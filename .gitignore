@@ -1,0 +1,12 @@
+uploads/
+node_modules
+.env
+.env.*
+dist
+build
+coverage
+logs
+*.log
+.vscode
+.idea
+.DS_Store
