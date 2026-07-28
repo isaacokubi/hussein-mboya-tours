@@ -96,7 +96,7 @@ import tourReportRoutes from "./routes/tourReportRoutes.js";
 
 import financeRoutes from "./routes/financeRoutes.js";
 
-import adminBookingRoutes from "./routes/adminBookingRoutes.js";
+import bookingAdminRoutes from "./routes/adminBookingRoutes.js";
 
 // ============================================================
 // AGENT ROUTES

@@ -1,33 +1,62 @@
+// server/controllers/adminController.js
+
+
 import User from "../models/User.js";
+
 import Booking from "../models/Booking.js";
+
 import Tour from "../models/Tour.js";
 
+import Payment from "../models/Payment.js";
+
+
 
 
 // ============================================================
-// ADMIN DASHBOARD STATS
+// ADMIN DASHBOARD STATISTICS
 // ============================================================
 
-export const dashboardStats = async (req,res)=>{
+export const getDashboardStats = async (req,res)=>{
+
 
 try{
 
 
 const users = await User.countDocuments();
 
+
 const bookings = await Booking.countDocuments();
+
 
 const tours = await Tour.countDocuments();
 
 
-res.json({
+let payments = 0;
+
+
+if(Payment){
+
+payments = await Payment.countDocuments();
+
+}
+
+
+
+
+res.status(200).json({
 
 success:true,
 
 data:{
-    users,
-    bookings,
-    tours
+
+users,
+
+bookings,
+
+tours,
+
+payments
+
 }
 
 });
@@ -36,9 +65,11 @@ data:{
 }
 catch(error){
 
+
 res.status(500).json({
 
 success:false,
+
 message:error.message
 
 });
@@ -48,6 +79,10 @@ message:error.message
 
 
 };
+
+
+
+
 
 
 
@@ -59,20 +94,27 @@ message:error.message
 
 export const getUsers = async(req,res)=>{
 
+
 try{
 
 
-const users =
-await User.find()
+const users = await User.find()
+
 .select("-password")
+
 .sort({
+
 createdAt:-1
+
 });
 
 
-res.json({
+
+
+res.status(200).json({
 
 success:true,
+
 data:users
 
 });
@@ -81,17 +123,24 @@ data:users
 }
 catch(error){
 
+
 res.status(500).json({
 
 success:false,
+
 message:error.message
 
 });
+
 
 }
 
 
 };
+
+
+
+
 
 
 
@@ -103,31 +152,45 @@ message:error.message
 
 export const getBookings = async(req,res)=>{
 
+
 try{
 
 
-const bookings =
-await Booking.find()
+const bookings = await Booking.find()
+
 
 .populate(
+
 "customer",
+
 "name email phone"
+
 )
 
+
 .populate(
+
 "tour",
+
 "title"
+
 )
+
 
 .sort({
+
 createdAt:-1
+
 });
 
 
 
-res.json({
+
+
+res.status(200).json({
 
 success:true,
+
 data:bookings
 
 });
@@ -136,9 +199,11 @@ data:bookings
 }
 catch(error){
 
+
 res.status(500).json({
 
 success:false,
+
 message:error.message
 
 });

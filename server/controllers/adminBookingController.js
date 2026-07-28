@@ -10,7 +10,7 @@ import Booking from "../models/Booking.js";
 |--------------------------------------------------------------------------
 */
 
-export const getBookings = async(req,res,next)=>{
+export const getAllBookings = async(req,res,next)=>{
 
 
 try{
@@ -57,7 +57,7 @@ createdAt:-1
 
 
 
-res.json({
+res.status(200).json({
 
 success:true,
 
@@ -135,6 +135,8 @@ if(!booking){
 
 return res.status(404).json({
 
+success:false,
+
 message:"Booking not found"
 
 });
@@ -143,7 +145,7 @@ message:"Booking not found"
 
 
 
-res.json({
+res.status(200).json({
 
 success:true,
 
@@ -214,6 +216,8 @@ if(!booking){
 
 return res.status(404).json({
 
+success:false,
+
 message:"Booking not found"
 
 });
@@ -223,7 +227,7 @@ message:"Booking not found"
 
 
 
-res.json({
+res.status(200).json({
 
 success:true,
 
@@ -298,6 +302,8 @@ if(!booking){
 
 return res.status(404).json({
 
+success:false,
+
 message:"Booking not found"
 
 });
@@ -306,7 +312,7 @@ message:"Booking not found"
 
 
 
-res.json({
+res.status(200).json({
 
 success:true,
 
@@ -374,6 +380,8 @@ if(!booking){
 
 return res.status(404).json({
 
+success:false,
+
 message:"Booking not found"
 
 });
@@ -382,7 +390,7 @@ message:"Booking not found"
 
 
 
-res.json({
+res.status(200).json({
 
 success:true,
 
