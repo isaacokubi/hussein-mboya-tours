@@ -1,6 +1,18 @@
 import mongoose from "mongoose";
 
 
+/*
+|--------------------------------------------------------------------------
+| AGENT SCHEMA
+|--------------------------------------------------------------------------
+|
+| Agent authentication comes from User.
+| Agent stores business-specific information.
+|
+*/
+
+
+
 const agentSchema = new mongoose.Schema(
 
 {
@@ -10,10 +22,10 @@ const agentSchema = new mongoose.Schema(
 | LINK TO USER ACCOUNT
 |--------------------------------------------------------------------------
 |
-| Agent authentication comes from User.
-| Agent stores business-specific information.
+| One User account can have one Agent profile.
 |
 */
+
 
 user:{
 
@@ -26,6 +38,9 @@ user:{
     unique:true
 
 },
+
+
+
 
 
 
@@ -48,6 +63,7 @@ companyName:{
 },
 
 
+
 phone:{
 
     type:String,
@@ -57,6 +73,7 @@ phone:{
     default:""
 
 },
+
 
 
 location:{
@@ -72,15 +89,19 @@ location:{
 
 
 
+
+
+
 /*
 |--------------------------------------------------------------------------
 | COMMISSION SYSTEM
 |--------------------------------------------------------------------------
 |
 | Example:
-| Booking = $1,000
+|
+| Booking Amount = 100,000 KES
 | Commission Rate = 10%
-| Agent earns $100
+| Agent Commission = 10,000 KES
 |
 */
 
@@ -112,11 +133,15 @@ totalCommission:{
 
 
 
+
+
+
 /*
 |--------------------------------------------------------------------------
-| WALLET
+| AGENT WALLET
 |--------------------------------------------------------------------------
 */
+
 
 walletBalance:{
 
@@ -127,6 +152,9 @@ walletBalance:{
     min:0
 
 },
+
+
+
 
 
 
@@ -149,6 +177,7 @@ totalSales:{
 },
 
 
+
 totalBookings:{
 
     type:Number,
@@ -162,12 +191,15 @@ totalBookings:{
 
 
 
+
+
+
 /*
 |--------------------------------------------------------------------------
 | APPROVAL STATUS
 |--------------------------------------------------------------------------
 |
-| Admin approves agents before they can operate.
+| Admin controls agent activation.
 |
 */
 
@@ -202,8 +234,8 @@ status:{
 
 
 
-
 },
+
 
 {
 
@@ -216,18 +248,31 @@ timestamps:true
 
 
 
+
+
+
+
+
 /*
 |--------------------------------------------------------------------------
-| INDEXES
+| DATABASE INDEXES
 |--------------------------------------------------------------------------
+|
+| IMPORTANT:
+|
+| Do NOT add:
+|
+| agentSchema.index({user:1})
+|
+| because user already has:
+|
+| unique:true
+|
+| which automatically creates:
+|
+| user_1
+|
 */
-
-
-agentSchema.index({
-
-    user:1
-
-});
 
 
 
@@ -239,6 +284,25 @@ agentSchema.index({
 
 
 
+agentSchema.index({
+
+    status:1
+
+});
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| EXPORT MODEL
+|--------------------------------------------------------------------------
+*/
 
 
 const Agent =

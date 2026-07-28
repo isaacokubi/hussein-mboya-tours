@@ -1,42 +1,48 @@
 import {
-  useState
+    useState
 } from "react";
 
+
 import {
-  useSearchParams,
-  useNavigate
+    useParams,
+    useNavigate
 } from "react-router-dom";
 
+
 import {
-  useQuery
+    useQuery
 } from "@tanstack/react-query";
 
+
 import {
-  getTourBySlug
+    getTourById
 } from "../api/tourApi";
 
+
 import {
-  createBooking
+    createBooking
 } from "../api/bookingApi";
 
-import {
-  initiateMpesa
-} from "../api/mpesaApi";
 
 import {
-  toast
+    initiateMpesa
+} from "../api/mpesaApi";
+
+
+import {
+    toast
 } from "react-toastify";
+
+
 
 
 
 export default function Checkout(){
 
 
-const [
-params
-]
-=
-useSearchParams();
+const {
+    id
+}=useParams();
 
 
 
@@ -45,61 +51,28 @@ useNavigate();
 
 
 
-const tourSlug =
-params.get("tour");
-
-
-
-const [
-form,
-setForm
-]
-=
-useState({
-
-fullName:"",
-
-email:"",
-
-phone:"",
-
-travelDate:"",
-
-
-travelers:[
-
-{
-fullName:"",
-nationality:""
-}
-
-]
-
-});
-
-
-
 
 
 const {
+
 data:tour,
+
 isLoading
-}
-=
-useQuery({
 
-queryKey:[
-"checkout-tour",
-tourSlug
-],
+}=useQuery({
 
-
-queryFn:
-()=>getTourBySlug(tourSlug),
+    queryKey:[
+        "checkout-tour",
+        id
+    ],
 
 
-enabled:
-!!tourSlug
+    queryFn:
+    ()=>getTourById(id),
+
+
+    enabled:
+    !!id
 
 });
 
@@ -109,31 +82,82 @@ enabled:
 
 
 
+const [form,setForm]=useState({
 
-const updateTraveler = (
+    fullName:"",
 
-index,
+    email:"",
 
-value
+    phone:"",
 
-)=>{
+    travelDate:"",
 
 
-const updated =
+    travelers:[
 
-[
-...form.travelers
+        {
+
+            fullName:"",
+
+            nationality:""
+
+        }
+
+    ]
+
+});
+
+
+
+
+
+const [loading,setLoading]=useState(false);
+
+
+
+
+
+
+
+const handleChange=(e)=>{
+
+
+setForm({
+
+    ...form,
+
+    [e.target.name]:
+    e.target.value
+
+});
+
+
+};
+
+
+
+
+
+
+
+
+
+const updateTraveler=(index,value)=>{
+
+
+const updated=[
+
+    ...form.travelers
+
 ];
 
 
 
-updated[index] =
+updated[index]={
 
-{
+    ...updated[index],
 
-...updated[index],
-
-...value
+    ...value
 
 };
 
@@ -141,9 +165,9 @@ updated[index] =
 
 setForm({
 
-...form,
+    ...form,
 
-travelers:updated
+    travelers:updated
 
 });
 
@@ -156,31 +180,27 @@ travelers:updated
 
 
 
-
-
-const addTraveler = ()=>{
+const addTraveler=()=>{
 
 
 setForm({
 
-...form,
+    ...form,
+
+    travelers:[
+
+        ...form.travelers,
 
 
-travelers:[
+        {
 
-...form.travelers,
+            fullName:"",
 
+            nationality:""
 
-{
+        }
 
-fullName:"",
-
-nationality:""
-
-}
-
-]
-
+    ]
 
 });
 
@@ -193,11 +213,6 @@ nationality:""
 
 
 
-/*
-|--------------------------------------------------------------------------
-| TOTAL CALCULATION
-|--------------------------------------------------------------------------
-*/
 
 
 const total =
@@ -221,46 +236,30 @@ form.travelers.length
 
 
 
-/*
-|--------------------------------------------------------------------------
-| CREATE BOOKING + MPESA
-|--------------------------------------------------------------------------
-*/
 
-
-const submitBooking = async(e)=>{
+const handleSubmit=async(e)=>{
 
 
 e.preventDefault();
 
 
 
-
-if(!tour){
-
-
-toast.error(
-"Tour information missing"
-);
-
-
-return;
-
-}
-
-
-
-
-
 try{
 
+
+setLoading(true);
+
+
+
+
+// CREATE BOOKING FIRST
 
 const booking =
 
 await createBooking({
 
-tour:
-tour._id,
+
+tour:id,
 
 
 travelDate:
@@ -271,10 +270,7 @@ form.travelDate,
 travelers:
 
 form.travelers.map(
-
-(item)=>(
-
-{
+(item)=>({
 
 name:
 item.fullName,
@@ -283,9 +279,7 @@ item.fullName,
 nationality:
 item.nationality
 
-}
-
-)
+})
 
 ),
 
@@ -305,13 +299,17 @@ form.email,
 phone:
 form.phone
 
-
 },
 
 
 
+amount:
+total,
+
+
 paymentMethod:
 "MPESA"
+
 
 
 });
@@ -323,7 +321,7 @@ paymentMethod:
 
 
 console.log(
-"BOOKING CREATED:",
+"BOOKING CREATED",
 booking
 );
 
@@ -333,14 +331,22 @@ booking
 
 
 
+// MPESA PAYMENT
+
 await initiateMpesa({
+
 
 phone:
 form.phone,
 
 
+amount:
+total,
+
+
 bookingId:
 booking._id
+
 
 });
 
@@ -350,9 +356,8 @@ booking._id
 
 
 
-
 toast.success(
-"M-Pesa prompt sent to your phone"
+"M-Pesa payment request sent"
 );
 
 
@@ -370,14 +375,12 @@ navigate(
 
 
 
-
 }
 
 catch(error){
 
 
 console.error(
-"BOOKING ERROR:",
 error
 );
 
@@ -387,9 +390,17 @@ toast.error(
 
 error.response?.data?.message ||
 
-"Booking failed"
+"Payment failed"
 
 );
+
+
+}
+
+finally{
+
+
+setLoading(false);
 
 
 }
@@ -405,17 +416,14 @@ error.response?.data?.message ||
 
 
 
+
+
 if(isLoading){
 
 
 return (
 
-<div
-className="
-p-10
-text-center
-"
->
+<div className="py-20 text-center">
 
 Loading tour...
 
@@ -434,30 +442,48 @@ Loading tour...
 
 
 
+if(!tour){
+
+
 return (
 
-<div
+<div className="py-20 text-center">
 
-className="
-max-w-5xl
+Tour not found
+
+</div>
+
+);
+
+
+}
+
+
+
+
+
+
+
+
+
+
+return (
+
+<div className="
+container
 mx-auto
-p-8
-"
+px-6
+py-20
+">
 
->
 
-
-<h1
-
-className="
+<h1 className="
 text-4xl
 font-bold
-mb-8
-"
+mb-10
+">
 
->
-
-Complete Your Booking
+Complete Booking
 
 </h1>
 
@@ -468,35 +494,22 @@ Complete Your Booking
 
 
 
-{
-
-tour && (
-
-<div
-
-className="
+<div className="
 bg-gray-100
-p-5
+p-6
 rounded-xl
-mb-6
-"
-
->
+mb-8
+">
 
 
-<h2
-
-className="
+<h2 className="
 text-2xl
 font-bold
-"
-
->
+">
 
 {tour.title}
 
 </h2>
-
 
 
 <p>
@@ -506,15 +519,7 @@ KES {tour.price} per person
 </p>
 
 
-
 </div>
-
-
-)
-
-}
-
-
 
 
 
@@ -524,10 +529,11 @@ KES {tour.price} per person
 
 <form
 
-onSubmit={submitBooking}
+onSubmit={handleSubmit}
 
 className="
-space-y-6
+max-w-xl
+space-y-5
 "
 
 >
@@ -535,37 +541,17 @@ space-y-6
 
 
 
-
-
-
-
 <input
 
-className="
-input
-"
+name="fullName"
 
-placeholder="
-Full Name
-"
+placeholder="Full Name"
 
 required
 
+onChange={handleChange}
 
-onChange={
-
-e=>
-
-setForm({
-
-...form,
-
-fullName:
-e.target.value
-
-})
-
-}
+className="input"
 
 />
 
@@ -574,37 +560,38 @@ e.target.value
 
 
 
-
-
 <input
 
-className="
-input
-"
-
-placeholder="
-Email
-"
+name="email"
 
 type="email"
 
+placeholder="Email"
+
 required
 
+onChange={handleChange}
 
-onChange={
+className="input"
 
-e=>
+/>
 
-setForm({
 
-...form,
 
-email:
-e.target.value
 
-})
 
-}
+
+<input
+
+name="phone"
+
+placeholder="M-Pesa Phone Number"
+
+required
+
+onChange={handleChange}
+
+className="input"
 
 />
 
@@ -614,69 +601,17 @@ e.target.value
 
 
 
-
 <input
-
-className="
-input
-"
-
-placeholder="
-M-Pesa Phone Number
-"
-
-required
-
-
-onChange={
-
-e=>
-
-setForm({
-
-...form,
-
-phone:
-e.target.value
-
-})
-
-}
-
-/>
-
-
-
-
-
-
-
-
-<input
-
-className="
-input
-"
 
 type="date"
 
+name="travelDate"
+
 required
 
+onChange={handleChange}
 
-onChange={
-
-e=>
-
-setForm({
-
-...form,
-
-travelDate:
-e.target.value
-
-})
-
-}
+className="input"
 
 />
 
@@ -686,21 +621,14 @@ e.target.value
 
 
 
-
-
-<h2
-
-className="
+<h2 className="
 text-2xl
 font-bold
-"
-
->
+">
 
 Travelers
 
 </h2>
-
 
 
 
@@ -730,25 +658,18 @@ space-y-3
 >
 
 
-
 <input
 
-className="
-input
-"
-
-placeholder="
-Traveler Name
-"
+placeholder="Traveler Name"
 
 value={
 traveler.fullName
 }
 
+className="input"
 
-onChange={
 
-e=>
+onChange={(e)=>
 
 updateTraveler(
 
@@ -765,10 +686,8 @@ e.target.value
 
 }
 
+
 />
-
-
-
 
 
 
@@ -776,22 +695,16 @@ e.target.value
 
 <input
 
-className="
-input
-"
-
-placeholder="
-Nationality
-"
+placeholder="Nationality"
 
 value={
 traveler.nationality
 }
 
+className="input"
 
-onChange={
 
-e=>
+onChange={(e)=>
 
 updateTraveler(
 
@@ -808,7 +721,9 @@ e.target.value
 
 }
 
+
 />
+
 
 
 
@@ -820,7 +735,6 @@ e.target.value
 )
 
 }
-
 
 
 
@@ -839,7 +753,6 @@ border
 px-5
 py-2
 rounded-lg
-hover:bg-gray-100
 "
 
 >
@@ -856,46 +769,31 @@ Add Traveler
 
 
 
-<div
-
-className="
+<div className="
 bg-gray-100
 p-5
 rounded-xl
-"
-
->
+">
 
 
-<h2
-
-className="
-text-xl
+<h3 className="
 font-bold
-"
-
->
+">
 
 Total
 
-</h2>
+</h3>
 
 
-
-<p
-
-className="
+<p className="
 text-3xl
 font-bold
 text-green-700
-"
-
->
+">
 
 KES {total}
 
 </p>
-
 
 
 </div>
@@ -906,23 +804,38 @@ KES {total}
 
 
 
-
 <button
 
+disabled={loading}
+
 className="
-bg-green-700
+bg-green-600
 text-white
 px-8
 py-4
-rounded-xl
+rounded-full
+font-bold
 w-full
-hover:bg-green-800
-transition
 "
 
 >
 
-Pay With M-Pesa
+
+{
+
+loading
+
+?
+
+"Processing Payment..."
+
+:
+
+"Pay With M-Pesa"
+
+}
+
+
 
 </button>
 
@@ -932,9 +845,6 @@ Pay With M-Pesa
 
 
 </form>
-
-
-
 
 
 </div>

@@ -11,43 +11,41 @@ from "../../api/adminTourApi";
 
 
 import {
-toast
+useNavigate
 }
-from "react-toastify";
+from "react-router-dom";
 
 
 
 export default function AddTour(){
 
 
-const [
-form,
-setForm
-]
-=
-useState({
+const navigate =
+useNavigate();
+
+
+
+const [form,setForm]=useState({
 
 title:"",
 description:"",
-country:"",
-category:"",
-price:""
+location:"",
+duration:"",
+price:"",
+category:"Safari",
+featured:false
 
 });
 
 
 
-const [
-images,
-setImages
-]
-=
-useState([]);
+const [images,setImages]=useState([]);
 
 
 
-const submit =
-async(e)=>{
+
+const submit=async(e)=>{
+
 
 e.preventDefault();
 
@@ -59,35 +57,37 @@ new FormData();
 
 
 Object.keys(form)
-.forEach(
-key=>
+.forEach(key=>{
+
 data.append(
 key,
 form[key]
-)
 );
 
+});
 
 
-Array.from(images)
-.forEach(
-image=>
+
+for(
+let img of images
+){
+
 data.append(
 "images",
-image
-)
+img
 );
 
-
-
-await createTour(
-data
-);
+}
 
 
 
-toast.success(
-"Tour created"
+
+await createTour(data);
+
+
+
+navigate(
+"/admin/tours"
 );
 
 
@@ -95,30 +95,33 @@ toast.success(
 
 
 
+
+
+
 return (
 
 <form
+
 onSubmit={submit}
+
 className="
+max-w-xl
 space-y-5
 "
+
 >
 
 
 <input
 
-className="input"
-
 placeholder="Tour title"
 
+className="input"
+
 onChange={
-e=>
-setForm({
-
+e=>setForm({
 ...form,
-
 title:e.target.value
-
 })
 }
 
@@ -128,18 +131,14 @@ title:e.target.value
 
 <textarea
 
-className="input"
-
 placeholder="Description"
 
+className="input"
+
 onChange={
-e=>
-setForm({
-
+e=>setForm({
 ...form,
-
 description:e.target.value
-
 })
 }
 
@@ -147,20 +146,17 @@ description:e.target.value
 
 
 
+
 <input
 
-className="input"
+placeholder="Location"
 
-placeholder="Country"
+className="input"
 
 onChange={
-e=>
-setForm({
-
+e=>setForm({
 ...form,
-
-country:e.target.value
-
+location:e.target.value
 })
 }
 
@@ -170,24 +166,37 @@ country:e.target.value
 
 <input
 
+placeholder="Duration"
+
 className="input"
+
+onChange={
+e=>setForm({
+...form,
+duration:e.target.value
+})
+}
+
+/>
+
+
+
+
+<input
 
 placeholder="Price"
 
-type="number"
+className="input"
 
 onChange={
-e=>
-setForm({
-
+e=>setForm({
 ...form,
-
 price:e.target.value
-
 })
 }
 
 />
+
 
 
 
@@ -198,9 +207,10 @@ type="file"
 multiple
 
 onChange={
-e=>
-setImages(
-e.target.files
+e=>setImages(
+[
+...e.target.files
+]
 )
 }
 
@@ -211,22 +221,22 @@ e.target.files
 <button
 
 className="
-bg-yellow-600
+bg-green-600
 text-white
-px-6
+px-8
 py-3
 rounded
 "
 
 >
 
-Create Tour
+Save Tour
 
 </button>
 
 
 </form>
 
-);
+)
 
 }

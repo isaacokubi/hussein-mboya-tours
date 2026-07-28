@@ -1,4 +1,57 @@
-import api from "./axios";
+import axios from "axios";
+
+
+/*
+|--------------------------------------------------------------------------
+| AXIOS INSTANCE
+|--------------------------------------------------------------------------
+*/
+
+const API = axios.create({
+
+    baseURL: import.meta.env.VITE_API_URL,
+
+});
+
+
+
+/*
+|--------------------------------------------------------------------------
+| AUTH INTERCEPTOR
+|--------------------------------------------------------------------------
+*/
+
+API.interceptors.request.use(
+
+    (config)=>{
+
+
+        const token =
+        localStorage.getItem("token");
+
+
+        if(token){
+
+            config.headers.Authorization =
+            `Bearer ${token}`;
+
+        }
+
+
+        return config;
+
+
+    },
+
+    (error)=>{
+
+        return Promise.reject(error);
+
+    }
+
+);
+
+
 
 
 
@@ -12,34 +65,17 @@ export const createBooking =
 async(data)=>{
 
 
-const token =
-localStorage.getItem("token");
+    const response =
+    await API.post(
+
+        "/api/bookings",
+
+        data
+
+    );
 
 
-
-const response =
-await api.post(
-
-"/bookings",
-
-data,
-
-{
-
-headers:{
-
-Authorization:
-`Bearer ${token}`
-
-}
-
-}
-
-);
-
-
-
-return response.data;
+    return response.data;
 
 
 };
@@ -62,32 +98,15 @@ export const getMyBookings =
 async()=>{
 
 
-const token =
-localStorage.getItem("token");
+    const response =
+    await API.get(
+
+        "/api/bookings/my-bookings"
+
+    );
 
 
-
-const response =
-await api.get(
-
-"/bookings/my-bookings",
-
-{
-
-headers:{
-
-Authorization:
-`Bearer ${token}`
-
-}
-
-}
-
-);
-
-
-
-return response.data;
+    return response.data;
 
 
 };
@@ -110,32 +129,15 @@ export const getBooking =
 async(id)=>{
 
 
-const token =
-localStorage.getItem("token");
+    const response =
+    await API.get(
+
+        `/api/bookings/${id}`
+
+    );
 
 
-
-const response =
-await api.get(
-
-`/bookings/${id}`,
-
-{
-
-headers:{
-
-Authorization:
-`Bearer ${token}`
-
-}
-
-}
-
-);
-
-
-
-return response.data;
+    return response.data;
 
 
 };
@@ -158,34 +160,22 @@ export const cancelBooking =
 async(id)=>{
 
 
-const token =
-localStorage.getItem("token");
+    const response =
+    await API.put(
+
+        `/api/bookings/cancel/${id}`,
+
+        {}
+
+    );
 
 
-
-const response =
-await api.put(
-
-`/bookings/cancel/${id}`,
-
-{},
-
-{
-
-headers:{
-
-Authorization:
-`Bearer ${token}`
-
-}
-
-}
-
-);
-
-
-
-return response.data;
+    return response.data;
 
 
 };
+
+
+
+
+export default API;

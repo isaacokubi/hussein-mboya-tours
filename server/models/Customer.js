@@ -25,7 +25,6 @@ const customerSchema = new mongoose.Schema(
 
 {
 
-
 /*
 |--------------------------------------------------------------------------
 | OWNER AGENT
@@ -35,13 +34,11 @@ const customerSchema = new mongoose.Schema(
 
 agent:{
 
-type:mongoose.Schema.Types.ObjectId,
+    type:mongoose.Schema.Types.ObjectId,
 
-ref:"Agent",
+    ref:"Agent",
 
-required:true,
-
-index:true
+    required:true
 
 },
 
@@ -60,11 +57,11 @@ index:true
 
 firstName:{
 
-type:String,
+    type:String,
 
-required:true,
+    required:true,
 
-trim:true
+    trim:true
 
 },
 
@@ -72,26 +69,33 @@ trim:true
 
 lastName:{
 
-type:String,
+    type:String,
 
-required:true,
+    required:true,
 
-trim:true
+    trim:true
 
 },
 
 
 
-
 email:{
 
-type:String,
+    type:String,
 
-lowercase:true,
+    lowercase:true,
 
-trim:true,
+    trim:true,
 
-default:""
+    default:"",
+
+    match:[
+
+        /^\S+@\S+\.\S+$/,
+
+        "Please enter a valid email"
+
+    ]
 
 },
 
@@ -99,11 +103,11 @@ default:""
 
 phone:{
 
-type:String,
+    type:String,
 
-required:true,
+    required:true,
 
-trim:true
+    trim:true
 
 },
 
@@ -122,67 +126,63 @@ trim:true
 
 gender:{
 
-type:String,
+    type:String,
 
-enum:[
+    enum:[
 
-"male",
+        "male",
 
-"female",
+        "female",
 
-"other"
+        "other"
 
-],
+    ],
 
-default:null
+    default:null
 
 },
-
 
 
 
 dateOfBirth:{
 
-type:Date,
+    type:Date,
 
-default:null
+    default:null
 
 },
-
 
 
 
 nationality:{
 
-type:String,
+    type:String,
 
-default:"",
+    default:"",
 
-trim:true
+    trim:true
 
 },
-
 
 
 
 passportNumber:{
 
-type:String,
+    type:String,
 
-default:"",
+    default:"",
 
-trim:true
+    trim:true
 
 },
 
 
 
-
 passportExpiryDate:{
 
-type:Date,
+    type:Date,
 
-default:null
+    default:null
 
 },
 
@@ -194,44 +194,42 @@ default:null
 
 /*
 |--------------------------------------------------------------------------
-| ADDRESS
+| ADDRESS INFORMATION
 |--------------------------------------------------------------------------
 */
 
 
 address:{
 
-type:String,
+    type:String,
 
-default:"",
+    default:"",
 
-trim:true
+    trim:true
 
 },
-
 
 
 
 city:{
 
-type:String,
+    type:String,
 
-default:"",
+    default:"",
 
-trim:true
+    trim:true
 
 },
 
 
 
-
 country:{
 
-type:String,
+    type:String,
 
-default:"Kenya",
+    default:"Kenya",
 
-trim:true
+    trim:true
 
 },
 
@@ -243,39 +241,38 @@ trim:true
 
 /*
 |--------------------------------------------------------------------------
-| CUSTOMER PROFILE
+| PROFILE
 |--------------------------------------------------------------------------
 */
 
 
 profileImage:{
 
-type:String,
+    type:String,
 
-default:""
+    default:""
 
 },
 
 
 
-
 customerType:{
 
-type:String,
+    type:String,
 
-enum:[
+    enum:[
 
-"individual",
+        "individual",
 
-"corporate",
+        "corporate",
 
-"family",
+        "family",
 
-"vip"
+        "vip"
 
-],
+    ],
 
-default:"individual"
+    default:"individual"
 
 },
 
@@ -287,33 +284,32 @@ default:"individual"
 
 /*
 |--------------------------------------------------------------------------
-| CRM INFORMATION
+| CRM DATA
 |--------------------------------------------------------------------------
 */
 
 
 notes:{
 
-type:String,
+    type:String,
 
-default:"",
+    default:"",
 
-trim:true
+    trim:true
 
 },
 
 
 
-
 tags:[
 
-{
+    {
 
-type:String,
+        type:String,
 
-trim:true
+        trim:true
 
-}
+    }
 
 ],
 
@@ -332,9 +328,9 @@ trim:true
 
 lastContactedAt:{
 
-type:Date,
+    type:Date,
 
-default:null
+    default:null
 
 },
 
@@ -342,19 +338,19 @@ default:null
 
 preferredContactMethod:{
 
-type:String,
+    type:String,
 
-enum:[
+    enum:[
 
-"phone",
+        "phone",
 
-"email",
+        "email",
 
-"whatsapp"
+        "whatsapp"
 
-],
+    ],
 
-default:"phone"
+    default:"phone"
 
 },
 
@@ -366,40 +362,42 @@ default:"phone"
 
 /*
 |--------------------------------------------------------------------------
-| LOYALTY
+| CUSTOMER LOYALTY
 |--------------------------------------------------------------------------
 */
 
 
 loyaltyPoints:{
 
-type:Number,
+    type:Number,
 
-default:0,
+    default:0,
 
-min:0
+    min:0
 
 },
-
 
 
 
 totalBookings:{
 
-type:Number,
+    type:Number,
 
-default:0
+    default:0,
+
+    min:0
 
 },
 
 
 
-
 totalSpent:{
 
-type:Number,
+    type:Number,
 
-default:0
+    default:0,
+
+    min:0
 
 },
 
@@ -418,37 +416,46 @@ default:0
 
 status:{
 
-type:String,
+    type:String,
 
-enum:[
+    enum:[
 
-"active",
+        "active",
 
-"inactive",
+        "inactive",
 
-"blocked"
+        "blocked"
 
-],
+    ],
 
-default:"active",
-
-index:true
+    default:"active"
 
 }
-
-
 
 
 },
 
 {
 
-timestamps:true
+timestamps:true,
+
+
+toJSON:{
+
+    virtuals:true
+
+},
+
+
+toObject:{
+
+    virtuals:true
+
+}
 
 }
 
 );
-
 
 
 
@@ -474,7 +481,7 @@ customerSchema.virtual(
 .get(function(){
 
 
-return `${this.firstName} ${this.lastName}`;
+    return `${this.firstName} ${this.lastName}`;
 
 
 });
@@ -494,24 +501,24 @@ return `${this.firstName} ${this.lastName}`;
 */
 
 
-// Agent customers
+// Agent customer listing
 
 customerSchema.index({
 
-agent:1,
+    agent:1,
 
-createdAt:-1
+    createdAt:-1
 
 });
 
 
 
 
-// Search customers
+// Search
 
 customerSchema.index({
 
-email:1
+    email:1
 
 });
 
@@ -519,19 +526,33 @@ email:1
 
 customerSchema.index({
 
-phone:1
+    phone:1
 
 });
 
 
 
-// CRM filtering
+
+// Filtering
 
 customerSchema.index({
 
-status:1
+    status:1
 
 });
+
+
+
+
+// Customer grouping
+
+customerSchema.index({
+
+    customerType:1
+
+});
+
+
 
 
 
@@ -552,9 +573,9 @@ mongoose.models.Customer ||
 
 mongoose.model(
 
-"Customer",
+    "Customer",
 
-customerSchema
+    customerSchema
 
 );
 

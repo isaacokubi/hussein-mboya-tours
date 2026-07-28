@@ -3,21 +3,7 @@ useQuery
 }
 from "@tanstack/react-query";
 
-
-import {
-getDashboard
-}
-from "../../api/adminApi";
-
-
-import {
-BarChart,
-Bar,
-XAxis,
-YAxis,
-Tooltip
-}
-from "recharts";
+import axios from "axios";
 
 
 
@@ -31,166 +17,144 @@ data
 useQuery({
 
 queryKey:[
-"admin-dashboard"
+"adminStats"
 ],
 
-queryFn:
-getDashboard
+queryFn:async()=>{
+
+
+const response =
+await axios.get(
+
+`${import.meta.env.VITE_API_URL}/api/admin/dashboard/stats`,
+
+{
+
+headers:{
+
+Authorization:
+`Bearer ${localStorage.getItem("token")}`
+
+}
+
+}
+
+);
+
+
+return response.data;
+
+
+}
 
 });
 
 
 
-if(!data)
-
-return <div>
-Loading...
-</div>;
-
-
-
-const chartData=[
-
-{
-name:"Revenue",
-value:data.revenue
-},
-
-{
-name:"Bookings",
-value:data.bookings
-}
-
-];
-
 
 
 return (
 
-<div>
+<div className="
+container
+mx-auto
+px-6
+py-20
+">
 
 
-<h1
-className="
+<h1 className="
 text-4xl
 font-bold
-mb-8
-"
->
+mb-10
+">
 
-Business Dashboard
+Admin Dashboard
 
 </h1>
 
 
 
-<div
-className="
+
+<div className="
 grid
-md:grid-cols-5
-gap-5
-"
->
+md:grid-cols-4
+gap-6
+">
 
 
-{
-
-[
-
-["Customers",data.users],
-
-["Tours",data.tours],
-
-["Bookings",data.bookings],
-
-["Revenue",
-`KES ${data.revenue}`],
-
-["Pending",
-data.pendingPayments]
-
-].map(
-
-(item)=>(
+<Card
+title="Users"
+value={data?.users}
+/>
 
 
-<div
-className="
+<Card
+title="Tours"
+value={data?.tours}
+/>
+
+
+<Card
+title="Bookings"
+value={data?.bookings}
+/>
+
+
+<Card
+title="Revenue"
+value={`$${data?.revenue}`}
+/>
+
+
+
+</div>
+
+
+
+</div>
+
+)
+
+}
+
+
+
+function Card({title,value}){
+
+
+return (
+
+<div className="
 bg-white
-shadow
+shadow-lg
 rounded-xl
-p-5
-"
->
+p-6
+">
 
-<h3>
-{item[0]}
+
+<h3 className="
+text-gray-500
+">
+
+{title}
+
 </h3>
 
 
-<p
-className="
+<p className="
 text-3xl
 font-bold
-"
->
+mt-3
+">
 
-{item[1]}
+{value || 0}
 
 </p>
 
 
 </div>
 
-
 )
-
-)
-
-}
-
-
-</div>
-
-
-
-
-<div
-className="
-mt-10
-bg-white
-p-6
-rounded-xl
-"
->
-
-
-<BarChart
-
-width={600}
-
-height={300}
-
-data={chartData}
-
->
-
-<XAxis dataKey="name"/>
-
-<YAxis/>
-
-<Tooltip/>
-
-<Bar dataKey="value"/>
-
-</BarChart>
-
-
-</div>
-
-
-</div>
-
-);
 
 }

@@ -1,126 +1,111 @@
-import { Link, useParams } from "react-router-dom";
+import {
+useQuery
+} from "@tanstack/react-query";
 
-import { useQuery } from "@tanstack/react-query";
 
-import { getTourBySlug } from "../api/tourApi";
+import {
+useParams,
+Link
+}
+from "react-router-dom";
 
-import SEO from "../components/seo/SEO";
+
+import {
+getTourById
+}
+from "../api/tourApi";
+
 
 
 export default function TourDetails(){
 
+
 const {
-slug
+id
 }=useParams();
 
 
 
 const {
 data:tour,
-isLoading,
-isError
-}=useQuery({
+isLoading
+}
+=
+useQuery({
 
 queryKey:[
 "tour",
-slug
+id
 ],
 
-
 queryFn:
-()=>getTourBySlug(slug)
-
+()=>getTourById(id)
 
 });
 
 
 
 
-
 if(isLoading){
 
-return(
+return (
 
-<div className="p-10 text-center">
+<div className="
+py-20
+text-center
+">
 
 Loading tour...
 
 </div>
 
-);
+)
 
 }
 
 
 
 
-
-if(isError || !tour){
-
-return(
-
-<div className="p-10 text-center text-red-600">
-
-Tour not found
-
-</div>
-
-);
-
-}
-
-
-
-
-
-return(
+return (
 
 <div className="
-max-w-7xl
+container
 mx-auto
-p-8
+px-6
+py-20
 ">
 
 
-<SEO
-
-title={tour.title}
-
-description={tour.description}
-
-image={tour.images?.[0]}
-
-/>
-
-
+<div className="
+grid
+md:grid-cols-2
+gap-10
+">
 
 
 <img
 
-src={
-tour.images?.[0] ||
-"/placeholder.jpg"
-}
+src={tour.image}
 
 alt={tour.title}
 
 className="
-w-full
-h-[500px]
-object-cover
 rounded-2xl
+h-[500px]
+w-full
+object-cover
 "
 
 />
 
 
 
+<div>
 
 
 <h1 className="
 text-5xl
 font-bold
-mt-8
 ">
 
 {tour.title}
@@ -129,11 +114,9 @@ mt-8
 
 
 
-
-
 <p className="
 mt-5
-text-gray-700
+text-gray-600
 text-lg
 ">
 
@@ -143,135 +126,77 @@ text-lg
 
 
 
+<div className="
+mt-6
+text-3xl
+font-bold
+text-green-600
+">
+
+${tour.price}
+
+</div>
+
 
 
 
 <div className="
 mt-8
-bg-gray-100
-p-6
-rounded-xl
+space-y-3
 ">
-
-<p className="
-text-gray-500
-">
-
-Starting From
-
-</p>
-
-
-<h2 className="
-text-4xl
-font-bold
-text-green-700
-">
-
-KES {tour.price}
-
-</h2>
-
-
-</div>
-
-
-
-
-
-
-
-<h2 className="
-text-3xl
-font-bold
-mt-10
-">
-
-Itinerary
-
-</h2>
-
-
-
-
-{
-tour.itinerary?.map(
-(day)=>(
-
-
-<div
-
-key={day.day}
-
-className="
-mt-5
-border
-p-5
-rounded-xl
-"
-
->
-
-
-<h3 className="
-font-bold
-text-xl
-">
-
-Day {day.day}: {day.title}
-
-</h3>
 
 
 <p>
+📍 {tour.location}
+</p>
 
-{day.description}
 
+<p>
+⏳ {tour.duration}
+</p>
+
+
+<p>
+🏕 {tour.category}
 </p>
 
 
 </div>
-
-
-)
-
-)
-
-}
-
-
-
 
 
 
 
 <Link
 
-to={`/checkout?tour=${tour.slug}`}
+to={`/checkout/${tour._id}`}
 
 className="
 inline-block
 mt-10
-bg-yellow-600
+bg-green-600
 text-white
-px-8
+px-10
 py-4
-rounded-xl
-hover:bg-yellow-700
+rounded-full
+font-bold
 "
 
 >
 
-Book This Experience
+Book This Adventure
 
 </Link>
 
 
-
+</div>
 
 
 </div>
 
-);
+
+</div>
+
+)
+
 
 }

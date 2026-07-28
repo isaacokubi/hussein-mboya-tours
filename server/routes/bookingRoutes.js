@@ -3,15 +3,15 @@ import express from "express";
 
 import {
 
-  createBooking,
+    createBooking,
 
-  getMyBookings,
+    getMyBookings,
 
-  getBooking,
+    getBooking,
 
-  cancelBooking,
+    cancelBooking,
 
-  getAllBookings
+    getAllBookings
 
 
 } from "../controllers/bookingController.js";
@@ -20,7 +20,7 @@ import {
 
 import {
 
-  protect
+    protect
 
 } from "../middleware/authMiddleware.js";
 
@@ -28,7 +28,7 @@ import {
 
 import {
 
-  roleMiddleware
+    roleMiddleware
 
 } from "../middleware/roleMiddleware.js";
 
@@ -47,7 +47,7 @@ const router = express.Router();
 
 /*
 |--------------------------------------------------------------------------
-| CUSTOMER BOOKING ROUTES
+| CUSTOMER ROUTES
 |--------------------------------------------------------------------------
 */
 
@@ -57,15 +57,18 @@ const router = express.Router();
 |--------------------------------------------------------------------------
 | CREATE BOOKING
 |--------------------------------------------------------------------------
+|
+| POST /api/bookings
+|
 */
 
 router.post(
 
-  "/",
+    "/",
 
-  protect,
+    protect,
 
-  createBooking
+    createBooking
 
 );
 
@@ -76,20 +79,23 @@ router.post(
 
 
 
+
 /*
 |--------------------------------------------------------------------------
-| CUSTOMER BOOKINGS
+| GET LOGGED USER BOOKINGS
 |--------------------------------------------------------------------------
+|
+| GET /api/bookings/my-bookings
+|
 */
-
 
 router.get(
 
-  "/my-bookings",
+    "/my-bookings",
 
-  protect,
+    protect,
 
-  getMyBookings
+    getMyBookings
 
 );
 
@@ -105,16 +111,18 @@ router.get(
 |--------------------------------------------------------------------------
 | GET SINGLE BOOKING
 |--------------------------------------------------------------------------
+|
+| GET /api/bookings/:id
+|
 */
-
 
 router.get(
 
-  "/:id",
+    "/:id",
 
-  protect,
+    protect,
 
-  getBooking
+    getBooking
 
 );
 
@@ -130,16 +138,18 @@ router.get(
 |--------------------------------------------------------------------------
 | CANCEL BOOKING
 |--------------------------------------------------------------------------
+|
+| PUT /api/bookings/cancel/:id
+|
 */
-
 
 router.put(
 
-  "/cancel/:id",
+    "/cancel/:id",
 
-  protect,
+    protect,
 
-  cancelBooking
+    cancelBooking
 
 );
 
@@ -153,23 +163,29 @@ router.put(
 
 /*
 |--------------------------------------------------------------------------
-| ADMIN BOOKING ROUTES
+| ADMIN / MANAGER ROUTES
 |--------------------------------------------------------------------------
+|
+| GET /api/bookings/admin/all
+|
 */
 
 
 router.get(
 
-  "/admin/all",
+    "/admin/all",
 
-  protect,
+    protect,
 
-  roleMiddleware("admin"),
+    roleMiddleware(
 
-  getAllBookings
+        "admin"
+
+    ),
+
+    getAllBookings
 
 );
-
 
 
 

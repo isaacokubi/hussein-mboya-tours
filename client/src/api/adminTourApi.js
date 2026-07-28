@@ -1,65 +1,250 @@
-import api from "./axios";
+import axios from "axios";
 
 
 
-export const createTour =
-async(formData)=>{
+
+// ============================================================
+// AXIOS INSTANCE
+// ============================================================
 
 
-const response =
-await api.post(
+const API = axios.create({
 
-"/admin/tours",
+    baseURL:
 
-formData,
+    import.meta.env.VITE_API_URL
 
-{
 
-headers:{
+});
 
-"Content-Type":
-"multipart/form-data"
+
+
+
+
+
+// ============================================================
+// AUTH TOKEN INTERCEPTOR
+// ============================================================
+
+
+API.interceptors.request.use(
+
+(config)=>{
+
+
+    const token =
+
+    localStorage.getItem("token");
+
+
+
+
+    if(token){
+
+
+        config.headers.Authorization =
+
+        `Bearer ${token}`;
+
+
+    }
+
+
+
+
+
+    return config;
+
+
+},
+
+
+(error)=>{
+
+
+    return Promise.reject(error);
+
 
 }
 
-}
+);
+
+
+
+
+
+
+
+
+
+// ============================================================
+// CREATE TOUR
+// ============================================================
+
+
+export const createTour = async(
+formData
+)=>{
+
+
+const {data} =
+
+await API.post(
+
+    "/api/admin/tours",
+
+    formData,
+
+    {
+
+        headers:{
+
+            "Content-Type":
+
+            "multipart/form-data"
+
+        }
+
+    }
 
 );
 
 
-return response.data;
+
+
+
+return data;
+
 
 };
 
 
 
 
-export const getAdminTours =
-async()=>{
 
 
-const response =
-await api.get(
-"/admin/tours"
+
+
+
+// ============================================================
+// GET ADMIN TOURS
+// ============================================================
+
+
+export const getAdminTours = async()=>{
+
+
+const {data} =
+
+await API.get(
+
+    "/api/admin/tours"
+
 );
 
 
-return response.data;
+
+
+
+return data;
+
 
 };
 
 
 
 
-export const deleteTour =
-async(id)=>{
 
 
-return await api.delete(
 
-`/admin/tours/${id}`
+
+
+// ============================================================
+// UPDATE TOUR
+// ============================================================
+
+
+export const updateTour = async(
+
+id,
+
+formData
+
+)=>{
+
+
+const {data} =
+
+await API.put(
+
+    `/api/admin/tours/${id}`,
+
+    formData,
+
+    {
+
+        headers:{
+
+            "Content-Type":
+
+            "multipart/form-data"
+
+        }
+
+    }
 
 );
 
 
+
+
+
+return data;
+
+
 };
+
+
+
+
+
+
+
+
+
+// ============================================================
+// DELETE TOUR
+// ============================================================
+
+
+export const deleteTour = async(
+
+id
+
+)=>{
+
+
+const {data} =
+
+await API.delete(
+
+    `/api/admin/tours/${id}`
+
+);
+
+
+
+
+
+return data;
+
+
+};
+
+
+
+
+
+
+
+export default API;

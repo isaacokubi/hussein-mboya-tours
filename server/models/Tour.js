@@ -11,30 +11,28 @@ import slugify from "slugify";
 
 const itinerarySchema = new mongoose.Schema(
 {
-
     day:{
         type:Number,
-        required:true,
+        required:true
     },
 
 
     title:{
         type:String,
         required:true,
-        trim:true,
+        trim:true
     },
 
 
     description:{
         type:String,
         required:true,
-        trim:true,
-    },
-
+        trim:true
+    }
 
 },
 {
-    _id:false,
+    _id:false
 }
 );
 
@@ -55,24 +53,21 @@ const availabilitySchema = new mongoose.Schema(
 
     date:{
         type:Date,
-        required:true,
+        required:true
     },
 
 
     availableSlots:{
         type:Number,
-        required:true,
         default:0,
-        min:0,
-    },
-
+        min:0
+    }
 
 },
 {
-    _id:false,
+    _id:false
 }
 );
-
 
 
 
@@ -91,31 +86,28 @@ const seoSchema = new mongoose.Schema(
 
     title:{
         type:String,
-        trim:true,
+        trim:true
     },
 
 
     description:{
         type:String,
-        trim:true,
+        trim:true
     },
 
 
     keywords:[
         {
             type:String,
-            trim:true,
+            trim:true
         }
-    ],
-
+    ]
 
 },
 {
-    _id:false,
+    _id:false
 }
 );
-
-
 
 
 
@@ -134,7 +126,6 @@ const tourSchema = new mongoose.Schema(
 
 {
 
-
 /*
 |--------------------------------------------------------------------------
 | BASIC INFORMATION
@@ -146,95 +137,118 @@ title:{
     type:String,
     required:true,
     trim:true,
-    maxlength:150,
+    maxlength:150
 },
 
 
 
+// REMOVED index:true
+// slug index handled below
 
 slug:{
     type:String,
-    required:true,
     unique:true,
     lowercase:true,
-    trim:true,
-    index:true,
+    trim:true
 },
-
 
 
 
 description:{
     type:String,
     required:true,
-    trim:true,
+    trim:true
 },
 
+
+
+shortDescription:{
+    type:String,
+    trim:true,
+    maxlength:200
+},
 
 
 
 category:{
     type:String,
-    required:true,
-    trim:true,
+    enum:[
+        "Safari",
+        "Beach",
+        "Adventure",
+        "Cultural",
+        "Luxury"
+    ],
+    default:"Safari"
 },
-
 
 
 
 destination:{
     type:mongoose.Schema.Types.ObjectId,
     ref:"Destination",
-    required:true,
+    required:true
 },
-
 
 
 
 country:{
     type:String,
     required:true,
-    trim:true,
+    trim:true
 },
 
 
 
-
+location:{
+    type:String,
+    required:true,
+    trim:true
+},
 
 
 
 /*
 |--------------------------------------------------------------------------
-| TOUR SCHEDULE (TOUR MANAGER)
+| TOUR DATE
 |--------------------------------------------------------------------------
 */
 
 
 date:{
     type:Date,
-    required:true,
+    required:true
 },
 
+
+
+duration:{
+    type:String,
+    required:true
+},
 
 
 
 capacity:{
     type:Number,
     default:20,
-    min:1,
+    min:1
 },
 
+
+
+maxTravelers:{
+    type:Number,
+    default:20,
+    min:1
+},
 
 
 
 vehicle:{
     type:mongoose.Schema.Types.ObjectId,
-    ref:"Vehicle",
+    ref:"Vehicle"
 },
-
-
-
-
 
 
 
@@ -245,50 +259,41 @@ vehicle:{
 */
 
 
-duration:{
-    type:Number,
-    required:true,
-    min:1,
-},
-
-
-
-
 difficulty:{
     type:String,
 
     enum:[
-
         "easy",
         "moderate",
         "hard"
-
     ],
 
-    default:"easy",
+    default:"easy"
 },
-
 
 
 
 price:{
     type:Number,
     required:true,
-    min:0,
+    min:0
 },
-
 
 
 
 discount:{
     type:Number,
     default:0,
-    min:0,
+    min:0
 },
 
 
 
-
+discountPrice:{
+    type:Number,
+    default:null,
+    min:0
+},
 
 
 
@@ -299,12 +304,54 @@ discount:{
 */
 
 
+image:{
+    type:String,
+    required:true
+},
+
+
+
 images:[
+    String
+],
 
-    {
-        type:String
-    }
 
+
+gallery:[
+    String
+],/*
+|--------------------------------------------------------------------------
+| TOUR CONTENT
+|--------------------------------------------------------------------------
+*/
+
+
+highlights:[
+    String
+],
+
+
+
+inclusions:[
+    String
+],
+
+
+
+exclusions:[
+    String
+],
+
+
+
+included:[
+    String
+],
+
+
+
+excluded:[
+    String
 ],
 
 
@@ -320,34 +367,8 @@ images:[
 */
 
 
- itinerary:[
-
+itinerary:[
     itinerarySchema
-
-],
-
-
-
-
-inclusions:[
-
-    {
-        type:String,
-        trim:true
-    }
-
-],
-
-
-
-
-exclusions:[
-
-    {
-        type:String,
-        trim:true
-    }
-
 ],
 
 
@@ -364,50 +385,31 @@ exclusions:[
 
 
 availableDates:[
-
-    {
-        type:Date
-    }
-
+    Date
 ],
-
 
 
 
 availability:[
-
     availabilitySchema
-
 ],
-
-
 
 
 
 availabilitySettings:{
 
-
     totalSlots:{
-
         type:Number,
-
         default:20,
-
         min:0
-
     },
 
 
     bookedSlots:{
-
         type:Number,
-
         default:0,
-
         min:0
-
     }
-
 
 },
 
@@ -428,38 +430,16 @@ pricingRules:[
 
 {
 
-
-name:{
-
-    type:String,
-
-    trim:true
-
-},
+name:String,
 
 
-
-minTravelers:{
-
-    type:Number,
-
-    min:1
-
-},
-
+minTravelers:Number,
 
 
 discount:{
-
     type:Number,
-
-    default:0,
-
-    min:0
-
+    default:0
 }
-
-
 
 }
 
@@ -479,37 +459,16 @@ discount:{
 
 
 cancellationPolicy:{
-
     type:String,
-
     trim:true
-
 },
-
 
 
 
 depositRequired:{
-
     type:Number,
-
     default:0,
-
     min:0
-
-},
-
-
-
-
-maxTravelers:{
-
-    type:Number,
-
-    default:20,
-
-    min:1
-
 },
 
 
@@ -520,62 +479,14 @@ maxTravelers:{
 
 /*
 |--------------------------------------------------------------------------
-| GUIDE ASSIGNMENT
+| ASSIGNMENTS
 |--------------------------------------------------------------------------
 */
 
 
 guide:{
-
     type:mongoose.Schema.Types.ObjectId,
-
     ref:"User"
-
-},
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| TOUR REPORT
-|--------------------------------------------------------------------------
-*/
-
-
-tourReport:{
-
-
-    notes:{
-
-        type:String,
-
-        trim:true
-
-    },
-
-
-
-    photos:[
-
-        {
-            type:String
-        }
-
-    ],
-
-
-
-    submittedAt:{
-
-        type:Date
-
-    }
-
-
 },
 
 
@@ -592,49 +503,33 @@ tourReport:{
 
 
 rating:{
-
     type:Number,
-
     default:0,
-
     min:0,
-
     max:5
-
 },
 
 
 
 totalReviews:{
-
     type:Number,
-
     default:0
-
 },
 
 
 
 reviewsCount:{
-
     type:Number,
-
     default:0
-
 },
 
 
 
 averageRating:{
-
     type:Number,
-
     default:0,
-
     min:0,
-
     max:5
-
 },
 
 
@@ -645,18 +540,46 @@ averageRating:{
 
 /*
 |--------------------------------------------------------------------------
-| FEATURED
+| FEATURED AND STATUS
 |--------------------------------------------------------------------------
 */
 
 
+// REMOVED index:true
+
 featured:{
-
     type:Boolean,
+    default:false
+},
 
-    default:false,
 
-    index:true
+
+// REMOVED index:true
+
+available:{
+    type:Boolean,
+    default:true
+},
+
+
+
+// REMOVED index:true
+
+status:{
+
+    type:String,
+
+    enum:[
+
+        "draft",
+        "upcoming",
+        "ongoing",
+        "completed",
+        "cancelled"
+
+    ],
+
+    default:"upcoming"
 
 },
 
@@ -673,63 +596,13 @@ featured:{
 */
 
 
-seo:seoSchema,
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| TOUR STATUS
-|--------------------------------------------------------------------------
-*/
-
-
-status:{
-
-
-    type:String,
-
-
-    enum:[
-
-
-        "draft",
-
-        "upcoming",
-
-        "ongoing",
-
-        "completed",
-
-        "cancelled"
-
-
-    ],
-
-
-    default:"upcoming",
-
-
-    index:true
-
-
-}
-
-
-
+seo:seoSchema
 
 
 },
 
 {
-
     timestamps:true
-
 }
 
 );
@@ -744,79 +617,38 @@ status:{
 
 /*
 |--------------------------------------------------------------------------
-| AUTO CREATE SLUG
+| AUTO SLUG GENERATION
 |--------------------------------------------------------------------------
 */
 
 
 tourSchema.pre(
-
 "validate",
 
 function(next){
 
 
     if(
-
         this.title &&
-
         (!this.slug || this.isModified("title"))
-
     ){
 
-
-        this.slug =
-        slugify(
+        this.slug = slugify(
 
             this.title,
 
             {
-
                 lower:true,
-
                 strict:true,
-
                 trim:true
-
             }
 
         );
-
 
     }
 
 
     next();
-
-
-}
-
-);
-
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| SEARCH INDEX
-|--------------------------------------------------------------------------
-*/
-
-
-tourSchema.index({
-
-    title:"text",
-
-    description:"text",
-
-    country:"text",
-
-    category:"text"
 
 });
 
@@ -826,12 +658,37 @@ tourSchema.index({
 
 
 
+
+
 /*
 |--------------------------------------------------------------------------
-| PERFORMANCE INDEXES
+| DATABASE INDEXES
 |--------------------------------------------------------------------------
 */
 
+
+// Search
+
+tourSchema.index({
+
+    title:"text",
+
+    description:"text",
+
+    shortDescription:"text",
+
+    country:"text",
+
+    location:"text",
+
+    category:"text"
+
+});
+
+
+
+
+// Destination filtering
 
 tourSchema.index({
 
@@ -846,6 +703,8 @@ tourSchema.index({
 
 
 
+// Guide dashboard
+
 tourSchema.index({
 
     guide:1,
@@ -857,6 +716,8 @@ tourSchema.index({
 
 
 
+// Vehicle lookup
+
 tourSchema.index({
 
     vehicle:1
@@ -865,6 +726,8 @@ tourSchema.index({
 
 
 
+
+// Date sorting
 
 tourSchema.index({
 
@@ -875,6 +738,19 @@ tourSchema.index({
 
 
 
+// Price filtering
+
+tourSchema.index({
+
+    price:1
+
+});
+
+
+
+
+// Rating sorting
+
 tourSchema.index({
 
     averageRating:-1
@@ -884,9 +760,11 @@ tourSchema.index({
 
 
 
+// Availability filtering
+
 tourSchema.index({
 
-    price:1
+    available:1
 
 });
 
@@ -900,8 +778,8 @@ tourSchema.index({
 
 export default mongoose.model(
 
-"Tour",
+    "Tour",
 
-tourSchema
+    tourSchema
 
 );

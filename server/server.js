@@ -9,39 +9,54 @@ import compression from "compression";
 import http from "http";
 import { Server } from "socket.io";
 
+
 import connectDatabase from "./config/database.js";
 import env from "./config/env.js";
 
+
+
 // ============================================================
-// REGISTER MONGOOSE MODELS
+// REGISTER MODELS
 // ============================================================
 
 import "./models/Permission.js";
 import "./models/Role.js";
 
+
+
+
 // ============================================================
 // ROUTES
 // ============================================================
 
-// Authentication
+
+// AUTH
 
 import authRoutes from "./routes/authRoutes.js";
 
-// Public
+
+
+// PUBLIC
 
 import tourRoutes from "./routes/tourRoutes.js";
 
 import destinationRoutes from "./routes/destinationRoutes.js";
 
-// Booking
+
+
+// BOOKINGS
 
 import bookingRoutes from "./routes/bookingRoutes.js";
 
-// Payments
+
+
+// PAYMENTS
 
 import mpesaRoutes from "./routes/mpesaRoutes.js";
 
-// Customer Features
+
+
+// CUSTOMER
 
 import invoiceRoutes from "./routes/invoiceRoutes.js";
 
@@ -49,11 +64,22 @@ import wishListRoutes from "./routes/wishlistRoutes.js";
 
 import reviewRoutes from "./routes/reviewRoutes.js";
 
-// User
+
+
+// USER
 
 import userRoutes from "./routes/userRoutes.js";
 
-// Admin
+
+
+
+
+// ============================================================
+// ADMIN ROUTES
+// ============================================================
+
+
+import adminAuthRoutes from "./routes/adminAuthRoutes.js";
 
 import adminRoutes from "./routes/adminRoutes.js";
 
@@ -63,9 +89,14 @@ import adminDestinationRoutes from "./routes/adminDestinationRoutes.js";
 
 import tourReportRoutes from "./routes/tourReportRoutes.js";
 
+
+
+
+
 // ============================================================
-// AGENT MODULE
+// AGENT
 // ============================================================
+
 
 import agentRoutes from "./routes/agentRoutes.js";
 
@@ -73,27 +104,44 @@ import agentCustomerRoutes from "./routes/agentCustomerRoutes.js";
 
 import agentPackageRoutes from "./routes/agentPackageRoutes.js";
 
+
+
+
 // ============================================================
-// TOUR GUIDE
+// GUIDE
 // ============================================================
 
+
 import guideRoutes from "./routes/guideRoutes.js";
+
+
+
 
 // ============================================================
 // TOUR MANAGER
 // ============================================================
 
+
 import tourManagerRoutes from "./routes/tourManagerRoutes.js";
+
+
+
+
 
 // ============================================================
 // VEHICLES
 // ============================================================
 
+
 import vehicleRoutes from "./routes/vehicleRoutes.js";
 
+
+
+
 // ============================================================
-// OTHER MODULES
+// OTHER
 // ============================================================
+
 
 import notificationRoutes from "./routes/notificationRoutes.js";
 
@@ -103,9 +151,14 @@ import recommendationRoutes from "./routes/recommendationRoutes.js";
 
 import analyticsRoutes from "./routes/analyticsRoutes.js";
 
+
+
+
+
 // ============================================================
 // MIDDLEWARE
 // ============================================================
+
 
 import securityMonitor from "./middleware/securityMonitor.js";
 
@@ -113,355 +166,770 @@ import notFound from "./middleware/notFoundMiddleware.js";
 
 import errorHandler from "./middleware/errorMiddleware.js";
 
+
+
+
+
+
+
 // ============================================================
 // EXPRESS APP
 // ============================================================
 
+
 const app = express();
+
+
+
+
 
 // ============================================================
 // DATABASE
 // ============================================================
 
+
 connectDatabase();
+
+
+
+
+
+
 
 // ============================================================
 // SECURITY
 // ============================================================
 
+
 app.use(
-  helmet({
-    crossOriginResourcePolicy: false,
-  }),
+
+    helmet({
+
+        crossOriginResourcePolicy:false
+
+    })
+
 );
 
+
+
 app.use(compression());
+
+
+
+
+
+
 
 // ============================================================
 // CORS
 // ============================================================
 
-app.use(
-  cors({
-    origin: env.CLIENT_URL,
 
-    credentials: true,
-  }),
+const allowedOrigins = [
+
+    "http://localhost:5173",
+
+    "http://localhost:3000",
+
+    "https://hussein-mboya-tours.vercel.app"
+
+];
+
+
+
+
+
+app.use(
+
+cors({
+
+    origin:(origin,callback)=>{
+
+
+        if(!origin){
+
+            return callback(null,true);
+
+        }
+
+
+
+        if(
+
+            allowedOrigins.includes(origin)
+
+        ){
+
+            return callback(null,true);
+
+        }
+
+
+
+        return callback(
+
+            new Error("CORS blocked")
+
+        );
+
+
+    },
+
+
+    credentials:true
+
+
+})
+
 );
+
+
+
+
+
+
 
 // ============================================================
 // BODY PARSER
 // ============================================================
 
-app.use(
-  express.json({
-    limit: "10mb",
-  }),
-);
 
 app.use(
-  express.urlencoded({
-    extended: true,
 
-    limit: "10mb",
-  }),
+express.json({
+
+    limit:"10mb"
+
+})
+
 );
+
+
+
+app.use(
+
+express.urlencoded({
+
+    extended:true,
+
+    limit:"10mb"
+
+})
+
+);
+
+
 
 app.use(cookieParser());
+
+
+
+
+
+
 
 // ============================================================
 // LOGGING
 // ============================================================
 
-app.use(morgan("dev"));
+
+app.use(
+
+morgan("dev")
+
+);
+
+
+
+
+
+
 
 // ============================================================
-// SECURITY LIMIT
+// SECURITY RATE LIMIT
 // ============================================================
+
 
 app.use(securityMonitor);
 
+
+
 app.use(
-  rateLimit({
-    windowMs: 15 * 60 * 1000,
 
-    max: 200,
+rateLimit({
 
-    message: "Too many requests. Please try again later.",
-  }),
+    windowMs:15 * 60 * 1000,
+
+    max:200,
+
+    message:
+
+    "Too many requests. Please try again later."
+
+
+})
+
 );
+
+
+
+
+
+
 
 // ============================================================
 // HEALTH CHECK
 // ============================================================
 
+
 app.get(
-  "/api",
 
-  (req, res) => {
-    res.status(200).json({
-      success: true,
+"/api",
 
-      message: "Hussein Mboya Tours API Running",
-    });
-  },
+(req,res)=>{
+
+
+res.status(200).json({
+
+    success:true,
+
+    message:
+
+    "Hussein Mboya Tours API Running"
+
+});
+
+
+}
+
 );
+
+
+
+
+
+
 
 // ============================================================
 // API ROUTES
 // ============================================================
 
+
 // AUTH
 
 app.use(
-  "/api/auth",
 
-  authRoutes,
+"/api/auth",
+
+authRoutes
+
 );
+
+
+
+
 
 // TOURS
 
 app.use(
-  "/api/tours",
 
-  tourRoutes,
+"/api/tours",
+
+tourRoutes
+
 );
+
+
+
+
 
 // DESTINATIONS
 
 app.use(
-  "/api/destinations",
 
-  destinationRoutes,
+"/api/destinations",
+
+destinationRoutes
+
 );
+
+
+
+
 
 // BOOKINGS
 
 app.use(
-  "/api/bookings",
 
-  bookingRoutes,
+"/api/bookings",
+
+bookingRoutes
+
 );
+
+
+
+
 
 // MPESA
 
 app.use(
-  "/api/mpesa",
 
-  mpesaRoutes,
+"/api/mpesa",
+
+mpesaRoutes
+
 );
+
+
+
+
 
 // INVOICES
 
 app.use(
-  "/api/invoices",
 
-  invoiceRoutes,
+"/api/invoices",
+
+invoiceRoutes
+
 );
+
+
+
+
 
 // WISHLIST
 
 app.use(
-  "/api/wishlist",
 
-  wishListRoutes,
+"/api/wishlist",
+
+wishListRoutes
+
 );
+
+
+
+
 
 // REVIEWS
 
 app.use(
-  "/api/reviews",
 
-  reviewRoutes,
+"/api/reviews",
+
+reviewRoutes
+
 );
+
+
+
+
 
 // USERS
 
 app.use(
-  "/api/users",
 
-  userRoutes,
+"/api/users",
+
+userRoutes
+
 );
+
+
+
+
 
 // ANALYTICS
 
 app.use(
-  "/api/analytics",
 
-  analyticsRoutes,
+"/api/analytics",
+
+analyticsRoutes
+
 );
+
+
+
+
+
+
 
 // ============================================================
-// ADMIN
+// ADMIN AUTH
 // ============================================================
 
-app.use(
-  "/api/admin",
-
-  adminRoutes,
-);
 
 app.use(
-  "/api/admin/tours",
 
-  adminTourRoutes,
+"/api/admin/auth",
+
+adminAuthRoutes
+
 );
 
-app.use(
-  "/api/admin/destinations",
 
-  adminDestinationRoutes,
-);
 
-app.use(
-  "/api/tour-reports",
 
-  tourReportRoutes,
-);
-// ============================================================
-// AGENT MODULE
-// ============================================================
 
-app.use(
-  "/api/agents",
 
-  agentRoutes,
-);
-
-app.use(
-  "/api/agents/customers",
-
-  agentCustomerRoutes,
-);
-
-app.use(
-  "/api/agents/packages",
-
-  agentPackageRoutes,
-);
 
 // ============================================================
-// TOUR GUIDE
+// ADMIN MANAGEMENT
 // ============================================================
 
-app.use(
-  "/api/guide",
 
-  guideRoutes,
+app.use(
+
+"/api/admin",
+
+adminRoutes
+
 );
+
+
+
+app.use(
+
+"/api/admin/tours",
+
+adminTourRoutes
+
+);
+
+
+
+app.use(
+
+"/api/admin/destinations",
+
+adminDestinationRoutes
+
+);
+
+
+
+app.use(
+
+"/api/tour-reports",
+
+tourReportRoutes
+
+);
+
+
+
+
+
+
+
+// ============================================================
+// AGENT
+// ============================================================
+
+
+app.use(
+
+"/api/agents",
+
+agentRoutes
+
+);
+
+
+
+app.use(
+
+"/api/agents/customers",
+
+agentCustomerRoutes
+
+);
+
+
+
+app.use(
+
+"/api/agents/packages",
+
+agentPackageRoutes
+
+);
+
+
+
+
+
+
+
+// ============================================================
+// GUIDE
+// ============================================================
+
+
+app.use(
+
+"/api/guide",
+
+guideRoutes
+
+);
+
+
+
+
+
+
 
 // ============================================================
 // TOUR MANAGER
 // ============================================================
 
-app.use(
-  "/api/tourmanager",
 
-  tourManagerRoutes,
+app.use(
+
+"/api/tourmanager",
+
+tourManagerRoutes
+
 );
+
+
+
+
+
+
 
 // ============================================================
 // VEHICLES
 // ============================================================
 
-app.use(
-  "/api/vehicles",
 
-  vehicleRoutes,
+app.use(
+
+"/api/vehicles",
+
+vehicleRoutes
+
 );
+
+
+
+
+
+
 
 // ============================================================
 // NOTIFICATIONS
 // ============================================================
 
-app.use(
-  "/api/notifications",
 
-  notificationRoutes,
+app.use(
+
+"/api/notifications",
+
+notificationRoutes
+
 );
+
+
+
+
+
+
 
 // ============================================================
 // AI
 // ============================================================
 
-app.use(
-  "/api/ai",
 
-  aiRoutes,
+app.use(
+
+"/api/ai",
+
+aiRoutes
+
 );
+
+
+
+
+
+
 
 // ============================================================
 // RECOMMENDATIONS
 // ============================================================
 
-app.use(
-  "/api/recommendations",
 
-  recommendationRoutes,
+app.use(
+
+"/api/recommendations",
+
+recommendationRoutes
+
 );
+
+
+
+
+
+
 
 // ============================================================
 // SOCKET.IO
 // ============================================================
 
+
 const server = http.createServer(app);
 
+
+
+
+
 const io = new Server(
-  server,
 
-  {
-    cors: {
-      origin: env.CLIENT_URL,
+server,
 
-      credentials: true,
-    },
-  },
+{
+
+cors:{
+
+    origin:allowedOrigins,
+
+    credentials:true
+
+}
+
+}
+
 );
+
+
+
+
 
 global.io = io;
 
+
+
+
+
+
 io.on(
-  "connection",
 
-  (socket) => {
-    console.log(`🔌 User connected: ${socket.id}`);
+"connection",
 
-    socket.on(
-      "join",
+(socket)=>{
 
-      (userId) => {
-        socket.join(userId);
 
-        console.log(`👤 User ${userId} joined room`);
-      },
-    );
+console.log(
 
-    socket.on(
-      "disconnect",
+`🔌 User connected: ${socket.id}`
 
-      () => {
-        console.log(`❌ User disconnected: ${socket.id}`);
-      },
-    );
-  },
 );
+
+
+
+
+
+
+socket.on(
+
+"join",
+
+(userId)=>{
+
+
+socket.join(userId);
+
+
+
+console.log(
+
+`👤 User ${userId} joined room`
+
+);
+
+
+}
+
+);
+
+
+
+
+
+
+socket.on(
+
+"disconnect",
+
+()=>{
+
+
+console.log(
+
+`❌ User disconnected: ${socket.id}`
+
+);
+
+
+}
+
+);
+
+
+
+}
+
+);
+
+
+
+
+
+
+
 
 // ============================================================
 // ERROR HANDLING
 // ============================================================
 
+
 app.use(notFound);
 
+
 app.use(errorHandler);
+
+
+
+
+
+
 
 // ============================================================
 // START SERVER
 // ============================================================
 
-server.listen(
-  env.PORT,
 
-  () => {
-    console.log(`🚀 Hussein Mboya Tours API running on port ${env.PORT}`);
-  },
+server.listen(
+
+env.PORT,
+
+()=>{
+
+
+console.log(
+
+`🚀 Hussein Mboya Tours API running on port ${env.PORT}`
+
+);
+
+
+}
+
 );

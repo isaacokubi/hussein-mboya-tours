@@ -1,207 +1,151 @@
 import express from "express";
 
-
+// Controllers
 
 import {
-
-    createTour,
-    getTours,
-    getTourById,
-    getManagerTours,
-    updateTour,
-    deleteTour,
-    assignGuide,
-    assignVehicle,
-    removeVehicle,
-    getReports
-
+  createTour,
+  getTours,
+  getFeaturedTours,
+  searchTours,
+  getTourById,
+  getTourBySlug,
+  getManagerTours,
+  updateTour,
+  deleteTour,
+  assignGuide,
+  assignVehicle,
+  removeVehicle,
+  getReports,
 } from "../controllers/tourController.js";
 
-
+// Availability Controller
 
 import {
-
-    getTourAvailability,
-    updateTourAvailability
-
+  getTourAvailability,
+  updateTourAvailability,
 } from "../controllers/tourAvailabilityController.js";
 
+// Authentication
 
+import { protect } from "../middleware/authMiddleware.js";
 
-import {
+// Tour Manager Authorization
 
-    protect
+import { tourManagerOnly } from "../middleware/tourManagerMiddleware.js";
 
-} from "../middleware/authMiddleware.js";
-
-
-
-import {
-
-    tourManagerOnly
-
-} from "../middleware/tourManagerMiddleware.js";
-
-
-
-
+// Image Upload
+import upload from "../middleware/uploadMiddleware.js";
 
 const router = express.Router();
 
-
-
-
-
-
-
-
-
 /*
 |--------------------------------------------------------------------------
-| GET ALL TOURS
+| PUBLIC TOUR ROUTES
 |--------------------------------------------------------------------------
 */
 
+// Get all tours
 
 router.get(
+  "/",
 
-    "/",
-
-    protect,
-
-    getTours
-
+  getTours,
 );
 
+// Featured tours homepage
 
+router.get(
+  "/featured",
 
+  getFeaturedTours,
+);
 
+// Search tours
 
+router.get(
+  "/search",
 
+  searchTours,
+);
 
+// SEO slug page
 
+router.get(
+  "/slug/:slug",
+
+  getTourBySlug,
+);
 
 /*
 |--------------------------------------------------------------------------
-| GET TOURS CREATED BY TOUR MANAGER
+| TOUR MANAGER ROUTES
 |--------------------------------------------------------------------------
 */
 
+// Get manager tours
 
 router.get(
+  "/manager",
 
-    "/manager",
+  protect,
 
-    protect,
+  tourManagerOnly,
 
-    tourManagerOnly,
-
-    getManagerTours
-
+  getManagerTours,
 );
 
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| TOUR REPORTS
-|--------------------------------------------------------------------------
-|
-| IMPORTANT:
-|
-| This MUST come before:
-|
-| router.get("/:id")
-|
-| Otherwise Express treats:
-|
-| /reports
-|
-| as:
-|
-| id = reports
-|
-|--------------------------------------------------------------------------
-*/
-
+// Reports
 
 router.get(
+  "/reports",
 
-    "/reports",
+  protect,
 
-    protect,
+  tourManagerOnly,
 
-    tourManagerOnly,
-
-    getReports
-
+  getReports,
 );
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
 | GET SINGLE TOUR
 |--------------------------------------------------------------------------
+|
+| Keep this AFTER:
+|
+| /featured
+| /search
+| /slug
+| /reports
+|
+| Otherwise Express treats them as IDs
+|
+|--------------------------------------------------------------------------
 */
 
-
 router.get(
+  "/:id",
 
-    "/:id",
-
-    protect,
-
-    getTourById
-
+  getTourById,
 );
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
-| CREATE TOUR
+| CREATE TOUR WITH CLOUDINARY IMAGES
 |--------------------------------------------------------------------------
 */
 
-
 router.post(
+  "/",
 
-    "/",
+  protect,
 
-    protect,
+  tourManagerOnly,
 
-    tourManagerOnly,
+  upload.array("images", 10),
 
-    createTour
-
+  createTour,
 );
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -209,26 +153,17 @@ router.post(
 |--------------------------------------------------------------------------
 */
 
-
 router.put(
+  "/:id",
 
-    "/:id",
+  protect,
 
-    protect,
+  tourManagerOnly,
 
-    tourManagerOnly,
+  upload.array("images", 10),
 
-    updateTour
-
+  updateTour,
 );
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -236,26 +171,15 @@ router.put(
 |--------------------------------------------------------------------------
 */
 
-
 router.delete(
+  "/:id",
 
-    "/:id",
+  protect,
 
-    protect,
+  tourManagerOnly,
 
-    tourManagerOnly,
-
-    deleteTour
-
+  deleteTour,
 );
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -263,45 +187,25 @@ router.delete(
 |--------------------------------------------------------------------------
 */
 
-
 router.get(
+  "/:id/availability",
 
-    "/:id/availability",
+  protect,
 
-    protect,
+  tourManagerOnly,
 
-    tourManagerOnly,
-
-    getTourAvailability
-
+  getTourAvailability,
 );
-
-
-
-
-
-
-
 
 router.patch(
+  "/:id/availability",
 
-    "/:id/availability",
+  protect,
 
-    protect,
+  tourManagerOnly,
 
-    tourManagerOnly,
-
-    updateTourAvailability
-
+  updateTourAvailability,
 );
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -309,26 +213,15 @@ router.patch(
 |--------------------------------------------------------------------------
 */
 
-
 router.patch(
+  "/:id/guide",
 
-    "/:id/guide",
+  protect,
 
-    protect,
+  tourManagerOnly,
 
-    tourManagerOnly,
-
-    assignGuide
-
+  assignGuide,
 );
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -336,26 +229,15 @@ router.patch(
 |--------------------------------------------------------------------------
 */
 
-
 router.patch(
+  "/:id/vehicle",
 
-    "/:id/vehicle",
+  protect,
 
-    protect,
+  tourManagerOnly,
 
-    tourManagerOnly,
-
-    assignVehicle
-
+  assignVehicle,
 );
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -363,25 +245,14 @@ router.patch(
 |--------------------------------------------------------------------------
 */
 
-
 router.patch(
+  "/:id/remove-vehicle",
 
-    "/:id/remove-vehicle",
+  protect,
 
-    protect,
+  tourManagerOnly,
 
-    tourManagerOnly,
-
-    removeVehicle
-
+  removeVehicle,
 );
-
-
-
-
-
-
-
-
 
 export default router;

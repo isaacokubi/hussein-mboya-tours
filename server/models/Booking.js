@@ -8,7 +8,6 @@ import mongoose from "mongoose";
 |--------------------------------------------------------------------------
 */
 
-
 const travelerSchema = new mongoose.Schema(
 
 {
@@ -58,12 +57,12 @@ const travelerSchema = new mongoose.Schema(
 
 
 
+
 /*
 |--------------------------------------------------------------------------
 | CUSTOMER SNAPSHOT
 |--------------------------------------------------------------------------
 */
-
 
 const customerSnapshotSchema = new mongoose.Schema(
 
@@ -109,11 +108,9 @@ const customerSnapshotSchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
-
 const bookingSchema = new mongoose.Schema(
 
 {
-
 
 /*
 |--------------------------------------------------------------------------
@@ -126,9 +123,7 @@ bookingNumber:{
 
     type:String,
 
-    unique:true,
-
-    index:true
+    unique:true
 
 },
 
@@ -149,14 +144,11 @@ customer:{
 
     type:mongoose.Schema.Types.ObjectId,
 
-    ref:"User",
-
-    required:true
+    ref:"User"
 
 },
 
 
-// Backward compatibility
 
 user:{
 
@@ -175,6 +167,46 @@ customerSnapshotSchema,
 
 
 
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| CUSTOMER DETAILS
+|--------------------------------------------------------------------------
+*/
+
+
+fullName:{
+
+    type:String,
+
+    trim:true
+
+},
+
+
+
+email:{
+
+    type:String,
+
+    trim:true,
+
+    lowercase:true
+
+},
+
+
+
+phone:{
+
+    type:String,
+
+    trim:true
+
+},
 
 
 
@@ -205,12 +237,9 @@ agent:{
 
 
 
-
-
-
 /*
 |--------------------------------------------------------------------------
-| SOURCE
+| BOOKING SOURCE
 |--------------------------------------------------------------------------
 */
 
@@ -241,10 +270,6 @@ bookingSource:{
 
 
 
-
-
-
-
 /*
 |--------------------------------------------------------------------------
 | CONTACT
@@ -254,44 +279,13 @@ bookingSource:{
 
 contact:{
 
+    name:String,
 
-    name:{
+    email:String,
 
-        type:String,
-
-        trim:true
-
-    },
-
-
-    email:{
-
-        type:String,
-
-        required:true,
-
-        trim:true,
-
-        lowercase:true
-
-    },
-
-
-    phone:{
-
-        type:String,
-
-        required:true,
-
-        trim:true
-
-    }
+    phone:String
 
 },
-
-
-
-
 
 
 
@@ -318,7 +312,6 @@ tour:{
 
 
 
-
 travelDate:{
 
     type:Date,
@@ -326,7 +319,6 @@ travelDate:{
     required:true
 
 },
-
 
 
 
@@ -353,14 +345,11 @@ guests:{
 
     type:Number,
 
-    required:true,
-
-    min:1
+    default:1
 
 },
 
 
-// Backward compatibility
 
 travelerCount:{
 
@@ -369,10 +358,6 @@ travelerCount:{
     default:0
 
 },
-
-
-
-
 
 
 
@@ -391,9 +376,7 @@ subtotal:{
 
     type:Number,
 
-    required:true,
-
-    min:0
+    default:0
 
 },
 
@@ -403,9 +386,7 @@ discountAmount:{
 
     type:Number,
 
-    default:0,
-
-    min:0
+    default:0
 
 },
 
@@ -415,23 +396,10 @@ couponUsed:{
 
     type:String,
 
-    default:"",
-
-    trim:true
+    default:""
 
 },
 
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| TOTAL AMOUNT
-|--------------------------------------------------------------------------
-*/
 
 
 totalAmount:{
@@ -445,21 +413,14 @@ totalAmount:{
 },
 
 
-// Backward compatibility
 
 amount:{
 
     type:Number,
 
-    default:0,
-
-    min:0
+    default:0
 
 },
-
-
-
-
 
 
 
@@ -478,11 +439,7 @@ commissionRate:{
 
     type:Number,
 
-    default:0,
-
-    min:0,
-
-    max:100
+    default:0
 
 },
 
@@ -492,9 +449,7 @@ commissionAmount:{
 
     type:Number,
 
-    default:0,
-
-    min:0
+    default:0
 
 },
 
@@ -536,10 +491,6 @@ commissionPaidAt:{
 
 
 
-
-
-
-
 /*
 |--------------------------------------------------------------------------
 | PAYMENT
@@ -551,9 +502,7 @@ depositAmount:{
 
     type:Number,
 
-    default:0,
-
-    min:0
+    default:0
 
 },
 
@@ -563,9 +512,7 @@ balanceAmount:{
 
     type:Number,
 
-    default:0,
-
-    min:0
+    default:0
 
 },
 
@@ -643,7 +590,15 @@ paymentReference:{
 
 
 
+mpesaReceipt:{
 
+    type:String,
+
+    default:"",
+
+    trim:true
+
+},
 
 
 
@@ -684,13 +639,9 @@ bookingStatus:{
 
 
 
-
-
-
-
 /*
 |--------------------------------------------------------------------------
-| ABANDONED BOOKING
+| ABANDONED BOOKINGS
 |--------------------------------------------------------------------------
 */
 
@@ -719,10 +670,6 @@ lastReminderSent:{
 
 
 
-
-
-
-
 /*
 |--------------------------------------------------------------------------
 | DOCUMENTS
@@ -732,17 +679,9 @@ lastReminderSent:{
 
 documents:[
 
-    {
-
-        type:String
-
-    }
+    String
 
 ],
-
-
-
-
 
 
 
@@ -761,9 +700,7 @@ notes:{
 
     type:String,
 
-    default:"",
-
-    trim:true
+    default:""
 
 }
 
@@ -789,10 +726,9 @@ timestamps:true
 
 /*
 |--------------------------------------------------------------------------
-| AUTO GENERATE BOOKING NUMBER
+| GENERATE BOOKING NUMBER
 |--------------------------------------------------------------------------
 */
-
 
 bookingSchema.pre(
 
@@ -822,7 +758,6 @@ function(next){
     }
 
 
-
     next();
 
 
@@ -840,10 +775,9 @@ function(next){
 
 /*
 |--------------------------------------------------------------------------
-| CALCULATE COMMISSION AND BALANCE
+| CALCULATE COMMISSION + BALANCE
 |--------------------------------------------------------------------------
 */
-
 
 bookingSchema.pre(
 
@@ -891,11 +825,13 @@ function(next){
 
 
 
+
     this.balanceAmount =
 
     this.totalAmount -
 
     this.depositAmount;
+
 
 
 
@@ -945,8 +881,6 @@ bookingSchema.methods.calculateCommission = function(){
 
 
 
-
-
 bookingSchema.methods.calculateBalance = function(){
 
 
@@ -986,7 +920,6 @@ bookingSchema.index({
 
 
 
-
 bookingSchema.index({
 
     user:1,
@@ -996,9 +929,6 @@ bookingSchema.index({
 });
 
 
-
-
-// Agent dashboard
 
 bookingSchema.index({
 
@@ -1010,9 +940,6 @@ bookingSchema.index({
 
 
 
-
-// Tour availability
-
 bookingSchema.index({
 
     tour:1,
@@ -1022,9 +949,6 @@ bookingSchema.index({
 });
 
 
-
-
-// Payment reports
 
 bookingSchema.index({
 
@@ -1036,9 +960,6 @@ bookingSchema.index({
 
 
 
-
-// Booking status dashboard
-
 bookingSchema.index({
 
     bookingStatus:1,
@@ -1049,9 +970,6 @@ bookingSchema.index({
 
 
 
-
-// Commission reports
-
 bookingSchema.index({
 
     commissionStatus:1,
@@ -1061,9 +979,6 @@ bookingSchema.index({
 });
 
 
-
-
-// Abandoned booking reminders
 
 bookingSchema.index({
 
@@ -1086,7 +1001,6 @@ bookingSchema.index({
 | EXPORT MODEL
 |--------------------------------------------------------------------------
 */
-
 
 const Booking =
 

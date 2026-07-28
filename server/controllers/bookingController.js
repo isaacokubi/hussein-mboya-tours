@@ -15,25 +15,24 @@ import {
 |--------------------------------------------------------------------------
 */
 
-const validateTourCapacity = async(
+const validateTourCapacity = async (
     tourId,
     requestedGuests
-)=>{
+) => {
 
 
     const bookings = await Booking.aggregate([
 
         {
-            $match:{
+            $match: {
 
-                tour:tourId,
+                tour: tourId,
 
-                bookingStatus:{
+                bookingStatus: {
 
-                    $in:[
+                    $in: [
 
                         "pending",
-
                         "confirmed"
 
                     ]
@@ -44,13 +43,14 @@ const validateTourCapacity = async(
 
         },
 
+
         {
 
-            $group:{
+            $group: {
 
                 _id:null,
 
-                bookedGuests:{
+                bookedGuests: {
 
                     $sum:"$travelerCount"
 
@@ -60,36 +60,22 @@ const validateTourCapacity = async(
 
         }
 
-
     ]);
 
 
 
+    const bookedGuests = bookings.length
 
+        ? bookings[0].bookedGuests
 
-    const bookedGuests =
-
-    bookings.length
-
-    ?
-
-    bookings[0].bookedGuests
-
-    :
-
-    0;
+        : 0;
 
 
 
 
-
-    const tour =
-
-    await Tour.findById(
+    const tour = await Tour.findById(
         tourId
     );
-
-
 
 
 
@@ -103,27 +89,15 @@ const validateTourCapacity = async(
 
 
 
-
-
-    if(
+    return (
 
         bookedGuests + requestedGuests
 
-        >
+        <=
 
         tour.capacity
 
-    ){
-
-        return false;
-
-    }
-
-
-
-
-
-    return true;
+    );
 
 
 };
@@ -143,719 +117,242 @@ const validateTourCapacity = async(
 */
 
 export const createBooking = async(
-req,
-res,
-next
+    req,
+    res,
+    next
 )=>{
 
 
-try{
+    try{
 
 
-const {
+        const {
 
-    tour,
+            tour,
 
-    travelDate,
+            travelDate,
 
-    travelers,
+            travelers,
 
-    contact,
+            contact,
 
-    paymentMethod
+            paymentMethod,
 
+            amount
 
-}=req.body;
+        } = req.body;
 
 
 
 
 
+        const tourData = await Tour.findById(
+            tour
+        );
 
 
-const tourData =
 
-await Tour.findById(
-    tour
-);
+        if(!tourData){
 
+            return res.status(404).json({
 
+                success:false,
 
+                message:"Tour not found"
 
+            });
 
+        }
 
 
-if(!tourData){
 
 
-return res.status(404).json({
 
-    success:false,
+        const travelerCount =
 
-    message:
-    "Tour not found"
+            travelers?.length || 1;
 
-});
 
 
-}
 
 
+        const available = await validateTourCapacity(
 
+            tour,
 
+            travelerCount
 
+        );
 
 
-const travelerCount =
 
-travelers.length;
 
+        if(!available){
 
+            return res.status(400).json({
 
+                success:false,
 
+                message:"No available slots"
 
+            });
 
+        }
 
 
-const available =
 
-await validateTourCapacity(
 
-    tour,
 
-    travelerCount
+        const subtotal =
 
-);
+            tourData.price *
 
+            travelerCount;
 
 
 
 
 
+        let discountAmount = 0;
 
-if(!available){
 
 
-return res.status(400).json({
+        if(tourData.discount){
 
-    success:false,
+            discountAmount =
 
-    message:
-    "No available slots"
+                (
 
-});
+                    subtotal *
 
+                    tourData.discount
 
-}
+                )
 
+                /
 
+                100;
 
+        }
 
 
 
 
-const subtotal =
 
-tourData.price *
+        const finalAmount =
 
-travelerCount;
+            amount ||
 
+            subtotal - discountAmount;
 
 
 
 
 
+        const depositAmount =
 
-let discountAmount = 0;
+            tourData.depositRequired || 0;
 
 
 
 
 
+        const balanceAmount =
 
+            finalAmount -
 
-if(tourData.discount){
+            depositAmount;
 
 
-discountAmount =
 
-(
-    tourData.discount / 100
-)
 
-*
 
-subtotal;
+        const booking = await Booking.create({
 
+            user:req.user?._id || null,
 
-}
+            tour,
 
+            travelers,
 
+            travelerCount,
 
+            travelDate,
 
+            contact,
 
+            subtotal,
 
+            discountAmount,
 
+            amount:finalAmount,
 
-if(
+            depositAmount,
 
-tourData.pricingRules &&
+            balanceAmount,
 
-tourData.pricingRules.length
+            paymentMethod:
 
-){
+                paymentMethod || "MPESA",
 
+            paymentStatus:"pending",
 
-tourData.pricingRules.forEach(
+            bookingStatus:"pending"
 
-(rule)=>{
+        });
 
 
-if(
 
-travelerCount >= rule.minTravelers
 
-){
 
+        await reserveSlots(
 
-const discount =
+            tour,
 
-(
-    rule.discount / 100
-)
+            travelerCount
 
-*
+        );
 
-subtotal;
 
 
 
 
+        const populatedBooking = await Booking.findById(
 
-if(
+            booking._id
 
-discount >
+        )
 
-discountAmount
+        .populate("tour")
 
-){
+        .populate(
 
+            "user",
 
-discountAmount = discount;
+            "-password"
 
+        );
 
-}
 
 
-}
 
 
-}
+        res.status(201).json({
 
+            success:true,
 
-);
+            booking:populatedBooking
 
+        });
 
-}
-
-
-
-
-
-
-
-
-const amount =
-
-subtotal -
-
-discountAmount;
-
-
-
-
-
-
-
-
-const depositAmount =
-
-tourData.depositRequired || 0;
-
-
-
-
-
-
-
-const balanceAmount =
-
-amount -
-
-depositAmount;
-
-
-
-
-
-
-
-const booking =
-
-await Booking.create({
-
-    user:req.user._id,
-
-    tour,
-
-    travelers,
-
-    travelerCount,
-
-    travelDate,
-
-    contact,
-
-    subtotal,
-
-    discountAmount,
-
-    amount,
-
-    depositAmount,
-
-    balanceAmount,
-
-    paymentMethod,
-
-    paymentStatus:"pending",
-
-    bookingStatus:"pending"
-
-});
-
-
-
-
-
-
-
-await reserveSlots(
-
-    tour,
-
-    travelerCount
-
-);
-
-
-
-
-
-
-
-
-const populatedBooking =
-
-await Booking.findById(
-
-    booking._id
-
-)
-
-.populate({
-
-    path:"tour",
-
-    populate:{
-
-        path:"destination"
 
     }
 
-})
+    catch(error){
 
-.populate(
+        next(error);
 
-    "user",
-
-    "-password"
-
-);
-
-
-
-
-
-
-
-res.status(201).json({
-
-    success:true,
-
-    booking:populatedBooking
-
-});
-
-
-}
-
-
-catch(error){
-
-next(error);
-
-}
-
-
-};
-
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| UPDATE BOOKING STATUS
-|--------------------------------------------------------------------------
-*/
-
-export const updateBookingStatus = async(
-req,
-res,
-next
-)=>{
-
-
-try{
-
-
-const booking =
-
-await Booking.findById(
-
-    req.params.id
-
-);
-
-
-
-
-
-
-
-if(!booking){
-
-
-return res.status(404).json({
-
-    success:false,
-
-    message:
-    "Booking not found"
-
-});
-
-
-}
-
-
-
-
-
-
-
-
-if(
-
-req.body.bookingStatus === "confirmed"
-
-){
-
-
-
-const available =
-
-await validateTourCapacity(
-
-    booking.tour,
-
-    booking.travelerCount
-
-);
-
-
-
-
-
-
-
-if(!available){
-
-
-return res.status(400).json({
-
-    success:false,
-
-    message:
-    "Tour capacity exceeded"
-
-});
-
-
-}
-
-
-}
-
-
-
-
-
-
-
-
-booking.bookingStatus =
-
-req.body.bookingStatus;
-
-
-
-
-
-
-
-
-if(req.body.paymentStatus){
-
-
-booking.paymentStatus =
-
-req.body.paymentStatus;
-
-
-}
-
-
-
-
-
-
-
-await booking.save();
-
-
-
-
-
-
-
-res.status(200).json({
-
-    success:true,
-
-    booking
-
-});
-
-
-}
-
-
-catch(error){
-
-next(error);
-
-}
-
-
-};
-
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| CANCEL BOOKING
-|--------------------------------------------------------------------------
-*/
-
-export const cancelBooking = async(
-req,
-res
-)=>{
-
-
-try{
-
-
-const booking =
-
-await Booking.findById(
-
-    req.params.id
-
-);
-
-
-
-
-
-
-
-if(!booking){
-
-
-return res.status(404).json({
-
-    success:false,
-
-    message:
-    "Booking not found"
-
-});
-
-
-}
-
-
-
-
-
-
-
-booking.bookingStatus =
-
-"cancelled";
-
-
-
-
-
-
-
-await booking.save();
-
-
-
-
-
-
-
-res.status(200).json({
-
-    success:true,
-
-    message:
-    "Booking cancelled successfully",
-
-    booking
-
-});
-
-
-}
-
-
-catch(error){
-
-
-res.status(500).json({
-
-    success:false,
-
-    message:error.message
-
-});
-
-
-}
-
-
-};
-
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| GET ALL BOOKINGS
-|--------------------------------------------------------------------------
-*/
-
-export const getBookings = async(
-req,
-res,
-next
-)=>{
-
-
-try{
-
-
-const bookings =
-
-await Booking.find()
-
-.populate(
-
-    "user",
-
-    "name email"
-
-)
-
-.populate(
-
-    "tour"
-
-)
-
-.sort({
-
-    createdAt:-1
-
-});
-
-
-
-
-
-
-
-res.status(200).json({
-
-    success:true,
-
-    count:bookings.length,
-
-    bookings
-
-});
-
-
-}
-
-
-catch(error){
-
-next(error);
-
-}
+    }
 
 
 };
@@ -875,60 +372,54 @@ next(error);
 */
 
 export const getMyBookings = async(
-req,
-res,
-next
+
+    req,
+
+    res,
+
+    next
+
 )=>{
 
 
-try{
+    try{
 
 
-const bookings =
+        const bookings = await Booking.find({
 
-await Booking.find({
+            user:req.user._id
 
-    user:req.user._id
+        })
 
-})
+        .populate("tour")
 
-.populate(
+        .sort({
 
-    "tour"
+            createdAt:-1
 
-)
-
-.sort({
-
-    createdAt:-1
-
-});
+        });
 
 
 
 
+        res.json({
+
+            success:true,
+
+            count:bookings.length,
+
+            bookings
+
+        });
 
 
+    }
 
-res.status(200).json({
+    catch(error){
 
-    success:true,
+        next(error);
 
-    count:bookings.length,
-
-    bookings
-
-});
-
-
-}
-
-
-catch(error){
-
-next(error);
-
-}
+    }
 
 
 };
@@ -943,72 +434,79 @@ next(error);
 
 /*
 |--------------------------------------------------------------------------
-| GET ALL BOOKINGS ADMIN / MANAGER
+| GET ALL BOOKINGS ADMIN
 |--------------------------------------------------------------------------
 */
 
 export const getAllBookings = async(
-req,
-res,
-next
+
+    req,
+
+    res,
+
+    next
+
 )=>{
 
 
-try{
+    try{
 
 
-const bookings =
+        const bookings = await Booking.find()
 
-await Booking.find()
+        .populate(
 
-.populate(
+            "user",
 
-    "user",
+            "name email"
 
-    "name email"
+        )
 
-)
+        .populate(
 
-.populate(
+            "tour"
 
-    "tour"
+        )
 
-)
+        .sort({
 
-.sort({
+            createdAt:-1
 
-    createdAt:-1
-
-});
-
+        });
 
 
 
 
 
+        res.json({
 
-res.status(200).json({
+            success:true,
 
-    success:true,
+            count:bookings.length,
 
-    count:bookings.length,
+            bookings
 
-    bookings
-
-});
-
-
-}
+        });
 
 
-catch(error){
 
-next(error);
+    }
 
-}
+    catch(error){
+
+        next(error);
+
+    }
 
 
 };
+
+
+
+
+
+// Old route compatibility
+export const getBookings = getAllBookings;
 
 
 
@@ -1025,81 +523,140 @@ next(error);
 */
 
 export const getBookingById = async(
-req,
-res,
-next
+
+    req,
+
+    res,
+
+    next
+
 )=>{
 
 
-try{
+    try{
 
 
-const booking =
+        const booking = await Booking.findById(
 
-await Booking.findById(
+            req.params.id
 
-    req.params.id
+        )
 
-)
+        .populate("tour")
 
-.populate(
+        .populate(
 
-    "user",
+            "user",
 
-    "name email"
+            "name email"
 
-)
-
-.populate(
-
-    "tour"
-
-);
+        );
 
 
 
 
 
+        if(!booking){
 
+            return res.status(404).json({
 
-if(!booking){
+                success:false,
 
+                message:"Booking not found"
 
-return res.status(404).json({
+            });
 
-    success:false,
-
-    message:
-    "Booking not found"
-
-});
-
-
-}
+        }
 
 
 
 
 
+        res.json({
+
+            success:true,
+
+            booking
+
+        });
 
 
-res.status(200).json({
 
-    success:true,
+    }
 
-    booking
+    catch(error){
 
-});
+        next(error);
 
-
-}
+    }
 
 
-catch(error){
+};
 
-next(error);
 
-}
+
+
+// Route compatibility
+export const getBooking = getBookingById;
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| UPDATE PAYMENT STATUS
+|--------------------------------------------------------------------------
+*/
+
+export const updateBookingPayment = async(
+
+    bookingId,
+
+    status
+
+)=>{
+
+
+    const booking = await Booking.findById(
+
+        bookingId
+
+    );
+
+
+
+    if(!booking){
+
+        throw new Error(
+            "Booking not found"
+        );
+
+    }
+
+
+
+    booking.paymentStatus = status;
+
+
+
+    if(status === "paid"){
+
+        booking.bookingStatus = "confirmed";
+
+    }
+
+
+
+    await booking.save();
+
+
+
+    return booking;
 
 
 };
@@ -1114,86 +671,173 @@ next(error);
 
 /*
 |--------------------------------------------------------------------------
-| GET SINGLE BOOKING ALIAS
+| UPDATE BOOKING STATUS
 |--------------------------------------------------------------------------
 */
 
-export const getBooking = async(
-req,
-res,
-next
+export const updateBookingStatus = async(
+
+    req,
+
+    res,
+
+    next
+
 )=>{
 
 
-try{
+    try{
 
 
-const booking =
+        const booking = await Booking.findById(
 
-await Booking.findById(
+            req.params.id
 
-    req.params.id
+        );
 
-)
 
-.populate(
 
-    "user",
+        if(!booking){
 
-    "name email"
+            return res.status(404).json({
 
-)
+                success:false,
 
-.populate(
+                message:"Booking not found"
 
-    "tour"
+            });
 
-);
-
+        }
 
 
 
 
 
+        booking.bookingStatus =
 
-if(!booking){
+            req.body.bookingStatus ||
 
-
-return res.status(404).json({
-
-    success:false,
-
-    message:
-    "Booking not found"
-
-});
+            booking.bookingStatus;
 
 
-}
+
+        booking.paymentStatus =
+
+            req.body.paymentStatus ||
+
+            booking.paymentStatus;
 
 
 
 
 
+        await booking.save();
 
 
-res.status(200).json({
-
-    success:true,
-
-    booking
-
-});
 
 
-}
+
+        res.json({
+
+            success:true,
+
+            booking
+
+        });
 
 
-catch(error){
+    }
 
-next(error);
+    catch(error){
 
-}
+        next(error);
+
+    }
+
+
+};
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| CANCEL BOOKING
+|--------------------------------------------------------------------------
+*/
+
+export const cancelBooking = async(
+
+    req,
+
+    res,
+
+    next
+
+)=>{
+
+
+    try{
+
+
+        const booking = await Booking.findById(
+
+            req.params.id
+
+        );
+
+
+
+        if(!booking){
+
+            return res.status(404).json({
+
+                success:false,
+
+                message:"Booking not found"
+
+            });
+
+        }
+
+
+
+
+
+        booking.bookingStatus = "cancelled";
+
+
+
+        await booking.save();
+
+
+
+
+
+        res.json({
+
+            success:true,
+
+            message:"Booking cancelled successfully",
+
+            booking
+
+        });
+
+
+
+    }
+
+    catch(error){
+
+        next(error);
+
+    }
 
 
 };

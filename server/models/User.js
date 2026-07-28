@@ -35,30 +35,42 @@ const userSchema = new mongoose.Schema(
 
     /*
 |--------------------------------------------------------------------------
-| ROLE BASED ACCESS CONTROL
+| ROLE SYSTEM
 |--------------------------------------------------------------------------
+|
+| Simple role support
+|
+| customer
+| admin
+|
 */
 
     role: {
+      type: String,
+
+      enum: ["customer", "admin", "agent", "tour_manager", "tour_guide"],
+
+      default: "customer",
+    },
+
+    /*
+|--------------------------------------------------------------------------
+| ADVANCED RBAC SUPPORT
+|--------------------------------------------------------------------------
+*/
+
+    roleId: {
       type: mongoose.Schema.Types.ObjectId,
 
       ref: "Role",
 
-      required: true,
+      default: null,
     },
 
     /*
 |--------------------------------------------------------------------------
 | AGENT LINK
 |--------------------------------------------------------------------------
-|
-| Only users with Agent role will have this.
-|
-| User
-|  |
-|  ↓
-| Agent Profile
-|
 */
 
     agent: {
@@ -71,19 +83,7 @@ const userSchema = new mongoose.Schema(
 
     /*
 |--------------------------------------------------------------------------
-| LEGACY SUPPORT
-|--------------------------------------------------------------------------
-*/
-
-    legacyRole: {
-      type: String,
-
-      default: "customer",
-    },
-
-    /*
-|--------------------------------------------------------------------------
-| PERMISSION OVERRIDE
+| PERMISSIONS
 |--------------------------------------------------------------------------
 */
 
@@ -253,7 +253,7 @@ userSchema.methods.matchPassword = async function (password) {
 
 /*
 |--------------------------------------------------------------------------
-| ACCOUNT LOCK
+| ACCOUNT LOCK CHECK
 |--------------------------------------------------------------------------
 */
 
@@ -261,6 +261,32 @@ userSchema.methods.isLocked = function () {
   return this.lockUntil && this.lockUntil > Date.now();
 };
 
-const User = mongoose.models.User || mongoose.model("User", userSchema);
+/*
+|--------------------------------------------------------------------------
+| ADMIN CHECK HELPER
+|--------------------------------------------------------------------------
+*/
+
+userSchema.methods.isAdmin = function () {
+  return this.role === "admin";
+};
+
+/*
+|--------------------------------------------------------------------------
+| CUSTOMER CHECK HELPER
+|--------------------------------------------------------------------------
+*/
+
+userSchema.methods.isCustomer = function () {
+  return this.role === "customer";
+};
+
+const User =
+  mongoose.models.User ||
+  mongoose.model(
+    "User",
+
+    userSchema,
+  );
 
 export default User;

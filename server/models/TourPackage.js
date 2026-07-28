@@ -330,21 +330,31 @@ itinerary:[
 
 day:{
 
-type:Number
+type:Number,
+
+required:true
 
 },
 
 
 title:{
 
-type:String
+type:String,
+
+required:true,
+
+trim:true
 
 },
 
 
 description:{
 
-type:String
+type:String,
+
+default:"",
+
+trim:true
 
 }
 
@@ -396,7 +406,9 @@ minimumGuests:{
 
 type:Number,
 
-default:1
+default:1,
+
+min:1
 
 },
 
@@ -406,7 +418,9 @@ bookingDeadline:{
 
 type:Number,
 
-default:1
+default:1,
+
+min:1
 
 },
 
@@ -439,9 +453,7 @@ enum:[
 
 ],
 
-default:"active",
-
-index:true
+default:"active"
 
 },
 
@@ -495,7 +507,9 @@ views:{
 
 type:Number,
 
-default:0
+default:0,
+
+min:0
 
 }
 
@@ -506,7 +520,21 @@ default:0
 
 {
 
-timestamps:true
+timestamps:true,
+
+
+toJSON:{
+
+virtuals:true
+
+},
+
+
+toObject:{
+
+virtuals:true
+
+}
 
 }
 
