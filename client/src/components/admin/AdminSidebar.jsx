@@ -1,103 +1,245 @@
-import {Link} from "react-router-dom";
+// client/src/components/admin/AdminSidebar.jsx
+
+import { NavLink } from "react-router-dom";
 
 import {
-FaHome,
-FaPlane,
-FaCalendar,
-FaChartBar
-}
-from "react-icons/fa";
+  LayoutDashboard,
+  Map,
+  CalendarCheck,
+  Wallet,
+  Users,
+  Car,
+  Settings,
+  PlusCircle,
+  Edit,
+  Trash2,
+  Smartphone,
+  FileText,
+  Home
+} from "lucide-react";
 
+import { FaChartBar } from "react-icons/fa";
 
-export default function AdminSidebar(){
+const AdminSidebar = () => {
+  const menu = [
+    {
+      title: "Dashboard",
+      icon: <LayoutDashboard size={20} />,
+      path: "/admin/dashboard"
+    },
 
+    {
+      title: "Tours",
+      icon: <Map size={20} />,
 
-return (
+      children: [
+        {
+          title: "Create Tour",
+          icon: <PlusCircle size={18} />,
+          path: "/admin/tours/create"
+        },
 
-<aside className="
-w-64
-bg-green-800
-text-white
-min-h-screen
-p-6
-">
+        {
+          title: "Edit Tours",
+          icon: <Edit size={18} />,
+          path: "/admin/tours"
+        },
 
+        {
+          title: "Delete Tours",
+          icon: <Trash2 size={18} />,
+          path: "/admin/tours/delete"
+        }
+      ]
+    },
 
-<h2 className="
-text-2xl
-font-bold
-mb-10
-">
+    {
+      title: "Bookings",
+      icon: <CalendarCheck size={20} />,
+      path: "/admin/bookings"
+    },
 
-Hussein Tours
+    {
+      title: "Finance",
+      icon: <Wallet size={20} />,
 
-</h2>
+      children: [
+        {
+          title: "Revenue",
+          icon: <Wallet size={18} />,
+          path: "/admin/finance"
+        },
 
+        {
+          title: "M-Pesa Transactions",
+          icon: <Smartphone size={18} />,
+          path: "/admin/finance/transactions"
+        },
 
+        {
+          title: "Reports",
+          icon: <FileText size={18} />,
+          path: "/admin/finance/reports"
+        }
+      ]
+    },
 
-<nav className="
-space-y-5
-">
+    {
+      title: "Analytics",
+      icon: <FaChartBar size={20} />,
+      path: "/admin/analytics"
+    },
 
+    {
+      title: "Customers",
+      icon: <Users size={20} />,
+      path: "/admin/customers"
+    },
 
-<Link
-to="/admin"
-className="flex gap-3"
->
+    {
+      title: "Guides",
+      icon: <Users size={20} />,
+      path: "/admin/guides"
+    },
 
-<FaChartBar/>
+    {
+      title: "Vehicles",
+      icon: <Car size={20} />,
+      path: "/admin/vehicles"
+    },
 
-Dashboard
+    {
+      title: "Settings",
+      icon: <Settings size={20} />,
+      path: "/admin/settings"
+    },
 
-</Link>
+    {
+      title: "Website",
+      icon: <Home size={20} />,
+      path: "/"
+    }
+  ];
 
+  return (
+    <aside
+      className="
+      w-72
+      bg-green-900
+      text-white
+      min-h-screen
+      p-5
+      shadow-xl
+    "
+    >
+      <h2
+        className="
+        text-2xl
+        font-bold
+        mb-10
+      "
+      >
+        HUSSEIN TOURS
+        <br />
+        <span className="text-sm text-green-300">
+          ADMIN PANEL
+        </span>
+      </h2>
 
+      <nav className="space-y-3">
+        {menu.map((item, index) => (
+          <div key={index}>
+            {item.children ? (
+              <div>
+                <div
+                  className="
+                  flex
+                  items-center
+                  gap-3
+                  p-3
+                  font-semibold
+                  text-green-200
+                "
+                >
+                  {item.icon}
 
-<Link
-to="/admin/tours"
-className="flex gap-3"
->
+                  <span>
+                    {item.title}
+                  </span>
+                </div>
 
-<FaPlane/>
+                <div
+                  className="
+                  ml-6
+                  space-y-2
+                  border-l
+                  border-green-700
+                  pl-3
+                "
+                >
+                  {item.children.map((child, i) => (
+                    <NavLink
+                      key={i}
+                      to={child.path}
+                      className={({ isActive }) =>
+                        `
+                        flex
+                        items-center
+                        gap-3
+                        p-2
+                        rounded-lg
+                        text-sm
+                        transition-all
 
-Tours
+                        ${
+                          isActive
+                            ? "bg-green-600 text-white"
+                            : "hover:bg-green-800 text-green-100"
+                        }
+                      `
+                      }
+                    >
+                      {child.icon}
 
-</Link>
+                      <span>
+                        {child.title}
+                      </span>
+                    </NavLink>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <NavLink
+                to={item.path}
+                className={({ isActive }) =>
+                  `
+                  flex
+                  items-center
+                  gap-3
+                  p-3
+                  rounded-lg
+                  transition-all
 
+                  ${
+                    isActive
+                      ? "bg-green-600"
+                      : "hover:bg-green-800"
+                  }
+                `
+                }
+              >
+                {item.icon}
 
+                <span>
+                  {item.title}
+                </span>
+              </NavLink>
+            )}
+          </div>
+        ))}
+      </nav>
+    </aside>
+  );
+};
 
-<Link
-to="/admin/bookings"
-className="flex gap-3"
->
-
-<FaCalendar/>
-
-Bookings
-
-</Link>
-
-
-
-<Link
-to="/"
-className="flex gap-3"
->
-
-<FaHome/>
-
-Website
-
-</Link>
-
-
-
-</nav>
-
-
-
-</aside>
-
-)
-
-}
+export default AdminSidebar;

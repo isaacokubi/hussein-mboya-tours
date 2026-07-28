@@ -4,13 +4,14 @@ import {
   LayoutDashboard,
   Map,
   Calendar,
+  FileText,
   Users,
   UserRoundCheck,
   Car,
-  FileText,
   Wallet,
   Settings,
-  BarChart3
+  BarChart3,
+  ClipboardCheck
 } from "lucide-react";
 
 
@@ -18,11 +19,15 @@ import { NavLink } from "react-router-dom";
 
 
 
+
+
 const TourManagerSidebar = () => {
 
 
 
+
 const menu = [
+
 
 
 {
@@ -30,6 +35,8 @@ name:"Dashboard",
 icon:<LayoutDashboard size={20}/>,
 path:"/tour-manager/dashboard"
 },
+
+
 
 
 
@@ -41,11 +48,15 @@ path:"/tour-manager/tours"
 
 
 
+
+
 {
 name:"Calendar",
 icon:<Calendar size={20}/>,
 path:"/tour-manager/calendar"
 },
+
+
 
 
 
@@ -57,11 +68,15 @@ path:"/tour-manager/bookings"
 
 
 
+
+
 {
 name:"Customers",
 icon:<Users size={20}/>,
 path:"/tour-manager/customers"
 },
+
+
 
 
 
@@ -73,11 +88,30 @@ path:"/tour-manager/guides"
 
 
 
+
+
+// ============================================================
+// TOUR ASSIGNMENTS
+// ============================================================
+
+
+{
+name:"Tour Assignments",
+icon:<ClipboardCheck size={20}/>,
+path:"/tour-manager/assignments"
+},
+
+
+
+
+
 {
 name:"Vehicles",
 icon:<Car size={20}/>,
 path:"/tour-manager/vehicles"
 },
+
+
 
 
 
@@ -89,11 +123,15 @@ path:"/tour-manager/reports"
 
 
 
+
+
 {
 name:"Analytics",
 icon:<BarChart3 size={20}/>,
 path:"/tour-manager/analytics"
 },
+
+
 
 
 
@@ -111,7 +149,10 @@ path:"/tour-manager/settings"
 
 
 
+
+
 return (
+
 
 <aside
 
@@ -147,11 +188,15 @@ text-yellow-400
 "
 
 >
+
 Tours
+
 </span>
 
 
 </h2>
+
+
 
 
 
@@ -173,9 +218,13 @@ menu.map((item)=>(
 
 <NavLink
 
+
 key={item.name}
 
+
 to={item.path}
+
+
 
 className={({isActive})=>
 
@@ -200,6 +249,7 @@ isActive
 
 }
 
+
 >
 
 
@@ -219,11 +269,14 @@ isActive
 
 ))
 
+
 }
 
 
 
 </nav>
+
+
 
 
 
@@ -234,6 +287,8 @@ isActive
 
 
 };
+
+
 
 
 

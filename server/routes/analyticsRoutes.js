@@ -3,25 +3,38 @@ import express from "express";
 
 import {
 
-dashboardAnalytics
+    getAnalytics,
+    dashboardAnalytics
 
 }
 
 from "../controllers/analyticsController.js";
 
 
+
 import {
 
-protect
+    protect
 
 }
 
 from "../middleware/authMiddleware.js";
 
 
+
 import {
 
-adminMiddleware
+    roleMiddleware
+
+}
+
+from "../middleware/roleMiddleware.js";
+
+
+
+import {
+
+    adminMiddleware
 
 }
 
@@ -29,10 +42,44 @@ from "../middleware/adminMiddleware.js";
 
 
 
-const router =
-express.Router();
+
+const router = express.Router();
 
 
+
+
+
+// ============================================================
+// FULL ADMIN ANALYTICS
+// ============================================================
+
+router.get(
+
+"/",
+
+protect,
+
+roleMiddleware(
+
+[
+"admin"
+]
+
+),
+
+getAnalytics
+
+);
+
+
+
+
+
+
+
+// ============================================================
+// ADMIN DASHBOARD ANALYTICS
+// ============================================================
 
 router.get(
 
@@ -45,6 +92,10 @@ adminMiddleware,
 dashboardAnalytics
 
 );
+
+
+
+
 
 
 

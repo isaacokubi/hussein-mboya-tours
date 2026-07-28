@@ -1,140 +1,323 @@
+// models/Commission.js
+
+
 import mongoose from "mongoose";
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| COMMISSION SCHEMA
+|--------------------------------------------------------------------------
+*/
 
 
 const commissionSchema = new mongoose.Schema(
 
 {
 
+
+/*
+|--------------------------------------------------------------------------
+| AGENT
+|--------------------------------------------------------------------------
+*/
+
+
 agent:{
 
-    type:mongoose.Schema.Types.ObjectId,
 
-    ref:"Agent",
+type:
 
-    required:true
+mongoose.Schema.Types.ObjectId,
+
+
+ref:
+
+"Agent",
+
+
+required:true
+
 
 },
 
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| RELATED BOOKING
+|--------------------------------------------------------------------------
+*/
 
 
 booking:{
 
-    type:mongoose.Schema.Types.ObjectId,
 
-    ref:"Booking",
+type:
 
-    required:true,
+mongoose.Schema.Types.ObjectId,
 
-    unique:true
+
+ref:
+
+"Booking",
+
+
+required:true,
+
+
+unique:true
+
 
 },
 
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| COMMISSION AMOUNT
+|--------------------------------------------------------------------------
+*/
 
 
 amount:{
 
-    type:Number,
 
-    required:true,
+type:Number,
 
-    min:0
+
+required:true,
+
+
+min:0
+
 
 },
 
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| COMMISSION RATE (%)
+|--------------------------------------------------------------------------
+*/
 
 
 rate:{
 
-    type:Number,
 
-    required:true,
+type:Number,
 
-    min:0
+
+default:10,
+
+
+min:0
+
 
 },
 
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| COMMISSION STATUS
+|--------------------------------------------------------------------------
+*/
 
 
 status:{
 
-    type:String,
 
-    enum:[
+type:String,
 
-        "pending",
 
-        "approved",
+enum:[
 
-        "processing",
 
-        "paid",
+"pending",
 
-        "cancelled"
+"approved",
 
-    ],
+"processing",
 
-    default:"pending"
+"paid",
+
+"cancelled"
+
+
+],
+
+
+default:
+
+"pending"
+
 
 },
 
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| PAYMENT REFERENCE
+|--------------------------------------------------------------------------
+*/
 
 
 paymentReference:{
 
-    type:String,
 
-    default:"",
+type:String,
 
-    trim:true
+
+default:"",
+
+
+trim:true
+
 
 },
 
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| PAYMENT DATE
+|--------------------------------------------------------------------------
+*/
 
 
 paidAt:{
-    type:Date
+
+
+type:Date
+
+
 },
 
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| APPROVAL INFORMATION
+|--------------------------------------------------------------------------
+*/
 
 
 approvedBy:{
 
-    type:mongoose.Schema.Types.ObjectId,
 
-    ref:"User",
+type:
 
-    default:null
+mongoose.Schema.Types.ObjectId,
+
+
+ref:
+
+"User",
+
+
+default:null
+
 
 },
+
 
 
 
 approvedAt:{
-    type:Date
+
+
+type:Date
+
+
 },
 
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| NOTES
+|--------------------------------------------------------------------------
+*/
 
 
 notes:{
 
-    type:String,
 
-    default:"",
+type:String,
 
-    trim:true
+
+default:"",
+
+
+trim:true
+
 
 }
+
 
 
 },
 
+
+
 {
+
 
 timestamps:true
 
+
 }
 
+
+
 );
+
 
 
 
@@ -150,29 +333,14 @@ timestamps:true
 */
 
 
-commissionSchema.index({
-
-    agent:1,
-
-    status:1
-
-});
-
+// Agent commission dashboard
 
 
 commissionSchema.index({
 
-    status:1,
+agent:1,
 
-    createdAt:-1
-
-});
-
-
-
-commissionSchema.index({
-
-    paidAt:-1
+status:1
 
 });
 
@@ -181,14 +349,73 @@ commissionSchema.index({
 
 
 
+// Finance reports
 
-const Commission = mongoose.model(
+
+commissionSchema.index({
+
+status:1,
+
+createdAt:-1
+
+});
+
+
+
+
+
+
+// Paid commissions
+
+
+commissionSchema.index({
+
+paidAt:-1
+
+});
+
+
+
+
+
+
+// Booking lookup
+
+
+commissionSchema.index({
+
+booking:1
+
+});
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| EXPORT MODEL
+|--------------------------------------------------------------------------
+*/
+
+
+const Commission =
+
+
+mongoose.models.Commission ||
+
+
+mongoose.model(
 
 "Commission",
 
 commissionSchema
 
 );
+
 
 
 export default Commission;

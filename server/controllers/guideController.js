@@ -1,5 +1,16 @@
-import Booking from "../models/Booking.js";
+// server/controllers/guideController.js
+
+
 import Tour from "../models/Tour.js";
+
+import Booking from "../models/Booking.js";
+
+import TourReport from "../models/TourReport.js";
+
+import Staff from "../models/Staff.js";
+
+
+
 
 
 
@@ -7,36 +18,109 @@ import Tour from "../models/Tour.js";
 
 /*
 |--------------------------------------------------------------------------
-| GET ASSIGNED TOURS
+| GUIDE DASHBOARD
+|--------------------------------------------------------------------------
+|
+| Shows tours assigned to logged-in guide
+|
 |--------------------------------------------------------------------------
 */
 
 
-export const getAssignedTours = async(req,res)=>{
+export const guideDashboard = async(req,res)=>{
 
 
 try{
 
 
+const guide = await Staff.findOne({
+
+email:req.user.email
+
+});
+
+
+
+if(!guide){
+
+
+return res.status(404).json({
+
+success:false,
+
+message:"Guide profile not found"
+
+});
+
+
+}
+
+
+
+
+
+
+
 const tours = await Tour.find({
 
-guide:req.user._id
+assignedGuide:guide._id
 
 })
+
+
 .populate(
+
 "destination"
-);
+
+)
+
+
+.populate(
+
+"assignedVehicle"
+
+)
+
+
+.populate(
+
+"assignedDriver"
+
+)
+
+.sort({
+
+startDate:1
+
+});
 
 
 
-res.json(tours);
 
 
 
-}catch(error){
 
-res.status(500)
-.json({
+res.status(200).json({
+
+success:true,
+
+count:tours.length,
+
+tours
+
+});
+
+
+
+}
+
+
+catch(error){
+
+
+res.status(500).json({
+
+success:false,
 
 message:error.message
 
@@ -47,6 +131,8 @@ message:error.message
 
 
 };
+
+
 
 
 
@@ -69,27 +155,59 @@ export const getTourDetails = async(req,res)=>{
 try{
 
 
-const tour =
-await Tour.findOne({
+const guide = await Staff.findOne({
+
+email:req.user.email
+
+});
+
+
+
+
+
+const tour = await Tour.findOne({
 
 _id:req.params.id,
 
-guide:req.user._id
+assignedGuide:guide._id
 
 })
+
+
 .populate(
+
 "destination"
+
+)
+
+
+.populate(
+
+"assignedVehicle"
+
+)
+
+
+.populate(
+
+"assignedDriver"
+
 );
+
+
+
+
 
 
 
 if(!tour){
 
-return res.status(404)
-.json({
 
-message:
-"Tour not found"
+return res.status(404).json({
+
+success:false,
+
+message:"Tour not found"
 
 });
 
@@ -98,14 +216,27 @@ message:
 
 
 
-res.json(tour);
+
+
+res.json({
+
+success:true,
+
+tour
+
+});
 
 
 
-}catch(error){
+}
 
-res.status(500)
-.json({
+
+catch(error){
+
+
+res.status(500).json({
+
+success:false,
 
 message:error.message
 
@@ -115,8 +246,9 @@ message:error.message
 }
 
 
-
 };
+
+
 
 
 
@@ -130,6 +262,10 @@ message:error.message
 |--------------------------------------------------------------------------
 | GET TOUR GUESTS
 |--------------------------------------------------------------------------
+|
+| Guide views customers travelling on assigned tour
+|
+|--------------------------------------------------------------------------
 */
 
 
@@ -139,28 +275,58 @@ export const getTourGuests = async(req,res)=>{
 try{
 
 
-const bookings =
-await Booking.find({
+const bookings = await Booking.find({
 
-tour:req.params.id
+tour:req.params.id,
+
+status:"confirmed"
 
 })
+
+
 .populate(
-"user",
+
+"customer",
+
 "name email phone"
+
+)
+
+
+.populate(
+
+"user",
+
+"name email phone"
+
 );
 
 
 
-res.json(bookings);
 
 
 
-}catch(error){
+res.status(200).json({
+
+success:true,
+
+count:bookings.length,
+
+guests:bookings
+
+});
 
 
-res.status(500)
-.json({
+
+}
+
+
+catch(error){
+
+
+res.status(500).json({
+
+success:false,
 
 message:error.message
 
@@ -180,9 +346,20 @@ message:error.message
 
 
 
+
+
 /*
 |--------------------------------------------------------------------------
 | UPDATE TOUR STATUS
+|--------------------------------------------------------------------------
+|
+| Guide updates:
+|
+| scheduled
+| ongoing
+| completed
+| cancelled
+|
 |--------------------------------------------------------------------------
 */
 
@@ -202,43 +379,96 @@ status
 
 
 
-const tour =
-await Tour.findOneAndUpdate(
+
+const guide = await Staff.findOne({
+
+email:req.user.email
+
+});
+
+
+
+
+
+const tour = await Tour.findOneAndUpdate(
 
 {
+
 
 _id:req.params.id,
 
-guide:req.user._id
+assignedGuide:guide._id
+
 
 },
 
 
 {
 
-status
+
+tourStatus:status
+
 
 },
 
 
 {
+
+
 new:true
-}
 
+
+}
 
 );
 
 
 
-res.json(tour);
 
 
 
-}catch(error){
+
+if(!tour){
 
 
-res.status(500)
-.json({
+return res.status(404).json({
+
+success:false,
+
+message:"Tour not found or not assigned to guide"
+
+});
+
+
+}
+
+
+
+
+
+
+
+res.json({
+
+success:true,
+
+message:"Tour status updated",
+
+tour
+
+});
+
+
+
+}
+
+
+catch(error){
+
+
+res.status(500).json({
+
+success:false,
 
 message:error.message
 
@@ -248,8 +478,9 @@ message:error.message
 }
 
 
-
 };
+
+
 
 
 
@@ -263,6 +494,10 @@ message:error.message
 |--------------------------------------------------------------------------
 | SUBMIT TOUR REPORT
 |--------------------------------------------------------------------------
+|
+| Guide completes tour and submits report
+|
+|--------------------------------------------------------------------------
 */
 
 
@@ -272,69 +507,67 @@ export const submitTourReport = async(req,res)=>{
 try{
 
 
-const {
+const report = await TourReport.create({
 
-notes,
+tour:req.params.id,
 
-photos
+guide:req.user.id,
 
-}=req.body;
+summary:req.body.summary,
 
+issues:req.body.issues || [],
 
-
-const tour =
-await Tour.findOneAndUpdate(
-
-{
-
-_id:req.params.id,
-
-guide:req.user._id
-
-},
-
-
-{
-
-tourReport:{
-
-notes,
-
-photos,
-
-submittedAt:
-new Date()
-
-}
-
-},
-
-
-{
-new:true
-}
-
-
-);
-
-
-
-res.json({
-
-message:
-"Tour report submitted successfully",
-
-tour
+photos:req.body.photos || []
 
 });
 
 
 
-}catch(error){
 
 
-res.status(500)
-.json({
+
+
+await Tour.findByIdAndUpdate(
+
+req.params.id,
+
+{
+
+
+tourStatus:"completed"
+
+
+}
+
+);
+
+
+
+
+
+
+
+res.status(201).json({
+
+success:true,
+
+message:"Tour report submitted successfully",
+
+report
+
+});
+
+
+
+}
+
+
+catch(error){
+
+
+res.status(500).json({
+
+success:false,
 
 message:error.message
 
@@ -342,7 +575,6 @@ message:error.message
 
 
 }
-
 
 
 };

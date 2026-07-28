@@ -1,13 +1,100 @@
+// client/src/api/customerApi.js
+
+
 import api from "./axios";
+
+
+
+
 
 
 
 /*
 |--------------------------------------------------------------------------
-| GET AGENT CUSTOMERS
+| ADMIN CUSTOMERS
+|--------------------------------------------------------------------------
+|
+| Admin CRM Dashboard
+|
+*/
+
+
+
+
+
+
+// GET ALL CUSTOMERS
+
+export const getCustomers = async(params)=>{
+
+
+const response = await api.get(
+
+"/customers",
+
+{
+
+params
+
+}
+
+);
+
+
+
+return response.data;
+
+
+};
+
+
+
+
+
+
+
+
+
+// GET CUSTOMER PROFILE
+
+export const getCustomerProfile = async(id)=>{
+
+
+const response = await api.get(
+
+`/customers/${id}`
+
+);
+
+
+
+return response.data;
+
+
+};
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| AGENT CUSTOMERS
 |--------------------------------------------------------------------------
 */
 
+
+
+
+
+
+
+
+// GET AGENT CUSTOMERS
 
 export const getAgentCustomers = async()=>{
 
@@ -30,12 +117,10 @@ return response.data;
 
 
 
-/*
-|--------------------------------------------------------------------------
-| GET SINGLE CUSTOMER
-|--------------------------------------------------------------------------
-*/
 
+
+
+// GET SINGLE AGENT CUSTOMER
 
 export const getAgentCustomer = async(id)=>{
 
@@ -58,12 +143,10 @@ return response.data;
 
 
 
-/*
-|--------------------------------------------------------------------------
-| CREATE CUSTOMER
-|--------------------------------------------------------------------------
-*/
 
+
+
+// CREATE CUSTOMER
 
 export const createCustomer = async(data)=>{
 
@@ -88,12 +171,10 @@ return response.data;
 
 
 
-/*
-|--------------------------------------------------------------------------
-| UPDATE CUSTOMER
-|--------------------------------------------------------------------------
-*/
 
+
+
+// UPDATE CUSTOMER
 
 export const updateCustomer = async(id,data)=>{
 
@@ -118,12 +199,10 @@ return response.data;
 
 
 
-/*
-|--------------------------------------------------------------------------
-| DELETE CUSTOMER
-|--------------------------------------------------------------------------
-*/
 
+
+
+// DELETE CUSTOMER
 
 export const deleteCustomer = async(id)=>{
 
@@ -146,11 +225,18 @@ return response.data;
 
 
 
+
+
+
 /*
 |--------------------------------------------------------------------------
 | CUSTOMER STATISTICS
 |--------------------------------------------------------------------------
 */
+
+
+
+
 
 
 export const getCustomerStats = async()=>{

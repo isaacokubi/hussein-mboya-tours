@@ -1,4 +1,8 @@
+// server/routes/bookingRoutes.js
+
+
 import express from "express";
+
 
 
 import {
@@ -11,10 +15,16 @@ import {
 
     cancelBooking,
 
-    getAllBookings
+    getAllBookings,
+
+    getConfirmedBookings,
+
+    updateBookingStatus
 
 
 } from "../controllers/bookingController.js";
+
+
 
 
 
@@ -23,6 +33,8 @@ import {
     protect
 
 } from "../middleware/authMiddleware.js";
+
+
 
 
 
@@ -36,7 +48,13 @@ import {
 
 
 
+
+
 const router = express.Router();
+
+
+
+
 
 
 
@@ -49,28 +67,29 @@ const router = express.Router();
 |
 | GET /api/bookings/test
 |
-| Purpose:
-| Confirm booking routes are mounted correctly.
-|
 */
 
 router.get(
 
     "/test",
 
-    (req, res) => {
+    (req,res)=>{
+
 
         res.status(200).json({
 
-            success: true,
+            success:true,
 
-            message: "Booking routes are loaded"
+            message:
+            "Booking routes are loaded"
 
         });
+
 
     }
 
 );
+
 
 
 
@@ -99,9 +118,6 @@ router.get(
 |
 | POST /api/bookings
 |
-| Protected:
-| Customer must be logged in
-|
 */
 
 router.post(
@@ -122,15 +138,12 @@ router.post(
 
 
 
-
 /*
 |--------------------------------------------------------------------------
 | GET LOGGED USER BOOKINGS
 |--------------------------------------------------------------------------
 |
 | GET /api/bookings/my-bookings
-|
-| Returns bookings belonging to logged-in customer
 |
 */
 
@@ -152,6 +165,134 @@ router.get(
 
 
 
+/*
+|--------------------------------------------------------------------------
+| TOUR MANAGER + ADMIN
+|--------------------------------------------------------------------------
+|
+| GET /api/bookings/confirmed
+|
+| Returns:
+| - Paid bookings
+| - Confirmed tours
+|
+*/
+
+router.get(
+
+    "/confirmed",
+
+    protect,
+
+    roleMiddleware(
+
+        [
+
+            "admin",
+
+            "tour_manager"
+
+        ]
+
+    ),
+
+    getConfirmedBookings
+
+);
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| ADMIN BOOKING MANAGEMENT
+|--------------------------------------------------------------------------
+|
+| GET /api/bookings/admin
+|
+| Admin + Tour Manager view all bookings
+|
+|--------------------------------------------------------------------------
+*/
+
+
+router.get(
+
+    "/admin",
+
+    protect,
+
+    roleMiddleware(
+
+        [
+
+            "admin",
+
+            "tour_manager"
+
+        ]
+
+    ),
+
+    getAllBookings
+
+);
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| UPDATE BOOKING STATUS
+|--------------------------------------------------------------------------
+|
+| PUT /api/bookings/:id/status
+|
+| Admin updates:
+| - booking status
+| - payment status
+| - assignment status
+|
+|--------------------------------------------------------------------------
+*/
+
+
+router.put(
+
+    "/:id/status",
+
+    protect,
+
+    roleMiddleware(
+
+        [
+
+            "admin"
+
+        ]
+
+    ),
+
+    updateBookingStatus
+
+);
+
+
+
+
+
+
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -159,8 +300,6 @@ router.get(
 |--------------------------------------------------------------------------
 |
 | GET /api/bookings/:id
-|
-| Get booking details by ID
 |
 */
 
@@ -182,15 +321,12 @@ router.get(
 
 
 
-
 /*
 |--------------------------------------------------------------------------
-| CANCEL BOOKING
+| CUSTOMER CANCEL BOOKING
 |--------------------------------------------------------------------------
 |
 | PUT /api/bookings/cancel/:id
-|
-| Customer cancels own booking
 |
 */
 
@@ -212,17 +348,18 @@ router.put(
 
 
 
-
 /*
 |--------------------------------------------------------------------------
-| ADMIN ROUTES
+| LEGACY ADMIN ROUTE
 |--------------------------------------------------------------------------
-|
-| Admin can view all bookings
 |
 | GET /api/bookings/admin/all
 |
+| Kept for compatibility
+|
+|--------------------------------------------------------------------------
 */
+
 
 router.get(
 
@@ -239,8 +376,6 @@ router.get(
     getAllBookings
 
 );
-
-
 
 
 

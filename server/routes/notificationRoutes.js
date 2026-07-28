@@ -1,9 +1,14 @@
+// routes/notificationRoutes.js
+
+
 import express from "express";
 
 
 import {
 
 getNotifications,
+
+getMyNotifications,
 
 markRead
 
@@ -17,9 +22,17 @@ protect
 from "../middleware/authMiddleware.js";
 
 
+
 const router =
 express.Router();
 
+
+
+
+
+// ============================================================
+// GET ALL USER NOTIFICATIONS
+// ============================================================
 
 
 router.get(
@@ -30,11 +43,35 @@ getNotifications
 
 
 
+
+
+// ============================================================
+// GET MY NOTIFICATIONS
+// ============================================================
+
+
+router.get(
+"/mine",
+protect,
+getMyNotifications
+);
+
+
+
+
+
+// ============================================================
+// MARK NOTIFICATION AS READ
+// ============================================================
+
+
 router.put(
 "/:id/read",
 protect,
 markRead
 );
+
+
 
 
 

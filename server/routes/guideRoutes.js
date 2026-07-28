@@ -1,23 +1,55 @@
+// server/routes/guideRoutes.js
+
+
 import express from "express";
 
 
-import {
-  getAssignedTours,
-  getTourDetails,
-  getTourGuests,
-  updateTourStatus,
-  submitTourReport
-} from "../controllers/guideController.js";
-
 
 import {
-  protect
-} from "../middleware/authMiddleware.js";
+
+guideDashboard,
+
+getAssignedTours,
+
+getTourDetails,
+
+getTourGuests,
+
+updateTourStatus,
+
+submitTourReport
+
+}
+
+from "../controllers/guideController.js";
+
+
+
 
 
 import {
-  authorize
-} from "../middleware/permissionMiddleware.js";
+
+protect
+
+}
+
+from "../middleware/authMiddleware.js";
+
+
+
+
+
+import {
+
+authorize
+
+}
+
+from "../middleware/permissionMiddleware.js";
+
+
+
+
 
 
 
@@ -27,9 +59,24 @@ const router = express.Router();
 
 
 
+
+
+
+
 /*
 |--------------------------------------------------------------------------
 | TOUR GUIDE ROUTES
+|--------------------------------------------------------------------------
+|
+| Guide Portal API
+|
+| Permissions:
+|
+| view_assigned_tours
+| view_tour_guests
+| update_tour_status
+| submit_tour_report
+|
 |--------------------------------------------------------------------------
 */
 
@@ -37,40 +84,32 @@ const router = express.Router();
 
 
 
-// Get assigned tours
+
+
+/*
+|--------------------------------------------------------------------------
+| GUIDE DASHBOARD
+|--------------------------------------------------------------------------
+|
+| GET /api/guide/dashboard
+|
+|--------------------------------------------------------------------------
+*/
+
 
 router.get(
 
-  "/assigned-tours",
+"/dashboard",
 
-  protect,
+protect,
 
-  authorize(
-    "view_assigned_tours"
-  ),
+authorize(
 
-  getAssignedTours
+"view_assigned_tours"
 
-);
+),
 
-
-
-
-
-
-// Get single tour details
-
-router.get(
-
-  "/tours/:id",
-
-  protect,
-
-  authorize(
-    "view_assigned_tours"
-  ),
-
-  getTourDetails
+guideDashboard
 
 );
 
@@ -80,19 +119,32 @@ router.get(
 
 
 
-// View guests for a tour
+
+
+/*
+|--------------------------------------------------------------------------
+| GET ASSIGNED TOURS
+|--------------------------------------------------------------------------
+|
+| GET /api/guide/assigned-tours
+|
+|--------------------------------------------------------------------------
+*/
+
 
 router.get(
 
-  "/tours/:id/guests",
+"/assigned-tours",
 
-  protect,
+protect,
 
-  authorize(
-    "view_tour_guests"
-  ),
+authorize(
 
-  getTourGuests
+"view_assigned_tours"
+
+),
+
+getAssignedTours
 
 );
 
@@ -102,19 +154,108 @@ router.get(
 
 
 
-// Update tour status
+
+
+/*
+|--------------------------------------------------------------------------
+| GET SINGLE TOUR DETAILS
+|--------------------------------------------------------------------------
+|
+| GET /api/guide/tours/:id
+|
+|--------------------------------------------------------------------------
+*/
+
+
+router.get(
+
+"/tours/:id",
+
+protect,
+
+authorize(
+
+"view_assigned_tours"
+
+),
+
+getTourDetails
+
+);
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| GET TOUR GUESTS
+|--------------------------------------------------------------------------
+|
+| GET /api/guide/tours/:id/guests
+|
+|--------------------------------------------------------------------------
+*/
+
+
+router.get(
+
+"/tours/:id/guests",
+
+protect,
+
+authorize(
+
+"view_tour_guests"
+
+),
+
+getTourGuests
+
+);
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| UPDATE TOUR STATUS
+|--------------------------------------------------------------------------
+|
+| PUT /api/guide/tours/:id/status
+|
+| Body:
+|
+| {
+|   "status":"ongoing"
+| }
+|
+|--------------------------------------------------------------------------
+*/
+
 
 router.put(
 
-  "/tours/:id/status",
+"/tours/:id/status",
 
-  protect,
+protect,
 
-  authorize(
-    "update_tour_status"
-  ),
+authorize(
 
-  updateTourStatus
+"update_tour_status"
+
+),
+
+updateTourStatus
 
 );
 
@@ -124,21 +265,38 @@ router.put(
 
 
 
-// Submit tour report
+
+
+/*
+|--------------------------------------------------------------------------
+| SUBMIT TOUR REPORT
+|--------------------------------------------------------------------------
+|
+| POST /api/guide/tours/:id/report
+|
+|--------------------------------------------------------------------------
+*/
+
 
 router.post(
 
-  "/tours/:id/report",
+"/tours/:id/report",
 
-  protect,
+protect,
 
-  authorize(
-    "submit_tour_report"
-  ),
+authorize(
 
-  submitTourReport
+"submit_tour_report"
+
+),
+
+submitTourReport
 
 );
+
+
+
+
 
 
 

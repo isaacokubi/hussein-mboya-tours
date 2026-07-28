@@ -1,62 +1,131 @@
+// models/Notification.js
+
 import mongoose from "mongoose";
 
+const notificationSchema = new mongoose.Schema(
+  {
+    /*
+    |--------------------------------------------------------------------------
+    | USER RECEIVING NOTIFICATION
+    |--------------------------------------------------------------------------
+    */
 
-const notificationSchema =
-new mongoose.Schema(
-{
+    recipient: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
+    },
 
-user:{
-type:mongoose.Schema.Types.ObjectId,
-ref:"User",
-required:true
-},
+    // Backward compatibility for older controllers
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
+    },
 
+    /*
+    |--------------------------------------------------------------------------
+    | NOTIFICATION TITLE
+    |--------------------------------------------------------------------------
+    */
 
-title:{
-type:String,
-required:true
-},
+    title: {
+      type: String,
+      required: true,
+      trim: true
+    },
 
+    /*
+    |--------------------------------------------------------------------------
+    | NOTIFICATION MESSAGE
+    |--------------------------------------------------------------------------
+    */
 
-message:{
-type:String,
-required:true
-},
+    message: {
+      type: String,
+      required: true,
+      trim: true
+    },
 
+    /*
+    |--------------------------------------------------------------------------
+    | NOTIFICATION CATEGORY
+    |--------------------------------------------------------------------------
+    */
 
-type:{
-type:String,
-enum:[
+    type: {
+      type: String,
+      enum: [
+        "booking",
+        "payment",
+        "tour_assignment",
+        "tour_update",
+        "assignment",
+        "system",
+        "promotion",
+        "alert"
+      ],
+      default: "system"
+    },
 
-"booking",
-"payment",
-"system",
-"promotion",
-"alert"
+    /*
+    |--------------------------------------------------------------------------
+    | READ STATUS
+    |--------------------------------------------------------------------------
+    */
 
-],
+    read: {
+      type: Boolean,
+      default: false
+    },
 
-default:"system"
+    /*
+    |--------------------------------------------------------------------------
+    | EXTRA METADATA
+    |--------------------------------------------------------------------------
+    */
 
-},
-
-
-read:{
-type:Boolean,
-default:false
-}
-
-
-},
-{
-timestamps:true
-}
-
+    metadata: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {}
+    }
+  },
+  {
+    timestamps: true
+  }
 );
 
+// ============================================================
+// INDEXES
+// ============================================================
 
+notificationSchema.index({
+  recipient: 1,
+  read: 1
+});
 
-export default mongoose.model(
-"Notification",
-notificationSchema
+notificationSchema.index({
+  user: 1,
+  read: 1
+});
+
+notificationSchema.index({
+  createdAt: -1
+});
+
+// ============================================================
+// VIRTUAL RECEIVER
+// ============================================================
+
+notificationSchema.virtual("receiver").get(function () {
+  return this.recipient || this.user;
+});
+
+// ============================================================
+// MODEL
+// ============================================================
+
+const Notification = mongoose.model(
+  "Notification",
+  notificationSchema
 );
+
+export default Notification;

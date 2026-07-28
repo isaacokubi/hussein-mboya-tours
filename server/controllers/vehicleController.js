@@ -1,29 +1,62 @@
+import Tour from "../models/Tour.js";
+
 import Vehicle from "../models/Vehicle.js";
 
+import Staff from "../models/Staff.js";
+
 
 
 
 
 /*
 |--------------------------------------------------------------------------
-| CREATE VEHICLE
+| ASSIGN TOUR RESOURCES
+|--------------------------------------------------------------------------
+|
+| Assign:
+| - Guide
+| - Driver
+| - Vehicle
+| - Staff
+|
+| Automatically update availability
+|
 |--------------------------------------------------------------------------
 */
 
-export const createVehicle = async(
-req,
-res
-)=>{
+
+export const assignTourResources = async(req,res)=>{
 
 
 try{
 
 
-const vehicle =
+const {
 
-await Vehicle.create(
+guideId,
 
-req.body
+driverId,
+
+vehicleId,
+
+staffIds,
+
+startDate,
+
+endDate
+
+
+}=req.body;
+
+
+
+
+
+
+
+const tour = await Tour.findById(
+
+req.params.id
 
 );
 
@@ -31,170 +64,304 @@ req.body
 
 
 
-res.status(201).json({
 
-success:true,
 
-vehicle
-
-});
-
-
-
-}
-catch(error){
-
-
-res.status(500).json({
-
-success:false,
-
-message:error.message
-
-});
-
-
-}
-
-
-};
-
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| GET VEHICLES
-|--------------------------------------------------------------------------
-*/
-
-export const getVehicles = async(
-req,
-res
-)=>{
-
-
-try{
-
-
-const vehicles =
-
-await Vehicle.find({
-
-status:{
-$in:[
-"Available",
-"Assigned"
-]
-}
-
-})
-
-.sort({
-
-createdAt:-1
-
-});
-
-
-
-
-
-
-
-res.status(200).json({
-
-success:true,
-
-vehicles
-
-});
-
-
-
-
-
-}
-catch(error){
-
-
-res.status(500).json({
-
-success:false,
-
-message:error.message
-
-});
-
-
-}
-
-
-
-};
-
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| UPDATE VEHICLE
-|--------------------------------------------------------------------------
-*/
-
-export const updateVehicle = async(
-req,
-res
-)=>{
-
-
-try{
-
-
-const vehicle =
-
-await Vehicle.findByIdAndUpdate(
-
-req.params.id,
-
-req.body,
+if(!tour)
 
 {
-
-new:true,
-
-runValidators:true
-
-}
-
-);
-
-
-
-
-
-
-if(!vehicle){
 
 
 return res.status(404).json({
 
-message:"Vehicle not found"
+success:false,
+
+message:"Tour not found"
 
 });
 
 
 }
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| ASSIGN TOUR RESOURCES
+|--------------------------------------------------------------------------
+*/
+
+
+tour.guide = guideId || tour.guide;
+
+
+tour.driver = driverId || tour.driver;
+
+
+tour.vehicle = vehicleId || tour.vehicle;
+
+
+
+tour.staff = staffIds || tour.staff;
+
+
+
+tour.startDate = startDate || tour.startDate;
+
+
+tour.endDate = endDate || tour.endDate;
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| UPDATE VEHICLE STATUS AUTOMATICALLY
+|--------------------------------------------------------------------------
+*/
+
+
+if(vehicleId)
+
+{
+
+
+await Vehicle.findByIdAndUpdate(
+
+vehicleId,
+
+{
+
+
+status:"Assigned"
+
+
+},
+
+{
+
+
+new:true
+
+}
+
+);
+
+
+}
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| UPDATE DRIVER AVAILABILITY
+|--------------------------------------------------------------------------
+*/
+
+
+if(driverId)
+
+{
+
+
+await Staff.findByIdAndUpdate(
+
+driverId,
+
+{
+
+
+availability:"busy"
+
+
+},
+
+{
+
+
+new:true
+
+}
+
+);
+
+
+}
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| UPDATE GUIDE AVAILABILITY
+|--------------------------------------------------------------------------
+*/
+
+
+if(guideId)
+
+{
+
+
+await Staff.findByIdAndUpdate(
+
+guideId,
+
+{
+
+
+availability:"busy"
+
+
+},
+
+{
+
+
+new:true
+
+}
+
+);
+
+
+}
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| UPDATE OTHER STAFF AVAILABILITY
+|--------------------------------------------------------------------------
+*/
+
+
+if(
+
+staffIds && staffIds.length > 0
+
+)
+
+{
+
+
+await Staff.updateMany(
+
+{
+
+
+_id:{
+
+$in:staffIds
+
+}
+
+},
+
+
+{
+
+
+availability:"busy"
+
+}
+
+
+);
+
+
+}
+
+
+
+
+
+
+
+
+
+await tour.save();
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| POPULATE RESPONSE
+|--------------------------------------------------------------------------
+*/
+
+
+const updatedTour = await Tour.findById(
+
+tour._id
+
+)
+
+.populate(
+
+"guide",
+
+"name phone email"
+
+)
+
+.populate(
+
+"driver",
+
+"name phone email"
+
+)
+
+.populate(
+
+"vehicle",
+
+"name registrationNumber status"
+
+)
+
+.populate(
+
+"staff",
+
+"name phone email role"
+
+);
+
 
 
 
@@ -205,15 +372,21 @@ res.status(200).json({
 
 success:true,
 
-vehicle
+message:
+
+"Tour resources assigned successfully",
+
+tour:updatedTour
 
 });
 
 
 
-
 }
-catch(error){
+
+catch(error)
+
+{
 
 
 res.status(500).json({
@@ -226,6 +399,7 @@ message:error.message
 
 
 }
+
 
 
 };

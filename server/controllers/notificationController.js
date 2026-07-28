@@ -1,36 +1,73 @@
+// controllers/notificationController.js
+
+
 import Notification from "../models/Notification.js";
 
 
 
-export const getNotifications =
-async(req,res,next)=>{
+
+// ============================================================
+// GET MY NOTIFICATIONS
+// ============================================================
 
 
-try{
+export const getMyNotifications = async (
+  req,
+  res,
+  next
+) => {
 
 
-const notifications =
-await Notification.find({
-
-user:req.user._id
-
-})
-.sort({
-
-createdAt:-1
-
-});
+  try {
 
 
-res.json(notifications);
+    const notifications =
+
+    await Notification.find({
+
+      $or:[
+
+        {
+          recipient:req.user._id
+        },
+
+        {
+          user:req.user._id
+        }
+
+      ]
+
+    })
+
+    .sort({
+
+      createdAt:-1
+
+    });
 
 
-}
-catch(error){
 
-next(error);
 
-}
+    res.status(200).json({
+
+      success:true,
+
+      count:notifications.length,
+
+      notifications
+
+    });
+
+
+
+  }
+
+  catch(error){
+
+    next(error);
+
+  }
+
 
 };
 
@@ -38,35 +75,173 @@ next(error);
 
 
 
-export const markRead =
-async(req,res,next)=>{
-
-
-try{
-
-
-const notification =
-await Notification.findById(
-req.params.id
-);
 
 
 
-notification.read=true;
+
+// ============================================================
+// GET NOTIFICATIONS
+// Alias for compatibility
+// ============================================================
 
 
-await notification.save();
+export const getNotifications = async (
+  req,
+  res,
+  next
+) => {
+
+
+  try {
+
+
+    const notifications =
+
+    await Notification.find({
+
+      $or:[
+
+        {
+          recipient:req.user._id
+        },
+
+        {
+          user:req.user._id
+        }
+
+      ]
+
+    })
+
+    .sort({
+
+      createdAt:-1
+
+    });
 
 
 
-res.json(notification);
 
 
-}
-catch(error){
+    res.status(200).json({
 
-next(error);
+      success:true,
 
-}
+      count:notifications.length,
+
+      notifications
+
+    });
+
+
+
+  }
+
+  catch(error){
+
+    next(error);
+
+  }
+
+
+};
+
+
+
+
+
+
+
+
+
+// ============================================================
+// MARK NOTIFICATION AS READ
+// ============================================================
+
+
+export const markRead = async (
+  req,
+  res,
+  next
+) => {
+
+
+  try {
+
+
+    const notification =
+
+    await Notification.findOne({
+
+      _id:req.params.id,
+
+
+      $or:[
+
+        {
+          recipient:req.user._id
+        },
+
+        {
+          user:req.user._id
+        }
+
+      ]
+
+    });
+
+
+
+
+
+
+    if(!notification){
+
+
+      return res.status(404).json({
+
+        success:false,
+
+        message:"Notification not found"
+
+      });
+
+
+    }
+
+
+
+
+
+
+    notification.read = true;
+
+
+
+    await notification.save();
+
+
+
+
+
+
+    res.status(200).json({
+
+      success:true,
+
+      notification
+
+    });
+
+
+
+  }
+
+  catch(error){
+
+    next(error);
+
+  }
+
 
 };

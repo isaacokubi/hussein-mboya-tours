@@ -1,47 +1,207 @@
 import express from "express";
 
 
+
 import {
 
 getBookings,
-updateBooking
+
+getBooking,
+
+updateBookingStatus,
+
+assignResources,
+
+updatePaymentStatus
 
 }
-from "../controllers/adminBookingController.js";
+
+from "../controllers/bookingAdminController.js";
 
 
-import authMiddleware 
+
+
+
+import {
+
+protect
+
+}
+
 from "../middleware/authMiddleware.js";
 
 
-import adminMiddleware 
+
+
+
+import {
+
+adminMiddleware
+
+}
+
 from "../middleware/adminMiddleware.js";
 
 
 
-const router =
-express.Router();
+
+
+const router = express.Router();
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| ADMIN SECURITY
+|--------------------------------------------------------------------------
+*/
+
+
+router.use(
+
+protect
+
+);
 
 
 
 router.use(
-authMiddleware,
+
 adminMiddleware
+
 );
 
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| GET ALL BOOKINGS
+|--------------------------------------------------------------------------
+*/
 
 
 router.get(
+
 "/",
+
 getBookings
+
 );
 
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| GET SINGLE BOOKING
+|--------------------------------------------------------------------------
+*/
+
+
+router.get(
+
+"/:id",
+
+getBooking
+
+);
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| UPDATE BOOKING STATUS
+|--------------------------------------------------------------------------
+|
+| Examples:
+| pending
+| confirmed
+| assigned
+| ongoing
+| completed
+| cancelled
+|
+*/
 
 
 router.put(
-"/:id",
-updateBooking
+
+"/:id/status",
+
+updateBookingStatus
+
 );
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| ASSIGN GUIDE / DRIVER / VEHICLE
+|--------------------------------------------------------------------------
+*/
+
+
+router.put(
+
+"/:id/assign",
+
+assignResources
+
+);
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| UPDATE PAYMENT STATUS
+|--------------------------------------------------------------------------
+*/
+
+
+router.put(
+
+"/:id/payment",
+
+updatePaymentStatus
+
+);
+
+
+
+
 
 
 

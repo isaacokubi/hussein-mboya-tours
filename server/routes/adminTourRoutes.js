@@ -1,22 +1,33 @@
 import express from "express";
 
 
-import upload
-from "../middleware/uploadMiddleware.js";
+import upload from "../middleware/uploadMiddleware.js";
+
 
 
 import {
 
 createTour,
 
-getAdminTours,
+getAllTours,
+
+getTour,
 
 updateTour,
 
-deleteTour
+deleteTour,
+
+assignGuide,
+
+assignDriver,
+
+assignVehicle,
+
+restoreTour
 
 }
-from "../controllers/adminTourController.js";
+from "../controllers/tourAdminController.js";
+
 
 
 import {
@@ -25,6 +36,7 @@ protect
 
 }
 from "../middleware/authMiddleware.js";
+
 
 
 import {
@@ -36,18 +48,50 @@ from "../middleware/adminMiddleware.js";
 
 
 
-const router =
-express.Router();
 
+
+const router = express.Router();
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| ADMIN SECURITY
+|--------------------------------------------------------------------------
+*/
+
+
+router.use(
+protect
+);
+
+
+router.use(
+adminMiddleware
+);
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| CREATE TOUR
+|--------------------------------------------------------------------------
+*/
 
 
 router.post(
 
 "/",
-
-protect,
-
-adminMiddleware,
 
 upload.array(
 "images",
@@ -60,27 +104,68 @@ createTour
 
 
 
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| GET ALL TOURS
+|--------------------------------------------------------------------------
+*/
+
+
 router.get(
 
 "/",
 
-protect,
-
-adminMiddleware,
-
-getAdminTours
+getAllTours
 
 );
 
 
 
-router.put(
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| GET SINGLE TOUR
+|--------------------------------------------------------------------------
+*/
+
+
+router.get(
 
 "/:id",
 
-protect,
+getTour
 
-adminMiddleware,
+);
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| UPDATE TOUR
+|--------------------------------------------------------------------------
+*/
+
+
+router.put(
+
+"/:id",
 
 upload.array(
 "images",
@@ -93,17 +178,122 @@ updateTour
 
 
 
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| DELETE TOUR (SOFT DELETE)
+|--------------------------------------------------------------------------
+*/
+
+
 router.delete(
 
 "/:id",
 
-protect,
-
-adminMiddleware,
-
 deleteTour
 
 );
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| RESTORE TOUR
+|--------------------------------------------------------------------------
+*/
+
+
+router.patch(
+
+"/:id/restore",
+
+restoreTour
+
+);
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| ASSIGN GUIDE
+|--------------------------------------------------------------------------
+*/
+
+
+router.patch(
+
+"/:id/guide",
+
+assignGuide
+
+);
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| ASSIGN DRIVER
+|--------------------------------------------------------------------------
+*/
+
+
+router.patch(
+
+"/:id/driver",
+
+assignDriver
+
+);
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| ASSIGN VEHICLE
+|--------------------------------------------------------------------------
+*/
+
+
+router.patch(
+
+"/:id/vehicle",
+
+assignVehicle
+
+);
+
+
+
+
 
 
 

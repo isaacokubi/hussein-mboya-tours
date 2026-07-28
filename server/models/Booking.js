@@ -11,41 +11,62 @@ import mongoose from "mongoose";
 const travelerSchema = new mongoose.Schema(
 
 {
-    name:{
-        type:String,
-        required:true,
-        trim:true
-    },
+
+name:{
+
+type:String,
+
+required:true,
+
+trim:true
+
+},
 
 
-    age:{
-        type:Number,
-        min:0
-    },
+age:{
+
+type:Number,
+
+min:0
+
+},
 
 
-    passportNumber:{
-        type:String,
-        default:"",
-        trim:true
-    },
+passportNumber:{
+
+type:String,
+
+default:"",
+
+trim:true
+
+},
 
 
-    nationality:{
-        type:String,
-        default:"",
-        trim:true
-    },
+nationality:{
+
+type:String,
+
+default:"",
+
+trim:true
+
+},
 
 
-    dateOfBirth:{
-        type:Date
-    }
+dateOfBirth:{
+
+type:Date
+
+}
+
 
 },
 
 {
-    _id:false
+
+_id:false
+
 }
 
 );
@@ -68,28 +89,19 @@ const customerSnapshotSchema = new mongoose.Schema(
 
 {
 
-    name:{
-        type:String,
-        trim:true
-    },
+name:String,
 
+email:String,
 
-    email:{
-        type:String,
-        trim:true,
-        lowercase:true
-    },
+phone:String
 
-
-    phone:{
-        type:String,
-        trim:true
-    }
 
 },
 
 {
-    _id:false
+
+_id:false
+
 }
 
 );
@@ -112,6 +124,9 @@ const bookingSchema = new mongoose.Schema(
 
 {
 
+
+
+
 /*
 |--------------------------------------------------------------------------
 | BOOKING NUMBER
@@ -121,9 +136,12 @@ const bookingSchema = new mongoose.Schema(
 
 bookingNumber:{
 
-    type:String,
 
-    unique:true
+type:String,
+
+
+unique:true
+
 
 },
 
@@ -142,9 +160,15 @@ bookingNumber:{
 
 customer:{
 
-    type:mongoose.Schema.Types.ObjectId,
 
-    ref:"User"
+type:mongoose.Schema.Types.ObjectId,
+
+
+ref:"User",
+
+
+required:true
+
 
 },
 
@@ -152,9 +176,12 @@ customer:{
 
 user:{
 
-    type:mongoose.Schema.Types.ObjectId,
 
-    ref:"User"
+type:mongoose.Schema.Types.ObjectId,
+
+
+ref:"User"
+
 
 },
 
@@ -168,45 +195,13 @@ customerSnapshotSchema,
 
 
 
+fullName:String,
 
 
-
-/*
-|--------------------------------------------------------------------------
-| CUSTOMER DETAILS
-|--------------------------------------------------------------------------
-*/
+email:String,
 
 
-fullName:{
-
-    type:String,
-
-    trim:true
-
-},
-
-
-
-email:{
-
-    type:String,
-
-    trim:true,
-
-    lowercase:true
-
-},
-
-
-
-phone:{
-
-    type:String,
-
-    trim:true
-
-},
+phone:String,
 
 
 
@@ -223,44 +218,44 @@ phone:{
 
 agent:{
 
-    type:mongoose.Schema.Types.ObjectId,
 
-    ref:"User",
+type:mongoose.Schema.Types.ObjectId,
 
-    default:null
+
+ref:"User",
+
+
+default:null
+
 
 },
 
 
 
 
-
-
-
-/*
-|--------------------------------------------------------------------------
-| BOOKING SOURCE
-|--------------------------------------------------------------------------
-*/
 
 
 bookingSource:{
 
-    type:String,
 
-    enum:[
+type:String,
 
-        "website",
 
-        "agent",
+enum:[
 
-        "admin",
+"website",
 
-        "walk_in"
+"agent",
 
-    ],
+"admin",
 
-    default:"website"
+"walk_in"
+
+],
+
+
+default:"website"
+
 
 },
 
@@ -270,61 +265,50 @@ bookingSource:{
 
 
 
-/*
-|--------------------------------------------------------------------------
-| CONTACT
-|--------------------------------------------------------------------------
-*/
-
-
-contact:{
-
-    name:String,
-
-    email:String,
-
-    phone:String
-
-},
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
-| TOUR INFORMATION
+| TOUR DETAILS
 |--------------------------------------------------------------------------
 */
 
 
 tour:{
 
-    type:mongoose.Schema.Types.ObjectId,
 
-    ref:"Tour",
+type:mongoose.Schema.Types.ObjectId,
 
-    required:true
+
+ref:"Tour",
+
+
+required:true
+
 
 },
+
+
 
 
 
 travelDate:{
 
-    type:Date,
 
-    required:true
+type:Date,
+
+
+required:true
+
 
 },
 
 
 
+
+
 travelers:[
 
-    travelerSchema
+travelerSchema
 
 ],
 
@@ -333,29 +317,126 @@ travelers:[
 
 
 
+// merged from new schema
 
-/*
-|--------------------------------------------------------------------------
-| GUEST COUNT
-|--------------------------------------------------------------------------
-*/
+numberOfGuests:{
 
 
-guests:{
+type:Number,
 
-    type:Number,
 
-    default:1
+required:true,
+
+
+default:1
+
 
 },
 
 
 
+
+guests:{
+
+
+type:Number,
+
+
+default:1
+
+
+},
+
+
+
+
 travelerCount:{
 
-    type:Number,
 
-    default:0
+type:Number,
+
+
+default:0
+
+
+},
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| TOUR OPERATIONS ASSIGNMENT
+|--------------------------------------------------------------------------
+*/
+
+
+assignedGuide:{
+
+
+type:mongoose.Schema.Types.ObjectId,
+
+
+ref:"Staff",
+
+
+default:null
+
+
+},
+
+
+
+
+assignedDriver:{
+
+
+type:mongoose.Schema.Types.ObjectId,
+
+
+ref:"Staff",
+
+
+default:null
+
+
+},
+
+
+
+
+assignedVehicle:{
+
+
+type:mongoose.Schema.Types.ObjectId,
+
+
+ref:"Vehicle",
+
+
+default:null
+
+
+},
+
+
+
+
+
+
+// merged assignment flag
+
+assigned:{
+
+
+type:Boolean,
+
+
+default:false
+
 
 },
 
@@ -374,51 +455,71 @@ travelerCount:{
 
 subtotal:{
 
-    type:Number,
 
-    default:0
+type:Number,
+
+
+default:0
+
 
 },
+
 
 
 
 discountAmount:{
 
-    type:Number,
 
-    default:0
+type:Number,
+
+
+default:0
+
 
 },
+
 
 
 
 couponUsed:{
 
-    type:String,
 
-    default:""
+type:String,
+
+
+default:""
+
 
 },
+
 
 
 
 totalAmount:{
 
-    type:Number,
 
-    required:true,
+type:Number,
 
-    min:0
+
+required:true,
+
+
+min:0
+
 
 },
 
 
 
+
 amount:{
 
-    type:Number,
 
-    default:0
+type:Number,
+
+
+default:0
+
 
 },
 
@@ -437,51 +538,67 @@ amount:{
 
 commissionRate:{
 
-    type:Number,
 
-    default:0
+type:Number,
+
+
+default:0
+
 
 },
+
 
 
 
 commissionAmount:{
 
-    type:Number,
 
-    default:0
+type:Number,
+
+
+default:0
+
 
 },
+
 
 
 
 commissionStatus:{
 
-    type:String,
 
-    enum:[
+type:String,
 
-        "pending",
 
-        "approved",
+enum:[
 
-        "paid",
+"pending",
 
-        "cancelled"
+"approved",
 
-    ],
+"paid",
 
-    default:"pending"
+"cancelled"
+
+],
+
+
+default:"pending"
+
 
 },
 
 
 
+
 commissionPaidAt:{
 
-    type:Date,
 
-    default:null
+type:Date,
+
+
+default:null
+
 
 },
 
@@ -500,103 +617,118 @@ commissionPaidAt:{
 
 depositAmount:{
 
-    type:Number,
 
-    default:0
+type:Number,
+
+
+default:0
+
 
 },
+
 
 
 
 balanceAmount:{
 
-    type:Number,
 
-    default:0
+type:Number,
+
+
+default:0
+
 
 },
+
 
 
 
 paymentMethod:{
 
-    type:String,
 
-    enum:[
+type:String,
 
-        "MPESA",
 
-        "CARD",
+enum:[
 
-        "PAYPAL",
+"MPESA",
 
-        "BANK_TRANSFER",
+"CARD",
 
-        "CASH"
+"PAYPAL",
 
-    ],
+"BANK_TRANSFER",
 
-    default:"MPESA"
+"CASH"
+
+],
+
+
+default:"MPESA"
+
 
 },
+
 
 
 
 paymentStatus:{
 
-    type:String,
 
-    enum:[
+type:String,
 
-        "pending",
 
-        "partial",
+enum:[
 
-        "paid",
+"pending",
 
-        "failed",
+"paid",
 
-        "refunded"
+"partial",
 
-    ],
+"failed",
 
-    default:"pending"
+"refunded"
+
+],
+
+
+default:"pending"
+
 
 },
+
 
 
 
 transactionId:{
 
-    type:String,
 
-    default:"",
-
-    trim:true
+type:String
 
 },
+
 
 
 
 paymentReference:{
 
-    type:String,
 
-    default:"",
-
-    trim:true
+type:String
 
 },
 
 
 
+
 mpesaReceipt:{
 
-    type:String,
 
-    default:"",
+type:String,
 
-    trim:true
+
+default:""
+
 
 },
 
@@ -613,23 +745,59 @@ mpesaReceipt:{
 */
 
 
+status:{
+
+
+type:String,
+
+
+enum:[
+
+"pending",
+
+"confirmed",
+
+"cancelled",
+
+"completed"
+
+],
+
+
+default:"pending"
+
+
+},
+
+
+
+
+
 bookingStatus:{
 
-    type:String,
 
-    enum:[
+type:String,
 
-        "pending",
 
-        "confirmed",
+enum:[
 
-        "cancelled",
+"pending",
 
-        "completed"
+"confirmed",
 
-    ],
+"assigned",
 
-    default:"pending"
+"ongoing",
+
+"completed",
+
+"cancelled"
+
+],
+
+
+default:"pending"
+
 
 },
 
@@ -641,16 +809,19 @@ bookingStatus:{
 
 /*
 |--------------------------------------------------------------------------
-| ABANDONED BOOKINGS
+| ABANDONED BOOKING
 |--------------------------------------------------------------------------
 */
 
 
 abandoned:{
 
-    type:Boolean,
 
-    default:false
+type:Boolean,
+
+
+default:false
+
 
 },
 
@@ -658,9 +829,12 @@ abandoned:{
 
 lastReminderSent:{
 
-    type:Date,
 
-    default:null
+type:Date,
+
+
+default:null
+
 
 },
 
@@ -679,10 +853,9 @@ lastReminderSent:{
 
 documents:[
 
-    String
+String
 
 ],
-
 
 
 
@@ -698,15 +871,20 @@ documents:[
 
 notes:{
 
-    type:String,
 
-    default:""
+type:String,
+
+
+default:""
+
 
 }
 
 
 
 },
+
+
 
 {
 
@@ -726,9 +904,10 @@ timestamps:true
 
 /*
 |--------------------------------------------------------------------------
-| GENERATE BOOKING NUMBER
+| AUTO BOOKING NUMBER
 |--------------------------------------------------------------------------
 */
+
 
 bookingSchema.pre(
 
@@ -737,28 +916,31 @@ bookingSchema.pre(
 function(next){
 
 
-    if(!this.bookingNumber){
+if(!this.bookingNumber)
+
+{
 
 
-        this.bookingNumber =
+this.bookingNumber =
 
-        "HMT-" +
+"HMT-" +
 
-        Date.now() +
+Date.now() +
 
-        "-" +
+"-" +
 
-        Math.floor(
+Math.floor(
 
-            Math.random()*10000
+Math.random()*10000
 
-        );
-
-
-    }
+);
 
 
-    next();
+}
+
+
+
+next();
 
 
 }
@@ -775,9 +957,10 @@ function(next){
 
 /*
 |--------------------------------------------------------------------------
-| CALCULATE COMMISSION + BALANCE
+| AUTO COMMISSION + BALANCE
 |--------------------------------------------------------------------------
 */
+
 
 bookingSchema.pre(
 
@@ -787,57 +970,79 @@ function(next){
 
 
 
-    if(
+if(
 
-        this.agent &&
+this.agent &&
 
-        this.commissionRate > 0
+this.commissionRate > 0
 
-    ){
+)
 
-
-        this.commissionAmount =
-
-        (
-
-            this.totalAmount *
-
-            this.commissionRate
-
-        )
-
-        /
-
-        100;
+{
 
 
-    }
+this.commissionAmount =
 
-    else{
+(
 
+this.totalAmount *
 
-        this.commissionAmount = 0;
+this.commissionRate
 
+)
 
-    }
-
-
-
-
+/100;
 
 
-    this.balanceAmount =
+}
 
-    this.totalAmount -
+else
 
-    this.depositAmount;
+{
+
+
+this.commissionAmount = 0;
+
+
+}
 
 
 
 
 
+this.balanceAmount =
 
-    next();
+this.totalAmount -
+
+this.depositAmount;
+
+
+
+
+
+// keep assignment status synchronized
+
+if(
+
+this.assignedGuide ||
+
+this.assignedDriver ||
+
+this.assignedVehicle
+
+)
+
+{
+
+
+this.assigned = true;
+
+
+}
+
+
+
+next();
 
 
 }
@@ -862,17 +1067,15 @@ function(next){
 bookingSchema.methods.calculateCommission = function(){
 
 
-    return (
+return (
 
-        this.totalAmount *
+this.totalAmount *
 
-        this.commissionRate
+this.commissionRate
 
-    )
+)
 
-    /
-
-    100;
+/100;
 
 
 };
@@ -884,13 +1087,13 @@ bookingSchema.methods.calculateCommission = function(){
 bookingSchema.methods.calculateBalance = function(){
 
 
-    return (
+return (
 
-        this.totalAmount -
+this.totalAmount -
 
-        this.depositAmount
+this.depositAmount
 
-    );
+);
 
 
 };
@@ -905,26 +1108,16 @@ bookingSchema.methods.calculateBalance = function(){
 
 /*
 |--------------------------------------------------------------------------
-| DATABASE INDEXES
+| INDEXES
 |--------------------------------------------------------------------------
 */
 
 
 bookingSchema.index({
 
-    customer:1,
+customer:1,
 
-    createdAt:-1
-
-});
-
-
-
-bookingSchema.index({
-
-    user:1,
-
-    createdAt:-1
+createdAt:-1
 
 });
 
@@ -932,19 +1125,9 @@ bookingSchema.index({
 
 bookingSchema.index({
 
-    agent:1,
+tour:1,
 
-    createdAt:-1
-
-});
-
-
-
-bookingSchema.index({
-
-    tour:1,
-
-    travelDate:1
+travelDate:1
 
 });
 
@@ -952,9 +1135,7 @@ bookingSchema.index({
 
 bookingSchema.index({
 
-    paymentStatus:1,
-
-    bookingStatus:1
+assignedGuide:1
 
 });
 
@@ -962,9 +1143,7 @@ bookingSchema.index({
 
 bookingSchema.index({
 
-    bookingStatus:1,
-
-    createdAt:-1
+assignedDriver:1
 
 });
 
@@ -972,9 +1151,7 @@ bookingSchema.index({
 
 bookingSchema.index({
 
-    commissionStatus:1,
-
-    createdAt:-1
+assignedVehicle:1
 
 });
 
@@ -982,9 +1159,27 @@ bookingSchema.index({
 
 bookingSchema.index({
 
-    abandoned:1,
+paymentStatus:1,
 
-    lastReminderSent:1
+status:1
+
+});
+
+
+
+bookingSchema.index({
+
+bookingStatus:1,
+
+createdAt:-1
+
+});
+
+
+
+bookingSchema.index({
+
+commissionStatus:1
 
 });
 
@@ -995,12 +1190,6 @@ bookingSchema.index({
 
 
 
-
-/*
-|--------------------------------------------------------------------------
-| EXPORT MODEL
-|--------------------------------------------------------------------------
-*/
 
 const Booking =
 
@@ -1008,9 +1197,9 @@ mongoose.models.Booking ||
 
 mongoose.model(
 
-    "Booking",
+"Booking",
 
-    bookingSchema
+bookingSchema
 
 );
 

@@ -1,3 +1,6 @@
+// client/src/context/AuthContext.jsx
+
+
 import {
     createContext,
     useContext,
@@ -10,8 +13,17 @@ import axios from "axios";
 
 
 import {
+    io
+} from "socket.io-client";
+
+
+import {
     queryClient
 } from "../lib/queryClient";
+
+
+
+
 
 
 
@@ -27,17 +39,49 @@ import {
 const api = axios.create({
 
     baseURL:
+
         import.meta.env.VITE_API_URL ||
+
         "http://localhost:5000/api",
 
 
-    headers: {
+    headers:{
 
-        "Content-Type": "application/json"
+        "Content-Type":"application/json"
 
     }
 
 });
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| SOCKET.IO CONNECTION
+|--------------------------------------------------------------------------
+*/
+
+
+export const socket = io(
+
+    import.meta.env.VITE_SOCKET_URL ||
+
+    "http://localhost:5000",
+
+    {
+
+        withCredentials:true
+
+    }
+
+);
+
 
 
 
@@ -55,38 +99,42 @@ const api = axios.create({
 
 api.interceptors.request.use(
 
-    (config)=>{
+(config)=>{
 
 
-        const token =
-        localStorage.getItem("token");
+    const token =
 
-
-
-        if(token){
-
-
-            config.headers.Authorization =
-            `Bearer ${token}`;
-
-
-        }
+    localStorage.getItem(
+        "token"
+    );
 
 
 
-        return config;
+    if(token){
 
 
-    },
+        config.headers.Authorization =
 
-
-    (error)=>{
-
-
-        return Promise.reject(error);
+        `Bearer ${token}`;
 
 
     }
+
+
+
+    return config;
+
+
+},
+
+
+(error)=>{
+
+
+    return Promise.reject(error);
+
+
+}
 
 );
 
@@ -106,6 +154,7 @@ api.interceptors.request.use(
 
 
 export const AuthContext =
+
 createContext();
 
 
@@ -115,7 +164,9 @@ createContext();
 export const useAuth = ()=>{
 
 
-    return useContext(AuthContext);
+    return useContext(
+        AuthContext
+    );
 
 
 };
@@ -140,16 +191,17 @@ const normalizeRole = (role)=>{
 
     return role
 
-        ?.toString()
+    ?.toString()
 
-        .toLowerCase()
+    .toLowerCase()
 
-        .replace(
-            /[\s_-]/g,
-            ""
-        )
+    .replace(
+        /[\s_-]/g,
+        ""
+    )
 
-        || "";
+    || "";
+
 
 };
 
@@ -163,7 +215,7 @@ const normalizeRole = (role)=>{
 
 /*
 |--------------------------------------------------------------------------
-| NORMALIZE USER OBJECT
+| NORMALIZE USER
 |--------------------------------------------------------------------------
 */
 
@@ -176,7 +228,6 @@ const normalizeUser = (user)=>{
         return null;
 
     }
-
 
 
 
@@ -219,26 +270,84 @@ const normalizeUser = (user)=>{
 */
 
 
-export function AuthProvider({children}) {
+export function AuthProvider({
+
+    children
+
+}) {
 
 
 
 const [user,setUser] =
+
 useState(null);
 
 
 
 const [token,setToken] =
+
 useState(
 
-    localStorage.getItem("token")
+    localStorage.getItem(
+        "token"
+    )
 
 );
 
 
 
 const [loading,setLoading] =
+
 useState(true);
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| REGISTER SOCKET USER
+|--------------------------------------------------------------------------
+*/
+
+
+const registerSocketUser = (
+
+currentUser
+
+)=>{
+
+
+    if(currentUser?._id){
+
+
+        socket.emit(
+
+            "register",
+
+            currentUser._id
+
+        );
+
+
+
+        console.log(
+
+            "Socket registered:",
+
+            currentUser._id
+
+        );
+
+
+    }
+
+
+};
 
 
 
@@ -262,10 +371,12 @@ try{
 
 
     const response =
-    await api.get(
-        "/auth/me"
-    );
 
+    await api.get(
+
+        "/auth/me"
+
+    );
 
 
 
@@ -284,32 +395,20 @@ try{
 
 
     console.log(
+
         "CURRENT USER:",
+
+        currentUser
+
+    );
+
+
+
+
+
+    setUser(
         currentUser
     );
-
-
-
-    console.log(
-        "USER ROLE:",
-        currentUser?.role
-    );
-
-
-
-    console.log(
-        "USER PERMISSIONS:",
-        currentUser?.permissions || []
-    );
-
-
-
-
-
-
-    setUser(currentUser);
-
-
 
 
 
@@ -317,8 +416,18 @@ try{
 
         "user",
 
-        JSON.stringify(currentUser)
+        JSON.stringify(
+            currentUser
+        )
 
+    );
+
+
+
+
+
+    registerSocketUser(
+        currentUser
     );
 
 
@@ -354,6 +463,7 @@ catch(error){
 }
 
 
+
 };
 
 
@@ -375,14 +485,19 @@ useEffect(()=>{
 
 
 const savedToken =
-localStorage.getItem("token");
+
+localStorage.getItem(
+    "token"
+);
 
 
 
 if(savedToken){
 
 
-    setToken(savedToken);
+    setToken(
+        savedToken
+    );
 
 
 
@@ -428,8 +543,11 @@ else{
 
 
 const login = async(
+
 email,
+
 password
+
 )=>{
 
 
@@ -476,8 +594,9 @@ try{
 
 
 
-    setToken(token);
-
+    setToken(
+        token
+    );
 
 
 
@@ -495,21 +614,9 @@ try{
 
 
 
-
-    console.log(
-
-        "LOGIN USER BEFORE SAVE",
-
+    setUser(
         currentUser
-
     );
-
-
-
-
-
-
-    setUser(currentUser);
 
 
 
@@ -519,10 +626,21 @@ try{
 
         "user",
 
-        JSON.stringify(currentUser)
+        JSON.stringify(
+            currentUser
+        )
 
     );
 
+
+
+
+
+    registerSocketUser(
+
+        currentUser
+
+    );
 
 
 
@@ -565,6 +683,7 @@ catch(error){
     );
 
 
+
     throw error;
 
 
@@ -589,7 +708,11 @@ catch(error){
 */
 
 
-const register = async(userData)=>{
+const register = async(
+
+userData
+
+)=>{
 
 
 try{
@@ -629,7 +752,9 @@ try{
 
 
 
-    setToken(token);
+    setToken(
+        token
+    );
 
 
 
@@ -647,7 +772,9 @@ try{
 
 
 
-    setUser(currentUser);
+    setUser(
+        currentUser
+    );
 
 
 
@@ -657,7 +784,19 @@ try{
 
         "user",
 
-        JSON.stringify(currentUser)
+        JSON.stringify(
+            currentUser
+        )
+
+    );
+
+
+
+
+
+    registerSocketUser(
+
+        currentUser
 
     );
 
@@ -683,6 +822,7 @@ try{
 catch(error){
 
 
+
     console.error(
 
         "REGISTER ERROR",
@@ -692,6 +832,7 @@ catch(error){
         error.message
 
     );
+
 
 
     throw error;
@@ -744,7 +885,12 @@ const logout = ()=>{
 
 
 
+    socket.disconnect();
+
+
+
     window.location.href =
+
     "/login";
 
 
@@ -777,14 +923,11 @@ user?.permissions || [];
 
 
 
-/*
-|--------------------------------------------------------------------------
-| PERMISSION CHECK
-|--------------------------------------------------------------------------
-*/
+const hasPermission = (
 
+path
 
-const hasPermission = (path)=>{
+)=>{
 
 
 return permissions.some(
@@ -808,7 +951,11 @@ permission.path === path
 
 
 
-const hasAnyPermission = (paths=[])=>{
+const hasAnyPermission = (
+
+paths=[]
+
+)=>{
 
 
 return paths.some(
@@ -830,7 +977,11 @@ hasPermission(path)
 
 
 
-const hasAllPermissions = (paths=[])=>{
+const hasAllPermissions = (
+
+paths=[]
+
+)=>{
 
 
 return paths.every(
@@ -859,16 +1010,28 @@ hasPermission(path)
 */
 
 
-const hasRole = (roleName)=>{
+const hasRole = (
+
+roleName
+
+)=>{
 
 
 return (
 
-    normalizeRole(user?.role)
+normalizeRole(
 
-    ===
+    user?.role
 
-    normalizeRole(roleName)
+)
+
+===
+
+normalizeRole(
+
+    roleName
+
+)
 
 );
 
@@ -883,17 +1046,16 @@ return (
 
 
 
-/*
-|--------------------------------------------------------------------------
-| ACCESS CHECK
-|--------------------------------------------------------------------------
-*/
+const canAccess = (
+
+path
+
+)=>{
 
 
-const canAccess = (path)=>{
-
-
-return hasPermission(path);
+return hasPermission(
+    path
+);
 
 
 };
@@ -969,7 +1131,10 @@ value={{
     canAccess,
 
 
-    getMenuPermissions
+    getMenuPermissions,
+
+
+    socket
 
 
 }}

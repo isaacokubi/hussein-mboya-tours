@@ -1,3 +1,5 @@
+// client/src/routes/AppRoutes.jsx
+
 import { Routes, Route } from "react-router-dom";
 
 // ============================================================
@@ -5,17 +7,11 @@ import { Routes, Route } from "react-router-dom";
 // ============================================================
 
 import Home from "../pages/Home";
-
 import Tours from "../pages/Tours";
-
 import TourDetails from "../pages/TourDetails";
-
 import Login from "../pages/Login";
-
 import Register from "../pages/Register";
-
 import Destinations from "../pages/Destinations";
-
 import Wishlist from "../pages/Wishlist";
 
 // ============================================================
@@ -23,15 +19,10 @@ import Wishlist from "../pages/Wishlist";
 // ============================================================
 
 import Dashboard from "../pages/Dashboard";
-
 import MyBookings from "../pages/MyBookings";
-
 import BookingDetails from "../pages/BookingDetails";
-
 import Profile from "../pages/Profile";
-
 import Checkout from "../pages/Checkout";
-
 import PaymentStatus from "../pages/PaymentStatus";
 
 // ============================================================
@@ -39,11 +30,8 @@ import PaymentStatus from "../pages/PaymentStatus";
 // ============================================================
 
 import AgentLayout from "../layouts/AgentLayout";
-
 import AgentDashboard from "../pages/agent/AgentDashboard";
-
 import AgentBookings from "../pages/agent/AgentBookings";
-
 import AgentCustomers from "../pages/agent/AgentCustomers";
 
 // ============================================================
@@ -57,59 +45,54 @@ import TourGuideDashboard from "../pages/guide/TourGuideDashboard";
 // ============================================================
 
 import TourManagerLayout from "../layouts/TourManagerLayout";
-
 import TourManagerDashboard from "../pages/tourManager/TourManagerDashboard";
-
 import TourManagerTours from "../pages/tourManager/TourManagerTours";
-
 import CreateTour from "../pages/tourManager/CreateTour";
-
 import EditTour from "../pages/tourManager/EditTour";
-
 import AssignGuides from "../pages/tourManager/AssignGuides";
-
 import AssignGuide from "../pages/tourManager/AssignGuide";
-
 import AssignVehicle from "../pages/tourManager/AssignVehicle";
-
-import Vehicles from "../pages/tourManager/Vehicles";
-
+import TourManagerVehicles from "../pages/tourManager/Vehicles";
 import TourAvailability from "../pages/tourManager/TourAvailability";
-
 import TourAnalytics from "../pages/tourManager/TourAnalytics";
-
 import TourReports from "../pages/tourManager/TourReports";
+import TourAssignments from "../pages/tourManager/TourAssignments";
 
 // ============================================================
 // ADMIN
 // ============================================================
 
 import AdminLayout from "../components/admin/AdminLayout";
-
 import AdminDashboard from "../pages/admin/AdminDashboard";
-
 import ManageTours from "../pages/admin/ManageTours";
-
 import AddTour from "../pages/admin/AddTour";
-
 import ManageBookings from "../pages/admin/ManageBookings";
+import Customers from "../pages/admin/Customers";
+import Vehicles from "../pages/admin/Vehicles";
+import AdminAnalytics from "../pages/admin/AdminAnalytics";
+
+// ============================================================
+// ADMIN FINANCE
+// ============================================================
+
+import AdminFinance from "../pages/admin/finance/AdminFinance";
+import MpesaTransactions from "../pages/admin/finance/MpesaTransactions";
+import FinanceReports from "../pages/admin/finance/FinanceReports";
 
 // ============================================================
 // ROUTE GUARDS
 // ============================================================
 
 import ProtectedRoute from "../components/auth/ProtectedRoute";
-
 import AdminRoute from "../components/auth/AdminRoute";
-
 import AgentRoute from "../components/agent/AgentRoute";
 
 export default function AppRoutes() {
   return (
     <Routes>
       {/* ============================================================
-PUBLIC ROUTES
-============================================================ */}
+          PUBLIC ROUTES
+      ============================================================ */}
 
       <Route path="/" element={<Home />} />
 
@@ -126,8 +109,8 @@ PUBLIC ROUTES
       <Route path="/wishlist" element={<Wishlist />} />
 
       {/* ============================================================
-CUSTOMER ROUTES
-============================================================ */}
+          CUSTOMER ROUTES
+      ============================================================ */}
 
       <Route
         path="/dashboard"
@@ -184,8 +167,8 @@ CUSTOMER ROUTES
       />
 
       {/* ============================================================
-AGENT ROUTES
-============================================================ */}
+          AGENT ROUTES
+      ============================================================ */}
 
       <Route
         path="/agent"
@@ -203,8 +186,8 @@ AGENT ROUTES
       </Route>
 
       {/* ============================================================
-TOUR GUIDE
-============================================================ */}
+          TOUR GUIDE
+      ============================================================ */}
 
       <Route
         path="/guide/dashboard"
@@ -216,8 +199,8 @@ TOUR GUIDE
       />
 
       {/* ============================================================
-TOUR MANAGER
-============================================================ */}
+          TOUR MANAGER
+      ============================================================ */}
 
       <Route
         path="/tour-manager"
@@ -243,9 +226,11 @@ TOUR MANAGER
 
         <Route path="assign-vehicle/:id" element={<AssignVehicle />} />
 
+        <Route path="assignments" element={<TourAssignments />} />
+
         <Route path="availability/:id" element={<TourAvailability />} />
 
-        <Route path="vehicles" element={<Vehicles />} />
+        <Route path="vehicles" element={<TourManagerVehicles />} />
 
         <Route path="analytics" element={<TourAnalytics />} />
 
@@ -253,8 +238,8 @@ TOUR MANAGER
       </Route>
 
       {/* ============================================================
-ADMIN ROUTES
-============================================================ */}
+          ADMIN ROUTES
+      ============================================================ */}
 
       <Route
         path="/admin"
@@ -266,34 +251,83 @@ ADMIN ROUTES
       >
         <Route index element={<AdminDashboard />} />
 
+        {/* TOURS */}
+
         <Route path="tours" element={<ManageTours />} />
 
         <Route path="tours/add" element={<AddTour />} />
 
+        {/* BOOKINGS */}
+
         <Route path="bookings" element={<ManageBookings />} />
+
+        {/* FINANCE */}
+
+        <Route path="finance" element={<AdminFinance />} />
+
+        <Route
+          path="finance/transactions"
+          element={<MpesaTransactions />}
+        />
+
+        <Route
+          path="finance/reports"
+          element={<FinanceReports />}
+        />
+
+        {/* ANALYTICS */}
+
+        <Route
+          path="analytics"
+          element={<AdminAnalytics />}
+        />
+
+        {/* CUSTOMERS */}
+
+        <Route
+          path="customers"
+          element={<Customers />}
+        />
+
+        {/* GUIDES */}
+
+        <Route
+          path="guides"
+          element={
+            <div>
+              <h1>Manage Guides</h1>
+            </div>
+          }
+        />
+
+        {/* VEHICLES */}
+
+        <Route
+          path="vehicles"
+          element={<Vehicles />}
+        />
+
+        {/* SETTINGS */}
+
+        <Route
+          path="settings"
+          element={
+            <div>
+              <h1>Admin Settings</h1>
+            </div>
+          }
+        />
       </Route>
 
       {/* ============================================================
-404
-============================================================ */}
+          404
+      ============================================================ */}
 
       <Route
         path="*"
         element={
-          <div
-            className="
-min-h-screen
-flex
-items-center
-justify-center
-"
-          >
-            <h1
-              className="
-text-4xl
-font-bold
-"
-            >
+          <div className="min-h-screen flex items-center justify-center">
+            <h1 className="text-4xl font-bold">
               404 - Page Not Found
             </h1>
           </div>

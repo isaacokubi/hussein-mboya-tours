@@ -5,24 +5,13 @@ import connectDatabase from "../config/database.js";
 import User from "../models/User.js";
 import Role from "../models/Role.js";
 
-
 dotenv.config();
 
-
-
 const seedUsers = async () => {
-
-
   try {
-
-
     await connectDatabase();
 
-
     console.log("Database connected");
-
-
-
 
     /*
     |--------------------------------------------------------------------------
@@ -30,50 +19,21 @@ const seedUsers = async () => {
     |--------------------------------------------------------------------------
     */
 
-
     const adminRole = await Role.findOne({
-
-      name:"admin"
-
+      name: "admin",
     });
-
-
 
     const managerRole = await Role.findOne({
-
-      name:"tour_manager"
-
+      name: "manager",
     });
 
-
-
-
-
-    if(!adminRole){
-
-      throw new Error(
-        "Admin role not found"
-      );
-
+    if (!adminRole) {
+      throw new Error("admin role not found");
     }
 
-
-
-
-
-    if(!managerRole){
-
-      throw new Error(
-        "Tour Manager role not found"
-      );
-
+    if (!managerRole) {
+      throw new Error("manager role not found");
     }
-
-
-
-
-
-
 
     /*
     |--------------------------------------------------------------------------
@@ -81,28 +41,11 @@ const seedUsers = async () => {
     |--------------------------------------------------------------------------
     */
 
-
     await User.deleteMany({
-
-      email:{
-
-        $in:[
-
-          "admin@demo.com",
-
-          "manager@demo.com"
-
-        ]
-
-      }
-
+      email: {
+        $in: ["admin@demo.com", "manager@demo.com"],
+      },
     });
-
-
-
-
-
-
 
     /*
     |--------------------------------------------------------------------------
@@ -110,40 +53,25 @@ const seedUsers = async () => {
     |--------------------------------------------------------------------------
     */
 
-
     const admin = await User.create({
+      name: "Hussein Admin",
 
-      name:"Hussein Admin",
+      email: "admin@demo.com",
 
-      email:"admin@demo.com",
+      phone: "0712345678",
 
-      phone:"0712345678",
-
-      password:"Admin@12345",
-
+      password: "Admin@12345",
 
       // MUST MATCH USER ENUM
-      role:"admin",
-
+      role: "admin",
 
       // RBAC ROLE REFERENCE
-      roleId:adminRole._id,
+      roleId: adminRole._id,
 
+      status: "active",
 
-      status:"active",
-
-      isVerified:true
-
-
+      isVerified: true,
     });
-
-
-
-
-
-
-
-
 
     /*
     |--------------------------------------------------------------------------
@@ -151,120 +79,62 @@ const seedUsers = async () => {
     |--------------------------------------------------------------------------
     */
 
-
     const manager = await User.create({
+      name: "Hussein Tour Manager",
 
-      name:"Hussein Tour Manager",
+      email: "manager@demo.com",
 
-      email:"manager@demo.com",
+      phone: "0712345679",
 
-      phone:"0712345679",
-
-      password:"Manager@12345",
-
+      password: "Manager@12345",
 
       // MUST MATCH USER ENUM
-      role:"tour_manager",
-
+      role: "manager",
 
       // RBAC ROLE REFERENCE
-      roleId:managerRole._id,
+      roleId: managerRole._id,
 
+      status: "active",
 
-      status:"active",
-
-      isVerified:true
-
-
+      isVerified: true,
     });
 
-
-
-
-
-
-
-
-
     console.log("================================");
-
 
     console.log("ADMIN CREATED");
 
-
     console.log({
+      email: admin.email,
 
-      email:admin.email,
+      password: "Admin@12345",
 
-      password:"Admin@12345",
-
-      role:admin.role
-
+      role: admin.role,
     });
-
-
-
-
 
     console.log("--------------------------------");
 
-
-
-
-
     console.log("TOUR MANAGER CREATED");
 
-
-
     console.log({
+      email: manager.email,
 
-      email:manager.email,
+      password: "Manager@12345",
 
-      password:"Manager@12345",
-
-      role:manager.role
-
+      role: manager.role,
     });
-
-
-
-
 
     console.log("================================");
 
-
-
-
-
     process.exit(0);
-
-
-
-  }
-
-
-  catch(error){
-
-
+  } catch (error) {
     console.error(
-
       "USER SEED ERROR:",
 
-      error.message
-
+      error.message,
     );
 
-
     process.exit(1);
-
-
   }
-
-
 };
-
-
-
-
 
 seedUsers();
