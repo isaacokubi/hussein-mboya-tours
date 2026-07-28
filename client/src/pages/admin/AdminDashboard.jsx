@@ -1,160 +1,142 @@
-import {
-useQuery
-}
-from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
 import axios from "axios";
 
+export default function AdminDashboard() {
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["adminStats"],
 
+    queryFn: async () => {
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_URL}/api/admin/dashboard`,
 
-export default function AdminDashboard(){
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        },
+      );
 
+      return response.data.data;
+    },
+  });
 
-const {
-data
-}
-=
-useQuery({
+  if (isLoading) {
+    return (
+      <div
+        className="
+min-h-screen
+flex
+items-center
+justify-center
+text-xl
+font-semibold
+"
+      >
+        Loading dashboard...
+      </div>
+    );
+  }
 
-queryKey:[
-"adminStats"
-],
-
-queryFn:async()=>{
-
-
-const response =
-await axios.get(
-
-`${import.meta.env.VITE_API_URL}/api/admin/dashboard/stats`,
-
-{
-
-headers:{
-
-Authorization:
-`Bearer ${localStorage.getItem("token")}`
-
-}
-
-}
-
-);
-
-
-return response.data;
-
-
-}
-
-});
-
-
-
-
-
-return (
-
-<div className="
+  if (isError) {
+    return (
+      <div
+        className="
 container
 mx-auto
 px-6
 py-20
-">
+"
+      >
+        <div
+          className="
+bg-red-100
+text-red-700
+p-6
+rounded-xl
+"
+        >
+          Failed to load dashboard
+          <br />
+          {error?.message}
+        </div>
+      </div>
+    );
+  }
 
-
-<h1 className="
+  return (
+    <div
+      className="
+container
+mx-auto
+px-6
+py-20
+"
+    >
+      <h1
+        className="
 text-4xl
 font-bold
 mb-10
-">
+"
+      >
+        Admin Dashboard
+      </h1>
 
-Admin Dashboard
-
-</h1>
-
-
-
-
-<div className="
+      <div
+        className="
 grid
 md:grid-cols-4
 gap-6
-">
+"
+      >
+        <Card title="Users" value={data?.customers} />
 
+        <Card title="Tours" value={data?.popularTours?.length} />
 
-<Card
-title="Users"
-value={data?.users}
-/>
+        <Card title="Bookings" value={data?.bookings} />
 
-
-<Card
-title="Tours"
-value={data?.tours}
-/>
-
-
-<Card
-title="Bookings"
-value={data?.bookings}
-/>
-
-
-<Card
-title="Revenue"
-value={`$${data?.revenue}`}
-/>
-
-
-
-</div>
-
-
-
-</div>
-
-)
-
+        <Card title="Revenue" value={`$${data?.revenue || 0}`} />
+      </div>
+    </div>
+  );
 }
 
+function Card({
+  title,
 
-
-function Card({title,value}){
-
-
-return (
-
-<div className="
+  value,
+}) {
+  return (
+    <div
+      className="
 bg-white
-shadow-lg
 rounded-xl
+shadow-lg
 p-6
-">
-
-
-<h3 className="
+border
+"
+    >
+      <h3
+        className="
 text-gray-500
-">
+text-lg
+font-medium
+"
+      >
+        {title}
+      </h3>
 
-{title}
-
-</h3>
-
-
-<p className="
+      <p
+        className="
 text-3xl
 font-bold
 mt-3
-">
-
-{value || 0}
-
-</p>
-
-
-</div>
-
-)
-
+text-gray-900
+"
+      >
+        {value ?? 0}
+      </p>
+    </div>
+  );
 }
