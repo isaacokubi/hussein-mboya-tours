@@ -1,68 +1,47 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
-
 const userSchema = new mongoose.Schema(
-
-{
-/*
+  {
+    /*
 |--------------------------------------------------------------------------
 | BASIC INFORMATION
 |--------------------------------------------------------------------------
 */
 
+    name: {
+      type: String,
 
-name: {
+      required: true,
 
-type:String,
+      trim: true,
+    },
 
-required:true,
+    email: {
+      type: String,
 
-trim:true,
+      required: true,
 
-},
+      unique: true,
 
+      lowercase: true,
 
+      trim: true,
+    },
 
-email: {
+    password: {
+      type: String,
 
-type:String,
+      required: true,
+    },
 
-required:true,
+    phone: {
+      type: String,
 
-unique:true,
+      default: "",
+    },
 
-lowercase:true,
-
-trim:true,
-
-},
-
-
-
-password: {
-
-type:String,
-
-required:true,
-
-},
-
-
-
-phone: {
-
-type:String,
-
-default:"",
-
-},
-
-
-
-
-
-/*
+    /*
 |--------------------------------------------------------------------------
 | ROLE SYSTEM
 |--------------------------------------------------------------------------
@@ -74,311 +53,179 @@ default:"",
 |--------------------------------------------------------------------------
 */
 
+    role: {
+      type: String,
 
-role: {
+      enum: ["customer", "admin", "agent", "manager", "guide"],
 
-type:String,
+      default: "customer",
+    },
 
-enum:[
+    roleId: {
+      type: mongoose.Schema.Types.ObjectId,
 
-"customer",
+      ref: "Role",
 
-"admin",
+      default: null,
+    },
 
-"agent",
-
-"tour_manager",
-
-"tour_guide"
-
-],
-
-default:"customer",
-
-},
-
-
-
-
-
-roleId: {
-
-type:mongoose.Schema.Types.ObjectId,
-
-ref:"Role",
-
-default:null,
-
-},
-
-
-
-
-
-/*
+    /*
 |--------------------------------------------------------------------------
 | LEGACY ROLE SUPPORT
 |--------------------------------------------------------------------------
 */
 
+    legacyRole: {
+      type: String,
 
-legacyRole: {
+      default: "customer",
+    },
 
-type:String,
-
-default:"customer",
-
-},
-
-
-
-
-
-/*
+    /*
 |--------------------------------------------------------------------------
 | AGENT LINK
 |--------------------------------------------------------------------------
 */
 
+    agent: {
+      type: mongoose.Schema.Types.ObjectId,
 
-agent: {
+      ref: "Agent",
 
-type:mongoose.Schema.Types.ObjectId,
+      default: null,
+    },
 
-ref:"Agent",
-
-default:null,
-
-},
-
-
-
-
-
-/*
+    /*
 |--------------------------------------------------------------------------
 | PERMISSIONS OVERRIDE
 |--------------------------------------------------------------------------
 */
 
+    permissionsOverride: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
 
-permissionsOverride:[
+        ref: "Permission",
+      },
+    ],
 
-{
-
-type:mongoose.Schema.Types.ObjectId,
-
-ref:"Permission",
-
-}
-
-],
-
-
-
-
-
-/*
+    /*
 |--------------------------------------------------------------------------
 | ACCOUNT STATUS
 |--------------------------------------------------------------------------
 */
 
+    status: {
+      type: String,
 
-status:{
+      enum: ["active", "inactive", "suspended"],
 
-type:String,
+      default: "active",
+    },
 
-enum:[
+    isVerified: {
+      type: Boolean,
 
-"active",
+      default: false,
+    },
 
-"inactive",
-
-"suspended"
-
-],
-
-default:"active",
-
-},
-
-
-
-
-isVerified:{
-
-type:Boolean,
-
-default:false,
-
-},
-
-
-
-
-
-/*
+    /*
 |--------------------------------------------------------------------------
 | PROFILE
 |--------------------------------------------------------------------------
 */
 
+    profileImage: {
+      type: String,
 
-profileImage:{
+      default: "",
+    },
 
-type:String,
+    address: {
+      type: String,
 
-default:"",
+      default: "",
+    },
 
-},
+    country: {
+      type: String,
 
+      default: "",
+    },
 
-
-address:{
-
-type:String,
-
-default:"",
-
-},
-
-
-
-country:{
-
-type:String,
-
-default:"",
-
-},
-
-
-
-
-
-/*
+    /*
 |--------------------------------------------------------------------------
 | SECURITY
 |--------------------------------------------------------------------------
 */
 
+    loginAttempts: {
+      type: Number,
 
-loginAttempts:{
+      default: 0,
+    },
 
-type:Number,
+    lockUntil: {
+      type: Date,
 
-default:0,
+      default: null,
+    },
 
-},
+    lastLoginAt: {
+      type: Date,
 
+      default: null,
+    },
 
+    passwordChangedAt: {
+      type: Date,
 
-lockUntil:{
+      default: null,
+    },
 
-type:Date,
+    resetPasswordToken: {
+      type: String,
 
-default:null,
+      default: null,
+    },
 
-},
+    resetPasswordExpire: {
+      type: Date,
 
+      default: null,
+    },
 
-
-lastLoginAt:{
-
-type:Date,
-
-default:null,
-
-},
-
-
-
-passwordChangedAt:{
-
-type:Date,
-
-default:null,
-
-},
-
-
-
-resetPasswordToken:{
-
-type:String,
-
-default:null,
-
-},
-
-
-
-resetPasswordExpire:{
-
-type:Date,
-
-default:null,
-
-},
-
-
-
-
-
-/*
+    /*
 |--------------------------------------------------------------------------
 | LOYALTY
 |--------------------------------------------------------------------------
 */
 
+    referralCode: {
+      type: String,
 
-referralCode:{
+      unique: true,
 
-type:String,
+      sparse: true,
+    },
 
-unique:true,
+    referredBy: {
+      type: String,
 
-sparse:true,
+      default: null,
+    },
 
-},
+    loyaltyPoints: {
+      type: Number,
 
+      default: 0,
+    },
+  },
 
-
-referredBy:{
-
-type:String,
-
-default:null,
-
-},
-
-
-
-loyaltyPoints:{
-
-type:Number,
-
-default:0,
-
-},
-
-
-},
-
-{
-
-timestamps:true,
-
-}
-
+  {
+    timestamps: true,
+  },
 );
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -386,46 +233,23 @@ timestamps:true,
 |--------------------------------------------------------------------------
 */
 
-
 userSchema.pre(
+  "save",
 
-"save",
+  async function (next) {
+    if (!this.isModified("password")) return next();
 
-async function(next){
+    const salt = await bcrypt.genSalt(12);
 
+    this.password = await bcrypt.hash(
+      this.password,
 
-if(!this.isModified("password"))
+      salt,
+    );
 
-return next();
-
-
-
-const salt = await bcrypt.genSalt(12);
-
-
-
-this.password = await bcrypt.hash(
-
-this.password,
-
-salt
-
+    next();
+  },
 );
-
-
-
-next();
-
-
-}
-
-);
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -433,24 +257,13 @@ next();
 |--------------------------------------------------------------------------
 */
 
+userSchema.methods.matchPassword = async function (password) {
+  return bcrypt.compare(
+    password,
 
-userSchema.methods.matchPassword = async function(password){
-
-return bcrypt.compare(
-
-password,
-
-this.password
-
-);
-
+    this.password,
+  );
 };
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -458,39 +271,20 @@ this.password
 |--------------------------------------------------------------------------
 */
 
-
-userSchema.methods.isAdmin=function(){
-
-return this.role==="admin";
-
+userSchema.methods.isAdmin = function () {
+  return this.role === "admin";
 };
 
-
-
-userSchema.methods.isCustomer=function(){
-
-return this.role==="customer";
-
+userSchema.methods.isCustomer = function () {
+  return this.role === "customer";
 };
-
-
-
-
-
-
 
 const User =
+  mongoose.models.User ||
+  mongoose.model(
+    "User",
 
-mongoose.models.User ||
-
-mongoose.model(
-
-"User",
-
-userSchema
-
-);
-
-
+    userSchema,
+  );
 
 export default User;
