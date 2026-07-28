@@ -15,7 +15,6 @@ import Staff from "../models/Staff.js";
 
 
 
-
 /*
 |--------------------------------------------------------------------------
 | GUIDE DASHBOARD
@@ -59,8 +58,6 @@ message:"Guide profile not found"
 
 
 
-
-
 const tours = await Tour.find({
 
 assignedGuide:guide._id
@@ -69,24 +66,19 @@ assignedGuide:guide._id
 
 
 .populate(
-
 "destination"
-
 )
 
 
 .populate(
-
 "assignedVehicle"
-
 )
 
 
 .populate(
-
 "assignedDriver"
-
 )
+
 
 .sort({
 
@@ -107,6 +99,97 @@ success:true,
 count:tours.length,
 
 tours
+
+});
+
+
+
+}
+
+
+catch(error){
+
+
+res.status(500).json({
+
+success:false,
+
+message:error.message
+
+});
+
+
+}
+
+
+};
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| GET ASSIGNED TOURS FOR GUIDE
+|--------------------------------------------------------------------------
+|
+| Used by guide portal
+|
+|--------------------------------------------------------------------------
+*/
+
+
+export const getAssignedTours = async(req,res)=>{
+
+
+try{
+
+
+const guideId = req.user._id;
+
+
+
+const tours = await Tour.find({
+
+assignedGuide:guideId
+
+})
+
+
+.populate(
+"destination"
+)
+
+
+.populate(
+"assignedVehicle"
+)
+
+
+.populate(
+"assignedDriver"
+)
+
+
+.sort({
+
+createdAt:-1
+
+});
+
+
+
+
+
+res.status(200).json({
+
+success:true,
+
+data:tours
 
 });
 
@@ -175,25 +258,18 @@ assignedGuide:guide._id
 
 
 .populate(
-
 "destination"
-
 )
 
 
 .populate(
-
 "assignedVehicle"
-
 )
 
 
 .populate(
-
 "assignedDriver"
-
 );
-
 
 
 
@@ -218,7 +294,8 @@ message:"Tour not found"
 
 
 
-res.json({
+
+res.status(200).json({
 
 success:true,
 
@@ -306,6 +383,7 @@ status:"confirmed"
 
 
 
+
 res.status(200).json({
 
 success:true,
@@ -337,8 +415,6 @@ message:error.message
 
 
 };
-
-
 
 
 
@@ -394,29 +470,21 @@ const tour = await Tour.findOneAndUpdate(
 
 {
 
-
 _id:req.params.id,
 
 assignedGuide:guide._id
 
-
 },
 
-
 {
-
 
 tourStatus:status
 
-
 },
-
 
 {
 
-
 new:true
-
 
 }
 
@@ -448,7 +516,7 @@ message:"Tour not found or not assigned to guide"
 
 
 
-res.json({
+res.status(200).json({
 
 success:true,
 
@@ -479,8 +547,6 @@ message:error.message
 
 
 };
-
-
 
 
 
@@ -533,9 +599,7 @@ req.params.id,
 
 {
 
-
 tourStatus:"completed"
-
 
 }
 
