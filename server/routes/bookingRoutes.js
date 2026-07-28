@@ -42,6 +42,40 @@ const router = express.Router();
 
 
 
+/*
+|--------------------------------------------------------------------------
+| ROUTE TEST
+|--------------------------------------------------------------------------
+|
+| GET /api/bookings/test
+|
+| Purpose:
+| Confirm booking routes are mounted correctly.
+|
+*/
+
+router.get(
+
+    "/test",
+
+    (req, res) => {
+
+        res.status(200).json({
+
+            success: true,
+
+            message: "Booking routes are loaded"
+
+        });
+
+    }
+
+);
+
+
+
+
+
 
 
 
@@ -53,12 +87,20 @@ const router = express.Router();
 
 
 
+
+
+
+
+
 /*
 |--------------------------------------------------------------------------
 | CREATE BOOKING
 |--------------------------------------------------------------------------
 |
 | POST /api/bookings
+|
+| Protected:
+| Customer must be logged in
 |
 */
 
@@ -80,12 +122,15 @@ router.post(
 
 
 
+
 /*
 |--------------------------------------------------------------------------
 | GET LOGGED USER BOOKINGS
 |--------------------------------------------------------------------------
 |
 | GET /api/bookings/my-bookings
+|
+| Returns bookings belonging to logged-in customer
 |
 */
 
@@ -107,12 +152,15 @@ router.get(
 
 
 
+
 /*
 |--------------------------------------------------------------------------
 | GET SINGLE BOOKING
 |--------------------------------------------------------------------------
 |
 | GET /api/bookings/:id
+|
+| Get booking details by ID
 |
 */
 
@@ -134,12 +182,15 @@ router.get(
 
 
 
+
 /*
 |--------------------------------------------------------------------------
 | CANCEL BOOKING
 |--------------------------------------------------------------------------
 |
 | PUT /api/bookings/cancel/:id
+|
+| Customer cancels own booking
 |
 */
 
@@ -161,15 +212,17 @@ router.put(
 
 
 
+
 /*
 |--------------------------------------------------------------------------
-| ADMIN / MANAGER ROUTES
+| ADMIN ROUTES
 |--------------------------------------------------------------------------
+|
+| Admin can view all bookings
 |
 | GET /api/bookings/admin/all
 |
 */
-
 
 router.get(
 
@@ -186,6 +239,8 @@ router.get(
     getAllBookings
 
 );
+
+
 
 
 
