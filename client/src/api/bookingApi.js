@@ -1,55 +1,94 @@
 import axios from "axios";
 
 
-/*
-|--------------------------------------------------------------------------
-| AXIOS INSTANCE
-|--------------------------------------------------------------------------
-*/
-
 const API = axios.create({
 
-    baseURL: import.meta.env.VITE_API_URL,
+    baseURL:
+    import.meta.env.VITE_API_URL ||
+    "http://localhost:5000/api",
 
 });
 
 
 
+
+
 /*
 |--------------------------------------------------------------------------
-| AUTH INTERCEPTOR
+| ATTACH TOKEN AUTOMATICALLY
 |--------------------------------------------------------------------------
 */
 
 API.interceptors.request.use(
 
-    (config)=>{
+(config)=>{
 
 
-        const token =
-        localStorage.getItem("token");
+const token = localStorage.getItem("token");
 
 
-        if(token){
 
-            config.headers.Authorization =
-            `Bearer ${token}`;
-
-        }
-
-
-        return config;
+console.log(
+"BOOKING API TOKEN:",
+token
+);
 
 
-    },
 
-    (error)=>{
+if(token){
 
-        return Promise.reject(error);
+config.headers.Authorization =
+`Bearer ${token}`;
 
-    }
+}
+
+
+
+return config;
+
+
+},
+
+
+(error)=>{
+
+return Promise.reject(error);
+
+}
 
 );
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| GET MY BOOKINGS
+|--------------------------------------------------------------------------
+*/
+
+export const getMyBookings = async()=>{
+
+
+const response = await API.get(
+
+"/bookings/my-bookings"
+
+);
+
+
+
+return response.data;
+
+
+};
+
+
+
 
 
 
@@ -61,56 +100,23 @@ API.interceptors.request.use(
 |--------------------------------------------------------------------------
 */
 
-export const createBooking =
-async(data)=>{
+export const createBooking = async(data)=>{
 
 
-    const response =
-    await API.post(
+const response = await API.post(
 
-        "/api/bookings",
+"/bookings",
 
-        data
+data
 
-    );
-
-
-    return response.data;
-
-
-};
+);
 
 
 
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| GET LOGGED-IN USER BOOKINGS
-|--------------------------------------------------------------------------
-*/
-
-export const getMyBookings =
-async()=>{
-
-
-    const response =
-    await API.get(
-
-        "/api/bookings/my-bookings"
-
-    );
-
-
-    return response.data;
+return response.data;
 
 
 };
-
 
 
 
@@ -125,23 +131,21 @@ async()=>{
 |--------------------------------------------------------------------------
 */
 
-export const getBooking =
-async(id)=>{
+export const getBooking = async(id)=>{
 
 
-    const response =
-    await API.get(
+const response = await API.get(
 
-        `/api/bookings/${id}`
+`/bookings/${id}`
 
-    );
+);
 
 
-    return response.data;
+
+return response.data;
 
 
 };
-
 
 
 
@@ -156,21 +160,20 @@ async(id)=>{
 |--------------------------------------------------------------------------
 */
 
-export const cancelBooking =
-async(id)=>{
+export const cancelBooking = async(id)=>{
 
 
-    const response =
-    await API.put(
+const response = await API.put(
 
-        `/api/bookings/cancel/${id}`,
+`/bookings/cancel/${id}`,
 
-        {}
+{}
 
-    );
+);
 
 
-    return response.data;
+
+return response.data;
 
 
 };
