@@ -26,7 +26,7 @@ assignVehicle,
 restoreTour
 
 }
-from "../controllers/tourAdminController.js";
+from "../controllers/adminTourController.js";
 
 
 
