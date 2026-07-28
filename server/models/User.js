@@ -1,241 +1,431 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
+
 const userSchema = new mongoose.Schema(
-  {
-    /*
+
+{
+/*
 |--------------------------------------------------------------------------
 | BASIC INFORMATION
 |--------------------------------------------------------------------------
 */
 
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-    },
 
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-      lowercase: true,
-      trim: true,
-    },
+name: {
 
-    password: {
-      type: String,
-      required: true,
-    },
+type:String,
 
-    phone: {
-      type: String,
-      default: "",
-    },
+required:true,
 
-    /*
+trim:true,
+
+},
+
+
+
+email: {
+
+type:String,
+
+required:true,
+
+unique:true,
+
+lowercase:true,
+
+trim:true,
+
+},
+
+
+
+password: {
+
+type:String,
+
+required:true,
+
+},
+
+
+
+phone: {
+
+type:String,
+
+default:"",
+
+},
+
+
+
+
+
+/*
 |--------------------------------------------------------------------------
 | ROLE SYSTEM
 |--------------------------------------------------------------------------
 |
-| Simple role support
+| role = application role
 |
-| customer
-| admin
+| roleId = advanced RBAC role reference
 |
-*/
-
-    role: {
-      type: String,
-
-      enum: ["customer", "admin", "agent", "tour_manager", "tour_guide"],
-
-      default: "customer",
-    },
-
-    /*
-|--------------------------------------------------------------------------
-| ADVANCED RBAC SUPPORT
 |--------------------------------------------------------------------------
 */
 
-    roleId: {
-      type: mongoose.Schema.Types.ObjectId,
 
-      ref: "Role",
+role: {
 
-      default: null,
-    },
+type:String,
 
-    /*
+enum:[
+
+"customer",
+
+"admin",
+
+"agent",
+
+"tour_manager",
+
+"tour_guide"
+
+],
+
+default:"customer",
+
+},
+
+
+
+
+
+roleId: {
+
+type:mongoose.Schema.Types.ObjectId,
+
+ref:"Role",
+
+default:null,
+
+},
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| LEGACY ROLE SUPPORT
+|--------------------------------------------------------------------------
+*/
+
+
+legacyRole: {
+
+type:String,
+
+default:"customer",
+
+},
+
+
+
+
+
+/*
 |--------------------------------------------------------------------------
 | AGENT LINK
 |--------------------------------------------------------------------------
 */
 
-    agent: {
-      type: mongoose.Schema.Types.ObjectId,
 
-      ref: "Agent",
+agent: {
 
-      default: null,
-    },
+type:mongoose.Schema.Types.ObjectId,
 
-    /*
+ref:"Agent",
+
+default:null,
+
+},
+
+
+
+
+
+/*
 |--------------------------------------------------------------------------
-| PERMISSIONS
+| PERMISSIONS OVERRIDE
 |--------------------------------------------------------------------------
 */
 
-    permissionsOverride: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
 
-        ref: "Permission",
-      },
-    ],
+permissionsOverride:[
 
-    /*
+{
+
+type:mongoose.Schema.Types.ObjectId,
+
+ref:"Permission",
+
+}
+
+],
+
+
+
+
+
+/*
 |--------------------------------------------------------------------------
 | ACCOUNT STATUS
 |--------------------------------------------------------------------------
 */
 
-    status: {
-      type: String,
 
-      enum: ["active", "inactive", "suspended"],
+status:{
 
-      default: "active",
-    },
+type:String,
 
-    isVerified: {
-      type: Boolean,
+enum:[
 
-      default: false,
-    },
+"active",
 
-    /*
+"inactive",
+
+"suspended"
+
+],
+
+default:"active",
+
+},
+
+
+
+
+isVerified:{
+
+type:Boolean,
+
+default:false,
+
+},
+
+
+
+
+
+/*
 |--------------------------------------------------------------------------
 | PROFILE
 |--------------------------------------------------------------------------
 */
 
-    profileImage: {
-      type: String,
 
-      default: "",
-    },
+profileImage:{
 
-    address: {
-      type: String,
+type:String,
 
-      default: "",
-    },
+default:"",
 
-    country: {
-      type: String,
+},
 
-      default: "",
-    },
 
-    /*
+
+address:{
+
+type:String,
+
+default:"",
+
+},
+
+
+
+country:{
+
+type:String,
+
+default:"",
+
+},
+
+
+
+
+
+/*
 |--------------------------------------------------------------------------
 | SECURITY
 |--------------------------------------------------------------------------
 */
 
-    loginAttempts: {
-      type: Number,
 
-      default: 0,
-    },
+loginAttempts:{
 
-    lockUntil: {
-      type: Date,
+type:Number,
 
-      default: null,
-    },
+default:0,
 
-    lastLoginAt: {
-      type: Date,
+},
 
-      default: null,
-    },
 
-    passwordChangedAt: {
-      type: Date,
 
-      default: null,
-    },
+lockUntil:{
 
-    resetPasswordToken: {
-      type: String,
+type:Date,
 
-      default: null,
-    },
+default:null,
 
-    resetPasswordExpire: {
-      type: Date,
+},
 
-      default: null,
-    },
 
-    /*
-|--------------------------------------------------------------------------
-| REFERRAL + LOYALTY
-|--------------------------------------------------------------------------
-*/
 
-    referralCode: {
-      type: String,
+lastLoginAt:{
 
-      unique: true,
+type:Date,
 
-      sparse: true,
-    },
+default:null,
 
-    referredBy: {
-      type: String,
+},
 
-      default: null,
-    },
 
-    loyaltyPoints: {
-      type: Number,
 
-      default: 0,
-    },
-  },
+passwordChangedAt:{
 
-  {
-    timestamps: true,
-  },
-);
+type:Date,
+
+default:null,
+
+},
+
+
+
+resetPasswordToken:{
+
+type:String,
+
+default:null,
+
+},
+
+
+
+resetPasswordExpire:{
+
+type:Date,
+
+default:null,
+
+},
+
+
+
+
 
 /*
 |--------------------------------------------------------------------------
-| PASSWORD HASHING
+| LOYALTY
 |--------------------------------------------------------------------------
 */
 
-userSchema.pre(
-  "save",
 
-  async function (next) {
-    if (!this.isModified("password")) return next();
+referralCode:{
 
-    const salt = await bcrypt.genSalt(12);
+type:String,
 
-    this.password = await bcrypt.hash(
-      this.password,
+unique:true,
 
-      salt,
-    );
+sparse:true,
 
-    next();
-  },
+},
+
+
+
+referredBy:{
+
+type:String,
+
+default:null,
+
+},
+
+
+
+loyaltyPoints:{
+
+type:Number,
+
+default:0,
+
+},
+
+
+},
+
+{
+
+timestamps:true,
+
+}
+
 );
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| PASSWORD HASH
+|--------------------------------------------------------------------------
+*/
+
+
+userSchema.pre(
+
+"save",
+
+async function(next){
+
+
+if(!this.isModified("password"))
+
+return next();
+
+
+
+const salt = await bcrypt.genSalt(12);
+
+
+
+this.password = await bcrypt.hash(
+
+this.password,
+
+salt
+
+);
+
+
+
+next();
+
+
+}
+
+);
+
+
+
+
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -243,50 +433,64 @@ userSchema.pre(
 |--------------------------------------------------------------------------
 */
 
-userSchema.methods.matchPassword = async function (password) {
-  return bcrypt.compare(
-    password,
 
-    this.password,
-  );
+userSchema.methods.matchPassword = async function(password){
+
+return bcrypt.compare(
+
+password,
+
+this.password
+
+);
+
 };
+
+
+
+
+
+
 
 /*
 |--------------------------------------------------------------------------
-| ACCOUNT LOCK CHECK
+| HELPERS
 |--------------------------------------------------------------------------
 */
 
-userSchema.methods.isLocked = function () {
-  return this.lockUntil && this.lockUntil > Date.now();
+
+userSchema.methods.isAdmin=function(){
+
+return this.role==="admin";
+
 };
 
-/*
-|--------------------------------------------------------------------------
-| ADMIN CHECK HELPER
-|--------------------------------------------------------------------------
-*/
 
-userSchema.methods.isAdmin = function () {
-  return this.role === "admin";
+
+userSchema.methods.isCustomer=function(){
+
+return this.role==="customer";
+
 };
 
-/*
-|--------------------------------------------------------------------------
-| CUSTOMER CHECK HELPER
-|--------------------------------------------------------------------------
-*/
 
-userSchema.methods.isCustomer = function () {
-  return this.role === "customer";
-};
+
+
+
+
 
 const User =
-  mongoose.models.User ||
-  mongoose.model(
-    "User",
 
-    userSchema,
-  );
+mongoose.models.User ||
+
+mongoose.model(
+
+"User",
+
+userSchema
+
+);
+
+
 
 export default User;

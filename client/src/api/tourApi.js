@@ -69,13 +69,48 @@ export const getTourBySlug = async (slug) => {
 
 
 
+/*
+|--------------------------------------------------------------------------
+| FEATURED TOUR API
+|--------------------------------------------------------------------------
+|
+| Returns only the array of tours.
+|
+| Supports backend responses:
+|
+| {
+|   success:true,
+|   tours:[]
+| }
+|
+| {
+|   data:[]
+| }
+|
+| []
+|
+|--------------------------------------------------------------------------
+*/
+
+
 export const getFeaturedTours = async () => {
 
     const { data } = await api.get(
         "/tours/featured"
     );
 
-    return data;
+
+    return (
+
+        data?.tours ||
+
+        data?.data ||
+
+        data ||
+
+        []
+
+    );
 
 };
 
@@ -140,10 +175,13 @@ export const assignGuide = async (
 ) => {
 
     const { data } = await api.patch(
+
         `/tours/${tourId}/assign-guide`,
+
         {
             guideId
         }
+
     );
 
     return data;
@@ -186,10 +224,13 @@ export const assignVehicle = async (
 ) => {
 
     const { data } = await api.patch(
+
         `/tours/${tourId}/assign-vehicle`,
+
         {
             vehicleId
         }
+
     );
 
     return data;
@@ -258,8 +299,11 @@ export const createTour = async (
 ) => {
 
     const { data } = await api.post(
+
         "/tours",
+
         tourData
+
     );
 
     return data;
@@ -277,8 +321,11 @@ export const updateTour = async (
 ) => {
 
     const { data } = await api.put(
+
         `/tours/${id}`,
+
         tourData
+
     );
 
     return data;
@@ -312,7 +359,9 @@ export const toggleFeaturedTour = async (
 ) => {
 
     const { data } = await api.patch(
+
         `/tours/${id}/featured`
+
     );
 
     return data;
@@ -330,8 +379,11 @@ export const updateTourAvailability = async (
 ) => {
 
     const { data } = await api.patch(
+
         `/tours/${id}/availability`,
+
         availability
+
     );
 
     return data;
@@ -358,7 +410,9 @@ export const getTourAvailability = async (
 ) => {
 
     const { data } = await api.get(
+
         `/tours/${id}/availability`
+
     );
 
     return data;
@@ -376,12 +430,15 @@ export const checkTourAvailability = async (
 ) => {
 
     const { data } = await api.get(
+
         `/tours/${id}/availability`,
+
         {
             params:{
                 date
             }
         }
+
     );
 
     return data;
@@ -406,7 +463,9 @@ export const checkTourAvailability = async (
 export const getTourReports = async () => {
 
     const { data } = await api.get(
+
         "/tours/reports"
+
     );
 
     return data;
@@ -423,7 +482,9 @@ export const getTourReportById = async (
 ) => {
 
     const { data } = await api.get(
+
         `/tours/${id}/report`
+
     );
 
     return data;
@@ -441,8 +502,11 @@ export const submitTourReport = async (
 ) => {
 
     const { data } = await api.post(
+
         `/tours/${id}/report`,
+
         reportData
+
     );
 
     return data;
@@ -460,8 +524,11 @@ export const updateTourReport = async (
 ) => {
 
     const { data } = await api.put(
+
         `/tours/${id}/report`,
+
         reportData
+
     );
 
     return data;
@@ -488,10 +555,13 @@ export const searchTours = async (
 ) => {
 
     const { data } = await api.get(
+
         "/tours/search",
+
         {
             params
         }
+
     );
 
     return data;
@@ -518,7 +588,9 @@ export const getTourReviews = async (
 ) => {
 
     const { data } = await api.get(
+
         `/tours/${id}/reviews`
+
     );
 
     return data;
