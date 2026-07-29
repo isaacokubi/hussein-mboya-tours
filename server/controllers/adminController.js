@@ -10,7 +10,7 @@ import Payment from "../models/Payment.js";
 // ADMIN DASHBOARD STATISTICS
 // ============================================================
 
-export const getDashboardStats = async (req,res)=>{
+export const getDashboardStats = async (req, res) => {
 
 try{
 
@@ -19,8 +19,7 @@ try{
 // USERS
 // ============================================================
 
-const users =
-await User.countDocuments();
+const users = await User.countDocuments();
 
 
 
@@ -28,8 +27,7 @@ await User.countDocuments();
 // BOOKINGS
 // ============================================================
 
-const bookings =
-await Booking.countDocuments();
+const bookings = await Booking.countDocuments();
 
 
 
@@ -38,8 +36,7 @@ await Booking.countDocuments();
 // TOURS
 // ============================================================
 
-const tours =
-await Tour.countDocuments();
+const tours = await Tour.countDocuments();
 
 
 
@@ -49,15 +46,13 @@ await Tour.countDocuments();
 // REVENUE
 // ============================================================
 
-const revenueData =
-await Payment.aggregate([
+const revenueData = await Payment.aggregate([
 
 {
 $match:{
 status:"paid"
 }
 },
-
 
 {
 $group:{
@@ -75,8 +70,8 @@ $sum:"$amount"
 ]);
 
 
-const revenue =
-revenueData[0]?.total || 0;
+const revenue = revenueData[0]?.total || 0;
+
 
 
 
@@ -84,15 +79,22 @@ revenueData[0]?.total || 0;
 
 // ============================================================
 // BOOKING STATUS
+// FIXED
+// Shows booking + payment status together
 // ============================================================
 
-const bookingStatus =
-await Booking.aggregate([
+const bookingStatus = await Booking.aggregate([
 
 {
 $group:{
 
-_id:"$bookingStatus",
+_id:{
+
+bookingStatus:"$bookingStatus",
+
+paymentStatus:"$paymentStatus"
+
+},
 
 count:{
 $sum:1
@@ -116,21 +118,18 @@ count:-1
 
 
 
+
 // ============================================================
 // MONTHLY REVENUE
 // ============================================================
 
-const monthlyRevenue =
-await Payment.aggregate([
-
+const monthlyRevenue = await Payment.aggregate([
 
 {
 $match:{
 status:"paid"
 }
 },
-
-
 
 {
 $group:{
@@ -141,14 +140,11 @@ month:{
 $month:"$createdAt"
 },
 
-
 year:{
 $year:"$createdAt"
 }
 
-
 },
-
 
 total:{
 $sum:"$amount"
@@ -157,7 +153,6 @@ $sum:"$amount"
 }
 
 },
-
 
 
 {
@@ -171,9 +166,9 @@ $sort:{
 
 }
 
-
-
 ]);
+
+
 
 
 
@@ -184,8 +179,7 @@ $sort:{
 // POPULAR TOURS
 // ============================================================
 
-const popularTours =
-await Booking.aggregate([
+const popularTours = await Booking.aggregate([
 
 
 {
@@ -202,7 +196,6 @@ $sum:1
 },
 
 
-
 {
 $sort:{
 totalBookings:-1
@@ -211,12 +204,9 @@ totalBookings:-1
 },
 
 
-
 {
 $limit:5
 },
-
-
 
 
 {
@@ -235,8 +225,6 @@ as:"tour"
 },
 
 
-
-
 {
 $unwind:{
 
@@ -247,8 +235,6 @@ preserveNullAndEmptyArrays:true
 }
 
 },
-
-
 
 
 {
@@ -264,10 +250,7 @@ totalBookings:1
 
 }
 
-
-
 ]);
-
 
 
 
@@ -285,14 +268,11 @@ const vehicleStats=[];
 
 
 
-
 res.status(200).json({
 
 success:true,
 
-
 data:{
-
 
 users,
 
@@ -310,9 +290,7 @@ popularTours,
 
 vehicleStats
 
-
 }
-
 
 });
 
