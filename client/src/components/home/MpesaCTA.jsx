@@ -1,4 +1,4 @@
-import {Link} from "react-router-dom";
+import { Link } from "react-router-dom";
 
 
 export default function MpesaCTA(){
@@ -38,7 +38,7 @@ Book your adventure today and pay securely using M-Pesa.
 
 <Link
 
-to="/checkout"
+to="/tours"
 
 className="
 inline-block

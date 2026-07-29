@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 
 
 export default function DestinationsSection(){
@@ -82,20 +83,33 @@ gap-8
 destinations.map((destination,index)=>(
 
 
-<motion.div
+<Link
 
 key={index}
+
+to="/destinations"
+
+>
+
+
+<motion.div
+
 
 whileHover={{
 scale:1.05
 }}
+
 
 className="
 rounded-xl
 shadow-lg
 p-6
 bg-gray-50
+cursor-pointer
+hover:shadow-2xl
+transition
 "
+
 
 >
 
@@ -122,6 +136,9 @@ mb-3
 
 
 </motion.div>
+
+
+</Link>
 
 
 ))

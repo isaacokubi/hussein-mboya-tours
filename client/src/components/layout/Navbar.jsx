@@ -56,7 +56,7 @@ export default function Navbar() {
   const isFinanceOfficer =
     role === "financeofficer" || role === "finance_officer";
 
-  const isTourGuide = role === "guide" || role === "guide";
+  const isTourGuide = role === "guide" || role === "tour_guide";
 
   return (
     <nav
@@ -196,7 +196,7 @@ export default function Navbar() {
 
           {user && isTourManager && (
             <Link
-              to="/manager/dashboard"
+              to="/tour_manager/dashboard"
               className="
               bg-blue-600
               text-white
@@ -217,7 +217,7 @@ export default function Navbar() {
 
           {user && isBookingAgent && (
             <Link
-              to="/agent/dashboard"
+              to="/agent"
               className="
               bg-purple-600
               text-white
