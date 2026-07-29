@@ -493,10 +493,16 @@ export const getBooking = getBookingById;
 |--------------------------------------------------------------------------
 */
 
+/*
+|--------------------------------------------------------------------------
+| UPDATE PAYMENT STATUS
+|--------------------------------------------------------------------------
+*/
+
 export const updateBookingPayment = async (
   bookingId,
 
-  status,
+  paymentStatus,
 ) => {
   const booking = await Booking.findById(bookingId);
 
@@ -504,12 +510,18 @@ export const updateBookingPayment = async (
     throw new Error("Booking not found");
   }
 
-  booking.paymentStatus = status;
+  booking.paymentStatus = paymentStatus;
 
-  if (status === "paid") {
+  if (paymentStatus === "paid") {
     booking.status = "confirmed";
 
     booking.bookingStatus = "confirmed";
+  }
+
+  if (paymentStatus === "failed") {
+    booking.status = "pending";
+
+    booking.bookingStatus = "pending";
   }
 
   await booking.save();
