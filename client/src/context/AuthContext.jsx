@@ -1,30 +1,10 @@
 // client/src/context/AuthContext.jsx
 
-
-import {
-    createContext,
-    useContext,
-    useState,
-    useEffect
-}
-from "react";
-
+import { createContext, useContext, useState, useEffect } from "react";
 
 import axios from "axios";
 
-
-import {
-    queryClient
-}
-from "../lib/queryClient";
-
-
-
-
-
-
-
-
+import { queryClient } from "../lib/queryClient";
 
 /*
 |--------------------------------------------------------------------------
@@ -32,31 +12,13 @@ from "../lib/queryClient";
 |--------------------------------------------------------------------------
 */
 
-
 const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
 
-    baseURL:
-
-        import.meta.env.VITE_API_URL ||
-
-        "http://localhost:5000/api",
-
-
-    headers: {
-
-        "Content-Type": "application/json"
-
-    }
-
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -64,53 +26,21 @@ const api = axios.create({
 |--------------------------------------------------------------------------
 */
 
-
 api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token");
 
-(config)=>{
-
-
-    const token =
-
-    localStorage.getItem(
-        "token"
-    );
-
-
-
-    if(token){
-
-        config.headers.Authorization =
-
-        `Bearer ${token}`;
-
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
 
-
-
     return config;
+  },
 
-
-},
-
-
-(error)=>{
-
-
+  (error) => {
     return Promise.reject(error);
-
-
-}
-
+  },
 );
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -118,32 +48,11 @@ api.interceptors.request.use(
 |--------------------------------------------------------------------------
 */
 
+export const AuthContext = createContext();
 
-export const AuthContext =
-
-createContext();
-
-
-
-
-
-export const useAuth = ()=>{
-
-
-    return useContext(
-        AuthContext
-    );
-
-
+export const useAuth = () => {
+  return useContext(AuthContext);
 };
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -151,33 +60,17 @@ export const useAuth = ()=>{
 |--------------------------------------------------------------------------
 */
 
+const normalizeRole = (role) => {
+  return (
+    role
 
-const normalizeRole = (role)=>{
+      ?.toString()
 
+      .toLowerCase()
 
-    return role
-
-    ?.toString()
-
-    .toLowerCase()
-
-    .replace(
-        /[\s_-]/g,
-        ""
-    )
-
-    || "";
-
-
+      .replace(/[\s_-]/g, "") || ""
+  );
 };
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -185,47 +78,17 @@ const normalizeRole = (role)=>{
 |--------------------------------------------------------------------------
 */
 
+const normalizeUser = (user) => {
+  if (!user) {
+    return null;
+  }
 
-const normalizeUser = (user)=>{
+  return {
+    ...user,
 
-
-    if(!user){
-
-        return null;
-
-    }
-
-
-
-    return {
-
-        ...user,
-
-
-        role:
-
-        normalizeRole(
-
-            user?.role?.name ||
-
-            user?.role ||
-
-            user?.legacyRole
-
-        )
-
-    };
-
-
+    role: normalizeRole(user?.role?.name || user?.role || user?.legacyRole),
+  };
 };
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -233,749 +96,266 @@ const normalizeUser = (user)=>{
 |--------------------------------------------------------------------------
 */
 
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null);
 
-export function AuthProvider({
+  const [token, setToken] = useState(localStorage.getItem("token"));
 
-children
+  const [loading, setLoading] = useState(true);
 
-}) {
-
-
-
-const [
-
-    user,
-
-    setUser
-
-]
-
-=
-
-useState(null);
-
-
-
-
-
-const [
-
-    token,
-
-    setToken
-
-]
-
-=
-
-useState(
-
-    localStorage.getItem(
-        "token"
-    )
-
-);
-
-
-
-const [
-
-    loading,
-
-    setLoading
-
-]
-
-=
-
-useState(true);
-
-
-
-
-
-
-
-
-
-/*
+  /*
 |--------------------------------------------------------------------------
 | GET CURRENT USER
 |--------------------------------------------------------------------------
 */
 
+  const fetchCurrentUser = async () => {
+    try {
+      const response = await api.get("/auth/me");
 
-const fetchCurrentUser = async()=>{
+      const currentUser = normalizeUser(response.data.user || response.data);
 
+      setUser(currentUser);
 
-try{
-
-
-    const response =
-
-    await api.get(
-        "/auth/me"
-    );
-
-
-
-    const currentUser =
-
-    normalizeUser(
-
-        response.data.user ||
-
-        response.data
-
-    );
-
-
-
-    setUser(
-        currentUser
-    );
-
-
-
-    localStorage.setItem(
-
+      localStorage.setItem(
         "user",
 
-        JSON.stringify(
-            currentUser
-        )
+        JSON.stringify(currentUser),
+      );
 
-    );
-
-
-
-    return currentUser;
-
-
-
-}
-
-catch(error){
-
-
-    console.error(
-
+      return currentUser;
+    } catch (error) {
+      console.error(
         "AUTH ME ERROR",
 
-        error.response?.data ||
+        error.response?.data || error.message,
+      );
 
-        error.message
+      logout();
+    }
+  };
 
-    );
-
-
-
-    logout();
-
-
-
-}
-
-
-
-};
-
-
-
-
-
-
-
-
-
-/*
+  /*
 |--------------------------------------------------------------------------
 | RESTORE SESSION
 |--------------------------------------------------------------------------
 */
 
+  useEffect(() => {
+    const savedToken = localStorage.getItem("token");
 
-useEffect(()=>{
+    if (savedToken) {
+      setToken(savedToken);
 
-
-const savedToken =
-
-localStorage.getItem(
-    "token"
-);
-
-
-
-if(savedToken){
-
-
-    setToken(
-        savedToken
-    );
-
-
-
-    fetchCurrentUser()
-
-    .finally(()=>{
-
+      fetchCurrentUser().finally(() => {
         setLoading(false);
+      });
+    } else {
+      setLoading(false);
+    }
+  }, []);
 
-    });
-
-
-
-}
-
-else{
-
-
-    setLoading(false);
-
-
-}
-
-
-
-},[]);
-
-
-
-
-
-
-
-
-
-/*
+  /*
 |--------------------------------------------------------------------------
 | LOGIN
 |--------------------------------------------------------------------------
 */
 
+  const login = async (
+    email,
 
-const login = async(
-
-email,
-
-password
-
-)=>{
-
-
-try{
-
-
-    const response =
-
-    await api.post(
-
+    password,
+  ) => {
+    try {
+      const response = await api.post(
         "/auth/login",
 
         {
+          email,
 
-            email,
+          password,
+        },
+      );
 
-            password
+      const newToken = response.data.token;
 
-        }
-
-    );
-
-
-
-    const newToken =
-
-    response.data.token;
-
-
-
-    localStorage.setItem(
-
+      localStorage.setItem(
         "token",
 
-        newToken
+        newToken,
+      );
 
-    );
+      setToken(newToken);
 
+      const currentUser = normalizeUser(response.data.user);
 
+      setUser(currentUser);
 
-    setToken(
-        newToken
-    );
-
-
-
-    const currentUser =
-
-    normalizeUser(
-
-        response.data.user
-
-    );
-
-
-
-    setUser(
-        currentUser
-    );
-
-
-
-    localStorage.setItem(
-
+      localStorage.setItem(
         "user",
 
-        JSON.stringify(
-            currentUser
-        )
+        JSON.stringify(currentUser),
+      );
 
-    );
+      setLoading(false);
 
+      return {
+        token: newToken,
 
-
-    setLoading(false);
-
-
-
-    return {
-
-        token:newToken,
-
-        user:currentUser
-
-    };
-
-
-
-}
-
-catch(error){
-
-
-    console.error(
-
+        user: currentUser,
+      };
+    } catch (error) {
+      console.error(
         "LOGIN ERROR",
 
-        error.response?.data ||
+        error.response?.data || error.message,
+      );
 
-        error.message
+      throw error;
+    }
+  };
 
-    );
-
-
-
-    throw error;
-
-
-}
-
-
-
-};
-
-
-
-
-
-
-
-
-
-/*
+  /*
 |--------------------------------------------------------------------------
 | REGISTER
 |--------------------------------------------------------------------------
 */
 
-
-const register = async(
-
-userData
-
-)=>{
-
-
-try{
-
-
-    const response =
-
-    await api.post(
-
+  const register = async (userData) => {
+    try {
+      const response = await api.post(
         "/auth/register",
 
-        userData
+        userData,
+      );
 
-    );
+      const newToken = response.data.token;
 
-
-
-    const newToken =
-
-    response.data.token;
-
-
-
-    localStorage.setItem(
-
+      localStorage.setItem(
         "token",
 
-        newToken
+        newToken,
+      );
 
-    );
+      setToken(newToken);
 
+      const currentUser = normalizeUser(response.data.user);
 
+      setUser(currentUser);
 
-    setToken(
-        newToken
-    );
-
-
-
-    const currentUser =
-
-    normalizeUser(
-
-        response.data.user
-
-    );
-
-
-
-    setUser(
-        currentUser
-    );
-
-
-
-    localStorage.setItem(
-
+      localStorage.setItem(
         "user",
 
-        JSON.stringify(
-            currentUser
-        )
+        JSON.stringify(currentUser),
+      );
 
-    );
+      return {
+        token: newToken,
 
-
-
-    return {
-
-        token:newToken,
-
-        user:currentUser
-
-    };
-
-
-
-}
-
-catch(error){
-
-
-    console.error(
-
+        user: currentUser,
+      };
+    } catch (error) {
+      console.error(
         "REGISTER ERROR",
 
-        error.response?.data ||
+        error.response?.data || error.message,
+      );
 
-        error.message
+      throw error;
+    }
+  };
 
-    );
-
-
-
-    throw error;
-
-
-}
-
-
-
-};
-
-
-
-
-
-
-
-
-
-/*
+  /*
 |--------------------------------------------------------------------------
 | LOGOUT
 |--------------------------------------------------------------------------
 */
 
+  const logout = () => {
+    localStorage.removeItem("token");
 
-const logout = ()=>{
-
-
-    localStorage.removeItem(
-        "token"
-    );
-
-
-    localStorage.removeItem(
-        "user"
-    );
-
-
+    localStorage.removeItem("user");
 
     queryClient.clear();
 
-
-
     setUser(null);
-
 
     setToken(null);
 
+    window.location.href = "/login";
+  };
 
-
-    window.location.href =
-
-    "/login";
-
-
-};
-
-
-
-
-
-
-
-
-
-/*
+  /*
 |--------------------------------------------------------------------------
 | PERMISSIONS
 |--------------------------------------------------------------------------
 */
 
+  const permissions = user?.permissions || [];
 
-const permissions =
+  const hasPermission = (path) => {
+    return permissions.some((permission) => permission.path === path);
+  };
 
-user?.permissions || [];
+  const hasAnyPermission = (paths = []) => {
+    return paths.some((path) => hasPermission(path));
+  };
 
+  const hasAllPermissions = (paths = []) => {
+    return paths.every((path) => hasPermission(path));
+  };
 
-
-
-
-
-
-
-
-const hasPermission = (
-
-path
-
-)=>{
-
-
-return permissions.some(
-
-(permission)=>
-
-permission.path === path
-
-);
-
-
-};
-
-
-
-
-
-
-
-
-
-const hasAnyPermission = (
-
-paths=[]
-
-)=>{
-
-
-return paths.some(
-
-path=>
-
-hasPermission(path)
-
-);
-
-
-};
-
-
-
-
-
-
-
-
-
-const hasAllPermissions = (
-
-paths=[]
-
-)=>{
-
-
-return paths.every(
-
-path=>
-
-hasPermission(path)
-
-);
-
-
-};
-
-
-
-
-
-
-
-
-
-/*
+  /*
 |--------------------------------------------------------------------------
 | ROLE CHECK
 |--------------------------------------------------------------------------
 */
 
+  const hasRole = (roleName) => {
+    return normalizeRole(user?.role) === normalizeRole(roleName);
+  };
 
-const hasRole = (
+  const canAccess = (path) => {
+    return hasPermission(path);
+  };
 
-roleName
+  const getMenuPermissions = () => {
+    return permissions;
+  };
 
-)=>{
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
 
+        token,
 
-return (
+        loading,
 
-normalizeRole(
+        login,
 
-    user?.role
+        register,
 
-)
+        logout,
 
-===
+        fetchCurrentUser,
 
-normalizeRole(
+        permissions,
 
-    roleName
+        hasPermission,
 
-)
+        hasAnyPermission,
 
-);
+        hasAllPermissions,
 
+        hasRole,
 
-};
+        canAccess,
 
-
-
-
-
-
-
-
-
-const canAccess = (
-
-path
-
-)=>{
-
-
-return hasPermission(
-    path
-);
-
-
-};
-
-
-
-
-
-
-
-
-
-const getMenuPermissions = ()=>{
-
-
-return permissions;
-
-
-};
-
-
-
-
-
-
-
-
-
-return (
-
-<AuthContext.Provider
-
-value={{
-
-    user,
-
-    token,
-
-    loading,
-
-    login,
-
-    register,
-
-    logout,
-
-    fetchCurrentUser,
-
-    permissions,
-
-    hasPermission,
-
-    hasAnyPermission,
-
-    hasAllPermissions,
-
-    hasRole,
-
-    canAccess,
-
-    getMenuPermissions
-
-}}
-
->
-
-
-{children}
-
-
-</AuthContext.Provider>
-
-
-);
-
-
+        getMenuPermissions,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
