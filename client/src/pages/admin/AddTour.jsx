@@ -1,242 +1,455 @@
-import {
-useState
-}
-from "react";
+import { useState } from "react";
 
+import { useNavigate } from "react-router-dom";
 
-import {
-createTour
-}
-from "../../api/adminTourApi";
+import { useQuery } from "@tanstack/react-query";
 
+import { createTour } from "../../api/adminTourApi";
 
-import {
-useNavigate
-}
-from "react-router-dom";
+import { getDestinations } from "../../api/adminDestinationApi";
 
 
 
-export default function AddTour(){
+export default function AddTour() {
 
 
-const navigate =
-useNavigate();
+  const navigate = useNavigate();
 
 
 
-const [form,setForm]=useState({
+  const {
+    data: destinationsData,
+    isLoading: destinationsLoading,
+  } = useQuery({
 
-title:"",
-description:"",
-location:"",
-duration:"",
-price:"",
-category:"Safari",
-featured:false
+    queryKey:["destinations"],
 
-});
+    queryFn:getDestinations,
 
+  });
 
 
-const [images,setImages]=useState([]);
 
+  const destinations =
+    Array.isArray(destinationsData)
+      ? destinationsData
+      : destinationsData?.destinations || [];
 
 
 
-const submit=async(e)=>{
 
 
-e.preventDefault();
+  const [form,setForm] = useState({
 
+    title:"",
 
+    description:"",
 
-const data =
-new FormData();
+    destination:"",
 
+    country:"Kenya",
 
+    date:"",
 
-Object.keys(form)
-.forEach(key=>{
+    duration:"",
 
-data.append(
-key,
-form[key]
-);
+    price:"",
 
-});
+    category:"Safari",
 
+    featured:false,
 
+  });
 
-for(
-let img of images
-){
 
-data.append(
-"images",
-img
-);
 
-}
+  const [images,setImages] = useState([]);
 
 
 
 
-await createTour(data);
 
+  const handleChange = (e)=>{
 
 
-navigate(
-"/admin/tours"
-);
+    const {
+      name,
+      value,
+      type,
+      checked
+    } = e.target;
 
 
-};
 
+    setForm({
 
+      ...form,
 
+      [name]:
+        type === "checkbox"
+          ? checked
+          : value
 
+    });
 
 
-return (
+  };
 
-<form
 
-onSubmit={submit}
 
-className="
-max-w-xl
-space-y-5
-"
 
->
 
 
-<input
+  const submit = async(e)=>{
 
-placeholder="Tour title"
 
-className="input"
+    e.preventDefault();
 
-onChange={
-e=>setForm({
-...form,
-title:e.target.value
-})
-}
 
-/>
 
+    const data = new FormData();
 
 
-<textarea
 
-placeholder="Description"
+    Object.entries(form)
+      .forEach(([key,value])=>{
 
-className="input"
+        data.append(
+          key,
+          value
+        );
 
-onChange={
-e=>setForm({
-...form,
-description:e.target.value
-})
-}
+      });
 
-/>
 
 
+    images.forEach((image)=>{
 
+      data.append(
+        "images",
+        image
+      );
 
-<input
+    });
 
-placeholder="Location"
 
-className="input"
 
-onChange={
-e=>setForm({
-...form,
-location:e.target.value
-})
-}
+    await createTour(data);
 
-/>
 
 
+    navigate(
+      "/admin/tours"
+    );
 
-<input
 
-placeholder="Duration"
+  };
 
-className="input"
 
-onChange={
-e=>setForm({
-...form,
-duration:e.target.value
-})
-}
 
-/>
 
 
 
+  return (
 
-<input
+    <form
+      onSubmit={submit}
+      className="
+      max-w-xl
+      space-y-5
+      "
+    >
 
-placeholder="Price"
 
-className="input"
 
-onChange={
-e=>setForm({
-...form,
-price:e.target.value
-})
-}
+      <input
 
-/>
+        name="title"
 
+        placeholder="Tour title"
 
+        className="input"
 
+        value={form.title}
 
-<input
+        onChange={handleChange}
 
-type="file"
+      />
 
-multiple
 
-onChange={
-e=>setImages(
-[
-...e.target.files
-]
-)
-}
 
-/>
 
+      <textarea
 
+        name="description"
 
-<button
+        placeholder="Description"
 
-className="
-bg-green-600
-text-white
-px-8
-py-3
-rounded
-"
+        className="input"
 
->
+        value={form.description}
 
-Save Tour
+        onChange={handleChange}
 
-</button>
+      />
 
 
-</form>
 
-)
+
+
+      <select
+
+        name="destination"
+
+        className="input"
+
+        value={form.destination}
+
+        onChange={handleChange}
+
+        required
+
+      >
+
+        <option value="">
+
+          Select Destination
+
+        </option>
+
+
+        {destinationsLoading && (
+
+          <option>
+
+            Loading destinations...
+
+          </option>
+
+        )}
+
+
+
+        {destinations.map((destination)=>(
+
+          <option
+
+            key={destination._id}
+
+            value={destination._id}
+
+          >
+
+            {destination.name}
+
+          </option>
+
+        ))}
+
+
+      </select>
+
+
+
+
+
+
+      <input
+
+        name="country"
+
+        placeholder="Country"
+
+        className="input"
+
+        value={form.country}
+
+        onChange={handleChange}
+
+        required
+
+      />
+
+
+
+
+
+
+      <input
+
+        type="date"
+
+        name="date"
+
+        className="input"
+
+        value={form.date}
+
+        onChange={handleChange}
+
+        required
+
+      />
+
+
+
+
+
+
+      <input
+
+        name="duration"
+
+        placeholder="Duration in days"
+
+        className="input"
+
+        value={form.duration}
+
+        onChange={handleChange}
+
+      />
+
+
+
+
+
+
+      <input
+
+        name="price"
+
+        placeholder="Price"
+
+        className="input"
+
+        value={form.price}
+
+        onChange={handleChange}
+
+      />
+
+
+
+
+
+
+      <select
+
+        name="category"
+
+        className="input"
+
+        value={form.category}
+
+        onChange={handleChange}
+
+      >
+
+        <option value="Safari">
+
+          Safari
+
+        </option>
+
+
+        <option value="Beach">
+
+          Beach
+
+        </option>
+
+
+        <option value="Mountain">
+
+          Mountain
+
+        </option>
+
+
+        <option value="Culture">
+
+          Culture
+
+        </option>
+
+
+      </select>
+
+
+
+
+
+
+      <label className="flex gap-2">
+
+
+        <input
+
+          type="checkbox"
+
+          name="featured"
+
+          checked={form.featured}
+
+          onChange={handleChange}
+
+        />
+
+
+        Featured Tour
+
+
+      </label>
+
+
+
+
+
+
+      <input
+
+        type="file"
+
+        multiple
+
+        onChange={(e)=>
+
+          setImages(
+            [...e.target.files]
+          )
+
+        }
+
+      />
+
+
+
+
+
+
+
+      <button
+
+        className="
+        bg-green-600
+        text-white
+        px-8
+        py-3
+        rounded
+        "
+
+      >
+
+        Save Tour
+
+      </button>
+
+
+
+
+    </form>
+
+  );
 
 }

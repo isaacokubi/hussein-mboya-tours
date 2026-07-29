@@ -1,33 +1,33 @@
 import express from "express";
 
-
 import {
-
-getDestinations,
-
-getDestination
-
-}
-from "../controllers/destinationController.js";
+  getDestinations,
+  getDestination,
+} from "../controllers/destinationController.js";
 
 
-const router =
-express.Router();
+const router = express.Router();
 
 
+/*
+|--------------------------------------------------------------------------
+| PUBLIC DESTINATIONS
+|--------------------------------------------------------------------------
+*/
 
+
+// Get all active destinations
 router.get(
-"/",
-getDestinations
+  "/",
+  getDestinations
 );
 
 
-
+// Get single destination by slug
 router.get(
-"/:slug",
-getDestination
+  "/:slug",
+  getDestination
 );
-
 
 
 export default router;

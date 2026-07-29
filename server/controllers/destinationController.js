@@ -1,27 +1,55 @@
 import Destination from "../models/Destination.js";
 
+
 /*
 |--------------------------------------------------------------------------
-| GET ALL DESTINATIONS
+| GET ALL ACTIVE DESTINATIONS
 |--------------------------------------------------------------------------
 | Used by:
-| /destinations page
+| - Public destinations page
+| - Admin destination selector
 |
-| Returns all available destinations
+| Endpoint:
+| GET /api/destinations
 |--------------------------------------------------------------------------
 */
 
 export const getDestinations = async (req, res, next) => {
+
   try {
-    const destinations = await Destination.find().sort({
+
+    const destinations = await Destination.find({
+
+      status: "active",
+
+    })
+    .sort({
+
       createdAt: -1,
+
     });
 
-    res.status(200).json(destinations);
+
+    res.status(200).json({
+
+      success: true,
+
+      count: destinations.length,
+
+      destinations,
+
+    });
+
+
   } catch (error) {
+
     next(error);
+
   }
+
 };
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -31,26 +59,49 @@ export const getDestinations = async (req, res, next) => {
 | /destinations/:slug
 |
 | Example:
-| /destinations/maasai-mara
+| GET /api/destinations/maasai-mara
 |--------------------------------------------------------------------------
 */
 
 export const getDestination = async (req, res, next) => {
+
   try {
+
     const destination = await Destination.findOne({
+
       slug: req.params.slug,
+
+      status: "active",
+
     });
 
+
     if (!destination) {
+
       return res.status(404).json({
+
         success: false,
 
         message: "Destination not found",
+
       });
+
     }
 
-    res.status(200).json(destination);
+
+    res.status(200).json({
+
+      success: true,
+
+      destination,
+
+    });
+
+
   } catch (error) {
+
     next(error);
+
   }
+
 };
