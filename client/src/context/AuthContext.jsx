@@ -6,20 +6,17 @@ import {
     useContext,
     useState,
     useEffect
-} from "react";
+}
+from "react";
 
 
 import axios from "axios";
 
 
 import {
-    io
-} from "socket.io-client";
-
-
-import {
     queryClient
-} from "../lib/queryClient";
+}
+from "../lib/queryClient";
 
 
 
@@ -52,84 +49,6 @@ const api = axios.create({
     }
 
 });
-
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| SOCKET.IO CONNECTION
-|--------------------------------------------------------------------------
-*/
-
-
-export const socket = io(
-
-    import.meta.env.VITE_SOCKET_URL ||
-
-    "http://localhost:5000",
-
-    {
-
-        transports: [
-            "websocket",
-            "polling"
-        ],
-
-        withCredentials: true,
-
-        autoConnect: true
-
-    }
-
-);
-
-
-
-socket.on(
-    "connect",
-    () => {
-
-        console.log(
-            "✅ Auth Socket Connected:",
-            socket.id
-        );
-
-    }
-);
-
-
-
-socket.on(
-    "disconnect",
-    (reason)=>{
-
-        console.log(
-            "🔌 Auth Socket Disconnected:",
-            reason
-        );
-
-    }
-);
-
-
-
-socket.on(
-    "connect_error",
-    (err)=>{
-
-        console.error(
-            "❌ Auth Socket Error:",
-            err.message
-        );
-
-    }
-);
 
 
 
@@ -323,13 +242,31 @@ children
 
 
 
-const [user,setUser] =
+const [
+
+    user,
+
+    setUser
+
+]
+
+=
 
 useState(null);
 
 
 
-const [token,setToken] =
+
+
+const [
+
+    token,
+
+    setToken
+
+]
+
+=
 
 useState(
 
@@ -341,68 +278,17 @@ useState(
 
 
 
-const [loading,setLoading] =
+const [
+
+    loading,
+
+    setLoading
+
+]
+
+=
 
 useState(true);
-
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| REGISTER SOCKET USER
-|--------------------------------------------------------------------------
-*/
-
-
-const registerSocketUser = (
-
-currentUser
-
-)=>{
-
-
-    if(!currentUser?._id){
-
-        return;
-
-    }
-
-
-
-    if(!socket.connected){
-
-        socket.connect();
-
-    }
-
-
-
-    socket.emit(
-
-        "register",
-
-        currentUser._id
-
-    );
-
-
-
-    console.log(
-
-        "✅ Socket user registered:",
-
-        currentUser._id
-
-    );
-
-
-};
 
 
 
@@ -463,12 +349,6 @@ try{
 
 
 
-    registerSocketUser(
-        currentUser
-    );
-
-
-
     return currentUser;
 
 
@@ -491,6 +371,7 @@ catch(error){
 
 
     logout();
+
 
 
 }
@@ -653,12 +534,6 @@ try{
 
 
 
-    registerSocketUser(
-        currentUser
-    );
-
-
-
     setLoading(false);
 
 
@@ -786,12 +661,6 @@ try{
 
 
 
-    registerSocketUser(
-        currentUser
-    );
-
-
-
     return {
 
         token:newToken,
@@ -865,14 +734,6 @@ const logout = ()=>{
 
 
     setToken(null);
-
-
-
-    if(socket.connected){
-
-        socket.disconnect();
-
-    }
 
 
 
@@ -1101,9 +962,7 @@ value={{
 
     canAccess,
 
-    getMenuPermissions,
-
-    socket
+    getMenuPermissions
 
 }}
 
