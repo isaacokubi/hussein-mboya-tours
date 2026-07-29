@@ -1,13 +1,92 @@
-uploads/
-node_modules
+# ==============================
+# Dependencies
+# ==============================
+
+node_modules/
+*/node_modules/
+
+
+# ==============================
+# Environment Variables
+# ==============================
+
 .env
 .env.*
-dist
-build
-coverage
-logs
+.env.local
+.env.development
+.env.production
+
+
+# ==============================
+# Build Output
+# ==============================
+
+dist/
+build/
+
+
+# ==============================
+# Uploads / User Generated Files
+# ==============================
+
+uploads/
+
+
+# ==============================
+# Logs
+# ==============================
+
+logs/
 *.log
-.vscode
-.idea
-.DS_Storeclient/public/videos/*.mp4
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+
+# ==============================
+# Media Files (Large Videos)
+# ==============================
+
 client/public/videos/*.mp4
+client/public/videos/*.webm
+client/public/videos/*.mov
+
+
+# ==============================
+# Coverage / Testing
+# ==============================
+
+coverage/
+
+
+# ==============================
+# IDE Settings
+# ==============================
+
+.vscode/
+.idea/
+
+
+# ==============================
+# OS Files
+# ==============================
+
+.DS_Store
+Thumbs.db
+
+
+# ==============================
+# Deployment
+# ==============================
+
+.vercel/
+.render/
+
+
+# ==============================
+# Temporary Files
+# ==============================
+
+*.tmp
+*.temp
+*.swp
