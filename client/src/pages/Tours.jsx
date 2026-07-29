@@ -1,216 +1,169 @@
 import { useState } from "react";
-
 import { useQuery } from "@tanstack/react-query";
-
-import { getTours } from "../api/tourApi";
-
-import TourCard from "../components/tours/TourCard";
-
-import TourFilters from "../components/tours/TourFilters";
-
-import SEO from "../components/seo/SEO";
+import { getTours } from "../../api/tourApi";
 
 export default function Tours() {
-  const [filters, setFilters] = useState({
-    country: "",
-    category: "",
-    minPrice: "",
-    maxPrice: "",
-  });
+  const [search, setSearch] = useState("");
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["tours", filters],
+    queryKey: ["tour-manager-tours"],
+    queryFn: getTours,
+  });
 
-    queryFn: () => getTours(filters),
+  const tours = data?.tours || [];
+
+  const filteredTours = tours.filter((tour) => {
+    const destinationName =
+      typeof tour.destination === "object"
+        ? tour.destination?.name
+        : tour.destination;
+
+    return (
+      tour.title?.toLowerCase().includes(search.toLowerCase()) ||
+      destinationName?.toLowerCase().includes(search.toLowerCase())
+    );
   });
 
   if (isLoading) {
     return (
-      <div
-        className="
-        min-h-screen
-        flex
-        items-center
-        justify-center
-        bg-gray-50
-        "
-      >
-        <div
-          className="
-          text-center
-          "
-        >
-          <div
-            className="
-            w-14
-            h-14
-            border-4
-            border-yellow-500
-            border-t-transparent
-            rounded-full
-            animate-spin
-            mx-auto
-            mb-5
-            "
-          />
-
-          <p
-            className="
-            text-gray-600
-            text-lg
-            "
-          >
-            Discovering amazing tours...
-          </p>
-        </div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="w-10 h-10 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div
-        className="
-        min-h-screen
-        flex
-        items-center
-        justify-center
-        "
-      >
-        <div
-          className="
-          bg-red-50
-          border
-          border-red-200
-          text-red-700
-          p-6
-          rounded-xl
-          "
-        >
-          Failed to load tours. Please try again later.
-        </div>
+      <div className="p-6 bg-red-50 border border-red-200 rounded-xl text-red-600">
+        Failed to load tours.
       </div>
     );
   }
 
-  const tours = data?.tours || [];
-
   return (
-    <>
-      <SEO
-        title="Luxury Kenya Tours & Safari Adventures"
-        description="
-        Explore unforgettable safari experiences,
-        beach holidays and cultural tours with
-        Hussein Mboya Tours.
-        "
-      />
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <h1 className="text-3xl font-bold">Tours Management</h1>
 
-      <main
-        className="
-        min-h-screen
-        bg-gray-50
-        "
-      >
-        {/* HERO SECTION */}
-
-        <section
+        <input
+          type="text"
+          placeholder="Search tours..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
           className="
-          bg-gradient-to-r
-          from-black
-          via-gray-900
-          to-yellow-700
-          text-white
-          py-20
-          px-6
+            w-full
+            md:w-80
+            px-4
+            py-2
+            border
+            rounded-lg
+            focus:outline-none
+            focus:ring-2
+            focus:ring-yellow-500
           "
-        >
-          <div
-            className="
-            max-w-7xl
-            mx-auto
-            "
-          >
-            <h1
+        />
+      </div>
+
+      {/* Tours Grid */}
+      {filteredTours.length === 0 ? (
+        <div className="bg-white rounded-xl shadow p-10 text-center">
+          <h2 className="text-xl font-semibold text-gray-700">
+            No tours found
+          </h2>
+          <p className="text-gray-500 mt-2">
+            Try changing your search criteria.
+          </p>
+        </div>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {filteredTours.map((tour) => (
+            <div
+              key={tour._id}
               className="
-              text-4xl
-              md:text-6xl
-              font-extrabold
-              mb-5
+                bg-white
+                rounded-xl
+                shadow
+                overflow-hidden
+                hover:shadow-lg
+                transition
               "
             >
-              Explore Our Tours
-            </h1>
+              <img
+                src={
+                  tour.images?.[0]?.url ||
+                  tour.image ||
+                  "https://via.placeholder.com/600x400"
+                }
+                alt={tour.title}
+                className="w-full h-52 object-cover"
+              />
 
-            <p
-              className="
-              text-lg
-              md:text-xl
-              max-w-3xl
-              text-gray-200
-              "
-            >
-              Experience Kenya's breathtaking wildlife, beaches and cultural
-              adventures with Hussein Mboya Tours.
-            </p>
-          </div>
-        </section>
+              <div className="p-5">
+                <h3 className="text-xl font-bold mb-2">{tour.title}</h3>
 
-        {/* CONTENT */}
+                <p className="text-gray-600 text-sm mb-3">
+                  📍{" "}
+                  {typeof tour.destination === "object"
+                    ? tour.destination?.name
+                    : tour.destination}
+                </p>
 
-        <section
-          className="
-          max-w-7xl
-          mx-auto
-          px-6
-          py-12
-          "
-        >
-          <TourFilters filters={filters} setFilters={setFilters} />
+                <p className="text-gray-600 text-sm line-clamp-3 mb-4">
+                  {tour.description}
+                </p>
 
-          {tours.length === 0 ? (
-            <div
-              className="
-                text-center
-                py-20
-                "
-            >
-              <h2
-                className="
-                  text-2xl
-                  font-bold
-                  text-gray-700
-                  "
-              >
-                No tours found
-              </h2>
+                <div className="flex items-center justify-between">
+                  <span className="text-yellow-600 font-bold text-lg">
+                    ${tour.price?.toLocaleString() || 0}
+                  </span>
 
-              <p
-                className="
-                  text-gray-500
-                  mt-3
-                  "
-              >
-                Try adjusting your filters.
-              </p>
+                  <span
+                    className={`
+                      px-3 py-1 rounded-full text-xs font-medium
+                      ${
+                        tour.status === "active"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-gray-100 text-gray-700"
+                      }
+                    `}
+                  >
+                    {tour.status || "Draft"}
+                  </span>
+                </div>
+
+                <div className="mt-4 flex gap-2">
+                  <button
+                    className="
+                      flex-1
+                      bg-yellow-500
+                      hover:bg-yellow-600
+                      text-white
+                      py-2
+                      rounded-lg
+                    "
+                  >
+                    Edit
+                  </button>
+
+                  <button
+                    className="
+                      flex-1
+                      bg-red-500
+                      hover:bg-red-600
+                      text-white
+                      py-2
+                      rounded-lg
+                    "
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
             </div>
-          ) : (
-            <div
-              className="
-                grid
-                sm:grid-cols-2
-                lg:grid-cols-3
-                gap-8
-                mt-12
-                "
-            >
-              {tours.map((tour) => (
-                <TourCard key={tour._id} tour={tour} />
-              ))}
-            </div>
-          )}
-        </section>
-      </main>
-    </>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
