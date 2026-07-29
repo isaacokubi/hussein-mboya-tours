@@ -28,7 +28,6 @@ from "./AuthContext";
 
 
 
-
 /*
 |--------------------------------------------------------------------------
 | SOCKET.IO CONNECTION
@@ -45,17 +44,23 @@ const socket = io(
     {
 
         transports: [
+
             "websocket",
+
             "polling"
+
         ],
 
-        withCredentials: true,
-
-        autoConnect: true
+        withCredentials: true
 
     }
 
 );
+
+
+
+
+
 
 
 
@@ -66,13 +71,20 @@ socket.on(
     ()=>{
 
         console.log(
+
             "✅ Notification Socket Connected:",
+
             socket.id
+
         );
 
     }
 
 );
+
+
+
+
 
 
 
@@ -83,13 +95,20 @@ socket.on(
     (err)=>{
 
         console.error(
+
             "❌ Notification Socket Error:",
+
             err.message
+
         );
 
     }
 
 );
+
+
+
+
 
 
 
@@ -100,8 +119,11 @@ socket.on(
     (reason)=>{
 
         console.log(
+
             "🔌 Notification Socket Disconnected:",
+
             reason
+
         );
 
     }
@@ -123,9 +145,7 @@ socket.on(
 */
 
 
-const NotificationContext =
-
-createContext();
+const NotificationContext = createContext();
 
 
 
@@ -137,156 +157,36 @@ createContext();
 
 export function NotificationProvider({
 
-children
+    children
 
 }){
 
 
-const {
+    const {
 
-    user
+        user
 
-}
+    }
 
-=
+    =
 
-useAuth();
+    useAuth();
 
 
 
 
 
-const [
+    const [
 
-notifications,
+        notifications,
 
-setNotifications
-
-]
-
-=
-
-useState([]);
-
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| LISTEN FOR USER NOTIFICATIONS
-|--------------------------------------------------------------------------
-*/
-
-
-useEffect(()=>{
-
-
-if(!user?._id){
-
-    return;
-
-}
-
-
-
-if(!socket.connected){
-
-    socket.connect();
-
-}
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| JOIN USER ROOM
-|--------------------------------------------------------------------------
-*/
-
-
-socket.emit(
-
-    "join",
-
-    user._id
-
-);
-
-
-
-console.log(
-
-    "🔔 Joined notification room:",
-
-    user._id
-
-);
-
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| RECEIVE NOTIFICATIONS
-|--------------------------------------------------------------------------
-*/
-
-
-const handleNotification = (
-
-data
-
-)=>{
-
-
-console.log(
-
-    "📩 New notification:",
-
-    data
-
-);
-
-
-
-setNotifications(
-
-    prev => [
-
-        data,
-
-        ...prev
+        setNotifications
 
     ]
 
-);
+    =
 
-
-};
-
-
-
-
-
-socket.on(
-
-    "notification",
-
-    handleNotification
-
-);
+    useState([]);
 
 
 
@@ -296,66 +196,203 @@ socket.on(
 
 
 
-/*
-|--------------------------------------------------------------------------
-| CLEANUP
-|--------------------------------------------------------------------------
-*/
+    /*
+    |--------------------------------------------------------------------------
+    | CONNECT USER TO NOTIFICATION ROOM
+    |--------------------------------------------------------------------------
+    */
 
 
-return ()=>{
+    useEffect(()=>{
 
 
-socket.off(
+        if(!user?._id){
 
-    "notification",
+            return;
 
-    handleNotification
-
-);
-
-
-
-};
-
-
-
-},[user]);
+        }
 
 
 
 
 
 
+        /*
+        |--------------------------------------------------------------------------
+        | CONNECT SOCKET
+        |--------------------------------------------------------------------------
+        */
+
+
+        if(!socket.connected){
+
+            socket.connect();
+
+        }
 
 
 
-return (
-
-<NotificationContext.Provider
 
 
-value={{
-
-    notifications,
-
-    setNotifications,
-
-    socket
-
-}}
 
 
->
 
 
-{children}
+        /*
+        |--------------------------------------------------------------------------
+        | JOIN USER ROOM
+        |--------------------------------------------------------------------------
+        */
 
 
-</NotificationContext.Provider>
+        socket.emit(
+
+            "join",
+
+            user._id
+
+        );
 
 
-);
+
+
+
+        console.log(
+
+            "🔔 Joined notification room:",
+
+            user._id
+
+        );
+
+
+
+
+
+
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | RECEIVE NOTIFICATIONS
+        |--------------------------------------------------------------------------
+        */
+
+
+        const handleNotification = (
+
+            data
+
+        )=>{
+
+
+            console.log(
+
+                "📩 New notification:",
+
+                data
+
+            );
+
+
+
+
+
+            setNotifications(
+
+                prev => [
+
+                    data,
+
+                    ...prev
+
+                ]
+
+            );
+
+
+        };
+
+
+
+
+
+
+
+
+
+        socket.on(
+
+            "notification",
+
+            handleNotification
+
+        );
+
+
+
+
+
+
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | CLEANUP
+        |--------------------------------------------------------------------------
+        */
+
+
+        return ()=>{
+
+
+            socket.off(
+
+                "notification",
+
+                handleNotification
+
+            );
+
+
+        };
+
+
+
+
+    },[user]);
+
+
+
+
+
+
+
+
+
+    return (
+
+        <NotificationContext.Provider
+
+            value={{
+
+                notifications,
+
+                setNotifications,
+
+                socket
+
+            }}
+
+        >
+
+            {children}
+
+        </NotificationContext.Provider>
+
+    );
 
 
 }
