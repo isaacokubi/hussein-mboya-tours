@@ -3,7 +3,6 @@
 import User from "../models/User.js";
 import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
-import Payment from "../models/Payment.js";
 
 
 // ============================================================
@@ -12,303 +11,314 @@ import Payment from "../models/Payment.js";
 
 export const getDashboardStats = async (req, res) => {
 
-try{
+  try {
 
 
-// ============================================================
-// USERS
-// ============================================================
+    // ============================================================
+    // USERS
+    // ============================================================
 
-const users = await User.countDocuments();
+    const users = await User.countDocuments();
 
 
 
-// ============================================================
-// BOOKINGS
-// ============================================================
+    // ============================================================
+    // BOOKINGS
+    // ============================================================
 
-const bookings = await Booking.countDocuments();
+    const bookings = await Booking.countDocuments();
 
 
 
+    // ============================================================
+    // TOURS
+    // ============================================================
 
-// ============================================================
-// TOURS
-// ============================================================
+    const tours = await Tour.countDocuments();
 
-const tours = await Tour.countDocuments();
 
 
 
+    // ============================================================
+    // REVENUE
+    // Source of truth: Booking collection
+    // Only successful paid bookings count
+    // ============================================================
 
+    const revenueData = await Booking.aggregate([
 
-// ============================================================
-// REVENUE
-// ============================================================
+      {
+        $match:{
+          paymentStatus:"paid"
+        }
+      },
 
-const revenueData = await Payment.aggregate([
 
-{
-$match:{
-status:"paid"
-}
-},
+      {
+        $group:{
 
-{
-$group:{
+          _id:null,
 
-_id:null,
+          total:{
+            $sum:"$amount"
+          }
 
-total:{
-$sum:"$amount"
-}
+        }
+      }
 
-}
+    ]);
 
-}
 
-]);
+    const revenue = revenueData[0]?.total || 0;
 
 
-const revenue = revenueData[0]?.total || 0;
 
 
 
 
+    // ============================================================
+    // BOOKING STATUS
+    // Shows booking + payment status together
+    // ============================================================
 
+    const bookingStatus = await Booking.aggregate([
 
-// ============================================================
-// BOOKING STATUS
-// FIXED
-// Shows booking + payment status together
-// ============================================================
+      {
+        $group:{
 
-const bookingStatus = await Booking.aggregate([
+          _id:{
 
-{
-$group:{
+            bookingStatus:"$bookingStatus",
 
-_id:{
+            paymentStatus:"$paymentStatus"
 
-bookingStatus:"$bookingStatus",
+          },
 
-paymentStatus:"$paymentStatus"
 
-},
+          count:{
+            $sum:1
+          }
 
-count:{
-$sum:1
-}
+        }
 
-}
+      },
 
-},
 
+      {
+        $sort:{
+          count:-1
+        }
+      }
 
-{
-$sort:{
-count:-1
-}
-}
+    ]);
 
-]);
 
 
 
 
 
 
+    // ============================================================
+    // MONTHLY REVENUE
+    // ============================================================
 
-// ============================================================
-// MONTHLY REVENUE
-// ============================================================
+    const monthlyRevenue = await Booking.aggregate([
 
-const monthlyRevenue = await Payment.aggregate([
+      {
+        $match:{
+          paymentStatus:"paid"
+        }
+      },
 
-{
-$match:{
-status:"paid"
-}
-},
 
-{
-$group:{
+      {
+        $group:{
 
-_id:{
+          _id:{
 
-month:{
-$month:"$createdAt"
-},
+            month:{
+              $month:"$createdAt"
+            },
 
-year:{
-$year:"$createdAt"
-}
 
-},
+            year:{
+              $year:"$createdAt"
+            }
 
-total:{
-$sum:"$amount"
-}
+          },
 
-}
 
-},
+          total:{
+            $sum:"$amount"
+          }
 
+        }
 
-{
-$sort:{
+      },
 
-"_id.year":1,
 
-"_id.month":1
+      {
+        $sort:{
 
-}
+          "_id.year":1,
 
-}
+          "_id.month":1
 
-]);
+        }
 
+      }
 
+    ]);
 
 
 
 
 
 
-// ============================================================
-// POPULAR TOURS
-// ============================================================
 
-const popularTours = await Booking.aggregate([
 
 
-{
-$group:{
+    // ============================================================
+    // POPULAR TOURS
+    // ============================================================
 
-_id:"$tour",
+    const popularTours = await Booking.aggregate([
 
-totalBookings:{
-$sum:1
-}
 
-}
+      {
+        $group:{
 
-},
+          _id:"$tour",
 
+          totalBookings:{
+            $sum:1
+          }
 
-{
-$sort:{
-totalBookings:-1
-}
+        }
 
-},
+      },
 
 
-{
-$limit:5
-},
+      {
+        $sort:{
+          totalBookings:-1
+        }
 
+      },
 
-{
-$lookup:{
 
-from:"tours",
+      {
+        $limit:5
+      },
 
-localField:"_id",
 
-foreignField:"_id",
 
-as:"tour"
+      {
+        $lookup:{
 
-}
+          from:"tours",
 
-},
+          localField:"_id",
 
+          foreignField:"_id",
 
-{
-$unwind:{
+          as:"tour"
 
-path:"$tour",
+        }
 
-preserveNullAndEmptyArrays:true
+      },
 
-}
 
-},
 
+      {
+        $unwind:{
 
-{
-$project:{
+          path:"$tour",
 
-_id:1,
+          preserveNullAndEmptyArrays:true
 
-title:"$tour.title",
+        }
 
-totalBookings:1
+      },
 
-}
 
-}
 
-]);
+      {
+        $project:{
 
+          _id:1,
 
+          title:"$tour.title",
 
+          totalBookings:1
 
+        }
 
+      }
 
 
-// ============================================================
-// VEHICLE STATS
-// ============================================================
+    ]);
 
-const vehicleStats=[];
 
 
 
 
 
-res.status(200).json({
 
-success:true,
 
-data:{
+    // ============================================================
+    // VEHICLE STATS
+    // ============================================================
 
-users,
+    const vehicleStats=[];
 
-tours,
 
-bookings,
 
-revenue,
 
-bookingStatus,
 
-monthlyRevenue,
+    res.status(200).json({
 
-popularTours,
+      success:true,
 
-vehicleStats
 
-}
+      data:{
 
-});
+        users,
 
+        tours,
 
+        bookings,
 
-}catch(error){
+        revenue,
 
+        bookingStatus,
 
-res.status(500).json({
+        monthlyRevenue,
 
-success:false,
+        popularTours,
 
-message:error.message
+        vehicleStats
 
-});
+      }
 
+    });
 
-}
+
+
+
+  } catch(error){
+
+
+    res.status(500).json({
+
+      success:false,
+
+      message:error.message
+
+    });
+
+
+  }
 
 
 };
