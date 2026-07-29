@@ -26,27 +26,7 @@ export default function FeaturedTours() {
   |--------------------------------------------------------------------------
   | HANDLE DIFFERENT API RESPONSE STRUCTURES
   |--------------------------------------------------------------------------
-  |
-  | Supports:
-  |
-  | 1. Array response
-  | [
-  |   { title:"Safari" }
-  | ]
-  |
-  | 2. Object response
-  | {
-  |   tours:[]
-  | }
-  |
-  | 3. Axios response
-  | {
-  |   data:[]
-  | }
-  |
-  |--------------------------------------------------------------------------
   */
-
 
   const tourList = Array.isArray(tours)
 
@@ -116,7 +96,6 @@ export default function FeaturedTours() {
       <div className="container mx-auto px-6">
 
 
-
         <h2 className="text-4xl font-bold text-center mb-12">
 
           Featured Tours
@@ -130,7 +109,6 @@ export default function FeaturedTours() {
         <div className="grid md:grid-cols-3 gap-8">
 
 
-
           {tourList.map((tour) => (
 
 
@@ -139,7 +117,15 @@ export default function FeaturedTours() {
 
               key={tour._id}
 
-              className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition duration-300"
+              className="
+              bg-white
+              rounded-xl
+              overflow-hidden
+              shadow-lg
+              hover:shadow-2xl
+              transition
+              duration-300
+              "
 
             >
 
@@ -153,15 +139,25 @@ export default function FeaturedTours() {
 
                   tour.images?.[0] ||
 
+                  tour.destination?.images?.[0] ||
+
                   tour.image ||
 
                   "/images/tour-placeholder.jpg"
 
                 }
 
-                alt={tour.title}
+                alt={
+                  tour.title ||
+                  tour.destination?.name ||
+                  "Tour"
+                }
 
-                className="h-64 w-full object-cover"
+                className="
+                h-64
+                w-full
+                object-cover
+                "
 
               />
 
@@ -179,7 +175,7 @@ export default function FeaturedTours() {
 
                 <h3 className="text-xl font-bold">
 
-                  {tour.title}
+                  {tour.title || "African Adventure Tour"}
 
                 </h3>
 
@@ -191,7 +187,7 @@ export default function FeaturedTours() {
 
                 <p className="text-gray-600 mt-2">
 
-                  {tour.destination}
+                  {tour.destination?.name || "Kenya"}
 
                 </p>
 
@@ -239,7 +235,17 @@ export default function FeaturedTours() {
 
                   to={`/tours/${tour._id}`}
 
-                  className="block mt-5 bg-green-600 hover:bg-green-700 text-white text-center py-3 rounded-lg transition"
+                  className="
+                  block
+                  mt-5
+                  bg-green-600
+                  hover:bg-green-700
+                  text-white
+                  text-center
+                  py-3
+                  rounded-lg
+                  transition
+                  "
 
                 >
 
