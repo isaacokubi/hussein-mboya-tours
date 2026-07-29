@@ -45,9 +45,9 @@ const api = axios.create({
         "http://localhost:5000/api",
 
 
-    headers:{
+    headers: {
 
-        "Content-Type":"application/json"
+        "Content-Type": "application/json"
 
     }
 
@@ -76,10 +76,59 @@ export const socket = io(
 
     {
 
-        withCredentials:true
+        transports: [
+            "websocket",
+            "polling"
+        ],
+
+        withCredentials: true,
+
+        autoConnect: true
 
     }
 
+);
+
+
+
+socket.on(
+    "connect",
+    () => {
+
+        console.log(
+            "✅ Auth Socket Connected:",
+            socket.id
+        );
+
+    }
+);
+
+
+
+socket.on(
+    "disconnect",
+    (reason)=>{
+
+        console.log(
+            "🔌 Auth Socket Disconnected:",
+            reason
+        );
+
+    }
+);
+
+
+
+socket.on(
+    "connect_error",
+    (err)=>{
+
+        console.error(
+            "❌ Auth Socket Error:",
+            err.message
+        );
+
+    }
 );
 
 
@@ -112,11 +161,9 @@ api.interceptors.request.use(
 
     if(token){
 
-
         config.headers.Authorization =
 
         `Bearer ${token}`;
-
 
     }
 
@@ -233,7 +280,6 @@ const normalizeUser = (user)=>{
 
     return {
 
-
         ...user,
 
 
@@ -248,7 +294,6 @@ const normalizeUser = (user)=>{
             user?.legacyRole
 
         )
-
 
     };
 
@@ -272,7 +317,7 @@ const normalizeUser = (user)=>{
 
 export function AuthProvider({
 
-    children
+children
 
 }) {
 
@@ -322,29 +367,39 @@ currentUser
 )=>{
 
 
-    if(currentUser?._id){
+    if(!currentUser?._id){
 
-
-        socket.emit(
-
-            "register",
-
-            currentUser._id
-
-        );
-
-
-
-        console.log(
-
-            "Socket registered:",
-
-            currentUser._id
-
-        );
-
+        return;
 
     }
+
+
+
+    if(!socket.connected){
+
+        socket.connect();
+
+    }
+
+
+
+    socket.emit(
+
+        "register",
+
+        currentUser._id
+
+    );
+
+
+
+    console.log(
+
+        "✅ Socket user registered:",
+
+        currentUser._id
+
+    );
 
 
 };
@@ -373,9 +428,7 @@ try{
     const response =
 
     await api.get(
-
         "/auth/me"
-
     );
 
 
@@ -389,20 +442,6 @@ try{
         response.data
 
     );
-
-
-
-
-
-    console.log(
-
-        "CURRENT USER:",
-
-        currentUser
-
-    );
-
-
 
 
 
@@ -424,13 +463,9 @@ try{
 
 
 
-
-
     registerSocketUser(
         currentUser
     );
-
-
 
 
 
@@ -441,7 +476,6 @@ try{
 }
 
 catch(error){
-
 
 
     console.error(
@@ -457,7 +491,6 @@ catch(error){
 
 
     logout();
-
 
 
 }
@@ -476,7 +509,7 @@ catch(error){
 
 /*
 |--------------------------------------------------------------------------
-| RESTORE LOGIN SESSION
+| RESTORE SESSION
 |--------------------------------------------------------------------------
 */
 
@@ -505,9 +538,7 @@ if(savedToken){
 
     .finally(()=>{
 
-
         setLoading(false);
-
 
     });
 
@@ -572,13 +603,9 @@ try{
 
 
 
-
-
-    const token =
+    const newToken =
 
     response.data.token;
-
-
 
 
 
@@ -586,19 +613,15 @@ try{
 
         "token",
 
-        token
+        newToken
 
     );
-
-
 
 
 
     setToken(
-        token
+        newToken
     );
-
-
 
 
 
@@ -612,13 +635,9 @@ try{
 
 
 
-
-
     setUser(
         currentUser
     );
-
-
 
 
 
@@ -634,15 +653,9 @@ try{
 
 
 
-
-
     registerSocketUser(
-
         currentUser
-
     );
-
-
 
 
 
@@ -650,26 +663,19 @@ try{
 
 
 
-
-
     return {
 
-
-        token,
-
+        token:newToken,
 
         user:currentUser
 
-
     };
-
 
 
 
 }
 
 catch(error){
-
 
 
     console.error(
@@ -730,13 +736,9 @@ try{
 
 
 
-
-
-    const token =
+    const newToken =
 
     response.data.token;
-
-
 
 
 
@@ -744,19 +746,15 @@ try{
 
         "token",
 
-        token
+        newToken
 
     );
-
-
 
 
 
     setToken(
-        token
+        newToken
     );
-
-
 
 
 
@@ -770,13 +768,9 @@ try{
 
 
 
-
-
     setUser(
         currentUser
     );
-
-
 
 
 
@@ -792,26 +786,17 @@ try{
 
 
 
-
-
     registerSocketUser(
-
         currentUser
-
     );
-
-
 
 
 
     return {
 
-
-        token,
-
+        token:newToken,
 
         user:currentUser
-
 
     };
 
@@ -820,7 +805,6 @@ try{
 }
 
 catch(error){
-
 
 
     console.error(
@@ -880,12 +864,15 @@ const logout = ()=>{
     setUser(null);
 
 
-
     setToken(null);
 
 
 
-    socket.disconnect();
+    if(socket.connected){
+
+        socket.disconnect();
+
+    }
 
 
 
@@ -934,9 +921,7 @@ return permissions.some(
 
 (permission)=>
 
-
 permission.path === path
-
 
 );
 
@@ -1088,57 +1073,39 @@ return (
 
 <AuthContext.Provider
 
-
 value={{
-
 
     user,
 
-
     token,
-
 
     loading,
 
-
     login,
-
 
     register,
 
-
     logout,
-
 
     fetchCurrentUser,
 
-
     permissions,
-
 
     hasPermission,
 
-
     hasAnyPermission,
-
 
     hasAllPermissions,
 
-
     hasRole,
-
 
     canAccess,
 
-
     getMenuPermissions,
-
 
     socket
 
-
 }}
-
 
 >
 

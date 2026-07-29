@@ -1,94 +1,322 @@
+// client/src/context/NotificationContext.jsx
+
+
 import {
-createContext,
-useContext,
-useEffect,
-useState
+    createContext,
+    useContext,
+    useEffect,
+    useState
 }
 from "react";
 
 
-import {io}
+import {
+    io
+}
 from "socket.io-client";
 
 
 import {
-useAuth
+    useAuth
 }
 from "./AuthContext";
 
 
 
-const NotificationContext =
-createContext();
 
 
 
-export function NotificationProvider({
-children
-}){
-
-
-const {
-user
-}
-=
-useAuth();
 
 
 
-const [
-notifications,
-setNotifications
-]
-=
-useState([]);
+/*
+|--------------------------------------------------------------------------
+| SOCKET.IO CONNECTION
+|--------------------------------------------------------------------------
+*/
 
 
+const socket = io(
 
-useEffect(()=>{
+    import.meta.env.VITE_SOCKET_URL ||
 
+    "http://localhost:5000",
 
-if(!user)
-return;
+    {
 
+        transports: [
+            "websocket",
+            "polling"
+        ],
 
+        withCredentials: true,
 
-const socket =
-io(
-import.meta.env.VITE_SOCKET_URL
-);
+        autoConnect: true
 
+    }
 
-
-socket.emit(
-"join",
-user._id
 );
 
 
 
 socket.on(
 
-"notification",
+    "connect",
 
-(data)=>{
+    ()=>{
 
+        console.log(
+            "✅ Notification Socket Connected:",
+            socket.id
+        );
 
-setNotifications(
-prev=>[
-data,
-...prev
-]
+    }
+
 );
 
+
+
+socket.on(
+
+    "connect_error",
+
+    (err)=>{
+
+        console.error(
+            "❌ Notification Socket Error:",
+            err.message
+        );
+
+    }
+
+);
+
+
+
+socket.on(
+
+    "disconnect",
+
+    (reason)=>{
+
+        console.log(
+            "🔌 Notification Socket Disconnected:",
+            reason
+        );
+
+    }
+
+);
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| NOTIFICATION CONTEXT
+|--------------------------------------------------------------------------
+*/
+
+
+const NotificationContext =
+
+createContext();
+
+
+
+
+
+
+
+
+
+export function NotificationProvider({
+
+children
+
+}){
+
+
+const {
+
+    user
 
 }
 
+=
+
+useAuth();
+
+
+
+
+
+const [
+
+notifications,
+
+setNotifications
+
+]
+
+=
+
+useState([]);
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| LISTEN FOR USER NOTIFICATIONS
+|--------------------------------------------------------------------------
+*/
+
+
+useEffect(()=>{
+
+
+if(!user?._id){
+
+    return;
+
+}
+
+
+
+if(!socket.connected){
+
+    socket.connect();
+
+}
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| JOIN USER ROOM
+|--------------------------------------------------------------------------
+*/
+
+
+socket.emit(
+
+    "join",
+
+    user._id
+
 );
 
 
 
-return ()=>socket.disconnect();
+console.log(
+
+    "🔔 Joined notification room:",
+
+    user._id
+
+);
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| RECEIVE NOTIFICATIONS
+|--------------------------------------------------------------------------
+*/
+
+
+const handleNotification = (
+
+data
+
+)=>{
+
+
+console.log(
+
+    "📩 New notification:",
+
+    data
+
+);
+
+
+
+setNotifications(
+
+    prev => [
+
+        data,
+
+        ...prev
+
+    ]
+
+);
+
+
+};
+
+
+
+
+
+socket.on(
+
+    "notification",
+
+    handleNotification
+
+);
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| CLEANUP
+|--------------------------------------------------------------------------
+*/
+
+
+return ()=>{
+
+
+socket.off(
+
+    "notification",
+
+    handleNotification
+
+);
+
+
+
+};
 
 
 
@@ -96,21 +324,36 @@ return ()=>socket.disconnect();
 
 
 
+
+
+
+
+
+
 return (
 
 <NotificationContext.Provider
 
+
 value={{
 
-notifications
+    notifications,
+
+    setNotifications,
+
+    socket
 
 }}
 
+
 >
+
 
 {children}
 
+
 </NotificationContext.Provider>
+
 
 );
 
@@ -119,7 +362,19 @@ notifications
 
 
 
+
+
+
+
+
+
 export const useNotifications =
-()=>useContext(
-NotificationContext
+
+()=>
+
+
+useContext(
+
+    NotificationContext
+
 );
