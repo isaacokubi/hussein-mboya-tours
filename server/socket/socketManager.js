@@ -1,293 +1,124 @@
 // server/socket/socketManager.js
 
-
 let io = null;
-
 
 // Store online users
 const onlineUsers = new Map();
-
-
-
 
 // ============================================================
 // INITIALIZE SOCKET SERVER
 // ============================================================
 
-export const initSocket = (socketServer)=>{
+export const initSocket = (socketServer) => {
+  io = socketServer;
 
+  io.on(
+    "connection",
 
-io = socketServer;
+    (socket) => {
+      console.log("🔌 Socket connected:", socket.id);
 
+      socket.on(
+        "disconnect",
 
-io.on(
+        () => {
+          for (const [userId, socketId] of onlineUsers.entries()) {
+            if (socketId === socket.id) {
+              onlineUsers.delete(userId);
 
-"connection",
+              console.log(`🧹 Removed user ${userId}`);
+            }
+          }
 
-(socket)=>{
+          console.log(
+            "❌ Socket disconnected:",
 
+            socket.id,
+          );
+        },
+      );
+    },
+  );
 
-console.log(
-"🔌 Socket connected:",
-socket.id
-);
-
-
-
-
-
-socket.on(
-
-"disconnect",
-
-()=>{
-
-
-for(const [userId, socketId] of onlineUsers.entries()){
-
-
-if(socketId === socket.id){
-
-
-onlineUsers.delete(userId);
-
-
-console.log(
-
-`🧹 Removed user ${userId}`
-
-);
-
-
-}
-
-
-}
-
-
-console.log(
-
-"❌ Socket disconnected:",
-
-socket.id
-
-);
-
-
-}
-
-);
-
-
-}
-
-);
-
-
-return io;
-
-
+  return io;
 };
-
-
-
-
-
-
-
-
 
 // ============================================================
 // REGISTER USER SOCKET
 // ============================================================
 
 export const registerSocket = (
+  userId,
 
-userId,
+  socketId,
+) => {
+  onlineUsers.set(
+    userId.toString(),
 
-socketId
-
-)=>{
-
-
-onlineUsers.set(
-
-userId.toString(),
-
-socketId
-
-);
-
-
+    socketId,
+  );
 };
-
-
-
-
-
-
-
-
 
 // ============================================================
 // REMOVE USER SOCKET
 // ============================================================
 
-export const removeSocket = (
-
-userId
-
-)=>{
-
-
-onlineUsers.delete(
-
-userId.toString()
-
-);
-
-
+export const removeSocket = (userId) => {
+  onlineUsers.delete(userId.toString());
 };
-
-
-
-
-
-
-
-
 
 // ============================================================
 // GET USER ID BY SOCKET ID
 // ============================================================
 
-export const getUserIdBySocketId = (
+export const getUserIdBySocketId = (socketId) => {
+  for (const [userId, id] of onlineUsers.entries()) {
+    if (id === socketId) {
+      return userId;
+    }
+  }
 
-socketId
-
-)=>{
-
-
-for(const [userId, id] of onlineUsers.entries()){
-
-
-if(id === socketId){
-
-
-return userId;
-
-
-}
-
-
-}
-
-
-
-return null;
-
-
+  return null;
 };
-
-
-
-
-
-
-
-
 
 // ============================================================
 // GET SOCKET INSTANCE
 // ============================================================
 
-export const getIO = ()=>{
+export const getIO = () => {
+  if (!io) {
+    throw new Error("Socket.io not initialized");
+  }
 
-
-if(!io){
-
-
-throw new Error(
-
-"Socket.io not initialized"
-
-);
-
-
-}
-
-
-return io;
-
-
+  return io;
 };
-
-
-
-
-
-
-
-
 
 // ============================================================
 // SEND NOTIFICATION TO USER
 // ============================================================
 
 export const sendNotificationToUser = (
+  userId,
 
-userId,
+  event,
 
-event,
+  data,
+) => {
+  if (!io) {
+    return;
+  }
 
-data
+  const socketId = onlineUsers.get(userId.toString());
 
-)=>{
+  if (socketId) {
+    const socket = io.sockets.sockets.get(socketId);
 
+    if (socket) {
+      socket.emit(
+        event,
 
-if(!io){
-
-return;
-
-}
-
-
-
-const socketId = onlineUsers.get(
-
-userId.toString()
-
-);
-
-
-
-if(socketId){
-
-
-const socket = io.sockets.sockets.get(
-
-socketId
-
-);
-
-
-
-if(socket){
-
-
-socket.emit(
-
-event,
-
-data
-
-);
-
-
-}
-
-
-}
-
-
+        data,
+      );
+    }
+  }
 };
