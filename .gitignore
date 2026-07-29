@@ -43,14 +43,6 @@ yarn-debug.log*
 yarn-error.log*
 
 
-# ==============================
-# Media Files (Large Videos)
-# ==============================
-
-client/public/videos/*.mp4
-client/public/videos/*.webm
-client/public/videos/*.mov
-
 
 # ==============================
 # Coverage / Testing
