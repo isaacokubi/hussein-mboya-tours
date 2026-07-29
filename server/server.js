@@ -354,22 +354,19 @@ app.use("/api/recommendations", recommendationRoutes); // ======================
 // SOCKET.IO
 // ============================================================
 
-const server = http.createServer(app);
-
 export const io = new Server(server, {
   cors: {
     origin: [
       process.env.CLIENT_URL,
-
       "http://localhost:5173",
-
       "http://localhost:3000",
-
       "https://hussein-mboya-tours.vercel.app",
     ],
-
+    methods: ["GET", "POST"],
     credentials: true,
   },
+
+  transports: ["websocket", "polling"],
 });
 
 // Make Socket.IO available globally
