@@ -18,7 +18,7 @@ const API = axios.create({
 
 export const initiateMpesa = async (data) => {
   const response = await API.post(
-    "/api/mpesa/stkpush",
+    "/mpesa/stkpush",
 
     data,
   );

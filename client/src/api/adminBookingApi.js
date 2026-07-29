@@ -1,74 +1,31 @@
 import axios from "axios";
 
-
 const API = axios.create({
-
-baseURL:
-import.meta.env.VITE_API_URL
-
+  baseURL: import.meta.env.VITE_API_URL,
 });
 
+API.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
 
+  config.headers.Authorization = `Bearer ${token}`;
 
-API.interceptors.request.use(
-(config)=>{
+  return config;
+});
 
+export const getBookings = async () => {
+  const { data } = await API.get("/admin/bookings");
 
-const token =
-localStorage.getItem("token");
-
-
-config.headers.Authorization =
-`Bearer ${token}`;
-
-
-return config;
-
-
-}
-
-);
-
-
-
-
-
-export const getBookings =
-async()=>{
-
-
-const {data} =
-await API.get(
-"/api/admin/bookings"
-);
-
-
-return data;
-
-
+  return data;
 };
 
+export const updateBooking = async (id, status) => {
+  const { data } = await API.put(
+    `/admin/bookings/${id}`,
 
+    {
+      status,
+    },
+  );
 
-
-
-export const updateBooking =
-async(id,status)=>{
-
-
-const {data} =
-await API.put(
-
-`/api/admin/bookings/${id}`,
-
-{
-status
-}
-
-);
-
-
-return data;
-
-
+  return data;
 };
