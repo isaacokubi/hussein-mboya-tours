@@ -6,10 +6,9 @@ import "swiper/css";
 import "swiper/css/effect-fade";
 
 const videos = [
-  "/videos/city1.mp4",
-  "/videos/city2.mp4",
-  "/videos/city3.mp4",
-  "/videos/city4.mp4",
+  "/videos/city1_web.mp4",
+  "/videos/city2_web.mp4",
+  "/videos/city3_web.mp4",
 ];
 
 export default function HeroSlider() {
