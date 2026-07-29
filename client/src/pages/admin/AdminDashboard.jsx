@@ -131,7 +131,7 @@ export default function AdminDashboard() {
 
         <Card
           title="Revenue"
-          value={`$${data?.revenue || 0}`}
+          value={`Ksh.${data?.revenue || 0}`}
         />
 
 

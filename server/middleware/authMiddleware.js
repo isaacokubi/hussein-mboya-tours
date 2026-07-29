@@ -1,3 +1,6 @@
+// server/middleware/authMiddleware.js
+
+
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import env from "../config/env.js";
@@ -15,7 +18,7 @@ import env from "../config/env.js";
 | - Bearer token support
 | - Cookie token support
 | - User loading
-| - Role population
+| - Role population through roleId
 | - Permission population
 | - Account status checking
 |
@@ -103,6 +106,7 @@ export const protect = async (req, res, next) => {
 
 
 
+
         /*
         |--------------------------------------------------------------------------
         | VERIFY TOKEN
@@ -128,6 +132,13 @@ export const protect = async (req, res, next) => {
         |--------------------------------------------------------------------------
         | LOAD USER WITH ROLE + PERMISSIONS
         |--------------------------------------------------------------------------
+        |
+        | New RBAC:
+        |
+        | role      => string
+        | roleId    => Role document
+        |
+        |--------------------------------------------------------------------------
         */
 
 
@@ -137,7 +148,7 @@ export const protect = async (req, res, next) => {
 
             .populate({
 
-                path:"role",
+                path:"roleId",
 
                 populate:{
 
@@ -210,7 +221,7 @@ export const protect = async (req, res, next) => {
 
         /*
         |--------------------------------------------------------------------------
-        | ATTACH USER TO REQUEST
+        | ATTACH USER
         |--------------------------------------------------------------------------
         */
 
@@ -260,7 +271,7 @@ export const protect = async (req, res, next) => {
 
 /*
 |--------------------------------------------------------------------------
-| ADMIN ONLY MIDDLEWARE
+| ADMIN ONLY
 |--------------------------------------------------------------------------
 |
 | Allows only admin role
@@ -280,9 +291,7 @@ export const adminOnly = (
 )=>{
 
 
-    const role =
-
-        req.user?.role?.name?.toLowerCase();
+    const role = req.user?.role?.toLowerCase();
 
 
 
@@ -329,7 +338,10 @@ export const adminOnly = (
 |
 | Usage:
 |
-| authorize("admin","tour_manager")
+| authorize(
+|   "admin",
+|   "tour_manager"
+| )
 |
 |--------------------------------------------------------------------------
 */
@@ -349,10 +361,9 @@ export const authorize = (...allowedRoles)=>{
     )=>{
 
 
-
         const userRole =
 
-            req.user?.role?.name?.toLowerCase();
+            req.user?.role?.toLowerCase();
 
 
 
@@ -462,9 +473,23 @@ export const checkPermission = (permissionName)=>{
 
 
 
+
+            /*
+            |--------------------------------------------------------------------------
+            | GET ROLE PERMISSIONS
+            |--------------------------------------------------------------------------
+            |
+            | Permissions now come from:
+            |
+            | req.user.roleId.permissions
+            |
+            |--------------------------------------------------------------------------
+            */
+
+
             const rolePermissions =
 
-                req.user.role?.permissions || [];
+                req.user.roleId?.permissions || [];
 
 
 
@@ -494,7 +519,6 @@ export const checkPermission = (permissionName)=>{
 
 
 
-
             const hasPermission =
 
                 allPermissions.some(
@@ -504,7 +528,6 @@ export const checkPermission = (permissionName)=>{
                     permission.name === permissionName
 
                 );
-
 
 
 

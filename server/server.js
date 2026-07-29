@@ -152,7 +152,10 @@ const app = express();
 // DATABASE
 // ============================================================
 
-connectDatabase(); // ============================================================
+connectDatabase();
+
+
+// ============================================================
 // SECURITY
 // ============================================================
 
@@ -355,78 +358,65 @@ app.use("/api/recommendations", recommendationRoutes);
 // CREATE HTTP SERVER
 // ============================================================
 
-const server = http.createServer(app);
+const httpServer = http.createServer(app);
 
 
 // ============================================================
 // SOCKET.IO
 // ============================================================
 
-export const io = new Server(server, {
+export const io = new Server(httpServer, {
 
     cors: {
 
         origin: [
-
-            process.env.CLIENT_URL,
-
             "http://localhost:5173",
-
             "http://localhost:3000",
-
             "https://hussein-mboya-tours.vercel.app"
-
         ],
 
         methods: [
-
             "GET",
             "POST"
-
         ],
 
-        credentials:true
+        credentials: true
 
     },
 
-    transports:[
-
+    transports: [
         "websocket",
         "polling"
-
     ]
 
 });
 
 
-// expose globally
+// Make Socket.IO available globally
 
 global.io = io;
 
 
 // ============================================================
-// SOCKET CONNECTION EVENTS
+// SOCKET EVENTS
 // ============================================================
 
 io.on(
     "connection",
     (socket)=>{
 
-
         console.log(
-            `🔌 User connected: ${socket.id}`
+            "🔌 Socket connected:",
+            socket.id
         );
-
 
 
         socket.on(
             "register",
             (userId)=>{
 
-
                 if(!userId)
                     return;
-
 
 
                 registerSocket(
@@ -444,20 +434,16 @@ io.on(
                     `👤 User ${userId} registered`
                 );
 
-
             }
         );
-
 
 
         socket.on(
             "join",
             (userId)=>{
 
-
                 if(!userId)
                     return;
-
 
 
                 socket.join(
@@ -469,16 +455,13 @@ io.on(
                     `👥 User ${userId} joined room`
                 );
 
-
             }
         );
-
 
 
         socket.on(
             "disconnect",
             ()=>{
-
 
                 const userId =
                     getUserIdBySocketId(
@@ -486,9 +469,7 @@ io.on(
                     );
 
 
-
                 if(userId){
-
 
                     removeSocket(
                         userId
@@ -499,53 +480,32 @@ io.on(
                         `🧹 Removed online user ${userId}`
                     );
 
-
                 }
 
 
-
                 console.log(
-                    `❌ User disconnected: ${socket.id}`
+                    "❌ Socket disconnected:",
+                    socket.id
                 );
-
 
             }
         );
 
-
     }
 );
-
-
-
-// ============================================================
-// ERROR HANDLING
-// ============================================================
-
-app.use(notFound);
-
-app.use(errorHandler);
-
 
 
 // ============================================================
 // START SERVER
 // ============================================================
 
-server.listen(
-
+httpServer.listen(
     env.PORT,
-
     ()=>{
 
-
         console.log(
-
             `🚀 Hussein Mboya Tours API running on port ${env.PORT}`
-
         );
 
-
     }
-
 );
