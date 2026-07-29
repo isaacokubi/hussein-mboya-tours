@@ -2,77 +2,39 @@ import Tour from "../models/Tour.js";
 import Vehicle from "../models/Vehicle.js";
 import Booking from "../models/Booking.js";
 
-
-
-
-
 /*
 |--------------------------------------------------------------------------
 | GET ALL PUBLIC TOURS
 |--------------------------------------------------------------------------
 */
 
-export const getTours = async (
-req,
-res,
-next
-)=>{
+export const getTours = async (req, res, next) => {
+  try {
+    const tours = await Tour.find({
+      available: true,
+    })
 
-try{
+      .populate("destination")
 
+      .populate("guide", "name email")
 
-const tours = await Tour.find({
+      .populate("vehicle")
 
-    available:true
+      .sort({
+        createdAt: -1,
+      });
 
-})
+    res.status(200).json({
+      success: true,
 
-.populate(
-    "destination"
-)
+      count: tours.length,
 
-.populate(
-    "guide",
-    "name email"
-)
-
-.populate(
-    "vehicle"
-)
-
-.sort({
-    createdAt:-1
-});
-
-
-
-res.status(200).json({
-
-    success:true,
-
-    count:tours.length,
-
-    tours
-
-});
-
-
-}catch(error){
-
-next(error);
-
-}
-
-
+      tours,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -80,62 +42,31 @@ next(error);
 |--------------------------------------------------------------------------
 */
 
-export const getFeaturedTours = async(
-req,
-res,
-next
-)=>{
+export const getFeaturedTours = async (req, res, next) => {
+  try {
+    const tours = await Tour.find({
+      featured: true,
 
-try{
+      available: true,
+    })
 
+      .populate("destination")
 
-const tours = await Tour.find({
+      .limit(6)
 
-    featured:true,
+      .sort({
+        createdAt: -1,
+      });
 
-    available:true
+    res.status(200).json({
+      success: true,
 
-})
-
-.populate(
-    "destination"
-)
-
-.limit(6)
-
-.sort({
-
-    createdAt:-1
-
-});
-
-
-
-res.status(200).json({
-
-    success:true,
-
-    tours
-
-});
-
-
-}catch(error){
-
-next(error);
-
-}
-
-
+      tours,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -143,91 +74,41 @@ next(error);
 |--------------------------------------------------------------------------
 */
 
-export const searchTours = async(
-req,
-res,
-next
-)=>{
+export const searchTours = async (req, res, next) => {
+  try {
+    const { keyword, category, country } = req.query;
 
+    const filter = {};
 
-try{
+    if (keyword) {
+      filter.$text = {
+        $search: keyword,
+      };
+    }
 
+    if (category) {
+      filter.category = category;
+    }
 
-const {
-keyword,
-category,
-country
-}=req.query;
+    if (country) {
+      filter.country = country;
+    }
 
+    const tours = await Tour.find(filter).sort({
+      createdAt: -1,
+    });
 
+    res.json({
+      success: true,
 
-const filter={};
+      count: tours.length,
 
-
-
-if(keyword){
-
-filter.$text={
-    $search:keyword
+      tours,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
-
-}
-
-
-
-if(category){
-
-filter.category=category;
-
-}
-
-
-
-if(country){
-
-filter.country=country;
-
-}
-
-
-
-const tours =
-await Tour.find(filter)
-.sort({
-createdAt:-1
-});
-
-
-
-
-res.json({
-
-success:true,
-
-count:tours.length,
-
-tours
-
-});
-
-
-
-}catch(error){
-
-next(error);
-
-}
-
-
-};
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -235,76 +116,33 @@ next(error);
 |--------------------------------------------------------------------------
 */
 
-export const getTourById = async(
-req,
-res,
-next
-)=>{
+export const getTourById = async (req, res, next) => {
+  try {
+    const tour = await Tour.findById(req.params.id)
 
+      .populate("destination")
 
-try{
+      .populate("guide", "name email")
 
+      .populate("vehicle");
 
-const tour =
-await Tour.findById(
-req.params.id
-)
+    if (!tour) {
+      return res.status(404).json({
+        success: false,
 
-.populate(
-    "destination"
-)
+        message: "Tour not found",
+      });
+    }
 
-.populate(
-    "guide",
-    "name email"
-)
+    res.json({
+      success: true,
 
-.populate(
-    "vehicle"
-);
-
-
-
-if(!tour){
-
-return res.status(404).json({
-
-success:false,
-
-message:"Tour not found"
-
-});
-
-}
-
-
-
-res.json({
-
-success:true,
-
-tour
-
-});
-
-
-
-}catch(error){
-
-next(error);
-
-}
-
-
+      tour,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -312,68 +150,31 @@ next(error);
 |--------------------------------------------------------------------------
 */
 
-export const getTourBySlug = async(
-req,
-res,
-next
-)=>{
+export const getTourBySlug = async (req, res, next) => {
+  try {
+    const tour = await Tour.findOne({
+      slug: req.params.slug,
+    })
 
+      .populate("destination");
 
-try{
+    if (!tour) {
+      return res.status(404).json({
+        success: false,
 
+        message: "Tour not found",
+      });
+    }
 
-const tour =
-await Tour.findOne({
+    res.json({
+      success: true,
 
-slug:req.params.slug
-
-})
-
-.populate(
-"destination"
-);
-
-
-
-if(!tour){
-
-return res.status(404).json({
-
-success:false,
-
-message:"Tour not found"
-
-});
-
-}
-
-
-
-res.json({
-
-success:true,
-
-tour
-
-});
-
-
-}catch(error){
-
-next(error);
-
-}
-
-
+      tour,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -381,55 +182,25 @@ next(error);
 |--------------------------------------------------------------------------
 */
 
-export const createTour = async(
-req,
-res,
-next
-)=>{
+export const createTour = async (req, res, next) => {
+  try {
+    const tour = await Tour.create({
+      ...req.body,
 
+      createdBy: req.user?._id,
+    });
 
-try{
+    res.status(201).json({
+      success: true,
 
+      message: "Tour created successfully",
 
-const tour =
-await Tour.create({
-
-...req.body,
-
-createdBy:req.user?._id
-
-});
-
-
-
-
-res.status(201).json({
-
-success:true,
-
-message:"Tour created successfully",
-
-tour
-
-});
-
-
-}catch(error){
-
-next(error);
-
-}
-
-
+      tour,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -437,68 +208,31 @@ next(error);
 |--------------------------------------------------------------------------
 */
 
-export const getManagerTours = async(
-req,
-res,
-next
-)=>{
+export const getManagerTours = async (req, res, next) => {
+  try {
+    const tours = await Tour.find({
+      createdBy: req.user._id,
+    })
 
+      .populate("guide", "name email")
 
-try{
+      .populate("vehicle")
 
+      .sort({
+        createdAt: -1,
+      });
 
-const tours =
-await Tour.find({
+    res.json({
+      success: true,
 
-createdBy:req.user._id
+      count: tours.length,
 
-})
-
-.populate(
-"guide",
-"name email"
-)
-
-.populate(
-"vehicle"
-)
-
-.sort({
-
-createdAt:-1
-
-});
-
-
-
-
-res.json({
-
-success:true,
-
-count:tours.length,
-
-tours
-
-});
-
-
-}catch(error){
-
-next(error);
-
-}
-
-
+      tours,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -506,72 +240,35 @@ next(error);
 |--------------------------------------------------------------------------
 */
 
-export const updateTour = async(
-req,
-res,
-next
-)=>{
+export const updateTour = async (req, res, next) => {
+  try {
+    const tour = await Tour.findByIdAndUpdate(
+      req.params.id,
 
+      req.body,
 
-try{
+      {
+        new: true,
 
+        runValidators: true,
+      },
+    );
 
-const tour =
-await Tour.findByIdAndUpdate(
+    if (!tour) {
+      return res.status(404).json({
+        message: "Tour not found",
+      });
+    }
 
-req.params.id,
+    res.json({
+      success: true,
 
-req.body,
-
-{
-
-new:true,
-
-runValidators:true
-
-}
-
-);
-
-
-
-if(!tour){
-
-return res.status(404).json({
-
-message:"Tour not found"
-
-});
-
-}
-
-
-
-res.json({
-
-success:true,
-
-tour
-
-});
-
-
-}catch(error){
-
-next(error);
-
-}
-
-
+      tour,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -579,60 +276,25 @@ next(error);
 |--------------------------------------------------------------------------
 */
 
-export const deleteTour = async(
-req,
-res,
-next
-)=>{
+export const deleteTour = async (req, res, next) => {
+  try {
+    const tour = await Tour.findByIdAndDelete(req.params.id);
 
+    if (!tour) {
+      return res.status(404).json({
+        message: "Tour not found",
+      });
+    }
 
-try{
+    res.json({
+      success: true,
 
-
-const tour =
-await Tour.findByIdAndDelete(
-req.params.id
-);
-
-
-
-if(!tour){
-
-return res.status(404).json({
-
-message:"Tour not found"
-
-});
-
-}
-
-
-
-res.json({
-
-success:true,
-
-message:"Tour deleted successfully"
-
-});
-
-
-}catch(error){
-
-next(error);
-
-}
-
-
+      message: "Tour deleted successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
 };
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -640,69 +302,31 @@ next(error);
 |--------------------------------------------------------------------------
 */
 
-export const assignGuide = async(
-req,
-res,
-next
-)=>{
+export const assignGuide = async (req, res, next) => {
+  try {
+    const tour = await Tour.findById(req.params.id);
 
+    if (!tour) {
+      return res.status(404).json({
+        message: "Tour not found",
+      });
+    }
 
-try{
+    tour.guide = req.body.guideId;
 
+    await tour.save();
 
-const tour =
-await Tour.findById(
-req.params.id
-);
+    res.json({
+      success: true,
 
+      message: "Guide assigned successfully",
 
-
-if(!tour){
-
-return res.status(404).json({
-
-message:"Tour not found"
-
-});
-
-}
-
-
-
-tour.guide=req.body.guideId;
-
-
-await tour.save();
-
-
-
-res.json({
-
-success:true,
-
-message:"Guide assigned successfully",
-
-tour
-
-});
-
-
-}catch(error){
-
-next(error);
-
-}
-
-
+      tour,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -710,97 +334,43 @@ next(error);
 |--------------------------------------------------------------------------
 */
 
-export const assignVehicle = async(
-req,
-res,
-next
-)=>{
+export const assignVehicle = async (req, res, next) => {
+  try {
+    const vehicle = await Vehicle.findById(req.body.vehicleId);
 
+    if (!vehicle) {
+      return res.status(404).json({
+        message: "Vehicle not found",
+      });
+    }
 
-try{
+    const tour = await Tour.findById(req.params.id);
 
+    if (!tour) {
+      return res.status(404).json({
+        message: "Tour not found",
+      });
+    }
 
-const vehicle =
-await Vehicle.findById(
-req.body.vehicleId
-);
+    tour.vehicle = vehicle._id;
 
+    await tour.save();
 
+    vehicle.status = "Assigned";
 
-if(!vehicle){
+    await vehicle.save();
 
-return res.status(404).json({
+    res.json({
+      success: true,
 
-message:"Vehicle not found"
+      message: "Vehicle assigned successfully",
 
-});
-
-}
-
-
-
-const tour =
-await Tour.findById(
-req.params.id
-);
-
-
-
-if(!tour){
-
-return res.status(404).json({
-
-message:"Tour not found"
-
-});
-
-}
-
-
-
-tour.vehicle =
-vehicle._id;
-
-
-
-await tour.save();
-
-
-
-vehicle.status="Assigned";
-
-
-await vehicle.save();
-
-
-
-res.json({
-
-success:true,
-
-message:"Vehicle assigned successfully",
-
-tour
-
-});
-
-
-}catch(error){
-
-next(error);
-
-}
-
-
+      tour,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -808,90 +378,39 @@ next(error);
 |--------------------------------------------------------------------------
 */
 
-export const removeVehicle = async(
-req,
-res,
-next
-)=>{
+export const removeVehicle = async (req, res, next) => {
+  try {
+    const tour = await Tour.findById(req.params.id);
 
+    if (!tour) {
+      return res.status(404).json({
+        message: "Tour not found",
+      });
+    }
 
-try{
+    if (tour.vehicle) {
+      const vehicle = await Vehicle.findById(tour.vehicle);
 
+      if (vehicle) {
+        vehicle.status = "Available";
 
-const tour =
-await Tour.findById(
-req.params.id
-);
+        await vehicle.save();
+      }
+    }
 
+    tour.vehicle = null;
 
+    await tour.save();
 
-if(!tour){
+    res.json({
+      success: true,
 
-return res.status(404).json({
-
-message:"Tour not found"
-
-});
-
-}
-
-
-
-if(tour.vehicle){
-
-
-const vehicle =
-await Vehicle.findById(
-tour.vehicle
-);
-
-
-
-if(vehicle){
-
-vehicle.status="Available";
-
-await vehicle.save();
-
-}
-
-
-}
-
-
-
-tour.vehicle=null;
-
-
-await tour.save();
-
-
-
-res.json({
-
-success:true,
-
-message:"Vehicle removed"
-
-});
-
-
-}catch(error){
-
-next(error);
-
-}
-
-
+      message: "Vehicle removed",
+    });
+  } catch (error) {
+    next(error);
+  }
 };
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -899,136 +418,74 @@ next(error);
 |--------------------------------------------------------------------------
 */
 
-export const getReports = async(
-req,
-res,
-next
-)=>{
+export const getReports = async (req, res, next) => {
+  try {
+    const tours = await Tour.find({
+      createdBy: req.user._id,
+    });
 
+    const tourIds = tours.map((tour) => tour._id);
 
-try{
+    const totalTours = tours.length;
 
+    const completedTours = await Tour.countDocuments({
+      createdBy: req.user._id,
 
-const tours =
-await Tour.find({
+      status: "completed",
+    });
 
-createdBy:req.user._id
+    const upcomingTours = await Tour.countDocuments({
+      createdBy: req.user._id,
 
-});
+      status: "upcoming",
+    });
 
+    const totalBookings = await Booking.countDocuments({
+      tour: {
+        $in: tourIds,
+      },
+    });
 
+    const revenue = await Booking.aggregate([
+      {
+        $match: {
+          tour: {
+            $in: tourIds,
+          },
 
-const tourIds =
-tours.map(
-tour=>tour._id
-);
+          paymentStatus: "paid",
+        },
+      },
 
+      {
+        $group: {
+          _id: null,
 
+          totalRevenue: {
+            $sum: "$totalAmount",
+          },
+        },
+      },
+    ]);
 
-const totalTours =
-tours.length;
+    res.json({
+      success: true,
 
+      reports: {
+        totalTours,
 
+        completedTours,
 
-const completedTours =
-await Tour.countDocuments({
+        upcomingTours,
 
-createdBy:req.user._id,
+        totalBookings,
 
-status:"completed"
+        totalRevenue: revenue[0]?.totalRevenue || 0,
 
-});
-
-
-
-const upcomingTours =
-await Tour.countDocuments({
-
-createdBy:req.user._id,
-
-status:"upcoming"
-
-});
-
-
-
-const totalBookings =
-await Booking.countDocuments({
-
-tour:{
-$in:tourIds
-}
-
-});
-
-
-
-const revenue =
-await Booking.aggregate([
-
-{
-
-$match:{
-
-tour:{
-$in:tourIds
-},
-
-paymentStatus:"paid"
-
-}
-
-},
-
-{
-
-$group:{
-
-_id:null,
-
-totalRevenue:{
-
-$sum:"$totalAmount"
-
-}
-
-}
-
-}
-
-]);
-
-
-
-res.json({
-
-success:true,
-
-reports:{
-
-totalTours,
-
-completedTours,
-
-upcomingTours,
-
-totalBookings,
-
-totalRevenue:
-revenue[0]?.totalRevenue || 0,
-
-tours
-
-}
-
-});
-
-
-}catch(error){
-
-next(error);
-
-}
-
-
+        tours,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
 };

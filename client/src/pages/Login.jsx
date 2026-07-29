@@ -117,11 +117,6 @@ export default function Login() {
       | ROLE DETECTION
       |--------------------------------------------------------------------------
       |
-      | Supports:
-      | "tourmanager"
-      | "tour_manager"
-      | "Tour Manager"
-      | {name:"tourmanager"}
       |
       |--------------------------------------------------------------------------
       */
@@ -268,7 +263,7 @@ export default function Login() {
 
         case "tourmanager":
 
-          navigate("/tour-manager/dashboard");
+          navigate("/manager/dashboard");
 
           break;
 

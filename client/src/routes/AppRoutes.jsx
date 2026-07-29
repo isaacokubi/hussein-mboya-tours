@@ -192,7 +192,7 @@ export default function AppRoutes() {
       <Route
         path="/guide/dashboard"
         element={
-          <ProtectedRoute roles={["tour_guide", "admin"]}>
+          <ProtectedRoute roles={["guide", "admin"]}>
             <TourGuideDashboard />
           </ProtectedRoute>
         }
@@ -205,7 +205,7 @@ export default function AppRoutes() {
       <Route
         path="/tour-manager"
         element={
-          <ProtectedRoute roles={["tour_manager", "admin"]}>
+          <ProtectedRoute roles={["manager", "admin"]}>
             <TourManagerLayout />
           </ProtectedRoute>
         }
@@ -265,29 +265,17 @@ export default function AppRoutes() {
 
         <Route path="finance" element={<AdminFinance />} />
 
-        <Route
-          path="finance/transactions"
-          element={<MpesaTransactions />}
-        />
+        <Route path="finance/transactions" element={<MpesaTransactions />} />
 
-        <Route
-          path="finance/reports"
-          element={<FinanceReports />}
-        />
+        <Route path="finance/reports" element={<FinanceReports />} />
 
         {/* ANALYTICS */}
 
-        <Route
-          path="analytics"
-          element={<AdminAnalytics />}
-        />
+        <Route path="analytics" element={<AdminAnalytics />} />
 
         {/* CUSTOMERS */}
 
-        <Route
-          path="customers"
-          element={<Customers />}
-        />
+        <Route path="customers" element={<Customers />} />
 
         {/* GUIDES */}
 
@@ -302,10 +290,7 @@ export default function AppRoutes() {
 
         {/* VEHICLES */}
 
-        <Route
-          path="vehicles"
-          element={<Vehicles />}
-        />
+        <Route path="vehicles" element={<Vehicles />} />
 
         {/* SETTINGS */}
 
@@ -327,9 +312,7 @@ export default function AppRoutes() {
         path="*"
         element={
           <div className="min-h-screen flex items-center justify-center">
-            <h1 className="text-4xl font-bold">
-              404 - Page Not Found
-            </h1>
+            <h1 className="text-4xl font-bold">404 - Page Not Found</h1>
           </div>
         }
       />

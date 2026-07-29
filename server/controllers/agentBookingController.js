@@ -6,14 +6,7 @@ import Customer from "../models/Customer.js";
 
 import Agent from "../models/Agent.js";
 
-import {
-createCommission
-}
-from "../services/commissionService.js";
-
-
-
-
+import { createCommission } from "../services/commissionService.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -26,319 +19,121 @@ from "../services/commissionService.js";
 |
 */
 
+export const createBooking = async (req, res) => {
+  try {
+    const agentUserId = req.user._id;
 
-export const createBooking = async(req,res)=>{
+    const agentProfile = await Agent.findOne({
+      user: agentUserId,
+    });
 
+    if (!agentProfile) {
+      return res.status(404).json({
+        message: "Agent profile not found",
+      });
+    }
 
-try{
+    const {
+      customer,
 
+      tour,
 
-const agentUserId = req.user._id;
+      travelDate,
 
+      travelers,
+    } = req.body;
 
+    const tourPackage = await TourPackage.findById(tour);
 
-const agentProfile =
-await Agent.findOne({
+    if (!tourPackage) {
+      return res.status(404).json({
+        message: "Tour package not found",
+      });
+    }
 
-user:agentUserId
+    const customerData = await Customer.findById(customer);
 
-});
+    if (!customerData) {
+      return res.status(404).json({
+        message: "Customer not found",
+      });
+    }
 
+    const travelerCount = travelers.length;
 
-
-if(!agentProfile){
-
-return res.status(404)
-.json({
-
-message:"Agent profile not found"
-
-});
-
-}
-
-
-
-
-const {
-
-
-customer,
-
-tour,
-
-travelDate,
-
-travelers
-
-
-}
-
-=
-req.body;
-
-
-
-
-
-
-
-const tourPackage =
-
-await TourPackage.findById(
-tour
-);
-
-
-
-
-
-if(!tourPackage){
-
-
-return res.status(404)
-.json({
-
-message:"Tour package not found"
-
-});
-
-
-}
-
-
-
-
-
-
-
-
-const customerData =
-
-await Customer.findById(
-customer
-);
-
-
-
-
-
-if(!customerData){
-
-
-return res.status(404)
-.json({
-
-message:"Customer not found"
-
-});
-
-
-}
-
-
-
-
-
-
-
-
-
-const travelerCount =
-
-travelers.length;
-
-
-
-
-
-
-
-
-/*
+    /*
 |--------------------------------------------------------------------------
 | CALCULATE PRICE
 |--------------------------------------------------------------------------
 */
 
+    const totalAmount = tourPackage.price * travelerCount;
 
-const totalAmount =
-
-tourPackage.price *
-
-travelerCount;
-
-
-
-
-
-
-
-
-
-/*
+    /*
 |--------------------------------------------------------------------------
 | CREATE BOOKING
 |--------------------------------------------------------------------------
 */
 
+    const booking = await Booking.create({
+      agent: agentProfile._id,
 
-const booking =
+      user: customerData.user || null,
 
-await Booking.create({
+      customerSnapshot: {
+        name: customerData.name,
 
-agent:agentProfile._id,
+        email: customerData.email,
 
+        phone: customerData.phone,
+      },
 
-user:customerData.user || null,
+      bookingSource: "agent",
 
+      contact: {
+        name: customerData.name,
 
+        email: customerData.email,
 
-customerSnapshot:{
+        phone: customerData.phone,
+      },
 
+      tour: tourPackage._id,
 
-name:
-customerData.name,
+      travelDate,
 
+      travelers,
 
-email:
-customerData.email,
+      travelerCount,
 
+      subtotal: totalAmount,
 
-phone:
-customerData.phone
+      amount: totalAmount,
 
+      commissionRate: agentProfile.commissionRate,
+    });
 
-},
-
-
-
-bookingSource:"agent",
-
-
-
-contact:{
-
-
-name:
-customerData.name,
-
-
-email:
-customerData.email,
-
-
-phone:
-customerData.phone
-
-
-},
-
-
-
-
-tour:
-tourPackage._id,
-
-
-
-travelDate,
-
-
-
-travelers,
-
-
-
-travelerCount,
-
-
-
-subtotal:
-totalAmount,
-
-
-
-amount:
-totalAmount,
-
-
-
-commissionRate:
-agentProfile.commissionRate
-
-
-});
-
-
-
-
-
-
-
-
-
-/*
+    /*
 |--------------------------------------------------------------------------
 | CREATE COMMISSION
 |--------------------------------------------------------------------------
 */
 
+    await createCommission(booking);
 
-await createCommission(
+    res.status(201).json({
+      success: true,
 
-booking
+      booking,
+    });
+  } catch (error) {
+    console.error(error);
 
-);
-
-
-
-
-
-
-
-res.status(201)
-.json({
-
-success:true,
-
-booking
-
-});
-
-
-
-
-}
-
-catch(error){
-
-
-console.error(
-error
-);
-
-
-res.status(500)
-.json({
-
-message:error.message
-
-});
-
-
-}
-
-
+    res.status(500).json({
+      message: error.message,
+    });
+  }
 };
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -346,97 +141,35 @@ message:error.message
 |--------------------------------------------------------------------------
 */
 
+export const getAgentBookings = async (req, res) => {
+  try {
+    const agentProfile = await Agent.findOne({
+      user: req.user._id,
+    });
 
-export const getAgentBookings =
+    const bookings = await Booking.find({
+      agent: agentProfile._id,
+    })
 
-async(req,res)=>{
+      .populate("tour")
 
+      .populate("user")
 
-try{
+      .sort({
+        createdAt: -1,
+      });
 
+    res.json({
+      success: true,
 
-const agentProfile =
-
-await Agent.findOne({
-
-user:req.user._id
-
-});
-
-
-
-
-
-const bookings =
-
-await Booking.find({
-
-agent:agentProfile._id
-
-})
-
-
-.populate(
-
-"tour"
-
-)
-
-
-.populate(
-
-"user"
-
-)
-
-
-.sort({
-
-createdAt:-1
-
-});
-
-
-
-
-
-
-
-res.json({
-
-success:true,
-
-bookings
-
-});
-
-
-
-}
-
-catch(error){
-
-
-res.status(500)
-.json({
-
-message:error.message
-
-});
-
-
-}
-
-
+      bookings,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
 };
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -444,129 +177,44 @@ message:error.message
 |--------------------------------------------------------------------------
 */
 
-
-export const updateBookingStatus =
-
-async(req,res)=>{
-
-
-try{
-
-
-const {
-
-status
-
-}
-
-=
-req.body;
-
-
-
-
-
-
-const agentProfile =
-
-await Agent.findOne({
-
-user:req.user._id
-
-});
-
-
-
-
-
-
-
-const booking =
-
-await Booking.findOneAndUpdate(
-
-{
-
-
-_id:req.params.id,
-
-
-agent:agentProfile._id
-
-
-},
-
-
-{
-
-
-bookingStatus:status
-
-
-},
-
-
-{
-
-
-new:true
-
-}
-
-
-);
-
-
-
-
-
-
-
-if(!booking){
-
-
-return res.status(404)
-.json({
-
-message:"Booking not found"
-
-});
-
-
-}
-
-
-
-
-
-
-
-res.json({
-
-success:true,
-
-booking
-
-});
-
-
-
-
-
-}
-
-catch(error){
-
-
-res.status(500)
-.json({
-
-message:error.message
-
-});
-
-
-}
-
-
+export const updateBookingStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    const agentProfile = await Agent.findOne({
+      user: req.user._id,
+    });
+
+    const booking = await Booking.findOneAndUpdate(
+      {
+        _id: req.params.id,
+
+        agent: agentProfile._id,
+      },
+
+      {
+        bookingStatus: status,
+      },
+
+      {
+        new: true,
+      },
+    );
+
+    if (!booking) {
+      return res.status(404).json({
+        message: "Booking not found",
+      });
+    }
+
+    res.json({
+      success: true,
+
+      booking,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
 };

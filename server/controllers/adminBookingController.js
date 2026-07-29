@@ -1,90 +1,42 @@
 import Booking from "../models/Booking.js";
 
-
-
-
-
 /*
 |--------------------------------------------------------------------------
 | GET ALL BOOKINGS
 |--------------------------------------------------------------------------
 */
 
-export const getAllBookings = async(req,res,next)=>{
+export const getAllBookings = async (req, res, next) => {
+  try {
+    const bookings = await Booking.find()
 
+      .populate("customer", "name email phone")
 
-try{
+      .populate("user", "name email phone")
 
+      .populate("tour", "title name destination price")
 
-const bookings = await Booking.find()
+      .populate("assignedGuide", "name email phone")
 
-.populate(
-"customer",
-"name email phone"
-)
+      .populate("assignedDriver", "name email phone")
 
-.populate(
-"user",
-"name email phone"
-)
+      .populate("assignedVehicle")
 
-.populate(
-"tour",
-"title name destination price"
-)
+      .sort({
+        createdAt: -1,
+      });
 
-.populate(
-"assignedGuide",
-"name email phone"
-)
+    res.status(200).json({
+      success: true,
 
-.populate(
-"assignedDriver",
-"name email phone"
-)
+      count: bookings.length,
 
-.populate(
-"assignedVehicle"
-)
-
-.sort({
-
-createdAt:-1
-
-});
-
-
-
-
-
-res.status(200).json({
-
-success:true,
-
-count:bookings.length,
-
-bookings
-
-});
-
-
-
-}
-catch(error){
-
-next(error);
-
-}
-
+      bookings,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -92,84 +44,37 @@ next(error);
 |--------------------------------------------------------------------------
 */
 
+export const getBooking = async (req, res, next) => {
+  try {
+    const booking = await Booking.findById(req.params.id)
 
-export const getBooking = async(req,res,next)=>{
+      .populate("customer", "name email phone")
 
+      .populate("tour")
 
-try{
+      .populate("assignedGuide", "name")
 
+      .populate("assignedDriver", "name")
 
-const booking = await Booking.findById(
+      .populate("assignedVehicle");
 
-req.params.id
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
 
-)
+        message: "Booking not found",
+      });
+    }
 
-.populate(
-"customer",
-"name email phone"
-)
+    res.status(200).json({
+      success: true,
 
-.populate(
-"tour"
-)
-
-.populate(
-"assignedGuide",
-"name"
-)
-
-.populate(
-"assignedDriver",
-"name"
-)
-
-.populate(
-"assignedVehicle"
-);
-
-
-
-
-if(!booking){
-
-return res.status(404).json({
-
-success:false,
-
-message:"Booking not found"
-
-});
-
-}
-
-
-
-res.status(200).json({
-
-success:true,
-
-booking
-
-});
-
-
-}
-catch(error){
-
-next(error);
-
-}
-
+      booking,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -177,84 +82,41 @@ next(error);
 |--------------------------------------------------------------------------
 */
 
+export const updateBookingStatus = async (req, res, next) => {
+  try {
+    const { status } = req.body;
 
-export const updateBookingStatus = async(req,res,next)=>{
+    const booking = await Booking.findByIdAndUpdate(
+      req.params.id,
 
+      {
+        bookingStatus: status,
+      },
 
-try{
+      {
+        new: true,
+      },
+    );
 
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
 
-const {
+        message: "Booking not found",
+      });
+    }
 
-status
+    res.status(200).json({
+      success: true,
 
-}=req.body;
+      message: "Booking status updated",
 
-
-
-const booking = await Booking.findByIdAndUpdate(
-
-req.params.id,
-
-
-{
-
-bookingStatus:status
-
-},
-
-
-{
-new:true
-}
-
-);
-
-
-
-if(!booking){
-
-return res.status(404).json({
-
-success:false,
-
-message:"Booking not found"
-
-});
-
-}
-
-
-
-
-res.status(200).json({
-
-success:true,
-
-message:"Booking status updated",
-
-booking
-
-});
-
-
-
-}
-catch(error){
-
-next(error);
-
-}
-
+      booking,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -262,84 +124,45 @@ next(error);
 |--------------------------------------------------------------------------
 */
 
+export const assignResources = async (req, res, next) => {
+  try {
+    const booking = await Booking.findByIdAndUpdate(
+      req.params.id,
 
-export const assignResources = async(req,res,next)=>{
+      {
+        assignedGuide: req.body.guide || null,
 
+        assignedDriver: req.body.driver || null,
 
-try{
+        assignedVehicle: req.body.vehicle || null,
 
+        bookingStatus: "assigned",
+      },
 
-const booking = await Booking.findByIdAndUpdate(
+      {
+        new: true,
+      },
+    );
 
-req.params.id,
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
 
+        message: "Booking not found",
+      });
+    }
 
-{
+    res.status(200).json({
+      success: true,
 
-assignedGuide:req.body.guide || null,
+      message: "Resources assigned successfully",
 
-
-assignedDriver:req.body.driver || null,
-
-
-assignedVehicle:req.body.vehicle || null,
-
-
-bookingStatus:"assigned"
-
-},
-
-
-{
-new:true
-}
-
-);
-
-
-
-if(!booking){
-
-return res.status(404).json({
-
-success:false,
-
-message:"Booking not found"
-
-});
-
-}
-
-
-
-res.status(200).json({
-
-success:true,
-
-message:"Resources assigned successfully",
-
-booking
-
-});
-
-
-
-}
-catch(error){
-
-next(error);
-
-}
-
+      booking,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -347,65 +170,38 @@ next(error);
 |--------------------------------------------------------------------------
 */
 
+export const updatePaymentStatus = async (req, res, next) => {
+  try {
+    const booking = await Booking.findByIdAndUpdate(
+      req.params.id,
 
-export const updatePaymentStatus = async(req,res,next)=>{
+      {
+        paymentStatus: req.body.status,
 
+        mpesaReceipt: req.body.mpesaReceipt || "",
+      },
 
-try{
+      {
+        new: true,
+      },
+    );
 
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
 
-const booking = await Booking.findByIdAndUpdate(
+        message: "Booking not found",
+      });
+    }
 
-req.params.id,
+    res.status(200).json({
+      success: true,
 
+      message: "Payment updated",
 
-{
-
-paymentStatus:req.body.status,
-
-mpesaReceipt:req.body.mpesaReceipt || ""
-
-},
-
-
-{
-new:true
-}
-
-);
-
-
-
-if(!booking){
-
-return res.status(404).json({
-
-success:false,
-
-message:"Booking not found"
-
-});
-
-}
-
-
-
-res.status(200).json({
-
-success:true,
-
-message:"Payment updated",
-
-booking
-
-});
-
-
-}
-catch(error){
-
-next(error);
-
-}
-
+      booking,
+    });
+  } catch (error) {
+    next(error);
+  }
 };

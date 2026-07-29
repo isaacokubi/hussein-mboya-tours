@@ -1,66 +1,28 @@
 import Staff from "../models/Staff.js";
 
-
-
-
 // ============================================================
 // CREATE STAFF
 // ============================================================
 
-export const createStaff = async(req,res)=>{
+export const createStaff = async (req, res) => {
+  try {
+    const staff = await Staff.create(req.body);
 
+    res.status(201).json({
+      success: true,
 
-try{
+      message: "Staff created successfully",
 
+      data: staff,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
 
-const staff = await Staff.create(
-
-req.body
-
-);
-
-
-
-res.status(201).json({
-
-success:true,
-
-message:"Staff created successfully",
-
-data:staff
-
-});
-
-
-
-}
-
-catch(error)
-
-{
-
-
-res.status(500).json({
-
-success:false,
-
-message:error.message
-
-});
-
-
-}
-
-
+      message: error.message,
+    });
+  }
 };
-
-
-
-
-
-
-
-
 
 // ============================================================
 // GET ALL ACTIVE STAFF
@@ -78,527 +40,217 @@ message:error.message
 //
 // ============================================================
 
+export const getStaff = async (req, res) => {
+  try {
+    const filter = {
+      isActive: true,
+    };
 
-export const getStaff = async(req,res)=>{
+    // FILTER BY POSITION
 
+    if (req.query.position) {
+      filter.position = req.query.position;
+    }
 
-try{
+    // FILTER BY AVAILABILITY
 
+    if (req.query.availability) {
+      filter.availability = req.query.availability;
+    }
 
-const filter = {
+    const staff = await Staff.find(filter)
 
+      .populate({
+        path: "assignedTours",
 
-isActive:true
+        select: "title startDate endDate status",
+      })
 
+      .sort({
+        createdAt: -1,
+      });
 
+    res.status(200).json({
+      success: true,
+
+      count: staff.length,
+
+      staff,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+
+      message: error.message,
+    });
+  }
 };
-
-
-
-
-
-
-
-// FILTER BY POSITION
-
-if(req.query.position)
-
-{
-
-
-filter.position = req.query.position;
-
-
-}
-
-
-
-
-
-
-
-// FILTER BY AVAILABILITY
-
-if(req.query.availability)
-
-{
-
-
-filter.availability = req.query.availability;
-
-
-}
-
-
-
-
-
-
-
-
-const staff = await Staff.find(filter)
-
-.populate(
-
-{
-
-path:"assignedTours",
-
-select:"title startDate endDate status"
-
-}
-
-)
-
-.sort({
-
-createdAt:-1
-
-});
-
-
-
-
-
-
-
-res.status(200).json({
-
-success:true,
-
-count:staff.length,
-
-staff
-
-});
-
-
-
-}
-
-catch(error)
-
-{
-
-
-res.status(500).json({
-
-success:false,
-
-message:error.message
-
-});
-
-
-}
-
-
-};
-
-
-
-
-
-
-
-
 
 // ============================================================
 // GET SINGLE STAFF
 // ============================================================
 
-export const getSingleStaff = async(req,res)=>{
+export const getSingleStaff = async (req, res) => {
+  try {
+    const staff = await Staff.findById(req.params.id)
 
+      .populate({
+        path: "assignedTours",
 
-try{
+        select: "title startDate endDate status",
+      });
 
+    if (!staff) {
+      return res.status(404).json({
+        success: false,
 
-const staff = await Staff.findById(
+        message: "Staff not found",
+      });
+    }
 
-req.params.id
+    res.status(200).json({
+      success: true,
 
-)
+      data: staff,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
 
-.populate(
-
-{
-
-path:"assignedTours",
-
-select:"title startDate endDate status"
-
-}
-
-);
-
-
-
-
-
-
-
-if(!staff)
-
-{
-
-
-return res.status(404).json({
-
-success:false,
-
-message:"Staff not found"
-
-});
-
-
-}
-
-
-
-
-
-
-
-res.status(200).json({
-
-success:true,
-
-data:staff
-
-});
-
-
-
-}
-
-catch(error)
-
-{
-
-
-res.status(500).json({
-
-success:false,
-
-message:error.message
-
-});
-
-
-}
-
-
+      message: error.message,
+    });
+  }
 };
-
-
-
-
-
-
-
-
 
 // ============================================================
 // UPDATE STAFF
 // ============================================================
 
-export const updateStaff = async(req,res)=>{
+export const updateStaff = async (req, res) => {
+  try {
+    const staff = await Staff.findByIdAndUpdate(
+      req.params.id,
 
+      req.body,
 
-try{
+      {
+        new: true,
 
+        runValidators: true,
+      },
+    );
 
-const staff = await Staff.findByIdAndUpdate(
+    if (!staff) {
+      return res.status(404).json({
+        success: false,
 
-req.params.id,
+        message: "Staff not found",
+      });
+    }
 
-req.body,
+    res.status(200).json({
+      success: true,
 
-{
+      message: "Staff updated successfully",
 
-new:true,
+      data: staff,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
 
-runValidators:true
-
-}
-
-);
-
-
-
-
-
-
-
-if(!staff)
-
-{
-
-
-return res.status(404).json({
-
-success:false,
-
-message:"Staff not found"
-
-});
-
-
-}
-
-
-
-
-
-
-
-res.status(200).json({
-
-success:true,
-
-message:"Staff updated successfully",
-
-data:staff
-
-});
-
-
-
-}
-
-catch(error)
-
-{
-
-
-res.status(500).json({
-
-success:false,
-
-message:error.message
-
-});
-
-
-}
-
-
+      message: error.message,
+    });
+  }
 };
-
-
-
-
-
-
-
-
 
 // ============================================================
 // DELETE STAFF (SOFT DELETE)
 // ============================================================
 
-export const deleteStaff = async(req,res)=>{
+export const deleteStaff = async (req, res) => {
+  try {
+    const staff = await Staff.findByIdAndUpdate(
+      req.params.id,
 
+      {
+        isActive: false,
 
-try{
+        status: "inactive",
+      },
 
+      {
+        new: true,
+      },
+    );
 
-const staff = await Staff.findByIdAndUpdate(
+    if (!staff) {
+      return res.status(404).json({
+        success: false,
 
-req.params.id,
+        message: "Staff not found",
+      });
+    }
 
-{
+    res.status(200).json({
+      success: true,
 
+      message: "Staff removed successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
 
-isActive:false,
-
-
-status:"inactive"
-
-
-
-},
-
-{
-
-new:true
-
-}
-
-);
-
-
-
-
-
-
-
-if(!staff)
-
-{
-
-
-return res.status(404).json({
-
-success:false,
-
-message:"Staff not found"
-
-});
-
-
-}
-
-
-
-
-
-
-
-res.status(200).json({
-
-success:true,
-
-message:"Staff removed successfully"
-
-});
-
-
-
-}
-
-catch(error)
-
-{
-
-
-res.status(500).json({
-
-success:false,
-
-message:error.message
-
-});
-
-
-}
-
-
+      message: error.message,
+    });
+  }
 };
-
-
-
-
-
-
-
-
 
 // ============================================================
 // RESTORE STAFF
 // ============================================================
 
-export const restoreStaff = async(req,res)=>{
+export const restoreStaff = async (req, res) => {
+  try {
+    const staff = await Staff.findByIdAndUpdate(
+      req.params.id,
 
+      {
+        isActive: true,
 
-try{
+        status: "active",
 
+        availability: "available",
+      },
 
-const staff = await Staff.findByIdAndUpdate(
+      {
+        new: true,
+      },
+    );
 
-req.params.id,
+    if (!staff) {
+      return res.status(404).json({
+        success: false,
 
-{
+        message: "Staff not found",
+      });
+    }
 
+    res.status(200).json({
+      success: true,
 
-isActive:true,
+      message: "Staff restored successfully",
 
+      data: staff,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
 
-status:"active",
-
-
-availability:"available"
-
-
-
-},
-
-{
-
-new:true
-
-}
-
-);
-
-
-
-
-
-
-
-if(!staff)
-
-{
-
-
-return res.status(404).json({
-
-success:false,
-
-message:"Staff not found"
-
-});
-
-
-}
-
-
-
-
-
-
-
-res.status(200).json({
-
-success:true,
-
-message:"Staff restored successfully",
-
-data:staff
-
-});
-
-
-
-}
-
-catch(error)
-
-{
-
-
-res.status(500).json({
-
-success:false,
-
-message:error.message
-
-});
-
-
-}
-
-
+      message: error.message,
+    });
+  }
 };
-
-
-
-
-
-
-
-
 
 // ============================================================
 // GET AVAILABLE DRIVERS
@@ -608,81 +260,37 @@ message:error.message
 //
 // ============================================================
 
+export const getDrivers = async (req, res) => {
+  try {
+    const drivers = await Staff.find({
+      position: "driver",
 
-export const getDrivers = async(req,res)=>{
+      isActive: true,
 
+      availability: "available",
+    })
 
-try{
+      .populate("assignedTours")
 
+      .sort({
+        createdAt: -1,
+      });
 
-const drivers = await Staff.find({
+    res.status(200).json({
+      success: true,
 
-position:"driver",
+      count: drivers.length,
 
-isActive:true,
+      drivers,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
 
-availability:"available"
-
-})
-
-.populate(
-
-"assignedTours"
-
-)
-
-.sort({
-
-createdAt:-1
-
-});
-
-
-
-
-
-
-
-res.status(200).json({
-
-success:true,
-
-count:drivers.length,
-
-drivers
-
-});
-
-
-
-}
-
-catch(error)
-
-{
-
-
-res.status(500).json({
-
-success:false,
-
-message:error.message
-
-});
-
-
-}
-
-
+      message: error.message,
+    });
+  }
 };
-
-
-
-
-
-
-
-
 
 // ============================================================
 // GET AVAILABLE GUIDES
@@ -692,75 +300,35 @@ message:error.message
 //
 // ============================================================
 
+export const getGuides = async (req, res) => {
+  try {
+    const guides = await Staff.find({
+      position: "guide",
 
-export const getGuides = async(req,res)=>{
+      isActive: true,
 
+      availability: "available",
+    })
 
-try{
+      .sort({
+        createdAt: -1,
+      });
 
+    res.status(200).json({
+      success: true,
 
-const guides = await Staff.find({
+      count: guides.length,
 
-position:"guide",
+      guides,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
 
-isActive:true,
-
-availability:"available"
-
-})
-
-.sort({
-
-createdAt:-1
-
-});
-
-
-
-
-
-
-
-res.status(200).json({
-
-success:true,
-
-count:guides.length,
-
-guides
-
-});
-
-
-
-}
-
-catch(error)
-
-{
-
-
-res.status(500).json({
-
-success:false,
-
-message:error.message
-
-});
-
-
-}
-
-
+      message: error.message,
+    });
+  }
 };
-
-
-
-
-
-
-
-
 
 // ============================================================
 // UPDATE STAFF AVAILABILITY
@@ -770,126 +338,52 @@ message:error.message
 //
 // ============================================================
 
+export const updateStaffAvailability = async (req, res) => {
+  try {
+    const { availability } = req.body;
 
-export const updateStaffAvailability = async(req,res)=>{
+    if (!availability) {
+      return res.status(400).json({
+        success: false,
 
+        message: "Availability is required",
+      });
+    }
 
-try{
+    const staff = await Staff.findByIdAndUpdate(
+      req.params.id,
 
+      {
+        availability,
+      },
 
-const {
+      {
+        new: true,
 
-availability
+        runValidators: true,
+      },
+    );
 
-}=req.body;
+    if (!staff) {
+      return res.status(404).json({
+        success: false,
 
+        message: "Staff not found",
+      });
+    }
 
+    res.status(200).json({
+      success: true,
 
+      message: "Availability updated successfully",
 
+      staff,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
 
-
-
-if(!availability)
-
-{
-
-
-return res.status(400).json({
-
-success:false,
-
-message:"Availability is required"
-
-});
-
-
-}
-
-
-
-
-
-
-
-const staff = await Staff.findByIdAndUpdate(
-
-req.params.id,
-
-{
-
-
-availability
-
-
-},
-
-{
-
-new:true,
-
-runValidators:true
-
-}
-
-);
-
-
-
-
-
-
-
-if(!staff)
-
-{
-
-
-return res.status(404).json({
-
-success:false,
-
-message:"Staff not found"
-
-});
-
-
-}
-
-
-
-
-
-
-
-res.status(200).json({
-
-success:true,
-
-message:"Availability updated successfully",
-
-staff
-
-});
-
-
-
-}
-
-catch(error)
-
-{
-
-
-res.status(500).json({
-
-success:false,
-
-message:error.message
-
-});
-
-
-}
-
-
+      message: error.message,
+    });
+  }
 };

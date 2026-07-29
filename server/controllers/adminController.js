@@ -1,300 +1,189 @@
 // server/controllers/adminController.js
 
-
 import User from "../models/User.js";
 import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
 import Payment from "../models/Payment.js";
-
-
-
 
 // ============================================================
 // ADMIN DASHBOARD STATISTICS
 // ============================================================
 
 export const getDashboardStats = async (req, res) => {
-
-try {
-
-
-
-/*
+  try {
+    /*
 |--------------------------------------------------------------------------
 | USERS
 |--------------------------------------------------------------------------
 */
 
-const users = 
-await User.countDocuments();
+    const users = await User.countDocuments();
 
-
-
-
-
-/*
+    /*
 |--------------------------------------------------------------------------
 | BOOKINGS
 |--------------------------------------------------------------------------
 */
 
-const bookings =
-await Booking.countDocuments();
+    const bookings = await Booking.countDocuments();
 
-
-
-
-
-/*
+    /*
 |--------------------------------------------------------------------------
 | TOURS
 |--------------------------------------------------------------------------
 */
 
-const tours =
-await Tour.countDocuments();
+    const tours = await Tour.countDocuments();
 
-
-
-
-
-/*
+    /*
 |--------------------------------------------------------------------------
 | REVENUE
 |--------------------------------------------------------------------------
 */
 
-const revenueData =
-await Payment.aggregate([
+    const revenueData = await Payment.aggregate([
+      {
+        $match: {
+          status: "paid",
+        },
+      },
 
-{
-$match:{
-status:"paid"
-}
-},
+      {
+        $group: {
+          _id: null,
 
-{
-$group:{
+          total: {
+            $sum: "$amount",
+          },
+        },
+      },
+    ]);
 
-_id:null,
+    const revenue = revenueData[0]?.total || 0;
 
-total:{
-$sum:"$amount"
-}
-
-}
-
-}
-
-]);
-
-
-
-const revenue =
-revenueData[0]?.total || 0;
-
-
-
-
-
-
-
-/*
+    /*
 |--------------------------------------------------------------------------
 | BOOKING STATUS
 |--------------------------------------------------------------------------
 */
 
-const bookingStatus =
-await Booking.aggregate([
+    const bookingStatus = await Booking.aggregate([
+      {
+        $group: {
+          _id: "$status",
 
-{
-$group:{
+          count: {
+            $sum: 1,
+          },
+        },
+      },
+    ]);
 
-_id:"$status",
-
-count:{
-$sum:1
-}
-
-}
-
-}
-
-]);
-
-
-
-
-
-
-
-
-/*
+    /*
 |--------------------------------------------------------------------------
 | MONTHLY REVENUE
 |--------------------------------------------------------------------------
 */
 
-const monthlyRevenue =
-await Payment.aggregate([
+    const monthlyRevenue = await Payment.aggregate([
+      {
+        $match: {
+          status: "paid",
+        },
+      },
 
-{
-$match:{
-status:"paid"
-}
-},
+      {
+        $group: {
+          _id: {
+            month: {
+              $month: "$createdAt",
+            },
 
-{
-$group:{
+            year: {
+              $year: "$createdAt",
+            },
+          },
 
-_id:{
+          total: {
+            $sum: "$amount",
+          },
+        },
+      },
 
-month:{
-$month:"$createdAt"
-},
+      {
+        $sort: {
+          "_id.year": 1,
 
-year:{
-$year:"$createdAt"
-}
+          "_id.month": 1,
+        },
+      },
+    ]);
 
-},
-
-total:{
-$sum:"$amount"
-}
-
-}
-
-},
-
-{
-$sort:{
-
-"_id.year":1,
-
-"_id.month":1
-
-}
-
-}
-
-]);
-
-
-
-
-
-
-
-
-
-/*
+    /*
 |--------------------------------------------------------------------------
 | POPULAR TOURS
 |--------------------------------------------------------------------------
 */
 
-const popularTours =
-await Booking.aggregate([
+    const popularTours = await Booking.aggregate([
+      {
+        $group: {
+          _id: "$tour",
 
-{
-$group:{
+          totalBookings: {
+            $sum: 1,
+          },
+        },
+      },
 
-_id:"$tour",
+      {
+        $sort: {
+          totalBookings: -1,
+        },
+      },
 
-totalBookings:{
-$sum:1
-}
+      {
+        $limit: 5,
+      },
+    ]);
 
-}
-
-},
-
-{
-$sort:{
-
-totalBookings:-1
-
-}
-
-},
-
-{
-$limit:5
-}
-
-]);
-
-
-
-
-
-
-
-
-/*
+    /*
 |--------------------------------------------------------------------------
 | VEHICLE STATS
 |--------------------------------------------------------------------------
 */
 
-// Add vehicle aggregation here later
-// when Vehicle model is connected
+    // Add vehicle aggregation here later
+    // when Vehicle model is connected
 
-const vehicleStats = [];
+    const vehicleStats = [];
 
+    res.status(200).json({
+      success: true,
 
+      data: {
+        users,
 
+        tours,
 
+        bookings,
 
+        revenue,
 
+        bookingStatus,
 
-res.status(200).json({
+        monthlyRevenue,
 
-success:true,
+        popularTours,
 
-data:{
+        vehicleStats,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
 
-
-users,
-
-tours,
-
-bookings,
-
-revenue,
-
-bookingStatus,
-
-monthlyRevenue,
-
-popularTours,
-
-vehicleStats
-
-
-}
-
-});
-
-
-
-
-}
-catch(error){
-
-
-res.status(500).json({
-
-success:false,
-
-message:error.message
-
-});
-
-
-}
-
-
+      message: error.message,
+    });
+  }
 };

@@ -1,247 +1,114 @@
 // controllers/notificationController.js
 
-
 import Notification from "../models/Notification.js";
-
-
-
 
 // ============================================================
 // GET MY NOTIFICATIONS
 // ============================================================
 
-
-export const getMyNotifications = async (
-  req,
-  res,
-  next
-) => {
-
-
+export const getMyNotifications = async (req, res, next) => {
   try {
-
-
-    const notifications =
-
-    await Notification.find({
-
-      $or:[
-
+    const notifications = await Notification.find({
+      $or: [
         {
-          recipient:req.user._id
+          recipient: req.user._id,
         },
 
         {
-          user:req.user._id
-        }
-
-      ]
-
+          user: req.user._id,
+        },
+      ],
     })
 
-    .sort({
-
-      createdAt:-1
-
-    });
-
-
-
+      .sort({
+        createdAt: -1,
+      });
 
     res.status(200).json({
+      success: true,
 
-      success:true,
+      count: notifications.length,
 
-      count:notifications.length,
-
-      notifications
-
+      notifications,
     });
-
-
-
-  }
-
-  catch(error){
-
+  } catch (error) {
     next(error);
-
   }
-
-
 };
-
-
-
-
-
-
-
-
 
 // ============================================================
 // GET NOTIFICATIONS
 // Alias for compatibility
 // ============================================================
 
-
-export const getNotifications = async (
-  req,
-  res,
-  next
-) => {
-
-
+export const getNotifications = async (req, res, next) => {
   try {
-
-
-    const notifications =
-
-    await Notification.find({
-
-      $or:[
-
+    const notifications = await Notification.find({
+      $or: [
         {
-          recipient:req.user._id
+          recipient: req.user._id,
         },
 
         {
-          user:req.user._id
-        }
-
-      ]
-
+          user: req.user._id,
+        },
+      ],
     })
 
-    .sort({
-
-      createdAt:-1
-
-    });
-
-
-
-
+      .sort({
+        createdAt: -1,
+      });
 
     res.status(200).json({
+      success: true,
 
-      success:true,
+      count: notifications.length,
 
-      count:notifications.length,
-
-      notifications
-
+      notifications,
     });
-
-
-
-  }
-
-  catch(error){
-
+  } catch (error) {
     next(error);
-
   }
-
-
 };
-
-
-
-
-
-
-
-
 
 // ============================================================
 // MARK NOTIFICATION AS READ
 // ============================================================
 
-
-export const markRead = async (
-  req,
-  res,
-  next
-) => {
-
-
+export const markRead = async (req, res, next) => {
   try {
+    const notification = await Notification.findOne({
+      _id: req.params.id,
 
-
-    const notification =
-
-    await Notification.findOne({
-
-      _id:req.params.id,
-
-
-      $or:[
-
+      $or: [
         {
-          recipient:req.user._id
+          recipient: req.user._id,
         },
 
         {
-          user:req.user._id
-        }
-
-      ]
-
+          user: req.user._id,
+        },
+      ],
     });
 
-
-
-
-
-
-    if(!notification){
-
-
+    if (!notification) {
       return res.status(404).json({
+        success: false,
 
-        success:false,
-
-        message:"Notification not found"
-
+        message: "Notification not found",
       });
-
-
     }
-
-
-
-
-
 
     notification.read = true;
 
-
-
     await notification.save();
 
-
-
-
-
-
     res.status(200).json({
+      success: true,
 
-      success:true,
-
-      notification
-
+      notification,
     });
-
-
-
-  }
-
-  catch(error){
-
+  } catch (error) {
     next(error);
-
   }
-
-
 };

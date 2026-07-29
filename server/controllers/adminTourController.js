@@ -1,78 +1,42 @@
 import Tour from "../models/Tour.js";
 
-
-
-
-
 /*
 |--------------------------------------------------------------------------
 | CREATE TOUR
 |--------------------------------------------------------------------------
 */
 
-export const createTour = async(req,res,next)=>{
+export const createTour = async (req, res, next) => {
+  try {
+    let images = [];
 
-try{
+    if (req.files?.length) {
+      images = req.files.map((file) => ({
+        url: file.path,
 
+        publicId: file.filename || null,
+      }));
+    }
 
-let images=[];
+    const tour = await Tour.create({
+      ...req.body,
 
+      images,
 
-if(req.files?.length){
+      createdBy: req.user._id,
+    });
 
-images =
-req.files.map(
-file=>({
+    res.status(201).json({
+      success: true,
 
-url:file.path,
+      message: "Tour created successfully",
 
-publicId:file.filename || null
-
-})
-);
-
-}
-
-
-
-const tour = await Tour.create({
-
-...req.body,
-
-images,
-
-createdBy:req.user._id
-
-});
-
-
-
-res.status(201).json({
-
-success:true,
-
-message:"Tour created successfully",
-
-tour
-
-});
-
-
-}
-catch(error){
-
-next(error);
-
-}
-
+      tour,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -80,73 +44,35 @@ next(error);
 |--------------------------------------------------------------------------
 */
 
+export const getAllTours = async (req, res, next) => {
+  try {
+    const tours = await Tour.find({
+      isDeleted: false,
+    })
 
-export const getAllTours = async(req,res,next)=>{
+      .populate("assignedGuide", "name email phone")
 
+      .populate("assignedDriver", "name email phone")
 
-try{
+      .populate("assignedVehicle")
 
+      .populate("createdBy", "name email")
 
-const tours = await Tour.find({
+      .sort({
+        createdAt: -1,
+      });
 
-isDeleted:false
+    res.json({
+      success: true,
 
-})
+      count: tours.length,
 
-.populate(
-"assignedGuide",
-"name email phone"
-)
-
-.populate(
-"assignedDriver",
-"name email phone"
-)
-
-.populate(
-"assignedVehicle"
-)
-
-.populate(
-"createdBy",
-"name email"
-)
-
-.sort({
-
-createdAt:-1
-
-});
-
-
-
-res.json({
-
-success:true,
-
-count:tours.length,
-
-tours
-
-});
-
-
-
-}
-catch(error){
-
-next(error);
-
-}
-
+      tours,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -154,73 +80,35 @@ next(error);
 |--------------------------------------------------------------------------
 */
 
+export const getTour = async (req, res, next) => {
+  try {
+    const tour = await Tour.findOne({
+      _id: req.params.id,
 
-export const getTour = async(req,res,next)=>{
+      isDeleted: false,
+    })
 
+      .populate("assignedGuide", "name email")
 
-try{
+      .populate("assignedDriver", "name email")
 
+      .populate("assignedVehicle");
 
-const tour = await Tour.findOne({
+    if (!tour) {
+      return res.status(404).json({
+        message: "Tour not found",
+      });
+    }
 
-_id:req.params.id,
+    res.json({
+      success: true,
 
-isDeleted:false
-
-})
-
-.populate(
-"assignedGuide",
-"name email"
-)
-
-.populate(
-"assignedDriver",
-"name email"
-)
-
-.populate(
-"assignedVehicle"
-);
-
-
-
-if(!tour){
-
-return res.status(404).json({
-
-message:"Tour not found"
-
-});
-
-}
-
-
-
-res.json({
-
-success:true,
-
-tour
-
-});
-
-
-}
-catch(error){
-
-next(error);
-
-}
-
+      tour,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -228,99 +116,43 @@ next(error);
 |--------------------------------------------------------------------------
 */
 
+export const updateTour = async (req, res, next) => {
+  try {
+    const tour = await Tour.findById(req.params.id);
 
-export const updateTour = async(req,res,next)=>{
+    if (!tour) {
+      return res.status(404).json({
+        message: "Tour not found",
+      });
+    }
 
+    Object.assign(
+      tour,
 
-try{
+      req.body,
+    );
 
+    if (req.files?.length) {
+      tour.images = req.files.map((file) => ({
+        url: file.path,
 
-const tour =
-await Tour.findById(
-req.params.id
-);
+        publicId: file.filename || null,
+      }));
+    }
 
+    await tour.save();
 
+    res.json({
+      success: true,
 
-if(!tour){
+      message: "Tour updated successfully",
 
-return res.status(404).json({
-
-message:"Tour not found"
-
-});
-
-}
-
-
-
-Object.assign(
-
-tour,
-
-req.body
-
-);
-
-
-
-
-
-if(req.files?.length){
-
-
-tour.images =
-req.files.map(
-file=>({
-
-url:file.path,
-
-publicId:file.filename || null
-
-})
-);
-
-
-}
-
-
-
-
-
-await tour.save();
-
-
-
-
-
-res.json({
-
-success:true,
-
-message:"Tour updated successfully",
-
-tour
-
-});
-
-
-
-}
-catch(error){
-
-next(error);
-
-}
-
+      tour,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -328,66 +160,29 @@ next(error);
 |--------------------------------------------------------------------------
 */
 
+export const deleteTour = async (req, res, next) => {
+  try {
+    const tour = await Tour.findById(req.params.id);
 
-export const deleteTour = async(req,res,next)=>{
+    if (!tour) {
+      return res.status(404).json({
+        message: "Tour not found",
+      });
+    }
 
+    tour.isDeleted = true;
 
-try{
+    await tour.save();
 
+    res.json({
+      success: true,
 
-const tour =
-await Tour.findById(
-req.params.id
-);
-
-
-
-if(!tour){
-
-return res.status(404).json({
-
-message:"Tour not found"
-
-});
-
-}
-
-
-
-tour.isDeleted=true;
-
-
-await tour.save();
-
-
-
-
-res.json({
-
-success:true,
-
-message:"Tour deleted successfully"
-
-});
-
-
-
-}
-catch(error){
-
-next(error);
-
-}
-
+      message: "Tour deleted successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
 };
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -395,67 +190,35 @@ next(error);
 |--------------------------------------------------------------------------
 */
 
+export const assignGuide = async (req, res, next) => {
+  try {
+    const { guideId } = req.body;
 
-export const assignGuide = async(req,res,next)=>{
+    const tour = await Tour.findByIdAndUpdate(
+      req.params.id,
 
+      {
+        assignedGuide: guideId,
 
-try{
+        guide: guideId,
+      },
 
+      {
+        new: true,
+      },
+    );
 
-const {
-guideId
-}=req.body;
+    res.json({
+      success: true,
 
+      message: "Guide assigned successfully",
 
-
-const tour =
-await Tour.findByIdAndUpdate(
-
-req.params.id,
-
-{
-
-assignedGuide:guideId,
-
-guide:guideId
-
-},
-
-{
-new:true
-}
-
-);
-
-
-
-res.json({
-
-success:true,
-
-message:"Guide assigned successfully",
-
-tour
-
-});
-
-
-}
-catch(error){
-
-next(error);
-
-}
-
+      tour,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -463,65 +226,33 @@ next(error);
 |--------------------------------------------------------------------------
 */
 
+export const assignDriver = async (req, res, next) => {
+  try {
+    const { driverId } = req.body;
 
-export const assignDriver = async(req,res,next)=>{
+    const tour = await Tour.findByIdAndUpdate(
+      req.params.id,
 
+      {
+        assignedDriver: driverId,
+      },
 
-try{
+      {
+        new: true,
+      },
+    );
 
+    res.json({
+      success: true,
 
-const {
-driverId
-}=req.body;
+      message: "Driver assigned successfully",
 
-
-
-const tour =
-await Tour.findByIdAndUpdate(
-
-req.params.id,
-
-{
-
-assignedDriver:driverId
-
-},
-
-{
-new:true
-}
-
-);
-
-
-
-res.json({
-
-success:true,
-
-message:"Driver assigned successfully",
-
-tour
-
-});
-
-
-}
-catch(error){
-
-next(error);
-
-}
-
+      tour,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -529,67 +260,35 @@ next(error);
 |--------------------------------------------------------------------------
 */
 
+export const assignVehicle = async (req, res, next) => {
+  try {
+    const { vehicleId } = req.body;
 
-export const assignVehicle = async(req,res,next)=>{
+    const tour = await Tour.findByIdAndUpdate(
+      req.params.id,
 
+      {
+        assignedVehicle: vehicleId,
 
-try{
+        vehicle: vehicleId,
+      },
 
+      {
+        new: true,
+      },
+    );
 
-const {
-vehicleId
-}=req.body;
+    res.json({
+      success: true,
 
+      message: "Vehicle assigned successfully",
 
-
-const tour =
-await Tour.findByIdAndUpdate(
-
-req.params.id,
-
-{
-
-assignedVehicle:vehicleId,
-
-vehicle:vehicleId
-
-},
-
-{
-new:true
-}
-
-);
-
-
-
-res.json({
-
-success:true,
-
-message:"Vehicle assigned successfully",
-
-tour
-
-});
-
-
-}
-catch(error){
-
-next(error);
-
-}
-
+      tour,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -597,48 +296,28 @@ next(error);
 |--------------------------------------------------------------------------
 */
 
+export const restoreTour = async (req, res, next) => {
+  try {
+    const tour = await Tour.findByIdAndUpdate(
+      req.params.id,
 
-export const restoreTour = async(req,res,next)=>{
+      {
+        isDeleted: false,
+      },
 
+      {
+        new: true,
+      },
+    );
 
-try{
+    res.json({
+      success: true,
 
+      message: "Tour restored successfully",
 
-const tour =
-await Tour.findByIdAndUpdate(
-
-req.params.id,
-
-{
-
-isDeleted:false
-
-},
-
-{
-new:true
-}
-
-);
-
-
-
-res.json({
-
-success:true,
-
-message:"Tour restored successfully",
-
-tour
-
-});
-
-
-}
-catch(error){
-
-next(error);
-
-}
-
+      tour,
+    });
+  } catch (error) {
+    next(error);
+  }
 };

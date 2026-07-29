@@ -1,7 +1,5 @@
 import TourPackage from "../models/TourPackage.js";
 
-
-
 /*
 |--------------------------------------------------------------------------
 | GET AGENT TOUR PACKAGES
@@ -13,262 +11,111 @@ import TourPackage from "../models/TourPackage.js";
 |
 */
 
+export const getAgentPackages = async (req, res) => {
+  try {
+    const {
+      search,
 
-export const getAgentPackages = async(req,res)=>{
+      category,
 
+      destination,
 
-try{
+      featured,
 
+      page = 1,
 
-const {
+      limit = 12,
+    } = req.query;
 
+    const filter = {
+      status: "active",
+    };
 
-search,
-
-category,
-
-destination,
-
-featured,
-
-page = 1,
-
-limit = 12
-
-
-}
-
-=
-req.query;
-
-
-
-
-
-
-
-const filter = {
-
-
-status:"active"
-
-
-};
-
-
-
-
-
-
-
-/*
+    /*
 |--------------------------------------------------------------------------
 | FILTERS
 |--------------------------------------------------------------------------
 */
 
+    if (category) {
+      filter.category = category;
+    }
 
-if(category){
+    if (destination) {
+      filter.destination = destination;
+    }
 
+    if (featured === "true") {
+      filter.featured = true;
+    }
 
-filter.category = category;
+    if (search) {
+      filter.$or = [
+        {
+          title: {
+            $regex: search,
 
+            $options: "i",
+          },
+        },
 
-}
+        {
+          destination: {
+            $regex: search,
 
+            $options: "i",
+          },
+        },
+      ];
+    }
 
-
-
-
-if(destination){
-
-
-filter.destination = destination;
-
-
-}
-
-
-
-
-
-if(featured === "true"){
-
-
-filter.featured = true;
-
-
-}
-
-
-
-
-
-
-
-
-if(search){
-
-
-filter.$or=[
-
-
-{
-
-title:{
-
-$regex:search,
-
-$options:"i"
-
-}
-
-},
-
-
-
-{
-
-destination:{
-
-$regex:search,
-
-$options:"i"
-
-}
-
-}
-
-
-];
-
-
-}
-
-
-
-
-
-
-
-/*
+    /*
 |--------------------------------------------------------------------------
 | PAGINATION
 |--------------------------------------------------------------------------
 */
 
+    const skip = (Number(page) - 1) * Number(limit);
 
-const skip =
+    const packages = await TourPackage.find(filter)
 
-(Number(page)-1)
+      .select(
+        "title slug destination category duration coverImage gallery agentPrice basePrice currency availableSeats maxGuests featured",
+      )
 
-*
+      .sort({
+        createdAt: -1,
+      })
 
-Number(limit);
+      .skip(skip)
 
+      .limit(Number(limit));
 
+    const total = await TourPackage.countDocuments(filter);
 
+    res.json({
+      success: true,
 
+      pagination: {
+        total,
 
+        page: Number(page),
 
-const packages =
+        pages: Math.ceil(total / limit),
+      },
 
-await TourPackage.find(filter)
+      packages,
+    });
+  } catch (error) {
+    console.error(error);
 
-.select(
+    res.status(500).json({
+      success: false,
 
-"title slug destination category duration coverImage gallery agentPrice basePrice currency availableSeats maxGuests featured"
-
-)
-
-.sort({
-
-createdAt:-1
-
-})
-
-.skip(skip)
-
-.limit(Number(limit));
-
-
-
-
-
-
-
-
-const total =
-
-await TourPackage.countDocuments(filter);
-
-
-
-
-
-
-
-res.json({
-
-success:true,
-
-
-pagination:{
-
-
-total,
-
-
-page:Number(page),
-
-
-pages:
-
-Math.ceil(total / limit)
-
-
-},
-
-
-packages
-
-
-});
-
-
-
-
-}
-
-catch(error){
-
-
-console.error(error);
-
-
-
-res.status(500)
-.json({
-
-success:false,
-
-message:error.message
-
-});
-
-
-}
-
-
+      message: error.message,
+    });
+  }
 };
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -276,97 +123,42 @@ message:error.message
 |--------------------------------------------------------------------------
 */
 
+export const getPackageDetails = async (req, res) => {
+  try {
+    const packageData = await TourPackage.findOne({
+      _id: req.params.id,
 
-export const getPackageDetails = async(req,res)=>{
+      status: "active",
+    });
 
+    if (!packageData) {
+      return res.status(404).json({
+        success: false,
 
-try{
+        message: "Tour package not found",
+      });
+    }
 
-
-const packageData =
-
-await TourPackage.findOne({
-
-_id:req.params.id,
-
-status:"active"
-
-});
-
-
-
-
-
-
-
-if(!packageData){
-
-
-return res.status(404)
-.json({
-
-success:false,
-
-message:"Tour package not found"
-
-});
-
-
-}
-
-
-
-
-
-
-
-
-/*
+    /*
 |--------------------------------------------------------------------------
 | INCREASE PACKAGE VIEWS
 |--------------------------------------------------------------------------
 */
 
+    packageData.views += 1;
 
-packageData.views += 1;
+    await packageData.save();
 
+    res.json({
+      success: true,
 
-await packageData.save();
+      package: packageData,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
 
-
-
-
-
-
-
-
-res.json({
-
-success:true,
-
-package:packageData
-
-});
-
-
-
-
-}
-
-catch(error){
-
-
-res.status(500)
-.json({
-
-success:false,
-
-message:error.message
-
-});
-
-
-}
-
-
+      message: error.message,
+    });
+  }
 };

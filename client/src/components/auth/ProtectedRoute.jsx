@@ -1,34 +1,17 @@
-import {
-  Navigate
-} from "react-router-dom";
+import { Navigate } from "react-router-dom";
 
-import {
-  useAuth
-} from "../../context/AuthContext";
-
-
+import { useAuth } from "../../context/AuthContext";
 
 export default function ProtectedRoute({
-
   children,
 
-  roles = []
-
+  roles = [],
 }) {
-
-
   const {
-
     user,
 
-    loading
-
+    loading,
   } = useAuth();
-
-
-
-
-
 
   /*
   |--------------------------------------------------------------------------
@@ -36,12 +19,8 @@ export default function ProtectedRoute({
   |--------------------------------------------------------------------------
   */
 
-
   if (loading) {
-
-
     return (
-
       <div
         className="
         min-h-screen
@@ -52,20 +31,10 @@ export default function ProtectedRoute({
         font-semibold
         "
       >
-
         Loading...
-
       </div>
-
     );
-
   }
-
-
-
-
-
-
 
   /*
   |--------------------------------------------------------------------------
@@ -73,30 +42,9 @@ export default function ProtectedRoute({
   |--------------------------------------------------------------------------
   */
 
-
   if (!user) {
-
-
-    return (
-
-      <Navigate
-
-        to="/login"
-
-        replace
-
-      />
-
-    );
-
+    return <Navigate to="/login" replace />;
   }
-
-
-
-
-
-
-
 
   /*
   |--------------------------------------------------------------------------
@@ -104,104 +52,34 @@ export default function ProtectedRoute({
   |--------------------------------------------------------------------------
   */
 
-
   let userRole = "";
 
-
-
-  if (
-
-    typeof user.role === "string"
-
-  ) {
-
-
+  if (typeof user.role === "string") {
     userRole = user.role;
-
-
-  }
-
-
-
-  else if (
-
-    user.role?.name
-
-  ) {
-
-
+  } else if (user.role?.name) {
     userRole = user.role.name;
-
-
+  } else if (user.roles && Array.isArray(user.roles) && user.roles.length > 0) {
+    userRole = user.roles[0]?.name || "";
   }
-
-
-
-  else if (
-
-    user.roles &&
-
-    Array.isArray(user.roles) &&
-
-    user.roles.length > 0
-
-  ) {
-
-
-    userRole =
-      user.roles[0]?.name || "";
-
-
-  }
-
-
-
-
-
 
   /*
   |--------------------------------------------------------------------------
   | NORMALIZE ROLE FORMAT
   |
-  | Handles:
-  | tour_manager
-  | tour-manager
-  | Tour Manager
-  | TourManager
   |--------------------------------------------------------------------------
   */
 
-
-  const normalizeRole = (role)=>{
-
-
+  const normalizeRole = (role) => {
     return role
 
       ?.toString()
 
       .toLowerCase()
 
-      .replace(
-        /[\s_-]/g,
-        ""
-      );
-
-
+      .replace(/[\s_-]/g, "");
   };
 
-
-
-
-
-  const normalizedUserRole =
-
-    normalizeRole(userRole);
-
-
-
-
-
-
+  const normalizedUserRole = normalizeRole(userRole);
 
   /*
   |--------------------------------------------------------------------------
@@ -209,56 +87,19 @@ export default function ProtectedRoute({
   |--------------------------------------------------------------------------
   */
 
-
   const roleAliases = {
+    guide: "guide",
 
+    guide: "guide",
 
-    tourguide:
-    "tourguide",
+    manager: "manager",
 
+    admin: "admin",
 
-    tour_guide:
-    "tourguide",
-
-
-
-    tourmanager:
-    "tourmanager",
-
-
-    tour_manager:
-    "tourmanager",
-
-
-
-    admin:
-    "admin",
-
-
-
-    agent:
-    "agent"
-
-
+    agent: "agent",
   };
 
-
-
-
-
-
-  const finalUserRole =
-
-    roleAliases[userRole] ||
-
-    normalizedUserRole;
-
-
-
-
-
-
-
+  const finalUserRole = roleAliases[userRole] || normalizedUserRole;
 
   /*
   |--------------------------------------------------------------------------
@@ -266,24 +107,9 @@ export default function ProtectedRoute({
   |--------------------------------------------------------------------------
   */
 
+  console.log("Logged User:", user);
 
-  console.log(
-    "Logged User:",
-    user
-  );
-
-
-  console.log(
-    "Detected Role:",
-    finalUserRole
-  );
-
-
-
-
-
-
-
+  console.log("Detected Role:", finalUserRole);
 
   /*
   |--------------------------------------------------------------------------
@@ -291,58 +117,18 @@ export default function ProtectedRoute({
   |--------------------------------------------------------------------------
   */
 
+  if (roles.length > 0) {
+    const allowedRoles = roles.map(
+      (role) => roleAliases[role] || normalizeRole(role),
+    );
 
-  if (
-
-    roles.length > 0
-
-  ) {
-
-
-
-    const allowedRoles =
-
-      roles.map(
-
-        role =>
-
-        roleAliases[role] ||
-
-        normalizeRole(role)
-
-      );
-
-
-
-
-
-
-    const hasPermission =
-
-      allowedRoles.includes(
-        finalUserRole
-      );
-
-
-
-
-
+    const hasPermission = allowedRoles.includes(finalUserRole);
 
     if (!hasPermission) {
-
-
-
-      console.log(
-        "Blocked Route",
-        {
-          requiredRoles: allowedRoles,
-          userRole: finalUserRole
-        }
-      );
-
-
-
-
+      console.log("Blocked Route", {
+        requiredRoles: allowedRoles,
+        userRole: finalUserRole,
+      });
 
       /*
       |--------------------------------------------------------------------------
@@ -350,117 +136,24 @@ export default function ProtectedRoute({
       |--------------------------------------------------------------------------
       */
 
+      switch (finalUserRole) {
+        case "manager":
+          return <Navigate to="/manager/dashboard" replace />;
 
-      switch(finalUserRole){
-
-
-
-        case "tourmanager":
-
-
-          return (
-
-            <Navigate
-
-              to="/tour-manager/dashboard"
-
-              replace
-
-            />
-
-          );
-
-
-
-
-
-        case "tourguide":
-
-
-          return (
-
-            <Navigate
-
-              to="/guide/dashboard"
-
-              replace
-
-            />
-
-          );
-
-
-
-
+        case "guide":
+          return <Navigate to="/guide/dashboard" replace />;
 
         case "admin":
-
-
-          return (
-
-            <Navigate
-
-              to="/admin"
-
-              replace
-
-            />
-
-          );
-
-
-
-
+          return <Navigate to="/admin" replace />;
 
         case "agent":
-
-
-          return (
-
-            <Navigate
-
-              to="/agent"
-
-              replace
-
-            />
-
-          );
-
-
-
-
+          return <Navigate to="/agent" replace />;
 
         default:
-
-
-          return (
-
-            <Navigate
-
-              to="/dashboard"
-
-              replace
-
-            />
-
-          );
-
-
-
+          return <Navigate to="/dashboard" replace />;
       }
-
-
     }
-
-
   }
-
-
-
-
-
-
 
   /*
   |--------------------------------------------------------------------------
@@ -468,8 +161,5 @@ export default function ProtectedRoute({
   |--------------------------------------------------------------------------
   */
 
-
   return children;
-
-
 }

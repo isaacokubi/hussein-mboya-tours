@@ -2,288 +2,134 @@ import Booking from "../models/Booking.js";
 import User from "../models/User.js";
 import Vehicle from "../models/Vehicle.js";
 
-
 import {
-    getRevenueAnalytics,
-    getBookingAnalytics,
-    getPopularTours
+  getRevenueAnalytics,
+  getBookingAnalytics,
+  getPopularTours,
 } from "../services/analyticsService.js";
-
-
-
-
 
 // ============================================================
 // ADMIN ANALYTICS DASHBOARD
 // ============================================================
 
-export const getAnalytics = async(req,res,next)=>{
+export const getAnalytics = async (req, res, next) => {
+  try {
+    // REVENUE
 
+    const revenue = await getRevenueAnalytics();
 
-try{
+    // BOOKINGS
 
+    const bookings = await getBookingAnalytics();
 
-// REVENUE
+    // POPULAR TOURS
 
-const revenue =
-await getRevenueAnalytics();
+    const popularTours = await getPopularTours();
 
+    // TOTAL CUSTOMERS
 
+    const customers = await User.countDocuments({
+      role: "customer",
+    });
 
+    // BOOKING STATUS
 
-// BOOKINGS
+    const bookingStatus = await Booking.aggregate([
+      {
+        $group: {
+          _id: "$status",
 
-const bookings =
-await getBookingAnalytics();
+          count: {
+            $sum: 1,
+          },
+        },
+      },
+    ]);
 
+    // MONTHLY BOOKING ANALYTICS
 
+    const monthlyRevenue = await Booking.aggregate([
+      {
+        $group: {
+          _id: {
+            month: {
+              $month: "$createdAt",
+            },
 
+            year: {
+              $year: "$createdAt",
+            },
+          },
 
-// POPULAR TOURS
+          revenue: {
+            $sum: "$totalAmount",
+          },
+        },
+      },
+    ]);
 
-const popularTours =
-await getPopularTours();
+    // VEHICLE UTILIZATION
 
+    const vehicleStats = await Vehicle.aggregate([
+      {
+        $group: {
+          _id: "$status",
 
+          count: {
+            $sum: 1,
+          },
+        },
+      },
+    ]);
 
+    res.status(200).json({
+      success: true,
 
+      data: {
+        revenue,
 
-// TOTAL CUSTOMERS
+        customers,
 
-const customers =
-await User.countDocuments({
+        bookings,
 
-role:"customer"
+        bookingStatus,
 
-});
+        monthlyRevenue,
 
+        popularTours,
 
-
-
-
-
-// BOOKING STATUS
-
-const bookingStatus =
-await Booking.aggregate([
-
-{
-$group:{
-
-_id:"$status",
-
-count:{
-$sum:1
-}
-
-}
-
-}
-
-]);
-
-
-
-
-
-
-
-// MONTHLY BOOKING ANALYTICS
-
-const monthlyRevenue =
-await Booking.aggregate([
-
-
-{
-$group:{
-
-
-_id:{
-
-
-month:{
-$month:"$createdAt"
-},
-
-
-year:{
-$year:"$createdAt"
-}
-
-
-},
-
-
-revenue:{
-
-$sum:"$totalAmount"
-
-}
-
-
-}
-
-}
-
-
-]);
-
-
-
-
-
-
-
-// VEHICLE UTILIZATION
-
-const vehicleStats =
-await Vehicle.aggregate([
-
-
-{
-$group:{
-
-
-_id:"$status",
-
-count:{
-$sum:1
-}
-
-
-}
-
-}
-
-
-]);
-
-
-
-
-
-
-
-res.status(200).json({
-
-success:true,
-
-
-data:{
-
-
-revenue,
-
-
-customers,
-
-
-bookings,
-
-
-bookingStatus,
-
-
-monthlyRevenue,
-
-
-popularTours,
-
-
-vehicleStats
-
-
-}
-
-
-});
-
-
-
-
-
-}
-catch(error){
-
-
-next(error);
-
-
-}
-
-
+        vehicleStats,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
 };
-
-
-
-
-
-
-
-
 
 // ============================================================
 // TOUR MANAGER DASHBOARD ANALYTICS
 // ============================================================
 
+export const dashboardAnalytics = async (req, res, next) => {
+  try {
+    const revenue = await getRevenueAnalytics();
 
-export const dashboardAnalytics = async(req,res,next)=>{
+    const bookings = await getBookingAnalytics();
 
+    const popularTours = await getPopularTours();
 
-try{
+    res.status(200).json({
+      success: true,
 
+      data: {
+        revenue,
 
-const revenue =
-await getRevenueAnalytics();
+        bookings,
 
-
-
-
-const bookings =
-await getBookingAnalytics();
-
-
-
-
-const popularTours =
-await getPopularTours();
-
-
-
-
-
-res.status(200).json({
-
-success:true,
-
-
-data:{
-
-
-revenue,
-
-
-bookings,
-
-
-popularTours
-
-
-}
-
-
-});
-
-
-
-}
-catch(error){
-
-
-next(error);
-
-
-}
-
-
+        popularTours,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
 };
