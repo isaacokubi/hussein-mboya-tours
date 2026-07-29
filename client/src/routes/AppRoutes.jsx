@@ -240,6 +240,9 @@ export default function AppRoutes() {
       {/* ============================================================
           ADMIN ROUTES
       ============================================================ */}
+      {/* ============================================================
+          ADMIN ROUTES
+      ============================================================ */}
 
       <Route
         path="/admin"
@@ -249,7 +252,11 @@ export default function AppRoutes() {
           </AdminRoute>
         }
       >
+        {/* DASHBOARD */}
+
         <Route index element={<AdminDashboard />} />
+
+        <Route path="dashboard" element={<AdminDashboard />} />
 
         {/* TOURS */}
 
@@ -282,8 +289,8 @@ export default function AppRoutes() {
         <Route
           path="guides"
           element={
-            <div>
-              <h1>Manage Guides</h1>
+            <div className="p-6">
+              <h1 className="text-2xl font-bold">Manage Guides</h1>
             </div>
           }
         />
@@ -297,8 +304,8 @@ export default function AppRoutes() {
         <Route
           path="settings"
           element={
-            <div>
-              <h1>Admin Settings</h1>
+            <div className="p-6">
+              <h1 className="text-2xl font-bold">Admin Settings</h1>
             </div>
           }
         />
