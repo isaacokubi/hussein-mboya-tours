@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-
 import { getDashboard } from "../../api/adminApi";
 
 export default function AdminDashboard() {
@@ -11,127 +10,92 @@ export default function AdminDashboard() {
     error,
   } = useQuery({
 
-    queryKey: ["adminStats"],
+    queryKey: ["adminDashboard"],
 
     queryFn: getDashboard,
-
-    select: (response) => response.data,
-
-    staleTime: 5 * 60 * 1000,
 
   });
 
 
   if (isLoading) {
-
     return (
-      <div
-        className="
-        min-h-screen
-        flex
-        items-center
-        justify-center
-        text-xl
-        font-semibold
-        "
-      >
+      <div className="p-6">
         Loading dashboard...
       </div>
     );
-
   }
 
 
   if (isError) {
-
     return (
-      <div
-        className="
-        container
-        mx-auto
-        px-6
-        py-20
-        "
-      >
-
-        <div
-          className="
-          bg-red-100
-          text-red-700
-          p-6
-          rounded-xl
-          "
-        >
-
-          Failed to load dashboard
-
-          <br />
-
-          {error?.response?.data?.message ||
-            error.message}
-
-        </div>
-
+      <div className="p-6 text-red-600">
+        {error?.message || "Failed to load dashboard"}
       </div>
     );
-
   }
 
 
+  const stats = data?.data || data;
+
+
+  const {
+    users = 0,
+    tours = 0,
+    bookings = 0,
+    revenue = 0,
+    bookingStatus = [],
+    popularTours = [],
+  } = stats;
+
+
 
   return (
 
-    <div
-      className="
-      container
-      mx-auto
-      px-6
-      py-20
-      "
-    >
+    <div className="p-6 space-y-8">
 
-      <h1
-        className="
-        text-4xl
-        font-bold
-        mb-10
-        "
-      >
-        Admin Dashboard
-      </h1>
+
+      {/* HEADER */}
+
+      <div>
+
+        <h1 className="text-3xl font-bold">
+          Admin Dashboard
+        </h1>
+
+        <p className="text-gray-500">
+          Hussein Mboya Tours Management Panel
+        </p>
+
+      </div>
 
 
 
-      <div
-        className="
-        grid
-        md:grid-cols-4
-        gap-6
-        "
-      >
+      {/* STAT CARDS */}
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
 
 
-        <Card
+        <DashboardCard
           title="Users"
-          value={data?.users}
+          value={users}
         />
 
 
-        <Card
+        <DashboardCard
           title="Tours"
-          value={data?.tours}
+          value={tours}
         />
 
 
-        <Card
+        <DashboardCard
           title="Bookings"
-          value={data?.bookings}
+          value={bookings}
         />
 
 
-        <Card
+        <DashboardCard
           title="Revenue"
-          value={`Ksh.${data?.revenue || 0}`}
+          value={`Ksh.${Number(revenue).toLocaleString()}`}
         />
 
 
@@ -139,155 +103,144 @@ export default function AdminDashboard() {
 
 
 
-      <div
-        className="
-        mt-10
-        grid
-        md:grid-cols-2
-        gap-6
-        "
-      >
 
-        <InfoCard
-          title="Booking Status"
-          data={data?.bookingStatus}
-        />
+      {/* BOOKING STATUS */}
+
+      <section className="bg-white rounded-xl shadow p-6">
+
+        <h2 className="text-xl font-semibold mb-4">
+          Booking Status
+        </h2>
 
 
-        <InfoCard
-          title="Popular Tours"
-          data={data?.popularTours}
-        />
-
-      </div>
+        <div className="grid md:grid-cols-3 gap-4">
 
 
-    </div>
+          {bookingStatus.map((item,index)=>(
 
-  );
+            <div
+              key={index}
+              className="border rounded-lg p-4"
+            >
 
-}
-
-
-
-
-
-function Card({
-  title,
-  value,
-}) {
+              <h3 className="font-bold capitalize">
+                {item._id.bookingStatus}
+              </h3>
 
 
-  return (
-
-    <div
-      className="
-      bg-white
-      rounded-xl
-      shadow-lg
-      p-6
-      border
-      "
-    >
-
-      <h3
-        className="
-        text-gray-500
-        text-lg
-        font-medium
-        "
-      >
-        {title}
-      </h3>
+              <p className="text-gray-600">
+                Payment: {item._id.paymentStatus}
+              </p>
 
 
-      <p
-        className="
-        text-3xl
-        font-bold
-        mt-3
-        text-gray-900
-        "
-      >
-        {value ?? 0}
-      </p>
+              <p className="text-2xl font-bold mt-2">
+                {item.count}
+              </p>
 
 
-    </div>
+            </div>
 
-  );
+          ))}
 
-}
+
+        </div>
+
+
+      </section>
 
 
 
 
 
-function InfoCard({
-  title,
-  data,
-}) {
+
+      {/* POPULAR TOURS */}
+
+      <section className="bg-white rounded-xl shadow p-6">
 
 
-  return (
-
-    <div
-      className="
-      bg-white
-      rounded-xl
-      shadow-lg
-      p-6
-      border
-      "
-    >
-
-      <h3
-        className="
-        text-xl
-        font-bold
-        mb-4
-        "
-      >
-        {title}
-      </h3>
+        <h2 className="text-xl font-semibold mb-4">
+          Popular Tours
+        </h2>
 
 
 
-      {
-        !data ||
-        data.length === 0 ?
+        <div className="space-y-3">
 
-        (
 
-          <p className="text-gray-500">
-            No data available
-          </p>
+        {popularTours.map((tour,index)=>(
 
-        )
 
-        :
-
-        (
-
-          <pre
-            className="
-            text-sm
-            bg-gray-50
-            p-4
-            rounded-lg
-            overflow-auto
-            "
+          <div
+            key={tour._id}
+            className="flex justify-between items-center border-b pb-3"
           >
-            {JSON.stringify(data, null, 2)}
-          </pre>
 
-        )
 
-      }
+            <div>
+
+
+              <p className="font-semibold">
+                #{index + 1} {tour.title}
+              </p>
+
+
+            </div>
+
+
+
+            <div className="font-bold">
+
+              {tour.totalBookings} bookings
+
+            </div>
+
+
+
+          </div>
+
+
+        ))}
+
+
+        </div>
+
+
+      </section>
+
 
 
     </div>
 
   );
+
+}
+
+
+
+
+
+function DashboardCard({
+  title,
+  value
+}){
+
+
+return (
+
+<div className="bg-white shadow rounded-xl p-6">
+
+<h3 className="text-gray-500">
+{title}
+</h3>
+
+
+<p className="text-3xl font-bold mt-2">
+{value}
+</p>
+
+
+</div>
+
+);
 
 }
