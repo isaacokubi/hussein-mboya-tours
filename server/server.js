@@ -350,100 +350,173 @@ app.use("/api/ai", aiRoutes);
 // RECOMMENDATIONS
 // ============================================================
 
-app.use("/api/recommendations", recommendationRoutes); // ============================================================
+app.use("/api/recommendations", recommendationRoutes); 
+// ============================================================
+// CREATE HTTP SERVER
+// ============================================================
+
+const server = http.createServer(app);
+
+
+// ============================================================
 // SOCKET.IO
 // ============================================================
 
 export const io = new Server(server, {
-  cors: {
-    origin: [
-      process.env.CLIENT_URL,
-      "http://localhost:5173",
-      "http://localhost:3000",
-      "https://hussein-mboya-tours.vercel.app",
-    ],
-    methods: ["GET", "POST"],
-    credentials: true,
-  },
 
-  transports: ["websocket", "polling"],
+    cors: {
+
+        origin: [
+
+            process.env.CLIENT_URL,
+
+            "http://localhost:5173",
+
+            "http://localhost:3000",
+
+            "https://hussein-mboya-tours.vercel.app"
+
+        ],
+
+        methods: [
+
+            "GET",
+            "POST"
+
+        ],
+
+        credentials:true
+
+    },
+
+    transports:[
+
+        "websocket",
+        "polling"
+
+    ]
+
 });
 
-// Make Socket.IO available globally
-// for notifications, payments, bookings etc.
+
+// expose globally
 
 global.io = io;
+
 
 // ============================================================
 // SOCKET CONNECTION EVENTS
 // ============================================================
 
 io.on(
-  "connection",
+    "connection",
+    (socket)=>{
 
-  (socket) => {
-    console.log(`🔌 User connected: ${socket.id}`);
 
-    // ========================================================
-    // REGISTER USER SOCKET
-    // ========================================================
+        console.log(
+            `🔌 User connected: ${socket.id}`
+        );
 
-    socket.on(
-      "register",
 
-      (userId) => {
-        if (!userId) {
-          return;
-        }
 
-        registerSocket(userId, socket.id);
+        socket.on(
+            "register",
+            (userId)=>{
 
-        // Join personal room
-        socket.join(userId.toString());
 
-        console.log(`👤 User ${userId} registered with socket ${socket.id}`);
-      },
-    );
+                if(!userId)
+                    return;
 
-    // ========================================================
-    // JOIN USER ROOM
-    // ========================================================
 
-    socket.on(
-      "join",
 
-      (userId) => {
-        if (!userId) {
-          return;
-        }
+                registerSocket(
+                    userId,
+                    socket.id
+                );
 
-        socket.join(userId.toString());
 
-        console.log(`👥 User ${userId} joined room`);
-      },
-    );
+                socket.join(
+                    userId.toString()
+                );
 
-    // ========================================================
-    // DISCONNECT CLEANUP
-    // ========================================================
 
-    socket.on(
-      "disconnect",
+                console.log(
+                    `👤 User ${userId} registered`
+                );
 
-      () => {
-        const userId = getUserIdBySocketId(socket.id);
 
-        if (userId) {
-          removeSocket(userId);
+            }
+        );
 
-          console.log(`🧹 Removed online user ${userId}`);
-        }
 
-        console.log(`❌ User disconnected: ${socket.id}`);
-      },
-    );
-  },
+
+        socket.on(
+            "join",
+            (userId)=>{
+
+
+                if(!userId)
+                    return;
+
+
+
+                socket.join(
+                    userId.toString()
+                );
+
+
+                console.log(
+                    `👥 User ${userId} joined room`
+                );
+
+
+            }
+        );
+
+
+
+        socket.on(
+            "disconnect",
+            ()=>{
+
+
+                const userId =
+                    getUserIdBySocketId(
+                        socket.id
+                    );
+
+
+
+                if(userId){
+
+
+                    removeSocket(
+                        userId
+                    );
+
+
+                    console.log(
+                        `🧹 Removed online user ${userId}`
+                    );
+
+
+                }
+
+
+
+                console.log(
+                    `❌ User disconnected: ${socket.id}`
+                );
+
+
+            }
+        );
+
+
+    }
 );
+
+
 
 // ============================================================
 // ERROR HANDLING
@@ -453,14 +526,26 @@ app.use(notFound);
 
 app.use(errorHandler);
 
+
+
 // ============================================================
 // START SERVER
 // ============================================================
 
 server.listen(
-  env.PORT,
 
-  () => {
-    console.log(`🚀 Hussein Mboya Tours API running on port ${env.PORT}`);
-  },
+    env.PORT,
+
+    ()=>{
+
+
+        console.log(
+
+            `🚀 Hussein Mboya Tours API running on port ${env.PORT}`
+
+        );
+
+
+    }
+
 );
