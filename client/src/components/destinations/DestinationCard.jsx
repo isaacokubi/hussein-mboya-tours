@@ -3,106 +3,111 @@ import { Link } from "react-router-dom";
 
 export default function DestinationCard({
   destination
-}){
+}) {
 
 
-return (
-
-<div
-
-className="
-rounded-xl
-overflow-hidden
-shadow-lg
-bg-white
-"
-
->
+  const imageUrl =
+    typeof destination.images?.[0] === "object"
+      ? destination.images?.[0]?.url
+      : destination.images?.[0];
 
 
-<img
+  return (
 
-src={
-destination.images?.[0] ||
-"/images/destination-placeholder.jpg"
-}
+    <div
 
-alt={
-destination.name || "Destination"
-}
+      className="
+      rounded-xl
+      overflow-hidden
+      shadow-lg
+      bg-white
+      "
 
-className="
-h-60
-w-full
-object-cover
-"
-
-/>
+    >
 
 
+      <img
 
+        src={
+          imageUrl ||
+          "/images/destination-placeholder.jpg"
+        }
 
+        alt={
+          destination.name || "Destination"
+        }
 
-<div
+        className="
+        h-60
+        w-full
+        object-cover
+        "
 
-className="
-p-5
-"
-
->
-
-
-<h2
-
-className="
-text-2xl
-font-bold
-"
-
->
-
-{destination.name}
-
-</h2>
+      />
 
 
 
 
 
-<p>
+      <div
 
-{destination.country}
+        className="
+        p-5
+        "
 
-</p>
+      >
 
 
+        <h2
 
+          className="
+          text-2xl
+          font-bold
+          "
 
+        >
 
-<Link
+          {destination.name}
 
-to={`/destinations/${destination.slug}`}
-
-className="
-text-yellow-700
-inline-block
-mt-3
-"
-
->
-
-Explore
-
-</Link>
+        </h2>
 
 
 
-</div>
 
 
-</div>
+        <p className="text-gray-600 mt-2">
+
+          {destination.country}
+
+        </p>
 
 
-);
+
+
+
+        <Link
+
+          to={`/destinations/${destination.slug}`}
+
+          className="
+          text-yellow-700
+          inline-block
+          mt-3
+          "
+
+        >
+
+          Explore
+
+        </Link>
+
+
+
+      </div>
+
+
+    </div>
+
+  );
 
 }
