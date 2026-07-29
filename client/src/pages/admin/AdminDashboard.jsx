@@ -8,7 +8,7 @@ export default function AdminDashboard() {
 
     queryFn: async () => {
       const response = await axios.get(
-        `${import.meta.env.VITE_API_URL}/api/admin/dashboard`,
+        `${import.meta.env.VITE_API_URL}/admin/dashboard`,
 
         {
           headers: {
