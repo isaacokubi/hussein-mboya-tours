@@ -95,7 +95,7 @@ export default function Navbar() {
           transition
           "
         >
-          Hussein Mboya Tours
+          Coherent Tours
         </Link>
 
         <div
