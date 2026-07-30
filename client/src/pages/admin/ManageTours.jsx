@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import {
   useQuery
 } from "@tanstack/react-query";
@@ -10,26 +12,28 @@ import {
 
 
 
-export default function ManageTours(){
+export default function ManageTours() {
+
+
+  const [search, setSearch] = useState("");
+
 
 
   const {
 
-    data:tours=[],
+    data: tours = [],
+
+    isLoading,
+
+    error,
 
     refetch
 
-  }
+  } = useQuery({
 
-  =
-  useQuery({
+    queryKey: ["adminTours"],
 
-    queryKey:[
-      "adminTours"
-    ],
-
-    queryFn:
-      getAdminTours
+    queryFn: getAdminTours
 
   });
 
@@ -37,9 +41,14 @@ export default function ManageTours(){
 
 
 
+  const remove = async (id) => {
+
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this tour?"
+    );
 
 
-  const remove = async(id)=>{
+    if (!confirmDelete) return;
 
 
     await deleteTour(id);
@@ -47,11 +56,90 @@ export default function ManageTours(){
 
     refetch();
 
-
   };
 
 
 
+
+
+  const filteredTours = tours.filter((tour) => {
+
+
+    const destination =
+
+      typeof tour.destination === "object"
+
+        ? tour.destination?.name
+
+        : tour.destination;
+
+
+
+    return (
+
+      tour.title
+        ?.toLowerCase()
+        .includes(search.toLowerCase())
+
+
+      ||
+
+
+      destination
+        ?.toLowerCase()
+        .includes(search.toLowerCase())
+
+
+    );
+
+
+  });
+
+
+
+
+
+  if (isLoading) {
+
+
+    return (
+
+      <div className="
+        flex
+        justify-center
+        py-20
+        text-lg
+      ">
+
+        Loading tours...
+
+      </div>
+
+    );
+
+  }
+
+
+
+
+
+  if (error) {
+
+
+    return (
+
+      <div className="
+        p-6
+        text-red-600
+      ">
+
+        Failed loading tours.
+
+      </div>
+
+    );
+
+  }
 
 
 
@@ -59,62 +147,87 @@ export default function ManageTours(){
 
   return (
 
-    <div>
+    <div className="
+      space-y-8
+    ">
 
 
 
+      {/* HEADER */}
 
-
-      <div
-        className="
+      <div className="
         flex
-        justify-between
-        mb-8
-        "
-      >
+        flex-col
+        md:flex-row
+        md:items-center
+        md:justify-between
+        gap-4
+      ">
 
 
 
-
-
-        <h1
-
-          className="
+        <h1 className="
           text-3xl
           font-bold
-          "
+        ">
 
-        >
-
-          Manage Tours
+          Tours Management
 
         </h1>
 
 
 
 
+        <div className="
+          flex
+          gap-4
+        ">
+
+
+          <input
+
+            type="text"
+
+            placeholder="Search tours..."
+
+            value={search}
+
+            onChange={(e)=>setSearch(e.target.value)}
+
+            className="
+              border
+              rounded-lg
+              px-4
+              py-2
+              w-64
+            "
+
+          />
 
 
 
-        <a
+          <a
 
-          href="/admin/tours/add"
+            href="/admin/tours/add"
 
-          className="
-          bg-green-600
-          text-white
-          px-6
-          py-3
-          rounded-lg
-          "
+            className="
+              bg-green-600
+              text-white
+              px-6
+              py-3
+              rounded-lg
+              hover:bg-green-700
+            "
 
-        >
+          >
 
-          Add Tour
+            Add Tour
 
-        </a>
+          </a>
 
 
+
+        </div>
 
 
 
@@ -126,113 +239,60 @@ export default function ManageTours(){
 
 
 
+      {
+        filteredTours.length === 0 ? (
 
 
-      <div
-
-        className="
-        bg-white
-        rounded-xl
-        shadow
-        overflow-hidden
-        "
-
-      >
+          <div className="
+            bg-white
+            rounded-xl
+            shadow
+            p-10
+            text-center
+          ">
 
 
+            <h2 className="
+              text-xl
+              font-semibold
+            ">
+
+              No tours found
+
+            </h2>
 
 
-
-        <table
-
-          className="
-          w-full
-          "
-
-        >
+          </div>
 
 
-
-
-
-          <thead>
-
-
-            <tr
-
-              className="
-              bg-gray-200
-              "
-
-            >
+        ) : (
 
 
 
-              <th className="p-4">
-
-                Image
-
-              </th>
-
-
-
-              <th>
-
-                Title
-
-              </th>
-
-
-
-              <th>
-
-                Price
-
-              </th>
-
-
-
-              <th>
-
-                Action
-
-              </th>
-
-
-
-            </tr>
-
-
-          </thead>
-
-
-
-
-
-
-
-
-
-          <tbody>
-
+          <div className="
+            grid
+            md:grid-cols-2
+            xl:grid-cols-3
+            gap-6
+          ">
 
 
 
 
             {
-
-              tours.map((tour)=>(
-
+              filteredTours.map((tour)=>(
 
 
 
-
-                <tr
+                <div
 
                   key={tour._id}
 
                   className="
-                  border-b
+                    bg-white
+                    rounded-xl
+                    shadow
+                    overflow-hidden
                   "
 
                 >
@@ -240,169 +300,199 @@ export default function ManageTours(){
 
 
 
-
-                  <td className="p-4">
-
+                  <img
 
 
+                    src={
+
+                      tour.image ||
+
+                      (
+
+                        typeof tour.images?.[0] === "object"
+
+                          ? tour.images?.[0]?.url
+
+                          : tour.images?.[0]
+
+                      )
+
+                      ||
+
+                      "/images/tour-placeholder.jpg"
+
+                    }
 
 
-                    <img
+                    alt={tour.title || "Tour"}
 
 
-                      src={
+                    className="
+                      w-full
+                      h-48
+                      object-cover
+                    "
+
+                  />
 
 
-                        tour.image ||
 
 
-                        (
-
-                          typeof tour.images?.[0] === "object"
 
 
-                          ?
+                  <div className="p-5">
 
 
-                          tour.images?.[0]?.url
+
+                    <h2 className="
+                      text-xl
+                      font-bold
+                    ">
+
+                      {tour.title}
+
+                    </h2>
 
 
-                          :
 
 
-                          tour.images?.[0]
+                    <p className="
+                      text-gray-600
+                      mt-2
+                    ">
 
-                        )
+                      📍 {
 
+                        typeof tour.destination === "object"
 
-                        ||
+                          ? tour.destination?.name
 
-
-                        "/images/tour-placeholder.jpg"
-
+                          : tour.destination
 
                       }
 
+                    </p>
 
 
-                      alt={tour.title || "Tour"}
 
 
 
-                      className="
-                      w-20
-                      h-16
-                      object-cover
-                      rounded
-                      "
 
+                    <p className="
+                      text-yellow-600
+                      font-bold
+                      mt-3
+                    ">
 
-                    />
+                      ${tour.price?.toLocaleString("en-US") || 0}
 
+                    </p>
 
 
 
 
-                  </td>
 
 
+                    <span className="
+                      inline-block
+                      mt-2
+                      text-sm
+                      px-3
+                      py-1
+                      rounded-full
+                      bg-green-100
+                      text-green-700
+                    ">
 
+                      {tour.status || "active"}
 
+                    </span>
 
 
 
-                  <td>
 
-                    {tour.title}
 
 
-                  </td>
+                    <div className="
+                      flex
+                      gap-3
+                      mt-5
+                    ">
 
 
 
+                      <button
 
+                        className="
+                          flex-1
+                          bg-blue-600
+                          text-white
+                          px-4
+                          py-2
+                          rounded
+                        "
 
+                      >
 
+                        Edit
 
-                  <td>
+                      </button>
 
-                    ${tour.price?.toLocaleString("en-US") || 0}
 
 
-                  </td>
 
 
 
+                      <button
 
 
+                        onClick={() => remove(tour._id)}
 
 
-                  <td>
+                        className="
+                          flex-1
+                          bg-red-600
+                          text-white
+                          px-4
+                          py-2
+                          rounded
+                        "
 
+                      >
 
+                        Delete
 
+                      </button>
 
 
-                    <button
 
 
-                      onClick={()=>remove(tour._id)}
+                    </div>
 
 
 
-                      className="
-                      bg-red-600
-                      text-white
-                      px-4
-                      py-2
-                      rounded
-                      "
 
+                  </div>
 
-                    >
 
-                      Delete
 
 
-                    </button>
-
-
-
-
-
-                  </td>
-
-
-
-
-
-                </tr>
-
-
+                </div>
 
 
 
               ))
-
             }
 
 
 
 
-
-          </tbody>
-
+          </div>
 
 
+        )
 
-
-        </table>
-
-
-
-
-
-      </div>
+      }
 
 
 

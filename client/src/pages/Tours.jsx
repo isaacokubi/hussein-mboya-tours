@@ -1,35 +1,38 @@
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { getTours } from "../api/tourApi";
 
-export default function Tours() {
-  const [search, setSearch] = useState("");
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["tour-manager-tours"],
+export default function Tours() {
+
+
+  const {
+    data,
+    isLoading,
+    error,
+
+  } = useQuery({
+
+    queryKey: ["public-tours"],
 
     queryFn: getTours,
+
   });
 
-  const tours = data?.tours || [];
 
-  const filteredTours = tours.filter((tour) => {
-    const destinationName =
-      typeof tour.destination === "object"
-        ? tour.destination?.name
-        : tour.destination;
-
-    return (
-      tour.title?.toLowerCase().includes(search.toLowerCase()) ||
-      destinationName?.toLowerCase().includes(search.toLowerCase())
-    );
-  });
 
   if (isLoading) {
+
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div
-          className="
+
+      <div className="
+        min-h-[400px]
+        flex
+        items-center
+        justify-center
+      ">
+
+        <div className="
           w-10
           h-10
           border-4
@@ -37,224 +40,286 @@ export default function Tours() {
           border-t-transparent
           rounded-full
           animate-spin
-          "
-        />
+        "/>
+
       </div>
+
     );
+
   }
+
+
 
   if (error) {
+
     return (
-      <div
-        className="
-        p-6
-        bg-red-50
-        border
-        border-red-200
-        rounded-xl
+
+      <div className="
+        max-w-7xl
+        mx-auto
+        px-6
+        py-20
+        text-center
         text-red-600
-        "
-      >
+      ">
+
         Failed to load tours.
+
       </div>
+
     );
+
   }
 
+
+
+  const tours = data?.tours || [];
+
+
+
   return (
-    <div className="space-y-6">
-      {/* HEADER */}
 
-      <div
-        className="
-        flex
-        flex-col
-        md:flex-row
-        md:items-center
-        md:justify-between
-        gap-4
-        "
-      >
-        <h1 className="text-3xl font-bold">Tours Management</h1>
+    <div className="
+      max-w-7xl
+      mx-auto
+      px-6
+      py-12
+    ">
 
-        <input
-          type="text"
-          placeholder="Search tours..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="
-          w-full
-          md:w-80
-          px-4
-          py-2
-          border
-          rounded-lg
-          focus:outline-none
-          focus:ring-2
-          focus:ring-yellow-500
-          "
-        />
+
+
+      <div className="mb-10">
+
+
+        <h1 className="
+          text-4xl
+          font-bold
+          text-gray-800
+        ">
+
+          Explore Our Tours
+
+        </h1>
+
+
+        <p className="
+          text-gray-600
+          mt-3
+        ">
+
+          Discover unforgettable African adventures with Hussein Mboya Tours.
+
+        </p>
+
+
       </div>
 
-      {/* TOURS */}
 
-      {filteredTours.length === 0 ? (
-        <div
-          className="
-            bg-white
-            rounded-xl
-            shadow
-            p-10
+
+
+
+      {
+        tours.length === 0 ? (
+
+          <div className="
             text-center
-            "
-        >
-          <h2 className="text-xl font-semibold text-gray-700">
-            No tours found
-          </h2>
+            py-20
+          ">
 
-          <p className="text-gray-500 mt-2">
-            Try changing your search criteria.
-          </p>
-        </div>
-      ) : (
-        <div
-          className="
+            <h2 className="
+              text-2xl
+              font-semibold
+            ">
+
+              No tours available
+
+            </h2>
+
+          </div>
+
+
+        ) : (
+
+
+
+          <div className="
             grid
-            gap-6
             md:grid-cols-2
-            xl:grid-cols-3
-            "
-        >
-          {filteredTours.map((tour) => (
+            lg:grid-cols-3
+            gap-8
+          ">
+
+
+
+          {
+
+          tours.map((tour)=>(
+
+
             <div
               key={tour._id}
               className="
-                  bg-white
-                  rounded-xl
-                  shadow
-                  overflow-hidden
-                  hover:shadow-lg
-                  transition
-                  "
+                bg-white
+                rounded-2xl
+                shadow
+                overflow-hidden
+                hover:shadow-xl
+                transition
+              "
             >
-              {/* IMAGE */}
+
+
 
               <img
+
                 src={
-                  typeof tour.images?.[0] === "object"
-                    ? tour.images?.[0]?.url
-                    : tour.images?.[0] ||
-                      tour.image ||
-                      "https://via.placeholder.com/600x400"
+
+                  tour.images?.[0]?.url ||
+
+                  tour.image ||
+
+                  "https://via.placeholder.com/600x400"
+
                 }
-                alt={tour.title || "Tour"}
+
+                alt={tour.title}
+
                 className="
-                    w-full
-                    h-52
-                    object-cover
-                    "
+                  w-full
+                  h-56
+                  object-cover
+                "
+
               />
 
-              <div className="p-5">
-                <h3 className="text-xl font-bold mb-2">
-                  {tour.title || "Untitled Tour"}
-                </h3>
 
-                <p
-                  className="
-                      text-gray-600
-                      text-sm
-                      mb-3
-                      "
-                >
-                  📍{" "}
-                  {typeof tour.destination === "object"
-                    ? tour.destination?.name
-                    : tour.destination || "Unknown destination"}
+
+
+
+              <div className="p-6">
+
+
+
+                <h2 className="
+                  text-xl
+                  font-bold
+                  text-gray-800
+                ">
+
+                  {tour.title}
+
+                </h2>
+
+
+
+
+
+                <p className="
+                  text-gray-600
+                  mt-2
+                ">
+
+                  📍 {
+
+                    tour.destination?.name ||
+
+                    tour.destination ||
+
+                    "Kenya"
+
+                  }
+
                 </p>
 
-                <p
-                  className="
-                      text-gray-600
-                      text-sm
-                      line-clamp-3
-                      mb-4
-                      "
-                >
-                  {tour.description || "No description available."}
+
+
+
+
+                <p className="
+                  text-gray-600
+                  mt-4
+                  line-clamp-3
+                ">
+
+                  {tour.description}
+
                 </p>
 
-                <div
-                  className="
-                      flex
-                      items-center
-                      justify-between
-                      "
-                >
-                  <span
-                    className="
-                        text-yellow-600
-                        font-bold
-                        text-lg
-                        "
-                  >
-                    ${tour.price ? tour.price.toLocaleString() : 0}
+
+
+
+
+                <div className="
+                  flex
+                  justify-between
+                  items-center
+                  mt-6
+                ">
+
+
+                  <span className="
+                    text-yellow-600
+                    font-bold
+                    text-xl
+                  ">
+
+                    ${tour.price}
+
                   </span>
 
-                  <span
-                    className={`
-
-                        px-3
-                        py-1
-                        rounded-full
-                        text-xs
-                        font-medium
 
 
-                        ${
-                          tour.status === "active"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-gray-100 text-gray-700"
-                        }
 
+                  <Link
 
-                        `}
+                    to={`/tours/${tour._id}`}
+
+                    className="
+                      bg-green-600
+                      text-white
+                      px-5
+                      py-2
+                      rounded-lg
+                      hover:bg-green-700
+                    "
+
                   >
-                    {tour.status || "Draft"}
-                  </span>
+
+                    View Tour
+
+                  </Link>
+
+
+
                 </div>
 
-                <div className="mt-4 flex gap-2">
-                  <button
-                    className="
-                        flex-1
-                        bg-yellow-500
-                        hover:bg-yellow-600
-                        text-white
-                        py-2
-                        rounded-lg
-                        "
-                  >
-                    Edit
-                  </button>
 
-                  <button
-                    className="
-                        flex-1
-                        bg-red-500
-                        hover:bg-red-600
-                        text-white
-                        py-2
-                        rounded-lg
-                        "
-                  >
-                    Delete
-                  </button>
-                </div>
+
               </div>
+
+
+
             </div>
-          ))}
-        </div>
-      )}
+
+
+
+          ))
+
+          }
+
+
+
+          </div>
+
+
+        )
+
+      }
+
+
+
     </div>
+
   );
+
 }
