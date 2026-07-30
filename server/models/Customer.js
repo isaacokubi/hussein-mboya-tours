@@ -1,0 +1,584 @@
+import mongoose from "mongoose";
+
+
+
+/*
+|--------------------------------------------------------------------------
+| CUSTOMER SCHEMA
+|--------------------------------------------------------------------------
+|
+| Each Agent manages their own customers.
+|
+| Agent
+|   |
+|   ↓
+| Customer
+|   |
+|   ↓
+| Bookings
+|
+*/
+
+
+
+const customerSchema = new mongoose.Schema(
+
+{
+
+/*
+|--------------------------------------------------------------------------
+| OWNER AGENT
+|--------------------------------------------------------------------------
+*/
+
+
+agent:{
+
+    type:mongoose.Schema.Types.ObjectId,
+
+    ref:"Agent",
+
+    required:true
+
+},
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| BASIC INFORMATION
+|--------------------------------------------------------------------------
+*/
+
+
+firstName:{
+
+    type:String,
+
+    required:true,
+
+    trim:true
+
+},
+
+
+
+lastName:{
+
+    type:String,
+
+    required:true,
+
+    trim:true
+
+},
+
+
+
+email:{
+
+    type:String,
+
+    lowercase:true,
+
+    trim:true,
+
+    default:"",
+
+    match:[
+
+        /^\S+@\S+\.\S+$/,
+
+        "Please enter a valid email"
+
+    ]
+
+},
+
+
+
+phone:{
+
+    type:String,
+
+    required:true,
+
+    trim:true
+
+},
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| PERSONAL DETAILS
+|--------------------------------------------------------------------------
+*/
+
+
+gender:{
+
+    type:String,
+
+    enum:[
+
+        "male",
+
+        "female",
+
+        "other"
+
+    ],
+
+    default:null
+
+},
+
+
+
+dateOfBirth:{
+
+    type:Date,
+
+    default:null
+
+},
+
+
+
+nationality:{
+
+    type:String,
+
+    default:"",
+
+    trim:true
+
+},
+
+
+
+passportNumber:{
+
+    type:String,
+
+    default:"",
+
+    trim:true
+
+},
+
+
+
+passportExpiryDate:{
+
+    type:Date,
+
+    default:null
+
+},
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| ADDRESS INFORMATION
+|--------------------------------------------------------------------------
+*/
+
+
+address:{
+
+    type:String,
+
+    default:"",
+
+    trim:true
+
+},
+
+
+
+city:{
+
+    type:String,
+
+    default:"",
+
+    trim:true
+
+},
+
+
+
+country:{
+
+    type:String,
+
+    default:"Kenya",
+
+    trim:true
+
+},
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| PROFILE
+|--------------------------------------------------------------------------
+*/
+
+
+profileImage:{
+
+    type:String,
+
+    default:""
+
+},
+
+
+
+customerType:{
+
+    type:String,
+
+    enum:[
+
+        "individual",
+
+        "corporate",
+
+        "family",
+
+        "vip"
+
+    ],
+
+    default:"individual"
+
+},
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| CRM DATA
+|--------------------------------------------------------------------------
+*/
+
+
+notes:{
+
+    type:String,
+
+    default:"",
+
+    trim:true
+
+},
+
+
+
+tags:[
+
+    {
+
+        type:String,
+
+        trim:true
+
+    }
+
+],
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| COMMUNICATION TRACKING
+|--------------------------------------------------------------------------
+*/
+
+
+lastContactedAt:{
+
+    type:Date,
+
+    default:null
+
+},
+
+
+
+preferredContactMethod:{
+
+    type:String,
+
+    enum:[
+
+        "phone",
+
+        "email",
+
+        "whatsapp"
+
+    ],
+
+    default:"phone"
+
+},
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| CUSTOMER LOYALTY
+|--------------------------------------------------------------------------
+*/
+
+
+loyaltyPoints:{
+
+    type:Number,
+
+    default:0,
+
+    min:0
+
+},
+
+
+
+totalBookings:{
+
+    type:Number,
+
+    default:0,
+
+    min:0
+
+},
+
+
+
+totalSpent:{
+
+    type:Number,
+
+    default:0,
+
+    min:0
+
+},
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| ACCOUNT STATUS
+|--------------------------------------------------------------------------
+*/
+
+
+status:{
+
+    type:String,
+
+    enum:[
+
+        "active",
+
+        "inactive",
+
+        "blocked"
+
+    ],
+
+    default:"active"
+
+}
+
+
+},
+
+{
+
+timestamps:true,
+
+
+toJSON:{
+
+    virtuals:true
+
+},
+
+
+toObject:{
+
+    virtuals:true
+
+}
+
+}
+
+);
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| VIRTUAL FULL NAME
+|--------------------------------------------------------------------------
+*/
+
+
+customerSchema.virtual(
+
+"fullName"
+
+)
+
+.get(function(){
+
+
+    return `${this.firstName} ${this.lastName}`;
+
+
+});
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| DATABASE INDEXES
+|--------------------------------------------------------------------------
+*/
+
+
+// Agent customer listing
+
+customerSchema.index({
+
+    agent:1,
+
+    createdAt:-1
+
+});
+
+
+
+
+// Search
+
+customerSchema.index({
+
+    email:1
+
+});
+
+
+
+customerSchema.index({
+
+    phone:1
+
+});
+
+
+
+
+// Filtering
+
+customerSchema.index({
+
+    status:1
+
+});
+
+
+
+
+// Customer grouping
+
+customerSchema.index({
+
+    customerType:1
+
+});
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| EXPORT MODEL
+|--------------------------------------------------------------------------
+*/
+
+
+const Customer =
+
+mongoose.models.Customer ||
+
+mongoose.model(
+
+    "Customer",
+
+    customerSchema
+
+);
+
+
+
+export default Customer;
