@@ -1,2 +1,0 @@
-(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[73629],{518574:(_,u,s)=>{"use strict";s.r(u),s.d(u,{__N_SSP:()=>n,default:()=>e.default});var e=s(969119),n=!0},633392:(_,u,s)=>{(window.__NEXT_P=window.__NEXT_P||[]).push(["/studios",function(){return s(518574)}])}},_=>{_.O(0,[27510,10654,29330,31994,67781,94367,76220,77484,72193,16288,50837,25515,72076,43630,37400,25153,90636,46593,38792],()=>_(_.s=633392)),_N_E=_.O()}]);
-//# sourceMappingURL=studios-cd83b58943ea3a10.js.map
