@@ -19,7 +19,7 @@ import { calculateBookingAmounts } from "../utils/bookingPricing.js";
 
 import { successResponse, errorResponse } from "../utils/apiResponse.js";
 
-import { withTransaction } from "../utils/withTransaction.js";
+import withTransaction from "../utils/withTransaction.js";
 
 /*
 |--------------------------------------------------------------------------
