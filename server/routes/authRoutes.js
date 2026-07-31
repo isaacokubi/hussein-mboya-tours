@@ -5,11 +5,7 @@ import express from "express";
 import {
   register,
   login,
-  logout,
   getMe,
-  refreshToken,
-  forgotPassword,
-  resetPassword,
   changePassword,
 } from "../controllers/authController.js";
 
@@ -21,11 +17,7 @@ const router = express.Router();
 
 /*
 |--------------------------------------------------------------------------
-| AUTHENTICATION
-|--------------------------------------------------------------------------
-|
-| Public Routes
-|
+| PUBLIC AUTH ROUTES
 |--------------------------------------------------------------------------
 */
 
@@ -47,36 +39,9 @@ router.post(
   login
 );
 
-/**
- * POST /api/auth/refresh
- * Refresh access token
- */
-router.post(
-  "/refresh",
-  refreshToken
-);
-
-/**
- * POST /api/auth/forgot-password
- * Request password reset
- */
-router.post(
-  "/forgot-password",
-  forgotPassword
-);
-
-/**
- * POST /api/auth/reset-password
- * Reset password using token
- */
-router.post(
-  "/reset-password",
-  resetPassword
-);
-
 /*
 |--------------------------------------------------------------------------
-| PROTECTED ROUTES
+| PROTECTED AUTH ROUTES
 |--------------------------------------------------------------------------
 */
 
@@ -89,15 +54,6 @@ router.use(protect);
 router.get(
   "/me",
   getMe
-);
-
-/**
- * POST /api/auth/logout
- * Logout current user
- */
-router.post(
-  "/logout",
-  logout
 );
 
 /**
