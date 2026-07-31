@@ -23,9 +23,8 @@ import {
   protect,
 } from "../middleware/authMiddleware.js";
 
-import {
-  tourManagerOnly,
-} from "../middleware/tourManagerMiddleware.js";
+
+import tourManagerOnly from "../middleware/tourManagerMiddleware.js";
 
 import upload from "../middleware/uploadMiddleware.js";
 
