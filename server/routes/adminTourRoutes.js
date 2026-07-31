@@ -18,9 +18,7 @@ import {
   protect,
 } from "../middleware/authMiddleware.js";
 
-import {
-  adminMiddleware,
-} from "../middleware/adminMiddleware.js";
+import adminMiddleware from "../middleware/adminMiddleware.js";
 
 import upload from "../middleware/uploadMiddleware.js";
 
