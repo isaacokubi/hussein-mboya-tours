@@ -18,7 +18,10 @@ const io = new Server(server, {
 
     cors: {
 
-        origin: env.CLIENT_ORIGINS.split(","),
+      origin: (env.CLIENT_ORIGINS || "")
+  .split(",")
+  .map(origin => origin.trim())
+  .filter(Boolean),
 
         credentials: true
     }
