@@ -55,6 +55,7 @@ const securityLogSchema = new mongoose.Schema(
         "login_success",
         "login_failed",
         "logout",
+        "register",
 
         "password_changed",
         "password_reset",

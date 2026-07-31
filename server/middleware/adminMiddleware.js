@@ -72,22 +72,15 @@ const adminMiddleware = async (req, res, next) => {
 
     let roleName = "";
 
-    // Role stored as populated document
     if (
       user.role &&
       typeof user.role === "object" &&
       user.role.name
     ) {
       roleName = user.role.name.toLowerCase();
-    }
-
-    // Legacy string role support
-    else if (typeof user.role === "string") {
+    } else if (typeof user.role === "string") {
       roleName = user.role.toLowerCase();
-    }
-
-    // Legacy legacyRole field support
-    else if (user.legacyRole) {
+    } else if (user.legacyRole) {
       roleName = user.legacyRole.toLowerCase();
     }
 
