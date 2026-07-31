@@ -1,28 +1,70 @@
-import User from "../models/User.js";
-import Role from "../models/Role.js";
+// server/middleware/tourManagerMiddleware.js
 
-export const tourManagerOnly = async (req, res, next) => {
-  try {
-    const user = await User.findById(req.user._id).populate("role");
+/*
+|--------------------------------------------------------------------------
+| TOUR MANAGER AUTHORIZATION
+|--------------------------------------------------------------------------
+|
+| Usage:
+|
+| router.get(
+|     "/dashboard",
+|     protect,
+|     tourManagerOnly,
+|     controller
+| );
+|
+|--------------------------------------------------------------------------
+*/
 
-    if (!user) {
-      return res.status(401).json({
-        message: "User not found",
-      });
+const tourManagerOnly = (req, res, next) => {
+    try {
+        /*
+        |--------------------------------------------------------------------------
+        | AUTHENTICATION
+        |--------------------------------------------------------------------------
+        */
+
+        if (!req.user) {
+            return res.status(401).json({
+                success: false,
+                message: "Authentication required",
+            });
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | GET USER ROLE
+        |--------------------------------------------------------------------------
+        |
+        | Supports both:
+        | - Legacy string role
+        | - New RBAC role document
+        |
+        |--------------------------------------------------------------------------
+        */
+
+        const role =
+            req.user.roleId?.name ||
+            req.user.role ||
+            "";
+
+        if (role.toLowerCase() !== "tour_manager") {
+            return res.status(403).json({
+                success: false,
+                message: "Tour Manager access required",
+            });
+        }
+
+        next();
+    } catch (error) {
+        console.error("TOUR MANAGER MIDDLEWARE ERROR:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Authorization failed",
+        });
     }
-
-    if (!user.role || user.role.name !== "tourmanager") {
-      return res.status(403).json({
-        message: "Tour Manager access required",
-      });
-    }
-
-    next();
-  } catch (error) {
-    res.status(500).json({
-      message: "Authorization failed",
-
-      error: error.message,
-    });
-  }
 };
+
+export default tourManagerOnly;

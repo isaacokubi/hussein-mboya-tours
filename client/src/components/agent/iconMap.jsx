@@ -1,118 +1,337 @@
 import {
-    LayoutDashboard,
-    Calendar,
-    Package,
-    Users,
-    UserRound,
-    FileText,
-    ClipboardList,
-    Map,
-    CreditCard,
-    Settings,
-    BarChart3,
-    Wallet,
-    Plane,
-    Car,
-    MessageSquare,
-    Bell,
-    Shield
-} from "lucide-react";
+
+LayoutDashboard,
+
+Calendar,
+
+Package,
+
+Users,
+
+UserRound,
+
+FileText,
+
+ClipboardList,
+
+Map,
+
+CreditCard,
+
+Settings,
+
+BarChart3,
+
+Wallet,
+
+Plane,
+
+Car,
+
+MessageSquare,
+
+Bell,
+
+Shield
+
+}
+
+from "lucide-react";
+
+
 
 
 
 /*
 |--------------------------------------------------------------------------
-| DYNAMIC ICON MAP
+| DATABASE ICON MAPPER
 |--------------------------------------------------------------------------
 |
-| Icons are stored in database as strings:
+| Database stores icon names as strings.
 |
-| Dashboard
-| Calendar
-| Package
-| Users
+| Example:
 |
-| Sidebar converts them here.
+| {
+|   label:"Bookings",
+|   icon:"calendar"
+| }
+|
+| Sidebar resolves it here.
 |
 |--------------------------------------------------------------------------
 */
 
 
+
+
+
 export const iconMap = {
 
 
-    LayoutDashboard,
+/*
+|--------------------------------------------------------------------------
+| DASHBOARD
+|--------------------------------------------------------------------------
+*/
 
-    Dashboard: LayoutDashboard,
+dashboard: LayoutDashboard,
 
+Dashboard: LayoutDashboard,
 
-    Calendar,
-
-    Bookings: Calendar,
-
-
-    Package,
-
-    Packages: Package,
+layoutdashboard: LayoutDashboard,
 
 
-    Users,
-
-    Customers: Users,
 
 
-    User: UserRound,
 
-    Agent: UserRound,
+/*
+|--------------------------------------------------------------------------
+| BOOKINGS
+|--------------------------------------------------------------------------
+*/
 
+calendar: Calendar,
 
-    FileText,
+Calendar,
 
-    Reports: FileText,
+bookings: Calendar,
 
-
-    ClipboardList,
-
-    Quotations: ClipboardList,
-
-
-    Map,
-
-    Tours: Map,
+Bookings: Calendar,
 
 
-    CreditCard,
-
-    Payments: CreditCard,
 
 
-    Wallet,
 
-    Commission: Wallet,
+/*
+|--------------------------------------------------------------------------
+| PACKAGES
+|--------------------------------------------------------------------------
+*/
 
+package: Package,
 
-    Plane,
+Package,
 
-    Flights: Plane,
+packages: Package,
 
-
-    Car,
-
-    Vehicles: Car,
-
-
-    MessageSquare,
-
-    Messages: MessageSquare,
+Packages: Package,
 
 
-    Bell,
-
-    Notifications: Bell,
 
 
-    Settings,
 
-    Shield
+
+/*
+|--------------------------------------------------------------------------
+| USERS
+|--------------------------------------------------------------------------
+*/
+
+users: Users,
+
+Users,
+
+customers: Users,
+
+Customers: Users,
+
+user: UserRound,
+
+User: UserRound,
+
+agent: UserRound,
+
+Agent: UserRound,
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| REPORTS
+|--------------------------------------------------------------------------
+*/
+
+filetext: FileText,
+
+FileText,
+
+reports: FileText,
+
+Reports: FileText,
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| QUOTATIONS
+|--------------------------------------------------------------------------
+*/
+
+clipboardlist: ClipboardList,
+
+ClipboardList,
+
+quotations: ClipboardList,
+
+Quotations: ClipboardList,
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| TOURS
+|--------------------------------------------------------------------------
+*/
+
+map: Map,
+
+Map,
+
+tours: Map,
+
+Tours: Map,
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| PAYMENTS
+|--------------------------------------------------------------------------
+*/
+
+creditcard: CreditCard,
+
+CreditCard,
+
+payments: CreditCard,
+
+Payments: CreditCard,
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| FINANCE
+|--------------------------------------------------------------------------
+*/
+
+wallet: Wallet,
+
+Wallet,
+
+commission: Wallet,
+
+Commission: Wallet,
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| TRANSPORT
+|--------------------------------------------------------------------------
+*/
+
+plane: Plane,
+
+Plane,
+
+flights: Plane,
+
+Flights: Plane,
+
+car: Car,
+
+Car,
+
+vehicles: Car,
+
+Vehicles: Car,
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| COMMUNICATION
+|--------------------------------------------------------------------------
+*/
+
+messages: MessageSquare,
+
+Messages: MessageSquare,
+
+message: MessageSquare,
+
+notifications: Bell,
+
+Notifications: Bell,
+
+bell: Bell,
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| SETTINGS & SECURITY
+|--------------------------------------------------------------------------
+*/
+
+settings: Settings,
+
+Settings,
+
+security: Shield,
+
+Security: Shield,
+
+permissions: Shield,
+
+Permissions: Shield,
+
+roles: Shield,
+
+Roles: Shield,
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| ANALYTICS
+|--------------------------------------------------------------------------
+*/
+
+analytics: BarChart3,
+
+Analytics: BarChart3,
+
+barChart: BarChart3
+
 
 };

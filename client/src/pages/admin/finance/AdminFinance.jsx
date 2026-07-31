@@ -1,156 +1,313 @@
-import {
-useEffect,
-useState
-}
-from "react";
+// client/src/pages/admin/finance/AdminFinance.jsx
 
 
 import {
-getFinanceDashboard
+    useQuery
+} from "@tanstack/react-query";
+
+
+import {
+    getFinanceDashboard
 }
 from "../../../api/financeApi";
+
+
+
+
 
 
 
 export default function AdminFinance(){
 
 
-const [data,setData]=useState({});
+
+    const {
+
+        data,
+
+        isLoading,
+
+        isError
+
+
+    } = useQuery({
 
 
 
-useEffect(()=>{
+        queryKey:[
 
+            "financeDashboard"
 
-getFinanceDashboard()
-
-.then(res=>{
-
-
-setData(
-res.data.data
-);
-
-
-});
-
-
-},[]);
+        ],
 
 
 
+        queryFn:getFinanceDashboard
 
 
-return (
 
-<div className="p-6">
-
-
-<h1 className="
-text-3xl
-font-bold
-mb-8
-">
-
-Finance Dashboard
-
-</h1>
+    });
 
 
 
 
 
-<div className="
-grid
-grid-cols-3
-gap-6
-">
 
 
+    const finance =
 
-<Card
+        data?.data ||
 
-title="Total Revenue"
+        data ||
 
-value={`KES ${data.revenue || 0}`}
-
-/>
-
-
-
-
-<Card
-
-title="Paid Bookings"
-
-value={data.paidBookings || 0}
-
-/>
+        {};
 
 
 
 
 
-<Card
-
-title="Commission"
-
-value={`KES ${data.commission || 0}`}
-
-/>
 
 
 
-</div>
+
+    if(isLoading)
+
+    return (
+
+        <div className="p-6">
+
+            Loading finance dashboard...
+
+        </div>
+
+    );
 
 
 
-</div>
 
-);
+
+
+
+
+    if(isError)
+
+    return (
+
+        <div className="
+            p-6
+            text-red-600
+        ">
+
+            Failed to load finance data
+
+        </div>
+
+    );
+
+
+
+
+
+
+
+
+
+    return (
+
+
+        <div className="p-6">
+
+
+
+
+
+            <h1 className="
+                text-3xl
+                font-bold
+                mb-8
+            ">
+
+
+                Finance Dashboard
+
+
+            </h1>
+
+
+
+
+
+
+
+
+
+            <div className="
+                grid
+                grid-cols-1
+                md:grid-cols-3
+                gap-6
+            ">
+
+
+
+
+                <Card
+
+
+                    title="Total Revenue"
+
+
+                    value={
+
+                        `KES ${
+
+                            Number(
+
+                                finance.revenue || 0
+
+                            )
+
+                            .toLocaleString()
+
+                        }`
+
+                    }
+
+
+                />
+
+
+
+
+
+
+
+                <Card
+
+
+                    title="Paid Bookings"
+
+
+                    value={
+
+                        finance.paidBookings || 0
+
+                    }
+
+
+                />
+
+
+
+
+
+
+
+                <Card
+
+
+                    title="Commission"
+
+
+                    value={
+
+                        `KES ${
+
+                            Number(
+
+                                finance.commission || 0
+
+                            )
+
+                            .toLocaleString()
+
+                        }`
+
+                    }
+
+
+                />
+
+
+
+
+
+            </div>
+
+
+
+
+
+
+        </div>
+
+
+    );
+
 
 }
 
 
 
+
+
+
+
+
+
 function Card({
 
-title,
+    title,
 
-value
+    value
 
 }){
 
 
-return (
-
-<div className="
-bg-white
-shadow
-rounded-xl
-p-6
-">
+    return (
 
 
-<p>
 
-{title}
-
-</p>
-
-
-<h2 className="
-text-3xl
-font-bold
-">
-
-{value}
-
-</h2>
+        <div className="
+            bg-white
+            shadow
+            rounded-xl
+            p-6
+        ">
 
 
-</div>
 
-);
+            <p className="
+                text-gray-500
+            ">
+
+                {title}
+
+            </p>
+
+
+
+
+
+            <h2 className="
+                text-3xl
+                font-bold
+                mt-2
+            ">
+
+                {value}
+
+            </h2>
+
+
+
+
+
+        </div>
+
+
+
+    );
+
 
 }

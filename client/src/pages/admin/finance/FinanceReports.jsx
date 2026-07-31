@@ -1,163 +1,370 @@
-import {
-useEffect,
-useState
-}
-from "react";
+// client/src/pages/admin/finance/FinanceReports.jsx
 
 
 import {
-getReports
+    useQuery
+} from "@tanstack/react-query";
+
+
+import {
+    getReports
 }
 from "../../../api/financeApi";
+
+
+
+
 
 
 
 export default function FinanceReports(){
 
 
-const [reports,setReports]=useState([]);
 
+    const {
 
+        data,
 
+        isLoading,
 
-useEffect(()=>{
+        isError
 
 
-getReports()
+    } = useQuery({
 
-.then(res=>{
 
 
-setReports(
+        queryKey:[
 
-res.data.monthlyRevenue
+            "financeReports"
 
-);
+        ],
 
 
-});
 
+        queryFn:getReports
 
-},[]);
 
 
+    });
 
 
-return (
 
-<div className="p-6">
 
 
-<h1
-className="
-text-3xl
-font-bold
-mb-8
-"
->
 
-Financial Reports
 
-</h1>
 
+    const reports =
 
+        data?.monthlyRevenue ||
 
+        data?.data?.monthlyRevenue ||
 
+        [];
 
-<div
-className="
-bg-white
-rounded-xl
-shadow
-"
->
 
 
 
-<table
-className="
-w-full
-"
->
 
 
-<thead
-className="
-bg-gray-100
-"
->
 
-<tr>
 
-<th className="p-4">
-Month
-</th>
 
+    if(isLoading)
 
-<th className="p-4">
-Revenue
-</th>
+    return (
 
+        <div className="p-6">
 
-</tr>
+            Loading reports...
 
-</thead>
+        </div>
 
+    );
 
 
 
-<tbody>
 
 
-{
-reports.map(
-(report,index)=>(
 
 
-<tr key={index}>
 
 
-<td className="p-4">
+    if(isError)
 
-{
-report._id.month
-}/
-{
-report._id.year
-}
+    return (
 
-</td>
+        <div className="
+            p-6
+            text-red-600
+        ">
 
+            Failed to load financial reports
 
-<td className="p-4">
+        </div>
 
-KES {report.revenue}
+    );
 
-</td>
 
 
-</tr>
 
 
-)
 
-)
 
-}
 
 
-</tbody>
+    return (
 
 
-</table>
 
+        <div className="p-6">
 
-</div>
 
 
-</div>
 
 
-);
+            <h1
+
+            className="
+                text-3xl
+                font-bold
+                mb-8
+            "
+
+            >
+
+                Financial Reports
+
+            </h1>
+
+
+
+
+
+
+
+
+
+            <div className="
+                bg-white
+                rounded-xl
+                shadow
+                overflow-hidden
+            ">
+
+
+
+
+
+                <table className="
+                    w-full
+                ">
+
+
+
+                    <thead className="
+                        bg-gray-100
+                    ">
+
+
+
+                        <tr>
+
+
+
+                            <th className="p-4 text-left">
+
+                                Month
+
+                            </th>
+
+
+
+
+
+                            <th className="p-4 text-left">
+
+                                Revenue
+
+                            </th>
+
+
+
+
+
+                        </tr>
+
+
+
+                    </thead>
+
+
+
+
+
+
+
+
+
+                    <tbody>
+
+
+
+
+
+                    {
+
+                        reports.length === 0 ? (
+
+
+                            <tr>
+
+
+                                <td
+
+                                colSpan="2"
+
+                                className="
+                                    p-6
+                                    text-center
+                                    text-gray-500
+                                "
+
+                                >
+
+                                    No financial reports available
+
+                                </td>
+
+
+                            </tr>
+
+
+
+                        ) : (
+
+
+
+                            reports.map((report,index)=>(
+
+
+
+                                <tr
+
+                                key={index}
+
+                                className="
+                                    border-b
+                                "
+
+                                >
+
+
+
+
+
+
+                                    <td className="p-4">
+
+
+                                        {
+
+                                            report?._id?.month ||
+
+                                            "-"
+
+                                        }
+
+
+                                        /
+
+                                        {
+
+                                            report?._id?.year ||
+
+                                            "-"
+
+                                        }
+
+
+
+                                    </td>
+
+
+
+
+
+
+
+
+                                    <td className="p-4 font-medium">
+
+
+                                        KES{" "}
+
+                                        {
+
+                                            Number(
+
+                                                report.revenue || 0
+
+                                            )
+
+                                            .toLocaleString()
+
+                                        }
+
+
+
+                                    </td>
+
+
+
+
+
+
+                                </tr>
+
+
+
+                            ))
+
+
+
+                        )
+
+                    }
+
+
+
+
+
+                    </tbody>
+
+
+
+
+
+                </table>
+
+
+
+
+
+
+            </div>
+
+
+
+
+
+
+        </div>
+
+
+
+    );
+
 
 }

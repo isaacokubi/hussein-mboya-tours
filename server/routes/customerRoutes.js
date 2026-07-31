@@ -1,84 +1,59 @@
+// server/routes/customerRoutes.js
+
 import express from "express";
 
+import {
+  getCustomers,
+  getCustomerProfile,
+} from "../controllers/customerController.js";
 
 import {
-
-getCustomers,
-
-getCustomerProfile
-
-}
-
-from "../controllers/customerController.js";
-
+  protect,
+} from "../middleware/authMiddleware.js";
 
 import {
+  adminMiddleware,
+} from "../middleware/adminMiddleware.js";
 
-protect
+const router = express.Router();
 
-}
+/*
+|--------------------------------------------------------------------------
+| AUTHORIZATION
+|--------------------------------------------------------------------------
+|
+| All customer management routes require:
+| • Valid JWT
+| • Administrator privileges
+|
+|--------------------------------------------------------------------------
+*/
 
-from "../middleware/authMiddleware.js";
+router.use(protect);
+router.use(adminMiddleware);
 
+/*
+|--------------------------------------------------------------------------
+| CUSTOMERS
+|--------------------------------------------------------------------------
+*/
 
-import {
-
-roleMiddleware
-
-}
-
-from "../middleware/roleMiddleware.js";
-
-
-
-const router =
-express.Router();
-
-
-
-
-
+/**
+ * GET /api/customers
+ * Get all customers
+ */
 router.get(
-
-"/",
-
-protect,
-
-roleMiddleware(
-
-[
-"admin"
-]
-
-),
-
-getCustomers
-
+  "/",
+  getCustomers
 );
 
-
-
-
-
+/**
+ * GET /api/customers/:id
+ * Get a customer's profile
+ */
 router.get(
-
-"/:id",
-
-protect,
-
-roleMiddleware(
-
-[
-"admin"
-]
-
-),
-
-getCustomerProfile
-
+  "/:id",
+  getCustomerProfile
 );
-
-
-
 
 export default router;

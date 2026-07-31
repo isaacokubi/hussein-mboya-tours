@@ -1,11 +1,4 @@
-// client/src/api/customerApi.js
-
-
 import api from "./axios";
-
-
-
-
 
 
 
@@ -19,63 +12,41 @@ import api from "./axios";
 */
 
 
+// ============================================================
+// GET ALL CUSTOMERS (ADMIN)
+// GET /api/customers
+// ============================================================
 
+export const getAdminCustomers = async (params) => {
 
+    const response = await api.get(
+        "/customers",
+        {
+            params: params || {}
+        }
+    );
 
-
-// GET ALL CUSTOMERS
-
-export const getCustomers = async(params)=>{
-
-
-const response = await api.get(
-
-"/customers",
-
-{
-
-params
-
-}
-
-);
-
-
-
-return response.data;
-
+    return response.data;
 
 };
 
 
 
 
+// ============================================================
+// GET CUSTOMER PROFILE (ADMIN)
+// GET /api/customers/:id
+// ============================================================
 
+export const getCustomerProfile = async (id) => {
 
+    const response = await api.get(
+        `/customers/${id}`
+    );
 
-
-
-// GET CUSTOMER PROFILE
-
-export const getCustomerProfile = async(id)=>{
-
-
-const response = await api.get(
-
-`/customers/${id}`
-
-);
-
-
-
-return response.data;
-
+    return response.data;
 
 };
-
-
-
-
 
 
 
@@ -88,27 +59,18 @@ return response.data;
 */
 
 
-
-
-
-
-
-
+// ============================================================
 // GET AGENT CUSTOMERS
+// GET /api/agents/customers
+// ============================================================
 
-export const getAgentCustomers = async()=>{
+export const getAgentCustomers = async () => {
 
+    const response = await api.get(
+        "/agents/customers"
+    );
 
-const response = await api.get(
-
-"/agents/customers"
-
-);
-
-
-
-return response.data;
-
+    return response.data;
 
 };
 
@@ -116,25 +78,18 @@ return response.data;
 
 
 
-
-
-
-
+// ============================================================
 // GET SINGLE AGENT CUSTOMER
+// GET /api/agents/customers/:id
+// ============================================================
 
-export const getAgentCustomer = async(id)=>{
+export const getAgentCustomer = async (id) => {
 
+    const response = await api.get(
+        `/agents/customers/${id}`
+    );
 
-const response = await api.get(
-
-`/agents/customers/${id}`
-
-);
-
-
-
-return response.data;
-
+    return response.data;
 
 };
 
@@ -142,27 +97,19 @@ return response.data;
 
 
 
-
-
-
-
+// ============================================================
 // CREATE CUSTOMER
+// POST /api/agents/customers
+// ============================================================
 
-export const createCustomer = async(data)=>{
+export const createCustomer = async (data) => {
 
+    const response = await api.post(
+        "/agents/customers",
+        data
+    );
 
-const response = await api.post(
-
-"/agents/customers",
-
-data
-
-);
-
-
-
-return response.data;
-
+    return response.data;
 
 };
 
@@ -170,27 +117,22 @@ return response.data;
 
 
 
-
-
-
-
+// ============================================================
 // UPDATE CUSTOMER
+// PUT /api/agents/customers/:id
+// ============================================================
 
-export const updateCustomer = async(id,data)=>{
+export const updateCustomer = async (
+    id,
+    data
+) => {
 
+    const response = await api.put(
+        `/agents/customers/${id}`,
+        data
+    );
 
-const response = await api.put(
-
-`/agents/customers/${id}`,
-
-data
-
-);
-
-
-
-return response.data;
-
+    return response.data;
 
 };
 
@@ -198,31 +140,20 @@ return response.data;
 
 
 
-
-
-
-
+// ============================================================
 // DELETE CUSTOMER
+// DELETE /api/agents/customers/:id
+// ============================================================
 
-export const deleteCustomer = async(id)=>{
+export const deleteCustomer = async (id) => {
 
+    const response = await api.delete(
+        `/agents/customers/${id}`
+    );
 
-const response = await api.delete(
-
-`/agents/customers/${id}`
-
-);
-
-
-
-return response.data;
-
+    return response.data;
 
 };
-
-
-
-
 
 
 
@@ -235,22 +166,17 @@ return response.data;
 */
 
 
+// ============================================================
+// GET CUSTOMER STATISTICS
+// GET /api/agents/customers/stats
+// ============================================================
 
+export const getCustomerStats = async () => {
 
+    const response = await api.get(
+        "/agents/customers/stats"
+    );
 
-
-export const getCustomerStats = async()=>{
-
-
-const response = await api.get(
-
-"/agents/customers/stats"
-
-);
-
-
-
-return response.data;
-
+    return response.data;
 
 };

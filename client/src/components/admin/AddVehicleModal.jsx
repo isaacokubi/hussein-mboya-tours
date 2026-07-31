@@ -1,45 +1,50 @@
 import {
-useEffect,
-useState
+    useEffect,
+    useState
 } from "react";
 
 
 import {
-
-createVehicle,
-
-getDrivers
-
+    createVehicle,
+    getDrivers,
+    assignDriver
 } from "../../api/vehicleApi";
+
+
 
 
 
 export default function AddVehicleModal({
 
-close,
+    close,
 
-refresh
+    refresh
 
 }){
 
 
 const [drivers,setDrivers]=useState([]);
 
+const [loading,setLoading]=useState(false);
+
+
+const [error,setError]=useState("");
+
 
 
 const [form,setForm]=useState({
 
-name:"",
+    name:"",
 
-registrationNumber:"",
+    registrationNumber:"",
 
-model:"",
+    model:"",
 
-type:"SUV",
+    type:"SUV",
 
-capacity:"",
+    capacity:"",
 
-driver:""
+    driver:""
 
 });
 
@@ -50,9 +55,7 @@ driver:""
 
 useEffect(()=>{
 
-
-loadDrivers();
-
+    loadDrivers();
 
 },[]);
 
@@ -60,7 +63,11 @@ loadDrivers();
 
 
 
+
+
 const loadDrivers = async()=>{
+
+try{
 
 
 const res =
@@ -68,11 +75,47 @@ await getDrivers();
 
 
 setDrivers(
-res.data.drivers
+    res.drivers || []
 );
 
 
+}
+
+catch(error){
+
+console.error(error);
+
+setError(
+    "Failed to load drivers"
+);
+
+}
+
+
 };
+
+
+
+
+
+
+
+
+
+const handleChange=(e)=>{
+
+
+setForm({
+
+...form,
+
+[e.target.name]:e.target.value
+
+});
+
+
+};
+
 
 
 
@@ -85,6 +128,14 @@ const submit = async(e)=>{
 
 
 e.preventDefault();
+
+
+try{
+
+
+setLoading(true);
+
+setError("");
 
 
 
@@ -104,27 +155,11 @@ capacity:Number(form.capacity)
 if(form.driver){
 
 
-await fetch(
+await assignDriver(
 
-`/api/vehicles/${response.data.vehicle._id}/assign-driver`,
+response.vehicle._id,
 
-{
-
-method:"PUT",
-
-headers:{
-
-"Content-Type":"application/json"
-
-},
-
-body:JSON.stringify({
-
-driverId:form.driver
-
-})
-
-}
+form.driver
 
 );
 
@@ -134,13 +169,44 @@ driverId:form.driver
 
 
 
-
 refresh();
 
 close();
 
 
+
+}
+
+catch(error){
+
+
+console.error(error);
+
+
+setError(
+
+error.response?.data?.message ||
+
+"Failed to create vehicle"
+
+);
+
+
+}
+
+finally{
+
+
+setLoading(false);
+
+
+}
+
+
+
 };
+
+
 
 
 
@@ -159,7 +225,6 @@ items-center
 justify-center
 "
 >
-
 
 
 <div
@@ -186,53 +251,70 @@ Add Vehicle
 
 
 
+{
+error &&
+
+<p className="text-red-600 mb-3">
+
+{error}
+
+</p>
+
+}
+
+
+
 
 
 <form
+
 onSubmit={submit}
+
 className="space-y-4"
+
 >
 
 
 
+
+
 <input
+
+name="name"
+
+value={form.name}
 
 className="border p-3 w-full"
 
 placeholder="Vehicle Name"
 
-onChange={
-e=>setForm({
-
-...form,
-
-name:e.target.value
-
-})
-}
+onChange={handleChange}
 
 />
 
 
 
 
+
+
+
+
 <input
+
+name="registrationNumber"
+
+value={form.registrationNumber}
 
 className="border p-3 w-full"
 
 placeholder="Registration Number"
 
-onChange={
-e=>setForm({
-
-...form,
-
-registrationNumber:e.target.value
-
-})
-}
+onChange={handleChange}
 
 />
+
+
+
 
 
 
@@ -240,21 +322,19 @@ registrationNumber:e.target.value
 
 <input
 
+name="model"
+
+value={form.model}
+
 className="border p-3 w-full"
 
 placeholder="Model"
 
-onChange={
-e=>setForm({
-
-...form,
-
-model:e.target.value
-
-})
-}
+onChange={handleChange}
 
 />
+
+
 
 
 
@@ -263,28 +343,35 @@ model:e.target.value
 
 <select
 
+name="type"
+
+value={form.type}
+
 className="border p-3 w-full"
 
-onChange={
-e=>setForm({
-
-...form,
-
-type:e.target.value
-
-})
-}
+onChange={handleChange}
 
 >
 
 
-<option>SUV</option>
+<option value="SUV">
+SUV
+</option>
 
-<option>VAN</option>
 
-<option>BUS</option>
+<option value="VAN">
+VAN
+</option>
 
-<option>Land Cruiser</option>
+
+<option value="BUS">
+BUS
+</option>
+
+
+<option value="Land Cruiser">
+Land Cruiser
+</option>
 
 
 </select>
@@ -295,7 +382,12 @@ type:e.target.value
 
 
 
+
 <input
+
+name="capacity"
+
+value={form.capacity}
 
 type="number"
 
@@ -303,15 +395,7 @@ className="border p-3 w-full"
 
 placeholder="Capacity"
 
-onChange={
-e=>setForm({
-
-...form,
-
-capacity:e.target.value
-
-})
-}
+onChange={handleChange}
 
 />
 
@@ -321,28 +405,27 @@ capacity:e.target.value
 
 
 
+
+
 <select
+
+name="driver"
+
+value={form.driver}
 
 className="border p-3 w-full"
 
-onChange={
-e=>setForm({
-
-...form,
-
-driver:e.target.value
-
-})
-}
+onChange={handleChange}
 
 >
 
 
-<option>
+<option value="">
 
 Assign Driver
 
 </option>
+
 
 
 
@@ -359,7 +442,6 @@ value={driver._id}
 >
 
 {driver.name}
-
 
 </option>
 
@@ -379,6 +461,7 @@ value={driver._id}
 
 
 
+
 <div
 className="
 flex
@@ -388,11 +471,14 @@ gap-3
 >
 
 
+
 <button
 
 type="button"
 
 onClick={close}
+
+disabled={loading}
 
 className="
 px-4
@@ -411,7 +497,11 @@ Cancel
 
 
 
+
+
 <button
+
+disabled={loading}
 
 className="
 px-4
@@ -423,7 +513,15 @@ rounded
 
 >
 
-Save Vehicle
+
+{
+loading
+?
+"Saving..."
+:
+"Save Vehicle"
+}
+
 
 </button>
 
@@ -434,6 +532,7 @@ Save Vehicle
 
 
 </form>
+
 
 
 </div>

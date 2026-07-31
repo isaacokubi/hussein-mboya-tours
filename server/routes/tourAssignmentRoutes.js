@@ -1,58 +1,51 @@
+// server/routes/tourAssignmentRoutes.js
+
 import express from "express";
 
+import {
+  assignTourResources,
+} from "../controllers/tourAssignmentController.js";
 
 import {
-
-assignTourResources
-
-}
-from "../controllers/tourAssignmentController.js";
-
-
+  protect,
+} from "../middleware/authMiddleware.js";
 
 import {
+  roleMiddleware,
+} from "../middleware/roleMiddleware.js";
 
-protect
+const router = express.Router();
 
-}
-from "../middleware/authMiddleware.js";
+/*
+|--------------------------------------------------------------------------
+| AUTHORIZATION
+|--------------------------------------------------------------------------
+|
+| All tour assignment routes require authentication.
+|
+|--------------------------------------------------------------------------
+*/
 
+router.use(protect);
 
-import {
+/*
+|--------------------------------------------------------------------------
+| TOUR ASSIGNMENTS
+|--------------------------------------------------------------------------
+*/
 
-roleMiddleware
-
-}
-from "../middleware/roleMiddleware.js";
-
-
-
-const router =
-express.Router();
-
-
-
-
+/**
+ * PUT /api/tour-assignments/:id/assign
+ *
+ * Assign:
+ * - Guide
+ * - Driver
+ * - Vehicle
+ */
 router.put(
-
-"/:id/assign",
-
-protect,
-
-roleMiddleware(
-
-[
-"admin",
-"tour_manager"
-
-]
-
-),
-
-assignTourResources
-
+  "/:id/assign",
+  roleMiddleware(["admin", "tour_manager"]),
+  assignTourResources
 );
-
-
 
 export default router;

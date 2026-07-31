@@ -1,21 +1,63 @@
 import api from "./axios";
 
-export const getWishlist = async () => {
-  const res = await api.get("/wishlist");
 
-  return res.data;
+/*
+|--------------------------------------------------------------------------
+| WISHLIST MANAGEMENT
+|--------------------------------------------------------------------------
+*/
+
+
+// ============================================================
+// GET USER WISHLIST
+// GET /api/wishlist
+// ============================================================
+
+export const getWishlist = async () => {
+
+  const { data } = await api.get(
+    "/wishlist"
+  );
+
+  return data;
+
 };
+
+
+
+
+// ============================================================
+// ADD TOUR TO WISHLIST
+// POST /api/wishlist
+// ============================================================
 
 export const addWishlist = async (tourId) => {
-  const res = await api.post("/wishlist", {
-    tourId,
-  });
 
-  return res.data;
+  const { data } = await api.post(
+    "/wishlist",
+    {
+      tourId,
+    }
+  );
+
+  return data;
+
 };
 
-export const removeWishlist = async (tourId) => {
-  const res = await api.delete(`/wishlist/${tourId}`);
 
-  return res.data;
+
+
+// ============================================================
+// REMOVE TOUR FROM WISHLIST
+// DELETE /api/wishlist/:tourId
+// ============================================================
+
+export const removeWishlist = async (tourId) => {
+
+  const { data } = await api.delete(
+    `/wishlist/${tourId}`
+  );
+
+  return data;
+
 };

@@ -1,38 +1,109 @@
-const images=[
+import {
+useQuery
+}
+from "@tanstack/react-query";
 
-"/gallery/mara.jpg",
-"/gallery/amboseli.jpg",
-"/gallery/diani.jpg",
-"/gallery/safari.jpg",
-"/gallery/culture.jpg",
-"/gallery/beach.jpg"
 
-];
+import {
+getFeaturedGallery
+}
+from "../../api/galleryApi";
+
+
+import LazyImage
+from "../common/LazyImage";
+
+
 
 
 export default function GallerySection(){
 
 
+
+const {
+
+data:images=[],
+
+isLoading
+
+}
+
+=
+
+useQuery({
+
+queryKey:["gallery"],
+
+queryFn:getFeaturedGallery
+
+});
+
+
+
+
+
+
+if(isLoading){
+
+
 return (
 
-<section className="
+<section className="py-20 text-center">
+
+Loading gallery...
+
+</section>
+
+);
+
+}
+
+
+
+
+
+
+
+return (
+
+<section
+
+className="
 py-20
-">
+"
+
+>
 
 
-<div className="
+
+
+
+
+<div
+
+className="
 container
 mx-auto
 px-6
-">
+"
+
+>
 
 
-<h2 className="
+
+
+
+
+<h2
+
+className="
 text-4xl
 font-bold
 text-center
 mb-12
-">
+"
+
+>
 
 Safari Gallery
 
@@ -40,25 +111,61 @@ Safari Gallery
 
 
 
-<div className="
+
+
+
+
+
+
+<div
+
+className="
 grid
+grid-cols-1
 md:grid-cols-3
 gap-6
-">
+"
+
+>
+
+
+
+
+
+
 
 
 {
-images.map(image=>(
 
-<img
+images.map(item=>(
 
-key={image}
 
-src={image}
 
-alt="Kenya Safari"
+<div
 
-loading="lazy"
+key={item._id}
+
+className="
+overflow-hidden
+rounded-xl
+"
+
+>
+
+
+
+
+
+
+<LazyImage
+
+
+src={item.image?.url}
+
+
+alt={item.title}
+
+
 
 className="
 rounded-xl
@@ -67,22 +174,47 @@ w-full
 object-cover
 hover:scale-105
 transition
+duration-500
 "
 
 />
 
+
+
+
+
+
+
+</div>
+
+
+
 ))
+
 }
 
 
+
 </div>
 
 
+
+
+
+
+
 </div>
+
+
+
+
+
 
 
 </section>
 
-)
+
+);
+
 
 }

@@ -1,41 +1,49 @@
+// server/routes/crmRoutes.js
+
 import express from "express";
 
+import {
+  getCRMStats,
+} from "../controllers/crmController.js";
 
 import {
-getCRMStats
-}
-from "../controllers/crmController.js";
-
+  protect,
+} from "../middleware/authMiddleware.js";
 
 import {
-protect
-}
-from "../middleware/authMiddleware.js";
+  adminMiddleware,
+} from "../middleware/adminMiddleware.js";
 
+const router = express.Router();
 
-import {
-adminMiddleware
-}
-from "../middleware/adminMiddleware.js";
+/*
+|--------------------------------------------------------------------------
+| AUTHORIZATION
+|--------------------------------------------------------------------------
+|
+| All CRM routes require:
+| • Valid JWT
+| • Administrator privileges
+|
+|--------------------------------------------------------------------------
+*/
 
+router.use(protect);
+router.use(adminMiddleware);
 
-const router =
-express.Router();
+/*
+|--------------------------------------------------------------------------
+| CRM DASHBOARD
+|--------------------------------------------------------------------------
+*/
 
-
-
+/**
+ * GET /api/crm/stats
+ * Get CRM statistics
+ */
 router.get(
-
-"/stats",
-
-protect,
-
-adminMiddleware,
-
-getCRMStats
-
+  "/stats",
+  getCRMStats
 );
-
-
 
 export default router;

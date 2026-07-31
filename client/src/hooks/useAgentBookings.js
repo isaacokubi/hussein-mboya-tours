@@ -1,40 +1,66 @@
-import {
-useQuery
-}
-from "@tanstack/react-query";
-
+// client/src/hooks/useAgentBookings.js
 
 import {
-getAgentBookings
-}
-from "../api/agentBookingApi";
+  useQuery
+} from "@tanstack/react-query";
+
+
+import {
+  getAgentBookings
+} from "../api/agentBookingApi";
 
 
 
-export default function useAgentBookings(){
+export default function useAgentBookings(
+  params = {}
+) {
 
 
-return useQuery({
+  return useQuery({
 
-queryKey:[
-"agent-bookings"
-],
-
-
-queryFn:
-
-async()=>{
-
-const res =
-await getAgentBookings();
+    queryKey: [
+      "agent-bookings",
+      params
+    ],
 
 
-return res.data.bookings;
+
+    queryFn: async()=>{
 
 
-}
+      const response =
+        await getAgentBookings(params);
 
-});
+
+
+      return (
+
+        response?.data?.bookings
+
+        ||
+
+        response?.bookings
+
+        ||
+
+        response?.data
+
+        ||
+
+        []
+
+      );
+
+
+    },
+
+
+
+    staleTime:
+      1000 * 60 * 5,
+
+
+  });
 
 
 }

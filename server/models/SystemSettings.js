@@ -1,44 +1,274 @@
+// server/models/SystemSettings.js
+
 import mongoose from "mongoose";
 
-const settingsSchema =
-new mongoose.Schema(
-{
+/*
+|--------------------------------------------------------------------------
+| SYSTEM SETTINGS SCHEMA
+|--------------------------------------------------------------------------
+|
+| Stores global application configuration.
+| Only one document should normally exist.
+|
+*/
 
-companyName:String,
+const systemSettingsSchema = new mongoose.Schema(
+  {
+    /*
+    |--------------------------------------------------------------------------
+    | COMPANY INFORMATION
+    |--------------------------------------------------------------------------
+    */
 
-supportEmail:String,
+    companyName: {
+      type: String,
+      required: true,
+      trim: true,
+      default: "Hussein Mboya Tours",
+    },
 
-supportPhone:String,
+    companyLogo: {
+      type: String,
+      default: "",
+    },
 
-websiteUrl:String,
+    websiteUrl: {
+      type: String,
+      trim: true,
+      default: "",
+    },
 
-currency:{
-type:String,
-default:"KES"
-},
+    /*
+    |--------------------------------------------------------------------------
+    | CONTACT DETAILS
+    |--------------------------------------------------------------------------
+    */
 
-timezone:{
-type:String,
-default:"Africa/Nairobi"
-},
+    supportEmail: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      default: "",
+    },
 
-maintenanceMode:{
-type:Boolean,
-default:false
-},
+    supportPhone: {
+      type: String,
+      trim: true,
+      default: "",
+    },
 
-allowRegistrations:{
-type:Boolean,
-default:true
-}
+    address: {
+      type: String,
+      trim: true,
+      default: "",
+    },
 
-},
-{
-timestamps:true
-}
+    city: {
+      type: String,
+      trim: true,
+      default: "Nairobi",
+    },
+
+    country: {
+      type: String,
+      trim: true,
+      default: "Kenya",
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | REGIONAL SETTINGS
+    |--------------------------------------------------------------------------
+    */
+
+    currency: {
+      type: String,
+      uppercase: true,
+      trim: true,
+      default: "KES",
+    },
+
+    currencySymbol: {
+      type: String,
+      default: "KSh",
+    },
+
+    timezone: {
+      type: String,
+      default: "Africa/Nairobi",
+    },
+
+    language: {
+      type: String,
+      default: "en",
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | BUSINESS SETTINGS
+    |--------------------------------------------------------------------------
+    */
+
+    taxRate: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    bookingDepositPercentage: {
+      type: Number,
+      default: 30,
+      min: 0,
+      max: 100,
+    },
+
+    defaultCommissionRate: {
+      type: Number,
+      default: 10,
+      min: 0,
+      max: 100,
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | APPLICATION SETTINGS
+    |--------------------------------------------------------------------------
+    */
+
+    maintenanceMode: {
+      type: Boolean,
+      default: false,
+    },
+
+    allowRegistrations: {
+      type: Boolean,
+      default: true,
+    },
+
+    allowAgentRegistrations: {
+      type: Boolean,
+      default: true,
+    },
+
+    requireEmailVerification: {
+      type: Boolean,
+      default: true,
+    },
+
+    requirePhoneVerification: {
+      type: Boolean,
+      default: false,
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | PAYMENT SETTINGS
+    |--------------------------------------------------------------------------
+    */
+
+    enableMpesa: {
+      type: Boolean,
+      default: true,
+    },
+
+    enableStripe: {
+      type: Boolean,
+      default: false,
+    },
+
+    enablePaypal: {
+      type: Boolean,
+      default: false,
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | EMAIL SETTINGS
+    |--------------------------------------------------------------------------
+    */
+
+    emailFromName: {
+      type: String,
+      default: "Hussein Mboya Tours",
+    },
+
+    emailFromAddress: {
+      type: String,
+      default: "",
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | SOCIAL MEDIA
+    |--------------------------------------------------------------------------
+    */
+
+    facebook: {
+      type: String,
+      default: "",
+    },
+
+    instagram: {
+      type: String,
+      default: "",
+    },
+
+    twitter: {
+      type: String,
+      default: "",
+    },
+
+    youtube: {
+      type: String,
+      default: "",
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | SEO SETTINGS
+    |--------------------------------------------------------------------------
+    */
+
+    seoTitle: {
+      type: String,
+      default: "",
+    },
+
+    seoDescription: {
+      type: String,
+      default: "",
+    },
+
+    seoKeywords: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
+  },
+  {
+    timestamps: true,
+  }
 );
 
-export default mongoose.model(
-"SystemSettings",
-settingsSchema
-);
+/*
+|--------------------------------------------------------------------------
+| INDEXES
+|--------------------------------------------------------------------------
+*/
+
+systemSettingsSchema.index({
+  maintenanceMode: 1,
+});
+
+/*
+|--------------------------------------------------------------------------
+| EXPORT MODEL
+|--------------------------------------------------------------------------
+*/
+
+const SystemSettings =
+  mongoose.models.SystemSettings ||
+  mongoose.model("SystemSettings", systemSettingsSchema);
+
+export default SystemSettings;

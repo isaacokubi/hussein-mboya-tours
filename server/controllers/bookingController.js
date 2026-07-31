@@ -1,125 +1,25 @@
+import mongoose from "mongoose";
+
 import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
 
-import { reserveSlots } from "../services/inventoryService.js";
-
-
-
-/*
-|--------------------------------------------------------------------------
-| CHECK TOUR CAPACITY
-|--------------------------------------------------------------------------
-*/
-
-const validateTourCapacity = async (
-
-    tourId,
-
-    requestedGuests
-
-)=>{
-
-
-const bookings = await Booking.aggregate([
-
-{
-
-$match:{
-
-tour: tourId,
-
-bookingStatus:{
-
-$in:[
-
-"pending",
-
-"confirmed"
-
-]
-
-}
-
-}
-
-},
-
-
-{
-
-$group:{
-
-_id:null,
-
-
-bookedGuests:{
-
-$sum:"$travelerCount"
-
-}
-
-}
-
-}
-
-]);
-
-
-
-
-const bookedGuests =
-
-bookings.length
-
-?
-
-bookings[0].bookedGuests
-
-:
-
-0;
-
-
-
-
-
-const tour = await Tour.findById(
-    tourId
-);
-
-
-
-if(!tour){
-
-throw new Error(
-    "Tour not found"
-);
-
-}
-
-
-
-return (
-
-bookedGuests + requestedGuests
-
-)
-
-<=
-
-tour.capacity;
-
-
-
-};
-
-
-
-
-
-
-
-
+import {
+  reserveSlots,
+  validateTourCapacity,
+  releaseSlots,
+} from "../services/inventoryService.js";
+
+import {
+  BOOKING_STATUSES,
+  PAYMENT_STATUSES,
+  PAYMENT_METHODS,
+} from "../constants/bookingConstants.js";
+
+import { calculateBookingAmounts } from "../utils/bookingPricing.js";
+
+import { successResponse, errorResponse } from "../utils/apiResponse.js";
+
+import { withTransaction } from "../utils/withTransactions.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -128,744 +28,399 @@ tour.capacity;
 */
 
 export const createBooking = async (
+  req,
+  res,
+  next
+) => {
+  try {
+    const {
+      tour,
+      travelDate,
+      travelers,
+      contact,
+      paymentMethod,
+    } = req.body;
+
+    const booking =
+      await withTransaction(
+        async (session) => {
+          const tourData =
+            await Tour.findById(tour)
+              .session(session);
+
+          if (!tourData) {
+            throw new Error(
+              "Tour not found"
+            );
+          }
+
+          /*
+          |--------------------------------------------------------------------------
+          | Validate Travel Date
+          |--------------------------------------------------------------------------
+          */
+
+          if (!travelDate) {
+            throw new Error(
+              "Travel date is required"
+            );
+          }
+
+          const selectedDate =
+            new Date(travelDate);
+
+          if (
+            selectedDate <
+            new Date()
+          ) {
+            throw new Error(
+              "Travel date cannot be in the past"
+            );
+          }
+
+          /*
+          |--------------------------------------------------------------------------
+          | Validate Travelers
+          |--------------------------------------------------------------------------
+          */
+
+          if (
+            !Array.isArray(travelers) ||
+            travelers.length === 0
+          ) {
+            throw new Error(
+              "At least one traveler is required"
+            );
+          }
+
+          const travelerCount =
+            travelers.length;
+
+          const available =
+            await validateTourCapacity(
+              tour,
+              travelerCount
+            );
+
+          if (!available) {
+            throw new Error(
+              "No available slots"
+            );
+          }
+
+          /*
+          |--------------------------------------------------------------------------
+          | Validate Payment Method
+          |--------------------------------------------------------------------------
+          */
+
+          if (
+            paymentMethod &&
+            !PAYMENT_METHODS.includes(
+              paymentMethod
+            )
+          ) {
+            throw new Error(
+              "Invalid payment method"
+            );
+          }
+
+          /*
+          |--------------------------------------------------------------------------
+          | Pricing
+          |--------------------------------------------------------------------------
+          */
 
-req,
-
-res,
-
-next
-
-)=>{
-
-
-try{
-
-
-const {
-
-
-tour,
-
-travelDate,
-
-travelers,
-
-contact,
-
-paymentMethod,
-
-amount
-
-
-}
-
-=
-req.body;
-
-
-
-
-
-const tourData = await Tour.findById(
-    tour
-);
-
-
-
-
-
-if(!tourData){
-
-
-return res.status(404).json({
-
-success:false,
-
-message:"Tour not found"
-
-});
-
-
-}
-
-
-
-
-
-
-
-const travelerCount =
-
-travelers?.length || 1;
-
-
-
-
-
-
-
-const available =
-
-await validateTourCapacity(
-
-tour,
-
-travelerCount
-
-);
-
-
-
-
-
-
-if(!available){
-
-
-return res.status(400).json({
-
-success:false,
-
-message:"No available slots"
-
-});
-
-
-}
-
-
-
-
-
-
-
-const subtotal =
-
-tourData.price *
-
-travelerCount;
-
-
-
-
-
-
-let discountAmount = 0;
-
-
-
-
-
-if(tourData.discount){
-
-
-discountAmount =
-
-(
-
-subtotal *
-
-tourData.discount
-
-)
-
-/
-
-100;
-
-
-}
-
-
-
-
-
-
-
-const finalAmount =
-
-amount ||
-
-subtotal -
-
-discountAmount;
-
-
-
-
-
-
-const depositAmount =
-
-tourData.depositRequired || 0;
-
-
-
-
-
-const balanceAmount =
-
-finalAmount -
-
-depositAmount;
-
-
-
-
-
-
-
-
-
-const booking = await Booking.create({
-
-customer:
-
-req.user._id,
-
-
-user:
-
-req.user._id,
-
-
-
-customerSnapshot:{
-
-
-name:req.user.name,
-
-
-email:req.user.email,
-
-
-phone:req.user.phone
-
-},
-
-
-
-tour,
-
-
-travelDate,
-
-
-travelers,
-
-
-travelerCount,
-
-
-numberOfGuests:
-
-travelerCount,
-
-
-
-contact,
-
-
-
-subtotal,
-
-
-discountAmount,
-
-
-
-totalAmount:
-
-finalAmount,
-
-
-amount:
-
-finalAmount,
-
-
-
-depositAmount,
-
-
-balanceAmount,
-
-
-
-paymentMethod:
-
-paymentMethod || "MPESA",
-
-
-
-paymentStatus:
-
-"pending",
-
-
-
-bookingStatus:
-
-"pending",
-
-
-
-status:
-
-"pending",
-
-
-
-assigned:false
-
-
-});
-
-
-
-
-
-
-
-await reserveSlots(
-
-tour,
-
-travelerCount
-
-);
-
-
-
-
-
-
-
-const populatedBooking =
-
-await Booking.findById(
-
-booking._id
-
-)
-
-
-.populate("tour")
-
-
-.populate(
-
-"customer",
-
-"-password"
-
-)
-
-
-.populate(
-
-"user",
-
-"-password"
-
-);
-
-
-
-
-
-
-
-return res.status(201).json({
-
-success:true,
-
-
-message:
-
-"Booking created successfully",
-
-
-booking:
-
-populatedBooking
-
-
-});
-
-
-
-
-}
-
-catch(error){
-
-
-next(error);
-
-
-}
-
-
-};
-
-
-
-
-
-
-
-
-
-/*
+          const {
+            subtotal,
+            discountAmount,
+            totalAmount,
+            depositAmount,
+            balanceAmount,
+          } = calculateBookingAmounts(
+            tourData,
+            travelerCount
+          );
+
+          /*
+          |--------------------------------------------------------------------------
+          | Reserve Inventory
+          |--------------------------------------------------------------------------
+          */
+
+          await reserveSlots(
+            tour,
+            travelerCount
+          );
+
+          /*
+          |--------------------------------------------------------------------------
+          | Create Booking
+          |--------------------------------------------------------------------------
+          */
+
+          const booking =
+            await Booking.create(
+              [
+                {
+                  customer:
+                    req.user._id,
+
+                  user:
+                    req.user._id,
+
+                  customerSnapshot: {
+                    name:
+                      req.user.name ||
+                      "",
+
+                    email:
+                      req.user.email ||
+                      "",
+
+                    phone:
+                      req.user.phone ||
+                      "",
+                  },
+
+                  tour,
+
+                  travelDate,
+
+                  travelers,
+
+                  travelerCount,
+
+                  numberOfGuests:
+                    travelerCount,
+
+                  contact,
+
+                  subtotal,
+
+                  discountAmount,
+
+                  totalAmount,
+
+                  amount:
+                    totalAmount,
+
+                  depositAmount,
+
+                  balanceAmount,
+
+                  paymentMethod:
+                    paymentMethod ||
+                    "MPESA",
+
+                  paymentStatus:
+                    "pending",
+
+                  bookingStatus:
+                    "pending",
+
+                  status:
+                    "pending",
+
+                  assigned:
+                    false,
+                },
+              ],
+              {
+                session,
+              }
+            );
+
+          return await Booking.findById(
+            booking[0]._id
+          )
+            .populate("tour")
+            .populate(
+              "customer",
+              "-password"
+            )
+            .populate(
+              "user",
+              "-password"
+            );
+        }
+      );
+
+    return successResponse(
+      res,
+      201,
+      "Booking created successfully",
+      {
+        booking,
+      }
+    );
+  } catch (error) {
+    return errorResponse(
+      res,
+      400,
+      error.message
+    );
+  }
+}; /*
 |--------------------------------------------------------------------------
 | GET MY BOOKINGS
 |--------------------------------------------------------------------------
 */
 
-export const getMyBookings = async (
+export const getMyBookings = async (req, res, next) => {
+  try {
+    const page = Number(req.query.page) || 1;
 
-req,
+    const limit = Number(req.query.limit) || 20;
 
-res,
+    const skip = (page - 1) * limit;
 
-next
+    const filter = {
+      $or: [
+        {
+          user: req.user._id,
+        },
 
-)=>{
+        {
+          customer: req.user._id,
+        },
+      ],
+    };
 
+    const total = await Booking.countDocuments(filter);
 
-try{
+    const bookings = await Booking.find(filter)
 
+      .populate("tour")
 
-const bookings = await Booking.find({
+      .sort({
+        createdAt: -1,
+      })
 
-$or:[
+      .skip(skip)
 
-{
+      .limit(limit)
 
-user:req.user._id
+      .lean();
 
-},
+    return successResponse(res, 200, "Bookings retrieved successfully", {
+      page,
+      pages: Math.ceil(total / limit),
+      total,
+      count: bookings.length,
+      bookings,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
-
-{
-
-customer:req.user._id
-
-}
-
-]
-
-})
-
-.populate("tour")
-
-
-.sort({
-
-createdAt:-1
-
-});
-
-
-
-
-
-
-
-return res.json({
-
-success:true,
-
-count:
-
-bookings.length,
-
-
-bookings
-
-});
-
-
-
-
-}
-
-catch(error){
-
-
-next(error);
-
-
-}
-
-
-}; /*
+/*
 |--------------------------------------------------------------------------
 | ADMIN GET ALL BOOKINGS
 |--------------------------------------------------------------------------
-|
-| Filters:
-| - status
-| - paymentStatus
-| - search
-|
-|--------------------------------------------------------------------------
 */
 
-export const getAllBookings = async (
+export const getAllBookings = async (req, res, next) => {
+  try {
+    const { status, paymentStatus, search } = req.query;
 
-req,
+    const page = Number(req.query.page) || 1;
 
-res,
+    const limit = Number(req.query.limit) || 20;
 
-next
+    const skip = (page - 1) * limit;
 
-)=>{
+    const filter = {};
 
+    if (status) {
+      filter.status = status;
+    }
 
-try{
+    if (paymentStatus) {
+      filter.paymentStatus = paymentStatus;
+    }
 
+    /*
+        |--------------------------------------------------------------------------
+        | Database Search
+        |--------------------------------------------------------------------------
+        */
 
-const {
+    if (search) {
+      filter.$or = [
+        {
+          bookingNumber: {
+            $regex: search,
 
-status,
+            $options: "i",
+          },
+        },
 
-paymentStatus,
+        {
+          "customerSnapshot.name": {
+            $regex: search,
 
-search
+            $options: "i",
+          },
+        },
 
-}
+        {
+          "customerSnapshot.email": {
+            $regex: search,
 
-=
-req.query;
+            $options: "i",
+          },
+        },
+      ];
+    }
 
+    const total = await Booking.countDocuments(filter);
 
+    const bookings = await Booking.find(filter)
 
+      .populate("customer", "name email phone")
 
+      .populate("user", "name email")
 
-const filter = {};
+      .populate("tour", "title destination price")
 
+      .populate("assignedGuide", "name email phone")
 
+      .populate("assignedDriver", "name email phone")
 
+      .populate("assignedVehicle")
 
+      .sort({
+        createdAt: -1,
+      })
 
+      .skip(skip)
 
-if(status){
+      .limit(limit)
 
+      .lean();
 
-filter.status = status;
+    return res.status(200).json({
+      success: true,
 
+      page,
 
-}
+      pages: Math.ceil(total / limit),
 
+      total,
 
+      count: bookings.length,
 
-
-
-
-if(paymentStatus){
-
-
-filter.paymentStatus = paymentStatus;
-
-
-}
-
-
-
-
-
-
-
-let bookings = await Booking.find(filter)
-
-
-.populate(
-
-"customer",
-
-"name email phone"
-
-)
-
-
-.populate(
-
-"user",
-
-"name email"
-
-)
-
-
-.populate(
-
-"tour",
-
-"title destination price"
-
-)
-
-
-.populate(
-
-"assignedGuide",
-
-"name email phone"
-
-)
-
-
-.populate(
-
-"assignedDriver",
-
-"name email phone"
-
-)
-
-
-.populate(
-
-"assignedVehicle"
-
-)
-
-
-.sort({
-
-createdAt:-1
-
-});
-
-
-
-
-
-
-
-
-
-if(search){
-
-
-
-const keyword =
-
-search.toLowerCase();
-
-
-
-
-
-
-bookings = bookings.filter(
-
-booking =>
-
-
-
-booking.customer?.name
-
-?.toLowerCase()
-
-.includes(keyword)
-
-
-
-||
-
-
-
-booking.bookingNumber
-
-?.toLowerCase()
-
-.includes(keyword)
-
-
-
-||
-
-
-
-booking.tour?.title
-
-?.toLowerCase()
-
-.includes(keyword)
-
-
-
-||
-
-
-
-booking.customer?.email
-
-?.toLowerCase()
-
-.includes(keyword)
-
-
-
-);
-
-
-}
-
-
-
-
-
-
-
-return res.status(200).json({
-
-success:true,
-
-
-count:
-
-bookings.length,
-
-
-bookings
-
-});
-
-
-
-}
-
-catch(error){
-
-
-next(error);
-
-
-}
-
-
+      bookings,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
-
-
-
-
-// compatibility
-
-export const getBookings =
-getAllBookings;
-
-
-
-
-
-
-
-
+// Compatibility
+export const getBookings = getAllBookings;
 
 /*
 |--------------------------------------------------------------------------
@@ -873,137 +428,71 @@ getAllBookings;
 |--------------------------------------------------------------------------
 */
 
-export const getConfirmedBookings = async (
+export const getConfirmedBookings = async (req, res, next) => {
+  try {
+    const page = Number(req.query.page) || 1;
 
-req,
+    const limit = Number(req.query.limit) || 20;
 
-res,
+    const skip = (page - 1) * limit;
 
-next
+    const filter = {
+      paymentStatus: "paid",
 
-)=>{
+      $or: [
+        {
+          bookingStatus: "confirmed",
+        },
 
+        {
+          status: "confirmed",
+        },
+      ],
+    };
 
-try{
+    const total = await Booking.countDocuments(filter);
 
+    const bookings = await Booking.find(filter)
 
-const bookings = await Booking.find({
+      .populate("tour")
 
-paymentStatus:
+      .populate("customer", "name email phone")
 
-"paid",
+      .populate("user", "name email phone")
 
+      .populate("assignedGuide")
 
-$or:[
+      .populate("assignedDriver")
 
+      .populate("assignedVehicle")
 
-{
+      .sort({
+        travelDate: 1,
+      })
 
-bookingStatus:
+      .skip(skip)
 
-"confirmed"
+      .limit(limit)
 
-},
+      .lean();
 
+    return res.status(200).json({
+      success: true,
 
-{
+      page,
 
-status:
+      pages: Math.ceil(total / limit),
 
-"confirmed"
+      total,
 
-}
+      count: bookings.length,
 
-
-]
-
-})
-
-
-
-.populate("tour")
-
-
-
-.populate(
-
-"customer",
-
-"name email phone"
-
-)
-
-
-
-.populate(
-
-"user",
-
-"name email phone"
-
-)
-
-
-
-.populate("assignedGuide")
-
-
-.populate("assignedDriver")
-
-
-.populate("assignedVehicle")
-
-
-
-.sort({
-
-travelDate:1
-
-});
-
-
-
-
-
-
-
-return res.json({
-
-success:true,
-
-
-count:
-
-bookings.length,
-
-
-bookings
-
-});
-
-
-
-
-}
-
-catch(error){
-
-
-next(error);
-
-
-}
-
-
+      bookings,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -1011,524 +500,281 @@ next(error);
 |--------------------------------------------------------------------------
 */
 
-export const getBookingById = async (
+export const getBookingById = async (req, res, next) => {
+  try {
+    const booking = await Booking.findById(req.params.id)
 
-req,
+      .populate("tour")
 
-res,
+      .populate("customer", "name email phone")
 
-next
+      .populate("user", "name email phone")
 
-)=>{
+      .populate("assignedGuide")
 
+      .populate("assignedDriver")
 
-try{
+      .populate("assignedVehicle")
 
+      .lean();
 
-const booking = await Booking.findById(
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
 
-req.params.id
+        message: "Booking not found",
+      });
+    }
 
-)
-
-
-
-.populate("tour")
-
-
-
-.populate(
-
-"customer",
-
-"name email phone"
-
-)
-
-
-
-.populate(
-
-"user",
-
-"name email phone"
-
-)
-
-
-
-.populate("assignedGuide")
-
-
-
-.populate("assignedDriver")
-
-
-
-.populate("assignedVehicle");
-
-
-
-
-
-
-
-if(!booking){
-
-
-return res.status(404).json({
-
-success:false,
-
-
-message:
-
-"Booking not found"
-
-});
-
-
-}
-
-
-
-
-
-
-return res.json({
-
-success:true,
-
-
-booking
-
-});
-
-
-
-}
-
-catch(error){
-
-
-next(error);
-
-
-}
-
-
+    return successResponse(res, 200, "Booking retrieved successfully", {
+      booking,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
-
-
-
-// compatibility
-
-export const getBooking =
-getBookingById;/*
+// Compatibility
+export const getBooking = getBookingById; /*
 |--------------------------------------------------------------------------
 | UPDATE PAYMENT STATUS
 |--------------------------------------------------------------------------
 |
 | Used by:
 | - M-Pesa callback
-| - Payment services
+| - Card payment
+| - Bank payment
 |
 |--------------------------------------------------------------------------
 */
 
 export const updateBookingPayment = async (
-
-bookingId,
-
-paymentStatus,
-
-paymentData = {}
-
-)=>{
-
-
-const booking = await Booking.findById(
-
-bookingId
-
-);
-
-
-
-
-
-if(!booking){
-
-
-throw new Error(
-
-"Booking not found"
-
-);
-
-
-}
-
-
-
-
-
-
-
-booking.paymentStatus =
-
-paymentStatus;
-
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| SUCCESSFUL PAYMENT
-|--------------------------------------------------------------------------
-*/
-
-
-if(paymentStatus === "paid"){
-
-
-
-booking.status =
-
-"confirmed";
-
-
-
-booking.bookingStatus =
-
-"confirmed";
-
-
-
-
-
-
-if(paymentData.mpesaReceiptNumber){
-
-
-booking.mpesaReceiptNumber =
-
-paymentData.mpesaReceiptNumber;
-
-
-}
-
-
-
-
-
-
-if(paymentData.amount){
-
-
-booking.paidAmount =
-
-paymentData.amount;
-
-
-}
-
-
-
-
-
-booking.paidAt =
-
-new Date();
-
-
-
-}
-
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| FAILED PAYMENT
-|--------------------------------------------------------------------------
-*/
-
-
-if(paymentStatus === "failed"){
-
-
-booking.status =
-
-"pending";
-
-
-booking.bookingStatus =
-
-"pending";
-
-
-}
-
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| CANCELLED PAYMENT
-|--------------------------------------------------------------------------
-*/
-
-
-if(paymentStatus === "cancelled"){
-
-
-booking.status =
-
-"cancelled";
-
-
-booking.bookingStatus =
-
-"cancelled";
-
-
-}
-
-
-
-
-
-
-
-await booking.save();
-
-
-
-
-return booking;
-
-
+  bookingId,
+  paymentStatus,
+  paymentData = {},
+) => {
+  if (!PAYMENT_STATUSES.includes(paymentStatus)) {
+    throw new Error("Invalid payment status");
+  }
+
+  const booking = await Booking.findById(bookingId);
+
+  if (!booking) {
+    throw new Error("Booking not found");
+  }
+
+  /*
+    |--------------------------------------------------------------------------
+    | Prevent duplicate payment processing
+    |--------------------------------------------------------------------------
+    */
+
+  if (booking.paymentStatus === "paid" && paymentStatus === "paid") {
+    return booking;
+  }
+
+  booking.paymentStatus = paymentStatus;
+
+  /*
+    |--------------------------------------------------------------------------
+    | SUCCESSFUL PAYMENT
+    |--------------------------------------------------------------------------
+    */
+
+  if (paymentStatus === "paid") {
+    booking.status = "confirmed";
+
+    booking.bookingStatus = "confirmed";
+
+    if (paymentData.mpesaReceiptNumber) {
+      booking.mpesaReceiptNumber = paymentData.mpesaReceiptNumber;
+    }
+
+    if (typeof paymentData.amount === "number") {
+      booking.paidAmount = paymentData.amount;
+    }
+
+    if (paymentData.transactionId) {
+      booking.transactionId = paymentData.transactionId;
+    }
+
+    if (paymentData.paymentMethod) {
+      booking.paymentMethod = paymentData.paymentMethod;
+    }
+
+    booking.paidAt = new Date();
+  }
+
+  /*
+    |--------------------------------------------------------------------------
+    | FAILED PAYMENT
+    |--------------------------------------------------------------------------
+    */
+
+  if (paymentStatus === "failed") {
+    if (booking.paymentStatus !== "paid") {
+      booking.status = "pending";
+
+      booking.bookingStatus = "pending";
+    }
+  }
+
+  /*
+    |--------------------------------------------------------------------------
+    | CANCELLED PAYMENT
+    |--------------------------------------------------------------------------
+    */
+
+  if (paymentStatus === "cancelled") {
+    if (booking.paymentStatus !== "paid") {
+      booking.status = "cancelled";
+
+      booking.bookingStatus = "cancelled";
+    }
+  }
+
+  /*
+    |--------------------------------------------------------------------------
+    | REFUNDED
+    |--------------------------------------------------------------------------
+    */
+
+  if (paymentStatus === "refunded") {
+    booking.status = "refunded";
+
+    booking.bookingStatus = "refunded";
+
+    booking.refundedAt = new Date();
+  }
+
+  await booking.save();
+
+  return booking;
 };
 
-
-
-
-
-
-
-
-
 /*
 |--------------------------------------------------------------------------
-| UPDATE BOOKING STATUS ADMIN
+| UPDATE BOOKING STATUS (ADMIN)
 |--------------------------------------------------------------------------
 */
 
-export const updateBookingStatus = async (
+export const updateBookingStatus = async (req, res, next) => {
+  try {
+    const booking = await Booking.findById(req.params.id);
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+
+        message: "Booking not found",
+      });
+    }
+
+    /*
+        |--------------------------------------------------------------------------
+        | Booking Status Validation
+        |--------------------------------------------------------------------------
+        */
+
+    if (req.body.status) {
+      if (!BOOKING_STATUSES.includes(req.body.status)) {
+        return res.status(400).json({
+          success: false,
+
+          message: "Invalid booking status",
+        });
+      }
+
+      booking.status = req.body.status;
+    }
+
+    /*
+        |--------------------------------------------------------------------------
+        | Booking Status Field
+        |--------------------------------------------------------------------------
+        */
+
+    if (req.body.bookingStatus) {
+      if (!BOOKING_STATUSES.includes(req.body.bookingStatus)) {
+        return res.status(400).json({
+          success: false,
+
+          message: "Invalid booking status",
+        });
+      }
+
+      booking.bookingStatus = req.body.bookingStatus;
+    }
+
+    /*
+        |--------------------------------------------------------------------------
+        | Payment Status
+        |--------------------------------------------------------------------------
+        */
+
+    if (req.body.paymentStatus) {
+      if (!PAYMENT_STATUSES.includes(req.body.paymentStatus)) {
+        return res.status(400).json({
+          success: false,
+
+          message: "Invalid payment status",
+        });
+      }
+
+      booking.paymentStatus = req.body.paymentStatus;
+    }
+
+    /*
+        |--------------------------------------------------------------------------
+        | Assigned Status
+        |--------------------------------------------------------------------------
+        */
+
+    if (req.body.assigned !== undefined) {
+      booking.assigned = req.body.assigned;
+    }
+
+    /*
+        |--------------------------------------------------------------------------
+        | Auto-confirm paid bookings
+        |--------------------------------------------------------------------------
+        */
+
+    if (booking.paymentStatus === "paid") {
+      booking.status = "confirmed";
+
+      booking.bookingStatus = "confirmed";
+
+      if (!booking.paidAt) {
+        booking.paidAt = new Date();
+      }
+    }
+
+    /*
+        |--------------------------------------------------------------------------
+        | Auto-cancel cancelled payments
+        |--------------------------------------------------------------------------
+        */
+
+    if (booking.paymentStatus === "cancelled") {
+      booking.status = "cancelled";
+
+      booking.bookingStatus = "cancelled";
+    }
 
-req,
+    await booking.save();
 
-res,
+    return res.status(200).json({
+      success: true,
 
-next
+      message: "Booking updated successfully",
 
-)=>{
-
-
-try{
-
-
-const booking = await Booking.findById(
-
-req.params.id
-
-);
-
-
-
-
-
-
-if(!booking){
-
-
-return res.status(404).json({
-
-success:false,
-
-
-message:
-
-"Booking not found"
-
-});
-
-
-}
-
-
-
-
-
-
-
-if(req.body.status){
-
-
-booking.status =
-
-req.body.status;
-
-
-}
-
-
-
-
-
-
-if(req.body.bookingStatus){
-
-
-booking.bookingStatus =
-
-req.body.bookingStatus;
-
-
-}
-
-
-
-
-
-
-
-if(req.body.paymentStatus){
-
-
-booking.paymentStatus =
-
-req.body.paymentStatus;
-
-
-}
-
-
-
-
-
-
-
-if(req.body.assigned !== undefined){
-
-
-booking.assigned =
-
-req.body.assigned;
-
-
-}
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| AUTO CONFIRM AFTER PAYMENT
-|--------------------------------------------------------------------------
-*/
-
-
-if(
-
-booking.paymentStatus === "paid"
-
-){
-
-
-booking.status =
-
-"confirmed";
-
-
-booking.bookingStatus =
-
-"confirmed";
-
-
-}
-
-
-
-
-
-
-
-
-await booking.save();
-
-
-
-
-
-
-return res.json({
-
-success:true,
-
-
-message:
-
-"Booking updated successfully",
-
-
-booking
-
-});
-
-
-
-}
-
-catch(error){
-
-
-next(error);
-
-
-}
-
-
+      booking,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -1536,120 +782,67 @@ next(error);
 |--------------------------------------------------------------------------
 */
 
-export const cancelBooking = async (
+export const cancelBooking = async (req, res, next) => {
+  try {
+    const booking = await Booking.findById(req.params.id);
 
-req,
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
 
-res,
+        message: "Booking not found",
+      });
+    }
 
-next
+    /*
+        |--------------------------------------------------------------------------
+        | Prevent duplicate cancellation
+        |--------------------------------------------------------------------------
+        */
 
-)=>{
+    if (booking.bookingStatus === "cancelled") {
+      return res.status(400).json({
+        success: false,
 
+        message: "Booking has already been cancelled",
+      });
+    }
 
-try{
+    /*
+        |--------------------------------------------------------------------------
+        | Prevent cancelling completed bookings
+        |--------------------------------------------------------------------------
+        */
 
+    if (booking.bookingStatus === "completed") {
+      return res.status(400).json({
+        success: false,
 
-const booking = await Booking.findById(
+        message: "Completed bookings cannot be cancelled",
+      });
+    }
 
-req.params.id
+    booking.bookingStatus = "cancelled";
 
-);
+    booking.status = "cancelled";
 
+    if (booking.paymentStatus !== "paid") {
+      booking.paymentStatus = "cancelled";
+    }
 
+    await releaseSlots(booking.tour, booking.travelerCount);
+    booking.cancelledAt = new Date();
 
+    await booking.save();
 
+    return res.status(200).json({
+      success: true,
 
+      message: "Booking cancelled successfully",
 
-if(!booking){
-
-
-return res.status(404).json({
-
-success:false,
-
-
-message:
-
-"Booking not found"
-
-});
-
-
-}
-
-
-
-
-
-
-
-booking.bookingStatus =
-
-"cancelled";
-
-
-
-booking.status =
-
-"cancelled";
-
-
-
-
-
-if(
-
-booking.paymentStatus !== "paid"
-
-){
-
-
-booking.paymentStatus =
-
-"cancelled";
-
-
-}
-
-
-
-
-
-
-await booking.save();
-
-
-
-
-
-
-
-return res.json({
-
-success:true,
-
-
-message:
-
-"Booking cancelled successfully",
-
-
-booking
-
-});
-
-
-
-}
-
-catch(error){
-
-
-next(error);
-
-
-}
-
-
+      booking,
+    });
+  } catch (error) {
+    next(error);
+  }
 };

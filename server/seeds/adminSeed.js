@@ -1,195 +1,102 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 
-import bcrypt from "bcryptjs";
-
 import User from "../models/User.js";
 import Role from "../models/Role.js";
 import Permission from "../models/Permission.js";
 
-
 dotenv.config();
 
+const createAdmin = async () => {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI);
 
-const createAdmin = async()=>{
+    console.log("✅ MongoDB Connected");
 
-try{
+    const permissionNames = [
+      "manage_users",
+      "manage_tours",
+      "manage_destinations",
+      "manage_bookings",
+      "manage_payments",
+      "view_reports",
+    ];
 
+    const permissionIds = [];
 
-await mongoose.connect(
-process.env.MONGODB_URI
-);
+    for (const name of permissionNames) {
+      let permission = await Permission.findOne({ name });
 
+      if (!permission) {
+        permission = await Permission.create({
+          name,
+          label: name.replace(/_/g, " "),
+        });
+      }
 
-console.log("MongoDB Connected");
+      permissionIds.push(permission._id);
+    }
 
+    let adminRole = await Role.findOne({
+      name: "admin",
+    });
 
+    if (!adminRole) {
+      adminRole = await Role.create({
+        name: "admin",
+        permissions: permissionIds,
+      });
 
-const permissionNames = [
+      console.log("✅ Admin role created");
+    } else {
+      adminRole.permissions = permissionIds;
+      await adminRole.save();
 
-"manage_users",
+      console.log("✅ Admin role updated");
+    }
 
-"manage_tours",
+    const email = "admin@husseinmboyatours.com";
 
-"manage_destinations",
+    const existingAdmin = await User.findOne({ email });
 
-"manage_bookings",
+    if (existingAdmin) {
+      console.log("ℹ️ Admin already exists");
 
-"manage_payments",
+      await mongoose.connection.close();
+      return;
+    }
 
-"view_reports"
+    const admin = await User.create({
+      name: "Hussein Mboya Admin",
 
-];
+      email,
 
+      password: "Admin@12345",
 
+      role: "admin",
 
-const permissionIds = [];
+      roleId: adminRole._id,
 
+      legacyRole: "admin",
 
+      status: "active",
 
-for(const name of permissionNames){
+      isVerified: true,
+    });
 
+    console.log("=================================");
+    console.log("✅ ADMIN CREATED");
+    console.log("Email:", admin.email);
+    console.log("Password:", "Admin@12345");
+    console.log("=================================");
 
-let permission =
-await Permission.findOne({
-name
-});
+    await mongoose.connection.close();
+  } catch (error) {
+    console.error("❌ Admin seed failed:", error);
 
-
-
-if(!permission){
-
-permission =
-await Permission.create({
-
-name
-
-});
-
-}
-
-
-
-permissionIds.push(permission._id);
-
-
-}
-
-
-
-
-let adminRole =
-await Role.findOne({
-name:"admin"
-});
-
-
-
-if(!adminRole){
-
-
-adminRole =
-await Role.create({
-
-name:"admin",
-
-permissions:permissionIds
-
-});
-
-
-console.log("Admin role created");
-
-
-}else{
-
-
-adminRole.permissions =
-permissionIds;
-
-
-await adminRole.save();
-
-
-console.log("Admin role updated");
-
-
-}
-
-
-
-
-const existingAdmin =
-await User.findOne({
-
-email:"admin@husseinmboyatours.com"
-
-});
-
-
-
-if(existingAdmin){
-
-console.log("Admin already exists");
-
-process.exit();
-
-}
-
-
-
-
-const admin =
-await User.create({
-
-name:"Hussein Mboya Admin",
-
-email:"admin@husseinmboyatours.com",
-
-password:"Admin@12345",
-
-role:adminRole._id,
-
-legacyRole:"admin",
-
-isActive:true,
-
-isVerified:true
-
-});
-
-
-
-console.log("--------------------------------");
-
-console.log("ADMIN CREATED");
-
-console.log("Email:",
-admin.email);
-
-console.log("Password:",
-"Admin@12345");
-
-console.log("--------------------------------");
-
-
-process.exit();
-
-
-
-}catch(error){
-
-console.log(
-"Admin seed failed:",
-error.message
-);
-
-process.exit(1);
-
-}
-
-
+    await mongoose.connection.close().catch(() => {});
+    process.exit(1);
+  }
 };
-
 
 createAdmin();

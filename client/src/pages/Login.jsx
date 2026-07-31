@@ -3,13 +3,16 @@ import {
   useContext
 } from "react";
 
+
 import {
   useNavigate
 } from "react-router-dom";
 
+
 import {
   toast
 } from "react-toastify";
+
 
 import {
   AuthContext
@@ -17,10 +20,16 @@ import {
 
 
 
+
+
+
+
 export default function Login() {
 
 
+
   const navigate = useNavigate();
+
 
 
   const {
@@ -29,17 +38,26 @@ export default function Login() {
 
 
 
-  const [formData, setFormData] = useState({
 
-    email: "",
 
-    password: ""
+
+  const [formData,setFormData] = useState({
+
+    email:"",
+
+    password:""
 
   });
 
 
 
-  const [loading, setLoading] = useState(false);
+
+
+  const [loading,setLoading] = useState(false);
+
+
+
+
 
 
 
@@ -52,12 +70,133 @@ export default function Login() {
 
       ...formData,
 
-      [e.target.name]: e.target.value
+      [e.target.name]:e.target.value
 
     });
 
 
   };
+
+
+
+
+
+
+
+
+
+  const redirectUser = (user)=>{
+
+
+    let role = "";
+
+
+
+    if(typeof user?.role === "string"){
+
+
+      role = user.role;
+
+
+    }
+
+    else if(user?.role?.name){
+
+
+      role = user.role.name;
+
+
+    }
+
+
+
+
+
+
+    role = role
+
+    .toLowerCase()
+
+    .replace(
+
+      /[\s_-]/g,
+
+      ""
+
+    );
+
+
+
+
+
+
+
+    switch(role){
+
+
+
+      case "admin":
+
+        navigate("/admin");
+
+        break;
+
+
+
+
+
+      case "agent":
+
+        navigate("/agent");
+
+        break;
+
+
+
+
+
+      case "guide":
+
+      case "tourguide":
+
+        navigate("/guide/dashboard");
+
+        break;
+
+
+
+
+
+      case "manager":
+
+      case "tourmanager":
+
+        navigate("/tour-manager/dashboard");
+
+        break;
+
+
+
+
+
+      case "customer":
+
+      case "user":
+
+      default:
+
+        navigate("/dashboard");
+
+        break;
+
+
+
+    }
+
+
+
+  };
+
 
 
 
@@ -80,7 +219,9 @@ export default function Login() {
 
 
 
-      const result = await login(
+
+
+      const response = await login(
 
         formData.email,
 
@@ -92,100 +233,9 @@ export default function Login() {
 
 
 
-      console.log(
-        "LOGIN RESPONSE:",
-        result
-      );
-
-
-
-
-
       toast.success(
+
         "Login successful"
-      );
-
-
-
-
-
-
-
-
-      /*
-      |--------------------------------------------------------------------------
-      | ROLE DETECTION
-      |--------------------------------------------------------------------------
-      |
-      |
-      |--------------------------------------------------------------------------
-      */
-
-
-      let role = "";
-
-
-
-
-
-      if(
-
-        typeof result?.user?.role === "string"
-
-      ){
-
-
-        role =
-
-        result.user.role.toLowerCase();
-
-
-      }
-
-
-
-
-
-
-      else if(
-
-        result?.user?.role?.name
-
-      ){
-
-
-        role =
-
-        result.user.role.name.toLowerCase();
-
-
-      }
-
-
-
-
-
-
-
-      /*
-      |--------------------------------------------------------------------------
-      | NORMALIZE ROLE
-      |--------------------------------------------------------------------------
-      |
-      | Removes:
-      | spaces
-      | underscores
-      | hyphens
-      |
-      |--------------------------------------------------------------------------
-      */
-
-
-      role = role.replace(
-
-        /[\s_-]/g,
-
-        ""
 
       );
 
@@ -193,105 +243,19 @@ export default function Login() {
 
 
 
+      redirectUser(
 
-
-      console.log(
-
-        "Logged User:",
-
-        result?.user
+        response?.user
 
       );
-
-
-
-
-      console.log(
-
-        "Detected Role:",
-
-        role
-
-      );
-
-
-
-
-
-
-
-
-      /*
-      |--------------------------------------------------------------------------
-      | ROLE REDIRECTS
-      |--------------------------------------------------------------------------
-      */
-
-
-      switch(role){
-
-
-        case "admin":
-
-          navigate("/admin");
-
-          break;
-
-
-
-
-
-        case "agent":
-
-          navigate("/agent");
-
-          break;
-
-
-
-
-
-        case "tourguide":
-
-          navigate("/guide/dashboard");
-
-          break;
-
-
-
-
-
-        case "tourmanager":
-
-          navigate("/manager/dashboard");
-
-          break;
-
-
-
-
-
-        case "customer":
-
-        case "user":
-
-        default:
-
-          navigate("/dashboard");
-
-          break;
-
-
-
-      }
-
-
 
 
 
 
 
     }
+
+
     catch(error){
 
 
@@ -307,19 +271,18 @@ export default function Login() {
 
 
 
-
       toast.error(
 
         error?.response?.data?.message ||
 
-        "Login failed"
+        "Invalid email or password"
 
       );
 
 
-
-
     }
+
+
     finally{
 
 
@@ -350,16 +313,19 @@ export default function Login() {
       items-center
       justify-center
       bg-gray-100
+      p-6
       "
     >
+
+
 
 
 
       <div
         className="
         bg-white
-        shadow-lg
-        rounded-xl
+        shadow-xl
+        rounded-2xl
         p-8
         w-full
         max-w-md
@@ -375,14 +341,13 @@ export default function Login() {
           font-bold
           text-center
           mb-6
+          text-gray-800
           "
         >
 
-          Login
+          Welcome Back
 
         </h1>
-
-
 
 
 
@@ -393,11 +358,10 @@ export default function Login() {
           onSubmit={handleSubmit}
 
           className="
-          space-y-4
+          space-y-5
           "
 
         >
-
 
 
 
@@ -408,15 +372,14 @@ export default function Login() {
             <label
               className="
               block
-              mb-1
               font-medium
+              mb-2
               "
             >
 
               Email
 
             </label>
-
 
 
 
@@ -438,11 +401,17 @@ export default function Login() {
               required
 
 
+              placeholder="Enter email"
+
+
               className="
               w-full
               border
               rounded-lg
               p-3
+              outline-none
+              focus:ring-2
+              focus:ring-blue-500
               "
 
 
@@ -458,24 +427,20 @@ export default function Login() {
 
 
 
-
-
           <div>
 
 
             <label
               className="
               block
-              mb-1
               font-medium
+              mb-2
               "
             >
 
               Password
 
             </label>
-
-
 
 
 
@@ -498,11 +463,17 @@ export default function Login() {
               required
 
 
+              placeholder="Enter password"
+
+
               className="
               w-full
               border
               rounded-lg
               p-3
+              outline-none
+              focus:ring-2
+              focus:ring-blue-500
               "
 
 
@@ -527,18 +498,18 @@ export default function Login() {
 
             className="
             w-full
-            bg-blue-600
-            hover:bg-blue-700
+            bg-green-700
+            hover:bg-green-800
             text-white
             py-3
             rounded-lg
+            font-semibold
             transition
             disabled:opacity-50
             "
 
 
           >
-
 
 
             {
@@ -554,8 +525,6 @@ export default function Login() {
               "Login"
 
             }
-
-
 
 
           </button>

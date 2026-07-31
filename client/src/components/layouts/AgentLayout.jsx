@@ -1,60 +1,65 @@
-import {
-Outlet
-}
-from "react-router-dom";
-
+import { Outlet } from "react-router-dom";
 
 import AgentSidebar from "../components/agent/AgentSidebar";
-
 import AgentHeader from "../components/agent/AgentHeader";
 
+export default function AgentLayout() {
+  return (
+    <div
+      className="
+      flex
+      min-h-screen
+      bg-gray-100
+      "
+    >
+      {/* Sidebar */}
 
+      <AgentSidebar />
 
-export default function AgentLayout(){
+      {/* Content */}
 
+      <div
+        className="
+        flex
+        flex-col
+        flex-1
+        min-w-0
+        "
+      >
+        {/* Header */}
 
-return (
+        <div
+          className="
+          sticky
+          top-0
+          z-30
+          bg-white
+          shadow-sm
+          "
+        >
+          <AgentHeader />
+        </div>
 
-<div
-className="
-flex
-bg-gray-100
-min-h-screen
-"
->
+        {/* Main */}
 
-
-<AgentSidebar/>
-
-
-<div
-className="
-flex-1
-"
->
-
-
-<AgentHeader/>
-
-
-<main
-className="
-p-6
-"
->
-
-<Outlet/>
-
-
-</main>
-
-
-</div>
-
-
-</div>
-
-
-)
-
+        <main
+          className="
+          flex-1
+          overflow-y-auto
+          p-6
+          lg:p-8
+          "
+        >
+          <div
+            className="
+            max-w-7xl
+            mx-auto
+            "
+          >
+            <Outlet />
+          </div>
+        </main>
+      </div>
+    </div>
+  );
 }

@@ -1,97 +1,131 @@
-import Destination from "../models/Destination.js";
+// server/controllers/adminDestinationController.js
 
+import mongoose from "mongoose";
+import Destination from "../models/Destination.js";
 
 /*
 |--------------------------------------------------------------------------
 | CREATE DESTINATION
 |--------------------------------------------------------------------------
-| Used by:
-| - Admin destination management
-|
-| Endpoint:
-| POST /api/admin/destinations
-|--------------------------------------------------------------------------
 */
 
 export const createDestination = async (req, res, next) => {
   try {
+    const {
+      name,
+      slug,
+      description,
+      country,
+      city,
+      featured,
+    } = req.body;
 
-    const images = req.files
-      ? req.files.map((file) => file.path)
-      : [];
+    if (!name || !slug) {
+      return res.status(400).json({
+        success: false,
+        message: "Name and slug are required.",
+      });
+    }
+
+    const exists = await Destination.findOne({
+      $or: [
+        { slug: slug.trim().toLowerCase() },
+        { name: name.trim() },
+      ],
+    });
+
+    if (exists) {
+      return res.status(409).json({
+        success: false,
+        message: "Destination already exists.",
+      });
+    }
+
+    const images = req.files?.map((file) => file.path) || [];
 
     const destination = await Destination.create({
-      ...req.body,
+      name: name.trim(),
+      slug: slug.trim().toLowerCase(),
+      description,
+      country,
+      city,
+      featured: featured || false,
       images,
     });
 
     res.status(201).json({
       success: true,
+      message: "Destination created successfully.",
       destination,
     });
-
   } catch (error) {
     next(error);
   }
 };
 
-
 /*
 |--------------------------------------------------------------------------
-| GET ALL DESTINATIONS
-|--------------------------------------------------------------------------
-| Used by:
-| - Public destinations page
-| - Admin destination selector
-|
-| Endpoint:
-| GET /api/destinations
+| GET DESTINATIONS
 |--------------------------------------------------------------------------
 */
 
 export const getDestinations = async (req, res, next) => {
   try {
+    const page = Math.max(Number(req.query.page) || 1, 1);
+    const limit = Math.min(Number(req.query.limit) || 20, 100);
 
-    const destinations = await Destination.find()
-      .sort({
-        createdAt: -1,
-      });
+    const skip = (page - 1) * limit;
+
+    const filter = {};
+
+    if (req.query.featured === "true") {
+      filter.featured = true;
+    }
+
+    if (req.query.country) {
+      filter.country = req.query.country;
+    }
+
+    const [destinations, total] = await Promise.all([
+      Destination.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+
+      Destination.countDocuments(filter),
+    ]);
 
     res.status(200).json({
       success: true,
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit),
       count: destinations.length,
       destinations,
     });
-
   } catch (error) {
     next(error);
   }
 };
 
-
 /*
 |--------------------------------------------------------------------------
 | GET SINGLE DESTINATION
-|--------------------------------------------------------------------------
-| Used by:
-| - Destination details page
-|
-| Endpoint:
-| GET /api/destinations/:slug
 |--------------------------------------------------------------------------
 */
 
 export const getDestination = async (req, res, next) => {
   try {
-
     const destination = await Destination.findOne({
-      slug: req.params.slug,
-    });
+      slug: req.params.slug.toLowerCase(),
+    }).lean();
 
     if (!destination) {
       return res.status(404).json({
         success: false,
-        message: "Destination not found",
+        message: "Destination not found.",
       });
     }
 
@@ -99,76 +133,130 @@ export const getDestination = async (req, res, next) => {
       success: true,
       destination,
     });
-
   } catch (error) {
     next(error);
   }
 };
 
-
 /*
 |--------------------------------------------------------------------------
-| GET ALL DESTINATIONS (ADMIN)
-|--------------------------------------------------------------------------
-| Used by:
-| - Admin destination management page
-|
-| Endpoint:
-| GET /api/admin/destinations
+| ADMIN DESTINATIONS
 |--------------------------------------------------------------------------
 */
 
 export const getAdminDestinations = async (req, res, next) => {
   try {
-
     const destinations = await Destination.find()
-      .sort({
-        createdAt: -1,
-      });
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.status(200).json({
       success: true,
       count: destinations.length,
       destinations,
     });
-
   } catch (error) {
     next(error);
   }
 };
 
+/*
+|--------------------------------------------------------------------------
+| UPDATE DESTINATION
+|--------------------------------------------------------------------------
+*/
+
+export const updateDestination = async (req, res, next) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid destination ID.",
+      });
+    }
+
+    const destination = await Destination.findById(req.params.id);
+
+    if (!destination) {
+      return res.status(404).json({
+        success: false,
+        message: "Destination not found.",
+      });
+    }
+
+    if (req.body.name) {
+      destination.name = req.body.name.trim();
+    }
+
+    if (req.body.slug) {
+      destination.slug = req.body.slug.trim().toLowerCase();
+    }
+
+    if (req.body.description !== undefined) {
+      destination.description = req.body.description;
+    }
+
+    if (req.body.country !== undefined) {
+      destination.country = req.body.country;
+    }
+
+    if (req.body.city !== undefined) {
+      destination.city = req.body.city;
+    }
+
+    if (req.body.featured !== undefined) {
+      destination.featured = req.body.featured;
+    }
+
+    if (req.files?.length) {
+      destination.images = req.files.map((file) => file.path);
+    }
+
+    await destination.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Destination updated successfully.",
+      destination,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 /*
 |--------------------------------------------------------------------------
 | DELETE DESTINATION
 |--------------------------------------------------------------------------
-| Used by:
-| - Admin destination management page
-|
-| Endpoint:
-| DELETE /api/admin/destinations/:id
-|--------------------------------------------------------------------------
 */
 
 export const deleteDestination = async (req, res, next) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid destination ID.",
+      });
+    }
 
-    const destination = await Destination.findByIdAndDelete(
-      req.params.id
-    );
+    const destination = await Destination.findById(req.params.id);
 
     if (!destination) {
       return res.status(404).json({
         success: false,
-        message: "Destination not found",
+        message: "Destination not found.",
       });
     }
 
+    // TODO:
+    // Delete Cloudinary images here if you're storing public_id values.
+
+    await destination.deleteOne();
+
     res.status(200).json({
       success: true,
-      message: "Destination deleted",
+      message: "Destination deleted successfully.",
     });
-
   } catch (error) {
     next(error);
   }

@@ -1,70 +1,101 @@
-import {
-  generateTravelAdvice
-} from "../services/aiService.js";
+import { generateTravelAdvice } from "../services/aiService.js";
 
+/*
+|--------------------------------------------------------------------------
+| CONSTANTS
+|--------------------------------------------------------------------------
+*/
 
+const MAX_MESSAGE_LENGTH = 2000;
 
-export const askAI =
-async(req,res)=>{
+/*
+|--------------------------------------------------------------------------
+| HELPERS
+|--------------------------------------------------------------------------
+*/
 
+const cleanMessage = (message = "") =>
+  message.trim().replace(/\s+/g, " ");
 
-try{
+/*
+|--------------------------------------------------------------------------
+| ASK AI
+|--------------------------------------------------------------------------
+|
+| POST /api/ai/chat
+|--------------------------------------------------------------------------
+*/
 
+export const askAI = async (req, res, next) => {
+  try {
+    /*
+    |--------------------------------------------------------------------------
+    | Validate Request
+    |--------------------------------------------------------------------------
+    */
 
-const {
-message
-}=req.body;
+    let { message } = req.body;
 
+    if (typeof message !== "string") {
+      return res.status(400).json({
+        success: false,
+        message: "Message must be a string.",
+      });
+    }
 
+    message = cleanMessage(message);
 
-if(!message){
+    if (!message) {
+      return res.status(400).json({
+        success: false,
+        message: "Message is required.",
+      });
+    }
 
-return res.status(400).json({
+    if (message.length > MAX_MESSAGE_LENGTH) {
+      return res.status(400).json({
+        success: false,
+        message: `Message cannot exceed ${MAX_MESSAGE_LENGTH} characters.`,
+      });
+    }
 
-success:false,
+    /*
+    |--------------------------------------------------------------------------
+    | Generate AI Response
+    |--------------------------------------------------------------------------
+    */
 
-message:"Message required"
+    const reply = await generateTravelAdvice(message);
 
-});
+    /*
+    |--------------------------------------------------------------------------
+    | Validate AI Response
+    |--------------------------------------------------------------------------
+    */
 
-}
+    if (!reply) {
+      return res.status(502).json({
+        success: false,
+        message: "AI service returned an empty response.",
+      });
+    }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Response
+    |--------------------------------------------------------------------------
+    */
 
+    res.status(200).json({
+      success: true,
+      data: {
+        message,
+        reply,
+        timestamp: new Date().toISOString(),
+      },
+    });
 
-const reply =
-await generateTravelAdvice(message);
-
-
-
-return res.status(200).json({
-
-success:true,
-
-reply
-
-});
-
-
-
-}catch(error){
-
-
-console.error(
-"AI CONTROLLER ERROR:",
-error
-);
-
-
-return res.status(500).json({
-
-success:false,
-
-message:error.message
-
-});
-
-
-}
-
-
+  } catch (error) {
+    next(error);
+  }
 };

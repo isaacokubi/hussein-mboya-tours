@@ -1,56 +1,104 @@
 import {
-Navigate
+    Navigate,
+    Outlet
 }
 from "react-router-dom";
 
 
 import {
-useAuth
+    useAuth
 }
 from "../../context/AuthContext";
 
 
 
-export default function AgentRoute({
-children
-}){
+
+
+
+
+export default function AgentRoute(){
+
 
 
 const {
-user
-}=useAuth();
+    user,
+    token
+}
+=
+useAuth();
 
 
 
-if(!user){
+
+
+
+
+if(
+    !token ||
+    !user
+){
+
 
 return (
 
 <Navigate
-to="/login"
+
+to="/agent/login"
+
+replace
+
 />
 
-)
+);
+
 
 }
 
 
 
-if(user.role !== "Agent"){
+
+
+
+
+
+const roleName =
+
+user.role?.name || user.role;
+
+
+
+
+
+
+
+
+if(
+    roleName !== "Agent"
+){
+
 
 return (
 
 <Navigate
+
 to="/"
+
+replace
+
 />
 
-)
+);
+
 
 }
 
 
 
-return children;
+
+
+
+
+return <Outlet/>;
 
 
 }

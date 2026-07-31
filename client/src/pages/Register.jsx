@@ -6,290 +6,654 @@ import {
 
 import {
   useNavigate
-} from "react-router-dom";
+}
+from "react-router-dom";
 
 
 import {
   toast
-} from "react-toastify";
+}
+from "react-toastify";
 
 
 import {
   AuthContext
-} from "../context/AuthContext";
+}
+from "../context/AuthContext";
+
+
+
 
 
 
 export default function Register(){
 
 
-  const navigate = useNavigate();
 
+const navigate =
+useNavigate();
 
-  const {
-    register
-  } = useContext(AuthContext);
 
 
 
+const {
+register
+}
+=
+useContext(AuthContext);
 
-  const [formData,setFormData]=useState({
 
-    name:"",
-    email:"",
-    phone:"",
-    password:"",
 
-  });
 
 
 
-  const [loading,setLoading]=useState(false);
+const [formData,setFormData] =
+useState({
 
+name:"",
 
+email:"",
 
+phone:"",
 
-  const handleChange=(e)=>{
+password:"",
 
+confirmPassword:""
 
-    setFormData({
 
-      ...formData,
+});
 
-      [e.target.name]:
-      e.target.value
 
-    });
 
 
-  };
 
+const [
+loading,
+setLoading
+]
+=
+useState(false);
 
 
 
-  const handleSubmit=async(e)=>{
 
 
-    e.preventDefault();
 
 
-    try{
 
 
-      setLoading(true);
+const handleChange=(e)=>{
 
 
+setFormData({
 
-      await register(
-        formData
-      );
+...formData,
 
+[e.target.name]:
+e.target.value
 
 
-      toast.success(
-        "Account created successfully"
-      );
+});
 
 
+};
 
-      navigate("/dashboard");
 
 
 
-    }catch(error){
 
 
-      toast.error(
 
-        error?.response?.data?.message ||
-        "Registration failed"
 
-      );
 
+const handleSubmit=async(e)=>{
 
-    }finally{
 
-      setLoading(false);
+e.preventDefault();
 
-    }
 
 
-  };
 
 
 
+if(
+formData.password !==
+formData.confirmPassword
+){
 
 
-  return (
+toast.error(
+"Passwords do not match"
+);
 
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
 
+return;
 
-      <div className="bg-white shadow-lg rounded-xl p-8 w-full max-w-md">
 
+}
 
-        <h1 className="text-3xl font-bold text-center mb-6">
 
-          Create Account
 
-        </h1>
 
 
 
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-4"
-        >
+try{
 
 
+setLoading(true);
 
-          <input
 
-            type="text"
 
-            name="name"
 
-            placeholder="Full name"
 
-            value={formData.name}
+const response =
+await register({
 
-            onChange={handleChange}
+name:
+formData.name,
 
-            required
 
-            className="w-full border rounded-lg p-3"
+email:
+formData.email,
 
-          />
 
+phone:
+formData.phone,
 
 
+password:
+formData.password
 
-          <input
 
-            type="email"
+});
 
-            name="email"
 
-            placeholder="Email address"
 
-            value={formData.email}
 
-            onChange={handleChange}
 
-            required
 
-            className="w-full border rounded-lg p-3"
+toast.success(
+"Account created successfully"
+);
 
-          />
 
 
 
 
-          <input
 
-            type="text"
 
-            name="phone"
 
-            placeholder="Phone number"
 
-            value={formData.phone}
+const user =
+response?.user;
 
-            onChange={handleChange}
 
-            required
 
-            className="w-full border rounded-lg p-3"
 
-          />
 
+const role =
 
+typeof user?.role === "string"
 
+?
 
-          <input
+user.role.toLowerCase()
 
-            type="password"
+:
 
-            name="password"
+user?.role?.name?.toLowerCase();
 
-            placeholder="Password"
 
-            value={formData.password}
 
-            onChange={handleChange}
 
-            required
 
-            className="w-full border rounded-lg p-3"
 
-          />
 
 
 
+switch(role){
 
 
-          <button
+case "admin":
 
-            disabled={loading}
+navigate("/admin");
 
-            className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700"
+break;
 
-          >
 
 
-            {
 
-              loading
+case "agent":
 
-              ?
+navigate("/agent");
 
-              "Creating account..."
+break;
 
-              :
 
-              "Register"
 
-            }
 
+case "tourguide":
 
-          </button>
+navigate("/guide/dashboard");
 
+break;
 
 
-        </form>
 
 
+case "tourmanager":
 
+navigate("/manager/dashboard");
 
-        <p className="text-center mt-5">
+break;
 
 
-          Already have an account?
 
 
-          <span
+default:
 
-            onClick={()=>navigate("/login")}
+navigate("/dashboard");
 
-            className="text-blue-600 cursor-pointer ml-2"
+break;
 
-          >
 
-            Login
+}
 
-          </span>
 
 
-        </p>
 
 
 
-      </div>
 
 
-    </div>
+}
 
-  );
+catch(error){
+
+
+
+console.error(
+"REGISTER ERROR:",
+error
+);
+
+
+
+
+toast.error(
+
+error?.response?.data?.message ||
+
+"Registration failed"
+
+);
+
+
+
+}
+
+
+finally{
+
+
+setLoading(false);
+
+
+}
+
+
+
+};
+
+
+
+
+
+
+
+
+
+
+return (
+
+<div className="
+min-h-screen
+flex
+items-center
+justify-center
+bg-gray-100
+p-6
+">
+
+
+
+
+
+<div className="
+bg-white
+shadow-xl
+rounded-2xl
+p-8
+w-full
+max-w-md
+">
+
+
+
+
+
+
+<h1 className="
+text-3xl
+font-bold
+text-center
+mb-6
+text-green-800
+">
+
+Join Hussein Mboya Tours
+
+</h1>
+
+
+
+
+
+
+<p className="
+text-center
+text-gray-500
+mb-6
+">
+
+Create your traveller account
+
+</p>
+
+
+
+
+
+
+
+
+<form
+
+onSubmit={handleSubmit}
+
+className="
+space-y-4
+"
+
+>
+
+
+
+
+
+
+
+<input
+
+type="text"
+
+name="name"
+
+placeholder="Full name"
+
+value={
+formData.name
+}
+
+onChange={handleChange}
+
+required
+
+className="
+w-full
+border
+rounded-lg
+p-3
+"
+
+/>
+
+
+
+
+
+
+
+
+
+<input
+
+type="email"
+
+name="email"
+
+placeholder="Email address"
+
+value={
+formData.email
+}
+
+onChange={handleChange}
+
+required
+
+className="
+w-full
+border
+rounded-lg
+p-3
+"
+
+/>
+
+
+
+
+
+
+
+
+
+<input
+
+type="tel"
+
+name="phone"
+
+placeholder="Phone number"
+
+value={
+formData.phone
+}
+
+onChange={handleChange}
+
+required
+
+className="
+w-full
+border
+rounded-lg
+p-3
+"
+
+/>
+
+
+
+
+
+
+
+
+
+<input
+
+type="password"
+
+name="password"
+
+placeholder="Password"
+
+value={
+formData.password
+}
+
+onChange={handleChange}
+
+required
+
+className="
+w-full
+border
+rounded-lg
+p-3
+"
+
+/>
+
+
+
+
+
+
+
+
+
+<input
+
+type="password"
+
+name="confirmPassword"
+
+placeholder="Confirm password"
+
+value={
+formData.confirmPassword
+}
+
+onChange={handleChange}
+
+required
+
+className="
+w-full
+border
+rounded-lg
+p-3
+"
+
+/>
+
+
+
+
+
+
+
+
+
+<button
+
+disabled={loading}
+
+className="
+w-full
+bg-green-700
+hover:bg-green-800
+text-white
+py-3
+rounded-xl
+font-bold
+disabled:opacity-50
+"
+
+>
+
+{
+
+loading
+
+?
+
+"Creating Account..."
+
+:
+
+"Register"
+
+}
+
+
+</button>
+
+
+
+
+
+
+</form>
+
+
+
+
+
+
+
+
+
+<p className="
+text-center
+mt-6
+text-gray-600
+">
+
+
+Already have an account?
+
+
+
+<button
+
+onClick={()=>navigate("/login")}
+
+className="
+text-green-700
+font-bold
+ml-2
+"
+
+>
+
+Login
+
+</button>
+
+
+</p>
+
+
+
+
+
+
+
+
+</div>
+
+
+
+
+
+</div>
+
+
+);
 
 
 }

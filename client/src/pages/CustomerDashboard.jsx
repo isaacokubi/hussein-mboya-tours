@@ -1,83 +1,75 @@
-// src/pages/CustomerDashboard.jsx
-
-
 import {
-  useEffect
+    useEffect
 } from "react";
 
 
 import {
-  useQuery,
-  useQueryClient
+    useQuery,
+    useQueryClient
 } from "@tanstack/react-query";
 
 
 import {
-  Link
+    Link
 } from "react-router-dom";
 
 
 import {
-  getMyBookings
+    getMyBookings
 } from "../api/bookingApi";
 
 
 import {
-  useAuth
+    useAuth
 } from "../context/AuthContext";
 
 
 
 
 
-const CustomerDashboard = () => {
 
+const CustomerDashboard =()=>{
 
 
-const {
-  user
-} = useAuth();
+    const {
+        user
+    } = useAuth();
 
 
 
-const queryClient =
-useQueryClient();
 
+    const queryClient =
+    useQueryClient();
 
 
 
 
 
-/*
-|--------------------------------------------------------------------------
-| Refresh only current user's bookings
-|--------------------------------------------------------------------------
-*/
 
+    useEffect(()=>{
 
-useEffect(()=>{
 
+        if(user?._id){
 
-if(user?._id){
 
+            queryClient.invalidateQueries({
 
-queryClient.invalidateQueries({
+                queryKey:[
+                    "my-bookings",
+                    user._id
+                ]
 
-queryKey:[
-"my-bookings",
-user._id
-]
+            });
 
-});
 
+        }
 
-}
 
+    },[
+        user?._id,
+        queryClient
+    ]);
 
-},[
-user?._id,
-queryClient
-]);
 
 
 
@@ -85,191 +77,189 @@ queryClient
 
 
 
+    const {
 
-/*
-|--------------------------------------------------------------------------
-| Fetch Customer Bookings
-|--------------------------------------------------------------------------
-*/
+        data,
 
+        isLoading,
 
-const {
+        error
 
-data,
-isLoading,
-error
+    } = useQuery({
 
-}=useQuery({
 
+        queryKey:[
 
-queryKey:[
+            "my-bookings",
 
-"my-bookings",
+            user?._id
 
-user?._id
+        ],
 
-],
 
 
+        queryFn:getMyBookings,
 
-queryFn:getMyBookings,
 
 
+        enabled:
+        !!user,
 
-enabled:
-!!user,
 
 
+        staleTime:
+        1000 * 60 * 5,
 
-staleTime:
-1000 * 60 * 5,
 
 
+        gcTime:
+        1000 * 60 * 15
 
-gcTime:
-1000 * 60 * 15,
 
+    });
 
 
-refetchOnWindowFocus:true
 
 
-});
 
 
 
 
 
+    if(isLoading){
 
 
+        return (
 
+            <div className="
+            min-h-screen
+            flex
+            items-center
+            justify-center
+            ">
 
-if(isLoading){
+                Loading your travel dashboard...
 
+            </div>
 
-return (
+        );
 
-<div className="
-min-h-screen
-flex
-items-center
-justify-center
-">
+    }
 
 
-<h2 className="
-text-xl
-font-semibold
-">
 
-Loading your travel dashboard...
 
-</h2>
 
 
-</div>
 
-);
 
-}
 
+    if(error){
 
 
+        return (
 
+            <div className="
+            min-h-screen
+            flex
+            items-center
+            justify-center
+            text-red-600
+            ">
 
+                Failed loading customer dashboard.
 
+            </div>
 
+        );
 
+    }
 
-if(error){
 
 
-return (
 
-<div className="
-min-h-screen
-flex
-items-center
-justify-center
-text-red-600
-font-semibold
-">
 
-Failed to load bookings.
 
-</div>
 
-);
 
 
-}
+    const bookings =
 
+    Array.isArray(data)
 
+    ?
 
+    data
 
+    :
 
+    data?.bookings || [];
 
 
 
-const bookings =
-Array.isArray(data)
-?
-data
-:
-[];
 
 
 
 
 
 
+    const totalTrips =
+    bookings.length;
 
 
-const today =
-new Date();
 
 
 
+    const upcomingTrips =
 
+    bookings.filter(
+        booking=>{
 
 
+            const date =
+            new Date(
+                booking.travelDate
+            );
 
 
-const totalTrips =
-bookings.length;
+            return (
 
+                date >= new Date()
 
+                &&
 
+                booking.bookingStatus
+                ?.toLowerCase()
 
+                !==
+                "cancelled"
 
+            );
 
 
+        }
 
-const upcomingTrips =
+    ).length;
 
-bookings.filter((booking)=>{
 
 
-const travelDate =
-new Date(
-booking.travelDate
-);
 
 
 
-return (
 
-travelDate >= today &&
 
-booking.bookingStatus
-?.toLowerCase()
 
-!=="cancelled"
+    const completedTrips =
 
-);
+    bookings.filter(
+        booking=>
 
+        booking.bookingStatus
+        ?.toLowerCase()
+        ===
+        "completed"
 
-}).length;
+    ).length;
 
 
 
@@ -278,911 +268,569 @@ booking.bookingStatus
 
 
 
-const completedTrips =
+    const cancelledTrips =
 
-bookings.filter((booking)=>{
+    bookings.filter(
+        booking=>
 
+        booking.bookingStatus
+        ?.toLowerCase()
+        ===
+        "cancelled"
 
-return (
+    ).length;
 
-booking.bookingStatus
-?.toLowerCase()
 
-==="completed"
 
-);
 
 
-}).length;
 
 
 
 
+    const totalSpent =
 
+    bookings.reduce(
 
+        (total,booking)=>
 
 
-const cancelledTrips =
+        total +
 
-bookings.filter((booking)=>{
+        Number(
 
+            booking.totalAmount
 
-return (
+            ||
 
-booking.bookingStatus
-?.toLowerCase()
+            booking.amount
 
-==="cancelled"
+            ||
 
-);
+            0
 
+        )
 
-}).length;
 
+        ,
 
+        0
 
+    );
 
 
 
 
 
 
-const totalSpent =
 
-bookings.reduce(
 
-(total,booking)=>
+    return (
 
+        <div className="
+        min-h-screen
+        bg-gray-100
+        p-6
+        md:p-8
+        ">
 
-total +
 
-Number(
-booking.amount || 0
-)
 
 
-,
 
-0
 
-);
+            <div className="
+            bg-gradient-to-r
+            from-green-900
+            to-green-600
+            text-white
+            rounded-2xl
+            shadow-xl
+            p-8
+            mb-8
+            ">
 
 
+                <h1 className="
+                text-3xl
+                font-bold
+                ">
 
+                    Welcome back,
+                    {" "}
+                    {user?.name || "Traveller"}
 
+                </h1>
 
 
 
+                <p className="
+                mt-2
+                ">
 
+                    Your Hussein Mboya Tours customer centre
 
-return (
+                </p>
 
-<div className="
-min-h-screen
-bg-gray-100
-p-4
-md:p-8
-">
 
 
 
 
+                <div className="
+                mt-6
+                flex
+                gap-4
+                flex-wrap
+                ">
 
 
+                    <Link
 
+                    to="/tours"
 
-{/* HERO SECTION */}
+                    className="
+                    bg-white
+                    text-green-700
+                    px-6
+                    py-3
+                    rounded-lg
+                    font-bold
+                    "
 
+                    >
 
+                        Book New Adventure
 
-<div className="
-bg-gradient-to-r
-from-green-900
-to-green-600
-text-white
-rounded-2xl
-shadow-xl
-p-8
-mb-8
-">
+                    </Link>
 
 
 
-<h1 className="
-text-3xl
-font-bold
-">
 
-Welcome back,
-{" "}
-{user?.name}
 
-</h1>
+                    <Link
 
+                    to="/profile"
 
+                    className="
+                    bg-yellow-500
+                    text-white
+                    px-6
+                    py-3
+                    rounded-lg
+                    font-bold
+                    "
 
+                    >
 
-<p className="
-mt-2
-">
+                        My Profile
 
-Your Hussein Mboya Tours customer centre
+                    </Link>
 
-</p>
 
+                </div>
 
 
+            </div>
 
 
-<div className="
-mt-6
-flex
-gap-4
-flex-wrap
-">
 
 
-<Link
 
-to="/tours"
 
-className="
-bg-white
-text-green-700
-px-6
-py-3
-rounded-lg
-font-bold
-"
 
->
 
-Book New Adventure
 
-</Link>
+            <div className="
+            grid
+            sm:grid-cols-2
+            lg:grid-cols-4
+            gap-6
+            mb-10
+            ">
 
 
+                <StatCard
+                title="Total Trips"
+                value={totalTrips}
+                />
 
 
+                <StatCard
+                title="Upcoming Trips"
+                value={upcomingTrips}
+                />
 
-<Link
 
-to="/profile"
+                <StatCard
+                title="Completed Trips"
+                value={completedTrips}
+                />
 
-className="
-bg-yellow-500
-text-white
-px-6
-py-3
-rounded-lg
-font-bold
-"
 
->
+                <StatCard
+                title="Cancelled Trips"
+                value={cancelledTrips}
+                />
 
-My Profile
 
-</Link>
+            </div>
 
 
 
-</div>
 
 
 
-</div>
 
 
 
+            <div className="
+            bg-white
+            rounded-xl
+            shadow
+            p-6
+            mb-10
+            ">
 
 
+                <h2 className="
+                text-2xl
+                font-bold
+                mb-6
+                ">
 
+                    Travel Summary
 
+                </h2>
 
 
-{/* STATISTICS */}
 
 
 
-<div className="
-grid
-sm:grid-cols-2
-lg:grid-cols-4
-gap-6
-mb-10
-">
+                <div className="
+                grid
+                md:grid-cols-3
+                gap-6
+                ">
 
 
 
-<StatCard
+                    <SummaryItem
 
-title="Total Trips"
+                    title="Total Booking Value"
 
-value={totalTrips}
+                    value={
+                        `KES ${totalSpent.toLocaleString()}`
+                    }
 
-/>
+                    />
 
 
 
+                    <SummaryItem
 
-<StatCard
+                    title="Email"
 
-title="Upcoming Trips"
+                    value={
+                        user?.email || "-"
+                    }
 
-value={upcomingTrips}
+                    />
 
-/>
 
 
 
+                    <SummaryItem
 
+                    title="Member Since"
 
-<StatCard
+                    value={
 
-title="Completed Trips"
+                        user?.createdAt
 
-value={completedTrips}
+                        ?
 
-/>
+                        new Date(
+                            user.createdAt
+                        )
+                        .toDateString()
 
+                        :
 
+                        "-"
 
+                    }
 
+                    />
 
-<StatCard
 
-title="Cancelled Trips"
+                </div>
 
-value={cancelledTrips}
 
-/>
+            </div>
 
 
 
 
-</div>
 
 
 
 
 
+            <div className="
+            bg-white
+            rounded-xl
+            shadow
+            p-6
+            ">
 
 
+                <div className="
+                flex
+                justify-between
+                items-center
+                mb-6
+                ">
 
 
-{/* CUSTOMER SUMMARY */}
+                    <h2 className="
+                    text-2xl
+                    font-bold
+                    ">
 
+                        My Adventures
 
+                    </h2>
 
-<div className="
-bg-white
-rounded-xl
-shadow
-p-6
-mb-10
-">
 
 
 
-<h2 className="
-text-2xl
-font-bold
-mb-6
-">
+                    <Link
 
-Travel Summary
+                    to="/bookings"
 
-</h2>
+                    className="
+                    text-green-600
+                    font-semibold
+                    "
 
+                    >
 
+                        View All
 
+                    </Link>
 
 
-<div className="
-grid
-md:grid-cols-3
-gap-6
-">
+                </div>
 
 
 
 
 
-<div>
 
 
-<p className="
-text-gray-500
-">
 
-Total Booking Value
+                {
+                    bookings.length===0
 
-</p>
+                    ?
 
+                    <div className="
+                    text-center
+                    py-10
+                    ">
 
 
-<h3 className="
-text-2xl
-font-bold
-">
+                        <p className="
+                        text-gray-500
+                        mb-5
+                        ">
 
-KES {totalSpent.toLocaleString("en-US")}
+                            You have no bookings yet.
 
-</h3>
+                        </p>
 
 
 
-</div>
+                        <Link
 
+                        to="/tours"
 
+                        className="
+                        bg-green-600
+                        text-white
+                        px-6
+                        py-3
+                        rounded-lg
+                        "
 
+                        >
 
+                            Explore Tours
 
+                        </Link>
 
 
-<div>
+                    </div>
 
 
-<p className="
-text-gray-500
-">
+                    :
 
-Email
 
-</p>
+                    <div className="
+                    space-y-5
+                    ">
 
 
+                    {
+                        bookings.map(
+                            booking=>(
 
-<h3 className="
-font-semibold
-">
 
-{user?.email}
+                            <div
 
-</h3>
+                            key={booking._id}
 
+                            className="
+                            border
+                            rounded-xl
+                            p-6
+                            "
 
-</div>
+                            >
 
 
+                                <h3 className="
+                                text-xl
+                                font-bold
+                                ">
 
+                                    {
+                                    booking.tour?.title
+                                    ||
+                                    "Tour Package"
+                                    }
 
+                                </h3>
 
 
 
-<div>
 
 
-<p className="
-text-gray-500
-">
+                                <p>
 
-Member Since
+                                    Booking ID:
 
-</p>
+                                    {" "}
 
+                                    {
+                                    booking._id
+                                    ?
+                                    booking._id.slice(-8)
+                                    :
+                                    "N/A"
+                                    }
 
+                                </p>
 
-<h3 className="
-font-semibold
-">
 
-{
 
-user?.createdAt
 
-?
 
-new Date(
-user.createdAt
-)
-.toDateString()
+                                <p className="mt-3">
 
-:
+                                    Status:
 
-"N/A"
+                                    {" "}
 
-}
+                                    {
+                                    booking.bookingStatus
+                                    ||
+                                    "pending"
+                                    }
 
-</h3>
+                                </p>
 
 
-</div>
 
 
 
+                                <p>
 
+                                    Amount:
 
-</div>
+                                    {" "}
 
+                                    KES {
 
-</div>
+                                    Number(
 
+                                    booking.totalAmount
 
+                                    ||
 
+                                    booking.amount
 
+                                    ||
 
+                                    0
 
+                                    )
+                                    .toLocaleString()
 
+                                    }
 
+                                </p>
 
-{/* BOOKINGS LIST */}
 
 
 
-<div className="
-bg-white
-rounded-xl
-shadow
-p-6
-">
 
+                                <Link
 
+                                to={`/bookings/${booking._id}`}
 
+                                className="
+                                inline-block
+                                mt-5
+                                bg-black
+                                text-white
+                                px-5
+                                py-2
+                                rounded-lg
+                                "
 
+                                >
 
-<div className="
-flex
-justify-between
-items-center
-mb-6
-">
+                                    View Booking
 
+                                </Link>
 
-<h2 className="
-text-2xl
-font-bold
-">
 
-My Adventures
 
-</h2>
+                            </div>
 
 
+                            )
+                    )
+                    }
 
 
-<Link
+                    </div>
 
-to="/bookings"
 
-className="
-text-green-600
-font-semibold
-"
+                }
 
->
 
-View All
 
-</Link>
+            </div>
 
 
 
-</div>
 
+        </div>
 
 
-
-
-
-
-
-{
-
-bookings.length === 0
-
-?
-
-(
-
-<div className="
-text-center
-py-10
-">
-
-
-<p className="
-text-gray-500
-mb-5
-">
-
-You have no bookings yet.
-
-</p>
-
-
-
-
-<Link
-
-to="/tours"
-
-className="
-bg-green-600
-text-white
-px-6
-py-3
-rounded-lg
-"
-
->
-
-Explore Tours
-
-</Link>
-
-
-
-</div>
-
-)
-
-
-:
-
-(
-
-
-<div className="
-space-y-6
-">
-
-
-{
-
-bookings.map((booking)=>(
-
-
-
-<div
-
-key={booking._id}
-
-className="
-border
-rounded-xl
-p-6
-hover:shadow-lg
-transition
-"
-
-
->
-
-
-
-
-
-<div className="
-flex
-justify-between
-flex-wrap
-gap-4
-">
-
-
-
-<div>
-
-
-<h3 className="
-text-xl
-font-bold
-">
-
-{
-
-booking.tour?.title ||
-
-"Tour Package"
-
-}
-
-</h3>
-
-
-
-<p>
-
-Booking ID:
-
-<b>
-
-{" "}
-
-{
-
-booking._id.slice(-8)
-
-}
-
-</b>
-
-</p>
-
-
-</div>
-
-
-
-
-
-
-
-<span className="
-bg-yellow-100
-px-4
-py-2
-rounded-full
-capitalize
-">
-
-{
-
-booking.bookingStatus ||
-
-"pending"
-
-}
-
-
-</span>
-
-
-
-
-
-</div>
-
-
-
-
-
-
-
-<hr className="
-my-5
-"/>
-
-
-
-
-
-
-
-
-<div className="
-grid
-md:grid-cols-2
-gap-5
-">
-
-
-
-
-
-<p>
-
-<strong>
-Travel Date:
-</strong>
-
-{" "}
-
-{
-
-booking.travelDate
-
-?
-
-new Date(
-booking.travelDate
-)
-.toDateString()
-
-:
-
-"N/A"
-
-}
-
-
-</p>
-
-
-
-
-
-<p>
-
-<strong>
-Travellers:
-</strong>
-
-{" "}
-
-{
-
-booking.travelers?.length || 1
-
-}
-
-
-</p>
-
-
-
-
-
-<p>
-
-<strong>
-Payment:
-</strong>
-
-{" "}
-
-{
-
-booking.paymentStatus ||
-
-"pending"
-
-}
-
-
-</p>
-
-
-
-
-
-
-<p>
-
-<strong>
-Amount:
-</strong>
-
-KES{" "}
-
-{
-
-Number(
-booking.amount || 0
-)
-.toLocaleString("en-US")
-
-}
-
-
-</p>
-
-
-
-
-
-
-</div>
-
-
-
-
-
-
-
-
-
-<div className="
-mt-6
-flex
-gap-4
-flex-wrap
-">
-
-
-
-
-
-<Link
-
-to={`/bookings/${booking._id}`}
-
-className="
-bg-black
-text-white
-px-5
-py-2
-rounded-lg
-"
-
->
-
-View Booking
-
-</Link>
-
-
-
-
-
-
-
-{
-
-booking.paymentStatus
-?.toLowerCase()
-
-!=="paid"
-
-&&
-
-(
-
-<Link
-
-to={`/payment-status/${booking._id}`}
-
-className="
-bg-green-600
-text-white
-px-5
-py-2
-rounded-lg
-"
-
->
-
-Complete Payment
-
-</Link>
-
-)
-
-
-}
-
-
-
-
-
-</div>
-
-
-
-
-
-
-</div>
-
-
-
-))
-
-
-}
-
-
-</div>
-
-
-)
-
-
-}
-
-
-
-</div>
-
-
-
-
-
-</div>
-
-
-);
+    );
 
 
 };
@@ -1196,8 +844,8 @@ Complete Payment
 
 
 function StatCard({
-title,
-value
+    title,
+    value
 }){
 
 
@@ -1220,7 +868,6 @@ text-gray-500
 </p>
 
 
-
 <h2 className="
 text-4xl
 font-bold
@@ -1241,6 +888,47 @@ mt-2
 }
 
 
+
+
+
+
+
+
+function SummaryItem({
+    title,
+    value
+}){
+
+
+return (
+
+<div>
+
+<p className="
+text-gray-500
+">
+
+{title}
+
+</p>
+
+
+<h3 className="
+font-semibold
+text-lg
+">
+
+{value}
+
+</h3>
+
+
+</div>
+
+);
+
+
+}
 
 
 

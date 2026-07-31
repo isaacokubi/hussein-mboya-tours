@@ -1,21 +1,80 @@
+// server/controllers/crmController.js
+
 import CustomerProfile from "../models/CustomerProfile.js";
 
-export const getCRMStats = async (req, res) => {
-  const totalCustomers = await CustomerProfile.countDocuments();
+/*
+|--------------------------------------------------------------------------
+| CUSTOMER CRM DASHBOARD STATISTICS
+|--------------------------------------------------------------------------
+|
+| GET /api/crm/stats
+|--------------------------------------------------------------------------
+*/
 
-  const vipCustomers = await CustomerProfile.countDocuments({
-    customerType: "vip",
-  });
+export const getCRMStats = async (req, res, next) => {
+  try {
+    /*
+    |--------------------------------------------------------------------------
+    | Customer Statistics
+    |--------------------------------------------------------------------------
+    */
 
-  const corporateCustomers = await CustomerProfile.countDocuments({
-    customerType: "corporate",
-  });
+    const [
+      totalCustomers,
+      vipCustomers,
+      corporateCustomers,
+      regularCustomers,
+      activeCustomers,
+      inactiveCustomers,
+    ] = await Promise.all([
+      CustomerProfile.countDocuments(),
 
-  res.json({
-    totalCustomers,
+      CustomerProfile.countDocuments({
+        customerType: "vip",
+      }),
 
-    vipCustomers,
+      CustomerProfile.countDocuments({
+        customerType: "corporate",
+      }),
 
-    corporateCustomers,
-  });
+      CustomerProfile.countDocuments({
+        customerType: "regular",
+      }),
+
+      CustomerProfile.countDocuments({
+        status: "active",
+      }),
+
+      CustomerProfile.countDocuments({
+        status: "inactive",
+      }),
+    ]);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Response
+    |--------------------------------------------------------------------------
+    */
+
+    return res.status(200).json({
+      success: true,
+
+      data: {
+        totalCustomers,
+
+        customerTypes: {
+          regular: regularCustomers,
+          vip: vipCustomers,
+          corporate: corporateCustomers,
+        },
+
+        accountStatus: {
+          active: activeCustomers,
+          inactive: inactiveCustomers,
+        },
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
 };

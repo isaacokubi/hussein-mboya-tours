@@ -1,49 +1,252 @@
+// server/models/Referral.js
+
 import mongoose from "mongoose";
 
+/*
+|--------------------------------------------------------------------------
+| REFERRAL SCHEMA
+|--------------------------------------------------------------------------
+|
+| Tracks customer referral program.
+|
+| Flow:
+|
+| User A (Referrer)
+|        │
+|        ▼
+| User B (Referred User)
+|        │
+|        ▼
+| Makes Booking
+|        │
+|        ▼
+| Reward Generated
+|
+|--------------------------------------------------------------------------
+*/
 
-const referralSchema =
-new mongoose.Schema(
-{
+const referralSchema = new mongoose.Schema(
+  {
+    /*
+    |--------------------------------------------------------------------------
+    | REFERRER
+    |--------------------------------------------------------------------------
+    */
 
-referrer:{
+    referrer: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
 
-type:mongoose.Schema.Types.ObjectId,
+    /*
+    |--------------------------------------------------------------------------
+    | REFERRED USER
+    |--------------------------------------------------------------------------
+    */
 
-ref:"User"
+    referredUser: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      unique: true,
+      index: true,
+    },
 
-},
+    /*
+    |--------------------------------------------------------------------------
+    | RELATED BOOKING
+    |--------------------------------------------------------------------------
+    */
 
+    booking: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Booking",
+      default: null,
+    },
 
-referredUser:{
+    /*
+    |--------------------------------------------------------------------------
+    | REFERRAL CODE
+    |--------------------------------------------------------------------------
+    */
 
-type:mongoose.Schema.Types.ObjectId,
+    referralCode: {
+      type: String,
+      trim: true,
+      uppercase: true,
+      index: true,
+    },
 
-ref:"User"
+    /*
+    |--------------------------------------------------------------------------
+    | REWARD
+    |--------------------------------------------------------------------------
+    */
 
-},
+    reward: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
 
+    rewardType: {
+      type: String,
+      enum: [
+        "cash",
+        "points",
+        "discount",
+        "voucher",
+        "gift",
+      ],
+      default: "cash",
+    },
 
-reward:Number,
+    /*
+    |--------------------------------------------------------------------------
+    | STATUS
+    |--------------------------------------------------------------------------
+    */
 
+    status: {
+      type: String,
+      enum: [
+        "pending",
+        "qualified",
+        "approved",
+        "paid",
+        "cancelled",
+        "expired",
+      ],
+      default: "pending",
+      index: true,
+    },
 
-status:{
+    /*
+    |--------------------------------------------------------------------------
+    | IMPORTANT DATES
+    |--------------------------------------------------------------------------
+    */
 
-type:String,
+    qualifiedAt: {
+      type: Date,
+      default: null,
+    },
 
-default:"pending"
+    approvedAt: {
+      type: Date,
+      default: null,
+    },
 
-}
+    paidAt: {
+      type: Date,
+      default: null,
+    },
 
-},
-{
-timestamps:true
-}
+    /*
+    |--------------------------------------------------------------------------
+    | PAYMENT REFERENCE
+    |--------------------------------------------------------------------------
+    */
 
+    paymentReference: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | NOTES
+    |--------------------------------------------------------------------------
+    */
+
+    notes: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | CREATED BY
+    |--------------------------------------------------------------------------
+    */
+
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+  },
+  {
+    timestamps: true,
+    toJSON: {
+      virtuals: true,
+    },
+    toObject: {
+      virtuals: true,
+    },
+  }
 );
 
+/*
+|--------------------------------------------------------------------------
+| INDEXES
+|--------------------------------------------------------------------------
+*/
 
+referralSchema.index({
+  referrer: 1,
+  status: 1,
+});
 
-export default mongoose.model(
-"Referral",
-referralSchema
-);
+referralSchema.index({
+  createdAt: -1,
+});
+
+referralSchema.index({
+  reward: -1,
+});
+
+referralSchema.index({
+  referralCode: 1,
+});
+
+/*
+|--------------------------------------------------------------------------
+| METHODS
+|--------------------------------------------------------------------------
+*/
+
+referralSchema.methods.markQualified = function () {
+  this.status = "qualified";
+  this.qualifiedAt = new Date();
+  return this.save();
+};
+
+referralSchema.methods.approveReward = function () {
+  this.status = "approved";
+  this.approvedAt = new Date();
+  return this.save();
+};
+
+referralSchema.methods.markPaid = function (reference = "") {
+  this.status = "paid";
+  this.paidAt = new Date();
+  this.paymentReference = reference;
+  return this.save();
+};
+
+/*
+|--------------------------------------------------------------------------
+| MODEL
+|--------------------------------------------------------------------------
+*/
+
+const Referral =
+  mongoose.models.Referral ||
+  mongoose.model("Referral", referralSchema);
+
+export default Referral;

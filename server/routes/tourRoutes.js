@@ -1,6 +1,7 @@
+// server/routes/tourRoutes.js
+
 import express from "express";
 
-// Controllers
 import {
   createTour,
   getTours,
@@ -13,148 +14,78 @@ import {
   deleteTour,
 } from "../controllers/tourController.js";
 
-
-// Availability Controller
 import {
   getTourAvailability,
   updateTourAvailability,
 } from "../controllers/tourAvailabilityController.js";
 
+import {
+  protect,
+} from "../middleware/authMiddleware.js";
 
-// Authentication
-import { protect } from "../middleware/authMiddleware.js";
+import {
+  tourManagerOnly,
+} from "../middleware/tourManagerMiddleware.js";
 
-
-// Tour Manager Authorization
-import { tourManagerOnly } from "../middleware/tourManagerMiddleware.js";
-
-
-// Upload
 import upload from "../middleware/uploadMiddleware.js";
-
 
 const router = express.Router();
 
+/*
+|--------------------------------------------------------------------------
+| PUBLIC ROUTES
+|--------------------------------------------------------------------------
+*/
 
-// ============================================================
-// PUBLIC TOUR ROUTES
-// ============================================================
+router.get("/", getTours);
 
+router.get("/featured", getFeaturedTours);
 
-router.get(
-  "/",
-  getTours
-);
+router.get("/search", searchTours);
 
+router.get("/slug/:slug", getTourBySlug);
 
-router.get(
-  "/featured",
-  getFeaturedTours
-);
+router.get("/:id", getTourById);
 
+/*
+|--------------------------------------------------------------------------
+| TOUR MANAGER ROUTES
+|--------------------------------------------------------------------------
+*/
 
-router.get(
-  "/search",
-  searchTours
-);
-
-
-router.get(
-  "/slug/:slug",
-  getTourBySlug
-);
-
-
-
-// ============================================================
-// TOUR MANAGER ROUTES
-// ============================================================
-
+router.use(protect);
+router.use(tourManagerOnly);
 
 router.get(
   "/manager",
-  protect,
-  tourManagerOnly,
   getManagerTours
 );
 
-
-
-// ============================================================
-// SINGLE TOUR
-// ============================================================
-
-
-router.get(
-  "/:id",
-  getTourById
-);
-
-
-
-// ============================================================
-// CREATE TOUR
-// ============================================================
-
-
 router.post(
   "/",
-  protect,
-  tourManagerOnly,
-  upload.array("images",10),
+  upload.array("images", 10),
   createTour
 );
 
-
-
-// ============================================================
-// UPDATE TOUR
-// ============================================================
-
-
 router.put(
   "/:id",
-  protect,
-  tourManagerOnly,
-  upload.array("images",10),
+  upload.array("images", 10),
   updateTour
 );
 
-
-
-// ============================================================
-// DELETE TOUR
-// ============================================================
-
-
 router.delete(
   "/:id",
-  protect,
-  tourManagerOnly,
   deleteTour
 );
 
-
-
-// ============================================================
-// AVAILABILITY
-// ============================================================
-
-
 router.get(
   "/:id/availability",
-  protect,
-  tourManagerOnly,
   getTourAvailability
 );
 
-
 router.patch(
   "/:id/availability",
-  protect,
-  tourManagerOnly,
   updateTourAvailability
 );
-
 
 export default router;

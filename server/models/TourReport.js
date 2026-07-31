@@ -1,101 +1,292 @@
+// server/models/TourReport.js
+
 import mongoose from "mongoose";
 
+/*
+|--------------------------------------------------------------------------
+| IMAGE SCHEMA
+|--------------------------------------------------------------------------
+*/
+
+const imageSchema = new mongoose.Schema(
+  {
+    url: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    publicId: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    caption: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+  },
+  {
+    _id: false,
+  }
+);
+
+/*
+|--------------------------------------------------------------------------
+| TOUR REPORT SCHEMA
+|--------------------------------------------------------------------------
+*/
 
 const tourReportSchema = new mongoose.Schema(
+  {
+    /*
+    |--------------------------------------------------------------------------
+    | TOUR INFORMATION
+    |--------------------------------------------------------------------------
+    */
 
-{
+    tour: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tour",
+      required: true,
+    },
 
+    booking: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Booking",
+      default: null,
+    },
 
-tour:{
+    /*
+    |--------------------------------------------------------------------------
+    | STAFF
+    |--------------------------------------------------------------------------
+    */
 
-type:mongoose.Schema.Types.ObjectId,
+    guide: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Staff",
+      required: true,
+    },
 
-ref:"Tour",
+    driver: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Staff",
+      default: null,
+    },
 
-required:true
+    vehicle: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Vehicle",
+      default: null,
+    },
 
-},
+    /*
+    |--------------------------------------------------------------------------
+    | REPORT
+    |--------------------------------------------------------------------------
+    */
 
+    summary: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
+    highlights: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
 
-guide:{
+    issues: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
 
-type:mongoose.Schema.Types.ObjectId,
+    recommendations: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
 
-ref:"Staff",
+    customerFeedback: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
 
-required:true
+    /*
+    |--------------------------------------------------------------------------
+    | TOUR STATISTICS
+    |--------------------------------------------------------------------------
+    */
 
-},
+    participants: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
 
+    completedSuccessfully: {
+      type: Boolean,
+      default: true,
+    },
 
+    guideRating: {
+      type: Number,
+      min: 1,
+      max: 5,
+      default: null,
+    },
 
-summary:{
+    /*
+    |--------------------------------------------------------------------------
+    | IMAGES
+    |--------------------------------------------------------------------------
+    */
 
-type:String,
+    images: [imageSchema],
 
-required:true
+    /*
+    |--------------------------------------------------------------------------
+    | APPROVAL
+    |--------------------------------------------------------------------------
+    */
 
-},
+    status: {
+      type: String,
+      enum: [
+        "draft",
+        "submitted",
+        "approved",
+        "rejected",
+      ],
+      default: "draft",
+    },
 
+    approvedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
 
+    approvedAt: {
+      type: Date,
+      default: null,
+    },
 
-issues:[
+    /*
+    |--------------------------------------------------------------------------
+    | COMPLETION
+    |--------------------------------------------------------------------------
+    */
 
-String
+    completedAt: {
+      type: Date,
+      default: Date.now,
+    },
 
-],
+    /*
+    |--------------------------------------------------------------------------
+    | SIGNATURE
+    |--------------------------------------------------------------------------
+    */
 
+    guideSignature: {
+      type: String,
+      default: "",
+    },
 
+    /*
+    |--------------------------------------------------------------------------
+    | SOFT DELETE
+    |--------------------------------------------------------------------------
+    */
 
-customerFeedback:[
-
-String
-
-],
-
-
-
-images:[
-
-{
-
-url:String,
-
-publicId:String
-
-}
-
-],
-
-
-
-completedAt:{
-
-type:Date,
-
-default:Date.now
-
-}
-
-
-
-},
-
-{
-
-timestamps:true
-
-}
-
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  {
+    timestamps: true,
+    toJSON: {
+      virtuals: true,
+    },
+    toObject: {
+      virtuals: true,
+    },
+  }
 );
 
+/*
+|--------------------------------------------------------------------------
+| VIRTUALS
+|--------------------------------------------------------------------------
+*/
 
+tourReportSchema.virtual("imageCount").get(function () {
+  return this.images.length;
+});
 
-export default mongoose.model(
+tourReportSchema.virtual("issueCount").get(function () {
+  return this.issues.length;
+});
 
-"TourReport",
+/*
+|--------------------------------------------------------------------------
+| INDEXES
+|--------------------------------------------------------------------------
+*/
 
-tourReportSchema
+tourReportSchema.index({
+  tour: 1,
+});
 
-);
+tourReportSchema.index({
+  booking: 1,
+});
+
+tourReportSchema.index({
+  guide: 1,
+});
+
+tourReportSchema.index({
+  driver: 1,
+});
+
+tourReportSchema.index({
+  vehicle: 1,
+});
+
+tourReportSchema.index({
+  status: 1,
+});
+
+tourReportSchema.index({
+  completedAt: -1,
+});
+
+tourReportSchema.index({
+  isDeleted: 1,
+});
+
+/*
+|--------------------------------------------------------------------------
+| EXPORT MODEL
+|--------------------------------------------------------------------------
+*/
+
+const TourReport =
+  mongoose.models.TourReport ||
+  mongoose.model("TourReport", tourReportSchema);
+
+export default TourReport;

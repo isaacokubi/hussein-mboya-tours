@@ -1,3 +1,5 @@
+// client/src/components/TourCard.jsx
+
 import { Link } from "react-router-dom";
 
 
@@ -6,49 +8,45 @@ export default function TourCard({
 }) {
 
 
+  const price = Number(tour.price || 0);
 
-  const discountedPrice =
 
-    tour.discount
-
-      ?
-
-      tour.price -
-      (
-        tour.price *
-        tour.discount /
+  const discountedPrice = tour.discount
+    ? price - (
+        price *
+        Number(tour.discount) /
         100
       )
-
-      :
-
-      tour.price;
-
-
+    : price;
 
 
 
   const tourImage =
-
     typeof tour.images?.[0] === "object"
-
-      ?
-
-      tour.images?.[0]?.url
-
+      ? tour.images?.[0]?.url
       :
-
       tour.images?.[0]
-
       ||
-
       tour.image
-
       ||
-
       "/placeholder.jpg";
 
 
+
+  const tourTitle =
+    tour.title
+    ||
+    tour.name
+    ||
+    "Amazing Safari Experience";
+
+
+
+  const rating =
+    typeof tour.rating === "object"
+      ? tour.rating?.average
+      :
+      tour.rating;
 
 
 
@@ -69,22 +67,61 @@ export default function TourCard({
 
 
 
+      <div className="relative">
 
 
-      <img
+        <img
 
-        src={tourImage}
+          src={tourImage}
 
-        alt={tour.title || "Tour"}
+          alt={tourTitle}
 
-        className="
-        w-full
-        h-64
-        object-cover
-        "
+          className="
+          w-full
+          h-64
+          object-cover
+          "
 
-      />
+          onError={(e)=>{
 
+            e.currentTarget.src =
+              "/placeholder.jpg";
+
+          }}
+
+        />
+
+
+
+        {
+          tour.discount > 0 && (
+
+            <span
+
+              className="
+              absolute
+              top-4
+              left-4
+              bg-red-600
+              text-white
+              px-3
+              py-1
+              rounded-full
+              text-sm
+              font-semibold
+              "
+
+            >
+
+              {tour.discount}% OFF
+
+            </span>
+
+          )
+        }
+
+
+      </div>
 
 
 
@@ -117,7 +154,7 @@ export default function TourCard({
 
           >
 
-            {tour.country}
+            {tour.country || tour.destination?.name}
 
           </span>
 
@@ -133,14 +170,13 @@ export default function TourCard({
 
           >
 
-            ⭐ {tour.rating || 0}
+            ⭐ {rating || 0}
 
           </span>
 
 
 
         </div>
-
 
 
 
@@ -157,10 +193,9 @@ export default function TourCard({
 
         >
 
-          {tour.title}
+          {tourTitle}
 
         </h2>
-
 
 
 
@@ -177,7 +212,8 @@ export default function TourCard({
 
         >
 
-          {tour.description}
+          {tour.description ||
+          "Explore unforgettable destinations with our guided travel experience."}
 
         </p>
 
@@ -202,36 +238,29 @@ export default function TourCard({
 
 
 
+
           <div>
 
 
 
+            {
+              tour.discount > 0 && (
 
+                <p
 
-            <p
+                  className="
+                  text-gray-400
+                  line-through
+                  "
 
-              className="
-              text-gray-400
-              line-through
-              "
+                >
 
-            >
+                  KES {price.toLocaleString("en-US")}
 
-              {
-                tour.discount
+                </p>
 
-                  ?
-
-                  `KES ${tour.price}`
-
-                  :
-
-                  ""
-              }
-
-            </p>
-
-
+              )
+            }
 
 
 
@@ -247,11 +276,9 @@ export default function TourCard({
 
             >
 
-              KES {discountedPrice?.toLocaleString("en-US")}
+              KES {discountedPrice.toLocaleString("en-US")}
 
             </p>
-
-
 
 
 
@@ -265,7 +292,7 @@ export default function TourCard({
 
           <Link
 
-            to={`/tours/${tour.slug}`}
+            to={`/tours/${tour.slug || tour._id}`}
 
             className="
             bg-yellow-600
@@ -273,6 +300,8 @@ export default function TourCard({
             px-5
             py-2
             rounded-lg
+            hover:bg-yellow-700
+            transition
             "
 
           >

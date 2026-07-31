@@ -1,165 +1,450 @@
-import { Navigate } from "react-router-dom";
+import {
+    Navigate,
+    Outlet
+}
+from "react-router-dom";
 
-import { useAuth } from "../../context/AuthContext";
+
+import {
+    useAuth
+}
+from "../../context/AuthContext";
+
+
+
+
 
 export default function ProtectedRoute({
-  children,
 
-  roles = [],
+    roles = [],
+
+    permission
+
 }) {
-  const {
+
+
+
+const {
+
     user,
 
-    loading,
-  } = useAuth();
+    token,
 
-  /*
-  |--------------------------------------------------------------------------
-  | LOADING STATE
-  |--------------------------------------------------------------------------
-  */
+    loading
 
-  if (loading) {
-    return (
-      <div
-        className="
-        min-h-screen
-        flex
-        items-center
-        justify-center
-        text-lg
-        font-semibold
-        "
-      >
-        Loading...
-      </div>
-    );
-  }
+}
 
-  /*
-  |--------------------------------------------------------------------------
-  | CHECK LOGIN
-  |--------------------------------------------------------------------------
-  */
+=
+useAuth();
 
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
 
-  /*
-  |--------------------------------------------------------------------------
-  | EXTRACT USER ROLE
-  |--------------------------------------------------------------------------
-  */
 
-  let userRole = "";
 
-  if (typeof user.role === "string") {
-    userRole = user.role;
-  } else if (user.role?.name) {
-    userRole = user.role.name;
-  } else if (user.roles && Array.isArray(user.roles) && user.roles.length > 0) {
-    userRole = user.roles[0]?.name || "";
-  }
 
-  /*
-  |--------------------------------------------------------------------------
-  | NORMALIZE ROLE FORMAT
-  |
-  |--------------------------------------------------------------------------
-  */
 
-  const normalizeRole = (role) => {
-    return role
 
-      ?.toString()
 
-      .toLowerCase()
+if(loading){
 
-      .replace(/[\s_-]/g, "");
-  };
 
-  const normalizedUserRole = normalizeRole(userRole);
+return (
 
-  /*
-  |--------------------------------------------------------------------------
-  | ROLE ALIASES
-  |--------------------------------------------------------------------------
-  */
+<div
 
-  const roleAliases = {
-    guide: "guide",
+className="
+min-h-screen
+flex
+items-center
+justify-center
+text-lg
+font-semibold
+"
 
-    guide: "guide",
+>
 
-    manager: "manager",
+Loading...
 
-    admin: "admin",
+</div>
 
-    agent: "agent",
-  };
+);
 
-  const finalUserRole = roleAliases[userRole] || normalizedUserRole;
 
-  /*
-  |--------------------------------------------------------------------------
-  | DEBUG
-  |--------------------------------------------------------------------------
-  */
+}
 
-  console.log("Logged User:", user);
 
-  console.log("Detected Role:", finalUserRole);
 
-  /*
-  |--------------------------------------------------------------------------
-  | ROLE PROTECTION
-  |--------------------------------------------------------------------------
-  */
 
-  if (roles.length > 0) {
-    const allowedRoles = roles.map(
-      (role) => roleAliases[role] || normalizeRole(role),
-    );
 
-    const hasPermission = allowedRoles.includes(finalUserRole);
 
-    if (!hasPermission) {
-      console.log("Blocked Route", {
-        requiredRoles: allowedRoles,
-        userRole: finalUserRole,
-      });
 
-      /*
-      |--------------------------------------------------------------------------
-      | SMART REDIRECT
-      |--------------------------------------------------------------------------
-      */
 
-      switch (finalUserRole) {
-        case "manager":
-          return <Navigate to="/manager/dashboard" replace />;
+if(
+    !token ||
+    !user
+){
 
-        case "guide":
-          return <Navigate to="/guide/dashboard" replace />;
 
-        case "admin":
-          return <Navigate to="/admin" replace />;
+return (
 
-        case "agent":
-          return <Navigate to="/agent" replace />;
+<Navigate
 
-        default:
-          return <Navigate to="/dashboard" replace />;
-      }
-    }
-  }
+to="/login"
 
-  /*
-  |--------------------------------------------------------------------------
-  | AUTHORIZED
-  |--------------------------------------------------------------------------
-  */
+replace
 
-  return children;
+/>
+
+);
+
+
+}
+
+
+
+
+
+
+
+
+
+
+const getRoleName = ()=>{
+
+
+if(typeof user.role === "string"){
+
+return user.role;
+
+}
+
+
+if(user.role?.name){
+
+return user.role.name;
+
+}
+
+
+if(
+
+Array.isArray(user.roles)
+
+&&
+
+user.roles.length
+
+){
+
+
+return user.roles[0]?.name;
+
+}
+
+
+
+return "";
+
+};
+
+
+
+
+
+
+
+
+
+const normalizeRole=(role)=>{
+
+
+return role
+
+?.toString()
+
+.toLowerCase()
+
+.replace(/[\s_-]/g,"");
+
+
+};
+
+
+
+
+
+
+
+
+const userRole = normalizeRole(
+
+getRoleName()
+
+);
+
+
+
+
+
+
+
+
+
+const roleMap = {
+
+
+admin:"admin",
+
+superadmin:"admin",
+
+administrator:"admin",
+
+
+agent:"agent",
+
+
+guide:"guide",
+
+
+manager:"manager"
+
+};
+
+
+
+
+
+
+
+const finalRole =
+
+roleMap[userRole] || userRole;
+
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| ROLE CHECK
+|--------------------------------------------------------------------------
+*/
+
+
+if(roles.length){
+
+
+
+const allowedRoles = roles.map(
+
+role=>
+
+roleMap[normalizeRole(role)]
+
+||
+
+normalizeRole(role)
+
+);
+
+
+
+
+
+if(
+!allowedRoles.includes(finalRole)
+){
+
+
+
+switch(finalRole){
+
+
+case "admin":
+
+return (
+
+<Navigate
+
+to="/admin"
+
+replace
+
+/>
+
+);
+
+
+
+case "agent":
+
+return (
+
+<Navigate
+
+to="/agent"
+
+replace
+
+/>
+
+);
+
+
+
+case "guide":
+
+return (
+
+<Navigate
+
+to="/guide"
+
+replace
+
+/>
+
+);
+
+
+
+case "manager":
+
+return (
+
+<Navigate
+
+to="/manager/dashboard"
+
+replace
+
+/>
+
+
+);
+
+
+
+default:
+
+return (
+
+<Navigate
+
+to="/"
+
+replace
+
+/>
+
+);
+
+
+
+}
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| PERMISSION CHECK
+|--------------------------------------------------------------------------
+*/
+
+
+if(permission){
+
+
+const permissions =
+
+user.permissions ||
+
+JSON.parse(
+
+localStorage.getItem("permissions")
+
+)
+
+||
+
+[];
+
+
+
+
+
+
+const permissionNames = permissions.map(
+
+item=>
+
+typeof item === "string"
+
+?
+
+item
+
+:
+
+item.name
+
+);
+
+
+
+
+
+
+
+if(
+!permissionNames.includes(permission)
+){
+
+
+return (
+
+<Navigate
+
+to="/unauthorized"
+
+replace
+
+/>
+
+);
+
+
+}
+
+
+}
+
+
+
+
+
+
+
+
+return <Outlet/>;
+
+
 }

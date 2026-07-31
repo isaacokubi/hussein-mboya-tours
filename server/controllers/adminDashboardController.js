@@ -2,38 +2,86 @@ import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
 import User from "../models/User.js";
 
-export const dashboardStats = async (req, res) => {
-  const users = await User.countDocuments();
+/*
+|--------------------------------------------------------------------------
+| DASHBOARD STATISTICS
+|--------------------------------------------------------------------------
+*/
 
-  const tours = await Tour.countDocuments();
+export const dashboardStats = async (req, res, next) => {
+  try {
+    const [
+      users,
+      tours,
+      bookings,
+      revenueData,
+      pendingBookings,
+      confirmedBookings,
+      completedBookings,
+      cancelledBookings,
+    ] = await Promise.all([
+      User.countDocuments(),
 
-  const bookings = await Booking.countDocuments();
+      Tour.countDocuments(),
 
-  const revenue = await Booking.aggregate([
-    {
-      $match: {
-        paymentStatus: "paid",
-      },
-    },
+      Booking.countDocuments(),
 
-    {
-      $group: {
-        _id: null,
+      Booking.aggregate([
+        {
+          $match: {
+            paymentStatus: "paid",
+            bookingStatus: {
+              $nin: ["cancelled", "refunded"],
+            },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            total: {
+              $sum: "$amount",
+            },
+          },
+        },
+      ]),
 
-        total: {
-          $sum: "$amount",
+      Booking.countDocuments({
+        bookingStatus: "pending",
+      }),
+
+      Booking.countDocuments({
+        bookingStatus: "confirmed",
+      }),
+
+      Booking.countDocuments({
+        bookingStatus: "completed",
+      }),
+
+      Booking.countDocuments({
+        bookingStatus: "cancelled",
+      }),
+    ]);
+
+    const revenue = revenueData[0]?.total || 0;
+
+    res.status(200).json({
+      success: true,
+
+      data: {
+        users,
+        tours,
+        bookings,
+        revenue,
+
+        summary: {
+          pendingBookings,
+          confirmedBookings,
+          completedBookings,
+          cancelledBookings,
         },
       },
-    },
-  ]);
-
-  res.json({
-    users,
-
-    tours,
-
-    bookings,
-
-    revenue: revenue[0]?.total || 0,
-  });
+    });
+  } catch (error) {
+    next(error);
+  }
 };

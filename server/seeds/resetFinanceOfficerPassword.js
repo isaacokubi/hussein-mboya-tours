@@ -1,33 +1,37 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-import User from "../models/User.js";
 
+import User from "../models/User.js";
+import Role from "../models/Role.js";
 
 dotenv.config();
 
-
 const resetFinanceOfficerPassword = async () => {
-
   try {
+    if (!process.env.MONGODB_URI) {
+      throw new Error("MONGODB_URI is missing.");
+    }
 
     await mongoose.connect(process.env.MONGODB_URI);
 
-    console.log("MongoDB Connected");
-
+    console.log("✅ MongoDB Connected");
 
     const financeOfficer = await User.findOne({
-      email: "finance@husseinmboyatours.com"
+      email: "finance@husseinmboyatours.com",
     });
 
-
     if (!financeOfficer) {
-
-      console.log("Finance Officer not found");
-
-      process.exit(1);
-
+      throw new Error("Finance Officer not found.");
     }
 
+    // RBAC role
+    const financeRole = await Role.findOne({
+      name: "finance",
+    });
+
+    if (!financeRole) {
+      throw new Error("Finance role not found.");
+    }
 
     /*
     |--------------------------------------------------------------------------
@@ -37,65 +41,51 @@ const resetFinanceOfficerPassword = async () => {
 
     financeOfficer.password = "Finance@12345";
 
-
     /*
     |--------------------------------------------------------------------------
     | ROLE SETTINGS
     |--------------------------------------------------------------------------
     */
 
-    financeOfficer.legacyRole = "financeofficer";
+    // Application role
+    financeOfficer.role = "manager";
 
+    // RBAC role
+    financeOfficer.roleId = financeRole._id;
 
-    financeOfficer.isActive = true;
-
-    financeOfficer.isVerified = true;
-
+    // Legacy compatibility
+    financeOfficer.legacyRole = "finance";
 
     /*
     |--------------------------------------------------------------------------
-    | RESET LOGIN SECURITY
+    | ACCOUNT STATUS
+    |--------------------------------------------------------------------------
+    */
+
+    financeOfficer.status = "active";
+    financeOfficer.isVerified = true;
+
+    /*
+    |--------------------------------------------------------------------------
+    | RESET SECURITY
     |--------------------------------------------------------------------------
     */
 
     financeOfficer.loginAttempts = 0;
-
     financeOfficer.lockUntil = null;
-
 
     await financeOfficer.save();
 
-
-    console.log(
-      "Finance Officer password reset successfully"
-    );
-
-
-    console.log(
-      "Email: finance@husseinmboyatours.com"
-    );
-
-
-    console.log(
-      "Password: Finance@12345"
-    );
-
-
-    process.exit(0);
-
-
+    console.log("✅ Finance Officer password reset successfully");
+    console.log("Email: finance@husseinmboyatours.com");
+    console.log("Password: Finance@12345");
   } catch (error) {
-
-    console.error(
-      "Password reset failed:",
-      error.message
-    );
-
-    process.exit(1);
-
+    console.error("❌ Password reset failed:", error.message);
+    process.exitCode = 1;
+  } finally {
+    await mongoose.connection.close().catch(() => {});
+    console.log("🔌 MongoDB connection closed");
   }
-
 };
-
 
 resetFinanceOfficerPassword();

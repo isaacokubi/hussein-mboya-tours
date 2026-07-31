@@ -1,46 +1,267 @@
+// server/models/Itinerary.js
+
 import mongoose from "mongoose";
 
+/*
+|--------------------------------------------------------------------------
+| ACTIVITY SCHEMA
+|--------------------------------------------------------------------------
+*/
 
-const itinerarySchema =
-new mongoose.Schema({
+const activitySchema = new mongoose.Schema(
+  {
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
-tour:{
-type:mongoose.Schema.Types.ObjectId,
-ref:"Tour"
-},
+    startTime: {
+      type: String,
+      default: "",
+    },
 
+    endTime: {
+      type: String,
+      default: "",
+    },
 
-days:[
+    description: {
+      type: String,
+      default: "",
+      trim: true,
+    },
 
-{
+    location: {
+      type: String,
+      default: "",
+      trim: true,
+    },
 
-title:String,
+    coordinates: {
+      latitude: Number,
+      longitude: Number,
+    },
 
-time:String,
+    meal: {
+      type: String,
+      enum: ["breakfast", "lunch", "dinner", "snack", "none"],
+      default: "none",
+    },
 
-description:String
+    accommodation: {
+      type: String,
+      default: "",
+      trim: true,
+    },
 
-}
+    transport: {
+      type: String,
+      default: "",
+      trim: true,
+    },
 
-],
+    image: {
+      type: String,
+      default: "",
+    },
 
+    notes: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+  },
+  {
+    _id: false,
+  }
+);
 
-createdBy:{
+/*
+|--------------------------------------------------------------------------
+| DAY SCHEMA
+|--------------------------------------------------------------------------
+*/
 
-type:mongoose.Schema.Types.ObjectId,
-ref:"User"
+const daySchema = new mongoose.Schema(
+  {
+    dayNumber: {
+      type: Number,
+      required: true,
+      min: 1,
+    },
 
-}
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
+    summary: {
+      type: String,
+      default: "",
+      trim: true,
+    },
 
-},
+    activities: [activitySchema],
+  },
+  {
+    _id: false,
+  }
+);
 
-{
-timestamps:true
+/*
+|--------------------------------------------------------------------------
+| ITINERARY SCHEMA
+|--------------------------------------------------------------------------
+*/
+
+const itinerarySchema = new mongoose.Schema(
+  {
+    /*
+    |--------------------------------------------------------------------------
+    | TOUR
+    |--------------------------------------------------------------------------
+    */
+
+    tour: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tour",
+      required: true,
+      unique: true,
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | DAYS
+    |--------------------------------------------------------------------------
+    */
+
+    days: [daySchema],
+
+    /*
+    |--------------------------------------------------------------------------
+    | OVERVIEW
+    |--------------------------------------------------------------------------
+    */
+
+    overview: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    highlights: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
+
+    included: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
+
+    excluded: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | STATUS
+    |--------------------------------------------------------------------------
+    */
+
+    status: {
+      type: String,
+      enum: ["draft", "published", "archived"],
+      default: "draft",
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | CREATED BY
+    |--------------------------------------------------------------------------
+    */
+
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+
+    updatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | SOFT DELETE
+    |--------------------------------------------------------------------------
+    */
+
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+/*
+|--------------------------------------------------------------------------
+| VIRTUALS
+|--------------------------------------------------------------------------
+*/
+
+itinerarySchema.virtual("totalDays").get(function () {
+  return this.days.length;
 });
 
+/*
+|--------------------------------------------------------------------------
+| INDEXES
+|--------------------------------------------------------------------------
+*/
 
-export default mongoose.model(
-"Itinerary",
-itinerarySchema
-);
+itinerarySchema.index({
+  tour: 1,
+});
+
+itinerarySchema.index({
+  status: 1,
+});
+
+itinerarySchema.index({
+  createdBy: 1,
+});
+
+itinerarySchema.index({
+  isDeleted: 1,
+});
+
+itinerarySchema.index({
+  createdAt: -1,
+});
+
+/*
+|--------------------------------------------------------------------------
+| EXPORT MODEL
+|--------------------------------------------------------------------------
+*/
+
+const Itinerary =
+  mongoose.models.Itinerary ||
+  mongoose.model("Itinerary", itinerarySchema);
+
+export default Itinerary;

@@ -1,30 +1,36 @@
-import jwt from "jsonwebtoken";
+// utils/generateToken.js
 
+import jwt from "jsonwebtoken";
+import crypto from "crypto";
+
+/*
+|--------------------------------------------------------------------------
+| GENERATE ACCESS TOKEN
+|--------------------------------------------------------------------------
+*/
 
 const generateToken = (user) => {
+  if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET is not configured.");
+  }
 
+  const payload = {
+    sub: user._id?.toString() || user.id?.toString(),
 
-    return jwt.sign(
+    role: user.role,
 
-        {
-            id:user.id || user._id,
+    email: user.email,
+  };
 
-            role:user.role || null,
+  return jwt.sign(payload, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES || "7d",
 
-            permissions:user.permissions || []
+    issuer: "husseinmboyatours",
 
-        },
+    audience: "husseinmboyatours-client",
 
-        process.env.JWT_SECRET,
-
-        {
-            expiresIn:"7d"
-        }
-
-    );
-
-
+    jwtid: crypto.randomUUID(),
+  });
 };
-
 
 export default generateToken;

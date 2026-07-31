@@ -1,209 +1,217 @@
 import mongoose from "mongoose";
 
-
 const paymentSchema = new mongoose.Schema(
-{
+  {
+    /*
+    |--------------------------------------------------------------------------
+    | USER
+    |--------------------------------------------------------------------------
+    */
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: false,
+      default: null,
+    },
 
-/*
-|--------------------------------------------------------------------------
-| USER WHO MADE PAYMENT
-|--------------------------------------------------------------------------
-*/
+    /*
+    |--------------------------------------------------------------------------
+    | CUSTOMER
+    |--------------------------------------------------------------------------
+    */
+    customer: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Customer",
+      default: null,
+    },
 
-user:{
-type:mongoose.Schema.Types.ObjectId,
-ref:"User",
-required:true
-},
+    /*
+    |--------------------------------------------------------------------------
+    | BOOKING
+    |--------------------------------------------------------------------------
+    */
+    booking: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Booking",
+      required: true,
+    },
 
+    /*
+    |--------------------------------------------------------------------------
+    | PAYMENT PROVIDER
+    |--------------------------------------------------------------------------
+    */
+    provider: {
+      type: String,
+      enum: ["MPESA", "STRIPE", "PAYPAL"],
+      required: true,
+    },
 
+    /*
+    |--------------------------------------------------------------------------
+    | PAYMENT METHOD
+    |--------------------------------------------------------------------------
+    */
+    method: {
+      type: String,
+      enum: ["mpesa", "card", "bank"],
+      required: true,
+    },
 
-/*
-|--------------------------------------------------------------------------
-| RELATED BOOKING
-|--------------------------------------------------------------------------
-*/
+    /*
+    |--------------------------------------------------------------------------
+    | AMOUNT
+    |--------------------------------------------------------------------------
+    */
+    amount: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
 
-booking:{
-type:mongoose.Schema.Types.ObjectId,
-ref:"Booking",
-required:true
-},
+    /*
+    |--------------------------------------------------------------------------
+    | STATUS
+    |--------------------------------------------------------------------------
+    */
+    status: {
+      type: String,
+      enum: [
+        "pending",
+        "completed",
+        "failed",
+        "cancelled",
+        "refunded",
+      ],
+      default: "pending",
+    },
 
+    /*
+    |--------------------------------------------------------------------------
+    | GENERAL TRANSACTION
+    |--------------------------------------------------------------------------
+    */
+    transactionId: {
+      type: String,
+      default: "",
+    },
 
+    transactionReference: {
+      type: String,
+      default: "",
+    },
 
-/*
-|--------------------------------------------------------------------------
-| PAYMENT PROVIDER
-|--------------------------------------------------------------------------
-*/
+    /*
+    |--------------------------------------------------------------------------
+    | MPESA DETAILS
+    |--------------------------------------------------------------------------
+    */
+    merchantRequestID: {
+      type: String,
+      default: "",
+    },
 
-provider:{
-type:String,
-enum:[
-"MPESA",
-"STRIPE",
-"PAYPAL"
-],
-required:true
-},
+    checkoutRequestID: {
+      type: String,
+      default: "",
+    },
 
+    mpesaReceiptNumber: {
+      type: String,
+      default: "",
+    },
 
+    transactionDate: {
+      type: String,
+      default: "",
+    },
 
-/*
-|--------------------------------------------------------------------------
-| PAYMENT METHOD
-|--------------------------------------------------------------------------
-*/
+    phoneNumber: {
+      type: String,
+      default: "",
+    },
 
-method:{
-type:String,
-enum:[
-"mpesa",
-"card",
-"bank"
-],
-},
+    /*
+    |--------------------------------------------------------------------------
+    | CALLBACK RESPONSE
+    |--------------------------------------------------------------------------
+    */
+    resultCode: {
+      type: Number,
+      default: null,
+    },
 
+    resultDescription: {
+      type: String,
+      default: "",
+    },
 
+    /*
+    |--------------------------------------------------------------------------
+    | FAILURE
+    |--------------------------------------------------------------------------
+    */
+    failureReason: {
+      type: String,
+      default: "",
+    },
 
-/*
-|--------------------------------------------------------------------------
-| PAYMENT AMOUNT
-|--------------------------------------------------------------------------
-*/
+    /*
+    |--------------------------------------------------------------------------
+    | PAYMENT DATE
+    |--------------------------------------------------------------------------
+    */
+    paidAt: {
+      type: Date,
+      default: null,
+    },
 
-amount:{
-type:Number,
-required:true,
-min:0
-},
+    /*
+    |--------------------------------------------------------------------------
+    | REFUND
+    |--------------------------------------------------------------------------
+    */
+    refundStatus: {
+      type: String,
+      enum: [
+        "none",
+        "requested",
+        "processing",
+        "completed",
+        "failed",
+      ],
+      default: "none",
+    },
 
+    refundReference: {
+      type: String,
+      default: "",
+    },
 
+    refundAmount: {
+      type: Number,
+      default: 0,
+    },
 
-/*
-|--------------------------------------------------------------------------
-| PAYMENT STATUS
-|--------------------------------------------------------------------------
-*/
+    refundedAt: {
+      type: Date,
+      default: null,
+    },
 
-status:{
-type:String,
-enum:[
-"pending",
-"completed",
-"failed",
-"cancelled"
-],
-default:"pending"
-},
-
-
-
-/*
-|--------------------------------------------------------------------------
-| GENERAL TRANSACTION ID
-|--------------------------------------------------------------------------
-*/
-
-transactionId:{
-type:String,
-},
-
-
-transactionReference:{
-type:String,
-},
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| M-PESA IDENTIFIERS
-|--------------------------------------------------------------------------
-*/
-
-merchantRequestID:{
-type:String
-},
-
-
-checkoutRequestID:{
-type:String
-},
-
-
-mpesaReceiptNumber:{
-type:String
-},
-
-
-transactionDate:{
-type:String
-},
-
-
-
-/*
-|--------------------------------------------------------------------------
-| CUSTOMER PHONE
-|--------------------------------------------------------------------------
-*/
-
-phoneNumber:{
-type:String
-},
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| FAILURE HANDLING
-|--------------------------------------------------------------------------
-*/
-
-failureReason:{
-type:String
-},
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| REFUNDS
-|--------------------------------------------------------------------------
-*/
-
-refundStatus:{
-type:String,
-enum:[
-"none",
-"requested",
-"processing",
-"completed",
-"failed"
-],
-default:"none"
-},
-
-
-refundReference:{
-type:String
-},
-
-
-
-},
-{
-timestamps:true
-});
-
-
-
-
+    /*
+    |--------------------------------------------------------------------------
+    | NOTES
+    |--------------------------------------------------------------------------
+    */
+    notes: {
+      type: String,
+      default: "",
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
 
 /*
 |--------------------------------------------------------------------------
@@ -211,79 +219,56 @@ timestamps:true
 |--------------------------------------------------------------------------
 */
 
-
-// Prevent duplicate M-Pesa callbacks
+paymentSchema.index(
+  {
+    checkoutRequestID: 1,
+  },
+  {
+    unique: true,
+    sparse: true,
+  }
+);
 
 paymentSchema.index(
-{
-checkoutRequestID:1
-},
-{
-unique:true,
-sparse:true
-}
+  {
+    mpesaReceiptNumber: 1,
+  },
+  {
+    unique: true,
+    sparse: true,
+  }
 );
 
-
-
-
-// Prevent duplicate M-Pesa receipts
-
-paymentSchema.index(
-{
-mpesaReceiptNumber:1
-},
-{
-unique:true,
-sparse:true
-}
-);
-
-
-
-
-// Fast booking payments
-
 paymentSchema.index({
-booking:1
+  booking: 1,
 });
 
-
-
-
-// Fast user history
-
 paymentSchema.index({
-user:1
+  customer: 1,
 });
 
-
-
-
-// Analytics queries
-
 paymentSchema.index({
-status:1,
-provider:1
+  user: 1,
 });
 
-
-
-
-// Transaction lookup
-
 paymentSchema.index({
-transactionId:1
+  status: 1,
 });
 
+paymentSchema.index({
+  provider: 1,
+});
 
+paymentSchema.index({
+  transactionId: 1,
+});
 
+paymentSchema.index({
+  createdAt: -1,
+});
 
-
-const Payment = mongoose.model(
-"Payment",
-paymentSchema
-);
-
+const Payment =
+  mongoose.models.Payment ||
+  mongoose.model("Payment", paymentSchema);
 
 export default Payment;

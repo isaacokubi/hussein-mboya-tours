@@ -1,51 +1,68 @@
-export const calculateQuotation =
-(items, discount=0, taxRate=0)=>{
+/*
+|--------------------------------------------------------------------------
+| CALCULATE QUOTATION TOTALS
+|--------------------------------------------------------------------------
+*/
 
+export const calculateQuotation = (
+  items = [],
+  discount = 0,
+  taxRate = 0
+) => {
+  if (!Array.isArray(items)) {
+    throw new Error("Items must be an array.");
+  }
 
-const subtotal =
-items.reduce(
+  let subtotal = 0;
+  let totalItems = 0;
 
-(sum,item)=>
+  for (const item of items) {
+    const quantity = Number(item.quantity);
+    const unitPrice = Number(item.unitPrice);
 
-sum +
-(
-item.quantity *
-item.unitPrice
-),
+    if (
+      !Number.isFinite(quantity) ||
+      quantity < 0
+    ) {
+      throw new Error(
+        `Invalid quantity for "${item.name || "item"}".`
+      );
+    }
 
-0
+    if (
+      !Number.isFinite(unitPrice) ||
+      unitPrice < 0
+    ) {
+      throw new Error(
+        `Invalid unit price for "${item.name || "item"}".`
+      );
+    }
 
-);
+    subtotal += quantity * unitPrice;
+    totalItems += quantity;
+  }
 
+  discount = Math.max(0, Number(discount) || 0);
 
+  const taxableAmount = Math.max(
+    subtotal - discount,
+    0
+  );
 
-const tax =
-subtotal *
-(taxRate/100);
+  const tax =
+    taxableAmount * (Number(taxRate) || 0) / 100;
 
+  const grandTotal = taxableAmount + tax;
 
+  return {
+    totalItems,
 
-const grandTotal =
+    subtotal: Number(subtotal.toFixed(2)),
 
-subtotal
-+
-tax
--
-discount;
+    discount: Number(discount.toFixed(2)),
 
+    tax: Number(tax.toFixed(2)),
 
-
-return {
-
-subtotal,
-
-tax,
-
-discount,
-
-grandTotal
-
-};
-
-
+    grandTotal: Number(grandTotal.toFixed(2)),
+  };
 };

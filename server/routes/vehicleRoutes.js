@@ -1,272 +1,89 @@
+// server/routes/vehicleRoutes.js
+
 import express from "express";
 
-
-
 import {
-
-    createVehicle,
-
-    getVehicles,
-
-    getVehicle,
-
-    updateVehicle,
-
-    deleteVehicle,
-
-    restoreVehicle,
-
-    assignVehicleDriver,
-
-    removeVehicleDriver
-
-
+  createVehicle,
+  getVehicles,
+  getVehicle,
+  updateVehicle,
+  deleteVehicle,
+  restoreVehicle,
+  assignVehicleDriver,
+  removeVehicleDriver,
 } from "../controllers/vehicleController.js";
 
-
-
-
-
 import {
-
-    protect
-
+  protect,
 } from "../middleware/authMiddleware.js";
 
-
-
-
-
 import {
-
-    roleMiddleware
-
+  roleMiddleware,
 } from "../middleware/roleMiddleware.js";
-
-
-
-
 
 import upload from "../middleware/uploadMiddleware.js";
 
-
-
-
-
-
-
 const router = express.Router();
 
-
-
-
-
-
-
-
-
 /*
 |--------------------------------------------------------------------------
-| VEHICLE MANAGEMENT ROUTES
+| AUTHENTICATION
 |--------------------------------------------------------------------------
 |
-| Roles:
-|
-| admin        -> Full access
-| tour_manager -> Fleet management
-| guide        -> View assigned vehicles
+| All vehicle routes require authentication.
 |
 |--------------------------------------------------------------------------
 */
 
-
-
-
-
-
-
-
-
+router.use(protect);
 
 /*
 |--------------------------------------------------------------------------
-| CREATE VEHICLE
-|--------------------------------------------------------------------------
-|
-| POST /api/vehicles
-|
-| Upload:
-| image
-|
-| Cloudinary folder:
-| hussein-tours/vehicles
-|
+| VEHICLE MANAGEMENT
 |--------------------------------------------------------------------------
 */
 
-
+/**
+ * POST /api/vehicles
+ * Create a new vehicle.
+ */
 router.post(
-
-    "/",
-
-    protect,
-
-
-    roleMiddleware(
-
-        [
-
-            "admin",
-
-            "tour_manager"
-
-        ]
-
-    ),
-
-
-    upload.single("image"),
-
-
-    createVehicle
-
+  "/",
+  roleMiddleware(["admin", "tour_manager"]),
+  upload.single("image"),
+  createVehicle
 );
 
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| GET ALL VEHICLES
-|--------------------------------------------------------------------------
-*/
-
-
+/**
+ * GET /api/vehicles
+ * Get all vehicles.
+ */
 router.get(
-
-    "/",
-
-    protect,
-
-
-    roleMiddleware(
-
-        [
-
-            "admin",
-
-            "tour_manager",
-
-            "guide"
-
-        ]
-
-    ),
-
-
-    getVehicles
-
+  "/",
+  roleMiddleware(["admin", "tour_manager", "guide"]),
+  getVehicles
 );
 
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| GET SINGLE VEHICLE
-|--------------------------------------------------------------------------
-*/
-
-
+/**
+ * GET /api/vehicles/:id
+ * Get a single vehicle.
+ */
 router.get(
-
-    "/:id",
-
-    protect,
-
-
-    roleMiddleware(
-
-        [
-
-            "admin",
-
-            "tour_manager",
-
-            "guide"
-
-        ]
-
-    ),
-
-
-    getVehicle
-
+  "/:id",
+  roleMiddleware(["admin", "tour_manager", "guide"]),
+  getVehicle
 );
 
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| UPDATE VEHICLE
-|--------------------------------------------------------------------------
-|
-| Allows replacing vehicle image
-|
-|--------------------------------------------------------------------------
-*/
-
-
+/**
+ * PUT /api/vehicles/:id
+ * Update vehicle details and optionally replace its image.
+ */
 router.put(
-
-    "/:id",
-
-    protect,
-
-
-    roleMiddleware(
-
-        [
-
-            "admin",
-
-            "tour_manager"
-
-        ]
-
-    ),
-
-
-    upload.single("image"),
-
-
-    updateVehicle
-
+  "/:id",
+  roleMiddleware(["admin", "tour_manager"]),
+  upload.single("image"),
+  updateVehicle
 );
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -274,153 +91,46 @@ router.put(
 |--------------------------------------------------------------------------
 */
 
-
-
-
-
-// ASSIGN DRIVER TO VEHICLE
-
+/**
+ * Assign a driver to a vehicle.
+ */
 router.put(
-
-    "/:id/assign-driver",
-
-    protect,
-
-
-    roleMiddleware(
-
-        [
-
-            "admin",
-
-            "tour_manager"
-
-        ]
-
-    ),
-
-
-    assignVehicleDriver
-
+  "/:id/assign-driver",
+  roleMiddleware(["admin", "tour_manager"]),
+  assignVehicleDriver
 );
 
-
-
-
-
-
-
-
-// REMOVE DRIVER FROM VEHICLE
-
+/**
+ * Remove a driver from a vehicle.
+ */
 router.put(
-
-    "/:id/remove-driver",
-
-    protect,
-
-
-    roleMiddleware(
-
-        [
-
-            "admin",
-
-            "tour_manager"
-
-        ]
-
-    ),
-
-
-    removeVehicleDriver
-
+  "/:id/remove-driver",
+  roleMiddleware(["admin", "tour_manager"]),
+  removeVehicleDriver
 );
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
-| DELETE VEHICLE
-|--------------------------------------------------------------------------
-|
-| Soft delete
-|
+| SOFT DELETE / RESTORE
 |--------------------------------------------------------------------------
 */
 
-
+/**
+ * Soft delete a vehicle.
+ */
 router.delete(
-
-    "/:id",
-
-    protect,
-
-
-    roleMiddleware(
-
-        [
-
-            "admin"
-
-        ]
-
-    ),
-
-
-    deleteVehicle
-
+  "/:id",
+  roleMiddleware(["admin"]),
+  deleteVehicle
 );
 
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| RESTORE VEHICLE
-|--------------------------------------------------------------------------
-*/
-
-
+/**
+ * Restore a soft-deleted vehicle.
+ */
 router.patch(
-
-    "/:id/restore",
-
-    protect,
-
-
-    roleMiddleware(
-
-        [
-
-            "admin"
-
-        ]
-
-    ),
-
-
-    restoreVehicle
-
+  "/:id/restore",
+  roleMiddleware(["admin"]),
+  restoreVehicle
 );
-
-
-
-
-
-
-
-
 
 export default router;

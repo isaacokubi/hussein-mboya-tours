@@ -1,24 +1,91 @@
-export const sendRealtimeNotification =
-(userId,data)=>{
+// services/socketService.js
 
+/*
+|--------------------------------------------------------------------------
+| SOCKET.IO INSTANCE
+|--------------------------------------------------------------------------
+*/
 
-if(global.io){
+let io = null;
 
+/*
+|--------------------------------------------------------------------------
+| INITIALIZE SOCKET.IO
+|--------------------------------------------------------------------------
+*/
 
-global.io
-.to(
-userId.toString()
-)
-.emit(
+export const initializeSocket = (socketIO) => {
+  io = socketIO;
+};
 
-"notification",
+/*
+|--------------------------------------------------------------------------
+| GET SOCKET INSTANCE
+|--------------------------------------------------------------------------
+*/
 
-data
+export const getSocket = () => io;
 
-);
+/*
+|--------------------------------------------------------------------------
+| SEND REALTIME NOTIFICATION
+|--------------------------------------------------------------------------
+*/
 
+export const sendRealtimeNotification = (
+  userId,
+  data
+) => {
+  if (!io) {
+    console.warn(
+      "Socket.IO has not been initialized."
+    );
 
-}
+    return false;
+  }
 
+  io.to(userId.toString()).emit(
+    "notification",
+    data
+  );
 
+  return true;
+};
+
+/*
+|--------------------------------------------------------------------------
+| SEND CUSTOM EVENT
+|--------------------------------------------------------------------------
+*/
+
+export const emitToUser = (
+  userId,
+  event,
+  payload
+) => {
+  if (!io) return false;
+
+  io.to(userId.toString()).emit(
+    event,
+    payload
+  );
+
+  return true;
+};
+
+/*
+|--------------------------------------------------------------------------
+| BROADCAST EVENT
+|--------------------------------------------------------------------------
+*/
+
+export const broadcast = (
+  event,
+  payload
+) => {
+  if (!io) return false;
+
+  io.emit(event, payload);
+
+  return true;
 };

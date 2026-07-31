@@ -7,7 +7,6 @@ export const getProfile = async () => {
 
   return axios.get(
     `${API}/users/profile`,
-
     {
       headers: {
         Authorization: `Bearer ${token}`,

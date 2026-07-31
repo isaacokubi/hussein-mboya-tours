@@ -1,3 +1,5 @@
+import crypto from "crypto";
+
 import "../models/Role.js";
 import "../models/Permission.js";
 
@@ -6,6 +8,10 @@ import Role from "../models/Role.js";
 import SecurityLog from "../models/SecurityLog.js";
 
 import generateToken from "../utils/generateToken.js";
+import buildPermissions from "../utils/buildPermissions.js";
+
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCK_TIME = 30 * 60 * 1000;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,44 +21,34 @@ import generateToken from "../utils/generateToken.js";
 
 export const login = async (req, res, next) => {
   try {
-    const {
-      email,
+    const { email, password } = req.body;
 
-      password,
-    } = req.body;
+    const normalizedEmail =
+      email.trim().toLowerCase();
 
     const user = await User.findOne({
-      email: email.toLowerCase(),
+      email: normalizedEmail,
     })
-
+      .select("+password")
       .populate({
         path: "roleId",
-
         populate: {
           path: "permissions",
         },
       })
-
-      .populate({
-        path: "permissionsOverride",
-      });
+      .populate("permissionsOverride");
 
     if (!user) {
       await SecurityLog.create({
-        email,
-
+        email: normalizedEmail,
         action: "login_failed",
-
         ipAddress: req.ip,
-
         userAgent: req.headers["user-agent"],
-
         details: "User not found",
       });
 
       return res.status(401).json({
         success: false,
-
         message: "Invalid email or password",
       });
     }
@@ -60,98 +56,86 @@ export const login = async (req, res, next) => {
     if (user.status !== "active") {
       return res.status(403).json({
         success: false,
-
         message: `Account ${user.status}`,
       });
     }
 
-    const passwordMatch = await user.matchPassword(password);
+    /*
+    |--------------------------------------------------------------------------
+    | Account Lock Check
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      user.lockUntil &&
+      user.lockUntil > new Date()
+    ) {
+      return res.status(423).json({
+        success: false,
+        message:
+          "Account temporarily locked due to multiple failed login attempts.",
+      });
+    }
+
+    const passwordMatch =
+      await user.matchPassword(password);
 
     if (!passwordMatch) {
       user.loginAttempts += 1;
 
-      if (user.loginAttempts >= 5) {
-        user.lockUntil = new Date(Date.now() + 30 * 60 * 1000);
+      if (
+        user.loginAttempts >=
+        MAX_LOGIN_ATTEMPTS
+      ) {
+        user.lockUntil = new Date(
+          Date.now() + LOCK_TIME
+        );
       }
 
       await user.save();
 
       await SecurityLog.create({
         user: user._id,
-
         email: user.email,
-
         action: "login_failed",
-
         ipAddress: req.ip,
-
         userAgent: req.headers["user-agent"],
-
         details: "Invalid password",
       });
 
       return res.status(401).json({
         success: false,
-
         message: "Invalid email or password",
       });
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Successful Login
+    |--------------------------------------------------------------------------
+    */
+
     user.loginAttempts = 0;
-
     user.lockUntil = null;
-
     user.lastLoginAt = new Date();
 
     await user.save();
 
-    const rolePermissions = user.roleId?.permissions || [];
-
-    const overridePermissions = user.permissionsOverride || [];
-
-    const permissionMap = new Map();
-
-    [...rolePermissions, ...overridePermissions].forEach((permission) => {
-      permissionMap.set(
-        permission.name,
-
-        permission,
-      );
-    });
-
-    const permissions = Array.from(permissionMap.values())
-
-      .map((permission) => ({
-        name: permission.name,
-
-        label: permission.label,
-
-        path: permission.path,
-
-        icon: permission.icon,
-
-        module: permission.module,
-      }));
+    const permissions =
+      buildPermissions(user);
 
     const token = generateToken({
       id: user._id,
-
       role: user.role,
-
       permissions,
     });
 
     await SecurityLog.create({
       user: user._id,
-
       email: user.email,
-
       action: "login_success",
-
       ipAddress: req.ip,
-
       userAgent: req.headers["user-agent"],
-
       details: "Login successful",
     });
 
@@ -162,35 +146,23 @@ export const login = async (req, res, next) => {
 
       user: {
         _id: user._id,
-
         name: user.name,
-
         email: user.email,
-
         phone: user.phone,
-
         role: user.role,
-
         permissions,
-
         status: user.status,
-
         isVerified: user.isVerified,
-
         loyaltyPoints: user.loyaltyPoints,
-
         referralCode: user.referralCode,
-
         lastLoginAt: user.lastLoginAt,
-
         createdAt: user.createdAt,
       },
     });
   } catch (error) {
     console.error(
       "LOGIN ERROR:",
-
-      error,
+      error
     );
 
     next(error);
@@ -203,75 +175,151 @@ export const login = async (req, res, next) => {
 |--------------------------------------------------------------------------
 */
 
-export const register = async (req, res, next) => {
+export const register = async (
+  req,
+  res,
+  next
+) => {
   try {
     const {
       name,
-
       email,
-
       phone,
-
       password,
     } = req.body;
 
-    const existingUser = await User.findOne({
-      email: email.toLowerCase(),
-    });
+    /*
+    |--------------------------------------------------------------------------
+    | Required Fields
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      !name ||
+      !email ||
+      !phone ||
+      !password
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "All fields are required",
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Password Validation
+    |--------------------------------------------------------------------------
+    */
+
+    if (password.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Password must be at least 8 characters.",
+      });
+    }
+
+    if (!/\d/.test(password)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Password must contain at least one number.",
+      });
+    }
+
+    if (!/[A-Z]/.test(password)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Password must contain an uppercase letter.",
+      });
+    }
+
+    const normalizedEmail =
+      email.trim().toLowerCase();
+
+    const existingUser =
+      await User.findOne({
+        email: normalizedEmail,
+      });
 
     if (existingUser) {
       return res.status(400).json({
         success: false,
-
-        message: "User already exists",
+        message:
+          "User already exists",
       });
     }
 
-    const customerRole = await Role.findOne({
-      name: "Customer",
-    });
+    const customerRole =
+      await Role.findOne({
+        name: "Customer",
+      });
 
     /*
-|--------------------------------------------------------------------------
-| CREATE USER
-|--------------------------------------------------------------------------
-*/
+    |--------------------------------------------------------------------------
+    | Generate Referral Code
+    |--------------------------------------------------------------------------
+    */
 
-    const user = await User.create({
-      name,
+    const referralCode =
+      crypto
+        .randomBytes(4)
+        .toString("hex")
+        .toUpperCase();
 
-      email: email.toLowerCase(),
+    /*
+    |--------------------------------------------------------------------------
+    | Create User
+    |--------------------------------------------------------------------------
+    */
 
-      phone,
+    const user =
+      await User.create({
+        name,
+        email: normalizedEmail,
+        phone,
+        password,
 
-      password,
+        referralCode,
 
-      /*
-|--------------------------------------------------------------------------
-| DEFAULT PROFILE IMAGE
-|--------------------------------------------------------------------------
-*/
+        profileImage: {
+          url: "",
+          publicId: "",
+        },
 
-      profileImage: {
-        url: "",
+        role: "customer",
 
-        publicId: "",
-      },
+        roleId:
+          customerRole?._id || null,
 
-      role: "customer",
+        legacyRole: "customer",
 
-      roleId: customerRole?._id || null,
+        status: "active",
+      });
 
-      legacyRole: "customer",
+    /*
+    |--------------------------------------------------------------------------
+    | Security Log
+    |--------------------------------------------------------------------------
+    */
 
-      status: "active",
+    await SecurityLog.create({
+      user: user._id,
+      email: user.email,
+      action: "register",
+      ipAddress: req.ip,
+      userAgent:
+        req.headers["user-agent"],
+      details:
+        "User registration",
     });
 
     const token = generateToken({
       id: user._id,
-
       role: user.role,
-
       permissions: [],
     });
 
@@ -282,25 +330,25 @@ export const register = async (req, res, next) => {
 
       user: {
         _id: user._id,
-
         name: user.name,
-
         email: user.email,
-
         phone: user.phone,
-
         role: user.role,
-
-        profileImage: user.profileImage,
-
+        profileImage:
+          user.profileImage,
+        referralCode:
+          user.referralCode,
         status: user.status,
+        isVerified:
+          user.isVerified,
+        createdAt:
+          user.createdAt,
       },
     });
   } catch (error) {
     console.error(
       "REGISTER ERROR:",
-
-      error,
+      error
     );
 
     next(error);
@@ -317,100 +365,71 @@ export const register = async (req, res, next) => {
 |--------------------------------------------------------------------------
 */
 
-export const getMe = async (req, res) => {
+export const getMe = async (
+  req,
+  res
+) => {
   try {
-    const user = await User.findById(req.user._id)
-
-      .populate({
-        path: "roleId",
-
-        populate: {
-          path: "permissions",
-        },
-      })
-
-      .populate({
-        path: "permissionsOverride",
-      });
+    const user =
+      await User.findById(
+        req.user._id
+      )
+        .populate({
+          path: "roleId",
+          populate: {
+            path: "permissions",
+          },
+        })
+        .populate(
+          "permissionsOverride"
+        );
 
     if (!user) {
       return res.status(404).json({
         success: false,
-
-        message: "User not found",
+        message:
+          "User not found",
       });
     }
 
-    const rolePermissions = user.roleId?.permissions || [];
-
-    const overridePermissions = user.permissionsOverride || [];
-
-    const permissionMap = new Map();
-
-    [...rolePermissions, ...overridePermissions].forEach((permission) => {
-      permissionMap.set(
-        permission.name,
-
-        permission,
-      );
-    });
-
-    const permissions = Array.from(permissionMap.values())
-
-      .map((permission) => ({
-        name: permission.name,
-
-        label: permission.label,
-
-        path: permission.path,
-
-        icon: permission.icon,
-
-        module: permission.module,
-      }));
+    const permissions =
+      buildPermissions(user);
 
     return res.status(200).json({
       success: true,
 
       user: {
         _id: user._id,
-
         name: user.name,
-
         email: user.email,
-
         phone: user.phone,
-
         role: user.role,
-
-        profileImage: user.profileImage,
-
+        profileImage:
+          user.profileImage,
         permissions,
-
         status: user.status,
-
-        isVerified: user.isVerified,
-
-        loyaltyPoints: user.loyaltyPoints,
-
-        referralCode: user.referralCode,
-
-        lastLoginAt: user.lastLoginAt,
-
-        createdAt: user.createdAt,
+        isVerified:
+          user.isVerified,
+        loyaltyPoints:
+          user.loyaltyPoints,
+        referralCode:
+          user.referralCode,
+        lastLoginAt:
+          user.lastLoginAt,
+        createdAt:
+          user.createdAt,
       },
     });
   } catch (error) {
     console.error(
       "GET ME ERROR:",
-
-      error,
+      error
     );
 
     return res.status(500).json({
       success: false,
-
-      message: error.message,
+      message:
+        error.message,
     });
   }
 };

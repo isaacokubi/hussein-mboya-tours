@@ -1,34 +1,42 @@
-import React,{
-useEffect,
-useState
-}
-from "react";
+// client/src/pages/tourManager/AssignGuide.jsx
 
 
 import {
-useParams,
-useNavigate
-}
-from "react-router-dom";
+    useState
+} from "react";
 
 
 import {
-toast
-}
-from "react-toastify";
+    useParams,
+    useNavigate
+} from "react-router-dom";
+
+
+import {
+    useQuery,
+    useMutation,
+    useQueryClient
+} from "@tanstack/react-query";
+
+
+import {
+    toast
+} from "react-toastify";
 
 
 import {
 
-getGuides,
+    getGuides,
 
-assignGuide,
+    assignGuide,
 
-getTour
+    getTour
 
 }
-
 from "../../api/tourApi";
+
+
+
 
 
 
@@ -38,334 +46,516 @@ from "../../api/tourApi";
 const AssignGuide =()=>{
 
 
-const {
-id
-}
-=
-useParams();
 
+    const {
 
+        id
 
-const navigate =
-useNavigate();
+    } = useParams();
 
 
 
 
-const [guides,setGuides]=
-useState([]);
+    const navigate = useNavigate();
 
 
 
-const [tour,setTour]=
-useState(null);
-
-
-
-const [guide,setGuide]=
-useState("");
+    const queryClient = useQueryClient();
 
 
 
 
 
-useEffect(()=>{
 
 
-const loadData =
-async()=>{
+    const [
 
+        guide,
 
-try{
+        setGuide
 
-
-const [
-
-guideResponse,
-
-tourResponse
-
-]=
-
-await Promise.all([
-
-getGuides(),
-
-getTour(id)
-
-]);
+    ] = useState("");
 
 
 
 
-setGuides(
-guideResponse.data.users
-);
 
 
 
-setTour(
-tourResponse.data.tour
-);
+
+
+    const {
+
+        data:guidesData
+
+    } = useQuery({
 
 
 
-setGuide(
+        queryKey:[
 
-tourResponse.data.tour.guide?._id
-||
-""
+            "guides"
 
-);
+        ],
 
 
 
-}
-
-catch(error){
+        queryFn:getGuides
 
 
-toast.error(
-"Failed loading guides"
-);
+
+    });
 
 
-}
 
+
+
+
+
+
+    const {
+
+        data:tourData,
+
+        isLoading
+
+    } = useQuery({
+
+
+
+        queryKey:[
+
+            "tour",
+
+            id
+
+        ],
+
+
+
+        queryFn:()=>getTour(id)
+
+
+
+    });
+
+
+
+
+
+
+
+
+
+    const tour =
+
+        tourData?.tour ||
+
+        tourData?.data?.tour ||
+
+        null;
+
+
+
+
+
+
+
+
+    const guides =
+
+        guidesData?.users ||
+
+        guidesData?.data?.users ||
+
+        [];
+
+
+
+
+
+
+
+
+
+    const {
+
+        mutate:saveGuide,
+
+        isPending
+
+    } = useMutation({
+
+
+
+        mutationFn:()=>
+
+
+            assignGuide(
+
+                id,
+
+                guide
+
+            ),
+
+
+
+
+
+        onSuccess:()=>{
+
+
+
+            toast.success(
+
+                "Guide assigned successfully"
+
+            );
+
+
+
+            queryClient.invalidateQueries({
+
+                queryKey:[
+
+                    "tour",
+
+                    id
+
+                ]
+
+            });
+
+
+
+            navigate(
+
+                "/tour-manager/tours"
+
+            );
+
+
+
+        },
+
+
+
+        onError:()=>{
+
+
+
+            toast.error(
+
+                "Assignment failed"
+
+            );
+
+
+        }
+
+
+
+    });
+
+
+
+
+
+
+
+
+
+    if(isLoading)
+
+    return (
+
+        <div className="p-6">
+
+            Loading tour...
+
+        </div>
+
+    );
+
+
+
+
+
+
+
+
+
+    return (
+
+
+
+        <div className="
+            min-h-screen
+            bg-gray-100
+            p-6
+        ">
+
+
+
+
+
+
+
+            <div className="
+                max-w-xl
+                mx-auto
+                bg-white
+                rounded-xl
+                shadow
+                p-8
+            ">
+
+
+
+
+
+                <h1 className="
+                    text-2xl
+                    font-bold
+                    mb-5
+                ">
+
+
+                    Assign Guide
+
+
+                </h1>
+
+
+
+
+
+
+
+
+
+                {
+
+                    tour &&
+
+
+                    <p className="
+                        mb-5
+                        text-gray-600
+                    ">
+
+
+                        Tour:
+
+
+                        <strong className="ml-2">
+
+
+                            {tour.title}
+
+
+                        </strong>
+
+
+
+                    </p>
+
+
+                }
+
+
+
+
+
+
+
+
+
+                <select
+
+
+                    value={guide}
+
+
+
+                    onChange={
+
+                        e=>
+
+                        setGuide(
+
+                            e.target.value
+
+                        )
+
+                    }
+
+
+
+                    className="
+                        border
+                        rounded-lg
+                        p-3
+                        w-full
+                    "
+
+
+
+                >
+
+
+
+
+                    <option value="">
+
+
+                        Select Guide
+
+
+                    </option>
+
+
+
+
+
+
+                    {
+
+                        guides.map(item=>(
+
+
+
+
+                            <option
+
+
+                            key={item._id}
+
+
+                            value={item._id}
+
+
+                            >
+
+
+                                {
+
+                                    item.name ||
+
+                                    item.firstName
+
+                                }
+
+
+
+                            </option>
+
+
+
+
+
+                        ))
+
+
+
+                    }
+
+
+
+
+
+
+
+                </select>
+
+
+
+
+
+
+
+
+
+                <button
+
+
+
+                    onClick={saveGuide}
+
+
+
+                    disabled={
+
+                        !guide ||
+
+                        isPending
+
+                    }
+
+
+
+                    className="
+                        mt-6
+                        w-full
+                        bg-green-600
+                        hover:bg-green-700
+                        disabled:opacity-50
+                        text-white
+                        py-3
+                        rounded-lg
+                    "
+
+
+
+                >
+
+
+
+                    {
+
+                        isPending
+
+                        ?
+
+                        "Assigning..."
+
+                        :
+
+                        "Assign Guide"
+
+                    }
+
+
+
+                </button>
+
+
+
+
+
+
+
+            </div>
+
+
+
+
+
+
+
+        </div>
+
+
+    );
 
 
 };
 
 
 
-loadData();
 
 
-
-},[id]);
-
-
-
-
-
-
-
-
-
-const saveGuide =
-async()=>{
-
-
-try{
-
-
-await assignGuide(
-
-id,
-
-guide
-
-);
-
-
-
-toast.success(
-"Guide assigned successfully"
-);
-
-
-
-navigate(
-"/tour-manager/tours"
-);
-
-
-
-}
-
-catch(error){
-
-
-toast.error(
-"Assignment failed"
-);
-
-
-}
-
-
-
-};
-
-
-
-
-
-
-
-return (
-
-<div
-className="
-min-h-screen
-bg-gray-100
-p-6
-"
->
-
-
-
-<div
-className="
-max-w-xl
-mx-auto
-bg-white
-rounded-xl
-shadow
-p-8
-"
->
-
-
-<h1
-className="
-text-2xl
-font-bold
-mb-5
-"
->
-
-Assign Guide
-
-</h1>
-
-
-
-
-
-{
-
-tour &&
-
-<p
-className="
-mb-5
-text-gray-600
-"
->
-
-Tour:
-
-<strong>
-
-{tour.title}
-
-</strong>
-
-</p>
-
-}
-
-
-
-
-
-
-
-<select
-
-value={guide}
-
-onChange={
-e=>setGuide(e.target.value)
-}
-
-className="
-border
-rounded-lg
-p-3
-w-full
-"
-
->
-
-
-<option value="">
-
-Select Guide
-
-</option>
-
-
-
-{
-
-guides.map(
-
-item=>(
-
-
-<option
-
-key={item._id}
-
-value={item._id}
-
->
-
-{item.name}
-
-</option>
-
-
-)
-
-)
-
-}
-
-
-
-</select>
-
-
-
-
-
-
-
-<button
-
-onClick={saveGuide}
-
-className="
-mt-6
-w-full
-bg-green-600
-text-white
-py-3
-rounded-lg
-"
-
->
-
-Assign Guide
-
-</button>
-
-
-
-
-
-</div>
-
-
-</div>
-
-);
-
-
-};
 
 
 export default AssignGuide;

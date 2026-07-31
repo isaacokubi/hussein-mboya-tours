@@ -1,92 +1,91 @@
-import React, {
-    useEffect,
-    useState
-} from "react";
+import React from "react";
 
-import axios from "axios";
 
 import {
     FaCar,
-    FaPlus
+    FaPlus,
+    FaEdit,
+    FaTrash
 } from "react-icons/fa";
 
 
-
-const API_URL =
-import.meta.env.VITE_API_URL ||
-"http://localhost:5000";
-
+import {
+    toast
+} from "react-toastify";
 
 
+import useVehicles
+from "../../hooks/useVehicles";
 
 
-const Vehicles = () => {
-
-
-const [vehicles,setVehicles] =
-useState([]);
-
-
-const [loading,setLoading] =
-useState(true);
+import {
+    deleteVehicle
+} from "../../api/vehicleApi";
 
 
 
 
 
 
-useEffect(()=>{
+
+export default function Vehicles(){
 
 
-const fetchVehicles = async()=>{
+const {
+    data:vehicles=[],
+    isLoading,
+    refetch
+}
+=
+useVehicles();
+
+
+
+
+
+
+
+const removeVehicle = async(id)=>{
+
+
+if(
+!window.confirm(
+"Remove this vehicle?"
+)
+
+)
+
+return;
+
+
+
 
 
 try{
 
 
-const response =
+await deleteVehicle(id);
 
-await axios.get(
 
-`${API_URL}/api/vehicles`,
 
-{
-
-headers:{
-
-Authorization:
-
-`Bearer ${localStorage.getItem("token")}`
-
-}
-
-}
-
+toast.success(
+"Vehicle removed"
 );
 
 
 
-setVehicles(
-response.data.vehicles || []
-);
-
+refetch();
 
 
 }
 
 catch(error){
 
-console.error(
-"Vehicles loading error",
-error
+
+toast.error(
+"Delete failed"
 );
 
-
-}
-
-finally{
-
-setLoading(false);
 
 }
 
@@ -94,11 +93,6 @@ setLoading(false);
 };
 
 
-
-fetchVehicles();
-
-
-},[]);
 
 
 
@@ -115,6 +109,14 @@ p-6
 ">
 
 
+
+
+
+
+{/* HEADER */}
+
+
+
 <div className="
 flex
 justify-between
@@ -124,6 +126,7 @@ mb-8
 
 
 <div>
+
 
 <h1 className="
 text-3xl
@@ -136,6 +139,7 @@ Vehicles Management
 </h1>
 
 
+
 <p className="
 text-gray-500
 ">
@@ -146,6 +150,8 @@ Manage tour transport vehicles
 
 
 </div>
+
+
 
 
 
@@ -167,15 +173,19 @@ gap-2
 
 >
 
+
 <FaPlus/>
 
 Add Vehicle
+
 
 </button>
 
 
 
 </div>
+
+
 
 
 
@@ -193,13 +203,18 @@ p-6
 
 {
 
-loading
+isLoading
+
 
 ?
 
+
 <p>
+
 Loading vehicles...
+
 </p>
+
 
 
 :
@@ -210,6 +225,7 @@ vehicles.length === 0
 
 ?
 
+
 <p className="
 text-gray-500
 ">
@@ -217,6 +233,7 @@ text-gray-500
 No vehicles available
 
 </p>
+
 
 
 
@@ -232,9 +249,8 @@ gap-6
 
 {
 
-vehicles.map(
+vehicles.map(vehicle=>(
 
-(vehicle)=>(
 
 
 <div
@@ -245,9 +261,13 @@ className="
 border
 rounded-xl
 p-5
+bg-white
 "
 
 >
+
+
+
 
 
 <div className="
@@ -257,12 +277,16 @@ gap-3
 mb-4
 ">
 
+
 <FaCar
+
 className="
 text-orange-600
 text-2xl
 "
+
 />
+
 
 
 <h2 className="
@@ -275,22 +299,124 @@ text-lg
 </h2>
 
 
+
 </div>
 
 
 
 
 
+
+
 <p>
+
 Registration:
-{vehicle.registrationNumber}
+
+<span className="
+font-semibold
+ml-1
+">
+
+{
+
+vehicle.registrationNumber ||
+
+"N/A"
+
+}
+
+</span>
+
 </p>
+
+
+
+
 
 
 <p>
+
 Type:
-{vehicle.type}
+
+<span className="
+font-semibold
+ml-1
+">
+
+{
+
+vehicle.type ||
+
+"N/A"
+
+}
+
+</span>
+
+
 </p>
+
+
+
+
+
+
+
+<p>
+
+Capacity:
+
+<span className="
+font-semibold
+ml-1
+">
+
+{
+
+vehicle.capacity ||
+
+0
+
+}
+
+</span>
+
+
+</p>
+
+
+
+
+
+
+
+<p>
+
+Driver:
+
+<span className="
+font-semibold
+ml-1
+">
+
+{
+
+vehicle.driver?.name ||
+
+"No driver"
+
+}
+
+</span>
+
+
+</p>
+
+
+
+
+
+
 
 
 
@@ -302,21 +428,79 @@ text-green-700
 px-3
 py-1
 rounded-full
+text-sm
 ">
 
-{vehicle.status}
+{
+
+vehicle.status ||
+
+"Available"
+
+}
 
 </span>
 
 
 
+
+
+
+
+<div className="
+flex
+gap-3
+mt-5
+">
+
+
+<button
+
+className="
+text-blue-600
+"
+
+>
+
+<FaEdit/>
+
+</button>
+
+
+
+
+
+
+<button
+
+onClick={()=>removeVehicle(
+vehicle._id
+)}
+
+className="
+text-red-600
+"
+
+>
+
+<FaTrash/>
+
+</button>
+
+
+
 </div>
 
 
-)
 
 
-)
+
+
+</div>
+
+
+
+))
 
 
 }
@@ -326,11 +510,17 @@ rounded-full
 </div>
 
 
+
 }
 
 
 
 </div>
+
+
+
+
+
 
 
 </div>
@@ -338,9 +528,4 @@ rounded-full
 );
 
 
-};
-
-
-
-
-export default Vehicles;
+}

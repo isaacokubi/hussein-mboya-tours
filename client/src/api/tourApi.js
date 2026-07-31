@@ -1,6 +1,6 @@
+// client/src/api/tourApi.js
+
 import api from "./axios";
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -8,118 +8,73 @@ import api from "./axios";
 |--------------------------------------------------------------------------
 */
 
+// ============================================================
+// GET ALL TOURS
+// ============================================================
 
 export const getTours = async (params = {}) => {
+  const { data } = await api.get("/tours", {
+    params,
+  });
 
-    const { data } = await api.get(
-        "/tours",
-        {
-            params
-        }
-    );
-
-    return data;
-
+  return data;
 };
 
 
+// ============================================================
+// GET UPCOMING TOURS
+// ============================================================
+
+export const getUpcomingTours = async (params = {}) => {
+  const { data } = await api.get(
+    "/tours/upcoming",
+    {
+      params,
+    }
+  );
+
+  return data;
+};
 
 
+// ============================================================
+// GET SINGLE TOUR
+// ============================================================
 
 export const getTour = async (id) => {
+  const { data } = await api.get(`/tours/${id}`);
 
-    const { data } = await api.get(
-        `/tours/${id}`
-    );
-
-    return data;
-
+  return data;
 };
 
 
+// ============================================================
+// COMPATIBILITY ALIAS
+// ============================================================
+
+export const getTourById = getTour;
 
 
-
-// Compatibility alias
-export const getTourById = async (id) => {
-
-    const { data } = await api.get(
-        `/tours/${id}`
-    );
-
-    return data;
-
-};
-
-
-
-
+// ============================================================
+// GET TOUR BY SLUG
+// ============================================================
 
 export const getTourBySlug = async (slug) => {
+  const { data } = await api.get(`/tours/slug/${slug}`);
 
-    const { data } = await api.get(
-        `/tours/slug/${slug}`
-    );
-
-    return data;
-
+  return data;
 };
 
 
-
-
-
-/*
-|--------------------------------------------------------------------------
-| FEATURED TOUR API
-|--------------------------------------------------------------------------
-|
-| Returns only the array of tours.
-|
-| Supports backend responses:
-|
-| {
-|   success:true,
-|   tours:[]
-| }
-|
-| {
-|   data:[]
-| }
-|
-| []
-|
-|--------------------------------------------------------------------------
-*/
-
+// ============================================================
+// GET FEATURED TOURS
+// ============================================================
 
 export const getFeaturedTours = async () => {
+  const { data } = await api.get("/tours/featured");
 
-    const { data } = await api.get(
-        "/tours/featured"
-    );
-
-
-    return (
-
-        data?.tours ||
-
-        data?.data ||
-
-        data ||
-
-        []
-
-    );
-
+  return data?.tours || data?.data || data || [];
 };
-
-
-
-
-
-
-
 
 
 /*
@@ -128,23 +83,11 @@ export const getFeaturedTours = async () => {
 |--------------------------------------------------------------------------
 */
 
-
 export const getDestinations = async () => {
+  const { data } = await api.get("/destinations");
 
-    const { data } = await api.get(
-        "/destinations"
-    );
-
-    return data;
-
+  return data;
 };
-
-
-
-
-
-
-
 
 
 /*
@@ -153,47 +96,26 @@ export const getDestinations = async () => {
 |--------------------------------------------------------------------------
 */
 
-
 export const getGuides = async () => {
+  const { data } = await api.get("/users/guides");
 
-    const { data } = await api.get(
-        "/users/guides"
-    );
-
-    return data;
-
+  return data;
 };
-
-
-
-
 
 
 export const assignGuide = async (
-    tourId,
-    guideId
+  tourId,
+  guideId
 ) => {
+  const { data } = await api.patch(
+    `/tours/${tourId}/assign-guide`,
+    {
+      guideId,
+    }
+  );
 
-    const { data } = await api.patch(
-
-        `/tours/${tourId}/assign-guide`,
-
-        {
-            guideId
-        }
-
-    );
-
-    return data;
-
+  return data;
 };
-
-
-
-
-
-
-
 
 
 /*
@@ -202,47 +124,26 @@ export const assignGuide = async (
 |--------------------------------------------------------------------------
 */
 
-
 export const getVehicles = async () => {
+  const { data } = await api.get("/vehicles");
 
-    const { data } = await api.get(
-        "/vehicles"
-    );
-
-    return data;
-
+  return data;
 };
-
-
-
-
 
 
 export const assignVehicle = async (
-    tourId,
-    vehicleId
+  tourId,
+  vehicleId
 ) => {
+  const { data } = await api.patch(
+    `/tours/${tourId}/assign-vehicle`,
+    {
+      vehicleId,
+    }
+  );
 
-    const { data } = await api.patch(
-
-        `/tours/${tourId}/assign-vehicle`,
-
-        {
-            vehicleId
-        }
-
-    );
-
-    return data;
-
+  return data;
 };
-
-
-
-
-
-
-
 
 
 /*
@@ -251,40 +152,22 @@ export const assignVehicle = async (
 |--------------------------------------------------------------------------
 */
 
-
 export const getManagerTours = async () => {
+  const { data } = await api.get(
+    "/tours/manager/my-tours"
+  );
 
-    const { data } = await api.get(
-        "/tours/manager/my-tours"
-    );
-
-    return data;
-
+  return data;
 };
 
 
+export const getManagerTourById = async (id) => {
+  const { data } = await api.get(
+    `/tours/manager/${id}`
+  );
 
-
-
-
-export const getManagerTourById = async (
-    id
-) => {
-
-    const { data } = await api.get(
-        `/tours/manager/${id}`
-    );
-
-    return data;
-
+  return data;
 };
-
-
-
-
-
-
-
 
 
 /*
@@ -293,109 +176,62 @@ export const getManagerTourById = async (
 |--------------------------------------------------------------------------
 */
 
-
 export const createTour = async (
-    tourData
+  tourData
 ) => {
+  const { data } = await api.post(
+    "/tours",
+    tourData
+  );
 
-    const { data } = await api.post(
-
-        "/tours",
-
-        tourData
-
-    );
-
-    return data;
-
+  return data;
 };
-
-
-
-
 
 
 export const updateTour = async (
-    id,
+  id,
+  tourData
+) => {
+  const { data } = await api.put(
+    `/tours/${id}`,
     tourData
-) => {
+  );
 
-    const { data } = await api.put(
-
-        `/tours/${id}`,
-
-        tourData
-
-    );
-
-    return data;
-
+  return data;
 };
 
 
+export const deleteTour = async (id) => {
+  const { data } = await api.delete(
+    `/tours/${id}`
+  );
 
-
-
-
-export const deleteTour = async (
-    id
-) => {
-
-    const { data } = await api.delete(
-        `/tours/${id}`
-    );
-
-    return data;
-
+  return data;
 };
-
-
-
-
 
 
 export const toggleFeaturedTour = async (
-    id
+  id
 ) => {
+  const { data } = await api.patch(
+    `/tours/${id}/featured`
+  );
 
-    const { data } = await api.patch(
-
-        `/tours/${id}/featured`
-
-    );
-
-    return data;
-
+  return data;
 };
-
-
-
-
 
 
 export const updateTourAvailability = async (
-    id,
-    availability
+  id,
+  availability
 ) => {
+  const { data } = await api.patch(
+    `/tours/${id}/availability`,
+    availability
+  );
 
-    const { data } = await api.patch(
-
-        `/tours/${id}/availability`,
-
-        availability
-
-    );
-
-    return data;
-
+  return data;
 };
-
-
-
-
-
-
-
 
 
 /*
@@ -404,53 +240,32 @@ export const updateTourAvailability = async (
 |--------------------------------------------------------------------------
 */
 
-
 export const getTourAvailability = async (
-    id
+  id
 ) => {
+  const { data } = await api.get(
+    `/tours/${id}/availability`
+  );
 
-    const { data } = await api.get(
-
-        `/tours/${id}/availability`
-
-    );
-
-    return data;
-
+  return data;
 };
-
-
-
-
 
 
 export const checkTourAvailability = async (
-    id,
-    date
+  id,
+  date
 ) => {
+  const { data } = await api.get(
+    `/tours/${id}/availability`,
+    {
+      params: {
+        date,
+      },
+    }
+  );
 
-    const { data } = await api.get(
-
-        `/tours/${id}/availability`,
-
-        {
-            params:{
-                date
-            }
-        }
-
-    );
-
-    return data;
-
+  return data;
 };
-
-
-
-
-
-
-
 
 
 /*
@@ -459,88 +274,50 @@ export const checkTourAvailability = async (
 |--------------------------------------------------------------------------
 */
 
-
 export const getTourReports = async () => {
+  const { data } = await api.get(
+    "/tours/reports"
+  );
 
-    const { data } = await api.get(
-
-        "/tours/reports"
-
-    );
-
-    return data;
-
+  return data;
 };
-
-
-
-
 
 
 export const getTourReportById = async (
-    id
+  id
 ) => {
+  const { data } = await api.get(
+    `/tours/${id}/report`
+  );
 
-    const { data } = await api.get(
-
-        `/tours/${id}/report`
-
-    );
-
-    return data;
-
+  return data;
 };
-
-
-
-
 
 
 export const submitTourReport = async (
-    id,
-    reportData
+  id,
+  reportData
 ) => {
+  const { data } = await api.post(
+    `/tours/${id}/report`,
+    reportData
+  );
 
-    const { data } = await api.post(
-
-        `/tours/${id}/report`,
-
-        reportData
-
-    );
-
-    return data;
-
+  return data;
 };
-
-
-
-
 
 
 export const updateTourReport = async (
-    id,
-    reportData
+  id,
+  reportData
 ) => {
+  const { data } = await api.put(
+    `/tours/${id}/report`,
+    reportData
+  );
 
-    const { data } = await api.put(
-
-        `/tours/${id}/report`,
-
-        reportData
-
-    );
-
-    return data;
-
+  return data;
 };
-
-
-
-
-
-
-
 
 
 /*
@@ -549,31 +326,18 @@ export const updateTourReport = async (
 |--------------------------------------------------------------------------
 */
 
-
 export const searchTours = async (
-    params = {}
+  params = {}
 ) => {
+  const { data } = await api.get(
+    "/tours/search",
+    {
+      params,
+    }
+  );
 
-    const { data } = await api.get(
-
-        "/tours/search",
-
-        {
-            params
-        }
-
-    );
-
-    return data;
-
+  return data;
 };
-
-
-
-
-
-
-
 
 
 /*
@@ -582,17 +346,12 @@ export const searchTours = async (
 |--------------------------------------------------------------------------
 */
 
-
 export const getTourReviews = async (
-    id
+  id
 ) => {
+  const { data } = await api.get(
+    `/tours/${id}/reviews`
+  );
 
-    const { data } = await api.get(
-
-        `/tours/${id}/reviews`
-
-    );
-
-    return data;
-
+  return data;
 };

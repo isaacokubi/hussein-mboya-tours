@@ -1,69 +1,235 @@
 import {
-FaBinoculars,
-FaUmbrellaBeach,
-FaMountain,
-FaPeopleGroup
-} from "react-icons/fa6";
 
+useEffect,
 
-const categories=[
+useState
 
-{
-title:"Wildlife Safaris",
-icon:<FaBinoculars/>,
-description:
-"Explore Kenya's famous national parks and wildlife reserves."
-},
-
-{
-title:"Beach Holidays",
-icon:<FaUmbrellaBeach/>,
-description:
-"Relax on the beautiful beaches of Diani, Mombasa and Malindi."
-},
-
-{
-title:"Adventure Tours",
-icon:<FaMountain/>,
-description:
-"Experience hiking, camping and thrilling outdoor activities."
-},
-
-{
-title:"Cultural Experiences",
-icon:<FaPeopleGroup/>,
-description:
-"Discover authentic African traditions and communities."
 }
 
-];
+from "react";
+
+
+
+import {
+
+Link
+
+}
+
+from "react-router-dom";
+
+
+
+import {
+
+FaBinoculars,
+
+FaUmbrellaBeach,
+
+FaMountain,
+
+FaPeopleGroup,
+
+FaMap
+
+}
+
+from "react-icons/fa6";
+
+
+
+import {
+
+getCategories
+
+}
+
+from "../../api/categoryApi";
+
+
+
+
+
+
+const iconMap={
+
+
+Binoculars:FaBinoculars,
+
+Beach:FaUmbrellaBeach,
+
+Mountain:FaMountain,
+
+People:FaPeopleGroup,
+
+Map:FaMap
+
+
+};
+
+
+
+
+
 
 
 
 export default function CategoriesSection(){
 
 
+
+
+
+const [
+
+categories,
+
+setCategories
+
+]
+
+=
+
+useState([]);
+
+
+
+const [
+
+loading,
+
+setLoading
+
+]
+
+=
+
+useState(true);
+
+
+
+
+
+
+
+
+useEffect(()=>{
+
+
+loadCategories();
+
+
+},[]);
+
+
+
+
+
+
+
+
+const loadCategories=async()=>{
+
+
+try{
+
+
+const data =
+await getCategories();
+
+
+
+setCategories(data);
+
+
+
+}
+
+finally{
+
+
+setLoading(false);
+
+
+}
+
+
+
+};
+
+
+
+
+
+
+
+
+
+if(loading){
+
+
 return (
 
-<section className="
+<section className="py-20 text-center">
+
+Loading experiences...
+
+</section>
+
+);
+
+
+}
+
+
+
+
+
+
+
+
+
+return (
+
+<section
+
+className="
 py-20
 bg-gray-100
-">
+"
+
+>
 
 
-<div className="
+
+
+
+
+
+<div
+
+className="
 container
 mx-auto
 px-6
-">
+"
+
+>
 
 
-<h2 className="
+
+
+
+<h2
+
+className="
 text-4xl
 font-bold
 text-center
 mb-12
-">
+"
+
+>
 
 Explore Travel Experiences
 
@@ -71,20 +237,55 @@ Explore Travel Experiences
 
 
 
-<div className="
-grid
-md:grid-cols-4
-gap-6
-">
 
 
-{
-categories.map(category=>(
+
+
 
 
 <div
 
-key={category.title}
+className="
+grid
+grid-cols-1
+sm:grid-cols-2
+lg:grid-cols-4
+gap-6
+"
+
+>
+
+
+
+
+
+
+
+{
+
+categories.map(category=>{
+
+
+
+const Icon =
+
+iconMap[category.icon]
+
+||
+
+FaMap;
+
+
+
+
+
+
+
+return (
+
+<div
+
+key={category._id}
 
 className="
 bg-white
@@ -99,55 +300,134 @@ transition
 >
 
 
-<div className="
+
+
+
+<div
+
+className="
 text-green-600
 text-4xl
 flex
 justify-center
 mb-5
-">
+"
 
-{category.icon}
+>
+
+<Icon/>
 
 </div>
 
 
-<h3 className="
+
+
+
+
+
+
+<h3
+
+className="
 font-bold
 text-xl
-">
+"
 
-{category.title}
+>
+
+{category.name}
 
 </h3>
 
 
-<p className="
+
+
+
+
+
+
+<p
+
+className="
 mt-3
 text-gray-600
-">
+"
+
+>
 
 {category.description}
 
 </p>
 
 
+
+
+
+
+
+
+<Link
+
+to={`/tours/category/${category.slug}`}
+
+className="
+inline-block
+mt-5
+text-yellow-700
+font-semibold
+"
+
+>
+
+View Tours →
+
+</Link>
+
+
+
+
+
+
+
 </div>
 
 
-))
+);
+
+
+
+})
+
+
 }
 
 
+
+
+
+
+
 </div>
 
 
+
+
+
+
+
 </div>
+
+
+
+
+
 
 
 </section>
 
-)
+
+);
+
 
 
 }

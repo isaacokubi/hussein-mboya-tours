@@ -1,44 +1,39 @@
+// server/routes/sitemapRoutes.js
+
 import express from "express";
 
 import {
-generateSitemap
-}
-from "../services/sitemapService";
+  generateSitemap,
+} from "../services/sitemapService.js";
 
+const router = express.Router();
 
-const router =
-express.Router();
-
-
+/*
+|--------------------------------------------------------------------------
+| XML SITEMAP
+|--------------------------------------------------------------------------
+|
+| GET /sitemap.xml
+|
+| Public route used by search engines.
+|
+|--------------------------------------------------------------------------
+*/
 
 router.get(
+  "/sitemap.xml",
+  async (req, res, next) => {
+    try {
+      const sitemap = await generateSitemap();
 
-"/sitemap.xml",
-
-async(req,res)=>{
-
-
-const sitemap =
-await generateSitemap();
-
-
-
-res.header(
-"Content-Type",
-"application/xml"
+      res
+        .status(200)
+        .type("application/xml")
+        .send(sitemap);
+    } catch (error) {
+      next(error);
+    }
+  }
 );
-
-
-
-res.send(
-sitemap
-);
-
-
-}
-
-);
-
-
 
 export default router;

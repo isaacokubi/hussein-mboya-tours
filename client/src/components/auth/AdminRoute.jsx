@@ -1,38 +1,54 @@
 import {
-Navigate
+    Navigate,
+    Outlet
 }
 from "react-router-dom";
 
 
 import {
-useAuth
+    useAuth
 }
 from "../../context/AuthContext";
 
 
+
+
+
 export default function AdminRoute({
-children
+
+    permission
+
 }){
 
 
+
 const {
-user
+    user,
+    token
+
 }
 =
 useAuth();
 
 
 
+
+
+
+
 if(
-!user ||
-user.role !== "admin"
+    !token ||
+    !user
 ){
 
 return (
 
 <Navigate
-to="/"
+
+to="/admin/login"
+
 replace
+
 />
 
 );
@@ -41,7 +57,143 @@ replace
 
 
 
-return children;
+
+
+
+
+
+const roleName =
+
+user.role?.name ||
+
+user.role;
+
+
+
+
+
+
+
+
+
+const allowedRoles = [
+
+"admin",
+
+"Admin",
+
+"Super Admin"
+
+];
+
+
+
+
+
+
+
+if(
+    !allowedRoles.includes(roleName)
+){
+
+return (
+
+<Navigate
+
+to="/"
+
+replace
+
+/>
+
+);
+
+}
+
+
+
+
+
+
+
+
+if(permission){
+
+
+
+const permissions =
+
+user.permissions ||
+
+JSON.parse(
+
+localStorage.getItem("permissions")
+
+) ||
+
+[];
+
+
+
+
+
+
+const permissionNames = permissions.map(
+
+(item)=>
+
+typeof item === "string"
+
+?
+
+item
+
+:
+
+item.name
+
+);
+
+
+
+
+
+
+
+
+if(
+!permissionNames.includes(permission)
+
+){
+
+
+return (
+
+<Navigate
+
+to="/admin/unauthorized"
+
+replace
+
+/>
+
+);
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+return <Outlet/>;
 
 
 }

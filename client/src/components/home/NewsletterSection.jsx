@@ -2,126 +2,351 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 
 
-export default function NewsletterSection(){
+export default function NewsletterSection() {
 
 
 const [email,setEmail] = useState("");
+
+const [message,setMessage] = useState("");
+
+const [loading,setLoading] = useState(false);
+
 
 
 
 const handleSubmit = (e)=>{
 
-    e.preventDefault();
 
-    if(!email) return;
-
-
-    console.log(
-        "Newsletter subscription:",
-        email
-    );
+e.preventDefault();
 
 
-    setEmail("");
+
+if(!email){
+
+setMessage(
+"Please enter your email address."
+);
+
+return;
+
+}
+
+
+
+setLoading(true);
+
+
+
+setTimeout(()=>{
+
+
+setMessage(
+"Thank you for subscribing to our travel updates!"
+);
+
+
+
+setEmail("");
+
+setLoading(false);
+
+
+
+},1000);
+
+
 
 };
 
 
 
 
+
 return (
 
-<section className="py-16 bg-gray-900 text-white">
+<section
+
+className="
+py-20
+bg-gray-900
+text-white
+"
+
+>
 
 
-    <div className="max-w-5xl mx-auto px-6 text-center">
+<div
 
+className="
+max-w-5xl
+mx-auto
+px-6
+text-center
+"
 
-        <motion.h2
-
-            initial={{
-                opacity:0,
-                y:20
-            }}
-
-            whileInView={{
-                opacity:1,
-                y:0
-            }}
-
-            transition={{
-                duration:0.5
-            }}
-
-            className="text-3xl md:text-4xl font-bold mb-4"
-
-        >
-
-            Subscribe To Our Travel Updates
-
-        </motion.h2>
+>
 
 
 
+<motion.div
 
 
-        <p className="text-gray-300 mb-8">
+initial={{
 
-            Get exclusive tour offers, travel tips,
-            and destination updates from Hussein Mboya Tours.
+opacity:0,
 
-        </p>
+y:30
 
-
-
+}}
 
 
-        <form
+whileInView={{
 
-            onSubmit={handleSubmit}
+opacity:1,
 
-            className="flex flex-col md:flex-row gap-4 justify-center"
+y:0
 
-        >
+}}
 
 
-            <input
+transition={{
 
-                type="email"
+duration:0.6
 
-                value={email}
+}}
 
-                onChange={(e)=>setEmail(e.target.value)}
 
-                placeholder="Enter your email"
-
-                required
-
-                className="px-5 py-3 rounded-lg text-gray-900 w-full md:w-96"
-
-            />
+>
 
 
 
+<h2
 
-            <button
+className="
+text-3xl
+md:text-5xl
+font-bold
+mb-5
+"
 
-                type="submit"
+>
 
-                className="px-8 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold"
+Subscribe To Our Travel Updates
 
-            >
-
-                Subscribe
-
-            </button>
-
-
-
-        </form>
+</h2>
 
 
-    </div>
+
+
+
+
+<p
+
+className="
+text-gray-300
+text-lg
+max-w-2xl
+mx-auto
+"
+
+>
+
+Get exclusive safari offers, holiday packages,
+travel tips, and destination inspiration from
+Hussein Mboya Tours.
+
+</p>
+
+
+
+
+
+
+<form
+
+onSubmit={handleSubmit}
+
+className="
+mt-10
+flex
+flex-col
+md:flex-row
+gap-4
+justify-center
+"
+
+>
+
+
+
+
+<input
+
+
+type="email"
+
+
+value={email}
+
+
+onChange={
+
+e=>
+
+setEmail(e.target.value)
+
+}
+
+
+placeholder="
+Enter your email address
+"
+
+
+className="
+px-6
+py-4
+rounded-full
+text-gray-900
+w-full
+md:w-[420px]
+outline-none
+focus:ring-2
+focus:ring-green-500
+"
+
+ />
+
+
+
+
+
+
+
+<button
+
+
+type="submit"
+
+
+disabled={loading}
+
+
+className="
+bg-green-600
+hover:bg-green-700
+px-10
+py-4
+rounded-full
+font-bold
+transition
+disabled:opacity-50
+"
+
+
+>
+
+
+{
+
+loading
+
+?
+
+"Subscribing..."
+
+:
+
+"Subscribe"
+
+}
+
+
+</button>
+
+
+
+
+
+
+</form>
+
+
+
+
+
+
+
+
+{
+
+message &&
+
+<motion.p
+
+
+initial={{
+
+opacity:0
+
+}}
+
+
+animate={{
+
+opacity:1
+
+}}
+
+
+className="
+mt-6
+text-green-400
+font-semibold
+"
+
+>
+
+{message}
+
+</motion.p>
+
+}
+
+
+
+
+
+<div
+
+className="
+mt-8
+text-sm
+text-gray-400
+"
+
+>
+
+✓ No spam  
+&nbsp; • &nbsp;
+✓ Exclusive travel offers  
+&nbsp; • &nbsp;
+✓ Kenya safari updates
+
+</div>
+
+
+
+
+
+</motion.div>
+
+
+
+
+</div>
+
+
 
 
 </section>

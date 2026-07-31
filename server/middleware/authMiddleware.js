@@ -1,616 +1,226 @@
 // server/middleware/authMiddleware.js
 
-
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import env from "../config/env.js";
-
-
 
 /*
 |--------------------------------------------------------------------------
 | AUTHENTICATION MIDDLEWARE
 |--------------------------------------------------------------------------
-|
-| Protect private routes using JWT
-|
-| Features:
-| - Bearer token support
-| - Cookie token support
-| - User loading
-| - Role population through roleId
-| - Permission population
-| - Account status checking
-|
-|--------------------------------------------------------------------------
 */
 
-
 export const protect = async (req, res, next) => {
-
-
-    try {
-
-
-        let token = null;
-
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | GET TOKEN FROM HEADER
-        |--------------------------------------------------------------------------
-        */
-
-
-        const authHeader = req.headers.authorization;
-
-
-
-        if(
-            authHeader &&
-            authHeader.startsWith("Bearer ")
-        ){
-
-            token = authHeader.split(" ")[1];
-
-        }
-
-
-
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | COOKIE TOKEN SUPPORT
-        |--------------------------------------------------------------------------
-        */
-
-
-        if(
-            !token &&
-            req.cookies?.token
-        ){
-
-            token = req.cookies.token;
-
-        }
-
-
-
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | CHECK TOKEN
-        |--------------------------------------------------------------------------
-        */
-
-
-        if(!token){
-
-
-            return res.status(401).json({
-
-                success:false,
-
-                message:"Authentication required. Token missing."
-
-            });
-
-
-        }
-
-
-
-
-
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | VERIFY TOKEN
-        |--------------------------------------------------------------------------
-        */
-
-
-        const decoded = jwt.verify(
-
-            token,
-
-            env.JWT_SECRET
-
-        );
-
-
-
-
-
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | LOAD USER WITH ROLE + PERMISSIONS
-        |--------------------------------------------------------------------------
-        |
-        | New RBAC:
-        |
-        | role      => string
-        | roleId    => Role document
-        |
-        |--------------------------------------------------------------------------
-        */
-
-
-        const user = await User.findById(decoded.id)
-
-            .select("-password")
-
-            .populate({
-
-                path:"roleId",
-
-                populate:{
-
-                    path:"permissions"
-
-                }
-
-            })
-
-            .populate({
-
-                path:"permissionsOverride"
-
-            });
-
-
-
-
-
-
-
-        if(!user){
-
-
-            return res.status(401).json({
-
-                success:false,
-
-                message:"User no longer exists."
-
-            });
-
-
-        }
-
-
-
-
-
-
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | ACCOUNT STATUS CHECK
-        |--------------------------------------------------------------------------
-        */
-
-
-        if(user.status !== "active"){
-
-
-            return res.status(403).json({
-
-                success:false,
-
-                message:`Account ${user.status}`
-
-            });
-
-
-        }
-
-
-
-
-
-
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | ATTACH USER
-        |--------------------------------------------------------------------------
-        */
-
-
-        req.user = user;
-
-
-
-        next();
-
-
-
-    }catch(error){
-
-
-        console.error(
-
-            "AUTH ERROR:",
-
-            error.message
-
-        );
-
-
-
-        return res.status(401).json({
-
-            success:false,
-
-            message:"Invalid or expired token."
-
-        });
-
-
+  try {
+    let token = null;
+
+    /*
+    |--------------------------------------------------------------------------
+    | GET TOKEN FROM AUTH HEADER
+    |--------------------------------------------------------------------------
+    */
+
+    const authHeader = req.headers.authorization;
+
+    if (authHeader?.startsWith("Bearer ")) {
+      token = authHeader.split(" ")[1];
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | COOKIE SUPPORT
+    |--------------------------------------------------------------------------
+    */
 
+    if (!token && req.cookies?.token) {
+      token = req.cookies.token;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | TOKEN REQUIRED
+    |--------------------------------------------------------------------------
+    */
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required.",
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | VERIFY JWT
+    |--------------------------------------------------------------------------
+    */
+
+    const decoded = jwt.verify(token, env.JWT_SECRET);
+
+    /*
+    |--------------------------------------------------------------------------
+    | LOAD USER
+    |--------------------------------------------------------------------------
+    */
+
+    const user = await User.findById(decoded.id)
+      .select("-password")
+      .populate({
+        path: "roleId",
+        populate: {
+          path: "permissions",
+        },
+      })
+      .populate("permissionsOverride");
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "User no longer exists.",
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | ACCOUNT STATUS
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      user.status !== "active" ||
+      user.isActive === false
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Account is inactive.",
+      });
+    }
+
+    req.user = user;
+
+    next();
+  } catch (error) {
+    console.error("AUTH ERROR:", error.message);
+
+    return res.status(401).json({
+      success: false,
+      message: "Invalid or expired token.",
+    });
+  }
 };
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
 | ADMIN ONLY
 |--------------------------------------------------------------------------
-|
-| Allows only admin role
-|
-|--------------------------------------------------------------------------
 */
 
+export const adminOnly = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      message: "Authentication required.",
+    });
+  }
 
-export const adminOnly = (
+  const roleName =
+    req.user.roleId?.name?.toLowerCase() ||
+    req.user.role?.toLowerCase() ||
+    req.user.legacyRole?.toLowerCase();
 
-    req,
+  if (!["admin", "super_admin"].includes(roleName)) {
+    return res.status(403).json({
+      success: false,
+      message: "Admin access required.",
+    });
+  }
 
-    res,
-
-    next
-
-)=>{
-
-
-    const role = req.user?.role?.toLowerCase();
-
-
-
-
-    if(
-
-        !req.user ||
-
-        role !== "admin"
-
-    ){
-
-
-        return res.status(403).json({
-
-            success:false,
-
-            message:"Admin access required."
-
-        });
-
-
-    }
-
-
-
-    next();
-
-
+  next();
 };
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
 | ROLE AUTHORIZATION
 |--------------------------------------------------------------------------
-|
-| Usage:
-|
-| authorize(
-|   "admin",
-|   "tour_manager"
-| )
-|
-|--------------------------------------------------------------------------
 */
 
+export const authorize = (...allowedRoles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required.",
+      });
+    }
 
-export const authorize = (...allowedRoles)=>{
+    const roleName =
+      req.user.roleId?.name?.toLowerCase() ||
+      req.user.role?.toLowerCase() ||
+      req.user.legacyRole?.toLowerCase();
 
+    const allowed = allowedRoles.map((role) =>
+      role.toLowerCase()
+    );
 
-    return (
+    if (!allowed.includes(roleName)) {
+      return res.status(403).json({
+        success: false,
+        message: "You do not have permission to access this resource.",
+      });
+    }
 
-        req,
-
-        res,
-
-        next
-
-    )=>{
-
-
-        const userRole =
-
-            req.user?.role?.toLowerCase();
-
-
-
-
-        const roles =
-
-            allowedRoles.map(
-
-                role => role.toLowerCase()
-
-            );
-
-
-
-
-
-        if(
-
-            !userRole ||
-
-            !roles.includes(userRole)
-
-        ){
-
-
-            return res.status(403).json({
-
-                success:false,
-
-                message:"You do not have permission to access this resource."
-
-            });
-
-
-        }
-
-
-
-        next();
-
-
-    };
-
-
+    next();
+  };
 };
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
 | PERMISSION CHECK
 |--------------------------------------------------------------------------
-|
-| Usage:
-|
-| router.get(
-| "/packages",
-| protect,
-| checkPermission("view_packages"),
-| controller
-| )
-|
-|--------------------------------------------------------------------------
 */
 
-
-export const checkPermission = (permissionName)=>{
-
-
-    return (
-
-        req,
-
-        res,
-
-        next
-
-    )=>{
-
-
-        try{
-
-
-
-            if(!req.user){
-
-
-                return res.status(401).json({
-
-                    success:false,
-
-                    message:"Authentication required."
-
-                });
-
-
-            }
-
-
-
-
-
-
-
-            /*
-            |--------------------------------------------------------------------------
-            | GET ROLE PERMISSIONS
-            |--------------------------------------------------------------------------
-            |
-            | Permissions now come from:
-            |
-            | req.user.roleId.permissions
-            |
-            |--------------------------------------------------------------------------
-            */
-
-
-            const rolePermissions =
-
-                req.user.roleId?.permissions || [];
-
-
-
-
-
-            const overridePermissions =
-
-                req.user.permissionsOverride || [];
-
-
-
-
-
-
-
-            const allPermissions = [
-
-                ...rolePermissions,
-
-                ...overridePermissions
-
-            ];
-
-
-
-
-
-
-
-            const hasPermission =
-
-                allPermissions.some(
-
-                    permission =>
-
-                    permission.name === permissionName
-
-                );
-
-
-
-
-
-
-
-            if(!hasPermission){
-
-
-                return res.status(403).json({
-
-                    success:false,
-
-                    message:
-
-                    `Missing permission: ${permissionName}`
-
-                });
-
-
-            }
-
-
-
-
-
-
-            next();
-
-
-
-
-        }catch(error){
-
-
-
-            console.error(
-
-                "PERMISSION ERROR:",
-
-                error.message
-
-            );
-
-
-
-            return res.status(403).json({
-
-                success:false,
-
-                message:"Permission verification failed."
-
-            });
-
-
-        }
-
-
-    };
-
-
+export const checkPermission = (permissionName) => {
+  return (req, res, next) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          message: "Authentication required.",
+        });
+      }
+
+      const rolePermissions =
+        req.user.roleId?.permissions || [];
+
+      const overridePermissions =
+        req.user.permissionsOverride || [];
+
+      const permissions = [
+        ...rolePermissions,
+        ...overridePermissions,
+      ];
+
+      const hasPermission = permissions.some(
+        (permission) => permission.name === permissionName
+      );
+
+      if (!hasPermission) {
+        return res.status(403).json({
+          success: false,
+          message: `Missing permission: ${permissionName}`,
+        });
+      }
+
+      next();
+    } catch (error) {
+      console.error("PERMISSION ERROR:", error.message);
+
+      return res.status(500).json({
+        success: false,
+        message: "Permission verification failed.",
+      });
+    }
+  };
 };
-
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| DEFAULT EXPORT
-|--------------------------------------------------------------------------
-|
-| Allows:
-|
-| import protect from "../middleware/authMiddleware.js"
-|
-|--------------------------------------------------------------------------
-*/
-
 
 export default protect;

@@ -1,13 +1,27 @@
-export const convertCurrency =
-(amount,rate)=>{
+/*
+|--------------------------------------------------------------------------
+| CONVERT CURRENCY
+|--------------------------------------------------------------------------
+|
+| amount: Amount in source currency
+| rate: Exchange rate (source per target)
+|
+| Returns:
+| Number
+|
+*/
 
+export const convertCurrency = (amount, rate) => {
+  const sourceAmount = Number(amount);
+  const exchangeRate = Number(rate);
 
-return Number(
+  if (!Number.isFinite(sourceAmount)) {
+    throw new Error("Invalid amount.");
+  }
 
-amount / rate
+  if (!Number.isFinite(exchangeRate) || exchangeRate <= 0) {
+    throw new Error("Invalid exchange rate.");
+  }
 
-)
-.toFixed(2);
-
-
+  return Number((sourceAmount / exchangeRate).toFixed(2));
 };

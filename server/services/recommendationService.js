@@ -1,61 +1,133 @@
 import Tour from "../models/Tour.js";
 
+/*
+|--------------------------------------------------------------------------
+| RECOMMEND TOURS
+|--------------------------------------------------------------------------
+*/
 
+export const recommendTours = async (preferences = {}) => {
+  const {
+    preferredCountries = [],
+    travelStyle = [],
+    minBudget,
+    maxBudget,
+    minDuration,
+    maxDuration,
+    featuredOnly = false,
+    limit = 10,
+  } = preferences;
 
-export const recommendTours =
-async(preferences)=>{
+  const query = {
+    status: "active",
+  };
 
+  /*
+  |--------------------------------------------------------------------------
+  | COUNTRY
+  |--------------------------------------------------------------------------
+  */
 
-const query={};
+  if (preferredCountries.length) {
+    query.country = {
+      $in: preferredCountries,
+    };
+  }
 
+  /*
+  |--------------------------------------------------------------------------
+  | CATEGORY
+  |--------------------------------------------------------------------------
+  */
 
+  if (travelStyle.length) {
+    query.category = {
+      $in: travelStyle,
+    };
+  }
 
-if(
-preferences.preferredCountries?.length
-){
+  /*
+  |--------------------------------------------------------------------------
+  | PRICE
+  |--------------------------------------------------------------------------
+  */
 
-query.country={
+  if (
+    minBudget !== undefined ||
+    maxBudget !== undefined
+  ) {
+    query.price = {};
 
-$in:
+    if (minBudget !== undefined) {
+      query.price.$gte = minBudget;
+    }
 
-preferences.preferredCountries
+    if (maxBudget !== undefined) {
+      query.price.$lte = maxBudget;
+    }
+  }
 
-};
+  /*
+  |--------------------------------------------------------------------------
+  | DURATION
+  |--------------------------------------------------------------------------
+  */
 
-}
+  if (
+    minDuration !== undefined ||
+    maxDuration !== undefined
+  ) {
+    query.duration = {};
 
+    if (minDuration !== undefined) {
+      query.duration.$gte = minDuration;
+    }
 
+    if (maxDuration !== undefined) {
+      query.duration.$lte = maxDuration;
+    }
+  }
 
-if(
-preferences.travelStyle?.length
-){
+  /*
+  |--------------------------------------------------------------------------
+  | FEATURED
+  |--------------------------------------------------------------------------
+  */
 
-query.category={
+  if (featuredOnly) {
+    query.featured = true;
+  }
 
-$in:
+  let tours = await Tour.find(query)
+    .populate("destination", "name country")
+    .sort({
+      featured: -1,
+      rating: -1,
+      bookingsCount: -1,
+    })
+    .limit(limit);
 
-preferences.travelStyle
+  /*
+  |--------------------------------------------------------------------------
+  | FALLBACK
+  |--------------------------------------------------------------------------
+  |
+  | If no tours match the filters,
+  | return the highest-rated active tours.
+  |
+  */
 
-};
+  if (!tours.length) {
+    tours = await Tour.find({
+      status: "active",
+    })
+      .populate("destination", "name country")
+      .sort({
+        featured: -1,
+        rating: -1,
+      })
+      .limit(limit);
+  }
 
-}
-
-
-
-const tours =
-await Tour.find(query)
-
-.sort({
-
-rating:-1
-
-})
-
-.limit(10);
-
-
-
-return tours;
-
-
+  return tours;
 };

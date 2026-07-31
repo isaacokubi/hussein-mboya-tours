@@ -1,192 +1,428 @@
+// client/src/pages/agent/AgentCustomers.jsx
+
+
 import useAgentCustomers
 from "../../hooks/useAgentCustomers";
+
+
+
+
 
 
 
 export default function AgentCustomers(){
 
 
-const {
 
-data,
+    const {
 
-isLoading
+        data = [],
 
-}
+        isLoading,
 
-=
-useAgentCustomers();
+        isError
 
 
+    } = useAgentCustomers();
 
-if(isLoading)
 
-return (
 
-<div>
 
-Loading customers...
 
-</div>
 
-);
 
 
 
-return (
+    if(isLoading)
 
-<div>
+    return (
 
+        <div className="p-6">
 
-<h1
-className="
-text-2xl
-font-bold
-mb-6
-">
+            Loading customers...
 
-My Customers
+        </div>
 
-</h1>
+    );
 
 
 
-<div
-className="
-bg-white
-rounded-xl
-shadow
-"
->
 
 
-<table
-className="
-w-full
-"
->
 
 
-<thead>
 
-<tr
-className="
-border-b
-"
->
 
-<th>
-Name
-</th>
+    if(isError)
 
+    return (
 
-<th>
-Phone
-</th>
+        <div className="
+            p-6
+            text-red-600
+        ">
 
+            Failed to load customers
 
-<th>
-Nationality
-</th>
+        </div>
 
+    );
 
-<th>
-Status
-</th>
 
-</tr>
 
 
-</thead>
 
 
 
-<tbody>
 
 
-{
+    return (
 
-data.map(customer=>(
 
+        <div className="p-6">
 
-<tr
 
-key={customer._id}
 
-className="
-border-b
-"
 
->
 
+            <h1 className="
+                text-2xl
+                font-bold
+                mb-6
+            ">
 
-<td>
 
-{
-customer.firstName
-}
+                My Customers
 
-{" "}
 
-{
-customer.lastName
-}
+            </h1>
 
 
-</td>
 
 
 
-<td>
 
-{
-customer.phone
-}
 
-</td>
 
 
+            <div className="
+                bg-white
+                rounded-xl
+                shadow
+                overflow-hidden
+            ">
 
-<td>
 
-{
-customer.nationality || "-"
-}
 
-</td>
 
 
 
-<td>
 
-{
-customer.status
-}
 
-</td>
+                <table className="
+                    w-full
+                ">
 
 
-</tr>
 
 
-))
+                    <thead className="
+                        bg-gray-100
+                    ">
 
 
-}
 
+                        <tr className="
+                            border-b
+                        ">
 
 
-</tbody>
 
+                            <th className="p-4 text-left">
 
-</table>
+                                Name
 
+                            </th>
 
-</div>
 
 
-</div>
 
-)
+
+                            <th className="p-4 text-left">
+
+                                Phone
+
+                            </th>
+
+
+
+
+
+                            <th className="p-4 text-left">
+
+                                Nationality
+
+                            </th>
+
+
+
+
+
+                            <th className="p-4 text-left">
+
+                                Status
+
+                            </th>
+
+
+
+
+
+                        </tr>
+
+
+
+                    </thead>
+
+
+
+
+
+
+
+
+
+                    <tbody>
+
+
+
+
+
+
+                    {
+
+                        data.length === 0 ? (
+
+
+                            <tr>
+
+
+                                <td
+
+                                colSpan="4"
+
+                                className="
+                                    p-6
+                                    text-center
+                                    text-gray-500
+                                "
+
+                                >
+
+
+                                    No customers found
+
+
+                                </td>
+
+
+
+                            </tr>
+
+
+
+                        ) : (
+
+
+
+                            data.map(customer=>(
+
+
+
+
+                                <tr
+
+
+                                key={customer._id}
+
+
+                                className="
+                                    border-b
+                                "
+
+
+
+                                >
+
+
+
+
+
+
+
+                                    <td className="p-4">
+
+
+
+                                        {
+
+                                            customer.firstName ||
+
+                                            customer.name ||
+
+                                            ""
+
+                                        }
+
+
+                                        {" "}
+
+
+                                        {
+
+                                            customer.lastName ||
+
+                                            ""
+
+                                        }
+
+
+
+                                    </td>
+
+
+
+
+
+
+
+
+
+                                    <td className="p-4">
+
+
+                                        {
+
+                                            customer.phone ||
+
+                                            "-"
+
+                                        }
+
+
+
+                                    </td>
+
+
+
+
+
+
+
+
+
+                                    <td className="p-4">
+
+
+                                        {
+
+                                            customer.nationality ||
+
+                                            "-"
+
+                                        }
+
+
+
+                                    </td>
+
+
+
+
+
+
+
+
+
+                                    <td className="p-4">
+
+
+
+                                        <span className="
+                                            px-3
+                                            py-1
+                                            rounded-full
+                                            bg-green-100
+                                        ">
+
+
+
+                                            {
+
+                                                customer.status ||
+
+                                                "Active"
+
+                                            }
+
+
+
+                                        </span>
+
+
+
+                                    </td>
+
+
+
+
+
+
+
+
+                                </tr>
+
+
+
+
+                            ))
+
+
+
+                        )
+
+                    }
+
+
+
+
+
+                    </tbody>
+
+
+
+
+
+
+                </table>
+
+
+
+
+
+
+
+            </div>
+
+
+
+
+
+
+        </div>
+
+
+    );
+
 
 }

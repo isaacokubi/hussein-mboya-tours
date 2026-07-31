@@ -1,172 +1,103 @@
+// server/middleware/uploadMiddleware.js
+
 import multer from "multer";
-
 import { CloudinaryStorage } from "multer-storage-cloudinary";
-
 import cloudinary from "../config/cloudinary.js";
 
-
-
-
-
 /*
 |--------------------------------------------------------------------------
-| CLOUDINARY STORAGE CONFIGURATION
+| CLOUDINARY STORAGE
 |--------------------------------------------------------------------------
 */
-
 
 const storage = new CloudinaryStorage({
-
     cloudinary,
 
+    params: async (req, file) => {
+        const isImage = file.mimetype.startsWith("image/");
 
-    params: {
+        return {
+            folder: "hussein-mboya-tours",
 
+            resource_type: "auto",
 
-        folder: "hussein-mboya-tours",
+            public_id: `${Date.now()}-${Math.round(
+                Math.random() * 1e9
+            )}`,
 
+            format: undefined,
 
-
-        allowed_formats: [
-
-            "jpg",
-
-            "jpeg",
-
-            "png",
-
-            "webp"
-
-        ],
-
-
-
-
-        transformation: [
-
-            {
-
-                width: 1200,
-
-                height: 800,
-
-                crop: "fill",
-
-                quality: "auto",
-
-                fetch_format: "auto"
-
-            }
-
-        ]
-
-    }
-
+            transformation: isImage
+                ? [
+                      {
+                          width: 1200,
+                          height: 800,
+                          crop: "fill",
+                          quality: "auto",
+                          fetch_format: "auto",
+                      },
+                  ]
+                : undefined,
+        };
+    },
 });
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
-| MULTER CONFIGURATION
+| FILE FILTER
 |--------------------------------------------------------------------------
 */
 
+const allowedMimeTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "application/pdf",
+];
 
-const upload = multer({
-
-
-    storage,
-
-
-
-    limits: {
-
-
-        // Maximum image size 5MB
-
-        fileSize: 5 * 1024 * 1024
-
-    },
-
-
-
-
-
-
-    fileFilter:(req,file,cb)=>{
-
-
-        const allowedTypes = [
-
-
-            "image/jpeg",
-
-            "image/png",
-
-            "image/webp"
-
-
-        ];
-
-
-
-
-
-
-
-        if(
-
-            allowedTypes.includes(
-
-                file.mimetype
-
-            )
-
-        )
-
-        {
-
-
-            cb(null,true);
-
-
-        }
-
-        else{
-
-
-            cb(
-
-                new Error(
-
-                    "Only JPG, PNG and WEBP images are allowed"
-
-                ),
-
-                false
-
-            );
-
-
-        }
-
-
+const fileFilter = (req, file, cb) => {
+    if (allowedMimeTypes.includes(file.mimetype)) {
+        return cb(null, true);
     }
 
+    cb(
+        new Error(
+            "Only JPG, PNG, WEBP images and PDF files are allowed."
+        ),
+        false
+    );
+};
 
+/*
+|--------------------------------------------------------------------------
+| MULTER INSTANCE
+|--------------------------------------------------------------------------
+*/
 
+const upload = multer({
+    storage,
+
+    limits: {
+        fileSize: 5 * 1024 * 1024, // 5 MB
+        files: 10,
+    },
+
+    fileFilter,
 });
 
+/*
+|--------------------------------------------------------------------------
+| COMMON EXPORTS
+|--------------------------------------------------------------------------
+*/
 
+export const uploadSingle = (field = "image") =>
+    upload.single(field);
 
+export const uploadMultiple = (field = "images", max = 10) =>
+    upload.array(field, max);
 
-
-
+export const uploadFields = (fields) =>
+    upload.fields(fields);
 
 export default upload;

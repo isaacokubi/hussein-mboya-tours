@@ -1,38 +1,41 @@
+// services/emailService.js
+
 import nodemailer from "nodemailer";
 
+/*
+|--------------------------------------------------------------------------
+| EMAIL TRANSPORT
+|--------------------------------------------------------------------------
+*/
 
+const transporter = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST,
 
-const transporter =
-nodemailer.createTransport({
+  port: Number(process.env.EMAIL_PORT),
 
-  host:
-  process.env.EMAIL_HOST,
+  secure: process.env.EMAIL_SECURE === "true",
 
-
-  port:
-  process.env.EMAIL_PORT,
-
-
-  secure:
-  process.env.EMAIL_SECURE === "true",
-
-
-  auth:{
-
-    user:
-    process.env.EMAIL_USER,
-
-
-    pass:
-    process.env.EMAIL_PASSWORD
-
-  }
-
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD,
+  },
 });
 
+/*
+|--------------------------------------------------------------------------
+| VERIFY SMTP CONNECTION
+|--------------------------------------------------------------------------
+*/
 
+export const verifyEmailConnection = async () => {
+  try {
+    await transporter.verify();
 
-
+    console.log("✅ Email server connected");
+  } catch (error) {
+    console.error("❌ Email configuration error:", error.message);
+  }
+};
 
 /*
 |--------------------------------------------------------------------------
@@ -40,58 +43,52 @@ nodemailer.createTransport({
 |--------------------------------------------------------------------------
 */
 
-export const sendEmail =
-async({
-
+export const sendEmail = async ({
   to,
-
   subject,
+  html,
+  text,
+  attachments = [],
+  cc,
+  bcc,
+  replyTo,
+}) => {
+  if (!to) {
+    throw new Error("Recipient email is required.");
+  }
 
-  html
+  if (!subject) {
+    throw new Error("Email subject is required.");
+  }
 
-})=>{
+  if (!html && !text) {
+    throw new Error("Email content is required.");
+  }
 
+  const mailOptions = {
+    from: `"Hussein Mboya Tours" <${process.env.EMAIL_USER}>`,
 
-try{
+    to,
 
+    subject,
 
-await transporter.sendMail({
+    html,
 
-  from:
+    text,
 
-  `"Hussein Mboya Tours" <${process.env.EMAIL_USER}>`,
+    attachments,
 
+    cc,
 
-  to,
+    bcc,
 
+    replyTo,
+  };
 
-  subject,
+  const info = await transporter.sendMail(mailOptions);
 
-
-  html
-
-
-});
-
-
-}
-
-catch(error){
-
-throw error;
-
-}
-
-
+  return info;
 };
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -99,81 +96,67 @@ throw error;
 |--------------------------------------------------------------------------
 */
 
-export const sendBookingEmail =
-async(
-  email,
-  booking
-)=>{
+export const sendBookingEmail = async (email, booking) => {
+  return sendEmail({
+    to: email,
 
+    subject: "Booking Confirmation - Hussein Mboya Tours",
 
-try{
+    html: `
+      <div style="font-family:Arial,sans-serif">
 
+        <h2>Booking Confirmed</h2>
 
-await sendEmail({
+        <p>Thank you for choosing Hussein Mboya Tours.</p>
 
-  to: email,
+        <hr>
 
+        <p><strong>Booking Number:</strong> ${
+          booking.bookingNumber || "Pending"
+        }</p>
 
-  subject:
-  "Booking Confirmation - Hussein Mboya Tours",
+        <p><strong>Tour:</strong> ${
+          booking.tour?.title ||
+          booking.tour?.name ||
+          booking.tour
+        }</p>
 
+        <p><strong>Travel Date:</strong> ${
+          booking.travelDate
+        }</p>
 
-  html:
+        <p><strong>Total Amount:</strong> ${
+          booking.totalAmount
+        }</p>
 
-  `
+        <br>
 
-  <div>
+        <p>
+          We look forward to giving you an unforgettable travel experience.
+        </p>
 
-    <h2>
-      Your booking is confirmed
-    </h2>
+        <p>
+          Regards,<br>
+          <strong>Hussein Mboya Tours</strong>
+        </p>
 
+      </div>
+    `,
 
-    <p>
-      Thank you for choosing Hussein Mboya Tours.
-    </p>
+    text: `
+Booking Confirmed
 
+Booking Number: ${booking.bookingNumber || "Pending"}
 
-    <p>
-      Booking Number:
-      ${booking.bookingNumber || "Pending"}
-    </p>
+Tour: ${booking.tour?.title || booking.tour?.name || booking.tour}
 
+Travel Date: ${booking.travelDate}
 
-    <p>
-      Tour:
-      ${
-        booking.tour?.name ||
-        booking.tour
-      }
-    </p>
+Total Amount: ${booking.totalAmount}
 
-
-    <p>
-      Travel Date:
-      ${booking.travelDate}
-    </p>
-
-
-    <p>
-      We look forward to welcoming you.
-    </p>
-
-
-  </div>
-
-  `
-
-});
-
-
-}
-
-catch(error){
-
-throw error;
-
-}
-
-
+Thank you for choosing Hussein Mboya Tours.
+    `,
+  });
 };
+
+export default transporter;

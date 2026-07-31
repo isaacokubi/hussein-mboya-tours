@@ -1,22 +1,43 @@
+// server/routes/recommendationRoutes.js
+
 import express from "express";
 
+import {
+  getRecommendations,
+} from "../controllers/recommendationController.js";
 
 import {
-getRecommendations
-}
-from "../controllers/recommendationController.js";
+  protect,
+} from "../middleware/authMiddleware.js";
 
+const router = express.Router();
 
-const router =
-express.Router();
+/*
+|--------------------------------------------------------------------------
+| AUTHORIZATION
+|--------------------------------------------------------------------------
+|
+| Recommendation routes require authentication.
+|
+|--------------------------------------------------------------------------
+*/
 
+router.use(protect);
 
+/*
+|--------------------------------------------------------------------------
+| RECOMMENDATIONS
+|--------------------------------------------------------------------------
+*/
 
+/**
+ * POST /api/recommendations
+ * Generate personalized tour recommendations
+ * for the authenticated user.
+ */
 router.post(
-"/",
-getRecommendations
+  "/",
+  getRecommendations
 );
-
-
 
 export default router;

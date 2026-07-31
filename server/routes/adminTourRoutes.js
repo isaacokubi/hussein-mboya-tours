@@ -1,300 +1,146 @@
+// server/routes/adminTourRoutes.js
+
 import express from "express";
 
+import {
+  createTour,
+  getAllTours,
+  getTour,
+  updateTour,
+  deleteTour,
+  restoreTour,
+  assignGuide,
+  assignDriver,
+  assignVehicle,
+} from "../controllers/adminTourController.js";
+
+import {
+  protect,
+} from "../middleware/authMiddleware.js";
+
+import {
+  adminMiddleware,
+} from "../middleware/adminMiddleware.js";
 
 import upload from "../middleware/uploadMiddleware.js";
 
-
-
-import {
-
-createTour,
-
-getAllTours,
-
-getTour,
-
-updateTour,
-
-deleteTour,
-
-assignGuide,
-
-assignDriver,
-
-assignVehicle,
-
-restoreTour
-
-}
-from "../controllers/adminTourController.js";
-
-
-
-import {
-
-protect
-
-}
-from "../middleware/authMiddleware.js";
-
-
-
-import {
-
-adminMiddleware
-
-}
-from "../middleware/adminMiddleware.js";
-
-
-
-
-
 const router = express.Router();
 
-
-
-
-
-
-
 /*
 |--------------------------------------------------------------------------
-| ADMIN SECURITY
+| ADMIN AUTHORIZATION
+|--------------------------------------------------------------------------
+|
+| All routes require:
+| - Valid JWT
+| - Active account
+| - Admin privileges
+|
 |--------------------------------------------------------------------------
 */
 
-
-router.use(
-protect
-);
-
-
-router.use(
-adminMiddleware
-);
-
-
-
-
-
-
-
-
+router.use(protect);
+router.use(adminMiddleware);
 
 /*
 |--------------------------------------------------------------------------
-| CREATE TOUR
+| TOURS
 |--------------------------------------------------------------------------
 */
 
+/**
+ * GET /api/admin/tours
+ * Get all tours
+ */
+router.get(
+  "/",
+  getAllTours
+);
 
+/**
+ * GET /api/admin/tours/:id
+ * Get single tour
+ */
+router.get(
+  "/:id",
+  getTour
+);
+
+/**
+ * POST /api/admin/tours
+ * Create new tour
+ *
+ * Upload:
+ * images[] (max 10)
+ */
 router.post(
-
-"/",
-
-upload.array(
-"images",
-10
-),
-
-createTour
-
+  "/",
+  upload.array("images", 10),
+  createTour
 );
 
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| GET ALL TOURS
-|--------------------------------------------------------------------------
-*/
-
-
-router.get(
-
-"/",
-
-getAllTours
-
-);
-
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| GET SINGLE TOUR
-|--------------------------------------------------------------------------
-*/
-
-
-router.get(
-
-"/:id",
-
-getTour
-
-);
-
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| UPDATE TOUR
-|--------------------------------------------------------------------------
-*/
-
-
+/**
+ * PUT /api/admin/tours/:id
+ * Update tour
+ *
+ * Upload:
+ * images[] (optional)
+ */
 router.put(
-
-"/:id",
-
-upload.array(
-"images",
-10
-),
-
-updateTour
-
+  "/:id",
+  upload.array("images", 10),
+  updateTour
 );
 
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| DELETE TOUR (SOFT DELETE)
-|--------------------------------------------------------------------------
-*/
-
-
+/**
+ * DELETE /api/admin/tours/:id
+ * Soft delete tour
+ */
 router.delete(
-
-"/:id",
-
-deleteTour
-
+  "/:id",
+  deleteTour
 );
 
-
-
-
-
-
-
-
+/**
+ * PATCH /api/admin/tours/:id/restore
+ * Restore soft-deleted tour
+ */
+router.patch(
+  "/:id/restore",
+  restoreTour
+);
 
 /*
 |--------------------------------------------------------------------------
-| RESTORE TOUR
+| TOUR RESOURCE ASSIGNMENTS
 |--------------------------------------------------------------------------
 */
 
-
+/**
+ * PATCH /api/admin/tours/:id/guide
+ * Assign guide
+ */
 router.patch(
-
-"/:id/restore",
-
-restoreTour
-
+  "/:id/guide",
+  assignGuide
 );
 
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| ASSIGN GUIDE
-|--------------------------------------------------------------------------
-*/
-
-
+/**
+ * PATCH /api/admin/tours/:id/driver
+ * Assign driver
+ */
 router.patch(
-
-"/:id/guide",
-
-assignGuide
-
+  "/:id/driver",
+  assignDriver
 );
 
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| ASSIGN DRIVER
-|--------------------------------------------------------------------------
-*/
-
-
+/**
+ * PATCH /api/admin/tours/:id/vehicle
+ * Assign vehicle
+ */
 router.patch(
-
-"/:id/driver",
-
-assignDriver
-
+  "/:id/vehicle",
+  assignVehicle
 );
-
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| ASSIGN VEHICLE
-|--------------------------------------------------------------------------
-*/
-
-
-router.patch(
-
-"/:id/vehicle",
-
-assignVehicle
-
-);
-
-
-
-
-
-
 
 export default router;

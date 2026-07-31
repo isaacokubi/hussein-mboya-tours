@@ -1,167 +1,270 @@
+// client/src/components/TourFilters.jsx
+
 export default function TourFilters({
-filters,
-setFilters
-}){
+  filters,
+  setFilters
+}) {
 
 
-return (
+  const updateFilter = (
+    key,
+    value
+  ) => {
 
-<div
-className="
-bg-white
-shadow-md
-rounded-xl
-p-5
-grid
-md:grid-cols-4
-gap-4
-"
->
+    setFilters({
 
+      ...filters,
 
-<input
+      [key]: value
 
-placeholder="Search country"
+    });
 
-className="
-border
-p-3
-rounded
-"
-
-value={
-filters.country
-}
-
-onChange={
-(e)=>
-setFilters({
-
-...filters,
-
-country:
-e.target.value
-
-})
-}
-
-/>
+  };
 
 
 
-<select
+  const clearFilters = () => {
 
-className="
-border
-p-3
-rounded
-"
+    setFilters({
 
-value={
-filters.category
-}
+      country: "",
+      category: "",
+      minPrice: "",
+      maxPrice: "",
+      duration: ""
 
-onChange={
-(e)=>
-setFilters({
+    });
 
-...filters,
-
-category:
-e.target.value
-
-})
-}
-
->
-
-
-<option value="">
-All Categories
-</option>
-
-
-<option>
-Safari
-</option>
-
-
-<option>
-Beach
-</option>
-
-
-<option>
-Adventure
-</option>
-
-
-<option>
-Honeymoon
-</option>
-
-
-</select>
+  };
 
 
 
-<input
+  return (
 
-type="number"
+    <div
 
-placeholder="Minimum price"
+      className="
+      bg-white
+      shadow-md
+      rounded-xl
+      p-5
+      grid
+      md:grid-cols-6
+      gap-4
+      "
 
-className="
-border
-p-3
-rounded
-"
-
-onChange={
-(e)=>
-setFilters({
-
-...filters,
-
-minPrice:
-e.target.value
-
-})
-}
-
-/>
+    >
 
 
 
-<input
-
-type="number"
-
-placeholder="Maximum price"
-
-className="
-border
-p-3
-rounded
-"
-
-onChange={
-(e)=>
-setFilters({
-
-...filters,
-
-maxPrice:
-e.target.value
-
-})
-}
-
-/>
 
 
-</div>
+      <input
 
-);
+        placeholder="Search country"
+
+        className="
+        border
+        p-3
+        rounded
+        "
+
+        value={
+          filters.country || ""
+        }
+
+        onChange={
+          (e)=>
+          updateFilter(
+            "country",
+            e.target.value
+          )
+        }
+
+      />
+
+
+
+
+
+
+
+      <select
+
+        className="
+        border
+        p-3
+        rounded
+        "
+
+        value={
+          filters.category || ""
+        }
+
+        onChange={
+          (e)=>
+          updateFilter(
+            "category",
+            e.target.value
+          )
+        }
+
+      >
+
+
+        <option value="">
+          All Categories
+        </option>
+
+
+        <option value="Safari">
+          Safari
+        </option>
+
+
+        <option value="Beach">
+          Beach
+        </option>
+
+
+        <option value="Adventure">
+          Adventure
+        </option>
+
+
+        <option value="Honeymoon">
+          Honeymoon
+        </option>
+
+
+      </select>
+
+
+
+
+
+
+
+      <input
+
+        type="number"
+
+        placeholder="Min price"
+
+        className="
+        border
+        p-3
+        rounded
+        "
+
+        value={
+          filters.minPrice || ""
+        }
+
+        onChange={
+          (e)=>
+          updateFilter(
+            "minPrice",
+            e.target.value
+          )
+        }
+
+      />
+
+
+
+
+
+
+
+      <input
+
+        type="number"
+
+        placeholder="Max price"
+
+        className="
+        border
+        p-3
+        rounded
+        "
+
+        value={
+          filters.maxPrice || ""
+        }
+
+        onChange={
+          (e)=>
+          updateFilter(
+            "maxPrice",
+            e.target.value
+          )
+        }
+
+      />
+
+
+
+
+
+
+
+      <input
+
+        type="number"
+
+        placeholder="Duration days"
+
+        className="
+        border
+        p-3
+        rounded
+        "
+
+        value={
+          filters.duration || ""
+        }
+
+        onChange={
+          (e)=>
+          updateFilter(
+            "duration",
+            e.target.value
+          )
+        }
+
+      />
+
+
+
+
+
+
+
+      <button
+
+        onClick={clearFilters}
+
+        className="
+        bg-gray-800
+        text-white
+        rounded
+        px-4
+        hover:bg-gray-900
+        "
+
+      >
+
+        Clear
+
+      </button>
+
+
+
+
+
+    </div>
+
+  );
 
 }

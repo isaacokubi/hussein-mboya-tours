@@ -1,95 +1,254 @@
-import User from "../models/User.js";
+// server/controllers/customerController.js
 
+import mongoose from "mongoose";
+import User from "../models/User.js";
 import Booking from "../models/Booking.js";
 
-// ============================================================
-// GET ALL CUSTOMERS
-// ============================================================
+/*
+|--------------------------------------------------------------------------
+| HELPERS
+|--------------------------------------------------------------------------
+*/
 
-export const getCustomers = async (req, res) => {
+const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
+
+/*
+|--------------------------------------------------------------------------
+| GET ALL CUSTOMERS
+|--------------------------------------------------------------------------
+|
+| GET /api/admin/customers
+|--------------------------------------------------------------------------
+*/
+
+export const getCustomers = async (req, res, next) => {
   try {
-    const { search } = req.query;
+    const {
+      search = "",
+      page = 1,
+      limit = 20,
+    } = req.query;
+
+    const currentPage = Math.max(Number(page), 1);
+    const pageSize = Math.min(Math.max(Number(limit), 1), 100);
+    const skip = (currentPage - 1) * pageSize;
+
+    /*
+    |--------------------------------------------------------------------------
+    | FILTER
+    |--------------------------------------------------------------------------
+    */
 
     const filter = {
       role: "customer",
     };
 
-    let customers = await User.find(filter)
-
-      .select("name email phone customerType createdAt");
-
-    if (search) {
-      customers = customers.filter(
-        (customer) =>
-          customer.name?.toLowerCase().includes(search.toLowerCase()) ||
-          customer.email?.toLowerCase().includes(search.toLowerCase()),
-      );
+    if (search.trim()) {
+      filter.$or = [
+        {
+          name: {
+            $regex: search.trim(),
+            $options: "i",
+          },
+        },
+        {
+          email: {
+            $regex: search.trim(),
+            $options: "i",
+          },
+        },
+        {
+          phone: {
+            $regex: search.trim(),
+            $options: "i",
+          },
+        },
+      ];
     }
 
-    const data = await Promise.all(
-      customers.map(async (customer) => {
-        const bookings = await Booking.find({
-          customer: customer._id,
-        });
+    /*
+    |--------------------------------------------------------------------------
+    | GET CUSTOMERS
+    |--------------------------------------------------------------------------
+    */
 
-        const spending = bookings.reduce(
-          (total, booking) => total + (booking.amount || 0),
+    const [customers, total] = await Promise.all([
+      User.find(filter)
+        .select(
+          "name email phone customerType totalBookings totalSpent loyaltyPoints status createdAt"
+        )
+        .sort({
+          createdAt: -1,
+        })
+        .skip(skip)
+        .limit(pageSize)
+        .lean(),
 
+      User.countDocuments(filter),
+    ]);
+
+    /*
+    |--------------------------------------------------------------------------
+    | BOOKING STATISTICS
+    |--------------------------------------------------------------------------
+    */
+
+    const customerIds = customers.map((c) => c._id);
+
+    const bookingStats = await Booking.aggregate([
+      {
+        $match: {
+          customer: {
+            $in: customerIds,
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$customer",
+
+          totalBookings: {
+            $sum: 1,
+          },
+
+          totalSpent: {
+            $sum: {
+              $ifNull: ["$amount", 0],
+            },
+          },
+        },
+      },
+    ]);
+
+    const statsMap = {};
+
+    bookingStats.forEach((item) => {
+      statsMap[item._id.toString()] = item;
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | RESPONSE DATA
+    |--------------------------------------------------------------------------
+    */
+
+    const data = customers.map((customer) => {
+      const stats =
+        statsMap[customer._id.toString()] || {};
+
+      return {
+        ...customer,
+
+        totalBookings:
+          stats.totalBookings ??
+          customer.totalBookings ??
           0,
-        );
 
-        return {
-          ...customer.toObject(),
+        totalSpent:
+          stats.totalSpent ??
+          customer.totalSpent ??
+          0,
+      };
+    });
 
-          totalBookings: bookings.length,
-
-          totalSpent: spending,
-        };
-      }),
-    );
-
-    res.json({
+    return res.status(200).json({
       success: true,
 
-      customers: data,
+      pagination: {
+        total,
+        page: currentPage,
+        pages: Math.ceil(total / pageSize),
+        limit: pageSize,
+      },
+
+      count: data.length,
+
+      data,
     });
   } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
+    next(error);
   }
 };
 
-// ============================================================
-// CUSTOMER PROFILE
-// ============================================================
+/*
+|--------------------------------------------------------------------------
+| GET CUSTOMER PROFILE
+|--------------------------------------------------------------------------
+|
+| GET /api/admin/customers/:id
+|--------------------------------------------------------------------------
+*/
 
-export const getCustomerProfile = async (req, res) => {
+export const getCustomerProfile = async (
+  req,
+  res,
+  next
+) => {
   try {
-    const customer = await User.findById(req.params.id)
+    if (!isValidId(req.params.id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid customer ID.",
+      });
+    }
 
-      .select("-password");
+    const customer = await User.findById(req.params.id)
+      .select("-password")
+      .lean();
+
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: "Customer not found.",
+      });
+    }
 
     const bookings = await Booking.find({
       customer: req.params.id,
     })
-
-      .populate("tour")
-
+      .populate(
+        "tour",
+        "title destination price"
+      )
       .sort({
         createdAt: -1,
-      });
+      })
+      .lean();
 
-    res.json({
+    /*
+    |--------------------------------------------------------------------------
+    | SUMMARY
+    |--------------------------------------------------------------------------
+    */
+
+    const summary = bookings.reduce(
+      (acc, booking) => {
+        acc.totalBookings += 1;
+        acc.totalSpent += booking.amount || 0;
+
+        if (booking.paymentStatus === "paid") {
+          acc.totalPaid += booking.amount || 0;
+        }
+
+        return acc;
+      },
+      {
+        totalBookings: 0,
+        totalSpent: 0,
+        totalPaid: 0,
+      }
+    );
+
+    return res.status(200).json({
       success: true,
 
-      customer,
-
-      bookings,
+      data: {
+        customer,
+        summary,
+        bookings,
+      },
     });
   } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
+    next(error);
   }
 };

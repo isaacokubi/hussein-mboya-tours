@@ -1,89 +1,420 @@
-import React,{
-useEffect,
-useState
-}
-from "react";
+// client/src/pages/tour-manager/TourAvailability.jsx
+
+import {
+  useState
+} from "react";
 
 
 import {
-
-useParams,
-
-useNavigate
-
-}
-
-from "react-router-dom";
+  useParams,
+  useNavigate
+} from "react-router-dom";
 
 
 import {
-
-toast
-
-}
-
-from "react-toastify";
+  useQuery,
+  useMutation,
+  useQueryClient
+} from "@tanstack/react-query";
 
 
 import {
+  toast
+} from "react-toastify";
 
-getTourAvailability,
 
-updateTourAvailability
+import {
+  getTourAvailability,
+  updateTourAvailability
+} from "../../api/tourApi";
+
+
+
+
+
+export default function TourAvailability(){
+
+
+  const {
+    id
+  } = useParams();
+
+
+
+  const navigate = useNavigate();
+
+
+  const queryClient = useQueryClient();
+
+
+
+
+
+  const [capacity,setCapacity] = useState("");
+
+
+
+
+
+  const {
+    data: availability = {},
+    isLoading
+  } = useQuery({
+
+    queryKey:[
+      "tour-availability",
+      id
+    ],
+
+
+    queryFn: async()=>{
+
+
+      const response =
+        await getTourAvailability(id);
+
+
+
+      const data =
+        response.data.availability;
+
+
+
+      setCapacity(
+        data.totalSlots || ""
+      );
+
+
+      return data;
+
+
+    },
+
+
+    enabled:!!id
+
+
+  });
+
+
+
+
+
+
+
+
+  const mutation = useMutation({
+
+
+    mutationFn:(payload)=>
+
+      updateTourAvailability(
+        id,
+        payload
+      ),
+
+
+
+    onSuccess:()=>{
+
+
+      toast.success(
+        "Availability updated"
+      );
+
+
+
+      queryClient.invalidateQueries({
+
+        queryKey:[
+          "tour-availability",
+          id
+        ]
+
+      });
+
+
+
+      navigate(
+        "/tour-manager/tours"
+      );
+
+
+    },
+
+
+    onError:()=>{
+
+
+      toast.error(
+        "Update failed"
+      );
+
+
+    }
+
+
+  });
+
+
+
+
+
+
+
+
+
+
+  const save = ()=>{
+
+
+    mutation.mutate({
+
+      totalSlots:Number(capacity)
+
+    });
+
+
+  };
+
+
+
+
+
+
+
+
+  if(isLoading){
+
+
+    return (
+
+      <div className="p-6">
+
+        Loading availability...
+
+      </div>
+
+    );
+
+  }
+
+
+
+
+
+
+
+  return (
+
+    <div
+      className="
+        min-h-screen
+        bg-gray-100
+        p-6
+      "
+    >
+
+
+
+      <div
+        className="
+          max-w-xl
+          mx-auto
+          bg-white
+          rounded-xl
+          shadow
+          p-8
+        "
+      >
+
+
+
+        <h1
+          className="
+            text-2xl
+            font-bold
+            mb-6
+          "
+        >
+
+          Tour Availability
+
+        </h1>
+
+
+
+
+
+
+
+        <div
+          className="
+            space-y-4
+          "
+        >
+
+
+
+
+
+          <AvailabilityCard
+
+            title="Total Slots"
+
+            value={
+              availability.totalSlots || 0
+            }
+
+            style="
+              bg-blue-50
+            "
+
+          />
+
+
+
+
+
+
+          <AvailabilityCard
+
+            title="Booked Slots"
+
+            value={
+              availability.bookedSlots || 0
+            }
+
+            style="
+              bg-red-50
+            "
+
+          />
+
+
+
+
+
+
+
+
+          <AvailabilityCard
+
+            title="Available Slots"
+
+            value={
+              availability.availableSlots || 0
+            }
+
+            style="
+              bg-green-50
+            "
+
+          />
+
+
+
+
+
+
+
+
+          <input
+
+
+            type="number"
+
+
+            value={capacity}
+
+
+            onChange={(e)=>
+              setCapacity(
+                e.target.value
+              )
+            }
+
+
+            className="
+              border
+              rounded-lg
+              p-3
+              w-full
+            "
+
+
+            min="0"
+
+
+          />
+
+
+
+
+
+
+
+
+
+          <button
+
+
+            onClick={save}
+
+
+            disabled={
+              mutation.isPending
+            }
+
+
+            className="
+              w-full
+              bg-orange-600
+              hover:bg-orange-700
+              text-white
+              py-3
+              rounded-lg
+              disabled:opacity-50
+            "
+
+
+          >
+
+            {
+              mutation.isPending
+              ?
+              "Updating..."
+              :
+              "Update Capacity"
+            }
+
+
+          </button>
+
+
+
+
+
+
+        </div>
+
+
+
+
+
+      </div>
+
+
+
+
+
+    </div>
+
+  );
+
 
 }
 
-from "../../api/tourApi";
-
-
-
-
-
-
-const TourAvailability =()=>{
-
-
-const {
-
-id
-
-}
-=
-useParams();
-
-
-
-const navigate =
-useNavigate();
-
-
-
-
-const [
-availability,
-setAvailability
-]
-=
-useState({
-
-totalSlots:0,
-
-bookedSlots:0,
-
-availableSlots:0
-
-});
-
-
-
-
-
-const [
-capacity,
-setCapacity
-]
-=
-useState("");
 
 
 
@@ -91,325 +422,48 @@ useState("");
 
 
 
+function AvailabilityCard({
+
+  title,
+
+  value,
+
+  style
+
+}){
 
 
-useEffect(()=>{
+  return (
+
+    <div
+      className={`
+        ${style}
+        p-4
+        rounded-lg
+      `}
+    >
 
 
-const load = async()=>{
+      <p>
+        {title}
+      </p>
 
 
-try{
+      <h2
+        className="
+          text-3xl
+          font-bold
+        "
+      >
+
+        {value}
+
+      </h2>
 
 
-const response =
+    </div>
 
-await getTourAvailability(id);
-
-
-
-setAvailability(
-
-response.data.availability
-
-);
-
-
-
-setCapacity(
-
-response.data.availability.totalSlots
-
-);
-
+  );
 
 
 }
-
-catch(error){
-
-
-toast.error(
-"Unable to load availability"
-);
-
-
-}
-
-
-
-};
-
-
-
-load();
-
-
-
-},[id]);
-
-
-
-
-
-
-
-
-
-
-const save = async()=>{
-
-
-try{
-
-
-await updateTourAvailability(
-
-id,
-
-{
-
-totalSlots:Number(capacity)
-
-}
-
-);
-
-
-
-toast.success(
-"Availability updated"
-);
-
-
-
-navigate(
-"/tour-manager/tours"
-);
-
-
-
-}
-
-catch(error){
-
-
-toast.error(
-"Update failed"
-);
-
-
-}
-
-
-
-};
-
-
-
-
-
-
-
-
-return (
-
-<div
-className="
-min-h-screen
-bg-gray-100
-p-6
-"
->
-
-
-
-<div
-className="
-max-w-xl
-mx-auto
-bg-white
-rounded-xl
-shadow
-p-8
-"
->
-
-
-<h1
-className="
-text-2xl
-font-bold
-mb-6
-"
->
-
-Tour Availability
-
-</h1>
-
-
-
-
-
-
-<div
-className="
-space-y-4
-"
->
-
-
-
-<div
-className="
-bg-blue-50
-p-4
-rounded-lg
-"
->
-
-<p>
-Total Slots
-</p>
-
-<h2
-className="
-text-3xl
-font-bold
-"
->
-
-{availability.totalSlots}
-
-</h2>
-
-</div>
-
-
-
-
-
-
-<div
-className="
-bg-red-50
-p-4
-rounded-lg
-"
->
-
-<p>
-Booked Slots
-</p>
-
-<h2
-className="
-text-3xl
-font-bold
-"
->
-
-{availability.bookedSlots}
-
-</h2>
-
-</div>
-
-
-
-
-
-
-
-<div
-className="
-bg-green-50
-p-4
-rounded-lg
-"
->
-
-<p>
-Available Slots
-</p>
-
-<h2
-className="
-text-3xl
-font-bold
-"
->
-
-{availability.availableSlots}
-
-</h2>
-
-</div>
-
-
-
-
-
-
-
-<input
-
-type="number"
-
-value={capacity}
-
-onChange={(e)=>
-setCapacity(e.target.value)
-}
-
-className="
-border
-rounded-lg
-p-3
-w-full
-"
-
-/>
-
-
-
-
-
-
-<button
-
-onClick={save}
-
-className="
-w-full
-bg-orange-600
-text-white
-py-3
-rounded-lg
-"
-
->
-
-Update Capacity
-
-</button>
-
-
-
-
-</div>
-
-
-</div>
-
-
-</div>
-
-);
-
-
-};
-
-
-export default TourAvailability;

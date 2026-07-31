@@ -1,16 +1,162 @@
-import { useState } from "react";
-import { MessageCircle, X } from "lucide-react";
+// client/src/components/HusseinAIWidget.jsx
+
+import {
+  useState
+} from "react";
+
+import {
+  MessageCircle,
+  X,
+  Send
+} from "lucide-react";
+
+import api from "../api/axios";
+
+
 
 const HusseinAIWidget = () => {
+
+
   const [open, setOpen] = useState(false);
 
+
+  const [message, setMessage] = useState("");
+
+
+  const [messages, setMessages] = useState([
+
+    {
+      role: "assistant",
+      text:
+      "👋 Hello, I am Hussein AI. How can I help plan your trip?"
+    }
+
+  ]);
+
+
+  const [loading, setLoading] = useState(false);
+
+
+
+
+
+  const sendMessage = async () => {
+
+
+    if (!message.trim())
+      return;
+
+
+
+    const userMessage = {
+
+      role: "user",
+
+      text: message
+
+    };
+
+
+
+    setMessages(prev => [
+
+      ...prev,
+
+      userMessage
+
+    ]);
+
+
+
+    setMessage("");
+
+
+    try {
+
+
+      setLoading(true);
+
+
+
+      const { data } = await api.post(
+        "/ai/chat",
+        {
+          message
+        }
+      );
+
+
+
+      setMessages(prev => [
+
+        ...prev,
+
+        {
+
+          role:"assistant",
+
+          text:
+          data.reply
+          ||
+          "I can help you plan your journey."
+
+        }
+
+      ]);
+
+
+
+    }
+
+    catch(error){
+
+
+      setMessages(prev => [
+
+        ...prev,
+
+        {
+
+          role:"assistant",
+
+          text:
+          "Sorry, I am unavailable right now."
+
+        }
+
+      ]);
+
+
+    }
+
+    finally{
+
+      setLoading(false);
+
+    }
+
+
+  };
+
+
+
+
+
+
+
   return (
+
     <>
-      {/* Floating Button */}
+
 
       {!open && (
+
         <button
-          onClick={() => setOpen(true)}
+
+          onClick={() =>
+            setOpen(true)
+          }
+
           className="
           fixed
           bottom-6
@@ -28,15 +174,24 @@ const HusseinAIWidget = () => {
           hover:scale-110
           transition
           "
+
         >
-          <MessageCircle size={32} />
+
+          <MessageCircle size={32}/>
+
         </button>
+
       )}
 
-      {/* AI PANEL */}
+
+
+
+
 
       {open && (
+
         <div
+
           className="
           fixed
           right-0
@@ -50,10 +205,15 @@ const HusseinAIWidget = () => {
           flex
           flex-col
           "
+
         >
-          {/* Header */}
+
+
+
+          {/* HEADER */}
 
           <div
+
             className="
             flex
             justify-between
@@ -62,48 +222,238 @@ const HusseinAIWidget = () => {
             text-white
             p-4
             "
-          >
-            <div>
-              <h2 className="font-bold text-lg">Hussein AI Assistant</h2>
 
-              <p className="text-sm">Your travel companion</p>
+          >
+
+
+            <div>
+
+
+              <h2 className="
+              font-bold
+              text-lg
+              ">
+
+                Hussein AI Assistant
+
+              </h2>
+
+
+              <p className="
+              text-sm
+              ">
+
+                Your travel companion
+
+              </p>
+
+
             </div>
 
+
+
             <button
-              onClick={() => setOpen(false)}
+
+              onClick={() =>
+                setOpen(false)
+              }
+
               className="
               hover:bg-green-800
               p-2
               rounded
               "
+
             >
-              <X size={25} />
+
+              <X size={25}/>
+
             </button>
+
+
+
           </div>
 
-          {/* AI CONTENT */}
 
-          <div className="flex-1 p-5 overflow-y-auto">
-            <div className="bg-gray-100 rounded-lg p-4">
-              <p>👋 Hello, I am Hussein AI.</p>
 
-              <p className="mt-2">Ask me about:</p>
 
-              <ul className="mt-3 space-y-2">
-                <li>🦁 Safari destinations</li>
 
-                <li>🏨 Hotels in Kenya</li>
 
-                <li>✈️ Travel planning</li>
 
-                <li>💰 Trip budgets</li>
-              </ul>
-            </div>
+          {/* CHAT AREA */}
+
+
+          <div
+
+            className="
+            flex-1
+            p-5
+            overflow-y-auto
+            space-y-3
+            "
+
+          >
+
+
+
+            {
+              messages.map(
+                (msg,index)=>(
+
+
+                  <div
+
+                    key={index}
+
+                    className={`
+                    rounded-lg
+                    p-3
+                    max-w-[85%]
+                    ${
+                      msg.role==="user"
+                      ?
+                      "ml-auto bg-green-600 text-white"
+                      :
+                      "bg-gray-100"
+                    }
+                    `}
+
+                  >
+
+                    {msg.text}
+
+                  </div>
+
+
+                )
+
+              )
+
+            }
+
+
+
+            {
+              loading && (
+
+                <div className="
+                bg-gray-100
+                rounded-lg
+                p-3
+                ">
+
+                  Hussein AI is typing...
+
+                </div>
+
+              )
+            }
+
+
+
           </div>
+
+
+
+
+
+
+
+          {/* INPUT */}
+
+
+          <div
+
+            className="
+            border-t
+            p-3
+            flex
+            gap-2
+            "
+
+          >
+
+
+            <input
+
+
+              value={message}
+
+
+              onChange={
+                e =>
+                setMessage(
+                  e.target.value
+                )
+              }
+
+
+              onKeyDown={
+                e => {
+
+                  if(
+                    e.key==="Enter"
+                  )
+                    sendMessage();
+
+                }
+              }
+
+
+              placeholder="
+              Ask Hussein AI about tours...
+              "
+
+
+              className="
+              flex-1
+              border
+              rounded-lg
+              px-3
+              "
+
+            />
+
+
+
+
+            <button
+
+              onClick={sendMessage}
+
+
+              className="
+              bg-green-600
+              text-white
+              px-4
+              rounded-lg
+              "
+
+            >
+
+              <Send size={20}/>
+
+            </button>
+
+
+          </div>
+
+
+
+
+
         </div>
+
       )}
+
+
+
     </>
+
   );
+
 };
+
+
 
 export default HusseinAIWidget;

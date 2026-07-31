@@ -1,96 +1,27 @@
 // client/src/api/bookingApi.js
 
-
-import axios from "axios";
-
-
-
-const API = axios.create({
-
-
-    baseURL:
-
-    import.meta.env.VITE_API_URL ||
-
-    "http://localhost:5000/api",
-
-
-});
-
-
-
-
-
-
-
+import api from "./axios";
 
 
 /*
 |--------------------------------------------------------------------------
-| ATTACH TOKEN AUTOMATICALLY
+| GET BOOKINGS
+| General booking list (supports query parameters)
 |--------------------------------------------------------------------------
 */
 
+export const getBookings = async (params = {}) => {
 
-API.interceptors.request.use(
+  const { data } = await api.get(
+    "/bookings",
+    {
+      params,
+    }
+  );
 
+  return data;
 
-(config)=>{
-
-
-const token =
-
-localStorage.getItem("token");
-
-
-
-console.log(
-
-"BOOKING API TOKEN:",
-
-token
-
-);
-
-
-
-
-
-if(token){
-
-
-config.headers.Authorization =
-
-`Bearer ${token}`;
-
-
-}
-
-
-
-
-return config;
-
-
-
-},
-
-
-
-(error)=>{
-
-
-return Promise.reject(error);
-
-
-}
-
-
-);
-
-
-
-
+};
 
 
 
@@ -100,33 +31,20 @@ return Promise.reject(error);
 |--------------------------------------------------------------------------
 | GET MY BOOKINGS
 |--------------------------------------------------------------------------
-|
-| Customer bookings
-|
 */
 
+export const getMyBookings = async (params = {}) => {
 
-export const getMyBookings = async()=>{
+  const { data } = await api.get(
+    "/bookings/my-bookings",
+    {
+      params,
+    }
+  );
 
-
-const response =
-
-await API.get(
-
-"/bookings/my-bookings"
-
-);
-
-
-
-return response.data;
-
+  return data;
 
 };
-
-
-
-
 
 
 
@@ -136,35 +54,39 @@ return response.data;
 |--------------------------------------------------------------------------
 | CREATE BOOKING
 |--------------------------------------------------------------------------
-|
-| Customer creates booking
-|
 */
 
+export const createBooking = async (data) => {
 
-export const createBooking = async(data)=>{
+  const response = await api.post(
+    "/bookings",
+    data
+  );
 
-
-const response =
-
-await API.post(
-
-"/bookings",
-
-data
-
-);
-
-
-
-return response.data;
-
+  return response.data;
 
 };
 
 
 
 
+
+/*
+|--------------------------------------------------------------------------
+| INITIATE MPESA PAYMENT
+|--------------------------------------------------------------------------
+*/
+
+export const initiatePayment = async (data) => {
+
+  const response = await api.post(
+    "/payments/mpesa",
+    data
+  );
+
+  return response.data;
+
+};
 
 
 
@@ -176,28 +98,15 @@ return response.data;
 |--------------------------------------------------------------------------
 */
 
+export const getBooking = async (id) => {
 
-export const getBooking = async(id)=>{
+  const { data } = await api.get(
+    `/bookings/${id}`
+  );
 
-
-const response =
-
-await API.get(
-
-`/bookings/${id}`
-
-);
-
-
-
-return response.data;
-
+  return data;
 
 };
-
-
-
-
 
 
 
@@ -209,30 +118,16 @@ return response.data;
 |--------------------------------------------------------------------------
 */
 
+export const cancelBooking = async (id) => {
 
-export const cancelBooking = async(id)=>{
+  const { data } = await api.put(
+    `/bookings/cancel/${id}`,
+    {}
+  );
 
-
-const response =
-
-await API.put(
-
-`/bookings/cancel/${id}`,
-
-{}
-
-);
-
-
-
-return response.data;
-
+  return data;
 
 };
-
-
-
-
 
 
 
@@ -240,54 +135,22 @@ return response.data;
 
 /*
 |--------------------------------------------------------------------------
-| ADMIN GET ALL BOOKINGS
-|--------------------------------------------------------------------------
-|
-| GET /api/bookings/admin
-|
-| Supports:
-| - status filter
-| - paymentStatus filter
-| - search
-|
-| Example:
-|
-| getAdminBookings({
-|   status:"confirmed",
-|   paymentStatus:"paid"
-| })
-|
+| ADMIN GET BOOKINGS
 |--------------------------------------------------------------------------
 */
 
+export const getAdminBookings = async (params = {}) => {
 
-export const getAdminBookings = async(params)=>{
+  const { data } = await api.get(
+    "/bookings/admin",
+    {
+      params,
+    }
+  );
 
-
-const response =
-
-await API.get(
-
-"/bookings/admin",
-
-{
-
-params
-
-}
-
-);
-
-
-
-return response.data;
-
+  return data;
 
 };
-
-
-
-
 
 
 
@@ -297,49 +160,20 @@ return response.data;
 |--------------------------------------------------------------------------
 | ADMIN UPDATE BOOKING STATUS
 |--------------------------------------------------------------------------
-|
-| PUT /api/bookings/:id/status
-|
-|--------------------------------------------------------------------------
 */
 
+export const updateBookingStatus = async (
+  id,
+  status
+) => {
 
-export const updateBookingStatus = async(
+  const { data } = await api.put(
+    `/bookings/${id}/status`,
+    {
+      status,
+    }
+  );
 
-id,
-
-status
-
-)=>{
-
-
-const response =
-
-await API.put(
-
-`/bookings/${id}/status`,
-
-{
-
-status
-
-}
-
-);
-
-
-
-return response.data;
-
+  return data;
 
 };
-
-
-
-
-
-
-
-
-
-export default API;

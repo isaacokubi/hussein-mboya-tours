@@ -2,19 +2,21 @@ import {
 
 Calendar,
 
-Users,
-
 Wallet,
 
-TrendingUp
+TrendingUp,
+
+BadgeDollarSign
 
 }
 
 from "lucide-react";
 
 
+
 import DashboardCard
-from "../../components/agent/DashboardCard";
+from "../../components/common/DashboardCard";
+
 
 
 import useAgentDashboard
@@ -23,34 +25,124 @@ from "../../hooks/useAgentDashboard";
 
 
 
+
+
+
 export default function AgentDashboard(){
 
 
+
+
+
 const {
+
 data,
-isLoading
+
+isLoading,
+
+isError
+
 }
+
 =
+
 useAgentDashboard();
+
+
+
+
+
 
 
 
 if(isLoading){
 
+
 return (
 
-<div>
+<div
+className="
+p-6
+text-gray-600
+"
+>
+
 Loading Agent Dashboard...
+
 </div>
 
-)
+);
+
 
 }
 
 
 
-const stats =
-data.data;
+
+
+
+
+if(isError){
+
+
+return (
+
+<div
+className="
+p-6
+text-red-600
+"
+>
+
+Failed to load dashboard data.
+
+</div>
+
+);
+
+
+}
+
+
+
+
+
+
+
+
+const stats = data || {};
+
+
+
+
+
+
+
+
+const formatCurrency=(value=0)=>{
+
+
+return new Intl.NumberFormat(
+
+"en-KE",
+
+{
+
+style:"currency",
+
+currency:"KES"
+
+}
+
+).format(value);
+
+
+};
+
+
+
+
+
 
 
 
@@ -60,48 +152,75 @@ return (
 
 
 <h1
+
 className="
 text-2xl
 font-bold
 mb-6
 "
+
 >
 
-Dashboard
+Agent Dashboard
 
 </h1>
 
 
 
+
+
+
+
 <div
+
 className="
 grid
-md:grid-cols-4
+grid-cols-1
+md:grid-cols-2
+lg:grid-cols-4
 gap-6
 "
+
 >
+
+
+
+
+
 
 
 <DashboardCard
 
 title="Bookings"
 
-value={stats.bookings}
+value={stats.bookings || 0}
 
 icon={<Calendar/>}
 
 />
 
 
+
+
+
+
+
+
 <DashboardCard
 
 title="Completed Tours"
 
-value={stats.completedTours}
+value={stats.completedTours || 0}
 
 icon={<TrendingUp/>}
 
 />
+
+
+
+
+
+
 
 
 <DashboardCard
@@ -109,7 +228,9 @@ icon={<TrendingUp/>}
 title="Revenue"
 
 value={
-`KES ${stats.revenue.toLocaleString()}`
+formatCurrency(
+stats.revenue
+)
 }
 
 icon={<Wallet/>}
@@ -117,24 +238,42 @@ icon={<Wallet/>}
 />
 
 
+
+
+
+
+
+
+
 <DashboardCard
 
 title="Commission"
 
 value={
-`KES ${stats.commission.toLocaleString()}`
+formatCurrency(
+stats.commission
+)
 }
 
-icon={<Users/>}
+icon={<BadgeDollarSign/>}
 
 />
 
 
+
+
+
+
+
 </div>
 
 
+
+
+
 </div>
 
-)
+);
+
 
 }

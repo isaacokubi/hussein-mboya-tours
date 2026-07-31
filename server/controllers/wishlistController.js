@@ -1,4 +1,7 @@
+import mongoose from "mongoose";
+
 import Wishlist from "../models/Wishlist.js";
+import Tour from "../models/Tour.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -12,29 +15,23 @@ export const getWishlist = async (req, res, next) => {
       user: req.user._id,
     }).populate({
       path: "tours",
+      match: {
+        status: "active",
+      },
     });
-
-    /*
-    |--------------------------------------------------------------------------
-    | CREATE EMPTY WISHLIST IF NONE EXISTS
-    |--------------------------------------------------------------------------
-    */
 
     if (!wishlist) {
       wishlist = await Wishlist.create({
         user: req.user._id,
-
         tours: [],
       });
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | RETURN ONLY TOURS ARRAY
-    |--------------------------------------------------------------------------
-    */
-
-    res.status(200).json(wishlist.tours || []);
+    return res.status(200).json({
+      success: true,
+      count: wishlist.tours.length,
+      wishlist: wishlist.tours,
+    });
   } catch (error) {
     next(error);
   }
@@ -52,7 +49,27 @@ export const addWishlist = async (req, res, next) => {
 
     if (!tourId) {
       return res.status(400).json({
+        success: false,
         message: "Tour ID is required",
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(tourId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid tour ID",
+      });
+    }
+
+    const tour = await Tour.findOne({
+      _id: tourId,
+      status: "active",
+    });
+
+    if (!tour) {
+      return res.status(404).json({
+        success: false,
+        message: "Tour not found",
       });
     }
 
@@ -63,22 +80,33 @@ export const addWishlist = async (req, res, next) => {
     if (!wishlist) {
       wishlist = await Wishlist.create({
         user: req.user._id,
-
         tours: [],
       });
     }
 
-    const alreadyExists = wishlist.tours.some((id) => id.toString() === tourId);
-
-    if (!alreadyExists) {
-      wishlist.tours.push(tourId);
-    }
-
-    await wishlist.save();
+    await Wishlist.updateOne(
+      {
+        _id: wishlist._id,
+      },
+      {
+        $addToSet: {
+          tours: tourId,
+        },
+      }
+    );
 
     await wishlist.populate("tours");
 
-    res.status(200).json(wishlist.tours);
+    const updatedWishlist = await Wishlist.findById(
+      wishlist._id
+    ).populate("tours");
+
+    return res.status(200).json({
+      success: true,
+      message: "Tour added to wishlist",
+      count: updatedWishlist.tours.length,
+      wishlist: updatedWishlist.tours,
+    });
   } catch (error) {
     next(error);
   }
@@ -90,15 +118,16 @@ export const addWishlist = async (req, res, next) => {
 |--------------------------------------------------------------------------
 */
 
-export const removeWishlist = async (
-  req,
-
-  res,
-
-  next,
-) => {
+export const removeWishlist = async (req, res, next) => {
   try {
     const { tourId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(tourId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid tour ID",
+      });
+    }
 
     const wishlist = await Wishlist.findOne({
       user: req.user._id,
@@ -106,17 +135,32 @@ export const removeWishlist = async (
 
     if (!wishlist) {
       return res.status(404).json({
+        success: false,
         message: "Wishlist not found",
       });
     }
 
-    wishlist.tours = wishlist.tours.filter((id) => id.toString() !== tourId);
+    await Wishlist.updateOne(
+      {
+        _id: wishlist._id,
+      },
+      {
+        $pull: {
+          tours: tourId,
+        },
+      }
+    );
 
-    await wishlist.save();
+    const updatedWishlist = await Wishlist.findById(
+      wishlist._id
+    ).populate("tours");
 
-    await wishlist.populate("tours");
-
-    res.status(200).json(wishlist.tours);
+    return res.status(200).json({
+      success: true,
+      message: "Tour removed from wishlist",
+      count: updatedWishlist.tours.length,
+      wishlist: updatedWishlist.tours,
+    });
   } catch (error) {
     next(error);
   }

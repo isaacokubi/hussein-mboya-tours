@@ -1,48 +1,64 @@
+import mongoose from "mongoose";
 import TourPackage from "../models/TourPackage.js";
+
+/*
+|--------------------------------------------------------------------------
+| HELPERS
+|--------------------------------------------------------------------------
+*/
+
+const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
 
 /*
 |--------------------------------------------------------------------------
 | GET AGENT TOUR PACKAGES
 |--------------------------------------------------------------------------
 |
-| Agents select packages created by Admin/Tour Manager.
-|
-| Agent cannot modify prices.
-|
+| Agents can only view active tour packages.
+| Supports:
+| - Search
+| - Category filter
+| - Destination filter
+| - Featured filter
+| - Pagination
+|--------------------------------------------------------------------------
 */
 
-export const getAgentPackages = async (req, res) => {
+export const getAgentPackages = async (req, res, next) => {
   try {
     const {
       search,
-
       category,
-
       destination,
-
       featured,
-
       page = 1,
-
       limit = 12,
+      sort = "latest",
     } = req.query;
+
+    const currentPage = Math.max(Number(page), 1);
+    const pageSize = Math.min(Math.max(Number(limit), 1), 100);
+    const skip = (currentPage - 1) * pageSize;
+
+    /*
+    |--------------------------------------------------------------------------
+    | FILTER
+    |--------------------------------------------------------------------------
+    */
 
     const filter = {
       status: "active",
     };
-
-    /*
-|--------------------------------------------------------------------------
-| FILTERS
-|--------------------------------------------------------------------------
-*/
 
     if (category) {
       filter.category = category;
     }
 
     if (destination) {
-      filter.destination = destination;
+      filter.destination = {
+        $regex: destination,
+        $options: "i",
+      };
     }
 
     if (featured === "true") {
@@ -54,15 +70,18 @@ export const getAgentPackages = async (req, res) => {
         {
           title: {
             $regex: search,
-
             $options: "i",
           },
         },
-
         {
           destination: {
             $regex: search,
-
+            $options: "i",
+          },
+        },
+        {
+          category: {
+            $regex: search,
             $options: "i",
           },
         },
@@ -70,50 +89,100 @@ export const getAgentPackages = async (req, res) => {
     }
 
     /*
-|--------------------------------------------------------------------------
-| PAGINATION
-|--------------------------------------------------------------------------
-*/
+    |--------------------------------------------------------------------------
+    | SORTING
+    |--------------------------------------------------------------------------
+    */
 
-    const skip = (Number(page) - 1) * Number(limit);
+    let sortOption = {
+      createdAt: -1,
+    };
 
-    const packages = await TourPackage.find(filter)
+    switch (sort) {
+      case "price-low":
+        sortOption = {
+          agentPrice: 1,
+        };
+        break;
 
-      .select(
-        "title slug destination category duration coverImage gallery agentPrice basePrice currency availableSeats maxGuests featured",
-      )
+      case "price-high":
+        sortOption = {
+          agentPrice: -1,
+        };
+        break;
 
-      .sort({
-        createdAt: -1,
-      })
+      case "popular":
+        sortOption = {
+          views: -1,
+        };
+        break;
 
-      .skip(skip)
+      case "latest":
+      default:
+        sortOption = {
+          createdAt: -1,
+        };
+    }
 
-      .limit(Number(limit));
+    /*
+    |--------------------------------------------------------------------------
+    | FETCH DATA
+    |--------------------------------------------------------------------------
+    */
 
-    const total = await TourPackage.countDocuments(filter);
+    const [packages, total] = await Promise.all([
+      TourPackage.find(filter)
+        .select(
+          `
+          title
+          slug
+          destination
+          category
+          duration
+          coverImage
+          gallery
+          agentPrice
+          basePrice
+          currency
+          availableSeats
+          maxGuests
+          featured
+          views
+          createdAt
+        `,
+        )
+        .sort(sortOption)
+        .skip(skip)
+        .limit(pageSize)
+        .lean(),
 
-    res.json({
+      TourPackage.countDocuments(filter),
+    ]);
+
+    /*
+    |--------------------------------------------------------------------------
+    | RESPONSE
+    |--------------------------------------------------------------------------
+    */
+
+    res.status(200).json({
       success: true,
 
       pagination: {
         total,
-
-        page: Number(page),
-
-        pages: Math.ceil(total / limit),
+        page: currentPage,
+        limit: pageSize,
+        pages: Math.ceil(total / pageSize),
+        hasNext: currentPage < Math.ceil(total / pageSize),
+        hasPrev: currentPage > 1,
       },
+
+      count: packages.length,
 
       packages,
     });
   } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
-      success: false,
-
-      message: error.message,
-    });
+    next(error);
   }
 };
 
@@ -121,44 +190,66 @@ export const getAgentPackages = async (req, res) => {
 |--------------------------------------------------------------------------
 | GET SINGLE PACKAGE DETAILS
 |--------------------------------------------------------------------------
+|
+| Returns one active package
+| Automatically increments views
+|--------------------------------------------------------------------------
 */
 
-export const getPackageDetails = async (req, res) => {
+export const getPackageDetails = async (req, res, next) => {
   try {
-    const packageData = await TourPackage.findOne({
-      _id: req.params.id,
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDATE ID
+    |--------------------------------------------------------------------------
+    */
 
-      status: "active",
-    });
-
-    if (!packageData) {
-      return res.status(404).json({
+    if (!isValidId(req.params.id)) {
+      return res.status(400).json({
         success: false,
-
-        message: "Tour package not found",
+        message: "Invalid package ID.",
       });
     }
 
     /*
-|--------------------------------------------------------------------------
-| INCREASE PACKAGE VIEWS
-|--------------------------------------------------------------------------
-*/
+    |--------------------------------------------------------------------------
+    | FIND PACKAGE
+    |--------------------------------------------------------------------------
+    */
 
-    packageData.views += 1;
+    const packageData = await TourPackage.findOneAndUpdate(
+      {
+        _id: req.params.id,
+        status: "active",
+      },
+      {
+        $inc: {
+          views: 1,
+        },
+      },
+      {
+        new: true,
+      },
+    ).lean();
 
-    await packageData.save();
+    if (!packageData) {
+      return res.status(404).json({
+        success: false,
+        message: "Tour package not found.",
+      });
+    }
 
-    res.json({
+    /*
+    |--------------------------------------------------------------------------
+    | RESPONSE
+    |--------------------------------------------------------------------------
+    */
+
+    res.status(200).json({
       success: true,
-
       package: packageData,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-
-      message: error.message,
-    });
+    next(error);
   }
 };

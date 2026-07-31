@@ -1,58 +1,272 @@
+// server/models/WalletTransaction.js
+
 import mongoose from "mongoose";
 
+/*
+|--------------------------------------------------------------------------
+| WALLET TRANSACTION SCHEMA
+|--------------------------------------------------------------------------
+|
+| Records every wallet movement for travel agents.
+|
+| Examples:
+| - Commission earned
+| - Withdrawal
+| - Refund adjustment
+| - Bonus
+| - Manual adjustment
+|
+|--------------------------------------------------------------------------
+*/
 
-const walletTransactionSchema =
-new mongoose.Schema(
-{
+const walletTransactionSchema = new mongoose.Schema(
+  {
+    /*
+    |--------------------------------------------------------------------------
+    | AGENT
+    |--------------------------------------------------------------------------
+    */
 
-agent:{
+    agent: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Agent",
+      required: true,
+      index: true,
+    },
 
-type:mongoose.Schema.Types.ObjectId,
+    /*
+    |--------------------------------------------------------------------------
+    | RELATED USER (Backward Compatibility)
+    |--------------------------------------------------------------------------
+    */
 
-ref:"User"
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
 
-},
+    /*
+    |--------------------------------------------------------------------------
+    | RELATED COMMISSION
+    |--------------------------------------------------------------------------
+    */
 
+    commission: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Commission",
+      default: null,
+    },
 
-type:{
+    /*
+    |--------------------------------------------------------------------------
+    | RELATED BOOKING
+    |--------------------------------------------------------------------------
+    */
 
-type:String,
+    booking: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Booking",
+      default: null,
+    },
 
-enum:[
+    /*
+    |--------------------------------------------------------------------------
+    | TRANSACTION TYPE
+    |--------------------------------------------------------------------------
+    */
 
-"commission",
+    type: {
+      type: String,
+      enum: [
+        "commission",
+        "withdrawal",
+        "refund",
+        "bonus",
+        "adjustment",
+      ],
+      required: true,
+    },
 
-"withdrawal"
+    /*
+    |--------------------------------------------------------------------------
+    | TRANSACTION DIRECTION
+    |--------------------------------------------------------------------------
+    */
 
-]
+    direction: {
+      type: String,
+      enum: ["credit", "debit"],
+      required: true,
+    },
 
-},
+    /*
+    |--------------------------------------------------------------------------
+    | AMOUNT
+    |--------------------------------------------------------------------------
+    */
 
+    amount: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
 
-amount:Number,
+    /*
+    |--------------------------------------------------------------------------
+    | WALLET BALANCE
+    |--------------------------------------------------------------------------
+    */
 
+    balanceBefore: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
 
-reference:String,
+    balanceAfter: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
 
+    /*
+    |--------------------------------------------------------------------------
+    | REFERENCE
+    |--------------------------------------------------------------------------
+    */
 
-status:{
+    reference: {
+      type: String,
+      trim: true,
+      unique: true,
+      sparse: true,
+    },
 
-type:String,
+    description: {
+      type: String,
+      trim: true,
+      default: "",
+    },
 
-default:"completed"
+    /*
+    |--------------------------------------------------------------------------
+    | PAYMENT DETAILS
+    |--------------------------------------------------------------------------
+    */
 
-}
+    paymentMethod: {
+      type: String,
+      enum: [
+        "mpesa",
+        "bank_transfer",
+        "cash",
+        "internal",
+        "other",
+      ],
+      default: "internal",
+    },
 
+    transactionReference: {
+      type: String,
+      default: "",
+      trim: true,
+    },
 
-},
-{
-timestamps:true
-}
+    /*
+    |--------------------------------------------------------------------------
+    | STATUS
+    |--------------------------------------------------------------------------
+    */
 
+    status: {
+      type: String,
+      enum: [
+        "pending",
+        "processing",
+        "completed",
+        "failed",
+        "cancelled",
+      ],
+      default: "completed",
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | APPROVAL
+    |--------------------------------------------------------------------------
+    */
+
+    approvedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
+    approvedAt: {
+      type: Date,
+      default: null,
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | NOTES
+    |--------------------------------------------------------------------------
+    */
+
+    notes: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+  },
+  {
+    timestamps: true,
+  }
 );
 
+/*
+|--------------------------------------------------------------------------
+| INDEXES
+|--------------------------------------------------------------------------
+*/
 
-export default mongoose.model(
-"WalletTransaction",
-walletTransactionSchema
-);
+walletTransactionSchema.index({
+  agent: 1,
+  createdAt: -1,
+});
+
+walletTransactionSchema.index({
+  booking: 1,
+});
+
+walletTransactionSchema.index({
+  commission: 1,
+});
+
+walletTransactionSchema.index({
+  status: 1,
+});
+
+walletTransactionSchema.index({
+  type: 1,
+});
+
+walletTransactionSchema.index({
+  reference: 1,
+});
+
+/*
+|--------------------------------------------------------------------------
+| MODEL EXPORT
+|--------------------------------------------------------------------------
+*/
+
+const WalletTransaction =
+  mongoose.models.WalletTransaction ||
+  mongoose.model(
+    "WalletTransaction",
+    walletTransactionSchema
+  );
+
+export default WalletTransaction;

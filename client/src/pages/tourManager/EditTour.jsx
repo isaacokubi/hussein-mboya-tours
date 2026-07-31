@@ -1,43 +1,47 @@
-import React,{
-useEffect,
-useState
-}
-from "react";
+// client/src/pages/tourManager/EditTour.jsx
+
+
+import {
+    useState
+} from "react";
+
+
+import {
+    useNavigate,
+    useParams
+} from "react-router-dom";
+
+
+import {
+    useQuery,
+    useMutation,
+    useQueryClient
+} from "@tanstack/react-query";
+
+
+import {
+    toast
+} from "react-toastify";
 
 
 import {
 
-useNavigate,
+    getTour,
 
-useParams
+    updateTour,
 
-}
-from "react-router-dom";
+    getGuides,
 
+    getVehicles,
 
-import {
-
-toast
+    getDestinations
 
 }
-from "react-toastify";
-
-
-import {
-
-getTour,
-
-updateTour,
-
-getGuides,
-
-getVehicles,
-
-getDestinations
-
-}
-
 from "../../api/tourApi";
+
+
+
+
 
 
 
@@ -46,62 +50,31 @@ from "../../api/tourApi";
 const EditTour =()=>{
 
 
-const {
-id
-}
-=
-useParams();
 
+    const {
 
-const navigate =
-useNavigate();
+        id
 
+    } = useParams();
 
 
 
-const [
-guides,
-setGuides
-]
-=
-useState([]);
 
+    const navigate = useNavigate();
 
 
-const [
-vehicles,
-setVehicles
-]
-=
-useState([]);
 
+    const queryClient = useQueryClient();
 
 
-const [
-destinations,
-setDestinations
-]
-=
-useState([]);
 
 
 
-const [
-loading,
-setLoading
-]
-=
-useState(true);
 
 
 
 
-const [
-saving,
-setSaving
-]
-=
-useState(false);
+    const [form,setForm] = useState(null);
 
 
 
@@ -109,953 +82,1128 @@ useState(false);
 
 
 
-const [
-form,
-setForm
-]
-=
-useState({
 
-title:"",
 
-description:"",
+    const {
 
-category:"",
+        data:tourData,
 
-destination:"",
+        isLoading:tourLoading
 
-country:"",
+    } = useQuery({
 
-date:"",
 
-capacity:20,
 
-duration:1,
+        queryKey:[
 
-difficulty:"easy",
+            "tour",
 
-price:0,
+            id
 
-discount:0,
+        ],
 
-images:"",
 
-guide:"",
 
-vehicle:"",
+        queryFn:()=>getTour(id),
 
-status:"upcoming"
 
 
-});
+        select:(res)=>{
 
 
 
+            const tour =
 
+                res?.tour ||
 
+                res?.data?.tour;
 
 
 
+            return {
 
-useEffect(()=>{
 
+                title:tour?.title || "",
 
-const loadData =
-async()=>{
 
+                description:tour?.description || "",
 
-try{
 
+                category:tour?.category || "",
 
-const [
 
-tourResponse,
+                destination:tour?.destination?._id || "",
 
-guideResponse,
 
-vehicleResponse,
+                country:tour?.country || "",
 
-destinationResponse
 
-]
+                date:
 
-=
-await Promise.all([
+                    tour?.date
 
+                    ?
 
-getTour(id),
+                    tour.date.substring(0,10)
 
-getGuides(),
+                    :
 
-getVehicles(),
+                    "",
 
-getDestinations()
 
 
-]);
+                capacity:tour?.capacity || 20,
 
 
+                duration:tour?.duration || 1,
 
 
+                difficulty:tour?.difficulty || "easy",
 
 
-const tour =
-tourResponse.data.tour;
+                price:tour?.price || 0,
 
 
+                discount:tour?.discount || 0,
 
 
+                images:
 
+                    tour?.images
 
-setForm({
+                    ?
 
-title:
-tour.title || "",
+                    tour.images.join(",")
 
+                    :
 
-description:
-tour.description || "",
+                    "",
 
 
-category:
-tour.category || "",
 
+                guide:tour?.guide?._id || "",
 
-destination:
-tour.destination?._id || "",
 
+                vehicle:tour?.vehicle?._id || "",
 
-country:
-tour.country || "",
 
+                status:tour?.status || "upcoming"
 
-date:
 
-tour.date
-?
-tour.date.substring(0,10)
-:
-"",
 
+            };
 
 
-capacity:
-tour.capacity || 20,
 
+        }
 
-duration:
-tour.duration || 1,
 
 
-difficulty:
-tour.difficulty || "easy",
+    });
 
 
-price:
-tour.price || 0,
 
 
-discount:
-tour.discount || 0,
 
 
-images:
 
-tour.images
-?
-tour.images.join(",")
-:
-"",
 
 
+    const {
 
-guide:
-tour.guide?._id || "",
+        data:guidesData
 
+    } = useQuery({
 
-vehicle:
-tour.vehicle?._id || "",
 
 
-status:
-tour.status || "upcoming"
+        queryKey:[
 
+            "guides"
 
-});
+        ],
 
 
 
+        queryFn:getGuides
 
 
-setGuides(
-guideResponse.data.users || []
-);
 
+    });
 
 
-setVehicles(
-vehicleResponse.data.vehicles || []
-);
 
 
 
-setDestinations(
-destinationResponse.data.destinations || []
-);
 
 
 
-}
 
-catch(error){
+    const {
 
+        data:vehiclesData
 
-console.log(error);
+    } = useQuery({
 
 
-toast.error(
-"Failed loading tour"
-);
 
+        queryKey:[
 
-}
+            "vehicles"
 
-finally{
+        ],
 
-setLoading(false);
 
-}
+
+        queryFn:getVehicles
+
+
+
+    });
+
+
+
+
+
+
+
+
+
+    const {
+
+        data:destinationsData
+
+    } = useQuery({
+
+
+
+        queryKey:[
+
+            "destinations"
+
+        ],
+
+
+
+        queryFn:getDestinations
+
+
+
+    });
+
+
+
+
+
+
+
+
+
+    const guides =
+
+        guidesData?.users ||
+
+        guidesData?.data?.users ||
+
+        [];
+
+
+
+
+
+
+
+
+    const vehicles =
+
+        vehiclesData?.vehicles ||
+
+        vehiclesData?.data?.vehicles ||
+
+        [];
+
+
+
+
+
+
+
+
+    const destinations =
+
+        destinationsData?.destinations ||
+
+        destinationsData?.data?.destinations ||
+
+        [];
+
+
+
+
+
+
+
+
+
+    if(!form && tourData)
+
+    setForm(tourData);
+
+
+
+
+
+
+
+
+
+    const {
+
+        mutate:saveTour,
+
+        isPending
+
+    } = useMutation({
+
+
+
+        mutationFn:(payload)=>
+
+            updateTour(
+
+                id,
+
+                payload
+
+            ),
+
+
+
+
+
+        onSuccess:()=>{
+
+
+
+            toast.success(
+
+                "Tour updated successfully"
+
+            );
+
+
+
+            queryClient.invalidateQueries({
+
+                queryKey:[
+
+                    "tour",
+
+                    id
+
+                ]
+
+            });
+
+
+
+            navigate(
+
+                "/tour-manager/tours"
+
+            );
+
+
+        },
+
+
+
+        onError:(error)=>{
+
+
+
+            toast.error(
+
+                error?.response?.data?.message ||
+
+                "Update failed"
+
+            );
+
+
+        }
+
+
+
+    });
+
+
+
+
+
+
+
+
+
+    const handleChange=(e)=>{
+
+
+
+        setForm(prev=>({
+
+
+
+            ...prev,
+
+
+
+            [e.target.name]:
+
+                e.target.value
+
+
+
+        }));
+
+
+
+    };
+
+
+
+
+
+
+
+
+
+    const submitHandler=(e)=>{
+
+
+
+        e.preventDefault();
+
+
+
+
+        saveTour({
+
+
+
+            ...form,
+
+
+
+            capacity:Number(form.capacity),
+
+
+            duration:Number(form.duration),
+
+
+            price:Number(form.price),
+
+
+            discount:Number(form.discount),
+
+
+
+
+            images:
+
+
+                form.images
+
+                ?
+
+                form.images
+
+                .split(",")
+
+                .map(img=>img.trim())
+
+                :
+
+                []
+
+
+
+        });
+
+
+
+    };
+
+
+
+
+
+
+
+
+
+    if(tourLoading || !form)
+
+
+    return (
+
+
+        <div className="
+            p-10
+            text-center
+        ">
+
+
+            Loading tour...
+
+
+        </div>
+
+
+    );
+
+
+
+
+
+
+
+
+
+    return (
+
+
+
+        <div className="
+            min-h-screen
+            bg-gray-100
+            p-6
+        ">
+
+
+
+
+
+
+
+            <div className="
+                max-w-5xl
+                mx-auto
+                bg-white
+                rounded-xl
+                shadow
+                p-8
+            ">
+
+
+
+
+
+                <h1 className="
+                    text-3xl
+                    font-bold
+                    mb-6
+                ">
+
+
+                    Edit Tour
+
+
+                </h1>
+
+
+
+
+
+
+
+
+
+                <form
+
+
+                    onSubmit={submitHandler}
+
+
+
+                    className="
+                        grid
+                        md:grid-cols-2
+                        gap-5
+                    "
+
+
+                >
+
+
+
+
+
+
+
+                    <input
+
+                        name="title"
+
+                        value={form.title}
+
+                        onChange={handleChange}
+
+                        className="input"
+
+                    />
+
+
+
+
+
+
+
+
+                    <input
+
+                        name="category"
+
+                        value={form.category}
+
+                        onChange={handleChange}
+
+                        className="input"
+
+                    />
+
+
+
+
+
+
+
+
+                    <select
+
+                        name="destination"
+
+                        value={form.destination}
+
+                        onChange={handleChange}
+
+                        className="input"
+
+                    >
+
+
+                        <option value="">
+
+                            Destination
+
+                        </option>
+
+
+
+                        {
+
+                            destinations.map(item=>(
+
+
+                                <option
+
+                                key={item._id}
+
+                                value={item._id}
+
+                                >
+
+                                    {item.name}
+
+                                </option>
+
+
+
+                            ))
+
+                        }
+
+
+                    </select>
+
+
+
+
+
+
+
+
+                    <input
+
+                        name="country"
+
+                        value={form.country}
+
+                        onChange={handleChange}
+
+                        className="input"
+
+                    />
+
+
+
+
+
+
+
+
+
+                    <textarea
+
+                        name="description"
+
+                        value={form.description}
+
+                        onChange={handleChange}
+
+                        className="
+                            input
+                            md:col-span-2
+                        "
+
+                    />
+
+
+
+
+
+
+
+
+
+                    <input
+
+                        type="date"
+
+                        name="date"
+
+                        value={form.date}
+
+                        onChange={handleChange}
+
+                        className="input"
+
+                    />
+
+
+
+
+
+
+
+
+
+                    <input
+
+                        type="number"
+
+                        name="capacity"
+
+                        value={form.capacity}
+
+                        onChange={handleChange}
+
+                        className="input"
+
+                    />
+
+
+
+
+
+
+
+
+
+                    <input
+
+                        type="number"
+
+                        name="duration"
+
+                        value={form.duration}
+
+                        onChange={handleChange}
+
+                        className="input"
+
+                    />
+
+
+
+
+
+
+
+
+
+                    <select
+
+                        name="difficulty"
+
+                        value={form.difficulty}
+
+                        onChange={handleChange}
+
+                        className="input"
+
+                    >
+
+
+                        <option value="easy">
+
+                            Easy
+
+                        </option>
+
+
+                        <option value="moderate">
+
+                            Moderate
+
+                        </option>
+
+
+                        <option value="hard">
+
+                            Hard
+
+                        </option>
+
+
+                    </select>
+
+
+
+
+
+
+
+
+
+                    <input
+
+                        type="number"
+
+                        name="price"
+
+                        value={form.price}
+
+                        onChange={handleChange}
+
+                        className="input"
+
+                    />
+
+
+
+
+
+
+
+
+
+                    <input
+
+                        type="number"
+
+                        name="discount"
+
+                        value={form.discount}
+
+                        onChange={handleChange}
+
+                        className="input"
+
+                    />
+
+
+
+
+
+
+
+
+
+                    <select
+
+                        name="guide"
+
+                        value={form.guide}
+
+                        onChange={handleChange}
+
+                        className="input"
+
+                    >
+
+
+                        <option value="">
+
+                            Guide
+
+                        </option>
+
+
+
+
+                        {
+
+                            guides.map(item=>(
+
+
+                                <option
+
+                                key={item._id}
+
+                                value={item._id}
+
+                                >
+
+                                    {item.name}
+
+                                </option>
+
+
+                            ))
+
+                        }
+
+
+                    </select>
+
+
+
+
+
+
+
+
+
+                    <select
+
+                        name="vehicle"
+
+                        value={form.vehicle}
+
+                        onChange={handleChange}
+
+                        className="input"
+
+                    >
+
+
+                        <option value="">
+
+                            Vehicle
+
+                        </option>
+
+
+
+
+
+                        {
+
+                            vehicles.map(item=>(
+
+
+                                <option
+
+                                key={item._id}
+
+                                value={item._id}
+
+                                >
+
+                                    {item.name}
+
+                                    {" - "}
+
+                                    {
+
+                                    item.registration ||
+
+                                    item.registrationNumber
+
+                                    }
+
+
+                                </option>
+
+
+
+                            ))
+
+                        }
+
+
+
+                    </select>
+
+
+
+
+
+
+
+
+
+                    <select
+
+                        name="status"
+
+                        value={form.status}
+
+                        onChange={handleChange}
+
+                        className="input"
+
+                    >
+
+
+                        <option value="draft">
+
+                            Draft
+
+                        </option>
+
+
+                        <option value="upcoming">
+
+                            Upcoming
+
+                        </option>
+
+
+                        <option value="ongoing">
+
+                            Ongoing
+
+                        </option>
+
+
+                        <option value="completed">
+
+                            Completed
+
+                        </option>
+
+
+                        <option value="cancelled">
+
+                            Cancelled
+
+                        </option>
+
+
+                    </select>
+
+
+
+
+
+
+
+
+
+                    <input
+
+                        name="images"
+
+                        value={form.images}
+
+                        onChange={handleChange}
+
+                        className="
+                            input
+                            md:col-span-2
+                        "
+
+                    />
+
+
+
+
+
+
+
+
+
+                    <button
+
+                        disabled={isPending}
+
+                        className="
+                            md:col-span-2
+                            bg-orange-600
+                            hover:bg-orange-700
+                            disabled:opacity-50
+                            text-white
+                            py-3
+                            rounded-lg
+                            font-semibold
+                        "
+
+
+                    >
+
+
+                        {
+
+                            isPending
+
+                            ?
+
+                            "Saving..."
+
+                            :
+
+                            "Update Tour"
+
+
+                        }
+
+
+                    </button>
+
+
+
+
+
+
+
+                </form>
+
+
+
+
+
+
+
+            </div>
+
+
+
+
+
+
+
+        </div>
+
+
+    );
 
 
 };
 
 
 
-loadData();
 
-
-
-},[id]);
-
-
-
-
-
-
-
-
-
-const handleChange=(e)=>{
-
-
-setForm({
-
-...form,
-
-[e.target.name]:
-
-e.target.value
-
-
-});
-
-
-};
-
-
-
-
-
-
-
-
-
-const submitHandler =
-async(e)=>{
-
-
-e.preventDefault();
-
-
-try{
-
-
-setSaving(true);
-
-
-
-
-await updateTour(
-
-id,
-
-{
-
-...form,
-
-images:
-
-form.images
-.split(",")
-.map(
-img=>img.trim()
-)
-
-
-}
-
-);
-
-
-
-
-
-toast.success(
-"Tour updated successfully"
-);
-
-
-
-navigate(
-"/tour-manager/tours"
-);
-
-
-
-}
-
-catch(error){
-
-
-toast.error(
-
-error.response?.data?.message ||
-
-"Update failed"
-
-);
-
-
-}
-
-finally{
-
-setSaving(false);
-
-}
-
-
-};
-
-
-
-
-
-
-
-
-
-if(loading){
-
-
-return (
-
-<div className="
-p-10
-text-center
-">
-
-Loading tour...
-
-</div>
-
-);
-
-
-}
-
-
-
-
-
-
-
-
-
-
-return (
-
-<div
-className="
-min-h-screen
-bg-gray-100
-p-6
-"
->
-
-
-<div
-className="
-max-w-5xl
-mx-auto
-bg-white
-rounded-xl
-shadow
-p-8
-"
->
-
-
-<h1
-className="
-text-3xl
-font-bold
-mb-6
-"
->
-
-Edit Tour
-
-</h1>
-
-
-
-
-
-<form
-
-onSubmit={submitHandler}
-
-className="
-grid
-md:grid-cols-2
-gap-5
-"
-
->
-
-
-
-
-
-
-
-<input
-
-name="title"
-
-value={form.title}
-
-onChange={handleChange}
-
-className="input"
-
-/>
-
-
-
-
-
-
-
-
-<input
-
-name="category"
-
-value={form.category}
-
-onChange={handleChange}
-
-className="input"
-
-/>
-
-
-
-
-
-
-
-
-<select
-
-name="destination"
-
-value={form.destination}
-
-onChange={handleChange}
-
-className="input"
-
->
-
-
-<option value="">
-
-Destination
-
-</option>
-
-
-
-{
-
-destinations.map(
-
-item=>(
-
-
-<option
-
-key={item._id}
-
-value={item._id}
-
->
-
-{item.name}
-
-</option>
-
-
-)
-
-)
-
-}
-
-
-
-</select>
-
-
-
-
-
-
-
-
-<input
-
-name="country"
-
-value={form.country}
-
-onChange={handleChange}
-
-className="input"
-
-/>
-
-
-
-
-
-
-
-
-<textarea
-
-name="description"
-
-value={form.description}
-
-onChange={handleChange}
-
-className="
-input
-md:col-span-2
-"
-
-/>
-
-
-
-
-
-
-
-<input
-
-type="date"
-
-name="date"
-
-value={form.date}
-
-onChange={handleChange}
-
-className="input"
-
-/>
-
-
-
-
-
-
-
-
-<input
-
-type="number"
-
-name="capacity"
-
-value={form.capacity}
-
-onChange={handleChange}
-
-className="input"
-
-/>
-
-
-
-
-
-
-
-
-<input
-
-type="number"
-
-name="duration"
-
-value={form.duration}
-
-onChange={handleChange}
-
-className="input"
-
-/>
-
-
-
-
-
-
-
-
-<select
-
-name="difficulty"
-
-value={form.difficulty}
-
-onChange={handleChange}
-
-className="input"
-
->
-
-
-<option value="easy">
-Easy
-</option>
-
-
-<option value="moderate">
-Moderate
-</option>
-
-
-<option value="hard">
-Hard
-</option>
-
-
-</select>
-
-
-
-
-
-
-
-
-<input
-
-type="number"
-
-name="price"
-
-value={form.price}
-
-onChange={handleChange}
-
-className="input"
-
-/>
-
-
-
-
-
-
-
-
-<input
-
-type="number"
-
-name="discount"
-
-value={form.discount}
-
-onChange={handleChange}
-
-className="input"
-
-/>
-
-
-
-
-
-
-
-
-<select
-
-name="guide"
-
-value={form.guide}
-
-onChange={handleChange}
-
-className="input"
-
->
-
-
-<option value="">
-
-Guide
-
-</option>
-
-
-{
-
-guides.map(
-
-item=>(
-
-
-<option
-
-key={item._id}
-
-value={item._id}
-
->
-
-{item.name}
-
-</option>
-
-
-)
-
-)
-
-}
-
-
-</select>
-
-
-
-
-
-
-
-
-<select
-
-name="vehicle"
-
-value={form.vehicle}
-
-onChange={handleChange}
-
-className="input"
-
->
-
-
-<option value="">
-
-Vehicle
-
-</option>
-
-
-
-{
-
-vehicles.map(
-
-item=>(
-
-
-<option
-
-key={item._id}
-
-value={item._id}
-
->
-
-{item.name}
-
--
-
-{item.registration}
-
-</option>
-
-
-)
-
-)
-
-}
-
-
-
-</select>
-
-
-
-
-
-
-
-
-<select
-
-name="status"
-
-value={form.status}
-
-onChange={handleChange}
-
-className="input"
-
->
-
-
-<option value="draft">
-Draft
-</option>
-
-
-<option value="upcoming">
-Upcoming
-</option>
-
-
-<option value="ongoing">
-Ongoing
-</option>
-
-
-<option value="completed">
-Completed
-</option>
-
-
-<option value="cancelled">
-Cancelled
-</option>
-
-
-
-</select>
-
-
-
-
-
-
-
-
-<input
-
-name="images"
-
-value={form.images}
-
-onChange={handleChange}
-
-className="
-input
-md:col-span-2
-"
-
-/>
-
-
-
-
-
-
-
-
-<button
-
-disabled={saving}
-
-className="
-md:col-span-2
-bg-orange-600
-text-white
-py-3
-rounded-lg
-font-semibold
-"
-
->
-
-
-{
-
-saving
-
-?
-
-"Saving..."
-
-:
-
-"Update Tour"
-
-}
-
-
-</button>
-
-
-
-
-
-
-</form>
-
-
-</div>
-
-
-</div>
-
-);
-
-
-};
 
 
 

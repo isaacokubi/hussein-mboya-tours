@@ -1,37 +1,41 @@
+// client/src/utils/iconMap.js
+
 import {
-LayoutDashboard,
-Calendar,
-Users,
-Map,
-Car,
-Wallet,
-FileText,
-Settings
-}
-from "lucide-react";
+  LayoutDashboard,
+  Calendar,
+  Users,
+  Map,
+  Car,
+  Wallet,
+  FileText,
+  Settings,
+  HelpCircle
+} from "lucide-react";
 
 
-const iconMap={
 
+const iconMap = {
 
-LayoutDashboard,
+  LayoutDashboard,
 
-Calendar,
+  Calendar,
 
-Users,
+  Users,
 
-Map,
+  Map,
 
-Car,
+  Car,
 
-Wallet,
+  Wallet,
 
-FileText,
+  FileText,
 
-Settings
+  Settings,
 
+  HelpCircle
 
 };
+
 
 
 export default iconMap;

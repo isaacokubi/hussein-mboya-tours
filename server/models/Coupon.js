@@ -1,64 +1,224 @@
+// server/models/Coupon.js
+
 import mongoose from "mongoose";
 
+/*
+|--------------------------------------------------------------------------
+| COUPON SCHEMA
+|--------------------------------------------------------------------------
+*/
 
-const couponSchema =
-new mongoose.Schema({
+const couponSchema = new mongoose.Schema(
+  {
+    /*
+    |--------------------------------------------------------------------------
+    | BASIC INFORMATION
+    |--------------------------------------------------------------------------
+    */
 
-code:{
+    code: {
+      type: String,
+      required: true,
+      unique: true,
+      uppercase: true,
+      trim: true,
+    },
 
-type:String,
+    description: {
+      type: String,
+      default: "",
+      trim: true,
+    },
 
-unique:true
+    /*
+    |--------------------------------------------------------------------------
+    | DISCOUNT
+    |--------------------------------------------------------------------------
+    */
 
-},
+    discountType: {
+      type: String,
+      enum: ["percentage", "fixed"],
+      required: true,
+    },
 
+    amount: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
 
-discountType:{
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDITY
+    |--------------------------------------------------------------------------
+    */
 
-type:String,
+    startDate: {
+      type: Date,
+      default: Date.now,
+    },
 
-enum:[
+    expiresAt: {
+      type: Date,
+      required: true,
+    },
 
-"percentage",
+    /*
+    |--------------------------------------------------------------------------
+    | USAGE LIMITS
+    |--------------------------------------------------------------------------
+    */
 
-"fixed"
+    usageLimit: {
+      type: Number,
+      default: 1,
+      min: 1,
+    },
 
-]
+    usedCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
 
-},
+    /*
+    |--------------------------------------------------------------------------
+    | MINIMUM ORDER
+    |--------------------------------------------------------------------------
+    */
 
+    minimumBookingAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
 
-amount:Number,
+    maximumDiscount: {
+      type: Number,
+      default: null,
+    },
 
+    /*
+    |--------------------------------------------------------------------------
+    | STATUS
+    |--------------------------------------------------------------------------
+    */
 
-expiresAt:Date,
+    active: {
+      type: Boolean,
+      default: true,
+    },
 
+    /*
+    |--------------------------------------------------------------------------
+    | CREATED BY
+    |--------------------------------------------------------------------------
+    */
 
-usageLimit:Number,
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
 
+/*
+|--------------------------------------------------------------------------
+| INDEXES
+|--------------------------------------------------------------------------
+*/
 
-usedCount:{
-
-type:Number,
-
-default:0
-
-},
-
-
-active:{
-
-type:Boolean,
-
-default:true
-
-}
-
-
+couponSchema.index({
+  code: 1,
 });
 
+couponSchema.index({
+  active: 1,
+  expiresAt: 1,
+});
 
-export default mongoose.model(
-"Coupon",
-couponSchema
-);
+couponSchema.index({
+  createdAt: -1,
+});
+
+/*
+|--------------------------------------------------------------------------
+| VIRTUALS
+|--------------------------------------------------------------------------
+*/
+
+couponSchema.virtual("remainingUses").get(function () {
+  return Math.max(this.usageLimit - this.usedCount, 0);
+});
+
+couponSchema.virtual("expired").get(function () {
+  return this.expiresAt < new Date();
+});
+
+/*
+|--------------------------------------------------------------------------
+| METHODS
+|--------------------------------------------------------------------------
+*/
+
+couponSchema.methods.isExpired = function () {
+  return this.expiresAt < new Date();
+};
+
+couponSchema.methods.canBeUsed = function () {
+  return (
+    this.active &&
+    !this.isExpired() &&
+    this.usedCount < this.usageLimit
+  );
+};
+
+couponSchema.methods.calculateDiscount = function (bookingAmount) {
+  if (!this.canBeUsed()) {
+    return 0;
+  }
+
+  if (bookingAmount < this.minimumBookingAmount) {
+    return 0;
+  }
+
+  let discount = 0;
+
+  if (this.discountType === "percentage") {
+    discount = (bookingAmount * this.amount) / 100;
+
+    if (
+      this.maximumDiscount &&
+      discount > this.maximumDiscount
+    ) {
+      discount = this.maximumDiscount;
+    }
+  } else {
+    discount = this.amount;
+  }
+
+  return Math.min(discount, bookingAmount);
+};
+
+couponSchema.methods.incrementUsage = async function () {
+  this.usedCount += 1;
+
+  await this.save();
+};
+
+/*
+|--------------------------------------------------------------------------
+| EXPORT MODEL
+|--------------------------------------------------------------------------
+*/
+
+const Coupon =
+  mongoose.models.Coupon ||
+  mongoose.model("Coupon", couponSchema);
+
+export default Coupon;

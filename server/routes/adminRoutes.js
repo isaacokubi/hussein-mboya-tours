@@ -1,82 +1,109 @@
+// server/routes/adminRoutes.js
+
 import express from "express";
 
+import {
+  getDashboardStats,
+} from "../controllers/adminController.js";
 
 import {
-
-getDashboardStats
-
-}
-from "../controllers/adminController.js";
-
-
-import {
-
-getAllBookings,
-
-updateBookingStatus
-
-}
-from "../controllers/adminBookingController.js";
-
+  getAllBookings,
+  getBookingById,
+  updateBookingStatus,
+  updatePaymentStatus,
+  assignBookingResources,
+} from "../controllers/adminBookingController.js";
 
 import {
-protect
-}
-from "../middleware/authMiddleware.js";
-
+  protect,
+} from "../middleware/authMiddleware.js";
 
 import {
-adminMiddleware
-}
-from "../middleware/adminMiddleware.js";
+  adminMiddleware,
+} from "../middleware/adminMiddleware.js";
 
+const router = express.Router();
 
+/*
+|--------------------------------------------------------------------------
+| ADMIN AUTHORIZATION
+|--------------------------------------------------------------------------
+|
+| All routes require:
+| - Valid JWT
+| - Active account
+| - Admin privileges
+|
+|--------------------------------------------------------------------------
+*/
 
-const router =
-express.Router();
+router.use(protect);
+router.use(adminMiddleware);
 
+/*
+|--------------------------------------------------------------------------
+| DASHBOARD
+|--------------------------------------------------------------------------
+*/
 
-
+/**
+ * GET /api/admin/dashboard
+ * Admin dashboard statistics
+ */
 router.get(
-
-"/dashboard",
-
-protect,
-
-adminMiddleware,
-
-getDashboardStats
-
+  "/dashboard",
+  getDashboardStats
 );
 
+/*
+|--------------------------------------------------------------------------
+| BOOKINGS
+|--------------------------------------------------------------------------
+*/
 
-
+/**
+ * GET /api/admin/bookings
+ * Get all bookings
+ */
 router.get(
-
-"/bookings",
-
-protect,
-
-adminMiddleware,
-
-getAllBookings
-
+  "/bookings",
+  getAllBookings
 );
 
+/**
+ * GET /api/admin/bookings/:id
+ * Get booking details
+ */
+router.get(
+  "/bookings/:id",
+  getBookingById
+);
 
-
+/**
+ * PUT /api/admin/bookings/:id/status
+ * Update booking status
+ */
 router.put(
-
-"/bookings/:id",
-
-protect,
-
-adminMiddleware,
-
-updateBookingStatus
-
+  "/bookings/:id/status",
+  updateBookingStatus
 );
 
+/**
+ * PUT /api/admin/bookings/:id/payment
+ * Update payment status
+ */
+router.put(
+  "/bookings/:id/payment",
+  updatePaymentStatus
+);
 
+/**
+ * PUT /api/admin/bookings/:id/assign
+ * Assign guide, driver and vehicle
+ */
+router.put(
+  "/bookings/:id/assign",
+  assignBookingResources
+);
 
 export default router;

@@ -1,245 +1,744 @@
-// server/controllers/bookingAdminController.js
-
+import mongoose from "mongoose";
 import Booking from "../models/Booking.js";
 
-// ============================================================
-// GET ALL BOOKINGS (ADMIN)
-// ============================================================
+/*
+|--------------------------------------------------------------------------
+| CONSTANTS
+|--------------------------------------------------------------------------
+*/
 
-export const getAllBookings = async (req, res) => {
+const BOOKING_STATUSES = [
+  "pending",
+  "confirmed",
+  "assigned",
+  "completed",
+  "cancelled",
+  "refunded",
+];
+
+const PAYMENT_STATUSES = [
+  "pending",
+  "paid",
+  "failed",
+  "cancelled",
+  "refunded",
+];
+
+/*
+|--------------------------------------------------------------------------
+| HELPERS
+|--------------------------------------------------------------------------
+*/
+
+const isValidId = (id) =>
+  mongoose.Types.ObjectId.isValid(id);
+
+/*
+|--------------------------------------------------------------------------
+| GET ALL BOOKINGS (ADMIN)
+|--------------------------------------------------------------------------
+|
+| Supports:
+| • Pagination
+| • Search
+| • Booking Status Filter
+| • Payment Status Filter
+|--------------------------------------------------------------------------
+*/
+
+export const getAllBookings = async (req, res, next) => {
   try {
-    const bookings = await Booking.find()
+    const {
+      page = 1,
+      limit = 20,
+      search,
+      bookingStatus,
+      paymentStatus,
+    } = req.query;
 
-      .populate("customer", "name email phone")
+    const currentPage = Math.max(Number(page), 1);
 
-      .populate("tour", "title")
+    const pageSize = Math.min(
+      Math.max(Number(limit), 1),
+      100
+    );
 
-      .sort({
-        createdAt: -1,
-      });
+    const skip =
+      (currentPage - 1) * pageSize;
+
+    const filter = {};
+
+    /*
+    |--------------------------------------------------------------------------
+    | SEARCH
+    |--------------------------------------------------------------------------
+    */
+
+    if (search) {
+      filter.$or = [
+        {
+          bookingNumber: {
+            $regex: search,
+            $options: "i",
+          },
+        },
+        {
+          "contact.name": {
+            $regex: search,
+            $options: "i",
+          },
+        },
+        {
+          "contact.email": {
+            $regex: search,
+            $options: "i",
+          },
+        },
+      ];
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | FILTERS
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      bookingStatus &&
+      BOOKING_STATUSES.includes(
+        bookingStatus
+      )
+    ) {
+      filter.bookingStatus =
+        bookingStatus;
+    }
+
+    if (
+      paymentStatus &&
+      PAYMENT_STATUSES.includes(
+        paymentStatus
+      )
+    ) {
+      filter.paymentStatus =
+        paymentStatus;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | QUERY
+    |--------------------------------------------------------------------------
+    */
+
+    const [bookings, total] =
+      await Promise.all([
+
+        Booking.find(filter)
+
+          .populate(
+            "customer",
+            "name email phone"
+          )
+
+          .populate(
+            "tour",
+            "title"
+          )
+
+          .populate(
+            "assignedGuide",
+            "name"
+          )
+
+          .populate(
+            "assignedDriver",
+            "name"
+          )
+
+          .populate(
+            "assignedVehicle",
+            "name registrationNumber"
+          )
+
+          .sort({
+            createdAt: -1,
+          })
+
+          .skip(skip)
+
+          .limit(pageSize)
+
+          .lean(),
+
+        Booking.countDocuments(filter),
+
+      ]);
+
+    /*
+    |--------------------------------------------------------------------------
+    | RESPONSE
+    |--------------------------------------------------------------------------
+    */
 
     res.status(200).json({
+
       success: true,
 
       count: bookings.length,
 
-      data: bookings,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
+      pagination: {
 
-      message: error.message,
+        total,
+
+        page: currentPage,
+
+        pages: Math.ceil(
+          total / pageSize
+        ),
+
+        limit: pageSize,
+
+      },
+
+      data: bookings,
+
     });
+
+  } catch (error) {
+
+    next(error);
+
   }
 };
 
-// ============================================================
-// ALIAS FOR ROUTES USING getBookings
-// ============================================================
+/*
+|--------------------------------------------------------------------------
+| ROUTE ALIAS
+|--------------------------------------------------------------------------
+*/
 
-export const getBookings = getAllBookings;
+export const getBookings =
+  getAllBookings;
 
-// ============================================================
-// GET SINGLE BOOKING
-// ============================================================
+/*
+|--------------------------------------------------------------------------
+| GET SINGLE BOOKING
+|--------------------------------------------------------------------------
+*/
 
-export const getBookingById = async (req, res) => {
+export const getBookingById = async (
+  req,
+  res,
+  next
+) => {
   try {
-    const booking = await Booking.findById(req.params.id)
 
-      .populate("customer", "name email phone")
+    if (
+      !isValidId(req.params.id)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid booking ID.",
+      });
+    }
 
-      .populate("tour", "title");
+    const booking =
+      await Booking.findById(
+        req.params.id
+      )
+
+        .populate(
+          "customer",
+          "name email phone"
+        )
+
+        .populate(
+          "tour"
+        )
+
+        .populate(
+          "assignedGuide",
+          "name email"
+        )
+
+        .populate(
+          "assignedDriver",
+          "name email"
+        )
+
+        .populate(
+          "assignedVehicle"
+        )
+
+        .lean();
 
     if (!booking) {
       return res.status(404).json({
+
         success: false,
 
-        message: "Booking not found",
+        message:
+          "Booking not found.",
+
       });
     }
 
     res.status(200).json({
+
       success: true,
 
       data: booking,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
 
-      message: error.message,
     });
+
+  } catch (error) {
+
+    next(error);
+
   }
 };
 
-// ============================================================
-// ALIAS FOR ROUTES USING getBooking
-// ============================================================
+/*
+|--------------------------------------------------------------------------
+| ROUTE ALIAS
+|--------------------------------------------------------------------------
+*/
 
-export const getBooking = getBookingById;
+export const getBooking =
+  getBookingById;/*
+|--------------------------------------------------------------------------
+| UPDATE BOOKING STATUS
+|--------------------------------------------------------------------------
+*/
 
-// ============================================================
-// UPDATE BOOKING STATUS
-// ============================================================
-
-export const updateBookingStatus = async (req, res) => {
+export const updateBookingStatus = async (
+  req,
+  res,
+  next
+) => {
   try {
     const { status } = req.body;
 
-    const booking = await Booking.findByIdAndUpdate(
-      req.params.id,
+    /*
+    |--------------------------------------------------------------------------
+    | Validate Booking ID
+    |--------------------------------------------------------------------------
+    */
 
-      {
-        status,
-      },
+    if (!isValidId(req.params.id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid booking ID.",
+      });
+    }
 
-      {
-        new: true,
+    /*
+    |--------------------------------------------------------------------------
+    | Validate Status
+    |--------------------------------------------------------------------------
+    */
 
-        runValidators: true,
-      },
-    );
+    if (!BOOKING_STATUSES.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid booking status.",
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Update
+    |--------------------------------------------------------------------------
+    */
+
+    const booking =
+      await Booking.findByIdAndUpdate(
+        req.params.id,
+        {
+          bookingStatus: status,
+        },
+        {
+          new: true,
+          runValidators: true,
+        }
+      )
+        .populate(
+          "customer",
+          "name email phone"
+        )
+        .populate(
+          "tour",
+          "title"
+        )
+        .populate(
+          "assignedGuide",
+          "name"
+        )
+        .populate(
+          "assignedDriver",
+          "name"
+        )
+        .populate(
+          "assignedVehicle",
+          "name registrationNumber"
+        );
 
     if (!booking) {
       return res.status(404).json({
         success: false,
-
-        message: "Booking not found",
+        message: "Booking not found.",
       });
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Response
+    |--------------------------------------------------------------------------
+    */
 
     res.status(200).json({
       success: true,
 
-      message: "Booking status updated",
+      message:
+        "Booking status updated successfully.",
 
       data: booking,
     });
+
   } catch (error) {
-    res.status(500).json({
-      success: false,
 
-      message: error.message,
-    });
-  }
-};
-
-// ============================================================
-// DELETE BOOKING
-// ============================================================
-
-export const deleteBooking = async (req, res) => {
-  try {
-    const booking = await Booking.findByIdAndDelete(req.params.id);
-
-    if (!booking) {
-      return res.status(404).json({
-        success: false,
-
-        message: "Booking not found",
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-
-      message: "Booking deleted successfully",
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-
-      message: error.message,
-    });
-  }
-};
-
-// ============================================================
-// ASSIGN GUIDE DRIVER VEHICLE
-// ============================================================
-
-export const assignResources = async (req, res, next) => {
-  try {
-    const booking = await Booking.findByIdAndUpdate(
-      req.params.id,
-
-      {
-        assignedGuide: req.body.guide || null,
-
-        assignedDriver: req.body.driver || null,
-
-        assignedVehicle: req.body.vehicle || null,
-
-        bookingStatus: "assigned",
-      },
-
-      {
-        new: true,
-      },
-    );
-
-    if (!booking) {
-      return res.status(404).json({
-        success: false,
-
-        message: "Booking not found",
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-
-      message: "Resources assigned successfully",
-
-      booking,
-    });
-  } catch (error) {
     next(error);
+
   }
 };
 
-// ============================================================
-// UPDATE PAYMENT STATUS
-// ============================================================
+/*
+|--------------------------------------------------------------------------
+| DELETE BOOKING
+|--------------------------------------------------------------------------
+|
+| Permanent delete.
+| If you later add soft delete,
+| only this function needs changing.
+|--------------------------------------------------------------------------
+*/
 
-export const updatePaymentStatus = async (req, res) => {
+export const deleteBooking = async (
+  req,
+  res,
+  next
+) => {
   try {
-    const booking = await Booking.findByIdAndUpdate(
-      req.params.id,
 
-      {
-        paymentStatus: req.body.status,
+    /*
+    |--------------------------------------------------------------------------
+    | Validate ID
+    |--------------------------------------------------------------------------
+    */
 
-        mpesaReceipt: req.body.mpesaReceipt || "",
-      },
+    if (!isValidId(req.params.id)) {
+      return res.status(400).json({
 
-      {
-        new: true,
-      },
-    );
+        success: false,
+
+        message: "Invalid booking ID.",
+
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Delete
+    |--------------------------------------------------------------------------
+    */
+
+    const booking =
+      await Booking.findByIdAndDelete(
+        req.params.id
+      );
+
+    if (!booking) {
+
+      return res.status(404).json({
+
+        success: false,
+
+        message:
+          "Booking not found.",
+
+      });
+
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Response
+    |--------------------------------------------------------------------------
+    */
+
+    res.status(200).json({
+
+      success: true,
+
+      message:
+        "Booking deleted successfully.",
+
+    });
+
+  } catch (error) {
+
+    next(error);
+
+  }
+};/*
+|--------------------------------------------------------------------------
+| ASSIGN GUIDE / DRIVER / VEHICLE
+|--------------------------------------------------------------------------
+*/
+
+export const assignResources = async (
+  req,
+  res,
+  next
+) => {
+  try {
+
+    const {
+      guide,
+      driver,
+      vehicle,
+    } = req.body;
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validate Booking ID
+    |--------------------------------------------------------------------------
+    */
+
+    if (!isValidId(req.params.id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid booking ID.",
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validate Resource IDs
+    |--------------------------------------------------------------------------
+    */
+
+    if (guide && !isValidId(guide)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid guide ID.",
+      });
+    }
+
+    if (driver && !isValidId(driver)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid driver ID.",
+      });
+    }
+
+    if (vehicle && !isValidId(vehicle)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid vehicle ID.",
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Update Booking
+    |--------------------------------------------------------------------------
+    */
+
+    const booking =
+      await Booking.findByIdAndUpdate(
+        req.params.id,
+        {
+          assignedGuide: guide || null,
+
+          assignedDriver: driver || null,
+
+          assignedVehicle: vehicle || null,
+
+          bookingStatus: "assigned",
+        },
+        {
+          new: true,
+          runValidators: true,
+        }
+      )
+        .populate(
+          "customer",
+          "name email phone"
+        )
+        .populate(
+          "tour",
+          "title"
+        )
+        .populate(
+          "assignedGuide",
+          "name email phone"
+        )
+        .populate(
+          "assignedDriver",
+          "name email phone"
+        )
+        .populate(
+          "assignedVehicle",
+          "name registrationNumber"
+        );
 
     if (!booking) {
       return res.status(404).json({
         success: false,
-
-        message: "Booking not found",
+        message: "Booking not found.",
       });
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Response
+    |--------------------------------------------------------------------------
+    */
+
     res.status(200).json({
+
       success: true,
 
-      message: "Payment status updated",
+      message:
+        "Resources assigned successfully.",
 
       data: booking,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
 
-      message: error.message,
     });
+
+  } catch (error) {
+
+    next(error);
+
+  }
+};
+
+/*
+|--------------------------------------------------------------------------
+| UPDATE PAYMENT STATUS
+|--------------------------------------------------------------------------
+*/
+
+export const updatePaymentStatus = async (
+  req,
+  res,
+  next
+) => {
+  try {
+
+    const {
+      status,
+      mpesaReceipt,
+    } = req.body;
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validate Booking ID
+    |--------------------------------------------------------------------------
+    */
+
+    if (!isValidId(req.params.id)) {
+      return res.status(400).json({
+
+        success: false,
+
+        message: "Invalid booking ID.",
+
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validate Payment Status
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      !PAYMENT_STATUSES.includes(status)
+    ) {
+      return res.status(400).json({
+
+        success: false,
+
+        message:
+          "Invalid payment status.",
+
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Update
+    |--------------------------------------------------------------------------
+    */
+
+    const booking =
+      await Booking.findByIdAndUpdate(
+        req.params.id,
+        {
+          paymentStatus: status,
+
+          mpesaReceipt:
+            mpesaReceipt || "",
+        },
+        {
+          new: true,
+          runValidators: true,
+        }
+      )
+        .populate(
+          "customer",
+          "name email phone"
+        )
+        .populate(
+          "tour",
+          "title"
+        )
+        .lean();
+
+    if (!booking) {
+
+      return res.status(404).json({
+
+        success: false,
+
+        message:
+          "Booking not found.",
+
+      });
+
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Response
+    |--------------------------------------------------------------------------
+    */
+
+    res.status(200).json({
+
+      success: true,
+
+      message:
+        "Payment status updated successfully.",
+
+      data: booking,
+
+    });
+
+  } catch (error) {
+
+    next(error);
+
   }
 };

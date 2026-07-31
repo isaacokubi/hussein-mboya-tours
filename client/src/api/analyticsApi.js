@@ -1,12 +1,31 @@
-import API from "./axios";
+// client/src/services/analyticsService.js
 
+import api from "./axios";
 
+/*
+|--------------------------------------------------------------------------
+| GET ANALYTICS
+|--------------------------------------------------------------------------
+*/
 
-export const getAnalytics = ()=>
+export const getAnalytics = async (params = {}) => {
+  const { data } = await api.get("/analytics", {
+    params,
+  });
 
+  return data;
+};
 
-API.get(
+/*
+|--------------------------------------------------------------------------
+| GET REVENUE ANALYTICS
+|--------------------------------------------------------------------------
+*/
 
-"/analytics"
+export const getRevenueAnalytics = async (params = {}) => {
+  const { data } = await api.get("/analytics/revenue", {
+    params,
+  });
 
-);
+  return data;
+};

@@ -1,40 +1,4 @@
-import axios from "axios";
-
-/*
-|--------------------------------------------------------------------------
-| API INSTANCE
-|--------------------------------------------------------------------------
-*/
-
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
-
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
-/*
-|--------------------------------------------------------------------------
-| ATTACH TOKEN
-|--------------------------------------------------------------------------
-*/
-
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-
-    return config;
-  },
-
-  (error) => {
-    return Promise.reject(error);
-  },
-);
+import api from "./axios";
 
 /*
 |--------------------------------------------------------------------------
@@ -43,9 +7,11 @@ api.interceptors.request.use(
 */
 
 export const fetchAgentDashboard = async () => {
-  const response = await api.get("/agent/dashboard");
+  const { data } = await api.get(
+    "/agents/dashboard"
+  );
 
-  return response.data;
+  return data;
 };
 
 /*
@@ -54,10 +20,15 @@ export const fetchAgentDashboard = async () => {
 |--------------------------------------------------------------------------
 */
 
-export const fetchAgentBookings = async () => {
-  const response = await api.get("/agent/bookings");
+export const fetchAgentBookings = async (params = {}) => {
+  const { data } = await api.get(
+    "/agents/bookings",
+    {
+      params,
+    }
+  );
 
-  return response.data;
+  return data;
 };
 
 /*
@@ -67,9 +38,11 @@ export const fetchAgentBookings = async () => {
 */
 
 export const fetchAgentQuotes = async () => {
-  const response = await api.get("/agent/quotes");
+  const { data } = await api.get(
+    "/agents/quotes"
+  );
 
-  return response.data;
+  return data;
 };
 
 /*
@@ -79,9 +52,11 @@ export const fetchAgentQuotes = async () => {
 */
 
 export const fetchAgentCustomers = async () => {
-  const response = await api.get("/agent/customers");
+  const { data } = await api.get(
+    "/agents/customers"
+  );
 
-  return response.data;
+  return data;
 };
 
 /*
@@ -91,7 +66,9 @@ export const fetchAgentCustomers = async () => {
 */
 
 export const fetchAgentCommission = async () => {
-  const response = await api.get("/agent/commission");
+  const { data } = await api.get(
+    "/agents/commission"
+  );
 
-  return response.data;
+  return data;
 };

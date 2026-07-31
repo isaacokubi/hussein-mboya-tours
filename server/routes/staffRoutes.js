@@ -1,189 +1,83 @@
+// server/routes/staffRoutes.js
+
 import express from "express";
 
 import {
-
-createStaff,
-getStaff,
-getStaffById,
-updateStaff,
-deleteStaff,
-getDrivers
-
+  createStaff,
+  getStaff,
+  getStaffById,
+  updateStaff,
+  deleteStaff,
+  getDrivers,
 } from "../controllers/staffController.js";
 
+import {
+  protect,
+} from "../middleware/authMiddleware.js";
 
-import protect from "../middleware/authMiddleware.js";
-
-import roleMiddleware from "../middleware/roleMiddleware.js";
-
-
+import {
+  roleMiddleware,
+} from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
 
-
-
-
-
 /*
 |--------------------------------------------------------------------------
-| STAFF MANAGEMENT ROUTES
+| AUTHORIZATION
 |--------------------------------------------------------------------------
 */
 
-
-// CREATE STAFF
-// Admin only
-router.post(
-
-"/",
-
-protect,
-
-roleMiddleware(
-[
-"admin"
-]
-),
-
-createStaff
-
-);
-
-
-
-
-
-
-// GET ALL STAFF
-// Admin and Tour Manager
-
-router.get(
-
-"/",
-
-protect,
-
-roleMiddleware(
-[
-"admin",
-"tour_manager"
-]
-),
-
-getStaff
-
-);
-
-
-
-
-
-
-// GET SINGLE STAFF MEMBER
-
-router.get(
-
-"/:id",
-
-protect,
-
-roleMiddleware(
-[
-"admin",
-"tour_manager"
-]
-),
-
-getStaffById
-
-);
-
-
-
-
-
-
-// UPDATE STAFF
-
-router.put(
-
-"/:id",
-
-protect,
-
-roleMiddleware(
-[
-"admin"
-]
-),
-
-updateStaff
-
-);
-
-
-
-
-
-
-
-// DELETE STAFF
-
-router.delete(
-
-"/:id",
-
-protect,
-
-roleMiddleware(
-[
-"admin"
-]
-),
-
-deleteStaff
-
-);
-
-
-
-
-
-
+router.use(protect);
 
 /*
 |--------------------------------------------------------------------------
 | DRIVER MANAGEMENT
 |--------------------------------------------------------------------------
 |
-| Used when assigning vehicles/tours
-|
-| Example:
-| GET /api/staff/drivers
+| Must come BEFORE "/:id"
 |
 */
 
-
 router.get(
-
-"/drivers",
-
-protect,
-
-roleMiddleware(
-[
-"admin",
-"tour_manager"
-]
-),
-
-getDrivers
-
+  "/drivers",
+  roleMiddleware(["admin", "tour_manager"]),
+  getDrivers
 );
 
+/*
+|--------------------------------------------------------------------------
+| STAFF
+|--------------------------------------------------------------------------
+*/
 
+router.post(
+  "/",
+  roleMiddleware(["admin"]),
+  createStaff
+);
 
+router.get(
+  "/",
+  roleMiddleware(["admin", "tour_manager"]),
+  getStaff
+);
 
+router.get(
+  "/:id",
+  roleMiddleware(["admin", "tour_manager"]),
+  getStaffById
+);
 
+router.put(
+  "/:id",
+  roleMiddleware(["admin"]),
+  updateStaff
+);
+
+router.delete(
+  "/:id",
+  roleMiddleware(["admin"]),
+  deleteStaff
+);
 
 export default router;

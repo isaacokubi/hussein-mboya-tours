@@ -1,15 +1,33 @@
+// client/src/pages/admin/Vehicles.jsx
+
+
 import {
-  useEffect,
-  useState
+    useState
 } from "react";
 
 
 import {
-  getVehicles,
-  deleteVehicle,
-  assignDriver,
-  getDrivers
-} from "../../api/vehicleApi";
+    useQuery,
+    useMutation,
+    useQueryClient
+} from "@tanstack/react-query";
+
+
+import {
+    toast
+} from "react-toastify";
+
+
+import {
+
+    getVehicles,
+
+    deleteVehicle,
+
+    assignDriver
+
+}
+from "../../api/vehicleApi";
 
 
 import AddVehicleModal
@@ -17,11 +35,19 @@ from "../../components/admin/AddVehicleModal";
 
 
 import {
-  Car,
-  Users,
-  CheckCircle,
-  Wrench
-} from "lucide-react";
+
+    Car,
+
+    Users,
+
+    CheckCircle,
+
+    Wrench
+
+}
+from "lucide-react";
+
+
 
 
 
@@ -31,16 +57,17 @@ export default function Vehicles(){
 
 
 
-const [vehicles,setVehicles]=useState([]);
+    const queryClient = useQueryClient();
 
 
-const [drivers,setDrivers]=useState([]);
 
 
-const [loading,setLoading]=useState(true);
+    const [
+        showAdd,
+        setShowAdd
+    ] = useState(false);
 
 
-const [showAdd,setShowAdd]=useState(false);
 
 
 
@@ -48,49 +75,43 @@ const [showAdd,setShowAdd]=useState(false);
 
 
 
+    const {
 
-/*
-|--------------------------------------------------------------------------
-| LOAD VEHICLES
-|--------------------------------------------------------------------------
-*/
+        data,
 
-const loadVehicles = async()=>{
+        isLoading
 
+    } = useQuery({
 
-try{
 
+        queryKey:[
 
-const res = await getVehicles();
+            "vehicles"
 
+        ],
 
-setVehicles(
 
-res.data.vehicles
 
-);
+        queryFn:getVehicles
 
 
-}
+    });
 
-catch(error){
 
 
-console.log(error);
 
 
-}
 
-finally{
 
 
-setLoading(false);
+    const vehicles =
 
+        data?.vehicles ||
 
-}
+        data?.data?.vehicles ||
 
+        [];
 
-};
 
 
 
@@ -99,179 +120,173 @@ setLoading(false);
 
 
 
+    const {
 
-/*
-|--------------------------------------------------------------------------
-| LOAD DRIVERS
-|--------------------------------------------------------------------------
-*/
+        mutate:removeVehicle
 
-const loadDrivers = async()=>{
+    } = useMutation({
 
 
-try{
 
+        mutationFn:deleteVehicle,
 
-const res = await getDrivers();
 
 
-setDrivers(
+        onSuccess:()=>{
 
-res.data.drivers
 
-);
+            queryClient.invalidateQueries({
 
+                queryKey:[
 
-}
+                    "vehicles"
 
-catch(error){
+                ]
 
+            });
 
-console.log(error);
 
 
-}
+            toast.success(
 
+                "Vehicle removed"
 
-};
+            );
 
 
+        }
 
 
 
+    });
 
 
 
 
-useEffect(()=>{
 
 
-loadVehicles();
 
 
-loadDrivers();
+    const {
 
+        mutate:assign
 
-},[]);
+    } = useMutation({
 
 
 
+        mutationFn:({
 
+            vehicleId,
 
+            driverId
 
+        })=>
 
+            assignDriver(
 
+                vehicleId,
 
-/*
-|--------------------------------------------------------------------------
-| DELETE VEHICLE
-|--------------------------------------------------------------------------
-*/
+                driverId
 
+            ),
 
-const removeVehicle = async(id)=>{
 
 
-if(
+        onSuccess:()=>{
 
-!window.confirm(
 
-"Remove this vehicle?"
+            queryClient.invalidateQueries({
 
-)
+                queryKey:[
 
-)
+                    "vehicles"
 
-return;
+                ]
 
+            });
 
 
 
-try{
+            toast.success(
 
+                "Driver assigned"
 
-await deleteVehicle(id);
+            );
 
 
-loadVehicles();
+        }
 
 
-}
 
-catch(error){
+    });
 
 
-console.log(error);
 
 
-}
 
 
-};
 
 
 
+    const handleAssignDriver=(vehicleId)=>{
 
 
+        const driverId = window.prompt(
 
+            "Enter Driver ID"
 
+        );
 
 
-/*
-|--------------------------------------------------------------------------
-| ASSIGN DRIVER
-|--------------------------------------------------------------------------
-*/
 
+        if(!driverId)
 
-const handleAssignDriver = async(vehicleId)=>{
+        return;
 
 
-const driverId =
 
-window.prompt(
+        assign({
 
-"Enter Driver ID"
+            vehicleId,
 
-);
+            driverId
 
+        });
 
 
-if(!driverId)
+    };
 
-return;
 
 
 
 
-try{
 
 
-await assignDriver(
 
-vehicleId,
 
-driverId
+    const remove=(id)=>{
 
-);
 
+        if(
 
+            !window.confirm(
 
-loadVehicles();
+                "Remove this vehicle?"
 
+            )
 
-}
+        )
 
-catch(error){
+        return;
 
 
-console.log(error);
 
+        removeVehicle(id);
 
-}
 
+    };
 
-};
 
 
 
@@ -280,97 +295,91 @@ console.log(error);
 
 
 
+    const stats={
 
-const stats={
 
 
-total:
+        total:
 
-vehicles.length,
+            vehicles.length,
 
 
 
-available:
 
-vehicles.filter(
+        available:
 
-v=>v.status==="Available"
+            vehicles.filter(
 
-).length,
+                v=>
 
+                v.status==="Available"
 
+            ).length,
 
-assigned:
 
-vehicles.filter(
 
-v=>v.status==="Assigned"
 
-).length,
 
+        assigned:
 
+            vehicles.filter(
 
-maintenance:
+                v=>
 
-vehicles.filter(
+                v.status==="Assigned"
 
-v=>v.status==="Maintenance"
+            ).length,
 
-).length
 
 
-};
 
 
+        maintenance:
 
+            vehicles.filter(
 
+                v=>
 
+                v.status==="Maintenance"
 
+            ).length
 
 
 
-if(loading)
+    };
 
 
-return (
 
-<div className="p-10">
 
-Loading vehicles...
 
-</div>
 
-);
 
 
 
+    if(isLoading)
 
+    return (
 
+        <div className="p-10">
 
+            Loading vehicles...
 
+        </div>
 
+    );
 
-return (
 
-<div className="p-6">
 
 
 
 
 
-<h1
 
-className="
-text-3xl
-font-bold
-mb-6
-"
 
->
+    return (
 
-Vehicle Management
 
-</h1>
+        <div className="p-6">
 
 
 
@@ -378,315 +387,320 @@ Vehicle Management
 
 
 
+            <h1 className="
+                text-3xl
+                font-bold
+                mb-6
+            ">
 
 
-<button
+                Vehicle Management
 
-onClick={()=>setShowAdd(true)}
 
-className="
-bg-green-700
-text-white
-px-5
-py-3
-rounded-lg
-mb-5
-"
+            </h1>
 
->
 
-+ Add Vehicle
 
-</button>
 
 
 
 
 
 
+            <button
 
 
+                onClick={()=>setShowAdd(true)}
 
-{/* =========================
-STATISTICS
-========================= */}
 
 
+                className="
+                    bg-green-700
+                    text-white
+                    px-5
+                    py-3
+                    rounded-lg
+                    mb-5
+                "
 
-<div
 
-className="
-grid
-grid-cols-4
-gap-5
-mb-10
-"
+            >
 
->
 
+                + Add Vehicle
 
 
-<Card
+            </button>
 
-title="Total Vehicles"
 
-value={stats.total}
 
-icon={<Car/>}
 
-/>
 
 
 
 
 
-<Card
+            <div className="
+                grid
+                grid-cols-1
+                md:grid-cols-2
+                lg:grid-cols-4
+                gap-5
+                mb-10
+            ">
 
-title="Available"
 
-value={stats.available}
 
-icon={<CheckCircle/>}
 
-/>
+                <Card
 
+                    title="Total Vehicles"
 
+                    value={stats.total}
 
+                    icon={<Car/>}
 
+                />
 
-<Card
 
-title="Assigned"
 
-value={stats.assigned}
 
-icon={<Users/>}
 
-/>
+                <Card
 
+                    title="Available"
 
+                    value={stats.available}
 
+                    icon={<CheckCircle/>}
 
+                />
 
-<Card
 
-title="Maintenance"
 
-value={stats.maintenance}
 
-icon={<Wrench/>}
 
-/>
+                <Card
 
+                    title="Assigned"
 
+                    value={stats.assigned}
 
-</div>
+                    icon={<Users/>}
 
+                />
 
 
 
 
 
+                <Card
 
+                    title="Maintenance"
 
+                    value={stats.maintenance}
 
-{/* =========================
-VEHICLE TABLE
-========================= */}
+                    icon={<Wrench/>}
 
+                />
 
 
-<div
 
-className="
-bg-white
-rounded-xl
-shadow
-overflow-hidden
-"
 
->
 
+            </div>
 
 
-<table
 
-className="
-w-full
-"
 
->
 
 
 
-<thead
 
-className="
-bg-gray-100
-"
 
->
+            <div className="
+                bg-white
+                rounded-xl
+                shadow
+                overflow-hidden
+            ">
 
 
 
-<tr>
 
+                <table className="w-full">
 
 
-<th className="p-4">
+                    <thead className="bg-gray-100">
 
-Image
 
-</th>
+                        <tr>
 
 
+                            <th className="p-4">
 
+                                Image
 
+                            </th>
 
-<th className="p-4 text-left">
 
-Name
+                            <th className="p-4 text-left">
 
-</th>
+                                Name
 
+                            </th>
 
 
+                            <th className="p-4 text-left">
 
+                                Registration
 
-<th className="p-4 text-left">
+                            </th>
 
-Registration
 
-</th>
+                            <th className="p-4 text-left">
 
+                                Type
 
+                            </th>
 
 
+                            <th className="p-4 text-left">
 
-<th className="p-4 text-left">
+                                Capacity
 
-Type
+                            </th>
 
-</th>
 
+                            <th className="p-4 text-left">
 
+                                Driver
 
+                            </th>
 
 
-<th className="p-4 text-left">
+                            <th className="p-4 text-left">
 
-Capacity
+                                Status
 
-</th>
+                            </th>
 
 
+                            <th className="p-4">
 
+                                Actions
 
+                            </th>
 
-<th className="p-4 text-left">
 
-Driver
+                        </tr>
 
-</th>
 
+                    </thead>
 
 
 
 
-<th className="p-4 text-left">
 
-Status
 
-</th>
 
 
 
+                    <tbody>
 
 
-<th className="p-4">
 
-Actions
 
-</th>
+                    {
 
+                    vehicles.length === 0 ? (
 
 
-</tr>
+                        <tr>
 
+                            <td
 
+                            colSpan="8"
 
-</thead>
+                            className="
+                                p-6
+                                text-center
+                                text-gray-500
+                            "
 
+                            >
 
+                                No vehicles found
 
+                            </td>
 
 
+                        </tr>
 
 
 
+                    ) : (
 
-<tbody>
 
 
+                    vehicles.map(vehicle=>(
 
-{
 
-vehicles.map(vehicle=>(
+                        <tr
 
+                        key={vehicle._id}
 
+                        className="border-b"
 
-<tr
+                        >
 
-key={vehicle._id}
 
-className="
-border-b
-"
 
->
 
+                            <td className="p-4">
 
 
+                                <img
 
 
+                                    src={
 
+                                        vehicle.image?.url ||
 
-{/* VEHICLE IMAGE */}
+                                        "/vehicle-placeholder.png"
 
+                                    }
 
 
-<td className="p-4">
 
+                                    alt={vehicle.name}
 
 
-<img
 
+                                    className="
+                                        w-16
+                                        h-16
+                                        object-cover
+                                        rounded
+                                    "
 
-src={
 
-vehicle.image?.url ||
+                                />
 
-"/vehicle-placeholder.png"
 
-}
+                            </td>
 
 
-alt={vehicle.name}
 
 
-className="
-w-16
-h-16
-object-cover
-rounded
-"
 
-/>
 
 
+                            <td className="p-4">
 
-</td>
+                                {vehicle.name}
 
+                            </td>
 
 
 
@@ -694,32 +708,35 @@ rounded
 
 
 
+                            <td className="p-4">
 
-<td className="p-4">
+                                {vehicle.registrationNumber}
 
+                            </td>
 
-{vehicle.name}
 
 
-</td>
 
 
 
 
+                            <td className="p-4">
 
+                                {vehicle.type}
 
+                            </td>
 
 
 
-<td className="p-4">
 
 
-{vehicle.registrationNumber}
 
 
-</td>
+                            <td className="p-4">
 
+                                {vehicle.capacity}
 
+                            </td>
 
 
 
@@ -727,14 +744,17 @@ rounded
 
 
 
-<td className="p-4">
+                            <td className="p-4">
 
 
-{vehicle.type}
+                                {
+                                    vehicle.driver?.name ||
 
+                                    "No driver"
+                                }
 
-</td>
 
+                            </td>
 
 
 
@@ -742,136 +762,132 @@ rounded
 
 
 
+                            <td className="p-4">
 
-<td className="p-4">
 
+                                <span className="
+                                    px-3
+                                    py-1
+                                    rounded-full
+                                    text-sm
+                                    bg-green-100
+                                ">
 
-{vehicle.capacity}
 
+                                    {
+                                        vehicle.status
+                                    }
 
-</td>
 
+                                </span>
 
 
+                            </td>
 
 
 
 
 
 
-<td className="p-4">
 
+                            <td className="p-4 space-x-2">
 
-{
 
-vehicle.driver
 
-?
 
-vehicle.driver.name
 
-:
+                                <button
 
-"No driver"
 
-}
+                                    onClick={()=>handleAssignDriver(vehicle._id)}
 
 
-</td>
 
+                                    className="
+                                        bg-blue-600
+                                        text-white
+                                        px-3
+                                        py-1
+                                        rounded
+                                    "
 
 
+                                >
 
 
+                                    Assign
 
 
+                                </button>
 
 
-<td className="p-4">
 
 
 
-<span
 
-className="
-px-3
-py-1
-rounded-full
-text-sm
-bg-green-100
-"
 
->
+                                <button
 
 
-{vehicle.status}
+                                    onClick={()=>remove(vehicle._id)}
 
 
-</span>
 
+                                    className="
+                                        bg-red-600
+                                        text-white
+                                        px-3
+                                        py-1
+                                        rounded
+                                    "
 
 
-</td>
+                                >
 
 
+                                    Delete
 
 
+                                </button>
 
 
 
 
 
-<td className="p-4 space-x-2">
+                            </td>
 
 
 
 
 
-<button
 
 
-onClick={()=>handleAssignDriver(vehicle._id)}
+                        </tr>
 
 
-className="
-bg-blue-600
-text-white
-px-3
-py-1
-rounded
-"
 
->
+                    ))
 
-Assign
+                    )
 
-</button>
+                    }
 
 
 
 
 
+                    </tbody>
 
 
-<button
 
 
-onClick={()=>removeVehicle(vehicle._id)}
+                </table>
 
 
-className="
-bg-red-600
-text-white
-px-3
-py-1
-rounded
-"
 
->
 
-Delete
+            </div>
 
-</button>
 
 
 
@@ -879,83 +895,49 @@ Delete
 
 
 
-</td>
 
+            {
 
+                showAdd &&
 
 
+                <AddVehicleModal
 
 
+                    close={()=>setShowAdd(false)}
 
-</tr>
 
+                    refresh={()=>
 
 
-))
+                        queryClient.invalidateQueries({
 
+                            queryKey:[
 
-}
+                                "vehicles"
 
+                            ]
 
+                        })
 
+                    }
 
-</tbody>
 
+                />
 
 
+            }
 
 
 
 
-</table>
 
 
 
+        </div>
 
 
-
-</div>
-
-
-
-
-
-
-
-
-
-{/* ADD VEHICLE MODAL */}
-
-
-
-{
-
-showAdd &&
-
-
-<AddVehicleModal
-
-
-close={()=>setShowAdd(false)}
-
-
-refresh={loadVehicles}
-
-
-/>
-
-
-}
-
-
-
-
-
-
-
-</div>
-
-);
+    );
 
 
 }
@@ -970,86 +952,74 @@ refresh={loadVehicles}
 
 function Card({
 
-title,
+    title,
 
-value,
+    value,
 
-icon
+    icon
 
 }){
 
 
-return (
+    return (
 
 
-<div
-
-className="
-bg-white
-shadow
-rounded-xl
-p-5
-flex
-justify-between
-"
-
->
+        <div className="
+            bg-white
+            shadow
+            rounded-xl
+            p-5
+            flex
+            justify-between
+            items-center
+        ">
 
 
-<div>
+            <div>
 
 
-<p
+                <p className="
+                    text-gray-500
+                ">
 
-className="
-text-gray-500
-"
+                    {title}
 
->
-
-{title}
-
-</p>
+                </p>
 
 
 
 
-<h2
+                <h2 className="
+                    text-3xl
+                    font-bold
+                ">
 
-className="
-text-3xl
-font-bold
-"
+                    {value}
 
->
-
-{value}
-
-</h2>
+                </h2>
 
 
 
-</div>
+            </div>
 
 
 
 
 
+            <div>
 
-<div>
+                {icon}
 
-{icon}
-
-</div>
-
+            </div>
 
 
 
 
-</div>
+
+        </div>
 
 
-);
+    );
 
 
 }

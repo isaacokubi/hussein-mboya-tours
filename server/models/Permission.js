@@ -1,52 +1,226 @@
+// server/models/Permission.js
+
 import mongoose from "mongoose";
 
+/*
+|--------------------------------------------------------------------------
+| PERMISSION SCHEMA
+|--------------------------------------------------------------------------
+|
+| Examples:
+|
+| bookings.view
+| bookings.create
+| bookings.update
+| bookings.delete
+|
+| tours.assign
+| vehicles.manage
+| reports.view
+|
+|--------------------------------------------------------------------------
+*/
 
-const permissionSchema = new mongoose.Schema({
+const permissionSchema = new mongoose.Schema(
+  {
+    /*
+    |--------------------------------------------------------------------------
+    | UNIQUE PERMISSION NAME
+    |--------------------------------------------------------------------------
+    */
 
-    name:{
-        type:String,
-        required:true,
-        unique:true
+    name: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      lowercase: true,
+      maxlength: 100,
     },
 
+    /*
+    |--------------------------------------------------------------------------
+    | DISPLAY LABEL
+    |--------------------------------------------------------------------------
+    */
 
-    label:{
-        type:String,
-        default:""
+    label: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 100,
     },
 
+    /*
+    |--------------------------------------------------------------------------
+    | MODULE
+    |--------------------------------------------------------------------------
+    */
 
-    path:{
-        type:String,
-        default:""
+    module: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true,
+      index: true,
     },
 
+    /*
+    |--------------------------------------------------------------------------
+    | DESCRIPTION
+    |--------------------------------------------------------------------------
+    */
 
-    icon:{
-        type:String,
-        default:""
+    description: {
+      type: String,
+      trim: true,
+      default: "",
+      maxlength: 500,
     },
 
+    /*
+    |--------------------------------------------------------------------------
+    | FRONTEND ROUTE
+    |--------------------------------------------------------------------------
+    */
 
-    module:{
-        type:String,
-        default:""
+    path: {
+      type: String,
+      trim: true,
+      default: "",
     },
 
+    /*
+    |--------------------------------------------------------------------------
+    | MENU ICON
+    |--------------------------------------------------------------------------
+    */
 
-    description:{
-        type:String,
-        default:""
-    }
+    icon: {
+      type: String,
+      trim: true,
+      default: "",
+    },
 
+    /*
+    |--------------------------------------------------------------------------
+    | CATEGORY
+    |--------------------------------------------------------------------------
+    */
 
-},{
-    timestamps:true
+    category: {
+      type: String,
+      enum: [
+        "dashboard",
+        "booking",
+        "tour",
+        "vehicle",
+        "staff",
+        "customer",
+        "agent",
+        "payment",
+        "report",
+        "user",
+        "role",
+        "system",
+        "other",
+      ],
+      default: "other",
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | STATUS
+    |--------------------------------------------------------------------------
+    */
+
+    isActive: {
+      type: Boolean,
+      default: true,
+      index: true,
+    },
+  },
+  {
+    timestamps: true,
+    toJSON: {
+      virtuals: true,
+    },
+    toObject: {
+      virtuals: true,
+    },
+  }
+);
+
+/*
+|--------------------------------------------------------------------------
+| INDEXES
+|--------------------------------------------------------------------------
+*/
+
+permissionSchema.index({
+  module: 1,
+  name: 1,
 });
 
+permissionSchema.index({
+  category: 1,
+});
 
-export default mongoose.models.Permission ||
-mongoose.model(
-    "Permission",
-    permissionSchema
-);
+permissionSchema.index({
+  isActive: 1,
+});
+
+/*
+|--------------------------------------------------------------------------
+| VIRTUALS
+|--------------------------------------------------------------------------
+*/
+
+permissionSchema.virtual("displayName").get(function () {
+  return this.label || this.name;
+});
+
+/*
+|--------------------------------------------------------------------------
+| PRE SAVE
+|--------------------------------------------------------------------------
+*/
+
+permissionSchema.pre("save", function (next) {
+  if (this.name) {
+    this.name = this.name.trim().toLowerCase();
+  }
+
+  if (this.module) {
+    this.module = this.module.trim().toLowerCase();
+  }
+
+  next();
+});
+
+/*
+|--------------------------------------------------------------------------
+| STATIC METHODS
+|--------------------------------------------------------------------------
+*/
+
+permissionSchema.statics.getByModule = function (module) {
+  return this.find({
+    module: module.toLowerCase(),
+    isActive: true,
+  }).sort({
+    name: 1,
+  });
+};
+
+/*
+|--------------------------------------------------------------------------
+| MODEL
+|--------------------------------------------------------------------------
+*/
+
+const Permission =
+  mongoose.models.Permission ||
+  mongoose.model("Permission", permissionSchema);
+
+export default Permission;

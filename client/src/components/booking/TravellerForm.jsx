@@ -1,28 +1,114 @@
 import {
-useState
+    useEffect,
+    useState
 }
 from "react";
 
 
+
+
+
 export default function TravelerForm({
-onChange
+
+    onChange
+
 }){
 
 
+
+
+
 const [
+
 travelers,
+
 setTravelers
+
 ]
+
 =
+
 useState([
 
 {
+
 name:"",
+
 age:"",
+
 passportNumber:""
+
 }
 
 ]);
+
+
+
+
+
+
+
+
+useEffect(()=>{
+
+
+if(onChange){
+
+onChange(travelers);
+
+}
+
+
+},[travelers,onChange]);
+
+
+
+
+
+
+
+
+
+const updateTraveler=(index,field,value)=>{
+
+
+const updated = travelers.map(
+
+(traveler,i)=>
+
+i===index
+
+?
+
+{
+
+...traveler,
+
+[field]:value
+
+}
+
+:
+
+traveler
+
+);
+
+
+
+
+
+setTravelers(updated);
+
+
+
+};
+
+
+
+
+
+
 
 
 
@@ -34,9 +120,13 @@ setTravelers([
 ...travelers,
 
 {
+
 name:"",
+
 age:"",
+
 passportNumber:""
+
 }
 
 ]);
@@ -46,53 +136,262 @@ passportNumber:""
 
 
 
+
+
+
+
+
+
+const removeTraveler=(index)=>{
+
+
+if(travelers.length===1){
+
+return;
+
+}
+
+
+
+setTravelers(
+
+travelers.filter(
+
+(_,i)=>i!==index
+
+)
+
+);
+
+
+};
+
+
+
+
+
+
+
+
+
 return (
 
 <div>
 
 
+
+
+
 {
 
 travelers.map(
-(item,index)=>(
+
+(traveler,index)=>(
+
 
 
 <div
+
 key={index}
+
 className="
 space-y-3
-mb-5
+mb-6
+border
+p-4
+rounded-lg
 "
+
 >
 
 
-<input
+
+
+
+<h3
 
 className="
-border p-3 w-full
+font-semibold
 "
 
-placeholder="
-Full Name
+>
+
+Traveler {index+1}
+
+</h3>
+
+
+
+
+
+
+
+<input
+
+
+value={traveler.name}
+
+
+className="
+border
+p-3
+w-full
+rounded
 "
+
+
+placeholder="Full Name"
+
+
+onChange={
+
+e=>
+
+updateTraveler(
+
+index,
+
+"name",
+
+e.target.value
+
+)
+
+}
+
+
 
 />
 
 
+
+
+
+
+
+
+
 <input
 
+
+type="number"
+
+
+value={traveler.age}
+
+
 className="
-border p-3 w-full
+border
+p-3
+w-full
+rounded
 "
 
-placeholder="
-Passport Number
-"
+
+placeholder="Age"
+
+
+onChange={
+
+e=>
+
+updateTraveler(
+
+index,
+
+"age",
+
+e.target.value
+
+)
+
+}
+
+
 
 />
+
+
+
+
+
+
+
+
+
+<input
+
+
+value={traveler.passportNumber}
+
+
+className="
+border
+p-3
+w-full
+rounded
+"
+
+
+placeholder="Passport Number"
+
+
+onChange={
+
+e=>
+
+updateTraveler(
+
+index,
+
+"passportNumber",
+
+e.target.value
+
+)
+
+}
+
+
+
+/>
+
+
+
+
+
+
+
+
+
+<button
+
+
+type="button"
+
+
+onClick={()=>removeTraveler(index)}
+
+
+className="
+text-red-600
+text-sm
+"
+
+>
+
+Remove Traveler
+
+</button>
+
+
+
+
+
 
 
 </div>
+
 
 
 )
@@ -103,11 +402,20 @@ Passport Number
 
 
 
+
+
+
+
+
+
 <button
+
 
 type="button"
 
+
 onClick={addTraveler}
+
 
 className="
 bg-black
@@ -124,8 +432,16 @@ Add Traveler
 </button>
 
 
+
+
+
+
+
+
 </div>
 
+
 );
+
 
 }

@@ -1,49 +1,43 @@
+// server/routes/tourReportRoutes.js
+
 import express from "express";
 
+import {
+  getTourReports,
+} from "../controllers/tourReportController.js";
 
 import {
-
-protect,
-
-authorize
-
-}
-
-from "../middleware/authMiddleware.js";
-
+  protect,
+} from "../middleware/authMiddleware.js";
 
 import {
+  roleMiddleware,
+} from "../middleware/roleMiddleware.js";
 
-getTourReports
+const router = express.Router();
 
-}
+/*
+|--------------------------------------------------------------------------
+| AUTHORIZATION
+|--------------------------------------------------------------------------
+*/
 
-from "../controllers/tourReportController.js";
+router.use(protect);
 
+/*
+|--------------------------------------------------------------------------
+| TOUR REPORTS
+|--------------------------------------------------------------------------
+*/
 
-
-
-const router =
-express.Router();
-
-
-
-
-
+/**
+ * GET /api/tour-reports
+ * Get submitted tour reports.
+ */
 router.get(
-
-"/",
-
-protect,
-
-authorize("tour_manager"),
-
-getTourReports
-
+  "/",
+  roleMiddleware(["admin", "tour_manager"]),
+  getTourReports
 );
-
-
-
-
 
 export default router;

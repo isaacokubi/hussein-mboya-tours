@@ -1,53 +1,228 @@
+// server/controllers/destinationController.js
+
 import Destination from "../models/Destination.js";
+
 
 
 /*
 |--------------------------------------------------------------------------
 | GET ALL ACTIVE DESTINATIONS
 |--------------------------------------------------------------------------
-| Used by:
-| - Public destinations page
-| - Admin destination selector
 |
-| Endpoint:
 | GET /api/destinations
+|
+| Query:
+| page
+| limit
+| search
+| country
+| featured=true
 |--------------------------------------------------------------------------
 */
 
-export const getDestinations = async (req, res, next) => {
 
-  try {
+export const getDestinations = async (req,res,next)=>{
 
-    const destinations = await Destination.find({
-
-      status: "active",
-
-    })
-    .sort({
-
-      createdAt: -1,
-
-    });
+try{
 
 
-    res.status(200).json({
+const {
 
-      success: true,
+page = 1,
 
-      count: destinations.length,
+limit = 12,
 
-      destinations,
+search,
 
-    });
+country,
+
+featured
 
 
-  } catch (error) {
+}=req.query;
 
-    next(error);
 
-  }
+
+const currentPage = Math.max(Number(page),1);
+
+
+const pageSize = Math.min(
+Math.max(Number(limit),1),
+100
+);
+
+
+const skip = (currentPage - 1) * pageSize;
+
+
+
+/*
+|--------------------------------------------------------------------------
+| FILTER
+|--------------------------------------------------------------------------
+*/
+
+
+const filter = {
+
+status:"active",
+
+active:true,
+
+isDeleted:false
 
 };
+
+
+
+if(country){
+
+filter.country = country;
+
+}
+
+
+
+if(featured === "true"){
+
+filter.featured = true;
+
+}
+
+
+
+
+
+if(search){
+
+
+const keyword = search.trim();
+
+
+
+filter.$or=[
+
+
+{
+name:{
+$regex:keyword,
+$options:"i"
+}
+},
+
+
+{
+slug:{
+$regex:keyword,
+$options:"i"
+}
+},
+
+
+{
+country:{
+$regex:keyword,
+$options:"i"
+}
+},
+
+
+{
+description:{
+$regex:keyword,
+$options:"i"
+}
+}
+
+
+];
+
+
+}
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| DATABASE QUERY
+|--------------------------------------------------------------------------
+*/
+
+
+const [destinations,total]=await Promise.all([
+
+
+Destination.find(filter)
+
+.sort({
+
+createdAt:-1
+
+})
+
+.skip(skip)
+
+.limit(pageSize)
+
+.lean(),
+
+
+
+Destination.countDocuments(filter)
+
+
+]);
+
+
+
+
+
+return res.status(200).json({
+
+success:true,
+
+
+count:destinations.length,
+
+
+pagination:{
+
+total,
+
+page:currentPage,
+
+pages:Math.ceil(total/pageSize),
+
+limit:pageSize
+
+},
+
+
+data:destinations
+
+
+});
+
+
+
+}
+
+catch(error){
+
+next(error);
+
+}
+
+
+};
+
+
+
+
+
+
 
 
 
@@ -55,53 +230,228 @@ export const getDestinations = async (req, res, next) => {
 |--------------------------------------------------------------------------
 | GET SINGLE DESTINATION
 |--------------------------------------------------------------------------
-| Used by:
-| /destinations/:slug
 |
-| Example:
-| GET /api/destinations/maasai-mara
+| GET /api/destinations/:slug
 |--------------------------------------------------------------------------
 */
 
-export const getDestination = async (req, res, next) => {
 
-  try {
-
-    const destination = await Destination.findOne({
-
-      slug: req.params.slug,
-
-      status: "active",
-
-    });
+export const getDestination = async(req,res,next)=>{
 
 
-    if (!destination) {
-
-      return res.status(404).json({
-
-        success: false,
-
-        message: "Destination not found",
-
-      });
-
-    }
+try{
 
 
-    res.status(200).json({
-
-      success: true,
-
-      destination,
-
-    });
+const slug=req.params.slug
+?.trim()
+.toLowerCase();
 
 
-  } catch (error) {
 
-    next(error);
+if(!slug){
 
-  }
+
+return res.status(400).json({
+
+success:false,
+
+message:"Destination slug is required."
+
+});
+
+
+}
+
+
+
+
+const destination = await Destination.findOne({
+
+slug,
+
+status:"active",
+
+active:true,
+
+isDeleted:false
+
+})
+.lean();
+
+
+
+
+
+
+if(!destination){
+
+
+return res.status(404).json({
+
+success:false,
+
+message:"Destination not found."
+
+});
+
+
+}
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| RELATED DESTINATIONS
+|--------------------------------------------------------------------------
+*/
+
+
+const relatedDestinations = await Destination.find({
+
+_id:{
+$ne:destination._id
+},
+
+
+country:destination.country,
+
+
+status:"active",
+
+
+active:true,
+
+
+isDeleted:false
+
+
+})
+
+.select(
+"name slug images country featured"
+)
+
+.limit(4)
+
+.lean();
+
+
+
+
+
+
+return res.status(200).json({
+
+success:true,
+
+
+data:{
+
+destination,
+
+relatedDestinations
+
+}
+
+
+});
+
+
+
+
+}
+
+catch(error){
+
+next(error);
+
+}
+
+
+};
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| FEATURED DESTINATIONS
+|--------------------------------------------------------------------------
+|
+| GET /api/destinations/featured
+|--------------------------------------------------------------------------
+*/
+
+
+export const getFeaturedDestinations = async(req,res,next)=>{
+
+
+try{
+
+
+const destinations = await Destination.find({
+
+
+status:"active",
+
+active:true,
+
+featured:true,
+
+isDeleted:false
+
+
+})
+
+
+.sort({
+
+createdAt:-1
+
+})
+
+
+.limit(6)
+
+
+
+.lean();
+
+
+
+
+
+
+return res.status(200).json({
+
+success:true,
+
+
+count:destinations.length,
+
+
+data:destinations
+
+
+});
+
+
+
+}
+
+catch(error){
+
+next(error);
+
+}
+
 
 };

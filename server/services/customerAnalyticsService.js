@@ -1,43 +1,44 @@
 import User from "../models/User.js";
 
+/*
+|--------------------------------------------------------------------------
+| CUSTOMER GROWTH ANALYTICS
+|--------------------------------------------------------------------------
+|
+| Returns monthly customer registrations.
+|
+*/
 
+export const getCustomerGrowth = async () => {
+  const growth = await User.aggregate([
+    {
+      $match: {
+        legacyRole: "customer",
+        isActive: true,
+      },
+    },
 
-export const getCustomerGrowth =
-async()=>{
+    {
+      $group: {
+        _id: {
+          $dateToString: {
+            format: "%Y-%m",
+            date: "$createdAt",
+          },
+        },
 
+        customers: {
+          $sum: 1,
+        },
+      },
+    },
 
-return await User.aggregate([
+    {
+      $sort: {
+        _id: 1,
+      },
+    },
+  ]);
 
-
-{
-
-$group:{
-
-_id:{
-
-$dateToString:{
-
-format:"%Y-%m",
-
-date:"$createdAt"
-
-}
-
-},
-
-
-customers:{
-
-$sum:1
-
-}
-
-}
-
-}
-
-
-]);
-
-
+  return growth;
 };

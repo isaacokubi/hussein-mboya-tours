@@ -1,54 +1,60 @@
-import CustomerProfile
-from "../models/CustomerProfile.js";
+import CustomerProfile from "../models/CustomerProfile.js";
 
+/*
+|--------------------------------------------------------------------------
+| CUSTOMER SEGMENT THRESHOLDS
+|--------------------------------------------------------------------------
+*/
 
+const CUSTOMER_SEGMENTS = {
+  VIP_MIN_SPENT: 500000,
+  REGULAR_MIN_BOOKINGS: 5,
+};
 
-export const updateCustomerSegment =
-async(userId)=>{
+/*
+|--------------------------------------------------------------------------
+| UPDATE CUSTOMER SEGMENT
+|--------------------------------------------------------------------------
+|
+| Updates customerType based on spending and bookings.
+|
+| Types:
+| - vip
+| - regular
+| - new
+|
+*/
 
+export const updateCustomerSegment = async (userId) => {
+  if (!userId) {
+    throw new Error("User ID is required.");
+  }
 
-const customer =
-await CustomerProfile.findOne({
+  const customer = await CustomerProfile.findOne({
+    user: userId,
+  });
 
-user:userId
+  if (!customer) {
+    return null;
+  }
 
-});
+  const totalSpent = customer.totalSpent || 0;
+  const totalBookings = customer.totalBookings || 0;
 
+  let customerType = "new";
 
+  if (totalSpent >= CUSTOMER_SEGMENTS.VIP_MIN_SPENT) {
+    customerType = "vip";
+  } else if (
+    totalBookings >= CUSTOMER_SEGMENTS.REGULAR_MIN_BOOKINGS
+  ) {
+    customerType = "regular";
+  }
 
-if(!customer)
-return;
+  if (customer.customerType !== customerType) {
+    customer.customerType = customerType;
+    await customer.save();
+  }
 
-
-
-if(
-customer.totalSpent >=500000
-){
-
-customer.customerType =
-"vip";
-
-}
-
-else if(
-customer.totalBookings >=5
-){
-
-customer.customerType =
-"regular";
-
-}
-
-else{
-
-customer.customerType =
-"new";
-
-}
-
-
-
-await customer.save();
-
-
+  return customer;
 };

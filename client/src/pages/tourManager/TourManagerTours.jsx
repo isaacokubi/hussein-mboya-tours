@@ -1,38 +1,34 @@
 import React, {
-useEffect,
-useState
+    useEffect,
+    useState
 } from "react";
 
 
 import {
-useNavigate
-}
-from "react-router-dom";
+    useNavigate
+} from "react-router-dom";
 
 
 import {
-FaEdit,
-FaTrash,
-FaSearch,
-FaPlus,
-FaUserTie,
-FaCar,
-FaCalendarAlt
-}
-from "react-icons/fa";
+    FaEdit,
+    FaTrash,
+    FaSearch,
+    FaPlus,
+    FaUserTie,
+    FaCar,
+    FaCalendarAlt
+} from "react-icons/fa";
 
 
 import {
-getManagerTours,
-deleteTour
-}
-from "../../api/tourApi";
+    toast
+} from "react-toastify";
 
 
 import {
-toast
-}
-from "react-toastify";
+    getManagerTours,
+    deleteTour
+} from "../../api/tourApi";
 
 
 
@@ -41,28 +37,22 @@ from "react-toastify";
 const TourManagerTours = ()=>{
 
 
-const navigate =
-useNavigate();
+const navigate = useNavigate();
 
 
 
-const [tours,setTours] =
-useState([]);
+const [tours,setTours] = useState([]);
 
 
-
-const [loading,setLoading] =
-useState(true);
+const [loading,setLoading] = useState(true);
 
 
-
-const [search,setSearch] =
-useState("");
+const [search,setSearch] = useState("");
 
 
+const [status,setStatus] = useState("all");
 
-const [status,setStatus] =
-useState("all");
+
 
 
 
@@ -72,10 +62,9 @@ useState("all");
 
 /*
 |--------------------------------------------------------------------------
-| FETCH TOURS
+| LOAD TOURS
 |--------------------------------------------------------------------------
 */
-
 
 const fetchTours = async()=>{
 
@@ -83,13 +72,20 @@ const fetchTours = async()=>{
 try{
 
 
-const response =
-await getManagerTours();
+const response = await getManagerTours();
+
 
 
 setTours(
-response.data.tours
+
+response.data.tours ||
+
+response.data ||
+
+[]
+
 );
+
 
 
 }
@@ -123,6 +119,7 @@ setLoading(false);
 
 
 
+
 useEffect(()=>{
 
 
@@ -146,17 +143,16 @@ fetchTours();
 */
 
 
-const handleDelete =
-async(id)=>{
+const handleDelete = async(id)=>{
 
 
-const confirmDelete =
-window.confirm(
+if(
+!window.confirm(
 "Delete this tour?"
-);
+)
 
+)
 
-if(!confirmDelete)
 return;
 
 
@@ -171,7 +167,7 @@ await deleteTour(id);
 
 
 toast.success(
-"Tour deleted"
+"Tour deleted successfully"
 );
 
 
@@ -196,7 +192,6 @@ toast.error(
 }
 
 
-
 };
 
 
@@ -206,25 +201,49 @@ toast.error(
 
 
 
-const filteredTours =
 
-tours.filter(
-tour=>{
+const filteredTours = tours.filter((tour)=>{
 
 
-const matchesSearch =
+const searchText =
+search.toLowerCase();
 
+
+
+const title =
 tour.title
 ?.toLowerCase()
-.includes(
-search.toLowerCase()
-);
+.includes(searchText);
 
 
 
-const matchesStatus =
+const destination =
 
-status==="all"
+typeof tour.destination === "object"
+
+?
+
+tour.destination?.name
+
+:
+
+tour.destination;
+
+
+
+const destinationMatch =
+
+destination
+?.toLowerCase()
+.includes(searchText);
+
+
+
+
+
+const statusMatch =
+
+status === "all"
 
 ?
 
@@ -232,24 +251,7 @@ true
 
 :
 
-tour.status===status;
-
-
-
-return (
-
-matchesSearch &&
-
-matchesStatus
-
-);
-
-
-}
-
-);
-
-
+tour.status === status;
 
 
 
@@ -257,15 +259,34 @@ matchesStatus
 
 return (
 
-<div
+(title || destinationMatch)
 
-className="
+&&
+
+statusMatch
+
+);
+
+
+});
+
+
+
+
+
+
+
+
+
+return (
+
+<div className="
 min-h-screen
 bg-gray-100
 p-6
-"
+">
 
->
+
 
 
 
@@ -273,45 +294,34 @@ p-6
 
 {/* HEADER */}
 
-
-<div
-
-className="
+<div className="
 flex
-justify-between
-items-center
+flex-col
+md:flex-row
+md:justify-between
+md:items-center
+gap-4
 mb-8
-"
-
->
+">
 
 
 <div>
 
 
-<h1
-
-className="
+<h1 className="
 text-3xl
 font-bold
 text-gray-800
-"
-
->
+">
 
 Manage Tours
 
 </h1>
 
 
-
-<p
-
-className="
+<p className="
 text-gray-500
-"
-
->
+">
 
 Create, update and manage travel experiences
 
@@ -365,12 +375,12 @@ Create Tour
 
 
 
-{/* FILTER BAR */}
+
+{/* FILTERS */}
 
 
-<div
 
-className="
+<div className="
 bg-white
 rounded-xl
 shadow
@@ -380,47 +390,36 @@ flex
 flex-col
 md:flex-row
 gap-4
-"
-
->
+">
 
 
-
-<div
-
-className="
+<div className="
 flex
 items-center
 border
 rounded-lg
 px-3
 flex-1
-"
-
->
+">
 
 
-<FaSearch
-className="
+<FaSearch className="
 text-gray-400
-"
-/>
+"/>
 
 
 
 <input
 
-
 value={search}
-
 
 onChange={(e)=>
 setSearch(e.target.value)
 }
 
-
-placeholder="Search tours..."
-
+placeholder="
+Search tour or destination...
+"
 
 className="
 w-full
@@ -431,7 +430,9 @@ outline-none
 />
 
 
+
 </div>
+
 
 
 
@@ -483,6 +484,7 @@ Cancelled
 </select>
 
 
+
 </div>
 
 
@@ -496,52 +498,41 @@ Cancelled
 {/* TABLE */}
 
 
-<div
 
-className="
+<div className="
 bg-white
 rounded-xl
 shadow
 overflow-hidden
-"
-
->
+">
 
 
-<div
-
-className="
+<div className="
 overflow-x-auto
-"
-
->
+">
 
 
-<table
-
-className="
+<table className="
 w-full
 text-left
-"
-
->
+">
 
 
-<thead
-
-className="
+<thead className="
 bg-gray-50
 border-b
-"
-
->
+">
 
 
 <tr>
 
 
-<th className="p-4">
+<th className="
+p-4
+">
+
 Tour
+
 </th>
 
 
@@ -581,7 +572,9 @@ Actions
 
 
 
+
 <tbody>
+
 
 
 {
@@ -589,6 +582,7 @@ Actions
 loading
 
 ?
+
 
 <tr>
 
@@ -614,7 +608,7 @@ Loading tours...
 :
 
 
-filteredTours.length===0
+filteredTours.length === 0
 
 
 ?
@@ -642,12 +636,12 @@ No tours found
 
 
 
+
 :
 
 
-filteredTours.map(
+filteredTours.map((tour)=>(
 
-tour=>(
 
 
 <tr
@@ -663,14 +657,13 @@ hover:bg-gray-50
 
 
 
-<td
 
-className="
+
+
+<td className="
 p-4
 font-semibold
-"
-
->
+">
 
 {tour.title}
 
@@ -683,7 +676,23 @@ font-semibold
 
 <td>
 
-{tour.country}
+
+{
+
+typeof tour.destination === "object"
+
+?
+
+tour.destination?.name
+
+:
+
+tour.destination || tour.country || "N/A"
+
+
+}
+
+
 
 </td>
 
@@ -692,7 +701,9 @@ font-semibold
 
 
 
+
 <td>
+
 
 {
 
@@ -709,18 +720,10 @@ tour.date
 
 "N/A"
 
+
 }
 
-</td>
 
-
-
-
-
-
-<td>
-
-{tour.capacity}
 
 </td>
 
@@ -729,23 +732,33 @@ tour.date
 
 
 
+
+<td>
+
+{tour.capacity || 0}
+
+</td>
+
+
+
+
+
+
+
+
 <td>
 
 
-<span
-
-className="
+<span className="
 px-3
 py-1
 rounded-full
 bg-green-100
 text-green-700
 text-sm
-"
+">
 
->
-
-{tour.status}
+{tour.status || "upcoming"}
 
 </span>
 
@@ -759,31 +772,23 @@ text-sm
 
 
 
-
 <td>
 
 
-<div
-
-className="
+<div className="
 flex
 gap-3
-"
-
->
+">
 
 
 
 
 
-{/* EDIT */}
 
 <button
 
 onClick={()=>navigate(
-
 `/tour-manager/edit-tour/${tour._id}`
-
 )}
 
 className="
@@ -803,14 +808,10 @@ text-blue-600
 
 
 
-{/* ASSIGN GUIDE */}
-
 <button
 
 onClick={()=>navigate(
-
 `/tour-manager/assign-guide/${tour._id}`
-
 )}
 
 className="
@@ -830,14 +831,10 @@ text-green-600
 
 
 
-{/* ASSIGN VEHICLE */}
-
 <button
 
 onClick={()=>navigate(
-
 `/tour-manager/assign-vehicle/${tour._id}`
-
 )}
 
 className="
@@ -857,14 +854,10 @@ text-purple-600
 
 
 
-{/* AVAILABILITY */}
-
 <button
 
 onClick={()=>navigate(
-
 `/tour-manager/availability/${tour._id}`
-
 )}
 
 className="
@@ -883,8 +876,6 @@ text-orange-600
 
 
 
-
-{/* DELETE */}
 
 <button
 
@@ -905,6 +896,7 @@ text-red-600
 
 
 
+
 </div>
 
 
@@ -915,16 +907,16 @@ text-red-600
 
 
 
-
 </tr>
 
 
-)
 
-)
+))
 
 
 }
+
+
 
 
 </tbody>

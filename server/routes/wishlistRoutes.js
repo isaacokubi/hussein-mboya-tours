@@ -1,88 +1,67 @@
+// server/routes/wishlistRoutes.js
+
 import express from "express";
 
 import {
-
-getWishlist,
-
-addWishlist,
-
-removeWishlist
-
-}
-from "../controllers/wishlistController.js";
-
+  getWishlist,
+  addWishlist,
+  removeWishlist,
+} from "../controllers/wishlistController.js";
 
 import {
-protect
-}
-from "../middleware/authMiddleware.js";
+  protect,
+} from "../middleware/authMiddleware.js";
 
-
-
-const router =
-express.Router();
-
-
-
+const router = express.Router();
 
 /*
 |--------------------------------------------------------------------------
-| GET USER WISHLIST
+| AUTHORIZATION
+|--------------------------------------------------------------------------
+|
+| All wishlist routes require authentication.
+|
 |--------------------------------------------------------------------------
 */
 
+router.use(protect);
+
+/*
+|--------------------------------------------------------------------------
+| WISHLIST
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * GET /api/wishlist
+ * Get the authenticated user's wishlist.
+ */
 router.get(
-
-"/",
-
-protect,
-
-getWishlist
-
+  "/",
+  getWishlist
 );
 
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| ADD TOUR
-|--------------------------------------------------------------------------
-*/
-
+/**
+ * POST /api/wishlist
+ * Add a tour to the authenticated user's wishlist.
+ *
+ * Body:
+ * {
+ *   "tourId": "..."
+ * }
+ */
 router.post(
-
-"/",
-
-protect,
-
-addWishlist
-
+  "/",
+  addWishlist
 );
 
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| REMOVE TOUR
-|--------------------------------------------------------------------------
-*/
-
+/**
+ * DELETE /api/wishlist/:tourId
+ * Remove a tour from the authenticated user's wishlist.
+ */
 router.delete(
-
-"/:tourId",
-
-protect,
-
-removeWishlist
-
+  "/:tourId",
+  removeWishlist
 );
-
-
-
-
 
 export default router;

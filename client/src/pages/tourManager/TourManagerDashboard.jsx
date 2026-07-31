@@ -1,250 +1,366 @@
-import React, {
-    useEffect,
-    useState
-} from "react";
+// client/src/pages/tour-manager/TourManagerDashboard.jsx
+
+import {
+  useQuery
+} from "@tanstack/react-query";
 
 
 import {
-    useNavigate
+  useNavigate
 } from "react-router-dom";
 
 
-import axios from "axios";
+import {
+  getTourManagerDashboard
+} from "../../api/tourManagerApi";
 
 
 import {
-
-    FaMapMarkedAlt,
-    FaCalendarCheck,
-    FaUsers,
-    FaMoneyBillWave,
-    FaCar,
-    FaUserTie,
-    FaClipboardList,
-    FaChartLine,
-    FaBell,
-
+  FaMapMarkedAlt,
+  FaCalendarCheck,
+  FaUsers,
+  FaMoneyBillWave,
+  FaCar,
+  FaUserTie,
+  FaClipboardList,
+  FaChartLine,
+  FaBell
 } from "react-icons/fa";
 
 
 
 
 
-const API_URL =
-import.meta.env.VITE_API_URL ||
-"http://localhost:5000";
+export default function TourManagerDashboard(){
 
 
+  const navigate = useNavigate();
 
 
 
 
-const TourManagerDashboard = () => {
+  const {
+    data,
+    isLoading,
+    isError
+  } = useQuery({
 
+    queryKey:[
+      "tour-manager-dashboard"
+    ],
 
-    const navigate = useNavigate();
 
+    queryFn:getTourManagerDashboard
 
 
-    const [dashboard,setDashboard] = useState({
+  });
 
-        stats:{
 
-            totalTours:0,
 
-            upcomingTours:0,
 
-            totalCustomers:0,
 
-            revenue:0
 
-        },
+  const dashboard =
+    data?.data || data || {};
 
 
-        upcomingTours:[],
 
+  const statsData =
+    dashboard.stats || {};
 
-        recentBookings:[]
 
-    });
 
 
+  const upcomingTours =
+    dashboard.upcomingTours || [];
 
 
 
-    const [loading,setLoading] =
-    useState(true);
+  const recentBookings =
+    dashboard.recentBookings || [];
 
 
 
 
 
 
+  const stats = [
 
 
+    {
 
-    useEffect(()=>{
+      title:"Total Tours",
 
+      value:statsData.totalTours || 0,
 
-        const fetchDashboard = async()=>{
+      icon:<FaMapMarkedAlt/>,
 
+      color:"bg-blue-600"
 
-            try{
+    },
 
 
-                const response =
-                await axios.get(
 
-                    `${API_URL}/api/tour-manager/dashboard`,
+    {
 
-                    {
+      title:"Upcoming Tours",
 
-                        headers:{
+      value:statsData.upcomingTours || 0,
 
-                            Authorization:
+      icon:<FaCalendarCheck/>,
 
-                            `Bearer ${localStorage.getItem(
-                                "token"
-                            )}`
+      color:"bg-green-600"
 
-                        }
+    },
 
-                    }
 
-                );
 
+    {
 
+      title:"Total Customers",
 
+      value:statsData.totalCustomers || 0,
 
+      icon:<FaUsers/>,
 
-                setDashboard(
-                    response.data
-                );
+      color:"bg-purple-600"
 
+    },
 
 
-            }
 
+    {
 
-            catch(error){
+      title:"Revenue",
 
+      value:
+      `KES ${Number(statsData.revenue || 0).toLocaleString()}`,
 
-                console.error(
+      icon:<FaMoneyBillWave/>,
 
-                    "Dashboard loading error",
+      color:"bg-yellow-600"
 
-                    error
+    }
 
-                );
 
+  ];
 
-            }
 
 
-            finally{
 
 
-                setLoading(false);
 
+  if(isError){
 
-            }
 
+    return (
 
+      <div className="p-6 text-red-600">
 
-        };
+        Failed loading dashboard.
 
+      </div>
 
+    );
 
+  }
 
 
-        fetchDashboard();
 
 
 
-    },[]);
 
 
+  return (
 
+    <div
+      className="
+        min-h-screen
+        bg-gray-100
+        p-6
+      "
+    >
 
 
 
+      <div
+        className="
+          flex
+          justify-between
+          items-center
+          mb-8
+        "
+      >
 
 
 
+        <div>
 
+          <h1 className="
+            text-3xl
+            font-bold
+            text-gray-800
+          ">
 
-    const stats = [
+            Hussein Mboya Tours
+
+          </h1>
+
+
+
+          <p className="text-gray-500">
+
+            Tour Manager Dashboard
+
+          </p>
+
+
+        </div>
+
+
+
+
+
+        <div className="
+          flex
+          items-center
+          gap-3
+        ">
+
+
+          <button
+            className="
+              bg-white
+              p-3
+              rounded-full
+              shadow
+            "
+          >
+
+            <FaBell className="text-orange-500"/>
+
+          </button>
+
+
+
+
+          <div className="
+            bg-white
+            px-4
+            py-2
+            rounded-lg
+            shadow
+          ">
+
+            Tour Manager
+
+          </div>
+
+
+        </div>
+
+
+
+      </div>
+
+
+
+
+
+
+
+
+      <div className="
+        grid
+        md:grid-cols-4
+        gap-6
+        mb-8
+      ">
 
 
         {
-
-            title:"Total Tours",
-
-            value:
-            dashboard.stats.totalTours,
-
-            icon:
-            <FaMapMarkedAlt/>,
-
-            color:
-            "bg-blue-600"
-
-        },
+          stats.map((item,index)=>(
 
 
+            <div
 
-        {
+              key={index}
 
-            title:"Upcoming Tours",
+              className="
+                bg-white
+                rounded-xl
+                shadow
+                p-5
+                flex
+                justify-between
+                items-center
+              "
 
-            value:
-            dashboard.stats.upcomingTours,
+            >
 
-            icon:
-            <FaCalendarCheck/>,
 
-            color:
-            "bg-green-600"
+              <div>
 
-        },
+
+                <p className="text-gray-500">
+
+                  {item.title}
+
+                </p>
 
 
 
-        {
-
-            title:"Total Customers",
-
-            value:
-            dashboard.stats.totalCustomers,
-
-            icon:
-            <FaUsers/>,
-
-            color:
-            "bg-purple-600"
-
-        },
+                <h2 className="
+                  text-3xl
+                  font-bold
+                  mt-2
+                ">
 
 
+                  {
+                    isLoading
+                    ?
+                    "..."
+                    :
+                    item.value
+                  }
 
-        {
 
-            title:"Revenue",
+                </h2>
 
-            value:
 
-            `$${dashboard.stats.revenue}`,
+              </div>
 
-            icon:
-            <FaMoneyBillWave/>,
 
-            color:
-            "bg-yellow-600"
+
+
+
+              <div
+
+                className={`
+                  ${item.color}
+                  text-white
+                  p-4
+                  rounded-full
+                  text-xl
+                `}
+
+              >
+
+                {item.icon}
+
+              </div>
+
+
+            </div>
+
+
+          ))
 
         }
 
 
-    ];
+      </div>
 
 
 
@@ -254,877 +370,506 @@ const TourManagerDashboard = () => {
 
 
 
-return (
+      <div className="
+        grid
+        lg:grid-cols-3
+        gap-6
+      ">
 
-<div
-className="
-min-h-screen
-bg-gray-100
-p-6
-"
->
 
 
 
 
+        <div className="
+          lg:col-span-2
+          bg-white
+          rounded-xl
+          shadow
+          p-6
+        ">
 
-<div
-className="
-flex
-justify-between
-items-center
-mb-8
-"
->
 
+          <div className="
+            flex
+            justify-between
+            mb-5
+          ">
 
-<div>
 
+            <h2 className="
+              text-xl
+              font-bold
+            ">
 
-<h1
-className="
-text-3xl
-font-bold
-text-gray-800
-"
->
+              Upcoming Tours
 
-Hussein Mboya Tours
+            </h2>
 
-</h1>
 
 
 
+            <button
 
-<p
-className="
-text-gray-500
-"
->
+              onClick={()=>
+                navigate(
+                  "/tour-manager/create-tour"
+                )
+              }
 
-Tour Manager Dashboard
+              className="
+                bg-orange-600
+                text-white
+                px-4
+                py-2
+                rounded-lg
+              "
 
-</p>
+            >
 
+              Create Tour
 
-</div>
+            </button>
 
 
+          </div>
 
 
 
 
 
-<div
-className="
-flex
-items-center
-gap-3
-"
->
 
+          <div className="overflow-x-auto">
 
-<button
-className="
-bg-white
-p-3
-rounded-full
-shadow
-"
->
 
-<FaBell
-className="
-text-orange-500
-"
-/>
+            <table className="w-full text-left">
 
-</button>
 
+              <thead>
 
 
+                <tr className="border-b">
 
 
-<div
-className="
-bg-white
-px-4
-py-2
-rounded-lg
-shadow
-"
->
+                  <th className="p-3">
+                    Tour
+                  </th>
 
-Tour Manager
 
-</div>
+                  <th>
+                    Date
+                  </th>
 
 
+                  <th>
+                    Guests
+                  </th>
 
-</div>
 
+                  <th>
+                    Guide
+                  </th>
 
 
-</div>
+                  <th>
+                    Status
+                  </th>
 
 
+                </tr>
 
 
+              </thead>
 
 
 
 
+              <tbody>
 
-<div
-className="
-grid
-md:grid-cols-4
-gap-6
-mb-8
-"
->
 
+                {
+                  upcomingTours.length === 0
 
-{
+                  ?
 
-stats.map(
+                  <tr>
 
-(item,index)=>(
+                    <td
+                      colSpan="5"
+                      className="
+                        text-center
+                        p-5
+                        text-gray-500
+                      "
+                    >
 
+                      No upcoming tours found
 
-<div
+                    </td>
 
-key={index}
 
-className="
-bg-white
-rounded-xl
-shadow
-p-5
-flex
-justify-between
-items-center
-"
+                  </tr>
 
->
 
+                  :
 
-<div>
 
+                  upcomingTours.map((tour,index)=>(
 
-<p
-className="
-text-gray-500
-"
->
 
-{item.title}
+                    <tr
 
-</p>
+                      key={tour._id || index}
 
+                      className="
+                        border-b
+                        hover:bg-gray-50
+                      "
 
+                    >
 
 
-<h2
-className="
-text-3xl
-font-bold
-mt-2
-"
->
+                      <td className="
+                        p-3
+                        font-semibold
+                      ">
 
+                        {
+                          tour.title ||
+                          tour.name
+                        }
 
-{
+                      </td>
 
-loading
 
-?
 
-"..."
+                      <td>
 
-:
+                        {tour.date}
 
-item.value
+                      </td>
 
-}
 
 
-</h2>
+                      <td>
 
+                        {tour.guests || tour.capacity || 0}
 
-</div>
+                      </td>
 
 
 
+                      <td>
 
+                        {
+                          tour.guide?.name ||
+                          tour.guide ||
+                          "-"
+                        }
 
+                      </td>
 
-<div
 
-className={`
-${item.color}
-text-white
-p-4
-rounded-full
-text-xl
-`}
 
->
+                      <td>
 
-{item.icon}
+                        <span className="
+                          bg-green-100
+                          text-green-700
+                          px-3
+                          py-1
+                          rounded-full
+                          text-sm
+                        ">
 
-</div>
+                          {
+                            tour.status ||
+                            "upcoming"
+                          }
 
+                        </span>
 
+                      </td>
 
-</div>
 
+                    </tr>
 
 
-)
+                  ))
 
+                }
 
-)
 
+              </tbody>
 
-}
 
+            </table>
 
-</div>
 
+          </div>
 
 
+        </div>
 
 
 
 
 
 
-<div
-className="
-grid
-lg:grid-cols-3
-gap-6
-"
->
 
 
 
+        <div className="
+          bg-white
+          rounded-xl
+          shadow
+          p-6
+        ">
 
 
+          <h2 className="
+            text-xl
+            font-bold
+            mb-5
+          ">
 
+            Quick Actions
 
-<div
-className="
-lg:col-span-2
-bg-white
-rounded-xl
-shadow
-p-6
-"
->
+          </h2>
 
 
 
-<div
-className="
-flex
-justify-between
-mb-5
-"
->
 
 
-<h2
-className="
-text-xl
-font-bold
-"
->
+          <div className="space-y-4">
 
-Upcoming Tours
 
-</h2>
 
+            <ActionButton
+              onClick={()=>navigate("/tour-manager/tours")}
+              color="bg-blue-600"
+              icon={<FaClipboardList/>}
+              text="Manage Tours"
+            />
 
 
 
+            <ActionButton
+              onClick={()=>navigate("/tour-manager/guides")}
+              color="bg-green-600"
+              icon={<FaUserTie/>}
+              text="Assign Guides"
+            />
 
 
-<button
 
-onClick={()=>navigate(
-"/tour-manager/create-tour"
-)}
+            <ActionButton
+              onClick={()=>navigate("/tour-manager/reports")}
+              color="bg-purple-600"
+              icon={<FaChartLine/>}
+              text="View Reports"
+            />
 
-className="
-bg-orange-600
-text-white
-px-4
-py-2
-rounded-lg
-"
 
->
 
-Create Tour
+            <ActionButton
+              onClick={()=>navigate("/tour-manager/vehicles")}
+              color="bg-orange-600"
+              icon={<FaCar/>}
+              text="Manage Vehicles"
+            />
 
-</button>
 
 
+          </div>
 
-</div>
 
+        </div>
 
 
 
+      </div>
 
 
 
-<div
-className="
-overflow-x-auto
-"
->
 
 
-<table
-className="
-w-full
-text-left
-"
->
 
 
-<thead>
 
-<tr
-className="
-border-b
-"
->
+      <div className="
+        mt-8
+        bg-white
+        rounded-xl
+        shadow
+        p-6
+      ">
 
-<th className="p-3">
-Tour
-</th>
 
+        <h2 className="
+          text-xl
+          font-bold
+          mb-5
+        ">
 
-<th>
-Date
-</th>
+          Recent Bookings
 
+        </h2>
 
-<th>
-Guests
-</th>
 
 
-<th>
-Guide
-</th>
 
 
-<th>
-Status
-</th>
+        <div className="
+          grid
+          md:grid-cols-3
+          gap-5
+        ">
 
 
-</tr>
+          {
+            recentBookings.length === 0
 
-</thead>
+            ?
 
+            <p className="text-gray-500">
 
+              No bookings found
 
+            </p>
 
 
-<tbody>
+            :
 
 
-{
+            recentBookings.map((booking,index)=>(
 
-dashboard.upcomingTours.length === 0
 
-?
+              <div
 
-<tr>
+                key={booking._id || index}
 
-<td
-colSpan="5"
-className="
-text-center
-p-5
-text-gray-500
-"
->
+                className="
+                  border
+                  rounded-lg
+                  p-5
+                "
 
-No upcoming tours found
+              >
 
-</td>
 
-</tr>
+                <h3 className="font-bold">
 
+                  {
+                    booking.customer?.name ||
+                    booking.customer
+                  }
 
+                </h3>
 
-:
 
 
-dashboard.upcomingTours.map(
+                <p className="text-gray-500">
 
-(tour,index)=>(
+                  {
+                    booking.tour?.title ||
+                    booking.tour
+                  }
 
+                </p>
 
-<tr
 
-key={index}
 
-className="
-border-b
-hover:bg-gray-50
-"
+                <p>
 
->
+                  Guests: {booking.guests || 0}
 
+                </p>
 
-<td
-className="
-p-3
-font-semibold
-"
->
 
-{tour.name}
 
-</td>
 
+                <span className="
+                  inline-block
+                  mt-3
+                  bg-green-100
+                  text-green-700
+                  px-3
+                  py-1
+                  rounded-full
+                ">
 
+                  {
+                    booking.paymentStatus ||
+                    booking.payment
+                  }
 
-<td>
+                </span>
 
-{tour.date}
 
-</td>
+              </div>
 
 
+            ))
 
-<td>
+          }
 
-{tour.guests}
 
-</td>
+        </div>
 
 
 
-<td>
+      </div>
 
-{tour.guide}
 
-</td>
 
 
 
 
-<td>
+    </div>
 
-<span
-className="
-bg-green-100
-text-green-700
-px-3
-py-1
-rounded-full
-text-sm
-"
->
-
-{tour.status}
-
-</span>
-
-
-</td>
-
-
-
-</tr>
-
-
-)
-
-
-)
+  );
 
 
 }
 
 
 
-</tbody>
 
 
-</table>
 
+function ActionButton({
+  onClick,
+  color,
+  icon,
+  text
+}){
 
 
-</div>
+  return (
 
+    <button
 
-</div>
+      onClick={onClick}
 
+      className={`
+        w-full
+        flex
+        items-center
+        gap-3
+        ${color}
+        text-white
+        p-4
+        rounded-lg
+      `}
 
+    >
 
+      {icon}
 
+      {text}
 
+    </button>
 
-
-
-
-<div
-className="
-bg-white
-rounded-xl
-shadow
-p-6
-"
->
-
-
-<h2
-className="
-text-xl
-font-bold
-mb-5
-"
->
-
-Quick Actions
-
-</h2>
-
-
-
-
-
-
-<div
-className="
-space-y-4
-"
->
-
-
-
-
-
-<button
-
-onClick={()=>navigate(
-"/tour-manager/tours"
-)}
-
-className="
-w-full
-flex
-items-center
-gap-3
-bg-blue-600
-text-white
-p-4
-rounded-lg
-"
-
->
-
-<FaClipboardList/>
-
-Manage Tours
-
-</button>
-
-
-
-
-
-
-
-<button
-
-onClick={()=>navigate(
-"/tour-manager/guides"
-)}
-
-className="
-w-full
-flex
-items-center
-gap-3
-bg-green-600
-text-white
-p-4
-rounded-lg
-"
-
->
-
-<FaUserTie/>
-
-Assign Guides
-
-</button>
-
-
-
-
-
-
-
-<button
-
-onClick={()=>navigate(
-"/tour-manager/reports"
-)}
-
-className="
-w-full
-flex
-items-center
-gap-3
-bg-purple-600
-text-white
-p-4
-rounded-lg
-"
-
->
-
-<FaChartLine/>
-
-View Reports
-
-</button>
-
-
-
-
-
-
-
-
-<button
-
-onClick={()=>navigate(
-"/tour-manager/vehicles"
-)}
-
-className="
-w-full
-flex
-items-center
-gap-3
-bg-orange-600
-text-white
-p-4
-rounded-lg
-"
-
->
-
-<FaCar/>
-
-Manage Vehicles
-
-</button>
-
-
-
-
-
-</div>
-
-
-</div>
-
-
-
-
-
-</div>
-
-
-
-
-
-
-
-
-
-<div
-className="
-mt-8
-bg-white
-rounded-xl
-shadow
-p-6
-"
->
-
-
-<h2
-className="
-text-xl
-font-bold
-mb-5
-"
->
-
-Recent Bookings
-
-</h2>
-
-
-
-
-
-<div
-className="
-grid
-md:grid-cols-3
-gap-5
-"
->
-
-
-{
-
-
-dashboard.recentBookings.length===0
-
-
-?
-
-
-<p
-className="
-text-gray-500
-"
->
-
-No bookings found
-
-</p>
-
-
-
-:
-
-
-dashboard.recentBookings.map(
-
-(booking,index)=>(
-
-
-<div
-
-key={index}
-
-className="
-border
-rounded-lg
-p-5
-"
-
->
-
-
-<h3
-className="
-font-bold
-"
->
-
-{booking.customer}
-
-</h3>
-
-
-
-<p
-className="
-text-gray-500
-"
->
-
-{booking.tour}
-
-</p>
-
-
-
-
-<p>
-
-Guests: {booking.guests}
-
-</p>
-
-
-
-
-
-<span
-className="
-inline-block
-mt-3
-bg-green-100
-text-green-700
-px-3
-py-1
-rounded-full
-"
->
-
-{booking.payment}
-
-</span>
-
-
-
-</div>
-
-
-)
-
-
-)
-
+  );
 
 }
-
-
-
-</div>
-
-
-
-</div>
-
-
-
-
-
-
-
-
-</div>
-
-
-);
-
-
-};
-
-
-
-
-
-
-export default TourManagerDashboard;

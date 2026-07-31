@@ -1,189 +1,69 @@
-// routes/financeRoutes.js
-
+// server/routes/financeRoutes.js
 
 import express from "express";
 
-
+import {
+  getFinanceStats,
+  getTransactions,
+  getReports,
+} from "../controllers/financeController.js";
 
 import {
-
-
-getFinanceStats,
-
-
-getTransactions,
-
-
-getReports
-
-
-
-}
-
-from "../controllers/financeController.js";
-
-
+  protect,
+} from "../middleware/authMiddleware.js";
 
 import {
-
-
-protect
-
-
-}
-
-from "../middleware/authMiddleware.js";
-
-
-
-import {
-
-
-roleMiddleware
-
-
-}
-
-from "../middleware/roleMiddleware.js";
-
-
-
-
-
-
+  adminMiddleware,
+} from "../middleware/adminMiddleware.js";
 
 const router = express.Router();
 
-
-
-
-
-
-
-
 /*
 |--------------------------------------------------------------------------
-| FINANCE SECURITY
+| AUTHORIZATION
 |--------------------------------------------------------------------------
 |
 | All finance routes require:
+| • Valid JWT
+| • Administrator privileges
 |
-| 1. Logged in user
-| 2. Admin role
-|
+|--------------------------------------------------------------------------
 */
 
-router.use(
-
-protect
-
-);
-
-
-
-router.use(
-
-roleMiddleware(
-
-"admin"
-
-)
-
-);
-
-
-
-
-
-
-
-
-
+router.use(protect);
+router.use(adminMiddleware);
 
 /*
 |--------------------------------------------------------------------------
-| FINANCE DASHBOARD STATISTICS
+| FINANCE DASHBOARD
 |--------------------------------------------------------------------------
-|
-| GET /api/admin/finance/stats
-|
-| Returns:
-| - Revenue
-| - Completed payments
-| - Pending payments
-| - Failed payments
-| - Paid bookings
-| - Commission totals
-|
 */
 
+/**
+ * GET /api/admin/finance/stats
+ * Financial dashboard statistics
+ */
 router.get(
-
-"/stats",
-
-getFinanceStats
-
+  "/stats",
+  getFinanceStats
 );
 
-
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| M-PESA / PAYMENT TRANSACTIONS
-|--------------------------------------------------------------------------
-|
-| GET /api/admin/finance/transactions
-|
-*/
-
+/**
+ * GET /api/admin/finance/transactions
+ * Payment transaction history
+ */
 router.get(
-
-"/transactions",
-
-getTransactions
-
+  "/transactions",
+  getTransactions
 );
 
-
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| FINANCE REPORTS
-|--------------------------------------------------------------------------
-|
-| GET /api/admin/finance/reports
-|
-| Monthly revenue analytics
-|
-*/
-
+/**
+ * GET /api/admin/finance/reports
+ * Revenue and finance reports
+ */
 router.get(
-
-"/reports",
-
-getReports
-
+  "/reports",
+  getReports
 );
-
-
-
-
-
-
-
 
 export default router;

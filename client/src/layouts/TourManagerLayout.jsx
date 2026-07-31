@@ -1,246 +1,304 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import {
-  Menu,
-  X
+    Menu,
+    X
 } from "lucide-react";
+
+
+import {
+    Outlet,
+    useLocation
+} from "react-router-dom";
 
 
 import TourManagerSidebar 
 from "../components/tourManager/TourManagerSidebar";
-
-import { Outlet } from "react-router-dom";
 
 
 
 const TourManagerLayout = () => {
 
 
-const [mobileOpen,setMobileOpen] = useState(false);
+    const [mobileOpen,setMobileOpen] = useState(false);
 
 
+    const location = useLocation();
 
-return (
 
-<div className="min-h-screen bg-gray-100 flex">
 
+    // Close sidebar after navigation
 
+    useEffect(()=>{
 
-{/* =====================================================
-    DESKTOP SIDEBAR
-===================================================== */}
+        setMobileOpen(false);
 
+    },[location]);
 
-<div
-className="
-hidden
-lg:block
-w-72
-"
->
 
-<TourManagerSidebar />
 
-</div>
+    return (
 
 
+        <div className="
+            min-h-screen
+            bg-gray-100
+            flex
+            overflow-hidden
+        ">
 
 
 
 
+            {/* ===============================
+                DESKTOP SIDEBAR
+            =============================== */}
 
-{/* =====================================================
-    MOBILE SIDEBAR OVERLAY
-===================================================== */}
 
+            <aside
+            className="
+                hidden
+                lg:block
+                w-72
+                flex-shrink-0
+            "
+            >
 
-{
+                <TourManagerSidebar />
 
-mobileOpen && (
+            </aside>
 
-<div
 
-className="
-fixed
-inset-0
-z-50
-lg:hidden
-"
 
->
 
 
-<div
 
-className="
-absolute
-inset-0
-bg-black
-opacity-50
-"
 
-onClick={()=>setMobileOpen(false)}
 
-></div>
+            {/* ===============================
+                MOBILE SIDEBAR
+            =============================== */}
 
 
 
+            {
+                mobileOpen && (
 
-<div
 
-className="
-relative
-w-72
-h-full
-"
+                    <div
+                    className="
+                        fixed
+                        inset-0
+                        z-50
+                        lg:hidden
+                    "
+                    >
 
->
 
 
-<TourManagerSidebar />
+                        {/* Overlay */}
 
 
+                        <div
 
-<button
+                        className="
+                            absolute
+                            inset-0
+                            bg-black/50
+                        "
 
-onClick={()=>setMobileOpen(false)}
+                        onClick={()=>setMobileOpen(false)}
 
-className="
-absolute
-top-4
-right-4
-bg-white
-text-green-900
-p-2
-rounded-full
-"
+                        />
 
->
 
-<X size={22}/>
 
-</button>
 
 
 
-</div>
+                        {/* Drawer */}
 
 
+                        <aside
 
-</div>
+                        className="
+                            relative
+                            w-72
+                            h-full
+                            bg-white
+                        "
 
+                        >
 
-)
 
-}
+                            <TourManagerSidebar />
 
 
 
 
 
+                            <button
 
+                            onClick={()=>setMobileOpen(false)}
 
-{/* =====================================================
-    MAIN CONTENT
-===================================================== */}
+                            className="
+                                absolute
+                                top-4
+                                right-4
+                                bg-white
+                                text-green-900
+                                p-2
+                                rounded-full
+                                shadow
+                            "
 
+                            >
 
-<div
-className="
-flex-1
-"
->
+                                <X size={22}/>
 
+                            </button>
 
 
 
+                        </aside>
 
-{/* MOBILE HEADER */}
 
-<div
 
-className="
-lg:hidden
-flex
-items-center
-gap-4
-bg-green-900
-p-4
-"
+                    </div>
 
->
 
+                )
+            }
 
-<button
 
-onClick={()=>setMobileOpen(true)}
 
-className="
-p-3
-bg-green-700
-text-white
-rounded
-"
 
->
 
-<Menu size={25}/>
 
-</button>
 
 
 
+            {/* ===============================
+                MAIN SECTION
+            =============================== */}
 
-<h1
 
-className="
-text-white
-text-xl
-font-bold
-"
 
->
+            <div
+            className="
+                flex-1
+                flex
+                flex-col
+                min-w-0
+            "
+            >
 
-Dashboard
 
-</h1>
 
 
 
-</div>
 
 
+                {/* MOBILE HEADER */}
 
 
+                <header
 
+                className="
+                    lg:hidden
+                    flex
+                    items-center
+                    gap-4
+                    bg-green-900
+                    p-4
+                "
 
+                >
 
-{/* PAGE CONTENT */}
 
-<main
 
-className="
-p-6
-"
+                    <button
 
->
+                    onClick={()=>setMobileOpen(true)}
 
-<Outlet />
+                    className="
+                        p-3
+                        bg-green-700
+                        text-white
+                        rounded
+                    "
 
-</main>
+                    >
 
+                        <Menu size={25}/>
 
+                    </button>
 
 
 
-</div>
 
 
 
+                    <h1
 
-</div>
+                    className="
+                        text-white
+                        text-xl
+                        font-bold
+                    "
 
-)
+                    >
+
+                        Dashboard
+
+                    </h1>
+
+
+
+                </header>
+
+
+
+
+
+
+
+
+
+                {/* CONTENT */}
+
+
+                <main
+
+                className="
+                    flex-1
+                    overflow-y-auto
+                    p-6
+                "
+
+                >
+
+
+                    <Outlet />
+
+
+                </main>
+
+
+
+
+
+
+            </div>
+
+
+
+
+        </div>
+
+
+    );
+
 
 };
 

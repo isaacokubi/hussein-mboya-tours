@@ -1,58 +1,222 @@
-import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import {
+
+useEffect,
+
+useState
+
+}
+
+from "react";
+
+
+import {
+
+motion
+
+}
+
+from "framer-motion";
+
+
+import {
+
+Link
+
+}
+
+from "react-router-dom";
+
+
+import {
+
+getFeaturedDestinations
+
+}
+
+from "../../api/destinationApi";
+
+
+import LazyImage
+
+from "../common/LazyImage";
+
+
+
+
 
 
 export default function DestinationsSection(){
 
 
-const destinations=[
 
-{
-name:"Maasai Mara",
-description:"Experience Kenya's famous wildlife safari destination."
-},
+const [
+
+destinations,
+
+setDestinations
+
+]
+
+=
+
+useState([]);
 
 
-{
-name:"Diani Beach",
-description:"Relax on one of Kenya's most beautiful beaches."
-},
+
+const [
+
+loading,
+
+setLoading
+
+]
+
+=
+
+useState(true);
 
 
-{
-name:"Mount Kenya",
-description:"Adventure through breathtaking mountain landscapes."
+
+
+
+
+
+
+useEffect(()=>{
+
+
+loadDestinations();
+
+
+},[]);
+
+
+
+
+
+
+
+const loadDestinations=async()=>{
+
+
+try{
+
+
+const data =
+
+await getFeaturedDestinations();
+
+
+
+setDestinations(data);
+
+
+
 }
 
-];
+finally{
+
+
+setLoading(false);
+
+
+}
+
+
+};
+
+
+
+
+
+
+
+
+if(loading){
+
+
+return (
+
+<section className="py-16 text-center">
+
+Loading destinations...
+
+</section>
+
+);
+
+
+}
+
+
+
+
 
 
 
 
 return (
 
-<section className="py-16 bg-white">
+<section
+
+className="
+py-16
+bg-white
+"
+
+>
 
 
-<div className="max-w-7xl mx-auto px-6">
+
+
+
+
+
+<div
+
+className="
+max-w-7xl
+mx-auto
+px-6
+"
+
+>
+
+
+
+
+
 
 
 
 <motion.h2
 
+
 initial={{
+
 opacity:0,
+
 y:30
+
 }}
+
 
 whileInView={{
+
 opacity:1,
+
 y:0
+
 }}
 
+
 transition={{
+
 duration:0.6
+
 }}
+
+
 
 className="
 text-3xl
@@ -71,54 +235,123 @@ Explore Our Destinations
 
 
 
-<div className="
+
+
+
+
+<div
+
+className="
 grid
+grid-cols-1
 md:grid-cols-3
 gap-8
-">
+"
+
+>
+
+
+
+
+
 
 
 {
 
-destinations.map((destination,index)=>(
+destinations.map(destination=>(
+
 
 
 <Link
 
-key={index}
+key={destination._id}
 
-to="/destinations"
+to={`/destinations/${destination.slug}`}
 
 >
+
+
+
+
+
 
 
 <motion.div
 
 
+
 whileHover={{
+
 scale:1.05
+
 }}
+
 
 
 className="
 rounded-xl
 shadow-lg
-p-6
+overflow-hidden
 bg-gray-50
 cursor-pointer
 hover:shadow-2xl
 transition
 "
 
+>
+
+
+
+
+
+
+
+<LazyImage
+
+
+src={destination.images?.[0]?.url}
+
+
+alt={destination.name}
+
+
+className="
+h-48
+w-full
+object-cover
+"
+
+/>
+
+
+
+
+
+
+
+
+
+<div
+
+className="
+p-6
+"
 
 >
 
 
-<h3 className="
+
+
+
+<h3
+
+className="
 text-xl
 font-semibold
 mb-3
-">
+"
+
+>
 
 {destination.name}
 
@@ -127,7 +360,16 @@ mb-3
 
 
 
-<p className="text-gray-600">
+
+
+
+<p
+
+className="
+text-gray-600
+"
+
+>
 
 {destination.description}
 
@@ -135,7 +377,22 @@ mb-3
 
 
 
+
+
+
+
+</div>
+
+
+
+
+
+
+
 </motion.div>
+
+
+
 
 
 </Link>
@@ -143,17 +400,34 @@ mb-3
 
 ))
 
+
 }
 
 
 
-</div>
+
+
 
 
 </div>
+
+
+
+
+
+
+
+
+</div>
+
+
+
+
+
 
 
 </section>
+
 
 );
 

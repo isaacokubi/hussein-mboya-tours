@@ -1,217 +1,121 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-import bcrypt from "bcryptjs";
 
 import User from "../models/User.js";
 import Role from "../models/Role.js";
 import Permission from "../models/Permission.js";
 
-
 dotenv.config();
 
-
 const createBookingAgent = async () => {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI);
 
-try {
+    console.log("✅ MongoDB Connected");
 
+    // -------------------------------------------------
+    // AGENT PERMISSIONS
+    // -------------------------------------------------
 
-await mongoose.connect(process.env.MONGODB_URI);
+    const permissionNames = [
+      "create_bookings",
+      "manage_customer_bookings",
+      "view_tours",
+      "view_destinations",
+      "view_commissions",
+      "view_wallet",
+    ];
 
-console.log("MongoDB Connected");
+    const permissionIds = [];
 
+    for (const name of permissionNames) {
+      let permission = await Permission.findOne({ name });
 
-// ----------------------------------
-// BOOKING AGENT PERMISSIONS
-// ----------------------------------
+      if (!permission) {
+        permission = await Permission.create({
+          name,
+          label: name.replace(/_/g, " "),
+        });
 
-const permissionNames = [
+        console.log(`✅ Created permission: ${name}`);
+      }
 
-"create_bookings",
-"manage_customer_bookings",
-"view_tours",
-"view_destinations",
-"view_commissions",
-"view_wallet"
+      permissionIds.push(permission._id);
+    }
 
-];
+    // -------------------------------------------------
+    // AGENT ROLE
+    // -------------------------------------------------
 
+    let agentRole = await Role.findOne({
+      name: "agent",
+    });
 
-const permissionIds = [];
+    if (!agentRole) {
+      agentRole = await Role.create({
+        name: "agent",
+        permissions: permissionIds,
+      });
 
+      console.log("✅ Agent role created");
+    } else {
+      agentRole.permissions = permissionIds;
 
-for(const name of permissionNames){
+      await agentRole.save();
 
+      console.log("✅ Agent role updated");
+    }
 
-let permission = await Permission.findOne({
-    name
-});
+    // -------------------------------------------------
+    // AGENT USER
+    // -------------------------------------------------
 
+    const email = "agent@husseinmboyatours.com";
 
-if(!permission){
+    const existingAgent = await User.findOne({ email });
 
-permission = await Permission.create({
-    name
-});
+    if (existingAgent) {
+      console.log("ℹ️ Agent already exists");
 
+      await mongoose.connection.close();
+      return;
+    }
 
-console.log(
-"Created permission:",
-name
-);
+    const agent = await User.create({
+      name: "Booking Agent",
 
-}
+      email,
 
+      password: "Agent@12345",
 
-permissionIds.push(permission._id);
+      phone: "",
 
-}
+      role: "agent",
 
+      roleId: agentRole._id,
 
+      legacyRole: "agent",
 
-// ----------------------------------
-// CREATE BOOKING AGENT ROLE
-// ----------------------------------
+      status: "active",
 
-let bookingAgentRole = await Role.findOne({
-    name:"bookingagent"
-});
+      isVerified: true,
+    });
 
+    console.log("=================================");
+    console.log("✅ BOOKING AGENT CREATED");
+    console.log("Name:", agent.name);
+    console.log("Email:", agent.email);
+    console.log("Password:", "Agent@12345");
+    console.log("Role:", agent.role);
+    console.log("=================================");
 
-if(!bookingAgentRole){
+    await mongoose.connection.close();
+  } catch (error) {
+    console.error("❌ BOOKING AGENT SEED ERROR:", error);
 
-
-bookingAgentRole = await Role.create({
-
-name:"bookingagent",
-
-permissions:permissionIds
-
-});
-
-
-console.log(
-"Booking Agent role created"
-);
-
-
-}
-else{
-
-
-bookingAgentRole.permissions = permissionIds;
-
-await bookingAgentRole.save();
-
-
-console.log(
-"Booking Agent role updated"
-);
-
-
-}
-
-
-
-// ----------------------------------
-// CREATE BOOKING AGENT USER
-// ----------------------------------
-
-const email = "agent@husseinmboyatours.com";
-
-
-const existingAgent = await User.findOne({
-    email
-});
-
-
-if(existingAgent){
-
-console.log(
-"Booking Agent already exists"
-);
-
-process.exit();
-
-}
-
-
-
-const hashedPassword = await bcrypt.hash(
-"Agent@12345",
-12
-);
-
-
-
-
-const agent = await User.create({
-
-name:"Booking Agent",
-
-email,
-
-password:hashedPassword,
-
-phone:"",
-
-role:bookingAgentRole._id,
-
-
-agentProfile:{
-
-commissionRate:10,
-
-walletBalance:0
-
-},
-
-
-isActive:true
-
-
-});
-
-
-
-console.log("BOOKING AGENT CREATED");
-
-
-console.log({
-
-name:agent.name,
-
-email:agent.email,
-
-password:"Agent@12345",
-
-commissionRate:agent.agentProfile.commissionRate,
-
-walletBalance:agent.agentProfile.walletBalance,
-
-role:"bookingagent"
-
-});
-
-
-process.exit();
-
-
-}
-
-
-catch(error){
-
-console.log(
-"BOOKING AGENT SEED ERROR:",
-error.message
-);
-
-process.exit(1);
-
-}
-
-
+    await mongoose.connection.close().catch(() => {});
+    process.exit(1);
+  }
 };
-
 
 createBookingAgent();

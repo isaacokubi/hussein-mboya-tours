@@ -1,154 +1,29 @@
 // client/src/context/NotificationContext.jsx
 
-
 import {
-    createContext,
-    useContext,
-    useEffect,
-    useState
-}
-from "react";
+  createContext,
+  useContext,
+  useEffect,
+  useState
+} from "react";
 
 
 import {
-    io
-}
-from "socket.io-client";
+  io
+} from "socket.io-client";
 
 
 import {
-    useAuth
-}
-from "./AuthContext";
+  useAuth
+} from "./AuthContext";
 
 
 
 
 
 
-
-
-/*
-|--------------------------------------------------------------------------
-| SOCKET.IO CONNECTION
-|--------------------------------------------------------------------------
-*/
-
-
-const socket = io(
-
-    import.meta.env.VITE_SOCKET_URL ||
-
-    "http://localhost:5000",
-
-    {
-
-        transports: [
-
-            "websocket",
-
-            "polling"
-
-        ],
-
-        withCredentials: true
-
-    }
-
-);
-
-
-
-
-
-
-
-
-socket.on(
-
-    "connect",
-
-    ()=>{
-
-        console.log(
-
-            "✅ Notification Socket Connected:",
-
-            socket.id
-
-        );
-
-    }
-
-);
-
-
-
-
-
-
-
-socket.on(
-
-    "connect_error",
-
-    (err)=>{
-
-        console.error(
-
-            "❌ Notification Socket Error:",
-
-            err.message
-
-        );
-
-    }
-
-);
-
-
-
-
-
-
-
-socket.on(
-
-    "disconnect",
-
-    (reason)=>{
-
-        console.log(
-
-            "🔌 Notification Socket Disconnected:",
-
-            reason
-
-        );
-
-    }
-
-);
-
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| NOTIFICATION CONTEXT
-|--------------------------------------------------------------------------
-*/
-
-
-const NotificationContext = createContext();
-
-
-
+const NotificationContext =
+  createContext();
 
 
 
@@ -157,162 +32,277 @@ const NotificationContext = createContext();
 
 export function NotificationProvider({
 
-    children
+  children
 
-}){
+}) {
 
 
-    const {
+  const {
+    user,
+    token
+  } = useAuth();
 
-        user
+
+
+
+  const [
+    socket,
+    setSocket
+  ] = useState(null);
+
+
+
+
+  const [
+    notifications,
+    setNotifications
+  ] = useState([]);
+
+
+
+
+  const [
+    unreadCount,
+    setUnreadCount
+  ] = useState(0);
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| SOCKET CONNECTION
+|--------------------------------------------------------------------------
+*/
+
+
+useEffect(()=>{
+
+
+  if(
+    !user?._id ||
+    !token
+  ){
+
+    return;
+
+  }
+
+
+
+
+
+
+  const newSocket =
+    io(
+
+      import.meta.env.VITE_SOCKET_URL
+      ||
+      "http://localhost:5000",
+
+      {
+
+        transports:[
+
+          "websocket",
+
+          "polling"
+
+        ],
+
+
+        withCredentials:true,
+
+
+        auth:{
+
+          token
+
+        }
+
+      }
+
+    );
+
+
+
+
+
+
+
+  setSocket(
+    newSocket
+  );
+
+
+
+
+
+
+
+  newSocket.on(
+
+    "connect",
+
+    ()=>{
+
+
+      console.log(
+
+        "✅ Notification socket connected",
+
+        newSocket.id
+
+      );
+
+
+
+      newSocket.emit(
+
+        "join",
+
+        user._id
+
+      );
+
 
     }
 
-    =
+  );
 
-    useAuth();
 
 
 
 
 
-    const [
 
-        notifications,
 
-        setNotifications
+  newSocket.on(
 
-    ]
+    "notification",
 
-    =
+    (notification)=>{
 
-    useState([]);
 
+      console.log(
 
+        "📩 Notification received",
 
+        notification
 
+      );
 
 
 
 
+      setNotifications(
 
-    /*
-    |--------------------------------------------------------------------------
-    | CONNECT USER TO NOTIFICATION ROOM
-    |--------------------------------------------------------------------------
-    */
+        prev=>[
 
+          notification,
 
-    useEffect(()=>{
+          ...prev
 
+        ]
 
-        if(!user?._id){
+      );
 
-            return;
 
-        }
 
 
+      setUnreadCount(
 
+        prev => prev + 1
 
+      );
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | CONNECT SOCKET
-        |--------------------------------------------------------------------------
-        */
+    }
 
+  );
 
-        if(!socket.connected){
 
-            socket.connect();
 
-        }
 
 
 
 
 
 
+  newSocket.on(
 
+    "connect_error",
 
+    (error)=>{
 
-        /*
-        |--------------------------------------------------------------------------
-        | JOIN USER ROOM
-        |--------------------------------------------------------------------------
-        */
 
+      console.error(
 
-        socket.emit(
+        "Socket error:",
 
-            "join",
+        error.message
 
-            user._id
+      );
 
-        );
 
+    }
 
+  );
 
 
 
-        console.log(
 
-            "🔔 Joined notification room:",
 
-            user._id
 
-        );
 
 
 
+  return ()=>{
 
 
+    newSocket.disconnect();
 
 
+    setSocket(null);
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | RECEIVE NOTIFICATIONS
-        |--------------------------------------------------------------------------
-        */
+  };
 
 
-        const handleNotification = (
 
-            data
+},[
 
-        )=>{
+user,
 
+token
 
-            console.log(
+]);
 
-                "📩 New notification:",
 
-                data
 
-            );
 
 
 
 
 
-            setNotifications(
 
-                prev => [
+/*
+|--------------------------------------------------------------------------
+| MARK NOTIFICATIONS READ
+|--------------------------------------------------------------------------
+*/
 
-                    data,
 
-                    ...prev
+const markAllRead = ()=>{
 
-                ]
 
-            );
+  setUnreadCount(0);
 
 
-        };
+};
 
 
 
@@ -321,78 +311,35 @@ export function NotificationProvider({
 
 
 
+return (
 
-        socket.on(
+<NotificationContext.Provider
 
-            "notification",
+value={{
 
-            handleNotification
+notifications,
 
-        );
+setNotifications,
 
+unreadCount,
 
+markAllRead,
 
+socket
 
+}}
 
+>
 
 
+{children}
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | CLEANUP
-        |--------------------------------------------------------------------------
-        */
+</NotificationContext.Provider>
 
 
-        return ()=>{
+);
 
-
-            socket.off(
-
-                "notification",
-
-                handleNotification
-
-            );
-
-
-        };
-
-
-
-
-    },[user]);
-
-
-
-
-
-
-
-
-
-    return (
-
-        <NotificationContext.Provider
-
-            value={{
-
-                notifications,
-
-                setNotifications,
-
-                socket
-
-            }}
-
-        >
-
-            {children}
-
-        </NotificationContext.Provider>
-
-    );
 
 
 }
@@ -403,15 +350,11 @@ export function NotificationProvider({
 
 
 
-
-
-export const useNotifications =
-
-()=>
+export const useNotifications = ()=>
 
 
 useContext(
 
-    NotificationContext
+  NotificationContext
 
 );

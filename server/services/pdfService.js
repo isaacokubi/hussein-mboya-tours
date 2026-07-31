@@ -1,70 +1,190 @@
 import PDFDocument from "pdfkit";
 
+/*
+|--------------------------------------------------------------------------
+| GENERATE PAYMENT RECEIPT
+|--------------------------------------------------------------------------
+*/
 
-export const generateReceipt=(booking,res)=>{
+export const generateReceipt = (booking, res) => {
+  const doc = new PDFDocument({
+    margin: 50,
+    size: "A4",
+  });
 
+  res.setHeader(
+    "Content-Type",
+    "application/pdf"
+  );
 
-const doc =
-new PDFDocument();
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename=receipt-${booking.bookingNumber}.pdf`
+  );
 
+  doc.pipe(res);
 
-res.setHeader(
+  /*
+  |--------------------------------------------------------------------------
+  | HEADER
+  |--------------------------------------------------------------------------
+  */
 
-"Content-Type",
+  doc
+    .fontSize(24)
+    .text("Hussein Mboya Tours", {
+      align: "center",
+    });
 
-"application/pdf"
+  doc
+    .fontSize(12)
+    .text("Official Payment Receipt", {
+      align: "center",
+    });
 
-);
+  doc.moveDown(2);
 
+  /*
+  |--------------------------------------------------------------------------
+  | RECEIPT DETAILS
+  |--------------------------------------------------------------------------
+  */
 
-res.setHeader(
+  doc.fontSize(14);
 
-"Content-Disposition",
+  doc.text(`Receipt No: ${booking.bookingNumber}`);
 
-"attachment; filename=receipt.pdf"
+  doc.text(
+    `Date: ${
+      booking.createdAt
+        ? new Date(booking.createdAt).toLocaleDateString()
+        : new Date().toLocaleDateString()
+    }`
+  );
 
-);
+  doc.moveDown();
 
+  /*
+  |--------------------------------------------------------------------------
+  | CUSTOMER
+  |--------------------------------------------------------------------------
+  */
 
+  doc.fontSize(16).text("Customer");
 
-doc.pipe(res);
+  doc.fontSize(12);
 
+  doc.text(
+    `Name: ${
+      booking.contactName ||
+      booking.fullName ||
+      "N/A"
+    }`
+  );
 
+  doc.text(
+    `Email: ${
+      booking.contactEmail || "N/A"
+    }`
+  );
 
-doc.fontSize(25)
+  doc.moveDown();
 
-.text(
-"Hussein Mboya Tours"
-);
+  /*
+  |--------------------------------------------------------------------------
+  | BOOKING
+  |--------------------------------------------------------------------------
+  */
 
+  doc.fontSize(16).text("Booking");
 
+  doc.fontSize(12);
 
-doc.moveDown();
+  doc.text(
+    `Booking Number: ${
+      booking.bookingNumber
+    }`
+  );
 
+  doc.text(
+    `Tour: ${
+      booking.tour?.title ||
+      booking.tour?.name ||
+      "N/A"
+    }`
+  );
 
-doc.fontSize(14)
+  doc.text(
+    `Travel Date: ${
+      booking.travelDate || "N/A"
+    }`
+  );
 
-.text(
+  doc.text(
+    `Travelers: ${
+      booking.travelerCount || 1
+    }`
+  );
 
-`
-Customer:
-${booking.fullName}
+  doc.moveDown();
 
-Tour:
-${booking.tour.title}
+  /*
+  |--------------------------------------------------------------------------
+  | PAYMENT
+  |--------------------------------------------------------------------------
+  */
 
-Amount:
-$${booking.amount}
+  doc.fontSize(16).text("Payment");
 
-Payment:
-${booking.paymentStatus}
+  doc.fontSize(12);
 
-`
+  doc.text(
+    `Amount: ${
+      booking.currency || "KES"
+    } ${booking.totalAmount ?? booking.amount}`
+  );
 
-);
+  doc.text(
+    `Payment Status: ${
+      booking.paymentStatus
+    }`
+  );
 
+  doc.text(
+    `Payment Method: ${
+      booking.paymentMethod || "N/A"
+    }`
+  );
 
+  if (booking.mpesaReceiptNumber) {
+    doc.text(
+      `M-Pesa Receipt: ${booking.mpesaReceiptNumber}`
+    );
+  }
 
-doc.end();
+  doc.moveDown(2);
 
+  /*
+  |--------------------------------------------------------------------------
+  | FOOTER
+  |--------------------------------------------------------------------------
+  */
+
+  doc
+    .fontSize(10)
+    .text(
+      "Thank you for choosing Hussein Mboya Tours.",
+      {
+        align: "center",
+      }
+    );
+
+  doc.text(
+    "This receipt serves as proof of payment.",
+    {
+      align: "center",
+    }
+  );
+
+  doc.end();
 };

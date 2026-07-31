@@ -1,42 +1,66 @@
-import {
-useQuery
-}
-from "@tanstack/react-query";
-
+// client/src/hooks/useAgentCustomers.js
 
 import {
-getAgentCustomers
-}
-from "../api/customerApi";
+  useQuery
+} from "@tanstack/react-query";
+
+
+import {
+  getAgentCustomers
+} from "../api/customerApi";
 
 
 
-export default function useAgentCustomers(){
+export default function useAgentCustomers(
+  params = {}
+) {
 
 
-return useQuery({
+  return useQuery({
 
-queryKey:[
-"agent-customers"
-],
-
-
-queryFn:
-
-async()=>{
+    queryKey: [
+      "agent-customers",
+      params
+    ],
 
 
-const res =
-await getAgentCustomers();
+
+    queryFn: async()=>{
 
 
-return res.data.customers;
+      const response =
+        await getAgentCustomers(params);
 
 
-}
+
+      return (
+
+        response?.data?.customers
+
+        ||
+
+        response?.customers
+
+        ||
+
+        response?.data
+
+        ||
+
+        []
+
+      );
 
 
-});
+    },
+
+
+
+    staleTime:
+      1000 * 60 * 5,
+
+
+  });
 
 
 }

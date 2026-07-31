@@ -1,79 +1,4 @@
-import axios from "axios";
-
-
-
-/*
-|--------------------------------------------------------------------------
-| AXIOS INSTANCE
-|--------------------------------------------------------------------------
-*/
-
-
-const API = axios.create({
-
-    baseURL:
-    import.meta.env.VITE_API_URL + "/api",
-
-});
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| JWT TOKEN INTERCEPTOR
-|--------------------------------------------------------------------------
-*/
-
-
-API.interceptors.request.use(
-
-    (config)=>{
-
-
-        const token =
-        localStorage.getItem("token");
-
-
-
-        if(token)
-
-        {
-
-
-            config.headers.Authorization =
-            `Bearer ${token}`;
-
-
-        }
-
-
-
-        return config;
-
-
-    },
-
-
-    (error)=>{
-
-
-        return Promise.reject(error);
-
-
-    }
-
-);
-
-
-
-
-
-
-
+import api from "./axios";
 
 
 /*
@@ -83,32 +8,13 @@ API.interceptors.request.use(
 */
 
 
-
-
-
-
-
 // ============================================================
 // GET ALL VEHICLES
 // ============================================================
 
-
-export const getVehicles = ()=>{
-
-
-    return API.get(
-
-        "/vehicles"
-
-    );
-
-
+export const getVehicles = () => {
+  return api.get("/vehicles");
 };
-
-
-
-
-
 
 
 
@@ -117,23 +23,9 @@ export const getVehicles = ()=>{
 // GET SINGLE VEHICLE
 // ============================================================
 
-
-export const getVehicleById = (id)=>{
-
-
-    return API.get(
-
-        `/vehicles/${id}`
-
-    );
-
-
+export const getVehicleById = (id) => {
+  return api.get(`/vehicles/${id}`);
 };
-
-
-
-
-
 
 
 
@@ -151,37 +43,17 @@ export const getVehicleById = (id)=>{
 //
 // ============================================================
 
-
-export const createVehicle = (data)=>{
-
-
-    return API.post(
-
-        "/vehicles",
-
-        data,
-
-        {
-
-            headers:{
-
-                "Content-Type":
-
-                "multipart/form-data"
-
-            }
-
-        }
-
-    );
-
-
+export const createVehicle = (data) => {
+  return api.post(
+    "/vehicles",
+    data,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
 };
-
-
-
-
-
 
 
 
@@ -189,48 +61,18 @@ export const createVehicle = (data)=>{
 // ============================================================
 // UPDATE VEHICLE
 // ============================================================
-//
-// Supports replacing vehicle image
-//
-// ============================================================
 
-
-export const updateVehicle = (
-
-    id,
-
-    data
-
-)=>{
-
-
-    return API.put(
-
-        `/vehicles/${id}`,
-
-        data,
-
-        {
-
-            headers:{
-
-                "Content-Type":
-
-                "multipart/form-data"
-
-            }
-
-        }
-
-    );
-
-
+export const updateVehicle = (id, data) => {
+  return api.put(
+    `/vehicles/${id}`,
+    data,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
 };
-
-
-
-
-
 
 
 
@@ -239,23 +81,9 @@ export const updateVehicle = (
 // DELETE VEHICLE
 // ============================================================
 
-
-export const deleteVehicle = (id)=>{
-
-
-    return API.delete(
-
-        `/vehicles/${id}`
-
-    );
-
-
+export const deleteVehicle = (id) => {
+  return api.delete(`/vehicles/${id}`);
 };
-
-
-
-
-
 
 
 
@@ -267,40 +95,13 @@ export const deleteVehicle = (id)=>{
 */
 
 
-
-
-
-
-
 // ============================================================
 // GET ALL DRIVERS
 // ============================================================
-//
-// Backend:
-// GET /api/staff/drivers
-//
-// MongoDB:
-// Staff collection
-//
-// ============================================================
 
-
-export const getDrivers = ()=>{
-
-
-    return API.get(
-
-        "/staff/drivers"
-
-    );
-
-
+export const getDrivers = () => {
+  return api.get("/staff/drivers");
 };
-
-
-
-
-
 
 
 
@@ -309,35 +110,17 @@ export const getDrivers = ()=>{
 // ASSIGN DRIVER TO VEHICLE
 // ============================================================
 
-
 export const assignDriver = (
-
-    vehicleId,
-
-    driverId
-
-)=>{
-
-
-    return API.put(
-
-        `/vehicles/${vehicleId}/assign-driver`,
-
-        {
-
-            driverId
-
-        }
-
-    );
-
-
+  vehicleId,
+  driverId
+) => {
+  return api.put(
+    `/vehicles/${vehicleId}/assign-driver`,
+    {
+      driverId,
+    }
+  );
 };
-
-
-
-
-
 
 
 
@@ -346,27 +129,11 @@ export const assignDriver = (
 // REMOVE DRIVER FROM VEHICLE
 // ============================================================
 
-
-export const removeDriver = (
-
-    vehicleId
-
-)=>{
-
-
-    return API.put(
-
-        `/vehicles/${vehicleId}/remove-driver`
-
-    );
-
-
+export const removeDriver = (vehicleId) => {
+  return api.put(
+    `/vehicles/${vehicleId}/remove-driver`
+  );
 };
-
-
-
-
-
 
 
 
@@ -378,53 +145,18 @@ export const removeDriver = (
 */
 
 
-
-
-
-
-
 // ============================================================
 // UPDATE VEHICLE STATUS
 // ============================================================
 
-
 export const updateVehicleStatus = (
-
-    id,
-
-    status
-
-)=>{
-
-
-    return API.put(
-
-        `/vehicles/${id}/status`,
-
-        {
-
-            status
-
-        }
-
-    );
-
-
+  id,
+  status
+) => {
+  return api.put(
+    `/vehicles/${id}/status`,
+    {
+      status,
+    }
+  );
 };
-
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| EXPORT AXIOS INSTANCE
-|--------------------------------------------------------------------------
-*/
-
-
-export default API;

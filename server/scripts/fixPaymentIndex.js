@@ -1,3 +1,5 @@
+// scripts/fixPaymentIndexes.js
+
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 
@@ -7,18 +9,30 @@ const fixIndex = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URI);
 
-    console.log("MongoDB connected");
+    console.log("✅ MongoDB connected");
 
     const collection = mongoose.connection.collection("payments");
 
-    await collection.dropIndex("mpesaReceiptNumber_1");
+    const indexes = await collection.indexes();
 
-    console.log("Old mpesaReceiptNumber index removed");
+    const hasIndex = indexes.some(
+      (index) => index.name === "mpesaReceiptNumber_1"
+    );
 
-    process.exit(0);
+    if (hasIndex) {
+      await collection.dropIndex("mpesaReceiptNumber_1");
+      console.log("✅ Removed old mpesaReceiptNumber index");
+    } else {
+      console.log("ℹ️ Index mpesaReceiptNumber_1 does not exist");
+    }
+
+    await mongoose.connection.close();
+
+    console.log("✅ Database connection closed");
   } catch (error) {
-    console.log(error.message);
+    console.error("❌ Error:", error.message);
 
+    await mongoose.connection.close().catch(() => {});
     process.exit(1);
   }
 };

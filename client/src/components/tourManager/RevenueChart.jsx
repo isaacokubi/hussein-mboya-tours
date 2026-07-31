@@ -1,111 +1,94 @@
-import React from "react";
-
 import {
-
-LineChart,
-Line,
-XAxis,
-YAxis,
-Tooltip,
-ResponsiveContainer
-
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
 } from "recharts";
 
+import { useQuery } from "@tanstack/react-query";
 
+import { getRevenueAnalytics } from "../../api/analyticsApi";
 
-const data=[
+export default function RevenueChart() {
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["adminRevenueAnalytics"],
+    queryFn: () =>
+      getRevenueAnalytics({
+        period: "monthly",
+      }),
+  });
 
-{
-month:"Jan",
-revenue:120000
-},
+  /*
+  |--------------------------------------------------------------------------
+  | NORMALIZE API RESPONSE
+  |--------------------------------------------------------------------------
+  */
 
-{
-month:"Feb",
-revenue:180000
-},
+  const chartData =
+    data?.revenue ||
+    data?.monthlyRevenue ||
+    data?.data ||
+    [];
 
-{
-month:"Mar",
-revenue:250000
-},
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-xl shadow p-6">
+        Loading revenue analytics...
+      </div>
+    );
+  }
 
-{
-month:"Apr",
-revenue:450000
-},
+  if (isError) {
+    return (
+      <div className="bg-white rounded-xl shadow p-6 text-red-600">
+        {error?.message || "Failed to load revenue analytics."}
+      </div>
+    );
+  }
 
-{
-month:"May",
-revenue:520000
+  return (
+    <div className="bg-white rounded-xl shadow p-6">
+      <h2 className="text-xl font-bold mb-6">
+        Revenue Growth
+      </h2>
+
+      <ResponsiveContainer width="100%" height={320}>
+        <LineChart data={chartData}>
+          <CartesianGrid strokeDasharray="3 3" />
+
+          <XAxis dataKey="month" />
+
+          <YAxis
+            tickFormatter={(value) =>
+              `KES ${Number(value).toLocaleString()}`
+            }
+          />
+
+          <Tooltip
+            formatter={(value) => [
+              `KES ${Number(value).toLocaleString()}`,
+              "Revenue",
+            ]}
+          />
+
+          <Line
+            type="monotone"
+            dataKey="revenue"
+            stroke="#15803d"
+            strokeWidth={3}
+            dot={{ r: 4 }}
+            activeDot={{ r: 6 }}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
 }
-
-
-];
-
-
-
-const RevenueChart=()=>{
-
-
-return (
-
-<div className="
-bg-white
-rounded-xl
-shadow
-p-6
-">
-
-
-<h2 className="
-font-bold
-text-xl
-mb-5
-">
-Revenue Growth
-</h2>
-
-
-
-<ResponsiveContainer
-width="100%"
-height={300}
->
-
-
-<LineChart
-data={data}
->
-
-
-<XAxis dataKey="month"/>
-
-<YAxis/>
-
-
-<Tooltip/>
-
-
-<Line
-type="monotone"
-dataKey="revenue"
-/>
-
-
-</LineChart>
-
-
-</ResponsiveContainer>
-
-
-
-</div>
-
-
-)
-
-}
-
-
-export default RevenueChart;

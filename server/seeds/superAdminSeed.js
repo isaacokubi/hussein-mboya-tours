@@ -1,197 +1,123 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-import bcrypt from "bcryptjs";
 
 import User from "../models/User.js";
 import Role from "../models/Role.js";
 import Permission from "../models/Permission.js";
 
-
 dotenv.config();
 
+const createSuperAdmin = async () => {
+  try {
+    if (!process.env.MONGODB_URI) {
+      throw new Error("MONGODB_URI is missing.");
+    }
 
-const createSuperAdmin = async()=>{
+    await mongoose.connect(process.env.MONGODB_URI);
 
-try{
+    console.log("✅ MongoDB Connected");
 
+    // --------------------------------------------------
+    // PERMISSIONS
+    // --------------------------------------------------
 
-await mongoose.connect(process.env.MONGODB_URI);
+    const permissionNames = [
+      "manage_users",
+      "manage_roles",
+      "manage_destinations",
+      "manage_tours",
+      "manage_bookings",
+      "view_reports",
+    ];
 
-console.log("MongoDB Connected");
+    const permissionIds = [];
 
+    for (const name of permissionNames) {
+      let permission = await Permission.findOne({ name });
 
-// ----------------------------------
-// CREATE PERMISSIONS
-// ----------------------------------
+      if (!permission) {
+        permission = await Permission.create({ name });
 
+        console.log(`Created permission: ${name}`);
+      }
 
-const permissionNames = [
+      permissionIds.push(permission._id);
+    }
 
-"manage_users",
-"manage_roles",
-"manage_destinations",
-"manage_tours",
-"manage_bookings",
-"view_reports"
+    // --------------------------------------------------
+    // ROLE
+    // --------------------------------------------------
 
-];
+    let superAdminRole = await Role.findOne({
+      name: "superadmin",
+    });
 
+    if (!superAdminRole) {
+      superAdminRole = await Role.create({
+        name: "superadmin",
+        permissions: permissionIds,
+      });
 
-const permissionIds = [];
+      console.log("✅ Superadmin role created");
+    } else {
+      superAdminRole.permissions = permissionIds;
 
+      await superAdminRole.save();
 
-for(const name of permissionNames){
+      console.log("✅ Superadmin role updated");
+    }
 
+    // --------------------------------------------------
+    // USER
+    // --------------------------------------------------
 
-let permission = await Permission.findOne({
-    name
-});
+    const email = "admin@husseinmboyatours.com";
 
+    const existingUser = await User.findOne({ email });
 
-if(!permission){
+    if (existingUser) {
+      console.log("⚠️ Super Admin already exists.");
+      return;
+    }
 
-permission = await Permission.create({
-    name
-});
+    const admin = await User.create({
+      name: "Hussein Mboya",
 
-console.log(
-"Created permission:",
-name
-);
+      email,
 
-}
+      password: "Admin@12345", // pre-save hook hashes it
 
+      phone: "",
 
-permissionIds.push(permission._id);
+      // Application role
+      role: "admin",
 
+      // RBAC role
+      roleId: superAdminRole._id,
 
-}
+      // Legacy support
+      legacyRole: "superadmin",
 
+      status: "active",
 
+      isVerified: true,
+    });
 
-// ----------------------------------
-// CREATE ROLE
-// ----------------------------------
-
-let superAdminRole = await Role.findOne({
-    name:"superadmin"
-});
-
-
-if(!superAdminRole){
-
-
-superAdminRole = await Role.create({
-
-name:"superadmin",
-
-permissions:permissionIds
-
-});
-
-
-console.log(
-"Superadmin role created"
-);
-
-
-}
-else{
-
-
-superAdminRole.permissions = permissionIds;
-
-await superAdminRole.save();
-
-
-console.log(
-"Superadmin role updated"
-);
-
-
-}
-
-
-
-// ----------------------------------
-// CREATE USER
-// ----------------------------------
-
-const email="admin@husseinmboyatours.com";
-
-
-const existingAdmin = await User.findOne({
-email
-});
-
-
-if(existingAdmin){
-
-console.log(
-"Super admin already exists"
-);
-
-process.exit();
-
-}
-
-
-
-const password = await bcrypt.hash(
-"Admin@12345",
-12
-);
-
-
-
-const admin = await User.create({
-
-name:"Hussein Mboya",
-
-email,
-
-password,
-
-role:superAdminRole._id,
-
-phone:"",
-
-isActive:true
-
-});
-
-
-console.log("SUPER ADMIN CREATED");
-
-console.log({
-
-name:admin.name,
-
-email:admin.email,
-
-role:"superadmin"
-
-});
-
-
-process.exit();
-
-
-}
-
-catch(error){
-
-console.log(
-"ADMIN SEED ERROR:",
-error.message
-);
-
-process.exit(1);
-
-}
-
-
+    console.log("✅ SUPER ADMIN CREATED");
+    console.log({
+      name: admin.name,
+      email: admin.email,
+      password: "Admin@12345",
+      role: admin.role,
+      roleId: superAdminRole.name,
+    });
+  } catch (error) {
+    console.error("❌ ADMIN SEED ERROR:", error.message);
+    process.exitCode = 1;
+  } finally {
+    await mongoose.connection.close().catch(() => {});
+    console.log("🔌 MongoDB connection closed");
+  }
 };
-
 
 createSuperAdmin();

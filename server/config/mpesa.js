@@ -4,6 +4,26 @@ dotenv.config();
 
 /*
 |--------------------------------------------------------------------------
+| VALIDATE REQUIRED MPESA CONFIGURATION
+|--------------------------------------------------------------------------
+*/
+
+const required = [
+  "MPESA_CONSUMER_KEY",
+  "MPESA_CONSUMER_SECRET",
+  "MPESA_SHORTCODE",
+  "MPESA_PASSKEY",
+  "MPESA_CALLBACK_URL",
+];
+
+for (const key of required) {
+  if (!process.env[key]) {
+    throw new Error(`Missing required MPESA configuration: ${key}`);
+  }
+}
+
+/*
+|--------------------------------------------------------------------------
 | MPESA CONFIGURATION
 |--------------------------------------------------------------------------
 */
@@ -30,19 +50,25 @@ export const mpesaConfig = {
 
 export const mpesaUrls = {
   sandbox: {
-    auth: "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
+    auth:
+      "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
 
-    stkPush: "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
+    stkPush:
+      "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
 
-    query: "https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query",
+    query:
+      "https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query",
   },
 
   production: {
-    auth: "https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
+    auth:
+      "https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
 
-    stkPush: "https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
+    stkPush:
+      "https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
 
-    query: "https://api.safaricom.co.ke/mpesa/stkpushquery/v1/query",
+    query:
+      "https://api.safaricom.co.ke/mpesa/stkpushquery/v1/query",
   },
 };
 
@@ -52,10 +78,7 @@ export const mpesaUrls = {
 |--------------------------------------------------------------------------
 */
 
-export const getMpesaUrls = () => {
-  if (mpesaConfig.environment === "production") {
-    return mpesaUrls.production;
-  }
-
-  return mpesaUrls.sandbox;
-};
+export const getMpesaUrls = () =>
+  mpesaConfig.environment === "production"
+    ? mpesaUrls.production
+    : mpesaUrls.sandbox;

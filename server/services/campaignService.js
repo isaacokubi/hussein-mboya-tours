@@ -1,85 +1,99 @@
-import User
-from "../models/User.js";
+import User from "../models/User.js";
 
+import { sendEmail } from "./emailService.js";
 
-import {
-sendEmail
-}
-from "./emailService.js";
+/*
+|--------------------------------------------------------------------------
+| SEND EMAIL CAMPAIGN
+|--------------------------------------------------------------------------
+*/
 
+export const sendCampaign = async (campaign) => {
+  try {
+    /*
+    |--------------------------------------------------------------------------
+    | BUILD AUDIENCE FILTER
+    |--------------------------------------------------------------------------
+    */
 
+    const filter = {
+      legacyRole: "customer",
+      isActive: true,
+    };
 
-export const sendCampaign =
-async(campaign)=>{
+    if (campaign.audience === "vip") {
+      filter.customerType = "vip";
+    }
 
+    const users = await User.find(filter).select(
+      "email name"
+    );
 
-let users;
+    let sentCount = 0;
+    let failedCount = 0;
 
+    /*
+    |--------------------------------------------------------------------------
+    | SEND EMAILS
+    |--------------------------------------------------------------------------
+    */
 
+    for (const user of users) {
+      try {
+        await sendEmail({
+          to: user.email,
 
-if(
-campaign.audience==="vip"
-){
+          subject: campaign.subject,
 
-users =
-await User.find({
+          html: campaign.message,
+        });
 
-role:"customer",
+        sentCount++;
+      } catch (error) {
+        failedCount++;
 
-"customerType":"vip"
+        console.error(
+          `Failed to send email to ${user.email}:`,
+          error.message
+        );
+      }
+    }
 
-});
+    /*
+    |--------------------------------------------------------------------------
+    | UPDATE CAMPAIGN
+    |--------------------------------------------------------------------------
+    */
 
-}
+    campaign.sentCount = sentCount;
 
-else{
+    campaign.failedCount = failedCount;
 
-users =
-await User.find({
+    campaign.status =
+      failedCount === users.length
+        ? "failed"
+        : "sent";
 
-role:"customer"
+    campaign.sentAt = new Date();
 
-});
+    await campaign.save();
 
-}
+    return {
+      success: true,
+      totalRecipients: users.length,
+      sent: sentCount,
+      failed: failedCount,
+    };
+  } catch (error) {
+    console.error(
+      "Campaign sending failed:",
+      error.message
+    );
 
+    campaign.status = "failed";
 
+    await campaign.save().catch(() => {});
 
-for(
-const user of users
-){
-
-
-await sendEmail({
-
-to:user.email,
-
-
-subject:
-campaign.subject,
-
-
-html:
-
-campaign.message
-
-
-});
-
-
-}
-
-
-
-campaign.sentCount =
-users.length;
-
-
-campaign.status =
-"sent";
-
-
-await campaign.save();
-
-
+    throw error;
+  }
 };

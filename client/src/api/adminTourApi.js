@@ -1,95 +1,90 @@
-import axios from "axios";
+import api from "./axios";
 
-// ============================================================
-// AXIOS INSTANCE
-// ============================================================
+/*
+|--------------------------------------------------------------------------
+| PUBLIC TOURS
+|--------------------------------------------------------------------------
+*/
 
-const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
-});
-
-// ============================================================
-// AUTH TOKEN INTERCEPTOR
-// ============================================================
-
-API.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-
-    return config;
-  },
-
-  (error) => {
-    return Promise.reject(error);
-  },
-);
-
-// ============================================================
-// CREATE TOUR
-// ============================================================
-
-export const createTour = async (formData) => {
-  const { data } = await API.post(
-    "/admin/tours",
-
-    formData,
-
+export const getTours = async (params = {}) => {
+  const { data } = await api.get(
+    "/tours",
     {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    },
+      params,
+    }
   );
 
   return data;
 };
 
-// ============================================================
-// GET ADMIN TOURS
-// ============================================================
-
-export const getAdminTours = async () => {
-  const { data } = await API.get("/admin/tours");
+export const getTour = async (id) => {
+  const { data } = await api.get(
+    `/tours/${id}`
+  );
 
   return data;
 };
 
-// ============================================================
-// UPDATE TOUR
-// ============================================================
+export const getTourBySlug = async (slug) => {
+  const { data } = await api.get(
+    `/tours/slug/${slug}`
+  );
+
+  return data;
+};
+
+/*
+|--------------------------------------------------------------------------
+| ADMIN TOURS
+|--------------------------------------------------------------------------
+*/
+
+export const getAdminTours = async (params = {}) => {
+  const { data } = await api.get(
+    "/admin/tours",
+    {
+      params,
+    }
+  );
+
+  return data;
+};
+
+export const createTour = async (formData) => {
+  const { data } = await api.post(
+    "/admin/tours",
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+
+  return data;
+};
 
 export const updateTour = async (
   id,
-
-  formData,
+  formData
 ) => {
-  const { data } = await API.put(
+  const { data } = await api.put(
     `/admin/tours/${id}`,
-
     formData,
-
     {
       headers: {
         "Content-Type": "multipart/form-data",
       },
-    },
+    }
   );
 
   return data;
 };
 
-// ============================================================
-// DELETE TOUR
-// ============================================================
-
 export const deleteTour = async (id) => {
-  const { data } = await API.delete(`/admin/tours/${id}`);
+  const { data } = await api.delete(
+    `/admin/tours/${id}`
+  );
 
   return data;
 };
-
-export default API;

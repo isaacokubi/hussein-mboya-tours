@@ -1,27 +1,29 @@
 import Navbar from "./Navbar";
+import Footer from "./Footer";
+import ScrollToTop from "./ScrollToTop";
 
+export default function MainLayout({ children }) {
+  return (
+    <>
+      {/* Scroll page to top on route change */}
+      <ScrollToTop />
 
-export default function MainLayout({
-children
-}){
+      {/* Main Navigation */}
+      <Navbar />
 
+      {/* Main Content */}
+      <main
+        className="
+        min-h-screen
+        bg-gray-50
+        pt-20
+        "
+      >
+        {children}
+      </main>
 
-return (
-
-<>
-
-<Navbar/>
-
-
-<main>
-
-{children}
-
-</main>
-
-
-</>
-
-);
-
+      {/* Website Footer */}
+      <Footer />
+    </>
+  );
 }

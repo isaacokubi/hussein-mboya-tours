@@ -1,138 +1,86 @@
+// client/src/services/guideService.js
+
 import api from "./axios";
 
+/*
+|--------------------------------------------------------------------------
+| GUIDE DASHBOARD
+|--------------------------------------------------------------------------
+*/
 
+export const getGuideDashboard = async () => {
+  const { data } = await api.get(
+    "/guide/dashboard"
+  );
 
-// ============================================================
-// GUIDE DASHBOARD
-// ============================================================
-
-export const getGuideDashboard = async()=>{
-
-const response = await api.get(
-"/guide/dashboard"
-);
-
-
-return response.data;
-
+  return data;
 };
 
+/*
+|--------------------------------------------------------------------------
+| ASSIGNED TOURS
+|--------------------------------------------------------------------------
+*/
 
+export const getAssignedTours = async (params = {}) => {
+  const { data } = await api.get(
+    "/guide/assigned-tours",
+    {
+      params,
+    }
+  );
 
-
-
-// ============================================================
-// GET ASSIGNED TOURS
-// ============================================================
-
-export const getAssignedTours = async()=>{
-
-
-const response =
-await api.get(
-"/guide/assigned-tours"
-);
-
-
-return response.data;
-
-
+  return data;
 };
 
+/*
+|--------------------------------------------------------------------------
+| TOUR GUESTS
+|--------------------------------------------------------------------------
+*/
 
+export const getTourGuests = async (tourId) => {
+  const { data } = await api.get(
+    `/guide/tours/${tourId}/guests`
+  );
 
-
-
-
-
-// ============================================================
-// GET TOUR GUESTS
-// ============================================================
-
-export const getTourGuests = async(id)=>{
-
-
-const response =
-await api.get(
-
-`/guide/tours/${id}/guests`
-
-);
-
-
-return response.data;
-
-
+  return data;
 };
 
+/*
+|--------------------------------------------------------------------------
+| UPDATE TOUR STATUS
+|--------------------------------------------------------------------------
+*/
 
+export const updateTourStatus = async (
+  tourId,
+  status
+) => {
+  const { data } = await api.put(
+    `/guide/tours/${tourId}/status`,
+    {
+      status,
+    }
+  );
 
-
-
-
-
-// ============================================================
-// UPDATE TOUR STATUS
-// ============================================================
-
-export const updateTourStatus = async(
-
-id,
-
-status
-
-)=>{
-
-
-const response =
-await api.put(
-
-`/guide/tours/${id}/status`,
-
-{
-
-status
-
-}
-
-);
-
-
-return response.data;
-
-
+  return data;
 };
 
+/*
+|--------------------------------------------------------------------------
+| SUBMIT TOUR REPORT
+|--------------------------------------------------------------------------
+*/
 
+export const submitTourReport = async (
+  tourId,
+  reportData
+) => {
+  const { data } = await api.post(
+    `/guide/tours/${tourId}/report`,
+    reportData
+  );
 
-
-
-
-
-// ============================================================
-// SUBMIT TOUR REPORT
-// ============================================================
-
-export const submitTourReport = async(
-
-id,
-
-data
-
-)=>{
-
-
-const response =
-await api.post(
-
-`/guide/tours/${id}/report`,
-
-data
-
-);
-
-
-return response.data;
-
-
+  return data;
 };

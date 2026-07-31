@@ -1,9 +1,4 @@
 import User from "../models/User.js";
-import Role from "../models/Role.js";
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -11,177 +6,52 @@ import Role from "../models/Role.js";
 |--------------------------------------------------------------------------
 */
 
-export const getUserProfile =
-async(
-req,
-res,
-next
-)=>{
+export const getUserProfile = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.user._id)
+            .select("-password")
+            .lean();
 
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found",
+            });
+        }
 
-try{
-
-
-const user =
-
-await User.findById(
-req.user._id
-)
-
-.select(
-"-password"
-);
-
-
-
-
-
-if(!user){
-
-
-return res.status(404).json({
-
-message:
-"User not found"
-
-});
-
-
-}
-
-
-
-
-
-res.json({
-
-success:true,
-
-user,
-
-});
-
-
-
-
-
-}
-catch(error){
-
-
-next(error);
-
-
-}
-
-
+        return res.status(200).json({
+            success: true,
+            data: user,
+        });
+    } catch (error) {
+        console.error("GET USER PROFILE ERROR:", error);
+        next(error);
+    }
 };
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
-| GET GUIDES
+| GET ALL ACTIVE GUIDES
 |--------------------------------------------------------------------------
 */
 
-export const getGuides = async(
-req,
-res
-)=>{
+export const getGuides = async (req, res, next) => {
+    try {
+        const guides = await User.find({
+            role: "guide",
+            status: "active",
+        })
+            .select("name email phone profileImage")
+            .sort({ name: 1 })
+            .lean();
 
-
-try{
-
-
-
-const guideRole =
-
-await Role.findOne({
-
-name:"guide"
-
-});
-
-
-
-
-
-
-if(!guideRole){
-
-
-return res.status(200).json({
-
-users:[]
-
-});
-
-
-}
-
-
-
-
-
-
-
-
-const guides =
-
-await User.find({
-
-role:guideRole._id,
-
-status:"active"
-
-})
-
-.select(
-
-"name email phone"
-
-);
-
-
-
-
-
-
-
-
-res.status(200).json({
-
-success:true,
-
-users:guides
-
-});
-
-
-
-
-
-}
-catch(error){
-
-
-res.status(500).json({
-
-success:false,
-
-message:error.message
-
-});
-
-
-}
-
-
+        return res.status(200).json({
+            success: true,
+            count: guides.length,
+            data: guides,
+        });
+    } catch (error) {
+        console.error("GET GUIDES ERROR:", error);
+        next(error);
+    }
 };

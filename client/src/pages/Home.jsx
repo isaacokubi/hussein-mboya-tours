@@ -14,52 +14,81 @@ import NewsletterSection from "../components/home/NewsletterSection";
 
 
 
+
+
 export default function Home() {
 
 
   return (
 
-    <>
+
+    <main
+      className="
+      overflow-hidden
+      "
+    >
+
+
 
       <SEO
+
         title="Luxury Kenya Safaris | Hussein Mboya Tours"
-        description="Experience luxury safaris, beach holidays and unforgettable African adventures."
+
+        description="Experience luxury safaris, beach holidays and unforgettable African adventures across Kenya."
+
         image="/hero1.jpeg"
+
       />
+
+
+
+
 
 
       <HeroSlider />
 
 
+
       <StatsSection />
+
 
 
       <FeaturedTours />
 
 
+
       <DestinationsSection />
+
 
 
       <CategoriesSection />
 
 
+
       <TestimonialsSection />
+
 
 
       <GallerySection />
 
 
+
       <WhyChooseUs />
+
 
 
       <MpesaCTA />
 
 
+
       <NewsletterSection />
 
 
-    </>
+
+    </main>
+
 
   );
+
 
 }

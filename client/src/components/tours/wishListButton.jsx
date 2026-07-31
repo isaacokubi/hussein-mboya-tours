@@ -1,80 +1,128 @@
-import {
-useMutation,
-useQueryClient
-}
-from "@tanstack/react-query";
-
+// client/src/components/WishlistButton.jsx
 
 import {
-addWishlist
-}
-from "../../api/wishlistApi";
+  useMutation,
+  useQueryClient
+} from "@tanstack/react-query";
 
 
 import {
-toast
-}
-from "react-toastify";
+  addWishlist
+} from "../../api/wishlistApi";
+
+
+import {
+  toast
+} from "react-toastify";
 
 
 
 export default function WishlistButton({
-tourId
-}){
+  tourId
+}) {
 
 
-const queryClient =
-useQueryClient();
-
-
-
-const mutation =
-useMutation({
-
-mutationFn:
-()=>addWishlist(tourId),
-
-
-onSuccess:()=>{
-
-
-toast.success(
-"Added to wishlist"
-);
-
-
-queryClient.invalidateQueries(
-[
-"wishlist"
-]
-);
-
-
-}
-
-});
+  const queryClient = useQueryClient();
 
 
 
-return (
+  const mutation = useMutation({
 
-<button
+    mutationFn: () =>
+      addWishlist(tourId),
 
-onClick={
-mutation.mutate
-}
 
-className="
-text-red-600
-text-2xl
-"
 
->
+    onSuccess: () => {
 
-♥
 
-</button>
+      toast.success(
+        "Added to wishlist"
+      );
 
-);
+
+      queryClient.invalidateQueries({
+
+        queryKey: [
+          "wishlist"
+        ]
+
+      });
+
+
+      queryClient.invalidateQueries({
+
+        queryKey: [
+          "tours"
+        ]
+
+      });
+
+
+    },
+
+
+
+    onError: (error) => {
+
+
+      toast.error(
+
+        error?.response?.data?.message
+        ||
+        "Failed to add wishlist"
+
+      );
+
+
+    }
+
+
+  });
+
+
+
+
+
+  return (
+
+    <button
+
+
+      onClick={() =>
+        mutation.mutate()
+      }
+
+
+      disabled={
+        mutation.isPending
+      }
+
+
+      className={`
+      text-2xl
+      transition
+      ${
+        mutation.isPending
+        ?
+        "opacity-50 cursor-not-allowed"
+        :
+        "text-red-600 hover:scale-110"
+      }
+      `}
+
+
+      title="Add to wishlist"
+
+
+    >
+
+
+      ♥
+
+
+    </button>
+
+  );
 
 }

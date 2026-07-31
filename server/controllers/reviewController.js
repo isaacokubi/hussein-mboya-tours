@@ -2,9 +2,32 @@ import Review from "../models/Review.js";
 import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
 
+/*
+|--------------------------------------------------------------------------
+| RECALCULATE TOUR RATING
+|--------------------------------------------------------------------------
+*/
 
+const updateTourRating = async (tourId) => {
+  const reviews = await Review.find({
+    tour: tourId,
+    approved: true,
+  });
 
+  const totalReviews = reviews.length;
 
+  const averageRating =
+    totalReviews > 0
+      ? reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews
+      : 0;
+
+  await Tour.findByIdAndUpdate(tourId, {
+    averageRating: Number(averageRating.toFixed(1)),
+    rating: Number(averageRating.toFixed(1)),
+    reviewsCount: totalReviews,
+    totalReviews,
+  });
+};
 
 /*
 |--------------------------------------------------------------------------
@@ -12,577 +35,195 @@ import Tour from "../models/Tour.js";
 |--------------------------------------------------------------------------
 */
 
-
-export const createReview = async (
-  req,
-  res,
-  next
-) => {
-
+export const createReview = async (req, res, next) => {
   try {
-
-
     const {
-
       tour,
-
       rating,
-
       title,
-
-      comment
-
+      comment,
     } = req.body;
 
-
-
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | VERIFY CUSTOMER COMPLETED TOUR
-    |--------------------------------------------------------------------------
-    */
-
-
-    const booking =
-      await Booking.findOne({
-
-        user:req.user._id,
-
-        tour,
-
-        bookingStatus:"completed"
-
+    if (!tour || !rating || !comment) {
+      return res.status(400).json({
+        success: false,
+        message: "Tour, rating and comment are required.",
       });
-
-
-
-
-
-    if(!booking){
-
-      return res
-      .status(400)
-      .json({
-
-        message:
-        "Only completed trips can be reviewed"
-
-      });
-
     }
 
+    const booking = await Booking.findOne({
+      user: req.user._id,
+      tour,
+      bookingStatus: "completed",
+    });
 
-
-
-
-
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | PREVENT DUPLICATE REVIEWS
-    |--------------------------------------------------------------------------
-    */
-
-
-    const existingReview =
-      await Review.findOne({
-
-        user:req.user._id,
-
-        tour
-
+    if (!booking) {
+      return res.status(400).json({
+        success: false,
+        message: "Only completed tours can be reviewed.",
       });
-
-
-
-
-    if(existingReview){
-
-      return res
-      .status(400)
-      .json({
-
-        message:
-        "You already reviewed this tour"
-
-      });
-
     }
 
+    const existingReview = await Review.findOne({
+      user: req.user._id,
+      tour,
+    });
 
-
-
-
-
-
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | CREATE REVIEW
-    |--------------------------------------------------------------------------
-    */
-
-
-    const review =
-      await Review.create({
-
-        user:req.user._id,
-
-        tour,
-
-        booking:booking._id,
-
-        rating,
-
-        title,
-
-        comment,
-
-
-        verified:true,
-
-
-        approved:false
-
+    if (existingReview) {
+      return res.status(409).json({
+        success: false,
+        message: "You have already reviewed this tour.",
       });
+    }
 
+    const review = await Review.create({
+      user: req.user._id,
+      booking: booking._id,
+      tour,
+      rating,
+      title,
+      comment,
+      verified: true,
+      approved: false,
+      helpfulVotes: 0,
+    });
 
-
-
-
-
-
-
-    res
-    .status(201)
-    .json(review);
-
-
-
-  }
-
-  catch(error){
-
+    return res.status(201).json({
+      success: true,
+      message: "Review submitted successfully and is awaiting approval.",
+      review,
+    });
+  } catch (error) {
+    console.error("CREATE REVIEW ERROR:", error);
     next(error);
-
   }
-
 };
 
-
-
-
-
-
-
-
-
 /*
 |--------------------------------------------------------------------------
-| PUBLIC GET TOUR REVIEWS
+| GET TOUR REVIEWS
 |--------------------------------------------------------------------------
 */
 
+export const getTourReviews = async (req, res, next) => {
+  try {
+    const reviews = await Review.find({
+      tour: req.params.id,
+      approved: true,
+    })
+      .populate(
+        "user",
+        "name profileImage"
+      )
+      .sort({
+        createdAt: -1,
+      });
 
-export const getTourReviews =
-async(
-req,
-res,
-next
-)=>{
-
-
-try{
-
-
-const reviews =
-
-await Review.find({
-
-tour:req.params.id,
-
-approved:true
-
-})
-
-
-.populate(
-
-"user",
-
-"name avatar"
-
-)
-
-
-.sort({
-
-createdAt:-1
-
-});
-
-
-
-
-
-res.json(reviews);
-
-
-
-}
-
-catch(error){
-
-next(error);
-
-}
-
-
+    return res.status(200).json({
+      success: true,
+      count: reviews.length,
+      reviews,
+    });
+  } catch (error) {
+    console.error("GET TOUR REVIEWS ERROR:", error);
+    next(error);
+  }
 };
 
-
-
-
-
-
-
-
-
 /*
 |--------------------------------------------------------------------------
-| ADMIN APPROVE REVIEW
+| APPROVE REVIEW
 |--------------------------------------------------------------------------
 */
 
-
-export const approveReview =
-async(
-req,
-res,
-next
-)=>{
-
-
-try{
-
-
-const review =
-await Review.findById(
-req.params.id
-);
-
-
-
-if(!review){
-
-return res
-.status(404)
-.json({
-
-message:
-"Review not found"
-
-});
-
-}
-
-
-
-
-
-review.approved =
-true;
-
-
-
-await review.save();
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| UPDATE TOUR RATING
-|--------------------------------------------------------------------------
-*/
-
-
-const reviews =
-await Review.find({
-
-tour:review.tour,
-
-approved:true
-
-});
-
-
-
-
-const totalRating =
-
-reviews.reduce(
-
-(sum,item)=>
-
-sum + item.rating,
-
-0
-
-);
-
-
-
-
-const averageRating =
-
-reviews.length
-
-?
-
-totalRating / reviews.length
-
-:
-
-0;
-
-
-
-
-
-
-
-await Tour.findByIdAndUpdate(
-
-review.tour,
-
-{
-
-averageRating:
-
-
-Number(
-averageRating.toFixed(1)
-),
-
-
-
-reviewsCount:
-
-reviews.length,
-
-
-totalReviews:
-
-reviews.length,
-
-
-rating:
-
-Number(
-averageRating.toFixed(1)
-)
-
-}
-
-);
-
-
-
-
-
-
-res.json({
-
-success:true,
-
-message:
-"Review approved",
-
-review
-
-});
-
-
-
-}
-
-catch(error){
-
-next(error);
-
-}
-
-
+export const approveReview = async (req, res, next) => {
+  try {
+    const review = await Review.findById(req.params.id);
+
+    if (!review) {
+      return res.status(404).json({
+        success: false,
+        message: "Review not found.",
+      });
+    }
+
+    review.approved = true;
+
+    await review.save();
+
+    await updateTourRating(review.tour);
+
+    return res.status(200).json({
+      success: true,
+      message: "Review approved successfully.",
+      review,
+    });
+  } catch (error) {
+    console.error("APPROVE REVIEW ERROR:", error);
+    next(error);
+  }
 };
 
-
-
-
-
-
-
-
-
 /*
 |--------------------------------------------------------------------------
-| HELPFUL REVIEW VOTE
+| MARK REVIEW HELPFUL
 |--------------------------------------------------------------------------
 */
 
+export const voteHelpful = async (req, res, next) => {
+  try {
+    const review = await Review.findById(req.params.id);
 
-export const voteHelpful =
-async(
-req,
-res,
-next
-)=>{
+    if (!review) {
+      return res.status(404).json({
+        success: false,
+        message: "Review not found.",
+      });
+    }
 
+    review.helpfulVotes += 1;
 
-try{
+    await review.save();
 
-
-const review =
-
-await Review.findById(
-
-req.params.id
-
-);
-
-
-
-
-if(!review){
-
-return res
-.status(404)
-.json({
-
-message:
-"Review not found"
-
-});
-
-}
-
-
-
-
-review.helpfulVotes =
-
-(review.helpfulVotes || 0)
-+
-1;
-
-
-
-
-await review.save();
-
-
-
-
-
-res.json(review);
-
-
-
-}
-
-catch(error){
-
-next(error);
-
-}
-
-
+    return res.status(200).json({
+      success: true,
+      helpfulVotes: review.helpfulVotes,
+    });
+  } catch (error) {
+    console.error("VOTE HELPFUL ERROR:", error);
+    next(error);
+  }
 };
 
-
-
-
-
-
-
-
-
 /*
 |--------------------------------------------------------------------------
-| DELETE REVIEW (ADMIN)
+| DELETE REVIEW
 |--------------------------------------------------------------------------
 */
 
+export const deleteReview = async (req, res, next) => {
+  try {
+    const review = await Review.findById(req.params.id);
 
-export const deleteReview =
-async(
-req,
-res,
-next
-)=>{
+    if (!review) {
+      return res.status(404).json({
+        success: false,
+        message: "Review not found.",
+      });
+    }
 
+    const tourId = review.tour;
 
-try{
+    await review.deleteOne();
 
+    await updateTourRating(tourId);
 
-const review =
-
-await Review.findById(
-
-req.params.id
-
-);
-
-
-
-
-if(!review){
-
-return res
-.status(404)
-.json({
-
-message:
-"Review not found"
-
-});
-
-}
-
-
-
-
-await review.deleteOne();
-
-
-
-
-
-res.json({
-
-success:true,
-
-message:
-"Review deleted"
-
-});
-
-
-
-}
-
-catch(error){
-
-next(error);
-
-}
-
-
+    return res.status(200).json({
+      success: true,
+      message: "Review deleted successfully.",
+    });
+  } catch (error) {
+    console.error("DELETE REVIEW ERROR:", error);
+    next(error);
+  }
 };

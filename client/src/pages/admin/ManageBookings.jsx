@@ -2,21 +2,31 @@
 
 
 import {
-useEffect,
-useState
-}
-from "react";
+    useState
+} from "react";
 
+
+import {
+    useQuery,
+    useMutation,
+    useQueryClient
+} from "@tanstack/react-query";
+
+
+import {
+    toast
+} from "react-toastify";
 
 
 import {
 
-getAdminBookings,
+    getAdminBookings,
 
-updateBookingStatus
+    updateBookingStatus
 
 }
 from "../../api/bookingApi";
+
 
 
 
@@ -28,182 +38,183 @@ export default function ManageBookings(){
 
 
 
-const [bookings,setBookings] =
+    const queryClient = useQueryClient();
 
-useState([]);
 
 
+    const [
+        search,
+        setSearch
+    ] = useState("");
 
 
-const [search,setSearch] =
 
-useState("");
+    const [
+        status,
+        setStatus
+    ] = useState("");
 
 
 
 
-const [status,setStatus] =
 
-useState("");
 
 
 
 
-const [loading,setLoading] =
+    const {
 
-useState(false);
+        data,
 
+        isLoading,
 
+        isError
 
 
+    } = useQuery({
 
 
+        queryKey:[
 
+            "admin-bookings",
 
+            search,
 
-/*
-|--------------------------------------------------------------------------
-| LOAD BOOKINGS
-|--------------------------------------------------------------------------
-*/
+            status
 
+        ],
 
-const loadBookings = async()=>{
 
 
-try{
+        queryFn:()=>getAdminBookings({
 
+            search,
 
-setLoading(true);
+            status
 
+        })
 
 
-const res =
+    });
 
-await getAdminBookings({
 
-search,
 
-status
 
-});
 
 
 
 
-setBookings(
 
-res.bookings || []
+    const bookings =
 
-);
+        data?.bookings ||
 
+        data?.data?.bookings ||
 
+        [];
 
-}
 
-catch(error){
 
 
-console.error(
 
-"Failed loading bookings",
 
-error
 
-);
 
 
-}
+    const {
 
-finally{
+        mutate:updateStatus,
 
+        isPending
 
-setLoading(false);
+    } = useMutation({
 
 
-}
 
+        mutationFn:({
 
+            id,
 
-};
+            status
 
+        })=>
 
+            updateBookingStatus(
 
+                id,
 
+                status
 
+            ),
 
 
 
 
-useEffect(()=>{
 
 
-loadBookings();
+        onSuccess:()=>{
 
 
-},[status]);
+            queryClient.invalidateQueries({
 
+                queryKey:[
 
+                    "admin-bookings"
 
+                ]
 
+            });
 
 
 
+            toast.success(
 
+                "Booking status updated"
 
-/*
-|--------------------------------------------------------------------------
-| UPDATE STATUS
-|--------------------------------------------------------------------------
-*/
+            );
 
 
-const changeStatus = async(
+        },
 
-id,
 
-newStatus
 
-)=>{
+        onError:()=>{
 
 
-try{
+            toast.error(
 
+                "Failed to update booking"
 
-await updateBookingStatus(
+            );
 
-id,
 
-newStatus
+        }
 
-);
 
 
+    });
 
-loadBookings();
 
 
 
-}
 
-catch(error){
 
 
-console.error(
 
-"Status update failed",
 
-error
+    const changeStatus=(id,newStatus)=>{
 
-);
 
+        updateStatus({
 
-}
+            id,
 
+            status:newStatus
 
+        });
 
-};
 
+    };
 
 
 
@@ -212,28 +223,26 @@ error
 
 
 
-return (
 
-<div className="p-6">
+    return (
 
 
+        <div className="p-6">
 
 
 
-<h1
 
-className="
-text-3xl
-font-bold
-mb-8
-"
 
->
 
-Booking Management
+            <h1 className="
+                text-3xl
+                font-bold
+                mb-8
+            ">
 
-</h1>
+                Booking Management
 
+            </h1>
 
 
 
@@ -242,621 +251,627 @@ Booking Management
 
 
 
-<div
 
-className="
-flex
-gap-4
-mb-6
-"
+            <div className="
+                flex
+                gap-4
+                mb-6
+            ">
 
->
 
 
 
-<input
+                <input
 
 
-className="
-border
-p-3
-rounded
-w-80
-"
+                    className="
+                        border
+                        p-3
+                        rounded
+                        w-80
+                    "
 
 
-placeholder="
-Search customer or booking number
-"
 
+                    placeholder="
+                        Search customer or booking number
+                    "
 
 
-value={search}
 
+                    value={search}
 
 
-onChange={
 
-e=>
+                    onChange={
 
-setSearch(
+                        e=>
 
-e.target.value
+                        setSearch(
 
-)
+                            e.target.value
 
-}
+                        )
 
+                    }
 
-/>
 
+                />
 
 
 
 
 
 
-<button
 
 
-onClick={loadBookings}
+                <select
 
 
+                    className="
+                        border
+                        p-3
+                        rounded
+                    "
 
-className="
-bg-green-700
-text-white
-px-5
-rounded
-"
 
->
 
-Search
+                    value={status}
 
-</button>
 
 
+                    onChange={
 
+                        e=>
 
+                        setStatus(
 
+                            e.target.value
 
+                        )
 
+                    }
 
 
-<select
+                >
 
 
-className="
-border
-p-3
-rounded
-"
+                    <option value="">
 
+                        All Status
 
+                    </option>
 
-value={status}
 
 
+                    <option value="pending">
 
-onChange={
+                        Pending
 
-e=>
+                    </option>
 
-setStatus(
 
-e.target.value
 
-)
+                    <option value="confirmed">
 
-}
+                        Confirmed
 
+                    </option>
 
->
 
 
+                    <option value="completed">
 
-<option value="">
+                        Completed
 
-All Status
+                    </option>
 
-</option>
 
 
+                    <option value="cancelled">
 
-<option value="pending">
+                        Cancelled
 
-Pending
+                    </option>
 
-</option>
 
+                </select>
 
 
-<option value="confirmed">
 
-Confirmed
 
-</option>
 
 
+            </div>
 
-<option value="completed">
 
-Completed
 
-</option>
 
 
 
-<option value="cancelled">
 
-Cancelled
 
-</option>
 
+            <div className="
+                bg-white
+                shadow
+                rounded-xl
+                overflow-hidden
+            ">
 
 
-</select>
 
 
 
 
 
-</div>
 
+            {
 
+                isLoading ? (
 
 
 
+                    <div className="p-6">
 
+                        Loading bookings...
 
+                    </div>
 
 
-<div
 
-className="
-bg-white
-shadow
-rounded-xl
-overflow-hidden
-"
+                ) : isError ? (
 
->
 
 
+                    <div className="
+                        p-6
+                        text-red-600
+                    ">
 
+                        Failed to load bookings
 
-{
+                    </div>
 
-loading ?
 
 
+                ) : (
 
-<div className="p-6">
 
-Loading bookings...
 
-</div>
 
 
 
-:
+                <table className="w-full">
 
 
+                    <thead className="bg-gray-100">
 
-<table
 
-className="
-w-full
-"
+                        <tr>
 
->
 
+                            <th className="p-4 text-left">
 
+                                Booking
 
-<thead
+                            </th>
 
-className="
-bg-gray-100
-"
 
->
 
+                            <th className="p-4 text-left">
 
+                                Customer
 
-<tr>
+                            </th>
 
 
 
-<th className="p-4">
+                            <th className="p-4 text-left">
 
-Booking
+                                Tour
 
-</th>
+                            </th>
 
 
 
-<th className="p-4">
+                            <th className="p-4 text-left">
 
-Customer
+                                Amount
 
-</th>
+                            </th>
 
 
 
-<th className="p-4">
+                            <th className="p-4 text-left">
 
-Tour
+                                Payment
 
-</th>
+                            </th>
 
 
 
-<th className="p-4">
+                            <th className="p-4 text-left">
 
-Amount
+                                Status
 
-</th>
+                            </th>
 
 
 
-<th className="p-4">
+                            <th className="p-4 text-left">
 
-Payment
+                                Actions
 
-</th>
+                            </th>
 
 
+                        </tr>
 
-<th className="p-4">
 
-Status
+                    </thead>
 
-</th>
 
 
 
-<th className="p-4">
 
-Actions
 
-</th>
 
 
 
-</tr>
+                    <tbody>
 
 
+                    {
 
-</thead>
+                    bookings.length === 0 ? (
 
 
+                        <tr>
 
 
+                            <td
 
+                            colSpan="7"
 
+                            className="
+                                p-6
+                                text-center
+                                text-gray-500
+                            "
 
+                            >
 
+                                No bookings found
 
-<tbody>
+                            </td>
 
 
+                        </tr>
 
-{
 
 
-bookings.map(booking=>(
+                    ) : (
 
 
+                        bookings.map(booking=>(
 
-<tr
 
 
-key={booking._id}
+                            <tr
 
+                            key={booking._id}
 
+                            className="border-b"
 
-className="
-border-b
-"
+                            >
 
->
 
 
 
-<td className="p-4">
 
+                                <td className="p-4">
 
-<div className="font-semibold">
 
+                                    <div className="font-semibold">
 
-{
+                                        {
+                                            booking.bookingNumber ||
+                                            booking._id
+                                        }
 
-booking.bookingNumber ||
+                                    </div>
 
-booking._id
 
-}
+                                </td>
 
 
-</div>
 
 
 
-</td>
 
 
 
+                                <td className="p-4">
 
 
+                                    <div className="font-medium">
 
 
+                                        {
+                                            booking.customer?.name ||
 
+                                            booking.customerSnapshot?.name ||
 
-<td className="p-4">
+                                            "Unknown"
+                                        }
 
 
+                                    </div>
 
-<div className="font-medium">
 
 
-{
 
-booking.customer?.name ||
+                                    <small>
 
-booking.customerSnapshot?.name
 
-}
+                                        {
+                                            booking.customer?.phone ||
 
+                                            booking.customerSnapshot?.phone ||
 
-</div>
+                                            "-"
+                                        }
 
 
+                                    </small>
 
-<small>
 
+                                </td>
 
-{
 
-booking.customer?.phone ||
 
-booking.customerSnapshot?.phone
 
-}
 
 
-</small>
 
 
 
-</td>
+                                <td className="p-4">
 
 
+                                    {
+                                        booking.tour?.title ||
 
+                                        "Tour unavailable"
+                                    }
 
 
+                                </td>
 
 
 
 
-<td className="p-4">
 
 
 
-{
 
-booking.tour?.title ||
 
-"Tour unavailable"
+                                <td className="p-4">
 
-}
 
+                                    KES{" "}
 
+                                    {
+                                        Number(
 
-</td>
+                                            booking.amount ||
 
+                                            booking.totalAmount ||
 
+                                            0
 
+                                        ).toLocaleString()
 
+                                    }
 
 
+                                </td>
 
 
 
-<td className="p-4">
 
 
-KES {
 
-booking.amount ||
 
-booking.totalAmount ||
 
-0
 
-}
+                                <td className="p-4">
 
 
+                                    <span className="
+                                        bg-green-100
+                                        px-3
+                                        py-1
+                                        rounded
+                                    ">
 
-</td>
 
+                                        {
+                                            booking.paymentStatus ||
 
+                                            "Pending"
+                                        }
 
 
+                                    </span>
 
 
+                                </td>
 
 
 
-<td className="p-4">
 
 
 
-<span
 
-className="
-bg-green-100
-px-3
-py-1
-rounded
-"
 
->
 
+                                <td className="p-4">
 
-{
 
-booking.paymentStatus
+                                    {
+                                        booking.status ||
 
-}
+                                        booking.bookingStatus
 
+                                    }
 
 
-</span>
+                                </td>
 
 
 
-</td>
 
 
 
 
 
 
+                                <td className="p-4 space-x-2">
 
 
 
-<td className="p-4">
 
 
-<span>
+                                    <button
 
 
-{
+                                        disabled={isPending}
 
-booking.status ||
 
-booking.bookingStatus
+                                        onClick={()=>
 
-}
 
+                                            changeStatus(
 
+                                                booking._id,
 
-</span>
+                                                "confirmed"
 
+                                            )
 
 
-</td>
+                                        }
 
 
 
+                                        className="
+                                            bg-green-700
+                                            text-white
+                                            px-3
+                                            py-1
+                                            rounded
+                                        "
 
 
+                                    >
 
 
+                                        Confirm
 
 
-<td className="p-4 space-x-2">
+                                    </button>
 
 
 
 
 
-<button
 
 
 
-onClick={
 
-()=>
+                                    <button
 
 
-changeStatus(
 
-booking._id,
+                                        disabled={isPending}
 
-"confirmed"
 
-)
 
+                                        onClick={()=>
 
-}
 
+                                            changeStatus(
 
+                                                booking._id,
 
-className="
-bg-green-700
-text-white
-px-3
-py-1
-rounded
-"
+                                                "cancelled"
 
->
+                                            )
 
 
+                                        }
 
-Confirm
 
 
+                                        className="
+                                            bg-red-600
+                                            text-white
+                                            px-3
+                                            py-1
+                                            rounded
+                                        "
 
-</button>
 
 
+                                    >
 
 
+                                        Cancel
 
 
+                                    </button>
 
 
 
-<button
 
 
 
-onClick={
+                                </td>
 
-()=>
 
 
-changeStatus(
 
-booking._id,
 
-"cancelled"
 
-)
+                            </tr>
 
 
-}
 
+                        ))
 
+                    )
 
-className="
-bg-red-600
-text-white
-px-3
-py-1
-rounded
-"
+                    }
 
->
 
 
 
-Cancel
 
+                    </tbody>
 
 
-</button>
 
 
 
+                </table>
 
 
 
+                )
 
-</td>
+            }
 
 
 
@@ -864,44 +879,18 @@ Cancel
 
 
 
-</tr>
 
+            </div>
 
 
-))
 
 
 
-}
 
+        </div>
 
 
-
-</tbody>
-
-
-
-
-
-
-
-</table>
-
-
-
-}
-
-
-
-</div>
-
-
-
-
-
-</div>
-
-);
+    );
 
 
 }

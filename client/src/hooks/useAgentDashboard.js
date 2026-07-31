@@ -1,10 +1,12 @@
+// client/src/hooks/useAgentDashboard.js
+
 import {
-    useQuery
+  useQuery
 } from "@tanstack/react-query";
 
 
 import {
-    fetchAgentDashboard
+  fetchAgentDashboard
 } from "../api/agentApi";
 
 
@@ -18,129 +20,174 @@ import {
 |
 | Fetches dashboard statistics for logged-in agents.
 |
-| Data source:
+| Flow:
 |
-| React Component
-|        |
-|        ↓
+| Component
+|     |
+|     ↓
 | useAgentDashboard()
-|        |
-|        ↓
+|     |
+|     ↓
 | fetchAgentDashboard()
-|        |
-|        ↓
+|     |
+|     ↓
 | GET /api/agent/dashboard
 |
 |--------------------------------------------------------------------------
 */
 
 
-export const useAgentDashboard = () => {
-
-
-    const query = useQuery({
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | CACHE KEY
-        |--------------------------------------------------------------------------
-        */
-
-        queryKey:[
-
-            "agent-dashboard"
-
-        ],
+export const useAgentDashboard = (
+  params = {}
+) => {
 
 
 
+  const query = useQuery({
 
-        /*
-        |--------------------------------------------------------------------------
-        | API FUNCTION
-        |--------------------------------------------------------------------------
-        */
 
-        queryFn:
 
-        fetchAgentDashboard,
+    /*
+    |--------------------------------------------------------------------------
+    | CACHE KEY
+    |--------------------------------------------------------------------------
+    */
+
+    queryKey:[
+
+      "agent-dashboard",
+
+      params
+
+    ],
 
 
 
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | PRODUCTION SETTINGS
-        |--------------------------------------------------------------------------
-        */
+    /*
+    |--------------------------------------------------------------------------
+    | API FUNCTION
+    |--------------------------------------------------------------------------
+    */
+
+    queryFn:
+
+    async()=>{
 
 
-        staleTime:
-
-        1000 * 60 * 5,
-
-
-
-        retry:
-
-        2
+      const response =
+        await fetchAgentDashboard(params);
 
 
 
-    });
+      return (
+
+        response?.data
+
+        ||
+
+        response
+
+        ||
+
+        {}
+
+      );
 
 
-
-
-
-    return {
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | ORIGINAL QUERY DATA
-        |--------------------------------------------------------------------------
-        */
-
-
-        ...query,
+    },
 
 
 
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | SAFE DEFAULT VALUES
-        |--------------------------------------------------------------------------
-        |
-        | Prevents UI crashes when API is loading.
-        |
-        |--------------------------------------------------------------------------
-        */
 
 
-        dashboard:
+    /*
+    |--------------------------------------------------------------------------
+    | PRODUCTION SETTINGS
+    |--------------------------------------------------------------------------
+    */
 
-        query.data || {},
 
+    staleTime:
 
-
-        stats:
-
-        query.data?.stats || {},
+      1000 * 60 * 5,
 
 
 
-        bookings:
+    retry:
 
-        query.data?.bookings || []
+      2
 
 
 
-    };
+  });
+
+
+
+
+
+
+
+
+
+  return {
+
+
+    ...query,
+
+
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | SAFE DATA DEFAULTS
+    |--------------------------------------------------------------------------
+    */
+
+
+    dashboard:
+
+      query.data || {},
+
+
+
+
+
+    stats:
+
+      query.data?.stats || {},
+
+
+
+
+
+    bookings:
+
+      query.data?.bookings || [],
+
+
+
+
+
+    customers:
+
+      query.data?.customers || [],
+
+
+
+
+
+    revenue:
+
+      query.data?.revenue || 0
+
+
+
+  };
 
 
 };

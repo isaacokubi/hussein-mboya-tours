@@ -1,78 +1,62 @@
-// routes/notificationRoutes.js
-
+// server/routes/notificationRoutes.js
 
 import express from "express";
 
+import {
+  getNotifications,
+  getMyNotifications,
+  markRead,
+} from "../controllers/notificationController.js";
 
 import {
+  protect,
+} from "../middleware/authMiddleware.js";
 
-getNotifications,
+const router = express.Router();
 
-getMyNotifications,
+/*
+|--------------------------------------------------------------------------
+| AUTHORIZATION
+|--------------------------------------------------------------------------
+|
+| All notification routes require authentication.
+|
+|--------------------------------------------------------------------------
+*/
 
-markRead
+router.use(protect);
 
-}
-from "../controllers/notificationController.js";
+/*
+|--------------------------------------------------------------------------
+| NOTIFICATIONS
+|--------------------------------------------------------------------------
+*/
 
-
-import {
-protect
-}
-from "../middleware/authMiddleware.js";
-
-
-
-const router =
-express.Router();
-
-
-
-
-
-// ============================================================
-// GET ALL USER NOTIFICATIONS
-// ============================================================
-
-
+/**
+ * GET /api/notifications
+ * Get notifications for the authenticated user.
+ */
 router.get(
-"/",
-protect,
-getNotifications
+  "/",
+  getNotifications
 );
 
-
-
-
-
-// ============================================================
-// GET MY NOTIFICATIONS
-// ============================================================
-
-
+/**
+ * GET /api/notifications/mine
+ * Alias for getting the authenticated user's notifications.
+ */
 router.get(
-"/mine",
-protect,
-getMyNotifications
+  "/mine",
+  getMyNotifications
 );
 
-
-
-
-
-// ============================================================
-// MARK NOTIFICATION AS READ
-// ============================================================
-
-
+/**
+ * PUT /api/notifications/:id/read
+ * Mark a notification as read.
+ */
 router.put(
-"/:id/read",
-protect,
-markRead
+  "/:id/read",
+  markRead
 );
-
-
-
-
 
 export default router;

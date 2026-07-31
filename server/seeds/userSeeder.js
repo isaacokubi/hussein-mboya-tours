@@ -1,6 +1,5 @@
 import dotenv from "dotenv";
-
-import connectDatabase from "../config/database.js";
+import mongoose from "mongoose";
 
 import User from "../models/User.js";
 import Role from "../models/Role.js";
@@ -9,9 +8,13 @@ dotenv.config();
 
 const seedUsers = async () => {
   try {
-    await connectDatabase();
+    if (!process.env.MONGODB_URI) {
+      throw new Error("MONGODB_URI is missing in .env");
+    }
 
-    console.log("Database connected");
+    await mongoose.connect(process.env.MONGODB_URI);
+
+    console.log("✅ MongoDB Connected");
 
     /*
     |--------------------------------------------------------------------------
@@ -20,19 +23,19 @@ const seedUsers = async () => {
     */
 
     const adminRole = await Role.findOne({
-      name: "admin",
+      name: "superadmin",
     });
 
     const managerRole = await Role.findOne({
-      name: "manager",
+      name: "tourmanager",
     });
 
     if (!adminRole) {
-      throw new Error("admin role not found");
+      throw new Error("Superadmin role not found. Run role seeder first.");
     }
 
     if (!managerRole) {
-      throw new Error("manager role not found");
+      throw new Error("Tour Manager role not found. Run role seeder first.");
     }
 
     /*
@@ -43,32 +46,35 @@ const seedUsers = async () => {
 
     await User.deleteMany({
       email: {
-        $in: ["admin@demo.com", "manager@demo.com"],
+        $in: [
+          "admin@husseinmboyatours.com",
+          "manager@husseinmboyatours.com",
+        ],
       },
     });
 
+    console.log("🗑 Existing demo users removed");
+
     /*
     |--------------------------------------------------------------------------
-    | CREATE ADMIN
+    | CREATE SUPER ADMIN
     |--------------------------------------------------------------------------
     */
 
     const admin = await User.create({
-      name: "Hussein Admin",
+      name: "Hussein Mboya",
 
-      email: "admin@demo.com",
+      email: "admin@husseinmboyatours.com",
 
       phone: "0712345678",
 
       password: "Admin@12345",
 
-      // MUST MATCH USER ENUM
-      role: "admin",
+      role: adminRole._id,
 
-      // RBAC ROLE REFERENCE
-      roleId: adminRole._id,
+      legacyRole: "superadmin",
 
-      status: "active",
+      isActive: true,
 
       isVerified: true,
     });
@@ -80,58 +86,56 @@ const seedUsers = async () => {
     */
 
     const manager = await User.create({
-      name: "Hussein Tour Manager",
+      name: "Tour Manager",
 
-      email: "manager@demo.com",
+      email: "manager@husseinmboyatours.com",
 
       phone: "0712345679",
 
       password: "Manager@12345",
 
-      // MUST MATCH USER ENUM
-      role: "manager",
+      role: managerRole._id,
 
-      // RBAC ROLE REFERENCE
-      roleId: managerRole._id,
+      legacyRole: "tourmanager",
 
-      status: "active",
+      isActive: true,
 
       isVerified: true,
     });
 
-    console.log("================================");
+    console.log("\n====================================");
 
-    console.log("ADMIN CREATED");
+    console.log("✅ SUPER ADMIN CREATED");
 
     console.log({
+      name: admin.name,
       email: admin.email,
-
       password: "Admin@12345",
-
-      role: admin.role,
+      role: "superadmin",
     });
 
-    console.log("--------------------------------");
+    console.log("------------------------------------");
 
-    console.log("TOUR MANAGER CREATED");
+    console.log("✅ TOUR MANAGER CREATED");
 
     console.log({
+      name: manager.name,
       email: manager.email,
-
       password: "Manager@12345",
-
-      role: manager.role,
+      role: "tourmanager",
     });
 
-    console.log("================================");
+    console.log("====================================");
+
+    await mongoose.connection.close();
+
+    console.log("🔌 MongoDB connection closed");
 
     process.exit(0);
   } catch (error) {
-    console.error(
-      "USER SEED ERROR:",
+    console.error("❌ USER SEED ERROR:", error.message);
 
-      error.message,
-    );
+    await mongoose.connection.close().catch(() => {});
 
     process.exit(1);
   }

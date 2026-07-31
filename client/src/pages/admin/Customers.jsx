@@ -1,21 +1,16 @@
 import {
-
-useEffect,
-
-useState
-
-}
-
-from "react";
-
+    useState
+} from "react";
 
 
 import {
+    useQuery
+} from "@tanstack/react-query";
 
-getCustomers
 
+import {
+    getCustomers
 }
-
 from "../../api/customerApi";
 
 
@@ -24,317 +19,444 @@ from "../../api/customerApi";
 export default function Customers(){
 
 
-const [
 
-customers,
+    const [search,setSearch] = useState("");
 
-setCustomers
 
-]=useState([]);
 
 
 
 
-const [
+    const {
+        data,
+        isLoading,
+        isError
 
-search,
+    } = useQuery({
 
-setSearch
 
-]=useState("");
+        queryKey:[
+            "customers",
+            search
+        ],
 
 
+        queryFn:()=>getCustomers({
 
+            search
 
+        }),
 
 
-const loadCustomers=async()=>{
+    });
 
 
-const res =
 
-await getCustomers({
 
-search
 
-});
 
 
+    const customers =
 
-setCustomers(
+        data?.data?.customers ||
 
-res.data.customers
+        data?.customers ||
 
-);
+        [];
 
 
 
-};
 
 
 
 
 
-useEffect(()=>{
 
+    if(isLoading)
 
-loadCustomers();
+    return (
 
+        <div className="p-6">
 
-},[]);
+            Loading customers...
 
+        </div>
 
+    );
 
 
 
 
 
-return (
 
-<div className="p-6">
 
+    if(isError)
 
-<h1 className="
-text-3xl
-font-bold
-mb-8
-">
+    return (
 
-Customer Management
+        <div className="
+            p-6
+            text-red-600
+        ">
 
-</h1>
+            Failed to load customers
 
+        </div>
 
+    );
 
 
 
 
-<div className="
-flex
-gap-4
-mb-6
-">
 
 
-<input
 
-className="
-border
-p-3
-rounded
-w-80
-"
+    return (
 
-placeholder="
-Search customers
-"
 
-value={search}
+        <div className="p-6">
 
-onChange={
-e=>setSearch(e.target.value)
-}
 
-/>
 
 
 
-<button
+            <h1 className="
+                text-3xl
+                font-bold
+                mb-8
+            ">
 
-onClick={loadCustomers}
+                Customer Management
 
-className="
-bg-green-700
-text-white
-px-5
-rounded
-"
+            </h1>
 
->
 
-Search
 
-</button>
 
 
-</div>
 
 
 
 
+            <div className="
+                flex
+                gap-4
+                mb-6
+            ">
 
 
 
+                <input
 
-<div className="
-bg-white
-shadow
-rounded-xl
-overflow-hidden
-">
+                    className="
+                        border
+                        p-3
+                        rounded
+                        w-80
+                    "
 
+                    placeholder="Search customers"
 
-<table className="
-w-full
-">
+                    value={search}
 
+                    onChange={
+                        e=>setSearch(
+                            e.target.value
+                        )
+                    }
 
-<thead className="
-bg-gray-100
-">
+                />
 
 
-<tr>
 
 
-<th className="p-4">
-Customer
-</th>
 
+            </div>
 
-<th className="p-4">
-Phone
-</th>
 
 
-<th className="p-4">
-Type
-</th>
 
 
-<th className="p-4">
-Bookings
-</th>
 
 
-<th className="p-4">
-Spent
-</th>
 
 
-</tr>
+            <div className="
+                bg-white
+                shadow
+                rounded-xl
+                overflow-hidden
+            ">
 
 
-</thead>
 
+                <table className="
+                    w-full
+                ">
 
 
 
+                    <thead className="
+                        bg-gray-100
+                    ">
 
 
-<tbody>
+                        <tr>
 
 
-{
+                            <th className="p-4 text-left">
 
-customers.map(customer=>(
+                                Customer
 
+                            </th>
 
-<tr
 
-key={customer._id}
 
-className="
-border-b
-">
+                            <th className="p-4 text-left">
 
+                                Phone
 
-<td className="p-4">
+                            </th>
 
-<div>
 
-{customer.name}
 
-</div>
+                            <th className="p-4 text-left">
 
-<small>
+                                Type
 
-{customer.email}
+                            </th>
 
-</small>
 
-</td>
 
+                            <th className="p-4 text-left">
 
+                                Bookings
 
+                            </th>
 
 
-<td className="p-4">
 
-{customer.phone}
+                            <th className="p-4 text-left">
 
-</td>
+                                Spent
 
+                            </th>
 
 
 
-<td className="p-4">
+                        </tr>
 
 
-<span className="
-bg-blue-100
-px-3
-py-1
-rounded
-">
 
-{
-customer.customerType
-}
+                    </thead>
 
-</span>
 
 
-</td>
 
 
 
 
 
-<td className="p-4">
+                    <tbody>
 
-{
-customer.totalBookings
-}
 
-</td>
 
+                    {
+                        customers.length === 0 ? (
 
 
+                            <tr>
 
-<td className="p-4">
+                                <td
 
-KES {
+                                colSpan="5"
 
-customer.totalSpent
+                                className="
+                                    p-6
+                                    text-center
+                                    text-gray-500
+                                "
 
-}
+                                >
 
-</td>
+                                    No customers found
 
+                                </td>
 
 
-</tr>
+                            </tr>
 
 
-))
 
-}
+                        ) : (
 
 
+                            customers.map(customer=>(
 
-</tbody>
 
+                                <tr
 
-</table>
+                                key={customer._id}
 
+                                className="
+                                    border-b
+                                "
 
-</div>
+                                >
 
 
-</div>
 
-);
+
+                                    <td className="p-4">
+
+
+                                        <div className="
+                                            font-medium
+                                        ">
+
+                                            {customer.name}
+
+                                        </div>
+
+
+
+                                        <small className="
+                                            text-gray-500
+                                        ">
+
+                                            {customer.email}
+
+                                        </small>
+
+
+
+                                    </td>
+
+
+
+
+
+
+
+                                    <td className="p-4">
+
+                                        {
+                                            customer.phone || "-"
+                                        }
+
+                                    </td>
+
+
+
+
+
+
+
+                                    <td className="p-4">
+
+
+                                        <span className="
+                                            bg-blue-100
+                                            px-3
+                                            py-1
+                                            rounded
+                                            text-sm
+                                        ">
+
+
+                                            {
+                                                customer.customerType ||
+                                                "Regular"
+                                            }
+
+
+                                        </span>
+
+
+
+                                    </td>
+
+
+
+
+
+
+
+                                    <td className="p-4">
+
+
+                                        {
+                                            customer.totalBookings || 0
+                                        }
+
+
+                                    </td>
+
+
+
+
+
+
+
+                                    <td className="p-4">
+
+
+                                        KES{" "}
+
+                                        {
+                                            Number(
+                                                customer.totalSpent || 0
+                                            )
+                                            .toLocaleString()
+                                        }
+
+
+                                    </td>
+
+
+
+
+
+
+                                </tr>
+
+
+
+                            ))
+
+
+                        )
+
+                    }
+
+
+
+
+
+                    </tbody>
+
+
+
+
+
+
+                </table>
+
+
+
+
+
+            </div>
+
+
+
+
+
+
+        </div>
+
+
+    );
 
 
 }

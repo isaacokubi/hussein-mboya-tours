@@ -1,8 +1,8 @@
+// server/controllers/tourController.js
+
 import Tour from "../models/Tour.js";
 import Vehicle from "../models/Vehicle.js";
 import Booking from "../models/Booking.js";
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -11,98 +11,104 @@ import Booking from "../models/Booking.js";
 */
 
 export const getTours = async (req, res, next) => {
-
   try {
+    const {
+      page = 1,
+      limit = 12,
+      search,
+      destination,
+      category,
+      featured,
+    } = req.query;
 
-    const tours = await Tour.find({
+    const filter = {
       status: "active",
-    })
+    };
 
-      .populate("destination")
+    if (destination) {
+      filter.destination = destination;
+    }
 
-      .populate("vehicle")
+    if (category) {
+      filter.category = category;
+    }
 
-      .sort({
-        createdAt: -1,
-      });
+    if (featured === "true") {
+      filter.featured = true;
+    }
 
+    if (search) {
+      filter.$or = [
+        {
+          title: {
+            $regex: search,
+            $options: "i",
+          },
+        },
+        {
+          description: {
+            $regex: search,
+            $options: "i",
+          },
+        },
+      ];
+    }
 
+    const skip = (Number(page) - 1) * Number(limit);
 
-    res.status(200).json({
+    const [tours, total] = await Promise.all([
+      Tour.find(filter)
+        .populate("destination")
+        .populate("assignedVehicle")
+        .populate("assignedGuide", "name")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(Number(limit)),
 
+      Tour.countDocuments(filter),
+    ]);
+
+    return res.status(200).json({
       success: true,
 
-      count: tours.length,
+      pagination: {
+        total,
+        page: Number(page),
+        pages: Math.ceil(total / Number(limit)),
+      },
 
-      tours,
-
+      data: tours,
     });
-
-
   } catch (error) {
-
     next(error);
-
   }
-
 };
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
-| GET FEATURED TOURS
+| FEATURED TOURS
 |--------------------------------------------------------------------------
 */
 
 export const getFeaturedTours = async (req, res, next) => {
-
   try {
-
     const tours = await Tour.find({
-
       featured: true,
-
       status: "active",
-
     })
-
       .populate("destination")
-
-      .populate("vehicle")
-
+      .populate("assignedVehicle")
       .limit(6)
+      .sort({ createdAt: -1 });
 
-      .sort({
-
-        createdAt: -1,
-
-      });
-
-
-
-    res.status(200).json({
-
+    return res.json({
       success: true,
-
-      tours,
-
+      data: tours,
     });
-
-
-  } catch(error) {
-
+  } catch (error) {
     next(error);
-
   }
-
 };
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -111,145 +117,83 @@ export const getFeaturedTours = async (req, res, next) => {
 */
 
 export const searchTours = async (req, res, next) => {
-
   try {
-
     const {
       keyword,
       category,
-      country
+      country,
+      destination,
     } = req.query;
 
-
-
     const filter = {
-
-      status:"active",
-
+      status: "active",
     };
 
-
-
-    if(keyword){
-
-      filter.$text = {
-
-        $search: keyword,
-
-      };
-
+    if (keyword) {
+      filter.$or = [
+        {
+          title: {
+            $regex: keyword,
+            $options: "i",
+          },
+        },
+        {
+          description: {
+            $regex: keyword,
+            $options: "i",
+          },
+        },
+      ];
     }
 
-
-
-    if(category){
-
-      filter.category = category;
-
-    }
-
-
-
-    if(country){
-
-      filter.country = country;
-
-    }
-
-
+    if (category) filter.category = category;
+    if (country) filter.country = country;
+    if (destination) filter.destination = destination;
 
     const tours = await Tour.find(filter)
-
       .populate("destination")
+      .populate("assignedVehicle")
+      .sort({ createdAt: -1 });
 
-      .populate("vehicle")
-
-      .sort({
-
-        createdAt:-1,
-
-      });
-
-
-
-    res.json({
-
-      success:true,
-
-      count:tours.length,
-
-      tours,
-
+    return res.json({
+      success: true,
+      count: tours.length,
+      data: tours,
     });
-
-
-
-  } catch(error){
-
+  } catch (error) {
     next(error);
-
   }
-
 };
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
-| GET SINGLE TOUR BY ID
+| GET TOUR BY ID
 |--------------------------------------------------------------------------
 */
 
-export const getTourById = async (req,res,next)=>{
-
+export const getTourById = async (req, res, next) => {
   try {
-
-
     const tour = await Tour.findById(req.params.id)
-
       .populate("destination")
+      .populate("assignedVehicle")
+      .populate("assignedGuide")
+      .populate("assignedDriver");
 
-      .populate("vehicle");
-
-
-
-    if(!tour){
-
+    if (!tour) {
       return res.status(404).json({
-
-        success:false,
-
-        message:"Tour not found",
-
+        success: false,
+        message: "Tour not found",
       });
-
     }
 
-
-
-    res.json({
-
-      success:true,
-
-      tour,
-
+    return res.json({
+      success: true,
+      data: tour,
     });
-
-
-
-  } catch(error){
-
+  } catch (error) {
     next(error);
-
   }
-
 };
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -257,58 +201,32 @@ export const getTourById = async (req,res,next)=>{
 |--------------------------------------------------------------------------
 */
 
-export const getTourBySlug = async(req,res,next)=>{
-
+export const getTourBySlug = async (req, res, next) => {
   try {
-
-
     const tour = await Tour.findOne({
-
-      slug:req.params.slug,
-
+      slug: req.params.slug,
+      status: "active",
     })
-
       .populate("destination")
+      .populate("assignedVehicle")
+      .populate("assignedGuide")
+      .populate("assignedDriver");
 
-      .populate("vehicle");
-
-
-
-    if(!tour){
-
+    if (!tour) {
       return res.status(404).json({
-
-        success:false,
-
-        message:"Tour not found",
-
+        success: false,
+        message: "Tour not found",
       });
-
     }
 
-
-
-    res.json({
-
-      success:true,
-
-      tour,
-
+    return res.json({
+      success: true,
+      data: tour,
     });
-
-
-
-  }catch(error){
-
+  } catch (error) {
     next(error);
-
   }
-
 };
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -316,46 +234,23 @@ export const getTourBySlug = async(req,res,next)=>{
 |--------------------------------------------------------------------------
 */
 
-export const createTour = async(req,res,next)=>{
-
-  try{
-
-
+export const createTour = async (req, res, next) => {
+  try {
     const tour = await Tour.create({
-
       ...req.body,
-
-      createdBy:req.user?._id,
-
-      status:req.body.status || "active",
-
+      createdBy: req.user._id,
+      status: req.body.status || "active",
     });
 
-
-
-    res.status(201).json({
-
-      success:true,
-
-      message:"Tour created successfully",
-
-      tour,
-
+    return res.status(201).json({
+      success: true,
+      message: "Tour created successfully",
+      data: tour,
     });
-
-
-
-  }catch(error){
-
+  } catch (error) {
     next(error);
-
   }
-
 };
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -363,52 +258,24 @@ export const createTour = async(req,res,next)=>{
 |--------------------------------------------------------------------------
 */
 
-export const getManagerTours = async(req,res,next)=>{
-
-  try{
-
-
+export const getManagerTours = async (req, res, next) => {
+  try {
     const tours = await Tour.find({
-
-      createdBy:req.user._id,
-
+      createdBy: req.user._id,
     })
-
       .populate("destination")
+      .populate("assignedVehicle")
+      .sort({ createdAt: -1 });
 
-      .populate("vehicle")
-
-      .sort({
-
-        createdAt:-1,
-
-      });
-
-
-
-    res.json({
-
-      success:true,
-
-      count:tours.length,
-
-      tours,
-
+    return res.json({
+      success: true,
+      count: tours.length,
+      data: tours,
     });
-
-
-
-  }catch(error){
-
+  } catch (error) {
     next(error);
-
   }
-
 };
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -416,115 +283,67 @@ export const getManagerTours = async(req,res,next)=>{
 |--------------------------------------------------------------------------
 */
 
-export const updateTour = async(req,res,next)=>{
-
-  try{
-
-
+export const updateTour = async (req, res, next) => {
+  try {
     const tour = await Tour.findByIdAndUpdate(
-
       req.params.id,
-
       req.body,
-
       {
-
-        new:true,
-
-        runValidators:true,
-
+        new: true,
+        runValidators: true,
       }
-
     );
 
-
-
-    if(!tour){
-
+    if (!tour) {
       return res.status(404).json({
-
-        message:"Tour not found",
-
+        success: false,
+        message: "Tour not found",
       });
-
     }
 
-
-
-    res.json({
-
-      success:true,
-
-      tour,
-
+    return res.json({
+      success: true,
+      message: "Tour updated successfully",
+      data: tour,
     });
-
-
-
-  }catch(error){
-
+  } catch (error) {
     next(error);
-
   }
-
 };
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
-| DELETE TOUR
+| DELETE TOUR (SOFT DELETE)
 |--------------------------------------------------------------------------
 */
 
-export const deleteTour = async(req,res,next)=>{
-
-  try{
-
-
-    const tour = await Tour.findByIdAndDelete(
-
-      req.params.id
-
+export const deleteTour = async (req, res, next) => {
+  try {
+    const tour = await Tour.findByIdAndUpdate(
+      req.params.id,
+      {
+        status: "inactive",
+      },
+      {
+        new: true,
+      }
     );
 
-
-
-    if(!tour){
-
+    if (!tour) {
       return res.status(404).json({
-
-        message:"Tour not found",
-
+        success: false,
+        message: "Tour not found",
       });
-
     }
 
-
-
-    res.json({
-
-      success:true,
-
-      message:"Tour deleted successfully",
-
+    return res.json({
+      success: true,
+      message: "Tour deleted successfully",
     });
-
-
-
-  }catch(error){
-
+  } catch (error) {
     next(error);
-
   }
-
 };
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -532,84 +351,54 @@ export const deleteTour = async(req,res,next)=>{
 |--------------------------------------------------------------------------
 */
 
-export const assignVehicle = async(req,res,next)=>{
+export const assignVehicle = async (req, res, next) => {
+  try {
+    const vehicle = await Vehicle.findById(req.body.vehicleId);
 
-  try{
-
-
-    const vehicle = await Vehicle.findById(
-
-      req.body.vehicleId
-
-    );
-
-
-
-    if(!vehicle){
-
+    if (!vehicle || !vehicle.isActive) {
       return res.status(404).json({
-
-        message:"Vehicle not found",
-
+        success: false,
+        message: "Vehicle not found",
       });
-
     }
 
-
+    if (
+      vehicle.availability &&
+      vehicle.availability !== "available"
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Vehicle is currently unavailable",
+      });
+    }
 
     const tour = await Tour.findById(req.params.id);
 
-
-
-    if(!tour){
-
+    if (!tour) {
       return res.status(404).json({
-
-        message:"Tour not found",
-
+        success: false,
+        message: "Tour not found",
       });
-
     }
 
-
-
-    tour.vehicle = vehicle._id;
-
+    tour.assignedVehicle = vehicle._id;
 
     await tour.save();
 
-
-
-    vehicle.status="Assigned";
-
+    vehicle.availability = "assigned";
+    vehicle.assignedTour = tour._id;
 
     await vehicle.save();
 
-
-
-    res.json({
-
-      success:true,
-
-      message:"Vehicle assigned successfully",
-
-      tour,
-
+    return res.json({
+      success: true,
+      message: "Vehicle assigned successfully",
+      data: tour,
     });
-
-
-
-  }catch(error){
-
+  } catch (error) {
     next(error);
-
   }
-
 };
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -617,160 +406,88 @@ export const assignVehicle = async(req,res,next)=>{
 |--------------------------------------------------------------------------
 */
 
-export const removeVehicle = async(req,res,next)=>{
-
-  try{
-
-
+export const removeVehicle = async (req, res, next) => {
+  try {
     const tour = await Tour.findById(req.params.id);
 
-
-
-    if(!tour){
-
+    if (!tour) {
       return res.status(404).json({
-
-        message:"Tour not found",
-
+        success: false,
+        message: "Tour not found",
       });
-
     }
 
+    if (tour.assignedVehicle) {
+      await Vehicle.findByIdAndUpdate(tour.assignedVehicle, {
+        availability: "available",
+        assignedTour: null,
+      });
+    }
 
-
-    tour.vehicle=null;
-
+    tour.assignedVehicle = null;
 
     await tour.save();
 
-
-
-    res.json({
-
-      success:true,
-
-      message:"Vehicle removed",
-
+    return res.json({
+      success: true,
+      message: "Vehicle removed successfully",
     });
-
-
-
-  }catch(error){
-
+  } catch (error) {
     next(error);
-
   }
-
 };
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
-| TOUR MANAGER REPORTS
+| TOUR REPORTS
 |--------------------------------------------------------------------------
 */
 
-export const getReports = async(req,res,next)=>{
-
-  try{
-
-
+export const getReports = async (req, res, next) => {
+  try {
     const tours = await Tour.find({
-
-      createdBy:req.user._id,
-
+      createdBy: req.user._id,
     });
 
+    const ids = tours.map((tour) => tour._id);
 
-
-    const tourIds = tours.map(
-
-      tour=>tour._id
-
-    );
-
-
-
-    const totalBookings = await Booking.countDocuments({
-
-      tour:{
-
-        $in:tourIds,
-
-      },
-
-    });
-
-
-
-    const revenue = await Booking.aggregate([
-
-      {
-
-        $match:{
-
-          tour:{
-
-            $in:tourIds,
-
-          },
-
-          paymentStatus:"paid",
-
+    const [totalBookings, revenue] = await Promise.all([
+      Booking.countDocuments({
+        tour: {
+          $in: ids,
         },
+      }),
 
-      },
-
-
-      {
-
-        $group:{
-
-          _id:null,
-
-          totalRevenue:{
-
-            $sum:"$totalAmount",
-
+      Booking.aggregate([
+        {
+          $match: {
+            tour: {
+              $in: ids,
+            },
+            paymentStatus: "paid",
           },
-
         },
-
-      },
-
+        {
+          $group: {
+            _id: null,
+            totalRevenue: {
+              $sum: "$totalAmount",
+            },
+          },
+        },
+      ]),
     ]);
 
-
-
-    res.json({
-
-      success:true,
-
-      reports:{
-
-        totalTours:tours.length,
-
+    return res.json({
+      success: true,
+      data: {
+        totalTours: tours.length,
         totalBookings,
-
-        totalRevenue:
-
-          revenue[0]?.totalRevenue || 0,
-
+        totalRevenue: revenue[0]?.totalRevenue || 0,
         tours,
-
       },
-
     });
-
-
-
-  }catch(error){
-
+  } catch (error) {
     next(error);
-
   }
-
 };

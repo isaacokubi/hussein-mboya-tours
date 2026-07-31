@@ -1,29 +1,281 @@
+// server/models/Media.js
+
 import mongoose from "mongoose";
 
-const mediaSchema =
-new mongoose.Schema(
-{
+/*
+|--------------------------------------------------------------------------
+| MEDIA SCHEMA
+|--------------------------------------------------------------------------
+*/
 
-fileName:String,
+const mediaSchema = new mongoose.Schema(
+  {
+    /*
+    |--------------------------------------------------------------------------
+    | FILE INFORMATION
+    |--------------------------------------------------------------------------
+    */
 
-url:String,
+    fileName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
-fileType:String,
+    originalName: {
+      type: String,
+      default: "",
+      trim: true,
+    },
 
-size:Number,
+    url: {
+      type: String,
+      required: true,
+    },
 
-uploadedBy:{
-type:mongoose.Schema.Types.ObjectId,
-ref:"User"
-}
+    publicId: {
+      type: String,
+      default: "",
+      index: true,
+    },
 
-},
-{
-timestamps:true
-}
+    /*
+    |--------------------------------------------------------------------------
+    | FILE DETAILS
+    |--------------------------------------------------------------------------
+    */
+
+    fileType: {
+      type: String,
+      enum: [
+        "image",
+        "video",
+        "document",
+        "pdf",
+        "audio",
+        "other",
+      ],
+      required: true,
+    },
+
+    mimeType: {
+      type: String,
+      default: "",
+    },
+
+    extension: {
+      type: String,
+      default: "",
+    },
+
+    size: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | IMAGE / VIDEO METADATA
+    |--------------------------------------------------------------------------
+    */
+
+    width: {
+      type: Number,
+      default: null,
+    },
+
+    height: {
+      type: Number,
+      default: null,
+    },
+
+    duration: {
+      type: Number,
+      default: null,
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | ORGANIZATION
+    |--------------------------------------------------------------------------
+    */
+
+    folder: {
+      type: String,
+      default: "general",
+      trim: true,
+    },
+
+    category: {
+      type: String,
+      enum: [
+        "tour",
+        "destination",
+        "vehicle",
+        "staff",
+        "customer",
+        "booking",
+        "marketing",
+        "document",
+        "other",
+      ],
+      default: "other",
+    },
+
+    tags: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | RELATED RECORD
+    |--------------------------------------------------------------------------
+    */
+
+    relatedModel: {
+      type: String,
+      enum: [
+        "Tour",
+        "Destination",
+        "Vehicle",
+        "Staff",
+        "Booking",
+        "Customer",
+        "User",
+      ],
+      default: null,
+    },
+
+    relatedId: {
+      type: mongoose.Schema.Types.ObjectId,
+      default: null,
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | OWNERSHIP
+    |--------------------------------------------------------------------------
+    */
+
+    uploadedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | STATUS
+    |--------------------------------------------------------------------------
+    */
+
+    visibility: {
+      type: String,
+      enum: [
+        "public",
+        "private",
+        "internal",
+      ],
+      default: "public",
+    },
+
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | DOWNLOADS
+    |--------------------------------------------------------------------------
+    */
+
+    downloadCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    lastDownloadedAt: {
+      type: Date,
+      default: null,
+    },
+  },
+  {
+    timestamps: true,
+  }
 );
 
-export default mongoose.model(
-"Media",
-mediaSchema
-);
+/*
+|--------------------------------------------------------------------------
+| VIRTUALS
+|--------------------------------------------------------------------------
+*/
+
+mediaSchema.virtual("fileSizeMB").get(function () {
+  return Number((this.size / (1024 * 1024)).toFixed(2));
+});
+
+/*
+|--------------------------------------------------------------------------
+| METHODS
+|--------------------------------------------------------------------------
+*/
+
+mediaSchema.methods.incrementDownloads = function () {
+  this.downloadCount += 1;
+  this.lastDownloadedAt = new Date();
+  return this.save();
+};
+
+/*
+|--------------------------------------------------------------------------
+| INDEXES
+|--------------------------------------------------------------------------
+*/
+
+mediaSchema.index({
+  uploadedBy: 1,
+  createdAt: -1,
+});
+
+mediaSchema.index({
+  category: 1,
+});
+
+mediaSchema.index({
+  folder: 1,
+});
+
+mediaSchema.index({
+  relatedModel: 1,
+  relatedId: 1,
+});
+
+mediaSchema.index({
+  visibility: 1,
+});
+
+mediaSchema.index({
+  isDeleted: 1,
+});
+
+mediaSchema.index({
+  createdAt: -1,
+});
+
+/*
+|--------------------------------------------------------------------------
+| EXPORT MODEL
+|--------------------------------------------------------------------------
+*/
+
+const Media =
+  mongoose.models.Media ||
+  mongoose.model("Media", mediaSchema);
+
+export default Media;

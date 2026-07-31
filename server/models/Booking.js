@@ -1,7 +1,5 @@
 import mongoose from "mongoose";
 
-
-
 /*
 |--------------------------------------------------------------------------
 | TRAVELER SCHEMA
@@ -9,75 +7,67 @@ import mongoose from "mongoose";
 */
 
 const travelerSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 100,
+    },
 
-{
+    age: {
+      type: Number,
+      min: 0,
+      max: 120,
+    },
 
-name:{
+    gender: {
+      type: String,
+      enum: ["male", "female", "other"],
+      default: "other",
+    },
 
-type:String,
+    passportNumber: {
+      type: String,
+      trim: true,
+      uppercase: true,
+      default: "",
+    },
 
-required:true,
+    nationality: {
+      type: String,
+      trim: true,
+      default: "",
+    },
 
-trim:true
+    dateOfBirth: Date,
 
-},
+    emergencyContactName: {
+      type: String,
+      trim: true,
+      default: "",
+    },
 
+    emergencyContactPhone: {
+      type: String,
+      trim: true,
+      default: "",
+    },
 
-age:{
+    dietaryRequirements: {
+      type: String,
+      default: "",
+    },
 
-type:Number,
-
-min:0
-
-},
-
-
-passportNumber:{
-
-type:String,
-
-default:"",
-
-trim:true
-
-},
-
-
-nationality:{
-
-type:String,
-
-default:"",
-
-trim:true
-
-},
-
-
-dateOfBirth:{
-
-type:Date
-
-}
-
-
-},
-
-{
-
-_id:false
-
-}
-
+    medicalConditions: {
+      type: String,
+      default: "",
+    },
+  },
+  {
+    _id: false,
+  }
 );
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -86,33 +76,36 @@ _id:false
 */
 
 const customerSnapshotSchema = new mongoose.Schema(
+  {
+    name: String,
 
-{
+    email: String,
 
-name:String,
-
-email:String,
-
-phone:String
-
-
-},
-
-{
-
-_id:false
-
-}
-
+    phone: String,
+  },
+  {
+    _id: false,
+  }
 );
 
+/*
+|--------------------------------------------------------------------------
+| EMERGENCY CONTACT
+|--------------------------------------------------------------------------
+*/
 
+const emergencyContactSchema = new mongoose.Schema(
+  {
+    name: String,
 
+    phone: String,
 
-
-
-
-
+    relationship: String,
+  },
+  {
+    _id: false,
+  }
+);
 
 /*
 |--------------------------------------------------------------------------
@@ -121,990 +114,713 @@ _id:false
 */
 
 const bookingSchema = new mongoose.Schema(
+  {
+    /*
+    |--------------------------------------------------------------------------
+    | BOOKING NUMBER
+    |--------------------------------------------------------------------------
+    */
 
-{
+    bookingNumber: {
+      type: String,
+      unique: true,
+      index: true,
+    },
 
+    /*
+    |--------------------------------------------------------------------------
+    | CUSTOMER
+    |--------------------------------------------------------------------------
+    */
 
+    customer: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
 
+    customerSnapshot: customerSnapshotSchema,
 
-/*
+    fullName: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    email: {
+      type: String,
+      lowercase: true,
+      trim: true,
+      default: "",
+    },
+
+    phone: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | AGENT
+    |--------------------------------------------------------------------------
+    */
+
+    agent: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Agent",
+      default: null,
+      index: true,
+    },
+
+    bookingSource: {
+      type: String,
+      enum: [
+        "website",
+        "mobile_app",
+        "agent",
+        "admin",
+        "walk_in",
+        "partner",
+        "api",
+      ],
+      default: "website",
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | TOUR
+    |--------------------------------------------------------------------------
+    */
+
+    tour: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tour",
+      required: true,
+      index: true,
+    },
+
+    travelDate: {
+      type: Date,
+      required: true,
+      index: true,
+    },
+
+    travelers: {
+      type: [travelerSchema],
+      default: [],
+    },
+
+    numberOfGuests: {
+      type: Number,
+      default: 1,
+      min: 1,
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | PICKUP DETAILS
+    |--------------------------------------------------------------------------
+    */
+
+    pickupLocation: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    pickupTime: Date,
+
+    hotelName: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    roomNumber: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    emergencyContact: emergencyContactSchema,
+
+    specialRequests: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | TOUR ASSIGNMENTS
+    |--------------------------------------------------------------------------
+    */
+
+    assignedGuide: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Staff",
+      default: null,
+    },
+
+    assignedDriver: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Staff",
+      default: null,
+    },
+
+    assignedVehicle: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Vehicle",
+      default: null,
+    },
+
+    assigned: {
+      type: Boolean,
+      default: false,
+    },    /*
+    |--------------------------------------------------------------------------
+    | PRICING
+    |--------------------------------------------------------------------------
+    */
+
+    subtotal: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    discountAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    taxAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    serviceFee: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    couponUsed: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    totalAmount: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | AGENT COMMISSION
+    |--------------------------------------------------------------------------
+    */
+
+    commissionRate: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100,
+    },
+
+    commissionAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    commissionStatus: {
+      type: String,
+      enum: [
+        "pending",
+        "approved",
+        "paid",
+        "cancelled",
+      ],
+      default: "pending",
+    },
+
+    commissionPaidAt: {
+      type: Date,
+      default: null,
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | PAYMENT
+    |--------------------------------------------------------------------------
+    */
+
+    depositAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    balanceAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    paymentMethod: {
+      type: String,
+      enum: [
+        "MPESA",
+        "CARD",
+        "PAYPAL",
+        "BANK_TRANSFER",
+        "CASH",
+      ],
+      default: "MPESA",
+    },
+
+    paymentStatus: {
+      type: String,
+      enum: [
+        "pending",
+        "partial",
+        "paid",
+        "failed",
+        "cancelled",
+        "refunded",
+      ],
+      default: "pending",
+      index: true,
+    },
+
+    transactionId: {
+      type: String,
+      trim: true,
+    },
+
+    paymentReference: {
+      type: String,
+      trim: true,
+    },
+
+    mpesaReceipt: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | PAYMENT HISTORY
+    |--------------------------------------------------------------------------
+    */
+
+    payments: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Payment",
+      },
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | REFUND
+    |--------------------------------------------------------------------------
+    */
+
+    refundAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    refundStatus: {
+      type: String,
+      enum: [
+        "none",
+        "requested",
+        "approved",
+        "completed",
+        "rejected",
+      ],
+      default: "none",
+    },
+
+    refundReason: {
+      type: String,
+      default: "",
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | BOOKING STATUS
+    |--------------------------------------------------------------------------
+    */
+
+    status: {
+      type: String,
+      enum: [
+        "pending",
+        "confirmed",
+        "assigned",
+        "ongoing",
+        "completed",
+        "cancelled",
+        "refunded",
+      ],
+      default: "pending",
+      index: true,
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | BOOKING TIMELINE
+    |--------------------------------------------------------------------------
+    */
+
+    confirmedAt: Date,
+
+    assignedAt: Date,
+
+    startedAt: Date,
+
+    completedAt: Date,
+
+    cancelledAt: Date,
+
+    cancelledBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+
+    cancellationReason: {
+      type: String,
+      default: "",
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | ABANDONED BOOKINGS
+    |--------------------------------------------------------------------------
+    */
+
+    abandoned: {
+      type: Boolean,
+      default: false,
+    },
+
+    abandonedAt: Date,
+
+    lastReminderSent: Date,
+
+    /*
+    |--------------------------------------------------------------------------
+    | DOCUMENTS
+    |--------------------------------------------------------------------------
+    */
+
+    documents: [
+      {
+        type: String,
+      },
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | NOTES
+    |--------------------------------------------------------------------------
+    */
+
+    customerNotes: {
+      type: String,
+      default: "",
+    },
+
+    staffNotes: {
+      type: String,
+      default: "",
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | AUDIT
+    |--------------------------------------------------------------------------
+    */
+
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+
+    updatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | SOFT DELETE
+    |--------------------------------------------------------------------------
+    */
+
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
+  },
+  {
+    timestamps: true,
+    toJSON: {
+      virtuals: true,
+    },
+    toObject: {
+      virtuals: true,
+    },
+  }
+);/*
 |--------------------------------------------------------------------------
-| BOOKING NUMBER
-|--------------------------------------------------------------------------
-*/
-
-
-bookingNumber:{
-
-
-type:String,
-
-
-unique:true
-
-
-},
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| CUSTOMER
-|--------------------------------------------------------------------------
-*/
-
-
-customer:{
-
-
-type:mongoose.Schema.Types.ObjectId,
-
-
-ref:"User",
-
-
-required:true
-
-
-},
-
-
-
-user:{
-
-
-type:mongoose.Schema.Types.ObjectId,
-
-
-ref:"User"
-
-
-},
-
-
-
-customerSnapshot:
-
-customerSnapshotSchema,
-
-
-
-
-
-fullName:String,
-
-
-email:String,
-
-
-phone:String,
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| AGENT
-|--------------------------------------------------------------------------
-*/
-
-
-agent:{
-
-
-type:mongoose.Schema.Types.ObjectId,
-
-
-ref:"User",
-
-
-default:null
-
-
-},
-
-
-
-
-
-
-bookingSource:{
-
-
-type:String,
-
-
-enum:[
-
-"website",
-
-"agent",
-
-"admin",
-
-"walk_in"
-
-],
-
-
-default:"website"
-
-
-},
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| TOUR DETAILS
-|--------------------------------------------------------------------------
-*/
-
-
-tour:{
-
-
-type:mongoose.Schema.Types.ObjectId,
-
-
-ref:"Tour",
-
-
-required:true
-
-
-},
-
-
-
-
-
-travelDate:{
-
-
-type:Date,
-
-
-required:true
-
-
-},
-
-
-
-
-
-travelers:[
-
-travelerSchema
-
-],
-
-
-
-
-
-
-// merged from new schema
-
-numberOfGuests:{
-
-
-type:Number,
-
-
-required:true,
-
-
-default:1
-
-
-},
-
-
-
-
-guests:{
-
-
-type:Number,
-
-
-default:1
-
-
-},
-
-
-
-
-travelerCount:{
-
-
-type:Number,
-
-
-default:0
-
-
-},
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| TOUR OPERATIONS ASSIGNMENT
-|--------------------------------------------------------------------------
-*/
-
-
-assignedGuide:{
-
-
-type:mongoose.Schema.Types.ObjectId,
-
-
-ref:"Staff",
-
-
-default:null
-
-
-},
-
-
-
-
-assignedDriver:{
-
-
-type:mongoose.Schema.Types.ObjectId,
-
-
-ref:"Staff",
-
-
-default:null
-
-
-},
-
-
-
-
-assignedVehicle:{
-
-
-type:mongoose.Schema.Types.ObjectId,
-
-
-ref:"Vehicle",
-
-
-default:null
-
-
-},
-
-
-
-
-
-
-// merged assignment flag
-
-assigned:{
-
-
-type:Boolean,
-
-
-default:false
-
-
-},
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| PRICING
-|--------------------------------------------------------------------------
-*/
-
-
-subtotal:{
-
-
-type:Number,
-
-
-default:0
-
-
-},
-
-
-
-
-discountAmount:{
-
-
-type:Number,
-
-
-default:0
-
-
-},
-
-
-
-
-couponUsed:{
-
-
-type:String,
-
-
-default:""
-
-
-},
-
-
-
-
-totalAmount:{
-
-
-type:Number,
-
-
-required:true,
-
-
-min:0
-
-
-},
-
-
-
-
-amount:{
-
-
-type:Number,
-
-
-default:0
-
-
-},
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| COMMISSION
-|--------------------------------------------------------------------------
-*/
-
-
-commissionRate:{
-
-
-type:Number,
-
-
-default:0
-
-
-},
-
-
-
-
-commissionAmount:{
-
-
-type:Number,
-
-
-default:0
-
-
-},
-
-
-
-
-commissionStatus:{
-
-
-type:String,
-
-
-enum:[
-
-"pending",
-
-"approved",
-
-"paid",
-
-"cancelled"
-
-],
-
-
-default:"pending"
-
-
-},
-
-
-
-
-commissionPaidAt:{
-
-
-type:Date,
-
-
-default:null
-
-
-},
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| PAYMENT
+| GENERATE BOOKING NUMBER
 |--------------------------------------------------------------------------
 */
 
-
-depositAmount:{
-
-
-type:Number,
-
-
-default:0
-
-
-},
-
-
-
-
-balanceAmount:{
-
-
-type:Number,
-
-
-default:0
-
-
-},
-
-
-
-
-paymentMethod:{
-
-
-type:String,
-
-
-enum:[
-
-"MPESA",
-
-"CARD",
-
-"PAYPAL",
-
-"BANK_TRANSFER",
-
-"CASH"
-
-],
-
-
-default:"MPESA"
-
-
-},
-
-
-
-
-paymentStatus:{
-
-
-type:String,
-
-
-enum:[
-
-"pending",
-
-"paid",
-
-"partial",
-
-"failed",
-
-"refunded"
-
-],
-
-
-default:"pending"
-
-
-},
-
-
-
-
-transactionId:{
-
-
-type:String
-
-},
-
-
-
-
-paymentReference:{
-
-
-type:String
-
-},
-
-
-
-
-mpesaReceipt:{
-
-
-type:String,
-
-
-default:""
-
-
-},
-
-
-
-
-
-
+bookingSchema.pre("save", function (next) {
+  if (!this.bookingNumber) {
+    const year = new Date().getFullYear();
+
+    const random = Math.random()
+      .toString(36)
+      .substring(2, 8)
+      .toUpperCase();
+
+    this.bookingNumber = `HMT-${year}-${random}`;
+  }
+
+  next();
+});
 
 /*
 |--------------------------------------------------------------------------
-| BOOKING STATUS
+| CALCULATIONS & VALIDATION
 |--------------------------------------------------------------------------
 */
 
+bookingSchema.pre("save", function (next) {
+  // Automatically determine guest count
 
-status:{
+  if (this.travelers?.length > 0) {
+    this.numberOfGuests = this.travelers.length;
+  }
 
+  // Prevent invalid deposits
 
-type:String,
+  if (this.depositAmount > this.totalAmount) {
+    return next(
+      new Error("Deposit amount cannot exceed total amount.")
+    );
+  }
 
+  // Calculate balance
 
-enum:[
+  this.balanceAmount = Math.max(
+    0,
+    this.totalAmount - this.depositAmount
+  );
 
-"pending",
+  // Calculate commission
 
-"confirmed",
+  if (this.agent && this.commissionRate > 0) {
+    this.commissionAmount =
+      (this.totalAmount * this.commissionRate) / 100;
+  } else {
+    this.commissionAmount = 0;
+  }
 
-"cancelled",
+  // Sync assignment flag
 
-"completed"
+  this.assigned = Boolean(
+    this.assignedGuide ||
+      this.assignedDriver ||
+      this.assignedVehicle
+  );
 
-],
+  // Automatic timestamps
 
+  if (
+    this.isModified("status") &&
+    this.status === "confirmed" &&
+    !this.confirmedAt
+  ) {
+    this.confirmedAt = new Date();
+  }
 
-default:"pending"
+  if (
+    this.isModified("status") &&
+    this.status === "assigned" &&
+    !this.assignedAt
+  ) {
+    this.assignedAt = new Date();
+  }
 
+  if (
+    this.isModified("status") &&
+    this.status === "ongoing" &&
+    !this.startedAt
+  ) {
+    this.startedAt = new Date();
+  }
 
-},
+  if (
+    this.isModified("status") &&
+    this.status === "completed" &&
+    !this.completedAt
+  ) {
+    this.completedAt = new Date();
+  }
 
+  if (
+    this.isModified("status") &&
+    this.status === "cancelled" &&
+    !this.cancelledAt
+  ) {
+    this.cancelledAt = new Date();
+  }
 
-
-
-
-bookingStatus:{
-
-
-type:String,
-
-
-enum:[
-
-"pending",
-
-"confirmed",
-
-"assigned",
-
-"ongoing",
-
-"completed",
-
-"cancelled"
-
-],
-
-
-default:"pending"
-
-
-},
-
-
-
-
-
-
+  next();
+});
 
 /*
 |--------------------------------------------------------------------------
-| ABANDONED BOOKING
+| VIRTUALS
 |--------------------------------------------------------------------------
 */
 
+bookingSchema.virtual("remainingBalance").get(function () {
+  return Math.max(
+    0,
+    this.totalAmount - this.depositAmount
+  );
+});
 
-abandoned:{
+bookingSchema.virtual("isPaid").get(function () {
+  return this.paymentStatus === "paid";
+});
 
+bookingSchema.virtual("isAssigned").get(function () {
+  return Boolean(
+    this.assignedGuide ||
+      this.assignedDriver ||
+      this.assignedVehicle
+  );
+});
 
-type:Boolean,
+bookingSchema.virtual("isCompleted").get(function () {
+  return this.status === "completed";
+});
 
-
-default:false
-
-
-},
-
-
-
-lastReminderSent:{
-
-
-type:Date,
-
-
-default:null
-
-
-},
-
-
-
-
-
-
+bookingSchema.virtual("isCancelled").get(function () {
+  return this.status === "cancelled";
+});
 
 /*
 |--------------------------------------------------------------------------
-| DOCUMENTS
+| INSTANCE METHODS
 |--------------------------------------------------------------------------
 */
 
-
-documents:[
-
-String
-
-],
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| NOTES
-|--------------------------------------------------------------------------
-*/
-
-
-notes:{
-
-
-type:String,
-
-
-default:""
-
-
-}
-
-
-
-},
-
-
-
-{
-
-timestamps:true
-
-}
-
-);
-
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| AUTO BOOKING NUMBER
-|--------------------------------------------------------------------------
-*/
-
-
-bookingSchema.pre(
-
-"save",
-
-function(next){
-
-
-if(!this.bookingNumber)
-
-{
-
-
-this.bookingNumber =
-
-"HMT-" +
-
-Date.now() +
-
-"-" +
-
-Math.floor(
-
-Math.random()*10000
-
-);
-
-
-}
-
-
-
-next();
-
-
-}
-
-);
-
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| AUTO COMMISSION + BALANCE
-|--------------------------------------------------------------------------
-*/
-
-
-bookingSchema.pre(
-
-"save",
-
-function(next){
-
-
-
-if(
-
-this.agent &&
-
-this.commissionRate > 0
-
-)
-
-{
-
-
-this.commissionAmount =
-
-(
-
-this.totalAmount *
-
-this.commissionRate
-
-)
-
-/100;
-
-
-}
-
-else
-
-{
-
-
-this.commissionAmount = 0;
-
-
-}
-
-
-
-
-
-this.balanceAmount =
-
-this.totalAmount -
-
-this.depositAmount;
-
-
-
-
-
-// keep assignment status synchronized
-
-if(
-
-this.assignedGuide ||
-
-this.assignedDriver ||
-
-this.assignedVehicle
-
-)
-
-{
-
-
-this.assigned = true;
-
-
-}
-
-
-
-next();
-
-
-}
-
-);
-
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| METHODS
-|--------------------------------------------------------------------------
-*/
-
-
-bookingSchema.methods.calculateCommission = function(){
-
-
-return (
-
-this.totalAmount *
-
-this.commissionRate
-
-)
-
-/100;
-
-
+bookingSchema.methods.calculateCommission = function () {
+  return (
+    this.totalAmount * this.commissionRate
+  ) / 100;
 };
 
-
-
-
-
-bookingSchema.methods.calculateBalance = function(){
-
-
-return (
-
-this.totalAmount -
-
-this.depositAmount
-
-);
-
-
+bookingSchema.methods.calculateBalance = function () {
+  return Math.max(
+    0,
+    this.totalAmount - this.depositAmount
+  );
 };
 
+bookingSchema.methods.markPaid = function () {
+  this.paymentStatus = "paid";
 
+  this.depositAmount = this.totalAmount;
 
+  this.balanceAmount = 0;
 
+  return this.save();
+};
 
+bookingSchema.methods.markCompleted = function () {
+  this.status = "completed";
 
+  this.completedAt = new Date();
 
+  return this.save();
+};
 
+bookingSchema.methods.cancelBooking = function (reason = "") {
+  this.status = "cancelled";
+
+  this.cancellationReason = reason;
+
+  this.cancelledAt = new Date();
+
+  return this.save();
+};
+
+/*
+|--------------------------------------------------------------------------
+| STATIC METHODS
+|--------------------------------------------------------------------------
+*/
+
+bookingSchema.statics.findUpcoming = function () {
+  return this.find({
+    status: {
+      $in: [
+        "confirmed",
+        "assigned",
+        "ongoing",
+      ],
+    },
+    travelDate: {
+      $gte: new Date(),
+    },
+    isDeleted: false,
+  });
+};
+
+bookingSchema.statics.findCompleted = function () {
+  return this.find({
+    status: "completed",
+    isDeleted: false,
+  });
+};
+
+bookingSchema.statics.findPendingPayments = function () {
+  return this.find({
+    paymentStatus: {
+      $in: [
+        "pending",
+        "partial",
+      ],
+    },
+    isDeleted: false,
+  });
+};
 
 /*
 |--------------------------------------------------------------------------
@@ -1112,97 +828,88 @@ this.depositAmount
 |--------------------------------------------------------------------------
 */
 
-
 bookingSchema.index({
-
-customer:1,
-
-createdAt:-1
-
+  customer: 1,
+  createdAt: -1,
 });
 
-
-
 bookingSchema.index({
-
-tour:1,
-
-travelDate:1
-
+  agent: 1,
 });
 
-
-
 bookingSchema.index({
-
-assignedGuide:1
-
+  travelDate: 1,
 });
 
-
-
 bookingSchema.index({
-
-assignedDriver:1
-
+  bookingNumber: 1,
 });
 
-
-
 bookingSchema.index({
-
-assignedVehicle:1
-
+  paymentReference: 1,
 });
 
-
-
 bookingSchema.index({
-
-paymentStatus:1,
-
-status:1
-
+  transactionId: 1,
 });
 
-
-
 bookingSchema.index({
-
-bookingStatus:1,
-
-createdAt:-1
-
+  paymentStatus: 1,
 });
 
-
-
 bookingSchema.index({
-
-commissionStatus:1
-
+  status: 1,
 });
 
+bookingSchema.index({
+  assignedGuide: 1,
+});
 
+bookingSchema.index({
+  assignedDriver: 1,
+});
 
+bookingSchema.index({
+  assignedVehicle: 1,
+});
 
+bookingSchema.index({
+  createdAt: -1,
+});
 
+bookingSchema.index({
+  isDeleted: 1,
+});
 
+bookingSchema.index({
+  refundStatus: 1,
+});
 
+bookingSchema.index({
+  commissionStatus: 1,
+});
 
+bookingSchema.index({
+  customer: 1,
+  travelDate: 1,
+});
+
+bookingSchema.index({
+  tour: 1,
+  travelDate: 1,
+});
+
+/*
+|--------------------------------------------------------------------------
+| EXPORT MODEL
+|--------------------------------------------------------------------------
+*/
 
 const Booking =
-
-mongoose.models.Booking ||
-
-mongoose.model(
-
-"Booking",
-
-bookingSchema
-
-);
-
-
+  mongoose.models.Booking ||
+  mongoose.model(
+    "Booking",
+    bookingSchema
+  );
 
 export default Booking;

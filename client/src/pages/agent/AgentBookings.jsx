@@ -1,173 +1,427 @@
+// client/src/pages/agent/AgentBookings.jsx
+
+
 import useAgentBookings
 from "../../hooks/useAgentBookings";
+
+
+
 
 
 
 export default function AgentBookings(){
 
 
-const {
 
-data,
+    const {
 
-isLoading
+        data = [],
 
-}
+        isLoading,
 
-=
-useAgentBookings();
+        isError
 
 
+    } = useAgentBookings();
 
-if(isLoading)
 
-return <div>
-Loading bookings...
-</div>
 
 
 
-return (
 
-<div>
 
 
-<h1
-className="
-text-2xl
-font-bold
-mb-6
-">
 
-My Bookings
+    if(isLoading)
 
-</h1>
+    return (
 
+        <div className="p-6">
 
+            Loading bookings...
 
-<div
-className="
-bg-white
-rounded-xl
-shadow
-overflow-hidden
-"
->
+        </div>
 
+    );
 
-<table
-className="
-w-full
-"
->
 
 
-<thead>
 
-<tr
-className="
-border-b
-"
->
 
-<th>
-Customer
-</th>
 
 
-<th>
-Tour
-</th>
 
 
-<th>
-Amount
-</th>
+    if(isError)
 
+    return (
 
-<th>
-Status
-</th>
+        <div className="
+            p-6
+            text-red-600
+        ">
 
+            Failed to load bookings
 
-</tr>
+        </div>
 
-</thead>
+    );
 
 
 
-<tbody>
 
 
-{
 
-data.map((booking)=>(
 
 
-<tr
-key={booking._id}
-className="
-border-b
-"
->
 
+    return (
 
-<td>
 
-{
-booking.customer.name
-}
+        <div className="p-6">
 
-</td>
 
 
 
-<td>
 
-{
-booking.tourPackage.title
-}
+            <h1 className="
+                text-2xl
+                font-bold
+                mb-6
+            ">
 
-</td>
 
+                My Bookings
 
 
-<td>
+            </h1>
 
-KES {booking.totalAmount.toLocaleString()}
 
-</td>
 
 
 
-<td>
 
-{
-booking.bookingStatus
-}
 
-</td>
 
 
-</tr>
+            <div className="
+                bg-white
+                rounded-xl
+                shadow
+                overflow-hidden
+            ">
 
 
-))
 
-}
 
 
-</tbody>
 
 
-</table>
 
+                <table className="
+                    w-full
+                ">
 
-</div>
 
 
-</div>
+                    <thead className="
+                        bg-gray-100
+                    ">
 
-)
+
+
+                        <tr className="
+                            border-b
+                        ">
+
+
+
+                            <th className="p-4 text-left">
+
+                                Customer
+
+                            </th>
+
+
+
+
+                            <th className="p-4 text-left">
+
+                                Tour
+
+                            </th>
+
+
+
+
+                            <th className="p-4 text-left">
+
+                                Amount
+
+                            </th>
+
+
+
+
+                            <th className="p-4 text-left">
+
+                                Status
+
+                            </th>
+
+
+
+
+                        </tr>
+
+
+
+                    </thead>
+
+
+
+
+
+
+
+
+
+                    <tbody>
+
+
+
+
+                    {
+
+                        data.length === 0 ? (
+
+
+
+                            <tr>
+
+
+                                <td
+
+                                colSpan="4"
+
+                                className="
+                                    p-6
+                                    text-center
+                                    text-gray-500
+                                "
+
+                                >
+
+
+                                    No bookings found
+
+
+                                </td>
+
+
+
+                            </tr>
+
+
+
+                        ) : (
+
+
+
+                            data.map((booking)=>(
+
+
+
+                                <tr
+
+
+                                key={booking._id}
+
+
+                                className="
+                                    border-b
+                                "
+
+
+
+                                >
+
+
+
+
+
+
+
+                                    <td className="p-4">
+
+
+
+                                        {
+
+                                            booking.customer?.name ||
+
+                                            booking.customerSnapshot?.name ||
+
+                                            "Unknown"
+
+                                        }
+
+
+
+                                    </td>
+
+
+
+
+
+
+
+
+
+                                    <td className="p-4">
+
+
+
+                                        {
+
+                                            booking.tourPackage?.title ||
+
+                                            booking.tour?.title ||
+
+                                            "Tour unavailable"
+
+                                        }
+
+
+
+                                    </td>
+
+
+
+
+
+
+
+
+
+                                    <td className="p-4">
+
+
+
+                                        KES{" "}
+
+                                        {
+
+                                            Number(
+
+                                                booking.totalAmount ||
+
+                                                booking.amount ||
+
+                                                0
+
+                                            )
+
+                                            .toLocaleString()
+
+                                        }
+
+
+
+                                    </td>
+
+
+
+
+
+
+
+
+
+                                    <td className="p-4">
+
+
+
+                                        <span className="
+                                            px-3
+                                            py-1
+                                            rounded-full
+                                            bg-green-100
+                                        ">
+
+
+
+                                            {
+
+                                                booking.bookingStatus ||
+
+                                                booking.status ||
+
+                                                "Pending"
+
+                                            }
+
+
+
+                                        </span>
+
+
+
+
+                                    </td>
+
+
+
+
+
+
+
+                                </tr>
+
+
+
+
+
+
+                            ))
+
+
+
+                        )
+
+                    }
+
+
+
+
+
+                    </tbody>
+
+
+
+
+
+
+                </table>
+
+
+
+
+
+
+
+            </div>
+
+
+
+
+
+
+
+        </div>
+
+
+    );
+
 
 }

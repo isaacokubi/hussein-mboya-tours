@@ -1,110 +1,104 @@
-import axios from "axios";
+// client/src/services/tourAssignmentService.js
 
+import api from "./axios";
 
-const API = axios.create({
+/*
+|--------------------------------------------------------------------------
+| TOURS
+|--------------------------------------------------------------------------
+*/
 
-baseURL:
-import.meta.env.VITE_API_URL + "/api"
-
-});
-
-
-
-API.interceptors.request.use(
-
-(config)=>{
-
-
-const token =
-localStorage.getItem("token");
-
-
-if(token){
-
-config.headers.Authorization =
-`Bearer ${token}`;
-
-}
-
-
-return config;
-
-
-}
-
-);
-
-
-
-
+// ============================================================
 // GET TOURS
+// ============================================================
 
-export const getTours = ()=>
+export const getTours = async (params = {}) => {
+  const { data } = await api.get(
+    "/tours",
+    {
+      params,
+    }
+  );
 
+  return data;
+};
 
-API.get(
-"/tours"
-);
+/*
+|--------------------------------------------------------------------------
+| STAFF
+|--------------------------------------------------------------------------
+*/
 
+// ============================================================
+// GET GUIDES
+// ============================================================
 
+export const getGuides = async () => {
+  const { data } = await api.get(
+    "/staff",
+    {
+      params: {
+        position: "guide",
+      },
+    }
+  );
 
+  return data;
+};
 
+// ============================================================
+// GET DRIVERS
+// ============================================================
 
-// GET STAFF
+export const getDrivers = async () => {
+  const { data } = await api.get(
+    "/staff",
+    {
+      params: {
+        position: "driver",
+      },
+    }
+  );
 
-export const getGuides = ()=>
+  return data;
+};
 
+/*
+|--------------------------------------------------------------------------
+| VEHICLES
+|--------------------------------------------------------------------------
+*/
 
-API.get(
-"/staff?position=guide"
-);
-
-
-
-
-export const getDrivers = ()=>
-
-
-API.get(
-"/staff?position=driver"
-);
-
-
-
-
-
+// ============================================================
 // GET VEHICLES
+// ============================================================
 
-export const getVehicles = ()=>
+export const getVehicles = async () => {
+  const { data } = await api.get(
+    "/vehicles"
+  );
 
+  return data;
+};
 
-API.get(
-"/vehicles"
-);
+/*
+|--------------------------------------------------------------------------
+| TOUR ASSIGNMENT
+|--------------------------------------------------------------------------
+*/
 
-
-
-
-
+// ============================================================
 // ASSIGN TOUR
+// ============================================================
 
-export const assignTour = (
+export const assignTour = async (
+  tourId,
+  assignmentData
+) => {
+  const { data } = await api.put(
+    `/tours/${tourId}/assign`,
+    assignmentData
+  );
 
-id,
-
-data
-
-)=>
-
-
-API.put(
-
-`/tours/${id}/assign`,
-
-data
-
-);
-
-
-
-export default API;
+  return data;
+};

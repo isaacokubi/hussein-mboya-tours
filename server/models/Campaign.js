@@ -1,86 +1,327 @@
 import mongoose from "mongoose";
 
+/*
+|--------------------------------------------------------------------------
+| CAMPAIGN SCHEMA
+|--------------------------------------------------------------------------
+*/
 
-const campaignSchema =
-new mongoose.Schema(
-{
+const campaignSchema = new mongoose.Schema(
+  {
+    /*
+    |--------------------------------------------------------------------------
+    | BASIC INFORMATION
+    |--------------------------------------------------------------------------
+    */
 
-name:{
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 150,
+    },
 
-type:String,
+    description: {
+      type: String,
+      default: "",
+      trim: true,
+    },
 
-required:true
+    /*
+    |--------------------------------------------------------------------------
+    | CAMPAIGN TYPE
+    |--------------------------------------------------------------------------
+    */
 
-},
+    type: {
+      type: String,
+      enum: [
+        "email",
+        "sms",
+        "whatsapp",
+        "push_notification",
+      ],
+      default: "email",
+      index: true,
+    },
 
+    /*
+    |--------------------------------------------------------------------------
+    | CONTENT
+    |--------------------------------------------------------------------------
+    */
 
-subject:String,
+    subject: {
+      type: String,
+      trim: true,
+      default: "",
+    },
 
+    message: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
-message:String,
+    htmlContent: {
+      type: String,
+      default: "",
+    },
 
+    attachments: [
+      {
+        type: String,
+      },
+    ],
 
-audience:{
+    /*
+    |--------------------------------------------------------------------------
+    | AUDIENCE
+    |--------------------------------------------------------------------------
+    */
 
-type:String,
+    audience: {
+      type: String,
+      enum: [
+        "all",
+        "new",
+        "vip",
+        "regular",
+        "corporate",
+        "agents",
+        "staff",
+        "custom",
+      ],
+      default: "all",
+      index: true,
+    },
 
-enum:[
+    recipients: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
 
-"all",
+    /*
+    |--------------------------------------------------------------------------
+    | STATUS
+    |--------------------------------------------------------------------------
+    */
 
-"new",
+    status: {
+      type: String,
+      enum: [
+        "draft",
+        "scheduled",
+        "sending",
+        "sent",
+        "failed",
+        "cancelled",
+      ],
+      default: "draft",
+      index: true,
+    },
 
-"vip",
+    /*
+    |--------------------------------------------------------------------------
+    | SCHEDULING
+    |--------------------------------------------------------------------------
+    */
 
-"regular",
+    scheduledAt: {
+      type: Date,
+      default: null,
+    },
 
-"corporate"
+    startedAt: {
+      type: Date,
+      default: null,
+    },
 
-]
+    completedAt: {
+      type: Date,
+      default: null,
+    },
 
-},
+    /*
+    |--------------------------------------------------------------------------
+    | DELIVERY STATISTICS
+    |--------------------------------------------------------------------------
+    */
 
+    totalRecipients: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
 
-status:{
+    sentCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
 
-type:String,
+    deliveredCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
 
-enum:[
+    failedCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
 
-"draft",
+    openedCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
 
-"scheduled",
+    clickedCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
 
-"sent"
+    unsubscribedCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
 
-],
+    /*
+    |--------------------------------------------------------------------------
+    | CREATED BY
+    |--------------------------------------------------------------------------
+    */
 
-default:"draft"
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
 
-},
+    /*
+    |--------------------------------------------------------------------------
+    | SOFT DELETE
+    |--------------------------------------------------------------------------
+    */
 
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
 
-scheduledAt:Date,
-
-
-sentCount:{
-
-type:Number,
-
-default:0
-
-}
-
-},
-{
-timestamps:true
-}
-
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
+  },
+  {
+    timestamps: true,
+    toJSON: {
+      virtuals: true,
+    },
+    toObject: {
+      virtuals: true,
+    },
+  }
 );
 
+/*
+|--------------------------------------------------------------------------
+| VIRTUALS
+|--------------------------------------------------------------------------
+*/
 
+campaignSchema.virtual("openRate").get(function () {
+  if (!this.sentCount) return 0;
 
-export default mongoose.model(
-"Campaign",
-campaignSchema
-);
+  return Number(
+    ((this.openedCount / this.sentCount) * 100).toFixed(2)
+  );
+});
+
+campaignSchema.virtual("clickRate").get(function () {
+  if (!this.sentCount) return 0;
+
+  return Number(
+    ((this.clickedCount / this.sentCount) * 100).toFixed(2)
+  );
+});
+
+campaignSchema.virtual("deliveryRate").get(function () {
+  if (!this.sentCount) return 0;
+
+  return Number(
+    ((this.deliveredCount / this.sentCount) * 100).toFixed(2)
+  );
+});
+
+/*
+|--------------------------------------------------------------------------
+| INSTANCE METHODS
+|--------------------------------------------------------------------------
+*/
+
+campaignSchema.methods.markSending = function () {
+  this.status = "sending";
+  this.startedAt = new Date();
+  return this.save();
+};
+
+campaignSchema.methods.markCompleted = function () {
+  this.status = "sent";
+  this.completedAt = new Date();
+  return this.save();
+};
+
+/*
+|--------------------------------------------------------------------------
+| INDEXES
+|--------------------------------------------------------------------------
+*/
+
+campaignSchema.index({
+  status: 1,
+});
+
+campaignSchema.index({
+  audience: 1,
+});
+
+campaignSchema.index({
+  type: 1,
+});
+
+campaignSchema.index({
+  scheduledAt: 1,
+});
+
+campaignSchema.index({
+  createdBy: 1,
+});
+
+campaignSchema.index({
+  createdAt: -1,
+});
+
+campaignSchema.index({
+  isDeleted: 1,
+});
+
+/*
+|--------------------------------------------------------------------------
+| EXPORT MODEL
+|--------------------------------------------------------------------------
+*/
+
+const Campaign =
+  mongoose.models.Campaign ||
+  mongoose.model("Campaign", campaignSchema);
+
+export default Campaign;

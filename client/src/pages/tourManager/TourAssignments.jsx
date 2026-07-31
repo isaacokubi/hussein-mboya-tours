@@ -1,24 +1,24 @@
+// client/src/pages/tour-manager/TourAssignments.jsx
+
 import {
-useEffect,
-useState
+  useState
 } from "react";
 
 
 import {
+  useQuery,
+  useMutation,
+  useQueryClient
+} from "@tanstack/react-query";
 
-getTours,
 
-getGuides,
-
-getDrivers,
-
-getVehicles,
-
-assignTour
-
-}
-from "../../api/tourAssignmentApi";
-
+import {
+  getTours,
+  getGuides,
+  getDrivers,
+  getVehicles,
+  assignTour
+} from "../../api/tourAssignmentApi";
 
 
 
@@ -26,452 +26,570 @@ from "../../api/tourAssignmentApi";
 export default function TourAssignments(){
 
 
-const [tours,setTours]=useState([]);
+  const queryClient = useQueryClient();
 
-const [guides,setGuides]=useState([]);
 
-const [drivers,setDrivers]=useState([]);
 
-const [vehicles,setVehicles]=useState([]);
+  const [assignments,setAssignments] = useState({});
 
 
 
 
+  const {
+    data: tours = [],
+    isLoading: toursLoading
+  } = useQuery({
 
-const loadData = async()=>{
+    queryKey:[
+      "assignment-tours"
+    ],
 
+    queryFn: async()=>{
 
-const [
+      const res = await getTours();
 
-tourRes,
+      return res.data.tours || res.data || [];
 
-guideRes,
+    }
 
-driverRes,
+  });
 
-vehicleRes
 
-]=await Promise.all([
 
 
-getTours(),
 
-getGuides(),
+  const {
+    data: guides = []
+  } = useQuery({
 
-getDrivers(),
+    queryKey:[
+      "assignment-guides"
+    ],
 
-getVehicles()
+    queryFn: async()=>{
 
+      const res = await getGuides();
 
-]);
+      return res.data.users || res.data.staff || [];
 
+    }
 
+  });
 
-setTours(
-tourRes.data.tours
-||
-tourRes.data
-);
 
 
 
-setGuides(
-guideRes.data.staff
-||
-[]
-);
 
+  const {
+    data: drivers = []
+  } = useQuery({
 
+    queryKey:[
+      "assignment-drivers"
+    ],
 
-setDrivers(
-driverRes.data.staff
-||
-[]
-);
+    queryFn: async()=>{
 
+      const res = await getDrivers();
 
+      return res.data.users || res.data.staff || [];
 
-setVehicles(
-vehicleRes.data.vehicles
-||
-[]
-);
+    }
 
+  });
 
 
-};
 
 
 
+  const {
+    data: vehicles = []
+  } = useQuery({
 
+    queryKey:[
+      "assignment-vehicles"
+    ],
 
+    queryFn: async()=>{
 
+      const res = await getVehicles();
 
-useEffect(()=>{
+      return res.data.vehicles || [];
 
+    }
 
-loadData();
+  });
 
 
-},[]);
 
 
 
 
 
 
+  const mutation = useMutation({
 
-const handleAssign = async(
+    mutationFn:({
+      tourId,
+      payload
+    })=>
 
-tourId,
+      assignTour(
+        tourId,
+        payload
+      ),
 
-guideId,
 
-driverId,
 
-vehicleId
+    onSuccess:()=>{
 
-)=>{
+      alert(
+        "Tour assigned successfully"
+      );
 
 
-await assignTour(
+      queryClient.invalidateQueries({
 
-tourId,
+        queryKey:[
+          "assignment-tours"
+        ]
 
-{
+      });
 
-guideId,
 
-driverId,
+    }
 
-vehicleId
 
-}
 
-);
+  });
 
 
 
-alert(
-"Tour assigned successfully"
-);
 
 
 
-loadData();
 
 
-};
+  const handleChange=(tourId,field,value)=>{
 
 
+    setAssignments(prev=>({
 
 
+      ...prev,
 
 
-return (
+      [tourId]:{
 
-<div className="p-6">
 
+        ...prev[tourId],
 
-<h1
-className="
-text-3xl
-font-bold
-mb-8
-"
->
 
-Tour Assignment Management
+        [field]:value
 
-</h1>
 
+      }
 
 
+    }));
 
 
-<div className="space-y-6">
+  };
 
 
 
-{
-tours.map(tour=>(
 
 
-<div
 
-key={tour._id}
 
-className="
-bg-white
-shadow
-rounded-xl
-p-6
-"
 
->
+  const handleAssign=(tourId)=>{
 
 
-<h2
-className="
-text-xl
-font-bold
-"
->
+    const selected =
+      assignments[tourId] || {};
 
-{tour.title}
 
-</h2>
 
+    mutation.mutate({
 
+      tourId,
 
-<p>
 
-Status:
+      payload:{
 
-<span
-className="
-ml-2
-font-semibold
-"
->
 
-{
-tour.assignmentStatus
-||
-"pending"
-}
+        guideId:selected.guideId,
 
-</span>
 
-</p>
+        driverId:selected.driverId,
 
 
+        vehicleId:selected.vehicleId
 
 
+      }
 
-<div
-className="
-grid
-grid-cols-3
-gap-4
-mt-5
-"
->
 
+    });
 
-<select
-id={`guide-${tour._id}`}
-className="border p-3 rounded"
->
 
+  };
 
-<option>
 
-Select Guide
 
-</option>
 
 
-{
-guides.map(g=>(
 
 
-<option
 
-key={g._id}
 
-value={g._id}
+  if(toursLoading){
 
->
 
-{g.name}
+    return (
 
-</option>
+      <div className="p-6">
 
+        Loading assignments...
 
-))
+      </div>
 
-}
+    );
 
+  }
 
 
-</select>
 
 
 
 
 
-<select
-id={`driver-${tour._id}`}
-className="border p-3 rounded"
->
+  return (
 
+    <div className="p-6">
 
-<option>
 
-Select Driver
 
-</option>
+      <h1 className="
+        text-3xl
+        font-bold
+        mb-8
+      ">
 
+        Tour Assignment Management
 
-{
-drivers.map(d=>(
+      </h1>
 
 
-<option
 
-key={d._id}
 
-value={d._id}
 
->
+      <div className="space-y-6">
 
-{d.name}
 
-</option>
+        {
+          tours.map((tour)=>(
 
 
-))
+            <div
 
-}
+              key={tour._id}
 
+              className="
+                bg-white
+                shadow
+                rounded-xl
+                p-6
+              "
 
+            >
 
-</select>
 
 
+              <h2 className="
+                text-xl
+                font-bold
+              ">
 
+                {tour.title}
 
+              </h2>
 
 
-<select
-id={`vehicle-${tour._id}`}
-className="border p-3 rounded"
->
 
 
-<option>
+              <p className="mt-2">
 
-Select Vehicle
+                Status:
 
-</option>
+                <span className="
+                  ml-2
+                  font-semibold
+                ">
 
+                  {
+                    tour.assignmentStatus ||
+                    tour.status ||
+                    "pending"
+                  }
 
-{
-vehicles.map(v=>(
+                </span>
 
+              </p>
 
-<option
 
-key={v._id}
 
-value={v._id}
 
->
 
-{v.name}
 
--
-{v.registrationNumber}
 
-</option>
+              <div className="
+                grid
+                md:grid-cols-3
+                gap-4
+                mt-5
+              ">
 
 
-))
 
-}
 
+                <select
 
+                  value={
+                    assignments[tour._id]?.guideId || ""
+                  }
 
-</select>
+                  onChange={(e)=>
+                    handleChange(
+                      tour._id,
+                      "guideId",
+                      e.target.value
+                    )
+                  }
 
+                  className="
+                    border
+                    p-3
+                    rounded
+                  "
 
+                >
 
-</div>
+                  <option value="">
+                    Select Guide
+                  </option>
 
 
+                  {
+                    guides.map(guide=>(
 
+                      <option
 
+                        key={guide._id}
 
+                        value={guide._id}
 
-<button
+                      >
 
+                        {guide.name}
 
-onClick={()=>{
+                      </option>
 
+                    ))
+                  }
 
-const guide =
-document.getElementById(
-`guide-${tour._id}`
-).value;
 
+                </select>
 
 
-const driver =
-document.getElementById(
-`driver-${tour._id}`
-).value;
 
 
 
-const vehicle =
-document.getElementById(
-`vehicle-${tour._id}`
-).value;
 
 
 
-handleAssign(
 
-tour._id,
+                <select
 
-guide,
+                  value={
+                    assignments[tour._id]?.driverId || ""
+                  }
 
-driver,
+                  onChange={(e)=>
+                    handleChange(
+                      tour._id,
+                      "driverId",
+                      e.target.value
+                    )
+                  }
 
-vehicle
+                  className="
+                    border
+                    p-3
+                    rounded
+                  "
 
-);
+                >
 
+                  <option value="">
+                    Select Driver
+                  </option>
 
-}}
 
+                  {
+                    drivers.map(driver=>(
 
-className="
-mt-5
-bg-green-700
-text-white
-px-5
-py-2
-rounded-lg
-"
+                      <option
 
+                        key={driver._id}
 
->
+                        value={driver._id}
 
-Assign Resources
+                      >
 
-</button>
+                        {driver.name}
 
+                      </option>
 
+                    ))
+                  }
 
 
+                </select>
 
-</div>
 
 
-))
 
-}
 
 
 
-</div>
 
 
-</div>
+                <select
 
-);
+                  value={
+                    assignments[tour._id]?.vehicleId || ""
+                  }
+
+                  onChange={(e)=>
+                    handleChange(
+                      tour._id,
+                      "vehicleId",
+                      e.target.value
+                    )
+                  }
+
+                  className="
+                    border
+                    p-3
+                    rounded
+                  "
+
+                >
+
+                  <option value="">
+                    Select Vehicle
+                  </option>
+
+
+                  {
+                    vehicles.map(vehicle=>(
+
+                      <option
+
+                        key={vehicle._id}
+
+                        value={vehicle._id}
+
+                      >
+
+                        {vehicle.name}
+                        {" - "}
+                        {
+                          vehicle.registrationNumber ||
+                          vehicle.registration
+                        }
+
+                      </option>
+
+                    ))
+                  }
+
+
+                </select>
+
+
+
+
+
+              </div>
+
+
+
+
+
+
+
+              <button
+
+
+                onClick={()=>
+                  handleAssign(
+                    tour._id
+                  )
+                }
+
+
+                disabled={
+                  mutation.isPending
+                }
+
+
+                className="
+                  mt-5
+                  bg-green-700
+                  hover:bg-green-800
+                  text-white
+                  px-5
+                  py-2
+                  rounded-lg
+                  disabled:opacity-50
+                "
+
+              >
+
+                {
+                  mutation.isPending
+                  ?
+                  "Assigning..."
+                  :
+                  "Assign Resources"
+                }
+
+
+              </button>
+
+
+
+
+
+            </div>
+
+
+          ))
+
+        }
+
+
+
+      </div>
+
+
+
+    </div>
+
+  );
 
 
 }

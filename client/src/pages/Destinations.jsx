@@ -1,11 +1,19 @@
-import { useQuery } from "@tanstack/react-query";
+import {
+  useQuery
+} from "@tanstack/react-query";
+
 
 import api from "../api/axios";
+
 
 import DestinationCard from "../components/destinations/DestinationCard";
 
 
+
+
+
 export default function Destinations() {
+
 
 
   const {
@@ -14,89 +22,287 @@ export default function Destinations() {
 
     isLoading,
 
+    error
+
   } = useQuery({
 
-    queryKey:["destinations"],
+
+    queryKey: [
+
+      "destinations"
+
+    ],
+
 
 
     queryFn: async()=>{
 
-      const res = await api.get("/destinations");
 
-      return res.data;
+      const response =
+
+      await api.get(
+        "/destinations"
+      );
+
+
+
+      return (
+
+        response.data.destinations ||
+
+        response.data ||
+
+        []
+
+      );
+
 
     },
+
+
+
+    staleTime:
+
+    1000 * 60 * 10,
+
 
   });
 
 
 
 
+
+
+
+
+
   if(isLoading){
+
 
     return (
 
-      <div className="p-8 text-center">
+      <div
+        className="
+        min-h-screen
+        flex
+        items-center
+        justify-center
+        "
+      >
 
-        <p className="text-xl font-semibold">
+        <p
+          className="
+          text-xl
+          font-semibold
+          "
+        >
+
           Loading destinations...
+
         </p>
+
 
       </div>
 
     );
+
 
   }
 
 
 
 
+
+
+
+
+
+  if(error){
+
+
+    return (
+
+      <div
+        className="
+        min-h-screen
+        flex
+        items-center
+        justify-center
+        text-red-600
+        font-semibold
+        "
+      >
+
+        Failed to load destinations.
+
+      </div>
+
+    );
+
+
+  }
+
+
+
+
+
+
+
+
+
   return (
 
-    <div className="p-8">
-
-
-      <h1 className="
-      text-5xl
-      font-bold
-      mb-10
-      ">
-
-        Explore Destinations
-
-      </h1>
+    <div
+      className="
+      min-h-screen
+      bg-gray-100
+      p-6
+      md:p-10
+      "
+    >
 
 
 
 
 
-      <div className="
-      grid
-      md:grid-cols-3
-      gap-8
-      ">
+      <div
+        className="
+        max-w-7xl
+        mx-auto
+        "
+      >
 
 
-        {data.map((destination)=>(
+
+        <div
+          className="
+          mb-10
+          "
+        >
 
 
-          <DestinationCard
+          <h1
+            className="
+            text-4xl
+            md:text-5xl
+            font-bold
+            text-gray-800
+            "
+          >
 
-            key={destination._id}
+            Explore Destinations
 
-            destination={destination}
-
-          />
+          </h1>
 
 
-        ))}
+
+          <p
+            className="
+            text-gray-500
+            mt-3
+            "
+          >
+
+            Discover amazing places and unforgettable experiences with Hussein Mboya Tours.
+
+          </p>
+
+
+
+        </div>
+
+
+
+
+
+
+
+
+
+        {
+
+          data.length === 0
+
+          ?
+
+          (
+
+            <div
+              className="
+              bg-white
+              rounded-xl
+              shadow
+              p-10
+              text-center
+              text-gray-500
+              "
+            >
+
+              No destinations available.
+
+            </div>
+
+          )
+
+
+          :
+
+
+          (
+
+            <div
+              className="
+              grid
+              sm:grid-cols-2
+              lg:grid-cols-3
+              gap-8
+              "
+            >
+
+
+
+              {
+
+                data.map((destination)=>(
+
+
+                  <DestinationCard
+
+
+                    key={destination._id}
+
+
+                    destination={destination}
+
+
+                  />
+
+
+                ))
+
+
+              }
+
+
+
+            </div>
+
+
+          )
+
+
+        }
+
 
 
       </div>
 
 
+
     </div>
 
+
   );
+
 
 }

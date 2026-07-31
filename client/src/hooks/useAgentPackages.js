@@ -1,43 +1,99 @@
-import {
-useQuery
-}
-from "@tanstack/react-query";
-
+// client/src/hooks/useAgentPackages.js
 
 import {
-getPackages
-}
-from "../api/packageApi";
+  useQuery
+} from "@tanstack/react-query";
+
+
+import {
+  getPackages
+} from "../api/packageApi";
 
 
 
-export default function useAgentPackages(params){
+export default function useAgentPackages(
+  params = {}
+) {
 
 
-return useQuery({
+  return useQuery({
 
-queryKey:[
-"agent-packages",
-params
-],
+    /*
+    |--------------------------------------------------------------------------
+    | CACHE KEY
+    |--------------------------------------------------------------------------
+    */
 
+    queryKey: [
 
-queryFn:
+      "agent-packages",
 
-async()=>{
+      params
 
-
-const res =
-await getPackages(params);
-
-
-return res.data.packages;
+    ],
 
 
-}
 
 
-});
+
+    /*
+    |--------------------------------------------------------------------------
+    | FETCH PACKAGES
+    |--------------------------------------------------------------------------
+    */
+
+    queryFn: async()=>{
+
+
+      const response =
+        await getPackages(params);
+
+
+
+      return (
+
+        response?.data?.packages
+
+        ||
+
+        response?.packages
+
+        ||
+
+        response?.data
+
+        ||
+
+        []
+
+      );
+
+
+    },
+
+
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | PERFORMANCE SETTINGS
+    |--------------------------------------------------------------------------
+    */
+
+    staleTime:
+
+      1000 * 60 * 5,
+
+
+
+    retry:
+
+      2
+
+
+
+  });
 
 
 }

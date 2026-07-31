@@ -1,38 +1,50 @@
+// server/routes/adminDashboardRoutes.js
+
 import express from "express";
 
+import {
+  dashboardStats,
+} from "../controllers/adminDashboardController.js";
 
 import {
-dashboardStats
-}
-from "../controllers/adminDashboardController.js";
+  protect,
+} from "../middleware/authMiddleware.js";
 
+import {
+  adminMiddleware,
+} from "../middleware/adminMiddleware.js";
 
-import authMiddleware
-from "../middleware/authMiddleware.js";
+const router = express.Router();
 
+/*
+|--------------------------------------------------------------------------
+| ADMIN DASHBOARD ROUTES
+|--------------------------------------------------------------------------
+|
+| All routes require:
+| - Authenticated user
+| - Active account
+| - Admin privileges
+|
+|--------------------------------------------------------------------------
+*/
 
-import adminMiddleware
-from "../middleware/adminMiddleware.js";
+router.use(protect);
+router.use(adminMiddleware);
 
-
-
-const router =
-express.Router();
-
-
+/*
+|--------------------------------------------------------------------------
+| DASHBOARD STATISTICS
+|--------------------------------------------------------------------------
+|
+| GET /api/admin/dashboard/stats
+|
+|--------------------------------------------------------------------------
+*/
 
 router.get(
-
-"/stats",
-
-authMiddleware,
-
-adminMiddleware,
-
-dashboardStats
-
+  "/stats",
+  dashboardStats
 );
-
-
 
 export default router;

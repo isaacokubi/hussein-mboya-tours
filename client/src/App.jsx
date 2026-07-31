@@ -6,41 +6,109 @@ import Footer from "./components/layout/Footer";
 
 import HusseinAIWidget from "./components/HusseinAIWidget";
 
-import { ToastContainer } from "react-toastify";
+
+import {
+  ToastContainer
+} from "react-toastify";
 
 import "react-toastify/dist/ReactToastify.css";
 
 
-export default function App() {
 
-  return (
-
-    <div className="min-h-screen flex flex-col">
-
-      <Navbar />
+export default function App(){
 
 
-      <main className="flex-1">
+return (
 
-        <AppRoutes />
+<div
 
-      </main>
+className="
+min-h-screen
+flex
+flex-col
+bg-gray-50
+"
+
+>
 
 
-      <Footer />
+{/* GLOBAL NAVBAR */}
+
+<Navbar />
 
 
-      {/* AI Assistant Floating Widget */}
-      <HusseinAIWidget />
 
 
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-      />
 
-    </div>
+{/* PAGE CONTENT */}
 
-  );
+<main
+
+className="
+flex-1
+"
+
+>
+
+<AppRoutes />
+
+</main>
+
+
+
+
+
+
+
+{/* FOOTER */}
+
+<Footer />
+
+
+
+
+
+
+
+
+{/* FLOATING AI ASSISTANT */}
+
+<HusseinAIWidget />
+
+
+
+
+
+
+
+{/* GLOBAL NOTIFICATIONS */}
+
+<ToastContainer
+
+position="top-right"
+
+autoClose={3000}
+
+hideProgressBar={false}
+
+newestOnTop
+
+closeOnClick
+
+pauseOnHover
+
+draggable
+
+/>
+
+
+
+
+
+</div>
+
+
+);
+
 
 }

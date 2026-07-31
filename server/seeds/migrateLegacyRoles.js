@@ -4,87 +4,48 @@ import mongoose from "mongoose";
 import User from "../models/User.js";
 import Role from "../models/Role.js";
 
-
 dotenv.config();
 
+const migrateRoles = async () => {
+  try {
+    if (!process.env.MONGODB_URI) {
+      throw new Error("MONGODB_URI is missing.");
+    }
 
+    await mongoose.connect(process.env.MONGODB_URI);
 
-const migrateRoles = async()=>{
+    console.log("✅ MongoDB Connected");
 
+    const users = await User.find();
 
-try{
+    for (const user of users) {
+      const roleName = user.legacyRole || user.role || "customer";
 
+      const role = await Role.findOne({
+        name: roleName,
+      });
 
-await mongoose.connect(
-process.env.MONGODB_URI
-);
+      if (!role) {
+        console.log(`⚠ Role "${roleName}" not found.`);
+        continue;
+      }
 
+      user.role = roleName;      // string role
+      user.roleId = role._id;    // RBAC reference
 
+      await user.save();
 
-const users = await User.find({
-role:null
-});
+      console.log(`✔ ${user.email} -> ${roleName}`);
+    }
 
-
-
-for(const user of users){
-
-
-const roleName = user.legacyRole || "customer";
-
-
-const role = await Role.findOne({
-name:roleName
-});
-
-
-
-if(role){
-
-
-user.role = role._id;
-
-await user.save();
-
-
-console.log(
-`Updated ${user.email} -> ${role.name}`
-);
-
-
-}
-
-
-}
-
-
-
-console.log(
-"Role migration completed"
-);
-
-
-
-process.exit(0);
-
-
-
-}catch(error){
-
-
-console.error(
-error
-);
-
-
-process.exit(1);
-
-
-}
-
-
+    console.log("✅ Role migration completed");
+  } catch (error) {
+    console.error("❌ Migration failed:", error);
+    process.exitCode = 1;
+  } finally {
+    await mongoose.connection.close().catch(() => {});
+    console.log("🔌 MongoDB connection closed");
+  }
 };
-
-
 
 migrateRoles();

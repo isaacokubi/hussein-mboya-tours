@@ -1,93 +1,100 @@
+import fs from "fs/promises";
 import path from "path";
 
-import {
-sendEmail
-}
-from "./emailService.js";
+import { sendEmail } from "./emailService.js";
+import { bookingConfirmationEmail } from "../utils/emailTemplates.js";
+import { createInvoice } from "../utils/createInvoice.js";
 
+/*
+|--------------------------------------------------------------------------
+| SEND BOOKING CONFIRMATION EMAIL
+|--------------------------------------------------------------------------
+*/
 
-import {
-bookingConfirmationEmail
-}
-from "../utils/emailTemplates.js";
+export const sendBookingConfirmation = async (booking) => {
+  let invoicePath = "";
 
+  try {
+    if (!booking) {
+      throw new Error("Booking is required.");
+    }
 
-import {
-createInvoice
-}
-from "../utils/createInvoice.js";
+    if (!booking.contactEmail) {
+      throw new Error("Customer email is missing.");
+    }
 
+    // Ensure uploads directory exists
+    const uploadDir = path.resolve("uploads");
 
+    await fs.mkdir(uploadDir, {
+      recursive: true,
+    });
 
-export const sendBookingConfirmation =
-async(booking)=>{
+    invoicePath = path.join(
+      uploadDir,
+      `${booking.bookingNumber}.pdf`
+    );
 
+    /*
+    |--------------------------------------------------------------------------
+    | GENERATE PDF INVOICE
+    |--------------------------------------------------------------------------
+    */
 
-const invoicePath =
-path.join(
-"uploads",
-`${booking.bookingNumber}.pdf`
-);
+    await createInvoice({
+      booking,
+      filePath: invoicePath,
+    });
 
+    /*
+    |--------------------------------------------------------------------------
+    | SEND EMAIL
+    |--------------------------------------------------------------------------
+    */
 
+    const result = await sendEmail({
+      to: booking.contactEmail,
 
-await createInvoice({
+      subject: "Your Hussein Mboya Tours Booking Confirmation",
 
-booking,
+      html: bookingConfirmationEmail({
+        customerName: booking.contactName,
 
-filePath:
-invoicePath
+        bookingNumber: booking.bookingNumber,
 
-});
+        tourName: booking.tour?.title || "Tour",
 
+        amount: booking.totalAmount,
+      }),
 
+      attachments: [
+        {
+          filename: `Invoice-${booking.bookingNumber}.pdf`,
+          path: invoicePath,
+        },
+      ],
+    });
 
-await sendEmail({
+    /*
+    |--------------------------------------------------------------------------
+    | CLEAN UP GENERATED PDF
+    |--------------------------------------------------------------------------
+    */
 
-to:
-booking.contactEmail,
+    await fs.unlink(invoicePath).catch(() => {});
 
+    return result;
+  } catch (error) {
+    // Delete PDF if something failed
+    if (invoicePath) {
+      await fs.unlink(invoicePath).catch(() => {});
+    }
 
-subject:
-"Your Hussein Mboya Tours Booking Confirmation",
+    console.error(
+      "Booking confirmation email failed:",
+      error.message
+    );
 
-
-html:
-bookingConfirmationEmail({
-
-customerName:
-booking.contactName,
-
-
-bookingNumber:
-booking.bookingNumber,
-
-
-tourName:
-booking.tour.title,
-
-
-amount:
-booking.totalAmount
-
-}),
-
-
-attachments:[
-
-{
-
-filename:
-"invoice.pdf",
-
-path:
-invoicePath
-
-}
-
-]
-
-});
-
-
+    throw error;
+  }
 };

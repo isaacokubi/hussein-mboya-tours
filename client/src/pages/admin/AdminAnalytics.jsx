@@ -1,46 +1,27 @@
 import {
-
-useEffect,
-
-useState
-
-}
-
-from "react";
+    useQuery
+} from "@tanstack/react-query";
 
 
 import {
 
-BarChart,
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    Tooltip,
+    ResponsiveContainer,
+    PieChart,
+    Pie
 
-Bar,
-
-XAxis,
-
-YAxis,
-
-Tooltip,
-
-ResponsiveContainer,
-
-PieChart,
-
-Pie,
-
-Cell
-
-}
-
-from "recharts";
+} from "recharts";
 
 
 import {
-
-getAnalytics
-
+    getAnalytics
 }
-
 from "../../api/analyticsApi";
+
 
 
 
@@ -48,279 +29,344 @@ from "../../api/analyticsApi";
 export default function AdminAnalytics(){
 
 
-const [data,setData]=useState(null);
 
+    const {
+        data,
+        isLoading,
+        isError
 
+    } = useQuery({
 
+        queryKey:[
+            "analytics"
+        ],
 
-useEffect(()=>{
+        queryFn:getAnalytics
 
+    });
 
-getAnalytics()
 
-.then(res=>{
 
 
-setData(
 
-res.data.analytics
 
-);
+    const analytics =
+        data?.analytics || data || {};
 
 
-});
 
 
-},[]);
 
 
 
+    if(isLoading)
 
+    return (
 
-if(!data)
+        <div className="p-10">
 
-return (
+            Loading analytics...
 
-<div className="p-10">
+        </div>
 
-Loading analytics...
+    );
 
-</div>
 
-);
 
 
 
 
 
+    if(isError)
 
+    return (
 
-return (
+        <div className="p-10 text-red-600">
 
-<div className="p-6">
+            Failed to load analytics
 
+        </div>
 
+    );
 
-<h1 className="
-text-3xl
-font-bold
-mb-8
-">
 
-Business Analytics
 
-</h1>
 
 
 
 
 
+    return (
 
 
-<div className="
-grid
-grid-cols-4
-gap-5
-mb-10
-">
+        <div className="p-6">
 
 
 
-<Card
+            <h1
 
-title="Revenue"
+            className="
+                text-3xl
+                font-bold
+                mb-8
+            "
 
-value={`KES ${data.revenue}`}
+            >
 
-/>
+                Business Analytics
 
+            </h1>
 
 
-<Card
 
-title="Customers"
 
-value={data.customers}
 
-/>
 
 
+            <div
 
-<Card
+            className="
+                grid
+                grid-cols-1
+                md:grid-cols-2
+                lg:grid-cols-4
+                gap-5
+                mb-10
+            "
 
-title="Bookings"
+            >
 
-value={data.bookings}
 
-/>
 
+                <Card
 
+                    title="Revenue"
 
-<Card
+                    value={`KES ${analytics.revenue || 0}`}
 
-title="Vehicles"
+                />
 
-value={
 
-data.vehicleStats.reduce(
 
-(a,b)=>a+b.count,
+                <Card
 
-0
+                    title="Customers"
 
-)
+                    value={analytics.customers || 0}
+
+                />
+
+
+
+                <Card
+
+                    title="Bookings"
+
+                    value={analytics.bookings || 0}
+
+                />
+
+
+
+                <Card
+
+                    title="Vehicles"
+
+                    value={
+                        analytics.vehicleStats?.reduce(
+                            (total,item)=>
+                            total + item.count,
+                            0
+                        ) || 0
+                    }
+
+                />
+
+
+
+
+            </div>
+
+
+
+
+
+
+
+
+
+            <h2
+
+            className="
+                text-xl
+                font-bold
+                mb-5
+            "
+
+            >
+
+                Monthly Revenue
+
+            </h2>
+
+
+
+
+
+
+            <div
+
+            className="
+                bg-white
+                p-5
+                rounded-xl
+                shadow
+            "
+
+            >
+
+
+
+                <ResponsiveContainer
+
+                width="100%"
+
+                height={300}
+
+                >
+
+
+                    <BarChart
+
+                    data={
+                        analytics.monthlyRevenue || []
+                    }
+
+                    >
+
+
+                        <XAxis
+
+                        dataKey="_id.month"
+
+                        />
+
+
+                        <YAxis/>
+
+
+                        <Tooltip/>
+
+
+                        <Bar
+
+                        dataKey="revenue"
+
+                        />
+
+
+
+                    </BarChart>
+
+
+
+                </ResponsiveContainer>
+
+
+
+            </div>
+
+
+
+
+
+
+
+
+
+            <h2
+
+            className="
+                text-xl
+                font-bold
+                mt-10
+                mb-5
+            "
+
+            >
+
+                Booking Status
+
+            </h2>
+
+
+
+
+
+
+
+            <div
+
+            className="
+                bg-white
+                p-5
+                rounded-xl
+                shadow
+            "
+
+            >
+
+
+
+                <ResponsiveContainer
+
+                width="100%"
+
+                height={300}
+
+                >
+
+
+                    <PieChart>
+
+
+                        <Pie
+
+                        data={
+                            analytics.bookingStatus || []
+                        }
+
+                        dataKey="count"
+
+                        nameKey="_id"
+
+                        />
+
+
+
+                    </PieChart>
+
+
+
+                </ResponsiveContainer>
+
+
+
+            </div>
+
+
+
+
+
+        </div>
+
+
+    );
+
 
 }
 
-/>
 
-
-
-</div>
-
-
-
-
-
-
-
-
-
-<h2 className="
-text-xl
-font-bold
-mb-5
-">
-
-Monthly Revenue
-
-</h2>
-
-
-
-<div className="
-bg-white
-p-5
-rounded-xl
-shadow
-">
-
-
-<ResponsiveContainer
-
-width="100%"
-
-height={300}
-
->
-
-
-<BarChart
-
-data={data.monthlyRevenue}
-
->
-
-
-<XAxis
-
-dataKey="_id.month"
-
-/>
-
-
-<YAxis/>
-
-
-<Tooltip/>
-
-
-<Bar
-
-dataKey="revenue"
-
-/>
-
-
-</BarChart>
-
-
-</ResponsiveContainer>
-
-
-</div>
-
-
-
-
-
-
-
-
-
-<h2 className="
-text-xl
-font-bold
-mt-10
-mb-5
-">
-
-Booking Status
-
-</h2>
-
-
-
-
-<div className="
-bg-white
-p-5
-rounded-xl
-shadow
-">
-
-
-<ResponsiveContainer
-
-width="100%"
-
-height={300}
-
->
-
-
-<PieChart>
-
-
-<Pie
-
-data={data.bookingStatus}
-
-dataKey="count"
-
-nameKey="_id"
-
-/>
-
-
-</PieChart>
-
-
-</ResponsiveContainer>
-
-
-
-</div>
-
-
-
-
-</div>
-
-
-);
-
-}
 
 
 
@@ -330,46 +376,66 @@ nameKey="_id"
 
 function Card({
 
-title,
+    title,
 
-value
+    value
 
 }){
 
 
-return (
-
-<div className="
-bg-white
-shadow
-rounded-xl
-p-5
-">
+    return (
 
 
-<p className="
-text-gray-500
-">
+        <div
 
-{title}
+        className="
+            bg-white
+            shadow
+            rounded-xl
+            p-5
+        "
 
-</p>
-
-
-<h2 className="
-text-3xl
-font-bold
-">
-
-{value}
-
-</h2>
+        >
 
 
 
-</div>
+            <p
+
+            className="
+                text-gray-500
+            "
+
+            >
+
+                {title}
+
+            </p>
 
 
-);
+
+
+
+            <h2
+
+            className="
+                text-3xl
+                font-bold
+            "
+
+            >
+
+                {value}
+
+            </h2>
+
+
+
+
+
+        </div>
+
+
+    );
+
 
 }

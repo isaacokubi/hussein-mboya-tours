@@ -1,44 +1,93 @@
 import Payment from "../models/Payment.js";
 
+/*
+|--------------------------------------------------------------------------
+| PAYMENT STATISTICS
+|--------------------------------------------------------------------------
+|
+| Returns payment statistics grouped by payment method.
+|
+*/
 
+export const getPaymentStatistics = async () => {
+  const statistics = await Payment.aggregate([
+    {
+      $match: {
+        paymentStatus: "paid",
+      },
+    },
 
-export const getPaymentStatistics =
-async()=>{
+    {
+      $group: {
+        _id: "$method",
 
+        transactionCount: {
+          $sum: 1,
+        },
 
-const result =
-await Payment.aggregate([
+        totalAmount: {
+          $sum: "$amount",
+        },
 
+        averageAmount: {
+          $avg: "$amount",
+        },
+      },
+    },
 
-{
+    {
+      $project: {
+        _id: 0,
 
-$group:{
+        method: "$_id",
 
-_id:"$method",
+        transactionCount: 1,
 
+        totalAmount: {
+          $round: ["$totalAmount", 2],
+        },
 
-count:{
+        averageAmount: {
+          $round: ["$averageAmount", 2],
+        },
+      },
+    },
 
-$sum:1
+    {
+      $sort: {
+        totalAmount: -1,
+      },
+    },
+  ]);
 
-},
+  const totals = await Payment.aggregate([
+    {
+      $match: {
+        paymentStatus: "paid",
+      },
+    },
 
+    {
+      $group: {
+        _id: null,
 
-amount:{
+        totalTransactions: {
+          $sum: 1,
+        },
 
-$sum:"$amount"
+        totalRevenue: {
+          $sum: "$amount",
+        },
+      },
+    },
+  ]);
 
-}
+  return {
+    methods: statistics,
 
-}
-
-}
-
-
-]);
-
-
-return result;
-
-
+    summary: totals[0] || {
+      totalTransactions: 0,
+      totalRevenue: 0,
+    },
+  };
 };

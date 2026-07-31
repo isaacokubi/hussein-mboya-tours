@@ -1,202 +1,509 @@
-import {
-
-useEffect,
-
-useState
-
-}
-
-from "react";
+// client/src/pages/guide/TourGuideDashboard.jsx
 
 
 import {
+    useMutation,
+    useQuery,
+    useQueryClient
+} from "@tanstack/react-query";
 
-getGuideDashboard,
 
-updateTourStatus
+import {
+    toast
+} from "react-toastify";
+
+
+import {
+
+    getGuideDashboard,
+
+    updateTourStatus
 
 }
-
 from "../../api/guideApi";
+
+
+
+
+
 
 
 
 export default function TourGuideDashboard(){
 
 
-const [tours,setTours]=useState([]);
 
+    const queryClient = useQueryClient();
 
 
 
-useEffect(()=>{
 
 
-getGuideDashboard()
 
-.then(res=>{
 
 
-setTours(
+    const {
 
-res.data.tours
+        data,
 
-);
+        isLoading,
 
+        isError
 
-});
+    } = useQuery({
 
 
-},[]);
 
+        queryKey:[
 
+            "guideDashboard"
 
+        ],
 
 
-return (
 
-<div className="p-6">
+        queryFn:getGuideDashboard
 
 
-<h1 className="
-text-3xl
-font-bold
-mb-8
-">
 
-Guide Dashboard
+    });
 
-</h1>
 
 
 
 
 
 
-<div className="space-y-5">
 
 
-{
+    const {
 
-tours.map(tour=>(
+        mutate:startTour
 
+    } = useMutation({
 
-<div
 
-key={tour._id}
 
-className="
-bg-white
-shadow
-rounded-xl
-p-6
-"
+        mutationFn:(id)=>
 
->
+            updateTourStatus(
 
+                id,
 
-<h2 className="
-text-xl
-font-bold
-">
+                "ongoing"
 
-{tour.title}
+            ),
 
-</h2>
 
 
 
-<p>
 
-Status:
+        onSuccess:()=>{
 
-{tour.tourStatus}
 
-</p>
+            queryClient.invalidateQueries({
 
+                queryKey:[
 
+                    "guideDashboard"
 
+                ]
 
-<p>
+            });
 
-Vehicle:
 
-{
 
-tour.assignedVehicle?.name
+            toast.success(
 
-}
+                "Tour started successfully"
 
-</p>
+            );
 
 
+        },
 
 
-<p>
 
-Driver:
+        onError:()=>{
 
-{
 
-tour.assignedDriver?.name
+            toast.error(
 
-}
+                "Failed to update tour status"
 
-</p>
+            );
 
 
+        }
 
 
 
+    });
 
-<button
 
-onClick={()=>
 
 
-updateTourStatus(
 
-tour._id,
 
-"ongoing"
 
-)
 
 
-}
+    const tours =
 
-className="
-bg-green-700
-text-white
-px-4
-py-2
-rounded
-mt-4
-"
+        data?.tours ||
 
->
+        data?.data?.tours ||
 
-Start Tour
+        [];
 
-</button>
 
 
 
-</div>
 
 
-))
 
 
-}
 
+    if(isLoading)
 
-</div>
+    return (
 
+        <div className="p-6">
 
-</div>
+            Loading guide dashboard...
 
-);
+        </div>
+
+    );
+
+
+
+
+
+
+
+
+
+    if(isError)
+
+    return (
+
+        <div className="
+            p-6
+            text-red-600
+        ">
+
+            Failed to load guide dashboard
+
+        </div>
+
+    );
+
+
+
+
+
+
+
+
+
+    return (
+
+
+
+        <div className="p-6">
+
+
+
+
+
+            <h1 className="
+                text-3xl
+                font-bold
+                mb-8
+            ">
+
+
+                Guide Dashboard
+
+
+            </h1>
+
+
+
+
+
+
+
+
+
+            <div className="
+                space-y-5
+            ">
+
+
+
+
+
+            {
+
+                tours.length === 0 ? (
+
+
+
+                    <div className="
+                        bg-white
+                        shadow
+                        rounded-xl
+                        p-6
+                        text-gray-500
+                    ">
+
+
+                        No assigned tours available.
+
+
+                    </div>
+
+
+
+
+                ) : (
+
+
+
+                    tours.map(tour=>(
+
+
+
+
+                        <div
+
+
+                        key={tour._id}
+
+
+                        className="
+                            bg-white
+                            shadow
+                            rounded-xl
+                            p-6
+                        "
+
+
+
+                        >
+
+
+
+
+
+
+
+                            <h2 className="
+                                text-xl
+                                font-bold
+                            ">
+
+
+                                {tour.title}
+
+
+
+                            </h2>
+
+
+
+
+
+
+
+
+
+                            <p className="mt-2">
+
+
+                                Status:
+
+                                <span className="
+                                    ml-2
+                                    font-semibold
+                                ">
+
+
+                                    {
+
+                                        tour.tourStatus ||
+
+                                        "Pending"
+
+                                    }
+
+
+
+                                </span>
+
+
+
+                            </p>
+
+
+
+
+
+
+
+
+
+                            <p className="mt-2">
+
+
+                                Vehicle:
+
+
+                                <span className="font-semibold ml-2">
+
+
+                                    {
+
+                                        tour.assignedVehicle?.name ||
+
+                                        "Not assigned"
+
+                                    }
+
+
+                                </span>
+
+
+
+                            </p>
+
+
+
+
+
+
+
+
+
+                            <p className="mt-2">
+
+
+                                Driver:
+
+
+                                <span className="font-semibold ml-2">
+
+
+                                    {
+
+                                        tour.assignedDriver?.name ||
+
+                                        "Not assigned"
+
+                                    }
+
+
+                                </span>
+
+
+
+                            </p>
+
+
+
+
+
+
+
+
+
+                            <button
+
+
+                                onClick={()=>startTour(tour._id)}
+
+
+
+                                disabled={
+
+                                    tour.tourStatus==="ongoing"
+
+                                }
+
+
+
+                                className="
+                                    bg-green-700
+                                    text-white
+                                    px-4
+                                    py-2
+                                    rounded
+                                    mt-4
+                                    disabled:opacity-50
+                                "
+
+
+
+                            >
+
+
+                                {
+
+                                    tour.tourStatus==="ongoing"
+
+                                    ?
+
+                                    "Tour Started"
+
+                                    :
+
+                                    "Start Tour"
+
+                                }
+
+
+
+                            </button>
+
+
+
+
+
+
+
+                        </div>
+
+
+
+
+
+
+                    ))
+
+
+
+                )
+
+            }
+
+
+
+
+
+            </div>
+
+
+
+
+
+
+
+        </div>
+
+
+    );
 
 
 }

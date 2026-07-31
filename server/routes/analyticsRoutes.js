@@ -1,102 +1,53 @@
+// server/routes/analyticsRoutes.js
+
 import express from "express";
 
+import {
+  getAnalytics,
+  dashboardAnalytics,
+} from "../controllers/analyticsController.js";
 
 import {
-
-    getAnalytics,
-    dashboardAnalytics
-
-}
-
-from "../controllers/analyticsController.js";
-
-
+  protect,
+} from "../middleware/authMiddleware.js";
 
 import {
-
-    protect
-
-}
-
-from "../middleware/authMiddleware.js";
-
-
-
-import {
-
-    roleMiddleware
-
-}
-
-from "../middleware/roleMiddleware.js";
-
-
-
-import {
-
-    adminMiddleware
-
-}
-
-from "../middleware/adminMiddleware.js";
-
-
-
+  adminMiddleware,
+} from "../middleware/adminMiddleware.js";
 
 const router = express.Router();
 
+/*
+|--------------------------------------------------------------------------
+| AUTHORIZATION
+|--------------------------------------------------------------------------
+*/
 
+router.use(protect);
+router.use(adminMiddleware);
 
+/*
+|--------------------------------------------------------------------------
+| ANALYTICS
+|--------------------------------------------------------------------------
+*/
 
-
-// ============================================================
-// FULL ADMIN ANALYTICS
-// ============================================================
-
+/**
+ * GET /api/analytics
+ * Full analytics report
+ */
 router.get(
-
-"/",
-
-protect,
-
-roleMiddleware(
-
-[
-"admin"
-]
-
-),
-
-getAnalytics
-
+  "/",
+  getAnalytics
 );
 
-
-
-
-
-
-
-// ============================================================
-// ADMIN DASHBOARD ANALYTICS
-// ============================================================
-
+/**
+ * GET /api/analytics/dashboard
+ * Dashboard analytics
+ */
 router.get(
-
-"/dashboard",
-
-protect,
-
-adminMiddleware,
-
-dashboardAnalytics
-
+  "/dashboard",
+  dashboardAnalytics
 );
-
-
-
-
-
-
 
 export default router;

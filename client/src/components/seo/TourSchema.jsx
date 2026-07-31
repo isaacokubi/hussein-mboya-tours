@@ -1,62 +1,79 @@
-export default function TourSchema({
-tour
-}){
+import { Helmet } from "react-helmet-async";
 
+const SITE_URL =
+  import.meta.env.VITE_SITE_URL ||
+  "https://www.husseinmboyatours.com";
 
-const schema={
+export default function TourSchema({ tour }) {
+  if (!tour) return null;
 
+  const image =
+    typeof tour.images?.[0] === "object"
+      ? tour.images?.[0]?.url
+      : tour.images?.[0];
 
-"@context":
-"https://schema.org",
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "TouristTrip",
 
+    name: tour.title,
 
-"@type":
-"TouristTrip",
+    description:
+      tour.shortDescription ||
+      tour.description,
 
+    image: image
+      ? image.startsWith("http")
+        ? image
+        : `${SITE_URL}${image}`
+      : undefined,
 
-"name":
-tour.title,
+    url: `${SITE_URL}/tours/${tour.slug || tour._id}`,
 
+    touristType: "Adventure Travelers",
 
-"description":
-tour.description,
+    provider: {
+      "@type": "TravelAgency",
+      name: "Hussein Mboya Tours",
+      url: SITE_URL,
+    },
 
+    offers: {
+      "@type": "Offer",
 
-"image":
-tour.images,
+      price: tour.price,
 
+      priceCurrency: tour.currency || "KES",
 
-"offers":{
+      availability: "https://schema.org/InStock",
 
-"@type":
-"Offer",
+      url: `${SITE_URL}/tours/${tour.slug || tour._id}`,
+    },
 
-"price":
-tour.price,
+    itinerary:
+      tour.itinerary?.map((day) => ({
+        "@type": "TouristAttraction",
+        name:
+          day.title ||
+          day.name ||
+          `Day ${day.day}`,
+        description: day.description,
+      })) || [],
 
-"priceCurrency":
-"KES"
+    aggregateRating: tour.averageRating
+      ? {
+          "@type": "AggregateRating",
+          ratingValue: tour.averageRating,
+          reviewCount: tour.reviewCount || 1,
+        }
+      : undefined,
+  };
 
-}
-
-};
-
-
-
-return (
-
-<script
-
-type="application/ld+json"
-
->
-
-{
-JSON.stringify(schema)
-}
-
-</script>
-
-);
-
+  return (
+    <Helmet>
+      <script type="application/ld+json">
+        {JSON.stringify(schema)}
+      </script>
+    </Helmet>
+  );
 }

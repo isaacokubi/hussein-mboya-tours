@@ -8,84 +8,150 @@ import {
   getPopularTours,
 } from "../services/analyticsService.js";
 
-// ============================================================
-// ADMIN ANALYTICS DASHBOARD
-// ============================================================
+/*
+|--------------------------------------------------------------------------
+| ADMIN ANALYTICS DASHBOARD
+|--------------------------------------------------------------------------
+*/
 
 export const getAnalytics = async (req, res, next) => {
   try {
-    // REVENUE
 
-    const revenue = await getRevenueAnalytics();
+    /*
+    |--------------------------------------------------------------------------
+    | Execute All Queries In Parallel
+    |--------------------------------------------------------------------------
+    */
 
-    // BOOKINGS
+    const [
 
-    const bookings = await getBookingAnalytics();
+      revenue,
 
-    // POPULAR TOURS
+      bookings,
 
-    const popularTours = await getPopularTours();
+      popularTours,
 
-    // TOTAL CUSTOMERS
+      customers,
 
-    const customers = await User.countDocuments({
-      role: "customer",
-    });
+      bookingStatus,
 
-    // BOOKING STATUS
+      monthlyRevenue,
 
-    const bookingStatus = await Booking.aggregate([
-      {
-        $group: {
-          _id: "$status",
+      vehicleStats
 
-          count: {
-            $sum: 1,
+    ] = await Promise.all([
+
+      getRevenueAnalytics(),
+
+      getBookingAnalytics(),
+
+      getPopularTours(),
+
+      User.countDocuments({
+        role: "customer",
+      }),
+
+      Booking.aggregate([
+
+        {
+          $group: {
+            _id: "$bookingStatus",
+
+            count: {
+              $sum: 1,
+            },
           },
         },
-      },
-    ]);
 
-    // MONTHLY BOOKING ANALYTICS
+        {
+          $sort: {
+            count: -1,
+          },
+        },
 
-    const monthlyRevenue = await Booking.aggregate([
-      {
-        $group: {
-          _id: {
-            month: {
-              $month: "$createdAt",
+      ]),
+
+      Booking.aggregate([
+
+        {
+          $match: {
+            paymentStatus: "paid",
+          },
+        },
+
+        {
+          $group: {
+
+            _id: {
+
+              year: {
+                $year: "$createdAt",
+              },
+
+              month: {
+                $month: "$createdAt",
+              },
+
             },
 
-            year: {
-              $year: "$createdAt",
+            revenue: {
+              $sum: "$amount",
             },
+
+            bookings: {
+              $sum: 1,
+            },
+
           },
 
-          revenue: {
-            $sum: "$totalAmount",
+        },
+
+        {
+          $sort: {
+            "_id.year": 1,
+            "_id.month": 1,
           },
         },
-      },
-    ]);
 
-    // VEHICLE UTILIZATION
+      ]),
 
-    const vehicleStats = await Vehicle.aggregate([
-      {
-        $group: {
-          _id: "$status",
+      Vehicle.aggregate([
 
-          count: {
-            $sum: 1,
+        {
+          $group: {
+
+            _id: "$status",
+
+            count: {
+              $sum: 1,
+            },
+
+          },
+
+        },
+
+        {
+          $sort: {
+            count: -1,
           },
         },
-      },
+
+      ])
+
     ]);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Response
+    |--------------------------------------------------------------------------
+    */
 
     res.status(200).json({
+
       success: true,
 
       data: {
+
         revenue,
 
         customers,
@@ -99,37 +165,64 @@ export const getAnalytics = async (req, res, next) => {
         popularTours,
 
         vehicleStats,
+
       },
+
     });
+
   } catch (error) {
+
     next(error);
+
   }
 };
 
-// ============================================================
-// TOUR MANAGER DASHBOARD ANALYTICS
-// ============================================================
+/*
+|--------------------------------------------------------------------------
+| TOUR MANAGER ANALYTICS
+|--------------------------------------------------------------------------
+*/
 
 export const dashboardAnalytics = async (req, res, next) => {
   try {
-    const revenue = await getRevenueAnalytics();
 
-    const bookings = await getBookingAnalytics();
+    const [
 
-    const popularTours = await getPopularTours();
+      revenue,
+
+      bookings,
+
+      popularTours
+
+    ] = await Promise.all([
+
+      getRevenueAnalytics(),
+
+      getBookingAnalytics(),
+
+      getPopularTours()
+
+    ]);
 
     res.status(200).json({
+
       success: true,
 
       data: {
+
         revenue,
 
         bookings,
 
         popularTours,
+
       },
+
     });
+
   } catch (error) {
+
     next(error);
+
   }
 };

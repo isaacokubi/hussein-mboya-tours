@@ -1,40 +1,95 @@
 import AfricasTalking from "africastalking";
 
+/*
+|--------------------------------------------------------------------------
+| AFRICA'S TALKING CONFIGURATION
+|--------------------------------------------------------------------------
+*/
 
-const africastalking =
-AfricasTalking({
-
-apiKey:
-process.env.AT_API_KEY,
-
-
-username:
-process.env.AT_USERNAME
-
+const africasTalking = AfricasTalking({
+  apiKey: process.env.AT_API_KEY,
+  username: process.env.AT_USERNAME,
 });
 
+const sms = africasTalking.SMS;
 
+/*
+|--------------------------------------------------------------------------
+| SEND SINGLE SMS
+|--------------------------------------------------------------------------
+*/
 
-const sms =
-africastalking.SMS;
+export const sendSMS = async (
+  phone,
+  message
+) => {
+  if (!phone) {
+    throw new Error("Phone number is required.");
+  }
 
+  if (!message) {
+    throw new Error("SMS message is required.");
+  }
 
+  try {
+    const response = await sms.send({
+      to: [phone],
+      message,
+      // Optional if using a registered sender ID
+      from: process.env.AT_SENDER_ID || undefined,
+    });
 
-export const sendSMS =
-async(
-phone,
-message
-)=>{
+    console.log(
+      `SMS sent successfully to ${phone}`
+    );
 
+    return response;
+  } catch (error) {
+    console.error(
+      "SMS sending failed:",
+      error.response?.data || error.message
+    );
 
-await sms.send({
+    throw error;
+  }
+};
 
-to:[phone],
+/*
+|--------------------------------------------------------------------------
+| SEND BULK SMS
+|--------------------------------------------------------------------------
+*/
 
+export const sendBulkSMS = async (
+  phones,
+  message
+) => {
+  if (!Array.isArray(phones) || phones.length === 0) {
+    throw new Error("At least one phone number is required.");
+  }
 
-message
+  if (!message) {
+    throw new Error("SMS message is required.");
+  }
 
-});
+  try {
+    const response = await sms.send({
+      to: phones,
+      message,
+      from: process.env.AT_SENDER_ID || undefined,
+    });
 
+    console.log(
+      `Bulk SMS sent to ${phones.length} recipients`
+    );
 
+    return response;
+  } catch (error) {
+    console.error(
+      "Bulk SMS failed:",
+      error.response?.data || error.message
+    );
+
+    throw error;
+  }
 };

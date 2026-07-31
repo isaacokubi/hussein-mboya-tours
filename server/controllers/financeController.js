@@ -1,74 +1,97 @@
-// controllers/financeController.js
+// server/controllers/financeController.js
 
 import Payment from "../models/Payment.js";
-
 import Booking from "../models/Booking.js";
-
 import Commission from "../models/Commission.js";
 
 /*
 |--------------------------------------------------------------------------
-| GET FINANCE STATISTICS
-|--------------------------------------------------------------------------
-|
-| Admin Finance Dashboard
-|
+| PAYMENT STATUS
 |--------------------------------------------------------------------------
 */
 
-export const getFinanceStats = async (req, res) => {
+const PAYMENT_STATUSES = [
+  "pending",
+  "completed",
+  "failed",
+  "cancelled",
+  "refunded",
+];
+
+/*
+|--------------------------------------------------------------------------
+| GET FINANCE DASHBOARD STATS
+|--------------------------------------------------------------------------
+*/
+
+export const getFinanceStats = async (req, res, next) => {
   try {
-    const totalRevenue = await Payment.aggregate([
-      {
-        $match: {
-          status: "completed",
-        },
-      },
-
-      {
-        $group: {
-          _id: null,
-
-          total: {
-            $sum: "$amount",
+    const [
+      revenueResult,
+      completedPayments,
+      pendingPayments,
+      failedPayments,
+      refundedPayments,
+      paidBookings,
+      commissionResult,
+    ] = await Promise.all([
+      Payment.aggregate([
+        {
+          $match: {
+            status: "completed",
           },
         },
-      },
-    ]);
-
-    const completedPayments = await Payment.countDocuments({
-      status: "completed",
-    });
-
-    const pendingPayments = await Payment.countDocuments({
-      status: "pending",
-    });
-
-    const failedPayments = await Payment.countDocuments({
-      status: "failed",
-    });
-
-    const totalBookings = await Booking.countDocuments({
-      paymentStatus: "paid",
-    });
-
-    const commissionData = await Commission.aggregate([
-      {
-        $group: {
-          _id: null,
-
-          total: {
-            $sum: "$amount",
+        {
+          $group: {
+            _id: null,
+            total: {
+              $sum: {
+                $ifNull: ["$amount", 0],
+              },
+            },
           },
         },
-      },
+      ]),
+
+      Payment.countDocuments({
+        status: "completed",
+      }),
+
+      Payment.countDocuments({
+        status: "pending",
+      }),
+
+      Payment.countDocuments({
+        status: "failed",
+      }),
+
+      Payment.countDocuments({
+        status: "refunded",
+      }),
+
+      Booking.countDocuments({
+        paymentStatus: "paid",
+      }),
+
+      Commission.aggregate([
+        {
+          $group: {
+            _id: null,
+            total: {
+              $sum: {
+                $ifNull: ["$amount", 0],
+              },
+            },
+          },
+        },
+      ]),
     ]);
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
 
       data: {
-        revenue: totalRevenue[0]?.total || 0,
+        revenue: revenueResult[0]?.total || 0,
 
         completedPayments,
 
@@ -76,124 +99,151 @@ export const getFinanceStats = async (req, res) => {
 
         failedPayments,
 
-        paidBookings: totalBookings,
+        refundedPayments,
 
-        commission: commissionData[0]?.total || 0,
+        paidBookings,
+
+        commission: commissionResult[0]?.total || 0,
       },
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-
-      message: error.message,
-    });
+    next(error);
   }
 };
 
 /*
 |--------------------------------------------------------------------------
-| GET MPESA TRANSACTIONS
-|--------------------------------------------------------------------------
-|
-| Admin Finance Dashboard
-|
-| Features:
-|
-| - View all payments
-| - Filter by status
-| - Search transactions
-| - Search M-Pesa receipt
-| - Search customer
-| - Search booking number
-|
+| GET TRANSACTIONS
 |--------------------------------------------------------------------------
 */
 
-export const getTransactions = async (req, res) => {
+export const getTransactions = async (req, res, next) => {
   try {
     const {
+      page = 1,
+      limit = 20,
       status,
-
       search,
+      startDate,
+      endDate,
     } = req.query;
+
+    const currentPage = Math.max(Number(page), 1);
+    const pageSize = Math.min(Math.max(Number(limit), 1), 100);
+    const skip = (currentPage - 1) * pageSize;
 
     const filter = {};
 
-    // FILTER PAYMENT STATUS
+    /*
+    |--------------------------------------------------------------------------
+    | STATUS FILTER
+    |--------------------------------------------------------------------------
+    */
 
-    if (status) {
+    if (
+      status &&
+      PAYMENT_STATUSES.includes(status)
+    ) {
       filter.status = status;
     }
 
-    const payments = await Payment.find(filter)
+    /*
+    |--------------------------------------------------------------------------
+    | DATE FILTER
+    |--------------------------------------------------------------------------
+    */
 
-      .populate(
-        "booking",
+    if (startDate || endDate) {
+      filter.createdAt = {};
 
-        "bookingNumber tour travelDate",
-      )
+      if (startDate) {
+        filter.createdAt.$gte = new Date(startDate);
+      }
 
-      .populate(
-        "customer",
-
-        "name email phone",
-      )
-
-      .populate(
-        "user",
-
-        "name email phone",
-      )
-
-      .sort({
-        createdAt: -1,
-      });
-
-    let results = payments;
-
-    // SEARCH FUNCTIONALITY
-
-    if (search) {
-      const keyword = search.toLowerCase();
-
-      results = payments.filter(
-        (payment) =>
-          payment.transactionId?.toLowerCase().includes(keyword) ||
-          payment.mpesaReceiptNumber?.toLowerCase().includes(keyword) ||
-          payment.customer?.name?.toLowerCase().includes(keyword) ||
-          payment.customer?.email?.toLowerCase().includes(keyword) ||
-          payment.customer?.phone?.includes(search) ||
-          payment.booking?.bookingNumber?.toLowerCase().includes(keyword),
-      );
+      if (endDate) {
+        filter.createdAt.$lte = new Date(endDate);
+      }
     }
 
-    res.status(200).json({
+    /*
+    |--------------------------------------------------------------------------
+    | SEARCH
+    |--------------------------------------------------------------------------
+    */
+
+    if (search) {
+      filter.$or = [
+        {
+          transactionId: {
+            $regex: search,
+            $options: "i",
+          },
+        },
+        {
+          mpesaReceiptNumber: {
+            $regex: search,
+            $options: "i",
+          },
+        },
+      ];
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | QUERY
+    |--------------------------------------------------------------------------
+    */
+
+    const [payments, total] = await Promise.all([
+      Payment.find(filter)
+        .populate(
+          "booking",
+          "bookingNumber travelDate"
+        )
+        .populate(
+          "customer",
+          "name email phone"
+        )
+        .populate(
+          "user",
+          "name email phone"
+        )
+        .sort({
+          createdAt: -1,
+        })
+        .skip(skip)
+        .limit(pageSize)
+        .lean(),
+
+      Payment.countDocuments(filter),
+    ]);
+
+    return res.status(200).json({
       success: true,
 
-      count: results.length,
+      count: payments.length,
 
-      payments: results,
+      pagination: {
+        total,
+        page: currentPage,
+        pages: Math.ceil(total / pageSize),
+        limit: pageSize,
+      },
+
+      data: payments,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-
-      message: error.message,
-    });
+    next(error);
   }
 };
 
 /*
 |--------------------------------------------------------------------------
-| GET FINANCE REPORTS
-|--------------------------------------------------------------------------
-|
-| Monthly Revenue Analytics
-|
+| MONTHLY FINANCE REPORTS
 |--------------------------------------------------------------------------
 */
 
-export const getReports = async (req, res) => {
+export const getReports = async (req, res, next) => {
   try {
     const monthlyRevenue = await Payment.aggregate([
       {
@@ -205,17 +255,23 @@ export const getReports = async (req, res) => {
       {
         $group: {
           _id: {
-            month: {
-              $month: "$createdAt",
-            },
-
             year: {
               $year: "$createdAt",
+            },
+
+            month: {
+              $month: "$createdAt",
             },
           },
 
           revenue: {
-            $sum: "$amount",
+            $sum: {
+              $ifNull: ["$amount", 0],
+            },
+          },
+
+          transactions: {
+            $sum: 1,
           },
         },
       },
@@ -223,22 +279,19 @@ export const getReports = async (req, res) => {
       {
         $sort: {
           "_id.year": 1,
-
           "_id.month": 1,
         },
       },
     ]);
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
 
-      monthlyRevenue,
+      data: {
+        monthlyRevenue,
+      },
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-
-      message: error.message,
-    });
+    next(error);
   }
 };

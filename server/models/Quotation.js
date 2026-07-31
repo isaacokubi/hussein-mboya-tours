@@ -1,141 +1,379 @@
+// server/models/Quotation.js
+
 import mongoose from "mongoose";
 
+/*
+|--------------------------------------------------------------------------
+| QUOTATION ITEM SCHEMA
+|--------------------------------------------------------------------------
+*/
 
-const quotationSchema =
-new mongoose.Schema({
+const quotationItemSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
-agent:{
-type:mongoose.Schema.Types.ObjectId,
-ref:"Agent",
-required:true
-},
+    category: {
+      type: String,
+      enum: [
+        "Accommodation",
+        "Transport",
+        "Activity",
+        "Meal",
+        "Guide",
+        "Park Fee",
+        "Insurance",
+        "Visa",
+        "Other",
+      ],
+      default: "Other",
+    },
 
+    description: {
+      type: String,
+      default: "",
+      trim: true,
+    },
 
-customer:{
-type:mongoose.Schema.Types.ObjectId,
-ref:"Customer",
-required:true
-},
+    quantity: {
+      type: Number,
+      required: true,
+      default: 1,
+      min: 1,
+    },
 
+    unitPrice: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
 
-tourPackage:{
-type:mongoose.Schema.Types.ObjectId,
-ref:"TourPackage"
-},
+    total: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+  },
+  {
+    _id: false,
+  }
+);
 
+/*
+|--------------------------------------------------------------------------
+| QUOTATION SCHEMA
+|--------------------------------------------------------------------------
+*/
 
-items:[
+const quotationSchema = new mongoose.Schema(
+  {
+    /*
+    |--------------------------------------------------------------------------
+    | QUOTATION NUMBER
+    |--------------------------------------------------------------------------
+    */
 
-{
+    quotationNumber: {
+      type: String,
+      unique: true,
+      index: true,
+    },
 
-name:{
-type:String,
-required:true
-},
+    /*
+    |--------------------------------------------------------------------------
+    | AGENT
+    |--------------------------------------------------------------------------
+    */
 
+    agent: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Agent",
+      required: true,
+      index: true,
+    },
 
-category:{
-type:String,
-enum:[
-"Accommodation",
-"Transport",
-"Activity",
-"Meal",
-"Other"
-]
-},
+    /*
+    |--------------------------------------------------------------------------
+    | CUSTOMER
+    |--------------------------------------------------------------------------
+    */
 
+    customer: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Customer",
+      required: true,
+      index: true,
+    },
 
-quantity:{
-type:Number,
-default:1
-},
+    /*
+    |--------------------------------------------------------------------------
+    | TOUR
+    |--------------------------------------------------------------------------
+    */
 
+    tour: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tour",
+      default: null,
+    },
 
-unitPrice:{
-type:Number,
-required:true
-},
+    /*
+    |--------------------------------------------------------------------------
+    | TOUR PACKAGE
+    |--------------------------------------------------------------------------
+    */
 
+    tourPackage: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "TourPackage",
+      default: null,
+    },
 
-total:{
-type:Number,
-required:true
-}
+    /*
+    |--------------------------------------------------------------------------
+    | ITEMS
+    |--------------------------------------------------------------------------
+    */
 
-}
+    items: {
+      type: [quotationItemSchema],
+      default: [],
+    },
 
-],
+    /*
+    |--------------------------------------------------------------------------
+    | PRICING
+    |--------------------------------------------------------------------------
+    */
 
+    subtotal: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
 
+    tax: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
 
-subtotal:{
-type:Number,
-default:0
-},
+    discount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
 
+    grandTotal: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
 
-tax:{
-type:Number,
-default:0
-},
+    currency: {
+      type: String,
+      default: "KES",
+      uppercase: true,
+      trim: true,
+    },
 
+    /*
+    |--------------------------------------------------------------------------
+    | STATUS
+    |--------------------------------------------------------------------------
+    */
 
-discount:{
-type:Number,
-default:0
-},
+    status: {
+      type: String,
+      enum: [
+        "draft",
+        "sent",
+        "approved",
+        "rejected",
+        "expired",
+        "converted",
+      ],
+      default: "draft",
+      index: true,
+    },
 
+    /*
+    |--------------------------------------------------------------------------
+    | NOTES
+    |--------------------------------------------------------------------------
+    */
 
-grandTotal:{
-type:Number,
-default:0
-},
+    notes: {
+      type: String,
+      default: "",
+      trim: true,
+    },
 
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDITY
+    |--------------------------------------------------------------------------
+    */
 
-currency:{
-type:String,
-default:"KES"
-},
+    validUntil: {
+      type: Date,
+      required: true,
+    },
 
+    sentAt: {
+      type: Date,
+      default: null,
+    },
 
-status:{
+    approvedAt: {
+      type: Date,
+      default: null,
+    },
 
-type:String,
+    /*
+    |--------------------------------------------------------------------------
+    | CONVERTED BOOKING
+    |--------------------------------------------------------------------------
+    */
 
-enum:[
+    booking: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Booking",
+      default: null,
+    },
 
-"draft",
+    /*
+    |--------------------------------------------------------------------------
+    | CREATED BY
+    |--------------------------------------------------------------------------
+    */
 
-"sent",
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
 
-"approved",
+    /*
+    |--------------------------------------------------------------------------
+    | SOFT DELETE
+    |--------------------------------------------------------------------------
+    */
 
-"rejected",
+    isDeleted: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+  },
+  {
+    timestamps: true,
+    toJSON: {
+      virtuals: true,
+    },
+    toObject: {
+      virtuals: true,
+    },
+  }
+);
 
-"converted"
+/*
+|--------------------------------------------------------------------------
+| PRE SAVE
+|--------------------------------------------------------------------------
+*/
 
-],
+quotationSchema.pre("save", function (next) {
+  if (!this.quotationNumber) {
+    this.quotationNumber =
+      "QT-" +
+      Date.now() +
+      "-" +
+      Math.floor(Math.random() * 10000);
+  }
 
-default:"draft"
+  this.subtotal = this.items.reduce(
+    (sum, item) => sum + item.total,
+    0
+  );
 
-},
+  this.grandTotal =
+    this.subtotal +
+    this.tax -
+    this.discount;
 
-
-notes:String,
-
-
-validUntil:Date
-
-
-},
-
-{
-timestamps:true
+  next();
 });
 
+/*
+|--------------------------------------------------------------------------
+| VIRTUALS
+|--------------------------------------------------------------------------
+*/
 
-export default mongoose.model(
-"Quotation",
-quotationSchema
-);
+quotationSchema.virtual("isExpired").get(function () {
+  return new Date() > this.validUntil;
+});
+
+/*
+|--------------------------------------------------------------------------
+| METHODS
+|--------------------------------------------------------------------------
+*/
+
+quotationSchema.methods.markSent = function () {
+  this.status = "sent";
+  this.sentAt = new Date();
+  return this.save();
+};
+
+quotationSchema.methods.markApproved = function () {
+  this.status = "approved";
+  this.approvedAt = new Date();
+  return this.save();
+};
+
+quotationSchema.methods.markConverted = function (bookingId) {
+  this.status = "converted";
+  this.booking = bookingId;
+  return this.save();
+};
+
+/*
+|--------------------------------------------------------------------------
+| INDEXES
+|--------------------------------------------------------------------------
+*/
+
+quotationSchema.index({
+  customer: 1,
+  status: 1,
+});
+
+quotationSchema.index({
+  agent: 1,
+  createdAt: -1,
+});
+
+quotationSchema.index({
+  validUntil: 1,
+});
+
+quotationSchema.index({
+  createdAt: -1,
+});
+
+/*
+|--------------------------------------------------------------------------
+| MODEL
+|--------------------------------------------------------------------------
+*/
+
+const Quotation =
+  mongoose.models.Quotation ||
+  mongoose.model("Quotation", quotationSchema);
+
+export default Quotation;

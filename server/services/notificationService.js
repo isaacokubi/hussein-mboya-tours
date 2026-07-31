@@ -1,471 +1,246 @@
 // services/notificationService.js
 
-
 import Notification from "../models/Notification.js";
 
+import { sendEmail } from "./emailService.js";
 
-import {
-  sendEmail
-} from "./emailService.js";
+import { io } from "../server.js";
 
+import { getSocketId } from "../socket/socketManager.js";
 
-import {
-  io
-} from "../server.js";
-
-
-import {
-  getSocketId
-} from "../socket/socketManager.js";
-
-
-
-
-// ============================================================
-// CREATE NOTIFICATION
-// ============================================================
-
+/*
+|--------------------------------------------------------------------------
+| CREATE NOTIFICATION
+|--------------------------------------------------------------------------
+*/
 
 export const createNotification = async ({
-
-  user,
-
   recipient,
-
   title,
-
   message,
-
   type = "system",
-
-  metadata = {}
-
+  metadata = {},
 }) => {
-
-
-  const receiver =
-    recipient || user;
-
-
-
-  const notification =
-
-  await Notification.create({
-
-    recipient: receiver,
-
-    user: receiver,
-
-    title,
-
-    message,
-
-    type,
-
-    metadata
-
-  });
-
-
-
-
-
-  // ==========================================================
-  // REALTIME SOCKET NOTIFICATION
-  // ==========================================================
-
-
-  const socketId = getSocketId(
-
-    receiver.toString()
-
-  );
-
-
-
-  if(socketId){
-
-
-    io.to(socketId).emit(
-
-      "notification",
-
-      notification
-
-    );
-
-
+  if (!recipient) {
+    throw new Error("Notification recipient is required.");
   }
 
+  if (!title) {
+    throw new Error("Notification title is required.");
+  }
 
+  if (!message) {
+    throw new Error("Notification message is required.");
+  }
+
+  const notification = await Notification.create({
+    recipient,
+    title,
+    message,
+    type,
+    metadata,
+  });
+
+  try {
+    const socketId = getSocketId(recipient.toString());
+
+    if (socketId) {
+      io.to(socketId).emit("notification", notification);
+    }
+  } catch (error) {
+    console.error("Socket notification failed:", error.message);
+  }
 
   return notification;
-
-
 };
 
+/*
+|--------------------------------------------------------------------------
+| GENERIC NOTIFICATION
+|--------------------------------------------------------------------------
+*/
 
+export const sendNotification = async (data) => {
+  return createNotification(data);
+};
 
+/*
+|--------------------------------------------------------------------------
+| SEND EMAIL + APP NOTIFICATION
+|--------------------------------------------------------------------------
+*/
 
-
-
-
-
-
-// ============================================================
-// GENERIC SEND NOTIFICATION
-// ============================================================
-
-
-export const sendNotification = async ({
-
-  recipient,
-
+export const notifyUser = async ({
+  user,
+  subject,
+  html,
   title,
-
   message,
-
   type = "system",
-
-  metadata = {}
-
+  metadata = {},
 }) => {
+  const tasks = [];
 
+  if (user?.email) {
+    tasks.push(
+      sendEmail({
+        to: user.email,
+        subject,
+        html,
+      }).catch((error) => {
+        console.error("Email failed:", error.message);
+      })
+    );
+  }
 
-  return await createNotification({
+  tasks.push(
+    createNotification({
+      recipient: user._id,
+      title,
+      message,
+      type,
+      metadata,
+    })
+  );
 
-    recipient,
-
-    title,
-
-    message,
-
-    type,
-
-    metadata
-
-  });
-
-
+  await Promise.all(tasks);
 };
 
-
-
-
-
-
-
-
-
-// ============================================================
-// BOOKING CONFIRMATION CUSTOMER
-// ============================================================
-
+/*
+|--------------------------------------------------------------------------
+| BOOKING CONFIRMATION
+|--------------------------------------------------------------------------
+*/
 
 export const sendBookingConfirmation = async (
-
   user,
-
   booking
+) => {
+  await notifyUser({
+    user,
 
-)=>{
+    subject: "Booking Confirmed - Hussein Mboya Tours",
 
+    html: `
+      <h2>Your booking is confirmed 🎉</h2>
 
-  await sendEmail({
+      <p>
+        Booking Number:
+        <strong>${booking.bookingNumber}</strong>
+      </p>
 
-    to:user.email,
+      <p>
+        Thank you for choosing Hussein Mboya Tours.
+      </p>
+    `,
 
-
-    subject:
-
-    "Booking Confirmed - Hussein Mboya Tours",
-
-
-    html:
-
-    `
-
-    <h2>
-    Your trip is confirmed 🎉
-    </h2>
-
-
-    <p>
-    Booking Reference:
-    <strong>
-    ${booking._id}
-    </strong>
-    </p>
-
-
-    <p>
-    Thank you for choosing Hussein Mboya Tours.
-    </p>
-
-    `
-
-
-  });
-
-
-
-
-
-
-  await createNotification({
-
-    user:user._id,
-
-
-    title:
-
-    "Booking Confirmed",
-
+    title: "Booking Confirmed",
 
     message:
+      "Your travel booking has been confirmed.",
 
-    "Your travel booking has been confirmed.",
+    type: "booking",
 
-
-    type:
-
-    "booking",
-
-
-    metadata:{
-
-      bookingId:booking._id
-
-    }
-
-
+    metadata: {
+      bookingId: booking._id,
+    },
   });
-
-
 };
 
-
-
-
-
-
-
-
-
-// ============================================================
-// ADMIN NEW BOOKING NOTIFICATION
-// ============================================================
-
+/*
+|--------------------------------------------------------------------------
+| ADMIN BOOKING ALERT
+|--------------------------------------------------------------------------
+*/
 
 export const sendBookingNotification = async ({
-
   adminUserId,
-
   customer,
+  booking,
+}) =>
+  sendNotification({
+    recipient: adminUserId,
 
-  booking
+    title: "New Booking",
 
-})=>{
+    message: `${customer.name} created a booking.`,
 
+    type: "booking",
 
-  return await sendNotification({
-
-    recipient:adminUserId,
-
-
-    title:
-
-    "New Booking",
-
-
-    message:
-
-    `${customer.name} created a booking`,
-
-
-    type:
-
-    "booking",
-
-
-    metadata:{
-
-
-      bookingId:booking._id
-
-
-    }
-
-
+    metadata: {
+      bookingId: booking._id,
+    },
   });
 
-
-};
-
-
-
-
-
-
-
-
-
-// ============================================================
-// PAYMENT SUCCESS NOTIFICATION
-// ============================================================
-
+/*
+|--------------------------------------------------------------------------
+| PAYMENT RECEIVED
+|--------------------------------------------------------------------------
+*/
 
 export const sendPaymentNotification = async ({
-
   adminUserId,
+  booking,
+}) =>
+  sendNotification({
+    recipient: adminUserId,
 
-  booking
+    title: "Payment Received",
 
-})=>{
+    message: `Booking ${booking.bookingNumber} has been paid.`,
 
+    type: "payment",
 
-  return await sendNotification({
-
-    recipient:adminUserId,
-
-
-    title:
-
-    "Payment Received",
-
-
-    message:
-
-    `Booking ${booking.bookingNumber} has been paid`,
-
-
-    type:
-
-    "payment",
-
-
-    metadata:{
-
-
-      bookingId:booking._id
-
-
-    }
-
-
+    metadata: {
+      bookingId: booking._id,
+    },
   });
 
-
-};
-
-
-
-
-
-
-
-
-
-// ============================================================
-// GUIDE TOUR ASSIGNMENT NOTIFICATION
-// ============================================================
-
+/*
+|--------------------------------------------------------------------------
+| GUIDE ASSIGNMENT
+|--------------------------------------------------------------------------
+*/
 
 export const sendTourAssignmentNotification = async ({
-
   guideUserId,
+  tour,
+}) =>
+  sendNotification({
+    recipient: guideUserId,
 
-  tour
+    title: "New Tour Assignment",
 
-})=>{
+    message: `${tour.title} has been assigned to you.`,
 
+    type: "tour_assignment",
 
-  return await sendNotification({
-
-    recipient:guideUserId,
-
-
-    title:
-
-    "New Tour Assignment",
-
-
-    message:
-
-    `${tour.title} assigned to you`,
-
-
-    type:
-
-    "tour_assignment",
-
-
-    metadata:{
-
-
-      tourId:tour._id
-
-
-    }
-
-
+    metadata: {
+      tourId: tour._id,
+    },
   });
 
-
-};
-
-
-
-
-
-
-
-
-
-// ============================================================
-// GENERIC PAYMENT NOTIFICATION FOR USER
-// ============================================================
-
+/*
+|--------------------------------------------------------------------------
+| PAYMENT SUCCESS
+|--------------------------------------------------------------------------
+*/
 
 export const notifyPaymentSuccess = async (
-
   user,
-
   payment
+) =>
+  sendNotification({
+    recipient: user._id,
 
-)=>{
-
-
-  return await sendNotification({
-
-    recipient:user._id,
-
-
-    title:
-
-    "Payment Successful",
-
+    title: "Payment Successful",
 
     message:
+      "Your payment has been received successfully.",
 
-    "Your payment has been received successfully.",
+    type: "payment",
 
-
-    type:
-
-    "payment",
-
-
-    metadata:{
-
-
-      paymentId:payment._id
-
-
-    }
-
-
+    metadata: {
+      paymentId: payment._id,
+    },
   });
-
-
-};

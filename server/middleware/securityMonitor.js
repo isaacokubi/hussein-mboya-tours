@@ -1,196 +1,96 @@
+// server/middleware/securityMonitor.js
+
 import SecurityLog from "../models/SecurityLog.js";
-
-
 
 /*
 |--------------------------------------------------------------------------
-| SECURITY MONITOR MIDDLEWARE
-|--------------------------------------------------------------------------
+| SECURITY MONITOR MIDDLE|--------------------------------------------------------------------------
 |
-| Tracks incoming requests and detects suspicious activity.
+| Monitors requests for suspicious activity.
 |
 |--------------------------------------------------------------------------
 */
 
-
-const securityMonitor = async (
-  req,
-  res,
-  next
-) => {
-
-
-  try {
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | REQUEST MONITORING
-    |--------------------------------------------------------------------------
-    */
-
-
-    console.log({
-
-      method: req.method,
-
-      url: req.originalUrl,
-
-      ip: req.ip,
-
-      userAgent:
-        req.headers["user-agent"],
-
-      time:
-        new Date(),
-
-    });
-
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | SUSPICIOUS REQUEST DETECTION
-    |--------------------------------------------------------------------------
-    */
-
-
-    const suspiciousPatterns = [
-
-      "<script",
-
-      "DROP TABLE",
-
-      "../",
-
-      "UNION SELECT",
-
-      "SELECT * FROM",
-
-      "<iframe",
-
-      "javascript:",
-
-    ];
-
-
-
-    const requestData = JSON.stringify({
-
-      body: req.body,
-
-      params: req.params,
-
-      query: req.query,
-
-    });
-
-
-
-    const foundPattern =
-      suspiciousPatterns.find(
-        pattern =>
-          requestData
-          .toUpperCase()
-          .includes(
-            pattern.toUpperCase()
-          )
-      );
-
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | SAVE SECURITY INCIDENT
-    |--------------------------------------------------------------------------
-    */
-
-
-    if(foundPattern){
-
-
-      await SecurityLog.create({
-
-        action:
-          "suspicious_request",
-
-
-        ipAddress:
-          req.ip,
-
-
-        userAgent:
-          req.headers["user-agent"],
-
-
-        details: {
-
-          patternDetected:
-            foundPattern,
-
-
-          method:
-            req.method,
-
-
-          url:
-            req.originalUrl,
-
-
-          request:
-            requestData,
-
-        },
-
-
-      });
-
-
-
-      console.log(
-        "⚠️ Suspicious request detected:",
-        foundPattern
-      );
-
-
+const securityMonitor = async (req, res, next) => {
+    try {
+        /*
+        |--------------------------------------------------------------------------
+        | REQUEST DATA
+        |--------------------------------------------------------------------------
+        */
+
+        const requestData = JSON.stringify({
+            body: req.body,
+            params: req.params,
+            query: req.query,
+        });
+
+        /*
+        |--------------------------------------------------------------------------
+        | SUSPICIOUS PATTERNS
+        |--------------------------------------------------------------------------
+        */
+
+        const suspiciousPatterns = [
+            /<script/i,
+            /<\/script>/i,
+            /javascript:/i,
+            /<iframe/i,
+            /union\s+select/i,
+            /drop\s+table/i,
+            /insert\s+into/i,
+            /delete\s+from/i,
+            /update\s+\w+\s+set/i,
+            /select\s+\*/i,
+            /\.\.\//,
+            /\.\.\\/,
+            /\$where/i,
+            /\$ne/i,
+            /\$gt/i,
+            /\$lt/i,
+            /\$regex/i,
+            /\|\|/,
+            /&&/,
+            /;.*(rm|cat|wget|curl|chmod|sudo)/i,
+        ];
+
+        const detectedPattern = suspiciousPatterns.find((regex) =>
+            regex.test(requestData)
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | SAVE INCIDENT
+        |--------------------------------------------------------------------------
+        */
+
+        if (detectedPattern) {
+            await SecurityLog.create({
+                action: "suspicious_request",
+
+                severity: "high",
+
+                user: req.user?._id || null,
+
+                ipAddress: req.ip,
+
+                userAgent: req.get("user-agent"),
+
+                details: {
+                    method: req.method,
+                    url: req.originalUrl,
+                    patternDetected: detectedPattern.toString(),
+                    request: requestData.substring(0, 5000),
+                },
+            });
+        }
+
+        next();
+    } catch (error) {
+        console.error("Security Monitor Error:", error.message);
+
+        next();
     }
-
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | CONTINUE REQUEST
-    |--------------------------------------------------------------------------
-    */
-
-
-    next();
-
-
-
-  } catch(error){
-
-
-
-    console.error(
-      "Security Monitor Error:",
-      error.message
-    );
-
-
-    /*
-    Continue application even if logging fails
-    */
-
-
-    next();
-
-
-  }
-
-
 };
-
-
 
 export default securityMonitor;

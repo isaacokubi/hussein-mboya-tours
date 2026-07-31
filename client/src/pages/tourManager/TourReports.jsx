@@ -1,46 +1,27 @@
-import React,{
-useEffect,
-useState
-}
-from "react";
+import React, {
+    useEffect,
+    useState
+} from "react";
 
 
 import {
-
-BarChart,
-
-Bar,
-
-XAxis,
-
-YAxis,
-
-Tooltip,
-
-ResponsiveContainer
-
-}
-
-from "recharts";
-
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    Tooltip,
+    ResponsiveContainer
+} from "recharts";
 
 
 import {
-
-toast
-
-}
-
-from "react-toastify";
+    toast
+} from "react-toastify";
 
 
 import {
-
-getTourReports
-
-}
-
-from "../../api/tourApi";
+    getTourReports
+} from "../../api/tourApi";
 
 
 
@@ -48,16 +29,15 @@ from "../../api/tourApi";
 
 
 
-const TourReports =()=>{
+export default function TourReports(){
 
 
-const [
+const [reports,setReports] = useState(null);
 
-reports,
 
-setReports
+const [loading,setLoading] = useState(true);
 
-]=useState(null);
+
 
 
 
@@ -67,7 +47,7 @@ setReports
 useEffect(()=>{
 
 
-const load=async()=>{
+const loadReports = async()=>{
 
 
 try{
@@ -77,16 +57,23 @@ const response =
 await getTourReports();
 
 
+
 setReports(
 
-response.data.reports
+response.data.reports ||
+
+{}
 
 );
+
 
 
 }
 
 catch(error){
+
+
+console.error(error);
 
 
 toast.error(
@@ -96,13 +83,20 @@ toast.error(
 
 }
 
+finally{
+
+
+setLoading(false);
+
+
+}
 
 
 };
 
 
 
-load();
+loadReports();
 
 
 
@@ -116,12 +110,15 @@ load();
 
 
 
-if(!reports){
+if(loading){
 
 
 return (
 
-<div className="p-10">
+<div className="
+p-10
+text-gray-600
+">
 
 Loading reports...
 
@@ -138,25 +135,119 @@ Loading reports...
 
 
 
+if(!reports){
+
+
 return (
 
-<div
-className="
+<div className="
+p-10
+text-red-600
+">
+
+No reports available.
+
+</div>
+
+);
+
+
+}
+
+
+
+
+
+
+
+
+const cards=[
+
+
+{
+title:"Total Bookings",
+value:reports.totalBookings || 0
+},
+
+
+{
+title:"Revenue",
+value:`KES ${reports.totalRevenue || 0}`
+},
+
+
+{
+title:"Customers",
+value:reports.totalCustomers || 0
+},
+
+
+{
+title:"Tours",
+value:reports.totalTours || 0
+},
+
+
+{
+title:"Completed",
+value:reports.completedTours || 0
+}
+
+
+];
+
+
+
+
+
+
+
+
+const chartData =
+
+reports.monthlyRevenue?.map(item=>({
+
+
+month:
+
+`${item._id.month}/${item._id.year}`,
+
+
+revenue:
+
+item.revenue || 0
+
+
+
+})) || [];
+
+
+
+
+
+
+
+
+
+return (
+
+<div className="
 min-h-screen
 bg-gray-100
 p-6
-"
->
+">
 
 
 
-<h1
-className="
+
+
+
+
+<h1 className="
 text-3xl
 font-bold
 mb-8
-"
->
+">
 
 Tour Analytics
 
@@ -168,42 +259,25 @@ Tour Analytics
 
 
 
-<div
-className="
+
+
+
+{/* KPI CARDS */}
+
+
+
+<div className="
 grid
-md:grid-cols-5
+sm:grid-cols-2
+lg:grid-cols-5
 gap-5
 mb-8
-"
->
-
+">
 
 
 {
 
-[
-
-["Bookings",
-reports.totalBookings],
-
-["Revenue",
-reports.totalRevenue],
-
-["Customers",
-reports.totalCustomers],
-
-["Tours",
-reports.totalTours],
-
-["Completed",
-reports.completedTours]
-
-
-]
-
-.map(
-
-(item,index)=>(
+cards.map((card,index)=>(
 
 
 <div
@@ -220,36 +294,34 @@ p-5
 >
 
 
-<p
-className="
+<p className="
 text-gray-500
-"
->
+text-sm
+">
 
-{item[0]}
+{card.title}
 
 </p>
 
 
-<h2
-className="
+
+<h2 className="
 text-3xl
 font-bold
 mt-2
-"
->
+">
 
-{item[1]}
+{card.value}
 
 </h2>
+
 
 
 </div>
 
 
-)
+))
 
-)
 
 }
 
@@ -265,23 +337,23 @@ mt-2
 
 
 
-<div
-className="
+{/* REVENUE CHART */}
+
+
+
+<div className="
 bg-white
 rounded-xl
 shadow
 p-6
-"
->
+">
 
 
-<h2
-className="
+<h2 className="
 text-xl
 font-bold
-mb-5
-"
->
+mb-6
+">
 
 Revenue Performance
 
@@ -289,6 +361,26 @@ Revenue Performance
 
 
 
+
+
+{
+
+chartData.length === 0
+
+?
+
+
+<p className="
+text-gray-500
+">
+
+No revenue data available.
+
+</p>
+
+
+
+:
 
 
 <ResponsiveContainer
@@ -302,17 +394,14 @@ height={350}
 
 <BarChart
 
-data={
-reports.monthlyRevenue
-}
-
+data={chartData}
 
 >
 
 
 <XAxis
 
-dataKey="_id.month"
+dataKey="month"
 
 />
 
@@ -337,6 +426,7 @@ dataKey="revenue"
 </ResponsiveContainer>
 
 
+}
 
 
 
@@ -346,13 +436,10 @@ dataKey="revenue"
 
 
 
-</div>
 
+</div>
 
 );
 
 
-};
-
-
-export default TourReports;
+}

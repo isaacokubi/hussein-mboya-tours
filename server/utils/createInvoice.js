@@ -1,97 +1,201 @@
 import PDFDocument from "pdfkit";
-
 import fs from "fs";
+import path from "path";
 
+/*
+|--------------------------------------------------------------------------
+| CREATE BOOKING INVOICE
+|--------------------------------------------------------------------------
+*/
 
-export const createInvoice =
-({
-booking,
-filePath
-})=>{
+export const createInvoice = async ({
+  booking,
+  filePath,
+}) => {
+  return new Promise((resolve, reject) => {
+    try {
+      const directory = path.dirname(filePath);
 
+      if (!fs.existsSync(directory)) {
+        fs.mkdirSync(directory, {
+          recursive: true,
+        });
+      }
 
-return new Promise(
-(resolve)=>{
+      const doc = new PDFDocument({
+        margin: 50,
+      });
 
+      const stream = fs.createWriteStream(filePath);
 
-const doc =
-new PDFDocument();
+      doc.pipe(stream);
 
+      /*
+      |--------------------------------------------------------------------------
+      | HEADER
+      |--------------------------------------------------------------------------
+      */
 
+      doc
+        .fontSize(24)
+        .text("Hussein Mboya Tours", {
+          align: "center",
+        });
 
-const stream =
-fs.createWriteStream(
-filePath
-);
+      doc
+        .fontSize(16)
+        .text("BOOKING INVOICE", {
+          align: "center",
+        });
 
+      doc.moveDown(2);
 
+      /*
+      |--------------------------------------------------------------------------
+      | INVOICE DETAILS
+      |--------------------------------------------------------------------------
+      */
 
-doc.pipe(stream);
+      doc.fontSize(12);
 
+      doc.text(
+        `Invoice #: ${booking.bookingNumber}`
+      );
 
+      doc.text(
+        `Issue Date: ${new Date().toLocaleDateString()}`
+      );
 
-doc.fontSize(20)
-.text(
-"Hussein Mboya Tours",
-{
-align:"center"
-}
-);
+      doc.moveDown();
 
+      /*
+      |--------------------------------------------------------------------------
+      | CUSTOMER DETAILS
+      |--------------------------------------------------------------------------
+      */
 
+      doc.font("Helvetica-Bold");
 
-doc.moveDown();
+      doc.text("Customer");
 
+      doc.font("Helvetica");
 
+      doc.text(
+        booking.contactName || "N/A"
+      );
 
-doc.fontSize(14)
-.text(
-"Booking Invoice"
-);
+      doc.text(
+        booking.contactEmail || ""
+      );
 
+      doc.text(
+        booking.contactPhone || ""
+      );
 
+      doc.moveDown();
 
-doc.moveDown();
+      /*
+      |--------------------------------------------------------------------------
+      | TOUR DETAILS
+      |--------------------------------------------------------------------------
+      */
 
+      doc.font("Helvetica-Bold");
 
+      doc.text("Tour Information");
 
-doc.text(
-`
-Booking Number:
-${booking.bookingNumber}
+      doc.font("Helvetica");
 
+      doc.text(
+        `Tour: ${booking.tour?.title || "N/A"}`
+      );
 
-Tour:
-${booking.tour.title}
+      doc.text(
+        `Travel Date: ${
+          booking.travelDate
+            ? new Date(
+                booking.travelDate
+              ).toLocaleDateString()
+            : "N/A"
+        }`
+      );
 
+      doc.text(
+        `Travelers: ${
+          booking.travelerCount || 1
+        }`
+      );
 
-Customer:
-${booking.contactName}
+      doc.moveDown();
 
+      /*
+      |--------------------------------------------------------------------------
+      | PAYMENT
+      |--------------------------------------------------------------------------
+      */
 
-Travel Date:
-${booking.travelDate}
+      doc.font("Helvetica-Bold");
 
+      doc.text("Payment Summary");
 
-Amount Paid:
-KES ${booking.totalAmount}
+      doc.font("Helvetica");
 
-`
-);
+      doc.text(
+        `Subtotal: KES ${Number(
+          booking.totalAmount || 0
+        ).toLocaleString()}`
+      );
 
+      doc.text("Discount: KES 0");
 
+      doc.text("Tax: KES 0");
 
-doc.end();
+      doc.moveDown();
 
+      doc.font("Helvetica-Bold");
 
+      doc.text(
+        `TOTAL PAID: KES ${Number(
+          booking.totalAmount || 0
+        ).toLocaleString()}`
+      );
 
-stream.on(
-"finish",
-()=>resolve()
-);
+      doc.moveDown(2);
 
+      /*
+      |--------------------------------------------------------------------------
+      | FOOTER
+      |--------------------------------------------------------------------------
+      */
 
-});
+      doc
+        .fontSize(10)
+        .fillColor("gray")
+        .text(
+          "Thank you for choosing Hussein Mboya Tours.",
+          {
+            align: "center",
+          }
+        );
 
+      doc.text(
+        "This invoice serves as proof of payment.",
+        {
+          align: "center",
+        }
+      );
 
+      doc.end();
+
+      stream.on("finish", () => {
+        resolve(filePath);
+      });
+
+      stream.on("error", (error) => {
+        reject(error);
+      });
+    } catch (error) {
+      reject(error);
+    }
+  });
 };
