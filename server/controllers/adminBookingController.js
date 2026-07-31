@@ -24,6 +24,7 @@ const PAYMENT_STATUSES = [
   "refunded",
 ];
 
+
 /*
 |--------------------------------------------------------------------------
 | GET ALL BOOKINGS
@@ -68,7 +69,7 @@ export const getAllBookings = async (req, res, next) => {
       Booking.countDocuments(filter),
     ]);
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       page,
       limit,
@@ -77,25 +78,29 @@ export const getAllBookings = async (req, res, next) => {
       count: bookings.length,
       bookings,
     });
+
   } catch (error) {
     next(error);
   }
 };
 
+
 /*
 |--------------------------------------------------------------------------
-| GET SINGLE BOOKING
+| GET BOOKING BY ID
 |--------------------------------------------------------------------------
 */
 
-export const getBooking = async (req, res, next) => {
+export const getBookingById = async (req, res, next) => {
   try {
+
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({
         success: false,
         message: "Invalid booking ID",
       });
     }
+
 
     const booking = await Booking.findById(req.params.id)
       .populate("customer", "name email phone")
@@ -106,6 +111,7 @@ export const getBooking = async (req, res, next) => {
       .populate("assignedVehicle")
       .lean();
 
+
     if (!booking) {
       return res.status(404).json({
         success: false,
@@ -113,14 +119,18 @@ export const getBooking = async (req, res, next) => {
       });
     }
 
-    res.status(200).json({
+
+    return res.status(200).json({
       success: true,
       booking,
     });
+
+
   } catch (error) {
     next(error);
   }
 };
+
 
 /*
 |--------------------------------------------------------------------------
@@ -128,9 +138,16 @@ export const getBooking = async (req, res, next) => {
 |--------------------------------------------------------------------------
 */
 
-export const updateBookingStatus = async (req, res, next) => {
+export const updateBookingStatus = async (
+  req,
+  res,
+  next
+) => {
+
   try {
+
     const { status } = req.body;
+
 
     if (!BOOKING_STATUSES.includes(status)) {
       return res.status(400).json({
@@ -139,16 +156,19 @@ export const updateBookingStatus = async (req, res, next) => {
       });
     }
 
-    const booking = await Booking.findByIdAndUpdate(
-      req.params.id,
-      {
-        bookingStatus: status,
-      },
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
+
+    const booking =
+      await Booking.findByIdAndUpdate(
+        req.params.id,
+        {
+          bookingStatus: status,
+        },
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
+
 
     if (!booking) {
       return res.status(404).json({
@@ -157,27 +177,50 @@ export const updateBookingStatus = async (req, res, next) => {
       });
     }
 
-    res.status(200).json({
+
+    return res.status(200).json({
       success: true,
       message: "Booking status updated successfully",
       booking,
     });
+
+
   } catch (error) {
     next(error);
   }
+
 };
+
 
 /*
 |--------------------------------------------------------------------------
-| ASSIGN GUIDE / DRIVER / VEHICLE
+| ASSIGN BOOKING RESOURCES
+|--------------------------------------------------------------------------
+| Assign:
+| - Tour Guide
+| - Driver
+| - Vehicle
 |--------------------------------------------------------------------------
 */
 
-export const assignResources = async (req, res, next) => {
-  try {
-    const { guide, driver, vehicle } = req.body;
+export const assignBookingResources = async (
+  req,
+  res,
+  next
+) => {
 
-    const booking = await Booking.findById(req.params.id);
+  try {
+
+    const {
+      guide,
+      driver,
+      vehicle,
+    } = req.body;
+
+
+    const booking =
+      await Booking.findById(req.params.id);
+
 
     if (!booking) {
       return res.status(404).json({
@@ -186,15 +229,28 @@ export const assignResources = async (req, res, next) => {
       });
     }
 
-    booking.assignedGuide = guide || null;
-    booking.assignedDriver = driver || null;
-    booking.assignedVehicle = vehicle || null;
 
-    if (guide || driver || vehicle) {
+    booking.assignedGuide =
+      guide || null;
+
+    booking.assignedDriver =
+      driver || null;
+
+    booking.assignedVehicle =
+      vehicle || null;
+
+
+    if (
+      guide ||
+      driver ||
+      vehicle
+    ) {
       booking.bookingStatus = "assigned";
     }
 
+
     await booking.save();
+
 
     await booking.populate([
       {
@@ -210,15 +266,21 @@ export const assignResources = async (req, res, next) => {
       },
     ]);
 
-    res.status(200).json({
+
+    return res.status(200).json({
       success: true,
-      message: "Resources assigned successfully",
+      message:
+        "Resources assigned successfully",
       booking,
     });
+
+
   } catch (error) {
     next(error);
   }
+
 };
+
 
 /*
 |--------------------------------------------------------------------------
@@ -226,9 +288,19 @@ export const assignResources = async (req, res, next) => {
 |--------------------------------------------------------------------------
 */
 
-export const updatePaymentStatus = async (req, res, next) => {
+export const updatePaymentStatus = async (
+  req,
+  res,
+  next
+) => {
+
   try {
-    const { status, mpesaReceipt } = req.body;
+
+    const {
+      status,
+      mpesaReceipt,
+    } = req.body;
+
 
     if (!PAYMENT_STATUSES.includes(status)) {
       return res.status(400).json({
@@ -237,7 +309,10 @@ export const updatePaymentStatus = async (req, res, next) => {
       });
     }
 
-    const booking = await Booking.findById(req.params.id);
+
+    const booking =
+      await Booking.findById(req.params.id);
+
 
     if (!booking) {
       return res.status(404).json({
@@ -246,20 +321,29 @@ export const updatePaymentStatus = async (req, res, next) => {
       });
     }
 
+
     booking.paymentStatus = status;
 
+
     if (mpesaReceipt) {
-      booking.mpesaReceipt = mpesaReceipt.trim();
+      booking.mpesaReceipt =
+        mpesaReceipt.trim();
     }
+
 
     await booking.save();
 
-    res.status(200).json({
+
+    return res.status(200).json({
       success: true,
-      message: "Payment status updated successfully",
+      message:
+        "Payment status updated successfully",
       booking,
     });
+
+
   } catch (error) {
     next(error);
   }
+
 };
