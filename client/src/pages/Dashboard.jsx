@@ -261,15 +261,23 @@ export default function Dashboard(){
 
     const bookings =
 
-    Array.isArray(data)
+Array.isArray(data)
 
-    ?
+?
 
-    data
+data
 
-    :
+:
 
-    data?.bookings || [];
+data?.data
+
+||
+
+data?.bookings
+
+||
+
+[];
 
 
 

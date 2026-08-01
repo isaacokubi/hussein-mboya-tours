@@ -1,30 +1,25 @@
 import {
-    Navigate,
-    Outlet
-}
-from "react-router-dom";
-
+  Navigate
+} from "react-router-dom";
 
 import {
-    useAuth
-}
-from "../../context/AuthContext";
-
-
+  useAuth
+} from "../../context/AuthContext";
 
 
 
 export default function ProtectedRoute({
 
-    roles = [],
+  children,
 
-    permission
+  roles = [],
+
+  permission
 
 }) {
 
 
-
-const {
+  const {
 
     user,
 
@@ -32,121 +27,122 @@ const {
 
     loading
 
-}
+  } = useAuth();
 
-=
-useAuth();
 
 
 
+  if (loading) {
 
+    return (
 
+      <div
+        className="
+        min-h-screen
+        flex
+        items-center
+        justify-center
+        text-lg
+        font-semibold
+        "
+      >
 
+        Loading...
 
+      </div>
 
-if(loading){
+    );
 
+  }
 
-return (
 
-<div
 
-className="
-min-h-screen
-flex
-items-center
-justify-center
-text-lg
-font-semibold
-"
 
->
 
-Loading...
 
-</div>
+  if (!token || !user) {
 
-);
 
+    return (
 
-}
+      <Navigate
 
+        to="/login"
 
+        replace
 
+      />
 
+    );
 
 
+  }
 
 
-if(
-    !token ||
-    !user
-){
 
 
-return (
 
-<Navigate
 
-to="/login"
 
-replace
+  const getRoleName = () => {
 
-/>
 
-);
+    if (typeof user.role === "string") {
 
+      return user.role;
 
-}
+    }
 
 
 
+    if (user.role?.name) {
 
+      return user.role.name;
 
+    }
 
 
 
+    if (
 
+      Array.isArray(user.roles)
 
-const getRoleName = ()=>{
+      &&
 
+      user.roles.length
 
-if(typeof user.role === "string"){
+    ) {
 
-return user.role;
+      return user.roles[0]?.name;
 
-}
+    }
 
 
-if(user.role?.name){
 
-return user.role.name;
+    return "";
 
-}
+  };
 
 
-if(
 
-Array.isArray(user.roles)
 
-&&
 
-user.roles.length
 
-){
 
 
-return user.roles[0]?.name;
+  const normalizeRole = (role) => {
 
-}
 
+    return role
 
+      ?.toString()
 
-return "";
+      .toLowerCase()
 
-};
+      .replace(/[\s_-]/g, "");
 
 
+  };
 
 
 
@@ -154,60 +150,61 @@ return "";
 
 
 
-const normalizeRole=(role)=>{
 
+  const userRole = normalizeRole(
 
-return role
+    getRoleName()
 
-?.toString()
+  );
 
-.toLowerCase()
 
-.replace(/[\s_-]/g,"");
 
 
-};
 
 
 
 
+  const roleMap = {
 
 
+    admin: "admin",
 
+    superadmin: "admin",
 
-const userRole = normalizeRole(
+    administrator: "admin",
 
-getRoleName()
 
-);
+    agent: "agent",
 
 
+    guide: "guide",
 
+    tourguide: "guide",
 
 
+    manager: "manager",
 
+    tourmanager: "manager",
 
+    tour_manager: "manager"
 
 
-const roleMap = {
+  };
 
 
-admin:"admin",
 
-superadmin:"admin",
 
-administrator:"admin",
 
 
-agent:"agent",
 
 
-guide:"guide",
+  const finalRole =
 
+    roleMap[userRole]
 
-manager:"manager"
+    ||
 
-};
+    userRole;
 
 
 
@@ -215,236 +212,219 @@ manager:"manager"
 
 
 
-const finalRole =
 
-roleMap[userRole] || userRole;
 
+  /*
+  |--------------------------------------------------------------------------
+  | ROLE PROTECTION
+  |--------------------------------------------------------------------------
+  */
 
 
+  if (roles.length) {
 
 
+    const allowedRoles = roles.map(
 
+      role =>
 
+        roleMap[normalizeRole(role)]
 
+        ||
 
+        normalizeRole(role)
 
-/*
-|--------------------------------------------------------------------------
-| ROLE CHECK
-|--------------------------------------------------------------------------
-*/
+    );
 
 
-if(roles.length){
 
 
 
-const allowedRoles = roles.map(
+    if (!allowedRoles.includes(finalRole)) {
 
-role=>
 
-roleMap[normalizeRole(role)]
+      switch (finalRole) {
 
-||
 
-normalizeRole(role)
+        case "admin":
 
-);
+          return (
 
+            <Navigate
 
+              to="/admin"
 
+              replace
 
+            />
 
-if(
-!allowedRoles.includes(finalRole)
-){
+          );
 
 
 
-switch(finalRole){
+        case "agent":
 
+          return (
 
-case "admin":
+            <Navigate
 
-return (
+              to="/agent"
 
-<Navigate
+              replace
 
-to="/admin"
+            />
 
-replace
+          );
 
-/>
 
-);
 
+        case "guide":
 
+          return (
 
-case "agent":
+            <Navigate
 
-return (
+              to="/guide/dashboard"
 
-<Navigate
+              replace
 
-to="/agent"
+            />
 
-replace
+          );
 
-/>
 
-);
 
+        case "manager":
 
+          return (
 
-case "guide":
+            <Navigate
 
-return (
+              to="/tour-manager/dashboard"
 
-<Navigate
+              replace
 
-to="/guide"
+            />
 
-replace
+          );
 
-/>
 
-);
 
+        default:
 
+          return (
 
-case "manager":
+            <Navigate
 
-return (
+              to="/"
 
-<Navigate
+              replace
 
-to="/manager/dashboard"
+            />
 
-replace
+          );
 
-/>
 
+      }
 
-);
 
+    }
 
 
-default:
+  }
 
-return (
 
-<Navigate
 
-to="/"
 
-replace
 
-/>
 
-);
 
 
 
-}
 
+  /*
+  |--------------------------------------------------------------------------
+  | PERMISSION PROTECTION
+  |--------------------------------------------------------------------------
+  */
 
 
-}
+  if (permission) {
 
 
+    const permissions =
 
-}
+      user.permissions
 
+      ||
 
+      JSON.parse(
 
+        localStorage.getItem("permissions")
 
+      )
 
+      ||
 
+      [];
 
 
 
-/*
-|--------------------------------------------------------------------------
-| PERMISSION CHECK
-|--------------------------------------------------------------------------
-*/
 
 
-if(permission){
 
+    const permissionNames = permissions.map(
 
-const permissions =
+      item =>
 
-user.permissions ||
+        typeof item === "string"
 
-JSON.parse(
+          ?
 
-localStorage.getItem("permissions")
+          item
 
-)
+          :
 
-||
+          item.name
 
-[];
+    );
 
 
 
 
 
+    if (
 
-const permissionNames = permissions.map(
+      !permissionNames.includes(permission)
 
-item=>
+    ) {
 
-typeof item === "string"
 
-?
+      return (
 
-item
+        <Navigate
 
-:
+          to="/unauthorized"
 
-item.name
+          replace
 
-);
+        />
 
+      );
 
 
+    }
 
 
+  }
 
 
-if(
-!permissionNames.includes(permission)
-){
 
 
-return (
 
-<Navigate
 
-to="/unauthorized"
 
-replace
-
-/>
-
-);
-
-
-}
-
-
-}
-
-
-
-
-
-
-
-
-return <Outlet/>;
+  return children;
 
 
 }
