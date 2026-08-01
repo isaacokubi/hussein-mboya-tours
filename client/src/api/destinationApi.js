@@ -8,9 +8,30 @@ export const getFeaturedDestinations = async()=>{
   );
 
 
-  console.log("DESTINATION RESPONSE:", response.data);
+  console.log(
+    "DESTINATION RESPONSE:",
+    response.data
+  );
 
 
-  return response.data.data || [];
+  const destinations =
+
+    Array.isArray(response.data)
+
+    ? response.data
+
+    : Array.isArray(response.data.data)
+
+    ? response.data.data
+
+    : Array.isArray(response.data.destinations)
+
+    ? response.data.destinations
+
+    : [];
+
+
+
+  return destinations;
 
 };
