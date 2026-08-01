@@ -20,7 +20,7 @@ import Register from "../pages/Register";
 import Destinations from "../pages/Destinations";
 import Wishlist from "../pages/Wishlist";
 
-
+import DestinationDetails from "../pages/DestinationDetails";
 
 // ============================================================
 // CUSTOMER
@@ -202,7 +202,10 @@ element={<TourDetails />}
 path="/destinations"
 element={<Destinations />}
 />
-
+<Route
+path="/destinations/:slug"
+element={<DestinationDetails />}
+/>
 
 
 <Route

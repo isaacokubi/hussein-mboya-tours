@@ -2,76 +2,79 @@ import {
   useQuery
 } from "@tanstack/react-query";
 
+
 import api from "../api/axios";
+
 
 import DestinationCard from "../components/destinations/DestinationCard";
 
 
-export default function Destinations() {
+
+export default function Destinations(){
+
 
 
   const {
+
     data = [],
+
     isLoading,
+
     error
+
 
   } = useQuery({
 
-    queryKey: [
+
+
+    queryKey:[
+
       "destinations"
+
     ],
 
 
-    queryFn: async () => {
+
+    queryFn:async()=>{
 
 
-      const response = await api.get(
+      const response =
+
+      await api.get(
         "/destinations"
       );
 
-
-      console.log(
-        "DESTINATIONS PAGE RESPONSE:",
-        response.data
-      );
 
 
 
       const destinations =
 
 
-        Array.isArray(response.data)
 
-        ? response.data
+      Array.isArray(response.data)
 
+      ?
 
-
-        : Array.isArray(response.data.destinations)
-
-        ? response.data.destinations
+      response.data
 
 
 
-        : Array.isArray(response.data.data)
 
-        ? response.data.data
+      :
 
+      Array.isArray(response.data.data)
 
+      ?
 
-        : Array.isArray(response.data.data?.destinations)
-
-        ? response.data.data.destinations
-
-
-
-        : [];
+      response.data.data
 
 
 
-      console.log(
-        "DESTINATIONS PAGE ARRAY:",
-        destinations
-      );
+
+      :
+
+      [];
+
 
 
 
@@ -81,8 +84,10 @@ export default function Destinations() {
     },
 
 
+
     staleTime:
-      1000 * 60 * 10,
+
+    1000 * 60 * 10
 
 
   });
@@ -92,30 +97,20 @@ export default function Destinations() {
 
 
 
-  if (isLoading) {
+
+  if(isLoading){
 
 
     return (
 
-      <div
-        className="
-          min-h-screen
-          flex
-          items-center
-          justify-center
-        "
-      >
+      <div className="
+      min-h-screen
+      flex
+      items-center
+      justify-center
+      ">
 
-        <p
-          className="
-            text-xl
-            font-semibold
-          "
-        >
-
-          Loading destinations...
-
-        </p>
+        Loading destinations...
 
 
       </div>
@@ -129,29 +124,32 @@ export default function Destinations() {
 
 
 
-  if (error) {
+
+
+  if(error){
 
 
     return (
 
-      <div
-        className="
-          min-h-screen
-          flex
-          items-center
-          justify-center
-          text-red-600
-          font-semibold
-        "
-      >
+      <div className="
+      min-h-screen
+      flex
+      items-center
+      justify-center
+      text-red-600
+      ">
 
         Failed to load destinations.
 
+
       </div>
 
     );
 
+
   }
+
+
 
 
 
@@ -160,61 +158,68 @@ export default function Destinations() {
 
   return (
 
+
+
     <div
-      className="
-        min-h-screen
-        bg-gray-100
-        p-6
-        md:p-10
-      "
+
+    className="
+    min-h-screen
+    bg-gray-100
+    p-6
+    md:p-10
+    "
+
     >
 
 
 
       <div
-        className="
-          max-w-7xl
-          mx-auto
-        "
+
+      className="
+      max-w-7xl
+      mx-auto
+      "
+
       >
 
 
 
-        <div
-          className="
-            mb-10
-          "
+        <h1
+
+        className="
+        text-4xl
+        font-bold
+        mb-4
+        text-gray-800
+        "
+
         >
 
+          Explore Destinations
 
-          <h1
-            className="
-              text-4xl
-              md:text-5xl
-              font-bold
-              text-gray-800
-            "
-          >
 
-            Explore Destinations
-
-          </h1>
+        </h1>
 
 
 
-          <p
-            className="
-              text-gray-500
-              mt-3
-            "
-          >
-
-            Discover amazing places and unforgettable experiences with Hussein Mboya Tours.
-
-          </p>
 
 
-        </div>
+        <p
+
+        className="
+        text-gray-600
+        mb-10
+        "
+
+        >
+
+          Discover amazing places and unforgettable experiences with Hussein Mboya Tours.
+
+
+        </p>
+
+
+
 
 
 
@@ -222,53 +227,73 @@ export default function Destinations() {
 
 
         {
-          data.length === 0 ? (
+
+          data.length === 0 ?
+
+
+
+          (
 
             <div
-              className="
-                bg-white
-                rounded-xl
-                shadow
-                p-10
-                text-center
-                text-gray-500
-              "
+
+            className="
+            bg-white
+            rounded-xl
+            shadow
+            p-10
+            text-center
+            "
+
             >
 
               No destinations available.
 
+
             </div>
 
 
-          ) : (
+          )
 
 
+
+          :
+
+
+
+          (
 
             <div
-              className="
-                grid
-                sm:grid-cols-2
-                lg:grid-cols-3
-                gap-8
-              "
+
+            className="
+            grid
+            sm:grid-cols-2
+            lg:grid-cols-3
+            gap-8
+            "
+
             >
 
 
 
               {
-                data.map((destination) => (
+
+                data.map((destination)=>(
 
 
                   <DestinationCard
 
+
                     key={destination._id}
 
+
                     destination={destination}
+
 
                   />
 
 
                 ))
+
               }
 
 
@@ -277,15 +302,21 @@ export default function Destinations() {
 
 
           )
+
         }
+
+
 
 
 
       </div>
 
 
+
     </div>
 
+
   );
+
 
 }
