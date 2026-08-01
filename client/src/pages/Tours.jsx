@@ -2,20 +2,16 @@ import {
   useQuery
 } from "@tanstack/react-query";
 
-
 import {
   Link
 } from "react-router-dom";
-
 
 import {
   getTours
 } from "../api/tourApi";
 
 
-
 export default function Tours() {
-
 
 
   const {
@@ -25,22 +21,17 @@ export default function Tours() {
 
   } = useQuery({
 
-    queryKey:[
+    queryKey: [
       "public-tours"
     ],
 
-
-    queryFn:getTours
+    queryFn: getTours
 
   });
 
 
 
-
-
-
-
-  if(isLoading){
+  if (isLoading) {
 
     return (
 
@@ -59,7 +50,7 @@ export default function Tours() {
           border-t-transparent
           rounded-full
           animate-spin
-        "/>
+        " />
 
       </div>
 
@@ -71,9 +62,7 @@ export default function Tours() {
 
 
 
-
-
-  if(error){
+  if (error) {
 
     return (
 
@@ -98,7 +87,17 @@ export default function Tours() {
 
 
 
-
+  /*
+  |--------------------------------------------------------------------------
+  | API RESPONSE:
+  |
+  | {
+  |   success:true,
+  |   data:[]
+  | }
+  |
+  |--------------------------------------------------------------------------
+  */
 
   const tours =
 
@@ -106,10 +105,7 @@ export default function Tours() {
 
       ? data
 
-      : data?.tours || [];
-
-
-
+      : data?.data || [];
 
 
 
@@ -124,8 +120,6 @@ export default function Tours() {
       px-6
       py-12
     ">
-
-
 
 
 
@@ -163,8 +157,6 @@ export default function Tours() {
 
 
 
-
-
       {
         tours.length === 0 ? (
 
@@ -188,9 +180,7 @@ export default function Tours() {
           </div>
 
 
-
         ) : (
-
 
 
           <div className="
@@ -201,199 +191,171 @@ export default function Tours() {
           ">
 
 
+            {
+              tours.map((tour)=>(
 
 
+                <div
 
-          {
-            tours.map((tour)=>(
-
-
-              <div
-
-                key={tour._id}
-
-                className="
-                  bg-white
-                  rounded-2xl
-                  shadow
-                  overflow-hidden
-                  hover:shadow-xl
-                  transition
-                "
-
-              >
-
-
-
-
-
-                <img
-
-
-                  src={
-
-                    tour.images?.[0]?.url ||
-
-                    tour.image ||
-
-                    "/images/tour-placeholder.jpg"
-
-                  }
-
-
-                  alt={
-                    tour.title
-                  }
-
+                  key={tour._id}
 
                   className="
-                    w-full
-                    h-56
-                    object-cover
+                    bg-white
+                    rounded-2xl
+                    shadow
+                    overflow-hidden
+                    hover:shadow-xl
+                    transition
                   "
 
-
-                />
-
+                >
 
 
 
+                  <img
 
 
+                    src={
 
-                <div className="
-                  p-6
-                ">
+                      tour.images?.[0] ||
 
+                      tour.image ||
 
-
-
-
-                  <h2 className="
-                    text-xl
-                    font-bold
-                    text-gray-800
-                  ">
-
-                    {
-                      tour.title
-                    }
-
-
-                  </h2>
-
-
-
-
-
-
-
-                  <p className="
-                    text-gray-600
-                    mt-2
-                  ">
-
-
-                    📍 {
-
-                      tour.destination?.name ||
-
-                      tour.destination ||
-
-                      "Kenya"
+                      "/images/tour-placeholder.jpg"
 
                     }
 
 
-                  </p>
+                    alt={tour.title}
 
 
+                    className="
+                      w-full
+                      h-56
+                      object-cover
+                    "
 
-
-
-
-
-
-                  <p className="
-                    text-gray-600
-                    mt-4
-                    line-clamp-3
-                  ">
-
-                    {
-                      tour.description
-                    }
-
-
-                  </p>
-
-
+                  />
 
 
 
 
 
                   <div className="
-                    flex
-                    justify-between
-                    items-center
-                    mt-6
+                    p-6
                   ">
 
 
 
-
-
-
-                    <span className="
-                      text-green-700
-                      font-bold
+                    <h2 className="
                       text-xl
+                      font-bold
+                      text-gray-800
+                    ">
+
+                      {tour.title}
+
+                    </h2>
+
+
+
+
+
+                    <p className="
+                      text-gray-600
+                      mt-2
                     ">
 
 
-                      KES {
+                      📍 {
 
-                        Number(
-                          tour.price || 0
-                        )
-                        .toLocaleString()
+                        tour.destination?.name ||
+
+                        tour.destination ||
+
+                        tour.country ||
+
+                        "Kenya"
 
                       }
 
 
-                    </span>
+                    </p>
+
+
+
+
+
+                    <p className="
+                      text-gray-600
+                      mt-4
+                      line-clamp-3
+                    ">
+
+                      {tour.description}
+
+                    </p>
 
 
 
 
 
 
-
-
-                    <Link
-
-                      to={`/tours/${tour._id}`}
-
-
-                      className="
-                        bg-green-600
-                        text-white
-                        px-5
-                        py-2
-                        rounded-lg
-                        hover:bg-green-700
-                      "
-
-                    >
-
-                      View Tour
-
-
-                    </Link>
+                    <div className="
+                      flex
+                      justify-between
+                      items-center
+                      mt-6
+                    ">
 
 
 
+                      <span className="
+                        text-green-700
+                        font-bold
+                        text-xl
+                      ">
+
+
+                        KES {
+
+                          Number(
+                            tour.price || 0
+                          )
+                          .toLocaleString()
+
+                        }
+
+
+                      </span>
+
+
+
+
+
+                      <Link
+
+                        to={`/tours/${tour._id}`}
+
+                        className="
+                          bg-green-600
+                          text-white
+                          px-5
+                          py-2
+                          rounded-lg
+                          hover:bg-green-700
+                        "
+
+                      >
+
+                        View Tour
+
+
+                      </Link>
+
+
+
+                    </div>
 
 
 
@@ -401,28 +363,15 @@ export default function Tours() {
 
 
 
-
-
                 </div>
 
 
+              ))
 
-
-
-              </div>
-
-
-
-            ))
-
-          }
-
-
-
+            }
 
 
           </div>
-
 
 
         )
@@ -431,12 +380,8 @@ export default function Tours() {
 
 
 
-
-
-
     </div>
 
   );
-
 
 }

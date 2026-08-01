@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { CalendarDays } from "lucide-react";
 
-import { getUpcomingTours } from "../../api/tourApi";
+import { getUpcomingTours } from "../../../api/tourApi";
 
 export default function UpcomingTours() {
   const {

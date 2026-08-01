@@ -12,15 +12,17 @@ import api from "./axios";
 // GET ALL TOURS
 // ============================================================
 
+
 export const getTours = async (params = {}) => {
+
   const { data } = await api.get("/tours", {
     params,
   });
 
+
   return data;
+
 };
-
-
 // ============================================================
 // GET UPCOMING TOURS
 // ============================================================
