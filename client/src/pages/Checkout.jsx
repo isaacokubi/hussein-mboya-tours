@@ -1,73 +1,60 @@
 import {
-    useParams,
-    useNavigate
+  useParams,
+  useNavigate,
 } from "react-router-dom";
 
-
 import {
-    useQuery,
-    useMutation
+  useQuery,
+  useMutation,
 } from "@tanstack/react-query";
 
-
 import {
-    useState
+  useState,
 } from "react";
 
-
 import {
-    toast
+  toast,
 } from "react-toastify";
 
-
 import {
-    getTourById
+  getTourById,
 } from "../api/tourApi";
 
-
 import {
-    createBooking,
-    initiatePayment
+  createBooking,
+  initiatePayment,
 } from "../api/bookingApi";
 
-
 import {
-    useAuth
+  useAuth,
 } from "../context/AuthContext";
 
 
 
-
-
-export default function Checkout(){
+export default function Checkout() {
 
 
 const {
-    id
+  id
 }=useParams();
 
 
-
-const navigate =
-useNavigate();
-
+const navigate = useNavigate();
 
 
 const {
-    user
+  user
 }=useAuth();
-
-
 
 
 
 const [form,setForm]=useState({
 
-    travelDate:"",
+  travelDate:"",
 
-    travelers:1,
+  travelers:1,
 
-    phone:""
+  phone:""
 
 });
 
@@ -75,55 +62,73 @@ const [form,setForm]=useState({
 
 
 
-
-
+/*
+|--------------------------------------------------------------------------
+| LOAD TOUR
+|--------------------------------------------------------------------------
+*/
 
 const {
 
-    data:tour,
+data,
 
-    isLoading
+isLoading,
 
 }=useQuery({
 
-    queryKey:[
-        "checkout-tour",
-        id
-    ],
+queryKey:[
+"checkout-tour",
+id
+],
 
 
-    queryFn:
-    ()=>getTourById(id),
+queryFn:()=>getTourById(id),
 
-
-    enabled:Boolean(id)
+enabled:Boolean(id)
 
 });
 
 
 
+const tour =
+data?.data || data;
 
 
 
 
+
+/*
+|--------------------------------------------------------------------------
+| CREATE BOOKING
+|--------------------------------------------------------------------------
+*/
 
 
 const bookingMutation = useMutation({
 
-
-
 mutationFn:createBooking,
 
 
-
-onSuccess:async(data)=>{
+onSuccess:async(response)=>{
 
 
 try{
 
 
 const booking =
-data.booking || data;
+response.booking || response.data?.booking;
+
+
+
+if(!booking){
+
+toast.error(
+"Booking response invalid"
+);
+
+return;
+
+}
 
 
 
@@ -133,19 +138,15 @@ toast.success(
 
 
 
-
-
 await initiatePayment({
 
-    bookingId:
-    booking._id,
+bookingId:
+booking._id,
 
-    phone:
-    form.phone
+phone:
+form.phone
 
 });
-
-
 
 
 
@@ -156,11 +157,10 @@ navigate(
 
 
 }
-
 catch(error){
 
 
-console.error(error);
+console.log(error);
 
 
 toast.error(
@@ -171,12 +171,14 @@ toast.error(
 }
 
 
-
 },
 
 
 
 onError(error){
+
+
+console.log(error);
 
 
 toast.error(
@@ -191,10 +193,8 @@ error?.response?.data?.message ||
 }
 
 
+
 });
-
-
-
 
 
 
@@ -206,13 +206,11 @@ const handleChange=(e)=>{
 
 setForm({
 
-    ...form,
+...form,
 
+[e.target.name]:
 
-    [e.target.name]:
-
-    e.target.value
-
+e.target.value
 
 });
 
@@ -225,14 +223,10 @@ setForm({
 
 
 
-
-
 const handleSubmit=(e)=>{
 
 
 e.preventDefault();
-
-
 
 
 
@@ -254,19 +248,38 @@ return;
 
 
 
+const count =
+Number(form.travelers);
 
 
 
-
-const totalAmount =
-
-Number(tour?.price || 0)
-
-*
-
-Number(form.travelers || 1);
+/*
+|--------------------------------------------------------------------------
+| CREATE TRAVELER ARRAY
+|--------------------------------------------------------------------------
+*/
 
 
+const travelers =
+Array.from(
+{
+length:count
+},
+(_,index)=>({
+
+name:
+`${user.name || "Traveler"} ${index+1}`,
+
+age:0,
+
+gender:"other",
+
+passportNumber:"",
+
+nationality:""
+
+})
+);
 
 
 
@@ -274,36 +287,45 @@ Number(form.travelers || 1);
 
 bookingMutation.mutate({
 
-
-
 tour:id,
-
 
 
 travelDate:
 form.travelDate,
 
 
+travelers,
 
-numberOfGuests:
-Number(form.travelers),
 
+
+contact:{
+
+
+name:
+user.name || "",
+
+
+email:
+user.email || "",
 
 
 phone:
-form.phone,
+form.phone
+
+
+},
 
 
 
-totalAmount
-
+paymentMethod:
+"MPESA"
 
 
 });
 
 
-
 };
+
 
 
 
@@ -363,14 +385,14 @@ Tour not found
 
 
 
+const image =
+tour.featuredImage?.url ||
 
-const total =
+tour.images?.[0]?.url ||
 
-Number(tour.price || 0)
+tour.image ||
 
-*
-
-Number(form.travelers || 1);
+"/images/tour-placeholder.jpg";
 
 
 
@@ -395,11 +417,6 @@ gap-8
 ">
 
 
-
-
-
-
-
 <div className="
 bg-white
 rounded-2xl
@@ -408,14 +425,9 @@ p-6
 ">
 
 
-
 <img
 
-src={
-tour.featuredImage?.url ||
-tour.images?.[0]?.url ||
-"/images/tour-placeholder.jpg"
-}
+src={image}
 
 alt={tour.title}
 
@@ -427,8 +439,6 @@ rounded-xl
 "
 
 />
-
-
 
 
 
@@ -444,17 +454,14 @@ mt-5
 
 
 
-
 <p className="
-text-gray-600
 mt-3
+text-gray-600
 ">
 
 {tour.description}
 
 </p>
-
-
 
 
 
@@ -465,21 +472,13 @@ font-bold
 text-green-700
 ">
 
-KES {
-Number(
-tour.price || 0
-)
-.toLocaleString()
-}
+KES {Number(tour.price || 0).toLocaleString()}
 
 </div>
 
 
 
 </div>
-
-
-
 
 
 
@@ -509,10 +508,13 @@ Complete Booking
 
 
 <form
+
 onSubmit={handleSubmit}
+
 className="
 space-y-5
 "
+
 >
 
 
@@ -539,8 +541,8 @@ onChange={handleChange}
 className="
 w-full
 border
-rounded-lg
 p-3
+rounded-lg
 "
 
 />
@@ -565,9 +567,9 @@ Number of Travellers
 
 type="number"
 
-min="1"
+name="travellers"
 
-name="travelers"
+min="1"
 
 value={form.travelers}
 
@@ -576,8 +578,8 @@ onChange={handleChange}
 className="
 w-full
 border
-rounded-lg
 p-3
+rounded-lg
 "
 
 />
@@ -615,8 +617,8 @@ onChange={handleChange}
 className="
 w-full
 border
-rounded-lg
 p-3
+rounded-lg
 "
 
 />
@@ -650,13 +652,21 @@ text-green-700
 ">
 
 KES {
-total.toLocaleString()
+
+(
+Number(tour.price || 0)
+*
+Number(form.travelers)
+)
+.toLocaleString()
+
 }
 
 </h3>
 
 
 </div>
+
 
 
 
@@ -683,10 +693,15 @@ font-bold
 
 {
 bookingMutation.isPending
+
 ?
+
 "Processing..."
+
 :
+
 "Pay with M-Pesa"
+
 }
 
 
@@ -694,15 +709,11 @@ bookingMutation.isPending
 
 
 
+
 </form>
 
 
-
 </div>
-
-
-
-
 
 
 

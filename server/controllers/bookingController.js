@@ -27,239 +27,155 @@ import withTransaction from "../utils/withTransaction.js";
 |--------------------------------------------------------------------------
 */
 
-export const createBooking = async (
-  req,
-  res,
-  next
-) => {
+export const createBooking = async (req, res, next) => {
   try {
-    const {
-      tour,
-      travelDate,
-      travelers,
-      contact,
-      paymentMethod,
-    } = req.body;
+    const { tour, travelDate, travelers, contact, paymentMethod } = req.body;
 
-    const booking =
-      await withTransaction(
-        async (session) => {
-          const tourData =
-            await Tour.findById(tour)
-              .session(session);
+    const booking = await withTransaction(async (session) => {
+      const tourData = await Tour.findById(tour).session(session);
 
-          if (!tourData) {
-            throw new Error(
-              "Tour not found"
-            );
-          }
+      if (!tourData) {
+        throw new Error("Tour not found");
+      }
 
-          /*
+      /*
           |--------------------------------------------------------------------------
           | Validate Travel Date
           |--------------------------------------------------------------------------
           */
 
-          if (!travelDate) {
-            throw new Error(
-              "Travel date is required"
-            );
-          }
+      if (!travelDate) {
+        throw new Error("Travel date is required");
+      }
 
-          const selectedDate =
-            new Date(travelDate);
+      const selectedDate = new Date(travelDate);
 
-          if (
-            selectedDate <
-            new Date()
-          ) {
-            throw new Error(
-              "Travel date cannot be in the past"
-            );
-          }
+      if (selectedDate < new Date()) {
+        throw new Error("Travel date cannot be in the past");
+      }
 
-          /*
+      /*
           |--------------------------------------------------------------------------
           | Validate Travelers
           |--------------------------------------------------------------------------
           */
 
-          if (
-            !Array.isArray(travelers) ||
-            travelers.length === 0
-          ) {
-            throw new Error(
-              "At least one traveler is required"
-            );
-          }
+      if (!Array.isArray(travelers) || travelers.length === 0) {
+        throw new Error("At least one traveler is required");
+      }
 
-          const travelerCount =
-            travelers.length;
+      const travelerCount = travelers.length;
 
-          const available =
-            await validateTourCapacity(
-              tour,
-              travelerCount
-            );
+      const available = await validateTourCapacity(tour, travelerCount);
 
-          if (!available) {
-            throw new Error(
-              "No available slots"
-            );
-          }
+      if (!available) {
+        throw new Error("No available slots");
+      }
 
-          /*
+      /*
           |--------------------------------------------------------------------------
           | Validate Payment Method
           |--------------------------------------------------------------------------
           */
 
-          if (
-            paymentMethod &&
-            !PAYMENT_METHODS.includes(
-              paymentMethod
-            )
-          ) {
-            throw new Error(
-              "Invalid payment method"
-            );
-          }
+      if (paymentMethod && !PAYMENT_METHODS.includes(paymentMethod)) {
+        throw new Error("Invalid payment method");
+      }
 
-          /*
+      /*
           |--------------------------------------------------------------------------
           | Pricing
           |--------------------------------------------------------------------------
           */
 
-          const {
-            subtotal,
-            discountAmount,
-            totalAmount,
-            depositAmount,
-            balanceAmount,
-          } = calculateBookingAmounts(
-            tourData,
-            travelerCount
-          );
+      const {
+        subtotal,
+        discountAmount,
+        totalAmount,
+        depositAmount,
+        balanceAmount,
+      } = calculateBookingAmounts(tourData, travelerCount);
 
-          /*
+      /*
           |--------------------------------------------------------------------------
           | Reserve Inventory
           |--------------------------------------------------------------------------
           */
 
-          await reserveSlots(
-            tour,
-            travelerCount
-          );
+      await reserveSlots(tour, travelerCount);
 
-          /*
+      /*
           |--------------------------------------------------------------------------
           | Create Booking
           |--------------------------------------------------------------------------
           */
 
-          const booking =
-            await Booking.create(
-              [
-                {
-                  customer:
-                    req.user._id,
+      const booking = await Booking.create(
+        [
+          {
+            customer: req.user._id,
 
-                  user:
-                    req.user._id,
+            user: req.user._id,
 
-                  customerSnapshot: {
-                    name:
-                      req.user.name ||
-                      "",
+            customerSnapshot: {
+              name: req.user.name || "",
 
-                    email:
-                      req.user.email ||
-                      "",
+              email: req.user.email || "",
 
-                    phone:
-                      req.user.phone ||
-                      "",
-                  },
+              phone: req.user.phone || "",
+            },
 
-                  tour,
+            tour,
 
-                  travelDate,
+            travelDate,
 
-                  travelers,
+            travelers,
 
-                  travelerCount,
+            travelerCount,
 
-                  numberOfGuests:
-                    travelerCount,
+            numberOfGuests: travelerCount,
 
-                  contact,
+            contact,
 
-                  subtotal,
+            subtotal,
 
-                  discountAmount,
+            discountAmount,
 
-                  totalAmount,
+            totalAmount,
 
-                  amount:
-                    totalAmount,
+            amount: totalAmount,
 
-                  depositAmount,
+            depositAmount,
 
-                  balanceAmount,
+            balanceAmount,
 
-                  paymentMethod:
-                    paymentMethod ||
-                    "MPESA",
+            paymentMethod: paymentMethod || "MPESA",
 
-                  paymentStatus:
-                    "pending",
+            paymentStatus: "pending",
 
-                  bookingStatus:
-                    "pending",
+            bookingStatus: "pending",
 
-                  status:
-                    "pending",
+            status: "pending",
 
-                  assigned:
-                    false,
-                },
-              ],
-              {
-                session,
-              }
-            );
-
-          return await Booking.findById(
-            booking[0]._id
-          )
-            .populate("tour")
-            .populate(
-              "customer",
-              "-password"
-            )
-            .populate(
-              "user",
-              "-password"
-            );
-        }
+            assigned: false,
+          },
+        ],
+        {
+          session,
+        },
       );
 
-    return successResponse(
-      res,
-      201,
-      "Booking created successfully",
-      {
-        booking,
-      }
-    );
+      return await Booking.findById(booking[0]._id)
+        .populate("tour")
+        .populate("customer", "-password")
+        .populate("user", "-password");
+    });
+
+    return successResponse(res, 201, "Booking created successfully", {
+      booking,
+    });
   } catch (error) {
-    return errorResponse(
-      res,
-      400,
-      error.message
-    );
+    return errorResponse(res, 400, error.message);
   }
 }; /*
 |--------------------------------------------------------------------------
@@ -830,7 +746,7 @@ export const cancelBooking = async (req, res, next) => {
       booking.paymentStatus = "cancelled";
     }
 
-    await releaseSlots(booking.tour, booking.travelerCount);
+    await releaseSlots(booking.tour, booking.numberOfGuests);
     booking.cancelledAt = new Date();
 
     await booking.save();
