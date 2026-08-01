@@ -59,9 +59,7 @@ export default function Navbar() {
 
   const isFinance = role === "financeofficer";
 
-  const isCustomer =
-    !role ||
-    role === "customer";
+  const isCustomer = !role || role === "customer";
 
   /*
   |--------------------------------------------------------------------------
@@ -153,22 +151,17 @@ export default function Navbar() {
         {/* LOGO */}
         {/* ------------------------------------------------ */}
 
-        <Link
-          to="/"
-          className="flex items-center gap-3"
-        >
+        <Link to="/" className="flex items-center gap-3">
           <div className="h-11 w-11 rounded-full bg-green-700 text-white flex items-center justify-center font-bold text-lg">
             HM
           </div>
 
           <div>
             <h2 className="font-bold text-xl text-green-800">
-              Hussein Mboya Tours
+              Coherent Tours
             </h2>
 
-            <p className="text-xs text-gray-500">
-              Explore Africa
-            </p>
+            <p className="text-xs text-gray-500">Explore Africa</p>
           </div>
         </Link>
 
@@ -203,10 +196,7 @@ export default function Navbar() {
 
           {!user && (
             <>
-              <Link
-                to="/login"
-                className="font-medium hover:text-green-700"
-              >
+              <Link to="/login" className="font-medium hover:text-green-700">
                 Login
               </Link>
 
@@ -239,19 +229,16 @@ export default function Navbar() {
 
               <div className="relative">
                 <button
-                  onClick={() =>
-                    setProfileOpen(!profileOpen)
-                  }
+                  onClick={() => setProfileOpen(!profileOpen)}
                   className="flex items-center gap-2 border rounded-lg px-3 py-2 hover:bg-gray-50"
                 >
                   <User size={18} />
 
-                  <span className="max-w-[120px] truncate">
-                    {user.name}
-                  </span>
+                  <span className="max-w-[120px] truncate">{user.name}</span>
 
                   <ChevronDown size={16} />
-                </button>                <AnimatePresence>
+                </button>{" "}
+                <AnimatePresence>
                   {profileOpen && (
                     <motion.div
                       initial={{
@@ -360,10 +347,10 @@ export default function Navbar() {
         >
           {mobileOpen ? <X size={30} /> : <Menu size={30} />}
         </button>
-      </div>      {/* ------------------------------------------------ */}
+      </div>{" "}
+      {/* ------------------------------------------------ */}
       {/* MOBILE MENU */}
       {/* ------------------------------------------------ */}
-
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
@@ -469,9 +456,7 @@ export default function Navbar() {
               ) : (
                 <>
                   <div className="pb-4 border-b">
-                    <h3 className="font-bold text-lg">
-                      {user.name}
-                    </h3>
+                    <h3 className="font-bold text-lg">{user.name}</h3>
 
                     <p className="text-sm text-gray-500 capitalize">
                       {dashboardLink.label}
