@@ -1,43 +1,40 @@
 import HeroSlide from "../models/HeroSlide.js";
 
 
+export const getHeroSlides = async (req, res) => {
 
-export const getHeroSlides = async(req,res,next)=>{
+  try {
 
-
-try{
-
-
-const slides = await HeroSlide.find({
-
-active:true
-
-})
-
-.sort({
-
-order:1
-
-});
+    const slides = await HeroSlide.find();
 
 
-
-res.json({
-
-success:true,
-
-slides
-
-});
+    console.log("ALL HERO SLIDES:", slides);
 
 
-}
+    res.status(200).json({
 
-catch(error){
+      success: true,
 
-next(error);
+      slides
 
-}
+    });
 
+
+  } catch (error) {
+
+
+    console.log("HERO SLIDE ERROR:", error);
+
+
+    res.status(500).json({
+
+      success: false,
+
+      message: error.message
+
+    });
+
+
+  }
 
 };
