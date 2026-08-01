@@ -49,7 +49,7 @@ export default function Footer() {
 
         <div>
           <h2 className="text-2xl font-bold text-white">
-            Hussein Mboya Tours
+            Coherent Tours
           </h2>
 
           <p className="mt-4 text-gray-400 leading-relaxed">
@@ -64,15 +64,15 @@ export default function Footer() {
               className="flex items-center gap-2 hover:text-green-400 transition"
             >
               <FaPhone />
-              +254 733 439 762
+              +254 733 439 362
             </a>
 
             <a
-              href="mailto:info@husseinmboyatours.com"
+              href="mailto:info@coherenttours.com"
               className="flex items-center gap-2 hover:text-green-400 transition"
             >
               <FaEnvelope />
-              info@husseinmboyatours.com
+              info@coherenttours.com
             </a>
 
             <div className="flex items-center gap-2">
@@ -419,7 +419,7 @@ export default function Footer() {
           "
         >
           <p className="text-sm text-gray-500 text-center lg:text-left">
-            © {year} Hussein Mboya Tours. All Rights Reserved.
+            © {year} Coherent  Tours. All Rights Reserved.
           </p>
 
           <div className="flex flex-wrap justify-center gap-6 text-sm">
