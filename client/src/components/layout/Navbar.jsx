@@ -55,7 +55,10 @@ export default function Navbar() {
 
   const isGuide = role === "guide";
 
-  const isManager = role === "manager";
+  const isManager =
+  role === "manager" ||
+  role === "tour_manager" ||
+  role === "tourmanager";
 
   const isFinance = role === "financeofficer";
 
