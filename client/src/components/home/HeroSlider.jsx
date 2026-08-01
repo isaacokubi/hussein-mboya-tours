@@ -18,199 +18,263 @@ export default function HeroSlider() {
     queryFn: getHeroSlides,
   });
 
+
   if (isLoading) {
     return (
-      <section
-        className="
-          h-screen
-          bg-black
-          flex
-          items-center
-          justify-center
-          text-white
-        "
-      >
+      <section className="h-[85vh] flex items-center justify-center bg-gray-900 text-white">
         Loading...
       </section>
     );
   }
 
+
   if (isError || !slides.length) {
     return (
-      <section
-        className="
-          h-screen
-          bg-black
-          flex
-          items-center
-          justify-center
-          text-white
-          text-xl
-        "
-      >
+      <section className="h-[85vh] flex items-center justify-center bg-gray-900 text-white text-xl">
         No hero slides available
       </section>
     );
   }
 
+
   return (
     <section
       className="
         relative
-        h-screen
+        px-4
+        md:px-8
+        lg:px-12
+        py-6
         overflow-hidden
       "
     >
-      <Swiper
-        modules={[Autoplay, EffectFade]}
-        effect="fade"
-        autoplay={{
-          delay: 5000,
-          disableOnInteraction: false,
-        }}
-        /*
-        Enable loop only when enough slides exist.
-        Swiper requires multiple slides for loop mode.
-        */
 
-        loop={slides.length > 3}
-        className="h-full"
+      <div
+        className="
+          relative
+          h-[85vh]
+          overflow-hidden
+          rounded-3xl
+          shadow-2xl
+        "
       >
-        {slides.map((slide) => (
+
+        <Swiper
+          modules={[Autoplay, EffectFade]}
+          effect="fade"
+          autoplay={{
+            delay:5000,
+            disableOnInteraction:false,
+          }}
+          loop={slides.length > 3}
+          className="h-full"
+        >
+
+
+        {slides.map((slide)=>(
           <SwiperSlide key={slide._id}>
+
+
             <div
               className="
                 relative
-                h-screen
+                h-full
+                overflow-hidden
               "
             >
+
+
               {slide.video?.url && (
+
                 <video
+                  src={slide.video.url}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+
                   className="
                     absolute
                     inset-0
                     w-full
                     h-full
                     object-cover
+                    scale-105
+                    animate-pulse
                   "
-                  src={slide.video.url}
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
                 />
+
               )}
+
+
+
+              {/* Premium Travel Overlay */}
 
               <div
                 className="
                   absolute
                   inset-0
-                  bg-black/55
+                  bg-gradient-to-b
+                  from-black/40
+                  via-black/50
+                  to-black/80
                 "
               />
+
+
 
               <div
                 className="
                   relative
                   z-10
+                  h-full
                   flex
                   flex-col
-                  items-center
                   justify-center
-                  h-full
+                  items-center
                   text-center
-                  text-white
                   px-6
+                  text-white
                 "
               >
-                {slide.badge && (
-                  <span
-                    className="
-                      uppercase
-                      tracking-[6px]
-                      text-green-400
-                      mb-4
-                    "
-                  >
-                    {slide.badge}
-                  </span>
-                )}
 
-                <h1
+
+              {slide.badge && (
+
+                <span
                   className="
-                    text-5xl
-                    md:text-7xl
-                    font-extrabold
-                    leading-tight
+                    mb-5
+                    px-5
+                    py-2
+                    rounded-full
+                    bg-white/20
+                    backdrop-blur-md
+                    border
+                    border-white/30
+                    uppercase
+                    tracking-[5px]
+                    text-sm
+                    text-green-300
                   "
                 >
-                  {slide.title}
-                </h1>
+                  {slide.badge}
+                </span>
 
-                {slide.subtitle && (
-                  <p
-                    className="
-                      mt-6
-                      max-w-2xl
-                      text-lg
-                      md:text-2xl
-                      text-gray-200
-                    "
-                  >
-                    {slide.subtitle}
-                  </p>
-                )}
+              )}
 
-                <div
+
+
+              <h1
+                className="
+                  text-4xl
+                  sm:text-5xl
+                  md:text-7xl
+                  font-black
+                  leading-tight
+                  max-w-5xl
+                  drop-shadow-lg
+                "
+              >
+                {slide.title}
+              </h1>
+
+
+
+              {slide.subtitle && (
+
+                <p
                   className="
-                    flex
-                    gap-4
-                    mt-10
-                    flex-wrap
-                    justify-center
+                    mt-6
+                    max-w-3xl
+                    text-base
+                    md:text-xl
+                    text-gray-200
+                    leading-relaxed
                   "
                 >
-                  {slide.buttonOne?.text && (
-                    <Link
-                      to={slide.buttonOne.link || "#"}
-                      className="
-                        bg-green-600
-                        hover:bg-green-700
-                        px-8
-                        py-4
-                        rounded-full
-                        font-semibold
-                        transition
-                      "
-                    >
-                      {slide.buttonOne.text}
-                    </Link>
-                  )}
+                  {slide.subtitle}
+                </p>
 
-                  {slide.buttonTwo?.text && (
-                    <Link
-                      to={slide.buttonTwo.link || "#"}
-                      className="
-                        border
-                        border-white
-                        hover:bg-white
-                        hover:text-black
-                        px-8
-                        py-4
-                        rounded-full
-                        font-semibold
-                        transition
-                      "
-                    >
-                      {slide.buttonTwo.text}
-                    </Link>
-                  )}
-                </div>
+              )}
+
+
+
+              <div
+                className="
+                  flex
+                  gap-5
+                  mt-10
+                  flex-wrap
+                  justify-center
+                "
+              >
+
+
+              {slide.buttonOne?.text && (
+
+                <Link
+                  to={slide.buttonOne.link || "#"}
+                  className="
+                    bg-green-600
+                    hover:bg-green-700
+                    px-9
+                    py-4
+                    rounded-full
+                    font-bold
+                    shadow-lg
+                    hover:scale-105
+                    transition
+                  "
+                >
+                  {slide.buttonOne.text}
+                </Link>
+
+              )}
+
+
+
+
+              {slide.buttonTwo?.text && (
+
+                <Link
+                  to={slide.buttonTwo.link || "#"}
+                  className="
+                    bg-white/10
+                    backdrop-blur-md
+                    border
+                    border-white/50
+                    hover:bg-white
+                    hover:text-black
+                    px-9
+                    py-4
+                    rounded-full
+                    font-bold
+                    transition
+                    hover:scale-105
+                  "
+                >
+                  {slide.buttonTwo.text}
+                </Link>
+
+              )}
+
+
               </div>
+
+
+              </div>
+
             </div>
+
+
           </SwiperSlide>
         ))}
-      </Swiper>
+
+
+        </Swiper>
+
+      </div>
+
     </section>
   );
 }
