@@ -14,9 +14,9 @@ import adminTourRoutes from "./adminTourRoutes.js";
 import adminBookingRoutes from "./adminBookingRoutes.js";
 
 import categoryRoutes from "./categoryRoutes.js";
+import adminDashboardRoutes from "./adminDashboardRoutes.js";
 
 const router = express.Router();
-
 
 /*
 |--------------------------------------------------------------------------
@@ -42,7 +42,6 @@ router.use("/gallery", galleryRoutes);
 
 router.use("/hero", heroRoutes);
 
-
 /*
 |--------------------------------------------------------------------------
 | ADMIN ROUTES
@@ -55,5 +54,6 @@ router.use("/admin/tours", adminTourRoutes);
 
 router.use("/admin/bookings", adminBookingRoutes);
 
+router.use("/admin/dashboard", adminDashboardRoutes);
 
 export default router;

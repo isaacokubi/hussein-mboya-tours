@@ -12,396 +12,523 @@ import slugify from "slugify";
 
 const destinationSchema = new mongoose.Schema(
 
-{
-/*
-|--------------------------------------------------------------------------
-| BASIC INFORMATION
-|--------------------------------------------------------------------------
-*/
+    {
 
-name:{
-    type:String,
-    required:true,
-    trim:true,
-    maxlength:150
-},
+        /*
+        |--------------------------------------------------------------------------
+        | BASIC INFORMATION
+        |--------------------------------------------------------------------------
+        */
 
 
-slug:{
-    type:String,
-    unique:true,
-    lowercase:true,
-    trim:true
-},
+        name: {
+
+            type: String,
+
+            required: true,
+
+            trim: true,
+
+            maxlength: 150,
+
+        },
 
 
-country:{
-    type:String,
-    default:"Kenya",
-    required:true,
-    trim:true
-},
+        slug: {
+
+            type: String,
+
+            unique: true,
+
+            lowercase: true,
+
+            trim: true,
+
+        },
 
 
-region:{
-    type:String,
-    default:"",
-    trim:true
-},
+        country: {
+
+            type: String,
+
+            default: "Kenya",
+
+            required: true,
+
+            trim: true,
+
+        },
 
 
-city:{
-    type:String,
-    default:"",
-    trim:true
-},
+        region: {
+
+            type: String,
+
+            default: "",
+
+            trim: true,
+
+        },
+
+
+        city: {
+
+            type: String,
+
+            default: "",
+
+            trim: true,
+
+        },
 
 
 
-/*
-|--------------------------------------------------------------------------
-| DESCRIPTION
-|--------------------------------------------------------------------------
-*/
+        /*
+        |--------------------------------------------------------------------------
+        | DESCRIPTION
+        |--------------------------------------------------------------------------
+        */
 
 
-shortDescription:{
-    type:String,
-    maxlength:300,
-    default:""
-},
+        shortDescription: {
+
+            type: String,
+
+            maxlength: 300,
+
+            default: "",
+
+        },
 
 
-description:{
-    type:String,
-    required:true
-},
+        description: {
+
+            type: String,
+
+            required: true,
+
+        },
 
 
 
-/*
-|--------------------------------------------------------------------------
-| MEDIA
-|--------------------------------------------------------------------------
-*/
+        /*
+        |--------------------------------------------------------------------------
+        | MEDIA
+        |--------------------------------------------------------------------------
+        */
 
 
-featuredImage:{
-    type:String,
-    default:""
-},
+        featuredImage: {
+
+            type: String,
+
+            default: "",
+
+        },
 
 
-images:[
+        images: [
 
-{
-    url:{
-        type:String,
-        required:true
+            {
+
+                url: {
+
+                    type: String,
+
+                    required: true,
+
+                },
+
+
+                publicId: {
+
+                    type: String,
+
+                    default: "",
+
+                },
+
+
+            }
+
+        ],
+
+
+
+        video: {
+
+            type: String,
+
+            default: "",
+
+        },
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | TOURISM INFORMATION
+        |--------------------------------------------------------------------------
+        */
+
+
+        attractions: [
+
+            {
+
+                type: String,
+
+                trim: true,
+
+            }
+
+        ],
+
+
+
+        activities: [
+
+            {
+
+                type: String,
+
+                trim: true,
+
+            }
+
+        ],
+
+
+
+        languages: [
+
+            {
+
+                type: String,
+
+                trim: true,
+
+            }
+
+        ],
+
+
+
+        currency: {
+
+            type: String,
+
+            default: "",
+
+        },
+
+
+
+        timezone: {
+
+            type: String,
+
+            default: "",
+
+        },
+
+
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | WEATHER
+        |--------------------------------------------------------------------------
+        */
+
+
+        bestSeason: {
+
+            type: String,
+
+            enum: [
+
+                "Spring",
+
+                "Summer",
+
+                "Autumn",
+
+                "Winter",
+
+                "All Year"
+
+            ],
+
+            default: "All Year",
+
+        },
+
+
+
+        weather: {
+
+            type: String,
+
+            default: "",
+
+        },
+
+
+
+        averageTemperature: {
+
+            type: Number,
+
+            default: null,
+
+        },
+
+
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | LOCATION
+        |--------------------------------------------------------------------------
+        */
+
+
+        coordinates: {
+
+
+            latitude: {
+
+                type: Number,
+
+                min: -90,
+
+                max: 90,
+
+            },
+
+
+            longitude: {
+
+                type: Number,
+
+                min: -180,
+
+                max: 180,
+
+            }
+
+
+        },
+
+
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | POPULARITY
+        |--------------------------------------------------------------------------
+        */
+
+
+        averageRating: {
+
+            type: Number,
+
+            default: 0,
+
+            min: 0,
+
+            max: 5,
+
+        },
+
+
+
+        totalReviews: {
+
+            type: Number,
+
+            default: 0,
+
+        },
+
+
+
+        totalTours: {
+
+            type: Number,
+
+            default: 0,
+
+        },
+
+
+
+        totalBookings: {
+
+            type: Number,
+
+            default: 0,
+
+        },
+
+
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | FEATURES
+        |--------------------------------------------------------------------------
+        */
+
+
+        featured: {
+
+            type: Boolean,
+
+            default: false,
+
+        },
+
+
+
+        popular: {
+
+            type: Boolean,
+
+            default: false,
+
+        },
+
+
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | STATUS
+        |--------------------------------------------------------------------------
+        */
+
+
+        status: {
+
+            type: String,
+
+            enum: [
+
+                "active",
+
+                "inactive"
+
+            ],
+
+            default: "active",
+
+        },
+
+
+
+        active: {
+
+            type: Boolean,
+
+            default: true,
+
+        },
+
+
+
+        isDeleted: {
+
+            type: Boolean,
+
+            default: false,
+
+        },
+
+
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | SEO
+        |--------------------------------------------------------------------------
+        */
+
+
+        seo: {
+
+
+            title: {
+
+                type: String,
+
+                default: "",
+
+            },
+
+
+            description: {
+
+                type: String,
+
+                default: "",
+
+            },
+
+
+            keywords: [
+
+                {
+
+                    type: String,
+
+                    trim: true,
+
+                }
+
+            ]
+
+
+        },
+
+
     },
 
-    publicId:{
-        type:String,
-        default:""
+
+
+    {
+
+        timestamps: true,
+
+
+        toJSON: {
+
+            virtuals: true,
+
+        },
+
+
+        toObject: {
+
+            virtuals: true,
+
+        },
+
+
     }
-}
 
-],
 
-
-
-video:{
-    type:String,
-    default:""
-},
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| TOURISM INFORMATION
-|--------------------------------------------------------------------------
-*/
-
-
-attractions:[
-
-{
-    type:String,
-    trim:true
-}
-
-],
-
-
-activities:[
-
-{
-    type:String,
-    trim:true
-}
-
-],
-
-
-languages:[
-
-{
-    type:String,
-    trim:true
-}
-
-],
-
-
-currency:{
-    type:String,
-    default:""
-},
-
-
-timezone:{
-    type:String,
-    default:""
-},
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| WEATHER
-|--------------------------------------------------------------------------
-*/
-
-
-bestSeason:{
-
-type:String,
-
-enum:[
-
-"Spring",
-"Summer",
-"Autumn",
-"Winter",
-"All Year"
-
-],
-
-default:"All Year"
-
-},
-
-
-weather:{
-    type:String,
-    default:""
-},
-
-
-averageTemperature:{
-    type:Number,
-    default:null
-},
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| LOCATION
-|--------------------------------------------------------------------------
-*/
-
-
-coordinates:{
-
-latitude:{
-    type:Number,
-    min:-90,
-    max:90
-},
-
-
-longitude:{
-    type:Number,
-    min:-180,
-    max:180
-}
-
-},
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| POPULARITY
-|--------------------------------------------------------------------------
-*/
-
-
-averageRating:{
-
-type:Number,
-
-default:0,
-
-min:0,
-
-max:5
-
-},
-
-
-totalReviews:{
-    type:Number,
-    default:0
-},
-
-
-totalTours:{
-    type:Number,
-    default:0
-},
-
-
-totalBookings:{
-    type:Number,
-    default:0
-},
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| FEATURES
-|--------------------------------------------------------------------------
-*/
-
-
-featured:{
-
-type:Boolean,
-
-default:false
-
-},
-
-
-popular:{
-
-type:Boolean,
-
-default:false
-
-},
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| STATUS
-|--------------------------------------------------------------------------
-*/
-
-
-status:{
-
-type:String,
-
-enum:[
-
-"active",
-"inactive"
-
-],
-
-default:"active"
-
-},
-
-
-
-// compatibility with second schema
-
-active:{
-
-type:Boolean,
-
-default:true
-
-},
-
-
-
-isDeleted:{
-
-type:Boolean,
-
-default:false
-
-},
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| SEO
-|--------------------------------------------------------------------------
-*/
-
-
-seo:{
-
-title:{
-    type:String,
-    default:""
-},
-
-
-description:{
-    type:String,
-    default:""
-},
-
-
-keywords:[
-
-{
-    type:String,
-    trim:true
-}
-
-]
-
-}
-
-
-},
-
-{
-timestamps:true,
-
-
-toJSON:{
-    virtuals:true
-},
-
-
-toObject:{
-    virtuals:true
-}
-
-}
 
 );
+
 
 
 
@@ -414,28 +541,39 @@ toObject:{
 */
 
 
-destinationSchema.pre("save",function(next){
+destinationSchema.pre(
+    "save",
+    function(next){
+
+        if(
+            !this.slug &&
+            this.name
+        ){
+
+            this.slug = slugify(
+                this.name,
+                {
+
+                    lower:true,
+
+                    strict:true,
+
+                    trim:true,
+
+                }
+            );
+
+        }
 
 
-if(!this.slug && this.name){
-
-this.slug = slugify(this.name,{
-
-lower:true,
-
-strict:true,
-
-trim:true
-
-});
-
-}
+        next();
 
 
-next();
+    }
+
+);
 
 
-});
 
 
 
@@ -448,25 +586,30 @@ next();
 */
 
 
-destinationSchema.virtual("location")
+destinationSchema.virtual(
+    "location"
+)
 .get(function(){
 
 
-return [
+    return [
 
-this.city,
+        this.city,
 
-this.region,
+        this.region,
 
-this.country
+        this.country
 
 
-]
-.filter(Boolean)
-.join(", ");
+    ]
+
+    .filter(Boolean)
+
+    .join(", ");
 
 
 });
+
 
 
 
@@ -482,58 +625,81 @@ this.country
 
 
 destinationSchema.index({
-slug:1
+
+    slug:1
+
 });
 
 
 destinationSchema.index({
-country:1
+
+    country:1
+
 });
 
 
 destinationSchema.index({
-region:1
+
+    region:1
+
 });
 
 
 destinationSchema.index({
-city:1
+
+    city:1
+
 });
 
 
 destinationSchema.index({
-featured:1
+
+    featured:1
+
 });
 
 
 destinationSchema.index({
-popular:1
+
+    popular:1
+
 });
 
 
 destinationSchema.index({
-status:1
+
+    status:1
+
 });
 
 
 destinationSchema.index({
-active:1
+
+    active:1
+
 });
 
 
 destinationSchema.index({
-averageRating:-1
+
+    averageRating:-1
+
 });
 
 
 destinationSchema.index({
-totalBookings:-1
+
+    totalBookings:-1
+
 });
 
 
 destinationSchema.index({
-isDeleted:1
+
+    isDeleted:1
+
 });
+
 
 
 
@@ -547,13 +713,18 @@ isDeleted:1
 */
 
 
-destinationSchema.methods.updateRating=function(rating){
+destinationSchema.methods.updateRating =
+function(rating){
 
-this.averageRating = rating;
 
-return this.save();
+    this.averageRating = rating;
+
+
+    return this.save();
+
 
 };
+
 
 
 
@@ -569,12 +740,18 @@ return this.save();
 
 const Destination =
 
-mongoose.models.Destination ||
+    mongoose.models.Destination ||
 
-mongoose.model(
-"Destination",
-destinationSchema
-);
+    mongoose.model(
+
+        "Destination",
+
+        destinationSchema,
+
+        "destinations"
+
+    );
+
 
 
 export default Destination;
