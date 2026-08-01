@@ -1,6 +1,5 @@
 import SEO from "../components/seo/SEO";
 
-
 import HeroSlider from "../components/home/HeroSlider";
 import StatsSection from "../components/home/StatsSection";
 import FeaturedTours from "../components/home/FeaturedTours";
@@ -13,82 +12,118 @@ import MpesaCTA from "../components/home/MpesaCTA";
 import NewsletterSection from "../components/home/NewsletterSection";
 
 
-
-
-
 export default function Home() {
-
-
   return (
-
-
     <main
       className="
-      overflow-hidden
+        overflow-hidden
+        bg-gray-50
       "
     >
 
-
-
       <SEO
-
         title="Luxury Kenya Safaris | Hussein Mboya Tours"
-
         description="Experience luxury safaris, beach holidays and unforgettable African adventures across Kenya."
-
         image="/hero1.jpeg"
-
       />
 
 
+      {/* Hero stays wider for cinematic effect */}
+      <section>
+        <HeroSlider />
+      </section>
 
 
 
-
-      <HeroSlider />
-
-
-
-      <StatsSection />
-
-
-
-      <FeaturedTours />
-
-
-
-      <DestinationsSection />
+      {/* Main page content container */}
+      <div
+        className="
+          max-w-[1600px]
+          mx-auto
+          px-4
+          sm:px-6
+          md:px-8
+          lg:px-12
+          xl:px-16
+        "
+      >
 
 
-
-      <CategoriesSection />
-
-
-
-      <TestimonialsSection />
+        <section className="py-12 md:py-16">
+          <StatsSection />
+        </section>
 
 
 
-      <GallerySection />
+        <section className="py-12 md:py-16">
+          <FeaturedTours />
+        </section>
 
 
 
-      <WhyChooseUs />
+        <section className="py-12 md:py-16">
+          <DestinationsSection />
+        </section>
 
 
 
-      <MpesaCTA />
+        <section className="py-12 md:py-16">
+          <CategoriesSection />
+        </section>
 
 
 
-      <NewsletterSection />
+        <section className="py-12 md:py-16">
+          <TestimonialsSection />
+        </section>
 
+
+
+        <section className="py-12 md:py-16">
+          <GallerySection />
+        </section>
+
+
+
+        <section className="py-12 md:py-16">
+          <WhyChooseUs />
+        </section>
+
+
+      </div>
+
+
+
+      {/* Full width premium CTA sections */}
+      <section
+        className="
+          mt-8
+          bg-gradient-to-r
+          from-green-900
+          via-green-800
+          to-emerald-700
+        "
+      >
+        <MpesaCTA />
+      </section>
+
+
+
+      <section
+        className="
+          px-4
+          sm:px-6
+          md:px-8
+          lg:px-12
+          py-12
+          max-w-[1600px]
+          mx-auto
+        "
+      >
+        <NewsletterSection />
+      </section>
 
 
     </main>
-
-
   );
-
-
 }
