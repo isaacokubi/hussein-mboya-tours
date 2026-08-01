@@ -57,13 +57,20 @@ export const protect = async (req, res, next) => {
 
     const decoded = jwt.verify(token, env.JWT_SECRET);
 
+    // DEBUG LOGS
+    console.log("JWT DECODED:", decoded);
+
     /*
     |--------------------------------------------------------------------------
     | LOAD USER
     |--------------------------------------------------------------------------
     */
 
-    const user = await User.findById(decoded.id)
+    const userId = decoded.sub || decoded.id;
+
+    console.log("LOOKING FOR USER:", userId);
+
+    const user = await User.findById(userId)
       .select("-password")
       .populate({
         path: "roleId",
@@ -74,11 +81,20 @@ export const protect = async (req, res, next) => {
       .populate("permissionsOverride");
 
     if (!user) {
+      console.error("USER NOT FOUND:", userId);
+
       return res.status(401).json({
         success: false,
         message: "User no longer exists.",
       });
     }
+
+    console.log("USER FOUND:", {
+      id: user._id,
+      email: user.email,
+      role: user.role,
+      roleId: user.roleId?.name,
+    });
 
     /*
     |--------------------------------------------------------------------------
@@ -86,10 +102,7 @@ export const protect = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    if (
-      user.status !== "active" ||
-      user.isActive === false
-    ) {
+    if (user.status !== "active" || user.isActive === false) {
       return res.status(403).json({
         success: false,
         message: "Account is inactive.",
@@ -100,7 +113,7 @@ export const protect = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error("AUTH ERROR:", error.message);
+    console.error("AUTH ERROR:", error);
 
     return res.status(401).json({
       success: false,
@@ -175,7 +188,7 @@ export const authorize = (...allowedRoles) => {
 
 /*
 |--------------------------------------------------------------------------
-| PERMISSION CHECK
+    | PERMISSION CHECK
 |--------------------------------------------------------------------------
 */
 
@@ -213,7 +226,7 @@ export const checkPermission = (permissionName) => {
 
       next();
     } catch (error) {
-      console.error("PERMISSION ERROR:", error.message);
+      console.error("PERMISSION ERROR:", error);
 
       return res.status(500).json({
         success: false,
