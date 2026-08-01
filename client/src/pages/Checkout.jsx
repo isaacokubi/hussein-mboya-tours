@@ -1,728 +1,411 @@
-import {
-  useParams,
-  useNavigate,
-} from "react-router-dom";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import { useMutation } from "@tanstack/react-query";
 
-import {
-  useQuery,
-  useMutation,
-} from "@tanstack/react-query";
+import { createBooking } from "../api/bookingApi";
+import { initiateMpesa } from "../api/mpesaApi";
 
-import {
-  useState,
-} from "react";
-
-import {
-  toast,
-} from "react-toastify";
-
-import {
-  getTourById,
-} from "../api/tourApi";
-
-import {
-  createBooking,
-  initiatePayment,
-} from "../api/bookingApi";
-
-import {
-  useAuth,
-} from "../context/AuthContext";
-
+import { useCart } from "../context/CartContext";
 
 
 export default function Checkout() {
 
+  const navigate = useNavigate();
 
-const {
-  id
-}=useParams();
+  const {
+    cart,
+    clearCart,
+  } = useCart();
 
 
-const navigate = useNavigate();
+  const tour = cart?.[0];
 
 
-const {
-  user
-}=useAuth();
+  const [travelDate,setTravelDate] = useState("");
 
+  const [travellerCount,setTravellerCount] = useState(1);
 
+  const [phone,setPhone] = useState("");
 
-const [form,setForm]=useState({
 
-  travelDate:"",
 
-  travelers:1,
+  const bookingMutation = useMutation({
 
-  phone:""
+    mutationFn: createBooking,
 
-});
+    onSuccess: async(response)=>{
 
+      const booking =
+        response.booking;
 
 
+      try {
 
+        await initiateMpesa({
 
-/*
-|--------------------------------------------------------------------------
-| LOAD TOUR
-|--------------------------------------------------------------------------
-*/
+          bookingId:
+            booking._id,
 
-const {
+          phone,
 
-data,
+          amount:
+            booking.totalAmount
 
-isLoading,
+        });
 
-}=useQuery({
 
-queryKey:[
-"checkout-tour",
-id
-],
+        toast.success(
+          "M-Pesa payment request sent"
+        );
 
 
-queryFn:()=>getTourById(id),
+        clearCart();
 
-enabled:Boolean(id)
+        navigate(
+          "/dashboard"
+        );
 
-});
 
+      } catch(error){
 
+        toast.error(
+          error?.response?.data?.message ||
+          "M-Pesa initiation failed"
+        );
 
-const tour =
-data?.data || data;
+      }
 
+    },
 
 
+    onError:(error)=>{
 
+      toast.error(
+        error?.response?.data?.message ||
+        "Booking failed"
+      );
 
-/*
-|--------------------------------------------------------------------------
-| CREATE BOOKING
-|--------------------------------------------------------------------------
-*/
+    }
 
+  });
 
-const bookingMutation = useMutation({
 
-mutationFn:createBooking,
 
 
-onSuccess:async(response)=>{
 
+  if(!tour){
 
-try{
+    return (
+      <div className="p-10 text-center">
 
+        No tour selected
 
-const booking =
-response.booking || response.data?.booking;
+      </div>
+    );
 
+  }
 
 
-if(!booking){
 
-toast.error(
-"Booking response invalid"
-);
 
-return;
 
-}
+  const submitBooking = (e)=>{
 
+    e.preventDefault();
 
 
-toast.success(
-"Booking created successfully"
-);
 
+    if(!travelDate){
 
+      toast.error(
+        "Please select travel date"
+      );
 
-await initiatePayment({
+      return;
 
-bookingId:
-booking._id,
+    }
 
-phone:
-form.phone
 
-});
 
+    if(travellerCount < 1){
 
+      toast.error(
+        "At least one traveller is required"
+      );
 
-navigate(
-`/payment-status/${booking._id}`
-);
+      return;
 
+    }
 
 
-}
-catch(error){
 
+    /*
+    |--------------------------------------------------------------------------
+    | IMPORTANT
+    | Backend expects travelers array
+    |--------------------------------------------------------------------------
+    */
 
-console.log(error);
 
+    const travelers =
+      Array.from(
+        {
+          length:
+          Number(travellerCount)
+        },
+        (_,index)=>({
 
-toast.error(
-"Payment initiation failed"
-);
+          name:
+          `Traveller ${index+1}`,
 
+          age:0,
 
-}
+          passport:""
 
+        })
+      );
 
-},
 
 
 
-onError(error){
+    bookingMutation.mutate({
 
+      tour:
+      tour._id,
 
-console.log(error);
 
+      travelDate,
 
-toast.error(
 
-error?.response?.data?.message ||
+      travelers,
 
-"Booking failed"
 
-);
+      contact:{
 
+        phone
 
-}
+      },
 
 
+      paymentMethod:
+      "MPESA"
 
-});
 
+    });
 
 
+  };
 
 
 
-const handleChange=(e)=>{
 
 
-setForm({
 
-...form,
+  const total =
+    Number(tour.price || 0) *
+    Number(travellerCount);
 
-[e.target.name]:
 
-e.target.value
 
-});
 
 
-};
+  return (
 
+    <div className="max-w-xl mx-auto p-6">
 
 
+      <h1 className="text-2xl font-bold mb-5">
 
+        Complete Booking
 
+      </h1>
 
 
-const handleSubmit=(e)=>{
 
 
-e.preventDefault();
+      <form
+        onSubmit={submitBooking}
+        className="space-y-5"
+      >
 
 
 
-if(!user){
+        <div>
 
+          <label>
+            Tour
+          </label>
 
-toast.error(
-"Please login first"
-);
 
+          <input
 
-navigate("/login");
+            value={
+              tour.title
+            }
 
+            readOnly
 
-return;
+            className="border p-2 w-full"
 
+          />
 
-}
+        </div>
 
 
 
-const count =
-Number(form.travelers);
 
 
+        <div>
 
-/*
-|--------------------------------------------------------------------------
-| CREATE TRAVELER ARRAY
-|--------------------------------------------------------------------------
-*/
+          <label>
+            Travel Date
+          </label>
 
 
-const travelers =
-Array.from(
-{
-length:count
-},
-(_,index)=>({
+          <input
 
-name:
-`${user.name || "Traveler"} ${index+1}`,
+            type="date"
 
-age:0,
+            value={
+              travelDate
+            }
 
-gender:"other",
+            onChange={
+              e=>setTravelDate(
+                e.target.value
+              )
+            }
 
-passportNumber:"",
+            className="border p-2 w-full"
 
-nationality:""
+            required
 
-})
-);
+          />
 
+        </div>
 
 
 
 
-bookingMutation.mutate({
 
-tour:id,
 
+        <div>
 
-travelDate:
-form.travelDate,
+          <label>
+            Number of Travellers
+          </label>
 
 
-travelers,
+          <input
 
+            type="number"
 
+            min="1"
 
-contact:{
+            value={
+              travellerCount
+            }
 
+            onChange={
+              e=>setTravellerCount(
+                e.target.value
+              )
+            }
 
-name:
-user.name || "",
 
+            className="border p-2 w-full"
 
-email:
-user.email || "",
+          />
 
+        </div>
 
-phone:
-form.phone
 
 
-},
 
 
 
-paymentMethod:
-"MPESA"
+        <div>
 
+          <label>
+            M-Pesa Phone Number
+          </label>
 
-});
 
+          <input
 
-};
+            value={
+              phone
+            }
 
+            onChange={
+              e=>setPhone(
+                e.target.value
+              )
+            }
 
 
+            placeholder="0700000000"
 
 
+            className="border p-2 w-full"
 
 
+            required
 
+          />
 
-if(isLoading){
+        </div>
 
 
-return (
 
-<div className="
-min-h-screen
-flex
-items-center
-justify-center
-">
 
-Loading checkout...
 
-</div>
+        <div className="font-bold text-lg">
 
-);
+          You will pay:
 
+          {" "}
 
-}
+          KES {total.toLocaleString()}
 
 
+        </div>
 
 
 
 
 
-if(!tour){
 
+        <button
 
-return (
+          disabled={
+            bookingMutation.isPending
+          }
 
-<div className="
-p-10
-text-center
-">
+          className="bg-green-600 text-white px-5 py-3 rounded w-full"
 
-Tour not found
+        >
 
-</div>
+          {
+            bookingMutation.isPending
+            ?
+            "Processing..."
+            :
+            "Pay with M-Pesa"
+          }
 
-);
 
+        </button>
 
-}
 
 
 
+      </form>
 
 
+    </div>
 
-const image =
-tour.featuredImage?.url ||
-
-tour.images?.[0]?.url ||
-
-tour.image ||
-
-"/images/tour-placeholder.jpg";
-
-
-
-
-
-
-return (
-
-<div className="
-min-h-screen
-bg-gray-100
-p-6
-">
-
-
-<div className="
-max-w-6xl
-mx-auto
-grid
-md:grid-cols-2
-gap-8
-">
-
-
-<div className="
-bg-white
-rounded-2xl
-shadow
-p-6
-">
-
-
-<img
-
-src={image}
-
-alt={tour.title}
-
-className="
-h-64
-w-full
-object-cover
-rounded-xl
-"
-
-/>
-
-
-
-<h1 className="
-text-3xl
-font-bold
-mt-5
-">
-
-{tour.title}
-
-</h1>
-
-
-
-<p className="
-mt-3
-text-gray-600
-">
-
-{tour.description}
-
-</p>
-
-
-
-<div className="
-mt-5
-text-2xl
-font-bold
-text-green-700
-">
-
-KES {Number(tour.price || 0).toLocaleString()}
-
-</div>
-
-
-
-</div>
-
-
-
-
-
-
-<div className="
-bg-white
-rounded-2xl
-shadow
-p-8
-">
-
-
-<h2 className="
-text-3xl
-font-bold
-mb-6
-">
-
-Complete Booking
-
-</h2>
-
-
-
-
-
-<form
-
-onSubmit={handleSubmit}
-
-className="
-space-y-5
-"
-
->
-
-
-
-<div>
-
-<label>
-Travel Date
-</label>
-
-
-<input
-
-type="date"
-
-name="travelDate"
-
-required
-
-value={form.travelDate}
-
-onChange={handleChange}
-
-className="
-w-full
-border
-p-3
-rounded-lg
-"
-
-/>
-
-
-</div>
-
-
-
-
-
-
-
-<div>
-
-<label>
-Number of Travellers
-</label>
-
-
-<input
-
-type="number"
-
-name="travellers"
-
-min="1"
-
-value={form.travelers}
-
-onChange={handleChange}
-
-className="
-w-full
-border
-p-3
-rounded-lg
-"
-
-/>
-
-
-</div>
-
-
-
-
-
-
-
-<div>
-
-<label>
-M-Pesa Phone Number
-</label>
-
-
-<input
-
-type="tel"
-
-name="phone"
-
-required
-
-placeholder="07XXXXXXXX"
-
-value={form.phone}
-
-onChange={handleChange}
-
-className="
-w-full
-border
-p-3
-rounded-lg
-"
-
-/>
-
-
-</div>
-
-
-
-
-
-
-
-
-<div className="
-bg-green-50
-p-4
-rounded-xl
-">
-
-
-<p>
-You will pay:
-</p>
-
-
-<h3 className="
-text-2xl
-font-bold
-text-green-700
-">
-
-KES {
-
-(
-Number(tour.price || 0)
-*
-Number(form.travelers)
-)
-.toLocaleString()
-
-}
-
-</h3>
-
-
-</div>
-
-
-
-
-
-
-
-<button
-
-disabled={
-bookingMutation.isPending
-}
-
-className="
-w-full
-bg-green-700
-text-white
-py-4
-rounded-xl
-font-bold
-"
-
->
-
-
-{
-bookingMutation.isPending
-
-?
-
-"Processing..."
-
-:
-
-"Pay with M-Pesa"
-
-}
-
-
-</button>
-
-
-
-
-</form>
-
-
-</div>
-
-
-
-</div>
-
-
-</div>
-
-);
-
+  );
 
 }

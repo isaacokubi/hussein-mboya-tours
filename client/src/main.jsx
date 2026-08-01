@@ -11,40 +11,79 @@ import App from "./App";
 
 import { AuthProvider } from "./context/AuthContext";
 
+import {
+  CartProvider,
+} from "./context/CartContext";
+
+
 import "./index.css";
 
 
+
 const queryClient = new QueryClient({
+
   defaultOptions: {
+
     queries: {
+
       retry: 1,
-      staleTime: 5 * 60 * 1000,
-      refetchOnWindowFocus: false,
+
+      staleTime:
+        5 * 60 * 1000,
+
+      refetchOnWindowFocus:
+        false,
+
     },
+
   },
+
 });
+
+
+
 
 
 ReactDOM.createRoot(
   document.getElementById("root")
-).render(
+)
+
+.render(
+
 
   <React.StrictMode>
 
-    <QueryClientProvider client={queryClient}>
+
+    <QueryClientProvider
+      client={queryClient}
+    >
+
 
       <BrowserRouter>
 
+
         <AuthProvider>
 
-          <App />
+
+          <CartProvider>
+
+
+            <App />
+
+
+          </CartProvider>
+
 
         </AuthProvider>
 
+
       </BrowserRouter>
+
 
     </QueryClientProvider>
 
+
   </React.StrictMode>
+
 
 );
