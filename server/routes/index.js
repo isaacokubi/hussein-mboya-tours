@@ -1,6 +1,5 @@
 import express from "express";
 
-
 import authRoutes from "./authRoutes.js";
 import bookingRoutes from "./bookingRoutes.js";
 import tourRoutes from "./tourRoutes.js";
@@ -10,15 +9,13 @@ import wishlistRoutes from "./wishlistRoutes.js";
 import galleryRoutes from "./galleryRoutes.js";
 import heroRoutes from "./heroRoutes.js";
 
-
 import adminRoutes from "./adminRoutes.js";
 import adminTourRoutes from "./adminTourRoutes.js";
 import adminBookingRoutes from "./adminBookingRoutes.js";
 
+import categoryRoutes from "./categoryRoutes.js";
 
 const router = express.Router();
-
-
 
 
 /*
@@ -27,57 +24,23 @@ const router = express.Router();
 |--------------------------------------------------------------------------
 */
 
+router.use("/categories", categoryRoutes);
 
-router.use(
-    "/auth",
-    authRoutes
-);
+router.use("/auth", authRoutes);
 
+router.use("/bookings", bookingRoutes);
 
-router.use(
-    "/bookings",
-    bookingRoutes
-);
+router.use("/tours", tourRoutes);
 
+router.use("/destinations", destinationRoutes);
 
-router.use(
-    "/tours",
-    tourRoutes
-);
+router.use("/reviews", reviewRoutes);
 
+router.use("/wishlist", wishlistRoutes);
 
-router.use(
-    "/destinations",
-    destinationRoutes
-);
+router.use("/gallery", galleryRoutes);
 
-
-router.use(
-    "/reviews",
-    reviewRoutes
-);
-
-
-router.use(
-    "/wishlist",
-    wishlistRoutes
-);
-
-
-router.use(
-    "/gallery",
-    galleryRoutes
-);
-
-
-router.use(
-    "/hero",
-    heroRoutes
-);
-
-
-
-
+router.use("/hero", heroRoutes);
 
 
 /*
@@ -86,25 +49,11 @@ router.use(
 |--------------------------------------------------------------------------
 */
 
+router.use("/admin", adminRoutes);
 
-router.use(
-    "/admin",
-    adminRoutes
-);
+router.use("/admin/tours", adminTourRoutes);
 
-
-router.use(
-    "/admin/tours",
-    adminTourRoutes
-);
-
-
-router.use(
-    "/admin/bookings",
-    adminBookingRoutes
-);
-
-
+router.use("/admin/bookings", adminBookingRoutes);
 
 
 export default router;
