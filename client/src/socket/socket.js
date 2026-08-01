@@ -1,12 +1,16 @@
+// client/src/socket/socket.js
+
 import { io } from "socket.io-client";
 
 
 
 const SOCKET_URL =
 
-  import.meta.env.VITE_SOCKET_URL ||
+    import.meta.env.VITE_SOCKET_URL ||
 
-  "http://localhost:5000";
+    import.meta.env.VITE_API_URL ||
+
+    "http://localhost:5000";
 
 
 
@@ -14,41 +18,41 @@ const SOCKET_URL =
 
 const socket = io(
 
-  SOCKET_URL,
+    SOCKET_URL,
 
-  {
-
-
-    transports: [
-
-      "websocket",
-
-      "polling"
-
-    ],
+    {
 
 
+        transports:[
 
-    withCredentials: true,
+            "websocket",
+
+            "polling"
+
+        ],
 
 
 
-    autoConnect: true,
+        withCredentials:true,
 
 
 
-    reconnection: true,
+        autoConnect:true,
 
 
 
-    reconnectionAttempts: 10,
+        reconnection:true,
 
 
 
-    reconnectionDelay: 3000,
+        reconnectionAttempts:10,
 
 
-  }
+
+        reconnectionDelay:3000,
+
+
+    }
 
 );
 
@@ -59,34 +63,15 @@ const socket = io(
 
 
 socket.on(
-  "connect",
-  ()=>{
+    "connect",
+    ()=>{
 
-    console.log(
-      "Socket connected:",
-      socket.id
-    );
+        console.log(
+            "Socket connected:",
+            socket.id
+        );
 
-  }
-);
-
-
-
-
-
-
-socket.on(
-  "disconnect",
-  (reason)=>{
-
-
-    console.log(
-      "Socket disconnected:",
-      reason
-    );
-
-
-  }
+    }
 );
 
 
@@ -96,17 +81,49 @@ socket.on(
 
 
 socket.on(
-  "connect_error",
-  (error)=>{
+
+    "disconnect",
+
+    (reason)=>{
 
 
-    console.error(
-      "Socket connection error:",
-      error.message
-    );
+        console.log(
+
+            "Socket disconnected:",
+
+            reason
+
+        );
 
 
-  }
+    }
+
+);
+
+
+
+
+
+
+
+socket.on(
+
+    "connect_error",
+
+    (error)=>{
+
+
+        console.error(
+
+            "Socket connection error:",
+
+            error.message
+
+        );
+
+
+    }
+
 );
 
 

@@ -1,29 +1,28 @@
 import {
-    NavLink
+  NavLink
 } from "react-router-dom";
 
 
 import {
-    LayoutDashboard,
-    Map,
-    CalendarCheck,
-    Wallet,
-    Users,
-    Car,
-    Settings,
-    PlusCircle,
-    Edit,
-    Smartphone,
-    FileText,
-    Home,
+  LayoutDashboard,
+  Map,
+  CalendarCheck,
+  Wallet,
+  Users,
+  Car,
+  Settings,
+  PlusCircle,
+  Edit,
+  Smartphone,
+  FileText,
+  Home,
+  Shield,
 } from "lucide-react";
 
 
 import {
-    FaChartBar
+  FaChartBar
 } from "react-icons/fa";
-
-
 
 
 
@@ -31,22 +30,16 @@ import {
 const AdminSidebar = () => {
 
 
-
 const permissions = JSON.parse(
-
-localStorage.getItem("permissions")
-
+  localStorage.getItem("permissions")
 ) || [];
 
 
 
 
+const hasPermission = (permission) => {
 
-
-const hasPermission = (permission)=>{
-
-
-return permissions.includes(permission);
+  return permissions.includes(permission);
 
 };
 
@@ -55,11 +48,7 @@ return permissions.includes(permission);
 
 
 
-
-
-
 const menu = [
-
 
 
 {
@@ -252,6 +241,24 @@ permission:"manage_vehicles"
 
 },
 
+
+
+
+
+// ============================================================
+// RBAC
+// ============================================================
+
+{
+title:"Roles & Permissions",
+
+icon:<Shield size={20}/>,
+
+path:"/admin/rbac",
+
+permission:"manage_roles"
+
+},
 
 
 

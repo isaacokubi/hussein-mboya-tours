@@ -1,495 +1,1639 @@
 import { useQuery } from "@tanstack/react-query";
-import { getDashboard } from "../../api/adminApi";
+
+import {
+  Users,
+  Map,
+  CalendarCheck,
+  Wallet,
+  TrendingUp,
+  CreditCard,
+} from "lucide-react";
+
+
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+} from "recharts";
+
+
+import {
+  getDashboard,
+} from "../../api/adminApi";
 
 
 
-export default function AdminDashboard() {
+export default function AdminDashboard(){
 
 
-    const {
-        data,
-        isLoading,
-        isError,
-        error,
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
 
-    } = useQuery({
+  } = useQuery({
 
-        queryKey:[
-            "adminDashboard"
-        ],
-
-        queryFn:getDashboard
-
-    });
+    queryKey:[
+      "adminDashboard"
+    ],
 
 
+    queryFn:
+      getDashboard,
+
+
+    staleTime:
+      300000,
+
+  });
 
 
 
 
 
-    if(isLoading)
+  if(isLoading){
 
     return (
 
-        <div className="p-6">
+      <div className="
+        p-8
+        text-center
+      ">
 
-            Loading dashboard...
+        Loading admin dashboard...
 
-        </div>
+      </div>
 
     );
 
+  }
 
 
 
 
 
-
-    if(isError)
+  if(isError){
 
     return (
 
-        <div className="p-6 text-red-600">
+      <div className="
+        p-8
+        text-red-600
+      ">
 
-            {error?.message || "Failed to load dashboard"}
+        {
+          error?.message ||
+          "Unable to load dashboard"
+        }
 
-        </div>
+      </div>
 
     );
 
+  }
 
 
 
 
 
+  /*
+  |--------------------------------------------------------------------------
+  | NORMALIZE RESPONSE
+  |--------------------------------------------------------------------------
+  */
 
-    const stats =
-        data?.data || data || {};
 
-
-
-
-
-    const {
-
-        users = 0,
-
-        tours = 0,
-
-        bookings = 0,
-
-        revenue = 0,
-
-        bookingStatus = [],
-
-        popularTours = []
-
-    } = stats;
+  const stats =
+    data?.data ||
+    data ||
+    {};
 
 
 
 
+  const {
+
+    users=0,
+
+    tours=0,
+
+    bookings=0,
+
+    destinations=0,
+
+    revenue=0,
+
+
+    payments={
+
+      paid:0,
+
+      pending:0,
+
+      failed:0,
+
+    },
+
+
+    monthlyRevenue=[],
+
+
+    bookingStatus=[],
+
+
+    popularTours=[],
+
+
+    recentBookings=[],
+
+
+    agents=[],
+
+
+    guides=[],
+
+
+    notifications=[],
+
+
+  } = stats;
 
 
 
 
-    return (
+
+  return (
+
+    <div
+      className="
+        p-6
+        space-y-8
+        bg-gray-50
+        min-h-screen
+      "
+    >
 
 
-        <div className="
-            p-6
-            space-y-8
+      <div>
+
+        <h1
+          className="
+            text-3xl
+            font-bold
+          "
+        >
+
+          Hussein Mboya Tours Admin Dashboard
+
+        </h1>
+
+
+        <p className="
+          text-gray-500
+          mt-2
         ">
 
+          Complete business management overview
+
+        </p>
+
+
+      </div>      {/* STATISTICS CARDS */}
+
+
+      <div
+        className="
+          grid
+          grid-cols-1
+          md:grid-cols-2
+          lg:grid-cols-6
+          gap-5
+        "
+      >
+
+
+        <StatCard
+
+          title="Users"
+
+          value={users}
+
+          icon={<Users />}
+
+        />
 
 
 
-            {/* HEADER */}
+        <StatCard
 
+          title="Tours"
 
-            <div>
+          value={tours}
 
+          icon={<Map />}
 
-                <h1 className="
-                    text-3xl
-                    font-bold
-                ">
-
-                    Admin Dashboard
-
-                </h1>
+        />
 
 
 
-                <p className="
-                    text-gray-500
-                ">
+        <StatCard
 
-                    Hussein Mboya Tours Management Panel
+          title="Destinations"
 
-                </p>
+          value={destinations}
 
+          icon={<TrendingUp />}
+
+        />
+
+
+
+        <StatCard
+
+          title="Bookings"
+
+          value={bookings}
+
+          icon={<CalendarCheck />}
+
+        />
+
+
+
+        <StatCard
+
+          title="Revenue"
+
+          value={
+            `Ksh ${Number(revenue)
+              .toLocaleString()}`
+          }
+
+          icon={<Wallet />}
+
+        />
+
+
+
+        <StatCard
+
+          title="Paid Payments"
+
+          value={payments.paid}
+
+          icon={<CreditCard />}
+
+        />
+
+
+      </div>
+
+
+
+
+
+      {/* REVENUE ANALYTICS */}
+
+
+
+      <section
+        className="
+          bg-white
+          rounded-xl
+          shadow
+          p-6
+        "
+      >
+
+
+        <h2
+          className="
+            text-xl
+            font-semibold
+            mb-5
+          "
+        >
+
+          Revenue Analytics
+
+        </h2>
+
+
+
+
+        {
+          monthlyRevenue.length === 0 ?
+
+
+          (
+
+            <p className="
+              text-gray-500
+            ">
+
+              No revenue data available
+
+            </p>
+
+
+          )
+
+
+          :
+
+
+          (
+
+            <div
+              className="
+                h-[350px]
+              "
+            >
+
+
+              <ResponsiveContainer
+                width="100%"
+                height="100%"
+              >
+
+
+                <LineChart
+
+                  data={
+                    monthlyRevenue
+                  }
+
+                >
+
+
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                  />
+
+
+                  <XAxis
+
+                    dataKey="month"
+
+                  />
+
+
+                  <YAxis />
+
+
+
+                  <Tooltip />
+
+
+
+                  <Line
+
+                    type="monotone"
+
+                    dataKey="amount"
+
+                    strokeWidth={3}
+
+                  />
+
+
+                </LineChart>
+
+
+              </ResponsiveContainer>
 
 
             </div>
 
+          )
 
+        }
 
 
+      </section>      {/* PAYMENT OVERVIEW */}
 
 
+      <section
+        className="
+          bg-white
+          rounded-xl
+          shadow
+          p-6
+        "
+      >
 
+        <h2
+          className="
+            text-xl
+            font-semibold
+            mb-4
+          "
+        >
 
+          Payment Overview
 
-            {/* STAT CARDS */}
+        </h2>
 
 
 
-            <div className="
-                grid
-                grid-cols-1
-                md:grid-cols-2
-                lg:grid-cols-4
-                gap-6
-            ">
+        <div
+          className="
+            grid
+            md:grid-cols-3
+            gap-4
+          "
+        >
 
+          <PaymentBox
 
+            title="Completed"
 
-                <DashboardCard
+            value={payments.paid}
 
-                    title="Users"
+          />
 
-                    value={users}
 
-                />
+          <PaymentBox
 
+            title="Pending"
 
+            value={payments.pending}
 
+          />
 
-                <DashboardCard
 
-                    title="Tours"
+          <PaymentBox
 
-                    value={tours}
+            title="Failed"
 
-                />
+            value={payments.failed}
 
+          />
 
 
+        </div>
 
-                <DashboardCard
 
-                    title="Bookings"
+      </section>
 
-                    value={bookings}
 
-                />
 
 
 
+      {/* BOOKING STATUS */}
 
-                <DashboardCard
 
-                    title="Revenue"
 
-                    value={`Ksh. ${Number(revenue).toLocaleString()}`}
+      <section
+        className="
+          bg-white
+          rounded-xl
+          shadow
+          p-6
+        "
+      >
 
-                />
 
+        <h2
+          className="
+            text-xl
+            font-semibold
+            mb-5
+          "
+        >
 
+          Booking Status
 
-            </div>
+        </h2>
 
 
 
 
+        <div
+          className="
+            grid
+            md:grid-cols-3
+            gap-4
+          "
+        >
 
 
+          {
 
+            bookingStatus.map(
 
+              (item,index)=>(
 
-            {/* BOOKING STATUS */}
 
+                <div
 
+                  key={index}
 
-            <section className="
-                bg-white
-                rounded-xl
-                shadow
-                p-6
-            ">
+                  className="
+                    border
+                    rounded-lg
+                    p-4
+                  "
 
+                >
 
 
-                <h2 className="
-                    text-xl
-                    font-semibold
-                    mb-4
-                ">
+                  <h3
+                    className="
+                      font-bold
+                      capitalize
+                    "
+                  >
 
-                    Booking Status
+                    {
+                      item?._id?.bookingStatus ||
+                      item?._id ||
+                      "Unknown"
+                    }
 
-                </h2>
 
+                  </h3>
 
 
+                  <p>
 
+                    {
+                      item.count || 0
+                    }
 
+                    {" "}
+                    bookings
 
+                  </p>
 
-                {
-                    bookingStatus.length === 0 ? (
 
-                        <p className="text-gray-500">
+                </div>
 
-                            No booking data available
 
-                        </p>
+              )
 
+            )
 
-                    ) : (
-
-
-
-                        <div className="
-                            grid
-                            md:grid-cols-3
-                            gap-4
-                        ">
-
-
-                            {
-                                bookingStatus.map(
-                                    (item,index)=>(
-
-
-                                    <div
-
-                                    key={index}
-
-                                    className="
-                                        border
-                                        rounded-lg
-                                        p-4
-                                    "
-
-                                    >
-
-
-
-                                        <h3 className="
-                                            font-bold
-                                            capitalize
-                                        ">
-
-                                            {
-                                                item?._id?.bookingStatus ||
-                                                "Unknown"
-                                            }
-
-                                        </h3>
-
-
-
-
-                                        <p className="
-                                            text-gray-600
-                                        ">
-
-                                            Payment:
-                                            {" "}
-                                            {
-                                                item?._id?.paymentStatus ||
-                                                "Unknown"
-                                            }
-
-                                        </p>
-
-
-
-
-
-                                        <p className="
-                                            text-2xl
-                                            font-bold
-                                            mt-2
-                                        ">
-
-                                            {
-                                                item.count || 0
-                                            }
-
-                                        </p>
-
-
-
-
-                                    </div>
-
-
-                                ))
-
-                            }
-
-
-
-                        </div>
-
-
-
-                    )
-
-                }
-
-
-
-            </section>
-
-
-
-
-
-
-
-
-
-            {/* POPULAR TOURS */}
-
-
-
-            <section className="
-                bg-white
-                rounded-xl
-                shadow
-                p-6
-            ">
-
-
-
-                <h2 className="
-                    text-xl
-                    font-semibold
-                    mb-4
-                ">
-
-                    Popular Tours
-
-                </h2>
-
-
-
-
-
-
-
-
-                {
-                    popularTours.length === 0 ? (
-
-                        <p className="text-gray-500">
-
-                            No popular tours available
-
-                        </p>
-
-
-                    ) : (
-
-
-
-                        <div className="
-                            space-y-3
-                        ">
-
-
-
-                            {
-                                popularTours.map(
-                                    (tour,index)=>(
-
-
-
-                                    <div
-
-                                    key={tour._id}
-
-                                    className="
-                                        flex
-                                        justify-between
-                                        items-center
-                                        border-b
-                                        pb-3
-                                    "
-
-                                    >
-
-
-
-
-                                        <p className="
-                                            font-semibold
-                                        ">
-
-                                            #{index + 1} {tour.title}
-
-                                        </p>
-
-
-
-
-
-
-                                        <div className="
-                                            font-bold
-                                        ">
-
-                                            {
-                                                tour.totalBookings || 0
-                                            }
-
-                                            {" "}bookings
-
-
-                                        </div>
-
-
-
-
-                                    </div>
-
-
-
-                                ))
-
-                            }
-
-
-
-
-                        </div>
-
-
-
-                    )
-
-                }
-
-
-
-
-            </section>
-
-
-
+          }
 
 
 
         </div>
 
 
-    );
+      </section>
 
+
+
+
+
+
+      {/* POPULAR TOURS */}
+
+
+
+      <section
+        className="
+          bg-white
+          rounded-xl
+          shadow
+          p-6
+        "
+      >
+
+
+        <h2
+          className="
+            text-xl
+            font-semibold
+            mb-5
+          "
+        >
+
+          Most Popular Tours
+
+        </h2>
+
+
+
+
+
+        {
+
+          popularTours.length === 0 ?
+
+
+          (
+
+            <p className="
+              text-gray-500
+            ">
+
+              No tour analytics available
+
+            </p>
+
+
+          )
+
+
+          :
+
+
+          (
+
+            <div
+              className="
+                space-y-4
+              "
+            >
+
+
+
+              {
+
+                popularTours.map(
+
+                  (tour,index)=>(
+
+
+                    <div
+
+                      key={
+                        tour._id ||
+                        index
+                      }
+
+
+                      className="
+                        flex
+                        justify-between
+                        items-center
+                        border-b
+                        pb-3
+                      "
+
+                    >
+
+
+                      <div>
+
+
+                        <p
+                          className="
+                            font-semibold
+                          "
+                        >
+
+                          #
+                          {index + 1}
+
+                          {" "}
+
+                          {
+                            tour.title ||
+                            tour.name ||
+                            "Tour"
+                          }
+
+
+                        </p>
+
+
+
+                        <p
+                          className="
+                            text-sm
+                            text-gray-500
+                          "
+                        >
+
+                          Revenue:
+
+                          {" "}
+
+                          Ksh
+
+                          {" "}
+
+                          {
+
+                            Number(
+                              tour.revenue || 0
+                            )
+                            .toLocaleString()
+
+                          }
+
+
+                        </p>
+
+
+
+                      </div>
+
+
+
+
+
+                      <div
+                        className="
+                          font-bold
+                        "
+                      >
+
+                        {
+                          tour.totalBookings ||
+                          0
+                        }
+
+                        {" "}
+
+                        bookings
+
+
+                      </div>
+
+
+
+                    </div>
+
+
+                  )
+
+                )
+
+              }
+
+
+            </div>
+
+
+          )
+
+
+        }
+
+
+
+      </section>      {/* RECENT BOOKINGS */}
+
+
+      <section
+        className="
+          bg-white
+          rounded-xl
+          shadow
+          p-6
+        "
+      >
+
+
+        <h2
+          className="
+            text-xl
+            font-semibold
+            mb-5
+          "
+        >
+
+          Recent Bookings
+
+        </h2>
+
+
+
+
+        {
+          recentBookings.length === 0 ?
+
+
+          (
+
+            <p className="
+              text-gray-500
+            ">
+
+              No recent bookings
+
+            </p>
+
+
+          )
+
+
+          :
+
+
+          (
+
+            <div
+              className="
+                overflow-x-auto
+              "
+            >
+
+
+              <table
+                className="
+                  w-full
+                  text-left
+                "
+              >
+
+
+                <thead>
+
+
+                  <tr
+                    className="
+                      border-b
+                    "
+                  >
+
+
+                    <th className="p-3">
+                      Customer
+                    </th>
+
+
+                    <th className="p-3">
+                      Tour
+                    </th>
+
+
+                    <th className="p-3">
+                      Amount
+                    </th>
+
+
+                    <th className="p-3">
+                      Status
+                    </th>
+
+
+                  </tr>
+
+
+                </thead>
+
+
+
+                <tbody>
+
+
+                {
+
+                  recentBookings.map(
+
+                    (booking,index)=>(
+
+
+                      <tr
+
+                        key={
+                          booking._id ||
+                          index
+                        }
+
+                        className="
+                          border-b
+                        "
+
+                      >
+
+
+                        <td className="p-3">
+
+                          {
+                            booking.customer?.name ||
+                            booking.fullName ||
+                            "Guest"
+                          }
+
+                        </td>
+
+
+
+
+                        <td className="p-3">
+
+                          {
+                            booking.tour?.title ||
+                            "Tour"
+                          }
+
+                        </td>
+
+
+
+
+                        <td className="p-3">
+
+
+                          Ksh{" "}
+
+                          {
+
+                            Number(
+                              booking.amount ||
+                              booking.totalAmount ||
+                              0
+                            )
+                            .toLocaleString()
+
+                          }
+
+
+                        </td>
+
+
+
+
+                        <td className="p-3">
+
+
+                          <span
+                            className="
+                              px-3
+                              py-1
+                              rounded-full
+                              text-sm
+                              bg-gray-100
+                            "
+                          >
+
+                            {
+                              booking.bookingStatus ||
+                              "Pending"
+                            }
+
+
+                          </span>
+
+
+                        </td>
+
+
+                      </tr>
+
+
+                    )
+
+                  )
+
+                }
+
+
+
+                </tbody>
+
+
+              </table>
+
+
+            </div>
+
+
+          )
+
+        }
+
+
+
+      </section>
+
+
+
+
+
+
+      {/* AGENT PERFORMANCE */}
+
+
+
+      <section
+        className="
+          bg-white
+          rounded-xl
+          shadow
+          p-6
+        "
+      >
+
+
+        <h2
+          className="
+            text-xl
+            font-semibold
+            mb-5
+          "
+        >
+
+          Agent Performance
+
+        </h2>
+
+
+
+
+        {
+
+          agents.length === 0 ?
+
+
+          (
+
+            <p className="
+              text-gray-500
+            ">
+
+              No agents found
+
+            </p>
+
+
+          )
+
+
+          :
+
+
+          (
+
+            <div
+              className="
+                grid
+                md:grid-cols-3
+                gap-5
+              "
+            >
+
+
+              {
+
+                agents.map(
+
+                  (agent,index)=>(
+
+
+                    <div
+
+                      key={
+                        agent._id ||
+                        index
+                      }
+
+                      className="
+                        border
+                        rounded-xl
+                        p-5
+                      "
+
+                    >
+
+
+                      <h3
+                        className="
+                          font-bold
+                        "
+                      >
+
+                        {
+                          agent.name ||
+                          "Agent"
+                        }
+
+
+                      </h3>
+
+
+
+
+                      <p
+                        className="
+                          text-gray-500
+                        "
+                      >
+
+                        Bookings:
+
+                        {" "}
+
+                        {
+                          agent.bookings ||
+                          0
+                        }
+
+
+                      </p>
+
+
+
+                      <p
+                        className="
+                          mt-2
+                          font-semibold
+                        "
+                      >
+
+                        Commission:
+
+                        {" "}
+
+                        Ksh{" "}
+
+                        {
+
+                          Number(
+                            agent.commission ||
+                            0
+                          )
+                          .toLocaleString()
+
+                        }
+
+
+                      </p>
+
+
+                    </div>
+
+
+                  )
+
+                )
+
+
+              }
+
+
+
+            </div>
+
+
+          )
+
+        }
+
+
+
+      </section>
+
+
+
+
+
+
+
+      {/* TOUR GUIDES */}
+
+
+
+      <section
+        className="
+          bg-white
+          rounded-xl
+          shadow
+          p-6
+        "
+      >
+
+
+        <h2
+          className="
+            text-xl
+            font-semibold
+            mb-5
+          "
+        >
+
+          Tour Guides
+
+        </h2>
+
+
+
+
+
+        {
+
+          guides.length === 0 ?
+
+
+          (
+
+            <p className="
+              text-gray-500
+            ">
+
+              No guides assigned
+
+            </p>
+
+
+          )
+
+
+          :
+
+
+          (
+
+            <div
+              className="
+                grid
+                md:grid-cols-4
+                gap-4
+              "
+            >
+
+
+
+              {
+
+                guides.map(
+
+                  (guide,index)=>(
+
+
+                    <div
+
+                      key={
+                        guide._id ||
+                        index
+                      }
+
+                      className="
+                        border
+                        rounded-xl
+                        p-4
+                      "
+
+                    >
+
+
+                      <h3
+                        className="
+                          font-bold
+                        "
+                      >
+
+                        {
+                          guide.name ||
+                          "Guide"
+                        }
+
+
+                      </h3>
+
+
+
+                      <p
+                        className="
+                          text-sm
+                          text-gray-500
+                        "
+                      >
+
+                        Assigned Tours:
+
+                        {" "}
+
+                        {
+                          guide.assignedTours ||
+                          0
+                        }
+
+
+                      </p>
+
+
+
+                    </div>
+
+
+                  )
+
+                )
+
+              }
+
+
+
+            </div>
+
+
+          )
+
+
+        }
+
+
+
+      </section>      {/* QUICK ADMIN ACTIONS */}
+
+
+      <section
+        className="
+          bg-white
+          rounded-xl
+          shadow
+          p-6
+        "
+      >
+
+        <h2
+          className="
+            text-xl
+            font-semibold
+            mb-5
+          "
+        >
+
+          Quick Actions
+
+        </h2>
+
+
+
+        <div
+          className="
+            grid
+            grid-cols-2
+            md:grid-cols-3
+            lg:grid-cols-6
+            gap-4
+          "
+        >
+
+
+          <ActionButton
+            title="Create Tour"
+            link="/admin/tours/create"
+          />
+
+
+          <ActionButton
+            title="Destinations"
+            link="/admin/destinations"
+          />
+
+
+          <ActionButton
+            title="Bookings"
+            link="/admin/bookings"
+          />
+
+
+          <ActionButton
+            title="Customers"
+            link="/admin/customers"
+          />
+
+
+          <ActionButton
+            title="Payments"
+            link="/admin/payments"
+          />
+
+
+          <ActionButton
+            title="Reports"
+            link="/admin/reports"
+          />
+
+
+        </div>
+
+
+      </section>
+
+
+
+
+
+
+      {/* NOTIFICATIONS */}
+
+
+
+      <section
+        className="
+          bg-white
+          rounded-xl
+          shadow
+          p-6
+        "
+      >
+
+
+        <h2
+          className="
+            text-xl
+            font-semibold
+            mb-5
+          "
+        >
+
+          System Notifications
+
+        </h2>
+
+
+
+
+        {
+
+          notifications.length === 0 ?
+
+
+          (
+
+            <p className="
+              text-gray-500
+            ">
+
+              No new notifications
+
+            </p>
+
+
+          )
+
+
+          :
+
+
+          (
+
+            <div
+              className="
+                space-y-3
+              "
+            >
+
+
+              {
+
+                notifications.map(
+
+                  (notification,index)=>(
+
+
+                    <div
+
+                      key={
+                        notification._id ||
+                        index
+                      }
+
+                      className="
+                        border
+                        rounded-lg
+                        p-4
+                      "
+
+                    >
+
+
+                      <h3
+                        className="
+                          font-semibold
+                        "
+                      >
+
+                        {
+                          notification.title ||
+                          "Notification"
+                        }
+
+
+                      </h3>
+
+
+
+                      <p
+                        className="
+                          text-gray-600
+                        "
+                      >
+
+                        {
+                          notification.message ||
+                          ""
+                        }
+
+
+                      </p>
+
+
+                    </div>
+
+
+                  )
+
+                )
+
+
+              }
+
+
+
+            </div>
+
+
+          )
+
+
+        }
+
+
+      </section>
+
+
+
+
+
+      {/* FOOTER SUMMARY */}
+
+
+
+      <section
+        className="
+          bg-gradient-to-r
+          from-blue-600
+          to-purple-600
+          rounded-xl
+          p-6
+          text-white
+        "
+      >
+
+
+        <div
+          className="
+            grid
+            md:grid-cols-4
+            gap-5
+          "
+        >
+
+
+          <SummaryBox
+
+            title="Total Customers"
+
+            value={users}
+
+          />
+
+
+          <SummaryBox
+
+            title="Available Tours"
+
+            value={tours}
+
+          />
+
+
+          <SummaryBox
+
+            title="Active Bookings"
+
+            value={bookings}
+
+          />
+
+
+          <SummaryBox
+
+            title="Business Revenue"
+
+            value={
+              `Ksh ${Number(revenue)
+              .toLocaleString()}`
+            }
+
+          />
+
+
+        </div>
+
+
+      </section>
+
+
+
+    </div>
+
+  );
 
 }
 
@@ -499,57 +1643,228 @@ export default function AdminDashboard() {
 
 
 
+/*
+|--------------------------------------------------------------------------
+| STAT CARD
+|--------------------------------------------------------------------------
+*/
 
 
-function DashboardCard({
-
-    title,
-
-    value
-
-}){
+function StatCard({
+  title,
+  value,
+  icon,
+}) {
 
 
-    return (
+  return (
+
+    <div
+      className="
+        bg-white
+        rounded-xl
+        shadow
+        p-5
+        flex
+        justify-between
+        items-center
+      "
+    >
 
 
-        <div className="
-            bg-white
-            shadow
-            rounded-xl
-            p-6
+      <div>
+
+
+        <p className="
+          text-gray-500
+          text-sm
         ">
 
+          {title}
+
+        </p>
 
 
-            <h3 className="
-                text-gray-500
-            ">
+        <h2 className="
+          text-2xl
+          font-bold
+          mt-2
+        ">
 
-                {title}
+          {value}
 
-            </h3>
-
-
+        </h2>
 
 
-            <p className="
-                text-3xl
-                font-bold
-                mt-2
-            ">
-
-                {value}
-
-            </p>
+      </div>
 
 
 
 
-        </div>
+      <div
+        className="
+          text-blue-600
+        "
+      >
+
+        {icon}
+
+      </div>
 
 
-    );
 
+    </div>
+
+  );
+
+}
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| PAYMENT BOX
+|--------------------------------------------------------------------------
+*/
+
+
+function PaymentBox({
+  title,
+  value,
+}) {
+
+
+  return (
+
+    <div
+      className="
+        border
+        rounded-lg
+        p-5
+      "
+    >
+
+
+      <p className="
+        text-gray-500
+      ">
+
+        {title}
+
+      </p>
+
+
+      <h3 className="
+        text-3xl
+        font-bold
+        mt-2
+      ">
+
+        {value}
+
+      </h3>
+
+
+    </div>
+
+  );
+
+}
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| ACTION BUTTON
+|--------------------------------------------------------------------------
+*/
+
+
+function ActionButton({
+  title,
+  link,
+}) {
+
+
+  return (
+
+    <a
+      href={link}
+      className="
+        border
+        rounded-xl
+        p-4
+        text-center
+        hover:bg-gray-100
+        transition
+        font-semibold
+      "
+    >
+
+      {title}
+
+    </a>
+
+  );
+
+}
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| SUMMARY BOX
+|--------------------------------------------------------------------------
+*/
+
+
+function SummaryBox({
+  title,
+  value,
+}) {
+
+
+  return (
+
+    <div>
+
+
+      <p className="
+        opacity-80
+        text-sm
+      ">
+
+        {title}
+
+      </p>
+
+
+
+      <h2 className="
+        text-2xl
+        font-bold
+        mt-2
+      ">
+
+        {value}
+
+      </h2>
+
+
+    </div>
+
+  );
 
 }

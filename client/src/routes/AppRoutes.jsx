@@ -1,11 +1,9 @@
 // client/src/routes/AppRoutes.jsx
 
-
 import {
   Routes,
-  Route
+  Route,
 } from "react-router-dom";
-
 
 
 // ============================================================
@@ -19,8 +17,9 @@ import Login from "../pages/Login";
 import Register from "../pages/Register";
 import Destinations from "../pages/Destinations";
 import Wishlist from "../pages/Wishlist";
-
 import DestinationDetails from "../pages/DestinationDetails";
+
+
 
 // ============================================================
 // CUSTOMER
@@ -103,43 +102,16 @@ from "../pages/tourManager/TourAssignments";
 // ============================================================
 
 import AdminLayout 
-from "../components/admin/AdminLayout";
+from "../layouts/AdminLayout";
 
 import AdminDashboard 
 from "../pages/admin/AdminDashboard";
 
-import ManageTours 
-from "../pages/admin/ManageTours";
+import UserManagement 
+from "../pages/admin/UserManagement";
 
-import AddTour 
-from "../pages/admin/AddTour";
-
-import ManageBookings 
-from "../pages/admin/ManageBookings";
-
-import Customers 
-from "../pages/admin/Customers";
-
-import Vehicles 
-from "../pages/admin/Vehicles";
-
-import AdminAnalytics 
-from "../pages/admin/AdminAnalytics";
-
-
-
-// ============================================================
-// ADMIN FINANCE
-// ============================================================
-
-import AdminFinance 
-from "../pages/admin/finance/AdminFinance";
-
-import MpesaTransactions 
-from "../pages/admin/finance/MpesaTransactions";
-
-import FinanceReports 
-from "../pages/admin/finance/FinanceReports";
+import TourManagement 
+from "../pages/admin/TourManagement";
 
 
 
@@ -160,7 +132,7 @@ from "../components/agent/AgentRoute";
 
 
 
-export default function AppRoutes(){
+export default function AppRoutes() {
 
 
 return (
@@ -168,13 +140,9 @@ return (
 <Routes>
 
 
-
-
-
 {/* ============================================================
     PUBLIC ROUTES
 ============================================================ */}
-
 
 
 <Route
@@ -202,10 +170,14 @@ element={<TourDetails />}
 path="/destinations"
 element={<Destinations />}
 />
+
+
+
 <Route
 path="/destinations/:slug"
 element={<DestinationDetails />}
 />
+
 
 
 <Route
@@ -231,12 +203,9 @@ element={<Wishlist />}
 
 
 
-
-
 {/* ============================================================
     CUSTOMER ROUTES
 ============================================================ */}
-
 
 
 <Route
@@ -254,8 +223,6 @@ element={
 }
 
 />
-
-
 
 
 
@@ -277,8 +244,6 @@ element={
 
 
 
-
-
 <Route
 
 path="/bookings/:id"
@@ -294,8 +259,6 @@ element={
 }
 
 />
-
-
 
 
 
@@ -317,8 +280,6 @@ element={
 
 
 
-
-
 <Route
 
 path="/checkout/:id"
@@ -334,8 +295,6 @@ element={
 }
 
 />
-
-
 
 
 
@@ -359,13 +318,9 @@ element={
 
 
 
-
-
-
 {/* ============================================================
     AGENT ROUTES
 ============================================================ */}
-
 
 
 <Route
@@ -383,7 +338,6 @@ element={
 }
 
 >
-
 
 
 <Route
@@ -415,12 +369,7 @@ element={<AgentCustomers />}
 />
 
 
-
 </Route>
-
-
-
-
 
 
 
@@ -431,7 +380,6 @@ element={<AgentCustomers />}
 ============================================================ */}
 
 
-
 <Route
 
 path="/guide/dashboard"
@@ -439,8 +387,11 @@ path="/guide/dashboard"
 element={
 
 <ProtectedRoute roles={[
+
 "guide",
+
 "admin"
+
 ]}>
 
 <TourGuideDashboard />
@@ -455,14 +406,9 @@ element={
 
 
 
-
-
-
-
 {/* ============================================================
     TOUR MANAGER ROUTES
 ============================================================ */}
-
 
 
 <Route
@@ -472,9 +418,13 @@ path="/tour-manager"
 element={
 
 <ProtectedRoute roles={[
+
 "manager",
+
 "tourmanager",
+
 "admin"
+
 ]}>
 
 <TourManagerLayout />
@@ -484,7 +434,6 @@ element={
 }
 
 >
-
 
 
 <Route
@@ -616,12 +565,7 @@ element={<TourReports />}
 />
 
 
-
 </Route>
-
-
-
-
 
 
 
@@ -630,7 +574,6 @@ element={<TourReports />}
 {/* ============================================================
     ADMIN ROUTES
 ============================================================ */}
-
 
 
 <Route
@@ -648,7 +591,6 @@ element={
 }
 
 >
-
 
 
 <Route
@@ -671,13 +613,21 @@ element={<AdminDashboard />}
 
 
 
+<Route
+
+path="users"
+
+element={<UserManagement />}
+
+/>
+
 
 
 <Route
 
 path="tours"
 
-element={<ManageTours />}
+element={<TourManagement />}
 
 />
 
@@ -685,91 +635,7 @@ element={<ManageTours />}
 
 <Route
 
-path="tours/add"
-
-element={<AddTour />}
-
-/>
-
-
-
-<Route
-
-path="bookings"
-
-element={<ManageBookings />}
-
-/>
-
-
-
-
-
-<Route
-
-path="finance"
-
-element={<AdminFinance />}
-
-/>
-
-
-
-<Route
-
-path="finance/transactions"
-
-element={<MpesaTransactions />}
-
-/>
-
-
-
-<Route
-
-path="finance/reports"
-
-element={<FinanceReports />}
-
-/>
-
-
-
-<Route
-
-path="analytics"
-
-element={<AdminAnalytics />}
-
-/>
-
-
-
-<Route
-
-path="customers"
-
-element={<Customers />}
-
-/>
-
-
-
-<Route
-
-path="vehicles"
-
-element={<Vehicles />}
-
-/>
-
-
-
-
-
-<Route
-
-path="guides"
+path="staff"
 
 element={
 
@@ -777,7 +643,7 @@ element={
 
 <h1 className="text-2xl font-bold">
 
-Manage Guides
+Staff Management
 
 </h1>
 
@@ -789,11 +655,9 @@ Manage Guides
 
 
 
-
-
 <Route
 
-path="settings"
+path="destinations"
 
 element={
 
@@ -801,7 +665,95 @@ element={
 
 <h1 className="text-2xl font-bold">
 
-Admin Settings
+Destination Management
+
+</h1>
+
+</div>
+
+}
+
+/>
+
+
+
+<Route
+
+path="bookings"
+
+element={
+
+<div className="p-6">
+
+<h1 className="text-2xl font-bold">
+
+Booking Management
+
+</h1>
+
+</div>
+
+}
+
+/>
+
+
+
+<Route
+
+path="payments"
+
+element={
+
+<div className="p-6">
+
+<h1 className="text-2xl font-bold">
+
+Payment Management
+
+</h1>
+
+</div>
+
+}
+
+/>
+
+
+
+<Route
+
+path="analytics"
+
+element={
+
+<div className="p-6">
+
+<h1 className="text-2xl font-bold">
+
+Analytics
+
+</h1>
+
+</div>
+
+}
+
+/>
+
+
+
+<Route
+
+path="reports"
+
+element={
+
+<div className="p-6">
+
+<h1 className="text-2xl font-bold">
+
+Reports
 
 </h1>
 
@@ -819,13 +771,9 @@ Admin Settings
 
 
 
-
-
-
 {/* ============================================================
     404
 ============================================================ */}
-
 
 
 <Route
@@ -834,30 +782,21 @@ path="*"
 
 element={
 
-<div
-
-className="
+<div className="
 min-h-screen
 flex
 items-center
 justify-center
-"
+">
 
->
-
-<h1
-
-className="
+<h1 className="
 text-4xl
 font-bold
-"
-
->
+">
 
 404 - Page Not Found
 
 </h1>
-
 
 </div>
 
@@ -867,10 +806,7 @@ font-bold
 
 
 
-
-
 </Routes>
-
 
 );
 
