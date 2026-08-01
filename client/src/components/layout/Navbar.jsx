@@ -110,7 +110,7 @@ export default function Navbar() {
     if (isManager)
       return {
         label: "Manager",
-        path: "/manager/dashboard",
+        path: "/tour-manager/dashboard",
       };
 
     if (isAgent)

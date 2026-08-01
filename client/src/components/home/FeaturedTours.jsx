@@ -4,95 +4,123 @@ import { Link } from "react-router-dom";
 import { getFeaturedTours } from "../../api/tourApi";
 import LazyImage from "../common/LazyImage";
 
+
 export default function FeaturedTours() {
+
+
   const {
     data,
     isLoading,
     isError,
     error,
   } = useQuery({
+
     queryKey: ["featuredTours"],
+
     queryFn: getFeaturedTours,
+
     staleTime: 1000 * 60 * 5,
+
   });
 
 
+
   /*
   |--------------------------------------------------------------------------
-  | NORMALIZE API RESPONSE
+  | NORMALIZE RESPONSE
   |--------------------------------------------------------------------------
   */
 
-  let tours = [];
-
-  if (Array.isArray(data)) {
-    tours = data;
-  } else if (Array.isArray(data?.tours)) {
-    tours = data.tours;
-  } else if (Array.isArray(data?.data?.tours)) {
-    tours = data.data.tours;
-  } else if (Array.isArray(data?.data)) {
-    tours = data.data;
-  }
+  const tours = Array.isArray(data) ? data : [];
 
 
   console.log("FEATURED TOURS RESPONSE:", data);
+
   console.log("FEATURED TOURS ARRAY:", tours);
+
 
 
   /*
   |--------------------------------------------------------------------------
-  | LOADING
+  | LOADING STATE
   |--------------------------------------------------------------------------
   */
 
   if (isLoading) {
+
     return (
+
       <section className="py-20">
+
         <div className="container mx-auto px-6">
+
           <div className="grid md:grid-cols-3 gap-8">
 
-            {[1, 2, 3].map((item) => (
+
+            {[1,2,3].map((item)=>(
+
               <div
+
                 key={item}
+
                 className="
                   h-96
                   bg-gray-200
                   animate-pulse
                   rounded-xl
                 "
+
               />
+
             ))}
 
+
           </div>
+
         </div>
+
       </section>
+
     );
+
   }
+
 
 
 
   /*
   |--------------------------------------------------------------------------
-  | ERROR
+  | ERROR STATE
   |--------------------------------------------------------------------------
   */
 
   if (isError) {
+
     return (
+
       <section className="py-20 text-center">
 
+
         <p className="text-red-600 font-semibold">
+
           Failed to load featured tours.
+
         </p>
+
 
         <p className="text-gray-500 mt-2">
+
           {error?.message}
+
         </p>
 
+
       </section>
+
     );
+
   }
+
 
 
 
@@ -103,7 +131,9 @@ export default function FeaturedTours() {
   */
 
   return (
+
     <section
+
       className="
         py-20
         bg-gradient-to-b
@@ -111,21 +141,30 @@ export default function FeaturedTours() {
         via-gray-50
         to-green-50
       "
+
     >
+
 
       <div className="container mx-auto px-6">
 
 
+
         <h2
+
           className="
             text-4xl
             font-bold
             text-center
             mb-12
           "
+
         >
+
           Featured Tours
+
         </h2>
+
+
 
 
 
@@ -134,16 +173,22 @@ export default function FeaturedTours() {
 
             <div className="text-center">
 
+
               <p className="text-gray-500 text-lg">
+
                 No featured tours available.
+
               </p>
 
+
             </div>
+
 
           ) : (
 
 
             <div
+
               className="
                 grid
                 grid-cols-1
@@ -151,25 +196,19 @@ export default function FeaturedTours() {
                 lg:grid-cols-3
                 gap-8
               "
+
             >
 
 
-              {tours.map((tour) => {
 
+              {
+                tours.map((tour)=>(
 
-                const image =
-                  tour?.images?.[0]?.url ||
-                  tour?.images?.[0] ||
-                  tour?.destination?.images?.[0]?.url ||
-                  tour?.image ||
-                  "/placeholder-tour.jpg";
-
-
-
-                return (
 
                   <div
+
                     key={tour._id}
+
                     className="
                       bg-white
                       rounded-2xl
@@ -180,25 +219,48 @@ export default function FeaturedTours() {
                       duration-300
                       hover:-translate-y-2
                     "
+
                   >
+
+
 
 
                     <div className="relative">
 
 
+
                       <LazyImage
-                        src={image}
+
+                        src={
+
+                          tour?.images?.[0]?.url ||
+
+                          tour?.images?.[0] ||
+
+                          tour?.destination?.images?.[0]?.url ||
+
+                          tour?.image ||
+
+                          "/placeholder-tour.jpg"
+
+                        }
+
                         alt={tour?.title || "Tour"}
+
                         className="
                           h-64
                           w-full
                           object-cover
                         "
+
                       />
 
 
 
+
+
                       <div
+
                         className="
                           absolute
                           top-4
@@ -211,9 +273,13 @@ export default function FeaturedTours() {
                           text-sm
                           font-semibold
                         "
+
                       >
+
                         Featured
+
                       </div>
+
 
 
                     </div>
@@ -221,28 +287,55 @@ export default function FeaturedTours() {
 
 
 
+
+
+
                     <div className="p-6">
 
 
+
+
+
                       <h3
+
                         className="
                           text-xl
                           font-bold
                         "
+
                       >
-                        {tour?.title || "African Adventure Tour"}
+
+                        {
+                          tour?.title ||
+                          "African Adventure Tour"
+                        }
+
                       </h3>
 
 
 
+
+
+
+
                       <p
+
                         className="
                           text-gray-600
                           mt-2
                         "
+
                       >
-                        {tour?.destination?.name || "Kenya"}
+
+                        {
+                          tour?.destination?.name ||
+                          "Kenya"
+                        }
+
                       </p>
+
+
+
 
 
 
@@ -250,18 +343,26 @@ export default function FeaturedTours() {
                       {
                         tour?.duration && (
 
+
                           <p
+
                             className="
                               text-sm
                               text-gray-500
                               mt-2
                             "
+
                           >
+
                             Duration: {tour.duration}
+
                           </p>
+
 
                         )
                       }
+
+
 
 
 
@@ -270,16 +371,22 @@ export default function FeaturedTours() {
                       {
                         tour?.price && (
 
+
                           <p
+
                             className="
                               text-green-600
                               font-bold
                               text-lg
                               mt-4
                             "
+
                           >
+
                             KES {Number(tour.price).toLocaleString()}
+
                           </p>
+
 
                         )
                       }
@@ -288,8 +395,13 @@ export default function FeaturedTours() {
 
 
 
+
+
+
                       <Link
+
                         to={`/tours/${tour?.slug || tour?._id}`}
+
                         className="
                           block
                           mt-5
@@ -301,32 +413,51 @@ export default function FeaturedTours() {
                           rounded-lg
                           transition
                         "
+
                       >
+
                         View Tour
+
                       </Link>
+
+
+
 
 
                     </div>
 
 
 
+
+
                   </div>
 
-                );
 
-              })}
+
+                ))
+              }
+
+
 
 
 
             </div>
 
+
           )
         }
+
+
+
 
 
       </div>
 
 
+
     </section>
+
+
   );
+
 }
