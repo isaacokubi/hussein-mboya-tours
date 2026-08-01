@@ -1,19 +1,15 @@
-import api from "./axios";
 
+
+import api from "./axios";
 
 
 export const getFeaturedDestinations = async()=>{
 
-
-const response = await api.get(
-
-"/destinations/featured"
-
-);
+  const response = await api.get(
+    "/destinations/featured"
+  );
 
 
-
-return response.data.destinations;
-
+  return response.data.data || [];
 
 };
