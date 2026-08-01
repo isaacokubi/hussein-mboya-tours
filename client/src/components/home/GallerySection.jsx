@@ -41,9 +41,10 @@ export default function GallerySection() {
         <h2 className="text-4xl font-bold text-center mb-12">Safari Gallery</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {images.map((item) => (
-            <div key={item._id} className="overflow-hidden rounded-xl">
-              {/* <LazyImage
+          {Array.isArray(images) &&
+            images.map((item) => (
+              <div key={item._id} className="overflow-hidden rounded-xl">
+                {/* <LazyImage
                 src={item.image?.url}
                 alt={item.title || "Safari"}
                 className="
@@ -56,9 +57,8 @@ export default function GallerySection() {
                   duration-500
                 "
               /> */}
-              
-            </div>
-          ))}
+              </div>
+            ))}
         </div>
       </div>
     </section>
