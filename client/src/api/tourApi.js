@@ -26,24 +26,22 @@ export const getTours = async (params = {}) => {
 };
 
 
-
-
-
 export const getFeaturedTours = async () => {
 
-    const { data } = await api.get(
-        "/tours/featured"
-    );
+  const response = await api.get(
+    "/tours/featured"
+  );
 
 
-    return data;
+  console.log(
+    "FEATURED API RAW RESPONSE:",
+    response.data
+  );
+
+
+  return response.data.data || [];
 
 };
-
-
-
-
-
 
 
 /*
