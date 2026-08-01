@@ -21,7 +21,11 @@ export default function DestinationsSection() {
     try {
       const data = await getFeaturedDestinations();
 
-      setDestinations(data);
+      setDestinations(data || []);
+    } catch (error) {
+      console.error("Failed to load destinations:", error);
+
+      setDestinations([]);
     } finally {
       setLoading(false);
     }
@@ -36,50 +40,51 @@ export default function DestinationsSection() {
   return (
     <section
       className="
-py-16
-bg-white
-"
+        py-16
+        bg-white
+      "
     >
       <div
         className="
-max-w-7xl
-mx-auto
-px-6
-"
+          max-w-7xl
+          mx-auto
+          px-6
+        "
       >
         <motion.h2
           initial={{
             opacity: 0,
-
             y: 30,
           }}
           whileInView={{
             opacity: 1,
-
             y: 0,
           }}
           transition={{
             duration: 0.6,
           }}
+          viewport={{
+            once: true,
+          }}
           className="
-text-3xl
-font-bold
-text-center
-mb-10
-"
+            text-3xl
+            font-bold
+            text-center
+            mb-10
+          "
         >
           Explore Our Destinations
         </motion.h2>
 
         <div
           className="
-grid
-grid-cols-1
-md:grid-cols-3
-gap-8
-"
+            grid
+            grid-cols-1
+            md:grid-cols-3
+            gap-8
+          "
         >
-          {destinations?.map((destination) => (
+          {destinations.map((destination) => (
             <Link
               key={destination._id}
               to={`/destinations/${destination.slug}`}
@@ -89,44 +94,50 @@ gap-8
                   scale: 1.05,
                 }}
                 className="
-rounded-xl
-shadow-lg
-overflow-hidden
-bg-gray-50
-cursor-pointer
-hover:shadow-2xl
-transition
-"
+                  rounded-xl
+                  shadow-lg
+                  overflow-hidden
+                  bg-gray-50
+                  cursor-pointer
+                  hover:shadow-2xl
+                  transition
+                "
               >
                 <LazyImage
-                  src={destination.images?.[0]?.url}
+                  src={
+                    typeof destination.images?.[0] === "string"
+                      ? destination.images[0]
+                      : destination.images?.[0]?.url ||
+                        "/images/placeholder.jpg"
+                  }
                   alt={destination.name}
                   className="
-h-48
-w-full
-object-cover
-"
+                    h-48
+                    w-full
+                    object-cover
+                  "
                 />
 
                 <div
                   className="
-p-6
-"
+                    p-6
+                  "
                 >
                   <h3
                     className="
-text-xl
-font-semibold
-mb-3
-"
+                      text-xl
+                      font-semibold
+                      mb-3
+                    "
                   >
                     {destination.name}
                   </h3>
 
                   <p
                     className="
-text-gray-600
-"
+                      text-gray-600
+                      line-clamp-3
+                    "
                   >
                     {destination.description}
                   </p>
