@@ -1,38 +1,38 @@
 import {
-  useParams,
-  useNavigate
+    useParams,
+    useNavigate
 } from "react-router-dom";
 
 
 import {
-  useQuery,
-  useMutation
+    useQuery,
+    useMutation
 } from "@tanstack/react-query";
 
 
 import {
-  useState
+    useState
 } from "react";
 
 
 import {
-  toast
+    toast
 } from "react-toastify";
 
 
 import {
-  getTourById
+    getTourById
 } from "../api/tourApi";
 
 
 import {
-  createBooking,
-  initiatePayment
+    createBooking,
+    initiatePayment
 } from "../api/bookingApi";
 
 
 import {
-  useAuth
+    useAuth
 } from "../context/AuthContext";
 
 
@@ -43,7 +43,7 @@ export default function Checkout(){
 
 
 const {
-  id
+    id
 }=useParams();
 
 
@@ -54,19 +54,20 @@ useNavigate();
 
 
 const {
- user
+    user
 }=useAuth();
+
 
 
 
 
 const [form,setForm]=useState({
 
-travelDate:"",
+    travelDate:"",
 
-travelers:1,
+    travelers:1,
 
-phone:""
+    phone:""
 
 });
 
@@ -75,30 +76,27 @@ phone:""
 
 
 
-
-/*
-|--------------------------------------------------------------------------
-| LOAD TOUR
-|--------------------------------------------------------------------------
-*/
 
 
 const {
 
-data:tour,
+    data:tour,
 
-isLoading
+    isLoading
 
 }=useQuery({
 
-queryKey:[
-"checkout-tour",
-id
-],
+    queryKey:[
+        "checkout-tour",
+        id
+    ],
 
 
-queryFn:
-()=>getTourById(id)
+    queryFn:
+    ()=>getTourById(id),
+
+
+    enabled:Boolean(id)
 
 });
 
@@ -108,19 +106,14 @@ queryFn:
 
 
 
-
-
-/*
-|--------------------------------------------------------------------------
-| CREATE BOOKING
-|--------------------------------------------------------------------------
-*/
 
 
 const bookingMutation = useMutation({
 
 
+
 mutationFn:createBooking,
+
 
 
 onSuccess:async(data)=>{
@@ -135,7 +128,7 @@ data.booking || data;
 
 
 toast.success(
-"Booking created"
+"Booking created successfully"
 );
 
 
@@ -144,11 +137,11 @@ toast.success(
 
 await initiatePayment({
 
-bookingId:
-booking._id,
+    bookingId:
+    booking._id,
 
-phone:
-form.phone
+    phone:
+    form.phone
 
 });
 
@@ -157,21 +150,21 @@ form.phone
 
 
 navigate(
-
 `/payment-status/${booking._id}`
-
 );
 
 
 
 }
+
 catch(error){
 
 
+console.error(error);
+
+
 toast.error(
-
 "Payment initiation failed"
-
 );
 
 
@@ -198,7 +191,6 @@ error?.response?.data?.message ||
 }
 
 
-
 });
 
 
@@ -214,11 +206,13 @@ const handleChange=(e)=>{
 
 setForm({
 
-...form,
+    ...form,
 
-[e.target.name]:
 
-e.target.value
+    [e.target.name]:
+
+    e.target.value
+
 
 });
 
@@ -240,7 +234,10 @@ e.preventDefault();
 
 
 
+
+
 if(!user){
+
 
 toast.error(
 "Please login first"
@@ -252,26 +249,54 @@ navigate("/login");
 
 return;
 
+
 }
+
+
+
+
+
+
+
+const totalAmount =
+
+Number(tour?.price || 0)
+
+*
+
+Number(form.travelers || 1);
+
+
+
 
 
 
 
 bookingMutation.mutate({
 
+
+
 tour:id,
+
+
 
 travelDate:
 form.travelDate,
 
-travelers:
+
+
+numberOfGuests:
 Number(form.travelers),
+
+
 
 phone:
 form.phone,
 
-amount:
-tour.price
+
+
+totalAmount
+
 
 
 });
@@ -279,7 +304,6 @@ tour.price
 
 
 };
-
 
 
 
@@ -302,13 +326,13 @@ justify-center
 
 Loading checkout...
 
-
 </div>
 
 );
 
 
 }
+
 
 
 
@@ -325,7 +349,7 @@ p-10
 text-center
 ">
 
-Tour not found.
+Tour not found
 
 </div>
 
@@ -335,6 +359,18 @@ Tour not found.
 }
 
 
+
+
+
+
+
+const total =
+
+Number(tour.price || 0)
+
+*
+
+Number(form.travelers || 1);
 
 
 
@@ -364,10 +400,6 @@ gap-8
 
 
 
-
-{/* TOUR SUMMARY */}
-
-
 <div className="
 bg-white
 rounded-2xl
@@ -376,16 +408,13 @@ p-6
 ">
 
 
+
 <img
 
 src={
-
+tour.featuredImage?.url ||
 tour.images?.[0]?.url ||
-
-tour.image ||
-
 "/images/tour-placeholder.jpg"
-
 }
 
 alt={tour.title}
@@ -428,6 +457,7 @@ mt-3
 
 
 
+
 <div className="
 mt-5
 text-2xl
@@ -435,24 +465,25 @@ font-bold
 text-green-700
 ">
 
-KES {Number(tour.price).toLocaleString()}
+KES {
+Number(
+tour.price || 0
+)
+.toLocaleString()
+}
+
+</div>
+
+
 
 </div>
 
 
 
 
-</div>
 
 
 
-
-
-
-
-
-
-{/* CHECKOUT FORM */}
 
 
 <div className="
@@ -477,33 +508,19 @@ Complete Booking
 
 
 
-
-
 <form
-
 onSubmit={handleSubmit}
-
 className="
 space-y-5
 "
-
 >
-
-
 
 
 
 <div>
 
-
-<label className="
-block
-font-semibold
-mb-2
-">
-
+<label>
 Travel Date
-
 </label>
 
 
@@ -537,18 +554,10 @@ p-3
 
 
 
-
 <div>
 
-
-<label className="
-block
-font-semibold
-mb-2
-">
-
+<label>
 Number of Travellers
-
 </label>
 
 
@@ -582,21 +591,11 @@ p-3
 
 
 
-
-
 <div>
 
-
-<label className="
-block
-font-semibold
-mb-2
-">
-
+<label>
 M-Pesa Phone Number
-
 </label>
-
 
 
 <input
@@ -605,9 +604,9 @@ type="tel"
 
 name="phone"
 
-placeholder="07XXXXXXXX"
-
 required
+
+placeholder="07XXXXXXXX"
 
 value={form.phone}
 
@@ -632,17 +631,15 @@ p-3
 
 
 
-
 <div className="
 bg-green-50
-rounded-xl
 p-4
+rounded-xl
 ">
 
+
 <p>
-
 You will pay:
-
 </p>
 
 
@@ -653,27 +650,13 @@ text-green-700
 ">
 
 KES {
-
-(
-
-Number(tour.price)
-
-*
-
-Number(form.travelers)
-
-)
-
-.toLocaleString()
-
+total.toLocaleString()
 }
 
 </h3>
 
 
 </div>
-
-
 
 
 
@@ -693,33 +676,21 @@ text-white
 py-4
 rounded-xl
 font-bold
-hover:bg-green-800
-disabled:opacity-50
 "
 
 >
 
 
 {
-
 bookingMutation.isPending
-
 ?
-
 "Processing..."
-
 :
-
 "Pay with M-Pesa"
-
 }
 
 
 </button>
-
-
-
-
 
 
 
@@ -734,12 +705,11 @@ bookingMutation.isPending
 
 
 
-</div>
-
-
 
 </div>
 
+
+</div>
 
 );
 

@@ -13,12 +13,13 @@ import api from "./axios";
 
 export const getTours = async (params = {}) => {
 
-    const {data} = await api.get(
+    const { data } = await api.get(
         "/tours",
         {
             params
         }
     );
+
 
     return data;
 
@@ -30,10 +31,11 @@ export const getTours = async (params = {}) => {
 
 export const getFeaturedTours = async () => {
 
-    const {data} = await api.get(
+    const { data } = await api.get(
         "/tours/featured"
     );
 
+
     return data;
 
 };
@@ -42,13 +44,40 @@ export const getFeaturedTours = async () => {
 
 
 
-export const getTourById = async (id)=>{
 
-    const {data}=await api.get(
+
+/*
+|--------------------------------------------------------------------------
+| GET SINGLE TOUR
+|--------------------------------------------------------------------------
+*/
+
+
+export const getTourById = async (id) => {
+
+
+    const { data } = await api.get(
         `/tours/${id}`
     );
 
-    return data;
+
+    /*
+    API returns:
+
+    {
+      success:true,
+      data:{
+        title,
+        price
+      }
+    }
+
+    Return only the tour object
+    */
+
+
+    return data.data || data;
+
 
 };
 
@@ -56,15 +85,20 @@ export const getTourById = async (id)=>{
 
 
 
-export const getTour = async (id)=>{
 
-    const {data}=await api.get(
+export const getTour = async (id) => {
+
+
+    const { data } = await api.get(
         `/tours/${id}`
     );
 
-    return data;
+
+    return data.data || data;
+
 
 };
+
 
 
 
@@ -80,10 +114,10 @@ export const getTour = async (id)=>{
 */
 
 
-export const getManagerTours = async(params={})=>{
+export const getManagerTours = async (params = {}) => {
 
 
-    const {data}=await api.get(
+    const { data } = await api.get(
         "/tour-manager/tours",
         {
             params
@@ -110,10 +144,10 @@ export const getManagerTours = async(params={})=>{
 */
 
 
-export const createTour = async(payload)=>{
+export const createTour = async (payload) => {
 
 
-    const {data}=await api.post(
+    const { data } = await api.post(
         "/tour-manager/tours",
         payload
     );
@@ -129,6 +163,8 @@ export const createTour = async(payload)=>{
 
 
 
+
+
 /*
 |--------------------------------------------------------------------------
 | UPDATE TOUR
@@ -136,22 +172,22 @@ export const createTour = async(payload)=>{
 */
 
 
-export const updateTour = async(
-id,
-payload
-)=>{
-
-
-const {data}=await api.put(
-    `/tour-manager/tours/${id}`,
+export const updateTour = async (
+    id,
     payload
-);
+) => {
 
 
-return data;
+    const { data } = await api.put(
+        `/tour-manager/tours/${id}`,
+        payload
+    );
 
+
+    return data;
 
 };
+
 
 
 
@@ -167,16 +203,15 @@ return data;
 */
 
 
-export const deleteTour = async(id)=>{
+export const deleteTour = async (id) => {
 
 
-const {data}=await api.delete(
-    `/tour-manager/tours/${id}`
-);
+    const { data } = await api.delete(
+        `/tour-manager/tours/${id}`
+    );
 
 
-return data;
-
+    return data;
 
 };
 
@@ -195,16 +230,15 @@ return data;
 */
 
 
-export const getGuides = async()=>{
+export const getGuides = async () => {
 
 
-const {data}=await api.get(
-    "/tour-manager/guides"
-);
+    const { data } = await api.get(
+        "/tour-manager/guides"
+    );
 
 
-return data;
-
+    return data;
 
 };
 
@@ -214,25 +248,24 @@ return data;
 
 
 
-export const assignGuide = async(
-tourId,
-guideId
-)=>{
-
-
-const {data}=await api.patch(
-
-`/admin/tours/${tourId}/guide`,
-
-{
+export const assignGuide = async (
+    tourId,
     guideId
-}
-
-);
+) => {
 
 
-return data;
+    const { data } = await api.patch(
 
+        `/admin/tours/${tourId}/guide`,
+
+        {
+            guideId
+        }
+
+    );
+
+
+    return data;
 
 };
 
@@ -251,16 +284,15 @@ return data;
 */
 
 
-export const getVehicles = async()=>{
+export const getVehicles = async () => {
 
 
-const {data}=await api.get(
-    "/tour-manager/vehicles"
-);
+    const { data } = await api.get(
+        "/tour-manager/vehicles"
+    );
 
 
-return data;
-
+    return data;
 
 };
 
@@ -270,25 +302,24 @@ return data;
 
 
 
-export const assignVehicle = async(
-tourId,
-vehicleId
-)=>{
-
-
-const {data}=await api.patch(
-
-`/admin/tours/${tourId}/vehicle`,
-
-{
+export const assignVehicle = async (
+    tourId,
     vehicleId
-}
-
-);
+) => {
 
 
-return data;
+    const { data } = await api.patch(
 
+        `/admin/tours/${tourId}/vehicle`,
+
+        {
+            vehicleId
+        }
+
+    );
+
+
+    return data;
 
 };
 
@@ -307,16 +338,15 @@ return data;
 */
 
 
-export const getDestinations = async()=>{
+export const getDestinations = async () => {
 
 
-const {data}=await api.get(
-    "/destinations"
-);
+    const { data } = await api.get(
+        "/destinations"
+    );
 
 
-return data;
-
+    return data;
 
 };
 
@@ -335,18 +365,17 @@ return data;
 */
 
 
-export const getTourAvailability = async(id)=>{
+export const getTourAvailability = async (id) => {
 
 
-const {data}=await api.get(
+    const { data } = await api.get(
 
-`/tour-manager/tours/${id}/availability`
+        `/tour-manager/tours/${id}/availability`
 
-);
+    );
 
 
-return data;
-
+    return data;
 
 };
 
@@ -357,23 +386,22 @@ return data;
 
 
 
-export const updateTourAvailability = async(
-id,
-payload
-)=>{
+export const updateTourAvailability = async (
+    id,
+    payload
+) => {
 
 
-const {data}=await api.put(
+    const { data } = await api.put(
 
-`/tour-manager/tours/${id}/availability`,
+        `/tour-manager/tours/${id}/availability`,
 
-payload
+        payload
 
-);
+    );
 
 
-return data;
-
+    return data;
 
 };
 
@@ -392,21 +420,20 @@ return data;
 */
 
 
-export const getTourReports = async(params={})=>{
+export const getTourReports = async (params = {}) => {
 
 
-const {data}=await api.get(
+    const { data } = await api.get(
 
-"/tour-manager/reports",
+        "/tour-manager/reports",
 
-{
-    params
-}
+        {
+            params
+        }
 
-);
+    );
 
 
-return data;
-
+    return data;
 
 };
