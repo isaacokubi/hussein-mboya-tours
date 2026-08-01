@@ -138,31 +138,95 @@ export default function Navbar() {
   })();
 
   const linkClass = ({ isActive }) =>
-    `transition duration-200 ${
-      isActive
-        ? "text-green-700 font-semibold"
-        : "text-gray-700 hover:text-green-700"
-    }`;
+`
+transition
+duration-300
+font-medium
+${
+isActive
+?
+"text-yellow-400 font-bold"
+:
+"text-white hover:text-yellow-300"
+}
+`;
 
   return (
-    <header className="sticky top-0 z-50 bg-white shadow border-b">
-      <div className="max-w-7xl mx-auto h-20 px-6 flex items-center justify-between">
+    <header
+      className="
+    sticky
+    top-0
+    z-50
+    bg-gradient-to-r
+    from-green-950
+    via-green-900
+    to-emerald-800
+    shadow-xl
+    border-b
+    border-yellow-500/30
+    backdrop-blur-lg
+  "
+    >
+      <div
+        className="
+    max-w-7xl
+    mx-auto
+    h-20
+    px-6
+    flex
+    items-center
+    justify-between
+  "
+      >
         {/* ------------------------------------------------ */}
         {/* LOGO */}
         {/* ------------------------------------------------ */}
 
         <Link to="/" className="flex items-center gap-3">
-          <div className="h-11 w-11 rounded-full bg-green-700 text-white flex items-center justify-center font-bold text-lg">
-            HM
-          </div>
+         <div
+  className="
+    h-11
+    w-11
+    rounded-full
+    bg-yellow-500
+    text-green-950
+    flex
+    items-center
+    justify-center
+    font-extrabold
+    text-lg
+    shadow-lg
+  "
+>
+  CT
+</div>
 
-          <div>
-            <h2 className="font-bold text-xl text-green-800">
-              Coherent Tours
-            </h2>
 
-            <p className="text-xs text-gray-500">Explore Africa</p>
-          </div>
+<div>
+
+<h2
+className="
+font-extrabold
+text-xl
+text-white
+tracking-wide
+"
+>
+Coherent Tours
+</h2>
+
+
+<p
+className="
+text-xs
+text-yellow-300
+"
+>
+Explore Africa
+</p>
+
+
+</div>
         </Link>
 
         {/* ------------------------------------------------ */}
@@ -188,7 +252,13 @@ export default function Navbar() {
 
         <div className="hidden lg:flex items-center gap-4">
           <button
-            className="p-2 rounded-full hover:bg-gray-100 transition"
+            className="
+p-2
+rounded-full
+text-white
+hover:bg-white/10
+transition
+"
             aria-label="Search"
           >
             <Search size={20} />
@@ -196,20 +266,33 @@ export default function Navbar() {
 
           {!user && (
             <>
-              <Link to="/login" className="font-medium hover:text-green-700">
+              <Link to="/login" className="
+text-white
+font-medium
+hover:text-yellow-300
+transition
+">
                 Login
               </Link>
 
               <Link
                 to="/register"
-                className="bg-green-700 hover:bg-green-800 text-white px-5 py-2.5 rounded-lg font-semibold transition"
+                className="bg-yellow-500
+hover:bg-yellow-600
+text-green-950
+shadow-lg px-5 py-2.5 rounded-lg font-semibold transition"
               >
                 Register
               </Link>
 
               <Link
                 to="/tours"
-                className="bg-yellow-500 hover:bg-yellow-600 text-white px-5 py-2.5 rounded-lg font-semibold transition"
+                className="bg-gradient-to-r
+from-yellow-400
+to-yellow-600
+text-green-950
+hover:scale-105
+shadow-xl px-5 py-2.5 rounded-lg font-semibold transition"
               >
                 Book Now
               </Link>
@@ -220,7 +303,10 @@ export default function Navbar() {
             <>
               <Link
                 to={dashboardLink.path}
-                className="bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-800 transition"
+                className="bg-yellow-500
+text-green-950
+hover:bg-yellow-400
+shadow-lg px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-800 transition"
               >
                 <LayoutDashboard size={18} />
 
@@ -377,7 +463,10 @@ export default function Navbar() {
             w-80
             max-w-full
             h-[calc(100vh-5rem)]
-            bg-white
+            bg-gradient-to-b
+from-green-950
+to-green-900
+text-white
             shadow-2xl
             border-l
             z-40
@@ -397,7 +486,7 @@ export default function Navbar() {
                     `block rounded-lg px-4 py-3 transition ${
                       isActive
                         ? "bg-green-100 text-green-700 font-semibold"
-                        : "hover:bg-gray-100"
+                        : "hover:bg-white/10 text-white"
                     }`
                   }
                 >
