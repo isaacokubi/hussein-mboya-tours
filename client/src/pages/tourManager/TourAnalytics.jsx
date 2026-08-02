@@ -89,7 +89,7 @@ export default function TourAnalytics() {
                     text-gray-500
                 "
         >
-          Business intelligence overview for Hussein Mboya Tours
+          Business intelligence overview for Coherent Tours
         </p>
       </div>
 

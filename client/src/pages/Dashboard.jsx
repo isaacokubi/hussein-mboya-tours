@@ -175,7 +175,7 @@ export default function Dashboard() {
         text-lg
         "
         >
-          Manage your adventures with Hussein Mboya Tours.
+          Manage your adventures with Coherent Tours.
         </p>
 
         <div

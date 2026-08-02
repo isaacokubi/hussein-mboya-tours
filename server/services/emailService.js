@@ -66,7 +66,7 @@ export const sendEmail = async ({
   }
 
   const mailOptions = {
-    from: `"Hussein Mboya Tours" <${process.env.EMAIL_USER}>`,
+    from: `"Coherent Tours" <${process.env.EMAIL_USER}>`,
 
     to,
 
@@ -100,14 +100,14 @@ export const sendBookingEmail = async (email, booking) => {
   return sendEmail({
     to: email,
 
-    subject: "Booking Confirmation - Hussein Mboya Tours",
+    subject: "Booking Confirmation - Coherent Tours",
 
     html: `
       <div style="font-family:Arial,sans-serif">
 
         <h2>Booking Confirmed</h2>
 
-        <p>Thank you for choosing Hussein Mboya Tours.</p>
+        <p>Thank you for choosing Coherent Tours.</p>
 
         <hr>
 
@@ -137,7 +137,7 @@ export const sendBookingEmail = async (email, booking) => {
 
         <p>
           Regards,<br>
-          <strong>Hussein Mboya Tours</strong>
+          <strong>Coherent Tours</strong>
         </p>
 
       </div>
@@ -154,7 +154,7 @@ Travel Date: ${booking.travelDate}
 
 Total Amount: ${booking.totalAmount}
 
-Thank you for choosing Hussein Mboya Tours.
+Thank you for choosing Coherent Tours.
     `,
   });
 };

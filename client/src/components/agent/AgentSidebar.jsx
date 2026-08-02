@@ -102,7 +102,7 @@ mb-8
 
 >
 
-Hussein Mboya Tours
+Coherent Tours
 
 <br/>
 

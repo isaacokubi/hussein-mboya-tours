@@ -351,7 +351,7 @@ mb-6
 text-green-800
 ">
 
-Join Hussein Mboya Tours
+Join Coherent Tours
 
 </h1>
 

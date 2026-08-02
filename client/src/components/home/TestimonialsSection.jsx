@@ -9,7 +9,7 @@ const testimonials = [
     country: "United Kingdom",
     image: "/testimonials/sarah.jpg",
     message:
-      "Hussein Mboya Tours gave us the best safari experience in Kenya. The guides were professional and the entire trip was perfectly organized.",
+      "Coherent Tours gave us the best safari experience in Kenya. The guides were professional and the entire trip was perfectly organized.",
   },
 
   {

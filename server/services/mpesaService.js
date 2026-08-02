@@ -307,7 +307,7 @@ export const initiateStkPush = async ({
 
 
     TransactionDesc:
-      "Hussein Mboya Tours Booking Payment",
+      "Coherent Tours Booking Payment",
 
   };
 

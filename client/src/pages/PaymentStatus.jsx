@@ -329,7 +329,7 @@ mt-4
 text-gray-600
 ">
 
-Your Hussein Mboya Tours booking has been confirmed.
+Your Coherent Tours booking has been confirmed.
 
 </p>
 

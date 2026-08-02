@@ -11,7 +11,7 @@ export const bookingConfirmationEmail = ({
   amount,
   travelDate,
   paymentMethod,
-  companyName = "Hussein Mboya Tours",
+  companyName = "Coherent Tours",
 }) => {
   return `
 <!DOCTYPE html>

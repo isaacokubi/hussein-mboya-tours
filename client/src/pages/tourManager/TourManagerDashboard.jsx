@@ -105,7 +105,7 @@ export default function TourManagerDashboard() {
             text-gray-800
           "
           >
-            Hussein Mboya Tours
+            Coherent Tours
           </h1>
 
           <p className="text-gray-500">Tour Manager Dashboard</p>

@@ -22,7 +22,7 @@ export default function Home() {
     >
 
       <SEO
-        title="Luxury Kenya Safaris | Hussein Mboya Tours"
+        title="Luxury Kenya Safaris | Coherent Tours"
         description="Experience luxury safaris, beach holidays and unforgettable African adventures across Kenya."
         image="/hero1.jpeg"
       />

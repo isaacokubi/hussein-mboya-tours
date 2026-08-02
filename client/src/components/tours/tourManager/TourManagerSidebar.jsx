@@ -102,7 +102,7 @@ export default function TourManagerSidebar() {
 
       <div className="px-6 py-8 border-b border-green-800">
         <h2 className="text-2xl font-bold">
-          Hussein Mboya Tours
+          Coherent Tours
         </h2>
 
         <p className="text-green-300 text-sm mt-1">

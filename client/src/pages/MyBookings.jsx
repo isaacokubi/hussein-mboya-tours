@@ -281,7 +281,7 @@ export default function MyBookings(){
             "
           >
 
-            Manage your Hussein Mboya Tours bookings, payments and trips.
+            Manage your Coherent Tours bookings, payments and trips.
 
           </p>
 

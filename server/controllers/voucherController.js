@@ -141,7 +141,7 @@ export const generateVoucher = async (req, res, next) => {
       "Tour Voucher";
 
     doc.info.Author =
-      "Hussein Mboya Tours";
+      "Coherent Tours";
 
     doc.info.Subject =
       "Travel Voucher";
@@ -539,7 +539,7 @@ export const generateVoucher = async (req, res, next) => {
 
     doc.fontSize(10);
 
-    doc.text("Hussein Mboya Tours");
+    doc.text("Coherent Tours");
     doc.text("Nairobi, Kenya");
     doc.text("Phone: +254 XXX XXX XXX");
     doc.text("Email: info@husseinmboyatours.com");
@@ -590,7 +590,7 @@ export const generateVoucher = async (req, res, next) => {
     doc.fontSize(9);
 
     doc.text(
-      "Thank you for choosing Hussein Mboya Tours.",
+      "Thank you for choosing Coherent Tours.",
       {
         align: "center",
       }

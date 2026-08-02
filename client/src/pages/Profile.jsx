@@ -4,557 +4,477 @@ import {
   useState
 } from "react";
 
-
 import {
   AuthContext
 } from "../context/AuthContext";
 
-
 import api from "../api/axios";
-
 
 import {
   toast
 } from "react-toastify";
 
 
+export default function Profile() {
 
 
+  const {
+    user,
+    setUser
+  } = useContext(AuthContext);
 
 
 
+  const [
+    loading,
+    setLoading
+  ] = useState(true);
 
-export default function Profile(){
 
 
+  const [
+    profile,
+    setProfile
+  ] = useState(user);
 
-const {
-  user,
-  setUser
 
-}
-=
-useContext(AuthContext);
 
+  useEffect(() => {
 
 
+    // Wait until authentication is ready
+    if (!user) {
 
+      setLoading(false);
 
-const [
-loading,
-setLoading
-]
-=
-useState(true);
+      return;
 
+    }
 
 
 
+    let mounted = true;
 
-const [
-profile,
-setProfile
-]
-=
-useState(user);
 
 
+    const fetchProfile = async () => {
 
 
+      try {
 
 
+        const response = await api.get(
+          "/users/profile"
+        );
 
 
-useEffect(()=>{
 
+        const userData =
+          response.data.user ||
+          response.data;
 
-const fetchProfile = async()=>{
 
 
-try{
+        if (mounted) {
 
 
-const response =
-await api.get(
-"/users/profile"
-);
+          setProfile(userData);
 
 
+          setUser(userData);
 
-const userData =
-response.data.user ||
-response.data;
 
+          localStorage.setItem(
+            "user",
+            JSON.stringify(userData)
+          );
 
 
-setProfile(
-userData
-);
+        }
 
 
 
-setUser(
-userData
-);
+      } catch (error) {
 
 
+        console.error(
+          "Profile fetch error:",
+          error
+        );
 
-localStorage.setItem(
 
-"user",
 
-JSON.stringify(userData)
+        /*
+          Only show toast when authentication
+          is actually invalid.
+        */
 
-);
+        if (
+          error.response?.status === 401
+        ) {
 
+          toast.error(
+            "Session expired. Please login again."
+          );
 
+        }
 
-}
 
-catch(error){
+      } finally {
 
 
-console.error(
-"Profile fetch error:",
-error
-);
+        if (mounted) {
 
+          setLoading(false);
 
+        }
 
-toast.error(
-"Unable to load profile"
-);
 
+      }
 
-}
 
+    };
 
-finally{
 
 
-setLoading(false);
+    fetchProfile();
 
 
-}
 
+    return () => {
 
+      mounted = false;
 
-};
+    };
 
 
+  }, [user, setUser]);
 
 
-fetchProfile();
 
 
 
-},[
-setUser
-]);
 
 
+  if (loading) {
 
 
+    return (
 
+      <div
+        className="
+        min-h-screen
+        flex
+        items-center
+        justify-center
+        bg-gray-100
+        "
+      >
 
+        <p
+          className="
+          text-xl
+          font-semibold
+          "
+        >
+          Loading profile...
+        </p>
 
 
+      </div>
 
-if(loading){
+    );
 
 
-return (
+  }
 
-<div className="
-min-h-screen
-flex
-items-center
-justify-center
-bg-gray-100
-">
 
 
-<p className="
-text-xl
-font-semibold
-">
 
-Loading profile...
 
-</p>
 
 
-</div>
+  if (!profile) {
 
-);
 
+    return (
 
-}
+      <div
+        className="
+        min-h-screen
+        flex
+        items-center
+        justify-center
+        "
+      >
 
+        <p
+          className="
+          text-red-600
+          font-semibold
+          "
+        >
+          Please login to view your profile.
+        </p>
 
 
+      </div>
 
+    );
 
 
+  }
 
-if(!profile){
 
 
-return (
 
-<div className="
-min-h-screen
-flex
-items-center
-justify-center
-"
->
 
 
-<p className="
-text-red-600
-font-semibold
-">
 
-Please login to view your profile.
+  return (
 
-</p>
+    <div
+      className="
+      min-h-screen
+      bg-gray-100
+      p-6
+      "
+    >
 
 
-</div>
+      <div
+        className="
+        max-w-3xl
+        mx-auto
+        bg-white
+        rounded-2xl
+        shadow-xl
+        p-8
+        "
+      >
 
-);
 
+        <h1
+          className="
+          text-4xl
+          font-bold
+          text-green-800
+          mb-8
+          "
+        >
+          My Profile
+        </h1>
 
-}
 
 
 
 
+        <div
+          className="
+          grid
+          md:grid-cols-2
+          gap-6
+          "
+        >
 
 
 
+          <div
+            className="
+            bg-gray-50
+            rounded-xl
+            p-5
+            "
+          >
 
+            <p className="text-gray-500">
+              Full Name
+            </p>
 
-return (
+            <h2 className="text-xl font-bold mt-2">
+              {profile.name || "N/A"}
+            </h2>
 
-<div className="
-min-h-screen
-bg-gray-100
-p-6
-">
+          </div>
 
 
 
 
 
-<div className="
-max-w-3xl
-mx-auto
-bg-white
-rounded-2xl
-shadow-xl
-p-8
-">
+          <div
+            className="
+            bg-gray-50
+            rounded-xl
+            p-5
+            "
+          >
 
+            <p className="text-gray-500">
+              Email Address
+            </p>
 
+            <h2 className="text-xl font-bold mt-2">
+              {profile.email || "N/A"}
+            </h2>
 
+          </div>
 
 
 
-<h1 className="
-text-4xl
-font-bold
-text-green-800
-mb-8
-">
 
-My Profile
 
-</h1>
+          <div
+            className="
+            bg-gray-50
+            rounded-xl
+            p-5
+            "
+          >
 
+            <p className="text-gray-500">
+              Account Type
+            </p>
 
 
+            <h2
+              className="
+              text-xl
+              font-bold
+              mt-2
+              capitalize
+              "
+            >
 
+              {
+                typeof profile.role === "object"
 
+                ?
 
+                profile.role?.name
 
+                :
 
+                profile.role || "Customer"
 
-<div className="
-grid
-md:grid-cols-2
-gap-6
-">
+              }
 
+            </h2>
 
 
+          </div>
 
 
-<div className="
-bg-gray-50
-rounded-xl
-p-5
-">
 
 
-<p className="
-text-gray-500
-">
 
-Full Name
+          <div
+            className="
+            bg-gray-50
+            rounded-xl
+            p-5
+            "
+          >
 
-</p>
+            <p className="text-gray-500">
+              Member Since
+            </p>
 
 
-<h2 className="
-text-xl
-font-bold
-mt-2
-">
+            <h2
+              className="
+              text-xl
+              font-bold
+              mt-2
+              "
+            >
 
-{profile.name || "N/A"}
+              {
+                profile.createdAt
 
-</h2>
+                ?
 
+                new Date(
+                  profile.createdAt
+                ).toDateString()
 
-</div>
+                :
 
+                "N/A"
+              }
 
+            </h2>
 
 
+          </div>
 
 
 
+        </div>
 
 
-<div className="
-bg-gray-50
-rounded-xl
-p-5
-">
 
 
-<p className="
-text-gray-500
-">
 
-Email Address
 
-</p>
+        <div
+          className="
+          mt-8
+          bg-gradient-to-r
+          from-yellow-100
+          to-green-100
+          rounded-xl
+          p-6
+          "
+        >
 
+          <h2 className="text-2xl font-bold">
+            Loyalty Rewards
+          </h2>
 
-<h2 className="
-text-xl
-font-bold
-mt-2
-">
 
-{profile.email || "N/A"}
+          <p className="mt-4 text-lg">
 
-</h2>
+            Points:
 
+            <span
+              className="
+              ml-2
+              font-bold
+              text-green-700
+              "
+            >
 
-</div>
+              {
+                profile.loyaltyPoints || 0
+              }
 
+            </span>
 
+          </p>
 
 
 
+          <p
+            className="
+            mt-2
+            text-gray-700
+            "
+          >
+            Continue exploring Kenya with Coherent Tours and earn more rewards.
+          </p>
 
 
+        </div>
 
 
-<div className="
-bg-gray-50
-rounded-xl
-p-5
-">
 
 
-<p className="
-text-gray-500
-">
+      </div>
 
-Account Type
 
-</p>
+    </div>
 
-
-<h2 className="
-text-xl
-font-bold
-mt-2
-capitalize
-">
-
-{
-
-typeof profile.role === "object"
-
-?
-
-profile.role.name
-
-:
-
-profile.role || "Customer"
-
-}
-
-
-</h2>
-
-
-</div>
-
-
-
-
-
-
-
-
-
-<div className="
-bg-gray-50
-rounded-xl
-p-5
-">
-
-
-<p className="
-text-gray-500
-">
-
-Member Since
-
-</p>
-
-
-<h2 className="
-text-xl
-font-bold
-mt-2
-">
-
-{
-
-profile.createdAt
-
-?
-
-new Date(
-profile.createdAt
-)
-.toDateString()
-
-:
-
-"N/A"
-
-}
-
-
-</h2>
-
-
-</div>
-
-
-
-
-
-</div>
-
-
-
-
-
-
-
-
-
-{/* LOYALTY */}
-
-
-
-<div className="
-mt-8
-bg-gradient-to-r
-from-yellow-100
-to-green-100
-rounded-xl
-p-6
-">
-
-
-<h2 className="
-text-2xl
-font-bold
-">
-
-Loyalty Rewards
-
-</h2>
-
-
-
-
-<p className="
-mt-4
-text-lg
-">
-
-Points:
-
-<span className="
-ml-2
-font-bold
-text-green-700
-">
-
-{
-
-profile.loyaltyPoints || 0
-
-}
-
-</span>
-
-
-</p>
-
-
-
-
-
-<p className="
-mt-2
-text-gray-700
-">
-
-Continue exploring Kenya with Hussein Mboya Tours and earn more rewards.
-
-</p>
-
-
-
-</div>
-
-
-
-
-
-
-
-</div>
-
-
-</div>
-
-
-);
+  );
 
 
 }

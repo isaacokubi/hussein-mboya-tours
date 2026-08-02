@@ -1,6 +1,6 @@
 import { Helmet } from "react-helmet-async";
 
-const SITE_NAME = "Hussein Mboya Tours";
+const SITE_NAME = "Coherent Tours";
 
 const SITE_URL =
   import.meta.env.VITE_SITE_URL ||
@@ -122,7 +122,7 @@ export default function SEO({
 
       <meta
         name="author"
-        content="Hussein Mboya Tours"
+        content="Coherent Tours"
       />
     </Helmet>
   );

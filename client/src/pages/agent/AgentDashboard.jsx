@@ -67,7 +67,7 @@ export default function AgentDashboard(){
             ">
 
 
-                Loading Hussein Mboya Tours Agent Portal...
+                Loading Coherent Tours Agent Portal...
 
 
             </h2>
@@ -184,7 +184,7 @@ export default function AgentDashboard(){
                 ">
 
 
-                    Manage Hussein Mboya Tours bookings, guests, safari activities and commissions.
+                    Manage Coherent Tours bookings, guests, safari activities and commissions.
 
 
                 </p>

@@ -119,7 +119,7 @@ export const sendBookingConfirmation = async (
   await notifyUser({
     user,
 
-    subject: "Booking Confirmed - Hussein Mboya Tours",
+    subject: "Booking Confirmed - Coherent Tours",
 
     html: `
       <h2>Your booking is confirmed 🎉</h2>
@@ -130,7 +130,7 @@ export const sendBookingConfirmation = async (
       </p>
 
       <p>
-        Thank you for choosing Hussein Mboya Tours.
+        Thank you for choosing Coherent Tours.
       </p>
     `,
 

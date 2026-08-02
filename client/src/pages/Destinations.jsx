@@ -213,7 +213,7 @@ export default function Destinations(){
 
         >
 
-          Discover amazing places and unforgettable experiences with Hussein Mboya Tours.
+          Discover amazing places and unforgettable experiences with Coherent Tours.
 
 
         </p>

@@ -97,7 +97,7 @@ export default function Tours() {
             mt-3
           "
         >
-          Discover unforgettable African adventures with Hussein Mboya Tours.
+          Discover unforgettable African adventures with Coherent Tours.
         </p>
 
         {slug && (

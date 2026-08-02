@@ -55,7 +55,7 @@ export const sendBookingConfirmation = async (booking) => {
     const result = await sendEmail({
       to: booking.contactEmail,
 
-      subject: "Your Hussein Mboya Tours Booking Confirmation",
+      subject: "Your Coherent Tours Booking Confirmation",
 
       html: bookingConfirmationEmail({
         customerName: booking.contactName,

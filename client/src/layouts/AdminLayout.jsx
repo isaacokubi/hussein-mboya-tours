@@ -206,7 +206,7 @@ font-bold
 mb-8
 ">
 
-Hussein Mboya Tours
+Coherent Tours
 
 </h1>
 

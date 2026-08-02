@@ -56,7 +56,7 @@ export const recoverBookings = async () => {
         to: booking.contact.email,
 
         subject:
-          "Complete Your Hussein Mboya Tours Booking",
+          "Complete Your Coherent Tours Booking",
 
         html: `
           <h2>Your adventure is waiting 🌍</h2>
@@ -75,7 +75,7 @@ export const recoverBookings = async () => {
           </p>
 
           <p>
-            Thank you for choosing Hussein Mboya Tours.
+            Thank you for choosing Coherent Tours.
           </p>
         `,
       });

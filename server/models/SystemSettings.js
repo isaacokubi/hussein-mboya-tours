@@ -24,7 +24,7 @@ const systemSettingsSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      default: "Hussein Mboya Tours",
+      default: "Coherent Tours",
     },
 
     companyLogo: {
@@ -189,7 +189,7 @@ const systemSettingsSchema = new mongoose.Schema(
 
     emailFromName: {
       type: String,
-      default: "Hussein Mboya Tours",
+      default: "Coherent Tours",
     },
 
     emailFromAddress: {

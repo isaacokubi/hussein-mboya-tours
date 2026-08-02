@@ -38,7 +38,7 @@ export const createInvoice = async ({
 
       doc
         .fontSize(24)
-        .text("Hussein Mboya Tours", {
+        .text("Coherent Tours", {
           align: "center",
         });
 
@@ -172,7 +172,7 @@ export const createInvoice = async ({
         .fontSize(10)
         .fillColor("gray")
         .text(
-          "Thank you for choosing Hussein Mboya Tours.",
+          "Thank you for choosing Coherent Tours.",
           {
             align: "center",
           }

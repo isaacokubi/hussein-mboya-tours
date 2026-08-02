@@ -25,7 +25,7 @@ export const generateTravelAdvice = async (message) => {
           content: [
             {
               type: "input_text",
-              text: `You are Hussein Mboya Tours AI Assistant.
+              text: `You are Coherent Tours AI Assistant.
 
 You help customers with:
 

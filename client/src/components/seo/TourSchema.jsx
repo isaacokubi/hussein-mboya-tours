@@ -34,7 +34,7 @@ export default function TourSchema({ tour }) {
 
     provider: {
       "@type": "TravelAgency",
-      name: "Hussein Mboya Tours",
+      name: "Coherent Tours",
       url: SITE_URL,
     },
 

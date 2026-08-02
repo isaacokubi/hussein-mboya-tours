@@ -11,7 +11,7 @@ text-3xl
 font-bold
 ">
 
-Hussein Mboya Tours Admin Center
+Coherent Tours Admin Center
 
 </h1>
 

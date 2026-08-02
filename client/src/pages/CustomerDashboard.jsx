@@ -287,7 +287,7 @@ Welcome back,{" "}
 
 <p className="mt-2">
 
-Your Hussein Mboya Tours customer centre
+Your Coherent Tours customer centre
 
 </p>
 

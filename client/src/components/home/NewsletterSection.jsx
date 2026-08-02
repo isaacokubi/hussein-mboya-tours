@@ -89,7 +89,7 @@ export default function NewsletterSection() {
           >
             Get exclusive safari offers, holiday packages,
             travel tips, and destination inspiration from
-            Hussein Mboya Tours.
+            Coherent Tours.
           </p>
 
 

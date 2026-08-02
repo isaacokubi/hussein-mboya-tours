@@ -32,7 +32,7 @@ export const generateReceipt = (booking, res) => {
 
   doc
     .fontSize(24)
-    .text("Hussein Mboya Tours", {
+    .text("Coherent Tours", {
       align: "center",
     });
 
@@ -173,7 +173,7 @@ export const generateReceipt = (booking, res) => {
   doc
     .fontSize(10)
     .text(
-      "Thank you for choosing Hussein Mboya Tours.",
+      "Thank you for choosing Coherent Tours.",
       {
         align: "center",
       }

@@ -188,7 +188,7 @@ export default function AdminDashboard(){
           "
         >
 
-          Hussein Mboya Tours Admin Dashboard
+          Coherent Tours Admin Dashboard
 
         </h1>
 
