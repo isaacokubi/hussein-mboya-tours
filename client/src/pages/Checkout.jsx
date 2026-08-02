@@ -7,7 +7,6 @@ import { createBooking } from "../api/bookingApi";
 import { initiateMpesa } from "../api/mpesaApi";
 import { getTourById } from "../api/tourApi";
 
-
 export default function Checkout() {
 
   const navigate = useNavigate();
@@ -17,9 +16,11 @@ export default function Checkout() {
 
   const [travelDate, setTravelDate] = useState("");
 
-  const [travellerCount, setTravellerCount] = useState(1);
+  const [travellerCount, setTravellerCount] =
+    useState(1);
 
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] =
+    useState("");
 
 
 
@@ -29,15 +30,14 @@ export default function Checkout() {
     error,
   } = useQuery({
 
-    queryKey: [
+    queryKey:[
       "tour",
       id
     ],
 
-    queryFn: () =>
-      getTourById(id),
+    queryFn:()=>getTourById(id),
 
-    enabled: !!id,
+    enabled:!!id,
 
   });
 
@@ -58,20 +58,28 @@ export default function Checkout() {
 
 
 
-  const bookingMutation = useMutation({
+  const bookingMutation =
+  useMutation({
 
-    mutationFn: createBooking,
+    mutationFn:createBooking,
 
 
-    onSuccess: async (response) => {
+    onSuccess: async(response)=>{
 
       try {
 
 
+        console.log(
+          "CREATE BOOKING RESPONSE:",
+          response
+        );
+
+
+
         const booking =
-          response?.booking ||
           response?.data?.booking ||
-          response?.data;
+          response?.booking ||
+          response;
 
 
 
@@ -82,7 +90,9 @@ export default function Checkout() {
 
 
 
-        if (!booking?._id) {
+        if(
+          !booking?._id
+        ){
 
           throw new Error(
             "Booking ID was not returned."
@@ -92,14 +102,16 @@ export default function Checkout() {
 
 
 
+
         const amount =
-
           booking.totalAmount ||
-
           booking.amount ||
+          (
+            Number(tour.price || 0) *
+            Number(travellerCount)
+          );
 
-          Number(tour.price || 0) *
-          Number(travellerCount);
+
 
 
 
@@ -113,9 +125,12 @@ export default function Checkout() {
             phone,
 
 
-          amount,
+          amount:
+
+            Number(amount)
 
         };
+
 
 
 
@@ -126,8 +141,18 @@ export default function Checkout() {
 
 
 
-        await initiateMpesa(
-          mpesaPayload
+
+
+        const mpesaResponse =
+          await initiateMpesa(
+            mpesaPayload
+          );
+
+
+
+        console.log(
+          "MPESA RESPONSE:",
+          mpesaResponse
         );
 
 
@@ -144,18 +169,17 @@ export default function Checkout() {
 
 
 
-      } catch (err) {
+      } catch(error){
 
 
         console.error(
           "MPESA ERROR:",
-          err
+          error
         );
 
 
-
         toast.error(
-          err.message ||
+          error.message ||
           "M-Pesa initiation failed"
         );
 
@@ -165,22 +189,22 @@ export default function Checkout() {
     },
 
 
-
-    onError: (err) => {
+    onError:(error)=>{
 
 
       console.error(
         "BOOKING ERROR:",
-        err
+        error
       );
 
 
       toast.error(
-        err.message ||
+        error.message ||
         "Booking failed"
       );
 
-    },
+
+    }
 
 
   });
@@ -189,11 +213,16 @@ export default function Checkout() {
 
 
 
-  if (isLoading) {
+  if(isLoading){
 
     return (
 
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="
+      min-h-screen
+      flex
+      items-center
+      justify-center
+      ">
 
         Loading tour...
 
@@ -207,11 +236,17 @@ export default function Checkout() {
 
 
 
-  if (error) {
+  if(error){
 
     return (
 
-      <div className="min-h-screen flex items-center justify-center text-red-600">
+      <div className="
+      min-h-screen
+      flex
+      items-center
+      justify-center
+      text-red-600
+      ">
 
         Failed to load tour
 
@@ -225,11 +260,17 @@ export default function Checkout() {
 
 
 
-  if (!tour?._id) {
+  if(!tour?._id){
 
     return (
 
-      <div className="min-h-screen flex items-center justify-center text-red-600">
+      <div className="
+      min-h-screen
+      flex
+      items-center
+      justify-center
+      text-red-600
+      ">
 
         Tour not found
 
@@ -244,22 +285,20 @@ export default function Checkout() {
 
 
   const total =
-
     Number(tour.price || 0) *
-
     Number(travellerCount);
 
 
 
 
 
-  const handleSubmit = (e) => {
+  const handleSubmit=(e)=>{
 
     e.preventDefault();
 
 
 
-    if (!travelDate) {
+    if(!travelDate){
 
       toast.error(
         "Please select a travel date"
@@ -271,7 +310,7 @@ export default function Checkout() {
 
 
 
-    if (!phone) {
+    if(!phone){
 
       toast.error(
         "Please enter your phone number"
@@ -283,26 +322,26 @@ export default function Checkout() {
 
 
 
-    const travelers = Array.from(
 
-      {
-        length:
-          Number(travellerCount),
-      },
+    const travelers =
+      Array.from(
 
+        {
+          length:Number(travellerCount)
+        },
 
-      (_, index) => ({
+        (_,index)=>({
 
-        name:
-          `Traveller ${index + 1}`,
+          name:
+          `Traveller ${index+1}`,
 
-        age: 0,
+          age:0,
 
-        passport: "",
+          passport:""
 
-      })
+        })
 
-    );
+      );
 
 
 
@@ -320,18 +359,15 @@ export default function Checkout() {
       travelers,
 
 
+      contact:{
 
-      contact: {
-
-        phone,
+        phone
 
       },
 
 
-
       paymentMethod:
-        "MPESA",
-
+        "MPESA"
 
     });
 
@@ -342,17 +378,31 @@ export default function Checkout() {
 
 
 
-
   return (
 
-    <div className="min-h-screen bg-gray-50 py-10 px-4">
+    <div className="
+    min-h-screen
+    bg-gray-50
+    py-10
+    px-4
+    ">
 
 
-      <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-lg p-8">
+      <div className="
+      max-w-2xl
+      mx-auto
+      bg-white
+      rounded-2xl
+      shadow-lg
+      p-8
+      ">
 
 
-
-        <h1 className="text-3xl font-bold mb-6">
+        <h1 className="
+        text-3xl
+        font-bold
+        mb-6
+        ">
 
           Complete Booking
 
@@ -361,11 +411,18 @@ export default function Checkout() {
 
 
 
+        <div className="
+        mb-6
+        p-4
+        bg-gray-100
+        rounded-xl
+        ">
 
-        <div className="mb-6 p-4 bg-gray-100 rounded-xl">
 
-
-          <h2 className="text-xl font-semibold">
+          <h2 className="
+          text-xl
+          font-semibold
+          ">
 
             {tour.title}
 
@@ -373,7 +430,10 @@ export default function Checkout() {
 
 
 
-          <p className="text-gray-600 mt-2">
+          <p className="
+          text-gray-600
+          mt-2
+          ">
 
             {tour.description}
 
@@ -381,16 +441,16 @@ export default function Checkout() {
 
 
 
-          <div className="mt-4 text-green-700 font-bold text-xl">
+          <div className="
+          mt-4
+          text-green-700
+          font-bold
+          text-xl
+          ">
 
-            KES{" "}
-
-            {Number(
-              tour.price || 0
-            ).toLocaleString()}
+            KES {Number(tour.price || 0).toLocaleString()}
 
           </div>
-
 
 
         </div>
@@ -400,18 +460,18 @@ export default function Checkout() {
 
 
         <form
-
           onSubmit={handleSubmit}
-
           className="space-y-5"
-
         >
-
 
 
           <div>
 
-            <label className="block mb-2 font-medium">
+            <label className="
+            block
+            mb-2
+            font-medium
+            ">
 
               Travel Date
 
@@ -424,18 +484,22 @@ export default function Checkout() {
 
               value={travelDate}
 
-              onChange={(e)=>
-                setTravelDate(
+              onChange={
+                e=>setTravelDate(
                   e.target.value
                 )
               }
 
-              className="w-full border rounded-lg p-3"
+              className="
+              w-full
+              border
+              rounded-lg
+              p-3
+              "
 
               required
 
             />
-
 
           </div>
 
@@ -445,13 +509,15 @@ export default function Checkout() {
 
           <div>
 
-
-            <label className="block mb-2 font-medium">
+            <label className="
+            block
+            mb-2
+            font-medium
+            ">
 
               Number of Travellers
 
             </label>
-
 
 
             <input
@@ -462,21 +528,20 @@ export default function Checkout() {
 
               value={travellerCount}
 
-              onChange={(e)=>
-
-                setTravellerCount(
-                  Number(
-                    e.target.value
-                  )
+              onChange={
+                e=>setTravellerCount(
+                  Number(e.target.value)
                 )
-
               }
 
-              className="w-full border rounded-lg p-3"
-
+              className="
+              w-full
+              border
+              rounded-lg
+              p-3
+              "
 
             />
-
 
           </div>
 
@@ -486,8 +551,11 @@ export default function Checkout() {
 
           <div>
 
-
-            <label className="block mb-2 font-medium">
+            <label className="
+            block
+            mb-2
+            font-medium
+            ">
 
               M-Pesa Phone Number
 
@@ -497,33 +565,28 @@ export default function Checkout() {
 
             <input
 
-
               type="tel"
-
 
               value={phone}
 
-
-              onChange={(e)=>
-
-                setPhone(
+              onChange={
+                e=>setPhone(
                   e.target.value
                 )
-
               }
-
 
               placeholder="0712345678"
 
-
-              className="w-full border rounded-lg p-3"
-
+              className="
+              w-full
+              border
+              rounded-lg
+              p-3
+              "
 
               required
 
-
             />
-
 
           </div>
 
@@ -531,16 +594,13 @@ export default function Checkout() {
 
 
 
-          <div className="text-xl font-bold">
+          <div className="
+          text-xl
+          font-bold
+          ">
 
             Total:
-
-            {" "}
-
-            KES{" "}
-
-            {total.toLocaleString()}
-
+            KES {total.toLocaleString()}
 
           </div>
 
@@ -550,39 +610,34 @@ export default function Checkout() {
 
           <button
 
-
             type="submit"
-
 
             disabled={
               bookingMutation.isPending
             }
 
-
-            className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-semibold"
-
+            className="
+            w-full
+            bg-green-600
+            hover:bg-green-700
+            text-white
+            py-3
+            rounded-lg
+            font-semibold
+            "
 
           >
 
-
             {
-
               bookingMutation.isPending
-
               ?
-
               "Processing..."
-
               :
-
               "Pay with M-Pesa"
-
             }
 
 
-
           </button>
-
 
 
 
@@ -591,6 +646,7 @@ export default function Checkout() {
 
 
       </div>
+
 
 
     </div>
