@@ -1,8 +1,7 @@
-// client/src/components/TourCard.jsx
-
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { toast } from "react-toastify";
+
 import { addToWishlist } from "../../api/wishlistApi";
 
 export default function TourCard({ tour }) {
@@ -71,7 +70,8 @@ export default function TourCard({ tour }) {
           object-cover
           "
           onError={(e) => {
-            e.currentTarget.src = "/placeholder.jpg";
+            e.currentTarget.src =
+              "/placeholder.jpg";
           }}
         />
 
@@ -109,7 +109,9 @@ export default function TourCard({ tour }) {
             text-gray-500
             "
           >
-            {tour.country || tour.destination?.name || "Kenya"}
+            {tour.country ||
+              tour.destination?.name ||
+              "Kenya"}
           </span>
 
           <span
@@ -158,7 +160,9 @@ export default function TourCard({ tour }) {
                 line-through
                 "
               >
-                KES {price.toLocaleString("en-US")}
+                KES {price.toLocaleString(
+                  "en-US"
+                )}
               </p>
             )}
 
@@ -169,7 +173,10 @@ export default function TourCard({ tour }) {
               text-green-700
               "
             >
-              KES {discountedPrice.toLocaleString("en-US")}
+              KES{" "}
+              {discountedPrice.toLocaleString(
+                "en-US"
+              )}
             </p>
           </div>
 
@@ -207,7 +214,9 @@ export default function TourCard({ tour }) {
           disabled:cursor-not-allowed
           "
         >
-          {adding ? "Adding..." : "♡ Add to Wishlist"}
+          {adding
+            ? "Adding..."
+            : "♡ Add to Wishlist"}
         </button>
       </div>
     </div>

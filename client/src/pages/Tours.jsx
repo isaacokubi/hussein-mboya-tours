@@ -1,15 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
-
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 import { getTours } from "../api/tourApi";
+import TourCard from "../components/TourCard";
 
 export default function Tours() {
   const { slug } = useParams();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["public-tours", slug],
-  queryFn: () => getTours(slug),
+    queryFn: () => getTours(slug),
   });
 
   if (isLoading) {
@@ -54,18 +54,9 @@ export default function Tours() {
     );
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | API RESPONSE:
-  |
-  | {
-  |   success:true,
-  |   data:[]
-  | }
-  |--------------------------------------------------------------------------
-  */
-
-  const tours = Array.isArray(data) ? data : data?.data || [];
+  const tours = Array.isArray(data)
+    ? data
+    : data?.data || [];
 
   return (
     <div
@@ -76,11 +67,7 @@ export default function Tours() {
         py-12
       "
     >
-      <div
-        className="
-          mb-10
-        "
-      >
+      <div className="mb-10">
         <h1
           className="
             text-4xl
@@ -140,103 +127,10 @@ export default function Tours() {
           "
         >
           {tours.map((tour) => (
-            <div
+            <TourCard
               key={tour._id}
-              className="
-                bg-white
-                rounded-2xl
-                shadow
-                overflow-hidden
-                hover:shadow-xl
-                transition
-              "
-            >
-              <img
-                src={
-                  tour.images?.[0] ||
-                  tour.image ||
-                  "/images/tour-placeholder.jpg"
-                }
-                alt={tour.title}
-                className="
-                  w-full
-                  h-56
-                  object-cover
-                "
-              />
-
-              <div
-                className="
-                  p-6
-                "
-              >
-                <h2
-                  className="
-                    text-xl
-                    font-bold
-                    text-gray-800
-                  "
-                >
-                  {tour.title}
-                </h2>
-
-                <p
-                  className="
-                    text-gray-600
-                    mt-2
-                  "
-                >
-                  📍{" "}
-                  {tour.destination?.name ||
-                    tour.destination ||
-                    tour.country ||
-                    "Kenya"}
-                </p>
-
-                <p
-                  className="
-                    text-gray-600
-                    mt-4
-                    line-clamp-3
-                  "
-                >
-                  {tour.description}
-                </p>
-
-                <div
-                  className="
-                    flex
-                    justify-between
-                    items-center
-                    mt-6
-                  "
-                >
-                  <span
-                    className="
-                      text-green-700
-                      font-bold
-                      text-xl
-                    "
-                  >
-                    KES {Number(tour.price || 0).toLocaleString()}
-                  </span>
-
-                  <Link
-                    to={`/tours/${tour.slug}`}
-                    className="
-                      bg-green-600
-                      text-white
-                      px-5
-                      py-2
-                      rounded-lg
-                      hover:bg-green-700
-                    "
-                  >
-                    View Tour
-                  </Link>
-                </div>
-              </div>
-            </div>
+              tour={tour}
+            />
           ))}
         </div>
       )}
