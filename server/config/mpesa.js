@@ -120,3 +120,15 @@ export const mpesaUrls =
   mpesaConfig.environment === "production"
     ? production
     : sandbox;
+
+/*
+|--------------------------------------------------------------------------
+| GET ACTIVE MPESA URLS
+|--------------------------------------------------------------------------
+*/
+
+export const getMpesaUrls = () => {
+  return mpesaConfig.environment === "production"
+    ? mpesaUrls.production
+    : mpesaUrls.sandbox;
+};
