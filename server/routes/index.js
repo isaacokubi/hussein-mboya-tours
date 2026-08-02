@@ -9,6 +9,8 @@ import wishlistRoutes from "./wishlistRoutes.js";
 import galleryRoutes from "./galleryRoutes.js";
 import heroRoutes from "./heroRoutes.js";
 
+import mpesaRoutes from "./mpesaRoutes.js";
+
 import adminRoutes from "./adminRoutes.js";
 import adminTourRoutes from "./adminTourRoutes.js";
 import adminBookingRoutes from "./adminBookingRoutes.js";
@@ -16,7 +18,10 @@ import adminBookingRoutes from "./adminBookingRoutes.js";
 import categoryRoutes from "./categoryRoutes.js";
 import adminDashboardRoutes from "./adminDashboardRoutes.js";
 
+
 const router = express.Router();
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -24,23 +29,74 @@ const router = express.Router();
 |--------------------------------------------------------------------------
 */
 
-router.use("/categories", categoryRoutes);
 
-router.use("/auth", authRoutes);
+router.use(
+  "/categories",
+  categoryRoutes
+);
 
-router.use("/bookings", bookingRoutes);
 
-router.use("/tours", tourRoutes);
+router.use(
+  "/auth",
+  authRoutes
+);
 
-router.use("/destinations", destinationRoutes);
 
-router.use("/reviews", reviewRoutes);
+router.use(
+  "/bookings",
+  bookingRoutes
+);
 
-router.use("/wishlist", wishlistRoutes);
 
-router.use("/gallery", galleryRoutes);
+router.use(
+  "/tours",
+  tourRoutes
+);
 
-router.use("/hero", heroRoutes);
+
+router.use(
+  "/destinations",
+  destinationRoutes
+);
+
+
+router.use(
+  "/reviews",
+  reviewRoutes
+);
+
+
+router.use(
+  "/wishlist",
+  wishlistRoutes
+);
+
+
+router.use(
+  "/gallery",
+  galleryRoutes
+);
+
+
+router.use(
+  "/hero",
+  heroRoutes
+);
+
+
+
+/*
+|--------------------------------------------------------------------------
+| MPESA ROUTES
+|--------------------------------------------------------------------------
+*/
+
+router.use(
+  "/mpesa",
+  mpesaRoutes
+);
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -48,12 +104,30 @@ router.use("/hero", heroRoutes);
 |--------------------------------------------------------------------------
 */
 
-router.use("/admin", adminRoutes);
 
-router.use("/admin/tours", adminTourRoutes);
+router.use(
+  "/admin",
+  adminRoutes
+);
 
-router.use("/admin/bookings", adminBookingRoutes);
 
-router.use("/admin/dashboard", adminDashboardRoutes);
+router.use(
+  "/admin/tours",
+  adminTourRoutes
+);
+
+
+router.use(
+  "/admin/bookings",
+  adminBookingRoutes
+);
+
+
+router.use(
+  "/admin/dashboard",
+  adminDashboardRoutes
+);
+
+
 
 export default router;
