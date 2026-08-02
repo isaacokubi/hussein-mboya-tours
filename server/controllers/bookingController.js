@@ -32,449 +32,73 @@ import withTransaction from "../utils/withTransaction.js";
 | CREATE BOOKING
 |--------------------------------------------------------------------------
 */
+const bookingDocument =
+new Booking({
 
-export const createBooking = async (req, res, next) => {
-  try {
+customer:
+req.user._id,
 
-    let {
-      tour,
-      travelDate,
-      travelers,
-      travelerCount,
-      numberOfGuests,
-      contact,
-      paymentMethod,
-    } = req.body;
 
+customerSnapshot: {
 
+name:
+req.user.name || "",
 
-    const booking = await withTransaction(
-      async (session) => {
+email:
+req.user.email || "",
 
+phone:
+req.user.phone || ""
 
-        const tourData =
-          await Tour.findById(tour)
-            .session(session);
+},
 
 
+tour,
 
-        if (!tourData) {
-          throw new Error(
-            "Tour not found"
-          );
-        }
 
+travelDate,
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | DATE VALIDATION
-        |--------------------------------------------------------------------------
-        */
+travelers,
 
-        if (!travelDate) {
-          throw new Error(
-            "Travel date is required"
-          );
-        }
 
+numberOfGuests:
+totalTravellers,
 
 
-        const selectedDate =
-          new Date(travelDate);
+contact,
 
 
+subtotal,
 
-        if (
-          Number.isNaN(
-            selectedDate.getTime()
-          )
-        ) {
-          throw new Error(
-            "Invalid travel date"
-          );
-        }
 
+discountAmount,
 
 
-        if (
-          selectedDate < new Date()
-        ) {
-          throw new Error(
-            "Travel date cannot be in the past"
-          );
-        }
+totalAmount,
 
 
+depositAmount,
 
 
+balanceAmount,
 
-        /*
-        |--------------------------------------------------------------------------
-        | TRAVELLER NORMALIZATION
-        |--------------------------------------------------------------------------
-        */
 
-        if (!Array.isArray(travelers)) {
+paymentMethod:
+paymentMethod || "MPESA",
 
 
-          const count =
-            Number(
-              travelerCount ||
-              numberOfGuests ||
-              0
-            );
+paymentStatus:
+"pending",
 
 
+status:
+"pending",
 
-          if (count < 1) {
-            throw new Error(
-              "At least one traveller is required"
-            );
-          }
 
+assigned:false
 
-
-          travelers =
-            Array.from(
-              {
-                length: count
-              },
-
-              (_, index) => ({
-                name:
-                  `Traveller ${index + 1}`,
-
-                age:0,
-
-                passport:""
-              })
-
-            );
-
-        }
-
-
-
-
-        if (
-          travelers.length < 1
-        ) {
-          throw new Error(
-            "At least one traveller is required"
-          );
-        }
-
-
-
-        const totalTravellers =
-          travelers.length;
-
-
-
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | CHECK TOUR CAPACITY
-        |--------------------------------------------------------------------------
-        */
-
-        const available =
-          await validateTourCapacity(
-            tour,
-            totalTravellers
-          );
-
-
-
-        if (!available) {
-          throw new Error(
-            "No available slots"
-          );
-        }
-
-
-
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | PAYMENT METHOD
-        |--------------------------------------------------------------------------
-        */
-
-        if (
-          paymentMethod &&
-          !PAYMENT_METHODS.includes(
-            paymentMethod
-          )
-        ) {
-          throw new Error(
-            "Invalid payment method"
-          );
-        }
-
-
-
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | PRICE CALCULATION
-        |--------------------------------------------------------------------------
-        */
-
-        const {
-
-          subtotal,
-
-          discountAmount,
-
-          totalAmount,
-
-          depositAmount,
-
-          balanceAmount
-
-
-        } =
-        calculateBookingAmounts(
-          tourData,
-          totalTravellers
-        );
-
-
-
-
-
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | RESERVE SLOTS
-        |--------------------------------------------------------------------------
-        */
-
-        await reserveSlots(
-          tour,
-          totalTravellers
-        );
-
-
-
-
-
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | CREATE BOOKING
-        |--------------------------------------------------------------------------
-        */
-
-
-        const bookingDocument =
-          new Booking({
-
-            customer:
-              req.user._id,
-
-
-
-            customerSnapshot: {
-
-              name:
-                req.user.name || "",
-
-
-              email:
-                req.user.email || "",
-
-
-              phone:
-                req.user.phone || ""
-
-            },
-
-
-
-            tour,
-
-
-
-            travelDate,
-
-
-
-            travelers,
-
-
-
-            travelerCount:
-              totalTravellers,
-
-
-
-            numberOfGuests:
-              totalTravellers,
-
-
-
-            contact,
-
-
-
-            subtotal,
-
-
-
-            discountAmount,
-
-
-
-            totalAmount,
-
-
-
-            amount:
-              totalAmount,
-
-
-
-            depositAmount,
-
-
-
-            balanceAmount,
-
-
-
-            paymentMethod:
-              paymentMethod ||
-              "MPESA",
-
-
-
-            paymentStatus:
-              PAYMENT_STATUSES.PENDING ||
-              "pending",
-
-
-
-            bookingStatus:
-              BOOKING_STATUSES.PENDING ||
-              "pending",
-
-
-
-            status:
-              "pending",
-
-
-
-            assigned:false
-
-          });
-
-
-
-
-
-        await bookingDocument.save({
-          session
-        });
-
-
-
-
-
-
-        const savedBooking =
-          await Booking.findById(
-            bookingDocument._id
-          )
-
-          .populate(
-            "tour"
-          )
-
-          .populate(
-            "customer",
-            "-password"
-          )
-
-          .session(session);
-
-
-
-
-
-        console.log(
-          "SAVED BOOKING:",
-          savedBooking
-        );
-
-
-
-        return savedBooking;
-
-
-      }
-    );
-
-
-
-
-
-    console.log(
-      "FINAL BOOKING RESPONSE:",
-      booking
-    );
-
-
-
-
-
-    return successResponse(
-
-      res,
-
-      201,
-
-      "Booking created successfully",
-
-      {
-        booking
-      }
-
-    );
-
-
-
-  } catch(error) {
-
-
-    console.error(
-      "CREATE BOOKING ERROR:",
-      error
-    );
-
-
-
-    return errorResponse(
-
-      res,
-
-      400,
-
-      error.message
-
-    );
-
-  }
-
-};
+});
 /*
 |--------------------------------------------------------------------------
 | GET MY BOOKINGS
@@ -593,11 +217,15 @@ export const getAllBookings = async (req, res, next) => {
 
     const bookings = await Booking.find(filter)
 
-      .populate("customer", "name email phone")
+     .populate(
+  "customer",
+  "name email phone"
+)
 
-      .populate("user", "name email")
-
-      .populate("tour", "title destination price")
+.populate(
+  "tour",
+  "title destination price"
+)
 
       .populate("assignedGuide", "name email phone")
 
@@ -670,9 +298,10 @@ export const getConfirmedBookings = async (req, res, next) => {
 
       .populate("tour")
 
-      .populate("customer", "name email phone")
-
-      .populate("user", "name email phone")
+      .populate(
+  "customer",
+  "name email phone"
+)
 
       .populate("assignedGuide")
 
@@ -714,40 +343,87 @@ export const getConfirmedBookings = async (req, res, next) => {
 |--------------------------------------------------------------------------
 */
 
-export const getBookingById = async (req, res, next) => {
-  try {
-    const booking = await Booking.findById(req.params.id)
+export const getBookingById = async (
+req,
+res,
+next
+)=>{
 
-      .populate("tour")
+try{
 
-      .populate("customer", "name email phone")
 
-      .populate("user", "name email phone")
+const booking =
+await Booking.findById(req.params.id)
 
-      .populate("assignedGuide")
 
-      .populate("assignedDriver")
+.populate(
+"tour"
+)
 
-      .populate("assignedVehicle")
 
-      .lean();
+.populate(
+"customer",
+"name email phone"
+)
 
-    if (!booking) {
-      return res.status(404).json({
-        success: false,
 
-        message: "Booking not found",
-      });
-    }
+.populate(
+"assignedGuide"
+)
 
-    return successResponse(res, 200, "Booking retrieved successfully", {
-      booking,
-    });
-  } catch (error) {
-    next(error);
-  }
+
+.populate(
+"assignedDriver"
+)
+
+
+.populate(
+"assignedVehicle"
+)
+
+
+.lean();
+
+
+
+if(!booking){
+
+return res.status(404).json({
+
+success:false,
+
+message:"Booking not found"
+
+});
+
+}
+
+
+
+return successResponse(
+
+res,
+
+200,
+
+"Booking retrieved successfully",
+
+{
+booking
+}
+
+);
+
+
+}
+catch(error){
+
+next(error);
+
+}
+
+
 };
-
 // Compatibility
 export const getBooking = getBookingById; /*
 |--------------------------------------------------------------------------
@@ -800,9 +476,12 @@ export const updateBookingPayment = async (
 
     booking.bookingStatus = "confirmed";
 
-    if (paymentData.mpesaReceiptNumber) {
-      booking.mpesaReceiptNumber = paymentData.mpesaReceiptNumber;
-    }
+   if(paymentData.mpesaReceiptNumber){
+
+booking.mpesaReceipt =
+paymentData.mpesaReceiptNumber;
+
+}
 
     if (typeof paymentData.amount === "number") {
       booking.paidAmount = paymentData.amount;

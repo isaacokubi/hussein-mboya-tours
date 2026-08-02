@@ -66,7 +66,7 @@ const travelerSchema = new mongoose.Schema(
   },
   {
     _id: false,
-  }
+  },
 );
 
 /*
@@ -85,7 +85,7 @@ const customerSnapshotSchema = new mongoose.Schema(
   },
   {
     _id: false,
-  }
+  },
 );
 
 /*
@@ -104,7 +104,7 @@ const emergencyContactSchema = new mongoose.Schema(
   },
   {
     _id: false,
-  }
+  },
 );
 
 /*
@@ -142,25 +142,32 @@ const bookingSchema = new mongoose.Schema(
 
     customerSnapshot: customerSnapshotSchema,
 
-    fullName: {
-      type: String,
-      trim: true,
-      default: "",
-    },
+    /*
+|--------------------------------------------------------------------------
+| CONTACT INFORMATION
+|--------------------------------------------------------------------------
+*/
 
-    email: {
-      type: String,
-      lowercase: true,
-      trim: true,
-      default: "",
-    },
+    contact: {
+      name: {
+        type: String,
+        trim: true,
+        default: "",
+      },
 
-    phone: {
-      type: String,
-      trim: true,
-      default: "",
-    },
+      email: {
+        type: String,
+        lowercase: true,
+        trim: true,
+        default: "",
+      },
 
+      phone: {
+        type: String,
+        trim: true,
+        default: "",
+      },
+    },
     /*
     |--------------------------------------------------------------------------
     | AGENT
@@ -280,11 +287,11 @@ const bookingSchema = new mongoose.Schema(
     assigned: {
       type: Boolean,
       default: false,
-    },    /*
+    } /*
     |--------------------------------------------------------------------------
     | PRICING
     |--------------------------------------------------------------------------
-    */
+    */,
 
     subtotal: {
       type: Number,
@@ -343,12 +350,7 @@ const bookingSchema = new mongoose.Schema(
 
     commissionStatus: {
       type: String,
-      enum: [
-        "pending",
-        "approved",
-        "paid",
-        "cancelled",
-      ],
+      enum: ["pending", "approved", "paid", "cancelled"],
       default: "pending",
     },
 
@@ -377,26 +379,13 @@ const bookingSchema = new mongoose.Schema(
 
     paymentMethod: {
       type: String,
-      enum: [
-        "MPESA",
-        "CARD",
-        "PAYPAL",
-        "BANK_TRANSFER",
-        "CASH",
-      ],
+      enum: ["MPESA", "CARD", "PAYPAL", "BANK_TRANSFER", "CASH"],
       default: "MPESA",
     },
 
     paymentStatus: {
       type: String,
-      enum: [
-        "pending",
-        "partial",
-        "paid",
-        "failed",
-        "cancelled",
-        "refunded",
-      ],
+      enum: ["pending", "partial", "paid", "failed", "cancelled", "refunded"],
       default: "pending",
       index: true,
     },
@@ -444,13 +433,7 @@ const bookingSchema = new mongoose.Schema(
 
     refundStatus: {
       type: String,
-      enum: [
-        "none",
-        "requested",
-        "approved",
-        "completed",
-        "rejected",
-      ],
+      enum: ["none", "requested", "approved", "completed", "rejected"],
       default: "none",
     },
 
@@ -589,8 +572,8 @@ const bookingSchema = new mongoose.Schema(
     toObject: {
       virtuals: true,
     },
-  }
-);/*
+  },
+); /*
 |--------------------------------------------------------------------------
 | GENERATE BOOKING NUMBER
 |--------------------------------------------------------------------------
@@ -600,10 +583,7 @@ bookingSchema.pre("save", function (next) {
   if (!this.bookingNumber) {
     const year = new Date().getFullYear();
 
-    const random = Math.random()
-      .toString(36)
-      .substring(2, 8)
-      .toUpperCase();
+    const random = Math.random().toString(36).substring(2, 8).toUpperCase();
 
     this.bookingNumber = `HMT-${year}-${random}`;
   }
@@ -627,23 +607,17 @@ bookingSchema.pre("save", function (next) {
   // Prevent invalid deposits
 
   if (this.depositAmount > this.totalAmount) {
-    return next(
-      new Error("Deposit amount cannot exceed total amount.")
-    );
+    return next(new Error("Deposit amount cannot exceed total amount."));
   }
 
   // Calculate balance
 
-  this.balanceAmount = Math.max(
-    0,
-    this.totalAmount - this.depositAmount
-  );
+  this.balanceAmount = Math.max(0, this.totalAmount - this.depositAmount);
 
   // Calculate commission
 
   if (this.agent && this.commissionRate > 0) {
-    this.commissionAmount =
-      (this.totalAmount * this.commissionRate) / 100;
+    this.commissionAmount = (this.totalAmount * this.commissionRate) / 100;
   } else {
     this.commissionAmount = 0;
   }
@@ -651,9 +625,7 @@ bookingSchema.pre("save", function (next) {
   // Sync assignment flag
 
   this.assigned = Boolean(
-    this.assignedGuide ||
-      this.assignedDriver ||
-      this.assignedVehicle
+    this.assignedGuide || this.assignedDriver || this.assignedVehicle,
   );
 
   // Automatic timestamps
@@ -708,10 +680,7 @@ bookingSchema.pre("save", function (next) {
 */
 
 bookingSchema.virtual("remainingBalance").get(function () {
-  return Math.max(
-    0,
-    this.totalAmount - this.depositAmount
-  );
+  return Math.max(0, this.totalAmount - this.depositAmount);
 });
 
 bookingSchema.virtual("isPaid").get(function () {
@@ -720,9 +689,7 @@ bookingSchema.virtual("isPaid").get(function () {
 
 bookingSchema.virtual("isAssigned").get(function () {
   return Boolean(
-    this.assignedGuide ||
-      this.assignedDriver ||
-      this.assignedVehicle
+    this.assignedGuide || this.assignedDriver || this.assignedVehicle,
   );
 });
 
@@ -741,16 +708,11 @@ bookingSchema.virtual("isCancelled").get(function () {
 */
 
 bookingSchema.methods.calculateCommission = function () {
-  return (
-    this.totalAmount * this.commissionRate
-  ) / 100;
+  return (this.totalAmount * this.commissionRate) / 100;
 };
 
 bookingSchema.methods.calculateBalance = function () {
-  return Math.max(
-    0,
-    this.totalAmount - this.depositAmount
-  );
+  return Math.max(0, this.totalAmount - this.depositAmount);
 };
 
 bookingSchema.methods.markPaid = function () {
@@ -790,11 +752,7 @@ bookingSchema.methods.cancelBooking = function (reason = "") {
 bookingSchema.statics.findUpcoming = function () {
   return this.find({
     status: {
-      $in: [
-        "confirmed",
-        "assigned",
-        "ongoing",
-      ],
+      $in: ["confirmed", "assigned", "ongoing"],
     },
     travelDate: {
       $gte: new Date(),
@@ -813,10 +771,7 @@ bookingSchema.statics.findCompleted = function () {
 bookingSchema.statics.findPendingPayments = function () {
   return this.find({
     paymentStatus: {
-      $in: [
-        "pending",
-        "partial",
-      ],
+      $in: ["pending", "partial"],
     },
     isDeleted: false,
   });
@@ -841,9 +796,7 @@ bookingSchema.index({
   travelDate: 1,
 });
 
-bookingSchema.index({
-  bookingNumber: 1,
-});
+
 
 bookingSchema.index({
   paymentReference: 1,
@@ -853,13 +806,7 @@ bookingSchema.index({
   transactionId: 1,
 });
 
-bookingSchema.index({
-  paymentStatus: 1,
-});
 
-bookingSchema.index({
-  status: 1,
-});
 
 bookingSchema.index({
   assignedGuide: 1,
@@ -906,10 +853,6 @@ bookingSchema.index({
 */
 
 const Booking =
-  mongoose.models.Booking ||
-  mongoose.model(
-    "Booking",
-    bookingSchema
-  );
+  mongoose.models.Booking || mongoose.model("Booking", bookingSchema);
 
 export default Booking;
