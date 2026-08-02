@@ -1,175 +1,375 @@
+// server/services/mpesaService.js
+
 import axios from "axios";
 
-import { mpesaConfig, getMpesaUrls } from "../config/mpesa.js";
+import {
+  mpesaConfig,
+  getMpesaUrls,
+} from "../config/mpesa.js";
+
+
+/*
+|--------------------------------------------------------------------------
+| AXIOS CLIENT
+|--------------------------------------------------------------------------
+*/
 
 const mpesaClient = axios.create({
   timeout: 30000,
 });
 
+
 /*
 |--------------------------------------------------------------------------
-| PHONE NORMALIZATION
+| NORMALIZE PHONE NUMBER
 |--------------------------------------------------------------------------
+|
+| Converts:
+| 0712345678
+| +254712345678
+| 254712345678
+|
+| Into:
+| 254712345678
+|
 */
 
 export const normalizePhoneNumber = (phone) => {
+
   if (!phone) {
-    throw new Error("Phone number is required");
+    throw new Error("Phone number is required.");
   }
 
-  let value = phone.toString().replace(/\s+/g, "").trim();
 
-  if (value.startsWith("+254")) {
-    value = value.substring(1);
+  let normalized = phone
+    .toString()
+    .trim()
+    .replace(/\s+/g, "");
+
+
+  if (normalized.startsWith("+254")) {
+    normalized = normalized.substring(1);
   }
 
-  if (value.startsWith("07")) {
-    value = "254" + value.substring(1);
+
+  if (normalized.startsWith("07")) {
+    normalized =
+      "254" + normalized.substring(1);
   }
 
-  if (!/^2547\d{8}$/.test(value)) {
-    throw new Error("Invalid Safaricom number");
+
+  if (!/^2547\d{8}$/.test(normalized)) {
+    throw new Error(
+      "Invalid Safaricom phone number."
+    );
   }
 
-  return value;
+
+  return normalized;
+
 };
 
-/*
-|--------------------------------------------------------------------------
-| ACCESS TOKEN
-|--------------------------------------------------------------------------
-*/
+
 
 /*
 |--------------------------------------------------------------------------
-| ACCESS TOKEN
+| GENERATE ACCESS TOKEN
 |--------------------------------------------------------------------------
 */
 
 export const generateAccessToken = async () => {
+
   const urls = getMpesaUrls();
 
-  const credentials = Buffer.from(
-    `${mpesaConfig.consumerKey}:${mpesaConfig.consumerSecret}`,
+
+  const auth = Buffer.from(
+    `${mpesaConfig.consumerKey}:${mpesaConfig.consumerSecret}`
   ).toString("base64");
 
+
   try {
-    const response = await mpesaClient.get(urls.auth, {
-      headers: {
-        Authorization: `Basic ${credentials}`,
-      },
-    });
 
-    return response.data.access_token;
-  } catch (error) {
+    const { data } =
+      await mpesaClient.get(
+        urls.auth,
+        {
+          headers:{
+            Authorization:
+              `Basic ${auth}`,
+          },
+        }
+      );
+
+
+    if (!data.access_token) {
+
+      throw new Error(
+        "M-Pesa access token missing."
+      );
+
+    }
+
+
+    return data.access_token;
+
+
+  } catch(error) {
+
+
     console.error("==============================");
 
-    console.error("MPESA AUTH ERROR STATUS:", error.response?.status);
+    console.error(
+      "MPESA AUTH ERROR STATUS:",
+      error.response?.status
+    );
 
-    console.error("MPESA AUTH ERROR DATA:", error.response?.data);
 
-    console.error("MPESA AUTH ERROR MESSAGE:", error.message);
+    console.error(
+      "MPESA AUTH ERROR DATA:",
+      error.response?.data
+    );
+
+
+    console.error(
+      "MPESA AUTH ERROR MESSAGE:",
+      error.message
+    );
+
 
     console.error("==============================");
+
 
     throw new Error(
       error.response?.data?.errorMessage ||
-        error.response?.data?.error ||
-        error.message ||
-        "Unable to authenticate with M-Pesa.",
+      error.response?.data?.error ||
+      "Unable to authenticate with M-Pesa."
     );
+
   }
+
 };
+
+
+
 
 /*
 |--------------------------------------------------------------------------
-| TIMESTAMP
+| GENERATE TIMESTAMP
 |--------------------------------------------------------------------------
 */
 
 export const generateTimestamp = () => {
-  const date = new Date();
+
+  const now = new Date();
+
 
   return (
-    date.getFullYear() +
-    String(date.getMonth() + 1).padStart(2, "0") +
-    String(date.getDate()).padStart(2, "0") +
-    String(date.getHours()).padStart(2, "0") +
-    String(date.getMinutes()).padStart(2, "0") +
-    String(date.getSeconds()).padStart(2, "0")
+    now.getFullYear() +
+    String(now.getMonth() + 1)
+      .padStart(2,"0") +
+    String(now.getDate())
+      .padStart(2,"0") +
+    String(now.getHours())
+      .padStart(2,"0") +
+    String(now.getMinutes())
+      .padStart(2,"0") +
+    String(now.getSeconds())
+      .padStart(2,"0")
   );
+
 };
+
+
+
 
 /*
 |--------------------------------------------------------------------------
-| PASSWORD
+| GENERATE PASSWORD
 |--------------------------------------------------------------------------
 */
 
-export const generatePassword = (timestamp) => {
+export const generatePassword = (
+  timestamp
+) => {
+
+
   return Buffer.from(
-    `${mpesaConfig.shortcode}${mpesaConfig.passkey}${timestamp}`,
-  ).toString("base64");
+    `${mpesaConfig.shortcode}${mpesaConfig.passkey}${timestamp}`
+  )
+  .toString("base64");
+
+
 };
+
+
+
 
 /*
 |--------------------------------------------------------------------------
-| STK PUSH
+| INITIATE STK PUSH
 |--------------------------------------------------------------------------
 */
 
-export const initiateStkPush = async ({ phone, amount, bookingId }) => {
+export const initiateStkPush = async ({
+  phone,
+  amount,
+  bookingId,
+}) => {
+
+
+  if (!phone) {
+    throw new Error(
+      "Phone number is required."
+    );
+  }
+
+
+  if (!amount || amount <= 0) {
+    throw new Error(
+      "Invalid payment amount."
+    );
+  }
+
+
+  if (!bookingId) {
+    throw new Error(
+      "Booking ID is required."
+    );
+  }
+
+
+
   const urls = getMpesaUrls();
 
-  const normalizedPhone = normalizePhoneNumber(phone);
 
-  const token = await generateAccessToken();
 
-  const timestamp = generateTimestamp();
+  const normalizedPhone =
+    normalizePhoneNumber(phone);
 
-  const password = generatePassword(timestamp);
+
+
+  const token =
+    await generateAccessToken();
+
+
+
+  const timestamp =
+    generateTimestamp();
+
+
+
+  const password =
+    generatePassword(timestamp);
+
+
+
 
   const payload = {
-    BusinessShortCode: mpesaConfig.shortcode,
 
-    Password: password,
+    BusinessShortCode:
+      mpesaConfig.shortcode,
 
-    Timestamp: timestamp,
 
-    TransactionType: "CustomerPayBillOnline",
+    Password:
+      password,
 
-    Amount: Math.round(amount),
 
-    PartyA: normalizedPhone,
+    Timestamp:
+      timestamp,
 
-    PartyB: mpesaConfig.shortcode,
 
-    PhoneNumber: normalizedPhone,
+    TransactionType:
+      "CustomerPayBillOnline",
 
-    CallBackURL: mpesaConfig.callbackUrl,
 
-    AccountReference: `BOOKING-${bookingId}`,
+    Amount:
+      Math.round(amount),
 
-    TransactionDesc: "Hussein Mboya Tours Payment",
+
+    PartyA:
+      normalizedPhone,
+
+
+    PartyB:
+      mpesaConfig.shortcode,
+
+
+    PhoneNumber:
+      normalizedPhone,
+
+
+    CallBackURL:
+      mpesaConfig.callbackUrl,
+
+
+    AccountReference:
+      `BOOKING-${bookingId}`,
+
+
+    TransactionDesc:
+      "Hussein Mboya Tours Booking Payment",
+
   };
 
+
+
+  console.log(
+    "MPESA STK PAYLOAD:",
+    payload
+  );
+
+
+
   try {
-    const response = await mpesaClient.post(
-      urls.stkPush,
 
-      payload,
 
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
+    const { data } =
+      await mpesaClient.post(
+
+        urls.stk,
+
+        payload,
+
+        {
+          headers:{
+            Authorization:
+              `Bearer ${token}`,
+          },
+        }
+
+      );
+
+
+
+    console.log(
+      "MPESA STK RESPONSE:",
+      data
     );
 
-    return response.data;
-  } catch (error) {
-    console.log("STK ERROR:", error.response?.data || error.message);
 
-    throw new Error("STK Push failed");
+
+    return data;
+
+
+
+  } catch(error) {
+
+
+    console.error(
+      "MPESA STK ERROR:",
+      error.response?.data ||
+      error.message
+    );
+
+
+    throw new Error(
+      error.response?.data?.errorMessage ||
+      error.response?.data?.errorCode ||
+      "STK Push failed."
+    );
+
+
   }
+
+
 };

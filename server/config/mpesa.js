@@ -3,24 +3,12 @@ import dotenv from "dotenv";
 dotenv.config();
 
 
-/*
-|--------------------------------------------------------------------------
-| VALIDATE MPESA CONFIGURATION
-|--------------------------------------------------------------------------
-*/
-
 const required = [
-
   "MPESA_CONSUMER_KEY",
-
   "MPESA_CONSUMER_SECRET",
-
   "MPESA_SHORTCODE",
-
   "MPESA_PASSKEY",
-
   "MPESA_CALLBACK_URL",
-
 ];
 
 
@@ -38,97 +26,79 @@ for (const key of required) {
 
 
 
-/*
-|--------------------------------------------------------------------------
-| MPESA CONFIG
-|--------------------------------------------------------------------------
-*/
-
-
 export const mpesaConfig = {
 
   consumerKey:
-  process.env.MPESA_CONSUMER_KEY,
-
+    process.env.MPESA_CONSUMER_KEY,
 
   consumerSecret:
-  process.env.MPESA_CONSUMER_SECRET,
-
+    process.env.MPESA_CONSUMER_SECRET,
 
   shortcode:
-  process.env.MPESA_SHORTCODE,
-
+    process.env.MPESA_SHORTCODE,
 
   passkey:
-  process.env.MPESA_PASSKEY,
-
+    process.env.MPESA_PASSKEY,
 
   callbackURL:
-  process.env.MPESA_CALLBACK_URL,
-
+    process.env.MPESA_CALLBACK_URL,
 
   environment:
-  process.env.MPESA_ENVIRONMENT || "sandbox",
+    process.env.MPESA_ENVIRONMENT || "sandbox"
 
 };
 
 
 
-/*
-|--------------------------------------------------------------------------
-| MPESA URLS
-|--------------------------------------------------------------------------
-*/
+export const mpesaUrls = {
 
 
-const sandbox = {
+  sandbox: {
 
-  oauth:
-  "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
-
-
-  stk:
-  "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
+    auth:
+    "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
 
 
-  query:
-  "https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query"
-
-};
+    stk:
+    "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
 
 
+    query:
+    "https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query"
 
-const production = {
-
-  oauth:
-  "https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
-
-
-  stk:
-  "https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
+  },
 
 
-  query:
-  "https://api.safaricom.co.ke/mpesa/stkpushquery/v1/query"
+  production: {
+
+    auth:
+    "https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
+
+
+    stk:
+    "https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
+
+
+    query:
+    "https://api.safaricom.co.ke/mpesa/stkpushquery/v1/query"
+
+  }
 
 };
 
 
-
-
-export const mpesaUrls =
-  mpesaConfig.environment === "production"
-    ? production
-    : sandbox;
-
-/*
-|--------------------------------------------------------------------------
-| GET ACTIVE MPESA URLS
-|--------------------------------------------------------------------------
-*/
 
 export const getMpesaUrls = () => {
-  return mpesaConfig.environment === "production"
-    ? mpesaUrls.production
-    : mpesaUrls.sandbox;
+
+  if (
+    mpesaConfig.environment === "production"
+  ) {
+
+    return mpesaUrls.production;
+
+  }
+
+
+  return mpesaUrls.sandbox;
+
 };
