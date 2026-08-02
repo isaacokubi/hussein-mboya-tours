@@ -34,7 +34,6 @@ import withTransaction from "../utils/withTransaction.js";
 */
 
 export const createBooking = async (req, res, next) => {
-
   try {
 
     let {
@@ -60,11 +59,9 @@ export const createBooking = async (req, res, next) => {
 
 
         if (!tourData) {
-
           throw new Error(
             "Tour not found"
           );
-
         }
 
 
@@ -75,13 +72,10 @@ export const createBooking = async (req, res, next) => {
         |--------------------------------------------------------------------------
         */
 
-
         if (!travelDate) {
-
           throw new Error(
             "Travel date is required"
           );
-
         }
 
 
@@ -96,11 +90,9 @@ export const createBooking = async (req, res, next) => {
             selectedDate.getTime()
           )
         ) {
-
           throw new Error(
             "Invalid travel date"
           );
-
         }
 
 
@@ -108,11 +100,9 @@ export const createBooking = async (req, res, next) => {
         if (
           selectedDate < new Date()
         ) {
-
           throw new Error(
             "Travel date cannot be in the past"
           );
-
         }
 
 
@@ -125,10 +115,7 @@ export const createBooking = async (req, res, next) => {
         |--------------------------------------------------------------------------
         */
 
-
-        if (
-          !Array.isArray(travelers)
-        ) {
+        if (!Array.isArray(travelers)) {
 
 
           const count =
@@ -141,11 +128,9 @@ export const createBooking = async (req, res, next) => {
 
 
           if (count < 1) {
-
             throw new Error(
               "At least one traveller is required"
             );
-
           }
 
 
@@ -157,14 +142,12 @@ export const createBooking = async (req, res, next) => {
               },
 
               (_, index) => ({
-
                 name:
                   `Traveller ${index + 1}`,
 
-                age: 0,
+                age:0,
 
-                passport: ""
-
+                passport:""
               })
 
             );
@@ -173,14 +156,13 @@ export const createBooking = async (req, res, next) => {
 
 
 
+
         if (
           travelers.length < 1
         ) {
-
           throw new Error(
             "At least one traveller is required"
           );
-
         }
 
 
@@ -191,12 +173,12 @@ export const createBooking = async (req, res, next) => {
 
 
 
+
         /*
         |--------------------------------------------------------------------------
-        | CAPACITY CHECK
+        | CHECK TOUR CAPACITY
         |--------------------------------------------------------------------------
         */
-
 
         const available =
           await validateTourCapacity(
@@ -207,11 +189,9 @@ export const createBooking = async (req, res, next) => {
 
 
         if (!available) {
-
           throw new Error(
             "No available slots"
           );
-
         }
 
 
@@ -224,18 +204,15 @@ export const createBooking = async (req, res, next) => {
         |--------------------------------------------------------------------------
         */
 
-
         if (
           paymentMethod &&
           !PAYMENT_METHODS.includes(
             paymentMethod
           )
         ) {
-
           throw new Error(
             "Invalid payment method"
           );
-
         }
 
 
@@ -247,7 +224,6 @@ export const createBooking = async (req, res, next) => {
         | PRICE CALCULATION
         |--------------------------------------------------------------------------
         */
-
 
         const {
 
@@ -273,12 +249,12 @@ export const createBooking = async (req, res, next) => {
 
 
 
+
         /*
         |--------------------------------------------------------------------------
         | RESERVE SLOTS
         |--------------------------------------------------------------------------
         */
-
 
         await reserveSlots(
           tour,
@@ -302,10 +278,6 @@ export const createBooking = async (req, res, next) => {
           new Booking({
 
             customer:
-              req.user._id,
-
-
-            user:
               req.user._id,
 
 
@@ -380,16 +352,18 @@ export const createBooking = async (req, res, next) => {
 
             paymentMethod:
               paymentMethod ||
-              PAYMENT_METHODS.MPESA,
+              "MPESA",
 
 
 
             paymentStatus:
+              PAYMENT_STATUSES.PENDING ||
               "pending",
 
 
 
             bookingStatus:
+              BOOKING_STATUSES.PENDING ||
               "pending",
 
 
@@ -400,7 +374,6 @@ export const createBooking = async (req, res, next) => {
 
 
             assigned:false
-
 
           });
 
@@ -422,15 +395,12 @@ export const createBooking = async (req, res, next) => {
             bookingDocument._id
           )
 
-          .populate("tour")
-
           .populate(
-            "customer",
-            "-password"
+            "tour"
           )
 
           .populate(
-            "user",
+            "customer",
             "-password"
           )
 
@@ -451,7 +421,6 @@ export const createBooking = async (req, res, next) => {
 
 
       }
-
     );
 
 
@@ -483,8 +452,6 @@ export const createBooking = async (req, res, next) => {
 
 
 
-
-
   } catch(error) {
 
 
@@ -492,6 +459,7 @@ export const createBooking = async (req, res, next) => {
       "CREATE BOOKING ERROR:",
       error
     );
+
 
 
     return errorResponse(
@@ -503,7 +471,6 @@ export const createBooking = async (req, res, next) => {
       error.message
 
     );
-
 
   }
 
