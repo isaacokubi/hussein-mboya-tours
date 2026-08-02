@@ -222,7 +222,7 @@ export default function Tours() {
                   </span>
 
                   <Link
-                    to={`/tours/${tour._id}`}
+                    to={`/tours/${tour.slug}`}
                     className="
                       bg-green-600
                       text-white
