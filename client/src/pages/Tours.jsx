@@ -1,23 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 
-import {
-  Link,
-  useParams,
-} from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 import { getTours } from "../api/tourApi";
 
 export default function Tours() {
- const { slug } = useParams();
+  const { slug } = useParams();
 
-const {
-  data,
-  isLoading,
-  error,
-} = useQuery({
-  queryKey: ["public-tours", slug],
-  queryFn: () => getTours(slug),
-});
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["public-tours", slug],
+    queryFn: () =>
+      getTours(slug ? slug.charAt(0).toUpperCase() + slug.slice(1) : null),
+  });
 
   if (isLoading) {
     return (
@@ -72,9 +66,7 @@ const {
   |--------------------------------------------------------------------------
   */
 
-  const tours = Array.isArray(data)
-    ? data
-    : data?.data || [];
+  const tours = Array.isArray(data) ? data : data?.data || [];
 
   return (
     <div
@@ -227,10 +219,7 @@ const {
                       text-xl
                     "
                   >
-                    KES{" "}
-                    {Number(
-                      tour.price || 0
-                    ).toLocaleString()}
+                    KES {Number(tour.price || 0).toLocaleString()}
                   </span>
 
                   <Link

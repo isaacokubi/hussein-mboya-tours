@@ -106,7 +106,7 @@ export default function CategoriesSection() {
                     <p className="mt-3 text-gray-600">{category.description}</p>
 
                     <Link
-                      to={`/tours/category/${category.slug}`}
+                     to={`/tours/category/${category.name.toLowerCase()}`}
                       className="
                     inline-block
                     mt-5
