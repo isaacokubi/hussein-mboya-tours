@@ -1,3 +1,5 @@
+// client/src/pages/Wishlist.jsx
+
 import { Link, Navigate } from "react-router-dom";
 
 import { Heart, MapPin } from "lucide-react";
@@ -8,87 +10,96 @@ import { useAuth } from "../context/AuthContext";
 
 import { getWishlist } from "../api/wishlistApi";
 
+
 export default function Wishlist() {
   const { token } = useAuth();
 
-  const { data, isLoading, error } = useQuery({
+
+  const {
+    data,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["wishlist"],
-
     queryFn: getWishlist,
-
     enabled: Boolean(token),
   });
+
+
 
   if (!token) {
     return <Navigate to="/login" replace />;
   }
 
+
+
   if (isLoading) {
     return (
       <section
         className="
-max-w-7xl
-mx-auto
-px-4
-py-12
-"
+        max-w-7xl
+        mx-auto
+        px-4
+        py-12
+        "
       >
         <h1
           className="
-text-3xl
-font-bold
-mb-8
-"
+          text-3xl
+          font-bold
+          mb-8
+          "
         >
           My Wishlist
         </h1>
 
+
         <div
           className="
-grid
-md:grid-cols-2
-lg:grid-cols-3
-gap-6
-"
+          grid
+          md:grid-cols-2
+          lg:grid-cols-3
+          gap-6
+          "
         >
           {[...Array(6)].map((_, index) => (
             <div
               key={index}
               className="
-animate-pulse
-bg-white
-rounded-2xl
-shadow
-overflow-hidden
-"
+              animate-pulse
+              bg-white
+              rounded-2xl
+              shadow
+              overflow-hidden
+              "
             >
               <div
                 className="
-h-56
-bg-gray-200
-"
+                h-56
+                bg-gray-200
+                "
               />
 
               <div
                 className="
-p-5
-space-y-3
-"
+                p-5
+                space-y-3
+                "
               >
                 <div
                   className="
-h-5
-bg-gray-200
-rounded
-"
+                  h-5
+                  bg-gray-200
+                  rounded
+                  "
                 />
 
                 <div
                   className="
-h-4
-bg-gray-200
-rounded
-"
+                  h-4
+                  bg-gray-200
+                  rounded
+                  "
                 />
               </div>
             </div>
@@ -98,24 +109,26 @@ rounded
     );
   }
 
+
+
   if (error) {
     return (
       <div
         className="
-max-w-4xl
-mx-auto
-py-12
-px-4
-"
+        max-w-4xl
+        mx-auto
+        py-12
+        px-4
+        "
       >
         <div
           className="
-bg-red-50
-text-red-600
-rounded-xl
-p-6
-text-center
-"
+          bg-red-50
+          text-red-600
+          rounded-xl
+          p-6
+          text-center
+          "
         >
           Failed to load wishlist.
         </div>
@@ -123,215 +136,281 @@ text-center
     );
   }
 
-  const wishlist = Array.isArray(data) ? data : data?.wishlist || [];
+
+
+  const wishlist = Array.isArray(data)
+    ? data
+    : data?.wishlist || [];
+
+
+
 
   if (wishlist.length === 0) {
     return (
       <section
         className="
-max-w-4xl
-mx-auto
-px-4
-py-16
-"
+        max-w-4xl
+        mx-auto
+        px-4
+        py-16
+        "
       >
         <div
           className="
-bg-white
-shadow
-rounded-3xl
-p-10
-text-center
-"
+          bg-white
+          shadow
+          rounded-3xl
+          p-10
+          text-center
+          "
         >
           <Heart
             className="
-mx-auto
-h-16
-w-16
-text-red-500
-mb-4
-"
+            mx-auto
+            h-16
+            w-16
+            text-red-500
+            mb-4
+            "
           />
 
           <h1
             className="
-text-3xl
-font-bold
-mb-4
-"
+            text-3xl
+            font-bold
+            mb-4
+            "
           >
             Your Wishlist is Empty
           </h1>
 
+
           <p
             className="
-text-gray-600
-mb-8
-"
+            text-gray-600
+            mb-8
+            "
           >
             Save your favorite tours and destinations for your next adventure.
           </p>
 
+
           <Link
             to="/tours"
             className="
-bg-green-600
-hover:bg-green-700
-text-white
-px-6
-py-3
-rounded-xl
-"
+            bg-green-600
+            hover:bg-green-700
+            text-white
+            px-6
+            py-3
+            rounded-xl
+            "
           >
             Explore Tours
           </Link>
+
         </div>
       </section>
     );
   }
 
+
+
+
   return (
     <section
       className="
-max-w-7xl
-mx-auto
-px-4
-py-12
-"
+      max-w-7xl
+      mx-auto
+      px-4
+      py-12
+      "
     >
+
       <div
         className="
-flex
-items-center
-gap-3
-mb-8
-"
+        flex
+        items-center
+        gap-3
+        mb-8
+        "
       >
+
         <Heart
           className="
-text-red-500
-"
+          text-red-500
+          "
         />
 
         <h1
           className="
-text-3xl
-font-bold
-"
+          text-3xl
+          font-bold
+          "
         >
           My Wishlist
         </h1>
+
       </div>
+
+
 
       <div
         className="
-grid
-md:grid-cols-2
-lg:grid-cols-3
-gap-8
-"
+        grid
+        md:grid-cols-2
+        lg:grid-cols-3
+        gap-8
+        "
       >
-        {wishlist.map((tour) => (
-          <div
-            key={tour._id}
-            className="
-bg-white
-rounded-2xl
-shadow-lg
-overflow-hidden
-hover:shadow-2xl
-transition
-"
-          >
-            <img
-              src={
-                tour.images?.[0]?.url ||
-                tour.image ||
-                "/images/tour-placeholder.jpg"
-              }
-              alt={tour.title || tour.name}
-              className="
-w-full
-h-60
-object-cover
-"
-            />
 
+        {wishlist.map((tour) => {
+
+
+          const tourImage =
+            typeof tour.images?.[0] === "object"
+              ? tour.images?.[0]?.url
+              : tour.images?.[0] ||
+                tour.image ||
+                "/images/tour-placeholder.jpg";
+
+
+
+          return (
             <div
+              key={tour._id}
               className="
-p-5
-"
+              bg-white
+              rounded-2xl
+              shadow-lg
+              overflow-hidden
+              hover:shadow-2xl
+              transition
+              "
             >
-              <h2
+
+
+              <img
+                src={tourImage}
+                alt={
+                  tour.title ||
+                  tour.name ||
+                  "Tour"
+                }
                 className="
-text-xl
-font-bold
-mb-2
-"
-              >
-                {tour.title || tour.name}
-              </h2>
+                w-full
+                h-60
+                object-cover
+                "
+                onError={(e) => {
+                  e.currentTarget.src =
+                    "/images/tour-placeholder.jpg";
+                }}
+              />
+
+
 
               <div
                 className="
-flex
-items-center
-text-gray-500
-text-sm
-mb-3
-"
+                p-5
+                "
               >
-                <MapPin
-                  className="
-h-4
-w-4
-mr-1
-"
-                />
 
-                {tour.destination?.name || tour.destination || "Kenya"}
+                <h2
+                  className="
+                  text-xl
+                  font-bold
+                  mb-2
+                  "
+                >
+                  {tour.title || tour.name}
+                </h2>
+
+
+
+                <div
+                  className="
+                  flex
+                  items-center
+                  text-gray-500
+                  text-sm
+                  mb-3
+                  "
+                >
+
+                  <MapPin
+                    className="
+                    h-4
+                    w-4
+                    mr-1
+                    "
+                  />
+
+
+                  {tour.destination?.name ||
+                    tour.destination ||
+                    "Kenya"}
+
+                </div>
+
+
+
+
+                <p
+                  className="
+                  text-gray-600
+                  line-clamp-3
+                  mb-4
+                  "
+                >
+                  {tour.description}
+                </p>
+
+
+
+
+                <p
+                  className="
+                  text-green-700
+                  font-bold
+                  text-lg
+                  mb-4
+                  "
+                >
+                  KES{" "}
+                  {Number(
+                    tour.price || 0
+                  ).toLocaleString()}
+                </p>
+
+
+
+
+                <Link
+                  to={`/tours/${tour.slug || tour._id}`}
+                  className="
+                  block
+                  text-center
+                  bg-green-600
+                  hover:bg-green-700
+                  text-white
+                  py-3
+                  rounded-xl
+                  "
+                >
+                  View Tour
+                </Link>
+
+
               </div>
 
-              <p
-                className="
-text-gray-600
-line-clamp-3
-mb-4
-"
-              >
-                {tour.description}
-              </p>
-
-              <p
-                className="
-text-green-700
-font-bold
-text-lg
-mb-4
-"
-              >
-                KES {Number(tour.price || 0).toLocaleString()}
-              </p>
-
-              <Link
-                to={`/tours/${tour.slug}`}
-                className="
-block
-text-center
-bg-green-600
-hover:bg-green-700
-text-white
-py-3
-rounded-xl
-"
-              >
-                View Tour
-              </Link>
             </div>
-          </div>
-        ))}
+          );
+
+        })}
+
       </div>
+
     </section>
   );
 }
