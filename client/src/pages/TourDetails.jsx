@@ -2,10 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useParams, useNavigate } from "react-router-dom";
 
-import { getTourById } from "../api/tourApi";
+import { getTourBySlug } from "../api/tourApi";
 
 export default function TourDetails() {
-  const { id } = useParams();
+ const { slug } = useParams();
 
   const navigate = useNavigate();
 
@@ -16,11 +16,11 @@ export default function TourDetails() {
 
     error,
   } = useQuery({
-    queryKey: ["tour", id],
+    queryKey: ["tour", slug],
 
-    queryFn: () => getTourById(id),
+    queryFn: () => getTourBySlug(slug),
 
-    enabled: Boolean(id),
+    enabled: Boolean(slug),
   });
 
   /*
@@ -69,7 +69,7 @@ export default function TourDetails() {
     "/images/tour-placeholder.jpg";
 
   const handleBooking = () => {
-    navigate(`/checkout/${tour._id}`);
+    navigate(`/checkout/${tour.slug}`);
   };
 
   return (
@@ -199,4 +199,3 @@ export default function TourDetails() {
     </div>
   );
 }
-

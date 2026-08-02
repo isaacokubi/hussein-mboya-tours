@@ -18,7 +18,6 @@ export default function HeroSlider() {
     queryFn: getHeroSlides,
   });
 
-
   if (isLoading) {
     return (
       <section className="h-[85vh] flex items-center justify-center bg-gray-900 text-white">
@@ -27,7 +26,6 @@ export default function HeroSlider() {
     );
   }
 
-
   if (isError || !slides.length) {
     return (
       <section className="h-[85vh] flex items-center justify-center bg-gray-900 text-white text-xl">
@@ -35,7 +33,6 @@ export default function HeroSlider() {
       </section>
     );
   }
-
 
   return (
     <section
@@ -48,7 +45,6 @@ export default function HeroSlider() {
         overflow-hidden
       "
     >
-
       <div
         className="
           relative
@@ -58,42 +54,33 @@ export default function HeroSlider() {
           shadow-2xl
         "
       >
-
         <Swiper
           modules={[Autoplay, EffectFade]}
           effect="fade"
           autoplay={{
-            delay:5000,
-            disableOnInteraction:false,
+            delay: 5000,
+            disableOnInteraction: false,
           }}
           loop={slides.length > 3}
           className="h-full"
         >
-
-
-        {slides.map((slide)=>(
-          <SwiperSlide key={slide._id}>
-
-
-            <div
-              className="
+          {slides.map((slide) => (
+            <SwiperSlide key={slide._id}>
+              <div
+                className="
                 relative
                 h-full
                 overflow-hidden
               "
-            >
-
-
-              {slide.video?.url && (
-
-                <video
-                  src={slide.video.url}
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-
-                  className="
+              >
+                {slide.video?.url && (
+                  <video
+                    src={slide.video.url}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    className="
                     absolute
                     inset-0
                     w-full
@@ -102,16 +89,13 @@ export default function HeroSlider() {
                     scale-105
                     animate-pulse
                   "
-                />
+                  />
+                )}
 
-              )}
+                {/* Premium Travel Overlay */}
 
-
-
-              {/* Premium Travel Overlay */}
-
-              <div
-                className="
+                <div
+                  className="
                   absolute
                   inset-0
                   bg-gradient-to-b
@@ -119,12 +103,10 @@ export default function HeroSlider() {
                   via-black/50
                   to-black/80
                 "
-              />
+                />
 
-
-
-              <div
-                className="
+                <div
+                  className="
                   relative
                   z-10
                   h-full
@@ -136,13 +118,10 @@ export default function HeroSlider() {
                   px-6
                   text-white
                 "
-              >
-
-
-              {slide.badge && (
-
-                <span
-                  className="
+                >
+                  {slide.badge && (
+                    <span
+                      className="
                     mb-5
                     px-5
                     py-2
@@ -156,16 +135,13 @@ export default function HeroSlider() {
                     text-sm
                     text-green-300
                   "
-                >
-                  {slide.badge}
-                </span>
+                    >
+                      {slide.badge}
+                    </span>
+                  )}
 
-              )}
-
-
-
-              <h1
-                className="
+                  <h1
+                    className="
                   text-4xl
                   sm:text-5xl
                   md:text-7xl
@@ -174,16 +150,13 @@ export default function HeroSlider() {
                   max-w-5xl
                   drop-shadow-lg
                 "
-              >
-                {slide.title}
-              </h1>
+                  >
+                    {slide.title}
+                  </h1>
 
-
-
-              {slide.subtitle && (
-
-                <p
-                  className="
+                  {slide.subtitle && (
+                    <p
+                      className="
                     mt-6
                     max-w-3xl
                     text-base
@@ -191,30 +164,24 @@ export default function HeroSlider() {
                     text-gray-200
                     leading-relaxed
                   "
-                >
-                  {slide.subtitle}
-                </p>
+                    >
+                      {slide.subtitle}
+                    </p>
+                  )}
 
-              )}
-
-
-
-              <div
-                className="
+                  <div
+                    className="
                   flex
                   gap-5
                   mt-10
                   flex-wrap
                   justify-center
                 "
-              >
-
-
-              {slide.buttonOne?.text && (
-
-                <Link
-                  to={slide.buttonOne.link || "#"}
-                  className="
+                  >
+                    {slide.buttonOne?.text && (
+                      <Link
+                        to={slide.buttonOne.link || "#"}
+                        className="
                     bg-green-600
                     hover:bg-green-700
                     px-9
@@ -225,20 +192,15 @@ export default function HeroSlider() {
                     hover:scale-105
                     transition
                   "
-                >
-                  {slide.buttonOne.text}
-                </Link>
+                      >
+                        {slide.buttonOne.text}
+                      </Link>
+                    )}
 
-              )}
-
-
-
-
-              {slide.buttonTwo?.text && (
-
-                <Link
-                  to={slide.buttonTwo.link || "#"}
-                  className="
+                    {slide.buttonTwo?.text && (
+                      <Link
+                        to={slide.buttonTwo.link || "#"}
+                        className="
                     bg-white/10
                     backdrop-blur-md
                     border
@@ -252,29 +214,17 @@ export default function HeroSlider() {
                     transition
                     hover:scale-105
                   "
-                >
-                  {slide.buttonTwo.text}
-                </Link>
-
-              )}
-
-
+                      >
+                        {slide.buttonTwo.text}
+                      </Link>
+                    )}
+                  </div>
+                </div>
               </div>
-
-
-              </div>
-
-            </div>
-
-
-          </SwiperSlide>
-        ))}
-
-
+            </SwiperSlide>
+          ))}
         </Swiper>
-
       </div>
-
     </section>
   );
 }

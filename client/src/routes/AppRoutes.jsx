@@ -106,7 +106,7 @@ export default function AppRoutes() {
 
       <Route path="/tours" element={<Tours />} />
 
-      <Route path="/tours/:id" element={<TourDetails />} />
+      <Route path="/tours/:slug" element={<TourDetails />} />
 
       <Route path="/destinations" element={<Destinations />} />
 

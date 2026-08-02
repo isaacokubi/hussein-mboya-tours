@@ -435,3 +435,8 @@ export const getTourReports = async (params = {}) => {
     return data;
 
 };
+
+export const getTourBySlug = async (slug) => {
+  const { data } = await api.get(`/tours/slug/${slug}`);
+  return data.data || data;
+};

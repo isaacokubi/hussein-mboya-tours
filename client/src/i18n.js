@@ -1,221 +1,89 @@
 import i18n from "i18next";
 
-import {
-  initReactI18next
-} from "react-i18next";
-
+import { initReactI18next } from "react-i18next";
 
 import LanguageDetector from "i18next-browser-languagedetector";
 
-
-
-
-
 i18n
 
-.use(LanguageDetector)
+  .use(LanguageDetector)
 
-.use(initReactI18next)
+  .use(initReactI18next)
 
-.init({
+  .init({
+    resources: {
+      en: {
+        translation: {
+          welcome: "Explore Africa With Us",
 
+          home: "Home",
 
+          tours: "Tours",
 
+          destinations: "Destinations",
 
+          bookNow: "Book Now",
 
-resources:{
+          myBookings: "My Bookings",
 
+          profile: "Profile",
 
+          login: "Login",
 
-en:{
+          logout: "Logout",
 
+          explore: "Explore unforgettable African adventures",
 
-translation:{
+          paymentSuccess: "Payment Successful",
 
+          paymentPending: "Waiting for payment confirmation",
 
-welcome:
-"Explore Africa With Us",
+          contact: "Contact Support",
+        },
+      },
 
+      sw: {
+        translation: {
+          welcome: "Gundua Afrika Nasi",
 
-home:
-"Home",
+          home: "Nyumbani",
 
+          tours: "Ziara",
 
-tours:
-"Tours",
+          destinations: "Maeneo",
 
+          bookNow: "Weka Nafasi Sasa",
 
-destinations:
-"Destinations",
+          myBookings: "Safari Zangu",
 
+          profile: "Wasifu",
 
-bookNow:
-"Book Now",
+          login: "Ingia",
 
+          logout: "Toka",
 
-myBookings:
-"My Bookings",
+          explore: "Gundua safari zisizosahaulika Afrika",
 
+          paymentSuccess: "Malipo Yamefanikiwa",
 
-profile:
-"Profile",
+          paymentPending: "Inasubiri uthibitisho wa malipo",
 
+          contact: "Wasiliana Nasi",
+        },
+      },
+    },
 
-login:
-"Login",
+    fallbackLng: "en",
 
+    supportedLngs: ["en", "sw"],
 
-logout:
-"Logout",
+    interpolation: {
+      escapeValue: false,
+    },
 
-
-explore:
-"Explore unforgettable African adventures",
-
-
-paymentSuccess:
-"Payment Successful",
-
-
-paymentPending:
-"Waiting for payment confirmation",
-
-
-contact:
-"Contact Support"
-
-
-
-}
-
-
-},
-
-
-
-
-
-
-
-
-sw:{
-
-
-translation:{
-
-
-welcome:
-"Gundua Afrika Nasi",
-
-
-home:
-"Nyumbani",
-
-
-tours:
-"Ziara",
-
-
-destinations:
-"Maeneo",
-
-
-bookNow:
-"Weka Nafasi Sasa",
-
-
-myBookings:
-"Safari Zangu",
-
-
-profile:
-"Wasifu",
-
-
-login:
-"Ingia",
-
-
-logout:
-"Toka",
-
-
-explore:
-"Gundua safari zisizosahaulika Afrika",
-
-
-paymentSuccess:
-"Malipo Yamefanikiwa",
-
-
-paymentPending:
-"Inasubiri uthibitisho wa malipo",
-
-
-contact:
-"Wasiliana Nasi"
-
-
-
-}
-
-
-}
-
-
-
-},
-
-
-
-
-
-
-
-fallbackLng:"en",
-
-
-
-
-supportedLngs:[
-
-"en",
-
-"sw"
-
-],
-
-
-
-
-
-interpolation:{
-
-
-escapeValue:false
-
-
-},
-
-
-
-
-
-react:{
-
-
-useSuspense:true
-
-
-}
-
-
-
-});
-
-
-
-
-
+    react: {
+      useSuspense: true,
+    },
+  });
 
 export default i18n;

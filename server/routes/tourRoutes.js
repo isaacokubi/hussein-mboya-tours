@@ -16,32 +16,16 @@ import {
   removeVehicle,
 } from "../controllers/tourController.js";
 
-
 import {
   getTourAvailability,
   updateTourAvailability,
 } from "../controllers/tourAvailabilityController.js";
 
-
-import {
-  protect,
-} from "../middleware/authMiddleware.js";
-
-
-import tourManagerOnly 
-from "../middleware/tourManagerMiddleware.js";
-
-
-import upload 
-from "../middleware/uploadMiddleware.js";
-
-
+import { protect } from "../middleware/authMiddleware.js";
+import tourManagerOnly from "../middleware/tourManagerMiddleware.js";
+import upload from "../middleware/uploadMiddleware.js";
 
 const router = express.Router();
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -49,92 +33,29 @@ const router = express.Router();
 |--------------------------------------------------------------------------
 */
 
-
 // GET ALL TOURS
-// /api/tours
-router.get(
-  "/",
-  getTours
-);
-
-
+// GET /api/tours
+router.get("/", getTours);
 
 // FEATURED TOURS
-// /api/tours/featured
-router.get(
-  "/featured",
-  getFeaturedTours
-);
-
-
+// GET /api/tours/featured
+router.get("/featured", getFeaturedTours);
 
 // SEARCH TOURS
-// /api/tours/search
-router.get(
-  "/search",
-  searchTours
-);
-
-
+// GET /api/tours/search
+router.get("/search", searchTours);
 
 // GET TOUR BY SLUG
-// /api/tours/slug/:slug
-router.get(
-  "/slug/:slug",
-  getTourBySlug
-);
+// GET /api/tours/slug/:slug
+router.get("/slug/:slug", getTourBySlug);
 
+// TOUR AVAILABILITY
+// GET /api/tours/:id/availability
+router.get("/:id/availability", getTourAvailability);
 
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| TOUR AVAILABILITY PUBLIC CHECK
-|--------------------------------------------------------------------------
-*/
-
-
-// IMPORTANT:
-// This must come BEFORE "/:id"
-// Otherwise Express treats "availability" as an id
-
-
-router.get(
-  "/:id/availability",
-  getTourAvailability
-);
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| GET SINGLE TOUR
-|--------------------------------------------------------------------------
-*/
-
-
-// /api/tours/:id
-
-router.get(
-  "/:id",
-  getTourById
-);
-
-
-
-
-
-
-
-
+// GET SINGLE TOUR
+// GET /api/tours/:id
+router.get("/:id", getTourById);
 
 /*
 |--------------------------------------------------------------------------
@@ -142,86 +63,24 @@ router.get(
 |--------------------------------------------------------------------------
 */
 
-
 router.use(protect);
-
 router.use(tourManagerOnly);
 
-
-
-
-
-
-
 // GET MANAGER TOURS
-// /api/tours/manager
-
-
-router.get(
-  "/manager",
-  getManagerTours
-);
-
-
-
-
-
-
+// GET /api/tours/manager
+router.get("/manager", getManagerTours);
 
 // CREATE TOUR
-
-
-router.post(
-  "/",
-  upload.array(
-    "images",
-    10
-  ),
-  createTour
-);
-
-
-
-
-
-
-
+// POST /api/tours
+router.post("/", upload.array("images", 10), createTour);
 
 // UPDATE TOUR
-
-
-router.put(
-  "/:id",
-  upload.array(
-    "images",
-    10
-  ),
-  updateTour
-);
-
-
-
-
-
-
-
-
+// PUT /api/tours/:id
+router.put("/:id", upload.array("images", 10), updateTour);
 
 // DELETE TOUR
-
-
-router.delete(
-  "/:id",
-  deleteTour
-);
-
-
-
-
-
-
-
-
+// DELETE /api/tours/:id
+router.delete("/:id", deleteTour);
 
 /*
 |--------------------------------------------------------------------------
@@ -229,18 +88,8 @@ router.delete(
 |--------------------------------------------------------------------------
 */
 
-
-router.patch(
-  "/:id/availability",
-  updateTourAvailability
-);
-
-
-
-
-
-
-
+// PATCH /api/tours/:id/availability
+router.patch("/:id/availability", updateTourAvailability);
 
 /*
 |--------------------------------------------------------------------------
@@ -248,23 +97,10 @@ router.patch(
 |--------------------------------------------------------------------------
 */
 
+// PATCH /api/tours/:id/assign-vehicle
+router.patch("/:id/assign-vehicle", assignVehicle);
 
-router.patch(
-  "/:id/assign-vehicle",
-  assignVehicle
-);
-
-
-
-router.patch(
-  "/:id/remove-vehicle",
-  removeVehicle
-);
-
-
-
-
-
-
+// PATCH /api/tours/:id/remove-vehicle
+router.patch("/:id/remove-vehicle", removeVehicle);
 
 export default router;
