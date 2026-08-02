@@ -1,26 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 
+import { initiatePayment } from "../api/bookingApi";
+import { useState } from "react";
+
 import { getMyBookings } from "../api/bookingApi";
 
-
 export default function MyBookings() {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["my-bookings"],
 
-  const {
-    data,
-    isLoading,
-    error,
-  } = useQuery({
+    queryFn: getMyBookings,
 
-    queryKey:["my-bookings"],
-
-    queryFn:getMyBookings,
-
-    staleTime:1000 * 60 * 5,
-
+    staleTime: 1000 * 60 * 5,
   });
-
-
 
   /*
   |--------------------------------------------------------------------------
@@ -28,30 +21,23 @@ export default function MyBookings() {
   |--------------------------------------------------------------------------
   */
 
-  const bookings =
-    Array.isArray(data)
-      ? data
-      : data?.data?.bookings ||
-        data?.bookings ||
-        [];
+  const bookings = Array.isArray(data)
+    ? data
+    : data?.data?.bookings || data?.bookings || [];
 
-
-
-
-  if(isLoading){
-
+  if (isLoading) {
     return (
-
-      <div className="
+      <div
+        className="
       min-h-screen
       flex
       items-center
       justify-center
-      ">
-
+      "
+      >
         <div className="text-center">
-
-          <div className="
+          <div
+            className="
           animate-spin
           h-10
           w-10
@@ -61,96 +47,62 @@ export default function MyBookings() {
           rounded-full
           mx-auto
           mb-4
-          "/>
+          "
+          />
 
-
-          <p className="
+          <p
+            className="
           text-xl
           font-semibold
-          ">
+          "
+          >
             Loading your adventures...
           </p>
-
         </div>
-
       </div>
-
     );
-
   }
 
-
-
-
-
-  if(error){
-
+  if (error) {
     return (
-
-      <div className="
+      <div
+        className="
       p-10
       text-center
       text-red-600
       font-semibold
-      ">
-
+      "
+      >
         Unable to load your bookings.
-
       </div>
-
     );
-
   }
 
+  const upcomingTrips = bookings.filter(
+    (booking) =>
+      booking.travelDate && new Date(booking.travelDate) >= new Date(),
+  );
 
-
-
-
-  const upcomingTrips =
-    bookings.filter(
-      booking =>
-        booking.travelDate &&
-        new Date(booking.travelDate) >= new Date()
-    );
-
-
-
-
-
-  const paidTrips =
-    bookings.filter(
-      booking =>
-        [
-          "paid",
-          "completed"
-        ].includes(
-          booking.paymentStatus?.toLowerCase()
-        )
-    );
-
-
-
-
-
-
+  const paidTrips = bookings.filter((booking) =>
+    ["paid", "completed"].includes(booking.paymentStatus?.toLowerCase()),
+  );
 
   return (
-
-    <div className="
+    <div
+      className="
     min-h-screen
     bg-gray-100
     p-6
-    ">
-
-
-      <div className="
+    "
+    >
+      <div
+        className="
       max-w-7xl
       mx-auto
-      ">
-
-
-
-        <div className="
+      "
+      >
+        <div
+          className="
         bg-gradient-to-r
         from-green-900
         to-yellow-600
@@ -159,95 +111,73 @@ export default function MyBookings() {
         text-white
         shadow-xl
         mb-8
-        ">
-
-
-          <h1 className="
+        "
+        >
+          <h1
+            className="
           text-4xl
           font-bold
-          ">
+          "
+          >
             My Adventures
           </h1>
 
-
-          <p className="
+          <p
+            className="
           mt-3
-          ">
+          "
+          >
             Manage your Coherent Tours bookings, payments and trips.
           </p>
-
-
         </div>
 
-
-
-
-
-        <div className="
+        <div
+          className="
         grid
         md:grid-cols-3
         gap-6
         mb-10
-        ">
+        "
+        >
+          <SummaryCard title="Total Bookings" value={bookings.length} />
 
+          <SummaryCard title="Upcoming Trips" value={upcomingTrips.length} />
 
-          <SummaryCard
-            title="Total Bookings"
-            value={bookings.length}
-          />
-
-
-          <SummaryCard
-            title="Upcoming Trips"
-            value={upcomingTrips.length}
-          />
-
-
-          <SummaryCard
-            title="Paid Trips"
-            value={paidTrips.length}
-          />
-
-
+          <SummaryCard title="Paid Trips" value={paidTrips.length} />
         </div>
 
-
-
-
-
-
-        {
-          bookings.length === 0 ? (
-
-            <div className="
+        {bookings.length === 0 ? (
+          <div
+            className="
             bg-white
             rounded-2xl
             shadow
             p-10
             text-center
-            ">
-
-
-              <h2 className="
+            "
+          >
+            <h2
+              className="
               text-3xl
               font-bold
               mb-4
-              ">
-                No Adventures Yet
-              </h2>
+              "
+            >
+              No Adventures Yet
+            </h2>
 
-
-              <p className="
+            <p
+              className="
               text-gray-600
               mb-6
-              ">
-                Start exploring Kenya's best destinations.
-              </p>
+              "
+            >
+              Start exploring Kenya's best destinations.
+            </p>
 
-
-              <Link
-                to="/tours"
-                className="
+            <Link
+              to="/tours"
+              className="
                 bg-green-700
                 text-white
                 px-8
@@ -255,402 +185,212 @@ export default function MyBookings() {
                 rounded-xl
                 font-bold
                 "
-              >
-
-                Explore Tours
-
-              </Link>
-
-
-            </div>
-
-
-          ) : (
-
-
-            <div className="
+            >
+              Explore Tours
+            </Link>
+          </div>
+        ) : (
+          <div
+            className="
             space-y-6
-            ">
-
-
-              {
-                bookings.map(
-                  booking => (
-
-                    <div
-                      key={booking._id}
-                      className="
+            "
+          >
+            {bookings.map((booking) => (
+              <div
+                key={booking._id}
+                className="
                       bg-white
                       rounded-2xl
                       shadow
                       p-6
                       "
-                    >
-
-
-
-                      <div className="
+              >
+                <div
+                  className="
                       flex
                       justify-between
                       flex-wrap
                       gap-5
-                      ">
-
-
-                        <div>
-
-
-                          <h2 className="
+                      "
+                >
+                  <div>
+                    <h2
+                      className="
                           text-2xl
                           font-bold
                           text-green-800
-                          ">
+                          "
+                    >
+                      {booking.tour?.title || "Tour Package"}
+                    </h2>
 
-                            {
-                              booking.tour?.title ||
-                              "Tour Package"
-                            }
-
-                          </h2>
-
-
-
-                          <p className="
+                    <p
+                      className="
                           text-gray-600
                           mt-2
-                          ">
+                          "
+                    >
+                      Booking Number:
+                      <b> {booking.bookingNumber || booking._id.slice(-8)}</b>
+                    </p>
 
-                            Booking Number:
-
-                            <b>
-                              {" "}
-                              {
-                                booking.bookingNumber ||
-                                booking._id.slice(-8)
-                              }
-                            </b>
-
-                          </p>
-
-
-
-
-                          <p className="
+                    <p
+                      className="
                           text-gray-600
-                          ">
+                          "
+                    >
+                      Travel Date:{" "}
+                      {booking.travelDate
+                        ? new Date(booking.travelDate).toDateString()
+                        : "N/A"}
+                    </p>
 
-                            Travel Date:
-
-                            {" "}
-
-                            {
-                              booking.travelDate
-                              ?
-                              new Date(
-                                booking.travelDate
-                              ).toDateString()
-                              :
-                              "N/A"
-                            }
-
-                          </p>
-
-
-
-
-                          <p className="
+                    <p
+                      className="
                           text-gray-600
-                          ">
+                          "
+                    >
+                      Travellers:{" "}
+                      {booking.travelers?.length ||
+                        booking.numberOfGuests ||
+                        booking.travelerCount ||
+                        1}
+                    </p>
+                  </div>
 
-                            Travellers:
-
-                            {" "}
-
-                            {
-                              booking.travelers?.length ||
-                              booking.numberOfGuests ||
-                              booking.travelerCount ||
-                              1
-                            }
-
-                          </p>
-
-
-                        </div>
-
-
-
-
-
-
-                        <div className="
+                  <div
+                    className="
                         flex
                         flex-col
                         gap-3
-                        ">
+                        "
+                  >
+                    <StatusBadge
+                      value={
+                        booking.bookingStatus || booking.status || "pending"
+                      }
+                    />
 
+                    <StatusBadge
+                      value={booking.paymentStatus || "pending"}
+                      payment
+                    />
+                  </div>
+                </div>
 
-                          <StatusBadge
-                            value={
-                              booking.bookingStatus ||
-                              booking.status ||
-                              "pending"
-                            }
-                          />
-
-
-
-                          <StatusBadge
-                            value={
-                              booking.paymentStatus ||
-                              "pending"
-                            }
-                            payment
-                          />
-
-
-                        </div>
-
-
-                      </div>
-
-
-
-
-
-
-                      <hr className="
+                <hr
+                  className="
                       my-6
-                      "/>
+                      "
+                />
 
-
-
-
-
-
-                      <div className="
+                <div
+                  className="
                       flex
                       justify-between
                       flex-wrap
                       gap-5
-                      ">
-
-
-                        <div>
-
-                          <p className="
+                      "
+                >
+                  <div>
+                    <p
+                      className="
                           text-gray-500
-                          ">
-                            Amount
-                          </p>
+                          "
+                    >
+                      Amount
+                    </p>
 
-
-                          <h3 className="
+                    <h3
+                      className="
                           text-xl
                           font-bold
-                          ">
+                          "
+                    >
+                      KES{" "}
+                      {Number(
+                        booking.amount ||
+                          booking.totalAmount ||
+                          booking.subtotal ||
+                          0,
+                      ).toLocaleString()}
+                    </h3>
+                  </div>
 
-                            KES{" "}
-
-                            {
-                              Number(
-                                booking.amount ||
-                                booking.totalAmount ||
-                                booking.subtotal ||
-                                0
-                              )
-                              .toLocaleString()
-                            }
-
-                          </h3>
-
-
-                        </div>
-
-
-
-
-
-
-
-                        <div className="
+                  <div
+                    className="
                         flex
                         gap-3
                         flex-wrap
-                        ">
-
-
-                          <Link
-                            to={`/bookings/${booking._id}`}
-                            className="
+                        "
+                  >
+                    <Link
+                      to={`/bookings/${booking._id}`}
+                      className="
                             bg-green-700
                             text-white
                             px-5
                             py-2
                             rounded-xl
                             "
-                          >
-                            View Trip
-                          </Link>
+                    >
+                      View Trip
+                    </Link>
 
-
-
-
-
-                          {
-                            ![
-                              "paid",
-                              "completed"
-                            ].includes(
-                              booking.paymentStatus?.toLowerCase()
-                            )
-
-                            &&
-
-                            (
-
-                              <Link
-                                to={`/payment-status/${booking._id}`}
-                                className="
-                                bg-black
-                                text-white
-                                px-5
-                                py-2
-                                rounded-xl
-                                "
-                              >
-
-                                Pay Now
-
-                              </Link>
-
-                            )
-
-                          }
-
-
-
-                        </div>
-
-
-                      </div>
-
-
-                    </div>
-
-                  )
-
-                )
-              }
-
-
-            </div>
-
-          )
-        }
-
-
-
+                    <PayNowButton booking={booking} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-
-
     </div>
-
   );
-
 }
 
-
-
-
-
-
-
-
-function SummaryCard({
-  title,
-  value,
-}){
-
-
+function SummaryCard({ title, value }) {
   return (
-
-    <div className="
+    <div
+      className="
     bg-white
     rounded-2xl
     shadow
     p-6
-    ">
-
-
-      <p className="
+    "
+    >
+      <p
+        className="
       text-gray-500
-      ">
+      "
+      >
         {title}
       </p>
 
-
-      <h2 className="
+      <h2
+        className="
       text-4xl
       font-bold
       mt-2
-      ">
+      "
+      >
         {value}
       </h2>
-
-
     </div>
-
   );
-
 }
 
-
-
-
-
-
-
-function StatusBadge({
-  value,
-  payment,
-}){
-
-
-  const status =
-    value?.toLowerCase();
-
-
+function StatusBadge({ value, payment }) {
+  const status = value?.toLowerCase();
 
   const styles =
-
-    status === "completed" ||
-    status === "paid"
-
-    ?
-
-    "bg-green-100 text-green-700"
-
-
-    :
-
-    status === "cancelled" ||
-    status === "failed"
-
-    ?
-
-    "bg-red-100 text-red-700"
-
-
-    :
-
-    "bg-yellow-100 text-yellow-700";
-
-
-
+    status === "completed" || status === "paid"
+      ? "bg-green-100 text-green-700"
+      : status === "cancelled" || status === "failed"
+        ? "bg-red-100 text-red-700"
+        : "bg-yellow-100 text-yellow-700";
 
   return (
-
     <span
       className={`
       px-4
@@ -661,13 +401,105 @@ function StatusBadge({
       ${styles}
       `}
     >
-
       {payment && "Payment: "}
 
       {value}
-
-
     </span>
+  );
+}
+
+function PayNowButton({ booking }) {
+
+  const [loading,setLoading] = useState(false);
+
+
+  const handlePayment = async()=>{
+
+    try{
+
+      setLoading(true);
+
+
+      const response = await initiatePayment({
+
+        bookingId: booking._id,
+
+        phone:
+          booking.customer?.phone ||
+          booking.customerSnapshot?.phone ||
+          booking.contact?.phone,
+
+
+        amount:
+          booking.totalAmount ||
+          booking.amount ||
+          booking.subtotal
+
+      });
+
+
+      console.log(
+        "MPESA RESPONSE",
+        response
+      );
+
+
+      window.location.href =
+      `/payment-status/${booking._id}`;
+
+
+    }catch(error){
+
+      console.error(
+        "MPESA ERROR",
+        error.response?.data || error
+      );
+
+
+      alert(
+        error.response?.data?.message ||
+        "Unable to start M-Pesa payment"
+      );
+
+    }
+    finally{
+
+      setLoading(false);
+
+    }
+
+  };
+
+
+
+  return (
+
+    <button
+
+      onClick={handlePayment}
+
+      disabled={loading}
+
+      className="
+      bg-black
+      text-white
+      px-5
+      py-2
+      rounded-xl
+      disabled:opacity-50
+      "
+
+    >
+
+      {
+        loading
+        ?
+        "Sending..."
+        :
+        "Pay Now"
+      }
+
+    </button>
 
   );
 
