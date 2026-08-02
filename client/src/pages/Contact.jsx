@@ -1,14 +1,6 @@
-import {
-  Phone,
-  Mail,
-  MapPin,
-  Clock,
-  Send,
-  MessageCircle,
-  Facebook,
-  Instagram,
-  Globe,
-} from "lucide-react";
+import { Phone, Mail, MapPin, Send, MessageCircle, Globe } from "lucide-react";
+
+import { FaFacebook, FaInstagram, FaWhatsapp } from "react-icons/fa";
 
 import { motion } from "framer-motion";
 import { useState } from "react";
@@ -235,11 +227,11 @@ export default function Contact() {
       mb-8
       "
             >
-              Whether you want corporate travel management services,airport transfers,car hire and transport services
-              ,meet and assist services,conference and events services
-              , a luxury safari, beach holiday, honeymoon
-              experience, mountain adventure or customized tour, our team will
-              create the perfect package for you.
+              Whether you want corporate travel management services,airport
+              transfers,car hire and transport services ,meet and assist
+              services,conference and events services , a luxury safari, beach
+              holiday, honeymoon experience, mountain adventure or customized
+              tour, our team will create the perfect package for you.
             </p>
 
             <div
@@ -412,7 +404,7 @@ export default function Contact() {
       hover:bg-yellow-500
       "
             >
-              <Facebook />
+              <FaFacebook size={24}/>
             </a>
 
             <a
@@ -424,7 +416,7 @@ export default function Contact() {
       hover:bg-yellow-500
       "
             >
-              <Instagram />
+              <FaInstagram size={24} />
             </a>
 
             <a
