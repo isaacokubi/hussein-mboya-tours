@@ -9,8 +9,7 @@ export default function Tours() {
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["public-tours", slug],
-    queryFn: () =>
-      getTours(slug ? slug.charAt(0).toUpperCase() + slug.slice(1) : null),
+  queryFn: () => getTours(slug),
   });
 
   if (isLoading) {
