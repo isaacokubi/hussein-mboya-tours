@@ -1,6 +1,6 @@
 // server/controllers/mpesaController.js
 
-import axios from "axios";
+
 
 import Booking from "../models/Booking.js";
 import Payment from "../models/Payment.js";
@@ -9,12 +9,10 @@ import User from "../models/User.js";
 import Notification from "../models/Notification.js";
 import Agent from "../models/Agent.js";
 
-import { mpesaConfig, mpesaUrls } from "../config/mpesa.js";
+
 
 import {
-  generateAccessToken,
-  generateTimestamp,
-  generatePassword,
+ initiateStkPush
 } from "../services/mpesaService.js";
 
 import { sendBookingConfirmation } from "../services/bookingNotificationService.js";
@@ -73,186 +71,309 @@ export const getMpesaToken = async (req, res, next) => {
 |--------------------------------------------------------------------------
 */
 
+/*
+|--------------------------------------------------------------------------
+| INITIATE STK PUSH
+|--------------------------------------------------------------------------
+*/
+
 export const stkPush = async (req, res, next) => {
   try {
-    console.log("MPESA STK REQUEST BODY:", req.body);
+    console.log(
+      "MPESA STK REQUEST BODY:",
+      req.body
+    );
 
-    const { phoneNumber, phone, bookingId, amount } = req.body;
+
+    const {
+      phoneNumber,
+      phone,
+      bookingId,
+      amount,
+    } = req.body;
+
+
 
     /*
     |--------------------------------------------------------------------------
-    | SUPPORT BOTH FRONTEND FORMATS
+    | SUPPORT FRONTEND PAYLOADS
     |--------------------------------------------------------------------------
     */
 
-    const customerPhone = phoneNumber || phone;
+    const customerPhone =
+      phoneNumber || phone;
+
+
 
     if (!customerPhone || !bookingId) {
+
       return res.status(400).json({
-        success: false,
 
-        message: "Phone number and booking ID are required.",
+        success:false,
+
+        message:
+        "Phone number and booking ID are required."
+
       });
+
     }
 
-    const booking = await Booking.findById(bookingId);
 
-    if (!booking) {
-      return res.status(404).json({
-        success: false,
 
-        message: "Booking not found.",
-      });
-    }
-
-    if (booking.paymentStatus === "paid") {
-      return res.status(400).json({
-        success: false,
-
-        message: "This booking has already been paid.",
-      });
-    }
 
     /*
     |--------------------------------------------------------------------------
-    | CHECK EXISTING PAYMENT
+    | FIND BOOKING
     |--------------------------------------------------------------------------
     */
 
-    const existingPayment = await Payment.findOne({
-      booking: booking._id,
+    const booking =
+      await Booking.findById(
+        bookingId
+      );
 
-      status: "pending",
-    });
 
-    if (existingPayment) {
+
+    if(!booking){
+
+      return res.status(404).json({
+
+        success:false,
+
+        message:
+        "Booking not found."
+
+      });
+
+    }
+
+
+
+
+    if(
+      booking.paymentStatus === "paid"
+    ){
+
+      return res.status(400).json({
+
+        success:false,
+
+        message:
+        "This booking has already been paid."
+
+      });
+
+    }
+
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | PREVENT DUPLICATE PAYMENT REQUEST
+    |--------------------------------------------------------------------------
+    */
+
+    const existingPayment =
+      await Payment.findOne({
+
+        booking:booking._id,
+
+        status:"pending"
+
+      });
+
+
+
+    if(existingPayment){
+
       return res.status(200).json({
-        success: true,
 
-        message: "Payment request already exists.",
+        success:true,
 
-        data: {
-          checkoutRequestID: existingPayment.checkoutRequestID,
-        },
+        message:
+        "Payment request already exists.",
+
+
+        data:{
+
+          checkoutRequestID:
+          existingPayment.checkoutRequestID
+
+        }
+
       });
+
     }
 
-    const formattedPhone = formatPhoneNumber(customerPhone);
 
-    if (!formattedPhone) {
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | AMOUNT
+    |--------------------------------------------------------------------------
+    */
+
+    const paymentAmount =
+      Math.round(
+        amount ||
+        booking.totalAmount ||
+        booking.amount ||
+        0
+      );
+
+
+
+    if(paymentAmount <=0){
+
       return res.status(400).json({
-        success: false,
 
-        message: "Invalid phone number.",
+        success:false,
+
+        message:
+        "Invalid booking amount."
+
       });
+
     }
 
-    const token = await generateAccessToken();
 
-    const timestamp = generateTimestamp();
 
-    const password = generatePassword(timestamp);
 
-    const paymentAmount = Math.round(
-      amount || booking.totalAmount || booking.amount || 0,
+    /*
+    |--------------------------------------------------------------------------
+    | SEND STK PUSH USING SERVICE
+    |--------------------------------------------------------------------------
+    */
+
+    const response =
+      await initiateStkPush({
+
+        phone:
+        customerPhone,
+
+
+        amount:
+        paymentAmount,
+
+
+        bookingId:
+        booking._id.toString()
+
+      });
+
+
+
+    console.log(
+      "MPESA RESPONSE:",
+      response
     );
 
-    if (paymentAmount <= 0) {
-      return res.status(400).json({
-        success: false,
 
-        message: "Invalid booking amount.",
-      });
-    }
 
-    const payload = {
-      BusinessShortCode: mpesaConfig.shortcode,
 
-      Password: password,
 
-      Timestamp: timestamp,
-
-      TransactionType: "CustomerPayBillOnline",
-
-      Amount: paymentAmount,
-
-      PartyA: formattedPhone,
-
-      PartyB: mpesaConfig.shortcode,
-
-      PhoneNumber: formattedPhone,
-
-      CallBackURL: mpesaConfig.callbackURL,
-
-      AccountReference: `BOOKING-${booking._id}`,
-
-      TransactionDesc: "Hussein Mboya Tours Booking Payment",
-    };
-
-    console.log("MPESA STK PAYLOAD:", payload);
-
-    const response = await axios.post(
-      mpesaUrls.stk,
-
-      payload,
-
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
-    );
-
-    console.log("MPESA RESPONSE:", response.data);
+    /*
+    |--------------------------------------------------------------------------
+    | SAVE PAYMENT
+    |--------------------------------------------------------------------------
+    */
 
     await Payment.create({
-      booking: booking._id,
 
-      user: booking.user || null,
+      booking:
+      booking._id,
 
-      customer: booking.customer || null,
 
-      provider: "MPESA",
+      user:
+      booking.user || null,
 
-      method: "mpesa",
 
-      amount: paymentAmount,
+      customer:
+      booking.customer || null,
 
-      phoneNumber: formattedPhone,
 
-      merchantRequestID: response.data.MerchantRequestID,
+      provider:
+      "MPESA",
 
-      checkoutRequestID: response.data.CheckoutRequestID,
 
-      status: "pending",
+      method:
+      "mpesa",
+
+
+      amount:
+      paymentAmount,
+
+
+      phoneNumber:
+      customerPhone,
+
+
+      merchantRequestID:
+      response.MerchantRequestID,
+
+
+      checkoutRequestID:
+      response.CheckoutRequestID,
+
+
+      status:
+      "pending"
+
     });
 
-    booking.paymentStatus = "pending";
+
+
+
+
+    booking.paymentStatus =
+      "pending";
+
 
     await booking.save();
 
+
+
+
+
     return res.status(200).json({
-      success: true,
 
-      message: "STK Push sent successfully.",
+      success:true,
 
-      data: response.data,
-    });
-  } catch (error) {
-    console.error(
-      "STK PUSH ERROR:",
-
-      error.response?.data || error.message,
-    );
-
-    return res.status(500).json({
-      success: false,
 
       message:
-        error.response?.data?.errorMessage ||
-        error.message ||
-        "M-Pesa STK Push failed",
+      "STK Push sent successfully.",
+
+
+      data:
+      response
+
     });
+
+
+
+  } catch(error){
+
+
+    console.error(
+      "STK PUSH ERROR:",
+      error.message
+    );
+
+
+    return res.status(500).json({
+
+      success:false,
+
+
+      message:
+      error.message ||
+      "M-Pesa STK Push failed"
+
+    });
+
+
   }
 };
 /*
