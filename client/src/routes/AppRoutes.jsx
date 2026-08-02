@@ -104,9 +104,11 @@ export default function AppRoutes() {
 
       <Route path="/" element={<Home />} />
 
-      <Route path="/tours" element={<Tours />} />
+   <Route path="/tours" element={<Tours />} />
 
-      <Route path="/tours/:slug" element={<TourDetails />} />
+<Route path="/tours/category/:slug" element={<Tours />} />
+
+<Route path="/tours/:slug" element={<TourDetails />} />
 
       <Route path="/destinations" element={<Destinations />} />
 

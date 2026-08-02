@@ -11,18 +11,14 @@ import api from "./axios";
 */
 
 
-export const getTours = async (params = {}) => {
+export const getTours = async (category = null) => {
+  const { data } = await api.get("/tours", {
+    params: category
+      ? { category }
+      : {},
+  });
 
-    const { data } = await api.get(
-        "/tours",
-        {
-            params
-        }
-    );
-
-
-    return data;
-
+  return data;
 };
 
 
