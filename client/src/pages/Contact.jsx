@@ -1,4 +1,4 @@
-import { Phone, Mail, MapPin, Send, MessageCircle, Globe } from "lucide-react";
+import { Phone, Mail, MapPin, Send, MessageCircle, Globe,Clock } from "lucide-react";
 
 import { FaFacebook, FaInstagram, FaWhatsapp } from "react-icons/fa";
 
