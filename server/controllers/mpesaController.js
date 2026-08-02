@@ -67,120 +67,409 @@ export const getMpesaToken = async (req, res, next) => {
 | INITIATE STK PUSH
 |--------------------------------------------------------------------------
 */
+/*
+|--------------------------------------------------------------------------
+| INITIATE STK PUSH
+|--------------------------------------------------------------------------
+*/
 
 export const stkPush = async (req, res, next) => {
   try {
-    const { phone, bookingId } = req.body;
 
-    if (!phone || !bookingId) {
+    console.log(
+      "MPESA STK REQUEST BODY:",
+      req.body
+    );
+
+
+    const {
+      phoneNumber,
+      phone,
+      bookingId,
+      amount
+    } = req.body;
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | SUPPORT BOTH FRONTEND FORMATS
+    |--------------------------------------------------------------------------
+    */
+
+    const customerPhone =
+      phoneNumber || phone;
+
+
+
+    if (
+      !customerPhone ||
+      !bookingId
+    ) {
+
       return res.status(400).json({
-        success: false,
-        message: "Phone number and booking ID are required.",
+
+        success:false,
+
+        message:
+        "Phone number and booking ID are required."
+
       });
+
     }
 
-    const booking = await Booking.findById(bookingId);
+
+
+    const booking =
+      await Booking.findById(
+        bookingId
+      );
+
+
 
     if (!booking) {
+
       return res.status(404).json({
-        success: false,
-        message: "Booking not found.",
+
+        success:false,
+
+        message:
+        "Booking not found."
+
       });
+
     }
 
-    if (booking.paymentStatus === "paid") {
+
+
+    if (
+      booking.paymentStatus === "paid"
+    ) {
+
       return res.status(400).json({
-        success: false,
-        message: "This booking has already been paid.",
+
+        success:false,
+
+        message:
+        "This booking has already been paid."
+
       });
+
     }
 
-    const existingPayment = await Payment.findOne({
-      booking: booking._id,
-      status: "pending",
-    });
 
-    if (existingPayment) {
+
+    /*
+    |--------------------------------------------------------------------------
+    | CHECK EXISTING PAYMENT
+    |--------------------------------------------------------------------------
+    */
+
+
+    const existingPayment =
+      await Payment.findOne({
+
+        booking: booking._id,
+
+        status:"pending"
+
+      });
+
+
+
+    if(existingPayment){
+
       return res.status(200).json({
-        success: true,
-        message: "A payment request already exists.",
-        checkoutRequestID: existingPayment.checkoutRequestID,
+
+        success:true,
+
+        message:
+        "Payment request already exists.",
+
+        data:{
+
+          checkoutRequestID:
+          existingPayment.checkoutRequestID
+
+        }
+
       });
+
     }
 
-    const formattedPhone = formatPhoneNumber(phone);
 
-    const token = await generateAccessToken();
 
-    const timestamp = generateTimestamp();
 
-    const password = generatePassword(timestamp);
 
-    const amount = Math.round(
-      booking.totalAmount ||
-      booking.amount ||
-      0
-    );
+    const formattedPhone =
+      formatPhoneNumber(
+        customerPhone
+      );
 
-    if (amount <= 0) {
+
+
+    if(!formattedPhone){
+
       return res.status(400).json({
-        success: false,
-        message: "Invalid booking amount.",
+
+        success:false,
+
+        message:
+        "Invalid phone number."
+
       });
+
     }
+
+
+
+
+
+    const token =
+      await generateAccessToken();
+
+
+
+    const timestamp =
+      generateTimestamp();
+
+
+
+    const password =
+      generatePassword(
+        timestamp
+      );
+
+
+
+
+
+    const paymentAmount =
+      Math.round(
+
+        amount ||
+
+        booking.totalAmount ||
+
+        booking.amount ||
+
+        0
+
+      );
+
+
+
+
+    if(paymentAmount <= 0){
+
+      return res.status(400).json({
+
+        success:false,
+
+        message:
+        "Invalid booking amount."
+
+      });
+
+    }
+
+
+
+
 
     const payload = {
-      BusinessShortCode: mpesaConfig.shortcode,
-      Password: password,
-      Timestamp: timestamp,
-      TransactionType: "CustomerPayBillOnline",
-      Amount: amount,
-      PartyA: formattedPhone,
-      PartyB: mpesaConfig.shortcode,
-      PhoneNumber: formattedPhone,
-      CallBackURL: mpesaConfig.callbackURL,
-      AccountReference: `BOOKING-${booking._id}`,
-      TransactionDesc: "Hussein Mboya Tours Booking Payment",
+
+
+      BusinessShortCode:
+      mpesaConfig.shortcode,
+
+
+      Password:
+      password,
+
+
+      Timestamp:
+      timestamp,
+
+
+      TransactionType:
+      "CustomerPayBillOnline",
+
+
+      Amount:
+      paymentAmount,
+
+
+      PartyA:
+      formattedPhone,
+
+
+      PartyB:
+      mpesaConfig.shortcode,
+
+
+      PhoneNumber:
+      formattedPhone,
+
+
+      CallBackURL:
+      mpesaConfig.callbackURL,
+
+
+      AccountReference:
+      `BOOKING-${booking._id}`,
+
+
+      TransactionDesc:
+      "Hussein Mboya Tours Booking Payment"
+
     };
 
-    const response = await axios.post(
-      mpesaUrls.stk,
-      payload,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
+
+
+
+
+    console.log(
+      "MPESA STK PAYLOAD:",
+      payload
     );
 
+
+
+
+
+    const response =
+      await axios.post(
+
+        mpesaUrls.stk,
+
+        payload,
+
+        {
+
+          headers:{
+
+            Authorization:
+            `Bearer ${token}`
+
+          }
+
+        }
+
+      );
+
+
+
+
+
+    console.log(
+      "MPESA RESPONSE:",
+      response.data
+    );
+
+
+
+
+
     await Payment.create({
-      booking: booking._id,
-      user: booking.user || null,
-      customer: booking.customer || null,
-      provider: "MPESA",
-      method: "mpesa",
-      amount,
-      phoneNumber: formattedPhone,
-      merchantRequestID: response.data.MerchantRequestID,
-      checkoutRequestID: response.data.CheckoutRequestID,
-      status: "pending",
+
+      booking:
+      booking._id,
+
+
+      user:
+      booking.user || null,
+
+
+      customer:
+      booking.customer || null,
+
+
+      provider:
+      "MPESA",
+
+
+      method:
+      "mpesa",
+
+
+      amount:
+      paymentAmount,
+
+
+      phoneNumber:
+      formattedPhone,
+
+
+      merchantRequestID:
+      response.data.MerchantRequestID,
+
+
+      checkoutRequestID:
+      response.data.CheckoutRequestID,
+
+
+      status:
+      "pending"
+
     });
 
-    booking.paymentStatus = "pending";
+
+
+
+
+    booking.paymentStatus =
+      "pending";
+
 
     await booking.save();
 
-    return res.status(200).json({
-      success: true,
-      message: "STK Push sent successfully.",
-      data: response.data,
-    });
-  } catch (error) {
-    console.error("STK PUSH ERROR:", error.response?.data || error.message);
 
-    next(error);
+
+
+
+    return res.status(200).json({
+
+      success:true,
+
+      message:
+      "STK Push sent successfully.",
+
+      data:
+      response.data
+
+    });
+
+
+
+
+  } catch(error){
+
+
+    console.error(
+
+      "STK PUSH ERROR:",
+
+      error.response?.data ||
+      error.message
+
+    );
+
+
+    return res.status(500).json({
+
+      success:false,
+
+      message:
+      error.response?.data?.errorMessage ||
+      error.message ||
+      "M-Pesa STK Push failed"
+
+    });
+
   }
-};/*
+};
+/*
 |--------------------------------------------------------------------------
 | MPESA CALLBACK
 |--------------------------------------------------------------------------
