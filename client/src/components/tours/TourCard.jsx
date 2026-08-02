@@ -75,7 +75,7 @@ export default function TourCard({ tour }) {
           }}
         />
 
-        {tour.discount > 0 && (
+        {Number(tour.discount) > 0 && (
           <span
             className="
             absolute
@@ -100,6 +100,7 @@ export default function TourCard({ tour }) {
           className="
           flex
           justify-between
+          items-center
           "
         >
           <span
@@ -108,7 +109,7 @@ export default function TourCard({ tour }) {
             text-gray-500
             "
           >
-            {tour.country || tour.destination?.name}
+            {tour.country || tour.destination?.name || "Kenya"}
           </span>
 
           <span
@@ -150,7 +151,7 @@ export default function TourCard({ tour }) {
           "
         >
           <div>
-            {tour.discount > 0 && (
+            {Number(tour.discount) > 0 && (
               <p
                 className="
                 text-gray-400
