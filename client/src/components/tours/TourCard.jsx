@@ -1,8 +1,10 @@
+// client/src/components/tours/TourCard.jsx
+
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { toast } from "react-toastify";
 
-import { addToWishlist } from "../../api/wishlistApi";
+import { addWishlist } from "../../api/wishlistApi";
 
 export default function TourCard({ tour }) {
   const [adding, setAdding] = useState(false);
@@ -34,9 +36,10 @@ export default function TourCard({ tour }) {
     try {
       setAdding(true);
 
-      await addToWishlist(tour._id);
+      await addWishlist(tour._id);
 
       toast.success("Added to wishlist ❤️");
+
     } catch (error) {
       console.error(error);
 
@@ -44,6 +47,7 @@ export default function TourCard({ tour }) {
         error.response?.data?.message ||
           "Failed to add wishlist"
       );
+
     } finally {
       setAdding(false);
     }
@@ -160,9 +164,8 @@ export default function TourCard({ tour }) {
                 line-through
                 "
               >
-                KES {price.toLocaleString(
-                  "en-US"
-                )}
+                KES{" "}
+                {price.toLocaleString("en-US")}
               </p>
             )}
 
@@ -174,9 +177,7 @@ export default function TourCard({ tour }) {
               "
             >
               KES{" "}
-              {discountedPrice.toLocaleString(
-                "en-US"
-              )}
+              {discountedPrice.toLocaleString("en-US")}
             </p>
           </div>
 

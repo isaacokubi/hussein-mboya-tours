@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 
 import { getTours } from "../api/tourApi";
-import TourCard from "../components/TourCard";
+import TourCard from "../components/tours/TourCard";
 
 export default function Tours() {
   const { slug } = useParams();
