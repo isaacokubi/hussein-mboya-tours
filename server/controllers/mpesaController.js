@@ -75,21 +75,9 @@ export const getMpesaToken = async (req, res, next) => {
 
 export const stkPush = async (req, res, next) => {
   try {
+    console.log("MPESA STK REQUEST BODY:", req.body);
 
-    console.log(
-      "MPESA STK REQUEST BODY:",
-      req.body
-    );
-
-
-    const {
-      phoneNumber,
-      phone,
-      bookingId,
-      amount
-    } = req.body;
-
-
+    const { phoneNumber, phone, bookingId, amount } = req.body;
 
     /*
     |--------------------------------------------------------------------------
@@ -97,67 +85,33 @@ export const stkPush = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    const customerPhone =
-      phoneNumber || phone;
+    const customerPhone = phoneNumber || phone;
 
-
-
-    if (
-      !customerPhone ||
-      !bookingId
-    ) {
-
+    if (!customerPhone || !bookingId) {
       return res.status(400).json({
+        success: false,
 
-        success:false,
-
-        message:
-        "Phone number and booking ID are required."
-
+        message: "Phone number and booking ID are required.",
       });
-
     }
 
-
-
-    const booking =
-      await Booking.findById(
-        bookingId
-      );
-
-
+    const booking = await Booking.findById(bookingId);
 
     if (!booking) {
-
       return res.status(404).json({
+        success: false,
 
-        success:false,
-
-        message:
-        "Booking not found."
-
+        message: "Booking not found.",
       });
-
     }
 
-
-
-    if (
-      booking.paymentStatus === "paid"
-    ) {
-
+    if (booking.paymentStatus === "paid") {
       return res.status(400).json({
+        success: false,
 
-        success:false,
-
-        message:
-        "This booking has already been paid."
-
+        message: "This booking has already been paid.",
       });
-
     }
-
-
 
     /*
     |--------------------------------------------------------------------------
@@ -165,308 +119,140 @@ export const stkPush = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
+    const existingPayment = await Payment.findOne({
+      booking: booking._id,
 
-    const existingPayment =
-      await Payment.findOne({
-
-        booking: booking._id,
-
-        status:"pending"
-
-      });
-
-
-
-    if(existingPayment){
-
-      return res.status(200).json({
-
-        success:true,
-
-        message:
-        "Payment request already exists.",
-
-        data:{
-
-          checkoutRequestID:
-          existingPayment.checkoutRequestID
-
-        }
-
-      });
-
-    }
-
-
-
-
-
-    const formattedPhone =
-      formatPhoneNumber(
-        customerPhone
-      );
-
-
-
-    if(!formattedPhone){
-
-      return res.status(400).json({
-
-        success:false,
-
-        message:
-        "Invalid phone number."
-
-      });
-
-    }
-
-
-
-
-
-    const token =
-      await generateAccessToken();
-
-
-
-    const timestamp =
-      generateTimestamp();
-
-
-
-    const password =
-      generatePassword(
-        timestamp
-      );
-
-
-
-
-
-    const paymentAmount =
-      Math.round(
-
-        amount ||
-
-        booking.totalAmount ||
-
-        booking.amount ||
-
-        0
-
-      );
-
-
-
-
-    if(paymentAmount <= 0){
-
-      return res.status(400).json({
-
-        success:false,
-
-        message:
-        "Invalid booking amount."
-
-      });
-
-    }
-
-
-
-
-
-    const payload = {
-
-
-      BusinessShortCode:
-      mpesaConfig.shortcode,
-
-
-      Password:
-      password,
-
-
-      Timestamp:
-      timestamp,
-
-
-      TransactionType:
-      "CustomerPayBillOnline",
-
-
-      Amount:
-      paymentAmount,
-
-
-      PartyA:
-      formattedPhone,
-
-
-      PartyB:
-      mpesaConfig.shortcode,
-
-
-      PhoneNumber:
-      formattedPhone,
-
-
-      CallBackURL:
-      mpesaConfig.callbackURL,
-
-
-      AccountReference:
-      `BOOKING-${booking._id}`,
-
-
-      TransactionDesc:
-      "Hussein Mboya Tours Booking Payment"
-
-    };
-
-
-
-
-
-    console.log(
-      "MPESA STK PAYLOAD:",
-      payload
-    );
-
-
-
-
-
-    const response =
-      await axios.post(
-
-        mpesaUrls.stk,
-
-        payload,
-
-        {
-
-          headers:{
-
-            Authorization:
-            `Bearer ${token}`
-
-          }
-
-        }
-
-      );
-
-
-
-
-
-    console.log(
-      "MPESA RESPONSE:",
-      response.data
-    );
-
-
-
-
-
-    await Payment.create({
-
-      booking:
-      booking._id,
-
-
-      user:
-      booking.user || null,
-
-
-      customer:
-      booking.customer || null,
-
-
-      provider:
-      "MPESA",
-
-
-      method:
-      "mpesa",
-
-
-      amount:
-      paymentAmount,
-
-
-      phoneNumber:
-      formattedPhone,
-
-
-      merchantRequestID:
-      response.data.MerchantRequestID,
-
-
-      checkoutRequestID:
-      response.data.CheckoutRequestID,
-
-
-      status:
-      "pending"
-
+      status: "pending",
     });
 
+    if (existingPayment) {
+      return res.status(200).json({
+        success: true,
 
+        message: "Payment request already exists.",
 
+        data: {
+          checkoutRequestID: existingPayment.checkoutRequestID,
+        },
+      });
+    }
 
+    const formattedPhone = formatPhoneNumber(customerPhone);
 
-    booking.paymentStatus =
-      "pending";
+    if (!formattedPhone) {
+      return res.status(400).json({
+        success: false,
 
+        message: "Invalid phone number.",
+      });
+    }
+
+    const token = await generateAccessToken();
+
+    const timestamp = generateTimestamp();
+
+    const password = generatePassword(timestamp);
+
+    const paymentAmount = Math.round(
+      amount || booking.totalAmount || booking.amount || 0,
+    );
+
+    if (paymentAmount <= 0) {
+      return res.status(400).json({
+        success: false,
+
+        message: "Invalid booking amount.",
+      });
+    }
+
+    const payload = {
+      BusinessShortCode: mpesaConfig.shortcode,
+
+      Password: password,
+
+      Timestamp: timestamp,
+
+      TransactionType: "CustomerPayBillOnline",
+
+      Amount: paymentAmount,
+
+      PartyA: formattedPhone,
+
+      PartyB: mpesaConfig.shortcode,
+
+      PhoneNumber: formattedPhone,
+
+      CallBackURL: mpesaConfig.callbackURL,
+
+      AccountReference: `BOOKING-${booking._id}`,
+
+      TransactionDesc: "Hussein Mboya Tours Booking Payment",
+    };
+
+    console.log("MPESA STK PAYLOAD:", payload);
+
+    const response = await axios.post(
+      mpesaUrls.stk,
+
+      payload,
+
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+
+    console.log("MPESA RESPONSE:", response.data);
+
+    await Payment.create({
+      booking: booking._id,
+
+      user: booking.user || null,
+
+      customer: booking.customer || null,
+
+      provider: "MPESA",
+
+      method: "mpesa",
+
+      amount: paymentAmount,
+
+      phoneNumber: formattedPhone,
+
+      merchantRequestID: response.data.MerchantRequestID,
+
+      checkoutRequestID: response.data.CheckoutRequestID,
+
+      status: "pending",
+    });
+
+    booking.paymentStatus = "pending";
 
     await booking.save();
 
-
-
-
-
     return res.status(200).json({
+      success: true,
 
-      success:true,
+      message: "STK Push sent successfully.",
 
-      message:
-      "STK Push sent successfully.",
-
-      data:
-      response.data
-
+      data: response.data,
     });
-
-
-
-
-  } catch(error){
-
-
+  } catch (error) {
     console.error(
-
       "STK PUSH ERROR:",
 
-      error.response?.data ||
-      error.message
-
+      error.response?.data || error.message,
     );
 
-
     return res.status(500).json({
-
-      success:false,
+      success: false,
 
       message:
-      error.response?.data?.errorMessage ||
-      error.message ||
-      "M-Pesa STK Push failed"
-
+        error.response?.data?.errorMessage ||
+        error.message ||
+        "M-Pesa STK Push failed",
     });
-
   }
 };
 /*
@@ -477,10 +263,7 @@ export const stkPush = async (req, res, next) => {
 
 export const mpesaCallback = async (req, res, next) => {
   try {
-    console.log(
-      "MPESA CALLBACK:",
-      JSON.stringify(req.body, null, 2)
-    );
+    console.log("MPESA CALLBACK:", JSON.stringify(req.body, null, 2));
 
     const stkCallback = req.body?.Body?.stkCallback;
 
@@ -498,10 +281,7 @@ export const mpesaCallback = async (req, res, next) => {
     });
 
     if (!payment) {
-      console.warn(
-        "Payment not found:",
-        checkoutRequestID
-      );
+      console.warn("Payment not found:", checkoutRequestID);
 
       return res.json({
         ResultCode: 0,
@@ -550,25 +330,19 @@ export const mpesaCallback = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    const callbackItems =
-      stkCallback.CallbackMetadata?.Item || [];
+    const callbackItems = stkCallback.CallbackMetadata?.Item || [];
 
     const getValue = (name) => {
-      const item = callbackItems.find(
-        (i) => i.Name === name
-      );
+      const item = callbackItems.find((i) => i.Name === name);
 
       return item?.Value ?? null;
     };
 
-    const mpesaReceiptNumber =
-      getValue("MpesaReceiptNumber");
+    const mpesaReceiptNumber = getValue("MpesaReceiptNumber");
 
-    const paidAmount =
-      Number(getValue("Amount")) || payment.amount;
+    const paidAmount = Number(getValue("Amount")) || payment.amount;
 
-    const phoneNumber =
-      getValue("PhoneNumber");
+    const phoneNumber = getValue("PhoneNumber");
 
     payment.status = "completed";
     payment.phoneNumber = phoneNumber;
@@ -609,10 +383,7 @@ export const mpesaCallback = async (req, res, next) => {
 
     await booking.save();
 
-    console.log(
-      "Booking payment confirmed:",
-      booking._id
-    );
+    console.log("Booking payment confirmed:", booking._id);
 
     /*
     |--------------------------------------------------------------------------
@@ -634,14 +405,11 @@ export const mpesaCallback = async (req, res, next) => {
             title: "New Booking Payment",
             message: `Booking ${booking._id} has been paid successfully.`,
             type: "booking",
-          }))
+          })),
         );
       }
     } catch (err) {
-      console.error(
-        "Notification Error:",
-        err.message
-      );
+      console.error("Notification Error:", err.message);
     }
 
     /*
@@ -652,16 +420,10 @@ export const mpesaCallback = async (req, res, next) => {
 
     try {
       if (booking.email) {
-        await sendBookingEmail(
-          booking.email,
-          booking
-        );
+        await sendBookingEmail(booking.email, booking);
       }
     } catch (err) {
-      console.error(
-        "Email Error:",
-        err.message
-      );
+      console.error("Email Error:", err.message);
     }
 
     /*
@@ -673,10 +435,7 @@ export const mpesaCallback = async (req, res, next) => {
     try {
       await sendBookingConfirmation(booking);
     } catch (err) {
-      console.error(
-        "Booking Confirmation Error:",
-        err.message
-      );
+      console.error("Booking Confirmation Error:", err.message);
     }
 
     /*
@@ -688,23 +447,15 @@ export const mpesaCallback = async (req, res, next) => {
     try {
       if (booking.user) {
         const points = Math.floor(
-          (booking.totalAmount ||
-            booking.amount ||
-            0) / 100
+          (booking.totalAmount || booking.amount || 0) / 100,
         );
 
         if (points > 0) {
-          await addPoints(
-            booking.user,
-            points
-          );
+          await addPoints(booking.user, points);
         }
       }
     } catch (err) {
-      console.error(
-        "Loyalty Error:",
-        err.message
-      );
+      console.error("Loyalty Error:", err.message);
     }
 
     /*
@@ -715,26 +466,18 @@ export const mpesaCallback = async (req, res, next) => {
 
     try {
       if (booking.agent) {
-        const agent = await Agent.findById(
-          booking.agent
-        );
+        const agent = await Agent.findById(booking.agent);
 
         if (agent) {
-          const exists =
-            await Commission.findOne({
-              booking: booking._id,
-            });
+          const exists = await Commission.findOne({
+            booking: booking._id,
+          });
 
           if (!exists) {
-            const rate =
-              agent.commissionRate || 0;
+            const rate = agent.commissionRate || 0;
 
             const commissionAmount =
-              ((booking.totalAmount ||
-                booking.amount ||
-                0) *
-                rate) /
-              100;
+              ((booking.totalAmount || booking.amount || 0) * rate) / 100;
 
             await Commission.create({
               booking: booking._id,
@@ -743,19 +486,14 @@ export const mpesaCallback = async (req, res, next) => {
               status: "pending",
             });
 
-            agent.walletBalance =
-              (agent.walletBalance || 0) +
-              commissionAmount;
+            agent.walletBalance = (agent.walletBalance || 0) + commissionAmount;
 
             await agent.save();
           }
         }
       }
     } catch (err) {
-      console.error(
-        "Commission Error:",
-        err.message
-      );
+      console.error("Commission Error:", err.message);
     }
 
     return res.json({
@@ -763,17 +501,14 @@ export const mpesaCallback = async (req, res, next) => {
       ResultDesc: "Accepted",
     });
   } catch (error) {
-    console.error(
-      "MPESA CALLBACK ERROR:",
-      error
-    );
+    console.error("MPESA CALLBACK ERROR:", error);
 
     return res.json({
       ResultCode: 0,
       ResultDesc: "Accepted",
     });
   }
-};/*
+}; /*
 |--------------------------------------------------------------------------
 | CHECK PAYMENT STATUS
 |--------------------------------------------------------------------------

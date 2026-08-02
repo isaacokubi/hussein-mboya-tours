@@ -1,9 +1,6 @@
 import axios from "axios";
 
-import {
-  mpesaConfig,
-  mpesaUrls,
-} from "../config/mpesa.js";
+import { mpesaConfig, mpesaUrls } from "../config/mpesa.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -62,18 +59,15 @@ export const normalizePhoneNumber = (phone) => {
 
 export const generateAccessToken = async () => {
   const auth = Buffer.from(
-    `${mpesaConfig.consumerKey}:${mpesaConfig.consumerSecret}`
+    `${mpesaConfig.consumerKey}:${mpesaConfig.consumerSecret}`,
   ).toString("base64");
 
   try {
-    const { data } = await mpesaClient.get(
-      mpesaUrls.oauth,
-      {
-        headers: {
-          Authorization: `Basic ${auth}`,
-        },
-      }
-    );
+    const { data } = await mpesaClient.get(mpesaUrls.oauth, {
+      headers: {
+        Authorization: `Basic ${auth}`,
+      },
+    });
 
     if (!data.access_token) {
       throw new Error("Failed to obtain M-Pesa access token.");
@@ -83,7 +77,7 @@ export const generateAccessToken = async () => {
   } catch (error) {
     throw new Error(
       error.response?.data?.errorMessage ||
-        "Unable to authenticate with M-Pesa."
+        "Unable to authenticate with M-Pesa.",
     );
   }
 };
@@ -115,7 +109,7 @@ export const generateTimestamp = () => {
 
 export const generatePassword = (timestamp) =>
   Buffer.from(
-    `${mpesaConfig.shortcode}${mpesaConfig.passkey}${timestamp}`
+    `${mpesaConfig.shortcode}${mpesaConfig.passkey}${timestamp}`,
   ).toString("base64");
 
 /*
@@ -124,11 +118,7 @@ export const generatePassword = (timestamp) =>
 |--------------------------------------------------------------------------
 */
 
-export const stkPush = async ({
-  phone,
-  amount,
-  bookingId,
-}) => {
+export const stkPush = async ({ phone, amount, bookingId }) => {
   if (!bookingId) {
     throw new Error("Booking ID is required.");
   }
@@ -137,8 +127,7 @@ export const stkPush = async ({
     throw new Error("Invalid payment amount.");
   }
 
-  const normalizedPhone =
-    normalizePhoneNumber(phone);
+  const normalizedPhone = normalizePhoneNumber(phone);
 
   const token = await generateAccessToken();
 
@@ -147,15 +136,13 @@ export const stkPush = async ({
   const password = generatePassword(timestamp);
 
   const payload = {
-    BusinessShortCode:
-      mpesaConfig.shortcode,
+    BusinessShortCode: mpesaConfig.shortcode,
 
     Password: password,
 
     Timestamp: timestamp,
 
-    TransactionType:
-      "CustomerPayBillOnline",
+    TransactionType: "CustomerPayBillOnline",
 
     Amount: Math.round(amount),
 
@@ -165,32 +152,26 @@ export const stkPush = async ({
 
     PhoneNumber: normalizedPhone,
 
-    CallBackURL:
-      mpesaConfig.callbackURL,
+    CallBackURL: mpesaConfig.callbackURL,
 
     AccountReference: `BOOKING-${bookingId}`,
 
-    TransactionDesc:
-      "Hussein Mboya Tour Booking",
+    TransactionDesc: "Hussein Mboya Tour Booking",
   };
 
   try {
-    const { data } = await mpesaClient.post(
-      mpesaUrls.stk,
-      payload,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    const { data } = await mpesaClient.post(mpesaUrls.stk, payload, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
     return data;
   } catch (error) {
     throw new Error(
       error.response?.data?.errorMessage ||
         error.response?.data?.errorCode ||
-        "Failed to initiate STK Push."
+        "Failed to initiate STK Push.",
     );
   }
 };
