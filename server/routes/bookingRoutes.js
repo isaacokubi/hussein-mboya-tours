@@ -3,7 +3,7 @@
 import express from "express";
 
 import {
-  
+  createBooking,
   getMyBookings,
   getBooking,
   cancelBooking,
