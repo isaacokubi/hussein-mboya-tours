@@ -1,7 +1,10 @@
+// server/controllers/wishlistController.js
+
 import mongoose from "mongoose";
 
 import Wishlist from "../models/Wishlist.js";
 import Tour from "../models/Tour.js";
+
 
 /*
 |--------------------------------------------------------------------------
@@ -16,9 +19,11 @@ export const getWishlist = async (req, res, next) => {
     }).populate({
       path: "tours",
       match: {
-        status: "active",
+        isDeleted: false,
+        published: true,
       },
     });
+
 
     if (!wishlist) {
       wishlist = await Wishlist.create({
@@ -27,15 +32,22 @@ export const getWishlist = async (req, res, next) => {
       });
     }
 
+
     return res.status(200).json({
       success: true,
       count: wishlist.tours.length,
       wishlist: wishlist.tours,
     });
+
+
   } catch (error) {
     next(error);
   }
 };
+
+
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -47,12 +59,15 @@ export const addWishlist = async (req, res, next) => {
   try {
     const { tourId } = req.body;
 
+
     if (!tourId) {
       return res.status(400).json({
         success: false,
         message: "Tour ID is required",
       });
     }
+
+
 
     if (!mongoose.Types.ObjectId.isValid(tourId)) {
       return res.status(400).json({
@@ -61,10 +76,27 @@ export const addWishlist = async (req, res, next) => {
       });
     }
 
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | CHECK TOUR EXISTS
+    |--------------------------------------------------------------------------
+    |
+    | Tours use published/isDeleted fields for visibility.
+    | They do not use status:"active".
+    |
+    |--------------------------------------------------------------------------
+    */
+
     const tour = await Tour.findOne({
       _id: tourId,
-      status: "active",
+      isDeleted: false,
+      published: true,
     });
+
+
 
     if (!tour) {
       return res.status(404).json({
@@ -73,9 +105,14 @@ export const addWishlist = async (req, res, next) => {
       });
     }
 
+
+
+
     let wishlist = await Wishlist.findOne({
       user: req.user._id,
     });
+
+
 
     if (!wishlist) {
       wishlist = await Wishlist.create({
@@ -83,6 +120,10 @@ export const addWishlist = async (req, res, next) => {
         tours: [],
       });
     }
+
+
+
+
 
     await Wishlist.updateOne(
       {
@@ -95,11 +136,23 @@ export const addWishlist = async (req, res, next) => {
       }
     );
 
-    await wishlist.populate("tours");
+
+
+
 
     const updatedWishlist = await Wishlist.findById(
       wishlist._id
-    ).populate("tours");
+    ).populate({
+      path: "tours",
+      match: {
+        isDeleted: false,
+        published: true,
+      },
+    });
+
+
+
+
 
     return res.status(200).json({
       success: true,
@@ -107,10 +160,18 @@ export const addWishlist = async (req, res, next) => {
       count: updatedWishlist.tours.length,
       wishlist: updatedWishlist.tours,
     });
+
+
+
   } catch (error) {
     next(error);
   }
 };
+
+
+
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -122,6 +183,8 @@ export const removeWishlist = async (req, res, next) => {
   try {
     const { tourId } = req.params;
 
+
+
     if (!mongoose.Types.ObjectId.isValid(tourId)) {
       return res.status(400).json({
         success: false,
@@ -129,9 +192,13 @@ export const removeWishlist = async (req, res, next) => {
       });
     }
 
+
+
     const wishlist = await Wishlist.findOne({
       user: req.user._id,
     });
+
+
 
     if (!wishlist) {
       return res.status(404).json({
@@ -139,6 +206,9 @@ export const removeWishlist = async (req, res, next) => {
         message: "Wishlist not found",
       });
     }
+
+
+
 
     await Wishlist.updateOne(
       {
@@ -151,9 +221,23 @@ export const removeWishlist = async (req, res, next) => {
       }
     );
 
+
+
+
+
     const updatedWishlist = await Wishlist.findById(
       wishlist._id
-    ).populate("tours");
+    ).populate({
+      path: "tours",
+      match: {
+        isDeleted: false,
+        published: true,
+      },
+    });
+
+
+
+
 
     return res.status(200).json({
       success: true,
@@ -161,6 +245,9 @@ export const removeWishlist = async (req, res, next) => {
       count: updatedWishlist.tours.length,
       wishlist: updatedWishlist.tours,
     });
+
+
+
   } catch (error) {
     next(error);
   }
