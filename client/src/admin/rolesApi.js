@@ -1,6 +1,6 @@
 // client/src/api/admin/rolesApi.js
 
-import api from "../axios";
+import api from "../api/axios";
 
 export const getRoles = async()=>{
 
