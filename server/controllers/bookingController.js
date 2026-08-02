@@ -17,9 +17,8 @@ import {
 
 import { calculateBookingAmounts } from "../utils/bookingPricing.js";
 
-import { successResponse, errorResponse } from "../utils/apiResponse.js";
+import { successResponse } from "../utils/apiResponse.js";
 
-import withTransaction from "../utils/withTransaction.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -27,78 +26,149 @@ import withTransaction from "../utils/withTransaction.js";
 |--------------------------------------------------------------------------
 */
 
-/*
-|--------------------------------------------------------------------------
-| CREATE BOOKING
-|--------------------------------------------------------------------------
-*/
-const bookingDocument =
-new Booking({
+export const createBooking = async (req, res, next) => {
+  try {
 
-customer:
-req.user._id,
-
-
-customerSnapshot: {
-
-name:
-req.user.name || "",
-
-email:
-req.user.email || "",
-
-phone:
-req.user.phone || ""
-
-},
+    const {
+      tour,
+      travelDate,
+      travelers,
+      numberOfGuests,
+      contact,
+      paymentMethod,
+    } = req.body;
 
 
-tour,
+    const totalTravellers =
+      Number(numberOfGuests) ||
+      travelers?.length ||
+      1;
 
 
-travelDate,
+    const tourData =
+      await Tour.findById(tour);
 
 
-travelers,
+    if (!tourData) {
+      return res.status(404).json({
+        success:false,
+        message:"Tour not found"
+      });
+    }
 
 
-numberOfGuests:
-totalTravellers,
+    await validateTourCapacity(
+      tour,
+      totalTravellers,
+      travelDate
+    );
 
 
-contact,
+    const amounts =
+      calculateBookingAmounts(
+        tourData,
+        totalTravellers
+      );
 
 
-subtotal,
+    const booking =
+      await Booking.create({
+
+        customer:req.user._id,
 
 
-discountAmount,
+        customerSnapshot:{
+          name:req.user.name || "",
+          email:req.user.email || "",
+          phone:req.user.phone || ""
+        },
 
 
-totalAmount,
+        tour,
 
 
-depositAmount,
+        travelDate,
 
 
-balanceAmount,
+        travelers,
 
 
-paymentMethod:
-paymentMethod || "MPESA",
+        numberOfGuests:
+          totalTravellers,
 
 
-paymentStatus:
-"pending",
+        contact,
 
 
-status:
-"pending",
+        subtotal:
+          amounts.subtotal,
 
 
-assigned:false
+        discountAmount:
+          amounts.discountAmount,
 
-});
+
+        totalAmount:
+          amounts.totalAmount,
+
+
+        depositAmount:
+          amounts.depositAmount,
+
+
+        balanceAmount:
+          amounts.balanceAmount,
+
+
+        paymentMethod:
+          paymentMethod ||
+          PAYMENT_METHODS.MPESA,
+
+
+        paymentStatus:
+          "pending",
+
+
+        status:
+          "pending",
+
+
+        bookingStatus:
+          "pending",
+
+
+        assigned:false
+
+      });
+
+
+
+    await reserveSlots(
+      tour,
+      totalTravellers,
+      travelDate
+    );
+
+
+    return successResponse(
+      res,
+      201,
+      "Booking created successfully",
+      {
+        booking
+      }
+    );
+
+
+  } catch(error){
+
+    next(error);
+
+  }
+};
+
+
+
 /*
 |--------------------------------------------------------------------------
 | GET MY BOOKINGS
@@ -107,32 +177,48 @@ assigned:false
 
 export const getMyBookings = async (req, res, next) => {
   try {
-    const page = Number(req.query.page) || 1;
 
-    const limit = Number(req.query.limit) || 20;
+    const page =
+      Number(req.query.page) || 1;
 
-    const skip = (page - 1) * limit;
+
+    const limit =
+      Number(req.query.limit) || 20;
+
+
+    const skip =
+      (page - 1) * limit;
+
 
     const filter = {
-      $or: [
+
+      $or:[
+
         {
-          user: req.user._id,
+          user:req.user._id
         },
 
         {
-          customer: req.user._id,
-        },
-      ],
+          customer:req.user._id
+        }
+
+      ]
+
     };
 
-    const total = await Booking.countDocuments(filter);
 
-    const bookings = await Booking.find(filter)
+    const total =
+      await Booking.countDocuments(filter);
+
+
+
+    const bookings =
+      await Booking.find(filter)
 
       .populate("tour")
 
       .sort({
-        createdAt: -1,
+        createdAt:-1
       })
 
       .skip(skip)
@@ -141,17 +227,30 @@ export const getMyBookings = async (req, res, next) => {
 
       .lean();
 
-    return successResponse(res, 200, "Bookings retrieved successfully", {
-      page,
-      pages: Math.ceil(total / limit),
-      total,
-      count: bookings.length,
-      bookings,
-    });
-  } catch (error) {
+
+
+    return successResponse(
+      res,
+      200,
+      "Bookings retrieved successfully",
+      {
+        page,
+        pages:Math.ceil(total / limit),
+        total,
+        count:bookings.length,
+        bookings
+      }
+    );
+
+
+  } catch(error){
+
     next(error);
+
   }
 };
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -159,112 +258,153 @@ export const getMyBookings = async (req, res, next) => {
 |--------------------------------------------------------------------------
 */
 
-export const getAllBookings = async (req, res, next) => {
-  try {
-    const { status, paymentStatus, search } = req.query;
+export const getAllBookings = async (req,res,next)=>{
 
-    const page = Number(req.query.page) || 1;
+try{
 
-    const limit = Number(req.query.limit) || 20;
 
-    const skip = (page - 1) * limit;
+const {
+status,
+paymentStatus,
+search
+}=req.query;
 
-    const filter = {};
 
-    if (status) {
-      filter.status = status;
-    }
+const page =
+Number(req.query.page)||1;
 
-    if (paymentStatus) {
-      filter.paymentStatus = paymentStatus;
-    }
 
-    /*
-        |--------------------------------------------------------------------------
-        | Database Search
-        |--------------------------------------------------------------------------
-        */
+const limit =
+Number(req.query.limit)||20;
 
-    if (search) {
-      filter.$or = [
-        {
-          bookingNumber: {
-            $regex: search,
 
-            $options: "i",
-          },
-        },
+const skip =
+(page-1)*limit;
 
-        {
-          "customerSnapshot.name": {
-            $regex: search,
 
-            $options: "i",
-          },
-        },
+const filter={};
 
-        {
-          "customerSnapshot.email": {
-            $regex: search,
 
-            $options: "i",
-          },
-        },
-      ];
-    }
 
-    const total = await Booking.countDocuments(filter);
+if(status){
+filter.status=status;
+}
 
-    const bookings = await Booking.find(filter)
 
-     .populate(
-  "customer",
-  "name email phone"
+
+if(paymentStatus){
+filter.paymentStatus=paymentStatus;
+}
+
+
+
+if(search){
+
+filter.$or=[
+
+{
+bookingNumber:{
+$regex:search,
+$options:"i"
+}
+},
+
+
+{
+"customerSnapshot.name":{
+$regex:search,
+$options:"i"
+}
+},
+
+
+{
+"customerSnapshot.email":{
+$regex:search,
+$options:"i"
+}
+}
+
+];
+
+}
+
+
+
+const total =
+await Booking.countDocuments(filter);
+
+
+
+const bookings =
+await Booking.find(filter)
+
+.populate(
+"customer",
+"name email phone"
 )
 
 .populate(
-  "tour",
-  "title destination price"
+"tour",
+"title destination price"
 )
 
-      .populate("assignedGuide", "name email phone")
+.populate(
+"assignedGuide",
+"name email phone"
+)
 
-      .populate("assignedDriver", "name email phone")
+.populate(
+"assignedDriver",
+"name email phone"
+)
 
-      .populate("assignedVehicle")
+.populate(
+"assignedVehicle"
+)
 
-      .sort({
-        createdAt: -1,
-      })
+.sort({
+createdAt:-1
+})
 
-      .skip(skip)
+.skip(skip)
 
-      .limit(limit)
+.limit(limit)
 
-      .lean();
+.lean();
 
-    return res.status(200).json({
-      success: true,
 
-      page,
 
-      pages: Math.ceil(total / limit),
+return res.status(200).json({
 
-      total,
+success:true,
 
-      count: bookings.length,
+page,
 
-      bookings,
-    });
-  } catch (error) {
-    next(error);
-  }
+pages:Math.ceil(total/limit),
+
+total,
+
+count:bookings.length,
+
+bookings
+
+});
+
+
+}
+catch(error){
+
+next(error);
+
+}
+
 };
 
-// Compatibility
-export const getBookings = getAllBookings;
 
-/*
+
+export const getBookings =
+getAllBookings; /*
 |--------------------------------------------------------------------------
 | GET CONFIRMED BOOKINGS FOR TOUR MANAGER
 |--------------------------------------------------------------------------
@@ -272,36 +412,54 @@ export const getBookings = getAllBookings;
 
 export const getConfirmedBookings = async (req, res, next) => {
   try {
-    const page = Number(req.query.page) || 1;
 
-    const limit = Number(req.query.limit) || 20;
+    const page =
+      Number(req.query.page) || 1;
 
-    const skip = (page - 1) * limit;
+
+    const limit =
+      Number(req.query.limit) || 20;
+
+
+    const skip =
+      (page - 1) * limit;
+
+
 
     const filter = {
-      paymentStatus: "paid",
 
-      $or: [
+      paymentStatus:"paid",
+
+      $or:[
+
         {
-          bookingStatus: "confirmed",
+          bookingStatus:"confirmed"
         },
 
         {
-          status: "confirmed",
-        },
-      ],
+          status:"confirmed"
+        }
+
+      ]
+
     };
 
-    const total = await Booking.countDocuments(filter);
 
-    const bookings = await Booking.find(filter)
+
+    const total =
+      await Booking.countDocuments(filter);
+
+
+
+    const bookings =
+      await Booking.find(filter)
 
       .populate("tour")
 
       .populate(
-  "customer",
-  "name email phone"
-)
+        "customer",
+        "name email phone"
+      )
 
       .populate("assignedGuide")
 
@@ -310,7 +468,7 @@ export const getConfirmedBookings = async (req, res, next) => {
       .populate("assignedVehicle")
 
       .sort({
-        travelDate: 1,
+        travelDate:1
       })
 
       .skip(skip)
@@ -319,23 +477,36 @@ export const getConfirmedBookings = async (req, res, next) => {
 
       .lean();
 
+
+
     return res.status(200).json({
-      success: true,
+
+      success:true,
 
       page,
 
-      pages: Math.ceil(total / limit),
+      pages:
+        Math.ceil(total / limit),
 
       total,
 
-      count: bookings.length,
+      count:
+        bookings.length,
 
-      bookings,
+      bookings
+
     });
-  } catch (error) {
+
+
+  } catch(error){
+
     next(error);
+
   }
 };
+
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -353,34 +524,29 @@ try{
 
 
 const booking =
-await Booking.findById(req.params.id)
 
-
-.populate(
-"tour"
+await Booking.findById(
+req.params.id
 )
 
+.populate("tour")
 
 .populate(
 "customer",
 "name email phone"
 )
 
-
 .populate(
 "assignedGuide"
 )
-
 
 .populate(
 "assignedDriver"
 )
 
-
 .populate(
 "assignedVehicle"
 )
-
 
 .lean();
 
@@ -415,7 +581,9 @@ booking
 );
 
 
+
 }
+
 catch(error){
 
 next(error);
@@ -424,8 +592,19 @@ next(error);
 
 
 };
+
+
+
 // Compatibility
-export const getBooking = getBookingById; /*
+export const getBooking =
+getBookingById;
+
+
+
+
+
+
+/*
 |--------------------------------------------------------------------------
 | UPDATE PAYMENT STATUS
 |--------------------------------------------------------------------------
@@ -439,235 +618,430 @@ export const getBooking = getBookingById; /*
 */
 
 export const updateBookingPayment = async (
-  bookingId,
-  paymentStatus,
-  paymentData = {},
-) => {
-  if (!PAYMENT_STATUSES.includes(paymentStatus)) {
-    throw new Error("Invalid payment status");
-  }
 
-  const booking = await Booking.findById(bookingId);
+bookingId,
 
-  if (!booking) {
-    throw new Error("Booking not found");
-  }
+paymentStatus,
 
-  /*
-    |--------------------------------------------------------------------------
-    | Prevent duplicate payment processing
-    |--------------------------------------------------------------------------
-    */
+paymentData={}
 
-  if (booking.paymentStatus === "paid" && paymentStatus === "paid") {
-    return booking;
-  }
+)=>{
 
-  booking.paymentStatus = paymentStatus;
 
-  /*
-    |--------------------------------------------------------------------------
-    | SUCCESSFUL PAYMENT
-    |--------------------------------------------------------------------------
-    */
+if(
+!PAYMENT_STATUSES.includes(paymentStatus)
+){
 
-  if (paymentStatus === "paid") {
-    booking.status = "confirmed";
+throw new Error(
+"Invalid payment status"
+);
 
-    booking.bookingStatus = "confirmed";
+}
 
-   if(paymentData.mpesaReceiptNumber){
+
+
+const booking =
+await Booking.findById(
+bookingId
+);
+
+
+
+if(!booking){
+
+throw new Error(
+"Booking not found"
+);
+
+}
+
+
+
+
+// Prevent duplicate processing
+
+if(
+booking.paymentStatus==="paid" &&
+paymentStatus==="paid"
+){
+
+return booking;
+
+}
+
+
+
+booking.paymentStatus =
+paymentStatus;
+
+
+
+/*
+|--------------------------------------------------------------------------
+| PAID
+|--------------------------------------------------------------------------
+*/
+
+if(paymentStatus==="paid"){
+
+
+booking.status =
+"confirmed";
+
+
+booking.bookingStatus =
+"confirmed";
+
+
+
+if(paymentData.mpesaReceiptNumber){
 
 booking.mpesaReceipt =
 paymentData.mpesaReceiptNumber;
 
 }
 
-    if (typeof paymentData.amount === "number") {
-      booking.paidAmount = paymentData.amount;
-    }
 
-    if (paymentData.transactionId) {
-      booking.transactionId = paymentData.transactionId;
-    }
 
-    if (paymentData.paymentMethod) {
-      booking.paymentMethod = paymentData.paymentMethod;
-    }
+if(
+typeof paymentData.amount==="number"
+){
 
-    booking.paidAt = new Date();
-  }
+booking.paidAmount =
+paymentData.amount;
 
-  /*
-    |--------------------------------------------------------------------------
-    | FAILED PAYMENT
-    |--------------------------------------------------------------------------
-    */
+}
 
-  if (paymentStatus === "failed") {
-    if (booking.paymentStatus !== "paid") {
-      booking.status = "pending";
 
-      booking.bookingStatus = "pending";
-    }
-  }
 
-  /*
-    |--------------------------------------------------------------------------
-    | CANCELLED PAYMENT
-    |--------------------------------------------------------------------------
-    */
+if(paymentData.transactionId){
 
-  if (paymentStatus === "cancelled") {
-    if (booking.paymentStatus !== "paid") {
-      booking.status = "cancelled";
+booking.transactionId =
+paymentData.transactionId;
 
-      booking.bookingStatus = "cancelled";
-    }
-  }
+}
 
-  /*
-    |--------------------------------------------------------------------------
-    | REFUNDED
-    |--------------------------------------------------------------------------
-    */
 
-  if (paymentStatus === "refunded") {
-    booking.status = "refunded";
 
-    booking.bookingStatus = "refunded";
+if(paymentData.paymentMethod){
 
-    booking.refundedAt = new Date();
-  }
+booking.paymentMethod =
+paymentData.paymentMethod;
 
-  await booking.save();
+}
 
-  return booking;
-};
+
+
+booking.paidAt =
+new Date();
+
+
+}
+
+
+
 
 /*
 |--------------------------------------------------------------------------
-| UPDATE BOOKING STATUS (ADMIN)
+| FAILED
 |--------------------------------------------------------------------------
 */
 
-export const updateBookingStatus = async (req, res, next) => {
-  try {
-    const booking = await Booking.findById(req.params.id);
+if(paymentStatus==="failed"){
 
-    if (!booking) {
-      return res.status(404).json({
-        success: false,
+if(
+booking.paymentStatus!=="paid"
+){
 
-        message: "Booking not found",
-      });
-    }
+booking.status =
+"pending";
 
-    /*
-        |--------------------------------------------------------------------------
-        | Booking Status Validation
-        |--------------------------------------------------------------------------
-        */
 
-    if (req.body.status) {
-      if (!BOOKING_STATUSES.includes(req.body.status)) {
-        return res.status(400).json({
-          success: false,
+booking.bookingStatus =
+"pending";
 
-          message: "Invalid booking status",
-        });
-      }
+}
 
-      booking.status = req.body.status;
-    }
+}
 
-    /*
-        |--------------------------------------------------------------------------
-        | Booking Status Field
-        |--------------------------------------------------------------------------
-        */
 
-    if (req.body.bookingStatus) {
-      if (!BOOKING_STATUSES.includes(req.body.bookingStatus)) {
-        return res.status(400).json({
-          success: false,
 
-          message: "Invalid booking status",
-        });
-      }
 
-      booking.bookingStatus = req.body.bookingStatus;
-    }
+/*
+|--------------------------------------------------------------------------
+| CANCELLED
+|--------------------------------------------------------------------------
+*/
 
-    /*
-        |--------------------------------------------------------------------------
-        | Payment Status
-        |--------------------------------------------------------------------------
-        */
+if(paymentStatus==="cancelled"){
 
-    if (req.body.paymentStatus) {
-      if (!PAYMENT_STATUSES.includes(req.body.paymentStatus)) {
-        return res.status(400).json({
-          success: false,
+if(
+booking.paymentStatus!=="paid"
+){
 
-          message: "Invalid payment status",
-        });
-      }
+booking.status =
+"cancelled";
 
-      booking.paymentStatus = req.body.paymentStatus;
-    }
 
-    /*
-        |--------------------------------------------------------------------------
-        | Assigned Status
-        |--------------------------------------------------------------------------
-        */
+booking.bookingStatus =
+"cancelled";
 
-    if (req.body.assigned !== undefined) {
-      booking.assigned = req.body.assigned;
-    }
+}
 
-    /*
-        |--------------------------------------------------------------------------
-        | Auto-confirm paid bookings
-        |--------------------------------------------------------------------------
-        */
+}
 
-    if (booking.paymentStatus === "paid") {
-      booking.status = "confirmed";
 
-      booking.bookingStatus = "confirmed";
 
-      if (!booking.paidAt) {
-        booking.paidAt = new Date();
-      }
-    }
 
-    /*
-        |--------------------------------------------------------------------------
-        | Auto-cancel cancelled payments
-        |--------------------------------------------------------------------------
-        */
 
-    if (booking.paymentStatus === "cancelled") {
-      booking.status = "cancelled";
+/*
+|--------------------------------------------------------------------------
+| REFUNDED
+|--------------------------------------------------------------------------
+*/
 
-      booking.bookingStatus = "cancelled";
-    }
+if(paymentStatus==="refunded"){
 
-    await booking.save();
+booking.status =
+"refunded";
 
-    return res.status(200).json({
-      success: true,
 
-      message: "Booking updated successfully",
+booking.bookingStatus =
+"refunded";
 
-      booking,
-    });
-  } catch (error) {
-    next(error);
-  }
+
+booking.refundedAt =
+new Date();
+
+}
+
+
+
+await booking.save();
+
+
+
+return booking;
+
 };
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| UPDATE BOOKING STATUS ADMIN
+|--------------------------------------------------------------------------
+*/
+
+export const updateBookingStatus = async (
+req,
+res,
+next
+)=>{
+
+
+try{
+
+
+const booking =
+await Booking.findById(
+req.params.id
+);
+
+
+
+if(!booking){
+
+return res.status(404).json({
+
+success:false,
+
+message:"Booking not found"
+
+});
+
+}
+
+
+
+
+
+if(req.body.status){
+
+
+if(
+!BOOKING_STATUSES.includes(
+req.body.status
+)
+){
+
+return res.status(400).json({
+
+success:false,
+
+message:"Invalid booking status"
+
+});
+
+}
+
+
+
+booking.status =
+req.body.status;
+
+}
+
+
+
+
+
+if(req.body.bookingStatus){
+
+
+if(
+!BOOKING_STATUSES.includes(
+req.body.bookingStatus
+)
+){
+
+return res.status(400).json({
+
+success:false,
+
+message:"Invalid booking status"
+
+});
+
+}
+
+
+booking.bookingStatus =
+req.body.bookingStatus;
+
+}
+
+
+
+
+
+if(req.body.paymentStatus){
+
+
+if(
+!PAYMENT_STATUSES.includes(
+req.body.paymentStatus
+)
+){
+
+return res.status(400).json({
+
+success:false,
+
+message:"Invalid payment status"
+
+});
+
+}
+
+
+booking.paymentStatus =
+req.body.paymentStatus;
+
+}
+
+
+
+
+if(
+req.body.assigned !== undefined
+){
+
+booking.assigned =
+req.body.assigned;
+
+}
+
+
+
+
+
+if(
+booking.paymentStatus==="paid"
+){
+
+booking.status =
+"confirmed";
+
+
+booking.bookingStatus =
+"confirmed";
+
+
+if(!booking.paidAt){
+
+booking.paidAt =
+new Date();
+
+}
+
+}
+
+
+
+
+
+if(
+booking.paymentStatus==="cancelled"
+){
+
+booking.status =
+"cancelled";
+
+
+booking.bookingStatus =
+"cancelled";
+
+}
+
+
+
+
+await booking.save();
+
+
+
+return res.status(200).json({
+
+success:true,
+
+message:
+"Booking updated successfully",
+
+booking
+
+});
+
+
+
+}
+
+catch(error){
+
+next(error);
+
+}
+
+};
+
+
+
+
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -675,67 +1049,130 @@ export const updateBookingStatus = async (req, res, next) => {
 |--------------------------------------------------------------------------
 */
 
-export const cancelBooking = async (req, res, next) => {
-  try {
-    const booking = await Booking.findById(req.params.id);
+export const cancelBooking = async (
+req,
+res,
+next
+)=>{
 
-    if (!booking) {
-      return res.status(404).json({
-        success: false,
 
-        message: "Booking not found",
-      });
-    }
+try{
 
-    /*
-        |--------------------------------------------------------------------------
-        | Prevent duplicate cancellation
-        |--------------------------------------------------------------------------
-        */
 
-    if (booking.bookingStatus === "cancelled") {
-      return res.status(400).json({
-        success: false,
+const booking =
+await Booking.findById(
+req.params.id
+);
 
-        message: "Booking has already been cancelled",
-      });
-    }
 
-    /*
-        |--------------------------------------------------------------------------
-        | Prevent cancelling completed bookings
-        |--------------------------------------------------------------------------
-        */
 
-    if (booking.bookingStatus === "completed") {
-      return res.status(400).json({
-        success: false,
+if(!booking){
 
-        message: "Completed bookings cannot be cancelled",
-      });
-    }
+return res.status(404).json({
 
-    booking.bookingStatus = "cancelled";
+success:false,
 
-    booking.status = "cancelled";
+message:"Booking not found"
 
-    if (booking.paymentStatus !== "paid") {
-      booking.paymentStatus = "cancelled";
-    }
+});
 
-    await releaseSlots(booking.tour, booking.numberOfGuests);
-    booking.cancelledAt = new Date();
+}
 
-    await booking.save();
 
-    return res.status(200).json({
-      success: true,
 
-      message: "Booking cancelled successfully",
 
-      booking,
-    });
-  } catch (error) {
-    next(error);
-  }
+if(
+booking.bookingStatus==="cancelled"
+){
+
+return res.status(400).json({
+
+success:false,
+
+message:
+"Booking has already been cancelled"
+
+});
+
+}
+
+
+
+
+if(
+booking.bookingStatus==="completed"
+){
+
+return res.status(400).json({
+
+success:false,
+
+message:
+"Completed bookings cannot be cancelled"
+
+});
+
+}
+
+
+
+
+booking.bookingStatus =
+"cancelled";
+
+
+booking.status =
+"cancelled";
+
+
+
+if(
+booking.paymentStatus!=="paid"
+){
+
+booking.paymentStatus =
+"cancelled";
+
+}
+
+
+
+
+await releaseSlots(
+booking.tour,
+booking.numberOfGuests
+);
+
+
+
+booking.cancelledAt =
+new Date();
+
+
+
+await booking.save();
+
+
+
+return res.status(200).json({
+
+success:true,
+
+message:
+"Booking cancelled successfully",
+
+booking
+
+});
+
+
+
+}
+
+catch(error){
+
+next(error);
+
+}
+
 };
