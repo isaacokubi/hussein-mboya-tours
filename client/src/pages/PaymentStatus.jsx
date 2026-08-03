@@ -124,7 +124,7 @@ rounded-lg
     );
   }
 
-  const status = booking.paymentStatus?.toLowerCase();
+  const status = (typeof booking.paymentStatus === "object" ? (booking.paymentStatus.paymentStatus || booking.paymentStatus.status || "pending") : booking.paymentStatus || "pending").toLowerCase();
 
   return (
     <div
@@ -315,7 +315,7 @@ text-yellow-700
 font-bold
 "
               >
-                {booking.paymentStatus || "pending"}
+                {typeof booking.paymentStatus === "object" ? (booking.paymentStatus.paymentStatus || booking.paymentStatus.status || "pending") : booking.paymentStatus || "pending"}
               </p>
             </div>
           </>

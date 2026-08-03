@@ -84,7 +84,7 @@ export default function MyBookings() {
   );
 
   const paidTrips = bookings.filter((booking) =>
-    ["paid", "completed"].includes(booking.paymentStatus?.toLowerCase()),
+    ["paid", "completed"].includes((typeof booking.paymentStatus === "object" ? (booking.paymentStatus.paymentStatus || booking.paymentStatus.status || "pending") : booking.paymentStatus || "pending").toLowerCase()),
   );
 
   return (
@@ -272,7 +272,7 @@ export default function MyBookings() {
                     />
 
                     <StatusBadge
-                      value={booking.paymentStatus || "pending"}
+                      value={typeof booking.paymentStatus === "object" ? booking.paymentStatus.paymentStatus : booking.paymentStatus || "pending"}
                       payment
                     />
                   </div>

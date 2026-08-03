@@ -424,7 +424,7 @@ export default function TourManagerDashboard() {
                   rounded-full
                 "
                 >
-                  {booking.paymentStatus || booking.payment}
+                  {typeof booking.paymentStatus === "object" ? (booking.paymentStatus.paymentStatus || booking.paymentStatus.status || "pending") : booking.paymentStatus || booking.payment || "pending"}
                 </span>
               </div>
             ))

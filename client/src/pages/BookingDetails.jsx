@@ -243,8 +243,18 @@ export default function BookingDetails() {
               {
                 booking.status ||
                 booking.bookingStatus ||
-                booking.paymentStatus ||
-                "Pending"
+                (
+                    typeof booking.paymentStatus === "object"
+                    ?
+                    (
+                        booking.paymentStatus.paymentStatus ||
+                        booking.paymentStatus.status ||
+                        "pending"
+                    )
+                    :
+                    booking.paymentStatus ||
+                    "Pending"
+                )
               }
 
             </span>
@@ -261,6 +271,14 @@ export default function BookingDetails() {
             <strong className="ml-2">
 
               {
+                typeof booking.paymentStatus === "object"
+                ?
+                (
+                    booking.paymentStatus.paymentStatus ||
+                    booking.paymentStatus.status ||
+                    "pending"
+                )
+                :
                 booking.paymentStatus ||
                 "Pending"
               }
