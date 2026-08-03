@@ -92,7 +92,7 @@ text-green-600
 mt-2
 ">
 
-● {system.status}
+● {typeof system.status === "object" ? (system.status.status || "unknown") : system.status || "unknown"}
 
 </p>
 

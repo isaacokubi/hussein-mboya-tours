@@ -129,7 +129,18 @@ export default function BookingTable() {
                       booking.status
                     )}`}
                   >
-                    {booking.status}
+                    {
+    typeof booking.status === "object"
+    ?
+    (
+        booking.status.status ||
+        booking.status.bookingStatus ||
+        "pending"
+    )
+    :
+    booking.status ||
+    "pending"
+}
                   </span>
                 </td>
               </tr>

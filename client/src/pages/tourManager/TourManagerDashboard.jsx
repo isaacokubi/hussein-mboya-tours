@@ -404,11 +404,22 @@ export default function TourManagerDashboard() {
                 "
               >
                 <h3 className="font-bold">
-                  {booking.customer?.name || booking.customer}
+                  
+    {
+        booking.customer?.name ||
+        booking.customer?.email ||
+        "Guest"
+    }
+    
                 </h3>
 
                 <p className="text-gray-500">
-                  {booking.tour?.title || booking.tour}
+                  
+    {
+        booking.tour?.title ||
+        "Tour Package"
+    }
+    
                 </p>
 
                 <p>Guests: {booking.guests || 0}</p>

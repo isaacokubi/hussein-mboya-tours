@@ -1,116 +1,149 @@
 export default function BookingOverview({
-  bookingStatus = []
+    bookingStatus = []
 }) {
 
 
-return (
+    const getStatus = (item) => {
 
-<section
-className="
-bg-white
-rounded-xl
-shadow
-p-6
-"
->
+        const bookingStatus =
+            item?._id?.bookingStatus;
 
 
-<h2
-className="
-text-xl
-font-bold
-mb-5
-"
->
-Booking Overview
-</h2>
+        const paymentStatus =
+            item?._id?.paymentStatus;
 
 
+        const payment =
+            typeof paymentStatus === "object"
 
-<div
-className="
-grid
-md:grid-cols-3
-gap-4
-"
->
+            ?
 
+            (
+                paymentStatus.paymentStatus ||
+                paymentStatus.status ||
+                "pending"
+            )
 
-{
-bookingStatus.map(
-(item,index)=>(
+            :
 
-
-<div
-key={index}
-className="
-border
-rounded-lg
-p-4
-"
->
+            paymentStatus || "pending";
 
 
-<h3
-className="
-font-bold
-capitalize
-"
->
+        return {
+            bookingStatus:
+                bookingStatus || "Unknown",
 
-{
-item?._id?.bookingStatus ||
-item?._id?.paymentStatus ||
-"Unknown"
+            paymentStatus:
+                payment
+        };
 
-}
-
-</h3>
+    };
 
 
 
-<p>
+    return (
 
-Payment:
+        <section
+            className="
+            bg-white
+            rounded-xl
+            shadow
+            p-6
+            "
+        >
 
-{" "}
-
-{
-item?._id?.paymentStatus ||
-"Not available"
-
-}
-
-</p>
-
-
-
-<h2
-className="
-text-2xl
-font-bold
-mt-3
-"
->
-
-{item.count}
-
-</h2>
+            <h2
+                className="
+                text-xl
+                font-bold
+                mb-5
+                "
+            >
+                Booking Overview
+            </h2>
 
 
-</div>
+            <div
+                className="
+                grid
+                md:grid-cols-3
+                gap-4
+                "
+            >
+
+            {
+                bookingStatus.map(
+                    (item,index)=>{
 
 
-))
-
-}
-
-
-</div>
+                        const status =
+                            getStatus(item);
 
 
-</section>
+                        return (
 
-);
+                            <div
+                                key={index}
+                                className="
+                                border
+                                rounded-lg
+                                p-4
+                                "
+                            >
+
+                                <h3
+                                    className="
+                                    font-bold
+                                    capitalize
+                                    "
+                                >
+                                    {
+                                        status.bookingStatus
+                                    }
+                                </h3>
+
+
+                                <p>
+
+                                    Payment:
+
+                                    {" "}
+
+                                    {
+                                        status.paymentStatus
+                                    }
+
+                                </p>
+
+
+                                <h2
+                                    className="
+                                    text-2xl
+                                    font-bold
+                                    mt-3
+                                    "
+                                >
+                                    {
+                                        item.count || 0
+                                    }
+                                </h2>
+
+
+                            </div>
+
+                        );
+
+
+                    }
+
+                )
+            }
+
+            </div>
+
+
+        </section>
+
+    );
 
 }

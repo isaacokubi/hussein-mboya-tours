@@ -127,7 +127,7 @@ export default function UpcomingTours() {
                   }
                 `}
               >
-                {tour.status}
+                {typeof tour.status === "object" ? (tour.status.status || "upcoming") : tour.status || "upcoming"}
               </span>
             </div>
           ))}

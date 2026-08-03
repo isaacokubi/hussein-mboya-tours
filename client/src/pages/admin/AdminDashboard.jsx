@@ -156,7 +156,7 @@ export default function AdminDashboard() {
 
         <StatCard
           title="Paid Payments"
-          value={payments.paid}
+          value={paymentStats.completed}
           icon={<CreditCard />}
         />
       </div>
@@ -235,11 +235,11 @@ export default function AdminDashboard() {
             gap-4
           "
         >
-          <PaymentBox title="Completed" value={payments.paid} />
+          <PaymentBox title="Completed" value={paymentStats.completed} />
 
-          <PaymentBox title="Pending" value={payments.pending} />
+          <PaymentBox title="Pending" value={paymentStats.pending} />
 
-          <PaymentBox title="Failed" value={payments.failed} />
+          <PaymentBox title="Failed" value={paymentStats.failed} />
         </div>
       </section>
       {/* BOOKING STATUS */}
