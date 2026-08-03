@@ -3,10 +3,39 @@ export default function RecentBookings({
 }) {
 
 
-  // Ensure bookings is always an array
   const bookingList = Array.isArray(bookings)
     ? bookings
     : [];
+
+
+
+  const getPaymentStatus = (paymentStatus) => {
+
+    if (!paymentStatus) {
+      return "pending";
+    }
+
+
+    if (typeof paymentStatus === "string") {
+      return paymentStatus;
+    }
+
+
+    if (typeof paymentStatus === "object") {
+
+      return (
+        paymentStatus.paymentStatus ||
+        paymentStatus.status ||
+        "pending"
+      );
+
+    }
+
+
+    return "pending";
+
+  };
+
 
 
   return (
@@ -33,7 +62,9 @@ export default function RecentBookings({
 
 
       {
-        bookingList.length === 0 ?
+        bookingList.length === 0
+
+        ?
 
         (
 
@@ -57,112 +88,116 @@ export default function RecentBookings({
             "
           >
 
-            {
-              bookingList.map(
-                (booking) => (
+          {
+            bookingList.map(
 
-                  <div
-                    key={booking?._id}
-                    className="
-                      border
-                      rounded-lg
-                      p-4
-                      flex
-                      justify-between
-                      items-center
-                    "
-                  >
+              (booking)=>(
 
-
-                    <div>
+                <div
+                  key={booking?._id}
+                  className="
+                    border
+                    rounded-lg
+                    p-4
+                    flex
+                    justify-between
+                    items-center
+                  "
+                >
 
 
-                      <h3
-                        className="
-                          font-semibold
-                        "
-                      >
-
-                        {
-                          booking?.bookingNumber ||
-                          "Booking"
-                        }
-
-                      </h3>
+                  <div>
 
 
-
-                      <p
-                        className="
-                          text-gray-500
-                        "
-                      >
-
-                        {
-                          booking?.customer?.name ||
-                          booking?.fullName ||
-                          "Customer"
-                        }
-
-                      </p>
-
-
-                    </div>
-
-
-
-
-                    <div
+                    <h3
                       className="
-                        text-right
+                        font-semibold
                       "
                     >
 
+                    {
+                      booking?.bookingNumber ||
+                      "Booking"
+                    }
 
-                      <p
-                        className="
-                          font-bold
-                        "
-                      >
-
-                        Ksh {
-
-                          Number(
-                            booking?.totalAmount ||
-                            booking?.amount ||
-                            0
-                          )
-                          .toLocaleString()
-
-                        }
-
-                      </p>
+                    </h3>
 
 
 
-                      <span
-                        className="
-                          text-sm
-                          capitalize
-                        "
-                      >
+                    <p
+                      className="
+                        text-gray-500
+                      "
+                    >
 
-                        {
-                          booking?.paymentStatus ||
-                          "pending"
-                        }
+                    {
+                      booking?.customer?.name ||
+                      booking?.fullName ||
+                      "Customer"
+                    }
 
-                      </span>
-
-
-                    </div>
+                    </p>
 
 
                   </div>
 
-                )
+
+
+
+                  <div
+                    className="
+                      text-right
+                    "
+                  >
+
+
+                    <p
+                      className="
+                        font-bold
+                      "
+                    >
+
+                    Ksh {
+
+                      Number(
+                        booking?.totalAmount ||
+                        booking?.amount ||
+                        0
+                      )
+                      .toLocaleString()
+
+                    }
+
+                    </p>
+
+
+
+
+                    <span
+                      className="
+                        text-sm
+                        capitalize
+                      "
+                    >
+
+                    {
+                      getPaymentStatus(
+                        booking?.paymentStatus
+                      )
+                    }
+
+                    </span>
+
+
+                  </div>
+
+
+                </div>
+
               )
-            }
+
+            )
+          }
 
 
           </div>
