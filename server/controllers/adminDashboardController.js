@@ -23,16 +23,20 @@ export const getDashboard = async (req, res) => {
             await User.countDocuments();
 
 
+
         const tours =
             await Tour.countDocuments();
+
 
 
         const bookings =
             await Booking.countDocuments();
 
 
+
         const destinations =
             await Destination.countDocuments();
+
 
 
 
@@ -48,59 +52,57 @@ export const getDashboard = async (req, res) => {
         let revenue = 0;
 
 
-        if (Payment) {
+
+        const paymentRevenue =
+            await Payment.aggregate([
 
 
-            const paymentRevenue =
-                await Payment.aggregate([
+                {
+                    $match: {
 
-                    {
-                        $match: {
+                        status: {
 
-                            status: {
-
-                                $in: [
-
-                                    "completed",
-                                    "paid",
-                                    "success"
-
-                                ]
-
-                            }
-
-                        }
-
-                    },
-
-
-                    {
-
-                        $group: {
-
-                            _id: null,
-
-
-                            total: {
-
-                                $sum: "$amount"
-
-                            }
+                            $in: [
+                                "completed",
+                                "paid",
+                                "success"
+                            ]
 
                         }
 
                     }
 
-
-                ]);
-
+                },
 
 
-            revenue =
-                paymentRevenue[0]?.total || 0;
+                {
+                    $group: {
+
+                        _id:null,
 
 
-        }
+                        total:{
+
+                            $sum:"$amount"
+
+                        }
+
+                    }
+
+                }
+
+
+            ]);
+
+
+
+        revenue =
+            paymentRevenue[0]?.total || 0;
+
+
+
+
+
 
 
 
@@ -111,7 +113,7 @@ export const getDashboard = async (req, res) => {
         */
 
 
-        if (revenue === 0) {
+        if(revenue === 0){
 
 
             const bookingRevenue =
@@ -120,9 +122,9 @@ export const getDashboard = async (req, res) => {
 
                     {
 
-                        $match: {
+                        $match:{
 
-                            paymentStatus: "paid"
+                            paymentStatus:"paid"
 
                         }
 
@@ -131,14 +133,19 @@ export const getDashboard = async (req, res) => {
 
                     {
 
-                        $group: {
+                        $group:{
 
-                            _id: null,
+                            _id:null,
 
 
-                            total: {
+                            total:{
 
-                                $sum: "$totalAmount"
+                                $sum:{
+                                    $ifNull:[
+                                        "$amount",
+                                        "$totalAmount"
+                                    ]
+                                }
 
                             }
 
@@ -161,6 +168,10 @@ export const getDashboard = async (req, res) => {
 
 
 
+
+
+
+
         /*
         |--------------------------------------------------------------------------
         | PAYMENT STATUS
@@ -175,16 +186,12 @@ export const getDashboard = async (req, res) => {
 
                 await Payment.countDocuments({
 
-                    status: {
-
-                        $in: [
-
+                    status:{
+                        $in:[
                             "paid",
                             "completed",
                             "success"
-
                         ]
-
                     }
 
                 }),
@@ -195,7 +202,7 @@ export const getDashboard = async (req, res) => {
 
                 await Payment.countDocuments({
 
-                    status: "pending"
+                    status:"pending"
 
                 }),
 
@@ -205,12 +212,14 @@ export const getDashboard = async (req, res) => {
 
                 await Payment.countDocuments({
 
-                    status: "failed"
+                    status:"failed"
 
                 })
 
 
         };
+
+
 
 
 
@@ -232,14 +241,15 @@ export const getDashboard = async (req, res) => {
 
                 {
 
-                    $group: {
+                    $group:{
 
 
-                        _id: {
+                        _id:{
 
 
                             bookingStatus:
                                 "$bookingStatus",
+
 
 
                             paymentStatus:
@@ -249,9 +259,9 @@ export const getDashboard = async (req, res) => {
                         },
 
 
-                        count: {
+                        count:{
 
-                            $sum: 1
+                            $sum:1
 
                         }
 
@@ -285,58 +295,68 @@ export const getDashboard = async (req, res) => {
 
                 {
 
-                    $group: {
+
+                    $group:{
 
 
-                        _id: "$tour",
+                        _id:"$tour",
 
 
-                        totalBookings: {
 
-                            $sum: 1
+                        totalBookings:{
+
+                            $sum:1
 
                         },
 
 
-                        revenue: {
 
-                            $sum: "$amount"
+                        revenue:{
+
+
+                            $sum:{
+
+                                $ifNull:[
+
+                                    "$amount",
+
+                                    "$totalAmount"
+
+                                ]
+
+                            }
+
 
                         }
 
 
                     }
 
+
                 },
 
 
 
                 {
 
-                    $lookup: {
+
+                    $lookup:{
 
 
-                        from: "tours",
+                        from:"tours",
 
 
-                        localField: "_id",
+                        localField:"_id",
 
 
-                        foreignField: "_id",
+                        foreignField:"_id",
 
 
-                        as: "tour"
+                        as:"tour"
 
 
                     }
 
-                },
-
-
-
-                {
-
-                    $unwind: "$tour"
 
                 },
 
@@ -344,20 +364,32 @@ export const getDashboard = async (req, res) => {
 
                 {
 
-                    $project: {
+
+                    $unwind:"$tour"
+
+
+                },
+
+
+
+                {
+
+
+                    $project:{
 
 
                         title:
                             "$tour.title",
 
 
-                        totalBookings: 1,
+                        totalBookings:1,
 
 
-                        revenue: 1
+                        revenue:1
 
 
                     }
+
 
                 },
 
@@ -365,13 +397,15 @@ export const getDashboard = async (req, res) => {
 
                 {
 
-                    $sort: {
+
+                    $sort:{
 
 
-                        totalBookings: -1
+                        totalBookings:-1
 
 
                     }
+
 
                 },
 
@@ -379,13 +413,14 @@ export const getDashboard = async (req, res) => {
 
                 {
 
-                    $limit: 5
+
+                    $limit:5
+
 
                 }
 
 
             ]);
-
 
 
 
@@ -427,14 +462,64 @@ export const getDashboard = async (req, res) => {
 
                 .sort({
 
-                    createdAt: -1
+                    createdAt:-1
 
                 })
 
 
                 .limit(10)
 
+
                 .lean();
+
+
+
+
+
+
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | NORMALIZE PAYMENT STATUS
+        |--------------------------------------------------------------------------
+        */
+
+
+        const normalizedRecentBookings =
+
+            recentBookings.map(
+                
+                (booking)=>({
+
+                    ...booking,
+
+
+                    paymentStatus:
+
+                        typeof booking.paymentStatus === "object"
+
+                        ?
+
+                        (
+
+                            booking.paymentStatus.paymentStatus ||
+
+                            booking.paymentStatus.status ||
+
+                            "pending"
+
+                        )
+
+                        :
+
+                        booking.paymentStatus || "pending"
+
+
+                })
+
+            );
 
 
 
@@ -455,9 +540,11 @@ export const getDashboard = async (req, res) => {
 
             await User.countDocuments({
 
-                role: "customer"
+                role:"customer"
 
             });
+
+
 
 
 
@@ -467,7 +554,7 @@ export const getDashboard = async (req, res) => {
 
             await User.find({
 
-                role: "agent"
+                role:"agent"
 
             })
 
@@ -481,13 +568,14 @@ export const getDashboard = async (req, res) => {
 
 
 
+
         const guides =
 
             await User.find({
 
-                role: {
+                role:{
 
-                    $in: [
+                    $in:[
 
                         "tour_guide",
                         "tourguide",
@@ -510,6 +598,7 @@ export const getDashboard = async (req, res) => {
 
 
 
+
         /*
         |--------------------------------------------------------------------------
         | NOTIFICATIONS
@@ -523,7 +612,7 @@ export const getDashboard = async (req, res) => {
 
                 .sort({
 
-                    createdAt: -1
+                    createdAt:-1
 
                 })
 
@@ -547,10 +636,10 @@ export const getDashboard = async (req, res) => {
         res.status(200).json({
 
 
-            success: true,
+            success:true,
 
 
-            data: {
+            data:{
 
 
                 users,
@@ -565,11 +654,29 @@ export const getDashboard = async (req, res) => {
                 destinations,
 
 
+
                 revenue,
 
 
 
-                payments,
+
+                paymentStats:{
+
+
+                    completed:
+                        payments.paid,
+
+
+                    pending:
+                        payments.pending,
+
+
+                    failed:
+                        payments.failed
+
+
+                },
+
 
 
 
@@ -577,11 +684,15 @@ export const getDashboard = async (req, res) => {
 
 
 
+
                 popularTours,
 
 
 
-                recentBookings,
+
+                recentBookings:
+                    normalizedRecentBookings,
+
 
 
 
@@ -589,22 +700,17 @@ export const getDashboard = async (req, res) => {
 
 
 
-                agents,
 
-
-
-                guides,
-
-
-
-                userStats: {
+                userStats:{
 
 
                     customers,
 
 
+
                     agents:
                         agents.length,
+
 
 
                     guides:
@@ -612,6 +718,7 @@ export const getDashboard = async (req, res) => {
 
 
                 }
+
 
 
 
@@ -623,10 +730,11 @@ export const getDashboard = async (req, res) => {
 
 
 
-
     }
 
-    catch(error) {
+
+
+    catch(error){
 
 
         console.error(
@@ -635,12 +743,15 @@ export const getDashboard = async (req, res) => {
         );
 
 
+
         res.status(500).json({
+
 
             success:false,
 
-            message:
-                error.message
+
+            message:error.message
+
 
         });
 
