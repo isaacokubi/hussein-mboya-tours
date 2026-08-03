@@ -81,14 +81,6 @@ const paymentStats = stats.paymentStats || {
 
     revenue = 0,
 
-    payments = {
-      paid: 0,
-
-      pending: 0,
-
-      failed: 0,
-    },
-
     monthlyRevenue = [],
 
     bookingStatus = [],
@@ -289,7 +281,21 @@ const paymentStats = stats.paymentStats || {
                       capitalize
                     "
               >
-                {item?._id?.bookingStatus || item?._id || "Unknown"}
+                {
+  item?._id?.bookingStatus ||
+  (
+    typeof item?._id?.paymentStatus === "object"
+    ?
+    (
+      item._id.paymentStatus.paymentStatus ||
+      item._id.paymentStatus.status ||
+      "pending"
+    )
+    :
+    item?._id?.paymentStatus ||
+    "Unknown"
+  )
+}
               </h3>
 
               <p>{item.count || 0} bookings</p>
