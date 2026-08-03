@@ -1,36 +1,43 @@
 export default function PaymentAnalytics({
 
-payments={}
+    payments = {
+        completed:0,
+        pending:0,
+        failed:0
+    }
 
-}){
+}) {
 
 
 return (
 
-<section className="
+<section
+className="
 bg-white
 rounded-xl
 shadow
 p-6
-">
+"
+>
 
 
-<h2 className="
+<h2
+className="
 font-bold
 text-xl
 mb-5
-">
-
+"
+>
 Payments
-
 </h2>
 
 
 
-
-<div className="
+<div
+className="
 space-y-4
-">
+"
+>
 
 
 <Item
@@ -74,10 +81,10 @@ payments.failed
 
 </section>
 
-
 );
 
 }
+
 
 
 
@@ -93,12 +100,14 @@ value
 
 return (
 
-<div className="
+<div
+className="
 flex
 justify-between
 border-b
 pb-2
-">
+"
+>
 
 
 <span>
@@ -112,14 +121,14 @@ pb-2
 <strong>
 
 {
-value || 0
+value ?? 0
 }
 
 </strong>
 
 
-</div>
 
+</div>
 
 );
 

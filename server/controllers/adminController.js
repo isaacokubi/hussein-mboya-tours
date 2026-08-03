@@ -4,6 +4,7 @@ import User from "../models/User.js";
 import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
 
+
 /*
 |--------------------------------------------------------------------------
 | ADMIN DASHBOARD STATISTICS
@@ -11,56 +12,109 @@ import Tour from "../models/Tour.js";
 */
 
 export const getDashboardStats = async (req, res, next) => {
+
   try {
+
+
     /*
     |--------------------------------------------------------------------------
-    | BASIC COUNTS (RUN IN PARALLEL)
+    | RUN ALL ANALYTICS IN PARALLEL
     |--------------------------------------------------------------------------
     */
 
     const [
+
       users,
+
       bookings,
+
       tours,
+
       revenueData,
+
       bookingStatus,
+
       monthlyRevenue,
+
       popularTours,
+
       pendingBookings,
+
       confirmedBookings,
+
       completedBookings,
+
       cancelledBookings,
+
+      paymentStatsData,
+
     ] = await Promise.all([
-      User.countDocuments(),
 
-      Booking.countDocuments(),
 
-      Tour.countDocuments(),
 
       /*
       |--------------------------------------------------------------------------
-      | REVENUE
+      | USERS
+      |--------------------------------------------------------------------------
+      */
+
+      User.countDocuments(),
+
+
+
+      /*
+      |--------------------------------------------------------------------------
+      | BOOKINGS
+      |--------------------------------------------------------------------------
+      */
+
+      Booking.countDocuments(),
+
+
+
+      /*
+      |--------------------------------------------------------------------------
+      | TOURS
+      |--------------------------------------------------------------------------
+      */
+
+      Tour.countDocuments(),
+
+
+
+      /*
+      |--------------------------------------------------------------------------
+      | TOTAL REVENUE
       |--------------------------------------------------------------------------
       */
 
       Booking.aggregate([
+
         {
-          $match: {
-            paymentStatus: "paid",
-            bookingStatus: {
-              $ne: "cancelled",
-            },
-          },
+          $match:{
+            paymentStatus:"paid",
+
+            bookingStatus:{
+              $ne:"cancelled"
+            }
+          }
         },
+
+
         {
-          $group: {
-            _id: null,
-            total: {
-              $sum: "$amount",
-            },
-          },
-        },
+          $group:{
+            _id:null,
+
+            total:{
+              $sum:"$amount"
+            }
+          }
+        }
+
       ]),
+
+
+
 
       /*
       |--------------------------------------------------------------------------
@@ -69,23 +123,38 @@ export const getDashboardStats = async (req, res, next) => {
       */
 
       Booking.aggregate([
+
         {
-          $group: {
-            _id: {
-              bookingStatus: "$bookingStatus",
-              paymentStatus: "$paymentStatus",
+          $group:{
+
+            _id:{
+
+              bookingStatus:"$bookingStatus",
+
+              paymentStatus:"$paymentStatus"
+
             },
-            count: {
-              $sum: 1,
-            },
-          },
+
+
+            count:{
+              $sum:1
+            }
+
+          }
+
         },
+
+
         {
-          $sort: {
-            count: -1,
-          },
-        },
+          $sort:{
+            count:-1
+          }
+        }
+
       ]),
+
+
+
 
       /*
       |--------------------------------------------------------------------------
@@ -94,36 +163,60 @@ export const getDashboardStats = async (req, res, next) => {
       */
 
       Booking.aggregate([
+
         {
-          $match: {
-            paymentStatus: "paid",
-            bookingStatus: {
-              $ne: "cancelled",
-            },
-          },
+          $match:{
+
+            paymentStatus:"paid",
+
+            bookingStatus:{
+              $ne:"cancelled"
+            }
+
+          }
         },
+
+
         {
-          $group: {
-            _id: {
-              year: {
-                $year: "$createdAt",
+          $group:{
+
+            _id:{
+
+              year:{
+                $year:"$createdAt"
               },
-              month: {
-                $month: "$createdAt",
-              },
+
+
+              month:{
+                $month:"$createdAt"
+              }
+
             },
-            total: {
-              $sum: "$amount",
-            },
-          },
+
+
+            total:{
+              $sum:"$amount"
+            }
+
+          }
         },
+
+
         {
-          $sort: {
-            "_id.year": 1,
-            "_id.month": 1,
-          },
-        },
+          $sort:{
+
+            "_id.year":1,
+
+            "_id.month":1
+
+          }
+
+        }
+
       ]),
+
+
+
 
       /*
       |--------------------------------------------------------------------------
@@ -132,63 +225,186 @@ export const getDashboardStats = async (req, res, next) => {
       */
 
       Booking.aggregate([
+
+
         {
-          $group: {
-            _id: "$tour",
-            totalBookings: {
-              $sum: 1,
-            },
-          },
+          $group:{
+
+            _id:"$tour",
+
+            totalBookings:{
+              $sum:1
+            }
+
+          }
+
         },
+
+
         {
-          $sort: {
-            totalBookings: -1,
-          },
+          $sort:{
+            totalBookings:-1
+          }
         },
+
+
         {
-          $limit: 5,
+          $limit:5
         },
+
+
         {
-          $lookup: {
-            from: "tours",
-            localField: "_id",
-            foreignField: "_id",
-            as: "tour",
-          },
+          $lookup:{
+
+            from:"tours",
+
+            localField:"_id",
+
+            foreignField:"_id",
+
+            as:"tour"
+
+          }
+
         },
+
+
         {
-          $unwind: {
-            path: "$tour",
-            preserveNullAndEmptyArrays: true,
-          },
+          $unwind:{
+
+            path:"$tour",
+
+            preserveNullAndEmptyArrays:true
+
+          }
+
         },
+
+
         {
-          $project: {
-            _id: 1,
-            title: "$tour.title",
-            price: "$tour.price",
-            destination: "$tour.destination",
-            totalBookings: 1,
-          },
-        },
+          $project:{
+
+            _id:1,
+
+            title:"$tour.title",
+
+            price:"$tour.price",
+
+            destination:"$tour.destination",
+
+            totalBookings:1
+
+          }
+
+        }
+
+
       ]),
 
-      Booking.countDocuments({
-        bookingStatus: "pending",
-      }),
+
+
+
+
+      /*
+      |--------------------------------------------------------------------------
+      | BOOKING COUNTS
+      |--------------------------------------------------------------------------
+      */
 
       Booking.countDocuments({
-        bookingStatus: "confirmed",
+        bookingStatus:"pending"
       }),
 
-      Booking.countDocuments({
-        bookingStatus: "completed",
-      }),
+
 
       Booking.countDocuments({
-        bookingStatus: "cancelled",
+        bookingStatus:"confirmed"
       }),
+
+
+
+      Booking.countDocuments({
+        bookingStatus:"completed"
+      }),
+
+
+
+      Booking.countDocuments({
+        bookingStatus:"cancelled"
+      }),
+
+
+
+
+
+      /*
+      |--------------------------------------------------------------------------
+      | PAYMENT ANALYTICS
+      |--------------------------------------------------------------------------
+      */
+
+      Booking.aggregate([
+
+        {
+          $group:{
+
+            _id:"$paymentStatus",
+
+            count:{
+              $sum:1
+            }
+
+          }
+
+        }
+
+      ])
+
+
+
     ]);
+
+
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | FORMAT PAYMENT ANALYTICS
+    |--------------------------------------------------------------------------
+    */
+
+    const paymentStats = {
+
+
+      completed:
+
+        paymentStatsData.find(
+          item => item._id === "paid"
+        )?.count || 0,
+
+
+
+      pending:
+
+        paymentStatsData.find(
+          item => item._id === "pending"
+        )?.count || 0,
+
+
+
+      failed:
+
+        paymentStatsData.find(
+          item => item._id === "failed"
+        )?.count || 0
+
+
+    };
+
+
+
+
 
     /*
     |--------------------------------------------------------------------------
@@ -196,7 +412,12 @@ export const getDashboardStats = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    const revenue = revenueData[0]?.total || 0;
+    const revenue =
+      revenueData[0]?.total || 0;
+
+
+
+
 
     /*
     |--------------------------------------------------------------------------
@@ -206,6 +427,10 @@ export const getDashboardStats = async (req, res, next) => {
 
     const vehicleStats = [];
 
+
+
+
+
     /*
     |--------------------------------------------------------------------------
     | RESPONSE
@@ -213,31 +438,75 @@ export const getDashboardStats = async (req, res, next) => {
     */
 
     res.status(200).json({
-      success: true,
 
-      data: {
+      success:true,
+
+
+      data:{
+
+
         users,
+
+
         bookings,
+
+
         tours,
+
+
         revenue,
+
+
 
         bookingStatus,
 
+
+
         monthlyRevenue,
+
+
 
         popularTours,
 
+
+
+        paymentStats,
+
+
+
         vehicleStats,
 
-        summary: {
+
+
+        summary:{
+
+
           pendingBookings,
+
+
           confirmedBookings,
+
+
           completedBookings,
-          cancelledBookings,
-        },
-      },
+
+
+          cancelledBookings
+
+
+        }
+
+
+      }
+
+
     });
-  } catch (error) {
+
+
+
+  } catch(error){
+
     next(error);
+
   }
+
 };

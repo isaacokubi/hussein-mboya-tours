@@ -14,7 +14,8 @@ import QuickActions from "./QuickActions";
 import SystemHealth from "./SystemHealth";
 
 
-export default function AdminDashboard(){
+export default function AdminDashboard() {
+
 
     const {
         data,
@@ -56,6 +57,8 @@ export default function AdminDashboard(){
 
             <div className="p-8 text-red-600">
 
+                Failed to load dashboard:
+                {" "}
                 {error?.message}
 
             </div>
@@ -67,7 +70,7 @@ export default function AdminDashboard(){
 
 
     const dashboard =
-        data?.data || data || {};
+        data?.data || {};
 
 
 
@@ -109,19 +112,26 @@ export default function AdminDashboard(){
                 >
 
                     <RevenueChart
+
                         revenue={
                             dashboard.revenue || 0
                         }
+
                     />
 
                 </div>
 
 
 
+
                 <PaymentAnalytics
 
                     payments={
-                        dashboard.paymentStats || []
+                        dashboard.paymentStats || {
+                            completed:0,
+                            pending:0,
+                            failed:0
+                        }
                     }
 
                 />
@@ -153,7 +163,6 @@ export default function AdminDashboard(){
             >
 
 
-
                 <PopularTours
 
                     tours={
@@ -178,7 +187,6 @@ export default function AdminDashboard(){
 
 
 
-
             <UserAnalytics
 
                 users={
@@ -190,6 +198,7 @@ export default function AdminDashboard(){
 
 
             <QuickActions />
+
 
 
             <SystemHealth />
