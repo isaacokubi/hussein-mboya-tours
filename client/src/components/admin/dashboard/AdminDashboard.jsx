@@ -71,18 +71,20 @@ export default function AdminDashboard(){
 
 
 
-
     return (
 
-        <div className="
-            p-6
-            space-y-8
-            bg-gray-50
-            min-h-screen
-        ">
+        <div
+            className="
+                p-6
+                space-y-8
+                bg-gray-50
+                min-h-screen
+            "
+        >
 
 
             <DashboardHeader />
+
 
 
             <StatsGrid
@@ -91,17 +93,25 @@ export default function AdminDashboard(){
 
 
 
-            <div className="
-                grid
-                xl:grid-cols-3
-                gap-6
-            ">
+            <div
+                className="
+                    grid
+                    xl:grid-cols-3
+                    gap-6
+                "
+            >
 
 
-                <div className="xl:col-span-2">
+                <div
+                    className="
+                        xl:col-span-2
+                    "
+                >
 
                     <RevenueChart
-                        revenue={dashboard.revenue}
+                        revenue={
+                            dashboard.revenue || 0
+                        }
                     />
 
                 </div>
@@ -109,9 +119,11 @@ export default function AdminDashboard(){
 
 
                 <PaymentAnalytics
+
                     payments={
-                        dashboard.paymentStats
+                        dashboard.paymentStats || []
                     }
+
                 />
 
 
@@ -121,25 +133,31 @@ export default function AdminDashboard(){
 
 
             <BookingOverview
+
                 bookingStatus={
-                    dashboard.bookingStatus
+                    dashboard.bookingStatus || []
                 }
+
             />
 
 
 
 
-            <div className="
-                grid
-                lg:grid-cols-2
-                gap-6
-            ">
+
+            <div
+                className="
+                    grid
+                    lg:grid-cols-2
+                    gap-6
+                "
+            >
+
 
 
                 <PopularTours
 
                     tours={
-                        dashboard.popularTours
+                        dashboard.popularTours || []
                     }
 
                 />
@@ -149,7 +167,7 @@ export default function AdminDashboard(){
                 <RecentBookings
 
                     bookings={
-                        dashboard.recentBookings
+                        dashboard.recentBookings || []
                     }
 
                 />
@@ -160,10 +178,11 @@ export default function AdminDashboard(){
 
 
 
+
             <UserAnalytics
 
                 users={
-                    dashboard.userStats
+                    dashboard.userStats || []
                 }
 
             />

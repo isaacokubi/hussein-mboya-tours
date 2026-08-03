@@ -1,102 +1,139 @@
 export default function BookingOverview({
-bookingStatus=[]
-}){
+  bookingStatus = []
+}) {
+
+  return (
+
+    <section
+      className="
+        bg-white
+        rounded-xl
+        shadow
+        p-6
+      "
+    >
+
+      <h2
+        className="
+          text-xl
+          font-bold
+          mb-5
+        "
+      >
+        Booking Overview
+      </h2>
 
 
-return (
+      <div
+        className="
+          grid
+          md:grid-cols-3
+          gap-4
+        "
+      >
 
-<section className="
-bg-white
-rounded-xl
-shadow
-p-6
-">
+        {
+          bookingStatus.length === 0 ? (
 
+            <p className="
+              text-gray-500
+            ">
+              No booking data available
+            </p>
 
-<h2 className="
-text-xl
-font-bold
-mb-5
-">
+          ) : (
 
-Booking Overview
+            bookingStatus.map(
+              (item, index) => (
 
-</h2>
+                <div
+                  key={index}
+                  className="
+                    border
+                    rounded-lg
+                    p-4
+                    hover:shadow-md
+                    transition
+                  "
+                >
 
+                  <h3
+                    className="
+                      font-bold
+                      capitalize
+                      text-lg
+                    "
+                  >
 
+                    {
+                      item?._id?.bookingStatus ||
+                      item?._id?.paymentStatus ||
+                      "Unknown"
+                    }
 
-<div className="
-grid
-md:grid-cols-3
-gap-4
-">
-
-
-{
-
-bookingStatus.map(
-(item,index)=>(
-
-
-<div
-key={index}
-className="
-border
-rounded-lg
-p-4
-"
->
-
-
-<h3 className="
-font-bold
-capitalize
-">
-
-{
-item?._id?.bookingStatus
-}
-
-</h3>
+                  </h3>
 
 
-<p>
+                  <p
+                    className="
+                      text-gray-600
+                      mt-2
+                    "
+                  >
 
-Payment:
+                    Payment:
 
-{
-item?._id?.paymentStatus
-}
+                    <span className="
+                      ml-2
+                      font-medium
+                    ">
+                      {
+                        item?._id?.paymentStatus ||
+                        "Not available"
+                      }
+                    </span>
 
-</p>
-
-
-<h2 className="
-text-2xl
-font-bold
-mt-3
-">
-
-{item.count}
-
-</h2>
-
-
-</div>
+                  </p>
 
 
-))
+                  <h2
+                    className="
+                      text-3xl
+                      font-bold
+                      mt-4
+                    "
+                  >
 
-}
+                    {
+                      item?.count || 0
+                    }
+
+                  </h2>
 
 
-</div>
+                  <p className="
+                    text-sm
+                    text-gray-500
+                  ">
+                    Bookings
+                  </p>
 
 
-</section>
+                </div>
+
+              )
+
+            )
+
+          )
+        }
 
 
-);
+      </div>
 
+
+    </section>
+
+  );
 
 }

@@ -1,171 +1,180 @@
 export default function RecentBookings({
+  bookings = []
+}) {
 
-    bookings=[]
 
-}){
+  // Ensure bookings is always an array
+  const bookingList = Array.isArray(bookings)
+    ? bookings
+    : [];
 
 
-return (
+  return (
 
-<section className="
-bg-white
-rounded-xl
-shadow
-p-6
-">
+    <section
+      className="
+        bg-white
+        rounded-xl
+        shadow
+        p-6
+      "
+    >
 
+      <h2
+        className="
+          text-xl
+          font-bold
+          mb-5
+        "
+      >
+        Recent Bookings
+      </h2>
 
-<h2 className="
-text-xl
-font-bold
-mb-5
-">
 
-Recent Bookings
 
-</h2>
+      {
+        bookingList.length === 0 ?
 
+        (
 
+          <p
+            className="
+              text-gray-500
+            "
+          >
+            No recent bookings available
+          </p>
 
-{
+        )
 
-bookings.length === 0 ?
+        :
 
-(
+        (
 
-<p className="
-text-gray-500
-">
+          <div
+            className="
+              space-y-4
+            "
+          >
 
-No recent bookings
+            {
+              bookingList.map(
+                (booking) => (
 
-</p>
+                  <div
+                    key={booking?._id}
+                    className="
+                      border
+                      rounded-lg
+                      p-4
+                      flex
+                      justify-between
+                      items-center
+                    "
+                  >
 
-)
 
-:
+                    <div>
 
-(
 
-<div className="
-space-y-4
-">
+                      <h3
+                        className="
+                          font-semibold
+                        "
+                      >
 
+                        {
+                          booking?.bookingNumber ||
+                          "Booking"
+                        }
 
-{
+                      </h3>
 
-bookings.map(
-booking=>(
 
 
-<div
+                      <p
+                        className="
+                          text-gray-500
+                        "
+                      >
 
-key={booking._id}
+                        {
+                          booking?.customer?.name ||
+                          booking?.fullName ||
+                          "Customer"
+                        }
 
-className="
-border
-rounded-lg
-p-4
-flex
-justify-between
-"
+                      </p>
 
->
 
+                    </div>
 
-<div>
 
 
-<h3 className="
-font-semibold
-">
 
-{
-booking.bookingNumber ||
-"Booking"
-}
+                    <div
+                      className="
+                        text-right
+                      "
+                    >
 
-</h3>
 
+                      <p
+                        className="
+                          font-bold
+                        "
+                      >
 
+                        Ksh {
 
-<p className="
-text-gray-500
-">
+                          Number(
+                            booking?.totalAmount ||
+                            booking?.amount ||
+                            0
+                          )
+                          .toLocaleString()
 
-{
-booking.customer?.name ||
-booking.fullName ||
-"Customer"
+                        }
 
-}
+                      </p>
 
-</p>
 
 
-</div>
+                      <span
+                        className="
+                          text-sm
+                          capitalize
+                        "
+                      >
 
+                        {
+                          booking?.paymentStatus ||
+                          "pending"
+                        }
 
+                      </span>
 
-<div className="
-text-right
-">
 
+                    </div>
 
-<p className="
-font-bold
-">
 
-Ksh {
+                  </div>
 
-Number(
-booking.totalAmount || 0
-).toLocaleString()
+                )
+              )
+            }
 
-}
 
-</p>
+          </div>
 
+        )
 
+      }
 
-<span className="
-text-sm
-capitalize
-">
 
-{
-booking.paymentStatus
-}
 
-</span>
+    </section>
 
-
-</div>
-
-
-</div>
-
-
-))
-
-}
-
-
-
-</div>
-
-
-)
-
-
-}
-
-
-
-</section>
-
-
-);
-
+  );
 
 }

@@ -9,7 +9,6 @@ import {
   CreditCard,
 } from "lucide-react";
 
-
 import {
   ResponsiveContainer,
   LineChart,
@@ -20,86 +19,42 @@ import {
   CartesianGrid,
 } from "recharts";
 
+import { getDashboard } from "../../api/adminApi";
 
-import {
-  getDashboard,
-} from "../../api/adminApi";
+export default function AdminDashboard() {
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["adminDashboard"],
 
+    queryFn: getDashboard,
 
-
-export default function AdminDashboard(){
-
-
-  const {
-    data,
-    isLoading,
-    isError,
-    error,
-
-  } = useQuery({
-
-    queryKey:[
-      "adminDashboard"
-    ],
-
-
-    queryFn:
-      getDashboard,
-
-
-    staleTime:
-      300000,
-
+    staleTime: 300000,
   });
 
-
-
-
-
-  if(isLoading){
-
+  if (isLoading) {
     return (
-
-      <div className="
+      <div
+        className="
         p-8
         text-center
-      ">
-
+      "
+      >
         Loading admin dashboard...
-
       </div>
-
     );
-
   }
 
-
-
-
-
-  if(isError){
-
+  if (isError) {
     return (
-
-      <div className="
+      <div
+        className="
         p-8
         text-red-600
-      ">
-
-        {
-          error?.message ||
-          "Unable to load dashboard"
-        }
-
+      "
+      >
+        {error?.message || "Unable to load dashboard"}
       </div>
-
     );
-
   }
-
-
-
-
 
   /*
   |--------------------------------------------------------------------------
@@ -107,68 +62,43 @@ export default function AdminDashboard(){
   |--------------------------------------------------------------------------
   */
 
-
-  const stats =
-    data?.data ||
-    data ||
-    {};
-
-
-
+  const stats = data?.data || data || {};
 
   const {
+    users = 0,
 
-    users=0,
+    tours = 0,
 
-    tours=0,
+    bookings = 0,
 
-    bookings=0,
+    destinations = 0,
 
-    destinations=0,
+    revenue = 0,
 
-    revenue=0,
+    payments = {
+      paid: 0,
 
+      pending: 0,
 
-    payments={
-
-      paid:0,
-
-      pending:0,
-
-      failed:0,
-
+      failed: 0,
     },
 
+    monthlyRevenue = [],
 
-    monthlyRevenue=[],
+    bookingStatus = [],
 
+    popularTours = [],
 
-    bookingStatus=[],
+    recentBookings = [],
 
+    agents = [],
 
-    popularTours=[],
+    guides = [],
 
-
-    recentBookings=[],
-
-
-    agents=[],
-
-
-    guides=[],
-
-
-    notifications=[],
-
-
+    notifications = [],
   } = stats;
 
-
-
-
-
   return (
-
     <div
       className="
         p-6
@@ -177,35 +107,26 @@ export default function AdminDashboard(){
         min-h-screen
       "
     >
-
-
       <div>
-
         <h1
           className="
             text-3xl
             font-bold
           "
         >
-
           Coherent Tours Admin Dashboard
-
         </h1>
 
-
-        <p className="
+        <p
+          className="
           text-gray-500
           mt-2
-        ">
-
+        "
+        >
           Complete business management overview
-
         </p>
-
-
-      </div>      {/* STATISTICS CARDS */}
-
-
+      </div>{" "}
+      {/* STATISTICS CARDS */}
       <div
         className="
           grid
@@ -215,92 +136,31 @@ export default function AdminDashboard(){
           gap-5
         "
       >
+        <StatCard title="Users" value={users} icon={<Users />} />
 
-
-        <StatCard
-
-          title="Users"
-
-          value={users}
-
-          icon={<Users />}
-
-        />
-
-
+        <StatCard title="Tours" value={tours} icon={<Map />} />
 
         <StatCard
-
-          title="Tours"
-
-          value={tours}
-
-          icon={<Map />}
-
-        />
-
-
-
-        <StatCard
-
           title="Destinations"
-
           value={destinations}
-
           icon={<TrendingUp />}
-
         />
 
-
-
-        <StatCard
-
-          title="Bookings"
-
-          value={bookings}
-
-          icon={<CalendarCheck />}
-
-        />
-
-
+        <StatCard title="Bookings" value={bookings} icon={<CalendarCheck />} />
 
         <StatCard
-
           title="Revenue"
-
-          value={
-            `Ksh ${Number(revenue)
-              .toLocaleString()}`
-          }
-
+          value={`Ksh ${Number(revenue).toLocaleString()}`}
           icon={<Wallet />}
-
         />
-
-
 
         <StatCard
-
           title="Paid Payments"
-
           value={payments.paid}
-
           icon={<CreditCard />}
-
         />
-
-
       </div>
-
-
-
-
-
       {/* REVENUE ANALYTICS */}
-
-
-
       <section
         className="
           bg-white
@@ -309,8 +169,6 @@ export default function AdminDashboard(){
           p-6
         "
       >
-
-
         <h2
           className="
             text-xl
@@ -318,106 +176,40 @@ export default function AdminDashboard(){
             mb-5
           "
         >
-
           Revenue Analytics
-
         </h2>
 
-
-
-
-        {
-          monthlyRevenue.length === 0 ?
-
-
-          (
-
-            <p className="
+        {monthlyRevenue.length === 0 ? (
+          <p
+            className="
               text-gray-500
-            ">
-
-              No revenue data available
-
-            </p>
-
-
-          )
-
-
-          :
-
-
-          (
-
-            <div
-              className="
+            "
+          >
+            No revenue data available
+          </p>
+        ) : (
+          <div
+            className="
                 h-[350px]
               "
-            >
+          >
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={monthlyRevenue}>
+                <CartesianGrid strokeDasharray="3 3" />
 
+                <XAxis dataKey="month" />
 
-              <ResponsiveContainer
-                width="100%"
-                height="100%"
-              >
+                <YAxis />
 
+                <Tooltip />
 
-                <LineChart
-
-                  data={
-                    monthlyRevenue
-                  }
-
-                >
-
-
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                  />
-
-
-                  <XAxis
-
-                    dataKey="month"
-
-                  />
-
-
-                  <YAxis />
-
-
-
-                  <Tooltip />
-
-
-
-                  <Line
-
-                    type="monotone"
-
-                    dataKey="amount"
-
-                    strokeWidth={3}
-
-                  />
-
-
-                </LineChart>
-
-
-              </ResponsiveContainer>
-
-
-            </div>
-
-          )
-
-        }
-
-
-      </section>      {/* PAYMENT OVERVIEW */}
-
-
+                <Line type="monotone" dataKey="amount" strokeWidth={3} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </section>{" "}
+      {/* PAYMENT OVERVIEW */}
       <section
         className="
           bg-white
@@ -426,7 +218,6 @@ export default function AdminDashboard(){
           p-6
         "
       >
-
         <h2
           className="
             text-xl
@@ -434,12 +225,8 @@ export default function AdminDashboard(){
             mb-4
           "
         >
-
           Payment Overview
-
         </h2>
-
-
 
         <div
           className="
@@ -448,47 +235,14 @@ export default function AdminDashboard(){
             gap-4
           "
         >
+          <PaymentBox title="Completed" value={payments.paid} />
 
-          <PaymentBox
+          <PaymentBox title="Pending" value={payments.pending} />
 
-            title="Completed"
-
-            value={payments.paid}
-
-          />
-
-
-          <PaymentBox
-
-            title="Pending"
-
-            value={payments.pending}
-
-          />
-
-
-          <PaymentBox
-
-            title="Failed"
-
-            value={payments.failed}
-
-          />
-
-
+          <PaymentBox title="Failed" value={payments.failed} />
         </div>
-
-
       </section>
-
-
-
-
-
       {/* BOOKING STATUS */}
-
-
-
       <section
         className="
           bg-white
@@ -497,8 +251,6 @@ export default function AdminDashboard(){
           p-6
         "
       >
-
-
         <h2
           className="
             text-xl
@@ -506,13 +258,8 @@ export default function AdminDashboard(){
             mb-5
           "
         >
-
           Booking Status
-
         </h2>
-
-
-
 
         <div
           className="
@@ -521,82 +268,30 @@ export default function AdminDashboard(){
             gap-4
           "
         >
-
-
-          {
-
-            bookingStatus.map(
-
-              (item,index)=>(
-
-
-                <div
-
-                  key={index}
-
-                  className="
+          {bookingStatus.map((item, index) => (
+            <div
+              key={index}
+              className="
                     border
                     rounded-lg
                     p-4
                   "
-
-                >
-
-
-                  <h3
-                    className="
+            >
+              <h3
+                className="
                       font-bold
                       capitalize
                     "
-                  >
+              >
+                {item?._id?.bookingStatus || item?._id || "Unknown"}
+              </h3>
 
-                    {
-                      item?._id?.bookingStatus ||
-                      item?._id ||
-                      "Unknown"
-                    }
-
-
-                  </h3>
-
-
-                  <p>
-
-                    {
-                      item.count || 0
-                    }
-
-                    {" "}
-                    bookings
-
-                  </p>
-
-
-                </div>
-
-
-              )
-
-            )
-
-          }
-
-
-
+              <p>{item.count || 0} bookings</p>
+            </div>
+          ))}
         </div>
-
-
       </section>
-
-
-
-
-
-
       {/* POPULAR TOURS */}
-
-
-
       <section
         className="
           bg-white
@@ -605,8 +300,6 @@ export default function AdminDashboard(){
           p-6
         "
       >
-
-
         <h2
           className="
             text-xl
@@ -614,176 +307,66 @@ export default function AdminDashboard(){
             mb-5
           "
         >
-
           Most Popular Tours
-
         </h2>
 
-
-
-
-
-        {
-
-          popularTours.length === 0 ?
-
-
-          (
-
-            <p className="
+        {popularTours.length === 0 ? (
+          <p
+            className="
               text-gray-500
-            ">
-
-              No tour analytics available
-
-            </p>
-
-
-          )
-
-
-          :
-
-
-          (
-
-            <div
-              className="
+            "
+          >
+            No tour analytics available
+          </p>
+        ) : (
+          <div
+            className="
                 space-y-4
               "
-            >
-
-
-
-              {
-
-                popularTours.map(
-
-                  (tour,index)=>(
-
-
-                    <div
-
-                      key={
-                        tour._id ||
-                        index
-                      }
-
-
-                      className="
+          >
+            {popularTours.map((tour, index) => (
+              <div
+                key={tour._id || index}
+                className="
                         flex
                         justify-between
                         items-center
                         border-b
                         pb-3
                       "
-
-                    >
-
-
-                      <div>
-
-
-                        <p
-                          className="
+              >
+                <div>
+                  <p
+                    className="
                             font-semibold
                           "
-                        >
+                  >
+                    #{index + 1} {tour.title || tour.name || "Tour"}
+                  </p>
 
-                          #
-                          {index + 1}
-
-                          {" "}
-
-                          {
-                            tour.title ||
-                            tour.name ||
-                            "Tour"
-                          }
-
-
-                        </p>
-
-
-
-                        <p
-                          className="
+                  <p
+                    className="
                             text-sm
                             text-gray-500
                           "
-                        >
+                  >
+                    Revenue: Ksh {Number(tour.revenue || 0).toLocaleString()}
+                  </p>
+                </div>
 
-                          Revenue:
-
-                          {" "}
-
-                          Ksh
-
-                          {" "}
-
-                          {
-
-                            Number(
-                              tour.revenue || 0
-                            )
-                            .toLocaleString()
-
-                          }
-
-
-                        </p>
-
-
-
-                      </div>
-
-
-
-
-
-                      <div
-                        className="
+                <div
+                  className="
                           font-bold
                         "
-                      >
-
-                        {
-                          tour.totalBookings ||
-                          0
-                        }
-
-                        {" "}
-
-                        bookings
-
-
-                      </div>
-
-
-
-                    </div>
-
-
-                  )
-
-                )
-
-              }
-
-
-            </div>
-
-
-          )
-
-
-        }
-
-
-
-      </section>      {/* RECENT BOOKINGS */}
-
-
+                >
+                  {tour.totalBookings || 0} bookings
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>{" "}
+      {/* RECENT BOOKINGS */}
       <section
         className="
           bg-white
@@ -792,8 +375,6 @@ export default function AdminDashboard(){
           p-6
         "
       >
-
-
         <h2
           className="
             text-xl
@@ -801,222 +382,87 @@ export default function AdminDashboard(){
             mb-5
           "
         >
-
           Recent Bookings
-
         </h2>
 
-
-
-
-        {
-          recentBookings.length === 0 ?
-
-
-          (
-
-            <p className="
+        {recentBookings.length === 0 ? (
+          <p
+            className="
               text-gray-500
-            ">
-
-              No recent bookings
-
-            </p>
-
-
-          )
-
-
-          :
-
-
-          (
-
-            <div
-              className="
+            "
+          >
+            No recent bookings
+          </p>
+        ) : (
+          <div
+            className="
                 overflow-x-auto
               "
-            >
-
-
-              <table
-                className="
+          >
+            <table
+              className="
                   w-full
                   text-left
                 "
-              >
-
-
-                <thead>
-
-
-                  <tr
-                    className="
+            >
+              <thead>
+                <tr
+                  className="
                       border-b
                     "
-                  >
+                >
+                  <th className="p-3">Customer</th>
 
+                  <th className="p-3">Tour</th>
 
-                    <th className="p-3">
-                      Customer
-                    </th>
+                  <th className="p-3">Amount</th>
 
+                  <th className="p-3">Status</th>
+                </tr>
+              </thead>
 
-                    <th className="p-3">
-                      Tour
-                    </th>
-
-
-                    <th className="p-3">
-                      Amount
-                    </th>
-
-
-                    <th className="p-3">
-                      Status
-                    </th>
-
-
-                  </tr>
-
-
-                </thead>
-
-
-
-                <tbody>
-
-
-                {
-
-                  recentBookings.map(
-
-                    (booking,index)=>(
-
-
-                      <tr
-
-                        key={
-                          booking._id ||
-                          index
-                        }
-
-                        className="
+              <tbody>
+                {recentBookings.map((booking, index) => (
+                  <tr
+                    key={booking._id || index}
+                    className="
                           border-b
                         "
+                  >
+                    <td className="p-3">
+                      {booking.customer?.name || booking.fullName || "Guest"}
+                    </td>
 
-                      >
+                    <td className="p-3">{booking.tour?.title || "Tour"}</td>
 
+                    <td className="p-3">
+                      Ksh{" "}
+                      {Number(
+                        booking.amount || booking.totalAmount || 0,
+                      ).toLocaleString()}
+                    </td>
 
-                        <td className="p-3">
-
-                          {
-                            booking.customer?.name ||
-                            booking.fullName ||
-                            "Guest"
-                          }
-
-                        </td>
-
-
-
-
-                        <td className="p-3">
-
-                          {
-                            booking.tour?.title ||
-                            "Tour"
-                          }
-
-                        </td>
-
-
-
-
-                        <td className="p-3">
-
-
-                          Ksh{" "}
-
-                          {
-
-                            Number(
-                              booking.amount ||
-                              booking.totalAmount ||
-                              0
-                            )
-                            .toLocaleString()
-
-                          }
-
-
-                        </td>
-
-
-
-
-                        <td className="p-3">
-
-
-                          <span
-                            className="
+                    <td className="p-3">
+                      <span
+                        className="
                               px-3
                               py-1
                               rounded-full
                               text-sm
                               bg-gray-100
                             "
-                          >
-
-                            {
-                              booking.bookingStatus ||
-                              "Pending"
-                            }
-
-
-                          </span>
-
-
-                        </td>
-
-
-                      </tr>
-
-
-                    )
-
-                  )
-
-                }
-
-
-
-                </tbody>
-
-
-              </table>
-
-
-            </div>
-
-
-          )
-
-        }
-
-
-
+                      >
+                        {booking.bookingStatus || "Pending"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
-
-
-
-
-
-
       {/* AGENT PERFORMANCE */}
-
-
-
       <section
         className="
           bg-white
@@ -1025,8 +471,6 @@ export default function AdminDashboard(){
           p-6
         "
       >
-
-
         <h2
           className="
             text-xl
@@ -1034,167 +478,65 @@ export default function AdminDashboard(){
             mb-5
           "
         >
-
           Agent Performance
-
         </h2>
 
-
-
-
-        {
-
-          agents.length === 0 ?
-
-
-          (
-
-            <p className="
+        {agents.length === 0 ? (
+          <p
+            className="
               text-gray-500
-            ">
-
-              No agents found
-
-            </p>
-
-
-          )
-
-
-          :
-
-
-          (
-
-            <div
-              className="
+            "
+          >
+            No agents found
+          </p>
+        ) : (
+          <div
+            className="
                 grid
                 md:grid-cols-3
                 gap-5
               "
-            >
-
-
-              {
-
-                agents.map(
-
-                  (agent,index)=>(
-
-
-                    <div
-
-                      key={
-                        agent._id ||
-                        index
-                      }
-
-                      className="
+          >
+            {agents.map((agent, index) => (
+              <div
+                key={agent._id || index}
+                className="
                         border
                         rounded-xl
                         p-5
                       "
-
-                    >
-
-
-                      <h3
-                        className="
+              >
+                <h3
+                  className="
                           font-bold
                         "
-                      >
+                >
+                  {agent.name || "Agent"}
+                </h3>
 
-                        {
-                          agent.name ||
-                          "Agent"
-                        }
-
-
-                      </h3>
-
-
-
-
-                      <p
-                        className="
+                <p
+                  className="
                           text-gray-500
                         "
-                      >
+                >
+                  Bookings: {agent.bookings || 0}
+                </p>
 
-                        Bookings:
-
-                        {" "}
-
-                        {
-                          agent.bookings ||
-                          0
-                        }
-
-
-                      </p>
-
-
-
-                      <p
-                        className="
+                <p
+                  className="
                           mt-2
                           font-semibold
                         "
-                      >
-
-                        Commission:
-
-                        {" "}
-
-                        Ksh{" "}
-
-                        {
-
-                          Number(
-                            agent.commission ||
-                            0
-                          )
-                          .toLocaleString()
-
-                        }
-
-
-                      </p>
-
-
-                    </div>
-
-
-                  )
-
-                )
-
-
-              }
-
-
-
-            </div>
-
-
-          )
-
-        }
-
-
-
+                >
+                  Commission: Ksh{" "}
+                  {Number(agent.commission || 0).toLocaleString()}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
-
-
-
-
-
-
-
       {/* TOUR GUIDES */}
-
-
-
       <section
         className="
           bg-white
@@ -1203,8 +545,6 @@ export default function AdminDashboard(){
           p-6
         "
       >
-
-
         <h2
           className="
             text-xl
@@ -1212,133 +552,56 @@ export default function AdminDashboard(){
             mb-5
           "
         >
-
           Tour Guides
-
         </h2>
 
-
-
-
-
-        {
-
-          guides.length === 0 ?
-
-
-          (
-
-            <p className="
+        {guides.length === 0 ? (
+          <p
+            className="
               text-gray-500
-            ">
-
-              No guides assigned
-
-            </p>
-
-
-          )
-
-
-          :
-
-
-          (
-
-            <div
-              className="
+            "
+          >
+            No guides assigned
+          </p>
+        ) : (
+          <div
+            className="
                 grid
                 md:grid-cols-4
                 gap-4
               "
-            >
-
-
-
-              {
-
-                guides.map(
-
-                  (guide,index)=>(
-
-
-                    <div
-
-                      key={
-                        guide._id ||
-                        index
-                      }
-
-                      className="
+          >
+            {guides.map((guide, index) => (
+              <div
+                key={guide._id || index}
+                className="
                         border
                         rounded-xl
                         p-4
                       "
-
-                    >
-
-
-                      <h3
-                        className="
+              >
+                <h3
+                  className="
                           font-bold
                         "
-                      >
+                >
+                  {guide.name || "Guide"}
+                </h3>
 
-                        {
-                          guide.name ||
-                          "Guide"
-                        }
-
-
-                      </h3>
-
-
-
-                      <p
-                        className="
+                <p
+                  className="
                           text-sm
                           text-gray-500
                         "
-                      >
-
-                        Assigned Tours:
-
-                        {" "}
-
-                        {
-                          guide.assignedTours ||
-                          0
-                        }
-
-
-                      </p>
-
-
-
-                    </div>
-
-
-                  )
-
-                )
-
-              }
-
-
-
-            </div>
-
-
-          )
-
-
-        }
-
-
-
-      </section>      {/* QUICK ADMIN ACTIONS */}
-
-
+                >
+                  Assigned Tours: {guide.assignedTours || 0}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>{" "}
+      {/* QUICK ADMIN ACTIONS */}
       <section
         className="
           bg-white
@@ -1347,7 +610,6 @@ export default function AdminDashboard(){
           p-6
         "
       >
-
         <h2
           className="
             text-xl
@@ -1355,12 +617,8 @@ export default function AdminDashboard(){
             mb-5
           "
         >
-
           Quick Actions
-
         </h2>
-
-
 
         <div
           className="
@@ -1371,58 +629,20 @@ export default function AdminDashboard(){
             gap-4
           "
         >
+          <ActionButton title="Create Tour" link="/admin/tours/create" />
 
+          <ActionButton title="Destinations" link="/admin/destinations" />
 
-          <ActionButton
-            title="Create Tour"
-            link="/admin/tours/create"
-          />
+          <ActionButton title="Bookings" link="/admin/bookings" />
 
+          <ActionButton title="Customers" link="/admin/customers" />
 
-          <ActionButton
-            title="Destinations"
-            link="/admin/destinations"
-          />
+          <ActionButton title="Payments" link="/admin/payments" />
 
-
-          <ActionButton
-            title="Bookings"
-            link="/admin/bookings"
-          />
-
-
-          <ActionButton
-            title="Customers"
-            link="/admin/customers"
-          />
-
-
-          <ActionButton
-            title="Payments"
-            link="/admin/payments"
-          />
-
-
-          <ActionButton
-            title="Reports"
-            link="/admin/reports"
-          />
-
-
+          <ActionButton title="Reports" link="/admin/reports" />
         </div>
-
-
       </section>
-
-
-
-
-
-
       {/* NOTIFICATIONS */}
-
-
-
       <section
         className="
           bg-white
@@ -1431,8 +651,6 @@ export default function AdminDashboard(){
           p-6
         "
       >
-
-
         <h2
           className="
             text-xl
@@ -1440,130 +658,53 @@ export default function AdminDashboard(){
             mb-5
           "
         >
-
           System Notifications
-
         </h2>
 
-
-
-
-        {
-
-          notifications.length === 0 ?
-
-
-          (
-
-            <p className="
+        {notifications.length === 0 ? (
+          <p
+            className="
               text-gray-500
-            ">
-
-              No new notifications
-
-            </p>
-
-
-          )
-
-
-          :
-
-
-          (
-
-            <div
-              className="
+            "
+          >
+            No new notifications
+          </p>
+        ) : (
+          <div
+            className="
                 space-y-3
               "
-            >
-
-
-              {
-
-                notifications.map(
-
-                  (notification,index)=>(
-
-
-                    <div
-
-                      key={
-                        notification._id ||
-                        index
-                      }
-
-                      className="
+          >
+            {notifications.map((notification, index) => (
+              <div
+                key={notification._id || index}
+                className="
                         border
                         rounded-lg
                         p-4
                       "
-
-                    >
-
-
-                      <h3
-                        className="
+              >
+                <h3
+                  className="
                           font-semibold
                         "
-                      >
+                >
+                  {notification.title || "Notification"}
+                </h3>
 
-                        {
-                          notification.title ||
-                          "Notification"
-                        }
-
-
-                      </h3>
-
-
-
-                      <p
-                        className="
+                <p
+                  className="
                           text-gray-600
                         "
-                      >
-
-                        {
-                          notification.message ||
-                          ""
-                        }
-
-
-                      </p>
-
-
-                    </div>
-
-
-                  )
-
-                )
-
-
-              }
-
-
-
-            </div>
-
-
-          )
-
-
-        }
-
-
+                >
+                  {notification.message || ""}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
-
-
-
-
-
       {/* FOOTER SUMMARY */}
-
-
-
       <section
         className="
           bg-gradient-to-r
@@ -1574,8 +715,6 @@ export default function AdminDashboard(){
           text-white
         "
       >
-
-
         <div
           className="
             grid
@@ -1583,65 +722,21 @@ export default function AdminDashboard(){
             gap-5
           "
         >
+          <SummaryBox title="Total Customers" value={users} />
 
+          <SummaryBox title="Available Tours" value={tours} />
 
-          <SummaryBox
-
-            title="Total Customers"
-
-            value={users}
-
-          />
-
+          <SummaryBox title="Active Bookings" value={bookings} />
 
           <SummaryBox
-
-            title="Available Tours"
-
-            value={tours}
-
-          />
-
-
-          <SummaryBox
-
-            title="Active Bookings"
-
-            value={bookings}
-
-          />
-
-
-          <SummaryBox
-
             title="Business Revenue"
-
-            value={
-              `Ksh ${Number(revenue)
-              .toLocaleString()}`
-            }
-
+            value={`Ksh ${Number(revenue).toLocaleString()}`}
           />
-
-
         </div>
-
-
       </section>
-
-
-
     </div>
-
   );
-
 }
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -1649,16 +744,8 @@ export default function AdminDashboard(){
 |--------------------------------------------------------------------------
 */
 
-
-function StatCard({
-  title,
-  value,
-  icon,
-}) {
-
-
+function StatCard({ title, value, icon }) {
   return (
-
     <div
       className="
         bg-white
@@ -1670,60 +757,37 @@ function StatCard({
         items-center
       "
     >
-
-
       <div>
-
-
-        <p className="
+        <p
+          className="
           text-gray-500
           text-sm
-        ">
-
+        "
+        >
           {title}
-
         </p>
 
-
-        <h2 className="
+        <h2
+          className="
           text-2xl
           font-bold
           mt-2
-        ">
-
+        "
+        >
           {value}
-
         </h2>
-
-
       </div>
-
-
-
 
       <div
         className="
           text-blue-600
         "
       >
-
         {icon}
-
       </div>
-
-
-
     </div>
-
   );
-
 }
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -1731,15 +795,8 @@ function StatCard({
 |--------------------------------------------------------------------------
 */
 
-
-function PaymentBox({
-  title,
-  value,
-}) {
-
-
+function PaymentBox({ title, value }) {
   return (
-
     <div
       className="
         border
@@ -1747,39 +804,26 @@ function PaymentBox({
         p-5
       "
     >
-
-
-      <p className="
+      <p
+        className="
         text-gray-500
-      ">
-
+      "
+      >
         {title}
-
       </p>
 
-
-      <h3 className="
+      <h3
+        className="
         text-3xl
         font-bold
         mt-2
-      ">
-
+      "
+      >
         {value}
-
       </h3>
-
-
     </div>
-
   );
-
 }
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -1787,15 +831,8 @@ function PaymentBox({
 |--------------------------------------------------------------------------
 */
 
-
-function ActionButton({
-  title,
-  link,
-}) {
-
-
+function ActionButton({ title, link }) {
   return (
-
     <a
       href={link}
       className="
@@ -1808,20 +845,10 @@ function ActionButton({
         font-semibold
       "
     >
-
       {title}
-
     </a>
-
   );
-
 }
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -1829,42 +856,27 @@ function ActionButton({
 |--------------------------------------------------------------------------
 */
 
-
-function SummaryBox({
-  title,
-  value,
-}) {
-
-
+function SummaryBox({ title, value }) {
   return (
-
     <div>
-
-
-      <p className="
+      <p
+        className="
         opacity-80
         text-sm
-      ">
-
+      "
+      >
         {title}
-
       </p>
 
-
-
-      <h2 className="
+      <h2
+        className="
         text-2xl
         font-bold
         mt-2
-      ">
-
+      "
+      >
         {value}
-
       </h2>
-
-
     </div>
-
   );
-
 }
