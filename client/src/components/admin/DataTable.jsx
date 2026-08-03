@@ -1,140 +1,202 @@
 export default function DataTable({
-columns,
-data=[]
-}){
+    columns = [],
+    data = []
+}) {
 
 
-return (
+    const safeValue = (value)=>{
 
-<div className="
-overflow-x-auto
-bg-white
-rounded-xl
-shadow
-">
 
+        if(value === null || value === undefined){
 
-<table className="
-w-full
-">
+            return "-";
 
+        }
 
-<thead
-className="
-bg-gray-100
-"
->
 
-<tr>
 
+        if(typeof value === "object"){
 
-{
-columns.map(col=>(
+            return JSON.stringify(value);
 
-<th
+        }
 
-key={col.key}
 
-className="
-p-4
-text-left
-"
 
->
+        return value;
 
-{col.label}
+    };
 
-</th>
 
-))
 
-}
+    return (
 
+        <div
+            className="
+                overflow-x-auto
+                bg-white
+                rounded-xl
+                shadow
+            "
+        >
 
-</tr>
 
+            <table
+                className="
+                    w-full
+                "
+            >
 
-</thead>
 
+                <thead
+                    className="
+                        bg-gray-100
+                    "
+                >
 
+                    <tr>
 
 
+                    {
+                        columns.map(col=>(
 
-<tbody>
 
+                            <th
 
-{
-data.map(
-(row,index)=>(
+                                key={col.key}
 
+                                className="
+                                    p-4
+                                    text-left
+                                "
 
-<tr
+                            >
 
-key={row._id || index}
+                                {col.label}
 
-className="
-border-b
-"
 
->
+                            </th>
 
 
-{
-columns.map(col=>(
+                        ))
+                    }
 
 
-<td
+                    </tr>
 
-key={col.key}
 
-className="
-p-4
-"
+                </thead>
 
->
 
 
-{
-col.render
 
-?
-col.render(row)
+                <tbody>
 
-:
 
-row[col.key]
+                {
+                    data.length === 0
 
-}
+                    ?
 
+                    (
 
-</td>
+                        <tr>
 
+                            <td
 
-))
+                                colSpan={columns.length}
 
+                                className="
+                                    p-6
+                                    text-center
+                                    text-gray-500
+                                "
 
-}
+                            >
 
+                                No data available
 
+                            </td>
 
-</tr>
+                        </tr>
 
+                    )
 
-))
+                    :
 
+                    data.map(
+                        (row,index)=>(
 
-}
 
+                        <tr
 
+                            key={
+                                row._id || index
+                            }
 
-</tbody>
+                            className="
+                                border-b
+                            "
 
+                        >
 
-</table>
 
 
-</div>
+                        {
+                            columns.map(col=>(
 
-)
+
+                                <td
+
+                                    key={col.key}
+
+                                    className="
+                                        p-4
+                                    "
+
+                                >
+
+
+                                {
+                                    col.render
+
+                                    ?
+
+                                    col.render(row)
+
+                                    :
+
+                                    safeValue(
+                                        row[col.key]
+                                    )
+
+                                }
+
+
+                                </td>
+
+
+                            ))
+                        }
+
+
+
+                        </tr>
+
+
+                    ))
+                }
+
+
+
+                </tbody>
+
+
+            </table>
+
+
+        </div>
+
+    );
 
 }
