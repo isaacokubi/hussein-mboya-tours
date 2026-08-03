@@ -1,11 +1,11 @@
 import {
-useQuery
+    useQuery
 }
 from "@tanstack/react-query";
 
 
 import {
-getAdminBookings
+    getAdminBookings
 }
 from "../../api/adminApi";
 
@@ -18,123 +18,197 @@ import DataTable from "../../components/admin/DataTable";
 export default function Bookings(){
 
 
+    const {
+        data,
+        isLoading
 
-const {
-data,
-isLoading
-}=useQuery({
+    } = useQuery({
 
-queryKey:[
-"adminBookings"
-],
+        queryKey:[
+            "adminBookings"
+        ],
 
-queryFn:getAdminBookings
+        queryFn:getAdminBookings
 
-
-});
-
+    });
 
 
 
 
-if(isLoading)
+    if(isLoading)
 
-return <p className="p-6">
-Loading bookings...
-</p>;
+        return (
 
+            <p className="p-6">
 
+                Loading bookings...
 
+            </p>
 
-
-const bookings =
-data?.data ||
-data ||
-[];
+        );
 
 
 
 
-return (
+    const bookings =
 
-<div className="p-6">
+        data?.data ||
 
+        data ||
 
-<h1 className="
-text-3xl
-font-bold
-mb-6
-">
-
-Booking Management
-
-</h1>
+        [];
 
 
 
 
-<DataTable
+    return (
+
+        <div className="p-6">
 
 
-data={bookings}
+            <h1
+                className="
+                    text-3xl
+                    font-bold
+                    mb-6
+                "
+            >
 
+                Booking Management
 
-columns={[
-
-
-{
-label:"Customer",
-key:"customer",
-
-render:(b)=>
-b.customer?.name || "-"
-},
-
-
-
-{
-label:"Tour",
-key:"tour",
-
-render:(b)=>
-b.tour?.title || "-"
-},
+            </h1>
 
 
 
-{
-label:"Amount",
-key:"totalAmount",
 
-render:(b)=>
-`Ksh ${b.totalAmount}`
-},
+            <DataTable
 
 
-
-{
-label:"Payment",
-key:"paymentStatus"
-},
+                data={bookings}
 
 
-
-{
-label:"Status",
-key:"bookingStatus"
-}
+                columns={[
 
 
-]}
+                {
 
+                    label:"Customer",
 
-/>
+                    key:"customer",
+
+                    render:(b)=>
+
+                        b.customer?.name ||
+
+                        b.customerSnapshot?.name ||
+
+                        "-"
+
+                },
 
 
 
-</div>
+                {
 
-)
+                    label:"Tour",
 
+                    key:"tour",
+
+                    render:(b)=>
+
+                        b.tour?.title ||
+
+                        "-"
+
+                },
+
+
+
+                {
+
+                    label:"Amount",
+
+                    key:"totalAmount",
+
+                    render:(b)=>
+
+                        `Ksh ${
+                            Number(
+                                b.totalAmount ||
+                                b.amount ||
+                                0
+                            ).toLocaleString()
+                        }`
+
+                },
+
+
+
+                {
+
+                    label:"Payment",
+
+                    key:"paymentStatus",
+
+                    render:(b)=>{
+
+
+                        if(
+                            typeof b.paymentStatus==="object"
+                        ){
+
+                            return (
+
+                                b.paymentStatus?.paymentStatus ||
+
+                                b.paymentStatus?.status ||
+
+                                "Pending"
+
+                            );
+
+                        }
+
+
+                        return (
+
+                            b.paymentStatus ||
+
+                            "Pending"
+
+                        );
+
+                    }
+
+                },
+
+
+
+                {
+
+                    label:"Status",
+
+                    key:"bookingStatus",
+
+                    render:(b)=>
+
+                        b.bookingStatus ||
+
+                        b.status ||
+
+                        "Pending"
+
+                }
+
+
+                ]}
+
+
+            />
+
+
+        </div>
+
+    );
 
 }
