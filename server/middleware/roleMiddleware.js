@@ -66,7 +66,11 @@ export const roleMiddleware = (...allowedRoles) => {
             const normalizedRole = userRole.toLowerCase();
 
             const normalizedAllowed = allowedRoles.map((role) =>
-                role.toLowerCase()
+                String(
+  typeof role === "object"
+    ? role.name || role.role || role._id
+    : role
+).toLowerCase()
             );
 
             if (!normalizedAllowed.includes(normalizedRole)) {

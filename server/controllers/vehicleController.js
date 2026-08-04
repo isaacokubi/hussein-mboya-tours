@@ -38,7 +38,7 @@ export const getVehicles = async (req, res, next) => {
         const vehicles = await Vehicle.find({
             isDeleted: false,
         })
-            .populate("assignedDriver", "name phone email")
+            .populate("driver", "name phone email")
             .sort({ createdAt: -1 })
             .lean();
 
@@ -68,7 +68,7 @@ export const getVehicle = async (req, res, next) => {
         }
 
         const vehicle = await Vehicle.findById(req.params.id)
-            .populate("assignedDriver", "name phone email")
+            .populate("driver", "name phone email")
             .lean();
 
         if (!vehicle) {
@@ -235,12 +235,12 @@ export const assignVehicleDriver = async (req, res, next) => {
         const vehicle = await Vehicle.findByIdAndUpdate(
             req.params.id,
             {
-                assignedDriver: driver || null,
+                driver: driver || null,
             },
             {
                 new: true,
             }
-        ).populate("assignedDriver", "name phone");
+        ).populate("driver", "name phone");
 
         if (!vehicle) {
             return res.status(404).json({
@@ -276,13 +276,13 @@ export const removeVehicleDriver = async (req, res, next) => {
             });
         }
 
-        if (vehicle.assignedDriver) {
-            await Staff.findByIdAndUpdate(vehicle.assignedDriver, {
+        if (vehicle.driver) {
+            await Staff.findByIdAndUpdate(vehicle.driver, {
                 availability: "available",
             });
         }
 
-        vehicle.assignedDriver = null;
+        vehicle.driver = null;
 
         await vehicle.save();
 
@@ -354,7 +354,7 @@ export const assignTourResources = async (req, res, next) => {
         }
 
         tour.assignedGuide = guideId || tour.assignedGuide;
-        tour.assignedDriver = driverId || tour.assignedDriver;
+        tour.driver = driverId || tour.driver;
         tour.assignedVehicle = vehicleId || tour.assignedVehicle;
 
         tour.staff = staffIds || tour.staff;
@@ -365,7 +365,7 @@ export const assignTourResources = async (req, res, next) => {
 
         const updatedTour = await Tour.findById(tour._id)
             .populate("assignedGuide")
-            .populate("assignedDriver")
+            .populate("driver")
             .populate("assignedVehicle")
             .populate("staff");
 
