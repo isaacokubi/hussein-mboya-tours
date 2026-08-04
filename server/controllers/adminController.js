@@ -336,25 +336,25 @@ export const getDashboardStats = async (req, res, next) => {
       */
 
       Booking.countDocuments({
-        bookingStatus:"pending"
+        status:"pending"
       }),
 
 
 
       Booking.countDocuments({
-        bookingStatus:"confirmed"
+        status:"confirmed"
       }),
 
 
 
       Booking.countDocuments({
-        bookingStatus:"completed"
+        status:"completed"
       }),
 
 
 
       Booking.countDocuments({
-        bookingStatus:"cancelled"
+        status:"cancelled"
       }),
 
 
