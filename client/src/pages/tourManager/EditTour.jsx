@@ -112,14 +112,6 @@ const EditTour =()=>{
 
 
 
-        select:(res)=>{
-
-            console.log("EDIT TOUR SELECT:", res);
-
-            return res;
-
-        },
-
 
 
         onError:(error)=>{
@@ -147,6 +139,64 @@ const EditTour =()=>{
 
 
 
+
+
+
+    useEffect(()=>{
+
+        if(tourData){
+
+            console.log(
+                "SETTING TOUR FORM:",
+                tourData
+            );
+
+
+            setForm({
+
+                ...tourData,
+
+
+                destination:
+                    tourData.destination?._id ||
+                    "",
+
+
+                assignedGuide:
+                    tourData.assignedGuide?._id ||
+                    "",
+
+
+                assignedDriver:
+                    tourData.assignedDriver?._id ||
+                    "",
+
+
+                assignedVehicle:
+                    tourData.assignedVehicle?._id ||
+                    "",
+
+
+                date:
+                    tourData.date?.substring(0,10) ||
+                    "",
+
+
+                difficulty:
+                    tourData.difficulty ||
+                    "easy",
+
+
+                status:
+                    tourData.status ||
+                    "upcoming",
+
+            });
+
+        }
+
+
+    },[tourData]);
 
 
     const handleChange=(e)=>{
