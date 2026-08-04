@@ -105,7 +105,7 @@ const paymentRevenue = {
 
 
         revenue =
-            paymentRevenue[0]?.total || 0;
+            paymentRevenue.total || 0;
 
 
 
