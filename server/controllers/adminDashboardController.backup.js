@@ -83,12 +83,7 @@ export const getDashboard = async (req, res) => {
 
                         total:{
 
-                            $sum:{
-                                $ifNull:[
-                                    "$amount",
-                                    "$totalAmount"
-                                ]
-                            }
+                            $sum:"$amount"
 
                         }
 
@@ -191,26 +186,13 @@ export const getDashboard = async (req, res) => {
 
                 await Payment.countDocuments({
 
-                    $or:[
-                        {
-                            status:{
-                                $in:[
-                                    "paid",
-                                    "completed",
-                                    "success"
-                                ]
-                            }
-                        },
-                        {
-                            paymentStatus:{
-                                $in:[
-                                    "paid",
-                                    "completed",
-                                    "success"
-                                ]
-                            }
-                        }
-                    ]
+                    status:{
+                        $in:[
+                            "paid",
+                            "completed",
+                            "success"
+                        ]
+                    }
 
                 }),
 
