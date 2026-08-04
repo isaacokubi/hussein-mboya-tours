@@ -1,11 +1,10 @@
-import { lazy, useRef } from "react";
+import { useRef } from "react";
 
 import { useQuery } from "@tanstack/react-query";
 import { Swiper, SwiperSlide } from "swiper/react";
 import {
   Autoplay,
   EffectFade,
-  Lazy,
 } from "swiper/modules";
 
 import { Link } from "react-router-dom";
@@ -109,16 +108,12 @@ shadow-2xl
 modules={[
 Autoplay,
 EffectFade,
-Lazy
 ]}
 
 
 effect="fade"
 
 
-lazy={{
-loadPrevNext:true,
-}}
 
 
 speed={900}
