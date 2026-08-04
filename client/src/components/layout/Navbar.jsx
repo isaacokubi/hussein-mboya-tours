@@ -142,9 +142,12 @@ export default function Navbar() {
 
   const linkClass = ({ isActive }) =>
 `
-transition
+px-2
+py-1
+transition-all
 duration-300
 font-medium
+relative
 ${
 isActive
 ?
@@ -158,16 +161,25 @@ isActive
     <header
       className="
     sticky
-    top-0
+    top-4
     z-50
+    mx-4
+    lg:mx-8
+    rounded-2xl
+    bg-white/5
     bg-gradient-to-r
     from-green-950
     via-green-900
     to-emerald-800
-    shadow-xl
-    border-b
+    shadow-2xl
+    border
     border-yellow-500/30
-    backdrop-blur-lg
+    backdrop-blur-xl
+    overflow-hidden
+    transition-all
+    duration-500
+    hover:shadow-yellow-500/20
+    hover:-translate-y-1
   "
     >
       <div
@@ -175,7 +187,8 @@ isActive
     max-w-7xl
     mx-auto
     h-20
-    px-6
+    px-8
+    lg:px-10
     flex
     items-center
     justify-between
@@ -185,7 +198,14 @@ isActive
         {/* LOGO */}
         {/* ------------------------------------------------ */}
 
-        <Link to="/" className="flex items-center gap-3">
+        <Link
+to="/"
+className="
+flex
+items-center
+gap-4
+pr-4
+">
          <div
   className="
     h-11
@@ -199,6 +219,13 @@ isActive
     font-extrabold
     text-lg
     shadow-lg
+    ring-2
+    ring-yellow-400/30
+    transition-all
+    duration-500
+    hover:scale-110
+    hover:ring-yellow-300
+    hover:shadow-yellow-500/50
   "
 >
   CT
@@ -213,6 +240,7 @@ font-extrabold
 text-xl
 text-white
 tracking-wide
+drop-shadow-lg
 "
 >
 Coherent Tours
@@ -236,7 +264,7 @@ Explore Africa
         {/* DESKTOP NAVIGATION */}
         {/* ------------------------------------------------ */}
 
-        <nav className="hidden lg:flex items-center gap-8">
+        <nav className="hidden lg:flex items-center gap-10">
           {publicLinks.map((link) => (
             <NavLink
               key={link.path}
@@ -253,14 +281,16 @@ Explore Africa
         {/* RIGHT SIDE */}
         {/* ------------------------------------------------ */}
 
-        <div className="hidden lg:flex items-center gap-4">
+        <div className="hidden lg:flex items-center gap-5">
           <button
             className="
 p-2
 rounded-full
 text-white
 hover:bg-white/10
-transition
+hover:scale-110
+transition-all
+duration-300
 "
             aria-label="Search"
           >
@@ -283,7 +313,7 @@ transition
                 className="bg-yellow-500
 hover:bg-yellow-600
 text-green-950
-shadow-lg px-5 py-2.5 rounded-lg font-semibold transition"
+shadow-lg hover:shadow-yellow-500/40 hover:-translate-y-1 px-5 py-2.5 rounded-lg font-semibold transition-all duration-300"
               >
                 Register
               </Link>
@@ -294,8 +324,9 @@ shadow-lg px-5 py-2.5 rounded-lg font-semibold transition"
 from-yellow-400
 to-yellow-600
 text-green-950
-hover:scale-105
-shadow-xl px-5 py-2.5 rounded-lg font-semibold transition"
+hover:scale-110
+hover:shadow-yellow-500/50
+shadow-xl px-5 py-2.5 rounded-lg font-semibold transition-all duration-300"
               >
                 Book Now
               </Link>
@@ -309,7 +340,7 @@ shadow-xl px-5 py-2.5 rounded-lg font-semibold transition"
                 className="bg-yellow-500
 text-green-950
 hover:bg-yellow-400
-shadow-lg px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-800 transition"
+shadow-lg px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-800 hover:-translate-y-1 transition-all duration-300"
               >
                 <LayoutDashboard size={18} />
 
@@ -319,7 +350,7 @@ shadow-lg px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-800 transi
               <div className="relative">
                 <button
                   onClick={() => setProfileOpen(!profileOpen)}
-                  className="flex items-center gap-2 border rounded-lg px-3 py-2 hover:bg-gray-50"
+                  className="flex items-center gap-2 border border-white/20 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 text-white hover:bg-white/20 transition-all duration-300"
                 >
                   <User size={18} />
 
@@ -351,8 +382,8 @@ shadow-lg px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-800 transi
                       mt-3
                       w-56
                       bg-white
-                      rounded-xl
-                      shadow-xl
+                      rounded-2xl
+                      shadow-2xl
                       border
                       overflow-hidden
                       z-50
@@ -468,7 +499,9 @@ shadow-lg px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-800 transi
             h-[calc(100vh-5rem)]
             bg-gradient-to-b
 from-green-950
-to-green-900
+via-green-900
+to-green-800
+backdrop-blur-xl
 text-white
             shadow-2xl
             border-l
@@ -476,7 +509,7 @@ text-white
             overflow-y-auto
             "
           >
-            <div className="p-6 space-y-2">
+            <div className="p-8 space-y-3">
               {/* Public Navigation */}
 
               {publicLinks.map((link) => (
