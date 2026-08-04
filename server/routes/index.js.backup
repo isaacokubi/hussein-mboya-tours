@@ -14,9 +14,6 @@ import mpesaRoutes from "./mpesaRoutes.js";
 import adminRoutes from "./adminRoutes.js";
 import adminTourRoutes from "./adminTourRoutes.js";
 import adminBookingRoutes from "./adminBookingRoutes.js";
-import adminPaymentRoutes from "./adminPaymentRoutes.js";
-import adminRoleRoutes from "./adminRoleRoutes.js";
-import systemHealthRoutes from "./systemHealthRoutes.js";
 
 import categoryRoutes from "./categoryRoutes.js";
 import adminDashboardRoutes from "./adminDashboardRoutes.js";
@@ -123,24 +120,6 @@ router.use(
 router.use(
   "/admin/bookings",
   adminBookingRoutes
-);
-
-
-router.use(
-  "/admin/payments",
-  adminPaymentRoutes
-);
-
-
-router.use(
-  "/admin/roles",
-  adminRoleRoutes
-);
-
-
-router.use(
-  "/admin/system-health",
-  systemHealthRoutes
 );
 
 
