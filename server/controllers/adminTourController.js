@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Tour from "../models/Tour.js";
 import User from "../models/User.js";
 import Vehicle from "../models/Vehicle.js";
+import Staff from "../models/Staff.js";
 
 
 /*
@@ -848,7 +849,6 @@ export const assignGuide = async (req, res, next) => {
 |--------------------------------------------------------------------------
 */
 
-import Staff from "../models/Staff.js";
 
 export const assignDriver = async (req, res, next) => {
   try {
