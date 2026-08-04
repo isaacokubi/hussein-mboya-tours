@@ -161,7 +161,7 @@ isActive
     <header
       className="
     sticky
-    top-4
+    top-0
     z-50
     mx-4
     lg:mx-8
