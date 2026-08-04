@@ -1,3 +1,5 @@
+import { useNavigate } from "react-router-dom";
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -13,11 +15,14 @@ import { toast } from "react-toastify";
 import {
   getAdminTours,
   deleteTour,
+  updateTour,
 } from "../../api/adminTourApi";
 
 import Loader from "../../components/common/Loader";
 
 export default function TourManagement() {
+
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const [search, setSearch] = useState("");
@@ -51,7 +56,23 @@ export default function TourManagement() {
   |--------------------------------------------------------------------------
   */
 
-  const deleteMutation = useMutation({
+  
+
+const updateMutation = useMutation({
+
+  mutationFn: ({id,data}) =>
+    updateTour(id,data),
+
+  onSuccess:()=>{
+
+    refetch();
+
+  }
+
+});
+
+
+const deleteMutation = useMutation({
     mutationFn: deleteTour,
 
     onSuccess: () => {
@@ -533,6 +554,13 @@ export default function TourManagement() {
 
 
                       <button
+
+                        onClick={()=>
+                          navigate(
+                            `/admin/edit-tour/${tour._id}`
+                          )
+                        }
+
                         className="
                           text-yellow-600
                         "
