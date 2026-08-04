@@ -22,7 +22,8 @@ import adminMiddleware from "../middleware/adminMiddleware.js";
 
 import {
   getUsers,
-  updateUserStatus
+  updateUserStatus,
+  deleteUser
 } from "../controllers/adminUserController.js";
 
 const router = express.Router();
@@ -115,6 +116,19 @@ router.put(
 | USERS
 |--------------------------------------------------------------------------
 */
+
+
+
+/**
+ * DELETE /api/admin/users/:id
+ * Delete user
+ */
+
+router.delete(
+  "/users/:id",
+  deleteUser
+);
+
 
 router.get(
   "/users",
