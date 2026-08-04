@@ -969,6 +969,8 @@ const EditTour =()=>{
 
                     <button
 
+                        type="submit"
+
                         disabled={isPending}
 
                         className="
