@@ -414,7 +414,6 @@ const EditTour =()=>{
 
 
 
-    };
 
 
 
@@ -1078,12 +1077,14 @@ const EditTour =()=>{
     );
 
 
+
+
+
+
+
+
+
+
 };
-
-
-
-
-
-
 
 export default EditTour;
