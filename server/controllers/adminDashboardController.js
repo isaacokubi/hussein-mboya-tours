@@ -69,13 +69,29 @@ $sum:"$amount"
 ]);
 
 
+const successfulStatuses = [
+    "completed",
+    "paid",
+    "success",
+    "Completed",
+    "Success"
+];
+
 const completedPayments =
-    paymentStats.find(
-        p => p._id === "completed"
-    ) || {
-        count:0,
-        amount:0
-    };
+paymentStats
+.filter(
+p => successfulStatuses.includes(p._id)
+)
+.reduce(
+(acc,p)=>({
+count: acc.count + p.count,
+amount: acc.amount + p.amount
+}),
+{
+count:0,
+amount:0
+}
+);
 
 
 const pendingPayments =
@@ -128,15 +144,16 @@ const paymentRevenue = {
             const bookingRevenue =
                 await Booking.aggregate([
 
-
                     {
-
                         $match:{
-
-                            paymentStatus:"paid"
-
+                            paymentStatus:{
+                                $in:[
+                                    "paid",
+                                    "partial",
+                                    "completed"
+                                ]
+                            }
                         }
-
                     },
 
 
@@ -453,7 +470,7 @@ createdAt:-1
 })
 .limit(5)
 .populate("tour","title")
-.populate("user","name email");
+.populate("customer","name email");
 
 
 
