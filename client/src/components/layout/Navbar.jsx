@@ -163,9 +163,9 @@ isActive
     sticky
     top-0
     z-50
-    mx-4
-    lg:mx-8
-    rounded-2xl
+    
+    
+    rounded-xl
     bg-white/5
     bg-gradient-to-r
     from-green-950
@@ -382,7 +382,7 @@ shadow-lg px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-800 hover:
                       mt-3
                       w-56
                       bg-white
-                      rounded-2xl
+                      rounded-xl
                       shadow-2xl
                       border
                       overflow-hidden
