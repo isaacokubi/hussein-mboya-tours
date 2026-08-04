@@ -98,9 +98,15 @@ export const getDashboardStats = async (req, res, next) => {
 
         {
           $match:{
-            paymentStatus:"paid",
+            paymentStatus:{
+              $in:[
+                "paid",
+                "partial",
+                "completed"
+              ]
+            },
 
-            bookingStatus:{
+            status:{
               $ne:"cancelled"
             }
           }
@@ -112,7 +118,7 @@ export const getDashboardStats = async (req, res, next) => {
             _id:null,
 
             total:{
-              $sum:"$amount"
+              $sum:"$totalAmount"
             }
           }
         }
@@ -173,9 +179,15 @@ export const getDashboardStats = async (req, res, next) => {
         {
           $match:{
 
-            paymentStatus:"paid",
+            paymentStatus:{
+              $in:[
+                "paid",
+                "partial",
+                "completed"
+              ]
+            },
 
-            bookingStatus:{
+            status:{
               $ne:"cancelled"
             }
 
@@ -201,7 +213,7 @@ export const getDashboardStats = async (req, res, next) => {
 
 
             total:{
-              $sum:"$amount"
+              $sum:"$totalAmount"
             }
 
           }
