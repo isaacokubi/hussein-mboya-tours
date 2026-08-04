@@ -99,20 +99,29 @@ const paymentStats = stats.paymentStats || {
   return (
     <div
       className="
-        p-6
-        space-y-8
-        bg-gray-50
-        min-h-screen
-      "
+min-h-screen
+bg-gradient-to-br
+from-slate-100
+via-gray-50
+to-blue-50
+p-6
+space-y-8
+"
     >
       <div>
         <h1
           className="
-            text-3xl
-            font-bold
+            text-4xl
+font-extrabold
+tracking-tight
+bg-gradient-to-r
+from-blue-700
+to-purple-600
+bg-clip-text
+text-transparent
           "
         >
-          Coherent Tours Admin Dashboard
+          Coherent Tours Control Center
         </h1>
 
         <p
@@ -123,6 +132,79 @@ const paymentStats = stats.paymentStats || {
         >
           Complete business management overview
         </p>
+
+
+      <div
+        className="
+        grid
+        md:grid-cols-3
+        gap-5
+        "
+      >
+
+        <div
+          className="
+          bg-gradient-to-r
+          from-blue-600
+          to-indigo-700
+          text-white
+          rounded-2xl
+          p-6
+          shadow-xl
+          "
+        >
+          <h3 className="text-lg font-semibold">
+            Business Overview
+          </h3>
+
+          <p className="mt-2 opacity-90">
+            Manage tours, customers, payments and operations from one place.
+          </p>
+        </div>
+
+
+        <div
+          className="
+          bg-gradient-to-r
+          from-purple-600
+          to-pink-600
+          text-white
+          rounded-2xl
+          p-6
+          shadow-xl
+          "
+        >
+          <h3 className="text-lg font-semibold">
+            Operations
+          </h3>
+
+          <p className="mt-2 opacity-90">
+            Monitor bookings and tour performance.
+          </p>
+        </div>
+
+
+        <div
+          className="
+          bg-gradient-to-r
+          from-green-600
+          to-emerald-600
+          text-white
+          rounded-2xl
+          p-6
+          shadow-xl
+          "
+        >
+          <h3 className="text-lg font-semibold">
+            Financial Health
+          </h3>
+
+          <p className="mt-2 opacity-90">
+            Track revenue and payment status.
+          </p>
+        </div>
+
+      </div>
       </div>{" "}
       {/* STATISTICS CARDS */}
       <div
@@ -130,7 +212,8 @@ const paymentStats = stats.paymentStats || {
           grid
           grid-cols-1
           md:grid-cols-2
-          lg:grid-cols-6
+          lg:grid-cols-3
+xl:grid-cols-6
           gap-5
         "
       >
@@ -413,9 +496,11 @@ const paymentStats = stats.paymentStats || {
           >
             <table
               className="
-                  w-full
-                  text-left
-                "
+w-full
+text-left
+overflow-hidden
+rounded-xl
+"
             >
               <thead>
                 <tr
@@ -637,7 +722,8 @@ const paymentStats = stats.paymentStats || {
             grid
             grid-cols-2
             md:grid-cols-3
-            lg:grid-cols-6
+            lg:grid-cols-3
+xl:grid-cols-6
             gap-4
           "
         >
