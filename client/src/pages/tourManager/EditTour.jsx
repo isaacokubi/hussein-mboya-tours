@@ -67,6 +67,22 @@ const EditTour =()=>{
 
     const queryClient = useQueryClient();
 
+
+
+    const {
+        data: destinations = []
+    } = useQuery({
+
+        queryKey:[
+            "destinations"
+        ],
+
+        queryFn:getDestinations
+
+    });
+
+
+
     
 
 
