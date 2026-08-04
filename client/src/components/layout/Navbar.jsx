@@ -142,12 +142,9 @@ export default function Navbar() {
 
   const linkClass = ({ isActive }) =>
 `
-px-2
-py-1
-transition-all
+transition
 duration-300
 font-medium
-relative
 ${
 isActive
 ?
@@ -163,23 +160,14 @@ isActive
     sticky
     top-0
     z-50
-    
-    
-    rounded-xl
-    bg-white/5
     bg-gradient-to-r
     from-green-950
     via-green-900
     to-emerald-800
-    shadow-2xl
-    border
+    shadow-xl
+    border-b
     border-yellow-500/30
-    backdrop-blur-xl
-    overflow-hidden
-    transition-all
-    duration-500
-    hover:shadow-yellow-500/20
-    hover:-translate-y-1
+    backdrop-blur-lg
   "
     >
       <div
@@ -187,8 +175,7 @@ isActive
     max-w-7xl
     mx-auto
     h-20
-    px-8
-    lg:px-10
+    px-6
     flex
     items-center
     justify-between
@@ -198,14 +185,7 @@ isActive
         {/* LOGO */}
         {/* ------------------------------------------------ */}
 
-        <Link
-to="/"
-className="
-flex
-items-center
-gap-4
-pr-4
-">
+        <Link to="/" className="flex items-center gap-3">
          <div
   className="
     h-11
@@ -219,13 +199,6 @@ pr-4
     font-extrabold
     text-lg
     shadow-lg
-    ring-2
-    ring-yellow-400/30
-    transition-all
-    duration-500
-    hover:scale-110
-    hover:ring-yellow-300
-    hover:shadow-yellow-500/50
   "
 >
   CT
@@ -240,7 +213,6 @@ font-extrabold
 text-xl
 text-white
 tracking-wide
-drop-shadow-lg
 "
 >
 Coherent Tours
@@ -264,7 +236,7 @@ Explore Africa
         {/* DESKTOP NAVIGATION */}
         {/* ------------------------------------------------ */}
 
-        <nav className="hidden lg:flex items-center gap-10">
+        <nav className="hidden lg:flex items-center gap-8">
           {publicLinks.map((link) => (
             <NavLink
               key={link.path}
@@ -281,16 +253,14 @@ Explore Africa
         {/* RIGHT SIDE */}
         {/* ------------------------------------------------ */}
 
-        <div className="hidden lg:flex items-center gap-5">
+        <div className="hidden lg:flex items-center gap-4">
           <button
             className="
 p-2
 rounded-full
 text-white
 hover:bg-white/10
-hover:scale-110
-transition-all
-duration-300
+transition
 "
             aria-label="Search"
           >
@@ -313,7 +283,7 @@ transition
                 className="bg-yellow-500
 hover:bg-yellow-600
 text-green-950
-shadow-lg hover:shadow-yellow-500/40 hover:-translate-y-1 px-5 py-2.5 rounded-lg font-semibold transition-all duration-300"
+shadow-lg px-5 py-2.5 rounded-lg font-semibold transition"
               >
                 Register
               </Link>
@@ -324,9 +294,8 @@ shadow-lg hover:shadow-yellow-500/40 hover:-translate-y-1 px-5 py-2.5 rounded-lg
 from-yellow-400
 to-yellow-600
 text-green-950
-hover:scale-110
-hover:shadow-yellow-500/50
-shadow-xl px-5 py-2.5 rounded-lg font-semibold transition-all duration-300"
+hover:scale-105
+shadow-xl px-5 py-2.5 rounded-lg font-semibold transition"
               >
                 Book Now
               </Link>
@@ -340,7 +309,7 @@ shadow-xl px-5 py-2.5 rounded-lg font-semibold transition-all duration-300"
                 className="bg-yellow-500
 text-green-950
 hover:bg-yellow-400
-shadow-lg px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-800 hover:-translate-y-1 transition-all duration-300"
+shadow-lg px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-800 transition"
               >
                 <LayoutDashboard size={18} />
 
@@ -350,7 +319,7 @@ shadow-lg px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-800 hover:
               <div className="relative">
                 <button
                   onClick={() => setProfileOpen(!profileOpen)}
-                  className="flex items-center gap-2 border border-white/20 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 text-white hover:bg-white/20 transition-all duration-300"
+                  className="flex items-center gap-2 border rounded-lg px-3 py-2 hover:bg-gray-50"
                 >
                   <User size={18} />
 
@@ -383,7 +352,7 @@ shadow-lg px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-800 hover:
                       w-56
                       bg-white
                       rounded-xl
-                      shadow-2xl
+                      shadow-xl
                       border
                       overflow-hidden
                       z-50
@@ -499,9 +468,7 @@ shadow-lg px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-800 hover:
             h-[calc(100vh-5rem)]
             bg-gradient-to-b
 from-green-950
-via-green-900
-to-green-800
-backdrop-blur-xl
+to-green-900
 text-white
             shadow-2xl
             border-l
@@ -509,7 +476,7 @@ text-white
             overflow-y-auto
             "
           >
-            <div className="p-8 space-y-3">
+            <div className="p-6 space-y-2">
               {/* Public Navigation */}
 
               {publicLinks.map((link) => (
