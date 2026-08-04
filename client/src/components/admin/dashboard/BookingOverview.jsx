@@ -1,12 +1,12 @@
 export default function BookingOverview({
-    bookingStatus = []
+    statusData = []
 }) {
 
 
     const getStatus = (item) => {
 
-        const bookingStatus =
-            item?._id?.bookingStatus;
+        const status =
+            item?._id?.status;
 
 
         const paymentStatus =
@@ -30,8 +30,8 @@ export default function BookingOverview({
 
 
         return {
-            bookingStatus:
-                bookingStatus || "Unknown",
+            status:
+                status || "Unknown",
 
             paymentStatus:
                 payment
@@ -72,7 +72,7 @@ export default function BookingOverview({
             >
 
             {
-                bookingStatus.map(
+                statusData.map(
                     (item,index)=>{
 
 
@@ -98,7 +98,7 @@ export default function BookingOverview({
                                     "
                                 >
                                     {
-                                        status.bookingStatus
+                                        status.status
                                     }
                                 </h3>
 

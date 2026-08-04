@@ -9,6 +9,20 @@ export default function RecentBookings({
 
 
 
+
+  const getBookingStatus = (status) => {
+
+    if (!status) {
+      return "pending";
+    }
+
+    return typeof status === "string"
+      ? status
+      : status.status || "pending";
+
+  };
+
+
   const getPaymentStatus = (paymentStatus) => {
 
     if (!paymentStatus) {
@@ -180,11 +194,30 @@ export default function RecentBookings({
                       "
                     >
 
-                    {
-                      getPaymentStatus(
-                        booking?.paymentStatus
-                      )
-                    }
+                    <p>
+                      Status:
+
+                      {" "}
+
+                      {
+                        getBookingStatus(
+                          booking?.status
+                        )
+                      }
+                    </p>
+
+
+                    <p>
+                      Payment:
+
+                      {" "}
+
+                      {
+                        getPaymentStatus(
+                          booking?.paymentStatus
+                        )
+                      }
+                    </p>
 
                     </span>
 
