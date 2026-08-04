@@ -252,6 +252,10 @@ export const getDashboardStats = async (req, res, next) => {
 
             totalBookings:{
               $sum:1
+            },
+
+            revenue:{
+              $sum:"$totalAmount"
             }
 
           }
@@ -310,7 +314,9 @@ export const getDashboardStats = async (req, res, next) => {
 
             destination:"$tour.destination",
 
-            totalBookings:1
+            totalBookings:1,
+
+            revenue:1
 
           }
 
