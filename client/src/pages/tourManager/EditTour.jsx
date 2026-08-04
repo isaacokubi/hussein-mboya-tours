@@ -37,7 +37,7 @@ import {
     getDestinations
 
 }
-from "../../api/tourApi";
+from "../../api/adminTourApi";
 
 
 
