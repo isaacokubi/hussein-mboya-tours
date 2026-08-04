@@ -66,7 +66,7 @@ const EditTour =()=>{
 
     const queryClient = useQueryClient();
 
-    console.log("EDIT TOUR DATA:", tourData);
+    
 
 
 
