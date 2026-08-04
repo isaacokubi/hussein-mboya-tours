@@ -82,3 +82,5 @@ Thumbs.db
 *.tmp
 *.temp
 *.swp
+.vercel
+.env*

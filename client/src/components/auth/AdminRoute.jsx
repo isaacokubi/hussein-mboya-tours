@@ -16,6 +16,7 @@ from "../../context/AuthContext";
 
 export default function AdminRoute({
 
+    children,
     permission
 
 }){
@@ -81,6 +82,8 @@ const allowedRoles = [
 "admin",
 
 "Admin",
+
+"superadmin",
 
 "Super Admin"
 
@@ -193,7 +196,7 @@ replace
 
 
 
-return <Outlet/>;
+return children || <Outlet/>;
 
 
 }

@@ -3,6 +3,7 @@
 import User from "../models/User.js";
 import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
+import Destination from "../models/Destination.js";
 
 
 /*
@@ -29,6 +30,8 @@ export const getDashboardStats = async (req, res, next) => {
       bookings,
 
       tours,
+
+      destinations,
 
       revenueData,
 
@@ -80,7 +83,10 @@ export const getDashboardStats = async (req, res, next) => {
 
       Tour.countDocuments(),
 
-
+      Destination.countDocuments({
+        isDeleted:false,
+        active:true
+      }),
 
       /*
       |--------------------------------------------------------------------------
@@ -453,6 +459,7 @@ export const getDashboardStats = async (req, res, next) => {
 
         tours,
 
+        destinations,
 
         revenue,
 
