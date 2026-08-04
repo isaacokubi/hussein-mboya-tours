@@ -20,8 +20,29 @@ import {
 } from "recharts";
 
 import { getDashboard } from "../../api/adminApi";
+import { getPaymentStats } from "../../api/admin/adminPaymentApi";
+import { getAdminRoles } from "../../api/admin/adminRoleApi";
+import { getSystemHealth } from "../../api/admin/systemHealthApi";
 
 export default function AdminDashboard() {
+
+  const { data: paymentData } = useQuery({
+    queryKey: ["adminPaymentStats"],
+    queryFn: getPaymentStats,
+    staleTime: 300000,
+  });
+
+  const { data: rolesData } = useQuery({
+    queryKey: ["adminRoles"],
+    queryFn: getAdminRoles,
+    staleTime: 300000,
+  });
+
+  const { data: healthData } = useQuery({
+    queryKey: ["systemHealth"],
+    queryFn: getSystemHealth,
+    staleTime: 300000,
+  });
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["adminDashboard"],
 
@@ -29,6 +50,8 @@ export default function AdminDashboard() {
 
     staleTime: 300000,
   });
+
+
 
   if (isLoading) {
     return (
@@ -62,13 +85,28 @@ export default function AdminDashboard() {
   |--------------------------------------------------------------------------
   */
 
+  console.log("ADMIN DASHBOARD RESPONSE:", data);
+
   const stats = data?.data || data || {};
 
-const paymentStats = stats.paymentStats || {
+const paymentStats =
+  paymentData?.stats ||
+  stats.paymentStats ||
+  {
     completed: 0,
     pending: 0,
     failed: 0
-};
+  };
+
+
+const roles =
+  rolesData?.roles ||
+  [];
+
+
+const systemHealth =
+  healthData?.system ||
+  {};
 
   const {
     users = 0,
@@ -237,8 +275,14 @@ xl:grid-cols-6
 
         <StatCard
           title="Paid Payments"
-          value={paymentStats.completed}
+          value={paymentStats.completed || 0}
           icon={<CreditCard />}
+        />
+
+        <StatCard
+          title="System Status"
+          value={systemHealth.status || "Healthy"}
+          icon={<TrendingUp />}
         />
       </div>
       {/* REVENUE ANALYTICS */}

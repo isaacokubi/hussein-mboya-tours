@@ -20,6 +20,11 @@ import {
 
 import adminMiddleware from "../middleware/adminMiddleware.js";
 
+import {
+  getUsers,
+  updateUserStatus
+} from "../controllers/adminUserController.js";
+
 const router = express.Router();
 
 /*
@@ -103,5 +108,24 @@ router.put(
   "/bookings/:id/assign",
   assignBookingResources
 );
+
+
+/*
+|--------------------------------------------------------------------------
+| USERS
+|--------------------------------------------------------------------------
+*/
+
+router.get(
+  "/users",
+  getUsers
+);
+
+
+router.put(
+  "/users/:id/status",
+  updateUserStatus
+);
+
 
 export default router;

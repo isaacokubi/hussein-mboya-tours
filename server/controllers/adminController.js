@@ -4,6 +4,7 @@ import User from "../models/User.js";
 import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
 import Destination from "../models/Destination.js";
+import Payment from "../models/Payment.js";
 
 
 /*
