@@ -104,9 +104,9 @@ export const adminOnly = roleMiddleware("admin");
 
 export const managerOnly = roleMiddleware("tour_manager");
 
-export const agentOnly = roleMiddleware("travel_agent");
+export const agentOnly = roleMiddleware("agent");
 
-export const guideOnly = roleMiddleware("guide");
+export const guideOnly = roleMiddleware("tour_guide");
 
 export const customerOnly = roleMiddleware("customer");
 

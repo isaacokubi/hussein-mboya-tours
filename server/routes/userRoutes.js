@@ -54,14 +54,14 @@ router.get(
 
 router.get(
   "/guides",
-  roleMiddleware(["admin", "tour_manager"]),
+  roleMiddleware("admin", "tour_manager"),
   getGuides
 );
 
 // DELETE USER
 router.delete(
   "/:id",
-  roleMiddleware(["admin"]),
+  roleMiddleware("admin"),
   deleteUser
 );
 

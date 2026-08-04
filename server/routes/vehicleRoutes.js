@@ -49,7 +49,7 @@ router.use(protect);
  */
 router.post(
   "/",
-  roleMiddleware(["admin", "tour_manager"]),
+  roleMiddleware("admin", "tour_manager"),
   upload.single("image"),
   createVehicle
 );
@@ -60,7 +60,7 @@ router.post(
  */
 router.get(
   "/",
-  roleMiddleware(["admin", "tour_manager", "guide"]),
+  roleMiddleware("admin", "tour_manager", "tour_guide"),
   getVehicles
 );
 
@@ -70,7 +70,7 @@ router.get(
  */
 router.get(
   "/:id",
-  roleMiddleware(["admin", "tour_manager", "guide"]),
+  roleMiddleware("admin", "tour_manager", "tour_guide"),
   getVehicle
 );
 
@@ -80,7 +80,7 @@ router.get(
  */
 router.put(
   "/:id",
-  roleMiddleware(["admin", "tour_manager"]),
+  roleMiddleware("admin", "tour_manager"),
   upload.single("image"),
   updateVehicle
 );
@@ -96,7 +96,7 @@ router.put(
  */
 router.put(
   "/:id/assign-driver",
-  roleMiddleware(["admin", "tour_manager"]),
+  roleMiddleware("admin", "tour_manager"),
   assignVehicleDriver
 );
 
@@ -105,7 +105,7 @@ router.put(
  */
 router.put(
   "/:id/remove-driver",
-  roleMiddleware(["admin", "tour_manager"]),
+  roleMiddleware("admin", "tour_manager"),
   removeVehicleDriver
 );
 
@@ -120,7 +120,7 @@ router.put(
  */
 router.delete(
   "/:id",
-  roleMiddleware(["admin"]),
+  roleMiddleware("admin"),
   deleteVehicle
 );
 
@@ -129,7 +129,7 @@ router.delete(
  */
 router.patch(
   "/:id/restore",
-  roleMiddleware(["admin"]),
+  roleMiddleware("admin"),
   restoreVehicle
 );
 
