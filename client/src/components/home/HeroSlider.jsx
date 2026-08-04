@@ -38,10 +38,10 @@ export default function HeroSlider() {
     <section
       className="
         relative
-        px-4
-        md:px-8
-        lg:px-12
-        py-6
+        px-1
+        
+        
+        py-1
         overflow-hidden
       "
     >
@@ -50,7 +50,7 @@ export default function HeroSlider() {
           relative
           h-[85vh]
           overflow-hidden
-          rounded-3xl
+          rounded-xl
           shadow-2xl
         "
       >
