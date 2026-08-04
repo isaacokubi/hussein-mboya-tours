@@ -130,6 +130,43 @@ const EditTour =()=>{
 
 
 
+    const {
+        mutate: saveTour,
+        isPending
+    } = useMutation({
+
+        mutationFn:(data)=>updateTour(id,data),
+
+        onSuccess:()=>{
+
+            toast.success(
+                "Tour updated successfully"
+            );
+
+            queryClient.invalidateQueries([
+                "tour",
+                id
+            ]);
+
+            navigate("/tour-manager/tours");
+
+        },
+
+        onError:(error)=>{
+
+            toast.error(
+                error?.response?.data?.message ||
+                "Update failed"
+            );
+
+        }
+
+    });
+
+
+
+
+
 
 
 
