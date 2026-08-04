@@ -520,7 +520,7 @@ const EditTour =()=>{
 
                         name="title"
 
-                        value={form.title}
+                        value={form?.title || ""}
 
                         onChange={handleChange}
 
@@ -539,7 +539,7 @@ const EditTour =()=>{
 
                         name="category"
 
-                        value={form.category}
+                        value={form?.category || ""}
 
                         onChange={handleChange}
 
@@ -558,7 +558,7 @@ const EditTour =()=>{
 
                         name="destination"
 
-                        value={form.destination}
+                        value={form?.destination || ""}
 
                         onChange={handleChange}
 
@@ -632,7 +632,7 @@ const EditTour =()=>{
 
                         name="description"
 
-                        value={form.description}
+                        value={form?.description || ""}
 
                         onChange={handleChange}
 
@@ -657,7 +657,7 @@ const EditTour =()=>{
 
                         name="date"
 
-                        value={form.date}
+                        value={form?.date || ""}
 
                         onChange={handleChange}
 
@@ -679,7 +679,7 @@ const EditTour =()=>{
 
                         name="capacity"
 
-                        value={form.capacity}
+                        value={form?.capacity || ""}
 
                         onChange={handleChange}
 
@@ -701,7 +701,7 @@ const EditTour =()=>{
 
                         name="duration"
 
-                        value={form.duration}
+                        value={form?.duration || ""}
 
                         onChange={handleChange}
 
@@ -721,7 +721,7 @@ const EditTour =()=>{
 
                         name="difficulty"
 
-                        value={form.difficulty}
+                        value={form?.difficulty || ""}
 
                         onChange={handleChange}
 
@@ -767,7 +767,7 @@ const EditTour =()=>{
 
                         name="price"
 
-                        value={form.price}
+                        value={form?.price || ""}
 
                         onChange={handleChange}
 
@@ -789,7 +789,7 @@ const EditTour =()=>{
 
                         name="discount"
 
-                        value={form.discount}
+                        value={form?.discount || ""}
 
                         onChange={handleChange}
 
@@ -933,7 +933,7 @@ const EditTour =()=>{
 
                         name="status"
 
-                        value={form.status}
+                        value={form?.status || ""}
 
                         onChange={handleChange}
 
@@ -991,7 +991,7 @@ const EditTour =()=>{
 
                         name="images"
 
-                        value={form.images}
+                        value={form?.images || ""}
 
                         onChange={handleChange}
 
