@@ -104,7 +104,7 @@ export const deleteTour = async (id) => {
 export const getGuides = async () => {
 
   const { data } = await api.get(
-    "/guides"
+    "/users/guides"
   );
 
   return data.guides || data.data || data.users || data;
