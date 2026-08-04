@@ -702,22 +702,20 @@ export const getDashboard = async (req, res) => {
 
 
                 userStats:{
-
-
                     customers,
-
-
-
                     agents:
                         agents.length,
-
-
-
                     guides:
                         guides.length
+                },
 
 
-                }
+                agents:
+                    agents.length,
+
+
+                guides:
+                    guides.length
 
 
 
