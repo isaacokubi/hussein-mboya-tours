@@ -178,7 +178,6 @@ const bookingSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Agent",
       default: null,
-      index: true,
     },
 
     bookingSource: {
@@ -211,7 +210,6 @@ const bookingSchema = new mongoose.Schema(
     travelDate: {
       type: Date,
       required: true,
-      index: true,
     },
 
     travelers: {
