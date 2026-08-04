@@ -66,6 +66,9 @@ const EditTour =()=>{
 
     const queryClient = useQueryClient();
 
+    console.log("EDIT TOUR DATA:", tourData);
+
+
 
 
 
@@ -110,14 +113,11 @@ const EditTour =()=>{
 
         select:(res)=>{
 
-    const tour =
-        res?.tour ||
-        res?.data?.tour ||
-        res;
+            console.log("EDIT TOUR SELECT:", res);
 
-    return tour;
+            return res;
 
-},
+        },
 
 
 
