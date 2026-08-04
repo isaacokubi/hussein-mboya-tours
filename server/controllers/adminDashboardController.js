@@ -672,15 +672,15 @@ const paymentRevenue = {
 
 
                     completed:
-                        payments.paid,
+                        paymentRevenue.completed,
 
 
                     pending:
-                        payments.pending,
+                        paymentRevenue.pending,
 
 
                     failed:
-                        payments.failed
+                        paymentRevenue.failed
 
 
                 },
