@@ -1,0 +1,27 @@
+require("dotenv").config();
+
+(async()=>{
+
+const mongoose = require("mongoose");
+
+await mongoose.connect(process.env.MONGODB_URI);
+
+const {default: Payment} = await import("./models/Payment.js");
+const {default: Booking} = await import("./models/Booking.js");
+
+console.log("PAYMENTS");
+console.log(
+await Payment.find()
+.select("amount status booking")
+);
+
+console.log("BOOKINGS");
+console.log(
+await Booking.find()
+.select("totalAmount paymentStatus status")
+);
+
+process.exit();
+
+})();
+
