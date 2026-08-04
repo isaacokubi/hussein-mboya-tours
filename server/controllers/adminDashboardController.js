@@ -1,4 +1,3 @@
-const Payment = require("../models/Payment");
 import User from "../models/User.js";
 import Tour from "../models/Tour.js";
 import Booking from "../models/Booking.js";
