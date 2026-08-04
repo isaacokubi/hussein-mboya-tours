@@ -53,18 +53,19 @@ export const getDashboard = async (req, res) => {
 
 
 
-        const paymentStats = await Payment.aggregate([
-    {
-        $group:{
-            _id:"$status",
-            count:{
-                $sum:1
-            },
-            amount:{
-                $sum:"$amount"
-            }
-        }
-    }
+        const paymentStats =
+await Payment.aggregate([
+{
+$group:{
+_id:"$status",
+count:{
+$sum:1
+},
+amount:{
+$sum:"$amount"
+}
+}
+}
 ]);
 
 
@@ -446,39 +447,13 @@ const paymentRevenue = {
 
 
         const recentBookings =
-
-            await Booking.find()
-
-
-                .populate(
-                    "tour",
-                    "title"
-                )
-
-
-                .populate(
-                    "user",
-                    "name email"
-                )
-
-
-                .populate(
-                    "customer",
-                    "name email"
-                )
-
-
-                .sort({
-
-                    createdAt:-1
-
-                })
-
-
-                .limit(10)
-
-
-                .lean();
+await Booking.find()
+.sort({
+createdAt:-1
+})
+.limit(5)
+.populate("tour","title")
+.populate("user","name email");
 
 
 
