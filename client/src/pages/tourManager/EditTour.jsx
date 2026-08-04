@@ -349,20 +349,23 @@ const EditTour =()=>{
 
             images:
 
+                Array.isArray(form.images)
 
-                form.images
+                    ?
 
-                ?
+                    form.images
 
-                form.images
+                    :
 
-                .split(",")
+                    form.images
 
-                .map(img=>img.trim())
+                    ?
 
-                :
+                    form.images.split(",").map(img=>img.trim())
 
-                []
+                    :
+
+                    []
 
 
 
