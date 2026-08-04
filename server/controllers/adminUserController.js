@@ -30,7 +30,10 @@ export const updateUserStatus = async (req, res, next) => {
 
     const user = await User.findByIdAndUpdate(
       req.params.id,
-      { status },
+      {
+        status,
+        isActive: status === "active"
+      },
       { new: true }
     ).select("-password");
 
