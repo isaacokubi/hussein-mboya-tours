@@ -70,6 +70,38 @@ const EditTour =()=>{
 
 
     const {
+        data: vehicles = []
+    } = useQuery({
+
+        queryKey:[
+            "vehicles"
+        ],
+
+        queryFn:getVehicles
+
+    });
+
+
+
+
+
+    const {
+        data: guides = []
+    } = useQuery({
+
+        queryKey:[
+            "guides"
+        ],
+
+        queryFn:getGuides
+
+    });
+
+
+
+
+
+    const {
         data: destinations = []
     } = useQuery({
 
