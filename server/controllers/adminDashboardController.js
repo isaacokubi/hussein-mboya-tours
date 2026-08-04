@@ -56,46 +56,31 @@ export const getDashboard = async (req, res) => {
         const paymentRevenue =
             await Payment.aggregate([
 
-
                 {
-                    $match: {
-
-                        status: {
-
-                            $in: [
+                    $match:{
+                        status:{
+                            $in:[
                                 "completed",
                                 "paid",
                                 "success"
                             ]
-
                         }
-
                     }
-
                 },
 
-
                 {
-                    $group: {
-
+                    $group:{
                         _id:null,
-
-
                         total:{
-
                             $sum:{
                                 $ifNull:[
                                     "$amount",
-                                    "$totalAmount"
+                                    0
                                 ]
                             }
-
                         }
-
                     }
-
                 }
-
 
             ]);
 
@@ -191,26 +176,13 @@ export const getDashboard = async (req, res) => {
 
                 await Payment.countDocuments({
 
-                    $or:[
-                        {
-                            status:{
-                                $in:[
-                                    "paid",
-                                    "completed",
-                                    "success"
-                                ]
-                            }
-                        },
-                        {
-                            paymentStatus:{
-                                $in:[
-                                    "paid",
-                                    "completed",
-                                    "success"
-                                ]
-                            }
-                        }
-                    ]
+                    status:{
+                        $in:[
+                            "completed",
+                            "paid",
+                            "success"
+                        ]
+                    }
 
                 }),
 
