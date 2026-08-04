@@ -55,3 +55,47 @@ export const getGuides = async (req, res, next) => {
         next(error);
     }
 };
+export const deleteUser = async (req,res)=>{
+
+try{
+
+const user = await User.findById(req.params.id);
+
+
+if(!user){
+
+return res.status(404).json({
+success:false,
+message:"User not found"
+});
+
+}
+
+
+await user.deleteOne();
+
+
+return res.json({
+
+success:true,
+
+message:"User deleted successfully"
+
+});
+
+
+}catch(error){
+
+console.error(error);
+
+res.status(500).json({
+
+success:false,
+
+message:error.message
+
+});
+
+}
+
+};

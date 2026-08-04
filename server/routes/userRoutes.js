@@ -4,6 +4,7 @@ import express from "express";
 
 // Controllers
 import {
+  deleteUser,
   getUserProfile,
   getGuides,
 } from "../controllers/userController.js";
@@ -57,4 +58,12 @@ router.get(
   getGuides
 );
 
+// DELETE USER
+router.delete(
+  "/:id",
+  roleMiddleware(["admin"]),
+  deleteUser
+);
+
 export default router;
+
