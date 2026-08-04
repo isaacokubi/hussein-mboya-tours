@@ -53,9 +53,11 @@ export const roleMiddleware = (...allowedRoles) => {
             */
 
             const userRole =
-                req.user.roleId?.name ||
-                req.user.role ||
-                "";
+                typeof req.user.roleId === "object"
+                    ? req.user.roleId?.name
+                    : req.user.roleId ||
+                      req.user.role ||
+                      "";
 
             /*
             |--------------------------------------------------------------------------
@@ -63,7 +65,7 @@ export const roleMiddleware = (...allowedRoles) => {
             |--------------------------------------------------------------------------
             */
 
-            const normalizedRole = userRole.toLowerCase();
+            const normalizedRole = String(userRole).toLowerCase();
 
             const normalizedAllowed = allowedRoles.map((role) =>
                 String(
