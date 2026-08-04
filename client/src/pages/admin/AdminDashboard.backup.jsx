@@ -16,4 +16,3 @@ import {
   MapPinned,
   FolderKanban,
 } from "lucide-react";
-export default AdminDashboard;
