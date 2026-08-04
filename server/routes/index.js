@@ -1,4 +1,6 @@
 import express from "express";
+import userRoutes from "./userRoutes.js";
+import vehicleRoutes from "./vehicleRoutes.js";
 
 import authRoutes from "./authRoutes.js";
 import bookingRoutes from "./bookingRoutes.js";
@@ -152,3 +154,7 @@ router.use(
 
 
 export default router;
+
+router.use("/vehicles", vehicleRoutes);
+
+router.use("/users", userRoutes);

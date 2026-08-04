@@ -19,10 +19,10 @@ export const getTours = async (params = {}) => {
 
 export const getTour = async (id) => {
   const { data } = await api.get(
-    `/tours/${id}`
+    `/admin/tours/${id}`
   );
 
-  return data;
+  return data.tour || data.data || data;
 };
 
 export const getTourBySlug = async (slug) => {
@@ -88,3 +88,42 @@ export const deleteTour = async (id) => {
 
   return data;
 };
+
+/*
+|--------------------------------------------------------------------------
+| SUPPORT DATA
+|--------------------------------------------------------------------------
+*/
+
+export const getGuides = async () => {
+
+  const { data } = await api.get(
+    "/guides"
+  );
+
+  return data.guides || data.data || data.users || data;
+
+};
+
+
+export const getVehicles = async () => {
+
+  const { data } = await api.get(
+    "/vehicles"
+  );
+
+  return data.vehicles || data.data || data;
+
+};
+
+
+export const getDestinations = async () => {
+
+  const { data } = await api.get(
+    "/destinations"
+  );
+
+  return data.destinations || data.data || data;
+
+};
+

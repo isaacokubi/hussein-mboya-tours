@@ -557,7 +557,7 @@ const deleteMutation = useMutation({
 
                         onClick={()=>
                           navigate(
-                            `/admin/edit-tour/${tour._id}`
+                            `/tour-manager/edit-tour/${tour._id}`
                           )
                         }
 
