@@ -18,11 +18,21 @@ export const getTours = async (params = {}) => {
 };
 
 export const getTour = async (id) => {
-  const { data } = await api.get(
+
+  console.log("EDIT TOUR REQUEST:", id);
+
+  const response = await api.get(
     `/admin/tours/${id}`
   );
 
-  return data.tour || data.data || data;
+  console.log("EDIT TOUR RESPONSE:", response.data);
+
+  return (
+    response.data.tour ||
+    response.data.data ||
+    response.data
+  );
+
 };
 
 export const getTourBySlug = async (slug) => {
