@@ -483,6 +483,25 @@ export const getDashboardStats = async (req, res, next) => {
 
 
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | RECENT BOOKINGS
+    |--------------------------------------------------------------------------
+    */
+
+    const recentBookings = await Booking.find({
+      isDeleted:false
+    })
+      .sort({
+        createdAt:-1
+      })
+      .limit(5)
+      .populate("customer","name email")
+      .populate("tour","title")
+      .lean();
+
+
     /*
     |--------------------------------------------------------------------------
     | RESPONSE
@@ -529,6 +548,8 @@ export const getDashboardStats = async (req, res, next) => {
 
         vehicleStats,
 
+
+        recentBookings,
 
 
         summary:{
