@@ -295,8 +295,7 @@ const EditTour =()=>{
 
 
 
-    if(tourLoading || !form)
-
+    if(tourLoading || !form){
 
     return (
 
@@ -315,12 +314,7 @@ const EditTour =()=>{
 
     );
 
-
-
-
-
-
-
+}
 
 
     return (
