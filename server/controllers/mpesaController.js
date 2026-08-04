@@ -490,6 +490,7 @@ export const mpesaCallback = async (req, res, next) => {
 
     booking.paymentStatus = "paid";
 
+    // Update booking lifecycle after successful payment
     if ("bookingStatus" in booking) {
       booking.bookingStatus = "confirmed";
     }
