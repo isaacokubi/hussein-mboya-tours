@@ -35,7 +35,7 @@ export const getDashboardStats = async (req, res, next) => {
 
       revenueData,
 
-      bookingStatus,
+      status,
 
       monthlyRevenue,
 
@@ -141,7 +141,7 @@ export const getDashboardStats = async (req, res, next) => {
 
             _id:{
 
-              bookingStatus:"$bookingStatus",
+              status:"$status",
 
               paymentStatus:"$paymentStatus"
 
@@ -530,7 +530,7 @@ export const getDashboardStats = async (req, res, next) => {
 
 
 
-        bookingStatus,
+        status,
 
 
 

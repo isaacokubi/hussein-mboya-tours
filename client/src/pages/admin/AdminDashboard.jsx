@@ -83,7 +83,7 @@ const paymentStats = stats.paymentStats || {
 
     monthlyRevenue = [],
 
-    bookingStatus = [],
+    statusData = [],
 
     popularTours = [],
 
@@ -349,7 +349,7 @@ xl:grid-cols-6
             gap-4
           "
         >
-          {bookingStatus.map((item, index) => (
+          {statusData.map((item, index) => (
             <div
               key={index}
               className="
@@ -365,7 +365,7 @@ xl:grid-cols-6
                     "
               >
                 {
-  item?._id?.bookingStatus ||
+  item?._id?.status ||
   (
     typeof item?._id?.paymentStatus === "object"
     ?
@@ -549,7 +549,7 @@ rounded-xl
                               bg-gray-100
                             "
                       >
-                        {booking.bookingStatus || "Pending"}
+                        {booking.status || "Pending"}
                       </span>
                     </td>
                   </tr>

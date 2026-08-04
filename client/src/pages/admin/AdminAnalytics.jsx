@@ -333,7 +333,7 @@ export default function AdminAnalytics(){
                         <Pie
 
                         data={
-                            analytics.bookingStatus || []
+                            analytics.status || []
                         }
 
                         dataKey="count"

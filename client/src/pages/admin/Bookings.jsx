@@ -188,11 +188,11 @@ export default function Bookings(){
 
                     label:"Status",
 
-                    key:"bookingStatus",
+                    key:"status",
 
                     render:(b)=>
 
-                        b.bookingStatus ||
+                        b.status ||
 
                         b.status ||
 

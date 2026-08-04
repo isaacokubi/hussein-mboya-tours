@@ -514,7 +514,7 @@ export default function ManageBookings(){
                         {
                             booking.status ||
 
-                            booking.bookingStatus ||
+                            booking.status ||
 
                             "Pending"
                         }

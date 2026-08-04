@@ -144,8 +144,8 @@ export default function AdminDashboard() {
 
             <BookingOverview
 
-                bookingStatus={
-                    dashboard.bookingStatus || []
+                statusData={
+                    dashboard.status || []
                 }
 
             />
