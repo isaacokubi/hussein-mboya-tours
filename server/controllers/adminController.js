@@ -397,25 +397,53 @@ export const getDashboardStats = async (req, res, next) => {
 
       completed:
 
-        paymentStatsData.find(
-          item => item._id === "paid"
-        )?.count || 0,
+        paymentStatsData
+          .filter(
+            item =>
+              [
+                "paid",
+                "completed",
+                "success"
+              ].includes(item._id)
+          )
+          .reduce(
+            (sum,item)=>sum + item.count,
+            0
+          ),
 
 
 
       pending:
 
-        paymentStatsData.find(
-          item => item._id === "pending"
-        )?.count || 0,
+        paymentStatsData
+          .filter(
+            item =>
+              [
+                "pending",
+                "partial"
+              ].includes(item._id)
+          )
+          .reduce(
+            (sum,item)=>sum + item.count,
+            0
+          ),
 
 
 
       failed:
 
-        paymentStatsData.find(
-          item => item._id === "failed"
-        )?.count || 0
+        paymentStatsData
+          .filter(
+            item =>
+              [
+                "failed",
+                "cancelled"
+              ].includes(item._id)
+          )
+          .reduce(
+            (sum,item)=>sum + item.count,
+            0
+          )
 
 
     };
