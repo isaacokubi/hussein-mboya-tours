@@ -88,12 +88,7 @@ export default function AdminDashboard() {
 
   const stats = data?.data || data || {};
 
-console.log(
-  "ADMIN DASHBOARD STATS:",
-  stats,
-  "MONTHLY REVENUE:",
-  stats.monthlyRevenue
-);
+
 
 const statusDataList =
   stats.status || [];
