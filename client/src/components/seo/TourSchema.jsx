@@ -23,7 +23,7 @@ export default function TourSchema({ tour }) {
       tour.description,
 
     image: image
-      ? image.startsWith("http")
+      ? (image?.url || image)?.startsWith("http")
         ? image
         : `${SITE_URL}${image}`
       : undefined,

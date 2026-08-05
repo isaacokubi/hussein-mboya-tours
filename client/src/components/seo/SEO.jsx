@@ -25,7 +25,7 @@ export default function SEO({
 
   const pageUrl = `${SITE_URL}${url}`;
 
-  const pageImage = image.startsWith("http")
+  const pageImage = (image?.url || image)?.startsWith("http")
     ? image
     : `${SITE_URL}${image}`;
 

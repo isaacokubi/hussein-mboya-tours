@@ -97,7 +97,7 @@ export default function TourDetails() {
 
         <div>
           <img
-            src={image}
+            src={image?.url || image}
             alt={tour.title}
             className="
           w-full
