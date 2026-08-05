@@ -106,26 +106,67 @@ const DestinationManagement = () => {
                     className="
                     border
                     rounded-lg
-                    p-4
+                    overflow-hidden
+                    bg-white
+                    shadow
                     "
                   >
 
+                    {
+                      destination.images?.length > 0 && (
 
-                    <h3 className="font-bold text-lg">
-                      {destination.name}
-                    </h3>
+                        <img
+                          src={destination.images[0]}
+                          alt={destination.name}
+                          className="
+                          w-full
+                          h-48
+                          object-cover
+                          "
+                        />
+
+                      )
+                    }
 
 
-                    <p className="text-sm text-gray-600 mt-2">
-                      {destination.location || "No location"}
-                    </p>
+                    <div className="p-4">
+
+                      <h3 className="font-bold text-lg">
+                        {destination.name}
+                      </h3>
 
 
-                    <p className="mt-3">
-                      Status:
-                      {" "}
-                      {destination.status || "active"}
-                    </p>
+                      <p className="text-sm text-gray-600 mt-2">
+                        {
+                          destination.country ||
+                          "No country"
+                        }
+                      </p>
+
+
+                      <p className="text-sm mt-3">
+                        {
+                          destination.description ||
+                          "No description"
+                        }
+                      </p>
+
+
+                      <p className="mt-3">
+                        Status:
+                        {" "}
+                        {destination.status || "active"}
+                      </p>
+
+
+                      <p className="mt-2 text-sm">
+                        Featured:
+                        {" "}
+                        {destination.featured ? "Yes" : "No"}
+                      </p>
+
+
+                    </div>
 
 
                   </div>
