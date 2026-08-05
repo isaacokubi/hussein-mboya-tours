@@ -86,6 +86,7 @@ import UserManagement from "../pages/admin/UserManagement";
 
 import TourManagement from "../pages/admin/TourManagement";
 import ManageTours from "../pages/admin/ManageTours";
+import DestinationManagement from "../pages/admin/DestinationManagement";
 
 // ============================================================
 // ROUTE GUARDS
@@ -286,11 +287,7 @@ export default function AppRoutes() {
 
         <Route
           path="destinations"
-          element={
-            <div className="p-6">
-              <h1 className="text-2xl font-bold">Destination Management</h1>
-            </div>
-          }
+          element={<DestinationManagement />}
         />
 
         <Route
