@@ -126,6 +126,9 @@ Failed loading bookings
 
 
 const bookings =
+
+
+
 Array.isArray(data)
 ? data
 : data?.bookings || [];
