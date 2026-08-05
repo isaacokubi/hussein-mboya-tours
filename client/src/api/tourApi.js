@@ -286,7 +286,19 @@ export const getVehicles = async () => {
     );
 
 
-    return data.data || data.vehicles || [];
+    console.log(
+        "VEHICLES API RESPONSE:",
+        data
+    );
+
+
+    return Array.isArray(data)
+        ? data
+        :
+        data?.vehicles ||
+        data?.data?.vehicles ||
+        data?.data ||
+        [];
 
 };
 
