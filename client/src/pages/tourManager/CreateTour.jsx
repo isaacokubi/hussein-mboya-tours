@@ -348,7 +348,59 @@ console.log("FINAL DESTINATIONS DEBUG:", destinations);
 
 
 
-    const submitHandler=(e)=>{
+    
+const submitHandler = (e)=>{
+
+    e.preventDefault();
+
+
+    const payload = {
+
+        title: form.title,
+
+        description: form.description,
+
+        destination: form.destination,
+
+        country: form.country,
+
+        location: form.location,
+
+        date: form.date,
+
+        price: Number(form.price),
+
+        discount: Number(form.discount || 0),
+
+        category: form.category,
+
+        capacity: Number(form.capacity),
+
+        duration: Number(form.duration),
+
+        difficulty: form.difficulty,
+
+        guide: form.guide || null,
+
+        vehicle: form.vehicle || null,
+
+        images: form.images,
+
+        status: form.status
+
+    };
+
+
+    console.log(
+        "FULL TOUR PAYLOAD:",
+        payload
+    );
+
+
+    saveTour(payload);
+
+};
+
 
 
 
