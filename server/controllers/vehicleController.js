@@ -35,9 +35,7 @@ export const createVehicle = async (req, res, next) => {
 
 export const getVehicles = async (req, res, next) => {
     try {
-        const vehicles = await Vehicle.find({
-            isDeleted: false,
-        })
+        const vehicles = await Vehicle.find({})
             .populate("driver", "name phone email")
             .sort({ createdAt: -1 })
             .lean();
