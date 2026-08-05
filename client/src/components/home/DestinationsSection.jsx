@@ -163,7 +163,7 @@ export default function DestinationsSection() {
 
 
 
-          {destinations.map((destination)=>(
+          {(Array.isArray(destinations) ? destinations : []).map((destination)=>(
 
 
             <Link

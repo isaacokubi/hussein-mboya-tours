@@ -129,7 +129,7 @@ export default function CategoriesSection() {
 
 
               {
-                categories.map((category) => {
+                (Array.isArray(categories) ? categories : []).map((category) => {
 
 
                   const Icon =

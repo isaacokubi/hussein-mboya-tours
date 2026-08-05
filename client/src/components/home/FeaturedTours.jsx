@@ -115,7 +115,7 @@ export default function FeaturedTours() {
                 gap-8
               "
           >
-            {tours.map((tour) => (
+            {(Array.isArray(tours) ? tours : []).map((tour) => (
               <div
                 key={tour._id}
                 className="
