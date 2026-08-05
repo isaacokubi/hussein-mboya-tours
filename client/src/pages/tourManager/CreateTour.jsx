@@ -268,7 +268,11 @@ const destinations =
 
         mutationFn:(payload)=>
 
-            createTour(payload),
+            
+console.log("PAYLOAD DEBUG:", payload);
+
+createTour(payload),
+
 
 
 
