@@ -361,29 +361,37 @@ const CreateTour =()=>{
 
 
 
-            capacity:Number(form.capacity),
+            capacity: Number.isFinite(Number(form?.capacity))
+                ? Number(form?.capacity)
+                : 0,
 
 
 
-            duration:Number(form.duration),
+            duration:Number.isFinite(Number(form?.duration))
+                ? Number(form?.duration)
+                : 0,
 
 
 
-            price:Number(form.price),
+            price:Number.isFinite(Number(form?.price))
+                ? Number(form?.price)
+                : 0,
 
 
 
-            discount:Number(form.discount),
+            discount:Number.isFinite(Number(form?.discount))
+                ? Number(form?.discount)
+                : 0,
 
 
 
             images:
 
-                form.images
+                form?.images
 
                 ?
 
-                form.images
+                form?.images
 
                 .split(",")
 
@@ -480,7 +488,7 @@ const CreateTour =()=>{
 
                     name="title"
 
-                    value={form.title}
+                    value={form?.title || ""}
 
                     onChange={handleChange}
 
@@ -504,7 +512,7 @@ const CreateTour =()=>{
 
                     name="category"
 
-                    value={form.category}
+                    value={form?.category || ""}
 
                     onChange={handleChange}
 
@@ -528,7 +536,7 @@ const CreateTour =()=>{
                     name="destination"
 
 
-                    value={form.destination}
+                    value={form?.destination || ""}
 
 
                     onChange={handleChange}
@@ -599,7 +607,7 @@ const CreateTour =()=>{
 
                     name="country"
 
-                    value={form.country}
+                    value={form?.country || ""}
 
                     onChange={handleChange}
 
@@ -623,7 +631,7 @@ const CreateTour =()=>{
                     name="description"
 
 
-                    value={form.description}
+                    value={form?.description || ""}
 
 
                     onChange={handleChange}
@@ -657,7 +665,7 @@ const CreateTour =()=>{
                     name="date"
 
 
-                    value={form.date}
+                    value={form?.date || ""}
 
 
                     onChange={handleChange}
@@ -685,7 +693,7 @@ const CreateTour =()=>{
                     name="capacity"
 
 
-                    value={form.capacity}
+                    value={form?.capacity}
 
 
                     onChange={handleChange}
@@ -716,7 +724,7 @@ const CreateTour =()=>{
                     name="duration"
 
 
-                    value={form.duration}
+                    value={form?.duration || ""}
 
 
                     onChange={handleChange}
@@ -744,7 +752,7 @@ const CreateTour =()=>{
                     name="difficulty"
 
 
-                    value={form.difficulty}
+                    value={form?.difficulty || ""}
 
 
                     onChange={handleChange}
@@ -800,7 +808,7 @@ const CreateTour =()=>{
                     name="price"
 
 
-                    value={form.price}
+                    value={form?.price || ""}
 
 
                     onChange={handleChange}
@@ -831,7 +839,7 @@ const CreateTour =()=>{
                     name="discount"
 
 
-                    value={form.discount}
+                    value={form?.discount || ""}
 
 
                     onChange={handleChange}
@@ -859,7 +867,7 @@ const CreateTour =()=>{
                     name="guide"
 
 
-                    value={form.guide}
+                    value={form?.guide || ""}
 
 
                     onChange={handleChange}
@@ -927,7 +935,7 @@ const CreateTour =()=>{
                     name="vehicle"
 
 
-                    value={form.vehicle}
+                    value={form?.vehicle || ""}
 
 
                     onChange={handleChange}
@@ -1007,7 +1015,7 @@ const CreateTour =()=>{
                     name="images"
 
 
-                    value={form.images}
+                    value={form?.images || ""}
 
 
                     onChange={handleChange}

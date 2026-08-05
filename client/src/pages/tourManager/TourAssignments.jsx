@@ -294,7 +294,7 @@ export default function TourAssignments(){
 
             <div
 
-              key={tour._id}
+              key={tour?._id}
 
               className="
                 bg-white
@@ -312,7 +312,7 @@ export default function TourAssignments(){
                 font-bold
               ">
 
-                {tour.title}
+                {tour?.title}
 
               </h2>
 
@@ -330,7 +330,7 @@ export default function TourAssignments(){
 
                   {
                     tour.assignmentStatus ||
-                    tour.status ||
+                    tour?.status ||
                     "pending"
                   }
 
@@ -357,12 +357,12 @@ export default function TourAssignments(){
                 <select
 
                   value={
-                    assignments[tour._id]?.guideId || ""
+                    assignments[tour?._id]?.guideId || ""
                   }
 
                   onChange={(e)=>
                     handleChange(
-                      tour._id,
+                      tour?._id,
                       "guideId",
                       e.target.value
                     )
@@ -413,12 +413,12 @@ export default function TourAssignments(){
                 <select
 
                   value={
-                    assignments[tour._id]?.driverId || ""
+                    assignments[tour?._id]?.driverId || ""
                   }
 
                   onChange={(e)=>
                     handleChange(
-                      tour._id,
+                      tour?._id,
                       "driverId",
                       e.target.value
                     )
@@ -469,12 +469,12 @@ export default function TourAssignments(){
                 <select
 
                   value={
-                    assignments[tour._id]?.vehicleId || ""
+                    assignments[tour?._id]?.vehicleId || ""
                   }
 
                   onChange={(e)=>
                     handleChange(
-                      tour._id,
+                      tour?._id,
                       "vehicleId",
                       e.target.value
                     )
@@ -536,7 +536,7 @@ export default function TourAssignments(){
 
                 onClick={()=>
                   handleAssign(
-                    tour._id
+                    tour?._id
                   )
                 }
 

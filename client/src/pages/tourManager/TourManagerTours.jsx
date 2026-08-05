@@ -211,7 +211,7 @@ search.toLowerCase();
 
 
 const title =
-tour.title
+tour?.title
 ?.toLowerCase()
 .includes(searchText);
 
@@ -251,7 +251,7 @@ true
 
 :
 
-tour.status === status;
+tour?.status === status;
 
 
 
@@ -646,7 +646,7 @@ filteredTours.map((tour)=>(
 
 <tr
 
-key={tour._id}
+key={tour?._id}
 
 className="
 border-b
@@ -665,7 +665,7 @@ p-4
 font-semibold
 ">
 
-{tour.title}
+{tour?.title}
 
 </td>
 
@@ -707,12 +707,12 @@ tour.destination || tour.country || "N/A"
 
 {
 
-tour.date
+tour?.date
 
 ?
 
 new Date(
-tour.date
+tour?.date
 )
 .toLocaleDateString()
 
@@ -735,7 +735,7 @@ tour.date
 
 <td>
 
-{tour.capacity || 0}
+{tour?.capacity || 0}
 
 </td>
 
@@ -758,7 +758,7 @@ text-green-700
 text-sm
 ">
 
-{tour.status || "upcoming"}
+{tour?.status || "upcoming"}
 
 </span>
 
@@ -788,7 +788,7 @@ gap-3
 <button
 
 onClick={()=>navigate(
-`/tour-manager/edit-tour/${tour._id}`
+`/tour-manager/edit-tour/${tour?._id}`
 )}
 
 className="
@@ -811,7 +811,7 @@ text-blue-600
 <button
 
 onClick={()=>navigate(
-`/tour-manager/assign-guide/${tour._id}`
+`/tour-manager/assign-guide/${tour?._id}`
 )}
 
 className="
@@ -834,7 +834,7 @@ text-green-600
 <button
 
 onClick={()=>navigate(
-`/tour-manager/assign-vehicle/${tour._id}`
+`/tour-manager/assign-vehicle/${tour?._id}`
 )}
 
 className="
@@ -857,7 +857,7 @@ text-purple-600
 <button
 
 onClick={()=>navigate(
-`/tour-manager/availability/${tour._id}`
+`/tour-manager/availability/${tour?._id}`
 )}
 
 className="
@@ -880,7 +880,7 @@ text-orange-600
 <button
 
 onClick={()=>handleDelete(
-tour._id
+tour?._id
 )}
 
 className="

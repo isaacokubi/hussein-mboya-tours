@@ -272,7 +272,7 @@ export default function TourManagerDashboard() {
                 ) : (
                   upcomingTours.map((tour, index) => (
                     <tr
-                      key={tour._id || index}
+                      key={tour?._id || index}
                       className="
                         border-b
                         hover:bg-gray-50
@@ -284,12 +284,12 @@ export default function TourManagerDashboard() {
                         font-semibold
                       "
                       >
-                        {tour.title || tour.name}
+                        {tour?.title || tour?.name}
                       </td>
 
-                      <td>{tour.date}</td>
+                      <td>{tour?.date}</td>
 
-                      <td>{tour.guests || tour.capacity || 0}</td>
+                      <td>{tour?.guests || tour?.capacity || 0}</td>
 
                       <td>{tour.guide?.name || tour.guide || "-"}</td>
 
@@ -304,7 +304,7 @@ export default function TourManagerDashboard() {
                           text-sm
                         "
                         >
-                          {tour.status || "upcoming"}
+                          {tour?.status || "upcoming"}
                         </span>
                       </td>
                     </tr>

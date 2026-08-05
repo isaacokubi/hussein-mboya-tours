@@ -330,27 +330,27 @@ const EditTour =()=>{
 
             ...form,
 
-            capacity: Number.isFinite(Number(form.capacity))
-                ? Number(form.capacity)
+            capacity: Number.isFinite(Number(form?.capacity))
+                ? Number(form?.capacity)
                 : 0,
 
-            duration: Number.isFinite(Number(form.duration))
-                ? Number(form.duration)
+            duration: Number.isFinite(Number(form?.duration))
+                ? Number(form?.duration)
                 : 0,
 
-            price: Number.isFinite(Number(form.price))
-                ? Number(form.price)
+            price: Number.isFinite(Number(form?.price))
+                ? Number(form?.price)
                 : 0,
 
-            discount: Number.isFinite(Number(form.discount))
-                ? Number(form.discount)
+            discount: Number.isFinite(Number(form?.discount))
+                ? Number(form?.discount)
                 : 0,
 
 
-            images: Array.isArray(form.images)
-                ? form.images
-                : form.images
-                    ? form.images.split(",").map(img => img.trim())
+            images: Array.isArray(form?.images)
+                ? form?.images
+                : form?.images
+                    ? form?.images.split(",").map(img => img.trim())
                     : []
 
         };
@@ -374,35 +374,43 @@ const EditTour =()=>{
 
 
 
-            capacity:Number(form.capacity),
+            capacity: Number.isFinite(Number(form?.capacity))
+                ? Number(form?.capacity)
+                : 0,
 
 
-            duration:Number(form.duration),
+            duration: Number.isFinite(Number(form?.duration))
+                ? Number(form?.duration)
+                : 0,
 
 
-            price:Number(form.price),
+            price: Number.isFinite(Number(form?.price))
+                ? Number(form?.price)
+                : 0,
 
 
-            discount:Number(form.discount),
+            discount: Number.isFinite(Number(form?.discount))
+                ? Number(form?.discount)
+                : 0,
 
 
 
 
             images:
 
-                Array.isArray(form.images)
+                Array.isArray(form?.images)
 
                     ?
 
-                    form.images
+                    form?.images
 
                     :
 
-                    form.images
+                    form?.images
 
                     ?
 
-                    form.images.split(",").map(img=>img.trim())
+                    form?.images.split(",").map(img=>img.trim())
 
                     :
 
@@ -612,7 +620,7 @@ const EditTour =()=>{
 
                         name="country"
 
-                        value={form.country}
+                        value={form?.country || ""}
 
                         onChange={handleChange}
 
@@ -809,7 +817,7 @@ const EditTour =()=>{
 
                         name="guide"
 
-                        value={form.guide}
+                        value={form?.guide || ""}
 
                         onChange={handleChange}
 
@@ -864,7 +872,7 @@ const EditTour =()=>{
 
                         name="vehicle"
 
-                        value={form.vehicle}
+                        value={form?.vehicle || ""}
 
                         onChange={handleChange}
 
