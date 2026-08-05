@@ -203,6 +203,7 @@ const deleteMutation = useMutation({
 
 
         <button
+          onClick={() => navigate("/tour-manager/create-tour")}
           className="
             flex
             items-center
