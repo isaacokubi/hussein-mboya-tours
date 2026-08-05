@@ -52,7 +52,7 @@ export const getAllBookings = async (req, res, next) => {
       page = 1,
       limit = 20,
       search,
-      bookingStatus,
+      status,
       paymentStatus,
     } = req.query;
 
@@ -104,13 +104,13 @@ export const getAllBookings = async (req, res, next) => {
     */
 
     if (
-      bookingStatus &&
+      status &&
       BOOKING_STATUSES.includes(
-        bookingStatus
+        status
       )
     ) {
-      filter.bookingStatus =
-        bookingStatus;
+      filter.status =
+        status;
     }
 
     if (

@@ -54,7 +54,7 @@ export const createReview = async (req, res, next) => {
     const booking = await Booking.findOne({
       user: req.user._id,
       tour,
-      bookingStatus: "completed",
+      status: "completed",
     });
 
     if (!booking) {

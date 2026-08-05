@@ -32,7 +32,7 @@ export const getTourAvailability = async (req, res, next) => {
           tour: tour._id,
           $or: [
             {
-              bookingStatus: {
+              status: {
                 $in: ["pending", "confirmed"],
               },
             },
@@ -128,7 +128,7 @@ export const updateTourAvailability = async (req, res, next) => {
           tour: tour._id,
           $or: [
             {
-              bookingStatus: {
+              status: {
                 $in: ["pending", "confirmed"],
               },
             },

@@ -157,7 +157,7 @@ export const createBooking = async (req, res, next) => {
             commissionRate:
                 agentProfile.commissionRate,
 
-            bookingStatus: "pending",
+            status: "pending",
 
             paymentStatus: "pending"
 
@@ -246,7 +246,7 @@ export const getAgentBookings = async (req, res, next) => {
         };
 
         if (req.query.status) {
-            filter.bookingStatus = req.query.status;
+            filter.status = req.query.status;
         }
 
         if (req.query.paymentStatus) {
@@ -433,7 +433,7 @@ export const updateBookingStatus = async (req, res, next) => {
         */
 
         if (
-            booking.bookingStatus === "completed"
+            booking.status === "completed"
         ) {
 
             return res.status(400).json({
@@ -453,7 +453,7 @@ export const updateBookingStatus = async (req, res, next) => {
         |--------------------------------------------------------------------------
         */
 
-        booking.bookingStatus = status;
+        booking.status = status;
 
         await booking.save();
 
