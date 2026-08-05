@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import {
+
   Users,
   Map,
   CalendarCheck,
@@ -777,7 +778,7 @@ xl:grid-cols-6
             gap-4
           "
         >
-          <ActionButton title="Create Tour" link="/admin/tours/create" />
+          <ActionButton title="Create Tour" link="/tour-manager/create-tour" />
 
           <ActionButton title="Destinations" link="/admin/destinations" />
 
