@@ -246,19 +246,18 @@ Failed loading bookings
 
 
 const bookings =
-
 Array.isArray(data)
-
 ?
-
 data
-
 :
-
-data?.data ||
-
-data?.bookings ||
-
+Array.isArray(data?.data)
+?
+data.data
+:
+Array.isArray(data?.bookings)
+?
+data.bookings
+:
 [];
 
 
@@ -415,7 +414,7 @@ Actions
 
 
 {
-bookings.map((b)=>(
+(Array.isArray(bookings) ? bookings : []).map((b)=>(
 
 
 <tr
