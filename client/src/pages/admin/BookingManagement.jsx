@@ -107,8 +107,7 @@ queryClient.invalidateQueries([
 
 if(isLoading)
 return (
-
-<>
+<div>
 
 <div className="p-6">
 Loading bookings...
@@ -175,8 +174,6 @@ b=>b.paymentStatus==="paid"
 
 
 return (
-
-<>
 
 <div className="p-6 space-y-6">
 
@@ -501,29 +498,22 @@ Assign Vehicle
 
 
 
-</div>
-
-
 
 {
 selectedBooking && (
 
 <div className="fixed inset-0 bg-black/40 flex justify-end">
 
-
 <div className="bg-white w-full md:w-96 h-full p-6 shadow-xl">
-
 
 <h2 className="text-2xl font-bold mb-4">
 Booking Details
 </h2>
 
-
 <p>
 ID:
 {selectedBooking._id}
 </p>
-
 
 <p>
 Customer:
@@ -534,7 +524,6 @@ selectedBooking.user?.name ||
 }
 </p>
 
-
 <p>
 Tour:
 {
@@ -543,35 +532,25 @@ selectedBooking.tour?.title ||
 }
 </p>
 
-
 <p>
 Amount:
 KES {selectedBooking.amount}
 </p>
 
-
 <p>
 Payment:
-{
-selectedBooking.paymentStatus
-}
+{selectedBooking.paymentStatus}
 </p>
-
 
 <p>
 Status:
-{
-selectedBooking.status
-}
+{selectedBooking.status}
 </p>
 
 
 <button
-
 onClick={()=>setSelectedBooking(null)}
-
 className="mt-5 px-4 py-2 bg-gray-800 text-white rounded"
-
 >
 Close
 </button>
@@ -585,11 +564,12 @@ Close
 
 }
 
-</>
+</div>
+
+</div>
 
 );
 
 };
-
 
 export default BookingManagement;
