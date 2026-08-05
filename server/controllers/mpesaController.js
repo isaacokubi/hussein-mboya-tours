@@ -715,7 +715,7 @@ export const getAllPayments = async (req, res, next) => {
     const skip = (Number(page) - 1) * Number(limit);
 
     const payments = await Payment.find(filter)
-      .populate("booking", "bookingNumber bookingStatus paymentStatus")
+      .populate("booking", "bookingNumber status paymentStatus")
       .populate("user", "name email phone")
       .populate("customer", "name email phone")
       .sort({

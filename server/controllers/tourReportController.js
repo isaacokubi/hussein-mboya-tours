@@ -51,7 +51,7 @@ export const getTourReports = async (req, res, next) => {
         const bookingStatus = await Booking.aggregate([
             {
                 $group: {
-                    _id: "$bookingStatus",
+                    _id: "$status",
                     count: {
                         $sum: 1,
                     },
