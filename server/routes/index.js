@@ -1,4 +1,5 @@
 import express from "express";
+import staffRoutes from "./staffRoutes.js";
 import userRoutes from "./userRoutes.js";
 import vehicleRoutes from "./vehicleRoutes.js";
 
@@ -158,3 +159,7 @@ export default router;
 router.use("/vehicles", vehicleRoutes);
 
 router.use("/users", userRoutes);
+
+
+// Staff Management
+router.use("/staff", staffRoutes);
