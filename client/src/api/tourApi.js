@@ -232,7 +232,7 @@ export const getGuides = async () => {
     );
 
 
-    return data;
+    return data.data || data.users || [];
 
 };
 
@@ -286,7 +286,7 @@ export const getVehicles = async () => {
     );
 
 
-    return data;
+    return data.data || data.vehicles || [];
 
 };
 
