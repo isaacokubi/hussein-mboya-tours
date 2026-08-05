@@ -243,7 +243,7 @@ w-fit
 
 Explore Tours
 
-</div>
+</button>
 
 
 </div>
@@ -479,7 +479,7 @@ text-blue-600
 
 View
 
-</div>
+</button>
 
 
 </div>
