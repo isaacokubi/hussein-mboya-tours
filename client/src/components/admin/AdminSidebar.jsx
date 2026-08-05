@@ -93,7 +93,7 @@ title:"Manage Tours",
 
 icon:<Edit size={18}/>,
 
-path:"/admin/tours"
+path:"/admin/manage-tours"
 
 }
 

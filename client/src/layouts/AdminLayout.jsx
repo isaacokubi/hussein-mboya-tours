@@ -51,7 +51,7 @@ icon:<UserCog/>
 
 {
 name:"Tours",
-path:"/admin/tours",
+path:"/admin/manage-tours",
 icon:<Map/>
 },
 
