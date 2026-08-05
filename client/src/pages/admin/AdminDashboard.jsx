@@ -85,7 +85,7 @@ export default function AdminDashboard() {
   |--------------------------------------------------------------------------
   */
 
-  console.log("ADMIN DASHBOARD FULL RESPONSE:", JSON.stringify(data, null, 2));
+  console.log("ADMIN DASHBOARD RESPONSE:", data);
 
   const stats = data?.data || data || {};
 
