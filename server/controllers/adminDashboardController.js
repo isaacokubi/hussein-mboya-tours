@@ -115,7 +115,8 @@ const failedPayments =
 
 const paymentRevenue = {
     total: completedPayments.amount,
-    completed: completedPayments.count,
+    completed: completedPayments.amount,
+    count: completedPayments.count,
     pending: pendingPayments.count,
     failed: failedPayments.count
 };
