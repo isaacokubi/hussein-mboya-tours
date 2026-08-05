@@ -352,7 +352,7 @@ const AssignGuide =()=>{
                         <strong className="ml-2">
 
 
-                            {tour.title}
+                            {tour?.title}
 
 
                         </strong>

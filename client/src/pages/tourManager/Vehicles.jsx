@@ -373,7 +373,7 @@ ml-1
 
 {
 
-vehicle.capacity ||
+vehicle?.capacity ||
 
 0
 
