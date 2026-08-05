@@ -204,7 +204,7 @@ export const updateBookingStatus = async (
 |--------------------------------------------------------------------------
 */
 
-export const assignBookingResources = async (
+export const assignResources = async (
   req,
   res,
   next
