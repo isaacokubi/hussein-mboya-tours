@@ -56,7 +56,7 @@ export const getAllBookings = async (req, res, next) => {
     const [bookings, total] = await Promise.all([
       Booking.find(filter)
         .populate("customer", "name email phone")
-        .populate("user", "name email phone")
+        
         .populate("tour", "title name destination price")
         .populate("assignedGuide", "name email phone")
         .populate("assignedDriver", "name email phone")
@@ -104,7 +104,7 @@ export const getBookingById = async (req, res, next) => {
 
     const booking = await Booking.findById(req.params.id)
       .populate("customer", "name email phone")
-      .populate("user", "name email phone")
+      
       .populate("tour")
       .populate("assignedGuide", "name email phone")
       .populate("assignedDriver", "name email phone")
