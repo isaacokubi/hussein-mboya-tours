@@ -228,7 +228,7 @@ export const getGuides = async () => {
 
 
     const { data } = await api.get(
-        "/tour-manager/guides"
+        "/users/guides"
     );
 
 
@@ -282,7 +282,7 @@ export const getVehicles = async () => {
 
 
     const { data } = await api.get(
-        "/tour-manager/vehicles"
+        "/vehicles"
     );
 
 
