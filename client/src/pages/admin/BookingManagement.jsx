@@ -5,7 +5,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getBookings,
   updateBookingStatus,
-  updateBookingPayment
+  updateBookingPayment,
+  assignBookingResources
 } from "../../api/adminBookingApi";
 
 
@@ -52,6 +53,22 @@ id,
 {
 paymentStatus:status
 }
+),
+
+onSuccess:()=>{
+queryClient.invalidateQueries([
+"admin-bookings"
+]);
+}
+
+});
+
+const assignMutation = useMutation({
+
+mutationFn:({id,payload}) =>
+assignBookingResources(
+id,
+payload
 ),
 
 onSuccess:()=>{
@@ -345,6 +362,72 @@ className="px-3 py-1 bg-blue-600 text-white rounded"
 >
 
 Mark Paid
+
+</button>
+
+
+<button
+
+onClick={()=>{
+
+const guide =
+prompt("Enter Guide ID");
+
+
+if(guide){
+
+assignMutation.mutate({
+
+id:b._id,
+
+payload:{
+guide
+}
+
+});
+
+}
+
+}}
+
+className="px-3 py-1 bg-purple-600 text-white rounded"
+
+>
+
+Assign Guide
+
+</button>
+
+
+<button
+
+onClick={()=>{
+
+const vehicle =
+prompt("Enter Vehicle ID");
+
+
+if(vehicle){
+
+assignMutation.mutate({
+
+id:b._id,
+
+payload:{
+vehicle
+}
+
+});
+
+}
+
+}}
+
+className="px-3 py-1 bg-orange-600 text-white rounded"
+
+>
+
+Assign Vehicle
 
 </button>
 
