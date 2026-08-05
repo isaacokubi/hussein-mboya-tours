@@ -184,6 +184,47 @@ const DestinationManagement = () => {
                       </p>
 
 
+
+                      <div className="flex gap-3 mt-5">
+
+                        <button
+                          onClick={() =>
+                            navigate(
+                              `/admin/edit-destination/${destination._id}`
+                            )
+                          }
+                          className="
+                          bg-blue-600
+                          text-white
+                          px-4
+                          py-2
+                          rounded
+                          "
+                        >
+                          Edit
+                        </button>
+
+
+                        <button
+                          onClick={() =>
+                            navigate(
+                              `/admin/destinations/${destination._id}`
+                            )
+                          }
+                          className="
+                          bg-gray-600
+                          text-white
+                          px-4
+                          py-2
+                          rounded
+                          "
+                        >
+                          View
+                        </button>
+
+                      </div>
+
+
                     </div>
 
 
