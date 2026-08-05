@@ -272,19 +272,7 @@ const paymentRevenue = {
                     $group:{
 
 
-                        _id:{
-
-
-                            bookingStatus:
-                                "$bookingStatus",
-
-
-
-                            paymentStatus:
-                                "$status"
-
-
-                        },
+                          _id:"$status",
 
 
                         count:{
