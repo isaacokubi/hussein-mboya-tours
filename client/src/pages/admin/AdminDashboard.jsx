@@ -89,6 +89,14 @@ export default function AdminDashboard() {
 
   const stats = data?.data || data || {};
 
+const monthlyRevenueSafe =
+  stats.monthlyRevenue || [];
+
+const statusSafe =
+  stats.status || [];
+
+
+
 const monthlyRevenueData =
   stats.monthlyRevenue || [];
 
