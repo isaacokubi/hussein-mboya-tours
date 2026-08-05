@@ -169,7 +169,7 @@ export const getTourGuests = async (req, res, next) => {
 
     const bookings = await Booking.find({
       tour: assignedTour._id,
-      bookingStatus: {
+      status: {
         $in: ["confirmed", "assigned", "completed"],
       },
     })

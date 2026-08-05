@@ -897,12 +897,12 @@ req.body.status;
 
 
 
-if(req.body.bookingStatus){
+if(req.body.status){
 
 
 if(
 !BOOKING_STATUSES.includes(
-req.body.bookingStatus
+req.body.status
 )
 ){
 
@@ -918,7 +918,7 @@ message:"Invalid booking status"
 
 
 booking.status =
-req.body.bookingStatus;
+req.body.status;
 
 }
 
