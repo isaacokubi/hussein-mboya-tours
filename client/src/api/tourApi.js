@@ -112,7 +112,7 @@ export const getManagerTours = async (params = {}) => {
 
 
     const { data } = await api.get(
-        "/tour-manager/tours",
+        "/tours",
         {
             params
         }
@@ -142,7 +142,7 @@ export const createTour = async (payload) => {
 
 
     const { data } = await api.post(
-        "/tour-manager/tours",
+        "/tours",
         payload
     );
 

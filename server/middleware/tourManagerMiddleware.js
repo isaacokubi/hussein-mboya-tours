@@ -49,12 +49,20 @@ const tourManagerOnly = (req, res, next) => {
             req.user.role ||
             "";
 
-        if (role.toLowerCase() !== "tour_manager") {
-            return res.status(403).json({
-                success: false,
-                message: "Tour Manager access required",
-            });
-        }
+          const allowedRoles = [
+              "tour_manager",
+              "tourmanager",
+              "manager",
+              "admin",
+              "superadmin"
+          ];
+
+          if (!allowedRoles.includes(role.toLowerCase())) {
+              return res.status(403).json({
+                  success: false,
+                  message: "Tour Manager access required",
+              });
+          }
 
         next();
     } catch (error) {
