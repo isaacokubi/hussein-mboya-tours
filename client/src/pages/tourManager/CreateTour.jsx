@@ -68,6 +68,8 @@ const CreateTour =()=>{
 
         country:"Kenya",
 
+        location:"",
+
         date:"",
 
         capacity:20,
