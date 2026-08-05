@@ -7,6 +7,7 @@ import authRoutes from "./authRoutes.js";
 import bookingRoutes from "./bookingRoutes.js";
 import tourRoutes from "./tourRoutes.js";
 import destinationRoutes from "./destinationRoutes.js";
+import adminDestinationRoutes from "./adminDestinationRoutes.js";
 import reviewRoutes from "./reviewRoutes.js";
 import wishlistRoutes from "./wishlistRoutes.js";
 import galleryRoutes from "./galleryRoutes.js";
@@ -63,6 +64,12 @@ router.use(
 router.use(
   "/destinations",
   destinationRoutes
+);
+
+
+router.use(
+  "/admin/destinations",
+  adminDestinationRoutes
 );
 
 
