@@ -133,7 +133,6 @@ export const createBooking = async (req, res, next) => {
           "pending",
 
 
-          "pending",
 
 
         assigned:false
