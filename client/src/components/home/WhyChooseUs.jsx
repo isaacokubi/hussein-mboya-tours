@@ -80,7 +80,7 @@ md:grid-cols-4
 gap-8
 "
         >
-          {reasons.map((item, index) => (
+          {(Array.isArray(reasons) ? reasons : []).map((item, index) => (
             <motion.div
               key={item.title}
               initial={{

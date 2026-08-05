@@ -176,7 +176,7 @@ activeVideo.play()
 
 
 {
-slides.map((slide,index)=>(
+(Array.isArray(slides) ? slides : []).map((slide,index)=>(
 
 
 <SwiperSlide key={slide._id}>

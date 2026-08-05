@@ -48,7 +48,7 @@ gap-8
 text-center
 "
         >
-          {stats?.map((stat, index) => (
+          {(Array.isArray(stats) ? stats : []).map((stat, index) => (
             <motion.div
               key={stat.label}
               initial={{
