@@ -351,3 +351,51 @@ export const updatePaymentStatus = async (
   }
 
 };
+
+/*
+|--------------------------------------------------------------------------
+| DOWNLOAD BOOKING INVOICE
+|--------------------------------------------------------------------------
+*/
+
+export const downloadBookingInvoice = async (
+  req,
+  res,
+  next
+) => {
+
+  try {
+
+    const booking = await Booking.findById(req.params.id)
+      .populate("customer", "name email phone")
+      .populate("tour", "title price")
+      .lean();
+
+
+    if (!booking) {
+      return res.status(404).json({
+        success:false,
+        message:"Booking not found"
+      });
+    }
+
+
+    return res.status(200).json({
+      success:true,
+      message:"Invoice data generated",
+      invoice:{
+        bookingNumber: booking.bookingNumber,
+        customer: booking.customer,
+        tour: booking.tour,
+        amount: booking.amount || booking.totalAmount,
+        status: booking.paymentStatus
+      }
+    });
+
+
+  } catch(error) {
+    next(error);
+  }
+
+};
+
