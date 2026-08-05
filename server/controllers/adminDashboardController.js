@@ -670,7 +670,7 @@ createdAt:-1
 
 
 
-                bookingStatus,
+                statusData: bookingStatus,
 
 
 
