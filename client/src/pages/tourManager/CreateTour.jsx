@@ -219,6 +219,12 @@ const destinations =
     destinationsData?.destinations ||
     [];
 
+console.log("FINAL GUIDES DEBUG:", guides);
+console.log("FINAL VEHICLES DEBUG:", vehicles);
+console.log("FINAL DESTINATIONS DEBUG:", destinations);
+
+
+
 
 
 
