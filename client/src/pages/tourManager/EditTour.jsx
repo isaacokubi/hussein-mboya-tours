@@ -139,18 +139,27 @@ const EditTour =()=>{
 
         mutationFn:(data)=>updateTour(id,data),
 
-        onSuccess:()=>{
+        onSuccess:(data)=>{
+
+            console.log(
+                "EDIT TOUR RESPONSE:",
+                data
+            );
 
             toast.success(
                 "Tour updated successfully"
             );
 
-            queryClient.invalidateQueries([
-                "tour",
-                id
-            ]);
+            queryClient.invalidateQueries({
+                queryKey:[
+                    "tour",
+                    id
+                ]
+            });
 
-            navigate("/tour-manager/tours");
+            setTimeout(()=>{
+                navigate("/tour-manager/tours");
+            },300);
 
         },
 
@@ -363,80 +372,10 @@ const EditTour =()=>{
 
         saveTour(payload);
 
-    };
 
 
 
-
-        saveTour({
-
-
-
-            ...form,
-
-
-
-            capacity: Number.isFinite(Number(form?.capacity))
-                ? Number(form?.capacity)
-                : 0,
-
-
-            duration: Number.isFinite(Number(form?.duration))
-                ? Number(form?.duration)
-                : 0,
-
-
-            price: Number.isFinite(Number(form?.price))
-                ? Number(form?.price)
-                : 0,
-
-
-            discount: Number.isFinite(Number(form?.discount))
-                ? Number(form?.discount)
-                : 0,
-
-
-
-
-            images:
-
-                Array.isArray(form?.images)
-
-                    ?
-
-                    form?.images
-
-                    :
-
-                    form?.images
-
-                    ?
-
-                    form?.images.split(",").map(img=>img.trim())
-
-                    :
-
-                    []
-
-
-
-        });
-
-
-
-
-
-
-
-
-
-
-
-
-    if(tourLoading || !form){
-
-    if(!form){
-        return (
+return (
             <div className="p-6">
                 Loading tour...
             </div>
@@ -461,7 +400,6 @@ const EditTour =()=>{
 
     );
 
-}
 
 
     return (
@@ -1094,15 +1032,6 @@ const EditTour =()=>{
 
 
     );
-
-
-
-
-
-
-
-
-
 
 };
 
