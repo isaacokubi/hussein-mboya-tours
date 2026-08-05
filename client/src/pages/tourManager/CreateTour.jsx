@@ -30,9 +30,7 @@ import {
 
     getGuides,
 
-    getVehicles,
-
-    getDestinations
+    getVehicles
 
 }
 from "../../api/tourApi";
