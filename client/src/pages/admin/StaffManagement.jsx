@@ -10,6 +10,9 @@ export default function StaffManagement(){
         queryKey:["staff"],
         queryFn: async()=>{
             const res = await api.get("/staff");
+
+            console.log("STAFF API RESPONSE:", res.data);
+
             return res.data;
         }
     });
