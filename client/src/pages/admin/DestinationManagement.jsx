@@ -1,4 +1,5 @@
 import React from "react";
+import {useNavigate} from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
 import {
@@ -7,6 +8,8 @@ import {
 
 
 const DestinationManagement = () => {
+
+  const navigate = useNavigate();
 
 
   const {
@@ -68,6 +71,7 @@ const DestinationManagement = () => {
 
 
           <button
+            onClick={()=>navigate("/admin/create-destination")}
             className="
             bg-green-600
             text-white
@@ -116,7 +120,13 @@ const DestinationManagement = () => {
                       destination.images?.length > 0 && (
 
                         <img
-                          src={destination.images[0]}
+                          src={
+                            destination.images[0]?.startsWith("http")
+                            ?
+                            destination.images[0]
+                            :
+                            `${import.meta.env.VITE_API_URL?.replace("/api","") || "http://localhost:5000"}${destination.images[0]}`
+                          }
                           alt={destination.name}
                           className="
                           w-full
