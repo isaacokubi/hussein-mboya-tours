@@ -11,7 +11,9 @@ import {
   getBookingById,
   updateBookingStatus,
   updatePaymentStatus,
-  assignBookingResources,
+  assignResources,
+  getBookingTimeline,
+  downloadBookingInvoice,
 } from "../controllers/adminBookingController.js";
 
 import {
@@ -105,9 +107,21 @@ router.put(
  * PUT /api/admin/bookings/:id/assign
  * Assign guide, driver and vehicle
  */
+router.get(
+  "/bookings/:id/timeline",
+  getBookingTimeline
+);
+
+
+router.get(
+  "/bookings/:id/invoice",
+  downloadBookingInvoice
+);
+
+
 router.put(
   "/bookings/:id/assign",
-  assignBookingResources
+  assignResources
 );
 
 

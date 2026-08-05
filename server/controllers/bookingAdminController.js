@@ -554,6 +554,36 @@ export const assignResources = async (
     |--------------------------------------------------------------------------
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Verify Payment Before Assignment
+    |--------------------------------------------------------------------------
+    */
+
+    const existingBooking =
+      await Booking.findById(req.params.id);
+
+
+    if (!existingBooking) {
+
+      return res.status(404).json({
+        success:false,
+        message:"Booking not found."
+      });
+
+    }
+
+
+    if (existingBooking.paymentStatus !== "paid") {
+
+      return res.status(400).json({
+        success:false,
+        message:"Only paid bookings can be assigned."
+      });
+
+    }
+
+
     const booking =
       await Booking.findByIdAndUpdate(
         req.params.id,
@@ -742,3 +772,167 @@ export const updatePaymentStatus = async (
 
   }
 };
+
+/*
+|--------------------------------------------------------------------------
+| BOOKING TIMELINE
+|--------------------------------------------------------------------------
+*/
+
+export const getBookingTimeline = async(
+req,
+res,
+next
+)=>{
+
+try{
+
+const booking =
+await Booking.findById(req.params.id)
+.populate(
+"customer",
+"name email phone"
+)
+.populate(
+"tour",
+"title"
+)
+.lean();
+
+
+if(!booking){
+
+return res.status(404).json({
+
+success:false,
+
+message:"Booking not found"
+
+});
+
+}
+
+
+const timeline=[
+
+{
+event:"Booking Created",
+status:"created",
+date:booking.createdAt
+},
+
+{
+event:`Payment ${booking.paymentStatus}`,
+status:booking.paymentStatus,
+date:booking.paidAt || null
+},
+
+{
+event:`Booking ${booking.status}`,
+status:booking.status,
+date:booking.updatedAt
+}
+
+];
+
+
+res.json({
+
+success:true,
+
+timeline
+
+});
+
+
+}catch(error){
+
+next(error);
+
+}
+
+};
+
+
+
+/*
+|--------------------------------------------------------------------------
+| BOOKING INVOICE
+|--------------------------------------------------------------------------
+*/
+
+export const downloadBookingInvoice =
+async(req,res,next)=>{
+
+try{
+
+const booking =
+await Booking.findById(req.params.id)
+.populate(
+"customer",
+"name email phone"
+)
+.populate(
+"tour",
+"title"
+);
+
+
+if(!booking){
+
+return res.status(404).json({
+
+success:false,
+
+message:"Booking not found"
+
+});
+
+}
+
+
+res.setHeader(
+"Content-Type",
+"text/plain"
+);
+
+
+res.send(
+`
+COHERENT TOURS
+
+BOOKING INVOICE
+
+Booking ID:
+${booking._id}
+
+Customer:
+${booking.customer?.name || ""}
+
+Tour:
+${booking.tour?.title || ""}
+
+Amount:
+KES ${booking.amount || 0}
+
+Payment:
+${booking.paymentStatus}
+
+Status:
+${booking.status}
+
+Generated:
+${new Date().toISOString()}
+
+`
+);
+
+
+}catch(error){
+
+next(error);
+
+}
+
+};
+
