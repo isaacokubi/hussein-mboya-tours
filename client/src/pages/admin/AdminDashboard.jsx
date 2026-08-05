@@ -99,9 +99,15 @@ const statusDataList =
   stats.status || [];
 
 const monthlyRevenueData =
-  stats.monthlyRevenue ||
-  stats.monthlyRevenueData ||
-  [];
+  (stats.monthlyRevenue || []).map(item => ({
+    month:
+      item.month ||
+      `${item._id?.month}/${item._id?.year}`,
+    amount:
+      item.amount ||
+      item.total ||
+      0
+  }));
 
 const paymentStats =
     stats.paymentStats ||
