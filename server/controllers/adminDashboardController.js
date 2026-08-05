@@ -262,7 +262,49 @@ const paymentRevenue = {
         */
 
 
-        const bookingStatus =
+        
+          /*
+          |--------------------------------------------------------------------------
+          | MONTHLY REVENUE
+          |--------------------------------------------------------------------------
+          */
+
+          const monthlyRevenue =
+              await Booking.aggregate([
+                  {
+                      $group:{
+                          _id:{
+                              month:{
+                                  $month:"$createdAt"
+                              },
+                              year:{
+                                  $year:"$createdAt"
+                              }
+                          },
+                          amount:{
+                              $sum:"$amount"
+                          }
+                      }
+                  },
+                  {
+                      $sort:{
+                          "_id.year":1,
+                          "_id.month":1
+                      }
+                  }
+              ]);
+
+
+          const formattedMonthlyRevenue =
+              monthlyRevenue.map(item => ({
+                  month:
+                      `${item._id.month}/${item._id.year}`,
+                  amount:
+                      item.amount || 0
+              }));
+
+
+const bookingStatus =
 
             await Booking.aggregate([
 
@@ -646,6 +688,9 @@ createdAt:-1
 
 
                 revenue,
+
+                  monthlyRevenue:
+                      formattedMonthlyRevenue,
 
 
 
