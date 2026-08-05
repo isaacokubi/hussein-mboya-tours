@@ -1,311 +1,249 @@
-import {
-  useParams
-} from "react-router-dom";
 
-
-import {
-  useQuery
-} from "@tanstack/react-query";
-
-
+import React from "react";
+import {useParams} from "react-router-dom";
+import {useQuery} from "@tanstack/react-query";
 import api from "../api/axios";
 
 
-import LazyImage from "../components/common/LazyImage";
+const DestinationDetails = ()=>{
 
 
+const {slug}=useParams();
 
-export default function DestinationDetails(){
 
+const {data,isLoading}=useQuery({
 
+queryKey:["destination",slug],
 
-  const {
+queryFn:async()=>{
 
-    slug
+const res = await api.get(
+`/destinations/${slug}`
+);
 
-  } = useParams();
+return res.data;
 
+}
 
+});
 
 
 
+if(isLoading){
 
-  const {
+return (
+<div className="p-10">
+Loading destination...
+</div>
+)
 
-    data,
+}
 
-    isLoading,
 
-    error
 
+const destination=data?.destination || data?.data;
 
-  } = useQuery({
 
 
+if(!destination){
 
-    queryKey:[
+return (
 
-      "destination",
+<div className="p-10">
 
-      slug
+Destination not found
 
-    ],
+</div>
 
+)
 
+}
 
 
-    queryFn:async()=>{
 
+const image =
+destination.images?.[0]?.url ||
+destination.images?.[0];
 
-      const response =
 
-      await api.get(
 
-        `/destinations/${slug}`
+return (
 
-      );
+<div className="max-w-6xl mx-auto p-6">
 
 
+<div className="rounded-xl overflow-hidden shadow">
 
-      return response.data.data.destination;
 
+{image && (
 
-    },
+<img
 
+src={image}
 
+alt={destination.name}
 
-    enabled:Boolean(slug)
+className="
+w-full
+h-[420px]
+object-cover
+"
 
+/>
 
-  });
+)}
 
 
+</div>
 
 
 
+<h1 className="
+text-4xl
+font-bold
+mt-8
+">
 
+{destination.name}
 
+</h1>
 
 
-  if(isLoading){
 
+<p className="mt-3 text-gray-600">
 
-    return (
+{destination.country}
 
-      <div className="
-      min-h-screen
-      flex
-      items-center
-      justify-center
-      ">
+{destination.city &&
+`, ${destination.city}`}
 
-        Loading destination...
+</p>
 
 
-      </div>
 
-    );
+<p className="
+mt-6
+text-lg
+leading-relaxed
+">
 
-  }
+{destination.description}
 
+</p>
 
 
 
+{
+destination.tours?.length > 0 && (
 
+<div className="mt-12">
 
 
-  if(error || !data){
+<h2 className="
+text-2xl
+font-bold
+mb-5
+">
 
+Available Tours
 
-    return (
+</h2>
 
-      <div className="
-      min-h-screen
-      flex
-      items-center
-      justify-center
-      text-red-600
-      ">
 
 
-        Destination not found.
+<div className="
+grid
+md:grid-cols-3
+gap-6
+">
 
 
-      </div>
+{
+destination.tours.map((tour)=>(
 
-    );
 
+<div
 
-  }
+key={tour._id}
 
+className="
+border
+rounded-xl
+overflow-hidden
+shadow
+"
 
+>
 
 
+{
+tour.images?.[0]?.url && (
 
+<img
 
+src={tour.images[0].url}
 
-  const image =
+className="
+h-40
+w-full
+object-cover
+"
 
+/>
 
+)
 
-  typeof data.images?.[0] === "object"
+}
 
 
 
-  ?
+<div className="p-4">
 
 
+<h3 className="font-bold">
 
-  data.images?.[0]?.url
+{tour.title}
 
+</h3>
 
 
-  :
+<p className="mt-2">
 
+{tour.duration}
 
+</p>
 
-  data.images?.[0];
 
+</div>
 
 
+</div>
 
 
+))
 
+}
 
 
-  return (
 
+</div>
 
 
-    <div
+</div>
 
-    className="
-    min-h-screen
-    bg-gray-100
-    p-6
-    md:p-10
-    "
+)
 
-    >
+}
 
 
 
-      <div
+</div>
 
-      className="
-      max-w-6xl
-      mx-auto
-      bg-white
-      rounded-xl
-      shadow-lg
-      overflow-hidden
-      "
 
-      >
-
-
-
-        <LazyImage
-
-
-          src={
-
-            image ||
-
-            "/images/destination-placeholder.jpg"
-
-          }
-
-
-          alt={data.name}
-
-
-          className="
-          w-full
-          h-[450px]
-          object-cover
-          "
-
-        />
-
-
-
-
-
-        <div className="p-8">
-
-
-
-          <h1
-
-          className="
-          text-4xl
-          font-bold
-          text-gray-800
-          "
-
-          >
-
-            {data.name}
-
-
-          </h1>
-
-
-
-
-
-          <p
-
-          className="
-          text-gray-500
-          mt-3
-          "
-
-          >
-
-            {data.country}
-
-
-          </p>
-
-
-
-
-
-
-
-          <p
-
-          className="
-          mt-6
-          text-gray-700
-          leading-relaxed
-          "
-
-          >
-
-            {data.description}
-
-
-          </p>
-
-
-
-
-        </div>
-
-
-
-      </div>
-
-
-
-    </div>
-
-
-
-  );
+)
 
 
 }
+
+
+export default DestinationDetails;

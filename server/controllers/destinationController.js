@@ -1,6 +1,7 @@
 // server/controllers/destinationController.js
 
 import Destination from "../models/Destination.js";
+import Tour from "../models/Tour.js";
 
 
 
@@ -283,6 +284,7 @@ isDeleted:false
 
 
 
+
 if(!destination){
 
 
@@ -296,6 +298,36 @@ message:"Destination not found."
 
 
 }
+
+
+/*
+|--------------------------------------------------------------------------
+| RELATED TOURS
+|--------------------------------------------------------------------------
+*/
+
+
+const tours = await Tour.find({
+
+destination: destination._id,
+
+isDeleted:false,
+
+status:{
+$ne:"inactive"
+}
+
+})
+
+.select(
+"title slug images price duration category"
+)
+
+.lean();
+
+
+
+destination.tours = tours;
 
 
 
