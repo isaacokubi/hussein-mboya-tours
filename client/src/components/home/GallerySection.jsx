@@ -102,7 +102,7 @@ export default function GallerySection() {
         >
 
 
-          {images.map((item) => (
+          {(Array.isArray(images) ? images : []).map((item) => (
 
             <div
               key={item._id}
