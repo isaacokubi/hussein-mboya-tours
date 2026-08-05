@@ -120,13 +120,21 @@ const DestinationManagement = () => {
                       destination.images?.length > 0 && (
 
                         <img
-                          src={
-                            ((destination.images[0]?.url || destination.images[0]) || destination.images[0])?.startsWith("http")
-                            ?
-                            (destination.images[0]?.url || destination.images[0])
-                            :
-                            `${import.meta.env.VITE_API_URL?.replace("/api","") || "http://localhost:5000"}${(destination.images[0]?.url || destination.images[0]) || destination.images[0]}`
-                          }
+                          src={(() => {
+
+                            const image =
+                              destination.images?.[0]?.url ||
+                              destination.images?.[0];
+
+                            if (!image) {
+                              return "";
+                            }
+
+                            return image.startsWith("http")
+                              ? image
+                              : `${import.meta.env.VITE_API_URL?.replace("/api","") || "http://localhost:5000"}${image}`;
+
+                          })()}
                           alt={destination.name}
                           className="
                           w-full

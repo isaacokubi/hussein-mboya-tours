@@ -88,6 +88,7 @@ import TourManagement from "../pages/admin/TourManagement";
 import ManageTours from "../pages/admin/ManageTours";
 import DestinationManagement from "../pages/admin/DestinationManagement";
 import CreateDestination from "../pages/admin/CreateDestination";
+import EditDestination from "../pages/admin/EditDestination";
 
 // ============================================================
 // ROUTE GUARDS
@@ -295,6 +296,12 @@ export default function AppRoutes() {
           path="create-destination"
           element={<CreateDestination />}
         />
+
+<Route
+ path="edit-destination/:id"
+ element={<EditDestination />}
+/>
+
 
         <Route
           path="bookings"
