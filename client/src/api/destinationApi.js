@@ -58,3 +58,20 @@ export const getDestinations = async()=>{
 
 };
 
+
+
+export const getDestinationBySlug = async(slug)=>{
+
+  const response = await api.get(
+    `/destinations/${slug}`
+  );
+
+
+  return (
+    response.data.destination ||
+    response.data.data ||
+    null
+  );
+
+};
+

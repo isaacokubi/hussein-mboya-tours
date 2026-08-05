@@ -18,6 +18,7 @@ export const createDestination = async (req, res, next) => {
       country,
       city,
       featured,
+      seo,
     } = req.body;
 
     if (!name || !slug) {
@@ -59,6 +60,7 @@ export const createDestination = async (req, res, next) => {
       city,
       featured: featured || false,
       images,
+      seo: seo ? JSON.parse(seo) : {},
     });
 
     res.status(201).json({
@@ -215,6 +217,16 @@ export const updateDestination = async (req, res, next) => {
     if (req.body.featured !== undefined) {
       destination.featured = req.body.featured;
     }
+
+    if(req.body.seo){
+
+      destination.seo = JSON.parse(
+        req.body.seo
+      );
+
+    }
+
+
 
     if (req.files?.length) {
       destination.images = req.files.map((file) => ({

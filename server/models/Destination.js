@@ -127,7 +127,30 @@ const destinationSchema = new mongoose.Schema(
         },
 
 
-        images: [
+        
+
+    seo: {
+
+      metaTitle: {
+        type:String,
+        trim:true
+      },
+
+      metaDescription:{
+        type:String,
+        trim:true
+      },
+
+      keywords:[
+        {
+          type:String,
+          trim:true
+        }
+      ]
+
+    },
+
+images: [
 
             {
 

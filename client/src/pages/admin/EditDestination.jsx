@@ -1,255 +1,470 @@
 
 import React, {useState} from "react";
-import {useNavigate, useParams} from "react-router-dom";
-import {useQuery, useMutation, useQueryClient} from "@tanstack/react-query";
+import {useNavigate,useParams} from "react-router-dom";
+import {useQuery,useMutation,useQueryClient} from "@tanstack/react-query";
 import axios from "../../api/axios";
 
 
-const EditDestination = () => {
+const EditDestination = ()=>{
 
-  const {id} = useParams();
 
-  const navigate = useNavigate();
+const {id}=useParams();
 
-  const queryClient = useQueryClient();
+const navigate=useNavigate();
 
+const queryClient=useQueryClient();
 
-  const [form,setForm] = useState({
-    name:"",
-    country:"",
-    city:"",
-    description:"",
-    featured:false
-  });
 
+const [images,setImages]=useState([]);
 
 
-  const {isLoading}=useQuery({
+const [form,setForm]=useState({
 
-    queryKey:["destination",id],
+name:"",
+country:"",
+city:"",
+description:"",
+featured:false,
 
-    queryFn:async()=>{
+seo:{
+title:"",
+metaDescription:"",
+keywords:""
+}
 
-      const res = await axios.get(
-        `/destinations/${id}`
-      );
+});
 
 
-      const d = res.data.destination;
 
+const {isLoading}=useQuery({
 
-      setForm({
+queryKey:["destination",id],
 
-        name:d.name || "",
+queryFn:async()=>{
 
-        country:d.country || "",
+const res=await axios.get(
+`/admin/destinations/${id}`
+);
 
-        city:d.city || "",
 
-        description:d.description || "",
+const d=res.data.data || res.data.destination;
 
-        featured:d.featured || false
 
-      });
+setForm({
 
+name:d.name || "",
 
-      return d;
+country:d.country || "",
 
-    }
+city:d.city || "",
 
-  });
+description:d.description || "",
 
+featured:d.featured || false,
 
 
-  const mutation = useMutation({
+seo:{
 
-    mutationFn:(payload)=>
+title:d.seo?.title || "",
 
-      axios.put(
-        `/admin/destinations/${id}`,
-        payload
-      ),
+metaDescription:
+d.seo?.metaDescription || "",
 
 
-    onSuccess:()=>{
+keywords:
+d.seo?.keywords?.join(", ") || ""
 
-      queryClient.invalidateQueries([
-        "admin-destinations"
-      ]);
+}
 
+});
 
-      alert(
-        "Destination updated successfully"
-      );
 
+return d;
 
-      navigate(
-        "/admin/destinations"
-      );
+}
 
-    },
+});
 
 
-    onError:(error)=>{
 
-      console.error(
-        "UPDATE DESTINATION ERROR:",
-        error
-      );
 
+const mutation=useMutation({
 
-      alert(
-        error.response?.data?.message ||
-        "Failed updating destination"
-      );
+mutationFn:async()=>{
 
-    }
 
+const data=new FormData();
 
-  });
 
+data.append(
+"name",
+form.name
+);
 
 
-  if(isLoading){
+data.append(
+"country",
+form.country
+);
 
-    return (
-      <div className="p-6">
-        Loading...
-      </div>
-    );
 
-  }
+data.append(
+"city",
+form.city
+);
 
 
+data.append(
+"description",
+form.description
+);
 
-  return (
 
-    <div className="p-6">
+data.append(
+"featured",
+form.featured
+);
 
 
-      <h1 className="text-2xl font-bold mb-6">
-        Edit Destination
-      </h1>
+data.append(
+"seo",
+JSON.stringify({
 
+title:form.seo.title,
 
-      <div className="space-y-4">
+metaDescription:
+form.seo.metaDescription,
 
 
-        {
-        [
-          "name",
-          "country",
-          "city"
-        ].map(field=>(
+keywords:
+form.seo.keywords
+.split(",")
+.map(k=>k.trim())
+.filter(Boolean)
 
-          <input
+})
+);
 
-          key={field}
 
-          className="
-          border
-          p-3
-          w-full
-          rounded
-          "
 
-          value={form[field]}
+images.forEach(image=>{
 
-          placeholder={field}
+data.append(
+"images",
+image
+);
 
-          onChange={
-            e=>
-            setForm({
-              ...form,
-              [field]:e.target.value
-            })
-          }
+});
 
-          />
 
-        ))
-        }
 
+return axios.put(
 
+`/admin/destinations/${id}`,
 
-        <textarea
+data,
 
-        className="
-        border
-        p-3
-        w-full
-        rounded
-        "
+{
+headers:{
+"Content-Type":"multipart/form-data"
+}
+}
 
-        rows="5"
+);
 
-        value={form.description}
 
-        placeholder="Description"
+},
 
-        onChange={
-          e=>
-          setForm({
-            ...form,
-            description:e.target.value
-          })
-        }
 
-        />
+onSuccess:()=>{
 
 
+queryClient.invalidateQueries(
+["admin-destinations"]
+);
 
-        <label>
 
-        <input
+alert(
+"Destination updated successfully"
+);
 
-        type="checkbox"
 
-        checked={form.featured}
+navigate(
+"/admin/destinations"
+);
 
-        onChange={
-          e=>
-          setForm({
-            ...form,
-            featured:e.target.checked
-          })
-        }
 
-        />
+}
 
-        {" "}Featured
 
-        </label>
+});
 
 
 
-        <button
 
-        onClick={()=>
-          mutation.mutate(form)
-        }
+if(isLoading){
 
-        className="
-        bg-green-600
-        text-white
-        px-6
-        py-3
-        rounded
-        "
+return <div className="p-6">
+Loading...
+</div>
 
-        >
+}
 
-        Save Changes
 
-        </button>
 
+return (
 
-      </div>
+<div className="p-6 max-w-3xl">
 
 
-    </div>
+<h1 className="text-3xl font-bold mb-6">
+Edit Destination
+</h1>
 
-  );
+
+
+<div className="space-y-4">
+
+
+{
+["name","country","city"].map(field=>(
+
+<input
+
+key={field}
+
+className="border p-3 rounded w-full"
+
+placeholder={field}
+
+value={form[field]}
+
+onChange={e=>
+
+setForm({
+
+...form,
+
+[field]:e.target.value
+
+})
+
+}
+
+/>
+
+))
+}
+
+
+
+<textarea
+
+className="border p-3 rounded w-full"
+
+rows="5"
+
+placeholder="Description"
+
+value={form.description}
+
+onChange={e=>
+
+setForm({
+
+...form,
+
+description:e.target.value
+
+})
+
+}
+
+/>
+
+
+
+<label className="flex gap-2">
+
+<input
+
+type="checkbox"
+
+checked={form.featured}
+
+onChange={e=>
+
+setForm({
+
+...form,
+
+featured:e.target.checked
+
+})
+
+}
+
+/>
+
+Featured
+
+</label>
+
+
+
+
+<h2 className="font-bold text-xl">
+SEO
+</h2>
+
+
+
+<input
+
+className="border p-3 rounded w-full"
+
+placeholder="SEO title"
+
+value={form.seo.title}
+
+onChange={e=>
+
+setForm({
+
+...form,
+
+seo:{
+...form.seo,
+title:e.target.value
+}
+
+})
+
+}
+
+/>
+
+
+
+
+<textarea
+
+className="border p-3 rounded w-full"
+
+placeholder="Meta description"
+
+value={form.seo.metaDescription}
+
+onChange={e=>
+
+setForm({
+
+...form,
+
+seo:{
+...form.seo,
+metaDescription:e.target.value
+}
+
+})
+
+}
+
+/>
+
+
+
+
+<input
+
+className="border p-3 rounded w-full"
+
+placeholder="keywords comma separated"
+
+value={form.seo.keywords}
+
+onChange={e=>
+
+setForm({
+
+...form,
+
+seo:{
+...form.seo,
+keywords:e.target.value
+}
+
+})
+
+}
+
+/>
+
+
+
+
+<h2 className="font-bold text-xl">
+Images
+</h2>
+
+
+<input
+
+type="file"
+
+multiple
+
+accept="image/*"
+
+onChange={e=>
+
+setImages(
+Array.from(e.target.files)
+)
+
+}
+
+/>
+
+
+
+
+<button
+
+disabled={mutation.isPending}
+
+onClick={()=>
+mutation.mutate()
+}
+
+className="
+bg-green-600
+text-white
+px-6
+py-3
+rounded
+"
+
+>
+
+{
+mutation.isPending
+?
+"Saving..."
+:
+"Save Changes"
+}
+
+</button>
+
+
+</div>
+
+
+</div>
+
+);
+
 
 };
 
