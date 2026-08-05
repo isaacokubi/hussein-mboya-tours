@@ -201,7 +201,7 @@ export default function Dashboard() {
           </Link>
 
           <Link
-            to="/bookings"
+            to="/admin/bookings"
             className="
           bg-black/40
           px-6
@@ -325,7 +325,7 @@ export default function Dashboard() {
           </h2>
 
           <Link
-            to="/bookings"
+            to="/admin/bookings"
             className="
           text-green-700
           font-bold

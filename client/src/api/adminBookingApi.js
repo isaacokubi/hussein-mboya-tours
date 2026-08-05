@@ -25,21 +25,39 @@ export const getBooking = async (id) => {
   return data;
 };
 
-export const updateBooking = async (
+export const updateBookingStatus = async (
+  id,
+  status
+) => {
+  const { data } = await api.put(
+    `/admin/bookings/${id}/status`,
+    {
+      status
+    }
+  );
+
+  return data;
+};
+
+export const assignBookingResources = async (
   id,
   payload
 ) => {
   const { data } = await api.put(
-    `/admin/bookings/${id}`,
+    `/admin/bookings/${id}/assign`,
     payload
   );
 
   return data;
 };
 
-export const deleteBooking = async (id) => {
-  const { data } = await api.delete(
-    `/admin/bookings/${id}`
+export const updateBookingPayment = async (
+  id,
+  payload
+) => {
+  const { data } = await api.put(
+    `/admin/bookings/${id}/payment`,
+    payload
   );
 
   return data;
