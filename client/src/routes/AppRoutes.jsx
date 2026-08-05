@@ -274,6 +274,11 @@ export default function AppRoutes() {
 
         <Route path="users" element={<UserManagement />} />
 
+        <Route
+          path="manage-tours"
+          element={<TourManagement />}
+        />
+
           <Route
             path="staff"
             element={<StaffManagement />}
