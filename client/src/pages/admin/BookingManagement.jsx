@@ -1,7 +1,7 @@
 
 import React from "react";
 import {useQuery} from "@tanstack/react-query";
-import {getAllBookings} from "../../api/bookingApi";
+import {getBookings} from "../../api/adminBookingApi";
 
 
 const BookingManagement=()=>{
@@ -15,7 +15,7 @@ error
 
 queryKey:["admin-bookings"],
 
-queryFn:getAllBookings
+queryFn:getBookings
 
 });
 

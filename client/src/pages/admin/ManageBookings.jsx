@@ -1,610 +1,346 @@
+import React from "react";
 import {
-    useState
-} from "react";
-
-
-import {
-    useQuery,
-    useMutation,
-    useQueryClient
+useQuery,
+useMutation,
+useQueryClient
 } from "@tanstack/react-query";
 
-
 import {
-    toast
-} from "react-toastify";
-
-
-import {
-    getAdminBookings,
-    updateBookingStatus
-}
-from "../../api/bookingApi";
-
+getBookings,
+updateBookingStatus,
+updateBookingPayment
+} from "../../api/adminBookingApi";
 
 
 export default function ManageBookings(){
 
+const queryClient = useQueryClient();
 
-    const queryClient = useQueryClient();
 
+const {
+data,
+isLoading
+}=useQuery({
 
-    const [search,setSearch] = useState("");
+queryKey:["admin-bookings"],
 
-    const [status,setStatus] = useState("");
+queryFn:getBookings
 
+});
 
 
-    const {
-        data,
-        isLoading,
-        isError
+const statusMutation = useMutation({
 
-    } = useQuery({
+mutationFn:({id,status})=>
+updateBookingStatus(id,status),
 
-        queryKey:[
-            "admin-bookings",
-            search,
-            status
-        ],
+onSuccess:()=>{
+queryClient.invalidateQueries(
+["admin-bookings"]
+);
+}
 
-        queryFn:()=>getAdminBookings({
-            search,
-            status
-        })
+});
 
-    });
 
+const paymentMutation = useMutation({
 
+mutationFn:({id,payload})=>
+updateBookingPayment(id,payload),
 
-    const bookings =
-        data?.bookings ||
-        data?.data?.bookings ||
-        [];
+onSuccess:()=>{
+queryClient.invalidateQueries(
+["admin-bookings"]
+);
+}
 
+});
 
 
-    const {
-        mutate:updateStatus,
-        isPending
+const bookings =
+data?.data ||
+data?.bookings ||
+data ||
+[];
 
-    } = useMutation({
 
 
-        mutationFn:({
-            id,
-            status
-        })=>
+if(isLoading){
 
-            updateBookingStatus(
-                id,
-                status
-            ),
+return (
 
+<div className="p-8">
+Loading bookings...
+</div>
 
-        onSuccess:()=>{
+)
 
-            queryClient.invalidateQueries({
+}
 
-                queryKey:[
-                    "admin-bookings"
-                ]
 
-            });
 
+return (
 
-            toast.success(
-                "Booking status updated"
-            );
+<div className="p-6 space-y-6">
 
-        },
 
+<h1 className="text-3xl font-bold">
+Bookings Management
+</h1>
 
-        onError:()=>{
 
-            toast.error(
-                "Failed to update booking"
-            );
+<div className="
+grid md:grid-cols-4 gap-5
+">
 
-        }
 
-    });
+<Card
+title="Total Bookings"
+value={bookings.length}
+/>
 
 
+<Card
+title="Confirmed"
+value={
+bookings.filter(
+b=>b.status==="confirmed"
+).length
+}
+/>
 
 
-    const changeStatus=(id,newStatus)=>{
+<Card
+title="Pending"
+value={
+bookings.filter(
+b=>b.status==="pending"
+).length
+}
+/>
 
-        updateStatus({
 
-            id,
+<Card
+title="Paid"
+value={
+bookings.filter(
+b=>b.paymentStatus==="paid"
+).length
+}
+/>
 
-            status:newStatus
 
-        });
+</div>
 
-    };
 
 
+<div className="
+bg-white rounded-xl shadow p-5
+">
 
 
-    const getPaymentStatus=(paymentStatus)=>{
+<table className="w-full">
 
 
-        if(!paymentStatus){
+<thead>
 
-            return "Pending";
+<tr className="border-b">
 
-        }
+<th>Customer</th>
+<th>Tour</th>
+<th>Date</th>
+<th>Payment</th>
+<th>Status</th>
+<th>Actions</th>
 
+</tr>
 
+</thead>
 
-        if(typeof paymentStatus==="string"){
 
-            return paymentStatus;
 
-        }
+<tbody>
 
 
+{
+bookings.map((booking)=>(
 
-        if(typeof paymentStatus==="object"){
+<tr
+key={booking._id}
+className="border-b"
+>
 
-            return (
 
-                paymentStatus.paymentStatus ||
+<td>
 
-                paymentStatus.status ||
+{
+booking.customer?.name ||
+booking.user?.name ||
+"Guest"
+}
 
-                "Pending"
+</td>
 
-            );
 
-        }
+<td>
 
+{
+booking.tour?.title ||
+booking.tour?.name ||
+"N/A"
+}
 
+</td>
 
-        return "Pending";
 
-    };
+<td>
 
+{
+new Date(
+booking.createdAt
+).toLocaleDateString()
 
+}
 
+</td>
 
 
-    return (
+<td>
 
-        <div className="p-6">
+<span>
 
+{
+booking.paymentStatus ||
+"pending"
+}
 
-            <h1
-                className="
-                    text-3xl
-                    font-bold
-                    mb-8
-                "
-            >
+</span>
 
-                Booking Management
 
-            </h1>
+</td>
 
 
 
+<td>
 
-            <div
-                className="
-                    flex
-                    gap-4
-                    mb-6
-                "
-            >
+{
+booking.status
+}
 
 
-                <input
+</td>
 
-                    className="
-                        border
-                        p-3
-                        rounded
-                        w-80
-                    "
 
-                    placeholder="
-                        Search customer or booking number
-                    "
 
-                    value={search}
+<td className="space-x-2">
 
-                    onChange={
-                        e=>setSearch(e.target.value)
-                    }
 
-                />
+<button
 
+onClick={()=>statusMutation.mutate({
 
+id:booking._id,
 
-                <select
+status:"confirmed"
 
-                    className="
-                        border
-                        p-3
-                        rounded
-                    "
+})}
 
-                    value={status}
+className="
+bg-green-600
+text-white
+px-3 py-1
+rounded
+"
 
-                    onChange={
-                        e=>setStatus(e.target.value)
-                    }
+>
 
-                >
+Confirm
 
-                    <option value="">
-                        All Status
-                    </option>
+</button>
 
 
-                    <option value="pending">
-                        Pending
-                    </option>
 
+<button
 
-                    <option value="confirmed">
-                        Confirmed
-                    </option>
+onClick={()=>paymentMutation.mutate({
 
+id:booking._id,
 
-                    <option value="completed">
-                        Completed
-                    </option>
+payload:{
+paymentStatus:"paid"
+}
 
+})}
 
-                    <option value="cancelled">
-                        Cancelled
-                    </option>
+className="
+bg-blue-600
+text-white
+px-3 py-1
+rounded
+"
 
+>
 
-                </select>
+Paid
 
+</button>
 
-            </div>
 
 
+</td>
 
 
 
-            <div
-                className="
-                    bg-white
-                    shadow
-                    rounded-xl
-                    overflow-hidden
-                "
-            >
+</tr>
 
 
-            {
-                isLoading ?
+))
 
-                (
+}
 
-                    <div className="p-6">
 
-                        Loading bookings...
+</tbody>
 
-                    </div>
 
-                )
+</table>
 
-                :
 
-                isError ?
+</div>
 
-                (
 
-                    <div className="
-                        p-6
-                        text-red-600
-                    ">
 
-                        Failed to load bookings
+</div>
 
-                    </div>
 
-                )
+)
 
-                :
+}
 
-                (
 
-                <table className="w-full">
 
+function Card({title,value}){
 
-                <thead className="bg-gray-100">
+return (
 
-                <tr>
+<div className="
+bg-white
+rounded-xl
+shadow
+p-5
+">
 
-                    <th className="p-4 text-left">
-                        Booking
-                    </th>
+<p className="text-gray-500">
+{title}
+</p>
 
-                    <th className="p-4 text-left">
-                        Customer
-                    </th>
 
-                    <th className="p-4 text-left">
-                        Tour
-                    </th>
+<h2 className="text-3xl font-bold">
+{value}
+</h2>
 
-                    <th className="p-4 text-left">
-                        Amount
-                    </th>
 
-                    <th className="p-4 text-left">
-                        Payment
-                    </th>
+</div>
 
-                    <th className="p-4 text-left">
-                        Status
-                    </th>
-
-                    <th className="p-4 text-left">
-                        Actions
-                    </th>
-
-
-                </tr>
-
-
-                </thead>
-
-
-
-
-
-                <tbody>
-
-
-                {
-                    bookings.length===0
-
-                    ?
-
-                    (
-
-                    <tr>
-
-                        <td
-                            colSpan="7"
-                            className="
-                                p-6
-                                text-center
-                                text-gray-500
-                            "
-                        >
-
-                            No bookings found
-
-                        </td>
-
-                    </tr>
-
-                    )
-
-                    :
-
-                    bookings.map(
-                        booking=>(
-
-
-                    <tr
-
-                        key={booking._id}
-
-                        className="border-b"
-
-                    >
-
-
-                        <td className="p-4">
-
-                            {
-                                booking.bookingNumber ||
-                                booking._id
-                            }
-
-                        </td>
-
-
-
-
-                        <td className="p-4">
-
-
-                            <div className="font-medium">
-
-                            {
-                                booking.customer?.name ||
-
-                                booking.customerSnapshot?.name ||
-
-                                "Unknown"
-                            }
-
-                            </div>
-
-
-                            <small>
-
-                            {
-                                booking.customer?.phone ||
-
-                                booking.customerSnapshot?.phone ||
-
-                                "-"
-                            }
-
-                            </small>
-
-
-                        </td>
-
-
-
-
-                        <td className="p-4">
-
-                        {
-                            booking.tour?.title ||
-
-                            "Tour unavailable"
-                        }
-
-                        </td>
-
-
-
-
-                        <td className="p-4">
-
-                            KES{" "}
-
-                            {
-                                Number(
-                                    booking.amount ||
-                                    booking.totalAmount ||
-                                    0
-                                ).toLocaleString()
-                            }
-
-                        </td>
-
-
-
-
-                        <td className="p-4">
-
-                            <span
-                                className="
-                                    bg-green-100
-                                    px-3
-                                    py-1
-                                    rounded
-                                    capitalize
-                                "
-                            >
-
-                            {
-                                getPaymentStatus(
-                                    booking.paymentStatus
-                                )
-                            }
-
-                            </span>
-
-
-                        </td>
-
-
-
-
-                        <td className="p-4 capitalize">
-
-
-                        {
-                            booking.status ||
-
-                            booking.status ||
-
-                            "Pending"
-                        }
-
-
-                        </td>
-
-
-
-
-                        <td className="p-4 space-x-2">
-
-
-                            <button
-
-                                disabled={isPending}
-
-                                onClick={()=>changeStatus(
-                                    booking._id,
-                                    "confirmed"
-                                )}
-
-                                className="
-                                    bg-green-700
-                                    text-white
-                                    px-3
-                                    py-1
-                                    rounded
-                                "
-
-                            >
-
-                                Confirm
-
-                            </button>
-
-
-
-
-                            <button
-
-                                disabled={isPending}
-
-                                onClick={()=>changeStatus(
-                                    booking._id,
-                                    "cancelled"
-                                )}
-
-                                className="
-                                    bg-red-600
-                                    text-white
-                                    px-3
-                                    py-1
-                                    rounded
-                                "
-
-                            >
-
-                                Cancel
-
-                            </button>
-
-
-                        </td>
-
-
-
-                    </tr>
-
-
-                    ))
-                }
-
-
-                </tbody>
-
-
-                </table>
-
-                )
-
-            }
-
-
-            </div>
-
-
-        </div>
-
-    );
-
+)
 
 }
