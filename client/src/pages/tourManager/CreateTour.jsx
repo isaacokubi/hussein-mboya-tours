@@ -197,28 +197,30 @@ const guides =
     Array.isArray(guidesData)
     ? guidesData
     :
-    guidesData?.data || [];
+    guidesData?.data ||
+    guidesData?.users ||
+    [];
 
 
 const vehicles =
     Array.isArray(vehiclesData)
     ? vehiclesData
     :
-    vehiclesData?.data || [];
+    vehiclesData?.data ||
+    vehiclesData?.vehicles ||
+    [];
 
 
 const destinations =
+    Array.isArray(destinationsData)
+    ? destinationsData
+    :
+    destinationsData?.data ||
+    destinationsData?.destinations ||
+    [];
 
-        Array.isArray(destinationsData)
-        ? destinationsData
-        :
-        destinationsData?.destinations ||
 
-        destinationsData?.data?.destinations ||
 
-        destinationsData?.data ||
-
-        [];
 
 
 
