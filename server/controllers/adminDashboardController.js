@@ -280,7 +280,7 @@ const paymentRevenue = {
 
 
                             paymentStatus:
-                                "$paymentStatus"
+                                "$status"
 
 
                         },
