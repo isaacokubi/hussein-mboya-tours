@@ -692,6 +692,9 @@ createdAt:-1
                   monthlyRevenue:
                       formattedMonthlyRevenue,
 
+                  debugMonthlyRevenue:
+                      formattedMonthlyRevenue,
+
 
 
 
