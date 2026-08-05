@@ -177,3 +177,14 @@ export const updateBookingStatus = async (
   return data;
 
 };
+
+
+
+export const getAllBookings = async()=>{
+
+const response = await api.get("/bookings");
+
+return response.data;
+
+};
+
