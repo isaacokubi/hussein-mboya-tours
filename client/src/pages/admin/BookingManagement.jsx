@@ -1,9 +1,15 @@
 import React, { useState } from "react";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient
+} from "@tanstack/react-query";
+
 
 import { getStaff } from "../../api/staffApi";
 import { getVehicles } from "../../api/vehicleApi";
+
 
 import {
   getBookings,
@@ -11,6 +17,7 @@ import {
   updateBookingPayment,
   assignBookingResources
 } from "../../api/adminBookingApi";
+
 
 
 const BookingManagement = () => {
@@ -23,8 +30,10 @@ const [selectedBooking,setSelectedBooking] = useState(null);
 
 
 
+/* STAFF */
+
 const {
-data:staffData
+data:staffResponse
 }=useQuery({
 
 queryKey:["staff"],
@@ -35,8 +44,22 @@ queryFn:getStaff
 
 
 
+const guides =
+Array.isArray(staffResponse)
+?
+staffResponse
+:
+staffResponse?.data ||
+staffResponse?.staff ||
+[];
+
+
+
+
+/* VEHICLES */
+
 const {
-data:vehicleData
+data:vehicleResponse
 }=useQuery({
 
 queryKey:["vehicles"],
@@ -46,6 +69,21 @@ queryFn:getVehicles
 });
 
 
+
+const vehicles =
+Array.isArray(vehicleResponse)
+?
+vehicleResponse
+:
+vehicleResponse?.data ||
+vehicleResponse?.vehicles ||
+[];
+
+
+
+
+
+/* BOOKINGS */
 
 const {
 data,
@@ -62,64 +100,97 @@ queryFn:getBookings
 
 
 
+
+/* STATUS UPDATE */
+
+
 const statusMutation = useMutation({
 
-mutationFn:({id,status}) =>
+mutationFn:({id,status})=>
 updateBookingStatus(id,status),
+
 
 onSuccess:()=>{
 
-queryClient.invalidateQueries([
-"admin-bookings"
-]);
+queryClient.invalidateQueries({
+
+queryKey:["admin-bookings"]
+
+});
 
 }
 
 });
 
 
+
+
+
+
+/* PAYMENT */
 
 
 const paymentMutation = useMutation({
 
-mutationFn:({id,status}) =>
+mutationFn:({id,status})=>
+
 updateBookingPayment(
+
 id,
+
 {
 paymentStatus:status
 }
+
 ),
+
 
 onSuccess:()=>{
 
-queryClient.invalidateQueries([
-"admin-bookings"
-]);
+queryClient.invalidateQueries({
+
+queryKey:["admin-bookings"]
+
+});
 
 }
 
 });
 
 
+
+
+
+
+/* ASSIGN RESOURCES */
 
 
 const assignMutation = useMutation({
 
-mutationFn:({id,payload}) =>
+mutationFn:({id,payload})=>
+
 assignBookingResources(
+
 id,
+
 payload
+
 ),
+
 
 onSuccess:()=>{
 
-queryClient.invalidateQueries([
-"admin-bookings"
-]);
+queryClient.invalidateQueries({
+
+queryKey:["admin-bookings"]
+
+});
 
 }
 
 });
+
+
 
 
 
@@ -138,6 +209,7 @@ Loading bookings...
 
 
 
+
 if(error)
 
 return (
@@ -153,6 +225,7 @@ Failed loading bookings
 
 
 
+
 const bookings =
 
 Array.isArray(data)
@@ -163,12 +236,18 @@ data
 
 :
 
-data?.bookings || [];
+data?.data ||
+
+data?.bookings ||
+
+[];
+
 
 
 
 
 const total = bookings.length;
+
 
 
 const pending =
@@ -177,16 +256,28 @@ b=>b.status==="pending"
 ).length;
 
 
+
 const confirmed =
 bookings.filter(
 b=>b.status==="confirmed"
 ).length;
 
 
+
 const paid =
 bookings.filter(
-b=>b.paymentStatus==="paid"
+b=>
+(
+typeof b.paymentStatus==="string"
+?
+b.paymentStatus
+:
+b.paymentStatus?.status
+)
+==="paid"
 ).length;
+
+
 
 
 
@@ -197,64 +288,51 @@ return (
 
 
 <h1 className="text-3xl font-bold">
+
 Booking Management
+
 </h1>
+
+
 
 
 
 <div className="grid md:grid-cols-4 gap-4">
 
 
-<div className="bg-white shadow rounded-xl p-5">
+{
+[
+["Total Bookings",total],
+["Pending",pending],
+["Confirmed Trips",confirmed],
+["Paid",paid]
 
-<p>Total Bookings</p>
+].map(([title,value])=>(
+
+
+<div
+key={title}
+className="bg-white shadow rounded-xl p-5"
+>
+
+<p>{title}</p>
 
 <h2 className="text-3xl font-bold">
-{total}
+
+{value}
+
 </h2>
 
 </div>
 
 
-
-<div className="bg-white shadow rounded-xl p-5">
-
-<p>Pending</p>
-
-<h2 className="text-3xl font-bold">
-{pending}
-</h2>
-
-</div>
-
-
-
-
-<div className="bg-white shadow rounded-xl p-5">
-
-<p>Confirmed Trips</p>
-
-<h2 className="text-3xl font-bold">
-{confirmed}
-</h2>
-
-</div>
-
-
-
-
-<div className="bg-white shadow rounded-xl p-5">
-
-<p>Paid</p>
-
-<h2 className="text-3xl font-bold">
-{paid}
-</h2>
-
-</div>
+))
+}
 
 
 </div>
+
+
 
 
 
@@ -312,6 +390,8 @@ Actions
 
 
 
+
+
 <tbody>
 
 
@@ -319,7 +399,11 @@ Actions
 bookings.map((b)=>(
 
 
-<tr key={b._id} className="border-b">
+<tr
+key={b._id}
+className="border-b"
+>
+
 
 
 <td className="p-3">
@@ -327,6 +411,7 @@ bookings.map((b)=>(
 #{b._id?.slice(-6)}
 
 </td>
+
 
 
 
@@ -359,7 +444,12 @@ b.tour?.name ||
 
 <td className="p-3">
 
-KES {b.amount || b.totalAmount || b.subtotal || 0}
+KES {
+b.amount ||
+b.totalAmount ||
+b.subtotal ||
+0
+}
 
 </td>
 
@@ -368,7 +458,13 @@ KES {b.amount || b.totalAmount || b.subtotal || 0}
 
 <td className="p-3">
 
-{b.paymentStatus || "pending"}
+{
+typeof b.paymentStatus==="string"
+?
+b.paymentStatus
+:
+b.paymentStatus?.status || "pending"
+}
 
 </td>
 
@@ -387,135 +483,113 @@ KES {b.amount || b.totalAmount || b.subtotal || 0}
 <td className="p-3 space-x-2">
 
 
-<button
-
-onClick={()=>setSelectedBooking(b)}
-
-className="px-3 py-1 bg-gray-700 text-white rounded"
-
->
-
-View
-
-</button>
 
 
+<select
+className="px-2 py-1 border rounded"
+defaultValue=""
+onChange={(e)=>{
 
-
-<button
-
-onClick={()=>statusMutation.mutate({
-
-id:b._id,
-
-status:"confirmed"
-
-})}
-
-className="px-3 py-1 bg-green-600 text-white rounded"
-
->
-
-Confirm
-
-</button>
-
-
-
-
-
-<button
-
-onClick={()=>paymentMutation.mutate({
-
-id:b._id,
-
-status:"paid"
-
-})}
-
-className="px-3 py-1 bg-blue-600 text-white rounded"
-
->
-
-Mark Paid
-
-</button>
-
-
-
-
-
-<button
-
-onClick={()=>{
-
-const guide =
-prompt("Enter Guide ID");
-
-
-if(guide){
+if(e.target.value){
 
 assignMutation.mutate({
 
 id:b._id,
 
 payload:{
-guide
+guideId:e.target.value
 }
 
-});
+})
 
 }
 
 }}
-
-className="px-3 py-1 bg-purple-600 text-white rounded"
-
 >
 
+<option value="">
 Assign Guide
-
-</button>
-
+</option>
 
 
+{
+guides.map(g=>(
+
+<option
+key={g._id}
+value={g._id}
+>
+
+{g.firstName || g.lastName
+? `${g.firstName || ""} ${g.lastName || ""}`
+: g.name || "Guide"}
+
+</option>
+
+))
+}
+
+</select>
 
 
-<button
-
-onClick={()=>{
-
-const vehicle =
-prompt("Enter Vehicle ID");
 
 
-if(vehicle){
+
+
+
+
+<select
+className="px-2 py-1 border rounded"
+defaultValue=""
+onChange={(e)=>{
+
+if(e.target.value){
 
 assignMutation.mutate({
 
 id:b._id,
 
 payload:{
-vehicleId:vehicle
+vehicleId:e.target.value
 }
 
-});
+})
 
 }
 
 }}
-
-className="px-3 py-1 bg-orange-600 text-white rounded"
-
 >
 
+<option value="">
 Assign Vehicle
+</option>
 
-</button>
+
+{
+vehicles.map(v=>(
+
+<option
+key={v._id}
+value={v._id}
+>
+
+{v.name ||
+v.registrationNumber ||
+"Vehicle"}
+
+</option>
+
+))
+}
+
+</select>
+
+
+
 
 
 </td>
+
 
 
 </tr>
@@ -538,8 +612,12 @@ Assign Vehicle
 
 
 
+
+
+
 {
 selectedBooking && (
+
 
 <div className="fixed inset-0 bg-black/40 flex justify-end">
 
@@ -555,14 +633,15 @@ Booking Details
 
 
 
+
 <p>
 ID: {selectedBooking._id}
 </p>
 
 
 
-<p>
 
+<p>
 Customer:
 
 {
@@ -572,6 +651,7 @@ selectedBooking.user?.name ||
 }
 
 </p>
+
 
 
 
@@ -588,13 +668,15 @@ selectedBooking.tour?.title ||
 
 
 
+
 <p>
 
 Amount:
 
-KES {selectedBooking.amount}
+KES {selectedBooking.amount || 0}
 
 </p>
+
 
 
 
@@ -602,9 +684,14 @@ KES {selectedBooking.amount}
 
 Payment:
 
-{selectedBooking.paymentStatus}
+{
+selectedBooking.paymentStatus?.status ||
+selectedBooking.paymentStatus ||
+"pending"
+}
 
 </p>
+
 
 
 
@@ -612,7 +699,69 @@ Payment:
 
 Status:
 
-{selectedBooking.status}
+{
+selectedBooking.status
+}
+
+</p>
+
+
+
+
+<p>
+
+Payment Method:
+
+{
+selectedBooking.paymentMethod ||
+"MPESA"
+}
+
+</p>
+
+
+
+
+<p>
+
+M-Pesa Receipt:
+
+{
+selectedBooking.mpesaReceiptNumber ||
+selectedBooking.payment?.mpesaReceiptNumber ||
+"Pending"
+}
+
+</p>
+
+
+
+
+<p>
+
+Phone:
+
+{
+selectedBooking.phone ||
+selectedBooking.customer?.phone ||
+selectedBooking.user?.phone ||
+"Not available"
+}
+
+</p>
+
+
+
+
+<p>
+
+Payment Date:
+
+{
+selectedBooking.paymentDate ||
+selectedBooking.updatedAt ||
+"Pending"
+}
 
 </p>
 
@@ -645,12 +794,14 @@ Close
 
 
 
+
 </div>
 
 );
 
 
 };
+
 
 
 export default BookingManagement;
