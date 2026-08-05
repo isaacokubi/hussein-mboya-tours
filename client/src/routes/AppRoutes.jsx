@@ -54,6 +54,7 @@ import TourManagerDashboard from "../pages/tourManager/TourManagerDashboard";
 import TourManagerTours from "../pages/tourManager/TourManagerTours";
 
 import CreateTour from "../pages/tourManager/CreateTour";
+import StaffManagement from "../pages/admin/StaffManagement";
 
 import EditTour from "../pages/tourManager/EditTour";
 
@@ -272,16 +273,10 @@ export default function AppRoutes() {
 
         <Route path="users" element={<UserManagement />} />
 
-        <Route path="tours" element={<TourManagement />} />
-
-        <Route
-          path="staff"
-          element={
-            <div className="p-6">
-              <h1 className="text-2xl font-bold">Staff Management</h1>
-            </div>
-          }
-        />
+          <Route
+            path="staff"
+            element={<StaffManagement />}
+          />
 
         <Route
           path="destinations"
