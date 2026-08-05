@@ -85,10 +85,7 @@ Failed loading bookings
 const bookings =
 Array.isArray(data)
 ? data
-: data?.data?.bookings ||
-data?.data ||
-data?.bookings ||
-[];
+: data?.bookings || [];
 
 
 
@@ -277,7 +274,7 @@ b.tour?.name ||
 
 <td className="p-3">
 
-KES {b.amount || 0}
+KES {b.amount || b.totalAmount || b.subtotal || 0}
 
 </td>
 
