@@ -1,8 +1,9 @@
+import React, { useState } from "react";
 
-import React,{useState} from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
 import { getStaff } from "../../api/staffApi";
 import { getVehicles } from "../../api/vehicleApi";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import {
   getBookings,
@@ -18,6 +19,10 @@ const BookingManagement = () => {
 const queryClient = useQueryClient();
 
 
+const [selectedBooking,setSelectedBooking] = useState(null);
+
+
+
 const {
 data:staffData
 }=useQuery({
@@ -29,6 +34,7 @@ queryFn:getStaff
 });
 
 
+
 const {
 data:vehicleData
 }=useQuery({
@@ -38,6 +44,7 @@ queryKey:["vehicles"],
 queryFn:getVehicles
 
 });
+
 
 
 const {
@@ -54,18 +61,22 @@ queryFn:getBookings
 
 
 
+
 const statusMutation = useMutation({
 
 mutationFn:({id,status}) =>
 updateBookingStatus(id,status),
 
 onSuccess:()=>{
+
 queryClient.invalidateQueries([
 "admin-bookings"
 ]);
+
 }
 
 });
+
 
 
 
@@ -80,12 +91,17 @@ paymentStatus:status
 ),
 
 onSuccess:()=>{
+
 queryClient.invalidateQueries([
 "admin-bookings"
 ]);
+
 }
 
 });
+
+
+
 
 const assignMutation = useMutation({
 
@@ -96,65 +112,63 @@ payload
 ),
 
 onSuccess:()=>{
+
 queryClient.invalidateQueries([
 "admin-bookings"
 ]);
+
 }
 
 });
 
 
 
+
 if(isLoading)
+
 return (
-<div>
 
 <div className="p-6">
+
 Loading bookings...
+
 </div>
+
 );
 
 
 
 if(error)
+
 return (
+
 <div className="p-6 text-red-500">
+
 Failed loading bookings
+
 </div>
+
 );
+
 
 
 
 const bookings =
 
-
-
 Array.isArray(data)
-? data
-: data?.bookings || [];
+
+?
+
+data
+
+:
+
+data?.bookings || [];
 
 
 
 
-const guides =
-Array.isArray(staffData)
-? staffData
-: staffData?.data ||
-staffData?.staff ||
-[];
-
-
-const vehicles =
-Array.isArray(vehicleData)
-? vehicleData
-: vehicleData?.data ||
-vehicleData?.vehicles ||
-[];
-
-
-
-const total =
-bookings.length;
+const total = bookings.length;
 
 
 const pending =
@@ -176,6 +190,7 @@ b=>b.paymentStatus==="paid"
 
 
 
+
 return (
 
 <div className="p-6 space-y-6">
@@ -191,9 +206,8 @@ Booking Management
 
 
 <div className="bg-white shadow rounded-xl p-5">
-<p className="text-gray-500">
-Total Bookings
-</p>
+
+<p>Total Bookings</p>
 
 <h2 className="text-3xl font-bold">
 {total}
@@ -204,9 +218,8 @@ Total Bookings
 
 
 <div className="bg-white shadow rounded-xl p-5">
-<p className="text-gray-500">
-Pending
-</p>
+
+<p>Pending</p>
 
 <h2 className="text-3xl font-bold">
 {pending}
@@ -216,10 +229,10 @@ Pending
 
 
 
+
 <div className="bg-white shadow rounded-xl p-5">
-<p className="text-gray-500">
-Confirmed Trips
-</p>
+
+<p>Confirmed Trips</p>
 
 <h2 className="text-3xl font-bold">
 {confirmed}
@@ -229,10 +242,10 @@ Confirmed Trips
 
 
 
+
 <div className="bg-white shadow rounded-xl p-5">
-<p className="text-gray-500">
-Paid
-</p>
+
+<p>Paid</p>
 
 <h2 className="text-3xl font-bold">
 {paid}
@@ -257,33 +270,41 @@ Paid
 
 <tr className="border-b bg-gray-50">
 
+
 <th className="p-3 text-left">
 Booking
 </th>
+
 
 <th className="p-3 text-left">
 Customer
 </th>
 
+
 <th className="p-3 text-left">
 Tour
 </th>
+
 
 <th className="p-3 text-left">
 Amount
 </th>
 
+
 <th className="p-3 text-left">
 Payment
 </th>
+
 
 <th className="p-3 text-left">
 Status
 </th>
 
+
 <th className="p-3 text-left">
 Actions
 </th>
+
 
 </tr>
 
@@ -298,14 +319,13 @@ Actions
 bookings.map((b)=>(
 
 
-<tr
-key={b._id}
-className="border-b"
->
+<tr key={b._id} className="border-b">
 
 
 <td className="p-3">
+
 #{b._id?.slice(-6)}
+
 </td>
 
 
@@ -323,6 +343,7 @@ b.user?.firstName ||
 
 
 
+
 <td className="p-3">
 
 {
@@ -332,6 +353,7 @@ b.tour?.name ||
 }
 
 </td>
+
 
 
 
@@ -346,9 +368,7 @@ KES {b.amount || b.totalAmount || b.subtotal || 0}
 
 <td className="p-3">
 
-<span>
 {b.paymentStatus || "pending"}
-</span>
 
 </td>
 
@@ -357,9 +377,7 @@ KES {b.amount || b.totalAmount || b.subtotal || 0}
 
 <td className="p-3">
 
-<span>
 {b.status || "pending"}
-</span>
 
 </td>
 
@@ -371,15 +389,28 @@ KES {b.amount || b.totalAmount || b.subtotal || 0}
 
 <button
 
-onClick={()=>
-statusMutation.mutate({
+onClick={()=>setSelectedBooking(b)}
+
+className="px-3 py-1 bg-gray-700 text-white rounded"
+
+>
+
+View
+
+</button>
+
+
+
+
+<button
+
+onClick={()=>statusMutation.mutate({
 
 id:b._id,
 
 status:"confirmed"
 
-})
-}
+})}
 
 className="px-3 py-1 bg-green-600 text-white rounded"
 
@@ -391,17 +422,17 @@ Confirm
 
 
 
+
+
 <button
 
-onClick={()=>
-paymentMutation.mutate({
+onClick={()=>paymentMutation.mutate({
 
 id:b._id,
 
 status:"paid"
 
-})
-}
+})}
 
 className="px-3 py-1 bg-blue-600 text-white rounded"
 
@@ -410,6 +441,9 @@ className="px-3 py-1 bg-blue-600 text-white rounded"
 Mark Paid
 
 </button>
+
+
+
 
 
 <button
@@ -445,14 +479,15 @@ Assign Guide
 </button>
 
 
+
+
+
 <button
 
 onClick={()=>{
 
 const vehicle =
-window.prompt(
-"Vehicle ID"
-);
+prompt("Enter Vehicle ID");
 
 
 if(vehicle){
@@ -502,77 +537,120 @@ Assign Vehicle
 
 
 
+
 {
 selectedBooking && (
 
 <div className="fixed inset-0 bg-black/40 flex justify-end">
 
+
 <div className="bg-white w-full md:w-96 h-full p-6 shadow-xl">
 
+
 <h2 className="text-2xl font-bold mb-4">
+
 Booking Details
+
 </h2>
 
-<p>
-ID:
-{selectedBooking._id}
-</p>
+
 
 <p>
+ID: {selectedBooking._id}
+</p>
+
+
+
+<p>
+
 Customer:
+
 {
 selectedBooking.customer?.name ||
 selectedBooking.user?.name ||
 "Unknown"
 }
+
 </p>
 
+
+
 <p>
+
 Tour:
+
 {
 selectedBooking.tour?.title ||
 "Unknown"
 }
+
 </p>
 
+
+
 <p>
+
 Amount:
+
 KES {selectedBooking.amount}
+
 </p>
 
+
+
 <p>
+
 Payment:
+
 {selectedBooking.paymentStatus}
+
 </p>
 
+
+
 <p>
+
 Status:
+
 {selectedBooking.status}
+
 </p>
+
+
 
 
 <button
+
 onClick={()=>setSelectedBooking(null)}
+
 className="mt-5 px-4 py-2 bg-gray-800 text-white rounded"
+
 >
+
 Close
+
 </button>
 
 
-</div>
 
 </div>
+
+
+</div>
+
 
 )
 
 }
 
-</div>
+
 
 </div>
 
 );
 
+
 };
+
 
 export default BookingManagement;
