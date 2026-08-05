@@ -407,21 +407,11 @@ xl:grid-cols-6
                       capitalize
                     "
               >
-                {
-  item?._id?.status ||
-  (
-    typeof item?._id?.paymentStatus === "object"
-    ?
-    (
-      item._id.paymentStatus.paymentStatus ||
-      item._id.paymentStatus.status ||
-      "pending"
-    )
-    :
-    item?._id?.paymentStatus ||
-    "Unknown"
-  )
-}
+                  {
+                    typeof item?._id === "string"
+                      ? item._id
+                      : item?._id?.status || "Unknown"
+                  }
               </h3>
 
               <p>{item.count || 0} bookings</p>
