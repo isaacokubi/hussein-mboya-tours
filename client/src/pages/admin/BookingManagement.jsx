@@ -531,7 +531,7 @@ Assign Guide
 
 
 {
-(guides || []).map(g=>(
+(Array.isArray(guides) ? guides : []).map(g=>(
 
 <option
 key={g._id}
@@ -584,7 +584,7 @@ Assign Vehicle
 
 
 {
-(vehicles || []).map(v=>(
+(Array.isArray(vehicles) ? vehicles : []).map(v=>(
 
 <option
 key={v._id}
