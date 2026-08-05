@@ -2,7 +2,7 @@
 import React from "react";
 import {useParams} from "react-router-dom";
 import {useQuery} from "@tanstack/react-query";
-import api from "../api/axios";
+import {getDestinationBySlug} from "../api/destinationApi";
 
 
 const DestinationDetails = ()=>{
@@ -15,15 +15,7 @@ const {data,isLoading}=useQuery({
 
 queryKey:["destination",slug],
 
-queryFn:async()=>{
-
-const res = await api.get(
-`/destinations/${slug}`
-);
-
-return res.data;
-
-}
+queryFn:()=>getDestinationBySlug(slug)
 
 });
 
@@ -41,7 +33,7 @@ Loading destination...
 
 
 
-const destination=data?.destination || data?.data;
+const destination=data;
 
 
 
@@ -212,6 +204,27 @@ object-cover
 {tour.duration}
 
 </p>
+
+
+<a
+
+href={`/tours/${tour.slug}`}
+
+className="
+inline-block
+mt-4
+bg-green-600
+text-white
+px-4
+py-2
+rounded
+"
+
+>
+
+View Tour
+
+</a>
 
 
 </div>
