@@ -107,7 +107,7 @@ mt-3
           </p>
 
           <button
-            onClick={() => navigate("/bookings")}
+            onClick={() => navigate("/admin/bookings")}
             className="
 mt-5
 bg-green-700
@@ -205,7 +205,7 @@ mt-2
             </div>
 
             <button
-              onClick={() => navigate("/bookings")}
+              onClick={() => navigate("/admin/bookings")}
               className="
 mt-6
 bg-green-700

@@ -145,7 +145,7 @@ export default function AppRoutes() {
       />
 
       <Route
-        path="/bookings"
+        path="/admin/bookings"
         element={
           <ProtectedRoute>
             <MyBookings />

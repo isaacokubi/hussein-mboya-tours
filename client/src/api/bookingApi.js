@@ -13,7 +13,7 @@ import api from "./axios";
 export const getBookings = async (params = {}) => {
 
   const { data } = await api.get(
-    "/bookings",
+    "/admin/bookings",
     {
       params,
     }
@@ -142,7 +142,7 @@ export const cancelBooking = async (id) => {
 export const getAdminBookings = async (params = {}) => {
 
   const { data } = await api.get(
-    "/bookings/admin",
+    "/admin/bookings",
     {
       params,
     }
@@ -168,7 +168,7 @@ export const updateBookingStatus = async (
 ) => {
 
   const { data } = await api.put(
-    `/bookings/${id}/status`,
+    `/admin/bookings/${id}/status`,
     {
       status,
     }
@@ -182,7 +182,7 @@ export const updateBookingStatus = async (
 
 export const getAllBookings = async()=>{
 
-const response = await api.get("/bookings");
+const response = await api.get("/admin/bookings");
 
 return response.data;
 

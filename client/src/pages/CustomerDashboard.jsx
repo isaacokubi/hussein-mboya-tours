@@ -503,7 +503,7 @@ My Adventures
 
 <Link
 
-to="/bookings"
+to="/admin/bookings"
 
 className="
 text-green-600

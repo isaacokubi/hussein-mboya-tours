@@ -370,7 +370,7 @@ shadow-lg px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-800 transi
                           </Link>
 
                           <Link
-                            to="/bookings"
+                            to="/admin/bookings"
                             onClick={() => setProfileOpen(false)}
                             className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100"
                           >
@@ -575,7 +575,7 @@ text-white
                   {isCustomer && (
                     <>
                       <Link
-                        to="/bookings"
+                        to="/admin/bookings"
                         onClick={() => setMobileOpen(false)}
                         className="
                         flex
