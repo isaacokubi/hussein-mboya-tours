@@ -163,7 +163,7 @@ bg-white rounded-xl shadow p-5
 
 
 {
-bookings.map((booking)=>(
+(Array.isArray(bookings) ? bookings : []).map((booking)=>(
 
 <tr
 key={booking._id}

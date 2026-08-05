@@ -92,7 +92,7 @@ Status
 
 
 {
-bookings.map((b)=>(
+(Array.isArray(bookings) ? bookings : []).map((b)=>(
 
 <tr
 key={b._id}

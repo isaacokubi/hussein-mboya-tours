@@ -17,7 +17,16 @@ export default function StaffManagement(){
         }
     });
 
-    const staff = data?.data || [];
+    const staff =
+    Array.isArray(data)
+        ? data
+        : Array.isArray(data?.data)
+            ? data.data
+            : Array.isArray(data?.staff)
+                ? data.staff
+                : Array.isArray(data?.data?.staff)
+                    ? data.data.staff
+                    : [];
 
     if(isLoading){
         return (
@@ -49,7 +58,7 @@ export default function StaffManagement(){
 
                     <tbody>
 
-                    {staff.map((member)=>(
+                    {(Array.isArray(staff) ? staff : []).map((member)=>(
 
                         <tr key={member._id} className="border-t">
 

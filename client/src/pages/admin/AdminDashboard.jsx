@@ -410,7 +410,7 @@ xl:grid-cols-6
             gap-4
           "
         >
-          {statusDataList.map((item, index) => (
+          {(Array.isArray(statusDataList) ? statusDataList : []).map((item, index) => (
             <div
               key={index}
               className="
@@ -470,7 +470,7 @@ xl:grid-cols-6
                 space-y-4
               "
           >
-            {popularTours.map((tour, index) => (
+            {(Array.isArray(popularTours) ? popularTours : []).map((tour, index) => (
               <div
                 key={tour._id || index}
                 className="
@@ -570,7 +570,7 @@ rounded-xl
               </thead>
 
               <tbody>
-                {recentBookings.map((booking, index) => (
+                {(Array.isArray(recentBookings) ? recentBookings : []).map((booking, index) => (
                   <tr
                     key={booking._id || index}
                     className="
@@ -645,7 +645,7 @@ rounded-xl
                 gap-5
               "
           >
-            {agents.map((agent, index) => (
+            {(Array.isArray(agents) ? agents : []).map((agent, index) => (
               <div
                 key={agent._id || index}
                 className="
@@ -719,7 +719,7 @@ rounded-xl
                 gap-4
               "
           >
-            {guides.map((guide, index) => (
+            {(Array.isArray(guides) ? guides : []).map((guide, index) => (
               <div
                 key={guide._id || index}
                 className="
@@ -824,7 +824,7 @@ xl:grid-cols-6
                 space-y-3
               "
           >
-            {notifications.map((notification, index) => (
+            {(Array.isArray(notifications) ? notifications : []).map((notification, index) => (
               <div
                 key={notification._id || index}
                 className="
