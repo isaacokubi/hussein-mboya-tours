@@ -109,6 +109,14 @@ export const protect = async (req, res, next) => {
       });
     }
 
+    console.log("AUTH USER DEBUG:", {
+      id: user._id,
+      email: user.email,
+      role: user.role,
+      roleId: user.roleId,
+      roleName: user.roleId?.name
+    });
+
     req.user = user;
 
     next();
