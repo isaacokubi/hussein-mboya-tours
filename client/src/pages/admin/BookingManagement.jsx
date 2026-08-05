@@ -760,7 +760,7 @@ Refunded
 <select
 className="px-2 py-1 border rounded"
 value={
-b.guide?._id ||
+b.assignedGuide?._id ||
 b.assignedGuide?._id ||
 ""
 }

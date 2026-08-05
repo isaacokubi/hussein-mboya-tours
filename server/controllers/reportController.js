@@ -22,7 +22,7 @@ export const exportBookings = async (req, res, next) => {
     */
 
     if (status) {
-      filter.bookingStatus = status;
+      filter.status = status;
     }
 
     if (paymentStatus) {
