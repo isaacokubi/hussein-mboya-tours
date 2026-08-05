@@ -90,6 +90,9 @@ export default function AdminDashboard() {
 
 console.log("ADMIN DASHBOARD STATS:", stats);
 
+const statusDataList =
+  stats.status || [];
+
 const monthlyRevenueData =
   stats.monthlyRevenue || [];
 
