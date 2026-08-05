@@ -1,11 +1,7 @@
-import React, {useEffect, useState} from "react";
+import React, {useState} from "react";
 import {useNavigate, useParams} from "react-router-dom";
-import {useMutation, useQuery} from "@tanstack/react-query";
-
-import {
-  getDestination,
-  updateDestination
-} from "../../api/adminDestinationApi";
+import {useQuery, useMutation, useQueryClient} from "@tanstack/react-query";
+import axios from "../../api/axios";
 
 
 const EditDestination = () => {
@@ -14,80 +10,79 @@ const EditDestination = () => {
 
   const navigate = useNavigate();
 
+  const queryClient = useQueryClient();
+
 
   const [form,setForm] = useState({
     name:"",
-    slug:"",
     country:"",
     city:"",
     description:"",
-    featured:false,
-    images:[]
+    featured:false
   });
+
 
 
   const {data,isLoading}=useQuery({
+
     queryKey:["destination",id],
-    queryFn:()=>getDestination(id)
+
+    queryFn:async()=>{
+
+      const res=await axios.get(
+        `/destinations/${id}`
+      );
+
+      const d=res.data.destination;
+
+      setForm({
+        name:d.name || "",
+        country:d.country || "",
+        city:d.city || "",
+        description:d.description || "",
+        featured:d.featured || false
+      });
+
+      return d;
+
+    }
+
   });
 
 
 
-  useEffect(()=>{
+  const mutation=useMutation({
 
-    const destination =
-      data?.destination || data?.data || data;
-
-    if(destination){
-
-      setForm({
-
-        name:destination.name || "",
-
-        slug:destination.slug || "",
-
-        country:destination.country || "",
-
-        city:destination.city || "",
-
-        description:destination.description || "",
-
-        featured:destination.featured || false,
-
-        images:[]
-
-      });
-
-    }
-
-  },[data]);
-
-
-
-  const mutation = useMutation({
-
-    mutationFn:updateDestination,
+    mutationFn:(payload)=>
+      axios.put(
+        `/admin/destinations/${id}`,
+        payload
+      ),
 
 
     onSuccess:()=>{
+
+      queryClient.invalidateQueries([
+        "admin-destinations"
+      ]);
 
       alert(
         "Destination updated successfully"
       );
 
-      navigate("/admin/destinations");
+      navigate(
+        "/admin/destinations"
+      );
 
     },
 
 
-    onError:(error)=>{
+    onError:(err)=>{
 
-      console.error(
-        error
-      );
+      console.error(err);
 
       alert(
-        error.response?.data?.message ||
+        err.response?.data?.message ||
         "Update failed"
       );
 
@@ -97,201 +92,130 @@ const EditDestination = () => {
 
 
 
-  const handleChange=(e)=>{
-
-    const {
-      name,
-      value,
-      checked,
-      type
-    }=e.target;
-
-
-    setForm({
-
-      ...form,
-
-      [name]:
-      type==="checkbox"
-      ?
-      checked
-      :
-      value
-
-    });
-
-  };
-
-
-
-  const handleImages=(e)=>{
-
-    setForm({
-
-      ...form,
-
-      images:e.target.files
-
-    });
-
-  };
-
-
-
-  const submit=(e)=>{
-
-    e.preventDefault();
-
-
-    const body=new FormData();
-
-
-    Object.keys(form).forEach(key=>{
-
-
-      if(key==="images"){
-
-        Array.from(form.images)
-        .forEach(file=>{
-
-          body.append(
-            "images",
-            file
-          );
-
-        });
-
-
-      }else{
-
-        body.append(
-          key,
-          form[key]
-        );
-
-      }
-
-
-    });
-
-
-    mutation.mutate({
-      id,
-      data:body
-    });
-
-  };
-
-
-
   if(isLoading)
-  return (
-    <div className="p-6">
+    return <div className="p-6">
       Loading...
+    </div>;
+
+
+
+  return (
+
+    <div className="p-6">
+
+
+      <h1 className="text-2xl font-bold mb-6">
+        Edit Destination
+      </h1>
+
+
+
+      <div className="space-y-4">
+
+
+        <input
+          className="border p-3 w-full"
+          value={form.name}
+          placeholder="Destination name"
+          onChange={
+            e=>setForm({
+              ...form,
+              name:e.target.value
+            })
+          }
+        />
+
+
+
+        <input
+          className="border p-3 w-full"
+          value={form.country}
+          placeholder="Country"
+          onChange={
+            e=>setForm({
+              ...form,
+              country:e.target.value
+            })
+          }
+        />
+
+
+
+        <input
+          className="border p-3 w-full"
+          value={form.city}
+          placeholder="City"
+          onChange={
+            e=>setForm({
+              ...form,
+              city:e.target.value
+            })
+          }
+        />
+
+
+
+        <textarea
+          className="border p-3 w-full"
+          rows="5"
+          value={form.description}
+          placeholder="Description"
+          onChange={
+            e=>setForm({
+              ...form,
+              description:e.target.value
+            })
+          }
+        />
+
+
+
+        <label>
+
+          <input
+            type="checkbox"
+            checked={form.featured}
+            onChange={
+              e=>setForm({
+                ...form,
+                featured:e.target.checked
+              })
+            }
+          />
+
+          {" "}Featured
+
+        </label>
+
+
+
+        <button
+
+          onClick={()=>
+            mutation.mutate(form)
+          }
+
+          className="
+          bg-green-600
+          text-white
+          px-6
+          py-3
+          rounded
+          "
+
+        >
+
+          Save Changes
+
+        </button>
+
+
+      </div>
+
+
     </div>
+
   );
-
-
-return (
-
-<div className="p-6">
-
-
-<h1 className="text-3xl font-bold mb-6">
-Edit Destination
-</h1>
-
-
-<form
-onSubmit={submit}
-className="bg-white shadow rounded p-6 space-y-4"
->
-
-
-<input
-name="name"
-value={form.name}
-onChange={handleChange}
-className="border p-2 w-full"
-/>
-
-
-<input
-name="slug"
-value={form.slug}
-onChange={handleChange}
-className="border p-2 w-full"
-/>
-
-
-<input
-name="country"
-value={form.country}
-onChange={handleChange}
-className="border p-2 w-full"
-/>
-
-
-<input
-name="city"
-value={form.city}
-onChange={handleChange}
-className="border p-2 w-full"
-/>
-
-
-<textarea
-name="description"
-value={form.description}
-onChange={handleChange}
-className="border p-2 w-full"
-/>
-
-
-
-<label>
-
-<input
-type="checkbox"
-name="featured"
-checked={form.featured}
-onChange={handleChange}
-/>
-
- Featured
-
-</label>
-
-
-
-<input
-type="file"
-multiple
-onChange={handleImages}
-/>
-
-
-<button
-className="
-bg-blue-600
-text-white
-px-5
-py-2
-rounded
-"
->
-
-Update Destination
-
-</button>
-
-
-</form>
-
-
-</div>
-
-);
 
 };
 
