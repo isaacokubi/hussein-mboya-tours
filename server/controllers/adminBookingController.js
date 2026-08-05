@@ -399,3 +399,67 @@ export const downloadBookingInvoice = async (
 
 };
 
+
+
+/*
+|--------------------------------------------------------------------------
+| GET BOOKING TIMELINE
+|--------------------------------------------------------------------------
+*/
+
+export const getBookingTimeline = async (
+  req,
+  res,
+  next
+) => {
+
+  try {
+
+    const booking = await Booking.findById(
+      req.params.id
+    )
+    .select(
+      "createdAt updatedAt status paymentStatus"
+    )
+    .lean();
+
+
+    if (!booking) {
+      return res.status(404).json({
+        success:false,
+        message:"Booking not found"
+      });
+    }
+
+
+    const timeline = [
+      {
+        event:"Booking created",
+        date:booking.createdAt,
+        status:"created"
+      },
+      {
+        event:"Booking status updated",
+        date:booking.updatedAt,
+        status:booking.status
+      },
+      {
+        event:"Payment status",
+        date:booking.updatedAt,
+        status:booking.paymentStatus
+      }
+    ];
+
+
+    return res.status(200).json({
+      success:true,
+      timeline
+    });
+
+
+  } catch(error) {
+    next(error);
+  }
+
+};
+
