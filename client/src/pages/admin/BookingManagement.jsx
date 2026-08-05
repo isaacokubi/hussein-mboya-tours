@@ -1,16 +1,16 @@
+
 import React from "react";
 import {useQuery} from "@tanstack/react-query";
 import {getAllBookings} from "../../api/bookingApi";
 
 
-const BookingManagement = ()=>{
+const BookingManagement=()=>{
 
 
 const {
 data,
 isLoading,
 error
-
 }=useQuery({
 
 queryKey:["admin-bookings"],
@@ -22,27 +22,18 @@ queryFn:getAllBookings
 
 
 if(isLoading)
-return (
-<div className="p-6">
-Loading bookings...
-</div>
-);
+return <div className="p-6">Loading bookings...</div>
 
 
 
 if(error)
-return (
-<div className="p-6 text-red-500">
-Failed to load bookings
+return <div className="p-6 text-red-500">
+Failed loading bookings
 </div>
-);
 
 
 
-const bookings =
-data?.data ||
-data ||
-[];
+const bookings=data?.data || data || [];
 
 
 
@@ -57,7 +48,7 @@ Booking Management
 
 
 
-<div className="bg-white shadow rounded-xl p-6">
+<div className="bg-white rounded-xl shadow p-6 overflow-x-auto">
 
 
 <table className="w-full">
@@ -67,30 +58,29 @@ Booking Management
 
 <tr className="border-b">
 
-<th className="text-left p-3">
+<th className="p-3 text-left">
 ID
 </th>
 
-<th className="text-left p-3">
+<th className="p-3 text-left">
 Customer
 </th>
 
-<th className="text-left p-3">
+<th className="p-3 text-left">
 Tour
 </th>
 
-<th className="text-left p-3">
+<th className="p-3 text-left">
 Amount
 </th>
 
-<th className="text-left p-3">
+<th className="p-3 text-left">
 Payment
 </th>
 
-<th className="text-left p-3">
+<th className="p-3 text-left">
 Status
 </th>
-
 
 </tr>
 
@@ -102,68 +92,61 @@ Status
 
 
 {
-bookings.map((booking)=>(
-
+bookings.map((b)=>(
 
 <tr
-key={booking._id}
+key={b._id}
 className="border-b"
 >
 
 
 <td className="p-3">
-
-{booking._id.slice(-6)}
-
+{b._id?.slice(-6)}
 </td>
 
 
 <td className="p-3">
 
 {
-booking.customer?.name ||
-booking.user?.name ||
-"N/A"
+b.customer?.name ||
+b.user?.name ||
+"Unknown"
 }
 
 </td>
 
 
-
 <td className="p-3">
 
 {
-booking.tour?.title ||
-booking.tour?.name ||
-"N/A"
+b.tour?.title ||
+b.tour?.name ||
+"Unknown"
 }
 
 </td>
 
 
-
 <td className="p-3">
 
-KES {booking.amount || 0}
+KES {b.amount || 0}
 
 </td>
-
 
 
 <td className="p-3">
 
 {
-booking.paymentStatus || "Pending"
+b.paymentStatus || "Pending"
 }
 
 </td>
 
 
-
 <td className="p-3">
 
 {
-booking.status || "Pending"
+b.status || "Pending"
 }
 
 </td>
@@ -171,11 +154,9 @@ booking.status || "Pending"
 
 </tr>
 
-
 ))
 
 }
-
 
 
 </tbody>
@@ -189,10 +170,9 @@ booking.status || "Pending"
 
 </div>
 
-);
+)
 
-
-};
+}
 
 
 export default BookingManagement;
