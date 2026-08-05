@@ -266,12 +266,13 @@ const destinations =
 
 
 
-        mutationFn:(payload)=>
+        mutationFn:(payload)=>{
 
-            
-console.log("PAYLOAD DEBUG:", payload);
+    console.log("PAYLOAD DEBUG:", payload);
 
-createTour(payload),
+    return createTour(payload);
+
+},
 
 
 
