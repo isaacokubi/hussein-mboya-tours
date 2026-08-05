@@ -85,31 +85,12 @@ export default function AdminDashboard() {
   |--------------------------------------------------------------------------
   */
 
-  console.log("MONTHLY REVENUE DATA:", stats.monthlyRevenue);
 
   const stats = data?.data || data || {};
 
-const monthlyRevenueSafe =
-  stats.monthlyRevenue || [];
+console.log("ADMIN DASHBOARD STATS:", stats);
 
-const statusSafe =
-  stats.status || [];
-
-
-
-const monthlyRevenueData =
-  stats.monthlyRevenue || [];
-
-const statusDataList =
-  stats.status || [];
-
-
-console.log(
-  "MONTHLY REVENUE DATA:",
-  stats.monthlyRevenue
-);
-
-  const paymentStats =
+const paymentStats =
     stats.paymentStats ||
     {
       completed: 0,
