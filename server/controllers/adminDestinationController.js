@@ -30,7 +30,12 @@ export const createDestination = async (req, res, next) => {
     const exists = await Destination.findOne({
       $or: [
         { slug: slug.trim().toLowerCase() },
-        { name: name.trim() },
+        { 
+          name: {
+            $regex: `^${name.trim()}$`,
+            $options:"i"
+          }
+        },
       ],
     });
 
