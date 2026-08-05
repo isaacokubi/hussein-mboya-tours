@@ -89,14 +89,13 @@ export default function AdminDashboard() {
 
   const stats = data?.data || data || {};
 
-const paymentStats =
-  paymentData?.stats ||
-  stats.paymentStats ||
-  {
-    completed: 0,
-    pending: 0,
-    failed: 0
-  };
+  const paymentStats =
+    stats.paymentStats ||
+    {
+      completed: 0,
+      pending: 0,
+      failed: 0
+    };
 
 
 const roles =
