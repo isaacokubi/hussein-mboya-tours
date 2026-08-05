@@ -754,6 +754,14 @@ Refunded
 
 <td className="p-3 space-x-2">
 
+<button
+className="px-3 py-1 bg-blue-600 text-white rounded"
+onClick={()=>setSelectedBooking(b)}
+>
+View
+</button>
+
+
 
 
 
