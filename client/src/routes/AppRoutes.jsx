@@ -85,6 +85,7 @@ import AdminDashboard from "../pages/admin/AdminDashboard";
 import UserManagement from "../pages/admin/UserManagement";
 
 import TourManagement from "../pages/admin/TourManagement";
+import ManageTours from "../pages/admin/ManageTours";
 
 // ============================================================
 // ROUTE GUARDS
