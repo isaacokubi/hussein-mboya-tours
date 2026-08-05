@@ -35,6 +35,7 @@ import PaymentStatus from "../pages/PaymentStatus";
 import AgentLayout from "../layouts/AgentLayout";
 import AgentDashboard from "../pages/agent/AgentDashboard";
 import AgentBookings from "../pages/agent/AgentBookings";
+import BookingManagement from "../pages/admin/BookingManagement";
 import AgentCustomers from "../pages/agent/AgentCustomers";
 
 // ============================================================
@@ -304,12 +305,10 @@ export default function AppRoutes() {
 
 
         <Route
-          path="bookings"
-          element={
-            <div className="p-6">
-              <h1 className="text-2xl font-bold">Booking Management</h1>
-            </div>
-          }
+          <Route
+            path="bookings"
+            element={<BookingManagement />}
+          />
         />
 
         <Route
