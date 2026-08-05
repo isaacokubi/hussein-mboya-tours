@@ -1,6 +1,6 @@
 
 import React,{useEffect} from "react";
-import {useParams,useNavigate} from "react-router-dom";
+import {useParams,Link} from "react-router-dom";
 import {useQuery} from "@tanstack/react-query";
 import api from "../api/axios";
 
@@ -10,7 +10,7 @@ const DestinationDetails=()=>{
 
 const {slug}=useParams();
 
-const navigate=useNavigate();
+
 
 
 
@@ -25,8 +25,9 @@ const res=await api.get(
 );
 
 return (
-res.data.destination ||
-res.data.data
+res.data?.data?.destination ||
+res.data?.destination ||
+null
 );
 
 }
@@ -242,7 +243,7 @@ w-fit
 
 Explore Tours
 
-</button>
+</div>
 
 
 </div>
@@ -286,7 +287,9 @@ gap-6
 data.tours.map(tour=>(
 
 
-<div
+<Link
+
+to={`/tours/${tour.slug}`}
 
 key={tour._id}
 
@@ -302,11 +305,14 @@ shadow
 
 
 {
-tour.images?.[0]?.url &&
+(tour.images?.[0]?.url || tour.images?.[0]) &&
 
 <img
 
-src={tour.images[0].url}
+src={
+tour.images?.[0]?.url ||
+tour.images?.[0]
+}
 
 className="
 h-48
@@ -342,14 +348,11 @@ text-xl
 
 
 
-<button
-
-onClick={()=>navigate(
-`/tours/${tour.slug}`
-)}
+<div
 
 className="
 mt-4
+inline-block
 bg-blue-600
 text-white
 px-4
@@ -361,13 +364,13 @@ rounded
 
 View Tour
 
-</button>
-
-
 </div>
 
 
 </div>
+
+
+</Link>
 
 
 ))
@@ -476,7 +479,7 @@ text-blue-600
 
 View
 
-</button>
+</div>
 
 
 </div>
