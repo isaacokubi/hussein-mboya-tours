@@ -62,3 +62,14 @@ export const updateBookingPayment = async (
 
   return data;
 };
+
+export const getBookingDetails = async(id)=>{
+
+const {data}=await api.get(
+`/admin/bookings/${id}`
+);
+
+return data;
+
+};
+
