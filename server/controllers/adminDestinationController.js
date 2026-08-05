@@ -41,7 +41,10 @@ export const createDestination = async (req, res, next) => {
       });
     }
 
-    const images = req.files?.map((file) => file.path) || [];
+    const images = req.files?.map((file) => ({
+      url: file.path,
+      public_id: file.filename
+    })) || [];
 
     const destination = await Destination.create({
       name: name.trim(),
@@ -209,7 +212,10 @@ export const updateDestination = async (req, res, next) => {
     }
 
     if (req.files?.length) {
-      destination.images = req.files.map((file) => file.path);
+      destination.images = req.files.map((file) => ({
+        url: file.path,
+        public_id: file.filename
+      }));
     }
 
     await destination.save();
