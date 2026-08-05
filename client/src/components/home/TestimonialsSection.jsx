@@ -77,7 +77,7 @@ md:grid-cols-3
 gap-8
 "
         >
-          {testimonials?.map((item, index) => (
+          {(Array.isArray(testimonials) ? testimonials : []).map((item, index) => (
             <motion.div
               key={item.name}
               initial={{
