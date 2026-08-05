@@ -73,3 +73,25 @@ return data;
 
 };
 
+
+
+export const getBookingTimeline = async(id)=>{
+  const {data}=await api.get(
+    `/admin/bookings/${id}/timeline`
+  );
+
+  return data;
+};
+
+
+export const downloadInvoice = async(id)=>{
+  const response=await api.get(
+    `/admin/bookings/${id}/invoice`,
+    {
+      responseType:"blob"
+    }
+  );
+
+  return response;
+};
+

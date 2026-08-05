@@ -247,7 +247,7 @@ export const generateVoucher = async (req, res, next) => {
 
     doc.text(`Booking Number : ${bookingNumber}`);
     doc.text(`Booking ID     : ${booking._id}`);
-    doc.text(`Status         : ${booking.bookingStatus || booking.status || "Pending"}`);
+    doc.text(`Status         : ${booking.status || booking.status || "Pending"}`);
     doc.text(`Payment Status : ${booking.paymentStatus || "Pending"}`);
     doc.text(`Travel Date    : ${travelDate}`);
 
