@@ -44,13 +44,32 @@ queryFn:getStaff
 
 
 
-const guides =
-Array.isArray(staffResponse)
+const staff = Array.isArray(staffResponse)
 ?
 staffResponse
 :
-staffResponse?.data ||
-staffResponse?.staff ||
+Array.isArray(staffResponse?.data)
+?
+staffResponse.data
+:
+Array.isArray(staffResponse?.staff)
+?
+staffResponse.staff
+:
+[];
+
+
+const guides = Array.isArray(staff)
+?
+staff.filter(
+(s)=>
+s &&
+(
+s.role==="tour_guide" ||
+s.position?.toLowerCase().includes("guide")
+)
+)
+:
 [];
 
 
@@ -513,7 +532,7 @@ Assign Guide
 
 
 {
-guides.map(g=>(
+(guides || []).map(g=>(
 
 <option
 key={g._id}
@@ -566,7 +585,7 @@ Assign Vehicle
 
 
 {
-vehicles.map(v=>(
+(vehicles || []).map(v=>(
 
 <option
 key={v._id}
