@@ -359,7 +359,7 @@ export default function Footer() {
                 </li>
 
                 <li>
-                  <Link to="/admin/tours" className="hover:text-green-400">
+                  <Link to="/admin/manage-tours" className="hover:text-green-400">
                     Manage Tours
                   </Link>
                 </li>

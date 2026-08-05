@@ -82,7 +82,7 @@ export default function AddTour() {
             );
 
 
-            navigate("/admin/tours");
+            navigate("/admin/manage-tours");
 
 
         },
