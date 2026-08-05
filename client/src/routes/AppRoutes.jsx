@@ -305,11 +305,9 @@ export default function AppRoutes() {
 
 
         <Route
-          <Route
             path="bookings"
             element={<BookingManagement />}
           />
-        />
 
         <Route
           path="payments"
