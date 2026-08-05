@@ -55,7 +55,7 @@ export const getAnalytics = async (req, res, next) => {
 
         {
           $group: {
-            _id: "$bookingStatus",
+            _id: "$status",
 
             count: {
               $sum: 1,

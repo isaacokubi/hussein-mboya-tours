@@ -354,7 +354,7 @@ export const updateBookingStatus = async (
       await Booking.findByIdAndUpdate(
         req.params.id,
         {
-          bookingStatus: status,
+          status: status,
         },
         {
           new: true,
@@ -564,7 +564,7 @@ export const assignResources = async (
 
           assignedVehicle: vehicle || null,
 
-          bookingStatus: "assigned",
+          status: "assigned",
         },
         {
           new: true,

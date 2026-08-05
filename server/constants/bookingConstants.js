@@ -1,6 +1,8 @@
 export const BOOKING_STATUSES = [
     "pending",
     "confirmed",
+    "assigned",
+    "ongoing",
     "completed",
     "cancelled",
     "refunded"

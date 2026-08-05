@@ -133,7 +133,6 @@ export const createBooking = async (req, res, next) => {
           "pending",
 
 
-        bookingStatus:
           "pending",
 
 
@@ -433,7 +432,6 @@ export const getConfirmedBookings = async (req, res, next) => {
       $or:[
 
         {
-          bookingStatus:"confirmed"
         },
 
         {
@@ -689,7 +687,7 @@ booking.status =
 "confirmed";
 
 
-booking.bookingStatus =
+booking.status =
 "confirmed";
 
 
@@ -757,7 +755,7 @@ booking.status =
 "pending";
 
 
-booking.bookingStatus =
+booking.status =
 "pending";
 
 }
@@ -783,7 +781,7 @@ booking.status =
 "cancelled";
 
 
-booking.bookingStatus =
+booking.status =
 "cancelled";
 
 }
@@ -806,7 +804,7 @@ booking.status =
 "refunded";
 
 
-booking.bookingStatus =
+booking.status =
 "refunded";
 
 
@@ -919,7 +917,7 @@ message:"Invalid booking status"
 }
 
 
-booking.bookingStatus =
+booking.status =
 req.body.bookingStatus;
 
 }
@@ -977,7 +975,7 @@ booking.status =
 "confirmed";
 
 
-booking.bookingStatus =
+booking.status =
 "confirmed";
 
 
@@ -1002,7 +1000,7 @@ booking.status =
 "cancelled";
 
 
-booking.bookingStatus =
+booking.status =
 "cancelled";
 
 }
@@ -1082,7 +1080,7 @@ message:"Booking not found"
 
 
 if(
-booking.bookingStatus==="cancelled"
+booking.status==="cancelled"
 ){
 
 return res.status(400).json({
@@ -1100,7 +1098,7 @@ message:
 
 
 if(
-booking.bookingStatus==="completed"
+booking.status==="completed"
 ){
 
 return res.status(400).json({
@@ -1117,7 +1115,7 @@ message:
 
 
 
-booking.bookingStatus =
+booking.status =
 "cancelled";
 
 

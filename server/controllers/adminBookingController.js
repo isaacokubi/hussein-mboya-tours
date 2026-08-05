@@ -11,6 +11,7 @@ const BOOKING_STATUSES = [
   "pending",
   "confirmed",
   "assigned",
+  "ongoing",
   "completed",
   "cancelled",
   "refunded",
@@ -43,7 +44,7 @@ export const getAllBookings = async (req, res, next) => {
       req.query.status &&
       BOOKING_STATUSES.includes(req.query.status)
     ) {
-      filter.bookingStatus = req.query.status;
+      filter.status = req.query.status;
     }
 
     if (
@@ -161,7 +162,7 @@ export const updateBookingStatus = async (
       await Booking.findByIdAndUpdate(
         req.params.id,
         {
-          bookingStatus: status,
+          status: status,
         },
         {
           new: true,
@@ -245,7 +246,7 @@ export const assignBookingResources = async (
       driver ||
       vehicle
     ) {
-      booking.bookingStatus = "assigned";
+      booking.status = "assigned";
     }
 
 

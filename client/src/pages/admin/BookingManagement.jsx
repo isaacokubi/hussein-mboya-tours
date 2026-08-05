@@ -29,6 +29,14 @@ const queryClient = useQueryClient();
 const [selectedBooking,setSelectedBooking] = useState(null);
 
 
+const [search,setSearch] = useState("");
+
+const [statusFilter,setStatusFilter] = useState("all");
+
+const [paymentFilter,setPaymentFilter] = useState("all");
+
+
+
 
 /* STAFF */
 
@@ -67,6 +75,20 @@ s &&
 (
 s.role==="tour_guide" ||
 s.position?.toLowerCase().includes("guide")
+)
+)
+:
+[];
+
+
+const drivers = Array.isArray(staff)
+?
+staff.filter(
+(s)=>
+s &&
+(
+s.role==="driver" ||
+s.position?.toLowerCase().includes("driver")
 )
 )
 :
@@ -264,6 +286,51 @@ data.bookings
 
 
 
+const filteredBookings = bookings.filter((b)=>{
+
+const customer =
+b.customer?.name ||
+b.user?.name ||
+"";
+
+const tour =
+b.tour?.title ||
+"";
+
+
+const payment =
+typeof b.paymentStatus==="string"
+?
+b.paymentStatus
+:
+b.paymentStatus?.status || "";
+
+
+const matchesSearch =
+customer.toLowerCase().includes(search.toLowerCase()) ||
+tour.toLowerCase().includes(search.toLowerCase()) ||
+b._id.includes(search);
+
+
+const matchesStatus =
+statusFilter==="all" ||
+b.status===statusFilter;
+
+
+const matchesPayment =
+paymentFilter==="all" ||
+payment===paymentFilter;
+
+
+return (
+matchesSearch &&
+matchesStatus &&
+matchesPayment
+);
+
+});
+
+
 const total = bookings.length;
 
 
@@ -356,6 +423,88 @@ className="bg-white shadow rounded-xl p-5"
 
 
 
+
+<div className="grid md:grid-cols-3 gap-4 mb-5">
+
+
+<input
+
+value={search}
+
+onChange={(e)=>setSearch(e.target.value)}
+
+placeholder="Search customer, tour or booking ID"
+
+className="border rounded px-3 py-2"
+
+/>
+
+
+
+<select
+
+value={statusFilter}
+
+onChange={(e)=>setStatusFilter(e.target.value)}
+
+className="border rounded px-3 py-2"
+
+>
+
+<option value="all">
+All Status
+</option>
+
+<option value="pending">
+Pending
+</option>
+
+<option value="confirmed">
+Confirmed
+</option>
+
+<option value="cancelled">
+Cancelled
+</option>
+
+</select>
+
+
+
+
+<select
+
+value={paymentFilter}
+
+onChange={(e)=>setPaymentFilter(e.target.value)}
+
+className="border rounded px-3 py-2"
+
+>
+
+<option value="all">
+All Payments
+</option>
+
+<option value="paid">
+Paid
+</option>
+
+<option value="pending">
+Pending
+</option>
+
+<option value="failed">
+Failed
+</option>
+
+</select>
+
+
+</div>
+
+
+
 <div className="bg-white rounded-xl shadow overflow-x-auto">
 
 
@@ -398,6 +547,26 @@ Status
 
 
 <th className="p-3 text-left">
+Guide
+</th>
+
+
+<th className="p-3 text-left">
+Driver
+</th>
+
+
+<th className="p-3 text-left">
+Vehicle
+</th>
+
+
+<th className="p-3 text-left">
+Workflow
+</th>
+
+
+<th className="p-3 text-left">
 Actions
 </th>
 
@@ -414,7 +583,7 @@ Actions
 
 
 {
-(Array.isArray(bookings) ? bookings : []).map((b)=>(
+(Array.isArray(filteredBookings) ? filteredBookings : []).map((b)=>(
 
 
 <tr
@@ -498,6 +667,91 @@ b.paymentStatus?.status || "pending"
 
 
 
+<td className="p-3">
+
+{
+b.guide?.name ||
+b.guide?.firstName ||
+b.assignedGuide?.name ||
+b.assignedGuide?.firstName ||
+"Not assigned"
+}
+
+</td>
+
+
+<td className="p-3">
+
+{
+b.assignedDriver?.name ||
+"Not assigned"
+}
+
+</td>
+
+
+<td className="p-3">
+
+{
+b.vehicle?.registrationNumber ||
+b.vehicle?.plateNumber ||
+b.assignedVehicle?.registrationNumber ||
+b.assignedVehicle?.plateNumber ||
+"Not assigned"
+}
+
+</td>
+
+
+
+<td className="p-3">
+
+<select
+className="px-2 py-1 border rounded"
+value={b.status || "pending"}
+onChange={(e)=>{
+
+statusMutation.mutate({
+id:b._id,
+status:e.target.value
+})
+
+}}
+>
+
+<option value="pending">
+Pending
+</option>
+
+<option value="confirmed">
+Confirmed
+</option>
+
+<option value="assigned">
+Assigned
+</option>
+
+<option value="ongoing">
+Ongoing
+</option>
+
+<option value="completed">
+Completed
+</option>
+
+<option value="cancelled">
+Cancelled
+</option>
+
+<option value="refunded">
+Refunded
+</option>
+
+</select>
+
+</td>
+
+
 <td className="p-3 space-x-2">
 
 
@@ -505,7 +759,11 @@ b.paymentStatus?.status || "pending"
 
 <select
 className="px-2 py-1 border rounded"
-defaultValue=""
+value={
+b.guide?._id ||
+b.assignedGuide?._id ||
+""
+}
 onChange={(e)=>{
 
 if(e.target.value){
@@ -515,7 +773,9 @@ assignMutation.mutate({
 id:b._id,
 
 payload:{
-guideId:e.target.value
+  guide:e.target.value,
+  driver:b.assignedDriver?._id || null,
+  vehicle:b.assignedVehicle?._id || null
 }
 
 })
@@ -558,6 +818,54 @@ value={g._id}
 
 <select
 className="px-2 py-1 border rounded"
+value={
+b.assignedDriver?._id || ""
+}
+onChange={(e)=>{
+
+if(e.target.value){
+
+assignMutation.mutate({
+
+id:b._id,
+
+payload:{
+guide:b.assignedGuide?._id || null,
+driver:e.target.value,
+vehicle:b.assignedVehicle?._id || null
+}
+
+})
+
+}
+
+}}
+>
+
+<option value="">
+Assign Driver
+</option>
+
+{
+(Array.isArray(drivers) ? drivers : []).map(d=>(
+
+<option
+key={d._id}
+value={d._id}
+>
+{d.name || "Driver"}
+
+</option>
+
+))
+}
+
+</select>
+
+
+
+<select
+className="px-2 py-1 border rounded"
 defaultValue=""
 onChange={(e)=>{
 
@@ -568,7 +876,9 @@ assignMutation.mutate({
 id:b._id,
 
 payload:{
-vehicleId:e.target.value
+  guide:b.assignedGuide?._id || null,
+  driver:b.assignedDriver?._id || null,
+  vehicle:e.target.value
 }
 
 })
