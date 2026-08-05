@@ -1,43 +1,70 @@
 
-import React from "react";
-import {useParams} from "react-router-dom";
+import React,{useEffect} from "react";
+import {useParams,useNavigate} from "react-router-dom";
 import {useQuery} from "@tanstack/react-query";
-import {getDestinationBySlug} from "../api/destinationApi";
+import api from "../api/axios";
 
 
-const DestinationDetails = ()=>{
+const DestinationDetails=()=>{
 
 
 const {slug}=useParams();
+
+const navigate=useNavigate();
+
 
 
 const {data,isLoading}=useQuery({
 
 queryKey:["destination",slug],
 
-queryFn:()=>getDestinationBySlug(slug)
+queryFn:async()=>{
+
+const res=await api.get(
+`/destinations/${slug}`
+);
+
+return (
+res.data.destination ||
+res.data.data
+);
+
+}
 
 });
+
+
+
+useEffect(()=>{
+
+if(data?.seo?.title){
+
+document.title=data.seo.title;
+
+}
+
+},[data]);
+
 
 
 
 if(isLoading){
 
 return (
+
 <div className="p-10">
+
 Loading destination...
+
 </div>
-)
+
+);
 
 }
 
 
 
-const destination=data;
-
-
-
-if(!destination){
+if(!data){
 
 return (
 
@@ -47,67 +74,140 @@ Destination not found
 
 </div>
 
-)
+);
 
 }
 
 
 
-const image =
-destination.images?.[0]?.url ||
-destination.images?.[0];
+const images =
+data.images || [];
+
 
 
 
 return (
 
-<div className="max-w-6xl mx-auto p-6">
+<div className="max-w-7xl mx-auto p-6">
 
 
-<div className="rounded-xl overflow-hidden shadow">
+{/* HERO IMAGE */}
+
+<div className="
+grid
+md:grid-cols-2
+gap-6
+">
 
 
-{image && (
+<div>
+
 
 <img
 
-src={image}
+src={
+images[0]?.url ||
+images[0]
+}
 
-alt={destination.name}
+alt={data.name}
 
 className="
 w-full
-h-[420px]
+h-[450px]
 object-cover
+rounded-xl
+shadow
 "
 
 />
 
-)}
+
+<div className="
+grid
+grid-cols-4
+gap-3
+mt-4
+">
+
+
+{
+images.slice(1,5).map((img,index)=>(
+
+<img
+
+key={index}
+
+src={
+img.url || img
+}
+
+className="
+h-24
+w-full
+object-cover
+rounded
+"
+
+/>
+
+))
+}
+
+
+</div>
 
 
 </div>
 
 
 
-<h1 className="
-text-4xl
-font-bold
-mt-8
+
+<div className="flex flex-col justify-center">
+
+
+{
+data.featured && (
+
+<span className="
+bg-yellow-500
+text-white
+px-3
+py-1
+rounded
+w-fit
 ">
 
-{destination.name}
+Featured
+
+</span>
+
+)
+
+}
+
+
+
+<h1 className="
+text-5xl
+font-bold
+mt-4
+">
+
+{data.name}
 
 </h1>
 
 
 
-<p className="mt-3 text-gray-600">
 
-{destination.country}
+<p className="
+text-gray-600
+mt-3
+text-lg
+">
 
-{destination.city &&
-`, ${destination.city}`}
+📍 {data.city}, {data.country}
 
 </p>
 
@@ -115,29 +215,61 @@ mt-8
 
 <p className="
 mt-6
-text-lg
 leading-relaxed
 ">
 
-{destination.description}
+{data.description}
 
 </p>
 
 
 
-{
-destination.tours?.length > 0 && (
+<button
 
-<div className="mt-12">
+onClick={()=>navigate("/tours")}
+
+className="
+mt-6
+bg-green-600
+text-white
+px-6
+py-3
+rounded-lg
+w-fit
+"
+
+>
+
+Explore Tours
+
+</button>
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+{/* AVAILABLE TOURS */}
+
+
+{
+data.tours?.length>0 && (
+
+<section className="mt-16">
 
 
 <h2 className="
-text-2xl
+text-3xl
 font-bold
-mb-5
+mb-6
 ">
 
-Available Tours
+Tours Available
 
 </h2>
 
@@ -151,7 +283,7 @@ gap-6
 
 
 {
-destination.tours.map((tour)=>(
+data.tours.map(tour=>(
 
 
 <div
@@ -165,38 +297,41 @@ overflow-hidden
 shadow
 "
 
+
 >
 
 
 {
-tour.images?.[0]?.url && (
+tour.images?.[0]?.url &&
 
 <img
 
 src={tour.images[0].url}
 
 className="
-h-40
+h-48
 w-full
 object-cover
 "
 
 />
 
-)
-
 }
 
 
 
-<div className="p-4">
+<div className="p-5">
 
 
-<h3 className="font-bold">
+<h3 className="
+font-bold
+text-xl
+">
 
 {tour.title}
 
 </h3>
+
 
 
 <p className="mt-2">
@@ -206,14 +341,16 @@ object-cover
 </p>
 
 
-<a
 
-href={`/tours/${tour.slug}`}
+<button
+
+onClick={()=>navigate(
+`/tours/${tour.slug}`
+)}
 
 className="
-inline-block
 mt-4
-bg-green-600
+bg-blue-600
 text-white
 px-4
 py-2
@@ -224,7 +361,7 @@ rounded
 
 View Tour
 
-</a>
+</button>
 
 
 </div>
@@ -242,7 +379,121 @@ View Tour
 </div>
 
 
+</section>
+
+)
+
+}
+
+
+
+
+
+
+{/* RELATED DESTINATIONS */}
+
+
+{
+data.relatedDestinations?.length>0 && (
+
+<section className="mt-16">
+
+
+<h2 className="
+text-3xl
+font-bold
+mb-6
+">
+
+More Destinations
+
+</h2>
+
+
+
+<div className="
+grid
+md:grid-cols-4
+gap-5
+">
+
+
+{
+data.relatedDestinations.map(item=>(
+
+
+<div
+
+key={item._id}
+
+className="
+border
+rounded-xl
+overflow-hidden
+"
+
+>
+
+
+<img
+
+src={
+item.images?.[0]?.url ||
+item.images?.[0]
+}
+
+className="
+h-40
+w-full
+object-cover
+"
+
+/>
+
+
+<div className="p-4">
+
+
+<h3 className="font-bold">
+
+{item.name}
+
+</h3>
+
+
+<button
+
+onClick={()=>navigate(
+`/destinations/${item.slug}`
+)}
+
+className="
+mt-3
+text-blue-600
+"
+
+>
+
+View
+
+</button>
+
+
 </div>
+
+
+</div>
+
+
+))
+
+}
+
+
+</div>
+
+
+</section>
 
 )
 
@@ -252,11 +503,10 @@ View Tour
 
 </div>
 
+);
 
-)
 
-
-}
+};
 
 
 export default DestinationDetails;
