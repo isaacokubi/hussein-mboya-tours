@@ -287,21 +287,29 @@ export const getVehicles = async () => {
 
 
     console.log(
-        "VEHICLES API RESPONSE:",
-        data
+        "FULL VEHICLES RESPONSE:",
+        JSON.stringify(data, null, 2)
     );
 
 
-    return Array.isArray(data)
+    return (
+        Array.isArray(data)
         ? data
         :
-        data?.vehicles ||
-        data?.data?.vehicles ||
-        data?.data ||
-        [];
+        Array.isArray(data?.vehicles)
+        ? data.vehicles
+        :
+        Array.isArray(data?.data)
+        ? data.data
+        :
+        Array.isArray(data?.data?.vehicles)
+        ? data.data.vehicles
+        :
+        []
+    );
+
 
 };
-
 
 
 
