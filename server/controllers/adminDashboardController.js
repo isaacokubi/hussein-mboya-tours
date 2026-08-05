@@ -282,7 +282,7 @@ const paymentRevenue = {
                               }
                           },
                           amount:{
-                              $sum:"$amount"
+                              $sum:"$subtotal"
                           }
                       }
                   },
