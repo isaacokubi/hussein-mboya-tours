@@ -191,50 +191,20 @@ const CreateTour =()=>{
 
 
 
-    const guides =
-
-        Array.isArray(guidesData)
-        ? guidesData
-        :
-        guidesData?.users ||
-
-        guidesData?.data?.users ||
-
-        guidesData?.data ||
-
-        [];
-
-
-
-
-
-
-
-
-    const vehicles =
-
-        Array.isArray(vehiclesData)
-        ? vehiclesData
-        :
-        vehiclesData?.vehicles ||
-
-        vehiclesData?.data?.vehicles ||
-
-        vehiclesData?.data ||
-
-        [];
-
-
-
-
-
-
-
-
     
-console.log("DESTINATIONS DEBUG:", destinationsData);
-console.log("GUIDES DEBUG:", guidesData);
-console.log("VEHICLES DEBUG:", vehiclesData);
+
+const guides =
+    Array.isArray(guidesData)
+    ? guidesData
+    :
+    guidesData?.data || [];
+
+
+const vehicles =
+    Array.isArray(vehiclesData)
+    ? vehiclesData
+    :
+    vehiclesData?.data || [];
 
 
 const destinations =
@@ -631,7 +601,18 @@ const destinations =
 
 
 
+                
+
                 <input
+                    type="text"
+                    name="location"
+                    value={form.location || ""}
+                    onChange={handleChange}
+                    placeholder="Location"
+                    required
+                />
+
+<input
 
                     name="country"
 
