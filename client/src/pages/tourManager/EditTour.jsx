@@ -128,6 +128,8 @@ const EditTour =()=>{
 
     const [form,setForm] = useState(null);
 
+    const [formInitialized,setFormInitialized] = useState(false);
+
 
 
     const {
@@ -229,7 +231,7 @@ const EditTour =()=>{
 
     useEffect(()=>{
 
-        if(tourData){
+        if(tourData && !formInitialized){
 
             console.log(
                 "SETTING TOUR FORM:",
@@ -432,6 +434,15 @@ const EditTour =()=>{
 
 
     if(tourLoading || !form){
+
+    if(!form){
+        return (
+            <div className="p-6">
+                Loading tour...
+            </div>
+        );
+    }
+
 
     return (
 
