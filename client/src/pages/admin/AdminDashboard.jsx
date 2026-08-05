@@ -94,7 +94,9 @@ const statusDataList =
   stats.status || [];
 
 const monthlyRevenueData =
-  stats.monthlyRevenue || [];
+  stats.monthlyRevenue ||
+  stats.monthlyRevenueData ||
+  [];
 
 const paymentStats =
     stats.paymentStats ||
