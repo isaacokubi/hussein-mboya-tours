@@ -17,6 +17,28 @@ const queryClient = useQueryClient();
 
 
 const {
+data:staffData
+}=useQuery({
+
+queryKey:["staff"],
+
+queryFn:getStaff
+
+});
+
+
+const {
+data:vehicleData
+}=useQuery({
+
+queryKey:["vehicles"],
+
+queryFn:getVehicles
+
+});
+
+
+const {
 data,
 isLoading,
 error
@@ -104,6 +126,23 @@ Array.isArray(data)
 ? data
 : data?.bookings || [];
 
+
+
+
+const guides =
+Array.isArray(staffData)
+? staffData
+: staffData?.data ||
+staffData?.staff ||
+[];
+
+
+const vehicles =
+Array.isArray(vehicleData)
+? vehicleData
+: vehicleData?.data ||
+vehicleData?.vehicles ||
+[];
 
 
 
@@ -404,7 +443,9 @@ Assign Guide
 onClick={()=>{
 
 const vehicle =
-prompt("Enter Vehicle ID");
+window.prompt(
+"Vehicle ID"
+);
 
 
 if(vehicle){
@@ -414,7 +455,7 @@ assignMutation.mutate({
 id:b._id,
 
 payload:{
-vehicle
+vehicleId:vehicle
 }
 
 });
