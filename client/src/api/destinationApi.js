@@ -35,3 +35,26 @@ export const getFeaturedDestinations = async()=>{
   return destinations;
 
 };
+
+export const getDestinations = async()=>{
+
+    const response = await api.get(
+        "/destinations"
+    );
+
+
+    console.log(
+        "ALL DESTINATIONS RESPONSE:",
+        response.data
+    );
+
+
+    return Array.isArray(response.data)
+        ? response.data
+        :
+        response.data.data ||
+        response.data.destinations ||
+        [];
+
+};
+

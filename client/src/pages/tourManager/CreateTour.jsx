@@ -1,6 +1,8 @@
 // client/src/pages/tourManager/CreateTour.jsx
 
 
+import { getDestinations } from "../../api/destinationApi";
+
 import {
     useState
 } from "react";
@@ -191,9 +193,14 @@ const CreateTour =()=>{
 
     const guides =
 
+        Array.isArray(guidesData)
+        ? guidesData
+        :
         guidesData?.users ||
 
         guidesData?.data?.users ||
+
+        guidesData?.data ||
 
         [];
 
@@ -206,9 +213,14 @@ const CreateTour =()=>{
 
     const vehicles =
 
+        Array.isArray(vehiclesData)
+        ? vehiclesData
+        :
         vehiclesData?.vehicles ||
 
         vehiclesData?.data?.vehicles ||
+
+        vehiclesData?.data ||
 
         [];
 
@@ -219,11 +231,22 @@ const CreateTour =()=>{
 
 
 
-    const destinations =
+    
+console.log("DESTINATIONS DEBUG:", destinationsData);
+console.log("GUIDES DEBUG:", guidesData);
+console.log("VEHICLES DEBUG:", vehiclesData);
 
+
+const destinations =
+
+        Array.isArray(destinationsData)
+        ? destinationsData
+        :
         destinationsData?.destinations ||
 
         destinationsData?.data?.destinations ||
+
+        destinationsData?.data ||
 
         [];
 
