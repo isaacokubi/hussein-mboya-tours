@@ -232,18 +232,21 @@ export const assignBookingResources = async (
 
 
     booking.assignedGuide =
-      guide || null;
+      guideId || guide || null;
 
     booking.assignedDriver =
-      driver || null;
+      driverId || driver || null;
 
     booking.assignedVehicle =
-      vehicle || null;
+      vehicleId || vehicle || null;
 
 
     if (
+      guideId ||
       guide ||
+      driverId ||
       driver ||
+      vehicleId ||
       vehicle
     ) {
       booking.status = "assigned";
