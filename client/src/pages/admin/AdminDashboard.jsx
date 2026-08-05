@@ -85,7 +85,7 @@ export default function AdminDashboard() {
   |--------------------------------------------------------------------------
   */
 
-  console.log("ADMIN DASHBOARD RESPONSE:", data);
+  console.log("ADMIN DASHBOARD FULL RESPONSE:", JSON.stringify(data, null, 2));
 
   const stats = data?.data || data || {};
 
@@ -120,7 +120,9 @@ const systemHealth =
 
     monthlyRevenue = [],
 
-    statusData = [],
+    status = [],
+
+    statusData = status,
 
     popularTours = [],
 
