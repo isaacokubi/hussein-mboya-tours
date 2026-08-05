@@ -107,6 +107,9 @@ queryClient.invalidateQueries([
 
 if(isLoading)
 return (
+
+<>
+
 <div className="p-6">
 Loading bookings...
 </div>
