@@ -261,3 +261,28 @@ export const deleteDestination = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getDestinationById = async (req, res) => {
+  try {
+    const destination = await Destination.findById(req.params.id);
+
+    if (!destination) {
+      return res.status(404).json({
+        success:false,
+        message:"Destination not found"
+      });
+    }
+
+    res.json({
+      success:true,
+      data:destination
+    });
+
+  } catch(error) {
+    res.status(500).json({
+      success:false,
+      message:error.message
+    });
+  }
+};
+
