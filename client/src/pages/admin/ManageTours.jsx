@@ -401,7 +401,7 @@ export default function ManageTours(){
                     <a
 
 
-                        href="/admin/tours/add"
+                        href="/tour-manager/create-tour"
 
 
 
