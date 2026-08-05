@@ -121,11 +121,11 @@ const DestinationManagement = () => {
 
                         <img
                           src={
-                            destination.images[0]?.url?.startsWith("http")
+                            ((destination.images[0]?.url || destination.images[0]) || destination.images[0])?.startsWith("http")
                             ?
-                            destination.images[0]?.url
+                            (destination.images[0]?.url || destination.images[0])
                             :
-                            `${import.meta.env.VITE_API_URL?.replace("/api","") || "http://localhost:5000"}${destination.images[0]?.url || destination.images[0]}`
+                            `${import.meta.env.VITE_API_URL?.replace("/api","") || "http://localhost:5000"}${(destination.images[0]?.url || destination.images[0]) || destination.images[0]}`
                           }
                           alt={destination.name}
                           className="
