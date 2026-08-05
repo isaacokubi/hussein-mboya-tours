@@ -40,7 +40,7 @@ router.use(protect);
 
 router.get(
   "/drivers",
-  roleMiddleware(["admin", "tour_manager"]),
+  roleMiddleware("admin", "tour_manager"),
   getDrivers
 );
 
@@ -52,31 +52,31 @@ router.get(
 
 router.post(
   "/",
-  roleMiddleware(["admin"]),
+  roleMiddleware("admin"),
   createStaff
 );
 
 router.get(
   "/",
-  roleMiddleware(["admin", "tour_manager"]),
+  roleMiddleware("admin", "tour_manager"),
   getStaff
 );
 
 router.get(
   "/:id",
-  roleMiddleware(["admin", "tour_manager"]),
+  roleMiddleware("admin", "tour_manager"),
   getStaffById
 );
 
 router.put(
   "/:id",
-  roleMiddleware(["admin"]),
+  roleMiddleware("admin"),
   updateStaff
 );
 
 router.delete(
   "/:id",
-  roleMiddleware(["admin"]),
+  roleMiddleware("admin"),
   deleteStaff
 );
 
