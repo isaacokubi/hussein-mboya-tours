@@ -15,7 +15,11 @@ error
 
 queryKey:["admin-bookings"],
 
-queryFn:getBookings
+queryFn:async()=>{
+    const res = await getBookings();
+    console.log("ADMIN BOOKINGS RESPONSE:",res);
+    return res;
+}
 
 });
 
@@ -33,7 +37,16 @@ Failed loading bookings
 
 
 
-const bookings=data?.data || data || [];
+const bookings =
+    Array.isArray(data)
+        ? data
+        : Array.isArray(data?.data)
+            ? data.data
+            : Array.isArray(data?.bookings)
+                ? data.bookings
+                : Array.isArray(data?.data?.bookings)
+                    ? data.data.bookings
+                    : [];
 
 
 
