@@ -65,7 +65,7 @@ export const getAgentDashboard = async (req, res, next) => {
 
             Booking.countDocuments({
                 agent: agent._id,
-                bookingStatus: "completed"
+                status: "completed"
             }),
 
             Booking.aggregate([
@@ -109,12 +109,12 @@ export const getAgentDashboard = async (req, res, next) => {
 
             Booking.countDocuments({
                 agent: agent._id,
-                bookingStatus: "pending"
+                status: "pending"
             }),
 
             Booking.countDocuments({
                 agent: agent._id,
-                bookingStatus: "cancelled"
+                status: "cancelled"
             }),
 
             Booking.find({
