@@ -53,17 +53,22 @@ export const roleMiddleware = (...allowedRoles) => {
             */
 
             const userRole =
-                typeof req.user.roleId === "object"
-                    ? req.user.roleId?.name
-                    : req.user.roleId ||
-                      req.user.role ||
-                      "";
+                req.user.role ||
+                (
+                    typeof req.user.roleId === "object"
+                        ? req.user.roleId?.name
+                        : req.user.roleId
+                ) ||
+                "";
 
             /*
             |--------------------------------------------------------------------------
             | CHECK ROLE
             |--------------------------------------------------------------------------
             */
+
+            console.log("ROLE DEBUG USER:", req.user);
+            console.log("ROLE DEBUG RESOLVED:", userRole);
 
             const normalizedRole = String(userRole).toLowerCase();
 
