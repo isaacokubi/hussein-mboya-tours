@@ -89,6 +89,13 @@ export default function AdminDashboard() {
 
   const stats = data?.data || data || {};
 
+const monthlyRevenueData =
+  stats.monthlyRevenue || [];
+
+const statusDataList =
+  stats.status || [];
+
+
 console.log(
   "MONTHLY REVENUE DATA:",
   stats.monthlyRevenue
@@ -127,7 +134,7 @@ const systemHealth =
 
     status = [],
 
-    statusData = status,
+    statusData = [],
 
     popularTours = [],
 
@@ -310,7 +317,7 @@ xl:grid-cols-6
           Revenue Analytics
         </h2>
 
-        {monthlyRevenue.length === 0 ? (
+        {monthlyRevenueData.length === 0 ? (
           <p
             className="
               text-gray-500
@@ -325,7 +332,7 @@ xl:grid-cols-6
               "
           >
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={monthlyRevenue}>
+              <LineChart data={monthlyRevenueData}>
                 <CartesianGrid strokeDasharray="3 3" />
 
                 <XAxis dataKey="month" />
@@ -399,7 +406,7 @@ xl:grid-cols-6
             gap-4
           "
         >
-          {statusData.map((item, index) => (
+          {statusDataList.map((item, index) => (
             <div
               key={index}
               className="
