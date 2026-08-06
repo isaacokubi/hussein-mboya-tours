@@ -228,7 +228,7 @@ export default function AgentBookings(){
 
 
 
-                            data.map((booking)=>(
+                            Array.isArray(data) ? data.map((booking)=>(
 
 
 
