@@ -71,3 +71,17 @@ export const updatePaymentStatus = async (
   return data;
 
 };
+
+
+export const refundPayment =
+async(id)=>{
+
+const res =
+await api.patch(
+`/admin/payments/${id}/refund`
+);
+
+return res.data;
+
+};
+

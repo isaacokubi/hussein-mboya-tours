@@ -86,6 +86,29 @@ statsResponse?.stats ||
 
 
 
+
+
+const refundMutation =
+useMutation({
+
+mutationFn:
+(id)=>
+refundPayment(id),
+
+
+onSuccess:()=>{
+
+queryClient.invalidateQueries({
+
+queryKey:["admin-payments"]
+
+});
+
+}
+
+});
+
+
 const statusMutation = useMutation({
 
 mutationFn:({id,status})=>
@@ -428,7 +451,10 @@ Status
 </th>
 
 
+
+<th className="p-3">Actions</th>
 </tr>
+
 
 </thead>
 
@@ -559,6 +585,7 @@ Refunded
 </option>
 
 
+
 </select>
 
 
@@ -566,8 +593,27 @@ Refunded
 </td>
 
 
+<td className="p-3 flex gap-2">
+
+<button
+className="px-3 py-1 bg-blue-600 text-white rounded"
+>
+View
+</button>
+
+
+<button
+onClick={() => refundMutation.mutate(payment._id)}
+className="px-3 py-1 bg-red-600 text-white rounded"
+>
+Refund
+</button>
+
+</td>
+
 
 </tr>
+
 
 
 ))
