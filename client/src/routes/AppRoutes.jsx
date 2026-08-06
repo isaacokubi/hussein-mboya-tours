@@ -91,6 +91,7 @@ import ManageTours from "../pages/admin/ManageTours";
 import DestinationManagement from "../pages/admin/DestinationManagement";
 import CreateDestination from "../pages/admin/CreateDestination";
 import EditDestination from "../pages/admin/EditDestination";
+
 import AdminPayments from "../pages/admin/payments/AdminPayments";
 
 // ============================================================
