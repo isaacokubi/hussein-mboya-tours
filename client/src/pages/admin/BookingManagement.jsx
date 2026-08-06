@@ -159,9 +159,21 @@ vehicleResponse.vehicles
 
 
 
+console.log("VEHICLE RESPONSE FULL:", vehicleResponse);
+
 console.log(
-  "VEHICLE RESPONSE:",
-  vehicleResponse
+  "VEHICLE RESPONSE DATA:",
+  vehicleResponse?.data
+);
+
+console.log(
+  "VEHICLE RESPONSE DATA.DATA:",
+  vehicleResponse?.data?.data
+);
+
+console.log(
+  "VEHICLE RESPONSE DATA.VEHICLES:",
+  vehicleResponse?.data?.vehicles
 );
 
 /* ================= BOOKINGS ================= */
