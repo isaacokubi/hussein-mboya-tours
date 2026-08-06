@@ -157,6 +157,13 @@ vehicleResponse.vehicles
 [];
 
 
+
+
+console.log(
+  "VEHICLE RESPONSE:",
+  vehicleResponse
+);
+
 /* ================= BOOKINGS ================= */
 
 
