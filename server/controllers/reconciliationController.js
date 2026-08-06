@@ -1,49 +1,70 @@
 
 import Payment from "../models/Payment.js";
-import RefundAudit from "../models/RefundAudit.js";
+import Booking from "../models/Booking.js";
 
 
-export const getReconciliation = async(req,res,next)=>{
+export const getPaymentReconciliation = async(req,res,next)=>{
 
 try{
 
 
 const payments =
-await Payment.aggregate([
-
-{
-$group:{
-_id:"$status",
-count:{
-$sum:1
-},
-amount:{
-$sum:"$amount"
-}
-}
-}
-
-]);
+await Payment.find()
+.populate(
+"booking",
+"bookingNumber paymentStatus totalAmount"
+)
+.sort({
+createdAt:-1
+})
+.lean();
 
 
 
-const refunds =
-await RefundAudit.aggregate([
+const summary={
 
-{
-$group:{
-_id:"$status",
-count:{
-$sum:1
-},
-amount:{
-$sum:"$amount"
-}
-}
+total:payments.length,
 
-}
+completed:
+payments.filter(
+p=>p.status==="completed"
+).length,
 
-]);
+
+pending:
+payments.filter(
+p=>p.status==="pending"
+).length,
+
+
+failed:
+payments.filter(
+p=>p.status==="failed"
+).length,
+
+
+missingReceipt:
+payments.filter(
+p=>
+p.status==="completed" &&
+!p.mpesaReceiptNumber
+).length
+
+};
+
+
+
+const mismatches =
+payments.filter(
+p=>
+
+p.booking &&
+
+p.status==="completed" &&
+
+p.booking.paymentStatus!=="paid"
+
+);
 
 
 
@@ -52,8 +73,13 @@ res.json({
 success:true,
 
 data:{
-payments,
-refunds
+
+summary,
+
+mismatches,
+
+payments
+
 }
 
 });
@@ -65,4 +91,7 @@ next(error);
 
 }
 
+
 };
+
+
