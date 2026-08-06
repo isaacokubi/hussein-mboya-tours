@@ -280,6 +280,11 @@ export default function AppRoutes() {
         <Route index element={<AdminDashboard />} />
 
         <Route path="dashboard" element={<AdminDashboard />} />
+          <Route
+            path="commissions"
+            element={<Commissions />}
+          />
+
 
         <Route path="users" element={<UserManagement />} />
 
