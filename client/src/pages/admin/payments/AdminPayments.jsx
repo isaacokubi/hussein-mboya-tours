@@ -11,7 +11,7 @@ export default function AdminPayments(){
   const {
     data: payments,
     isLoading,
-      error
+    error
   } = useQuery({
 
     queryKey:["adminPayments"],
@@ -21,12 +21,7 @@ export default function AdminPayments(){
   });
 
 
-  
-console.log("PAYMENTS RESPONSE:", payments);
-console.log("STATS RESPONSE:", stats);
-console.log("PAYMENTS ERROR:", error);
-
-const {
+  const {
     data: stats
   } = useQuery({
 
@@ -37,9 +32,13 @@ const {
   });
 
 
+  console.log("PAYMENTS RESPONSE:", payments);
+  console.log("STATS RESPONSE:", stats);
+  console.log("PAYMENTS ERROR:", error);
 
-  if(isLoading,
-      error){
+
+
+  if(isLoading){
 
     return (
       <div className="p-6">
@@ -50,131 +49,177 @@ const {
   }
 
 
-return (
 
-<div className="p-6 space-y-6">
+  if(error){
 
+    return (
+      <div className="p-6 text-red-600">
+        Failed to load payments.
+      </div>
+    );
 
-<h1 className="text-3xl font-bold">
-Payment Management
-</h1>
-
-
-
-<div className="grid md:grid-cols-3 gap-5">
-
-
-<div className="bg-white shadow rounded-xl p-5">
-
-<h3>
-Completed
-</h3>
-
-<p className="text-3xl font-bold">
-
-{stats?.stats?.find(
- s=>s._id==="completed"
-)?.count || 0}
-
-</p>
-
-</div>
+  }
 
 
 
-<div className="bg-white shadow rounded-xl p-5">
+  return (
 
-<h3>
-Pending
-</h3>
+    <div className="p-6 space-y-6">
 
-<p className="text-3xl font-bold">
 
-{stats?.stats?.find(
- s=>s._id==="pending"
-)?.count || 0}
-
-</p>
-
-</div>
+      <h1 className="text-3xl font-bold">
+        Payment Management
+      </h1>
 
 
 
-<div className="bg-white shadow rounded-xl p-5">
-
-<h3>
-Failed
-</h3>
-
-<p className="text-3xl font-bold">
-
-{stats?.stats?.find(
- s=>s._id==="failed"
-)?.count || 0}
-
-</p>
-
-</div>
+      <div className="grid md:grid-cols-3 gap-5">
 
 
-</div>
+        {["completed","pending","failed"].map(status=>(
+
+          <div
+            key={status}
+            className="bg-white shadow rounded-xl p-5"
+          >
+
+            <h3 className="capitalize">
+              {status}
+            </h3>
+
+
+            <p className="text-3xl font-bold">
+
+              {
+                stats?.stats?.find(
+                  s=>s._id===status
+                )?.count || 0
+              }
+
+            </p>
+
+
+          </div>
+
+        ))}
+
+
+      </div>
 
 
 
-
-<div className="bg-white rounded-xl shadow p-5">
-
-<table className="w-full">
-
-<thead>
-
-<tr>
-
-<th>ID</th>
-<th>Status</th>
-<th>Amount</th>
-
-</tr>
-
-</thead>
+      <div className="bg-white shadow rounded-xl p-5 overflow-x-auto">
 
 
-<tbody>
-
-{
-payments?.payments?.map((payment)=>(
-
-<tr key={payment._id}>
-
-<td>
-{payment._id}
-</td>
-
-<td>
-{payment.status}
-</td>
-
-<td>
-{payment.amount}
-</td>
-
-</tr>
-
-))
-}
-
-</tbody>
+        <table className="w-full">
 
 
-</table>
+          <thead>
+
+            <tr className="border-b">
+
+              <th className="p-3 text-left">
+                Customer
+              </th>
+
+              <th className="p-3 text-left">
+                Method
+              </th>
+
+              <th className="p-3 text-left">
+                Amount
+              </th>
+
+              <th className="p-3 text-left">
+                Phone
+              </th>
+
+              <th className="p-3 text-left">
+                Status
+              </th>
+
+            </tr>
+
+          </thead>
 
 
-</div>
+
+          <tbody>
 
 
-</div>
+          {
+            payments?.payments?.length ?
 
-);
+            payments.payments.map(payment=>(
+
+              <tr
+                key={payment._id}
+                className="border-b"
+              >
+
+                <td className="p-3">
+                  {payment.customer?.name || "Guest"}
+                </td>
+
+
+                <td className="p-3">
+                  {
+                    payment.paymentMethod ||
+                    payment.method ||
+                    "-"
+                  }
+                </td>
+
+
+                <td className="p-3 font-bold">
+                  KES {payment.amount}
+                </td>
+
+
+                <td className="p-3">
+                  {payment.phoneNumber || "-"}
+                </td>
+
+
+                <td className="p-3">
+                  {payment.status}
+                </td>
+
+
+              </tr>
+
+            ))
+
+            :
+
+            <tr>
+
+              <td
+                colSpan="5"
+                className="p-6 text-center"
+              >
+
+                No payments found
+
+              </td>
+
+            </tr>
+
+          }
+
+
+          </tbody>
+
+
+        </table>
+
+
+      </div>
+
+
+    </div>
+
+  );
 
 
 }
