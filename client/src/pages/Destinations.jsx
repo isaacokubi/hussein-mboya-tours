@@ -277,7 +277,7 @@ export default function Destinations(){
 
               {
 
-                Array.isArray(data) ? data.map((destination)=>(
+                (Array.isArray(data) ? data : []).map((destination)=>(
 
 
                   <DestinationCard
