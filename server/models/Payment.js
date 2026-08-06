@@ -207,6 +207,11 @@ const paymentSchema = new mongoose.Schema(
     |--------------------------------------------------------------------------
     */
 
+    refundRequestedAt: {
+      type: Date,
+    },
+
+
     refundStatus: {
       type: String,
       enum: [
