@@ -65,7 +65,9 @@ Completed
 
 <p className="text-3xl font-bold">
 
-{stats?.data?.completed || 0}
+{stats?.stats?.find(
+ s=>s._id==="completed"
+)?.count || 0}
 
 </p>
 
@@ -81,7 +83,9 @@ Pending
 
 <p className="text-3xl font-bold">
 
-{stats?.data?.pending || 0}
+{stats?.stats?.find(
+ s=>s._id==="pending"
+)?.count || 0}
 
 </p>
 
@@ -97,7 +101,9 @@ Failed
 
 <p className="text-3xl font-bold">
 
-{stats?.data?.failed || 0}
+{stats?.stats?.find(
+ s=>s._id==="failed"
+)?.count || 0}
 
 </p>
 
@@ -129,7 +135,7 @@ Failed
 <tbody>
 
 {
-payments?.data?.map((payment)=>(
+payments?.payments?.map((payment)=>(
 
 <tr key={payment._id}>
 
