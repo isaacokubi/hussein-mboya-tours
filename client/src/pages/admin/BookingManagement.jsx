@@ -16,7 +16,10 @@ import {
   getBookings,
   updateBookingStatus,
   updateBookingPayment,
-  assignBookingResources
+  assignBookingResources,
+    exportBookings,
+    sendBookingNotification,
+  requestRefund
 } from "../../api/adminBookingApi";
 
 
@@ -28,6 +31,8 @@ const queryClient = useQueryClient();
 
 
 const [selectedBooking,setSelectedBooking] = useState(null);
+
+const [actionBooking,setActionBooking]=useState(null);
 
 
 const [search,setSearch] = useState("");
@@ -200,6 +205,35 @@ queryKey:["admin-bookings"]
 });
 
 
+
+
+
+
+
+/* REFUND */
+
+const refundMutation = useMutation({
+
+mutationFn:({id,payload})=>
+refundBooking(id,payload),
+
+onSuccess:()=>{
+queryClient.invalidateQueries({
+queryKey:["admin-bookings"]
+});
+}
+
+});
+
+
+/* NOTIFICATIONS */
+
+const notificationMutation = useMutation({
+
+mutationFn:({id,payload})=>
+sendBookingNotification(id,payload),
+
+});
 
 
 
@@ -520,6 +554,177 @@ b=>b.status==="confirmed"
 
 
 
+
+
+const cancelled =
+bookings.filter(
+b=>b.status==="cancelled"
+).length;
+
+
+const revenue =
+bookings.reduce(
+(sum,b)=>
+sum +
+Number(
+b.totalAmount ||
+b.amount ||
+0
+),
+0
+);
+
+
+
+
+const today =
+new Date();
+
+today.setHours(
+0,0,0,0
+);
+
+
+const tomorrow =
+new Date(today);
+
+tomorrow.setDate(
+tomorrow.getDate()+1
+);
+
+
+
+const todayDepartures =
+bookings.filter(
+b=>{
+
+const date =
+new Date(b.travelDate);
+
+date.setHours(0,0,0,0);
+
+return date.getTime()===today.getTime();
+
+}
+
+).length;
+
+
+
+const tomorrowDepartures =
+bookings.filter(
+b=>{
+
+const date =
+new Date(b.travelDate);
+
+date.setHours(0,0,0,0);
+
+return date.getTime()===tomorrow.getTime();
+
+}
+
+).length;
+
+
+
+
+const unassignedPaidBookings =
+bookings.filter(
+b=>
+
+b.paymentStatus==="paid" &&
+!b.assignedGuide &&
+!b.assignedVehicle
+
+).length;
+
+
+
+const guideWorkload =
+Object.entries(
+
+bookings.reduce(
+(acc,b)=>{
+
+const guide =
+b.assignedGuide?.name ||
+b.assignedGuide?.firstName;
+
+
+if(guide){
+
+acc[guide]=
+(acc[guide]||0)+1;
+
+}
+
+
+return acc;
+
+},{})
+);
+
+
+
+const vehicleAssignments =
+{};
+
+
+bookings.forEach(b=>{
+
+const vehicle =
+b.assignedVehicle?._id;
+
+
+if(vehicle){
+
+vehicleAssignments[vehicle]=
+(vehicleAssignments[vehicle]||0)+1;
+
+}
+
+});
+
+
+
+const vehicleConflicts =
+Object.values(vehicleAssignments)
+.filter(
+count=>count>1
+).length;
+
+
+
+const upcomingDepartures =
+bookings.filter(
+b=>
+new Date(b.travelDate) >= new Date()
+).length;
+
+
+
+const mostBookedTours =
+Object.values(
+bookings.reduce(
+(acc,b)=>{
+
+const name =
+b.tour?.title ||
+"Unknown";
+
+
+acc[name]=
+(acc[name]||0)+1;
+
+
+return acc;
+
+},{})
+)
+.sort((a,b)=>b-a)[0] || 0;
+
+
 const paid =
 bookings.filter(
 b=>
@@ -690,6 +895,121 @@ Failed
 </option>
 
 </select>
+
+
+</div>
+
+
+
+
+
+<div className="bg-white shadow rounded-xl p-5 space-y-4">
+
+
+<h2 className="text-xl font-bold">
+Operational View
+</h2>
+
+
+
+<div className="grid md:grid-cols-5 gap-4">
+
+
+<div className="border rounded p-4">
+<p>Today's Departures</p>
+<h3 className="text-2xl font-bold">
+{todayDepartures}
+</h3>
+</div>
+
+
+
+<div className="border rounded p-4">
+<p>Tomorrow</p>
+<h3 className="text-2xl font-bold">
+{tomorrowDepartures}
+</h3>
+</div>
+
+
+
+
+<div className="border rounded p-4">
+<p>Unassigned Paid</p>
+<h3 className="text-2xl font-bold">
+{unassignedPaidBookings}
+</h3>
+</div>
+
+
+
+
+<div className="border rounded p-4">
+<p>Vehicle Conflicts</p>
+<h3 className="text-2xl font-bold">
+{vehicleConflicts}
+</h3>
+</div>
+
+
+
+
+<div className="border rounded p-4">
+<p>Guide Load</p>
+<h3 className="text-2xl font-bold">
+{guideWorkload.length}
+</h3>
+</div>
+
+
+
+</div>
+
+
+
+
+</div>
+
+
+
+<div className="bg-white shadow rounded-xl p-5">
+
+
+<h2 className="font-bold text-lg mb-3">
+Guide Workload Details
+</h2>
+
+
+
+<div className="grid md:grid-cols-3 gap-3">
+
+
+{
+guideWorkload.map(
+([guide,count])=>(
+
+<div
+key={guide}
+className="border rounded p-3"
+>
+
+<p>
+{guide}
+</p>
+
+<strong>
+{count} trips
+</strong>
+
+
+</div>
+
+
+))
+}
+
+
+</div>
 
 
 </div>
@@ -895,7 +1215,133 @@ b.assignedVehicle?.plateNumber ||
 
 
 
+
 <td className="p-3">
+
+<button
+className="border px-3 py-1 rounded"
+onClick={()=>
+setActionBooking(
+actionBooking===b._id?null:b._id
+)}
+>
+Actions
+</button>
+
+
+{
+actionBooking===b._id &&
+
+<div className="bg-white shadow rounded p-3 mt-2 space-y-2">
+
+
+<button
+onClick={()=>
+statusMutation.mutate({
+id:b._id,
+status:"confirmed"
+})
+}
+>
+Confirm booking
+</button>
+
+
+<button
+onClick={()=>
+statusMutation.mutate({
+id:b._id,
+status:"cancelled"
+})
+}
+>
+Cancel booking
+</button>
+
+
+<button
+onClick={()=>
+statusMutation.mutate({
+id:b._id,
+status:"completed"
+})
+}
+>
+Mark completed
+</button>
+
+
+<button
+onClick={()=>
+refundMutation.mutate({
+
+id:b._id,
+
+payload:{
+reason:
+"Customer requested cancellation"
+}
+
+})
+}
+>
+Refund booking
+</button>
+
+
+<button
+onClick={()=>notificationMutation.mutate({
+
+id:b._id,
+
+payload:{
+type:"confirmation",
+channel:"sms"
+}
+
+})}
+>
+Send confirmation SMS
+</button>
+
+
+<button
+onClick={()=>notificationMutation.mutate({
+
+id:b._id,
+
+payload:{
+type:"payment_reminder",
+channel:"whatsapp"
+}
+
+})}
+>
+Payment Reminder
+</button>
+
+
+<button
+onClick={()=>notificationMutation.mutate({
+
+id:b._id,
+
+payload:{
+type:"trip_reminder",
+channel:"email"
+}
+
+})}
+>
+Trip Reminder
+</button>
+
+
+</div>
+
+}
+
+</td>
 
 <select
 className="px-2 py-1 border rounded"

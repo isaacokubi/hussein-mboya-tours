@@ -1,76 +1,55 @@
-// client/src/services/financeService.js
+
 
 import api from "./axios";
 
-/*
-|--------------------------------------------------------------------------
-| FINANCE DASHBOARD
-|--------------------------------------------------------------------------
-*/
 
-export const getFinanceDashboard = async () => {
-  const { data } = await api.get(
-    "/finance"
-  );
+export const getFinanceStats =
+async()=>{
 
-  return data;
+const {data}=await api.get(
+"/admin/finance"
+);
+
+return data;
+
 };
 
-/*
-|--------------------------------------------------------------------------
-| ALL TRANSACTIONS
-|--------------------------------------------------------------------------
-*/
 
-export const getTransactions = async (params = {}) => {
-  const { data } = await api.get(
-    "/finance/transactions",
-    {
-      params,
-    }
-  );
 
-  return data;
+export const requestRefund =
+async(id,payload)=>{
+
+
+const {data}=await api.post(
+
+`/admin/bookings/${id}/refund`,
+
+payload
+
+);
+
+
+return data;
+
 };
 
-/*
-|--------------------------------------------------------------------------
-| MPESA TRANSACTIONS
-|--------------------------------------------------------------------------
-|
-| Supports:
-| - status
-| - search
-| - receipt number
-| - customer
-|
-|--------------------------------------------------------------------------
-*/
 
-export const getMpesaTransactions = async (params = {}) => {
-  const { data } = await api.get(
-    "/finance/transactions",
-    {
-      params,
-    }
-  );
 
-  return data;
+export const processRefund =
+async(id,payload)=>{
+
+
+const {data}=await api.put(
+
+`/admin/refunds/${id}/process`,
+
+payload
+
+);
+
+
+return data;
+
 };
 
-/*
-|--------------------------------------------------------------------------
-| FINANCE REPORTS
-|--------------------------------------------------------------------------
-*/
 
-export const getReports = async (params = {}) => {
-  const { data } = await api.get(
-    "/finance/reports",
-    {
-      params,
-    }
-  );
-
-  return data;
-};

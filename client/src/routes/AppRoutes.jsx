@@ -36,6 +36,7 @@ import AgentLayout from "../layouts/AgentLayout";
 import AgentDashboard from "../pages/agent/AgentDashboard";
 import AgentBookings from "../pages/agent/AgentBookings";
 import BookingManagement from "../pages/admin/BookingManagement";
+import Reports from "../pages/admin/Reports";
 import AgentCustomers from "../pages/agent/AgentCustomers";
 
 // ============================================================
@@ -301,6 +302,12 @@ export default function AppRoutes() {
         <Route
             path="bookings"
             element={<BookingManagement />}
+      />
+
+      <Route
+        path="/admin/reports"
+        element={<Reports />}
+      
           />
 
         <Route

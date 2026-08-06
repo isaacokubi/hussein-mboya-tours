@@ -936,3 +936,30 @@ next(error);
 
 };
 
+
+
+export const sendBookingNotification =
+async(req,res,next)=>{
+
+try{
+
+
+res.json({
+
+success:true,
+
+message:
+"Notification queued successfully."
+
+});
+
+
+}catch(error){
+
+next(error)
+
+}
+
+};
+
+

@@ -2,9 +2,41 @@
 
 import express from "express";
 
+
+import {
+
+getFinanceStats,
+
+requestRefund,
+
+processRefund
+
+
+} from "../controllers/financeController.js";
+
+
+
+
+import {
+sendBookingNotification
+
+} from "../controllers/notificationController.js";
+
+
+
 import {
   getDashboardStats,
 } from "../controllers/adminController.js";
+
+
+
+import {
+dailyBookingReport,
+monthlyBookingReport,
+tourBookingReport,
+agentBookingReport
+
+} from "../controllers/bookingReportController.js";
 
 import {
   getAllBookings,
@@ -12,6 +44,9 @@ import {
   updateBookingStatus,
   updatePaymentStatus,
   assignResources,
+  refundBooking,
+  sendBookingNotification,
+  sendBookingNotification,
   getBookingTimeline,
   downloadBookingInvoice,
 } from "../controllers/adminBookingController.js";
@@ -119,6 +154,13 @@ router.get(
 );
 
 
+
+
+router.post(
+ "/bookings/:id/notify",
+ sendBookingNotification
+);
+
 router.put(
   "/bookings/:id/assign",
   assignResources
@@ -154,6 +196,40 @@ router.put(
   "/users/:id/status",
   updateUserStatus
 );
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| BOOKING REPORTS
+|--------------------------------------------------------------------------
+*/
+
+
+router.get(
+"/reports/daily",
+dailyBookingReport
+);
+
+
+router.get(
+"/reports/monthly",
+monthlyBookingReport
+);
+
+
+router.get(
+"/reports/tours",
+tourBookingReport
+);
+
+
+router.get(
+"/reports/agents",
+agentBookingReport
+);
+
 
 
 export default router;
