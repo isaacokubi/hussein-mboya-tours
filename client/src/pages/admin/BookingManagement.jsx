@@ -2399,6 +2399,77 @@ v.registrationNumber ||
 
 
 
+
+<div className="flex gap-2 flex-wrap">
+
+<button
+onClick={()=>
+statusMutation.mutate({
+id:b._id,
+status:"confirmed"
+})
+}
+className="px-2 py-1 bg-green-600 text-white rounded"
+>
+Confirm
+</button>
+
+<button
+onClick={()=>
+statusMutation.mutate({
+id:b._id,
+status:"cancelled"
+})
+}
+className="px-2 py-1 bg-red-600 text-white rounded"
+>
+Cancel
+</button>
+
+<button
+onClick={()=>
+statusMutation.mutate({
+id:b._id,
+status:"completed"
+})
+}
+className="px-2 py-1 bg-blue-600 text-white rounded"
+>
+Complete
+</button>
+
+<button
+onClick={()=>
+refundMutation.mutate({
+id:b._id,
+payload:{
+reason:"Customer requested cancellation"
+}
+})
+}
+className="px-2 py-1 bg-orange-600 text-white rounded"
+>
+Refund
+</button>
+
+<button
+onClick={()=>
+notificationMutation.mutate({
+id:b._id,
+payload:{
+type:"confirmation",
+channel:"email",
+message:"Your booking has been confirmed"
+}
+})
+}
+className="px-2 py-1 bg-purple-600 text-white rounded"
+>
+Notify
+</button>
+
+</div>
+
 </td>
 
 

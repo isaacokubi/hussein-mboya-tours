@@ -235,7 +235,7 @@ export default function AgentCustomers(){
 
 
 
-                            data.map(customer=>(
+                            Array.isArray(data) ? data.map(customer=>(
 
 
 

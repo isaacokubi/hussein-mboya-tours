@@ -11,7 +11,13 @@ await api.get(
 
 
 
-return response.data.images;
+return Array.isArray(response.data)
+? response.data
+: Array.isArray(response.data.images)
+? response.data.images
+: Array.isArray(response.data.data)
+? response.data.data
+: [];
 
 
 };
