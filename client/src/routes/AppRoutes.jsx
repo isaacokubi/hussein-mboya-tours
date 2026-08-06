@@ -38,6 +38,7 @@ import AgentBookings from "../pages/agent/AgentBookings";
 import BookingManagement from "../pages/admin/BookingManagement";
 import Reports from "../pages/admin/Reports";
 import AgentCustomers from "../pages/agent/AgentCustomers";
+import Customers from "../pages/admin/Customers";
 
 // ============================================================
 // TOUR GUIDE
