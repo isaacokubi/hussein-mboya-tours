@@ -101,7 +101,9 @@ const {
   queryFn:getVehicles
 });
 
-console.log("STAFF RESPONSE:", staffResponse);\n\nconst guides =
+console.log("STAFF RESPONSE:", staffResponse);
+
+const guides =
   (
     staffResponse?.data?.data ||
     staffResponse?.data?.staff ||
