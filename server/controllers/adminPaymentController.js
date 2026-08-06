@@ -243,6 +243,7 @@ message:"Payment not found"
 }
 
 
+
 payment.status="refunded";
 
 payment.refundStatus="completed";
@@ -253,9 +254,62 @@ payment.refundedAt=new Date();
 await payment.save();
 
 
+
+
+
+/*
+|--------------------------------------------------------------------------
+| SYNC BOOKING PAYMENT STATUS
+|--------------------------------------------------------------------------
+*/
+
+
+if(payment.booking){
+
+const Booking =
+(await import("../models/Booking.js")).default;
+
+
+const booking =
+await Booking.findById(
+payment.booking
+);
+
+
+if(booking){
+
+
+booking.paymentStatus="refunded";
+
+
+booking.refundStatus="completed";
+
+
+booking.refundAmount =
+payment.amount || 0;
+
+
+booking.refundedAt =
+new Date();
+
+
+await booking.save();
+
+
+}
+
+
+
+}
+
+
+
+
 res.json({
 
 success:true,
+
+message:"Payment refunded successfully",
 
 payment
 
