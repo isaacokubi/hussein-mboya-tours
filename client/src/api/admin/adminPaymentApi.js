@@ -99,3 +99,24 @@ return res.data;
 
 };
 
+
+
+export const exportPaymentsCSV = ()=>{
+
+window.open(
+`${import.meta.env.VITE_API_URL}/admin/payments/export/csv`,
+"_blank"
+);
+
+};
+
+
+export const exportPaymentsPDF = ()=>{
+
+window.open(
+`${import.meta.env.VITE_API_URL}/admin/payments/export/pdf`,
+"_blank"
+);
+
+};
+

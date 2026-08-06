@@ -423,6 +423,29 @@ overflow-x-auto
 ">
 
 
+
+<div className="flex gap-3 mb-4">
+
+<button
+className="px-4 py-2 bg-green-600 text-white rounded"
+onClick={()=>{
+window.alert("CSV export coming soon");
+}}
+>
+Export CSV
+</button>
+
+<button
+className="px-4 py-2 bg-red-600 text-white rounded"
+onClick={()=>{
+window.alert("PDF export coming soon");
+}}
+>
+Export PDF
+</button>
+
+</div>
+
 <table className="w-full">
 
 
@@ -470,11 +493,13 @@ Status
 
 
 
+
 <tbody>
 
 
 {
 filteredPayments.length ?
+
 
 filteredPayments.map(payment=>(
 
