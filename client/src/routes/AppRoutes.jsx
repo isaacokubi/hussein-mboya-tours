@@ -313,13 +313,9 @@ export default function AppRoutes() {
           />
 
         <Route
-          path="payments"
-          element={
-            <div className="p-6">
-              <h1 className="text-2xl font-bold">Payment Management</h1>
-            </div>
-          }
-        />
+            path="payments"
+            element={<AdminPayments />}
+          />
 
         <Route
           path="analytics"
