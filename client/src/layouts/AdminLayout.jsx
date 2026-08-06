@@ -85,6 +85,13 @@ icon:<Users/>
 
 
 {
+name:"Commissions",
+path:"/admin/commissions",
+icon:<Wallet/>
+},
+
+
+{
 name:"Customers CRM",
 path:"/admin/customers",
 icon:<Users/>
