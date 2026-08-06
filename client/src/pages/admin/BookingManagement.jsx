@@ -114,21 +114,17 @@ staffResponse.staff
 
 
 const drivers =
-Array.isArray(driverResponse)
+Array.isArray(staffResponse)
 ?
-driverResponse
+staffResponse.filter(
+s=>s.role==="driver"
+)
 :
-Array.isArray(driverResponse?.data)
+Array.isArray(staffResponse?.data)
 ?
-driverResponse.data
-:
-Array.isArray(driverResponse?.data?.drivers)
-?
-driverResponse.data.drivers
-:
-Array.isArray(driverResponse?.drivers)
-?
-driverResponse.drivers
+staffResponse.data.filter(
+s=>s.role==="driver"
+)
 :
 [];
 
