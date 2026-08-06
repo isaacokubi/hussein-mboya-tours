@@ -12,6 +12,11 @@ from "../controllers/adminPaymentController.js";
 import {protect}
 from "../middleware/authMiddleware.js";
 
+import {
+getPaymentReconciliation
+}
+from "../controllers/reconciliationController.js";
+
 import adminMiddleware
 from "../middleware/adminMiddleware.js";
 
@@ -28,6 +33,13 @@ router.use(adminMiddleware);
 router.get(
 "/",
 getPayments
+);
+
+
+
+router.get(
+"/reconciliation",
+getPaymentReconciliation
 );
 
 

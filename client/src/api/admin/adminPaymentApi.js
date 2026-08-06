@@ -85,3 +85,17 @@ return res.data;
 
 };
 
+
+
+export const getPaymentReconciliation =
+async()=>{
+
+const res =
+await api.get(
+"/admin/payments/reconciliation"
+);
+
+return res.data;
+
+};
+
