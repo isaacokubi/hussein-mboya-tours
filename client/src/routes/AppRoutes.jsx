@@ -105,6 +105,8 @@ import ProtectedRoute from "../components/auth/ProtectedRoute";
 import AdminRoute from "../components/auth/AdminRoute";
 
 import AgentRoute from "../components/agent/AgentRoute";
+import Agents from "../pages/admin/Agents";
+
 
 export default function AppRoutes() {
   return (
@@ -317,10 +319,15 @@ export default function AppRoutes() {
       
           />
 
-        <Route
-          path="payments"
-          element={<AdminPayments />}
-        />
+          <Route
+            path="payments"
+            element={<AdminPayments />}
+          />
+
+          <Route
+            path="agents"
+            element={<Agents />}
+          />
 
 
         <Route
