@@ -256,7 +256,10 @@ export default function AppRoutes() {
 
         <Route path="analytics" element={<TourAnalytics />} />
 
-        <Route path="reports" element={<TourReports />} />
+        <Route
+            path="reports"
+            element={<Reports />}
+          />
       </Route>
 
       {/* ============================================================
@@ -315,9 +318,16 @@ export default function AppRoutes() {
           />
 
         <Route
-            path="payments"
-            element={<AdminPayments />}
-          />
+          path="payments"
+          element={<AdminPayments />}
+        />
+
+
+        <Route
+          path="finance/reconciliation"
+          element={<Reconciliation />}
+        />
+
 
         <Route
           path="analytics"
@@ -329,13 +339,66 @@ export default function AppRoutes() {
         />
 
         <Route
-          path="reports"
-          element={
-            <div className="p-6">
-              <h1 className="text-2xl font-bold">Reports</h1>
-            </div>
-          }
+            path="reports"
+            element={<Reports />}
+          />
+      </Route>
+
+      {/* ============================================================
+    ADMIN ROUTES
+============================================================ */}
+
+      <Route
+        path="/admin"
+        element={
+          <AdminRoute>
+            <AdminLayout />
+          </AdminRoute>
+        }
+      >
+        <Route index element={<AdminDashboard />} />
+
+        <Route path="dashboard" element={<AdminDashboard />} />
+
+        <Route path="users" element={<UserManagement />} />
+
+        <Route
+          path="manage-tours"
+          element={<TourManagement />}
         />
+
+          <Route
+            path="staff"
+            element={<StaffManagement />}
+          />
+
+        <Route
+          path="destinations"
+          element={<DestinationManagement />}
+        />
+
+        <Route
+          path="create-destination"
+          element={<CreateDestination />}
+        />
+
+<Route
+ path="edit-destination/:id"
+ element={<EditDestination />}
+/>
+
+
+        <Route
+            path="bookings"
+            element={<BookingManagement />}
+      />
+
+      <Route
+        path="/admin/reports"
+        element={<Reports />}
+      
+          />
+
       </Route>
 
       {/* ============================================================
