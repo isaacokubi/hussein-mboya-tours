@@ -17,12 +17,15 @@ processRefund
 
 
 
+
+
+
+
+
+
 import {
-sendBookingNotification
-
+  sendBookingNotification
 } from "../controllers/notificationController.js";
-
-
 
 import {
   getDashboardStats,
@@ -45,8 +48,6 @@ import {
   updatePaymentStatus,
   assignResources,
   refundBooking,
-  sendBookingNotification,
-  sendBookingNotification,
   getBookingTimeline,
   downloadBookingInvoice,
 } from "../controllers/adminBookingController.js";
@@ -157,8 +158,8 @@ router.get(
 
 
 router.post(
- "/bookings/:id/notify",
- sendBookingNotification
+  "/bookings/:id/notify",
+  sendBookingNotification
 );
 
 router.put(
