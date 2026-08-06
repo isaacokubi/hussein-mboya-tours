@@ -73,6 +73,7 @@ icon:<CalendarCheck/>
 {
 name:"Payments",
 path:"/admin/payments",
+    "/admin/finance/reconciliation",
 icon:<Wallet/>
 },
 
