@@ -17,6 +17,13 @@ getPaymentReconciliation
 }
 from "../controllers/reconciliationController.js";
 
+import {
+exportPaymentsCSV,
+exportPaymentsPDF
+}
+from "../controllers/financeExportController.js";
+
+
 import adminMiddleware
 from "../middleware/adminMiddleware.js";
 
@@ -69,3 +76,16 @@ refundPayment
 
 
 export default router;
+
+
+router.get(
+"/export/csv",
+exportPaymentsCSV
+);
+
+
+router.get(
+"/export/pdf",
+exportPaymentsPDF
+);
+
