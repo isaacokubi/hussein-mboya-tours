@@ -6,12 +6,9 @@ import api from "./axios";
 |--------------------------------------------------------------------------
 */
 
-export const getBookings = async (params = {}) => {
+export const getBookings = async () => {
   const { data } = await api.get(
-    "/admin/bookings",
-    {
-      params,
-    }
+    "/admin/bookings"
   );
 
   return data;
