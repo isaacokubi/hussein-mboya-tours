@@ -245,21 +245,3 @@ export const notifyPaymentSuccess = async (
     },
   });
 
-export const sendEmail = async ({
-  to,
-  subject,
-  message
-}) => {
-
-  console.log("EMAIL NOTIFICATION");
-  console.log({
-    to,
-    subject,
-    message
-  });
-
-  return {
-    success:true
-  };
-
-};
