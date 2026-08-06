@@ -245,3 +245,7 @@ export const notifyPaymentSuccess = async (
     },
   });
 
+
+
+export { sendEmail };
+
