@@ -10,7 +10,8 @@ export default function AdminPayments(){
 
   const {
     data: payments,
-    isLoading
+    isLoading,
+      error
   } = useQuery({
 
     queryKey:["adminPayments"],
@@ -23,6 +24,7 @@ export default function AdminPayments(){
   
 console.log("PAYMENTS RESPONSE:", payments);
 console.log("STATS RESPONSE:", stats);
+console.log("PAYMENTS ERROR:", error);
 
 const {
     data: stats
@@ -36,7 +38,8 @@ const {
 
 
 
-  if(isLoading){
+  if(isLoading,
+      error){
 
     return (
       <div className="p-6">
