@@ -93,6 +93,14 @@ staffResponse.staff
 
 
 
+
+const {
+  data: vehicleResponse
+} = useQuery({
+  queryKey:["vehicles"],
+  queryFn:getVehicles
+});
+
 const guides =
 Array.isArray(staffResponse)
 ?
