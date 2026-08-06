@@ -157,15 +157,3 @@ return data;
 
 
 
-export const sendBookingNotification = async(
-id,
-payload
-)=>{
-const {data}=await api.post(
-`/admin/bookings/${id}/notify`,
-payload
-);
-
-return data;
-};
-
