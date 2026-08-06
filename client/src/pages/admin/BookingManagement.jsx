@@ -101,7 +101,10 @@ const {
   queryFn:getVehicles
 });
 
-console.log("STAFF RESPONSE:", staffResponse);
+console.log(
+  "STAFF RESPONSE FULL:",
+  JSON.stringify(staffResponse, null, 2)
+);
 
 const guides =
   (
