@@ -4,7 +4,8 @@ import {
 getPayments,
 getPaymentStats,
 getPayment,
-updatePaymentStatus
+updatePaymentStatus,
+refundPayment
 }
 from "../controllers/adminPaymentController.js";
 
@@ -45,6 +46,12 @@ getPayment
 router.patch(
 "/:id/status",
 updatePaymentStatus
+);
+
+
+router.patch(
+"/:id/refund",
+refundPayment
 );
 
 

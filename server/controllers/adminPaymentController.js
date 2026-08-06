@@ -1,6 +1,7 @@
 import Payment from "../models/Payment.js";
 
 
+
 export const getPayments = async(req,res,next)=>{
 
 try{
@@ -9,18 +10,65 @@ const page = Number(req.query.page)||1;
 const limit = Number(req.query.limit)||20;
 
 
+const query={};
+
+
+if(req.query.status){
+
+query.status=req.query.status;
+
+}
+
+
+if(req.query.method){
+
+query.method=req.query.method;
+
+}
+
+
+
 const payments =
-await Payment.find()
-.populate("customer","name email phone")
-.populate("booking")
-.sort({createdAt:-1})
-.skip((page-1)*limit)
+await Payment.find(query)
+
+.populate(
+"customer",
+"name email phone"
+)
+
+.populate({
+
+path:"booking",
+
+select:
+"bookingNumber travelDate totalAmount status",
+
+populate:{
+
+path:"tour",
+
+select:"title"
+
+}
+
+})
+
+.sort({
+
+createdAt:-1
+
+})
+
+.skip(
+(page-1)*limit
+)
+
 .limit(limit);
 
 
 
 const total =
-await Payment.countDocuments();
+await Payment.countDocuments(query);
 
 
 
@@ -46,8 +94,6 @@ next(error);
 }
 
 };
-
-
 
 
 
@@ -172,3 +218,56 @@ next(error);
 }
 
 };
+
+
+
+export const refundPayment = async(req,res,next)=>{
+
+try{
+
+
+const payment =
+await Payment.findById(req.params.id);
+
+
+if(!payment){
+
+return res.status(404).json({
+
+success:false,
+
+message:"Payment not found"
+
+});
+
+}
+
+
+payment.status="refunded";
+
+payment.refundStatus="completed";
+
+payment.refundedAt=new Date();
+
+
+await payment.save();
+
+
+res.json({
+
+success:true,
+
+payment
+
+});
+
+
+}catch(error){
+
+next(error);
+
+}
+
+};
+
+
