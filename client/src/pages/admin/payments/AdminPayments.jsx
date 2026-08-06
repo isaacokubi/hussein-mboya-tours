@@ -20,7 +20,11 @@ export default function AdminPayments(){
   });
 
 
-  const {
+  
+console.log("PAYMENTS RESPONSE:", payments);
+console.log("STATS RESPONSE:", stats);
+
+const {
     data: stats
   } = useQuery({
 
