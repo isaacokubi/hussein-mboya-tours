@@ -1,225 +1,648 @@
-import { useQuery } from "@tanstack/react-query";
+
+import {
+  useState
+} from "react";
+
+
+import {
+  useQuery,
+  useMutation,
+  useQueryClient
+} from "@tanstack/react-query";
+
 
 import {
   getAdminPayments,
   getPaymentStats,
+  updatePaymentStatus
 } from "../../../api/admin/adminPaymentApi";
+
 
 
 export default function AdminPayments(){
 
-  const {
-    data: payments,
-    isLoading,
-    error
-  } = useQuery({
 
-    queryKey:["adminPayments"],
+const queryClient = useQueryClient();
 
-    queryFn:getAdminPayments
 
-  });
 
+const [search,setSearch] = useState("");
 
-  const {
-    data: stats
-  } = useQuery({
+const [statusFilter,setStatusFilter] = useState("all");
 
-    queryKey:["paymentStats"],
 
-    queryFn:getPaymentStats
 
-  });
 
+const {
+data:paymentsResponse,
+isLoading,
+error
+}=useQuery({
 
-  console.log("PAYMENTS RESPONSE:", payments);
-  console.log("STATS RESPONSE:", stats);
-  console.log("PAYMENTS ERROR:", error);
+queryKey:[
+"adminPayments"
+],
 
+queryFn:getAdminPayments
 
+});
 
-  if(isLoading){
 
-    return (
-      <div className="p-6">
-        Loading payments...
-      </div>
-    );
 
-  }
 
+const {
+data:statsResponse
+}=useQuery({
 
+queryKey:[
+"paymentStats"
+],
 
-  if(error){
+queryFn:getPaymentStats
 
-    return (
-      <div className="p-6 text-red-600">
-        Failed to load payments.
-      </div>
-    );
+});
 
-  }
 
 
 
-  return (
+const payments =
 
-    <div className="p-6 space-y-6">
+paymentsResponse?.payments ||
 
+paymentsResponse?.data?.payments ||
 
-      <h1 className="text-3xl font-bold">
-        Payment Management
-      </h1>
+[];
 
 
 
-      <div className="grid md:grid-cols-3 gap-5">
 
+const stats =
 
-        {["completed","pending","failed"].map(status=>(
+statsResponse?.stats ||
 
-          <div
-            key={status}
-            className="bg-white shadow rounded-xl p-5"
-          >
+[];
 
-            <h3 className="capitalize">
-              {status}
-            </h3>
 
 
-            <p className="text-3xl font-bold">
 
-              {
-                stats?.stats?.find(
-                  s=>s._id===status
-                )?.count || 0
-              }
 
-            </p>
+const statusMutation = useMutation({
 
+mutationFn:({id,status})=>
 
-          </div>
+updatePaymentStatus(
+id,
+{
+status
+}
+),
 
-        ))}
 
+onSuccess:()=>{
 
-      </div>
+queryClient.invalidateQueries({
 
+queryKey:[
+"adminPayments"
+]
 
+});
 
-      <div className="bg-white shadow rounded-xl p-5 overflow-x-auto">
 
+queryClient.invalidateQueries({
 
-        <table className="w-full">
+queryKey:[
+"paymentStats"
+]
 
+});
 
-          <thead>
+}
 
-            <tr className="border-b">
+});
 
-              <th className="p-3 text-left">
-                Customer
-              </th>
 
-              <th className="p-3 text-left">
-                Method
-              </th>
 
-              <th className="p-3 text-left">
-                Amount
-              </th>
 
-              <th className="p-3 text-left">
-                Phone
-              </th>
 
-              <th className="p-3 text-left">
-                Status
-              </th>
 
-            </tr>
 
-          </thead>
+if(isLoading)
 
+return (
 
+<div className="p-6">
 
-          <tbody>
+Loading payments...
 
+</div>
 
-          {
-            payments?.payments?.length ?
+);
 
-            payments.payments.map(payment=>(
 
-              <tr
-                key={payment._id}
-                className="border-b"
-              >
 
-                <td className="p-3">
-                  {payment.customer?.name || "Guest"}
-                </td>
 
 
-                <td className="p-3">
-                  {
-                    payment.paymentMethod ||
-                    payment.method ||
-                    "-"
-                  }
-                </td>
+if(error)
 
+return (
 
-                <td className="p-3 font-bold">
-                  KES {payment.amount}
-                </td>
+<div className="p-6 text-red-600">
 
+Failed loading payments
 
-                <td className="p-3">
-                  {payment.phoneNumber || "-"}
-                </td>
+</div>
 
+);
 
-                <td className="p-3">
-                  {payment.status}
-                </td>
 
 
-              </tr>
 
-            ))
 
-            :
 
-            <tr>
 
-              <td
-                colSpan="5"
-                className="p-6 text-center"
-              >
+const filteredPayments = payments.filter(payment=>{
 
-                No payments found
 
-              </td>
+const customer =
 
-            </tr>
+payment.customer?.name ||
 
-          }
+"";
 
 
-          </tbody>
+const receipt =
 
+payment.mpesaReceiptNumber ||
 
-        </table>
+"";
 
 
-      </div>
+const matchesSearch =
 
+(customer + receipt)
 
-    </div>
+.toLowerCase()
 
-  );
+.includes(
+search.toLowerCase()
+);
+
+
+
+const matchesStatus =
+
+statusFilter==="all"
+
+?
+
+true
+
+:
+
+payment.status===statusFilter;
+
+
+
+return matchesSearch && matchesStatus;
+
+
+});
+
+
+
+
+
+
+
+const revenue =
+
+stats
+.filter(
+s=>s._id==="completed"
+)
+.reduce(
+(sum,s)=>sum+s.amount,
+0
+);
+
+
+
+
+
+
+
+
+return (
+
+<div className="p-6 space-y-8">
+
+
+
+<h1 className="
+text-3xl
+font-bold
+">
+
+Payment Management
+
+</h1>
+
+
+
+
+
+
+<div className="
+grid
+md:grid-cols-4
+gap-5
+">
+
+
+<Card
+title="Total Payments"
+value={payments.length}
+/>
+
+
+<Card
+title="Completed Revenue"
+value={`KES ${revenue.toLocaleString()}`}
+/>
+
+
+<Card
+title="Pending"
+value={
+stats.find(
+s=>s._id==="pending"
+)?.count || 0
+}
+/>
+
+
+<Card
+title="Failed"
+value={
+stats.find(
+s=>s._id==="failed"
+)?.count || 0
+}
+/>
+
+
+</div>
+
+
+
+
+
+
+<div className="
+flex
+gap-4
+">
+
+
+<input
+
+className="
+border
+rounded
+p-3
+w-80
+"
+
+placeholder="Search customer or receipt"
+
+value={search}
+
+onChange={
+e=>setSearch(e.target.value)
+}
+
+/>
+
+
+
+<select
+
+className="
+border
+rounded
+p-3
+"
+
+value={statusFilter}
+
+onChange={
+e=>setStatusFilter(e.target.value)
+}
+
+>
+
+<option value="all">
+All
+</option>
+
+<option value="pending">
+Pending
+</option>
+
+<option value="processing">
+Processing
+</option>
+
+<option value="completed">
+Completed
+</option>
+
+<option value="failed">
+Failed
+</option>
+
+<option value="cancelled">
+Cancelled
+</option>
+
+<option value="refunded">
+Refunded
+</option>
+
+
+</select>
+
+
+</div>
+
+
+
+
+
+
+
+<div className="
+bg-white
+shadow
+rounded-xl
+overflow-x-auto
+">
+
+
+<table className="w-full">
+
+
+<thead>
+
+<tr className="border-b">
+
+
+<th className="p-3 text-left">
+Customer
+</th>
+
+
+<th className="p-3 text-left">
+Booking
+</th>
+
+
+<th className="p-3 text-left">
+Amount
+</th>
+
+
+<th className="p-3 text-left">
+Receipt
+</th>
+
+
+<th className="p-3 text-left">
+Phone
+</th>
+
+
+<th className="p-3 text-left">
+Status
+</th>
+
+
+</tr>
+
+</thead>
+
+
+
+<tbody>
+
+
+{
+filteredPayments.length ?
+
+filteredPayments.map(payment=>(
+
+
+<tr
+key={payment._id}
+className="border-b"
+>
+
+
+
+<td className="p-3">
+
+{
+payment.customer?.name ||
+"Guest"
+}
+
+</td>
+
+
+
+<td className="p-3">
+
+{
+payment.booking?.bookingNumber ||
+"-"
+}
+
+</td>
+
+
+
+<td className="p-3 font-bold">
+
+KES {payment.amount}
+
+</td>
+
+
+
+
+<td className="p-3">
+
+{
+payment.mpesaReceiptNumber ||
+"-"
+}
+
+</td>
+
+
+
+<td className="p-3">
+
+{
+payment.phoneNumber ||
+payment.phone ||
+"-"
+}
+
+</td>
+
+
+
+
+<td className="p-3">
+
+
+<select
+
+className="
+border
+rounded
+p-2
+"
+
+value={payment.status}
+
+onChange={
+e=>
+
+statusMutation.mutate({
+
+id:payment._id,
+
+status:e.target.value
+
+})
+
+}
+
+>
+
+
+<option value="pending">
+Pending
+</option>
+
+<option value="processing">
+Processing
+</option>
+
+<option value="completed">
+Completed
+</option>
+
+<option value="failed">
+Failed
+</option>
+
+<option value="cancelled">
+Cancelled
+</option>
+
+<option value="refunded">
+Refunded
+</option>
+
+
+</select>
+
+
+
+</td>
+
+
+
+</tr>
+
+
+))
+
+
+:
+
+<tr>
+
+<td
+colSpan="6"
+className="p-6 text-center"
+>
+
+No payments found
+
+</td>
+
+</tr>
+
+
+}
+
+
+
+</tbody>
+
+
+</table>
+
+
+</div>
+
+
+</div>
+
+);
+
+}
+
+
+
+function Card({title,value}){
+
+
+return (
+
+<div className="
+bg-white
+shadow
+rounded-xl
+p-5
+">
+
+
+<h3>
+
+{title}
+
+</h3>
+
+
+<p className="
+text-3xl
+font-bold
+">
+
+{value}
+
+</p>
+
+
+</div>
+
+);
 
 
 }
