@@ -4,9 +4,12 @@ import express from "express";
 
 
 import {
-getAgents,
-  getFinanceStats
+getFinanceStats
 } from "../controllers/financeController.js";
+
+import {
+getAgents
+} from "../controllers/adminAgentController.js";
 
 
 
