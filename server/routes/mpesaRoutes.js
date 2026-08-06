@@ -65,12 +65,6 @@ export default router;
 
 router.post(
 "/refund/result",
-handleRefundResult
-);
-
-
-router.post(
-"/refund/timeout",
-handleRefundTimeout
+mpesaRefundResult
 );
 
