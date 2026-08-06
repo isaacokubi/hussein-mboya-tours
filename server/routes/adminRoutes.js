@@ -41,7 +41,6 @@ import {
   updateBookingStatus,
   updatePaymentStatus,
   assignResources,
-  refundBooking,
   getBookingTimeline,
   downloadBookingInvoice,
 } from "../controllers/adminBookingController.js";

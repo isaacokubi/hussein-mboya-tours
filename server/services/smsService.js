@@ -6,12 +6,27 @@ import AfricasTalking from "africastalking";
 |--------------------------------------------------------------------------
 */
 
-const africasTalking = AfricasTalking({
-  apiKey: process.env.AT_API_KEY,
-  username: process.env.AT_USERNAME,
-});
+const getSMSClient = () => {
 
-const sms = africasTalking.SMS;
+  if(
+    !process.env.AT_API_KEY ||
+    !process.env.AT_USERNAME
+  ){
+    throw new Error(
+      "Africa's Talking credentials missing"
+    );
+  }
+
+
+  const africasTalking = AfricasTalking({
+    apiKey: process.env.AT_API_KEY,
+    username: process.env.AT_USERNAME,
+  });
+
+
+  return africasTalking.SMS;
+
+};
 
 /*
 |--------------------------------------------------------------------------
