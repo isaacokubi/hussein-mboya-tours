@@ -223,7 +223,12 @@ true
 
 :
 
-payment.status===statusFilter;
+
+(
+payment.status ||
+payment.paymentStatus
+)===statusFilter
+;
 
 
 
@@ -242,7 +247,12 @@ const revenue =
 
 stats
 .filter(
-s=>s._id==="completed"
+s=>
+(
+s._id==="completed" ||
+s._id==="paid"
+)
+
 )
 .reduce(
 (sum,s)=>sum+s.amount,
@@ -542,7 +552,7 @@ rounded
 p-2
 "
 
-value={payment.status}
+value={payment.status || payment.paymentStatus}
 
 onChange={
 e=>
