@@ -182,6 +182,77 @@ export default function MpesaTransactions(){
 
             </h1>
 
+<div className="
+grid
+grid-cols-1
+md:grid-cols-4
+gap-4
+mb-8
+">
+
+<div className="border rounded p-4">
+<h3 className="font-bold">
+Completed Transactions
+</h3>
+<p>
+{
+transactions.filter(
+t=>t.status==="completed"
+).length
+}
+</p>
+</div>
+
+
+<div className="border rounded p-4">
+<h3 className="font-bold">
+M-Pesa Revenue
+</h3>
+<p>
+KES {
+transactions
+.filter(t=>t.status==="completed")
+.reduce(
+(sum,t)=>sum+(t.amount||0),
+0
+)
+.toLocaleString()
+}
+</p>
+</div>
+
+
+<div className="border rounded p-4">
+<h3 className="font-bold">
+Refunded
+</h3>
+<p>
+{
+transactions.filter(
+t=>t.status==="refunded"
+).length
+}
+</p>
+</div>
+
+
+<div className="border rounded p-4">
+<h3 className="font-bold">
+Failed
+</h3>
+<p>
+{
+transactions.filter(
+t=>t.status==="failed"
+).length
+}
+</p>
+</div>
+
+</div>
+
+
+
 
 
 

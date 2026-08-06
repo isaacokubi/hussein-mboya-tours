@@ -32,6 +32,7 @@ export const getFinanceStats = async (req, res, next) => {
       pendingPayments,
       failedPayments,
       refundedPayments,
+      refundedAmountResult,
       paidBookings,
       commissionResult,
     ] = await Promise.all([
@@ -69,6 +70,24 @@ export const getFinanceStats = async (req, res, next) => {
         status: "refunded",
       }),
 
+      Payment.aggregate([
+        {
+          $match:{
+            status:"refunded"
+          }
+        },
+        {
+          $group:{
+            _id:null,
+            total:{
+              $sum:{
+                $ifNull:["$amount",0]
+              }
+            }
+          }
+        }
+      ]),
+
       Booking.countDocuments({
         paymentStatus: "paid",
       }),
@@ -92,6 +111,14 @@ export const getFinanceStats = async (req, res, next) => {
 
       data: {
         revenue: revenueResult[0]?.total || 0,
+
+        netRevenue:
+          (revenueResult[0]?.total || 0)
+          -
+          (refundedAmountResult[0]?.total || 0),
+
+        refundedAmount:
+          refundedAmountResult[0]?.total || 0,
 
         completedPayments,
 

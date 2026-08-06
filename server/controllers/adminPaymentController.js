@@ -1,4 +1,5 @@
 import Payment from "../models/Payment.js";
+import Booking from "../models/Booking.js";
 
 
 
@@ -252,6 +253,35 @@ payment.refundedAt=new Date();
 
 
 await payment.save();
+
+
+
+if(payment.booking){
+
+const booking =
+await Booking.findById(
+payment.booking
+);
+
+
+if(booking){
+
+booking.paymentStatus="refunded";
+
+booking.refundAmount =
+payment.amount;
+
+booking.refundStatus="completed";
+
+booking.refundedAt =
+new Date();
+
+
+await booking.save();
+
+}
+
+}
 
 
 
