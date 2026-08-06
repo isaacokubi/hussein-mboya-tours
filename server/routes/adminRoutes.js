@@ -4,6 +4,7 @@ import express from "express";
 
 
 import {
+getAgents,
   getFinanceStats
 } from "../controllers/financeController.js";
 
@@ -224,6 +225,14 @@ router.get(
 agentBookingReport
 );
 
+
+
+
+
+router.get(
+"/agents",
+getAgents
+);
 
 
 export default router;
