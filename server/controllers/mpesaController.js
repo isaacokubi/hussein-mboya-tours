@@ -765,3 +765,113 @@ export const getPaymentByReceipt = async (req, res, next) => {
     next(error);
   }
 };
+
+
+/*
+|--------------------------------------------------------------------------
+| MPESA REFUND RESULT CALLBACK
+|--------------------------------------------------------------------------
+*/
+
+export const handleRefundResult = async(req,res,next)=>{
+
+try{
+
+const Payment =
+(await import("../models/Payment.js")).default;
+
+
+const result =
+req.body.Result || {};
+
+
+const conversationId =
+result.ConversationID ||
+result.OriginatorConversationID;
+
+
+const success =
+result.ResultCode === 0 ||
+result.ResultCode === "0";
+
+
+const payment =
+await Payment.findOne({
+
+refundReference:conversationId
+
+});
+
+
+if(payment){
+
+
+if(success){
+
+payment.refundStatus="completed";
+
+payment.refundedAt=new Date();
+
+
+}
+else{
+
+payment.refundStatus="failed";
+
+}
+
+
+await payment.save();
+
+
+}
+
+
+res.json({
+
+ResultCode:0,
+
+ResultDesc:"Accepted"
+
+});
+
+
+}catch(error){
+
+next(error);
+
+}
+
+};
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| MPESA REFUND TIMEOUT CALLBACK
+|--------------------------------------------------------------------------
+*/
+
+export const handleRefundTimeout = async(req,res,next)=>{
+
+try{
+
+
+res.json({
+
+ResultCode:0,
+
+ResultDesc:"Accepted"
+
+});
+
+
+}catch(error){
+
+next(error);
+
+}
+
+};
+
