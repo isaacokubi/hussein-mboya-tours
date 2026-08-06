@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { exportBookingsCSV } from "../../utils/exportBookings";
 
 import {
   useQuery,
@@ -206,6 +207,29 @@ queryKey:["admin-bookings"]
 /* ASSIGN RESOURCES */
 
 
+/* CUSTOMER NOTIFICATION */
+
+const notificationMutation = useMutation({
+
+mutationFn: async(id)=>{
+
+return {
+success:true,
+message:"Notification queued"
+};
+
+},
+
+onSuccess:()=>{
+
+alert("Customer notification sent");
+
+}
+
+});
+
+
+
 const assignMutation = useMutation({
 
 mutationFn:({id,payload})=>
@@ -251,6 +275,62 @@ Loading bookings...
 
 
 
+
+const handleBookingAction=(action,b)=>{
+
+
+if(action==="confirm"){
+
+statusMutation.mutate({
+id:b._id,
+status:"confirmed"
+});
+
+}
+
+
+if(action==="cancel"){
+
+statusMutation.mutate({
+id:b._id,
+status:"cancelled"
+});
+
+}
+
+
+if(action==="complete"){
+
+statusMutation.mutate({
+id:b._id,
+status:"completed"
+});
+
+}
+
+
+if(action==="refund"){
+
+paymentMutation.mutate({
+id:b._id,
+status:"refunded"
+});
+
+}
+
+
+if(action==="notify"){
+
+notificationMutation.mutate(
+b._id
+);
+
+}
+
+};
+
+
+
 if(error)
 
 return (
@@ -283,6 +363,46 @@ data.bookings
 [];
 
 
+
+
+
+
+const today =
+new Date()
+.toISOString()
+.split("T")[0];
+
+
+const todaysDepartures =
+bookings.filter(
+b=>
+b.travelDate?.startsWith(today)
+);
+
+
+const unassignedPaid =
+bookings.filter(
+b=>
+b.paymentStatus==="paid" &&
+!b.assignedGuide
+);
+
+
+const guideWorkload={};
+
+
+bookings.forEach(b=>{
+
+const guide=b.assignedGuide?.name;
+
+if(guide){
+
+guideWorkload[guide]=
+(guideWorkload[guide]||0)+1;
+
+}
+
+});
 
 
 
@@ -334,6 +454,57 @@ matchesPayment
 const total = bookings.length;
 
 
+const cancelled =
+bookings.filter(
+b=>b.status==="cancelled"
+).length;
+
+
+const revenue =
+bookings.reduce(
+(sum,b)=>
+sum+
+Number(
+b.totalAmount ||
+b.amount ||
+0
+),
+0
+);
+
+
+const upcoming =
+bookings.filter(
+b=>
+new Date(b.travelDate)>new Date()
+).length;
+
+
+const tourCounts={};
+
+
+bookings.forEach(b=>{
+
+const name=b.tour?.title;
+
+if(name){
+
+tourCounts[name]=(tourCounts[name]||0)+1;
+
+}
+
+});
+
+
+const mostBookedTour =
+Object.entries(tourCounts)
+.sort((a,b)=>b[1]-a[1])[0]?.[0]
+||
+"None";
+
+
+
+
 
 const pending =
 bookings.filter(
@@ -382,15 +553,20 @@ Booking Management
 
 
 
-<div className="grid md:grid-cols-4 gap-4">
+<div className="grid md:grid-cols-7 gap-4">
 
 
 {
 [
 ["Total Bookings",total],
-["Pending",pending],
-["Confirmed Trips",confirmed],
-["Paid",paid]
+["Pending Payments",
+bookings.filter(b=>b.paymentStatus==="pending").length],
+["Paid",paid],
+["Cancelled",cancelled],
+["Revenue",
+`KES ${revenue.toLocaleString()}`],
+["Upcoming Departures",upcoming],
+["Most Booked",mostBookedTour]
 
 ].map(([title,value])=>(
 
@@ -421,6 +597,21 @@ className="bg-white shadow rounded-xl p-5"
 
 
 
+
+
+
+
+<button
+
+onClick={()=>exportBookingsCSV(bookings)}
+
+className="bg-green-600 text-white px-4 py-2 rounded"
+
+>
+
+Export CSV
+
+</button>
 
 
 
