@@ -588,36 +588,4 @@ export const getDashboardStats = async (req, res, next) => {
 
 
 
-// Get all agents
-export const getAgents = async (req,res)=>{
-
-try{
-
-const Agent = (await import("../models/User.js")).default;
-
-const agents = await Agent.find({
-role:"agent"
-})
-.select("-password")
-.sort({
-createdAt:-1
-});
-
-
-res.json({
-success:true,
-data:agents
-});
-
-
-}catch(error){
-
-res.status(500).json({
-success:false,
-message:error.message
-});
-
-}
-
-};
 

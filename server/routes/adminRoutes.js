@@ -8,7 +8,10 @@ getFinanceStats
 } from "../controllers/financeController.js";
 
 import {
-getAgents
+getAgents,
+getAgentById,
+approveAgent,
+updateAgentStatus
 } from "../controllers/adminAgentController.js";
 
 
@@ -233,8 +236,26 @@ agentBookingReport
 
 
 router.get(
-"/agents",
-getAgents
+  "/agents",
+  getAgents
+);
+
+
+router.get(
+  "/agents/:id",
+  getAgentById
+);
+
+
+router.put(
+  "/agents/:id/approve",
+  approveAgent
+);
+
+
+router.put(
+  "/agents/:id/status",
+  updateAgentStatus
 );
 
 

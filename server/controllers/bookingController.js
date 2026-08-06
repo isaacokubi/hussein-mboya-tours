@@ -1,6 +1,9 @@
 import mongoose from "mongoose";
 
 import Booking from "../models/Booking.js";
+import Commission from "../models/Commission.js";
+import Agent from "../models/Agent.js";
+
 import Tour from "../models/Tour.js";
 
 import {
@@ -680,6 +683,95 @@ paymentStatus;
 */
 
 if(paymentStatus==="paid"){
+
+
+/*
+|--------------------------------------------------------------------------
+| CREATE AGENT COMMISSION
+|--------------------------------------------------------------------------
+*/
+
+if(booking.agent){
+
+const existingCommission =
+await Commission.findOne({
+booking:booking._id
+});
+
+
+if(!existingCommission){
+
+
+const agent =
+await Agent.findById(
+booking.agent
+);
+
+
+if(agent){
+
+
+const rate =
+agent.commissionRate || 10;
+
+
+const amount =
+(
+booking.totalAmount *
+rate
+) / 100;
+
+
+
+await Commission.create({
+
+agent:agent._id,
+
+booking:booking._id,
+
+customer:booking.customer,
+
+tour:booking.tour,
+
+bookingAmount:
+booking.totalAmount,
+
+rate,
+
+amount,
+
+status:"pending",
+
+paymentMethod:
+paymentData.paymentMethod || "MPESA",
+
+paymentReference:
+paymentData.mpesaReceiptNumber || ""
+
+});
+
+
+
+agent.totalCommission += amount;
+
+agent.pendingCommission += amount;
+
+agent.walletBalance += amount;
+
+agent.totalSales += booking.totalAmount;
+
+agent.totalBookings += 1;
+
+
+await agent.save();
+
+
+}
+
+}
+
+}
+
 
 
 booking.status =
