@@ -244,3 +244,22 @@ export const notifyPaymentSuccess = async (
       paymentId: payment._id,
     },
   });
+
+export const sendEmail = async ({
+  to,
+  subject,
+  message
+}) => {
+
+  console.log("EMAIL NOTIFICATION");
+  console.log({
+    to,
+    subject,
+    message
+  });
+
+  return {
+    success:true
+  };
+
+};
