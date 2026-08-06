@@ -777,6 +777,10 @@ export const handleRefundResult = async(req,res,next)=>{
 
 try{
 
+const RefundAudit =
+(await import("../models/RefundAudit.js")).default;
+
+
 const Payment =
 (await import("../models/Payment.js")).default;
 
@@ -813,10 +817,38 @@ payment.refundStatus="completed";
 payment.refundedAt=new Date();
 
 
+
+await RefundAudit.findOneAndUpdate(
+
+{
+reference:conversationId
+},
+
+{
+status:"completed",
+completedAt:new Date()
+}
+
+);
+
+
 }
 else{
 
 payment.refundStatus="failed";
+
+
+await RefundAudit.findOneAndUpdate(
+
+{
+reference:conversationId
+},
+
+{
+status:"failed"
+}
+
+);
 
 }
 
