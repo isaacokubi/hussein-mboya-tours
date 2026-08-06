@@ -95,3 +95,77 @@ export const downloadInvoice = async(id)=>{
   return response;
 };
 
+
+
+/*
+|--------------------------------------------------------------------------
+| BOOKING REPORTING
+|--------------------------------------------------------------------------
+*/
+
+export const exportBookings = async(type="csv")=>{
+
+  const response = await api.get(
+    `/admin/bookings/export?type=${type}`,
+    {
+      responseType:"blob"
+    }
+  );
+
+  return response;
+
+};
+
+
+
+/*
+|--------------------------------------------------------------------------
+| CUSTOMER COMMUNICATION
+|--------------------------------------------------------------------------
+*/
+
+
+export const sendBookingNotification = async(
+ id,
+ payload
+)=>{
+
+ const {data}=await api.post(
+   `/admin/bookings/${id}/notify`,
+   payload
+ );
+
+ return data;
+
+};
+
+
+
+
+
+export const refundBooking = async(
+id,
+payload={}
+)=>{
+const {data}=await api.put(
+`/admin/bookings/${id}/refund`,
+payload
+);
+
+return data;
+};
+
+
+
+export const sendBookingNotification = async(
+id,
+payload
+)=>{
+const {data}=await api.post(
+`/admin/bookings/${id}/notify`,
+payload
+);
+
+return data;
+};
+
