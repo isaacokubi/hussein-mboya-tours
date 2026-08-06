@@ -1,5 +1,7 @@
 import Payment from "../models/Payment.js";
 import Booking from "../models/Booking.js";
+import {requestMpesaRefund}
+from "../services/mpesaRefundService.js";
 
 
 
@@ -222,13 +224,19 @@ next(error);
 
 
 
+
 export const refundPayment = async(req,res,next)=>{
 
 try{
 
 
 const payment =
-await Payment.findById(req.params.id);
+await Payment.findById(
+req.params.id
+)
+.populate("booking")
+.populate("customer");
+
 
 
 if(!payment){
@@ -245,11 +253,67 @@ message:"Payment not found"
 
 
 
-payment.status="refunded";
+if(payment.status==="refunded"){
 
-payment.refundStatus="completed";
+return res.status(400).json({
 
-payment.refundedAt=new Date();
+success:false,
+
+message:"Payment already refunded"
+
+});
+
+}
+
+
+
+const phone =
+payment.phoneNumber ||
+payment.phone ||
+payment.customer?.phone;
+
+
+
+if(!phone){
+
+return res.status(400).json({
+
+success:false,
+
+message:"Customer phone number missing"
+
+});
+
+}
+
+
+
+const refundResponse =
+await requestMpesaRefund({
+
+amount:
+payment.amount,
+
+phone,
+
+transactionId:
+payment.mpesaReceipt ||
+payment.checkoutRequestID ||
+payment._id
+
+});
+
+
+
+payment.refundStatus="processing";
+
+payment.refundReference =
+refundResponse.ConversationID ||
+refundResponse.OriginatorConversationID ||
+"";
+
+payment.refundRequestedAt =
+new Date();
 
 
 await payment.save();
@@ -258,20 +322,23 @@ await payment.save();
 
 if(payment.booking){
 
+
 const booking =
 await Booking.findById(
-payment.booking
+payment.booking._id
 );
+
 
 
 if(booking){
 
 booking.paymentStatus="refunded";
+
+booking.refundStatus="processing";
 
 booking.refundAmount =
 payment.amount;
 
-booking.refundStatus="completed";
 
 booking.refundedAt =
 new Date();
@@ -281,57 +348,8 @@ await booking.save();
 
 }
 
-}
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| SYNC BOOKING PAYMENT STATUS
-|--------------------------------------------------------------------------
-*/
-
-
-if(payment.booking){
-
-const Booking =
-(await import("../models/Booking.js")).default;
-
-
-const booking =
-await Booking.findById(
-payment.booking
-);
-
-
-if(booking){
-
-
-booking.paymentStatus="refunded";
-
-
-booking.refundStatus="completed";
-
-
-booking.refundAmount =
-payment.amount || 0;
-
-
-booking.refundedAt =
-new Date();
-
-
-await booking.save();
-
 
 }
-
-
-
-}
-
 
 
 
@@ -339,7 +357,10 @@ res.json({
 
 success:true,
 
-message:"Payment refunded successfully",
+message:
+"Refund request submitted",
+
+refundResponse,
 
 payment
 
@@ -353,5 +374,4 @@ next(error);
 }
 
 };
-
 

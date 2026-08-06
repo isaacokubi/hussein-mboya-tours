@@ -51,3 +51,21 @@ router.post(
 );
 
 export default router;
+
+/*
+|--------------------------------------------------------------------------
+| MPESA REFUND CALLBACKS
+|--------------------------------------------------------------------------
+*/
+
+router.post(
+"/refund/result",
+handleRefundResult
+);
+
+
+router.post(
+"/refund/timeout",
+handleRefundTimeout
+);
+
