@@ -138,43 +138,12 @@ s=>s.role==="driver"
 
 
 const vehicles =
-Array.isArray(vehicleResponse)
-?
-vehicleResponse
-:
-Array.isArray(vehicleResponse?.data)
-?
-vehicleResponse.data
-:
-Array.isArray(vehicleResponse?.data?.vehicles)
-?
-vehicleResponse.data.vehicles
-:
-Array.isArray(vehicleResponse?.vehicles)
-?
-vehicleResponse.vehicles
-:
-[];
+  vehicleResponse?.data?.data ||
+  [];
 
 
 
 
-console.log("VEHICLE RESPONSE FULL:", vehicleResponse);
-
-console.log(
-  "VEHICLE RESPONSE DATA:",
-  vehicleResponse?.data
-);
-
-console.log(
-  "VEHICLE RESPONSE DATA.DATA:",
-  vehicleResponse?.data?.data
-);
-
-console.log(
-  "VEHICLE RESPONSE DATA.VEHICLES:",
-  vehicleResponse?.data?.vehicles
-);
 
 /* ================= BOOKINGS ================= */
 
