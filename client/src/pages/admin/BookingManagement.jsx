@@ -101,24 +101,19 @@ const {
   queryFn:getVehicles
 });
 
-const guides =
-Array.isArray(staffResponse)
-?
-staffResponse
-:
-Array.isArray(staffResponse?.data)
-?
-staffResponse.data
-:
-Array.isArray(staffResponse?.data?.staff)
-?
-staffResponse.data.staff
-:
-Array.isArray(staffResponse?.staff)
-?
-staffResponse.staff
-:
-[];
+console.log("STAFF RESPONSE:", staffResponse);\n\nconst guides =
+  (
+    staffResponse?.data?.data ||
+    staffResponse?.data?.staff ||
+    staffResponse?.data ||
+    staffResponse ||
+    []
+  ).filter(
+    staff =>
+      staff.role === "tour_guide" ||
+      staff.role?.name === "tour_guide" ||
+      staff.role?.slug === "tour_guide"
+  );
 
 
 const drivers =
