@@ -6,12 +6,16 @@ import Notification from "../models/Notification.js";
 
 
 import {
-sendSMS,
-sendWhatsApp,
-sendEmail
+  sendSMS
+} from "../services/smsService.js";
 
-}
-from "../services/notificationService.js";
+import {
+  sendWhatsApp
+} from "../services/whatsappService.js";
+
+import {
+  sendEmail
+} from "../services/emailService.js";
 
 
 
