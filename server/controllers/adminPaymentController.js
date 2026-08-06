@@ -254,6 +254,23 @@ message:"Payment not found"
 
 
 
+if(
+payment.status!=="completed"
+){
+
+return res.status(400).json({
+
+success:false,
+
+message:
+"Only completed payments can be refunded"
+
+});
+
+}
+
+
+
 if(payment.status==="refunded"){
 
 return res.status(400).json({
@@ -287,6 +304,19 @@ message:"Customer phone number missing"
 
 }
 
+
+
+if(!payment.amount || payment.amount<=0){
+
+return res.status(400).json({
+
+success:false,
+
+message:"Invalid refund amount"
+
+});
+
+}
 
 
 const refundResponse =
