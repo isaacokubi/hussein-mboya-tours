@@ -1,4 +1,5 @@
 import http from "http";
+import mongoose from "mongoose";
 
 import app from "./app.js";
 
@@ -28,6 +29,8 @@ const io = new Server(server, {
 });
 
 initSocket(io);
+
+export { io };
 
 server.listen(env.PORT, () => {
 
