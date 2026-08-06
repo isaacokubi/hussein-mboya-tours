@@ -101,23 +101,15 @@ const {
   queryFn:getVehicles
 });
 
-console.log(
-  "STAFF RESPONSE FULL:",
-  JSON.stringify(staffResponse, null, 2)
-);
+
 
 const guides =
   (
     staffResponse?.data?.data ||
-    staffResponse?.data?.staff ||
     staffResponse?.data ||
-    staffResponse ||
     []
   ).filter(
-    staff =>
-      staff.role === "tour_guide" ||
-      staff.role?.name === "tour_guide" ||
-      staff.role?.slug === "tour_guide"
+    staff => staff.isGuide === true
   );
 
 
