@@ -92,48 +92,45 @@ staffResponse.staff
 
 
 
-const guides =
-staff.filter(
-(s)=>
-s &&
-(
-s.role==="tour_guide" ||
-s.position?.toLowerCase().includes("guide")
-)
-);
 
+const guides =
+Array.isArray(staffResponse)
+?
+staffResponse
+:
+Array.isArray(staffResponse?.data)
+?
+staffResponse.data
+:
+Array.isArray(staffResponse?.data?.staff)
+?
+staffResponse.data.staff
+:
+Array.isArray(staffResponse?.staff)
+?
+staffResponse.staff
+:
+[];
 
 
 const drivers =
-staff.filter(
-(s)=>
-s &&
-(
-s.role==="driver" ||
-s.position?.toLowerCase().includes("driver")
-)
-);
-
-
-
-
-
-
-
-
-/* ================= VEHICLES ================= */
-
-
-const {
-data:vehicleResponse
-}=useQuery({
-
-queryKey:["vehicles"],
-
-queryFn:getVehicles
-
-});
-
+Array.isArray(driverResponse)
+?
+driverResponse
+:
+Array.isArray(driverResponse?.data)
+?
+driverResponse.data
+:
+Array.isArray(driverResponse?.data?.drivers)
+?
+driverResponse.data.drivers
+:
+Array.isArray(driverResponse?.drivers)
+?
+driverResponse.drivers
+:
+[];
 
 
 const vehicles =
@@ -141,15 +138,19 @@ Array.isArray(vehicleResponse)
 ?
 vehicleResponse
 :
-vehicleResponse?.data ||
-vehicleResponse?.vehicles ||
+Array.isArray(vehicleResponse?.data)
+?
+vehicleResponse.data
+:
+Array.isArray(vehicleResponse?.data?.vehicles)
+?
+vehicleResponse.data.vehicles
+:
+Array.isArray(vehicleResponse?.vehicles)
+?
+vehicleResponse.vehicles
+:
 [];
-
-
-
-
-
-
 
 
 /* ================= BOOKINGS ================= */
@@ -166,6 +167,26 @@ queryKey:["admin-bookings"],
 queryFn:getBookings
 
 });
+
+
+const bookings =
+Array.isArray(data)
+?
+data
+:
+Array.isArray(data?.data)
+?
+data.data
+:
+Array.isArray(data?.data?.bookings)
+?
+data.data.bookings
+:
+Array.isArray(data?.bookings)
+?
+data.bookings
+:
+[];
 
 
 
@@ -359,21 +380,7 @@ Failed loading bookings
 
 
 
-const bookings =
 
-Array.isArray(data)
-?
-data
-:
-Array.isArray(data?.data)
-?
-data.data
-:
-Array.isArray(data?.bookings)
-?
-data.bookings
-:
-[];
 /* ================= DATE / OPERATIONS ================= */
 
 
@@ -2174,7 +2181,7 @@ Assign Guide
 
 {
 
-guides.map(g=>(
+(Array.isArray(guides) ? guides : []).map(g=>(
 
 
 <option
@@ -2273,7 +2280,7 @@ Assign Driver
 
 {
 
-drivers.map(d=>(
+(Array.isArray(drivers) ? drivers : []).map(d=>(
 
 
 <option
@@ -2360,7 +2367,7 @@ Assign Vehicle
 
 {
 
-vehicles.map(v=>(
+(Array.isArray(vehicles) ? vehicles : []).map(v=>(
 
 
 <option
