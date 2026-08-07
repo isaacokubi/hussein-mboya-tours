@@ -15,12 +15,13 @@ import { toast } from "react-toastify";
 import {
   getAdminTours,
   deleteTour,
-  updateTour,
 } from "../../api/adminTourApi";
 
 import Loader from "../../components/common/Loader";
 
 export default function TourManagement() {
+
+  // Preserve intentionally fetched values for future dashboard UI.
 
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -55,23 +56,6 @@ export default function TourManagement() {
   | DELETE TOUR
   |--------------------------------------------------------------------------
   */
-
-  
-
-const updateMutation = useMutation({
-
-  mutationFn: ({id,data}) =>
-    updateTour(id,data),
-
-  onSuccess:()=>{
-
-    refetch();
-
-  }
-
-});
-
-
 const deleteMutation = useMutation({
     mutationFn: deleteTour,
 

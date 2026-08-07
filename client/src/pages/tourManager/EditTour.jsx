@@ -3,7 +3,8 @@
 
 import {
     useState,
-    useEffect
+    useEffect,
+    useRef
 } from "react";
 
 
@@ -128,7 +129,9 @@ const EditTour =()=>{
 
     const [form,setForm] = useState(null);
 
-    const [formInitialized,setFormInitialized] = useState(false);
+    const formInitialized = useRef(false);
+
+    
 
 
 
@@ -240,7 +243,7 @@ const EditTour =()=>{
 
     useEffect(()=>{
 
-        if(tourData && !formInitialized){
+        if(tourData && !formInitialized.current){
 
             console.log(
                 "SETTING TOUR FORM:",
@@ -371,34 +374,24 @@ const EditTour =()=>{
 
 
         saveTour(payload);
+    };
 
-
-
-
-return (
+    if (tourLoading) {
+        return (
             <div className="p-6">
                 Loading tour...
             </div>
         );
     }
 
+    if (!form) {
+        return (
+            <div className="p-10 text-center">
+                Loading tour...
+            </div>
+        );
+    }
 
-    return (
-
-
-        <div className="
-            p-10
-            text-center
-        ">
-
-
-            Loading tour...
-
-
-        </div>
-
-
-    );
 
 
 

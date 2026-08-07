@@ -1,6 +1,6 @@
 import Navbar from "./Navbar";
 import Footer from "./Footer";
-import ScrollToTop from "./ScrollToTop";
+import ScrollToTop from "../common/ScrollToTop";
 
 export default function MainLayout({ children }) {
   return (

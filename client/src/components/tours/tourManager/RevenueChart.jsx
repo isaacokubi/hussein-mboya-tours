@@ -10,7 +10,7 @@ import {
 
 import { useQuery } from "@tanstack/react-query";
 
-import { getRevenueAnalytics } from "../../api/analyticsApi";
+import { getRevenueAnalytics } from "../../../api/analyticsApi";
 
 export default function RevenueChart() {
   const {

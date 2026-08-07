@@ -1,6 +1,7 @@
 // client/src/pages/tourManager/TourAnalytics.jsx
 
 import { useQuery } from "@tanstack/react-query";
+import { getAnalytics } from "../../api/analyticsApi";
 
 
 export default function TourAnalytics() {

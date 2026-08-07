@@ -1,7 +1,7 @@
 import { Outlet } from "react-router-dom";
 
-import AgentSidebar from "../components/agent/AgentSidebar";
-import AgentHeader from "../components/agent/AgentHeader";
+import AgentSidebar from "../agent/AgentSidebar";
+import AgentHeader from "../agent/AgentHeader";
 
 export default function AgentLayout() {
   return (

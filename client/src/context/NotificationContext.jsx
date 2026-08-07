@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 // client/src/context/NotificationContext.jsx
 
 import {
@@ -133,9 +134,9 @@ useEffect(()=>{
 
 
 
-  setSocket(
-    newSocket
-  );
+  queueMicrotask(() => {
+    setSocket(newSocket);
+  });
 
 
 

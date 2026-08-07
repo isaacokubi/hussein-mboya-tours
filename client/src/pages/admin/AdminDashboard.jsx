@@ -27,7 +27,7 @@ import { getSystemHealth } from "../../api/admin/systemHealthApi";
 
 export default function AdminDashboard() {
 
-  const { data: paymentData } = useQuery({
+  useQuery({
     queryKey: ["adminPaymentStats"],
     queryFn: getPaymentStats,
     staleTime: 300000,
@@ -112,13 +112,6 @@ const paymentStats =
       pending: 0,
       failed: 0
     };
-
-
-const roles =
-  rolesData?.roles ||
-  [];
-
-
 const systemHealth =
   healthData?.system ||
   {};
@@ -133,12 +126,6 @@ const systemHealth =
     destinations = 0,
 
     revenue = 0,
-
-    monthlyRevenue = [],
-
-    status = [],
-
-    statusData = [],
 
     popularTours = [],
 

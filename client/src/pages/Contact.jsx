@@ -1,6 +1,6 @@
 import { Phone, Mail, MapPin, Send, MessageCircle, Globe,Clock } from "lucide-react";
 
-import { FaFacebook, FaInstagram, FaWhatsapp } from "react-icons/fa";
+import { FaFacebook, FaInstagram } from "react-icons/fa";
 
 import { motion } from "framer-motion";
 import { useState } from "react";

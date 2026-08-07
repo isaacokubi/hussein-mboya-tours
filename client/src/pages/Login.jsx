@@ -156,38 +156,40 @@ export default function Login() {
 
 
       case "guide":
+          navigate("/guide/dashboard");
+          break;
 
-      case "tourguide":
-
-        navigate("/guide/dashboard");
-
-        break;
+        case "tourguide":
+          navigate("/guide/dashboard");
+          break;
 
 
 
 
 
       case "manager":
+          navigate("/tour-manager/dashboard");
+          break;
 
-      case "tourmanager":
-
-        navigate("/tour-manager/dashboard");
-
-        break;
+        case "tourmanager":
+          navigate("/tour-manager/dashboard");
+          break;
 
 
 
 
 
       case "customer":
+          navigate("/dashboard");
+          break;
 
-      case "user":
+        case "user":
+          navigate("/dashboard");
+          break;
 
-      default:
-
-        navigate("/dashboard");
-
-        break;
+        default:
+          navigate("/dashboard");
+          break;
 
 
 

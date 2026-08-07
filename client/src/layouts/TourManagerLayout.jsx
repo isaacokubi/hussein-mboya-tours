@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
     Menu,
@@ -29,11 +29,13 @@ const TourManagerLayout = () => {
 
     // Close sidebar after navigation
 
-    useEffect(()=>{
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setMobileOpen(false);
+        }, 0);
 
-        setMobileOpen(false);
-
-    },[location]);
+        return () => clearTimeout(timer);
+    }, [location]);
 
 
 

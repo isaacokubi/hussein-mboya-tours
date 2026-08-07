@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import {
   createContext,
   useContext,
@@ -32,9 +33,9 @@ export function CartProvider({
 
     if(savedCart){
 
-      setCart(
-        JSON.parse(savedCart)
-      );
+      queueMicrotask(() => {
+        setCart(JSON.parse(savedCart));
+      });
 
     }
 

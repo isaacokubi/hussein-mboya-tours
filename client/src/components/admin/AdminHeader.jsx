@@ -27,7 +27,7 @@ return JSON.parse(
 
 }
 
-catch(error){
+catch {
 
 return {};
 

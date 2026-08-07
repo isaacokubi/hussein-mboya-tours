@@ -108,7 +108,7 @@ const HusseinAIWidget = () => {
 
     }
 
-    catch(error){
+    catch {
 
 
       setMessages(prev => [

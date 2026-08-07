@@ -20,7 +20,7 @@ export default function PermissionGuard({
 
 
 
-  let user = null;
+  let user;
 
 
   try {
@@ -32,7 +32,7 @@ export default function PermissionGuard({
 
   }
 
-  catch(error){
+  catch {
 
     user = null;
 

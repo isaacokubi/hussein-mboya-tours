@@ -57,7 +57,7 @@ payments.completed
 label="Pending"
 
 value={
-paymentStats.pending
+payments.pending
 }
 
 />
@@ -69,7 +69,7 @@ paymentStats.pending
 label="Failed"
 
 value={
-paymentStats.failed
+payments.failed
 }
 
 />

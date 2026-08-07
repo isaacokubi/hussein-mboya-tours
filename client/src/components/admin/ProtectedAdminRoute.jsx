@@ -34,7 +34,7 @@ localStorage.getItem("user")
 
 }
 
-catch(error){
+catch {
 
 
 localStorage.removeItem("user");

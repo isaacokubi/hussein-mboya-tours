@@ -4,7 +4,7 @@ import {
 
 import {
     getRoles
-} from "../../../api/admin/rolesApi";
+} from "../../admin/rolesApi.js";
 
 
 

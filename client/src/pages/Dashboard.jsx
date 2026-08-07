@@ -13,7 +13,16 @@ export default function Dashboard() {
     .toString()
     .toLowerCase();
 
-  /*
+  
+
+const { data, isLoading, error } = useQuery({
+    queryKey: ["my-bookings", user?._id],
+
+    queryFn: getMyBookings,
+
+    enabled: !!user,
+  });
+/*
   |--------------------------------------------------------------------------
   | ROLE REDIRECTS
   |--------------------------------------------------------------------------
@@ -44,16 +53,7 @@ export default function Dashboard() {
   | CUSTOMER BOOKINGS
   |--------------------------------------------------------------------------
   */
-
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["my-bookings", user?._id],
-
-    queryFn: getMyBookings,
-
-    enabled: !!user,
-  });
-
-  if (isLoading) {
+if (isLoading) {
     return (
       <div
         className="
@@ -90,23 +90,31 @@ export default function Dashboard() {
   |--------------------------------------------------------------------------
   */
 
-  let bookings = [];
+  const bookings = (() => {
+    if (Array.isArray(data)) {
+      return data;
+    }
 
-  if (Array.isArray(data)) {
-    bookings = data;
-  } else if (Array.isArray(data?.bookings)) {
-    bookings = data.bookings;
-  } else if (Array.isArray(data?.data)) {
-    bookings = data.data;
-  } else if (Array.isArray(data?.data?.bookings)) {
-    bookings = data.data.bookings;
-  } else if (Array.isArray(data?.results)) {
-    bookings = data.results;
-  } else {
+    if (Array.isArray(data?.bookings)) {
+      return data.bookings;
+    }
+
+    if (Array.isArray(data?.data)) {
+      return data.data;
+    }
+
+    if (Array.isArray(data?.data?.bookings)) {
+      return data.data.bookings;
+    }
+
+    if (Array.isArray(data?.results)) {
+      return data.results;
+    }
+
     console.warn("Unexpected bookings response:", data);
 
-    bookings = [];
-  }
+    return [];
+  })();
 
   console.log("CUSTOMER BOOKINGS ARRAY:", bookings);
 

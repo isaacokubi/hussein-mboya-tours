@@ -14,14 +14,6 @@ export default function DestinationsSection() {
 
 
 
-  useEffect(() => {
-
-    loadDestinations();
-
-  }, []);
-
-
-
   const loadDestinations = async () => {
 
     try {
@@ -82,6 +74,14 @@ export default function DestinationsSection() {
     }
 
   };
+
+useEffect(() => {
+    void Promise.resolve().then(() => loadDestinations());
+  }, []);
+
+
+
+  
 
 
 

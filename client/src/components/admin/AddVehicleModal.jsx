@@ -53,78 +53,35 @@ const [form,setForm]=useState({
 
 
 
-useEffect(()=>{
+const loadDrivers = async () => {
+    try {
+        const res = await getDrivers();
 
+        setDrivers(
+            res.drivers || []
+        );
+    } catch (error) {
+        console.error(error);
+
+        setError(
+            "Failed to load drivers"
+        );
+    }
+};
+
+useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadDrivers();
+}, []);
 
-},[]);
-
-
-
-
-
-
-
-const loadDrivers = async()=>{
-
-try{
-
-
-const res =
-await getDrivers();
-
-
-setDrivers(
-    res.drivers || []
-);
-
-
-}
-
-catch(error){
-
-console.error(error);
-
-setError(
-    "Failed to load drivers"
-);
-
-}
-
-
+const handleChange = (e) => {
+    setForm({
+        ...form,
+        [e.target.name]: e.target.value
+    });
 };
 
-
-
-
-
-
-
-
-
-const handleChange=(e)=>{
-
-
-setForm({
-
-...form,
-
-[e.target.name]:e.target.value
-
-});
-
-
-};
-
-
-
-
-
-
-
-
-
-const submit = async(e)=>{
+const submit = async (e) => {
 
 
 e.preventDefault();
