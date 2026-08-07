@@ -32,7 +32,7 @@ router.use(protect);
 
 router.get(
   "/dashboard",
-  roleMiddleware(["admin", "tour_manager"]),
+  roleMiddleware(["admin", "tour_manager", "tourmanager", "manager"]),
   getTourManagerDashboard
 );
 
