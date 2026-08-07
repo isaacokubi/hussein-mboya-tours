@@ -4,7 +4,7 @@ import express from "express";
 
 import {
   getCRMStats,
-} from "../controllers/crmController.js";
+} from "../controllers/crmControllers.js";
 
 import {
   protect,

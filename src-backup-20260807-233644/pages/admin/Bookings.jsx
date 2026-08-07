@@ -1,0 +1,214 @@
+import {
+    useQuery
+}
+from "@tanstack/react-query";
+
+
+import {
+    getAdminBookings
+}
+from "../../api/adminApi";
+
+
+import DataTable from "../../components/admin/DataTable";
+
+
+
+
+export default function Bookings(){
+
+
+    const {
+        data,
+        isLoading
+
+    } = useQuery({
+
+        queryKey:[
+            "adminBookings"
+        ],
+
+        queryFn:getAdminBookings
+
+    });
+
+
+
+
+    if(isLoading)
+
+        return (
+
+            <p className="p-6">
+
+                Loading bookings...
+
+            </p>
+
+        );
+
+
+
+
+    const bookings =
+
+        data?.data ||
+
+        data ||
+
+        [];
+
+
+
+
+    return (
+
+        <div className="p-6">
+
+
+            <h1
+                className="
+                    text-3xl
+                    font-bold
+                    mb-6
+                "
+            >
+
+                Booking Management
+
+            </h1>
+
+
+
+
+            <DataTable
+
+
+                data={bookings}
+
+
+                columns={[
+
+
+                {
+
+                    label:"Customer",
+
+                    key:"customer",
+
+                    render:(b)=>
+
+                        b.customer?.name ||
+
+                        b.customerSnapshot?.name ||
+
+                        "-"
+
+                },
+
+
+
+                {
+
+                    label:"Tour",
+
+                    key:"tour",
+
+                    render:(b)=>
+
+                        b.tour?.title ||
+
+                        "-"
+
+                },
+
+
+
+                {
+
+                    label:"Amount",
+
+                    key:"totalAmount",
+
+                    render:(b)=>
+
+                        `Ksh ${
+                            Number(
+                                b.totalAmount ||
+                                b.amount ||
+                                0
+                            ).toLocaleString()
+                        }`
+
+                },
+
+
+
+                {
+
+                    label:"Payment",
+
+                    key:"paymentStatus",
+
+                    render:(b)=>{
+
+
+                        if(
+                            typeof b.paymentStatus==="object"
+                        ){
+
+                            return (
+
+                                b.paymentStatus?.paymentStatus ||
+
+                                b.paymentStatus?.status ||
+
+                                "Pending"
+
+                            );
+
+                        }
+
+
+                        return (
+
+                            b.paymentStatus ||
+
+                            "Pending"
+
+                        );
+
+                    }
+
+                },
+
+
+
+                {
+
+                    label:"Status",
+
+                    key:"status",
+
+                    render:(b)=>
+
+                        b.status ||
+
+                        b.status ||
+
+                        "Pending"
+
+                }
+
+
+                ]}
+
+
+            />
+
+
+        </div>
+
+    );
+
+}
