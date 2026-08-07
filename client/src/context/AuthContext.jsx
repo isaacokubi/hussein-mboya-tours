@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 // client/src/context/AuthContext.jsx
 
 import {
@@ -277,9 +278,9 @@ const savedToken =
 if(savedToken){
 
 
-  setToken(
-    savedToken
-  );
+  queueMicrotask(() => {
+    setToken(savedToken);
+  });
 
 
 

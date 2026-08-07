@@ -1,5 +1,4 @@
 import {
-  Award,
   Globe2,
   HeartHandshake,
   MapPin,

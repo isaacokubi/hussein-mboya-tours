@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import { requestRefund } from "../../api/financeApi";
+import { useState } from "react";
 
 import {
   useQuery,
@@ -19,8 +20,7 @@ import {
   updateBookingStatus,
   updateBookingPayment,
   assignBookingResources,
-  sendBookingNotification,
-  refundBooking
+  sendBookingNotification
 } from "../../api/adminBookingApi";
 
 
@@ -70,30 +70,6 @@ queryKey:["staff"],
 queryFn:getStaff
 
 });
-
-
-
-const staff =
-Array.isArray(staffResponse)
-?
-staffResponse
-:
-Array.isArray(staffResponse?.data)
-?
-staffResponse.data
-:
-Array.isArray(staffResponse?.staff)
-?
-staffResponse.staff
-:
-[];
-
-
-
-
-
-
-
 const {
   data: vehicleResponse
 } = useQuery({
@@ -656,45 +632,6 @@ b=>
 new Date(b.travelDate) > new Date()
 
 ).length;
-
-
-
-
-
-
-
-const pending =
-
-bookings.filter(
-
-b=>
-
-b.status==="pending"
-
-).length;
-
-
-
-
-
-
-const confirmed =
-
-bookings.filter(
-
-b=>
-
-b.status==="confirmed"
-
-).length;
-
-
-
-
-
-
-
-
 const paid =
 
 bookings.filter(
@@ -762,14 +699,10 @@ tourCounts[name] =
 
 const mostBookedTour =
 
-Object.entries(tourCounts)
-
-.sort(
+Object.entries(tourCounts).sort(
 (a,b)=>
 b[1]-a[1]
-)
-
-[0]?.[0]
+)[0]?.[0]
 
 ||
 
@@ -866,93 +799,6 @@ count=>count>1
 )
 
 .length;
-
-
-
-
-
-
-
-
-const handleBookingAction=(action,b)=>{
-
-
-if(action==="confirm"){
-
-statusMutation.mutate({
-
-id:b._id,
-
-status:"confirmed"
-
-});
-
-}
-
-
-
-if(action==="cancel"){
-
-statusMutation.mutate({
-
-id:b._id,
-
-status:"cancelled"
-
-});
-
-}
-
-
-
-if(action==="complete"){
-
-statusMutation.mutate({
-
-id:b._id,
-
-status:"completed"
-
-});
-
-}
-
-
-
-if(action==="refund"){
-
-paymentMutation.mutate({
-
-id:b._id,
-
-status:"refunded"
-
-});
-
-}
-
-
-
-if(action==="notify"){
-
-notificationMutation.mutate({
-
-id:b._id,
-
-payload:{
-
-type:"confirmation",
-
-channel:"sms"
-
-}
-
-});
-
-}
-
-
-};
 /* ================= PAGE UI ================= */
 
 

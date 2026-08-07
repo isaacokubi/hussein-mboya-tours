@@ -27,11 +27,6 @@ export default function CategoriesSection() {
   const [loading, setLoading] = useState(true);
 
 
-  useEffect(() => {
-    loadCategories();
-  }, []);
-
-
   const loadCategories = async () => {
 
     try {
@@ -68,6 +63,13 @@ export default function CategoriesSection() {
     }
 
   };
+
+useEffect(() => {
+    void Promise.resolve().then(() => loadCategories());
+  }, []);
+
+
+  
 
 
   if (loading) {

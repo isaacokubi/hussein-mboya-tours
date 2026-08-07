@@ -12,7 +12,6 @@ import {
     Wallet,
     UserCog,
     Car,
-    FileText,
     Star,
     Image,
     Settings,

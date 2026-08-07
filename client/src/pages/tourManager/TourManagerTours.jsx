@@ -1,4 +1,4 @@
-import React, {
+import {
     useEffect,
     useState
 } from "react";
@@ -120,13 +120,13 @@ setLoading(false);
 
 
 
-useEffect(()=>{
+useEffect(() => {
+    const loadTours = async () => {
+      await fetchTours();
+    };
 
-
-fetchTours();
-
-
-},[]);
+    loadTours();
+  }, []);
 
 
 

@@ -15,7 +15,7 @@ from "lucide-react";
 
 
 import DashboardCard
-from "../../components/common/DashboardCard";
+from "./DashboardCard";
 
 
 

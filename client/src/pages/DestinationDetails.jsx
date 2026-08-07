@@ -1,6 +1,6 @@
 
-import React,{useEffect} from "react";
-import {useParams,Link} from "react-router-dom";
+import{useEffect} from "react";
+import {useParams,Link,useNavigate} from "react-router-dom";
 import {useQuery} from "@tanstack/react-query";
 import api from "../api/axios";
 
@@ -9,6 +9,8 @@ const DestinationDetails=()=>{
 
 
 const {slug}=useParams();
+
+const navigate = useNavigate();
 
 
 

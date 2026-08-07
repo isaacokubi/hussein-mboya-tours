@@ -1,7 +1,7 @@
 import { Bell } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
-import { getNotifications } from "../../api/notificationApi";
+import { getNotifications } from "../../../api/notificationApi";
 
 export default function Notifications() {
   const {

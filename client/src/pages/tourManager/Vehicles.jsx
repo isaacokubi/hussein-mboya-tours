@@ -1,4 +1,3 @@
-import React from "react";
 
 
 import {
@@ -79,7 +78,7 @@ refetch();
 
 }
 
-catch(error){
+catch{
 
 
 toast.error(

@@ -1,7 +1,7 @@
 // client/src/hooks/useNotifications.js
 
 import { useEffect, useState } from "react";
-import socket from "../services/socket";
+import socket from "../socket/socket.js";
 import { toast } from "react-toastify";
 
 

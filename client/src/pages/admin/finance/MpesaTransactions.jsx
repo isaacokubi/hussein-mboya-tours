@@ -108,6 +108,8 @@ export default function MpesaTransactions(){
 
         [];
 
+    const transactions = payments;
+
 
 
 

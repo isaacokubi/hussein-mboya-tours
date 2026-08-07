@@ -22,6 +22,7 @@ import Contact from "../pages/Contact";
 // ============================================================
 
 import Dashboard from "../pages/Dashboard";
+import MyBookings from "../pages/MyBookings";
 import BookingDetails from "../pages/BookingDetails";
 import Profile from "../pages/Profile";
 import Checkout from "../pages/Checkout";
@@ -37,6 +38,7 @@ import AgentBookings from "../pages/agent/AgentBookings";
 import BookingManagement from "../pages/admin/BookingManagement";
 import Reports from "../pages/admin/Reports";
 import AgentCustomers from "../pages/agent/AgentCustomers";
+import Customers from "../pages/admin/Customers";
 
 // ============================================================
 // TOUR GUIDE
@@ -71,6 +73,7 @@ import TourAvailability from "../pages/tourManager/TourAvailability";
 
 import TourAnalytics from "../pages/tourManager/TourAnalytics";
 
+import TourReports from "../pages/tourManager/TourReports";
 
 import TourAssignments from "../pages/tourManager/TourAssignments";
 
@@ -85,6 +88,7 @@ import AdminDashboard from "../pages/admin/AdminDashboard";
 import UserManagement from "../pages/admin/UserManagement";
 
 import TourManagement from "../pages/admin/TourManagement";
+import ManageTours from "../pages/admin/ManageTours";
 import DestinationManagement from "../pages/admin/DestinationManagement";
 import CreateDestination from "../pages/admin/CreateDestination";
 import EditDestination from "../pages/admin/EditDestination";
