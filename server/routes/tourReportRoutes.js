@@ -36,7 +36,7 @@ router.use(protect);
  */
 router.get(
   "/",
-  roleMiddleware(["admin", "tour_manager"]),
+  roleMiddleware("admin", "tour_manager"),
   getTourReports
 );
 

@@ -8,7 +8,8 @@ import {
   getTours,
   updateTour,
   deleteTour,
- } from "../controllers/tourManagerController.js";
+  assignTourGuide,
+} from "../controllers/tourManagerController.js";
 
 import {
   createItinerary,
@@ -77,6 +78,17 @@ router.get("/tours", getTours);
 router.post("/tours", createTour);
 router.put("/tours/:id", updateTour);
 router.delete("/tours/:id", deleteTour);
+
+/*
+|--------------------------------------------------------------------------
+| GUIDE / RESOURCE ASSIGNMENT
+|--------------------------------------------------------------------------
+|
+| The audited frontend submits { tourId, guideId } to this endpoint.
+|--------------------------------------------------------------------------
+*/
+
+router.put("/assign-guide", assignTourGuide);
 
 /*
 |--------------------------------------------------------------------------

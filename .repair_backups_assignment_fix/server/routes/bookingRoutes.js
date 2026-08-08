@@ -72,13 +72,13 @@ router.put(
 
 router.get(
   "/confirmed",
-  roleMiddleware("admin", "tour_manager"),
+  roleMiddleware(["admin", "tour_manager"]),
   getConfirmedBookings
 );
 
 router.get(
   "/admin",
-  roleMiddleware("admin", "tour_manager"),
+  roleMiddleware(["admin", "tour_manager"]),
   getAllBookings
 );
 

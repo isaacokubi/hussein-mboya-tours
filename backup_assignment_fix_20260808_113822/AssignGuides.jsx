@@ -11,7 +11,9 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 
-import { toast } from "react-toastify";
+import {
+  toast,
+} from "react-toastify";
 
 import {
   getGuides,
@@ -47,29 +49,37 @@ const AssignGuides = () => {
 
   /*
   |--------------------------------------------------------------------------
-  | LOAD AVAILABLE GUIDES
+  | LOAD GUIDES
   |--------------------------------------------------------------------------
   */
 
   const {
-    data: guideData,
+    data,
     isLoading: guidesLoading,
+    isError: guidesError,
   } = useQuery({
     queryKey: ["availableGuides"],
     queryFn: getGuides,
   });
 
+  /*
+  |--------------------------------------------------------------------------
+  | NORMALIZE RESPONSES
+  |--------------------------------------------------------------------------
+  */
+
   const guides =
-    guideData?.guides ||
-    guideData?.data?.guides ||
-    guideData?.data ||
-    guideData ||
+    data?.guides ||
+    data?.data?.guides ||
+    data?.data ||
+    data ||
     [];
 
   const tour =
     tourData?.tour ||
     tourData?.data?.tour ||
     tourData?.data ||
+    tourData ||
     null;
 
   /*
@@ -83,7 +93,10 @@ const AssignGuides = () => {
     isPending,
   } = useMutation({
     mutationFn: (guideId) =>
-      assignGuide(id, guideId),
+      assignGuide(
+        id,
+        guideId
+      ),
 
     onSuccess: async () => {
       toast.success(
@@ -100,10 +113,6 @@ const AssignGuides = () => {
 
       await queryClient.invalidateQueries({
         queryKey: ["assignment-tours"],
-      });
-
-      await queryClient.invalidateQueries({
-        queryKey: ["assignment-guides"],
       });
 
       navigate(
@@ -127,40 +136,35 @@ const AssignGuides = () => {
   |--------------------------------------------------------------------------
   */
 
-  if (tourLoading || guidesLoading) {
+  if (
+    tourLoading ||
+    guidesLoading
+  ) {
     return (
       <div className="p-6">
-        Loading assignment data...
+        Loading...
       </div>
     );
   }
 
   /*
   |--------------------------------------------------------------------------
-  | ERROR
+  | ERRORS
   |--------------------------------------------------------------------------
   */
 
-  if (tourError || !tour) {
+  if (tourError) {
     return (
-      <div className="p-6">
-        <div className="rounded-xl bg-white p-6 shadow">
-          <h1 className="text-xl font-bold text-red-600">
-            Failed to load tour
-          </h1>
+      <div className="p-6 text-red-600">
+        Failed to load tour.
+      </div>
+    );
+  }
 
-          <button
-            type="button"
-            onClick={() =>
-              navigate(
-                "/tour-manager/tours"
-              )
-            }
-            className="mt-4 rounded-lg bg-gray-800 px-4 py-2 text-white"
-          >
-            Back to Tours
-          </button>
-        </div>
+  if (guidesError) {
+    return (
+      <div className="p-6 text-red-600">
+        Failed to load guides.
       </div>
     );
   }
@@ -174,42 +178,47 @@ const AssignGuides = () => {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
 
-      <div className="mx-auto max-w-5xl">
+      <div className="max-w-6xl mx-auto">
 
-        <div className="mb-6 rounded-xl bg-white p-6 shadow">
+        <div className="bg-white rounded-xl shadow p-6">
 
           <h1 className="text-3xl font-bold">
             Assign Guide
           </h1>
 
-          <p className="mt-2 text-gray-600">
-            Tour:
-            <strong className="ml-2">
-              {tour.title || "Untitled Tour"}
-            </strong>
-          </p>
-
-          {tour.assignedGuide && (
-            <p className="mt-2 text-sm text-gray-500">
-              A guide is currently assigned.
-              Selecting another guide will replace
-              the existing assignment.
+          {tour && (
+            <p className="mt-2 text-gray-600">
+              Tour:
+              <strong className="ml-2">
+                {tour.title || "Untitled Tour"}
+              </strong>
             </p>
           )}
 
         </div>
 
-        {guides.length === 0 ? (
+        <div className="
+          grid
+          md:grid-cols-3
+          gap-5
+          mt-6
+        ">
 
-          <div className="rounded-xl bg-white p-6 shadow">
-            No available guides found.
-          </div>
+          {guides.length === 0 ? (
 
-        ) : (
+            <div className="
+              bg-white
+              rounded-xl
+              shadow
+              p-5
+              md:col-span-3
+            ">
+              No guides available.
+            </div>
 
-          <div className="grid gap-5 md:grid-cols-3">
+          ) : (
 
-            {guides.map((guide) => {
+            guides.map((guide) => {
 
               const guideName =
                 guide.name ||
@@ -221,21 +230,36 @@ const AssignGuides = () => {
               return (
                 <div
                   key={guide._id}
-                  className="rounded-xl bg-white p-5 shadow"
+                  className="
+                    bg-white
+                    shadow
+                    rounded-xl
+                    p-5
+                  "
                 >
 
-                  <h2 className="text-xl font-bold">
+                  <h2 className="
+                    font-bold
+                    text-xl
+                  ">
                     {guideName}
                   </h2>
 
-                  <p className="mt-2 text-gray-600">
+                  <p className="
+                    mt-2
+                    text-gray-600
+                  ">
                     Experience:{" "}
                     {guide.experience || 0} years
                   </p>
 
                   {guide.availability && (
-                    <p className="mt-1 text-sm text-gray-500">
-                      Status:{" "}
+                    <p className="
+                      mt-1
+                      text-sm
+                      text-gray-500
+                    ">
+                      Availability:{" "}
                       {guide.availability}
                     </p>
                   )}
@@ -249,7 +273,16 @@ const AssignGuides = () => {
                       isPending ||
                       !guide._id
                     }
-                    className="mt-4 w-full rounded-lg bg-green-700 px-4 py-3 font-semibold text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="
+                      bg-green-700
+                      hover:bg-green-800
+                      disabled:opacity-50
+                      text-white
+                      p-2
+                      rounded
+                      mt-4
+                      w-full
+                    "
                   >
                     {isPending
                       ? "Assigning..."
@@ -258,23 +291,11 @@ const AssignGuides = () => {
 
                 </div>
               );
-            })}
+            })
 
-          </div>
+          )}
 
-        )}
-
-        <button
-          type="button"
-          onClick={() =>
-            navigate(
-              "/tour-manager/tours"
-            )
-          }
-          className="mt-6 rounded-lg bg-gray-700 px-5 py-3 text-white hover:bg-gray-800"
-        >
-          Back to Tours
-        </button>
+        </div>
 
       </div>
 

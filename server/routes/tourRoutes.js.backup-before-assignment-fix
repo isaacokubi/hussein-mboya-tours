@@ -54,11 +54,6 @@ router.get("/slug/:slug", getTourBySlug);
 // GET /api/tours/:id/availability
 router.get("/:id/availability", getTourAvailability);
 
-// GET SINGLE TOUR
-// GET /api/tours/:id
-// Public read-only tour details.
-router.get("/:id", getTourById);
-
 /*
 |--------------------------------------------------------------------------
 | PROTECTED TOUR MANAGER ROUTES
@@ -71,6 +66,10 @@ router.use(tourManagerOnly);
 // GET MANAGER TOURS
 // GET /api/tours/manager
 router.get("/manager", getManagerTours);
+
+// GET SINGLE TOUR
+// GET /api/tours/:id
+router.get("/:id", getTourById);
 
 // CREATE TOUR
 // POST /api/tours

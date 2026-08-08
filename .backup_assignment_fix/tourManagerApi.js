@@ -93,14 +93,11 @@ export const deleteTour = async (id) => {
 // ============================================================
 
 export const assignGuide = async (
-  tourId,
-  guideId
+  assignmentData
 ) => {
   const { data } = await api.put(
-    `/tour-assignments/${tourId}/assign`,
-    {
-      guideId,
-    }
+    "/tourmanager/assign-guide",
+    assignmentData
   );
 
   return data;
