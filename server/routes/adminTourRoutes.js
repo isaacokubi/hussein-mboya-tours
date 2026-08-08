@@ -1,3 +1,4 @@
+
 // server/routes/adminTourRoutes.js
 
 import express from "express";

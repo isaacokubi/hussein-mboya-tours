@@ -1,3 +1,4 @@
+
 // server/routes/adminDestinationRoutes.js
 
 import express from "express";
