@@ -1,4 +1,11 @@
-# ==============================
+# Repair script backups
+.audit-fix-backup-*/
+.fix-backup-*/
+.module-completion-backup-*/
+
+# Audit reports
+REAL_COMPLETION_REPORT.txt
+DEEP_REPAIR_REPORT.txt# ==============================
 # Dependencies
 # ==============================
 
