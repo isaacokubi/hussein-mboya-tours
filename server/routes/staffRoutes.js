@@ -9,6 +9,7 @@ import {
   updateStaff,
   deleteStaff,
   getDrivers,
+  getGuides,
 } from "../controllers/staffController.js";
 
 import {
@@ -37,6 +38,12 @@ router.use(protect);
 | Must come BEFORE "/:id"
 |
 */
+
+router.get(
+  "/guides",
+  roleMiddleware("admin", "tour_manager"),
+  getGuides
+);
 
 router.get(
   "/drivers",

@@ -1,4 +1,4 @@
-// client/src/pages/tourManager/AssignGuide.jsx
+// client/src/pages/tourManager/AssignVehicle.jsx
 
 
 import {
@@ -26,9 +26,9 @@ import {
 
 import {
 
-    getGuides,
+    getVehicles,
 
-    assignGuide,
+    assignVehicle,
 
     getTour
 
@@ -43,7 +43,7 @@ from "../../api/tourApi";
 
 
 
-const AssignGuide =()=>{
+const AssignVehicle =()=>{
 
 
 
@@ -68,11 +68,12 @@ const AssignGuide =()=>{
 
 
 
+
     const [
 
-        guide,
+        vehicle,
 
-        setGuide
+        setVehicle
 
     ] = useState("");
 
@@ -86,7 +87,7 @@ const AssignGuide =()=>{
 
     const {
 
-        data:guidesData
+        data:vehicleData
 
     } = useQuery({
 
@@ -94,17 +95,18 @@ const AssignGuide =()=>{
 
         queryKey:[
 
-            "guides"
+            "vehicles"
 
         ],
 
 
 
-        queryFn:getGuides
+        queryFn:getVehicles
 
 
 
     });
+
 
 
 
@@ -147,6 +149,22 @@ const AssignGuide =()=>{
 
 
 
+    const vehicles =
+
+        vehicleData?.vehicles ||
+
+        vehicleData?.data?.vehicles ||
+
+        [];
+
+
+
+
+
+
+
+
+
     const tour =
 
         tourData?.tour ||
@@ -162,24 +180,10 @@ const AssignGuide =()=>{
 
 
 
-    const guides =
-    Array.isArray(guidesData?.data)
-        ? guidesData.data
-        : Array.isArray(guidesData)
-        ? guidesData
-        : [];
-
-
-
-
-
-
-
-
 
     const {
 
-        mutate:saveGuide,
+        mutate:saveVehicle,
 
         isPending
 
@@ -190,11 +194,11 @@ const AssignGuide =()=>{
         mutationFn:()=>
 
 
-            assignGuide(
+            assignVehicle(
 
                 id,
 
-                guide
+                vehicle
 
             ),
 
@@ -205,10 +209,9 @@ const AssignGuide =()=>{
         onSuccess:()=>{
 
 
-
             toast.success(
 
-                "Guide assigned successfully"
+                "Vehicle assigned successfully"
 
             );
 
@@ -241,7 +244,6 @@ const AssignGuide =()=>{
 
 
         onError:()=>{
-
 
 
             toast.error(
@@ -305,8 +307,8 @@ const AssignGuide =()=>{
                 max-w-xl
                 mx-auto
                 bg-white
-                rounded-xl
                 shadow
+                rounded-xl
                 p-8
             ">
 
@@ -321,7 +323,7 @@ const AssignGuide =()=>{
                 ">
 
 
-                    Assign Guide
+                    Assign Vehicle
 
 
                 </h1>
@@ -374,7 +376,7 @@ const AssignGuide =()=>{
                 <select
 
 
-                    value={guide}
+                    value={vehicle}
 
 
 
@@ -382,7 +384,7 @@ const AssignGuide =()=>{
 
                         e=>
 
-                        setGuide(
+                        setVehicle(
 
                             e.target.value
 
@@ -406,10 +408,11 @@ const AssignGuide =()=>{
 
 
 
+
                     <option value="">
 
 
-                        Select Guide
+                        Select Vehicle
 
 
                     </option>
@@ -419,9 +422,12 @@ const AssignGuide =()=>{
 
 
 
+
+
+
                     {
 
-                        guides.map(item=>(
+                        vehicles.map(item=>(
 
 
 
@@ -438,13 +444,41 @@ const AssignGuide =()=>{
                             >
 
 
+
                                 {
 
-                                    item.name ||
-
-                                    item.firstName
+                                    item.name
 
                                 }
+
+
+                                {" - "}
+
+
+
+                                {
+
+                                    item.registration ||
+
+                                    item.registrationNumber
+
+                                }
+
+
+
+                                {" ("}
+
+
+
+                                {
+
+                                    item.type
+
+                                }
+
+
+
+                                {")"}
 
 
 
@@ -480,13 +514,13 @@ const AssignGuide =()=>{
 
 
 
-                    onClick={saveGuide}
+                    onClick={saveVehicle}
 
 
 
                     disabled={
 
-                        !guide ||
+                        !vehicle ||
 
                         isPending
 
@@ -497,8 +531,8 @@ const AssignGuide =()=>{
                     className="
                         mt-6
                         w-full
-                        bg-green-600
-                        hover:bg-green-700
+                        bg-purple-600
+                        hover:bg-purple-700
                         disabled:opacity-50
                         text-white
                         py-3
@@ -521,7 +555,7 @@ const AssignGuide =()=>{
 
                         :
 
-                        "Assign Guide"
+                        "Assign Vehicle"
 
                     }
 
@@ -557,4 +591,4 @@ const AssignGuide =()=>{
 
 
 
-export default AssignGuide;
+export default AssignVehicle;
