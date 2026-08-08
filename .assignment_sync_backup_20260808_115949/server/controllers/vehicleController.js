@@ -352,7 +352,7 @@ export const assignTourResources = async (req, res, next) => {
         }
 
         tour.assignedGuide = guideId || tour.assignedGuide;
-        tour.assignedDriver = driverId || tour.assignedDriver;
+        tour.driver = driverId || tour.driver;
         tour.assignedVehicle = vehicleId || tour.assignedVehicle;
 
         tour.staff = staffIds || tour.staff;

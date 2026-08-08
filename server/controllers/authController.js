@@ -117,11 +117,19 @@ export const login = async (req, res, next) => {
 
     const permissions = buildPermissions(user);
 
-    const token = generateToken({
-      id: user._id,
-      role: user.role,
-      permissions,
-    });
+const effectiveRole =
+  user.roleId?.name ||
+  user.role ||
+  user.legacyRole ||
+  "customer";
+
+const token = generateToken({
+  _id: user._id,
+  role: effectiveRole,
+  roleId: user.roleId,
+  email: user.email,
+  permissions,
+});
 
     await SecurityLog.create({
       user: user._id,
@@ -142,7 +150,7 @@ export const login = async (req, res, next) => {
         name: user.name,
         email: user.email,
         phone: user.phone,
-        role: user.role,
+        role: effectiveRole,
         permissions,
         status: user.status,
         isVerified: user.isVerified,
@@ -280,11 +288,19 @@ export const register = async (req, res, next) => {
       details: "User registration",
     });
 
-    const token = generateToken({
-      id: user._id,
-      role: user.role,
-      permissions: [],
-    });
+    const effectiveRole =
+  user.roleId?.name ||
+  user.role ||
+  user.legacyRole ||
+  "customer";
+
+const token = generateToken({
+  _id: user._id,
+  role: effectiveRole,
+  roleId: user.roleId,
+  email: user.email,
+  permissions: [],
+});
 
     return res.status(201).json({
       success: true,
