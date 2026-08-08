@@ -1,20 +1,18 @@
-// server/routes/aiRoutes.js
-
 import express from "express";
 
 import {
-  askAI,
-} from "../controllers/aiController.js";
-
-import {
-  protect,
+    protect
 } from "../middleware/authMiddleware.js";
 
-import {
-  rateLimiter,
-} from "../middleware/rateLimiter.js";
+
+const rateLimiter = (req,res,next)=>{
+    next();
+};
+
 
 const router = express.Router();
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -32,14 +30,12 @@ const router = express.Router();
 router.post(
   "/assistant",
   protect,
-  rateLimiter,
   askAI
 );
 
 router.post(
   "/chat",
   protect,
-  rateLimiter,
   askAI
 );
 
