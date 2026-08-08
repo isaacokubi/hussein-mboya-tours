@@ -456,7 +456,9 @@ tourPackageSchema.methods.bookSeats = function (count = 1) {
 |--------------------------------------------------------------------------
 */
 
-
+tourPackageSchema.index({
+  slug: 1,
+});
 
 tourPackageSchema.index({
   destination: 1,

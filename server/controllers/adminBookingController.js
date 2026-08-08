@@ -387,7 +387,7 @@ export const downloadBookingInvoice = async (
         bookingNumber: booking.bookingNumber,
         customer: booking.customer,
         tour: booking.tour,
-        amount: booking.amount || booking.totalAmount,
+        amount: booking.totalAmount,
         status: booking.paymentStatus
       }
     });

@@ -792,17 +792,6 @@ paymentData.mpesaReceiptNumber;
 
 
 
-if(
-typeof paymentData.amount==="number"
-){
-
-booking.paidAmount =
-paymentData.amount;
-
-}
-
-
-
 if(paymentData.transactionId){
 
 booking.transactionId =

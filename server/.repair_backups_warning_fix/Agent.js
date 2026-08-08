@@ -201,7 +201,7 @@ const agentSchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
-
+agentSchema.index({ user: 1 }, { unique: true });
 
 agentSchema.index({
   status: 1,

@@ -39,7 +39,6 @@ const securityLogSchema = new mongoose.Schema(
       trim: true,
       lowercase: true,
       default: "",
-      index: true,
     },
 
     /*

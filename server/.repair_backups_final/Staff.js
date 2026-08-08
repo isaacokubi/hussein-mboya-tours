@@ -397,7 +397,9 @@ staffSchema.methods.releaseFromTour = async function (tourId) {
 |--------------------------------------------------------------------------
 */
 
-
+staffSchema.index({
+  email: 1,
+});
 
 staffSchema.index({
   position: 1,
@@ -411,7 +413,9 @@ staffSchema.index({
   availability: 1,
 });
 
-
+staffSchema.index({
+  employeeNumber: 1,
+});
 
 staffSchema.index({
   isDeleted: 1,

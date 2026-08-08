@@ -364,7 +364,9 @@ customerProfileSchema.virtual("fullAddress").get(function () {
 |--------------------------------------------------------------------------
 */
 
-
+customerProfileSchema.index({
+  user: 1,
+});
 
 customerProfileSchema.index({
   customerType: 1,

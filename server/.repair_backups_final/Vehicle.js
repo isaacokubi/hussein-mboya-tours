@@ -301,7 +301,9 @@ const vehicleSchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
-
+vehicleSchema.index({
+  registrationNumber: 1,
+});
 
 vehicleSchema.index({
   status: 1,

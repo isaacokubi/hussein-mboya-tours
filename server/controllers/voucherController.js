@@ -92,7 +92,7 @@ export const generateVoucher = async (req, res, next) => {
       allowedRoles.includes(userRole);
 
     const isOwner =
-      booking.user?.toString() ===
+      booking.customer?.toString() ===
       req.user._id.toString();
 
     if (!isAdmin && !isOwner) {
@@ -270,11 +270,11 @@ export const generateVoucher = async (req, res, next) => {
     doc.fontSize(11);
 
     doc.text(
-      `Customer : ${booking.customer?.name || booking.user?.name || "N/A"}`
+      `Customer : ${booking.customer?.name || booking.customer?.name || "N/A"}`
     );
 
     doc.text(
-      `Email    : ${booking.customer?.email || booking.user?.email || "N/A"}`
+      `Email    : ${booking.customer?.email || booking.customer?.email || "N/A"}`
     );
 
     doc.text(

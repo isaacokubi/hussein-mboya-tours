@@ -103,7 +103,6 @@ const roleSchema = new mongoose.Schema(
         "inactive",
       ],
       default: "active",
-      index: true,
     },
 
     /*

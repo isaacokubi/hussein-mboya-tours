@@ -1,5 +1,6 @@
 import express from "express";
 import commissionRoutes from "./commissionRoutes.js";
+import tourManagerRoutes from "./tourManagerRoutes.js";
 import staffRoutes from "./staffRoutes.js";
 import userRoutes from "./userRoutes.js";
 import vehicleRoutes from "./vehicleRoutes.js";
@@ -161,6 +162,11 @@ router.use(
 );
 
 
+
+router.use(
+"/tourmanager",
+tourManagerRoutes
+);
 
 router.use(
 "/commissions",
