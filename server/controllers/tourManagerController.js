@@ -80,9 +80,9 @@ export const getTourManagerDashboard = async (req, res, next) => {
                 booking.customerSnapshot?.name ||
                 "Unknown",
             tour: booking.tour?.title || "Unknown",
-            guests: booking.guests || booking.travelerCount || 0,
+            guests: booking.numberOfGuests || 0,
             payment: booking.paymentStatus || "pending",
-            amount: booking.totalAmount || booking.amount || 0,
+            amount: booking.totalAmount || 0,
         }));
 
         return res.status(200).json({

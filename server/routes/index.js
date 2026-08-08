@@ -173,7 +173,7 @@ router.use(
 commissionRoutes
 );
 
-export default router;
+
 
 router.use("/vehicles", vehicleRoutes);
 
@@ -182,3 +182,5 @@ router.use("/users", userRoutes);
 
 // Staff Management
 router.use("/staff", staffRoutes);
+
+export default router;

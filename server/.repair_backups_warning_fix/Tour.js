@@ -731,7 +731,9 @@ tourSchema.statics.getActiveTours = function () {
 |--------------------------------------------------------------------------
 */
 
-
+tourSchema.index({
+  slug: 1,
+});
 
 tourSchema.index({
   destination: 1,

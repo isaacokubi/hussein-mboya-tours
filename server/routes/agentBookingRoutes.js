@@ -15,7 +15,7 @@ import {
   getAgentBookings,
   getAgentBooking,
   updateBookingStatus,
-  cancelBooking,
+  cancelAgentBooking,
 } from "../controllers/agentBookingController.js";
 
 const router = express.Router();
@@ -84,7 +84,7 @@ router.patch(
  */
 router.patch(
   "/:id/cancel",
-  cancelBooking
+  cancelAgentBooking
 );
 
 export default router;

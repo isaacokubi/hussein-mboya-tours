@@ -224,10 +224,10 @@ export const getCustomerProfile = async (
     const summary = bookings.reduce(
       (acc, booking) => {
         acc.totalBookings += 1;
-        acc.totalSpent += booking.amount || 0;
+        acc.totalSpent += booking.totalAmount || 0;
 
         if (booking.paymentStatus === "paid") {
-          acc.totalPaid += booking.amount || 0;
+          acc.totalPaid += booking.totalAmount || 0;
         }
 
         return acc;

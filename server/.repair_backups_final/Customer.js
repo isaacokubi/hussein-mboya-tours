@@ -1,10 +1,10 @@
-// server/models/Staff.js
+// server/models/Customer.js
 
 import mongoose from "mongoose";
 
 /*
 |--------------------------------------------------------------------------
-| EMERGENCY CONTACT SCHEMA
+| EMERGENCY CONTACT
 |--------------------------------------------------------------------------
 */
 
@@ -30,20 +30,33 @@ const emergencyContactSchema = new mongoose.Schema(
   },
   {
     _id: false,
-  }
+  },
 );
 
 /*
 |--------------------------------------------------------------------------
-| STAFF SCHEMA
+| CUSTOMER SCHEMA
 |--------------------------------------------------------------------------
 */
 
-const staffSchema = new mongoose.Schema(
+const customerSchema = new mongoose.Schema(
   {
     /*
     |--------------------------------------------------------------------------
-    | LINKED USER ACCOUNT
+    | OWNER AGENT
+    |--------------------------------------------------------------------------
+    */
+
+    agent: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Agent",
+      default: null,
+      index: true,
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | OPTIONAL LINK TO USER ACCOUNT
     |--------------------------------------------------------------------------
     */
 
@@ -51,16 +64,23 @@ const staffSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       default: null,
-      index: true,
+      unique: true,
+      sparse: true,
     },
 
     /*
     |--------------------------------------------------------------------------
-    | PERSONAL INFORMATION
+    | BASIC DETAILS
     |--------------------------------------------------------------------------
     */
 
-    name: {
+    firstName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    lastName: {
       type: String,
       required: true,
       trim: true,
@@ -68,10 +88,10 @@ const staffSchema = new mongoose.Schema(
 
     email: {
       type: String,
-      required: true,
-      unique: true,
       lowercase: true,
       trim: true,
+      default: "",
+      match: [/^\S+@\S+\.\S+$/, "Invalid email"],
     },
 
     phone: {
@@ -80,11 +100,11 @@ const staffSchema = new mongoose.Schema(
       trim: true,
     },
 
-    nationalId: {
-      type: String,
-      default: "",
-      trim: true,
-    },
+    /*
+    |--------------------------------------------------------------------------
+    | PERSONAL DETAILS
+    |--------------------------------------------------------------------------
+    */
 
     gender: {
       type: String,
@@ -97,185 +117,81 @@ const staffSchema = new mongoose.Schema(
       default: null,
     },
 
+    nationality: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    passportNumber: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    passportExpiryDate: {
+      type: Date,
+      default: null,
+    },
+
+    nationalId: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | ADDRESS
+    |--------------------------------------------------------------------------
+    */
+
     address: {
       type: String,
-      default: "",
       trim: true,
-    },
-
-    /*
-    |--------------------------------------------------------------------------
-    | POSITION
-    |--------------------------------------------------------------------------
-    */
-
-    position: {
-      type: String,
-      enum: [
-        "admin",
-        "tour_manager",
-        "guide",
-        "driver",
-        "support",
-      ],
-      required: true,
-    },
-
-    // Legacy compatibility
-    role: {
-      type: String,
-      enum: [
-        "admin",
-        "manager",
-        "guide",
-        "driver",
-        "support",
-      ],
-      default: null,
-    },
-
-    department: {
-      type: String,
       default: "",
-      trim: true,
     },
 
-    /*
-    |--------------------------------------------------------------------------
-    | PROFILE IMAGE
-    |--------------------------------------------------------------------------
-    */
-
-    profileImage: {
-      url: {
-        type: String,
-        default: "",
-      },
-
-      publicId: {
-        type: String,
-        default: "",
-      },
-    },
-
-    /*
-    |--------------------------------------------------------------------------
-    | DRIVER INFORMATION
-    |--------------------------------------------------------------------------
-    */
-
-    licenseNumber: {
+    city: {
       type: String,
+      trim: true,
       default: "",
+    },
+
+    county: {
+      type: String,
       trim: true,
+      default: "",
     },
 
-    licenseExpiry: {
-      type: Date,
-      default: null,
-    },
-
-    /*
-    |--------------------------------------------------------------------------
-    | SKILLS
-    |--------------------------------------------------------------------------
-    */
-
-    languages: [
-      {
-        type: String,
-        trim: true,
-      },
-    ],
-
-    certifications: [
-      {
-        type: String,
-        trim: true,
-      },
-    ],
-
-    experience: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
-
-    /*
-    |--------------------------------------------------------------------------
-    | EMPLOYMENT
-    |--------------------------------------------------------------------------
-    */
-
-    employeeNumber: {
+    country: {
       type: String,
-      unique: true,
-      sparse: true,
+      trim: true,
+      default: "Kenya",
     },
 
-    employmentType: {
+    postalCode: {
       type: String,
-      enum: [
-        "full_time",
-        "part_time",
-        "contract",
-        "temporary",
-      ],
-      default: "full_time",
-    },
-
-    joinedAt: {
-      type: Date,
-      default: Date.now,
-    },
-
-    salary: {
-      type: Number,
-      default: 0,
-      min: 0,
+      trim: true,
+      default: "",
     },
 
     /*
     |--------------------------------------------------------------------------
-    | AVAILABILITY
+    | COMPANY
     |--------------------------------------------------------------------------
     */
 
-    availability: {
+    company: {
       type: String,
-      enum: [
-        "available",
-        "busy",
-        "leave",
-        "offline",
-      ],
-      default: "available",
+      trim: true,
+      default: "",
     },
 
-    assignedTours: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Tour",
-      },
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | PERFORMANCE
-    |--------------------------------------------------------------------------
-    */
-
-    completedTours: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
-
-    averageRating: {
-      type: Number,
-      default: 0,
-      min: 0,
-      max: 5,
+    jobTitle: {
+      type: String,
+      trim: true,
+      default: "",
     },
 
     /*
@@ -288,33 +204,29 @@ const staffSchema = new mongoose.Schema(
 
     /*
     |--------------------------------------------------------------------------
-    | STATUS
+    | PROFILE
     |--------------------------------------------------------------------------
     */
 
-    status: {
+    profileImage: {
+      type: String,
+      default: "",
+    },
+
+    customerType: {
       type: String,
       enum: [
-        "active",
-        "inactive",
-        "suspended",
+        "individual",
+        "family",
+        "corporate",
+        "vip",
       ],
-      default: "active",
-    },
-
-    isActive: {
-      type: Boolean,
-      default: true,
-    },
-
-    isDeleted: {
-      type: Boolean,
-      default: false,
+      default: "individual",
     },
 
     /*
     |--------------------------------------------------------------------------
-    | NOTES
+    | CRM
     |--------------------------------------------------------------------------
     */
 
@@ -324,6 +236,106 @@ const staffSchema = new mongoose.Schema(
       trim: true,
     },
 
+    tags: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
+
+    preferredContactMethod: {
+      type: String,
+      enum: [
+        "phone",
+        "email",
+        "whatsapp",
+      ],
+      default: "phone",
+    },
+
+    marketingConsent: {
+      type: Boolean,
+      default: true,
+    },
+
+    lastContactedAt: {
+      type: Date,
+      default: null,
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | LOYALTY
+    |--------------------------------------------------------------------------
+    */
+
+    loyaltyPoints: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    totalBookings: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    completedBookings: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    cancelledBookings: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    totalSpent: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    averageBookingValue: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    lastBookingDate: {
+      type: Date,
+      default: null,
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | ACCOUNT STATUS
+    |--------------------------------------------------------------------------
+    */
+
+    status: {
+      type: String,
+      enum: [
+        "active",
+        "inactive",
+        "blocked",
+      ],
+      default: "active",
+    },
+
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
+
     /*
     |--------------------------------------------------------------------------
     | AUDIT
@@ -331,6 +343,12 @@ const staffSchema = new mongoose.Schema(
     */
 
     createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
+    updatedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       default: null,
@@ -346,7 +364,7 @@ const staffSchema = new mongoose.Schema(
     toObject: {
       virtuals: true,
     },
-  }
+  },
 );
 
 /*
@@ -355,12 +373,78 @@ const staffSchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
-staffSchema.virtual("isDriver").get(function () {
-  return this.position === "driver";
+customerSchema.virtual("fullName").get(function () {
+  return `${this.firstName} ${this.lastName}`;
 });
 
-staffSchema.virtual("isGuide").get(function () {
-  return this.position === "guide";
+customerSchema.virtual("bookingCount", {
+  ref: "Booking",
+  localField: "_id",
+  foreignField: "customer",
+  count: true,
+});
+
+/*
+|--------------------------------------------------------------------------
+| INDEXES
+|--------------------------------------------------------------------------
+*/
+
+customerSchema.index({
+  firstName: "text",
+  lastName: "text",
+  email: "text",
+  phone: "text",
+});
+
+customerSchema.index({
+  agent: 1,
+  status: 1,
+});
+
+customerSchema.index({
+  customerType: 1,
+});
+
+customerSchema.index({
+  email: 1,
+});
+
+customerSchema.index({
+  phone: 1,
+});
+
+customerSchema.index({
+  createdAt: -1,
+});
+
+customerSchema.index({
+  totalSpent: -1,
+});
+
+customerSchema.index({
+  loyaltyPoints: -1,
+});
+
+customerSchema.index({
+  isDeleted: 1,
+});
+
+/*
+|--------------------------------------------------------------------------
+| MIDDLEWARE
+|--------------------------------------------------------------------------
+*/
+
+customerSchema.pre("save", function (next) {
+  if (this.totalBookings > 0) {
+    this.averageBookingValue =
+      this.totalSpent / this.totalBookings;
+  } else {
+    this.averageBookingValue = 0;
+  }
+
+  next();
 });
 
 /*
@@ -369,62 +453,26 @@ staffSchema.virtual("isGuide").get(function () {
 |--------------------------------------------------------------------------
 */
 
-staffSchema.methods.assignTour = async function (tourId) {
-  if (!this.assignedTours.includes(tourId)) {
-    this.assignedTours.push(tourId);
-  }
-
-  this.availability = "busy";
-
+customerSchema.methods.addLoyaltyPoints = function (points) {
+  this.loyaltyPoints += points;
   return this.save();
 };
 
-staffSchema.methods.releaseFromTour = async function (tourId) {
-  this.assignedTours = this.assignedTours.filter(
-    (id) => id.toString() !== tourId.toString()
-  );
-
-  if (this.assignedTours.length === 0) {
-    this.availability = "available";
-  }
-
+customerSchema.methods.softDelete = function () {
+  this.isDeleted = true;
+  this.deletedAt = new Date();
+  this.status = "inactive";
   return this.save();
 };
 
 /*
 |--------------------------------------------------------------------------
-| INDEXES
+| EXPORT
 |--------------------------------------------------------------------------
 */
 
+const Customer =
+  mongoose.models.Customer ||
+  mongoose.model("Customer", customerSchema);
 
-
-staffSchema.index({
-  position: 1,
-});
-
-staffSchema.index({
-  status: 1,
-});
-
-staffSchema.index({
-  availability: 1,
-});
-
-
-
-staffSchema.index({
-  isDeleted: 1,
-});
-
-/*
-|--------------------------------------------------------------------------
-| MODEL
-|--------------------------------------------------------------------------
-*/
-
-const Staff =
-  mongoose.models.Staff ||
-  mongoose.model("Staff", staffSchema);
-
-export default Staff;
+export default Customer;

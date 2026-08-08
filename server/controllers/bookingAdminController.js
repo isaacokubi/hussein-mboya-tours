@@ -913,7 +913,7 @@ Tour:
 ${booking.tour?.title || ""}
 
 Amount:
-KES ${booking.amount || 0}
+KES ${booking.totalAmount || 0}
 
 Payment:
 ${booking.paymentStatus}

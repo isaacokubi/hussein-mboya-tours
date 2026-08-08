@@ -333,7 +333,9 @@ commissionSchema.index({
   status: 1,
 });
 
-
+commissionSchema.index({
+  booking: 1,
+});
 
 commissionSchema.index({
   paymentReference: 1,

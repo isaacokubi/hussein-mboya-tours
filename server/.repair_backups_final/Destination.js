@@ -647,7 +647,11 @@ destinationSchema.virtual(
 */
 
 
+destinationSchema.index({
 
+    slug:1
+
+});
 
 
 destinationSchema.index({

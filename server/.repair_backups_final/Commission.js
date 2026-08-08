@@ -99,7 +99,7 @@ const commissionSchema = new mongoose.Schema(
         "rejected",
       ],
       default: "pending",
-      
+      index: true,
     },
 
     /*
@@ -333,7 +333,9 @@ commissionSchema.index({
   status: 1,
 });
 
-
+commissionSchema.index({
+  booking: 1,
+});
 
 commissionSchema.index({
   paymentReference: 1,

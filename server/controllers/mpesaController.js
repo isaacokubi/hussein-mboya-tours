@@ -219,8 +219,7 @@ export const stkPush = async (req, res, next) => {
       Math.round(
         amount ||
         booking.totalAmount ||
-        booking.amount ||
-        0
+0
       );
 
 
@@ -287,7 +286,7 @@ export const stkPush = async (req, res, next) => {
 
 
       user:
-      booking.user || null,
+      booking.customer || null,
 
 
       customer:
@@ -561,13 +560,13 @@ export const mpesaCallback = async (req, res, next) => {
     */
 
     try {
-      if (booking.user) {
+      if (booking.customer) {
         const points = Math.floor(
-          (booking.totalAmount || booking.amount || 0) / 100,
+          (booking.totalAmount || 0) / 100,
         );
 
         if (points > 0) {
-          await addPoints(booking.user, points);
+          await addPoints(booking.customer, points);
         }
       }
     } catch (err) {
@@ -593,7 +592,7 @@ export const mpesaCallback = async (req, res, next) => {
             const rate = agent.commissionRate || 0;
 
             const commissionAmount =
-              ((booking.totalAmount || booking.amount || 0) * rate) / 100;
+              ((booking.totalAmount || 0) * rate) / 100;
 
             await Commission.create({
               booking: booking._id,

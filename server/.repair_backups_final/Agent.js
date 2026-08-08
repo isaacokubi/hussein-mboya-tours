@@ -144,7 +144,7 @@ const agentSchema = new mongoose.Schema(
     isApproved: {
       type: Boolean,
       default: false,
-      
+      index: true,
     },
 
     approvedBy: {
@@ -201,7 +201,7 @@ const agentSchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
-
+agentSchema.index({ user: 1 }, { unique: true });
 
 agentSchema.index({
   status: 1,

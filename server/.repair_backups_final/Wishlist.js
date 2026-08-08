@@ -26,7 +26,7 @@ const wishlistSchema = new mongoose.Schema(
       ref: "User",
       required: true,
       unique: true,
-      
+      index: true,
     },
 
     /*
@@ -123,7 +123,9 @@ wishlistSchema.pre("save", function (next) {
 */
 
 // Fast lookup by user
-
+wishlistSchema.index({
+  user: 1,
+});
 
 // Lookup by saved tour
 wishlistSchema.index({
