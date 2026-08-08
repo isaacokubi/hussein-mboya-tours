@@ -26,8 +26,9 @@ export default function Profile() {
 
 
   const [
-    loading
-  ] = useState(false);
+    loading,
+    setLoading
+  ] = useState(true);
 
 
 
@@ -43,7 +44,11 @@ export default function Profile() {
 
     // Wait until authentication is ready
     if (!user) {
+
+      setLoading(false);
+
       return;
+
     }
 
 
@@ -119,7 +124,9 @@ export default function Profile() {
 
 
         if (mounted) {
-          // Authentication data is already available from AuthContext.
+
+          setLoading(false);
+
         }
 
 

@@ -37,25 +37,12 @@ app.use(helmet());
 |--------------------------------------------------------------------------
 */
 
-const allowedOrigins = (
-  process.env.CLIENT_ORIGINS ||
-  process.env.CLIENT_URL ||
-  "http://localhost:5173"
-)
-  .split(",")
-  .map((origin) => origin.trim())
-  .filter(Boolean);
-
 app.use(
   cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      return callback(new Error(`CORS blocked origin: ${origin}`));
-    },
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
+
     credentials: true,
-  })
+  }),
 );
 
 /*

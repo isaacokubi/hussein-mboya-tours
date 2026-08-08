@@ -83,16 +83,3 @@ return response.data;
 
 
 };
-
-
-/* ADMIN BOOKINGS */
-export const getAdminBookings = async (params = {}) => {
-  const { data } = await api.get('/admin/bookings', { params });
-  return data;
-};
-
-/* ADMIN TOURS */
-export const getAdminTours = async (params = {}) => {
-  const { data } = await api.get('/admin/tours', { params });
-  return data;
-};

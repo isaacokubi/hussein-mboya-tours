@@ -225,40 +225,27 @@ export const createTour = async (req, res, next) => {
 
 export const getTours = async (req, res, next) => {
     try {
-        const { upcoming, limit, status } = req.query;
-        const filter = { isDeleted: { $ne: true } };
+        const tours = await Tour.find()
+        .populate(
+            "assignedGuide",
+            "name email phone position availability"
+        )
+        .populate(
+            "assignedDriver",
+            "name email phone position availability"
+        )
+        .populate(
+            "assignedVehicle",
+            "name registrationNumber type capacity status"
+        )
+        .populate("createdBy", "name email")
+        .sort({ createdAt: -1 })
+        .lean();
 
-        if (status) filter.status = status;
-
-        if (upcoming === "true" || upcoming === "1") {
-            const now = new Date();
-            filter.$or = [
-                { startDate: { $gte: now } },
-                { date: { $gte: now } },
-            ];
-            filter.status = {
-                $in: ["scheduled", "upcoming", "confirmed", "active", "ongoing"],
-            };
-        }
-
-        let query = Tour.find(filter)
-            .populate("assignedGuide", "name email phone position availability")
-            .populate("assignedDriver", "name email phone position availability")
-            .populate("assignedVehicle", "name registrationNumber type capacity status")
-            .populate("createdBy", "name email")
-            .sort({ startDate: 1, date: 1, createdAt: -1 });
-
-        const pageLimit = Number(limit);
-        if (Number.isFinite(pageLimit) && pageLimit > 0) {
-            query = query.limit(Math.min(pageLimit, 100));
-        }
-
-        const tours = await query.lean();
         return res.status(200).json({
             success: true,
             count: tours.length,
             data: tours,
-            tours,
         });
     } catch (error) {
         next(error);
