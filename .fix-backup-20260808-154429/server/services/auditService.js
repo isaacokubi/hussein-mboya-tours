@@ -34,5 +34,9 @@ export const createAuditLog = async ({
 };
 
 
-
+export const createAuditLog = async(data)=>{
+    return {
+        success:true,
+        data
+    };
 };

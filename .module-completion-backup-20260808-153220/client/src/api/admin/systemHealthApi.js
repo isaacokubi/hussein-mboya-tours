@@ -20,15 +20,3 @@ export const getSystemHealth = async () => {
   return data;
 
 };
-
-
-
-/*
- Auto completed API helpers
-*/
-
-export const getAll = async()=>{
-    const {data}=await api.get("/");
-    return data;
-};
-

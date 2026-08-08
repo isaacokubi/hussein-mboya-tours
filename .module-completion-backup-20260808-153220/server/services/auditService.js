@@ -32,7 +32,3 @@ export const createAuditLog = async ({
     return null;
   }
 };
-
-
-
-};

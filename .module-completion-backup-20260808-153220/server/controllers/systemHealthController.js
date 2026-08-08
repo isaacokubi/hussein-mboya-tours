@@ -84,17 +84,3 @@ message:error.message
 }
 
 };
-
-
-
-/*
- Auto completed fallback handlers
-*/
-
-export const healthCheck = async(req,res)=>{
-    res.json({
-        success:true,
-        message:"Module operational"
-    });
-};
-

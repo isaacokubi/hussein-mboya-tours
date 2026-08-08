@@ -1,5 +1,3 @@
-import api from "./axios";
-
 import axios from "./axios";
 
 
@@ -26,15 +24,3 @@ await axios.get(
 return res.data.data;
 
 };
-
-
-
-/*
- Auto completed API helpers
-*/
-
-export const getAll = async()=>{
-    const {data}=await api.get("/");
-    return data;
-};
-
