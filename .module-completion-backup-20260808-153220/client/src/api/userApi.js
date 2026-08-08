@@ -1,5 +1,3 @@
-import api from "./axios";
-
 import axios from "axios";
 
 const API = import.meta.env.VITE_API_URL;
@@ -16,15 +14,3 @@ export const getProfile = async () => {
     },
   );
 };
-
-
-
-/*
- Auto completed API helpers
-*/
-
-export const getAll = async()=>{
-    const {data}=await api.get("/");
-    return data;
-};
-

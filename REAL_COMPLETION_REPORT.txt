@@ -1,0 +1,51 @@
+Empty export: server/controllers/customerController.js
+Small controller: server/controllers/systemHealthController.js (621 bytes)
+Empty export: server/controllers/mpesaController.js
+Empty export: server/controllers/vehicleController.js
+Small controller: server/controllers/galleryController.js (305 bytes)
+Empty export: server/controllers/adminPaymentController.js
+Small controller: server/controllers/heroController.js (444 bytes)
+Empty export: server/controllers/bookingController.js
+TODO/STUB: server/controllers/adminDestinationController.js
+Empty export: server/controllers/adminDestinationController.js
+Empty export: server/controllers/reportController.js
+Small controller: server/controllers/crmController.js (622 bytes)
+Empty export: server/controllers/staffController.js
+Empty export: server/controllers/bookingReportController.js
+Empty export: server/controllers/agentBookingController.js
+Empty export: server/controllers/agentTourController.js
+Empty export: server/controllers/adminBookingController.js
+Empty export: server/controllers/financeController.js
+Small controller: server/controllers/categoryController.js (485 bytes)
+Empty export: server/controllers/bookingAdminController.js
+Empty export: server/services/campaignService.js
+Empty export: server/services/notificationService.js
+Empty export: server/services/reportService.js
+Empty export: server/services/recommendationService.js
+Service returns null: server/services/customerSegmentationService.js
+Empty export: server/services/bookingNotificationService.js
+Service returns null: server/services/commissionService.js
+Empty export: server/services/auditService.js
+Service returns null: server/services/auditService.js
+Empty export: server/services/availabilityService.js
+Empty export: client/src/hooks/useAgentDashboard.js
+Empty export: client/src/api/adminApi.js
+Empty export: client/src/api/guideApi.js
+Empty export: client/src/api/agentBookingApi.js
+Empty export: client/src/api/adminTourApi.js
+Empty export: client/src/api/financeApi.js
+Empty export: client/src/api/tourApi.js
+Empty export: client/src/api/bookingApi.js
+Empty export: client/src/api/packageApi.js
+Empty export: client/src/api/aiApi.js
+Empty export: client/src/api/adminBookingApi.js
+Empty export: client/src/api/adminDestinationApi.js
+Empty export: client/src/api/notificationApi.js
+Empty export: client/src/api/searchApi.js
+Empty export: client/src/api/analyticsApi.js
+Empty export: client/src/api/customerApi.js
+Empty export: client/src/api/agentApi.js
+Empty export: client/src/api/tourAssignmentApi.js
+Empty export: client/src/api/tourManagerApi.js
+Empty export: client/src/api/admin/adminPaymentApi.js
+TODO/STUB: client/src/services/tourManagerService.js

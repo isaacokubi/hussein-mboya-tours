@@ -38,17 +38,3 @@ export const getHeroSlides = async (req, res) => {
   }
 
 };
-
-
-
-/*
- Auto completed fallback handlers
-*/
-
-export const healthCheck = async(req,res)=>{
-    res.json({
-        success:true,
-        message:"Module operational"
-    });
-};
-
