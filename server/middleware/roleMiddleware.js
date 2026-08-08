@@ -1,38 +1,31 @@
-// server/middleware/roleMiddleware.js
+/**
+ * server/middleware/roleMiddleware.js
+ *
+ * Centralized role authorization.
+ */
 
-/*
-|--------------------------------------------------------------------------
-| ROLE AUTHORIZATION MIDDLEWARE
-|--------------------------------------------------------------------------
-|
-| Usage:
-|
-| router.get(
-|     "/admin",
-|     protect,
-|     roleMiddleware("admin"),
-|     controller
-| );
-|
-| router.post(
-|     "/manager",
-|     protect,
-|     roleMiddleware("tour_manager"),
-|     controller
-| );
-|
-|--------------------------------------------------------------------------
-*/
+const normalizeRole = (role) => {
+    if (!role) {
+        return "";
+    }
+
+    if (typeof role === "object") {
+        role =
+            role.name ||
+            role.role ||
+            role._id ||
+            "";
+    }
+
+    return String(role)
+        .trim()
+        .toLowerCase()
+        .replace(/[\s_-]+/g, "");
+};
 
 export const roleMiddleware = (...allowedRoles) => {
     return (req, res, next) => {
         try {
-            /*
-            |--------------------------------------------------------------------------
-            | AUTHENTICATION
-            |--------------------------------------------------------------------------
-            */
-
             if (!req.user) {
                 return res.status(401).json({
                     success: false,
@@ -40,79 +33,81 @@ export const roleMiddleware = (...allowedRoles) => {
                 });
             }
 
-            /*
-            |--------------------------------------------------------------------------
-            | GET USER ROLE
-            |--------------------------------------------------------------------------
-            |
-            | Supports both:
-            | - Legacy string role
-            | - New RBAC role document
-            |
-            |--------------------------------------------------------------------------
-            */
-
             const userRole =
+                req.user.roleId?.name ||
                 req.user.role ||
-                (
-                    typeof req.user.roleId === "object"
-                        ? req.user.roleId?.name
-                        : req.user.roleId
-                ) ||
+                req.user.legacyRole ||
                 "";
 
-            /*
-            |--------------------------------------------------------------------------
-            | CHECK ROLE
-            |--------------------------------------------------------------------------
-            */
+            const normalizedUserRole =
+                normalizeRole(userRole);
 
-            console.log("ROLE DEBUG USER:", req.user);
-            console.log("ROLE DEBUG RESOLVED:", userRole);
+            const normalizedAllowedRoles =
+                allowedRoles.map(normalizeRole);
 
-            const normalizedRole = String(userRole).toLowerCase();
+            console.log("ROLE AUTH DEBUG:", {
+                userId: req.user._id?.toString(),
+                email: req.user.email,
+                rawRole: userRole,
+                normalizedRole: normalizedUserRole,
+                allowedRoles: normalizedAllowedRoles,
+            });
 
-            const normalizedAllowed = allowedRoles.map((role) =>
-                String(
-  typeof role === "object"
-    ? role.name || role.role || role._id
-    : role
-).toLowerCase()
-            );
-
-            if (!normalizedAllowed.includes(normalizedRole)) {
+            if (
+                !normalizedAllowedRoles.includes(
+                    normalizedUserRole
+                )
+            ) {
                 return res.status(403).json({
                     success: false,
-                    message: "Access denied. Insufficient role.",
+                    message:
+                        "Access denied. Insufficient role.",
+                    role: normalizedUserRole,
                 });
             }
 
             next();
         } catch (error) {
-            console.error("ROLE MIDDLEWARE ERROR:", error);
+            console.error(
+                "ROLE MIDDLEWARE ERROR:",
+                error
+            );
 
             return res.status(500).json({
                 success: false,
-                message: "Role verification failed.",
+                message:
+                    "Role verification failed.",
             });
         }
     };
 };
 
-/*
-|--------------------------------------------------------------------------
-| ROLE ALIASES
-|--------------------------------------------------------------------------
-*/
+export const adminOnly =
+    roleMiddleware(
+        "admin",
+        "super_admin",
+        "superadmin",
+        "administrator"
+    );
 
-export const adminOnly = roleMiddleware("admin");
+export const managerOnly =
+    roleMiddleware(
+        "tour_manager",
+        "tourmanager",
+        "manager"
+    );
 
-export const managerOnly = roleMiddleware("tour_manager");
+export const agentOnly =
+    roleMiddleware("agent");
 
-export const agentOnly = roleMiddleware("agent");
+export const guideOnly =
+    roleMiddleware(
+        "tour_guide",
+        "tourguide",
+        "guide"
+    );
 
-export const guideOnly = roleMiddleware("tour_guide");
-
-export const customerOnly = roleMiddleware("customer");
+export const customerOnly =
+    roleMiddleware("customer");
 
 export default roleMiddleware;
