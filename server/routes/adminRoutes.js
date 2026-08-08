@@ -30,6 +30,9 @@ import {
 
 import {
   getDashboardStats,
+  getUserAnalytics,
+  getBookingAnalytics,
+  getRevenueAnalytics,
 } from "../controllers/adminController.js";
 
 
@@ -57,6 +60,16 @@ import {
 } from "../middleware/authMiddleware.js";
 
 import adminMiddleware from "../middleware/adminMiddleware.js";
+
+import {
+  exportBookings,
+} from "../controllers/reportController.js";
+
+import {
+  refundPayment,
+  refundBooking,
+  processRefund,
+} from "../controllers/adminPaymentController.js";
 
 import {
   getUsers,
@@ -117,9 +130,20 @@ router.get(
  * Get booking details
  */
 router.get(
+  "/bookings/analytics",
+  getBookingAnalytics
+);
+
+router.get(
+  "/bookings/export",
+  exportBookings
+);
+
+router.get(
   "/bookings/:id",
   getBookingById
 );
+
 
 /**
  * PUT /api/admin/bookings/:id/status
@@ -157,6 +181,17 @@ router.get(
 
 
 
+
+router.put(
+  "/bookings/:id/refund",
+  refundBooking
+);
+
+router.post(
+  "/bookings/:id/refund",
+  refundBooking
+);
+
 router.post(
   "/bookings/:id/notify",
   sendBookingNotification
@@ -167,6 +202,11 @@ router.put(
   assignResources
 );
 
+
+router.put(
+  "/refunds/:id/process",
+  processRefund
+);
 
 /*
 |--------------------------------------------------------------------------
@@ -192,14 +232,29 @@ router.get(
   getUsers
 );
 
+router.get(
+  "/users/analytics",
+  getUserAnalytics
+);
+
 
 router.put(
   "/users/:id/status",
   updateUserStatus
 );
 
+router.patch(
+  "/users/:id/status",
+  updateUserStatus
+);
 
 
+
+
+router.get(
+  "/revenue/analytics",
+  getRevenueAnalytics
+);
 
 /*
 |--------------------------------------------------------------------------

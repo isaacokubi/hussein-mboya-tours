@@ -81,7 +81,7 @@ export const getAgentDashboard = async (req, res, next) => {
                     $group: {
                         _id: null,
                         totalSales: {
-                            $sum: "$amount"
+                            $sum: "$totalAmount"
                         }
                     }
                 }
@@ -196,5 +196,38 @@ export const getAgentDashboard = async (req, res, next) => {
 
         next(error);
 
+    }
+};
+
+/*
+|--------------------------------------------------------------------------
+| CURRENT AGENT COMMISSIONS
+|--------------------------------------------------------------------------
+*/
+
+export const getMyAgentCommission = async (req, res, next) => {
+    try {
+        const agent = await Agent.findOne({ user: req.user._id }).lean();
+
+        if (!agent) {
+            return res.status(404).json({
+                success: false,
+                message: "Agent profile not found.",
+            });
+        }
+
+        const commissions = await Commission.find({
+            agent: agent._id,
+        })
+            .populate("booking")
+            .sort({ createdAt: -1 })
+            .lean();
+
+        return res.status(200).json({
+            success: true,
+            data: commissions,
+        });
+    } catch (error) {
+        next(error);
     }
 };

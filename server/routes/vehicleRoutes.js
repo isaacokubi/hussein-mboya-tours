@@ -11,6 +11,7 @@ import {
   restoreVehicle,
   assignVehicleDriver,
   removeVehicleDriver,
+  updateVehicleStatus,
 } from "../controllers/vehicleController.js";
 
 import {
@@ -107,6 +108,12 @@ router.put(
   "/:id/remove-driver",
   roleMiddleware("admin", "tour_manager"),
   removeVehicleDriver
+);
+
+router.put(
+  "/:id/status",
+  roleMiddleware("admin", "tour_manager"),
+  updateVehicleStatus
 );
 
 /*

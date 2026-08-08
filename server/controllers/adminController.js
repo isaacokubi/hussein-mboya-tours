@@ -589,3 +589,75 @@ export const getDashboardStats = async (req, res, next) => {
 
 
 
+
+
+/*
+|--------------------------------------------------------------------------
+| ADMIN ANALYTICS COMPATIBILITY ENDPOINTS
+|--------------------------------------------------------------------------
+*/
+
+export const getUserAnalytics = async (req, res, next) => {
+  try {
+    const [total, active, customers, agents] = await Promise.all([
+      User.countDocuments(),
+      User.countDocuments({ isActive: { $ne: false } }),
+      User.countDocuments({ role: "customer" }),
+      User.countDocuments({ role: "agent" }),
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      data: { total, active, customers, agents },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getBookingAnalytics = async (req, res, next) => {
+  try {
+    const status = await Booking.aggregate([
+      { $group: { _id: "$status", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      data: { status },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getRevenueAnalytics = async (req, res, next) => {
+  try {
+    const monthly = await Booking.aggregate([
+      {
+        $match: {
+          paymentStatus: "paid",
+          status: { $ne: "cancelled" },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: "$createdAt" },
+            month: { $month: "$createdAt" },
+          },
+          revenue: { $sum: "$totalAmount" },
+          bookings: { $sum: 1 },
+        },
+      },
+      { $sort: { "_id.year": 1, "_id.month": 1 } },
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      data: { monthly },
+    });
+  } catch (error) {
+    next(error);
+  }
+};

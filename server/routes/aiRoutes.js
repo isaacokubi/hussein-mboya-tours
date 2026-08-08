@@ -36,4 +36,11 @@ router.post(
   askAI
 );
 
+router.post(
+  "/chat",
+  protect,
+  rateLimiter,
+  askAI
+);
+
 export default router;

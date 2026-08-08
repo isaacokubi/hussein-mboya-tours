@@ -95,7 +95,7 @@ export const getAnalytics = async (req, res, next) => {
             },
 
             revenue: {
-              $sum: "$amount",
+              $sum: "$totalAmount",
             },
 
             bookings: {
@@ -224,5 +224,24 @@ export const dashboardAnalytics = async (req, res, next) => {
 
     next(error);
 
+  }
+};
+
+/*
+|--------------------------------------------------------------------------
+| REVENUE-ONLY ANALYTICS
+|--------------------------------------------------------------------------
+*/
+
+export const revenueAnalytics = async (req, res, next) => {
+  try {
+    const revenue = await getRevenueAnalytics();
+
+    return res.status(200).json({
+      success: true,
+      data: { revenue },
+    });
+  } catch (error) {
+    next(error);
   }
 };

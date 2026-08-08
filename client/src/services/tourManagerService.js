@@ -1,12 +1,20 @@
 // client/src/services/tourManagerService.js
 
-import api from "../api/axios";
+// Compatibility service layer.
+// The actual Tour Manager API implementation lives in:
+// client/src/api/tourManagerApi.js
 
-
-export const getDashboardStats = async () => {
-  const { data } = await api.get(
-    "/tourmanager/dashboard"
-  );
-
-  return data;
-};
+export {
+  getDashboardStats,
+  getTours,
+  createTour,
+  updateTour,
+  deleteTour,
+  assignGuide,
+  createItinerary,
+  getItineraries,
+  getBookings,
+  getCustomers,
+  getGuides,
+  getReports,
+} from "../api/tourManagerApi";

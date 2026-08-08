@@ -73,7 +73,7 @@ export const getAgentDashboard = async (req, res, next) => {
             _id: null,
             total: {
               $sum: {
-                $ifNull: ["$amount", 0],
+                $ifNull: ["$totalAmount", 0],
               },
             },
           },

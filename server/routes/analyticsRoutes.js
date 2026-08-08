@@ -5,6 +5,7 @@ import express from "express";
 import {
   getAnalytics,
   dashboardAnalytics,
+  revenueAnalytics,
 } from "../controllers/analyticsController.js";
 
 import {
@@ -46,6 +47,11 @@ router.get(
 router.get(
   "/dashboard",
   dashboardAnalytics
+);
+
+router.get(
+  "/revenue",
+  revenueAnalytics
 );
 
 export default router;

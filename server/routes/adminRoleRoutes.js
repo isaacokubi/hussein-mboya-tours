@@ -63,6 +63,11 @@ router.put(
 updateRole
 );
 
+router.patch(
+"/:id",
+updateRole
+);
+
 
 
 router.delete(

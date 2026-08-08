@@ -24,6 +24,7 @@ import {
 import { protect } from "../middleware/authMiddleware.js";
 import tourManagerOnly from "../middleware/tourManagerMiddleware.js";
 import upload from "../middleware/uploadMiddleware.js";
+import { assignTourResources } from "../controllers/tourAssignmentController.js";
 
 const router = express.Router();
 
@@ -96,6 +97,13 @@ router.patch("/:id/availability", updateTourAvailability);
 | VEHICLE ASSIGNMENT
 |--------------------------------------------------------------------------
 */
+
+// PUT /api/tours/:id/assign
+// Frontend compatibility alias for assigning guide/driver/vehicle.
+router.put(
+  "/:id/assign",
+  assignTourResources
+);
 
 // PATCH /api/tours/:id/assign-vehicle
 router.patch("/:id/assign-vehicle", assignVehicle);

@@ -30,18 +30,9 @@ export const getTourAvailability = async (req, res, next) => {
       {
         $match: {
           tour: tour._id,
-          $or: [
-            {
-              status: {
-                $in: ["pending", "confirmed"],
-              },
-            },
-            {
-              status: {
-                $in: ["pending", "confirmed"],
-              },
-            },
-          ],
+          status: {
+            $in: ["pending", "confirmed"],
+          },
         },
       },
       {
@@ -49,7 +40,7 @@ export const getTourAvailability = async (req, res, next) => {
           _id: null,
           totalGuests: {
             $sum: {
-              $ifNull: ["$guests", 1],
+              $ifNull: ["$numberOfGuests", 1],
             },
           },
           totalBookings: {
@@ -126,18 +117,9 @@ export const updateTourAvailability = async (req, res, next) => {
       {
         $match: {
           tour: tour._id,
-          $or: [
-            {
-              status: {
-                $in: ["pending", "confirmed"],
-              },
-            },
-            {
-              status: {
-                $in: ["pending", "confirmed"],
-              },
-            },
-          ],
+          status: {
+            $in: ["pending", "confirmed"],
+          },
         },
       },
       {
@@ -145,7 +127,7 @@ export const updateTourAvailability = async (req, res, next) => {
           _id: null,
           bookedGuests: {
             $sum: {
-              $ifNull: ["$guests", 1],
+              $ifNull: ["$numberOfGuests", 1],
             },
           },
         },

@@ -6,9 +6,7 @@ import {
   protect,
 } from "../middleware/authMiddleware.js";
 
-import {
-  agentMiddleware,
-} from "../middleware/agentMiddleware.js";
+import agentMiddleware from "../middleware/agentMiddleware.js";
 
 import {
   createCustomer,
@@ -16,6 +14,7 @@ import {
   getCustomer,
   updateCustomer,
   deleteCustomer,
+  getCustomerStats,
 } from "../controllers/agentCustomerController.js";
 
 const router = express.Router();
@@ -55,6 +54,11 @@ router.get(
  * GET /api/agent/customers/:id
  * Get a single customer.
  */
+router.get(
+  "/stats",
+  getCustomerStats
+);
+
 router.get(
   "/:id",
   getCustomer

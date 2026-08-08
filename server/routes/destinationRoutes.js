@@ -84,6 +84,14 @@ router.get(
 
 );
 
+router.get(
+
+  "/slug/:slug",
+
+  getDestination
+
+);
+
 
 
 

@@ -376,3 +376,51 @@ export const assignTourResources = async (req, res, next) => {
         next(error);
     }
 };
+
+/*
+|--------------------------------------------------------------------------
+| UPDATE VEHICLE STATUS
+|--------------------------------------------------------------------------
+*/
+
+export const updateVehicleStatus = async (req, res, next) => {
+  try {
+    const allowedStatuses = [
+      "available",
+      "assigned",
+      "maintenance",
+      "inactive",
+      "unavailable",
+    ];
+
+    const { status } = req.body;
+
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid vehicle status. Allowed values: ${allowedStatuses.join(", ")}`,
+      });
+    }
+
+    const vehicle = await Vehicle.findByIdAndUpdate(
+      req.params.id,
+      { availability: status },
+      { new: true, runValidators: true }
+    );
+
+    if (!vehicle) {
+      return res.status(404).json({
+        success: false,
+        message: "Vehicle not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Vehicle status updated successfully",
+      data: vehicle,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

@@ -42,6 +42,11 @@ router.use(adminMiddleware);
  * Financial dashboard statistics
  */
 router.get(
+  "/",
+  getFinanceStats
+);
+
+router.get(
   "/stats",
   getFinanceStats
 );

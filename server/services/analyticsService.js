@@ -18,7 +18,7 @@ export const getRevenueAnalytics = async () => {
         $group: {
           _id: null,
           totalRevenue: {
-            $sum: "$amount",
+            $sum: "$totalAmount",
           },
           totalBookings: {
             $sum: 1,

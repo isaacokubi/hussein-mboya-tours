@@ -225,3 +225,74 @@ export const deleteTour = async (req, res, next) => {
         next(error);
     }
 };
+
+/*
+|--------------------------------------------------------------------------
+| FRONTEND-COMPATIBLE GUIDE ASSIGNMENT
+|--------------------------------------------------------------------------
+|
+| The manager UI sends { tourId, guideId } to /tourmanager/assign-guide.
+| Reuse the same assignment rules as the general tour assignment flow.
+|--------------------------------------------------------------------------
+*/
+
+export const assignTourGuide = async (req, res, next) => {
+    try {
+        const { tourId, guideId } = req.body;
+
+        if (!tourId) {
+            return res.status(400).json({
+                success: false,
+                message: "tourId is required",
+            });
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(tourId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid tour ID",
+            });
+        }
+
+        if (!guideId) {
+            return res.status(400).json({
+                success: false,
+                message: "guideId is required",
+            });
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(guideId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid guide ID",
+            });
+        }
+
+        const tour = await Tour.findById(tourId);
+
+        if (!tour) {
+            return res.status(404).json({
+                success: false,
+                message: "Tour not found",
+            });
+        }
+
+        tour.assignedGuide = guideId;
+        tour.assignmentStatus = "assigned";
+
+        await tour.save();
+
+        const updatedTour = await Tour.findById(tour._id)
+            .populate("assignedGuide", "name phone email")
+            .populate("assignedDriver", "name phone email")
+            .populate("assignedVehicle", "registrationNumber model capacity");
+
+        return res.status(200).json({
+            success: true,
+            message: "Guide assigned successfully",
+            data: updatedTour,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
