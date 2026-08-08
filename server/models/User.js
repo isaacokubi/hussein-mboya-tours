@@ -32,16 +32,20 @@ const userSchema = new mongoose.Schema(
     },
 
     role: {
-      type: String,
-      enum: [
-        "customer",
-        "admin",
-        "agent",
-        "tour_manager",
-        "tour_guide",
-      ],
-      default: "customer",
-    },
+    type: String,
+    enum: [
+      "customer",
+      "admin",
+      "super_admin",
+      "agent",
+      "travel_agent",
+      "tour_manager",
+      "tour_guide",
+      "guide",
+      "driver",
+    ],
+    default: "customer",
+  },
 
     roleId: {
       type: mongoose.Schema.Types.ObjectId,

@@ -14,77 +14,57 @@ const resetManagerPassword = async () => {
 
     await mongoose.connect(process.env.MONGODB_URI);
 
-    console.log("✅ MongoDB Connected");
+    console.log("MongoDB Connected");
 
     const manager = await User.findOne({
       email: "manager@husseinmboyatours.com",
     });
 
     if (!manager) {
-      throw new Error("Tour Manager not found.");
+      throw new Error(
+        "Tour Manager not found. Run seeds/tourManagerSeed.js first."
+      );
     }
 
-    // Find RBAC role
-    const managerRole =
-      (await Role.findOne({ name: "tourmanager" })) ||
-      (await Role.findOne({ name: "manager" }));
+    const managerRole = await Role.findOne({
+      name: "tour_manager",
+    });
 
     if (!managerRole) {
-      throw new Error("Tour Manager role not found.");
+      throw new Error(
+        "tour_manager role not found. Run seeds/tourManagerSeed.js first."
+      );
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | RESET PASSWORD
-    |--------------------------------------------------------------------------
-    */
 
     manager.password = "Manager@12345";
 
-    /*
-    |--------------------------------------------------------------------------
-    | ROLE SETTINGS
-    |--------------------------------------------------------------------------
-    */
-
-    // Application role
-    manager.role = "manager";
-
-    // RBAC role
+    manager.role = "tour_manager";
     manager.roleId = managerRole._id;
-
-    // Legacy compatibility
-    manager.legacyRole = managerRole.name;
-
-    /*
-    |--------------------------------------------------------------------------
-    | ACCOUNT STATUS
-    |--------------------------------------------------------------------------
-    */
+    manager.legacyRole = "tour_manager";
 
     manager.status = "active";
     manager.isVerified = true;
-
-    /*
-    |--------------------------------------------------------------------------
-    | RESET SECURITY
-    |--------------------------------------------------------------------------
-    */
 
     manager.loginAttempts = 0;
     manager.lockUntil = null;
 
     await manager.save();
 
-    console.log("✅ Tour Manager password reset successfully");
-    console.log("Email: manager@husseinmboyatours.com");
+    console.log("\n======================================");
+    console.log("TOUR MANAGER PASSWORD RESET");
+    console.log("======================================");
+    console.log("Email:    manager@husseinmboyatours.com");
     console.log("Password: Manager@12345");
+    console.log("Role:     tour_manager");
+    console.log("Role ID:  ", managerRole._id.toString());
+    console.log("======================================\n");
+
   } catch (error) {
-    console.error("❌ Password reset failed:", error.message);
+    console.error("Password reset failed:", error);
     process.exitCode = 1;
   } finally {
     await mongoose.connection.close().catch(() => {});
-    console.log("🔌 MongoDB connection closed");
+    console.log("MongoDB connection closed");
   }
 };
 
