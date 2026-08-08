@@ -22,6 +22,7 @@ import {
 
 import { getDashboard } from "../../api/adminApi";
 import { getPaymentStats } from "../../api/admin/adminPaymentApi";
+import { getAdminRoles } from "../../api/admin/adminRoleApi";
 import { getSystemHealth } from "../../api/admin/systemHealthApi";
 
 export default function AdminDashboard() {
@@ -31,6 +32,13 @@ export default function AdminDashboard() {
     queryFn: getPaymentStats,
     staleTime: 300000,
   });
+
+  const { data: rolesData } = useQuery({
+    queryKey: ["adminRoles"],
+    queryFn: getAdminRoles,
+    staleTime: 300000,
+  });
+
   const { data: healthData } = useQuery({
     queryKey: ["systemHealth"],
     queryFn: getSystemHealth,

@@ -53,14 +53,3 @@ return data;
 };
 
 
-/* FINANCE REPORTS */
-export const getReports = async (params = {}) => {
-  const { data } = await api.get('/admin/finance/reports', { params });
-  return data;
-};
-
-/* MPESA / PAYMENT TRANSACTIONS */
-export const getMpesaTransactions = async (params = {}) => {
-  const { data } = await api.get('/admin/finance/transactions', { params });
-  return data;
-};

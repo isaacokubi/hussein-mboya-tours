@@ -265,25 +265,46 @@ catch(error){
 */
 
 
-useEffect(() => {
-  const savedToken = localStorage.getItem("token");
+useEffect(()=>{
+
+
+const savedToken =
+  localStorage.getItem(
+    "token"
+  );
+
+
+
+if(savedToken){
+
 
   queueMicrotask(() => {
-    if (!savedToken) {
-      setLoading(false);
-      return;
-    }
-
     setToken(savedToken);
-
-    fetchCurrentUser().finally(() => {
-      setLoading(false);
-    });
   });
 
-  // Intentional one-time session restoration on provider mount.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, []);
+
+
+  fetchCurrentUser()
+    .finally(()=>{
+
+      setLoading(false);
+
+    });
+
+
+}
+
+else{
+
+
+  setLoading(false);
+
+
+}
+
+
+
+},[]);
 
 
 

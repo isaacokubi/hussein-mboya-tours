@@ -281,12 +281,3 @@ export const getTourBySlug = async (slug) => {
 
   return data?.data || data;
 };
-
-
-/* UPCOMING TOURS */
-export const getUpcomingTours = async (params = {}) => {
-  const { data } = await api.get('/tourmanager/tours', {
-    params: { ...params, upcoming: 'true' },
-  });
-  return data;
-};
