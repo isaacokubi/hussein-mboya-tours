@@ -431,7 +431,14 @@ const bookingSchema = new mongoose.Schema(
 
     refundStatus: {
       type: String,
-      enum: ["none", "requested", "approved", "completed", "rejected"],
+      enum: [
+        "none",
+        "requested",
+        "approved",
+        "processing",
+        "completed",
+        "rejected",
+      ],
       default: "none",
     },
 

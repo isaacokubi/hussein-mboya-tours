@@ -6,9 +6,7 @@ import {
   protect,
 } from "../middleware/authMiddleware.js";
 
-import {
-  agentMiddleware,
-} from "../middleware/agentMiddleware.js";
+import agentMiddleware from "../middleware/agentMiddleware.js";
 
 import {
   createBooking,
@@ -84,6 +82,11 @@ router.patch(
  */
 router.patch(
   "/:id/cancel",
+  cancelAgentBooking
+);
+
+router.delete(
+  "/:id",
   cancelAgentBooking
 );
 

@@ -10,6 +10,8 @@ from "../controllers/mpesaRefundController.js";
 import {
   stkPush,
   mpesaCallback,
+  checkCheckoutStatus,
+  verifyBookingPayment,
 } from "../controllers/mpesaController.js";
 
 import {
@@ -36,6 +38,12 @@ router.post(
   stkPush
 );
 
+router.post(
+  "/mpesa",
+  protect,
+  stkPush
+);
+
 /*
 |--------------------------------------------------------------------------
 | SAFARICOM CALLBACK
@@ -53,6 +61,18 @@ router.post(
 router.post(
   "/callback",
   mpesaCallback
+);
+
+router.get(
+  "/status/:checkoutRequestId",
+  protect,
+  checkCheckoutStatus
+);
+
+router.get(
+  "/verify/:bookingId",
+  protect,
+  verifyBookingPayment
 );
 
 export default router;

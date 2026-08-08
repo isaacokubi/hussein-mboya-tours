@@ -6,9 +6,7 @@ import {
   protect,
 } from "../middleware/authMiddleware.js";
 
-import {
-  agentMiddleware,
-} from "../middleware/agentMiddleware.js";
+import agentMiddleware from "../middleware/agentMiddleware.js";
 
 import {
   getAgentPackages,

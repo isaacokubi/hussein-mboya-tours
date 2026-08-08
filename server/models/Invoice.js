@@ -271,9 +271,6 @@ invoiceSchema.methods.markPaid = function (reference = "") {
 |--------------------------------------------------------------------------
 */
 
-invoiceSchema.index({
-  booking: 1,
-});
 
 invoiceSchema.index({
   customer: 1,
@@ -283,9 +280,6 @@ invoiceSchema.index({
   tour: 1,
 });
 
-invoiceSchema.index({
-  invoiceNumber: 1,
-});
 
 invoiceSchema.index({
   status: 1,

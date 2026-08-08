@@ -4,7 +4,10 @@ import express from "express";
 
 import {
   getAgentDashboard,
+  getMyAgentCommission,
 } from "../controllers/agentController.js";
+
+import { getAgentQuotations } from "../controllers/quotationController.js";
 
 import {
   createAgentTour,
@@ -18,9 +21,7 @@ import {
   protect,
 } from "../middleware/authMiddleware.js";
 
-import {
-  agentMiddleware,
-} from "../middleware/agentMiddleware.js";
+import agentMiddleware from "../middleware/agentMiddleware.js";
 
 import {
   authorize,
@@ -58,6 +59,16 @@ router.get(
   "/dashboard",
   authorize("view_agent_dashboard"),
   getAgentDashboard
+);
+
+router.get(
+  "/quotes",
+  getAgentQuotations
+);
+
+router.get(
+  "/commission",
+  getMyAgentCommission
 );
 
 /*

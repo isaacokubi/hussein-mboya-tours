@@ -4,6 +4,7 @@ import {
 getPayments,
 getPaymentStats,
 getPayment,
+getPaymentAnalytics,
 updatePaymentStatus,
 refundPayment
 }
@@ -55,6 +56,21 @@ router.get(
 getPaymentStats
 );
 
+router.get(
+"/analytics",
+getPaymentAnalytics
+);
+
+
+router.get(
+"/export/csv",
+exportPaymentsCSV
+);
+
+router.get(
+"/export/pdf",
+exportPaymentsPDF
+);
 
 router.get(
 "/:id",
@@ -64,6 +80,12 @@ getPayment
 
 router.patch(
 "/:id/status",
+updatePaymentStatus
+);
+
+// Frontend compatibility alias.
+router.patch(
+"/:id",
 updatePaymentStatus
 );
 

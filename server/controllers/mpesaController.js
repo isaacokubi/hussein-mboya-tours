@@ -906,3 +906,73 @@ next(error);
 
 };
 
+
+
+/*
+|--------------------------------------------------------------------------
+| CHECK STK STATUS BY CHECKOUT REQUEST ID
+|--------------------------------------------------------------------------
+*/
+
+export const checkCheckoutStatus = async (req, res, next) => {
+  try {
+    const payment = await Payment.findOne({
+      checkoutRequestID: req.params.checkoutRequestId,
+    })
+      .populate("booking")
+      .lean();
+
+    if (!payment) {
+      return res.status(404).json({
+        success: false,
+        message: "Payment request not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        status: payment.status,
+        payment,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/*
+|--------------------------------------------------------------------------
+| VERIFY BOOKING PAYMENT
+|--------------------------------------------------------------------------
+*/
+
+export const verifyBookingPayment = async (req, res, next) => {
+  try {
+    const booking = await Booking.findById(req.params.bookingId).lean();
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
+    }
+
+    const payment = await Payment.findOne({
+      booking: booking._id,
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        booking,
+        payment,
+        paymentStatus: booking.paymentStatus,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
