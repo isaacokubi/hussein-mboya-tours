@@ -1,4 +1,19 @@
-import express from "express";
+from pathlib import Path
+import shutil
+from datetime import datetime
+
+root = Path("server/routes/aiRoutes.js")
+
+backup = Path(
+    f".ai-route-final-backup-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+)
+
+backup.mkdir(exist_ok=True)
+
+shutil.copy2(root, backup / "aiRoutes.js")
+
+
+content = """import express from "express";
 
 import {
   protect
@@ -41,3 +56,10 @@ router.post(
 
 
 export default router;
+"""
+
+
+root.write_text(content)
+
+print("AI ROUTE FULLY REPAIRED")
+print("Backup:", backup)
