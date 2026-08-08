@@ -3,13 +3,12 @@
 import express from "express";
 
 import {
-    getTourManagerDashboard,
-    createTour,
-    getTours,
-    updateTour,
-    deleteTour,
-    assignTourGuide,
-} from "../controllers/tourManagerController.js";
+  getTourManagerDashboard,
+  createTour,
+  getTours,
+  updateTour,
+  deleteTour,
+ } from "../controllers/tourManagerController.js";
 
 import {
   createItinerary,
@@ -78,11 +77,6 @@ router.get("/tours", getTours);
 router.post("/tours", createTour);
 router.put("/tours/:id", updateTour);
 router.delete("/tours/:id", deleteTour);
-
-// Frontend compatibility route.
-// POST /api/tourmanager/assign-guide
-// Body: { tourId, guideId }
-router.post("/assign-guide", assignTourGuide);
 
 /*
 |--------------------------------------------------------------------------

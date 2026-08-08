@@ -1,12 +1,35 @@
-// server/middleware/authMiddleware.js
-
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import env from "../config/env.js";
 
+const normalizeRole = (role) => {
+  if (!role) return "";
+
+  if (typeof role === "object") {
+    role =
+      role.name ||
+      role.role ||
+      role._id ||
+      "";
+  }
+
+  return String(role)
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, "");
+};
+
+const getUserRole = (user) => {
+  return normalizeRole(
+    user?.roleId?.name ||
+    user?.role ||
+    user?.legacyRole
+  );
+};
+
 /*
 |--------------------------------------------------------------------------
-| AUTHENTICATION MIDDLEWARE
+| AUTHENTICATION
 |--------------------------------------------------------------------------
 */
 
@@ -14,33 +37,15 @@ export const protect = async (req, res, next) => {
   try {
     let token = null;
 
-    /*
-    |--------------------------------------------------------------------------
-    | GET TOKEN FROM AUTH HEADER
-    |--------------------------------------------------------------------------
-    */
-
     const authHeader = req.headers.authorization;
 
     if (authHeader?.startsWith("Bearer ")) {
-      token = authHeader.split(" ")[1];
+      token = authHeader.substring(7).trim();
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | COOKIE SUPPORT
-    |--------------------------------------------------------------------------
-    */
 
     if (!token && req.cookies?.token) {
       token = req.cookies.token;
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | TOKEN REQUIRED
-    |--------------------------------------------------------------------------
-    */
 
     if (!token) {
       return res.status(401).json({
@@ -49,26 +54,30 @@ export const protect = async (req, res, next) => {
       });
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | VERIFY JWT
-    |--------------------------------------------------------------------------
-    */
+    const secret = env.JWT_SECRET || process.env.JWT_SECRET;
 
-    const decoded = jwt.verify(token, env.JWT_SECRET);
+    if (!secret) {
+      console.error("JWT_SECRET is not configured.");
 
-    // DEBUG LOGS
-    console.log("JWT DECODED:", decoded);
+      return res.status(500).json({
+        success: false,
+        message: "Authentication configuration error.",
+      });
+    }
 
-    /*
-    |--------------------------------------------------------------------------
-    | LOAD USER
-    |--------------------------------------------------------------------------
-    */
+    const decoded = jwt.verify(token, secret, {
+      issuer: "husseinmboyatours",
+      audience: "husseinmboyatours-client",
+    });
 
     const userId = decoded.sub || decoded.id;
 
-    console.log("LOOKING FOR USER:", userId);
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid authentication token.",
+      });
+    }
 
     const user = await User.findById(userId)
       .select("-password")
@@ -81,47 +90,34 @@ export const protect = async (req, res, next) => {
       .populate("permissionsOverride");
 
     if (!user) {
-      console.error("USER NOT FOUND:", userId);
-
       return res.status(401).json({
         success: false,
         message: "User no longer exists.",
       });
     }
 
-    console.log("USER FOUND:", {
-      id: user._id,
-      email: user.email,
-      role: user.role,
-      roleId: user.roleId?.name,
-    });
-
-    /*
-    |--------------------------------------------------------------------------
-    | ACCOUNT STATUS
-    |--------------------------------------------------------------------------
-    */
-
-    if (user.status !== "active" || user.isActive === false) {
+    if (
+      user.status !== "active" ||
+      user.isActive === false
+    ) {
       return res.status(403).json({
         success: false,
         message: "Account is inactive.",
       });
     }
 
-    console.log("AUTH USER DEBUG:", {
-      id: user._id,
-      email: user.email,
-      role: user.role,
-      roleId: user.roleId,
-      roleName: user.roleId?.name
-    });
-
     req.user = user;
+
+    console.log("AUTH SUCCESS:", {
+      userId: user._id.toString(),
+      email: user.email,
+      role: getUserRole(user),
+      tokenRole: decoded.role,
+    });
 
     next();
   } catch (error) {
-    console.error("AUTH ERROR:", error);
+    console.error("AUTH ERROR:", error.message);
 
     return res.status(401).json({
       success: false,
@@ -144,12 +140,16 @@ export const adminOnly = (req, res, next) => {
     });
   }
 
-  const roleName =
-    req.user.roleId?.name?.toLowerCase() ||
-    req.user.role?.toLowerCase() ||
-    req.user.legacyRole?.toLowerCase();
+  const role = getUserRole(req.user);
 
-  if (!["admin", "super_admin"].includes(roleName)) {
+  if (
+    ![
+      "admin",
+      "superadmin",
+      "administrator",
+      "super_admin",
+    ].map(normalizeRole).includes(role)
+  ) {
     return res.status(403).json({
       success: false,
       message: "Admin access required.",
@@ -174,19 +174,16 @@ export const authorize = (...allowedRoles) => {
       });
     }
 
-    const roleName =
-      req.user.roleId?.name?.toLowerCase() ||
-      req.user.role?.toLowerCase() ||
-      req.user.legacyRole?.toLowerCase();
+    const userRole = getUserRole(req.user);
 
-    const allowed = allowedRoles.map((role) =>
-      role.toLowerCase()
-    );
+    const allowed = allowedRoles.map(normalizeRole);
 
-    if (!allowed.includes(roleName)) {
+    if (!allowed.includes(userRole)) {
       return res.status(403).json({
         success: false,
-        message: "You do not have permission to access this resource.",
+        message:
+          "You do not have permission to access this resource.",
+        role: userRole,
       });
     }
 
@@ -196,7 +193,7 @@ export const authorize = (...allowedRoles) => {
 
 /*
 |--------------------------------------------------------------------------
-    | PERMISSION CHECK
+| PERMISSION CHECK
 |--------------------------------------------------------------------------
 */
 
@@ -222,19 +219,37 @@ export const checkPermission = (permissionName) => {
       ];
 
       const hasPermission = permissions.some(
-        (permission) => permission.name === permissionName
+        (permission) => {
+          const name =
+            typeof permission === "object"
+              ? permission.name
+              : permission;
+
+          return (
+            String(name)
+              .trim()
+              .toLowerCase() ===
+            String(permissionName)
+              .trim()
+              .toLowerCase()
+          );
+        }
       );
 
       if (!hasPermission) {
         return res.status(403).json({
           success: false,
-          message: `Missing permission: ${permissionName}`,
+          message:
+            "You do not have permission to perform this action.",
         });
       }
 
       next();
     } catch (error) {
-      console.error("PERMISSION ERROR:", error);
+      console.error(
+        "PERMISSION CHECK ERROR:",
+        error
+      );
 
       return res.status(500).json({
         success: false,
@@ -243,5 +258,3 @@ export const checkPermission = (permissionName) => {
     }
   };
 };
-
-export default protect;
