@@ -24,7 +24,7 @@ export const getProfile = async () => {
 */
 
 export const getAll = async()=>{
-    const {data}=await api.get("/");
+    const {data}=await api.get("/users/profile");
     return data;
 };
 

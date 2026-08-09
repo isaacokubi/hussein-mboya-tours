@@ -15,7 +15,7 @@ export const getNotifications = async (params = {}) => {
 */
 
 export const getAll = async()=>{
-    const {data}=await api.get("/");
+    const {data}=await api.get("/notifications");
     return data;
 };
 

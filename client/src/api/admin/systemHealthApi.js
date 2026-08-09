@@ -28,7 +28,7 @@ export const getSystemHealth = async () => {
 */
 
 export const getAll = async()=>{
-    const {data}=await api.get("/");
+    const {data}=await api.get("/admin/system-health");
     return data;
 };
 

@@ -27,6 +27,9 @@ import systemHealthRoutes from "./systemHealthRoutes.js";
 import adminAuthRoutes from "./adminAuthRoutes.js";
 
 import adminDashboardRoutes from "./adminDashboardRoutes.js";
+import adminReviewRoutes from "./adminReviewRoutes.js";
+import adminGalleryRoutes from "./adminGalleryRoutes.js";
+import adminCouponRoutes from "./adminCouponRoutes.js";
 
 import categoryRoutes from "./categoryRoutes.js";
 import analyticsRoutes from "./analyticsRoutes.js";
@@ -91,6 +94,9 @@ router.use("/admin/payments", adminPaymentRoutes);
 router.use("/admin/roles", adminRoleRoutes);
 router.use("/admin/system-health", systemHealthRoutes);
 router.use("/admin/dashboard", adminDashboardRoutes);
+router.use("/admin/reviews", adminReviewRoutes);
+router.use("/admin/gallery", adminGalleryRoutes);
+router.use("/admin/coupons", adminCouponRoutes);
 router.use("/admin/finance", financeRoutes);
 
 /*

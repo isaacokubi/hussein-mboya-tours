@@ -25,7 +25,7 @@ return response.data.categories;
 */
 
 export const getAll = async()=>{
-    const {data}=await api.get("/");
+    const {data}=await api.get("/categories");
     return data;
 };
 

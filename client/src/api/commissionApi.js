@@ -34,7 +34,7 @@ return res.data.data;
 */
 
 export const getAll = async()=>{
-    const {data}=await api.get("/");
+    const {data}=await api.get("/commissions");
     return data;
 };
 

@@ -24,7 +24,7 @@ export const getHeroSlides = async () => {
 */
 
 export const getAll = async()=>{
-    const {data}=await api.get("/");
+    const {data}=await api.get("/hero");
     return data;
 };
 

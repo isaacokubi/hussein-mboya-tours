@@ -29,7 +29,7 @@ return Array.isArray(response.data)
 */
 
 export const getAll = async()=>{
-    const {data}=await api.get("/");
+    const {data}=await api.get("/gallery/featured");
     return data;
 };
 
