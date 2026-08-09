@@ -2,6 +2,14 @@
 
 import User from "../models/User.js";
 
+const normalizeRole = (role) => {
+  if (!role) return "";
+  if (typeof role === "object") {
+    role = role.name || role.role || "";
+  }
+  return String(role).trim().toLowerCase().replace(/[\s_-]+/g, "");
+};
+
 /*
 |--------------------------------------------------------------------------
 | ADMIN AUTHORIZATION MIDDLEWARE
@@ -37,7 +45,14 @@ const adminMiddleware = async (req, res, next) => {
     */
 
     const user = await User.findById(req.user._id)
-      .populate("role");
+      .select("-password")
+      .populate({
+        path: "roleId",
+        populate: {
+          path: "permissions",
+        },
+      })
+      .populate("permissionsOverride");
 
     if (!user) {
       return res.status(401).json({
@@ -70,19 +85,11 @@ const adminMiddleware = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    let roleName = "";
-
-    if (
-      user.role &&
-      typeof user.role === "object" &&
-      user.role.name
-    ) {
-      roleName = user.role.name.toLowerCase();
-    } else if (typeof user.role === "string") {
-      roleName = user.role.toLowerCase();
-    } else if (user.legacyRole) {
-      roleName = user.legacyRole.toLowerCase();
-    }
+    const roleName = normalizeRole(
+      user.roleId?.name ||
+      user.role ||
+      user.legacyRole
+    );
 
     /*
     |--------------------------------------------------------------------------
@@ -90,15 +97,17 @@ const adminMiddleware = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    const allowedRoles = [
+    const allowedRoles = new Set([
       "admin",
-      "super_admin",
-    ];
+      "superadmin",
+      "administrator",
+    ]);
 
-    if (!allowedRoles.includes(roleName)) {
+    if (!allowedRoles.has(roleName)) {
       return res.status(403).json({
         success: false,
         message: "Admin access required",
+        role: roleName,
       });
     }
 

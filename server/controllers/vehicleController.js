@@ -209,7 +209,7 @@ export const restoreVehicle = async (req, res, next) => {
 
 export const assignVehicleDriver = async (req, res, next) => {
     try {
-        const { driver } = req.body;
+        const driver = req.body.driverId || req.body.driver || null;
 
         if (driver) {
             const driverExists = await Staff.findOne({
@@ -404,7 +404,7 @@ export const updateVehicleStatus = async (req, res, next) => {
 
     const vehicle = await Vehicle.findByIdAndUpdate(
       req.params.id,
-      { availability: status },
+      { status },
       { new: true, runValidators: true }
     );
 

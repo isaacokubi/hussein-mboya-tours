@@ -23,7 +23,15 @@ const seedTourGuidePermissions = async () => {
   const operations = tourGuidePermissions.map((permission) => ({
     updateOne: {
       filter: { name: permission.name },
-      update: { $set: permission },
+      update: {
+        $set: {
+          ...permission,
+          label: permission.label || permission.name.replace(/_/g, " "),
+          module: permission.module || permission.name.split(/[._]/)[0],
+          category: permission.category || "other",
+          isActive: true,
+        },
+      },
       upsert: true,
     },
   }));

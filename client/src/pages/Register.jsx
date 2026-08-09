@@ -215,6 +215,9 @@ switch(role){
 
 
 case "admin":
+case "superadmin":
+case "super_admin":
+case "administrator":
 
 navigate("/admin");
 
@@ -233,6 +236,7 @@ break;
 
 
 case "tourguide":
+case "tour_guide":
 
 navigate("/guide/dashboard");
 
@@ -242,8 +246,10 @@ break;
 
 
 case "tourmanager":
+case "tour_manager":
+case "manager":
 
-navigate("/manager/dashboard");
+navigate("/tour-manager/dashboard");
 
 break;
 

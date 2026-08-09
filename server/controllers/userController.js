@@ -38,8 +38,9 @@ export const getUserProfile = async (req, res, next) => {
 export const getGuides = async (req, res, next) => {
     try {
         const guides = await User.find({
-            role: "guide",
+            role: { $in: ["guide", "tour_guide"] },
             status: "active",
+            isActive: { $ne: false },
         })
             .select("name email phone profileImage")
             .sort({ name: 1 })

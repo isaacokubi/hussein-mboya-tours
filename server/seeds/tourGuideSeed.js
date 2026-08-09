@@ -39,6 +39,9 @@ const createTourGuide = async () => {
       if (!permission) {
         permission = await Permission.create({
           name,
+          label: name.replace(/_/g, " "),
+          module: name.split(/[._]/)[0],
+          category: "other",
         });
 
         console.log(`✅ Created permission: ${name}`);
@@ -60,6 +63,7 @@ const createTourGuide = async () => {
     if (!guideRole) {
       guideRole = await Role.create({
         name: "guide",
+        displayName: "Tour Guide",
         permissions: permissionIds,
       });
 

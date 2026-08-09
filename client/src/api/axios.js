@@ -35,11 +35,21 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
+      const token = localStorage.getItem("token");
+      const requestUrl = String(error.config?.url || "");
+      const isLoginRequest = requestUrl.includes("/auth/login");
 
-      // Force fresh login
-      window.location.href = "/login";
+      // Only clear an existing session when a protected request proves
+      // that its token is no longer accepted. Avoid redirect loops and
+      // avoid turning an ordinary unauthenticated request into a logout.
+      if (token && !isLoginRequest) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+
+        if (window.location.pathname !== "/login") {
+          window.location.href = "/login";
+        }
+      }
     }
 
     return Promise.reject(error);

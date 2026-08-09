@@ -136,6 +136,9 @@ export default function Login() {
 
 
       case "admin":
+      case "superadmin":
+      case "super_admin":
+      case "administrator":
 
         navigate("/admin");
 
@@ -156,6 +159,7 @@ export default function Login() {
 
 
       case "guide":
+      case "tour_guide":
           navigate("/guide/dashboard");
           break;
 
@@ -168,6 +172,7 @@ export default function Login() {
 
 
       case "manager":
+      case "tour_manager":
           navigate("/tour-manager/dashboard");
           break;
 

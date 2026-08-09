@@ -106,11 +106,11 @@ export default function Vehicles(){
 
     const vehicles =
 
-        data?.vehicles ||
-
-        data?.data?.vehicles ||
-
-        [];
+        Array.isArray(data?.data)
+            ? data.data
+            : Array.isArray(data?.vehicles)
+                ? data.vehicles
+                : [];
 
 
 

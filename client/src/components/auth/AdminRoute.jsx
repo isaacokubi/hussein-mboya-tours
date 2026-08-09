@@ -81,30 +81,16 @@ replace
 
 
 const roleName =
-
 user.role?.name ||
+user.role ||
+user.legacyRole ||
+user.roleId?.name ||
+"";
 
-user.role;
-
-
-
-
-
-
-
-
-
-const allowedRoles = [
-
-"admin",
-
-"Admin",
-
-"superadmin",
-
-"Super Admin"
-
-];
+const normalizedRole = String(roleName)
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, "");
 
 
 
@@ -112,9 +98,21 @@ const allowedRoles = [
 
 
 
-if(
-    !allowedRoles.includes(roleName)
-){
+
+
+const allowedRoles = new Set([
+    "admin",
+    "superadmin",
+    "administrator",
+]);
+
+
+
+
+
+
+
+if (!allowedRoles.has(normalizedRole)) {
 
 return (
 

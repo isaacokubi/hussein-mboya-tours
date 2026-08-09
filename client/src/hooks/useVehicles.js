@@ -31,7 +31,7 @@ export default function useVehicles() {
     queryFn: async () => {
       const response = await getVehicles();
 
-      return response.data?.vehicles || response.data || [];
+      return response?.data || response?.vehicles || [];
     },
   });
 

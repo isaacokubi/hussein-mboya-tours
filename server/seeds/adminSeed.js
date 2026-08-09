@@ -31,6 +31,8 @@ const createAdmin = async () => {
         permission = await Permission.create({
           name,
           label: name.replace(/_/g, " "),
+          module: name.split(/[._]/)[0],
+          category: "other",
         });
       }
 
@@ -44,6 +46,7 @@ const createAdmin = async () => {
     if (!adminRole) {
       adminRole = await Role.create({
         name: "admin",
+        displayName: "Admin",
         permissions: permissionIds,
       });
 

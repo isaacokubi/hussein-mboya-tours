@@ -61,7 +61,7 @@ import EditDestination from "../pages/admin/EditDestination";
 import BookingManagement from "../pages/admin/BookingManagement";
 import StaffManagement from "../pages/admin/StaffManagement";
 import AdminCustomers from "../pages/admin/Customers";
-import AdminVehicles from "../pages/admin/Vehicles";
+import AdminVehicles from "../pages/admin/AdminVehicles";
 import AdminGuides from "../pages/admin/AdminGuides";
 import AdminReviews from "../pages/admin/AdminReviews";
 import AdminGallery from "../pages/admin/AdminGallery";

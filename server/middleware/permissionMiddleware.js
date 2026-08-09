@@ -17,6 +17,11 @@
 |--------------------------------------------------------------------------
 */
 
+const normalizePermission = (permission) =>
+    String(permission || "")
+        .trim()
+        .toLowerCase();
+
 export const authorize = (...requiredPermissions) => {
     return async (req, res, next) => {
         try {
@@ -60,8 +65,13 @@ export const authorize = (...requiredPermissions) => {
             const permissionMap = new Map();
 
             [...rolePermissions, ...overridePermissions].forEach((permission) => {
-                if (permission?.name) {
-                    permissionMap.set(permission.name, permission);
+                const name =
+                    typeof permission === "string"
+                        ? permission
+                        : permission?.name;
+
+                if (name) {
+                    permissionMap.set(normalizePermission(name), permission);
                 }
             });
 
@@ -73,7 +83,9 @@ export const authorize = (...requiredPermissions) => {
             |--------------------------------------------------------------------------
             */
 
-            const hasPermission = requiredPermissions.every((permission) =>
+            const normalizedRequired = requiredPermissions.map(normalizePermission);
+
+            const hasPermission = normalizedRequired.every((permission) =>
                 userPermissions.includes(permission)
             );
 
@@ -81,7 +93,7 @@ export const authorize = (...requiredPermissions) => {
                 return res.status(403).json({
                     success: false,
                     message: "Access denied. Missing required permission.",
-                    missingPermissions: requiredPermissions.filter(
+                    missingPermissions: normalizedRequired.filter(
                         (permission) => !userPermissions.includes(permission)
                     ),
                 });

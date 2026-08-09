@@ -12,8 +12,9 @@ import api from "./axios";
 // GET ALL VEHICLES
 // ============================================================
 
-export const getVehicles = () => {
-  return api.get("/vehicles");
+export const getVehicles = async () => {
+  const { data } = await api.get("/vehicles");
+  return data;
 };
 
 
@@ -23,8 +24,9 @@ export const getVehicles = () => {
 // GET SINGLE VEHICLE
 // ============================================================
 
-export const getVehicleById = (id) => {
-  return api.get(`/vehicles/${id}`);
+export const getVehicleById = async (id) => {
+  const { data } = await api.get(`/vehicles/${id}`);
+  return data;
 };
 
 
@@ -43,8 +45,8 @@ export const getVehicleById = (id) => {
 //
 // ============================================================
 
-export const createVehicle = (data) => {
-  return api.post(
+export const createVehicle = async (data) => {
+  const response = await api.post(
     "/vehicles",
     data,
     {
@@ -53,6 +55,7 @@ export const createVehicle = (data) => {
       },
     }
   );
+  return response.data;
 };
 
 
@@ -62,8 +65,8 @@ export const createVehicle = (data) => {
 // UPDATE VEHICLE
 // ============================================================
 
-export const updateVehicle = (id, data) => {
-  return api.put(
+export const updateVehicle = async (id, data) => {
+  const response = await api.put(
     `/vehicles/${id}`,
     data,
     {
@@ -72,6 +75,7 @@ export const updateVehicle = (id, data) => {
       },
     }
   );
+  return response.data;
 };
 
 
@@ -81,8 +85,9 @@ export const updateVehicle = (id, data) => {
 // DELETE VEHICLE
 // ============================================================
 
-export const deleteVehicle = (id) => {
-  return api.delete(`/vehicles/${id}`);
+export const deleteVehicle = async (id) => {
+  const { data } = await api.delete(`/vehicles/${id}`);
+  return data;
 };
 
 
@@ -99,8 +104,9 @@ export const deleteVehicle = (id) => {
 // GET ALL DRIVERS
 // ============================================================
 
-export const getDrivers = () => {
-  return api.get("/staff/drivers");
+export const getDrivers = async () => {
+  const { data } = await api.get("/staff/drivers");
+  return data;
 };
 
 
@@ -110,16 +116,18 @@ export const getDrivers = () => {
 // ASSIGN DRIVER TO VEHICLE
 // ============================================================
 
-export const assignDriver = (
+export const assignDriver = async (
   vehicleId,
   driverId
 ) => {
-  return api.put(
+  const { data } = await api.put(
     `/vehicles/${vehicleId}/assign-driver`,
     {
       driverId,
+      driver: driverId,
     }
   );
+  return data;
 };
 
 
@@ -129,10 +137,11 @@ export const assignDriver = (
 // REMOVE DRIVER FROM VEHICLE
 // ============================================================
 
-export const removeDriver = (vehicleId) => {
-  return api.put(
+export const removeDriver = async (vehicleId) => {
+  const { data } = await api.put(
     `/vehicles/${vehicleId}/remove-driver`
   );
+  return data;
 };
 
 
@@ -149,14 +158,13 @@ export const removeDriver = (vehicleId) => {
 // UPDATE VEHICLE STATUS
 // ============================================================
 
-export const updateVehicleStatus = (
+export const updateVehicleStatus = async (
   id,
   status
 ) => {
-  return api.put(
+  const { data } = await api.put(
     `/vehicles/${id}/status`,
-    {
-      status,
-    }
+    { status }
   );
+  return data;
 };

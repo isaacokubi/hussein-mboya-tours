@@ -36,7 +36,12 @@ const createSuperAdmin = async () => {
       let permission = await Permission.findOne({ name });
 
       if (!permission) {
-        permission = await Permission.create({ name });
+        permission = await Permission.create({
+          name,
+          label: name.replace(/_/g, " "),
+          module: name.split(/[._]/)[0],
+          category: "other",
+        });
 
         console.log(`Created permission: ${name}`);
       }
@@ -55,6 +60,7 @@ const createSuperAdmin = async () => {
     if (!superAdminRole) {
       superAdminRole = await Role.create({
         name: "superadmin",
+        displayName: "Super Admin",
         permissions: permissionIds,
       });
 

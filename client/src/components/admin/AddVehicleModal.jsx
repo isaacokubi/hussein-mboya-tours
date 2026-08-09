@@ -58,7 +58,11 @@ const loadDrivers = async () => {
         const res = await getDrivers();
 
         setDrivers(
-            res.drivers || []
+            Array.isArray(res?.data)
+                ? res.data
+                : Array.isArray(res?.drivers)
+                    ? res.drivers
+                    : []
         );
     } catch (error) {
         console.error(error);
