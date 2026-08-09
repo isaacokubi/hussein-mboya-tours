@@ -1,4 +1,5 @@
 import Booking from "../models/Booking.js";
+import Payment from "../models/Payment.js";
 import User from "../models/User.js";
 import Vehicle from "../models/Vehicle.js";
 
@@ -71,48 +72,43 @@ export const getAnalytics = async (req, res, next) => {
 
       ]),
 
-      Booking.aggregate([
-
+      Payment.aggregate([
         {
           $match: {
-            paymentStatus: "paid",
+            status: "completed",
           },
         },
-
         {
           $group: {
-
             _id: {
-
               year: {
-                $year: "$createdAt",
+                $year: { $ifNull: ["$paidAt", "$createdAt"] },
               },
-
               month: {
-                $month: "$createdAt",
+                $month: { $ifNull: ["$paidAt", "$createdAt"] },
               },
-
             },
-
             revenue: {
-              $sum: "$totalAmount",
+              $sum: {
+                $max: [
+                  0,
+                  {
+                    $subtract: [
+                      { $ifNull: ["$amount", 0] },
+                      { $ifNull: ["$refundedAmount", 0] },
+                    ],
+                  },
+                ],
+              },
             },
-
-            bookings: {
-              $sum: 1,
-            },
-
           },
-
         },
-
         {
           $sort: {
             "_id.year": 1,
             "_id.month": 1,
           },
         },
-
       ]),
 
       Vehicle.aggregate([

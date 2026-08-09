@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Tour from "../models/Tour.js";
 import Booking from "../models/Booking.js";
 import User from "../models/User.js";
+import Payment from "../models/Payment.js";
 import { assignTourResources } from "./tourAssignmentController.js";
 
 /*
@@ -19,13 +20,15 @@ export const getTourManagerDashboard = async (req, res, next) => {
       upcomingToursCount,
       totalCustomers,
       revenueResult,
+      upcomingTours,
+      recentBookings,
     ] = await Promise.all([
       Tour.countDocuments({
-        isDeleted: false,
+        isDeleted: { $ne: true },
       }),
 
       Tour.countDocuments({
-        isDeleted: false,
+        isDeleted: { $ne: true },
         $or: [
           { startDate: { $gte: now } },
           { date: { $gte: now } },
@@ -39,50 +42,99 @@ export const getTourManagerDashboard = async (req, res, next) => {
         role: "customer",
       }),
 
-      Booking.aggregate([
+      // Revenue is actual completed payments, not booking value.
+      Payment.aggregate([
         {
           $match: {
-            paymentStatus: "paid",
+            status: "completed",
           },
         },
         {
           $group: {
             _id: null,
             total: {
-              $sum: "$totalAmount",
+              $sum: {
+                $max: [
+                  0,
+                  {
+                    $subtract: [
+                      { $ifNull: ["$amount", 0] },
+                      { $ifNull: ["$refundedAmount", 0] },
+                    ],
+                  },
+                ],
+              },
             },
           },
         },
       ]),
+
+      Tour.find({
+        isDeleted: { $ne: true },
+        $or: [
+          { startDate: { $gte: now } },
+          { date: { $gte: now } },
+        ],
+        status: {
+          $in: ["scheduled", "upcoming", "ongoing"],
+        },
+      })
+        .populate(
+          "assignedGuide",
+          "name email phone position availability assignedTours"
+        )
+        .populate(
+          "assignedDriver",
+          "name email phone position availability assignedTours"
+        )
+        .populate(
+          "assignedVehicle",
+          "name registrationNumber registration model type capacity status assignedTour"
+        )
+        .sort({ startDate: 1, date: 1 })
+        .limit(10)
+        .lean(),
+
+      Booking.find({
+        isDeleted: { $ne: true },
+      })
+        .populate("customer", "name email")
+        .populate("tour", "title")
+        .sort({ createdAt: -1 })
+        .limit(6)
+        .lean(),
     ]);
 
-    const revenue = revenueResult[0]?.total || 0;
+    const tourIds = upcomingTours.map((tour) => tour._id);
 
-    const upcomingTours = await Tour.find({
-      isDeleted: false,
-      $or: [
-        { startDate: { $gte: now } },
-        { date: { $gte: now } },
-      ],
-      status: {
-        $in: ["scheduled", "upcoming", "ongoing"],
-      },
-    })
-      .populate(
-        "assignedGuide",
-        "name email phone position availability assignedTours"
-      )
-      .populate(
-        "assignedDriver",
-        "name email phone position availability assignedTours"
-      )
-      .populate(
-        "assignedVehicle",
-        "name registrationNumber registration model type capacity status assignedTour"
-      )
-      .sort({ startDate: 1, date: 1 })
-      .limit(10)
-      .lean();
+    const guestStats = tourIds.length
+      ? await Booking.aggregate([
+          {
+            $match: {
+              tour: { $in: tourIds },
+              isDeleted: { $ne: true },
+              status: {
+                $in: ["confirmed", "assigned", "ongoing"],
+              },
+            },
+          },
+          {
+            $group: {
+              _id: "$tour",
+              guests: {
+                $sum: { $ifNull: ["$numberOfGuests", 1] },
+              },
+            },
+          },
+        ])
+      : [];
+
+    const guestMap = new Map(
+      guestStats.map((item) => [
+        item._id.toString(),
+        item.guests || 0,
+      ])
+    );
 
     const formattedTours = upcomingTours.map((tour) => ({
       id: tour._id,
@@ -91,86 +143,50 @@ export const getTourManagerDashboard = async (req, res, next) => {
       name: tour.title || "Untitled Tour",
       title: tour.title || "Untitled Tour",
 
-      date: tour.startDate
-        ? new Date(tour.startDate).toLocaleDateString("en-GB", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          })
-        : tour.date
-        ? new Date(tour.date).toLocaleDateString("en-GB", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          })
-        : "No date",
+      date: tour.startDate || tour.date || null,
 
-      guests:
-        tour.availabilitySettings?.bookedSlots ??
-        tour.capacity ??
-        0,
+      // This is the real number of guests from non-cancelled bookings.
+      guests: guestMap.get(tour._id.toString()) || 0,
 
-      guide:
-        tour.assignedGuide?.name ||
-        "Not Assigned",
+      capacity: tour.capacity || 0,
 
-      driver:
-        tour.assignedDriver?.name ||
-        "Not Assigned",
-
-      vehicle:
-        tour.assignedVehicle?.registrationNumber ||
-        tour.assignedVehicle?.registration ||
-        tour.assignedVehicle?.name ||
-        "Not Assigned",
+      guide: tour.assignedGuide || null,
+      driver: tour.assignedDriver || null,
+      vehicle: tour.assignedVehicle || null,
 
       status: tour.status || "draft",
-
-      assignmentStatus:
-        tour.assignmentStatus || "pending",
+      assignmentStatus: tour.assignmentStatus || "pending",
 
       assignedGuide: tour.assignedGuide || null,
       assignedDriver: tour.assignedDriver || null,
       assignedVehicle: tour.assignedVehicle || null,
     }));
 
-    const recentBookings = await Booking.find()
-      .populate("customer", "name email")
-      .populate("tour", "title")
-      .sort({ createdAt: -1 })
-      .limit(6)
-      .lean();
-
     const formattedBookings = recentBookings.map((booking) => ({
       id: booking._id,
       _id: booking._id,
 
-      customer:
-        booking.customer?.name ||
-        booking.customerSnapshot?.name ||
-        "Unknown",
+      customer: booking.customer || {
+        name: booking.customerSnapshot?.name || "Unknown",
+      },
 
-      tour:
-        booking.tour?.title ||
-        "Unknown",
+      tour: booking.tour || {
+        title: "Unknown",
+      },
 
-      guests:
-        booking.numberOfGuests ||
-        booking.guests ||
-        0,
+      guests: booking.numberOfGuests || 0,
 
-      payment:
-        booking.paymentStatus ||
-        "pending",
+      paymentStatus: booking.paymentStatus || "pending",
 
-      amount:
-        booking.totalAmount ||
-        0,
+      amount: booking.totalAmount || 0,
+
+      status: booking.status || "pending",
     }));
+
+    const revenue = revenueResult[0]?.total || 0;
 
     return res.status(200).json({
       success: true,
-
       data: {
         stats: {
           totalTours,
@@ -178,18 +194,12 @@ export const getTourManagerDashboard = async (req, res, next) => {
           totalCustomers,
           revenue,
         },
-
         upcomingTours: formattedTours,
-
         recentBookings: formattedBookings,
       },
     });
   } catch (error) {
-    console.error(
-      "TOUR MANAGER DASHBOARD ERROR:",
-      error
-    );
-
+    console.error("TOUR MANAGER DASHBOARD ERROR:", error);
     next(error);
   }
 };

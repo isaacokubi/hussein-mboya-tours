@@ -6,7 +6,8 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "check": "node --check server.js",
-    "lint": "npm run check"
+    "lint": "npm run check",
+    "repair:guides": "node scripts/repairGuideStaffProfiles.js"
   },
   "dependencies": {
     "africastalking": "^0.8.0",

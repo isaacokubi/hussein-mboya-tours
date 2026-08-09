@@ -1,798 +1,383 @@
-import mongoose from "mongoose";
-import User from "../models/User.js";
-import Tour from "../models/Tour.js";
 import Booking from "../models/Booking.js";
 import Destination from "../models/Destination.js";
-import Payment from "../models/Payment.js";
 import Notification from "../models/Notification.js";
+import Payment from "../models/Payment.js";
+import Staff from "../models/Staff.js";
+import Tour from "../models/Tour.js";
+import User from "../models/User.js";
 
-
+const ACTIVE_PAYMENT_STATUS = "completed";
+const NON_DELETED = { $ne: true };
 
 export const getDashboard = async (req, res) => {
-
-    try {
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | BASIC COUNTS
-        |--------------------------------------------------------------------------
-        */
-
-
-        const users =
-            await User.countDocuments();
-
-
-
-        const tours =
-            await Tour.countDocuments();
-
-
-
-        const bookings =
-            await Booking.countDocuments();
-
-
-
-        const destinations =
-            await Destination.countDocuments();
-
-
-
-
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | REVENUE FROM PAYMENTS
-        |--------------------------------------------------------------------------
-        */
-
-
-        let revenue = 0;
-
-
-
-        const paymentStats =
-await Payment.aggregate([
-{
-$group:{
-_id:"$status",
-count:{
-$sum:1
-},
-amount:{
-$sum:"$amount"
-}
-}
-}
-]);
-
-
-const successfulStatuses = [
-    "completed",
-    "paid",
-    "success",
-    "Completed",
-    "Success"
-];
-
-const completedPayments =
-paymentStats
-.filter(
-p => successfulStatuses.includes(p._id)
-)
-.reduce(
-(acc,p)=>({
-count: acc.count + p.count,
-amount: acc.amount + p.amount
-}),
-{
-count:0,
-amount:0
-}
-);
-
-
-const pendingPayments =
-    paymentStats.find(
-        p => p._id === "pending"
-    ) || {
-        count:0,
-        amount:0
-    };
-
-
-const failedPayments =
-    paymentStats.find(
-        p => p._id === "failed"
-    ) || {
-        count:0,
-        amount:0
-    };
-
-
-const paymentRevenue = {
-    total: completedPayments.amount,
-    completed: completedPayments.amount,
-    count: completedPayments.count,
-    pending: pendingPayments.count,
-    failed: failedPayments.count
-};
-
-
-
-        revenue =
-            paymentRevenue.total || 0;
-
-
-
-
-
-
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | FALLBACK REVENUE FROM BOOKINGS
-        |--------------------------------------------------------------------------
-        */
-
-
-        if(revenue === 0){
-
-
-            const bookingRevenue =
-                await Booking.aggregate([
-
-                    {
-                        $match:{
-                            paymentStatus:{
-                                $in:[
-                                    "paid",
-                                    "partial",
-                                    "completed"
-                                ]
-                            }
-                        }
-                    },
-
-
-                    {
-
-                        $group:{
-
-                            _id:null,
-
-
-                            total:{
-
-                                $sum:{
-                                    $ifNull:[
-                                        "$amount",
-                                        "$totalAmount"
-                                    ]
-                                }
-
-                            }
-
-                        }
-
-                    }
-
-
-                ]);
-
-
-
-            revenue =
-                bookingRevenue[0]?.total || 0;
-
-
-        }
-
-
-
-
-
-
-
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | PAYMENT STATUS
-        |--------------------------------------------------------------------------
-        */
-
-
-        const payments = {
-
-
-            paid:
-
-                await Payment.countDocuments({
-
-                    status:{
-                        $in:[
-                            "completed",
-                            "paid",
-                            "success"
-                        ]
-                    }
-
-                }),
-
-
-
-            pending:
-
-                await Payment.countDocuments({
-
-                    status:"pending"
-
-                }),
-
-
-
-            failed:
-
-                await Payment.countDocuments({
-
-                    status:"failed"
-
-                })
-
-
-        };
-
-
-
-
-
-
-
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | BOOKING STATUS
-        |--------------------------------------------------------------------------
-        */
-
-
-        
-          /*
-          |--------------------------------------------------------------------------
-          | MONTHLY REVENUE
-          |--------------------------------------------------------------------------
-          */
-
-          const monthlyRevenue =
-              await Booking.aggregate([
+  try {
+    /*
+    |--------------------------------------------------------------------------
+    | COUNTS
+    |--------------------------------------------------------------------------
+    |
+    | These are database counts, not cached/denormalized counters.
+    | Soft-deleted tours/bookings/destinations are excluded.
+    |
+    |--------------------------------------------------------------------------
+    */
+    const [
+      users,
+      tours,
+      bookings,
+      destinations,
+      customers,
+    ] = await Promise.all([
+      User.countDocuments({}),
+      Tour.countDocuments({ isDeleted: NON_DELETED }),
+      Booking.countDocuments({ isDeleted: NON_DELETED }),
+      Destination.countDocuments({ isDeleted: NON_DELETED }),
+      User.countDocuments({ role: "customer" }),
+    ]);
+
+    /*
+    |--------------------------------------------------------------------------
+    | ACTUAL CASH REVENUE
+    |--------------------------------------------------------------------------
+    |
+    | Payment is the source of truth for money actually received.
+    | Booking.totalAmount is the value of a booking, not necessarily cash
+    | received, so it must not be used as a revenue fallback.
+    |
+    |--------------------------------------------------------------------------
+    */
+    const [
+      paymentStats,
+      revenueResult,
+      monthlyRevenue,
+      bookingStatus,
+      popularTours,
+      recentBookings,
+      agentPerformance,
+      guidePerformance,
+      notifications,
+    ] = await Promise.all([
+      Payment.aggregate([
+        {
+          $group: {
+            _id: "$status",
+            count: { $sum: 1 },
+            amount: { $sum: {
+                $max: [
+                  0,
                   {
-                      $group:{
-                          _id:{
-                              month:{
-                                  $month:"$createdAt"
-                              },
-                              year:{
-                                  $year:"$createdAt"
-                              }
-                          },
-                          amount:{
-                              $sum:"$subtotal"
-                          }
-                      }
+                    $subtract: [
+                      { $ifNull: ["$amount", 0] },
+                      { $ifNull: ["$refundedAmount", 0] },
+                    ],
                   },
+                ],
+              } },
+          },
+        },
+      ]),
+
+      Payment.aggregate([
+        {
+          $match: {
+            status: ACTIVE_PAYMENT_STATUS,
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: {
+                $max: [
+                  0,
                   {
-                      $sort:{
-                          "_id.year":1,
-                          "_id.month":1
-                      }
-                  }
-              ]);
+                    $subtract: [
+                      { $ifNull: ["$amount", 0] },
+                      { $ifNull: ["$refundedAmount", 0] },
+                    ],
+                  },
+                ],
+              } },
+          },
+        },
+      ]),
 
+      Payment.aggregate([
+        {
+          $match: {
+            status: ACTIVE_PAYMENT_STATUS,
+          },
+        },
+        {
+          $group: {
+            _id: {
+              year: { $year: { $ifNull: ["$paidAt", "$createdAt"] } },
+              month: { $month: { $ifNull: ["$paidAt", "$createdAt"] } },
+            },
+            amount: { $sum: {
+                $max: [
+                  0,
+                  {
+                    $subtract: [
+                      { $ifNull: ["$amount", 0] },
+                      { $ifNull: ["$refundedAmount", 0] },
+                    ],
+                  },
+                ],
+              } },
+          },
+        },
+        {
+          $sort: {
+            "_id.year": 1,
+            "_id.month": 1,
+          },
+        },
+      ]),
 
-          const formattedMonthlyRevenue =
-              monthlyRevenue.map(item => ({
-                  month:
-                      `${item._id.month}/${item._id.year}`,
-                  amount:
-                      item.amount || 0
-              }));
+      Booking.aggregate([
+        {
+          $match: {
+            isDeleted: NON_DELETED,
+          },
+        },
+        {
+          $group: {
+            _id: "$status",
+            count: { $sum: 1 },
+          },
+        },
+        {
+          $sort: { _id: 1 },
+        },
+      ]),
 
+      Booking.aggregate([
+        {
+          $match: {
+            isDeleted: NON_DELETED,
+            status: { $nin: ["cancelled", "refunded"] },
+          },
+        },
+        {
+          $group: {
+            _id: "$tour",
+            totalBookings: { $sum: 1 },
+            bookingValue: {
+              $sum: { $ifNull: ["$totalAmount", 0] },
+            },
+            guests: {
+              $sum: { $ifNull: ["$numberOfGuests", 1] },
+            },
+          },
+        },
+        {
+          $lookup: {
+            from: "tours",
+            localField: "_id",
+            foreignField: "_id",
+            as: "tour",
+          },
+        },
+        { $unwind: "$tour" },
+        {
+          $match: {
+            "tour.isDeleted": NON_DELETED,
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            title: "$tour.title",
+            totalBookings: 1,
+            bookingValue: 1,
+            guests: 1,
+          },
+        },
+        { $sort: { totalBookings: -1, bookingValue: -1 } },
+        { $limit: 5 },
+      ]),
 
-const bookingStatus =
+      Booking.find({
+        isDeleted: NON_DELETED,
+      })
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .populate("tour", "title")
+        .populate("customer", "name email phone")
+        .lean(),
 
-            await Booking.aggregate([
+      Booking.aggregate([
+        {
+          $match: {
+            isDeleted: NON_DELETED,
+            agent: { $ne: null },
+            status: { $nin: ["cancelled", "refunded"] },
+          },
+        },
+        {
+          $group: {
+            _id: "$agent",
+            bookings: { $sum: 1 },
+            commission: {
+              $sum: { $ifNull: ["$commissionAmount", 0] },
+            },
+          },
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "_id",
+            foreignField: "_id",
+            as: "agent",
+          },
+        },
+        { $unwind: "$agent" },
+        {
+          $project: {
+            _id: 1,
+            name: "$agent.name",
+            email: "$agent.email",
+            bookings: 1,
+            commission: 1,
+          },
+        },
+        { $sort: { bookings: -1 } },
+      ]),
 
-
-                {
-
-                    $group:{
-
-
-                          _id:"$status",
-
-
-                        count:{
-
-                            $sum:1
-
-                        }
-
-
-                    }
-
-                }
-
-
-            ]);
-
-
-
-
-
-
-
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | POPULAR TOURS
-        |--------------------------------------------------------------------------
-        */
-
-
-        const popularTours =
-
-            await Booking.aggregate([
-
-
-                {
-
-
-                    $group:{
-
-
-                        _id:"$tour",
-
-
-
-                        totalBookings:{
-
-                            $sum:1
-
-                        },
-
-
-
-                        revenue:{
-
-
-                            $sum:{
-
-                                $ifNull:[
-
-                                    "$amount",
-
-                                    "$totalAmount"
-
-                                ]
-
-                            }
-
-
-                        }
-
-
-                    }
-
-
+      Staff.aggregate([
+        {
+          $match: {
+            position: "guide",
+            isDeleted: NON_DELETED,
+            isActive: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "tours",
+            let: { guideId: "$_id" },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $eq: ["$assignedGuide", "$$guideId"],
+                  },
+                  isDeleted: NON_DELETED,
                 },
-
-
-
-                {
-
-
-                    $lookup:{
-
-
-                        from:"tours",
-
-
-                        localField:"_id",
-
-
-                        foreignField:"_id",
-
-
-                        as:"tour"
-
-
-                    }
-
-
-                },
-
-
-
-                {
-
-
-                    $unwind:"$tour"
-
-
-                },
-
-
-
-                {
-
-
-                    $project:{
-
-
-                        title:
-                            "$tour.title",
-
-
-                        totalBookings:1,
-
-
-                        revenue:1
-
-
-                    }
-
-
-                },
-
-
-
-                {
-
-
-                    $sort:{
-
-
-                        totalBookings:-1
-
-
-                    }
-
-
-                },
-
-
-
-                {
-
-
-                    $limit:5
-
-
-                }
-
-
-            ]);
-
-
-
-
-
-
-
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | RECENT BOOKINGS
-        |--------------------------------------------------------------------------
-        */
-
-
-        const recentBookings =
-await Booking.find()
-.sort({
-createdAt:-1
-})
-.limit(5)
-.populate("tour","title")
-.populate("customer","name email");
-
-
-
-
-
-
-
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | NORMALIZE PAYMENT STATUS
-        |--------------------------------------------------------------------------
-        */
-
-
-        const normalizedRecentBookings =
-
-            recentBookings.map(
-                
-                (booking)=>({
-
-                    ...booking,
-
-
-                    paymentStatus:
-
-                        typeof booking.paymentStatus === "object"
-
-                        ?
-
-                        (
-
-                            booking.paymentStatus.paymentStatus ||
-
-                            booking.paymentStatus.status ||
-
-                            "pending"
-
-                        )
-
-                        :
-
-                        booking.paymentStatus || "pending"
-
-
-                })
-
-            );
-
-
-
-
-
-
-
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | USER GROUPS
-        |--------------------------------------------------------------------------
-        */
-
-
-        const customers =
-
-            await User.countDocuments({
-
-                role:"customer"
-
-            });
-
-
-
-
-
-
-
-        const agents =
-
-            await User.find({
-
-                role:"agent"
-
-            })
-
-            .select(
-                "name email"
-            );
-
-
-
-
-
-
-
-
-        const guides =
-
-            await User.find({
-
-                role:{
-
-                    $in:[
-
-                        "tour_guide",
-                        "tourguide",
-                        "Tour Guide"
-
-                    ]
-
-                }
-
-            })
-
-            .select(
-                "name email"
-            );
-
-
-
-
-
-
-
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | NOTIFICATIONS
-        |--------------------------------------------------------------------------
-        */
-
-
-        const notifications =
-
-            await Notification.find()
-
-                .sort({
-
-                    createdAt:-1
-
-                })
-
-                .limit(5);
-
-
-
-
-
-
-
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | RESPONSE
-        |--------------------------------------------------------------------------
-        */
-
-
-        res.status(200).json({
-
-
-            success:true,
-
-
-            data:{
-
-
-                users,
-
-
-                tours,
-
-
-                bookings,
-
-
-                destinations,
-
-
-
-                revenue,
-
-                  monthlyRevenue:
-                      formattedMonthlyRevenue,
-
-                  debugMonthlyRevenue:
-                      formattedMonthlyRevenue,
-
-
-
-
-                paymentStats:{
-
-
-                    completed:
-                        paymentRevenue.completed,
-
-
-                    pending:
-                        paymentRevenue.pending,
-
-
-                    failed:
-                        paymentRevenue.failed
-
-
-                },
-
-
-
-
-                statusData: bookingStatus,
-
-
-
-
-                popularTours,
-
-
-
-
-                recentBookings:
-                    normalizedRecentBookings,
-
-
-
-
-                notifications,
-
-
-
-
-                userStats:{
-                    customers,
-                    agents:
-                        agents.length,
-                    guides:
-                        guides.length
-                },
-
-
-                agents:
-                    agents.length,
-
-
-                guides:
-                    guides.length
-
-
-
-
-            }
-
-
-
-        });
-
-
-
-    }
-
-
-
-    catch(error){
-
-
-        console.error(
-            "Dashboard Error:",
-            error
-        );
-
-
-
-        res.status(500).json({
-
-
-            success:false,
-
-
-            message:error.message
-
-
-        });
-
-
-    }
-
-
+              },
+              { $count: "count" },
+            ],
+            as: "tourCount",
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            name: 1,
+            email: 1,
+            availability: 1,
+            assignedTours: {
+              $ifNull: [
+                { $arrayElemAt: ["$tourCount.count", 0] },
+                0,
+              ],
+            },
+          },
+        },
+        { $sort: { name: 1 } },
+      ]),
+
+      Notification.find({})
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .lean(),
+    ]);
+
+    const statsByStatus = Object.fromEntries(
+      paymentStats.map((item) => [
+        item._id || "unknown",
+        {
+          count: item.count || 0,
+          amount: item.amount || 0,
+        },
+      ])
+    );
+
+    const paidPayments = statsByStatus.completed || {
+      count: 0,
+      amount: 0,
+    };
+
+    const pendingPayments = statsByStatus.pending || {
+      count: 0,
+      amount: 0,
+    };
+
+    const failedPayments = statsByStatus.failed || {
+      count: 0,
+      amount: 0,
+    };
+
+    const normalizedRecentBookings = recentBookings.map((booking) => ({
+      ...booking,
+      amount: booking.totalAmount || 0,
+      paymentStatus: booking.paymentStatus || "pending",
+    }));
+
+    const formattedMonthlyRevenue = monthlyRevenue.map((item) => ({
+      month: `${item._id.month}/${item._id.year}`,
+      amount: item.amount || 0,
+    }));
+
+    const revenue = revenueResult[0]?.total || 0;
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        users,
+        customers,
+        tours,
+        bookings,
+        destinations,
+
+        revenue,
+
+        monthlyRevenue: formattedMonthlyRevenue,
+
+        paymentStats: {
+          completed: paidPayments.count,
+          completedAmount: paidPayments.amount,
+          pending: pendingPayments.count,
+          pendingAmount: pendingPayments.amount,
+          failed: failedPayments.count,
+          failedAmount: failedPayments.amount,
+        },
+
+        status: bookingStatus,
+        statusData: bookingStatus,
+
+        popularTours,
+
+        recentBookings: normalizedRecentBookings,
+
+        notifications,
+
+        agents: agentPerformance,
+        guides: guidePerformance,
+
+        userStats: {
+          customers,
+          agents: agentPerformance.length,
+          guides: guidePerformance.length,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Dashboard Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to load dashboard",
+    });
+  }
 };

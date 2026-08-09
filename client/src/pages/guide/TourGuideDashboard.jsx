@@ -48,7 +48,9 @@ export default function TourGuideDashboard(){
 
         isLoading,
 
-        isError
+        isError,
+
+        error
 
     } = useQuery({
 
@@ -193,7 +195,7 @@ export default function TourGuideDashboard(){
             text-red-600
         ">
 
-            Failed to load guide dashboard
+            {error?.response?.data?.message || error?.message || "Failed to load guide dashboard"}
 
         </div>
 
@@ -333,7 +335,7 @@ export default function TourGuideDashboard(){
 
                                     {
 
-                                        tour.tourStatus ||
+                                        tour.status ||
 
                                         "Pending"
 
@@ -428,7 +430,7 @@ export default function TourGuideDashboard(){
 
                                 disabled={
 
-                                    tour.tourStatus==="ongoing"
+                                    tour.status==="ongoing"
 
                                 }
 
@@ -451,7 +453,7 @@ export default function TourGuideDashboard(){
 
                                 {
 
-                                    tour.tourStatus==="ongoing"
+                                    tour.status==="ongoing"
 
                                     ?
 

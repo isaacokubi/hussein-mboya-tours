@@ -84,7 +84,7 @@ export default function AdminDashboard() {
 
 
 const statusDataList =
-  stats.status || [];
+  stats.status || stats.statusData || [];
 
 const monthlyRevenueData =
   (stats.monthlyRevenue || []).map(item => ({

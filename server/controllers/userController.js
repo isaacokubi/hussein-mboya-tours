@@ -1,4 +1,5 @@
 import User from "../models/User.js";
+import Staff from "../models/Staff.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -37,12 +38,22 @@ export const getUserProfile = async (req, res, next) => {
 
 export const getGuides = async (req, res, next) => {
     try {
-        const guides = await User.find({
-            role: { $in: ["guide", "tour_guide"] },
+        /*
+        |----------------------------------------------------------------------
+        | Tour assignments reference Staff, not User.
+        | Return Staff IDs so the assignment endpoint receives the correct
+        | resource type.
+        |----------------------------------------------------------------------
+        */
+        const guides = await Staff.find({
+            position: "guide",
             status: "active",
-            isActive: { $ne: false },
+            isActive: true,
+            isDeleted: { $ne: true },
         })
-            .select("name email phone profileImage")
+            .select(
+                "name email phone profileImage experience availability assignedTours position"
+            )
             .sort({ name: 1 })
             .lean();
 
@@ -50,12 +61,14 @@ export const getGuides = async (req, res, next) => {
             success: true,
             count: guides.length,
             data: guides,
+            guides,
         });
     } catch (error) {
         console.error("GET GUIDES ERROR:", error);
         next(error);
     }
 };
+
 export const deleteUser = async (req,res)=>{
 
 try{
