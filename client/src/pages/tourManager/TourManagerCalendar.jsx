@@ -1,457 +1,128 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { useMemo, useState } from "react";
 
-// Public pages
-import Home from "../pages/Home";
-import Tours from "../pages/Tours";
-import TourDetails from "../pages/TourDetails";
-import Login from "../pages/Login";
-import Register from "../pages/Register";
-import Destinations from "../pages/Destinations";
-import Wishlist from "../pages/Wishlist";
-import DestinationDetails from "../pages/DestinationDetails";
-import About from "../pages/About";
-import Contact from "../pages/Contact";
-import AirportTransfers from "../pages/AirportTransfers";
-import PolicyPage from "../pages/PolicyPage";
-import Unauthorized from "../pages/Unauthorized";
+export default function TourManagerCalendar() {
+  const [currentDate, setCurrentDate] = useState(new Date());
 
-// Customer pages
-import Dashboard from "../pages/Dashboard";
-import BookingDetails from "../pages/BookingDetails";
-import Profile from "../pages/Profile";
-import Checkout from "../pages/Checkout";
-import PaymentStatus from "../pages/PaymentStatus";
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
 
-// Agent pages
-import AgentLayout from "../layouts/AgentLayout";
-import AgentDashboard from "../pages/agent/AgentDashboard";
-import AgentBookings from "../pages/agent/AgentBookings";
-import AgentCustomers from "../pages/agent/AgentCustomers";
+  const monthName = currentDate.toLocaleString("default", {
+    month: "long",
+  });
 
-// Guide pages
-import TourGuideDashboard from "../pages/guide/TourGuideDashboard";
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDay = new Date(year, month, 1).getDay();
 
-// Tour manager pages
-import TourManagerLayout from "../layouts/TourManagerLayout";
-import TourManagerDashboard from "../pages/tourManager/TourManagerDashboard";
-import TourManagerTours from "../pages/tourManager/TourManagerTours";
-import CreateTour from "../pages/tourManager/CreateTour";
-import EditTour from "../pages/tourManager/EditTour";
-import AssignGuides from "../pages/tourManager/AssignGuides";
-import AssignGuide from "../pages/tourManager/AssignGuide";
-import AssignVehicle from "../pages/tourManager/AssignVehicle";
-import TourManagerVehicles from "../pages/tourManager/Vehicles";
-import TourAvailability from "../pages/tourManager/TourAvailability";
-import TourAnalytics from "../pages/tourManager/TourAnalytics";
-import TourAssignments from "../pages/tourManager/TourAssignments";
-import TourReports from "../pages/tourManager/TourReports";
-import TourManagerCalendar from "../pages/tourManager/TourManagerCalendar";
-import TourManagerBookings from "../pages/tourManager/TourManagerBookings";
-import TourManagerCustomers from "../pages/tourManager/TourManagerCustomers";
+  const days = useMemo(() => {
+    const result = [];
 
-// Admin pages
-import AdminLayout from "../layouts/AdminLayout";
-import AdminDashboard from "../pages/admin/AdminDashboard";
-import UserManagement from "../pages/admin/UserManagement";
-import TourManagement from "../pages/admin/TourManagement";
-import AddTour from "../pages/admin/AddTour";
-import DestinationManagement from "../pages/admin/DestinationManagement";
-import CreateDestination from "../pages/admin/CreateDestination";
-import EditDestination from "../pages/admin/EditDestination";
-import BookingManagement from "../pages/admin/BookingManagement";
-import StaffManagement from "../pages/admin/StaffManagement";
-import AdminCustomers from "../pages/admin/Customers";
-import AdminVehicles from "../pages/admin/AdminVehicles";
-import AdminGuides from "../pages/admin/AdminGuides";
-import AdminReviews from "../pages/admin/AdminReviews";
-import AdminGallery from "../pages/admin/AdminGallery";
-import AdminCoupons from "../pages/admin/AdminCoupons";
-import AdminNotifications from "../pages/admin/AdminNotifications";
-import AdminAITools from "../pages/admin/AdminAITools";
-import AdminSettings from "../pages/admin/AdminSettings";
-import AdminAnalytics from "../pages/admin/AdminAnalytics";
-import AdminPayments from "../pages/admin/payments/AdminPayments";
-import Commissions from "../pages/admin/finance/Commissions";
-import Reconciliation from "../pages/admin/finance/Reconciliation";
-import Reports from "../pages/admin/Reports";
-import Agents from "../pages/admin/Agents";
-import RolesPage from "../pages/rbac/RolesPage";
-import AdminSystemHealth from "../pages/admin/AdminSystemHealth";
-
-// Route guards
-import ProtectedRoute from "../components/auth/ProtectedRoute";
-import AdminRoute from "../components/auth/AdminRoute";
-import AgentRoute from "../components/agent/AgentRoute";
-
-export default function AppRoutes() {
-return ( <Routes>
-<Route path="/" element={<Home />} />
-<Route path="/tours" element={<Tours />} />
-<Route path="/tours/category/:slug" element={<Tours />} />
-<Route path="/tours/:slug" element={<TourDetails />} />
-
-```
-  <Route path="/destinations" element={<Destinations />} />
-  <Route
-    path="/destinations/:slug"
-    element={<DestinationDetails />}
-  />
-
-  <Route path="/login" element={<Login />} />
-  <Route path="/admin/login" element={<Login />} />
-  <Route path="/agent/login" element={<Login />} />
-  <Route path="/register" element={<Register />} />
-
-  <Route path="/wishlist" element={<Wishlist />} />
-  <Route path="/about" element={<About />} />
-  <Route path="/contact" element={<Contact />} />
-
-  <Route
-    path="/airport-transfers"
-    element={<AirportTransfers />}
-  />
-
-  <Route
-    path="/privacy"
-    element={<PolicyPage type="privacy" />}
-  />
-
-  <Route
-    path="/terms"
-    element={<PolicyPage type="terms" />}
-  />
-
-  <Route
-    path="/refund-policy"
-    element={<PolicyPage type="refund" />}
-  />
-
-  <Route
-    path="/unauthorized"
-    element={<Unauthorized />}
-  />
-
-  <Route
-    path="/admin/unauthorized"
-    element={<Unauthorized />}
-  />
-
-  <Route
-    path="/dashboard"
-    element={
-      <ProtectedRoute>
-        <Dashboard />
-      </ProtectedRoute>
+    for (let i = 0; i < firstDay; i += 1) {
+      result.push(null);
     }
-  />
 
-  <Route
-    path="/bookings/:id"
-    element={
-      <ProtectedRoute>
-        <BookingDetails />
-      </ProtectedRoute>
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      result.push(day);
     }
-  />
 
-  <Route
-    path="/profile"
-    element={
-      <ProtectedRoute>
-        <Profile />
-      </ProtectedRoute>
-    }
-  />
+    return result;
+  }, [firstDay, daysInMonth]);
 
-  <Route
-    path="/checkout/:id"
-    element={
-      <ProtectedRoute>
-        <Checkout />
-      </ProtectedRoute>
-    }
-  />
+  const previousMonth = () => {
+    setCurrentDate(new Date(year, month - 1, 1));
+  };
 
-  <Route
-    path="/payment-status/:id"
-    element={
-      <ProtectedRoute>
-        <PaymentStatus />
-      </ProtectedRoute>
-    }
-  />
+  const nextMonth = () => {
+    setCurrentDate(new Date(year, month + 1, 1));
+  };
 
-  <Route
-    path="/agent"
-    element={
-      <AgentRoute>
-        <AgentLayout />
-      </AgentRoute>
-    }
-  >
-    <Route index element={<AgentDashboard />} />
-    <Route path="dashboard" element={<AgentDashboard />} />
-    <Route path="bookings" element={<AgentBookings />} />
-    <Route path="customers" element={<AgentCustomers />} />
-  </Route>
+  const today = new Date();
 
-  <Route
-    path="/guide/dashboard"
-    element={
-      <ProtectedRoute roles={["guide", "admin"]}>
-        <TourGuideDashboard />
-      </ProtectedRoute>
-    }
-  />
+  const isToday = (day) =>
+    day &&
+    today.getDate() === day &&
+    today.getMonth() === month &&
+    today.getFullYear() === year;
 
-  <Route
-    path="/tour-manager"
-    element={
-      <ProtectedRoute
-        roles={[
-          "manager",
-          "tour_manager",
-          "tourmanager",
-          "admin"
-        ]}
-      >
-        <TourManagerLayout />
-      </ProtectedRoute>
-    }
-  >
-    <Route index element={<TourManagerDashboard />} />
-    <Route
-      path="dashboard"
-      element={<TourManagerDashboard />}
-    />
-    <Route
-      path="tours"
-      element={<TourManagerTours />}
-    />
-    <Route
-      path="create-tour"
-      element={<CreateTour />}
-    />
-    <Route
-      path="edit-tour/:id"
-      element={<EditTour />}
-    />
-    <Route
-      path="guides"
-      element={<AssignGuides />}
-    />
-    <Route
-      path="assign-guide/:id"
-      element={<AssignGuide />}
-    />
-    <Route
-      path="assign-vehicle/:id"
-      element={<AssignVehicle />}
-    />
-    <Route
-      path="assignments"
-      element={<TourAssignments />}
-    />
-    <Route
-      path="availability/:id"
-      element={<TourAvailability />}
-    />
-    <Route
-      path="vehicles"
-      element={<TourManagerVehicles />}
-    />
-    <Route
-      path="calendar"
-      element={<TourManagerCalendar />}
-    />
-    <Route
-      path="bookings"
-      element={<TourManagerBookings />}
-    />
-    <Route
-      path="customers"
-      element={<TourManagerCustomers />}
-    />
-    <Route
-      path="analytics"
-      element={<TourAnalytics />}
-    />
-    <Route
-      path="reports"
-      element={<TourReports />}
-    />
-  </Route>
+  return (
+    <div className="p-6">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Tour Calendar
+          </h1>
+          <p className="mt-1 text-sm text-gray-600">
+            View and manage scheduled tours and activities.
+          </p>
+        </div>
 
-  <Route
-    path="/manager/dashboard"
-    element={
-      <Navigate
-        to="/tour-manager/dashboard"
-        replace
-      />
-    }
-  />
+        <button
+          type="button"
+          onClick={() => setCurrentDate(new Date())}
+          className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        >
+          Today
+        </button>
+      </div>
 
-  <Route
-    path="/admin"
-    element={
-      <AdminRoute>
-        <AdminLayout />
-      </AdminRoute>
-    }
-  >
-    <Route index element={<AdminDashboard />} />
-    <Route
-      path="dashboard"
-      element={<AdminDashboard />}
-    />
-    <Route
-      path="users"
-      element={<UserManagement />}
-    />
-    <Route
-      path="staff"
-      element={<StaffManagement />}
-    />
-    <Route
-      path="manage-tours"
-      element={<TourManagement />}
-    />
-    <Route
-      path="tours/add"
-      element={<AddTour />}
-    />
-    <Route
-      path="destinations"
-      element={<DestinationManagement />}
-    />
-    <Route
-      path="create-destination"
-      element={<CreateDestination />}
-    />
-    <Route
-      path="edit-destination/:id"
-      element={<EditDestination />}
-    />
-    <Route
-      path="bookings"
-      element={<BookingManagement />}
-    />
-    <Route
-      path="payments"
-      element={<AdminPayments />}
-    />
-    <Route
-      path="agents"
-      element={<Agents />}
-    />
-    <Route
-      path="commissions"
-      element={<Commissions />}
-    />
-    <Route
-      path="customers"
-      element={<AdminCustomers />}
-    />
-    <Route
-      path="guides"
-      element={<AdminGuides />}
-    />
-    <Route
-      path="vehicles"
-      element={<AdminVehicles />}
-    />
-    <Route
-      path="coupons"
-      element={<AdminCoupons />}
-    />
-    <Route
-      path="reviews"
-      element={<AdminReviews />}
-    />
-    <Route
-      path="gallery"
-      element={<AdminGallery />}
-    />
-    <Route
-      path="reports"
-      element={<Reports />}
-    />
-    <Route
-      path="analytics"
-      element={<AdminAnalytics />}
-    />
-    <Route
-      path="ai"
-      element={<AdminAITools />}
-    />
-    <Route
-      path="notifications"
-      element={<AdminNotifications />}
-    />
-    <Route
-      path="settings"
-      element={<AdminSettings />}
-    />
-    <Route
-      path="roles"
-      element={<RolesPage />}
-    />
-    <Route
-      path="finance/reconciliation"
-      element={<Reconciliation />}
-    />
-    <Route
-      path="system-health"
-      element={<AdminSystemHealth />}
-    />
-  </Route>
+      <div className="rounded-xl bg-white shadow-sm ring-1 ring-gray-200">
+        <div className="flex items-center justify-between border-b border-gray-200 px-4 py-4">
+          <button
+            type="button"
+            onClick={previousMonth}
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            aria-label="Previous month"
+          >
+            ←
+          </button>
 
-  <Route
-    path="/admin/tours"
-    element={
-      <Navigate
-        to="/admin/manage-tours"
-        replace
-      />
-    }
-  />
+          <h2 className="text-lg font-semibold text-gray-900">
+            {monthName} {year}
+          </h2>
 
-  <Route
-    path="*"
-    element={<NotFound />}
-  />
-</Routes>
+          <button
+            type="button"
+            onClick={nextMonth}
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            aria-label="Next month"
+          >
+            →
+          </button>
+        </div>
 
+        <div className="grid grid-cols-7 border-b border-gray-200">
+          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
+            (day) => (
+              <div
+                key={day}
+                className="border-r border-gray-200 px-2 py-3 text-center text-xs font-semibold uppercase text-gray-500 last:border-r-0"
+              >
+                {day}
+              </div>
+            )
+          )}
+        </div>
 
-);
-}
-
-function NotFound() {
-return (
-<div
-style={{
-minHeight: "100vh",
-display: "flex",
-flexDirection: "column",
-alignItems: "center",
-justifyContent: "center",
-padding: "2rem",
-textAlign: "center"
-}}
-> <h1>404</h1> <p>The page you requested does not exist.</p>
-
-
-  <button
-    type="button"
-    onClick={() => {
-      window.location.href = "/";
-    }}
-  >
-    Return Home
-  </button>
-</div>
-
-
-);
+        <div className="grid grid-cols-7">
+          {days.map((day, index) => (
+            <div
+              key={`${year}-${month}-${index}`}
+              className="min-h-28 border-b border-r border-gray-200 p-2 last:border-r-0"
+            >
+              {day && (
+                <div
+                  className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
+                    isToday(day)
+                      ? "bg-blue-600 text-white"
+                      : "text-gray-700"
+                  }`}
+                >
+                  {day}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }
