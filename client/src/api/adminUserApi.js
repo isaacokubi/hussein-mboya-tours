@@ -9,19 +9,16 @@ export const getAdminUsers = async (params = {}) => {
 };
 
 
-
 // UPDATE USER STATUS
-export const updateUserStatus = async ({
-  id,
-  userId,
-  status
-}) => {
-  const resolvedId = id || userId;
+export const updateUserStatus = async ({ id, status }) => {
+  if (!id) {
+    throw new Error("User ID is required");
+  }
 
-  const response = await api.patch(
-    `/admin/users/${resolvedId}/status`,
+  const response = await api.put(
+    `/admin/users/${id}/status`,
     {
-      status
+      status,
     }
   );
 
@@ -29,9 +26,11 @@ export const updateUserStatus = async ({
 };
 
 
-
 // DELETE USER
 export const deleteUser = async (userId) => {
+  if (!userId) {
+    throw new Error("User ID is required");
+  }
 
   const response = await api.delete(
     `/admin/users/${userId}`

@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 
 import User from "../models/User.js";
 
@@ -24,49 +25,59 @@ export const getUsers = async (req, res, next) => {
 
 export const updateUserStatus = async (req, res, next) => {
   try {
-
+    const { id } = req.params;
     const { status } = req.body;
 
-    if (!["active", "inactive", "suspended", "blocked"].includes(status)) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid user status.",
+        message: "Invalid user ID",
       });
     }
 
-    if (req.params.id === req.user?._id?.toString()) {
+    const allowedStatuses = [
+      "active",
+      "inactive",
+      "disabled",
+      "suspended",
+      "blocked",
+    ];
+
+    if (!allowedStatuses.includes(status)) {
       return res.status(400).json({
         success: false,
-        message: "You cannot disable your own account.",
+        message: "Invalid user status",
       });
     }
 
     const user = await User.findByIdAndUpdate(
-      req.params.id,
+      id,
       {
         status,
-        isActive: status === "active"
+        isActive: status === "active",
       },
-      { new: true, runValidators: true }
+      {
+        new: true,
+        runValidators: true,
+      }
     ).select("-password");
 
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "User not found.",
+        message: "User not found",
       });
     }
 
-    return res.json({
+    return res.status(200).json({
       success: true,
-      message: `User ${status === "active" ? "enabled" : "disabled"} successfully.`,
-      data: user
+      message: `User status changed to ${status}`,
+      user,
     });
-
   } catch (error) {
     next(error);
   }
-};
+};;
 
 
 // DELETE USER

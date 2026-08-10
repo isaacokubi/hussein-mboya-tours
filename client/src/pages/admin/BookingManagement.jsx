@@ -109,15 +109,33 @@ const vehicles =
 
 
 const {
-data,
-isLoading,
-error
-}=useQuery({
-
-queryKey:["admin-bookings"],
-
-queryFn:getBookings
-
+  data,
+  isLoading,
+  isFetching,
+  error,
+  refetch
+} = useQuery({
+  queryKey: [
+    "admin-bookings",
+    search,
+    statusFilter,
+    paymentFilter
+  ],
+  queryFn: () =>
+    getBookings({
+      search: search.trim(),
+      status:
+        statusFilter === "all"
+          ? undefined
+          : statusFilter,
+      paymentStatus:
+        paymentFilter === "all"
+          ? undefined
+          : paymentFilter,
+      page: 1,
+      limit: 100
+    }),
+  keepPreviousData: true,
 });
 
 
@@ -487,31 +505,49 @@ b.paymentStatus?.status || "";
 
 
 
+const normalizedSearch =
+  search.trim().toLowerCase();
+
+const bookingId =
+  String(b._id || "").toLowerCase();
+
+const bookingNumber =
+  String(b.bookingNumber || "").toLowerCase();
+
+const customerName =
+  String(
+    b.customer?.name ||
+    b.customerSnapshot?.name ||
+    b.user?.name ||
+    b.user?.firstName ||
+    ""
+  ).toLowerCase();
+
+const customerEmail =
+  String(
+    b.customer?.email ||
+    b.customerSnapshot?.email ||
+    b.user?.email ||
+    ""
+  ).toLowerCase();
+
+const customerPhone =
+  String(
+    b.customer?.phone ||
+    b.customerSnapshot?.phone ||
+    b.user?.phone ||
+    ""
+  ).toLowerCase();
+
+
 const matchesSearch =
-
-customer
-.toLowerCase()
-.includes(
-search.toLowerCase()
-)
-
-||
-
-tour
-.toLowerCase()
-.includes(
-search.toLowerCase()
-)
-
-||
-
-b._id
-.includes(search);
-
-
-
-
-
+  !normalizedSearch ||
+  bookingId.includes(normalizedSearch) ||
+  bookingNumber.includes(normalizedSearch) ||
+  customerName.includes(normalizedSearch) ||
+  customerEmail.includes(normalizedSearch) ||
+  customerPhone.includes(normalizedSearch) ||
+  tour.includes(normalizedSearch);
 
 const matchesStatus =
 

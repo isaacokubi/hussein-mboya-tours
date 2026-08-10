@@ -72,6 +72,31 @@ export const getAllBookings = async (req, res, next) => {
     |--------------------------------------------------------------------------
     | SEARCH
     |--------------------------------------------------------------------------
+    | Search booking number and customer snapshot.
+    */
+
+    if (req.query.search) {
+      const search = String(req.query.search).trim();
+
+      if (search) {
+        const regex = {
+          $regex: search,
+          $options: "i",
+        };
+
+        filter.$or = [
+          { bookingNumber: regex },
+          { "customerSnapshot.name": regex },
+          { "customerSnapshot.email": regex },
+          { "customerSnapshot.phone": regex },
+        ];
+      }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | SEARCH
+    |--------------------------------------------------------------------------
     */
 
     if (search) {

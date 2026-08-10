@@ -88,34 +88,30 @@ data?.users ||
 
 
 
-const statusMutation=
+const statusMutation = useMutation({
+  mutationFn: ({ id, status }) =>
+    updateUserStatus({
+      id,
+      status,
+    }),
 
-useMutation({
+  onSuccess: async () => {
+    await queryClient.invalidateQueries({
+      queryKey: ["admin-users"],
+    });
+  },
 
-mutationFn: ({ id, status }) => updateUserStatus({ id, status }),
-
-
-
-onSuccess(){
-
-toast.success(
-"User status updated"
-);
-
-
-queryClient.invalidateQueries({
-  queryKey:["admin-users"]
+  onError: (error) => {
+    console.error(
+      "USER STATUS UPDATE FAILED:",
+      error?.response?.data ||
+      error?.message ||
+      error
+    );
+  },
 });
 
 
-},
-onError(error){
-  toast.error(
-    error?.response?.data?.message || "Unable to update user status."
-  );
-}
-
-});
 
 
 
@@ -424,18 +420,9 @@ onClick={()=>
 
 
 statusMutation.mutate({
-
-id:user._id,
-
-status:
-user.isActive
-?
-"inactive"
-:
-"active"
-
-
-})
+      id: user._id || user.id,
+      status: user.status === "active" ? "inactive" : "active",
+    })
 
 
 }

@@ -6,12 +6,12 @@ import api from "./axios";
 |--------------------------------------------------------------------------
 */
 
-export const getBookings = async () => {
-  const { data } = await api.get(
-    "/admin/bookings"
-  );
+export const getBookings = async (params = {}) => {
+  const response = await api.get("/admin/bookings", {
+    params,
+  });
 
-  return data;
+  return response.data;
 };
 
 export const getBooking = async (id) => {

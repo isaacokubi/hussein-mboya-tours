@@ -91,3 +91,6 @@ Thumbs.db
 *.swp
 .vercel
 .env*
+
+# Automatic repair backups
+*.backup
