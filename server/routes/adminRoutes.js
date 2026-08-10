@@ -25,10 +25,6 @@ updateAgentStatus
 
 
 import {
-  sendBookingNotification
-} from "../controllers/notificationController.js";
-
-import {
   getDashboardStats,
   getUserAnalytics,
   getBookingAnalytics,
@@ -44,16 +40,6 @@ tourBookingReport,
 agentBookingReport
 
 } from "../controllers/bookingReportController.js";
-
-import {
-  getAllBookings,
-  getBookingById,
-  updateBookingStatus,
-  updatePaymentStatus,
-  assignResources,
-  getBookingTimeline,
-  downloadBookingInvoice,
-} from "../controllers/adminBookingController.js";
 
 import {
   protect,
@@ -116,72 +102,23 @@ router.get(
 |--------------------------------------------------------------------------
 */
 
-/**
- * GET /api/admin/bookings
- * Get all bookings
- */
-router.get(
-  "/bookings",
-  getAllBookings
-);
-
-/**
- * GET /api/admin/bookings/:id
- * Get booking details
- */
 router.get(
   "/bookings/analytics",
   getBookingAnalytics
 );
 
-router.get(
-  "/bookings/export",
-  exportBookings
-);
-
-router.get(
-  "/bookings/:id",
-  getBookingById
-);
-
-
 /**
  * PUT /api/admin/bookings/:id/status
  * Update booking status
  */
-router.put(
-  "/bookings/:id/status",
-  updateBookingStatus
-);
-
 /**
  * PUT /api/admin/bookings/:id/payment
  * Update payment status
  */
-router.put(
-  "/bookings/:id/payment",
-  updatePaymentStatus
-);
-
 /**
  * PUT /api/admin/bookings/:id/assign
  * Assign guide, driver and vehicle
  */
-router.get(
-  "/bookings/:id/timeline",
-  getBookingTimeline
-);
-
-
-router.get(
-  "/bookings/:id/invoice",
-  downloadBookingInvoice
-);
-
-
-
-
-
 router.put(
   "/bookings/:id/refund",
   refundBooking
@@ -191,17 +128,6 @@ router.post(
   "/bookings/:id/refund",
   refundBooking
 );
-
-router.post(
-  "/bookings/:id/notify",
-  sendBookingNotification
-);
-
-router.put(
-  "/bookings/:id/assign",
-  assignResources
-);
-
 
 router.put(
   "/refunds/:id/process",
@@ -238,10 +164,6 @@ router.get(
 );
 
 
-router.put(
-  "/users/:id/status",
-  updateUserStatus
-);
 
 router.patch(
   "/users/:id/status",

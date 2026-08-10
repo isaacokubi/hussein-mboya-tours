@@ -92,9 +92,7 @@ const statusMutation=
 
 useMutation({
 
-mutationFn:
-({id,status})=>
-updateUserStatus(id,status),
+mutationFn: ({ id, status }) => updateUserStatus({ id, status }),
 
 
 
