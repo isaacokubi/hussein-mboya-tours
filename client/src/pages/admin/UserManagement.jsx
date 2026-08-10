@@ -61,9 +61,7 @@ search
 ],
 
 queryFn:()=>getAdminUsers({
-
-search
-
+  search
 })
 
 
@@ -103,15 +101,20 @@ updateUserStatus(id,status),
 onSuccess(){
 
 toast.success(
-"User updated"
+"User status updated"
 );
 
 
-queryClient.invalidateQueries([
-"admin-users"
-]);
+queryClient.invalidateQueries({
+  queryKey:["admin-users"]
+});
 
 
+},
+onError(error){
+  toast.error(
+    error?.response?.data?.message || "Unable to update user status."
+  );
 }
 
 });
@@ -138,9 +141,9 @@ toast.success(
 );
 
 
-queryClient.invalidateQueries([
-"admin-users"
-]);
+queryClient.invalidateQueries({
+  queryKey:["admin-users"]
+});
 
 }
 
@@ -429,7 +432,7 @@ id:user._id,
 status:
 user.isActive
 ?
-"disabled"
+"inactive"
 :
 "active"
 

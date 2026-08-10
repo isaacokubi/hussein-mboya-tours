@@ -20,6 +20,9 @@ export default function AdminCustomers() {
             <th className="p-3 text-left">Name</th>
             <th className="p-3 text-left">Email</th>
             <th className="p-3 text-left">Phone</th>
+            <th className="p-3 text-left">Bookings</th>
+            <th className="p-3 text-left">Spent</th>
+            <th className="p-3 text-left">Status</th>
           </tr></thead>
           <tbody>
             {customers.map((customer) => (
@@ -27,9 +30,18 @@ export default function AdminCustomers() {
                 <td className="p-3">{customer.name || customer.fullName || "-"}</td>
                 <td className="p-3">{customer.email || "-"}</td>
                 <td className="p-3">{customer.phone || customer.phoneNumber || "-"}</td>
+                <td className="p-3">{customer.totalBookings || 0}</td>
+                <td className="p-3 font-semibold">
+                  KES {Number(customer.totalSpent || 0).toLocaleString()}
+                </td>
+                <td className="p-3">
+                  <span className={customer.isActive === false ? "text-red-600" : "text-green-600"}>
+                    {customer.isActive === false ? "Inactive" : "Active"}
+                  </span>
+                </td>
               </tr>
             ))}
-            {!customers.length && <tr><td colSpan="3" className="p-6 text-center text-gray-500">No customers found.</td></tr>}
+            {!customers.length && <tr><td colSpan="7" className="p-6 text-center text-gray-500">No customers found.</td></tr>}
           </tbody>
         </table>
       </div>

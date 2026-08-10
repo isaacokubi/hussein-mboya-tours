@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 
 import Booking from "../models/Booking.js";
+import Customer from "../models/Customer.js";
 import Commission from "../models/Commission.js";
 import Agent from "../models/Agent.js";
 
@@ -204,20 +205,24 @@ export const getMyBookings = async (req, res, next) => {
       (page - 1) * limit;
 
 
+    const customerProfile = await Customer.findOne({
+      user: req.user._id,
+    })
+      .select("_id")
+      .lean();
+
+    const ownershipFilters = [
+      { user: req.user._id },
+    ];
+
+    if (customerProfile?._id) {
+      ownershipFilters.push({
+        customer: customerProfile._id,
+      });
+    }
+
     const filter = {
-
-      $or:[
-
-        {
-          user:req.user._id
-        },
-
-        {
-          customer:req.user._id
-        }
-
-      ]
-
+      $or: ownershipFilters,
     };
 
 
@@ -230,6 +235,10 @@ export const getMyBookings = async (req, res, next) => {
       await Booking.find(filter)
 
       .populate("tour")
+
+      .populate("user", "name email phone")
+
+      .populate("customer", "name email phone user")
 
       .sort({
         createdAt:-1
@@ -572,8 +581,13 @@ req.params.id
 .populate("tour")
 
 .populate(
-"customer",
+"user",
 "name email phone"
+)
+
+.populate(
+"customer",
+"name email phone user"
 )
 
 .populate(
@@ -604,15 +618,25 @@ message:"Booking not found"
 
 }
 
-if (
-  !isPrivilegedBookingViewer(req.user) &&
-  booking.user?.toString() !== req.user._id.toString() &&
-  booking.customer?.toString() !== req.user._id.toString()
-) {
-  return res.status(403).json({
-    success: false,
-    message: "You do not have access to this booking.",
-  });
+if (!isPrivilegedBookingViewer(req.user)) {
+  const requesterId = req.user._id.toString();
+
+  const ownsAsUser =
+    booking.user?._id?.toString() === requesterId ||
+    booking.user?.toString() === requesterId;
+
+  const ownsThroughCustomer =
+    booking.customer?.user?._id?.toString() === requesterId ||
+    booking.customer?.user?.toString() === requesterId ||
+    booking.customer?._id?.toString() === requesterId ||
+    booking.customer?.toString() === requesterId;
+
+  if (!ownsAsUser && !ownsThroughCustomer) {
+    return res.status(403).json({
+      success: false,
+      message: "You do not have access to this booking.",
+    });
+  }
 }
 
 

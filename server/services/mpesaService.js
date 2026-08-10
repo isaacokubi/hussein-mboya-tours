@@ -52,13 +52,14 @@ export const normalizePhoneNumber = (phone) => {
   }
 
 
-  if (normalized.startsWith("07")) {
+  if (/^0[17]\d{8}$/.test(normalized)) {
     normalized =
       "254" + normalized.substring(1);
   }
 
 
-  if (!/^2547\d{8}$/.test(normalized)) {
+  // Safaricom uses 07xx and 01xx mobile ranges in Kenya.
+  if (!/^254[17]\d{8}$/.test(normalized)) {
     throw new Error(
       "Invalid Safaricom phone number."
     );

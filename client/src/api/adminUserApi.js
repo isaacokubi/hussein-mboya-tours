@@ -2,8 +2,8 @@ import api from "./axios";
 
 
 // GET USERS
-export const getAdminUsers = async () => {
-  const response = await api.get("/admin/users");
+export const getAdminUsers = async (params = {}) => {
+  const response = await api.get("/admin/users", { params });
 
   return response.data;
 };
@@ -12,12 +12,14 @@ export const getAdminUsers = async () => {
 
 // UPDATE USER STATUS
 export const updateUserStatus = async ({
+  id,
   userId,
   status
 }) => {
+  const resolvedId = id || userId;
 
   const response = await api.patch(
-    `/admin/users/${userId}/status`,
+    `/admin/users/${resolvedId}/status`,
     {
       status
     }

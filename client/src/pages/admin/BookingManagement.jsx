@@ -190,7 +190,7 @@ updateBookingPayment(
 id,
 
 {
-paymentStatus:status
+status
 }
 
 ),
@@ -587,11 +587,22 @@ b.status==="cancelled"
 
 
 const revenue = bookings.reduce((sum, booking) => {
-  const status = typeof booking.paymentStatus === "string"
-    ? booking.paymentStatus
-    : booking.paymentStatus?.status;
-  if (status !== "paid") return sum;
-  return sum + Number(booking.totalAmount || booking.amount || booking.subtotal || 0);
+  const status = String(
+    typeof booking.paymentStatus === "string"
+      ? booking.paymentStatus
+      : booking.paymentStatus?.status || "pending"
+  ).toLowerCase();
+
+  if (!["paid", "completed"].includes(status)) return sum;
+
+  const paidAmount =
+    Number(booking.depositAmount || 0) ||
+    Number(booking.totalAmount || booking.amount || 0);
+
+  return sum + Math.max(
+    0,
+    paidAmount - Number(booking.refundAmount || 0)
+  );
 }, 0);
 
 

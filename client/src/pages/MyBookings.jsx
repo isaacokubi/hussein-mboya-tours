@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { toast } from "react-toastify";
+import { useAuth } from "../context/AuthContext";
 
 import {
   cancelBooking,
@@ -31,6 +32,7 @@ const bookingStatusOf = (booking) =>
 
 export default function MyBookings() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["my-bookings"],
@@ -262,12 +264,30 @@ function PayNowButton({ booking }) {
 
   const handlePayment = async () => {
     const phone =
+      booking.user?.phone ||
+      user?.phone ||
       booking.customer?.phone ||
       booking.customerSnapshot?.phone ||
       booking.contact?.phone;
 
+    const amount = Number(
+      booking.balanceAmount ??
+        Math.max(
+          0,
+          Number(booking.totalAmount || 0) -
+            Number(booking.depositAmount || 0)
+        )
+    );
+
     if (!phone) {
-      toast.error("No phone number is available for this booking.");
+      toast.error(
+        "No phone number is available. Update your profile phone number first."
+      );
+      return;
+    }
+
+    if (!amount || amount <= 0) {
+      toast.info("There is no outstanding balance to pay.");
       return;
     }
 
@@ -277,7 +297,8 @@ function PayNowButton({ booking }) {
       await initiatePayment({
         bookingId: booking._id,
         phone,
-        amount: Number(booking.balanceAmount || booking.totalAmount || 0),
+        phoneNumber: phone,
+        amount,
       });
 
       toast.success("M-Pesa payment request sent.");

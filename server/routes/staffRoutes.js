@@ -76,6 +76,12 @@ router.get(
 );
 
 router.put(
+  "/:id/status",
+  roleMiddleware("admin"),
+  updateStaff
+);
+
+router.put(
   "/:id",
   roleMiddleware("admin"),
   updateStaff

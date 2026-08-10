@@ -217,29 +217,35 @@ const CustomerDashboard = () => {
 
 
 
+  // "Total Spent" means money actually paid, not the value of
+  // pending bookings.  depositAmount represents the amount received
+  // for partial/paid bookings and refundAmount is deducted.
   const totalSpent =
-    bookings.reduce(
+    bookings.reduce((total, booking) => {
+      const paymentStatus = String(
+        typeof booking.paymentStatus === "object"
+          ? booking.paymentStatus?.paymentStatus ||
+              booking.paymentStatus?.status ||
+              "pending"
+          : booking.paymentStatus || "pending"
+      ).toLowerCase();
 
-      (total,booking)=>
+      const deposited = Number(booking.depositAmount || 0);
+      const totalAmount = Number(
+        booking.totalAmount || booking.amount || 0
+      );
 
-        total +
+      const paidAmount =
+        deposited > 0
+          ? deposited
+          : ["paid", "completed"].includes(paymentStatus)
+            ? totalAmount
+            : 0;
 
-        Number(
+      const refunded = Number(booking.refundAmount || 0);
 
-          booking.totalAmount ||
-
-          booking.amount ||
-
-          booking.subtotal ||
-
-          0
-
-        ),
-
-
-      0
-
-    );
+      return total + Math.max(0, paidAmount - refunded);
+    }, 0);
 
 
 
@@ -410,7 +416,7 @@ gap-6
 
 <SummaryItem
 
-title="Total Booking Value"
+title="Total Spent"
 
 value={
 `KES ${totalSpent.toLocaleString()}`

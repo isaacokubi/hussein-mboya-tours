@@ -2,6 +2,7 @@
 
 import mongoose from "mongoose";
 import User from "../models/User.js";
+import Customer from "../models/Customer.js";
 import Booking from "../models/Booking.js";
 
 /*
@@ -94,37 +95,69 @@ export const getCustomers = async (req, res, next) => {
 
     const customerIds = customers.map((c) => c._id);
 
-    const bookingStats = await Booking.aggregate([
-      {
-        $match: {
-          $or: [
-            { customer: { $in: customerIds } },
-            { user: { $in: customerIds } },
-          ],
-        },
-      },
-      {
-        $group: {
-          _id: "$customer",
+    // Current web bookings point to User. Older/agent bookings can point
+    // through Customer.user, so resolve both ownership models.
+    const customerRecords = await Customer.find({
+      user: { $in: customerIds },
+    })
+      .select("_id user")
+      .lean();
 
-          totalBookings: {
-            $sum: 1,
-          },
+    const legacyCustomerIds = customerRecords.map((c) => c._id);
 
-          totalSpent: {
-            $sum: {
-              $ifNull: ["$amount", 0],
-            },
-          },
-        },
-      },
-    ]);
+    const bookingStats = await Booking.find({
+      $or: [
+        { user: { $in: customerIds } },
+        { customer: { $in: legacyCustomerIds } },
+      ],
+    })
+      .select("user customer totalAmount depositAmount refundAmount paymentStatus")
+      .lean();
+
+    const legacyToUser = new Map(
+      customerRecords.map((c) => [
+        c._id.toString(),
+        c.user?.toString(),
+      ])
+    );
 
     const statsMap = {};
 
-    bookingStats.forEach((item) => {
-      statsMap[item._id.toString()] = item;
-    });
+    for (const booking of bookingStats) {
+      const ownerId =
+        booking.user?.toString() ||
+        legacyToUser.get(booking.customer?.toString());
+
+      if (!ownerId) continue;
+
+      if (!statsMap[ownerId]) {
+        statsMap[ownerId] = {
+          totalBookings: 0,
+          totalSpent: 0,
+        };
+      }
+
+      statsMap[ownerId].totalBookings += 1;
+
+      const paymentStatus = String(
+        booking.paymentStatus || "pending"
+      ).toLowerCase();
+
+      const deposited = Number(booking.depositAmount || 0);
+      const totalAmount = Number(booking.totalAmount || 0);
+
+      const paidAmount =
+        deposited > 0
+          ? deposited
+          : ["paid", "completed"].includes(paymentStatus)
+            ? totalAmount
+            : 0;
+
+      statsMap[ownerId].totalSpent += Math.max(
+        0,
+        paidAmount - Number(booking.refundAmount || 0)
+      );
+    }
 
     /*
     |--------------------------------------------------------------------------
@@ -224,11 +257,27 @@ export const getCustomerProfile = async (
     const summary = bookings.reduce(
       (acc, booking) => {
         acc.totalBookings += 1;
-        acc.totalSpent += booking.totalAmount || 0;
 
-        if (booking.paymentStatus === "paid") {
-          acc.totalPaid += booking.totalAmount || 0;
-        }
+        const deposited = Number(booking.depositAmount || 0);
+        const totalAmount = Number(booking.totalAmount || 0);
+        const paymentStatus = String(
+          booking.paymentStatus || "pending"
+        ).toLowerCase();
+
+        const paidAmount =
+          deposited > 0
+            ? deposited
+            : ["paid", "completed"].includes(paymentStatus)
+              ? totalAmount
+              : 0;
+
+        const netPaid = Math.max(
+          0,
+          paidAmount - Number(booking.refundAmount || 0)
+        );
+
+        acc.totalSpent += netPaid;
+        acc.totalPaid += netPaid;
 
         return acc;
       },

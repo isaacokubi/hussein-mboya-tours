@@ -35,6 +35,7 @@ const [search,setSearch] = useState("");
 
 const [statusFilter,setStatusFilter] = useState("all");
 const [selectedPayment,setSelectedPayment] = useState(null);
+const [refundingPaymentId,setRefundingPaymentId] = useState(null);
 
 
 
@@ -96,16 +97,24 @@ const refundMutation =
 useMutation({
 
 mutationFn:
-(id)=>
-refundPayment(id),
+(id) => refundPayment(id),
 
+onMutate: (id) => {
+  setRefundingPaymentId(id);
+},
 
 onSuccess:()=>{
   queryClient.invalidateQueries({ queryKey:["adminPayments"] });
-  toast.success("Refund request submitted.");
+  queryClient.invalidateQueries({ queryKey:["paymentStats"] });
+  toast.success("Refund request submitted for the selected payment.");
 },
+
 onError:(error)=>{
   toast.error(error?.response?.data?.message || "Refund failed.");
+},
+
+onSettled:()=>{
+  setRefundingPaymentId(null);
 }
 
 });
@@ -627,11 +636,24 @@ View
 
 <button
   type="button"
-  disabled={refundMutation.isPending}
-  onClick={() => refundMutation.mutate(payment._id)}
+  disabled={
+    (refundMutation.isPending && refundingPaymentId === payment._id) ||
+    payment.status === "refunded" ||
+    payment.refundStatus === "processing" ||
+    payment.refundStatus === "completed"
+  }
+  onClick={() => {
+    if (
+      window.confirm(
+        `Start a refund for ${payment.customer?.name || "this customer"} — KES ${Number(payment.amount || 0).toLocaleString()}?`
+      )
+    ) {
+      refundMutation.mutate(payment._id);
+    }
+  }}
   className="px-3 py-1 bg-red-600 text-white rounded disabled:opacity-50"
 >
-  {refundMutation.isPending ? "Refunding..." : "Refund"}
+  {refundingPaymentId === payment._id ? "Refunding..." : "Refund"}
 </button>
 
 </td>

@@ -44,7 +44,17 @@ export const getStaff = async (req, res, next) => {
     if (status) {
       filter.status = status;
     } else {
-      filter.isActive = true;
+      const role = String(
+        req.user?.roleId?.name || req.user?.role || ""
+      ).toLowerCase().replace(/[\s_-]/g, "");
+
+      const includeInactive =
+        role === "admin" &&
+        String(req.query.includeInactive || "").toLowerCase() === "true";
+
+      if (!includeInactive) {
+        filter.isActive = true;
+      }
     }
 
     if (position) {

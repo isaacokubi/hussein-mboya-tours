@@ -312,7 +312,7 @@ export default function Vehicles(){
 
                 v=>
 
-                v.status==="Available"
+                String(v.status || "").toLowerCase()==="available"
 
             ).length,
 
@@ -326,7 +326,7 @@ export default function Vehicles(){
 
                 v=>
 
-                v.status==="Assigned"
+                String(v.status || "").toLowerCase()==="assigned"
 
             ).length,
 
@@ -340,7 +340,7 @@ export default function Vehicles(){
 
                 v=>
 
-                v.status==="Maintenance"
+                String(v.status || "").toLowerCase()==="maintenance"
 
             ).length
 

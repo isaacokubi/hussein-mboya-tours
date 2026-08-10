@@ -256,7 +256,7 @@ message:"Payment not found"
 
 
 if(
-payment.status!=="completed"
+!["completed", "paid", "success"].includes(payment.status)
 ){
 
 return res.status(400).json({

@@ -131,9 +131,9 @@ export default function TourGuideDashboard(){
 
 
             toast.error(
-
+                error?.response?.data?.message ||
+                error?.message ||
                 "Failed to update tour status"
-
             );
 
 

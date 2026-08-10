@@ -21,7 +21,10 @@ export default function BookingDetails() {
   const {
     data,
     isLoading,
-    isError
+    isError,
+    error,
+    refetch,
+    isFetching
   } = useQuery({
 
     queryKey:[
@@ -68,14 +71,20 @@ export default function BookingDetails() {
 
     return (
 
-      <div
-      className="
-      p-10
-      text-red-600
-      "
-      >
+      <div className="p-10 text-center text-red-600">
 
-        Unable to load booking details.
+        <p className="font-semibold">
+          {error?.response?.data?.message || "Unable to load booking details."}
+        </p>
+
+        <button
+          type="button"
+          onClick={() => refetch()}
+          disabled={isFetching}
+          className="mt-4 rounded-lg bg-green-700 px-5 py-2 text-white disabled:opacity-50"
+        >
+          {isFetching ? "Retrying..." : "Retry"}
+        </button>
 
       </div>
 
@@ -203,19 +212,11 @@ export default function BookingDetails() {
 
           <p>
 
-            Amount Paid:
+            Total Amount:
 
             <strong className="ml-2">
 
-              KES {
-
-                Number(
-                  booking.totalAmount ||
-                  0
-                )
-                .toLocaleString()
-
-              }
+              KES {Number(booking.totalAmount || 0).toLocaleString()}
 
             </strong>
 
@@ -223,6 +224,27 @@ export default function BookingDetails() {
 
 
 
+
+
+          <p>
+
+            Amount Paid:
+
+            <strong className="ml-2">
+              KES {Number(booking.depositAmount || 0).toLocaleString()}
+            </strong>
+
+          </p>
+
+          <p>
+
+            Balance:
+
+            <strong className="ml-2">
+              KES {Number(booking.balanceAmount || 0).toLocaleString()}
+            </strong>
+
+          </p>
 
 
           <p>

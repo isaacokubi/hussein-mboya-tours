@@ -27,6 +27,19 @@ export const updateUserStatus = async (req, res, next) => {
 
     const { status } = req.body;
 
+    if (!["active", "inactive", "suspended", "blocked"].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user status.",
+      });
+    }
+
+    if (req.params.id === req.user?._id?.toString()) {
+      return res.status(400).json({
+        success: false,
+        message: "You cannot disable your own account.",
+      });
+    }
 
     const user = await User.findByIdAndUpdate(
       req.params.id,
@@ -34,12 +47,19 @@ export const updateUserStatus = async (req, res, next) => {
         status,
         isActive: status === "active"
       },
-      { new: true }
+      { new: true, runValidators: true }
     ).select("-password");
 
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
 
-    res.json({
+    return res.json({
       success: true,
+      message: `User ${status === "active" ? "enabled" : "disabled"} successfully.`,
       data: user
     });
 
