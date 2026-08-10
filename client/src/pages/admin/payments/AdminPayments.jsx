@@ -3,6 +3,8 @@ import {
   useState
 } from "react";
 
+import { toast } from "react-toastify";
+
 
 import {
   useQuery,
@@ -32,6 +34,7 @@ const queryClient = useQueryClient();
 const [search,setSearch] = useState("");
 
 const [statusFilter,setStatusFilter] = useState("all");
+const [selectedPayment,setSelectedPayment] = useState(null);
 
 
 
@@ -69,12 +72,10 @@ queryFn:getPaymentStats
 
 
 const payments =
-
-paymentsResponse?.payments ||
-
-paymentsResponse?.data?.payments ||
-
-[];
+  Array.isArray(paymentsResponse?.payments) ? paymentsResponse.payments :
+  Array.isArray(paymentsResponse?.data?.payments) ? paymentsResponse.data.payments :
+  Array.isArray(paymentsResponse?.data) ? paymentsResponse.data :
+  Array.isArray(paymentsResponse) ? paymentsResponse : [];
 
 
 
@@ -100,13 +101,11 @@ refundPayment(id),
 
 
 onSuccess:()=>{
-
-queryClient.invalidateQueries({
-
-queryKey:["adminPayments"]
-
-});
-
+  queryClient.invalidateQueries({ queryKey:["adminPayments"] });
+  toast.success("Refund request submitted.");
+},
+onError:(error)=>{
+  toast.error(error?.response?.data?.message || "Refund failed.");
 }
 
 });
@@ -125,24 +124,12 @@ status
 
 
 onSuccess:()=>{
-
-queryClient.invalidateQueries({
-
-queryKey:[
-"adminPayments"
-]
-
-});
-
-
-queryClient.invalidateQueries({
-
-queryKey:[
-"paymentStats"
-]
-
-});
-
+  queryClient.invalidateQueries({ queryKey:["adminPayments"] });
+  queryClient.invalidateQueries({ queryKey:["paymentStats"] });
+  toast.success("Payment status updated.");
+},
+onError:(error)=>{
+  toast.error(error?.response?.data?.message || "Unable to update payment status.");
 }
 
 });
@@ -630,17 +617,21 @@ Refunded
 <td className="p-3 flex gap-2">
 
 <button
-className="px-3 py-1 bg-blue-600 text-white rounded"
+  type="button"
+  onClick={() => setSelectedPayment(payment)}
+  className="px-3 py-1 bg-blue-600 text-white rounded"
 >
 View
 </button>
 
 
 <button
-onClick={() => refundMutation.mutate(payment._id)}
-className="px-3 py-1 bg-red-600 text-white rounded"
+  type="button"
+  disabled={refundMutation.isPending}
+  onClick={() => refundMutation.mutate(payment._id)}
+  className="px-3 py-1 bg-red-600 text-white rounded disabled:opacity-50"
 >
-Refund
+  {refundMutation.isPending ? "Refunding..." : "Refund"}
 </button>
 
 </td>
@@ -678,6 +669,24 @@ No payments found
 
 </table>
 
+{selectedPayment && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl">
+      <div className="flex items-center justify-between gap-4">
+        <h2 className="text-2xl font-bold">Payment Details</h2>
+        <button type="button" onClick={() => setSelectedPayment(null)} className="rounded px-3 py-1 text-gray-600 hover:bg-gray-100">Close</button>
+      </div>
+      <div className="mt-5 space-y-2 text-sm">
+        <p><strong>Customer:</strong> {selectedPayment.customer?.name || "Guest"}</p>
+        <p><strong>Booking:</strong> {selectedPayment.booking?.bookingNumber || "-"}</p>
+        <p><strong>Amount:</strong> KES {Number(selectedPayment.amount || 0).toLocaleString()}</p>
+        <p><strong>Phone:</strong> {selectedPayment.phoneNumber || selectedPayment.phone || "-"}</p>
+        <p><strong>Receipt:</strong> {selectedPayment.mpesaReceiptNumber || selectedPayment.mpesaReceipt || "-"}</p>
+        <p><strong>Status:</strong> {selectedPayment.status || selectedPayment.paymentStatus || "-"}</p>
+      </div>
+    </div>
+  </div>
+)}
 
 </div>
 
@@ -723,6 +732,7 @@ font-bold
 </div>
 
 );
+
 
 
 }

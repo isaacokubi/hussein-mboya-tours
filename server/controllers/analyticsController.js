@@ -49,7 +49,10 @@ export const getAnalytics = async (req, res, next) => {
       getPopularTours(),
 
       User.countDocuments({
-        role: "customer",
+        $or: [
+          { role: "customer" },
+          { legacyRole: "customer" },
+        ],
       }),
 
       Booking.aggregate([

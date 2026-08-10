@@ -497,7 +497,7 @@ My Adventures
 
 <Link
 
-to="/admin/bookings"
+to="/my-bookings"
 
 className="
 text-green-600

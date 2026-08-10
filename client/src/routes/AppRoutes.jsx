@@ -49,6 +49,7 @@ import TourReports from "../pages/tourManager/TourReports";
 import TourManagerCalendar from "../pages/tourManager/TourManagerCalendar";
 import TourManagerBookings from "../pages/tourManager/TourManagerBookings";
 import TourManagerCustomers from "../pages/tourManager/TourManagerCustomers";
+import TourManagerGuides from "../pages/tourManager/TourManagerGuides";
 
 // Admin pages
 import AdminLayout from "../layouts/AdminLayout";
@@ -59,6 +60,7 @@ import AddTour from "../pages/admin/AddTour";
 import DestinationManagement from "../pages/admin/DestinationManagement";
 import CreateDestination from "../pages/admin/CreateDestination";
 import EditDestination from "../pages/admin/EditDestination";
+import AdminDestinationDetails from "../pages/admin/DestinationDetails";
 import BookingManagement from "../pages/admin/BookingManagement";
 import StaffManagement from "../pages/admin/StaffManagement";
 import AdminCustomers from "../pages/admin/Customers";
@@ -286,7 +288,7 @@ export default function AppRoutes() {
         />
         <Route
           path="guides"
-          element={<AssignGuides />}
+          element={<TourManagerGuides />}
         />
         <Route
           path="assign-guide/:id"
@@ -403,6 +405,10 @@ export default function AppRoutes() {
         <Route
           path="edit-destination/:id"
           element={<EditDestination />}
+        />
+        <Route
+          path="destinations/:id"
+          element={<AdminDestinationDetails />}
         />
         <Route
           path="bookings"

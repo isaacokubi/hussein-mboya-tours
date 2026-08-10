@@ -51,7 +51,7 @@ export default function AdminAnalytics(){
 
 
     const analytics =
-        data?.analytics || data || {};
+        data?.data?.analytics || data?.data || data?.analytics || data || {};
 
 
 
@@ -142,7 +142,7 @@ export default function AdminAnalytics(){
 
                     title="Revenue"
 
-                    value={`KES ${analytics.revenue || 0}`}
+                    value={`KES ${Number(analytics.revenue?.totalRevenue ?? analytics.revenue ?? 0).toLocaleString()}`}
 
                 />
 

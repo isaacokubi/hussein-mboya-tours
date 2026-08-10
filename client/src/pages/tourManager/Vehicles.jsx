@@ -1,6 +1,10 @@
 
 
 import {
+    useState
+} from "react";
+
+import {
     FaCar,
     FaPlus,
     FaEdit,
@@ -16,6 +20,8 @@ import {
 import useVehicles
 from "../../hooks/useVehicles";
 
+import AddVehicleModal from "../../components/admin/AddVehicleModal";
+
 
 import {
     deleteVehicle
@@ -29,14 +35,13 @@ import {
 
 export default function Vehicles(){
 
+const [showAdd, setShowAdd] = useState(false);
 
 const {
-    data:vehicles=[],
+    vehicles = [],
     isLoading,
     refetch
-}
-=
-useVehicles();
+} = useVehicles();
 
 
 
@@ -158,7 +163,8 @@ Manage tour transport vehicles
 
 
 <button
-
+  type="button"
+  onClick={() => setShowAdd(true)}
 className="
 bg-orange-600
 text-white
@@ -169,7 +175,6 @@ flex
 items-center
 gap-2
 "
-
 >
 
 
@@ -521,6 +526,8 @@ text-red-600
 
 
 
+
+{showAdd && <AddVehicleModal close={() => setShowAdd(false)} refresh={refetch} />}
 
 </div>
 

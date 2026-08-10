@@ -116,12 +116,15 @@ capacity:Number(form.capacity)
 if(form.driver){
 
 
+const createdVehicle =
+    response?.vehicle ||
+    response?.data?.vehicle ||
+    response?.data ||
+    response;
+
 await assignDriver(
-
-response.vehicle._id,
-
-form.driver
-
+    createdVehicle?._id,
+    form.driver
 );
 
 

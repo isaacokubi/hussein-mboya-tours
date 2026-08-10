@@ -127,7 +127,7 @@ router.put(
  */
 router.delete(
   "/:id",
-  roleMiddleware("admin"),
+  roleMiddleware("admin", "tour_manager", "tourmanager", "manager"),
   deleteVehicle
 );
 

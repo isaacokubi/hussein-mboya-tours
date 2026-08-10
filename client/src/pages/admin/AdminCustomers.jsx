@@ -6,7 +6,7 @@ export default function AdminCustomers() {
     queryKey: ["admin-customers"],
     queryFn: async () => (await api.get("/customers")).data,
   });
-  const customers = Array.isArray(data) ? data : data?.customers || data?.data || [];
+  const customers = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : Array.isArray(data?.customers) ? data.customers : [];
 
   if (isLoading) return <div className="p-6">Loading customers...</div>;
   if (isError) return <div className="p-6 text-red-600">Failed to load customers.</div>;

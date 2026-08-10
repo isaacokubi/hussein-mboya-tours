@@ -40,30 +40,29 @@ export const getCustomers = async (req, res, next) => {
     */
 
     const filter = {
-      role: "customer",
+      $or: [
+        { role: "customer" },
+        { legacyRole: "customer" },
+      ],
     };
 
     if (search.trim()) {
-      filter.$or = [
+      filter.$and = [
         {
-          name: {
-            $regex: search.trim(),
-            $options: "i",
-          },
+          $or: [
+            { role: "customer" },
+            { legacyRole: "customer" },
+          ],
         },
         {
-          email: {
-            $regex: search.trim(),
-            $options: "i",
-          },
-        },
-        {
-          phone: {
-            $regex: search.trim(),
-            $options: "i",
-          },
+          $or: [
+            { name: { $regex: search.trim(), $options: "i" } },
+            { email: { $regex: search.trim(), $options: "i" } },
+            { phone: { $regex: search.trim(), $options: "i" } },
+          ],
         },
       ];
+      delete filter.$or;
     }
 
     /*
@@ -98,9 +97,10 @@ export const getCustomers = async (req, res, next) => {
     const bookingStats = await Booking.aggregate([
       {
         $match: {
-          customer: {
-            $in: customerIds,
-          },
+          $or: [
+            { customer: { $in: customerIds } },
+            { user: { $in: customerIds } },
+          ],
         },
       },
       {

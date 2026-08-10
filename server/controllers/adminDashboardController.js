@@ -32,7 +32,12 @@ export const getDashboard = async (req, res) => {
       Tour.countDocuments({ isDeleted: NON_DELETED }),
       Booking.countDocuments({ isDeleted: NON_DELETED }),
       Destination.countDocuments({ isDeleted: NON_DELETED }),
-      User.countDocuments({ role: "customer" }),
+      User.countDocuments({
+        $or: [
+          { role: "customer" },
+          { legacyRole: "customer" },
+        ],
+      }),
     ]);
 
     /*

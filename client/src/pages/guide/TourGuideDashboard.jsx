@@ -80,7 +80,8 @@ export default function TourGuideDashboard(){
 
     const {
 
-        mutate:startTour
+        mutate:startTour,
+        isPending: startingTour
 
     } = useMutation({
 
@@ -126,7 +127,7 @@ export default function TourGuideDashboard(){
 
 
 
-        onError:()=>{
+        onError:(error)=>{
 
 
             toast.error(
@@ -430,7 +431,7 @@ export default function TourGuideDashboard(){
 
                                 disabled={
 
-                                    tour.status==="ongoing"
+                                    tour.status==="ongoing" || startingTour
 
                                 }
 
@@ -458,6 +459,12 @@ export default function TourGuideDashboard(){
                                     ?
 
                                     "Tour Started"
+
+                                    : startingTour
+
+                                    ?
+
+                                    "Starting..."
 
                                     :
 

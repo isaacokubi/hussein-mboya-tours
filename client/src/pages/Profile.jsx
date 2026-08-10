@@ -13,6 +13,7 @@ const normalizeProfile = (response) =>
 
 export default function Profile() {
   const { user, setUser } = useAuth();
+  const userId = user?._id || user?.id || null;
   const [profile, setProfile] = useState(user);
   const [form, setForm] = useState({
     name: user?.name || "",
@@ -63,7 +64,7 @@ export default function Profile() {
     return () => {
       mounted = false;
     };
-  }, [user, setUser]);
+  }, [userId, setUser]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;

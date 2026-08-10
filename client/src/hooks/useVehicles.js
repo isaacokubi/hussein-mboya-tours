@@ -107,6 +107,7 @@ export default function useVehicles() {
     // states
     isLoading: vehiclesQuery.isLoading,
     isError: vehiclesQuery.isError,
+    refetch: vehiclesQuery.refetch,
 
 
     // actions

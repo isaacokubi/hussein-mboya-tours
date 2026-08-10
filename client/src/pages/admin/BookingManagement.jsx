@@ -79,34 +79,26 @@ const {
 
 
 
-const guides =
-  (
-    staffResponse?.data?.data ||
-    staffResponse?.data ||
-    []
-  ).filter(
-    staff => staff.isGuide === true
-  );
+const staff =
+  Array.isArray(staffResponse) ? staffResponse :
+  Array.isArray(staffResponse?.data) ? staffResponse.data :
+  Array.isArray(staffResponse?.data?.data) ? staffResponse.data.data :
+  [];
 
+const guides = staff.filter((member) =>
+  String(member.position || member.role || "").toLowerCase() === "guide" ||
+  member.isGuide === true
+);
 
-const drivers =
-Array.isArray(staffResponse)
-?
-staffResponse.filter(
-s=>s.role==="driver"
-)
-:
-Array.isArray(staffResponse?.data)
-?
-staffResponse.data.filter(
-s=>s.role==="driver"
-)
-:
-[];
-
+const drivers = staff.filter((member) =>
+  String(member.position || member.role || "").toLowerCase() === "driver"
+);
 
 const vehicles =
-  vehicleResponse?.data?.data ||
+  Array.isArray(vehicleResponse) ? vehicleResponse :
+  Array.isArray(vehicleResponse?.data) ? vehicleResponse.data :
+  Array.isArray(vehicleResponse?.data?.data) ? vehicleResponse.data.data :
+  Array.isArray(vehicleResponse?.vehicles) ? vehicleResponse.vehicles :
   [];
 
 
@@ -594,72 +586,13 @@ b.status==="cancelled"
 
 
 
-const revenue =
-
-bookings.reduce(
-
-(sum,b)=>
-
-sum +
-
-Number(
-
-b.totalAmount ||
-
-b.amount ||
-
-b.subtotal ||
-
-0
-
-),
-
-0
-
-);
-
-
-
-
-
-
-const upcoming =
-
-bookings.filter(
-
-b=>
-
-new Date(b.travelDate) > new Date()
-
-).length;
-const paid =
-
-bookings.filter(
-
-b=>
-
-(
-
-typeof b.paymentStatus==="string"
-
-?
-
-b.paymentStatus
-
-:
-
-b.paymentStatus?.status
-
-)
-
-==="paid"
-
-).length;
-
-
-
-
-
+const revenue = bookings.reduce((sum, booking) => {
+  const status = typeof booking.paymentStatus === "string"
+    ? booking.paymentStatus
+    : booking.paymentStatus?.status;
+  if (status !== "paid") return sum;
+  return sum + Number(booking.totalAmount || booking.amount || booking.subtotal || 0);
+}, 0);
 
 
 
