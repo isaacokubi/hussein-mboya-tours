@@ -17,6 +17,7 @@ import Unauthorized from "../pages/Unauthorized";
 
 // Customer pages
 import Dashboard from "../pages/Dashboard";
+import MyBookings from "../pages/MyBookings";
 import BookingDetails from "../pages/BookingDetails";
 import Profile from "../pages/Profile";
 import Checkout from "../pages/Checkout";
@@ -71,6 +72,9 @@ import AdminAITools from "../pages/admin/AdminAITools";
 import AdminSettings from "../pages/admin/AdminSettings";
 import AdminAnalytics from "../pages/admin/AdminAnalytics";
 import AdminPayments from "../pages/admin/payments/AdminPayments";
+import AdminFinance from "../pages/admin/finance/AdminFinance";
+import FinanceReports from "../pages/admin/finance/FinanceReports";
+import MpesaTransactions from "../pages/admin/finance/MpesaTransactions";
 import Commissions from "../pages/admin/finance/Commissions";
 import Reconciliation from "../pages/admin/finance/Reconciliation";
 import Reports from "../pages/admin/Reports";
@@ -154,6 +158,22 @@ export default function AppRoutes() {
       />
 
       <Route
+        path="/my-bookings"
+        element={
+          <ProtectedRoute roles={["customer", "admin", "manager", "guide", "agent"]}>
+            <MyBookings />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/customer/dashboard"
+        element={
+          <Navigate to="/dashboard" replace />
+        }
+      />
+
+      <Route
         path="/bookings/:id"
         element={
           <ProtectedRoute>
@@ -214,6 +234,11 @@ export default function AppRoutes() {
       </Route>
 
       {/* Guide */}
+      <Route
+        path="/guide"
+        element={<Navigate to="/guide/dashboard" replace />}
+      />
+
       <Route
         path="/guide/dashboard"
         element={
@@ -316,6 +341,20 @@ export default function AppRoutes() {
         }
       />
 
+      {/* Legacy manager compatibility aliases */}
+      <Route path="/manager/dashboard" element={<Navigate to="/tour-manager/dashboard" replace />} />
+      <Route path="/manager/tours" element={<Navigate to="/tour-manager/tours" replace />} />
+      <Route path="/manager/create-tour" element={<Navigate to="/tour-manager/create-tour" replace />} />
+      <Route path="/manager/edit-tour/:id" element={<Navigate to="/tour-manager/edit-tour/:id" replace />} />
+      <Route path="/manager/guides" element={<Navigate to="/tour-manager/guides" replace />} />
+      <Route path="/manager/assignments" element={<Navigate to="/tour-manager/assignments" replace />} />
+      <Route path="/manager/vehicles" element={<Navigate to="/tour-manager/vehicles" replace />} />
+      <Route path="/manager/calendar" element={<Navigate to="/tour-manager/calendar" replace />} />
+      <Route path="/manager/bookings" element={<Navigate to="/tour-manager/bookings" replace />} />
+      <Route path="/manager/customers" element={<Navigate to="/tour-manager/customers" replace />} />
+      <Route path="/manager/analytics" element={<Navigate to="/tour-manager/analytics" replace />} />
+      <Route path="/manager/reports" element={<Navigate to="/tour-manager/reports" replace />} />
+
       {/* Admin */}
       <Route
         path="/admin"
@@ -348,6 +387,10 @@ export default function AppRoutes() {
         <Route
           path="tours/add"
           element={<AddTour />}
+        />
+        <Route
+          path="tours/edit/:id"
+          element={<EditTour />}
         />
         <Route
           path="destinations"
@@ -422,16 +465,32 @@ export default function AppRoutes() {
           element={<AdminSettings />}
         />
         <Route
-          path="roles"
-          element={<RolesPage />}
-        />
-        <Route
           path="finance/reconciliation"
           element={<Reconciliation />}
         />
         <Route
           path="system-health"
           element={<AdminSystemHealth />}
+        />
+        <Route
+          path="finance"
+          element={<AdminFinance />}
+        />
+        <Route
+          path="finance/transactions"
+          element={<MpesaTransactions />}
+        />
+        <Route
+          path="finance/reports"
+          element={<FinanceReports />}
+        />
+        <Route
+          path="roles"
+          element={<RolesPage />}
+        />
+        <Route
+          path="rbac"
+          element={<RolesPage />}
         />
       </Route>
 
