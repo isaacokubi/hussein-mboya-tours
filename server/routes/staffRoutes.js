@@ -41,13 +41,13 @@ router.use(protect);
 
 router.get(
   "/guides",
-  roleMiddleware("admin", "tour_manager"),
+  roleMiddleware("admin", "tour_manager", "tourmanager", "manager"),
   getGuides
 );
 
 router.get(
   "/drivers",
-  roleMiddleware("admin", "tour_manager"),
+  roleMiddleware("admin", "tour_manager", "tourmanager", "manager"),
   getDrivers
 );
 
@@ -65,13 +65,13 @@ router.post(
 
 router.get(
   "/",
-  roleMiddleware("admin", "tour_manager"),
+  roleMiddleware("admin", "tour_manager", "tourmanager", "manager"),
   getStaff
 );
 
 router.get(
   "/:id",
-  roleMiddleware("admin", "tour_manager"),
+  roleMiddleware("admin", "tour_manager", "tourmanager", "manager"),
   getStaffById
 );
 

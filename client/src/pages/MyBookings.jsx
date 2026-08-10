@@ -1,63 +1,76 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-
-import { initiatePayment } from "../api/bookingApi";
 import { useState } from "react";
+import { toast } from "react-toastify";
 
-import { getMyBookings } from "../api/bookingApi";
+import {
+  cancelBooking,
+  getMyBookings,
+  initiatePayment,
+} from "../api/bookingApi";
+
+const normalizeBookings = (response) => {
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response?.bookings)) return response.bookings;
+  if (Array.isArray(response?.data?.bookings)) return response.data.bookings;
+  if (Array.isArray(response?.data)) return response.data;
+  return [];
+};
+
+const paymentStatusOf = (booking) =>
+  String(
+    typeof booking?.paymentStatus === "object"
+      ? booking.paymentStatus?.paymentStatus ||
+          booking.paymentStatus?.status ||
+          "pending"
+      : booking?.paymentStatus || "pending"
+  ).toLowerCase();
+
+const bookingStatusOf = (booking) =>
+  String(booking?.status || booking?.bookingStatus || "pending").toLowerCase();
 
 export default function MyBookings() {
+  const queryClient = useQueryClient();
+
   const { data, isLoading, error } = useQuery({
     queryKey: ["my-bookings"],
-
     queryFn: getMyBookings,
-
     staleTime: 1000 * 60 * 5,
   });
 
-  /*
-  |--------------------------------------------------------------------------
-  | HANDLE API RESPONSE
-  |--------------------------------------------------------------------------
-  */
+  const bookings = normalizeBookings(data);
 
-  const bookings = Array.isArray(data)
-    ? data
-    : data?.data?.bookings || data?.bookings || [];
+  const cancelMutation = useMutation({
+    mutationFn: cancelBooking,
+    onSuccess: () => {
+      toast.success("Booking cancelled successfully.");
+      queryClient.invalidateQueries({ queryKey: ["my-bookings"] });
+    },
+    onError: (requestError) => {
+      toast.error(
+        requestError?.response?.data?.message || "Unable to cancel booking."
+      );
+    },
+  });
+
+  const handleCancel = (booking) => {
+    if (
+      !window.confirm(
+        `Cancel booking ${booking.bookingNumber || booking._id}?`
+      )
+    ) {
+      return;
+    }
+
+    cancelMutation.mutate(booking._id);
+  };
 
   if (isLoading) {
     return (
-      <div
-        className="
-      min-h-screen
-      flex
-      items-center
-      justify-center
-      "
-      >
+      <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div
-            className="
-          animate-spin
-          h-10
-          w-10
-          border-4
-          border-green-600
-          border-t-transparent
-          rounded-full
-          mx-auto
-          mb-4
-          "
-          />
-
-          <p
-            className="
-          text-xl
-          font-semibold
-          "
-          >
-            Loading your adventures...
-          </p>
+          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-green-600 border-t-transparent" />
+          <p className="text-xl font-semibold">Loading your bookings...</p>
         </div>
       </div>
     );
@@ -65,283 +78,153 @@ export default function MyBookings() {
 
   if (error) {
     return (
-      <div
-        className="
-      p-10
-      text-center
-      text-red-600
-      font-semibold
-      "
-      >
-        Unable to load your bookings.
+      <div className="p-10 text-center text-red-600">
+        <p className="font-semibold">
+          {error?.response?.data?.message || "Unable to load your bookings."}
+        </p>
+        <button
+          type="button"
+          onClick={() =>
+            queryClient.invalidateQueries({ queryKey: ["my-bookings"] })
+          }
+          className="mt-4 rounded-lg bg-green-700 px-5 py-2 font-semibold text-white"
+        >
+          Retry
+        </button>
       </div>
     );
   }
 
+  const now = new Date();
   const upcomingTrips = bookings.filter(
     (booking) =>
-      booking.travelDate && new Date(booking.travelDate) >= new Date(),
+      booking.travelDate &&
+      new Date(booking.travelDate) >= now &&
+      bookingStatusOf(booking) !== "cancelled"
   );
 
   const paidTrips = bookings.filter((booking) =>
-    ["paid", "completed"].includes((typeof booking.paymentStatus === "object" ? (booking.paymentStatus.paymentStatus || booking.paymentStatus.status || "pending") : booking.paymentStatus || "pending").toLowerCase()),
+    ["paid", "completed"].includes(paymentStatusOf(booking))
   );
 
   return (
-    <div
-      className="
-    min-h-screen
-    bg-gray-100
-    p-6
-    "
-    >
-      <div
-        className="
-      max-w-7xl
-      mx-auto
-      "
-      >
-        <div
-          className="
-        bg-gradient-to-r
-        from-green-900
-        to-yellow-600
-        rounded-3xl
-        p-8
-        text-white
-        shadow-xl
-        mb-8
-        "
-        >
-          <h1
-            className="
-          text-4xl
-          font-bold
-          "
-          >
-            My Adventures
-          </h1>
-
-          <p
-            className="
-          mt-3
-          "
-          >
-            Manage your Coherent Tours bookings, payments and trips.
+    <div className="min-h-screen bg-gray-100 p-6">
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-8 rounded-3xl bg-gradient-to-r from-green-900 to-yellow-600 p-8 text-white shadow-xl">
+          <h1 className="text-4xl font-bold">My Adventures</h1>
+          <p className="mt-3">
+            Manage your bookings, payments and upcoming trips.
           </p>
         </div>
 
-        <div
-          className="
-        grid
-        md:grid-cols-3
-        gap-6
-        mb-10
-        "
-        >
+        <div className="mb-10 grid gap-6 md:grid-cols-3">
           <SummaryCard title="Total Bookings" value={bookings.length} />
-
           <SummaryCard title="Upcoming Trips" value={upcomingTrips.length} />
-
           <SummaryCard title="Paid Trips" value={paidTrips.length} />
         </div>
 
         {bookings.length === 0 ? (
-          <div
-            className="
-            bg-white
-            rounded-2xl
-            shadow
-            p-10
-            text-center
-            "
-          >
-            <h2
-              className="
-              text-3xl
-              font-bold
-              mb-4
-              "
-            >
-              No Adventures Yet
-            </h2>
-
-            <p
-              className="
-              text-gray-600
-              mb-6
-              "
-            >
+          <div className="rounded-2xl bg-white p-10 text-center shadow">
+            <h2 className="mb-4 text-3xl font-bold">No Bookings Yet</h2>
+            <p className="mb-6 text-gray-600">
               Start exploring Kenya's best destinations.
             </p>
-
             <Link
               to="/tours"
-              className="
-                bg-green-700
-                text-white
-                px-8
-                py-3
-                rounded-xl
-                font-bold
-                "
+              className="rounded-xl bg-green-700 px-8 py-3 font-bold text-white"
             >
               Explore Tours
             </Link>
           </div>
         ) : (
-          <div
-            className="
-            space-y-6
-            "
-          >
-            {bookings.map((booking) => (
-              <div
-                key={booking._id}
-                className="
-                      bg-white
-                      rounded-2xl
-                      shadow
-                      p-6
-                      "
-              >
-                <div
-                  className="
-                      flex
-                      justify-between
-                      flex-wrap
-                      gap-5
-                      "
+          <div className="space-y-6">
+            {bookings.map((booking) => {
+              const status = bookingStatusOf(booking);
+              const paymentStatus = paymentStatusOf(booking);
+
+              return (
+                <article
+                  key={booking._id || booking.bookingNumber}
+                  className="rounded-2xl bg-white p-6 shadow"
                 >
-                  <div>
-                    <h2
-                      className="
-                          text-2xl
-                          font-bold
-                          text-green-800
-                          "
-                    >
-                      {booking.tour?.title || "Tour Package"}
-                    </h2>
+                  <div className="flex flex-wrap justify-between gap-5">
+                    <div>
+                      <h2 className="text-2xl font-bold text-green-800">
+                        {booking.tour?.title || "Tour Package"}
+                      </h2>
 
-                    <p
-                      className="
-                          text-gray-600
-                          mt-2
-                          "
-                    >
-                      Booking Number:
-                      <b> {booking.bookingNumber || booking._id.slice(-8)}</b>
-                    </p>
+                      <p className="mt-2 text-gray-600">
+                        Booking Number:{" "}
+                        <b>
+                          {booking.bookingNumber ||
+                            booking._id?.slice?.(-8) ||
+                            "N/A"}
+                        </b>
+                      </p>
 
-                    <p
-                      className="
-                          text-gray-600
-                          "
-                    >
-                      Travel Date:{" "}
-                      {booking.travelDate
-                        ? new Date(booking.travelDate).toDateString()
-                        : "N/A"}
-                    </p>
+                      <p className="text-gray-600">
+                        Travel Date:{" "}
+                        {booking.travelDate
+                          ? new Date(booking.travelDate).toDateString()
+                          : "N/A"}
+                      </p>
 
-                    <p
-                      className="
-                          text-gray-600
-                          "
-                    >
-                      Travellers:{" "}
-                      {booking.travelers?.length ||
-                        booking.numberOfGuests ||
-                        booking.travelerCount ||
-                        1}
-                    </p>
+                      <p className="text-gray-600">
+                        Travellers:{" "}
+                        {booking.travelers?.length ||
+                          booking.numberOfGuests ||
+                          1}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+                      <StatusBadge value={status} />
+                      <StatusBadge value={paymentStatus} payment />
+                    </div>
                   </div>
 
-                  <div
-                    className="
-                        flex
-                        flex-col
-                        gap-3
-                        "
-                  >
-                    <StatusBadge
-                      value={
-                        booking.bookingStatus || booking.status || "pending"
-                      }
-                    />
+                  <hr className="my-6" />
 
-                    <StatusBadge
-                      value={typeof booking.paymentStatus === "object" ? booking.paymentStatus.paymentStatus : booking.paymentStatus || "pending"}
-                      payment
-                    />
+                  <div className="flex flex-wrap items-center justify-between gap-5">
+                    <div>
+                      <p className="text-gray-500">Total Amount</p>
+                      <h3 className="text-xl font-bold">
+                        KES{" "}
+                        {Number(booking.totalAmount || 0).toLocaleString()}
+                      </h3>
+                    </div>
+
+                    <div className="flex flex-wrap gap-3">
+                      <Link
+                        to={`/bookings/${booking._id}`}
+                        className="rounded-xl bg-green-700 px-5 py-2 text-white"
+                      >
+                        View Trip
+                      </Link>
+
+                      {status !== "cancelled" &&
+                        status !== "completed" &&
+                        paymentStatus !== "paid" && (
+                          <PayNowButton booking={booking} />
+                        )}
+
+                      {status !== "cancelled" && status !== "completed" && (
+                        <button
+                          type="button"
+                          disabled={cancelMutation.isPending}
+                          onClick={() => handleCancel(booking)}
+                          className="rounded-xl bg-red-600 px-5 py-2 text-white disabled:opacity-50"
+                        >
+                          {cancelMutation.isPending
+                            ? "Cancelling..."
+                            : "Cancel"}
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-
-                <hr
-                  className="
-                      my-6
-                      "
-                />
-
-                <div
-                  className="
-                      flex
-                      justify-between
-                      flex-wrap
-                      gap-5
-                      "
-                >
-                  <div>
-                    <p
-                      className="
-                          text-gray-500
-                          "
-                    >
-                      Amount
-                    </p>
-
-                    <h3
-                      className="
-                          text-xl
-                          font-bold
-                          "
-                    >
-                      KES{" "}
-                      {Number(
-                        booking.amount ||
-                          booking.totalAmount ||
-                          booking.subtotal ||
-                          0,
-                      ).toLocaleString()}
-                    </h3>
-                  </div>
-
-                  <div
-                    className="
-                        flex
-                        gap-3
-                        flex-wrap
-                        "
-                  >
-                    <Link
-                      to={`/bookings/${booking._id}`}
-                      className="
-                            bg-green-700
-                            text-white
-                            px-5
-                            py-2
-                            rounded-xl
-                            "
-                    >
-                      View Trip
-                    </Link>
-
-                    <PayNowButton booking={booking} />
-                  </div>
-                </div>
-              </div>
-            ))}
+                </article>
+              );
+            })}
           </div>
         )}
       </div>
@@ -351,156 +234,73 @@ export default function MyBookings() {
 
 function SummaryCard({ title, value }) {
   return (
-    <div
-      className="
-    bg-white
-    rounded-2xl
-    shadow
-    p-6
-    "
-    >
-      <p
-        className="
-      text-gray-500
-      "
-      >
-        {title}
-      </p>
-
-      <h2
-        className="
-      text-4xl
-      font-bold
-      mt-2
-      "
-      >
-        {value}
-      </h2>
+    <div className="rounded-2xl bg-white p-6 shadow">
+      <p className="text-gray-500">{title}</p>
+      <h2 className="mt-2 text-4xl font-bold">{value}</h2>
     </div>
   );
 }
 
-function StatusBadge({ value, payment }) {
-  const status = value?.toLowerCase();
-
+function StatusBadge({ value, payment = false }) {
   const styles =
-    status === "completed" || status === "paid"
+    value === "completed" || value === "paid"
       ? "bg-green-100 text-green-700"
-      : status === "cancelled" || status === "failed"
+      : value === "cancelled" || value === "failed"
         ? "bg-red-100 text-red-700"
         : "bg-yellow-100 text-yellow-700";
 
   return (
-    <span
-      className={`
-      px-4
-      py-2
-      rounded-full
-      font-bold
-      capitalize
-      ${styles}
-      `}
-    >
-      {payment && "Payment: "}
-
+    <span className={`rounded-full px-4 py-2 font-bold capitalize ${styles}`}>
+      {payment ? "Payment: " : ""}
       {value}
     </span>
   );
 }
 
 function PayNowButton({ booking }) {
+  const [loading, setLoading] = useState(false);
 
-  const [loading,setLoading] = useState(false);
+  const handlePayment = async () => {
+    const phone =
+      booking.customer?.phone ||
+      booking.customerSnapshot?.phone ||
+      booking.contact?.phone;
 
+    if (!phone) {
+      toast.error("No phone number is available for this booking.");
+      return;
+    }
 
-  const handlePayment = async()=>{
-
-    try{
-
+    try {
       setLoading(true);
 
-
-      const response = await initiatePayment({
-
+      await initiatePayment({
         bookingId: booking._id,
-
-        phone:
-          booking.customer?.phone ||
-          booking.customerSnapshot?.phone ||
-          booking.contact?.phone,
-
-
-        amount:
-          booking.totalAmount ||
-          booking.amount ||
-          booking.subtotal
-
+        phone,
+        amount: Number(booking.balanceAmount || booking.totalAmount || 0),
       });
 
-
-      console.log(
-        "MPESA RESPONSE",
-        response
-      );
-
-
-      window.location.href =
-      `/payment-status/${booking._id}`;
-
-
-    }catch(error){
-
-      console.error(
-        "MPESA ERROR",
-        error.response?.data || error
-      );
-
-
-      alert(
+      toast.success("M-Pesa payment request sent.");
+      window.location.href = `/payment-status/${booking._id}`;
+    } catch (error) {
+      console.error("MPESA ERROR:", error.response?.data || error);
+      toast.error(
         error.response?.data?.message ||
-        "Unable to start M-Pesa payment"
+          "Unable to start M-Pesa payment. Please try again."
       );
-
-    }
-    finally{
-
+    } finally {
       setLoading(false);
-
     }
-
   };
 
-
-
   return (
-
     <button
-
+      type="button"
       onClick={handlePayment}
-
       disabled={loading}
-
-      className="
-      bg-black
-      text-white
-      px-5
-      py-2
-      rounded-xl
-      disabled:opacity-50
-      "
-
+      className="rounded-xl bg-black px-5 py-2 text-white disabled:opacity-50"
     >
-
-      {
-        loading
-        ?
-        "Sending..."
-        :
-        "Pay Now"
-      }
-
+      {loading ? "Sending..." : "Pay Now"}
     </button>
-
   );
-
 }

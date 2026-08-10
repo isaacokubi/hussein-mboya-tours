@@ -8,6 +8,9 @@ import {
   updateBookingStatus,
   assignResources,
   updatePaymentStatus,
+  getBookingTimeline,
+  downloadBookingInvoice,
+  sendBookingNotification,
 } from "../controllers/bookingAdminController.js";
 
 import {
@@ -101,6 +104,21 @@ router.put(
 router.put(
   "/:id/payment",
   updatePaymentStatus
+);
+
+router.get(
+  "/:id/timeline",
+  getBookingTimeline
+);
+
+router.get(
+  "/:id/invoice",
+  downloadBookingInvoice
+);
+
+router.post(
+  "/:id/notify",
+  sendBookingNotification
 );
 
 export default router;

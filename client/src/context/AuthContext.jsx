@@ -579,6 +579,8 @@ value={{
 
 user,
 
+setUser,
+
 token,
 
 loading,

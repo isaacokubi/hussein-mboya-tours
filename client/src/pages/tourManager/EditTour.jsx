@@ -26,20 +26,8 @@ import {
 } from "react-toastify";
 
 
-import {
-
-    getTour,
-
-    updateTour,
-
-    getGuides,
-
-    getVehicles,
-
-    getDestinations
-
-}
-from "../../api/adminTourApi";
+import { getTour, updateTour, getGuides, getDrivers, getVehicles, assignTourResources } from "../../api/tourApi";
+import { getDestinations } from "../../api/destinationApi";
 
 
 
@@ -73,13 +61,15 @@ const EditTour =()=>{
     const {
         data: vehicles = []
     } = useQuery({
-
-        queryKey:[
-            "vehicles"
-        ],
-
+        queryKey:["tour-assignment-vehicles"],
         queryFn:getVehicles
+    });
 
+    const {
+        data: drivers = []
+    } = useQuery({
+        queryKey:["tour-assignment-drivers"],
+        queryFn:getDrivers
     });
 
 
@@ -91,7 +81,7 @@ const EditTour =()=>{
     } = useQuery({
 
         queryKey:[
-            "guides"
+            "tour-assignment-guides"
         ],
 
         queryFn:getGuides
@@ -140,7 +130,27 @@ const EditTour =()=>{
         isPending
     } = useMutation({
 
-        mutationFn:(data)=>updateTour(id,data),
+        mutationFn: async (data) => {
+            const {
+                assignedGuide,
+                assignedDriver,
+                assignedVehicle,
+                guide,
+                driver,
+                vehicle,
+                ...tourFields
+            } = data;
+
+            const response = await updateTour(id, tourFields);
+
+            await assignTourResources(id, {
+                guideId: assignedGuide || null,
+                driverId: assignedDriver || null,
+                vehicleId: assignedVehicle || null,
+            });
+
+            return response;
+        },
 
         onSuccess:(data)=>{
 
@@ -343,30 +353,26 @@ const EditTour =()=>{
         const payload = {
 
             ...form,
-
+            assignedGuide: form?.assignedGuide || null,
+            assignedDriver: form?.assignedDriver || null,
+            assignedVehicle: form?.assignedVehicle || null,
             capacity: Number.isFinite(Number(form?.capacity))
                 ? Number(form?.capacity)
                 : 0,
-
             duration: Number.isFinite(Number(form?.duration))
                 ? Number(form?.duration)
-                : 0,
-
+                : 1,
             price: Number.isFinite(Number(form?.price))
                 ? Number(form?.price)
                 : 0,
-
             discount: Number.isFinite(Number(form?.discount))
                 ? Number(form?.discount)
                 : 0,
-
-
             images: Array.isArray(form?.images)
                 ? form?.images
                 : form?.images
                     ? form?.images.split(",").map(img => img.trim())
                     : []
-
         };
 
 
@@ -757,9 +763,9 @@ const EditTour =()=>{
 
                     <select
 
-                        name="guide"
+                        name="assignedGuide"
 
-                        value={form?.guide || ""}
+                        value={form?.assignedGuide || ""}
 
                         onChange={handleChange}
 
@@ -812,9 +818,9 @@ const EditTour =()=>{
 
                     <select
 
-                        name="vehicle"
+                        name="assignedVehicle"
 
-                        value={form?.vehicle || ""}
+                        value={form?.assignedVehicle || ""}
 
                         onChange={handleChange}
 
@@ -871,13 +877,20 @@ const EditTour =()=>{
 
                     </select>
 
-
-
-
-
-
-
-
+                    <select
+                        name="assignedDriver"
+                        value={form?.assignedDriver || ""}
+                        onChange={handleChange}
+                        className="input"
+                    >
+                        <option value="">Driver</option>
+                        {drivers.map((item) => (
+                            <option key={item._id} value={item._id}>
+                                {item.name}
+                                {item.phone ? ` - ${item.phone}` : ""}
+                            </option>
+                        ))}
+                    </select>
 
                     <select
 

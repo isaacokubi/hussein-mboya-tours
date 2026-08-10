@@ -5,14 +5,7 @@ import {
 } from "../controllers/adminDashboardController.js";
 
 
-import {
-    protect
-} from "../middleware/authMiddleware.js";
-
-
-import {
-    authorize
-} from "../middleware/permissionMiddleware.js";
+import { protect, adminOnly } from "../middleware/authMiddleware.js";
 
 
 
@@ -26,11 +19,7 @@ router.get(
 "/",
 
 protect,
-
-
-authorize(
-"view_reports"
-),
+adminOnly,
 
 
 getDashboard

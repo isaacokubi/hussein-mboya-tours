@@ -3,6 +3,8 @@ import Tour from "../models/Tour.js";
 import Booking from "../models/Booking.js";
 import User from "../models/User.js";
 import Payment from "../models/Payment.js";
+import Staff from "../models/Staff.js";
+import Vehicle from "../models/Vehicle.js";
 import { assignTourResources } from "./tourAssignmentController.js";
 
 /*
@@ -211,20 +213,166 @@ export const getTourManagerDashboard = async (req, res, next) => {
 */
 
 export const createTour = async (req, res, next) => {
-    try {
-        const tour = await Tour.create({
-            ...req.body,
-            createdBy: req.user._id,
-        });
+  try {
+    const body = req.body || {};
+    const {
+      guide,
+      assignedGuide,
+      driver,
+      assignedDriver,
+      vehicle,
+      assignedVehicle,
+      capacity,
+      duration,
+      price,
+      ...rest
+    } = body;
 
-        return res.status(201).json({
-            success: true,
-            message: "Tour created successfully",
-            data: tour,
-        });
-    } catch (error) {
-        next(error);
+    if (
+      !rest.title?.trim() ||
+      !rest.description?.trim() ||
+      !rest.destination ||
+      !rest.country?.trim() ||
+      !rest.location?.trim() ||
+      !rest.date ||
+      price === undefined ||
+      Number(price) < 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Title, description, destination, country, location, date and a valid price are required.",
+      });
     }
+
+    const guideId = assignedGuide || guide || null;
+    const driverId = assignedDriver || driver || null;
+    const vehicleId = assignedVehicle || vehicle || null;
+
+    const [guideDoc, driverDoc, vehicleDoc] = await Promise.all([
+      guideId
+        ? Staff.findOne({
+            _id: guideId,
+            position: "guide",
+            isActive: true,
+            isDeleted: { $ne: true },
+          })
+        : null,
+      driverId
+        ? Staff.findOne({
+            _id: driverId,
+            position: "driver",
+            isActive: true,
+            isDeleted: { $ne: true },
+          })
+        : null,
+      vehicleId
+        ? Vehicle.findOne({
+            _id: vehicleId,
+            isActive: true,
+            isDeleted: { $ne: true },
+          })
+        : null,
+    ]);
+
+    if (guideId && (!guideDoc || guideDoc.availability !== "available")) {
+      return res.status(400).json({
+        success: false,
+        message: "Selected guide is unavailable.",
+      });
+    }
+
+    if (driverId && (!driverDoc || driverDoc.availability !== "available")) {
+      return res.status(400).json({
+        success: false,
+        message: "Selected driver is unavailable.",
+      });
+    }
+
+    if (vehicleId && (!vehicleDoc || vehicleDoc.status !== "available")) {
+      return res.status(400).json({
+        success: false,
+        message: "Selected vehicle is unavailable.",
+      });
+    }
+
+    const numericCapacity = Number(capacity) || 20;
+    const numericDuration = Number(duration) || 1;
+    const numericPrice = Number(price);
+    const numericDiscount = Number(rest.discount) || 0;
+
+    const tour = await Tour.create({
+      ...rest,
+      title: rest.title.trim(),
+      description: rest.description.trim(),
+      country: rest.country.trim(),
+      location: rest.location.trim(),
+      price: numericPrice,
+      capacity: numericCapacity,
+      duration: String(duration ?? numericDuration),
+      durationDetails: {
+        days: numericDuration,
+        nights: 0,
+      },
+      discount: numericDiscount,
+      assignedGuide: guideDoc?._id || null,
+      assignedDriver: driverDoc?._id || null,
+      assignedVehicle: vehicleDoc?._id || null,
+      assignmentStatus:
+        guideDoc || driverDoc || vehicleDoc ? "assigned" : "pending",
+      status: rest.status || "upcoming",
+      published: rest.published ?? true,
+      available: true,
+      availabilitySettings: {
+        totalSlots: numericCapacity,
+        bookedSlots: 0,
+        waitlistEnabled: false,
+      },
+      createdBy: req.user._id,
+    });
+
+    if (guideDoc) {
+      await Staff.findByIdAndUpdate(guideDoc._id, {
+        $set: { availability: "busy" },
+        $addToSet: { assignedTours: tour._id },
+      });
+    }
+
+    if (driverDoc) {
+      await Staff.findByIdAndUpdate(driverDoc._id, {
+        $set: { availability: "busy" },
+        $addToSet: { assignedTours: tour._id },
+      });
+    }
+
+    if (vehicleDoc) {
+      await Vehicle.findByIdAndUpdate(vehicleDoc._id, {
+        $set: {
+          status: "assigned",
+          assignedTour: tour._id,
+        },
+      });
+    }
+
+    const createdTour = await Tour.findById(tour._id)
+      .populate("destination")
+      .populate("assignedGuide", "name email phone position availability")
+      .populate("assignedDriver", "name email phone position availability")
+      .populate(
+        "assignedVehicle",
+        "name registrationNumber registration model type capacity status"
+      )
+      .lean();
+
+    return res.status(201).json({
+      success: true,
+      message: "Tour created successfully",
+      data: createdTour,
+      tour: createdTour,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 /*

@@ -1,6 +1,7 @@
 import Tour from "../models/Tour.js";
 import Vehicle from "../models/Vehicle.js";
 import Booking from "../models/Booking.js";
+import Staff from "../models/Staff.js";
 
 
 
@@ -554,117 +555,196 @@ next(error);
 |--------------------------------------------------------------------------
 */
 
-export const createTour =
-async(req,res,next)=>{
+export const createTour = async (req, res, next) => {
+  try {
+    const {
+      title,
+      description,
+      destination,
+      country,
+      location,
+      date,
+      price,
+      capacity,
+      duration,
+      difficulty,
+      discount,
+      status,
+      published,
+      guide,
+      assignedGuide,
+      driver,
+      assignedDriver,
+      vehicle,
+      assignedVehicle,
+      ...rest
+    } = req.body || {};
 
-try{
+    if (
+      !title?.trim() ||
+      !description?.trim() ||
+      !destination ||
+      !country?.trim() ||
+      !location?.trim() ||
+      !date ||
+      price === undefined ||
+      price === null ||
+      Number(price) < 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Title, description, destination, country, location, date and a valid price are required.",
+      });
+    }
 
+    const guideId = assignedGuide || guide || null;
+    const driverId = assignedDriver || driver || null;
+    const vehicleId = assignedVehicle || vehicle || null;
 
-const {
+    const [guideDoc, driverDoc, vehicleDoc] = await Promise.all([
+      guideId
+        ? Staff.findOne({
+            _id: guideId,
+            position: "guide",
+            isActive: true,
+            isDeleted: { $ne: true },
+          })
+        : null,
+      driverId
+        ? Staff.findOne({
+            _id: driverId,
+            position: "driver",
+            isActive: true,
+            isDeleted: { $ne: true },
+          })
+        : null,
+      vehicleId
+        ? Vehicle.findOne({
+            _id: vehicleId,
+            isActive: true,
+            isDeleted: { $ne: true },
+          })
+        : null,
+    ]);
 
-title,
+    if (guideId && (!guideDoc || guideDoc.availability !== "available")) {
+      return res.status(400).json({
+        success: false,
+        message: "Selected guide is unavailable.",
+      });
+    }
 
-description,
+    if (driverId && (!driverDoc || driverDoc.availability !== "available")) {
+      return res.status(400).json({
+        success: false,
+        message: "Selected driver is unavailable.",
+      });
+    }
 
-destination,
+    if (vehicleId && (!vehicleDoc || vehicleDoc.status !== "available")) {
+      return res.status(400).json({
+        success: false,
+        message: "Selected vehicle is unavailable.",
+      });
+    }
 
-country,
+    const numericCapacity = Number(capacity) || 20;
+    const numericDuration = Number(duration) || 1;
+    const numericPrice = Number(price);
+    const numericDiscount = Number(discount) || 0;
 
-location,
+    if (numericCapacity < 1 || numericDuration < 1 || numericPrice < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Capacity, duration and price must contain valid values.",
+      });
+    }
 
-date,
+    if (numericDiscount < 0 || numericDiscount > 100) {
+      return res.status(400).json({
+        success: false,
+        message: "Discount must be between 0 and 100.",
+      });
+    }
 
-price
+    const tour = await Tour.create({
+      ...rest,
+      title: title.trim(),
+      description: description.trim(),
+      destination,
+      country: country.trim(),
+      location: location.trim(),
+      date,
+      price: numericPrice,
+      capacity: numericCapacity,
+      duration: String(duration ?? numericDuration),
+      durationDetails: {
+        days: numericDuration,
+        nights: 0,
+      },
+      difficulty: difficulty || "easy",
+      discount: numericDiscount,
+      assignedGuide: guideDoc?._id || null,
+      assignedDriver: driverDoc?._id || null,
+      assignedVehicle: vehicleDoc?._id || null,
+      assignmentStatus:
+        guideDoc || driverDoc || vehicleDoc ? "assigned" : "pending",
+      status: status || "upcoming",
+      published: published ?? true,
+      available: true,
+      availabilitySettings: {
+        totalSlots: numericCapacity,
+        bookedSlots: 0,
+        waitlistEnabled: false,
+      },
+      createdBy: req.user._id,
+    });
 
+    // Keep staff/vehicle availability synchronized with the tour assignment.
+    if (guideDoc) {
+      await Staff.findByIdAndUpdate(guideDoc._id, {
+        $set: { availability: "busy" },
+        $addToSet: { assignedTours: tour._id },
+      });
+    }
 
-}=req.body;
+    if (driverDoc) {
+      await Staff.findByIdAndUpdate(driverDoc._id, {
+        $set: { availability: "busy" },
+        $addToSet: { assignedTours: tour._id },
+      });
+    }
 
+    if (vehicleDoc) {
+      await Vehicle.findByIdAndUpdate(vehicleDoc._id, {
+        $set: {
+          status: "assigned",
+          assignedTour: tour._id,
+        },
+      });
+    }
 
+    const createdTour = await Tour.findById(tour._id)
+      .populate("destination")
+      .populate("assignedGuide", "name email phone position availability")
+      .populate("assignedDriver", "name email phone position availability")
+      .populate(
+        "assignedVehicle",
+        "name registrationNumber registration model type capacity status"
+      )
+      .lean();
 
-
-if(
-!title ||
-!description ||
-!destination ||
-!country ||
-!location ||
-!date ||
-!price
-){
-
-return res.status(400).json({
-
-success:false,
-
-message:
-"Title, description, destination, country, location, date and price are required"
-
-});
-
-}
-
-
-
-
-
-
-const tour =
-await Tour.create({
-
-...req.body,
-
-
-createdBy:
-req.user._id,
-
-
-
-status:
-req.body.status ||
-"scheduled",
-
-
-
-published:
-req.body.published ??
-true
-
-
-});
-
-
-
-
-
-return res.status(201).json({
-
-success:true,
-
-message:
-"Tour created successfully",
-
-data:tour
-
-});
-
-
-
-
-}catch(error){
-
-next(error);
-
-}
-
+    return res.status(201).json({
+      success: true,
+      message: "Tour created successfully",
+      data: createdTour,
+      tour: createdTour,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------

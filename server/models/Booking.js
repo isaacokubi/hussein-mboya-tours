@@ -136,7 +136,16 @@ const bookingSchema = new mongoose.Schema(
     customer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Customer",
-      required: true,
+      required: false,
+      index: true,
+    },
+
+    // Website-authenticated customer account. Agent/walk-in bookings may
+    // continue to use the Customer document above.
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
       index: true,
     },
 

@@ -6,6 +6,7 @@ import express from "express";
 import {
   deleteUser,
   getUserProfile,
+  updateUserProfile,
   getGuides,
 } from "../controllers/userController.js";
 
@@ -43,6 +44,11 @@ router.get(
   getUserProfile
 );
 
+router.put(
+  "/profile",
+  updateUserProfile
+);
+
 /*
 |--------------------------------------------------------------------------
 | GUIDES
@@ -54,7 +60,7 @@ router.get(
 
 router.get(
   "/guides",
-  roleMiddleware("admin", "tour_manager"),
+  roleMiddleware("admin", "tour_manager", "tourmanager", "manager"),
   getGuides
 );
 

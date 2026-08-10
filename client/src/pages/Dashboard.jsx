@@ -9,9 +9,10 @@ import { useAuth } from "../context/AuthContext";
 export default function Dashboard() {
   const { user } = useAuth();
 
-  const role = (user?.role?.name || user?.role || "customer")
+  const role = (user?.role?.name || user?.role || user?.legacyRole || "customer")
     .toString()
-    .toLowerCase();
+    .toLowerCase()
+    .replace(/[\s_-]/g, "");
 
   
 
@@ -28,15 +29,11 @@ const { data, isLoading, error } = useQuery({
   |--------------------------------------------------------------------------
   */
 
-  if (role === "guide") {
+  if (role === "guide" || role === "tourguide") {
     return <Navigate to="/guide/dashboard" replace />;
   }
 
-  if (
-    role === "manager" ||
-    role === "tour-manager" ||
-    role === "tour_manager"
-  ) {
+  if (role === "manager" || role === "tourmanager") {
     return <Navigate to="/tour-manager/dashboard" replace />;
   }
 
@@ -126,16 +123,19 @@ if (isLoading) {
     const date = new Date(booking.travelDate);
 
     return (
-      date >= today && booking.bookingStatus?.toLowerCase() !== "cancelled"
+      date >= today &&
+      (booking.bookingStatus || booking.status || "").toLowerCase() !== "cancelled"
     );
   });
 
   const completedTrips = bookings.filter(
-    (booking) => booking.bookingStatus?.toLowerCase() === "completed",
+    (booking) =>
+      (booking.bookingStatus || booking.status || "").toLowerCase() === "completed",
   );
 
   const cancelledTrips = bookings.filter(
-    (booking) => booking.bookingStatus?.toLowerCase() === "cancelled",
+    (booking) =>
+      (booking.bookingStatus || booking.status || "").toLowerCase() === "cancelled",
   );
 
   const totalSpent = bookings.reduce(
@@ -209,7 +209,7 @@ if (isLoading) {
           </Link>
 
           <Link
-            to="/admin/bookings"
+            to="/my-bookings"
             className="
           bg-black/40
           px-6
@@ -333,7 +333,7 @@ if (isLoading) {
           </h2>
 
           <Link
-            to="/admin/bookings"
+            to="/my-bookings"
             className="
           text-green-700
           font-bold

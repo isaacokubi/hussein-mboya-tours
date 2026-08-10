@@ -44,7 +44,7 @@ router.use(protect);
  */
 router.put(
   "/:id/assign",
-  roleMiddleware("admin", "tour_manager"),
+  roleMiddleware("admin", "tour_manager", "tourmanager", "manager"),
   assignTourResources
 );
 

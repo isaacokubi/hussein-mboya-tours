@@ -147,7 +147,35 @@ export const stkPush = async (req, res, next) => {
 
     }
 
+    const requesterRole = String(
+      req.user?.roleId?.name || req.user?.role || req.user?.legacyRole || ""
+    )
+      .trim()
+      .toLowerCase()
+      .replace(/[\s_-]/g, "");
 
+    const isStaff = [
+      "admin",
+      "superadmin",
+      "administrator",
+      "manager",
+      "tourmanager",
+      "guide",
+      "tourguide",
+      "agent",
+      "travelagent",
+    ].includes(requesterRole);
+
+    const ownsBooking =
+      booking.user?.toString() === req.user._id.toString() ||
+      booking.customer?.toString() === req.user._id.toString();
+
+    if (!isStaff && !ownsBooking) {
+      return res.status(403).json({
+        success: false,
+        message: "You do not have permission to pay this booking.",
+      });
+    }
 
 
     if(
@@ -286,11 +314,11 @@ export const stkPush = async (req, res, next) => {
 
 
       user:
-      booking.customer || null,
+      booking.user || booking.customer || null,
 
 
       customer:
-      booking.customer || null,
+      booking.user || booking.customer || null,
 
 
       provider:
@@ -566,7 +594,7 @@ export const mpesaCallback = async (req, res, next) => {
         );
 
         if (points > 0) {
-          await addPoints(booking.customer, points);
+          await addPoints(booking.user || booking.customer, points);
         }
       }
     } catch (err) {

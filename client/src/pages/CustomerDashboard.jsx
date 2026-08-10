@@ -36,10 +36,7 @@ const CustomerDashboard = () => {
 
       queryClient.invalidateQueries({
 
-        queryKey:[
-          "my-bookings",
-          user._id
-        ]
+        queryKey:["my-bookings"]
 
       });
 
@@ -60,10 +57,7 @@ const CustomerDashboard = () => {
 
   } = useQuery({
 
-    queryKey:[
-      "my-bookings",
-      user?._id
-    ],
+    queryKey:["my-bookings"],
 
 
     queryFn:getMyBookings,

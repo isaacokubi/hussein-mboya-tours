@@ -111,25 +111,29 @@ export const deleteTour = async (id) => {
 export const getGuides = async () => {
   const { data } = await api.get("/staff/guides");
 
-  return Array.isArray(data?.data)
-    ? data.data
-    : Array.isArray(data?.guides)
-      ? data.guides
-      : Array.isArray(data)
-        ? data
-        : [];
+  return Array.isArray(data)
+    ? data
+    : Array.isArray(data?.data)
+      ? data.data
+      : Array.isArray(data?.data?.guides)
+        ? data.data.guides
+        : Array.isArray(data?.guides)
+          ? data.guides
+          : [];
 };
 
 export const getDrivers = async () => {
   const { data } = await api.get("/staff/drivers");
 
-  return Array.isArray(data?.data)
-    ? data.data
-    : Array.isArray(data?.drivers)
-      ? data.drivers
-      : Array.isArray(data)
-        ? data
-        : [];
+  return Array.isArray(data)
+    ? data
+    : Array.isArray(data?.data)
+      ? data.data
+      : Array.isArray(data?.data?.drivers)
+        ? data.data.drivers
+        : Array.isArray(data?.drivers)
+          ? data.drivers
+          : [];
 };
 
 /*
@@ -197,19 +201,14 @@ export const assignVehicle = async (
 export const getVehicles = async () => {
   const { data } = await api.get("/vehicles");
 
-  console.log(
-    "FULL VEHICLES RESPONSE:",
-    JSON.stringify(data, null, 2)
-  );
-
   return Array.isArray(data)
     ? data
-    : Array.isArray(data?.vehicles)
-      ? data.vehicles
-      : Array.isArray(data?.data)
-        ? data.data
-        : Array.isArray(data?.data?.vehicles)
-          ? data.data.vehicles
+    : Array.isArray(data?.data)
+      ? data.data
+      : Array.isArray(data?.data?.vehicles)
+        ? data.data.vehicles
+        : Array.isArray(data?.vehicles)
+          ? data.vehicles
           : [];
 };
 

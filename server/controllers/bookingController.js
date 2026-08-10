@@ -60,12 +60,18 @@ export const createBooking = async (req, res, next) => {
     }
 
 
-    await validateTourCapacity(
+    const capacityAvailable = await validateTourCapacity(
       tour,
       totalTravellers,
       travelDate
     );
 
+    if (!capacityAvailable) {
+      return res.status(409).json({
+        success: false,
+        message: "Not enough available tour slots for this booking.",
+      });
+    }
 
     const amounts =
       calculateBookingAmounts(
@@ -73,11 +79,18 @@ export const createBooking = async (req, res, next) => {
         totalTravellers
       );
 
+    // Reserve capacity before creating the booking. If booking creation
+    // fails, the reservation is released in the catch block below.
+    await reserveSlots(tour, totalTravellers);
 
-    const booking =
-      await Booking.create({
+    let booking;
 
-        customer:req.user._id,
+    try {
+      booking = await Booking.create({
+
+        customer:null,
+
+        user:req.user._id,
 
 
         customerSnapshot:{
@@ -141,15 +154,15 @@ export const createBooking = async (req, res, next) => {
         assigned:false
 
       });
-
-
-
-    await reserveSlots(
-      tour,
-      totalTravellers,
-      travelDate
-    );
-
+    } catch (createError) {
+      // Roll back the reserved capacity when booking creation fails.
+      try {
+        await releaseSlots(tour, totalTravellers);
+      } catch (releaseError) {
+        console.error("BOOKING CAPACITY ROLLBACK ERROR:", releaseError);
+      }
+      throw createError;
+    }
 
     return successResponse(
       res,
@@ -514,6 +527,27 @@ export const getConfirmedBookings = async (req, res, next) => {
 |--------------------------------------------------------------------------
 */
 
+const isPrivilegedBookingViewer = (user) => {
+  const role = String(
+    user?.roleId?.name || user?.role || user?.legacyRole || ""
+  )
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]/g, "");
+
+  return [
+    "admin",
+    "superadmin",
+    "administrator",
+    "manager",
+    "tourmanager",
+    "guide",
+    "tourguide",
+    "agent",
+    "travelagent",
+  ].includes(role);
+};
+
 export const getBookingById = async (
 req,
 res,
@@ -522,6 +556,12 @@ next
 
 try{
 
+if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+return res.status(400).json({
+success:false,
+message:"Invalid booking ID"
+});
+}
 
 const booking =
 
@@ -563,6 +603,19 @@ message:"Booking not found"
 });
 
 }
+
+if (
+  !isPrivilegedBookingViewer(req.user) &&
+  booking.user?.toString() !== req.user._id.toString() &&
+  booking.customer?.toString() !== req.user._id.toString()
+) {
+  return res.status(403).json({
+    success: false,
+    message: "You do not have access to this booking.",
+  });
+}
+
+
 
 
 
@@ -1136,6 +1189,12 @@ next
 
 try{
 
+if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+return res.status(400).json({
+success:false,
+message:"Invalid booking ID"
+});
+}
 
 const booking =
 await Booking.findById(
@@ -1158,6 +1217,17 @@ message:"Booking not found"
 
 
 
+
+if (
+  !isPrivilegedBookingViewer(req.user) &&
+  booking.user?.toString() !== req.user._id.toString() &&
+  booking.customer?.toString() !== req.user._id.toString()
+) {
+return res.status(403).json({
+success:false,
+message:"You do not have permission to cancel this booking"
+});
+}
 
 if(
 booking.status==="cancelled"
