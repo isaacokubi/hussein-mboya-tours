@@ -1,5 +1,4 @@
 import {
-    useCallback,
     useEffect,
     useState
 } from "react";
@@ -67,7 +66,7 @@ const [status,setStatus] = useState("all");
 |--------------------------------------------------------------------------
 */
 
-const fetchTours = useCallback(async()=>{
+const fetchTours = async()=>{
 
 
 try{
@@ -113,7 +112,12 @@ setLoading(false);
 }
 
 
-}, []);
+};
+
+
+
+
+
 
 
 useEffect(() => {
@@ -122,7 +126,7 @@ useEffect(() => {
     };
 
     loadTours();
-  }, [fetchTours]);
+  }, []);
 
 
 

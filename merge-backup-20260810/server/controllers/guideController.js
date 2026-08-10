@@ -270,6 +270,7 @@ export const getTourGuests = async (req, res, next) => {
       },
     })
       .populate("customer", "name email phone")
+      .populate("user", "name email phone")
       .sort({ createdAt: -1 });
 
     res.status(200).json({

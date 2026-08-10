@@ -41,9 +41,7 @@ const generateToken = (user) => {
 
   return jwt.sign(payload, secret, {
     expiresIn:
-      env.JWT_EXPIRE ||
       env.JWT_EXPIRES ||
-      process.env.JWT_EXPIRE ||
       process.env.JWT_EXPIRES ||
       "7d",
 

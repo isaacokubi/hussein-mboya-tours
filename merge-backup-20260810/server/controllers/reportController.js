@@ -48,6 +48,7 @@ export const exportBookings = async (req, res, next) => {
     */
 
     const bookings = await Booking.find(filter)
+      .populate("user", "name email phone")
       .populate("customer", "name email phone")
       .populate("tour", "title destination")
       .sort({

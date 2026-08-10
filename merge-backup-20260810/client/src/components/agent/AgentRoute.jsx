@@ -63,16 +63,7 @@ replace
 
 const roleName =
 
-user.role?.name ||
-user.role ||
-user.legacyRole ||
-user.roleId?.name ||
-"";
-
-const normalizedRole = String(roleName)
-    .trim()
-    .toLowerCase()
-    .replace(/[\s_-]+/g, "");
+user.role?.name || user.role;
 
 
 
@@ -82,7 +73,7 @@ const normalizedRole = String(roleName)
 
 
 if(
-    normalizedRole !== "agent"
+    roleName !== "Agent"
 ){
 
 

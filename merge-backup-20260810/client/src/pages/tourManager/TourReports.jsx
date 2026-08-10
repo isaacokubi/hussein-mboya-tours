@@ -59,8 +59,11 @@ await getTourReports();
 
 
 setReports(
-response?.data ||
+
+response.data.reports ||
+
 {}
+
 );
 
 

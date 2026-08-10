@@ -2,7 +2,6 @@
 
 import mongoose from "mongoose";
 import Destination from "../models/Destination.js";
-import cloudinary from "../config/cloudinary.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -50,7 +49,7 @@ export const createDestination = async (req, res, next) => {
 
     const images = req.files?.map((file) => ({
       url: file.path,
-      publicId: file.filename
+      public_id: file.filename
     })) || [];
 
     const destination = await Destination.create({
@@ -232,7 +231,7 @@ export const updateDestination = async (req, res, next) => {
     if (req.files?.length) {
       destination.images = req.files.map((file) => ({
         url: file.path,
-        publicId: file.filename
+        public_id: file.filename
       }));
     }
 
@@ -272,18 +271,8 @@ export const deleteDestination = async (req, res, next) => {
       });
     }
 
-    // Remove associated Cloudinary assets before deleting the database record.
-    const imagePublicIds = (destination.images || [])
-      .map((image) => image.publicId)
-      .filter(Boolean);
-
-    await Promise.all(
-      imagePublicIds.map((publicId) =>
-        cloudinary.uploader.destroy(publicId).catch((error) => {
-          console.error("DESTINATION IMAGE DELETE ERROR:", error.message);
-        })
-      )
-    );
+    // TODO:
+    // Delete Cloudinary images here if you're storing public_id values.
 
     await destination.deleteOne();
 

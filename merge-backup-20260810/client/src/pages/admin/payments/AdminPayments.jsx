@@ -15,9 +15,7 @@ import {
   getAdminPayments,
   getPaymentStats,
   updatePaymentStatus,
-  refundPayment,
-  exportPaymentsCSV,
-  exportPaymentsPDF
+  refundPayment
 } from "../../../api/admin/adminPaymentApi";
 
 
@@ -103,7 +101,7 @@ onSuccess:()=>{
 
 queryClient.invalidateQueries({
 
-queryKey:["adminPayments"]
+queryKey:["admin-payments"]
 
 });
 
@@ -431,14 +429,18 @@ overflow-x-auto
 
 <button
 className="px-4 py-2 bg-green-600 text-white rounded"
-onClick={exportPaymentsCSV}
+onClick={()=>{
+window.alert("CSV export coming soon");
+}}
 >
 Export CSV
 </button>
 
 <button
 className="px-4 py-2 bg-red-600 text-white rounded"
-onClick={exportPaymentsPDF}
+onClick={()=>{
+window.alert("PDF export coming soon");
+}}
 >
 Export PDF
 </button>

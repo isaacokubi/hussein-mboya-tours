@@ -101,29 +101,22 @@ return res.data;
 
 
 
-const downloadBlob = (blob, filename) => {
-  const url = window.URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.URL.revokeObjectURL(url);
+export const exportPaymentsCSV = ()=>{
+
+window.open(
+`${import.meta.env.VITE_API_URL}/admin/payments/export/csv`,
+"_blank"
+);
+
 };
 
-export const exportPaymentsCSV = async (params = {}) => {
-  const { data } = await api.get("/admin/payments/export/csv", {
-    params,
-    responseType: "blob",
-  });
-  downloadBlob(data, "payments-report.csv");
+
+export const exportPaymentsPDF = ()=>{
+
+window.open(
+`${import.meta.env.VITE_API_URL}/admin/payments/export/pdf`,
+"_blank"
+);
+
 };
 
-export const exportPaymentsPDF = async (params = {}) => {
-  const { data } = await api.get("/admin/payments/export/pdf", {
-    params,
-    responseType: "blob",
-  });
-  downloadBlob(data, "payments-report.pdf");
-};

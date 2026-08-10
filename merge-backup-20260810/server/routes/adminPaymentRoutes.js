@@ -99,3 +99,15 @@ refundPayment
 
 export default router;
 
+
+router.get(
+"/export/csv",
+exportPaymentsCSV
+);
+
+
+router.get(
+"/export/pdf",
+exportPaymentsPDF
+);
+

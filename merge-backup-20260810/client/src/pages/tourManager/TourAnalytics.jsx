@@ -1,7 +1,7 @@
 // client/src/pages/tourManager/TourAnalytics.jsx
 
 import { useQuery } from "@tanstack/react-query";
-import { getTourReports } from "../../api/tourApi";
+import { getAnalytics } from "../../api/analyticsApi";
 
 
 export default function TourAnalytics() {
@@ -14,7 +14,7 @@ export default function TourAnalytics() {
   } = useQuery({
     queryKey: ["tourAnalytics"],
 
-    queryFn: getTourReports,
+    queryFn: getAnalytics,
   });
 
   if (isLoading) return <div className="p-6">Loading analytics...</div>;
@@ -43,33 +43,25 @@ export default function TourAnalytics() {
     {
       title: "Revenue",
 
-      value: `KES ${Number(analytics.totalRevenue || 0).toLocaleString()}`,
+      value: `KES ${Number(analytics.revenue || 0).toLocaleString()}`,
     },
 
     {
-      title: "Customers",
+      title: "Returning Customers",
 
-      value: analytics.totalCustomers || 0,
+      value: `${analytics.returningCustomers || 0}%`,
     },
 
     {
-      title: "Completed Tours",
+      title: "Average Rating",
 
-      value: analytics.completedTours || 0,
+      value: `${analytics.averageRating || 0} ⭐`,
     },
   ];
 
-  const bookingGrowth = (analytics.monthlyRevenue || []).map((item) => ({
-    month: `${item?._id?.year || ""}-${String(item?._id?.month || "").padStart(2, "0")}`,
-    value: item?.bookings || 0,
-  }));
+  const bookingGrowth = analytics.bookingGrowth || [];
 
-  const popularTours = analytics.popularTours || [];
-  const maxBookings = Math.max(1, ...popularTours.map((item) => Number(item?.bookings || 0)));
-  const destinations = popularTours.map((item) => ({
-    name: item?.title || "Untitled tour",
-    percentage: Math.round((Number(item?.bookings || 0) / maxBookings) * 100),
-  }));
+  const destinations = analytics.popularDestinations || [];
 
   return (
     <div
