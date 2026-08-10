@@ -1,97 +1,80 @@
-
 import Payment from "../models/Payment.js";
-import Booking from "../models/Booking.js";
 
+export const getPaymentReconciliation = async (req, res, next) => {
+  try {
+    const payments = await Payment.find()
+      .populate(
+        "booking",
+        "bookingNumber paymentStatus totalAmount status"
+      )
+      .populate(
+        "customer",
+        "name email phone"
+      )
+      .sort({ createdAt: -1 })
+      .lean();
 
-export const getPaymentReconciliation = async(req,res,next)=>{
+    const summary = {
+      total: payments.length,
+      completed: payments.filter(
+        (p) => p.status === "completed"
+      ).length,
+      pending: payments.filter(
+        (p) => ["pending", "processing"].includes(p.status)
+      ).length,
+      failed: payments.filter(
+        (p) => ["failed", "cancelled"].includes(p.status)
+      ).length,
+      refunded: payments.filter(
+        (p) => p.status === "refunded"
+      ).length,
+      missingReceipt: payments.filter(
+        (p) =>
+          p.status === "completed" &&
+          !p.mpesaReceiptNumber &&
+          String(p.provider || "").toUpperCase() === "MPESA"
+      ).length,
+    };
 
-try{
+    const mismatches = payments.filter((payment) => {
+      if (!payment.booking) return true;
 
+      if (payment.status === "completed") {
+        const bookingPaymentStatus =
+          payment.booking.paymentStatus;
 
-const payments =
-await Payment.find()
-.populate(
-"booking",
-"bookingNumber paymentStatus totalAmount"
-)
-.sort({
-createdAt:-1
-})
-.lean();
+        const bookingAmount =
+          Number(payment.booking.totalAmount || 0);
 
+        const paymentAmount =
+          Number(payment.amount || 0);
 
+        const amountMismatch =
+          bookingAmount > 0 &&
+          paymentAmount > bookingAmount;
 
-const summary={
+        return (
+          bookingPaymentStatus !== "paid" ||
+          amountMismatch
+        );
+      }
 
-total:payments.length,
+      if (payment.status === "refunded") {
+        return payment.booking.paymentStatus !== "refunded";
+      }
 
-completed:
-payments.filter(
-p=>p.status==="completed"
-).length,
+      return false;
+    });
 
-
-pending:
-payments.filter(
-p=>p.status==="pending"
-).length,
-
-
-failed:
-payments.filter(
-p=>p.status==="failed"
-).length,
-
-
-missingReceipt:
-payments.filter(
-p=>
-p.status==="completed" &&
-!p.mpesaReceiptNumber
-).length
-
+    return res.json({
+      success: true,
+      data: {
+        summary,
+        mismatches,
+        payments,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
 };
-
-
-
-const mismatches =
-payments.filter(
-p=>
-
-p.booking &&
-
-p.status==="completed" &&
-
-p.booking.paymentStatus!=="paid"
-
-);
-
-
-
-res.json({
-
-success:true,
-
-data:{
-
-summary,
-
-mismatches,
-
-payments
-
-}
-
-});
-
-
-}catch(error){
-
-next(error);
-
-}
-
-
-};
-
-

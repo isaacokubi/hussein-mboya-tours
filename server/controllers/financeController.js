@@ -3,6 +3,7 @@
 import Payment from "../models/Payment.js";
 import Booking from "../models/Booking.js";
 import Commission from "../models/Commission.js";
+import User from "../models/User.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -199,17 +200,39 @@ export const getTransactions = async (req, res, next) => {
     */
 
     if (search) {
+      const regex = {
+        $regex: String(search).trim(),
+        $options: "i",
+      };
+
+      const [matchingUsers, matchingBookings] = await Promise.all([
+        User.find({
+          $or: [
+            { name: regex },
+            { email: regex },
+            { phone: regex },
+          ],
+        }).select("_id").lean(),
+
+        Booking.find({
+          $or: [
+            { bookingNumber: regex },
+          ],
+        }).select("_id").lean(),
+      ]);
+
       filter.$or = [
+        { transactionId: regex },
+        { transactionReference: regex },
+        { mpesaReceiptNumber: regex },
         {
-          transactionId: {
-            $regex: search,
-            $options: "i",
+          customer: {
+            $in: matchingUsers.map((user) => user._id),
           },
         },
         {
-          mpesaReceiptNumber: {
-            $regex: search,
-            $options: "i",
+          booking: {
+            $in: matchingBookings.map((booking) => booking._id),
           },
         },
       ];

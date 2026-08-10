@@ -169,18 +169,71 @@ message:"Payment not found"
 }
 
 
-payment.status=req.body.status;
+const nextStatus = req.body.status;
 
+const allowedStatuses = [
+  "pending",
+  "processing",
+  "completed",
+  "failed",
+  "cancelled",
+  "refunded",
+];
+
+if (!allowedStatuses.includes(nextStatus)) {
+  return res.status(400).json({
+    success: false,
+    message: "Invalid payment status",
+  });
+}
+
+payment.status = nextStatus;
+
+if (nextStatus === "completed" && !payment.paidAt) {
+  payment.paidAt = new Date();
+}
 
 await payment.save();
 
+if (payment.booking) {
+  const booking = await Booking.findById(payment.booking);
+
+  if (booking) {
+    if (nextStatus === "completed") {
+      booking.paymentStatus = "paid";
+      booking.status = "confirmed";
+      booking.paidAt = payment.paidAt || new Date();
+      if (payment.mpesaReceiptNumber) {
+        booking.mpesaReceipt = payment.mpesaReceiptNumber;
+      }
+      if (payment.transactionId) {
+        booking.transactionId = payment.transactionId;
+      }
+    } else if (nextStatus === "failed") {
+      booking.paymentStatus = "failed";
+      if (booking.status !== "completed") {
+        booking.status = "pending";
+      }
+    } else if (nextStatus === "cancelled") {
+      booking.paymentStatus = "cancelled";
+      if (booking.status !== "completed") {
+        booking.status = "cancelled";
+      }
+    } else if (nextStatus === "refunded") {
+      booking.paymentStatus = "refunded";
+      booking.status = "refunded";
+      booking.refundAmount = payment.refundedAmount || payment.amount || 0;
+    } else {
+      booking.paymentStatus = "pending";
+    }
+
+    await booking.save();
+  }
+}
 
 res.json({
-
-success:true,
-
-payment
-
+  success:true,
+  payment
 });
 
 

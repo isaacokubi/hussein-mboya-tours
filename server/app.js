@@ -6,6 +6,7 @@ import cors from "cors";
 import compression from "compression";
 import cookieParser from "cookie-parser";
 import morgan from "morgan";
+import mongoose from "mongoose";
 
 import apiRoutes from "./routes/index.js";
 
@@ -113,6 +114,20 @@ app.use("/api", apiRoutes);
 | HEALTH CHECK
 |--------------------------------------------------------------------------
 */
+
+app.get(
+  "/api/health",
+  async (req, res) => {
+    const dbReady = mongoose.connection.readyState === 1;
+
+    res.status(dbReady ? 200 : 503).json({
+      success: dbReady,
+      status: dbReady ? "healthy" : "degraded",
+      database: dbReady ? "connected" : "disconnected",
+      timestamp: new Date().toISOString(),
+    });
+  },
+);
 
 app.get(
   "/",

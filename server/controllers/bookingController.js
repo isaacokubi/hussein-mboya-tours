@@ -364,6 +364,11 @@ await Booking.find(filter)
 
 .populate(
 "customer",
+"name email phone user"
+)
+
+.populate(
+"user",
 "name email phone"
 )
 
@@ -450,20 +455,10 @@ export const getConfirmedBookings = async (req, res, next) => {
 
 
     const filter = {
-
-      paymentStatus:"paid",
-
-      $or:[
-
-        {
-        },
-
-        {
-          status:"confirmed"
-        }
-
-      ]
-
+      paymentStatus: "paid",
+      status: {
+        $in: ["confirmed", "assigned", "ongoing"],
+      },
     };
 
 

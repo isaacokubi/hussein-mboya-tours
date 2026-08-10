@@ -72,53 +72,22 @@ export const getAllBookings = async (req, res, next) => {
     |--------------------------------------------------------------------------
     | SEARCH
     |--------------------------------------------------------------------------
-    | Search booking number and customer snapshot.
-    */
-
-    if (req.query.search) {
-      const search = String(req.query.search).trim();
-
-      if (search) {
-        const regex = {
-          $regex: search,
-          $options: "i",
-        };
-
-        filter.$or = [
-          { bookingNumber: regex },
-          { "customerSnapshot.name": regex },
-          { "customerSnapshot.email": regex },
-          { "customerSnapshot.phone": regex },
-        ];
-      }
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | SEARCH
-    |--------------------------------------------------------------------------
     */
 
     if (search) {
+      const regex = {
+        $regex: String(search).trim(),
+        $options: "i",
+      };
+
       filter.$or = [
-        {
-          bookingNumber: {
-            $regex: search,
-            $options: "i",
-          },
-        },
-        {
-          "contact.name": {
-            $regex: search,
-            $options: "i",
-          },
-        },
-        {
-          "contact.email": {
-            $regex: search,
-            $options: "i",
-          },
-        },
+        { bookingNumber: regex },
+        { "customerSnapshot.name": regex },
+        { "customerSnapshot.email": regex },
+        { "customerSnapshot.phone": regex },
+        { "contact.name": regex },
+        { "contact.email": regex },
+        { "contact.phone": regex },
       ];
     }
 
@@ -161,6 +130,11 @@ export const getAllBookings = async (req, res, next) => {
 
           .populate(
             "customer",
+            "name email phone user"
+          )
+
+          .populate(
+            "user",
             "name email phone"
           )
 

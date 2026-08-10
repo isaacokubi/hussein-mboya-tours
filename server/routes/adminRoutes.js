@@ -170,6 +170,11 @@ router.patch(
   updateUserStatus
 );
 
+router.put(
+  "/users/:id/status",
+  updateUserStatus
+);
+
 
 
 

@@ -678,15 +678,32 @@ tourCounts[name] =
 
 
 const mostBookedTour =
-
 Object.entries(tourCounts).sort(
-(a,b)=>
-b[1]-a[1]
-)[0]?.[0]
+  (a, b) => b[1] - a[1]
+)[0]?.[0] || "None";
 
-||
+const paid =
+bookings.filter((booking) => {
+  const paymentStatus = String(
+    typeof booking.paymentStatus === "string"
+      ? booking.paymentStatus
+      : booking.paymentStatus?.status || "pending"
+  ).toLowerCase();
 
-"None";
+  return paymentStatus === "paid";
+}).length;
+
+const upcoming =
+bookings.filter((booking) => {
+  const travelDate = new Date(booking.travelDate);
+  return (
+    !Number.isNaN(travelDate.getTime()) &&
+    travelDate >= new Date() &&
+    !["cancelled", "refunded", "completed"].includes(
+      String(booking.status || "").toLowerCase()
+    )
+  );
+}).length;
 
 
 

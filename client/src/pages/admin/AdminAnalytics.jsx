@@ -50,8 +50,39 @@ export default function AdminAnalytics(){
 
 
 
-    const analytics =
-        data?.data?.analytics || data?.data || data?.analytics || data || {};
+    const payload = data?.data || data || {};
+
+    const revenue = payload.revenue || {
+        totalRevenue: 0,
+        totalPayments: 0,
+    };
+
+    const bookingsSeries = Array.isArray(payload.bookings)
+        ? payload.bookings
+        : [];
+
+    const bookingStatus = Array.isArray(payload.bookingStatus)
+        ? payload.bookingStatus
+        : [];
+
+    const monthlyRevenue = Array.isArray(payload.monthlyRevenue)
+        ? payload.monthlyRevenue
+        : [];
+
+    const vehicleStats = Array.isArray(payload.vehicleStats)
+        ? payload.vehicleStats
+        : [];
+
+    const popularTours = Array.isArray(payload.popularTours)
+        ? payload.popularTours
+        : [];
+
+    const customerCount = Number(payload.customers || 0);
+
+    const bookingCount = bookingsSeries.reduce(
+        (sum, item) => sum + Number(item.bookings || 0),
+        0
+    );
 
 
 
@@ -142,7 +173,7 @@ export default function AdminAnalytics(){
 
                     title="Revenue"
 
-                    value={`KES ${Number(analytics.revenue?.totalRevenue ?? analytics.revenue ?? 0).toLocaleString()}`}
+                    value={`KES ${Number(revenue.totalRevenue || 0).toLocaleString()}`}
 
                 />
 
@@ -152,7 +183,7 @@ export default function AdminAnalytics(){
 
                     title="Customers"
 
-                    value={analytics.customers || 0}
+                    value={customerCount}
 
                 />
 
@@ -162,7 +193,7 @@ export default function AdminAnalytics(){
 
                     title="Bookings"
 
-                    value={analytics.bookings || 0}
+                    value={bookingCount}
 
                 />
 
@@ -173,11 +204,11 @@ export default function AdminAnalytics(){
                     title="Vehicles"
 
                     value={
-                        analytics.vehicleStats?.reduce(
-                            (total,item)=>
-                            total + item.count,
+                        vehicleStats.reduce(
+                            (total, item) =>
+                                total + Number(item.count || 0),
                             0
-                        ) || 0
+                        )
                     }
 
                 />
@@ -239,7 +270,7 @@ export default function AdminAnalytics(){
                     <BarChart
 
                     data={
-                        analytics.monthlyRevenue || []
+                        monthlyRevenue
                     }
 
                     >
@@ -333,7 +364,7 @@ export default function AdminAnalytics(){
                         <Pie
 
                         data={
-                            analytics.status || []
+                            bookingStatus
                         }
 
                         dataKey="count"

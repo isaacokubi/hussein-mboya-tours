@@ -160,6 +160,14 @@ export const getBookings = async (params = {}) => {
   return data;
 };
 
+export const completeBooking = async (id) => {
+  const { data } = await api.patch(
+    `/tourmanager/bookings/${id}/complete`
+  );
+
+  return data;
+};
+
 /*
 |--------------------------------------------------------------------------
 | CUSTOMERS

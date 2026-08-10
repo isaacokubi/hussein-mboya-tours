@@ -253,9 +253,8 @@ export const register = async (req, res, next) => {
       email: normalizedEmail,
       phone,
       password,
-  status: "active",
-  isActive: true,
-  isVerified: true,
+      status: "active",
+      isVerified: true,
 
       referralCode,
 

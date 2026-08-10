@@ -51,6 +51,7 @@ import tourAssignmentRoutes from "./tourAssignmentRoutes.js";
 import tourReportRoutes from "./tourReportRoutes.js";
 import aiRoutes from "./aiRoutes.js";
 import seoRoutes from "./seoRoutes.js";
+import settingsRoutes from "./settingsRoutes.js";
 
 const router = express.Router();
 
@@ -93,11 +94,14 @@ router.use("/admin/bookings", adminBookingRoutes);
 router.use("/admin/payments", adminPaymentRoutes);
 router.use("/admin/roles", adminRoleRoutes);
 router.use("/admin/system-health", systemHealthRoutes);
+router.use("/admin/settings", settingsRoutes);
 router.use("/admin/dashboard", adminDashboardRoutes);
 router.use("/admin/reviews", adminReviewRoutes);
 router.use("/admin/gallery", adminGalleryRoutes);
 router.use("/admin/coupons", adminCouponRoutes);
 router.use("/admin/finance", financeRoutes);
+// Compatibility alias for the Admin Customers CRM.
+router.use("/admin/customers", customerRoutes);
 
 /*
 |--------------------------------------------------------------------------
@@ -156,6 +160,14 @@ router.use("/customers", customerRoutes);
 router.use("/documents", documentRoutes);
 router.use("/invoices", invoiceRoutes);
 router.use("/notifications", notificationRoutes);
+
+// Lightweight health endpoint for local/deployment checks.
+router.get("/health", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Travel API healthy",
+  });
+});
 router.use("/recommendations", recommendationRoutes);
 router.use("/guide", guideRoutes);
 

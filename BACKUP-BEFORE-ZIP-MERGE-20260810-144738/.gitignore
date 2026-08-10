@@ -1,0 +1,96 @@
+# Repair script backups
+.audit-fix-backup-*/
+.fix-backup-*/
+.module-completion-backup-*/
+
+# Audit reports
+REAL_COMPLETION_REPORT.txt
+DEEP_REPAIR_REPORT.txt# ==============================
+# Dependencies
+# ==============================
+
+node_modules/
+*/node_modules/
+
+
+# ==============================
+# Environment Variables
+# ==============================
+
+.env
+.env.*
+.env.local
+.env.development
+.env.production
+
+
+# ==============================
+# Build Output
+# ==============================
+
+dist/
+build/
+
+
+# ==============================
+# Uploads / User Generated Files
+# ==============================
+
+uploads/
+
+
+# ==============================
+# Logs
+# ==============================
+
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+
+
+# ==============================
+# Coverage / Testing
+# ==============================
+
+coverage/
+
+
+# ==============================
+# IDE Settings
+# ==============================
+
+.vscode/
+.idea/
+
+
+# ==============================
+# OS Files
+# ==============================
+
+.DS_Store
+Thumbs.db
+
+
+# ==============================
+# Deployment
+# ==============================
+
+.vercel/
+.render/
+
+
+# ==============================
+# Temporary Files
+# ==============================
+
+*.tmp
+*.temp
+*.swp
+.vercel
+.env*
+
+# Automatic repair backups
+*.backup

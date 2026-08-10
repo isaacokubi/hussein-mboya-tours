@@ -9,6 +9,7 @@ import {
     updateTour,
     deleteTour,
     assignTourGuide,
+    completeBooking,
 } from "../controllers/tourManagerController.js";
 
 import {
@@ -103,6 +104,8 @@ router.delete("/itineraries/:id", deleteItinerary);
 */
 
 router.get("/bookings", getBookings);
+router.patch("/bookings/:id/complete", completeBooking);
+router.put("/bookings/:id/complete", completeBooking);
 router.get("/customers", getCustomers);
 router.get("/guides", getGuides);
 

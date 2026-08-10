@@ -421,7 +421,7 @@ onClick={()=>
 
 statusMutation.mutate({
       id: user._id || user.id,
-      status: user.status === "active" ? "inactive" : "active",
+      status: user.status === "active" ? "disabled" : "active",
     })
 
 
@@ -440,7 +440,7 @@ bg-gray-100
 
 {
 
-user.isActive
+user.status === "active"
 
 ?
 

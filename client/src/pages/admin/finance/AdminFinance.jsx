@@ -27,38 +27,40 @@ export default function AdminFinance() {
     );
   }
 
+  const stats = finance?.data || finance || {};
+
   const revenue =
     Number(
-      finance?.revenue ??
-      finance?.totalRevenue ??
+      stats.revenue ??
+      stats.totalRevenue ??
       0
     );
 
   const netRevenue =
     Number(
-      finance?.netRevenue ??
-      finance?.paidRevenue ??
+      stats.netRevenue ??
+      stats.paidRevenue ??
       0
     );
 
   const refunded =
     Number(
-      finance?.refundedAmount ??
-      finance?.refunded ??
+      stats.refundedAmount ??
+      stats.refunded ??
       0
     );
 
   const paidBookings =
-    finance?.paidBookings ??
-    finance?.bookings ??
+    stats.paidBookings ??
+    stats.bookings ??
     0;
 
   const pendingPayments =
-    finance?.pendingPayments ??
+    stats.pendingPayments ??
     0;
 
   const failedPayments =
-    finance?.failedPayments ??
+    stats.failedPayments ??
     0;
 
   const cards = [

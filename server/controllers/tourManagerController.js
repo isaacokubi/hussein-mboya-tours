@@ -561,3 +561,70 @@ export const assignTourGuide = async (req, res, next) => {
         next(error);
     }
 };
+
+/*
+|--------------------------------------------------------------------------
+| MARK BOOKING COMPLETED
+|--------------------------------------------------------------------------
+|
+| Tour managers can complete a paid/confirmed booking after the trip is
+| finished. This keeps the booking status consistent across dashboards.
+|--------------------------------------------------------------------------
+*/
+
+export const completeBooking = async (req, res, next) => {
+    try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid booking ID",
+            });
+        }
+
+        const booking = await Booking.findById(req.params.id);
+
+        if (!booking) {
+            return res.status(404).json({
+                success: false,
+                message: "Booking not found",
+            });
+        }
+
+        if (["cancelled", "refunded"].includes(booking.status)) {
+            return res.status(400).json({
+                success: false,
+                message: `A ${booking.status} booking cannot be completed.`,
+            });
+        }
+
+        if (booking.paymentStatus !== "paid") {
+            return res.status(400).json({
+                success: false,
+                message: "Only paid bookings can be marked as completed.",
+            });
+        }
+
+        booking.status = "completed";
+        booking.completedAt = new Date();
+
+        await booking.save();
+
+        const updatedBooking = await Booking.findById(booking._id)
+            .populate("user", "name email phone")
+            .populate("customer", "name email phone")
+            .populate("tour", "title")
+            .populate("assignedGuide", "name email phone")
+            .populate("assignedDriver", "name email phone")
+            .populate("assignedVehicle", "name registrationNumber")
+            .lean();
+
+        return res.status(200).json({
+            success: true,
+            message: "Booking marked as completed.",
+            data: updatedBooking,
+            booking: updatedBooking,
+        });
+    } catch (error) {
+        next(error);
+    }
+};

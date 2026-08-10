@@ -20,7 +20,7 @@ export default function StaffManagement() {
             const res = await api.put(`/staff/${id}/status`, {
                 isActive: active,
                 status: active ? "active" : "inactive",
-                availability: active ? "available" : "unavailable"
+                availability: active ? "available" : "offline"
             });
             return res.data;
         },

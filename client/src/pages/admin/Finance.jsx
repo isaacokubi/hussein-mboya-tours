@@ -47,7 +47,7 @@ Finance Dashboard
 <div className="bg-white shadow rounded p-5">
 Revenue
 <h2>
-KES {data?.totalRevenue || 0}
+KES {stats.revenue || stats.totalRevenue || 0}
 </h2>
 </div>
 
@@ -55,7 +55,7 @@ KES {data?.totalRevenue || 0}
 <div className="bg-white shadow rounded p-5">
 Paid Revenue
 <h2>
-KES {data?.paidRevenue || 0}
+KES {stats.netRevenue || stats.paidRevenue || 0}
 </h2>
 </div>
 
@@ -63,7 +63,7 @@ KES {data?.paidRevenue || 0}
 <div className="bg-white shadow rounded p-5">
 Pending Payments
 <h2>
-{data?.pendingPayments || 0}
+{stats.pendingPayments || 0}
 </h2>
 </div>
 
@@ -71,7 +71,7 @@ Pending Payments
 <div className="bg-white shadow rounded p-5">
 Bookings
 <h2>
-{data?.bookings || 0}
+{stats.paidBookings || stats.bookings || 0}
 </h2>
 </div>
 

@@ -12,7 +12,8 @@ export default function RolesPage(){
 
     const {
         data,
-        isLoading
+        isLoading,
+        isError
     } = useQuery({
 
         queryKey:["roles"],
@@ -36,11 +37,21 @@ export default function RolesPage(){
 
 
     const roles =
-    data?.data ||
-    data ||
-    [];
+    Array.isArray(data?.roles)
+        ? data.roles
+        : Array.isArray(data?.data)
+            ? data.data
+            : [];
 
 
+
+    if (isError) {
+        return (
+            <div className="p-6 text-red-600">
+                Failed to load roles and permissions.
+            </div>
+        );
+    }
 
     return (
 

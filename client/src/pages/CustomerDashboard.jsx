@@ -217,11 +217,16 @@ const CustomerDashboard = () => {
 
 
 
-  // "Total Spent" means money actually paid, not the value of
-  // pending bookings.  depositAmount represents the amount received
-  // for partial/paid bookings and refundAmount is deducted.
+  // Total Spent only includes confirmed/completed bookings that have
+  // actually been paid. Pending and failed payments never contribute.
   const totalSpent =
     bookings.reduce((total, booking) => {
+      const bookingStatus = String(
+        booking.status ||
+        booking.bookingStatus ||
+        ""
+      ).toLowerCase();
+
       const paymentStatus = String(
         typeof booking.paymentStatus === "object"
           ? booking.paymentStatus?.paymentStatus ||
@@ -230,21 +235,24 @@ const CustomerDashboard = () => {
           : booking.paymentStatus || "pending"
       ).toLowerCase();
 
-      const deposited = Number(booking.depositAmount || 0);
-      const totalAmount = Number(
-        booking.totalAmount || booking.amount || 0
-      );
+      const qualifies =
+        ["confirmed", "completed"].includes(bookingStatus) &&
+        ["paid", "completed"].includes(paymentStatus);
+
+      if (!qualifies) return total;
 
       const paidAmount =
-        deposited > 0
-          ? deposited
-          : ["paid", "completed"].includes(paymentStatus)
-            ? totalAmount
-            : 0;
+        Number(booking.depositAmount || 0) ||
+        Number(booking.totalAmount || booking.amount || 0);
 
-      const refunded = Number(booking.refundAmount || 0);
+      const refunded = Number(
+        booking.refundAmount || 0
+      );
 
-      return total + Math.max(0, paidAmount - refunded);
+      return total + Math.max(
+        0,
+        paidAmount - refunded
+      );
     }, 0);
 
 

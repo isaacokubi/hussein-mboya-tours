@@ -101,12 +101,13 @@ export default function MpesaTransactions(){
 
 
     const payments =
-
-        data?.payments ||
-
-        data?.data?.payments ||
-
-        [];
+        Array.isArray(data?.data)
+            ? data.data
+            : Array.isArray(data?.payments)
+                ? data.payments
+                : Array.isArray(data?.data?.payments)
+                    ? data.data.payments
+                    : [];
 
     const transactions = payments;
 
@@ -590,8 +591,9 @@ t=>t.status==="failed"
 
                                         {
 
+                                            payment.mpesaReceiptNumber ||
                                             payment.transactionId ||
-
+                                            payment.transactionReference ||
                                             "N/A"
 
                                         }

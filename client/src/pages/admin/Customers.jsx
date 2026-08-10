@@ -30,7 +30,8 @@ export default function Customers(){
     const {
         data,
         isLoading,
-        isError
+        isError,
+        error
 
     } = useQuery({
 
@@ -42,9 +43,9 @@ export default function Customers(){
 
 
         queryFn:()=>getCustomers({
-
-            search
-
+            search,
+            page: 1,
+            limit: 100,
         }),
 
 
@@ -57,12 +58,11 @@ export default function Customers(){
 
 
     const customers =
-
-        data?.data?.customers ||
-
-        data?.customers ||
-
-        [];
+        Array.isArray(data?.data)
+            ? data.data
+            : Array.isArray(data?.customers)
+                ? data.customers
+                : [];
 
 
 
@@ -94,13 +94,8 @@ export default function Customers(){
 
     return (
 
-        <div className="
-            p-6
-            text-red-600
-        ">
-
-            Failed to load customers
-
+        <div className="p-6 text-red-600">
+            Failed to load customers: {error?.message || "Request failed"}
         </div>
 
     );

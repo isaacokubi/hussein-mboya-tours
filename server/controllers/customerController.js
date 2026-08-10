@@ -34,12 +34,6 @@ export const getCustomers = async (req, res, next) => {
     const pageSize = Math.min(Math.max(Number(limit), 1), 100);
     const skip = (currentPage - 1) * pageSize;
 
-    /*
-    |--------------------------------------------------------------------------
-    | FILTER
-    |--------------------------------------------------------------------------
-    */
-
     const filter = {
       $or: [
         { role: "customer" },
@@ -47,7 +41,12 @@ export const getCustomers = async (req, res, next) => {
       ],
     };
 
-    if (search.trim()) {
+    if (String(search).trim()) {
+      const regex = {
+        $regex: String(search).trim(),
+        $options: "i",
+      };
+
       filter.$and = [
         {
           $or: [
@@ -57,53 +56,40 @@ export const getCustomers = async (req, res, next) => {
         },
         {
           $or: [
-            { name: { $regex: search.trim(), $options: "i" } },
-            { email: { $regex: search.trim(), $options: "i" } },
-            { phone: { $regex: search.trim(), $options: "i" } },
+            { name: regex },
+            { email: regex },
+            { phone: regex },
           ],
         },
       ];
       delete filter.$or;
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | GET CUSTOMERS
-    |--------------------------------------------------------------------------
-    */
-
     const [customers, total] = await Promise.all([
       User.find(filter)
-        .select(
-          "name email phone customerType totalBookings totalSpent loyaltyPoints status createdAt"
-        )
-        .sort({
-          createdAt: -1,
-        })
+        .select("name email phone role status createdAt")
+        .sort({ createdAt: -1 })
         .skip(skip)
         .limit(pageSize)
         .lean(),
-
       User.countDocuments(filter),
     ]);
 
-    /*
-    |--------------------------------------------------------------------------
-    | BOOKING STATISTICS
-    |--------------------------------------------------------------------------
-    */
-
     const customerIds = customers.map((c) => c._id);
 
-    // Current web bookings point to User. Older/agent bookings can point
-    // through Customer.user, so resolve both ownership models.
     const customerRecords = await Customer.find({
       user: { $in: customerIds },
     })
-      .select("_id user")
+      .select("_id user customerType")
       .lean();
 
     const legacyCustomerIds = customerRecords.map((c) => c._id);
+    const legacyToUser = new Map(
+      customerRecords.map((c) => [
+        c._id.toString(),
+        c.user?.toString(),
+      ])
+    );
 
     const bookingStats = await Booking.find({
       $or: [
@@ -111,15 +97,10 @@ export const getCustomers = async (req, res, next) => {
         { customer: { $in: legacyCustomerIds } },
       ],
     })
-      .select("user customer totalAmount depositAmount refundAmount paymentStatus")
+      .select(
+        "user customer status totalAmount depositAmount refundAmount paymentStatus"
+      )
       .lean();
-
-    const legacyToUser = new Map(
-      customerRecords.map((c) => [
-        c._id.toString(),
-        c.user?.toString(),
-      ])
-    );
 
     const statsMap = {};
 
@@ -139,84 +120,70 @@ export const getCustomers = async (req, res, next) => {
 
       statsMap[ownerId].totalBookings += 1;
 
+      const bookingStatus = String(
+        booking.status || "pending"
+      ).toLowerCase();
+
       const paymentStatus = String(
         booking.paymentStatus || "pending"
       ).toLowerCase();
 
-      const deposited = Number(booking.depositAmount || 0);
-      const totalAmount = Number(booking.totalAmount || 0);
+      const qualifies =
+        ["confirmed", "assigned", "ongoing", "completed"].includes(
+          bookingStatus
+        ) &&
+        ["paid", "completed"].includes(paymentStatus);
 
-      const paidAmount =
-        deposited > 0
-          ? deposited
-          : ["paid", "completed"].includes(paymentStatus)
-            ? totalAmount
-            : 0;
+      if (qualifies) {
+        const amount =
+          Number(booking.depositAmount || 0) ||
+          Number(booking.totalAmount || 0);
 
-      statsMap[ownerId].totalSpent += Math.max(
-        0,
-        paidAmount - Number(booking.refundAmount || 0)
-      );
+        statsMap[ownerId].totalSpent += Math.max(
+          0,
+          amount - Number(booking.refundAmount || 0)
+        );
+      }
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | RESPONSE DATA
-    |--------------------------------------------------------------------------
-    */
-
     const data = customers.map((customer) => {
-      const stats =
-        statsMap[customer._id.toString()] || {};
+      const stats = statsMap[customer._id.toString()] || {
+        totalBookings: 0,
+        totalSpent: 0,
+      };
+
+      const legacy = customerRecords.find(
+        (record) =>
+          record.user?.toString() === customer._id.toString()
+      );
 
       return {
         ...customer,
-
-        totalBookings:
-          stats.totalBookings ??
-          customer.totalBookings ??
-          0,
-
-        totalSpent:
-          stats.totalSpent ??
-          customer.totalSpent ??
-          0,
+        customerType: legacy?.customerType || "individual",
+        isActive: customer.status === "active",
+        totalBookings: stats.totalBookings,
+        totalSpent: stats.totalSpent,
       };
     });
 
     return res.status(200).json({
       success: true,
-
       pagination: {
         total,
         page: currentPage,
         pages: Math.ceil(total / pageSize),
         limit: pageSize,
       },
-
       count: data.length,
-
       data,
+      customers: data,
     });
   } catch (error) {
     next(error);
   }
 };
 
-/*
-|--------------------------------------------------------------------------
-| GET CUSTOMER PROFILE
-|--------------------------------------------------------------------------
-|
-| GET /api/admin/customers/:id
-|--------------------------------------------------------------------------
-*/
-
-export const getCustomerProfile = async (
-  req,
-  res,
-  next
-) => {
+export const getCustomerProfile = async (req, res, next) => {
   try {
     if (!isValidId(req.params.id)) {
       return res.status(400).json({
@@ -225,7 +192,13 @@ export const getCustomerProfile = async (
       });
     }
 
-    const customer = await User.findById(req.params.id)
+    const customer = await User.findOne({
+      _id: req.params.id,
+      $or: [
+        { role: "customer" },
+        { legacyRole: "customer" },
+      ],
+    })
       .select("-password")
       .lean();
 
@@ -236,48 +209,58 @@ export const getCustomerProfile = async (
       });
     }
 
-    const bookings = await Booking.find({
-      customer: req.params.id,
+    const legacyCustomer = await Customer.findOne({
+      user: customer._id,
     })
-      .populate(
-        "tour",
-        "title destination price"
-      )
-      .sort({
-        createdAt: -1,
-      })
+      .select("_id customerType")
       .lean();
 
-    /*
-    |--------------------------------------------------------------------------
-    | SUMMARY
-    |--------------------------------------------------------------------------
-    */
+    const ownership = [
+      { user: customer._id },
+    ];
+
+    if (legacyCustomer?._id) {
+      ownership.push({ customer: legacyCustomer._id });
+    }
+
+    const bookings = await Booking.find({
+      $or: ownership,
+    })
+      .populate("tour", "title destination price")
+      .sort({ createdAt: -1 })
+      .lean();
 
     const summary = bookings.reduce(
       (acc, booking) => {
         acc.totalBookings += 1;
 
-        const deposited = Number(booking.depositAmount || 0);
-        const totalAmount = Number(booking.totalAmount || 0);
+        const bookingStatus = String(
+          booking.status || "pending"
+        ).toLowerCase();
+
         const paymentStatus = String(
           booking.paymentStatus || "pending"
         ).toLowerCase();
 
-        const paidAmount =
-          deposited > 0
-            ? deposited
-            : ["paid", "completed"].includes(paymentStatus)
-              ? totalAmount
-              : 0;
+        const qualifies =
+          ["confirmed", "assigned", "ongoing", "completed"].includes(
+            bookingStatus
+          ) &&
+          ["paid", "completed"].includes(paymentStatus);
 
-        const netPaid = Math.max(
-          0,
-          paidAmount - Number(booking.refundAmount || 0)
-        );
+        if (qualifies) {
+          const paidAmount =
+            Number(booking.depositAmount || 0) ||
+            Number(booking.totalAmount || 0);
 
-        acc.totalSpent += netPaid;
-        acc.totalPaid += netPaid;
+          const netPaid = Math.max(
+            0,
+            paidAmount - Number(booking.refundAmount || 0)
+          );
+
+          acc.totalSpent += netPaid;
+          acc.totalPaid += netPaid;
+        }
 
         return acc;
       },
@@ -290,7 +273,6 @@ export const getCustomerProfile = async (
 
     return res.status(200).json({
       success: true,
-
       data: {
         customer,
         summary,

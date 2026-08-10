@@ -15,7 +15,7 @@ import api from "./axios";
 // ============================================================
 
 export const getAdminCustomers = async (params) => {
-  const response = await api.get("/customers", {
+  const response = await api.get("/admin/customers", {
     params: params || {},
   });
 

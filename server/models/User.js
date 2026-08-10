@@ -87,6 +87,7 @@ const userSchema = new mongoose.Schema(
       enum: [
         "active",
         "inactive",
+        "disabled",
         "suspended",
         "blocked",
       ],
@@ -187,6 +188,10 @@ userSchema.methods.matchPassword = async function (
 | ACCOUNT LOCK HELPER
 |--------------------------------------------------------------------------
 */
+
+userSchema.virtual("isActive").get(function () {
+  return this.status === "active";
+});
 
 userSchema.virtual("isLocked").get(function () {
   return (
