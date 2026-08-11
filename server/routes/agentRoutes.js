@@ -21,6 +21,8 @@ import {
   protect,
 } from "../middleware/authMiddleware.js";
 
+import { authorize } from "../middleware/permissionMiddleware.js";
+
 import agentMiddleware from "../middleware/agentMiddleware.js";
 
 import upload from "../middleware/uploadMiddleware.js";
