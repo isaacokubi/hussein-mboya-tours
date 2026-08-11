@@ -533,6 +533,17 @@ const tourSchema = new mongoose.Schema(
       default: false,
     },
 
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
+
+    deletedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
     /*
     |--------------------------------------------------------------------------
     | REVIEWS
@@ -582,6 +593,8 @@ const tourSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   }
 );/*
 |--------------------------------------------------------------------------
@@ -621,9 +634,46 @@ tourSchema.pre("validate", async function (next) {
 
 /*
 |--------------------------------------------------------------------------
+| NORMALIZE TOUR DATES
+|--------------------------------------------------------------------------
+*/
+
+tourSchema.pre("validate", function (next) {
+  const start = this.startDate || this.date;
+  const days = Math.max(
+    1,
+    Number(this.durationDetails?.days || this.duration || 1)
+  );
+
+  if (start) {
+    const startDate = new Date(start);
+    if (!Number.isNaN(startDate.getTime())) {
+      this.startDate = startDate;
+      const calculatedEnd = new Date(startDate);
+      calculatedEnd.setDate(calculatedEnd.getDate() + days - 1);
+      this.endDate = this.endDate || calculatedEnd;
+    }
+  }
+
+  next();
+});
+
+/*
+|--------------------------------------------------------------------------
 | VIRTUALS
 |--------------------------------------------------------------------------
 */
+
+tourSchema.virtual("images").get(function () {
+  const result = [];
+  if (this.featuredImage?.url) result.push(this.featuredImage);
+  if (Array.isArray(this.gallery)) result.push(...this.gallery);
+  return result;
+});
+
+tourSchema.virtual("image").get(function () {
+  return this.featuredImage?.url || this.gallery?.[0]?.url || "";
+});
 
 tourSchema.virtual("finalPrice").get(function () {
   if (

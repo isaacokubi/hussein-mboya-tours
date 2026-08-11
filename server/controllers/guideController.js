@@ -87,6 +87,50 @@ const getGuideOr404 = async (req, res) => {
   return guide;
 };
 
+const startOfDay = (value) => {
+  const d = new Date(value);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+};
+
+const getTourStart = (tour) => new Date(tour.startDate || tour.date);
+
+const getTourEnd = (tour) => {
+  if (tour.endDate) return new Date(tour.endDate);
+  const start = getTourStart(tour);
+  const days = Math.max(1, Number(tour.durationDetails?.days || tour.duration || 1));
+  const end = new Date(start);
+  end.setDate(end.getDate() + days - 1);
+  return end;
+};
+
+const syncTourLifecycle = async (tours) => {
+  const today = startOfDay(new Date());
+  for (const tour of tours) {
+    const start = startOfDay(getTourStart(tour));
+    const end = startOfDay(getTourEnd(tour));
+    if (tour.status !== "cancelled" && tour.status !== "completed") {
+      if (today > end) {
+        tour.status = "completed";
+        tour.assignmentStatus = "completed";
+        tour.completedAt = tour.completedAt || new Date();
+        await Tour.updateOne({ _id: tour._id }, {
+          $set: {
+            status: "completed",
+            assignmentStatus: "completed",
+            completedAt: tour.completedAt,
+            endDate: getTourEnd(tour),
+          },
+        });
+      } else if (today >= start) {
+        // Do not auto-start; a guide must explicitly start it on the exact start date.
+        if (tour.status === "upcoming" || tour.status === "scheduled") {
+          continue;
+        }
+      }
+    }
+  }
+};
+
 // ============================================================
 // GUIDE DASHBOARD
 // ============================================================
@@ -96,7 +140,7 @@ export const guideDashboard = async (req, res, next) => {
     const guide = await getGuideOr404(req, res);
     if (!guide) return;
 
-    const tours = await Tour.find({
+    let tours = await Tour.find({
       assignedGuide: guide._id,
       isDeleted: { $ne: true },
     })
@@ -104,6 +148,19 @@ export const guideDashboard = async (req, res, next) => {
       .populate("assignedVehicle")
       .populate("assignedDriver")
       .sort({ startDate: 1, date: 1 })
+      .lean();
+
+    await syncTourLifecycle(tours);
+
+    tours = await Tour.find({
+      assignedGuide: guide._id,
+      isDeleted: { $ne: true },
+    })
+      .populate("destination")
+      .populate("assignedVehicle")
+      .populate("assignedDriver")
+      .sort({ startDate: 1, date: 1 })
+      .limit(10)
       .lean();
 
     const tourIds = tours.map((tour) => tour._id);
@@ -192,7 +249,10 @@ export const getAssignedTours = async (req, res, next) => {
       .populate("destination")
       .populate("assignedVehicle")
       .populate("assignedDriver")
-      .sort({ startDate: 1, date: 1 });
+      .sort({ startDate: 1, date: 1 })
+      .limit(10);
+
+    await syncTourLifecycle(tours);
 
     res.status(200).json({
       success: true,
@@ -301,7 +361,38 @@ export const updateTourStatus = async (req, res, next) => {
     const guide = await getGuideOr404(req, res);
     if (!guide) return;
 
-    const update = { status };
+    const assignedTourForDate = await Tour.findOne({
+      _id: req.params.id,
+      assignedGuide: guide._id,
+      isDeleted: { $ne: true },
+    }).lean();
+
+    if (!assignedTourForDate) {
+      return res.status(404).json({
+        success: false,
+        message: "Tour not found or not assigned to you",
+      });
+    }
+
+    const today = startOfDay(new Date());
+    const start = startOfDay(getTourStart(assignedTourForDate));
+    const end = startOfDay(getTourEnd(assignedTourForDate));
+
+    if (status === "ongoing" && today.getTime() !== start.getTime()) {
+      return res.status(400).json({
+        success: false,
+        message: `This tour can only be started on ${start.toLocaleDateString()}.`,
+      });
+    }
+
+    if (status === "completed" && today < end) {
+      return res.status(400).json({
+        success: false,
+        message: "This tour cannot be completed before its final day.",
+      });
+    }
+
+    const update = { status, endDate: assignedTourForDate.endDate || end };
 
     if (status === "ongoing") {
       update.startedAt = new Date();

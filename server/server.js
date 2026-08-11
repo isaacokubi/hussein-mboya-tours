@@ -10,8 +10,19 @@ import env from "./config/env.js";
 import { Server } from "socket.io";
 
 import { initSocket } from "./socket/socketManager.js";
+import { syncTourLifecycle } from "./services/tourLifecycleService.js";
 
 await connectDatabase();
+
+await syncTourLifecycle().catch((error) => {
+    console.error("Initial tour lifecycle sync failed:", error);
+});
+
+const lifecycleInterval = setInterval(() => {
+    syncTourLifecycle().catch((error) => {
+        console.error("Tour lifecycle sync failed:", error);
+    });
+}, 60 * 1000);
 
 const server = http.createServer(app);
 
@@ -41,6 +52,8 @@ server.listen(env.PORT, () => {
 });const shutdown = async () => {
 
     console.log("Closing server...");
+
+    clearInterval(lifecycleInterval);
 
     server.close(async () => {
 

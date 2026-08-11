@@ -27,11 +27,11 @@ export const getCustomers = async (req, res, next) => {
     const {
       search = "",
       page = 1,
-      limit = 20,
+      limit = 10,
     } = req.query;
 
     const currentPage = Math.max(Number(page), 1);
-    const pageSize = Math.min(Math.max(Number(limit), 1), 100);
+    const pageSize = Math.min(Math.max(Number(limit), 1), 10);
     const skip = (currentPage - 1) * pageSize;
 
     const filter = {
@@ -132,7 +132,7 @@ export const getCustomers = async (req, res, next) => {
         ["confirmed", "assigned", "ongoing", "completed"].includes(
           bookingStatus
         ) &&
-        ["paid", "completed"].includes(paymentStatus);
+        ["partial", "paid"].includes(paymentStatus);
 
       if (qualifies) {
         const amount =
@@ -246,7 +246,7 @@ export const getCustomerProfile = async (req, res, next) => {
           ["confirmed", "assigned", "ongoing", "completed"].includes(
             bookingStatus
           ) &&
-          ["paid", "completed"].includes(paymentStatus);
+          ["partial", "paid"].includes(paymentStatus);
 
         if (qualifies) {
           const paidAmount =

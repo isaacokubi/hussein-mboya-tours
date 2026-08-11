@@ -383,7 +383,7 @@ export const createTour = async (req, res, next) => {
 
 export const getTours = async (req, res, next) => {
     try {
-        const { upcoming, limit, status } = req.query;
+        const { upcoming, page = 1, limit = 10, status } = req.query;
         const filter = { isDeleted: { $ne: true } };
 
         if (status) filter.status = status;
@@ -399,24 +399,29 @@ export const getTours = async (req, res, next) => {
             };
         }
 
-        let query = Tour.find(filter)
+        const currentPage = Math.max(Number(page) || 1, 1);
+        const pageLimit = Math.min(Math.max(Number(limit) || 10, 1), 10);
+
+        const [tours, total] = await Promise.all([
+          Tour.find(filter)
             .populate("assignedGuide", "name email phone position availability")
             .populate("assignedDriver", "name email phone position availability")
             .populate("assignedVehicle", "name registrationNumber type capacity status")
             .populate("createdBy", "name email")
-            .sort({ startDate: 1, date: 1, createdAt: -1 });
+            .sort({ startDate: 1, date: 1, createdAt: -1 })
+            .skip((currentPage - 1) * pageLimit)
+            .limit(pageLimit)
+            .lean(),
+          Tour.countDocuments(filter),
+        ]);
 
-        const pageLimit = Number(limit);
-        if (Number.isFinite(pageLimit) && pageLimit > 0) {
-            query = query.limit(Math.min(pageLimit, 100));
-        }
-
-        const tours = await query.lean();
         return res.status(200).json({
             success: true,
             count: tours.length,
+            total,
             data: tours,
             tours,
+            pagination: { total, page: currentPage, limit: pageLimit, pages: Math.ceil(total / pageLimit) },
         });
     } catch (error) {
         next(error);
@@ -471,30 +476,49 @@ export const updateTour = async (req, res, next) => {
 */
 
 export const deleteTour = async (req, res, next) => {
-    try {
-        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid tour ID",
-            });
-        }
-
-        const tour = await Tour.findByIdAndDelete(req.params.id);
-
-        if (!tour) {
-            return res.status(404).json({
-                success: false,
-                message: "Tour not found",
-            });
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: "Tour deleted successfully",
-        });
-    } catch (error) {
-        next(error);
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ success: false, message: "Invalid tour ID" });
     }
+
+    const tour = await Tour.findOne({ _id: req.params.id, isDeleted: { $ne: true } });
+    if (!tour) {
+      return res.status(404).json({ success: false, message: "Tour not found" });
+    }
+
+    tour.isDeleted = true;
+    tour.deletedAt = new Date();
+    tour.status = "cancelled";
+    tour.assignmentStatus = "cancelled";
+    await tour.save();
+
+    if (tour.assignedGuide) {
+      const guide = await Staff.findById(tour.assignedGuide);
+      if (guide) {
+        guide.assignedTours = (guide.assignedTours || []).filter(id => id.toString() !== tour._id.toString());
+        if (!guide.assignedTours.length) guide.availability = "available";
+        await guide.save();
+      }
+    }
+    if (tour.assignedDriver) {
+      const driver = await Staff.findById(tour.assignedDriver);
+      if (driver) {
+        driver.assignedTours = (driver.assignedTours || []).filter(id => id.toString() !== tour._id.toString());
+        if (!driver.assignedTours.length) driver.availability = "available";
+        await driver.save();
+      }
+    }
+    if (tour.assignedVehicle) {
+      await Vehicle.findByIdAndUpdate(tour.assignedVehicle, {
+        status: "available",
+        assignedTour: null,
+      });
+    }
+
+    return res.status(200).json({ success: true, message: "Tour deleted successfully" });
+  } catch (error) {
+    next(error);
+  }
 };
 
 /*

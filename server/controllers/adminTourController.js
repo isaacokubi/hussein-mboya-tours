@@ -223,7 +223,8 @@ export const createTour = async (req, res, next) => {
           ? req.body.status
           : "draft",
 
-      images,
+      featuredImage: images[0] || { url: "", publicId: "" },
+      gallery: images.slice(1),
 
       createdBy: req.user._id,
     };
@@ -267,7 +268,7 @@ export const getAllTours = async (req, res, next) => {
 
     const page = Math.max(Number(req.query.page) || 1, 1);
 
-    const limit = Math.min(Number(req.query.limit) || 20, 100);
+    const limit = Math.min(Number(req.query.limit) || 10, 10);
 
     const skip = (page - 1) * limit;
 
@@ -589,7 +590,9 @@ export const updateTour = async (req, res, next) => {
     */
 
     if (req.files?.length) {
-      tour.images = buildImages(req.files);
+      const uploadedImages = buildImages(req.files);
+      tour.featuredImage = uploadedImages[0] || { url: "", publicId: "" };
+      tour.gallery = uploadedImages.slice(1);
     }
 
     /*
@@ -681,12 +684,24 @@ if (tour.assignedVehicle) {
 
     if (vehicle) {
 
-        vehicle.status = "Available";
+        vehicle.status = "available";
+        vehicle.assignedTour = null;
 
         await vehicle.save();
 
     }
 
+}
+
+if (tour.assignedGuide) {
+  const guide = await Staff.findById(tour.assignedGuide);
+  if (guide) {
+    guide.assignedTours = (guide.assignedTours || []).filter(
+      (id) => id.toString() !== tour._id.toString()
+    );
+    guide.availability = "available";
+    await guide.save();
+  }
 }
 
 /*
@@ -1213,7 +1228,8 @@ export const restoreTour = async (req, res, next) => {
       );
 
       if (vehicle) {
-        vehicle.status = "Available";
+        vehicle.status = "available";
+        vehicle.assignedTour = null;
         await vehicle.save();
       }
     }

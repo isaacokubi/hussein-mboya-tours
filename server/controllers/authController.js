@@ -192,6 +192,21 @@ export const register = async (req, res, next) => {
 
     /*
     |--------------------------------------------------------------------------
+    | Phone Validation
+    |--------------------------------------------------------------------------
+    */
+
+    const normalizedPhone = String(phone).trim();
+
+    if (!/^\\d{10}$/.test(normalizedPhone)) {
+      return res.status(400).json({
+        success: false,
+        message: "Phone number must contain exactly 10 digits.",
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
     | Password Validation
     |--------------------------------------------------------------------------
     */
@@ -251,7 +266,7 @@ export const register = async (req, res, next) => {
     const user = await User.create({
       name,
       email: normalizedEmail,
-      phone,
+      phone: normalizedPhone,
       password,
       status: "active",
       isVerified: true,

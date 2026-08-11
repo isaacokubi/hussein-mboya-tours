@@ -1,4 +1,5 @@
 import {
+    useEffect,
     useState
 }
 from "react";
@@ -26,6 +27,11 @@ export default function LazyImage({
 const [imageSrc,setImageSrc] = useState(src);
 
 const [loading,setLoading] = useState(true);
+
+useEffect(() => {
+    setImageSrc(typeof src === "object" ? src?.url : src);
+    setLoading(true);
+}, [src]);
 
 
 

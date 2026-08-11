@@ -17,7 +17,8 @@ import {
     FaPlus,
     FaUserTie,
     FaCar,
-    FaCalendarAlt
+    FaCalendarAlt,
+    FaEye
 } from "react-icons/fa";
 
 
@@ -52,6 +53,8 @@ const [search,setSearch] = useState("");
 
 
 const [status,setStatus] = useState("all");
+const [page, setPage] = useState(1);
+const PAGE_SIZE = 10;
 
 
 
@@ -274,6 +277,17 @@ statusMatch
 
 
 
+const totalPages = Math.max(1, Math.ceil(filteredTours.length / PAGE_SIZE));
+const pagedTours = filteredTours.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+useEffect(() => {
+  setPage(1);
+}, [search, status]);
+
+useEffect(() => {
+  if (page > totalPages) setPage(totalPages);
+}, [page, totalPages]);
+
 return (
 
 <div className="
@@ -362,6 +376,10 @@ Create Tour
 
 
 </div>
+
+
+
+
 
 
 
@@ -782,6 +800,21 @@ gap-3
 
 
 <button
+type="button"
+title="View tour"
+onClick={()=>navigate(`/tours/${tour?.slug || tour?._id}`)}
+className="
+text-slate-700
+hover:text-emerald-600
+"
+
+>
+
+<FaEye/>
+
+</button>
+
+<button
 
 onClick={()=>navigate(
 `/tour-manager/edit-tour/${tour?._id}`
@@ -924,13 +957,21 @@ text-red-600
 
 </div>
 
-
+<div className="mt-5 flex items-center justify-between rounded-xl bg-white p-4 shadow">
+  <span className="text-sm text-gray-500">
+    Page {page} of {totalPages} · {filteredTours.length} tour(s)
+  </span>
+  <div className="flex gap-2">
+    <button type="button" disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="rounded-lg border px-4 py-2 disabled:opacity-40">Previous</button>
+    <button type="button" disabled={page === totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className="rounded-lg bg-slate-900 px-4 py-2 text-white disabled:opacity-40">Next</button>
+  </div>
 </div>
 
 
 
 
 
+</div>
 </div>
 
 

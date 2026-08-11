@@ -116,6 +116,13 @@ e.preventDefault();
 
 
 
+const normalizedPhone = String(formData.phone || "").replace(/\\D/g, "");
+
+if (normalizedPhone.length !== 10 || normalizedPhone !== formData.phone.trim()) {
+  toast.error("Phone number must contain exactly 10 digits.");
+  return;
+}
+
 if(
 formData.password !==
 formData.confirmPassword
@@ -470,6 +477,14 @@ p-3
 type="tel"
 
 name="phone"
+
+inputMode="numeric"
+
+pattern="\\d{10}"
+
+maxLength={10}
+
+minLength={10}
 
 placeholder="Phone number"
 

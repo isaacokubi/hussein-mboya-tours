@@ -146,7 +146,8 @@ export const deleteVehicle = async (req, res, next) => {
             req.params.id,
             {
                 isDeleted: true,
-                status: "inactive",
+                isActive: false,
+                status: "out_of_service",
             },
             { new: true }
         );
@@ -389,8 +390,7 @@ export const updateVehicleStatus = async (req, res, next) => {
       "available",
       "assigned",
       "maintenance",
-      "inactive",
-      "unavailable",
+      "out_of_service",
     ];
 
     const { status } = req.body;

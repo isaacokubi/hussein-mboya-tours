@@ -609,6 +609,14 @@ destinationSchema.pre(
 */
 
 
+destinationSchema.virtual("image").get(function () {
+    return this.images?.[0]?.url || this.featuredImage || "";
+});
+
+destinationSchema.virtual("imageUrl").get(function () {
+    return this.images?.[0]?.url || this.featuredImage || "";
+});
+
 destinationSchema.virtual(
     "location"
 )

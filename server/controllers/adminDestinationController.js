@@ -60,6 +60,7 @@ export const createDestination = async (req, res, next) => {
       country,
       city,
       featured: featured || false,
+      featuredImage: images[0]?.url || "",
       images,
       seo: seo ? JSON.parse(seo) : {},
     });
@@ -234,6 +235,7 @@ export const updateDestination = async (req, res, next) => {
         url: file.path,
         publicId: file.filename
       }));
+      destination.featuredImage = destination.images[0]?.url || destination.featuredImage || "";
     }
 
     await destination.save();

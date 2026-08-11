@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
@@ -27,6 +27,8 @@ export default function TourManagement() {
   const queryClient = useQueryClient();
 
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
 
   /*
   |--------------------------------------------------------------------------
@@ -47,7 +49,7 @@ export default function TourManagement() {
 
   const tours = Array.isArray(data)
     ? data
-    : data?.tours || [];
+    : data?.tours || data?.data || [];
 
 
 
@@ -106,6 +108,17 @@ const deleteMutation = useMutation({
 
     }
   );
+
+  const totalPages = Math.max(1, Math.ceil(filteredTours.length / pageSize));
+  const visibleTours = filteredTours.slice((page - 1) * pageSize, page * pageSize);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
 
 
@@ -412,7 +425,7 @@ const deleteMutation = useMutation({
             :
 
 
-            filteredTours.map(
+            visibleTours.map(
 
               (tour)=>(
 
@@ -527,8 +540,11 @@ const deleteMutation = useMutation({
 
 
                       <button
+                        type="button"
+                        title="View tour"
+                        onClick={() => navigate(`/tours/${tour.slug || tour._id}`)}
                         className="
-                          text-blue-600
+                          text-blue-600 hover:text-blue-800
                         "
                       >
 
@@ -604,6 +620,13 @@ const deleteMutation = useMutation({
 
       </div>
 
+      <div className="flex items-center justify-between rounded-xl bg-white p-4 shadow">
+        <span className="text-sm text-gray-500">Page {page} of {totalPages} · {filteredTours.length} tour(s)</span>
+        <div className="flex gap-2">
+          <button type="button" disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="rounded-lg border px-4 py-2 disabled:opacity-40">Previous</button>
+          <button type="button" disabled={page === totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className="rounded-lg bg-slate-900 px-4 py-2 text-white disabled:opacity-40">Next</button>
+        </div>
+      </div>
 
     </div>
 

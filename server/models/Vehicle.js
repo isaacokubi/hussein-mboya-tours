@@ -185,6 +185,12 @@ const vehicleSchema = new mongoose.Schema(
       default: true,
     },
 
+    isDeleted: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+
     /*
     |--------------------------------------------------------------------------
     | VEHICLE DETAILS
