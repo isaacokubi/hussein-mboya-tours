@@ -1,0 +1,36 @@
+{
+  "timestamp": "20260808-000040",
+  "root": "/home/camaraadmin/Desktop/isaac projects/mern stack/hussein-mboya/client",
+  "changed": [
+    "src/components/HusseinAIWidget.jsx",
+    "src/components/PermissionGuard.jsx",
+    "src/components/admin/AdminHeader.jsx",
+    "src/components/admin/ProtectedAdminRoute.jsx",
+    "src/context/AuthContext.jsx",
+    "src/context/CartContext.jsx",
+    "src/context/NotificationContext.jsx"
+  ],
+  "warnings": [
+    "AdminFinance.jsx is severely corrupted. 253272 lines and 58 standalone corruption markers. Automatic reconstruction skipped.",
+    "Login.jsx contains switch statements. Possible fall-through was not automatically modified.",
+    "Application variables such as paymentData, roles, monthlyRevenue, statusData, staff, pending, confirmed, handleBookingAction and updateMutation were not blindly deleted."
+  ],
+  "checks": {
+    "AdminFinance": {
+      "status": "MANUAL_RECONSTRUCTION_REQUIRED",
+      "lines": 253272,
+      "standalone_markers": 58
+    },
+    "set_state_effect_files": [
+      "src/context/AuthContext.jsx",
+      "src/context/CartContext.jsx",
+      "src/context/NotificationContext.jsx",
+      "src/layouts/TourManagerLayout.jsx",
+      "src/pages/Profile.jsx",
+      "src/pages/tourManager/EditTour.jsx",
+      "src/pages/tourManager/TourManagerTours.jsx",
+      "src/components/home/CategoriesSection.jsx",
+      "src/components/home/DestinationsSection.jsx"
+    ]
+  }
+}

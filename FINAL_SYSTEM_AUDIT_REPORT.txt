@@ -1,0 +1,451 @@
+HUSSEIN-MBOYA TOURS
+FINAL SYSTEM AUDIT REPORT
+==============================================================================
+Generated: 2026-08-11T14:27:04.372758
+Project: /home/camaraadmin/Desktop/isaac projects/mern stack/hussein-mboya
+Backup: /home/camaraadmin/Desktop/isaac projects/mern stack/hussein-mboya/.final-audit-backup-20260811-142631
+
+SUCCESS COUNT: 414
+WARNING COUNT: 14
+ERROR COUNT: 0
+
+==============================================================================
+ERRORS
+==============================================================================
+No critical errors detected.
+
+==============================================================================
+WARNINGS
+==============================================================================
+[WARNING] No package.json at project root. This is acceptable for a split MERN project.
+[WARNING] Assignment controller may be missing assignGuide
+[WARNING] Assignment controller may be missing assignDriver
+[WARNING] Assignment controller may be missing assignVehicle
+[WARNING] Assignment controller may be missing getAssignments
+[WARNING] Assignment controller may be missing updateAssignment
+[WARNING] staffRoutes.js does not contain /vehicles
+[WARNING] tourManagerApi.js is missing assignDriver
+[WARNING] tourManagerApi.js is missing assignVehicle
+[WARNING] tourManagerApi.js is missing getDrivers
+[WARNING] tourManagerApi.js is missing getVehicles
+[WARNING] Possible unfinished code: client/dist/assets/index-BoZjBz_4.js -> IMPLEMENT
+[WARNING] Possible unfinished code: client/src/services/tourManagerService.js -> IMPLEMENT
+[WARNING] There are uncommitted changes. Review them before committing.
+
+==============================================================================
+SUCCESSFUL CHECKS
+==============================================================================
+[OK] server/ directory found.
+[OK] client/ directory found.
+[OK] Backup created: .final-audit-backup-20260811-142631
+[OK] server/server.js
+[OK] server/package.json
+[OK] server/controllers/tourController.js
+[OK] server/controllers/tourAssignmentController.js
+[OK] server/controllers/vehicleController.js
+[OK] server/controllers/customerController.js
+[OK] server/controllers/mpesaController.js
+[OK] server/routes/staffRoutes.js
+[OK] server/routes/tourAssignmentRoutes.js
+[OK] tourAssignmentController.js contains assignedGuide
+[OK] tourAssignmentController.js contains assignedDriver
+[OK] tourAssignmentController.js contains assignedVehicle
+[OK] tourAssignmentController.js contains assignmentStatus
+[OK] staffRoutes.js contains /guides
+[OK] staffRoutes.js contains /drivers
+[OK] Driver endpoint reference: client/dist/assets/vehicleApi-BQFCvPy5.js -> ["`]/staff/drivers
+[OK] Driver endpoint reference: client/dist/assets/tourApi-BkTz0nVs.js -> ["`]/staff/drivers
+[OK] Driver endpoint reference: client/dist/assets/TourAssignments-Snlu1QLu.js -> ["`]/staff/drivers
+[OK] Driver endpoint reference: client/src/api/vehicleApi.js -> ["`]/staff/drivers
+[OK] Driver endpoint reference: client/src/api/tourApi.js -> ["`]/staff/drivers
+[OK] Driver endpoint reference: client/src/api/tourAssignmentApi.js -> ["`]/staff/drivers
+[OK] Guide endpoint reference: client/dist/assets/tourApi-BkTz0nVs.js -> ["`]/staff/guides
+[OK] Guide endpoint reference: client/dist/assets/tourManagerApi-BqrGlzD5.js -> ["`]/tourmanager/guides
+[OK] Guide endpoint reference: client/dist/assets/TourAssignments-Snlu1QLu.js -> ["`]/staff/guides
+[OK] Guide endpoint reference: client/src/api/adminTourApi.js -> ["`]/users/guides
+[OK] Guide endpoint reference: client/src/api/tourApi.js -> ["`]/staff/guides
+[OK] Guide endpoint reference: client/src/api/tourAssignmentApi.js -> ["`]/staff/guides
+[OK] Guide endpoint reference: client/src/api/tourManagerApi.js -> ["`]/tourmanager/guides
+[OK] Assignment endpoint reference: client/dist/assets/tourApi-BkTz0nVs.js -> ["`]/tour-assignments
+[OK] Assignment endpoint reference: client/dist/assets/tourManagerApi-BqrGlzD5.js -> ["`]/tour-assignments
+[OK] Assignment endpoint reference: client/dist/assets/TourAssignments-Snlu1QLu.js -> ["`]/tour-assignments
+[OK] Assignment endpoint reference: client/src/api/tourApi.js -> ["`]/tour-assignments
+[OK] Assignment endpoint reference: client/src/api/tourAssignmentApi.js -> ["`]/tour-assignments
+[OK] Assignment endpoint reference: client/src/api/tourManagerApi.js -> ["`]/tour-assignments
+[OK] tourManagerApi.js contains assignGuide
+[OK] tourManagerApi.js contains getGuides
+[OK] tourManagerApi.js contains getBookings
+[OK] tourManagerApi.js contains getCustomers
+[OK] tourManagerApi.js contains getReports
+[OK] tourManagerApi.js contains deleteTour
+[OK] Found frontend file: client/src/pages/tourManager/TourAssignments.jsx
+[OK] TourAssignments.jsx references assignedGuide
+[OK] TourAssignments.jsx references assignedDriver
+[OK] TourAssignments.jsx references assignedVehicle
+[OK] Found frontend file: client/src/pages/tourManager/AssignGuides.jsx
+[OK] AssignGuides.jsx references assignedGuide
+[OK] Found frontend file: client/src/pages/tourManager/EditTour.jsx
+[OK] EditTour.jsx references assignedGuide
+[OK] EditTour.jsx references assignedDriver
+[OK] EditTour.jsx references assignedVehicle
+[OK] Assignment-related controller: server/controllers/tourAssignmentController.js
+[OK] client/src/api/axios.js
+[OK] client/src/api/userApi.js
+[OK] client/src/api/commissionApi.js
+[OK] client/src/api/heroApi.js
+[OK] client/src/api/tourManagerApi.js
+[OK] Found 48 backend route files.
+[OK] Route file looks valid: agentBookingRoutes.js
+[OK] Route file looks valid: mpesaRoutes.js
+[OK] Route file looks valid: adminTourRoutes.js
+[OK] Route file looks valid: systemHealthRoutes.js
+[OK] Route file looks valid: heroRoutes.js
+[OK] Route file looks valid: tourManagerRoutes.js
+[OK] Route file looks valid: recommendationRoutes.js
+[OK] Route file looks valid: vehicleRoutes.js
+[OK] Route file looks valid: bookingRoutes.js
+[OK] Route file looks valid: reviewRoutes.js
+[OK] Route file looks valid: adminBookingRoutes.js
+[OK] Route file looks valid: crmRoutes.js
+[OK] Route file looks valid: agentCustomerRoutes.js
+[OK] Route file looks valid: staffRoutes.js
+[OK] Route file looks valid: categoryRoutes.js
+[OK] Route file looks valid: galleryRoutes.js
+[OK] Route file looks valid: aiRoutes.js
+[OK] Route file looks valid: adminReviewRoutes.js
+[OK] Route file looks valid: adminRoutes.js
+[OK] Route file looks valid: customerRoutes.js
+[OK] Route file looks valid: invoiceRoutes.js
+[OK] Route file looks valid: userRoutes.js
+[OK] Route file looks valid: adminAuthRoutes.js
+[OK] Route file looks valid: wishlistRoutes.js
+[OK] Route file looks valid: notificationRoutes.js
+[OK] Route file looks valid: quotationRoutes.js
+[OK] Route file looks valid: analyticsRoutes.js
+[OK] Route file looks valid: guideRoutes.js
+[OK] Route file looks valid: couponRoutes.js
+[OK] Route file looks valid: seoRoutes.js
+[OK] Route file looks valid: settingsRoutes.js
+[OK] Route file looks valid: adminDashboardRoutes.js
+[OK] Route file looks valid: index.js
+[OK] Route file looks valid: adminRoleRoutes.js
+[OK] Route file looks valid: documentRoutes.js
+[OK] Route file looks valid: tourAssignmentRoutes.js
+[OK] Route file looks valid: adminCouponRoutes.js
+[OK] Route file looks valid: adminDestinationRoutes.js
+[OK] Route file looks valid: commissionRoutes.js
+[OK] Route file looks valid: authRoutes.js
+[OK] Route file looks valid: financeRoutes.js
+[OK] Route file looks valid: agentRoutes.js
+[OK] Route file looks valid: agentPackageRoutes.js
+[OK] Route file looks valid: adminGalleryRoutes.js
+[OK] Route file looks valid: adminPaymentRoutes.js
+[OK] Route file looks valid: tourRoutes.js
+[OK] Route file looks valid: destinationRoutes.js
+[OK] Route file looks valid: tourReportRoutes.js
+[OK] Controller has non-empty content: customerController.js
+[OK] Controller has non-empty content: systemHealthController.js
+[OK] Controller has non-empty content: dashboardApiController.js
+[OK] Controller has non-empty content: adminAgentController.js
+[OK] Controller has non-empty content: agentController.js
+[OK] Controller has non-empty content: adminReviewController.js
+[OK] Controller has non-empty content: voucherController.js
+[OK] Controller has non-empty content: mpesaController.js
+[OK] Controller has non-empty content: commissionController.js
+[OK] Controller has non-empty content: adminUserController.js
+[OK] Controller has non-empty content: mpesaRefundController.js
+[OK] Controller has non-empty content: vehicleController.js
+[OK] Controller has non-empty content: galleryController.js
+[OK] Controller has non-empty content: quotationController.js
+[OK] Controller has non-empty content: aiController.js
+[OK] Controller has non-empty content: adminPaymentController.js
+[OK] Controller has non-empty content: heroController.js
+[OK] Controller has non-empty content: destinationController.js
+[OK] Controller has non-empty content: agentCustomerController.js
+[OK] Controller has non-empty content: userController.js
+[OK] Controller has non-empty content: tourAvailabilityController.js
+[OK] Controller has non-empty content: paymentController.js
+[OK] Controller has non-empty content: bookingController.js
+[OK] Controller has non-empty content: agentPackageController.js
+[OK] Controller has non-empty content: reconciliationController.js
+[OK] Controller has non-empty content: adminDestinationController.js
+[OK] Controller has non-empty content: settingsController.js
+[OK] Controller has non-empty content: recommendationController.js
+[OK] Controller has non-empty content: reportController.js
+[OK] Controller has non-empty content: documentController.js
+[OK] Controller has non-empty content: crmController.js
+[OK] Controller has non-empty content: tourReportController.js
+[OK] Controller has non-empty content: adminRoleController.js
+[OK] Controller has non-empty content: itineraryController.js
+[OK] Controller has non-empty content: authController.js
+[OK] Controller has non-empty content: adminDashboardController.js
+[OK] Controller has non-empty content: guideController.js
+[OK] Controller has non-empty content: staffController.js
+[OK] Controller has non-empty content: adminCouponController.js
+[OK] Controller has non-empty content: wishlistController.js
+[OK] Controller has non-empty content: tourController.js
+[OK] Controller has non-empty content: bookingReportController.js
+[OK] Controller has non-empty content: adminTourController.js
+[OK] Controller has non-empty content: tourManagerController.js
+[OK] Controller has non-empty content: tourAssignmentController.js
+[OK] Controller has non-empty content: agentBookingController.js
+[OK] Controller has non-empty content: agentTourController.js
+[OK] Controller has non-empty content: invoiceController.js
+[OK] Controller has non-empty content: adminBookingController.js
+[OK] Controller has non-empty content: financeController.js
+[OK] Controller has non-empty content: categoryController.js
+[OK] Controller has non-empty content: financeExportController.js
+[OK] Controller has non-empty content: couponController.js
+[OK] Controller has non-empty content: reviewController.js
+[OK] Controller has non-empty content: analyticsController.js
+[OK] Controller has non-empty content: adminGalleryController.js
+[OK] Controller has non-empty content: bookingAdminController.js
+[OK] Controller has non-empty content: adminController.js
+[OK] Controller has non-empty content: notificationController.js
+[OK] Controller has non-empty content: adminAuthController.js
+[OK] Syntax OK: server/server.js
+[OK] Syntax OK: server/app.js
+[OK] Syntax OK: server/constants/bookingConstants.js
+[OK] Syntax OK: server/scripts/seedStaffVehicles.js
+[OK] Syntax OK: server/scripts/createMissingCommissions.js
+[OK] Syntax OK: server/scripts/repairGuideStaffProfiles.js
+[OK] Syntax OK: server/scripts/fixPaymentIndex.js
+[OK] Syntax OK: server/config/database.js
+[OK] Syntax OK: server/config/mpesa.js
+[OK] Syntax OK: server/config/cloudinary.js
+[OK] Syntax OK: server/config/env.js
+[OK] Syntax OK: server/config/email.js
+[OK] Syntax OK: server/routes/agentBookingRoutes.js
+[OK] Syntax OK: server/routes/mpesaRoutes.js
+[OK] Syntax OK: server/routes/adminTourRoutes.js
+[OK] Syntax OK: server/routes/systemHealthRoutes.js
+[OK] Syntax OK: server/routes/heroRoutes.js
+[OK] Syntax OK: server/routes/tourManagerRoutes.js
+[OK] Syntax OK: server/routes/recommendationRoutes.js
+[OK] Syntax OK: server/routes/vehicleRoutes.js
+[OK] Syntax OK: server/routes/bookingRoutes.js
+[OK] Syntax OK: server/routes/reviewRoutes.js
+[OK] Syntax OK: server/routes/adminBookingRoutes.js
+[OK] Syntax OK: server/routes/crmRoutes.js
+[OK] Syntax OK: server/routes/agentCustomerRoutes.js
+[OK] Syntax OK: server/routes/staffRoutes.js
+[OK] Syntax OK: server/routes/categoryRoutes.js
+[OK] Syntax OK: server/routes/galleryRoutes.js
+[OK] Syntax OK: server/routes/aiRoutes.js
+[OK] Syntax OK: server/routes/adminReviewRoutes.js
+[OK] Syntax OK: server/routes/adminRoutes.js
+[OK] Syntax OK: server/routes/customerRoutes.js
+[OK] Syntax OK: server/routes/invoiceRoutes.js
+[OK] Syntax OK: server/routes/userRoutes.js
+[OK] Syntax OK: server/routes/adminAuthRoutes.js
+[OK] Syntax OK: server/routes/wishlistRoutes.js
+[OK] Syntax OK: server/routes/notificationRoutes.js
+[OK] Syntax OK: server/routes/quotationRoutes.js
+[OK] Syntax OK: server/routes/analyticsRoutes.js
+[OK] Syntax OK: server/routes/guideRoutes.js
+[OK] Syntax OK: server/routes/couponRoutes.js
+[OK] Syntax OK: server/routes/seoRoutes.js
+[OK] Syntax OK: server/routes/settingsRoutes.js
+[OK] Syntax OK: server/routes/adminDashboardRoutes.js
+[OK] Syntax OK: server/routes/index.js
+[OK] Syntax OK: server/routes/adminRoleRoutes.js
+[OK] Syntax OK: server/routes/documentRoutes.js
+[OK] Syntax OK: server/routes/tourAssignmentRoutes.js
+[OK] Syntax OK: server/routes/adminCouponRoutes.js
+[OK] Syntax OK: server/routes/adminDestinationRoutes.js
+[OK] Syntax OK: server/routes/commissionRoutes.js
+[OK] Syntax OK: server/routes/authRoutes.js
+[OK] Syntax OK: server/routes/financeRoutes.js
+[OK] Syntax OK: server/routes/agentRoutes.js
+[OK] Syntax OK: server/routes/agentPackageRoutes.js
+[OK] Syntax OK: server/routes/adminGalleryRoutes.js
+[OK] Syntax OK: server/routes/adminPaymentRoutes.js
+[OK] Syntax OK: server/routes/tourRoutes.js
+[OK] Syntax OK: server/routes/destinationRoutes.js
+[OK] Syntax OK: server/routes/tourReportRoutes.js
+[OK] Syntax OK: server/middleware/guideMiddleware.js
+[OK] Syntax OK: server/middleware/uploadMiddleware.js
+[OK] Syntax OK: server/middleware/errorMiddleware.js
+[OK] Syntax OK: server/middleware/agentMiddleware.js
+[OK] Syntax OK: server/middleware/rateLimiter.js
+[OK] Syntax OK: server/middleware/notFoundMiddleware.js
+[OK] Syntax OK: server/middleware/adminMiddleware.js
+[OK] Syntax OK: server/middleware/permissionMiddleware.js
+[OK] Syntax OK: server/middleware/roleMiddleware.js
+[OK] Syntax OK: server/middleware/tourManagerMiddleware.js
+[OK] Syntax OK: server/middleware/authMiddleware.js
+[OK] Syntax OK: server/middleware/securityMonitor.js
+[OK] Syntax OK: server/models/Payment.js
+[OK] Syntax OK: server/models/Loyalty.js
+[OK] Syntax OK: server/models/Gallery.js
+[OK] Syntax OK: server/models/Coupon.js
+[OK] Syntax OK: server/models/WalletTransaction.js
+[OK] Syntax OK: server/models/Staff.js
+[OK] Syntax OK: server/models/Campaign.js
+[OK] Syntax OK: server/models/Promotion.js
+[OK] Syntax OK: server/models/Invoice.js
+[OK] Syntax OK: server/models/AuditLog.js
+[OK] Syntax OK: server/models/RefundAudit.js
+[OK] Syntax OK: server/models/UserPreference.js
+[OK] Syntax OK: server/models/Currency.js
+[OK] Syntax OK: server/models/Wishlist.js
+[OK] Syntax OK: server/models/TourCategory.js
+[OK] Syntax OK: server/models/HeroSlide.js
+[OK] Syntax OK: server/models/SecurityLog.js
+[OK] Syntax OK: server/models/Quotation.js
+[OK] Syntax OK: server/models/Booking.js
+[OK] Syntax OK: server/models/Itinerary.js
+[OK] Syntax OK: server/models/User.js
+[OK] Syntax OK: server/models/TourReport.js
+[OK] Syntax OK: server/models/Destination.js
+[OK] Syntax OK: server/models/notFoundMiddleware.js
+[OK] Syntax OK: server/models/StaffProfile.js
+[OK] Syntax OK: server/models/Review.js
+[OK] Syntax OK: server/models/Commission.js
+[OK] Syntax OK: server/models/Refund.js
+[OK] Syntax OK: server/models/SystemSettings.js
+[OK] Syntax OK: server/models/SystemSetting.js
+[OK] Syntax OK: server/models/CustomerProfile.js
+[OK] Syntax OK: server/models/Role.js
+[OK] Syntax OK: server/models/Customer.js
+[OK] Syntax OK: server/models/TourPackage.js
+[OK] Syntax OK: server/models/Media.js
+[OK] Syntax OK: server/models/Notification.js
+[OK] Syntax OK: server/models/Tour.js
+[OK] Syntax OK: server/models/Agent.js
+[OK] Syntax OK: server/models/Vehicle.js
+[OK] Syntax OK: server/models/Referral.js
+[OK] Syntax OK: server/models/TourGallery.js
+[OK] Syntax OK: server/models/Permission.js
+[OK] Syntax OK: server/controllers/customerController.js
+[OK] Syntax OK: server/controllers/systemHealthController.js
+[OK] Syntax OK: server/controllers/dashboardApiController.js
+[OK] Syntax OK: server/controllers/adminAgentController.js
+[OK] Syntax OK: server/controllers/agentController.js
+[OK] Syntax OK: server/controllers/adminReviewController.js
+[OK] Syntax OK: server/controllers/voucherController.js
+[OK] Syntax OK: server/controllers/mpesaController.js
+[OK] Syntax OK: server/controllers/commissionController.js
+[OK] Syntax OK: server/controllers/adminUserController.js
+[OK] Syntax OK: server/controllers/mpesaRefundController.js
+[OK] Syntax OK: server/controllers/vehicleController.js
+[OK] Syntax OK: server/controllers/galleryController.js
+[OK] Syntax OK: server/controllers/quotationController.js
+[OK] Syntax OK: server/controllers/aiController.js
+[OK] Syntax OK: server/controllers/adminPaymentController.js
+[OK] Syntax OK: server/controllers/heroController.js
+[OK] Syntax OK: server/controllers/destinationController.js
+[OK] Syntax OK: server/controllers/agentCustomerController.js
+[OK] Syntax OK: server/controllers/userController.js
+[OK] Syntax OK: server/controllers/tourAvailabilityController.js
+[OK] Syntax OK: server/controllers/paymentController.js
+[OK] Syntax OK: server/controllers/bookingController.js
+[OK] Syntax OK: server/controllers/agentPackageController.js
+[OK] Syntax OK: server/controllers/reconciliationController.js
+[OK] Syntax OK: server/controllers/adminDestinationController.js
+[OK] Syntax OK: server/controllers/settingsController.js
+[OK] Syntax OK: server/controllers/recommendationController.js
+[OK] Syntax OK: server/controllers/reportController.js
+[OK] Syntax OK: server/controllers/documentController.js
+[OK] Syntax OK: server/controllers/crmController.js
+[OK] Syntax OK: server/controllers/tourReportController.js
+[OK] Syntax OK: server/controllers/adminRoleController.js
+[OK] Syntax OK: server/controllers/itineraryController.js
+[OK] Syntax OK: server/controllers/authController.js
+[OK] Syntax OK: server/controllers/adminDashboardController.js
+[OK] Syntax OK: server/controllers/guideController.js
+[OK] Syntax OK: server/controllers/staffController.js
+[OK] Syntax OK: server/controllers/adminCouponController.js
+[OK] Syntax OK: server/controllers/wishlistController.js
+[OK] Syntax OK: server/controllers/tourController.js
+[OK] Syntax OK: server/controllers/bookingReportController.js
+[OK] Syntax OK: server/controllers/adminTourController.js
+[OK] Syntax OK: server/controllers/tourManagerController.js
+[OK] Syntax OK: server/controllers/tourAssignmentController.js
+[OK] Syntax OK: server/controllers/agentBookingController.js
+[OK] Syntax OK: server/controllers/agentTourController.js
+[OK] Syntax OK: server/controllers/invoiceController.js
+[OK] Syntax OK: server/controllers/adminBookingController.js
+[OK] Syntax OK: server/controllers/financeController.js
+[OK] Syntax OK: server/controllers/categoryController.js
+[OK] Syntax OK: server/controllers/financeExportController.js
+[OK] Syntax OK: server/controllers/couponController.js
+[OK] Syntax OK: server/controllers/reviewController.js
+[OK] Syntax OK: server/controllers/analyticsController.js
+[OK] Syntax OK: server/controllers/adminGalleryController.js
+[OK] Syntax OK: server/controllers/bookingAdminController.js
+[OK] Syntax OK: server/controllers/adminController.js
+[OK] Syntax OK: server/controllers/notificationController.js
+[OK] Syntax OK: server/controllers/adminAuthController.js
+[OK] Syntax OK: server/socket/socketManager.js
+[OK] Syntax OK: server/seeds/customerSeed.js
+[OK] Syntax OK: server/seeds/resetAdminPassword.js
+[OK] Syntax OK: server/seeds/migrateLegacyRoles.js
+[OK] Syntax OK: server/seeds/categorySeed.js
+[OK] Syntax OK: server/seeds/superAdminSeed.js
+[OK] Syntax OK: server/seeds/bookingAgentSeed.js
+[OK] Syntax OK: server/seeds/guideSeed.js
+[OK] Syntax OK: server/seeds/resetManagerPassword.js
+[OK] Syntax OK: server/seeds/roleSeed.js
+[OK] Syntax OK: server/seeds/resetFinanceOfficerPassword.js
+[OK] Syntax OK: server/seeds/resetCustomerPassword.js
+[OK] Syntax OK: server/seeds/agentSeed.js
+[OK] Syntax OK: server/seeds/tourSeed.js
+[OK] Syntax OK: server/seeds/resetTourGuidePassword.js
+[OK] Syntax OK: server/seeds/tourManagerSeed.js
+[OK] Syntax OK: server/seeds/adminSeed.js
+[OK] Syntax OK: server/seeds/categories.js
+[OK] Syntax OK: server/seeds/resetBookingAgentPassword.js
+[OK] Syntax OK: server/seeds/index.js
+[OK] Syntax OK: server/seeds/userSeeder.js
+[OK] Syntax OK: server/seeds/seedDestinations.js
+[OK] Syntax OK: server/seeds/staffSeed.js
+[OK] Syntax OK: server/seeds/destinationSeed.js
+[OK] Syntax OK: server/seeds/vehicleSeed.js
+[OK] Syntax OK: server/seeds/tourGuideSeed.js
+[OK] Syntax OK: server/seeds/permissionSeed.js
+[OK] Syntax OK: server/utils/bookingPricing.js
+[OK] Syntax OK: server/utils/apiResponse.js
+[OK] Syntax OK: server/utils/emailTemplates.js
+[OK] Syntax OK: server/utils/buildPermissions.js
+[OK] Syntax OK: server/utils/generateToken.js
+[OK] Syntax OK: server/utils/calculateBookingAmounts.js
+[OK] Syntax OK: server/utils/withTransaction.js
+[OK] Syntax OK: server/utils/sitemap.js
+[OK] Syntax OK: server/utils/createInvoice.js
+[OK] Syntax OK: server/services/currencyService.js
+[OK] Syntax OK: server/services/campaignService.js
+[OK] Syntax OK: server/services/notificationService.js
+[OK] Syntax OK: server/services/couponService.js
+[OK] Syntax OK: server/services/emailService.js
+[OK] Syntax OK: server/services/pdfService.js
+[OK] Syntax OK: server/services/socket.js
+[OK] Syntax OK: server/services/loyaltyService.js
+[OK] Syntax OK: server/services/reportService.js
+[OK] Syntax OK: server/services/smsService.js
+[OK] Syntax OK: server/services/recommendationService.js
+[OK] Syntax OK: server/services/customerSegmentationService.js
+[OK] Syntax OK: server/services/bookingNotificationService.js
+[OK] Syntax OK: server/services/whatsappService.js
+[OK] Syntax OK: server/services/commissionService.js
+[OK] Syntax OK: server/services/customerAnalyticsService.js
+[OK] Syntax OK: server/services/inventoryService.js
+[OK] Syntax OK: server/services/auditService.js
+[OK] Syntax OK: server/services/socketService.js
+[OK] Syntax OK: server/services/sitemapService.js
+[OK] Syntax OK: server/services/mpesaService.js
+[OK] Syntax OK: server/services/recoveryService.js
+[OK] Syntax OK: server/services/analyticsService.js
+[OK] Syntax OK: server/services/paymentAnalyticsService.js
+[OK] Syntax OK: server/services/availabilityService.js
+[OK] Syntax OK: server/services/quotationCalculator.js
+[OK] Syntax OK: server/services/mpesaRefundService.js
+[OK] Syntax OK: server/services/tourLifecycleService.js
+[OK] Syntax OK: server/services/aiService.js
+[OK] All backend JavaScript files passed node --check.
+[OK] server/package.json exists.
+[OK] Server package.json contains scripts.
+[OK] client/package.json exists.
+[OK] Client build script exists.
+[OK] Frontend production build completed successfully.
+[OK] Git remote is configured.

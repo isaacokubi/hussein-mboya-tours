@@ -18,3 +18,9 @@ export {
   getGuides,
   getReports,
 } from "../api/tourManagerApi";
+
+// Compatibility exports added by final_repair.py
+export { assignDriver } from "../api/tourManagerApi";
+export { assignVehicle } from "../api/tourManagerApi";
+export { getDrivers } from "../api/tourManagerApi";
+export { getVehicles } from "../api/tourManagerApi";
