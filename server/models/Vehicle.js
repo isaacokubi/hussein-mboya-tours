@@ -110,7 +110,7 @@ const vehicleSchema = new mongoose.Schema(
     year: {
       type: Number,
       min: 1990,
-      max: new Date().getFullYear() + 1,
+      max: new Date().getFullYear() + 10,
     },
 
     /*
