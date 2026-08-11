@@ -94,3 +94,5 @@ Thumbs.db
 
 # Automatic repair backups
 *.backup
+client-BACKUP-*
+server-BACKUP-*
