@@ -248,7 +248,7 @@ export const getTransactions = async (req, res, next) => {
       Payment.find(filter)
         .populate(
           "booking",
-          "bookingNumber travelDate"
+          "bookingNumber travelDate mpesaReceipt transactionId paymentStatus status"
         )
         .populate(
           "customer",

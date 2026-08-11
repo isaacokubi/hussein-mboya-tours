@@ -10,6 +10,7 @@ import {
     deleteTour,
     assignTourGuide,
     completeBooking,
+    cancelBooking,
 } from "../controllers/tourManagerController.js";
 
 import {
@@ -35,7 +36,7 @@ import {
 
 import {
   getGuides,
-} from "../controllers/userController.js";
+} from "../controllers/staffController.js";
 
 import {
   getTourReports,
@@ -106,6 +107,8 @@ router.delete("/itineraries/:id", deleteItinerary);
 router.get("/bookings", getBookings);
 router.patch("/bookings/:id/complete", completeBooking);
 router.put("/bookings/:id/complete", completeBooking);
+router.patch("/bookings/:id/cancel", cancelBooking);
+router.put("/bookings/:id/cancel", cancelBooking);
 router.get("/customers", getCustomers);
 router.get("/guides", getGuides);
 

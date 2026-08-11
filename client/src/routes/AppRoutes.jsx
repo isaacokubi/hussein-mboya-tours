@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 
 // Public pages
 const Home = lazy(() => import("../pages/Home"));
@@ -7,6 +8,7 @@ const Tours = lazy(() => import("../pages/Tours"));
 const TourDetails = lazy(() => import("../pages/TourDetails"));
 const Login = lazy(() => import("../pages/Login"));
 const Register = lazy(() => import("../pages/Register"));
+const ForgotPassword = lazy(() => import("../pages/ForgotPassword"));
 const Destinations = lazy(() => import("../pages/Destinations"));
 const Wishlist = lazy(() => import("../pages/Wishlist"));
 const DestinationDetails = lazy(() => import("../pages/DestinationDetails"));
@@ -84,8 +86,18 @@ import ProtectedRoute from "../components/auth/ProtectedRoute";
 import AdminRoute from "../components/auth/AdminRoute";
 import AgentRoute from "../components/agent/AgentRoute";
 
+function ScrollToTop() {
+  const { pathname, search } = useLocation();
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [pathname, search]);
+  return null;
+}
+
 export default function AppRoutes() {
   return (
+    <>
+      <ScrollToTop />
     <Suspense
       fallback={
         <div
@@ -127,6 +139,7 @@ export default function AppRoutes() {
       <Route path="/admin/login" element={<Login />} />
       <Route path="/agent/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
 
       <Route path="/wishlist" element={<Wishlist />} />
       <Route path="/about" element={<About />} />
@@ -528,6 +541,7 @@ export default function AppRoutes() {
       />
       </Routes>
     </Suspense>
+    </>
   );
 }
 

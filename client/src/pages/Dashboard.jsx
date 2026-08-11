@@ -138,12 +138,35 @@ if (isLoading) {
       (booking.bookingStatus || booking.status || "").toLowerCase() === "cancelled",
   );
 
-  const totalSpent = bookings.reduce(
-    (total, booking) =>
-      total + Number(booking.totalAmount || booking.amount || 0),
+  const totalSpent = bookings.reduce((total, booking) => {
+    const bookingStatus = String(
+      booking.status || booking.bookingStatus || ""
+    ).toLowerCase();
 
-    0,
-  );
+    const paymentStatus = String(
+      typeof booking.paymentStatus === "object"
+        ? booking.paymentStatus?.paymentStatus ||
+          booking.paymentStatus?.status ||
+          "pending"
+        : booking.paymentStatus || "pending"
+    ).toLowerCase();
+
+    if (
+      bookingStatus !== "confirmed" ||
+      !["paid", "completed"].includes(paymentStatus)
+    ) {
+      return total;
+    }
+
+    const paidAmount =
+      Number(booking.depositAmount || 0) ||
+      Number(booking.totalAmount || booking.amount || 0);
+
+    return total + Math.max(
+      0,
+      paidAmount - Number(booking.refundAmount || 0)
+    );
+  }, 0);
 
   const nextTrip = upcomingTrips[0];
 

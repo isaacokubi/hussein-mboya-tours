@@ -41,44 +41,43 @@ export const updateSettings = async (req, res, next) => {
     ];
 
     const updates = {};
-
     for (const key of allowed) {
-      if (req.body?.[key] !== undefined) {
-        updates[key] = req.body[key];
-      }
+      if (req.body?.[key] !== undefined) updates[key] = req.body[key];
     }
 
-    if (updates.companyName !== undefined &&
-        !String(updates.companyName).trim()) {
-      return res.status(400).json({
-        success: false,
-        message: "Company name cannot be empty.",
-      });
+    updates.companyName = String(updates.companyName ?? DEFAULTS.companyName).trim();
+    updates.supportEmail = String(updates.supportEmail ?? DEFAULTS.supportEmail).trim().toLowerCase();
+    updates.supportPhone = String(updates.supportPhone ?? DEFAULTS.supportPhone).trim();
+    updates.currency = String(updates.currency ?? DEFAULTS.currency).trim().toUpperCase();
+    updates.timezone = String(updates.timezone ?? DEFAULTS.timezone).trim();
+
+    if (!updates.companyName) {
+      return res.status(400).json({ success: false, message: "Company name cannot be empty." });
     }
 
-    const settings = await SystemSetting.findOneAndUpdate(
-      { key: "default" },
-      {
-        $set: updates,
-        $setOnInsert: {
-          key: "default",
-          ...DEFAULTS,
-        },
-      },
-      {
-        upsert: true,
-        new: true,
-        runValidators: true,
-      }
-    ).lean();
+    if (updates.supportEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(updates.supportEmail)) {
+      return res.status(400).json({ success: false, message: "Enter a valid support email." });
+    }
+
+    let settings = await SystemSetting.findOne({ key: "default" });
+    if (!settings) {
+      settings = new SystemSetting({ key: "default", ...DEFAULTS });
+    }
+
+    Object.assign(settings, updates);
+    await settings.save();
 
     return res.status(200).json({
       success: true,
       message: "System settings saved successfully.",
-      data: settings,
-      settings,
+      data: settings.toObject(),
+      settings: settings.toObject(),
     });
   } catch (error) {
-    next(error);
+    console.error("UPDATE SETTINGS ERROR:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to save system settings.",
+    });
   }
 };

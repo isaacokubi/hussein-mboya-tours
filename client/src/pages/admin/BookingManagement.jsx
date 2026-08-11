@@ -1584,282 +1584,39 @@ b.assignedVehicle?.plateNumber ||
 
 
 {/* WORKFLOW */}
-
-
 <td className="p-3">
-
-
-<button
-
-className="border px-3 py-1 rounded"
-
-onClick={()=>
-
-
-setActionBooking(
-
-actionBooking===b._id
-
-?
-
-null
-
-:
-
-b._id
-
-)
-
-
-}
-
->
-
-Actions
-
-</button>
-
-
-
-
-
-
-
-{
-
-actionBooking===b._id &&
-
-
-
-<div className="bg-white shadow rounded p-3 mt-2 space-y-2">
-
-
-
-<button
-
-onClick={()=>
-
-
-statusMutation.mutate({
-
-id:b._id,
-
-status:"confirmed"
-
-})
-
-
-}
-
->
-
-Confirm booking
-
-</button>
-
-
-
-
-
-<button
-
-onClick={()=>
-
-
-statusMutation.mutate({
-
-id:b._id,
-
-status:"cancelled"
-
-})
-
-
-}
-
->
-
-Cancel booking
-
-</button>
-
-
-
-
-
-
-
-<button
-
-onClick={()=>
-
-
-statusMutation.mutate({
-
-id:b._id,
-
-status:"completed"
-
-})
-
-
-}
-
->
-
-Mark completed
-
-</button>
-
-
-
-
-
-
-
-<button
-
-onClick={()=>
-
-
-paymentMutation.mutate({
-
-id:b._id,
-
-status:"refunded"
-
-})
-
-
-}
-
->
-
-Refund booking
-
-</button>
-
-
-
-
-
-
-
-<button
-
-onClick={()=>
-
-
-notificationMutation.mutate({
-
-id:b._id,
-
-payload:{
-
-type:"confirmation",
-
-channel:"sms"
-
-}
-
-})
-
-
-}
-
->
-
-Send Confirmation SMS
-
-</button>
-
-
-
-
-
-
-
-<button
-
-onClick={()=>
-
-
-notificationMutation.mutate({
-
-id:b._id,
-
-payload:{
-
-type:"payment_reminder",
-
-channel:"whatsapp"
-
-}
-
-})
-
-
-}
-
->
-
-Payment Reminder
-
-</button>
-
-
-
-
-
-
-
-<button
-
-onClick={()=>
-
-
-notificationMutation.mutate({
-
-id:b._id,
-
-payload:{
-
-type:"trip_reminder",
-
-channel:"email"
-
-}
-
-})
-
-
-}
-
->
-
-Trip Reminder
-
-</button>
-
-
-
-
-
-</div>
-
-
-}
-
-
+  <select
+    className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium"
+    value=""
+    onChange={(e) => {
+      const action = e.target.value;
+      if (!action) return;
+      if (["confirmed","assigned","ongoing","completed","cancelled"].includes(action)) {
+        statusMutation.mutate({ id: b._id, status: action });
+      } else if (action === "refund") {
+        refundMutation.mutate({ id: b._id, payload: { reason: "Admin refund request" } });
+      } else if (action === "sms") {
+        notificationMutation.mutate({ id: b._id, payload: { type: "confirmation", channel: "sms" } });
+      } else if (action === "payment-reminder") {
+        notificationMutation.mutate({ id: b._id, payload: { type: "payment_reminder", channel: "whatsapp" } });
+      } else if (action === "trip-reminder") {
+        notificationMutation.mutate({ id: b._id, payload: { type: "trip_reminder", channel: "email" } });
+      }
+      setActionBooking(null);
+    }}
+  >
+    <option value="">Choose action...</option>
+    <option value="confirmed">Confirm booking</option>
+    <option value="assigned">Mark assigned</option>
+    <option value="ongoing">Start / ongoing</option>
+    <option value="completed">Mark completed</option>
+    <option value="cancelled">Cancel booking</option>
+    <option value="refund">Request refund</option>
+    <option value="sms">Send confirmation SMS</option>
+    <option value="payment-reminder">Payment reminder</option>
+    <option value="trip-reminder">Trip reminder</option>
+  </select>
 </td>
-
-
-
-
-
-
-
-
 
 {/* ACTIONS / ASSIGNMENT */}
 
@@ -2233,76 +1990,6 @@ v.registrationNumber ||
 
 
 
-
-<div className="flex gap-2 flex-wrap">
-
-<button
-onClick={()=>
-statusMutation.mutate({
-id:b._id,
-status:"confirmed"
-})
-}
-className="px-2 py-1 bg-green-600 text-white rounded"
->
-Confirm
-</button>
-
-<button
-onClick={()=>
-statusMutation.mutate({
-id:b._id,
-status:"cancelled"
-})
-}
-className="px-2 py-1 bg-red-600 text-white rounded"
->
-Cancel
-</button>
-
-<button
-onClick={()=>
-statusMutation.mutate({
-id:b._id,
-status:"completed"
-})
-}
-className="px-2 py-1 bg-blue-600 text-white rounded"
->
-Complete
-</button>
-
-<button
-onClick={()=>
-refundMutation.mutate({
-id:b._id,
-payload:{
-reason:"Customer requested cancellation"
-}
-})
-}
-className="px-2 py-1 bg-orange-600 text-white rounded"
->
-Refund
-</button>
-
-<button
-onClick={()=>
-notificationMutation.mutate({
-id:b._id,
-payload:{
-type:"confirmation",
-channel:"email",
-message:"Your booking has been confirmed"
-}
-})
-}
-className="px-2 py-1 bg-purple-600 text-white rounded"
->
-Notify
-</button>
-
-</div>
 
 </td>
 

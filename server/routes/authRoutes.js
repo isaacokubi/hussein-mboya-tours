@@ -7,6 +7,8 @@ import {
   login,
   getMe,
   changePassword,
+  requestPasswordReset,
+  resetPasswordWithCode,
 } from "../controllers/authController.js";
 
 import {
@@ -37,6 +39,16 @@ router.post(
 router.post(
   "/login",
   login
+);
+
+router.post(
+  "/password-reset/request",
+  requestPasswordReset
+);
+
+router.post(
+  "/password-reset/confirm",
+  resetPasswordWithCode
 );
 
 /*

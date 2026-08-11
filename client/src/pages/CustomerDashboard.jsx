@@ -236,7 +236,7 @@ const CustomerDashboard = () => {
       ).toLowerCase();
 
       const qualifies =
-        ["confirmed", "completed"].includes(bookingStatus) &&
+        bookingStatus === "confirmed" &&
         ["paid", "completed"].includes(paymentStatus);
 
       if (!qualifies) return total;

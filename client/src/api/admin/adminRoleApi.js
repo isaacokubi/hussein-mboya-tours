@@ -98,3 +98,14 @@ export const toggleRoleStatus = async (
   return data;
 
 };
+
+
+export const getAdminPermissions = async () => {
+  const { data } = await api.get("/admin/roles/permissions/all");
+  return data;
+};
+
+export const updateAdminRolePermissions = async (id, permissions) => {
+  const { data } = await api.patch(`/admin/roles/${id}/permissions`, { permissions });
+  return data;
+};

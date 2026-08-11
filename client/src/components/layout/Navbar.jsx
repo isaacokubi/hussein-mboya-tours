@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -24,6 +24,24 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef(null);
+
+  useEffect(() => {
+    const handleOutside = (event) => {
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setProfileOpen(false);
+      }
+    };
+    const handleEscape = (event) => {
+      if (event.key === "Escape") setProfileOpen(false);
+    };
+    document.addEventListener("mousedown", handleOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
 
   /*
   |--------------------------------------------------------------------------
@@ -316,7 +334,7 @@ shadow-lg px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-800 transi
                 {dashboardLink.label}
               </Link>
 
-              <div className="relative">
+              <div className="relative" ref={profileRef}>
                 <button
                   onClick={() => setProfileOpen(!profileOpen)}
                   className="flex items-center gap-2 border rounded-lg px-3 py-2 hover:bg-gray-50"
@@ -358,6 +376,17 @@ shadow-lg px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-800 transi
                       z-50
                       "
                     >
+                      <div className="flex items-center justify-between border-b px-4 py-3">
+                        <span className="text-sm font-semibold text-gray-700">Account menu</span>
+                        <button
+                          type="button"
+                          onClick={() => setProfileOpen(false)}
+                          className="rounded-full p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                          aria-label="Close account menu"
+                        >
+                          <X size={18} />
+                        </button>
+                      </div>
                       {isCustomer && (
                         <>
                           <Link

@@ -45,6 +45,7 @@ export default function AddTour() {
         description:"",
         destination:"",
         country:"Kenya",
+        location:"",
         date:"",
         duration:"",
         price:"",
@@ -349,6 +350,16 @@ export default function AddTour() {
 
 
 
+
+                <input
+                    type="text"
+                    name="location"
+                    placeholder="Location / meeting area (e.g. Diani Beach, Ukunda)"
+                    className="w-full border rounded px-4 py-3"
+                    value={form.location}
+                    onChange={handleChange}
+                    required
+                />
 
                 <input
 

@@ -1,120 +1,17 @@
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Users, Search, UserCheck, UserX } from "lucide-react";
 import { toast } from "react-toastify";
 import api from "../../api/axios";
 
 export default function StaffManagement() {
-    const queryClient = useQueryClient();
-
-    const { data, isLoading, isError } = useQuery({
-        queryKey: ["staff", "admin"],
-        queryFn: async () => {
-            const res = await api.get("/staff", {
-                params: { includeInactive: true, limit: 100 }
-            });
-            return res.data;
-        }
-    });
-
-    const statusMutation = useMutation({
-        mutationFn: async ({ id, active }) => {
-            const res = await api.put(`/staff/${id}/status`, {
-                isActive: active,
-                status: active ? "active" : "inactive",
-                availability: active ? "available" : "offline"
-            });
-            return res.data;
-        },
-        onSuccess: () => {
-            toast.success("Staff status updated.");
-            queryClient.invalidateQueries({ queryKey: ["staff", "admin"] });
-        },
-        onError: (error) => {
-            toast.error(
-                error?.response?.data?.message ||
-                "Unable to update staff status."
-            );
-        }
-    });
-
-    const staff =
-        Array.isArray(data)
-            ? data
-            : Array.isArray(data?.data)
-                ? data.data
-                : Array.isArray(data?.staff)
-                    ? data.staff
-                    : [];
-
-    if (isLoading) {
-        return <div className="p-6">Loading staff...</div>;
-    }
-
-    if (isError) {
-        return <div className="p-6 text-red-600">Failed to load staff.</div>;
-    }
-
-    return (
-        <div className="p-6">
-            <div className="mb-6">
-                <h1 className="text-2xl font-bold">Staff Management</h1>
-                <p className="text-gray-600">
-                    Manage guides, drivers and other staff.
-                </p>
-            </div>
-
-            <div className="bg-white rounded-xl shadow overflow-x-auto">
-                <table className="w-full">
-                    <thead className="bg-gray-100">
-                        <tr>
-                            <th className="p-3 text-left">Name</th>
-                            <th className="p-3 text-left">Email</th>
-                            <th className="p-3 text-left">Position</th>
-                            <th className="p-3 text-left">Status</th>
-                            <th className="p-3 text-left">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {staff.map((member) => {
-                            const active =
-                                member.isActive !== false &&
-                                String(member.status || "active").toLowerCase() === "active";
-
-                            return (
-                                <tr key={member._id} className="border-t">
-                                    <td className="p-3">{member.name}</td>
-                                    <td className="p-3">{member.email}</td>
-                                    <td className="p-3 capitalize">{member.position}</td>
-                                    <td className={`p-3 font-semibold ${active ? "text-green-600" : "text-red-600"}`}>
-                                        {active ? "Active" : "Inactive"}
-                                    </td>
-                                    <td className="p-3">
-                                        <button
-                                            type="button"
-                                            disabled={statusMutation.isPending}
-                                            onClick={() =>
-                                                statusMutation.mutate({
-                                                    id: member._id,
-                                                    active: !active
-                                                })
-                                            }
-                                            className="rounded bg-gray-900 px-3 py-2 text-sm text-white disabled:opacity-50"
-                                        >
-                                            {active ? "Disable" : "Enable"}
-                                        </button>
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                        {!staff.length && (
-                            <tr>
-                                <td colSpan="5" className="p-6 text-center text-gray-500">
-                                    No staff found.
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    );
+  const qc=useQueryClient();
+  const [search,setSearch]=useState("");
+  const {data,isLoading,isError}=useQuery({queryKey:["staff","admin",search],queryFn:async()=>{const r=await api.get("/staff",{params:{includeInactive:true,limit:100,search}});return r.data;}});
+  const mutation=useMutation({mutationFn:({id,active})=>api.put(`/staff/${id}/status`,{isActive:active,status:active?"active":"inactive",availability:active?"available":"offline"}),onSuccess:()=>{qc.invalidateQueries({queryKey:["staff","admin"]});toast.success("Staff status updated.");}});
+  const staff=Array.isArray(data?.data)?data.data:Array.isArray(data)?data:[];
+  if(isLoading)return <div className="p-6">Loading staff...</div>;
+  if(isError)return <div className="p-6 text-red-600">Failed to load staff.</div>;
+  const active=staff.filter(s=>s.isActive!==false&&s.status==="active").length;
+  return <div className="min-h-screen bg-slate-50 p-6"><div className="mx-auto max-w-7xl"><div className="mb-6"><p className="text-sm font-semibold uppercase tracking-wider text-emerald-700">People operations</p><h1 className="text-3xl font-bold text-slate-900">Staff Management</h1><p className="text-slate-500">Manage guides, drivers and operational staff accounts.</p></div><div className="mb-6 grid gap-4 md:grid-cols-3">{[["Total staff",staff.length],["Active",active],["Inactive",staff.length-active]].map(([l,v])=><div key={l} className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200"><div className="flex justify-between"><span className="text-sm text-slate-500">{l}</span><Users size={19} className="text-emerald-700"/></div><p className="mt-2 text-3xl font-bold">{v}</p></div>)}</div><div className="mb-5 flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200"><Search size={18} className="text-slate-400"/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search staff by name, email, phone or position..." className="w-full outline-none"/></div><div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200"><div className="overflow-x-auto"><table className="w-full"><thead className="bg-slate-50"><tr><th className="p-4 text-left">Staff member</th><th className="p-4 text-left">Position</th><th className="p-4 text-left">Availability</th><th className="p-4 text-left">Status</th><th className="p-4 text-right">Action</th></tr></thead><tbody>{staff.map(m=>{const on=m.isActive!==false&&m.status==="active";return <tr key={m._id} className="border-t hover:bg-slate-50"><td className="p-4"><div className="font-semibold">{m.name}</div><div className="text-sm text-slate-500">{m.email} · {m.phone}</div></td><td className="p-4 capitalize">{String(m.position||"-").replace("_"," ")}</td><td className="p-4 capitalize">{m.availability||"-"}</td><td className="p-4"><span className={`rounded-full px-3 py-1 text-xs font-semibold ${on?"bg-emerald-100 text-emerald-700":"bg-red-100 text-red-700"}`}>{on?"Active":"Inactive"}</span></td><td className="p-4 text-right"><button onClick={()=>mutation.mutate({id:m._id,active:!on})} className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white">{on?<><UserX size={15}/>Disable</>:<><UserCheck size={15}/>Enable</>}</button></td></tr>})}{!staff.length&&<tr><td colSpan="5" className="p-10 text-center text-slate-500">No staff found.</td></tr>}</tbody></table></div></div></div></div>;
 }

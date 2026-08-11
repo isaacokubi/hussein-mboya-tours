@@ -536,14 +536,16 @@ export const mpesaCallback = async (req, res, next) => {
 
     try {
       const managers = await User.find({
-        role: {
-          $in: ["admin", "manager", "tour_manager"],
-        },
+        $or: [
+          { role: { $in: ["admin", "superadmin", "super_admin", "manager", "tour_manager", "tourmanager"] } },
+          { legacyRole: { $in: ["admin", "superadmin", "super_admin", "manager", "tour_manager", "tourmanager"] } },
+        ],
       });
 
       if (managers.length) {
         await Notification.insertMany(
           managers.map((manager) => ({
+            recipient: manager._id,
             user: manager._id,
             title: "New Booking Payment",
             message: `Booking ${booking._id} has been paid successfully.`,

@@ -651,7 +651,14 @@ tourSchema.pre("validate", function (next) {
       this.startDate = startDate;
       const calculatedEnd = new Date(startDate);
       calculatedEnd.setDate(calculatedEnd.getDate() + days - 1);
-      this.endDate = this.endDate || calculatedEnd;
+      const existingEnd = this.endDate ? new Date(this.endDate) : null;
+      if (
+        !existingEnd ||
+        Number.isNaN(existingEnd.getTime()) ||
+        (days > 1 && existingEnd.getTime() <= startDate.getTime())
+      ) {
+        this.endDate = calculatedEnd;
+      }
     }
   }
 

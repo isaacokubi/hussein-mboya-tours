@@ -95,6 +95,16 @@ router.patch(
 refundPayment
 );
 
+router.put(
+"/:id/refund",
+refundPayment
+);
+
+router.post(
+"/:id/refund",
+refundPayment
+);
+
 
 
 export default router;

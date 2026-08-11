@@ -30,8 +30,9 @@ export const getTourAvailability = async (req, res, next) => {
       {
         $match: {
           tour: tour._id,
+          isDeleted: { $ne: true },
           status: {
-            $in: ["pending", "confirmed"],
+            $nin: ["cancelled", "refunded", "completed"],
           },
         },
       },
@@ -53,11 +54,22 @@ export const getTourAvailability = async (req, res, next) => {
     const bookedSlots = bookingStats[0]?.totalGuests || 0;
     const totalBookings = bookingStats[0]?.totalBookings || 0;
 
-    const totalSlots =
+    const configuredSlots = Number(
+      tour.availabilitySettings?.totalSlots ??
       tour.capacity ??
       tour.maxGuests ??
       tour.availableSeats ??
-      0;
+      0
+    );
+
+    const totalSlots =
+      configuredSlots > 0
+        ? configuredSlots
+        : Math.max(
+            Number(tour.capacity || 0),
+            Number(tour.maxGuests || 0),
+            20
+          );
 
     const availableSlots = Math.max(totalSlots - bookedSlots, 0);
 
@@ -117,8 +129,9 @@ export const updateTourAvailability = async (req, res, next) => {
       {
         $match: {
           tour: tour._id,
+          isDeleted: { $ne: true },
           status: {
-            $in: ["pending", "confirmed"],
+            $nin: ["cancelled", "refunded", "completed"],
           },
         },
       },
@@ -144,10 +157,9 @@ export const updateTourAvailability = async (req, res, next) => {
     }
 
     tour.capacity = Number(totalSlots);
-
-    if (tour.availabilitySettings) {
-      tour.availabilitySettings.totalSlots = Number(totalSlots);
-    }
+    tour.availabilitySettings = tour.availabilitySettings || {};
+    tour.availabilitySettings.totalSlots = Number(totalSlots);
+    tour.availabilitySettings.bookedSlots = bookedGuests;
 
     await tour.save();
 

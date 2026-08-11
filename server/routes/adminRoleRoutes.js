@@ -4,6 +4,7 @@ import express from "express";
 import {
 
 getRoles,
+getPermissions,
 getRole,
 createRole,
 updateRole,
@@ -40,6 +41,11 @@ router.use(adminMiddleware);
 router.get(
 "/",
 getRoles
+);
+
+router.get(
+"/permissions/all",
+getPermissions
 );
 
 

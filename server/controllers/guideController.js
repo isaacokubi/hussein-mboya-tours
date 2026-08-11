@@ -204,8 +204,14 @@ export const guideDashboard = async (req, res, next) => {
         bookings: 0,
       };
 
+      const startDate = getTourStart(tour);
+      const endDate = getTourEnd(tour);
+
       return {
         ...tour,
+        date: tour.date || startDate,
+        startDate,
+        endDate,
         guests: stats.guests,
         bookings: stats.bookings,
       };

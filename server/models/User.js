@@ -124,6 +124,24 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
+    passwordResetCodeHash: {
+      type: String,
+      default: "",
+      select: false,
+    },
+
+    passwordResetExpiresAt: {
+      type: Date,
+      default: null,
+      select: false,
+    },
+
+    passwordResetAttempts: {
+      type: Number,
+      default: 0,
+      select: false,
+    },
+
     lastLoginAt: {
       type: Date,
       default: null,

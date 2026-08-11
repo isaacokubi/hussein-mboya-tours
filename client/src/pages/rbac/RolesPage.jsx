@@ -1,142 +1,43 @@
-import {
-    useQuery
-} from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ShieldCheck, Save, ChevronDown } from "lucide-react";
+import { toast } from "react-toastify";
+import { getAdminRoles, getAdminPermissions, updateAdminRolePermissions } from "../api/admin/adminRoleApi";
 
-import {
-    getRoles
-} from "../../admin/rolesApi.js";
+export default function RolesPage() {
+  const qc=useQueryClient();
+  const [selected,setSelected]=useState(null);
+  const rolesQuery=useQuery({queryKey:["admin-roles"],queryFn:getAdminRoles});
+  const permissionsQuery=useQuery({queryKey:["admin-permissions"],queryFn:getAdminPermissions});
+  const roles=rolesQuery.data?.roles||[];
+  const permissions=permissionsQuery.data?.permissions||[];
+  const grouped=useMemo(()=>permissions.reduce((a,p)=>{const k=p.module||p.category||"other";(a[k] ||= []).push(p);return a;},{}),[permissions]);
+  const mutation=useMutation({
+    mutationFn:({id,permissions})=>updateAdminRolePermissions(id,permissions),
+    onSuccess:()=>{qc.invalidateQueries({queryKey:["admin-roles"]});toast.success("Role permissions updated.");},
+    onError:e=>toast.error(e?.response?.data?.message||"Could not update permissions."),
+  });
 
+  if(rolesQuery.isLoading||permissionsQuery.isLoading)return <div className="p-6">Loading roles and permissions...</div>;
+  if(rolesQuery.isError||permissionsQuery.isError)return <div className="p-6 text-red-600">Failed to load roles and permissions.</div>;
 
+  return <div className="min-h-screen bg-slate-50 p-6"><div className="mx-auto max-w-7xl">
+    <div className="mb-6"><p className="text-sm font-semibold uppercase tracking-wider text-emerald-700">Access control</p><h1 className="text-3xl font-bold text-slate-900">Roles & Permissions</h1><p className="text-slate-500">Assign exactly what each operational role can access.</p></div>
+    <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
+      <div className="space-y-3">{roles.map(role=><button key={role._id} onClick={()=>setSelected(role._id)} className={`w-full rounded-2xl bg-white p-5 text-left shadow-sm ring-1 ring-slate-200 ${selected===role._id?"ring-2 ring-emerald-600":""}`}><div className="flex items-center justify-between"><div><div className="font-bold capitalize">{String(role.displayName||role.name).replace(/_/g," ")}</div><div className="mt-1 text-sm text-slate-500">{role.permissions?.length||0} permissions</div></div><ShieldCheck className="text-emerald-700"/></div></button>)}</div>
+      <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        {!selected?<div className="py-16 text-center text-slate-500">Select a role to manage its permissions.</div>:<PermissionEditor role={roles.find(r=>r._id===selected)} grouped={grouped} mutation={mutation}/>}
+      </div>
+    </div>
+  </div></div>;
+}
 
-export default function RolesPage(){
-
-    const {
-        data,
-        isLoading,
-        isError
-    } = useQuery({
-
-        queryKey:["roles"],
-
-        queryFn:getRoles
-
-    });
-
-
-
-    if(isLoading){
-
-        return (
-            <div>
-                Loading roles...
-            </div>
-        );
-
-    }
-
-
-
-    const roles =
-    Array.isArray(data?.roles)
-        ? data.roles
-        : Array.isArray(data?.data)
-            ? data.data
-            : [];
-
-
-
-    if (isError) {
-        return (
-            <div className="p-6 text-red-600">
-                Failed to load roles and permissions.
-            </div>
-        );
-    }
-
-    return (
-
-        <div className="space-y-6">
-
-            <h1 className="
-                text-3xl
-                font-bold
-            ">
-
-                Roles & Permissions
-
-            </h1>
-
-
-
-            <div className="
-                bg-white
-                rounded-xl
-                shadow
-                overflow-hidden
-            ">
-
-                <table className="w-full">
-
-                    <thead>
-
-                        <tr className="
-                            bg-gray-100
-                        ">
-
-                            <th className="p-4 text-left">
-                                Role
-                            </th>
-
-                            <th className="p-4 text-left">
-                                Permissions
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-                    <tbody>
-
-                        {
-
-                            roles.map(role=>(
-
-                                <tr
-                                key={role._id}
-                                className="border-b"
-                                >
-
-                                    <td className="p-4">
-
-                                        {role.name}
-
-                                    </td>
-
-                                    <td className="p-4">
-
-                                        {
-
-                                            role.permissions
-                                            ?.length || 0
-
-                                        }
-
-                                    </td>
-
-                                </tr>
-
-                            ))
-
-                        }
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
-        </div>
-
-    );
-
+function PermissionEditor({role,grouped,mutation}) {
+  const initial=new Set((role?.permissions||[]).map(p=>p._id));
+  const [checked,setChecked]=useState(initial);
+  const allIds=Object.values(grouped).flat().map(p=>p._id);
+  const toggle=(id)=>setChecked(prev=>{const n=new Set(prev);n.has(id)?n.delete(id):n.add(id);return n;});
+  const selectAll=()=>setChecked(new Set(allIds));
+  const clear=()=>setChecked(new Set());
+  return <><div className="mb-5 flex items-center justify-between"><div><h2 className="text-2xl font-bold">{role?.displayName||role?.name}</h2><p className="text-sm text-slate-500">Choose permissions for this role.</p></div><button onClick={()=>mutation.mutate({id:role._id,permissions:[...checked]})} disabled={mutation.isPending||role?.isSystem&&role?.name==="super_admin"} className="inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 font-semibold text-white disabled:opacity-40"><Save size={17}/>{mutation.isPending?"Saving...":"Save permissions"}</button></div><div className="mb-4 flex gap-2"><button onClick={selectAll} className="rounded-lg border px-3 py-2 text-sm">Select all</button><button onClick={clear} className="rounded-lg border px-3 py-2 text-sm">Clear</button></div><div className="space-y-5">{Object.entries(grouped).map(([module,items])=><div key={module}><h3 className="mb-2 text-sm font-bold uppercase tracking-wider text-slate-500">{module}</h3><div className="grid gap-2 md:grid-cols-2">{items.map(p=><label key={p._id} className="flex cursor-pointer items-center gap-3 rounded-xl border p-3 hover:bg-slate-50"><input type="checkbox" checked={checked.has(p._id)} onChange={()=>toggle(p._id)} /><span><span className="block font-medium">{p.label||p.name}</span><span className="text-xs text-slate-500">{p.description}</span></span></label>)}</div></div>)}</div></>;
 }

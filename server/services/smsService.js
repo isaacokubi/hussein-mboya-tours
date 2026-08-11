@@ -46,9 +46,15 @@ export const sendSMS = async (
     throw new Error("SMS message is required.");
   }
 
+  const normalizedPhone =
+    /^0\d{9}$/.test(String(phone).trim())
+      ? `+254${String(phone).trim().slice(1)}`
+      : String(phone).trim();
+
   try {
+    const sms = getSMSClient();
     const response = await sms.send({
-      to: [phone],
+      to: [normalizedPhone],
       message,
       // Optional if using a registered sender ID
       from: process.env.AT_SENDER_ID || undefined,
@@ -88,6 +94,7 @@ export const sendBulkSMS = async (
   }
 
   try {
+    const sms = getSMSClient();
     const response = await sms.send({
       to: phones,
       message,

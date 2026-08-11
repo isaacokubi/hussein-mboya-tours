@@ -102,19 +102,56 @@ export const getPopularTours = async () => {
     {
       $group: {
         _id: "$tour",
-        totalBookings: {
-          $sum: 1,
+        totalBookings: { $sum: 1 },
+        confirmedPaidBookings: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ["$status", "confirmed"] },
+                  { $in: ["$paymentStatus", ["paid", "completed"]] },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+        revenue: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ["$status", "confirmed"] },
+                  { $in: ["$paymentStatus", ["paid", "completed"]] },
+                ],
+              },
+              {
+                $max: [
+                  0,
+                  {
+                    $subtract: [
+                      {
+                        $subtract: [
+                          { $ifNull: ["$totalAmount", 0] },
+                          { $ifNull: ["$balanceAmount", 0] },
+                        ],
+                      },
+                      { $ifNull: ["$refundAmount", 0] },
+                    ],
+                  },
+                ],
+              },
+              0,
+            ],
+          },
         },
       },
     },
     {
-      $sort: {
-        totalBookings: -1,
-      },
+      $sort: { totalBookings: -1, confirmedPaidBookings: -1 },
     },
-    {
-      $limit: 10,
-    },
+    { $limit: 10 },
     {
       $lookup: {
         from: "tours",
@@ -130,13 +167,13 @@ export const getPopularTours = async () => {
       },
     },
     {
-      $match: {
-        "tour.isDeleted": { $ne: true },
-      },
+      $match: { "tour.isDeleted": { $ne: true } },
     },
     {
       $project: {
         totalBookings: 1,
+        confirmedPaidBookings: 1,
+        revenue: 1,
         "tour._id": 1,
         "tour.title": 1,
         "tour.slug": 1,

@@ -24,7 +24,8 @@ import {
 
     deleteVehicle,
 
-    assignDriver
+    assignDriver,
+    getDrivers
 
 }
 from "../../api/vehicleApi";
@@ -110,6 +111,18 @@ export default function Vehicles(){
             ? data.data
             : Array.isArray(data?.vehicles)
                 ? data.vehicles
+                : [];
+
+    const { data: driversData } = useQuery({
+        queryKey: ["admin-vehicle-drivers"],
+        queryFn: getDrivers,
+    });
+
+    const drivers =
+        Array.isArray(driversData?.data)
+            ? driversData.data
+            : Array.isArray(driversData?.drivers)
+                ? driversData.drivers
                 : [];
 
 
@@ -230,40 +243,17 @@ export default function Vehicles(){
 
 
     const handleAssignDriver=(vehicleId)=>{
-
-
-        const driverId = window.prompt(
-
-            "Enter Driver ID"
-
+        const driverName = window.prompt(
+            `Enter driver name (available: ${drivers.map(d=>d.name).join(", ") || "none"})`
         );
-
-
-
-        if(!driverId)
-
-        return;
-
-
-
-        assign({
-
-            vehicleId,
-
-            driverId
-
-        });
-
-
+        if(!driverName) return;
+        const driver = drivers.find(d => String(d.name || "").toLowerCase() === driverName.trim().toLowerCase());
+        if(!driver){
+            toast.error("Driver not found. Use the exact seeded driver name shown in the prompt.");
+            return;
+        }
+        assign({ vehicleId, driverId: driver._id });
     };
-
-
-
-
-
-
-
-
 
     const remove=(id)=>{
 
@@ -815,7 +805,7 @@ export default function Vehicles(){
                                 >
 
 
-                                    Assign
+                                    Assign Driver
 
 
                                 </button>

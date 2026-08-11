@@ -489,13 +489,15 @@ export default function Login() {
 
           </div>
 
-
-
-
-
-
-
-
+          <div className="text-right">
+            <button
+              type="button"
+              onClick={() => navigate("/forgot-password")}
+              className="text-sm font-semibold text-green-700 hover:underline"
+            >
+              Forgot password?
+            </button>
+          </div>
 
           <button
 

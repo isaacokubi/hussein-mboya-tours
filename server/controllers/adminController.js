@@ -102,14 +102,11 @@ export const getDashboardStats = async (req, res, next) => {
             paymentStatus:{
               $in:[
                 "paid",
-                "partial",
                 "completed"
               ]
             },
 
-            status:{
-              $ne:"cancelled"
-            }
+            status:"confirmed"
           }
         },
 
@@ -119,7 +116,22 @@ export const getDashboardStats = async (req, res, next) => {
             _id:null,
 
             total:{
-              $sum:"$totalAmount"
+              $sum:{
+                $max:[
+                  0,
+                  {
+                    $subtract:[
+                      {
+                        $subtract:[
+                          { $ifNull:["$totalAmount",0] },
+                          { $ifNull:["$balanceAmount",0] }
+                        ]
+                      },
+                      { $ifNull:["$refundAmount",0] }
+                    ]
+                  }
+                ]
+              }
             }
           }
         }
@@ -183,14 +195,11 @@ export const getDashboardStats = async (req, res, next) => {
             paymentStatus:{
               $in:[
                 "paid",
-                "partial",
                 "completed"
               ]
             },
 
-            status:{
-              $ne:"cancelled"
-            }
+            status:"confirmed"
 
           }
         },
@@ -214,7 +223,22 @@ export const getDashboardStats = async (req, res, next) => {
 
 
             total:{
-              $sum:"$totalAmount"
+              $sum:{
+                $max:[
+                  0,
+                  {
+                    $subtract:[
+                      {
+                        $subtract:[
+                          { $ifNull:["$totalAmount",0] },
+                          { $ifNull:["$balanceAmount",0] }
+                        ]
+                      },
+                      { $ifNull:["$refundAmount",0] }
+                    ]
+                  }
+                ]
+              }
             }
 
           }
@@ -244,30 +268,66 @@ export const getDashboardStats = async (req, res, next) => {
       */
 
       Booking.aggregate([
-
-
         {
-          $group:{
-
-            _id:"$tour",
-
-            totalBookings:{
-              $sum:1
-            },
-
-            revenue:{
-              $sum:"$totalAmount"
-            }
-
-          }
-
+          $match: {
+            isDeleted: { $ne: true },
+            status: { $nin: ["cancelled", "refunded"] },
+          },
         },
-
-
         {
-          $sort:{
-            totalBookings:-1
-          }
+          $group: {
+            _id: "$tour",
+            totalBookings: { $sum: 1 },
+            confirmedPaidBookings: {
+              $sum: {
+                $cond: [
+                  {
+                    $and: [
+                      { $eq: ["$status", "confirmed"] },
+                      { $in: ["$paymentStatus", ["paid", "completed"]] },
+                    ],
+                  },
+                  1,
+                  0,
+                ],
+              },
+            },
+            revenue: {
+              $sum: {
+                $cond: [
+                  {
+                    $and: [
+                      { $eq: ["$status", "confirmed"] },
+                      { $in: ["$paymentStatus", ["paid", "completed"]] },
+                    ],
+                  },
+                  {
+                    $max: [
+                      0,
+                      {
+                        $subtract: [
+                          {
+                            $subtract: [
+                              { $ifNull: ["$totalAmount", 0] },
+                              { $ifNull: ["$balanceAmount", 0] },
+                            ],
+                          },
+                          { $ifNull: ["$refundAmount", 0] },
+                        ],
+                      },
+                    ],
+                  },
+                  0,
+                ],
+              },
+            },
+          },
+        },
+        {
+          $sort: {
+            totalBookings: -1,
+            confirmedPaidBookings: -1,
+          },
         },
 
 
@@ -316,7 +376,7 @@ export const getDashboardStats = async (req, res, next) => {
             destination:"$tour.destination",
 
             totalBookings:1,
-
+            confirmedPaidBookings:1,
             revenue:1
 
           }

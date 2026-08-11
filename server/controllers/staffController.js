@@ -262,7 +262,8 @@ export const getGuides = async (req, res, next) => {
     const guides = await Staff.find({
       position: "guide",
       isActive: true,
-      availability: "available",
+      isDeleted: { $ne: true },
+      status: "active",
     }).sort({
       createdAt: -1,
     });
@@ -288,7 +289,8 @@ export const getDrivers = async (req, res, next) => {
     const drivers = await Staff.find({
       position: "driver",
       isActive: true,
-      availability: "available",
+      isDeleted: { $ne: true },
+      status: "active",
     })
       .populate("assignedTours", "title startDate endDate")
       .sort({

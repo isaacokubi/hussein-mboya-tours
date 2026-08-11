@@ -55,6 +55,10 @@ export default function AdminSettings() {
       setSaved(true);
       window.setTimeout(() => setSaved(false), 2000);
     },
+    onError: (error) => {
+      setSaved(false);
+      console.error("SETTINGS SAVE ERROR:", error?.response?.data || error);
+    },
   });
 
   const update = (key, value) => {

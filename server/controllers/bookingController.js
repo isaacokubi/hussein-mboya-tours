@@ -4,6 +4,8 @@ import Booking from "../models/Booking.js";
 import Customer from "../models/Customer.js";
 import Commission from "../models/Commission.js";
 import Agent from "../models/Agent.js";
+import User from "../models/User.js";
+import Notification from "../models/Notification.js";
 
 import Tour from "../models/Tour.js";
 
@@ -155,6 +157,31 @@ export const createBooking = async (req, res, next) => {
         assigned:false
 
       });
+      try {
+        const admins = await User.find({
+          $or: [
+            { role: { $in: ["admin", "superadmin", "super_admin", "manager", "tour_manager", "tourmanager"] } },
+            { legacyRole: { $in: ["admin", "superadmin", "super_admin", "manager", "tour_manager", "tourmanager"] } },
+          ],
+          status: "active",
+        }).select("_id").lean();
+
+        if (admins.length) {
+          await Notification.insertMany(admins.map((admin) => ({
+            recipient: admin._id,
+            user: admin._id,
+            title: "New Booking",
+            message: `New booking ${booking.bookingNumber || booking._id} is awaiting payment/confirmation.`,
+            type: "booking",
+            relatedModel: "Booking",
+            relatedId: booking._id,
+            actionUrl: `/admin/bookings`,
+          })));
+        }
+      } catch (notificationError) {
+        console.error("ADMIN BOOKING NOTIFICATION ERROR:", notificationError.message);
+      }
+
     } catch (createError) {
       // Roll back the reserved capacity when booking creation fails.
       try {

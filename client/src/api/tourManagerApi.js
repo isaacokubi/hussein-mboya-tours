@@ -227,3 +227,8 @@ export const getReports = async (params = {}) => {
 
   return data;
 };
+
+export const cancelBooking = async (id, reason = "Cancelled by tour manager") => {
+  const { data } = await api.patch(`/tourmanager/bookings/${id}/cancel`, { reason });
+  return data;
+};

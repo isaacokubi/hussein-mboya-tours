@@ -38,3 +38,9 @@ export const deleteUser = async (userId) => {
 
   return response.data;
 };
+
+
+export const createStaffAccount = async (payload) => {
+  const { data } = await api.post("/admin/users/staff", payload);
+  return data;
+};

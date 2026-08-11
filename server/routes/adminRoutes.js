@@ -60,7 +60,8 @@ import {
 import {
   getUsers,
   updateUserStatus,
-  deleteUser
+  deleteUser,
+  createStaffAccount
 } from "../controllers/adminUserController.js";
 
 const router = express.Router();
@@ -156,6 +157,11 @@ router.delete(
 router.get(
   "/users",
   getUsers
+);
+
+router.post(
+  "/users/staff",
+  createStaffAccount
 );
 
 router.get(

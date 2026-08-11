@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import User from "../models/User.js";
 import Customer from "../models/Customer.js";
 import Booking from "../models/Booking.js";
+import Role from "../models/Role.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -34,10 +35,14 @@ export const getCustomers = async (req, res, next) => {
     const pageSize = Math.min(Math.max(Number(limit), 1), 10);
     const skip = (currentPage - 1) * pageSize;
 
+    const nonCustomerRoleIds = await Role.find({
+      name: { $nin: ["customer", "Customer"] },
+    }).distinct("_id");
+
     const filter = {
-      $or: [
-        { role: "customer" },
-        { legacyRole: "customer" },
+      $and: [
+        { $or: [{ role: "customer" }, { legacyRole: "customer" }] },
+        { $or: [{ roleId: null }, { roleId: { $nin: nonCustomerRoleIds } }] },
       ],
     };
 
@@ -67,7 +72,8 @@ export const getCustomers = async (req, res, next) => {
 
     const [customers, total] = await Promise.all([
       User.find(filter)
-        .select("name email phone role status createdAt")
+        .select("name email phone role roleId legacyRole status createdAt")
+        .populate("roleId", "name displayName")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(pageSize)
@@ -129,10 +135,8 @@ export const getCustomers = async (req, res, next) => {
       ).toLowerCase();
 
       const qualifies =
-        ["confirmed", "assigned", "ongoing", "completed"].includes(
-          bookingStatus
-        ) &&
-        ["partial", "paid"].includes(paymentStatus);
+        bookingStatus === "confirmed" &&
+        ["paid", "completed"].includes(paymentStatus);
 
       if (qualifies) {
         const amount =
@@ -243,10 +247,8 @@ export const getCustomerProfile = async (req, res, next) => {
         ).toLowerCase();
 
         const qualifies =
-          ["confirmed", "assigned", "ongoing", "completed"].includes(
-            bookingStatus
-          ) &&
-          ["partial", "paid"].includes(paymentStatus);
+          bookingStatus === "confirmed" &&
+          ["paid", "completed"].includes(paymentStatus);
 
         if (qualifies) {
           const paidAmount =

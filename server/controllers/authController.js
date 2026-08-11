@@ -399,6 +399,133 @@ export const getMe = async (req, res) => {
     });
   }
 };
+
+
+/*
+|--------------------------------------------------------------------------
+| REQUEST PASSWORD RESET CODE
+|--------------------------------------------------------------------------
+*/
+
+export const requestPasswordReset = async (req, res, next) => {
+  try {
+    const phone = String(req.body?.phone || "").trim();
+
+    if (!/^\d{10}$/.test(phone)) {
+      return res.status(400).json({
+        success: false,
+        message: "Enter the 10-digit phone number used on your account.",
+      });
+    }
+
+    const user = await User.findOne({ phone }).select("+passwordResetCodeHash +passwordResetExpiresAt +passwordResetAttempts");
+
+    // Always return the same response for unknown numbers.
+    if (!user) {
+      return res.status(200).json({
+        success: true,
+        message: "If an account exists for that phone number, a reset code has been sent.",
+      });
+    }
+
+    const code = String(crypto.randomInt(100000, 1000000));
+    user.passwordResetCodeHash = crypto
+      .createHash("sha256")
+      .update(code)
+      .digest("hex");
+    user.passwordResetExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    user.passwordResetAttempts = 0;
+    await user.save({ validateBeforeSave: false });
+
+    const { sendSMS } = await import("../services/smsService.js");
+    await sendSMS(
+      phone,
+      `Coherent Tours password reset code: ${code}. It expires in 10 minutes. If you did not request this, ignore this message.`
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "A password reset code has been sent to your phone.",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/*
+|--------------------------------------------------------------------------
+| RESET PASSWORD WITH CODE
+|--------------------------------------------------------------------------
+*/
+
+export const resetPasswordWithCode = async (req, res, next) => {
+  try {
+    const phone = String(req.body?.phone || "").trim();
+    const code = String(req.body?.code || "").trim();
+    const newPassword = String(req.body?.newPassword || "");
+
+    if (!/^\d{10}$/.test(phone) || !/^\d{6}$/.test(code)) {
+      return res.status(400).json({
+        success: false,
+        message: "Phone number and 6-digit reset code are required.",
+      });
+    }
+
+    if (newPassword.length < 8 || !/\d/.test(newPassword) || !/[A-Z]/.test(newPassword)) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 8 characters and include an uppercase letter and a number.",
+      });
+    }
+
+    const user = await User.findOne({ phone }).select("+password +passwordResetCodeHash +passwordResetExpiresAt +passwordResetAttempts");
+
+    if (
+      !user ||
+      !user.passwordResetCodeHash ||
+      !user.passwordResetExpiresAt ||
+      user.passwordResetExpiresAt < new Date()
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "The reset code is invalid or expired.",
+      });
+    }
+
+    if (Number(user.passwordResetAttempts || 0) >= 5) {
+      return res.status(429).json({
+        success: false,
+        message: "Too many incorrect attempts. Request a new code.",
+      });
+    }
+
+    const hash = crypto.createHash("sha256").update(code).digest("hex");
+    if (hash !== user.passwordResetCodeHash) {
+      user.passwordResetAttempts = Number(user.passwordResetAttempts || 0) + 1;
+      await user.save({ validateBeforeSave: false });
+      return res.status(400).json({
+        success: false,
+        message: "The reset code is invalid or expired.",
+      });
+    }
+
+    user.password = newPassword;
+    user.passwordResetCodeHash = "";
+    user.passwordResetExpiresAt = null;
+    user.passwordResetAttempts = 0;
+    user.loginAttempts = 0;
+    user.lockUntil = null;
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Password reset successfully. You can now log in.",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;

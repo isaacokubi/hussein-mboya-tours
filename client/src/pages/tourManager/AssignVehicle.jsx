@@ -150,12 +150,13 @@ const AssignVehicle =()=>{
 
 
     const vehicles =
-
-        vehicleData?.vehicles ||
-
-        vehicleData?.data?.vehicles ||
-
-        [];
+        Array.isArray(vehicleData?.data)
+            ? vehicleData.data
+            : Array.isArray(vehicleData?.vehicles)
+                ? vehicleData.vehicles
+                : Array.isArray(vehicleData?.data?.vehicles)
+                    ? vehicleData.data.vehicles
+                    : [];
 
 
 

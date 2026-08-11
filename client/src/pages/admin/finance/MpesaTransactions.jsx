@@ -592,6 +592,8 @@ t=>t.status==="failed"
                                         {
 
                                             payment.mpesaReceiptNumber ||
+                                            payment.mpesaReceipt ||
+                                            payment.booking?.mpesaReceipt ||
                                             payment.transactionId ||
                                             payment.transactionReference ||
                                             "N/A"

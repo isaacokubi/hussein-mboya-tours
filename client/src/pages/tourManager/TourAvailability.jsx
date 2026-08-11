@@ -1,6 +1,7 @@
 // client/src/pages/tour-manager/TourAvailability.jsx
 
 import {
+  useEffect,
   useState
 } from "react";
 
@@ -76,13 +77,11 @@ export default function TourAvailability(){
 
 
       const data =
-        response.data.availability;
+        response.data?.data ||
+        response.data?.availability ||
+        response.data ||
+        {};
 
-
-
-      setCapacity(
-        data.totalSlots || ""
-      );
 
 
       return data;
@@ -297,6 +296,12 @@ export default function TourAvailability(){
 
 
 
+
+          <AvailabilityCard
+            title="Occupancy"
+            value={`${availability.occupancyRate || 0}%`}
+            style="bg-amber-50"
+          />
 
           <AvailabilityCard
 

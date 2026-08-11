@@ -596,6 +596,66 @@ export const assignTourGuide = async (req, res, next) => {
 |--------------------------------------------------------------------------
 */
 
+
+
+/*
+|--------------------------------------------------------------------------
+| CANCEL BOOKING
+|--------------------------------------------------------------------------
+*/
+
+export const cancelBooking = async (req, res, next) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ success: false, message: "Invalid booking ID" });
+    }
+
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) return res.status(404).json({ success: false, message: "Booking not found" });
+
+    if (["cancelled", "refunded", "completed"].includes(booking.status)) {
+      return res.status(400).json({ success: false, message: `A ${booking.status} booking cannot be cancelled.` });
+    }
+
+    booking.status = "cancelled";
+    booking.cancelledAt = new Date();
+    booking.cancelledBy = req.user._id;
+    booking.cancellationReason = String(req.body?.reason || "Cancelled by tour manager");
+    await booking.save();
+
+    if (booking.tour && booking.numberOfGuests) {
+      const tour = await Tour.findById(booking.tour);
+      if (tour) {
+        tour.availabilitySettings = tour.availabilitySettings || {};
+        tour.availabilitySettings.bookedSlots = Math.max(
+          0,
+          Number(tour.availabilitySettings.bookedSlots || 0) - Number(booking.numberOfGuests || 1)
+        );
+        if (tour.status === "fully-booked" && tour.availabilitySettings.bookedSlots < tour.availabilitySettings.totalSlots) {
+          tour.status = "upcoming";
+          tour.available = true;
+        }
+        await tour.save();
+      }
+    }
+
+    const updated = await Booking.findById(booking._id)
+      .populate("user", "name email phone")
+      .populate("customer", "name email phone")
+      .populate("tour", "title")
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      message: "Booking cancelled successfully.",
+      booking: updated,
+      data: updated,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const completeBooking = async (req, res, next) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
