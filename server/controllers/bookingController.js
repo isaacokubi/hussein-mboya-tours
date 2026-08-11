@@ -1428,3 +1428,28 @@ next(error);
 }
 
 };
+
+
+export const rescheduleBooking = async (req, res, next) => {
+  try {
+    const { newTravelDate, reason = "" } = req.body || {};
+    if (!newTravelDate || Number.isNaN(new Date(newTravelDate).getTime())) return res.status(400).json({ success:false, message:"A valid future travel date is required." });
+    const target = new Date(newTravelDate); target.setHours(0,0,0,0);
+    const today = new Date(); today.setHours(0,0,0,0);
+    if (target <= today) return res.status(400).json({ success:false, message:"The rescheduled date must be in the future." });
+    const booking = await Booking.findOne({ _id:req.params.id, $or:[{user:req.user._id},{"customerSnapshot.email":req.user.email}] });
+    if (!booking) return res.status(404).json({ success:false, message:"Booking not found." });
+    if (["cancelled","completed","refunded"].includes(booking.status)) return res.status(400).json({ success:false, message:"This booking cannot be rescheduled." });
+    if (booking.travelDate && target.getTime() === new Date(booking.travelDate).setHours(0,0,0,0)) return res.status(400).json({ success:false, message:"Choose a different travel date." });
+    const previous = booking.travelDate;
+    if (!booking.originalTravelDate) booking.originalTravelDate = previous;
+    booking.travelDate = target;
+    booking.rescheduleCount = Number(booking.rescheduleCount || 0) + 1;
+    booking.rescheduleHistory.push({ fromDate: previous, toDate: target, reason:String(reason||"").trim() });
+    await booking.save();
+    await Notification.create({ recipient:req.user._id, user:req.user._id, title:"Booking Rescheduled", message:`Your booking ${booking.bookingNumber} has been rescheduled to ${target.toLocaleDateString("en-KE")}.`, type:"booking", relatedModel:"Booking", relatedId:booking._id, actionUrl:`/bookings/${booking._id}` });
+    const admins = await User.find({ $or:[{role:{$in:["admin","superadmin","super_admin","manager","tour_manager","tourmanager"]}},{legacyRole:{$in:["admin","superadmin","super_admin","manager","tour_manager","tourmanager"]}}], status:"active" }).select("_id").lean();
+    if (admins.length) await Notification.insertMany(admins.map(a=>({recipient:a._id,user:a._id,title:"Booking Reschedule Requested",message:`${booking.bookingNumber} was moved to ${target.toLocaleDateString("en-KE")}.`,type:"booking",relatedModel:"Booking",relatedId:booking._id,actionUrl:"/admin/bookings"})));
+    res.json({success:true,message:"Booking rescheduled successfully.",booking});
+  } catch(error){ next(error); }
+};

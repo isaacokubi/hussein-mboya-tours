@@ -33,12 +33,20 @@ const DEFAULT_PERMISSIONS = {
 
 let defaultsBootstrapPromise = null;
 
+const validObjectId = (value) => mongoose.Types.ObjectId.isValid(value);
+
+const sanitizePermissionIds = (values = []) =>
+  Array.from(new Set(
+    (Array.isArray(values) ? values : [])
+      .filter(validObjectId)
+      .map((value) => String(value))
+  ));
+
 const ensureDefaultPermissions = async () => {
   if (defaultsBootstrapPromise) return defaultsBootstrapPromise;
 
   defaultsBootstrapPromise = (async () => {
-  const allNames = [...new Set(Object.values(DEFAULT_PERMISSIONS).flat())];
-  try {
+    const allNames = [...new Set(Object.values(DEFAULT_PERMISSIONS).flat())];
     await Permission.bulkWrite(allNames.map((name) => ({
       updateOne: {
         filter: { name },
@@ -46,7 +54,7 @@ const ensureDefaultPermissions = async () => {
           $set: {
             label: name.replace(/[._]/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
             description: `Permission: ${name}`,
-            module: name.split(/[._]/)[0],
+            module: name.split(/[._]/)[0] || "system",
             category: "system",
             isActive: true,
           },
@@ -54,59 +62,44 @@ const ensureDefaultPermissions = async () => {
         },
         upsert: true,
       },
-    })), { ordered: false });
-  } catch (error) {
-    // A concurrent request may have created the same unique permission.
-    // The authoritative records are re-read below, so duplicate-key races
-    // must never make the Roles page return HTTP 500.
-    if (error?.code !== 11000 && !error?.writeErrors?.every((e) => e?.code === 11000)) {
-      throw error;
-    }
-  }
-
-  const permissions = await Permission.find({ name: { $in: allNames } }).lean();
-  const byName = new Map(permissions.map(p => [p.name, p._id]));
-
-  for (const [roleName, names] of Object.entries(DEFAULT_PERMISSIONS)) {
-    let role = await Role.findOne({
-      name: { $in: [roleName, roleName.replace("tour_", "")] },
+    })), { ordered: false }).catch((error) => {
+      if (error?.code !== 11000 && !error?.writeErrors?.every((e) => e?.code === 11000)) throw error;
     });
 
-    if (!role) {
-      try {
-        role = await Role.create({
-          name: roleName,
-          displayName: roleName.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-          description: `${roleName.replace(/_/g, " ")} access`,
-          permissions: [],
-          isSystem: ["admin", "super_admin", "tour_manager", "tour_guide", "driver"].includes(roleName),
-          status: "active",
-          level: roleName === "super_admin" ? 200 : roleName === "admin" ? 100 : 20,
-          isDefault: roleName === "customer",
-        });
-      } catch (error) {
-        if (error?.code !== 11000) throw error;
-        role = await Role.findOne({ name: roleName });
+    const permissions = await Permission.find({ name: { $in: allNames } }).select("_id name").lean();
+    const byName = new Map(permissions.map(p => [p.name, p._id]));
+
+    for (const [roleName, names] of Object.entries(DEFAULT_PERMISSIONS)) {
+      let role = await Role.findOne({ name: { $in: [roleName, roleName.replace("tour_", "")] } }).select("_id name permissions").lean();
+      const roleDocName = role?.name || roleName;
+      const ids = names.map((name) => byName.get(name)).filter(Boolean);
+      const merged = new Map(
+        sanitizePermissionIds(role?.permissions || []).map((id) => [String(id), id])
+      );
+      ids.filter(Boolean).forEach((id) => merged.set(String(id), id));
+      const permissionsValue = [...merged.values()];
+
+      const set = { permissions: permissionsValue, status: "active" };
+      if (!role) {
+        set.displayName = roleName.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+        set.description = `${roleName.replace(/_/g, " ")} access`;
+        set.isSystem = ["admin", "super_admin", "tour_manager", "tour_guide", "driver"].includes(roleName);
+        set.level = roleName === "super_admin" ? 200 : roleName === "admin" ? 100 : 20;
+        set.isDefault = roleName === "customer";
+      } else if (!Number.isFinite(Number(role.level)) || Number(role.level) < 1) {
+        set.level = roleName === "super_admin" ? 200 : roleName === "admin" ? 100 : 20;
       }
-    }
 
-    const merged = new Map(
-      (role.permissions || []).map((id) => [id.toString(), id])
-    );
-    names.forEach((name) => {
-      const id = byName.get(name);
-      if (id) merged.set(id.toString(), id);
-    });
-    role.permissions = [...merged.values()];
-    await role.save();
-  }
+      await Role.updateOne(
+        role ? { _id: role._id } : { name: roleName },
+        { $set: set, $setOnInsert: { name: roleDocName } },
+        { upsert: !role }
+      );
+    }
   })();
 
-  try {
-    return await defaultsBootstrapPromise;
-  } finally {
-    defaultsBootstrapPromise = null;
-  }
+  try { return await defaultsBootstrapPromise; }
+  finally { defaultsBootstrapPromise = null; }
 };
 
 export const getRoles = async(req,res,next)=>{
@@ -115,26 +108,25 @@ try{
 
 await ensureDefaultPermissions();
 
-const roles =
-await Role.find()
+const roleDocs = await Role.find().sort({ level: -1 }).lean();
+const permissionIds = Array.from(new Set(
+  roleDocs.flatMap((role) => sanitizePermissionIds(role.permissions))
+));
+const permissionDocs = permissionIds.length
+  ? await Permission.find({ _id: { $in: permissionIds } }).lean()
+  : [];
+const permissionMap = new Map(permissionDocs.map((permission) => [String(permission._id), permission]));
+const roles = roleDocs.map((role) => ({
+  ...role,
+  permissions: sanitizePermissionIds(role.permissions)
+    .map((id) => permissionMap.get(String(id)))
+    .filter(Boolean),
+}));
 
-.populate(
-"permissions"
-)
-
-.sort({
-level:-1
-});
-
-
-res.json({
-
-success:true,
-
-count:roles.length,
-
-roles
-
+return res.json({
+  success: true,
+  count: roles.length,
+  roles,
 });
 
 
@@ -175,13 +167,24 @@ export const getRole = async(req,res,next)=>{
 try{
 
 
-const role =
-await Role.findById(
-req.params.id
-)
-.populate(
-"permissions"
-);
+if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+  return res.status(400).json({ success: false, message: "Invalid role ID" });
+}
+
+const roleDoc = await Role.findById(req.params.id).lean();
+if (!roleDoc) {
+  return res.status(404).json({ success: false, message: "Role not found" });
+}
+
+const permissionIds = sanitizePermissionIds(roleDoc.permissions);
+const permissions = permissionIds.length
+  ? await Permission.find({ _id: { $in: permissionIds } }).lean()
+  : [];
+const permissionMap = new Map(permissions.map((permission) => [String(permission._id), permission]));
+const role = {
+  ...roleDoc,
+  permissions: permissionIds.map((id) => permissionMap.get(String(id))).filter(Boolean),
+};
 
 
 
@@ -471,9 +474,7 @@ message:"Role not found"
 
 
 
-const permissionIds = Array.isArray(req.body.permissions)
-  ? req.body.permissions.filter((id) => mongoose.Types.ObjectId.isValid(id))
-  : [];
+const permissionIds = sanitizePermissionIds(req.body.permissions);
 
 if (role.isSystem && ["super_admin", "superadmin"].includes(role.name)) {
   return res.status(403).json({

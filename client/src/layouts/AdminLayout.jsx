@@ -16,6 +16,7 @@ const MENU = [
   ["Add Tour", "/admin/tours/add", PlusCircle, "tour.manage"],
   ["Destinations", "/admin/destinations", Map, "tour.manage"],
   ["Bookings", "/admin/bookings", CalendarCheck, "booking.manage"],
+  ["Custom Tour Requests", "/admin/custom-tour-requests", CalendarCheck, "booking.manage"],
   ["Payments", "/admin/payments", CreditCard, "payment.manage"],
   ["Agents", "/admin/agents", Handshake, "user.manage"],
   ["Commissions", "/admin/commissions", Wallet, "finance.view"],

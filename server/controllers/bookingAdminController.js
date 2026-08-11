@@ -505,6 +505,7 @@ export const assignResources = async (
       guide,
       driver,
       vehicle,
+      agent,
     } = req.body;
 
     /*
@@ -541,10 +542,11 @@ export const assignResources = async (
     }
 
     if (vehicle && !isValidId(vehicle)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid vehicle ID.",
-      });
+      return res.status(400).json({ success: false, message: "Invalid vehicle ID." });
+    }
+
+    if (agent && !isValidId(agent)) {
+      return res.status(400).json({ success: false, message: "Invalid agent ID." });
     }
 
     /*
@@ -592,7 +594,7 @@ export const assignResources = async (
           assignedDriver: driver || null,
 
           assignedVehicle: vehicle || null,
-
+          agent: agent || null,
           status: "assigned",
         },
         {

@@ -181,6 +181,13 @@ const systemSettingsSchema = new mongoose.Schema(
       default: false,
     },
 
+    enableBankTransfer: { type: Boolean, default: true },
+    bankName: { type: String, default: "" },
+    bankAccountName: { type: String, default: "" },
+    bankAccountNumber: { type: String, default: "" },
+    bankBranch: { type: String, default: "" },
+    bankSwiftCode: { type: String, default: "" },
+
     /*
     |--------------------------------------------------------------------------
     | EMAIL SETTINGS

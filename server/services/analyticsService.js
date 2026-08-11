@@ -1,6 +1,7 @@
 import Booking from "../models/Booking.js";
 import Payment from "../models/Payment.js";
 
+// A confirmed payment is the sole financial source of truth. Booking status is deliberately ignored.
 const PAID = "completed";
 
 export const getRevenueAnalytics = async () => {

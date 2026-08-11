@@ -12,11 +12,13 @@ import api from "../axios";
 
 export const getAdminRoles = async () => {
 
-  const { data } = await api.get(
-    "/admin/roles"
-  );
-
-  return data;
+  try {
+    const { data } = await api.get("/admin/roles");
+    return data;
+  } catch (error) {
+    console.error("ADMIN ROLES API ERROR:", error?.response?.data || error);
+    throw error;
+  }
 
 };
 
@@ -101,8 +103,13 @@ export const toggleRoleStatus = async (
 
 
 export const getAdminPermissions = async () => {
-  const { data } = await api.get("/admin/roles/permissions/all");
-  return data;
+  try {
+    const { data } = await api.get("/admin/roles/permissions/all");
+    return data;
+  } catch (error) {
+    console.error("ADMIN PERMISSIONS API ERROR:", error?.response?.data || error);
+    throw error;
+  }
 };
 
 export const updateAdminRolePermissions = async (id, permissions) => {

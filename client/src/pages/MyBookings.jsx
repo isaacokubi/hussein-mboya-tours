@@ -3,11 +3,13 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
+import { createReview } from "../api/reviewApi";
 
 import {
   cancelBooking,
   getMyBookings,
   initiatePayment,
+  rescheduleBooking,
 } from "../api/bookingApi";
 
 const normalizeBookings = (response) => {
@@ -196,6 +198,9 @@ export default function MyBookings() {
                       </h3>
                     </div>
 
+                    {status === "completed" && <ReviewForm booking={booking} />}
+                    {status !== "cancelled" && status !== "completed" && <RescheduleForm booking={booking} onDone={() => queryClient.invalidateQueries({ queryKey:["my-bookings"] })} />}
+
                     <div className="flex flex-wrap gap-3">
                       <Link
                         to={`/bookings/${booking._id}`}
@@ -325,3 +330,7 @@ function PayNowButton({ booking, user }) {
     </button>
   );
 }
+
+
+function RescheduleForm({booking,onDone}){const [date,setDate]=useState("");const [reason,setReason]=useState("");const [open,setOpen]=useState(false);const mutation=useMutation({mutationFn:()=>rescheduleBooking(booking._id,{newTravelDate:date,reason}),onSuccess:()=>{toast.success("Booking rescheduled.");setOpen(false);onDone();},onError:e=>toast.error(e?.response?.data?.message||"Unable to reschedule booking.")});return <div className="w-full rounded-xl border border-sky-100 bg-sky-50 p-4"><button type="button" onClick={()=>setOpen(v=>!v)} className="font-semibold text-sky-800">{open?"Close reschedule":"Postpone / reschedule"}</button>{open&&<div className="mt-3 grid gap-3 sm:grid-cols-[1fr_2fr_auto]"><input type="date" min={new Date(Date.now()+86400000).toISOString().slice(0,10)} value={date} onChange={e=>setDate(e.target.value)} className="rounded-lg border p-2"/><input value={reason} onChange={e=>setReason(e.target.value)} placeholder="Reason (optional)" className="rounded-lg border p-2"/><button disabled={!date||mutation.isPending} onClick={()=>mutation.mutate()} className="rounded-lg bg-sky-700 px-4 py-2 font-semibold text-white disabled:opacity-50">{mutation.isPending?"Saving...":"Reschedule"}</button></div>}</div>}
+function ReviewForm({booking}){const [open,setOpen]=useState(false);const [rating,setRating]=useState(5);const [comment,setComment]=useState("");const [title,setTitle]=useState("");const mutation=useMutation({mutationFn:()=>createReview({tour:booking.tour?._id||booking.tour,rating,title,comment}),onSuccess:()=>{toast.success("Review submitted for admin approval.");setOpen(false);},onError:e=>toast.error(e?.response?.data?.message||"Unable to submit review.")});return <div className="w-full rounded-xl border border-amber-100 bg-amber-50 p-4"><button type="button" onClick={()=>setOpen(v=>!v)} className="font-semibold text-amber-800">{open?"Close review":"Leave a review"}</button>{open&&<div className="mt-3 space-y-3"><div className="flex gap-2">{[1,2,3,4,5].map(n=><button type="button" key={n} onClick={()=>setRating(n)} className={`text-2xl ${n<=rating?"text-amber-500":"text-slate-300"}`}>★</button>)}</div><input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Review title" className="w-full rounded-lg border p-2"/><textarea value={comment} onChange={e=>setComment(e.target.value)} placeholder="Tell us about your experience" rows={3} className="w-full rounded-lg border p-2"/><button disabled={!comment.trim()||mutation.isPending} onClick={()=>mutation.mutate()} className="rounded-lg bg-amber-600 px-4 py-2 font-semibold text-white disabled:opacity-50">{mutation.isPending?"Submitting...":"Submit review"}</button></div>}</div>}

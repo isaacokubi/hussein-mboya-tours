@@ -221,6 +221,17 @@ const bookingSchema = new mongoose.Schema(
       required: true,
     },
 
+    originalTravelDate: { type: Date, default: null },
+
+    rescheduleHistory: [{
+      fromDate: { type: Date },
+      toDate: { type: Date },
+      reason: { type: String, default: "" },
+      requestedAt: { type: Date, default: Date.now },
+    }],
+
+    rescheduleCount: { type: Number, default: 0, min: 0 },
+
     travelers: {
       type: [travelerSchema],
       default: [],

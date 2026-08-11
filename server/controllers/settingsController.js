@@ -24,6 +24,12 @@ const DEFAULTS = {
   enableMpesa: true,
   enableStripe: false,
   enablePaypal: false,
+  enableBankTransfer: true,
+  bankName: "",
+  bankAccountName: "",
+  bankAccountNumber: "",
+  bankBranch: "",
+  bankSwiftCode: "",
   emailFromName: "Coherent Tours",
   emailFromAddress: "",
   facebook: "",
@@ -63,7 +69,7 @@ export const updateSettings = async (req, res, next) => {
       "taxRate","bookingDepositPercentage","defaultCommissionRate",
       "maintenanceMode","allowRegistrations","allowAgentRegistrations",
       "requireEmailVerification","requirePhoneVerification",
-      "enableMpesa","enableStripe","enablePaypal",
+      "enableMpesa","enableStripe","enablePaypal","enableBankTransfer","bankName","bankAccountName","bankAccountNumber","bankBranch","bankSwiftCode",
       "emailFromName","emailFromAddress",
       "facebook","instagram","twitter","youtube",
       "seoTitle","seoDescription","seoKeywords",
@@ -89,7 +95,7 @@ export const updateSettings = async (req, res, next) => {
     for (const key of ["taxRate","bookingDepositPercentage","defaultCommissionRate"]) {
       if (updates[key] !== undefined) updates[key] = Number(updates[key]);
     }
-    for (const key of ["bookingNotifications","paymentNotifications","maintenanceMode","allowRegistrations","allowAgentRegistrations","requireEmailVerification","requirePhoneVerification","enableMpesa","enableStripe","enablePaypal"]) {
+    for (const key of ["bookingNotifications","paymentNotifications","maintenanceMode","allowRegistrations","allowAgentRegistrations","requireEmailVerification","requirePhoneVerification","enableMpesa","enableStripe","enablePaypal","enableBankTransfer"]) {
       if (updates[key] !== undefined && typeof updates[key] === "string") updates[key] = updates[key] === "true";
     }
     if (updates.taxRate < 0 || updates.taxRate > 100 ||
@@ -152,6 +158,14 @@ export const getPublicSettings = async (req, res, next) => {
         city: settings.city || "",
         country: settings.country || "",
         currencySymbol: settings.currencySymbol || "",
+        enableMpesa: settings.enableMpesa !== false,
+        enableStripe: settings.enableStripe === true,
+        enableBankTransfer: settings.enableBankTransfer !== false,
+        bankName: settings.bankName || "",
+        bankAccountName: settings.bankAccountName || "",
+        bankAccountNumber: settings.bankAccountNumber || "",
+        bankBranch: settings.bankBranch || "",
+        bankSwiftCode: settings.bankSwiftCode || "",
       },
     });
   } catch (error) {

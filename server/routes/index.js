@@ -17,6 +17,7 @@ import galleryRoutes from "./galleryRoutes.js";
 import heroRoutes from "./heroRoutes.js";
 
 import mpesaRoutes from "./mpesaRoutes.js";
+import stripeRoutes from "./stripeRoutes.js";
 
 import adminRoutes from "./adminRoutes.js";
 import adminTourRoutes from "./adminTourRoutes.js";
@@ -70,6 +71,8 @@ router.use("/tours", tourRoutes);
 router.use("/destinations", destinationRoutes);
 router.use("/admin/destinations", adminDestinationRoutes);
 router.use("/reviews", reviewRoutes);
+import customTourRequestRoutes from "./customTourRequestRoutes.js";
+router.use("/custom-tour-requests", customTourRequestRoutes);
 router.use("/wishlist", wishlistRoutes);
 router.use("/gallery", galleryRoutes);
 router.use("/hero", heroRoutes);
@@ -82,6 +85,7 @@ router.use("/hero", heroRoutes);
 
 router.use("/mpesa", mpesaRoutes);
 router.use("/payments", mpesaRoutes);
+router.use("/payments/stripe", stripeRoutes);
 
 /*
 |--------------------------------------------------------------------------
@@ -89,12 +93,14 @@ router.use("/payments", mpesaRoutes);
 |--------------------------------------------------------------------------
 */
 
+// Keep the dedicated RBAC router before the generic /admin router so role
+// requests can never be intercepted by a broader admin route.
+router.use("/admin/roles", adminRoleRoutes);
 router.use("/admin", adminRoutes);
 router.use("/admin/auth", adminAuthRoutes);
 router.use("/admin/tours", adminTourRoutes);
 router.use("/admin/bookings", adminBookingRoutes);
 router.use("/admin/payments", adminPaymentRoutes);
-router.use("/admin/roles", adminRoleRoutes);
 router.use("/admin/system-health", systemHealthRoutes);
 router.get("/settings/public", getPublicSettings);
 router.use("/admin/settings", settingsRoutes);

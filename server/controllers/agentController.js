@@ -42,10 +42,16 @@ export const getAgentDashboard = async (req, res, next) => {
         }
 
         if (!agent) {
-            return res.status(404).json({
-                success: false,
-                message: "Agent profile not found."
+            // Self-heal legacy agent accounts that have a User role but no linked Agent document.
+            agent = await Agent.create({
+                user: req.user._id,
+                companyName: req.user.name || "",
+                email: String(req.user.email || "").toLowerCase(),
+                phone: req.user.phone || "",
+                status: "active",
+                isApproved: false,
             });
+            agent = agent.toObject();
         }
 
         /*

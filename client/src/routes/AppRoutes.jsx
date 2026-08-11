@@ -23,6 +23,7 @@ const MyBookings = lazy(() => import("../pages/MyBookings"));
 const BookingDetails = lazy(() => import("../pages/BookingDetails"));
 const Profile = lazy(() => import("../pages/Profile"));
 const Checkout = lazy(() => import("../pages/Checkout"));
+const CustomTourRequest = lazy(() => import("../pages/CustomTourRequest"));
 const PaymentStatus = lazy(() => import("../pages/PaymentStatus"));
 // Agent pages
 const AgentLayout = lazy(() => import("../layouts/AgentLayout"));
@@ -85,6 +86,7 @@ const Reports = lazy(() => import("../pages/admin/Reports"));
 const Agents = lazy(() => import("../pages/admin/Agents"));
 const RolesPage = lazy(() => import("../pages/rbac/RolesPage"));
 const AdminSystemHealth = lazy(() => import("../pages/admin/AdminSystemHealth"));
+const CustomTourRequests = lazy(() => import("../pages/admin/CustomTourRequests"));
 // Route guards
 import ProtectedRoute from "../components/auth/ProtectedRoute";
 import AdminRoute from "../components/auth/AdminRoute";
@@ -219,6 +221,8 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
+
+      <Route path="/custom-tour" element={<ProtectedRoute><CustomTourRequest /></ProtectedRoute>} />
 
       <Route
         path="/checkout/:id"
@@ -541,6 +545,10 @@ export default function AppRoutes() {
           path="rbac"
           element={<RolesPage />}
         />
+        <Route
+          path="custom-tour-requests"
+          element={<CustomTourRequests />}
+        />
       </Route>
 
       {/* Compatibility alias */}
@@ -559,7 +567,7 @@ export default function AppRoutes() {
         path="*"
         element={<NotFound />}
       />
-      </Routes>
+</Routes>
     </Suspense>
     </>
   );

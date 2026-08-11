@@ -7,6 +7,7 @@ import {
   getMyBookings,
   getBooking,
   cancelBooking,
+  rescheduleBooking,
   getAllBookings,
   getConfirmedBookings,
   updateBookingStatus,
@@ -62,6 +63,11 @@ router.get(
 router.put(
   "/cancel/:id",
   cancelBooking
+);
+
+router.put(
+  "/reschedule/:id",
+  rescheduleBooking
 );
 
 /*

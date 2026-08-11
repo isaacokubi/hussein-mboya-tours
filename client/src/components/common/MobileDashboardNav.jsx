@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Menu, X, LayoutDashboard, CalendarCheck, UserRound, Heart,   FileText, } from "lucide-react";
+import { Menu, X, LayoutDashboard, CalendarCheck, UserRound, Heart, Users, WalletCards, FileText, Car } from "lucide-react";
 
 const NAV = {
   customer: [

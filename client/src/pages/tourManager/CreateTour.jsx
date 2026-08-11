@@ -68,11 +68,9 @@ export default function CreateTour() {
   });
 
   const destinations = unwrapList(destinationsData, ["destinations"]);
-  const guides = unwrapList(guidesData, ["guides"]);
-  const drivers = unwrapList(driversData, ["drivers"]);
-  const vehicles = unwrapList(vehiclesData, ["vehicles"]).filter(
-    (vehicle) => !vehicle.status || vehicle.status === "available"
-  );
+  const guides = unwrapList(guidesData, ["guides"]).filter((item) => item.availability === "available" && !item.assignedTour && !item.assignedTours?.length);
+  const drivers = unwrapList(driversData, ["drivers"]).filter((item) => item.availability === "available" && !item.assignedTour && !item.assignedTours?.length);
+  const vehicles = unwrapList(vehiclesData, ["vehicles"]).filter((vehicle) => (vehicle.status === "available" || !vehicle.status) && !vehicle.assignedTour);
 
   const { mutate: saveTour, isPending } = useMutation({
     mutationFn: createTour,

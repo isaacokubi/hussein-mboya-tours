@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, Globe2, Phone, Save, ShieldCheck, WalletCards } from "lucide-react";
+import { Building2, Globe2, Mail, Phone, Palette, Save, ShieldCheck, WalletCards } from "lucide-react";
 import { toast } from "react-toastify";
 import { getSettings, updateSettings } from "../../api/settingsApi";
 
@@ -12,7 +12,8 @@ const DEFAULTS = {
   bookingDepositPercentage: 30, defaultCommissionRate: 10,
   maintenanceMode: false, allowRegistrations: true, allowAgentRegistrations: true,
   requireEmailVerification: true, requirePhoneVerification: false,
-  enableMpesa: true, enableStripe: false, enablePaypal: false,
+  enableMpesa: true, enableStripe: false, enablePaypal: false, enableBankTransfer: true,
+  bankName: "", bankAccountName: "", bankAccountNumber: "", bankBranch: "", bankSwiftCode: "",
   emailFromName: "Coherent Tours", emailFromAddress: "",
   facebook: "", instagram: "", twitter: "", youtube: "",
   seoTitle: "", seoDescription: "", seoKeywords: "",
@@ -27,13 +28,7 @@ export default function AdminSettings() {
 
   useEffect(() => {
     const incoming = data?.data || data?.settings;
-    if (!incoming) return;
-
-    const timer = setTimeout(() => {
-      setSettings((current) => ({ ...current, ...incoming }));
-    }, 0);
-
-    return () => clearTimeout(timer);
+    if (incoming) setSettings((current) => ({ ...current, ...incoming }));
   }, [data]);
 
   const mutation = useMutation({
@@ -86,6 +81,7 @@ export default function AdminSettings() {
             <div className="grid gap-4 md:grid-cols-4"><Field label="Currency"><input value={settings.currency} onChange={e=>update("currency",e.target.value.toUpperCase())}/></Field><Field label="Currency symbol"><input value={settings.currencySymbol} onChange={e=>update("currencySymbol",e.target.value)}/></Field><Field label="Timezone"><input value={settings.timezone} onChange={e=>update("timezone",e.target.value)}/></Field><Field label="Language"><input value={settings.language} onChange={e=>update("language",e.target.value)}/></Field></div>
             <div className="grid gap-4 md:grid-cols-3"><Field label="Tax rate %"><input type="number" min="0" max="100" value={settings.taxRate} onChange={e=>update("taxRate",e.target.value)}/></Field><Field label="Booking deposit %"><input type="number" min="0" max="100" value={settings.bookingDepositPercentage} onChange={e=>update("bookingDepositPercentage",e.target.value)}/></Field><Field label="Default agent commission %"><input type="number" min="0" max="100" value={settings.defaultCommissionRate} onChange={e=>update("defaultCommissionRate",e.target.value)}/></Field></div>
             <div className="grid gap-3 md:grid-cols-3"><Toggle label="Enable M-Pesa" value={settings.enableMpesa} onChange={v=>update("enableMpesa",v)}/><Toggle label="Enable Stripe" value={settings.enableStripe} onChange={v=>update("enableStripe",v)}/><Toggle label="Enable PayPal" value={settings.enablePaypal} onChange={v=>update("enablePaypal",v)}/></div>
+            <div className="grid gap-4 md:grid-cols-2"><Field label="Bank name"><input value={settings.bankName} onChange={e=>update("bankName",e.target.value)}/></Field><Field label="Account name"><input value={settings.bankAccountName} onChange={e=>update("bankAccountName",e.target.value)}/></Field><Field label="Account number"><input value={settings.bankAccountNumber} onChange={e=>update("bankAccountNumber",e.target.value)}/></Field><Field label="Branch"><input value={settings.bankBranch} onChange={e=>update("bankBranch",e.target.value)}/></Field><Field label="SWIFT / BIC"><input value={settings.bankSwiftCode} onChange={e=>update("bankSwiftCode",e.target.value)}/></Field><Toggle label="Enable bank transfer" value={settings.enableBankTransfer} onChange={v=>update("enableBankTransfer",v)}/></div>
           </Section>
 
           <Section icon={<ShieldCheck size={20}/>} title="Access & security">

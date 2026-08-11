@@ -32,6 +32,8 @@ export const getDashboard = async (req, res) => {
       guidesCount,
       vehiclesCount,
       agentsCount,
+      guideUsersCount,
+      agentUsersCount,
     ] = await Promise.all([
       User.countDocuments({}),
       Tour.countDocuments({ isDeleted: NON_DELETED }),
@@ -44,17 +46,22 @@ export const getDashboard = async (req, res) => {
         ],
       }),
       Staff.countDocuments({
-        position: { $in: ["guide", "tour_guide", "tourguide"] },
+        $or: [
+          { position: { $in: ["guide", "tour_guide", "tourguide"] } },
+          { role: { $in: ["guide", "tour_guide", "tourguide"] } },
+        ],
         isDeleted: NON_DELETED,
+        isActive: { $ne: false },
         status: { $ne: "inactive" },
       }),
       Vehicle.countDocuments({
         isDeleted: NON_DELETED,
-        status: { $nin: ["inactive", "retired"] },
+        isActive: { $ne: false },
+        status: { $nin: ["out_of_service", "retired", "inactive"] },
       }),
-      Agent.countDocuments({
-        status: { $ne: "inactive" },
-      }),
+      Agent.countDocuments({ status: { $ne: "inactive" } }),
+      User.countDocuments({ role: { $in: ["guide", "tour_guide", "tourguide"] }, status: "active" }),
+      User.countDocuments({ role: { $in: ["agent", "travel_agent", "travelagent"] }, status: "active" }),
     ]);
 
     /*
@@ -397,13 +404,13 @@ export const getDashboard = async (req, res) => {
         agents: agentPerformance,
         guides: guidePerformance,
         vehicles: vehiclesCount,
-        guidesCount,
-        agentsCount,
+        guidesCount: Math.max(guidesCount, guideUsersCount),
+        agentsCount: Math.max(agentsCount, agentUsersCount),
 
         userStats: {
           customers,
-          agents: agentsCount,
-          guides: guidesCount,
+          agents: Math.max(agentsCount, agentUsersCount),
+          guides: Math.max(guidesCount, guideUsersCount),
           vehicles: vehiclesCount,
         },
       },

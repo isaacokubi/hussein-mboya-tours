@@ -3,8 +3,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createBooking } from "../api/bookingApi";
-import { initiateMpesa } from "../api/mpesaApi";
+import { initiateMpesa, checkPaymentStatus } from "../api/mpesaApi";
 import { getTourById } from "../api/tourApi";
+import api from "../api/axios";
+import { getPublicSettings } from "../api/settingsApi";
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -19,6 +21,9 @@ export default function Checkout() {
   const [roomNumber, setRoomNumber] = useState("");
   const [specialRequests, setSpecialRequests] = useState("");
   const [paymentState, setPaymentState] = useState(null);
+  const [paymentMethod, setPaymentMethod] = useState("mpesa");
+  const { data: publicSettings } = useQuery({ queryKey:["public-settings"], queryFn:getPublicSettings });
+  const siteSettings = publicSettings?.settings || publicSettings?.data || {};
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["tour", id],
@@ -39,9 +44,38 @@ export default function Checkout() {
   const bookingMutation = useMutation({
     mutationFn: createBooking,
     onSuccess: async (response) => {
+      const booking = response?.data?.booking || response?.booking || response;
+
       try {
-        const booking = response?.data?.booking || response?.booking || response;
-        if (!booking?._id) throw new Error("Booking ID was not returned.");
+        if (!booking?._id) {
+          throw new Error("Booking ID was not returned.");
+        }
+
+        if (paymentMethod === "stripe") {
+          const stripe = await api.post("/payments/stripe/checkout", {
+            bookingId: booking._id,
+            amount: Number(booking.totalAmount || 0),
+            origin: window.location.origin,
+          });
+
+          if (!stripe.data?.url) {
+            throw new Error(stripe.data?.message || "Unable to start Stripe checkout.");
+          }
+
+          window.location.href = stripe.data.url;
+          return;
+        }
+
+        if (paymentMethod === "bank") {
+          await api.post("/payments/stripe/bank-transfer", {
+            bookingId: booking._id,
+            amount: Number(booking.totalAmount || 0),
+          });
+
+          toast.success("Booking created. Bank transfer instructions are available in your booking.");
+          navigate("/my-bookings");
+          return;
+        }
 
         const paymentResponse = await initiateMpesa({
           bookingId: booking._id,
@@ -68,15 +102,18 @@ export default function Checkout() {
 
         toast.success("M-Pesa prompt sent. Redirecting you to your bookings...");
         window.setTimeout(() => navigate("/my-bookings"), 1800);
-
-        // Payment confirmation continues through the M-Pesa callback; the customer is now on My Bookings.
-        } catch (paymentError) {
+      } catch (paymentError) {
         toast.error(
           paymentError?.response?.data?.message ||
             paymentError?.message ||
-            "Booking created, but M-Pesa initiation failed. You can pay from My Bookings."
+            "Booking created, but payment initiation failed. You can pay from My Bookings."
         );
-        navigate(`/bookings/${response?.data?.booking?._id || response?.booking?._id}`);
+
+        if (booking?._id) {
+          navigate(`/bookings/${booking._id}`);
+        } else {
+          navigate("/my-bookings");
+        }
       }
     },
     onError: (requestError) => {
@@ -174,7 +211,10 @@ export default function Checkout() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="rounded-xl border bg-white p-4"><p className="mb-3 font-semibold">Payment method</p><div className="grid gap-3 sm:grid-cols-3">{[["mpesa","M-Pesa"],["stripe","Card / Stripe"],["bank","Bank transfer"]].map(([value,label])=><label key={value} className={`cursor-pointer rounded-xl border p-3 ${paymentMethod===value?"border-emerald-600 bg-emerald-50":""}`}><input type="radio" name="paymentMethod" value={value} checked={paymentMethod===value} onChange={e=>setPaymentMethod(e.target.value)} className="mr-2"/>{label}</label>)}</div></div>
+{paymentMethod === "bank" && <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm"><p className="font-bold">Bank transfer instructions</p><p>Bank: {siteSettings.bankName || "Contact the company for bank details"}</p>{siteSettings.bankAccountName && <p>Account name: {siteSettings.bankAccountName}</p>}{siteSettings.bankAccountNumber && <p>Account number: {siteSettings.bankAccountNumber}</p>}{siteSettings.bankBranch && <p>Branch: {siteSettings.bankBranch}</p>}{siteSettings.bankSwiftCode && <p>SWIFT/BIC: {siteSettings.bankSwiftCode}</p>}<p className="mt-2">After transferring, the company will verify and confirm the payment.</p></div>}
+
+<form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid gap-5 md:grid-cols-2">
             <Field label="Travel date" required>
               <input type="date" value={travelDate} onChange={(e) => setTravelDate(e.target.value)} className="w-full rounded-lg border p-3" required />
@@ -215,7 +255,7 @@ export default function Checkout() {
           </div>
 
           <button type="submit" disabled={bookingMutation.isPending || availableSlots < 1} className="w-full rounded-lg bg-green-600 py-3 font-semibold text-white hover:bg-green-700 disabled:opacity-50">
-            {bookingMutation.isPending ? "Processing..." : availableSlots < 1 ? "Tour Fully Booked" : "Book & Pay with M-Pesa"}
+            {bookingMutation.isPending ? "Processing..." : availableSlots < 1 ? "Tour Fully Booked" : "Book & Continue to Payment"}
           </button>
         </form>
       </div>

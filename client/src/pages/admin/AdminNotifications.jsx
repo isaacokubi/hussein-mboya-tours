@@ -20,6 +20,7 @@ export default function AdminNotifications() {
   const [type, setType] = useState("system");
   const [priority, setPriority] = useState("normal");
   const [actionUrl, setActionUrl] = useState("");
+  const [page, setPage] = useState(1);
 
   const recipientsQuery = useQuery({
     queryKey: ["notification-recipients"],
@@ -29,8 +30,8 @@ export default function AdminNotifications() {
   });
 
   const notificationsQuery = useQuery({
-    queryKey: ["admin-notifications"],
-    queryFn: async () => (await api.get("/notifications", { params: { limit: 50 } })).data,
+    queryKey: ["admin-notifications", page],
+    queryFn: async () => (await api.get("/notifications", { params: { page, limit: 5 } })).data,
   });
 
   const recipients = recipientsQuery.data?.recipients || [];
@@ -145,6 +146,7 @@ export default function AdminNotifications() {
             </div>
           ))}
           {!notifications.length && <p className="text-slate-500">No notifications found.</p>}
+          <div className="flex items-center justify-between border-t pt-4"><button disabled={page<=1} onClick={()=>setPage(p=>Math.max(1,p-1))} className="rounded-lg border px-3 py-2 text-sm disabled:opacity-40">Previous</button><span className="text-sm font-semibold text-slate-500">Page {page} of {Math.max(1,Number(notificationsQuery.data?.pages||1))}</span><button disabled={page>=Number(notificationsQuery.data?.pages||1)} onClick={()=>setPage(p=>p+1)} className="rounded-lg border px-3 py-2 text-sm disabled:opacity-40">Next</button></div>
         </section>
       </div>
     </div>

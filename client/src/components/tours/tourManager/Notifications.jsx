@@ -1,19 +1,21 @@
-import { Bell } from "lucide-react";
+import { Bell, ChevronLeft, ChevronRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 import { getNotifications } from "../../../api/notificationApi";
+import { useState } from "react";
 
 export default function Notifications() {
+  const [page,setPage]=useState(1);
   const {
     data,
     isLoading,
     isError,
     error,
   } = useQuery({
-    queryKey: ["adminNotifications"],
+    queryKey: ["adminNotifications",page],
     queryFn: () =>
       getNotifications({
-        limit: 8,
+        page, limit: 5,
       }),
   });
 
@@ -122,6 +124,7 @@ export default function Notifications() {
           </div>
         )}
       </div>
+      <div className="mt-5 flex items-center justify-between border-t pt-4"><button disabled={page<=1} onClick={()=>setPage(p=>Math.max(1,p-1))} className="rounded-lg border p-2 disabled:opacity-40"><ChevronLeft size={16}/></button><span className="text-xs font-semibold text-slate-500">Page {page} of {Math.max(1,Number(data?.pages||1))}</span><button disabled={page>=Number(data?.pages||1)} onClick={()=>setPage(p=>p+1)} className="rounded-lg border p-2 disabled:opacity-40"><ChevronRight size={16}/></button></div>
     </div>
   );
 }

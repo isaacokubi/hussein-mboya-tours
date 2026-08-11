@@ -19,7 +19,11 @@ export default function RolesPage() {
   });
 
   if(rolesQuery.isLoading||permissionsQuery.isLoading)return <div className="p-6">Loading roles and permissions...</div>;
-  if(rolesQuery.isError||permissionsQuery.isError)return <div className="p-6 text-red-600">Failed to load roles and permissions.</div>;
+  if(rolesQuery.isError||permissionsQuery.isError){
+    const rolesError = rolesQuery.error?.response?.data?.message || rolesQuery.error?.message;
+    const permissionsError = permissionsQuery.error?.response?.data?.message || permissionsQuery.error?.message;
+    return <div className="p-6 text-red-600"><h2 className="text-xl font-bold">Failed to load roles and permissions.</h2><p className="mt-2 text-sm">Roles: {rolesError || "Unknown error"}</p><p className="text-sm">Permissions: {permissionsError || "Unknown error"}</p></div>;
+  }
 
   return <div className="min-h-screen bg-slate-50 p-6"><div className="mx-auto max-w-7xl">
     <div className="mb-6"><p className="text-sm font-semibold uppercase tracking-wider text-emerald-700">Access control</p><h1 className="text-3xl font-bold text-slate-900">Roles & Permissions</h1><p className="text-slate-500">Assign exactly what each operational role can access.</p></div>
