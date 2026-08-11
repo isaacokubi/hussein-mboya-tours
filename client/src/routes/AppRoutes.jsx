@@ -33,6 +33,7 @@ const AgentCommission = lazy(() => import("../pages/agent/AgentCommission"));
 const AgentQuotes = lazy(() => import("../pages/agent/AgentQuotes"));
 // Guide pages
 const TourGuideDashboard = lazy(() => import("../pages/guide/TourGuideDashboard"));
+const DriverDashboard = lazy(() => import("../pages/driver/DriverDashboard"));
 // Tour manager pages
 const TourManagerLayout = lazy(() => import("../layouts/TourManagerLayout"));
 const TourManagerDashboard = lazy(() => import("../pages/tourManager/TourManagerDashboard"));
@@ -274,6 +275,16 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute roles={["guide", "admin"]}>
             <TourGuideDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Driver */}
+      <Route
+        path="/driver/dashboard"
+        element={
+          <ProtectedRoute roles={["driver", "admin"]}>
+            <DriverDashboard />
           </ProtectedRoute>
         }
       />

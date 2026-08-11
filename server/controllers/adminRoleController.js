@@ -31,7 +31,12 @@ const DEFAULT_PERMISSIONS = {
   super_admin: ["admin.dashboard", "user.manage", "staff.manage", "tour.manage", "booking.manage", "payment.manage", "refund.manage", "analytics.view", "settings.manage", "roles.manage", "notifications.view", "finance.view"],
 };
 
+let defaultsBootstrapPromise = null;
+
 const ensureDefaultPermissions = async () => {
+  if (defaultsBootstrapPromise) return defaultsBootstrapPromise;
+
+  defaultsBootstrapPromise = (async () => {
   const allNames = [...new Set(Object.values(DEFAULT_PERMISSIONS).flat())];
   await Permission.bulkWrite(allNames.map((name) => ({
     updateOne: {
@@ -80,6 +85,13 @@ const ensureDefaultPermissions = async () => {
     });
     role.permissions = [...merged.values()];
     await role.save();
+  }
+  })();
+
+  try {
+    return await defaultsBootstrapPromise;
+  } finally {
+    defaultsBootstrapPromise = null;
   }
 };
 

@@ -9,7 +9,7 @@ import { useAuth } from "../context/AuthContext";
 export default function Dashboard() {
   const { user } = useAuth();
 
-  const role = (user?.role?.name || user?.role || user?.legacyRole || "customer")
+  const role = (user?.role?.name || user?.roleId?.name || user?.role || user?.legacyRole || "customer")
     .toString()
     .toLowerCase()
     .replace(/[\s_-]/g, "");
@@ -39,6 +39,10 @@ const { data, isLoading, error } = useQuery({
 
   if (role === "agent") {
     return <Navigate to="/agent" replace />;
+  }
+
+  if (role === "driver") {
+    return <Navigate to="/driver/dashboard" replace />;
   }
 
   if (role === "admin") {

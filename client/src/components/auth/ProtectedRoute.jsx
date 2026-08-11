@@ -101,6 +101,10 @@ export default function ProtectedRoute({
 
     }
 
+    if (user.roleId?.name) {
+      return user.roleId.name;
+    }
+
 
 
     if (
@@ -180,6 +184,8 @@ export default function ProtectedRoute({
     guide: "guide",
 
     tourguide: "guide",
+
+    driver: "driver",
 
 
     manager: "manager",
@@ -285,6 +291,20 @@ export default function ProtectedRoute({
             <Navigate
 
               to="/guide/dashboard"
+
+              replace
+
+            />
+
+          );
+
+        case "driver":
+
+          return (
+
+            <Navigate
+
+              to="/driver/dashboard"
 
               replace
 

@@ -40,13 +40,26 @@ export default function AddVehicleModal({ close, refresh }) {
     setError("");
 
     try {
+      const capacity = Number(form.capacity);
+      const year = form.year === "" ? null : Number(form.year);
+
+      if (!Number.isFinite(capacity) || capacity < 1 || !Number.isInteger(capacity)) {
+        setError("Passenger capacity must be a whole number greater than 0.");
+        return;
+      }
+
+      if (year !== null && (!Number.isFinite(year) || year < 1990 || year > new Date().getFullYear() + 1)) {
+        setError(`Vehicle year must be between 1990 and ${new Date().getFullYear() + 1}.`);
+        return;
+      }
+
       const data = new FormData();
       Object.entries(form).forEach(([key, value]) => {
-        if (key === "driver" || value === null || value === "") return;
+        if (key === "driver" || key === "capacity" || key === "year" || value === null || value === "") return;
         data.append(key, value);
       });
-      data.append("capacity", Number(form.capacity));
-      if (form.year) data.set("year", Number(form.year));
+      data.append("capacity", String(capacity));
+      if (year !== null) data.append("year", String(year));
 
       const response = await createVehicle(data);
       const createdVehicle = response?.data || response?.vehicle;

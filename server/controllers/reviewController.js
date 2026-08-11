@@ -55,9 +55,12 @@ export const createReview = async (req, res, next) => {
     }
 
     const booking = await Booking.findOne({
-      user: req.user._id,
       tour,
       status: "completed",
+      $or: [
+        { user: req.user._id },
+        { "customerSnapshot.email": req.user.email },
+      ],
     });
 
     if (!booking) {
@@ -113,6 +116,7 @@ export const getTourReviews = async (req, res, next) => {
     const reviews = await Review.find({
       tour: req.params.id,
       approved: true,
+      isDeleted: false,
     })
       .populate(
         "user",

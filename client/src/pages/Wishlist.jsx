@@ -267,12 +267,19 @@ export default function Wishlist() {
         {wishlist.map((tour) => {
 
 
-          const tourImage =
-            typeof tour.images?.[0] === "object"
-              ? tour.images?.[0]?.url
-              : tour.images?.[0] ||
-                tour.image ||
-                "/images/tour-placeholder.jpg";
+          const media =
+            tour.images?.[0] ||
+            tour.featuredImage ||
+            tour.gallery?.[0] ||
+            tour.image;
+          const rawImage =
+            typeof media === "object" ? media?.url : media;
+          const apiRoot = String(import.meta.env.VITE_API_URL || "").replace(/\/api\/?$/, "");
+          const tourImage = rawImage
+            ? (/^https?:\/\//i.test(rawImage)
+                ? rawImage
+                : `${apiRoot}${rawImage.startsWith("/") ? "" : "/"}${rawImage}`)
+            : "/hero1.jpeg";
 
 
 
@@ -304,7 +311,7 @@ export default function Wishlist() {
                 "
                 onError={(e) => {
                   e.currentTarget.src =
-                    "/images/tour-placeholder.jpg";
+                    "/hero1.jpeg";
                 }}
               />
 

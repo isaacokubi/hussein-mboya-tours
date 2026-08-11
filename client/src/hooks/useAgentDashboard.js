@@ -18,7 +18,9 @@ export const useAgentDashboard = () => {
     stats: {
       ...statistics,
       assignedTours: statistics.assignedTours ?? statistics.bookings ?? 0,
-      upcomingTours: statistics.upcomingTours ?? statistics.pendingBookings ?? 0,
+      upcomingTours: statistics.upcomingTours ?? statistics.upcomingBookings ?? statistics.pendingBookings ?? 0,
+      totalGuests: statistics.totalGuests ?? 0,
+      walletBalance: payload.agent?.walletBalance ?? 0,
     },
     bookings: payload.recentBookings || payload.bookings || [],
     customers: payload.customers || [],

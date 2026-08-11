@@ -113,3 +113,7 @@ merge-backup-*/
 
 # Duplicate extracted project folders
 hussein-mboya-tours-main/
+client/node_modules/
+server/node_modules/
+client/dist/
+server/dist/

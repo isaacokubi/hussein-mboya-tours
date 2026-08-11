@@ -1,6 +1,8 @@
 // client/src/pages/agent/AgentDashboard.jsx
 
 
+import { Link } from "react-router-dom";
+
 import {
     CalendarDays,
     Users,
@@ -33,11 +35,13 @@ export default function AgentDashboard(){
 
     const {
 
-        data,
+        stats,
 
         isLoading,
 
-        error
+        error,
+
+        bookings
 
     } = useAgentDashboard();
 
@@ -128,9 +132,7 @@ export default function AgentDashboard(){
 
 
 
-    const stats =
-
-        data?.stats || {};
+    const safeStats = stats || {};
 
 
 
@@ -220,7 +222,7 @@ export default function AgentDashboard(){
 
                     value={
 
-                        stats.assignedTours || 0
+                        safeStats.assignedTours || 0
 
                     }
 
@@ -251,7 +253,7 @@ export default function AgentDashboard(){
 
                     value={
 
-                        stats.upcomingTours || 0
+                        safeStats.upcomingTours || 0
 
                     }
 
@@ -282,7 +284,7 @@ export default function AgentDashboard(){
 
                     value={
 
-                        stats.totalGuests || 0
+                        safeStats.totalGuests || 0
 
                     }
 
@@ -313,7 +315,7 @@ export default function AgentDashboard(){
 
                     value={
 
-                        stats.completedTours || 0
+                        safeStats.completedTours || 0
 
                     }
 
@@ -368,7 +370,7 @@ export default function AgentDashboard(){
 
                             Number(
 
-                                stats.totalCommission || 0
+                                safeStats.totalCommission || 0
 
                             )
 
@@ -392,11 +394,11 @@ export default function AgentDashboard(){
 
                     trend={
 
-                        stats.commissionGrowth
+                        safeStats.commissionGrowth
 
                         ?
 
-                        `${stats.commissionGrowth}% this month`
+                        `${safeStats.commissionGrowth}% this month`
 
                         :
 
@@ -427,7 +429,7 @@ export default function AgentDashboard(){
 
                             Number(
 
-                                stats.walletBalance || 0
+                                safeStats.walletBalance || 0
 
                             )
 
@@ -519,8 +521,7 @@ export default function AgentDashboard(){
 
 
                         color="green"
-
-
+                        href="/agent/bookings"
                     />
 
 
@@ -545,8 +546,7 @@ export default function AgentDashboard(){
 
 
                         color="blue"
-
-
+                        href="/agent/customers"
                     />
 
 
@@ -571,8 +571,7 @@ export default function AgentDashboard(){
 
 
                         color="orange"
-
-
+                        href="/agent/quotes"
                     />
 
 
@@ -622,16 +621,33 @@ export default function AgentDashboard(){
 
 
 
-                <p className="
-                    text-gray-500
-                    mt-3
-                ">
-
-
-                    Recent bookings, guest updates and tour activities will appear here.
-
-
-                </p>
+                {bookings?.length ? (
+                    <div className="mt-4 space-y-3">
+                        {bookings.map((booking) => (
+                            <Link
+                                key={booking._id}
+                                to="/agent/bookings"
+                                className="block rounded-xl border border-gray-100 p-4 transition hover:bg-gray-50"
+                            >
+                                <div className="flex items-center justify-between gap-3">
+                                    <span className="font-semibold text-gray-800">
+                                        {booking.tour?.title || "Tour booking"}
+                                    </span>
+                                    <span className="text-xs capitalize text-gray-500">
+                                        {booking.status || "pending"}
+                                    </span>
+                                </div>
+                                <p className="mt-1 text-sm text-gray-500">
+                                    KES {Number(booking.totalAmount || 0).toLocaleString()}
+                                </p>
+                            </Link>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="mt-3 text-gray-500">
+                        No recent bookings yet.
+                    </p>
+                )}
 
 
 
@@ -670,7 +686,8 @@ function ActionCard({
 
     icon,
 
-    color
+    color,
+    href = "#"
 
 }){
 
@@ -767,8 +784,8 @@ function ActionCard({
 
 
 
-            <button
-
+            <Link
+                to={href}
                 className={`
                     mt-5
                     px-5
@@ -785,7 +802,7 @@ function ActionCard({
                 Open
 
 
-            </button>
+            </Link>
 
 
 

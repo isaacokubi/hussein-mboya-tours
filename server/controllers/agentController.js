@@ -45,9 +45,13 @@ export const getAgentDashboard = async (req, res, next) => {
 
             bookings,
 
+            upcomingBookings,
+
             completedTours,
 
             salesResult,
+
+            guestsResult,
 
             commissionResult,
 
@@ -61,6 +65,11 @@ export const getAgentDashboard = async (req, res, next) => {
 
             Booking.countDocuments({
                 agent: agent._id
+            }),
+
+            Booking.countDocuments({
+                agent: agent._id,
+                status: { $in: ["confirmed", "assigned", "ongoing"] }
             }),
 
             Booking.countDocuments({
@@ -86,6 +95,23 @@ export const getAgentDashboard = async (req, res, next) => {
                     }
                 }
 
+            ]),
+
+            Booking.aggregate([
+                {
+                    $match: {
+                        agent: agent._id,
+                        status: { $ne: "cancelled" }
+                    }
+                },
+                {
+                    $group: {
+                        _id: null,
+                        totalGuests: {
+                            $sum: { $ifNull: ["$numberOfGuests", 1] }
+                        }
+                    }
+                }
             ]),
 
             Commission.aggregate([
@@ -144,6 +170,9 @@ export const getAgentDashboard = async (req, res, next) => {
         const totalCommission =
             commissionResult[0]?.totalCommission || 0;
 
+        const totalGuests =
+            guestsResult[0]?.totalGuests || 0;
+
         /*
         |--------------------------------------------------------------------------
         | Response
@@ -174,6 +203,8 @@ export const getAgentDashboard = async (req, res, next) => {
 
                     bookings,
 
+                    upcomingBookings,
+
                     completedTours,
 
                     pendingBookings,
@@ -182,7 +213,9 @@ export const getAgentDashboard = async (req, res, next) => {
 
                     totalSales,
 
-                    totalCommission
+                    totalCommission,
+
+                    totalGuests
 
                 },
 

@@ -82,11 +82,22 @@ export default function TourDetails() {
     );
   }
 
-  const image =
-    tour.images?.[0]?.url ||
+  const firstMedia =
     tour.images?.[0] ||
-    tour.image ||
-    "/images/tour-placeholder.jpg";
+    tour.featuredImage ||
+    tour.gallery?.[0] ||
+    tour.image;
+
+  const rawImage =
+    typeof firstMedia === "object"
+      ? firstMedia?.url
+      : firstMedia;
+
+  const apiRoot = String(import.meta.env.VITE_API_URL || "").replace(/\/api\/?$/, "");
+  const image =
+    rawImage
+      ? (/^https?:\/\//i.test(rawImage) ? rawImage : `${apiRoot}${rawImage.startsWith("/") ? "" : "/"}${rawImage}`)
+      : "/hero1.jpeg";
 
   const handleBooking = () => {
     navigate(`/checkout/${tour._id}`);
@@ -125,7 +136,7 @@ export default function TourDetails() {
 
         <div>
           <img
-            src={image?.url || image}
+            src={image}
             alt={tour.title}
             className="
           w-full

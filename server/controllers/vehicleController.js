@@ -12,10 +12,30 @@ import Staff from "../models/Staff.js";
 
 export const createVehicle = async (req, res, next) => {
     try {
+        const rawCapacity = req.body.capacity;
+        const capacity = Number(rawCapacity);
+        const year = req.body.year === undefined || req.body.year === "" ? undefined : Number(req.body.year);
+
+        if (!Number.isFinite(capacity) || capacity < 1 || !Number.isInteger(capacity)) {
+            return res.status(400).json({
+                success: false,
+                message: "Passenger capacity must be a whole number greater than 0.",
+                field: "capacity",
+            });
+        }
+
+        if (year !== undefined && (!Number.isFinite(year) || year < 1990 || year > new Date().getFullYear() + 1)) {
+            return res.status(400).json({
+                success: false,
+                message: "Vehicle year is invalid.",
+                field: "year",
+            });
+        }
+
         const payload = {
             ...req.body,
-            capacity: Number(req.body.capacity),
-            year: req.body.year ? Number(req.body.year) : undefined,
+            capacity,
+            ...(year !== undefined ? { year } : {}),
         };
 
         if (req.file) {
@@ -113,6 +133,30 @@ export const updateVehicle = async (req, res, next) => {
         const updateData = {
             ...req.body,
         };
+
+        if (updateData.capacity !== undefined) {
+            const capacity = Number(updateData.capacity);
+            if (!Number.isFinite(capacity) || capacity < 1 || !Number.isInteger(capacity)) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Passenger capacity must be a whole number greater than 0.",
+                    field: "capacity",
+                });
+            }
+            updateData.capacity = capacity;
+        }
+
+        if (updateData.year !== undefined && updateData.year !== "") {
+            const year = Number(updateData.year);
+            if (!Number.isFinite(year)) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Vehicle year is invalid.",
+                    field: "year",
+                });
+            }
+            updateData.year = year;
+        }
 
         if (req.file) {
             updateData.image = {

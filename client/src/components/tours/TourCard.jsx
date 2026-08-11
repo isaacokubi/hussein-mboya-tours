@@ -15,12 +15,24 @@ export default function TourCard({ tour }) {
     ? price - (price * Number(tour.discount)) / 100
     : price;
 
+  const mediaCandidates = [
+    tour.images?.[0],
+    tour.featuredImage,
+    tour.gallery?.[0],
+    tour.image,
+  ];
+
+  const firstMedia = mediaCandidates.find(Boolean);
+  const rawImage =
+    typeof firstMedia === "object"
+      ? firstMedia?.url
+      : firstMedia;
+
+  const apiRoot = String(import.meta.env.VITE_API_URL || "").replace(/\/api\/?$/, "");
   const tourImage =
-    typeof tour.images?.[0] === "object"
-      ? tour.images?.[0]?.url
-      : tour.images?.[0] ||
-        tour.image ||
-        "/placeholder.jpg";
+    rawImage
+      ? (/^https?:\/\//i.test(rawImage) ? rawImage : `${apiRoot}${rawImage.startsWith("/") ? "" : "/"}${rawImage}`)
+      : "/hero1.jpeg";
 
   const tourTitle =
     tour.title ||
@@ -30,7 +42,7 @@ export default function TourCard({ tour }) {
   const rating =
     typeof tour.rating === "object"
       ? tour.rating?.average
-      : tour.rating;
+      : (tour.rating ?? tour.averageRating ?? 0);
 
   const handleWishlist = async () => {
     try {
@@ -75,7 +87,7 @@ export default function TourCard({ tour }) {
           "
           onError={(e) => {
             e.currentTarget.src =
-              "/placeholder.jpg";
+              "/hero1.jpeg";
           }}
         />
 

@@ -164,10 +164,29 @@ app.use((req, res, next) => {
 app.use((err, req, res, next) => {
   console.error(err);
 
-  res.status(err.statusCode || 500).json({
-    success: false,
+  let status = Number(err.statusCode) || 500;
+  let message = err.message || "Internal server error";
 
-    message: err.message || "Internal server error",
+  if (err.name === "ValidationError" || err.name === "CastError") {
+    status = 400;
+  }
+
+  if (err.code === 11000) {
+    status = 409;
+    const duplicateField = Object.keys(err.keyPattern || err.keyValue || {})[0];
+    message = duplicateField
+      ? `A record with this ${duplicateField} already exists.`
+      : "A record with these unique details already exists.";
+  }
+
+  res.status(status).json({
+    success: false,
+    message,
+    ...(err.name === "ValidationError" ? {
+      errors: Object.fromEntries(
+        Object.entries(err.errors || {}).map(([key, value]) => [key, value.message])
+      )
+    } : {}),
   });
 });
 

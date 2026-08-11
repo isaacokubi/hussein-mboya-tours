@@ -23,10 +23,6 @@ import {
 
 import agentMiddleware from "../middleware/agentMiddleware.js";
 
-import {
-  authorize,
-} from "../middleware/permissionMiddleware.js";
-
 import upload from "../middleware/uploadMiddleware.js";
 
 const router = express.Router();
@@ -57,7 +53,6 @@ router.use(agentMiddleware);
  */
 router.get(
   "/dashboard",
-  authorize("view_agent_dashboard"),
   getAgentDashboard
 );
 

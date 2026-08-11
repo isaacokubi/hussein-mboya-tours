@@ -58,9 +58,9 @@ const resolveGuide = async (user) => {
 
   guide = await Staff.create({
     user: user._id,
-    name: user.name,
-    email: user.email,
-    phone: user.phone || "",
+    name: user.name || "Tour Guide",
+    email: user.email || `guide-${user._id}@coherenttours.local`,
+    phone: user.phone || "N/A",
     position: "guide",
     role: "guide",
     status: "active",

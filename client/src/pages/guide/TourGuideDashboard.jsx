@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FaCalendarAlt, FaCar, FaCheckCircle, FaClock, FaMapMarkerAlt, FaUsers, FaUserTie } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { getGuideDashboard, updateTourStatus } from "../../api/guideApi";
+import AssignmentNotifications from "../../components/notifications/AssignmentNotifications";
 
 const startOfDay = (value) => {
   const d = new Date(value);
@@ -97,6 +98,10 @@ export default function TourGuideDashboard() {
               <div className="mt-3 text-3xl font-bold text-slate-900">{value}</div>
             </div>
           ))}
+        </div>
+
+        <div className="mb-8">
+          <AssignmentNotifications />
         </div>
 
         <div className="mb-4 flex items-center justify-between">

@@ -43,6 +43,7 @@ import customerRoutes from "./customerRoutes.js";
 import documentRoutes from "./documentRoutes.js";
 import financeRoutes from "./financeRoutes.js";
 import guideRoutes from "./guideRoutes.js";
+import driverRoutes from "./driverRoutes.js";
 import invoiceRoutes from "./invoiceRoutes.js";
 import notificationRoutes from "./notificationRoutes.js";
 import quotationRoutes from "./quotationRoutes.js";
@@ -172,6 +173,7 @@ router.get("/health", (req, res) => {
 });
 router.use("/recommendations", recommendationRoutes);
 router.use("/guide", guideRoutes);
+router.use("/driver", driverRoutes);
 
 router.use("/vehicles", vehicleRoutes);
 router.use("/users", userRoutes);

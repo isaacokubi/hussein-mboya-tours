@@ -13,6 +13,8 @@ import {
   io
 } from "socket.io-client";
 
+import { getNotifications } from "../api/notificationApi";
+
 
 import {
   useAuth
@@ -66,6 +68,27 @@ export function NotificationProvider({
     unreadCount,
     setUnreadCount
   ] = useState(0);
+
+  useEffect(() => {
+    if (!user?._id || !token) return;
+
+    let cancelled = false;
+
+    getNotifications({ limit: 30 })
+      .then((response) => {
+        if (cancelled) return;
+        const items = response?.notifications || [];
+        setNotifications(items);
+        setUnreadCount(items.filter((item) => !item.read).length);
+      })
+      .catch((error) => {
+        console.error("Failed to load notifications:", error?.message || error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?._id, token]);
 
 
 

@@ -404,7 +404,12 @@ export default function BookingDetails() {
 
       </div>
 
-      {String(booking.status || "").toLowerCase() === "completed" && booking.tour?._id && (
+      {(
+        ["completed", "complete", "finished"].includes(
+          String(booking.status || booking.bookingStatus || "").toLowerCase()
+        ) ||
+        Boolean(booking.completedAt)
+      ) && booking.tour?._id && (
         <div className="mt-8">
           <ReviewForm
             tourId={booking.tour._id}
