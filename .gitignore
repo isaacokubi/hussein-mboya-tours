@@ -96,3 +96,9 @@ Thumbs.db
 *.backup
 client-BACKUP-*
 server-BACKUP-*
+
+# Local repair/merge backups
+client-BACKUP-before-repair/
+server-BACKUP-before-repair/
+BACKUP-BEFORE-ZIP-MERGE-*/
+merge-backup-*/
