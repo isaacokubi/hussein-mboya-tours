@@ -4,6 +4,7 @@ import Booking from "../models/Booking.js";
 import User from "../models/User.js";
 import Staff from "../models/Staff.js";
 import Notification from "../models/Notification.js";
+import Role from "../models/Role.js";
 
 import {
   sendSMS,
@@ -113,11 +114,14 @@ export const getNotificationRecipients = async (req, res, next) => {
     };
 
     const allowedRoles = [...new Set(requested.flatMap((r) => roleMap[r] || []))];
+    const roleDocs = await Role.find({ name: { $in: allowedRoles } }).select("_id").lean();
+    const roleIds = roleDocs.map((role) => role._id);
 
     const users = await User.find({
       $or: [
         { role: { $in: allowedRoles } },
         { legacyRole: { $in: allowedRoles } },
+        ...(roleIds.length ? [{ roleId: { $in: roleIds } }] : []),
       ],
       status: "active",
       isActive: { $ne: false },
@@ -220,6 +224,12 @@ export const sendInternalNotification = async (req, res, next) => {
     if (!filter.length) {
       return res.status(400).json({ success: false, message: "Select at least one recipient or recipient group." });
     }
+
+    const roleDocs = expandedRoles.length
+      ? await Role.find({ name: { $in: expandedRoles } }).select("_id").lean()
+      : [];
+    const roleIds = roleDocs.map((role) => role._id);
+    if (roleIds.length) filter.push({ roleId: { $in: roleIds } });
 
     const recipients = await User.find({
       $or: filter,

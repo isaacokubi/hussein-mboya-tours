@@ -208,7 +208,9 @@ export const getAgentDashboard = async (req, res, next) => {
 
                     commissionRate: agent.commissionRate,
 
-                    status: agent.status
+                    status: agent.status,
+                    isApproved: Boolean(agent.isApproved),
+                    pendingApproval: !agent.isApproved
 
                 },
 

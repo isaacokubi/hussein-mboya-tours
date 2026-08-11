@@ -689,8 +689,23 @@ export const createTour = async (req, res, next) => {
       });
     }
 
+    const uploadedImages = Array.isArray(req.files)
+      ? req.files
+          .filter((file) => file?.path)
+          .map((file) => ({
+            url: file.path,
+            publicId: file.filename || file.public_id || "",
+          }))
+      : [];
+
     const tour = await Tour.create({
       ...rest,
+      ...(uploadedImages.length
+        ? {
+            featuredImage: uploadedImages[0],
+            gallery: uploadedImages,
+          }
+        : {}),
       title: title.trim(),
       description: description.trim(),
       destination,
@@ -835,21 +850,24 @@ async(req,res,next)=>{
 try{
 
 
+const updatePayload = { ...(req.body || {}) };
+    if (Array.isArray(req.files) && req.files.length) {
+      const uploadedImages = req.files.filter((file) => file?.path).map((file) => ({
+        url: file.path,
+        publicId: file.filename || file.public_id || "",
+      }));
+      updatePayload.featuredImage = uploadedImages[0];
+      updatePayload.gallery = uploadedImages;
+    }
+
 const tour =
 await Tour.findByIdAndUpdate(
-
 req.params.id,
-
-req.body,
-
+updatePayload,
 {
-
 new:true,
-
 runValidators:true
-
 }
-
 );
 
 

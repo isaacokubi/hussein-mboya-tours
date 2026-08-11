@@ -21,6 +21,7 @@ export const useAgentDashboard = () => {
       upcomingTours: statistics.upcomingTours ?? statistics.upcomingBookings ?? statistics.pendingBookings ?? 0,
       totalGuests: statistics.totalGuests ?? 0,
       walletBalance: payload.agent?.walletBalance ?? 0,
+      isApproved: payload.agent?.isApproved !== false,
     },
     bookings: payload.recentBookings || payload.bookings || [],
     customers: payload.customers || [],

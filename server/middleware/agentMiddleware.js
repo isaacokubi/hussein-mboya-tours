@@ -84,15 +84,9 @@ const agentMiddleware = async (req, res, next) => {
       });
     }
 
-    if (!agent.isApproved) {
-      return res.status(403).json({
-        success: false,
-        message: "Agent account is pending approval",
-      });
-    }
-
     req.user = user;
     req.agent = agent;
+    req.agentPendingApproval = !agent.isApproved;
 
     next();
   } catch (error) {
@@ -105,3 +99,14 @@ const agentMiddleware = async (req, res, next) => {
 };
 
 export default agentMiddleware;
+
+
+export const requireApprovedAgent = (req, res, next) => {
+  if (req.agentPendingApproval) {
+    return res.status(403).json({
+      success: false,
+      message: "Agent account is pending approval. Ask an administrator to approve the agent account before using operational agent features.",
+    });
+  }
+  next();
+};

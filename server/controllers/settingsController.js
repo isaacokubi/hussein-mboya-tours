@@ -2,10 +2,37 @@ import SystemSetting from "../models/SystemSetting.js";
 
 const DEFAULTS = {
   companyName: "Coherent Tours",
+  companyLogo: "",
+  websiteUrl: "",
   supportEmail: "",
   supportPhone: "+254 733 439 362",
+  address: "",
+  city: "Nairobi",
+  country: "Kenya",
   currency: "KES",
+  currencySymbol: "KSh",
   timezone: "Africa/Nairobi",
+  language: "en",
+  taxRate: 0,
+  bookingDepositPercentage: 30,
+  defaultCommissionRate: 10,
+  maintenanceMode: false,
+  allowRegistrations: true,
+  allowAgentRegistrations: true,
+  requireEmailVerification: true,
+  requirePhoneVerification: false,
+  enableMpesa: true,
+  enableStripe: false,
+  enablePaypal: false,
+  emailFromName: "Coherent Tours",
+  emailFromAddress: "",
+  facebook: "",
+  instagram: "",
+  twitter: "",
+  youtube: "",
+  seoTitle: "",
+  seoDescription: "",
+  seoKeywords: [],
   bookingNotifications: true,
   paymentNotifications: true,
 };
@@ -31,13 +58,16 @@ export const getSettings = async (req, res, next) => {
 export const updateSettings = async (req, res, next) => {
   try {
     const allowed = [
-      "companyName",
-      "supportEmail",
-      "supportPhone",
-      "currency",
-      "timezone",
-      "bookingNotifications",
-      "paymentNotifications",
+      "companyName","companyLogo","websiteUrl","supportEmail","supportPhone",
+      "address","city","country","currency","currencySymbol","timezone","language",
+      "taxRate","bookingDepositPercentage","defaultCommissionRate",
+      "maintenanceMode","allowRegistrations","allowAgentRegistrations",
+      "requireEmailVerification","requirePhoneVerification",
+      "enableMpesa","enableStripe","enablePaypal",
+      "emailFromName","emailFromAddress",
+      "facebook","instagram","twitter","youtube",
+      "seoTitle","seoDescription","seoKeywords",
+      "bookingNotifications","paymentNotifications",
     ];
 
     const updates = {};
@@ -45,11 +75,28 @@ export const updateSettings = async (req, res, next) => {
       if (req.body?.[key] !== undefined) updates[key] = req.body[key];
     }
 
+    if (req.file?.path) updates.companyLogo = req.file.path;
     updates.companyName = String(updates.companyName ?? DEFAULTS.companyName).trim();
     updates.supportEmail = String(updates.supportEmail ?? DEFAULTS.supportEmail).trim().toLowerCase();
     updates.supportPhone = String(updates.supportPhone ?? DEFAULTS.supportPhone).trim();
     updates.currency = String(updates.currency ?? DEFAULTS.currency).trim().toUpperCase();
     updates.timezone = String(updates.timezone ?? DEFAULTS.timezone).trim();
+
+    if (typeof updates.seoKeywords === "string") {
+      try { updates.seoKeywords = JSON.parse(updates.seoKeywords); }
+      catch { updates.seoKeywords = updates.seoKeywords.split(",").map((v) => v.trim()).filter(Boolean); }
+    }
+    for (const key of ["taxRate","bookingDepositPercentage","defaultCommissionRate"]) {
+      if (updates[key] !== undefined) updates[key] = Number(updates[key]);
+    }
+    for (const key of ["bookingNotifications","paymentNotifications","maintenanceMode","allowRegistrations","allowAgentRegistrations","requireEmailVerification","requirePhoneVerification","enableMpesa","enableStripe","enablePaypal"]) {
+      if (updates[key] !== undefined && typeof updates[key] === "string") updates[key] = updates[key] === "true";
+    }
+    if (updates.taxRate < 0 || updates.taxRate > 100 ||
+        updates.bookingDepositPercentage < 0 || updates.bookingDepositPercentage > 100 ||
+        updates.defaultCommissionRate < 0 || updates.defaultCommissionRate > 100) {
+      return res.status(400).json({ success: false, message: "Tax, deposit and commission rates must be between 0 and 100." });
+    }
 
     if (!updates.companyName) {
       return res.status(400).json({ success: false, message: "Company name cannot be empty." });
@@ -99,6 +146,12 @@ export const getPublicSettings = async (req, res, next) => {
         supportPhone: settings.supportPhone,
         currency: settings.currency,
         timezone: settings.timezone,
+        companyLogo: settings.companyLogo || "",
+        websiteUrl: settings.websiteUrl || "",
+        address: settings.address || "",
+        city: settings.city || "",
+        country: settings.country || "",
+        currencySymbol: settings.currencySymbol || "",
       },
     });
   } catch (error) {

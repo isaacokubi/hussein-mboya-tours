@@ -45,6 +45,7 @@ export default function CreateTour() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [form, setForm] = useState(emptyForm);
+  const [imageFiles, setImageFiles] = useState([]);
 
   const { data: destinationsData, isLoading: destinationsLoading } = useQuery({
     queryKey: ["destinations"],
@@ -114,25 +115,18 @@ export default function CreateTour() {
       return;
     }
 
-    saveTour({
-      title: form.title.trim(),
-      description: form.description.trim(),
-      category: form.category,
-      destination: form.destination,
-      country: form.country.trim(),
-      location: form.location.trim(),
-      date: form.date,
-      price: Number(form.price),
-      discount: Number(form.discount || 0),
-      capacity: Number(form.capacity || 20),
-      duration: Number(form.duration || 1),
-      difficulty: form.difficulty,
-      guide: form.guide || null,
-      driver: form.driver || null,
-      vehicle: form.vehicle || null,
-      status: form.status,
-      published: true,
-    });
+    const payload = new FormData();
+    const values = {
+      title: form.title.trim(), description: form.description.trim(), category: form.category,
+      destination: form.destination, country: form.country.trim(), location: form.location.trim(),
+      date: form.date, price: Number(form.price), discount: Number(form.discount || 0),
+      capacity: Number(form.capacity || 20), duration: Number(form.duration || 1),
+      difficulty: form.difficulty, guide: form.guide || "", driver: form.driver || "",
+      vehicle: form.vehicle || "", status: form.status, published: true,
+    };
+    Object.entries(values).forEach(([key, value]) => payload.append(key, String(value)));
+    imageFiles.forEach((file) => payload.append("images", file));
+    saveTour(payload);
   };
 
   const assignmentLoading =
@@ -300,6 +294,31 @@ export default function CreateTour() {
             rows="5"
             required
           />
+
+          <div className="md:col-span-2 rounded-xl border bg-white p-5">
+            <label className="block">
+              <span className="mb-2 block text-lg font-bold">Tour Images</span>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                multiple
+                onChange={(e) => setImageFiles(Array.from(e.target.files || []).slice(0, 10))}
+                className="w-full rounded-xl border bg-gray-50 p-3"
+              />
+              <span className="mt-2 block text-xs text-gray-500">
+                Upload up to 10 images. The first image becomes the featured image.
+              </span>
+              {imageFiles.length > 0 && (
+                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {imageFiles.map((file) => (
+                    <div key={`${file.name}-${file.lastModified}`} className="truncate rounded-lg border bg-gray-50 p-2 text-xs">
+                      {file.name}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </label>
+          </div>
 
           <div className="md:col-span-2 rounded-xl border bg-gray-50 p-5">
             <div className="mb-4">

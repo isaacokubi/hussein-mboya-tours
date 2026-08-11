@@ -29,6 +29,7 @@ from "../../components/agent/DashboardCard";
 
 
 
+
 export default function AgentDashboard(){
 
 
@@ -112,8 +113,7 @@ export default function AgentDashboard(){
             ">
 
 
-                Unable to load agent dashboard.
-                Please try again later.
+                {error?.response?.data?.message || error?.message || "Unable to load agent dashboard. Please try again later."}
 
 
             </div>
@@ -160,6 +160,13 @@ export default function AgentDashboard(){
 
 
 
+
+            {!safeStats.isApproved && (
+                <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-800">
+                    <strong>Agent account pending approval.</strong>
+                    <span className="ml-1">Your dashboard is available, but operational agent features will unlock after an administrator approves your account.</span>
+                </div>
+            )}
 
             <div className="mb-8">
 

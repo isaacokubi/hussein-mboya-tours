@@ -49,18 +49,29 @@ export default function TourManagerCalendar() {
     const keyDate = dateKey(day);
     if (!keyDate) return [];
     const target = new Date(`${keyDate}T00:00:00`);
-    const tourEvents = tours.filter(t => {
+    const uniqueTours = Array.from(
+      new Map(tours.filter(Boolean).map((tour) => [String(tour._id), tour])).values()
+    );
+    const tourEvents = uniqueTours.filter(t => {
       const start = new Date(startDateOf(t)); start.setHours(0,0,0,0);
       const end = new Date(endDateOf(t)); end.setHours(0,0,0,0);
       return target >= start && target <= end;
     }).map(t => ({ kind:"tour", id:t._id, title:t.title, tour:t }));
-    const reminderEvents = reminders.filter(r => r.date === keyDate).map(r => ({ kind:"reminder", ...r }));
+    const uniqueReminders = Array.from(
+      new Map(reminders.filter((r) => r?.date === keyDate).map((r) => [String(r.id), r])).values()
+    );
+    const reminderEvents = uniqueReminders.map(r => ({ kind:"reminder", ...r }));
     return [...tourEvents, ...reminderEvents];
   };
 
   const addReminder = () => {
     if (!selectedDay || !title.trim()) return;
     const item = { id: `${Date.now()}`, date: dateKey(selectedDay), title: title.trim() };
+    const duplicate = reminders.some((r) => r.date === item.date && r.title.trim().toLowerCase() === item.title.toLowerCase());
+    if (duplicate) {
+      toast.info("That reminder already exists on this date.");
+      return;
+    }
     const next = [...reminders, item];
     setReminders(next);
     localStorage.setItem(key, JSON.stringify(next));

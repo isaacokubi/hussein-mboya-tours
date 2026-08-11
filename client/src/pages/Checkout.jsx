@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createBooking } from "../api/bookingApi";
-import { initiateMpesa, checkPaymentStatus } from "../api/mpesaApi";
+import { initiateMpesa } from "../api/mpesaApi";
 import { getTourById } from "../api/tourApi";
 
 export default function Checkout() {
@@ -66,59 +66,11 @@ export default function Checkout() {
           message: "M-Pesa prompt sent. Check your phone and enter your M-Pesa PIN.",
         });
 
-        toast.success("M-Pesa prompt sent to your phone.");
+        toast.success("M-Pesa prompt sent. Redirecting you to your bookings...");
+        window.setTimeout(() => navigate("/my-bookings"), 1800);
 
-        let attempts = 0;
-        const maxAttempts = 30;
-
-        const poll = async () => {
-          attempts += 1;
-          try {
-            const statusResponse = await checkPaymentStatus(checkoutRequestId);
-            const payment =
-              statusResponse?.data?.payment ||
-              statusResponse?.payment ||
-              statusResponse?.data ||
-              statusResponse;
-
-            const status = String(payment?.status || payment?.paymentStatus || "").toLowerCase();
-
-            if (["completed", "paid", "success", "successful"].includes(status)) {
-              setPaymentState((current) => current ? {
-                ...current,
-                status: "completed",
-                message: "Payment confirmed. Your booking is now confirmed.",
-              } : current);
-              toast.success("Payment confirmed successfully.");
-              setTimeout(() => navigate(`/bookings/${booking._id}`), 1200);
-              return;
-            }
-
-            if (["failed", "cancelled", "refunded"].includes(status)) {
-              setPaymentState((current) => current ? {
-                ...current,
-                status: "failed",
-                message: "The M-Pesa payment was not completed. You can retry from your booking.",
-              } : current);
-              return;
-            }
-
-            if (attempts < maxAttempts) {
-              window.setTimeout(poll, 3000);
-            } else {
-              setPaymentState((current) => current ? {
-                ...current,
-                status: "timeout",
-                message: "We are still waiting for M-Pesa confirmation. Check your booking status shortly.",
-              } : current);
-            }
-          } catch {
-            if (attempts < maxAttempts) window.setTimeout(poll, 3000);
-          }
-        };
-
-        window.setTimeout(poll, 3000);
-      } catch (paymentError) {
+        // Payment confirmation continues through the M-Pesa callback; the customer is now on My Bookings.
+        } catch (paymentError) {
         toast.error(
           paymentError?.response?.data?.message ||
             paymentError?.message ||

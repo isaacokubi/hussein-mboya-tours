@@ -4,6 +4,7 @@ import { FaCalendarAlt, FaCar, FaCheckCircle, FaClock, FaMapMarkerAlt, FaUsers, 
 import { toast } from "react-toastify";
 import { getGuideDashboard, updateTourStatus } from "../../api/guideApi";
 import AssignmentNotifications from "../../components/notifications/AssignmentNotifications";
+import MobileDashboardNav from "../../components/common/MobileDashboardNav";
 
 const startOfDay = (value) => {
   const d = new Date(value);
@@ -74,6 +75,8 @@ export default function TourGuideDashboard() {
   ];
 
   return (
+    <>
+      <MobileDashboardNav role="guide" title="Guide Dashboard" />
     <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-8">
       <div className="mx-auto max-w-7xl">
         <div className="mb-8 rounded-3xl bg-gradient-to-r from-slate-900 to-emerald-900 p-6 text-white shadow-xl md:p-8">
@@ -157,5 +160,6 @@ export default function TourGuideDashboard() {
         </div>
       </div>
     </div>
+    </>
   );
 }

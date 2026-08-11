@@ -61,7 +61,9 @@ export const getManagerTours = async (params = {}) => {
 */
 
 export const createTour = async (payload) => {
-  const { data } = await api.post("/tours", payload);
+  const { data } = await api.post("/tours", payload, {
+    headers: payload instanceof FormData ? { "Content-Type": "multipart/form-data" } : undefined,
+  });
 
   return data;
 };

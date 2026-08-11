@@ -21,7 +21,7 @@ import {
   protect,
 } from "../middleware/authMiddleware.js";
 
-import agentMiddleware from "../middleware/agentMiddleware.js";
+import agentMiddleware, { requireApprovedAgent } from "../middleware/agentMiddleware.js";
 import { authorize } from "../middleware/permissionMiddleware.js";
 
 import upload from "../middleware/uploadMiddleware.js";
@@ -56,6 +56,8 @@ router.get(
   "/dashboard",
   getAgentDashboard
 );
+
+router.use(requireApprovedAgent);
 
 router.get(
   "/quotes",

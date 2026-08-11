@@ -1,6 +1,7 @@
 // client/src/pages/tour-manager/TourManagerDashboard.jsx
 
 import { useQuery } from "@tanstack/react-query";
+import AssignmentNotifications from "../../components/notifications/AssignmentNotifications";
 
 import { useNavigate } from "react-router-dom";
 
@@ -142,6 +143,8 @@ export default function TourManagerDashboard() {
           </div>
         </div>
       </div>
+
+      <div className="mb-6"><AssignmentNotifications /></div>
 
       <div
         className="

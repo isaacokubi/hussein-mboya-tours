@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "react-toastify";
 
 import { addWishlist } from "../../api/wishlistApi";
+import { getTourImage } from "../../utils/tourImage";
 
 export default function TourCard({ tour }) {
   const [adding, setAdding] = useState(false);
@@ -15,24 +16,7 @@ export default function TourCard({ tour }) {
     ? price - (price * Number(tour.discount)) / 100
     : price;
 
-  const mediaCandidates = [
-    tour.images?.[0],
-    tour.featuredImage,
-    tour.gallery?.[0],
-    tour.image,
-  ];
-
-  const firstMedia = mediaCandidates.find(Boolean);
-  const rawImage =
-    typeof firstMedia === "object"
-      ? firstMedia?.url
-      : firstMedia;
-
-  const apiRoot = String(import.meta.env.VITE_API_URL || "").replace(/\/api\/?$/, "");
-  const tourImage =
-    rawImage
-      ? (/^https?:\/\//i.test(rawImage) ? rawImage : `${apiRoot}${rawImage.startsWith("/") ? "" : "/"}${rawImage}`)
-      : "/hero1.jpeg";
+  const tourImage = getTourImage(tour);
 
   const tourTitle =
     tour.title ||

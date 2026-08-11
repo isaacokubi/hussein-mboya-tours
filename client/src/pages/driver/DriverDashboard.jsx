@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { getDriverDashboard } from "../../api/driverApi";
 import AssignmentNotifications from "../../components/notifications/AssignmentNotifications";
+import MobileDashboardNav from "../../components/common/MobileDashboardNav";
 
 const formatDate = (value) =>
   value
@@ -26,6 +27,8 @@ export default function DriverDashboard() {
   const stats = data?.stats || {};
 
   return (
+    <>
+      <MobileDashboardNav role="driver" title="Driver Dashboard" />
     <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-8">
       <div className="mx-auto max-w-7xl">
         <div className="rounded-3xl bg-gradient-to-r from-slate-950 to-emerald-900 p-6 text-white shadow-xl md:p-8">
@@ -79,5 +82,6 @@ export default function DriverDashboard() {
         </div>
       </div>
     </div>
+    </>
   );
 }

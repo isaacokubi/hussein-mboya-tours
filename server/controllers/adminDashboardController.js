@@ -44,17 +44,16 @@ export const getDashboard = async (req, res) => {
         ],
       }),
       Staff.countDocuments({
-        position: "guide",
+        position: { $in: ["guide", "tour_guide", "tourguide"] },
         isDeleted: NON_DELETED,
-        isActive: true,
-        status: "active",
+        status: { $ne: "inactive" },
       }),
       Vehicle.countDocuments({
         isDeleted: NON_DELETED,
-        isActive: true,
+        status: { $nin: ["inactive", "retired"] },
       }),
       Agent.countDocuments({
-        status: "active",
+        status: { $ne: "inactive" },
       }),
     ]);
 

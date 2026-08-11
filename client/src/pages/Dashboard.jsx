@@ -5,6 +5,8 @@ import { Link, Navigate } from "react-router-dom";
 import { getMyBookings } from "../api/bookingApi";
 
 import { useAuth } from "../context/AuthContext";
+import MobileDashboardNav from "../components/common/MobileDashboardNav";
+import AssignmentNotifications from "../components/notifications/AssignmentNotifications";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -175,7 +177,9 @@ if (isLoading) {
   const nextTrip = upcomingTrips[0];
 
   return (
-    <div
+    <>
+      <MobileDashboardNav role="customer" title="Customer Dashboard" />
+      <div
       className="
     min-h-screen
     bg-gray-100
@@ -249,6 +253,8 @@ if (isLoading) {
           </Link>
         </div>
       </div>
+
+      <div className="mb-6 mt-6 md:mt-0"><AssignmentNotifications /></div>
 
       <div
         className="
@@ -427,6 +433,7 @@ if (isLoading) {
         )}
       </div>
     </div>
+    </>
   );
 }
 

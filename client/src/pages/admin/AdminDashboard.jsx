@@ -21,6 +21,7 @@ import {
 } from "recharts";
 
 import { getDashboard } from "../../api/adminApi";
+import AssignmentNotifications from "../../components/notifications/AssignmentNotifications";
 import { getPaymentStats } from "../../api/admin/adminPaymentApi";
 import { getSystemHealth } from "../../api/admin/systemHealthApi";
 
@@ -242,6 +243,8 @@ text-transparent
 
       </div>
       </div>{" "}
+      <div className="mb-6"><AssignmentNotifications /></div>
+
       {/* STATISTICS CARDS */}
       <div
         className="
