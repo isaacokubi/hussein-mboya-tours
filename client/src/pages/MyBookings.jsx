@@ -207,7 +207,7 @@ export default function MyBookings() {
                       {status !== "cancelled" &&
                         status !== "completed" &&
                         paymentStatus !== "paid" && (
-                          <PayNowButton booking={booking} />
+                          <PayNowButton booking={booking} user={user} />
                         )}
 
                       {status !== "cancelled" && status !== "completed" && (
@@ -259,7 +259,7 @@ function StatusBadge({ value, payment = false }) {
   );
 }
 
-function PayNowButton({ booking }) {
+function PayNowButton({ booking, user }) {
   const [loading, setLoading] = useState(false);
 
   const handlePayment = async () => {

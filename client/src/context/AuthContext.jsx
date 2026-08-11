@@ -215,14 +215,13 @@ try{
 
 
   localStorage.setItem(
-
     "user",
-
     JSON.stringify(currentUser)
-
   );
-
-
+  localStorage.setItem(
+    "permissions",
+    JSON.stringify(currentUser.permissions || [])
+  );
 
   return currentUser;
 
@@ -456,15 +455,9 @@ const hasPermission =
 
 
  return permissions.some(
-
-  item =>
-
-    item.name === permission
-
-    ||
-
-    item.path === permission
-
+  (item) =>
+    (typeof item === "string" ? item : item?.name) === permission ||
+    (typeof item === "object" && item?.path === permission)
  );
 
 

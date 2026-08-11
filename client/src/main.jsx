@@ -10,6 +10,7 @@ import {
 import App from "./App";
 
 import { AuthProvider } from "./context/AuthContext";
+import { SettingsProvider } from "./context/SettingsContext";
 
 import {
   CartProvider,
@@ -63,17 +64,11 @@ ReactDOM.createRoot(
 
 
         <AuthProvider>
-
-
-          <CartProvider>
-
-
-            <App />
-
-
-          </CartProvider>
-
-
+          <SettingsProvider>
+            <CartProvider>
+              <App />
+            </CartProvider>
+          </SettingsProvider>
         </AuthProvider>
 
 

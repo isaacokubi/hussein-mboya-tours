@@ -9,6 +9,7 @@ import {
 import {
   getBooking
 } from "../api/bookingApi";
+import ReviewForm from "../components/reviews/ReviewForm";
 
 
 export default function BookingDetails() {
@@ -403,6 +404,14 @@ export default function BookingDetails() {
 
       </div>
 
+      {String(booking.status || "").toLowerCase() === "completed" && booking.tour?._id && (
+        <div className="mt-8">
+          <ReviewForm
+            tourId={booking.tour._id}
+            onSuccess={() => refetch()}
+          />
+        </div>
+      )}
 
     </div>
 

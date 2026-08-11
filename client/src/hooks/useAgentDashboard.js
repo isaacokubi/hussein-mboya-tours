@@ -1,193 +1,27 @@
-// client/src/hooks/useAgentDashboard.js
+import { useQuery } from "@tanstack/react-query";
+import { fetchAgentDashboard } from "../api/agentApi";
 
-import {
-  useQuery
-} from "@tanstack/react-query";
-
-
-import {
-  fetchAgentDashboard
-} from "../api/agentApi";
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| AGENT DASHBOARD HOOK
-|--------------------------------------------------------------------------
-|
-| Fetches dashboard statistics for logged-in agents.
-|
-| Flow:
-|
-| Component
-|     |
-|     ↓
-| useAgentDashboard()
-|     |
-|     ↓
-| fetchAgentDashboard()
-|     |
-|     ↓
-| GET /api/agent/dashboard
-|
-|--------------------------------------------------------------------------
-*/
-
-
-export const useAgentDashboard = (
-  params = {}
-) => {
-
-
-
+export const useAgentDashboard = () => {
   const query = useQuery({
-
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | CACHE KEY
-    |--------------------------------------------------------------------------
-    */
-
-    queryKey:[
-
-      "agent-dashboard",
-
-      params
-
-    ],
-
-
-
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | API FUNCTION
-    |--------------------------------------------------------------------------
-    */
-
-    queryFn:
-
-    async()=>{
-
-
-      const response =
-        await fetchAgentDashboard(params);
-
-
-
-      return (
-
-        response?.data
-
-        ||
-
-        response
-
-        ||
-
-        {}
-
-      );
-
-
-    },
-
-
-
-
-
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | PRODUCTION SETTINGS
-    |--------------------------------------------------------------------------
-    */
-
-
-    staleTime:
-
-      1000 * 60 * 5,
-
-
-
-    retry:
-
-      2
-
-
-
+    queryKey: ["agent-dashboard"],
+    queryFn: fetchAgentDashboard,
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
   });
 
-
-
-
-
-
-
-
+  const payload = query.data?.data || query.data || {};
+  const statistics = payload.statistics || payload.stats || {};
 
   return {
-
-
     ...query,
-
-
-
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | SAFE DATA DEFAULTS
-    |--------------------------------------------------------------------------
-    */
-
-
-    dashboard:
-
-      query.data || {},
-
-
-
-
-
-    stats:
-
-      query.data?.stats || {},
-
-
-
-
-
-    bookings:
-
-      query.data?.bookings || [],
-
-
-
-
-
-    customers:
-
-      query.data?.customers || [],
-
-
-
-
-
-    revenue:
-
-      query.data?.revenue || 0
-
-
-
+    dashboard: payload,
+    stats: {
+      ...statistics,
+      assignedTours: statistics.assignedTours ?? statistics.bookings ?? 0,
+      upcomingTours: statistics.upcomingTours ?? statistics.pendingBookings ?? 0,
+    },
+    bookings: payload.recentBookings || payload.bookings || [],
+    customers: payload.customers || [],
+    revenue: statistics.totalSales || payload.revenue || 0,
   };
-
-
 };

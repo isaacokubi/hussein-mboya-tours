@@ -81,3 +81,27 @@ export const updateSettings = async (req, res, next) => {
     });
   }
 };
+
+
+export const getPublicSettings = async (req, res, next) => {
+  try {
+    const settings = await SystemSetting.findOneAndUpdate(
+      { key: "default" },
+      { $setOnInsert: { key: "default", ...DEFAULTS } },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    ).lean();
+
+    return res.json({
+      success: true,
+      settings: {
+        companyName: settings.companyName,
+        supportEmail: settings.supportEmail,
+        supportPhone: settings.supportPhone,
+        currency: settings.currency,
+        timezone: settings.timezone,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};

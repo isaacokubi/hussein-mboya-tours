@@ -1,3 +1,5 @@
+import { useSettings } from "../../context/SettingsContext";
+
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -12,6 +14,7 @@ import {
 
 export default function Footer() {
   const { user } = useAuth();
+  const { companyName, supportEmail, supportPhone } = useSettings();
 
   const year = new Date().getFullYear();
 
@@ -49,7 +52,7 @@ export default function Footer() {
 
         <div>
           <h2 className="text-2xl font-bold text-white">
-            Coherent Tours
+            {companyName}
           </h2>
 
           <p className="mt-4 text-gray-400 leading-relaxed">
@@ -60,19 +63,19 @@ export default function Footer() {
 
           <div className="mt-6 space-y-3 text-sm">
             <a
-              href="tel:+254733439762"
+              href={`tel:${supportPhone.replace(/\s+/g, "")}`}
               className="flex items-center gap-2 hover:text-green-400 transition"
             >
               <FaPhone />
-              +254 733 439 362
+              {supportPhone}
             </a>
 
             <a
-              href="mailto:info@coherenttours.com"
+              href={`mailto:${supportEmail || "support@example.com"}`}
               className="flex items-center gap-2 hover:text-green-400 transition"
             >
               <FaEnvelope />
-              info@coherenttours.com
+              {supportEmail || "support@example.com"}
             </a>
 
             <div className="flex items-center gap-2">

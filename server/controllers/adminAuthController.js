@@ -1,70 +1,66 @@
 import User from "../models/User.js";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import generateToken from "../utils/generateToken.js";
+import buildPermissions from "../utils/buildPermissions.js";
 
 export const adminLogin = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const email = String(req.body?.email || "").trim().toLowerCase();
+    const password = String(req.body?.password || "");
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email })
+      .select("+password")
+      .populate({
+        path: "roleId",
+        populate: { path: "permissions" },
+      })
+      .populate("permissionsOverride");
 
-    // Amendment 1 - Prevent email enumeration
-    if (!user) {
+    const role = String(
+      user?.roleId?.name || user?.role || user?.legacyRole || ""
+    )
+      .trim()
+      .toLowerCase()
+      .replace(/[\s_-]+/g, "");
+
+    if (
+      !user ||
+      !["admin", "superadmin", "administrator"].includes(role) ||
+      user.status !== "active" ||
+      !(await user.matchPassword(password))
+    ) {
       return res.status(401).json({
         success: false,
         message: "Invalid email or password",
       });
     }
 
-    // Amendment 2 - Hide admin role information
-    if (user.role !== "admin") {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid email or password",
-      });
-    }
+    const permissions = buildPermissions(user);
+    const token = generateToken({
+      _id: user._id,
+      roleId: user.roleId,
+      role,
+      email: user.email,
+      permissions,
+    });
 
-    const valid = await bcrypt.compare(password, user.password);
-
-    // Amendment 3 - Generic password response
-    if (!valid) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid email or password",
-      });
-    }
-
-    // Amendment 4 - Improved JWT
-    const token = jwt.sign(
-      {
-        id: user._id.toString(),
-        role: user.role,
-        email: user.email,
-      },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: process.env.JWT_EXPIRE || "7d",
-        issuer: "hussein-mboya-tours",
-        audience: "admin",
-      }
-    );
-
-    // Amendment 5 - Success response
     return res.status(200).json({
       success: true,
       token,
       user: {
-        id: user._id,
+        _id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role,
+        phone: user.phone,
+        role,
+        permissions,
+        status: user.status,
       },
     });
-
   } catch (error) {
+    console.error("ADMIN LOGIN ERROR:", error);
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Unable to complete admin login.",
     });
   }
 };

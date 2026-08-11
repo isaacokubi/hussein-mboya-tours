@@ -29,6 +29,27 @@ const publicTourFilter = {
 
 };
 
+const attachAvailability = (tourLike) => {
+  const totalSlots = Number(
+    tourLike?.availabilitySettings?.totalSlots ??
+    tourLike?.capacity ??
+    0
+  );
+  const bookedSlots = Math.max(
+    0,
+    Number(tourLike?.availabilitySettings?.bookedSlots ?? 0)
+  );
+  const availableSlots = Math.max(totalSlots - bookedSlots, 0);
+
+  return {
+    ...tourLike,
+    totalSlots,
+    bookedSlots,
+    availableSlots,
+    isFull: availableSlots === 0,
+  };
+};
+
 
 
 
@@ -208,7 +229,7 @@ export const getTours = async(req,res,next)=>{
       },
 
 
-      data:tours
+      data:tours.map((tour) => attachAvailability(tour.toObject?.() || tour))
 
     });
 

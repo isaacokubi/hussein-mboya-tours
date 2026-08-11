@@ -52,6 +52,7 @@ import tourReportRoutes from "./tourReportRoutes.js";
 import aiRoutes from "./aiRoutes.js";
 import seoRoutes from "./seoRoutes.js";
 import settingsRoutes from "./settingsRoutes.js";
+import { getPublicSettings } from "../controllers/settingsController.js";
 
 const router = express.Router();
 
@@ -94,6 +95,7 @@ router.use("/admin/bookings", adminBookingRoutes);
 router.use("/admin/payments", adminPaymentRoutes);
 router.use("/admin/roles", adminRoleRoutes);
 router.use("/admin/system-health", systemHealthRoutes);
+router.get("/settings/public", getPublicSettings);
 router.use("/admin/settings", settingsRoutes);
 router.use("/admin/dashboard", adminDashboardRoutes);
 router.use("/admin/reviews", adminReviewRoutes);

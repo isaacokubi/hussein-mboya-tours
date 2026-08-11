@@ -1,0 +1,39 @@
+REPAIR NOTES - HUSSEIN MBOYA TOURS
+
+The repair package is based on the uploaded project and keeps the MERN structure (client/ + server/).
+
+Major fixes include:
+- RBAC/default permission repair and role bootstrap.
+- First-admin bootstrap command.
+- Agent account/profile lifecycle and middleware repair.
+- Booking pickup data and live slot accounting.
+- SMS/WhatsApp booking and assignment notification dispatch.
+- Vehicle image upload/form/model compatibility.
+- Admin dashboard agent/guide/vehicle data repair.
+- Staff and customer search fixes.
+- Review submission/display integration.
+- Commission approval/payment confirmation controls.
+- Global system settings propagation.
+- Admin mobile hamburger navigation.
+- Admin Add Tour routing/publication fix.
+- CSV customer export fix.
+- Customer registration and M-Pesa commission validation fixes.
+
+First admin bootstrap:
+  cd server
+  npm install
+  npm run create:admin -- "Admin Name" admin@example.com 0712345678 StrongPassword123!
+
+Then configure server/.env with at least:
+  MONGODB_URI
+  JWT_SECRET
+  CLIENT_ORIGINS
+
+For live notifications configure:
+  AT_API_KEY
+  AT_USERNAME
+  AT_SENDER_ID (optional)
+  WHATSAPP_API_URL
+  WHATSAPP_ACCESS_TOKEN
+
+For payments/media/email also configure the existing M-Pesa, Cloudinary and SMTP environment variables used by the project.

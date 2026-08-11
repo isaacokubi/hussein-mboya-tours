@@ -4,7 +4,7 @@ import { Search, Trash2, UserCheck, UserX, UserPlus, ChevronLeft, ChevronRight }
 import { toast } from "react-toastify";
 import { getAdminUsers, updateUserStatus, deleteUser, createStaffAccount } from "../../api/adminUserApi";
 
-const roles = ["admin", "manager", "guide", "driver"];
+const roles = ["admin", "manager", "agent", "guide", "driver"];
 
 export default function UserManagement() {
   const queryClient = useQueryClient();
@@ -47,7 +47,7 @@ export default function UserManagement() {
       setForm({ name:"", email:"", phone:"", password:"", role:"guide" });
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       queryClient.invalidateQueries({ queryKey: ["staff", "admin"] });
-      toast.success("Staff account created.");
+      toast.success("Account created successfully.");
     },
     onError: e => toast.error(e?.response?.data?.message || "Could not create account."),
   });
@@ -64,7 +64,7 @@ export default function UserManagement() {
           <p className="mt-1 text-slate-500">Search, control access and create operational accounts.</p>
         </div>
         <button onClick={()=>setShowCreate(true)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white shadow hover:bg-emerald-800">
-          <UserPlus size={18}/> Create staff account
+          <UserPlus size={18}/> Create user account
         </button>
       </div>
 
@@ -113,8 +113,8 @@ export default function UserManagement() {
       {showCreate && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
           <form onSubmit={e=>{e.preventDefault();createMutation.mutate(form)}} className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
-            <div className="flex items-center justify-between"><h2 className="text-2xl font-bold">Create staff account</h2><button type="button" onClick={()=>setShowCreate(false)} className="text-2xl">×</button></div>
-            <p className="mt-1 text-sm text-slate-500">Create an admin, manager, guide or driver login. Guides and drivers also receive an operational staff profile.</p>
+            <div className="flex items-center justify-between"><h2 className="text-2xl font-bold">Create user account</h2><button type="button" onClick={()=>setShowCreate(false)} className="text-2xl">×</button></div>
+            <p className="mt-1 text-sm text-slate-500">Create an admin, manager, agent, guide or driver login. Agents receive a linked agent profile; guides and drivers receive operational staff profiles.</p>
             <div className="mt-5 grid gap-4">
               <input required placeholder="Full name" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} className="rounded-lg border p-3"/>
               <input required type="email" placeholder="Email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} className="rounded-lg border p-3"/>

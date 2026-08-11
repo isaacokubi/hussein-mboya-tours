@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ShieldCheck, Save, ChevronDown } from "lucide-react";
 import { toast } from "react-toastify";
@@ -33,8 +33,11 @@ export default function RolesPage() {
 }
 
 function PermissionEditor({role,grouped,mutation}) {
-  const initial=new Set((role?.permissions||[]).map(p=>p._id));
-  const [checked,setChecked]=useState(initial);
+  const initial = new Set((role?.permissions || []).map((p) => p._id));
+  const [checked, setChecked] = useState(initial);
+  useEffect(() => {
+    setChecked(new Set((role?.permissions || []).map((p) => p._id)));
+  }, [role?._id]);
   const allIds=Object.values(grouped).flat().map(p=>p._id);
   const toggle=(id)=>setChecked(prev=>{const n=new Set(prev);n.has(id)?n.delete(id):n.add(id);return n;});
   const selectAll=()=>setChecked(new Set(allIds));

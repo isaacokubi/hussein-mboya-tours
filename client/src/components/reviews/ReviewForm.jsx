@@ -47,7 +47,7 @@ export default function ReviewForm({
       setLoading(true);
 
       await api.post("/reviews", {
-        tourId,
+        tour: tourId,
         rating: Number(form.rating),
         title: form.title.trim(),
         comment: form.comment.trim(),

@@ -2,13 +2,16 @@ import express from "express";
 
 import {
 getCommissions,
-getAgentCommissions
+getAgentCommissions,
+approveCommission,
+payCommission
 } from "../controllers/commissionController.js";
 
 
 import {
 protect
 } from "../middleware/authMiddleware.js";
+import adminMiddleware from "../middleware/adminMiddleware.js";
 
 
 const router = express.Router();
@@ -16,8 +19,7 @@ const router = express.Router();
 
 
 router.use(protect);
-
-
+router.use(adminMiddleware);
 
 router.get(
 "/",
@@ -30,6 +32,9 @@ router.get(
 "/agent/:agentId",
 getAgentCommissions
 );
+
+router.patch("/:id/approve", adminMiddleware, approveCommission);
+router.post("/:id/pay", adminMiddleware, payCommission);
 
 
 

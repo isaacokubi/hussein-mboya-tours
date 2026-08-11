@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Role from "../models/Role.js";
 import Permission from "../models/Permission.js";
 
@@ -11,7 +12,18 @@ import Permission from "../models/Permission.js";
 
 const DEFAULT_PERMISSIONS = {
   customer: ["profile.view", "booking.create", "booking.view", "wishlist.manage"],
-  agent: ["booking.create", "booking.view", "customer.view", "commission.view"],
+  agent: [
+    "admin.dashboard",
+    "booking.create",
+    "booking.view",
+    "customer.view",
+    "commission.view",
+    "view_agent_dashboard",
+    "view_agent_tours",
+    "create_agent_tour",
+    "edit_agent_tour",
+    "delete_agent_tour",
+  ],
   tour_manager: ["tour.view", "tour.create", "tour.update", "booking.view", "booking.cancel", "tour.assign", "tour.availability", "calendar.manage", "customer.view", "guide.view", "vehicle.view", "report.view"],
   tour_guide: ["tour.view", "view_assigned_tours", "view_tour_guests", "update_tour_status", "submit_tour_report"],
   driver: ["tour.view", "view_assigned_tours"],
@@ -42,14 +54,32 @@ const ensureDefaultPermissions = async () => {
   const byName = new Map(permissions.map(p => [p.name, p._id]));
 
   for (const [roleName, names] of Object.entries(DEFAULT_PERMISSIONS)) {
-    const role = await Role.findOne({
+    let role = await Role.findOne({
       name: { $in: [roleName, roleName.replace("tour_", "")] },
     });
-    if (!role) continue;
-    if (!role.permissions?.length) {
-      role.permissions = names.map(name => byName.get(name)).filter(Boolean);
-      await role.save();
+
+    if (!role) {
+      role = await Role.create({
+        name: roleName,
+        displayName: roleName.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+        description: `${roleName.replace(/_/g, " ")} access`,
+        permissions: [],
+        isSystem: ["admin", "super_admin", "tour_manager", "tour_guide", "driver"].includes(roleName),
+        status: "active",
+        level: roleName === "super_admin" ? 200 : roleName === "admin" ? 100 : 20,
+        isDefault: roleName === "customer",
+      });
     }
+
+    const merged = new Map(
+      (role.permissions || []).map((id) => [id.toString(), id])
+    );
+    names.forEach((name) => {
+      const id = byName.get(name);
+      if (id) merged.set(id.toString(), id);
+    });
+    role.permissions = [...merged.values()];
+    await role.save();
   }
 };
 
@@ -415,11 +445,18 @@ message:"Role not found"
 
 
 
-role.permissions =
-req.body.permissions || [];
+const permissionIds = Array.isArray(req.body.permissions)
+  ? req.body.permissions.filter((id) => mongoose.Types.ObjectId.isValid(id))
+  : [];
 
+if (role.isSystem && ["super_admin", "superadmin"].includes(role.name)) {
+  return res.status(403).json({
+    success: false,
+    message: "The Super Admin role permissions cannot be modified.",
+  });
+}
 
-
+role.permissions = permissionIds;
 await role.save();
 
 

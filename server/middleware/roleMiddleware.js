@@ -98,7 +98,7 @@ export const managerOnly =
     );
 
 export const agentOnly =
-    roleMiddleware("agent");
+    roleMiddleware("agent", "travel_agent", "travelagent");
 
 export const guideOnly =
     roleMiddleware(

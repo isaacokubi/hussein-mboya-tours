@@ -38,11 +38,14 @@ const updateTourRating = async (tourId) => {
 export const createReview = async (req, res, next) => {
   try {
     const {
-      tour,
+      tour: requestedTour,
+      tourId,
       rating,
       title,
       comment,
     } = req.body;
+
+    const tour = requestedTour || tourId;
 
     if (!tour || !rating || !comment) {
       return res.status(400).json({

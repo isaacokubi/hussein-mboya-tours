@@ -1,45 +1,28 @@
 import Commission from "../models/Commission.js";
-import User from "../models/User.js";
-
-/*
-|--------------------------------------------------------------------------
-| CREATE AGENT COMMISSION
-|--------------------------------------------------------------------------
-*/
+import Agent from "../models/Agent.js";
 
 export const createCommission = async (booking) => {
-  if (!booking.agent) {
-    return null;
-  }
+  if (!booking?.agent) return null;
 
-  // Prevent duplicate commission
-  const existingCommission = await Commission.findOne({
-    booking: booking._id,
-  });
+  const existingCommission = await Commission.findOne({ booking: booking._id });
+  if (existingCommission) return existingCommission;
 
-  if (existingCommission) {
-    return existingCommission;
-  }
+  const agent = await Agent.findById(booking.agent);
+  if (!agent) throw new Error("Agent profile not found.");
 
-  const agent = await User.findById(booking.agent);
+  const rate = Number(agent.commissionRate || 0);
+  const bookingAmount = Number(booking.totalAmount || 0);
+  const amount = Number(((bookingAmount * rate) / 100).toFixed(2));
 
-  if (!agent) {
-    throw new Error("Agent not found.");
-  }
-
-  const rate = agent.agentProfile?.commissionRate ?? 0;
-
-  const amount = Number(
-    ((booking.totalAmount * rate) / 100).toFixed(2)
-  );
-
-  const commission = await Commission.create({
+  return Commission.create({
     agent: agent._id,
     booking: booking._id,
-    amount,
+    customer: booking.user || booking.customer || null,
+    tour: booking.tour || null,
+    bookingAmount,
     rate,
+    amount,
     status: "pending",
+    paymentMethod: booking.paymentMethod || "MPESA",
   });
-
-  return commission;
 };

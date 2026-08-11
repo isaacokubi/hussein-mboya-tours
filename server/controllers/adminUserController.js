@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import User from "../models/User.js";
 import Role from "../models/Role.js";
 import Staff from "../models/Staff.js";
+import Agent from "../models/Agent.js";
 import bcrypt from "bcryptjs";
 
 const STATUS_VALUES = [
@@ -81,11 +82,16 @@ export const createStaffAccount = async (req, res, next) => {
       guide: "tour_guide",
       tour_guide: "tour_guide",
       driver: "driver",
+      agent: "agent",
+      travel_agent: "agent",
     };
 
     const canonicalRole = allowed[normalizedRole];
     if (!canonicalRole) {
-      return res.status(400).json({ success: false, message: "Choose admin, manager, guide or driver." });
+      return res.status(400).json({
+        success: false,
+        message: "Choose admin, manager, agent, guide or driver.",
+      });
     }
 
     if (!name?.trim() || !email?.trim() || !/^\d{10}$/.test(String(phone || "")) || String(password || "").length < 8) {
@@ -97,9 +103,62 @@ export const createStaffAccount = async (req, res, next) => {
       return res.status(409).json({ success: false, message: "A user with this email already exists." });
     }
 
-    const roleDoc = await Role.findOne({
+    const permissionNamesByRole = {
+      admin: [
+        "admin.dashboard", "user.manage", "staff.manage", "tour.manage",
+        "booking.manage", "payment.manage", "refund.manage",
+        "analytics.view", "settings.manage", "roles.manage",
+        "notifications.view", "finance.view",
+      ],
+      agent: [
+        "booking.create", "booking.view", "customer.view", "commission.view",
+        "view_agent_dashboard", "view_agent_tours", "create_agent_tour",
+        "edit_agent_tour", "delete_agent_tour",
+      ],
+      tour_manager: [
+        "tour.view", "tour.create", "tour.update", "booking.view",
+        "booking.cancel", "tour.assign", "tour.availability", "calendar.manage",
+        "customer.view", "guide.view", "vehicle.view", "report.view",
+      ],
+      tour_guide: [
+        "tour.view", "view_assigned_tours", "view_tour_guests",
+        "update_tour_status", "submit_tour_report",
+      ],
+      driver: ["tour.view", "view_assigned_tours"],
+    };
+
+    let roleDoc = await Role.findOne({
       name: { $in: [canonicalRole, canonicalRole.replace("tour_", "")] },
     });
+
+    if (!roleDoc) {
+      const names = permissionNamesByRole[canonicalRole] || [];
+      const permissionIds = [];
+      for (const name of names) {
+        const permission = await (await import("../models/Permission.js")).default.findOneAndUpdate(
+          { name },
+          {
+            $setOnInsert: {
+              name,
+              label: name.replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+              module: name.split(/[._]/)[0],
+              category: "system",
+              isActive: true,
+            },
+          },
+          { upsert: true, new: true }
+        );
+        permissionIds.push(permission._id);
+      }
+      roleDoc = await Role.create({
+        name: canonicalRole,
+        displayName: canonicalRole.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+        description: `${canonicalRole} access`,
+        permissions: permissionIds,
+        isSystem: ["admin", "tour_manager", "tour_guide", "driver"].includes(canonicalRole),
+        level: canonicalRole === "admin" ? 100 : 20,
+      });
+    }
 
     const user = await User.create({
       name: name.trim(),
@@ -114,6 +173,20 @@ export const createStaffAccount = async (req, res, next) => {
     });
 
     let staff = null;
+    let agent = null;
+
+    if (canonicalRole === "agent") {
+      agent = await Agent.create({
+        user: user._id,
+        companyName: "",
+        phone: user.phone,
+        email: user.email,
+        commissionRate: 10,
+        isApproved: false,
+        status: "active",
+      });
+    }
+
     if (["tour_guide", "driver"].includes(canonicalRole)) {
       staff = await Staff.create({
         user: user._id,
@@ -139,6 +212,7 @@ export const createStaffAccount = async (req, res, next) => {
       message: `${canonicalRole.replace("_", " ")} account created successfully.`,
       user: safeUser,
       staff,
+      agent,
     });
   } catch (error) {
     next(error);

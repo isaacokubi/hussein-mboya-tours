@@ -22,6 +22,15 @@ export const sendWhatsApp = async ({
   message,
 }) => {
   try {
+    if (!to) throw new Error("WhatsApp recipient is required.");
+    if (!message) throw new Error("WhatsApp message is required.");
+
+    let normalizedTo = String(to).trim().replace(/[^0-9+]/g, "");
+    if (/^0\d{9}$/.test(normalizedTo)) {
+      normalizedTo = `254${normalizedTo.slice(1)}`;
+    } else {
+      normalizedTo = normalizedTo.replace(/^\+/, "");
+    }
     if (!process.env.WHATSAPP_API_URL) {
       throw new Error("WHATSAPP_API_URL is missing");
     }
@@ -37,7 +46,7 @@ export const sendWhatsApp = async ({
 
         recipient_type: "individual",
 
-        to,
+        to: normalizedTo,
 
         type: "text",
 

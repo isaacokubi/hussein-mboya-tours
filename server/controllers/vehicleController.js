@@ -12,10 +12,20 @@ import Staff from "../models/Staff.js";
 
 export const createVehicle = async (req, res, next) => {
     try {
-        const vehicle = await Vehicle.create({
+        const payload = {
             ...req.body,
-            image: req.file?.path || "",
-        });
+            capacity: Number(req.body.capacity),
+            year: req.body.year ? Number(req.body.year) : undefined,
+        };
+
+        if (req.file) {
+            payload.image = {
+                url: req.file.path,
+                publicId: req.file.filename || req.file.public_id || "",
+            };
+        }
+
+        const vehicle = await Vehicle.create(payload);
 
         return res.status(201).json({
             success: true,
@@ -105,7 +115,10 @@ export const updateVehicle = async (req, res, next) => {
         };
 
         if (req.file) {
-            updateData.image = req.file.path;
+            updateData.image = {
+                url: req.file.path,
+                publicId: req.file.filename || req.file.public_id || "",
+            };
         }
 
         const vehicle = await Vehicle.findByIdAndUpdate(

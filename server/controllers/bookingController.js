@@ -6,6 +6,9 @@ import Commission from "../models/Commission.js";
 import Agent from "../models/Agent.js";
 import User from "../models/User.js";
 import Notification from "../models/Notification.js";
+import SystemSetting from "../models/SystemSetting.js";
+import { sendSMS } from "../services/smsService.js";
+import { sendWhatsApp } from "../services/whatsappService.js";
 
 import Tour from "../models/Tour.js";
 
@@ -42,6 +45,12 @@ export const createBooking = async (req, res, next) => {
       numberOfGuests,
       contact,
       paymentMethod,
+      pickupLocation,
+      pickupTime,
+      hotelName,
+      roomNumber,
+      emergencyContact,
+      specialRequests,
     } = req.body;
 
 
@@ -118,6 +127,14 @@ export const createBooking = async (req, res, next) => {
 
         contact,
 
+        pickupLocation: String(pickupLocation || "").trim(),
+        pickupTime: pickupTime ? new Date(pickupTime) : null,
+        hotelName: String(hotelName || "").trim(),
+        roomNumber: String(roomNumber || "").trim(),
+        emergencyContact: emergencyContact || undefined,
+        specialRequests: Array.isArray(specialRequests)
+          ? specialRequests.map((item) => String(item).trim()).filter(Boolean)
+          : [],
 
         subtotal:
           amounts.subtotal,
@@ -190,6 +207,47 @@ export const createBooking = async (req, res, next) => {
         console.error("BOOKING CAPACITY ROLLBACK ERROR:", releaseError);
       }
       throw createError;
+    }
+
+    // External notifications must never make a successful booking fail.
+    const bookingTour = tourData;
+    const systemSettings = await SystemSetting.findOne({ key: "default" }).lean().catch(() => null);
+    const bookingNotificationsEnabled = systemSettings?.bookingNotifications !== false;
+    const customerPhone =
+      booking.contact?.phone ||
+      booking.customerSnapshot?.phone ||
+      req.user.phone ||
+      "";
+    const bookingMessage = [
+      `Coherent Tours booking ${booking.bookingNumber}.`,
+      `Tour: ${bookingTour.title}.`,
+      `Date: ${new Date(booking.travelDate).toLocaleDateString("en-KE")}.`,
+      `Guests: ${booking.numberOfGuests}.`,
+      pickupLocation ? `Pickup: ${pickupLocation}.` : "",
+      pickupTime ? `Pickup time: ${new Date(pickupTime).toLocaleTimeString("en-KE", { hour: "2-digit", minute: "2-digit" })}.` : "",
+      `Amount: KES ${Number(booking.totalAmount || 0).toLocaleString()}.`,
+      "Thank you for choosing Coherent Tours.",
+    ].filter(Boolean).join(" ");
+
+    if (bookingNotificationsEnabled) {
+      await Promise.allSettled([
+        customerPhone ? sendSMS(customerPhone, bookingMessage) : Promise.resolve(),
+        customerPhone ? sendWhatsApp({ to: customerPhone, message: bookingMessage }) : Promise.resolve(),
+      ]);
+    }
+
+    // Keep a useful internal notification for the customer when the app is used.
+    if (bookingNotificationsEnabled && req.user?._id) {
+      await Notification.create({
+        recipient: req.user._id,
+        user: req.user._id,
+        title: "Booking received",
+        message: `Booking ${booking.bookingNumber} for ${bookingTour.title} has been received.`,
+        type: "booking",
+        relatedModel: "Booking",
+        relatedId: booking._id,
+        actionUrl: `/bookings/${booking._id}`,
+      }).catch((error) => console.error("CUSTOMER BOOKING NOTIFICATION ERROR:", error.message));
     }
 
     return successResponse(

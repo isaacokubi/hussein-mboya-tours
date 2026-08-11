@@ -58,7 +58,12 @@ export const getStaff = async (req, res, next) => {
     }
 
     if (position) {
-      filter.position = position;
+      filter.position =
+        position === "guide"
+          ? { $in: ["guide", "tour_guide", "tourguide"] }
+          : position === "driver"
+            ? { $in: ["driver", "tour_driver"] }
+            : position;
     }
 
     if (availability) {
@@ -260,7 +265,7 @@ export const restoreStaff = async (req, res, next) => {
 export const getGuides = async (req, res, next) => {
   try {
     const guides = await Staff.find({
-      position: "guide",
+      position: { $in: ["guide", "tour_guide", "tourguide"] },
       isActive: true,
       isDeleted: { $ne: true },
       status: "active",
@@ -287,7 +292,7 @@ export const getGuides = async (req, res, next) => {
 export const getDrivers = async (req, res, next) => {
   try {
     const drivers = await Staff.find({
-      position: "driver",
+      position: { $in: ["driver", "tour_driver"] },
       isActive: true,
       isDeleted: { $ne: true },
       status: "active",

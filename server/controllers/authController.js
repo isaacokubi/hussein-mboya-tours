@@ -198,7 +198,7 @@ export const register = async (req, res, next) => {
 
     const normalizedPhone = String(phone).trim();
 
-    if (!/^\\d{10}$/.test(normalizedPhone)) {
+    if (!/^\d{10}$/.test(normalizedPhone)) {
       return res.status(400).json({
         success: false,
         message: "Phone number must contain exactly 10 digits.",
@@ -245,9 +245,7 @@ export const register = async (req, res, next) => {
       });
     }
 
-    const customerRole = await Role.findOne({
-      name: "Customer",
-    });
+    const customerRole = await Role.findOne({ name: "customer" });
 
     /*
     |--------------------------------------------------------------------------

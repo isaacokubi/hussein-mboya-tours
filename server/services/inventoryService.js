@@ -1,236 +1,86 @@
 import Tour from "../models/Tour.js";
 
-
 /*
-|--------------------------------------------------------------------------
-| VALIDATE TOUR CAPACITY
-|--------------------------------------------------------------------------
-|
-| Checks whether a booking can be accommodated.
-|
-*/
+ * Capacity is maintained on Tour.availabilitySettings and updated atomically
+ * so two simultaneous bookings cannot oversell the same tour.
+ */
 
-export const validateTourCapacity = async (
-  tourId,
-  requestedGuests
-) => {
-
-  if (
-    !Number.isInteger(requestedGuests) ||
-    requestedGuests <= 0
-  ) {
-    throw new Error(
-      "Invalid traveler count."
-    );
+export const validateTourCapacity = async (tourId, requestedGuests) => {
+  if (!Number.isInteger(requestedGuests) || requestedGuests <= 0) {
+    throw new Error("Invalid traveler count.");
   }
 
+  const tour = await Tour.findById(tourId).lean();
+  if (!tour) throw new Error("Tour not found.");
 
-  const tour =
-    await Tour.findById(tourId);
+  const totalSlots = Number(
+    tour.availabilitySettings?.totalSlots ?? tour.capacity ?? 0
+  );
+  const bookedSlots = Number(
+    tour.availabilitySettings?.bookedSlots ?? 0
+  );
 
-
-
-  if (!tour) {
-    throw new Error(
-      "Tour not found."
-    );
-  }
-
-
-
-  const totalSlots =
-    tour.availabilitySettings?.totalSlots || 0;
-
-
-
-  const bookedSlots =
-    tour.availabilitySettings?.bookedSlots || 0;
-
-
-
-  const remainingSlots =
-    totalSlots - bookedSlots;
-
-
-
-  return requestedGuests <= remainingSlots;
-
+  return requestedGuests <= Math.max(totalSlots - bookedSlots, 0);
 };
 
-
-
-/*
-|--------------------------------------------------------------------------
-| RESERVE TOUR SLOTS
-|--------------------------------------------------------------------------
-|
-| Increases booked slots after successful booking.
-|
-| Uses updateOne() instead of save()
-| to avoid validating the entire Tour document.
-|
-*/
-
-export const reserveSlots = async (
-  tourId,
-  travelers
-) => {
-
-
-  if (
-    !Number.isInteger(travelers) ||
-    travelers <= 0
-  ) {
-    throw new Error(
-      "Invalid traveler count."
-    );
+export const reserveSlots = async (tourId, travelers) => {
+  if (!Number.isInteger(travelers) || travelers <= 0) {
+    throw new Error("Invalid traveler count.");
   }
 
-
-
-  const tour =
-    await Tour.findById(tourId);
-
-
-
-  if (!tour) {
-    throw new Error(
-      "Tour not found."
-    );
-  }
-
-
-
-  const totalSlots =
-    tour.availabilitySettings?.totalSlots || 0;
-
-
-
-  const bookedSlots =
-    tour.availabilitySettings?.bookedSlots || 0;
-
-
-
-  if (
-    bookedSlots + travelers > totalSlots
-  ) {
-
-    throw new Error(
-      "Not enough available tour slots."
-    );
-
-  }
-
-
-
-  await Tour.updateOne(
-
+  const tour = await Tour.findOneAndUpdate(
     {
-      _id: tourId
+      _id: tourId,
+      $expr: {
+        $lte: [
+          {
+            $add: [
+              { $ifNull: ["$availabilitySettings.bookedSlots", 0] },
+              travelers,
+            ],
+          },
+          { $ifNull: ["$availabilitySettings.totalSlots", "$capacity"] },
+        ],
+      },
     },
-
     {
-
       $inc: {
-
-        "availabilitySettings.bookedSlots":
-          travelers
-
-      }
-
-    }
-
+        "availabilitySettings.bookedSlots": travelers,
+      },
+    },
+    { new: true }
   );
-
-
-
-  return await Tour.findById(tourId);
-
-};
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| RELEASE TOUR SLOTS
-|--------------------------------------------------------------------------
-|
-| Decreases booked slots when:
-| - booking cancelled
-| - payment failed
-| - booking removed
-|
-*/
-
-export const releaseSlots = async (
-  tourId,
-  travelers
-) => {
-
-
-  if (
-    !Number.isInteger(travelers) ||
-    travelers <= 0
-  ) {
-
-    throw new Error(
-      "Invalid traveler count."
-    );
-
-  }
-
-
-
-  const tour =
-    await Tour.findById(tourId);
-
-
 
   if (!tour) {
-
-    throw new Error(
-      "Tour not found."
-    );
-
+    const exists = await Tour.exists({ _id: tourId });
+    if (!exists) throw new Error("Tour not found.");
+    throw new Error("Not enough available tour slots.");
   }
 
+  return tour;
+};
 
+export const releaseSlots = async (tourId, travelers) => {
+  if (!Number.isInteger(travelers) || travelers <= 0) {
+    throw new Error("Invalid traveler count.");
+  }
 
-  const bookedSlots =
-    tour.availabilitySettings?.bookedSlots || 0;
-
-
-
-  const newBookedSlots =
-    Math.max(
-      0,
-      bookedSlots - travelers
-    );
-
-
-
-  await Tour.updateOne(
-
+  const tour = await Tour.findByIdAndUpdate(
+    tourId,
     {
-      _id: tourId
+      $inc: {
+        "availabilitySettings.bookedSlots": -travelers,
+      },
     },
-
-    {
-
-      $set: {
-
-        "availabilitySettings.bookedSlots":
-          newBookedSlots
-
-      }
-
-    }
-
+    { new: true }
   );
 
+  if (!tour) throw new Error("Tour not found.");
 
+  if (tour.availabilitySettings.bookedSlots < 0) {
+    tour.availabilitySettings.bookedSlots = 0;
+    await tour.save();
+  }
 
-  return await Tour.findById(tourId);
-
+  return tour;
 };

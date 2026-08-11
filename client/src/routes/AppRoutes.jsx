@@ -29,6 +29,8 @@ const AgentLayout = lazy(() => import("../layouts/AgentLayout"));
 const AgentDashboard = lazy(() => import("../pages/agent/AgentDashboard"));
 const AgentBookings = lazy(() => import("../pages/agent/AgentBookings"));
 const AgentCustomers = lazy(() => import("../pages/agent/AgentCustomers"));
+const AgentCommission = lazy(() => import("../pages/agent/AgentCommission"));
+const AgentQuotes = lazy(() => import("../pages/agent/AgentQuotes"));
 // Guide pages
 const TourGuideDashboard = lazy(() => import("../pages/guide/TourGuideDashboard"));
 // Tour manager pages
@@ -62,6 +64,7 @@ const AdminDestinationDetails = lazy(() => import("../pages/admin/DestinationDet
 const BookingManagement = lazy(() => import("../pages/admin/BookingManagement"));
 const StaffManagement = lazy(() => import("../pages/admin/StaffManagement"));
 const AdminCustomers = lazy(() => import("../pages/admin/Customers"));
+const AdminCustomerDetails = lazy(() => import("../pages/admin/CustomerDetails"));
 const AdminVehicles = lazy(() => import("../pages/admin/AdminVehicles"));
 const AdminGuides = lazy(() => import("../pages/admin/AdminGuides"));
 const AdminReviews = lazy(() => import("../pages/admin/AdminReviews"));
@@ -256,6 +259,8 @@ export default function AppRoutes() {
           path="customers"
           element={<AgentCustomers />}
         />
+        <Route path="commission" element={<AgentCommission />} />
+        <Route path="quotes" element={<AgentQuotes />} />
       </Route>
 
       {/* Guide */}
@@ -452,6 +457,10 @@ export default function AppRoutes() {
         <Route
           path="customers"
           element={<AdminCustomers />}
+        />
+        <Route
+          path="customers/:id"
+          element={<AdminCustomerDetails />}
         />
         <Route
           path="guides"

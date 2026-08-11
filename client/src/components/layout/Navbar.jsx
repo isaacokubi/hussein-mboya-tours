@@ -17,9 +17,11 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "../../context/AuthContext";
+import { useSettings } from "../../context/SettingsContext";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
+  const { companyName, supportPhone } = useSettings();
 
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -67,7 +69,7 @@ export default function Navbar() {
     return "";
   }, [user]);
 
-  const isAdmin = role === "admin";
+  const isAdmin = ["admin", "super_admin", "superadmin", "administrator"].includes(role.replace(/[\s_-]/g, ""));
 
   const isAgent = role === "agent";
 
@@ -233,7 +235,7 @@ text-white
 tracking-wide
 "
 >
-Coherent Tours
+{companyName}
 </h2>
 
 
@@ -687,7 +689,7 @@ text-white
               <div className="space-y-3 text-sm text-gray-600">
                 <div className="flex items-center gap-2">
                   <Phone size={16} />
-                  +254 733 439 762
+                  {supportPhone}
                 </div>
 
                 <div className="flex items-center gap-2">

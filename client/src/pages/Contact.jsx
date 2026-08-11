@@ -1,3 +1,5 @@
+import { useSettings } from "../context/SettingsContext";
+
 import { Phone, Mail, MapPin, Send, MessageCircle, Globe,Clock } from "lucide-react";
 
 import { FaFacebook, FaInstagram } from "react-icons/fa";
@@ -6,6 +8,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 
 export default function Contact() {
+  const { supportPhone, supportEmail } = useSettings();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -32,13 +35,13 @@ export default function Contact() {
     {
       icon: Phone,
       title: "Phone",
-      value: "+254 733 439 362",
+      value: supportPhone,
     },
 
     {
       icon: Mail,
       title: "Email",
-      value: "info@coherenttours.com",
+      value: supportEmail || "support@example.com",
     },
 
     {

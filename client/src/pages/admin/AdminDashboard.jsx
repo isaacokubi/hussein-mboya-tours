@@ -280,6 +280,10 @@ xl:grid-cols-6
           value={systemHealth.status || "Healthy"}
           icon={<TrendingUp />}
         />
+
+        <StatCard title="Agents" value={agentsCount || agents.length} icon={<Users />} />
+        <StatCard title="Guides" value={guidesCount || guides.length} icon={<Users />} />
+        <StatCard title="Vehicles" value={vehicles} icon={<CreditCard />} />
       </div>
       {/* REVENUE ANALYTICS */}
       <section
@@ -557,7 +561,7 @@ rounded-xl
                         "
                   >
                     <td className="p-3">
-                      {booking.customer?.name || booking.fullName || "Guest"}
+                      {booking.customer?.name || booking.user?.name || booking.customerSnapshot?.name || booking.contact?.name || "Guest"}
                     </td>
 
                     <td className="p-3">{booking.tour?.title || "Tour"}</td>

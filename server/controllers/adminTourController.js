@@ -3,6 +3,9 @@ import Tour from "../models/Tour.js";
 import User from "../models/User.js";
 import Vehicle from "../models/Vehicle.js";
 import Staff from "../models/Staff.js";
+import Notification from "../models/Notification.js";
+import { sendSMS } from "../services/smsService.js";
+import { sendWhatsApp } from "../services/whatsappService.js";
 
 
 /*
@@ -14,7 +17,6 @@ import Staff from "../models/Staff.js";
 const TOUR_STATUSES = [
   "draft",
   "upcoming",
-  "active",
   "ongoing",
   "fully-booked",
   "completed",
@@ -211,7 +213,7 @@ export const createTour = async (req, res, next) => {
 
       depositRequired: Number(req.body.depositRequired || 0),
 
-      featured: req.body.featured || false,
+      featured: req.body.featured === true || String(req.body.featured || "").toLowerCase() === "true",
 
       available:
         req.body.available === undefined
@@ -221,7 +223,12 @@ export const createTour = async (req, res, next) => {
       status:
         TOUR_STATUSES.includes(req.body.status)
           ? req.body.status
-          : "draft",
+          : "upcoming",
+
+      published:
+        req.body.published === undefined
+          ? true
+          : String(req.body.published) === "true" || req.body.published === true,
 
       featuredImage: images[0] || { url: "", publicId: "" },
       gallery: images.slice(1),
@@ -809,25 +816,25 @@ export const assignGuide = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    const guide = await User.findById(guideId);
+    const guide = await Staff.findOne({
+      _id: guideId,
+      position: { $in: ["guide", "tour_guide", "tourguide"] },
+      isActive: true,
+      isDeleted: { $ne: true },
+      status: "active",
+    });
 
     if (!guide) {
       return res.status(404).json({
         success: false,
-        message: "Guide not found.",
+        message: "Guide not found or inactive.",
       });
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Verify Role
-    |--------------------------------------------------------------------------
-    */
-
-    if (guide.role !== "guide") {
+    if (guide.availability !== "available" && guide._id.toString() !== tour.assignedGuide?.toString()) {
       return res.status(400).json({
         success: false,
-        message: "Selected user is not a guide.",
+        message: "Guide is currently unavailable.",
       });
     }
 
@@ -838,8 +845,13 @@ export const assignGuide = async (req, res, next) => {
     */
 
     tour.assignedGuide = guide._id;
-
+    tour.assignmentStatus = "assigned";
     await tour.save();
+
+    await Staff.findByIdAndUpdate(guide._id, {
+      $set: { availability: "busy" },
+      $addToSet: { assignedTours: tour._id },
+    });
 
     /*
     |--------------------------------------------------------------------------
@@ -847,7 +859,23 @@ export const assignGuide = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    await tour.populate("assignedGuide", "name email phone");
+    await tour.populate("assignedGuide", "name email phone user");
+
+    const message = `Coherent Tours assignment: you have been assigned as guide for "${tour.title}" on ${new Date(tour.date || tour.startDate).toLocaleDateString("en-KE")}. ${tour.location ? `Location: ${tour.location}.` : ""}`;
+    await Promise.allSettled([
+      guide.phone ? sendSMS(guide.phone, message) : Promise.resolve(),
+      guide.phone ? sendWhatsApp({ to: guide.phone, message }) : Promise.resolve(),
+      guide.user ? Notification.create({
+        recipient: guide.user,
+        user: guide.user,
+        title: "New tour assignment",
+        message,
+        type: "tour_assignment",
+        relatedModel: "Tour",
+        relatedId: tour._id,
+        actionUrl: "/guide/dashboard",
+      }) : Promise.resolve(),
+    ]);
 
     res.status(200).json({
       success: true,
@@ -970,7 +998,7 @@ export const assignDriver = async (req, res, next) => {
     */
 
     tour.assignedDriver = driver._id;
-
+    tour.assignmentStatus = "assigned";
     await tour.save();
 
     /*
@@ -992,8 +1020,24 @@ export const assignDriver = async (req, res, next) => {
 
     await tour.populate(
       "assignedDriver",
-      "name phone email licenseNumber experience"
+      "name phone email licenseNumber experience user"
     );
+
+    const message = `Coherent Tours assignment: you have been assigned as driver for "${tour.title}" on ${new Date(tour.date || tour.startDate).toLocaleDateString("en-KE")}. ${tour.location ? `Location: ${tour.location}.` : ""}`;
+    await Promise.allSettled([
+      driver.phone ? sendSMS(driver.phone, message) : Promise.resolve(),
+      driver.phone ? sendWhatsApp({ to: driver.phone, message }) : Promise.resolve(),
+      driver.user ? Notification.create({
+        recipient: driver.user,
+        user: driver.user,
+        title: "New tour assignment",
+        message,
+        type: "tour_assignment",
+        relatedModel: "Tour",
+        relatedId: tour._id,
+        actionUrl: "/guide/dashboard",
+      }) : Promise.resolve(),
+    ]);
 
     res.status(200).json({
       success: true,
@@ -1087,7 +1131,7 @@ export const assignVehicle = async (req, res, next) => {
       });
     }
 
-    if (vehicle.status !== "Available") {
+    if (vehicle.status !== "available") {
       return res.status(400).json({
         success: false,
         message: "Vehicle is not available.",
@@ -1129,7 +1173,8 @@ export const assignVehicle = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    vehicle.status = "Assigned";
+    vehicle.status = "assigned";
+    vehicle.assignedTour = tour._id;
 
     await vehicle.save();
 

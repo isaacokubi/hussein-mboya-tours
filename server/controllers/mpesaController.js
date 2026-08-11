@@ -627,8 +627,13 @@ export const mpesaCallback = async (req, res, next) => {
             await Commission.create({
               booking: booking._id,
               agent: agent._id,
+              customer: booking.user || booking.customer || null,
+              tour: booking.tour || null,
+              bookingAmount: Number(booking.totalAmount || 0),
+              rate,
               amount: commissionAmount,
               status: "pending",
+              paymentMethod: booking.paymentMethod || "MPESA",
             });
 
             agent.walletBalance = (agent.walletBalance || 0) + commissionAmount;

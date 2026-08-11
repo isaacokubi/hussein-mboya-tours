@@ -8,7 +8,8 @@
     "check": "node --check server.js",
     "lint": "npm run check",
     "repair:guides": "node scripts/repairGuideStaffProfiles.js",
-    "seed:staff": "node scripts/seedStaffVehicles.js"
+    "seed:staff": "node scripts/seedStaffVehicles.js",
+    "create:admin": "node scripts/createAdmin.js"
   },
   "dependencies": {
     "africastalking": "^0.8.0",

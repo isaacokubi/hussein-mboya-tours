@@ -1,46 +1,37 @@
 // server/middleware/agentMiddleware.js
+//
+// Canonical agent authorization:
+// - authenticated active User
+// - role: agent / travel_agent
+// - linked Agent profile
+// - approved Agent profile
 
 import User from "../models/User.js";
+import Agent from "../models/Agent.js";
 
-/*
-|--------------------------------------------------------------------------
-| AGENT AUTHORIZATION MIDDLEWARE
-|--------------------------------------------------------------------------
-|
-| Verifies:
-| - User is authenticated
-| - User exists
-| - Account is active
-| - User has Travel Agent role
-| - Agent profile exists
-| - Agent has been approved
-|
-|--------------------------------------------------------------------------
-*/
+const normalizeRole = (role) =>
+  String(
+    typeof role === "object"
+      ? role?.name || role?.role || ""
+      : role || ""
+  )
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, "");
 
 const agentMiddleware = async (req, res, next) => {
   try {
-    /*
-    |--------------------------------------------------------------------------
-    | AUTHENTICATION
-    |--------------------------------------------------------------------------
-    */
-
-    if (!req.user || !req.user._id) {
+    if (!req.user?._id) {
       return res.status(401).json({
         success: false,
         message: "Authentication required",
       });
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | LOAD USER
-    |--------------------------------------------------------------------------
-    */
-
     const user = await User.findById(req.user._id)
-      .populate("role");
+      .select("-password")
+      .populate("roleId")
+      .lean();
 
     if (!user) {
       return res.status(401).json({
@@ -49,17 +40,9 @@ const agentMiddleware = async (req, res, next) => {
       });
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | ACCOUNT STATUS
-    |--------------------------------------------------------------------------
-    */
-
     if (
-      user.isActive === false ||
-      user.status === "inactive" ||
-      user.status === "blocked" ||
-      user.status === "suspended"
+      user.status !== "active" ||
+      user.isActive === false
     ) {
       return res.status(403).json({
         success: false,
@@ -67,77 +50,41 @@ const agentMiddleware = async (req, res, next) => {
       });
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | GET ROLE NAME
-    |--------------------------------------------------------------------------
-    */
+    const roleName = normalizeRole(
+      user.roleId?.name || user.role || user.legacyRole
+    );
 
-    let roleName = "";
-
-    if (
-      user.role &&
-      typeof user.role === "object" &&
-      user.role.name
-    ) {
-      roleName = user.role.name.toLowerCase();
-    } else if (typeof user.role === "string") {
-      roleName = user.role.toLowerCase();
-    } else if (user.legacyRole) {
-      roleName = user.legacyRole.toLowerCase();
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | VERIFY AGENT ROLE
-    |--------------------------------------------------------------------------
-    */
-
-    if (roleName !== "travel_agent") {
+    if (!["agent", "travelagent"].includes(roleName)) {
       return res.status(403).json({
         success: false,
         message: "Travel Agent access required",
       });
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | VERIFY AGENT PROFILE
-    |--------------------------------------------------------------------------
-    */
+    const agent = await Agent.findOne({
+      user: user._id,
+    }).lean();
 
-    if (!user.agentProfile) {
+    if (!agent) {
       return res.status(403).json({
         success: false,
-        message: "Agent profile not found",
+        message: "Agent profile not found. Ask an administrator to complete the agent account.",
       });
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | VERIFY APPROVAL
-    |--------------------------------------------------------------------------
-    */
-
-    if (!user.agentProfile.approved) {
+    if (!agent.isApproved) {
       return res.status(403).json({
         success: false,
         message: "Agent account is pending approval",
       });
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | MAKE FULL USER AVAILABLE
-    |--------------------------------------------------------------------------
-    */
-
     req.user = user;
+    req.agent = agent;
 
     next();
   } catch (error) {
     console.error("Agent Middleware Error:", error);
-
     return res.status(500).json({
       success: false,
       message: "Server error while authorizing agent",

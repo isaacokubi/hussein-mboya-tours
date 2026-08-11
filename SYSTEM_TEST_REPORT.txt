@@ -1,0 +1,74 @@
+HUSSEIN MBOYA / COHERENT TOURS SYSTEM TEST REPORT
+Date: 2026-08-11
+
+Scope
+-----
+The uploaded MERN project was inspected against the requirements supplied with the repair request. The review covered authentication, RBAC, admin, manager, agent, guide, customer, booking, capacity, assignment, vehicle, notifications, reviews, commissions, exports, settings, homepage content, routing and mobile navigation.
+
+STATIC / CODE-LEVEL TESTS
+-------------------------
+PASS - All server JavaScript files pass `node --check` after repair.
+PASS - Relative imports in client/src resolve to existing local files.
+PASS - Relative imports in server resolve to existing local files.
+PASS - package.json files parse as valid JSON.
+
+REPAIRED REQUIREMENTS
+---------------------
+PASS - Booking now accepts exact pickup location, pickup time, hotel, room, emergency contact and special requests.
+PASS - Booking capacity is reserved atomically to reduce race-condition overselling.
+PASS - Tour responses expose totalSlots, bookedSlots, availableSlots and isFull.
+PASS - Tour detail page refreshes availability periodically.
+PASS - Customer booking sends SMS and WhatsApp notification attempts; external notification failures do not cancel a valid booking.
+PASS - Guide/driver assignment sends SMS and WhatsApp notification attempts with tour details and creates in-app assignment notifications.
+PASS - Both canonical assignment and admin guide/driver assignment paths trigger assignment notifications.
+PASS - Vehicle creation form now submits multipart FormData and includes a required vehicle image field.
+PASS - Vehicle image is stored using the schema's {url, publicId} shape instead of a string, fixing vehicle creation validation failures.
+PASS - Vehicle type values now match the model enum, including LAND_CRUISER.
+PASS - Admin dashboard now reports agents, guides and vehicles from the correct collections.
+PASS - Agent dashboard aggregation now joins Booking.agent to Agent, then Agent.user to User.
+PASS - Admin staff search now combines operational staff with registered admin/manager/agent accounts so registered admins appear by name.
+PASS - Admin customer search now uses the paginated admin customer endpoint and has a working customer detail page.
+PASS - Booking CSV export now fills customer from customer, user, snapshot or contact and includes email/phone.
+PASS - Review submission payload now uses `tour` as required by the backend; completed customers can submit reviews.
+PASS - Tour detail page displays approved customer reviews.
+PASS - Admin commission page can approve commissions and confirm agent funds as paid with payment reference/method.
+PASS - Agent commission records use the Agent model and required Commission fields.
+PASS - Agent account creation is supported from Admin > Users, creates a linked Agent profile and starts pending approval.
+PASS - Agent middleware now checks the User role plus the linked Agent profile and approval state instead of nonexistent user.agentProfile fields.
+PASS - Agent dashboard frontend now consumes the backend `statistics` response correctly.
+PASS - Agent sidebar now uses real application routes and has mobile navigation.
+PASS - Admin can create an administrator account from the Users module.
+PASS - A `npm run create:admin` bootstrap script was added for first-admin creation when no admin account exists.
+PASS - Admin roles page now creates/repairs default system roles and permissions and prevents Super Admin permission modification.
+PASS - Admin mobile dashboard now collapses into a hamburger drawer, matching the manager mobile pattern.
+PASS - Admin sidebar modules are permission-aware and route to control-center pages.
+PASS - System settings are now exposed publicly through /api/settings/public and consumed by global app settings context, allowing company name/contact details to propagate across the app.
+PASS - Booking notification setting is respected by booking SMS/WhatsApp/internal notification dispatch.
+PASS - Homepage now explicitly lists Luxury Safaris, Wildlife Tours, Beach Holidays, Group Adventures, Honeymoon Packages and Airport Transfers.
+PASS - WhatsApp booking button was added to individual tour details.
+PASS - Admin Add Tour now remains in the admin area after creation and defaults to a published upcoming tour so it can appear on the public site.
+PASS - Customer registration phone regex and lowercase customer role lookup were corrected.
+PASS - M-Pesa commission creation now supplies the Commission model's required bookingAmount and rate fields.
+PASS - Legacy admin authentication was aligned with the application's JWT issuer/audience/token generation.
+
+IMPORTANT RUNTIME TEST LIMITATION
+---------------------------------
+A full browser/database/third-party integration test could not be executed inside this inspection container because the uploaded ZIP does not contain node_modules and the environment could not download the complete client dependency tree. The attempted client `npm ci` failed because a required package was not available in the local npm cache/network path. Therefore browser UI, MongoDB data, Africa's Talking SMS, Meta WhatsApp Cloud API, M-Pesa, Cloudinary and SMTP delivery still require deployment-environment testing.
+
+Recommended final acceptance test after deployment
+---------------------------------------------------
+1. Create/bootstrap an admin account.
+2. Log in as admin and open Roles & Permissions; verify roles and permission counts load.
+3. Create a guide, driver, agent and vehicle with image.
+4. Approve the agent.
+5. Create a tour from Admin > Add Tour; confirm it stays in /admin and appears under Manage Tours/public tours.
+6. Assign guide, driver and vehicle; confirm SMS/WhatsApp and in-app notifications.
+7. Register/login as customer; book a tour with pickup location/time.
+8. Verify bookedSlots increments and availableSlots decreases immediately/within the refresh interval.
+9. Cancel a booking and verify capacity is released.
+10. Complete a booking and submit a review; approve it from Admin > Reviews and verify it appears on the tour page.
+11. Create/confirm an agent booking, verify commission creation, approve it and confirm funds paid with a reference.
+12. Export bookings CSV and verify customer name/email/phone are populated.
+13. Change System Settings and verify company/contact details change in navbar/footer/contact page.
+14. Test admin and agent mobile menus at phone width.
+15. Configure Africa's Talking, WhatsApp Cloud API, M-Pesa, SMTP and Cloudinary credentials and repeat notification/payment/media tests.

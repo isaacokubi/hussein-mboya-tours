@@ -2,655 +2,189 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useMutation, useQuery } from "@tanstack/react-query";
-
 import { createBooking } from "../api/bookingApi";
 import { initiateMpesa } from "../api/mpesaApi";
 import { getTourById } from "../api/tourApi";
 
 export default function Checkout() {
-
   const navigate = useNavigate();
-
   const { id } = useParams();
 
-
   const [travelDate, setTravelDate] = useState("");
+  const [travellerCount, setTravellerCount] = useState(1);
+  const [phone, setPhone] = useState("");
+  const [pickupLocation, setPickupLocation] = useState("");
+  const [pickupTime, setPickupTime] = useState("");
+  const [hotelName, setHotelName] = useState("");
+  const [roomNumber, setRoomNumber] = useState("");
+  const [specialRequests, setSpecialRequests] = useState("");
 
-  const [travellerCount, setTravellerCount] =
-    useState(1);
-
-  const [phone, setPhone] =
-    useState("");
-
-
-
-  const {
-    data,
-    isLoading,
-    error,
-  } = useQuery({
-
-    queryKey:[
-      "tour",
-      id
-    ],
-
-    queryFn:()=>getTourById(id),
-
-    enabled:!!id,
-
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["tour", id],
+    queryFn: () => getTourById(id),
+    enabled: Boolean(id),
   });
 
-
-
-  console.log(
-    "CHECKOUT TOUR RESPONSE:",
-    data
+  const tour = data?.tour || data?.data?.tour || data?.data || data;
+  const availableSlots = Number(
+    tour?.availableSlots ??
+      Math.max(
+        Number(tour?.totalSlots ?? tour?.capacity ?? 0) -
+          Number(tour?.bookedSlots ?? 0),
+        0
+      )
   );
 
-
-
-  const tour =
-    data?.tour ||
-    data?.data?.tour ||
-    data?.data ||
-    data;
-
-
-
-  const bookingMutation =
-  useMutation({
-
-    mutationFn:createBooking,
-
-
-    onSuccess: async(response)=>{
-
+  const bookingMutation = useMutation({
+    mutationFn: createBooking,
+    onSuccess: async (response) => {
       try {
+        const booking = response?.data?.booking || response?.booking || response;
+        if (!booking?._id) throw new Error("Booking ID was not returned.");
 
+        await initiateMpesa({
+          bookingId: booking._id,
+          phoneNumber: phone,
+          amount: Number(booking.totalAmount || 0),
+        });
 
-        console.log(
-          "CREATE BOOKING RESPONSE:",
-          response
-        );
-
-
-
-        const booking =
-          response?.data?.booking ||
-          response?.booking ||
-          response;
-
-
-
-        console.log(
-          "CREATED BOOKING:",
-          booking
-        );
-
-
-
-        if(
-          !booking?._id
-        ){
-
-          throw new Error(
-            "Booking ID was not returned."
-          );
-
-        }
-
-
-
-
-        const amount =
-          booking.totalAmount ||
-          booking.amount ||
-          (
-            Number(tour.price || 0) *
-            Number(travellerCount)
-          );
-
-
-
-
-
-        const mpesaPayload = {
-
-          bookingId:
-            booking._id,
-
-
-          phoneNumber:
-            phone,
-
-
-          amount:
-
-            Number(amount)
-
-        };
-
-
-
-
-        console.log(
-          "MPESA PAYLOAD:",
-          mpesaPayload
-        );
-
-
-
-
-
-        const mpesaResponse =
-          await initiateMpesa(
-            mpesaPayload
-          );
-
-
-
-        console.log(
-          "MPESA RESPONSE:",
-          mpesaResponse
-        );
-
-
-
-        toast.success(
-          "M-Pesa payment request sent"
-        );
-
-
-
-        navigate(
-          "/dashboard"
-        );
-
-
-
-      } catch(error){
-
-
-        console.error(
-          "MPESA ERROR:",
-          error
-        );
-
-
+        toast.success("Booking created and M-Pesa payment request sent.");
+        navigate("/dashboard");
+      } catch (paymentError) {
         toast.error(
-          error.message ||
-          "M-Pesa initiation failed"
+          paymentError?.response?.data?.message ||
+            paymentError?.message ||
+            "Booking created, but M-Pesa initiation failed. You can pay from My Bookings."
         );
-
-
+        navigate(`/bookings/${response?.data?.booking?._id || response?.booking?._id}`);
       }
-
     },
-
-
-    onError:(error)=>{
-
-
-      console.error(
-        "BOOKING ERROR:",
-        error
-      );
-
-
+    onError: (requestError) => {
       toast.error(
-        error.message ||
-        "Booking failed"
+        requestError?.response?.data?.message || "Booking failed."
       );
-
-
-    }
-
-
+    },
   });
 
-
-
-
-
-  if(isLoading){
-
-    return (
-
-      <div className="
-      min-h-screen
-      flex
-      items-center
-      justify-center
-      ">
-
-        Loading tour...
-
-      </div>
-
-    );
-
+  if (isLoading) {
+    return <div className="flex min-h-screen items-center justify-center">Loading tour...</div>;
   }
 
-
-
-
-
-  if(error){
-
-    return (
-
-      <div className="
-      min-h-screen
-      flex
-      items-center
-      justify-center
-      text-red-600
-      ">
-
-        Failed to load tour
-
-      </div>
-
-    );
-
+  if (error || !tour?._id) {
+    return <div className="flex min-h-screen items-center justify-center text-red-600">Tour not found.</div>;
   }
 
+  const total = Number(tour.price || 0) * Number(travellerCount);
 
+  const handleSubmit = (event) => {
+    event.preventDefault();
 
-
-
-  if(!tour?._id){
-
-    return (
-
-      <div className="
-      min-h-screen
-      flex
-      items-center
-      justify-center
-      text-red-600
-      ">
-
-        Tour not found
-
-      </div>
-
-    );
-
-  }
-
-
-
-
-
-  const total =
-    Number(tour.price || 0) *
-    Number(travellerCount);
-
-
-
-
-
-  const handleSubmit=(e)=>{
-
-    e.preventDefault();
-
-
-
-    if(!travelDate){
-
-      toast.error(
-        "Please select a travel date"
-      );
-
-      return;
-
+    if (!travelDate) return toast.error("Please select a travel date.");
+    if (!phone) return toast.error("Please enter your phone number.");
+    if (!pickupLocation.trim()) return toast.error("Please enter the exact pickup location.");
+    if (!pickupTime) return toast.error("Please select the pickup time.");
+    if (travellerCount < 1 || travellerCount > availableSlots) {
+      return toast.error(`Only ${availableSlots} slot(s) are currently available.`);
     }
 
-
-
-    if(!phone){
-
-      toast.error(
-        "Please enter your phone number"
-      );
-
-      return;
-
-    }
-
-
-
-
-    const travelers =
-      Array.from(
-
-        {
-          length:Number(travellerCount)
-        },
-
-        (_,index)=>({
-
-          name:
-          `Traveller ${index+1}`,
-
-          age:0,
-
-          passport:""
-
-        })
-
-      );
-
-
-
-
+    const travelers = Array.from({ length: Number(travellerCount) }, (_, index) => ({
+      name: `Traveller ${index + 1}`,
+      age: 0,
+      passportNumber: "",
+    }));
 
     bookingMutation.mutate({
-
-      tour:
-        tour._id,
-
-
+      tour: tour._id,
       travelDate,
-
-
       travelers,
-
-
-      contact:{
-
-        phone
-
-      },
-
-
-      paymentMethod:
-        "MPESA"
-
+      numberOfGuests: Number(travellerCount),
+      contact: { phone },
+      pickupLocation: pickupLocation.trim(),
+      pickupTime,
+      hotelName: hotelName.trim(),
+      roomNumber: roomNumber.trim(),
+      specialRequests: specialRequests
+        .split("\n")
+        .map((item) => item.trim())
+        .filter(Boolean),
+      paymentMethod: "MPESA",
     });
-
-
   };
 
-
-
-
-
   return (
+    <div className="min-h-screen bg-gray-50 px-4 py-10">
+      <div className="mx-auto max-w-3xl rounded-2xl bg-white p-8 shadow-lg">
+        <h1 className="mb-2 text-3xl font-bold">Complete Booking</h1>
+        <p className="mb-6 text-gray-500">Provide your trip and pickup details so the operations team can prepare your tour.</p>
 
-    <div className="
-    min-h-screen
-    bg-gray-50
-    py-10
-    px-4
-    ">
-
-
-      <div className="
-      max-w-2xl
-      mx-auto
-      bg-white
-      rounded-2xl
-      shadow-lg
-      p-8
-      ">
-
-
-        <h1 className="
-        text-3xl
-        font-bold
-        mb-6
-        ">
-
-          Complete Booking
-
-        </h1>
-
-
-
-
-        <div className="
-        mb-6
-        p-4
-        bg-gray-100
-        rounded-xl
-        ">
-
-
-          <h2 className="
-          text-xl
-          font-semibold
-          ">
-
-            {tour.title}
-
-          </h2>
-
-
-
-          <p className="
-          text-gray-600
-          mt-2
-          ">
-
-            {tour.description}
-
-          </p>
-
-
-
-          <div className="
-          mt-4
-          text-green-700
-          font-bold
-          text-xl
-          ">
-
-            KES {Number(tour.price || 0).toLocaleString()}
-
+        <div className="mb-6 rounded-xl bg-gray-100 p-5">
+          <h2 className="text-xl font-semibold">{tour.title}</h2>
+          <p className="mt-2 text-gray-600">{tour.description}</p>
+          <div className="mt-4 flex flex-wrap gap-5 font-semibold">
+            <span className="text-green-700">KES {Number(tour.price || 0).toLocaleString()} / person</span>
+            <span>Total slots: {tour.totalSlots ?? tour.capacity ?? 0}</span>
+            <span>Booked: {tour.bookedSlots ?? 0}</span>
+            <span className={availableSlots > 0 ? "text-green-700" : "text-red-600"}>Available: {availableSlots}</span>
           </div>
-
-
         </div>
 
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="grid gap-5 md:grid-cols-2">
+            <Field label="Travel date" required>
+              <input type="date" value={travelDate} onChange={(e) => setTravelDate(e.target.value)} className="w-full rounded-lg border p-3" required />
+            </Field>
 
-
-
-
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-5"
-        >
-
-
-          <div>
-
-            <label className="
-            block
-            mb-2
-            font-medium
-            ">
-
-              Travel Date
-
-            </label>
-
-
-            <input
-
-              type="date"
-
-              value={travelDate}
-
-              onChange={
-                e=>setTravelDate(
-                  e.target.value
-                )
-              }
-
-              className="
-              w-full
-              border
-              rounded-lg
-              p-3
-              "
-
-              required
-
-            />
-
+            <Field label="Number of travellers" required>
+              <input type="number" min="1" max={Math.max(availableSlots, 1)} value={travellerCount} onChange={(e) => setTravellerCount(Number(e.target.value))} className="w-full rounded-lg border p-3" required />
+            </Field>
           </div>
 
+          <Field label="Exact pickup location" required hint="Hotel, apartment, airport terminal, landmark or full address.">
+            <input value={pickupLocation} onChange={(e) => setPickupLocation(e.target.value)} placeholder="e.g. Sarova Stanley, Nairobi CBD" className="w-full rounded-lg border p-3" required />
+          </Field>
 
+          <Field label="Pickup time" required>
+            <input type="datetime-local" value={pickupTime} onChange={(e) => setPickupTime(e.target.value)} className="w-full rounded-lg border p-3" required />
+          </Field>
 
-
-
-          <div>
-
-            <label className="
-            block
-            mb-2
-            font-medium
-            ">
-
-              Number of Travellers
-
-            </label>
-
-
-            <input
-
-              type="number"
-
-              min="1"
-
-              value={travellerCount}
-
-              onChange={
-                e=>setTravellerCount(
-                  Number(e.target.value)
-                )
-              }
-
-              className="
-              w-full
-              border
-              rounded-lg
-              p-3
-              "
-
-            />
-
+          <div className="grid gap-5 md:grid-cols-2">
+            <Field label="Hotel / accommodation">
+              <input value={hotelName} onChange={(e) => setHotelName(e.target.value)} placeholder="Hotel or accommodation name" className="w-full rounded-lg border p-3" />
+            </Field>
+            <Field label="Room number">
+              <input value={roomNumber} onChange={(e) => setRoomNumber(e.target.value)} placeholder="Optional" className="w-full rounded-lg border p-3" />
+            </Field>
           </div>
 
+          <Field label="M-Pesa phone number" required>
+            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0712345678" className="w-full rounded-lg border p-3" required />
+          </Field>
 
+          <Field label="Special requests" hint="One request per line.">
+            <textarea value={specialRequests} onChange={(e) => setSpecialRequests(e.target.value)} rows={4} placeholder="Dietary needs, accessibility, celebration, child seat, etc." className="w-full rounded-lg border p-3" />
+          </Field>
 
-
-
-          <div>
-
-            <label className="
-            block
-            mb-2
-            font-medium
-            ">
-
-              M-Pesa Phone Number
-
-            </label>
-
-
-
-            <input
-
-              type="tel"
-
-              value={phone}
-
-              onChange={
-                e=>setPhone(
-                  e.target.value
-                )
-              }
-
-              placeholder="0712345678"
-
-              className="
-              w-full
-              border
-              rounded-lg
-              p-3
-              "
-
-              required
-
-            />
-
+          <div className="rounded-xl bg-green-50 p-4 text-xl font-bold text-green-900">
+            Total: KES {total.toLocaleString()}
           </div>
 
-
-
-
-
-          <div className="
-          text-xl
-          font-bold
-          ">
-
-            Total:
-            KES {total.toLocaleString()}
-
-          </div>
-
-
-
-
-
-          <button
-
-            type="submit"
-
-            disabled={
-              bookingMutation.isPending
-            }
-
-            className="
-            w-full
-            bg-green-600
-            hover:bg-green-700
-            text-white
-            py-3
-            rounded-lg
-            font-semibold
-            "
-
-          >
-
-            {
-              bookingMutation.isPending
-              ?
-              "Processing..."
-              :
-              "Pay with M-Pesa"
-            }
-
-
+          <button type="submit" disabled={bookingMutation.isPending || availableSlots < 1} className="w-full rounded-lg bg-green-600 py-3 font-semibold text-white hover:bg-green-700 disabled:opacity-50">
+            {bookingMutation.isPending ? "Processing..." : availableSlots < 1 ? "Tour Fully Booked" : "Book & Pay with M-Pesa"}
           </button>
-
-
-
         </form>
-
-
-
       </div>
-
-
-
     </div>
-
   );
+}
 
+function Field({ label, required, hint, children }) {
+  return (
+    <label className="block">
+      <span className="mb-2 block font-medium">
+        {label} {required && <span className="text-red-600">*</span>}
+      </span>
+      {children}
+      {hint && <span className="mt-1 block text-xs text-gray-500">{hint}</span>}
+    </label>
+  );
 }

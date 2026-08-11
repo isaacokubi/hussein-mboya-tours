@@ -49,6 +49,7 @@ export const exportBookings = async (req, res, next) => {
 
     const bookings = await Booking.find(filter)
       .populate("customer", "name email phone")
+      .populate("user", "name email phone")
       .populate("tour", "title destination")
       .sort({
         createdAt: -1,
@@ -60,7 +61,34 @@ export const exportBookings = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    const csv = generateCSV(bookings);
+    const rows = bookings.map((booking) => ({
+      booking: booking.bookingNumber || booking._id,
+      customer:
+        booking.customer?.name ||
+        booking.user?.name ||
+        booking.customerSnapshot?.name ||
+        booking.contact?.name ||
+        "Guest",
+      customerEmail:
+        booking.customer?.email ||
+        booking.user?.email ||
+        booking.customerSnapshot?.email ||
+        booking.contact?.email ||
+        "",
+      customerPhone:
+        booking.customer?.phone ||
+        booking.user?.phone ||
+        booking.customerSnapshot?.phone ||
+        booking.contact?.phone ||
+        "",
+      tour: booking.tour?.title || "",
+      amount: booking.totalAmount || 0,
+      paymentStatus: booking.paymentStatus || "",
+      status: booking.status || "",
+      travelDate: booking.travelDate || "",
+    }));
+
+    const csv = generateCSV(rows);
 
     res.setHeader("Content-Type", "text/csv");
 

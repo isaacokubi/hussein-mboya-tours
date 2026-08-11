@@ -1,85 +1,39 @@
-import { Outlet } from "react-router-dom";
-
+import { useEffect, useState } from "react";
+import { Outlet, useLocation } from "react-router-dom";
+import { Menu, X } from "lucide-react";
 import AgentSidebar from "../components/agent/AgentSidebar";
-import AgentHeader from "../components/agent/AgentHeader";
 
+export default function AgentLayout() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const location = useLocation();
 
-const AgentLayout = () => {
+  useEffect(() => setMobileOpen(false), [location.pathname]);
 
+  return (
+    <div className="min-h-screen bg-slate-100">
+      <aside className="fixed inset-y-0 left-0 hidden lg:block">
+        <AgentSidebar />
+      </aside>
 
-    return (
-
-        <div className="
-            flex
-            min-h-screen
-            bg-gray-100
-            overflow-hidden
-        ">
-
-
-            {/* Sidebar */}
-
-            <aside className="
-                w-64
-                flex-shrink-0
-            ">
-
-                <AgentSidebar />
-
-            </aside>
-
-
-
-
-            {/* Main Area */}
-
-            <div className="
-                flex-1
-                flex
-                flex-col
-                min-w-0
-            ">
-
-
-
-                {/* Header */}
-
-                <header>
-
-                    <AgentHeader />
-
-                </header>
-
-
-
-
-
-                {/* Page Content */}
-
-                <main className="
-                    flex-1
-                    overflow-y-auto
-                    p-6
-                ">
-
-
-                    <Outlet />
-
-
-                </main>
-
-
-
-            </div>
-
-
-
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <button onClick={() => setMobileOpen(false)} className="absolute inset-0 bg-black/60" aria-label="Close menu" />
+          <aside className="relative h-full w-80 max-w-[85vw]">
+            <AgentSidebar />
+            <button onClick={() => setMobileOpen(false)} className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white" aria-label="Close agent menu"><X size={20} /></button>
+          </aside>
         </div>
+      )}
 
-    );
-
-
-};
-
-
-export default AgentLayout;
+      <div className="lg:pl-72">
+        <header className="sticky top-0 z-40 flex items-center gap-3 border-b bg-white px-4 py-3 shadow-sm lg:hidden">
+          <button onClick={() => setMobileOpen(true)} className="rounded-xl bg-slate-900 p-2 text-white" aria-label="Open agent menu"><Menu size={22} /></button>
+          <h1 className="font-bold">Agent Portal</h1>
+        </header>
+        <main className="min-w-0">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
+}

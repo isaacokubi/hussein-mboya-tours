@@ -5,6 +5,8 @@ import Payment from "../models/Payment.js";
 import Staff from "../models/Staff.js";
 import Tour from "../models/Tour.js";
 import User from "../models/User.js";
+import Vehicle from "../models/Vehicle.js";
+import Agent from "../models/Agent.js";
 
 const ACTIVE_PAYMENT_STATUS = "completed";
 const NON_DELETED = { $ne: true };
@@ -27,6 +29,9 @@ export const getDashboard = async (req, res) => {
       bookings,
       destinations,
       customers,
+      guidesCount,
+      vehiclesCount,
+      agentsCount,
     ] = await Promise.all([
       User.countDocuments({}),
       Tour.countDocuments({ isDeleted: NON_DELETED }),
@@ -37,6 +42,19 @@ export const getDashboard = async (req, res) => {
           { role: "customer" },
           { legacyRole: "customer" },
         ],
+      }),
+      Staff.countDocuments({
+        position: "guide",
+        isDeleted: NON_DELETED,
+        isActive: true,
+        status: "active",
+      }),
+      Vehicle.countDocuments({
+        isDeleted: NON_DELETED,
+        isActive: true,
+      }),
+      Agent.countDocuments({
+        status: "active",
       }),
     ]);
 
@@ -209,6 +227,7 @@ export const getDashboard = async (req, res) => {
         .limit(5)
         .populate("tour", "title")
         .populate("customer", "name email phone")
+        .populate("user", "name email phone")
         .lean(),
 
       Booking.aggregate([
@@ -230,18 +249,27 @@ export const getDashboard = async (req, res) => {
         },
         {
           $lookup: {
-            from: "users",
+            from: "agents",
             localField: "_id",
             foreignField: "_id",
-            as: "agent",
+            as: "agentProfile",
           },
         },
-        { $unwind: "$agent" },
+        { $unwind: "$agentProfile" },
+        {
+          $lookup: {
+            from: "users",
+            localField: "agentProfile.user",
+            foreignField: "_id",
+            as: "agentUser",
+          },
+        },
+        { $unwind: { path: "$agentUser", preserveNullAndEmptyArrays: true } },
         {
           $project: {
             _id: 1,
-            name: "$agent.name",
-            email: "$agent.email",
+            name: { $ifNull: ["$agentUser.name", "$agentProfile.companyName"] },
+            email: { $ifNull: ["$agentUser.email", "$agentProfile.email"] },
             bookings: 1,
             commission: 1,
           },
@@ -369,11 +397,15 @@ export const getDashboard = async (req, res) => {
 
         agents: agentPerformance,
         guides: guidePerformance,
+        vehicles: vehiclesCount,
+        guidesCount,
+        agentsCount,
 
         userStats: {
           customers,
-          agents: agentPerformance.length,
-          guides: guidePerformance.length,
+          agents: agentsCount,
+          guides: guidesCount,
+          vehicles: vehiclesCount,
         },
       },
     });

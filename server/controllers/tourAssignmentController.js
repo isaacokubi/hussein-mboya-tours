@@ -6,6 +6,9 @@ import mongoose from "mongoose";
 import Tour from "../models/Tour.js";
 import Staff from "../models/Staff.js";
 import Vehicle from "../models/Vehicle.js";
+import Notification from "../models/Notification.js";
+import { sendSMS } from "../services/smsService.js";
+import { sendWhatsApp } from "../services/whatsappService.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -457,6 +460,66 @@ export const assignTourResources = async (req, res, next) => {
         "assignedVehicle",
         "name registrationNumber registration model type capacity status assignedTour"
       );
+
+    /*
+    |--------------------------------------------------------------------------
+    | STAFF ASSIGNMENT NOTIFICATIONS
+    |--------------------------------------------------------------------------
+    */
+
+    const assignmentMessage = (person, role) =>
+      [
+        `Coherent Tours assignment.`,
+        `You have been assigned as ${role} for "${tour.title}".`,
+        `Tour date: ${new Date(tour.date || tour.startDate).toLocaleDateString("en-KE")}.`,
+        tour.location ? `Location: ${tour.location}.` : "",
+        tour.meetingPoint ? `Meeting point: ${tour.meetingPoint}.` : "",
+        `Tour ID: ${tour._id}.`,
+      ].filter(Boolean).join(" ");
+
+    const notificationJobs = [];
+
+    if (guide && newGuideId !== oldGuideId && guide.phone) {
+      const message = assignmentMessage(guide, "guide");
+      notificationJobs.push(
+        sendSMS(guide.phone, message),
+        sendWhatsApp({ to: guide.phone, message }),
+        guide.user
+          ? Notification.create({
+              recipient: guide.user,
+              user: guide.user,
+              title: "New tour assignment",
+              message,
+              type: "assignment",
+              relatedModel: "Tour",
+              relatedId: tour._id,
+              actionUrl: `/guide/dashboard`,
+            })
+          : Promise.resolve()
+      );
+    }
+
+    if (driver && newDriverId !== oldDriverId && driver.phone) {
+      const message = assignmentMessage(driver, "driver");
+      notificationJobs.push(
+        sendSMS(driver.phone, message),
+        sendWhatsApp({ to: driver.phone, message }),
+        driver.user
+          ? Notification.create({
+              recipient: driver.user,
+              user: driver.user,
+              title: "New tour assignment",
+              message,
+              type: "assignment",
+              relatedModel: "Tour",
+              relatedId: tour._id,
+              actionUrl: `/guide/dashboard`,
+            })
+          : Promise.resolve()
+      );
+    }
+
+    await Promise.allSettled(notificationJobs);
 
     /*
     |--------------------------------------------------------------------------
