@@ -102,3 +102,14 @@ client-BACKUP-before-repair/
 server-BACKUP-before-repair/
 BACKUP-BEFORE-ZIP-MERGE-*/
 merge-backup-*/
+
+# Local audit/repair backups
+.final-audit-backup-*/
+.final-repair-backup-*/
+merge-backup-*/
+*-BACKUP*/
+*.backup
+*.bak
+
+# Duplicate extracted project folders
+hussein-mboya-tours-main/
