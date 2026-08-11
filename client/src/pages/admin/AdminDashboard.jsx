@@ -127,6 +127,8 @@ const systemHealth =
 
     guides = [],
 
+      vehicles = 0,
+
     notifications = [],
   } = stats;
 
@@ -281,9 +283,21 @@ xl:grid-cols-6
           icon={<TrendingUp />}
         />
 
-        <StatCard title="Agents" value={agentsCount || agents.length} icon={<Users />} />
-        <StatCard title="Guides" value={guidesCount || guides.length} icon={<Users />} />
-        <StatCard title="Vehicles" value={vehicles} icon={<CreditCard />} />
+        <StatCard
+            title="Agents"
+            value={Array.isArray(agents) ? agents.length : Number(agents) || 0}
+            icon={<Users />}
+          />
+        <StatCard
+            title="Guides"
+            value={Array.isArray(guides) ? guides.length : Number(guides) || 0}
+            icon={<Users />}
+          />
+        <StatCard
+            title="Vehicles"
+            value={Number(vehicles) || 0}
+            icon={<CreditCard />}
+          />
       </div>
       {/* REVENUE ANALYTICS */}
       <section
