@@ -38,22 +38,31 @@ const ensureDefaultPermissions = async () => {
 
   defaultsBootstrapPromise = (async () => {
   const allNames = [...new Set(Object.values(DEFAULT_PERMISSIONS).flat())];
-  await Permission.bulkWrite(allNames.map((name) => ({
-    updateOne: {
-      filter: { name },
-      update: {
-        $setOnInsert: {
-          name,
-          label: name.replace(/[._]/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
-          description: `Permission: ${name}`,
-          module: name.split(/[._]/)[0],
-          category: "system",
-          isActive: true,
+  try {
+    await Permission.bulkWrite(allNames.map((name) => ({
+      updateOne: {
+        filter: { name },
+        update: {
+          $set: {
+            label: name.replace(/[._]/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
+            description: `Permission: ${name}`,
+            module: name.split(/[._]/)[0],
+            category: "system",
+            isActive: true,
+          },
+          $setOnInsert: { name },
         },
+        upsert: true,
       },
-      upsert: true,
-    },
-  })));
+    })), { ordered: false });
+  } catch (error) {
+    // A concurrent request may have created the same unique permission.
+    // The authoritative records are re-read below, so duplicate-key races
+    // must never make the Roles page return HTTP 500.
+    if (error?.code !== 11000 && !error?.writeErrors?.every((e) => e?.code === 11000)) {
+      throw error;
+    }
+  }
 
   const permissions = await Permission.find({ name: { $in: allNames } }).lean();
   const byName = new Map(permissions.map(p => [p.name, p._id]));
@@ -64,16 +73,21 @@ const ensureDefaultPermissions = async () => {
     });
 
     if (!role) {
-      role = await Role.create({
-        name: roleName,
-        displayName: roleName.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-        description: `${roleName.replace(/_/g, " ")} access`,
-        permissions: [],
-        isSystem: ["admin", "super_admin", "tour_manager", "tour_guide", "driver"].includes(roleName),
-        status: "active",
-        level: roleName === "super_admin" ? 200 : roleName === "admin" ? 100 : 20,
-        isDefault: roleName === "customer",
-      });
+      try {
+        role = await Role.create({
+          name: roleName,
+          displayName: roleName.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+          description: `${roleName.replace(/_/g, " ")} access`,
+          permissions: [],
+          isSystem: ["admin", "super_admin", "tour_manager", "tour_guide", "driver"].includes(roleName),
+          status: "active",
+          level: roleName === "super_admin" ? 200 : roleName === "admin" ? 100 : 20,
+          isDefault: roleName === "customer",
+        });
+      } catch (error) {
+        if (error?.code !== 11000) throw error;
+        role = await Role.findOne({ name: roleName });
+      }
     }
 
     const merged = new Map(

@@ -40,7 +40,7 @@ const TourManagerDashboard = lazy(() => import("../pages/tourManager/TourManager
 const TourManagerTours = lazy(() => import("../pages/tourManager/TourManagerTours"));
 const CreateTour = lazy(() => import("../pages/tourManager/CreateTour"));
 const EditTour = lazy(() => import("../pages/tourManager/EditTour"));
-const AssignGuides = lazy(() => import("../pages/tourManager/AssignGuides"));
+
 const AssignGuide = lazy(() => import("../pages/tourManager/AssignGuide"));
 const AssignVehicle = lazy(() => import("../pages/tourManager/AssignVehicle"));
 const TourManagerVehicles = lazy(() => import("../pages/tourManager/Vehicles"));

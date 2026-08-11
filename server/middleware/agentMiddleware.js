@@ -61,9 +61,21 @@ const agentMiddleware = async (req, res, next) => {
       });
     }
 
-    const agent = await Agent.findOne({
-      user: user._id,
-    }).lean();
+    let agent = await Agent.findOne({ user: user._id }).lean();
+
+    // Legacy agent records were sometimes created before the User reference
+    // was stored. Resolve by email and self-heal the link.
+    if (!agent && user.email) {
+      agent = await Agent.findOne({
+        email: String(user.email).toLowerCase(),
+      }).lean();
+      if (agent) {
+        await Agent.updateOne(
+          { _id: agent._id },
+          { $set: { user: user._id } }
+        );
+      }
+    }
 
     if (!agent) {
       return res.status(403).json({

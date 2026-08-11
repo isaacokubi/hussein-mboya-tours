@@ -490,95 +490,79 @@ export const assignTourResources = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    const resolveStaffUser = async (staff) => {
-      if (!staff) return null;
+    const notificationJobs = [];
 
-      if (staff.user) {
-        return staff.user;
+    const resolveStaffUser = async (person) => {
+      if (!person) return null;
+      if (person.user) {
+        const linked = await User.findById(person.user).select("_id email").lean();
+        if (linked) return linked;
       }
-
-      if (staff.email) {
-        const user = await User.findOne({
-          email: String(staff.email).trim().toLowerCase(),
-          isActive: { $ne: false },
-        }).select("_id").lean();
-
-        if (user?._id) {
+      if (person.email) {
+        const linked = await User.findOne({
+          email: String(person.email).toLowerCase(),
+        }).select("_id email").lean();
+        if (linked) {
           await Staff.updateOne(
-            { _id: staff._id },
-            { $set: { user: user._id } }
+            { _id: person._id },
+            { $set: { user: linked._id } }
           );
-          return user._id;
+          return linked;
         }
       }
-
       return null;
     };
 
-    const notificationJobs = [];
-
     if (guide && newGuideId !== oldGuideId) {
       const message = assignmentMessage(guide, "guide");
-      const guideUserId = await resolveStaffUser(guide);
-
-      if (guideUserId) {
-        notificationJobs.push(
-          Notification.create({
-            recipient: guideUserId,
-            user: guideUserId,
-            title: "New tour assignment",
-            message,
-            type: "tour_assignment",
-            priority: "high",
-            relatedModel: "Tour",
-            relatedId: tour._id,
-            actionUrl: "/guide/dashboard",
-            metadata: {
-              tourId: tour._id,
-              role: "guide",
-            },
-          })
-        );
-      }
-
-      if (guide.phone) {
-        notificationJobs.push(
-          sendSMS(guide.phone, message),
-          sendWhatsApp({ to: guide.phone, message })
-        );
-      }
+      const guideUser = await resolveStaffUser(guide);
+      notificationJobs.push(
+        guide.phone ? sendSMS(guide.phone, message) : Promise.resolve(),
+        guide.phone ? sendWhatsApp({ to: guide.phone, message }) : Promise.resolve(),
+        guideUser
+          ? Notification.create({
+              recipient: guideUser._id,
+              user: guideUser._id,
+              title: "New tour assignment",
+              message,
+              type: "assignment",
+              priority: "high",
+              relatedModel: "Tour",
+              relatedId: tour._id,
+              actionUrl: `/guide/dashboard`,
+              metadata: {
+                tourId: tour._id,
+                assignmentRole: "guide",
+              },
+            })
+          : Promise.resolve()
+      );
     }
 
     if (driver && newDriverId !== oldDriverId) {
       const message = assignmentMessage(driver, "driver");
-      const driverUserId = await resolveStaffUser(driver);
-
-      if (driverUserId) {
-        notificationJobs.push(
-          Notification.create({
-            recipient: driverUserId,
-            user: driverUserId,
-            title: "New tour assignment",
-            message,
-            type: "tour_assignment",
-            priority: "high",
-            relatedModel: "Tour",
-            relatedId: tour._id,
-            actionUrl: "/driver/dashboard",
-            metadata: {
-              tourId: tour._id,
-              role: "driver",
-            },
-          })
-        );
-      }
-
-      if (driver.phone) {
-        notificationJobs.push(
-          sendSMS(driver.phone, message),
-          sendWhatsApp({ to: driver.phone, message })
-        );
-      }
+      const driverUser = await resolveStaffUser(driver);
+      notificationJobs.push(
+        driver.phone ? sendSMS(driver.phone, message) : Promise.resolve(),
+        driver.phone ? sendWhatsApp({ to: driver.phone, message }) : Promise.resolve(),
+        driverUser
+          ? Notification.create({
+              recipient: driverUser._id,
+              user: driverUser._id,
+              title: "New tour assignment",
+              message,
+              type: "assignment",
+              priority: "high",
+              relatedModel: "Tour",
+              relatedId: tour._id,
+              actionUrl: `/driver/dashboard`,
+              metadata: {
+                tourId: tour._id,
+                assignmentRole: "driver",
+              },
+            })
+          : Promise.resolve()
+      );
     }
 
     await Promise.allSettled(notificationJobs);

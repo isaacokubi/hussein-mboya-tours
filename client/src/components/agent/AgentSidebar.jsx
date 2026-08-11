@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, CalendarCheck, Users, WalletCards, FileText, MessageSquareQuote } from "lucide-react";
+import { LayoutDashboard, CalendarCheck, Users, WalletCards, MessageSquareQuote } from "lucide-react";
 import { useSettings } from "../../context/SettingsContext";
 
 const links = [

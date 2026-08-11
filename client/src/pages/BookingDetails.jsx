@@ -7,7 +7,8 @@ import {
 } from "@tanstack/react-query";
 
 import {
-  getBooking
+  getBooking,
+  getMyBookings
 } from "../api/bookingApi";
 import ReviewForm from "../components/reviews/ReviewForm";
 
@@ -33,7 +34,27 @@ export default function BookingDetails() {
       id
     ],
 
-    queryFn:()=>getBooking(id),
+    queryFn: async () => {
+      try {
+        return await getBooking(id);
+      } catch (error) {
+        // Some older deployments exposed only the customer's booking list.
+        // Fall back to it so a valid customer booking never gets stuck on
+        // "Unable to load booking details".
+        const fallback = await getMyBookings();
+        const list =
+          fallback?.bookings ||
+          fallback?.data?.bookings ||
+          fallback?.data ||
+          fallback ||
+          [];
+        const found = Array.isArray(list)
+          ? list.find((item) => String(item._id || item.id) === String(id))
+          : null;
+        if (found) return { success: true, booking: found };
+        throw error;
+      }
+    },
 
   });
 

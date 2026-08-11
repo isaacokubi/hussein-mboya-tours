@@ -1,3 +1,4 @@
+import { getTourImage } from "../utils/tourImage";
 // client/src/pages/Wishlist.jsx
 
 import { Link, Navigate } from "react-router-dom";
@@ -272,14 +273,8 @@ export default function Wishlist() {
             tour.featuredImage ||
             tour.gallery?.[0] ||
             tour.image;
-          const rawImage =
             typeof media === "object" ? media?.url : media;
-          const apiRoot = String(import.meta.env.VITE_API_URL || "").replace(/\/api\/?$/, "");
-          const tourImage = rawImage
-            ? (/^https?:\/\//i.test(rawImage)
-                ? rawImage
-                : `${apiRoot}${rawImage.startsWith("/") ? "" : "/"}${rawImage}`)
-            : "/hero1.jpeg";
+          const tourImage = getTourImage(tour);
 
 
 

@@ -135,9 +135,6 @@ const EditTour =()=>{
                 assignedGuide,
                 assignedDriver,
                 assignedVehicle,
-                guide,
-                driver,
-                vehicle,
                 ...tourFields
             } = data;
 

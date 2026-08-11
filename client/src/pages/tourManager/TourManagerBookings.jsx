@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle, XCircle, CalendarDays } from "lucide-react";
+import { CheckCircle, XCircle } from "lucide-react";
 import { toast } from "react-toastify";
 import { getBookings, completeBooking, cancelBooking } from "../../api/tourManagerApi";
 

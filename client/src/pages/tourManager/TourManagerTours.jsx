@@ -278,14 +278,17 @@ statusMatch
 
 
 const totalPages = Math.max(1, Math.ceil(filteredTours.length / PAGE_SIZE));
-const pagedTours = filteredTours.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
 useEffect(() => {
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   setPage(1);
 }, [search, status]);
 
 useEffect(() => {
-  if (page > totalPages) setPage(totalPages);
+  if (page > totalPages) {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPage(totalPages);
+  }
 }, [page, totalPages]);
 
 return (

@@ -59,12 +59,17 @@ const AssignGuides = () => {
     queryFn: getGuides,
   });
 
-  const guides =
+  const guidesRaw =
     guideData?.guides ||
     guideData?.data?.guides ||
     guideData?.data ||
     guideData ||
     [];
+
+  const guides = (Array.isArray(guidesRaw) ? guidesRaw : []).filter((item) => {
+    const position = String(item?.position || item?.role || "").toLowerCase().replace(/[\s_-]/g, "");
+    return position === "guide" || position === "tourguide" || position === "tour_guide".replace(/[\s_-]/g, "");
+  });
 
   const tour =
     tourData?.tour ||

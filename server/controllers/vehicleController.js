@@ -24,7 +24,7 @@ export const createVehicle = async (req, res, next) => {
             });
         }
 
-        if (year !== undefined && (!Number.isFinite(year) || year < 1990 || year > new Date().getFullYear() + 10)) {
+        if (year !== undefined && (!Number.isFinite(year) || year < 1990 || year > new Date().getFullYear() + 1)) {
             return res.status(400).json({
                 success: false,
                 message: "Vehicle year is invalid.",

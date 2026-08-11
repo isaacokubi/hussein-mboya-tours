@@ -7,7 +7,10 @@ export default function AgentLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
 
-  useEffect(() => setMobileOpen(false), [location.pathname]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMobileOpen(false);
+  }, [location.pathname]);
 
   return (
     <div className="min-h-screen bg-slate-100">

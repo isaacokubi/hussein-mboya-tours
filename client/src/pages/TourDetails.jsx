@@ -1,3 +1,4 @@
+import { getTourImage } from "../utils/tourImage";
 import { useQuery } from "@tanstack/react-query";
 
 import { useParams, useNavigate } from "react-router-dom";
@@ -82,22 +83,7 @@ export default function TourDetails() {
     );
   }
 
-  const firstMedia =
-    tour.images?.[0] ||
-    tour.featuredImage ||
-    tour.gallery?.[0] ||
-    tour.image;
-
-  const rawImage =
-    typeof firstMedia === "object"
-      ? firstMedia?.url
-      : firstMedia;
-
-  const apiRoot = String(import.meta.env.VITE_API_URL || "").replace(/\/api\/?$/, "");
-  const image =
-    rawImage
-      ? (/^https?:\/\//i.test(rawImage) ? rawImage : `${apiRoot}${rawImage.startsWith("/") ? "" : "/"}${rawImage}`)
-      : "/hero1.jpeg";
+  const image = getTourImage(tour);
 
   const handleBooking = () => {
     navigate(`/checkout/${tour._id}`);

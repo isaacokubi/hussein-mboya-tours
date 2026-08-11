@@ -6,6 +6,8 @@ import {
   getNotifications,
   getMyNotifications,
   markRead,
+  getNotificationRecipients,
+  sendInternalNotification,
 } from "../controllers/notificationController.js";
 
 import {
@@ -25,6 +27,9 @@ const router = express.Router();
 */
 
 router.use(protect);
+
+router.get("/recipients", roleMiddleware("admin", "super_admin", "superadmin", "tour_manager", "tourmanager", "manager"), getNotificationRecipients);
+router.post("/internal", roleMiddleware("admin", "super_admin", "superadmin", "tour_manager", "tourmanager", "manager"), sendInternalNotification);
 
 /*
 |--------------------------------------------------------------------------

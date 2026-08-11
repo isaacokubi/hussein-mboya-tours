@@ -1,7 +1,6 @@
 // client/src/pages/tour-manager/TourAvailability.jsx
 
 import {
-  useEffect,
   useState
 } from "react";
 

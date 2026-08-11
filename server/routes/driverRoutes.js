@@ -1,26 +1,14 @@
 // server/routes/driverRoutes.js
-
 import express from "express";
-import { protect } from "../middleware/authMiddleware.js";
 import { driverDashboard } from "../controllers/driverController.js";
+import { protect } from "../middleware/authMiddleware.js";
+import { roleMiddleware } from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
 
 router.use(protect);
+router.use(roleMiddleware("driver", "admin", "super_admin", "superadmin", "tour_manager", "tourmanager", "manager"));
 
-router.get("/dashboard", (req, res, next) => {
-  const role = String(
-    req.user?.roleId?.name || req.user?.role || req.user?.legacyRole || ""
-  ).toLowerCase().replace(/[\s_-]+/g, "");
-
-  if (!["driver", "admin", "superadmin", "administrator"].includes(role)) {
-    return res.status(403).json({
-      success: false,
-      message: "Driver access required.",
-    });
-  }
-
-  return driverDashboard(req, res, next);
-});
+router.get("/dashboard", driverDashboard);
 
 export default router;

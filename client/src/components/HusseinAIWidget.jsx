@@ -16,7 +16,6 @@ import api from "../api/axios";
 
 const HusseinAIWidget = () => {
 
-
   const [open, setOpen] = useState(false);
 
 

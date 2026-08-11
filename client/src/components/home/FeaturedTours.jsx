@@ -1,3 +1,4 @@
+import { getTourImage } from "../../utils/tourImage";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 
@@ -131,19 +132,7 @@ export default function FeaturedTours() {
               >
                 <div className="relative">
                   <LazyImage
-                    src={(() => {
-                      const media =
-                        tour?.images?.[0] ||
-                        tour?.featuredImage ||
-                        tour?.gallery?.[0] ||
-                        tour?.destination?.images?.[0] ||
-                        tour?.image;
-                      const value = typeof media === "object" ? media?.url : media;
-                      if (!value) return "/hero1.jpeg";
-                      if (/^https?:\/\//i.test(value)) return value;
-                      const apiRoot = String(import.meta.env.VITE_API_URL || "").replace(/\/api\/?$/, "");
-                      return `${apiRoot}${value.startsWith("/") ? "" : "/"}${value}`;
-                    })()}
+                    src={getTourImage(tour)}
                     alt={tour?.title || "Tour"}
                     className="
                           h-64

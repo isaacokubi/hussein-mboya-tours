@@ -1,6 +1,8 @@
 import mongoose from "mongoose";
 
 import Booking from "../models/Booking.js";
+import User from "../models/User.js";
+import Staff from "../models/Staff.js";
 import Notification from "../models/Notification.js";
 
 import {
@@ -64,6 +66,195 @@ const getNotificationType = (type) => {
   }
 
   return "alert";
+};
+
+
+
+const normalizeRole = (value) =>
+  String(
+    typeof value === "object"
+      ? value?.name || value?.role || ""
+      : value || ""
+  )
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, "");
+
+const requesterCanSendStaffNotifications = (user) =>
+  ["admin", "superadmin", "administrator", "tourmanager", "manager"].includes(
+    normalizeRole(user?.roleId?.name || user?.role || user?.legacyRole)
+  );
+
+/*
+|--------------------------------------------------------------------------
+| STAFF / INTERNAL NOTIFICATION RECIPIENTS
+|--------------------------------------------------------------------------
+*/
+
+export const getNotificationRecipients = async (req, res, next) => {
+  try {
+    if (!requesterCanSendStaffNotifications(req.user)) {
+      return res.status(403).json({ success: false, message: "Only administrators and managers can send internal notifications." });
+    }
+
+    const requested = String(req.query.roles || "guide,driver,agent,admin,manager")
+      .split(",")
+      .map((v) => normalizeRole(v))
+      .filter(Boolean);
+
+    const roleMap = {
+      guide: ["guide", "tourguide"],
+      tourguide: ["guide", "tourguide"],
+      driver: ["driver"],
+      agent: ["agent", "travelagent"],
+      admin: ["admin", "superadmin", "administrator"],
+      manager: ["manager", "tourmanager", "tour_manager"],
+      tourmanager: ["manager", "tourmanager", "tour_manager"],
+    };
+
+    const allowedRoles = [...new Set(requested.flatMap((r) => roleMap[r] || []))];
+
+    const users = await User.find({
+      $or: [
+        { role: { $in: allowedRoles } },
+        { legacyRole: { $in: allowedRoles } },
+      ],
+      status: "active",
+      isActive: { $ne: false },
+    })
+      .select("_id name firstName lastName email phone role legacyRole roleId")
+      .populate("roleId", "name displayName")
+      .sort({ name: 1, email: 1 })
+      .lean();
+
+    const staff = await Staff.find({
+      position: {
+        $in: requested.flatMap((r) => ({
+          guide: ["guide"],
+          tourguide: ["guide"],
+          driver: ["driver"],
+          agent: [],
+          admin: ["admin"],
+          manager: ["tour_manager"],
+          tourmanager: ["tour_manager"],
+        }[r] || [])),
+      },
+      status: "active",
+      isDeleted: { $ne: true },
+    }).select("user name email phone position").lean();
+
+    const linkedIds = new Set(users.map((u) => u._id.toString()));
+    const extra = [];
+
+    for (const member of staff) {
+      if (member.user && !linkedIds.has(member.user.toString())) {
+        const user = await User.findById(member.user)
+          .select("_id name firstName lastName email phone role legacyRole roleId")
+          .populate("roleId", "name displayName")
+          .lean();
+        if (user && user.status === "active" && user.isActive !== false) {
+          extra.push(user);
+          linkedIds.add(user._id.toString());
+        }
+      }
+    }
+
+    return res.json({
+      success: true,
+      recipients: [...users, ...extra],
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const sendInternalNotification = async (req, res, next) => {
+  try {
+    if (!requesterCanSendStaffNotifications(req.user)) {
+      return res.status(403).json({ success: false, message: "Only administrators and managers can send internal notifications." });
+    }
+
+    const {
+      recipientIds = [],
+      roles = [],
+      title,
+      message,
+      type = "system",
+      priority = "normal",
+      actionUrl = "",
+    } = req.body || {};
+
+    if (!title?.trim() || !message?.trim()) {
+      return res.status(400).json({ success: false, message: "Title and message are required." });
+    }
+
+    const normalizedIds = Array.isArray(recipientIds)
+      ? recipientIds.filter((id) => isValidId(id))
+      : [];
+
+    const normalizedRoles = Array.isArray(roles)
+      ? roles.map(normalizeRole).filter(Boolean)
+      : [];
+
+    const roleMap = {
+      guide: ["guide", "tourguide"],
+      tourguide: ["guide", "tourguide"],
+      driver: ["driver"],
+      agent: ["agent", "travelagent"],
+      admin: ["admin", "superadmin", "administrator"],
+      manager: ["manager", "tourmanager", "tour_manager"],
+      tourmanager: ["manager", "tourmanager", "tour_manager"],
+    };
+
+    const expandedRoles = [...new Set(normalizedRoles.flatMap((r) => roleMap[r] || []))];
+
+    const filter = [];
+    if (normalizedIds.length) filter.push({ _id: { $in: normalizedIds } });
+    if (expandedRoles.length) {
+      filter.push(
+        { role: { $in: expandedRoles } },
+        { legacyRole: { $in: expandedRoles } }
+      );
+    }
+
+    if (!filter.length) {
+      return res.status(400).json({ success: false, message: "Select at least one recipient or recipient group." });
+    }
+
+    const recipients = await User.find({
+      $or: filter,
+      status: "active",
+      isActive: { $ne: false },
+    }).select("_id");
+
+    if (!recipients.length) {
+      return res.status(404).json({ success: false, message: "No active recipients matched your selection." });
+    }
+
+    const docs = recipients.map((user) => ({
+      recipient: user._id,
+      user: user._id,
+      title: title.trim(),
+      message: message.trim(),
+      type: ["booking", "payment", "tour_assignment", "tour_update", "assignment", "promotion", "system", "alert"].includes(type) ? type : "system",
+      priority: ["low", "normal", "high", "urgent"].includes(priority) ? priority : "normal",
+      actionUrl: actionUrl.trim(),
+      metadata: { sentBy: req.user._id, internal: true },
+      isSent: true,
+      isArchived: false,
+      read: false,
+    }));
+
+    const created = await Notification.insertMany(docs);
+
+    return res.status(201).json({
+      success: true,
+      message: `Notification sent to ${created.length} recipient${created.length === 1 ? "" : "s"}.`,
+      count: created.length,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 /*

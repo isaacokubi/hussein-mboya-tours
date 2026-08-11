@@ -29,6 +29,7 @@ const [imageSrc,setImageSrc] = useState(src);
 const [loading,setLoading] = useState(true);
 
 useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setImageSrc(typeof src === "object" ? src?.url : src);
     setLoading(true);
 }, [src]);

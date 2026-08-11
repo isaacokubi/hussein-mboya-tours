@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Bell, ChevronLeft, ChevronRight, CalendarDays, Plus, X } from "lucide-react";
+import { Bell, ChevronLeft, ChevronRight, CalendarDays, Plus } from "lucide-react";
 import { toast } from "react-toastify";
 import { getManagerTours } from "../../api/tourApi";
 

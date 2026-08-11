@@ -24,9 +24,22 @@ export const getAgentDashboard = async (req, res, next) => {
         |--------------------------------------------------------------------------
         */
 
-        const agent = await Agent.findOne({
+        let agent = await Agent.findOne({
             user: req.user._id
         }).lean();
+
+        if (!agent && req.user.email) {
+            agent = await Agent.findOne({
+                email: String(req.user.email).toLowerCase(),
+            }).lean();
+
+            if (agent) {
+                await Agent.updateOne(
+                    { _id: agent._id },
+                    { $set: { user: req.user._id } }
+                );
+            }
+        }
 
         if (!agent) {
             return res.status(404).json({
@@ -82,7 +95,7 @@ export const getAgentDashboard = async (req, res, next) => {
                 {
                     $match: {
                         agent: agent._id,
-                        paymentStatus: "paid"
+                        paymentStatus: { $in: ["paid", "completed"] }
                     }
                 },
 

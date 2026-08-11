@@ -1,78 +1,57 @@
-import { useQuery } from "@tanstack/react-query";
-import { Bell, CalendarDays, CheckCircle2 } from "lucide-react";
-import { getNotifications } from "../../api/notificationApi";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "../../api/axios";
 
-const formatDate = (value) =>
-  value
-    ? new Date(value).toLocaleString("en-KE", {
-        day: "numeric",
-        month: "short",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "";
-
-export default function AssignmentNotifications({ compact = false }) {
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ["my-notifications"],
-    queryFn: () => getNotifications({ limit: 8 }),
-    staleTime: 15000,
+export default function AssignmentNotifications() {
+  const queryClient = useQueryClient();
+  const { data, isLoading } = useQuery({
+    queryKey: ["assignment-notifications"],
+    queryFn: async () => (await api.get("/notifications", { params: { limit: 20 } })).data,
     refetchInterval: 30000,
   });
 
-  const notifications = data?.notifications || [];
+  const notifications = (data?.notifications || data?.data || []).filter(
+    (item) => ["assignment", "tour_assignment", "tour_update"].includes(item.type)
+  );
+
+  const readMutation = useMutation({
+    mutationFn: (id) => api.put(`/notifications/${id}/read`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["assignment-notifications"] }),
+  });
 
   return (
-    <section className={`rounded-2xl bg-white shadow-sm ring-1 ring-slate-100 ${compact ? "p-5" : "p-6"}`}>
-      <div className="flex items-center justify-between gap-4">
+    <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900">
-            <Bell className="text-emerald-600" size={20} />
-            Notifications
-          </h2>
-          <p className="mt-1 text-sm text-slate-500">Tour assignments and operational updates.</p>
+          <h2 className="text-xl font-bold text-slate-900">Assignment Notifications</h2>
+          <p className="text-sm text-slate-500">New tour assignments and operational updates.</p>
         </div>
-        {notifications.length > 0 && (
-          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-            {notifications.filter((item) => !item.read).length} unread
-          </span>
-        )}
+        <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+          {notifications.filter((n) => !n.read).length} unread
+        </span>
       </div>
 
       {isLoading ? (
-        <div className="mt-5 animate-pulse space-y-3">
-          <div className="h-14 rounded-xl bg-slate-100" />
-          <div className="h-14 rounded-xl bg-slate-100" />
-        </div>
-      ) : isError ? (
-        <p className="mt-5 rounded-xl bg-red-50 p-4 text-sm text-red-700">
-          Notifications could not be loaded. Refresh the page to try again.
-        </p>
+        <p className="mt-5 text-slate-500">Loading notifications...</p>
       ) : notifications.length === 0 ? (
-        <div className="mt-5 rounded-xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">
-          <CheckCircle2 className="mx-auto mb-2 text-slate-300" />
-          No new notifications.
-        </div>
+        <p className="mt-5 rounded-xl bg-slate-50 p-4 text-sm text-slate-500">No assignment notifications yet.</p>
       ) : (
-        <div className="mt-5 space-y-3">
-          {notifications.map((notification) => (
-            <article
-              key={notification._id}
-              className={`rounded-xl border p-4 ${
-                notification.read
-                  ? "border-slate-100 bg-slate-50"
-                  : "border-emerald-100 bg-emerald-50/60"
-              }`}
+        <div className="mt-4 space-y-3">
+          {notifications.map((item) => (
+            <button
+              key={item._id}
+              type="button"
+              onClick={() => !item.read && readMutation.mutate(item._id)}
+              className={`block w-full rounded-xl border p-4 text-left ${item.read ? "border-slate-100 bg-white" : "border-emerald-200 bg-emerald-50/50"}`}
             >
-              <div className="flex items-start gap-3">
-                <CalendarDays className="mt-0.5 shrink-0 text-emerald-600" size={18} />
-                <div className="min-w-0">
-                  <h3 className="font-semibold text-slate-900">{notification.title}</h3>
-                  <p className="mt-1 text-sm leading-6 text-slate-600">{notification.message}</p>
-                  <p className="mt-2 text-xs text-slate-400">{formatDate(notification.createdAt)}</p>
-                </div>
+              <div className="flex justify-between gap-4">
+                <strong className="text-slate-900">{item.title}</strong>
+                <span className="text-xs text-slate-400">
+                  {item.createdAt ? new Date(item.createdAt).toLocaleString() : ""}
+                </span>
               </div>
-            </article>
+              <p className="mt-1 text-sm text-slate-600">{item.message}</p>
+              {item.actionUrl && <p className="mt-2 text-xs font-semibold text-emerald-700">Open assigned tour →</p>}
+            </button>
           ))}
         </div>
       )}

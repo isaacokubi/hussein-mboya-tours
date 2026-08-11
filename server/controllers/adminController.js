@@ -93,53 +93,39 @@ export const getDashboardStats = async (req, res, next) => {
       |--------------------------------------------------------------------------
       | TOTAL REVENUE
       |--------------------------------------------------------------------------
+      |
+      | Revenue is based on successfully completed Payment records, not on
+      | booking lifecycle status. A customer can pay while the booking is
+      | still pending/assigned, so requiring status:"confirmed" caused real
+      | paid money to appear as Ksh 0.
+      |--------------------------------------------------------------------------
       */
 
-      Booking.aggregate([
-
+      Payment.aggregate([
         {
-          $match:{
-            paymentStatus:{
-              $in:[
-                "paid",
-                "completed"
-              ]
-            },
-
-            status:"confirmed"
-          }
+          $match: {
+            status: "completed",
+          },
         },
-
-
         {
-          $group:{
-            _id:null,
-
-            total:{
-              $sum:{
-                $max:[
+          $group: {
+            _id: null,
+            total: {
+              $sum: {
+                $max: [
                   0,
                   {
-                    $subtract:[
-                      {
-                        $subtract:[
-                          { $ifNull:["$totalAmount",0] },
-                          { $ifNull:["$balanceAmount",0] }
-                        ]
-                      },
-                      { $ifNull:["$refundAmount",0] }
-                    ]
-                  }
-                ]
-              }
-            }
-          }
-        }
-
+                    $subtract: [
+                      { $ifNull: ["$amount", 0] },
+                      { $ifNull: ["$refundedAmount", 0] },
+                    ],
+                  },
+                ],
+              },
+            },
+          },
+        },
       ]),
-
-
-
 
       /*
       |--------------------------------------------------------------------------
@@ -181,85 +167,40 @@ export const getDashboardStats = async (req, res, next) => {
 
 
 
-      /*
-      |--------------------------------------------------------------------------
-      | MONTHLY REVENUE
-      |--------------------------------------------------------------------------
-      */
-
-      Booking.aggregate([
-
+      Payment.aggregate([
         {
-          $match:{
-
-            paymentStatus:{
-              $in:[
-                "paid",
-                "completed"
-              ]
-            },
-
-            status:"confirmed"
-
-          }
+          $match: {
+            status: "completed",
+          },
         },
-
-
         {
-          $group:{
-
-            _id:{
-
-              year:{
-                $year:"$createdAt"
-              },
-
-
-              month:{
-                $month:"$createdAt"
-              }
-
+          $group: {
+            _id: {
+              year: { $year: { $ifNull: ["$paidAt", "$createdAt"] } },
+              month: { $month: { $ifNull: ["$paidAt", "$createdAt"] } },
             },
-
-
-            total:{
-              $sum:{
-                $max:[
+            total: {
+              $sum: {
+                $max: [
                   0,
                   {
-                    $subtract:[
-                      {
-                        $subtract:[
-                          { $ifNull:["$totalAmount",0] },
-                          { $ifNull:["$balanceAmount",0] }
-                        ]
-                      },
-                      { $ifNull:["$refundAmount",0] }
-                    ]
-                  }
-                ]
-              }
-            }
-
-          }
+                    $subtract: [
+                      { $ifNull: ["$amount", 0] },
+                      { $ifNull: ["$refundedAmount", 0] },
+                    ],
+                  },
+                ],
+              },
+            },
+          },
         },
-
-
         {
-          $sort:{
-
-            "_id.year":1,
-
-            "_id.month":1
-
-          }
-
-        }
-
+          $sort: {
+            "_id.year": 1,
+            "_id.month": 1,
+          },
+        },
       ]),
-
-
-
 
       /*
       |--------------------------------------------------------------------------
@@ -283,7 +224,6 @@ export const getDashboardStats = async (req, res, next) => {
                 $cond: [
                   {
                     $and: [
-                      { $eq: ["$status", "confirmed"] },
                       { $in: ["$paymentStatus", ["paid", "completed"]] },
                     ],
                   },
@@ -297,7 +237,6 @@ export const getDashboardStats = async (req, res, next) => {
                 $cond: [
                   {
                     $and: [
-                      { $eq: ["$status", "confirmed"] },
                       { $in: ["$paymentStatus", ["paid", "completed"]] },
                     ],
                   },
@@ -693,20 +632,31 @@ export const getBookingAnalytics = async (req, res, next) => {
 
 export const getRevenueAnalytics = async (req, res, next) => {
   try {
-    const monthly = await Booking.aggregate([
+    const monthly = await Payment.aggregate([
       {
         $match: {
-          paymentStatus: "paid",
-          status: { $ne: "cancelled" },
+          status: "completed",
         },
       },
       {
         $group: {
           _id: {
-            year: { $year: "$createdAt" },
-            month: { $month: "$createdAt" },
+            year: { $year: { $ifNull: ["$paidAt", "$createdAt"] } },
+            month: { $month: { $ifNull: ["$paidAt", "$createdAt"] } },
           },
-          revenue: { $sum: "$totalAmount" },
+          revenue: {
+            $sum: {
+              $max: [
+                0,
+                {
+                  $subtract: [
+                    { $ifNull: ["$amount", 0] },
+                    { $ifNull: ["$refundedAmount", 0] },
+                  ],
+                },
+              ],
+            },
+          },
           bookings: { $sum: 1 },
         },
       },

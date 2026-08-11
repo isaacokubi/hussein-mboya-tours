@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ShieldCheck, Save, ChevronDown } from "lucide-react";
+import { ShieldCheck, Save } from "lucide-react";
 import { toast } from "react-toastify";
 import { getAdminRoles, getAdminPermissions, updateAdminRolePermissions } from "../../api/admin/adminRoleApi";
 
@@ -36,6 +36,7 @@ function PermissionEditor({role,grouped,mutation}) {
   const initial = new Set((role?.permissions || []).map((p) => p._id));
   const [checked, setChecked] = useState(initial);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setChecked(new Set((role?.permissions || []).map((p) => p._id)));
   }, [role?._id]);
   const allIds=Object.values(grouped).flat().map(p=>p._id);

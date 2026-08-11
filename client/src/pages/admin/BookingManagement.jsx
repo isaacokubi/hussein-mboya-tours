@@ -37,11 +37,7 @@ const queryClient = useQueryClient();
 const [selectedBooking,setSelectedBooking] =
 useState(null);
 
-
-const [actionBooking,setActionBooking] =
-useState(null);
-
-
+const [, setActionBooking] = useState(null);
 const [search,setSearch] =
 useState("");
 
@@ -109,12 +105,10 @@ const vehicles =
 
 
 const {
-  data,
-  isLoading,
-  isFetching,
-  error,
-  refetch
-} = useQuery({
+    data,
+    isLoading,
+    error
+  } = useQuery({
   queryKey: [
     "admin-bookings",
     search,
@@ -198,7 +192,6 @@ queryKey:["admin-bookings"]
 /* ================= PAYMENT ================= */
 
 
-const paymentMutation =
 useMutation({
 
 mutationFn:({id,status})=>
@@ -469,17 +462,6 @@ guideWorkload[guide] =
 const filteredBookings =
 
 bookings.filter((b)=>{
-
-
-const customer =
-
-b.customer?.name ||
-b.user?.name ||
-b.user?.firstName ||
-"";
-
-
-
 const tour =
 
 b.tour?.title ||
@@ -514,27 +496,27 @@ const bookingId =
 const bookingNumber =
   String(b.bookingNumber || "").toLowerCase();
 
-const customerName =
+const _customerName =
   String(
-    b.customer?.name ||
-    b.customerSnapshot?.name ||
+    b._customer?.name ||
+    b._customerSnapshot?.name ||
     b.user?.name ||
     b.user?.firstName ||
     ""
   ).toLowerCase();
 
-const customerEmail =
+const _customerEmail =
   String(
-    b.customer?.email ||
-    b.customerSnapshot?.email ||
+    b._customer?.email ||
+    b._customerSnapshot?.email ||
     b.user?.email ||
     ""
   ).toLowerCase();
 
-const customerPhone =
+const _customerPhone =
   String(
-    b.customer?.phone ||
-    b.customerSnapshot?.phone ||
+    b._customer?.phone ||
+    b._customerSnapshot?.phone ||
     b.user?.phone ||
     ""
   ).toLowerCase();
@@ -544,9 +526,9 @@ const matchesSearch =
   !normalizedSearch ||
   bookingId.includes(normalizedSearch) ||
   bookingNumber.includes(normalizedSearch) ||
-  customerName.includes(normalizedSearch) ||
-  customerEmail.includes(normalizedSearch) ||
-  customerPhone.includes(normalizedSearch) ||
+  _customerName.includes(normalizedSearch) ||
+  _customerEmail.includes(normalizedSearch) ||
+  _customerPhone.includes(normalizedSearch) ||
   tour.includes(normalizedSearch);
 
 const matchesStatus =
@@ -952,7 +934,7 @@ onChange={(e)=>
 setSearch(e.target.value)
 }
 
-placeholder="Search customer, tour or booking ID"
+placeholder="Search _ tour or booking ID"
 
 className="border rounded px-3 py-2"
 
@@ -1398,7 +1380,7 @@ className="border-b"
 
 {
 
-b.customer?.name ||
+b._customer?.name ||
 
 b.user?.name ||
 
@@ -2067,7 +2049,7 @@ Booking Details
 
 {
 
-selectedBooking.customer?.name ||
+selectedBooking._customer?.name ||
 
 selectedBooking.user?.name ||
 
@@ -2254,7 +2236,7 @@ selectedBooking.payment?.mpesaReceiptNumber ||
 
 selectedBooking.phone ||
 
-selectedBooking.customer?.phone ||
+selectedBooking._customer?.phone ||
 
 selectedBooking.user?.phone ||
 

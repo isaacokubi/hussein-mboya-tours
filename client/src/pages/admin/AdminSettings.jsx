@@ -32,6 +32,7 @@ export default function AdminSettings() {
   useEffect(() => {
     const serverSettings = data?.data || data?.settings;
     if (serverSettings) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSettings((current) => ({
         ...current,
         ...serverSettings,

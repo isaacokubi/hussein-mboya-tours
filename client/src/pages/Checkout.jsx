@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createBooking } from "../api/bookingApi";
-import { initiateMpesa } from "../api/mpesaApi";
+import { initiateMpesa, checkPaymentStatus } from "../api/mpesaApi";
 import { getTourById } from "../api/tourApi";
 
 export default function Checkout() {
@@ -18,6 +18,7 @@ export default function Checkout() {
   const [hotelName, setHotelName] = useState("");
   const [roomNumber, setRoomNumber] = useState("");
   const [specialRequests, setSpecialRequests] = useState("");
+  const [paymentState, setPaymentState] = useState(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["tour", id],
@@ -42,14 +43,81 @@ export default function Checkout() {
         const booking = response?.data?.booking || response?.booking || response;
         if (!booking?._id) throw new Error("Booking ID was not returned.");
 
-        await initiateMpesa({
+        const paymentResponse = await initiateMpesa({
           bookingId: booking._id,
           phoneNumber: phone,
           amount: Number(booking.totalAmount || 0),
         });
 
-        toast.success("Booking created and M-Pesa payment request sent.");
-        navigate("/dashboard");
+        const checkoutRequestId =
+          paymentResponse?.data?.CheckoutRequestID ||
+          paymentResponse?.data?.checkoutRequestID ||
+          paymentResponse?.CheckoutRequestID ||
+          paymentResponse?.checkoutRequestID;
+
+        if (!checkoutRequestId) {
+          throw new Error("M-Pesa request was not accepted. Please try again.");
+        }
+
+        setPaymentState({
+          bookingId: booking._id,
+          checkoutRequestId,
+          status: "pending",
+          message: "M-Pesa prompt sent. Check your phone and enter your M-Pesa PIN.",
+        });
+
+        toast.success("M-Pesa prompt sent to your phone.");
+
+        let attempts = 0;
+        const maxAttempts = 30;
+
+        const poll = async () => {
+          attempts += 1;
+          try {
+            const statusResponse = await checkPaymentStatus(checkoutRequestId);
+            const payment =
+              statusResponse?.data?.payment ||
+              statusResponse?.payment ||
+              statusResponse?.data ||
+              statusResponse;
+
+            const status = String(payment?.status || payment?.paymentStatus || "").toLowerCase();
+
+            if (["completed", "paid", "success", "successful"].includes(status)) {
+              setPaymentState((current) => current ? {
+                ...current,
+                status: "completed",
+                message: "Payment confirmed. Your booking is now confirmed.",
+              } : current);
+              toast.success("Payment confirmed successfully.");
+              setTimeout(() => navigate(`/bookings/${booking._id}`), 1200);
+              return;
+            }
+
+            if (["failed", "cancelled", "refunded"].includes(status)) {
+              setPaymentState((current) => current ? {
+                ...current,
+                status: "failed",
+                message: "The M-Pesa payment was not completed. You can retry from your booking.",
+              } : current);
+              return;
+            }
+
+            if (attempts < maxAttempts) {
+              window.setTimeout(poll, 3000);
+            } else {
+              setPaymentState((current) => current ? {
+                ...current,
+                status: "timeout",
+                message: "We are still waiting for M-Pesa confirmation. Check your booking status shortly.",
+              } : current);
+            }
+          } catch {
+            if (attempts < maxAttempts) window.setTimeout(poll, 3000);
+          }
+        };
+
+        window.setTimeout(poll, 3000);
       } catch (paymentError) {
         toast.error(
           paymentError?.response?.data?.message ||
@@ -127,6 +195,32 @@ export default function Checkout() {
             <span className={availableSlots > 0 ? "text-green-700" : "text-red-600"}>Available: {availableSlots}</span>
           </div>
         </div>
+
+        {paymentState && (
+          <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
+            <div className="flex items-start gap-4">
+              <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-xl ${paymentState.status === "completed" ? "bg-emerald-600 text-white" : paymentState.status === "failed" ? "bg-red-600 text-white" : "bg-amber-400 text-white"}`}>
+                {paymentState.status === "completed" ? "✓" : paymentState.status === "failed" ? "!" : "M"}
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">
+                  {paymentState.status === "completed" ? "Payment Confirmed" : paymentState.status === "failed" ? "Payment Not Completed" : "Check Your Phone"}
+                </h2>
+                <p className="mt-1 text-slate-700">{paymentState.message}</p>
+                {paymentState.status !== "completed" && (
+                  <p className="mt-2 text-sm font-semibold text-emerald-800">
+                    An M-Pesa prompt should appear on {phone}. Enter your M-Pesa PIN to authorize the payment.
+                  </p>
+                )}
+                {paymentState.status === "timeout" && (
+                  <button type="button" onClick={() => navigate(`/bookings/${paymentState.bookingId}`)} className="mt-3 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
+                    View Booking Status
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid gap-5 md:grid-cols-2">

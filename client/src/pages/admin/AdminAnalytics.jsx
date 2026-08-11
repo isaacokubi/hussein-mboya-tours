@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { TrendingUp, Users, CalendarCheck, Car, Trophy, WalletCards } from "lucide-react";
+import { Users, CalendarCheck, Car, Trophy, WalletCards } from "lucide-react";
 import { getAnalytics } from "../../api/analyticsApi";
 
 export default function AdminAnalytics() {

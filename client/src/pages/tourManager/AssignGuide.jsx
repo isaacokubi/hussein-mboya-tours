@@ -162,12 +162,17 @@ const AssignGuide =()=>{
 
 
 
-    const guides =
+    const guidesRaw =
     Array.isArray(guidesData?.data)
         ? guidesData.data
         : Array.isArray(guidesData)
         ? guidesData
         : [];
+
+    const guides = guidesRaw.filter((item) => {
+        const position = String(item?.position || item?.role || "").toLowerCase().replace(/[\s_-]/g, "");
+        return position === "guide" || position === "tourguide";
+    });
 
 
 
