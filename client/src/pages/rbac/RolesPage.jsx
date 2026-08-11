@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ShieldCheck, Save, ChevronDown } from "lucide-react";
 import { toast } from "react-toastify";
-import { getAdminRoles, getAdminPermissions, updateAdminRolePermissions } from "../api/admin/adminRoleApi";
+import { getAdminRoles, getAdminPermissions, updateAdminRolePermissions } from "../../api/admin/adminRoleApi";
 
 export default function RolesPage() {
   const qc=useQueryClient();
