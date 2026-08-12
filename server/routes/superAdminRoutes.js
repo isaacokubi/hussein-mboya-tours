@@ -16,8 +16,8 @@ router.get(
 "/dashboard",
 authorize(
 [
-"superadmin",
-"super_admin"
+"super_admin",
+"superadmin"
 ]
 ),
 getSuperAdminDashboard

@@ -55,8 +55,12 @@ const TourManagerCustomers = lazy(() => import("../pages/tourManager/TourManager
 const TourManagerGuides = lazy(() => import("../pages/tourManager/TourManagerGuides"));
 // Admin pages
 const AdminLayout = lazy(() => import("../layouts/AdminLayout"));
+const SuperAdminLayout = lazy(() => import("../layouts/SuperAdminLayout"));
 const AdminDashboard = lazy(() => import("../pages/admin/AdminDashboard"));
 const SuperAdminDashboard = lazy(() => import("../pages/superadmin/SuperAdminDashboard"));
+const SuperAdminUsers = lazy(() => import("../pages/superadmin/SuperAdminUsers"));
+const SuperAdminRoles = lazy(() => import("../pages/superadmin/SuperAdminRoles"));
+const SuperAdminSystem = lazy(() => import("../pages/superadmin/SuperAdminSystem"));
 const UserManagement = lazy(() => import("../pages/admin/UserManagement"));
 const TourManagement = lazy(() => import("../pages/admin/TourManagement"));
 const AddTour = lazy(() => import("../pages/admin/AddTour"));
@@ -408,10 +412,10 @@ export default function AppRoutes() {
 path="/superadmin"
 element={
 <ProtectedRoute roles={[
-"superadmin",
-"super_admin"
+"super_admin",
+"superadmin"
 ]}>
-<AdminLayout />
+<SuperAdminLayout />
 </ProtectedRoute>
 }
 >
@@ -430,31 +434,6 @@ element={<SuperAdminDashboard />}
 
 
 
-
-{/* Super Admin */}
-<Route
-path="/superadmin"
-element={
-<ProtectedRoute roles={[
-"superadmin",
-"super_admin"
-]}>
-<AdminLayout />
-</ProtectedRoute>
-}
->
-
-<Route
-index
-element={<SuperAdminDashboard />}
-/>
-
-<Route
-path="dashboard"
-element={<SuperAdminDashboard />}
-/>
-
-</Route>
 
 
       {/* Admin */}
