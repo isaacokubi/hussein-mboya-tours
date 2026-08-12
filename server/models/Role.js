@@ -1,6 +1,7 @@
 // server/models/Role.js
 
 import mongoose from "mongoose";
+import "./Permission.js";
 
 /*
 |--------------------------------------------------------------------------
