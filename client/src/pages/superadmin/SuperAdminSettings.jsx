@@ -1,60 +1,7 @@
-export default function SuperAdminSettings(){
-
-return (
-
-<section className="p-8">
-
-<h1 className="text-3xl font-bold">
-Platform Settings
-</h1>
-
-
-<div className="
-mt-6
-grid
-md:grid-cols-3
-gap-6
-">
-
-
-<div className="bg-white shadow rounded-xl p-6">
-<h2 className="font-bold">
-Email Configuration
-</h2>
-
-<p>
-SMTP and notification settings
-</p>
-</div>
-
-
-<div className="bg-white shadow rounded-xl p-6">
-<h2 className="font-bold">
-Security Policy
-</h2>
-
-<p>
-Password and authentication rules
-</p>
-</div>
-
-
-<div className="bg-white shadow rounded-xl p-6">
-<h2 className="font-bold">
-System Preferences
-</h2>
-
-<p>
-Global application settings
-</p>
-</div>
-
-
-</div>
-
-
-</section>
-
-);
-
+import React,{useEffect,useState} from "react";
+import { getSettings } from "../../api/superAdminApi";
+export default function Page(){
+ const [data,setData]=useState(null); const [error,setError]=useState("");
+ useEffect(()=>{getSettings().then(setData).catch(e=>setError(e.message))},[]);
+ return <section className="space-y-6"><h1 className="text-3xl font-black">Platform Settings</h1><p className="text-gray-500">Manage platform configuration.</p>{error&&<div className="text-red-600">{error}</div>}<pre className="bg-white rounded-xl p-6 overflow-auto">{JSON.stringify(data,null,2)}</pre></section>
 }

@@ -1,38 +1,7 @@
-export default function SuperAdminApiMonitor(){
-
-return (
-
-<section className="p-8">
-
-<h1 className="text-3xl font-bold">
-API Monitoring
-</h1>
-
-
-<div className="
-mt-6
-bg-white
-shadow
-rounded-xl
-p-6
-">
-
-
-<h2 className="font-bold">
-API Gateway Status
-</h2>
-
-
-<p className="text-green-600">
-All services operational
-</p>
-
-
-</div>
-
-
-</section>
-
-);
-
+import React,{useEffect,useState} from "react";
+import { getApiMonitor } from "../../api/superAdminApi";
+export default function Page(){
+ const [data,setData]=useState(null); const [error,setError]=useState("");
+ useEffect(()=>{getApiMonitor().then(setData).catch(e=>setError(e.message))},[]);
+ return <section className="space-y-6"><h1 className="text-3xl font-black">API Monitor</h1><p className="text-gray-500">Monitor API availability and response information.</p>{error&&<div className="text-red-600">{error}</div>}<pre className="bg-white rounded-xl p-6 overflow-auto">{JSON.stringify(data,null,2)}</pre></section>
 }

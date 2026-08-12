@@ -1,64 +1,7 @@
-import React from "react";
-
-export default function SuperAdminAudit(){
-
-return (
-
-<div>
-
-<h1>
-Audit Logs
-</h1>
-
-<p>
-Track important platform activities, administrator actions and security events.
-</p>
-
-
-<div
-style={{
-display:"grid",
-gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",
-gap:"20px",
-marginTop:"30px"
-}}
->
-
-<Card title="Total Events" value="Monitoring Active" />
-
-<Card title="Admin Actions" value="Tracked" />
-
-<Card title="Security Events" value="Protected" />
-
-</div>
-
-
-</div>
-
-);
-
-}
-
-
-function Card({title,value}){
-
-return (
-
-<div
-style={{
-background:"#fff",
-padding:"20px",
-borderRadius:"12px",
-boxShadow:"0 2px 8px rgba(0,0,0,.08)"
-}}
->
-
-<h3>{title}</h3>
-
-<p>{value}</p>
-
-</div>
-
-);
-
+import React,{useEffect,useState} from "react";
+import { getAuditLogs } from "../../api/superAdminApi";
+export default function Page(){
+ const [data,setData]=useState(null); const [error,setError]=useState("");
+ useEffect(()=>{getAuditLogs().then(setData).catch(e=>setError(e.message))},[]);
+ return <section className="space-y-6"><h1 className="text-3xl font-black">Audit Center</h1><p className="text-gray-500">Review recorded administrator and security events.</p>{error&&<div className="text-red-600">{error}</div>}<pre className="bg-white rounded-xl p-6 overflow-auto">{JSON.stringify(data,null,2)}</pre></section>
 }
