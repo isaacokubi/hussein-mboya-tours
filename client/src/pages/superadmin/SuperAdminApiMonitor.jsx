@@ -1,7 +1,32 @@
-import React,{useEffect,useState} from "react";
-import { getApiMonitor } from "../../api/superAdminApi";
-export default function Page(){
- const [data,setData]=useState(null); const [error,setError]=useState("");
- useEffect(()=>{getApiMonitor().then(setData).catch(e=>setError(e.message))},[]);
- return <section className="space-y-6"><h1 className="text-3xl font-black">API Monitor</h1><p className="text-gray-500">Monitor API availability and response information.</p>{error&&<div className="text-red-600">{error}</div>}<pre className="bg-white rounded-xl p-6 overflow-auto">{JSON.stringify(data,null,2)}</pre></section>
+import {useQuery} from "@tanstack/react-query";
+import {getApiMonitor} from "../../api/superAdminApi";
+
+export default function SuperAdminApiMonitor(){
+
+const {data,isLoading}=useQuery({
+queryKey:["api-monitor"],
+queryFn:getApiMonitor
+});
+
+
+if(isLoading)
+return <div className="p-6">Monitoring APIs...</div>
+
+
+return (
+
+<div className="p-6">
+
+<h1 className="text-3xl font-bold mb-5">
+API Monitor
+</h1>
+
+<pre className="bg-white shadow rounded-xl p-5">
+{JSON.stringify(data,null,2)}
+</pre>
+
+</div>
+
+)
+
 }

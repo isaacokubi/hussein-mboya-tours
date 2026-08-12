@@ -36,13 +36,30 @@ export default function StaffManagement() {
     onError: (e) => toast.error(e?.response?.data?.message || "Could not update staff."),
   });
 
-  const staff = Array.isArray(staffQuery.data?.data) ? staffQuery.data.data : [];
-  const adminUsers = Array.isArray(usersQuery.data?.data)
-    ? usersQuery.data.data.filter((u) =>
-        ["admin", "super_admin", "superadmin", "administrator", "tour_manager", "manager", "agent"]
-          .includes(String(u.role || "").toLowerCase())
-      )
-    : [];
+  const staff = useMemo(
+    () =>
+      Array.isArray(staffQuery.data?.data)
+        ? staffQuery.data.data
+        : [],
+    [staffQuery.data]
+  );
+  const adminUsers = useMemo(
+    () =>
+      Array.isArray(usersQuery.data?.data)
+        ? usersQuery.data.data.filter((u) =>
+            [
+              "admin",
+              "super_admin",
+              "superadmin",
+              "administrator",
+              "tour_manager",
+              "manager",
+              "agent",
+            ].includes(String(u.role || "").toLowerCase())
+          )
+        : [],
+    [usersQuery.data]
+  );
 
   const rows = useMemo(() => {
     const staffRows = staff.map((m) => ({ ...m, rowType: "staff" }));

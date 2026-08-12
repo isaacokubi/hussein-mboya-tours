@@ -1,5 +1,5 @@
+import { useEffect, useState, useCallback } from "react";
 
-import React,{useEffect,useState} from "react";
 import {
 getAdminUsers,
 updateUserStatus,
@@ -15,7 +15,7 @@ const [loading,setLoading]=useState(true);
 const [error,setError]=useState("");
 
 
-const loadUsers=async()=>{
+const loadUsers=useCallback(async()=>{
 
 try{
 
@@ -33,7 +33,7 @@ data ||
 );
 
 }
-catch(e){
+catch{
 
 setError(
 "Failed loading users"
@@ -47,14 +47,18 @@ setLoading(false);
 
 }
 
-};
+},[search]);
 
 
 useEffect(()=>{
 
-loadUsers();
+const run = async () => {
+  await loadUsers();
+};
 
-},[]);
+run();
+
+},[loadUsers]);
 
 
 

@@ -174,7 +174,9 @@ export const authorize = (...allowedRoles) => {
       });
     }
 
-    const userRole = getUserRole(req.user);
+    const userRole = normalizeRole(
+      getUserRole(req.user)
+    );
 
     const allowed = allowedRoles.map(normalizeRole);
 

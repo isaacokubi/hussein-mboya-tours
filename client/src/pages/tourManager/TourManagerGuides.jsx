@@ -6,7 +6,17 @@ import { getGuides } from "../../api/tourManagerApi";
 export default function TourManagerGuides() {
   const [search, setSearch] = useState("");
   const { data, isLoading, isError, error } = useQuery({ queryKey: ["tour-manager-guides"], queryFn: getGuides });
-  const guides = Array.isArray(data?.guides) ? data.guides : Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+  const guides = useMemo(
+    () =>
+      Array.isArray(data?.guides)
+        ? data.guides
+        : Array.isArray(data?.data)
+          ? data.data
+          : Array.isArray(data)
+            ? data
+            : [],
+    [data]
+  );
   const filtered = useMemo(() => guides.filter(g => {
     const q = search.toLowerCase();
     return !q || [g.name,g.email,g.phone,g.position,g.availability].some(v => String(v || "").toLowerCase().includes(q));

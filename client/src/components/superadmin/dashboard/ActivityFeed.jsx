@@ -1,4 +1,3 @@
-import React from "react";
 
 const activities=[
 "New safari package created",

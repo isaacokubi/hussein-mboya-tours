@@ -65,7 +65,7 @@ export default function Profile() {
     return () => {
       mounted = false;
     };
-  }, [userId, setUser]);
+  }, [userId, setUser, user]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;

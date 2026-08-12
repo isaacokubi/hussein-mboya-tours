@@ -1,26 +1,52 @@
-import React,{useEffect,useState} from "react";
-import {Users,Map,ShieldCheck,Database,Activity,WalletCards} from "lucide-react";
+import {useQuery} from "@tanstack/react-query";
 import {getSuperAdminDashboard} from "../../api/superAdminApi";
 
-const Card=({title,value,icon:Icon})=><div className="bg-white rounded-2xl border shadow-sm p-6"><div className="flex justify-between text-gray-500"><span>{title}</span><Icon/></div><div className="text-3xl font-black mt-4">{value}</div></div>;
-
 export default function SuperAdminDashboard(){
- const [data,setData]=useState(null);
- const [error,setError]=useState("");
- useEffect(()=>{getSuperAdminDashboard().then(setData).catch(e=>setError(e.message))},[]);
- const s=data?.stats||{};
- return <section className="space-y-8">
- <header><h1 className="text-4xl font-black">Super Admin Control Center</h1><p className="text-gray-500">Live platform governance and operations.</p></header>
- {error&&<div className="p-4 bg-red-50 text-red-600">{error}</div>}
- <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-5">
- <Card title="Users" value={s.users??"Loading..."} icon={Users}/>
- <Card title="Bookings" value={s.bookings??"Loading..."} icon={Map}/>
- <Card title="Administrators" value={s.admins??"Loading..."} icon={ShieldCheck}/>
- <Card title="Vehicles" value={s.vehicles??"Loading..."} icon={Database}/>
- </div>
- <div className="grid md:grid-cols-3 gap-5">
- <Card title="Staff" value={s.staff??0} icon={Activity}/>
- <Card title="Agents" value={s.agents??0} icon={WalletCards}/>
- </div>
- </section>
+
+const {data,isLoading}=useQuery({
+queryKey:["superadmin-dashboard"],
+queryFn:getSuperAdminDashboard
+});
+
+if(isLoading)
+return <div className="p-6">Loading dashboard...</div>;
+
+const stats=data?.stats || {};
+
+return (
+<div className="p-6 space-y-6">
+
+<h1 className="text-3xl font-bold">
+Super Admin Control Center
+</h1>
+
+<p className="text-gray-600">
+Complete system overview and platform administration.
+</p>
+
+
+<div className="grid md:grid-cols-3 gap-5">
+
+{Object.entries(stats).map(([key,value])=>(
+
+<div key={key}
+className="bg-white rounded-xl shadow p-5">
+
+<p className="text-gray-500 capitalize">
+{key}
+</p>
+
+<h2 className="text-3xl font-bold mt-2">
+{value}
+</h2>
+
+</div>
+
+))}
+
+</div>
+
+</div>
+)
+
 }

@@ -12,11 +12,15 @@ export default function AdminGuides() {
     })).data,
   });
 
-  const guides = Array.isArray(data?.data)
-    ? data.data
-    : Array.isArray(data?.guides)
-      ? data.guides
-      : [];
+  const guides = useMemo(
+      () =>
+        Array.isArray(data?.data)
+          ? data.data
+          : Array.isArray(data?.guides)
+            ? data.guides
+            : [],
+      [data]
+    );
 
   const availabilityMutation = useMutation({
     mutationFn: async ({ id, availability }) => {

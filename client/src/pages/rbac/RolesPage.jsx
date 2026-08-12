@@ -10,7 +10,10 @@ export default function RolesPage() {
   const rolesQuery=useQuery({queryKey:["admin-roles"],queryFn:getAdminRoles});
   const permissionsQuery=useQuery({queryKey:["admin-permissions"],queryFn:getAdminPermissions});
   const roles=rolesQuery.data?.roles||[];
-  const permissions=permissionsQuery.data?.permissions||[];
+  const permissions = useMemo(
+      () => permissionsQuery.data?.permissions || [],
+      [permissionsQuery.data]
+    );
   const grouped=useMemo(()=>permissions.reduce((a,p)=>{const k=p.module||p.category||"other";(a[k] ||= []).push(p);return a;},{}),[permissions]);
   const mutation=useMutation({
     mutationFn:({id,permissions})=>updateAdminRolePermissions(id,permissions),
@@ -42,7 +45,7 @@ function PermissionEditor({role,grouped,mutation}) {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setChecked(new Set((role?.permissions || []).map((p) => p._id)));
-  }, [role?._id]);
+  }, [role?._id, role?.permissions]);
   const allIds=Object.values(grouped).flat().map(p=>p._id);
   const toggle=(id)=>setChecked(prev=>{const n=new Set(prev);n.has(id)?n.delete(id):n.add(id);return n;});
   const selectAll=()=>setChecked(new Set(allIds));

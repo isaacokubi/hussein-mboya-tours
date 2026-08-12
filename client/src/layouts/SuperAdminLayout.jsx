@@ -1,5 +1,5 @@
+import { useState } from "react";
 
-import React,{useState} from "react";
 import {Outlet} from "react-router-dom";
 import {Menu,Bell} from "lucide-react";
 import SuperAdminSidebar from "../components/superadmin/SuperAdminSidebar";
