@@ -135,14 +135,20 @@ export default function Login() {
 
 
 
-      case "admin":
       case "superadmin":
-      case "super_admin":
-      case "administrator":
+  case "super_admin":
 
-        navigate("/admin");
+    navigate("/superadmin");
 
-        break;
+    break;
+
+
+  case "admin":
+  case "administrator":
+
+    navigate("/admin");
+
+    break;
 
 
 
