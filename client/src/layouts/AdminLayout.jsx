@@ -20,7 +20,7 @@ const MENU = [
   ["Payments", "/admin/payments", CreditCard, "payment.manage"],
   ["Agents", "/admin/agents", Handshake, "user.manage"],
   ["Commissions", "/admin/commissions", Wallet, "finance.view"],
-  ["Customers CRM", "/admin/customers", Users, "user.manage"],
+  ["Customers CRM", "/admin/customers", Users, "manage_customers"],
   ["Guides", "/admin/guides", UserCog, "staff.manage"],
   ["Vehicles", "/admin/vehicles", Car, "staff.manage"],
   ["Coupons", "/admin/coupons", Tag, "tour.manage"],
