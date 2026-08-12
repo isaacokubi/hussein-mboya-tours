@@ -2,11 +2,10 @@ import express from "express";
 
 const router = express.Router();
 
-router.get("/health", async (req, res) => {
+router.get("/", async (req, res) => {
   res.json({
-    status: "healthy",
-    server: "running",
-    uptime: process.uptime(),
+    status: "ok",
+    security: "active",
     timestamp: new Date()
   });
 });

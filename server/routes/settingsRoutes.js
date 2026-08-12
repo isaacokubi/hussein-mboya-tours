@@ -1,21 +1,13 @@
-import { authorize } from "../middleware/permissionMiddleware.js";
 import express from "express";
-import { getSettings, updateSettings, getPublicSettings } from "../controllers/settingsController.js";
-import { protect } from "../middleware/authMiddleware.js";
-import adminMiddleware from "../middleware/adminMiddleware.js";
-import upload from "../middleware/uploadMiddleware.js";
 
 const router = express.Router();
 
-router.get("/public", getPublicSettings);
-
-router.use(protect);
-router.use(adminMiddleware);
-
-router.use(authorize("settings.manage"));
-
-router.get("/", getSettings);
-router.put("/", upload.single("logo"), updateSettings);
-router.patch("/", upload.single("logo"), updateSettings);
+router.get("/", async (req, res) => {
+  res.json({
+    site: "Coherent Tours",
+    maintenance: false,
+    version: "1.0.0"
+  });
+});
 
 export default router;

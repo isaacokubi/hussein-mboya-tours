@@ -2,11 +2,11 @@ import express from "express";
 
 const router = express.Router();
 
-router.get("/health", async (req, res) => {
+router.get("/", async (req, res) => {
   res.json({
-    status: "healthy",
-    server: "running",
+    api: "online",
     uptime: process.uptime(),
+    memory: process.memoryUsage(),
     timestamp: new Date()
   });
 });
