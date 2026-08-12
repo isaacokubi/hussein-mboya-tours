@@ -415,9 +415,47 @@ export const getDashboard = async (req, res) => {
 
         notifications,
 
-        agents: agentPerformance,
-        guides: guidePerformance,
-        vehicles: vehiclesCount,
+        agents: await Agent.find({
+          status: { $ne: "inactive" }
+        })
+        .select("companyName email phone status")
+        .lean(),
+
+        guides: await Staff.find({
+          $or: [
+            {
+              position: {
+                $in: [
+                  "guide",
+                  "tour_guide",
+                  "tourguide"
+                ]
+              }
+            },
+            {
+              role: {
+                $in: [
+                  "guide",
+                  "tour_guide",
+                  "tourguide"
+                ]
+              }
+            }
+          ],
+          isDeleted: false,
+          isActive: true
+        })
+        .select("name email phone position role")
+        .lean(),
+
+        vehicles: await Vehicle.find({
+          isDeleted: { $ne: true },
+          isActive: true
+        })
+        .select(
+          "name registrationNumber model status"
+        )
+        .lean(),
         guidesCount: Math.max(guidesCount, guideUsersCount),
         agentsCount: Math.max(agentsCount, agentUsersCount),
 

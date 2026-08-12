@@ -69,6 +69,7 @@ const adminMiddleware = async (req, res, next) => {
     const allowedRoles = new Set([
       "admin",
       "superadmin",
+      "super_admin",
       "administrator",
     ]);
 
