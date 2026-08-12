@@ -29,7 +29,7 @@ export default function AgentLayout() {
       )}
 
       <div className="lg:pl-72">
-        <header className="sticky top-0 z-40 flex items-center gap-3 border-b bg-white px-4 py-3 shadow-sm lg:hidden">
+        <header className="sticky top-0 z-40 flex min-h-14 items-center gap-3 border-b bg-white px-4 py-3 shadow-sm lg:hidden">
           <button onClick={() => setMobileOpen(true)} className="rounded-xl bg-slate-900 p-2 text-white" aria-label="Open agent menu"><Menu size={22} /></button>
           <h1 className="font-bold">Agent Portal</h1>
         </header>

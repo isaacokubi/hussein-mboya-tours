@@ -8,7 +8,7 @@ import api from "./axios";
 
 export const fetchAgentDashboard = async () => {
   const { data } = await api.get(
-    "/agents/dashboard"
+    "/agent/dashboard"
   );
 
   return data;
@@ -22,7 +22,7 @@ export const fetchAgentDashboard = async () => {
 
 export const fetchAgentBookings = async (params = {}) => {
   const { data } = await api.get(
-    "/agents/bookings",
+    "/agent/bookings",
     {
       params,
     }
@@ -39,7 +39,7 @@ export const fetchAgentBookings = async (params = {}) => {
 
 export const fetchAgentQuotes = async () => {
   const { data } = await api.get(
-    "/agents/quotes"
+    "/agent/quotes"
   );
 
   return data;
@@ -53,7 +53,7 @@ export const fetchAgentQuotes = async () => {
 
 export const fetchAgentCustomers = async () => {
   const { data } = await api.get(
-    "/agents/customers"
+    "/agent/customers"
   );
 
   return data;
@@ -67,7 +67,7 @@ export const fetchAgentCustomers = async () => {
 
 export const fetchAgentCommission = async () => {
   const { data } = await api.get(
-    "/agents/commission"
+    "/agent/commission"
   );
 
   return data;
