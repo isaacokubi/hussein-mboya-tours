@@ -1,124 +1,129 @@
-// server/middleware/permissionMiddleware.js
 
-const normalizePermission = (permission) =>
-  String(permission || "")
-    .trim()
-    .toLowerCase();
+import Role from "../models/Role.js";
 
-const normalizeRole = (role) => {
-  if (!role) return "";
 
-  if (typeof role === "object") {
-    role = role.name || role.role || "";
-  }
+export const authorize = (permission) => {
 
-  return String(role)
-    .trim()
-    .toLowerCase()
-    .replace(/[\s_-]+/g, "");
-};
+    return async (req,res,next)=>{
 
-const isSuperAdmin = (user) => {
-  const roleName = normalizeRole(
-    user?.roleId?.name ||
-    user?.role ||
-    user?.legacyRole
-  );
+        
+try {
 
-  return roleName === "superadmin";
-};
+console.log("USER RBAC DEBUG:",{
+id:req.user?._id,
+email:req.user?.email,
+role:req.user?.role,
+roleId:req.user?.roleId
+});
 
-export const authorize = (...requiredPermissions) => {
-  return async (req, res, next) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({
-          success: false,
-          message: "Authentication required",
-        });
-      }
 
-      /*
-       * Super Admin has unrestricted access.
-       */
-      if (isSuperAdmin(req.user)) {
-        return next();
-      }
 
-      /*
-       * Role permissions.
-       */
-      const rolePermissions =
-        req.user.roleId?.permissions || [];
+            if(!req.user){
+                return res.status(401).json({
+                    message:"Authentication required"
+                });
+            }
 
-      /*
-       * User-specific permission overrides.
-       */
-      const overridePermissions =
-        req.user.permissionsOverride || [];
 
-      /*
-       * Merge permissions.
-       */
-      const permissionMap = new Map();
+            let permissions = [];
 
-      [...rolePermissions, ...overridePermissions].forEach((permission) => {
-        const name =
-          typeof permission === "string"
-            ? permission
-            : permission?.name;
 
-        if (name) {
-          permissionMap.set(
-            normalizePermission(name),
-            permission
-          );
+            /*
+              Load permissions from roleId
+            */
+
+            if(req.user.roleId){
+
+                const role = await Role
+                    .findById(req.user.roleId)
+                    .populate("permissions","name");
+
+
+                if(role && role.permissions){
+
+                    permissions =
+                        role.permissions.map(
+                            p=>p.name
+                        );
+
+                }
+
+            }
+
+
+
+            /*
+              Backward compatibility
+            */
+
+            if(
+                req.user.role === "admin" ||
+                req.user.role === "super_admin"
+            ){
+
+                permissions.push(
+                    "admin.dashboard",
+                    "roles.manage",
+                    "system.audit",
+                    "manage_customers",
+                    "payment.manage",
+                    "report.view",
+                    "analytics.view"
+                );
+
+            }
+
+
+
+            permissions = [
+                ...new Set(permissions)
+            ];
+
+
+
+            console.log(
+                "AUTH CHECK:",
+                req.user.email,
+                permission,
+                permissions
+            );
+
+
+
+            if(
+                !permissions.includes(permission)
+            ){
+
+                return res.status(403).json({
+
+                    message:
+                    "Access denied. Missing required permission.",
+                    required:permission,
+                    available:permissions
+
+                });
+
+            }
+
+
+            next();
+
+
+
+        } catch(error){
+
+            console.error(
+                "Permission middleware error:",
+                error
+            );
+
+
+            res.status(500).json({
+                message:"Permission check failed"
+            });
+
         }
-      });
 
-      const userPermissions = [...permissionMap.keys()];
+    };
 
-      /*
-       * No permission supplied.
-       */
-      if (!requiredPermissions.length) {
-        return next();
-      }
-
-      const normalizedRequired =
-        requiredPermissions.map(normalizePermission);
-
-      /*
-       * All requested permissions are required.
-       */
-      const missingPermissions =
-        normalizedRequired.filter(
-          (permission) =>
-            !userPermissions.includes(permission)
-        );
-
-      if (missingPermissions.length) {
-        return res.status(403).json({
-          success: false,
-          message:
-            "Access denied. Missing required permission.",
-          missingPermissions,
-        });
-      }
-
-      next();
-    } catch (error) {
-      console.error("PERMISSION ERROR:", error);
-
-      return res.status(500).json({
-        success: false,
-        message: "Permission verification failed.",
-      });
-    }
-  };
 };
-
-export const permissionMiddleware = (permission) =>
-  authorize(permission);
-
-export default authorize;
