@@ -47,6 +47,10 @@ const { data, isLoading, error } = useQuery({
     return <Navigate to="/driver/dashboard" replace />;
   }
 
+  if (role === "superadmin") {
+    return <Navigate to="/superadmin" replace />;
+  }
+
   if (role === "admin") {
     return <Navigate to="/admin" replace />;
   }
