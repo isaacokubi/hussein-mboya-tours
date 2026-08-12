@@ -1,416 +1,109 @@
-
-
 import React from "react";
-
 import {
-Users,
-ShieldCheck,
-Database,
-CreditCard,
-MapPin,
-CalendarCheck,
-TrendingUp,
-Activity
+  Activity,
+  Users,
+  ShieldCheck,
+  Database,
+  CreditCard,
+  Map,
+  TrendingUp,
+  AlertTriangle
 } from "lucide-react";
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid
+} from "recharts";
 
-
-
-const cards=[
-
-{
-title:"Total Users",
-value:"2,450",
-icon:Users,
-color:"blue"
-},
-
-{
-title:"Monthly Bookings",
-value:"486",
-icon:CalendarCheck,
-color:"green"
-},
-
-{
-title:"Revenue",
-value:"KES 8.4M",
-icon:TrendingUp,
-color:"purple"
-},
-
-{
-title:"Security Status",
-value:"Protected",
-icon:ShieldCheck,
-color:"emerald"
-}
-
+const kpis = [
+  {title:"Total Users", value:"2,845", change:"+12.4%", icon:Users},
+  {title:"Revenue", value:"KES 12.4M", change:"+18.2%", icon:TrendingUp},
+  {title:"Active Tours", value:"126", change:"+8.1%", icon:Map},
+  {title:"Security Score", value:"98%", change:"Excellent", icon:ShieldCheck},
 ];
 
+const revenue = [
+  {month:"Jan",amount:850000},
+  {month:"Feb",amount:1200000},
+  {month:"Mar",amount:980000},
+  {month:"Apr",amount:1600000},
+  {month:"May",amount:2100000},
+  {month:"Jun",amount:2600000},
+];
 
+const tours = [
+  {name:"Safari",bookings:245},
+  {name:"Beach",bookings:180},
+  {name:"Mountain",bookings:92},
+];
 
-
-function StatusCard({
-title,
-status,
-detail,
-icon:Icon
-}){
-
-return (
-
-<div className="
-bg-white
-rounded-xl
-shadow
-p-5
-border
-">
-
-
-<div className="
-flex
-justify-between
-items-center
-mb-3
-">
-
-<h3 className="font-bold">
-{title}
-</h3>
-
-{
-Icon &&
-<Icon size={22}/>
+function Service({icon:Icon,title,status,detail}) {
+ return <div className="rounded-2xl bg-white border shadow-sm p-5 flex gap-4 items-center">
+   <div className="p-3 rounded-xl bg-emerald-50 text-emerald-700"><Icon size={24}/></div>
+   <div><h3 className="font-bold">{title}</h3><p className="text-emerald-600 font-semibold">{status}</p><p className="text-sm text-gray-500">{detail}</p></div>
+ </div>
 }
-
-</div>
-
-
-<p className="
-text-xl
-font-bold
-text-green-600
-">
-{status}
-</p>
-
-
-<p className="
-text-sm
-text-gray-500
-mt-2
-">
-{detail}
-</p>
-
-
-</div>
-
-)
-
-}
-
-
 
 export default function SuperAdminDashboard(){
+ return <section className="space-y-8">
+  <header>
+   <h1 className="text-4xl font-black">Super Admin Control Center</h1>
+   <p className="text-gray-500 mt-2">Enterprise platform governance, tourism intelligence and security operations.</p>
+  </header>
 
+  <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-5">
+   {kpis.map(({title,value,change,icon:Icon})=>
+    <div key={title} className="bg-white rounded-2xl border shadow-sm p-6">
+     <div className="flex justify-between"><span className="text-gray-500">{title}</span><Icon/></div>
+     <div className="text-3xl font-black mt-4">{value}</div>
+     <div className="text-emerald-600 mt-2">{change}</div>
+    </div>)}
+  </div>
 
+  <div className="grid xl:grid-cols-2 gap-6">
+   <div className="bg-white rounded-2xl border shadow-sm p-6">
+    <h2 className="font-bold text-xl mb-5">Revenue Analytics</h2>
+    <ResponsiveContainer width="100%" height={280}>
+     <AreaChart data={revenue}>
+      <CartesianGrid strokeDasharray="3 3"/>
+      <XAxis dataKey="month"/><YAxis/><Tooltip/>
+      <Area dataKey="amount" type="monotone" fillOpacity={0.3}/>
+     </AreaChart>
+    </ResponsiveContainer>
+   </div>
+   <div className="bg-white rounded-2xl border shadow-sm p-6">
+    <h2 className="font-bold text-xl mb-5">Tour Performance</h2>
+    <ResponsiveContainer width="100%" height={280}>
+     <BarChart data={tours}>
+      <CartesianGrid strokeDasharray="3 3"/>
+      <XAxis dataKey="name"/><YAxis/><Tooltip/>
+      <Bar dataKey="bookings"/>
+     </BarChart>
+    </ResponsiveContainer>
+   </div>
+  </div>
 
-return (
+  <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-5">
+   <Service icon={Activity} title="API Services" status="ONLINE" detail="All endpoints responding"/>
+   <Service icon={Database} title="Database" status="HEALTHY" detail="MongoDB operational"/>
+   <Service icon={CreditCard} title="Payments" status="ACTIVE" detail="M-Pesa gateway ready"/>
+   <Service icon={AlertTriangle} title="Security" status="MONITORED" detail="Audit monitoring active"/>
+  </div>
 
-<section className="space-y-8">
-
-
-
-<div>
-
-<h1 className="
-text-3xl
-md:text-4xl
-font-bold
-">
-
-Super Admin Control Center
-
-</h1>
-
-
-<p className="
-text-gray-500
-mt-2
-">
-
-Complete platform governance and tour business intelligence
-
-</p>
-
-
-</div>
-
-
-
-
-
-<div className="
-grid
-grid-cols-1
-sm:grid-cols-2
-xl:grid-cols-4
-gap-5
-">
-
-
-{
-cards.map(
-(card)=>(
-
-<div
-key={card.title}
-className="
-bg-white
-rounded-xl
-shadow
-p-6
-border
-">
-
-
-<div className="
-flex
-justify-between
-items-center
-">
-
-
-<div>
-
-<p className="
-text-gray-500
-">
-{card.title}
-</p>
-
-
-<h2 className="
-text-3xl
-font-bold
-mt-2
-">
-
-{card.value}
-
-</h2>
-
-
-</div>
-
-
-<card.icon size={32}/>
-
-
-</div>
-
-
-</div>
-
-
-)
-
-)
-
+  <div className="bg-white rounded-2xl border shadow-sm p-6">
+   <h2 className="font-bold text-xl mb-4">Recent Platform Activity</h2>
+   <div className="space-y-3 text-gray-600">
+    <p>✓ New customer registrations processed</p>
+    <p>✓ Booking payments verified</p>
+    <p>✓ Staff permissions audited</p>
+    <p>✓ System health scan completed</p>
+   </div>
+  </div>
+ </section>
 }
-
-
-
-</div>
-
-
-
-
-
-<div className="
-grid
-grid-cols-1
-lg:grid-cols-2
-gap-6
-">
-
-
-
-<div className="
-bg-white
-rounded-xl
-shadow
-p-6
-">
-
-
-<h2 className="
-text-xl
-font-bold
-mb-5
-">
-
-Tour Operations
-
-</h2>
-
-
-
-<div className="space-y-5">
-
-
-<div>
-
-<p className="font-semibold">
-Maasai Mara Safari
-</p>
-
-<p className="text-sm text-gray-500">
-245 bookings this month
-</p>
-
-</div>
-
-
-
-<div>
-
-<p className="font-semibold">
-Mombasa Beach Holiday
-</p>
-
-<p className="text-sm text-gray-500">
-180 bookings this month
-</p>
-
-</div>
-
-
-
-
-<div>
-
-<p className="font-semibold">
-Mount Kenya Adventure
-</p>
-
-<p className="text-sm text-gray-500">
-92 bookings this month
-</p>
-
-</div>
-
-
-</div>
-
-
-</div>
-
-
-
-
-<div className="
-bg-white
-rounded-xl
-shadow
-p-6
-">
-
-
-<h2 className="
-text-xl
-font-bold
-mb-5
-">
-
-Recent Activity
-
-</h2>
-
-
-<div className="space-y-4">
-
-
-<p>
-✓ New booking received
-</p>
-
-<p>
-✓ Payment verified through M-Pesa
-</p>
-
-<p>
-✓ Staff account created
-</p>
-
-<p>
-✓ Security scan completed
-</p>
-
-
-</div>
-
-
-</div>
-
-
-</div>
-
-
-
-
-
-<div className="
-grid
-grid-cols-1
-sm:grid-cols-2
-xl:grid-cols-4
-gap-5
-">
-
-
-<StatusCard
-title="API Services"
-status="ONLINE"
-detail="All endpoints responding"
-icon={Activity}
-/>
-
-
-<StatusCard
-title="Database"
-status="HEALTHY"
-detail="MongoDB connected"
-icon={Database}
-/>
-
-
-<StatusCard
-title="Payments"
-status="ACTIVE"
-detail="M-Pesa gateway operational"
-icon={CreditCard}
-/>
-
-
-<StatusCard
-title="Tours"
-status="RUNNING"
-detail="Operations active"
-icon={MapPin}
-/>
-
-
-</div>
-
-
-
-</section>
-
-
-)
-
-}
-
