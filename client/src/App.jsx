@@ -17,6 +17,8 @@ import "react-toastify/dist/ReactToastify.css";
 
 export default function App(){
 
+const location = useLocation();
+
 
 return (
 
@@ -62,7 +64,17 @@ flex-1
 
 {/* FOOTER */}
 
+
+{
+!location.pathname.startsWith("/admin") &&
+!location.pathname.startsWith("/superadmin") &&
+!location.pathname.startsWith("/agent") &&
+!location.pathname.startsWith("/tour-manager") &&
+!location.pathname.startsWith("/guide") &&
+!location.pathname.startsWith("/driver") &&
 <Footer />
+}
+
 
 
 
