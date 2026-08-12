@@ -61,6 +61,8 @@ const SuperAdminDashboard = lazy(() => import("../pages/superadmin/SuperAdminDas
 const SuperAdminUsers = lazy(() => import("../pages/superadmin/SuperAdminUsers"));
 const SuperAdminRoles = lazy(() => import("../pages/superadmin/SuperAdminRoles"));
 const SuperAdminSystem = lazy(() => import("../pages/superadmin/SuperAdminSystem"));
+const SuperAdminAudit = lazy(() => import("../pages/superadmin/SuperAdminAudit"));
+const SuperAdminSecurity = lazy(() => import("../pages/superadmin/SuperAdminSecurity"));
 const UserManagement = lazy(() => import("../pages/admin/UserManagement"));
 const TourManagement = lazy(() => import("../pages/admin/TourManagement"));
 const AddTour = lazy(() => import("../pages/admin/AddTour"));
@@ -435,6 +437,17 @@ element={<SuperAdminDashboard />}
 <Route
 path="users"
 element={<SuperAdminUsers />}
+/>
+
+
+<Route
+path="audit"
+element={<SuperAdminAudit />}
+/>
+
+<Route
+path="security"
+element={<SuperAdminSecurity />}
 />
 
 <Route
