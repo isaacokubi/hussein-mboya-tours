@@ -430,6 +430,23 @@ path="dashboard"
 element={<SuperAdminDashboard />}
 />
 
+
+
+<Route
+path="users"
+element={<SuperAdminUsers />}
+/>
+
+<Route
+path="roles"
+element={<SuperAdminRoles />}
+/>
+
+<Route
+path="system"
+element={<SuperAdminSystem />}
+/>
+
 </Route>
 
 

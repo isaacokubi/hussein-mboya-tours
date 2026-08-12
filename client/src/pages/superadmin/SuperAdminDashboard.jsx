@@ -1,237 +1,107 @@
+
 import React from "react";
 
 
 export default function SuperAdminDashboard(){
 
+const cards=[
+["Total Users","29"],
+["Administrators","System Managed"],
+["Roles","Active"],
+["Security","Protected"],
+["Database","Healthy"],
+["API Services","Online"],
+["Audit Logs","Available"],
+["Platform","Operational"]
+];
+
 
 return (
 
 <div>
-
 
 <h1>
 Super Admin Control Center
 </h1>
 
-
 <p>
-Global system administration and platform oversight.
+Global platform security, administration and business oversight.
 </p>
-
 
 
 <div
 style={{
 display:"grid",
-gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",
+gridTemplateColumns:"repeat(auto-fit,minmax(230px,1fr))",
 gap:"20px",
 marginTop:"30px"
 }}
 >
 
+{
+cards.map((c,i)=>(
 
-<Card
-title="Total Users"
-value="29"
-/>
+<div
+key={i}
+style={{
+background:"white",
+padding:"25px",
+borderRadius:"12px",
+boxShadow:"0 3px 10px rgba(0,0,0,.08)"
+}}
+>
 
+<h3>{c[0]}</h3>
 
-<Card
-title="Administrator Accounts"
-value="System Managed"
-/>
+<p>
+{c[1]}
+</p>
 
+</div>
 
-<Card
-title="Roles & Permissions"
-value="Active"
-/>
-
-
-<Card
-title="System Security"
-value="Protected"
-/>
-
-
-<Card
-title="Database"
-value="Healthy"
-/>
-
-
-<Card
-title="API Services"
-value="Online"
-/>
-
-
-<Card
-title="Audit Logs"
-value="Available"
-/>
-
-
-<Card
-title="Platform Status"
-value="Operational"
-/>
-
+))
+}
 
 </div>
 
 
 
-
-<section
-style={{
-marginTop:"40px"
-}}
->
-
-<h2>
+<h2 style={{marginTop:"40px"}}>
 Security Center
 </h2>
 
 <ul>
-
-<li>
-Authentication monitoring
-</li>
-
-<li>
-Administrator activity tracking
-</li>
-
-<li>
-Permission enforcement
-</li>
-
-<li>
-Audit trail management
-</li>
-
+<li>Authentication monitoring</li>
+<li>Administrator activity tracking</li>
+<li>Permission enforcement</li>
+<li>Audit trail management</li>
 </ul>
 
-
-</section>
-
-
-
-
-
-<section
-style={{
-marginTop:"40px"
-}}
->
 
 <h2>
 Business Intelligence
 </h2>
 
-
-<p>
-High-level business performance monitoring without operational management controls.
-</p>
-
-
-<div>
-
-<p>
-Revenue Overview
-</p>
-
-<p>
-Booking Growth
-</p>
-
-<p>
-Customer Growth
-</p>
-
-
-</div>
-
-
-</section>
-
-
-
-
-
-<section
-style={{
-marginTop:"40px"
-}}
->
-
-<h2>
-System Administration
-</h2>
-
-
 <ul>
-
-<li>
-Manage administrators
-</li>
-
-<li>
-Configure roles
-</li>
-
-<li>
-Review permissions
-</li>
-
-<li>
-Monitor infrastructure
-</li>
-
-
+<li>Revenue Overview</li>
+<li>Booking Growth</li>
+<li>Customer Growth</li>
 </ul>
 
 
-</section>
+<h2>
+Infrastructure
+</h2>
 
-
-
-</div>
-
-);
-
-
-}
-
-
-
-function Card({title,value}){
-
-
-return (
-
-<div
-style={{
-background:"#ffffff",
-padding:"20px",
-borderRadius:"10px",
-boxShadow:"0 2px 8px rgba(0,0,0,0.08)"
-}}
->
-
-<h3>
-{title}
-</h3>
-
-<p>
-{value}
-</p>
+<ul>
+<li>API monitoring</li>
+<li>Database health</li>
+<li>System performance</li>
+</ul>
 
 
 </div>
 
 );
-
 
 }
