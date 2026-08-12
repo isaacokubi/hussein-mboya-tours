@@ -63,6 +63,16 @@ const SuperAdminRoles = lazy(() => import("../pages/superadmin/SuperAdminRoles")
 const SuperAdminSystem = lazy(() => import("../pages/superadmin/SuperAdminSystem"));
 const SuperAdminAudit = lazy(() => import("../pages/superadmin/SuperAdminAudit"));
 const SuperAdminSecurity = lazy(() => import("../pages/superadmin/SuperAdminSecurity"));
+
+const SuperAdminSettings =
+lazy(()=>import("../pages/superadmin/SuperAdminSettings"));
+
+const SuperAdminDatabase =
+lazy(()=>import("../pages/superadmin/SuperAdminDatabase"));
+
+const SuperAdminApiMonitor =
+lazy(()=>import("../pages/superadmin/SuperAdminApiMonitor"));
+
 const UserManagement = lazy(() => import("../pages/admin/UserManagement"));
 const TourManagement = lazy(() => import("../pages/admin/TourManagement"));
 const AddTour = lazy(() => import("../pages/admin/AddTour"));

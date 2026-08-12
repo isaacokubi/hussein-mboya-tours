@@ -1,74 +1,200 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
+import {
+Shield,
+Users,
+KeyRound,
+FileSearch,
+Lock,
+Activity,
+Settings,
+Database,
+Server
+} from "lucide-react";
+
 
 export default function SuperAdminSidebar(){
 
+
 const links=[
+
 {
 name:"Dashboard",
-path:"/superadmin/dashboard"
+path:"/superadmin/dashboard",
+icon:Activity
 },
+
 {
-name:"Users",
-path:"/superadmin/users"
+name:"User Management",
+path:"/superadmin/users",
+icon:Users
 },
+
 {
 name:"Roles & Permissions",
-path:"/superadmin/roles"
+path:"/superadmin/roles",
+icon:KeyRound
 },
+
+{
+name:"Audit Center",
+path:"/superadmin/audit",
+icon:FileSearch
+},
+
+{
+name:"Security Center",
+path:"/superadmin/security",
+icon:Lock
+},
+
 {
 name:"System Health",
-path:"/superadmin/system"
+path:"/superadmin/system",
+icon:Server
 },
+
 {
-name:"Audit Logs",
-path:"/superadmin/audit"
+name:"Platform Settings",
+path:"/superadmin/settings",
+icon:Settings
 },
+
 {
-name:"Security",
-path:"/superadmin/security"
+name:"Database Tools",
+path:"/superadmin/database",
+icon:Database
+},
+
+{
+name:"API Monitor",
+path:"/superadmin/api",
+icon:Shield
 }
+
 ];
 
 
 return (
-<div
-style={{
-width:"260px",
-minHeight:"100vh",
-background:"#111827",
-color:"#fff",
-padding:"20px"
-}}
+
+<aside
+className="
+w-72
+min-h-screen
+bg-gray-950
+text-white
+p-6
+shadow-xl
+"
 >
 
-<h2>
-Super Admin
-</h2>
 
-<hr/>
+<div className="mb-8">
 
-{
-links.map(link=>(
-<NavLink
-key={link.path}
-to={link.path}
-style={{
-display:"block",
-padding:"12px",
-marginBottom:"8px",
-color:"#fff",
-textDecoration:"none"
-}}
->
+<h1 className="
+text-2xl
+font-bold
+">
+Coherent Tours
+</h1>
 
-{link.name}
 
-</NavLink>
-))
-}
+<p className="
+text-sm
+text-gray-400
+mt-1
+">
+Super Admin Console
+</p>
 
 </div>
+
+
+
+<nav className="space-y-2">
+
+
+{
+links.map(({name,path,icon:Icon})=>(
+
+<NavLink
+
+key={path}
+
+to={path}
+
+className={({isActive})=>
+
+`
+flex items-center gap-3
+px-4 py-3
+rounded-xl
+transition
+
+${isActive
+?
+"bg-blue-600 text-white shadow-lg"
+:
+"text-gray-300 hover:bg-gray-800"
+}
+
+`
+
+}
+
+>
+
+
+<Icon size={20}/>
+
+<span>
+{name}
+</span>
+
+
+</NavLink>
+
+
+))
+
+}
+
+
+</nav>
+
+
+<div className="
+mt-10
+p-4
+rounded-xl
+bg-gray-900
+border
+border-gray-800
+">
+
+
+<p className="
+text-xs
+text-gray-400
+">
+System Access Level
+</p>
+
+
+<p className="
+font-bold
+text-green-400
+">
+SUPER ADMIN
+</p>
+
+
+</div>
+
+
+</aside>
+
+
 );
 
 }
