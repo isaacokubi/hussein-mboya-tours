@@ -1,4 +1,5 @@
 import express from "express";
+import superAdminRoutes from "./superAdminRoutes.js";
 
 import commissionRoutes from "./commissionRoutes.js";
 import tourManagerRoutes from "./tourManagerRoutes.js";
@@ -212,3 +213,5 @@ router.use("/ai", aiRoutes);
 router.use("/", seoRoutes);
 
 export default router;
+
+router.use("/superadmin", superAdminRoutes);

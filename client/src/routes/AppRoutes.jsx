@@ -56,6 +56,7 @@ const TourManagerGuides = lazy(() => import("../pages/tourManager/TourManagerGui
 // Admin pages
 const AdminLayout = lazy(() => import("../layouts/AdminLayout"));
 const AdminDashboard = lazy(() => import("../pages/admin/AdminDashboard"));
+const SuperAdminDashboard = lazy(() => import("../pages/superadmin/SuperAdminDashboard"));
 const UserManagement = lazy(() => import("../pages/admin/UserManagement"));
 const TourManagement = lazy(() => import("../pages/admin/TourManagement"));
 const AddTour = lazy(() => import("../pages/admin/AddTour"));
@@ -399,6 +400,34 @@ export default function AppRoutes() {
       <Route path="/manager/customers" element={<Navigate to="/tour-manager/customers" replace />} />
       <Route path="/manager/analytics" element={<Navigate to="/tour-manager/analytics" replace />} />
       <Route path="/manager/reports" element={<Navigate to="/tour-manager/reports" replace />} />
+
+
+
+{/* Super Admin */}
+<Route
+path="/superadmin"
+element={
+<ProtectedRoute roles={[
+"superadmin",
+"super_admin"
+]}>
+<AdminLayout />
+</ProtectedRoute>
+}
+>
+
+<Route
+index
+element={<SuperAdminDashboard />}
+/>
+
+<Route
+path="dashboard"
+element={<SuperAdminDashboard />}
+/>
+
+</Route>
+
 
       {/* Admin */}
       <Route
