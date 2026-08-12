@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, Globe2, Mail, Phone, Palette, Save, ShieldCheck, WalletCards } from "lucide-react";
+import { Building2, Globe2,  Phone,  Save, ShieldCheck, WalletCards } from "lucide-react";
 import { toast } from "react-toastify";
 import { getSettings, updateSettings } from "../../api/settingsApi";
 
@@ -28,7 +28,11 @@ export default function AdminSettings() {
 
   useEffect(() => {
     const incoming = data?.data || data?.settings;
-    if (incoming) setSettings((current) => ({ ...current, ...incoming }));
+    if (incoming) {
+      queueMicrotask(() =>
+        setSettings((current) => ({ ...current, ...incoming }))
+      );
+    }
   }, [data]);
 
   const mutation = useMutation({

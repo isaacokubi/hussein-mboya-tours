@@ -1,3 +1,4 @@
+import { authorize } from "../middleware/permissionMiddleware.js";
 import express from "express";
 import { getSettings, updateSettings, getPublicSettings } from "../controllers/settingsController.js";
 import { protect } from "../middleware/authMiddleware.js";
@@ -10,6 +11,8 @@ router.get("/public", getPublicSettings);
 
 router.use(protect);
 router.use(adminMiddleware);
+
+router.use(authorize("settings.manage"));
 
 router.get("/", getSettings);
 router.put("/", upload.single("logo"), updateSettings);

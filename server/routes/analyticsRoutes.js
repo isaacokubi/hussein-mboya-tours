@@ -1,3 +1,4 @@
+import { authorize } from "../middleware/permissionMiddleware.js";
 // server/routes/analyticsRoutes.js
 
 import express from "express";
@@ -24,6 +25,8 @@ const router = express.Router();
 
 router.use(protect);
 router.use(adminMiddleware);
+
+router.use(authorize("analytics.view"));
 
 /*
 |--------------------------------------------------------------------------

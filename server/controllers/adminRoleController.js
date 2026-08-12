@@ -229,147 +229,144 @@ next(error);
 |--------------------------------------------------------------------------
 */
 
-export const createRole = async(req,res,next)=>{
+export const createRole = async (req, res, next) => {
+  try {
+    const {
+      name,
+      displayName,
+      description = "",
+      permissions = [],
+      level = 1,
+      status = "active",
+      isDefault = false,
+    } = req.body;
 
-try{
+    if (!name || !displayName) {
+      return res.status(400).json({
+        success: false,
+        message: "Role name and display name are required.",
+      });
+    }
 
+    const normalizedName = String(name)
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, "_");
 
-const role =
-await Role.create({
+    const permissionIds = sanitizePermissionIds(permissions);
 
-name:req.body.name,
+    if (permissionIds.length) {
+      const validPermissions = await Permission.countDocuments({
+        _id: { $in: permissionIds },
+        isActive: { $ne: false },
+      });
 
-displayName:req.body.displayName,
+      if (validPermissions !== permissionIds.length) {
+        return res.status(400).json({
+          success: false,
+          message: "One or more selected permissions are invalid.",
+        });
+      }
+    }
 
-description:req.body.description || "",
+    const existingRole = await Role.findOne({
+      name: normalizedName,
+    });
 
-permissions:req.body.permissions || [],
+    if (existingRole) {
+      return res.status(409).json({
+        success: false,
+        message: "A role with this name already exists.",
+      });
+    }
 
-level:req.body.level || 1,
+    const role = await Role.create({
+      name: normalizedName,
+      displayName: String(displayName).trim(),
+      description: String(description || "").trim(),
+      permissions: permissionIds,
+      level: Math.max(1, Number(level) || 1),
+      status: status === "inactive" ? "inactive" : "active",
+      isDefault: Boolean(isDefault),
+      isSystem: false,
+      createdBy: req.user?._id || null,
+    });
 
-status:req.body.status || "active",
-
-isDefault:req.body.isDefault || false,
-
-createdBy:req.user?._id || null
-
-});
-
-
-
-res.status(201).json({
-
-success:true,
-
-role
-
-});
-
-
-}catch(error){
-
-next(error);
-
-}
-
+    return res.status(201).json({
+      success: true,
+      role,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 
+export const updateRole = async (req, res, next) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid role ID",
+      });
+    }
 
+    const role = await Role.findById(req.params.id);
 
+    if (!role) {
+      return res.status(404).json({
+        success: false,
+        message: "Role not found",
+      });
+    }
 
+    if (role.isSystem) {
+      return res.status(403).json({
+        success: false,
+        message: "System roles cannot be modified",
+      });
+    }
 
+    /*
+     * Only these fields may be changed through the general
+     * role update endpoint.
+     */
+    const allowedFields = [
+      "displayName",
+      "description",
+      "level",
+      "status",
+      "isDefault",
+    ];
 
-/*
-|--------------------------------------------------------------------------
-| UPDATE ROLE
-|--------------------------------------------------------------------------
-*/
+    for (const field of allowedFields) {
+      if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+        if (field === "level") {
+          role.level = Math.max(1, Number(req.body.level) || 1);
+        } else if (field === "status") {
+          role.status =
+            req.body.status === "inactive"
+              ? "inactive"
+              : "active";
+        } else if (field === "isDefault") {
+          role.isDefault = Boolean(req.body.isDefault);
+        } else {
+          role[field] = req.body[field];
+        }
+      }
+    }
 
-export const updateRole = async(req,res,next)=>{
+    await role.save();
 
-try{
-
-
-const role =
-await Role.findById(
-req.params.id
-);
-
-
-
-if(!role){
-
-return res.status(404).json({
-
-success:false,
-
-message:"Role not found"
-
-});
-
-}
-
-
-
-
-
-if(role.isSystem){
-
-return res.status(403).json({
-
-success:false,
-
-message:"System roles cannot be modified"
-
-});
-
-}
-
-
-
-
-Object.assign(
-role,
-req.body
-);
-
-
-
-await role.save();
-
-
-
-res.json({
-
-success:true,
-
-role
-
-});
-
-
-
-}catch(error){
-
-next(error);
-
-}
-
+    return res.json({
+      success: true,
+      role,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| DELETE ROLE
-|--------------------------------------------------------------------------
-*/
 
 export const deleteRole = async(req,res,next)=>{
 
@@ -448,59 +445,71 @@ next(error);
 |--------------------------------------------------------------------------
 */
 
-export const updatePermissions = async(req,res,next)=>{
+export const updatePermissions = async (req, res, next) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid role ID",
+      });
+    }
 
-try{
+    const role = await Role.findById(req.params.id);
 
+    if (!role) {
+      return res.status(404).json({
+        success: false,
+        message: "Role not found",
+      });
+    }
 
-const role =
-await Role.findById(
-req.params.id
-);
+    /*
+     * Super Admin permissions must never be removed or altered.
+     */
+    const normalizedRoleName = String(role.name || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[\s_-]+/g, "");
 
+    if (
+      role.isSystem &&
+      normalizedRoleName === "superadmin"
+    ) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "The Super Admin role permissions cannot be modified.",
+      });
+    }
 
+    const permissionIds =
+      sanitizePermissionIds(req.body.permissions);
 
-if(!role){
+    if (permissionIds.length) {
+      const validPermissions =
+        await Permission.countDocuments({
+          _id: { $in: permissionIds },
+          isActive: { $ne: false },
+        });
 
-return res.status(404).json({
+      if (validPermissions !== permissionIds.length) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "One or more selected permissions are invalid.",
+        });
+      }
+    }
 
-success:false,
+    role.permissions = permissionIds;
 
-message:"Role not found"
+    await role.save();
 
-});
-
-}
-
-
-
-const permissionIds = sanitizePermissionIds(req.body.permissions);
-
-if (role.isSystem && ["super_admin", "superadmin"].includes(role.name)) {
-  return res.status(403).json({
-    success: false,
-    message: "The Super Admin role permissions cannot be modified.",
-  });
-}
-
-role.permissions = permissionIds;
-await role.save();
-
-
-
-res.json({
-
-success:true,
-
-role
-
-});
-
-
-}catch(error){
-
-next(error);
-
-}
-
+    return res.json({
+      success: true,
+      role,
+    });
+  } catch (error) {
+    next(error);
+  }
 };

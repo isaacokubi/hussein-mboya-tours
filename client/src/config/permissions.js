@@ -1,48 +1,87 @@
 // client/src/config/permissions.js
-
+//
+// Canonical application RBAC permission names.
+// These names must match the Permission documents created by
+// server/controllers/adminRoleController.js and consumed by
+// server/middleware/permissionMiddleware.js.
 
 export const PERMISSION_GROUPS = {
+  Dashboard: [
+    "admin.dashboard",
+  ],
 
   Tours: [
-    "create_tours",
-    "update_tours",
-    "delete_tours",
-    "manage_tours",
+    "tour.view",
+    "tour.create",
+    "tour.update",
+    "tour.manage",
+    "tour.assign",
+    "tour.availability",
   ],
-
 
   Bookings: [
-    "manage_bookings",
-    "view_bookings",
+    "booking.view",
+    "booking.create",
+    "booking.update",
+    "booking.manage",
+    "booking.cancel",
   ],
 
-
-  Customers: [
-    "view_customers",
-    "manage_customers",
+  Staff: [
+    "staff.manage",
+    "guide.view",
+    "vehicle.view",
   ],
-
-
-  Guides: [
-    "assign_guides",
-    "view_assigned_tours",
-  ],
-
 
   Finance: [
-    "view_finance",
-    "manage_payments",
-    "manage_invoices",
+    "finance.view",
+    "payment.manage",
+    "refund.manage",
   ],
-
 
   Reports: [
-    "view_reports",
+    "report.view",
+    "analytics.view",
   ],
-
 
   Users: [
-    "manage_users",
+    "user.manage",
   ],
 
+    Customers: [
+      "customer.view",
+      "manage_customers",
+    ],
+
+    Destinations: [
+      "manage_destinations",
+    ],
+
+    Reviews: [
+      "review.manage",
+    ],
+
+    System: [
+      "system.audit",
+    ],
+
+
+    Administration: [
+    "roles.manage",
+    "settings.manage",
+    "notifications.view",
+  ],
+
+  Agents: [
+    "commission.view",
+  ],
+
+  Guides: [
+    "view_assigned_tours",
+    "view_tour_guests",
+    "update_tour_status",
+    "submit_tour_report",
+  ],
 };
+
+export const ALL_PERMISSIONS = Object.values(PERMISSION_GROUPS).flat();

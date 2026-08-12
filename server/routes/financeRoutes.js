@@ -1,3 +1,4 @@
+import { authorize } from "../middleware/permissionMiddleware.js";
 // server/routes/financeRoutes.js
 
 import express from "express";
@@ -30,6 +31,8 @@ const router = express.Router();
 
 router.use(protect);
 router.use(adminMiddleware);
+
+router.use(authorize("finance.view"));
 
 /*
 |--------------------------------------------------------------------------

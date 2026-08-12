@@ -1,3 +1,4 @@
+import { authorize } from "../middleware/permissionMiddleware.js";
 import express from "express";
 
 import {
@@ -35,6 +36,8 @@ const router=express.Router();
 router.use(protect);
 
 router.use(adminMiddleware);
+
+router.use(authorize("payment.manage"));
 
 
 

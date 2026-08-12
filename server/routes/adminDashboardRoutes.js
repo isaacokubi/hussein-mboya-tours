@@ -1,3 +1,4 @@
+import { authorize } from "../middleware/permissionMiddleware.js";
 import express from "express";
 
 import {
@@ -21,6 +22,7 @@ router.get(
 protect,
 adminOnly,
 
+authorize("admin.dashboard"),
 
 getDashboard
 

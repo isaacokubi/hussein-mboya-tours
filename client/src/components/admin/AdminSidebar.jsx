@@ -24,24 +24,14 @@ import {
   FaChartBar
 } from "react-icons/fa";
 
+import { useAuth } from "../../context/AuthContext";
+
 
 
 
 const AdminSidebar = () => {
 
-
-const permissions = JSON.parse(
-  localStorage.getItem("permissions")
-) || [];
-
-
-
-
-const hasPermission = (permission) => {
-
-  return permissions.includes(permission);
-
-};
+const { hasPermission } = useAuth();
 
 
 
@@ -58,7 +48,7 @@ icon:<LayoutDashboard size={20}/>,
 
 path:"/admin",
 
-permission:"view_dashboard"
+permission:"admin.dashboard"
 
 },
 
@@ -72,7 +62,7 @@ title:"Tours",
 
 icon:<Map size={20}/>,
 
-permission:"manage_tours",
+permission:"tour.manage",
 
 children:[
 
@@ -117,7 +107,7 @@ icon:<CalendarCheck size={20}/>,
 
 path:"/admin/bookings",
 
-permission:"manage_bookings"
+permission:"booking.manage"
 
 },
 
@@ -132,7 +122,7 @@ title:"Finance",
 
 icon:<Wallet size={20}/>,
 
-permission:"manage_finance",
+permission:"finance.view",
 
 children:[
 
@@ -188,7 +178,7 @@ icon:<FaChartBar size={20}/>,
 
 path:"/admin/analytics",
 
-permission:"view_analytics"
+permission:"analytics.view"
 
 },
 
@@ -204,7 +194,7 @@ icon:<Users size={20}/>,
 
 path:"/admin/customers",
 
-permission:"manage_customers"
+permission:"customer.view"
 
 },
 
@@ -221,7 +211,7 @@ icon:<Users size={20}/>,
 
 path:"/admin/guides",
 
-permission:"manage_guides"
+permission:"staff.manage"
 
 },
 
@@ -237,7 +227,7 @@ icon:<Car size={20}/>,
 
 path:"/admin/vehicles",
 
-permission:"manage_vehicles"
+permission:"staff.manage"
 
 },
 
@@ -256,7 +246,7 @@ icon:<Shield size={20}/>,
 
 path:"/admin/rbac",
 
-permission:"manage_roles"
+permission:"roles.manage"
 
 },
 
@@ -272,7 +262,7 @@ icon:<Settings size={20}/>,
 
 path:"/admin/settings",
 
-permission:"manage_settings"
+permission:"settings.manage"
 
 },
 
@@ -284,6 +274,7 @@ permission:"manage_settings"
 
 
 {
+
 title:"Website",
 
 icon:<Home size={20}/>,

@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createBooking } from "../api/bookingApi";
-import { initiateMpesa, checkPaymentStatus } from "../api/mpesaApi";
+import { initiateMpesa } from "../api/mpesaApi";
 import { getTourById } from "../api/tourApi";
 import api from "../api/axios";
 import { getPublicSettings } from "../api/settingsApi";

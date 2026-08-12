@@ -1,3 +1,4 @@
+import { authorize } from "../middleware/permissionMiddleware.js";
 import express from "express";
 import { protect } from "../middleware/authMiddleware.js";
 import adminMiddleware from "../middleware/adminMiddleware.js";
@@ -10,6 +11,7 @@ import {
 
 const router = express.Router();
 router.use(protect, adminMiddleware);
+router.use(authorize("review.manage"));
 router.get("/", getAdminReviews);
 router.patch("/:id/approve", approveAdminReview);
 router.patch("/:id/reject", rejectAdminReview);

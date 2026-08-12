@@ -16,7 +16,6 @@ import {
 import {
   useAuth,
 } from "../context/AuthContext";
-import AssignmentNotifications from "../components/notifications/AssignmentNotifications";
 
 
 const CustomerDashboard = () => {

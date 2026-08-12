@@ -4,45 +4,25 @@ import User from "../models/User.js";
 
 const normalizeRole = (role) => {
   if (!role) return "";
+
   if (typeof role === "object") {
     role = role.name || role.role || "";
   }
-  return String(role).trim().toLowerCase().replace(/[\s_-]+/g, "");
-};
 
-/*
-|--------------------------------------------------------------------------
-| ADMIN AUTHORIZATION MIDDLEWARE
-|--------------------------------------------------------------------------
-|
-| Verifies:
-| - User exists
-| - Account is active
-| - User has Admin or Super Admin role
-|
-|--------------------------------------------------------------------------
-*/
+  return String(role)
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, "");
+};
 
 const adminMiddleware = async (req, res, next) => {
   try {
-    /*
-    |--------------------------------------------------------------------------
-    | AUTHENTICATED USER
-    |--------------------------------------------------------------------------
-    */
-
     if (!req.user || !req.user._id) {
       return res.status(401).json({
         success: false,
         message: "Authentication required",
       });
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | LOAD USER WITH ROLE
-    |--------------------------------------------------------------------------
-    */
 
     const user = await User.findById(req.user._id)
       .select("-password")
@@ -62,16 +42,13 @@ const adminMiddleware = async (req, res, next) => {
     }
 
     /*
-    |--------------------------------------------------------------------------
-    | ACCOUNT STATUS
-    |--------------------------------------------------------------------------
-    */
-
+     * Account status.
+     */
     if (
       user.isActive === false ||
-      user.status === "inactive" ||
-      user.status === "blocked" ||
-      user.status === "suspended"
+      ["inactive", "disabled", "blocked", "suspended"].includes(
+        user.status
+      )
     ) {
       return res.status(403).json({
         success: false,
@@ -80,22 +57,14 @@ const adminMiddleware = async (req, res, next) => {
     }
 
     /*
-    |--------------------------------------------------------------------------
-    | ROLE NAME
-    |--------------------------------------------------------------------------
-    */
-
+     * roleId is authoritative when available.
+     * Legacy role fields remain compatibility fallbacks.
+     */
     const roleName = normalizeRole(
       user.roleId?.name ||
       user.role ||
       user.legacyRole
     );
-
-    /*
-    |--------------------------------------------------------------------------
-    | ADMIN CHECK
-    |--------------------------------------------------------------------------
-    */
 
     const allowedRoles = new Set([
       "admin",
@@ -112,11 +81,8 @@ const adminMiddleware = async (req, res, next) => {
     }
 
     /*
-    |--------------------------------------------------------------------------
-    | MAKE FULL USER AVAILABLE
-    |--------------------------------------------------------------------------
-    */
-
+     * Make fully populated user available downstream.
+     */
     req.user = user;
 
     next();
