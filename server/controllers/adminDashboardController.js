@@ -60,8 +60,22 @@ export const getDashboard = async (req, res) => {
         status: { $nin: ["out_of_service", "retired", "inactive"] },
       }),
       Agent.countDocuments({ status: { $ne: "inactive" } }),
-      User.countDocuments({ role: { $in: ["guide", "tour_guide", "tourguide"] }, status: "active" }),
-      User.countDocuments({ role: { $in: ["agent", "travel_agent", "travelagent"] }, status: "active" }),
+      Staff.countDocuments({
+        role:{
+            $in:[
+                "guide",
+                "tour_guide",
+                "tourguide"
+            ]
+        },
+        isActive:true,
+        isDeleted:false
+    }),
+      Agent.countDocuments({
+        status:{
+            $ne:"inactive"
+        }
+    }),
     ]);
 
     /*

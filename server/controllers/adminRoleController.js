@@ -27,8 +27,8 @@ const DEFAULT_PERMISSIONS = {
   tour_manager: ["tour.view", "tour.create", "tour.update", "booking.view", "booking.cancel", "tour.assign", "tour.availability", "calendar.manage", "customer.view", "guide.view", "vehicle.view", "report.view"],
   tour_guide: ["tour.view", "view_assigned_tours", "view_tour_guests", "update_tour_status", "submit_tour_report"],
   driver: ["tour.view", "view_assigned_tours"],
-  admin: ["admin.dashboard", "user.manage", "staff.manage", "tour.manage", "booking.manage", "payment.manage", "refund.manage", "analytics.view", "settings.manage", "roles.manage", "notifications.view", "finance.view"],
-  super_admin: ["admin.dashboard", "user.manage", "staff.manage", "tour.manage", "booking.manage", "payment.manage", "refund.manage", "analytics.view", "settings.manage", "roles.manage", "notifications.view", "finance.view"],
+  admin: ["admin.dashboard", "user.manage", "staff.manage", "tour.manage", "booking.manage", "payment.manage", "refund.manage", "analytics.view", "finance.view", "notifications.view", "report.view"],
+  super_admin: ["admin.dashboard", "user.manage", "staff.manage", "tour.manage", "booking.manage", "payment.manage", "refund.manage", "analytics.view", "finance.view", "notifications.view", "report.view"],
 };
 
 let defaultsBootstrapPromise = null;
@@ -302,7 +302,22 @@ export const createRole = async (req, res, next) => {
 };
 
 
+
 export const updateRole = async (req, res, next) => {
+
+    const existingRole = await Role.findById(req.params.id);
+
+    if (
+        existingRole &&
+        existingRole.name === "super_admin" &&
+        req.user.role !== "super_admin"
+    ) {
+        return res.status(403).json({
+            message:
+            "Only super admin can modify super admin role"
+        });
+    }
+
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({
@@ -368,7 +383,21 @@ export const updateRole = async (req, res, next) => {
 };
 
 
+
 export const deleteRole = async(req,res,next)=>{
+
+    const existingRole = await Role.findById(req.params.id);
+
+    if (
+        existingRole &&
+        existingRole.name === "super_admin"
+    ) {
+        return res.status(403).json({
+            message:
+            "Super admin role cannot be deleted"
+        });
+    }
+
 
 try{
 
