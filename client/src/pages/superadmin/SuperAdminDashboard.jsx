@@ -1,73 +1,77 @@
-import React, {useEffect,useState} from "react";
-import {getSuperAdminDashboard} from "../../api/superAdminApi";
-
-const Card=({title,value})=>(
-<div style={{
-padding:"20px",
-borderRadius:"12px",
-background:"#fff",
-boxShadow:"0 2px 8px rgba(0,0,0,.1)"
-}}>
-<h4>{title}</h4>
-<h2>{value}</h2>
-</div>
-);
-
+import React from "react";
 
 export default function SuperAdminDashboard(){
 
-const [data,setData]=useState(null);
-const [error,setError]=useState("");
-
-useEffect(()=>{
-
-getSuperAdminDashboard()
-.then(setData)
-.catch(e=>setError(e.message));
-
-},[]);
-
-
-if(error)
-return <div>{error}</div>;
-
-
-if(!data)
-return <div>Loading Super Admin Dashboard...</div>;
-
-
-const stats=data.stats || {};
-
-
 return (
 
-<div style={{padding:"25px"}}>
+<div>
 
 <h1>
-Super Admin Control Center
+Super Administrator Control Center
 </h1>
 
 
-<div style={{
+<p>
+Global system administration dashboard.
+</p>
+
+
+<div
+style={{
 display:"grid",
-gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",
-gap:"20px"
-}}>
+gridTemplateColumns:"repeat(3,1fr)",
+gap:"20px",
+marginTop:"30px"
+}}
+>
 
 
-<Card title="Users" value={stats.users || 0}/>
+<div>
+<h2>Platform Control</h2>
+<p>
+Manage users, roles, permissions and security.
+</p>
+</div>
 
-<Card title="Staff" value={stats.staff || 0}/>
 
-<Card title="Admins" value={stats.admins || 0}/>
+<div>
+<h2>System Monitoring</h2>
+<p>
+Monitor server health, logs and application status.
+</p>
+</div>
 
-<Card title="Agents" value={stats.agents || 0}/>
 
-<Card title="Guides" value={stats.guides || 0}/>
+<div>
+<h2>Business Oversight</h2>
+<p>
+View company-wide statistics and operations.
+</p>
+</div>
 
-<Card title="Vehicles" value={stats.vehicles || 0}/>
 
-<Card title="Bookings" value={stats.bookings || 0}/>
+<div>
+<h2>Security</h2>
+<p>
+Audit access, permissions and suspicious activity.
+</p>
+</div>
+
+
+<div>
+<h2>Database</h2>
+<p>
+Manage system data integrity.
+</p>
+</div>
+
+
+<div>
+<h2>Configuration</h2>
+<p>
+Global application settings.
+</p>
+</div>
 
 
 </div>
