@@ -1,8 +1,8 @@
-const systemHealthRoutes = require("./routes/systemHealthRoutes");
-const apiMonitorRoutes = require("./routes/apiMonitorRoutes");
-const databaseRoutes = require("./routes/databaseRoutes");
-const settingsRoutes = require("./routes/settingsRoutes");
-const securityRoutes = require("./routes/securityRoutes");
+import systemHealthRoutes from "./routes/systemHealthRoutes.js";
+import apiMonitorRoutes from "./routes/apiMonitorRoutes.js";
+import databaseRoutes from "./routes/databaseRoutes.js";
+import settingsRoutes from "./routes/settingsRoutes.js";
+import securityRoutes from "./routes/securityRoutes.js";
 import http from "http";
 import mongoose from "mongoose";
 
@@ -48,6 +48,13 @@ initSocket(io);
 
 export { io };
 
+// SUPER ADMIN ROUTES
+app.use("/api/security", securityRoutes);
+app.use("/api/settings", settingsRoutes);
+app.use("/api/database", databaseRoutes);
+app.use("/api/api-monitor", apiMonitorRoutes);
+app.use("/api/system", systemHealthRoutes);
+
 server.listen(env.PORT, () => {
 
     console.log(
@@ -75,9 +82,3 @@ server.listen(env.PORT, () => {
 process.on("SIGINT", shutdown);
 
 process.on("SIGTERM", shutdown);
-// SUPER ADMIN ROUTES
-app.use("/api/security", securityRoutes);
-app.use("/api/settings", settingsRoutes);
-app.use("/api/database", databaseRoutes);
-app.use("/api/api-monitor", apiMonitorRoutes);
-app.use("/api/system", systemHealthRoutes);
