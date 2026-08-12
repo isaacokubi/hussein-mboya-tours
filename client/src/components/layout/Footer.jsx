@@ -350,9 +350,15 @@ export default function Footer() {
 
           {/* ADMIN */}
 
-          {userRole === "admin" && (
+          {userRole === "admin" && !["superadmin","super_admin"].includes(user?.role) && (
             <div className="mt-8">
-              <h4 className="text-white font-semibold mb-3">Admin Panel</h4>
+              {!["superadmin","super_admin"].includes(
+  user?.role
+) && (
+<h4 className="text-white font-semibold mb-3">
+Admin Panel
+</h4>
+)}
 
               <ul className="space-y-2 text-sm">
                 <li>
