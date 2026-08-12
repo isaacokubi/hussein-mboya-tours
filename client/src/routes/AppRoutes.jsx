@@ -429,6 +429,34 @@ element={<SuperAdminDashboard />}
 </Route>
 
 
+
+
+{/* Super Admin */}
+<Route
+path="/superadmin"
+element={
+<ProtectedRoute roles={[
+"superadmin",
+"super_admin"
+]}>
+<AdminLayout />
+</ProtectedRoute>
+}
+>
+
+<Route
+index
+element={<SuperAdminDashboard />}
+/>
+
+<Route
+path="dashboard"
+element={<SuperAdminDashboard />}
+/>
+
+</Route>
+
+
       {/* Admin */}
       <Route
         path="/admin"
