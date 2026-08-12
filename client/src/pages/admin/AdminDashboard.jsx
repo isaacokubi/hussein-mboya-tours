@@ -128,12 +128,34 @@ const systemHealth =
 
     guides = [],
 
-      vehicles = 0,
+      vehicles = [],
 
     notifications = [],
   } = stats;
 
-  return (
+  // ==========================================================
+  // DASHBOARD RESOURCE NORMALIZATION
+  // ==========================================================
+  // The backend returns agents, guides and vehicles as arrays.
+  // Counts displayed by the dashboard are derived from those
+  // arrays so the UI cannot confuse arrays with numeric values.
+
+  const dashboardAgents = Array.isArray(agents)
+    ? agents
+    : [];
+
+  const dashboardGuides = Array.isArray(guides)
+    ? guides
+    : [];
+
+  const dashboardVehicles = Array.isArray(vehicles)
+    ? vehicles
+    : [];
+
+  const agentsCount = dashboardAgents.length;
+  const guidesCount = dashboardGuides.length;
+  const vehiclesCount = dashboardVehicles.length;
+return (
     <div
       className="
 min-h-screen
@@ -288,12 +310,12 @@ xl:grid-cols-6
 
         <StatCard
             title="Agents"
-            value={Array.isArray(agents) ? agents.length : Number(agents) || 0}
+            value={Array.isArray(agents) ? agentsCount : Number(agents) || 0}
             icon={<Users />}
           />
         <StatCard
             title="Guides"
-            value={Array.isArray(guides) ? guides.length : Number(guides) || 0}
+            value={Array.isArray(guides) ? guidesCount : Number(guides) || 0}
             icon={<Users />}
           />
         <StatCard
@@ -629,7 +651,7 @@ rounded-xl
           Agent Performance
         </h2>
 
-        {agents.length === 0 ? (
+        {agentsCount === 0 ? (
           <p
             className="
               text-gray-500
@@ -703,7 +725,7 @@ rounded-xl
           Tour Guides
         </h2>
 
-        {guides.length === 0 ? (
+        {guidesCount === 0 ? (
           <p
             className="
               text-gray-500
