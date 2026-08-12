@@ -470,6 +470,22 @@ path="system"
 element={<SuperAdminSystem />}
 />
 
+<Route
+path="settings"
+element={<SuperAdminSettings />}
+/>
+
+<Route
+path="database"
+element={<SuperAdminDatabase />}
+/>
+
+<Route
+path="api"
+element={<SuperAdminApiMonitor />}
+/>
+
+
 </Route>
 
 
