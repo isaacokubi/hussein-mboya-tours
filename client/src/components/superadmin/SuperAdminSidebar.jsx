@@ -1,5 +1,6 @@
+
 import React from "react";
-import { NavLink } from "react-router-dom";
+import {NavLink} from "react-router-dom";
 import {
 Shield,
 Users,
@@ -9,182 +10,152 @@ Lock,
 Activity,
 Settings,
 Database,
-Server
+Server,
+X
 } from "lucide-react";
 
 
-export default function SuperAdminSidebar(){
+export default function SuperAdminSidebar({open,setOpen}){
 
 
 const links=[
-
-{
-name:"Dashboard",
-path:"/superadmin/dashboard",
-icon:Activity
-},
-
-{
-name:"User Management",
-path:"/superadmin/users",
-icon:Users
-},
-
-{
-name:"Roles & Permissions",
-path:"/superadmin/roles",
-icon:KeyRound
-},
-
-{
-name:"Audit Center",
-path:"/superadmin/audit",
-icon:FileSearch
-},
-
-{
-name:"Security Center",
-path:"/superadmin/security",
-icon:Lock
-},
-
-{
-name:"System Health",
-path:"/superadmin/system",
-icon:Server
-},
-
-{
-name:"Platform Settings",
-path:"/superadmin/settings",
-icon:Settings
-},
-
-{
-name:"Database Tools",
-path:"/superadmin/database",
-icon:Database
-},
-
-{
-name:"API Monitor",
-path:"/superadmin/api",
-icon:Shield
-}
-
+["Dashboard","/superadmin/dashboard",Activity],
+["User Management","/superadmin/users",Users],
+["Roles & Permissions","/superadmin/roles",KeyRound],
+["Audit Center","/superadmin/audit",FileSearch],
+["Security Center","/superadmin/security",Lock],
+["System Health","/superadmin/system",Server],
+["Platform Settings","/superadmin/settings",Settings],
+["Database Tools","/superadmin/database",Database],
+["API Monitor","/superadmin/api",Shield]
 ];
 
 
 return (
 
-<aside
+<>
+
+{open &&
+<div
 className="
+fixed inset-0
+bg-black/50
+z-40
+md:hidden
+"
+onClick={()=>setOpen(false)}
+/>
+}
+
+
+<aside
+className={`
+fixed
+z-50
+top-0
+left-0
+h-screen
 w-72
-min-h-screen
 bg-gray-950
 text-white
 p-6
 shadow-xl
-"
+transform
+transition-transform
+duration-300
+
+${open?"translate-x-0":"-translate-x-full"}
+
+md:translate-x-0
+
+`}
 >
 
 
-<div className="mb-8">
+<div className="flex justify-between items-center mb-8">
 
-<h1 className="
-text-2xl
-font-bold
-">
+<div>
+
+<h1 className="text-2xl font-bold">
 Coherent Tours
 </h1>
 
-
-<p className="
-text-sm
-text-gray-400
-mt-1
-">
+<p className="text-gray-400 text-sm">
 Super Admin Console
 </p>
 
 </div>
 
 
+<button
+className="md:hidden"
+onClick={()=>setOpen(false)}
+>
+<X/>
+</button>
+
+
+</div>
+
 
 <nav className="space-y-2">
 
-
 {
-links.map(({name,path,icon:Icon})=>(
+links.map(([name,path,Icon])=>(
 
 <NavLink
-
 key={path}
-
 to={path}
+onClick={()=>setOpen(false)}
 
 className={({isActive})=>
-
 `
 flex items-center gap-3
 px-4 py-3
 rounded-xl
-transition
 
-${isActive
+${
+isActive
 ?
-"bg-blue-600 text-white shadow-lg"
+"bg-blue-600 text-white"
 :
 "text-gray-300 hover:bg-gray-800"
 }
 
 `
-
 }
 
 >
 
-
 <Icon size={20}/>
 
-<span>
 {name}
-</span>
-
 
 </NavLink>
 
-
 ))
-
 }
 
 
 </nav>
 
 
-<div className="
+<div
+className="
 mt-10
-p-4
-rounded-xl
 bg-gray-900
-border
-border-gray-800
-">
+border border-gray-800
+rounded-xl
+p-4
+"
+>
 
-
-<p className="
-text-xs
-text-gray-400
-">
-System Access Level
+<p className="text-xs text-gray-400">
+Access Level
 </p>
 
 
-<p className="
-font-bold
-text-green-400
-">
+<p className="text-green-400 font-bold">
 SUPER ADMIN
 </p>
 
@@ -195,6 +166,8 @@ SUPER ADMIN
 </aside>
 
 
-);
+</>
+
+)
 
 }

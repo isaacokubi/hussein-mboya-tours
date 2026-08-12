@@ -116,3 +116,37 @@ export const updateAdminRolePermissions = async (id, permissions) => {
   const { data } = await api.patch(`/admin/roles/${id}/permissions`, { permissions });
   return data;
 };
+
+
+// ===============================
+// SUPER ADMIN ROLE MANAGEMENT
+// ===============================
+
+export const getRoles = async () => {
+
+    const response = await api.get(
+        "/admin/roles"
+    );
+
+    return response.data;
+
+};
+
+
+export const updateRolePermissions = async (
+    id,
+    permissions
+)=>{
+
+    const response = await api.put(
+        `/admin/roles/${id}/permissions`,
+        {
+            permissions
+        }
+    );
+
+    return response.data;
+
+};
+
+
