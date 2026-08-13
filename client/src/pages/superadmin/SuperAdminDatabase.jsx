@@ -1,31 +1,13 @@
 import {useQuery} from "@tanstack/react-query";
-import {getDatabaseStatus} from "../../api/superAdminApi";
+import { getDatabaseStatus } from "../../api/superAdminApi";
 
 export default function SuperAdminDatabase(){
-
-const {data,isLoading}=useQuery({
-queryKey:["database-status"],
-queryFn:getDatabaseStatus
-});
-
-if(isLoading)
-return <div className="p-6">Checking database...</div>
-
-
-return (
-
-<div className="p-6">
-
-<h1 className="text-3xl font-bold mb-5">
-Database Status
-</h1>
-
-<pre className="bg-white shadow rounded-xl p-5">
-{JSON.stringify(data,null,2)}
-</pre>
-
-</div>
-
-)
-
+ const {data,isLoading,isError,error}=useQuery({queryKey:["database-status"],queryFn:getDatabaseStatus});
+ if(isLoading) return <div className="p-8">Loading database-status...</div>;
+ if(isError) return <div className="p-8 bg-red-50 text-red-700 rounded-xl">{error?.message||"Failed loading data"}</div>;
+ return <main className="p-6 bg-gray-50 min-h-screen"><div className="bg-white rounded-2xl shadow border p-6">
+ <h1 className="text-3xl font-bold">Database Status</h1>
+ <p className="mt-2 text-gray-600">Production data view connected to backend services.</p>
+ <pre className="mt-6 overflow-auto bg-gray-100 p-4 rounded-xl text-sm">{JSON.stringify(data,null,2)}</pre>
+ </div></main>
 }

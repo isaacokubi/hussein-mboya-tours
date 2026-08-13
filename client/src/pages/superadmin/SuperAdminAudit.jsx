@@ -1,50 +1,13 @@
 import {useQuery} from "@tanstack/react-query";
-import {getAuditLogs} from "../../api/superAdminApi";
+import { getAuditLogs } from "../../api/superAdminApi";
 
 export default function SuperAdminAudit(){
-
-const {data,isLoading}=useQuery({
-queryKey:["audit"],
-queryFn:getAuditLogs
-});
-
-
-if(isLoading)
-return <div className="p-6">Loading audit logs...</div>
-
-
-const logs=data?.logs || data || [];
-
-
-return (
-
-<div className="p-6">
-
-<h1 className="text-3xl font-bold mb-5">
-Audit Logs
-</h1>
-
-
-<div className="space-y-3">
-
-{
-Array.isArray(logs) &&
-logs.map((log,i)=>(
-
-<div key={i}
-className="bg-white rounded-xl shadow p-4">
-
-{JSON.stringify(log)}
-
-</div>
-
-))
-}
-
-</div>
-
-</div>
-
-)
-
+ const {data,isLoading,isError,error}=useQuery({queryKey:["audit"],queryFn:getAuditLogs});
+ if(isLoading) return <div className="p-8">Loading audit...</div>;
+ if(isError) return <div className="p-8 bg-red-50 text-red-700 rounded-xl">{error?.message||"Failed loading data"}</div>;
+ return <main className="p-6 bg-gray-50 min-h-screen"><div className="bg-white rounded-2xl shadow border p-6">
+ <h1 className="text-3xl font-bold">Audit Logs</h1>
+ <p className="mt-2 text-gray-600">Production data view connected to backend services.</p>
+ <pre className="mt-6 overflow-auto bg-gray-100 p-4 rounded-xl text-sm">{JSON.stringify(data,null,2)}</pre>
+ </div></main>
 }
