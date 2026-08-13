@@ -1,41 +1,131 @@
+
+import mongoose from "mongoose";
+import User from "../models/User.js";
+import AuditLog from "../models/AuditLog.js";
 import { createAuditLog } from "../services/auditService.js";
 
 
+
 export const getAudit = async(req,res)=>{
+
+try{
+
+const total =
+await AuditLog.countDocuments();
+
+
+const recent =
+await AuditLog.find()
+.sort({
+createdAt:-1
+})
+.limit(10)
+.populate(
+"user",
+"name email role"
+);
+
+
 await createAuditLog({
 user:req.user?._id,
 action:"view",
 resource:"Audit Center",
-description:"Viewed audit center",
+description:"Viewed audit center dashboard",
 ipAddress:req.ip,
 userAgent:req.headers["user-agent"]
 });
 
+
 res.json({
+
 success:true,
-message:"Audit center operational",
-logs:[]
+
+data:{
+total,
+recent
+}
+
 });
+
+
+}catch(error){
+
+res.status(500).json({
+success:false,
+message:error.message
+});
+
+}
+
 };
 
+
+
+
+
 export const getSecurity = async(req,res)=>{
+
+try{
+
+
+const failedLogins =
+await AuditLog.countDocuments({
+action:"login_failed"
+});
+
+
+const critical =
+await AuditLog.countDocuments({
+severity:"critical"
+});
+
+
 await createAuditLog({
 user:req.user?._id,
 action:"view",
 resource:"Security",
-description:"Viewed security center",
+description:"Viewed security dashboard",
 ipAddress:req.ip,
 userAgent:req.headers["user-agent"]
 });
 
+
 res.json({
+
 success:true,
-message:"Security center operational",
-events:[]
+
+data:{
+failedLogins,
+criticalEvents:critical
+}
+
 });
+
+
+}catch(error){
+
+res.status(500).json({
+success:false,
+message:error.message
+});
+
+}
+
 };
 
+
+
+
+
 export const getDatabase = async(req,res)=>{
+
+try{
+
+
+const state =
+mongoose.connection.readyState;
+
+
 await createAuditLog({
 user:req.user?._id,
 action:"view",
@@ -45,31 +135,102 @@ ipAddress:req.ip,
 userAgent:req.headers["user-agent"]
 });
 
+
 res.json({
+
 success:true,
-message:"Database tools operational",
-status:"healthy"
+
+data:{
+
+status:
+state===1
+?"connected"
+:"disconnected",
+
+database:
+mongoose.connection.name,
+
+host:
+mongoose.connection.host
+
+}
+
 });
+
+
+}catch(error){
+
+res.status(500).json({
+success:false,
+message:error.message
+});
+
+}
+
 };
 
+
+
+
+
+
 export const getApiMonitor = async(req,res)=>{
+
+try{
+
+
 await createAuditLog({
 user:req.user?._id,
 action:"view",
 resource:"API Monitor",
-description:"Viewed API monitor",
+description:"Viewed API monitoring",
 ipAddress:req.ip,
 userAgent:req.headers["user-agent"]
 });
 
+
 res.json({
+
 success:true,
-message:"API monitor operational",
-endpoints:[]
+
+data:{
+
+status:"operational",
+
+timestamp:new Date(),
+
+serverTime:process.uptime()
+
+}
+
 });
+
+
+}catch(error){
+
+res.status(500).json({
+success:false,
+message:error.message
+});
+
+}
+
 };
 
+
+
+
+
+
 export const getSystem = async(req,res)=>{
+
+try{
+
+
+const memory =
+process.memoryUsage();
+
+
 await createAuditLog({
 user:req.user?._id,
 action:"view",
@@ -79,14 +240,47 @@ ipAddress:req.ip,
 userAgent:req.headers["user-agent"]
 });
 
+
 res.json({
+
 success:true,
-message:"System health operational",
-status:"healthy"
+
+data:{
+
+status:"healthy",
+
+uptime:
+process.uptime(),
+
+memory
+
+}
+
 });
+
+
+}catch(error){
+
+res.status(500).json({
+success:false,
+message:error.message
+});
+
+}
+
 };
 
+
+
+
+
+
+
 export const getSettings = async(req,res)=>{
+
+try{
+
+
 await createAuditLog({
 user:req.user?._id,
 action:"view",
@@ -96,9 +290,30 @@ ipAddress:req.ip,
 userAgent:req.headers["user-agent"]
 });
 
+
 res.json({
+
 success:true,
-message:"Platform settings operational",
-settings:{}
+
+data:{
+
+maintenance:false,
+
+environment:
+process.env.NODE_ENV || "development"
+
+}
+
 });
+
+
+}catch(error){
+
+res.status(500).json({
+success:false,
+message:error.message
+});
+
+}
+
 };
