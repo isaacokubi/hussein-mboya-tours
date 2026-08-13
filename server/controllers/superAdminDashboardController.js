@@ -46,6 +46,7 @@ res.json({
 
 success:true,
 
+data:{
 stats:{
 users,
 staff,
@@ -53,6 +54,7 @@ agents,
 vehicles,
 bookings,
 admins
+}
 },
 
 timestamp:new Date()

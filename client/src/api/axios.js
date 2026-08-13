@@ -27,7 +27,9 @@ api.interceptors.request.use(
 
 
 const token =
-localStorage.getItem("token");
+localStorage.getItem("token") ||
+localStorage.getItem("accessToken") ||
+localStorage.getItem("authToken");
 
 
 
