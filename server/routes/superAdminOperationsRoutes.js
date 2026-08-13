@@ -44,3 +44,4 @@ router.get("/database",getDatabaseStatus);
 
 router.get("/system",getSystemHealth);
 
+export default router;
