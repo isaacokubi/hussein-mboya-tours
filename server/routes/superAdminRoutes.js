@@ -1,3 +1,4 @@
+import { getSecurityStatus } from "../controllers/securityController.js";
 import express from "express";
 
 import {
@@ -86,5 +87,8 @@ authorize(
 getApiMonitor
 );
 
+
+
+router.get("/security", getSecurityStatus);
 
 export default router;
