@@ -13,8 +13,6 @@ const router=express.Router();
 
 // security endpoint handled by superAdminOperationsRoutes
 router.get("/database",getDatabase);
-router.get("/api-monitor",getApiMonitor);
-router.get("/system",getSystem);
 router.get("/settings",getSettings);
 
 

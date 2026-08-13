@@ -44,7 +44,3 @@ router.get("/database",getDatabaseStatus);
 
 router.get("/system",getSystemHealth);
 
-router.get("/api-monitor",getApiMonitor);
-
-
-export default router;
