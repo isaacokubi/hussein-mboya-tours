@@ -7,7 +7,7 @@ const {data,isLoading,error}=useQuery({
 queryKey:["superadmin-system"],
 queryFn:async()=>{
 const res=await getSystemHealth();
-return res.data || {};
+return res || {};
 }
 });
 
