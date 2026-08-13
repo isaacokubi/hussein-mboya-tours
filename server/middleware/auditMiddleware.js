@@ -6,18 +6,29 @@ const detectResource=(url)=>{
 
 const map={
 
+auth:"Authentication",
+security:"Security",
+superadmin:"Super Admin",
+admin:"Admin",
 users:"User",
+user:"User",
 bookings:"Booking",
 booking:"Booking",
 tours:"Tour",
+tour:"Tour",
 destinations:"Destination",
+destination:"Destination",
 payments:"Payment",
+payment:"Payment",
 reviews:"Review",
 gallery:"Gallery",
 vehicles:"Vehicle",
 roles:"Role",
 permissions:"Permission",
-settings:"Setting"
+settings:"Setting",
+database:"Database",
+system:"System",
+api:"API Monitor"
 
 };
 
