@@ -1,8 +1,9 @@
 import axios from "./axios";
 
 
-export const getSuperAdminDashboard=()=>{
-return axios.get("/superadmin/dashboard");
+export const getSuperAdminDashboard=async()=>{
+const response = await axios.get("/superadmin/dashboard");
+return response.data;
 };
 
 
