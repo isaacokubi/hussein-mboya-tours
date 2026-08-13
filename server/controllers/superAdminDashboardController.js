@@ -8,6 +8,8 @@ export const getSuperAdminDashboard = async (req,res)=>{
 
 try{
 
+console.log("SUPERADMIN DB:", process.env.MONGODB_URI?.split("/").pop());
+
 const [
 users,
 staff,
