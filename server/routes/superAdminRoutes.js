@@ -15,10 +15,8 @@ const router=express.Router();
 router.get(
 "/dashboard",
 authorize(
-[
 "super_admin",
 "superadmin"
-]
 ),
 getSuperAdminDashboard
 );
