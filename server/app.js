@@ -18,7 +18,7 @@ const app = express();
 |--------------------------------------------------------------------------
 */
 
-app.use("/api/security", securityRoutes);
+
 
 app.use(
   "/destinations",
