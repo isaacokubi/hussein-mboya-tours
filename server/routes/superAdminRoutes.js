@@ -121,4 +121,54 @@ clearSystemCache
 
 
 
+
+
+// ===============================
+// DATABASE MANAGEMENT
+// ===============================
+
+router.post(
+"/database/backup",
+protect,
+authorize(
+"super_admin",
+"superadmin"
+),
+createDatabaseBackup
+);
+
+
+router.post(
+"/database/cache-clear",
+protect,
+authorize(
+"super_admin",
+"superadmin"
+),
+clearSystemCache
+);
+
+
+router.get(
+"/maintenance/backups",
+protect,
+authorize(
+"super_admin",
+"superadmin"
+),
+listDatabaseBackups
+);
+
+
+router.delete(
+"/maintenance/backups/:file",
+protect,
+authorize(
+"super_admin",
+"superadmin"
+),
+deleteDatabaseBackup
+);
+
+
 export default router;
