@@ -62,6 +62,13 @@ const auditLogSchema = new mongoose.Schema(
       enum: [
         "User",
         "Booking",
+        "Authentication",
+        "Security",
+        "Super Admin",
+        "Admin",
+        "Database",
+        "API Monitor",
+        "Audit Center",
         "Tour",
         "Vehicle",
         "Staff",
