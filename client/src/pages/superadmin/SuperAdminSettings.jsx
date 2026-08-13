@@ -1,151 +1,176 @@
-import React, {useEffect, useState} from "react";
+import React, { useEffect, useState } from "react";
 import {
-  Settings,
-  Shield,
-  CreditCard,
-  Bell,
-  Database,
   Save,
-  RefreshCcw,
+  RefreshCw,
+  Shield,
+  Database,
+  Bell,
+  CreditCard,
+  Building2,
+  Settings,
   CheckCircle,
   AlertTriangle
 } from "lucide-react";
 
-import { getSettings, updateSettings } from "../../api/superAdminApi";
+import {
+  getSettings,
+  updateSettings
+} from "../../api/superAdminApi";
 
 
-const Section = ({icon:Icon,title,children})=>(
-  <div className="bg-white rounded-xl shadow-sm border p-6 space-y-5">
-    <div className="flex items-center gap-3 border-b pb-3">
-      <Icon size={22}/>
-      <h2 className="text-lg font-semibold">{title}</h2>
+const Card = ({icon:Icon,title,children}) => (
+  <div className="bg-white rounded-2xl shadow-sm border p-6 space-y-5">
+    <div className="flex items-center gap-3">
+      <div className="p-3 rounded-xl bg-gray-100">
+        <Icon size={22}/>
+      </div>
+      <h2 className="text-lg font-semibold">
+        {title}
+      </h2>
     </div>
+
     {children}
   </div>
 );
 
 
-const Field=({label,value,onChange})=>(
-  <div className="space-y-2">
-    <label className="text-sm font-medium">{label}</label>
+const Toggle = ({checked,onChange,label}) => (
+  <label className="flex items-center justify-between p-3 rounded-xl border cursor-pointer">
+
+    <span className="text-sm">
+      {label}
+    </span>
+
     <input
-      className="w-full border rounded-lg px-3 py-2"
-      value={value || ""}
-      onChange={e=>onChange(e.target.value)}
+      type="checkbox"
+      checked={checked}
+      onChange={e=>onChange(e.target.checked)}
+      className="w-5 h-5"
     />
-  </div>
+
+  </label>
 );
 
 
 export default function SuperAdminSettings(){
 
 const [settings,setSettings]=useState({});
-const [loading,setLoading]=useState(true);
 const [saving,setSaving]=useState(false);
+const [loading,setLoading]=useState(true);
 const [message,setMessage]=useState("");
 
 
 useEffect(()=>{
 
-loadSettings();
+load();
 
 },[]);
 
 
-async function loadSettings(){
+
+const load=async()=>{
 
 try{
 
 setLoading(true);
 
-const res=await superAdminApi.getSettings?.();
+const data=await getSettings();
 
-setSettings(res?.data || res || {});
+setSettings(data.settings || data || {});
 
 }
+
 catch(err){
 
 console.error(err);
 
 }
+
 finally{
 
 setLoading(false);
 
 }
 
-}
+};
 
 
 
-function update(key,value){
+const update=(key,value)=>{
 
 setSettings(prev=>({
 ...prev,
 [key]:value
 }));
 
-}
+};
 
 
 
-async function save(){
+const save=async()=>{
 
 try{
 
 setSaving(true);
 
-if(updateSettings){
-
 await updateSettings(settings);
-
-}
 
 setMessage("Settings saved successfully");
 
 setTimeout(()=>setMessage(""),3000);
 
-
 }
+
 catch(err){
+
+console.error(err);
 
 setMessage("Failed saving settings");
 
 }
+
 finally{
 
 setSaving(false);
 
 }
 
-}
+};
 
 
 
-if(loading){
+if(loading)
 
 return (
-<div className="p-8">
-Loading platform settings...
+
+<div className="p-8 flex items-center gap-3">
+
+<RefreshCw className="animate-spin"/>
+
+Loading settings...
+
 </div>
-)
 
-}
+);
+
 
 
 return (
 
-<div className="p-6 space-y-6">
+<div className="space-y-8 p-6">
 
+
+<div className="bg-white rounded-2xl shadow-sm border p-6">
 
 <div className="flex justify-between items-center">
 
 <div>
+
 <h1 className="text-3xl font-bold">
 Platform Settings
 </h1>
 
-<p className="text-gray-500">
+<p className="text-gray-500 mt-2">
 Manage Coherent Tours global configuration
 </p>
 
@@ -153,12 +178,27 @@ Manage Coherent Tours global configuration
 
 
 <button
-onClick={loadSettings}
-className="flex gap-2 items-center border px-4 py-2 rounded-lg"
+onClick={load}
+className="flex gap-2 items-center border px-4 py-2 rounded-xl"
 >
-<RefreshCcw size={18}/>
+
+<RefreshCw size={18}/>
+
 Refresh
+
 </button>
+
+
+</div>
+
+
+<div className="mt-4 flex items-center gap-2 text-sm">
+
+<CheckCircle size={16}/>
+
+System configuration active
+
+</div>
 
 
 </div>
@@ -167,158 +207,132 @@ Refresh
 
 {message &&
 
-<div className="flex items-center gap-2 bg-green-100 p-3 rounded-lg">
-<CheckCircle size={18}/>
+<div className="bg-green-50 border border-green-200 p-4 rounded-xl">
+
 {message}
+
 </div>
 
 }
 
 
 
-
-<Section icon={Settings} title="General Configuration">
-
-<div className="grid md:grid-cols-2 gap-5">
-
-<Field
-label="Company Name"
-value={settings.companyName}
-onChange={v=>update("companyName",v)}
-/>
+<div className="grid lg:grid-cols-2 gap-6">
 
 
-<Field
-label="Support Email"
-value={settings.supportEmail}
-onChange={v=>update("supportEmail",v)}
-/>
+<Card icon={Building2} title="General Configuration">
 
-
-<Field
-label="Support Phone"
-value={settings.supportPhone}
-onChange={v=>update("supportPhone",v)}
-/>
-
-
-<Field
-label="Currency"
-value={settings.currency}
-onChange={v=>update("currency",v)}
-/>
-
-
-</div>
-
-</Section>
-
-
-
-
-
-<Section icon={CreditCard} title="Booking & Payments">
-
-
-<div className="grid md:grid-cols-2 gap-5">
-
-
-<Field
-label="Default Booking Status"
-value={settings.bookingStatus}
-onChange={v=>update("bookingStatus",v)}
-/>
-
-
-<Field
-label="Payment Provider"
-value={settings.paymentProvider}
-onChange={v=>update("paymentProvider",v)}
-/>
-
-
-</div>
-
-
-</Section>
-
-
-
-
-
-
-<Section icon={Bell} title="Notifications">
-
-
-<div className="space-y-3">
-
-
-<label className="flex gap-3">
 
 <input
-type="checkbox"
+className="w-full border rounded-xl p-3"
+placeholder="Company Name"
+value={settings.companyName || ""}
+onChange={e=>update("companyName",e.target.value)}
+/>
+
+
+<input
+className="w-full border rounded-xl p-3"
+placeholder="Support Email"
+value={settings.supportEmail || ""}
+onChange={e=>update("supportEmail",e.target.value)}
+/>
+
+
+<input
+className="w-full border rounded-xl p-3"
+placeholder="Support Phone"
+value={settings.supportPhone || ""}
+onChange={e=>update("supportPhone",e.target.value)}
+/>
+
+
+<select
+className="w-full border rounded-xl p-3"
+value={settings.currency || "KES"}
+onChange={e=>update("currency",e.target.value)}
+>
+
+<option>KES</option>
+<option>USD</option>
+<option>EUR</option>
+
+</select>
+
+
+</Card>
+
+
+
+
+<Card icon={CreditCard} title="Booking & Payments">
+
+
+<select
+className="w-full border rounded-xl p-3"
+value={settings.bookingStatus || "confirmed"}
+onChange={e=>update("bookingStatus",e.target.value)}
+>
+
+<option value="pending">
+Pending
+</option>
+
+<option value="confirmed">
+Confirmed
+</option>
+
+</select>
+
+
+<input
+className="w-full border rounded-xl p-3"
+placeholder="Payment Provider"
+value={settings.paymentProvider || ""}
+onChange={e=>update("paymentProvider",e.target.value)}
+/>
+
+
+</Card>
+
+
+
+
+
+<Card icon={Bell} title="Notifications">
+
+
+<Toggle
 checked={settings.emailNotifications ?? true}
-onChange={e=>update(
-"emailNotifications",
-e.target.checked
-)}
+label="Booking and payment email notifications"
+onChange={v=>update("emailNotifications",v)}
 />
 
-Booking and payment email notifications
 
-</label>
-
-
-<label className="flex gap-3">
-
-<input
-type="checkbox"
+<Toggle
 checked={settings.systemAlerts ?? true}
-onChange={e=>update(
-"systemAlerts",
-e.target.checked
-)}
+label="System alerts"
+onChange={v=>update("systemAlerts",v)}
 />
 
-System alerts
 
-</label>
-
-
-</div>
-
-
-</Section>
+</Card>
 
 
 
 
 
+<Card icon={Shield} title="Security Controls">
 
 
-<Section icon={Shield} title="Security Controls">
-
-
-<div className="space-y-3">
-
-
-<label className="flex gap-3">
-
-<input
-type="checkbox"
+<Toggle
 checked={settings.twoFactor ?? false}
-onChange={e=>update(
-"twoFactor",
-e.target.checked
-)}
+label="Enable Two Factor Authentication"
+onChange={v=>update("twoFactor",v)}
 />
 
-Enable Two Factor Authentication
 
-</label>
-
-
-<div className="flex items-center gap-2 text-sm">
+<div className="flex gap-2 text-sm text-gray-600">
 
 <AlertTriangle size={16}/>
 
@@ -327,62 +341,66 @@ Security changes are recorded in audit logs
 </div>
 
 
-</div>
-
-
-</Section>
+</Card>
 
 
 
 
 
+<Card icon={Database} title="System Maintenance">
 
 
-<Section icon={Database} title="System Maintenance">
-
-
-<div className="space-y-3">
-
-
-<button
-className="border px-4 py-2 rounded-lg"
->
+<button className="w-full border rounded-xl p-3">
 
 Create Database Backup
 
 </button>
 
 
-<button
-className="border px-4 py-2 rounded-lg"
->
+<button className="w-full border rounded-xl p-3">
 
 Clear System Cache
 
 </button>
 
 
+</Card>
+
+
+
+<Card icon={Settings} title="System Information">
+
+
+<div className="text-sm space-y-2">
+
+<p>
+Environment: Production
+</p>
+
+<p>
+Configuration management enabled
+</p>
+
+<p>
+Audit logging active
+</p>
+
 </div>
 
 
-</Section>
+</Card>
 
 
-
-
+</div>
 
 
 
 <div className="flex justify-end">
 
 <button
-
 disabled={saving}
-
 onClick={save}
-
-className="flex gap-2 items-center bg-black text-white px-6 py-3 rounded-lg"
-
+className="flex items-center gap-2 bg-black text-white px-8 py-3 rounded-xl"
 >
 
 <Save size={18}/>
@@ -395,11 +413,8 @@ className="flex gap-2 items-center bg-black text-white px-6 py-3 rounded-lg"
 </div>
 
 
-
-
-
 </div>
 
-)
+);
 
 }
