@@ -98,13 +98,21 @@ value={data.threatLevel || "Low"}
 
 <Card
 title="Authentication"
-value={data.authentication?.status || "Unknown"}
+value={
+typeof data.authentication === "object"
+? data.authentication.status || "Active"
+: data.authentication || "Unknown"
+}
 />
 
 
 <Card
 title="Authorization"
-value={`Roles: ${data.authorization?.roles || 0} | Permissions: ${data.authorization?.permissions || 0} | Admins: ${data.authorization?.admins || 0}`}
+value={
+typeof data.authorization === "object"
+? `Roles: ${data.authorization.roles || 0} | Permissions: ${data.authorization.permissions || 0} | Admins: ${data.authorization.admins || 0}`
+: data.authorization || "Unknown"
+}
 />
 
 
@@ -154,12 +162,20 @@ System Protection Status
 
 <Row
 name="Authentication Service"
-status={data.authentication}
+status={
+typeof data.authentication === "object"
+? data.authentication.status
+: data.authentication
+}
 />
 
 <Row
 name="Authorization Service"
-status={data.authorization}
+status={
+typeof data.authorization === "object"
+? data.authorization.status
+: data.authorization
+}
 />
 
 <Row
