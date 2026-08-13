@@ -2,7 +2,42 @@
 import {createAuditLog} from "../services/auditService.js";
 
 
-export const auditMiddleware = (req,res,next)=>{
+const detectResource=(url)=>{
+
+const map={
+
+users:"User",
+bookings:"Booking",
+booking:"Booking",
+tours:"Tour",
+destinations:"Destination",
+payments:"Payment",
+reviews:"Review",
+gallery:"Gallery",
+vehicles:"Vehicle",
+roles:"Role",
+permissions:"Permission",
+settings:"Setting"
+
+};
+
+
+for(const key in map){
+
+if(url.includes(key)){
+return map[key];
+}
+
+}
+
+
+return "System";
+
+};
+
+
+
+export const auditMiddleware=(req,res,next)=>{
 
 
 res.on("finish",async()=>{
@@ -30,8 +65,8 @@ if(req.method==="DELETE")
 action="delete";
 
 
-let status =
-res.statusCode >= 400
+const status =
+res.statusCode>=400
 ?"failed"
 :"success";
 
@@ -42,7 +77,8 @@ user:req.user._id,
 
 action,
 
-resource:"System",
+resource:
+detectResource(req.originalUrl),
 
 description:
 `${req.method} ${req.originalUrl}`,
@@ -56,7 +92,8 @@ status==="failed"
 
 ipAddress:req.ip,
 
-userAgent:req.headers["user-agent"],
+userAgent:
+req.headers["user-agent"],
 
 method:req.method,
 
@@ -69,7 +106,8 @@ statusCode:res.statusCode
 });
 
 
-}catch(error){
+}
+catch(error){
 
 console.error(
 "Audit middleware error:",
@@ -86,4 +124,3 @@ next();
 
 
 };
-
