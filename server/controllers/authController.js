@@ -1,3 +1,5 @@
+import { createAuditLog } from "../services/auditService.js";
+
 import crypto from "crypto";
 
 import "../models/Role.js";
@@ -105,7 +107,28 @@ export const login = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    user.loginAttempts = 0;
+    
+await createAuditLog({
+
+user:user._id,
+
+action:"login",
+
+resource:"User",
+
+description:
+"User logged into the platform",
+
+severity:"medium",
+
+ipAddress:req.ip,
+
+userAgent:req.headers["user-agent"]
+
+});
+
+
+user.loginAttempts = 0;
     user.lockUntil = null;
     user.lastLoginAt = new Date();
 

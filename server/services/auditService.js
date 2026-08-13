@@ -1,36 +1,81 @@
+
 import AuditLog from "../models/AuditLog.js";
 
-/*
-|--------------------------------------------------------------------------
-| CREATE AUDIT LOG
-|--------------------------------------------------------------------------
-*/
 
 export const createAuditLog = async ({
-  user = null,
-  action,
-  resource,
-  resourceId = null,
-  ipAddress = null,
-  userAgent = null,
-  metadata = {},
-}) => {
-  try {
-    return await AuditLog.create({
-      user,
-      action,
-      resource,
-      resourceId,
-      ipAddress,
-      userAgent,
-      metadata,
-    });
-  } catch (error) {
-    console.error("Audit Log Error:", error.message);
 
-    // Don't interrupt the main application if audit logging fails
-    return null;
-  }
+user=null,
+
+action,
+
+resource,
+
+resourceId=null,
+
+description="",
+
+status="success",
+
+severity="low",
+
+ipAddress="",
+
+userAgent="",
+
+method="",
+
+endpoint="",
+
+metadata={}
+
+})=>{
+
+
+try{
+
+
+return await AuditLog.create({
+
+user,
+
+action,
+
+resource,
+
+resourceId,
+
+description,
+
+status,
+
+severity,
+
+ipAddress,
+
+userAgent,
+
+method,
+
+endpoint,
+
+metadata
+
+});
+
+
+}catch(error){
+
+
+console.error(
+"Audit Log Error:",
+error.message
+);
+
+
+return null;
+
+
+}
+
+
 };
-
-
