@@ -1,8 +1,6 @@
 import express from "express";
 
 import {
-getAudit,
-getSecurity,
 getDatabase,
 getApiMonitor,
 getSystem,
@@ -13,7 +11,6 @@ getSettings
 const router=express.Router();
 
 
-router.get("/audit",getAudit);
 // security endpoint handled by superAdminOperationsRoutes
 router.get("/database",getDatabase);
 router.get("/api-monitor",getApiMonitor);
