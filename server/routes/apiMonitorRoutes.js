@@ -2,13 +2,13 @@ import express from "express";
 
 const router = express.Router();
 
-router.get("/", async (req,res)=>{
+router.get("/", async (req, res) => {
   res.json({
-    status:"healthy",
-    service:"API Service",
-    server:"running",
-    timestamp:new Date(),
-    uptime:process.uptime()
+    success: true,
+    status: "online",
+    service: "API Service",
+    uptime: process.uptime(),
+    timestamp: new Date()
   });
 });
 

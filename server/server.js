@@ -56,6 +56,7 @@ app.use("/api/settings", settingsRoutes);
 app.use("/api/database", databaseRoutes);
 app.use("/api/api-monitor", apiMonitorRoutes);
 app.use("/api/system", systemHealthRoutes);
+app.use("/api/superadmin/api-monitor", apiMonitorRoutes);
 
 server.listen(env.PORT, () => {
 
