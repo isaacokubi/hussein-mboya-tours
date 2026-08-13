@@ -136,7 +136,6 @@ export default function Login() {
 
 
       case "superadmin":
-  case "super_admin":
 
     navigate("/superadmin");
 

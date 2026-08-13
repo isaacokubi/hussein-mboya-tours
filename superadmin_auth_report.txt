@@ -1,0 +1,337 @@
+server/controllers/customerController.js:44:        { $or: [{ role: "customer" }, { legacyRole: "customer" }] },
+server/controllers/customerController.js:45:        { $or: [{ roleId: null }, { roleId: { $nin: nonCustomerRoleIds } }] },
+server/controllers/customerController.js:58:            { role: "customer" },
+server/controllers/customerController.js:75:        .select("name email phone role roleId legacyRole status createdAt")
+server/controllers/customerController.js:76:        .populate("roleId", "name displayName")
+server/controllers/customerController.js:202:        { role: "customer" },
+server/controllers/adminAgentController.js:19:"name email phone role"
+server/controllers/adminAgentController.js:66:"name email phone role"
+server/controllers/agentController.js:45:            // Self-heal legacy agent accounts that have a User role but no linked Agent document.
+server/controllers/voucherController.js:87:      req.user.role?.name ||
+server/controllers/voucherController.js:88:      req.user.role ||
+server/controllers/mpesaController.js:151:      req.user?.roleId?.name || req.user?.role || req.user?.legacyRole || ""
+server/controllers/mpesaController.js:159:      "superadmin",
+server/controllers/mpesaController.js:540:          { role: { $in: ["admin", "superadmin", "super_admin", "manager", "tour_manager", "tourmanager"] } },
+server/controllers/mpesaController.js:541:          { legacyRole: { $in: ["admin", "superadmin", "super_admin", "manager", "tour_manager", "tourmanager"] } },
+server/controllers/superAdminOperationsController.js:35:role:{
+server/controllers/superAdminOperationsController.js:38:"superadmin",
+server/controllers/superAdminOperationsController.js:39:"super_admin"
+server/controllers/adminUserController.js:29:        { role: regex },
+server/controllers/adminUserController.js:38:        .populate("roleId", "name displayName permissions")
+server/controllers/adminUserController.js:48:      role: user.roleId?.name || user.role || user.legacyRole || "customer",
+server/controllers/adminUserController.js:76:    const { name, email, phone, password, role } = req.body || {};
+server/controllers/adminUserController.js:77:    const normalizedRole = String(role || "").toLowerCase().replace(/[\s-]/g, "_");
+server/controllers/adminUserController.js:110:        "analytics.view", "settings.manage", "roles.manage",
+server/controllers/adminUserController.js:130:    let roleDoc = await Role.findOne({
+server/controllers/adminUserController.js:134:    if (!roleDoc) {
+server/controllers/adminUserController.js:153:      roleDoc = await Role.create({
+server/controllers/adminUserController.js:168:      role: canonicalRole,
+server/controllers/adminUserController.js:170:      roleId: roleDoc?._id || null,
+server/controllers/adminUserController.js:197:        role: canonicalRole === "tour_guide" ? "guide" : "driver",
+server/controllers/adminUserController.js:207:      .populate("roleId", "name displayName permissions")
+server/controllers/bookingController.js:180:            { role: { $in: ["admin", "superadmin", "super_admin", "manager", "tour_manager", "tourmanager"] } },
+server/controllers/bookingController.js:181:            { legacyRole: { $in: ["admin", "superadmin", "super_admin", "manager", "tour_manager", "tourmanager"] } },
+server/controllers/bookingController.js:620:  const role = String(
+server/controllers/bookingController.js:621:    user?.roleId?.name || user?.role || user?.legacyRole || ""
+server/controllers/bookingController.js:629:    "superadmin",
+server/controllers/bookingController.js:637:  ].includes(role);
+server/controllers/bookingController.js:1451:    const admins = await User.find({ $or:[{role:{$in:["admin","superadmin","super_admin","manager","tour_manager","tourmanager"]}},{legacyRole:{$in:["admin","superadmin","super_admin","manager","tour_manager","tourmanager"]}}], status:"active" }).select("_id").lean();
+server/controllers/tourReportController.js:157:            role: "customer",
+server/controllers/adminRoleController.js:31:  super_admin: ["admin.dashboard", "user.manage", "staff.manage", "tour.manage", "booking.manage", "payment.manage", "refund.manage", "analytics.view", "finance.view", "notifications.view", "report.view"],
+server/controllers/adminRoleController.js:72:    for (const [roleName, names] of Object.entries(DEFAULT_PERMISSIONS)) {
+server/controllers/adminRoleController.js:73:      let role = await Role.findOne({ name: { $in: [roleName, roleName.replace("tour_", "")] } }).select("_id name permissions").lean();
+server/controllers/adminRoleController.js:74:      const roleDocName = role?.name || roleName;
+server/controllers/adminRoleController.js:77:        sanitizePermissionIds(role?.permissions || []).map((id) => [String(id), id])
+server/controllers/adminRoleController.js:83:      if (!role) {
+server/controllers/adminRoleController.js:84:        set.displayName = roleName.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+server/controllers/adminRoleController.js:85:        set.description = `${roleName.replace(/_/g, " ")} access`;
+server/controllers/adminRoleController.js:86:        set.isSystem = ["admin", "super_admin", "tour_manager", "tour_guide", "driver"].includes(roleName);
+server/controllers/adminRoleController.js:87:        set.level = roleName === "super_admin" ? 200 : roleName === "admin" ? 100 : 20;
+server/controllers/adminRoleController.js:88:        set.isDefault = roleName === "customer";
+server/controllers/adminRoleController.js:89:      } else if (!Number.isFinite(Number(role.level)) || Number(role.level) < 1) {
+server/controllers/adminRoleController.js:90:        set.level = roleName === "super_admin" ? 200 : roleName === "admin" ? 100 : 20;
+server/controllers/adminRoleController.js:94:        role ? { _id: role._id } : { name: roleName },
+server/controllers/adminRoleController.js:95:        { $set: set, $setOnInsert: { name: roleDocName } },
+server/controllers/adminRoleController.js:96:        { upsert: !role }
+server/controllers/adminRoleController.js:111:const roleDocs = await Role.find().sort({ level: -1 }).lean();
+server/controllers/adminRoleController.js:113:  roleDocs.flatMap((role) => sanitizePermissionIds(role.permissions))
+server/controllers/adminRoleController.js:119:const roles = roleDocs.map((role) => ({
+server/controllers/adminRoleController.js:120:  ...role,
+server/controllers/adminRoleController.js:121:  permissions: sanitizePermissionIds(role.permissions)
+server/controllers/adminRoleController.js:128:  count: roles.length,
+server/controllers/adminRoleController.js:129:  roles,
+server/controllers/adminRoleController.js:171:  return res.status(400).json({ success: false, message: "Invalid role ID" });
+server/controllers/adminRoleController.js:174:const roleDoc = await Role.findById(req.params.id).lean();
+server/controllers/adminRoleController.js:175:if (!roleDoc) {
+server/controllers/adminRoleController.js:179:const permissionIds = sanitizePermissionIds(roleDoc.permissions);
+server/controllers/adminRoleController.js:184:const role = {
+server/controllers/adminRoleController.js:185:  ...roleDoc,
+server/controllers/adminRoleController.js:191:if(!role){
+server/controllers/adminRoleController.js:208:role
+server/controllers/adminRoleController.js:279:        message: "A role with this name already exists.",
+server/controllers/adminRoleController.js:283:    const role = await Role.create({
+server/controllers/adminRoleController.js:297:      role,
+server/controllers/adminRoleController.js:312:        existingRole.name === "super_admin" &&
+server/controllers/adminRoleController.js:313:        req.user.role !== "super_admin"
+server/controllers/adminRoleController.js:317:            "Only super admin can modify super admin role"
+server/controllers/adminRoleController.js:325:        message: "Invalid role ID",
+server/controllers/adminRoleController.js:329:    const role = await Role.findById(req.params.id);
+server/controllers/adminRoleController.js:331:    if (!role) {
+server/controllers/adminRoleController.js:338:    if (role.isSystem) {
+server/controllers/adminRoleController.js:341:        message: "System roles cannot be modified",
+server/controllers/adminRoleController.js:347:     * role update endpoint.
+server/controllers/adminRoleController.js:360:          role.level = Math.max(1, Number(req.body.level) || 1);
+server/controllers/adminRoleController.js:362:          role.status =
+server/controllers/adminRoleController.js:367:          role.isDefault = Boolean(req.body.isDefault);
+server/controllers/adminRoleController.js:369:          role[field] = req.body[field];
+server/controllers/adminRoleController.js:374:    await role.save();
+server/controllers/adminRoleController.js:378:      role,
+server/controllers/adminRoleController.js:393:        existingRole.name === "super_admin"
+server/controllers/adminRoleController.js:397:            "Super admin role cannot be deleted"
+server/controllers/adminRoleController.js:405:const role =
+server/controllers/adminRoleController.js:412:if(!role){
+server/controllers/adminRoleController.js:427:if(role.isSystem){
+server/controllers/adminRoleController.js:433:message:"System roles cannot be deleted"
+server/controllers/adminRoleController.js:441:await role.deleteOne();
+server/controllers/adminRoleController.js:482:        message: "Invalid role ID",
+server/controllers/adminRoleController.js:486:    const role = await Role.findById(req.params.id);
+server/controllers/adminRoleController.js:488:    if (!role) {
+server/controllers/adminRoleController.js:498:    const normalizedRoleName = String(role.name || "")
+server/controllers/adminRoleController.js:504:      role.isSystem &&
+server/controllers/adminRoleController.js:505:      normalizedRoleName === "superadmin"
+server/controllers/adminRoleController.js:510:          "The Super Admin role permissions cannot be modified.",
+server/controllers/adminRoleController.js:533:    role.permissions = permissionIds;
+server/controllers/adminRoleController.js:535:    await role.save();
+server/controllers/adminRoleController.js:539:      role,
+server/controllers/authController.js:22:export const login = async (req, res, next) => {
+server/controllers/authController.js:33:        path: "roleId",
+server/controllers/authController.js:43:        action: "login_failed",
+server/controllers/authController.js:72:          "Account temporarily locked due to multiple failed login attempts.",
+server/controllers/authController.js:79:      user.loginAttempts += 1;
+server/controllers/authController.js:81:      if (user.loginAttempts >= MAX_LOGIN_ATTEMPTS) {
+server/controllers/authController.js:90:        action: "login_failed",
+server/controllers/authController.js:108:    user.loginAttempts = 0;
+server/controllers/authController.js:113:      loginAttempts: 0,
+server/controllers/authController.js:121:  user.roleId?.name ||
+server/controllers/authController.js:122:  user.role ||
+server/controllers/authController.js:128:  role: effectiveRole,
+server/controllers/authController.js:129:  roleId: user.roleId,
+server/controllers/authController.js:137:      action: "login_success",
+server/controllers/authController.js:153:        role: effectiveRole,
+server/controllers/authController.js:279:      role: "customer",
+server/controllers/authController.js:281:      roleId: customerRole?._id || null,
+server/controllers/authController.js:304:  user.roleId?.name ||
+server/controllers/authController.js:305:  user.role ||
+server/controllers/authController.js:311:  role: effectiveRole,
+server/controllers/authController.js:312:  roleId: user.roleId,
+server/controllers/authController.js:327:        role: user.role,
+server/controllers/authController.js:356:        path: "roleId",
+server/controllers/authController.js:380:        role: user.role,
+server/controllers/authController.js:514:    user.loginAttempts = 0;
+server/controllers/adminDashboardController.js:44:          { role: "customer" },
+server/controllers/adminDashboardController.js:51:          { role: { $in: ["guide", "tour_guide", "tourguide"] } },
+server/controllers/adminDashboardController.js:64:        role:{
+server/controllers/adminDashboardController.js:436:              role: {
+server/controllers/adminDashboardController.js:448:        .select("name email phone position role")
+server/controllers/guideController.js:65:    role: "guide",
+server/controllers/driverController.js:49:        role: "driver",
+server/controllers/superAdminDashboardController.js:33:role:{
+server/controllers/superAdminDashboardController.js:36:"superadmin",
+server/controllers/superAdminDashboardController.js:37:"super_admin"
+server/controllers/staffController.js:47:      const role = String(
+server/controllers/staffController.js:48:        req.user?.roleId?.name || req.user?.role || ""
+server/controllers/staffController.js:52:        role === "admin" &&
+server/controllers/customTourRequestController.js:5:const adminRoles=["admin","superadmin","super_admin","manager","tour_manager","tourmanager"];
+server/controllers/customTourRequestController.js:6:export const createCustomTourRequest=async(req,res,next)=>{try{const {destination,durationDays,people,startDate,budget,requirements}=req.body||{};if(!destination||Number(durationDays)<1||Number(people)<1)return res.status(400).json({success:false,message:"Destination, duration and number of people are required."});const item=await CustomTourRequest.create({customer:req.user._id,destination:String(destination).trim(),durationDays:Number(durationDays),people:Number(people),startDate:startDate?new Date(startDate):null,budget:Number(budget||0),requirements:String(requirements||"").trim()});const admins=await User.find({$or:[{role:{$in:adminRoles}},{legacyRole:{$in:adminRoles}}],status:"active"}).select("_id").lean();if(admins.length)await Notification.insertMany(admins.map(a=>({recipient:a._id,user:a._id,title:"Custom Tour Request",message:`A customer requested a ${durationDays}-day custom trip to ${destination} for ${people} people.`,type:"booking",relatedModel:"CustomTourRequest",relatedId:item._id,actionUrl:"/admin/custom-tour-requests"})));res.status(201).json({success:true,message:"Custom tour request submitted. The company will review it and send you a total cost.",request:item});}catch(e){next(e)}};
+server/controllers/tourManagerController.js:44:        role: "customer",
+server/controllers/tourAssignmentController.js:471:    const assignmentMessage = (person, role) =>
+server/controllers/tourAssignmentController.js:474:        `You have been assigned as ${role} for "${tour.title}".`,
+server/controllers/analyticsController.js:53:          { role: "customer" },
+server/controllers/adminController.js:604:      User.countDocuments({ role: "customer" }),
+server/controllers/adminController.js:605:      User.countDocuments({ role: "agent" }),
+server/controllers/notificationController.js:77:      ? value?.name || value?.role || ""
+server/controllers/notificationController.js:85:  ["admin", "superadmin", "administrator", "tourmanager", "manager"].includes(
+server/controllers/notificationController.js:86:    normalizeRole(user?.roleId?.name || user?.role || user?.legacyRole)
+server/controllers/notificationController.js:101:    const requested = String(req.query.roles || "guide,driver,agent,admin,manager")
+server/controllers/notificationController.js:106:    const roleMap = {
+server/controllers/notificationController.js:111:      admin: ["admin", "superadmin", "administrator"],
+server/controllers/notificationController.js:116:    const allowedRoles = [...new Set(requested.flatMap((r) => roleMap[r] || []))];
+server/controllers/notificationController.js:117:    const roleDocs = await Role.find({ name: { $in: allowedRoles } }).select("_id").lean();
+server/controllers/notificationController.js:118:    const roleIds = roleDocs.map((role) => role._id);
+server/controllers/notificationController.js:122:        { role: { $in: allowedRoles } },
+server/controllers/notificationController.js:124:        ...(roleIds.length ? [{ roleId: { $in: roleIds } }] : []),
+server/controllers/notificationController.js:129:      .select("_id name firstName lastName email phone role legacyRole roleId")
+server/controllers/notificationController.js:130:      .populate("roleId", "name displayName")
+server/controllers/notificationController.js:156:          .select("_id name firstName lastName email phone role legacyRole roleId")
+server/controllers/notificationController.js:157:          .populate("roleId", "name displayName")
+server/controllers/notificationController.js:183:      roles = [],
+server/controllers/notificationController.js:199:    const normalizedRoles = Array.isArray(roles)
+server/controllers/notificationController.js:200:      ? roles.map(normalizeRole).filter(Boolean)
+server/controllers/notificationController.js:203:    const roleMap = {
+server/controllers/notificationController.js:208:      admin: ["admin", "superadmin", "administrator"],
+server/controllers/notificationController.js:213:    const expandedRoles = [...new Set(normalizedRoles.flatMap((r) => roleMap[r] || []))];
+server/controllers/notificationController.js:219:        { role: { $in: expandedRoles } },
+server/controllers/notificationController.js:228:    const roleDocs = expandedRoles.length
+server/controllers/notificationController.js:231:    const roleIds = roleDocs.map((role) => role._id);
+server/controllers/notificationController.js:232:    if (roleIds.length) filter.push({ roleId: { $in: roleIds } });
+server/controllers/adminAuthController.js:13:        path: "roleId",
+server/controllers/adminAuthController.js:18:    const role = String(
+server/controllers/adminAuthController.js:19:      user?.roleId?.name || user?.role || user?.legacyRole || ""
+server/controllers/adminAuthController.js:27:      !["admin", "superadmin", "administrator"].includes(role) ||
+server/controllers/adminAuthController.js:40:      roleId: user.roleId,
+server/controllers/adminAuthController.js:41:      role,
+server/controllers/adminAuthController.js:54:        role,
+server/controllers/adminAuthController.js:63:      message: "Unable to complete admin login.",
+server/middleware/guideMiddleware.js:1:import { roleMiddleware } from "./roleMiddleware.js";
+server/middleware/guideMiddleware.js:3:const guideMiddleware = roleMiddleware("tour_guide", "guide");
+server/middleware/agentMiddleware.js:5:// - role: agent / travel_agent
+server/middleware/agentMiddleware.js:12:const normalizeRole = (role) =>
+server/middleware/agentMiddleware.js:14:    typeof role === "object"
+server/middleware/agentMiddleware.js:15:      ? role?.name || role?.role || ""
+server/middleware/agentMiddleware.js:16:      : role || ""
+server/middleware/agentMiddleware.js:33:      .populate("roleId")
+server/middleware/agentMiddleware.js:53:    const roleName = normalizeRole(
+server/middleware/agentMiddleware.js:54:      user.roleId?.name || user.role || user.legacyRole
+server/middleware/agentMiddleware.js:57:    if (!["agent", "travelagent"].includes(roleName)) {
+server/middleware/adminMiddleware.js:5:const normalizeRole = (role) => {
+server/middleware/adminMiddleware.js:6:  if (!role) return "";
+server/middleware/adminMiddleware.js:8:  if (typeof role === "object") {
+server/middleware/adminMiddleware.js:9:    role = role.name || role.role || "";
+server/middleware/adminMiddleware.js:12:  return String(role)
+server/middleware/adminMiddleware.js:30:        path: "roleId",
+server/middleware/adminMiddleware.js:60:     * roleId is authoritative when available.
+server/middleware/adminMiddleware.js:61:     * Legacy role fields remain compatibility fallbacks.
+server/middleware/adminMiddleware.js:63:    const roleName = normalizeRole(
+server/middleware/adminMiddleware.js:64:      user.roleId?.name ||
+server/middleware/adminMiddleware.js:65:      user.role ||
+server/middleware/adminMiddleware.js:71:      "superadmin",
+server/middleware/adminMiddleware.js:72:      "super_admin",
+server/middleware/adminMiddleware.js:76:    if (!allowedRoles.has(roleName)) {
+server/middleware/adminMiddleware.js:80:        role: roleName,
+server/middleware/permissionMiddleware.js:19:role:req.user?.role,
+server/middleware/permissionMiddleware.js:20:roleId:req.user?.roleId
+server/middleware/permissionMiddleware.js:36:              Load permissions from roleId
+server/middleware/permissionMiddleware.js:39:            if(req.user.roleId){
+server/middleware/permissionMiddleware.js:41:                const role = await Role
+server/middleware/permissionMiddleware.js:42:                    .findById(req.user.roleId)
+server/middleware/permissionMiddleware.js:46:                if(role && role.permissions){
+server/middleware/permissionMiddleware.js:49:                        role.permissions.map(
+server/middleware/permissionMiddleware.js:64:                req.user.role === "admin" ||
+server/middleware/permissionMiddleware.js:65:                req.user.role === "super_admin"
+server/middleware/permissionMiddleware.js:70:                    "roles.manage",
+server/middleware/roleMiddleware.js:2: * server/middleware/roleMiddleware.js
+server/middleware/roleMiddleware.js:4: * Centralized role authorization.
+server/middleware/roleMiddleware.js:7:const normalizeRole = (role) => {
+server/middleware/roleMiddleware.js:8:    if (!role) {
+server/middleware/roleMiddleware.js:12:    if (typeof role === "object") {
+server/middleware/roleMiddleware.js:13:        role =
+server/middleware/roleMiddleware.js:14:            role.name ||
+server/middleware/roleMiddleware.js:15:            role.role ||
+server/middleware/roleMiddleware.js:16:            role._id ||
+server/middleware/roleMiddleware.js:20:    return String(role)
+server/middleware/roleMiddleware.js:26:export const roleMiddleware = (...allowedRoles) => {
+server/middleware/roleMiddleware.js:37:                req.user.roleId?.name ||
+server/middleware/roleMiddleware.js:38:                req.user.role ||
+server/middleware/roleMiddleware.js:64:                        "Access denied. Insufficient role.",
+server/middleware/roleMiddleware.js:65:                    role: normalizedUserRole,
+server/middleware/roleMiddleware.js:86:    roleMiddleware(
+server/middleware/roleMiddleware.js:88:        "super_admin",
+server/middleware/roleMiddleware.js:89:        "superadmin",
+server/middleware/roleMiddleware.js:94:    roleMiddleware(
+server/middleware/roleMiddleware.js:101:    roleMiddleware("agent", "travel_agent", "travelagent");
+server/middleware/roleMiddleware.js:104:    roleMiddleware(
+server/middleware/roleMiddleware.js:111:    roleMiddleware("customer");
+server/middleware/roleMiddleware.js:113:export default roleMiddleware;
+server/middleware/tourManagerMiddleware.js:6: * Uses the centralized roleMiddleware so role normalization
+server/middleware/tourManagerMiddleware.js:10:import { roleMiddleware } from "./roleMiddleware.js";
+server/middleware/tourManagerMiddleware.js:12:const tourManagerOnly = roleMiddleware(
+server/middleware/tourManagerMiddleware.js:17:  "superadmin",
+server/middleware/tourManagerMiddleware.js:18:  "super_admin"
+server/middleware/authMiddleware.js:5:const normalizeRole = (role) => {
+server/middleware/authMiddleware.js:6:  if (!role) return "";
+server/middleware/authMiddleware.js:8:  if (typeof role === "object") {
+server/middleware/authMiddleware.js:9:    role =
+server/middleware/authMiddleware.js:10:      role.name ||
+server/middleware/authMiddleware.js:11:      role.role ||
+server/middleware/authMiddleware.js:12:      role._id ||
+server/middleware/authMiddleware.js:16:  return String(role)
+server/middleware/authMiddleware.js:24:    user?.roleId?.name ||
+server/middleware/authMiddleware.js:25:    user?.role ||
+server/middleware/authMiddleware.js:85:        path: "roleId",
+server/middleware/authMiddleware.js:114:      role: getUserRole(user),
+server/middleware/authMiddleware.js:115:      tokenRole: decoded.role,
+server/middleware/authMiddleware.js:143:  const role = getUserRole(req.user);
+server/middleware/authMiddleware.js:148:      "superadmin",
+server/middleware/authMiddleware.js:150:      "super_admin",
+server/middleware/authMiddleware.js:151:    ].map(normalizeRole).includes(role)
+server/middleware/authMiddleware.js:188:        role: userRole,
+server/middleware/authMiddleware.js:212:      const rolePermissions =
+server/middleware/authMiddleware.js:213:        req.user.roleId?.permissions || [];
+server/middleware/authMiddleware.js:219:        ...rolePermissions,
+server/routes/superAdminOperationsRoutes.js:29:"super_admin",
+server/routes/superAdminOperationsRoutes.js:30:"superadmin"
+server/routes/tourManagerRoutes.js:50:  roleMiddleware,
+server/routes/tourManagerRoutes.js:51:} from "../middleware/roleMiddleware.js";
+server/routes/tourManagerRoutes.js:63:router.use(roleMiddleware(...managerRoles));
+server/routes/vehicleRoutes.js:22:  roleMiddleware,
+server/routes/vehicleRoutes.js:23:} from "../middleware/roleMiddleware.js";
+server/routes/vehicleRoutes.js:53:  roleMiddleware("admin", "tour_manager", "tourmanager", "manager"),
+server/routes/vehicleRoutes.js:64:  roleMiddleware("admin", "tour_manager", "tourmanager", "manager", "tour_guide"),
+server/routes/vehicleRoutes.js:74:  roleMiddleware("admin", "tour_manager", "tourmanager", "manager", "tour_guide"),
+server/routes/vehicleRoutes.js:84:  roleMiddleware("admin", "tour_manager", "tourmanager", "manager"),
+server/routes/vehicleRoutes.js:100:  roleMiddleware("admin", "tour_manager", "tourmanager", "manager"),
+server/routes/vehicleRoutes.js:109:  roleMiddleware("admin", "tour_manager", "tourmanager", "manager"),
+server/routes/vehicleRoutes.js:115:  roleMiddleware("admin", "tour_manager", "tourmanager", "manager"),
+server/routes/vehicleRoutes.js:130:  roleMiddleware("admin", "tour_manager", "tourmanager", "manager"),
+server/routes/vehicleRoutes.js:139:  roleMiddleware("admin"),
+server/routes/bookingRoutes.js:21:  roleMiddleware,
+server/routes/bookingRoutes.js:22:} from "../middleware/roleMiddleware.js";
+server/routes/bookingRoutes.js:81:  roleMiddleware("admin", "tour_manager", "tourmanager", "manager"),
+server/routes/bookingRoutes.js:87:  roleMiddleware("admin", "tour_manager", "tourmanager", "manager"),
+server/routes/bookingRoutes.js:93:  roleMiddleware(["admin"]),
+server/routes/bookingRoutes.js:99:  roleMiddleware(["admin"]),
+server/routes/driverRoutes.js:5:import { roleMiddleware } from "../middleware/roleMiddleware.js";
+server/routes/driverRoutes.js:10:router.use(roleMiddleware("driver", "admin", "super_admin", "superadmin", "tour_manager", "tourmanager", "manager"));
+server/routes/staffRoutes.js:20:  roleMiddleware,
+server/routes/staffRoutes.js:21:} from "../middleware/roleMiddleware.js";
+server/routes/staffRoutes.js:44:  roleMiddleware("admin", "tour_manager", "tourmanager", "manager"),
+server/routes/staffRoutes.js:50:  roleMiddleware("admin", "tour_manager", "tourmanager", "manager"),
+server/routes/staffRoutes.js:62:  roleMiddleware("admin"),
+server/routes/staffRoutes.js:68:  roleMiddleware("admin", "tour_manager", "tourmanager", "manager"),
+server/routes/staffRoutes.js:74:  roleMiddleware("admin", "tour_manager", "tourmanager", "manager"),
+server/routes/staffRoutes.js:80:  roleMiddleware("admin"),
+server/routes/staffRoutes.js:86:  roleMiddleware("admin"),
+server/routes/staffRoutes.js:92:  roleMiddleware("admin"),
+server/routes/index.js.backup-superadmin-api:97:// Keep the dedicated RBAC router before the generic /admin router so role
+server/routes/index.js.backup-superadmin-api:99:router.use("/admin/roles", adminRoleRoutes);
+server/routes/index.js.backup-superadmin-api:215:router.use("/superadmin", superAdminRoutes);
+server/routes/userRoutes.js:19:  roleMiddleware,
+server/routes/userRoutes.js:20:} from "../middleware/roleMiddleware.js";
+server/routes/userRoutes.js:63:  roleMiddleware("admin", "tour_manager", "tourmanager", "manager"),
+server/routes/userRoutes.js:70:  roleMiddleware("admin"),
+server/routes/adminAuthRoutes.js:18: * POST /api/admin/login
+server/routes/adminAuthRoutes.js:22:  "/login",
+server/routes/notificationRoutes.js:17:import { roleMiddleware } from "../middleware/roleMiddleware.js";
+server/routes/notificationRoutes.js:33:router.get("/recipients", roleMiddleware("admin", "super_admin", "superadmin", "tour_manager", "tourmanager", "manager"), getNotificationRecipients);
+server/routes/notificationRoutes.js:34:router.post("/internal", roleMiddleware("admin", "super_admin", "superadmin", "tour_manager", "tourmanager", "manager"), sendInternalNotification);
+server/routes/guideRoutes.js:31:| • Guide role
+server/routes/index.js:98:// Keep the dedicated RBAC router before the generic /admin router so role
+server/routes/index.js:100:router.use("/admin/roles", adminRoleRoutes);
+server/routes/index.js:216:router.use("/superadmin", superAdminRoutes);
+server/routes/index.js:219:"/superadmin-tools",
+server/routes/index.js.backup-superadmin-order-fix:97:// Keep the dedicated RBAC router before the generic /admin router so role
+server/routes/index.js.backup-superadmin-order-fix:99:router.use("/admin/roles", adminRoleRoutes);
+server/routes/index.js.backup-superadmin-order-fix:217:router.use("/superadmin", superAdminRoutes);
+server/routes/adminRoleRoutes.js:40:router.use(authorize("roles.manage"));
+server/routes/tourAssignmentRoutes.js:14:  roleMiddleware,
+server/routes/tourAssignmentRoutes.js:15:} from "../middleware/roleMiddleware.js";
+server/routes/tourAssignmentRoutes.js:47:  roleMiddleware("admin", "tour_manager", "tourmanager", "manager"),
+server/routes/authRoutes.js:7:  login,
+server/routes/authRoutes.js:36: * POST /api/auth/login
+server/routes/authRoutes.js:40:  "/login",
+server/routes/authRoutes.js:41:  login
+server/routes/superAdminRoutes.js:19:"super_admin",
+server/routes/superAdminRoutes.js:20:"superadmin"
+server/routes/tourReportRoutes.js:14:  roleMiddleware,
+server/routes/tourReportRoutes.js:15:} from "../middleware/roleMiddleware.js";
+server/routes/tourReportRoutes.js:39:  roleMiddleware("admin", "tour_manager", "tourmanager", "manager"),

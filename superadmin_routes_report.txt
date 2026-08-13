@@ -1,0 +1,150 @@
+client/src/pages/Register.jsx:225:case "superadmin":
+client/src/pages/Login.jsx:138:      case "superadmin":
+client/src/pages/Login.jsx:141:    navigate("/superadmin");
+client/src/pages/admin/StaffManagement.jsx:53:              "superadmin",
+client/src/pages/Dashboard.jsx:50:  if (role === "superadmin") {
+client/src/pages/Dashboard.jsx:51:    return <Navigate to="/superadmin" replace />;
+client/src/pages/superadmin/SuperAdminDashboard.jsx.backup-dashboard-v2-20260812-221912:3:import MetricCard from "../../components/superadmin/dashboard/MetricCard";
+client/src/pages/superadmin/SuperAdminDashboard.jsx.backup-dashboard-v2-20260812-221912:4:import StatusCard from "../../components/superadmin/dashboard/StatusCard";
+client/src/pages/superadmin/SuperAdminDashboard.jsx.backup-dashboard-v2-20260812-221912:5:import ActivityFeed from "../../components/superadmin/dashboard/ActivityFeed";
+client/src/pages/superadmin/SuperAdminUsers.jsx.backup-superadmin-modules-20260812-221420:197:["admin","superadmin","super_admin"]
+client/src/pages/superadmin/SuperAdminDashboard.jsx:15:    queryKey: ["superadmin-dashboard"],
+client/src/pages/superadmin/SuperAdminDashboard.jsx:27:        Unable to load superadmin dashboard: {error?.message || "Server error"}
+client/src/App.jsx:71:!location.pathname.startsWith("/superadmin") &&
+client/src/layouts/SuperAdminLayout.jsx.backup-responsive-20260812-221306:5:import SuperAdminSidebar from "../components/superadmin/SuperAdminSidebar";
+client/src/layouts/SuperAdminLayout.jsx:5:import SuperAdminSidebar from "../components/superadmin/SuperAdminSidebar";
+client/src/layouts/SuperAdminLayout.jsx.backup-superadmin-20260812-221059:4:import SuperAdminSidebar from "../components/superadmin/SuperAdminSidebar";
+client/src/routes/AppRoutes.jsx:60:const SuperAdminDashboard = lazy(() => import("../pages/superadmin/SuperAdminDashboard"));
+client/src/routes/AppRoutes.jsx:61:const SuperAdminUsers = lazy(() => import("../pages/superadmin/SuperAdminUsers"));
+client/src/routes/AppRoutes.jsx:62:const SuperAdminRoles = lazy(() => import("../pages/superadmin/SuperAdminRoles"));
+client/src/routes/AppRoutes.jsx:63:const SuperAdminSystem = lazy(() => import("../pages/superadmin/SuperAdminSystem"));
+client/src/routes/AppRoutes.jsx:64:const SuperAdminAudit = lazy(() => import("../pages/superadmin/SuperAdminAudit"));
+client/src/routes/AppRoutes.jsx:65:const SuperAdminSecurity = lazy(() => import("../pages/superadmin/SuperAdminSecurity"));
+client/src/routes/AppRoutes.jsx:68:lazy(()=>import("../pages/superadmin/SuperAdminSettings"));
+client/src/routes/AppRoutes.jsx:71:lazy(()=>import("../pages/superadmin/SuperAdminDatabase"));
+client/src/routes/AppRoutes.jsx:74:lazy(()=>import("../pages/superadmin/SuperAdminApiMonitor"));
+client/src/routes/AppRoutes.jsx:424:path="/superadmin"
+client/src/routes/AppRoutes.jsx:428:"superadmin"
+client/src/routes/AppRoutes.jsx.backup-20260812-214526:60:const SuperAdminDashboard = lazy(() => import("../pages/superadmin/SuperAdminDashboard"));
+client/src/routes/AppRoutes.jsx.backup-20260812-214526:61:const SuperAdminUsers = lazy(() => import("../pages/superadmin/SuperAdminUsers"));
+client/src/routes/AppRoutes.jsx.backup-20260812-214526:62:const SuperAdminRoles = lazy(() => import("../pages/superadmin/SuperAdminRoles"));
+client/src/routes/AppRoutes.jsx.backup-20260812-214526:63:const SuperAdminSystem = lazy(() => import("../pages/superadmin/SuperAdminSystem"));
+client/src/routes/AppRoutes.jsx.backup-20260812-214526:64:const SuperAdminAudit = lazy(() => import("../pages/superadmin/SuperAdminAudit"));
+client/src/routes/AppRoutes.jsx.backup-20260812-214526:65:const SuperAdminSecurity = lazy(() => import("../pages/superadmin/SuperAdminSecurity"));
+client/src/routes/AppRoutes.jsx.backup-20260812-214526:414:path="/superadmin"
+client/src/routes/AppRoutes.jsx.backup-20260812-214526:418:"superadmin"
+client/src/routes/AppRoutes.jsx.backup-superadmin-fix-20260812-215739:60:const SuperAdminDashboard = lazy(() => import("../pages/superadmin/SuperAdminDashboard"));
+client/src/routes/AppRoutes.jsx.backup-superadmin-fix-20260812-215739:61:const SuperAdminUsers = lazy(() => import("../pages/superadmin/SuperAdminUsers"));
+client/src/routes/AppRoutes.jsx.backup-superadmin-fix-20260812-215739:62:const SuperAdminRoles = lazy(() => import("../pages/superadmin/SuperAdminRoles"));
+client/src/routes/AppRoutes.jsx.backup-superadmin-fix-20260812-215739:63:const SuperAdminSystem = lazy(() => import("../pages/superadmin/SuperAdminSystem"));
+client/src/routes/AppRoutes.jsx.backup-superadmin-fix-20260812-215739:64:const SuperAdminAudit = lazy(() => import("../pages/superadmin/SuperAdminAudit"));
+client/src/routes/AppRoutes.jsx.backup-superadmin-fix-20260812-215739:65:const SuperAdminSecurity = lazy(() => import("../pages/superadmin/SuperAdminSecurity"));
+client/src/routes/AppRoutes.jsx.backup-superadmin-fix-20260812-215739:68:lazy(()=>import("../pages/superadmin/SuperAdminSettings"));
+client/src/routes/AppRoutes.jsx.backup-superadmin-fix-20260812-215739:71:lazy(()=>import("../pages/superadmin/SuperAdminDatabase"));
+client/src/routes/AppRoutes.jsx.backup-superadmin-fix-20260812-215739:74:lazy(()=>import("../pages/superadmin/SuperAdminApiMonitor"));
+client/src/routes/AppRoutes.jsx.backup-superadmin-fix-20260812-215739:424:path="/superadmin"
+client/src/routes/AppRoutes.jsx.backup-superadmin-fix-20260812-215739:428:"superadmin"
+client/src/routes/AppRoutes.jsx.backup-20260812-215551:60:const SuperAdminDashboard = lazy(() => import("../pages/superadmin/SuperAdminDashboard"));
+client/src/routes/AppRoutes.jsx.backup-20260812-215551:61:const SuperAdminUsers = lazy(() => import("../pages/superadmin/SuperAdminUsers"));
+client/src/routes/AppRoutes.jsx.backup-20260812-215551:62:const SuperAdminRoles = lazy(() => import("../pages/superadmin/SuperAdminRoles"));
+client/src/routes/AppRoutes.jsx.backup-20260812-215551:63:const SuperAdminSystem = lazy(() => import("../pages/superadmin/SuperAdminSystem"));
+client/src/routes/AppRoutes.jsx.backup-20260812-215551:64:const SuperAdminAudit = lazy(() => import("../pages/superadmin/SuperAdminAudit"));
+client/src/routes/AppRoutes.jsx.backup-20260812-215551:65:const SuperAdminSecurity = lazy(() => import("../pages/superadmin/SuperAdminSecurity"));
+client/src/routes/AppRoutes.jsx.backup-20260812-215551:68:lazy(()=>import("../pages/superadmin/SuperAdminSettings"));
+client/src/routes/AppRoutes.jsx.backup-20260812-215551:71:lazy(()=>import("../pages/superadmin/SuperAdminDatabase"));
+client/src/routes/AppRoutes.jsx.backup-20260812-215551:74:lazy(()=>import("../pages/superadmin/SuperAdminApiMonitor"));
+client/src/routes/AppRoutes.jsx.backup-20260812-215551:424:path="/superadmin"
+client/src/routes/AppRoutes.jsx.backup-20260812-215551:428:"superadmin"
+client/src/components/auth/AdminRoute.jsx:105:    "superadmin",
+client/src/components/auth/ProtectedRoute.jsx:176:    superadmin: "superadmin",
+client/src/components/auth/ProtectedRoute.jsx:261:              to="/superadmin/dashboard"
+client/src/components/PermissionGuard.jsx:86:    user?.role === "superadmin";
+client/src/components/layout/Navbar.jsx:72:  const isAdmin = ["admin", "super_admin", "superadmin", "administrator"].includes(role.replace(/[\s_-]/g, ""));
+client/src/components/layout/Footer.jsx:353:          {userRole === "admin" && !["superadmin","super_admin"].includes(user?.role) && (
+client/src/components/layout/Footer.jsx:355:              {!["superadmin","super_admin"].includes(
+client/src/components/superadmin/SuperAdminSidebar.jsx:21:["Dashboard","/superadmin/dashboard",Activity],
+client/src/components/superadmin/SuperAdminSidebar.jsx:22:["User Management","/superadmin/users",Users],
+client/src/components/superadmin/SuperAdminSidebar.jsx:23:["Roles & Permissions","/superadmin/roles",KeyRound],
+client/src/components/superadmin/SuperAdminSidebar.jsx:24:["Audit Center","/superadmin/audit",FileSearch],
+client/src/components/superadmin/SuperAdminSidebar.jsx:25:["Security Center","/superadmin/security",Lock],
+client/src/components/superadmin/SuperAdminSidebar.jsx:26:["System Health","/superadmin/system",Server],
+client/src/components/superadmin/SuperAdminSidebar.jsx:27:["Platform Settings","/superadmin/settings",Settings],
+client/src/components/superadmin/SuperAdminSidebar.jsx:28:["Database Tools","/superadmin/database",Database],
+client/src/components/superadmin/SuperAdminSidebar.jsx:29:["API Monitor","/superadmin/api",Shield]
+client/src/components/superadmin/SuperAdminSidebar.jsx.backup-mobile-sidebar-20260812-221936:22:["Dashboard","/superadmin/dashboard",Activity],
+client/src/components/superadmin/SuperAdminSidebar.jsx.backup-mobile-sidebar-20260812-221936:23:["User Management","/superadmin/users",Users],
+client/src/components/superadmin/SuperAdminSidebar.jsx.backup-mobile-sidebar-20260812-221936:24:["Roles & Permissions","/superadmin/roles",KeyRound],
+client/src/components/superadmin/SuperAdminSidebar.jsx.backup-mobile-sidebar-20260812-221936:25:["Audit Center","/superadmin/audit",FileSearch],
+client/src/components/superadmin/SuperAdminSidebar.jsx.backup-mobile-sidebar-20260812-221936:26:["Security Center","/superadmin/security",Lock],
+client/src/components/superadmin/SuperAdminSidebar.jsx.backup-mobile-sidebar-20260812-221936:27:["System Health","/superadmin/system",Server],
+client/src/components/superadmin/SuperAdminSidebar.jsx.backup-mobile-sidebar-20260812-221936:28:["Platform Settings","/superadmin/settings",Settings],
+client/src/components/superadmin/SuperAdminSidebar.jsx.backup-mobile-sidebar-20260812-221936:29:["Database Tools","/superadmin/database",Database],
+client/src/components/superadmin/SuperAdminSidebar.jsx.backup-mobile-sidebar-20260812-221936:30:["API Monitor","/superadmin/api",Shield]
+client/src/components/superadmin/SuperAdminSidebar.jsx.backup-responsive-20260812-221306:23:path:"/superadmin/dashboard",
+client/src/components/superadmin/SuperAdminSidebar.jsx.backup-responsive-20260812-221306:29:path:"/superadmin/users",
+client/src/components/superadmin/SuperAdminSidebar.jsx.backup-responsive-20260812-221306:35:path:"/superadmin/roles",
+client/src/components/superadmin/SuperAdminSidebar.jsx.backup-responsive-20260812-221306:41:path:"/superadmin/audit",
+client/src/components/superadmin/SuperAdminSidebar.jsx.backup-responsive-20260812-221306:47:path:"/superadmin/security",
+client/src/components/superadmin/SuperAdminSidebar.jsx.backup-responsive-20260812-221306:53:path:"/superadmin/system",
+client/src/components/superadmin/SuperAdminSidebar.jsx.backup-responsive-20260812-221306:59:path:"/superadmin/settings",
+client/src/components/superadmin/SuperAdminSidebar.jsx.backup-responsive-20260812-221306:65:path:"/superadmin/database",
+client/src/components/superadmin/SuperAdminSidebar.jsx.backup-responsive-20260812-221306:71:path:"/superadmin/api",
+client/src/components/superadmin/SuperAdminSidebar.jsx.backup-superadmin-20260812-221059:23:path:"/superadmin/dashboard",
+client/src/components/superadmin/SuperAdminSidebar.jsx.backup-superadmin-20260812-221059:29:path:"/superadmin/users",
+client/src/components/superadmin/SuperAdminSidebar.jsx.backup-superadmin-20260812-221059:35:path:"/superadmin/roles",
+client/src/components/superadmin/SuperAdminSidebar.jsx.backup-superadmin-20260812-221059:41:path:"/superadmin/audit",
+client/src/components/superadmin/SuperAdminSidebar.jsx.backup-superadmin-20260812-221059:47:path:"/superadmin/security",
+client/src/components/superadmin/SuperAdminSidebar.jsx.backup-superadmin-20260812-221059:53:path:"/superadmin/system",
+client/src/components/superadmin/SuperAdminSidebar.jsx.backup-superadmin-20260812-221059:59:path:"/superadmin/settings",
+client/src/components/superadmin/SuperAdminSidebar.jsx.backup-superadmin-20260812-221059:65:path:"/superadmin/database",
+client/src/components/superadmin/SuperAdminSidebar.jsx.backup-superadmin-20260812-221059:71:path:"/superadmin/api",
+client/src/context/AuthContext.jsx:438: user?.role === "superadmin";
+client/src/api/superAdminApi.js.backup-superadmin-api-fix:3:export const getSuperAdminDashboard = async () => (await api.get("/superadmin/dashboard")).data;
+client/src/api/superAdminApi.js:3:export const getSuperAdminDashboard = async () => (await api.get("/superadmin/dashboard")).data;
+client/src/api/superAdminApi.js:5:export const getSystemHealth = async () => (await api.get("/superadmin-tools/system")).data;
+client/src/api/superAdminApi.js:6:export const getAuditLogs = async () => (await api.get("/superadmin-tools/audit")).data;
+client/src/api/superAdminApi.js:7:export const getSecurity = async () => (await api.get("/superadmin-tools/security")).data;
+client/src/api/superAdminApi.js:8:export const getSettings = async () => (await api.get("/superadmin-tools/settings")).data;
+client/src/api/superAdminApi.js:9:export const getDatabaseStatus = async () => (await api.get("/superadmin-tools/database")).data;
+client/src/api/superAdminApi.js:10:export const getApiMonitor = async () => (await api.get("/superadmin-tools/api-monitor")).data;
+server/scripts/repairRBAC.js:63:  superadmin: "super_admin",
+server/scripts/repairRBAC.js:211:        "superadmin",
+server/repair_superadmin.js:11: email:"superadmin@coherenttours.com"
+server/repair_superadmin.js:15: throw new Error("superadmin missing");
+server/repair_admin_rbac.js:80:"superadmin"
+server/repair_admin_rbac.js:124:"superadmin"
+server/routes/superAdminOperationsRoutes.js:30:"superadmin"
+server/routes/driverRoutes.js:10:router.use(roleMiddleware("driver", "admin", "super_admin", "superadmin", "tour_manager", "tourmanager", "manager"));
+server/routes/index.js.backup-superadmin-api:215:router.use("/superadmin", superAdminRoutes);
+server/routes/notificationRoutes.js:33:router.get("/recipients", roleMiddleware("admin", "super_admin", "superadmin", "tour_manager", "tourmanager", "manager"), getNotificationRecipients);
+server/routes/notificationRoutes.js:34:router.post("/internal", roleMiddleware("admin", "super_admin", "superadmin", "tour_manager", "tourmanager", "manager"), sendInternalNotification);
+server/routes/index.js:216:router.use("/superadmin", superAdminRoutes);
+server/routes/index.js:219:"/superadmin-tools",
+server/routes/index.js.backup-superadmin-order-fix:217:router.use("/superadmin", superAdminRoutes);
+server/routes/superAdminRoutes.js:20:"superadmin"
+server/middleware/adminMiddleware.js:71:      "superadmin",
+server/middleware/roleMiddleware.js:89:        "superadmin",
+server/middleware/tourManagerMiddleware.js:17:  "superadmin",
+server/middleware/authMiddleware.js:148:      "superadmin",
+server/models/User.js:44:      "superadmin",
+server/controllers/mpesaController.js:159:      "superadmin",
+server/controllers/mpesaController.js:540:          { role: { $in: ["admin", "superadmin", "super_admin", "manager", "tour_manager", "tourmanager"] } },
+server/controllers/mpesaController.js:541:          { legacyRole: { $in: ["admin", "superadmin", "super_admin", "manager", "tour_manager", "tourmanager"] } },
+server/controllers/superAdminOperationsController.js:38:"superadmin",
+server/controllers/bookingController.js:180:            { role: { $in: ["admin", "superadmin", "super_admin", "manager", "tour_manager", "tourmanager"] } },
+server/controllers/bookingController.js:181:            { legacyRole: { $in: ["admin", "superadmin", "super_admin", "manager", "tour_manager", "tourmanager"] } },
+server/controllers/bookingController.js:629:    "superadmin",
+server/controllers/bookingController.js:1451:    const admins = await User.find({ $or:[{role:{$in:["admin","superadmin","super_admin","manager","tour_manager","tourmanager"]}},{legacyRole:{$in:["admin","superadmin","super_admin","manager","tour_manager","tourmanager"]}}], status:"active" }).select("_id").lean();
+server/controllers/adminRoleController.js:505:      normalizedRoleName === "superadmin"
+server/controllers/superAdminDashboardController.js:36:"superadmin",
+server/controllers/customTourRequestController.js:5:const adminRoles=["admin","superadmin","super_admin","manager","tour_manager","tourmanager"];
+server/controllers/notificationController.js:85:  ["admin", "superadmin", "administrator", "tourmanager", "manager"].includes(
+server/controllers/notificationController.js:111:      admin: ["admin", "superadmin", "administrator"],
+server/controllers/notificationController.js:208:      admin: ["admin", "superadmin", "administrator"],
+server/controllers/adminAuthController.js:27:      !["admin", "superadmin", "administrator"].includes(role) ||
+server/seeds/superAdminSeed.js:57:      name: "superadmin",
+server/seeds/superAdminSeed.js:62:        name: "superadmin",
+server/seeds/superAdminSeed.js:105:      legacyRole: "superadmin",
+server/seeds/userSeeder.js:26:      name: "superadmin",
+server/seeds/userSeeder.js:75:      legacyRole: "superadmin",
+server/seeds/userSeeder.js:114:      role: "superadmin",

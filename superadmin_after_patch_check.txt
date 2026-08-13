@@ -1,0 +1,47 @@
+client/src/routes/AppRoutes.jsx:60:const SuperAdminDashboard = lazy(() => import("../pages/superadmin/SuperAdminDashboard"));
+client/src/routes/AppRoutes.jsx:61:const SuperAdminUsers = lazy(() => import("../pages/superadmin/SuperAdminUsers"));
+client/src/routes/AppRoutes.jsx:62:const SuperAdminRoles = lazy(() => import("../pages/superadmin/SuperAdminRoles"));
+client/src/routes/AppRoutes.jsx:63:const SuperAdminSystem = lazy(() => import("../pages/superadmin/SuperAdminSystem"));
+client/src/routes/AppRoutes.jsx:64:const SuperAdminAudit = lazy(() => import("../pages/superadmin/SuperAdminAudit"));
+client/src/routes/AppRoutes.jsx:65:const SuperAdminSecurity = lazy(() => import("../pages/superadmin/SuperAdminSecurity"));
+client/src/routes/AppRoutes.jsx:68:lazy(()=>import("../pages/superadmin/SuperAdminSettings"));
+client/src/routes/AppRoutes.jsx:71:lazy(()=>import("../pages/superadmin/SuperAdminDatabase"));
+client/src/routes/AppRoutes.jsx:74:lazy(()=>import("../pages/superadmin/SuperAdminApiMonitor"));
+client/src/routes/AppRoutes.jsx:424:path="/superadmin"
+client/src/routes/AppRoutes.jsx:427:"super_admin",
+client/src/routes/AppRoutes.jsx:428:"superadmin"
+client/src/routes/AppRoutes.jsx.backup-20260812-214526:60:const SuperAdminDashboard = lazy(() => import("../pages/superadmin/SuperAdminDashboard"));
+client/src/routes/AppRoutes.jsx.backup-20260812-214526:61:const SuperAdminUsers = lazy(() => import("../pages/superadmin/SuperAdminUsers"));
+client/src/routes/AppRoutes.jsx.backup-20260812-214526:62:const SuperAdminRoles = lazy(() => import("../pages/superadmin/SuperAdminRoles"));
+client/src/routes/AppRoutes.jsx.backup-20260812-214526:63:const SuperAdminSystem = lazy(() => import("../pages/superadmin/SuperAdminSystem"));
+client/src/routes/AppRoutes.jsx.backup-20260812-214526:64:const SuperAdminAudit = lazy(() => import("../pages/superadmin/SuperAdminAudit"));
+client/src/routes/AppRoutes.jsx.backup-20260812-214526:65:const SuperAdminSecurity = lazy(() => import("../pages/superadmin/SuperAdminSecurity"));
+client/src/routes/AppRoutes.jsx.backup-20260812-214526:414:path="/superadmin"
+client/src/routes/AppRoutes.jsx.backup-20260812-214526:417:"super_admin",
+client/src/routes/AppRoutes.jsx.backup-20260812-214526:418:"superadmin"
+client/src/routes/AppRoutes.jsx.backup-superadmin-fix-20260812-215739:60:const SuperAdminDashboard = lazy(() => import("../pages/superadmin/SuperAdminDashboard"));
+client/src/routes/AppRoutes.jsx.backup-superadmin-fix-20260812-215739:61:const SuperAdminUsers = lazy(() => import("../pages/superadmin/SuperAdminUsers"));
+client/src/routes/AppRoutes.jsx.backup-superadmin-fix-20260812-215739:62:const SuperAdminRoles = lazy(() => import("../pages/superadmin/SuperAdminRoles"));
+client/src/routes/AppRoutes.jsx.backup-superadmin-fix-20260812-215739:63:const SuperAdminSystem = lazy(() => import("../pages/superadmin/SuperAdminSystem"));
+client/src/routes/AppRoutes.jsx.backup-superadmin-fix-20260812-215739:64:const SuperAdminAudit = lazy(() => import("../pages/superadmin/SuperAdminAudit"));
+client/src/routes/AppRoutes.jsx.backup-superadmin-fix-20260812-215739:65:const SuperAdminSecurity = lazy(() => import("../pages/superadmin/SuperAdminSecurity"));
+client/src/routes/AppRoutes.jsx.backup-superadmin-fix-20260812-215739:68:lazy(()=>import("../pages/superadmin/SuperAdminSettings"));
+client/src/routes/AppRoutes.jsx.backup-superadmin-fix-20260812-215739:71:lazy(()=>import("../pages/superadmin/SuperAdminDatabase"));
+client/src/routes/AppRoutes.jsx.backup-superadmin-fix-20260812-215739:74:lazy(()=>import("../pages/superadmin/SuperAdminApiMonitor"));
+client/src/routes/AppRoutes.jsx.backup-superadmin-fix-20260812-215739:424:path="/superadmin"
+client/src/routes/AppRoutes.jsx.backup-superadmin-fix-20260812-215739:427:"super_admin",
+client/src/routes/AppRoutes.jsx.backup-superadmin-fix-20260812-215739:428:"superadmin"
+client/src/routes/AppRoutes.jsx.backup-20260812-215551:60:const SuperAdminDashboard = lazy(() => import("../pages/superadmin/SuperAdminDashboard"));
+client/src/routes/AppRoutes.jsx.backup-20260812-215551:61:const SuperAdminUsers = lazy(() => import("../pages/superadmin/SuperAdminUsers"));
+client/src/routes/AppRoutes.jsx.backup-20260812-215551:62:const SuperAdminRoles = lazy(() => import("../pages/superadmin/SuperAdminRoles"));
+client/src/routes/AppRoutes.jsx.backup-20260812-215551:63:const SuperAdminSystem = lazy(() => import("../pages/superadmin/SuperAdminSystem"));
+client/src/routes/AppRoutes.jsx.backup-20260812-215551:64:const SuperAdminAudit = lazy(() => import("../pages/superadmin/SuperAdminAudit"));
+client/src/routes/AppRoutes.jsx.backup-20260812-215551:65:const SuperAdminSecurity = lazy(() => import("../pages/superadmin/SuperAdminSecurity"));
+client/src/routes/AppRoutes.jsx.backup-20260812-215551:68:lazy(()=>import("../pages/superadmin/SuperAdminSettings"));
+client/src/routes/AppRoutes.jsx.backup-20260812-215551:71:lazy(()=>import("../pages/superadmin/SuperAdminDatabase"));
+client/src/routes/AppRoutes.jsx.backup-20260812-215551:74:lazy(()=>import("../pages/superadmin/SuperAdminApiMonitor"));
+client/src/routes/AppRoutes.jsx.backup-20260812-215551:424:path="/superadmin"
+client/src/routes/AppRoutes.jsx.backup-20260812-215551:427:"super_admin",
+client/src/routes/AppRoutes.jsx.backup-20260812-215551:428:"superadmin"
+client/src/context/AuthContext.jsx:438: ["superadmin","super_admin","administrator"].includes(normalizeRole(user?.role));
+client/src/context/AuthContext.jsx.backup-auth-20260813-085532:438: user?.role === "superadmin";

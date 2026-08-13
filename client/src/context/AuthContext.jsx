@@ -431,11 +431,11 @@ const permissions =
 
 const isAdmin =
 
- user?.role === "admin"
+ ["admin","administrator"].includes(normalizeRole(user?.role))
 
  ||
 
- user?.role === "superadmin";
+ ["superadmin","super_admin","administrator"].includes(normalizeRole(user?.role));
 
 
 
