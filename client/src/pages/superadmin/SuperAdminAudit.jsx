@@ -1,66 +1,33 @@
-import { useQuery } from "@tanstack/react-query";
+
+import {useQuery} from "@tanstack/react-query";
 import api from "../../api/axios";
 
 
 export default function SuperAdminAudit(){
 
+
 const {
-data:logs=[],
-isLoading,
-error
+data,
+isLoading
 }=useQuery({
 
-queryKey:["superadmin-audit"],
+queryKey:["audit-center"],
 
 queryFn:async()=>{
 
-const response = await api.get("/superadmin/audit");
+const res =
+await api.get("/superadmin/audit");
 
-const data=response.data;
-
-
-/*
-Handle different backend responses:
-{
- logs:[]
-}
-
-or
-
-{
- auditLogs:[]
-}
-
-or
-
-[]
-*/
-
-const result =
-Array.isArray(data.logs)
-?
-data.logs
-:
-Array.isArray(data.data)
-?
-data.data
-:
-Array.isArray(data.auditLogs)
-?
-data.auditLogs
-:
-Array.isArray(data)
-?
-data
-:
-[];
-
-
-return result;
+return res.data;
 
 }
 
 });
+
+
+const logs=data?.logs || [];
+
+const stats=data?.statistics || {};
 
 
 
@@ -74,99 +41,184 @@ Audit Center
 </h1>
 
 
+
+<div className="grid md:grid-cols-4 gap-4">
+
+
+<div className="bg-white shadow rounded-xl p-5">
+<h3>Total Events</h3>
+<p className="text-3xl font-bold">
+{stats.total || 0}
+</p>
+</div>
+
+
+
+<div className="bg-white shadow rounded-xl p-5">
+<h3>Successful</h3>
+<p className="text-3xl font-bold">
+{stats.success || 0}
+</p>
+</div>
+
+
+
+<div className="bg-white shadow rounded-xl p-5">
+<h3>Failed</h3>
+<p className="text-3xl font-bold">
+{stats.failed || 0}
+</p>
+</div>
+
+
+
+<div className="bg-white shadow rounded-xl p-5">
+<h3>Critical</h3>
+<p className="text-3xl font-bold">
+{stats.critical || 0}
+</p>
+</div>
+
+
+</div>
+
+
+
+
+<div className="bg-white rounded-xl shadow overflow-hidden">
+
+
+<table className="w-full">
+
+
+<thead className="bg-gray-100">
+
+<tr>
+
+<th className="p-3 text-left">
+Action
+</th>
+
+
+<th className="p-3 text-left">
+User
+</th>
+
+
+<th className="p-3 text-left">
+Resource
+</th>
+
+
+<th className="p-3 text-left">
+Status
+</th>
+
+
+<th className="p-3 text-left">
+Severity
+</th>
+
+
+<th className="p-3 text-left">
+Date
+</th>
+
+
+</tr>
+
+</thead>
+
+
+
+<tbody>
+
+
 {isLoading && (
 
-<div className="border rounded-xl p-5 bg-white">
-Loading audit records...
-</div>
+<tr>
+<td className="p-5">
+Loading audit logs...
+</td>
+</tr>
 
 )}
 
 
 
-{error && (
-
-<div className="border border-red-300 rounded-xl p-5 bg-red-50 text-red-700">
-
-Failed to load audit records.
-
-</div>
-
-)}
+{logs.map((log)=>(
 
 
-
-<div className="space-y-4">
-
-
-{logs.map((log,index)=>(
-
-<div
-key={log._id || index}
-className="bg-white border rounded-xl p-5 shadow-sm"
+<tr
+key={log._id}
+className="border-t"
 >
 
 
-<div className="font-semibold">
+<td className="p-3 font-semibold">
+{log.action}
+</td>
+
+
+
+<td className="p-3">
 
 {
-log.action ||
-log.event ||
-log.message ||
-log.description ||
-"System Activity"
-
-}
-
-</div>
-
-
-
-{log.user && (
-
-<p className="text-sm text-gray-600 mt-2">
-
-User:
-{
-typeof log.user==="object"
-?
-(log.user.name || log.user.email)
-:
 log.user
+?
+`${log.user.name || ""} ${log.user.email || ""}`
+:
+"System"
 }
 
-</p>
-
-)}
+</td>
 
 
 
-{log.createdAt && (
+<td className="p-3">
+{log.resource}
+</td>
 
-<p className="text-xs text-gray-500 mt-2">
 
+
+<td className="p-3">
+{log.status}
+</td>
+
+
+
+<td className="p-3">
+{log.severity}
+</td>
+
+
+
+<td className="p-3 text-sm">
 {
-new Date(log.createdAt).toLocaleString()
-
+new Date(
+log.createdAt
+).toLocaleString()
 }
-
-</p>
-
-)}
+</td>
 
 
-</div>
+
+</tr>
+
 
 ))}
 
 
 
-{
-!isLoading && logs.length===0 && (
+</tbody>
 
-<div className="bg-white border rounded-xl p-5 text-gray-500">
 
-No audit activities found.
+</table>
+
+
+</div>
+
+
 
 </div>
 
@@ -174,12 +226,3 @@ No audit activities found.
 
 }
 
-
-</div>
-
-
-</div>
-
-)
-
-}
