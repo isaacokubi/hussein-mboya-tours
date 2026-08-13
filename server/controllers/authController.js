@@ -48,8 +48,6 @@ export const login = async (req, res, next) => {
         severity: "high",
         ipAddress: req.ip,
         userAgent: req.headers["user-agent"],
-        ipAddress: req.ip,
-        userAgent: req.headers["user-agent"],
         details: "User not found",
       });
 
@@ -98,8 +96,6 @@ export const login = async (req, res, next) => {
         resource: "User",
         description: "Failed login attempt",
         severity: "high",
-        ipAddress: req.ip,
-        userAgent: req.headers["user-agent"],
         ipAddress: req.ip,
         userAgent: req.headers["user-agent"],
         details: "Invalid password",
