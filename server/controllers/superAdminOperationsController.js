@@ -1,3 +1,11 @@
+import fs from "fs";
+import path from "path";
+import {exec} from "child_process";
+import {promisify} from "util";
+
+const execAsync = promisify(exec);
+const BACKUP_DIR = path.join(process.cwd(),"server","backups");
+
 import mongoose from "mongoose";
 import AuditLog from "../models/AuditLog.js";
 import User from "../models/User.js";
@@ -298,59 +306,145 @@ service:"Coherent Tours API"
 };
 
 
-export const createDatabaseBackup = async (req,res)=>{
-  try{
 
-    console.log(
-      "SUPERADMIN DATABASE BACKUP REQUEST:",
-      req.user?.email || req.user?._id
-    );
+export const createDatabaseBackup = async(req,res)=>{
 
-    return res.json({
-      success:true,
-      message:"Database backup completed successfully.",
-      timestamp:new Date()
-    });
+try{
 
-  }catch(error){
+if(!fs.existsSync(BACKUP_DIR)){
+fs.mkdirSync(BACKUP_DIR,{recursive:true});
+}
 
-    console.error(error);
 
-    res.status(500).json({
-      success:false,
-      message:"Database backup failed."
-    });
+const filename =
+`database-backup-${Date.now()}.gz`;
 
-  }
+
+const filepath =
+path.join(
+BACKUP_DIR,
+filename
+);
+
+
+await execAsync(
+`mongodump --uri="${process.env.MONGO_URI}" --archive="${filepath}" --gzip`
+);
+
+
+res.json({
+
+success:true,
+
+message:
+"Database backup created successfully",
+
+file:filename,
+
+location:filepath,
+
+timestamp:new Date()
+
+});
+
+
+}catch(error){
+
+console.error(
+"DATABASE BACKUP ERROR",
+error
+);
+
+
+res.status(500).json({
+
+success:false,
+
+message:
+"Database backup failed. Ensure mongodump is installed."
+
+});
+
+}
+
 };
 
 
 
-export const clearSystemCache = async (req,res)=>{
-  try{
-
-    console.log(
-      "SUPERADMIN CACHE CLEAR REQUEST:",
-      req.user?.email || req.user?._id
-    );
 
 
-    return res.json({
-      success:true,
-      message:"System cache cleared successfully.",
-      timestamp:new Date()
-    });
+
+export const clearSystemCache = async(req,res)=>{
+
+try{
+
+const folders=[
+
+path.join(process.cwd(),"cache"),
+
+path.join(process.cwd(),"tmp"),
+
+path.join(process.cwd(),"uploads","tmp")
+
+];
 
 
-  }catch(error){
+let cleared=[];
 
-    console.error(error);
 
-    res.status(500).json({
-      success:false,
-      message:"Cache clearing failed."
-    });
+for(const folder of folders){
 
-  }
+if(fs.existsSync(folder)){
+
+for(const item of fs.readdirSync(folder)){
+
+fs.rmSync(
+path.join(folder,item),
+{
+recursive:true,
+force:true
+}
+);
+
+}
+
+cleared.push(folder);
+
+}
+
+}
+
+
+res.json({
+
+success:true,
+
+message:
+"System cache cleared successfully",
+
+cleared,
+
+timestamp:new Date()
+
+});
+
+
+}catch(error){
+
+console.error(error);
+
+res.status(500).json({
+
+success:false,
+
+message:
+"Cache clearing failed"
+
+});
+
+}
+
 };
+
+
 
