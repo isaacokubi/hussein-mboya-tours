@@ -217,7 +217,7 @@ router.use("/", seoRoutes);
 router.use("/superadmin", superAdminRoutes);
 
 router.use(
-"/superadmin-tools",
+"/superadmin",
 superAdminOperationsRoutes
 );
 
