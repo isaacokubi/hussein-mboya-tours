@@ -120,10 +120,10 @@ user:user._id,
 
 action:"login",
 
-resource:"User",
+resource:"Authentication",
 
 description:
-"User logged into the platform",
+"User successfully logged in",
 
 severity:"medium",
 
