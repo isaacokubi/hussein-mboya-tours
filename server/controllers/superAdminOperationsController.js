@@ -309,38 +309,10 @@ service:"Coherent Tours API"
 
 
 
+
 export const createDatabaseBackup = async(req,res)=>{
 
 try{
-
-const backupDir =
-path.join(
-process.cwd(),
-"server",
-"backups"
-);
-
-
-if(!fs.existsSync(backupDir)){
-fs.mkdirSync(
-backupDir,
-{
-recursive:true
-}
-);
-}
-
-
-const filename =
-`database-backup-${Date.now()}.json`;
-
-
-const filepath =
-path.join(
-backupDir,
-filename
-);
-
 
 const db =
 mongoose.connection.db;
@@ -350,50 +322,51 @@ const collections =
 await db.listCollections().toArray();
 
 
-const databaseBackup={
-createdAt:new Date(),
-database:db.databaseName,
-createdBy:
-req.user?.email ||
-req.user?._id ||
-"system",
-collections:{}
-};
-
+const backupData={};
 
 
 for(const collection of collections){
 
-const name =
-collection.name;
+const name=collection.name;
 
 
-const documents =
+backupData[name]=
 await db
 .collection(name)
 .find({})
 .toArray();
 
-
-databaseBackup.collections[name]=documents;
-
 }
 
 
 
-fs.writeFileSync(
-filepath,
-JSON.stringify(
-databaseBackup,
-null,
-2
-)
+const jsonSize =
+Buffer.byteLength(
+JSON.stringify(backupData)
 );
 
 
 
-const stats =
-fs.statSync(filepath);
+const backup =
+await DatabaseBackup.create({
+
+name:
+`database-backup-${Date.now()}.json`,
+
+size:
+(jsonSize/1024/1024).toFixed(2)+" MB",
+
+collections:
+collections.length,
+
+data:
+backupData,
+
+createdBy:
+req.user?.email || "system"
+
+});
+
 
 
 res.json({
@@ -403,12 +376,7 @@ success:true,
 message:
 "Database backup created successfully",
 
-file:filename,
-
-size:
-stats.size,
-
-createdAt:new Date()
+backup
 
 });
 
@@ -416,7 +384,7 @@ createdAt:new Date()
 }catch(error){
 
 console.error(
-"DATABASE BACKUP ERROR",
+"BACKUP ERROR",
 error
 );
 
@@ -426,13 +394,15 @@ res.status(500).json({
 success:false,
 
 message:
-"Database backup failed"
+error.message
 
 });
+
 
 }
 
 };
+
 
 export const clearSystemCache = async(req,res)=>{
 
@@ -510,41 +480,19 @@ message:
 
 
 
+
 export const listDatabaseBackups = async(req,res)=>{
 
 try{
 
-if(!fs.existsSync(BACKUP_DIR)){
-return res.json({
-success:true,
-backups:[]
-});
-}
-
-
 const backups =
-fs.readdirSync(BACKUP_DIR)
-.filter(file=>file.startsWith("database-backup-"))
-.map(file=>{
-
-const stat =
-fs.statSync(
-path.join(BACKUP_DIR,file)
+await DatabaseBackup.find()
+.sort({
+createdAt:-1
+})
+.select(
+"-data"
 );
-
-return {
-
-file,
-
-size:
-(stat.size/1024/1024).toFixed(2)+" MB",
-
-createdAt:
-stat.birthtime
-
-};
-
-});
 
 
 res.json({
@@ -558,18 +506,11 @@ backups
 
 }catch(error){
 
-console.error(
-"LIST BACKUPS ERROR",
-error
-);
-
-
 res.status(500).json({
 
 success:false,
 
-message:
-"Unable to load backups"
+message:error.message
 
 });
 
@@ -616,6 +557,114 @@ message:
 "Delete failed"
 
 });
+
+}
+
+};
+
+
+
+export const downloadDatabaseBackup = async(req,res)=>{
+
+try{
+
+const backup =
+await DatabaseBackup.findById(
+req.params.id
+);
+
+
+if(!backup){
+
+return res.status(404).json({
+message:"Backup not found"
+});
+
+}
+
+
+res.json({
+
+success:true,
+
+backup
+
+});
+
+
+}catch(error){
+
+res.status(500).json({
+message:error.message
+});
+
+}
+
+};
+
+
+
+// DOWNLOAD DATABASE BACKUP
+
+export const downloadDatabaseBackup = async(req,res)=>{
+
+try{
+
+
+const DatabaseBackup =
+(await import("../models/DatabaseBackup.js"))
+.default;
+
+
+const backup =
+await DatabaseBackup.findById(
+req.params.id
+);
+
+
+
+if(!backup){
+
+return res.status(404).json({
+
+success:false,
+
+message:"Backup not found"
+
+});
+
+}
+
+
+
+res.json({
+
+success:true,
+
+backup
+
+});
+
+
+
+}catch(error){
+
+
+console.error(
+"DOWNLOAD BACKUP ERROR",
+error
+);
+
+
+
+res.status(500).json({
+
+success:false,
+
+message:error.message
+
+});
+
 
 }
 
