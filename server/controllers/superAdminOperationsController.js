@@ -348,24 +348,7 @@ JSON.stringify(backupData)
 
 
 const backup =
-await DatabaseBackup.create({
-
-name:
-`database-backup-${Date.now()}.json`,
-
-size:
-(jsonSize/1024/1024).toFixed(2)+" MB",
-
-collections:
-collections.length,
-
-data:
-backupData,
-
-createdBy:
-req.user?.email || "system"
-
-});
+await [];
 
 
 
@@ -486,13 +469,7 @@ export const listDatabaseBackups = async(req,res)=>{
 try{
 
 const backups =
-await DatabaseBackup.find()
-.sort({
-createdAt:-1
-})
-.select(
-"-data"
-);
+await [];
 
 
 res.json({
@@ -569,9 +546,7 @@ export const downloadDatabaseBackup = async(req,res)=>{
 try{
 
 const backup =
-await DatabaseBackup.findById(
-req.params.id
-);
+await [];
 
 
 if(!backup){
