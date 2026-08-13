@@ -464,12 +464,69 @@ message:
 
 
 
+
 export const listDatabaseBackups = async(req,res)=>{
 
 try{
 
+const backupDir =
+path.join(
+process.cwd(),
+"server",
+"backups"
+);
+
+
+if(!fs.existsSync(backupDir)){
+
+return res.json({
+
+success:true,
+
+backups:[]
+
+});
+
+}
+
+
 const backups =
-await [];
+fs.readdirSync(backupDir)
+.filter(file =>
+file.endsWith(".json")
+)
+.map(file=>{
+
+
+const fullPath =
+path.join(
+backupDir,
+file
+);
+
+
+const stat =
+fs.statSync(fullPath);
+
+
+return {
+
+file,
+
+size:
+(stat.size / 1024 / 1024).toFixed(2)+" MB",
+
+createdAt:
+stat.birthtime
+
+};
+
+
+})
+.sort(
+(a,b)=>
+new Date(b.createdAt)-new Date(a.createdAt)
+);
 
 
 res.json({
@@ -481,19 +538,28 @@ backups
 });
 
 
-}catch(error){
+}
+catch(error){
+
+console.error(
+"LIST BACKUPS ERROR",
+error
+);
+
 
 res.status(500).json({
 
 success:false,
 
-message:error.message
+message:
+"Unable to load backups"
 
 });
 
 }
 
 };
+
 
 
 export const deleteDatabaseBackup = async(req,res)=>{
