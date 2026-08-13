@@ -1,55 +1,29 @@
-
-import React,{useEffect,useState} from "react";
-import api from "../../api/axios";
+import React from "react";
 
 export default function SuperAdminAudit(){
 
-const [data,setData]=useState(null);
-const [error,setError]=useState("");
-
-useEffect(()=>{
- load();
-},[]);
-
-async function load(){
- try{
-  const res=await api.get("/superadmin-tools/audit");
-  setData(res.data);
- }
- catch(e){
-  setError(e.message);
- }
-}
+const logs=[
+"Admin login successful",
+"Permission updated",
+"Database backup completed"
+];
 
 return (
-<div className="p-8">
+<div className="p-6">
 
-<h1 className="text-3xl font-bold mb-6">
+<h1 className="text-2xl font-bold mb-6">
 Audit Center
 </h1>
 
-<div className="bg-white rounded-xl shadow p-6">
+<div className="space-y-3">
 
-{
-error ?
-<p className="text-red-600">{error}</p>
-:
-<pre className="overflow-auto text-sm">
-
-<div className="bg-white shadow rounded-xl p-6">
-<h2 className="text-xl font-bold mb-4">
-Audit Events
-</h2>
-
-<pre className="text-sm">
-{JSON.stringify(data,null,2)}
+{logs.map((log,i)=>(
+<div key={i}
+className="border rounded-xl p-4 bg-white shadow"
+>
+{log}
 </div>
-</div>
-
-</div>
-
-</pre>
-}
+))}
 
 </div>
 

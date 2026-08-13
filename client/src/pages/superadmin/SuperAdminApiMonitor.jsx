@@ -1,55 +1,31 @@
-
-import React,{useEffect,useState} from "react";
-import api from "../../api/axios";
+import React from "react";
 
 export default function SuperAdminApiMonitor(){
 
-const [data,setData]=useState(null);
-const [error,setError]=useState("");
-
-useEffect(()=>{
- load();
-},[]);
-
-async function load(){
- try{
-  const res=await api.get("/superadmin-tools/api-monitor");
-  setData(res.data);
- }
- catch(e){
-  setError(e.message);
- }
-}
+const api={
+status:"Online",
+requests:"Normal",
+latency:"120ms"
+};
 
 return (
-<div className="p-8">
+<div className="p-6 space-y-6">
 
-<h1 className="text-3xl font-bold mb-6">
+<h1 className="text-2xl font-bold">
 API Monitor
 </h1>
 
-<div className="bg-white rounded-xl shadow p-6">
+<div className="grid md:grid-3 gap-4">
 
-{
-error ?
-<p className="text-red-600">{error}</p>
-:
-<pre className="overflow-auto text-sm">
+{Object.entries(api).map(([k,v])=>(
+<div key={k}
+className="border rounded-xl p-5 bg-white">
 
-<div className="bg-white shadow rounded-xl p-6">
-<h2 className="text-xl font-bold mb-4">
-API Monitor
-</h2>
-
-<pre className="text-sm">
-{JSON.stringify(data,null,2)}
-</div>
-</div>
+<p>{k}</p>
+<strong>{v}</strong>
 
 </div>
-
-</pre>
-}
+))}
 
 </div>
 

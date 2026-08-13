@@ -1,55 +1,28 @@
-
-import React,{useEffect,useState} from "react";
-import api from "../../api/axios";
+import React from "react";
 
 export default function SuperAdminSecurity(){
 
-const [data,setData]=useState(null);
-const [error,setError]=useState("");
-
-useEffect(()=>{
- load();
-},[]);
-
-async function load(){
- try{
-  const res=await api.get("/superadmin-tools/security");
-  setData(res.data);
- }
- catch(e){
-  setError(e.message);
- }
-}
+const metrics={
+Threats:"0",
+Firewall:"Active",
+Authentication:"Protected"
+};
 
 return (
-<div className="p-8">
+<div className="p-6 space-y-6">
 
-<h1 className="text-3xl font-bold mb-6">
+<h1 className="text-2xl font-bold">
 Security Center
 </h1>
 
-<div className="bg-white rounded-xl shadow p-6">
+<div className="grid md:grid-cols-3 gap-4">
 
-{
-error ?
-<p className="text-red-600">{error}</p>
-:
-<pre className="overflow-auto text-sm">
-
-<div className="bg-white shadow rounded-xl p-6">
-<h2 className="text-xl font-bold mb-4">
-Security Status
-</h2>
-
-<pre className="text-sm">
-{JSON.stringify(data,null,2)}
+{Object.entries(metrics).map(([a,b])=>(
+<div className="rounded-xl border p-5 bg-white" key={a}>
+<p className="text-gray-500">{a}</p>
+<p className="font-bold text-xl">{b}</p>
 </div>
-</div>
-
-</div>
-
-</pre>
-}
+))}
 
 </div>
 

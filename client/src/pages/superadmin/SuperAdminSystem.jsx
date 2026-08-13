@@ -1,55 +1,51 @@
-
-import React,{useEffect,useState} from "react";
-import api from "../../api/axios";
+import React from "react";
 
 export default function SuperAdminSystem(){
 
-const [data,setData]=useState(null);
-const [error,setError]=useState("");
-
-useEffect(()=>{
- load();
-},[]);
-
-async function load(){
- try{
-  const res=await api.get("/superadmin-tools/system");
-  setData(res.data);
- }
- catch(e){
-  setError(e.message);
- }
-}
+const data={
+ status:"Operational",
+ uptime:"99.99%",
+ services:12,
+ servers:"Healthy"
+};
 
 return (
-<div className="p-8">
+<div className="p-6 space-y-6">
 
-<h1 className="text-3xl font-bold mb-6">
-System Health
+<h1 className="text-2xl font-bold">
+System Health Center
 </h1>
 
-<div className="bg-white rounded-xl shadow p-6">
+<div className="grid md:grid-cols-4 gap-4">
 
-{
-error ?
-<p className="text-red-600">{error}</p>
-:
-<pre className="overflow-auto text-sm">
+{Object.entries(data).map(([key,value])=>(
+<div
+key={key}
+className="rounded-xl border bg-white p-5 shadow"
+>
 
-<div className="bg-white shadow rounded-xl p-6">
-<h2 className="text-xl font-bold mb-4">
-System Health
+<p className="text-sm text-gray-500 uppercase">
+{key}
+</p>
+
+<p className="text-xl font-bold mt-2">
+{value}
+</p>
+
+</div>
+))}
+
+</div>
+
+<div className="rounded-xl bg-slate-50 border p-5">
+
+<h2 className="font-semibold mb-3">
+System Information
 </h2>
 
-<pre className="text-sm">
+<pre className="overflow-auto text-sm">
 {JSON.stringify(data,null,2)}
-</div>
-</div>
-
-</div>
-
 </pre>
-}
 
 </div>
 

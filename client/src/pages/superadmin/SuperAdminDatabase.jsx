@@ -1,55 +1,19 @@
-
-import React,{useEffect,useState} from "react";
-import api from "../../api/axios";
+import React from "react";
 
 export default function SuperAdminDatabase(){
 
-const [data,setData]=useState(null);
-const [error,setError]=useState("");
-
-useEffect(()=>{
- load();
-},[]);
-
-async function load(){
- try{
-  const res=await api.get("/superadmin-tools/database");
-  setData(res.data);
- }
- catch(e){
-  setError(e.message);
- }
-}
-
 return (
-<div className="p-8">
+<div className="p-6">
 
-<h1 className="text-3xl font-bold mb-6">
+<h1 className="text-2xl font-bold">
 Database Tools
 </h1>
 
-<div className="bg-white rounded-xl shadow p-6">
+<div className="mt-6 rounded-xl border p-6 bg-white">
 
-{
-error ?
-<p className="text-red-600">{error}</p>
-:
-<pre className="overflow-auto text-sm">
-
-<div className="bg-white shadow rounded-xl p-6">
-<h2 className="text-xl font-bold mb-4">
-Database Status
-</h2>
-
-<pre className="text-sm">
-{JSON.stringify(data,null,2)}
-</div>
-</div>
-
-</div>
-
-</pre>
-}
+<p>
+Database monitoring and maintenance
+</p>
 
 </div>
 
