@@ -447,6 +447,12 @@ const collections =
 await db.listCollections().toArray();
 
 
+const collectionNames =
+collections.map(
+collection => collection.name
+);
+
+
 for(const collection of collections){
 
 const name = collection.name;
@@ -481,15 +487,7 @@ size:
 (fs.statSync(filepath).size / 1024 / 1024).toFixed(2)+" MB",
 
 collections:
-Object.keys(backupData).filter(
-key =>
-![
-"createdAt",
-"environment",
-"database",
-"createdBy"
-].includes(key)
-),
+collectionNames,
 
 databaseName:
 mongoose.connection.name || "unknown",

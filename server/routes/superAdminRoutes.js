@@ -165,7 +165,7 @@ router.get(
 
 
 router.delete(
-  "/maintenance/backups/:file",
+  "/maintenance/backups/:id",
   protect,
   authorize("super_admin","superadmin"),
   deleteDatabaseBackup
