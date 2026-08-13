@@ -16,7 +16,7 @@ const STATUS_VALUES = [
 export const getUsers = async (req, res, next) => {
   try {
     const page = Math.max(Number(req.query.page) || 1, 1);
-    const limit = Math.min(Math.max(Number(req.query.limit) || 10, 1), 100);
+    const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 100);
     const search = String(req.query.search || "").trim();
     const query = {};
 
@@ -37,8 +37,7 @@ export const getUsers = async (req, res, next) => {
         .select("-password")
         .populate("roleId", "name displayName permissions")
         .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(limit)
+        
         .lean(),
       User.countDocuments(query),
     ]);
@@ -58,7 +57,7 @@ export const getUsers = async (req, res, next) => {
       count: data.length,
       data,
       users: data,
-      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+      pagination: { page:1, limit:total, total, pages:1 },
     });
   } catch (error) {
     next(error);
