@@ -421,6 +421,7 @@ filename
 );
 
 
+
 const backupData={
 
 createdAt:new Date(),
@@ -437,6 +438,25 @@ req.user?._id ||
 "system"
 
 };
+
+
+const collections =
+await db.listCollections().toArray();
+
+
+for(const collection of collections){
+
+const name = collection.name;
+
+
+backupData[name] =
+await db
+.collection(name)
+.find({})
+.toArray();
+
+}
+
 
 
 fs.writeFileSync(
@@ -458,7 +478,15 @@ size:
 (fs.statSync(filepath).size / 1024 / 1024).toFixed(2)+" MB",
 
 collections:
-Object.keys(backupData),
+Object.keys(backupData).filter(
+key =>
+![
+"createdAt",
+"environment",
+"database",
+"createdBy"
+].includes(key)
+),
 
 databaseName:
 mongoose.connection.name || "unknown",
