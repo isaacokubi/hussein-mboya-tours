@@ -86,7 +86,6 @@ getApiMonitor
 
 
 
-router.get("/security",
 );
 
 export default router;
