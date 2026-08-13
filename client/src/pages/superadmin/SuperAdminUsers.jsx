@@ -1,325 +1,117 @@
-import { useEffect, useState, useCallback } from "react";
-
-import {
-getAdminUsers,
-updateUserStatus,
-deleteUser
-} from "../../api/adminUserApi";
+import {useQuery} from "@tanstack/react-query";
+import {useState} from "react";
+import {getAdminUsers,updateUserStatus,deleteUser} from "../../api/adminUserApi";
 
 
 export default function SuperAdminUsers(){
 
-const [users,setUsers]=useState([]);
 const [search,setSearch]=useState("");
-const [loading,setLoading]=useState(true);
-const [error,setError]=useState("");
 
-
-const loadUsers=useCallback(async()=>{
-
-try{
-
-setLoading(true);
-
-const data=await getAdminUsers({
-search
+const {data,isLoading,refetch}=useQuery({
+queryKey:["superadmin-users",search],
+queryFn:()=>getAdminUsers({search})
 });
 
-setUsers(
-data.users ||
-data.data ||
-data ||
-[]
-);
 
-}
-catch{
-
-setError(
-"Failed loading users"
-);
-
-}
-
-finally{
-
-setLoading(false);
-
-}
-
-},[search]);
+const users=data?.users || data?.data || data || [];
 
 
-useEffect(()=>{
-
-const run = async () => {
-  await loadUsers();
-};
-
-run();
-
-},[loadUsers]);
-
-
-
-const changeStatus=async(id,status)=>{
-
-await updateUserStatus({
-id,
-status
-});
-
-loadUsers();
-
+const status=async(id,value)=>{
+await updateUserStatus({id,status:value});
+refetch();
 };
 
 
 const remove=async(id)=>{
-
-if(
-window.confirm(
-"Delete this user?"
-)
-){
-
+if(confirm("Delete this user permanently?")){
 await deleteUser(id);
-
-loadUsers();
-
+refetch();
 }
-
 };
 
 
-
-return (
-
-<section className="space-y-6">
-
-
-<div>
+return <div className="p-8 space-y-6">
 
 <h1 className="text-3xl font-bold">
-User Administration
+SuperAdmin User Management
 </h1>
 
+<div className="grid md:grid-cols-4 gap-4">
 
-<p className="text-gray-500">
-Manage all platform users, staff and customers
-</p>
-
+<Card title="Total Users" value={users.length}/>
+<Card title="Active" value={users.filter(u=>u.status==="active").length}/>
+<Card title="Admins" value={users.filter(u=>String(u.role).includes("admin")).length}/>
+<Card title="Customers" value={users.filter(u=>u.role==="customer").length}/>
 
 </div>
-
-
-
-<div className="bg-white rounded-xl shadow p-5">
 
 
 <input
-
-className="
-border
-rounded-lg
-p-3
-w-full
-"
-
+className="border rounded-xl p-3 w-full"
 placeholder="Search users..."
-
 value={search}
-
-onChange={
-e=>setSearch(e.target.value)
-}
-
-onKeyDown={
-e=>{
-if(e.key==="Enter")
-loadUsers()
-}
-}
-
+onChange={e=>setSearch(e.target.value)}
 />
 
 
-</div>
+<div className="bg-white rounded-xl shadow overflow-auto">
 
+<table className="w-full">
 
-
-{
-loading
-?
-<p>Loading users...</p>
-:
-error
-?
-<p>{error}</p>
-:
-
-
-<div className="
-bg-white
-rounded-xl
-shadow
-overflow-x-auto
-">
-
-
-<table className="
-w-full
-text-left
-">
-
-
-<thead
-className="
-bg-gray-100
-"
->
-
+<thead className="bg-gray-100">
 <tr>
-
-<th className="p-4">
-Name
-</th>
-
-<th className="p-4">
-Email
-</th>
-
-<th className="p-4">
-Role
-</th>
-
-<th className="p-4">
-Status
-</th>
-
-<th className="p-4">
-Actions
-</th>
-
+<th className="p-4">Name</th>
+<th>Email</th>
+<th>Role</th>
+<th>Status</th>
+<th>Actions</th>
 </tr>
-
-
 </thead>
 
 
 <tbody>
 
+{isLoading?
+<tr><td className="p-5">Loading...</td></tr>
+:
+users.map(u=>
 
-{
-users.map(user=>(
+<tr className="border-t" key={u._id}>
 
-<tr
-key={user._id}
-className="border-t"
->
+<td className="p-4">{u.name}</td>
 
+<td>{u.email}</td>
 
-<td className="p-4">
-{user.name}
-</td>
-
-
-<td className="p-4">
-{user.email}
-</td>
-
-
-<td className="p-4">
-<span className="
-bg-blue-100
-px-3
-py-1
-rounded-full
-text-sm
-">
-
-{
-user.role ||
-user.roleId?.name ||
-"customer"
-}
-
+<td>
+<span className="px-3 py-1 rounded-full bg-blue-100">
+{u.role || "customer"}
 </span>
 </td>
 
-
-<td className="p-4">
-
-{
-user.status ||
-"active"
-}
-
-</td>
+<td>{u.status || "active"}</td>
 
 
-<td className="p-4 space-x-2">
-
+<td className="space-x-2">
 
 <button
-
-className="
-px-3
-py-2
-bg-green-600
-text-white
-rounded
-"
-
-onClick={()=>
-changeStatus(
-user._id,
-"active"
-)
-}
-
+className="border px-3 py-1 rounded"
+onClick={()=>status(u._id,"active")}
 >
 Activate
 </button>
 
 
-
 <button
-
-className="
-px-3
-py-2
-bg-red-600
-text-white
-rounded
-"
-
-onClick={()=>
-changeStatus(
-user._id,
-"suspended"
-)
-}
-
+className="border px-3 py-1 rounded"
+onClick={()=>status(u._id,"suspended")}
 >
 Suspend
 </button>
 
 
-
 <button
-
-className="
-px-3
-py-2
-bg-gray-800
-text-white
-rounded
-"
-
-onClick={()=>
-remove(user._id)
-}
-
+className="bg-red-500 text-white px-3 py-1 rounded"
+onClick={()=>remove(u._id)}
 >
 Delete
 </button>
@@ -327,29 +119,29 @@ Delete
 
 </td>
 
-
 </tr>
 
-
-))
-
-}
-
+)}
 
 </tbody>
 
-
 </table>
-
 
 </div>
 
+</div>
 
 }
 
 
-</section>
+function Card({title,value}){
 
-)
+return <div className="bg-white border rounded-xl p-5">
+
+<p className="text-gray-500">{title}</p>
+
+<h2 className="text-3xl font-bold">{value}</h2>
+
+</div>
 
 }
