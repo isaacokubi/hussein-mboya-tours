@@ -8,17 +8,18 @@ import SecurityLog from "../models/SecurityLog.js";
 
 const securityService = {
 
+
 async getSecurityStatus(){
 
 const [
-users,
-admins,
+totalUsers,
+adminUsers,
 superAdmins,
 roles,
 permissions,
 auditEvents,
 securityEvents
-]=await Promise.all([
+] = await Promise.all([
 
 User.countDocuments(),
 
@@ -55,34 +56,53 @@ SecurityLog.countDocuments()
 ]);
 
 
-const database =
-mongoose.connection.readyState===1
-?"healthy"
-:"warning";
+const databaseHealthy =
+mongoose.connection.readyState === 1;
+
+
+let score = 100;
+
+
+if(!databaseHealthy)
+score -= 30;
+
+if(securityEvents > 50)
+score -= 20;
+
+if(auditEvents === 0)
+score -= 10;
 
 
 return {
 
-securityScore:92,
+
+securityScore:Math.max(score,0),
+
 
 threatLevel:
-securityEvents>20
+securityEvents > 50
+?"high"
+:
+securityEvents > 10
 ?"medium"
 :"low",
+
+
 
 authentication:{
 
 status:"healthy",
 
-totalUsers:users,
+users:totalUsers,
 
-activeSessions:0,
+admins:adminUsers,
 
-failedLogins:0,
+superAdmins,
 
-twoFactorEnabled:0
+jwt:"active"
 
 },
+
 
 
 authorization:{
@@ -91,22 +111,39 @@ roles,
 
 permissions,
 
-admins,
+admins:adminUsers,
 
 superAdmins
 
 },
 
 
+
+audit:{
+
+events:auditEvents
+
+},
+
+
+
+security:{
+
+events:securityEvents
+
+},
+
+
+
 system:{
 
-database,
-
-auditEvents,
-
-securityEvents
+database:
+databaseHealthy
+?"healthy"
+:"error"
 
 }
+
 
 };
 
@@ -114,9 +151,11 @@ securityEvents
 },
 
 
+
 async getSecurityEvents(){
 
-return await SecurityLog.find()
+return await SecurityLog
+.find()
 .sort({
 createdAt:-1
 })
@@ -124,6 +163,7 @@ createdAt:-1
 .lean();
 
 }
+
 
 };
 

@@ -82,7 +82,7 @@ Platform authentication, authorization and threat monitoring
 
 <Card
 title="Security Score"
-value={`${data.securityScore || 92}/100`}
+value={`${data.securityScore || 0}/100`}
 />
 
 
@@ -94,13 +94,13 @@ value={data.threatLevel || "Low"}
 
 <Card
 title="Authentication"
-value={data.authentication?.status || "Healthy"}
+value={data.authentication?.status || "Unknown"}
 />
 
 
 <Card
 title="Authorization"
-value={`Roles: ${data.authorization?.roles || 0} | Permissions: ${data.authorization?.permissions || 0}`}
+value={`Roles: ${data.authorization?.roles || 0} | Permissions: ${data.authorization?.permissions || 0} | Admins: ${data.authorization?.admins || 0}`}
 />
 
 
