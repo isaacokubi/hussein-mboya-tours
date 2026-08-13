@@ -161,45 +161,29 @@ message:error.message
 
 
 
-export const getSecurityStatus = async(req,res)=>{
 
-try{
+export const getSecurityStatus = async (req,res)=>{
+  try {
 
-const admins = await User.countDocuments({
-role:{
-$in:[
-"admin",
-"superadmin",
-"super_admin"
-]
-}
-});
+    const securityService = await import("../services/securityService.js");
 
+    const data = await securityService.default.getSecurityStatus();
 
-res.json({
+    res.json({
+      success:true,
+      data
+    });
 
-success:true,
+  } catch(error){
 
-security:{
-authentication:"active",
-authorization:"active",
-admins,
-status:"protected"
-}
+    res.status(500).json({
+      success:false,
+      message:error.message
+    });
 
-});
-
-
-}catch(error){
-
-res.status(500).json({
-success:false,
-message:error.message
-});
-
-}
-
+  }
 };
+
 
 
 
