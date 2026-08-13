@@ -204,32 +204,47 @@ export const getSecurityStatus = async (req,res)=>{
 export const getDatabaseStatus = async (req,res)=>{
   try{
 
-    const mongoose = (await import("mongoose")).default;
+    const mongoose = await import("mongoose");
 
-    const state = mongoose.connection.readyState;
+    const state =
+      mongoose.default.connection.readyState;
 
     res.json({
       success:true,
-      connected: state === 1,
-      status:
-        state === 1
-        ? "Connected"
-        : "Disconnected",
-      host:
-        mongoose.connection.host || "Unknown",
-      database:
-        mongoose.connection.name || "Unknown",
-      collections:
-        Object.keys(mongoose.connection.collections || {}).length,
-      checkedAt:new Date()
+
+      database:{
+        status:
+          state === 1
+          ? "Connected"
+          : "Disconnected",
+
+        connected:
+          state === 1,
+
+        host:
+          mongoose.default.connection.host || "Unknown",
+
+        name:
+          mongoose.default.connection.name || "Unknown",
+
+        environment:
+          process.env.NODE_ENV || "production",
+
+        checkedAt:
+          new Date()
+      }
     });
 
   }catch(error){
 
+    console.error(
+      "DATABASE STATUS ERROR",
+      error
+    );
+
     res.status(500).json({
       success:false,
-      message:"Database status check failed",
-      error:error.message
+      message:"Unable to read database status"
     });
 
   }
