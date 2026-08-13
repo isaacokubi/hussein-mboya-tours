@@ -1,6 +1,6 @@
 import React,{useEffect,useState} from "react";
-import {getSecurityStatus} from "../../api/superAdminApi";
 import {useNavigate} from "react-router-dom";
+import {getSecurityStatus} from "../../api/superAdminApi";
 
 
 export default function SuperAdminSecurity(){
@@ -252,7 +252,60 @@ return (
 
 
 
-function Control({text,path,navigate}){
+
+
+
+
+
+
+
+
+
+function Row({name,status}){
+
+return (
+
+<tr className="border-b">
+
+<td className="py-3 font-medium">
+{name}
+</td>
+
+<td className="py-3 text-right">
+
+<span className="px-3 py-1 rounded bg-gray-100">
+
+{
+typeof status === "object"
+?
+JSON.stringify(status)
+:
+status || "Unknown"
+}
+
+</span>
+
+</td>
+
+</tr>
+
+);
+
+}
+
+
+
+
+
+
+
+
+
+
+function Control({text,path}){
+
+const navigate = useNavigate();
+
 
 return (
 
@@ -260,7 +313,7 @@ return (
 
 onClick={()=>navigate(path)}
 
-className="bg-gray-50 rounded-xl p-4 text-left hover:shadow cursor-pointer"
+className="bg-gray-50 rounded-xl p-4 text-left hover:shadow transition cursor-pointer"
 
 >
 
@@ -271,5 +324,4 @@ className="bg-gray-50 rounded-xl p-4 text-left hover:shadow cursor-pointer"
 );
 
 }
-
 
