@@ -4,10 +4,14 @@ const router = express.Router();
 
 router.get("/", async (req, res) => {
   res.json({
-    api: "online",
-    uptime: process.uptime(),
-    memory: process.memoryUsage(),
-    timestamp: new Date()
+    success: true,
+    api: {
+      status: "healthy",
+      service: "Coherent Tours API",
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+      timestamp: new Date()
+    }
   });
 });
 
