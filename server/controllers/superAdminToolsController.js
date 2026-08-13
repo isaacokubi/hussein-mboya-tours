@@ -131,8 +131,23 @@ success:true,
 
 message:"API monitor operational",
 
+api:{
+
+status:"healthy",
+
+service:"Coherent Tours API",
+
+version:"1.0.0",
+
+environment:process.env.NODE_ENV || "development",
+
+uptime:process.uptime(),
+
+timestamp:new Date(),
+
 endpoints:routes
 
+}
 
 });
 
