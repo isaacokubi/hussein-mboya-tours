@@ -13,6 +13,7 @@ async getSecurityStatus(){
 const [
 users,
 admins,
+superAdmins,
 roles,
 permissions,
 auditEvents,
@@ -25,6 +26,14 @@ User.countDocuments({
 role:{
 $in:[
 "admin",
+"administrator"
+]
+}
+}),
+
+User.countDocuments({
+role:{
+$in:[
 "superadmin",
 "super_admin"
 ]
@@ -33,7 +42,11 @@ $in:[
 
 Role.countDocuments(),
 
-Permission.countDocuments(),
+Permission.countDocuments({
+isActive:{
+$ne:false
+}
+}),
 
 AuditLog.countDocuments(),
 
@@ -78,7 +91,9 @@ roles,
 
 permissions,
 
-admins
+admins,
+
+superAdmins
 
 },
 
