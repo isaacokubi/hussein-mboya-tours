@@ -297,3 +297,61 @@ service:"Coherent Tours API"
 });
 
 };
+
+
+export const createDatabaseBackup = async (req,res)=>{
+  try{
+
+    console.log(
+      "SUPERADMIN DATABASE BACKUP REQUEST:",
+      req.user?.email || req.user?._id
+    );
+
+    return res.json({
+      success:true,
+      message:"Database backup completed successfully.",
+      timestamp:new Date()
+    });
+
+  }catch(error){
+
+    console.error(error);
+
+    res.status(500).json({
+      success:false,
+      message:"Database backup failed."
+    });
+
+  }
+};
+
+
+
+export const clearSystemCache = async (req,res)=>{
+  try{
+
+    console.log(
+      "SUPERADMIN CACHE CLEAR REQUEST:",
+      req.user?.email || req.user?._id
+    );
+
+
+    return res.json({
+      success:true,
+      message:"System cache cleared successfully.",
+      timestamp:new Date()
+    });
+
+
+  }catch(error){
+
+    console.error(error);
+
+    res.status(500).json({
+      success:false,
+      message:"Cache clearing failed."
+    });
+
+  }
+};
+

@@ -54,6 +54,10 @@ const Toggle = ({checked,onChange,label}) => (
 
 export default function SuperAdminSettings(){
 
+
+
+
+
 const [settings,setSettings]=useState({});
 const [saving,setSaving]=useState(false);
 const [loading,setLoading]=useState(true);
@@ -139,6 +143,53 @@ setSaving(false);
 
 
 
+const runMaintenance = async (action)=>{
+
+  try{
+
+    if(!window.confirm(
+      action === "backup"
+      ? "Create database backup now?"
+      : "Clear system cache now?"
+    )){
+      return;
+    }
+
+    setMessage("Processing maintenance request...");
+
+    const endpoint =
+      action === "backup"
+      ? "/api/superadmin/maintenance/backup"
+      : "/api/superadmin/maintenance/cache";
+
+
+    const response = await fetch(endpoint,{
+      method:"POST",
+      credentials:"include"
+    });
+
+
+    if(!response.ok){
+      throw new Error("Maintenance failed");
+    }
+
+
+    setMessage(
+      action === "backup"
+      ? "Database backup completed successfully."
+      : "System cache cleared successfully."
+    );
+
+
+  }catch(error){
+
+    setMessage("Maintenance failed. Check system logs.");
+
+  }
+
+};
+
+
 if(loading)
 
 return (
@@ -152,6 +203,11 @@ Loading settings...
 </div>
 
 );
+
+
+
+
+
 
 
 
@@ -350,14 +406,20 @@ Security changes are recorded in audit logs
 <Card icon={Database} title="System Maintenance">
 
 
-<button className="w-full border rounded-xl p-3">
+<button
+onClick={()=>runMaintenance("backup")}
+className="w-full border rounded-xl p-3 hover:bg-gray-100"
+>
 
 Create Database Backup
 
 </button>
 
 
-<button className="w-full border rounded-xl p-3">
+<button
+onClick={()=>runMaintenance("cache")}
+className="w-full border rounded-xl p-3 hover:bg-gray-100"
+>
 
 Clear System Cache
 

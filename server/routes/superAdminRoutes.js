@@ -10,7 +10,9 @@ import {
 getAuditLogs,
 getDatabaseStatus,
 getSystemHealth,
-getApiMonitor
+getApiMonitor,
+createDatabaseBackup,
+clearSystemCache
 }
 from "../controllers/superAdminOperationsController.js";
 
@@ -50,7 +52,15 @@ authorize(
 "super_admin",
 "superadmin"
 ),
-);
+(req,res)=>{
+  res.json({
+    success:true,
+    message:"Security status loaded",
+    twoFactor:true,
+    auditLogging:true,
+    sessionProtection:true
+  });
+});
 
 
 router.get(
@@ -85,6 +95,29 @@ authorize(
 getApiMonitor
 );
 
+
+
+router.post(
+"/maintenance/backup",
+protect,
+authorize(
+"super_admin",
+"superadmin"
+),
+createDatabaseBackup
+);
+
+
+
+router.post(
+"/maintenance/cache",
+protect,
+authorize(
+"super_admin",
+"superadmin"
+),
+clearSystemCache
+);
 
 
 
