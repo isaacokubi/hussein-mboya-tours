@@ -157,7 +157,7 @@ path="/superadmin/security"
 
 <Control
 text="API Protection"
-path="/superadmin/api"
+path="/superadmin/api-monitor"
 />
 
 <Control

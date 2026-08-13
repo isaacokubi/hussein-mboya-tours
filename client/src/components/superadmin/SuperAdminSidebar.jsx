@@ -33,7 +33,7 @@ items:[
 ["Audit Center","/superadmin/audit",FileSearch,"Review platform activities"],
 ["Security Center","/superadmin/security",Lock,"Authentication and protection"],
 ["System Health","/superadmin/system",Server,"Infrastructure monitoring"],
-["API Monitor","/superadmin/api",Shield,"API availability tracking"]
+["API Monitor","/superadmin/api-monitor",Shield,"API availability tracking"]
 ]
 },
 
