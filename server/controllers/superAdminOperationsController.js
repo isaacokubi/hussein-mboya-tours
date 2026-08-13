@@ -308,6 +308,7 @@ service:"Coherent Tours API"
 
 
 
+
 export const createDatabaseBackup = async(req,res)=>{
 
 try{
@@ -321,14 +322,12 @@ process.cwd(),
 
 
 if(!fs.existsSync(backupDir)){
-
 fs.mkdirSync(
 backupDir,
 {
 recursive:true
 }
 );
-
 }
 
 
@@ -343,43 +342,58 @@ filename
 );
 
 
+const db =
+mongoose.connection.db;
 
-const backupData={
 
-createdAt:
-new Date(),
+const collections =
+await db.listCollections().toArray();
 
-environment:
-process.env.NODE_ENV || "production",
 
-database:
-process.env.MONGO_URI
-?
-"MongoDB Connected"
-:
-"Database configured",
-
+const databaseBackup={
+createdAt:new Date(),
+database:db.databaseName,
 createdBy:
 req.user?.email ||
 req.user?._id ||
-"system"
-
+"system",
+collections:{}
 };
 
 
 
+for(const collection of collections){
+
+const name =
+collection.name;
+
+
+const documents =
+await db
+.collection(name)
+.find({})
+.toArray();
+
+
+databaseBackup.collections[name]=documents;
+
+}
+
+
+
 fs.writeFileSync(
-
 filepath,
-
 JSON.stringify(
-backupData,
+databaseBackup,
 null,
 2
 )
-
 );
 
+
+
+const stats =
+fs.statSync(filepath);
 
 
 res.json({
@@ -391,8 +405,10 @@ message:
 
 file:filename,
 
-createdAt:
-new Date()
+size:
+stats.size,
+
+createdAt:new Date()
 
 });
 
@@ -414,16 +430,9 @@ message:
 
 });
 
-
 }
 
 };
-
-
-
-
-
-
 
 export const clearSystemCache = async(req,res)=>{
 
