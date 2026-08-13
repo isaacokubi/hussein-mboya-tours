@@ -313,6 +313,81 @@ service:"Coherent Tours API"
 
 
 
+
+
+export const clearSystemCache = async(req,res)=>{
+
+try{
+
+const folders=[
+
+path.join(process.cwd(),"cache"),
+
+path.join(process.cwd(),"tmp"),
+
+path.join(process.cwd(),"uploads","tmp")
+
+];
+
+
+let cleared=[];
+
+
+for(const folder of folders){
+
+if(fs.existsSync(folder)){
+
+for(const item of fs.readdirSync(folder)){
+
+fs.rmSync(
+path.join(folder,item),
+{
+recursive:true,
+force:true
+}
+);
+
+}
+
+cleared.push(folder);
+
+}
+
+}
+
+
+res.json({
+
+success:true,
+
+message:"System cache cleared successfully",
+
+cleared,
+
+timestamp:new Date()
+
+});
+
+
+}
+catch(error){
+
+console.error(error);
+
+
+res.status(500).json({
+
+success:false,
+
+message:"Cache clearing failed"
+
+});
+
+}
+
+};
+
+
 export const createDatabaseBackup = async(req,res)=>{
 
 try{
