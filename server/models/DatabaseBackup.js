@@ -12,21 +12,31 @@ const databaseBackupSchema = new mongoose.Schema(
     default:"0 MB"
   },
 
+  collections:{
+    type:[String],
+    default:[]
+  },
+
+  databaseName:{
+    type:String,
+    default:"unknown"
+  },
+
+  environment:{
+    type:String,
+    default:"production"
+  },
+
   createdBy:{
     type:String,
     default:"system"
-  },
-
-  createdAt:{
-    type:Date,
-    default:Date.now
   }
 
 },
 {
- timestamps:true
-}
-);
+  timestamps:true
+});
+
 
 export default mongoose.model(
 "DatabaseBackup",
