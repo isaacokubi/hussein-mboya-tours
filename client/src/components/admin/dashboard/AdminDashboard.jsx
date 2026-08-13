@@ -70,7 +70,7 @@ export default function AdminDashboard() {
 
 
     const dashboard =
-        data?.data || {};
+        data?.data || data || {};
 
 
 

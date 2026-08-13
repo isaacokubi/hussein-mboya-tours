@@ -1,2 +1,5 @@
-const items=[["Revenue","KSh 0"],["Bookings","Monitoring"],["Customers","Growing"],["Tours","Active"],["Payments","Tracked"],["Staff","Managed"]];
-export default function AdminDashboard(){return <section className="p-6 space-y-6"><h1 className="text-3xl font-bold">Admin Dashboard</h1><p>Complete business operations overview.</p><div className="grid md:grid-cols-3 gap-4">{items.map(i=><div className="bg-white shadow rounded-xl p-5" key={i[0]}><p className="text-gray-500">{i[0]}</p><b className="text-2xl">{i[1]}</b></div>)}</div></section>}
+import AdminDashboardView from "../../components/admin/dashboard/AdminDashboard";
+
+export default function AdminDashboard() {
+  return <AdminDashboardView />;
+}
