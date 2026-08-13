@@ -13,7 +13,7 @@ useEffect(()=>{
 
 async function load(){
  try{
-  const res=await api.get("/admin/api");
+  const res=await api.get("/superadmin-tools/api-monitor");
   setData(res.data);
  }
  catch(e){
