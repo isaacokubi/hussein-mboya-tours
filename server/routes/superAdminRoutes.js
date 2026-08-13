@@ -49,7 +49,6 @@ authorize(
 "super_admin",
 "superadmin"
 ),
-getSecurityStatus
 );
 
 
