@@ -1,5 +1,6 @@
-import React,{useEffect,useState} from "react";
 import {useNavigate} from "react-router-dom";
+import React,{useEffect,useState} from "react";
+
 import {getSecurityStatus} from "../../api/superAdminApi";
 
 
@@ -247,24 +248,9 @@ return (
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function Row({name,status}){
 
 return (
-
 <tr className="border-b">
 
 <td className="py-3 font-medium">
@@ -288,24 +274,15 @@ status || "Unknown"
 </td>
 
 </tr>
-
 );
 
 }
 
 
 
-
-
-
-
-
-
-
 function Control({text,path}){
 
 const navigate = useNavigate();
-
 
 return (
 
