@@ -457,6 +457,15 @@ file:filename,
 size:
 (fs.statSync(filepath).size / 1024 / 1024).toFixed(2)+" MB",
 
+collections:
+Object.keys(backupData),
+
+databaseName:
+mongoose.connection.name || "unknown",
+
+environment:
+process.env.NODE_ENV || "production",
+
 createdBy:
 req.user?.email ||
 req.user?._id ||
