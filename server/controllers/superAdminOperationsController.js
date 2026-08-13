@@ -7,6 +7,7 @@ const execAsync = promisify(exec);
 const BACKUP_DIR = path.join(process.cwd(),"server","backups");
 
 import mongoose from "mongoose";
+import DatabaseBackup from "../models/DatabaseBackup.js";
 import AuditLog from "../models/AuditLog.js";
 import User from "../models/User.js";
 import { createAuditLog } from "../services/auditService.js";
@@ -310,162 +311,9 @@ service:"Coherent Tours API"
 
 
 
+
+
 export const createDatabaseBackup = async(req,res)=>{
-
-try{
-
-const db =
-mongoose.connection.db;
-
-
-const collections =
-await db.listCollections().toArray();
-
-
-const backupData={};
-
-
-for(const collection of collections){
-
-const name=collection.name;
-
-
-backupData[name]=
-await db
-.collection(name)
-.find({})
-.toArray();
-
-}
-
-
-
-const jsonSize =
-Buffer.byteLength(
-JSON.stringify(backupData)
-);
-
-
-
-const backup =
-await [];
-
-
-
-res.json({
-
-success:true,
-
-message:
-"Database backup created successfully",
-
-backup
-
-});
-
-
-}catch(error){
-
-console.error(
-"BACKUP ERROR",
-error
-);
-
-
-res.status(500).json({
-
-success:false,
-
-message:
-error.message
-
-});
-
-
-}
-
-};
-
-
-export const clearSystemCache = async(req,res)=>{
-
-try{
-
-const folders=[
-
-path.join(process.cwd(),"cache"),
-
-path.join(process.cwd(),"tmp"),
-
-path.join(process.cwd(),"uploads","tmp")
-
-];
-
-
-let cleared=[];
-
-
-for(const folder of folders){
-
-if(fs.existsSync(folder)){
-
-for(const item of fs.readdirSync(folder)){
-
-fs.rmSync(
-path.join(folder,item),
-{
-recursive:true,
-force:true
-}
-);
-
-}
-
-cleared.push(folder);
-
-}
-
-}
-
-
-res.json({
-
-success:true,
-
-message:
-"System cache cleared successfully",
-
-cleared,
-
-timestamp:new Date()
-
-});
-
-
-}catch(error){
-
-console.error(error);
-
-res.status(500).json({
-
-success:false,
-
-message:
-"Cache clearing failed"
-
-});
-
-}
-
-};
-
-
-
-
-
-
-
-export const listDatabaseBackups = async(req,res)=>{
 
 try{
 
@@ -478,55 +326,118 @@ process.cwd(),
 
 
 if(!fs.existsSync(backupDir)){
+fs.mkdirSync(
+backupDir,
+{
+recursive:true
+}
+);
+}
 
-return res.json({
+
+const filename =
+`database-backup-${Date.now()}.json`;
+
+
+const filepath =
+path.join(
+backupDir,
+filename
+);
+
+
+const backupData={
+
+createdAt:new Date(),
+
+environment:
+process.env.NODE_ENV || "production",
+
+database:
+mongoose.connection.name || "unknown",
+
+createdBy:
+req.user?.email ||
+req.user?._id ||
+"system"
+
+};
+
+
+fs.writeFileSync(
+filepath,
+JSON.stringify(
+backupData,
+null,
+2
+)
+);
+
+
+
+const savedBackup = await DatabaseBackup.create({
+
+file:filename,
+
+size:
+(fs.statSync(filepath).size / 1024 / 1024).toFixed(2)+" MB",
+
+createdBy:
+req.user?.email ||
+req.user?._id ||
+"system"
+
+});
+
+console.log("SAVED BACKUP RECORD:", savedBackup);
+
+
+res.json({
 
 success:true,
 
-backups:[]
+message:
+"Database backup created successfully",
+
+file:filename
+
+});
+
+
+}
+catch(error){
+
+console.error(
+"BACKUP ERROR",
+error
+);
+
+
+res.status(500).json({
+
+success:false,
+
+message:error.message
 
 });
 
 }
 
-
-const backups =
-fs.readdirSync(backupDir)
-.filter(file =>
-file.endsWith(".json")
-)
-.map(file=>{
-
-
-const fullPath =
-path.join(
-backupDir,
-file
-);
-
-
-const stat =
-fs.statSync(fullPath);
-
-
-return {
-
-file,
-
-size:
-(stat.size / 1024 / 1024).toFixed(2)+" MB",
-
-createdAt:
-stat.birthtime
-
 };
 
 
+
+
+export const listDatabaseBackups = async(req,res)=>{
+
+try{
+
+const backups =
+await DatabaseBackup.find()
+.sort({
+createdAt:-1
 })
-.sort(
-(a,b)=>
-new Date(b.createdAt)-new Date(a.createdAt)
-);
+.lean();
 
 
 res.json({
@@ -562,81 +473,51 @@ message:
 
 
 
-export const deleteDatabaseBackup = async(req,res)=>{
-
-try{
-
-const file =
-path.join(
-BACKUP_DIR,
-req.params.file
-);
-
-
-if(fs.existsSync(file)){
-
-fs.rmSync(file);
-
-}
-
-
-res.json({
-
-success:true,
-
-message:
-"Backup deleted successfully"
-
-});
-
-
-}catch(error){
-
-res.status(500).json({
-
-success:false,
-
-message:
-"Delete failed"
-
-});
-
-}
-
-};
-
-
 
 export const downloadDatabaseBackup = async(req,res)=>{
 
 try{
 
 const backup =
-await [];
+await DatabaseBackup.findOne({
+file:req.params.id
+});
 
 
 if(!backup){
 
 return res.status(404).json({
+
+success:false,
+
 message:"Backup not found"
+
 });
 
 }
 
 
-res.json({
+const filepath =
+path.join(
+process.cwd(),
+"server",
+"backups",
+backup.file
+);
 
-success:true,
 
-backup
-
-});
+res.download(filepath);
 
 
-}catch(error){
+}
+catch(error){
 
 res.status(500).json({
+
+success:false,
+
 message:error.message
+
 });
 
 }
@@ -645,4 +526,39 @@ message:error.message
 
 
 
-// DOWNLOAD DATABASE BACKUP
+
+export const deleteDatabaseBackup = async(req,res)=>{
+
+try{
+
+await DatabaseBackup.deleteOne({
+
+file:req.params.file
+
+});
+
+
+res.json({
+
+success:true,
+
+message:"Backup deleted"
+
+});
+
+
+}
+catch(error){
+
+res.status(500).json({
+
+success:false,
+
+message:error.message
+
+});
+
+}
+
+};
+
