@@ -48,9 +48,9 @@ useEffect(()=>{
 Roles & Permissions Center
 </h1><p className="text-slate-500">Assign exactly what each operational role can access.</p></div>
     <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
-      <div className="space-y-3">{roles.map(role=><button key={role._id} onClick={()=>setSelected(role._id)} className={`w-full rounded-2xl bg-white p-5 text-left shadow-sm ring-1 ring-slate-200 ${selected===role._id?"ring-2 ring-emerald-600":""}`}><div className="flex items-center justify-between"><div><div className="font-bold capitalize">{String(role.displayName||role.name).replace(/_/g," ")}</div><div className="mt-1 text-sm text-slate-500">{role.permissions?.length||0} permissions</div></div><ShieldCheck className="text-emerald-700"/></div></button>)}</div>
+      <div className="space-y-3">{roles.map(role=><button key={role._id || role.id} onClick={()=>setSelected(role._id || role.id)} className={`w-full rounded-2xl bg-white p-5 text-left shadow-sm ring-1 ring-slate-200 ${selected===(role._id || role.id)?"ring-2 ring-emerald-600":""}`}><div className="flex items-center justify-between"><div><div className="font-bold capitalize">{String(role.displayName||role.name).replace(/_/g," ")}</div><div className="mt-1 text-sm text-slate-500">{role.permissions?.length||0} permissions</div></div><ShieldCheck className="text-emerald-700"/></div></button>)}</div>
       <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-        {!selected?<div className="py-16 text-center text-slate-500">Select a role to manage its permissions.</div>:<PermissionEditor role={roles.find(r=>r._id===selected)} grouped={grouped} mutation={mutation}/>}
+        {!selected?<div className="py-16 text-center text-slate-500">Select a role to manage its permissions.</div>:<PermissionEditor role={roles.find(r=>(r._id || r.id)===selected)} grouped={grouped} mutation={mutation}/>}
       </div>
     </div>
   </div></div>;
