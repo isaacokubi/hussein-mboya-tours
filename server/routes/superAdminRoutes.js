@@ -19,6 +19,7 @@ import {
   clearSystemCache,
   listDatabaseBackups,
   deleteDatabaseBackup
+  ,downloadDatabaseBackup
 } from "../controllers/superAdminOperationsController.js";
 
 
@@ -168,8 +169,24 @@ router.delete(
   protect,
   authorize("super_admin","superadmin"),
   deleteDatabaseBackup
+  ,downloadDatabaseBackup
 );
 
+
+
+
+
+// DOWNLOAD DATABASE BACKUP
+
+router.get(
+  "/database/backup/:id/download",
+  protect,
+  authorize(
+    "super_admin",
+    "superadmin"
+  ),
+  downloadDatabaseBackup
+);
 
 
 export default router;
