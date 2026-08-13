@@ -240,41 +240,95 @@ Database Backups
 
 
 {
-
 backups?.backups?.length ?
 
-
-backups.backups.map(b=>(
-
+[...backups.backups]
+.sort(
+(a,b)=>
+new Date(b.createdAt)-new Date(a.createdAt)
+)
+.map((b,index)=>(
 
 <div
 key={b._id}
-className="flex justify-between items-center border-b py-4"
+className="border rounded-xl p-5 mb-4 shadow-sm"
 >
 
+<div className="flex justify-between items-start">
 
 <div>
 
-
-<p className="font-semibold">
+<p className="font-bold text-lg">
 {b.file}
 </p>
 
-
-
-<p>
+<p className="text-sm">
 Size: {b.size}
 </p>
 
 
-
-<p>
-Collections: {Array.isArray(b.collections) ? b.collections.length : 0}
+<p className="text-sm">
+Database: {b.databaseName || "husseindb"}
 </p>
 
 
+<p className="text-sm">
+Environment: {b.environment || "production"}
+</p>
 
-<p className="text-sm text-gray-500">
+
+<p className="text-sm">
+Created By: {b.createdBy || "system"}
+</p>
+
+
+<p className="text-sm">
+Collections:
+{" "}
+{Array.isArray(b.collections)
+?
+b.collections.length
+:
+0}
+</p>
+
+
+{
+Array.isArray(b.collections)
+&&
+b.collections.length > 0
+&&
+
+<details className="mt-3">
+
+<summary className="cursor-pointer text-blue-600">
+View Collections
+</summary>
+
+
+<div className="grid grid-cols-2 gap-2 mt-3 text-sm">
+
+{
+b.collections.map(
+(collection)=>(
+<span
+key={collection}
+className="border rounded px-2 py-1"
+>
+{collection}
+</span>
+)
+)
+}
+
+</div>
+
+</details>
+
+}
+
+
+<p className="text-gray-500 text-sm mt-2">
 
 Created:
 
@@ -289,49 +343,43 @@ b.createdAt
 </p>
 
 
+{
+index===0 &&
+
+<span className="inline-block mt-2 text-green-600 font-semibold">
+Latest Backup
+</span>
+
+}
+
 </div>
 
 
-
-
-
-<div className="flex gap-3">
+<div className="flex gap-4 mt-2">
 
 
 <button
-
 className="text-blue-600"
-
 onClick={()=>downloadBackup(b._id)}
-
 >
-
 Download
-
 </button>
-
 
 
 <button
-
 className="text-red-600"
-
 onClick={()=>removeBackup(b._id)}
-
 >
-
 Delete
-
 </button>
 
 
-
 </div>
 
 
-
 </div>
 
+</div>
 
 ))
 
@@ -341,7 +389,6 @@ Delete
 <p>
 No backups available
 </p>
-
 
 }
 
