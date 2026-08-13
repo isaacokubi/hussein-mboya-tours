@@ -86,6 +86,5 @@ getApiMonitor
 
 
 
-);
 
 export default router;
