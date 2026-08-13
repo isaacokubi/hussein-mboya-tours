@@ -1,7 +1,12 @@
-const router = require("express").Router();
-const controller = require("../controllers/securityController");
+import express from "express";
+import {
+  getSecurityStatus,
+  getSecurityEvents
+} from "../controllers/securityController.js";
 
-router.get("/status", controller.getSecurityStatus);
-router.get("/events", controller.getSecurityEvents);
+const router = express.Router();
 
-module.exports = router;
+router.get("/status", getSecurityStatus);
+router.get("/events", getSecurityEvents);
+
+export default router;
