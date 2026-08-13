@@ -15,7 +15,7 @@ export const getDatabaseStatus = async () =>
   (await axios.get("/superadmin/database")).data;
 
 export const getSystemHealth = async () =>
-  (await axios.get("/superadmin/system")).data;
+  (await axios.get("/system/health")).data;
 
 export const getApiMonitor = async () =>
-  (await axios.get("/superadmin/api-monitor")).data;
+  (await axios.get("/api-monitor")).data;
