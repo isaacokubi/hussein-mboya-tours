@@ -64,7 +64,7 @@ return (
 </p>
 
 <p className="font-bold mt-2">
-{value || "Unknown"}
+{value || "Loading..."}
 </p>
 
 </div>
