@@ -14,7 +14,7 @@ const router=express.Router();
 
 
 router.get("/audit",getAudit);
-router.get("/security",getSecurity);
+// security endpoint handled by superAdminOperationsRoutes
 router.get("/database",getDatabase);
 router.get("/api-monitor",getApiMonitor);
 router.get("/system",getSystem);
