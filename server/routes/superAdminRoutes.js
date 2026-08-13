@@ -169,7 +169,6 @@ router.delete(
   protect,
   authorize("super_admin","superadmin"),
   deleteDatabaseBackup
-  ,downloadDatabaseBackup
 );
 
 
