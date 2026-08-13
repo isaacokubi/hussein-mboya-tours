@@ -1,9 +1,10 @@
+import { getSecurityStatus } from "../controllers/securityController.js";
 import express from "express";
 
 import {
 
 getAuditLogs,
-getSecurityStatus,
+
 getDatabaseStatus,
 getSystemHealth,
 getApiMonitor
