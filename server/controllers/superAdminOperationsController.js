@@ -443,8 +443,21 @@ req.user?._id ||
 };
 
 
+console.log(
+"BACKUP DB STATE:",
+mongoose.connection.readyState,
+mongoose.connection.name
+);
+
+
 const collections =
 await db.listCollections().toArray();
+
+
+console.log(
+"FOUND COLLECTIONS:",
+collections
+);
 
 
 const collectionNames =
