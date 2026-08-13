@@ -11,6 +11,12 @@ import {
 } from "../controllers/superAdminDashboardController.js";
 
 import {
+
+import {
+  protect,
+  authorize
+} from "../middleware/authMiddleware.js";
+
   getDatabaseStatus,
   getSystemHealth,
   createDatabaseBackup,
