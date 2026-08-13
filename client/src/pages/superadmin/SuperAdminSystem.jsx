@@ -42,7 +42,8 @@ System Health Center
 <div className="grid md:grid-cols-3 gap-6">
 
 <Card title="Status" value={system.status}/>
-<Card title="Node Version" value={system.node?.version || system.nodeVersion || "N/A"}/>
+<Card title="Node Version" value={typeof system.node === "string" ? system.node : system.node?.version || system.nodeVersion || "N/A"}/>
+
 <Card title="Uptime" value={`${uptime} seconds`}/>
 
 </div>
