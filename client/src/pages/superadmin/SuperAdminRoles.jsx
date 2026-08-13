@@ -1,10 +1,15 @@
-import {useQuery} from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../../api/axios";
 
+export default function SuperAdminRoles() {
 
-export default function SuperAdminRoles(){
+const queryClient = useQueryClient();
 
-const {data:roles}=useQuery({
+const [selectedRole,setSelectedRole] = useState(null);
+const [selectedPermissions,setSelectedPermissions] = useState([]);
+
+const {data:roles=[]}=useQuery({
 queryKey:["roles"],
 queryFn:async()=>{
 const r=await api.get("/admin/roles");
@@ -13,7 +18,7 @@ return r.data.roles || [];
 });
 
 
-const {data:permissions}=useQuery({
+const {data:permissions=[]}=useQuery({
 queryKey:["permissions"],
 queryFn:async()=>{
 const r=await api.get("/admin/roles/permissions/all");
@@ -22,7 +27,56 @@ return r.data.permissions || [];
 });
 
 
-return <div className="p-8 space-y-6">
+const updateRole=useMutation({
+
+mutationFn:async()=>{
+
+return api.patch(
+`/admin/roles/${selectedRole._id}`,
+{
+permissions:selectedPermissions
+}
+);
+
+},
+
+onSuccess:()=>{
+
+queryClient.invalidateQueries(["roles"]);
+alert("Role permissions updated successfully");
+
+}
+
+});
+
+
+const openRole=(role)=>{
+
+setSelectedRole(role);
+
+setSelectedPermissions(
+(role.permissions || []).map(p=>p._id)
+);
+
+};
+
+
+const togglePermission=(id)=>{
+
+setSelectedPermissions(prev=>
+prev.includes(id)
+?
+prev.filter(x=>x!==id)
+:
+[...prev,id]
+);
+
+};
+
+
+return (
+
+<div className="p-8 space-y-6">
 
 
 <h1 className="text-3xl font-bold">
@@ -30,66 +84,131 @@ Roles & Permissions Center
 </h1>
 
 
-<div className="grid md:grid-cols-2 gap-6">
+<div className="grid lg:grid-cols-3 gap-6">
 
 
-<div className="bg-white rounded-xl border p-6">
+<div className="bg-white border rounded-xl p-6">
 
-<h2 className="font-bold text-xl mb-4">
+<h2 className="text-xl font-bold mb-4">
 System Roles
 </h2>
 
-{
-roles?.map(r=>
 
-<div key={r._id}
-className="border rounded-lg p-4 mb-3">
+{roles.map(role=>(
+
+<button
+key={role._id}
+onClick={()=>openRole(role)}
+className="w-full text-left border rounded-lg p-4 mb-3 hover:bg-gray-50"
+>
+
 
 <h3 className="font-bold">
-{r.displayName || r.name}
+{role.displayName || role.name}
 </h3>
 
-<p>
-Level: {r.level}
-</p>
 
 <p>
-Permissions: {r.permissions?.length || 0}
+Level: {role.level}
 </p>
+
+
+<p>
+Permissions: {role.permissions?.length || 0}
+</p>
+
+
+</button>
+
+))}
 
 </div>
 
-)
-}
 
 
-</div>
+<div className="lg:col-span-2 bg-white border rounded-xl p-6">
 
-
-<div className="bg-white rounded-xl border p-6">
-
-<h2 className="font-bold text-xl mb-4">
-Available Permissions
-</h2>
 
 {
-permissions?.map(p=>
+selectedRole ?
 
-<div key={p._id}
-className="border p-3 rounded mb-2">
+<>
 
-{p.name}
+<h2 className="text-xl font-bold mb-4">
+Edit {selectedRole.displayName || selectedRole.name}
+</h2>
+
+
+<div className="grid md:grid-cols-2 gap-3">
+
+
+{permissions.map(permission=>(
+
+<label
+key={permission._id}
+className="border rounded p-3 flex gap-3"
+>
+
+
+<input
+type="checkbox"
+checked={selectedPermissions.includes(permission._id)}
+onChange={()=>togglePermission(permission._id)}
+/>
+
+
+<span>
+{permission.name}
+</span>
+
+
+</label>
+
+))}
+
 
 </div>
 
-)
+
+<button
+onClick={()=>updateRole.mutate()}
+disabled={updateRole.isPending}
+className="mt-6 bg-black text-white px-6 py-3 rounded"
+>
+
+{
+updateRole.isPending
+?
+"Saving..."
+:
+"Save Permissions"
 }
 
+</button>
+
+
+</>
+
+
+:
+
+
+<div className="text-gray-500">
+Select a role to edit permissions
+</div>
+
+
+}
+
+
+</div>
+
+
 </div>
 
 
 </div>
 
-</div>
+);
 
 }
