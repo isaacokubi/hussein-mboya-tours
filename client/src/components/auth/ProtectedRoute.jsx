@@ -175,7 +175,7 @@ export default function ProtectedRoute({
 
     superadmin: "superadmin",
 
-    administrator: "admin",
+    administrator: "superadmin",
 
 
     agent: "agent",

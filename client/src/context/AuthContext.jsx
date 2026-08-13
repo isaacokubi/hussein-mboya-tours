@@ -90,6 +90,10 @@ const normalizeUser = (user)=>{
 
         ||
 
+        user?.roleId?.name
+
+        ||
+
         user?.legacyRole
 
       )
