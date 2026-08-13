@@ -24,12 +24,21 @@ securityEvents
 User.countDocuments(),
 
 User.countDocuments({
+$or:[
+{
 role:{
 $in:[
 "admin",
 "administrator"
 ]
 }
+},
+{
+roleId:{
+$exists:true
+}
+}
+]
 }),
 
 User.countDocuments({
@@ -43,11 +52,7 @@ $in:[
 
 Role.countDocuments(),
 
-Permission.countDocuments({
-isActive:{
-$ne:false
-}
-}),
+Permission.countDocuments(),
 
 AuditLog.countDocuments(),
 
