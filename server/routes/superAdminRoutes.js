@@ -1,32 +1,25 @@
-
-
-
-
-
-
 import express from "express";
-
-import {
-  getSuperAdminDashboard
-} from "../controllers/superAdminDashboardController.js";
-
-import {
 
 import {
   protect,
   authorize
 } from "../middleware/authMiddleware.js";
 
+import {
+  getSuperAdminDashboard
+} from "../controllers/superAdminDashboardController.js";
+
+import {
+  getAuditLogs,
+  getSecurityStatus,
   getDatabaseStatus,
   getSystemHealth,
+  getApiMonitor,
   createDatabaseBackup,
   clearSystemCache,
   listDatabaseBackups,
   deleteDatabaseBackup
 } from "../controllers/superAdminOperationsController.js";
-
-
-
 
 
 const router = express.Router();
