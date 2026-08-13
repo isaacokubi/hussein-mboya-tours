@@ -515,7 +515,7 @@ backups:[]
 
 const backups =
 fs.readdirSync(BACKUP_DIR)
-.filter(file=>file.endsWith(".gz"))
+.filter(file=>file.startsWith("database-backup-"))
 .map(file=>{
 
 const stat =
