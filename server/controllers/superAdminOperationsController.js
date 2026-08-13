@@ -392,6 +392,9 @@ export const createDatabaseBackup = async(req,res)=>{
 
 try{
 
+const db =
+mongoose.connection.db;
+
 const backupDir =
 path.join(
 process.cwd(),
