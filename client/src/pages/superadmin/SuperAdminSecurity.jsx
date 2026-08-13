@@ -1,5 +1,6 @@
 import React,{useEffect,useState} from "react";
 import {getSecurityStatus} from "../../api/superAdminApi";
+import {useNavigate} from "react-router-dom";
 
 
 export default function SuperAdminSecurity(){
@@ -132,12 +133,35 @@ Security Controls
 <div className="grid md:grid-cols-2 gap-4">
 
 
-<Control text="JWT Authentication"/>
-<Control text="Role Based Access Control"/>
-<Control text="Audit Logging"/>
-<Control text="Session Monitoring"/>
-<Control text="API Protection"/>
-<Control text="Database Security"/>
+<Control
+text="JWT Authentication"
+path="/superadmin/security/jwt"
+/>
+
+<Control
+text="Role Based Access Control"
+path="/superadmin/roles"
+/>
+
+<Control
+text="Audit Logging"
+path="/superadmin/audit"
+/>
+
+<Control
+text="Session Monitoring"
+path="/superadmin/security/sessions"
+/>
+
+<Control
+text="API Protection"
+path="/superadmin/security/api"
+/>
+
+<Control
+text="Database Security"
+path="/superadmin/database"
+/>
 
 
 </div>
@@ -223,40 +247,28 @@ return (
 
 
 
-function Control({text}){
+
+
+function Control({text,path}){
+
+const navigate = useNavigate();
+
 
 return (
 
-<div className="border rounded-lg p-4">
+<button
+
+onClick={()=>navigate(path)}
+
+className="bg-gray-50 rounded-xl p-4 text-left hover:shadow transition"
+
+>
 
 ✓ {text}
 
-</div>
+</button>
 
 );
 
 }
 
-
-
-function Row({name,status}){
-
-return (
-
-<tr className="border-b">
-
-<td className="py-3">
-{name}
-</td>
-
-<td className="py-3 text-right">
-
-{status || "Configured"}
-
-</td>
-
-</tr>
-
-);
-
-}
