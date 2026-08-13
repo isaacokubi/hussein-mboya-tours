@@ -35,7 +35,18 @@ error ?
 <p className="text-red-600">{error}</p>
 :
 <pre className="overflow-auto text-sm">
+
+<div className="bg-white shadow rounded-xl p-6">
+<h2 className="text-xl font-bold mb-4">
+Security Status
+</h2>
+
+<pre className="text-sm">
 {JSON.stringify(data,null,2)}
+</pre>
+
+</div>
+
 </pre>
 }
 
