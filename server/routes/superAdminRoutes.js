@@ -1,26 +1,21 @@
 import express from "express";
-import { auditMiddleware } from "../middleware/auditMiddleware.js";
 
 import {
-getSuperAdminDashboard
-}
-from "../controllers/superAdminDashboardController.js";
+  protect,
+  authorize
+} from "../middleware/authMiddleware.js";
 
 import {
-getAuditLogs,
-getDatabaseStatus,
-getSystemHealth,
-getApiMonitor,
-createDatabaseBackup,
-clearSystemCache
-}
-from "../controllers/superAdminOperationsController.js";
-
-import {protect, authorize}
-from "../middleware/authMiddleware.js";
+  createDatabaseBackup,
+  clearSystemCache,
+  listDatabaseBackups,
+  deleteDatabaseBackup
+} from "../controllers/superAdminOperationsController.js";
 
 
-const router=express.Router();
+const router = express.Router();
+
+router=express.Router();
 
 
 router.get(
@@ -128,47 +123,36 @@ clearSystemCache
 // ===============================
 
 router.post(
-"/database/backup",
-protect,
-authorize(
-"super_admin",
-"superadmin"
-),
-createDatabaseBackup
+  "/database/backup",
+  protect,
+  authorize("super_admin","superadmin"),
+  createDatabaseBackup
 );
 
 
 router.post(
-"/database/cache-clear",
-protect,
-authorize(
-"super_admin",
-"superadmin"
-),
-clearSystemCache
+  "/database/cache-clear",
+  protect,
+  authorize("super_admin","superadmin"),
+  clearSystemCache
 );
 
 
 router.get(
-"/maintenance/backups",
-protect,
-authorize(
-"super_admin",
-"superadmin"
-),
-listDatabaseBackups
+  "/maintenance/backups",
+  protect,
+  authorize("super_admin","superadmin"),
+  listDatabaseBackups
 );
 
 
 router.delete(
-"/maintenance/backups/:file",
-protect,
-authorize(
-"super_admin",
-"superadmin"
-),
-deleteDatabaseBackup
+  "/maintenance/backups/:file",
+  protect,
+  authorize("super_admin","superadmin"),
+  deleteDatabaseBackup
 );
+
 
 
 export default router;
