@@ -42,35 +42,20 @@ $in:[
 ]);
 
 
-res.json({
+res.status(200).json({
 
 success:true,
 
 stats:{
-users,
-staff,
-agents,
-vehicles,
-booking: bookings,
-bookings,
-admins,
-administrators: admins
+users:Number(users)||0,
+staff:Number(staff)||0,
+agents:Number(agents)||0,
+vehicles:Number(vehicles)||0,
+bookings:Number(bookings)||0,
+admins:Number(admins)||0
 },
 
-data:{
-stats:{
-users,
-staff,
-agents,
-vehicles,
-booking: bookings,
-bookings,
-admins,
-administrators: admins
-}
-},
-
-timestamp:new Date()
+timestamp:new Date().toISOString()
 
 });
 

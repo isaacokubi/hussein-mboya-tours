@@ -9,7 +9,7 @@ const cards = [
 export default function SuperAdminDashboard(){
  const {data,isLoading,isError,error,refetch}=useQuery({
   queryKey:["superadmin-dashboard"], queryFn:getSuperAdminDashboard,
-  retry:2, staleTime:30000
+  retry:2, staleTime:0, refetchOnMount:"always", refetchOnWindowFocus:true
  });
  const stats=data?.stats||{};
  if(isLoading) return <div className="p-8">Loading SuperAdmin Control Center...</div>;
