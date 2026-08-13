@@ -1,32 +1,21 @@
 import axios from "./axios";
 
-
-export const getSuperAdminDashboard=async()=>{
-const response = await axios.get("/superadmin/dashboard");
-return response.data;
+export const getSuperAdminDashboard = async () => {
+  const response = await axios.get("/superadmin/dashboard");
+  return response.data;
 };
 
+export const getAuditLogs = async () =>
+  (await axios.get("/superadmin/audit")).data;
 
-export const getAuditLogs=()=>{
-return axios.get("/superadmin/audit");
-};
+export const getSecurityStatus = async () =>
+  (await axios.get("/superadmin/security")).data;
 
+export const getDatabaseStatus = async () =>
+  (await axios.get("/superadmin/database")).data;
 
-export const getSecurityStatus=()=>{
-return axios.get("/superadmin/security");
-};
+export const getSystemHealth = async () =>
+  (await axios.get("/superadmin/system")).data;
 
-
-export const getDatabaseStatus=()=>{
-return axios.get("/superadmin/database");
-};
-
-
-export const getSystemHealth=()=>{
-return axios.get("/superadmin/system");
-};
-
-
-export const getApiMonitor=()=>{
-return axios.get("/superadmin/api-monitor");
-};
+export const getApiMonitor = async () =>
+  (await axios.get("/superadmin/api-monitor")).data;

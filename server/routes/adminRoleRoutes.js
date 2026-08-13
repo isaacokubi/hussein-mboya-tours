@@ -91,6 +91,16 @@ router.patch(
 updatePermissions
 );
 
+router.put(
+"/:id/permissions",
+updatePermissions
+);
+
+router.put(
+"/:id/permissions",
+updatePermissions
+);
+
 
 
 export default router;
