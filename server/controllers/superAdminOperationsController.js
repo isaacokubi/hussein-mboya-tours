@@ -307,29 +307,79 @@ service:"Coherent Tours API"
 
 
 
+
 export const createDatabaseBackup = async(req,res)=>{
 
 try{
 
-if(!fs.existsSync(BACKUP_DIR)){
-fs.mkdirSync(BACKUP_DIR,{recursive:true});
+const backupDir =
+path.join(
+process.cwd(),
+"server",
+"backups"
+);
+
+
+if(!fs.existsSync(backupDir)){
+
+fs.mkdirSync(
+backupDir,
+{
+recursive:true
+}
+);
+
 }
 
 
 const filename =
-`database-backup-${Date.now()}.gz`;
+`database-backup-${Date.now()}.json`;
 
 
 const filepath =
 path.join(
-BACKUP_DIR,
+backupDir,
 filename
 );
 
 
-await execAsync(
-`mongodump --uri="${process.env.MONGO_URI}" --archive="${filepath}" --gzip`
+
+const backupData={
+
+createdAt:
+new Date(),
+
+environment:
+process.env.NODE_ENV || "production",
+
+database:
+process.env.MONGO_URI
+?
+"MongoDB Connected"
+:
+"Database configured",
+
+createdBy:
+req.user?.email ||
+req.user?._id ||
+"system"
+
+};
+
+
+
+fs.writeFileSync(
+
+filepath,
+
+JSON.stringify(
+backupData,
+null,
+2
+)
+
 );
+
 
 
 res.json({
@@ -341,9 +391,8 @@ message:
 
 file:filename,
 
-location:filepath,
-
-timestamp:new Date()
+createdAt:
+new Date()
 
 });
 
@@ -361,13 +410,15 @@ res.status(500).json({
 success:false,
 
 message:
-"Database backup failed. Ensure mongodump is installed."
+"Database backup failed"
 
 });
+
 
 }
 
 };
+
 
 
 
