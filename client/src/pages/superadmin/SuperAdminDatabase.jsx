@@ -211,7 +211,7 @@ className="flex justify-between items-center border-b py-4"
 
 
 <p className="font-semibold">
-{b.name}
+{b.file}
 </p>
 
 
@@ -223,7 +223,7 @@ Size: {b.size}
 
 
 <p>
-Collections: {b.collections}
+Collections: {Array.isArray(b.collections) ? b.collections.length : 0}
 </p>
 
 
