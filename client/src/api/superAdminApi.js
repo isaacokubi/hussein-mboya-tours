@@ -18,4 +18,4 @@ export const getSystemHealth = async () =>
   (await axios.get("/system/health")).data;
 
 export const getApiMonitor = async () =>
-  (await axios.get("/api-monitor")).data;
+  (await axios.get("/superadmin/api-monitor")).data;
