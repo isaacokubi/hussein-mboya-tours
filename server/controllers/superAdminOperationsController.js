@@ -3,26 +3,125 @@ import AuditLog from "../models/AuditLog.js";
 import User from "../models/User.js";
 
 
-export const getAuditLogs = async(req,res)=>{
-try{
+export const getAuditLogs = async (req, res) => {
+  try {
 
-const logs = await AuditLog.find()
-.sort({createdAt:-1})
-.limit(100);
+    const {
+      page = 1,
+      limit = 20,
+      action,
+      resource,
+      status,
+      search
+    } = req.query;
 
-res.json({
-success:true,
-data:logs
-});
 
-}catch(error){
+    const filter = {};
 
-res.status(500).json({
-success:false,
-message:error.message
-});
 
-}
+    if(action){
+      filter.action = action;
+    }
+
+
+    if(resource){
+      filter.resource = resource;
+    }
+
+
+    if(status){
+      filter.status = status;
+    }
+
+
+    if(search){
+
+      filter.$or = [
+        {
+          description:{
+            $regex:search,
+            $options:"i"
+          }
+        },
+        {
+          action:{
+            $regex:search,
+            $options:"i"
+          }
+        },
+        {
+          resource:{
+            $regex:search,
+            $options:"i"
+          }
+        }
+      ];
+
+    }
+
+
+    const skip =
+      (Number(page)-1) *
+      Number(limit);
+
+
+
+    const [
+      logs,
+      total
+    ] = await Promise.all([
+
+
+      AuditLog.find(filter)
+      .populate(
+        "user",
+        "name email role"
+      )
+      .sort({
+        createdAt:-1
+      })
+      .skip(skip)
+      .limit(Number(limit))
+      .lean(),
+
+
+
+      AuditLog.countDocuments(filter)
+
+    ]);
+
+
+
+    res.json({
+
+      success:true,
+
+      logs,
+
+      pagination:{
+        page:Number(page),
+        limit:Number(limit),
+        total,
+        pages:
+          Math.ceil(
+            total / Number(limit)
+          )
+      }
+
+    });
+
+
+  }catch(error){
+
+    res.status(500).json({
+
+      success:false,
+
+      message:error.message
+
+    });
+
+  }
 };
 
 

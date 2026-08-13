@@ -1,36 +1,67 @@
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getAuditLogs } from "../../api/superAdminApi";
+import api from "../../api/axios";
 
 
 export default function SuperAdminAudit(){
 
-const [search,setSearch]=useState("");
-
 const {
-data,
+data:logs=[],
 isLoading,
-isError
+error
 }=useQuery({
+
 queryKey:["superadmin-audit"],
-queryFn:getAuditLogs
-});
+
+queryFn:async()=>{
+
+const response = await api.get("/superadmin/audit");
+
+const data=response.data;
 
 
-const logs =
-data?.logs ||
-data?.auditLogs ||
-data ||
+/*
+Handle different backend responses:
+{
+ logs:[]
+}
+
+or
+
+{
+ auditLogs:[]
+}
+
+or
+
+[]
+*/
+
+const result =
+Array.isArray(data.logs)
+?
+data.logs
+:
+Array.isArray(data.data)
+?
+data.data
+:
+Array.isArray(data.auditLogs)
+?
+data.auditLogs
+:
+Array.isArray(data)
+?
+data
+:
 [];
 
 
-const filteredLogs = logs.filter((log)=>{
+return result;
 
-const text = JSON.stringify(log).toLowerCase();
-
-return text.includes(search.toLowerCase());
+}
 
 });
+
 
 
 return (
@@ -38,38 +69,14 @@ return (
 <div className="p-6 space-y-6">
 
 
-<div>
-
 <h1 className="text-3xl font-bold">
 Audit Center
 </h1>
 
-<p className="text-gray-500">
-Monitor platform activities and administrative actions
-</p>
-
-</div>
-
-
-<div className="bg-white border rounded-xl p-5">
-
-<input
-className="border rounded-lg px-4 py-3 w-full"
-placeholder="Search audit activity..."
-value={search}
-onChange={(e)=>setSearch(e.target.value)}
-/>
-
-</div>
-
-
-
-<div className="bg-white border rounded-xl overflow-hidden">
-
 
 {isLoading && (
 
-<div className="p-6">
+<div className="border rounded-xl p-5 bg-white">
 Loading audit records...
 </div>
 
@@ -77,96 +84,102 @@ Loading audit records...
 
 
 
-{isError && (
+{error && (
 
-<div className="p-6 text-red-600">
+<div className="border border-red-300 rounded-xl p-5 bg-red-50 text-red-700">
+
 Failed to load audit records.
+
 </div>
 
 )}
 
 
 
-{
-!isLoading && filteredLogs.length===0 && (
-
-<div className="p-6 text-gray-500">
-No audit activity found.
-</div>
-
-)
-}
+<div className="space-y-4">
 
 
-
-<div className="divide-y">
-
-{filteredLogs.map((log,index)=>(
-
+{logs.map((log,index)=>(
 
 <div
 key={log._id || index}
-className="p-5 hover:bg-gray-50"
+className="bg-white border rounded-xl p-5 shadow-sm"
 >
 
 
-<div className="flex justify-between gap-4">
+<div className="font-semibold">
 
-
-<div>
-
-<h3 className="font-semibold">
 {
 log.action ||
 log.event ||
 log.message ||
-"System Activity"
-}
-</h3>
-
-
-<p className="text-sm text-gray-500 mt-1">
-{
 log.description ||
-log.details ||
-"Administrative action recorded"
+"System Activity"
+
 }
+
+</div>
+
+
+
+{log.user && (
+
+<p className="text-sm text-gray-600 mt-2">
+
+User:
+{
+typeof log.user==="object"
+?
+(log.user.name || log.user.email)
+:
+log.user
+}
+
 </p>
 
+)}
 
-</div>
 
 
-<div className="text-sm text-gray-500">
+{log.createdAt && (
+
+<p className="text-xs text-gray-500 mt-2">
 
 {
-log.createdAt
-?
 new Date(log.createdAt).toLocaleString()
-:
-""
 
 }
 
-</div>
+</p>
+
+)}
 
 
 </div>
-
-
-</div>
-
 
 ))}
 
+
+
+{
+!isLoading && logs.length===0 && (
+
+<div className="bg-white border rounded-xl p-5 text-gray-500">
+
+No audit activities found.
+
+</div>
+
+)
+
+}
+
+
 </div>
 
 
 </div>
 
-
-</div>
-
-);
+)
 
 }
