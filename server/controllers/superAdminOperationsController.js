@@ -200,56 +200,40 @@ export const getSecurityStatus = async (req,res)=>{
 
 
 
-export const getDatabaseStatus = async(req,res)=>{
 
-try{
+export const getDatabaseStatus = async (req,res)=>{
+  try{
 
-await createAuditLog({
-user:req.user?._id,
-action:"view",
-resource:"Database",
-description:"Viewed database status",
-severity:"low",
-ipAddress:req.ip,
-userAgent:req.headers["user-agent"],
-endpoint:req.originalUrl,
-method:req.method
-});
+    const mongoose = (await import("mongoose")).default;
 
-res.json({
+    const state = mongoose.connection.readyState;
 
-success:true,
+    res.json({
+      success:true,
+      connected: state === 1,
+      status:
+        state === 1
+        ? "Connected"
+        : "Disconnected",
+      host:
+        mongoose.connection.host || "Unknown",
+      database:
+        mongoose.connection.name || "Unknown",
+      collections:
+        Object.keys(mongoose.connection.collections || {}).length,
+      checkedAt:new Date()
+    });
 
-database:{
+  }catch(error){
 
-status:
-mongoose.connection.readyState===1
-?"connected"
-:"disconnected",
+    res.status(500).json({
+      success:false,
+      message:"Database status check failed",
+      error:error.message
+    });
 
-host:
-mongoose.connection.host,
-
-name:
-mongoose.connection.name
-
-}
-
-});
-
-
-}catch(error){
-
-res.status(500).json({
-success:false,
-message:error.message
-});
-
-}
-
+  }
 };
-
-
 
 export const getSystemHealth = async(req,res)=>{
 
