@@ -137,7 +137,7 @@ Security Controls
 
 <Control
 text="JWT Authentication"
-path="/superadmin/security/jwt"
+path="/superadmin/security"
 />
 
 <Control
@@ -152,12 +152,12 @@ path="/superadmin/audit"
 
 <Control
 text="Session Monitoring"
-path="/superadmin/security/sessions"
+path="/superadmin/security"
 />
 
 <Control
 text="API Protection"
-path="/superadmin/security/api"
+path="/superadmin/api"
 />
 
 <Control
