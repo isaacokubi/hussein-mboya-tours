@@ -113,7 +113,10 @@ export const getAdminPermissions = async () => {
 };
 
 export const updateAdminRolePermissions = async (id, permissions) => {
-  const { data } = await api.patch(`/admin/roles/${id}/permissions`, { permissions });
+  const { data } = await api.put(
+    `/admin/roles/${id}/permissions`,
+    { permissions }
+  );
   return data;
 };
 
