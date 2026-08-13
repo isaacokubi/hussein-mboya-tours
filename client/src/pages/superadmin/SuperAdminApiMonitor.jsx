@@ -25,7 +25,11 @@ API monitor unavailable
 </div>;
 
 
-const api=data.api || data || {};
+const api =
+data.api ||
+data.data ||
+data ||
+{};
 
 
 return (
@@ -43,7 +47,7 @@ API Monitor
 Status:
 <strong>
 {" "}
-{api.status || "Unknown"}
+{api.status || api.health || "Unknown"}
 </strong>
 </p>
 
@@ -51,14 +55,14 @@ Status:
 <p>
 Service:
 {" "}
-{api.service || "API Service"}
+{api.service || api.name || "API Service"}
 </p>
 
 
 <p>
 Timestamp:
 {" "}
-{api.timestamp || "N/A"}
+{api.timestamp || api.time || new Date().toISOString()}
 </p>
 
 
