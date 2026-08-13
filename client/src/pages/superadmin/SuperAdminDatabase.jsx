@@ -4,22 +4,33 @@ import {getDatabaseStatus} from "../../api/superAdminApi";
 
 export default function SuperAdminDatabase(){
 
-const {data,isLoading}=useQuery({
+const {data,isLoading,error}=useQuery({
 queryKey:["superadmin-database"],
-queryFn:getDatabaseStatus
+queryFn:async()=>{
+const res=await getDatabaseStatus();
+return res.data || {};
+}
 });
 
 
 if(isLoading)
-return <div className="p-6">Loading database...</div>;
+return <div className="p-8">
+Loading database...
+</div>;
 
 
-const db=data?.database||{};
+if(error)
+return <div className="p-8 text-red-600">
+Database information unavailable
+</div>;
+
+
+const db=data.database || data || {};
 
 
 return (
 
-<div className="p-6 space-y-6">
+<div className="p-8 space-y-6">
 
 <h1 className="text-3xl font-bold">
 Database Management
@@ -44,14 +55,20 @@ Database Management
 
 function Card({title,value}){
 
-return <div className="bg-white border rounded-xl p-6">
+return (
 
-<p className="text-gray-500">{title}</p>
+<div className="bg-white border rounded-xl p-6">
+
+<p className="text-gray-500">
+{title}
+</p>
 
 <p className="font-bold mt-2">
-{value||"Unknown"}
+{value || "Unknown"}
 </p>
 
 </div>
+
+)
 
 }

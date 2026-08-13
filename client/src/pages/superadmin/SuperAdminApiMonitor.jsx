@@ -4,22 +4,33 @@ import {getApiMonitor} from "../../api/superAdminApi";
 
 export default function SuperAdminApiMonitor(){
 
-const {data,isLoading}=useQuery({
+const {data,isLoading,error}=useQuery({
 queryKey:["superadmin-api"],
-queryFn:getApiMonitor
+queryFn:async()=>{
+const res=await getApiMonitor();
+return res.data || {};
+}
 });
 
 
 if(isLoading)
-return <div className="p-6">Checking API...</div>;
+return <div className="p-8">
+Checking API...
+</div>;
 
 
-const api=data?.api||{};
+if(error)
+return <div className="p-8 text-red-600">
+API monitor unavailable
+</div>;
+
+
+const api=data.api || data || {};
 
 
 return (
 
-<div className="p-6 space-y-6">
+<div className="p-8 space-y-6">
 
 <h1 className="text-3xl font-bold">
 API Monitor
@@ -28,21 +39,30 @@ API Monitor
 
 <div className="bg-white border rounded-xl p-6">
 
-<p>Status:
-<strong>{api.status}</strong>
+<p>
+Status:
+<strong>
+{" "}
+{api.status || "Unknown"}
+</strong>
 </p>
+
 
 <p>
 Service:
-{api.service}
+{" "}
+{api.service || "API Service"}
 </p>
+
 
 <p>
-{api.timestamp}
+Timestamp:
+{" "}
+{api.timestamp || "N/A"}
 </p>
 
-</div>
 
+</div>
 
 </div>
 

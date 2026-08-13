@@ -4,22 +4,33 @@ import {getSecurityStatus} from "../../api/superAdminApi";
 
 export default function SuperAdminSecurity(){
 
-const {data,isLoading}=useQuery({
+const {data,isLoading,error}=useQuery({
 queryKey:["superadmin-security"],
-queryFn:getSecurityStatus
+queryFn:async()=>{
+const res=await getSecurityStatus();
+return res.data || {};
+}
 });
 
 
 if(isLoading)
-return <div className="p-6">Loading security...</div>;
+return <div className="p-8">
+Loading security...
+</div>;
 
 
-const security=data?.security||{};
+if(error)
+return <div className="p-8 text-red-600">
+Security information unavailable
+</div>;
+
+
+const security=data.security || data || {};
 
 
 return (
 
-<div className="p-6 space-y-6">
+<div className="p-8 space-y-6">
 
 <h1 className="text-3xl font-bold">
 Security Center
@@ -43,14 +54,20 @@ Security Center
 
 function Card({title,value}){
 
-return <div className="bg-white border rounded-xl p-6">
+return (
 
-<p className="text-gray-500">{title}</p>
+<div className="bg-white border rounded-xl p-6">
 
-<h2 className="text-3xl font-bold">
-{value}
-</h2>
+<p className="text-gray-500">
+{title}
+</p>
+
+<p className="text-xl font-bold">
+{value || "Configured"}
+</p>
 
 </div>
+
+)
 
 }
