@@ -1,6 +1,7 @@
 import express from "express";
 import superAdminRoutes from "./superAdminRoutes.js";
 import superAdminOperationsRoutes from "./superAdminOperationsRoutes.js";
+import superAdminToolsRoutes from "./superAdminToolsRoutes.js";
 
 import commissionRoutes from "./commissionRoutes.js";
 import tourManagerRoutes from "./tourManagerRoutes.js";
@@ -218,6 +219,11 @@ router.use("/superadmin", superAdminRoutes);
 router.use(
 "/superadmin-tools",
 superAdminOperationsRoutes
+);
+
+router.use(
+"/superadmin-tools",
+superAdminToolsRoutes
 );
 
 export default router;

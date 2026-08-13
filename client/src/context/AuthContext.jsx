@@ -448,7 +448,7 @@ const isAdmin =
 
  ||
 
- ["superadmin","super_admin","administrator"].includes(normalizeRole(user?.role));
+ ["superadmin","super_admin"].includes(normalizeRole(user?.role));
 
 
 

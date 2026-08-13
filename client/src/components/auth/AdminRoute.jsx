@@ -103,7 +103,7 @@ const normalizedRole = String(roleName)
 const allowedRoles = new Set([
     "admin",
     "superadmin",
-    "administrator",
+    
 ]);
 
 
