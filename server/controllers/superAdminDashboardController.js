@@ -46,14 +46,27 @@ res.json({
 
 success:true,
 
+stats:{
+users,
+staff,
+agents,
+vehicles,
+booking: bookings,
+bookings,
+admins,
+administrators: admins
+},
+
 data:{
 stats:{
 users,
 staff,
 agents,
 vehicles,
+booking: bookings,
 bookings,
-admins
+admins,
+administrators: admins
 }
 },
 
