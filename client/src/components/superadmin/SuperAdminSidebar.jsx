@@ -10,24 +10,45 @@ Activity,
 Settings,
 Database,
 Server,
-X
+X,
+Gauge,
+ChevronRight
 } from "lucide-react";
 
 
-export default function SuperAdminSidebar({open,setOpen}){
+const sections=[
 
+{
+title:"Platform Management",
+items:[
+["Dashboard","/superadmin/dashboard",Gauge,"Overview and platform metrics"],
+["User Management","/superadmin/users",Users,"Manage users and accounts"],
+["Roles & Permissions","/superadmin/roles",KeyRound,"Control access policies"]
+]
+},
 
-const links=[
-["Dashboard","/superadmin/dashboard",Activity],
-["User Management","/superadmin/users",Users],
-["Roles & Permissions","/superadmin/roles",KeyRound],
-["Audit Center","/superadmin/audit",FileSearch],
-["Security Center","/superadmin/security",Lock],
-["System Health","/superadmin/system",Server],
-["Platform Settings","/superadmin/settings",Settings],
-["Database Tools","/superadmin/database",Database],
-["API Monitor","/superadmin/api",Shield]
+{
+title:"Security & Monitoring",
+items:[
+["Audit Center","/superadmin/audit",FileSearch,"Review platform activities"],
+["Security Center","/superadmin/security",Lock,"Authentication and protection"],
+["System Health","/superadmin/system",Server,"Infrastructure monitoring"],
+["API Monitor","/superadmin/api",Shield,"API availability tracking"]
+]
+},
+
+{
+title:"Configuration",
+items:[
+["Platform Settings","/superadmin/settings",Settings,"Global system configuration"],
+["Database Tools","/superadmin/database",Database,"Database management"]
+]
+}
+
 ];
+
+
+export default function SuperAdminSidebar({open,setOpen}){
 
 
 return (
@@ -36,12 +57,7 @@ return (
 
 {open &&
 <div
-className="
-fixed inset-0
-bg-black/50
-z-40
-md:hidden
-"
+className="fixed inset-0 bg-black/50 z-40 md:hidden"
 onClick={()=>setOpen(false)}
 />
 }
@@ -49,37 +65,39 @@ onClick={()=>setOpen(false)}
 
 <aside
 className={`
-fixed
-z-50
-top-0
-left-0
-h-screen
-w-72
-bg-gray-950
-text-white
+fixed z-50 top-0 left-0 h-screen w-80
+bg-slate-950 text-white
+shadow-2xl
+transition-transform duration-300
 p-6
-shadow-xl
-transform
-transition-transform
-duration-300
-
+overflow-y-auto
 ${open?"translate-x-0":"-translate-x-full"}
-
 md:translate-x-0
-
 `}
 >
 
 
-<div className="flex justify-between items-center mb-8">
+<div className="flex justify-between items-start mb-8">
+
 
 <div>
 
-<h1 className="text-2xl font-bold">
+<div className="flex items-center gap-2">
+
+<div className="p-2 rounded-xl bg-blue-600">
+<Shield size={22}/>
+</div>
+
+
+<h1 className="text-xl font-bold">
 Coherent Tours
 </h1>
 
-<p className="text-gray-400 text-sm">
+
+</div>
+
+
+<p className="text-sm text-slate-400 mt-2">
 Super Admin Console
 </p>
 
@@ -97,10 +115,28 @@ onClick={()=>setOpen(false)}
 </div>
 
 
-<nav className="space-y-2">
+
+<nav className="space-y-7">
+
 
 {
-links.map(([name,path,Icon])=>(
+sections.map(section=>(
+
+<div key={section.title}>
+
+
+<p className="text-xs uppercase tracking-wider text-slate-500 mb-3">
+{section.title}
+</p>
+
+
+
+<div className="space-y-2">
+
+
+{
+section.items.map(([name,path,Icon,desc])=>(
+
 
 <NavLink
 key={path}
@@ -109,57 +145,108 @@ onClick={()=>setOpen(false)}
 
 className={({isActive})=>
 `
-flex items-center gap-3
-px-4 py-3
-rounded-xl
+group flex items-center justify-between
+rounded-xl px-4 py-3
+transition-all
 
 ${
 isActive
 ?
-"bg-blue-600 text-white"
+"bg-blue-600 text-white shadow-lg"
 :
-"text-gray-300 hover:bg-gray-800"
+"text-slate-300 hover:bg-slate-800"
 }
-
 `
 }
 
+
 >
+
+
+<div className="flex items-center gap-3">
 
 <Icon size={20}/>
 
+
+<div>
+
+<div className="font-medium text-sm">
 {name}
+</div>
+
+
+<div className="text-xs opacity-70 hidden lg:block">
+{desc}
+</div>
+
+
+</div>
+
+
+</div>
+
+
+<ChevronRight
+size={16}
+className="opacity-50"
+/>
+
 
 </NavLink>
 
+
 ))
+
+}
+
+
+</div>
+
+
+</div>
+
+
+))
+
 }
 
 
 </nav>
 
 
-<div
-className="
-mt-10
-bg-gray-900
-border border-gray-800
-rounded-xl
-p-4
-"
->
 
-<p className="text-xs text-gray-400">
+<div className="
+mt-10
+rounded-2xl
+bg-slate-900
+border border-slate-800
+p-5
+">
+
+
+<div className="flex items-center gap-2">
+
+<Activity size={18} className="text-green-400"/>
+
+<p className="text-sm text-slate-400">
 Access Level
 </p>
 
+</div>
 
-<p className="text-green-400 font-bold">
+
+<p className="mt-2 text-green-400 font-bold">
 SUPER ADMIN
 </p>
 
 
+<p className="text-xs text-slate-500 mt-1">
+Full platform governance access
+</p>
+
+
 </div>
+
 
 
 </aside>
