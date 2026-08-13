@@ -94,13 +94,13 @@ value={data.threatLevel || "Low"}
 
 <Card
 title="Authentication"
-value={data.authentication || "Configured"}
+value={data.authentication?.status || "Healthy"}
 />
 
 
 <Card
 title="Authorization"
-value={data.authorization || "Configured"}
+value={`Roles: ${data.authorization?.roles || 0} | Permissions: ${data.authorization?.permissions || 0}`}
 />
 
 
