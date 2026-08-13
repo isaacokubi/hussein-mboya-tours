@@ -1,10 +1,10 @@
-
 import User from "../models/User.js";
+import Staff from "../models/Staff.js";
+import Agent from "../models/Agent.js";
 import Vehicle from "../models/Vehicle.js";
 import Booking from "../models/Booking.js";
 
-
-export const getSuperAdminDashboard=async(req,res)=>{
+export const getSuperAdminDashboard = async (req,res)=>{
 
 try{
 
@@ -19,26 +19,9 @@ admins
 
 User.countDocuments(),
 
-User.countDocuments({
-role:{
-$in:[
-"manager",
-"tour_manager",
-"tourmanager",
-"guide",
-"tour_guide",
-"driver"
-]
-}
-}),
+Staff.countDocuments(),
 
-User.countDocuments({
-role:{
-$in:[
-"agent"
-]
-}
-}),
+Agent.countDocuments(),
 
 Vehicle.countDocuments(),
 
@@ -58,7 +41,9 @@ $in:[
 
 
 res.json({
+
 success:true,
+
 stats:{
 users,
 staff,
@@ -66,15 +51,22 @@ agents,
 vehicles,
 bookings,
 admins
-}
+},
+
+timestamp:new Date()
+
 });
 
 
 }catch(error){
 
+console.error("SuperAdmin dashboard error:",error);
+
 res.status(500).json({
+
 success:false,
 message:error.message
+
 });
 
 }
