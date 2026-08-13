@@ -52,7 +52,7 @@ export { io };
 
 app.use("/api/settings", settingsRoutes);
 
-app.use(auditMiddleware);
+
 app.use("/api/database", databaseRoutes);
 app.use("/api/api-monitor", apiMonitorRoutes);
 app.use("/api/system", systemHealthRoutes);

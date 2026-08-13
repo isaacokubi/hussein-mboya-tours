@@ -1,3 +1,4 @@
+
 import {useState} from "react";
 import {useQuery} from "@tanstack/react-query";
 import api from "../../api/axios";
@@ -6,9 +7,15 @@ import api from "../../api/axios";
 export default function SuperAdminAudit(){
 
 const [page,setPage]=useState(1);
-const [search,setSearch]=useState("");
-const [severity,setSeverity]=useState("");
-const [status,setStatus]=useState("");
+const [selected,setSelected]=useState(null);
+
+const [filters,setFilters]=useState({
+search:"",
+severity:"",
+status:"",
+action:"",
+resource:""
+});
 
 
 const {data,isLoading,error,refetch}=useQuery({
@@ -16,9 +23,7 @@ const {data,isLoading,error,refetch}=useQuery({
 queryKey:[
 "audit-center",
 page,
-search,
-severity,
-status
+filters
 ],
 
 queryFn:async()=>{
@@ -29,9 +34,7 @@ const res=await api.get(
 params:{
 page,
 limit:20,
-search,
-severity,
-status
+...filters
 }
 }
 );
@@ -52,7 +55,7 @@ return (
 <div className="space-y-6">
 
 
-<div>
+<header>
 
 <h1 className="text-3xl font-bold">
 Audit Center
@@ -62,76 +65,62 @@ Audit Center
 Platform activity monitoring and security events
 </p>
 
-</div>
+</header>
 
 
 
 <div className="grid grid-cols-4 gap-4">
 
 
-<Card
-title="Total Events"
-value={data?.statistics?.total || 0}
-/>
-
-
-<Card
-title="Successful"
-value={data?.statistics?.success || 0}
-/>
-
-
-<Card
-title="Failed"
-value={data?.statistics?.failed || 0}
-/>
-
-
-<Card
-title="Critical"
-value={data?.statistics?.critical || 0}
-/>
+<Card title="Total Events" value={data?.statistics?.total || 0}/>
+<Card title="Successful" value={data?.statistics?.success || 0}/>
+<Card title="Failed" value={data?.statistics?.failed || 0}/>
+<Card title="Critical" value={data?.statistics?.critical || 0}/>
 
 
 </div>
 
 
 
-<div className="flex gap-3">
+
+<div className="grid grid-cols-5 gap-3">
 
 
 <input
-className="border rounded p-2 flex-1"
-placeholder="Search audit activity..."
-value={search}
-onChange={e=>{
-setPage(1);
-setSearch(e.target.value);
-}}
+className="border rounded p-2"
+placeholder="Search"
+value={filters.search}
+onChange={e=>
+setFilters({...filters,search:e.target.value})
+}
 />
-
 
 
 <select
 className="border rounded p-2"
-value={severity}
-onChange={e=>setSeverity(e.target.value)}
+onChange={e=>
+setFilters({...filters,action:e.target.value})
+}
 >
 
 <option value="">
-All Severity
+Action
 </option>
 
-<option value="critical">
-Critical
+<option value="login">
+Login
 </option>
 
-<option value="warning">
-Warning
+<option value="create">
+Create
 </option>
 
-<option value="info">
-Info
+<option value="update">
+Update
+</option>
+
+<option value="delete">
+Delete
 </option>
 
 </select>
@@ -140,12 +129,44 @@ Info
 
 <select
 className="border rounded p-2"
-value={status}
-onChange={e=>setStatus(e.target.value)}
+onChange={e=>
+setFilters({...filters,severity:e.target.value})
+}
 >
 
 <option value="">
-All Status
+Severity
+</option>
+
+<option value="critical">
+Critical
+</option>
+
+<option value="high">
+High
+</option>
+
+<option value="medium">
+Medium
+</option>
+
+<option value="low">
+Low
+</option>
+
+</select>
+
+
+
+<select
+className="border rounded p-2"
+onChange={e=>
+setFilters({...filters,status:e.target.value})
+}
+>
+
+<option value="">
+Status
 </option>
 
 <option value="success">
@@ -161,7 +182,7 @@ Failed
 
 
 <button
-className="px-4 py-2 border rounded"
+className="border rounded px-4"
 onClick={()=>refetch()}
 >
 Refresh
@@ -173,11 +194,10 @@ Refresh
 
 
 
-<div className="bg-white rounded-xl shadow overflow-hidden">
+<div className="bg-white rounded-xl shadow overflow-auto">
 
 
 <table className="w-full">
-
 
 <thead className="bg-gray-100">
 
@@ -187,23 +207,27 @@ Refresh
 User
 </th>
 
-<th className="p-3 text-left">
+<th>
 Action
 </th>
 
-<th className="p-3 text-left">
+<th>
 Resource
 </th>
 
-<th className="p-3 text-left">
+<th>
+Description
+</th>
+
+<th>
 Status
 </th>
 
-<th className="p-3 text-left">
+<th>
 Severity
 </th>
 
-<th className="p-3 text-left">
+<th>
 Date
 </th>
 
@@ -216,88 +240,59 @@ Date
 <tbody>
 
 
-{isLoading &&
-
-<tr>
-<td colSpan="6" className="p-5 text-center">
-Loading audit logs...
-</td>
-</tr>
-
-}
-
-
-
-{error &&
-
-<tr>
-<td colSpan="6" className="p-5 text-center text-red-600">
-Failed loading audit records
-</td>
-</tr>
-
-}
-
-
-
-{!isLoading && !error && logs.length===0 &&
-
-<tr>
-<td colSpan="6" className="p-5 text-center">
-No audit activity found
-</td>
-</tr>
-
-}
-
-
-
 {logs.map(log=>(
 
-<tr key={log._id}
-className="border-t"
+
+<tr
+key={log._id}
+className="border-t hover:bg-gray-50 cursor-pointer"
+onClick={()=>setSelected(log)}
 >
+
 
 <td className="p-3">
 
 {log.user?.name || "System"}
 
-<br/>
-
-<span className="text-xs text-gray-500">
-{log.user?.role || ""}
-</span>
-
 </td>
 
 
-<td className="p-3">
+<td>
 {log.action}
 </td>
 
 
-<td className="p-3">
+<td>
 {log.resource}
 </td>
 
 
-<td className="p-3">
-{log.status}
+<td>
+{log.description || "-"}
 </td>
 
 
-<td className="p-3">
-{log.severity}
+<td>
+
+<Badge value={log.status}/>
+
 </td>
 
 
-<td className="p-3">
-{new Date(log.createdAt)
-.toLocaleString()}
+<td>
+
+<Badge value={log.severity}/>
+
+</td>
+
+
+<td>
+{new Date(log.createdAt).toLocaleString()}
 </td>
 
 
 </tr>
+
 
 ))}
 
@@ -306,12 +301,13 @@ className="border-t"
 
 </table>
 
-
 </div>
 
 
 
+
 <div className="flex justify-between">
+
 
 <button
 className="border px-4 py-2 rounded"
@@ -329,9 +325,6 @@ Page {page} / {data?.pagination?.pages || 1}
 
 <button
 className="border px-4 py-2 rounded"
-disabled={
-page >= (data?.pagination?.pages || 1)
-}
 onClick={()=>setPage(page+1)}
 >
 Next
@@ -339,6 +332,47 @@ Next
 
 
 </div>
+
+
+
+{selected &&
+
+<div className="fixed inset-0 bg-black/40 flex justify-end">
+
+
+<div className="bg-white w-96 h-full p-6 overflow-auto">
+
+
+<h2 className="text-xl font-bold mb-4">
+Audit Details
+</h2>
+
+
+<pre className="text-sm whitespace-pre-wrap">
+
+{JSON.stringify(
+selected,
+null,
+2
+)}
+
+</pre>
+
+
+<button
+className="mt-5 border px-4 py-2 rounded"
+onClick={()=>setSelected(null)}
+>
+Close
+</button>
+
+
+</div>
+
+</div>
+
+}
+
 
 
 </div>
@@ -355,16 +389,32 @@ return (
 
 <div className="bg-white shadow rounded-xl p-5">
 
-<div className="text-gray-500">
+<p className="text-gray-500">
 {title}
-</div>
+</p>
 
-<div className="text-3xl font-bold">
+<h2 className="text-3xl font-bold">
 {value}
-</div>
+</h2>
 
 </div>
 
-)
+);
+
+}
+
+
+
+function Badge({value}){
+
+return (
+
+<span className="px-2 py-1 rounded text-sm border">
+
+{value}
+
+</span>
+
+);
 
 }

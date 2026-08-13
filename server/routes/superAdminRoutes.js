@@ -1,4 +1,5 @@
 import express from "express";
+import { auditMiddleware } from "../middleware/auditMiddleware.js";
 
 import {
 getSuperAdminDashboard

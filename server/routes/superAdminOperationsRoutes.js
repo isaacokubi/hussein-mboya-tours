@@ -1,5 +1,6 @@
 import { getSecurityStatus } from "../controllers/securityController.js";
 import express from "express";
+import { auditMiddleware } from "../middleware/auditMiddleware.js";
 
 import {
 
@@ -32,6 +33,8 @@ authorize(
 )
 );
 
+
+router.use(auditMiddleware);
 
 router.get("/audit",getAuditLogs);
 

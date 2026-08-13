@@ -1,17 +1,18 @@
 
-import { createAuditLog } from "../services/auditService.js";
+import {createAuditLog} from "../services/auditService.js";
 
 
 export const auditMiddleware = (req,res,next)=>{
 
-const start = Date.now();
 
+res.on("finish",async()=>{
 
-res.on("finish", async()=>{
 
 try{
 
-if(!req.user) return;
+
+if(!req.user)
+return;
 
 
 let action="view";
@@ -20,11 +21,19 @@ let action="view";
 if(req.method==="POST")
 action="create";
 
+
 if(req.method==="PUT" || req.method==="PATCH")
 action="update";
 
+
 if(req.method==="DELETE")
 action="delete";
+
+
+let status =
+res.statusCode >= 400
+?"failed"
+:"success";
 
 
 await createAuditLog({
@@ -38,33 +47,23 @@ resource:"System",
 description:
 `${req.method} ${req.originalUrl}`,
 
-status:
-res.statusCode >= 400
-?
-"failed"
-:
-"success",
+status,
 
 severity:
-res.statusCode >=400
-?
-"high"
-:
-"low",
+status==="failed"
+?"high"
+:"low",
 
 ipAddress:req.ip,
 
-userAgent:
-req.headers["user-agent"],
+userAgent:req.headers["user-agent"],
 
 method:req.method,
 
 endpoint:req.originalUrl,
 
 metadata:{
-statusCode:res.statusCode,
-responseTime:
-Date.now()-start
+statusCode:res.statusCode
 }
 
 });
@@ -79,9 +78,12 @@ error.message
 
 }
 
+
 });
 
 
 next();
 
+
 };
+

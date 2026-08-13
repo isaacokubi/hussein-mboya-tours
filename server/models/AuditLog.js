@@ -28,6 +28,8 @@ const auditLogSchema = new mongoose.Schema(
       trim: true,
       enum: [
         "login",
+        "login_success",
+        "login_failed",
         "logout",
         "create",
         "update",
