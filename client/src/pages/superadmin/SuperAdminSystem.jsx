@@ -43,7 +43,8 @@ System Health
 
 <pre className="text-sm">
 {JSON.stringify(data,null,2)}
-</pre>
+</div>
+</div>
 
 </div>
 
