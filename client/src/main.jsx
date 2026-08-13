@@ -52,7 +52,7 @@ ReactDOM.createRoot(
 .render(
 
 
-  <React.StrictMode>
+  
 
 
     <QueryClientProvider
@@ -75,10 +75,7 @@ ReactDOM.createRoot(
       </BrowserRouter>
 
 
-    </QueryClientProvider>
-
-
-  </React.StrictMode>
+</QueryClientProvider>
 
 
 );

@@ -1,60 +1,93 @@
+
 import axios from "axios";
 
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
-  withCredentials: true,
-  timeout: 30000,
-  headers: {
-    "Content-Type": "application/json",
-  },
+
+baseURL:
+import.meta.env.VITE_API_URL ||
+"http://localhost:5000/api",
+
+withCredentials:true,
+
+timeout:30000,
+
+headers:{
+"Content-Type":"application/json"
+}
+
 });
 
-/*
-|--------------------------------------------------------------------------
-| ATTACH JWT TOKEN AUTOMATICALLY
-|--------------------------------------------------------------------------
-*/
+
+
+
 api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
 
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+(config)=>{
 
-    return config;
-  },
-  (error) => Promise.reject(error)
+
+const token =
+localStorage.getItem("token");
+
+
+
+if(token){
+
+config.headers.Authorization =
+`Bearer ${token}`;
+
+}
+
+
+
+return config;
+
+
+},
+
+
+(error)=>
+Promise.reject(error)
+
 );
 
-/*
-|--------------------------------------------------------------------------
-| GLOBAL ERROR HANDLER
-|--------------------------------------------------------------------------
-*/
+
+
+
+
+
 api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      const token = localStorage.getItem("token");
-      const requestUrl = String(error.config?.url || "");
-      const isLoginRequest = requestUrl.includes("/auth/login");
 
-      // Only clear an existing session when a protected request proves
-      // that its token is no longer accepted. Avoid redirect loops and
-      // avoid turning an ordinary unauthenticated request into a logout.
-      if (token && !isLoginRequest) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
+(response)=>response,
 
-        if (window.location.pathname !== "/login") {
-          window.location.href = "/login";
-        }
-      }
-    }
 
-    return Promise.reject(error);
-  }
+(error)=>{
+
+
+if(error.response?.status===401){
+
+
+console.error(
+"401 SERVER RESPONSE",
+error.response.data
 );
+
+
+// DO NOT REMOVE TOKEN HERE
+
+
+}
+
+
+
+return Promise.reject(error);
+
+
+}
+
+);
+
+
 
 export default api;
+

@@ -246,7 +246,10 @@ catch(error){
   );
 
 
-  logout();
+  // Do NOT remove token immediately.
+  // Keep session alive unless user manually logs out.
+
+  return null;
 
 
 }
@@ -334,6 +337,12 @@ const newToken =
 localStorage.setItem(
  "token",
  newToken
+);
+
+
+console.log(
+ "TOKEN SAVED:",
+ localStorage.getItem("token")
 );
 
 

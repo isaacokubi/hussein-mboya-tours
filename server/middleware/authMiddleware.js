@@ -65,12 +65,13 @@ export const protect = async (req, res, next) => {
       });
     }
 
-    const decoded = jwt.verify(token, secret, {
-      issuer: "husseinmboyatours",
-      audience: "husseinmboyatours-client",
-    });
+    const decoded = jwt.verify(token, secret);
 
-    const userId = decoded.sub || decoded.id;
+    const userId =
+      decoded.sub ||
+      decoded.id ||
+      decoded._id ||
+      decoded.userId;
 
     if (!userId) {
       return res.status(401).json({
