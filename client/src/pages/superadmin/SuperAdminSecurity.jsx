@@ -272,3 +272,39 @@ className="bg-gray-50 rounded-xl p-4 text-left hover:shadow transition"
 
 }
 
+
+
+function Row({name,status}){
+
+
+return (
+
+<tr className="border-b">
+
+<td className="py-3 font-medium">
+{name}
+</td>
+
+
+<td className="py-3 text-right">
+
+<span className="px-3 py-1 rounded-full bg-green-100 text-green-700">
+
+{typeof status === "object"
+? status.status || "Configured"
+: status || "Configured"
+}
+
+</span>
+
+</td>
+
+
+</tr>
+
+);
+
+
+}
+
+
