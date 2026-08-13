@@ -21,7 +21,11 @@ try{
 
 const response=await getSecurityStatus();
 
-setSecurity(response);
+console.log("SECURITY API RESPONSE:", response);
+
+setSecurity(
+response?.data || response
+);
 
 }
 catch(error){
@@ -55,7 +59,7 @@ Loading security infrastructure...
 
 
 
-const data=security?.data || security || {};
+const data=security || {};
 
 
 return (
