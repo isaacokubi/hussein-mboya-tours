@@ -1,73 +1,79 @@
 
 import {useQuery} from "@tanstack/react-query";
-import {
-getDatabaseStatus
-} from "../../api/superAdminApi";
-
 import axios from "../../api/axios";
+import {getDatabaseStatus} from "../../api/superAdminApi";
 
 
 export default function SuperAdminDatabase(){
 
-const runAction = async(endpoint)=>{
-  try{
 
-    await axios.post(endpoint);
+const {data}=useQuery({
 
-    alert("Operation completed successfully");
+queryKey:["database-status"],
 
-  }catch(error){
-
-    alert(
-      error.response?.data?.message ||
-      "Operation failed"
-    );
-
-  }
-};
-
-
-const {
-data,
-isLoading,
-error,
-refetch
-}=useQuery({
-
-queryKey:[
-"superadmin-database"
-],
-
-queryFn:getDatabaseStatus,
-
-refetchInterval:30000
+queryFn:getDatabaseStatus
 
 });
 
 
-if(isLoading)
+const {
+data:backups,
+refetch
+}=useQuery({
 
-return (
+queryKey:["database-backups"],
 
-<div className="p-8">
-Checking database status...
-</div>
+queryFn:
+async()=>(
+await axios.get(
+"/superadmin/maintenance/backups"
+)
+).data
 
+});
+
+
+
+const action=async(url)=>{
+
+try{
+
+const res=
+await axios.post(url);
+
+alert(
+res.data.message
 );
 
+refetch();
 
-if(error)
+}catch(e){
 
-return (
-
-<div className="p-8 text-red-600">
-Database connection unavailable
-</div>
-
+alert(
+e.response?.data?.message ||
+"Operation failed"
 );
 
+}
 
-const db=data?.database || {};
+};
+
+
+
+const removeBackup=async(file)=>{
+
+if(!confirm("Delete this backup?"))
+return;
+
+
+await axios.delete(
+"/superadmin/maintenance/backups/"+file
+);
+
+refetch();
+
+};
+
 
 
 return (
@@ -75,59 +81,39 @@ return (
 <div className="p-8 space-y-8">
 
 
-<div className="flex justify-between items-center">
-
-<div>
-
 <h1 className="text-3xl font-bold">
 Database Management
 </h1>
 
-<p className="text-gray-500">
-Production database monitoring
-</p>
-
-</div>
 
 
-<button
-
-onClick={()=>refetch()}
-
-className="px-5 py-2 rounded-lg bg-black text-white"
-
->
-Refresh
-</button>
-
-</div>
-
-
-
-<div className="grid md:grid-cols-4 gap-5">
+<div className="grid md:grid-cols-3 gap-6">
 
 
 <Card
 title="Status"
-value={db.status}
+value={
+data?.database?.status ||
+"Checking..."
+}
 />
 
 
 <Card
 title="Host"
-value={db.host}
+value={
+data?.database?.host ||
+"Loading..."
+}
 />
 
 
 <Card
 title="Database"
-value={db.name}
-/>
-
-
-<Card
-title="Environment"
-value={db.environment}
+value={
+data?.database?.name ||
+"Loading..."
+}
 />
 
 
@@ -135,66 +121,84 @@ value={db.environment}
 
 
 
-<div className="bg-white border rounded-xl p-6">
+<div className="flex gap-4">
 
 
-<h2 className="font-bold text-xl">
-Database Tools
+<button
+className="px-5 py-3 rounded-xl bg-black text-white"
+onClick={()=>action("/superadmin/database/backup")}
+>
+Create Backup
+</button>
+
+
+
+<button
+className="px-5 py-3 rounded-xl border"
+onClick={()=>action("/superadmin/database/cache-clear")}
+>
+Clear Cache
+</button>
+
+
+</div>
+
+
+
+<div className="border rounded-xl p-6">
+
+
+<h2 className="text-xl font-bold mb-4">
+Database Backups
 </h2>
 
 
-<div className="grid md:grid-cols-2 gap-4 mt-5">
+{
+backups?.backups?.length ?
+
+backups.backups.map(b=>(
+
+<div
+key={b.file}
+className="flex justify-between border-b py-3"
+>
+
+<div>
+
+<p className="font-semibold">
+{b.file}
+</p>
+
+<p>
+{b.size}
+</p>
+
+</div>
 
 
 <button
-onClick={()=>runAction("/superadmin/maintenance/backup")}
-className="border rounded-xl p-5 text-left hover:bg-gray-50"
+className="text-red-600"
+onClick={()=>removeBackup(b.file)}
 >
-
-<h3 className="font-semibold">
-Create Backup
-</h3>
-
-<p className="text-sm text-gray-500">
-Generate database backup snapshot
-</p>
-
-</button>
-
-
-<button
-onClick={()=>runAction("/superadmin/maintenance/cache")}
-className="border rounded-xl p-5 text-left hover:bg-gray-50"
->
-
-<h3 className="font-semibold">
-Clear Cache
-</h3>
-
-<p className="text-sm text-gray-500">
-Clear temporary system data
-</p>
-
+Delete
 </button>
 
 
 </div>
 
+))
 
-<p className="text-sm text-gray-500 mt-6">
-
-Last checked:
-{" "}
-{db.checkedAt
-?
-new Date(db.checkedAt).toLocaleString()
 :
-"Unknown"}
 
+<p>
+No backups available
 </p>
+
+}
 
 
 </div>
+
 
 
 </div>
@@ -209,14 +213,14 @@ function Card({title,value}){
 
 return (
 
-<div className="border rounded-xl p-5 bg-white">
+<div className="border rounded-xl p-6">
 
-<p className="text-gray-500 text-sm">
+<p className="text-gray-500">
 {title}
 </p>
 
 <p className="font-bold mt-2">
-{value || "Unknown"}
+{value}
 </p>
 
 </div>

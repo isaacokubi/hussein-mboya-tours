@@ -448,3 +448,116 @@ message:
 
 
 
+
+
+export const listDatabaseBackups = async(req,res)=>{
+
+try{
+
+if(!fs.existsSync(BACKUP_DIR)){
+return res.json({
+success:true,
+backups:[]
+});
+}
+
+
+const backups =
+fs.readdirSync(BACKUP_DIR)
+.filter(file=>file.endsWith(".gz"))
+.map(file=>{
+
+const stat =
+fs.statSync(
+path.join(BACKUP_DIR,file)
+);
+
+return {
+
+file,
+
+size:
+(stat.size/1024/1024).toFixed(2)+" MB",
+
+createdAt:
+stat.birthtime
+
+};
+
+});
+
+
+res.json({
+
+success:true,
+
+backups
+
+});
+
+
+}catch(error){
+
+console.error(
+"LIST BACKUPS ERROR",
+error
+);
+
+
+res.status(500).json({
+
+success:false,
+
+message:
+"Unable to load backups"
+
+});
+
+}
+
+};
+
+
+export const deleteDatabaseBackup = async(req,res)=>{
+
+try{
+
+const file =
+path.join(
+BACKUP_DIR,
+req.params.file
+);
+
+
+if(fs.existsSync(file)){
+
+fs.rmSync(file);
+
+}
+
+
+res.json({
+
+success:true,
+
+message:
+"Backup deleted successfully"
+
+});
+
+
+}catch(error){
+
+res.status(500).json({
+
+success:false,
+
+message:
+"Delete failed"
+
+});
+
+}
+
+};
+
