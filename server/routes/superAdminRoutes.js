@@ -1,4 +1,3 @@
-import { getSecurityStatus } from "../controllers/securityController.js";
 import express from "express";
 
 import {
@@ -8,7 +7,6 @@ from "../controllers/superAdminDashboardController.js";
 
 import {
 getAuditLogs,
-getSecurityStatus,
 getDatabaseStatus,
 getSystemHealth,
 getApiMonitor
