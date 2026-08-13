@@ -19,3 +19,15 @@ export const getSystemHealth = async () =>
 
 export const getApiMonitor = async () =>
   (await axios.get("/superadmin/api-monitor")).data;
+
+
+export const getSettings = async () => {
+  const response = await axios.get("/settings/public");
+  return response.data;
+};
+
+
+export const updateSettings = async (data) => {
+  const response = await axios.put("/settings", data);
+  return response.data;
+};
