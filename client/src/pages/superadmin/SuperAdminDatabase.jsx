@@ -1,4 +1,3 @@
-
 import {useQuery} from "@tanstack/react-query";
 import axios from "../../api/axios";
 import {getDatabaseStatus} from "../../api/superAdminApi";
@@ -14,6 +13,7 @@ queryKey:["database-status"],
 queryFn:getDatabaseStatus
 
 });
+
 
 
 const {
@@ -47,6 +47,7 @@ res.data.message
 
 refetch();
 
+
 }catch(e){
 
 alert(
@@ -60,19 +61,54 @@ e.response?.data?.message ||
 
 
 
-const removeBackup=async(file)=>{
+
+const removeBackup=async(id)=>{
+
 
 if(!confirm("Delete this backup?"))
 return;
 
 
+try{
+
 await axios.delete(
-"/superadmin/maintenance/backups/"+file
+"/superadmin/maintenance/backups/"+id
 );
+
 
 refetch();
 
+
+}catch(e){
+
+alert(
+e.response?.data?.message ||
+"Delete failed"
+);
+
+}
+
+
 };
+
+
+
+
+const downloadBackup=(id)=>{
+
+
+window.open(
+
+axios.defaults.baseURL +
+"/superadmin/database/backup/"+id+"/download",
+
+"_blank"
+
+);
+
+
+};
+
 
 
 
@@ -121,6 +157,7 @@ data?.database?.name ||
 
 
 
+
 <div className="flex gap-4">
 
 
@@ -145,6 +182,8 @@ Clear Cache
 
 
 
+
+
 <div className="border rounded-xl p-6">
 
 
@@ -153,40 +192,103 @@ Database Backups
 </h2>
 
 
+
 {
+
 backups?.backups?.length ?
+
 
 backups.backups.map(b=>(
 
+
 <div
-key={b.file}
-className="flex justify-between border-b py-3"
+key={b._id}
+className="flex justify-between items-center border-b py-4"
 >
+
 
 <div>
 
+
 <p className="font-semibold">
-{b.file}
+{b.name}
 </p>
+
+
 
 <p>
-{b.size}
+Size: {b.size}
 </p>
 
+
+
+<p>
+Collections: {b.collections}
+</p>
+
+
+
+<p className="text-sm text-gray-500">
+
+Created:
+
+{" "}
+
+{
+new Date(
+b.createdAt
+).toLocaleString()
+}
+
+</p>
+
+
 </div>
+
+
+
+
+
+<div className="flex gap-3">
 
 
 <button
-className="text-red-600"
-onClick={()=>removeBackup(b.file)}
+
+className="text-blue-600"
+
+onClick={()=>downloadBackup(b._id)}
+
 >
-Delete
+
+Download
+
 </button>
+
+
+
+<button
+
+className="text-red-600"
+
+onClick={()=>removeBackup(b._id)}
+
+>
+
+Delete
+
+</button>
+
 
 
 </div>
 
+
+
+</div>
+
+
 ))
+
 
 :
 
@@ -194,7 +296,9 @@ Delete
 No backups available
 </p>
 
+
 }
+
 
 
 </div>
@@ -206,6 +310,7 @@ No backups available
 )
 
 }
+
 
 
 
