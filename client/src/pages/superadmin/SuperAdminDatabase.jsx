@@ -1,23 +1,57 @@
-import React from "react";
+import {useQuery} from "@tanstack/react-query";
+import {getDatabaseStatus} from "../../api/superAdminApi";
+
 
 export default function SuperAdminDatabase(){
 
-return (
-<div className="p-6">
+const {data,isLoading}=useQuery({
+queryKey:["superadmin-database"],
+queryFn:getDatabaseStatus
+});
 
-<h1 className="text-2xl font-bold">
-Database Tools
+
+if(isLoading)
+return <div className="p-6">Loading database...</div>;
+
+
+const db=data?.database||{};
+
+
+return (
+
+<div className="p-6 space-y-6">
+
+<h1 className="text-3xl font-bold">
+Database Management
 </h1>
 
-<div className="mt-6 rounded-xl border p-6 bg-white">
 
-<p>
-Database monitoring and maintenance
+<div className="grid md:grid-cols-3 gap-6">
+
+<Card title="Status" value={db.status}/>
+<Card title="Host" value={db.host}/>
+<Card title="Database" value={db.name}/>
+
+</div>
+
+
+</div>
+
+)
+
+}
+
+
+function Card({title,value}){
+
+return <div className="bg-white border rounded-xl p-6">
+
+<p className="text-gray-500">{title}</p>
+
+<p className="font-bold mt-2">
+{value||"Unknown"}
 </p>
 
 </div>
-
-</div>
-)
 
 }

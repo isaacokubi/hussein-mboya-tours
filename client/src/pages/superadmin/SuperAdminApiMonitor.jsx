@@ -1,35 +1,51 @@
-import React from "react";
+import {useQuery} from "@tanstack/react-query";
+import {getApiMonitor} from "../../api/superAdminApi";
+
 
 export default function SuperAdminApiMonitor(){
 
-const api={
-status:"Online",
-requests:"Normal",
-latency:"120ms"
-};
+const {data,isLoading}=useQuery({
+queryKey:["superadmin-api"],
+queryFn:getApiMonitor
+});
+
+
+if(isLoading)
+return <div className="p-6">Checking API...</div>;
+
+
+const api=data?.api||{};
+
 
 return (
+
 <div className="p-6 space-y-6">
 
-<h1 className="text-2xl font-bold">
+<h1 className="text-3xl font-bold">
 API Monitor
 </h1>
 
-<div className="grid md:grid-3 gap-4">
 
-{Object.entries(api).map(([k,v])=>(
-<div key={k}
-className="border rounded-xl p-5 bg-white">
+<div className="bg-white border rounded-xl p-6">
 
-<p>{k}</p>
-<strong>{v}</strong>
+<p>Status:
+<strong>{api.status}</strong>
+</p>
+
+<p>
+Service:
+{api.service}
+</p>
+
+<p>
+{api.timestamp}
+</p>
 
 </div>
-))}
+
 
 </div>
 
-</div>
 )
 
 }

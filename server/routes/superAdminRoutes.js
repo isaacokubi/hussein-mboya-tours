@@ -5,6 +5,15 @@ getSuperAdminDashboard
 }
 from "../controllers/superAdminDashboardController.js";
 
+import {
+getAuditLogs,
+getSecurityStatus,
+getDatabaseStatus,
+getSystemHealth,
+getApiMonitor
+}
+from "../controllers/superAdminOperationsController.js";
+
 import {protect, authorize}
 from "../middleware/authMiddleware.js";
 
@@ -20,6 +29,61 @@ authorize(
 "superadmin"
 ),
 getSuperAdminDashboard
+);
+
+
+router.get(
+"/audit",
+protect,
+authorize(
+"super_admin",
+"superadmin"
+),
+getAuditLogs
+);
+
+
+router.get(
+"/security",
+protect,
+authorize(
+"super_admin",
+"superadmin"
+),
+getSecurityStatus
+);
+
+
+router.get(
+"/database",
+protect,
+authorize(
+"super_admin",
+"superadmin"
+),
+getDatabaseStatus
+);
+
+
+router.get(
+"/system",
+protect,
+authorize(
+"super_admin",
+"superadmin"
+),
+getSystemHealth
+);
+
+
+router.get(
+"/api-monitor",
+protect,
+authorize(
+"super_admin",
+"superadmin"
+),
+getApiMonitor
 );
 
 

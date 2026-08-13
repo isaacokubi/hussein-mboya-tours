@@ -1,55 +1,76 @@
-import React from "react";
+import {useQuery} from "@tanstack/react-query";
+import {getSystemHealth} from "../../api/superAdminApi";
+
 
 export default function SuperAdminSystem(){
 
-const data={
- status:"Operational",
- uptime:"99.99%",
- services:12,
- servers:"Healthy"
-};
+const {data,isLoading}=useQuery({
+queryKey:["superadmin-system"],
+queryFn:getSystemHealth
+});
+
+
+if(isLoading)
+return <div className="p-6">Loading system health...</div>;
+
+
+const system=data?.system||{};
+
 
 return (
+
 <div className="p-6 space-y-6">
 
-<h1 className="text-2xl font-bold">
+<h1 className="text-3xl font-bold">
 System Health Center
 </h1>
 
-<div className="grid md:grid-cols-4 gap-4">
 
-{Object.entries(data).map(([key,value])=>(
-<div
-key={key}
-className="rounded-xl border bg-white p-5 shadow"
->
+<div className="grid md:grid-cols-3 gap-6">
 
-<p className="text-sm text-gray-500 uppercase">
-{key}
-</p>
-
-<p className="text-xl font-bold mt-2">
-{value}
-</p>
-
-</div>
-))}
+<Card title="Status" value={system.status}/>
+<Card title="Node Version" value={system.node}/>
+<Card title="Uptime" value={`${Math.round(system.uptime)} seconds`}/>
 
 </div>
 
-<div className="rounded-xl bg-slate-50 border p-5">
 
-<h2 className="font-semibold mb-3">
-System Information
+<div className="bg-white rounded-xl border p-6">
+
+<h2 className="font-bold mb-4">
+Memory Usage
 </h2>
 
-<pre className="overflow-auto text-sm">
-{JSON.stringify(data,null,2)}
+<pre className="text-sm overflow-auto">
+{JSON.stringify(system.memory,null,2)}
 </pre>
 
 </div>
 
+
 </div>
+
+)
+
+}
+
+
+function Card({title,value}){
+
+return (
+
+<div className="bg-white border rounded-xl p-5 shadow">
+
+<p className="text-gray-500">
+{title}
+</p>
+
+<p className="text-2xl font-bold mt-2">
+{value||"N/A"}
+</p>
+
+</div>
+
 )
 
 }
