@@ -10,6 +10,18 @@ export default function RolesPage() {
   const rolesQuery=useQuery({queryKey:["admin-roles"],queryFn:getAdminRoles});
   const permissionsQuery=useQuery({queryKey:["admin-permissions"],queryFn:getAdminPermissions});
   const roles=rolesQuery.data?.roles||[];
+
+// Automatically select Super Administrator first
+useEffect(()=>{
+ if(!selected && roles.length){
+   const superRole=roles.find(r =>
+     ["super_admin","superadmin"].includes(
+       String(r.name).toLowerCase()
+     )
+   );
+   setSelected(superRole?._id || roles[0]._id);
+ }
+},[roles,selected]);
   const permissions = useMemo(
       () => permissionsQuery.data?.permissions || [],
       [permissionsQuery.data]
@@ -29,7 +41,9 @@ export default function RolesPage() {
   }
 
   return <div className="min-h-screen bg-slate-50 p-6"><div className="mx-auto max-w-7xl">
-    <div className="mb-6"><p className="text-sm font-semibold uppercase tracking-wider text-emerald-700">Access control</p><h1 className="text-3xl font-bold text-slate-900">Roles & Permissions</h1><p className="text-slate-500">Assign exactly what each operational role can access.</p></div>
+    <div className="mb-6"><p className="text-sm font-semibold uppercase tracking-wider text-emerald-700">Access control</p><h1 className="text-3xl font-bold text-slate-900">
+Roles & Permissions Center
+</h1><p className="text-slate-500">Assign exactly what each operational role can access.</p></div>
     <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
       <div className="space-y-3">{roles.map(role=><button key={role._id} onClick={()=>setSelected(role._id)} className={`w-full rounded-2xl bg-white p-5 text-left shadow-sm ring-1 ring-slate-200 ${selected===role._id?"ring-2 ring-emerald-600":""}`}><div className="flex items-center justify-between"><div><div className="font-bold capitalize">{String(role.displayName||role.name).replace(/_/g," ")}</div><div className="mt-1 text-sm text-slate-500">{role.permissions?.length||0} permissions</div></div><ShieldCheck className="text-emerald-700"/></div></button>)}</div>
       <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
