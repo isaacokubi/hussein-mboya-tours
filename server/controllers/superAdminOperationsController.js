@@ -589,24 +589,21 @@ message:
 
 
 
+
 export const downloadDatabaseBackup = async(req,res)=>{
 
 try{
 
 const backup =
-await DatabaseBackup.findOne({
-file:req.params.id
-});
-
+await DatabaseBackup.findById(
+req.params.id
+);
 
 if(!backup){
 
 return res.status(404).json({
-
 success:false,
-
 message:"Backup not found"
-
 });
 
 }
@@ -621,23 +618,31 @@ backup.file
 );
 
 
-res.download(filepath);
+if(!fs.existsSync(filepath)){
 
+return res.status(404).json({
+success:false,
+message:"Backup file missing"
+});
+
+}
+
+
+res.download(filepath);
 
 }
 catch(error){
 
 res.status(500).json({
-
 success:false,
-
 message:error.message
-
 });
 
 }
 
 };
+
+
 
 
 
@@ -646,18 +651,48 @@ export const deleteDatabaseBackup = async(req,res)=>{
 
 try{
 
-await DatabaseBackup.deleteOne({
+const backup =
+await DatabaseBackup.findById(
+req.params.id
+);
 
-file:req.params.file
 
+if(!backup){
+
+return res.status(404).json({
+success:false,
+message:"Backup not found"
 });
+
+}
+
+
+const filepath =
+path.join(
+process.cwd(),
+"server",
+"backups",
+backup.file
+);
+
+
+if(fs.existsSync(filepath)){
+
+fs.rmSync(filepath);
+
+}
+
+
+await DatabaseBackup.findByIdAndDelete(
+req.params.id
+);
 
 
 res.json({
 
 success:true,
 
-message:"Backup deleted"
+message:"Backup deleted successfully"
 
 });
 
@@ -676,4 +711,5 @@ message:error.message
 }
 
 };
+
 
