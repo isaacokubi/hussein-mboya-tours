@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import AuditLog from "../models/AuditLog.js";
 import User from "../models/User.js";
+import { createAuditLog } from "../services/auditService.js";
 
 
 
@@ -169,6 +170,18 @@ export const getSecurityStatus = async (req,res)=>{
 
     const data = await securityService.default.getSecurityStatus();
 
+    await createAuditLog({
+      user:req.user?._id,
+      action:"view",
+      resource:"Security",
+      description:"Viewed security center status",
+      severity:"low",
+      ipAddress:req.ip,
+      userAgent:req.headers["user-agent"],
+      endpoint:req.originalUrl,
+      method:req.method
+    });
+
     res.json({
       success:true,
       data
@@ -190,6 +203,18 @@ export const getSecurityStatus = async (req,res)=>{
 export const getDatabaseStatus = async(req,res)=>{
 
 try{
+
+await createAuditLog({
+user:req.user?._id,
+action:"view",
+resource:"Database",
+description:"Viewed database status",
+severity:"low",
+ipAddress:req.ip,
+userAgent:req.headers["user-agent"],
+endpoint:req.originalUrl,
+method:req.method
+});
 
 res.json({
 
