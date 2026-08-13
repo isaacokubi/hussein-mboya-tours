@@ -94,20 +94,66 @@ e.response?.data?.message ||
 
 
 
-const downloadBackup=(id)=>{
+
+const downloadBackup = async(id)=>{
+
+try{
+
+const token =
+localStorage.getItem("token");
 
 
-window.open(
-
-axios.defaults.baseURL +
+const response =
+await axios.get(
 "/superadmin/database/backup/"+id+"/download",
-
-"_blank"
-
+{
+headers:{
+Authorization:`Bearer ${token}`
+},
+responseType:"blob"
+}
 );
 
 
+const url =
+window.URL.createObjectURL(
+new Blob([response.data])
+);
+
+
+const link =
+document.createElement("a");
+
+link.href=url;
+
+link.download =
+"database-backup.json";
+
+document.body.appendChild(link);
+
+link.click();
+
+link.remove();
+
+window.URL.revokeObjectURL(url);
+
+
+}
+catch(error){
+
+console.error(
+"DOWNLOAD BACKUP ERROR",
+error
+);
+
+alert(
+"Unable to download backup"
+);
+
+}
+
 };
+
 
 
 
