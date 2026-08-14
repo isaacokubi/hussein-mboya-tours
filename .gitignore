@@ -136,3 +136,8 @@ fix_*.py
 upgrade_*.py
 *_audit*.py
 
+
+# Python temporary files
+*.py
+*.pyc
+__pycache__/
