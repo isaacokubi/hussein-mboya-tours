@@ -54,7 +54,7 @@ export default function Commissions(
           ].map(([label, value, Icon]) => (
             <div key={label} className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
               <div className="flex justify-between"><span className="text-sm text-slate-500">{label}</span><Icon className="text-emerald-700" /></div>
-              <p className="mt-2 text-3xl font-bold">settings.currency || "KES" {value.toLocaleString()}</p>
+              <p className="mt-2 text-3xl font-bold">KES {value.toLocaleString()}</p>
             </div>
           ))}
         </div>
@@ -70,7 +70,7 @@ export default function Commissions(
                   <tr key={c._id} className="border-t">
                     <td className="p-4"><div className="font-semibold">{c.agent?.user?.name || c.agent?.companyName || "-"}</div><div className="text-sm text-slate-500">{c.agent?.user?.email || c.agent?.email || ""}</div></td>
                     <td className="p-4">{c.booking?.bookingNumber || "-"}</td>
-                    <td className="p-4 font-semibold">settings.currency || "KES" {Number(c.amount || 0).toLocaleString()}</td>
+                    <td className="p-4 font-semibold">KES {Number(c.amount || 0).toLocaleString()}</td>
                     <td className="p-4">{c.rate || 0}%</td>
                     <td className="p-4 capitalize">{c.status || "pending"}</td>
                     <td className="p-4 text-right">

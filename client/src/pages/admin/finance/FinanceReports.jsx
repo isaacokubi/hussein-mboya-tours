@@ -303,7 +303,7 @@ export default function FinanceReports(
                                     <td className="p-4 font-medium">
 
 
-                                        settings.currency || "KES"{" "}
+                                        KES{" "}
 
                                         {
 

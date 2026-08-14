@@ -27,15 +27,15 @@ export default function CustomerDetails(
           <p className="mt-1 text-slate-500">{customer?.email} · {customer?.phone}</p>
           <div className="mt-5 grid gap-4 md:grid-cols-3">
             <Metric label="Bookings" value={data?.data?.summary?.totalBookings || 0} />
-            <Metric label="Total paid" value={`settings.currency || "KES" ${Number(data?.data?.summary?.totalPaid || 0).toLocaleString()}`} />
-            <Metric label="Confirmed spend" value={`settings.currency || "KES" ${Number(data?.data?.summary?.totalSpent || 0).toLocaleString()}`} />
+            <Metric label="Total paid" value={`KES ${Number(data?.data?.summary?.totalPaid || 0).toLocaleString()}`} />
+            <Metric label="Confirmed spend" value={`KES ${Number(data?.data?.summary?.totalSpent || 0).toLocaleString()}`} />
           </div>
         </section>
         <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
           <div className="overflow-x-auto"><table className="w-full">
             <thead className="bg-slate-50"><tr><th className="p-4 text-left">Booking</th><th className="p-4 text-left">Tour</th><th className="p-4 text-left">Date</th><th className="p-4 text-left">Status</th><th className="p-4 text-left">Amount</th></tr></thead>
             <tbody>
-              {bookings.map((b) => <tr key={b._id} className="border-t"><td className="p-4">{b.bookingNumber || b._id}</td><td className="p-4">{b.tour?.title || "-"}</td><td className="p-4">{b.travelDate ? new Date(b.travelDate).toLocaleDateString() : "-"}</td><td className="p-4 capitalize">{b.status || "-"}</td><td className="p-4 font-semibold">settings.currency || "KES" {Number(b.totalAmount || 0).toLocaleString()}</td></tr>)}
+              {bookings.map((b) => <tr key={b._id} className="border-t"><td className="p-4">{b.bookingNumber || b._id}</td><td className="p-4">{b.tour?.title || "-"}</td><td className="p-4">{b.travelDate ? new Date(b.travelDate).toLocaleDateString() : "-"}</td><td className="p-4 capitalize">{b.status || "-"}</td><td className="p-4 font-semibold">KES {Number(b.totalAmount || 0).toLocaleString()}</td></tr>)}
               {!bookings.length && <tr><td colSpan="5" className="p-8 text-center text-slate-500">No bookings found.</td></tr>}
             </tbody>
           </table></div>

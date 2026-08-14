@@ -45,7 +45,7 @@ export default function TourSchema({ tour }) {
 
       price: tour.price,
 
-      priceCurrency: tour.currency || settings.currency || "KES",
+      priceCurrency: tour.currency || "KES",
 
       availability: "https://schema.org/InStock",
 

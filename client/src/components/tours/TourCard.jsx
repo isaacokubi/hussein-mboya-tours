@@ -164,7 +164,7 @@ export default function TourCard({
                 line-through
                 "
               >
-                settings.currency || "KES"{" "}
+                KES{" "}
                 {price.toLocaleString("en-US")}
               </p>
             )}
@@ -176,7 +176,7 @@ export default function TourCard({
               text-green-700
               "
             >
-              settings.currency || "KES"{" "}
+              KES{" "}
               {discountedPrice.toLocaleString("en-US")}
             </p>
           </div>

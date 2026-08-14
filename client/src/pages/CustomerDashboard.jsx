@@ -237,8 +237,17 @@ const CustomerDashboard = () => {
       ).toLowerCase();
 
       const qualifies =
-        bookingStatus === "confirmed" &&
-        ["paid", "completed"].includes(paymentStatus);
+        [
+          "confirmed",
+          "completed",
+          "assigned",
+          "ongoing"
+        ].includes(bookingStatus) &&
+        [
+          "paid",
+          "completed",
+          "success"
+        ].includes(paymentStatus);
 
       if (!qualifies) return total;
 
@@ -428,7 +437,7 @@ gap-6
 title="Total Spent"
 
 value={
-`settings.currency || "KES" ${totalSpent.toLocaleString()}`
+`KES ${totalSpent.toLocaleString()}`
 }
 
 />
@@ -684,7 +693,7 @@ booking.status ||
 
 <p>
 
-Amount: settings.currency || "KES"{" "}
+Amount: KES{" "}
 
 {
 

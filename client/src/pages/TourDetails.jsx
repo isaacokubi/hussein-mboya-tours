@@ -165,7 +165,7 @@ export default function TourDetails(
           text-green-700
           "
           >
-            settings.currency || "KES" {Number(tour.price || 0).toLocaleString()}
+            KES {Number(tour.price || 0).toLocaleString()}
           </div>
 
           <div

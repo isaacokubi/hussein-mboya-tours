@@ -34,7 +34,7 @@ export default function AdminCustomers(
                 <td className="p-3">{customer.phone || customer.phoneNumber || "-"}</td>
                 <td className="p-3">{customer.totalBookings || 0}</td>
                 <td className="p-3 font-semibold">
-                  settings.currency || "KES" {Number(customer.totalSpent || 0).toLocaleString()}
+                  KES {Number(customer.totalSpent || 0).toLocaleString()}
                 </td>
                 <td className="p-3">
                   <span className={customer.isActive === false ? "text-red-600" : "text-green-600"}>

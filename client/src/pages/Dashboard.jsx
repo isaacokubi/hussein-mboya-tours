@@ -164,8 +164,20 @@ if (isLoading) {
     ).toLowerCase();
 
     if (
-      bookingStatus !== "confirmed" ||
-      !["paid", "completed"].includes(paymentStatus)
+      !(
+        [
+          "confirmed",
+          "completed",
+          "assigned",
+          "ongoing"
+        ].includes(bookingStatus)
+        &&
+        [
+          "paid",
+          "completed",
+          "success"
+        ].includes(paymentStatus)
+      )
     ) {
       return total;
     }
@@ -301,7 +313,7 @@ if (isLoading) {
         font-bold
         "
         >
-          settings.currency || "KES" {totalSpent.toLocaleString()}
+          KES {totalSpent.toLocaleString()}
         </h2>
       </div>
 

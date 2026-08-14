@@ -45,7 +45,7 @@ export default function TourAnalytics(
     {
       title: "Revenue",
 
-      value: `settings.currency || "KES" ${Number(analytics.totalRevenue || 0).toLocaleString()}`,
+      value: `KES ${Number(analytics.totalRevenue || 0).toLocaleString()}`,
     },
 
     {

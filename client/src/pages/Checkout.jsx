@@ -180,7 +180,7 @@ export default function Checkout(
           <h2 className="text-xl font-semibold">{tour.title}</h2>
           <p className="mt-2 text-gray-600">{tour.description}</p>
           <div className="mt-4 flex flex-wrap gap-5 font-semibold">
-            <span className="text-green-700">settings.currency || "KES" {Number(tour.price || 0).toLocaleString()} / person</span>
+            <span className="text-green-700">KES {Number(tour.price || 0).toLocaleString()} / person</span>
             <span>Total slots: {tour.totalSlots ?? tour.capacity ?? 0}</span>
             <span>Booked: {tour.bookedSlots ?? 0}</span>
             <span className={availableSlots > 0 ? "text-green-700" : "text-red-600"}>Available: {availableSlots}</span>
@@ -253,7 +253,7 @@ export default function Checkout(
           </Field>
 
           <div className="rounded-xl bg-green-50 p-4 text-xl font-bold text-green-900">
-            Total: settings.currency || "KES" {total.toLocaleString()}
+            Total: KES {total.toLocaleString()}
           </div>
 
           <button type="submit" disabled={bookingMutation.isPending || availableSlots < 1} className="w-full rounded-lg bg-green-600 py-3 font-semibold text-white hover:bg-green-700 disabled:opacity-50">

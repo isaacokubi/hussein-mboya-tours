@@ -60,7 +60,7 @@ export default function Customers(
                     <td className="p-4">{customer.phone || "-"}</td>
                     <td className="p-4 capitalize">{customer.customerType || "individual"}</td>
                     <td className="p-4">{customer.totalBookings || 0}</td>
-                    <td className="p-4 font-semibold">settings.currency || "KES" {Number(customer.totalSpent || 0).toLocaleString()}</td>
+                    <td className="p-4 font-semibold">KES {Number(customer.totalSpent || 0).toLocaleString()}</td>
                     <td className="p-4 text-right"><Link to={`/admin/customers/${customer._id}`} className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white"><Eye size={15} /> View</Link></td>
                   </tr>
                 ))}

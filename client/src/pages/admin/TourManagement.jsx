@@ -492,7 +492,7 @@ const deleteMutation = useMutation({
                     text-center
                   ">
 
-                    settings.currency || "KES" {
+                    KES {
 
                       tour.price ||
                       0

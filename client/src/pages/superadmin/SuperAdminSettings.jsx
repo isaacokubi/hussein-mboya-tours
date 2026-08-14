@@ -328,11 +328,11 @@ onChange={e=>update("supportPhone",e.target.value)}
 
 <select
 className="w-full border rounded-xl p-3"
-value={settings.currency || "KES"}
+value="KES"
 onChange={e=>update("currency",e.target.value)}
 >
 
-<option>settings.currency || "KES"</option>
+<option>KES</option>
 <option>USD</option>
 <option>EUR</option>
 

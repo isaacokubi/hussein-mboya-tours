@@ -214,7 +214,7 @@ t=>t.status==="completed"
 M-Pesa Revenue
 </h3>
 <p>
-settings.currency || "KES" {
+KES {
 transactions
 .filter(t=>t.status==="completed")
 .reduce(
@@ -687,7 +687,7 @@ t=>t.status==="failed"
                                     <td className="p-4">
 
 
-                                        settings.currency || "KES"{" "}
+                                        KES{" "}
 
                                         {
 

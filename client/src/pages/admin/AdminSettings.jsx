@@ -8,7 +8,7 @@ import { getSettings, updateSettings } from "../../api/settingsApi";
 const DEFAULTS = {
   companyName: settings.companyName || "Coherent Tours", companyLogo: "", websiteUrl: "",
   supportEmail: "", supportPhone: "+254 733 439 362", address: "",
-  city: "Nairobi", country: "Kenya", currency: settings.currency || "KES", currencySymbol: "KSh",
+  city: "Nairobi", country: "Kenya", currency: "KES", currencySymbol: "KSh",
   timezone: "Africa/Nairobi", language: "en", taxRate: 0,
   bookingDepositPercentage: 30, defaultCommissionRate: 10,
   maintenanceMode: false, allowRegistrations: true, allowAgentRegistrations: true,

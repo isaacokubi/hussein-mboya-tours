@@ -26,7 +26,7 @@ export default function AdminCoupons(
             {coupons.map((coupon) => (
               <tr key={coupon._id} className="border-t">
                 <td className="p-3 font-semibold">{coupon.code}</td>
-                <td className="p-3">{coupon.discountType === "percentage" ? `${coupon.amount}%` : `settings.currency || "KES" ${coupon.amount}`}</td>
+                <td className="p-3">{coupon.discountType === "percentage" ? `${coupon.amount}%` : `KES ${coupon.amount}`}</td>
                 <td className="p-3">{coupon.usedCount || 0} / {coupon.usageLimit || 0}</td>
                 <td className="p-3">{coupon.active && new Date(coupon.expiresAt) > new Date() ? "Active" : "Inactive"}</td>
               </tr>

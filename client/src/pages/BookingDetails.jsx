@@ -240,7 +240,7 @@ export default function BookingDetails(
 
             <strong className="ml-2">
 
-              settings.currency || "KES" {Number(booking.totalAmount || 0).toLocaleString()}
+              KES {Number(booking.totalAmount || 0).toLocaleString()}
 
             </strong>
 
@@ -255,7 +255,7 @@ export default function BookingDetails(
             Amount Paid:
 
             <strong className="ml-2">
-              settings.currency || "KES" {Number(booking.depositAmount || 0).toLocaleString()}
+              KES {Number(booking.depositAmount || 0).toLocaleString()}
             </strong>
 
           </p>
@@ -265,7 +265,7 @@ export default function BookingDetails(
             Balance:
 
             <strong className="ml-2">
-              settings.currency || "KES" {Number(booking.balanceAmount || 0).toLocaleString()}
+              KES {Number(booking.balanceAmount || 0).toLocaleString()}
             </strong>
 
           </p>

@@ -70,13 +70,13 @@ export default function RevenueChart(
 
           <YAxis
             tickFormatter={(value) =>
-              `settings.currency || "KES" ${Number(value).toLocaleString()}`
+              `KES ${Number(value).toLocaleString()}`
             }
           />
 
           <Tooltip
             formatter={(value) => [
-              `settings.currency || "KES" ${Number(value).toLocaleString()}`,
+              `KES ${Number(value).toLocaleString()}`,
               "Revenue",
             ]}
           />

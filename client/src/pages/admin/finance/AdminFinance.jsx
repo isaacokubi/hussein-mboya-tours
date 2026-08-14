@@ -68,15 +68,15 @@ export default function AdminFinance(
   const cards = [
     {
       title: "Total Revenue",
-      value: `settings.currency || "KES" ${revenue.toLocaleString()}`,
+      value: `KES ${revenue.toLocaleString()}`,
     },
     {
       title: "Net Revenue",
-      value: `settings.currency || "KES" ${netRevenue.toLocaleString()}`,
+      value: `KES ${netRevenue.toLocaleString()}`,
     },
     {
       title: "Refunded",
-      value: `settings.currency || "KES" ${refunded.toLocaleString()}`,
+      value: `KES ${refunded.toLocaleString()}`,
     },
     {
       title: "Paid Bookings",

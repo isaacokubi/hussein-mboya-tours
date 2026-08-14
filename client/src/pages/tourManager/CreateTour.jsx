@@ -268,7 +268,7 @@ export default function CreateTour(
             step="0.01"
             value={form.price}
             onChange={handleChange}
-            placeholder={"Price (" + (settings.currency || "KES") + ")"}
+            placeholder={"Price (" + ("KES") + ")"}
             className="input"
             required
           />

@@ -838,7 +838,7 @@ cancelled
 
 [
 "Revenue",
-`settings.currency || "KES" ${revenue.toLocaleString()}`
+`KES ${revenue.toLocaleString()}`
 ],
 
 [
@@ -1427,7 +1427,7 @@ b.tour?.name ||
 <td className="p-3">
 
 
-settings.currency || "KES" {
+KES {
 
 b.amount ||
 
@@ -2101,7 +2101,7 @@ selectedBooking.tour?.name ||
 
 {" "}
 
-settings.currency || "KES" {
+KES {
 
 selectedBooking.amount ||
 

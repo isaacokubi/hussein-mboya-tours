@@ -132,7 +132,7 @@ return new Intl.NumberFormat(
 
 style:"currency",
 
-currency: settings.currency || "KES"
+currency: "KES"
 
 }
 

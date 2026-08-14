@@ -310,7 +310,7 @@ export default function AgentBookings(
 
 
 
-                                        settings.currency || "KES"{" "}
+                                        KES{" "}
 
                                         {
 

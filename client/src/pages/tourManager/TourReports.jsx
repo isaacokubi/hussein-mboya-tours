@@ -171,7 +171,7 @@ value:reports.totalBookings || 0
 
 {
 title:"Revenue",
-value:`settings.currency || "KES" ${reports.totalRevenue || 0}`
+value:`KES ${reports.totalRevenue || 0}`
 },
 
 

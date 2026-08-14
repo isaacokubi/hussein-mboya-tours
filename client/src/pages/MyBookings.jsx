@@ -195,7 +195,7 @@ export default function MyBookings(
                     <div>
                       <p className="text-gray-500">Total Amount</p>
                       <h3 className="text-xl font-bold">
-                        settings.currency || "KES"{" "}
+                        KES{" "}
                         {Number(booking.totalAmount || 0).toLocaleString()}
                       </h3>
                     </div>

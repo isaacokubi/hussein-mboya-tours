@@ -201,7 +201,7 @@ export default function FeaturedTours(
                               mt-4
                             "
                     >
-                      settings.currency || "KES" {Number(tour.price).toLocaleString()}
+                      KES {Number(tour.price).toLocaleString()}
                     </p>
                   )}
 

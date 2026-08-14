@@ -41,14 +41,14 @@ export default function Finance(
         <div className="bg-white shadow rounded p-5">
           <div className="text-sm text-gray-500">Revenue</div>
           <h2 className="text-2xl font-bold">
-            settings.currency || "KES" {stats.revenue || stats.totalRevenue || 0}
+            KES {stats.revenue || stats.totalRevenue || 0}
           </h2>
         </div>
 
         <div className="bg-white shadow rounded p-5">
           <div className="text-sm text-gray-500">Paid Revenue</div>
           <h2 className="text-2xl font-bold">
-            settings.currency || "KES" {stats.netRevenue || stats.paidRevenue || 0}
+            KES {stats.netRevenue || stats.paidRevenue || 0}
           </h2>
         </div>
 

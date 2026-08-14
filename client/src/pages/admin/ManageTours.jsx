@@ -647,7 +647,7 @@ export default function ManageTours(
 
 
 
-                                settings.currency || "KES" {
+                                KES {
 
                                     Number(
 

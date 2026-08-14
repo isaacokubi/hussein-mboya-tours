@@ -19,7 +19,7 @@ export default function Profile() {
     name: user?.name || "",
     phone: user?.phone || "",
   });
-  const [loading, setLoading] = useState(Boolean(user));
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -65,7 +65,7 @@ export default function Profile() {
     return () => {
       mounted = false;
     };
-  }, [userId, setUser, user]);
+  }, [userId, setUser]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;

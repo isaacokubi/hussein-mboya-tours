@@ -381,7 +381,7 @@ export default function Wishlist(
                   mb-4
                   "
                 >
-                  settings.currency || "KES"{" "}
+                  KES{" "}
                   {Number(
                     tour.price || 0
                   ).toLocaleString()}
