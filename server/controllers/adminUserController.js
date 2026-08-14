@@ -57,7 +57,12 @@ export const getUsers = async (req, res, next) => {
       count: data.length,
       data,
       users: data,
-      pagination: { page:1, limit:total, total, pages:1 },
+      pagination: {
+page,
+limit,
+total,
+pages: Math.ceil(total / limit)
+},
     });
   } catch (error) {
     next(error);

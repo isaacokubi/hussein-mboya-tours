@@ -28,7 +28,25 @@ const DEFAULT_PERMISSIONS = {
   tour_guide: ["tour.view", "view_assigned_tours", "view_tour_guests", "update_tour_status", "submit_tour_report"],
   driver: ["tour.view", "view_assigned_tours"],
   admin: ["admin.dashboard", "user.manage", "staff.manage", "tour.manage", "booking.manage", "payment.manage", "refund.manage", "analytics.view", "finance.view", "notifications.view", "report.view"],
-  super_admin: ["admin.dashboard", "user.manage", "staff.manage", "tour.manage", "booking.manage", "payment.manage", "refund.manage", "analytics.view", "finance.view", "notifications.view", "report.view"],
+  super_admin: [
+"admin.dashboard",
+"user.manage",
+"staff.manage",
+"tour.manage",
+"booking.manage",
+"payment.manage",
+"refund.manage",
+"analytics.view",
+"finance.view",
+"notifications.view",
+"report.view",
+"roles.manage",
+"settings.manage",
+"system.audit",
+"system.security",
+"system.database",
+"system.backup"
+],
 };
 
 let defaultsBootstrapPromise = null;
