@@ -1,4 +1,4 @@
-import { authorize } from "../middleware/permissionMiddleware.js";
+
 // server/routes/adminRoutes.js
 
 import express from "express";
@@ -44,6 +44,7 @@ agentBookingReport
 
 import {
   protect,
+  checkPermission,
 } from "../middleware/authMiddleware.js";
 
 import adminMiddleware from "../middleware/adminMiddleware.js";
@@ -83,7 +84,7 @@ const router = express.Router();
 router.use(protect);
 router.use(adminMiddleware);
 
-router.use(authorize("user.manage"));
+router.use(checkPermission("user.manage"));
 
 /*
 |--------------------------------------------------------------------------
