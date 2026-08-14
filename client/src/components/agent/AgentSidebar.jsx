@@ -10,7 +10,8 @@ const links = [
   ["Commissions", "/agent/commission", WalletCards],
 ];
 
-export default function AgentSidebar() {
+export default function AgentSidebar(
+) {
   const { companyName } = useSettings();
 
   return (

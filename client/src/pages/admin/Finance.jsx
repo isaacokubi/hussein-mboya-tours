@@ -1,7 +1,9 @@
+import { useSettings } from "../../context/SettingsContext";
 import { useQuery } from "@tanstack/react-query";
 import { getFinanceStats } from "../../api/financeApi";
 
-export default function Finance() {
+export default function Finance(
+) {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["finance"],
     queryFn: getFinanceStats,
@@ -39,14 +41,14 @@ export default function Finance() {
         <div className="bg-white shadow rounded p-5">
           <div className="text-sm text-gray-500">Revenue</div>
           <h2 className="text-2xl font-bold">
-            KES {stats.revenue || stats.totalRevenue || 0}
+            settings.currency || "KES" {stats.revenue || stats.totalRevenue || 0}
           </h2>
         </div>
 
         <div className="bg-white shadow rounded p-5">
           <div className="text-sm text-gray-500">Paid Revenue</div>
           <h2 className="text-2xl font-bold">
-            KES {stats.netRevenue || stats.paidRevenue || 0}
+            settings.currency || "KES" {stats.netRevenue || stats.paidRevenue || 0}
           </h2>
         </div>
 

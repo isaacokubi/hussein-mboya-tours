@@ -12,7 +12,8 @@ import {
   FaEnvelope,
 } from "react-icons/fa6";
 
-export default function Footer() {
+export default function Footer(
+) {
   const { user } = useAuth();
   const { companyName, supportEmail, supportPhone } = useSettings();
 
@@ -63,7 +64,7 @@ export default function Footer() {
 
           <div className="mt-6 space-y-3 text-sm">
             <a
-              href={`tel:${supportPhone.replace(/\s+/g, "")}`}
+              href={`tel:${String(supportPhone || "").replace(/\s+/g, "")}`}
               className="flex items-center gap-2 hover:text-green-400 transition"
             >
               <FaPhone />

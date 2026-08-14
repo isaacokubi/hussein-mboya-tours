@@ -1,3 +1,4 @@
+import { useSettings } from "../../../context/SettingsContext";
 import {
   ResponsiveContainer,
   LineChart,
@@ -12,7 +13,8 @@ import { useQuery } from "@tanstack/react-query";
 
 import { getRevenueAnalytics } from "../../../api/analyticsApi";
 
-export default function RevenueChart() {
+export default function RevenueChart(
+) {
   const {
     data,
     isLoading,
@@ -68,13 +70,13 @@ export default function RevenueChart() {
 
           <YAxis
             tickFormatter={(value) =>
-              `KES ${Number(value).toLocaleString()}`
+              `settings.currency || "KES" ${Number(value).toLocaleString()}`
             }
           />
 
           <Tooltip
             formatter={(value) => [
-              `KES ${Number(value).toLocaleString()}`,
+              `settings.currency || "KES" ${Number(value).toLocaleString()}`,
               "Revenue",
             ]}
           />

@@ -1,3 +1,4 @@
+import { useSettings } from "../../context/SettingsContext";
 import { motion } from "framer-motion";
 
 import { FaShield, FaUserTie, FaClock, FaStar } from "react-icons/fa6";
@@ -28,7 +29,8 @@ const reasons = [
   },
 ];
 
-export default function WhyChooseUs() {
+export default function WhyChooseUs(
+) {
   return (
     <section
       className="

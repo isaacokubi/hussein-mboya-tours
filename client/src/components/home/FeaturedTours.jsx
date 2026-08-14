@@ -1,3 +1,4 @@
+import { useSettings } from "../../context/SettingsContext";
 import { getTourImage } from "../../utils/tourImage";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
@@ -5,7 +6,8 @@ import { Link } from "react-router-dom";
 import { getFeaturedTours } from "../../api/tourApi";
 import LazyImage from "../common/LazyImage";
 
-export default function FeaturedTours() {
+export default function FeaturedTours(
+) {
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["featuredTours"],
 
@@ -199,7 +201,7 @@ export default function FeaturedTours() {
                               mt-4
                             "
                     >
-                      KES {Number(tour.price).toLocaleString()}
+                      settings.currency || "KES" {Number(tour.price).toLocaleString()}
                     </p>
                   )}
 

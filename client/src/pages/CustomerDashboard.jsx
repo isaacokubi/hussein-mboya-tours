@@ -1,3 +1,4 @@
+import { useSettings } from "../context/SettingsContext";
 import { useEffect } from "react";
 
 import {
@@ -427,7 +428,7 @@ gap-6
 title="Total Spent"
 
 value={
-`KES ${totalSpent.toLocaleString()}`
+`settings.currency || "KES" ${totalSpent.toLocaleString()}`
 }
 
 />
@@ -683,7 +684,7 @@ booking.status ||
 
 <p>
 
-Amount: KES{" "}
+Amount: settings.currency || "KES"{" "}
 
 {
 
@@ -762,6 +763,7 @@ View Booking
 
 
 function StatCard({
+  const {settings={}} = useSettings() || {};
 title,
 value
 }){

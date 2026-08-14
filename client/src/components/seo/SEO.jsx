@@ -1,6 +1,5 @@
+import { useSettings } from "../../context/SettingsContext";
 import { Helmet } from "react-helmet-async";
-
-const SITE_NAME = "Coherent Tours";
 
 const SITE_URL =
   import.meta.env.VITE_SITE_URL ||
@@ -18,6 +17,11 @@ export default function SEO({
   type = "website",
   noIndex = false,
 }) {
+
+  const { settings = {} } = useSettings() || {};
+
+  const SITE_NAME = settings.companyName || "Coherent Tours";
+
   const pageTitle =
     title === SITE_NAME
       ? SITE_NAME
@@ -122,7 +126,7 @@ export default function SEO({
 
       <meta
         name="author"
-        content="Coherent Tours"
+        content={settings.companyName || "Coherent Tours"}
       />
     </Helmet>
   );

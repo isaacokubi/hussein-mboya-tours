@@ -1,3 +1,4 @@
+import { getSystemSettings } from "../services/settingsService.js";
 // services/emailService.js
 
 import nodemailer from "nodemailer";
@@ -29,6 +30,15 @@ const transporter = nodemailer.createTransport({
 
 export const verifyEmailConnection = async () => {
   try {
+
+    const settings = await getSystemSettings();
+
+    const companyName =
+      settings.companyName || "Coherent Tours";
+
+    const currency =
+      settings.currency || "KES";
+
     await transporter.verify();
 
     console.log("✅ Email server connected");
@@ -66,7 +76,7 @@ export const sendEmail = async ({
   }
 
   const mailOptions = {
-    from: `"Coherent Tours" <${process.env.EMAIL_USER}>`,
+    from: `"${companyName}" <${process.env.EMAIL_USER}>`,
 
     to,
 

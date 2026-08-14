@@ -1,28 +1,83 @@
-/* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { getPublicSettings } from "../api/settingsApi";
 
-const DEFAULTS = {
-  companyName: "Coherent Tours",
-  supportEmail: "",
-  supportPhone: "+254 733 439 362",
-  currency: "KES",
-  timezone: "Africa/Nairobi",
-};
+import React, {
+    createContext,
+    useContext,
+    useEffect,
+    useState
+} from "react";
 
-const SettingsContext = createContext(DEFAULTS);
+import axios from "axios";
 
-export function SettingsProvider({ children }) {
-  const { data } = useQuery({
-    queryKey: ["public-settings"],
-    queryFn: getPublicSettings,
-    staleTime: 60 * 1000,
-  });
+const SettingsContext = createContext(null);
 
-  const settings = { ...DEFAULTS, ...(data?.settings || {}) };
 
-  return <SettingsContext.Provider value={settings}>{children}</SettingsContext.Provider>;
+export function SettingsProvider({children}){
+
+    const [settings,setSettings] = useState({});
+    const [loading,setLoading] = useState(true);
+
+
+    const loadSettings = async()=>{
+
+        try{
+
+            const res = await axios.get(
+                "/api/settings/public"
+            );
+
+            setSettings(
+                res.data.settings ||
+                res.data ||
+                {}
+            );
+
+        }catch(error){
+
+            console.error(
+                "GLOBAL SETTINGS LOAD ERROR",
+                error
+            );
+
+        }finally{
+
+            setLoading(false);
+
+        }
+
+    };
+
+
+    useEffect(()=>{
+
+        loadSettings();
+
+    },[]);
+
+
+
+    return (
+
+        <SettingsContext.Provider
+            value={{
+                settings,
+                setSettings,
+                refreshSettings:loadSettings,
+                loading
+            }}
+        >
+
+            {children}
+
+        </SettingsContext.Provider>
+
+    );
+
 }
 
-export const useSettings = () => useContext(SettingsContext);
+
+
+export function useSettings(){
+
+    return useContext(SettingsContext);
+
+}

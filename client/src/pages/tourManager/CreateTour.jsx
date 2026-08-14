@@ -1,3 +1,4 @@
+import { useSettings } from "../../context/SettingsContext";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -41,7 +42,8 @@ const unwrapList = (response, keys = []) => {
   return [];
 };
 
-export default function CreateTour() {
+export default function CreateTour(
+) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [form, setForm] = useState(emptyForm);
@@ -266,7 +268,7 @@ export default function CreateTour() {
             step="0.01"
             value={form.price}
             onChange={handleChange}
-            placeholder="Price (KES)"
+            placeholder={"Price (" + (settings.currency || "KES") + ")"}
             className="input"
             required
           />

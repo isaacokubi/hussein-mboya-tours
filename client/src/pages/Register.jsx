@@ -1,3 +1,4 @@
+import { useSettings } from "../context/SettingsContext";
 import {
   useState,
   useContext
@@ -26,7 +27,8 @@ from "../context/AuthContext";
 
 
 
-export default function Register(){
+export default function Register(
+){
 
 
 

@@ -1,3 +1,4 @@
+import { useSettings } from "../../context/SettingsContext";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2, Globe2,  Phone,  Save, ShieldCheck, WalletCards } from "lucide-react";
@@ -5,22 +6,23 @@ import { toast } from "react-toastify";
 import { getSettings, updateSettings } from "../../api/settingsApi";
 
 const DEFAULTS = {
-  companyName: "Coherent Tours", companyLogo: "", websiteUrl: "",
+  companyName: settings.companyName || "Coherent Tours", companyLogo: "", websiteUrl: "",
   supportEmail: "", supportPhone: "+254 733 439 362", address: "",
-  city: "Nairobi", country: "Kenya", currency: "KES", currencySymbol: "KSh",
+  city: "Nairobi", country: "Kenya", currency: settings.currency || "KES", currencySymbol: "KSh",
   timezone: "Africa/Nairobi", language: "en", taxRate: 0,
   bookingDepositPercentage: 30, defaultCommissionRate: 10,
   maintenanceMode: false, allowRegistrations: true, allowAgentRegistrations: true,
   requireEmailVerification: true, requirePhoneVerification: false,
   enableMpesa: true, enableStripe: false, enablePaypal: false, enableBankTransfer: true,
   bankName: "", bankAccountName: "", bankAccountNumber: "", bankBranch: "", bankSwiftCode: "",
-  emailFromName: "Coherent Tours", emailFromAddress: "",
+  emailFromName: settings.companyName || "Coherent Tours", emailFromAddress: "",
   facebook: "", instagram: "", twitter: "", youtube: "",
   seoTitle: "", seoDescription: "", seoKeywords: "",
   bookingNotifications: true, paymentNotifications: true,
 };
 
-export default function AdminSettings() {
+export default function AdminSettings(
+) {
   const qc = useQueryClient();
   const [settings, setSettings] = useState(DEFAULTS);
   const [logoFile, setLogoFile] = useState(null);
@@ -76,7 +78,7 @@ export default function AdminSettings() {
           </Section>
 
           <Section icon={<Phone size={20}/>} title="Contact & communications">
-            <div className="grid gap-4 md:grid-cols-2"><Field label="Support phone"><input value={settings.supportPhone} onChange={e=>update("supportPhone",e.target.value)}/></Field><Field label="Support email"><input type="email" value={settings.supportEmail} onChange={e=>update("supportEmail",e.target.value)}/></Field></div>
+            <div className="grid gap-4 md:grid-cols-2"><Field label="Support phone"><input value={settings.supportPhone || ''} onChange={e=>update("supportPhone",e.target.value)}/></Field><Field label="Support email"><input type="email" value={settings.supportEmail} onChange={e=>update("supportEmail",e.target.value)}/></Field></div>
             <div className="grid gap-4 md:grid-cols-2"><Field label="Email sender name"><input value={settings.emailFromName} onChange={e=>update("emailFromName",e.target.value)}/></Field><Field label="Email sender address"><input type="email" value={settings.emailFromAddress} onChange={e=>update("emailFromAddress",e.target.value)}/></Field></div>
             <div className="grid gap-3 md:grid-cols-2"><Toggle label="Booking notifications" value={settings.bookingNotifications} onChange={v=>update("bookingNotifications",v)}/><Toggle label="Payment notifications" value={settings.paymentNotifications} onChange={v=>update("paymentNotifications",v)}/></div>
           </Section>

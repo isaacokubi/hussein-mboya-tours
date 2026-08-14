@@ -28,7 +28,7 @@ export const getSettings = async () => {
 
 
 export const updateSettings = async (data) => {
-  const response = await axios.put("/settings", data);
+  const response = await axios.put("/admin/settings", data);
   return response.data;
 };
 

@@ -1,3 +1,4 @@
+import { useSettings } from "../context/SettingsContext";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { useState } from "react";
@@ -32,7 +33,8 @@ const paymentStatusOf = (booking) =>
 const bookingStatusOf = (booking) =>
   String(booking?.status || booking?.bookingStatus || "pending").toLowerCase();
 
-export default function MyBookings() {
+export default function MyBookings(
+) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
@@ -193,7 +195,7 @@ export default function MyBookings() {
                     <div>
                       <p className="text-gray-500">Total Amount</p>
                       <h3 className="text-xl font-bold">
-                        KES{" "}
+                        settings.currency || "KES"{" "}
                         {Number(booking.totalAmount || 0).toLocaleString()}
                       </h3>
                     </div>

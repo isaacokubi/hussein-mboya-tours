@@ -1,3 +1,4 @@
+import { useSettings } from "../../context/SettingsContext";
 import { useNavigate } from "react-router-dom";
 
 import { useEffect, useState } from "react";
@@ -19,7 +20,8 @@ import {
 
 import Loader from "../../components/common/Loader";
 
-export default function TourManagement() {
+export default function TourManagement(
+) {
 
   // Preserve intentionally fetched values for future dashboard UI.
 
@@ -490,7 +492,7 @@ const deleteMutation = useMutation({
                     text-center
                   ">
 
-                    KES {
+                    settings.currency || "KES" {
 
                       tour.price ||
                       0

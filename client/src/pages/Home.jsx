@@ -13,7 +13,8 @@ import NewsletterSection from "../components/home/NewsletterSection";
 import { useSettings } from "../context/SettingsContext";
 
 
-export default function Home() {
+export default function Home(
+) {
   const { companyName } = useSettings();
 
   return (

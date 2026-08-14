@@ -1,3 +1,4 @@
+import { useSettings } from "../context/SettingsContext";
 import { useQuery } from "@tanstack/react-query";
 
 import { Link, Navigate } from "react-router-dom";
@@ -8,7 +9,8 @@ import { useAuth } from "../context/AuthContext";
 import MobileDashboardNav from "../components/common/MobileDashboardNav";
 import AssignmentNotifications from "../components/notifications/AssignmentNotifications";
 
-export default function Dashboard() {
+export default function Dashboard(
+) {
   const { user } = useAuth();
 
   const role = (user?.role?.name || user?.roleId?.name || user?.role || user?.legacyRole || "customer")
@@ -299,7 +301,7 @@ if (isLoading) {
         font-bold
         "
         >
-          KES {totalSpent.toLocaleString()}
+          settings.currency || "KES" {totalSpent.toLocaleString()}
         </h2>
       </div>
 

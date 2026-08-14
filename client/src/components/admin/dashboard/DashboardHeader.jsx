@@ -1,4 +1,6 @@
-export default function DashboardHeader(){
+import { useSettings } from "../../../context/SettingsContext";
+export default function DashboardHeader(
+){
 
 
 return (

@@ -1,3 +1,4 @@
+import { useSettings } from "../../context/SettingsContext";
 import { useEffect, useRef, useState } from "react";
 
 import { useQuery } from "@tanstack/react-query";
@@ -11,7 +12,8 @@ import { getHeroSlides } from "../../api/heroApi";
 import "swiper/css";
 import "swiper/css/effect-fade";
 
-export default function HeroSlider() {
+export default function HeroSlider(
+) {
   const videoRefs = useRef([]);
   const [heroReady, setHeroReady] = useState(false);
 
@@ -126,7 +128,7 @@ export default function HeroSlider() {
                    */}
                   <img
                     src={imageUrl}
-                    alt={slide.title || "Coherent Tours"}
+                    alt={slide.title || settings.companyName || "Coherent Tours"}
                     className="absolute inset-0 w-full h-full object-cover"
                     fetchPriority={index === 0 ? "high" : "auto"}
                     loading={index === 0 ? "eager" : "lazy"}

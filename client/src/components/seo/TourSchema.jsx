@@ -1,3 +1,4 @@
+import { useSettings } from "../../context/SettingsContext";
 import { Helmet } from "react-helmet-async";
 
 const SITE_URL =
@@ -5,6 +6,7 @@ const SITE_URL =
   "https://www.husseinmboyatours.com";
 
 export default function TourSchema({ tour }) {
+  const { settings = {} } = useSettings() || {};
   if (!tour) return null;
 
   const image =
@@ -34,7 +36,7 @@ export default function TourSchema({ tour }) {
 
     provider: {
       "@type": "TravelAgency",
-      name: "Coherent Tours",
+      name: settings.companyName || "Coherent Tours",
       url: SITE_URL,
     },
 
@@ -43,7 +45,7 @@ export default function TourSchema({ tour }) {
 
       price: tour.price,
 
-      priceCurrency: tour.currency || "KES",
+      priceCurrency: tour.currency || settings.currency || "KES",
 
       availability: "https://schema.org/InStock",
 

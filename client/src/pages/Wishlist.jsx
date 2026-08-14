@@ -1,3 +1,4 @@
+import { useSettings } from "../context/SettingsContext";
 import { getTourImage } from "../utils/tourImage";
 // client/src/pages/Wishlist.jsx
 
@@ -12,7 +13,8 @@ import { useAuth } from "../context/AuthContext";
 import { getWishlist } from "../api/wishlistApi";
 
 
-export default function Wishlist() {
+export default function Wishlist(
+) {
   const { token } = useAuth();
 
 
@@ -379,7 +381,7 @@ export default function Wishlist() {
                   mb-4
                   "
                 >
-                  KES{" "}
+                  settings.currency || "KES"{" "}
                   {Number(
                     tour.price || 0
                   ).toLocaleString()}

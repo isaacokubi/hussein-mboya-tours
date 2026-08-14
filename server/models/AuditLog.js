@@ -234,9 +234,6 @@ auditLogSchema.index({
   resourceId: 1,
 });
 
-auditLogSchema.index({
-  status: 1,
-});
 
 auditLogSchema.index({
   severity: 1,

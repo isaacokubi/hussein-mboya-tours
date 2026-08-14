@@ -1,3 +1,4 @@
+import { useSettings } from "../context/SettingsContext";
 import { useParams, useNavigate } from "react-router-dom";
 
 import { useQuery } from "@tanstack/react-query";
@@ -6,7 +7,8 @@ import { toast } from "react-toastify";
 
 import { getBooking } from "../api/bookingApi";
 
-export default function PaymentStatus() {
+export default function PaymentStatus(
+) {
   const { id } = useParams();
 
   const navigate = useNavigate();

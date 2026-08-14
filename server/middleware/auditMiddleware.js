@@ -97,9 +97,18 @@ description:
 status,
 
 severity:
+res.statusCode >= 500
+? "critical"
+:
+res.statusCode === 403
+? "high"
+:
+res.statusCode === 401
+? "medium"
+:
 status==="failed"
-?"high"
-:"low",
+? "medium"
+: "low",
 
 ipAddress:req.ip,
 

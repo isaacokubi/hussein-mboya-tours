@@ -1,3 +1,4 @@
+import { useSettings } from "../../context/SettingsContext";
 import { requestRefund } from "../../api/financeApi";
 import { useState } from "react";
 
@@ -837,7 +838,7 @@ cancelled
 
 [
 "Revenue",
-`KES ${revenue.toLocaleString()}`
+`settings.currency || "KES" ${revenue.toLocaleString()}`
 ],
 
 [
@@ -1426,7 +1427,7 @@ b.tour?.name ||
 <td className="p-3">
 
 
-KES {
+settings.currency || "KES" {
 
 b.amount ||
 
@@ -2100,7 +2101,7 @@ selectedBooking.tour?.name ||
 
 {" "}
 
-KES {
+settings.currency || "KES" {
 
 selectedBooking.amount ||
 

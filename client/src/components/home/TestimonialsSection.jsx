@@ -1,3 +1,4 @@
+import { useSettings } from "../../context/SettingsContext";
 import { motion } from "framer-motion";
 import { FaQuoteLeft } from "react-icons/fa";
 
@@ -29,7 +30,8 @@ const testimonials = [
   },
 ];
 
-export default function TestimonialsSection() {
+export default function TestimonialsSection(
+) {
   return (
     <section
       className="

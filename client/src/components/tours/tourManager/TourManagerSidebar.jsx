@@ -1,3 +1,4 @@
+import { useSettings } from "../../../context/SettingsContext";
 import {
   LayoutDashboard,
   Map,
@@ -95,7 +96,8 @@ const menu = [
   },
 ];
 
-export default function TourManagerSidebar() {
+export default function TourManagerSidebar(
+) {
   return (
     <aside className="w-72 min-h-screen bg-green-900 text-white flex flex-col shadow-xl">
       {/* Logo */}

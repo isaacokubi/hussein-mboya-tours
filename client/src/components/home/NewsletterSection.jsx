@@ -1,7 +1,9 @@
+import { useSettings } from "../../context/SettingsContext";
 import { motion } from "framer-motion";
 import { useState } from "react";
 
-export default function NewsletterSection() {
+export default function NewsletterSection(
+) {
   const [email, setEmail] = useState("");
 
   const [message, setMessage] = useState("");

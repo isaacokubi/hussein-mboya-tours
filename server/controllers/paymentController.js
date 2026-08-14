@@ -1,3 +1,4 @@
+import { getSystemSettings } from "../services/settingsService.js";
 import Payment from "../models/Payment.js";
 
 /*
@@ -19,6 +20,15 @@ import Payment from "../models/Payment.js";
 
 export const getPaymentById = async (req, res, next) => {
   try {
+
+    const settings = await getSystemSettings();
+
+    const companyName =
+      settings.companyName || "Coherent Tours";
+
+    const currency =
+      settings.currency || "KES";
+
     const payment = await Payment.findById(req.params.id)
       .populate("booking")
       .populate("customer")
@@ -194,7 +204,7 @@ export const createPayment = async (req, res, next) => {
       method,
       paymentMethod: paymentMethod || undefined,
       amount: Number(amount),
-      currency: currency || "KES",
+      currency: currency || currency,
       phone: phone || "",
       phoneNumber: phoneNumber || phone || "",
       transactionId: transactionId || "",

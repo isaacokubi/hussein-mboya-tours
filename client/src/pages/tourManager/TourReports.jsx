@@ -1,3 +1,4 @@
+import { useSettings } from "../../context/SettingsContext";
 import {
     useEffect,
     useState
@@ -29,7 +30,8 @@ import {
 
 
 
-export default function TourReports(){
+export default function TourReports(
+){
 
 
 const [reports,setReports] = useState(null);
@@ -169,7 +171,7 @@ value:reports.totalBookings || 0
 
 {
 title:"Revenue",
-value:`KES ${reports.totalRevenue || 0}`
+value:`settings.currency || "KES" ${reports.totalRevenue || 0}`
 },
 
 

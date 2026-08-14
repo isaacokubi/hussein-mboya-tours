@@ -1,3 +1,4 @@
+import { useSettings } from "../context/SettingsContext";
 import {
   useParams
 } from "react-router-dom";
@@ -13,7 +14,8 @@ import {
 import ReviewForm from "../components/reviews/ReviewForm";
 
 
-export default function BookingDetails() {
+export default function BookingDetails(
+) {
 
   const {
     id
@@ -238,7 +240,7 @@ export default function BookingDetails() {
 
             <strong className="ml-2">
 
-              KES {Number(booking.totalAmount || 0).toLocaleString()}
+              settings.currency || "KES" {Number(booking.totalAmount || 0).toLocaleString()}
 
             </strong>
 
@@ -253,7 +255,7 @@ export default function BookingDetails() {
             Amount Paid:
 
             <strong className="ml-2">
-              KES {Number(booking.depositAmount || 0).toLocaleString()}
+              settings.currency || "KES" {Number(booking.depositAmount || 0).toLocaleString()}
             </strong>
 
           </p>
@@ -263,7 +265,7 @@ export default function BookingDetails() {
             Balance:
 
             <strong className="ml-2">
-              KES {Number(booking.balanceAmount || 0).toLocaleString()}
+              settings.currency || "KES" {Number(booking.balanceAmount || 0).toLocaleString()}
             </strong>
 
           </p>

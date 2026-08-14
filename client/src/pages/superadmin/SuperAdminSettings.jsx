@@ -1,3 +1,6 @@
+import { toast } from "react-toastify";
+import { useSettings } from "../../context/SettingsContext";
+
 import React, { useEffect, useState } from "react";
 import {
   Save,
@@ -52,7 +55,12 @@ const Toggle = ({checked,onChange,label}) => (
 );
 
 
-export default function SuperAdminSettings(){
+export default function SuperAdminSettings(
+){
+
+// Toastify health check
+// Remove after confirming notifications work
+
 
 
 
@@ -61,10 +69,12 @@ export default function SuperAdminSettings(){
 const [settings,setSettings]=useState({});
 const [saving,setSaving]=useState(false);
 const [loading,setLoading]=useState(true);
-const [message,setMessage]=useState("");
+
 
 
 useEffect(()=>{
+
+toast.info("SuperAdmin Settings loaded");
 
 load();
 
@@ -111,25 +121,30 @@ setSettings(prev=>({
 
 
 
-const save=async()=>{
+const save = async()=>{
 
 try{
 
 setSaving(true);
 
+console.log("SUPERADMIN SETTINGS SAVE START", settings);
+
 await updateSettings(settings);
 
-setMessage("Settings saved successfully");
+toast.success("Settings saved successfully.");
 
-setTimeout(()=>setMessage(""),3000);
+console.log("SUPERADMIN SETTINGS SAVE SUCCESS");
 
 }
 
 catch(err){
 
-console.error(err);
+console.error("SUPERADMIN SETTINGS SAVE ERROR", err);
 
-setMessage("Failed saving settings");
+toast.error(
+err?.response?.data?.message ||
+"Failed saving settings."
+);
 
 }
 
@@ -155,7 +170,7 @@ const runMaintenance = async (action)=>{
       return;
     }
 
-    setMessage("Processing maintenance request...");
+    console.log("MAINTENANCE START"); toast.info("Processing maintenance request...");
 
     const endpoint =
       action === "backup"
@@ -165,16 +180,24 @@ const runMaintenance = async (action)=>{
 
     const response = await fetch(endpoint,{
       method:"POST",
-      credentials:"include"
+      credentials:"include",
+      headers:{
+        "Content-Type":"application/json"
+      }
     });
 
 
-    if(!response.ok){
-      throw new Error("Maintenance failed");
+    const data = await response.json();
+
+
+    if(!response.ok || !data.success){
+      throw new Error(
+        data.message || "Maintenance failed"
+      );
     }
 
 
-    setMessage(
+    toast.success(
       action === "backup"
       ? "Database backup completed successfully."
       : "System cache cleared successfully."
@@ -183,7 +206,7 @@ const runMaintenance = async (action)=>{
 
   }catch(error){
 
-    setMessage("Maintenance failed. Check system logs.");
+    toast.error("Maintenance failed. Check system logs.");
 
   }
 
@@ -261,7 +284,7 @@ System configuration active
 
 
 
-{message &&
+{false &&
 
 <div className="bg-green-50 border border-green-200 p-4 rounded-xl">
 
@@ -298,7 +321,7 @@ onChange={e=>update("supportEmail",e.target.value)}
 <input
 className="w-full border rounded-xl p-3"
 placeholder="Support Phone"
-value={settings.supportPhone || ""}
+value={settings.supportPhone || '' || ""}
 onChange={e=>update("supportPhone",e.target.value)}
 />
 
@@ -309,7 +332,7 @@ value={settings.currency || "KES"}
 onChange={e=>update("currency",e.target.value)}
 >
 
-<option>KES</option>
+<option>settings.currency || "KES"</option>
 <option>USD</option>
 <option>EUR</option>
 

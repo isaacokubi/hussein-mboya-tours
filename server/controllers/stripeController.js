@@ -1,3 +1,4 @@
+import { getSystemSettings } from "../services/settingsService.js";
 import Booking from "../models/Booking.js";
 import Payment from "../models/Payment.js";
 
@@ -57,7 +58,7 @@ export const createBankTransferPayment=async(req,res,next)=>{
     const booking=await Booking.findOne({_id:req.body.bookingId,$or:[{user:req.user._id},{"customerSnapshot.email":req.user.email}]});
     if(!booking) return res.status(404).json({success:false,message:"Booking not found."});
     const amount=Math.max(0,Number(req.body.amount||booking.balanceAmount||booking.totalAmount||0));
-    const payment=await Payment.create({customer:req.user._id,user:req.user._id,booking:booking._id,provider:"BANK",method:"bank",paymentMethod:"Bank",amount,currency:"KES",transactionReference:String(req.body.reference||""),notes:String(req.body.notes||"Bank transfer payment awaiting administrator verification"),status:"pending"});
+    const payment=await Payment.create({customer:req.user._id,user:req.user._id,booking:booking._id,provider:"BANK",method:"bank",paymentMethod:"Bank",amount,currency:currency,transactionReference:String(req.body.reference||""),notes:String(req.body.notes||"Bank transfer payment awaiting administrator verification"),status:"pending"});
     res.status(201).json({success:true,message:"Bank transfer recorded. The company will verify the transfer and confirm your booking.",payment});
   }catch(error){next(error);}
 };

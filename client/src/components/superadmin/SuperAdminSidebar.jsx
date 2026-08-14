@@ -1,3 +1,4 @@
+import { useSettings } from "../../context/SettingsContext";
 
 import {NavLink} from "react-router-dom";
 import {
@@ -48,7 +49,8 @@ items:[
 ];
 
 
-export default function SuperAdminSidebar({open,setOpen}){
+export default function SuperAdminSidebar({ open, setOpen }) {
+  const { settings = {} } = useSettings() || {};
 
 
 return (

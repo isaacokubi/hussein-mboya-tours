@@ -1,3 +1,4 @@
+import { useSettings } from "../../context/SettingsContext";
 import {
 
 Calendar,
@@ -28,7 +29,8 @@ from "../../hooks/useAgentDashboard";
 
 
 
-export default function AgentDashboard(){
+export default function AgentDashboard(
+){
 
 
 
@@ -130,7 +132,7 @@ return new Intl.NumberFormat(
 
 style:"currency",
 
-currency:"KES"
+currency: settings.currency || "KES"
 
 }
 

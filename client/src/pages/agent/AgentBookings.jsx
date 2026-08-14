@@ -1,3 +1,4 @@
+import { useSettings } from "../../context/SettingsContext";
 // client/src/pages/agent/AgentBookings.jsx
 
 
@@ -9,7 +10,8 @@ from "../../hooks/useAgentBookings";
 
 
 
-export default function AgentBookings(){
+export default function AgentBookings(
+){
 
 
 
@@ -308,7 +310,7 @@ export default function AgentBookings(){
 
 
 
-                                        KES{" "}
+                                        settings.currency || "KES"{" "}
 
                                         {
 

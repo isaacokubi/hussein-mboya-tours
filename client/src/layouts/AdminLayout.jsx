@@ -39,7 +39,8 @@ const MENU = [
   ["Settings", "/admin/settings", Settings, "settings.manage"],
 ];
 
-export default function AdminLayout() {
+export default function AdminLayout(
+) {
   const { user, hasPermission } = useAuth();
   const { companyName } = useSettings();
   const [mobileOpen, setMobileOpen] = useState(false);

@@ -1,7 +1,9 @@
+import { useSettings } from "../../../context/SettingsContext";
 import { useQuery } from "@tanstack/react-query";
 import { getFinanceStats } from "../../../api/financeApi";
 
-export default function AdminFinance() {
+export default function AdminFinance(
+) {
   const {
     data: finance,
     isLoading,
@@ -66,15 +68,15 @@ export default function AdminFinance() {
   const cards = [
     {
       title: "Total Revenue",
-      value: `KES ${revenue.toLocaleString()}`,
+      value: `settings.currency || "KES" ${revenue.toLocaleString()}`,
     },
     {
       title: "Net Revenue",
-      value: `KES ${netRevenue.toLocaleString()}`,
+      value: `settings.currency || "KES" ${netRevenue.toLocaleString()}`,
     },
     {
       title: "Refunded",
-      value: `KES ${refunded.toLocaleString()}`,
+      value: `settings.currency || "KES" ${refunded.toLocaleString()}`,
     },
     {
       title: "Paid Bookings",

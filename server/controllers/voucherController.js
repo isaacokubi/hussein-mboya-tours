@@ -1,3 +1,4 @@
+import { getSystemSettings } from "../services/settingsService.js";
 // controllers/voucherController.js
 
 import mongoose from "mongoose";
@@ -24,6 +25,15 @@ import User from "../models/User.js";
 
 export const generateVoucher = async (req, res, next) => {
   try {
+
+    const settings = await getSystemSettings();
+
+    const companyName =
+      settings.companyName || "Coherent Tours";
+
+    const currency =
+      settings.currency || "KES";
+
 
     /*
     |--------------------------------------------------------------------------
@@ -141,7 +151,7 @@ export const generateVoucher = async (req, res, next) => {
       "Tour Voucher";
 
     doc.info.Author =
-      "Coherent Tours";
+      companyName;
 
     doc.info.Subject =
       "Travel Voucher";
@@ -539,7 +549,7 @@ export const generateVoucher = async (req, res, next) => {
 
     doc.fontSize(10);
 
-    doc.text("Coherent Tours");
+    doc.text(companyName);
     doc.text("Nairobi, Kenya");
     doc.text("Phone: +254 XXX XXX XXX");
     doc.text("Email: info@husseinmboyatours.com");

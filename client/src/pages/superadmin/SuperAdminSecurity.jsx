@@ -134,37 +134,44 @@ Security Controls
 
 <div className="grid md:grid-cols-2 gap-4">
 
+{
+Array.isArray(data.controls) && data.controls.length > 0
+?
+data.controls.map((control,index)=>(
+<div
+key={index}
+className="flex items-center justify-between bg-gray-50 rounded-lg p-4"
+>
 
-<Control
-text="JWT Authentication"
-path="/superadmin/security"
-/>
+<div>
+<p className="font-semibold">
+{control.name}
+</p>
 
-<Control
-text="Role Based Access Control"
-path="/superadmin/roles"
-/>
+<p className="text-sm text-gray-500">
+Security module protection
+</p>
+</div>
 
-<Control
-text="Audit Logging"
-path="/superadmin/audit"
-/>
+<span
+className={
+control.status === "active"
+?
+"text-green-600 font-semibold"
+:
+"text-red-600 font-semibold"
+}
+>
+{control.status}
+</span>
 
-<Control
-text="Session Monitoring"
-path="/superadmin/security"
-/>
-
-<Control
-text="API Protection"
-path="/superadmin/api-monitor"
-/>
-
-<Control
-text="Database Security"
-path="/superadmin/database"
-/>
-
+</div>
+))
+:
+<div className="text-gray-500">
+No security controls available
+</div>
+}
 
 </div>
 
@@ -199,7 +206,10 @@ typeof data.authentication === "object"
 name="Authorization Service"
 status={
 typeof data.authorization === "object"
-? data.authorization.status
+? (
+  data.authorization.status ||
+  `Healthy (${data.authorization.roles || 0} Roles, ${data.authorization.permissions || 0} Permissions, ${data.authorization.admins || 0} Admins)`
+)
 : data.authorization
 }
 />

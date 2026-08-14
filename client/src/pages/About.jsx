@@ -1,3 +1,4 @@
+import { useSettings } from "../context/SettingsContext";
 import {
   Globe2,
   HeartHandshake,
@@ -13,7 +14,8 @@ import { motion } from "framer-motion";
 
 import { Link } from "react-router-dom";
 
-export default function About() {
+export default function About(
+) {
   const values = [
     {
       icon: HeartHandshake,

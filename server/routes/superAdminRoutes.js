@@ -1,4 +1,5 @@
 import express from "express";
+import securityService from "../services/securityService.js";
 
 import {
   protect,
@@ -65,14 +66,24 @@ authorize(
 "super_admin",
 "superadmin"
 ),
-(req,res)=>{
-  res.json({
-    success:true,
-    message:"Security status loaded",
-    twoFactor:true,
-    auditLogging:true,
-    sessionProtection:true
-  });
+async (req,res)=>{
+  try {
+
+    const data = await securityService.getSecurityStatus();
+
+    res.json({
+      success:true,
+      data
+    });
+
+  } catch(error){
+
+    res.status(500).json({
+      success:false,
+      message:error.message
+    });
+
+  }
 });
 
 

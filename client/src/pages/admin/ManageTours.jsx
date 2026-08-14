@@ -1,3 +1,4 @@
+import { useSettings } from "../../context/SettingsContext";
 // client/src/pages/admin/ManageTours.jsx
 
 
@@ -28,7 +29,8 @@ from "../../api/adminTourApi";
 
 
 
-export default function ManageTours(){
+export default function ManageTours(
+){
 
 
 
@@ -645,7 +647,7 @@ export default function ManageTours(){
 
 
 
-                                KES {
+                                settings.currency || "KES" {
 
                                     Number(
 

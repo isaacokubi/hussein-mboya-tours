@@ -1,13 +1,24 @@
 import express from "express";
+import {
+  getSettings,
+  updateSettings
+} from "../controllers/settingsController.js";
 
 const router = express.Router();
 
-router.get("/", async (req, res) => {
-  res.json({
-    site: "Coherent Tours",
-    maintenance: false,
-    version: "1.0.0"
-  });
-});
+
+// Get system settings
+router.get(
+  "/",
+  getSettings
+);
+
+
+// Update system settings
+router.put(
+  "/",
+  updateSettings
+);
+
 
 export default router;

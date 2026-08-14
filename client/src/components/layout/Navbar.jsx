@@ -19,7 +19,8 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { useSettings } from "../../context/SettingsContext";
 
-export default function Navbar() {
+export default function Navbar(
+) {
   const { user, logout } = useAuth();
   const { companyName, supportPhone } = useSettings();
 

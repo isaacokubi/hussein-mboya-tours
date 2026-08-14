@@ -1,3 +1,4 @@
+import { useSettings } from "../../../context/SettingsContext";
 
 import {
   useState
@@ -24,7 +25,8 @@ import {
 
 
 
-export default function AdminPayments(){
+export default function AdminPayments(
+){
 
 
 const queryClient = useQueryClient();
@@ -300,7 +302,7 @@ value={payments.length}
 
 <Card
 title="Completed Revenue"
-value={`KES ${revenue.toLocaleString()}`}
+value={`settings.currency || "KES" ${revenue.toLocaleString()}`}
 />
 
 
@@ -530,7 +532,7 @@ payment.booking?.bookingNumber ||
 
 <td className="p-3 font-bold">
 
-KES {payment.amount}
+settings.currency || "KES" {payment.amount}
 
 </td>
 
@@ -645,7 +647,7 @@ View
   onClick={() => {
     if (
       window.confirm(
-        `Start a refund for ${payment.customer?.name || "this customer"} — KES ${Number(payment.amount || 0).toLocaleString()}?`
+        `Start a refund for ${payment.customer?.name || "this customer"} — settings.currency || "KES" ${Number(payment.amount || 0).toLocaleString()}?`
       )
     ) {
       refundMutation.mutate(payment._id);
@@ -701,7 +703,7 @@ No payments found
       <div className="mt-5 space-y-2 text-sm">
         <p><strong>Customer:</strong> {selectedPayment.customer?.name || "Guest"}</p>
         <p><strong>Booking:</strong> {selectedPayment.booking?.bookingNumber || "-"}</p>
-        <p><strong>Amount:</strong> KES {Number(selectedPayment.amount || 0).toLocaleString()}</p>
+        <p><strong>Amount:</strong> settings.currency || "KES" {Number(selectedPayment.amount || 0).toLocaleString()}</p>
         <p><strong>Phone:</strong> {selectedPayment.phoneNumber || selectedPayment.phone || "-"}</p>
         <p><strong>Receipt:</strong> {selectedPayment.mpesaReceiptNumber || selectedPayment.mpesaReceipt || "-"}</p>
         <p><strong>Status:</strong> {selectedPayment.status || selectedPayment.paymentStatus || "-"}</p>

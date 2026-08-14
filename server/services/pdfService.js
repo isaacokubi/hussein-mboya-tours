@@ -1,3 +1,4 @@
+import { getSystemSettings } from "../services/settingsService.js";
 import PDFDocument from "pdfkit";
 
 /*
@@ -32,7 +33,7 @@ export const generateReceipt = (booking, res) => {
 
   doc
     .fontSize(24)
-    .text("Coherent Tours", {
+    .text(companyName, {
       align: "center",
     });
 
@@ -140,7 +141,7 @@ export const generateReceipt = (booking, res) => {
 
   doc.text(
     `Amount: ${
-      booking.currency || "KES"
+      booking.currency || currency
     } ${booking.totalAmount ?? booking.amount}`
   );
 

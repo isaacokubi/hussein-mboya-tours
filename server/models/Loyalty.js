@@ -297,7 +297,7 @@ loyaltySchema.methods.updateTier = function () {
 
 loyaltySchema.index({ tier: 1 });
 
-loyaltySchema.index({ status: 1 });
+
 
 loyaltySchema.index({ availablePoints: -1 });
 

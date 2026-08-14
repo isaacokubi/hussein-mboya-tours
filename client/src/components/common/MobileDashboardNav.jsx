@@ -1,3 +1,4 @@
+import { useSettings } from "../../context/SettingsContext";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X, LayoutDashboard, CalendarCheck, UserRound, Heart,  FileText } from "lucide-react";
@@ -15,7 +16,12 @@ const NAV = {
   ],
 };
 
-export default function MobileDashboardNav({ role = "customer", title = "Coherent Tours" }) {
+export default function MobileDashboardNav({
+  role = "customer",
+  title,
+}) {
+  const { settings = {} } = useSettings() || {};
+  title = title || settings.companyName || "Coherent Tours";
   const [open, setOpen] = useState(false);
   const items = NAV[role] || NAV.customer;
   return (

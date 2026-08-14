@@ -372,14 +372,37 @@ timestamp:new Date()
 }
 catch(error){
 
-console.error(error);
+console.error(
+" CACHE CLEAR ERROR ",
+error
+);
+
+try{
+
+await createAuditLog({
+
+user:req.user?._id,
+
+action:"error",
+
+resource:"Database",
+
+description:error.message,
+
+status:"failed",
+
+severity:"high"
+
+});
+
+}catch(e){}
 
 
 res.status(500).json({
 
 success:false,
 
-message:"Cache clearing failed"
+message:error.message
 
 });
 
@@ -391,6 +414,15 @@ message:"Cache clearing failed"
 export const createDatabaseBackup = async(req,res)=>{
 
 try{
+
+if (!mongoose.connection.db) {
+
+return res.status(503).json({
+success:false,
+message:"Database connection unavailable"
+});
+
+}
 
 const db =
 mongoose.connection.db;
@@ -450,8 +482,16 @@ mongoose.connection.name
 );
 
 
+console.log("BACKUP DATABASE:", mongoose.connection.name);
+console.log("MONGO STATE:", mongoose.connection.readyState);
+
 const collections =
 await db.listCollections().toArray();
+
+console.log(
+"COLLECTION COUNT:",
+collections.length
+);
 
 
 console.log(
@@ -518,6 +558,24 @@ req.user?._id ||
 console.log("SAVED BACKUP RECORD:", savedBackup);
 
 
+await createAuditLog({
+
+user:req.user?._id,
+
+action:"create",
+
+resource:"Database",
+
+description:
+`Database backup created: ${filename}`,
+
+status:"success",
+
+severity:"low"
+
+});
+
+
 res.json({
 
 success:true,
@@ -534,8 +592,9 @@ file:filename
 catch(error){
 
 console.error(
-"BACKUP ERROR",
-error
+"BACKUP ERROR DETAILS:",
+error.message,
+error.stack
 );
 
 
@@ -583,13 +642,32 @@ console.error(
 error
 );
 
+try{
+
+await createAuditLog({
+
+user:req.user?._id,
+
+action:"error",
+
+resource:"Database",
+
+description:error.message,
+
+status:"failed",
+
+severity:"high"
+
+});
+
+}catch(e){}
+
 
 res.status(500).json({
 
 success:false,
 
-message:
-"Unable to load backups"
+message:error.message
 
 });
 
@@ -643,6 +721,15 @@ res.download(filepath);
 
 }
 catch(error){
+
+await createAuditLog({
+user:req.user?._id,
+action:"error",
+resource:"Database",
+description:error.message,
+status:"failed",
+severity:"high"
+});
 
 res.status(500).json({
 success:false,

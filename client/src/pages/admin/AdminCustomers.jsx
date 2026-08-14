@@ -1,7 +1,9 @@
+import { useSettings } from "../../context/SettingsContext";
 import { useQuery } from "@tanstack/react-query";
 import api from "../../api/axios";
 
-export default function AdminCustomers() {
+export default function AdminCustomers(
+) {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["admin-customers"],
     queryFn: async () => (await api.get("/customers")).data,
@@ -32,7 +34,7 @@ export default function AdminCustomers() {
                 <td className="p-3">{customer.phone || customer.phoneNumber || "-"}</td>
                 <td className="p-3">{customer.totalBookings || 0}</td>
                 <td className="p-3 font-semibold">
-                  KES {Number(customer.totalSpent || 0).toLocaleString()}
+                  settings.currency || "KES" {Number(customer.totalSpent || 0).toLocaleString()}
                 </td>
                 <td className="p-3">
                   <span className={customer.isActive === false ? "text-red-600" : "text-green-600"}>

@@ -1,10 +1,12 @@
+import { useSettings } from "../../context/SettingsContext";
 // client/src/pages/tourManager/TourAnalytics.jsx
 
 import { useQuery } from "@tanstack/react-query";
 import { getTourReports } from "../../api/tourApi";
 
 
-export default function TourAnalytics() {
+export default function TourAnalytics(
+) {
   const {
     data,
 
@@ -43,7 +45,7 @@ export default function TourAnalytics() {
     {
       title: "Revenue",
 
-      value: `KES ${Number(analytics.totalRevenue || 0).toLocaleString()}`,
+      value: `settings.currency || "KES" ${Number(analytics.totalRevenue || 0).toLocaleString()}`,
     },
 
     {

@@ -1,3 +1,4 @@
+import { useSettings } from "../../../context/SettingsContext";
 // client/src/pages/admin/finance/FinanceReports.jsx
 
 
@@ -17,7 +18,8 @@ from "../../../api/financeApi";
 
 
 
-export default function FinanceReports(){
+export default function FinanceReports(
+){
 
 
 
@@ -301,7 +303,7 @@ export default function FinanceReports(){
                                     <td className="p-4 font-medium">
 
 
-                                        KES{" "}
+                                        settings.currency || "KES"{" "}
 
                                         {
 

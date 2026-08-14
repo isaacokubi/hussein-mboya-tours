@@ -1,3 +1,4 @@
+import { useSettings } from "../../context/SettingsContext";
 // client/src/components/tours/TourCard.jsx
 
 import { Link } from "react-router-dom";
@@ -7,7 +8,10 @@ import { toast } from "react-toastify";
 import { addWishlist } from "../../api/wishlistApi";
 import { getTourImage } from "../../utils/tourImage";
 
-export default function TourCard({ tour }) {
+export default function TourCard({
+  tour }) {
+
+  const {settings={}} = useSettings() || {};
   const [adding, setAdding] = useState(false);
 
   const price = Number(tour.price || 0);
@@ -160,7 +164,7 @@ export default function TourCard({ tour }) {
                 line-through
                 "
               >
-                KES{" "}
+                settings.currency || "KES"{" "}
                 {price.toLocaleString("en-US")}
               </p>
             )}
@@ -172,7 +176,7 @@ export default function TourCard({ tour }) {
               text-green-700
               "
             >
-              KES{" "}
+              settings.currency || "KES"{" "}
               {discountedPrice.toLocaleString("en-US")}
             </p>
           </div>

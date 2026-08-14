@@ -8,7 +8,8 @@ import { useQuery as useReviewsQuery } from "@tanstack/react-query";
 import { MessageCircle, Star } from "lucide-react";
 import { useSettings } from "../context/SettingsContext";
 
-export default function TourDetails() {
+export default function TourDetails(
+) {
  const { slug } = useParams();
   const { supportPhone } = useSettings();
 
@@ -164,7 +165,7 @@ export default function TourDetails() {
           text-green-700
           "
           >
-            KES {Number(tour.price || 0).toLocaleString()}
+            settings.currency || "KES" {Number(tour.price || 0).toLocaleString()}
           </div>
 
           <div

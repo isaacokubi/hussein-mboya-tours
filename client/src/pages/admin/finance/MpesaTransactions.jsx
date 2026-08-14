@@ -1,3 +1,4 @@
+import { useSettings } from "../../../context/SettingsContext";
 // client/src/pages/admin/finance/MpesaTransactions.jsx
 
 
@@ -23,7 +24,8 @@ from "../../../api/financeApi";
 
 
 
-export default function MpesaTransactions(){
+export default function MpesaTransactions(
+){
 
 
 
@@ -212,7 +214,7 @@ t=>t.status==="completed"
 M-Pesa Revenue
 </h3>
 <p>
-KES {
+settings.currency || "KES" {
 transactions
 .filter(t=>t.status==="completed")
 .reduce(
@@ -685,7 +687,7 @@ t=>t.status==="failed"
                                     <td className="p-4">
 
 
-                                        KES{" "}
+                                        settings.currency || "KES"{" "}
 
                                         {
 

@@ -7,7 +7,8 @@ import { FaFacebook, FaInstagram } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { useState } from "react";
 
-export default function Contact() {
+export default function Contact(
+) {
   const { supportPhone, supportEmail } = useSettings();
   const [form, setForm] = useState({
     name: "",
