@@ -1,7 +1,7 @@
 
 import {useState} from "react";
 import {useQuery} from "@tanstack/react-query";
-import api from "../../api/axios";
+import {getAuditLogs} from "../../api/auditApi";
 
 
 export default function SuperAdminAudit(){
@@ -28,18 +28,11 @@ filters
 
 queryFn:async()=>{
 
-const res=await api.get(
-"/superadmin/audit",
-{
-params:{
+return getAuditLogs({
 page,
 limit:20,
 ...filters
-}
-}
-);
-
-return res.data;
+});
 
 }
 

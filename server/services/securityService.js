@@ -5,6 +5,13 @@ import User from "../models/User.js";
 const securityService = {
 
 
+async getSecurityEvents(){
+
+return [];
+
+},
+
+
 async getSecurityStatus(){
 
 

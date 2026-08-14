@@ -31,3 +31,10 @@ export const updateSettings = async (data) => {
   const response = await axios.put("/settings", data);
   return response.data;
 };
+
+
+
+
+export const getSecurityEvents = async () =>
+  (await axios.get("/security/events")).data;
+

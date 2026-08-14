@@ -31,8 +31,8 @@ const updateRole=useMutation({
 
 mutationFn:async()=>{
 
-return api.patch(
-`/admin/roles/${selectedRole._id}`,
+return api.put(
+`/admin/roles/${selectedRole._id}/permissions`,
 {
 permissions:selectedPermissions
 }
@@ -44,6 +44,20 @@ onSuccess:()=>{
 
 queryClient.invalidateQueries(["roles"]);
 alert("Role permissions updated successfully");
+
+},
+
+onError:(error)=>{
+
+console.error(
+"ROLE UPDATE ERROR:",
+error?.response?.data || error
+);
+
+alert(
+error?.response?.data?.message ||
+"Unable to update permissions"
+);
 
 }
 

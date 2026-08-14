@@ -86,16 +86,6 @@ deleteRole
 
 
 
-router.patch(
-"/:id/permissions",
-updatePermissions
-);
-
-router.put(
-"/:id/permissions",
-updatePermissions
-);
-
 router.put(
 "/:id/permissions",
 updatePermissions
