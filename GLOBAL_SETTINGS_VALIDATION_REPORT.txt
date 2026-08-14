@@ -1,6 +1,0 @@
-GLOBAL SETTINGS VALIDATION COMPLETE
-
-No real errors found.
-
-Note:
-SettingsContext.jsx defines useSettings() and does not require importing itself.
