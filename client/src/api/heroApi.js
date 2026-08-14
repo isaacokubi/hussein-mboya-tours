@@ -5,7 +5,7 @@ export const getHeroSlides = async () => {
 
   const response = await api.get("/hero");
 
-  console.log("HERO API RESPONSE:", response.data);
+  
 
   return Array.isArray(response.data)
     ? response.data

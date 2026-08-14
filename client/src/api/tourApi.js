@@ -17,7 +17,7 @@ export const getTours = async (category = null) => {
 export const getFeaturedTours = async () => {
   const { data } = await api.get("/tours/featured");
 
-  console.log("FEATURED API RAW RESPONSE:", data);
+  
 
   return data?.data || [];
 };

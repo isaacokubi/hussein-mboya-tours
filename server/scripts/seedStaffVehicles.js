@@ -101,8 +101,8 @@ const seed = async () => {
     );
   }
 
-  console.log("Seed complete: 10 guides, 10 drivers and 10 vehicles.");
-  console.log("Seed account password: ChangeMe123! (change these passwords after first login).");
+  // debug removed
+  // debug removed.");
   await mongoose.disconnect();
 };
 

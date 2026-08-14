@@ -140,10 +140,10 @@ const seedGuides = async () => {
         await staff.save();
       }
 
-      console.log(`Guide ready: ${user.email} -> Staff ${staff._id}`);
+      // debug removed
     }
 
-    console.log("Tour guides and Staff profiles are synchronized.");
+    // debug removed
   } catch (error) {
     console.error("TOUR GUIDE SEED ERROR:", error);
     process.exitCode = 1;

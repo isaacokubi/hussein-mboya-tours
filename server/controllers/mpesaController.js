@@ -411,7 +411,7 @@ export const stkPush = async (req, res, next) => {
 
 export const mpesaCallback = async (req, res, next) => {
   try {
-    console.log("MPESA CALLBACK:", JSON.stringify(req.body, null, 2));
+    // debug removed);
 
     const stkCallback = req.body?.Body?.stkCallback;
 
@@ -526,7 +526,7 @@ export const mpesaCallback = async (req, res, next) => {
 
     await booking.save();
 
-    console.log("Booking payment confirmed:", booking._id);
+    // debug removed
 
     /*
     |--------------------------------------------------------------------------

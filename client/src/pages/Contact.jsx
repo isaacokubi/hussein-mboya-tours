@@ -27,7 +27,7 @@ export default function Contact(
   const submitHandler = (e) => {
     e.preventDefault();
 
-    console.log(form);
+    
 
     alert("Thank you for contacting Coherent Tours. We will respond shortly.");
   };

@@ -14,7 +14,7 @@ const migrateRoles = async () => {
 
     await mongoose.connect(process.env.MONGODB_URI);
 
-    console.log("✅ MongoDB Connected");
+    // debug removed
 
     const users = await User.find();
 
@@ -26,7 +26,7 @@ const migrateRoles = async () => {
       });
 
       if (!role) {
-        console.log(`⚠ Role "${roleName}" not found.`);
+        // debug removed
         continue;
       }
 
@@ -35,16 +35,16 @@ const migrateRoles = async () => {
 
       await user.save();
 
-      console.log(`✔ ${user.email} -> ${roleName}`);
+      // debug removed
     }
 
-    console.log("✅ Role migration completed");
+    // debug removed
   } catch (error) {
     console.error("❌ Migration failed:", error);
     process.exitCode = 1;
   } finally {
     await mongoose.connection.close().catch(() => {});
-    console.log("🔌 MongoDB connection closed");
+    // debug removed
   }
 };
 

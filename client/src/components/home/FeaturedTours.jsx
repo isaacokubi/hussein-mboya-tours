@@ -24,9 +24,9 @@ export default function FeaturedTours(
 
  const tours = data || [];
 
-  console.log("FEATURED TOURS RESPONSE:", data);
+  
 
-  console.log("FEATURED TOURS ARRAY:", tours);
+  
 
   /*
   |--------------------------------------------------------------------------

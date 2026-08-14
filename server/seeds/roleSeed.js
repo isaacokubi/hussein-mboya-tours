@@ -30,7 +30,7 @@ const seedRoles = async () => {
       );
     }
 
-    console.log(`✅ ${roles.length} canonical roles seeded successfully`);
+    // debug removed
   } catch (error) {
     console.error("❌ Role Seeder Error:", error.message);
     throw error;

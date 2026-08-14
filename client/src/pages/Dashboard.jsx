@@ -125,7 +125,7 @@ if (isLoading) {
     return [];
   })();
 
-  console.log("CUSTOMER BOOKINGS ARRAY:", bookings);
+  
 
   const today = new Date();
 

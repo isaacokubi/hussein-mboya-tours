@@ -33,11 +33,11 @@ const socket = io(import.meta.env.VITE_API_URL, {
 */
 
 socket.on("connect", () => {
-  console.log("✅ Socket connected:", socket.id);
+  // debug removed
 });
 
 socket.on("disconnect", (reason) => {
-  console.log("🔌 Socket disconnected:", reason);
+  // debug removed
 });
 
 socket.on("connect_error", (error) => {
@@ -45,7 +45,7 @@ socket.on("connect_error", (error) => {
 });
 
 socket.on("reconnect", (attempt) => {
-  console.log(`🔄 Reconnected after ${attempt} attempt(s)`);
+  // debug removed`);
 });
 
 export default socket;

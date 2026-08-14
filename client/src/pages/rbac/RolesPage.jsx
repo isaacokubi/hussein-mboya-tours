@@ -11,8 +11,8 @@ export default function RolesPage() {
   const permissionsQuery=useQuery({queryKey:["admin-permissions"],queryFn:getAdminPermissions});
   const roles=rolesQuery.data?.roles||[];
 
-console.log("RBAC ROLES:", roles);
-console.log("RBAC DATA:", rolesQuery.data);
+
+
 
 // Automatically select Super Administrator first
 useEffect(()=>{

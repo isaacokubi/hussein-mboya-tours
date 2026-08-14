@@ -127,13 +127,13 @@ try{
 
 setSaving(true);
 
-console.log("SUPERADMIN SETTINGS SAVE START", settings);
+
 
 await updateSettings(settings);
 
 toast.success("Settings saved successfully.");
 
-console.log("SUPERADMIN SETTINGS SAVE SUCCESS");
+
 
 }
 
@@ -170,7 +170,7 @@ const runMaintenance = async (action)=>{
       return;
     }
 
-    console.log("MAINTENANCE START"); toast.info("Processing maintenance request...");
+     toast.info("Processing maintenance request...");
 
     const endpoint =
       action === "backup"

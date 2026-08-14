@@ -9,7 +9,7 @@ const fixIndex = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URI);
 
-    console.log("✅ MongoDB connected");
+    // debug removed
 
     const collection = mongoose.connection.collection("payments");
 
@@ -21,14 +21,14 @@ const fixIndex = async () => {
 
     if (hasIndex) {
       await collection.dropIndex("mpesaReceiptNumber_1");
-      console.log("✅ Removed old mpesaReceiptNumber index");
+      // debug removed
     } else {
-      console.log("ℹ️ Index mpesaReceiptNumber_1 does not exist");
+      // debug removed
     }
 
     await mongoose.connection.close();
 
-    console.log("✅ Database connection closed");
+    // debug removed
   } catch (error) {
     console.error("❌ Error:", error.message);
 

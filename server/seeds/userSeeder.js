@@ -14,7 +14,7 @@ const seedUsers = async () => {
 
     await mongoose.connect(process.env.MONGODB_URI);
 
-    console.log("✅ MongoDB Connected");
+    // debug removed
 
     /*
     |--------------------------------------------------------------------------
@@ -53,7 +53,7 @@ const seedUsers = async () => {
       },
     });
 
-    console.log("🗑 Existing demo users removed");
+    // debug removed
 
     /*
     |--------------------------------------------------------------------------
@@ -103,9 +103,9 @@ const seedUsers = async () => {
       isVerified: true,
     });
 
-    console.log("\n====================================");
+    // debug removed
 
-    console.log("✅ SUPER ADMIN CREATED");
+    // debug removed
 
     console.log({
       name: admin.name,
@@ -114,9 +114,9 @@ const seedUsers = async () => {
       role: "superadmin",
     });
 
-    console.log("------------------------------------");
+    // debug removed
 
-    console.log("✅ TOUR MANAGER CREATED");
+    // debug removed
 
     console.log({
       name: manager.name,
@@ -125,11 +125,11 @@ const seedUsers = async () => {
       role: "tourmanager",
     });
 
-    console.log("====================================");
+    // debug removed
 
     await mongoose.connection.close();
 
-    console.log("🔌 MongoDB connection closed");
+    // debug removed
 
     process.exit(0);
   } catch (error) {

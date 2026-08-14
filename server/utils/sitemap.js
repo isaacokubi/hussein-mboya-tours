@@ -16,7 +16,7 @@ const generateSitemap = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URI);
 
-    console.log("MongoDB Connected");
+    // debug removed
 
     const hostname =
       process.env.CLIENT_URL ||
@@ -115,7 +115,7 @@ const generateSitemap = async () => {
       xml.toString()
     );
 
-    console.log("✅ Sitemap generated successfully");
+    // debug removed
 
     await mongoose.connection.close();
 

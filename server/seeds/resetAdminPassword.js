@@ -14,7 +14,7 @@ const resetPassword = async () => {
 
     await mongoose.connect(process.env.MONGODB_URI);
 
-    console.log("✅ MongoDB Connected");
+    // debug removed
 
     const user = await User.findOne({
       email: "admin@husseinmboyatours.com",
@@ -45,13 +45,13 @@ const resetPassword = async () => {
 
     await user.save();
 
-    console.log("✅ Admin password reset successfully");
+    // debug removed
   } catch (error) {
     console.error("❌ Reset failed:", error.message);
     process.exitCode = 1;
   } finally {
     await mongoose.connection.close().catch(() => {});
-    console.log("🔌 MongoDB connection closed");
+    // debug removed
   }
 };
 

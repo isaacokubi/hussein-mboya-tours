@@ -33,7 +33,7 @@ export default function CategoriesSection() {
 
       const data = await getCategories();
 
-      console.log("Categories API:", data);
+      
 
 
       // Supports:

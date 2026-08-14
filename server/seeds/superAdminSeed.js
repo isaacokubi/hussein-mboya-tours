@@ -15,7 +15,7 @@ const createSuperAdmin = async () => {
 
     await mongoose.connect(process.env.MONGODB_URI);
 
-    console.log("✅ MongoDB Connected");
+    // debug removed
 
     // --------------------------------------------------
     // PERMISSIONS
@@ -43,7 +43,7 @@ const createSuperAdmin = async () => {
           category: "other",
         });
 
-        console.log(`Created permission: ${name}`);
+        // debug removed
       }
 
       permissionIds.push(permission._id);
@@ -64,13 +64,13 @@ const createSuperAdmin = async () => {
         permissions: permissionIds,
       });
 
-      console.log("✅ Superadmin role created");
+      // debug removed
     } else {
       superAdminRole.permissions = permissionIds;
 
       await superAdminRole.save();
 
-      console.log("✅ Superadmin role updated");
+      // debug removed
     }
 
     // --------------------------------------------------
@@ -82,7 +82,7 @@ const createSuperAdmin = async () => {
     const existingUser = await User.findOne({ email });
 
     if (existingUser) {
-      console.log("⚠️ Super Admin already exists.");
+      // debug removed
       return;
     }
 
@@ -109,7 +109,7 @@ const createSuperAdmin = async () => {
       isVerified: true,
     });
 
-    console.log("✅ SUPER ADMIN CREATED");
+    // debug removed
     console.log({
       name: admin.name,
       email: admin.email,
@@ -122,7 +122,7 @@ const createSuperAdmin = async () => {
     process.exitCode = 1;
   } finally {
     await mongoose.connection.close().catch(() => {});
-    console.log("🔌 MongoDB connection closed");
+    // debug removed
   }
 };
 

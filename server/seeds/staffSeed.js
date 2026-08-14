@@ -70,12 +70,12 @@ const seedStaff = async () => {
 
     await mongoose.connect(process.env.MONGODB_URI);
 
-    console.log("MongoDB connected");
+    // debug removed
 
 
     await Staff.deleteMany();
 
-    console.log("Existing staff removed");
+    // debug removed
 
 
     const staff = await Staff.insertMany(staffMembers);

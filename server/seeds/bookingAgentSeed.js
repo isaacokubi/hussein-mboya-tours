@@ -11,7 +11,7 @@ const createBookingAgent = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URI);
 
-    console.log("✅ MongoDB Connected");
+    // debug removed
 
     // -------------------------------------------------
     // AGENT PERMISSIONS
@@ -39,7 +39,7 @@ const createBookingAgent = async () => {
           category: "other",
         });
 
-        console.log(`✅ Created permission: ${name}`);
+        // debug removed
       }
 
       permissionIds.push(permission._id);
@@ -60,13 +60,13 @@ const createBookingAgent = async () => {
         permissions: permissionIds,
       });
 
-      console.log("✅ Agent role created");
+      // debug removed
     } else {
       agentRole.permissions = permissionIds;
 
       await agentRole.save();
 
-      console.log("✅ Agent role updated");
+      // debug removed
     }
 
     // -------------------------------------------------
@@ -78,7 +78,7 @@ const createBookingAgent = async () => {
     const existingAgent = await User.findOne({ email });
 
     if (existingAgent) {
-      console.log("ℹ️ Agent already exists");
+      // debug removed
 
       await mongoose.connection.close();
       return;
@@ -104,13 +104,13 @@ const createBookingAgent = async () => {
       isVerified: true,
     });
 
-    console.log("=================================");
-    console.log("✅ BOOKING AGENT CREATED");
-    console.log("Name:", agent.name);
-    console.log("Email:", agent.email);
-    console.log("Password:", "Agent@12345");
-    console.log("Role:", agent.role);
-    console.log("=================================");
+    // debug removed
+    // debug removed
+    // debug removed
+    // debug removed
+    // debug removed
+    // debug removed
+    // debug removed
 
     await mongoose.connection.close();
   } catch (error) {

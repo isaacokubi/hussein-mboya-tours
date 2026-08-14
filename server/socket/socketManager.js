@@ -23,7 +23,7 @@ export const initSocket = (socketServer) => {
     io = socketServer;
 
     io.on("connection", (socket) => {
-        console.log(`🔌 Socket connected: ${socket.id}`);
+        // debug removed
 
         /*
         |--------------------------------------------------------------------------
@@ -47,7 +47,7 @@ export const initSocket = (socketServer) => {
 
             socket.userId = id;
 
-            console.log(`✅ User ${id} registered (${socket.id})`);
+            // debug removed`);
         });
 
         /*
@@ -59,7 +59,7 @@ export const initSocket = (socketServer) => {
         socket.on("join-room", (room) => {
             socket.join(room);
 
-            console.log(`${socket.id} joined room ${room}`);
+            // debug removed
         });
 
         /*
@@ -90,10 +90,10 @@ export const initSocket = (socketServer) => {
                     }
                 }
 
-                console.log(`❌ User ${socket.userId} disconnected`);
+                // debug removed
             }
 
-            console.log(`Socket disconnected: ${socket.id}`);
+            // debug removed
         });
     });
 

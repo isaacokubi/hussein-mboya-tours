@@ -99,7 +99,7 @@ amount
 }
 
 
-console.log("Finished");
+// debug removed
 
 process.exit();
 

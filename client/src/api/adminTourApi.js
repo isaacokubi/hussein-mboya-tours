@@ -19,13 +19,13 @@ export const getTours = async (params = {}) => {
 
 export const getTour = async (id) => {
 
-  console.log("EDIT TOUR REQUEST:", id);
+  
 
   const { data } = await api.get(
     `/admin/tours/${id}`
   );
 
-  console.log("EDIT TOUR RESPONSE:", data);
+  
 
   return data.tour;
 

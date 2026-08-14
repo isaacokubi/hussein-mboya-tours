@@ -24,7 +24,7 @@ try{
 
 const response=await getSecurityStatus();
 
-console.log("SECURITY API RESPONSE:", response);
+
 
 setSecurity(
 response?.data || response

@@ -395,7 +395,7 @@ severity:"high"
 
 });
 
-}catch(e){}
+}catch(e){ console.error(e.message); }
 
 
 res.status(500).json({
@@ -482,8 +482,8 @@ mongoose.connection.name
 );
 
 
-console.log("BACKUP DATABASE:", mongoose.connection.name);
-console.log("MONGO STATE:", mongoose.connection.readyState);
+// debug removed
+// debug removed
 
 const collections =
 await db.listCollections().toArray();
@@ -555,7 +555,7 @@ req.user?._id ||
 
 });
 
-console.log("SAVED BACKUP RECORD:", savedBackup);
+// debug removed
 
 
 await createAuditLog({
@@ -660,7 +660,7 @@ severity:"high"
 
 });
 
-}catch(e){}
+}catch(e){ console.error(e.message); }
 
 
 res.status(500).json({

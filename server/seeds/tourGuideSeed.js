@@ -15,7 +15,7 @@ const createTourGuide = async () => {
 
     await mongoose.connect(process.env.MONGODB_URI);
 
-    console.log("✅ MongoDB Connected");
+    // debug removed
 
     /*
     |--------------------------------------------------------------------------
@@ -44,7 +44,7 @@ const createTourGuide = async () => {
           category: "other",
         });
 
-        console.log(`✅ Created permission: ${name}`);
+        // debug removed
       }
 
       permissionIds.push(permission._id);
@@ -67,13 +67,13 @@ const createTourGuide = async () => {
         permissions: permissionIds,
       });
 
-      console.log("✅ Guide role created");
+      // debug removed
     } else {
       guideRole.permissions = permissionIds;
 
       await guideRole.save();
 
-      console.log("✅ Guide role updated");
+      // debug removed
     }
 
     /*
@@ -87,7 +87,7 @@ const createTourGuide = async () => {
     const existingGuide = await User.findOne({ email });
 
     if (existingGuide) {
-      console.log("⚠️ Tour Guide already exists.");
+      // debug removed
 
       return;
     }
@@ -116,21 +116,21 @@ const createTourGuide = async () => {
       isVerified: true,
     });
 
-    console.log("\n======================================");
-    console.log("✅ TOUR GUIDE CREATED");
-    console.log("======================================");
-    console.log("Name:      ", guide.name);
-    console.log("Email:     ", guide.email);
-    console.log("Password:  ", "Guide@12345");
-    console.log("Role:      ", guide.role);
-    console.log("RBAC Role: ", guideRole.name);
-    console.log("======================================");
+    // debug removed
+    // debug removed
+    // debug removed
+    // debug removed
+    // debug removed
+    // debug removed
+    // debug removed
+    // debug removed
+    // debug removed
   } catch (error) {
     console.error("❌ TOUR GUIDE SEED ERROR:", error.message);
     process.exitCode = 1;
   } finally {
     await mongoose.connection.close().catch(() => {});
-    console.log("🔌 MongoDB connection closed");
+    // debug removed
   }
 };
 

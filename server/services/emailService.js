@@ -41,7 +41,7 @@ export const verifyEmailConnection = async () => {
 
     await transporter.verify();
 
-    console.log("✅ Email server connected");
+    // debug removed
   } catch (error) {
     console.error("❌ Email configuration error:", error.message);
   }

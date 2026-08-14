@@ -373,7 +373,7 @@ const EditTour =()=>{
         };
 
 
-        console.log("UPDATE TOUR PAYLOAD:", payload);
+        
 
 
         saveTour(payload);

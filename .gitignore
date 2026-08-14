@@ -141,3 +141,22 @@ upgrade_*.py
 *.py
 *.pyc
 __pycache__/
+
+# Dependencies
+node_modules/
+
+# Builds
+dist/
+build/
+
+# Environment
+.env*
+
+# Temporary repair files
+*.backup*
+*.before-*
+*.old
+*.log
+
+# Database backups
+server/server/backups/

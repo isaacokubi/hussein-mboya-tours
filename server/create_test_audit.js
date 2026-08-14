@@ -30,7 +30,7 @@ await AuditLog.create({
   }
 });
 
-console.log("Test audit created successfully");
+// debug removed
 
 await mongoose.disconnect();
 

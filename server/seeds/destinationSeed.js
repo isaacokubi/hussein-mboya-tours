@@ -81,22 +81,22 @@ const seedDestinations = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URI);
 
-    console.log("✅ MongoDB connected");
+    // debug removed
 
     await Destination.deleteMany({});
 
-    console.log("🗑 Existing destinations removed");
+    // debug removed
 
     await Destination.insertMany(destinations);
 
-    console.log(`✅ ${destinations.length} destinations seeded successfully`);
+    // debug removed
   } catch (error) {
     console.error("❌ Destination seeding failed:");
     console.error(error);
     process.exitCode = 1;
   } finally {
     await mongoose.connection.close().catch(() => {});
-    console.log("🔌 MongoDB connection closed");
+    // debug removed
   }
 };
 

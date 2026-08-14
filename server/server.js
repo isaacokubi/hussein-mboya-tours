@@ -66,7 +66,7 @@ server.listen(env.PORT, () => {
 
 });const shutdown = async () => {
 
-    console.log("Closing server...");
+    // debug removed
 
     clearInterval(lifecycleInterval);
 
@@ -74,7 +74,7 @@ server.listen(env.PORT, () => {
 
         await mongoose.connection.close();
 
-        console.log("Server stopped");
+        // debug removed
 
         process.exit(0);
 

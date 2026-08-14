@@ -22,7 +22,7 @@ cloudinary.config({
 });
 
 if (process.env.NODE_ENV !== "production") {
-  console.log("✓ Cloudinary configured successfully");
+  // debug removed
 }
 
 export default cloudinary;

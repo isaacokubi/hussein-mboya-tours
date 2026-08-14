@@ -15,7 +15,7 @@ const createTourManager = async () => {
 
     await mongoose.connect(process.env.MONGODB_URI);
 
-    console.log("MongoDB Connected");
+    // debug removed
 
     /*
     |--------------------------------------------------------------------------
@@ -93,7 +93,7 @@ const createTourManager = async () => {
           enabled: true,
         });
 
-        console.log(`CREATED permission: ${data.name}`);
+        // debug removed
       } else {
         permission.label = data.label;
         permission.module = data.module;
@@ -102,7 +102,7 @@ const createTourManager = async () => {
 
         await permission.save();
 
-        console.log(`UPDATED permission: ${data.name}`);
+        // debug removed
       }
 
       permissionIds.push(permission._id);
@@ -131,7 +131,7 @@ const createTourManager = async () => {
         status: "active",
       });
 
-      console.log("CREATED role: tour_manager");
+      // debug removed
     } else {
       tourManagerRole.displayName = "Tour Manager";
       tourManagerRole.description =
@@ -143,7 +143,7 @@ const createTourManager = async () => {
 
       await tourManagerRole.save();
 
-      console.log("UPDATED role: tour_manager");
+      // debug removed
     }
 
     /*
@@ -173,7 +173,7 @@ const createTourManager = async () => {
         isVerified: true,
       });
 
-      console.log("CREATED user: manager@husseinmboyatours.com");
+      // debug removed
     } else {
       manager.role = "tour_manager";
       manager.roleId = tourManagerRole._id;
@@ -183,7 +183,7 @@ const createTourManager = async () => {
 
       await manager.save();
 
-      console.log("UPDATED user: manager@husseinmboyatours.com");
+      // debug removed
     }
 
     /*
@@ -192,22 +192,22 @@ const createTourManager = async () => {
     |--------------------------------------------------------------------------
     */
 
-    console.log("\n======================================");
-    console.log("TOUR MANAGER RBAC READY");
-    console.log("======================================");
-    console.log("Email:       manager@husseinmboyatours.com");
-    console.log("Password:    Manager@12345");
-    console.log("Role:        tour_manager");
-    console.log("Role ID:     ", tourManagerRole._id.toString());
-    console.log("Permissions: ", permissionIds.length);
-    console.log("======================================\n");
+    // debug removed
+    // debug removed
+    // debug removed
+    // debug removed
+    // debug removed
+    // debug removed
+    // debug removed);
+    // debug removed
+    // debug removed
 
   } catch (error) {
     console.error("TOUR MANAGER SEED ERROR:", error);
     process.exitCode = 1;
   } finally {
     await mongoose.connection.close().catch(() => {});
-    console.log("MongoDB connection closed");
+    // debug removed
   }
 };
 

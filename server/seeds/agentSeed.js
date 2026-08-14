@@ -16,7 +16,7 @@ const seedAgents = async () => {
 
     await mongoose.connect(process.env.MONGODB_URI);
 
-    console.log("MongoDB connected");
+    // debug removed
 
 
     const emails = [
@@ -142,7 +142,7 @@ const seedAgents = async () => {
     }
 
 
-    console.log("✓ Agent seed completed");
+    // debug removed
 
     process.exit(0);
 

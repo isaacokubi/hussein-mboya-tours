@@ -39,6 +39,6 @@ const destinations = [
 export default async function seedDestinations() {
   await Destination.deleteMany({});
   const created = await Destination.insertMany(destinations);
-  console.log(`Seeded ${created.length} destinations`);
+  // debug removed
   return created;
 }

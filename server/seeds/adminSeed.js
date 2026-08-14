@@ -11,7 +11,7 @@ const createAdmin = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URI);
 
-    console.log("✅ MongoDB Connected");
+    // debug removed
 
     const permissionNames = [
       "manage_users",
@@ -50,12 +50,12 @@ const createAdmin = async () => {
         permissions: permissionIds,
       });
 
-      console.log("✅ Admin role created");
+      // debug removed
     } else {
       adminRole.permissions = permissionIds;
       await adminRole.save();
 
-      console.log("✅ Admin role updated");
+      // debug removed
     }
 
     const email = "admin@husseinmboyatours.com";
@@ -63,7 +63,7 @@ const createAdmin = async () => {
     const existingAdmin = await User.findOne({ email });
 
     if (existingAdmin) {
-      console.log("ℹ️ Admin already exists");
+      // debug removed
 
       await mongoose.connection.close();
       return;
@@ -87,11 +87,11 @@ const createAdmin = async () => {
       isVerified: true,
     });
 
-    console.log("=================================");
-    console.log("✅ ADMIN CREATED");
-    console.log("Email:", admin.email);
-    console.log("Password:", "Admin@12345");
-    console.log("=================================");
+    // debug removed
+    // debug removed
+    // debug removed
+    // debug removed
+    // debug removed
 
     await mongoose.connection.close();
   } catch (error) {

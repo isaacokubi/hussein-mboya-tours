@@ -13,23 +13,23 @@ const runSeeds = async () => {
       throw new Error("MONGODB_URI is missing.");
     }
 
-    console.log("Connecting to MongoDB...");
+    // debug removed
 
     await mongoose.connect(process.env.MONGODB_URI);
 
-    console.log("MongoDB Connected");
+    // debug removed
 
     await seedPermissions();
     await seedRoles();
     await seedDestinations();
 
-    console.log("✅ Database seeding completed");
+    // debug removed
   } catch (error) {
     console.error("Seeder failed:", error);
     process.exitCode = 1;
   } finally {
     await mongoose.connection.close().catch(() => {});
-    console.log("MongoDB connection closed");
+    // debug removed
   }
 };
 

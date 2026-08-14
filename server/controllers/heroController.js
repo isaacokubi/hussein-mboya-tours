@@ -8,7 +8,7 @@ export const getHeroSlides = async (req, res) => {
     const slides = await HeroSlide.find();
 
 
-    console.log("ALL HERO SLIDES:", slides);
+    // debug removed
 
 
     res.status(200).json({
@@ -23,7 +23,7 @@ export const getHeroSlides = async (req, res) => {
   } catch (error) {
 
 
-    console.log("HERO SLIDE ERROR:", error);
+    // debug removed
 
 
     res.status(500).json({

@@ -14,7 +14,7 @@ const seedTours = async () => {
 
     await mongoose.connect(process.env.MONGODB_URI);
 
-    console.log("✅ MongoDB Connected");
+    // debug removed
 
     const destinations = await Destination.find();
 
@@ -38,7 +38,7 @@ const seedTours = async () => {
 
     await Tour.deleteMany({});
 
-    console.log("🗑 Existing tours removed");
+    // debug removed
 
     const tourData = [
       {
@@ -263,13 +263,13 @@ const seedTours = async () => {
       ordered: true,
     });
 
-    console.log(`✅ ${tourData.length} tours seeded successfully`);
+    // debug removed
   } catch (error) {
     console.error("❌ Tour seed failed:", error.message);
     process.exitCode = 1;
   } finally {
     await mongoose.connection.close().catch(() => {});
-    console.log("🔌 MongoDB connection closed");
+    // debug removed
   }
 };
 

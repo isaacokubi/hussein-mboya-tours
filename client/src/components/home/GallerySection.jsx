@@ -20,7 +20,7 @@ export default function GallerySection() {
   });
 
 
-  console.log("Gallery images:", images);
+  
 
 
 

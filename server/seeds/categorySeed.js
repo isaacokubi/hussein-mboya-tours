@@ -42,11 +42,11 @@ const seed = async () => {
 
     await TourCategory.insertMany(categories);
 
-    console.log("Categories seeded successfully");
+    // debug removed
 
     process.exit();
   } catch (error) {
-    console.log(error);
+    // debug removed
 
     process.exit(1);
   }

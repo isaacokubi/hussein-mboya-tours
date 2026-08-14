@@ -14,7 +14,7 @@ const resetManagerPassword = async () => {
 
     await mongoose.connect(process.env.MONGODB_URI);
 
-    console.log("MongoDB Connected");
+    // debug removed
 
     const manager = await User.findOne({
       email: "manager@husseinmboyatours.com",
@@ -50,21 +50,21 @@ const resetManagerPassword = async () => {
 
     await manager.save();
 
-    console.log("\n======================================");
-    console.log("TOUR MANAGER PASSWORD RESET");
-    console.log("======================================");
-    console.log("Email:    manager@husseinmboyatours.com");
-    console.log("Password: Manager@12345");
-    console.log("Role:     tour_manager");
-    console.log("Role ID:  ", managerRole._id.toString());
-    console.log("======================================\n");
+    // debug removed
+    // debug removed
+    // debug removed
+    // debug removed
+    // debug removed
+    // debug removed
+    // debug removed);
+    // debug removed
 
   } catch (error) {
     console.error("Password reset failed:", error);
     process.exitCode = 1;
   } finally {
     await mongoose.connection.close().catch(() => {});
-    console.log("MongoDB connection closed");
+    // debug removed
   }
 };
 

@@ -11,7 +11,7 @@ const createCustomer = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URI);
 
-    console.log("✅ MongoDB Connected");
+    // debug removed
 
     // -------------------------------------------------
     // CUSTOMER PERMISSIONS
@@ -38,7 +38,7 @@ const createCustomer = async () => {
           category: "other",
         });
 
-        console.log(`✅ Created permission: ${name}`);
+        // debug removed
       }
 
       permissionIds.push(permission._id);
@@ -59,13 +59,13 @@ const createCustomer = async () => {
         permissions: permissionIds,
       });
 
-      console.log("✅ Customer role created");
+      // debug removed
     } else {
       customerRole.permissions = permissionIds;
 
       await customerRole.save();
 
-      console.log("✅ Customer role updated");
+      // debug removed
     }
 
     // -------------------------------------------------
@@ -77,7 +77,7 @@ const createCustomer = async () => {
     const existingCustomer = await User.findOne({ email });
 
     if (existingCustomer) {
-      console.log("ℹ️ Customer already exists");
+      // debug removed
 
       await mongoose.connection.close();
       return;
@@ -103,13 +103,13 @@ const createCustomer = async () => {
       isVerified: true,
     });
 
-    console.log("=================================");
-    console.log("✅ CUSTOMER CREATED");
-    console.log("Name:", customer.name);
-    console.log("Email:", customer.email);
-    console.log("Password:", "Customer@12345");
-    console.log("Role:", customer.role);
-    console.log("=================================");
+    // debug removed
+    // debug removed
+    // debug removed
+    // debug removed
+    // debug removed
+    // debug removed
+    // debug removed
 
     await mongoose.connection.close();
   } catch (error) {

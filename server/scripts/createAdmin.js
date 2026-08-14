@@ -76,7 +76,7 @@ if (user) {
   user.status = "active";
   user.isVerified = true;
   await user.save();
-  console.log(`Updated admin account: ${email}`);
+  // debug removed
 } else {
   user = await User.create({
     name,
@@ -89,7 +89,7 @@ if (user) {
     status: "active",
     isVerified: true,
   });
-  console.log(`Created admin account: ${email}`);
+  // debug removed
 }
 
 await mongoose.disconnect();
