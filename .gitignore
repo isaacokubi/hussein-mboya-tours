@@ -125,3 +125,14 @@ server/dist/
 *backup*
 backup/
 backups/
+
+# Temporary repair scripts and reports
+*.pyc
+__pycache__/
+*_report.txt
+*_REPORT.txt
+repair_*.py
+fix_*.py
+upgrade_*.py
+*_audit*.py
+
