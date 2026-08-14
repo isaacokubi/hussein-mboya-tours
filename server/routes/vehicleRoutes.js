@@ -141,3 +141,5 @@ router.patch(
 );
 
 export default router;
+
+// RBAC middleware placeholder

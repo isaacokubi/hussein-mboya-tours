@@ -15,7 +15,7 @@ from "../controllers/superAdminOperationsController.js";
 
 import {
 protect,
-authorize
+checkPermission
 }
 from "../middleware/authMiddleware.js";
 
@@ -26,10 +26,7 @@ const router=express.Router();
 router.use(protect);
 
 router.use(
-authorize(
-"super_admin",
-"superadmin"
-)
+  checkPermission("roles.manage")
 );
 
 

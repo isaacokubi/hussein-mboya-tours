@@ -38,3 +38,41 @@ export const updateSettings = async (data) => {
 export const getSecurityEvents = async () =>
   (await axios.get("/security/events")).data;
 
+
+
+
+export const getRoles = async () => {
+  const response = await axios.get("/admin/roles");
+  return response.data.roles || [];
+};
+
+
+export const getRole = async (id) => {
+  const response = await axios.get(`/admin/roles/${id}`);
+  return response.data.role || response.data;
+};
+
+
+export const getPermissions = async () => {
+  const response = await axios.get("/admin/roles/permissions/all");
+  return response.data.permissions || [];
+};
+
+
+export const updateRolePermissions = async (
+ id,
+ permissions
+) => {
+
+ const response =
+ await axios.put(
+   `/admin/roles/${id}/permissions`,
+   {
+    permissions
+   }
+ );
+
+ return response.data;
+
+};
+

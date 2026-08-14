@@ -79,3 +79,5 @@ router.post(
 );
 
 export default router;
+
+// RBAC middleware placeholder

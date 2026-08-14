@@ -1,4 +1,4 @@
-import { authorize } from "../middleware/permissionMiddleware.js";
+
 import express from "express";
 
 
@@ -18,13 +18,13 @@ from "../controllers/adminRoleController.js";
 
 
 import {
-protect
+protect,
+checkPermission
 }
 from "../middleware/authMiddleware.js";
 
 
-import adminMiddleware
-from "../middleware/adminMiddleware.js";
+
 
 
 
@@ -35,9 +35,9 @@ express.Router();
 
 router.use(protect);
 
-router.use(adminMiddleware);
 
-router.use(authorize("roles.manage"));
+
+router.use(checkPermission("roles.manage"));
 
 
 

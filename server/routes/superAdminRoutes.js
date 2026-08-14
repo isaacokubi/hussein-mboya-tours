@@ -2,9 +2,12 @@ import express from "express";
 import securityService from "../services/securityService.js";
 
 import {
-  protect,
-  authorize
+  protect
 } from "../middleware/authMiddleware.js";
+
+import {
+  authorize
+} from "../middleware/permissionMiddleware.js";
 
 import {
   getSuperAdminDashboard
@@ -41,8 +44,7 @@ router.get(
 "/dashboard",
 protect,
 authorize(
-"super_admin",
-"superadmin"
+"admin.dashboard"
 ),
 getSuperAdminDashboard
 );
@@ -52,8 +54,7 @@ router.get(
 "/audit",
 protect,
 authorize(
-"super_admin",
-"superadmin"
+"system.audit"
 ),
 getAuditLogs
 );
@@ -63,8 +64,7 @@ router.get(
 "/security",
 protect,
 authorize(
-"super_admin",
-"superadmin"
+"system.security"
 ),
 async (req,res)=>{
   try {
@@ -91,8 +91,7 @@ router.get(
 "/database",
 protect,
 authorize(
-"super_admin",
-"superadmin"
+"system.database"
 ),
 getDatabaseStatus
 );
@@ -102,8 +101,7 @@ router.get(
 "/system",
 protect,
 authorize(
-"super_admin",
-"superadmin"
+"system.security"
 ),
 getSystemHealth
 );
@@ -113,8 +111,7 @@ router.get(
 "/api-monitor",
 protect,
 authorize(
-"super_admin",
-"superadmin"
+"system.security"
 ),
 getApiMonitor
 );
@@ -125,8 +122,7 @@ router.post(
 "/maintenance/backup",
 protect,
 authorize(
-"super_admin",
-"superadmin"
+"system.backup"
 ),
 createDatabaseBackup
 );
@@ -137,8 +133,7 @@ router.post(
 "/maintenance/cache",
 protect,
 authorize(
-"super_admin",
-"superadmin"
+"admin.dashboard"
 ),
 clearSystemCache
 );
@@ -154,7 +149,7 @@ clearSystemCache
 router.post(
   "/database/backup",
   protect,
-  authorize("super_admin","superadmin"),
+  authorize("system.backup"),
   createDatabaseBackup
 );
 
@@ -162,7 +157,7 @@ router.post(
 router.post(
   "/database/cache-clear",
   protect,
-  authorize("super_admin","superadmin"),
+  authorize("settings.manage"),
   clearSystemCache
 );
 
@@ -170,7 +165,7 @@ router.post(
 router.get(
   "/maintenance/backups",
   protect,
-  authorize("super_admin","superadmin"),
+  authorize("settings.manage"),
   listDatabaseBackups
 );
 
@@ -178,7 +173,7 @@ router.get(
 router.delete(
   "/maintenance/backups/:id",
   protect,
-  authorize("super_admin","superadmin"),
+  authorize("settings.manage"),
   deleteDatabaseBackup
 );
 

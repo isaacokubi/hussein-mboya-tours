@@ -12,3 +12,6 @@ router.use(roleMiddleware("driver", "admin", "super_admin", "superadmin", "tour_
 router.get("/dashboard", driverDashboard);
 
 export default router;
+
+
+// RBAC middleware placeholder

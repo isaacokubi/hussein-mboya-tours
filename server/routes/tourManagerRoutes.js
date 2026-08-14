@@ -130,3 +130,6 @@ router.get("/tours/:id/availability", getTourAvailability);
 router.put("/tours/:id/availability", updateTourAvailability);
 
 export default router;
+
+
+// RBAC middleware placeholder

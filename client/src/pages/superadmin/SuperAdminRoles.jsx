@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import api from "../../api/axios";
+import {
+getRoles,
+getRole,
+getPermissions,
+updateRolePermissions
+} from "../../api/superAdminApi";
 
 export default function SuperAdminRoles() {
 
@@ -12,8 +17,7 @@ const [selectedPermissions,setSelectedPermissions] = useState([]);
 const {data:roles=[]}=useQuery({
 queryKey:["roles"],
 queryFn:async()=>{
-const r=await api.get("/admin/roles");
-return r.data.roles || [];
+return await getRoles();
 }
 });
 
@@ -21,8 +25,7 @@ return r.data.roles || [];
 const {data:permissions=[]}=useQuery({
 queryKey:["permissions"],
 queryFn:async()=>{
-const r=await api.get("/admin/roles/permissions/all");
-return r.data.permissions || [];
+return await getPermissions();
 }
 });
 
@@ -31,11 +34,9 @@ const updateRole=useMutation({
 
 mutationFn:async()=>{
 
-return api.put(
-`/admin/roles/${selectedRole._id}/permissions`,
-{
-permissions:selectedPermissions
-}
+return updateRolePermissions(
+selectedRole._id,
+selectedPermissions
 );
 
 },
@@ -64,13 +65,42 @@ error?.response?.data?.message ||
 });
 
 
-const openRole=(role)=>{
+const openRole=async(role)=>{
 
-setSelectedRole(role);
+try{
+
+const fullRole =
+await getRole(role._id);
+
+
+setSelectedRole(fullRole);
+
 
 setSelectedPermissions(
-(role.permissions || []).map(p=>p._id)
+(fullRole.permissions || [])
+.map(
+p =>
+typeof p === "object"
+?
+p._id
+:
+p
+)
 );
+
+
+}catch(error){
+
+console.error(
+"LOAD ROLE ERROR:",
+error
+);
+
+alert(
+"Unable to load role details"
+);
+
+}
 
 };
 

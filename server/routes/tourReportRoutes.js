@@ -41,3 +41,5 @@ router.get(
 );
 
 export default router;
+
+// RBAC middleware placeholder

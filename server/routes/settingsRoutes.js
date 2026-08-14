@@ -22,3 +22,6 @@ router.put(
 
 
 export default router;
+
+
+// RBAC middleware placeholder

@@ -160,39 +160,6 @@ export const adminOnly = (req, res, next) => {
   next();
 };
 
-/*
-|--------------------------------------------------------------------------
-| ROLE AUTHORIZATION
-|--------------------------------------------------------------------------
-*/
-
-export const authorize = (...allowedRoles) => {
-  return (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json({
-        success: false,
-        message: "Authentication required.",
-      });
-    }
-
-    const userRole = normalizeRole(
-      getUserRole(req.user)
-    );
-
-    const allowed = allowedRoles.map(normalizeRole);
-
-    if (!allowed.includes(userRole)) {
-      return res.status(403).json({
-        success: false,
-        message:
-          "You do not have permission to access this resource.",
-        role: userRole,
-      });
-    }
-
-    next();
-  };
-};
 
 /*
 |--------------------------------------------------------------------------

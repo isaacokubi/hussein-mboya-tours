@@ -92,3 +92,5 @@ router.delete(
 );
 
 export default router;
+
+// RBAC middleware placeholder

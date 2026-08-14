@@ -17,3 +17,6 @@ router.get("/settings",getSettings);
 
 
 export default router;
+
+
+// RBAC middleware placeholder
