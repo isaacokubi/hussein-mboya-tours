@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAuth } from "../../context/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
 getRoles,
@@ -8,6 +9,16 @@ updateRolePermissions
 } from "../../api/superAdminApi";
 
 export default function SuperAdminRoles() {
+
+const {hasPermission}=useAuth();
+
+if(!hasPermission("roles.manage")){
+return (
+<div className="p-8 text-red-600">
+You do not have permission to manage roles.
+</div>
+);
+}
 
 const queryClient = useQueryClient();
 
@@ -41,10 +52,25 @@ selectedPermissions
 
 },
 
-onSuccess:()=>{
+onSuccess: async ()=>{
 
-queryClient.invalidateQueries(["roles"]);
-alert("Role permissions updated successfully");
+await queryClient.invalidateQueries({
+queryKey:["roles"]
+});
+
+const refreshed = await getRole(selectedRole._id);
+
+setSelectedRole(refreshed);
+
+setSelectedPermissions(
+(refreshed.permissions || []).map(
+p => typeof p === "object" ? p._id : p
+)
+);
+
+alert(
+"Role permissions updated successfully"
+);
 
 },
 
