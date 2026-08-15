@@ -100,13 +100,19 @@ export const stkPush = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-      const customerPhone =
-        phoneNumber ||
-        phone ||
-        booking?.contact?.phone ||
-        booking?.customerSnapshot?.phone ||
-        req.user?.phone ||
-        "";
+      let booking = null;
+
+    if (bookingId) {
+      booking = await Booking.findById(bookingId);
+    }
+
+    const customerPhone =
+      phoneNumber ||
+      phone ||
+      booking?.contact?.phone ||
+      booking?.customerSnapshot?.phone ||
+      req.user?.phone ||
+      "";
 
 
 
@@ -132,10 +138,6 @@ export const stkPush = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    const booking =
-      await Booking.findById(
-        bookingId
-      );
 
 
 
@@ -511,7 +513,7 @@ export const mpesaCallback = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    const booking = await Booking.findById(payment.booking);
+    
 
     if (!booking) {
       return res.json({
@@ -700,7 +702,7 @@ export const checkTransactionStatus = async (req, res, next) => {
 
 export const getBookingPayments = async (req, res, next) => {
   try {
-    const booking = await Booking.findById(req.params.bookingId);
+    
 
     if (!booking) {
       return res.status(404).json({

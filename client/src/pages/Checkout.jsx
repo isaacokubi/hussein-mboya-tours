@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createBooking,getBookingById } from "../api/bookingApi";
+import { createBooking,getBookingById,cancelBooking } from "../api/bookingApi";
 import { initiateMpesa } from "../api/mpesaApi";
 import { getTourById } from "../api/tourApi";
 import api from "../api/axios";
@@ -17,12 +17,11 @@ export default function Checkout(
   const isMongoId = /^[0-9a-fA-F]{24}$/.test(id || "");
 
   const isBookingCheckout =
-    window.location.pathname.includes("/checkout/booking/") ||
-    (isMongoId && !window.location.pathname.includes("/checkout/tour/"));
+    window.location.pathname.includes("/checkout/booking/");
 
   const isTourCheckout =
     window.location.pathname.includes("/checkout/tour/") ||
-    (!isMongoId && Boolean(id));
+    Boolean(id);
 
   const [travelDate, setTravelDate] = useState("");
   const [travellerCount, setTravellerCount] = useState(1);
@@ -34,6 +33,7 @@ export default function Checkout(
   const [specialRequests, setSpecialRequests] = useState("");
   const [paymentState, setPaymentState] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState("mpesa");
+  const [createdBookingId, setCreatedBookingId] = useState(null);
   const { data: publicSettings } = useQuery({ queryKey:["public-settings"], queryFn:getPublicSettings });
   const siteSettings = publicSettings?.settings || publicSettings?.data || {};
 
@@ -46,15 +46,64 @@ export default function Checkout(
 const { data:bookingResponse, isLoading:bookingLoading } = useQuery({
     queryKey:["checkout-booking", id],
     queryFn:()=>getBookingById(id),
-    enabled:isBookingCheckout
+    enabled:isBookingCheckout && Boolean(id)
 });
 
 
-const tour =
-tourResponse?.tour ||
-tourResponse?.data?.tour ||
-tourResponse?.data ||
-tourResponse;
+const rawTour =
+  tourResponse?.data?.data ||
+  tourResponse?.data?.tour ||
+  tourResponse?.data ||
+  tourResponse?.tour ||
+  tourResponse ||
+  null;
+
+
+const sourceTour =
+  rawTour ||
+  bookingResponse?.data?.booking?.tour ||
+  bookingResponse?.booking?.tour ||
+  null;
+
+
+const tour = sourceTour
+  ? {
+      ...sourceTour,
+
+      price:
+        sourceTour?.price ??
+        sourceTour?.tourPrice ??
+        0,
+
+      totalSlots:
+        sourceTour?.availabilitySettings?.totalSlots ??
+        sourceTour?.totalSlots ??
+        sourceTour?.capacity ??
+        0,
+
+      bookedSlots:
+        sourceTour?.availabilitySettings?.bookedSlots ??
+        sourceTour?.bookedSlots ??
+        0,
+
+      availableSlots:
+        Math.max(
+          Number(
+            sourceTour?.availabilitySettings?.totalSlots ??
+            sourceTour?.totalSlots ??
+            sourceTour?.capacity ??
+            0
+          )
+          -
+          Number(
+            sourceTour?.availabilitySettings?.bookedSlots ??
+            sourceTour?.bookedSlots ??
+            0
+          ),
+          0
+        )
+    }
+  : null;
 
 
 const booking =
@@ -64,8 +113,20 @@ bookingResponse?.data ||
 bookingResponse;
 
 
+console.log("AI CHECKOUT DATA", {
+  url: window.location.pathname,
+  id,
+  isTourCheckout,
+  isBookingCheckout,
+  tourResponse,
+  tour,
+  slots: tour?.availabilitySettings
+});
+
+
 const isCustomBooking =
-Boolean(booking?.customTourRequest);
+  isBookingCheckout &&
+  Boolean(booking?.customTourRequest);
 
 const customSnapshot =
   booking?.customTourSnapshot ||
@@ -97,20 +158,15 @@ console.log("CHECKOUT DEBUG FULL", JSON.stringify({
   }, null, 2));
 
 const availableSlots = isCustomBooking
-    ? 999
-    : Number(
-        tour?.availableSlots ??
-          Math.max(
-            Number(tour?.totalSlots ?? tour?.capacity ?? 0) -
-              Number(tour?.bookedSlots ?? 0),
-            0
-          )
-      );
+  ? 999
+  : Number(tour?.availableSlots ?? 0);
 
   const bookingMutation = useMutation({
     mutationFn: createBooking,
     onSuccess: async (response) => {
       const booking = response?.data?.booking || response?.booking || response;
+
+      setCreatedBookingId(booking?._id);
 
       try {
         if (!booking?._id) {
@@ -182,10 +238,34 @@ const availableSlots = isCustomBooking
         }
       }
     },
-    onError: (requestError) => {
+    onError: async (requestError) => {
+
+      try {
+
+        const bookingId =
+          createdBookingId ||
+          requestError?.bookingId ||
+          requestError?.response?.data?.bookingId;
+
+        if (bookingId) {
+          await cancelBooking(bookingId);
+        }
+
+      } catch (cancelError) {
+
+        console.error(
+          "Failed to cancel booking:",
+          cancelError
+        );
+
+      }
+
       toast.error(
-        requestError?.response?.data?.message || "Booking failed."
+        requestError?.response?.data?.message ||
+        requestError?.message ||
+        "Payment failed. Booking cancelled."
       );
+
     },
   });
 
@@ -237,13 +317,23 @@ isCustomBooking
 ?
 Number(booking.totalAmount || 0)
 :
-Number(tour.price || 0) * Number(travellerCount);
+Number(tour?.price || 0) * Number(travellerCount);
 
   const handleSubmit = (event) => {
     event.preventDefault();
 
     if (!travelDate) return toast.error("Please select a travel date.");
     if (!phone) return toast.error("Please enter your phone number.");
+
+    const normalizedPhone = phone.replace(/\\D/g, "");
+
+    if (!/^0[17]\\d{8}$/.test(normalizedPhone)) {
+      return toast.error("Enter a valid Safaricom number e.g. 0712345678");
+    }
+
+    if (!total || Number(total) <= 0) {
+      return toast.error("Invalid booking amount.");
+    }
     const finalPickupLocation =
       pickupLocation.trim() ||
       String(displayPickupLocation || "").trim();
@@ -276,6 +366,8 @@ Number(tour.price || 0) * Number(travellerCount);
       travelDate,
       travelers,
       numberOfGuests: Number(travellerCount),
+      subtotal: Number(total),
+      totalAmount: Number(total),
       contact: { phone },
       pickupLocation: finalPickupLocation,
       pickupTime: finalPickupTime,
@@ -308,12 +400,24 @@ Number(tour.price || 0) * Number(travellerCount);
 </p>
           <div className="mt-4 flex flex-wrap gap-5 font-semibold">
             <span className="text-green-700">
-KES {Number(isCustomBooking ? booking?.totalAmount || 0 : tour?.price || 0).toLocaleString()}
+KES {Number(
+  tour?.price ||
+  booking?.totalAmount ||
+  0
+).toLocaleString()}
 </span>
-            <span>Total slots: {isCustomBooking ? "Unlimited" : tour?.totalSlots ?? tour?.capacity ?? 0}</span>
-            <span>Booked: {isCustomBooking ? 0 : tour?.bookedSlots ?? 0}</span>
+            <span>
+Total slots: {
+  tour?.totalSlots ?? 0
+}
+</span>
+            <span>
+Booked: {
+  tour?.bookedSlots ?? 0
+}
+</span>
             <span className={availableSlots > 0 ? "text-green-700" : "text-red-600"}>
-Available: {isCustomBooking ? "Available" : availableSlots}
+Available: {availableSlots}
 </span>
           </div>
         </div>
@@ -354,7 +458,15 @@ Available: {isCustomBooking ? "Available" : availableSlots}
             </Field>
 
             <Field label="Number of travellers" required>
-              <input type="number" min="1" max={Math.max(availableSlots, 1)} value={displayTravellers} className="w-full rounded-lg border p-3 bg-gray-100 cursor-not-allowed" readOnly required />
+              <input
+  type="number"
+  min="1"
+  max={Math.max(availableSlots, 1)}
+  value={travellerCount}
+  onChange={(e)=>setTravellerCount(Number(e.target.value))}
+  className="w-full rounded-lg border p-3"
+  required
+/>
             </Field>
           </div>
 
@@ -387,7 +499,10 @@ Available: {isCustomBooking ? "Available" : availableSlots}
             Total: KES {total.toLocaleString()}
           </div>
 
-          <button type="submit" disabled={bookingMutation.isPending || availableSlots < 1} className="w-full rounded-lg bg-green-600 py-3 font-semibold text-white hover:bg-green-700 disabled:opacity-50">
+          <button type="submit" disabled={
+  bookingMutation.isPending ||
+  (!isCustomBooking && availableSlots < 1)
+} className="w-full rounded-lg bg-green-600 py-3 font-semibold text-white hover:bg-green-700 disabled:opacity-50">
             {bookingMutation.isPending ? "Processing..." : availableSlots < 1 ? "Tour Fully Booked" : "Book & Continue to Payment"}
           </button>
         </form>

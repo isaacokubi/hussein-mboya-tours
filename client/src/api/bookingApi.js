@@ -196,3 +196,10 @@ export const getBookingById = async (id) => {
   const response = await api.get(`/bookings/${id}`);
   return response.data;
 };
+
+
+/*
+|--------------------------------------------------------------------------
+| CANCEL BOOKING
+|--------------------------------------------------------------------------
+*/

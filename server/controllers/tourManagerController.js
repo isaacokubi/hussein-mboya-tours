@@ -45,30 +45,23 @@ export const getTourManagerDashboard = async (req, res, next) => {
       }),
 
       // Revenue is actual completed payments, not booking value.
-      Payment.aggregate([
+      Booking.aggregate([
         {
-          $match: {
-            status: "completed",
-          },
+          $match:{
+            isDeleted:{ $ne:true },
+            paymentStatus:"paid"
+          }
         },
         {
-          $group: {
-            _id: null,
-            total: {
-              $sum: {
-                $max: [
-                  0,
-                  {
-                    $subtract: [
-                      { $ifNull: ["$amount", 0] },
-                      { $ifNull: ["$refundedAmount", 0] },
-                    ],
-                  },
-                ],
-              },
-            },
-          },
-        },
+          $group:{
+            _id:null,
+            total:{
+              $sum:{
+                $ifNull:["$totalAmount",0]
+              }
+            }
+          }
+        }
       ]),
 
       Tour.find({
@@ -81,6 +74,14 @@ export const getTourManagerDashboard = async (req, res, next) => {
           $in: ["scheduled", "upcoming", "ongoing"],
         },
       })
+        .populate(
+          "destination",
+          "name location country"
+        )
+        .populate(
+          "destination",
+          "name country location image"
+        )
         .populate(
           "assignedGuide",
           "name email phone position availability assignedTours"
@@ -116,7 +117,7 @@ export const getTourManagerDashboard = async (req, res, next) => {
               tour: { $in: tourIds },
               isDeleted: { $ne: true },
               status: {
-                $in: ["confirmed", "assigned", "ongoing"],
+                $in: ["confirmed", "assigned", "ongoing", "completed"],
               },
             },
           },
@@ -124,7 +125,22 @@ export const getTourManagerDashboard = async (req, res, next) => {
             $group: {
               _id: "$tour",
               guests: {
-                $sum: { $ifNull: ["$numberOfGuests", 1] },
+                $sum: {
+                  $ifNull: [
+                    "$numberOfGuests",
+                    {
+                      $ifNull: [
+                        "$guests",
+                        {
+                          $ifNull: [
+                            "$numberOfPeople",
+                            1
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
               },
             },
           },
@@ -162,13 +178,47 @@ export const getTourManagerDashboard = async (req, res, next) => {
 
 
 capacity: tour.capacity || 0,
-bookedSlots: confirmedBookings,
-availableSlots,
-occupancyRate,
 
-      guide: tour.assignedGuide || null,
-      driver: tour.assignedDriver || null,
-      vehicle: tour.assignedVehicle || null,
+      bookedSlots:
+        guestMap.get(tour._id.toString()) || 0,
+
+      availableSlots:
+        Math.max(
+          0,
+          (tour.capacity || 0) -
+          (guestMap.get(tour._id.toString()) || 0)
+        ),
+
+      occupancyRate:
+        tour.capacity
+          ? Math.round(
+              (
+                (guestMap.get(tour._id.toString()) || 0)
+                /
+                tour.capacity
+              ) * 100
+            )
+          : 0,
+
+      destination:
+        tour.destination || {
+          name:"Unknown Destination"
+        },
+
+      guide:
+        tour.assignedGuide ||
+        tour.guide ||
+        null,
+
+      driver:
+        tour.assignedDriver ||
+        tour.driver ||
+        null,
+
+      vehicle:
+        tour.assignedVehicle ||
+        tour.vehicle ||
+        null,
 
       status: tour.status || "draft",
       assignmentStatus: tour.assignmentStatus || "pending",
@@ -192,9 +242,17 @@ occupancyRate,
 
       guests: booking.numberOfGuests || 0,
 
-      paymentStatus: booking.paymentStatus || "pending",
+      paymentStatus:
+        booking.paymentStatus ||
+        booking.payment?.status ||
+        booking.status ||
+        "pending",
 
-      amount: booking.totalAmount || 0,
+      amount:
+        booking.totalAmount ||
+        booking.amount ||
+        booking.price ||
+        0,
 
       status: booking.status || "pending",
     }));

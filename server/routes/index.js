@@ -57,6 +57,7 @@ import recommendationRoutes from "./recommendationRoutes.js";
 import tourAssignmentRoutes from "./tourAssignmentRoutes.js";
 import tourReportRoutes from "./tourReportRoutes.js";
 import aiRoutes from "./aiRoutes.js";
+import adminAIRoutes from "./adminAIRoutes.js";
 import seoRoutes from "./seoRoutes.js";
 import settingsRoutes from "./settingsRoutes.js";
 import { getPublicSettings } from "../controllers/settingsController.js";
@@ -107,6 +108,40 @@ router.use("/admin/tours", adminTourRoutes);
 router.use("/admin/bookings", adminBookingRoutes);
 router.use("/admin/payments", adminPaymentRoutes);
 router.use("/system", systemHealthRoutes);
+
+// Compatibility route for admin dashboard
+router.get("/admin/system-health", async (req, res) => {
+  const mongoose = (await import("mongoose")).default;
+
+  const memory = process.memoryUsage();
+
+  res.json({
+    status: "healthy",
+    server: "running",
+    nodeVersion: process.version,
+    environment: process.env.NODE_ENV || "development",
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+
+    database:
+      mongoose.connection.readyState === 1
+        ? "connected"
+        : "disconnected",
+
+    memory: {
+      used:
+        Math.round(memory.heapUsed / 1024 / 1024) + " MB",
+
+      total:
+        Math.round(memory.heapTotal / 1024 / 1024) + " MB"
+    },
+
+    platform: {
+      os: process.platform,
+      architecture: process.arch
+    }
+  });
+});
 router.get("/settings/public", getPublicSettings);
 router.use("/admin/settings", settingsRoutes);
 router.use("/admin/dashboard", adminDashboardRoutes);
@@ -207,6 +242,7 @@ router.use("/coupons", couponRoutes);
 */
 
 router.use("/ai", aiRoutes);
+router.use("/admin-ai", adminAIRoutes);
 
 /*
 |--------------------------------------------------------------------------

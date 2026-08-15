@@ -1,24 +1,55 @@
-// client/src/services/aiService.js
+import axios from "./axios";
 
-import api from "./axios";
 
-/*
-|--------------------------------------------------------------------------
-| ASK TRAVEL AI
-|--------------------------------------------------------------------------
-*/
+const getSessionId = () => {
 
-export const askTravelAI = async (
-  message,
-  context = {}
-) => {
-  const { data } = await api.post(
-    "/ai/assistant",
-    {
-      message,
-      ...context,
-    }
-  );
+  let id =
+    localStorage.getItem(
+      "ai_session_id"
+    );
 
-  return data;
+
+  if(!id){
+
+    id =
+      crypto.randomUUID();
+
+    localStorage.setItem(
+      "ai_session_id",
+      id
+    );
+
+  }
+
+
+  return id;
+
 };
+
+
+
+export const askAI = async (
+  message
+)=>{
+
+  const response =
+    await axios.post(
+      "/ai/chat",
+      {
+        message
+      },
+      {
+        headers:{
+          "x-ai-session":
+            getSessionId()
+        }
+      }
+    );
+
+
+  return response.data;
+
+};
+
+
+export const askTravelAI = askAI;

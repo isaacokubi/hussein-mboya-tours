@@ -10,7 +10,7 @@ import {
   Send
 } from "lucide-react";
 
-import api from "../api/axios";
+import { askTravelAI } from "../api/aiApi";
 
 
 
@@ -34,6 +34,8 @@ const HusseinAIWidget = () => {
 
 
   const [loading, setLoading] = useState(false);
+
+  const [bookingTour, setBookingTour] = useState(null);
 
 
 
@@ -77,11 +79,8 @@ const HusseinAIWidget = () => {
 
 
 
-      const { data } = await api.post(
-        "/ai/chat",
-        {
-          message
-        }
+      const data = await askTravelAI(
+        message
       );
 
 
@@ -95,9 +94,21 @@ const HusseinAIWidget = () => {
           role:"assistant",
 
           text:
-          data.reply
+          data?.data?.reply
           ||
-          "I can help you plan your journey."
+          "I can help you plan your journey.",
+
+          booking:
+          data?.data?.reply?.includes("Tour ID:"),
+
+          tourId:
+          data?.data?.reply
+          ?.match(/Tour ID:\s*([a-f0-9]+)/i)?.[1],
+
+          bookingId:
+          data?.data?.reply
+          ?.match(/Booking ID:\s*([a-f0-9]+)/i)?.[1]
+          
 
         }
 
@@ -320,6 +331,44 @@ const HusseinAIWidget = () => {
                   >
 
                     {msg.text}
+
+
+                    {
+                      msg.booking && (
+
+                        <button
+
+                          onClick={() =>
+                            window.location.href =
+                            msg.bookingId
+                            ?
+                            `/checkout/booking/${msg.bookingId}`
+                            :
+                            msg.tourId
+                            ?
+                            `/checkout/tour/${msg.tourId}`
+                            :
+                            "/tours"
+                          }
+
+                          className="
+                          mt-3
+                          bg-green-600
+                          text-white
+                          px-4
+                          py-2
+                          rounded-lg
+                          text-sm
+                          "
+
+                        >
+
+                          Continue Booking
+
+                        </button>
+
+                      )
+                    }
 
                   </div>
 

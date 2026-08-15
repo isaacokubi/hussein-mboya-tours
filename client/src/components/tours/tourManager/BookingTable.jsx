@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { getBookings } from "../../../api/bookingApi";
+import { getBookings } from "../../../api/tourManagerApi";
 
 export default function BookingTable() {
   const {

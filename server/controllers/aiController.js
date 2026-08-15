@@ -1,4 +1,7 @@
 import { generateTravelAdvice } from "../services/aiService.js";
+import {
+  addMessage
+} from "../services/aiConversationService.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -65,7 +68,7 @@ export const askAI = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    const reply = await generateTravelAdvice(message);
+    const reply = await generateTravelAdvice(message, req.user || null);
 
     /*
     |--------------------------------------------------------------------------

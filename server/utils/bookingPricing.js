@@ -33,17 +33,12 @@ export const calculateBookingAmounts = (
     throw new Error("Invalid tour price.");
   }
 
-  const discountPercentage = Math.min(
-    Math.max(Number(tour.discount) || 0, 0),
-    100
+  const discountAmount = roundMoney(
+    Math.min(Number(tour.discount) || 0, price * travelerCount)
   );
 
   const subtotal = roundMoney(
     price * travelerCount
-  );
-
-  const discountAmount = roundMoney(
-    subtotal * (discountPercentage / 100)
   );
 
   const totalAmount = roundMoney(
@@ -79,7 +74,7 @@ export const calculateBookingAmounts = (
 
     subtotal,
 
-    discountPercentage,
+    discountPercentage: 0,
 
     discountAmount,
 
