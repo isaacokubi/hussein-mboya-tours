@@ -1,5 +1,4 @@
 import systemHealthRoutes from "./routes/systemHealthRoutes.js";
-import apiMonitorRoutes from "./routes/apiMonitorRoutes.js";
 import databaseRoutes from "./routes/databaseRoutes.js";
 import settingsRoutes from "./routes/settingsRoutes.js";
 
@@ -56,7 +55,6 @@ app.use("/api/settings", settingsRoutes);
 app.use("/api/database", databaseRoutes);
 
 app.use("/api/system", systemHealthRoutes);
-app.use("/api/superadmin/api-monitor", apiMonitorRoutes);
 
 server.listen(env.PORT, () => {
 

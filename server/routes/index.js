@@ -1,5 +1,6 @@
 import express from "express";
 import superAdminRoutes from "./superAdminRoutes.js";
+import apiMonitorRoutes from "./apiMonitorRoutes.js";
 import superAdminOperationsRoutes from "./superAdminOperationsRoutes.js";
 import superAdminToolsRoutes from "./superAdminToolsRoutes.js";
 
@@ -215,6 +216,8 @@ router.use("/ai", aiRoutes);
 router.use("/", seoRoutes);
 
 router.use("/superadmin", superAdminRoutes);
+
+router.use("/superadmin/api-monitor", apiMonitorRoutes);
 
 router.use(
 "/superadmin",
