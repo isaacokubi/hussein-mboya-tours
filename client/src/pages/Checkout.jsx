@@ -14,6 +14,16 @@ export default function Checkout(
   const navigate = useNavigate();
   const { id } = useParams();
 
+  const isMongoId = /^[0-9a-fA-F]{24}$/.test(id || "");
+
+  const isBookingCheckout =
+    window.location.pathname.includes("/checkout/booking/") ||
+    (isMongoId && !window.location.pathname.includes("/checkout/tour/"));
+
+  const isTourCheckout =
+    window.location.pathname.includes("/checkout/tour/") ||
+    (!isMongoId && Boolean(id));
+
   const [travelDate, setTravelDate] = useState("");
   const [travellerCount, setTravellerCount] = useState(1);
   const [phone, setPhone] = useState("");
@@ -30,13 +40,13 @@ export default function Checkout(
   const { data:tourResponse, isLoading:tourLoading } = useQuery({
     queryKey:["tour", id],
     queryFn:()=>getTourById(id),
-    enabled:Boolean(id) && !id.startsWith("6"),
+    enabled:Boolean(id) && isTourCheckout,
 });
 
 const { data:bookingResponse, isLoading:bookingLoading } = useQuery({
     queryKey:["checkout-booking", id],
     queryFn:()=>getBookingById(id),
-    enabled:Boolean(id)
+    enabled:isBookingCheckout
 });
 
 

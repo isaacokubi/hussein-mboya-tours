@@ -105,6 +105,16 @@ durationDays:Number(item.durationDays || 1),
 
 category:"Safari",
 
+slug:"custom-tour-package",
+
+published:false,
+
+available:false,
+
+isDeleted:false,
+
+status:"draft",
+
 totalSlots:1000,
 
 availableSlots:1000

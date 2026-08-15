@@ -242,7 +242,7 @@ export default function AppRoutes() {
       <Route path="/custom-tour" element={<ProtectedRoute><CustomTourRequest /></ProtectedRoute>} />
 
       <Route
-        path="/checkout/:id"
+        path="/checkout/:type/:id"
         element={
           <ProtectedRoute>
             <Checkout />

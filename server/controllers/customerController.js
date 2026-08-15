@@ -132,11 +132,11 @@ export const getCustomers = async (req, res, next) => {
 
       
 
-const confirmedSpend = bookings
+const confirmedSpend = bookingStats
 .filter(booking =>
- booking.status === "confirmed" &&
+ String(booking.status || "").toLowerCase() === "confirmed" &&
  ["paid","completed"]
- .includes(booking.paymentStatus)
+ .includes(String(booking.paymentStatus || "").toLowerCase())
 )
 .reduce(
 (sum,booking)=>

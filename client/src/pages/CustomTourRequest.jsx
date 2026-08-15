@@ -75,7 +75,7 @@ try{
 const data = await convertCustomTourRequest(r._id);
 
 if(data?.booking?._id){
-window.location.href = `/checkout/${data.booking._id}`;
+window.location.href = `/checkout/booking/${data.booking._id}`;
 }
 
 }catch(error){

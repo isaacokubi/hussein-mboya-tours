@@ -28,7 +28,7 @@ export const createStripeSession = async (req,res,next)=>{
       "line_items[0][price_data][unit_amount]":String(Math.round(amount*100)),
       "line_items[0][quantity]":"1",
       success_url:`${origin}/payment-status/${booking._id}?stripe_session={CHECKOUT_SESSION_ID}`,
-      cancel_url:`${origin}/checkout/${booking.tour}`,
+      cancel_url:`${origin}/checkout/booking/${booking._id}`,
       "metadata[bookingId]":String(booking._id),
       "metadata[userId]":String(req.user._id),
     });

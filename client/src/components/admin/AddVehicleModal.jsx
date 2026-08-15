@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { createVehicle, getDrivers, assignDriver } from "../../api/vehicleApi";
+import { createVehicle, updateVehicle, getDrivers, assignDriver } from "../../api/vehicleApi";
 
-export default function AddVehicleModal({ close, refresh }) {
+export default function AddVehicleModal({ close, refresh, vehicle }) {
   const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -25,6 +25,26 @@ export default function AddVehicleModal({ close, refresh }) {
       .then((res) => setDrivers(res?.data || res?.drivers || []))
       .catch(() => setError("Failed to load drivers."));
   }, []);
+
+
+  useEffect(() => {
+    if (vehicle) {
+      setForm({
+        name: vehicle.name || "",
+        registrationNumber: vehicle.registrationNumber || "",
+        model: vehicle.model || "",
+        manufacturer: vehicle.manufacturer || "",
+        year: vehicle.year || "",
+        type: vehicle.type || "SUV",
+        capacity: vehicle.capacity || "",
+        driver: vehicle.driver?._id || vehicle.driver || "",
+        fuelType: vehicle.fuelType || "Diesel",
+        transmission: vehicle.transmission || "Manual",
+        description: vehicle.description || "",
+        image: null,
+      });
+    }
+  }, [vehicle]);
 
   const handleChange = (event) => {
     const { name, value, files } = event.target;
@@ -61,7 +81,9 @@ export default function AddVehicleModal({ close, refresh }) {
       data.append("capacity", String(capacity));
       if (year !== null) data.append("year", String(year));
 
-      const response = await createVehicle(data);
+      const response = vehicle
+        ? await updateVehicle(vehicle._id, data)
+        : await createVehicle(data);
       const createdVehicle = response?.data || response?.vehicle;
 
       if (form.driver && createdVehicle?._id) {
@@ -83,7 +105,7 @@ export default function AddVehicleModal({ close, refresh }) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
       <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
-        <h2 className="mb-5 text-2xl font-bold">Add Vehicle</h2>
+        <h2 className="mb-5 text-2xl font-bold">{vehicle ? "Edit Vehicle" : "Add Vehicle"}</h2>
         {error && <p className="mb-4 rounded-lg bg-red-50 p-3 text-red-700">{error}</p>}
 
         <form onSubmit={submit} className="grid gap-4 md:grid-cols-2">
@@ -120,7 +142,7 @@ export default function AddVehicleModal({ close, refresh }) {
 
           <label className="md:col-span-2">
             <span className="mb-2 block font-medium">Vehicle image</span>
-            <input required type="file" name="image" accept="image/jpeg,image/png,image/webp" onChange={handleChange} className="w-full rounded-lg border p-3" />
+            <input required={!vehicle} type="file" name="image" accept="image/jpeg,image/png,image/webp" onChange={handleChange} className="w-full rounded-lg border p-3" />
           </label>
 
           <textarea name="description" value={form.description} onChange={handleChange} placeholder="Vehicle description / notes" rows={3} className="md:col-span-2 rounded-lg border p-3" />
@@ -128,7 +150,7 @@ export default function AddVehicleModal({ close, refresh }) {
           <div className="md:col-span-2 flex justify-end gap-3">
             <button type="button" onClick={close} disabled={loading} className="rounded-lg bg-gray-200 px-5 py-2">Cancel</button>
             <button disabled={loading} className="rounded-lg bg-emerald-700 px-5 py-2 font-semibold text-white disabled:opacity-50">
-              {loading ? "Saving..." : "Save Vehicle"}
+              {loading ? "Saving..." : vehicle ? "Update Vehicle" : "Save Vehicle"}
             </button>
           </div>
         </form>

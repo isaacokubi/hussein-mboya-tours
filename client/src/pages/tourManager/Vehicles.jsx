@@ -36,6 +36,7 @@ import {
 export default function Vehicles(){
 
 const [showAdd, setShowAdd] = useState(false);
+const [editingVehicle, setEditingVehicle] = useState(null);
 
 const {
     vehicles = [],
@@ -103,6 +104,32 @@ toast.error(
 
 
 
+
+
+const saveEdit = async () => {
+try {
+
+await updateVehicle(
+editingVehicle._id,
+editingVehicle
+);
+
+toast.success("Vehicle updated");
+
+setEditingVehicle(null);
+
+refetch();
+
+}
+catch(error){
+
+toast.error(
+error?.response?.data?.message || "Update failed"
+);
+
+}
+
+};
 
 return (
 
@@ -224,7 +251,7 @@ Loading vehicles...
 :
 
 
-vehicles.length === 0
+vehicles.filter(v => !v.isDeleted).length === 0
 
 
 ?
@@ -253,7 +280,7 @@ gap-6
 
 {
 
-vehicles.map(vehicle=>(
+vehicles.filter(v => !v.isDeleted).map(vehicle=>(
 
 
 
@@ -459,36 +486,19 @@ mt-5
 
 
 <button
-
-className="
-text-blue-600
-"
-
+ type="button"
+ onClick={()=>setEditingVehicle(vehicle)}
+ className="text-blue-600"
 >
-
-<FaEdit/>
-
+ <FaEdit/>
 </button>
 
-
-
-
-
-
 <button
-
-onClick={()=>removeVehicle(
-vehicle._id
-)}
-
-className="
-text-red-600
-"
-
+ type="button"
+ onClick={()=>removeVehicle(vehicle._id)}
+ className="text-red-600"
 >
-
-<FaTrash/>
-
+ <FaTrash/>
 </button>
 
 
@@ -527,7 +537,21 @@ text-red-600
 
 
 
-{showAdd && <AddVehicleModal close={() => setShowAdd(false)} refresh={refetch} />}
+{showAdd && (
+<AddVehicleModal
+  close={() => setShowAdd(false)}
+  refresh={refetch}
+/>
+)}
+
+
+{editingVehicle && (
+<AddVehicleModal
+  vehicle={editingVehicle}
+  close={() => setEditingVehicle(null)}
+  refresh={refetch}
+/>
+)}
 
 </div>
 

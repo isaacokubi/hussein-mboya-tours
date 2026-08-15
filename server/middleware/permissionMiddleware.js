@@ -75,7 +75,15 @@ roleId:req.user?.roleId
                     "manage_customers",
                     "payment.manage",
                     "report.view",
-                    "analytics.view"
+                    "analytics.view",
+                    "commission.view",
+                    "commission.manage",
+                    "commission.approve",
+                    "commission.pay",
+                    "coupon.manage",
+                    "coupons.manage",
+                    "review.manage",
+                    "settings.manage"
                 );
 
             }

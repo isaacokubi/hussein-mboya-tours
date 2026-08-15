@@ -87,7 +87,7 @@ export default function TourDetails(
   const image = getTourImage(tour);
 
   const handleBooking = () => {
-    navigate(`/checkout/${tour._id}`);
+    navigate(`/checkout/tour/${tour._id}`);
   };
 
   const handleWhatsAppBooking = () => {

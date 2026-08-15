@@ -59,6 +59,7 @@ export const createReview = async (req, res, next) => {
       status: "completed",
       $or: [
         { user: req.user._id },
+        { customer: req.user._id },
         { "customerSnapshot.email": req.user.email },
       ],
     });

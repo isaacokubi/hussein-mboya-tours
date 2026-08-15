@@ -252,7 +252,7 @@ text-gray-600
             </p>
 
             <button
-              onClick={() => navigate(`/checkout/${booking.tour?._id}`)}
+              onClick={() => navigate(`/checkout/booking/${booking._id}`)}
               className="
 mt-6
 bg-yellow-600

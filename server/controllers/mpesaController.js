@@ -100,8 +100,13 @@ export const stkPush = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    const customerPhone =
-      phoneNumber || phone;
+      const customerPhone =
+        phoneNumber ||
+        phone ||
+        booking?.contact?.phone ||
+        booking?.customerSnapshot?.phone ||
+        req.user?.phone ||
+        "";
 
 
 

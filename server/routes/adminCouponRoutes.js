@@ -12,7 +12,7 @@ import {
 const router = express.Router();
 router.use(protect, adminMiddleware);
 
-router.use(authorize("settings.manage"));
+router.use(authorize("coupon.manage"));
 router.get("/", getAdminCoupons);
 router.post("/", createAdminCoupon);
 router.put("/:id", updateAdminCoupon);

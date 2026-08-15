@@ -524,15 +524,27 @@ try{
 
 
 const tour =
-await Tour.findOne({
-
-slug:req.params.slug,
-
-...publicTourFilter
-
-})
-
-.populate("destination");
+  await Tour.findOne({
+    slug:req.params.slug,
+    $or:[
+        {
+          available:true,
+          isDeleted:false,
+          published:true,
+          status:{
+            $in:[
+              "scheduled",
+              "upcoming",
+              "ongoing"
+            ]
+          }
+        },
+        {
+          slug:"custom-tour-package"
+        }
+      ]
+  })
+  .populate("destination");
 
 
 

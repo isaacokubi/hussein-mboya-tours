@@ -14,6 +14,8 @@ import {
   getMyBookings,
 } from "../api/bookingApi";
 
+import api from "../api/axios";
+
 import {
   useAuth,
 } from "../context/AuthContext";
