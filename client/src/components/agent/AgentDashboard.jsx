@@ -1,3 +1,5 @@
+import { formatCurrency } from "../../utils/currency";
+
 import { useSettings } from "../../context/SettingsContext";
 import {
 
@@ -121,25 +123,7 @@ const stats = data || {};
 
 
 
-const formatCurrency=(value=0)=>{
 
-
-return new Intl.NumberFormat(
-
-"en-KE",
-
-{
-
-style:"currency",
-
-currency: "KES"
-
-}
-
-).format(value);
-
-
-};
 
 
 
