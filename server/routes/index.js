@@ -104,7 +104,7 @@ router.use("/admin/auth", adminAuthRoutes);
 router.use("/admin/tours", adminTourRoutes);
 router.use("/admin/bookings", adminBookingRoutes);
 router.use("/admin/payments", adminPaymentRoutes);
-router.use("/admin/system-health", systemHealthRoutes);
+router.use("/system", systemHealthRoutes);
 router.get("/settings/public", getPublicSettings);
 router.use("/admin/settings", settingsRoutes);
 router.use("/admin/dashboard", adminDashboardRoutes);

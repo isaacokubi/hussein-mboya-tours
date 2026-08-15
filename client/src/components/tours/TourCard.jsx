@@ -12,6 +12,25 @@ export default function TourCard({
   tour }) {
 
   const {settings={}} = useSettings() || {};
+
+  const currency =
+    settings.currency ||
+    tour.currency ||
+    "KES";
+
+  const currencySymbolMap = {
+    KES: "KSh",
+    USD: "$",
+    EUR: "€",
+    GBP: "£"
+  };
+
+  const currencySymbol =
+    currencySymbolMap[currency] ||
+    settings.currencySymbol ||
+    tour.currencySymbol ||
+    currency;
+
   const [adding, setAdding] = useState(false);
 
   const price = Number(tour.price || 0);
@@ -164,8 +183,7 @@ export default function TourCard({
                 line-through
                 "
               >
-                KES{" "}
-                {price.toLocaleString("en-US")}
+                {currencySymbol} {price.toLocaleString("en-US")}
               </p>
             )}
 
@@ -176,8 +194,7 @@ export default function TourCard({
               text-green-700
               "
             >
-              KES{" "}
-              {discountedPrice.toLocaleString("en-US")}
+              {currencySymbol} {discountedPrice.toLocaleString("en-US")}
             </p>
           </div>
 

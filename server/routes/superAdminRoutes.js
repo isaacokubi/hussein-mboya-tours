@@ -18,13 +18,16 @@ import {
   getSecurityStatus,
   getDatabaseStatus,
   getSystemHealth,
-  getApiMonitor,
   createDatabaseBackup,
   clearSystemCache,
   listDatabaseBackups,
-  deleteDatabaseBackup
-  ,downloadDatabaseBackup
+  deleteDatabaseBackup,
+  downloadDatabaseBackup
 } from "../controllers/superAdminOperationsController.js";
+
+import {
+  getApiMonitor
+} from "../controllers/apiMonitorController.js";
 
 
 const router = express.Router();

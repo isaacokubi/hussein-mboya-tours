@@ -2,6 +2,7 @@ import Tour from "../models/Tour.js";
 import Vehicle from "../models/Vehicle.js";
 import Booking from "../models/Booking.js";
 import Staff from "../models/Staff.js";
+import { getSystemSettings } from "../services/settingsService.js";
 
 
 
@@ -209,6 +210,15 @@ export const getTours = async(req,res,next)=>{
 
 
 
+    const settings = await getSystemSettings();
+
+    const formattedTours = tours.map((tour) => ({
+      ...attachAvailability(tour.toObject?.() || tour),
+      currency: settings.currency || "KES",
+      currencySymbol: settings.currencySymbol || "KSh"
+    }));
+
+
     return res.json({
 
       success:true,
@@ -229,7 +239,7 @@ export const getTours = async(req,res,next)=>{
       },
 
 
-      data:tours.map((tour) => attachAvailability(tour.toObject?.() || tour))
+      data:formattedTours
 
     });
 

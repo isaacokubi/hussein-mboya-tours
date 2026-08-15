@@ -481,7 +481,7 @@ element={<SuperAdminDatabase />}
 />
 
 <Route
-path="api"
+path="api-monitor"
 element={<SuperAdminApiMonitor />}
 />
 

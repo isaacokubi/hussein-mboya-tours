@@ -86,7 +86,7 @@ threatLevel,
 
 authentication:{
 
-status:"healthy",
+status:"Active",
 
 jwt:"active"
 
@@ -96,15 +96,13 @@ jwt:"active"
 
 authorization:{
 
+status:"Active",
 
 roles:7,
 
-
 permissions:50,
 
-
 admins
-
 
 },
 
@@ -157,7 +155,7 @@ status:"active"
 
 
 
-database:"Configured"
+database:"Connected"
 
 
 };
