@@ -29,7 +29,7 @@ export const generateVoucher = async (req, res, next) => {
     const settings = await getSystemSettings();
 
     const companyName =
-      settings.companyName || "Coherent Tours";
+      settings.companyName || "Company";
 
     const currency =
       settings.currency || "KES";
@@ -600,7 +600,7 @@ export const generateVoucher = async (req, res, next) => {
     doc.fontSize(9);
 
     doc.text(
-      "Thank you for choosing Coherent Tours.",
+      `Thank you for choosing ${companyName}.`,
       {
         align: "center",
       }

@@ -15,7 +15,11 @@ import {
 export default function Footer(
 ) {
   const { user } = useAuth();
-  const { companyName, supportEmail, supportPhone } = useSettings();
+  const { settings = {} } = useSettings() || {};
+
+  const companyName = settings.companyName || "Company";
+  const supportEmail = settings.supportEmail || "";
+  const supportPhone = settings.supportPhone || "";
 
   const year = new Date().getFullYear();
 
@@ -72,11 +76,11 @@ export default function Footer(
             </a>
 
             <a
-              href={`mailto:${supportEmail || "support@example.com"}`}
+              href={`mailto:${supportEmail || ""}`}
               className="flex items-center gap-2 hover:text-green-400 transition"
             >
               <FaEnvelope />
-              {supportEmail || "support@example.com"}
+              {supportEmail || ""}
             </a>
 
             <div className="flex items-center gap-2">

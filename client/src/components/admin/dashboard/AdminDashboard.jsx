@@ -72,6 +72,9 @@ export default function AdminDashboard() {
     const dashboard =
         data?.data || data || {};
 
+    console.log("ADMIN DASHBOARD RAW:", JSON.stringify(data, null, 2));
+    console.log("ADMIN DASHBOARD PARSED:", JSON.stringify(dashboard, null, 2));
+
 
 
     return (
@@ -189,9 +192,12 @@ export default function AdminDashboard() {
 
             <UserAnalytics
 
-                users={
-                    dashboard.userStats || []
-                }
+                users={{
+                    customers: dashboard.userStats?.customers || 0,
+                    admins: dashboard.userStats?.admins || 0,
+                    agents: dashboard.userStats?.agents || 0,
+                    guides: dashboard.userStats?.guides || 0
+                }}
 
             />
 

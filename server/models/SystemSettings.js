@@ -24,7 +24,7 @@ const systemSettingsSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      default: "Coherent Tours",
+      default: "Company",
     },
 
     companyLogo: {
@@ -196,7 +196,7 @@ const systemSettingsSchema = new mongoose.Schema(
 
     emailFromName: {
       type: String,
-      default: "Coherent Tours",
+      default: "Company",
     },
 
     emailFromAddress: {

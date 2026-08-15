@@ -250,7 +250,7 @@ Platform Settings
 </h1>
 
 <p className="text-gray-500 mt-2">
-Manage Coherent Tours global configuration
+Manage ${settings?.companyName || 'Company'} global configuration
 </p>
 
 </div>

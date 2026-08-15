@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { getSystemSettings } from "../services/settingsService.js";
 
 import Booking from "../models/Booking.js";
 import Customer from "../models/Customer.js";
@@ -36,6 +37,9 @@ import { successResponse } from "../utils/apiResponse.js";
 */
 
 export const createBooking = async (req, res, next) => {
+
+    const settings = await getSystemSettings();
+    const companyName = settings.companyName || "Company";
   try {
 
     const {
@@ -219,14 +223,14 @@ export const createBooking = async (req, res, next) => {
       req.user.phone ||
       "";
     const bookingMessage = [
-      `Coherent Tours booking ${booking.bookingNumber}.`,
+      `${companyName} booking ${booking.bookingNumber}.`,
       `Tour: ${bookingTour.title}.`,
       `Date: ${new Date(booking.travelDate).toLocaleDateString("en-KE")}.`,
       `Guests: ${booking.numberOfGuests}.`,
       pickupLocation ? `Pickup: ${pickupLocation}.` : "",
       pickupTime ? `Pickup time: ${new Date(pickupTime).toLocaleTimeString("en-KE", { hour: "2-digit", minute: "2-digit" })}.` : "",
       `Amount: KES ${Number(booking.totalAmount || 0).toLocaleString()}.`,
-      "Thank you for choosing Coherent Tours.",
+      `Thank you for choosing ${companyName}.`,
     ].filter(Boolean).join(" ");
 
     if (bookingNotificationsEnabled) {

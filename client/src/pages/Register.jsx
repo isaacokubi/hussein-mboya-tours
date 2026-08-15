@@ -366,7 +366,7 @@ mb-6
 text-green-800
 ">
 
-Join Coherent Tours
+Join ${settings?.companyName || 'Company'}
 
 </h1>
 

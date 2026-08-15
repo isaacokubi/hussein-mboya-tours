@@ -1,4 +1,5 @@
 
+import { getSystemSettings } from "../services/settingsService.js";
 // server/controllers/tourAssignmentController.js
 
 import mongoose from "mongoose";
@@ -34,6 +35,9 @@ import { sendWhatsApp } from "../services/whatsappService.js";
 */
 
 export const assignTourResources = async (req, res, next) => {
+
+    const settings = await getSystemSettings();
+    const companyName = settings.companyName || "Company";
   try {
     const { guideId, driverId, vehicleId } = req.body;
     const tourId = req.params.id;
@@ -470,7 +474,7 @@ export const assignTourResources = async (req, res, next) => {
 
     const assignmentMessage = (person, role) =>
       [
-        `Coherent Tours assignment.`,
+        `${companyName} assignment.`,
         `You have been assigned as ${role} for "${tour.title}".`,
         `Tour date: ${new Date(tour.date || tour.startDate).toLocaleDateString("en-KE")}.`,
         tour.location ? `Location: ${tour.location}.` : "",

@@ -3,11 +3,11 @@ import mongoose from "mongoose";
 const systemSettingSchema = new mongoose.Schema(
   {
     key: { type: String, unique: true, default: "default", index: true },
-    companyName: { type: String, default: "Coherent Tours", trim: true },
+    companyName: { type: String, default: "Company", trim: true },
     companyLogo: { type: String, default: "" },
     websiteUrl: { type: String, default: "", trim: true },
     supportEmail: { type: String, default: "", trim: true, lowercase: true },
-    supportPhone: { type: String, default: "+254 733 439 362", trim: true },
+    supportPhone: { type: String, default: "", trim: true },
     address: { type: String, default: "", trim: true },
     city: { type: String, default: "Nairobi", trim: true },
     country: { type: String, default: "Kenya", trim: true },
@@ -32,7 +32,7 @@ const systemSettingSchema = new mongoose.Schema(
     bankAccountNumber: { type: String, default: "", trim: true },
     bankBranch: { type: String, default: "", trim: true },
     bankSwiftCode: { type: String, default: "", trim: true },
-    emailFromName: { type: String, default: "Coherent Tours", trim: true },
+    emailFromName: { type: String, default: "Company", trim: true },
     emailFromAddress: { type: String, default: "", trim: true, lowercase: true },
     facebook: { type: String, default: "", trim: true },
     instagram: { type: String, default: "", trim: true },

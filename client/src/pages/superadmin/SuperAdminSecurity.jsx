@@ -26,9 +26,7 @@ const response=await getSecurityStatus();
 
 
 
-setSecurity(
-response?.data?.data || response?.data || response
-);
+setSecurity(response.data);
 
 }
 catch(error){

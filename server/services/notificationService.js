@@ -1,4 +1,5 @@
 // services/notificationService.js
+import { getSystemSettings } from "../services/settingsService.js";
 
 import Notification from "../models/Notification.js";
 
@@ -116,10 +117,13 @@ export const sendBookingConfirmation = async (
   user,
   booking
 ) => {
+  const settings = await getSystemSettings();
+  const companyName = settings.companyName || "Company";
+
   await notifyUser({
     user,
 
-    subject: "Booking Confirmed - Coherent Tours",
+    subject: `Booking Confirmed - ${companyName}`,
 
     html: `
       <h2>Your booking is confirmed 🎉</h2>
@@ -130,7 +134,7 @@ export const sendBookingConfirmation = async (
       </p>
 
       <p>
-        Thank you for choosing Coherent Tours.
+        Thank you for choosing ${companyName}.
       </p>
     `,
 

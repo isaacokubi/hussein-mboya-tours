@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { getSystemSettings } from "../services/settingsService.js";
 import Tour from "../models/Tour.js";
 import User from "../models/User.js";
 import Vehicle from "../models/Vehicle.js";
@@ -762,6 +763,9 @@ if (tour.assignedDriver) {
 */
 
 export const assignGuide = async (req, res, next) => {
+
+    const settings = await getSystemSettings();
+    const companyName = settings.companyName || "Company";
   try {
     /*
     |--------------------------------------------------------------------------
@@ -861,7 +865,7 @@ export const assignGuide = async (req, res, next) => {
 
     await tour.populate("assignedGuide", "name email phone user");
 
-    const message = `Coherent Tours assignment: you have been assigned as guide for "${tour.title}" on ${new Date(tour.date || tour.startDate).toLocaleDateString("en-KE")}. ${tour.location ? `Location: ${tour.location}.` : ""}`;
+    const message = `${companyName} assignment: you have been assigned as guide for "${tour.title}" on ${new Date(tour.date || tour.startDate).toLocaleDateString("en-KE")}. ${tour.location ? `Location: ${tour.location}.` : ""}`;
     await Promise.allSettled([
       guide.phone ? sendSMS(guide.phone, message) : Promise.resolve(),
       guide.phone ? sendWhatsApp({ to: guide.phone, message }) : Promise.resolve(),
@@ -894,6 +898,9 @@ export const assignGuide = async (req, res, next) => {
 
 
 export const assignDriver = async (req, res, next) => {
+
+    const settings = await getSystemSettings();
+    const companyName = settings.companyName || "Company";
   try {
     /*
     |--------------------------------------------------------------------------
@@ -1023,7 +1030,7 @@ export const assignDriver = async (req, res, next) => {
       "name phone email licenseNumber experience user"
     );
 
-    const message = `Coherent Tours assignment: you have been assigned as driver for "${tour.title}" on ${new Date(tour.date || tour.startDate).toLocaleDateString("en-KE")}. ${tour.location ? `Location: ${tour.location}.` : ""}`;
+    const message = `${companyName} assignment: you have been assigned as driver for "${tour.title}" on ${new Date(tour.date || tour.startDate).toLocaleDateString("en-KE")}. ${tour.location ? `Location: ${tour.location}.` : ""}`;
     await Promise.allSettled([
       driver.phone ? sendSMS(driver.phone, message) : Promise.resolve(),
       driver.phone ? sendWhatsApp({ to: driver.phone, message }) : Promise.resolve(),

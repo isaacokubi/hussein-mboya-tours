@@ -388,6 +388,37 @@ localStorage.setItem(
 );
 
 
+// Force fresh user data from database
+try {
+
+ const fresh = await api.get("/auth/me");
+
+ const refreshedUser = normalizeUser(
+   fresh.data.user || fresh.data
+ );
+
+
+ setUser(
+   refreshedUser
+ );
+
+
+ localStorage.setItem(
+   "user",
+   JSON.stringify(refreshedUser)
+ );
+
+
+} catch(error){
+
+ console.error(
+   "AUTH REFRESH FAILED",
+   error
+ );
+
+}
+
+
 
 return {
 
@@ -461,7 +492,7 @@ const isAdmin =
 
  ||
 
- ["superadmin","super_admin","administrator"].includes(normalizeRole(user?.role));
+ ["superadmin","super_admin"].includes(normalizeRole(user?.role));
 
 
 
@@ -548,17 +579,18 @@ return paths.every(
 const hasRole =
 (roleName)=>{
 
-
-return (
-
- normalizeRole(user?.role)
-
- ===
-
- normalizeRole(roleName)
-
+const currentRole =
+normalizeRole(
+ user?.role?.name ||
+ user?.role ||
+ user?.roleId?.name ||
+ user?.legacyRole
 );
 
+
+return (
+ currentRole === normalizeRole(roleName)
+);
 
 };
 

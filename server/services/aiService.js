@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { getSystemSettings } from "../services/settingsService.js";
 import env from "../config/env.js";
 
 console.log(
@@ -16,6 +17,9 @@ const client = new OpenAI({
 });
 
 export const generateTravelAdvice = async (message) => {
+
+  const settings = await getSystemSettings();
+  const companyName = settings.companyName || "Company";
   try {
     const response = await client.responses.create({
       model: env.AI_MODEL,
@@ -25,7 +29,7 @@ export const generateTravelAdvice = async (message) => {
           content: [
             {
               type: "input_text",
-              text: `You are Coherent Tours AI Assistant.
+              text: `You are ${companyName} AI Assistant.
 
 You help customers with:
 

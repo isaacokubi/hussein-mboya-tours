@@ -1,3 +1,4 @@
+import { getSystemSettings } from "../services/settingsService.js";
 
 import Payment from "../models/Payment.js";
 import { Parser } from "json2csv";
@@ -93,6 +94,9 @@ next(error);
 
 export const exportPaymentsPDF = async(req,res,next)=>{
 
+const settings = await getSystemSettings();
+const companyName = settings.companyName || "Company";
+
 try{
 
 
@@ -129,7 +133,7 @@ doc.pipe(res);
 
 doc.fontSize(18)
 .text(
-"Coherent Tours Finance Report"
+`${companyName} Finance Report`
 );
 
 

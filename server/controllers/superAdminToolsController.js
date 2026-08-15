@@ -1,3 +1,4 @@
+import { getSystemSettings } from "../services/settingsService.js";
 import AuditLog from "../models/AuditLog.js";
 import SecurityLog from "../models/SecurityLog.js";
 import mongoose from "mongoose";
@@ -112,6 +113,9 @@ message:error.message
 
 
 export const getApiMonitor = async(req,res)=>{
+
+  const settings = await getSystemSettings();
+  const companyName = settings.companyName || "Company";
 try{
 
 
@@ -135,7 +139,7 @@ api:{
 
 status:"healthy",
 
-service:"Coherent Tours API",
+service:`${companyName} API`,
 
 version:"1.0.0",
 

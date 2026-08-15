@@ -1,6 +1,7 @@
 import { useSettings } from "../../../context/SettingsContext";
-export default function DashboardHeader(
-){
+export default function DashboardHeader(){
+
+const { settings } = useSettings();
 
 
 return (
@@ -13,7 +14,7 @@ text-3xl
 font-bold
 ">
 
-Coherent Tours Admin Center
+{settings.companyName || 'Company'} Admin Center
 
 </h1>
 

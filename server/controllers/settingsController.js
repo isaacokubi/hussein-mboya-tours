@@ -1,47 +1,7 @@
 import SystemSetting from "../models/SystemSetting.js";
+import { COMPANY_DEFAULTS } from "../config/companyDefaults.js";
 
-const DEFAULTS = {
-  companyName: "Coherent Tours",
-  companyLogo: "",
-  websiteUrl: "",
-  supportEmail: "",
-  supportPhone: "+254 733 439 362",
-  address: "",
-  city: "Nairobi",
-  country: "Kenya",
-  currency: "KES",
-  currencySymbol: "KSh",
-  timezone: "Africa/Nairobi",
-  language: "en",
-  taxRate: 0,
-  bookingDepositPercentage: 30,
-  defaultCommissionRate: 10,
-  maintenanceMode: false,
-  allowRegistrations: true,
-  allowAgentRegistrations: true,
-  requireEmailVerification: true,
-  requirePhoneVerification: false,
-  enableMpesa: true,
-  enableStripe: false,
-  enablePaypal: false,
-  enableBankTransfer: true,
-  bankName: "",
-  bankAccountName: "",
-  bankAccountNumber: "",
-  bankBranch: "",
-  bankSwiftCode: "",
-  emailFromName: "Coherent Tours",
-  emailFromAddress: "",
-  facebook: "",
-  instagram: "",
-  twitter: "",
-  youtube: "",
-  seoTitle: "",
-  seoDescription: "",
-  seoKeywords: [],
-  bookingNotifications: true,
-  paymentNotifications: true,
-};
+const DEFAULTS = { ...COMPANY_DEFAULTS };
 
 export const getSettings = async (req, res, next) => {
   try {

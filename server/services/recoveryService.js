@@ -1,4 +1,5 @@
 import Booking from "../models/Booking.js";
+import { getSystemSettings } from "../services/settingsService.js";
 import { sendEmail } from "./emailService.js";
 
 /*
@@ -14,6 +15,9 @@ import { sendEmail } from "./emailService.js";
 */
 
 export const recoverBookings = async () => {
+
+  const settings = await getSystemSettings();
+  const companyName = settings.companyName || "Company";
   const now = new Date();
 
   const twentyFourHoursAgo = new Date(
@@ -56,7 +60,7 @@ export const recoverBookings = async () => {
         to: booking.contact.email,
 
         subject:
-          "Complete Your Coherent Tours Booking",
+          `Complete Your ${companyName} Booking`,
 
         html: `
           <h2>Your adventure is waiting 🌍</h2>
@@ -75,7 +79,7 @@ export const recoverBookings = async () => {
           </p>
 
           <p>
-            Thank you for choosing Coherent Tours.
+            Thank you for choosing ${companyName}.
           </p>
         `,
       });

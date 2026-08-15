@@ -7,12 +7,26 @@ import Tour from "../models/Tour.js";
 import User from "../models/User.js";
 import Vehicle from "../models/Vehicle.js";
 import Agent from "../models/Agent.js";
+import Role from "../models/Role.js";
 
 const ACTIVE_PAYMENT_STATUS = "completed";
 const NON_DELETED = { $ne: true };
 
 export const getDashboard = async (req, res) => {
   try {
+
+    const [
+      customerRole,
+      adminRole,
+      agentRole,
+      guideRole
+    ] = await Promise.all([
+      Role.findOne({name:"customer"}),
+      Role.findOne({name:"admin"}),
+      Role.findOne({name:"agent"}),
+      Role.findOne({name:{$in:["guide","tour_guide"]}})
+    ]);
+
     /*
     |--------------------------------------------------------------------------
     | COUNTS
@@ -29,6 +43,7 @@ export const getDashboard = async (req, res) => {
       bookings,
       destinations,
       customers,
+      adminsCount,
       guidesCount,
       vehiclesCount,
       agentsCount,
@@ -40,11 +55,18 @@ export const getDashboard = async (req, res) => {
       Booking.countDocuments({ isDeleted: NON_DELETED }),
       Destination.countDocuments({ isDeleted: NON_DELETED }),
       User.countDocuments({
-        $or: [
-          { role: "customer" },
-          { legacyRole: "customer" },
-        ],
+        role:"customer"
       }),
+
+      User.countDocuments({
+        role:{
+          $in:[
+            "admin",
+            "super_admin"
+          ]
+        }
+      }),
+
       Staff.countDocuments({
         $or: [
           { position: { $in: ["guide", "tour_guide", "tourguide"] } },
@@ -59,18 +81,18 @@ export const getDashboard = async (req, res) => {
         isActive: { $ne: false },
         status: { $nin: ["out_of_service", "retired", "inactive"] },
       }),
-      Agent.countDocuments({ status: { $ne: "inactive" } }),
-      Staff.countDocuments({
+      User.countDocuments({
+        role:"agent"
+      }),
+      User.countDocuments({
         role:{
-            $in:[
-                "guide",
-                "tour_guide",
-                "tourguide"
-            ]
-        },
-        isActive:true,
-        isDeleted:false
-    }),
+          $in:[
+            "guide",
+            "tour_guide",
+            "tourguide"
+          ]
+        }
+      }),
       Agent.countDocuments({
         status:{
             $ne:"inactive"
@@ -415,6 +437,14 @@ export const getDashboard = async (req, res) => {
 
         notifications,
 
+        userStats: {
+          customers,
+          admins: adminsCount,
+          agents: Math.max(agentsCount, agentUsersCount),
+          guides: Math.max(guidesCount, guideUsersCount),
+          vehicles: vehiclesCount,
+        },
+
         agents: await Agent.find({
           status: { $ne: "inactive" }
         })
@@ -461,6 +491,7 @@ export const getDashboard = async (req, res) => {
 
         userStats: {
           customers,
+          admins: adminsCount,
           agents: Math.max(agentsCount, agentUsersCount),
           guides: Math.max(guidesCount, guideUsersCount),
           vehicles: vehiclesCount,

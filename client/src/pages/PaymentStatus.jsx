@@ -177,7 +177,7 @@ mt-4
 text-gray-600
 "
             >
-              Your Coherent Tours booking has been confirmed.
+              Your ${settings?.companyName || 'Company'} booking has been confirmed.
             </p>
 
             <div

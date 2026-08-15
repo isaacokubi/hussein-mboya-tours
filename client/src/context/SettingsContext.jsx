@@ -1,83 +1,47 @@
-
-import React, {
-    createContext,
-    useContext,
-    useEffect,
-    useState
-} from "react";
-
+import { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
 
 const SettingsContext = createContext(null);
 
+export function SettingsProvider({ children }) {
+  const [settings, setSettings] = useState({
+    companyName: "Coherent Tours",
+    supportEmail: "",
+    supportPhone: "",
+    currency: "KES",
+    currencySymbol: "KSh",
+    logo: ""
+  });
 
-export function SettingsProvider({children}){
+  const [loading, setLoading] = useState(true);
 
-    const [settings,setSettings] = useState({});
-    const [loading,setLoading] = useState(true);
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const response = await axios.get("/settings");
+        const data = response.data?.data || response.data || {};
 
-
-    const loadSettings = async()=>{
-
-        try{
-
-            const res = await axios.get(
-                "/api/settings/public"
-            );
-
-            setSettings(
-                res.data.settings ||
-                res.data ||
-                {}
-            );
-
-        }catch(error){
-
-            console.error(
-                "GLOBAL SETTINGS LOAD ERROR",
-                error
-            );
-
-        }finally{
-
-            setLoading(false);
-
-        }
-
+        setSettings(prev => ({
+          ...prev,
+          ...data
+        }));
+      } catch (error) {
+        console.error("Settings load failed:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
+    loadSettings();
+  }, []);
 
-    useEffect(()=>{
-
-        loadSettings();
-
-    },[]);
-
-
-
-    return (
-
-        <SettingsContext.Provider
-            value={{
-                settings,
-                setSettings,
-                refreshSettings:loadSettings,
-                loading
-            }}
-        >
-
-            {children}
-
-        </SettingsContext.Provider>
-
-    );
-
+  return (
+    <SettingsContext.Provider value={{ settings, loading }}>
+      {children}
+    </SettingsContext.Provider>
+  );
 }
 
-
-
-export function useSettings(){
-
-    return useContext(SettingsContext);
-
+export function useSettings() {
+  return useContext(SettingsContext);
 }

@@ -21,7 +21,7 @@ export default function MobileDashboardNav({
   title,
 }) {
   const { settings = {} } = useSettings() || {};
-  title = title || settings.companyName || "Coherent Tours";
+  title = title || settings.companyName || "{settings.companyName || 'Company'}";
   const [open, setOpen] = useState(false);
   const items = NAV[role] || NAV.customer;
   return (
@@ -34,7 +34,7 @@ export default function MobileDashboardNav({
         <div className="fixed inset-0 z-[60] lg:hidden">
           <button aria-label="Close dashboard menu" onClick={() => setOpen(false)} className="absolute inset-0 bg-black/60"/>
           <aside className="relative h-full w-80 max-w-[86vw] bg-slate-950 p-5 text-white shadow-2xl">
-            <div className="mb-8 flex items-center justify-between"><div><div className="text-lg font-bold">Coherent Tours</div><div className="text-xs text-slate-400 capitalize">{role} portal</div></div><button onClick={()=>setOpen(false)} aria-label="Close menu" className="rounded-lg p-2 hover:bg-white/10"><X size={20}/></button></div>
+            <div className="mb-8 flex items-center justify-between"><div><div className="text-lg font-bold">{settings.companyName || 'Company'}</div><div className="text-xs text-slate-400 capitalize">{role} portal</div></div><button onClick={()=>setOpen(false)} aria-label="Close menu" className="rounded-lg p-2 hover:bg-white/10"><X size={20}/></button></div>
             <nav className="space-y-2">{items.map(([to,label,Icon])=><Link key={to} to={to} onClick={()=>setOpen(false)} className="flex items-center gap-3 rounded-xl px-4 py-3 font-medium hover:bg-white/10"><Icon size={19}/>{label}</Link>)}</nav>
           </aside>
         </div>

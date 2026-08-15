@@ -1,4 +1,5 @@
 import PDFDocument from "pdfkit";
+import { getSystemSettings } from "../services/settingsService.js";
 import fs from "fs";
 import path from "path";
 
@@ -12,6 +13,11 @@ export const createInvoice = async ({
   booking,
   filePath,
 }) => {
+  const settings = await getSystemSettings();
+
+  const companyName =
+    settings.companyName || "Company";
+
   return new Promise((resolve, reject) => {
     try {
       const directory = path.dirname(filePath);
@@ -38,7 +44,7 @@ export const createInvoice = async ({
 
       doc
         .fontSize(24)
-        .text("Coherent Tours", {
+        .text(companyName, {
           align: "center",
         });
 

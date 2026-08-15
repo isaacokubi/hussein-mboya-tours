@@ -34,7 +34,7 @@ export const verifyEmailConnection = async () => {
     const settings = await getSystemSettings();
 
     const companyName =
-      settings.companyName || "Coherent Tours";
+      settings.companyName || "Company";
 
     const currency =
       settings.currency || "KES";
@@ -107,17 +107,20 @@ export const sendEmail = async ({
 */
 
 export const sendBookingEmail = async (email, booking) => {
+
+    const settings = await getSystemSettings();
+    const companyName = settings.companyName || "Company";
   return sendEmail({
     to: email,
 
-    subject: "Booking Confirmation - Coherent Tours",
+    subject: `Booking Confirmation - ${companyName}`,
 
     html: `
       <div style="font-family:Arial,sans-serif">
 
         <h2>Booking Confirmed</h2>
 
-        <p>Thank you for choosing Coherent Tours.</p>
+        <p>Thank you for choosing ${companyName}.</p>
 
         <hr>
 
@@ -147,7 +150,7 @@ export const sendBookingEmail = async (email, booking) => {
 
         <p>
           Regards,<br>
-          <strong>Coherent Tours</strong>
+          <strong>${companyName}</strong>
         </p>
 
       </div>
@@ -164,7 +167,7 @@ Travel Date: ${booking.travelDate}
 
 Total Amount: ${booking.totalAmount}
 
-Thank you for choosing Coherent Tours.
+Thank you for choosing ${companyName}.
     `,
   });
 };

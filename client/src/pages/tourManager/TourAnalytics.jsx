@@ -100,7 +100,7 @@ export default function TourAnalytics(
                     text-gray-500
                 "
         >
-          Business intelligence overview for Coherent Tours
+          Business intelligence overview for ${settings?.companyName || 'Company'}
         </p>
       </div>
 

@@ -12,6 +12,7 @@ import AssignmentNotifications from "../components/notifications/AssignmentNotif
 export default function Dashboard(
 ) {
   const { user } = useAuth();
+  const { settings } = useSettings();
 
   const role = (user?.role?.name || user?.roleId?.name || user?.role || user?.legacyRole || "customer")
     .toString()
@@ -49,7 +50,7 @@ const { data, isLoading, error } = useQuery({
     return <Navigate to="/driver/dashboard" replace />;
   }
 
-  if (role === "superadmin" || role === "administrator") {
+  if (role === "superadmin") {
     return <Navigate to="/superadmin/dashboard" replace />;
   }
 
@@ -232,7 +233,7 @@ if (isLoading) {
         text-lg
         "
         >
-          Manage your adventures with Coherent Tours.
+          Manage your adventures with ${settings?.companyName || 'Company'}.
         </p>
 
         <div

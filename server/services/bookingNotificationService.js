@@ -1,4 +1,5 @@
 import fs from "fs/promises";
+import { getSystemSettings } from "../services/settingsService.js";
 import path from "path";
 
 import { sendEmail } from "./emailService.js";
@@ -55,7 +56,7 @@ export const sendBookingConfirmation = async (booking) => {
     const result = await sendEmail({
       to: booking.contactEmail,
 
-      subject: "Your Coherent Tours Booking Confirmation",
+      subject: `Your ${companyName} Booking Confirmation`,
 
       html: bookingConfirmationEmail({
         customerName: booking.contactName,

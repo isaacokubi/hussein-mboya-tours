@@ -175,7 +175,7 @@ export default function ProtectedRoute({
 
     superadmin: "superadmin",
 
-    administrator: "superadmin",
+    administrator: "admin",
 
 
     agent: "agent",
@@ -258,7 +258,7 @@ export default function ProtectedRoute({
 
             <Navigate
 
-              to="/superadmin/dashboard"
+              to="/admin/dashboard"
 
               replace
 
@@ -328,6 +328,21 @@ export default function ProtectedRoute({
 
           );
 
+
+
+        case "superadmin":
+
+          return (
+
+            <Navigate
+
+              to="/superadmin/dashboard"
+
+              replace
+
+            />
+
+          );
 
 
         default:

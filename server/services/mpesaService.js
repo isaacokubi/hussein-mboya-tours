@@ -1,4 +1,5 @@
 // server/services/mpesaService.js
+import { getSystemSettings } from "../services/settingsService.js";
 
 import axios from "axios";
 
@@ -217,6 +218,8 @@ export const initiateStkPush = async ({
   bookingId,
 }) => {
 
+  const settings = await getSystemSettings();
+  const companyName = settings.companyName || "Company";
 
   if (!phone) {
     throw new Error(
@@ -308,7 +311,7 @@ export const initiateStkPush = async ({
 
 
     TransactionDesc:
-      "Coherent Tours Booking Payment",
+      `${companyName} Booking Payment`,
 
   };
 

@@ -36,7 +36,7 @@ export default function TourSchema({ tour }) {
 
     provider: {
       "@type": "TravelAgency",
-      name: settings.companyName || "Coherent Tours",
+      name: settings.companyName || "Company",
       url: SITE_URL,
     },
 

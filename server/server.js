@@ -1,6 +1,7 @@
 import systemHealthRoutes from "./routes/systemHealthRoutes.js";
 import databaseRoutes from "./routes/databaseRoutes.js";
 import settingsRoutes from "./routes/settingsRoutes.js";
+import superAdminRoutes from "./routes/superAdminRoutes.js";
 
 import http from "http";
 import mongoose from "mongoose";
@@ -55,6 +56,7 @@ app.use("/api/settings", settingsRoutes);
 app.use("/api/database", databaseRoutes);
 
 app.use("/api/system", systemHealthRoutes);
+app.use("/api/superadmin", superAdminRoutes);
 
 server.listen(env.PORT, () => {
 

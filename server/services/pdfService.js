@@ -7,7 +7,16 @@ import PDFDocument from "pdfkit";
 |--------------------------------------------------------------------------
 */
 
-export const generateReceipt = (booking, res) => {
+export const generateReceipt = async (booking, res) => {
+
+  const settings = await getSystemSettings();
+
+  const companyName =
+    settings.companyName || "Company";
+
+  const currency =
+    settings.currencySymbol || "KSh";
+
   const doc = new PDFDocument({
     margin: 50,
     size: "A4",

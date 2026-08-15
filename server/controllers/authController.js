@@ -1,4 +1,5 @@
 import { createAuditLog } from "../services/auditService.js";
+import { getSystemSettings } from "../services/settingsService.js";
 
 import crypto from "crypto";
 
@@ -356,7 +357,11 @@ const token = generateToken({
         name: user.name,
         email: user.email,
         phone: user.phone,
-        role: user.role,
+        role:
+          user.roleId?.name ||
+          user.role ||
+          user.legacyRole ||
+          "customer",
         profileImage: user.profileImage,
         referralCode: user.referralCode,
         status: user.status,
@@ -409,7 +414,11 @@ export const getMe = async (req, res) => {
         name: user.name,
         email: user.email,
         phone: user.phone,
-        role: user.role,
+        role:
+          user.roleId?.name ||
+          user.role ||
+          user.legacyRole ||
+          "customer",
         profileImage: user.profileImage,
         permissions,
         status: user.status,
@@ -438,6 +447,9 @@ export const getMe = async (req, res) => {
 */
 
 export const requestPasswordReset = async (req, res, next) => {
+
+  const settings = await getSystemSettings();
+  const companyName = settings.companyName || "Company";
   try {
     const phone = String(req.body?.phone || "").trim();
 
@@ -470,7 +482,7 @@ export const requestPasswordReset = async (req, res, next) => {
     const { sendSMS } = await import("../services/smsService.js");
     await sendSMS(
       phone,
-      `Coherent Tours password reset code: ${code}. It expires in 10 minutes. If you did not request this, ignore this message.`
+      `${companyName} password reset code: ${code}. It expires in 10 minutes. If you did not request this, ignore this message.`
     );
 
     return res.status(200).json({

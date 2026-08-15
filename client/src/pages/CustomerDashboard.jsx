@@ -305,7 +305,7 @@ Welcome back,{" "}
 
 <p className="mt-2">
 
-Your Coherent Tours customer centre
+Your ${settings?.companyName || 'Company'} customer centre
 
 </p>
 

@@ -20,7 +20,7 @@ export default function SEO({
 
   const { settings = {} } = useSettings() || {};
 
-  const SITE_NAME = settings.companyName || "Coherent Tours";
+  const SITE_NAME = settings.companyName || "Company";
 
   const pageTitle =
     title === SITE_NAME
@@ -126,7 +126,7 @@ export default function SEO({
 
       <meta
         name="author"
-        content={settings.companyName || "Coherent Tours"}
+        content={settings.companyName || "Company"}
       />
     </Helmet>
   );

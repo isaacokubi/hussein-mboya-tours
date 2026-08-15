@@ -92,7 +92,7 @@ export default function TourDetails(
 
   const handleWhatsAppBooking = () => {
     const message = encodeURIComponent(
-      `Hello Coherent Tours, I would like to book "${tour.title}" on ${tour.date ? new Date(tour.date).toLocaleDateString("en-KE") : "the available date"}. Please share availability and booking details.`
+      `Hello ${settings?.companyName || 'Company'}, I would like to book "${tour.title}" on ${tour.date ? new Date(tour.date).toLocaleDateString("en-KE") : "the available date"}. Please share availability and booking details.`
     );
     const whatsappNumber = String(supportPhone || "+254733439362").replace(/\D/g, "").replace(/^0/, "254");
     window.open(`https://wa.me/${whatsappNumber}?text=${message}`, "_blank", "noopener,noreferrer");

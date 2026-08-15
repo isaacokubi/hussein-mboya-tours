@@ -1,11 +1,7 @@
 import SystemSetting from "../models/SystemSetting.js";
+import { COMPANY_DEFAULTS } from "../config/companyDefaults.js";
 
-const DEFAULTS = {
-  companyName:"Coherent Tours",
-  currency:"KES",
-  currencySymbol:"KSh",
-  timezone:"Africa/Nairobi"
-};
+const DEFAULTS = COMPANY_DEFAULTS;
 
 export async function getSystemSettings(){
 

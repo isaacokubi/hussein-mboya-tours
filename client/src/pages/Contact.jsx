@@ -29,7 +29,7 @@ export default function Contact(
 
     
 
-    alert("Thank you for contacting Coherent Tours. We will respond shortly.");
+    alert("Thank you for contacting ${settings?.companyName || 'Company'}. We will respond shortly.");
   };
 
   const details = [
@@ -42,7 +42,7 @@ export default function Contact(
     {
       icon: Mail,
       title: "Email",
-      value: supportEmail || "support@example.com",
+      value: supportEmail || "",
     },
 
     {

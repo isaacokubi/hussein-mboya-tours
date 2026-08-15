@@ -6,7 +6,7 @@ import { toast } from "react-toastify";
 import { getSettings, updateSettings } from "../../api/settingsApi";
 
 const DEFAULTS = {
-  companyName: settings.companyName || "Coherent Tours", companyLogo: "", websiteUrl: "",
+  companyName: settings.companyName || "Company", companyLogo: "", websiteUrl: "",
   supportEmail: "", supportPhone: "+254 733 439 362", address: "",
   city: "Nairobi", country: "Kenya", currency: "KES", currencySymbol: "KSh",
   timezone: "Africa/Nairobi", language: "en", taxRate: 0,
@@ -15,7 +15,7 @@ const DEFAULTS = {
   requireEmailVerification: true, requirePhoneVerification: false,
   enableMpesa: true, enableStripe: false, enablePaypal: false, enableBankTransfer: true,
   bankName: "", bankAccountName: "", bankAccountNumber: "", bankBranch: "", bankSwiftCode: "",
-  emailFromName: settings.companyName || "Coherent Tours", emailFromAddress: "",
+  emailFromName: settings.companyName || "Company", emailFromAddress: "",
   facebook: "", instagram: "", twitter: "", youtube: "",
   seoTitle: "", seoDescription: "", seoKeywords: "",
   bookingNotifications: true, paymentNotifications: true,

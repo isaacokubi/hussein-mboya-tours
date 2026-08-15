@@ -1,3 +1,4 @@
+import { getSystemSettings } from "../services/settingsService.js";
 import mongoose from "mongoose";
 
 const checkEndpoint = async (name, path) => {
@@ -26,6 +27,9 @@ const checkEndpoint = async (name, path) => {
 
 
 export const getApiMonitor = async(req,res)=>{
+
+  const settings = await getSystemSettings();
+  const companyName = settings.companyName || "Company";
 
 try{
 
@@ -79,7 +83,7 @@ data:{
 
 status:"online",
 
-service:"Coherent Tours API",
+service:`${companyName} API`,
 
 healthScore,
 

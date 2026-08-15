@@ -92,7 +92,7 @@ md:translate-x-0
 
 
 <h1 className="text-xl font-bold">
-Coherent Tours
+{settings.companyName || "Company"}
 </h1>
 
 

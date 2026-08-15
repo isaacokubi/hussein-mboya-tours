@@ -24,7 +24,7 @@ export const getPaymentById = async (req, res, next) => {
     const settings = await getSystemSettings();
 
     const companyName =
-      settings.companyName || "Coherent Tours";
+      settings.companyName || "Company";
 
     const currency =
       settings.currency || "KES";
