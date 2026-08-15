@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Search, Trash2, UserCheck, UserX, UserPlus, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "react-toastify";
@@ -8,18 +8,41 @@ const roles = ["admin", "manager", "agent", "guide", "driver"];
 
 export default function UserManagement() {
   const queryClient = useQueryClient();
-  const [search, setSearch] = useState("");
+  
+const [search,setSearch]=useState("");
+const [searchValue,setSearchValue]=useState("");
+
+useEffect(()=>{
+ const timer=setTimeout(()=>{
+   setSearch(searchValue);
+ },500);
+
+ return ()=>clearTimeout(timer);
+
+},[searchValue]);
+
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => { setDebouncedSearch(search); }, 500);
+
+    return () => clearTimeout(timer);
+  }, [search]);
   const [page, setPage] = useState(1);
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ name:"", email:"", phone:"", password:"", role:"guide" });
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["admin-users", search, page],
+    queryKey: ["admin-users", debouncedSearch, page],
     queryFn: () => getAdminUsers({ search, page, limit: 10 }),
     keepPreviousData: true,
   });
 
-  const users = data?.data || data?.users || [];
+  const users = Array.isArray(data?.data)
+    ? data.data
+    : Array.isArray(data?.users)
+      ? data.users
+      : [];
   const totalPages = Math.max(1, Number(data?.pages || data?.pagination?.pages || 1));
 
   const statusMutation = useMutation({
@@ -71,7 +94,7 @@ export default function UserManagement() {
       <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
         <div className="flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-2">
           <Search className="text-slate-400" size={19}/>
-          <input value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="Search by name, email, phone, role or status..." className="w-full p-2 outline-none"/>
+          <input value={searchValue} onChange={e=>{setSearchValue(e.target.value);setPage(1);}} placeholder="Search by name, email, phone, role or status..." className="w-full p-2 outline-none"/>
           {search && <button onClick={()=>setSearch("")} className="text-sm text-slate-500">Clear</button>}
         </div>
       </div>

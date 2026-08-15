@@ -150,7 +150,21 @@ export const getTourManagerDashboard = async (req, res, next) => {
       // This is the real number of guests from non-cancelled bookings.
       guests: guestMap.get(tour._id.toString()) || 0,
 
-      capacity: tour.capacity || 0,
+      
+
+
+
+
+
+
+
+
+
+
+capacity: tour.capacity || 0,
+bookedSlots: confirmedBookings,
+availableSlots,
+occupancyRate,
 
       guide: tour.assignedGuide || null,
       driver: tour.assignedDriver || null,

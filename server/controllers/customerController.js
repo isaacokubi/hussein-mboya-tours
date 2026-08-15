@@ -130,7 +130,27 @@ export const getCustomers = async (req, res, next) => {
         booking.status || "pending"
       ).toLowerCase();
 
-      const paymentStatus = String(
+      
+
+const confirmedSpend = bookings
+.filter(booking =>
+ booking.status === "confirmed" &&
+ ["paid","completed"]
+ .includes(booking.paymentStatus)
+)
+.reduce(
+(sum,booking)=>
+sum +
+Number(
+ booking.totalAmount ||
+ booking.amount ||
+ 0
+),
+0
+);
+
+
+const paymentStatus = String(
         booking.paymentStatus || "pending"
       ).toLowerCase();
 

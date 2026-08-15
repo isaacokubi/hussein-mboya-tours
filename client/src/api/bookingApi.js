@@ -190,3 +190,9 @@ return response.data;
 
 
 export const rescheduleBooking = async (id, payload) => (await api.put(`/bookings/reschedule/${id}`, payload)).data;
+
+
+export const getBookingById = async (id) => {
+  const response = await api.get(`/bookings/${id}`);
+  return response.data;
+};

@@ -143,6 +143,7 @@ const notificationSchema = new mongoose.Schema(
       type: String,
       enum: [
         "Booking",
+        "CustomTourRequest",
         "Tour",
         "Payment",
         "Vehicle",

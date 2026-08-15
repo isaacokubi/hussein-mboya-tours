@@ -23,7 +23,14 @@ const userSchema = new mongoose.Schema(
       required: true,
       trim: true,
       validate: {
-        validator: (value) => /^\d{10}$/.test(String(value || "")),
+        validator: (value) => {
+        const phone = String(value || "").replace(/\s+/g, "");
+
+        return (
+          /^\d{10}$/.test(phone) ||
+          /^\+254\d{9}$/.test(phone)
+        );
+      },
         message: "Phone number must contain exactly 10 digits.",
       },
     },

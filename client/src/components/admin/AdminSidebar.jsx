@@ -199,6 +199,19 @@ permission:"customer.view"
 },
 
 
+{
+title:"Custom Tour Requests",
+
+icon:<FileText size={20}/>,
+
+path:"/admin/custom-tour-requests",
+
+permission:"customer.view"
+
+},
+
+
+
 
 
 

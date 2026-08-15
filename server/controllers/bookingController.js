@@ -12,6 +12,7 @@ import { sendSMS } from "../services/smsService.js";
 import { sendWhatsApp } from "../services/whatsappService.js";
 
 import Tour from "../models/Tour.js";
+import CustomTourRequest from "../models/CustomTourRequest.js";
 
 import {
   reserveSlots,
@@ -42,62 +43,86 @@ export const createBooking = async (req, res, next) => {
     const companyName = settings.companyName || "Company";
   try {
 
-    const {
-      tour,
-      travelDate,
-      travelers,
-      numberOfGuests,
-      contact,
-      paymentMethod,
-      pickupLocation,
-      pickupTime,
-      hotelName,
-      roomNumber,
-      emergencyContact,
-      specialRequests,
-    } = req.body;
+      const {
+        tour,
+        customTourRequest,
+        travelDate,
+        travelers,
+        numberOfGuests,
+        contact,
+        paymentMethod,
+        pickupLocation,
+        pickupTime,
+        hotelName,
+        roomNumber,
+        emergencyContact,
+        specialRequests,
+      } = req.body;
 
 
-    const totalTravellers =
-      Number(numberOfGuests) ||
-      travelers?.length ||
-      1;
+      const totalTravellers =
+        Number(numberOfGuests) ||
+        travelers?.length ||
+        1;
 
 
-    const tourData =
-      await Tour.findById(tour);
+      let tourData = null;
+
+      if (tour) {
+        tourData = await Tour.findById(tour);
+      }
 
 
-    if (!tourData) {
-      return res.status(404).json({
-        success:false,
-        message:"Tour not found"
-      });
-    }
+      let customTourData = null;
+
+      if (customTourRequest) {
+        customTourData = await CustomTourRequest.findById(customTourRequest);
+      }
 
 
-    const capacityAvailable = await validateTourCapacity(
-      tour,
-      totalTravellers,
-      travelDate
-    );
+      if (!tourData && !customTourData) {
+        return res.status(404).json({
+          success:false,
+          message:"Tour or custom tour request not found"
+        });
+      }
 
-    if (!capacityAvailable) {
-      return res.status(409).json({
-        success: false,
-        message: "Not enough available tour slots for this booking.",
-      });
-    }
 
-    const amounts =
-      calculateBookingAmounts(
-        tourData,
-        totalTravellers
-      );
+      let capacityAvailable = true;
+
+      if (tour) {
+        capacityAvailable = await validateTourCapacity(
+          tour,
+          totalTravellers,
+          travelDate
+        );
+      }
+
+      if (!capacityAvailable) {
+        return res.status(409).json({
+          success: false,
+          message: "Not enough available tour slots for this booking.",
+        });
+      }
+
+    const amounts = tourData
+      ? calculateBookingAmounts(
+          tourData,
+          totalTravellers
+        )
+      : {
+          subtotal: Number(customTourData?.quotedAmount || customTourData?.budget || 0),
+          discountAmount: 0,
+          totalAmount: Number(customTourData?.quotedAmount || customTourData?.budget || 0),
+          depositAmount: Number(customTourData?.quotedAmount || customTourData?.budget || 0),
+          balanceAmount: 0,
+        };
 
     // Reserve capacity before creating the booking. If booking creation
     // fails, the reservation is released in the catch block below.
-    await reserveSlots(tour, totalTravellers);
+      if (tour) {
+        await reserveSlots(tour, totalTravellers);
+      }
 
     let booking;
 
@@ -116,9 +141,9 @@ export const createBooking = async (req, res, next) => {
         },
 
 
-        tour,
+          tour: tour || null,
 
-
+          customTourRequest: customTourRequest || null,
         travelDate,
 
 
@@ -892,7 +917,7 @@ booking:booking._id,
 
 customer:booking.customer,
 
-tour:booking.tour,
+tour:booking.tour || null,
 
 bookingAmount:
 booking.totalAmount,

@@ -352,6 +352,22 @@ My Profile
 </Link>
 
 
+<Link
+to="/custom-tour"
+className="
+bg-green-700
+text-white
+px-6
+py-3
+rounded-lg
+font-bold
+">
+
+Create Custom Tour
+
+</Link>
+
+
 </div>
 
 

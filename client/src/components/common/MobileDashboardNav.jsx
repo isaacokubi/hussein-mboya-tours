@@ -1,12 +1,13 @@
 import { useSettings } from "../../context/SettingsContext";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Menu, X, LayoutDashboard, CalendarCheck, UserRound, Heart,  FileText } from "lucide-react";
+import { Menu, X, LayoutDashboard, CalendarCheck, UserRound, Heart,  FileText, Sparkles } from "lucide-react";
 
 const NAV = {
   customer: [
     ["/dashboard","Dashboard",LayoutDashboard],["/my-bookings","My Bookings",CalendarCheck],
-    ["/tours","Explore Tours",FileText],["/profile","Profile",UserRound],["/wishlist","Wishlist",Heart],
+    ["/custom-tour","Custom Tour",Sparkles],
+    ["/tours","Explore Tours",FileText, Sparkles],["/profile","Profile",UserRound],["/wishlist","Wishlist",Heart],
   ],
   guide: [
     ["/guide/dashboard","Dashboard",LayoutDashboard],["/my-bookings","Bookings",CalendarCheck],["/profile","Profile",UserRound],

@@ -7,78 +7,7 @@ users={}
 
 return (
 
-<section className="
-bg-white
-rounded-xl
-shadow
-p-6
-">
 
-
-<h2 className="
-text-xl
-font-bold
-mb-5
-">
-
-User Analytics
-
-</h2>
-
-
-
-<div className="
-grid
-md:grid-cols-4
-gap-5
-">
-
-
-<Card
-
-title="Customers"
-
-value={
-users.customers
-}
-
-/>
-
-
-<Card
-
-title="Admins"
-
-value={
-users.admins
-}
-
-/>
-
-
-<Card
-
-title="Agents"
-
-value={
-users.agents
-}
-
-/>
-
-
-<Card
-
-title="Tour Guides"
-
-value={
-users.guides
-}
-
-/>
-
-
-</div>
 
 
 </section>

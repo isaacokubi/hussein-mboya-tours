@@ -4,11 +4,8 @@ import { getDashboard } from "../../../api/adminApi";
 
 import DashboardHeader from "./DashboardHeader";
 import StatsGrid from "./StatsGrid";
-import BookingOverview from "./BookingOverview";
 import PopularTours from "./PopularTours";
 import RecentBookings from "./RecentBookings";
-import RevenueChart from "./RevenueChart";
-import UserAnalytics from "./UserAnalytics";
 import PaymentAnalytics from "./PaymentAnalytics";
 import QuickActions from "./QuickActions";
 import SystemHealth from "./SystemHealth";
@@ -114,13 +111,7 @@ export default function AdminDashboard() {
                     "
                 >
 
-                    <RevenueChart
-
-                        revenue={
-                            dashboard.revenue || 0
-                        }
-
-                    />
+                    
 
                 </div>
 
@@ -145,13 +136,7 @@ export default function AdminDashboard() {
 
 
 
-            <BookingOverview
-
-                statusData={
-                    dashboard.status || []
-                }
-
-            />
+            
 
 
 
@@ -190,16 +175,7 @@ export default function AdminDashboard() {
 
 
 
-            <UserAnalytics
-
-                users={{
-                    customers: dashboard.userStats?.customers || 0,
-                    admins: dashboard.userStats?.admins || 0,
-                    agents: dashboard.userStats?.agents || 0,
-                    guides: dashboard.userStats?.guides || 0
-                }}
-
-            />
+            
 
 
 

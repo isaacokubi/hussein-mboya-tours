@@ -6,7 +6,15 @@ export const getAgents = async()=>{
 const res =
 await axios.get("/admin/agents");
 
-return res.data.data;
+const data = res.data;
+
+return Array.isArray(data)
+  ? data
+  : Array.isArray(data?.data)
+    ? data.data
+    : Array.isArray(data?.agents)
+      ? data.agents
+      : [];
 
 };
 

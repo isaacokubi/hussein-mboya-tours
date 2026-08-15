@@ -35,6 +35,8 @@ export default function Register(
 const navigate =
 useNavigate();
 
+const { settings } = useSettings();
+
 
 
 
@@ -118,9 +120,9 @@ e.preventDefault();
 
 
 
-const normalizedPhone = String(formData.phone || "").replace(/\\D/g, "");
+const normalizedPhone = String(formData.phone || "").replace(/\D/g, "");
 
-if (normalizedPhone.length !== 10 || normalizedPhone !== formData.phone.trim()) {
+if (normalizedPhone.length !== 10) {
   toast.error("Phone number must contain exactly 10 digits.");
   return;
 }
@@ -482,7 +484,7 @@ name="phone"
 
 inputMode="numeric"
 
-pattern="\\d{10}"
+pattern="\d{10}"
 
 maxLength={10}
 

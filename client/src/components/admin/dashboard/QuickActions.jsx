@@ -7,7 +7,7 @@ const actions=[
 
 {
 name:"Create Tour",
-path:"/admin/tours/create"
+path:"/admin/tours/add"
 },
 
 {

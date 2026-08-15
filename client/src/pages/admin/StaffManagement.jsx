@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Users, Search, UserCheck, UserX, Shield } from "lucide-react";
 import { toast } from "react-toastify";
@@ -6,29 +6,36 @@ import api from "../../api/axios";
 
 export default function StaffManagement() {
   const qc = useQueryClient();
-  const [search, setSearch] = useState("");
+const [search,setSearch] = useState("");
+
+const [searchInput,setSearchInput] = useState("");
+
+useEffect(()=>{
+  const timer=setTimeout(()=>{
+    setSearch(searchInput);
+  },500);
+
+  return ()=>clearTimeout(timer);
+
+},[searchInput]);
 
   const staffQuery = useQuery({
     queryKey: ["staff", "admin", search],
     queryFn: async () => (await api.get("/staff", {
-      params: { includeInactive: true, limit: 100, search },
+      params: { includeInactive: true, limit: 100, search: search },
     })).data,
   });
 
   const usersQuery = useQuery({
     queryKey: ["admin-users", "staff-list", search],
     queryFn: async () => (await api.get("/admin/users", {
-      params: { limit: 100, search },
+      params: { limit: 100, search: search },
     })).data,
   });
 
   const mutation = useMutation({
     mutationFn: ({ id, active }) =>
-      api.put(`/staff/${id}/status`, {
-        isActive: active,
-        status: active ? "active" : "inactive",
-        availability: active ? "available" : "offline",
-      }),
+      api.put(`/staff/${ id }/status`, { isActive: active, status: active ? "active" : "inactive", availability: active ? "available" : "offline" }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["staff", "admin"] });
       toast.success("Staff status updated.");
@@ -103,8 +110,8 @@ export default function StaffManagement() {
         <div className="mb-5 flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
           <Search size={18} className="text-slate-400" />
           <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={searchInput}
+            onChange={(e)=>setSearchInput(e.target.value)}
             placeholder="Search name, email, phone, role or position..."
             className="w-full outline-none"
           />

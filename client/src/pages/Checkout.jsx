@@ -1,9 +1,9 @@
 import { useSettings } from "../context/SettingsContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createBooking } from "../api/bookingApi";
+import { createBooking,getBookingById } from "../api/bookingApi";
 import { initiateMpesa } from "../api/mpesaApi";
 import { getTourById } from "../api/tourApi";
 import api from "../api/axios";
@@ -27,21 +27,75 @@ export default function Checkout(
   const { data: publicSettings } = useQuery({ queryKey:["public-settings"], queryFn:getPublicSettings });
   const siteSettings = publicSettings?.settings || publicSettings?.data || {};
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["tour", id],
-    queryFn: () => getTourById(id),
-    enabled: Boolean(id),
-  });
+  const { data:tourResponse, isLoading:tourLoading } = useQuery({
+    queryKey:["tour", id],
+    queryFn:()=>getTourById(id),
+    enabled:Boolean(id) && !id.startsWith("6"),
+});
 
-  const tour = data?.tour || data?.data?.tour || data?.data || data;
-  const availableSlots = Number(
-    tour?.availableSlots ??
-      Math.max(
-        Number(tour?.totalSlots ?? tour?.capacity ?? 0) -
-          Number(tour?.bookedSlots ?? 0),
-        0
-      )
-  );
+const { data:bookingResponse, isLoading:bookingLoading } = useQuery({
+    queryKey:["checkout-booking", id],
+    queryFn:()=>getBookingById(id),
+    enabled:Boolean(id)
+});
+
+
+const tour =
+tourResponse?.tour ||
+tourResponse?.data?.tour ||
+tourResponse?.data ||
+tourResponse;
+
+
+const booking =
+bookingResponse?.booking ||
+bookingResponse?.data?.booking ||
+bookingResponse?.data ||
+bookingResponse;
+
+
+const isCustomBooking =
+Boolean(booking?.customTourRequest);
+
+const customSnapshot =
+  booking?.customTourSnapshot ||
+  booking?.customTourRequest ||
+  {};
+
+useEffect(() => {
+  if (!isCustomBooking) return;
+
+  setTravelDate(customSnapshot.startDate || "");
+  setTravellerCount(Number(customSnapshot.people || 1));
+  setPickupLocation(customSnapshot.pickupLocation || "");
+  setPickupTime(customSnapshot.pickupTime || "");
+  setHotelName(customSnapshot.accommodationPreference || "");
+  setSpecialRequests(customSnapshot.specialRequests || "");
+
+}, [isCustomBooking, bookingResponse]);
+
+  
+
+console.log("CHECKOUT DEBUG FULL", JSON.stringify({
+   id,
+   idType: typeof id,
+   tourResponse,
+   bookingResponse,
+   tour,
+   booking,
+   isCustomBooking
+  }, null, 2));
+
+const availableSlots = isCustomBooking
+    ? 999
+    : Number(
+        tour?.availableSlots ??
+          Math.max(
+            Number(tour?.totalSlots ?? tour?.capacity ?? 0) -
+              Number(tour?.bookedSlots ?? 0),
+            0
+          )
+      );
 
   const bookingMutation = useMutation({
     mutationFn: createBooking,
@@ -125,24 +179,77 @@ export default function Checkout(
     },
   });
 
-  if (isLoading) {
+  if (tourLoading || bookingLoading) {
     return <div className="flex min-h-screen items-center justify-center">Loading tour...</div>;
   }
 
-  if (error || !tour?._id) {
+  if ((!tour?._id && !booking?._id)) {
     return <div className="flex min-h-screen items-center justify-center text-red-600">Tour not found.</div>;
   }
 
-  const total = Number(tour.price || 0) * Number(travellerCount);
+const displayTravelDate =
+  customSnapshot.startDate ||
+  booking?.travelDate ||
+  travelDate;
+
+const displayTravellers =
+  customSnapshot.people ||
+  booking?.numberOfGuests ||
+  travellerCount;
+
+const displayPickupLocation =
+  customSnapshot.pickupLocation ||
+  booking?.pickupLocation ||
+  pickupLocation;
+
+const displayPickupTime =
+  customSnapshot.pickupTime ||
+  booking?.pickupTime ||
+  pickupTime;
+
+const displayHotel =
+  customSnapshot.accommodationPreference ||
+  booking?.hotelName ||
+  hotelName;
+
+const displayRoom =
+  booking?.roomNumber ||
+  roomNumber;
+
+const displaySpecialRequests =
+  customSnapshot.specialRequests ||
+  customSnapshot.requirements ||
+  booking?.specialRequests ||
+  specialRequests;
+
+const total =
+isCustomBooking
+?
+Number(booking.totalAmount || 0)
+:
+Number(tour.price || 0) * Number(travellerCount);
 
   const handleSubmit = (event) => {
     event.preventDefault();
 
     if (!travelDate) return toast.error("Please select a travel date.");
     if (!phone) return toast.error("Please enter your phone number.");
-    if (!pickupLocation.trim()) return toast.error("Please enter the exact pickup location.");
-    if (!pickupTime) return toast.error("Please select the pickup time.");
-    if (travellerCount < 1 || travellerCount > availableSlots) {
+    const finalPickupLocation =
+      pickupLocation.trim() ||
+      String(displayPickupLocation || "").trim();
+
+    const finalPickupTime =
+      pickupTime ||
+      displayPickupTime;
+
+    if (!finalPickupLocation) {
+      return toast.error("Please enter the exact pickup location.");
+    }
+
+    if (!finalPickupTime) {
+      return toast.error("Please select the pickup time.");
+    }
+    if (!isCustomBooking && (travellerCount < 1 || travellerCount > availableSlots)) {
       return toast.error(`Only ${availableSlots} slot(s) are currently available.`);
     }
 
@@ -153,13 +260,15 @@ export default function Checkout(
     }));
 
     bookingMutation.mutate({
-      tour: tour._id,
+      ...(isCustomBooking
+        ? { customTourRequest: booking.customTourRequest?._id || booking.customTourRequest }
+        : { tour: tour._id }),
       travelDate,
       travelers,
       numberOfGuests: Number(travellerCount),
       contact: { phone },
-      pickupLocation: pickupLocation.trim(),
-      pickupTime,
+      pickupLocation: finalPickupLocation,
+      pickupTime: finalPickupTime,
       hotelName: hotelName.trim(),
       roomNumber: roomNumber.trim(),
       specialRequests: specialRequests
@@ -177,13 +286,25 @@ export default function Checkout(
         <p className="mb-6 text-gray-500">Provide your trip and pickup details so the operations team can prepare your tour.</p>
 
         <div className="mb-6 rounded-xl bg-gray-100 p-5">
-          <h2 className="text-xl font-semibold">{tour.title}</h2>
-          <p className="mt-2 text-gray-600">{tour.description}</p>
+          <h2 className="text-xl font-semibold">
+{isCustomBooking
+? booking.title || "Custom Tour"
+: tour?.title || "Custom Tour"}
+</h2>
+          <p className="mt-2 text-gray-600">
+{isCustomBooking
+? booking?.customTourRequest?.requirements || "Custom tour package"
+: tour?.description}
+</p>
           <div className="mt-4 flex flex-wrap gap-5 font-semibold">
-            <span className="text-green-700">KES {Number(tour.price || 0).toLocaleString()} / person</span>
-            <span>Total slots: {tour.totalSlots ?? tour.capacity ?? 0}</span>
-            <span>Booked: {tour.bookedSlots ?? 0}</span>
-            <span className={availableSlots > 0 ? "text-green-700" : "text-red-600"}>Available: {availableSlots}</span>
+            <span className="text-green-700">
+KES {Number(isCustomBooking ? booking?.totalAmount || 0 : tour?.price || 0).toLocaleString()}
+</span>
+            <span>Total slots: {isCustomBooking ? "Unlimited" : tour?.totalSlots ?? tour?.capacity ?? 0}</span>
+            <span>Booked: {isCustomBooking ? 0 : tour?.bookedSlots ?? 0}</span>
+            <span className={availableSlots > 0 ? "text-green-700" : "text-red-600"}>
+Available: {isCustomBooking ? "Available" : availableSlots}
+</span>
           </div>
         </div>
 
@@ -219,28 +340,28 @@ export default function Checkout(
 <form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid gap-5 md:grid-cols-2">
             <Field label="Travel date" required>
-              <input type="date" value={travelDate} onChange={(e) => setTravelDate(e.target.value)} className="w-full rounded-lg border p-3" required />
+              <input type="date" value={travelDate || displayTravelDate} onChange={(e)=>setTravelDate(e.target.value)} className="w-full rounded-lg border p-3" required />
             </Field>
 
             <Field label="Number of travellers" required>
-              <input type="number" min="1" max={Math.max(availableSlots, 1)} value={travellerCount} onChange={(e) => setTravellerCount(Number(e.target.value))} className="w-full rounded-lg border p-3" required />
+              <input type="number" min="1" max={Math.max(availableSlots, 1)} value={displayTravellers} className="w-full rounded-lg border p-3 bg-gray-100 cursor-not-allowed" readOnly required />
             </Field>
           </div>
 
           <Field label="Exact pickup location" required hint="Hotel, apartment, airport terminal, landmark or full address.">
-            <input value={pickupLocation} onChange={(e) => setPickupLocation(e.target.value)} placeholder="e.g. Sarova Stanley, Nairobi CBD" className="w-full rounded-lg border p-3" required />
+            <input value={pickupLocation || displayPickupLocation} onChange={(e)=>setPickupLocation(e.target.value)} placeholder="e.g. Sarova Stanley, Nairobi CBD" className="w-full rounded-lg border p-3" required />
           </Field>
 
           <Field label="Pickup time" required>
-            <input type="datetime-local" value={pickupTime} onChange={(e) => setPickupTime(e.target.value)} className="w-full rounded-lg border p-3" required />
+            <input type="datetime-local" value={pickupTime || displayPickupTime} onChange={(e)=>setPickupTime(e.target.value)} className="w-full rounded-lg border p-3" required />
           </Field>
 
           <div className="grid gap-5 md:grid-cols-2">
             <Field label="Hotel / accommodation">
-              <input value={hotelName} onChange={(e) => setHotelName(e.target.value)} placeholder="Hotel or accommodation name" className="w-full rounded-lg border p-3" />
+              <input value={hotelName || displayHotel} onChange={(e)=>setHotelName(e.target.value)} placeholder="Hotel or accommodation name" className="w-full rounded-lg border p-3" />
             </Field>
             <Field label="Room number">
-              <input value={roomNumber} onChange={(e) => setRoomNumber(e.target.value)} placeholder="Optional" className="w-full rounded-lg border p-3" />
+              <input value={roomNumber || displayRoom} onChange={(e)=>setRoomNumber(e.target.value)} placeholder="Optional" className="w-full rounded-lg border p-3" />
             </Field>
           </div>
 
@@ -249,7 +370,7 @@ export default function Checkout(
           </Field>
 
           <Field label="Special requests" hint="One request per line.">
-            <textarea value={specialRequests} onChange={(e) => setSpecialRequests(e.target.value)} rows={4} placeholder="Dietary needs, accessibility, celebration, child seat, etc." className="w-full rounded-lg border p-3" />
+            <textarea value={specialRequests || displaySpecialRequests} onChange={(e)=>setSpecialRequests(e.target.value)} rows={4} placeholder="Dietary needs, accessibility, celebration, child seat, etc." className="w-full rounded-lg border p-3" />
           </Field>
 
           <div className="rounded-xl bg-green-50 p-4 text-xl font-bold text-green-900">

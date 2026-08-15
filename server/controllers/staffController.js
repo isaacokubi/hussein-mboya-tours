@@ -90,6 +90,18 @@ export const getStaff = async (req, res, next) => {
             $options: "i",
           },
         },
+        {
+          position: {
+            $regex: search,
+            $options: "i",
+          },
+        },
+        {
+          status: {
+            $regex: search,
+            $options: "i",
+          },
+        },
       ];
     }
 

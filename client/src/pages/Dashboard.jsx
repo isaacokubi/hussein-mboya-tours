@@ -270,6 +270,20 @@ if (isLoading) {
           >
             My Bookings
           </Link>
+
+          <Link
+            to="/custom-tour"
+            className="
+          bg-emerald-600
+          text-white
+          px-6
+          py-3
+          rounded-xl
+          font-bold
+          "
+          >
+            Create Custom Tour
+          </Link>
         </div>
       </div>
 

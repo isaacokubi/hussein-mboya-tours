@@ -133,7 +133,14 @@ const bookingSchema = new mongoose.Schema(
     |--------------------------------------------------------------------------
     */
 
-    customer: {
+    
+customTourRequest:{
+type:mongoose.Schema.Types.ObjectId,
+ref:"CustomTourRequest",
+default:null
+},
+
+customer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Customer",
       required: false,
@@ -212,7 +219,8 @@ const bookingSchema = new mongoose.Schema(
     tour: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Tour",
-      required: true,
+      required: false,
+      default: null,
       index: true,
     },
 
@@ -869,6 +877,16 @@ bookingSchema.index({
 bookingSchema.index({
   tour: 1,
   travelDate: 1,
+});
+
+
+// Ensure every booking belongs to either a standard tour or a custom tour request
+schema.pre("validate", function(next) {
+  if (!this.tour && !this.customTourRequest) {
+    return next(new Error("Booking must have either a tour or a custom tour request."));
+  }
+
+  next();
 });
 
 /*
