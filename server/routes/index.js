@@ -3,6 +3,7 @@ import superAdminRoutes from "./superAdminRoutes.js";
 import apiMonitorRoutes from "./apiMonitorRoutes.js";
 import superAdminOperationsRoutes from "./superAdminOperationsRoutes.js";
 import superAdminToolsRoutes from "./superAdminToolsRoutes.js";
+import superAdminMaintenanceRoutes from "./superAdminMaintenanceRoutes.js";
 
 import commissionRoutes from "./commissionRoutes.js";
 import tourManagerRoutes from "./tourManagerRoutes.js";
@@ -232,3 +233,5 @@ superAdminToolsRoutes
 export default router;
 
 
+
+router.use("/superadmin/maintenance", superAdminMaintenanceRoutes);
