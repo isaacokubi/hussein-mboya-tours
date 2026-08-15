@@ -160,3 +160,6 @@ build/
 
 # Database backups
 server/server/backups/
+node_modules/
+client/node_modules/
+server/node_modules/
