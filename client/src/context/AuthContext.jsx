@@ -96,7 +96,16 @@ const normalizeUser = (user)=>{
 
         user?.legacyRole
 
-      )
+      ),
+
+
+    permissions:
+
+      user?.permissions ||
+
+      user?.roleId?.permissions ||
+
+      []
 
 
   };
