@@ -327,13 +327,24 @@ export const updateRole = async (req, res, next) => {
 
     if (
         existingRole &&
-        existingRole.name === "super_admin" &&
-        req.user.role !== "super_admin"
+        existingRole.name === "super_admin"
     ) {
-        return res.status(403).json({
+
+        const currentRole =
+          req.user?.roleId?.name ||
+          req.user?.role ||
+          req.user?.legacyRole;
+
+        if(currentRole !== "super_admin") {
+
+          return res.status(403).json({
+            success:false,
             message:
             "Only super admin can modify super admin role"
-        });
+          });
+
+        }
+
     }
 
   try {

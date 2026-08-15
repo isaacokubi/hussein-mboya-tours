@@ -1,3 +1,5 @@
+import api from "../../api/axios";
+
 import React,{useEffect,useState} from "react";
 
 export default function SecurityCenter(){
@@ -9,8 +11,8 @@ const [loading,setLoading]=useState(true);
 useEffect(()=>{
 
 Promise.all([
-fetch("/api/security/status").then(r=>r.json()),
-fetch("/api/security/events").then(r=>r.json())
+api.get("/security/status").then(r=>r.data),
+api.get("/security/events").then(r=>r.data)
 ])
 .then(([status,eventData])=>{
 

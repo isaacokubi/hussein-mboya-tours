@@ -224,7 +224,11 @@ try{
   );
   localStorage.setItem(
     "permissions",
-    JSON.stringify(currentUser.permissions || [])
+    JSON.stringify(
+      (currentUser.permissions || []).map(
+        p => typeof p === "string" ? p : p.name
+      )
+    )
   );
 
   return currentUser;
@@ -455,24 +459,25 @@ const isAdmin =
 
 
 
-const hasPermission =
-(permission)=>{
 
+const hasPermission = (permission)=>{
 
- if(isAdmin){
+  if(!user){
+    return false;
+  }
 
-  return true;
+  const permissions =
+    Array.isArray(user.permissions)
+    ? user.permissions
+    : JSON.parse(
+        localStorage.getItem("permissions") || "[]"
+      );
 
- }
-
-
-
- return permissions.some(
-  (item) =>
-    (typeof item === "string" ? item : item?.name) === permission ||
-    (typeof item === "object" && item?.path === permission)
- );
-
+  return permissions.some(p =>
+    typeof p === "string"
+      ? p === permission
+      : p?.name === permission
+  );
 
 };
 

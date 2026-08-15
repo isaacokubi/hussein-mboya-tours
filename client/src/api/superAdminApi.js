@@ -9,7 +9,7 @@ export const getAuditLogs = async () =>
   (await axios.get("/superadmin/audit")).data;
 
 export const getSecurityStatus = async () =>
-  (await axios.get("/superadmin/security")).data;
+  (await axios.get("/security/status")).data;
 
 export const getDatabaseStatus = async () =>
   (await axios.get("/superadmin/database")).data;

@@ -61,8 +61,11 @@ roleId:req.user?.roleId
             */
 
             if(
-                req.user.role === "admin" ||
-                req.user.role === "super_admin"
+                [
+                    "admin",
+                    "super_admin",
+                    "superadmin"
+                ].includes(req.user.role)
             ){
 
                 permissions.push(
