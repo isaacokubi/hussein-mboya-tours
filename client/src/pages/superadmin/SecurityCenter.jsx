@@ -16,8 +16,8 @@ api.get("/security/events").then(r=>r.data)
 ])
 .then(([status,eventData])=>{
 
-setSecurity(status.data || {});
-setEvents(eventData.data || []);
+setSecurity(status || {});
+setEvents(eventData || []);
 
 })
 .catch(()=>{})
@@ -56,7 +56,7 @@ Security Center
 <div className="p-5 rounded-xl shadow bg-white">
 <h3>Threat Level</h3>
 <p className="text-3xl">
-{security?.threatLevel}
+{security?.threatLevel?.toUpperCase() || 'Unknown'}
 </p>
 </div>
 
@@ -64,7 +64,7 @@ Security Center
 <div className="p-5 rounded-xl shadow bg-white">
 <h3>Authentication</h3>
 <p>
-{security?.authentication}
+{security?.authentication?.status || security?.authentication || 'Unknown'}
 </p>
 </div>
 
@@ -72,7 +72,7 @@ Security Center
 <div className="p-5 rounded-xl shadow bg-white">
 <h3>Authorization</h3>
 <p>
-{security?.authorization}
+{security?.authorization?.status || security?.authorization || 'Unknown'}
 </p>
 </div>
 
