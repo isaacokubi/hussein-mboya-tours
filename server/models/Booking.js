@@ -881,7 +881,7 @@ bookingSchema.index({
 
 
 // Ensure every booking belongs to either a standard tour or a custom tour request
-schema.pre("validate", function(next) {
+bookingSchema.pre("validate", function(next) {
   if (!this.tour && !this.customTourRequest) {
     return next(new Error("Booking must have either a tour or a custom tour request."));
   }
