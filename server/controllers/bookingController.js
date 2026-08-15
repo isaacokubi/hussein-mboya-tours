@@ -230,16 +230,25 @@ export const createBooking = async (req, res, next) => {
 
     } catch (createError) {
       // Roll back the reserved capacity when booking creation fails.
-      try {
-        await releaseSlots(tour, totalTravellers);
-      } catch (releaseError) {
-        console.error("BOOKING CAPACITY ROLLBACK ERROR:", releaseError);
-      }
+        try {
+          if (tour) {
+            await releaseSlots(tour, totalTravellers);
+          }
+        } catch (releaseError) {
+          console.error("BOOKING CAPACITY ROLLBACK ERROR:", releaseError);
+        }
       throw createError;
     }
 
     // External notifications must never make a successful booking fail.
-    const bookingTour = tourData;
+    const bookingTour = tourData || customTourData || {
+      title: "Custom Tour Request"
+    };
+
+    const bookingTourTitle =
+      tourData?.title ||
+      customTourData?.destination ||
+      "Custom Tour Request";
     const systemSettings = await SystemSetting.findOne({ key: "default" }).lean().catch(() => null);
     const bookingNotificationsEnabled = systemSettings?.bookingNotifications !== false;
     const customerPhone =
@@ -249,7 +258,7 @@ export const createBooking = async (req, res, next) => {
       "";
     const bookingMessage = [
       `${companyName} booking ${booking.bookingNumber}.`,
-      `Tour: ${bookingTour.title}.`,
+      `Tour: ${bookingTourTitle}.`,
       `Date: ${new Date(booking.travelDate).toLocaleDateString("en-KE")}.`,
       `Guests: ${booking.numberOfGuests}.`,
       pickupLocation ? `Pickup: ${pickupLocation}.` : "",
@@ -271,7 +280,7 @@ export const createBooking = async (req, res, next) => {
         recipient: req.user._id,
         user: req.user._id,
         title: "Booking received",
-        message: `Booking ${booking.bookingNumber} for ${bookingTour.title} has been received.`,
+        message: `Booking ${booking.bookingNumber} for ${bookingTourTitle} has been received.`,
         type: "booking",
         relatedModel: "Booking",
         relatedId: booking._id,
@@ -1419,10 +1428,12 @@ booking.paymentStatus =
 
 
 
-await releaseSlots(
-booking.tour,
-booking.numberOfGuests
-);
+if (booking.tour) {
+  await releaseSlots(
+    booking.tour,
+    booking.numberOfGuests
+  );
+}
 
 
 
