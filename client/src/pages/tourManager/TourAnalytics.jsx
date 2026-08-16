@@ -5,8 +5,9 @@ import { useQuery } from "@tanstack/react-query";
 import { getTourReports } from "../../api/tourApi";
 
 
-export default function TourAnalytics(
-) {
+export default function TourAnalytics() {
+  const { settings } = useSettings();
+
   const {
     data,
 
@@ -100,7 +101,7 @@ export default function TourAnalytics(
                     text-gray-500
                 "
         >
-          Business intelligence overview for ${settings?.companyName || 'Company'}
+          Business intelligence overview for {settings?.companyName || "Company"}
         </p>
       </div>
 

@@ -2,11 +2,10 @@ import Booking from "../models/Booking.js";
 import Payment from "../models/Payment.js";
 
 // A confirmed payment is the sole financial source of truth. Booking status is deliberately ignored.
-const PAID = "completed";
 
 export const getRevenueAnalytics = async () => {
   const [result] = await Payment.aggregate([
-    { $match: { status: PAID } },
+    { $match: { status: "completed" } },
     { $group: {
       _id: null,
       totalRevenue: { $sum: { $max: [0, { $subtract: [{ $ifNull: ["$amount", 0] }, { $ifNull: ["$refundedAmount", 0] }] }] } },
@@ -29,7 +28,7 @@ export const getBookingAnalytics = async () => Booking.aggregate([
  * and recognized revenue.
  */
 export const getPopularTours = async () => Payment.aggregate([
-  { $match: { status: PAID, booking: { $ne: null } } },
+  { $match: { status: "completed", booking: { $ne: null } } },
   { $group: {
     _id: "$booking",
     paidAmount: { $sum: { $max: [0, { $subtract: [{ $ifNull: ["$amount", 0] }, { $ifNull: ["$refundedAmount", 0] }] }] } },

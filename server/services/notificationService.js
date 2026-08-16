@@ -5,9 +5,7 @@ import Notification from "../models/Notification.js";
 
 import { sendEmail } from "./emailService.js";
 
-import { io } from "../server.js";
-
-import { getSocketId } from "../socket/socketManager.js";
+import { sendNotificationToUser } from "../socket/socketManager.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -43,11 +41,11 @@ export const createNotification = async ({
   });
 
   try {
-    const socketId = getSocketId(recipient.toString());
-
-    if (socketId) {
-      io.to(socketId).emit("notification", notification);
-    }
+    sendNotificationToUser(
+      recipient.toString(),
+      "notification",
+      notification
+    );
   } catch (error) {
     console.error("Socket notification failed:", error.message);
   }

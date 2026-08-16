@@ -21,8 +21,8 @@ import {
 } from "../services/inventoryService.js";
 
 import {
+  BOOKING_PAYMENT_STATUSES,
   BOOKING_STATUSES,
-  PAYMENT_STATUSES,
   PAYMENT_METHODS,
 } from "../constants/bookingConstants.js";
 
@@ -824,7 +824,7 @@ paymentData={}
 
 
 if(
-!PAYMENT_STATUSES.includes(paymentStatus)
+!BOOKING_PAYMENT_STATUSES.includes(paymentStatus)
 ){
 
 throw new Error(
@@ -1205,7 +1205,7 @@ if(req.body.paymentStatus){
 
 
 if(
-!PAYMENT_STATUSES.includes(
+!BOOKING_PAYMENT_STATUSES.includes(
 req.body.paymentStatus
 )
 ){

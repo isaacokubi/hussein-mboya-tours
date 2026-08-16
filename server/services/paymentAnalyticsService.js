@@ -13,7 +13,7 @@ export const getPaymentStatistics = async () => {
   const statistics = await Payment.aggregate([
     {
       $match: {
-        paymentStatus: "paid",
+        status: "completed",
       },
     },
 
@@ -63,7 +63,7 @@ export const getPaymentStatistics = async () => {
   const totals = await Payment.aggregate([
     {
       $match: {
-        paymentStatus: "paid",
+        status: "completed",
       },
     },
 

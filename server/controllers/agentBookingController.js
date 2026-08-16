@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 
+
+import { BOOKING_STATUSES } from "../constants/bookingConstants.js";
 import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
 import Customer from "../models/Customer.js";
@@ -15,15 +17,7 @@ import { createCommission } from "../services/commissionService.js";
 const isValidId = (id) =>
   mongoose.Types.ObjectId.isValid(id);
 
-const BOOKING_STATUSES = [
-  "pending",
-  "confirmed",
-  "assigned",
-  "ongoing",
-  "completed",
-  "cancelled",
-  "refunded",
-];
+
 
 /*
 |--------------------------------------------------------------------------

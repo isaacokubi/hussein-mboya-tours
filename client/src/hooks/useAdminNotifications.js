@@ -1,67 +1,59 @@
-import {
-useEffect
-} from "react";
+import { useEffect } from "react";
 
 import socket from "../socket/socket";
 
 
-export default function useAdminNotifications(){
+export default function useAdminNotifications() {
+
+  useEffect(() => {
+
+    const handleNewBooking = (data) => {
+
+      console.log(
+        "New booking:",
+        data
+      );
+
+    };
 
 
+    const handlePaymentReceived = (data) => {
 
-useEffect(()=>{
+      console.log(
+        "Payment:",
+        data
+      );
 
-
-socket.on(
-"newBooking",
-(data)=>{
-
-
-console.log(
-"New booking:",
-data
-);
+    };
 
 
-}
-);
+    socket.on(
+      "newBooking",
+      handleNewBooking
+    );
 
 
-
-socket.on(
-"paymentReceived",
-(data)=>{
-
-
-console.log(
-"Payment:",
-data
-);
+    socket.on(
+      "paymentReceived",
+      handlePaymentReceived
+    );
 
 
-}
-);
+    return () => {
+
+      socket.off(
+        "newBooking",
+        handleNewBooking
+      );
 
 
+      socket.off(
+        "paymentReceived",
+        handlePaymentReceived
+      );
 
-return ()=>{
+    };
 
-
-socket.off(
-"newBooking"
-);
-
-
-socket.off(
-"paymentReceived"
-);
-
-
-};
-
-
-},[]);
-
-
+  }, []);
 
 }

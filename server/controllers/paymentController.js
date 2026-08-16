@@ -93,6 +93,7 @@ export const getPayments = async (req, res, next) => {
     const {
       status,
       provider,
+      method,
       booking,
       customer,
       user,
@@ -104,6 +105,7 @@ export const getPayments = async (req, res, next) => {
 
     if (status) query.status = status;
     if (provider) query.provider = provider;
+    if (method) query.method = method;
     if (booking) query.booking = booking;
     if (customer) query.customer = customer;
     if (user) query.user = user;
@@ -204,7 +206,7 @@ export const createPayment = async (req, res, next) => {
       method,
       paymentMethod: paymentMethod || undefined,
       amount: Number(amount),
-      currency: currency || currency,
+      currency: currency || process.env.DEFAULT_CURRENCY || "KES",
       phone: phone || "",
       phoneNumber: phoneNumber || phone || "",
       transactionId: transactionId || "",

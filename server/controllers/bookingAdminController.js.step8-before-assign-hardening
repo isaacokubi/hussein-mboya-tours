@@ -3,11 +3,11 @@ import Booking from "../models/Booking.js";
 
 import {
   BOOKING_STATUSES,
-  BOOKING_PAYMENT_STATUSES,
+  PAYMENT_STATUSES,
   isValidBookingStatus,
-  isValidBookingPaymentStatus,
+  isValidPaymentStatus,
   canTransitionBookingStatus,
-  canTransitionBookingPaymentStatus,
+  canTransitionPaymentStatus,
 } from "../constants/bookingConstants.js";
 
 /*
@@ -95,7 +95,7 @@ export const getAllBookings = async (req, res, next) => {
 
     if (
       paymentStatus &&
-      BOOKING_PAYMENT_STATUSES.includes(
+      PAYMENT_STATUSES.includes(
         paymentStatus
       )
     ) {
@@ -551,6 +551,7 @@ export const assignResources = async (
   next
 ) => {
   try {
+
     const {
       guide,
       driver,
@@ -560,7 +561,7 @@ export const assignResources = async (
 
     /*
     |--------------------------------------------------------------------------
-    | VALIDATE BOOKING ID
+    | Validate Booking ID
     |--------------------------------------------------------------------------
     */
 
@@ -573,7 +574,7 @@ export const assignResources = async (
 
     /*
     |--------------------------------------------------------------------------
-    | VALIDATE RESOURCE IDs
+    | Validate Resource IDs
     |--------------------------------------------------------------------------
     */
 
@@ -592,107 +593,57 @@ export const assignResources = async (
     }
 
     if (vehicle && !isValidId(vehicle)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid vehicle ID.",
-      });
+      return res.status(400).json({ success: false, message: "Invalid vehicle ID." });
     }
 
     if (agent && !isValidId(agent)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid agent ID.",
-      });
+      return res.status(400).json({ success: false, message: "Invalid agent ID." });
     }
 
     /*
     |--------------------------------------------------------------------------
-    | FIND BOOKING
+    | Update Booking
+    |--------------------------------------------------------------------------
+    */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Verify Payment Before Assignment
     |--------------------------------------------------------------------------
     */
 
     const existingBooking =
       await Booking.findById(req.params.id);
 
+
     if (!existingBooking) {
+
       return res.status(404).json({
-        success: false,
-        message: "Booking not found.",
+        success:false,
+        message:"Booking not found."
       });
+
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | PAYMENT PROTECTION
-    |--------------------------------------------------------------------------
-    |
-    | Only paid bookings may receive operational resources.
-    |--------------------------------------------------------------------------
-    */
 
     if (existingBooking.paymentStatus !== "paid") {
+
       return res.status(400).json({
-        success: false,
-        message: "Only paid bookings can be assigned.",
-        paymentStatus:
-          existingBooking.paymentStatus,
+        success:false,
+        message:"Only paid bookings can be assigned."
       });
+
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | NO-OP PROTECTION
-    |--------------------------------------------------------------------------
-    */
-
-    if (existingBooking.status === "assigned") {
-      return res.status(400).json({
-        success: false,
-        message: "Booking is already assigned.",
-      });
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | VALIDATE BOOKING TRANSITION
-    |--------------------------------------------------------------------------
-    |
-    | Assignment must follow the centralized lifecycle:
-    |
-    | pending -> confirmed -> assigned
-    |--------------------------------------------------------------------------
-    */
-
-    if (
-      !canTransitionBookingStatus(
-        existingBooking.status,
-        "assigned"
-      )
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          `Booking cannot transition from ` +
-          `"${existingBooking.status}" to "assigned".`,
-        currentStatus:
-          existingBooking.status,
-        requestedStatus:
-          "assigned",
-      });
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | UPDATE BOOKING
-    |--------------------------------------------------------------------------
-    */
 
     const booking =
       await Booking.findByIdAndUpdate(
         req.params.id,
         {
           assignedGuide: guide || null,
+
           assignedDriver: driver || null,
+
           assignedVehicle: vehicle || null,
           agent: agent || null,
           status: "assigned",
@@ -732,19 +683,25 @@ export const assignResources = async (
 
     /*
     |--------------------------------------------------------------------------
-    | RESPONSE
+    | Response
     |--------------------------------------------------------------------------
     */
 
-    return res.status(200).json({
+    res.status(200).json({
+
       success: true,
+
       message:
         "Resources assigned successfully.",
+
       data: booking,
+
     });
 
   } catch (error) {
+
     next(error);
+
   }
 };
 
@@ -784,11 +741,11 @@ export const updatePaymentStatus = async (
     |--------------------------------------------------------------------------
     */
 
-    if (!isValidBookingPaymentStatus(status)) {
+    if (!isValidPaymentStatus(status)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid booking payment status.",
-        allowedStatuses: BOOKING_PAYMENT_STATUSES,
+        message: "Invalid payment status.",
+        allowedStatuses: PAYMENT_STATUSES,
       });
     }
 
@@ -829,7 +786,7 @@ export const updatePaymentStatus = async (
     */
 
     if (
-      !canTransitionBookingPaymentStatus(
+      !canTransitionPaymentStatus(
         booking.paymentStatus,
         status
       )

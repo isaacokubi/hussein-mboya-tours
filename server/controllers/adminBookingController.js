@@ -1,4 +1,9 @@
 import mongoose from "mongoose";
+
+import {
+  BOOKING_STATUSES,
+  BOOKING_PAYMENT_STATUSES,
+} from "../constants/bookingConstants.js";
 import Booking from "../models/Booking.js";
 
 /*
@@ -7,23 +12,7 @@ import Booking from "../models/Booking.js";
 |--------------------------------------------------------------------------
 */
 
-const BOOKING_STATUSES = [
-  "pending",
-  "confirmed",
-  "assigned",
-  "ongoing",
-  "completed",
-  "cancelled",
-  "refunded",
-];
 
-const PAYMENT_STATUSES = [
-  "pending",
-  "paid",
-  "failed",
-  "cancelled",
-  "refunded",
-];
 
 
 /*
@@ -49,7 +38,7 @@ export const getAllBookings = async (req, res, next) => {
 
     if (
       req.query.paymentStatus &&
-      PAYMENT_STATUSES.includes(req.query.paymentStatus)
+      BOOKING_PAYMENT_STATUSES.includes(req.query.paymentStatus)
     ) {
       filter.paymentStatus = req.query.paymentStatus;
     }
@@ -306,7 +295,7 @@ export const updatePaymentStatus = async (
     } = req.body;
 
 
-    if (!PAYMENT_STATUSES.includes(status)) {
+    if (!BOOKING_PAYMENT_STATUSES.includes(status)) {
       return res.status(400).json({
         success: false,
         message: "Invalid payment status",

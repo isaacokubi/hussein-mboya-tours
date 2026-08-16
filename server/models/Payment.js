@@ -8,6 +8,15 @@ import mongoose from "mongoose";
 |--------------------------------------------------------------------------
 */
 
+
+/*
+|--------------------------------------------------------------------------
+| PAYMENT IDEMPOTENCY INDEXES
+|--------------------------------------------------------------------------
+| Prevent duplicate M-Pesa transaction records.
+|--------------------------------------------------------------------------
+*/
+
 const paymentSchema = new mongoose.Schema(
   {
     /*
@@ -201,6 +210,11 @@ const paymentSchema = new mongoose.Schema(
       default: "",
     },
 
+    failedAt: {
+      type: Date,
+      default: null,
+    },
+
     /*
     |--------------------------------------------------------------------------
     | REFUND
@@ -230,6 +244,12 @@ const paymentSchema = new mongoose.Schema(
     },
 
     refundedAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    refundRequestedAmount: {
       type: Number,
       default: 0,
       min: 0,

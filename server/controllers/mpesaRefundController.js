@@ -3,122 +3,155 @@ import Payment from "../models/Payment.js";
 import Booking from "../models/Booking.js";
 
 
-export const mpesaRefundResult = async(req,res,next)=>{
+import { refundBookingPayment } from "../services/paymentLifecycleService.js";
 
-try{
+export const mpesaRefundResult = async (
+  req,
+  res,
+  next
+) => {
 
+  try {
 
-console.log(
-"MPESA REFUND RESULT",
-JSON.stringify(req.body,null,2)
-);
+    console.log(
+      "MPESA REFUND RESULT",
+      JSON.stringify(
+        req.body,
+        null,
+        2
+      )
+    );
 
+    const result =
+      req.body?.Result;
 
+    if (!result) {
 
-const result =
-req.body.Result;
+      return res.json({
+        success: true,
+        message:
+          "Invalid refund callback",
+      });
 
+    }
 
+    const conversationId =
+      result.ConversationID ||
+      result.OriginatorConversationID ||
+      "";
 
-if(!result){
+    if (!conversationId) {
 
-return res.json({
-success:false,
-message:"Invalid refund callback"
-});
+      return res.json({
+        success: true,
+        message:
+          "Refund conversation ID missing",
+      });
 
-}
+    }
 
+    const payment =
+      await Payment.findOne({
+        refundReference:
+          conversationId,
+      });
 
+    if (!payment) {
 
-const conversationId =
-result.ConversationID ||
-result.OriginatorConversationID;
+      return res.json({
+        success: true,
+        message:
+          "Payment not found",
+      });
 
+    }
 
+    /*
+    |--------------------------------------------------------------------------
+    | IDEMPOTENCY
+    |--------------------------------------------------------------------------
+    */
 
-const payment =
-await Payment.findOne({
+    if (
+      payment.refundStatus ===
+        "completed" &&
+      payment.status ===
+        "refunded"
+    ) {
 
-refundReference:
-conversationId
+      return res.json({
+        success: true,
+        message:
+          "Refund already processed",
+      });
 
-});
+    }
 
+    /*
+    |--------------------------------------------------------------------------
+    | M-PESA REFUND SUCCESS
+    |--------------------------------------------------------------------------
+    */
 
+    if (
+      Number(result.ResultCode) === 0
+    ) {
 
-if(!payment){
+      await refundBookingPayment({
 
-return res.json({
-success:true,
-message:"Payment not found"
-});
+        payment,
 
-}
+        refundAmount:
+          Number(
+            payment.refundRequestedAmount ||
+            payment.amount ||
+            0
+          ),
 
+        refundData: {
 
+          refundReference:
+            conversationId,
 
-if(
-result.ResultCode === 0
-){
+          refundStatus:
+            "completed",
 
-payment.refundStatus="completed";
+          refundResponse:
+            result,
 
-payment.status="refunded";
+        },
 
-payment.refundedAt =
-new Date();
+      });
 
+    } else {
 
+      payment.refundStatus =
+        "failed";
 
-if(payment.booking){
+      payment.refundReference =
+        conversationId;
 
-const booking =
-await Booking.findById(
-payment.booking
-);
+      payment.refundRequestedAmount =
+        Number(
+          payment.refundRequestedAmount ||
+          0
+        );
 
+      await payment.save();
 
-if(booking){
+    }
 
-booking.refundStatus="completed";
+    return res.json({
+      success: true,
+    });
 
-booking.paymentStatus="refunded";
+  } catch (error) {
 
-booking.refundedAt =
-new Date();
+    next(error);
 
-await booking.save();
-
-}
-
-}
-
-}else{
-
-payment.refundStatus="failed";
-
-}
-
-
-await payment.save();
-
-
-
-res.json({
-success:true
-});
-
-
-}catch(error){
-
-next(error);
-
-}
+  }
 
 };
-
-
 
 export const mpesaRefundTimeout = async(req,res)=>{
 

@@ -4,7 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createBooking,getBookingById,cancelBooking } from "../api/bookingApi";
-import { initiateMpesa } from "../api/mpesaApi";
+import { initiateMpesa, checkPaymentStatus } from "../api/mpesaApi";
 import { getTourById } from "../api/tourApi";
 import api from "../api/axios";
 import { getPublicSettings } from "../api/settingsApi";
@@ -32,6 +32,7 @@ export default function Checkout(
   const [roomNumber, setRoomNumber] = useState("");
   const [specialRequests, setSpecialRequests] = useState("");
   const [paymentState, setPaymentState] = useState(null);
+  const [paymentPolling, setPaymentPolling] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("mpesa");
   const [createdBookingId, setCreatedBookingId] = useState(null);
   const { data: publicSettings } = useQuery({ queryKey:["public-settings"], queryFn:getPublicSettings });
@@ -163,8 +164,13 @@ const availableSlots = isCustomBooking
 
   const bookingMutation = useMutation({
     mutationFn: createBooking,
-    onSuccess: async (response) => {
+    onSuccess: async (response, variables) => {
       const booking = response?.data?.booking || response?.booking || response;
+      const selectedPaymentMethod = String(
+        variables?.paymentMethod || paymentMethod || ""
+      ).toLowerCase();
+
+      const normalizedPhone = variables?.normalizedPhone;
 
       setCreatedBookingId(booking?._id);
 
@@ -173,10 +179,9 @@ const availableSlots = isCustomBooking
           throw new Error("Booking ID was not returned.");
         }
 
-        if (paymentMethod === "stripe") {
+        if (selectedPaymentMethod === "stripe") {
           const stripe = await api.post("/payments/stripe/checkout", {
             bookingId: booking._id,
-            amount: Number(booking.totalAmount || 0),
             origin: window.location.origin,
           });
 
@@ -188,10 +193,9 @@ const availableSlots = isCustomBooking
           return;
         }
 
-        if (paymentMethod === "bank") {
+        if (selectedPaymentMethod === "bank") {
           await api.post("/payments/stripe/bank-transfer", {
             bookingId: booking._id,
-            amount: Number(booking.totalAmount || 0),
           });
 
           toast.success("Booking created. Bank transfer instructions are available in your booking.");
@@ -199,10 +203,18 @@ const availableSlots = isCustomBooking
           return;
         }
 
+        if (!normalizedPhone) {
+          throw new Error("M-Pesa phone number is missing.");
+        }
+
+        console.log(
+          "M-PESA PAYMENT PHONE:",
+          normalizedPhone
+        );
+
         const paymentResponse = await initiateMpesa({
           bookingId: booking._id,
-          phoneNumber: phone,
-          amount: Number(booking.totalAmount || 0),
+          phoneNumber: normalizedPhone,
         });
 
         const checkoutRequestId =
@@ -223,7 +235,6 @@ const availableSlots = isCustomBooking
         });
 
         toast.success("M-Pesa prompt sent. Redirecting you to your bookings...");
-        window.setTimeout(() => navigate("/my-bookings"), 1800);
       } catch (paymentError) {
         toast.error(
           paymentError?.response?.data?.message ||
@@ -323,12 +334,44 @@ Number(tour?.price || 0) * Number(travellerCount);
     event.preventDefault();
 
     if (!travelDate) return toast.error("Please select a travel date.");
-    if (!phone) return toast.error("Please enter your phone number.");
 
-    const normalizedPhone = phone.replace(/\\D/g, "");
+    let normalizedPhone = "";
+    let rawPhone = String(phone || "").trim();
 
-    if (!/^0[17]\\d{8}$/.test(normalizedPhone)) {
-      return toast.error("Enter a valid Safaricom number e.g. 0712345678");
+    if (paymentMethod === "mpesa") {
+      if (!rawPhone) {
+        return toast.error("Please enter your M-Pesa phone number.");
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | VALIDATE AND NORMALIZE M-PESA PHONE NUMBER
+      |--------------------------------------------------------------------------
+      |
+      | Accepted:
+      | 0707476586
+      | 0700000000
+      | 0100000000
+      | 0110000000
+      | +254707476586
+      | 254707476586
+      |
+      | Backend receives:
+      | 254707476586
+      |--------------------------------------------------------------------------
+      */
+
+      normalizedPhone = rawPhone.replace(/\D/g, "");
+
+      if (normalizedPhone.startsWith("0")) {
+        normalizedPhone = `254${normalizedPhone.substring(1)}`;
+      }
+
+      if (!/^254[17]\d{8}$/.test(normalizedPhone)) {
+        return toast.error(
+          "Enter a valid Safaricom phone number, e.g. 0707476586."
+        );
+      }
     }
 
     if (!total || Number(total) <= 0) {
@@ -368,7 +411,11 @@ Number(tour?.price || 0) * Number(travellerCount);
       numberOfGuests: Number(travellerCount),
       subtotal: Number(total),
       totalAmount: Number(total),
-      contact: { phone },
+      contact: {
+        ...(paymentMethod === "mpesa" && {
+          phone: rawPhone,
+        }),
+      },
       pickupLocation: finalPickupLocation,
       pickupTime: finalPickupTime,
       hotelName: hotelName.trim(),
@@ -377,9 +424,234 @@ Number(tour?.price || 0) * Number(travellerCount);
         .split("\n")
         .map((item) => item.trim())
         .filter(Boolean),
-      paymentMethod: "MPESA",
+      paymentMethod:
+        paymentMethod === "mpesa"
+          ? "MPESA"
+          : paymentMethod === "stripe"
+          ? "CARD"
+          : "BANK_TRANSFER",
+      ...(paymentMethod === "mpesa" && {
+        normalizedPhone,
+      }),
     });
   };
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | M-PESA PAYMENT STATUS POLLING
+  |--------------------------------------------------------------------------
+  |
+  | The M-Pesa callback on the server is the authoritative source.
+  | The browser simply polls the server until that callback updates
+  | the Payment document.
+  |
+  */
+
+  useEffect(() => {
+
+    if (
+      !paymentState?.checkoutRequestId ||
+      !paymentState?.bookingId ||
+      paymentState.status !== "pending"
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+    let attempts = 0;
+
+    const maxAttempts = 60;
+    const intervalMs = 3000;
+
+    setPaymentPolling(true);
+
+    const pollPayment = async () => {
+
+      if (cancelled) {
+        return;
+      }
+
+      attempts += 1;
+
+      try {
+
+        const response = await checkPaymentStatus(
+          paymentState.checkoutRequestId
+        );
+
+        const data =
+          response?.data ||
+          response ||
+          {};
+
+        const payment =
+          data?.payment ||
+          response?.payment ||
+          null;
+
+        const booking =
+          data?.booking ||
+          response?.booking ||
+          payment?.booking ||
+          null;
+
+        const status = String(
+          data?.status ||
+          payment?.status ||
+          "pending"
+        ).toLowerCase();
+
+        const failureReason =
+          payment?.failureReason ||
+          data?.failureReason ||
+          "M-Pesa payment was not completed.";
+
+        /*
+        |--------------------------------------------------------------------------
+        | SUCCESS
+        |--------------------------------------------------------------------------
+        */
+
+        if (status === "completed") {
+
+          if (cancelled) {
+            return;
+          }
+
+          setPaymentPolling(false);
+
+          setPaymentState((current) => ({
+            ...current,
+            status: "completed",
+            bookingId:
+              booking?._id ||
+              current?.bookingId,
+            message:
+              "Payment received successfully. Your booking has been confirmed.",
+            mpesaReceiptNumber:
+              payment?.mpesaReceiptNumber ||
+              payment?.transactionId ||
+              "",
+          }));
+
+          toast.success(
+            "M-Pesa payment confirmed successfully."
+          );
+
+          return;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | FAILED
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+          status === "failed" ||
+          status === "cancelled"
+        ) {
+
+          if (cancelled) {
+            return;
+          }
+
+          setPaymentPolling(false);
+
+          setPaymentState((current) => ({
+            ...current,
+            status,
+            message:
+              failureReason ||
+              "M-Pesa payment was not completed.",
+            failureReason,
+          }));
+
+          toast.error(
+            failureReason ||
+            "M-Pesa payment failed."
+          );
+
+          return;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | TIMEOUT
+        |--------------------------------------------------------------------------
+        */
+
+        if (attempts >= maxAttempts) {
+
+          setPaymentPolling(false);
+
+          setPaymentState((current) => ({
+            ...current,
+            status: "timeout",
+            message:
+              "We have not received M-Pesa confirmation yet. You can check the booking status or retry the payment.",
+          }));
+
+          return;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | CONTINUE POLLING
+        |--------------------------------------------------------------------------
+        */
+
+        if (!cancelled) {
+          window.setTimeout(
+            pollPayment,
+            intervalMs
+          );
+        }
+
+      } catch (error) {
+
+        console.warn(
+          "M-Pesa status polling error:",
+          error
+        );
+
+        if (attempts >= maxAttempts) {
+
+          setPaymentPolling(false);
+
+          setPaymentState((current) => ({
+            ...current,
+            status: "timeout",
+            message:
+              "We could not receive M-Pesa confirmation. Please check your booking status.",
+          }));
+
+          return;
+        }
+
+        if (!cancelled) {
+          window.setTimeout(
+            pollPayment,
+            intervalMs
+          );
+        }
+      }
+    };
+
+    pollPayment();
+
+    return () => {
+
+      cancelled = true;
+
+    };
+
+  }, [
+    paymentState?.checkoutRequestId,
+    paymentState?.bookingId,
+    paymentState?.status,
+  ]);
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-10">
@@ -423,26 +695,178 @@ Available: {availableSlots}
         </div>
 
         {paymentState && (
-          <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
+          <div
+            className={`mb-6 rounded-2xl border p-5 shadow-sm ${
+              paymentState.status === "completed"
+                ? "border-emerald-200 bg-emerald-50"
+                : paymentState.status === "failed" ||
+                  paymentState.status === "cancelled"
+                ? "border-red-200 bg-red-50"
+                : paymentState.status === "timeout"
+                ? "border-orange-200 bg-orange-50"
+                : "border-amber-200 bg-amber-50"
+            }`}
+          >
             <div className="flex items-start gap-4">
-              <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-xl ${paymentState.status === "completed" ? "bg-emerald-600 text-white" : paymentState.status === "failed" ? "bg-red-600 text-white" : "bg-amber-400 text-white"}`}>
-                {paymentState.status === "completed" ? "✓" : paymentState.status === "failed" ? "!" : "M"}
+
+              <div
+                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-xl ${
+                  paymentState.status === "completed"
+                    ? "bg-emerald-600 text-white"
+                    : paymentState.status === "failed" ||
+                      paymentState.status === "cancelled"
+                    ? "bg-red-600 text-white"
+                    : paymentState.status === "timeout"
+                    ? "bg-orange-500 text-white"
+                    : "bg-amber-400 text-white"
+                }`}
+              >
+                {paymentState.status === "completed"
+                  ? "✓"
+                  : paymentState.status === "failed" ||
+                    paymentState.status === "cancelled"
+                  ? "!"
+                  : paymentState.status === "timeout"
+                  ? "?"
+                  : "M"}
               </div>
-              <div>
+
+              <div className="min-w-0 flex-1">
+
                 <h2 className="text-lg font-bold text-slate-900">
-                  {paymentState.status === "completed" ? "Payment Confirmed" : paymentState.status === "failed" ? "Payment Not Completed" : "Check Your Phone"}
+
+                  {paymentState.status === "completed"
+                    ? "Payment Successful"
+                    : paymentState.status === "failed" ||
+                      paymentState.status === "cancelled"
+                    ? "Payment Failed"
+                    : paymentState.status === "timeout"
+                    ? "Payment Verification Taking Too Long"
+                    : "Waiting for M-Pesa Payment"}
+
                 </h2>
-                <p className="mt-1 text-slate-700">{paymentState.message}</p>
-                {paymentState.status !== "completed" && (
-                  <p className="mt-2 text-sm font-semibold text-emerald-800">
-                    An M-Pesa prompt should appear on {phone}. Enter your M-Pesa PIN to authorize the payment.
-                  </p>
+
+                <p className="mt-1 text-slate-700">
+                  {paymentState.message}
+                </p>
+
+                {paymentState.status === "pending" && (
+                  <div className="mt-4">
+
+                    <p className="text-sm font-semibold text-amber-800">
+                      Check your phone and enter your M-Pesa PIN.
+                    </p>
+
+                    {paymentPolling && (
+                      <div className="mt-3 flex items-center gap-2 text-sm text-slate-600">
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-emerald-600" />
+                        <span>
+                          Waiting for M-Pesa confirmation...
+                        </span>
+                      </div>
+                    )}
+
+                  </div>
                 )}
+
+                {paymentState.failureReason && (
+                  <div className="mt-4 rounded-lg border border-red-200 bg-white p-3 text-sm">
+                    <p className="font-bold text-red-700">
+                      M-Pesa response
+                    </p>
+
+                    <p className="mt-1 text-slate-700">
+                      {paymentState.failureReason}
+                    </p>
+                  </div>
+                )}
+
+                {paymentState.status === "completed" && (
+                  <div className="mt-4">
+
+                    {paymentState.mpesaReceiptNumber && (
+                      <p className="text-sm text-slate-600">
+                        M-Pesa Receipt:{" "}
+                        <strong>
+                          {paymentState.mpesaReceiptNumber}
+                        </strong>
+                      </p>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigate(
+                          `/bookings/${paymentState.bookingId}`
+                        )
+                      }
+                      className="mt-4 rounded-lg bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800"
+                    >
+                      View Booking
+                    </button>
+
+                  </div>
+                )}
+
+                {(paymentState.status === "failed" ||
+                  paymentState.status === "cancelled") && (
+                  <div className="mt-4 flex flex-wrap gap-3">
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPaymentState(null);
+                        setPaymentPolling(false);
+                      }}
+                      className="rounded-lg bg-amber-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-amber-700"
+                    >
+                      Retry Payment
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigate(
+                          `/bookings/${paymentState.bookingId}`
+                        )
+                      }
+                      className="rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
+                    >
+                      View Booking
+                    </button>
+
+                  </div>
+                )}
+
                 {paymentState.status === "timeout" && (
-                  <button type="button" onClick={() => navigate(`/bookings/${paymentState.bookingId}`)} className="mt-3 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
-                    View Booking Status
-                  </button>
+                  <div className="mt-4 flex flex-wrap gap-3">
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigate(
+                          `/bookings/${paymentState.bookingId}`
+                        )
+                      }
+                      className="rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
+                    >
+                      View Booking Status
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPaymentState(null);
+                        setPaymentPolling(false);
+                      }}
+                      className="rounded-lg bg-amber-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-amber-700"
+                    >
+                      Retry Payment
+                    </button>
+
+                  </div>
                 )}
+
               </div>
             </div>
           </div>
@@ -487,9 +911,23 @@ Available: {availableSlots}
             </Field>
           </div>
 
-          <Field label="M-Pesa phone number" required>
-            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0712345678" className="w-full rounded-lg border p-3" required />
-          </Field>
+          {paymentMethod === "mpesa" && (
+            <Field
+              label="M-Pesa phone number"
+              required
+              hint="Use a Safaricom number registered for M-Pesa."
+            >
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="0712345678"
+                className="w-full rounded-lg border p-3"
+                required
+                autoComplete="tel"
+              />
+            </Field>
+          )}
 
           <Field label="Special requests" hint="One request per line.">
             <textarea value={specialRequests || displaySpecialRequests} onChange={(e)=>setSpecialRequests(e.target.value)} rows={4} placeholder="Dietary needs, accessibility, celebration, child seat, etc." className="w-full rounded-lg border p-3" />

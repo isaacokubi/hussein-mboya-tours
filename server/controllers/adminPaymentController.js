@@ -1,5 +1,8 @@
 import Refund from "../models/Refund.js";
 import Payment from "../models/Payment.js";
+import {
+  refundBookingPayment
+} from "../services/paymentLifecycleService.js";
 import Booking from "../models/Booking.js";
 import RefundAudit from "../models/RefundAudit.js";
 import {requestMpesaRefund}
@@ -309,7 +312,7 @@ message:"Payment not found"
 
 
 if(
-!["completed", "paid", "success"].includes(payment.status)
+!["completed"].includes(payment.status)
 ){
 
 return res.status(400).json({
@@ -397,6 +400,11 @@ refundResponse.ConversationID ||
 refundResponse.OriginatorConversationID ||
 "";
 
+payment.refundRequestedAmount =
+Number(
+  payment.amount || 0
+);
+
 payment.refundRequestedAt =
 new Date();
 
@@ -407,32 +415,26 @@ await payment.save();
 
 if(payment.booking){
 
+  const booking =
+    await Booking.findById(
+      payment.booking._id
+    );
 
-const booking =
-await Booking.findById(
-payment.booking._id
-);
+  if(booking){
 
+    booking.refundStatus =
+      "processing";
 
+    booking.refundAmount =
+      Number(
+        payment.refundRequestedAmount ||
+        payment.amount ||
+        0
+      );
 
-if(booking){
+    await booking.save();
 
-booking.paymentStatus="refunded";
-
-booking.refundStatus="processing";
-
-booking.refundAmount =
-payment.amount;
-
-
-booking.refundedAt =
-new Date();
-
-
-await booking.save();
-
-}
-
+  }
 
 }
 
@@ -514,7 +516,7 @@ export const refundBooking = async (req, res, next) => {
 
     const payment = await Payment.findOne({
       booking: booking._id,
-      status: { $in: ["completed", "paid", "success"] },
+      status: "completed",
     }).sort({ createdAt: -1 });
 
     if (!payment) {
@@ -634,23 +636,85 @@ export const processRefund = async (req, res, next) => {
 
     await refund.save();
 
-    if (refund.booking) {
-      const booking = await Booking.findById(refund.booking);
+    if (status === "completed") {
 
-      if (booking) {
-        if (status === "completed") {
-          booking.refundStatus = "completed";
-          booking.paymentStatus = "refunded";
-          booking.status = "refunded";
-          booking.refundedAt = new Date();
-        } else if (status === "rejected") {
-          booking.refundStatus = "rejected";
-        } else {
-          booking.refundStatus = status;
+      const payment =
+        refund.payment
+          ? await Payment.findById(
+              refund.payment
+            )
+          : null;
+
+      if (payment) {
+
+        await refundBookingPayment({
+
+          payment,
+
+          refundAmount:
+            Number(
+              refund.amount || 0
+            ),
+
+          refundData: {
+
+            refundReference:
+              refund.mpesaReference ||
+              `refund-${refund._id}`,
+
+            refundStatus:
+              "completed",
+
+            refundResponse: {
+
+              refundId:
+                String(
+                  refund._id
+                ),
+
+              refundRecord:
+                true,
+
+            },
+
+          },
+
+        });
+
+      } else if (refund.booking) {
+
+        const booking =
+          await Booking.findById(
+            refund.booking
+          );
+
+        if (booking) {
+
+          booking.refundStatus =
+            "completed";
+
+          await booking.save();
+
         }
 
-        await booking.save();
       }
+
+    } else if (refund.booking) {
+
+      const booking =
+        await Booking.findById(
+          refund.booking
+        );
+
+      if (booking) {
+
+        booking.refundStatus =
+          status;
+
+        await booking.save();
+
+      }
+
     }
 
     return res.status(200).json({

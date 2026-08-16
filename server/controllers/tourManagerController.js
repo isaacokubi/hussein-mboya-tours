@@ -116,9 +116,21 @@ export const getTourManagerDashboard = async (req, res, next) => {
             $match: {
               tour: { $in: tourIds },
               isDeleted: { $ne: true },
-              status: {
-                $in: ["confirmed", "assigned", "ongoing", "completed"],
-              },
+              $or: [
+                {
+                  status: {
+                    $in: [
+                      "confirmed",
+                      "assigned",
+                      "ongoing",
+                      "completed",
+                    ],
+                  },
+                },
+                {
+                  paymentStatus: "paid",
+                },
+              ],
             },
           },
           {

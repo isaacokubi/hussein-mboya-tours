@@ -643,9 +643,38 @@ bookingSchema.pre("save", function (next) {
     return next(new Error("Deposit amount cannot exceed total amount."));
   }
 
-  // Calculate balance
+  // Calculate financial state from the total amount already paid.
 
-  this.balanceAmount = Math.max(0, this.totalAmount - this.depositAmount);
+  this.depositAmount = Math.min(
+    Math.max(Number(this.depositAmount || 0), 0),
+    Number(this.totalAmount || 0)
+  );
+
+  this.balanceAmount = Math.max(
+    0,
+    Number(this.totalAmount || 0) -
+      Number(this.depositAmount || 0)
+  );
+
+  // Synchronize payment status with the actual financial state.
+
+  if (
+    Number(this.totalAmount || 0) > 0 &&
+    Number(this.depositAmount || 0) >=
+      Number(this.totalAmount || 0)
+  ) {
+    this.depositAmount =
+      Number(this.totalAmount);
+
+    this.balanceAmount = 0;
+
+    this.paymentStatus = "paid";
+
+  } else if (
+    Number(this.depositAmount || 0) > 0
+  ) {
+    this.paymentStatus = "partial";
+  }
 
   // Calculate commission
 

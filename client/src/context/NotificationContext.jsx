@@ -1,4 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
+
 // client/src/context/NotificationContext.jsx
 
 import {
@@ -8,52 +9,24 @@ import {
   useState
 } from "react";
 
-
-import {
-  io
-} from "socket.io-client";
-
 import { getNotifications } from "../api/notificationApi";
+import socket from "../socket/socket";
 
-
-import {
-  useAuth
-} from "./AuthContext";
-
-
-
-
+import { useAuth } from "./AuthContext";
 
 
 const NotificationContext =
   createContext();
 
 
-
-
-
-
 export function NotificationProvider({
-
   children
-
 }) {
-
 
   const {
     user,
     token
   } = useAuth();
-
-
-
-
-  const [
-    socket,
-    setSocket
-  ] = useState(null);
-
-
 
 
   const [
@@ -62,323 +35,293 @@ export function NotificationProvider({
   ] = useState([]);
 
 
-
-
   const [
     unreadCount,
     setUnreadCount
   ] = useState(0);
 
+
+  /*
+  |--------------------------------------------------------------------------
+  | LOAD NOTIFICATIONS
+  |--------------------------------------------------------------------------
+  */
+
   useEffect(() => {
-    if (!user?._id || !token) return;
+
+    if (
+      !user?._id ||
+      !token
+    ) {
+      return;
+    }
+
 
     let cancelled = false;
 
-    getNotifications({ limit: 30 })
+
+    getNotifications({
+      limit: 30
+    })
+
       .then((response) => {
-        if (cancelled) return;
-        const items = response?.notifications || [];
-        setNotifications(items);
-        setUnreadCount(items.filter((item) => !item.read).length);
-      })
-      .catch((error) => {
-        console.error("Failed to load notifications:", error?.message || error);
-      });
 
-    return () => {
-      cancelled = true;
-    };
-  }, [user?._id, token]);
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| SOCKET CONNECTION
-|--------------------------------------------------------------------------
-*/
-
-
-useEffect(()=>{
-
-
-  if(
-    !user?._id ||
-    !token
-  ){
-
-    return;
-
-  }
-
-
-
-
-
-
-  const newSocket =
-    io(
-
-      import.meta.env.VITE_SOCKET_URL
-      ||
-      "http://localhost:5000",
-
-      {
-
-        transports:[
-
-          "websocket",
-
-          "polling"
-
-        ],
-
-
-        withCredentials:true,
-
-
-        auth:{
-
-          token
-
+        if (cancelled) {
+          return;
         }
 
-      }
 
-    );
-
-
+        const items =
+          response?.notifications || [];
 
 
+        setNotifications(items);
 
 
+        setUnreadCount(
+          items.filter(
+            (item) => !item.read
+          ).length
+        );
 
-  queueMicrotask(() => {
-    setSocket(newSocket);
-  });
+      })
 
+      .catch((error) => {
 
+        console.error(
+          "Failed to load notifications:",
+          error?.message || error
+        );
 
-
-
-
-
-  newSocket.on(
-
-    "connect",
-
-    ()=>{
-
-
-      console.log(
-
-        "✅ Notification socket connected",
-
-        newSocket.id
-
-      );
+      });
 
 
+    return () => {
 
-      newSocket.emit(
+      cancelled = true;
 
-        "join",
+    };
 
-        user._id
+  }, [
+    user?._id,
+    token
+  ]);
 
-      );
 
+  /*
+  |--------------------------------------------------------------------------
+  | SHARED SOCKET CONNECTION
+  |--------------------------------------------------------------------------
+  */
 
+  useEffect(() => {
+
+    if (
+      !user?._id ||
+      !token
+    ) {
+      return;
     }
 
-  );
 
-
-
-
-
-
-
-
-  newSocket.on(
-
-    "notification",
-
-    (notification)=>{
-
+    const handleConnect = () => {
 
       console.log(
-
-        "📩 Notification received",
-
-        notification
-
+        "✅ Notification socket connected",
+        socket.id
       );
 
 
+
+    };
+
+
+    const handleNotification = (
+      notification
+    ) => {
+
+      console.log(
+        "📩 Notification received",
+        notification
+      );
 
 
       setNotifications(
-
-        prev=>[
-
+        (prev) => [
           notification,
-
           ...prev
-
         ]
-
       );
-
-
 
 
       setUnreadCount(
-
-        prev => prev + 1
-
+        (prev) => prev + 1
       );
 
-
-    }
-
-  );
+    };
 
 
-
-
-
-
-
-
-
-  newSocket.on(
-
-    "connect_error",
-
-    (error)=>{
-
+    const handleConnectError = (
+      error
+    ) => {
 
       console.error(
-
-        "Socket error:",
-
-        error.message
-
+        "Socket connection error:",
+        error?.message || error
       );
 
+    };
+
+
+    const handleDisconnect = (
+      reason
+    ) => {
+
+      console.log(
+        "Notification socket disconnected:",
+        reason
+      );
+
+    };
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | SOCKET AUTHENTICATION
+    |--------------------------------------------------------------------------
+    */
+
+    socket.auth = {
+      ...(socket.auth || {}),
+      token
+    };
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | EVENT LISTENERS
+    |--------------------------------------------------------------------------
+    */
+
+    socket.on(
+      "connect",
+      handleConnect
+    );
+
+
+    socket.on(
+      "notification",
+      handleNotification
+    );
+
+
+    socket.on(
+      "connect_error",
+      handleConnectError
+    );
+
+
+    socket.on(
+      "disconnect",
+      handleDisconnect
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | CONNECT SHARED SOCKET
+    |--------------------------------------------------------------------------
+    */
+
+    if (socket.connected) {
+
+      handleConnect();
+
+    } else {
+
+      socket.connect();
 
     }
 
-  );
+
+    /*
+    |--------------------------------------------------------------------------
+    | CLEANUP LISTENERS ONLY
+    |--------------------------------------------------------------------------
+    |
+    | IMPORTANT:
+    | Do NOT disconnect the shared socket here.
+    |
+    */
+
+    return () => {
+
+      socket.off(
+        "connect",
+        handleConnect
+      );
 
 
+      socket.off(
+        "notification",
+        handleNotification
+      );
 
 
+      socket.off(
+        "connect_error",
+        handleConnectError
+      );
 
 
+      socket.off(
+        "disconnect",
+        handleDisconnect
+      );
+
+    };
+
+  }, [
+    user?._id,
+    token
+  ]);
 
 
+  /*
+  |--------------------------------------------------------------------------
+  | MARK NOTIFICATIONS READ
+  |--------------------------------------------------------------------------
+  */
 
-  return ()=>{
+  const markAllRead = () => {
 
-
-    newSocket.disconnect();
-
-
-    setSocket(null);
-
+    setUnreadCount(0);
 
   };
 
 
+  return (
 
-},[
+    <NotificationContext.Provider
+      value={{
+        notifications,
+        setNotifications,
+        unreadCount,
+        markAllRead,
+        socket
+      }}
+    >
 
-user,
+      {children}
 
-token
+    </NotificationContext.Provider>
 
-]);
-
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| MARK NOTIFICATIONS READ
-|--------------------------------------------------------------------------
-*/
-
-
-const markAllRead = ()=>{
-
-
-  setUnreadCount(0);
-
-
-};
-
-
-
-
-
-
-
-
-return (
-
-<NotificationContext.Provider
-
-value={{
-
-notifications,
-
-setNotifications,
-
-unreadCount,
-
-markAllRead,
-
-socket
-
-}}
-
->
-
-
-{children}
-
-
-</NotificationContext.Provider>
-
-
-);
-
-
+  );
 
 }
 
 
-
-
-
-
-
-export const useNotifications = ()=>
-
-
-useContext(
-
-  NotificationContext
-
-);
+export const useNotifications = () =>
+  useContext(
+    NotificationContext
+  );

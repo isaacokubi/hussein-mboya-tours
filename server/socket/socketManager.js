@@ -76,41 +76,6 @@ export const getIO = () => {
     return io;
 };
 
-export const registerSocket = (userId, socketId) => {
-    const id = userId.toString();
-    let sockets = onlineUsers.get(id);
-    if (!sockets) {
-        sockets = new Set();
-        onlineUsers.set(id, sockets);
-    }
-    sockets.add(socketId);
-};
-
-export const removeSocket = (userId, socketId = null) => {
-    const id = userId.toString();
-    if (!onlineUsers.has(id)) return;
-    if (!socketId) {
-        onlineUsers.delete(id);
-        return;
-    }
-    const sockets = onlineUsers.get(id);
-    sockets.delete(socketId);
-    if (sockets.size === 0) onlineUsers.delete(id);
-};
-
-export const getSocketId = (userId) => {
-    const sockets = onlineUsers.get(userId.toString());
-    return sockets?.size ? [...sockets][0] : null;
-};
-
-export const getSocketIds = (userId) =>
-    [...(onlineUsers.get(userId.toString()) || [])];
-
-export const isUserOnline = (userId) =>
-    onlineUsers.has(userId.toString());
-
-export const getOnlineUsers = () => [...onlineUsers.keys()];
-
 export const sendNotificationToUser = (userId, event, data) => {
     if (!io) return;
     const sockets = onlineUsers.get(userId.toString());
@@ -128,12 +93,4 @@ export const emitToRoom = (room, event, data) => {
     io.to(room).emit(event, data);
 };
 
-export const getSocketById = (socketId) =>
-    io?.sockets?.sockets?.get(socketId) || null;
 
-export const getUserIdBySocketId = (socketId) => {
-    for (const [userId, sockets] of onlineUsers.entries()) {
-        if (sockets.has(socketId)) return userId;
-    }
-    return null;
-};

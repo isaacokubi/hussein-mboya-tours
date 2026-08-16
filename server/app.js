@@ -8,6 +8,7 @@ import cookieParser from "cookie-parser";
 import morgan from "morgan";
 import mongoose from "mongoose";
 import rateLimit from "express-rate-limit";
+import env from "./config/env.js";
 
 import apiRoutes from "./routes/index.js";
 
@@ -56,23 +57,53 @@ app.use(globalLimiter);
 */
 
 const allowedOrigins = (
-  process.env.CLIENT_ORIGINS ||
-  process.env.CLIENT_URL ||
+  env.CLIENT_ORIGINS ||
   "http://localhost:5173"
 )
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
 
+console.log("CORS allowed origins:", allowedOrigins);
+
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      // Allow requests without an Origin header
+      // such as server-to-server requests.
+      if (!origin) {
         return callback(null, true);
       }
-      return callback(new Error(`CORS blocked origin: ${origin}`));
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      console.warn("CORS blocked origin:", origin);
+
+      return callback(
+        new Error(`CORS blocked origin: ${origin}`)
+      );
     },
+
     credentials: true,
+
+    methods: [
+      "GET",
+      "POST",
+      "PUT",
+      "PATCH",
+      "DELETE",
+      "OPTIONS",
+    ],
+
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Requested-With",
+      "Accept",
+      "Origin",
+    ],
   })
 );
 
