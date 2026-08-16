@@ -34,16 +34,24 @@ export const getBookings = async (params = {}) => {
 */
 
 export const getMyBookings = async (params = {}) => {
+  // React Query v5 passes a QueryFunctionContext when this function is
+  // used directly as queryFn. Never send that context as URL parameters.
+  const safeParams =
+    params &&
+    typeof params === "object" &&
+    !("queryKey" in params) &&
+    !("signal" in params)
+      ? params
+      : {};
 
   const { data } = await api.get(
     "/bookings/my-bookings",
     {
-      params,
+      params: safeParams,
     }
   );
 
   return data;
-
 };
 
 

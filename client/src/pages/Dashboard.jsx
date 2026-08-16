@@ -24,7 +24,7 @@ export default function Dashboard(
 const { data, isLoading, error } = useQuery({
     queryKey: ["my-bookings", user?._id],
 
-    queryFn: getMyBookings,
+    queryFn: () => getMyBookings(),
 
     enabled: !!user,
   });

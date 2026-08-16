@@ -56,13 +56,22 @@ app.use(globalLimiter);
 |--------------------------------------------------------------------------
 */
 
-const allowedOrigins = (
+const configuredOrigins = (
   env.CLIENT_ORIGINS ||
-  "http://localhost:5173"
+  env.CLIENT_URL ||
+  ""
 )
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
+
+// Local development must remain accessible even when a stale production,
+// Vercel, or tunnel origin is present in CLIENT_ORIGINS.
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  ...configuredOrigins,
+].filter((origin, index, list) => list.indexOf(origin) === index);
 
 console.log("CORS allowed origins:", allowedOrigins);
 
