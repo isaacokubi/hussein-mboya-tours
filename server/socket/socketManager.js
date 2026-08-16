@@ -1,283 +1,139 @@
-// server/socket/socketManager.js
+import jwt from "jsonwebtoken";
+import env from "../config/env.js";
+import User from "../models/User.js";
 
 let io = null;
-
-/*
-|--------------------------------------------------------------------------
-| ONLINE USERS
-|--------------------------------------------------------------------------
-|
-| Map<UserId, Set<SocketId>>
-|
-*/
-
 const onlineUsers = new Map();
-
-/*
-|--------------------------------------------------------------------------
-| INITIALIZE SOCKET SERVER
-|--------------------------------------------------------------------------
-*/
 
 export const initSocket = (socketServer) => {
     io = socketServer;
 
-    io.on("connection", (socket) => {
-        // debug removed
+    io.use(async (socket, next) => {
+        try {
+            const token =
+                socket.handshake.auth?.token ||
+                socket.handshake.headers?.authorization?.replace(/^Bearer\s+/i, "");
 
-        /*
-        |--------------------------------------------------------------------------
-        | REGISTER USER
-        |--------------------------------------------------------------------------
-        */
+            if (!token) return next(new Error("Authentication required"));
 
-        socket.on("register", (userId) => {
-            if (!userId) return;
+            const decoded = jwt.verify(token, env.JWT_SECRET, {
+                issuer: "husseinmboyatours",
+                audience: "husseinmboyatours-client",
+            });
 
-            const id = userId.toString();
-
-            let sockets = onlineUsers.get(id);
-
-            if (!sockets) {
-                sockets = new Set();
-                onlineUsers.set(id, sockets);
+            const user = await User.findById(decoded.sub).select("_id status role");
+            if (!user || user.status !== "active") {
+                return next(new Error("Account inactive or unavailable"));
             }
 
-            sockets.add(socket.id);
+            socket.userId = user._id.toString();
+            socket.userRole = user.role;
+            next();
+        } catch {
+            next(new Error("Invalid socket authentication"));
+        }
+    });
 
-            socket.userId = id;
+    io.on("connection", (socket) => {
+        const id = socket.userId;
+        let sockets = onlineUsers.get(id);
 
-            // debug removed`);
-        });
+        if (!sockets) {
+            sockets = new Set();
+            onlineUsers.set(id, sockets);
+        }
+        sockets.add(socket.id);
 
-        /*
-        |--------------------------------------------------------------------------
-        | JOIN ROOM
-        |--------------------------------------------------------------------------
-        */
+        // A client cannot impersonate another user by supplying a userId.
+        socket.on("register", () => {});
 
         socket.on("join-room", (room) => {
-            socket.join(room);
+            if (typeof room !== "string" || room.length > 100) return;
 
-            // debug removed
+            // User-private rooms are allowed only for the authenticated user.
+            if (room === `user:${id}`) {
+                socket.join(room);
+            }
         });
-
-        /*
-        |--------------------------------------------------------------------------
-        | LEAVE ROOM
-        |--------------------------------------------------------------------------
-        */
 
         socket.on("leave-room", (room) => {
-            socket.leave(room);
+            if (room === `user:${id}`) socket.leave(room);
         });
 
-        /*
-        |--------------------------------------------------------------------------
-        | DISCONNECT
-        |--------------------------------------------------------------------------
-        */
-
         socket.on("disconnect", () => {
-            if (socket.userId) {
-                const sockets = onlineUsers.get(socket.userId);
-
-                if (sockets) {
-                    sockets.delete(socket.id);
-
-                    if (sockets.size === 0) {
-                        onlineUsers.delete(socket.userId);
-                    }
-                }
-
-                // debug removed
-            }
-
-            // debug removed
+            const sockets = onlineUsers.get(id);
+            if (!sockets) return;
+            sockets.delete(socket.id);
+            if (sockets.size === 0) onlineUsers.delete(id);
         });
     });
 
     return io;
 };
 
-/*
-|--------------------------------------------------------------------------
-| GET SOCKET SERVER
-|--------------------------------------------------------------------------
-*/
-
 export const getIO = () => {
-    if (!io) {
-        throw new Error("Socket.io not initialized");
-    }
-
+    if (!io) throw new Error("Socket.io not initialized");
     return io;
 };
 
-/*
-|--------------------------------------------------------------------------
-| REGISTER SOCKET (MANUAL)
-|--------------------------------------------------------------------------
-*/
-
 export const registerSocket = (userId, socketId) => {
     const id = userId.toString();
-
     let sockets = onlineUsers.get(id);
-
     if (!sockets) {
         sockets = new Set();
         onlineUsers.set(id, sockets);
     }
-
     sockets.add(socketId);
 };
 
-/*
-|--------------------------------------------------------------------------
-| REMOVE SOCKET
-|--------------------------------------------------------------------------
-*/
-
 export const removeSocket = (userId, socketId = null) => {
     const id = userId.toString();
-
     if (!onlineUsers.has(id)) return;
-
     if (!socketId) {
         onlineUsers.delete(id);
         return;
     }
-
     const sockets = onlineUsers.get(id);
-
     sockets.delete(socketId);
-
-    if (sockets.size === 0) {
-        onlineUsers.delete(id);
-    }
+    if (sockets.size === 0) onlineUsers.delete(id);
 };
-
-/*
-|--------------------------------------------------------------------------
-| GET FIRST SOCKET ID
-|--------------------------------------------------------------------------
-*/
 
 export const getSocketId = (userId) => {
     const sockets = onlineUsers.get(userId.toString());
-
-    if (!sockets || sockets.size === 0) {
-        return null;
-    }
-
-    return [...sockets][0];
+    return sockets?.size ? [...sockets][0] : null;
 };
 
-/*
-|--------------------------------------------------------------------------
-| GET ALL SOCKET IDS
-|--------------------------------------------------------------------------
-*/
+export const getSocketIds = (userId) =>
+    [...(onlineUsers.get(userId.toString()) || [])];
 
-export const getSocketIds = (userId) => {
-    return [...(onlineUsers.get(userId.toString()) || [])];
-};
+export const isUserOnline = (userId) =>
+    onlineUsers.has(userId.toString());
 
-/*
-|--------------------------------------------------------------------------
-| CHECK ONLINE
-|--------------------------------------------------------------------------
-*/
+export const getOnlineUsers = () => [...onlineUsers.keys()];
 
-export const isUserOnline = (userId) => {
-    return onlineUsers.has(userId.toString());
-};
-
-/*
-|--------------------------------------------------------------------------
-| GET ONLINE USERS
-|--------------------------------------------------------------------------
-*/
-
-export const getOnlineUsers = () => {
-    return [...onlineUsers.keys()];
-};
-
-/*
-|--------------------------------------------------------------------------
-| SEND EVENT TO USER
-|--------------------------------------------------------------------------
-*/
-
-export const sendNotificationToUser = (
-    userId,
-    event,
-    data
-) => {
+export const sendNotificationToUser = (userId, event, data) => {
     if (!io) return;
-
     const sockets = onlineUsers.get(userId.toString());
-
     if (!sockets) return;
-
-    sockets.forEach((socketId) => {
-        io.to(socketId).emit(event, data);
-    });
+    sockets.forEach((socketId) => io.to(socketId).emit(event, data));
 };
-
-/*
-|--------------------------------------------------------------------------
-| BROADCAST EVENT
-|--------------------------------------------------------------------------
-*/
 
 export const broadcast = (event, data) => {
     if (!io) return;
-
     io.emit(event, data);
 };
 
-/*
-|--------------------------------------------------------------------------
-| EMIT TO ROOM
-|--------------------------------------------------------------------------
-*/
-
-export const emitToRoom = (
-    room,
-    event,
-    data
-) => {
+export const emitToRoom = (room, event, data) => {
     if (!io) return;
-
     io.to(room).emit(event, data);
 };
 
-/*
-|--------------------------------------------------------------------------
-| SOCKET FROM ID
-|--------------------------------------------------------------------------
-*/
-
-export const getSocketById = (socketId) => {
-    if (!io) return null;
-
-    return io.sockets.sockets.get(socketId);
-};
-
-/*
-|--------------------------------------------------------------------------
-| USER FROM SOCKET
-|--------------------------------------------------------------------------
-*/
+export const getSocketById = (socketId) =>
+    io?.sockets?.sockets?.get(socketId) || null;
 
 export const getUserIdBySocketId = (socketId) => {
     for (const [userId, sockets] of onlineUsers.entries()) {
-        if (sockets.has(socketId)) {
-            return userId;
-        }
+        if (sockets.has(socketId)) return userId;
     }
-
     return null;
 };

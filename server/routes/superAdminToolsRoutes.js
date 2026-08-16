@@ -1,4 +1,6 @@
 import express from "express";
+import { protect } from "../middleware/authMiddleware.js";
+import { authorize } from "../middleware/permissionMiddleware.js";
 
 import {
 getDatabase,
@@ -9,6 +11,9 @@ getSettings
 
 
 const router=express.Router();
+
+router.use(protect);
+router.use(authorize("system.security"));
 
 
 // security endpoint handled by superAdminOperationsRoutes

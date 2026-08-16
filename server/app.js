@@ -7,6 +7,7 @@ import compression from "compression";
 import cookieParser from "cookie-parser";
 import morgan from "morgan";
 import mongoose from "mongoose";
+import rateLimit from "express-rate-limit";
 
 import apiRoutes from "./routes/index.js";
 
@@ -32,7 +33,21 @@ app.use(
 |--------------------------------------------------------------------------
 */
 
-app.use(helmet());
+app.set("trust proxy", 1);
+
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  hsts: process.env.NODE_ENV === "production" ? undefined : false,
+}));
+
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.path === "/health",
+});
+app.use(globalLimiter);
 
 /*
 |--------------------------------------------------------------------------
@@ -71,7 +86,7 @@ app.use(compression());
 
 app.use(
   express.json({
-    limit: "10mb",
+    limit: "1mb",
   }),
 );
 
@@ -79,13 +94,13 @@ app.use(
   express.urlencoded({
     extended: true,
 
-    limit: "10mb",
+    limit: "1mb",
   }),
 );
 
 app.use(cookieParser());
 
-app.use(morgan("dev"));
+app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 
 /*
 |--------------------------------------------------------------------------

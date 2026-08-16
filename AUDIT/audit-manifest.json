@@ -1,0 +1,226 @@
+{
+  "assessment_date": "2026-08-16",
+  "project": "Hussein Mboya Tours",
+  "decision": "RELEASE WITH SECURITY REMEDIATION REQUIRED",
+  "inventory": {
+    "route_files": 59,
+    "controllers": 86,
+    "models": 46,
+    "react_components": 91
+  },
+  "report_pages": 151,
+  "findings": [
+    {
+      "id": "F-001",
+      "severity": "Critical",
+      "title": "Public database endpoint exposed",
+      "status": "Remediated in supplied build.",
+      "evidence": "server/routes/databaseRoutes.js + server/server.js"
+    },
+    {
+      "id": "F-002",
+      "severity": "Critical",
+      "title": "System settings route exposed without authentication",
+      "status": "Remediated in supplied build.",
+      "evidence": "server/routes/settingsRoutes.js + server/server.js"
+    },
+    {
+      "id": "F-003",
+      "severity": "High",
+      "title": "System health leaked environment/runtime internals",
+      "status": "Remediated in supplied build.",
+      "evidence": "server/routes/systemHealthRoutes.js; server/routes/index.js"
+    },
+    {
+      "id": "F-004",
+      "severity": "Critical",
+      "title": "Super-admin tools routes lacked authorization",
+      "status": "Remediated in supplied build.",
+      "evidence": "server/routes/superAdminToolsRoutes.js"
+    },
+    {
+      "id": "F-005",
+      "severity": "Critical",
+      "title": "Socket authentication relied on client-supplied user ID",
+      "status": "Remediated in supplied build.",
+      "evidence": "server/socket/socketManager.js"
+    },
+    {
+      "id": "F-006",
+      "severity": "High",
+      "title": "Socket rooms accepted arbitrary room names",
+      "status": "Remediated in supplied build.",
+      "evidence": "server/socket/socketManager.js"
+    },
+    {
+      "id": "F-007",
+      "severity": "High",
+      "title": "JWT issuer/audience not enforced on verification",
+      "status": "Remediated in supplied build.",
+      "evidence": "server/middleware/authMiddleware.js"
+    },
+    {
+      "id": "F-008",
+      "severity": "High",
+      "title": "Large global request body limits",
+      "status": "Remediated in supplied build.",
+      "evidence": "server/app.js"
+    },
+    {
+      "id": "F-009",
+      "severity": "High",
+      "title": "Authentication endpoints lacked dedicated rate limiting",
+      "status": "Remediated in supplied build.",
+      "evidence": "server/routes/authRoutes.js; server/routes/adminAuthRoutes.js"
+    },
+    {
+      "id": "F-010",
+      "severity": "High",
+      "title": "Multipart parser nesting/field limits incomplete",
+      "status": "Remediated in supplied build.",
+      "evidence": "server/middleware/uploadMiddleware.js"
+    },
+    {
+      "id": "F-011",
+      "severity": "High",
+      "title": "JWT stored in browser localStorage",
+      "status": "Open.",
+      "evidence": "client/src/context/AuthContext.jsx; client/src/api/axios.js"
+    },
+    {
+      "id": "F-012",
+      "severity": "High",
+      "title": "Mass-assignment patterns in privileged controllers",
+      "status": "Open.",
+      "evidence": "server/controllers/staffController.js; adminCouponController.js; tourManagerController.js; itineraryController.js; vehicleController.js; aiBookingController.js"
+    },
+    {
+      "id": "F-013",
+      "severity": "High",
+      "title": "Passport and health/emergency data stored as ordinary fields",
+      "status": "Open.",
+      "evidence": "server/models/Booking.js"
+    },
+    {
+      "id": "F-014",
+      "severity": "High",
+      "title": "Password reset code protection needs stronger defense",
+      "status": "Partially remediated.",
+      "evidence": "server/controllers/authController.js"
+    },
+    {
+      "id": "F-015",
+      "severity": "High",
+      "title": "Registration immediately marks users verified",
+      "status": "Open.",
+      "evidence": "server/controllers/authController.js"
+    },
+    {
+      "id": "F-016",
+      "severity": "High",
+      "title": "Production CORS depends on optional environment variable",
+      "status": "Open.",
+      "evidence": "server/app.js; server/config/env.js"
+    },
+    {
+      "id": "F-017",
+      "severity": "Medium",
+      "title": "Legacy/duplicate role names increase authorization complexity",
+      "status": "Open.",
+      "evidence": "server/models/User.js; middleware files"
+    },
+    {
+      "id": "F-018",
+      "severity": "High",
+      "title": "Authorization is duplicated across multiple middleware implementations",
+      "status": "Open.",
+      "evidence": "server/middleware/authMiddleware.js; roleMiddleware.js; permissionMiddleware.js; adminMiddleware.js"
+    },
+    {
+      "id": "F-019",
+      "severity": "High",
+      "title": "Client-side permission state is trusted for navigation",
+      "status": "Open; defense-in-depth.",
+      "evidence": "client/src/components/admin/ProtectedAdminRoute.jsx"
+    },
+    {
+      "id": "F-020",
+      "severity": "Medium",
+      "title": "Verbose security/debug logging remains in several paths",
+      "status": "Open.",
+      "evidence": "server/controllers/*; middleware/*"
+    },
+    {
+      "id": "F-021",
+      "severity": "High",
+      "title": "No explicit CSRF strategy for cookie authentication",
+      "status": "Open.",
+      "evidence": "server/app.js; authMiddleware.js"
+    },
+    {
+      "id": "F-022",
+      "severity": "High",
+      "title": "Booking capacity changes need atomic concurrency controls",
+      "status": "Open.",
+      "evidence": "server/models/Tour.js"
+    },
+    {
+      "id": "F-023",
+      "severity": "High",
+      "title": "Payment state transitions require server-side invariants",
+      "status": "Open.",
+      "evidence": "server/models/Booking.js; payment controllers"
+    },
+    {
+      "id": "F-024",
+      "severity": "High",
+      "title": "M-Pesa/webhook security must be independently verified",
+      "status": "Open pending live provider validation.",
+      "evidence": "server/routes/mpesaRoutes.js; controllers/mpesaController.js"
+    },
+    {
+      "id": "F-025",
+      "severity": "High",
+      "title": "AI endpoints need data minimization and abuse controls",
+      "status": "Open.",
+      "evidence": "server/routes/aiRoutes.js; adminAIRoutes.js"
+    }
+  ],
+  "remediated_ids": [
+    "F-001",
+    "F-002",
+    "F-003",
+    "F-004",
+    "F-005",
+    "F-006",
+    "F-007",
+    "F-008",
+    "F-009",
+    "F-010"
+  ],
+  "open_high_or_critical": [
+    "F-011",
+    "F-012",
+    "F-013",
+    "F-014",
+    "F-015",
+    "F-016",
+    "F-018",
+    "F-019",
+    "F-021",
+    "F-022",
+    "F-023",
+    "F-024",
+    "F-025"
+  ],
+  "validation": {
+    "server_javascript_syntax": "passed",
+    "live_npm_audit": "not_available_registry_network_failure",
+    "frontend_build": "not_run"
+  },
+  "standards": [
+    "OWASP ASVS 5.0",
+    "OWASP API Security Top 10 2023",
+    "Kenya Data Protection Act 2019"
+  ]
+}

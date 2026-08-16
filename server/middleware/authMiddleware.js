@@ -65,7 +65,10 @@ export const protect = async (req, res, next) => {
       });
     }
 
-    const decoded = jwt.verify(token, secret);
+    const decoded = jwt.verify(token, secret, {
+      issuer: "husseinmboyatours",
+      audience: "husseinmboyatours-client",
+    });
 
     const userId =
       decoded.sub ||
@@ -108,13 +111,6 @@ export const protect = async (req, res, next) => {
     }
 
     req.user = user;
-
-    console.log("AUTH SUCCESS:", {
-      userId: user._id.toString(),
-      email: user.email,
-      role: getUserRole(user),
-      tokenRole: decoded.role,
-    });
 
     next();
   } catch (error) {

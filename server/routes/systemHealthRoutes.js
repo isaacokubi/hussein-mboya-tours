@@ -1,100 +1,26 @@
 import express from "express";
 import mongoose from "mongoose";
+import { protect } from "../middleware/authMiddleware.js";
+import adminMiddleware from "../middleware/adminMiddleware.js";
+import { authorize } from "../middleware/permissionMiddleware.js";
 
 const router = express.Router();
 
-router.get("/health", async (req,res)=>{
+router.use(protect);
+router.use(adminMiddleware);
+router.use(authorize("system.security"));
 
-    const memory = process.memoryUsage();
+const health = (req, res) => {
+  const dbReady = mongoose.connection.readyState === 1;
+  res.status(dbReady ? 200 : 503).json({
+    success: dbReady,
+    status: dbReady ? "healthy" : "degraded",
+    database: dbReady ? "connected" : "disconnected",
+    timestamp: new Date().toISOString(),
+  });
+};
 
-    const database =
-        mongoose.connection.readyState === 1
-        ? "connected"
-        : "disconnected";
-
-
-    res.json({
-
-        status:"healthy",
-
-        server:"running",
-
-        nodeVersion:process.version,
-
-        environment:
-            process.env.NODE_ENV || "development",
-
-        uptime:
-            Math.floor(process.uptime()),
-
-        timestamp:
-            new Date().toISOString(),
-
-
-        database,
-
-
-        memory:{
-            used:
-            Math.round(memory.heapUsed / 1024 / 1024)
-            +" MB",
-
-            total:
-            Math.round(memory.heapTotal / 1024 / 1024)
-            +" MB"
-        },
-
-
-        platform:{
-            os:process.platform,
-            architecture:process.arch
-        }
-
-    });
-
-});
-
-
-
-router.get("/admin/system-health", async (req,res)=>{
-
-    const memory = process.memoryUsage();
-
-    const database =
-        mongoose.connection.readyState === 1
-        ? "connected"
-        : "disconnected";
-
-    res.json({
-
-        status:"healthy",
-        server:"running",
-        nodeVersion:process.version,
-        environment:
-            process.env.NODE_ENV || "development",
-        uptime:
-            Math.floor(process.uptime()),
-        timestamp:
-            new Date().toISOString(),
-
-        database,
-
-        memory:{
-            used:
-            Math.round(memory.heapUsed / 1024 / 1024)+" MB",
-
-            total:
-            Math.round(memory.heapTotal / 1024 / 1024)+" MB"
-        },
-
-        platform:{
-            os:process.platform,
-            architecture:process.arch
-        }
-
-    });
-
-});
-
+router.get("/health", health);
+router.get("/admin/system-health", health);
 
 export default router;
