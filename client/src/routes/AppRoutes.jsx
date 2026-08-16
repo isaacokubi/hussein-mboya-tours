@@ -199,7 +199,7 @@ export default function AppRoutes() {
       <Route
         path="/dashboard"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute roles={["customer"]}>
             <Dashboard />
           </ProtectedRoute>
         }

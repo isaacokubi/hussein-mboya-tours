@@ -1,7 +1,6 @@
 import { useLocation } from "react-router-dom";
 
 import AppRoutes from "./routes/AppRoutes";
-import { SettingsProvider } from "./context/SettingsContext";
 
 
 import Navbar from "./components/layout/Navbar";
@@ -26,8 +25,6 @@ const location = useLocation();
 
 return (
 
-
-<SettingsProvider>
 
 <div
 
@@ -127,9 +124,6 @@ draggable
 
 
 </div>
-
-</SettingsProvider>
-
 
 );
 

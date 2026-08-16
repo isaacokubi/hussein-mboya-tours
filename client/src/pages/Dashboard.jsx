@@ -233,7 +233,7 @@ if (isLoading) {
         text-lg
         "
         >
-          Manage your adventures with ${settings?.companyName || 'Company'}.
+          Manage your adventures with {settings?.companyName || "Company"}.
         </p>
 
         <div
