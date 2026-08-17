@@ -19,27 +19,69 @@ const ROLE_ALIASES = {
 
 export function normalizeRole(role) {
   if (!role) return "";
-  if (typeof role === "object") role = role.name || role.role || role._id || "";
+  if (typeof role === "object") {
+    role = role.name || role.role || role.value || "";
+  }
   const key = String(role).trim().toLowerCase().replace(/[\s-]+/g, "_");
   return ROLE_ALIASES[key] || ROLE_ALIASES[key.replace(/_/g, "")] || key;
 }
 
 export function getUserRole(user) {
-  return normalizeRole(user?.roleId?.name || user?.role?.name || user?.role || user?.legacyRole);
+  return normalizeRole(
+    user?.roleId?.name ||
+      user?.role?.name ||
+      user?.role ||
+      user?.legacyRole ||
+      user?.userRole
+  );
 }
 
-export function isSuperAdmin(user) { return getUserRole(user) === "superadmin"; }
-export function isAdmin(user) { return ["admin", "superadmin"].includes(getUserRole(user)); }
+export function isSuperAdmin(user) {
+  return getUserRole(user) === "superadmin";
+}
+
+export function isAdmin(user) {
+  return ["admin", "superadmin"].includes(getUserRole(user));
+}
+
+export function isManager(user) {
+  return ["manager", "admin", "superadmin"].includes(getUserRole(user));
+}
+
+export function isAgent(user) {
+  return getUserRole(user) === "agent";
+}
+
+export function isGuide(user) {
+  return getUserRole(user) === "guide";
+}
+
+export function isDriver(user) {
+  return getUserRole(user) === "driver";
+}
+
+export function isCustomer(user) {
+  return getUserRole(user) === "customer";
+}
 
 export function dashboardPath(user) {
   switch (getUserRole(user)) {
-    case "superadmin": return "/superadmin/dashboard";
-    case "admin": return "/admin/dashboard";
-    case "manager": return "/tour-manager/dashboard";
-    case "agent": return "/agent";
-    case "guide": return "/guide/dashboard";
-    case "driver": return "/driver/dashboard";
-    default: return "/dashboard";
+    case "superadmin":
+      return "/superadmin/dashboard";
+    case "admin":
+      return "/admin/dashboard";
+    case "manager":
+      return "/tour-manager/dashboard";
+    case "agent":
+      return "/agent/dashboard";
+    case "guide":
+      return "/guide/dashboard";
+    case "driver":
+      return "/driver/dashboard";
+    case "customer":
+      return "/dashboard";
+    default:
+      return "/login";
   }
 }
 
