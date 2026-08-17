@@ -114,6 +114,10 @@ const paymentSchema = new mongoose.Schema(
       type: Number,
       required: true,
       min: 0,
+      validate: {
+        validator: (value) => Number.isFinite(Number(value)) && Number(value) >= 0 && Number(value) <= 1000000000,
+        message: "Invalid payment amount.",
+      },
     },
 
     currency: {
@@ -336,6 +340,20 @@ paymentSchema.index({
 paymentSchema.index({
   transactionReference: 1,
 });
+
+// A provider transaction reference must never be credited twice. This is
+// intentionally limited to completed records so pending bank references can
+// still be submitted while awaiting reconciliation.
+paymentSchema.index(
+  { provider: 1, transactionReference: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      status: "completed",
+      transactionReference: { $type: "string", $gt: "" },
+    },
+  }
+);
 
 // M-Pesa callbacks
 paymentSchema.index(

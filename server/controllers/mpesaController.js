@@ -18,7 +18,11 @@ import {
 import { sendBookingConfirmation } from "../services/bookingNotificationService.js";
 import { sendBookingEmail } from "../services/emailService.js";
 import { addPoints } from "../services/loyaltyService.js";
-import { failBookingPayment, completeBookingPayment } from "../services/paymentLifecycleService.js";
+import {
+  failBookingPayment,
+  completeBookingPayment,
+  getPayableBookingAmount,
+} from "../services/paymentLifecycleService.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -90,7 +94,6 @@ export const stkPush = async (req, res, next) => {
       phoneNumber,
       phone,
       bookingId,
-      amount,
     } = req.body;
 
 
@@ -251,16 +254,12 @@ export const stkPush = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
+    // NEVER trust a client-supplied amount. The amount due is derived
+    // exclusively from the server-side booking financial state.
     const paymentAmount =
-      Math.round(
-        amount ||
-        booking.totalAmount ||
-0
-      );
+      getPayableBookingAmount(booking);
 
-
-
-    if(paymentAmount <=0){
+    if (!Number.isFinite(paymentAmount) || paymentAmount <= 0){
 
       return res.status(400).json({
 
@@ -650,9 +649,47 @@ export const mpesaCallback = async (req, res, next) => {
     const mpesaReceiptNumber =
       getValue("MpesaReceiptNumber");
 
-    const paidAmount =
-      Number(getValue("Amount")) ||
-      payment.amount;
+    // Safaricom's callback amount is authoritative for the actual charge.
+    // Do not fall back to our requested amount: a malformed callback must
+    // never be converted into a successful financial event.
+    const rawPaidAmount = getValue("Amount");
+    const paidAmount = Number(rawPaidAmount);
+
+    const expectedAmount = getPayableBookingAmount(booking);
+
+    if (!Number.isFinite(paidAmount) || paidAmount <= 0) {
+      await failBookingPayment({
+        payment,
+        booking,
+        failureReason: "M-Pesa callback did not contain a valid paid amount.",
+        paymentData: { callbackResponse: stkCallback },
+      });
+      return res.json({ ResultCode: 0, ResultDesc: "Accepted" });
+    }
+
+    if (Math.round(paidAmount) !== Math.round(expectedAmount)) {
+      await failBookingPayment({
+        payment,
+        booking,
+        failureReason: `M-Pesa amount mismatch. Expected ${expectedAmount}, received ${paidAmount}.`,
+        paymentData: {
+          amount: paidAmount,
+          callbackResponse: stkCallback,
+        },
+      });
+      return res.json({ ResultCode: 0, ResultDesc: "Accepted" });
+    }
+
+    const mpesaReceiptRequired = String(mpesaReceiptNumber || "").trim();
+    if (!mpesaReceiptRequired) {
+      await failBookingPayment({
+        payment,
+        booking,
+        failureReason: "M-Pesa callback did not contain a receipt number.",
+        paymentData: { amount: paidAmount, callbackResponse: stkCallback },
+      });
+      return res.json({ ResultCode: 0, ResultDesc: "Accepted" });
+    }
 
     const phoneNumber =
       getValue("PhoneNumber");

@@ -76,7 +76,31 @@ export const createBooking = async (req, res, next) => {
       let customTourData = null;
 
       if (customTourRequest) {
-        customTourData = await CustomTourRequest.findById(customTourRequest);
+        customTourData = await CustomTourRequest.findOne({
+          _id: customTourRequest,
+          customer: req.user._id,
+        });
+
+        if (!customTourData) {
+          return res.status(404).json({
+            success: false,
+            message: "Custom tour request not found.",
+          });
+        }
+
+        if (!["approved", "quoted"].includes(customTourData.status)) {
+          return res.status(409).json({
+            success: false,
+            message: "This custom tour has not been approved and quoted for booking.",
+          });
+        }
+
+        if (!Number.isFinite(Number(customTourData.quotedAmount)) || Number(customTourData.quotedAmount) <= 0) {
+          return res.status(409).json({
+            success: false,
+            message: "This custom tour does not have a valid server-approved quote.",
+          });
+        }
       }
 
 

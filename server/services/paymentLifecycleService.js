@@ -589,6 +589,28 @@ export const completeBookingPayment = async ({
 
       /*
       |--------------------------------------------------------------------------
+      | NEVER ALLOW OVERPAYMENT / DOUBLE CREDIT
+      |--------------------------------------------------------------------------
+      | The booking's remaining balance is the maximum amount that can be
+      | credited by this payment event. Provider callbacks and manual bank
+      | verification must not be able to inflate depositAmount.
+      |--------------------------------------------------------------------------
+      */
+      const currentPaidAmount = Number(bookingDoc.depositAmount || 0);
+      const remainingDue = Math.max(0, totalAmount - currentPaidAmount);
+
+      if (paymentAmount > remainingDue) {
+        throw new Error(
+          `Payment amount ${paymentAmount} exceeds remaining booking balance ${remainingDue}.`
+        );
+      }
+
+      if (paymentAmount <= 0 || remainingDue <= 0) {
+        throw new Error("No amount remains due for this booking.");
+      }
+
+      /*
+      |--------------------------------------------------------------------------
       | PAYMENT METHOD
       |--------------------------------------------------------------------------
       */
@@ -747,11 +769,6 @@ export const completeBookingPayment = async ({
       | this booking.
       |
       */
-
-      const currentPaidAmount =
-        Number(
-          bookingDoc.depositAmount || 0
-        );
 
       const newPaidAmount =
         Math.min(

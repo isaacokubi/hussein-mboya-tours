@@ -1,5 +1,7 @@
 import { getSystemSettings } from "../services/settingsService.js";
 import Payment from "../models/Payment.js";
+import Booking from "../models/Booking.js";
+import { completeBookingPayment, getPayableBookingAmount, userOwnsBooking } from "../services/paymentLifecycleService.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -153,73 +155,43 @@ export const getPayments = async (req, res, next) => {
 
 export const createPayment = async (req, res, next) => {
   try {
-    const {
-      user,
-      customer,
-      booking,
-      provider,
-      method,
-      paymentMethod,
-      amount,
-      currency,
-      phone,
-      phoneNumber,
-      transactionId,
-      transactionReference,
-      invoiceNumber,
-      notes,
-    } = req.body;
+    const { booking: bookingId, provider, method, paymentMethod, phone, phoneNumber, transactionReference, notes } = req.body || {};
 
-    if (!booking) {
-      return res.status(400).json({
-        success: false,
-        message: "Booking is required",
-      });
+    if (!bookingId || !provider || !method) {
+      return res.status(400).json({ success: false, message: "Booking, provider and payment method are required" });
     }
 
-    if (amount === undefined || amount === null) {
-      return res.status(400).json({
-        success: false,
-        message: "Payment amount is required",
-      });
+    const booking = await Booking.findById(bookingId);
+    if (!booking) return res.status(404).json({ success: false, message: "Booking not found" });
+
+    if (!userOwnsBooking(booking, req.user)) {
+      return res.status(403).json({ success: false, message: "You do not have permission to create a payment for this booking" });
     }
 
-    if (!provider) {
-      return res.status(400).json({
-        success: false,
-        message: "Payment provider is required",
-      });
+    const amount = getPayableBookingAmount(booking);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return res.status(400).json({ success: false, message: "No amount is due for this booking" });
     }
 
-    if (!method) {
-      return res.status(400).json({
-        success: false,
-        message: "Payment method is required",
-      });
-    }
-
+    // This generic endpoint can create only a pending payment intent.
+    // Financial completion must happen through the provider/lifecycle flow.
     const payment = await Payment.create({
-      user: user || null,
-      customer: customer || null,
-      booking,
-      provider,
+      user: req.user._id,
+      customer: req.user._id,
+      booking: booking._id,
+      provider: String(provider).toUpperCase(),
       method,
       paymentMethod: paymentMethod || undefined,
-      amount: Number(amount),
-      currency: currency || process.env.DEFAULT_CURRENCY || "KES",
-      phone: phone || "",
-      phoneNumber: phoneNumber || phone || "",
-      transactionId: transactionId || "",
-      transactionReference: transactionReference || "",
-      invoiceNumber: invoiceNumber || "",
-      notes: notes || "",
+      amount,
+      currency: process.env.DEFAULT_CURRENCY || "KES",
+      phone: String(phone || "").trim(),
+      phoneNumber: String(phoneNumber || phone || "").trim(),
+      transactionReference: String(transactionReference || "").trim(),
+      notes: String(notes || "").trim().slice(0, 1000),
+      status: "pending",
     });
 
-    return res.status(201).json({
-      success: true,
-      message: "Payment created successfully",
-      payment,
-    });
+    return res.status(201).json({ success: true, message: "Payment intent created successfully", payment });
   } catch (error) {
     return next(error);
   }
@@ -233,50 +205,39 @@ export const createPayment = async (req, res, next) => {
 
 export const updatePaymentStatus = async (req, res, next) => {
   try {
-    const { status, failureReason } = req.body;
+    const status = String(req.body?.status || "").trim().toLowerCase();
+    const payment = await Payment.findById(req.params.id);
+    if (!payment) return res.status(404).json({ success: false, message: "Payment not found" });
 
-    const allowedStatuses = [
-      "pending",
-      "processing",
-      "completed",
-      "failed",
-      "cancelled",
-      "refunded",
-    ];
-
-    if (!allowedStatuses.includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid payment status",
+    if (status === "completed") {
+      const booking = await Booking.findById(payment.booking);
+      if (!booking) return res.status(404).json({ success: false, message: "Booking not found for payment" });
+      if (!["BANK", "CASH"].includes(String(payment.provider || "").toUpperCase())) {
+        return res.status(409).json({ success: false, message: "Provider payments must be completed by provider verification" });
+      }
+      const result = await completeBookingPayment({
+        payment,
+        booking,
+        paymentData: { amount: Number(payment.amount), paymentMethod: payment.paymentMethod || payment.method },
       });
+      return res.json({ success: true, payment: result.payment, booking: result.booking });
     }
 
-    const payment = await Payment.findById(req.params.id);
+    if (["refunded"].includes(status)) {
+      return res.status(409).json({ success: false, message: "Use the refund workflow" });
+    }
 
-    if (!payment) {
-      return res.status(404).json({
-        success: false,
-        message: "Payment not found",
-      });
+    if (!["pending", "processing", "failed", "cancelled"].includes(status)) {
+      return res.status(400).json({ success: false, message: "Invalid payment status" });
     }
 
     payment.status = status;
-
-    if (status === "completed" && !payment.paidAt) {
-      payment.paidAt = new Date();
+    if (status === "failed") {
+      payment.failureReason = String(req.body?.failureReason || "Marked failed by authorized staff").slice(0, 500);
+      payment.failedAt = new Date();
     }
-
-    if (status === "failed" && failureReason) {
-      payment.failureReason = failureReason;
-    }
-
     await payment.save();
-
-    return res.status(200).json({
-      success: true,
-      message: "Payment status updated successfully",
-      payment,
-    });
+    return res.status(200).json({ success: true, message: "Payment status updated successfully", payment });
   } catch (error) {
     return next(error);
   }
@@ -290,34 +251,27 @@ export const updatePaymentStatus = async (req, res, next) => {
 
 export const markPaymentCompleted = async (req, res, next) => {
   try {
-    const {
-      receiptNumber,
-      transactionId = "",
-    } = req.body;
-
     const payment = await Payment.findById(req.params.id);
+    if (!payment) return res.status(404).json({ success: false, message: "Payment not found" });
+    const booking = await Booking.findById(payment.booking);
+    if (!booking) return res.status(404).json({ success: false, message: "Booking not found for payment" });
 
-    if (!payment) {
-      return res.status(404).json({
-        success: false,
-        message: "Payment not found",
-      });
+    if (!["BANK", "CASH"].includes(String(payment.provider || "").toUpperCase())) {
+      return res.status(409).json({ success: false, message: "Provider payments cannot be manually completed" });
     }
 
-    payment.status = "completed";
-    payment.mpesaReceiptNumber =
-      receiptNumber || payment.mpesaReceiptNumber || "";
-    payment.transactionId =
-      transactionId || payment.transactionId || "";
-    payment.paidAt = new Date();
-
-    await payment.save();
-
-    return res.status(200).json({
-      success: true,
-      message: "Payment marked as completed",
+    const result = await completeBookingPayment({
       payment,
+      booking,
+      paymentData: {
+        amount: Number(payment.amount),
+        transactionId: req.body?.transactionId || payment.transactionId || undefined,
+        paymentReference: req.body?.receiptNumber || payment.transactionReference || undefined,
+        paymentMethod: payment.paymentMethod || payment.method,
+      },
     });
+
+    return res.status(200).json({ success: true, message: "Payment completed through financial lifecycle", payment: result.payment, booking: result.booking });
   } catch (error) {
     return next(error);
   }

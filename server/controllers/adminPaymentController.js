@@ -1,7 +1,8 @@
 import Refund from "../models/Refund.js";
 import Payment from "../models/Payment.js";
 import {
-  refundBookingPayment
+  refundBookingPayment,
+  completeBookingPayment,
 } from "../services/paymentLifecycleService.js";
 import Booking from "../models/Booking.js";
 import RefundAudit from "../models/RefundAudit.js";
@@ -150,106 +151,77 @@ next(error);
 
 
 
-export const updatePaymentStatus = async(req,res,next)=>{
+export const updatePaymentStatus = async (req, res, next) => {
+  try {
+    const payment = await Payment.findById(req.params.id);
 
-try{
-
-
-const payment =
-await Payment.findById(req.params.id);
-
-
-if(!payment){
-
-return res.status(404).json({
-
-success:false,
-
-message:"Payment not found"
-
-});
-
-}
-
-
-const nextStatus = req.body.status;
-
-const allowedStatuses = [
-  "pending",
-  "processing",
-  "completed",
-  "failed",
-  "cancelled",
-  "refunded",
-];
-
-if (!allowedStatuses.includes(nextStatus)) {
-  return res.status(400).json({
-    success: false,
-    message: "Invalid payment status",
-  });
-}
-
-payment.status = nextStatus;
-
-if (nextStatus === "completed" && !payment.paidAt) {
-  payment.paidAt = new Date();
-}
-
-await payment.save();
-
-if (payment.booking) {
-  const booking = await Booking.findById(payment.booking);
-
-  if (booking) {
-    if (nextStatus === "completed") {
-      booking.paymentStatus = "paid";
-      booking.status = "confirmed";
-      booking.paidAt = payment.paidAt || new Date();
-      if (payment.mpesaReceiptNumber) {
-        booking.mpesaReceipt = payment.mpesaReceiptNumber;
-      }
-      if (payment.transactionId) {
-        booking.transactionId = payment.transactionId;
-      }
-    } else if (nextStatus === "failed") {
-      booking.paymentStatus = "failed";
-      if (booking.status !== "completed") {
-        booking.status = "pending";
-      }
-    } else if (nextStatus === "cancelled") {
-      booking.paymentStatus = "cancelled";
-      if (booking.status !== "completed") {
-        booking.status = "cancelled";
-      }
-    } else if (nextStatus === "refunded") {
-      booking.paymentStatus = "refunded";
-      booking.status = "refunded";
-      booking.refundAmount = payment.refundedAmount || payment.amount || 0;
-    } else {
-      booking.paymentStatus = "pending";
+    if (!payment) {
+      return res.status(404).json({ success: false, message: "Payment not found" });
     }
 
-    await booking.save();
+    const nextStatus = String(req.body?.status || "").trim().toLowerCase();
+    const allowedStatuses = [
+      "pending", "processing", "completed", "failed", "cancelled", "refunded",
+    ];
+
+    if (!allowedStatuses.includes(nextStatus)) {
+      return res.status(400).json({ success: false, message: "Invalid payment status" });
+    }
+
+    // A payment may only become financially successful through the central
+    // lifecycle service. This prevents an admin/API caller from simply
+    // setting payment.status=completed and marking the booking as paid.
+    if (nextStatus === "completed") {
+      const booking = await Booking.findById(payment.booking);
+
+      if (!booking) {
+        return res.status(404).json({ success: false, message: "Booking not found for payment" });
+      }
+
+      if (!["BANK", "CASH"].includes(String(payment.provider || "").toUpperCase())) {
+        return res.status(409).json({
+          success: false,
+          message: "Provider payments must be confirmed by their provider callback/verification flow.",
+        });
+      }
+
+      const result = await completeBookingPayment({
+        payment,
+        booking,
+        paymentData: {
+          amount: Number(payment.amount),
+          paymentMethod: payment.paymentMethod || payment.method,
+          transactionId: payment.transactionId || undefined,
+          paymentReference: payment.transactionReference || undefined,
+        },
+      });
+
+      return res.json({ success: true, payment: result.payment, booking: result.booking });
+    }
+
+    // Do not allow a generic status edit to mark a payment as refunded.
+    // Refunds must go through the refund lifecycle/provider flow.
+    if (nextStatus === "refunded") {
+      return res.status(409).json({
+        success: false,
+        message: "Use the refund workflow to refund a payment.",
+      });
+    }
+
+    payment.status = nextStatus;
+
+    if (nextStatus === "failed") {
+      payment.failureReason = String(req.body?.failureReason || "Marked failed by authorized staff").slice(0, 500);
+      payment.failedAt = new Date();
+    }
+
+    await payment.save();
+
+    return res.json({ success: true, payment });
+  } catch (error) {
+    return next(error);
   }
-}
-
-res.json({
-  success:true,
-  payment
-});
-
-
-}catch(error){
-
-next(error);
-
-}
-
 };
-
-
-
 
 
 export const getPayment = async(req,res,next)=>{
