@@ -1,145 +1,55 @@
 import api from "./axios";
 
 /*
-|--------------------------------------------------------------------------
-| ADMIN CUSTOMERS
-|--------------------------------------------------------------------------
-|
-| Admin CRM Dashboard
-|
-*/
+ * Customer-management API contract.
+ *
+ * The server exposes customer management at /api/customers and Agent
+ * customer access at /api/agent/customers. Keep this module aligned with
+ * those canonical routes instead of retaining legacy /admin/customers and
+ * /agents/customers paths that no longer exist.
+ */
 
-// ============================================================
-// GET ALL CUSTOMERS (ADMIN)
-// GET /api/customers
-// ============================================================
-
-export const getAdminCustomers = async (params) => {
-  const response = await api.get("/admin/customers", {
-    params: params || {},
-  });
-
-  return response.data;
-};
-
-// ============================================================
-// GET CUSTOMER PROFILE (ADMIN)
-// GET /api/customers/:id
-// ============================================================
-
-export const getCustomerProfile = async (id) => {
-  const response = await api.get(`/customers/${id}`);
-
-  return response.data;
-};
-
-/*
-|--------------------------------------------------------------------------
-| AGENT CUSTOMERS
-|--------------------------------------------------------------------------
-*/
-
-// ============================================================
-// GET AGENT CUSTOMERS
-// GET /api/agents/customers
-// ============================================================
-
-export const getAgentCustomers = async () => {
-  const response = await api.get("/agents/customers");
-
-  return response.data;
-};
-
-// ============================================================
-// GET SINGLE AGENT CUSTOMER
-// GET /api/agents/customers/:id
-// ============================================================
-
-export const getAgentCustomer = async (id) => {
-  const response = await api.get(`/agents/customers/${id}`);
-
-  return response.data;
-};
-
-// ============================================================
-// CREATE CUSTOMER
-// POST /api/agents/customers
-// ============================================================
-
-export const createCustomer = async (data) => {
-  const response = await api.post("/agents/customers", data);
-
-  return response.data;
-};
-
-// ============================================================
-// UPDATE CUSTOMER
-// PUT /api/agents/customers/:id
-// ============================================================
-
-export const updateCustomer = async (id, data) => {
-  const response = await api.put(`/agents/customers/${id}`, data);
-
-  return response.data;
-};
-
-// ============================================================
-// DELETE CUSTOMER
-// DELETE /api/agents/customers/:id
-// ============================================================
-
-export const deleteCustomer = async (id) => {
-  const response = await api.delete(`/agents/customers/${id}`);
-
-  return response.data;
-};
-
-/*
-|--------------------------------------------------------------------------
-| CUSTOMER STATISTICS
-|--------------------------------------------------------------------------
-*/
-
-// ============================================================
-// GET CUSTOMER STATISTICS
-// GET /api/agents/customers/stats
-// ============================================================
-
-export const getCustomerStats = async () => {
-  const response = await api.get("/agents/customers/stats");
-
-  return response.data;
-};
-
-
-/*
-|--------------------------------------------------------------------------
-| GET CUSTOMERS
-|--------------------------------------------------------------------------
-*/
-
-export const getCustomers = async (params = {}) => {
-  const { data } = await api.get(
-    "/customers",
-    {
-      params,
-    }
-  );
-
+/**
+ * Get customers available to an administrator.
+ * GET /api/customers
+ */
+export const getAdminCustomers = async (params = {}) => {
+  const { data } = await api.get("/customers", { params });
   return data;
 };
 
+/**
+ * Get the customer-management profile for an administrator.
+ * GET /api/customers/:id
+ */
+export const getCustomerProfile = async (id) => {
+  const { data } = await api.get(`/customers/${id}`);
+  return data;
+};
 
-/*
-|--------------------------------------------------------------------------
-| GET SINGLE CUSTOMER
-|--------------------------------------------------------------------------
-*/
+/**
+ * Get customers associated with the authenticated Agent.
+ * GET /api/agent/customers
+ */
+export const getAgentCustomers = async (params = {}) => {
+  const { data } = await api.get("/agent/customers", { params });
+  return data;
+};
 
+/**
+ * Generic customer-management alias used by existing admin screens.
+ * GET /api/customers
+ */
+export const getCustomers = async (params = {}) => {
+  const { data } = await api.get("/customers", { params });
+  return data;
+};
+
+/**
+ * Get a single customer profile.
+ * GET /api/customers/:id
+ */
 export const getCustomerById = async (id) => {
-  const { data } = await api.get(
-    `/customers/${id}`
-  );
-
+  const { data } = await api.get(`/customers/${id}`);
   return data;
 };
