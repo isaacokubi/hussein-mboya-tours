@@ -1,39 +1,18 @@
-import { getUserRole, normalizeRole } from "../utils/roleUtils.js";
+import { requireRoles } from "./authMiddleware.js";
 
-export const roleMiddleware = (...allowedRoles) => (req, res, next) => {
-  try {
-    if (!req.user) {
-      return res.status(401).json({ success: false, message: "Authentication required" });
-    }
+// Canonical role middleware.
+// All role aliases are normalized by authMiddleware -> roleUtils, and the
+// privileged-role semantics therefore remain identical across the application.
+export const roleMiddleware = (...allowedRoles) => requireRoles(...allowedRoles);
 
-    const userRole = getUserRole(req.user);
-    const allowed = allowedRoles.flat().map(normalizeRole);
-
-    // Platform SuperAdmin can administer every role-scoped operational module.
-    if (userRole === "superadmin") return next();
-
-    if (!allowed.includes(userRole)) {
-      return res.status(403).json({
-        success: false,
-        message: "Access denied. Insufficient role.",
-        role: userRole,
-        allowedRoles: [...new Set(allowed)],
-      });
-    }
-
-    req.userRole = userRole;
-    next();
-  } catch (error) {
-    console.error("ROLE MIDDLEWARE ERROR:", error);
-    return res.status(500).json({ success: false, message: "Role verification failed." });
-  }
-};
-
-export const adminOnly = roleMiddleware("admin");
-export const managerOnly = roleMiddleware("manager");
-export const agentOnly = roleMiddleware("agent");
-export const guideOnly = roleMiddleware("guide");
-export const driverOnly = roleMiddleware("driver");
+export const adminOnly = roleMiddleware("admin", "superadmin");
+export const managerOnly = roleMiddleware("manager", "admin", "superadmin");
+export const agentOnly = roleMiddleware("agent", "admin", "superadmin");
+export const guideOnly = roleMiddleware("guide", "admin", "superadmin");
+export const driverOnly = roleMiddleware("driver", "admin", "superadmin");
 export const customerOnly = roleMiddleware("customer");
+
+export const authorizeRole = roleMiddleware;
+export const authorizeRoles = roleMiddleware;
 
 export default roleMiddleware;
