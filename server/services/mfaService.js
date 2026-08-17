@@ -1,47 +1,22 @@
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 
-/**
- * Generate a cryptographically secure 4-digit login PIN.
- */
-export const generateLoginPin = () => {
-  return crypto.randomInt(1000, 10000).toString();
-};
+export const generateLoginPin = () =>
+  crypto.randomInt(1000, 10000).toString();
 
-/**
- * Hash the PIN before storing it.
- */
-export const hashLoginPin = async (pin) => {
-  return bcrypt.hash(String(pin), 10);
-};
+export const hashLoginPin = async (pin) =>
+  bcrypt.hash(String(pin), 10);
 
-/**
- * Verify submitted PIN against stored hash.
- */
 export const verifyLoginPin = async (pin, hash) => {
   if (!pin || !hash) return false;
-
-  return bcrypt.compare(
-    String(pin),
-    String(hash)
-  );
+  return bcrypt.compare(String(pin), String(hash));
 };
 
-/**
- * Normalize Kenyan phone numbers.
- */
 export const normalizeMfaPhone = (phone) => {
-  const value = String(phone || "").trim();
+  let value = String(phone || "").trim().replace(/\s+/g, "");
 
-  if (!value) return "";
+  if (value.startsWith("+254")) value = `0${value.slice(4)}`;
+  else if (value.startsWith("254")) value = `0${value.slice(3)}`;
 
-  if (value.startsWith("+254")) {
-    return `0${value.slice(4)}`;
-  }
-
-  if (value.startsWith("254")) {
-    return `0${value.slice(3)}`;
-  }
-
-  return value;
+  return /^\d{10}$/.test(value) ? value : "";
 };
