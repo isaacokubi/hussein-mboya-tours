@@ -18,22 +18,7 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true, minlength: 8, select: false },
     role: {
       type: String,
-      enum: [
-        "customer",
-        "admin",
-        "super_admin",
-        "superadmin",
-        "administrator",
-        "agent",
-        "travel_agent",
-        "tour_manager",
-        "tourmanager",
-        "manager",
-        "tour_guide",
-        "tourguide",
-        "guide",
-        "driver",
-      ],
+      enum: ["customer", "admin", "super_admin", "superadmin", "administrator", "agent", "travel_agent", "tour_manager", "tourmanager", "manager", "tour_guide", "tourguide", "guide", "driver"],
       default: "customer",
     },
     roleId: { type: mongoose.Schema.Types.ObjectId, ref: "Role", default: null },
@@ -43,48 +28,25 @@ const userSchema = new mongoose.Schema(
       url: { type: String, default: "" },
       publicId: { type: String, default: "" },
     },
-    status: {
-      type: String,
-      enum: ["active", "inactive", "disabled", "suspended", "blocked"],
-      default: "active",
-    },
+    status: { type: String, enum: ["active", "inactive", "disabled", "suspended", "blocked"], default: "active" },
     isVerified: { type: Boolean, default: false },
     loyaltyPoints: { type: Number, default: 0 },
     referralCode: { type: String, unique: true, sparse: true },
     loginAttempts: { type: Number, default: 0 },
     lockUntil: { type: Date, default: null },
+
     passwordResetCodeHash: { type: String, default: "", select: false },
     passwordResetExpiresAt: { type: Date, default: null, select: false },
     passwordResetAttempts: { type: Number, default: 0, select: false },
+
+    loginPinHash: { type: String, default: "", select: false },
+    loginPinExpiresAt: { type: Date, default: null, select: false },
+    loginPinAttempts: { type: Number, default: 0, select: false },
+    loginPinLastSentAt: { type: Date, default: null, select: false },
+
     lastLoginAt: { type: Date, default: null },
   },
-  { 
-  // ==========================================================
-  // CUSTOMER MFA
-  // ==========================================================
-
-  loginPinHash: {
-    type: String,
-    select: false,
-  },
-
-  loginPinExpiresAt: {
-    type: Date,
-    select: false,
-  },
-
-  loginPinAttempts: {
-    type: Number,
-    default: 0,
-    select: false,
-  },
-
-  loginPinLastSentAt: {
-    type: Date,
-    select: false,
-  },
-
-timestamps: true }
+  { timestamps: true }
 );
 
 userSchema.pre("save", async function (next) {
@@ -102,7 +64,7 @@ userSchema.pre("save", function (next) {
 });
 
 userSchema.methods.matchPassword = async function (enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
+  return bcrypt.compare(enteredPassword, this.password);
 };
 
 userSchema.virtual("isActive").get(function () {
