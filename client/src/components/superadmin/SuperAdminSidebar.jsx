@@ -68,7 +68,7 @@ onClick={()=>setOpen(false)}
 <aside
 className={`
 fixed z-50 top-0 left-0 h-screen w-80
-bg-slate-950 text-white
+bg-[#102b24] text-white
 shadow-2xl
 transition-transform duration-300
 p-6
@@ -86,7 +86,7 @@ md:translate-x-0
 
 <div className="flex items-center gap-2">
 
-<div className="p-2 rounded-xl bg-blue-600">
+<div className="p-2 rounded-xl bg-[#1b7658]">
 <Shield size={22}/>
 </div>
 
@@ -154,9 +154,9 @@ transition-all
 ${
 isActive
 ?
-"bg-blue-600 text-white shadow-lg"
+"bg-[#1b7658] text-white shadow-lg"
 :
-"text-slate-300 hover:bg-slate-800"
+"text-slate-300 hover:bg-white/10"
 }
 `
 }

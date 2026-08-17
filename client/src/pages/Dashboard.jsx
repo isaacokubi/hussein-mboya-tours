@@ -66,12 +66,7 @@ const { data, isLoading, error } = useQuery({
 if (isLoading) {
     return (
       <div
-        className="
-      min-h-screen
-      flex
-      items-center
-      justify-center
-      "
+        className="customer-ops"
       >
         Loading dashboard...
       </div>
@@ -83,11 +78,7 @@ if (isLoading) {
 
     return (
       <div
-        className="
-      p-10
-      text-center
-      text-red-600
-      "
+        className="customer-ops"
       >
         Unable to load dashboard.
       </div>
