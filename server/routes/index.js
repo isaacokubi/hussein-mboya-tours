@@ -16,6 +16,7 @@ import userRoutes from "./userRoutes.js";
 import vehicleRoutes from "./vehicleRoutes.js";
 
 import authRoutes from "./authRoutes.js";
+import mfaRoutes from "./mfaRoutes.js";
 import bookingRoutes from "./bookingRoutes.js";
 import tourRoutes from "./tourRoutes.js";
 import destinationRoutes from "./destinationRoutes.js";
@@ -67,6 +68,8 @@ import seoRoutes from "./seoRoutes.js";
 import settingsRoutes from "./settingsRoutes.js";
 import { getPublicSettings } from "../controllers/settingsController.js";
 
+import customTourRequestRoutes from "./customTourRequestRoutes.js";
+
 const router = express.Router();
 
 /*
@@ -77,12 +80,12 @@ const router = express.Router();
 
 router.use("/categories", categoryRoutes);
 router.use("/auth", authRoutes);
+router.use("/mfa", mfaRoutes);
 router.use("/bookings", bookingRoutes);
 router.use("/tours", tourRoutes);
 router.use("/destinations", destinationRoutes);
 router.use("/admin/destinations", adminDestinationRoutes);
 router.use("/reviews", reviewRoutes);
-import customTourRequestRoutes from "./customTourRequestRoutes.js";
 router.use("/custom-tour-requests", customTourRequestRoutes);
 router.use("/wishlist", wishlistRoutes);
 router.use("/gallery", galleryRoutes);
@@ -104,8 +107,6 @@ router.use("/payments/stripe", stripeRoutes);
 |--------------------------------------------------------------------------
 */
 
-// Keep the dedicated RBAC router before the generic /admin router so role
-// requests can never be intercepted by a broader admin route.
 router.use("/admin/roles", adminRoleRoutes);
 router.use("/admin", adminRoutes);
 router.use("/admin/auth", adminAuthRoutes);
@@ -113,48 +114,36 @@ router.use("/admin/tours", adminTourRoutes);
 router.use("/admin/bookings", adminBookingRoutes);
 router.use("/admin/payments", adminPaymentRoutes);
 router.use("/system", systemHealthRoutes);
-router.use(
-  "/security",
-  securityRoutes
-);
+router.use("/security", securityRoutes);
 
-// Compatibility route for admin dashboard
 router.get(
   "/admin/system-health",
   protect,
   checkPermission("system.security"),
   async (req, res) => {
-  const mongoose = (await import("mongoose")).default;
+    const mongoose = (await import("mongoose")).default;
+    const memory = process.memoryUsage();
 
-  const memory = process.memoryUsage();
+    res.json({
+      status: "healthy",
+      server: "running",
+      nodeVersion: process.version,
+      environment: process.env.NODE_ENV || "development",
+      uptime: Math.floor(process.uptime()),
+      timestamp: new Date().toISOString(),
+      database: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
+      memory: {
+        used: Math.round(memory.heapUsed / 1024 / 1024) + " MB",
+        total: Math.round(memory.heapTotal / 1024 / 1024) + " MB"
+      },
+      platform: {
+        os: process.platform,
+        architecture: process.arch
+      }
+    });
+  }
+);
 
-  res.json({
-    status: "healthy",
-    server: "running",
-    nodeVersion: process.version,
-    environment: process.env.NODE_ENV || "development",
-    uptime: Math.floor(process.uptime()),
-    timestamp: new Date().toISOString(),
-
-    database:
-      mongoose.connection.readyState === 1
-        ? "connected"
-        : "disconnected",
-
-    memory: {
-      used:
-        Math.round(memory.heapUsed / 1024 / 1024) + " MB",
-
-      total:
-        Math.round(memory.heapTotal / 1024 / 1024) + " MB"
-    },
-
-    platform: {
-      os: process.platform,
-      architecture: process.arch
-    }
-  });
-});
 router.get("/settings/public", getPublicSettings);
 router.use("/admin/settings", settingsRoutes);
 router.use("/admin/dashboard", adminDashboardRoutes);
@@ -162,7 +151,6 @@ router.use("/admin/reviews", adminReviewRoutes);
 router.use("/admin/gallery", adminGalleryRoutes);
 router.use("/admin/coupons", adminCouponRoutes);
 router.use("/admin/finance", financeRoutes);
-// Compatibility alias for the Admin Customers CRM.
 router.use("/admin/customers", customerRoutes);
 
 /*
@@ -177,27 +165,16 @@ router.use("/analytics", analyticsRoutes);
 |--------------------------------------------------------------------------
 | TOUR MANAGER
 |--------------------------------------------------------------------------
-|
-| Both spellings are kept because the audited frontend currently uses
-| /tourmanager in manager-specific services and /tour-manager in tour APIs.
-|
-|--------------------------------------------------------------------------
 */
 
 router.use("/tourmanager", tourManagerRoutes);
 router.use("/tour-manager", tourManagerRoutes);
-
 router.use("/tour-assignments", tourAssignmentRoutes);
 router.use("/tour-reports", tourReportRoutes);
 
 /*
 |--------------------------------------------------------------------------
 | AGENT
-|--------------------------------------------------------------------------
-|
-| The frontend uses the plural /agents namespace. /agent is retained as
-| a compatibility alias for the existing route documentation.
-|
 |--------------------------------------------------------------------------
 */
 
@@ -222,8 +199,6 @@ router.use("/customers", customerRoutes);
 router.use("/documents", documentRoutes);
 router.use("/invoices", invoiceRoutes);
 router.use("/notifications", notificationRoutes);
-
-// Lightweight health endpoint for local/deployment checks.
 router.get("/health", (req, res) => {
   res.status(200).json({
     success: true,
@@ -233,7 +208,6 @@ router.get("/health", (req, res) => {
 router.use("/recommendations", recommendationRoutes);
 router.use("/guide", guideRoutes);
 router.use("/driver", driverRoutes);
-
 router.use("/vehicles", vehicleRoutes);
 router.use("/users", userRoutes);
 router.use("/staff", staffRoutes);
@@ -264,23 +238,10 @@ router.use("/admin-ai", adminAIRoutes);
 */
 
 router.use("/", seoRoutes);
-
 router.use("/superadmin", superAdminRoutes);
-
 router.use("/superadmin/api-monitor", apiMonitorRoutes);
-
-router.use(
-"/superadmin",
-superAdminOperationsRoutes
-);
-
-router.use(
-"/superadmin-tools",
-superAdminToolsRoutes
-);
+router.use("/superadmin", superAdminOperationsRoutes);
+router.use("/superadmin-tools", superAdminToolsRoutes);
+router.use("/superadmin/maintenance", superAdminMaintenanceRoutes);
 
 export default router;
-
-
-
-router.use("/superadmin/maintenance", superAdminMaintenanceRoutes);
