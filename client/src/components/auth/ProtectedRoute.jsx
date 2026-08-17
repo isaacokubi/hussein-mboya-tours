@@ -4,19 +4,21 @@ import { dashboardPath, getUserRole, normalizeRole } from "../../utils/roleUtils
 
 const ROLE_PARENTS = {
   superadmin: new Set(["superadmin", "admin", "manager", "agent", "guide", "driver"]),
-  admin: new Set(["admin"]),
+  // Backend adminOnly/managerOnly/agentOnly/driverOnly/guideOnly gates
+  // intentionally allow Admin access to operational staff areas.
+  admin: new Set(["admin", "manager", "agent", "guide", "driver"]),
 };
 
 function roleAllowed(userRole, allowedRoles) {
   if (!allowedRoles.length) return true;
   if (allowedRoles.includes(userRole)) return true;
 
-  // SuperAdmin is an administrative superset for operational staff routes.
-  // Customer is intentionally excluded so staff never inherit customer-only pages.
-  if (userRole === "superadmin") {
-    return allowedRoles.some((role) => ROLE_PARENTS.superadmin.has(role));
+  const inheritedRoles = ROLE_PARENTS[userRole];
+  if (inheritedRoles && allowedRoles.some((role) => inheritedRoles.has(role))) {
+    return true;
   }
 
+  // Customer is intentionally not an operational parent role.
   return false;
 }
 
