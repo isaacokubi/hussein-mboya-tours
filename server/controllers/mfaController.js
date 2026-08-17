@@ -1,225 +1,110 @@
-import crypto from "crypto";
-import bcrypt from "bcryptjs";
 import User from "../models/User.js";
-import {
-  generateLoginPin,
-  hashLoginPin,
-  verifyLoginPin,
-  normalizeMfaPhone,
-} from "../services/mfaService.js";
+import { createAuditLog } from "../services/auditService.js";
+import { generateLoginPin, hashLoginPin, verifyLoginPin, normalizeMfaPhone } from "../services/mfaService.js";
+import { sendSMS } from "../services/smsService.js";
+import generateToken from "../utils/generateToken.js";
+import buildPermissions from "../utils/buildPermissions.js";
 
-import * as smsService from "../services/smsService.js";
+const MAX_MFA_ATTEMPTS = 5;
+const MFA_EXPIRY_MS = 5 * 60 * 1000;
+const MFA_RESEND_DELAY_MS = 30 * 1000;
 
-/**
- * Send SMS through the project's existing SMS service.
- *
- * The adapter checks the common function names used by the
- * existing project so the MFA feature does not introduce
- * another SMS provider.
- */
-const sendMfaSms = async (phone, message) => {
-  const normalizedPhone = normalizeMfaPhone(phone);
+export const createCustomerLoginChallenge = async (user) => {
+  if (!user?._id) throw new Error("Invalid MFA user.");
 
-  if (!normalizedPhone) {
-    throw new Error("User does not have a registered phone number.");
+  const phone = normalizeMfaPhone(user.phone);
+  if (!phone) throw new Error("This account does not have a valid registered phone number.");
+
+  const now = Date.now();
+  if (user.loginPinLastSentAt && now - new Date(user.loginPinLastSentAt).getTime() < MFA_RESEND_DELAY_MS) {
+    throw new Error("Please wait before requesting another verification PIN.");
   }
 
-  const sender =
-    smsService.sendSMS ||
-    smsService.sendSms ||
-    smsService.sendSMSMessage ||
-    smsService.sendMessage;
+  const pin = generateLoginPin();
+  user.loginPinHash = await hashLoginPin(pin);
+  user.loginPinExpiresAt = new Date(now + MFA_EXPIRY_MS);
+  user.loginPinAttempts = 0;
+  user.loginPinLastSentAt = new Date();
+  await user.save({ validateBeforeSave: false });
 
-  if (typeof sender !== "function") {
-    throw new Error(
-      "No supported SMS sending function was found in smsService.js."
-    );
+  try {
+    await sendSMS(phone, `Your Hussein Mboya Tours login PIN is ${pin}. It expires in 5 minutes. Do not share this PIN with anyone.`);
+  } catch (error) {
+    user.loginPinHash = "";
+    user.loginPinExpiresAt = null;
+    user.loginPinAttempts = 0;
+    await user.save({ validateBeforeSave: false });
+    throw error;
   }
 
-  return sender(normalizedPhone, message);
+  return { userId: user._id, phone };
 };
 
-/**
- * Start customer MFA challenge.
- *
- * This endpoint receives a verified email/password result,
- * generates a 4-digit PIN, stores only its hash, then sends
- * the PIN to the registered phone.
- */
 export const sendCustomerLoginPin = async (req, res, next) => {
   try {
-    const {
-      userId,
-    } = req.body;
+    const userId = String(req.body?.userId || "").trim();
+    if (!userId) return res.status(400).json({ success: false, message: "MFA user ID is required." });
 
-    if (!userId) {
-      return res.status(400).json({
-        success: false,
-        message: "MFA user ID is required.",
-      });
-    }
+    const user = await User.findById(userId).select("+loginPinHash +loginPinExpiresAt +loginPinAttempts +loginPinLastSentAt");
+    if (!user) return res.status(404).json({ success: false, message: "User account not found." });
+    if ((user.roleId?.name || user.role || user.legacyRole) !== "customer") return res.status(400).json({ success: false, message: "Customer MFA is not available for this account." });
 
-    const user = await User.findById(userId)
-      .select(
-        "+loginPinHash +loginPinExpiresAt +loginPinAttempts +loginPinLastSentAt"
-      );
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User account not found.",
-      });
-    }
-
-    const phone = normalizeMfaPhone(user.phone);
-
-    if (!phone) {
-      return res.status(400).json({
-        success: false,
-        message: "This account does not have a registered phone number.",
-      });
-    }
-
-    const now = Date.now();
-
-    // Prevent rapid repeated PIN generation.
-    if (
-      user.loginPinLastSentAt &&
-      now - new Date(user.loginPinLastSentAt).getTime() < 30 * 1000
-    ) {
-      return res.status(429).json({
-        success: false,
-        message: "Please wait before requesting another PIN.",
-      });
-    }
-
-    const pin = generateLoginPin();
-
-    user.loginPinHash = await hashLoginPin(pin);
-    user.loginPinExpiresAt = new Date(now + 5 * 60 * 1000);
-    user.loginPinAttempts = 0;
-    user.loginPinLastSentAt = new Date();
-
-    await user.save();
-
-    await sendMfaSms(
-      phone,
-      `Your Coherent Tours login PIN is ${pin}. It expires in 5 minutes. Do not share this PIN with anyone.`
-    );
-
-    return res.json({
-      success: true,
-      message: "A 4-digit verification PIN has been sent to your registered phone.",
-      mfaRequired: true,
-      userId: user._id,
-    });
+    await createCustomerLoginChallenge(user);
+    return res.status(200).json({ success: true, mfaRequired: true, userId: user._id, message: "A 4-digit verification PIN has been sent to your registered phone." });
   } catch (error) {
+    if (error.message.includes("wait before requesting")) return res.status(429).json({ success: false, message: error.message });
     next(error);
   }
 };
 
-/**
- * Verify the 4-digit customer MFA PIN.
- */
 export const verifyCustomerLoginPin = async (req, res, next) => {
   try {
-    const {
-      userId,
-      pin,
-    } = req.body;
-
-    if (!userId || !pin) {
-      return res.status(400).json({
-        success: false,
-        message: "User ID and 4-digit PIN are required.",
-      });
-    }
-
-    if (!/^\d{4}$/.test(String(pin))) {
-      return res.status(400).json({
-        success: false,
-        message: "PIN must contain exactly 4 digits.",
-      });
-    }
+    const userId = String(req.body?.userId || "").trim();
+    const pin = String(req.body?.pin || "").trim();
+    if (!userId || !/^\d{4}$/.test(pin)) return res.status(400).json({ success: false, message: "User ID and 4-digit PIN are required." });
 
     const user = await User.findById(userId)
-      .select(
-        "+password +loginPinHash +loginPinExpiresAt +loginPinAttempts +loginPinLastSentAt"
-      );
+      .select("+loginPinHash +loginPinExpiresAt +loginPinAttempts +loginPinLastSentAt")
+      .populate({ path: "roleId", populate: { path: "permissions" } })
+      .populate("permissionsOverride");
 
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid MFA request.",
-      });
-    }
-
-    if (!user.loginPinHash || !user.loginPinExpiresAt) {
-      return res.status(400).json({
-        success: false,
-        message: "No active login PIN exists. Request a new PIN.",
-      });
-    }
+    if (!user || (user.roleId?.name || user.role || user.legacyRole) !== "customer") return res.status(401).json({ success: false, message: "Invalid MFA request." });
+    if (!user.loginPinHash || !user.loginPinExpiresAt) return res.status(400).json({ success: false, message: "No active login PIN exists. Request a new PIN." });
 
     if (new Date(user.loginPinExpiresAt).getTime() < Date.now()) {
-      user.loginPinHash = undefined;
-      user.loginPinExpiresAt = undefined;
+      user.loginPinHash = "";
+      user.loginPinExpiresAt = null;
       user.loginPinAttempts = 0;
-
-      await user.save();
-
-      return res.status(401).json({
-        success: false,
-        message: "The login PIN has expired. Request a new PIN.",
-      });
+      await user.save({ validateBeforeSave: false });
+      return res.status(401).json({ success: false, message: "The login PIN has expired. Request a new PIN." });
     }
 
-    if (Number(user.loginPinAttempts || 0) >= 5) {
-      return res.status(429).json({
-        success: false,
-        message: "Too many incorrect PIN attempts. Request a new PIN.",
-      });
-    }
+    const attempts = Number(user.loginPinAttempts || 0);
+    if (attempts >= MAX_MFA_ATTEMPTS) return res.status(429).json({ success: false, message: "Too many incorrect PIN attempts. Request a new PIN." });
 
-    const valid = await verifyLoginPin(
-      String(pin),
-      user.loginPinHash
-    );
-
+    const valid = await verifyLoginPin(pin, user.loginPinHash);
     if (!valid) {
-      user.loginPinAttempts =
-        Number(user.loginPinAttempts || 0) + 1;
-
-      await user.save();
-
-      return res.status(401).json({
-        success: false,
-        message: "Incorrect verification PIN.",
-        attemptsRemaining: Math.max(
-          0,
-          5 - Number(user.loginPinAttempts || 0)
-        ),
-      });
+      user.loginPinAttempts = attempts + 1;
+      await user.save({ validateBeforeSave: false });
+      return res.status(401).json({ success: false, message: "Incorrect verification PIN.", attemptsRemaining: Math.max(0, MAX_MFA_ATTEMPTS - user.loginPinAttempts) });
     }
 
-    // Consume the PIN immediately.
-    user.loginPinHash = undefined;
-    user.loginPinExpiresAt = undefined;
+    const permissions = buildPermissions(user);
+    const effectiveRole = user.roleId?.name || user.role || user.legacyRole || "customer";
+
+    user.loginPinHash = "";
+    user.loginPinExpiresAt = null;
     user.loginPinAttempts = 0;
+    user.loginAttempts = 0;
+    user.lockUntil = null;
+    user.lastLoginAt = new Date();
+    await user.save({ validateBeforeSave: false });
 
-    await user.save();
+    const token = generateToken({ _id: user._id, role: effectiveRole, roleId: user.roleId, email: user.email, permissions });
 
-    return res.json({
-      success: true,
-      mfaVerified: true,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
-      },
-    });
+    await createAuditLog({ user: user._id, action: "mfa_login_success", resource: "Authentication", description: "Customer successfully completed MFA verification.", severity: "medium" });
+
+    return res.status(200).json({ success: true, mfaVerified: true, token, user: { ...user.toObject(), password: undefined, loginPinHash: undefined, loginPinExpiresAt: undefined, loginPinAttempts: undefined, loginPinLastSentAt: undefined, permissions, role: effectiveRole } });
   } catch (error) {
     next(error);
   }
