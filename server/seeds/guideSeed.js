@@ -6,25 +6,26 @@ import Role from "../models/Role.js";
 import Permission from "../models/Permission.js";
 import Staff from "../models/Staff.js";
 
+import crypto from "crypto";
 dotenv.config();
 
 const guides = [
   {
     name: "John Safari Guide",
     email: "john.guide@husseinmboyatours.com",
-    password: "password123",
+    password: process.env.SEED_GUIDE_PASSWORD || crypto.randomBytes(18).toString("base64url"),
     phone: "+254700111222",
   },
   {
     name: "Mary Wildlife Expert",
     email: "mary.guide@husseinmboyatours.com",
-    password: "password123",
+    password: process.env.SEED_GUIDE_PASSWORD || crypto.randomBytes(18).toString("base64url"),
     phone: "+254700333444",
   },
   {
     name: "David Mountain Guide",
     email: "david.guide@husseinmboyatours.com",
-    password: "password123",
+    password: process.env.SEED_GUIDE_PASSWORD || crypto.randomBytes(18).toString("base64url"),
     phone: "+254700555666",
   },
 ];

@@ -3,11 +3,6 @@ node_modules/
 */node_modules/
 
 # Environment / secrets
-.env
-.env.*
-.env.local
-.env.development
-.env.production
 
 # Build / deployment output
 dist/
@@ -68,3 +63,42 @@ upgrade_*.py
 # Local temporary files
 *.tmp
 *.temp
+*.bak*
+*.orig
+client/dist/
+server/logs/
+
+# Safe environment templates may be committed
+# Safe environment templates are allowed in Git
+
+# ------------------------------------------------------------
+# Environment files
+# ------------------------------------------------------------
+# Never commit real environment files.
+
+# Safe example templates may be committed.
+
+# ------------------------------------------------------------
+# Environment files
+# ------------------------------------------------------------
+# Real environment files must never be committed.
+
+# Safe environment templates may be committed.
+
+# ============================================================
+# Environment and secrets
+# ============================================================
+# Never commit real environment files.
+.env
+.env.local
+.env.development
+.env.production
+server/.env
+client/.env
+client/.env.local
+client/.env.development
+client/.env.production
+
+# Safe environment templates may be committed.
+!server/.env.example
+!client/.env.example

@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import User from "../models/User.js";
 import Role from "../models/Role.js";
 
+import crypto from "crypto";
 dotenv.config();
 
 const resetTourGuidePassword = async () => {
@@ -39,7 +40,7 @@ const resetTourGuidePassword = async () => {
     |--------------------------------------------------------------------------
     */
 
-    tourGuide.password = "Guide@12345";
+    tourGuide.password = process.env.SEED_GUIDE_PASSWORD || crypto.randomBytes(18).toString("base64url");
 
     /*
     |--------------------------------------------------------------------------

@@ -4,6 +4,7 @@ import User from "../models/User.js";
 import Staff from "../models/Staff.js";
 import Vehicle from "../models/Vehicle.js";
 
+import crypto from "crypto";
 dotenv.config();
 
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -12,7 +13,7 @@ if (!MONGODB_URI) throw new Error("MONGODB_URI is missing from server/.env");
 const seed = async () => {
   await mongoose.connect(MONGODB_URI);
 
-  const seedPassword = "ChangeMe123!";
+  const seedPassword = process.env.SEED_STAFF_PASSWORD || crypto.randomBytes(18).toString("base64url");
 
   for (let i = 1; i <= 10; i += 1) {
     const guideEmail = `guide${i}@seed.husseintours.local`;

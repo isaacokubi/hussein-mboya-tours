@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import User from "../models/User.js";
 import Role from "../models/Role.js";
 
+import crypto from "crypto";
 dotenv.config();
 
 const seedUsers = async () => {
@@ -68,7 +69,7 @@ const seedUsers = async () => {
 
       phone: "0712345678",
 
-      password: "Admin@12345",
+      password: process.env.SEED_ADMIN_PASSWORD || crypto.randomBytes(18).toString("base64url"),
 
       role: adminRole._id,
 
@@ -92,7 +93,7 @@ const seedUsers = async () => {
 
       phone: "0712345679",
 
-      password: "Manager@12345",
+      password: process.env.SEED_MANAGER_PASSWORD || crypto.randomBytes(18).toString("base64url"),
 
       role: managerRole._id,
 
@@ -110,7 +111,7 @@ const seedUsers = async () => {
     console.log({
       name: admin.name,
       email: admin.email,
-      password: "Admin@12345",
+      password: process.env.SEED_ADMIN_PASSWORD || crypto.randomBytes(18).toString("base64url"),
       role: "superadmin",
     });
 
@@ -121,7 +122,7 @@ const seedUsers = async () => {
     console.log({
       name: manager.name,
       email: manager.email,
-      password: "Manager@12345",
+      password: process.env.SEED_MANAGER_PASSWORD || crypto.randomBytes(18).toString("base64url"),
       role: "tourmanager",
     });
 

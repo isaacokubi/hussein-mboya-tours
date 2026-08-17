@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import User from "../models/User.js";
 import Role from "../models/Role.js";
 
+import crypto from "crypto";
 dotenv.config();
 
 const resetBookingAgentPassword = async () => {
@@ -34,7 +35,7 @@ const resetBookingAgentPassword = async () => {
     }
 
     // Reset password
-    agent.password = "Agent@12345";
+    agent.password = process.env.SEED_AGENT_PASSWORD || crypto.randomBytes(18).toString("base64url");
 
     // Application role
     agent.role = "agent";

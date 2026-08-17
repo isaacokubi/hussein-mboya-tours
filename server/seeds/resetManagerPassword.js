@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import User from "../models/User.js";
 import Role from "../models/Role.js";
 
+import crypto from "crypto";
 dotenv.config();
 
 const resetManagerPassword = async () => {
@@ -36,7 +37,7 @@ const resetManagerPassword = async () => {
       );
     }
 
-    manager.password = "Manager@12345";
+    manager.password = process.env.SEED_MANAGER_PASSWORD || crypto.randomBytes(18).toString("base64url");
 
     manager.role = "tour_manager";
     manager.roleId = managerRole._id;

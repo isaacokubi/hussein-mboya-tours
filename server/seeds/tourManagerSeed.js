@@ -5,6 +5,7 @@ import User from "../models/User.js";
 import Role from "../models/Role.js";
 import Permission from "../models/Permission.js";
 
+import crypto from "crypto";
 dotenv.config();
 
 const createTourManager = async () => {
@@ -160,7 +161,7 @@ const createTourManager = async () => {
       manager = await User.create({
         name: "Tour Manager",
         email,
-        password: "Manager@12345",
+        password: process.env.SEED_MANAGER_PASSWORD || crypto.randomBytes(18).toString("base64url"),
         phone: "0000000000",
 
         role: "tour_manager",

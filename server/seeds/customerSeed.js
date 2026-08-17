@@ -5,6 +5,7 @@ import User from "../models/User.js";
 import Role from "../models/Role.js";
 import Permission from "../models/Permission.js";
 
+import crypto from "crypto";
 dotenv.config();
 
 const createCustomer = async () => {
@@ -88,7 +89,7 @@ const createCustomer = async () => {
 
       email,
 
-      password: "Customer@12345",
+      password: process.env.SEED_CUSTOMER_PASSWORD || crypto.randomBytes(18).toString("base64url"),
 
       phone: "",
 

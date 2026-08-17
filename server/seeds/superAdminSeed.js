@@ -5,6 +5,7 @@ import User from "../models/User.js";
 import Role from "../models/Role.js";
 import Permission from "../models/Permission.js";
 
+import crypto from "crypto";
 dotenv.config();
 
 const createSuperAdmin = async () => {
@@ -91,7 +92,7 @@ const createSuperAdmin = async () => {
 
       email,
 
-      password: "Admin@12345", // pre-save hook hashes it
+      password: process.env.SEED_SUPERADMIN_PASSWORD || crypto.randomBytes(18).toString("base64url"), // pre-save hook hashes it
 
       phone: "",
 
@@ -113,7 +114,7 @@ const createSuperAdmin = async () => {
     console.log({
       name: admin.name,
       email: admin.email,
-      password: "Admin@12345",
+      password: process.env.SEED_SUPERADMIN_PASSWORD || crypto.randomBytes(18).toString("base64url"),
       role: admin.role,
       roleId: superAdminRole.name,
     });

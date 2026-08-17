@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import User from "../models/User.js";
 import Role from "../models/Role.js";
 
+import crypto from "crypto";
 dotenv.config();
 
 const resetFinanceOfficerPassword = async () => {
@@ -39,7 +40,7 @@ const resetFinanceOfficerPassword = async () => {
     |--------------------------------------------------------------------------
     */
 
-    financeOfficer.password = "Finance@12345";
+    financeOfficer.password = process.env.SEED_FINANCE_PASSWORD || crypto.randomBytes(18).toString("base64url");
 
     /*
     |--------------------------------------------------------------------------

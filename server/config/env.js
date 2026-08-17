@@ -28,7 +28,9 @@ const env = {
     process.env.JWT_SECRET,
 
   JWT_EXPIRE:
-    process.env.JWT_EXPIRE || "7d",
+    process.env.JWT_EXPIRE ||
+    process.env.JWT_EXPIRES_IN ||
+    "7d",
 
   /*
   |--------------------------------------------------------------------------

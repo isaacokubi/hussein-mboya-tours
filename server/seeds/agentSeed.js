@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 import Agent from "../models/Agent.js";
 
+import crypto from "crypto";
 dotenv.config({
   path: "./server/.env"
 });
@@ -41,7 +42,7 @@ const seedAgents = async () => {
 
 
     const password = await bcrypt.hash(
-      "Agent@12345",
+      process.env.SEED_AGENT_PASSWORD || crypto.randomBytes(18).toString("base64url"),
       12
     );
 
