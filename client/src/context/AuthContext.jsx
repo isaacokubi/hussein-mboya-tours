@@ -10,47 +10,34 @@ export const useAuth = () => useContext(AuthContext);
 const normalizePermissions = (permissions) => {
   if (!Array.isArray(permissions)) return [];
   const seen = new Set();
-  return permissions
-    .map((permission) => {
-      if (typeof permission === "string") return { name: permission.trim() };
-      if (!permission?.name) return null;
-      return { ...permission, name: String(permission.name).trim() };
-    })
-    .filter((permission) => {
-      if (!permission?.name) return false;
-      const key = permission.name.toLowerCase();
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
+  return permissions.map((permission) => {
+    if (typeof permission === "string") return { name: permission.trim() };
+    if (!permission?.name) return null;
+    return { ...permission, name: String(permission.name).trim() };
+  }).filter((permission) => {
+    if (!permission?.name) return false;
+    const key = permission.name.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 };
 
 const extractRolePermissions = (user) => {
-  const roleIdPermissions = user?.roleId && typeof user.roleId === "object"
-    ? user.roleId.permissions || []
-    : [];
-  const roleObjectPermissions = user?.role && typeof user.role === "object"
-    ? user.role.permissions || []
-    : [];
-
+  const roleIdPermissions = user?.roleId && typeof user.roleId === "object" ? user.roleId.permissions || [] : [];
+  const roleObjectPermissions = user?.role && typeof user.role === "object" ? user.role.permissions || [] : [];
   return [...roleIdPermissions, ...roleObjectPermissions];
 };
 
 const normalizeUser = (user) => {
   if (!user) return null;
-
   const rolePermissions = extractRolePermissions(user);
   const overridePermissions = user.permissionsOverride || user.permissionOverrides || [];
   const directPermissions = user.permissions || [];
-
   return {
     ...user,
     role: getUserRole(user),
-    permissions: normalizePermissions([
-      ...rolePermissions,
-      ...overridePermissions,
-      ...directPermissions,
-    ]),
+    permissions: normalizePermissions([...rolePermissions, ...overridePermissions, ...directPermissions]),
   };
 };
 
@@ -90,13 +77,21 @@ export function AuthProvider({ children }) {
     }
     setToken(savedToken);
     fetchCurrentUser()
-      .catch((error) => console.error("AUTH ME ERROR", error.response?.data || error.message))
+      .catch((error) => {
+        console.error("AUTH ME ERROR", error.response?.data || error.message);
+        ["token", "user", "permissions"].forEach((key) => localStorage.removeItem(key));
+        setToken(null);
+        setUser(null);
+      })
       .finally(() => setLoading(false));
   }, []);
 
   const login = async (email, password) => {
-    const { data } = await api.post("/auth/login", { email, password });
+    const { data } = await api.post("/auth/login", { email: String(email || "").trim().toLowerCase(), password });
+
+    if (data?.mfaRequired) return data;
     if (!data?.token) throw new Error("Authentication response did not contain a token.");
+
     localStorage.setItem("token", data.token);
     setToken(data.token);
     persistUser(data.user);
@@ -106,44 +101,24 @@ export function AuthProvider({ children }) {
     } catch (error) {
       console.warn("AUTH REFRESH FAILED", error.response?.data || error.message);
     }
-
     return data;
   };
 
   const register = async (userData) => (await api.post("/auth/register", userData)).data;
-
   const permissions = user?.permissions || [];
-
   const hasPermission = (permission) => {
     if (!user || !permission) return false;
     if (getUserRole(user) === "superadmin") return true;
     const wanted = String(permission).trim().toLowerCase();
     return permissions.some((p) => String(p?.name || "").trim().toLowerCase() === wanted && p?.enabled !== false);
   };
-
   const hasAnyPermission = (items = []) => items.some(hasPermission);
   const hasAllPermissions = (items = []) => items.every(hasPermission);
   const hasRole = (roleName) => getUserRole(user) === normalizeRole(roleName);
   const canAccess = hasPermission;
   const getMenuPermissions = () => permissions;
 
-  const value = useMemo(() => ({
-    user,
-    setUser: (valueOrUpdater) => setUser((current) => normalizeUser(typeof valueOrUpdater === "function" ? valueOrUpdater(current) : valueOrUpdater)),
-    token,
-    loading,
-    login,
-    register,
-    logout,
-    fetchCurrentUser,
-    permissions,
-    hasPermission,
-    hasAnyPermission,
-    hasAllPermissions,
-    hasRole,
-    canAccess,
-    getMenuPermissions,
-  }), [user, token, loading, permissions]);
+  const value = useMemo(() => ({ user, setUser: (valueOrUpdater) => setUser((current) => normalizeUser(typeof valueOrUpdater === "function" ? valueOrUpdater(current) : valueOrUpdater)), token, loading, login, register, logout, fetchCurrentUser, permissions, hasPermission, hasAnyPermission, hasAllPermissions, hasRole, canAccess, getMenuPermissions }), [user, token, loading, permissions]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
