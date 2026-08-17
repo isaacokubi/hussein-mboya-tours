@@ -280,163 +280,6 @@ const availableSlots = isCustomBooking
     },
   });
 
-  if (tourLoading || bookingLoading) {
-    return <div className="flex min-h-screen items-center justify-center">Loading tour...</div>;
-  }
-
-  if ((!tour?._id && !booking?._id)) {
-    return <div className="flex min-h-screen items-center justify-center text-red-600">Tour not found.</div>;
-  }
-
-const displayTravelDate =
-  customSnapshot.startDate ||
-  booking?.travelDate ||
-  travelDate;
-
-const displayTravellers =
-  customSnapshot.people ||
-  booking?.numberOfGuests ||
-  travellerCount;
-
-const displayPickupLocation =
-  customSnapshot.pickupLocation ||
-  booking?.pickupLocation ||
-  pickupLocation;
-
-const displayPickupTime =
-  customSnapshot.pickupTime ||
-  booking?.pickupTime ||
-  pickupTime;
-
-const displayHotel =
-  customSnapshot.accommodationPreference ||
-  booking?.hotelName ||
-  hotelName;
-
-const displayRoom =
-  booking?.roomNumber ||
-  roomNumber;
-
-const displaySpecialRequests =
-  customSnapshot.specialRequests ||
-  customSnapshot.requirements ||
-  booking?.specialRequests ||
-  specialRequests;
-
-const total =
-isCustomBooking
-?
-Number(booking.totalAmount || 0)
-:
-Number(tour?.price || 0) * Number(travellerCount);
-
-  const handleSubmit = (event) => {
-    event.preventDefault();
-
-    if (!travelDate) return toast.error("Please select a travel date.");
-
-    let normalizedPhone = "";
-    let rawPhone = String(phone || "").trim();
-
-    if (paymentMethod === "mpesa") {
-      if (!rawPhone) {
-        return toast.error("Please enter your M-Pesa phone number.");
-      }
-
-      /*
-      |--------------------------------------------------------------------------
-      | VALIDATE AND NORMALIZE M-PESA PHONE NUMBER
-      |--------------------------------------------------------------------------
-      |
-      | Accepted:
-      | 0707476586
-      | 0700000000
-      | 0100000000
-      | 0110000000
-      | +254707476586
-      | 254707476586
-      |
-      | Backend receives:
-      | 254707476586
-      |--------------------------------------------------------------------------
-      */
-
-      normalizedPhone = rawPhone.replace(/\D/g, "");
-
-      if (normalizedPhone.startsWith("0")) {
-        normalizedPhone = `254${normalizedPhone.substring(1)}`;
-      }
-
-      if (!/^254[17]\d{8}$/.test(normalizedPhone)) {
-        return toast.error(
-          "Enter a valid Safaricom phone number, e.g. 0707476586."
-        );
-      }
-    }
-
-    if (!total || Number(total) <= 0) {
-      return toast.error("Invalid booking amount.");
-    }
-    const finalPickupLocation =
-      pickupLocation.trim() ||
-      String(displayPickupLocation || "").trim();
-
-    const finalPickupTime =
-      pickupTime ||
-      displayPickupTime;
-
-    if (!finalPickupLocation) {
-      return toast.error("Please enter the exact pickup location.");
-    }
-
-    if (!finalPickupTime) {
-      return toast.error("Please select the pickup time.");
-    }
-    if (!isCustomBooking && (travellerCount < 1 || travellerCount > availableSlots)) {
-      return toast.error(`Only ${availableSlots} slot(s) are currently available.`);
-    }
-
-    const travelers = Array.from({ length: Number(travellerCount) }, (_, index) => ({
-      name: `Traveller ${index + 1}`,
-      age: 0,
-      passportNumber: "",
-    }));
-
-    bookingMutation.mutate({
-      ...(isCustomBooking
-        ? { customTourRequest: booking.customTourRequest?._id || booking.customTourRequest }
-        : { tour: tour._id }),
-      travelDate,
-      travelers,
-      numberOfGuests: Number(travellerCount),
-      subtotal: Number(total),
-      totalAmount: Number(total),
-      contact: {
-        ...(paymentMethod === "mpesa" && {
-          phone: rawPhone,
-        }),
-      },
-      pickupLocation: finalPickupLocation,
-      pickupTime: finalPickupTime,
-      hotelName: hotelName.trim(),
-      roomNumber: roomNumber.trim(),
-      specialRequests: specialRequests
-        .split("\n")
-        .map((item) => item.trim())
-        .filter(Boolean),
-      paymentMethod:
-        paymentMethod === "mpesa"
-          ? "MPESA"
-          : paymentMethod === "stripe"
-          ? "CARD"
-          : "BANK_TRANSFER",
-      ...(paymentMethod === "mpesa" && {
-        normalizedPhone,
-      }),
-    });
-  };
-
-
   /*
   |--------------------------------------------------------------------------
   | M-PESA PAYMENT STATUS POLLING
@@ -652,6 +495,166 @@ Number(tour?.price || 0) * Number(travellerCount);
     paymentState?.bookingId,
     paymentState?.status,
   ]);
+
+  if (tourLoading || bookingLoading) {
+    return <div className="flex min-h-screen items-center justify-center">Loading tour...</div>;
+  }
+
+  if ((!tour?._id && !booking?._id)) {
+    return <div className="flex min-h-screen items-center justify-center text-red-600">Tour not found.</div>;
+  }
+
+const displayTravelDate =
+  customSnapshot.startDate ||
+  booking?.travelDate ||
+  travelDate;
+
+const displayTravellers =
+  customSnapshot.people ||
+  booking?.numberOfGuests ||
+  travellerCount;
+
+const displayPickupLocation =
+  customSnapshot.pickupLocation ||
+  booking?.pickupLocation ||
+  pickupLocation;
+
+const displayPickupTime =
+  customSnapshot.pickupTime ||
+  booking?.pickupTime ||
+  pickupTime;
+
+const displayHotel =
+  customSnapshot.accommodationPreference ||
+  booking?.hotelName ||
+  hotelName;
+
+const displayRoom =
+  booking?.roomNumber ||
+  roomNumber;
+
+const displaySpecialRequests =
+  customSnapshot.specialRequests ||
+  customSnapshot.requirements ||
+  booking?.specialRequests ||
+  specialRequests;
+
+const total =
+isCustomBooking
+?
+Number(booking.totalAmount || 0)
+:
+Number(tour?.price || 0) * Number(travellerCount);
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+
+    if (!travelDate) return toast.error("Please select a travel date.");
+
+    let normalizedPhone = "";
+    let rawPhone = String(phone || "").trim();
+
+    if (paymentMethod === "mpesa") {
+      if (!rawPhone) {
+        return toast.error("Please enter your M-Pesa phone number.");
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | VALIDATE AND NORMALIZE M-PESA PHONE NUMBER
+      |--------------------------------------------------------------------------
+      |
+      | Accepted:
+      | 0707476586
+      | 0700000000
+      | 0100000000
+      | 0110000000
+      | +254707476586
+      | 254707476586
+      |
+      | Backend receives:
+      | 254707476586
+      |--------------------------------------------------------------------------
+      */
+
+      normalizedPhone = rawPhone.replace(/\D/g, "");
+
+      if (normalizedPhone.startsWith("0")) {
+        normalizedPhone = `254${normalizedPhone.substring(1)}`;
+      }
+
+      if (!/^254[17]\d{8}$/.test(normalizedPhone)) {
+        return toast.error(
+          "Enter a valid Safaricom phone number, e.g. 0707476586."
+        );
+      }
+    }
+
+    if (!total || Number(total) <= 0) {
+      return toast.error("Invalid booking amount.");
+    }
+    const finalPickupLocation =
+      pickupLocation.trim() ||
+      String(displayPickupLocation || "").trim();
+
+    const finalPickupTime =
+      pickupTime ||
+      displayPickupTime;
+
+    if (!finalPickupLocation) {
+      return toast.error("Please enter the exact pickup location.");
+    }
+
+    if (!finalPickupTime) {
+      return toast.error("Please select the pickup time.");
+    }
+    if (!isCustomBooking && (travellerCount < 1 || travellerCount > availableSlots)) {
+      return toast.error(`Only ${availableSlots} slot(s) are currently available.`);
+    }
+
+    const travelers = Array.from({ length: Number(travellerCount) }, (_, index) => ({
+      name: `Traveller ${index + 1}`,
+      age: 0,
+      passportNumber: "",
+    }));
+
+    bookingMutation.mutate({
+      ...(isCustomBooking
+        ? { customTourRequest: booking.customTourRequest?._id || booking.customTourRequest }
+        : { tour: tour._id }),
+      travelDate,
+      travelers,
+      numberOfGuests: Number(travellerCount),
+      subtotal: Number(total),
+      totalAmount: Number(total),
+      contact: {
+        ...(paymentMethod === "mpesa" && {
+          phone: rawPhone,
+        }),
+      },
+      pickupLocation: finalPickupLocation,
+      pickupTime: finalPickupTime,
+      hotelName: hotelName.trim(),
+      roomNumber: roomNumber.trim(),
+      specialRequests: specialRequests
+        .split("\n")
+        .map((item) => item.trim())
+        .filter(Boolean),
+      paymentMethod:
+        paymentMethod === "mpesa"
+          ? "MPESA"
+          : paymentMethod === "stripe"
+          ? "CARD"
+          : "BANK_TRANSFER",
+      ...(paymentMethod === "mpesa" && {
+        normalizedPhone,
+      }),
+    });
+  };
+
+
+
+
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-10">
