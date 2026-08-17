@@ -8,8 +8,6 @@ import Role from "../models/Role.js";
 import SecurityLog from "../models/SecurityLog.js";
 import generateToken from "../utils/generateToken.js";
 import buildPermissions from "../utils/buildPermissions.js";
-import { createCustomerLoginChallenge } from "./mfaController.js";
-import { normalizeMfaPhone } from "../services/mfaService.js";
 import { sendSMS } from "../services/smsService.js";
 
 const MAX_LOGIN_ATTEMPTS = 5;
@@ -41,7 +39,7 @@ export const login = async (req, res, next) => {
     }
 
     const user = await User.findOne({ email: normalizedEmail })
-      .select("+password +loginPinHash +loginPinExpiresAt +loginPinAttempts +loginPinLastSentAt")
+      .select("+password")
       .populate({ path: "roleId", populate: { path: "permissions" } })
       .populate("permissionsOverride");
 
@@ -72,18 +70,6 @@ export const login = async (req, res, next) => {
 
     user.loginAttempts = 0;
     user.lockUntil = null;
-
-    if (effectiveRole === "customer") {
-      try {
-        const challenge = await createCustomerLoginChallenge(user);
-        await createAuditLog({ user: user._id, action: "mfa_challenge_created", resource: "Authentication", description: "Customer password verified; MFA PIN challenge created.", severity: "medium", ipAddress: req.ip, userAgent: req.headers["user-agent"] });
-        return res.status(200).json({ success: true, mfaRequired: true, userId: challenge.userId, message: "A 4-digit verification PIN has been sent to your registered phone." });
-      } catch (mfaError) {
-        if (mfaError.message.includes("wait before requesting")) return res.status(429).json({ success: false, message: mfaError.message });
-        console.error("MFA CHALLENGE ERROR:", mfaError);
-        return res.status(503).json({ success: false, message: "Unable to send the verification PIN. Please try again." });
-      }
-    }
 
     user.lastLoginAt = new Date();
     await user.save({ validateBeforeSave: false });
