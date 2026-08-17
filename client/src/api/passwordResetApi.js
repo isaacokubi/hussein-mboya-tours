@@ -1,7 +1,7 @@
 import api from "./axios";
 
-export const requestPasswordReset = async (phone) => {
-  const { data } = await api.post("/auth/password-reset/request", { phone });
+export const requestPasswordReset = async ({ email, phone }) => {
+  const { data } = await api.post("/auth/password-reset/request", { email, phone });
   return data;
 };
 
