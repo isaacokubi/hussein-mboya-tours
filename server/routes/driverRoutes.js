@@ -1,17 +1,13 @@
-// server/routes/driverRoutes.js
+// Driver operational routes.
 import express from "express";
 import { driverDashboard } from "../controllers/driverController.js";
-import { protect } from "../middleware/authMiddleware.js";
-import { roleMiddleware } from "../middleware/roleMiddleware.js";
+import { protect, driverOnly } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
 router.use(protect);
-router.use(roleMiddleware("driver", "admin", "super_admin", "superadmin", "tour_manager", "tourmanager", "manager"));
+router.use(driverOnly);
 
 router.get("/dashboard", driverDashboard);
 
 export default router;
-
-
-// RBAC middleware placeholder
