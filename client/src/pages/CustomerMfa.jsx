@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import api from "../api/axios";
+import { dashboardPath } from "../utils/roleUtils";
 
-export default function CustomerMfa() {
+export default function CustomerMfa({ userId: userIdProp }) {
   const navigate = useNavigate();
   const location = useLocation();
-
-  const userId = location.state?.userId || "";
-
+  const userId = userIdProp || location.state?.userId || "";
   const [pin, setPin] = useState("");
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
@@ -16,51 +16,25 @@ export default function CustomerMfa() {
 
   const verify = async (event) => {
     event.preventDefault();
-
     setError("");
     setMessage("");
 
-    if (!/^\d{4}$/.test(pin)) {
-      setError("Enter the 4-digit PIN sent to your registered phone.");
-      return;
-    }
-
-    if (!userId) {
-      setError("Your login session is incomplete. Please log in again.");
-      return;
-    }
+    if (!userId) return setError("Your login verification session has expired. Please log in again.");
+    if (!/^\d{4}$/.test(pin)) return setError("Enter the 4-digit PIN sent to your registered phone.");
 
     try {
       setLoading(true);
+      const { data } = await api.post("/mfa/customer/verify-pin", { userId, pin });
+      if (!data?.success || !data?.token) throw new Error(data?.message || "Unable to verify the PIN.");
 
-      const response = await api.post(
-        "/mfa/customer/verify-pin",
-        {
-          userId,
-          pin,
-        }
-      );
-
-      if (response.data?.success) {
-        /*
-         * The existing login implementation should establish the
-         * authenticated session/token after MFA verification.
-         *
-         * Reload the application so AuthContext can re-evaluate
-         * the authenticated state.
-         */
-        window.location.href = "/dashboard";
-      } else {
-        setError(
-          response.data?.message ||
-            "Unable to verify the PIN."
-        );
-      }
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      localStorage.setItem("permissions", JSON.stringify((data.user?.permissions || []).map((p) => typeof p === "string" ? p : p?.name).filter(Boolean)));
+      toast.success("Verification successful.");
+      navigate(dashboardPath(data.user), { replace: true });
+      window.location.reload();
     } catch (requestError) {
-      setError(
-        requestError?.response?.data?.message ||
-          "Incorrect or expired PIN."
-      );
+      setError(requestError?.response?.data?.message || requestError?.message || "Incorrect or expired PIN.");
     } finally {
       setLoading(false);
     }
@@ -69,31 +43,14 @@ export default function CustomerMfa() {
   const resend = async () => {
     setError("");
     setMessage("");
-
-    if (!userId) {
-      setError("Your login session is incomplete. Please log in again.");
-      return;
-    }
+    if (!userId) return navigate("/login", { replace: true });
 
     try {
       setResending(true);
-
-      const response = await api.post(
-        "/mfa/customer/send-pin",
-        {
-          userId,
-        }
-      );
-
-      setMessage(
-        response.data?.message ||
-          "A new PIN has been sent."
-      );
+      const { data } = await api.post("/mfa/customer/send-pin", { userId });
+      setMessage(data?.message || "A new PIN has been sent.");
     } catch (requestError) {
-      setError(
-        requestError?.response?.data?.message ||
-          "Unable to send a new PIN."
-      );
+      setError(requestError?.response?.data?.message || "Unable to send a new PIN.");
     } finally {
       setResending(false);
     }
@@ -103,91 +60,20 @@ export default function CustomerMfa() {
     <div className="min-h-screen bg-slate-50 px-4 py-12">
       <div className="mx-auto max-w-md rounded-3xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
         <div className="text-center">
-          <p className="text-sm font-semibold uppercase tracking-wider text-emerald-700">
-            Security Verification
-          </p>
-
-          <h1 className="mt-2 text-3xl font-bold text-slate-900">
-            Verify your login
-          </h1>
-
-          <p className="mt-3 text-sm leading-6 text-slate-500">
-            We sent a 4-digit verification PIN to your registered
-            mobile number.
-          </p>
+          <p className="text-sm font-semibold uppercase tracking-wider text-emerald-700">Security Verification</p>
+          <h1 className="mt-2 text-3xl font-bold text-slate-900">Verify your login</h1>
+          <p className="mt-3 text-sm leading-6 text-slate-500">Enter the 4-digit verification PIN sent to your registered mobile number.</p>
         </div>
 
-        <form
-          onSubmit={verify}
-          className="mt-8 space-y-5"
-        >
-          <div>
-            <label
-              htmlFor="login-pin"
-              className="mb-2 block text-sm font-semibold text-slate-700"
-            >
-              4-digit PIN
-            </label>
+        <form onSubmit={verify} className="mt-8 space-y-5">
+          <input id="login-pin" type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={4} value={pin} onChange={(event) => setPin(event.target.value.replace(/\D/g, "").slice(0, 4))} autoFocus placeholder="••••" className="w-full rounded-xl border border-slate-300 px-4 py-4 text-center text-3xl font-bold tracking-[0.5em] outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" />
 
-            <input
-              id="login-pin"
-              type="text"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              maxLength={4}
-              value={pin}
-              onChange={(event) =>
-                setPin(
-                  event.target.value
-                    .replace(/\D/g, "")
-                    .slice(0, 4)
-                )
-              }
-              className="w-full rounded-xl border border-slate-300 px-4 py-4 text-center text-3xl font-bold tracking-[0.5em] outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
-              placeholder="••••"
-            />
-          </div>
+          {error && <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{error}</div>}
+          {message && <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">{message}</div>}
 
-          {error && (
-            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
-              {error}
-            </div>
-          )}
-
-          {message && (
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
-              {message}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-xl bg-emerald-700 px-5 py-4 font-bold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {loading
-              ? "Verifying..."
-              : "Verify & Continue"}
-          </button>
-
-          <button
-            type="button"
-            onClick={resend}
-            disabled={resending}
-            className="w-full rounded-xl border border-slate-300 px-5 py-3 font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
-          >
-            {resending
-              ? "Sending..."
-              : "Send New PIN"}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => navigate("/login")}
-            className="w-full text-sm font-semibold text-slate-500 hover:text-slate-900"
-          >
-            Back to Login
-          </button>
+          <button type="submit" disabled={loading || pin.length !== 4} className="w-full rounded-xl bg-emerald-700 px-5 py-4 font-bold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60">{loading ? "Verifying..." : "Verify & Continue"}</button>
+          <button type="button" onClick={resend} disabled={resending} className="w-full rounded-xl border border-slate-300 px-5 py-3 font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60">{resending ? "Sending..." : "Send New PIN"}</button>
+          <button type="button" onClick={() => navigate("/login", { replace: true })} className="w-full text-sm font-semibold text-slate-500 hover:text-slate-900">Back to Login</button>
         </form>
       </div>
     </div>
