@@ -62,6 +62,7 @@ export const superAdminOnly = requireRoles("superadmin");
 export const managerOnly = requireRoles("manager", "admin", "superadmin");
 export const agentOnly = requireRoles("agent", "admin", "superadmin");
 export const driverOnly = requireRoles("driver", "admin", "superadmin");
+export const guideOnly = requireRoles("guide", "admin", "superadmin");
 export const customerOnly = requireRoles("customer");
 
 export const checkPermission = (permissionName) => (req, res, next) => {
