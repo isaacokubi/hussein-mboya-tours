@@ -1,0 +1,4 @@
+import api from "./axios";export const createCustomTourRequest=async(payload)=>(await api.post("/custom-tour-requests",payload)).data;export const getMyCustomTourRequests=async()=>(await api.get("/custom-tour-requests/mine")).data;export const getAdminCustomTourRequests=async()=>(await api.get("/custom-tour-requests/admin")).data;export const quoteCustomTourRequest=async({id,...payload})=>(await api.patch(`/custom-tour-requests/admin/${id}/quote`,payload)).data;
+export const assignCustomTourResources=async({id,guide,driver,agent})=>(await api.patch(`/custom-tour-requests/admin/${id}/assign`,{guide,driver,agent})).data;
+
+export const convertCustomTourRequest=async(id)=>(await api.post(`/custom-tour-requests/${id}/convert`)).data;

@@ -1,0 +1,5 @@
+import { NavLink } from "react-router-dom";
+import { LayoutDashboard, CalendarCheck, Users, WalletCards, MessageSquareQuote } from "lucide-react";
+import { useSettings } from "../../context/SettingsContext";
+const links=[["Dashboard","/agent",LayoutDashboard],["Bookings","/agent/bookings",CalendarCheck],["Customers","/agent/customers",Users],["Quotes","/agent/quotes",MessageSquareQuote],["Commissions","/agent/commission",WalletCards]];
+export default function AgentSidebar(){const {companyName}=useSettings();return <div><div className="ops-brand"><div className="ops-brand-mark">AG</div><div><div className="ops-brand-title">{companyName||"COHERENT TOURS"}</div><div className="ops-brand-sub">Sales Operations</div></div></div><div className="ops-section">Agent Workspace</div><nav className="ops-nav">{links.map(([name,path,Icon])=><NavLink key={path} to={path} end={path==="/agent"} className={({isActive})=>`ops-link ${isActive?"active":""}`}><Icon size={17}/><span>{name}</span></NavLink>)}</nav></div>}

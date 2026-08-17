@@ -1,0 +1,213 @@
+// client/src/api/bookingApi.js
+
+import api from "./axios";
+
+
+/*
+|--------------------------------------------------------------------------
+| GET BOOKINGS
+| General booking list (supports query parameters)
+|--------------------------------------------------------------------------
+*/
+
+export const getBookings = async (params = {}) => {
+
+  const { data } = await api.get(
+    "/admin/bookings",
+    {
+      params,
+    }
+  );
+
+  return data;
+
+};
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| GET MY BOOKINGS
+|--------------------------------------------------------------------------
+*/
+
+export const getMyBookings = async (params = {}) => {
+  // React Query v5 passes a QueryFunctionContext when this function is
+  // used directly as queryFn. Never send that context as URL parameters.
+  const safeParams =
+    params &&
+    typeof params === "object" &&
+    !("queryKey" in params) &&
+    !("signal" in params)
+      ? params
+      : {};
+
+  const { data } = await api.get(
+    "/bookings/my-bookings",
+    {
+      params: safeParams,
+    }
+  );
+
+  return data;
+};
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| CREATE BOOKING
+|--------------------------------------------------------------------------
+*/
+
+export const createBooking = async (data) => {
+
+  const response = await api.post(
+    "/bookings",
+    data
+  );
+
+  return response.data;
+
+};
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| INITIATE MPESA PAYMENT
+|--------------------------------------------------------------------------
+*/
+
+export const initiatePayment = async (data) => {
+
+  const response = await api.post(
+    "/payments/mpesa",
+    data
+  );
+
+  return response.data;
+
+};
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| GET SINGLE BOOKING
+|--------------------------------------------------------------------------
+*/
+
+export const getBooking = async (id) => {
+
+  const { data } = await api.get(
+    `/bookings/${id}`
+  );
+
+  return data;
+
+};
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| CANCEL BOOKING
+|--------------------------------------------------------------------------
+*/
+
+export const cancelBooking = async (id) => {
+
+  const { data } = await api.put(
+    `/bookings/cancel/${id}`,
+    {}
+  );
+
+  return data;
+
+};
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| ADMIN GET BOOKINGS
+|--------------------------------------------------------------------------
+*/
+
+export const getAdminBookings = async (params = {}) => {
+
+  const { data } = await api.get(
+    "/admin/bookings",
+    {
+      params,
+    }
+  );
+
+  return data;
+
+};
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| ADMIN UPDATE BOOKING STATUS
+|--------------------------------------------------------------------------
+*/
+
+export const updateBookingStatus = async (
+  id,
+  status
+) => {
+
+  const { data } = await api.put(
+    `/admin/bookings/${id}/status`,
+    {
+      status,
+    }
+  );
+
+  return data;
+
+};
+
+
+
+export const getAllBookings = async()=>{
+
+const response = await api.get("/admin/bookings");
+
+return response.data;
+
+};
+
+
+export const rescheduleBooking = async (id, payload) => (await api.put(`/bookings/reschedule/${id}`, payload)).data;
+
+
+export const getBookingById = async (id) => {
+  const response = await api.get(`/bookings/${id}`);
+  return response.data;
+};
+
+
+/*
+|--------------------------------------------------------------------------
+| CANCEL BOOKING
+|--------------------------------------------------------------------------
+*/
