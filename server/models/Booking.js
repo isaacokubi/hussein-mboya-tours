@@ -485,6 +485,7 @@ customer: {
       type: String,
       enum: [
         "pending",
+        "failed",
         "confirmed",
         "assigned",
         "ongoing",

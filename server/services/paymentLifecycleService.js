@@ -398,7 +398,7 @@ export const failBookingPayment = async ({
           bookingDoc.status !== "refunded"
         ) {
           bookingDoc.status =
-            "pending";
+            "failed";
         }
       }
 
@@ -818,7 +818,8 @@ export const completeBookingPayment = async ({
         */
 
         if (
-          bookingDoc.status === "pending"
+          bookingDoc.status === "pending" ||
+          bookingDoc.status === "failed"
         ) {
 
           bookingDoc.status =

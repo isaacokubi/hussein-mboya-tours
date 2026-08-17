@@ -15,6 +15,7 @@
 
 export const BOOKING_STATUSES = [
   "pending",
+  "failed",
   "confirmed",
   "assigned",
   "ongoing",
@@ -83,6 +84,13 @@ export const PAYMENT_METHODS = {
 
 export const BOOKING_STATUS_TRANSITIONS = {
   pending: [
+    "confirmed",
+    "failed",
+    "cancelled",
+  ],
+
+  failed: [
+    "pending",
     "confirmed",
     "cancelled",
   ],
