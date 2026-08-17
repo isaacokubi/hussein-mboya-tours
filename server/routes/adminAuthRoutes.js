@@ -6,6 +6,8 @@ import {
   adminLogin,
 } from "../controllers/adminAuthController.js";
 
+import { loginRateLimiter } from "../middleware/authRateLimiters.js";
+
 const router = express.Router();
 
 /*
@@ -20,6 +22,7 @@ const router = express.Router();
  */
 router.post(
   "/login",
+  loginRateLimiter,
   adminLogin
 );
 

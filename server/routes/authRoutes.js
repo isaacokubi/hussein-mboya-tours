@@ -15,6 +15,11 @@ import {
   protect,
 } from "../middleware/authMiddleware.js";
 
+import {
+  loginRateLimiter,
+  passwordResetRateLimiter,
+} from "../middleware/authRateLimiters.js";
+
 const router = express.Router();
 
 /*
@@ -38,16 +43,19 @@ router.post(
  */
 router.post(
   "/login",
+  loginRateLimiter,
   login
 );
 
 router.post(
   "/password-reset/request",
+  passwordResetRateLimiter,
   requestPasswordReset
 );
 
 router.post(
   "/password-reset/confirm",
+  passwordResetRateLimiter,
   resetPasswordWithCode
 );
 
