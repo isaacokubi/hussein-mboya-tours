@@ -1,165 +1,70 @@
-# Repair script backups
-.audit-fix-backup-*/
-.fix-backup-*/
-.module-completion-backup-*/
-
-# Audit reports
-REAL_COMPLETION_REPORT.txt
-DEEP_REPAIR_REPORT.txt# ==============================
 # Dependencies
-# ==============================
-
 node_modules/
 */node_modules/
 
-
-# ==============================
-# Environment Variables
-# ==============================
-
+# Environment / secrets
 .env
 .env.*
 .env.local
 .env.development
 .env.production
 
-
-# ==============================
-# Build Output
-# ==============================
-
+# Build / deployment output
 dist/
 build/
+.vercel/
+.render/
 
-
-# ==============================
-# Uploads / User Generated Files
-# ==============================
-
-uploads/
-
-
-# ==============================
-# Logs
-# ==============================
-
+# Logs / coverage
 logs/
 *.log
+coverage/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-
-
-# ==============================
-# Coverage / Testing
-# ==============================
-
-coverage/
-
-
-# ==============================
-# IDE Settings
-# ==============================
-
+# IDE / OS
 .vscode/
 .idea/
-
-
-# ==============================
-# OS Files
-# ==============================
-
 .DS_Store
 Thumbs.db
-
-
-# ==============================
-# Deployment
-# ==============================
-
-.vercel/
-.render/
-
-
-# ==============================
-# Temporary Files
-# ==============================
-
-*.tmp
-*.temp
 *.swp
-.vercel
-.env*
 
-# Automatic repair backups
+# Uploads / generated data
+uploads/
+server/server/backups/
+
+# Repair / audit backups and temporary artifacts
+*.bak
 *.backup
+*.backup*
+*.before-*
+*.old
+*.save
+*.broken
+*-BACKUP*/
+*-BACKUP-*
 client-BACKUP-*
 server-BACKUP-*
-
-# Local repair/merge backups
-client-BACKUP-before-repair/
-server-BACKUP-before-repair/
-BACKUP-BEFORE-ZIP-MERGE-*/
-merge-backup-*/
-
-# Local audit/repair backups
+.audit-fix-backup-*/
+.fix-backup-*/
+.module-completion-backup-*/
 .final-audit-backup-*/
 .final-repair-backup-*/
 merge-backup-*/
-*-BACKUP*/
-*.backup
-*.bak
-
-# Duplicate extracted project folders
+BACKUP-BEFORE-ZIP-MERGE-*/
 hussein-mboya-tours-main/
-client/node_modules/
-server/node_modules/
-client/dist/
-server/dist/
 
-# Development backups and temporary artifacts
-*.backup
-*.bak
-*.before-*
-*backup*
-backup/
-backups/
-
-# Temporary repair scripts and reports
+# Python/local repair tooling
 *.pyc
 __pycache__/
-*_report.txt
-*_REPORT.txt
 repair_*.py
 fix_*.py
 upgrade_*.py
 *_audit*.py
+*_report.txt
+*_REPORT.txt
 
-
-# Python temporary files
-*.py
-*.pyc
-__pycache__/
-
-# Dependencies
-node_modules/
-
-# Builds
-dist/
-build/
-
-# Environment
-.env*
-
-# Temporary repair files
-*.backup*
-*.before-*
-*.old
-*.log
-
-# Database backups
-server/server/backups/
-node_modules/
-client/node_modules/
-server/node_modules/
+# Local temporary files
+*.tmp
+*.temp
