@@ -1,0 +1,96 @@
+name: Repair M-Pesa Failure Booking State
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - .github/workflows/repair-mpesa-failure-state.yml
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Repair payment failure lifecycle
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          # 1. Booking status must support an explicit failed state.
+          p = Path('server/models/Booking.js')
+          s = p.read_text()
+          old = '''        "pending",\n        "confirmed",\n        "assigned",'''
+          new = '''        "pending",\n        "failed",\n        "confirmed",\n        "assigned",'''
+          if old not in s:
+              raise SystemExit('Booking status enum anchor not found')
+          s = s.replace(old, new, 1)
+          p.write_text(s)
+
+          # 2. Add failed to the canonical booking status list and transitions.
+          p = Path('server/constants/bookingConstants.js')
+          s = p.read_text()
+          old = '''export const BOOKING_STATUSES = [\n  "pending",\n  "confirmed",'''
+          new = '''export const BOOKING_STATUSES = [\n  "pending",\n  "failed",\n  "confirmed",'''
+          if old not in s:
+              raise SystemExit('BOOKING_STATUSES anchor not found')
+          s = s.replace(old, new, 1)
+
+          old = '''  pending: [\n    "confirmed",\n    "cancelled",\n  ],\n\n  confirmed: ['''
+          new = '''  pending: [\n    "confirmed",\n    "failed",\n    "cancelled",\n  ],\n\n  failed: [\n    "pending",\n    "confirmed",\n    "cancelled",\n  ],\n\n  confirmed: ['''
+          if old not in s:
+              raise SystemExit('BOOKING_STATUS_TRANSITIONS anchor not found')
+          s = s.replace(old, new, 1)
+          p.write_text(s)
+
+          # 3. A failed M-Pesa callback must make the booking visibly failed,
+          #    not leave Booking.status as pending.
+          p = Path('server/services/paymentLifecycleService.js')
+          s = p.read_text()
+          old = '''        if (\n          bookingDoc.status !== "completed" &&\n          bookingDoc.status !== "cancelled" &&\n          bookingDoc.status !== "refunded"\n        ) {\n          bookingDoc.status =\n            "pending";\n        }'''
+          new = '''        if (\n          bookingDoc.status !== "completed" &&\n          bookingDoc.status !== "cancelled" &&\n          bookingDoc.status !== "refunded"\n        ) {\n          bookingDoc.status =\n            "failed";\n        }'''
+          if old not in s:
+              raise SystemExit('failBookingPayment status block not found')
+          s = s.replace(old, new, 1)
+
+          # 4. A customer may retry after a failed payment. A successful retry
+          #    must be allowed to confirm the booking.
+          old = '''        if (\n          bookingDoc.status === "pending"\n        ) {\n\n          bookingDoc.status =\n            "confirmed";\n        }'''
+          new = '''        if (\n          bookingDoc.status === "pending" ||\n          bookingDoc.status === "failed"\n        ) {\n\n          bookingDoc.status =\n            "confirmed";\n        }'''
+          if old not in s:
+              raise SystemExit('completeBookingPayment confirmation block not found')
+          s = s.replace(old, new, 1)
+          p.write_text(s)
+          PY
+
+          node --check server/services/paymentLifecycleService.js
+          node --check server/models/Booking.js
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add server/models/Booking.js server/constants/bookingConstants.js server/services/paymentLifecycleService.js
+          git diff --cached --check
+          git diff --cached --quiet && exit 0
+          git commit -m "fix: mark failed M-Pesa bookings as failed"
+          git push origin main
+
+      - name: Remove one-time repair workflow
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/repair-mpesa-failure-state.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -u .github/workflows/repair-mpesa-failure-state.yml
+          git commit -m "chore: remove one-time payment repair workflow"
+          git push origin main
