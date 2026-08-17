@@ -1,53 +1,18 @@
 // server/routes/tourAssignmentRoutes.js
 
 import express from "express";
-
-import {
-  assignTourResources,
-} from "../controllers/tourAssignmentController.js";
-
-import {
-  protect,
-} from "../middleware/authMiddleware.js";
-
-import {
-  roleMiddleware,
-} from "../middleware/roleMiddleware.js";
+import { assignTourResources } from "../controllers/tourAssignmentController.js";
+import { protect, managerOnly } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-/*
-|--------------------------------------------------------------------------
-| AUTHORIZATION
-|--------------------------------------------------------------------------
-|
-| All tour assignment routes require authentication.
-|
-|--------------------------------------------------------------------------
-*/
-
 router.use(protect);
-
-/*
-|--------------------------------------------------------------------------
-| TOUR ASSIGNMENTS
-|--------------------------------------------------------------------------
-*/
+router.use(managerOnly);
 
 /**
  * PUT /api/tour-assignments/:id/assign
- *
- * Assign:
- * - Guide
- * - Driver
- * - Vehicle
+ * Assign or update guide, driver and/or vehicle resources for a tour.
  */
-router.put(
-  "/:id/assign",
-  roleMiddleware("admin", "tour_manager", "tourmanager", "manager"),
-  assignTourResources
-);
+router.put("/:id/assign", assignTourResources);
 
 export default router;
-
-// RBAC middleware placeholder
