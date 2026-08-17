@@ -3,9 +3,9 @@
 import express from "express";
 
 import {
-mpesaRefundResult
-}
-from "../controllers/mpesaRefundController.js";
+  mpesaRefundResult,
+  mpesaRefundTimeout,
+} from "../controllers/mpesaRefundController.js";
 
 import {
   stkPush,
@@ -75,16 +75,24 @@ router.get(
   verifyBookingPayment
 );
 
-export default router;
-
 /*
 |--------------------------------------------------------------------------
 | MPESA REFUND CALLBACKS
 |--------------------------------------------------------------------------
+|
+| These endpoints are public because Safaricom Daraja calls them
+| server-to-server. Do not attach application JWT middleware.
+|--------------------------------------------------------------------------
 */
 
 router.post(
-"/refund/result",
-mpesaRefundResult
+  "/refund/result",
+  mpesaRefundResult
 );
 
+router.post(
+  "/refund/timeout",
+  mpesaRefundTimeout
+);
+
+export default router;

@@ -29,11 +29,11 @@ export const roleMiddleware = (...allowedRoles) => (req, res, next) => {
   }
 };
 
-export const adminOnly = roleMiddleware("admin");
-export const managerOnly = roleMiddleware("manager");
-export const agentOnly = roleMiddleware("agent");
-export const guideOnly = roleMiddleware("guide");
+export const adminOnly = roleMiddleware("admin", "administrator");
+export const managerOnly = roleMiddleware("manager", "tour_manager", "tourmanager");
+export const agentOnly = roleMiddleware("agent", "travel_agent", "travelagent");
+export const guideOnly = roleMiddleware("guide", "tour_guide", "tourguide");
 export const driverOnly = roleMiddleware("driver");
-export const customerOnly = roleMiddleware("customer");
+export const customerOnly = roleMiddleware("customer", "user");
 
 export default roleMiddleware;

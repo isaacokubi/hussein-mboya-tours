@@ -1,171 +1,125 @@
-
 import Payment from "../models/Payment.js";
-import Booking from "../models/Booking.js";
-
-
-import { refundBookingPayment } from "../services/paymentLifecycleService.js";
+import {
+  refundBookingPayment
+} from "../services/paymentLifecycleService.js";
 
 export const mpesaRefundResult = async (
   req,
   res,
   next
 ) => {
-
   try {
-
     console.log(
       "MPESA REFUND RESULT",
-      JSON.stringify(
-        req.body,
-        null,
-        2
-      )
+      JSON.stringify(req.body, null, 2)
     );
 
-    const result =
-      req.body?.Result;
+    const result = req.body?.Result;
 
-    if (!result) {
-
+    if (!result || typeof result !== "object") {
       return res.json({
-        success: true,
-        message:
-          "Invalid refund callback",
+        ResultCode: 0,
+        ResultDesc: "Accepted"
       });
-
     }
 
-    const conversationId =
+    const conversationId = String(
       result.ConversationID ||
       result.OriginatorConversationID ||
-      "";
+      ""
+    ).trim();
 
     if (!conversationId) {
-
       return res.json({
-        success: true,
-        message:
-          "Refund conversation ID missing",
+        ResultCode: 0,
+        ResultDesc: "Accepted"
       });
-
     }
 
-    const payment =
-      await Payment.findOne({
-        refundReference:
-          conversationId,
-      });
+    const payment = await Payment.findOne({
+      refundReference: conversationId
+    });
 
+    /*
+     * Unknown provider callbacks are acknowledged without revealing
+     * whether a payment exists.
+     */
     if (!payment) {
-
       return res.json({
-        success: true,
-        message:
-          "Payment not found",
+        ResultCode: 0,
+        ResultDesc: "Accepted"
       });
-
     }
 
     /*
-    |--------------------------------------------------------------------------
-    | IDEMPOTENCY
-    |--------------------------------------------------------------------------
-    */
-
+     * Idempotency protection.
+     */
     if (
-      payment.refundStatus ===
-        "completed" &&
-      payment.status ===
-        "refunded"
+      payment.refundStatus === "completed" &&
+      payment.status === "refunded"
     ) {
-
       return res.json({
-        success: true,
-        message:
-          "Refund already processed",
+        ResultCode: 0,
+        ResultDesc: "Accepted"
       });
-
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | M-PESA REFUND SUCCESS
-    |--------------------------------------------------------------------------
-    */
+    const resultCode = Number(result.ResultCode);
 
-    if (
-      Number(result.ResultCode) === 0
-    ) {
-
+    if (resultCode === 0) {
       await refundBookingPayment({
-
         payment,
-
-        refundAmount:
-          Number(
-            payment.refundRequestedAmount ||
-            payment.amount ||
-            0
-          ),
-
-        refundData: {
-
-          refundReference:
-            conversationId,
-
-          refundStatus:
-            "completed",
-
-          refundResponse:
-            result,
-
-        },
-
-      });
-
-    } else {
-
-      payment.refundStatus =
-        "failed";
-
-      payment.refundReference =
-        conversationId;
-
-      payment.refundRequestedAmount =
-        Number(
+        refundAmount: Number(
           payment.refundRequestedAmount ||
+          payment.amount ||
           0
-        );
+        ),
+        refundData: {
+          refundReference: conversationId,
+          refundStatus: "completed",
+          refundResponse: result
+        }
+      });
+    } else {
+      payment.refundStatus = "failed";
+      payment.refundReference = conversationId;
 
       await payment.save();
-
     }
 
     return res.json({
-      success: true,
+      ResultCode: 0,
+      ResultDesc: "Accepted"
     });
 
   } catch (error) {
+    console.error(
+      "M-PESA REFUND CALLBACK ERROR:",
+      error
+    );
 
-    next(error);
-
+    /*
+     * Provider callbacks should be acknowledged after the request has
+     * reached the application. The error remains in server logs.
+     */
+    return res.json({
+      ResultCode: 0,
+      ResultDesc: "Accepted"
+    });
   }
-
 };
 
-export const mpesaRefundTimeout = async(req,res)=>{
+export const mpesaRefundTimeout = async (
+  req,
+  res
+) => {
+  console.log(
+    "MPESA REFUND TIMEOUT",
+    JSON.stringify(req.body, null, 2)
+  );
 
-
-console.log(
-"MPESA REFUND TIMEOUT",
-JSON.stringify(req.body,null,2)
-);
-
-
-res.json({
-success:true
-});
-
-
+  return res.json({
+    ResultCode: 0,
+    ResultDesc: "Accepted"
+  });
 };
-

@@ -1,4 +1,8 @@
 import express from "express";
+import {
+  protect,
+  checkPermission
+} from "../middleware/authMiddleware.js";
 import superAdminRoutes from "./superAdminRoutes.js";
 import apiMonitorRoutes from "./apiMonitorRoutes.js";
 import superAdminOperationsRoutes from "./superAdminOperationsRoutes.js";
@@ -30,6 +34,7 @@ import adminBookingRoutes from "./adminBookingRoutes.js";
 import adminPaymentRoutes from "./adminPaymentRoutes.js";
 import adminRoleRoutes from "./adminRoleRoutes.js";
 import systemHealthRoutes from "./systemHealthRoutes.js";
+import securityRoutes from "./securityRoutes.js";
 import adminAuthRoutes from "./adminAuthRoutes.js";
 
 import adminDashboardRoutes from "./adminDashboardRoutes.js";
@@ -108,9 +113,17 @@ router.use("/admin/tours", adminTourRoutes);
 router.use("/admin/bookings", adminBookingRoutes);
 router.use("/admin/payments", adminPaymentRoutes);
 router.use("/system", systemHealthRoutes);
+router.use(
+  "/security",
+  securityRoutes
+);
 
 // Compatibility route for admin dashboard
-router.get("/admin/system-health", async (req, res) => {
+router.get(
+  "/admin/system-health",
+  protect,
+  checkPermission("system.security"),
+  async (req, res) => {
   const mongoose = (await import("mongoose")).default;
 
   const memory = process.memoryUsage();

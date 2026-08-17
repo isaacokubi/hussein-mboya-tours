@@ -27,7 +27,7 @@ const resetTourGuidePassword = async () => {
 
     // Find RBAC role
     const guideRole =
-      (await Role.findOne({ name: "tourguide" })) ||
+      (await Role.findOne({ name: "guide" })) ||
       (await Role.findOne({ name: "guide" }));
 
     if (!guideRole) {

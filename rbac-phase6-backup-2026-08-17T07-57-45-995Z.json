@@ -1,0 +1,74 @@
+[
+  {
+    "_id": "6a648cddc14fbd351570dc89",
+    "name": "Booking Agent",
+    "email": "agent@husseinmboyatours.com",
+    "role": "agent",
+    "legacyRole": "bookingagent",
+    "status": "active",
+    "roleId": "6a68af6fac6be6b267b6fd12"
+  },
+  {
+    "_id": "6a72ec40dd99de18cadbcd61",
+    "name": "David Mountain Guide",
+    "email": "david.guide@husseinmboyatours.com",
+    "role": "tour_guide",
+    "roleId": "6a7b68b86b936aeeff3c2824",
+    "legacyRole": "customer",
+    "status": "active"
+  },
+  {
+    "_id": "6a7b68b86b936aeeff3c2826",
+    "name": "driver1",
+    "email": "driver1@husseinmboyatours.com",
+    "role": "driver",
+    "roleId": "6a7b85a69cc30de33cd41c03",
+    "legacyRole": "tour_guide",
+    "status": "active"
+  },
+  {
+    "_id": "6a648d6989341fda381067c1",
+    "name": "Finance Officer",
+    "email": "finance@husseinmboyatours.com",
+    "role": "admin",
+    "legacyRole": "financeofficer",
+    "status": "active",
+    "roleId": "6a68af6fac6be6b267b6fd0f"
+  },
+  {
+    "_id": "6a72ec40dd99de18cadbcd5f",
+    "name": "John Safari Guide",
+    "email": "john.guide@husseinmboyatours.com",
+    "role": "tour_guide",
+    "roleId": "6a7b68b86b936aeeff3c2824",
+    "legacyRole": "customer",
+    "status": "active"
+  },
+  {
+    "_id": "6a68b76e35983a45db15fe64",
+    "name": "Hussein Tour Manager",
+    "email": "manager@demo.com",
+    "role": "manager",
+    "roleId": "6a68af6fac6be6b267b6fd10",
+    "legacyRole": "customer",
+    "status": "active"
+  },
+  {
+    "_id": "6a72ec40dd99de18cadbcd60",
+    "name": "Mary Wildlife Expert",
+    "email": "mary.guide@husseinmboyatours.com",
+    "role": "tour_guide",
+    "roleId": "6a7b68b86b936aeeff3c2824",
+    "legacyRole": "customer",
+    "status": "active"
+  },
+  {
+    "_id": "6a7c56b7a3a446bf30692154",
+    "name": "Super Administrator",
+    "email": "superadmin@coherenttours.com",
+    "role": "super_admin",
+    "roleId": "6a7c532679b36de451b7f1c8",
+    "legacyRole": "customer",
+    "status": "active"
+  }
+]

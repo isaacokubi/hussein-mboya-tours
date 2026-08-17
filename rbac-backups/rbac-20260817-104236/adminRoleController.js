@@ -101,11 +101,11 @@ const ensureDefaultPermissions = async () => {
       if (!role) {
         set.displayName = roleName.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
         set.description = `${roleName.replace(/_/g, " ")} access`;
-        set.isSystem = ["admin", "superadmin", "manager", "guide", "driver"].includes(roleName);
-        set.level = roleName === "superadmin" ? 200 : roleName === "admin" ? 100 : 20;
+        set.isSystem = ["admin", "super_admin", "tour_manager", "tour_guide", "driver"].includes(roleName);
+        set.level = roleName === "super_admin" ? 200 : roleName === "admin" ? 100 : 20;
         set.isDefault = roleName === "customer";
       } else if (!Number.isFinite(Number(role.level)) || Number(role.level) < 1) {
-        set.level = roleName === "superadmin" ? 200 : roleName === "admin" ? 100 : 20;
+        set.level = roleName === "super_admin" ? 200 : roleName === "admin" ? 100 : 20;
       }
 
       await Role.updateOne(
@@ -327,7 +327,7 @@ export const updateRole = async (req, res, next) => {
 
     if (
         existingRole &&
-        normalizeRole(existingRole.name) === "superadmin"
+        existingRole.name === "super_admin"
     ) {
 
         const currentRole =
@@ -419,7 +419,7 @@ export const deleteRole = async(req,res,next)=>{
 
     if (
         existingRole &&
-        normalizeRole(existingRole.name) === "superadmin"
+        existingRole.name === "super_admin"
     ) {
         return res.status(403).json({
             message:
