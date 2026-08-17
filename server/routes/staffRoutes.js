@@ -12,87 +12,26 @@ import {
   getGuides,
 } from "../controllers/staffController.js";
 
+import { protect } from "../middleware/authMiddleware.js";
 import {
-  protect,
-} from "../middleware/authMiddleware.js";
-
-import {
-  roleMiddleware,
+  adminOnly,
+  managerOnly,
 } from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
 
-/*
-|--------------------------------------------------------------------------
-| AUTHORIZATION
-|--------------------------------------------------------------------------
-*/
-
 router.use(protect);
 
-/*
-|--------------------------------------------------------------------------
-| DRIVER MANAGEMENT
-|--------------------------------------------------------------------------
-|
-| Must come BEFORE "/:id"
-|
-*/
+// Operational staff lookup. Managers can read staff needed for assignments.
+router.get("/guides", managerOnly, getGuides);
+router.get("/drivers", managerOnly, getDrivers);
 
-router.get(
-  "/guides",
-  roleMiddleware("admin", "tour_manager", "tourmanager", "manager"),
-  getGuides
-);
-
-router.get(
-  "/drivers",
-  roleMiddleware("admin", "tour_manager", "tourmanager", "manager"),
-  getDrivers
-);
-
-/*
-|--------------------------------------------------------------------------
-| STAFF
-|--------------------------------------------------------------------------
-*/
-
-router.post(
-  "/",
-  roleMiddleware("admin"),
-  createStaff
-);
-
-router.get(
-  "/",
-  roleMiddleware("admin", "tour_manager", "tourmanager", "manager"),
-  getStaff
-);
-
-router.get(
-  "/:id",
-  roleMiddleware("admin", "tour_manager", "tourmanager", "manager"),
-  getStaffById
-);
-
-router.put(
-  "/:id/status",
-  roleMiddleware("admin"),
-  updateStaff
-);
-
-router.put(
-  "/:id",
-  roleMiddleware("admin"),
-  updateStaff
-);
-
-router.delete(
-  "/:id",
-  roleMiddleware("admin"),
-  deleteStaff
-);
+// Staff administration is restricted to Admin/SuperAdmin.
+router.post("/", adminOnly, createStaff);
+router.get("/", managerOnly, getStaff);
+router.get("/:id", managerOnly, getStaffById);
+router.put("/:id/status", adminOnly, updateStaff);
+router.put("/:id", adminOnly, updateStaff);
+router.delete("/:id", adminOnly, deleteStaff);
 
 export default router;
-
-// RBAC middleware placeholder
