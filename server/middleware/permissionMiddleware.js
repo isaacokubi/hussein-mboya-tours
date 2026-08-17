@@ -5,6 +5,7 @@ const ADMIN_COMPATIBILITY_PERMISSIONS = [
   "admin.dashboard",
   "roles.manage",
   "system.audit",
+  "system.security",
   "manage_customers",
   "payment.manage",
   "report.view",
