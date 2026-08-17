@@ -51,11 +51,10 @@ export default function SuperAdminRoles() {
     }
   };
 
-  const selectedIsSystem = Boolean(selectedRole?.isSystem);
   const selectedIsSuperAdmin = roleKey(selectedRole) === "superadmin";
 
   const togglePermission = (id) => {
-    if (selectedIsSystem) return;
+    if (selectedIsSuperAdmin) return;
     setSelectedPermissions((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
@@ -63,7 +62,7 @@ export default function SuperAdminRoles() {
     <div className="space-y-6 p-8">
       <header>
         <h1 className="text-3xl font-bold">Roles &amp; Permissions Center</h1>
-        <p className="mt-1 text-gray-600">Select a role to inspect its permissions. System roles are protected from accidental changes.</p>
+        <p className="mt-1 text-gray-600">Select a role to inspect and manage its permissions. SuperAdmin permissions are protected.</p>
       </header>
 
       {loadError && <div className="rounded-lg bg-red-50 p-4 text-red-700">{loadError}</div>}
@@ -94,7 +93,9 @@ export default function SuperAdminRoles() {
               <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h2 className="text-xl font-bold">{selectedRole.displayName || selectedRole.name}</h2>
-                  <p className="text-sm text-gray-500">{selectedIsSystem ? "Protected system role" : "Custom role"}</p>
+                  <p className="text-sm text-gray-500">
+                    {selectedIsSuperAdmin ? "Protected SuperAdmin role" : selectedRole.isSystem ? "System role — permission changes are allowed" : "Custom role"}
+                  </p>
                 </div>
                 {selectedIsSuperAdmin && <span className="rounded-full bg-red-100 px-3 py-1 text-sm font-medium text-red-700">SuperAdmin protected</span>}
               </div>
@@ -102,8 +103,8 @@ export default function SuperAdminRoles() {
               {permissionsLoading ? <p>Loading permissions...</p> : (
                 <div className="grid gap-3 md:grid-cols-2">
                   {permissions.map((permission) => (
-                    <label key={permission._id} className={`flex gap-3 rounded border p-3 ${selectedIsSystem ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:bg-gray-50"}`}>
-                      <input type="checkbox" checked={selectedPermissions.includes(permission._id)} disabled={selectedIsSystem} onChange={() => togglePermission(permission._id)} />
+                    <label key={permission._id} className={`flex gap-3 rounded border p-3 ${selectedIsSuperAdmin ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:bg-gray-50"}`}>
+                      <input type="checkbox" checked={selectedPermissions.includes(permission._id)} disabled={selectedIsSuperAdmin} onChange={() => togglePermission(permission._id)} />
                       <span>{permission.label || permission.name}</span>
                     </label>
                   ))}
@@ -111,10 +112,10 @@ export default function SuperAdminRoles() {
               )}
 
               <div className="mt-6 flex flex-wrap items-center gap-3">
-                <button type="button" onClick={() => updateRole.mutate()} disabled={selectedIsSystem || updateRole.isPending || permissionsLoading} className="rounded bg-black px-6 py-3 text-white disabled:cursor-not-allowed disabled:opacity-50">
+                <button type="button" onClick={() => updateRole.mutate()} disabled={selectedIsSuperAdmin || updateRole.isPending || permissionsLoading} className="rounded bg-black px-6 py-3 text-white disabled:cursor-not-allowed disabled:opacity-50">
                   {updateRole.isPending ? "Saving..." : "Save Permissions"}
                 </button>
-                {selectedIsSystem && <span className="text-sm text-gray-500">System roles cannot have their permissions changed here.</span>}
+                {selectedIsSuperAdmin && <span className="text-sm text-gray-500">SuperAdmin permissions cannot be changed here.</span>}
               </div>
             </>
           )}
