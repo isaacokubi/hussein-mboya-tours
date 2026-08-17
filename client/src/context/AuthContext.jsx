@@ -9,20 +9,36 @@ export const useAuth = () => useContext(AuthContext);
 
 const normalizePermissions = (permissions) => {
   if (!Array.isArray(permissions)) return [];
+  const seen = new Set();
   return permissions
     .map((permission) => {
-      if (typeof permission === "string") return { name: permission };
-      return permission?.name ? permission : null;
+      if (typeof permission === "string") return { name: permission.trim() };
+      if (!permission?.name) return null;
+      return { ...permission, name: String(permission.name).trim() };
     })
-    .filter(Boolean);
+    .filter((permission) => {
+      if (!permission?.name) return false;
+      const key = permission.name.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 };
 
 const normalizeUser = (user) => {
   if (!user) return null;
+  const rolePermissions = user.roleId?.permissions || [];
+  const overridePermissions = user.permissionsOverride || user.permissionOverrides || [];
+  const directPermissions = user.permissions || [];
+
   return {
     ...user,
     role: getUserRole(user),
-    permissions: normalizePermissions(user.permissions || user.roleId?.permissions || []),
+    permissions: normalizePermissions([
+      ...rolePermissions,
+      ...overridePermissions,
+      ...directPermissions,
+    ]),
   };
 };
 
@@ -89,7 +105,8 @@ export function AuthProvider({ children }) {
   const hasPermission = (permission) => {
     if (!user || !permission) return false;
     if (getUserRole(user) === "superadmin") return true;
-    return permissions.some((p) => p.name === permission);
+    const wanted = String(permission).trim().toLowerCase();
+    return permissions.some((p) => String(p?.name || "").trim().toLowerCase() === wanted && p?.enabled !== false);
   };
 
   const hasAnyPermission = (items = []) => items.some(hasPermission);
