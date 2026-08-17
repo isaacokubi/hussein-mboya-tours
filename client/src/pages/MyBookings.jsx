@@ -102,8 +102,30 @@ export default function MyBookings() {
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="mx-auto max-w-7xl">
         <div className="mb-8 rounded-3xl bg-gradient-to-r from-green-900 to-yellow-600 p-8 text-white shadow-xl">
-          <h1 className="text-4xl font-bold">My Adventures</h1>
-          <p className="mt-3">Manage your bookings, payments and upcoming trips.</p>
+          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h1 className="text-4xl font-bold">My Adventures</h1>
+              <p className="mt-3">
+                Manage your bookings, payments and upcoming trips.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <Link
+                to="/custom-tour"
+                className="rounded-xl bg-white px-5 py-3 font-bold text-green-900 shadow-md transition hover:bg-green-50"
+              >
+                Create Custom Tour
+              </Link>
+
+              <Link
+                to="/custom-tour#my-requests"
+                className="rounded-xl border-2 border-white px-5 py-3 font-bold text-white transition hover:bg-white hover:text-green-900"
+              >
+                My Requests
+              </Link>
+            </div>
+          </div>
         </div>
 
         <div className="mb-10 grid gap-6 md:grid-cols-3">
