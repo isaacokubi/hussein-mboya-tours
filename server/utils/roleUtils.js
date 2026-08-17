@@ -1,5 +1,6 @@
 const ROLE_ALIASES = {
   customer: "customer",
+  user: "customer",
   admin: "admin",
   administrator: "admin",
   superadmin: "superadmin",
@@ -20,7 +21,7 @@ export function normalizeRole(role) {
   if (!role) return "";
 
   if (typeof role === "object") {
-    role = role.name || role.role || role._id || "";
+    role = role.name || role.displayName || role.role || role._id || "";
   }
 
   const key = String(role)
@@ -33,7 +34,10 @@ export function normalizeRole(role) {
 
 export function getUserRole(user) {
   return normalizeRole(
-    user?.roleId?.name || user?.role || user?.legacyRole
+    user?.roleId?.name ||
+    user?.role?.name ||
+    user?.role ||
+    user?.legacyRole
   );
 }
 
