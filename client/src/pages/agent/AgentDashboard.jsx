@@ -1,1 +1,129 @@
-export default function AgentDashboard(){return <section className="p-6 space-y-6"><h1 className="text-3xl font-bold">Agent Dashboard</h1><div className="grid md:grid-cols-4 gap-4">{["Customers","Quotes","Bookings","Commissions"].map(x=><div className="bg-white shadow rounded-xl p-5" key={x}><b>{x}</b><p>Management center</p></div>)}</div></section>}
+import { useEffect, useMemo, useState } from "react";
+import { fetchAgentDashboard } from "../../api/agentApi";
+
+const money = (value) => `KES ${Number(value || 0).toLocaleString()}`;
+
+const StatCard = ({ label, value, hint }) => (
+  <div className="rounded-xl border bg-white p-5 shadow-sm">
+    <p className="text-sm text-gray-500">{label}</p>
+    <p className="mt-2 text-2xl font-bold text-gray-900">{value}</p>
+    {hint && <p className="mt-1 text-xs text-gray-500">{hint}</p>}
+  </div>
+);
+
+export default function AgentDashboard() {
+  const [payload, setPayload] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const load = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const response = await fetchAgentDashboard();
+      setPayload(response?.data || {});
+    } catch (err) {
+      setError(err?.response?.data?.message || "Unable to load the agent dashboard.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const stats = payload?.statistics || {};
+  const recentBookings = useMemo(
+    () => (Array.isArray(payload?.recentBookings) ? payload.recentBookings : []),
+    [payload]
+  );
+
+  if (loading) {
+    return <div className="p-6 text-gray-600">Loading agent dashboard...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="m-6 rounded-xl border border-red-200 bg-red-50 p-5 text-red-700">
+        <p className="font-semibold">Agent dashboard unavailable</p>
+        <p className="mt-1 text-sm">{error}</p>
+        <button onClick={load} className="mt-4 rounded-lg bg-red-700 px-4 py-2 text-sm font-medium text-white">
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <section className="space-y-6 p-6">
+      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Agent Dashboard</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            {payload?.agent?.companyName || "Agent operations"}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${payload?.agent?.isApproved ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
+            {payload?.agent?.isApproved ? "Approved" : "Pending approval"}
+          </span>
+          <button onClick={load} className="rounded-lg border bg-white px-4 py-2 text-sm font-medium shadow-sm hover:bg-gray-50">
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="Bookings" value={stats.bookings || 0} />
+        <StatCard label="Upcoming" value={stats.upcomingBookings || 0} />
+        <StatCard label="Completed" value={stats.completedTours || 0} />
+        <StatCard label="Pending" value={stats.pendingBookings || 0} />
+        <StatCard label="Total Sales" value={money(stats.totalSales)} />
+        <StatCard label="Commission" value={money(stats.totalCommission)} />
+        <StatCard label="Guests" value={stats.totalGuests || 0} />
+        <StatCard label="Cancelled" value={stats.cancelledBookings || 0} />
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="rounded-xl border bg-white p-5 shadow-sm">
+          <h2 className="font-semibold text-gray-900">Agent account</h2>
+          <dl className="mt-4 space-y-3 text-sm">
+            <div className="flex justify-between gap-4"><dt className="text-gray-500">Status</dt><dd className="font-medium">{payload?.agent?.status || "—"}</dd></div>
+            <div className="flex justify-between gap-4"><dt className="text-gray-500">Commission rate</dt><dd className="font-medium">{payload?.agent?.commissionRate ?? 0}%</dd></div>
+            <div className="flex justify-between gap-4"><dt className="text-gray-500">Wallet balance</dt><dd className="font-medium">{money(payload?.agent?.walletBalance)}</dd></div>
+          </dl>
+        </div>
+
+        <div className="rounded-xl border bg-white p-5 shadow-sm lg:col-span-2">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-semibold text-gray-900">Recent bookings</h2>
+            <span className="text-xs text-gray-500">Latest 5</span>
+          </div>
+          <div className="mt-4 overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="border-b text-left text-gray-500">
+                  <th className="px-3 py-2">Tour</th>
+                  <th className="px-3 py-2">Amount</th>
+                  <th className="px-3 py-2">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentBookings.length === 0 ? (
+                  <tr><td colSpan="3" className="px-3 py-6 text-center text-gray-500">No recent bookings found.</td></tr>
+                ) : recentBookings.map((booking) => (
+                  <tr key={booking._id} className="border-b last:border-0">
+                    <td className="px-3 py-3">{booking.tour?.title || booking.tour?.name || "Tour unavailable"}</td>
+                    <td className="px-3 py-3">{money(booking.totalAmount || booking.amount)}</td>
+                    <td className="px-3 py-3"><span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs">{booking.bookingStatus || booking.status || "Pending"}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
