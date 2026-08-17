@@ -1,15 +1,11 @@
 import React, { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 
 
-export default function CustomerMfa() {
+export default function CustomerMfa({ userId, devPin }) {
 
-  const location = useLocation();
   const navigate = useNavigate();
-
-  const userId = location.state?.userId;
-  const devPin = location.state?.devPin;
 
   const [pin,setPin] = useState("");
   const [error,setError] = useState("");

@@ -10,7 +10,7 @@ export default function Login() {
   const { login } = useContext(AuthContext);
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
-  const [mfaUserId, setMfaUserId] = useState("");
+  const [mfaData, setMfaData] = useState(null);
 
   const handleChange = (event) => setFormData((current) => ({ ...current, [event.target.name]: event.target.value }));
 
@@ -21,8 +21,17 @@ export default function Login() {
       const response = await login(formData.email, formData.password);
 
       if (response?.mfaRequired) {
-        setMfaUserId(String(response.userId || ""));
-        toast.info(response.message || "Verification PIN sent to your registered phone.");
+
+        setMfaData({
+          userId: response.userId,
+          devPin: response.devPin
+        });
+
+        toast.info(
+          response.message ||
+          "Verification PIN sent to your registered phone."
+        );
+
         return;
       }
 
@@ -37,7 +46,14 @@ export default function Login() {
     }
   };
 
-  if (mfaUserId) return <CustomerMfa userId={mfaUserId} />;
+  if (mfaData) {
+    return (
+      <CustomerMfa
+        userId={mfaData.userId}
+        devPin={mfaData.devPin}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-6">
