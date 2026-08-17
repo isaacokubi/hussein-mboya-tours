@@ -20,7 +20,7 @@ const ROLE_ALIASES = {
 export function normalizeRole(role) {
   if (!role) return "";
   if (typeof role === "object") {
-    role = role.name || role.role || role.value || "";
+    role = role.name || role.displayName || role.role || role.value || "";
   }
   const key = String(role).trim().toLowerCase().replace(/[\s-]+/g, "_");
   return ROLE_ALIASES[key] || ROLE_ALIASES[key.replace(/_/g, "")] || key;
