@@ -21,33 +21,28 @@ import mfaRoutes from "./routes/mfaRoutes.js";
 
 await connectDatabase();
 
-
 startPaymentCleanupScheduler();
 
-
 await syncTourLifecycle().catch((error) => {
-    console.error("Initial tour lifecycle sync failed:", error);
+  console.error("Initial tour lifecycle sync failed:", error);
 });
 
 const lifecycleInterval = setInterval(() => {
-    syncTourLifecycle().catch((error) => {
-        console.error("Tour lifecycle sync failed:", error);
-    });
+  syncTourLifecycle().catch((error) => {
+    console.error("Tour lifecycle sync failed:", error);
+  });
 }, 60 * 1000);
 
 const server = http.createServer(app);
 
 const io = new Server(server, {
-
-    cors: {
-
-      origin: (env.CLIENT_ORIGINS || "")
-  .split(",")
-  .map(origin => origin.trim())
-  .filter(Boolean),
-
-        credentials: true
-    }
+  cors: {
+    origin: (env.CLIENT_ORIGINS || "")
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean),
+    credentials: true,
+  },
 });
 
 initSocket(io);
@@ -55,39 +50,58 @@ initSocket(io);
 export { io };
 
 // SUPER ADMIN ROUTES
-
 app.use("/api/settings", settingsRoutes);
-
-
 app.use("/api/database", databaseRoutes);
-
 app.use("/api/system", systemHealthRoutes);
 app.use("/api/superadmin", superAdminRoutes);
 
-server.listen(env.PORT, () => {
+const shutdown = async (exitCode = 0) => {
+  clearInterval(lifecycleInterval);
 
-    console.log(
-        `Server running on port ${env.PORT}`
-    );
+  try {
+    await new Promise((resolve) => {
+      if (!server.listening) {
+        resolve();
+        return;
+      }
 
-});const shutdown = async () => {
-
-    // debug removed
-
-    clearInterval(lifecycleInterval);
-
-    server.close(async () => {
-
-        await mongoose.connection.close();
-
-        // debug removed
-
-        process.exit(0);
-
+      server.close(() => resolve());
     });
+  } catch (error) {
+    console.error("Server shutdown error:", error.message);
+  }
 
+  try {
+    await mongoose.connection.close();
+  } catch (error) {
+    console.error("MongoDB shutdown error:", error.message);
+  }
+
+  process.exit(exitCode);
 };
 
-process.on("SIGINT", shutdown);
+server.on("error", (error) => {
+  if (error?.code === "EADDRINUSE") {
+    console.error(
+      `PORT ${env.PORT} is already in use. Stop the existing server before starting another instance.`
+    );
+    console.error(
+      `Find it with: sudo lsof -i :${env.PORT} -nP`
+    );
+    console.error(
+      `Then stop the matching Node process, for example: kill <PID>`
+    );
+    void shutdown(1);
+    return;
+  }
 
-process.on("SIGTERM", shutdown);
+  console.error("HTTP server error:", error);
+  void shutdown(1);
+});
+
+server.listen(env.PORT, () => {
+  console.log(`Server running on port ${env.PORT}`);
+});
+
+process.on("SIGINT", () => void shutdown(0));
+process.on("SIGTERM", () => void shutdown(0));
