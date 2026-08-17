@@ -232,3 +232,31 @@ export const cancelBooking = async (id, reason = "Cancelled by tour manager") =>
   const { data } = await api.patch(`/tourmanager/bookings/${id}/cancel`, { reason });
   return data;
 };
+
+    
+// Delete a tour from the Tour Manager operations API.
+export const deleteManagerTour = async (id) => {
+  const { data } = await api.delete(`/tourmanager/tours/${id}`);
+  return data;
+};
+
+
+/* ============================================================
+   TOUR MANAGER — TOURS API
+   ============================================================ */
+
+export const getManagerTours = async (params = {}) => {
+  const { data } = await api.get("/tourmanager/tours", { params });
+  return data;
+};
+
+export const createManagerTour = async (payload) => {
+  const { data } = await api.post("/tourmanager/tours", payload);
+  return data;
+};
+
+export const updateManagerTour = async (id, payload) => {
+  const { data } = await api.put(`/tourmanager/tours/${id}`, payload);
+  return data;
+};
+
