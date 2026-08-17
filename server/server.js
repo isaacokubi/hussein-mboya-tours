@@ -16,8 +16,13 @@ import { Server } from "socket.io";
 
 import { initSocket } from "./socket/socketManager.js";
 import { syncTourLifecycle } from "./services/tourLifecycleService.js";
+import { startPaymentCleanupScheduler } from "./services/paymentCleanupScheduler.js";
 
 await connectDatabase();
+
+
+startPaymentCleanupScheduler();
+
 
 await syncTourLifecycle().catch((error) => {
     console.error("Initial tour lifecycle sync failed:", error);
