@@ -1,113 +1,13 @@
-import {
-    Navigate,
-    Outlet
-}
-from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { getUserRole } from "../../utils/roleUtils";
 
+export default function AgentRoute() {
+  const { user, token, loading } = useAuth();
 
-import {
-    useAuth
-}
-from "../../context/AuthContext";
+  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (!token || !user) return <Navigate to="/agent/login" replace />;
+  if (getUserRole(user) !== "agent") return <Navigate to="/" replace />;
 
-
-
-
-
-
-
-export default function AgentRoute(){
-
-
-
-const {
-    user,
-    token
-}
-=
-useAuth();
-
-
-
-
-
-
-
-if(
-    !token ||
-    !user
-){
-
-
-return (
-
-<Navigate
-
-to="/agent/login"
-
-replace
-
-/>
-
-);
-
-
-}
-
-
-
-
-
-
-
-
-const roleName =
-
-user.role?.name ||
-user.role ||
-user.legacyRole ||
-user.roleId?.name ||
-"";
-
-const normalizedRole = String(roleName)
-    .trim()
-    .toLowerCase()
-    .replace(/[\s_-]+/g, "");
-
-
-
-
-
-
-
-
-if(
-    normalizedRole !== "agent"
-){
-
-
-return (
-
-<Navigate
-
-to="/"
-
-replace
-
-/>
-
-);
-
-
-}
-
-
-
-
-
-
-
-return <Outlet/>;
-
-
+  return <Outlet />;
 }
