@@ -102,3 +102,4 @@ client/.env.production
 # Safe environment templates may be committed.
 !server/.env.example
 !client/.env.example
+backup_before_*

@@ -1,1 +1,0 @@
-import api from "./axios";export const createReview=async(payload)=>(await api.post("/reviews",payload)).data;export const getAdminReviews=async()=>(await api.get("/admin/reviews")).data;

@@ -1,4 +1,0 @@
-import express from "express";import {protect} from "../middleware/authMiddleware.js";import adminMiddleware from "../middleware/adminMiddleware.js";import {createCustomTourRequest,getMyCustomTourRequests,getAdminCustomTourRequests,quoteCustomTourRequest,assignCustomTourResources,convertCustomTourToBooking} from "../controllers/customTourRequestController.js";const router=express.Router();router.post("/",protect,createCustomTourRequest);router.get("/mine",protect,getMyCustomTourRequests);router.get("/admin",protect,adminMiddleware,getAdminCustomTourRequests);router.patch("/admin/:id/quote",protect,adminMiddleware,quoteCustomTourRequest);router.patch("/admin/:id/assign",protect,adminMiddleware,assignCustomTourResources);
-
-router.post("/:id/convert",protect,convertCustomTourToBooking);
-export default router;
