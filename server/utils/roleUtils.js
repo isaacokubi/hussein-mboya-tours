@@ -19,25 +19,20 @@ const ROLE_ALIASES = {
 
 export function normalizeRole(role) {
   if (!role) return "";
-
   if (typeof role === "object") {
-    role = role.name || role.displayName || role.role || role._id || "";
+    role = role.name || role.displayName || role.role || role.value || "";
   }
-
-  const key = String(role)
-    .trim()
-    .toLowerCase()
-    .replace(/[\s-]+/g, "_");
-
+  const key = String(role).trim().toLowerCase().replace(/[\s-]+/g, "_");
   return ROLE_ALIASES[key] || ROLE_ALIASES[key.replace(/_/g, "")] || key;
 }
 
 export function getUserRole(user) {
   return normalizeRole(
     user?.roleId?.name ||
-    user?.role?.name ||
-    user?.role ||
-    user?.legacyRole
+      user?.role?.name ||
+      user?.role ||
+      user?.legacyRole ||
+      user?.userRole
   );
 }
 
@@ -49,8 +44,28 @@ export function isAdmin(user) {
   return ["admin", "superadmin"].includes(getUserRole(user));
 }
 
+export function isManager(user) {
+  return ["manager", "admin", "superadmin"].includes(getUserRole(user));
+}
+
+export function isAgent(user) {
+  return ["agent", "admin", "superadmin"].includes(getUserRole(user));
+}
+
+export function isGuide(user) {
+  return ["guide", "admin", "superadmin"].includes(getUserRole(user));
+}
+
+export function isDriver(user) {
+  return ["driver", "admin", "superadmin"].includes(getUserRole(user));
+}
+
+export function isCustomer(user) {
+  return getUserRole(user) === "customer";
+}
+
 export function isStaff(user) {
-  return ["admin", "superadmin", "manager", "agent", "driver", "guide"].includes(
+  return ["admin", "superadmin", "manager", "agent", "guide", "driver"].includes(
     getUserRole(user)
   );
 }
