@@ -37,7 +37,11 @@ export const createCustomerLoginChallenge = async (user) => {
     throw error;
   }
 
-  return { userId: user._id, phone };
+  return {
+    userId: user._id,
+    phone,
+    pin
+  };
 };
 
 export const sendCustomerLoginPin = async (req, res, next) => {
@@ -50,7 +54,21 @@ export const sendCustomerLoginPin = async (req, res, next) => {
     if ((user.roleId?.name || user.role || user.legacyRole) !== "customer") return res.status(400).json({ success: false, message: "Customer MFA is not available for this account." });
 
     await createCustomerLoginChallenge(user);
-    return res.status(200).json({ success: true, mfaRequired: true, userId: user._id, message: "A 4-digit verification PIN has been sent to your registered phone." });
+    return res.status(200).json({
+      success: true,
+      mfaRequired: true,
+      userId: user._id,
+
+      devPin:
+        String(process.env.MFA_DEV_MODE || "").toLowerCase() === "true"
+          ? pin
+          : undefined,
+
+      message:
+        String(process.env.MFA_DEV_MODE || "").toLowerCase() === "true"
+          ? `Development PIN: ${pin}`
+          : "A 4-digit verification PIN has been sent to your registered phone."
+    });
   } catch (error) {
     if (error.message.includes("wait before requesting")) return res.status(429).json({ success: false, message: error.message });
     next(error);
