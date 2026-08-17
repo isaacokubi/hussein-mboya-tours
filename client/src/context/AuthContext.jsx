@@ -1,675 +1,120 @@
 /* eslint-disable react-refresh/only-export-components */
-// client/src/context/AuthContext.jsx
-
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect
-} from "react";
-
-
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import api from "../api/axios";
-
-
-import {
-  queryClient
-} from "../lib/queryClient";
-
-
+import { queryClient } from "../lib/queryClient";
+import { getUserRole, normalizeRole } from "../utils/roleUtils";
 
 export const AuthContext = createContext();
+export const useAuth = () => useContext(AuthContext);
 
-
-
-export const useAuth = () =>
-  useContext(AuthContext);
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| ROLE NORMALIZER
-|--------------------------------------------------------------------------
-*/
-
-const normalizeRole = (role) => {
-
-  return (
-
-    role
-      ?.toString()
-      .toLowerCase()
-      .replace(/[\s_-]/g, "")
-
-    ||
-
-    ""
-
-  );
-
+const normalizePermissions = (permissions) => {
+  if (!Array.isArray(permissions)) return [];
+  return permissions
+    .map((permission) => {
+      if (typeof permission === "string") return { name: permission };
+      return permission?.name ? permission : null;
+    })
+    .filter(Boolean);
 };
 
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| USER NORMALIZER
-|--------------------------------------------------------------------------
-*/
-
-const normalizeUser = (user)=>{
-
-
-  if(!user){
-
-    return null;
-
-  }
-
-
-
+const normalizeUser = (user) => {
+  if (!user) return null;
   return {
-
-
     ...user,
+    role: getUserRole(user),
+    permissions: normalizePermissions(user.permissions || user.roleId?.permissions || []),
+  };
+};
 
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(() => localStorage.getItem("token"));
+  const [loading, setLoading] = useState(true);
 
-    role:
-
-      normalizeRole(
-
-        user?.role?.name
-
-        ||
-
-        user?.role
-
-        ||
-
-        user?.roleId?.name
-
-        ||
-
-        user?.legacyRole
-
-      ),
-
-
-    permissions:
-
-      user?.permissions ||
-
-      user?.roleId?.permissions ||
-
-      []
-
-
+  const persistUser = (nextUser) => {
+    const normalized = normalizeUser(nextUser);
+    setUser(normalized);
+    if (normalized) {
+      localStorage.setItem("user", JSON.stringify(normalized));
+      localStorage.setItem("permissions", JSON.stringify(normalized.permissions.map((p) => p.name)));
+    }
+    return normalized;
   };
 
-
-};
-
-
-
-
-
-
-
-export function AuthProvider({
-
-  children
-
-}) {
-
-
-  const [user,setUser] =
-    useState(null);
-
-
-
-  const [token,setToken] =
-    useState(
-
-      localStorage.getItem("token")
-
-    );
-
-
-
-  const [loading,setLoading] =
-    useState(true);
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| LOGOUT
-|--------------------------------------------------------------------------
-*/
-
-
-const logout = ()=>{
-
-
-  localStorage.removeItem(
-    "token"
-  );
-
-
-  localStorage.removeItem(
-    "user"
-  );
-
-
-  queryClient.clear();
-
-
-  setUser(null);
-
-
-  setToken(null);
-
-
-
-  window.location.href="/login";
-
-
-};
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| CURRENT USER
-|--------------------------------------------------------------------------
-*/
-
-
-const fetchCurrentUser =
-async()=>{
-
-
-try{
-
-
-  const {data} =
-    await api.get(
-      "/auth/me"
-    );
-
-
-
-  const currentUser =
-    normalizeUser(
-
-      data.user || data
-
-    );
-
-
-
-  setUser(
-    currentUser
-  );
-
-
-
-  localStorage.setItem(
-    "user",
-    JSON.stringify(currentUser)
-  );
-  localStorage.setItem(
-    "permissions",
-    JSON.stringify(
-      (currentUser.permissions || []).map(
-        p => typeof p === "string" ? p : p.name
-      )
-    )
-  );
-
-  return currentUser;
-
-
-
-}
-
-catch(error){
-
-
-  console.error(
-
-    "AUTH ME ERROR",
-
-    error.response?.data ||
-    error.message
-
-  );
-
-
-  // Do NOT remove token immediately.
-  // Keep session alive unless user manually logs out.
-
-  return null;
-
-
-}
-
-
-};
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| RESTORE SESSION
-|--------------------------------------------------------------------------
-*/
-
-
-useEffect(() => {
-  const savedToken = localStorage.getItem("token");
-
-  queueMicrotask(() => {
+  const logout = () => {
+    ["token", "accessToken", "authToken", "user", "permissions"].forEach((key) => localStorage.removeItem(key));
+    queryClient.clear();
+    setUser(null);
+    setToken(null);
+    window.location.href = "/login";
+  };
+
+  const fetchCurrentUser = async () => {
+    const { data } = await api.get("/auth/me");
+    return persistUser(data.user || data);
+  };
+
+  useEffect(() => {
+    const savedToken = localStorage.getItem("token");
     if (!savedToken) {
       setLoading(false);
       return;
     }
-
     setToken(savedToken);
-
-    fetchCurrentUser().finally(() => {
-      setLoading(false);
-    });
-  });
-
-  // Intentional one-time session restoration on provider mount.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, []);
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| LOGIN
-|--------------------------------------------------------------------------
-*/
-
-
-const login =
-async(
-
- email,
-
- password
-
-)=>{
-
-
-const {data} =
- await api.post(
-
-   "/auth/login",
-
-   {
-     email,
-     password
-   }
-
- );
-
-
-
-const newToken =
- data.token;
-
-
-
-localStorage.setItem(
- "token",
- newToken
-);
-
-
-console.log(
- "TOKEN SAVED:",
- localStorage.getItem("token")
-);
-
-
-
-setToken(
- newToken
-);
-
-
-
-const currentUser =
- normalizeUser(
-   data.user
- );
-
-
-
-setUser(
- currentUser
-);
-
-
-
-localStorage.setItem(
-
- "user",
-
- JSON.stringify(currentUser)
-
-);
-
-
-// Force fresh user data from database
-try {
-
- const fresh = await api.get("/auth/me");
-
- const refreshedUser = normalizeUser(
-   fresh.data.user || fresh.data
- );
-
-
- setUser(
-   refreshedUser
- );
-
-
- localStorage.setItem(
-   "user",
-   JSON.stringify(refreshedUser)
- );
-
-
-} catch(error){
-
- console.error(
-   "AUTH REFRESH FAILED",
-   error
- );
-
-}
-
-return data;
-
-
-
-return {
-
- token:newToken,
-
- user:currentUser
-
-};
-
-
-};
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| REGISTER
-|--------------------------------------------------------------------------
-*/
-
-
-const register =
-async(userData)=>{
-
-
-const {data} =
- await api.post(
-
- "/auth/register",
-
- userData
-
- );
-
-
-
-return data;
-
-
-};
-
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| PERMISSIONS
-|--------------------------------------------------------------------------
-*/
-
-
-const permissions =
- user?.permissions || [];
-
-
-
-
-const isAdmin =
-  ["admin", "administrator", "superadmin"].includes(
-    normalizeRole(user?.role)
-  );
-
-
-
-
-
-
-
-const hasPermission = (permission)=>{
-
-  if(!user){
-    return false;
-  }
-
-  const permissions =
-    Array.isArray(user.permissions)
-    ? user.permissions
-    : JSON.parse(
-        localStorage.getItem("permissions") || "[]"
-      );
-
-  return permissions.some(p =>
-    typeof p === "string"
-      ? p === permission
-      : p?.name === permission
-  );
-
-};
-
-
-
-
-
-
-
-const hasAnyPermission =
-(paths=[])=>{
-
-
-return paths.some(
-
- path =>
-
- hasPermission(path)
-
-);
-
-
-};
-
-
-
-
-
-
-const hasAllPermissions =
-(paths=[])=>{
-
-
-return paths.every(
-
- path =>
-
- hasPermission(path)
-
-);
-
-
-};
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| ROLE CHECK
-|--------------------------------------------------------------------------
-*/
-
-
-const hasRole =
-(roleName)=>{
-
-const currentRole =
-normalizeRole(
- user?.role?.name ||
- user?.role ||
- user?.roleId?.name ||
- user?.legacyRole
-);
-
-
-return (
- currentRole === normalizeRole(roleName)
-);
-
-};
-
-
-
-
-
-
-
-const canAccess =
-(path)=>{
-
-
-return hasPermission(path);
-
-
-};
-
-
-
-
-
-
-const getMenuPermissions =
-()=>permissions;
-
-
-
-
-
-
-
-return (
-
-<AuthContext.Provider
-
-value={{
-
-user,
-
-setUser,
-
-token,
-
-loading,
-
-login,
-
-register,
-
-logout,
-
-fetchCurrentUser,
-
-permissions,
-
-hasPermission,
-
-hasAnyPermission,
-
-hasAllPermissions,
-
-hasRole,
-
-canAccess,
-
-getMenuPermissions
-
-}}
-
->
-
-
-{children}
-
-
-</AuthContext.Provider>
-
-
-);
-
-
+    fetchCurrentUser()
+      .catch((error) => console.error("AUTH ME ERROR", error.response?.data || error.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const login = async (email, password) => {
+    const { data } = await api.post("/auth/login", { email, password });
+    if (!data?.token) throw new Error("Authentication response did not contain a token.");
+    localStorage.setItem("token", data.token);
+    setToken(data.token);
+    persistUser(data.user);
+
+    try {
+      await fetchCurrentUser();
+    } catch (error) {
+      console.warn("AUTH REFRESH FAILED", error.response?.data || error.message);
+    }
+
+    return data;
+  };
+
+  const register = async (userData) => (await api.post("/auth/register", userData)).data;
+
+  const permissions = user?.permissions || [];
+
+  const hasPermission = (permission) => {
+    if (!user || !permission) return false;
+    if (getUserRole(user) === "superadmin") return true;
+    return permissions.some((p) => p.name === permission);
+  };
+
+  const hasAnyPermission = (items = []) => items.some(hasPermission);
+  const hasAllPermissions = (items = []) => items.every(hasPermission);
+  const hasRole = (roleName) => getUserRole(user) === normalizeRole(roleName);
+  const canAccess = hasPermission;
+  const getMenuPermissions = () => permissions;
+
+  const value = useMemo(() => ({
+    user,
+    setUser: (valueOrUpdater) => setUser((current) => normalizeUser(typeof valueOrUpdater === "function" ? valueOrUpdater(current) : valueOrUpdater)),
+    token,
+    loading,
+    login,
+    register,
+    logout,
+    fetchCurrentUser,
+    permissions,
+    hasPermission,
+    hasAnyPermission,
+    hasAllPermissions,
+    hasRole,
+    canAccess,
+    getMenuPermissions,
+  }), [user, token, loading, permissions]);
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
