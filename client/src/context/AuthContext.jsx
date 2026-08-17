@@ -25,9 +25,21 @@ const normalizePermissions = (permissions) => {
     });
 };
 
+const extractRolePermissions = (user) => {
+  const roleIdPermissions = user?.roleId && typeof user.roleId === "object"
+    ? user.roleId.permissions || []
+    : [];
+  const roleObjectPermissions = user?.role && typeof user.role === "object"
+    ? user.role.permissions || []
+    : [];
+
+  return [...roleIdPermissions, ...roleObjectPermissions];
+};
+
 const normalizeUser = (user) => {
   if (!user) return null;
-  const rolePermissions = user.roleId?.permissions || [];
+
+  const rolePermissions = extractRolePermissions(user);
   const overridePermissions = user.permissionsOverride || user.permissionOverrides || [];
   const directPermissions = user.permissions || [];
 
