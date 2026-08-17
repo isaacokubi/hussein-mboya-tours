@@ -35,6 +35,8 @@ const AgentQuotes = lazy(() => import("../pages/agent/AgentQuotes"));
 // Guide pages
 const TourGuideDashboard = lazy(() => import("../pages/guide/TourGuideDashboard"));
 const DriverDashboard = lazy(() => import("../pages/driver/DriverDashboard"));
+const GuideAssignedTours = lazy(() => import("../pages/guide/AssignedTours"));
+const AgentPackages = lazy(() => import("../pages/agent/AgentPackages"));
 // Tour manager pages
 const TourManagerLayout = lazy(() => import("../layouts/TourManagerLayout"));
 const TourManagerDashboard = lazy(() => import("../pages/tourManager/TourManagerDashboard"));
@@ -53,6 +55,9 @@ const TourManagerCalendar = lazy(() => import("../pages/tourManager/TourManagerC
 const TourManagerBookings = lazy(() => import("../pages/tourManager/TourManagerBookings"));
 const TourManagerCustomers = lazy(() => import("../pages/tourManager/TourManagerCustomers"));
 const TourManagerGuides = lazy(() => import("../pages/tourManager/TourManagerGuides"));
+const TourManagerDestinations = lazy(() => import("../pages/tourManager/Destinations"));
+const TourManagerItineraries = lazy(() => import("../pages/tourManager/Itineraries"));
+const TourManagerSettings = lazy(() => import("../pages/tourManager/ManagerSettings"));
 // Admin pages
 const AdminLayout = lazy(() => import("../layouts/AdminLayout"));
 const SuperAdminLayout = lazy(() => import("../layouts/SuperAdminLayout"));
@@ -108,6 +113,14 @@ const CustomTourRequests = lazy(() => import("../pages/admin/CustomTourRequests"
 import ProtectedRoute from "../components/auth/ProtectedRoute";
 import AdminRoute from "../components/auth/AdminRoute";
 import AgentRoute from "../components/agent/AgentRoute";
+
+function AdminProtected({ children }) {
+  return <AdminRoute>{children}</AdminRoute>;
+}
+
+function SuperAdminProtected({ children }) {
+  return <ProtectedRoute roles={["super_admin", "superadmin"]}>{children}</ProtectedRoute>;
+}
 
 function ScrollToTop() {
   const { pathname, search } = useLocation();
@@ -283,6 +296,7 @@ export default function AppRoutes() {
         />
         <Route path="commission" element={<AgentCommission />} />
         <Route path="quotes" element={<AgentQuotes />} />
+        <Route path="packages" element={<AgentPackages />} />
       </Route>
 
       {/* Guide */}
@@ -296,6 +310,14 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute roles={["guide", "admin"]}>
             <TourGuideDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/guide/assigned-tours"
+        element={
+          <ProtectedRoute roles={["guide", "admin"]}>
+            <GuideAssignedTours />
           </ProtectedRoute>
         }
       />
@@ -404,7 +426,6 @@ export default function AppRoutes() {
       />
 
       {/* Legacy manager compatibility aliases */}
-      <Route path="/manager/dashboard" element={<Navigate to="/tour-manager/dashboard" replace />} />
       <Route path="/manager/tours" element={<Navigate to="/tour-manager/tours" replace />} />
       <Route path="/manager/create-tour" element={<Navigate to="/tour-manager/create-tour" replace />} />
       <Route path="/manager/edit-tour/:id" element={<Navigate to="/tour-manager/edit-tour/:id" replace />} />
@@ -642,6 +663,85 @@ element={<SuperAdminApiMonitor />}
           element={<CustomTourRequests />}
         />
       </Route>
+
+      {/* Dashboard compatibility + deep-link coverage */}
+      <Route path="/driver" element={<Navigate to="/driver/dashboard" replace />} />
+      <Route path="/manager" element={<Navigate to="/tour-manager/dashboard" replace />} />
+      <Route path="/manager/destinations" element={<Navigate to="/tour-manager/destinations" replace />} />
+      <Route path="/manager/itineraries" element={<Navigate to="/tour-manager/itineraries" replace />} />
+      <Route path="/manager/settings" element={<Navigate to="/tour-manager/settings" replace />} />
+
+      {/* Admin legacy/deep-link aliases */}
+      <Route path="/admin/auth" element={<Navigate to="/admin/login" replace />} />
+      <Route path="/admin/all" element={<Navigate to="/admin/dashboard" replace />} />
+      <Route path="/admin/ai" element={<AdminProtected><AdminAITools /></AdminProtected>} />
+      <Route path="/admin/query" element={<AdminProtected><AdminAITools /></AdminProtected>} />
+      <Route path="/admin/briefing" element={<AdminProtected><AdminAITools /></AdminProtected>} />
+      <Route path="/admin/revenue/analytics" element={<AdminProtected><AdminAnalytics /></AdminProtected>} />
+      <Route path="/admin/bookings/analytics" element={<AdminProtected><AdminAnalytics /></AdminProtected>} />
+      <Route path="/admin/users/analytics" element={<AdminProtected><AdminAnalytics /></AdminProtected>} />
+      <Route path="/admin/reports/daily" element={<AdminProtected><Reports /></AdminProtected>} />
+      <Route path="/admin/reports/monthly" element={<AdminProtected><Reports /></AdminProtected>} />
+      <Route path="/admin/reports/tours" element={<AdminProtected><Reports /></AdminProtected>} />
+      <Route path="/admin/reports/agents" element={<AdminProtected><Reports /></AdminProtected>} />
+      <Route path="/admin/payments/analytics" element={<AdminProtected><AdminPayments /></AdminProtected>} />
+      <Route path="/admin/payments/reconciliation" element={<AdminProtected><Reconciliation /></AdminProtected>} />
+      <Route path="/admin/gallery/upload" element={<AdminProtected><AdminGallery /></AdminProtected>} />
+      <Route path="/admin/tours/:id" element={<AdminProtected><TourDetails /></AdminProtected>} />
+      <Route path="/admin/bookings/:id" element={<AdminProtected><BookingDetails /></AdminProtected>} />
+      <Route path="/admin/bookings/:id/assign" element={<AdminProtected><BookingDetails /></AdminProtected>} />
+      <Route path="/admin/bookings/:id/invoice" element={<AdminProtected><BookingDetails /></AdminProtected>} />
+      <Route path="/admin/bookings/:id/notify" element={<AdminProtected><BookingDetails /></AdminProtected>} />
+      <Route path="/admin/bookings/:id/payment" element={<AdminProtected><BookingDetails /></AdminProtected>} />
+      <Route path="/admin/bookings/:id/refund" element={<AdminProtected><BookingDetails /></AdminProtected>} />
+      <Route path="/admin/bookings/:id/status" element={<AdminProtected><BookingDetails /></AdminProtected>} />
+      <Route path="/admin/bookings/:id/timeline" element={<AdminProtected><BookingDetails /></AdminProtected>} />
+      <Route path="/admin/roles/:id" element={<AdminProtected><RolesPage /></AdminProtected>} />
+      <Route path="/admin/roles/:id/permissions" element={<AdminProtected><RolesPage /></AdminProtected>} />
+      <Route path="/admin/roles/permissions/all" element={<AdminProtected><RolesPage /></AdminProtected>} />
+      <Route path="/admin/users/:userId" element={<AdminProtected><UserManagement /></AdminProtected>} />
+      <Route path="/admin/users/:id/status" element={<AdminProtected><UserManagement /></AdminProtected>} />
+      <Route path="/admin/agents" element={<AdminProtected><Agents /></AdminProtected>} />
+      <Route path="/admin/agents/:id" element={<AdminProtected><Agents /></AdminProtected>} />
+      <Route path="/admin/agents/:id/approve" element={<AdminProtected><Agents /></AdminProtected>} />
+      <Route path="/admin/agents/:id/status" element={<AdminProtected><Agents /></AdminProtected>} />
+      <Route path="/admin/refunds/:id/process" element={<AdminProtected><AdminPayments /></AdminProtected>} />
+
+      {/* SuperAdmin deep links */}
+      <Route path="/superadmin-tools" element={<Navigate to="/superadmin" replace />} />
+      <Route path="/superadmin/maintenance" element={<SuperAdminSystem />} />
+      <Route path="/superadmin/maintenance/backups" element={<SuperAdminDatabase />} />
+      <Route path="/superadmin/maintenance/backups/:id" element={<SuperAdminDatabase />} />
+      <Route path="/superadmin/database/backup" element={<SuperAdminDatabase />} />
+      <Route path="/superadmin/database/cache-clear" element={<SuperAdminSystem />} />
+
+      {/* SuperAdmin deep links */}
+      <Route path="/superadmin-tools" element={<Navigate to="/superadmin" replace />} />
+      <Route path="/superadmin/maintenance" element={<SuperAdminProtected><SuperAdminSystem /></SuperAdminProtected>} />
+      <Route path="/superadmin/maintenance/backups" element={<SuperAdminProtected><SuperAdminDatabase /></SuperAdminProtected>} />
+      <Route path="/superadmin/maintenance/backups/:id" element={<SuperAdminProtected><SuperAdminDatabase /></SuperAdminProtected>} />
+      <Route path="/superadmin/database/backup" element={<SuperAdminProtected><SuperAdminDatabase /></SuperAdminProtected>} />
+      <Route path="/superadmin/database/cache-clear" element={<SuperAdminProtected><SuperAdminSystem /></SuperAdminProtected>} />
+
+      <Route path="/admin/coupons/:id" element={<AdminProtected><AdminCoupons /></AdminProtected>} />
+      <Route path="/admin/reviews/:id" element={<AdminProtected><AdminReviews /></AdminProtected>} />
+      <Route path="/admin/gallery/:id" element={<AdminProtected><AdminGallery /></AdminProtected>} />
+      <Route path="/admin/payments/:id" element={<AdminProtected><AdminPayments /></AdminProtected>} />
+      <Route path="/admin/:id/assign" element={<AdminProtected><CustomTourRequests /></AdminProtected>} />
+      <Route path="/admin/:id/quote" element={<AdminProtected><CustomTourRequests /></AdminProtected>} />
+      <Route path="/admin-ai" element={<AdminProtected><AdminAITools /></AdminProtected>} />
+      <Route path="/admin-ai/*" element={<AdminProtected><AdminAITools /></AdminProtected>} />
+      <Route path="/agent/:agentId" element={<AgentRoute><AgentDashboard /></AgentRoute>} />
+      <Route path="/agent/packages/:packageId" element={<AgentRoute><AgentPackages /></AgentRoute>} />
+      <Route path="/agents" element={<AdminProtected><Agents /></AdminProtected>} />
+      <Route path="/agents/:id" element={<AdminProtected><Agents /></AdminProtected>} />
+      <Route path="/agents/:id/approve" element={<AdminProtected><Agents /></AdminProtected>} />
+      <Route path="/agents/:id/status" element={<AdminProtected><Agents /></AdminProtected>} />
+      <Route path="/drivers" element={<AdminProtected><AdminVehicles /></AdminProtected>} />
+      <Route path="/guides" element={<AdminProtected><AdminGuides /></AdminProtected>} />
+      <Route path="/tour-manager/tours/create" element={<ProtectedRoute roles={["manager","tour_manager","tourmanager","admin"]}><CreateTour /></ProtectedRoute>} />
+      <Route path="/tour-manager/tours/:id/edit" element={<ProtectedRoute roles={["manager","tour_manager","tourmanager","admin"]}><EditTour /></ProtectedRoute>} />
+      <Route path="/tour-manager/tours/:id/availability" element={<ProtectedRoute roles={["manager","tour_manager","tourmanager","admin"]}><TourAvailability /></ProtectedRoute>} />
 
       {/* Compatibility alias */}
       <Route
