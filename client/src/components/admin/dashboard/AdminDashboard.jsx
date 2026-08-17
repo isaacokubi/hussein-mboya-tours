@@ -1,7 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-
 import { getDashboard } from "../../../api/adminApi";
-
 import DashboardHeader from "./DashboardHeader";
 import StatsGrid from "./StatsGrid";
 import PopularTours from "./PopularTours";
@@ -10,184 +8,51 @@ import PaymentAnalytics from "./PaymentAnalytics";
 import QuickActions from "./QuickActions";
 import SystemHealth from "./SystemHealth";
 
-
 export default function AdminDashboard() {
+  const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
+    queryKey: ["admin-dashboard"],
+    queryFn: getDashboard,
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
+  });
 
+  if (isLoading) return <div className="p-8">Loading admin dashboard...</div>;
 
-    const {
-        data,
-        isLoading,
-        isError,
-        error
-
-    } = useQuery({
-
-        queryKey:[
-            "admin-dashboard"
-        ],
-
-        queryFn:getDashboard
-
-    });
-
-
-
-    if(isLoading){
-
-        return (
-
-            <div className="p-8">
-
-                Loading admin dashboard...
-
-            </div>
-
-        );
-
-    }
-
-
-
-    if(isError){
-
-        return (
-
-            <div className="p-8 text-red-600">
-
-                Failed to load dashboard:
-                {" "}
-                {error?.message}
-
-            </div>
-
-        );
-
-    }
-
-
-
-    const dashboard =
-        data?.data || data || {};
-
-    console.log("ADMIN DASHBOARD RAW:", JSON.stringify(data, null, 2));
-    console.log("ADMIN DASHBOARD PARSED:", JSON.stringify(dashboard, null, 2));
-
-
-
+  if (isError) {
     return (
-
-        <div
-            className="
-                p-6
-                space-y-8
-                bg-gray-50
-                min-h-screen
-            "
-        >
-
-
-            <DashboardHeader />
-
-
-
-            <StatsGrid
-                stats={dashboard}
-            />
-
-
-
-            <div
-                className="
-                    grid
-                    xl:grid-cols-3
-                    gap-6
-                "
-            >
-
-
-                <div
-                    className="
-                        xl:col-span-2
-                    "
-                >
-
-                    
-
-                </div>
-
-
-
-
-                <PaymentAnalytics
-
-                    payments={
-                        dashboard.paymentStats || {
-                            completed:0,
-                            pending:0,
-                            failed:0
-                        }
-                    }
-
-                />
-
-
-            </div>
-
-
-
-
-            
-
-
-
-
-
-            <div
-                className="
-                    grid
-                    lg:grid-cols-2
-                    gap-6
-                "
-            >
-
-
-                <PopularTours
-
-                    tours={
-                        dashboard.popularTours || []
-                    }
-
-                />
-
-
-
-                <RecentBookings
-
-                    bookings={
-                        dashboard.recentBookings || []
-                    }
-
-                />
-
-
-            </div>
-
-
-
-
-            
-
-
-
-            <QuickActions />
-
-
-
-            <SystemHealth />
-
-
+      <div className="p-8">
+        <div className="rounded-xl bg-red-50 p-6 text-red-700">
+          <h2 className="font-semibold">Unable to load Admin Dashboard</h2>
+          <p className="mt-1">{error?.message || "Dashboard request failed."}</p>
+          <button type="button" onClick={() => refetch()} className="mt-4 rounded-lg bg-red-700 px-4 py-2 text-white">
+            Retry
+          </button>
         </div>
-
+      </div>
     );
+  }
 
+  const dashboard = data?.data || data || {};
+  const summary = dashboard.summary || {};
+
+  return (
+    <div className="min-h-screen space-y-8 bg-gray-50 p-6">
+      <DashboardHeader />
+      <div className="flex justify-end">
+        <button type="button" onClick={() => refetch()} disabled={isFetching} className="rounded-lg border bg-white px-4 py-2 text-sm font-medium shadow-sm disabled:opacity-60">
+          {isFetching ? "Refreshing..." : "Refresh Dashboard"}
+        </button>
+      </div>
+      <StatsGrid stats={dashboard} summary={summary} />
+      <div className="grid gap-6 xl:grid-cols-3">
+        <div className="xl:col-span-2"><RecentBookings bookings={dashboard.recentBookings || []} /></div>
+        <PaymentAnalytics payments={dashboard.paymentStats || { completed: 0, pending: 0, failed: 0 }} />
+      </div>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <PopularTours tours={dashboard.popularTours || []} />
+        <SystemHealth />
+      </div>
+      <QuickActions />
+    </div>
+  );
 }
