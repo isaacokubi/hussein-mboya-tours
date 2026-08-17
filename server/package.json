@@ -12,7 +12,8 @@
     "create:admin": "node scripts/createAdmin.js",
     "check:controllers": "node --check controllers/bookingAdminController.js && node --check controllers/adminBookingController.js && node --check controllers/agentBookingController.js && node --check controllers/bookingController.js && node --check controllers/tourManagerController.js && node --check controllers/mpesaController.js && node --check controllers/mpesaRefundController.js && node --check controllers/stripeController.js && node --check controllers/adminPaymentController.js && node --check controllers/paymentController.js",
     "check:models": "node --check models/Booking.js && node --check models/Payment.js",
-    "check:all": "npm run check && npm run check:controllers && npm run check:models"
+    "check:rbac": "node scripts/rbac-contract-check.js",
+    "check:all": "npm run check && npm run check:controllers && npm run check:models && npm run check:rbac"
   },
   "dependencies": {
     "africastalking": "^0.8.0",
