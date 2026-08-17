@@ -15,27 +15,14 @@ import {
 
 import {
   protect,
+  customerOnly,
+  adminOnly,
+  managerOnly,
 } from "../middleware/authMiddleware.js";
-
-import {
-  roleMiddleware,
-} from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
 
-/*
-|--------------------------------------------------------------------------
-| AUTHENTICATION
-|--------------------------------------------------------------------------
-*/
-
 router.use(protect);
-
-/*
-|--------------------------------------------------------------------------
-| TEST
-|--------------------------------------------------------------------------
-*/
 
 router.get("/test", (req, res) => {
   res.status(200).json({
@@ -44,71 +31,20 @@ router.get("/test", (req, res) => {
   });
 });
 
-/*
-|--------------------------------------------------------------------------
-| CUSTOMER
-|--------------------------------------------------------------------------
-*/
+// Customer-owned booking operations. These endpoints must never become
+// generic staff endpoints because the controller uses req.user ownership.
+router.post("/", customerOnly, createBooking);
+router.get("/my-bookings", customerOnly, getMyBookings);
+router.put("/cancel/:id", customerOnly, cancelBooking);
+router.put("/reschedule/:id", customerOnly, rescheduleBooking);
 
-router.post(
-  "/",
-  createBooking
-);
+// Operational booking views.
+router.get("/confirmed", managerOnly, getConfirmedBookings);
+router.get("/admin", managerOnly, getAllBookings);
+router.get("/admin/all", adminOnly, getAllBookings);
+router.put("/:id/status", adminOnly, updateBookingStatus);
 
-router.get(
-  "/my-bookings",
-  getMyBookings
-);
-
-router.put(
-  "/cancel/:id",
-  cancelBooking
-);
-
-router.put(
-  "/reschedule/:id",
-  rescheduleBooking
-);
-
-/*
-|--------------------------------------------------------------------------
-| ADMIN / TOUR MANAGER
-|--------------------------------------------------------------------------
-*/
-
-router.get(
-  "/confirmed",
-  roleMiddleware("admin", "tour_manager", "tourmanager", "manager"),
-  getConfirmedBookings
-);
-
-router.get(
-  "/admin",
-  roleMiddleware("admin", "tour_manager", "tourmanager", "manager"),
-  getAllBookings
-);
-
-router.get(
-  "/admin/all",
-  roleMiddleware(["admin"]),
-  getAllBookings
-);
-
-router.put(
-  "/:id/status",
-  roleMiddleware(["admin"]),
-  updateBookingStatus
-);
-
-/*
-|--------------------------------------------------------------------------
-| SINGLE BOOKING
-|--------------------------------------------------------------------------
-*/
-
-router.get(
-  "/:id",
-  getBooking
-);
+// Single-booking access is additionally ownership-checked by the controller.
+router.get("/:id", getBooking);
 
 export default router;
