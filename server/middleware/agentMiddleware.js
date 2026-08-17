@@ -1,31 +1,12 @@
-// server/middleware/agentMiddleware.js
-//
-// Canonical agent authorization:
-// - authenticated active User
-// - role: agent / travel_agent
-// - linked Agent profile
-// - approved Agent profile
-
+// Canonical agent authorization.
 import User from "../models/User.js";
 import Agent from "../models/Agent.js";
-
-const normalizeRole = (role) =>
-  String(
-    typeof role === "object"
-      ? role?.name || role?.role || ""
-      : role || ""
-  )
-    .trim()
-    .toLowerCase()
-    .replace(/[\s_-]+/g, "");
+import { getUserRole } from "../utils/roleUtils.js";
 
 const agentMiddleware = async (req, res, next) => {
   try {
     if (!req.user?._id) {
-      return res.status(401).json({
-        success: false,
-        message: "Authentication required",
-      });
+      return res.status(401).json({ success: false, message: "Authentication required" });
     }
 
     const user = await User.findById(req.user._id)
@@ -33,47 +14,22 @@ const agentMiddleware = async (req, res, next) => {
       .populate("roleId")
       .lean();
 
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "User not found",
-      });
+    if (!user) return res.status(401).json({ success: false, message: "User not found" });
+
+    if (user.status !== "active" || user.isActive === false) {
+      return res.status(403).json({ success: false, message: "Your account is inactive" });
     }
 
-    if (
-      user.status !== "active" ||
-      user.isActive === false
-    ) {
-      return res.status(403).json({
-        success: false,
-        message: "Your account is inactive",
-      });
-    }
-
-    const roleName = normalizeRole(
-      user.roleId?.name || user.role || user.legacyRole
-    );
-
-    if (!["agent", "travelagent"].includes(roleName)) {
-      return res.status(403).json({
-        success: false,
-        message: "Travel Agent access required",
-      });
+    if (getUserRole(user) !== "agent") {
+      return res.status(403).json({ success: false, message: "Travel Agent access required" });
     }
 
     let agent = await Agent.findOne({ user: user._id }).lean();
 
-    // Legacy agent records were sometimes created before the User reference
-    // was stored. Resolve by email and self-heal the link.
     if (!agent && user.email) {
-      agent = await Agent.findOne({
-        email: String(user.email).toLowerCase(),
-      }).lean();
+      agent = await Agent.findOne({ email: String(user.email).trim().toLowerCase() }).lean();
       if (agent) {
-        await Agent.updateOne(
-          { _id: agent._id },
-          { $set: { user: user._id } }
-        );
+        await Agent.updateOne({ _id: agent._id }, { $set: { user: user._id } });
       }
     }
 
@@ -86,20 +42,15 @@ const agentMiddleware = async (req, res, next) => {
 
     req.user = user;
     req.agent = agent;
-    req.agentPendingApproval = !agent.isApproved;
-
+    req.agentPendingApproval = agent.isApproved === false;
     next();
   } catch (error) {
     console.error("Agent Middleware Error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Server error while authorizing agent",
-    });
+    return res.status(500).json({ success: false, message: "Server error while authorizing agent" });
   }
 };
 
 export default agentMiddleware;
-
 
 export const requireApprovedAgent = (req, res, next) => {
   if (req.agentPendingApproval) {
