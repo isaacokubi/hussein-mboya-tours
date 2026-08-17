@@ -24,6 +24,7 @@ const BookingDetails = lazy(() => import("../pages/BookingDetails"));
 const Profile = lazy(() => import("../pages/Profile"));
 const Checkout = lazy(() => import("../pages/Checkout"));
 const CustomTourRequest = lazy(() => import("../pages/CustomTourRequest"));
+const MyCustomTours = lazy(() => import("../pages/MyCustomTours"));
 const PaymentStatus = lazy(() => import("../pages/PaymentStatus"));
 // Agent pages
 const AgentLayout = lazy(() => import("../layouts/AgentLayout"));
@@ -252,7 +253,23 @@ export default function AppRoutes() {
         }
       />
 
-      <Route path="/custom-tour" element={<ProtectedRoute><CustomTourRequest /></ProtectedRoute>} />
+      <Route
+        path="/custom-tour"
+        element={
+          <ProtectedRoute>
+            <CustomTourRequest />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/my-custom-tours"
+        element={
+          <ProtectedRoute>
+            <MyCustomTours />
+          </ProtectedRoute>
+        }
+      />
 
       <Route
         path="/checkout/:type/:id"

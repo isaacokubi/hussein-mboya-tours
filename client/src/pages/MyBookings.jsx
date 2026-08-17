@@ -119,7 +119,7 @@ export default function MyBookings() {
               </Link>
 
               <Link
-                to="/custom-tour#my-requests"
+                to="/my-custom-tours"
                 className="rounded-xl border-2 border-white px-5 py-3 font-bold text-white transition hover:bg-white hover:text-green-900"
               >
                 My Requests

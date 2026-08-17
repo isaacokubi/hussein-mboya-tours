@@ -163,7 +163,7 @@ export default function Profile() {
                 Phone Number
               </span>
               <input
-                name="phone"
+                name="email"
                 value={form.phone}
                 onChange={handleChange}
                 className="input w-full"

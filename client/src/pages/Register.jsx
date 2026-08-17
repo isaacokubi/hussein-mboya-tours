@@ -480,7 +480,7 @@ p-3
 
 type="tel"
 
-name="phone"
+name="email"
 
 inputMode="numeric"
 

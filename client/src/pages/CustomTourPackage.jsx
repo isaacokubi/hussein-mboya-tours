@@ -190,7 +190,7 @@ export default function CustomTourPackage() {
 
                     <input
                       id="phone"
-                      name="phone"
+                      name="email"
                       type="tel"
                       value={formData.phone}
                       onChange={handleChange}

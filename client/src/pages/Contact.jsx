@@ -317,7 +317,7 @@ export default function Contact(
             />
 
             <input
-              name="phone"
+              name="email"
               value={form.phone}
               onChange={handleChange}
               placeholder="Phone Number"

@@ -62,7 +62,7 @@ export default function Dashboard() {
 <Link to="/custom-tour" className="bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold">Create Custom Tour</Link>
 
 <Link
-  to="/custom-tour#my-requests"
+  to="/my-custom-tours"
   className="bg-white text-emerald-700 px-6 py-3 rounded-xl font-bold border border-white/30 hover:bg-emerald-50 transition"
 >
   My Custom Tours

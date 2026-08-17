@@ -17,6 +17,7 @@ import { Server } from "socket.io";
 import { initSocket } from "./socket/socketManager.js";
 import { syncTourLifecycle } from "./services/tourLifecycleService.js";
 import { startPaymentCleanupScheduler } from "./services/paymentCleanupScheduler.js";
+import mfaRoutes from "./routes/mfaRoutes.js";
 
 await connectDatabase();
 

@@ -58,7 +58,33 @@ const userSchema = new mongoose.Schema(
     passwordResetAttempts: { type: Number, default: 0, select: false },
     lastLoginAt: { type: Date, default: null },
   },
-  { timestamps: true }
+  { 
+  // ==========================================================
+  // CUSTOMER MFA
+  // ==========================================================
+
+  loginPinHash: {
+    type: String,
+    select: false,
+  },
+
+  loginPinExpiresAt: {
+    type: Date,
+    select: false,
+  },
+
+  loginPinAttempts: {
+    type: Number,
+    default: 0,
+    select: false,
+  },
+
+  loginPinLastSentAt: {
+    type: Date,
+    select: false,
+  },
+
+timestamps: true }
 );
 
 userSchema.pre("save", async function (next) {
