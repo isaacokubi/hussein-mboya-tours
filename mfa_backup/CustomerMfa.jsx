@@ -7,8 +7,6 @@ import { dashboardPath } from "../utils/roleUtils";
 export default function CustomerMfa({ userId: userIdProp }) {
   const navigate = useNavigate();
   const location = useLocation();
-
-  const devPin = location.state?.devPin;
   const userId = userIdProp || location.state?.userId || "";
   const [pin, setPin] = useState("");
   const [loading, setLoading] = useState(false);
@@ -22,15 +20,7 @@ export default function CustomerMfa({ userId: userIdProp }) {
     setMessage("");
 
     if (!userId) return setError("Your login verification session has expired. Please log in again.");
-    if (!/^\d{4}$/.test(pin)) return setError("Enter the 4-digit PIN sent to your registered phone.
-
-{devPin && (
-  <div className="mt-4 rounded-xl bg-yellow-100 p-3 text-center font-bold text-yellow-900">
-    Development PIN: {devPin}
-  </div>
-)}
-
-");
+    if (!/^\d{4}$/.test(pin)) return setError("Enter the 4-digit PIN sent to your registered phone.");
 
     try {
       setLoading(true);
