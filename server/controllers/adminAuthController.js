@@ -1,6 +1,7 @@
 import User from "../models/User.js";
 import generateToken from "../utils/generateToken.js";
 import buildPermissions from "../utils/buildPermissions.js";
+import { normalizeRole } from "../utils/roleUtils.js";
 
 export const adminLogin = async (req, res) => {
   try {
@@ -9,29 +10,16 @@ export const adminLogin = async (req, res) => {
 
     const user = await User.findOne({ email })
       .select("+password")
-      .populate({
-        path: "roleId",
-        populate: { path: "permissions" },
-      })
+      .populate({ path: "roleId", populate: { path: "permissions" } })
       .populate("permissionsOverride");
 
-    const role = String(
-      user?.roleId?.name || user?.role || user?.legacyRole || ""
-    )
-      .trim()
-      .toLowerCase()
-      .replace(/[\s_-]+/g, "");
+    if (!user || user.status !== "active" || !(await user.matchPassword(password))) {
+      return res.status(401).json({ success: false, message: "Invalid email or password" });
+    }
 
-    if (
-      !user ||
-      !["admin", "superadmin", "administrator"].includes(role) ||
-      user.status !== "active" ||
-      !(await user.matchPassword(password))
-    ) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid email or password",
-      });
+    const role = normalizeRole(user.roleId?.name || user.role || user.legacyRole);
+    if (!["admin", "superadmin"].includes(role)) {
+      return res.status(403).json({ success: false, message: "Administrative access required." });
     }
 
     const permissions = buildPermissions(user);
@@ -58,9 +46,6 @@ export const adminLogin = async (req, res) => {
     });
   } catch (error) {
     console.error("ADMIN LOGIN ERROR:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Unable to complete admin login.",
-    });
+    return res.status(500).json({ success: false, message: "Unable to complete admin login." });
   }
 };
