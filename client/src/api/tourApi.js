@@ -1,118 +1,71 @@
 import api from "./axios";
 
-/*
-|--------------------------------------------------------------------------
-| PUBLIC TOURS
-|--------------------------------------------------------------------------
-*/
-
+/* Public tours */
 export const getTours = async (category = null) => {
   const { data } = await api.get("/tours", {
     params: category ? { category } : {},
   });
-
   return data;
 };
 
 export const getFeaturedTours = async () => {
   const { data } = await api.get("/tours/featured");
-
-  
-
   return data?.data || [];
 };
 
-/*
-|--------------------------------------------------------------------------
-| GET SINGLE TOUR
-|--------------------------------------------------------------------------
-*/
-
 export const getTourById = async (id) => {
   const { data } = await api.get(`/tours/${id}`);
-
   return data?.data || data;
 };
 
-export const getTour = async (id) => {
-  const { data } = await api.get(`/tours/${id}`);
+export const getTour = getTourById;
 
+export const getTourBySlug = async (slug) => {
+  const { data } = await api.get(`/tours/slug/${slug}`);
   return data?.data || data;
 };
 
-/*
-|--------------------------------------------------------------------------
-| TOUR MANAGER
-|--------------------------------------------------------------------------
-*/
-
+/* Tour Manager */
 export const getManagerTours = async (params = {}) => {
-  const { data } = await api.get("/tours", {
-    params,
-  });
-
+  const { data } = await api.get("/tours/manager", { params });
   return data;
 };
 
-/*
-|--------------------------------------------------------------------------
-| CREATE TOUR
-|--------------------------------------------------------------------------
-*/
+export const getUpcomingTours = async (params = {}) => {
+  const { data } = await api.get("/tourmanager/tours", {
+    params: { ...params, upcoming: "true" },
+  });
+  return data;
+};
 
 export const createTour = async (payload) => {
   const { data } = await api.post("/tours", payload, {
-    headers: payload instanceof FormData ? { "Content-Type": "multipart/form-data" } : undefined,
+    headers:
+      payload instanceof FormData
+        ? { "Content-Type": "multipart/form-data" }
+        : undefined,
   });
-
   return data;
 };
-
-/*
-|--------------------------------------------------------------------------
-| UPDATE TOUR
-|--------------------------------------------------------------------------
-*/
 
 export const updateTour = async (id, payload) => {
-  const { data } = await api.put(
-    `/tour-manager/tours/${id}`,
-    payload
-  );
-
+  const { data } = await api.put(`/tours/${id}`, payload, {
+    headers:
+      payload instanceof FormData
+        ? { "Content-Type": "multipart/form-data" }
+        : undefined,
+  });
   return data;
 };
-
-/*
-|--------------------------------------------------------------------------
-| DELETE TOUR
-|--------------------------------------------------------------------------
-*/
 
 export const deleteTour = async (id) => {
-  const { data } = await api.delete(
-    `/tour-manager/tours/${id}`
-  );
-
+  const { data } = await api.delete(`/tours/${id}`);
   return data;
 };
 
-/*
-|--------------------------------------------------------------------------
-| STAFF
-|--------------------------------------------------------------------------
-|
-| IMPORTANT:
-| Assignment uses Staff.js on the backend.
-|
-| Therefore guides/drivers used for tour assignment should come
-| from /staff/guides and /staff/drivers rather than /users/guides.
-|--------------------------------------------------------------------------
-*/
-
+/* Staff/resources */
 export const getGuides = async () => {
   const { data } = await api.get("/staff/guides");
-
   return Array.isArray(data)
     ? data
     : Array.isArray(data?.data)
@@ -126,7 +79,6 @@ export const getGuides = async () => {
 
 export const getDrivers = async () => {
   const { data } = await api.get("/staff/drivers");
-
   return Array.isArray(data)
     ? data
     : Array.isArray(data?.data)
@@ -138,71 +90,8 @@ export const getDrivers = async () => {
           : [];
 };
 
-/*
-|--------------------------------------------------------------------------
-| CANONICAL TOUR RESOURCE ASSIGNMENT
-|--------------------------------------------------------------------------
-|
-| PUT /api/tour-assignments/:id/assign
-|
-| Supported fields:
-| - guideId
-| - driverId
-| - vehicleId
-|
-| Undefined field = keep existing assignment
-| null / ""         = remove assignment
-|--------------------------------------------------------------------------
-*/
-
-export const assignTourResources = async (
-  tourId,
-  assignmentData
-) => {
-  const { data } = await api.put(
-    `/tour-assignments/${tourId}/assign`,
-    assignmentData
-  );
-
-  return data;
-};
-
-export const assignGuide = async (
-  tourId,
-  guideId
-) => {
-  return assignTourResources(tourId, {
-    guideId,
-  });
-};
-
-export const assignDriver = async (
-  tourId,
-  driverId
-) => {
-  return assignTourResources(tourId, {
-    driverId,
-  });
-};
-
-export const assignVehicle = async (
-  tourId,
-  vehicleId
-) => {
-  return assignTourResources(tourId, {
-    vehicleId,
-  });
-};
-
-/*
-|--------------------------------------------------------------------------
-| VEHICLES
-|--------------------------------------------------------------------------
-*/
-
 export const getVehicles = async () => {
   const { data } = await api.get("/vehicles");
-
   return Array.isArray(data)
     ? data
     : Array.isArray(data?.data)
@@ -214,80 +103,40 @@ export const getVehicles = async () => {
           : [];
 };
 
-/*
-|--------------------------------------------------------------------------
-| DESTINATIONS
-|--------------------------------------------------------------------------
-*/
+/* Canonical resource assignment */
+export const assignTourResources = async (tourId, assignmentData) => {
+  const { data } = await api.put(`/tour-assignments/${tourId}/assign`, assignmentData);
+  return data;
+};
 
+export const assignGuide = (tourId, guideId) =>
+  assignTourResources(tourId, { guideId });
+
+export const assignDriver = (tourId, driverId) =>
+  assignTourResources(tourId, { driverId });
+
+export const assignVehicle = (tourId, vehicleId) =>
+  assignTourResources(tourId, { vehicleId });
+
+/* Destinations */
 export const getDestinations = async () => {
   const { data } = await api.get("/destinations");
-
   return data;
 };
 
-/*
-|--------------------------------------------------------------------------
-| TOUR AVAILABILITY
-|--------------------------------------------------------------------------
-*/
-
+/* Availability */
 export const getTourAvailability = async (id) => {
-  const { data } = await api.get(
-    `/tour-manager/tours/${id}/availability`
-  );
-
+  const { data } = await api.get(`/tours/${id}/availability`);
   return data;
 };
 
-export const updateTourAvailability = async (
-  id,
-  payload
-) => {
-  const { data } = await api.put(
-    `/tour-manager/tours/${id}/availability`,
-    payload
-  );
-
+export const updateTourAvailability = async (id, payload) => {
+  const { data } = await api.patch(`/tours/${id}/availability`, payload);
   return data;
 };
 
-/*
-|--------------------------------------------------------------------------
-| REPORTS
-|--------------------------------------------------------------------------
-*/
-
+/* Reports */
 export const getTourReports = async (params = {}) => {
-  const { data } = await api.get(
-    "/tour-manager/reports",
-    {
-      params,
-    }
-  );
-
-  return data;
-};
-
-/*
-|--------------------------------------------------------------------------
-| GET TOUR BY SLUG
-|--------------------------------------------------------------------------
-*/
-
-export const getTourBySlug = async (slug) => {
-  const { data } = await api.get(
-    `/tours/slug/${slug}`
-  );
-
-  return data?.data || data;
-};
-
-
-/* UPCOMING TOURS */
-export const getUpcomingTours = async (params = {}) => {
-  const { data } = await api.get('/tourmanager/tours', {
-    params: { ...params, upcoming: 'true' },
-  });
+  const { data } = await api.get("/tourmanager/reports", { params });
   return data;
 };
