@@ -7,6 +7,14 @@ import { getUserRole, normalizeRole } from "../utils/roleUtils";
 export const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
 
+const ADMIN_BASE_PERMISSIONS = [
+  "admin.dashboard", "user.manage", "staff.manage", "tour.manage",
+  "booking.manage", "payment.manage", "refund.manage", "analytics.view",
+  "settings.manage", "roles.manage", "notifications.view", "finance.view",
+  "customer.view", "tour.view", "tour.create", "tour.update", "booking.view",
+  "report.view", "guide.view", "vehicle.view",
+];
+
 const normalizePermissions = (permissions) => {
   if (!Array.isArray(permissions)) return [];
   const seen = new Set();
@@ -31,13 +39,15 @@ const extractRolePermissions = (user) => {
 
 const normalizeUser = (user) => {
   if (!user) return null;
+  const role = getUserRole(user);
   const rolePermissions = extractRolePermissions(user);
   const overridePermissions = user.permissionsOverride || user.permissionOverrides || [];
   const directPermissions = user.permissions || [];
+  const fallbackPermissions = ["admin", "superadmin"].includes(role) ? ADMIN_BASE_PERMISSIONS : [];
   return {
     ...user,
-    role: getUserRole(user),
-    permissions: normalizePermissions([...rolePermissions, ...overridePermissions, ...directPermissions]),
+    role,
+    permissions: normalizePermissions([...fallbackPermissions, ...rolePermissions, ...overridePermissions, ...directPermissions]),
   };
 };
 
@@ -88,14 +98,11 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     const { data } = await api.post("/auth/login", { email: String(email || "").trim().toLowerCase(), password });
-
     if (data?.mfaRequired) return data;
     if (!data?.token) throw new Error("Authentication response did not contain a token.");
-
     localStorage.setItem("token", data.token);
     setToken(data.token);
     persistUser(data.user);
-
     try {
       await fetchCurrentUser();
     } catch (error) {
@@ -108,7 +115,9 @@ export function AuthProvider({ children }) {
   const permissions = user?.permissions || [];
   const hasPermission = (permission) => {
     if (!user || !permission) return false;
-    if (getUserRole(user) === "superadmin") return true;
+    const role = getUserRole(user);
+    if (role === "superadmin") return true;
+    if (["admin"].includes(role) && ADMIN_BASE_PERMISSIONS.includes(String(permission).trim().toLowerCase())) return true;
     const wanted = String(permission).trim().toLowerCase();
     return permissions.some((p) => String(p?.name || "").trim().toLowerCase() === wanted && p?.enabled !== false);
   };
