@@ -6,7 +6,7 @@ import axios from "axios";
 |--------------------------------------------------------------------------
 |
 | During local development the project should talk directly to the local
-| Express server.  A stale ngrok URL can otherwise cause the customer
+| Express server. A stale ngrok URL can otherwise cause the customer
 | dashboard to fail before React even receives /auth/me.
 |
 | Production/staging URLs supplied through VITE_API_URL are still respected.
@@ -53,7 +53,22 @@ api.interceptors.request.use(
 );
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Any successful write operation can change dashboard statistics.
+    // Broadcast once here so every dashboard/query cache can refresh without
+    // every individual CRUD page needing custom synchronization code.
+    const method = String(response.config?.method || "").toLowerCase();
+    if (typeof window !== "undefined" && ["post", "put", "patch", "delete"].includes(method)) {
+      window.dispatchEvent(new CustomEvent("dashboard:data-changed", {
+        detail: {
+          method,
+          url: response.config?.url || "",
+        },
+      }));
+    }
+
+    return response;
+  },
   (error) => {
     if (error.response?.status === 401) {
       console.error("401 SERVER RESPONSE", error.response.data);
