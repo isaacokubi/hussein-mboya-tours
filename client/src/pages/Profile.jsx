@@ -12,19 +12,20 @@ const normalizeProfile = (response) =>
   null;
 
 export default function Profile() {
-  const { user, setUser } = useAuth();
+  const { user, setUser, loading: authLoading } = useAuth();
   const userId = user?._id || user?.id || null;
   const [profile, setProfile] = useState(user);
   const [form, setForm] = useState({
     name: user?.name || "",
     phone: user?.phone || "",
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!user) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (authLoading) return;
+
+    if (!userId) {
       setProfile(null);
       setLoading(false);
       return;
@@ -39,18 +40,22 @@ export default function Profile() {
         const response = await api.get("/users/profile");
         const nextProfile = normalizeProfile(response);
 
-        if (mounted && nextProfile) {
-          setProfile(nextProfile);
-          setForm({
-            name: nextProfile.name || "",
-            phone: nextProfile.phone || "",
-          });
-          setUser(nextProfile);
-          localStorage.setItem("user", JSON.stringify(nextProfile));
+        if (!mounted) return;
+
+        if (!nextProfile) {
+          throw new Error("The profile response did not contain user data.");
         }
+
+        setProfile(nextProfile);
+        setForm({
+          name: nextProfile.name || "",
+          phone: nextProfile.phone || "",
+        });
+        setUser(nextProfile);
+        localStorage.setItem("user", JSON.stringify(nextProfile));
       } catch (error) {
         console.error("Profile fetch error:", error);
-        if (error.response?.status !== 401) {
+        if (mounted && error.response?.status !== 401) {
           toast.error(
             error.response?.data?.message || "Unable to load your profile."
           );
@@ -65,7 +70,11 @@ export default function Profile() {
     return () => {
       mounted = false;
     };
-  }, [userId, setUser]);
+    // setUser is intentionally excluded: AuthContext recreates that wrapper
+    // function when auth state changes, which previously caused this request
+    // to run repeatedly and made the profile appear to keep loading.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, userId]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -75,19 +84,23 @@ export default function Profile() {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (!form.name.trim() || !form.phone.trim()) {
+    const name = form.name.trim();
+    const phone = form.phone.trim();
+
+    if (!name || !phone) {
       toast.error("Name and phone number are required.");
+      return;
+    }
+
+    if (!/^\d{10}$/.test(phone)) {
+      toast.error("Phone number must contain exactly 10 digits.");
       return;
     }
 
     setSaving(true);
 
     try {
-      const response = await api.put("/users/profile", {
-        name: form.name.trim(),
-        phone: form.phone.trim(),
-      });
-
+      const response = await api.put("/users/profile", { name, phone });
       const updatedProfile = normalizeProfile(response);
 
       if (updatedProfile) {
@@ -110,17 +123,20 @@ export default function Profile() {
     }
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-100">
-        <p className="text-xl font-semibold">Loading profile...</p>
+      <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4">
+        <div className="rounded-2xl bg-white px-8 py-7 text-center shadow-lg">
+          <div className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-gray-200 border-t-green-700" />
+          <p className="text-lg font-semibold text-gray-700">Loading profile...</p>
+        </div>
       </div>
     );
   }
 
   if (!profile) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center px-4">
         <p className="font-semibold text-red-600">
           Please login to view your profile.
         </p>
@@ -136,77 +152,71 @@ export default function Profile() {
     "customer";
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="mx-auto max-w-3xl rounded-2xl bg-white p-8 shadow-xl">
-        <h1 className="mb-2 text-4xl font-bold text-green-800">My Profile</h1>
-        <p className="mb-8 text-gray-600">
-          Keep your contact information up to date.
-        </p>
+    <div className="min-h-screen bg-gray-100 px-4 py-6 sm:px-6">
+      <div className="mx-auto max-w-3xl rounded-2xl bg-white p-5 shadow-xl sm:p-8">
+        <h1 className="mb-2 text-3xl font-bold text-green-800 sm:text-4xl">My Profile</h1>
+        <p className="mb-8 text-gray-600">Keep your contact information up to date.</p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid gap-6 md:grid-cols-2">
-            <label className="block">
-              <span className="mb-2 block text-sm font-medium text-gray-600">
-                Full Name
-              </span>
+            <label className="block min-w-0">
+              <span className="mb-2 block text-sm font-medium text-gray-600">Full Name</span>
               <input
                 name="name"
+                type="text"
                 value={form.name}
                 onChange={handleChange}
+                autoComplete="name"
                 className="input w-full"
                 required
               />
             </label>
 
-            <label className="block">
-              <span className="mb-2 block text-sm font-medium text-gray-600">
-                Phone Number
-              </span>
+            <label className="block min-w-0">
+              <span className="mb-2 block text-sm font-medium text-gray-600">Phone Number</span>
               <input
-                name="email"
+                name="phone"
+                type="tel"
+                inputMode="numeric"
+                maxLength={10}
                 value={form.phone}
                 onChange={handleChange}
+                autoComplete="tel"
                 className="input w-full"
                 required
               />
             </label>
 
-            <div className="rounded-xl bg-gray-50 p-5">
+            <div className="min-w-0 rounded-xl bg-gray-50 p-5">
               <p className="text-sm text-gray-500">Email Address</p>
-              <p className="mt-2 break-all text-lg font-bold">
-                {profile.email || "N/A"}
-              </p>
+              <p className="mt-2 break-all text-lg font-bold">{profile.email || "N/A"}</p>
             </div>
 
             <div className="rounded-xl bg-gray-50 p-5">
               <p className="text-sm text-gray-500">Account Type</p>
-              <p className="mt-2 text-lg font-bold capitalize">{role}</p>
+              <p className="mt-2 break-words text-lg font-bold capitalize">{role}</p>
             </div>
 
             <div className="rounded-xl bg-gray-50 p-5">
               <p className="text-sm text-gray-500">Member Since</p>
               <p className="mt-2 text-lg font-bold">
-                {profile.createdAt
-                  ? new Date(profile.createdAt).toDateString()
-                  : "N/A"}
+                {profile.createdAt ? new Date(profile.createdAt).toDateString() : "N/A"}
               </p>
             </div>
           </div>
 
-          <div className="rounded-xl bg-gradient-to-r from-yellow-100 to-green-100 p-6">
-            <h2 className="text-2xl font-bold">Loyalty Rewards</h2>
+          <div className="rounded-xl bg-gradient-to-r from-yellow-100 to-green-100 p-5 sm:p-6">
+            <h2 className="text-xl font-bold sm:text-2xl">Loyalty Rewards</h2>
             <p className="mt-4 text-lg">
               Points:
-              <span className="ml-2 font-bold text-green-700">
-                {profile.loyaltyPoints || 0}
-              </span>
+              <span className="ml-2 font-bold text-green-700">{profile.loyaltyPoints || 0}</span>
             </p>
           </div>
 
           <button
             type="submit"
             disabled={saving}
-            className="rounded-xl bg-green-700 px-6 py-3 font-bold text-white disabled:opacity-50"
+            className="w-full rounded-xl bg-green-700 px-6 py-3 font-bold text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
           >
             {saving ? "Saving..." : "Save Changes"}
           </button>
