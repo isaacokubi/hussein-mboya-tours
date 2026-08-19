@@ -12,10 +12,11 @@ import { getHeroSlides } from "../../api/heroApi";
 import "swiper/css";
 import "swiper/css/effect-fade";
 
-export default function HeroSlider(
-) {
+export default function HeroSlider() {
   const videoRefs = useRef([]);
   const [heroReady, setHeroReady] = useState(false);
+  const [loadedVideos, setLoadedVideos] = useState({});
+  const { settings } = useSettings();
 
   const {
     data: slides = [],
@@ -28,11 +29,7 @@ export default function HeroSlider(
     gcTime: 1000 * 60 * 60,
   });
 
-  /*
-   * Let the hero poster/image render first.
-   * Video playback begins shortly after the browser
-   * has had time to render the initial page.
-   */
+  // Render the image first. Video loading starts only after the hero has painted.
   useEffect(() => {
     if (!slides.length) return;
 
@@ -42,6 +39,13 @@ export default function HeroSlider(
 
     return () => window.clearTimeout(timer);
   }, [slides]);
+
+  const markVideoLoaded = (index) => {
+    setLoadedVideos((current) => ({
+      ...current,
+      [index]: true,
+    }));
+  };
 
   const playVideo = (index) => {
     const video = videoRefs.current[index];
@@ -54,7 +58,6 @@ export default function HeroSlider(
   const pauseAllVideos = () => {
     videoRefs.current.forEach((video) => {
       if (!video) return;
-
       video.pause();
     });
   };
@@ -62,9 +65,7 @@ export default function HeroSlider(
   if (isLoading) {
     return (
       <section className="h-[85vh] flex items-center justify-center bg-gray-900 text-white">
-        <div className="animate-pulse text-lg">
-          Loading...
-        </div>
+        <div className="animate-pulse text-lg">Loading...</div>
       </section>
     );
   }
@@ -96,49 +97,44 @@ export default function HeroSlider(
           className="h-full"
           onSwiper={(swiper) => {
             pauseAllVideos();
-
             window.setTimeout(() => {
               playVideo(swiper.realIndex);
             }, 100);
           }}
           onSlideChange={(swiper) => {
             pauseAllVideos();
-
             window.setTimeout(() => {
               playVideo(swiper.realIndex);
             }, 100);
           }}
         >
           {slides.map((slide, index) => {
-            const imageUrl =
-              slide.image?.url ||
-              slide.image ||
-              "/hero1.jpeg";
-
-            const videoUrl =
-              slide.video?.url ||
-              slide.video;
+            const imageUrl = slide.image?.url || slide.image || "/hero1.jpeg";
+            const videoUrl = slide.video?.url || slide.video;
+            const videoLoaded = Boolean(loadedVideos[index]);
 
             return (
               <SwiperSlide key={slide._id || index}>
                 <div className="relative h-full overflow-hidden bg-gray-900">
                   {/*
-                   * Poster/image is always available immediately.
-                   * This prevents a blank hero while video downloads.
+                   * IMAGE PLACEHOLDER / POSTER:
+                   * The image stays visible while the video is downloading,
+                   * buffering or waiting for its first playable frame.
                    */}
                   <img
                     src={imageUrl}
-                    alt={slide.title || settings.companyName || "Coherent Tours"}
-                    className="absolute inset-0 w-full h-full object-cover"
+                    alt={slide.title || settings?.companyName || "Coherent Tours"}
+                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${
+                      videoLoaded ? "opacity-0" : "opacity-100"
+                    }`}
                     fetchPriority={index === 0 ? "high" : "auto"}
                     loading={index === 0 ? "eager" : "lazy"}
                     decoding="async"
                   />
 
                   {/*
-                   * Videos are NOT downloaded immediately.
-                   * They begin loading only after the initial hero
-                   * has rendered.
+                   * Video remains transparent until it has a playable frame.
+                   * This prevents a black/blank hero during slow video loading.
                    */}
                   {videoUrl && heroReady && (
                     <video
@@ -151,8 +147,11 @@ export default function HeroSlider(
                       loop
                       preload={index === 0 ? "metadata" : "none"}
                       poster={imageUrl}
-                      className="absolute inset-0 w-full h-full object-cover"
+                      className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${
+                        videoLoaded ? "opacity-100" : "opacity-0"
+                      }`}
                       onCanPlay={() => {
+                        markVideoLoaded(index);
                         if (index === 0) {
                           playVideo(index);
                         }
@@ -200,4 +199,3 @@ export default function HeroSlider(
     </section>
   );
 }
-
