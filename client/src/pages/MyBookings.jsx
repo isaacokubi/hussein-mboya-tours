@@ -5,13 +5,7 @@ import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
 import { createReview } from "../api/reviewApi";
 import { getUserRole } from "../utils/roleUtils";
-
-import {
-  cancelBooking,
-  getMyBookings,
-  initiatePayment,
-  rescheduleBooking,
-} from "../api/bookingApi";
+import { cancelBooking, getMyBookings, initiatePayment, rescheduleBooking } from "../api/bookingApi";
 
 const normalizeBookings = (response) => {
   if (Array.isArray(response)) return response;
@@ -21,33 +15,75 @@ const normalizeBookings = (response) => {
   return [];
 };
 
-const paymentStatusOf = (booking) =>
-  String(
-    typeof booking?.paymentStatus === "object"
-      ? booking.paymentStatus?.paymentStatus || booking.paymentStatus?.status || "pending"
-      : booking?.paymentStatus || "pending"
-  ).toLowerCase();
+const paymentStatusOf = (booking) => String(
+  typeof booking?.paymentStatus === "object"
+    ? booking.paymentStatus?.paymentStatus || booking.paymentStatus?.status || "pending"
+    : booking?.paymentStatus || "pending"
+).toLowerCase();
 
-const bookingStatusOf = (booking) =>
-  String(booking?.status || booking?.bookingStatus || "pending").toLowerCase();
+const bookingStatusOf = (booking) => String(booking?.status || booking?.bookingStatus || "pending").toLowerCase();
+
+const firstValue = (...values) => values.find((value) => value !== undefined && value !== null && String(value).trim() !== "");
+
+const bookingReferenceOf = (booking) => firstValue(
+  booking?.bookingReference,
+  booking?.bookingRef,
+  booking?.reference,
+  booking?.bookingNumber,
+  booking?.bookingCode,
+  booking?.confirmationNumber,
+  booking?._id ? String(booking._id).slice(-8).toUpperCase() : null,
+  "N/A"
+);
+
+const tourNameOf = (booking) => firstValue(
+  typeof booking?.tour === "object" ? booking.tour?.title || booking.tour?.name : booking?.tour,
+  booking?.tourTitle,
+  booking?.tourName,
+  "Tour Package"
+);
+
+const pickupLocationOf = (booking) => firstValue(
+  booking?.pickupLocation,
+  booking?.pickup?.location,
+  booking?.pickup?.address,
+  booking?.pickupAddress,
+  booking?.pickupPoint,
+  booking?.pickup,
+  "Not specified"
+);
+
+const pickupTimeOf = (booking) => firstValue(
+  booking?.pickupTime,
+  booking?.pickup?.time,
+  booking?.pickup?.pickupTime,
+  "Not specified"
+);
+
+const amountOf = (booking) => Number(firstValue(
+  booking?.totalAmount,
+  booking?.amount,
+  booking?.total,
+  booking?.pricing?.total,
+  0
+));
+
+const formatDate = (value) => value ? new Date(value).toLocaleDateString(undefined, {
+  weekday: "short", year: "numeric", month: "short", day: "numeric",
+}) : "Not specified";
 
 export default function MyBookings() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const userRole = getUserRole(user);
 
-  // This page performs customer-owned operations. Keep the compatibility route
-  // harmless for staff users until the legacy route declaration is removed.
-  if (userRole !== "customer") {
-    return <Navigate to="/unauthorized" replace />;
-  }
+  if (userRole !== "customer") return <Navigate to="/unauthorized" replace />;
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["my-bookings"],
     queryFn: getMyBookings,
     staleTime: 1000 * 60 * 5,
   });
-
   const bookings = normalizeBookings(data);
 
   const cancelMutation = useMutation({
@@ -56,147 +92,104 @@ export default function MyBookings() {
       toast.success("Booking cancelled successfully.");
       queryClient.invalidateQueries({ queryKey: ["my-bookings"] });
     },
-    onError: (requestError) => {
-      toast.error(requestError?.response?.data?.message || "Unable to cancel booking.");
-    },
+    onError: (e) => toast.error(e?.response?.data?.message || "Unable to cancel booking."),
   });
 
   const handleCancel = (booking) => {
-    if (!window.confirm(`Cancel booking ${booking.bookingNumber || booking._id}?`)) return;
+    if (!window.confirm(`Cancel booking ${bookingReferenceOf(booking)}?`)) return;
     cancelMutation.mutate(booking._id);
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-green-600 border-t-transparent" />
-          <p className="text-xl font-semibold">Loading your bookings...</p>
-        </div>
+  if (isLoading) return (
+    <div className="flex min-h-screen items-center justify-center px-4">
+      <div className="text-center">
+        <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-green-600 border-t-transparent" />
+        <p className="text-lg font-semibold sm:text-xl">Loading your bookings...</p>
       </div>
-    );
-  }
+    </div>
+  );
 
-  if (error) {
-    return (
-      <div className="p-10 text-center text-red-600">
-        <p className="font-semibold">{error?.response?.data?.message || "Unable to load your bookings."}</p>
-        <button
-          type="button"
-          onClick={() => queryClient.invalidateQueries({ queryKey: ["my-bookings"] })}
-          className="mt-4 rounded-lg bg-green-700 px-5 py-2 font-semibold text-white"
-        >
-          Retry
-        </button>
-      </div>
-    );
-  }
+  if (error) return (
+    <div className="p-6 text-center text-red-600 sm:p-10">
+      <p className="font-semibold">{error?.response?.data?.message || "Unable to load your bookings."}</p>
+      <button type="button" onClick={() => queryClient.invalidateQueries({ queryKey: ["my-bookings"] })} className="mt-4 rounded-lg bg-green-700 px-5 py-2 font-semibold text-white">Retry</button>
+    </div>
+  );
 
   const now = new Date();
-  const upcomingTrips = bookings.filter(
-    (booking) => booking.travelDate && new Date(booking.travelDate) >= now && bookingStatusOf(booking) !== "cancelled"
-  );
-  const paidTrips = bookings.filter((booking) => ["paid", "completed"].includes(paymentStatusOf(booking)));
+  const upcomingTrips = bookings.filter((b) => b.travelDate && new Date(b.travelDate) >= now && bookingStatusOf(b) !== "cancelled");
+  const paidTrips = bookings.filter((b) => ["paid", "completed"].includes(paymentStatusOf(b)));
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-8 rounded-3xl bg-gradient-to-r from-green-900 to-yellow-600 p-8 text-white shadow-xl">
-          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h1 className="text-4xl font-bold">My Adventures</h1>
-              <p className="mt-3">
-                Manage your bookings, payments and upcoming trips.
-              </p>
+    <div className="min-h-screen overflow-x-hidden bg-gray-100 px-3 py-4 sm:px-6 sm:py-6">
+      <div className="mx-auto w-full max-w-7xl">
+        <div className="mb-6 rounded-2xl bg-gradient-to-r from-green-900 to-yellow-600 p-5 text-white shadow-xl sm:mb-8 sm:rounded-3xl sm:p-8">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="min-w-0">
+              <h1 className="text-2xl font-bold sm:text-4xl">My Adventures</h1>
+              <p className="mt-2 text-sm sm:mt-3 sm:text-base">Manage your bookings, payments and upcoming trips.</p>
             </div>
-
-            <div className="flex flex-wrap gap-3">
-              <Link
-                to="/custom-tour"
-                className="rounded-xl bg-white px-5 py-3 font-bold text-green-900 shadow-md transition hover:bg-green-50"
-              >
-                Create Custom Tour
-              </Link>
-
-              <Link
-                to="/my-custom-tours"
-                className="rounded-xl border-2 border-white px-5 py-3 font-bold text-white transition hover:bg-white hover:text-green-900"
-              >
-                My Requests
-              </Link>
+            <div className="flex flex-wrap gap-2 sm:gap-3">
+              <Link to="/custom-tour" className="rounded-xl bg-white px-3 py-2 text-sm font-bold text-green-900 shadow-md sm:px-5 sm:py-3 sm:text-base">Create Custom Tour</Link>
+              <Link to="/my-custom-tours" className="rounded-xl border-2 border-white px-3 py-2 text-sm font-bold text-white sm:px-5 sm:py-3 sm:text-base">My Requests</Link>
             </div>
           </div>
         </div>
 
-        <div className="mb-10 grid gap-6 md:grid-cols-3">
+        <div className="mb-7 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-5 lg:mb-10 lg:gap-6">
           <SummaryCard title="Total Bookings" value={bookings.length} />
           <SummaryCard title="Upcoming Trips" value={upcomingTrips.length} />
           <SummaryCard title="Paid Trips" value={paidTrips.length} />
         </div>
 
         {bookings.length === 0 ? (
-          <div className="rounded-2xl bg-white p-10 text-center shadow">
-            <h2 className="mb-4 text-3xl font-bold">No Bookings Yet</h2>
+          <div className="rounded-2xl bg-white p-7 text-center shadow sm:p-10">
+            <h2 className="mb-4 text-2xl font-bold sm:text-3xl">No Bookings Yet</h2>
             <p className="mb-6 text-gray-600">Start exploring Kenya's best destinations.</p>
-            <Link to="/tours" className="rounded-xl bg-green-700 px-8 py-3 font-bold text-white">
-              Explore Tours
-            </Link>
+            <Link to="/tours" className="rounded-xl bg-green-700 px-6 py-3 font-bold text-white sm:px-8">Explore Tours</Link>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-5 sm:space-y-6">
             {bookings.map((booking) => {
               const status = bookingStatusOf(booking);
               const paymentStatus = paymentStatusOf(booking);
-
               return (
-                <article key={booking._id || booking.bookingNumber} className="rounded-2xl bg-white p-6 shadow">
-                  <div className="flex flex-wrap justify-between gap-5">
-                    <div>
-                      <h2 className="text-2xl font-bold text-green-800">{booking.tour?.title || "Tour Package"}</h2>
-                      <p className="mt-2 text-gray-600">Booking Number: <b>{booking.bookingNumber || booking._id?.slice?.(-8) || "N/A"}</b></p>
-                      <p className="text-gray-600">Travel Date: {booking.travelDate ? new Date(booking.travelDate).toDateString() : "N/A"}</p>
-                      <p className="text-gray-600">Travellers: {booking.travelers?.length || booking.numberOfGuests || 1}</p>
+                <article key={booking._id || bookingReferenceOf(booking)} className="overflow-hidden rounded-2xl bg-white p-4 shadow sm:p-6">
+                  <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="min-w-0">
+                      <h2 className="break-words text-xl font-bold text-green-800 sm:text-2xl">{tourNameOf(booking)}</h2>
+                      <p className="mt-2 break-all text-sm text-gray-600">Booking Reference: <b>{bookingReferenceOf(booking)}</b></p>
                     </div>
-                    <div className="flex flex-col gap-3">
-                      <StatusBadge value={status} />
-                      <StatusBadge value={paymentStatus} payment />
+                    <div className="flex flex-wrap gap-2 lg:justify-end">
+                      <StatusBadge value={status} label="Booking" />
+                      <StatusBadge value={paymentStatus} label="Payment" payment />
                     </div>
                   </div>
 
-                  <hr className="my-6" />
+                  <div className="my-5 grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                    <BookingDetail label="Tour" value={tourNameOf(booking)} />
+                    <BookingDetail label="Date" value={formatDate(booking.travelDate || booking.date)} />
+                    <BookingDetail label="Pickup Location" value={pickupLocationOf(booking)} />
+                    <BookingDetail label="Pickup Time" value={pickupTimeOf(booking)} />
+                    <BookingDetail label="Amount" value={`KES ${amountOf(booking).toLocaleString()}`} emphasize />
+                  </div>
 
-                  <div className="flex flex-wrap items-center justify-between gap-5">
-                    <div>
-                      <p className="text-gray-500">Total Amount</p>
-                      <h3 className="text-xl font-bold">KES {Number(booking.totalAmount || 0).toLocaleString()}</h3>
+                  <div className="mb-5 flex flex-wrap gap-x-5 gap-y-2 border-t border-gray-100 pt-4 text-sm text-gray-600">
+                    <span>Travellers: <b>{booking.travelers?.length || booking.numberOfGuests || 1}</b></span>
+                    <span>Booking Status: <b className="capitalize">{status}</b></span>
+                    <span>Payment Status: <b className="capitalize">{paymentStatus}</b></span>
+                  </div>
+
+                  <div className="flex flex-col gap-4 border-t pt-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap">
+                      {status === "completed" && <ReviewForm booking={booking} />}
+                      {status !== "cancelled" && status !== "completed" && <RescheduleForm booking={booking} onDone={() => queryClient.invalidateQueries({ queryKey: ["my-bookings"] })} />}
                     </div>
-
-                    {status === "completed" && <ReviewForm booking={booking} />}
-                    {status !== "cancelled" && status !== "completed" && (
-                      <RescheduleForm
-                        booking={booking}
-                        onDone={() => queryClient.invalidateQueries({ queryKey: ["my-bookings"] })}
-                      />
-                    )}
-
-                    <div className="flex flex-wrap gap-3">
-                      <Link to={`/bookings/${booking._id}`} className="rounded-xl bg-green-700 px-5 py-2 text-white">
-                        View Trip
-                      </Link>
-
-                      {status !== "cancelled" && status !== "completed" && paymentStatus !== "paid" && (
-                        <PayNowButton booking={booking} user={user} />
-                      )}
-
+                    <div className="flex w-full flex-wrap gap-2 lg:w-auto lg:justify-end">
+                      <Link to={`/bookings/${booking._id}`} className="flex-1 rounded-xl bg-green-700 px-4 py-2 text-center text-sm font-semibold text-white sm:flex-none sm:px-5">View Trip</Link>
+                      {status !== "cancelled" && status !== "completed" && paymentStatus !== "paid" && <PayNowButton booking={booking} user={user} />}
                       {status !== "cancelled" && status !== "completed" && (
-                        <button
-                          type="button"
-                          disabled={cancelMutation.isPending}
-                          onClick={() => handleCancel(booking)}
-                          className="rounded-xl bg-red-600 px-5 py-2 text-white disabled:opacity-50"
-                        >
-                          {cancelMutation.isPending ? "Cancelling..." : "Cancel"}
-                        </button>
+                        <button type="button" disabled={cancelMutation.isPending} onClick={() => handleCancel(booking)} className="flex-1 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 sm:flex-none sm:px-5">{cancelMutation.isPending ? "Cancelling..." : "Cancel"}</button>
                       )}
                     </div>
                   </div>
@@ -211,44 +204,25 @@ export default function MyBookings() {
 }
 
 function SummaryCard({ title, value }) {
-  return (
-    <div className="rounded-2xl bg-white p-6 shadow">
-      <p className="text-gray-500">{title}</p>
-      <h2 className="mt-2 text-4xl font-bold">{value}</h2>
-    </div>
-  );
+  return <div className="min-w-0 rounded-2xl bg-white p-4 shadow sm:p-6"><p className="truncate text-sm text-gray-500 sm:text-base">{title}</p><h2 className="mt-1 text-3xl font-bold leading-tight sm:text-4xl">{value}</h2></div>;
 }
 
-function StatusBadge({ value, payment = false }) {
-  const styles = value === "completed" || value === "paid"
-    ? "bg-green-100 text-green-700"
-    : value === "cancelled" || value === "failed"
-      ? "bg-red-100 text-red-700"
-      : "bg-yellow-100 text-yellow-700";
+function BookingDetail({ label, value, emphasize = false }) {
+  return <div className="min-w-0 rounded-xl border border-gray-100 bg-gray-50 p-3"><p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</p><p className={`break-words text-sm leading-5 ${emphasize ? "font-bold text-green-800" : "font-semibold text-gray-800"}`}>{value}</p></div>;
+}
 
-  return (
-    <span className={`rounded-full px-4 py-2 font-bold capitalize ${styles}`}>
-      {payment ? "Payment: " : ""}{value}
-    </span>
-  );
+function StatusBadge({ value, label, payment = false }) {
+  const styles = value === "completed" || value === "paid" ? "bg-green-100 text-green-700" : value === "cancelled" || value === "failed" ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700";
+  return <span className={`max-w-full break-words rounded-full px-3 py-1.5 text-xs font-bold capitalize sm:px-4 sm:py-2 sm:text-sm ${styles}`}>{label}: {value}</span>;
 }
 
 function PayNowButton({ booking, user }) {
   const [loading, setLoading] = useState(false);
-
   const handlePayment = async () => {
     const phone = booking.user?.phone || user?.phone || booking.customer?.phone || booking.customerSnapshot?.phone || booking.contact?.phone;
-    const amount = Number(booking.balanceAmount ?? Math.max(0, Number(booking.totalAmount || 0) - Number(booking.depositAmount || 0)));
-
-    if (!phone) {
-      toast.error("No phone number is available. Update your profile phone number first.");
-      return;
-    }
-    if (!amount || amount <= 0) {
-      toast.info("There is no outstanding balance to pay.");
-      return;
-    }
-
+    const amount = Number(booking.balanceAmount ?? Math.max(0, amountOf(booking) - Number(booking.depositAmount || 0)));
+    if (!phone) return toast.error("No phone number is available. Update your profile phone number first.");
+    if (!amount || amount <= 0) return toast.info("There is no outstanding balance to pay.");
     try {
       setLoading(true);
       await initiatePayment({ bookingId: booking._id, phone, phoneNumber: phone, amount });
@@ -257,16 +231,9 @@ function PayNowButton({ booking, user }) {
     } catch (error) {
       console.error("MPESA ERROR:", error.response?.data || error);
       toast.error(error.response?.data?.message || "Unable to start M-Pesa payment. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
-
-  return (
-    <button type="button" onClick={handlePayment} disabled={loading} className="rounded-xl bg-black px-5 py-2 text-white disabled:opacity-50">
-      {loading ? "Sending..." : "Pay Now"}
-    </button>
-  );
+  return <button type="button" onClick={handlePayment} disabled={loading} className="flex-1 rounded-xl bg-black px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 sm:flex-none sm:px-5">{loading ? "Sending..." : "Pay Now"}</button>;
 }
 
 function RescheduleForm({ booking, onDone }) {
@@ -278,23 +245,7 @@ function RescheduleForm({ booking, onDone }) {
     onSuccess: () => { toast.success("Booking rescheduled."); setOpen(false); onDone(); },
     onError: (e) => toast.error(e?.response?.data?.message || "Unable to reschedule booking."),
   });
-
-  return (
-    <div className="w-full rounded-xl border border-sky-100 bg-sky-50 p-4">
-      <button type="button" onClick={() => setOpen((v) => !v)} className="font-semibold text-sky-800">
-        {open ? "Close reschedule" : "Postpone / reschedule"}
-      </button>
-      {open && (
-        <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_2fr_auto]">
-          <input type="date" min={new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().slice(0, 10)} value={date} onChange={(e) => setDate(e.target.value)} className="rounded-lg border p-2" />
-          <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason (optional)" className="rounded-lg border p-2" />
-          <button type="button" disabled={!date || mutation.isPending} onClick={() => mutation.mutate()} className="rounded-lg bg-sky-700 px-4 py-2 font-semibold text-white disabled:opacity-50">
-            {mutation.isPending ? "Saving..." : "Reschedule"}
-          </button>
-        </div>
-      )}
-    </div>
-  );
+  return <div className="w-full min-w-0 rounded-xl border border-sky-100 bg-sky-50 p-3 sm:p-4"><button type="button" onClick={() => setOpen((v) => !v)} className="font-semibold text-sky-800">{open ? "Close reschedule" : "Postpone / reschedule"}</button>{open && <div className="mt-3 grid min-w-0 gap-3 sm:grid-cols-[1fr_2fr_auto]"><input type="date" min={new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().slice(0, 10)} value={date} onChange={(e) => setDate(e.target.value)} className="min-w-0 rounded-lg border p-2" /><input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason (optional)" className="min-w-0 rounded-lg border p-2" /><button type="button" disabled={!date || mutation.isPending} onClick={() => mutation.mutate()} className="rounded-lg bg-sky-700 px-4 py-2 font-semibold text-white disabled:opacity-50">{mutation.isPending ? "Saving..." : "Reschedule"}</button></div>}</div>;
 }
 
 function ReviewForm({ booking }) {
@@ -307,28 +258,5 @@ function ReviewForm({ booking }) {
     onSuccess: () => { toast.success("Review submitted for admin approval."); setOpen(false); },
     onError: (e) => toast.error(e?.response?.data?.message || "Unable to submit review."),
   });
-
-  return (
-    <div className="w-full rounded-xl border border-amber-100 bg-amber-50 p-4">
-      <button type="button" onClick={() => setOpen((v) => !v)} className="font-semibold text-amber-800">
-        {open ? "Close review" : "Leave a review"}
-      </button>
-      {open && (
-        <div className="mt-3 space-y-3">
-          <div className="flex gap-2">
-            {[1, 2, 3, 4, 5].map((n) => (
-              <button type="button" key={n} onClick={() => setRating(n)} className={`text-2xl ${n <= rating ? "text-amber-500" : "text-slate-300"}`}>
-                ★
-              </button>
-            ))}
-          </div>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Review title" className="w-full rounded-lg border p-2" />
-          <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Tell us about your experience" rows={3} className="w-full rounded-lg border p-2" />
-          <button type="button" disabled={!comment.trim() || mutation.isPending} onClick={() => mutation.mutate()} className="rounded-lg bg-amber-600 px-4 py-2 font-semibold text-white disabled:opacity-50">
-            {mutation.isPending ? "Submitting..." : "Submit review"}
-          </button>
-        </div>
-      )}
-    </div>
-  );
+  return <div className="w-full min-w-0 rounded-xl border border-amber-100 bg-amber-50 p-3 sm:p-4"><button type="button" onClick={() => setOpen((v) => !v)} className="font-semibold text-amber-800">{open ? "Close review" : "Leave a review"}</button>{open && <div className="mt-3 min-w-0 space-y-3"><div className="flex gap-2">{[1,2,3,4,5].map((n) => <button type="button" key={n} onClick={() => setRating(n)} className={`text-2xl ${n <= rating ? "text-amber-500" : "text-slate-300"}`}>★</button>)}</div><input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Review title" className="w-full min-w-0 rounded-lg border p-2" /><textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Tell us about your experience" rows={3} className="w-full min-w-0 rounded-lg border p-2" /><button type="button" disabled={!comment.trim() || mutation.isPending} onClick={() => mutation.mutate()} className="rounded-lg bg-amber-600 px-4 py-2 font-semibold text-white disabled:opacity-50">{mutation.isPending ? "Submitting..." : "Submit review"}</button></div>}</div>;
 }
