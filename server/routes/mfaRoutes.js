@@ -3,21 +3,24 @@ import {
   sendCustomerLoginPin,
   verifyCustomerLoginPin,
 } from "../controllers/mfaController.js";
-import { loginRateLimiter } from "../middleware/authRateLimiters.js";
+import {
+  mfaSendRateLimiter,
+  mfaVerifyRateLimiter,
+} from "../middleware/authRateLimiters.js";
 
 const router = express.Router();
 
 // MFA PIN endpoints are part of the unauthenticated login flow, so they
-// cannot use `protect`; they must still be aggressively rate-limited.
+// cannot use `protect`; they use dedicated, stricter throttles instead.
 router.post(
   "/customer/send-pin",
-  loginRateLimiter,
+  mfaSendRateLimiter,
   sendCustomerLoginPin
 );
 
 router.post(
   "/customer/verify-pin",
-  loginRateLimiter,
+  mfaVerifyRateLimiter,
   verifyCustomerLoginPin
 );
 
