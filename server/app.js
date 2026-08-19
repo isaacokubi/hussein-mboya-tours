@@ -16,17 +16,64 @@ const app = express();
 
 /*
 |--------------------------------------------------------------------------
-| Legacy Destination Images
+| PRODUCTION LOG REDACTION
+|--------------------------------------------------------------------------
+|
+| Payment callbacks can contain customer phone numbers and provider
+| transaction metadata. Controllers may log diagnostic objects, so install
+| a final application-level guard that removes sensitive payloads before
+| they reach stdout/stderr in production.
 |--------------------------------------------------------------------------
 */
 
+if (process.env.NODE_ENV === "production") {
+  const originalLog = console.log.bind(console);
+  const originalWarn = console.warn.bind(console);
+  const originalError = console.error.bind(console);
 
+  const sensitiveKeys = new Set([
+    "body",
+    "callbackResponse",
+    "phone",
+    "phoneNumber",
+    "PhoneNumber",
+    "password",
+    "token",
+    "accessToken",
+    "apiKey",
+    "consumerSecret",
+    "passkey",
+  ]);
+
+  const redact = (value, key = "") => {
+    if (sensitiveKeys.has(key)) return "[REDACTED]";
+    if (Array.isArray(value)) return value.map((item) => redact(item));
+    if (value && typeof value === "object") {
+      return Object.fromEntries(
+        Object.entries(value).map(([childKey, childValue]) => [
+          childKey,
+          redact(childValue, childKey),
+        ])
+      );
+    }
+    return value;
+  };
+
+  console.log = (...args) => originalLog(...args.map((value) => redact(value)));
+  console.warn = (...args) => originalWarn(...args.map((value) => redact(value)));
+  console.error = (...args) => originalError(...args.map((value) => redact(value)));
+}
+
+/*
+|--------------------------------------------------------------------------
+| Legacy Destination Images
+|--------------------------------------------------------------------------
+*/
 
 app.use(
   "/destinations",
   express.static("uploads/destinations")
 );
-
 
 /*
 |--------------------------------------------------------------------------
@@ -78,8 +125,6 @@ console.log("CORS allowed origins:", allowedOrigins);
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests without an Origin header
-      // such as server-to-server requests.
       if (!origin) {
         return callback(null, true);
       }
@@ -133,7 +178,6 @@ app.use(
 app.use(
   express.urlencoded({
     extended: true,
-
     limit: "1mb",
   }),
 );
@@ -146,22 +190,6 @@ app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 |--------------------------------------------------------------------------
 | API ROUTES
 |--------------------------------------------------------------------------
-|
-| All routes are centralized inside:
-|
-| server/routes/index.js
-|
-| Example:
-|
-| /api/auth
-| /api/bookings
-| /api/tours
-| /api/destinations
-| /api/reviews
-| /api/gallery
-| /api/hero
-| etc.
-|
 */
 
 app.use("/api", apiRoutes);
@@ -188,11 +216,9 @@ app.get(
 
 app.get(
   "/",
-
   (req, res) => {
     res.status(200).json({
       success: true,
-
       message: "Travel API running successfully",
     });
   },
@@ -207,7 +233,6 @@ app.get(
 app.use((req, res, next) => {
   res.status(404).json({
     success: false,
-
     message: "Route not found",
   });
 });
