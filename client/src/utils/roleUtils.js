@@ -10,21 +10,25 @@ const ROLE_ALIASES = {
 
 export function normalizeRole(role) {
   if (!role) return "";
-  if (typeof role === "object") role = role.name || role.role || role.displayName || role.value || "";
+  if (typeof role === "object") {
+    role = role.name || role.role || role.displayName || role.value || "";
+  }
   const key = String(role).trim().toLowerCase().replace(/[\s-]+/g, "_");
   return ROLE_ALIASES[key] || ROLE_ALIASES[key.replace(/_/g, "")] || key;
 }
 
-// Prefer the user's durable role field over a deleted/stale Role document.
-// This keeps authentication and dashboard routing working when role records are rebuilt.
+// Client and server use the same precedence: a populated durable Role record
+// is authoritative, with legacy string fields retained only as fallbacks.
+// This prevents dashboard routing and authorization from disagreeing when a
+// user's legacy role string and roleId point at different roles.
 export function getUserRole(user) {
   return normalizeRole(
-    user?.role ||
-    user?.legacyRole ||
-    user?.userRole ||
     user?.roleId?.name ||
     user?.roleId?.role ||
-    user?.role?.name
+    user?.role?.name ||
+    user?.role ||
+    user?.legacyRole ||
+    user?.userRole
   );
 }
 
