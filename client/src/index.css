@@ -1,18 +1,171 @@
 @import "./styles/enterprise.css";
 @import "tailwindcss";
 
-
 .input {
+  @apply w-full p-3 rounded-xl border border-gray-300 outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500;
+}
 
-    @apply
-    w-full
-    p-3
-    rounded-xl
-    border
-    border-gray-300
-    outline-none
-    focus:ring-2
-    focus:ring-orange-500
-    focus:border-orange-500;
+/* --------------------------------------------------------------------------
+   Dashboard responsive foundation
+   Keeps statistic cards readable and prevents long values/headings from
+   overflowing on desktop, tablets and phones. These rules intentionally sit
+   after Tailwind so they provide a consistent cross-dashboard safety net.
+   -------------------------------------------------------------------------- */
+.dashboard-card,
+.dashboard-stat-card {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
 
+.dashboard-card h1,
+.dashboard-card h2,
+.dashboard-card h3,
+.dashboard-card h4,
+.dashboard-stat-card h1,
+.dashboard-stat-card h2,
+.dashboard-stat-card h3,
+.dashboard-stat-card h4 {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.2;
+}
+
+.dashboard-card .dashboard-value,
+.dashboard-stat-card .dashboard-value {
+  font-size: clamp(1.25rem, 1.1rem + 0.55vw, 2rem);
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Existing Tailwind dashboard statistic cards. */
+.bg-white.rounded-xl.shadow,
+.bg-white.rounded-2xl.shadow {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.bg-white.rounded-xl.shadow h1,
+.bg-white.rounded-xl.shadow h2,
+.bg-white.rounded-xl.shadow h3,
+.bg-white.rounded-xl.shadow h4,
+.bg-white.rounded-2xl.shadow h1,
+.bg-white.rounded-2xl.shadow h2,
+.bg-white.rounded-2xl.shadow h3,
+.bg-white.rounded-2xl.shadow h4 {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Long revenue/currency values should shrink instead of pushing card width. */
+.bg-white.rounded-xl.shadow h2.text-3xl,
+.bg-white.rounded-xl.shadow h2.text-4xl,
+.bg-white.rounded-2xl.shadow h2.text-3xl,
+.bg-white.rounded-2xl.shadow h2.text-4xl {
+  font-size: clamp(1.35rem, 1.05rem + 1vw, 2.15rem);
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+}
+
+/* Prevent icon + value rows from becoming wider than their card. */
+.bg-white.rounded-xl.shadow > .flex,
+.bg-white.rounded-2xl.shadow > .flex {
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: .75rem;
+}
+
+.bg-white.rounded-xl.shadow > .flex > div,
+.bg-white.rounded-2xl.shadow > .flex > div {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Dashboard grids: keep 4/5-column desktop layouts, but collapse cleanly. */
+@media (max-width: 1024px) {
+  [class~="lg:grid-cols-4"],
+  [class~="lg:grid-cols-5"],
+  [class~="xl:grid-cols-4"],
+  [class~="xl:grid-cols-5"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Two compact columns on normal phones. */
+  [class~="sm:grid-cols-2"],
+  [class~="lg:grid-cols-4"],
+  [class~="lg:grid-cols-5"],
+  [class~="xl:grid-cols-4"],
+  [class~="xl:grid-cols-5"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  /* Never allow a dense card row to force horizontal page scrolling. */
+  .dashboard-card,
+  .dashboard-stat-card,
+  .bg-white.rounded-xl.shadow,
+  .bg-white.rounded-2xl.shadow {
+    width: 100%;
+  }
+
+  .dashboard-card,
+  .dashboard-stat-card {
+    padding: 1rem;
+  }
+
+  .bg-white.rounded-xl.shadow h2.text-3xl,
+  .bg-white.rounded-xl.shadow h2.text-4xl,
+  .bg-white.rounded-2xl.shadow h2.text-3xl,
+  .bg-white.rounded-2xl.shadow h2.text-4xl {
+    font-size: clamp(1.15rem, 5vw, 1.55rem);
+  }
+
+  /* Headings and actions should wrap rather than collide. */
+  .dashboard-card .flex,
+  .dashboard-stat-card .flex,
+  .bg-white.rounded-xl.shadow .flex,
+  .bg-white.rounded-2xl.shadow .flex {
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  /* Tables remain usable on small screens through horizontal scrolling. */
+  .dashboard-card table,
+  .dashboard-stat-card table,
+  .bg-white.rounded-xl.shadow table,
+  .bg-white.rounded-2xl.shadow table {
+    min-width: 620px;
+  }
+
+  /* Reduce large dashboard page padding on phones. */
+  [class~="min-h-screen"][class~="p-6"] {
+    padding: 1rem !important;
+  }
+}
+
+@media (max-width: 420px) {
+  /* Single-column cards on narrow phones prevent cramped words/values. */
+  [class~="sm:grid-cols-2"],
+  [class~="md:grid-cols-2"],
+  [class~="lg:grid-cols-4"],
+  [class~="lg:grid-cols-5"],
+  [class~="xl:grid-cols-4"],
+  [class~="xl:grid-cols-5"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  .dashboard-card,
+  .dashboard-stat-card,
+  .bg-white.rounded-xl.shadow,
+  .bg-white.rounded-2xl.shadow {
+    border-radius: .875rem;
+  }
 }
