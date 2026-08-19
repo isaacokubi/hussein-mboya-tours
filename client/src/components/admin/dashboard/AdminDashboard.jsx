@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getDashboard } from "../../../api/adminApi";
 import DashboardHeader from "./DashboardHeader";
@@ -12,9 +13,18 @@ export default function AdminDashboard() {
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ["admin-dashboard"],
     queryFn: getDashboard,
-    staleTime: 30_000,
+    staleTime: 0,
+    refetchInterval: 5000,
+    refetchIntervalInBackground: true,
+    refetchOnMount: "always",
     refetchOnWindowFocus: true,
   });
+
+  useEffect(() => {
+    const refresh = () => refetch();
+    window.addEventListener("dashboard:data-changed", refresh);
+    return () => window.removeEventListener("dashboard:data-changed", refresh);
+  }, [refetch]);
 
   if (isLoading) return <div className="p-8">Loading admin dashboard...</div>;
 
