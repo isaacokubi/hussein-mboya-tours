@@ -19,12 +19,6 @@ import mongoose from "mongoose";
 
 const paymentSchema = new mongoose.Schema(
   {
-    /*
-    |--------------------------------------------------------------------------
-    | CUSTOMER
-    |--------------------------------------------------------------------------
-    */
-
     customer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -32,29 +26,16 @@ const paymentSchema = new mongoose.Schema(
       index: true,
     },
 
-    // Backward compatibility
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
-
-    /*
-    |--------------------------------------------------------------------------
-    | BOOKING
-    |--------------------------------------------------------------------------
-    */
 
     booking: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Booking",
       required: true,
     },
-
-    /*
-    |--------------------------------------------------------------------------
-    | PAYMENT PROVIDER
-    |--------------------------------------------------------------------------
-    */
 
     provider: {
       type: String,
@@ -67,12 +48,6 @@ const paymentSchema = new mongoose.Schema(
       ],
       default: "MPESA",
     },
-
-    /*
-    |--------------------------------------------------------------------------
-    | PAYMENT METHOD
-    |--------------------------------------------------------------------------
-    */
 
     method: {
       type: String,
@@ -88,27 +63,30 @@ const paymentSchema = new mongoose.Schema(
 
     /*
     |--------------------------------------------------------------------------
-    | LEGACY SUPPORT
+    | PAYMENT METHOD
+    |--------------------------------------------------------------------------
+    | Accept both the legacy human-readable values and the canonical values
+    | used by the payment lifecycle service. This prevents M-Pesa STK payment
+    | creation/callbacks from failing Mongoose validation.
     |--------------------------------------------------------------------------
     */
 
     paymentMethod: {
       type: String,
       enum: [
+        "MPESA",
+        "CARD",
+        "PAYPAL",
+        "BANK_TRANSFER",
+        "CASH",
         "M-Pesa",
         "Cash",
         "Card",
         "Bank",
         "PayPal",
       ],
-      default: "M-Pesa",
+      default: "MPESA",
     },
-
-    /*
-    |--------------------------------------------------------------------------
-    | PAYMENT DETAILS
-    |--------------------------------------------------------------------------
-    */
 
     amount: {
       type: Number,
@@ -139,12 +117,6 @@ const paymentSchema = new mongoose.Schema(
       default: "",
     },
 
-    /*
-    |--------------------------------------------------------------------------
-    | STATUS
-    |--------------------------------------------------------------------------
-    */
-
     status: {
       type: String,
       enum: [
@@ -157,12 +129,6 @@ const paymentSchema = new mongoose.Schema(
       ],
       default: "pending",
     },
-
-    /*
-    |--------------------------------------------------------------------------
-    | REFERENCES
-    |--------------------------------------------------------------------------
-    */
 
     transactionId: {
       type: String,
@@ -182,12 +148,6 @@ const paymentSchema = new mongoose.Schema(
       default: "",
     },
 
-    /*
-    |--------------------------------------------------------------------------
-    | M-PESA DATA
-    |--------------------------------------------------------------------------
-    */
-
     merchantRequestID: String,
     merchantRequestId: String,
 
@@ -203,12 +163,6 @@ const paymentSchema = new mongoose.Schema(
       default: {},
     },
 
-    /*
-    |--------------------------------------------------------------------------
-    | FAILURE
-    |--------------------------------------------------------------------------
-    */
-
     failureReason: {
       type: String,
       default: "",
@@ -219,16 +173,9 @@ const paymentSchema = new mongoose.Schema(
       default: null,
     },
 
-    /*
-    |--------------------------------------------------------------------------
-    | REFUND
-    |--------------------------------------------------------------------------
-    */
-
     refundRequestedAt: {
       type: Date,
     },
-
 
     refundStatus: {
       type: String,
@@ -264,19 +211,7 @@ const paymentSchema = new mongoose.Schema(
       default: null,
     },
 
-    /*
-    |--------------------------------------------------------------------------
-    | PAYMENT DATE
-    |--------------------------------------------------------------------------
-    */
-
     paidAt: Date,
-
-    /*
-    |--------------------------------------------------------------------------
-    | NOTES
-    |--------------------------------------------------------------------------
-    */
 
     notes: {
       type: String,
@@ -295,12 +230,6 @@ const paymentSchema = new mongoose.Schema(
   }
 );
 
-/*
-|--------------------------------------------------------------------------
-| VIRTUALS
-|--------------------------------------------------------------------------
-*/
-
 paymentSchema.virtual("isSuccessful").get(function () {
   return this.status === "completed";
 });
@@ -309,30 +238,20 @@ paymentSchema.virtual("isRefunded").get(function () {
   return this.refundStatus === "completed";
 });
 
-/*
-|--------------------------------------------------------------------------
-| INDEXES
-|--------------------------------------------------------------------------
-*/
-
-// Customer payments
 paymentSchema.index({
   customer: 1,
   createdAt: -1,
 });
 
-// Booking payments
 paymentSchema.index({
   booking: 1,
 });
 
-// Analytics
 paymentSchema.index({
   status: 1,
   provider: 1,
 });
 
-// Transaction lookup
 paymentSchema.index({
   transactionId: 1,
 });
@@ -341,9 +260,6 @@ paymentSchema.index({
   transactionReference: 1,
 });
 
-// A provider transaction reference must never be credited twice. This is
-// intentionally limited to completed records so pending bank references can
-// still be submitted while awaiting reconciliation.
 paymentSchema.index(
   { provider: 1, transactionReference: 1 },
   {
@@ -355,7 +271,6 @@ paymentSchema.index(
   }
 );
 
-// M-Pesa callbacks
 paymentSchema.index(
   {
     checkoutRequestID: 1,
@@ -376,7 +291,6 @@ paymentSchema.index(
   }
 );
 
-// Receipt lookup
 paymentSchema.index(
   {
     mpesaReceiptNumber: 1,
@@ -386,12 +300,6 @@ paymentSchema.index(
     sparse: true,
   }
 );
-
-/*
-|--------------------------------------------------------------------------
-| METHODS
-|--------------------------------------------------------------------------
-*/
 
 paymentSchema.methods.markCompleted = function (
   receiptNumber,
@@ -411,12 +319,6 @@ paymentSchema.methods.markFailed = function (reason) {
 
   return this.save();
 };
-
-/*
-|--------------------------------------------------------------------------
-| MODEL
-|--------------------------------------------------------------------------
-*/
 
 const Payment =
   mongoose.models.Payment ||
