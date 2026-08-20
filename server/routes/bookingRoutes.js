@@ -20,6 +20,8 @@ import {
   managerOnly,
 } from "../middleware/authMiddleware.js";
 
+import { requireFullPaymentForTrip } from "../middleware/requireFullPaymentForTrip.js";
+
 const router = express.Router();
 
 router.use(protect);
@@ -42,7 +44,10 @@ router.put("/reschedule/:id", customerOnly, rescheduleBooking);
 router.get("/confirmed", managerOnly, getConfirmedBookings);
 router.get("/admin", managerOnly, getAllBookings);
 router.get("/admin/all", adminOnly, getAllBookings);
-router.put("/:id/status", adminOnly, updateBookingStatus);
+
+// Assignment can happen while a customer is paying in installments. Starting
+// or completing the actual trip cannot happen until the balance is zero.
+router.put("/:id/status", adminOnly, requireFullPaymentForTrip, updateBookingStatus);
 
 // Single-booking access is additionally ownership-checked by the controller.
 router.get("/:id", getBooking);
