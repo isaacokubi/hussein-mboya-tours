@@ -26,15 +26,7 @@ const RateInput = ({ label, description, value, onChange }) => (
   <div className="space-y-2">
     <label className="block text-sm font-medium">{label}</label>
     <div className="relative">
-      <input
-        type="number"
-        min="0"
-        max="100"
-        step="0.01"
-        className="w-full border rounded-xl p-3 pr-10"
-        value={value ?? 0}
-        onChange={e => onChange(Number(e.target.value))}
-      />
+      <input type="number" min="0" max="100" step="0.01" className="w-full border rounded-xl p-3 pr-10" value={value ?? 0} onChange={e => onChange(Number(e.target.value))} />
       <span className="absolute right-3 top-3 text-gray-500">%</span>
     </div>
     <p className="text-xs text-gray-500">{description}</p>
@@ -60,7 +52,6 @@ export default function SuperAdminSettings() {
   };
 
   useEffect(() => { load(); }, []);
-
   const update = (key, value) => setSettings(prev => ({ ...prev, [key]: value }));
 
   const save = async () => {
@@ -69,6 +60,7 @@ export default function SuperAdminSettings() {
       await updateSettings({
         ...settings,
         taxRate: Number(settings.taxRate ?? 0),
+        taxServiceType: settings.taxServiceType || "service_fee",
         bookingDepositPercentage: Number(settings.bookingDepositPercentage ?? 30),
         defaultCommissionRate: Number(settings.defaultCommissionRate ?? 10),
       });
@@ -77,9 +69,7 @@ export default function SuperAdminSettings() {
     } catch (err) {
       console.error("SUPERADMIN SETTINGS SAVE ERROR", err);
       toast.error(err?.response?.data?.message || "Failed saving settings.");
-    } finally {
-      setSaving(false);
-    }
+    } finally { setSaving(false); }
   };
 
   const runMaintenance = async action => {
@@ -117,20 +107,29 @@ export default function SuperAdminSettings() {
           <Percent className="mt-1 text-blue-700" size={22} />
           <div>
             <h2 className="font-semibold text-blue-900">Global Business Rates</h2>
-            <p className="mt-1 text-sm text-blue-800">These rates are controlled centrally by SuperAdmin and are used throughout the booking, payment, commission and reporting system. Individual agents cannot override the global commission rate.</p>
+            <p className="mt-1 text-sm text-blue-800">These rates are controlled centrally by SuperAdmin and are used throughout eligible booking, payment, commission and reporting calculations. Individual agents cannot override the global commission rate.</p>
           </div>
         </div>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
         <Card icon={Percent} title="Agent Commission">
-          <RateInput label="Global agent commission" description="Applied to every new agent commission calculation." value={settings.defaultCommissionRate} onChange={v => update("defaultCommissionRate", v)} />
+          <RateInput label="Global agent commission" description="Applied to every new agent commission calculation. This is the system-wide default." value={settings.defaultCommissionRate} onChange={v => update("defaultCommissionRate", v)} />
         </Card>
         <Card icon={CreditCard} title="Booking Deposit">
-          <RateInput label="Default booking deposit" description="Default percentage requested when a booking deposit is calculated." value={settings.bookingDepositPercentage} onChange={v => update("bookingDepositPercentage", v)} />
+          <RateInput label="Default booking deposit" description="The default percentage of a booking total requested as the initial deposit. The remaining balance can be paid later." value={settings.bookingDepositPercentage} onChange={v => update("bookingDepositPercentage", v)} />
         </Card>
         <Card icon={CreditCard} title="Tax / Service Rate">
-          <RateInput label="Global tax/service rate" description="Central tax/service percentage for calculations that use the system rate." value={settings.taxRate} onChange={v => update("taxRate", v)} />
+          <RateInput label="Global tax/service rate" description="A centrally controlled percentage added to eligible booking totals when the booking/payment calculation uses the global rate." value={settings.taxRate} onChange={v => update("taxRate", v)} />
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">Charge type</label>
+            <select className="w-full border rounded-xl p-3" value={settings.taxServiceType || "service_fee"} onChange={e => update("taxServiceType", e.target.value)}>
+              <option value="service_fee">Service fee</option>
+              <option value="tax">Tax</option>
+              <option value="tax_and_service">Tax / service charge</option>
+            </select>
+            <p className="text-xs text-gray-500">This controls how the global percentage is identified in system configuration. It does not automatically make a charge mandatory on bookings that do not use the rate.</p>
+          </div>
         </Card>
       </div>
 
@@ -139,48 +138,30 @@ export default function SuperAdminSettings() {
           <input className="w-full border rounded-xl p-3" placeholder="Company Name" value={settings.companyName || ""} onChange={e => update("companyName", e.target.value)} />
           <input className="w-full border rounded-xl p-3" placeholder="Support Email" value={settings.supportEmail || ""} onChange={e => update("supportEmail", e.target.value)} />
           <input className="w-full border rounded-xl p-3" placeholder="Support Phone" value={settings.supportPhone || ""} onChange={e => update("supportPhone", e.target.value)} />
-          <select className="w-full border rounded-xl p-3" value={settings.currency || "KES"} onChange={e => update("currency", e.target.value)}>
-            <option>KES</option><option>USD</option><option>EUR</option>
-          </select>
+          <select className="w-full border rounded-xl p-3" value={settings.currency || "KES"} onChange={e => update("currency", e.target.value)}><option>KES</option><option>USD</option><option>EUR</option></select>
         </Card>
-
         <Card icon={CreditCard} title="Booking & Payments">
-          <select className="w-full border rounded-xl p-3" value={settings.bookingStatus || "confirmed"} onChange={e => update("bookingStatus", e.target.value)}>
-            <option value="pending">Pending</option><option value="confirmed">Confirmed</option>
-          </select>
+          <select className="w-full border rounded-xl p-3" value={settings.bookingStatus || "confirmed"} onChange={e => update("bookingStatus", e.target.value)}><option value="pending">Pending</option><option value="confirmed">Confirmed</option></select>
           <input className="w-full border rounded-xl p-3" placeholder="Payment Provider" value={settings.paymentProvider || ""} onChange={e => update("paymentProvider", e.target.value)} />
         </Card>
-
         <Card icon={Bell} title="Notifications">
           <Toggle checked={settings.emailNotifications ?? true} label="Booking and payment email notifications" onChange={v => update("emailNotifications", v)} />
           <Toggle checked={settings.systemAlerts ?? true} label="System alerts" onChange={v => update("systemAlerts", v)} />
         </Card>
-
         <Card icon={Shield} title="Security Controls">
           <Toggle checked={settings.twoFactor ?? false} label="Enable Two Factor Authentication" onChange={v => update("twoFactor", v)} />
           <div className="flex gap-2 text-sm text-gray-600"><AlertTriangle size={16} /> Security changes are recorded in audit logs</div>
         </Card>
-
         <Card icon={Database} title="System Maintenance">
           <button onClick={() => runMaintenance("backup")} className="w-full border rounded-xl p-3 hover:bg-gray-100">Create Database Backup</button>
           <button onClick={() => runMaintenance("cache")} className="w-full border rounded-xl p-3 hover:bg-gray-100">Clear System Cache</button>
         </Card>
-
         <Card icon={Settings} title="System Information">
-          <div className="text-sm space-y-2">
-            <p>Environment: Production</p>
-            <p>Configuration management enabled</p>
-            <p>Global rates controlled by SuperAdmin</p>
-            <p>Audit logging active</p>
-          </div>
+          <div className="text-sm space-y-2"><p>Environment: Production</p><p>Configuration management enabled</p><p>Global rates controlled by SuperAdmin</p><p>Audit logging active</p></div>
         </Card>
       </div>
 
-      <div className="flex justify-end">
-        <button disabled={saving} onClick={save} className="flex items-center gap-2 bg-black text-white px-8 py-3 rounded-xl disabled:opacity-50">
-          <Save size={18} /> {saving ? "Saving..." : "Save Settings"}
-        </button>
-      </div>
+      <div className="flex justify-end"><button disabled={saving} onClick={save} className="flex items-center gap-2 bg-black text-white px-8 py-3 rounded-xl disabled:opacity-50"><Save size={18} /> {saving ? "Saving..." : "Save Settings"}</button></div>
     </div>
   );
 }
