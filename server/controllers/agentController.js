@@ -1,6 +1,13 @@
 import Booking from "../models/Booking.js";
 import Commission from "../models/Commission.js";
 import Agent from "../models/Agent.js";
+import SystemSetting from "../models/SystemSetting.js";
+
+const getGlobalCommissionRate = async () => {
+  const settings = await SystemSetting.findOne({ key: "default" }).select("defaultCommissionRate").lean();
+  const rate = Number(settings?.defaultCommissionRate);
+  return Number.isFinite(rate) && rate >= 0 && rate <= 100 ? rate : 10;
+};
 
 const getAgent = async (user) => {
   let agent = await Agent.findOne({ user: user._id }).lean();
@@ -15,6 +22,12 @@ export const getAgentDashboard = async (req, res, next) => {
       agent = (await Agent.create({ user: req.user._id, companyName: req.user.name || "", email: String(req.user.email || "").toLowerCase(), phone: req.user.phone || "", status: "active", isApproved: false })).toObject();
     } else if (!agent.user) {
       await Agent.updateOne({ _id: agent._id }, { $set: { user: req.user._id } });
+    }
+
+    const globalCommissionRate = await getGlobalCommissionRate();
+    if (Number(agent.commissionRate) !== globalCommissionRate) {
+      await Agent.updateOne({ _id: agent._id }, { $set: { commissionRate: globalCommissionRate } });
+      agent.commissionRate = globalCommissionRate;
     }
 
     const base = { agent: agent._id, isDeleted: { $ne: true } };
@@ -39,7 +52,7 @@ export const getAgentDashboard = async (req, res, next) => {
     ]);
 
     return res.status(200).json({ success: true, data: {
-      agent: { id: agent._id, companyName: agent.companyName, walletBalance: agent.walletBalance, commissionRate: agent.commissionRate, status: agent.status, isApproved: Boolean(agent.isApproved), pendingApproval: !agent.isApproved },
+      agent: { id: agent._id, companyName: agent.companyName, walletBalance: agent.walletBalance, commissionRate: globalCommissionRate, status: agent.status, isApproved: Boolean(agent.isApproved), pendingApproval: !agent.isApproved },
       statistics: { bookings, upcomingBookings, completedTours, pendingBookings, cancelledBookings, totalSales: salesResult[0]?.totalSales || 0, totalCommission: commissionResult[0]?.totalCommission || 0, totalGuests: guestsResult[0]?.totalGuests || 0 },
       recentBookings,
     } });
@@ -83,6 +96,7 @@ export const getMyAgentCommission = async (req, res, next) => {
     const agent = await getAgent(req.user);
     if (!agent) return res.status(404).json({ success: false, message: "Agent profile not found." });
     const commissions = await Commission.find({ agent: agent._id }).populate("booking").sort({ createdAt: -1 }).lean();
-    return res.status(200).json({ success: true, data: commissions });
+    const globalCommissionRate = await getGlobalCommissionRate();
+    return res.status(200).json({ success: true, commissionRate: globalCommissionRate, data: commissions });
   } catch (error) { next(error); }
 };
