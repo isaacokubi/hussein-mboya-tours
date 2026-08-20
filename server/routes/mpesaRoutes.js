@@ -14,9 +14,8 @@ import {
   verifyBookingPayment,
 } from "../controllers/mpesaController.js";
 
-import {
-  protect,
-} from "../middleware/authMiddleware.js";
+import { protect } from "../middleware/authMiddleware.js";
+import { prepareBookingForMpesa } from "../middleware/prepareBookingForMpesa.js";
 
 const router = express.Router();
 
@@ -26,21 +25,17 @@ const router = express.Router();
 |--------------------------------------------------------------------------
 */
 
-/**
- * POST /api/mpesa/stkpush
- *
- * Initiate an STK Push request.
- * Requires an authenticated user.
- */
 router.post(
   "/stkpush",
   protect,
+  prepareBookingForMpesa,
   stkPush
 );
 
 router.post(
   "/mpesa",
   protect,
+  prepareBookingForMpesa,
   stkPush
 );
 
@@ -48,51 +43,14 @@ router.post(
 |--------------------------------------------------------------------------
 | SAFARICOM CALLBACK
 |--------------------------------------------------------------------------
-|
-| POST /api/mpesa/callback
-|
-| Public endpoint.
-| Called directly by Safaricom Daraja.
-| Do NOT protect with JWT middleware.
-|
-|--------------------------------------------------------------------------
 */
+router.post("/callback", mpesaCallback);
 
-router.post(
-  "/callback",
-  mpesaCallback
-);
+router.get("/status/:checkoutRequestId", protect, checkCheckoutStatus);
+router.get("/verify/:bookingId", protect, verifyBookingPayment);
 
-router.get(
-  "/status/:checkoutRequestId",
-  protect,
-  checkCheckoutStatus
-);
-
-router.get(
-  "/verify/:bookingId",
-  protect,
-  verifyBookingPayment
-);
-
-/*
-|--------------------------------------------------------------------------
-| MPESA REFUND CALLBACKS
-|--------------------------------------------------------------------------
-|
-| These endpoints are public because Safaricom Daraja calls them
-| server-to-server. Do not attach application JWT middleware.
-|--------------------------------------------------------------------------
-*/
-
-router.post(
-  "/refund/result",
-  mpesaRefundResult
-);
-
-router.post(
-  "/refund/timeout",
-  mpesaRefundTimeout
-);
+/* M-Pesa refund callbacks are public because Daraja calls them server-to-server. */
+router.post("/refund/result", mpesaRefundResult);
+router.post("/refund/timeout", mpesaRefundTimeout);
 
 export default router;
