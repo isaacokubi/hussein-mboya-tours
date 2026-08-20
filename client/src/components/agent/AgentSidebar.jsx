@@ -19,14 +19,14 @@ const links = [
 ];
 
 export default function AgentSidebar() {
-  const { companyName } = useSettings();
+  const { companyName } = useSettings() || {};
 
   return (
     <div className="h-full w-72 overflow-y-auto bg-slate-950 px-5 py-6 text-white">
       <div className="ops-brand">
         <div className="ops-brand-mark">AG</div>
         <div>
-          <div className="ops-brand-title">{companyName || "COHERENT TOURS"}</div>
+          <div className="ops-brand-title">{companyName}</div>
           <div className="ops-brand-sub">Sales Operations</div>
         </div>
       </div>
