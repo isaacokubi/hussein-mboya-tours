@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import { createBooking, getBookingById } from "../api/bookingApi";
+import { getMyCustomTourRequests } from "../api/customTourApi";
 import { initiateMpesa, checkPaymentStatus } from "../api/mpesaApi";
 import { getTourById } from "../api/tourApi";
 
@@ -20,6 +21,9 @@ const unwrapBooking = (response) =>
 
 const unwrapTour = (response) =>
   response?.data?.data || response?.data?.tour || response?.data || response?.tour || response || null;
+
+const unwrapCustomRequests = (response) =>
+  response?.data?.requests || response?.requests || response?.data || response || [];
 
 // Booking pickupTime is stored as a Date, while older/custom-tour requests may
 // contain a time-only string such as "10:30". Normalize both representations
@@ -75,7 +79,37 @@ export default function Checkout() {
 
   const booking = useMemo(() => unwrapBooking(bookingResponse), [bookingResponse]);
   const tour = useMemo(() => unwrapTour(tourResponse), [tourResponse]);
-  const custom = booking?.customTourSnapshot || booking?.customTourRequest || {};
+
+  // getBookingById historically returned customTourRequest as an ObjectId
+  // rather than a populated document. Fetch the customer's custom requests as
+  // a fallback so pickup time, accommodation and other custom details remain
+  // available on checkout for older/custom bookings.
+  const customRequestId =
+    typeof booking?.customTourRequest === "string"
+      ? booking.customTourRequest
+      : booking?.customTourRequest?._id || "";
+
+  const { data: customRequestsResponse, isLoading: customRequestLoading } = useQuery({
+    queryKey: ["checkout-custom-request", customRequestId],
+    queryFn: getMyCustomTourRequests,
+    enabled:
+      isBookingCheckout &&
+      Boolean(customRequestId) &&
+      typeof booking?.customTourRequest !== "object",
+  });
+
+  const customRequest = useMemo(() => {
+    if (booking?.customTourRequest && typeof booking.customTourRequest === "object") {
+      return booking.customTourRequest;
+    }
+
+    const requests = unwrapCustomRequests(customRequestsResponse);
+    return Array.isArray(requests)
+      ? requests.find((request) => String(request?._id || request?.id) === String(customRequestId)) || {}
+      : {};
+  }, [booking?.customTourRequest, customRequestsResponse, customRequestId]);
+
+  const custom = booking?.customTourSnapshot || customRequest || {};
 
   const total = isBookingCheckout
     ? Number(booking?.totalAmount || booking?.quotedAmount || 0)
@@ -85,7 +119,7 @@ export default function Checkout() {
     booking?.depositAmount ?? booking?.amountPaid ?? booking?.paidAmount ?? booking?.paymentSummary?.paid ?? 0
   );
 
-  // Legacy bookings could contain depositAmount=total while still being pending.
+  // Legacy bookings could contain depositAmount=total while still pending.
   // Pending means no confirmed provider payment, so show the real payable balance.
   const amountPaid =
     isBookingCheckout &&
@@ -290,7 +324,7 @@ export default function Checkout() {
     });
   };
 
-  if (bookingLoading || tourLoading) return <div className="flex min-h-screen items-center justify-center">Loading checkout...</div>;
+  if (bookingLoading || tourLoading || customRequestLoading) return <div className="flex min-h-screen items-center justify-center">Loading checkout...</div>;
   if (isBookingCheckout && !booking?._id) return <div className="flex min-h-screen items-center justify-center text-red-600">Booking not found.</div>;
   if (isTourCheckout && !tour?._id) return <div className="flex min-h-screen items-center justify-center text-red-600">Tour not found.</div>;
 
