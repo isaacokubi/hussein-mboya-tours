@@ -1,6 +1,7 @@
 import { NavLink } from "react-router-dom";
 import { LayoutDashboard, Map, CalendarCheck, Wallet, Users, Car, Settings, Smartphone, FileText, Home, Shield, BarChart3, UserRoundCog } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { useSettings } from "../../context/SettingsContext";
 import { isAdmin } from "../../utils/roleUtils";
 
 const sections = [
@@ -9,17 +10,16 @@ const sections = [
   { title: "Governance", items: [["Staff & Users", "/admin/staff", UserRoundCog, "staff.manage"], ["Roles & Permissions", "/admin/rbac", Shield, "roles.manage"], ["Settings", "/admin/settings", Settings, "settings.manage"], ["Website", "/", Home, null]] },
 ];
 
-// Admin navigation is an application capability, not data owned by a Role document.
-// Recreated/deleted users or roles therefore cannot make the sidebar disappear.
 const ADMIN_CORE_PERMISSIONS = new Set(["admin.dashboard", "booking.manage", "tour.manage", "customer.view", "staff.manage", "finance.view", "analytics.view", "roles.manage", "settings.manage"]);
 
 export default function AdminSidebar() {
   const { user, hasPermission } = useAuth();
+  const { companyName } = useSettings() || {};
   const adminUser = isAdmin(user);
   const canRender = (permission) => !permission || (adminUser && ADMIN_CORE_PERMISSIONS.has(permission)) || hasPermission(permission);
 
   return <div>
-    <div className="ops-brand"><div className="ops-brand-mark">CT</div><div><div className="ops-brand-title">COHERENT TOURS</div><div className="ops-brand-sub">Operations Center</div></div></div>
+    <div className="ops-brand"><div className="ops-brand-mark">CT</div><div><div className="ops-brand-title">{companyName || "Company"}</div><div className="ops-brand-sub">Operations Center</div></div></div>
     {sections.map(section => <div key={section.title}><div className="ops-section">{section.title}</div><nav className="ops-nav">{section.items.map(([name, path, Icon, permission]) => canRender(permission) ? <NavLink key={path} to={path} end={path === "/admin"} className={({ isActive }) => `ops-link ${isActive ? "active" : ""}`}><Icon size={17}/><span>{name}</span></NavLink> : null)}</nav></div>)}
     <div className="ops-alert" style={{marginTop:20}}>Operational mode: monitor bookings, payments, schedules and resources from one control surface.</div>
   </div>;
