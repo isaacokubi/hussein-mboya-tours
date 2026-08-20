@@ -2,16 +2,40 @@ export default function RecentBookings({
   bookings = []
 }) {
 
-
   const bookingList = Array.isArray(bookings)
     ? bookings
     : [];
 
+  const getCustomerName = (booking) => {
+    const customer = booking?.customer;
+    const snapshot = booking?.customerSnapshot;
+    const contact = booking?.contact;
+    const user = booking?.user;
 
+    const firstName =
+      user?.firstName ||
+      customer?.firstName ||
+      "";
 
+    const lastName =
+      user?.lastName ||
+      customer?.lastName ||
+      "";
+
+    const composedName = `${firstName} ${lastName}`.trim();
+
+    return (
+      customer?.name ||
+      snapshot?.name ||
+      contact?.name ||
+      user?.name ||
+      composedName ||
+      booking?.customerDisplayName ||
+      "Customer"
+    );
+  };
 
   const getBookingStatus = (status) => {
-
     if (!status) {
       return "pending";
     }
@@ -19,41 +43,29 @@ export default function RecentBookings({
     return typeof status === "string"
       ? status
       : status.status || "pending";
-
   };
 
-
   const getPaymentStatus = (paymentStatus) => {
-
     if (!paymentStatus) {
       return "pending";
     }
-
 
     if (typeof paymentStatus === "string") {
       return paymentStatus;
     }
 
-
     if (typeof paymentStatus === "object") {
-
       return (
         paymentStatus.paymentStatus ||
         paymentStatus.status ||
         "pending"
       );
-
     }
 
-
     return "pending";
-
   };
 
-
-
   return (
-
     <section
       className="
         bg-white
@@ -62,7 +74,6 @@ export default function RecentBookings({
         p-6
       "
     >
-
       <h2
         className="
           text-xl
@@ -73,176 +84,59 @@ export default function RecentBookings({
         Recent Bookings
       </h2>
 
+      {bookingList.length === 0 ? (
+        <p className="text-gray-500">
+          No recent bookings available
+        </p>
+      ) : (
+        <div className="space-y-4">
+          {bookingList.map((booking) => (
+            <div
+              key={booking?._id}
+              className="
+                border
+                rounded-lg
+                p-4
+                flex
+                justify-between
+                items-center
+              "
+            >
+              <div>
+                <h3 className="font-semibold">
+                  {booking?.bookingNumber || "Booking"}
+                </h3>
 
+                <p className="text-gray-500">
+                  {getCustomerName(booking)}
+                </p>
+              </div>
 
-      {
-        bookingList.length === 0
+              <div className="text-right">
+                <p className="font-bold">
+                  Ksh {
+                    Number(
+                      booking?.totalAmount ||
+                      booking?.amount ||
+                      0
+                    ).toLocaleString()
+                  }
+                </p>
 
-        ?
+                <span className="text-sm capitalize">
+                  <p>
+                    Status: {getBookingStatus(booking?.status)}
+                  </p>
 
-        (
-
-          <p
-            className="
-              text-gray-500
-            "
-          >
-            No recent bookings available
-          </p>
-
-        )
-
-        :
-
-        (
-
-          <div
-            className="
-              space-y-4
-            "
-          >
-
-          {
-            bookingList.map(
-
-              (booking)=>(
-
-                <div
-                  key={booking?._id}
-                  className="
-                    border
-                    rounded-lg
-                    p-4
-                    flex
-                    justify-between
-                    items-center
-                  "
-                >
-
-
-                  <div>
-
-
-                    <h3
-                      className="
-                        font-semibold
-                      "
-                    >
-
-                    {
-                      booking?.bookingNumber ||
-                      "Booking"
-                    }
-
-                    </h3>
-
-
-
-                    <p
-                      className="
-                        text-gray-500
-                      "
-                    >
-
-                    {
-                      booking?.customer?.name ||
-                      booking?.fullName ||
-                      "Customer"
-                    }
-
-                    </p>
-
-
-                  </div>
-
-
-
-
-                  <div
-                    className="
-                      text-right
-                    "
-                  >
-
-
-                    <p
-                      className="
-                        font-bold
-                      "
-                    >
-
-                    Ksh {
-
-                      Number(
-                        booking?.totalAmount ||
-                        booking?.amount ||
-                        0
-                      )
-                      .toLocaleString()
-
-                    }
-
-                    </p>
-
-
-
-
-                    <span
-                      className="
-                        text-sm
-                        capitalize
-                      "
-                    >
-
-                    <p>
-                      Status:
-
-                      {" "}
-
-                      {
-                        getBookingStatus(
-                          booking?.status
-                        )
-                      }
-                    </p>
-
-
-                    <p>
-                      Payment:
-
-                      {" "}
-
-                      {
-                        getPaymentStatus(
-                          booking?.paymentStatus
-                        )
-                      }
-                    </p>
-
-                    </span>
-
-
-                  </div>
-
-
-                </div>
-
-              )
-
-            )
-          }
-
-
-          </div>
-
-        )
-
-      }
-
-
-
+                  <p>
+                    Payment: {getPaymentStatus(booking?.paymentStatus)}
+                  </p>
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </section>
-
   );
-
 }
