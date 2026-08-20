@@ -10,19 +10,21 @@ const STATUS_VALUES = ["active", "inactive", "disabled", "suspended", "blocked"]
 export const getUsers = async (req, res, next) => {
   try {
     const page = Math.max(Number(req.query.page) || 1, 1);
-    const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 100);
+    const limit = Math.min(Math.max(Number(req.query.limit) || 10, 1), 100);
     const search = String(req.query.search || "").trim();
     const query = {};
     if (search) {
       const regex = { $regex: search, $options: "i" };
       query.$or = [{ name: regex }, { email: regex }, { phone: regex }, { role: regex }, { legacyRole: regex }, { status: regex }];
     }
+    const skip = (page - 1) * limit;
     const [users, total] = await Promise.all([
-      User.find(query).select("-password").populate("roleId", "name displayName permissions").sort({ createdAt: -1 }).lean(),
+      User.find(query).select("-password").populate("roleId", "name displayName permissions").sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
       User.countDocuments(query),
     ]);
+    const pages = Math.max(1, Math.ceil(total / limit));
     const data = users.map((user) => ({ ...user, role: user.roleId?.name || user.role || user.legacyRole || "customer", isActive: user.status === "active" }));
-    return res.json({ success: true, page, limit, total, pages: Math.ceil(total / limit), count: data.length, data, users: data, pagination: { page, limit, total, pages: Math.ceil(total / limit) } });
+    return res.json({ success: true, page, limit, total, pages, count: data.length, data, users: data, pagination: { page, limit, total, pages } });
   } catch (error) { next(error); }
 };
 
@@ -36,7 +38,6 @@ export const createStaffAccount = async (req, res, next) => {
     if (!name?.trim() || !email?.trim() || !/^\d{10}$/.test(String(phone || "")) || String(password || "").length < 8) return res.status(400).json({ success: false, message: "Name, email, 10-digit phone and an 8+ character password are required." });
     const normalizedEmail = String(email).trim().toLowerCase();
     if (await User.exists({ email: normalizedEmail })) return res.status(409).json({ success: false, message: "A user with this email already exists." });
-
     const permissionNamesByRole = {
       admin: ["admin.dashboard", "user.manage", "staff.manage", "tour.manage", "booking.manage", "payment.manage", "refund.manage", "analytics.view", "settings.manage", "roles.manage", "notifications.view", "finance.view"],
       agent: ["booking.create", "booking.view", "customer.view", "commission.view", "view_agent_dashboard", "view_agent_tours", "create_agent_tour", "edit_agent_tour", "delete_agent_tour"],
@@ -54,7 +55,6 @@ export const createStaffAccount = async (req, res, next) => {
       }
       roleDoc = await Role.create({ name: canonicalRole, displayName: canonicalRole.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), description: `${canonicalRole} access`, permissions: permissionIds, isSystem: ["admin", "tour_manager", "tour_guide", "driver"].includes(canonicalRole), level: canonicalRole === "admin" ? 100 : 20 });
     }
-
     const user = await User.create({ name: name.trim(), email: normalizedEmail, phone: String(phone).trim(), password, role: canonicalRole, legacyRole: canonicalRole, roleId: roleDoc?._id || null, status: "active", isVerified: true });
     let staff = null;
     let agent = null;
@@ -83,19 +83,14 @@ export const deleteUser = async (req, res, next) => {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ success: false, message: "Invalid user ID" });
     if (String(req.user?._id) === String(id)) return res.status(400).json({ success: false, message: "You cannot delete your own account." });
-
-    const user = await User.findById(id);
+    const user = await User.findById(id).select("_id role");
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
     if (["superadmin", "super_admin"].includes(String(user.role || "").toLowerCase())) return res.status(403).json({ success: false, message: "SuperAdmin accounts cannot be deleted." });
-
-    // Deletion is intentionally implemented as a durable deactivation. Historical
-    // bookings, payments, tours and staff records keep their original user ObjectId
-    // and remain reportable even when the account is no longer usable for login.
-    user.status = "disabled";
-    user.loginAttempts = 0;
-    user.lockUntil = null;
-    await user.save();
-
-    return res.json({ success: true, deleted: true, softDeleted: true, message: "User account disabled. Historical business records were preserved." });
+    await Promise.all([
+      Staff.deleteMany({ user: user._id }),
+      Agent.deleteMany({ user: user._id }),
+      User.deleteOne({ _id: user._id }),
+    ]);
+    return res.json({ success: true, deleted: true, message: "User account deleted successfully." });
   } catch (error) { next(error); }
 };
