@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
-import { getBooking, getMyBookings } from "../api/bookingApi";
 import ReviewForm from "../components/reviews/ReviewForm";
+import { getBooking, getMyBookings } from "../api/bookingApi";
 
 const toNumber = (value) => {
   const parsed = Number(value);
@@ -10,27 +10,15 @@ const toNumber = (value) => {
 
 const getPaymentStatus = (booking) => {
   const value = booking?.paymentStatus;
-  if (value && typeof value === "object") {
-    return value.paymentStatus || value.status || "pending";
-  }
+  if (value && typeof value === "object") return value.paymentStatus || value.status || "pending";
   return value || "pending";
 };
 
 const getPaidAmount = (booking) => {
-  const direct = [
-    booking?.amountPaid,
-    booking?.paidAmount,
-    booking?.depositAmount,
-    booking?.paymentSummary?.paid,
-    booking?.payment?.amountPaid,
-  ];
-
+  const direct = [booking?.amountPaid, booking?.paidAmount, booking?.depositAmount, booking?.paymentSummary?.paid, booking?.payment?.amountPaid];
   for (const value of direct) {
-    if (value !== undefined && value !== null && value !== "") {
-      return toNumber(value);
-    }
+    if (value !== undefined && value !== null && value !== "") return toNumber(value);
   }
-
   if (Array.isArray(booking?.payments)) {
     return booking.payments.reduce((sum, payment) => {
       const status = String(payment?.status || payment?.paymentStatus || "").toLowerCase();
@@ -38,14 +26,14 @@ const getPaidAmount = (booking) => {
       return confirmed ? sum + toNumber(payment?.amount || payment?.amountPaid || payment?.paidAmount) : sum;
     }, 0);
   }
-
   return 0;
 };
+
+const isCustomBooking = (booking) => Boolean(booking?.customTourSnapshot || booking?.customTourRequest || booking?.customTour || booking?.isCustomTour);
 
 export default function BookingDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-
   const query = useQuery({
     queryKey: ["booking", id],
     queryFn: async () => {
@@ -54,12 +42,8 @@ export default function BookingDetails() {
       } catch (requestError) {
         const fallback = await getMyBookings();
         const list = fallback?.bookings || fallback?.data?.bookings || fallback?.data || fallback || [];
-        const found = Array.isArray(list)
-          ? list.find((item) => String(item?._id || item?.id) === String(id))
-          : null;
-        if (found) {
-          return { success: true, booking: found };
-        }
+        const found = Array.isArray(list) ? list.find((item) => String(item?._id || item?.id) === String(id)) : null;
+        if (found) return { success: true, booking: found };
         throw requestError;
       }
     },
@@ -69,40 +53,23 @@ export default function BookingDetails() {
   const { data, isLoading, isError, error, refetch, isFetching } = query;
   const booking = data?.booking || data?.data?.booking || data?.data || data;
 
-  if (isLoading) {
-    return <div className="p-10">Loading booking details...</div>;
-  }
-
-  if (isError || !booking) {
-    return (
-      <div className="p-10 text-center text-red-600">
-        <p className="font-semibold">
-          {error?.response?.data?.message || "Unable to load booking details."}
-        </p>
-        <button
-          type="button"
-          onClick={() => refetch()}
-          disabled={isFetching}
-          className="mt-4 rounded-lg bg-green-700 px-5 py-2 text-white disabled:opacity-50"
-        >
-          {isFetching ? "Retrying..." : "Retry"}
-        </button>
-      </div>
-    );
-  }
+  if (isLoading) return <div className="p-10">Loading booking details...</div>;
+  if (isError || !booking) return (
+    <div className="p-10 text-center text-red-600">
+      <p className="font-semibold">{error?.response?.data?.message || "Unable to load booking details."}</p>
+      <button type="button" onClick={() => refetch()} disabled={isFetching} className="mt-4 rounded-lg bg-green-700 px-5 py-2 text-white disabled:opacity-50">{isFetching ? "Retrying..." : "Retry"}</button>
+    </div>
+  );
 
   const custom = booking.customTourSnapshot || booking.customTourRequest || {};
+  const customBooking = isCustomBooking(booking);
   const title = booking.tour?.title || booking.title || custom.destination || custom.title || "Custom Tour Package";
   const totalAmount = toNumber(booking.totalAmount ?? booking.quotedAmount ?? booking.quotedTotal);
   const amountPaid = getPaidAmount(booking);
   const storedBalance = booking.balanceAmount ?? booking.balance ?? booking.paymentSummary?.balance;
-  const balanceAmount = Math.max(
-    storedBalance !== undefined && storedBalance !== null
-      ? toNumber(storedBalance)
-      : totalAmount - amountPaid,
-    0,
-  );
+  const balanceAmount = Math.max(storedBalance !== undefined && storedBalance !== null ? toNumber(storedBalance) : totalAmount - amountPaid, 0);
   const paymentStatus = String(getPaymentStatus(booking)).toLowerCase();
+  const failedPayment = ["failed", "cancelled"].includes(paymentStatus);
   const customerName = booking.customerSnapshot?.name || booking.customer?.name || booking.user?.name || booking.contact?.name || "Customer";
   const customerPhone = booking.customerSnapshot?.phone || booking.customer?.phone || booking.user?.phone || booking.contact?.phone || "N/A";
   const customerEmail = booking.customerSnapshot?.email || booking.customer?.email || booking.user?.email || booking.contact?.email || "N/A";
@@ -119,22 +86,17 @@ export default function BookingDetails() {
 
         <div className="overflow-hidden rounded-2xl bg-white shadow ring-1 ring-slate-200">
           <div className="bg-slate-900 p-6 text-white">
+            <div className="mb-3 flex flex-wrap gap-2">
+              <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-bold">{customBooking ? "Custom Tour Booking" : "Normal Tour Booking"}</span>
+              {failedPayment && <span className="rounded-full bg-red-500/90 px-3 py-1 text-xs font-bold">Payment failed — retry required</span>}
+            </div>
             <h2 className="text-2xl font-bold">{title}</h2>
             <p className="mt-2 text-slate-300">Booking #{booking.bookingNumber || booking._id || "N/A"}</p>
           </div>
 
           <div className="p-6">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <Info
-                label="Travel date"
-                value={
-                  booking.travelDate
-                    ? new Date(booking.travelDate).toLocaleDateString()
-                    : custom.startDate
-                      ? new Date(custom.startDate).toLocaleDateString()
-                      : "N/A"
-                }
-              />
+              <Info label="Travel date" value={booking.travelDate ? new Date(booking.travelDate).toLocaleDateString() : custom.startDate ? new Date(custom.startDate).toLocaleDateString() : "N/A"} />
               <Info label="Total cost" value={`KES ${totalAmount.toLocaleString()}`} />
               <Info label="Amount paid" value={`KES ${amountPaid.toLocaleString()}`} />
               <Info label="Balance" value={`KES ${balanceAmount.toLocaleString()}`} />
@@ -156,18 +118,15 @@ export default function BookingDetails() {
               </div>
 
               {balanceAmount > 0 && !["cancelled", "refunded"].includes(String(status).toLowerCase()) && (
-                <button
-                  type="button"
-                  onClick={() => navigate(checkoutPath)}
-                  className="mt-5 rounded-xl bg-emerald-700 px-5 py-3 font-bold text-white hover:bg-emerald-800"
-                >
-                  Pay Outstanding Balance
-                </button>
+                <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <button type="button" onClick={() => navigate(checkoutPath)} className={`rounded-xl px-5 py-3 font-bold text-white ${failedPayment ? "bg-red-600 hover:bg-red-700" : "bg-emerald-700 hover:bg-emerald-800"}`}>
+                    {failedPayment ? "Retry Failed Payment" : amountPaid > 0 ? "Continue Payment" : "Open Checkout & Pay"}
+                  </button>
+                  <p className="text-sm text-slate-600">Open the full checkout, review or update your phone and pickup details, then request a new M-Pesa prompt and enter the PIN on the customer's phone.</p>
+                </div>
               )}
 
-              {balanceAmount <= 0 && totalAmount > 0 && (
-                <p className="mt-4 font-semibold text-emerald-800">✓ This booking is fully paid.</p>
-              )}
+              {balanceAmount <= 0 && totalAmount > 0 && <p className="mt-4 font-semibold text-emerald-800">✓ This booking is fully paid.</p>}
             </div>
 
             <div className="mt-6 border-t pt-5">
@@ -179,11 +138,7 @@ export default function BookingDetails() {
               </div>
             </div>
 
-            {(booking.completedAt || ["completed", "complete", "finished"].includes(String(status).toLowerCase())) && booking.tour?._id && (
-              <div className="mt-8">
-                <ReviewForm tourId={booking.tour._id} onSuccess={() => refetch()} />
-              </div>
-            )}
+            {(booking.completedAt || ["completed", "complete", "finished"].includes(String(status).toLowerCase())) && booking.tour?._id && <div className="mt-8"><ReviewForm tourId={booking.tour._id} onSuccess={() => refetch()} /></div>}
           </div>
         </div>
       </main>
@@ -192,10 +147,5 @@ export default function BookingDetails() {
 }
 
 function Info({ label, value }) {
-  return (
-    <div>
-      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-1 font-semibold capitalize text-slate-900">{value || "N/A"}</p>
-    </div>
-  );
+  return <div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p><p className="mt-1 font-semibold capitalize text-slate-900">{value || "N/A"}</p></div>;
 }
