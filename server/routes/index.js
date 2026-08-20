@@ -1,20 +1,17 @@
+import "../tenancy/bootstrap.js";
 import express from "express";
-import {
-  protect,
-  checkPermission
-} from "../middleware/authMiddleware.js";
+import { protect, checkPermission } from "../middleware/authMiddleware.js";
 import superAdminRoutes from "./superAdminRoutes.js";
 import apiMonitorRoutes from "./apiMonitorRoutes.js";
 import superAdminOperationsRoutes from "./superAdminOperationsRoutes.js";
 import superAdminToolsRoutes from "./superAdminToolsRoutes.js";
 import superAdminMaintenanceRoutes from "./superAdminMaintenanceRoutes.js";
-
+import tenantRoutes from "./tenantRoutes.js";
 import commissionRoutes from "./commissionRoutes.js";
 import tourManagerRoutes from "./tourManagerRoutes.js";
 import staffRoutes from "./staffRoutes.js";
 import userRoutes from "./userRoutes.js";
 import vehicleRoutes from "./vehicleRoutes.js";
-
 import authRoutes from "./authRoutes.js";
 import mfaRoutes from "./mfaRoutes.js";
 import bookingRoutes from "./bookingRoutes.js";
@@ -25,10 +22,8 @@ import reviewRoutes from "./reviewRoutes.js";
 import wishlistRoutes from "./wishlistRoutes.js";
 import galleryRoutes from "./galleryRoutes.js";
 import heroRoutes from "./heroRoutes.js";
-
 import mpesaRoutes from "./mpesaRoutes.js";
 import stripeRoutes from "./stripeRoutes.js";
-
 import adminRoutes from "./adminRoutes.js";
 import adminTourRoutes from "./adminTourRoutes.js";
 import adminBookingRoutes from "./adminBookingRoutes.js";
@@ -37,12 +32,10 @@ import adminRoleRoutes from "./adminRoleRoutes.js";
 import systemHealthRoutes from "./systemHealthRoutes.js";
 import securityRoutes from "./securityRoutes.js";
 import adminAuthRoutes from "./adminAuthRoutes.js";
-
 import adminDashboardRoutes from "./adminDashboardRoutes.js";
 import adminReviewRoutes from "./adminReviewRoutes.js";
 import adminGalleryRoutes from "./adminGalleryRoutes.js";
 import adminCouponRoutes from "./adminCouponRoutes.js";
-
 import categoryRoutes from "./categoryRoutes.js";
 import analyticsRoutes from "./analyticsRoutes.js";
 import agentRoutes from "./agentRoutes.js";
@@ -67,16 +60,9 @@ import adminAIRoutes from "./adminAIRoutes.js";
 import seoRoutes from "./seoRoutes.js";
 import settingsRoutes from "./settingsRoutes.js";
 import { getPublicSettings } from "../controllers/settingsController.js";
-
 import customTourRequestRoutes from "./customTourRequestRoutes.js";
 
 const router = express.Router();
-
-/*
-|--------------------------------------------------------------------------
-| PUBLIC / CUSTOMER ROUTES
-|--------------------------------------------------------------------------
-*/
 
 router.use("/categories", categoryRoutes);
 router.use("/auth", authRoutes);
@@ -91,22 +77,11 @@ router.use("/wishlist", wishlistRoutes);
 router.use("/gallery", galleryRoutes);
 router.use("/hero", heroRoutes);
 
-/*
-|--------------------------------------------------------------------------
-| PAYMENT / M-PESA
-|--------------------------------------------------------------------------
-*/
-
 router.use("/mpesa", mpesaRoutes);
 router.use("/payments", mpesaRoutes);
 router.use("/payments/stripe", stripeRoutes);
 
-/*
-|--------------------------------------------------------------------------
-| ADMIN ROUTES
-|--------------------------------------------------------------------------
-*/
-
+router.use("/tenants", tenantRoutes);
 router.use("/admin/roles", adminRoleRoutes);
 router.use("/admin", adminRoutes);
 router.use("/admin/auth", adminAuthRoutes);
@@ -116,33 +91,11 @@ router.use("/admin/payments", adminPaymentRoutes);
 router.use("/system", systemHealthRoutes);
 router.use("/security", securityRoutes);
 
-router.get(
-  "/admin/system-health",
-  protect,
-  checkPermission("system.security"),
-  async (req, res) => {
-    const mongoose = (await import("mongoose")).default;
-    const memory = process.memoryUsage();
-
-    res.json({
-      status: "healthy",
-      server: "running",
-      nodeVersion: process.version,
-      environment: process.env.NODE_ENV || "development",
-      uptime: Math.floor(process.uptime()),
-      timestamp: new Date().toISOString(),
-      database: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
-      memory: {
-        used: Math.round(memory.heapUsed / 1024 / 1024) + " MB",
-        total: Math.round(memory.heapTotal / 1024 / 1024) + " MB"
-      },
-      platform: {
-        os: process.platform,
-        architecture: process.arch
-      }
-    });
-  }
-);
+router.get("/admin/system-health", protect, checkPermission("system.security"), async (req, res) => {
+  const mongoose = (await import("mongoose")).default;
+  const memory = process.memoryUsage();
+  res.json({ status: "healthy", server: "running", nodeVersion: process.version, environment: process.env.NODE_ENV || "development", uptime: Math.floor(process.uptime()), timestamp: new Date().toISOString(), database: mongoose.connection.readyState === 1 ? "connected" : "disconnected", memory: { used: Math.round(memory.heapUsed / 1024 / 1024) + " MB", total: Math.round(memory.heapTotal / 1024 / 1024) + " MB" }, platform: { os: process.platform, architecture: process.arch } });
+});
 
 router.get("/settings/public", getPublicSettings);
 router.use("/admin/settings", settingsRoutes);
@@ -152,32 +105,11 @@ router.use("/admin/gallery", adminGalleryRoutes);
 router.use("/admin/coupons", adminCouponRoutes);
 router.use("/admin/finance", financeRoutes);
 router.use("/admin/customers", customerRoutes);
-
-/*
-|--------------------------------------------------------------------------
-| ADMIN / GENERAL ANALYTICS
-|--------------------------------------------------------------------------
-*/
-
 router.use("/analytics", analyticsRoutes);
-
-/*
-|--------------------------------------------------------------------------
-| TOUR MANAGER
-|--------------------------------------------------------------------------
-*/
-
 router.use("/tourmanager", tourManagerRoutes);
 router.use("/tour-manager", tourManagerRoutes);
 router.use("/tour-assignments", tourAssignmentRoutes);
 router.use("/tour-reports", tourReportRoutes);
-
-/*
-|--------------------------------------------------------------------------
-| AGENT
-|--------------------------------------------------------------------------
-*/
-
 router.use("/agents", agentRoutes);
 router.use("/agent", agentRoutes);
 router.use("/agents/bookings", agentBookingRoutes);
@@ -188,55 +120,22 @@ router.use("/agents/packages", agentPackageRoutes);
 router.use("/agent/packages", agentPackageRoutes);
 router.use("/agents/quotes", quotationRoutes);
 router.use("/agent/quotes", quotationRoutes);
-
-/*
-|--------------------------------------------------------------------------
-| USER / CUSTOMER / STAFF / VEHICLES
-|--------------------------------------------------------------------------
-*/
-
 router.use("/customers", customerRoutes);
 router.use("/documents", documentRoutes);
 router.use("/invoices", invoiceRoutes);
 router.use("/notifications", notificationRoutes);
-router.get("/health", (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "Travel API healthy",
-  });
-});
+router.get("/health", (req, res) => res.status(200).json({ success: true, message: "Travel API healthy" }));
 router.use("/recommendations", recommendationRoutes);
 router.use("/guide", guideRoutes);
 router.use("/driver", driverRoutes);
 router.use("/vehicles", vehicleRoutes);
 router.use("/users", userRoutes);
 router.use("/staff", staffRoutes);
-
-/*
-|--------------------------------------------------------------------------
-| COMMISSIONS / CRM / COUPONS
-|--------------------------------------------------------------------------
-*/
-
 router.use("/commissions", commissionRoutes);
 router.use("/crm", crmRoutes);
 router.use("/coupons", couponRoutes);
-
-/*
-|--------------------------------------------------------------------------
-| AI
-|--------------------------------------------------------------------------
-*/
-
 router.use("/ai", aiRoutes);
 router.use("/admin-ai", adminAIRoutes);
-
-/*
-|--------------------------------------------------------------------------
-| SEO
-|--------------------------------------------------------------------------
-*/
-
 router.use("/", seoRoutes);
 router.use("/superadmin", superAdminRoutes);
 router.use("/superadmin/api-monitor", apiMonitorRoutes);

@@ -1,0 +1,25 @@
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createTenant, getTenants, selectTenant, updateTenant } from "../../api/tenantApi";
+import { toast } from "react-toastify";
+
+const initialForm = { name: "", slug: "", country: "Kenya", timezone: "Africa/Nairobi", currency: "KES", adminName: "", adminEmail: "", adminPhone: "", adminPassword: "" };
+
+export default function SuperAdminTenants() {
+  const queryClient = useQueryClient();
+  const [form, setForm] = useState(initialForm);
+  const [open, setOpen] = useState(false);
+  const { data, isLoading, isError, error } = useQuery({ queryKey: ["platform-tenants"], queryFn: getTenants, staleTime: 0, refetchOnMount: "always" });
+  const tenants = data?.tenants || data?.data || [];
+  const createMutation = useMutation({ mutationFn: createTenant, onSuccess: (result) => { queryClient.invalidateQueries({ queryKey: ["platform-tenants"] }); setForm(initialForm); setOpen(false); toast.success(`${result.tenant?.name || "Company"} created successfully.`); }, onError: (err) => toast.error(err?.response?.data?.message || err.message || "Unable to create company.") });
+  const toggleMutation = useMutation({ mutationFn: ({ id, status }) => updateTenant(id, { status }), onSuccess: () => queryClient.invalidateQueries({ queryKey: ["platform-tenants"] }), onError: (err) => toast.error(err?.response?.data?.message || "Unable to update company.") });
+  const submit = (event) => { event.preventDefault(); createMutation.mutate({ name: form.name, slug: form.slug, country: form.country, timezone: form.timezone, currency: form.currency, admin: form.adminEmail ? { name: form.adminName, email: form.adminEmail, phone: form.adminPhone, password: form.adminPassword } : undefined }); };
+
+  return <main className="space-y-6">
+    <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4"><div><h1 className="text-3xl font-bold text-slate-900">Companies / Tenants</h1><p className="text-slate-600 mt-1">Create and govern isolated tour-operator workspaces from one platform.</p></div><button onClick={() => setOpen((v) => !v)} className="rounded-xl bg-emerald-700 text-white px-5 py-3 font-semibold">{open ? "Close form" : "Add company"}</button></header>
+    {open && <form onSubmit={submit} className="bg-white border rounded-2xl p-6 shadow-sm grid md:grid-cols-2 gap-4"><div className="md:col-span-2"><h2 className="font-semibold text-lg">New company workspace</h2><p className="text-sm text-slate-500">The workspace receives its own users, tours, bookings, staff, finance and settings.</p></div>{[["name","Company name"],["slug","Tenant slug"],["country","Country"],["timezone","Timezone"],["currency","Currency"],["adminName","First admin name"],["adminEmail","First admin email"],["adminPhone","First admin phone"],["adminPassword","First admin password"]].map(([key,label]) => <label key={key} className="block"><span className="text-sm font-medium text-slate-700">{label}</span><input required={key === "name" || key === "slug"} type={key === "adminPassword" ? "password" : key === "adminEmail" ? "email" : "text"} value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} className="mt-1 w-full rounded-xl border p-3" /></label>)}<div className="md:col-span-2"><button disabled={createMutation.isPending} className="rounded-xl bg-emerald-700 text-white px-5 py-3 font-semibold disabled:opacity-50">{createMutation.isPending ? "Creating..." : "Create company"}</button></div></form>}
+    {isLoading && <div className="bg-white border rounded-2xl p-8">Loading companies...</div>}
+    {isError && <div className="bg-red-50 text-red-700 border border-red-200 rounded-2xl p-6">{error?.response?.data?.message || error.message}</div>}
+    {!isLoading && !isError && <div className="grid gap-4">{tenants.map((tenant) => <article key={tenant._id} className="bg-white border rounded-2xl p-5 shadow-sm flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5"><div><div className="flex items-center gap-3"><h2 className="font-bold text-lg">{tenant.name}</h2><span className="px-2 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">{tenant.status}</span></div><p className="text-sm text-slate-500 mt-1">slug: {tenant.slug} · {tenant.country} · {tenant.currency}</p><p className="text-xs text-slate-400 mt-1">Plan: {tenant.subscription?.plan || "starter"} · Seats: {tenant.subscription?.seats || 0}</p></div><div className="flex flex-wrap gap-2"><button onClick={() => selectTenant(tenant)} className="rounded-lg border px-4 py-2 font-medium">Open workspace</button><button onClick={() => toggleMutation.mutate({ id: tenant._id, status: tenant.status === "active" ? "suspended" : "active" })} className="rounded-lg bg-slate-900 text-white px-4 py-2">{tenant.status === "active" ? "Suspend" : "Activate"}</button></div></article>)}{!tenants.length && <div className="bg-white border rounded-2xl p-8 text-slate-500">No company workspaces have been created yet.</div>}</div>}
+  </main>;
+}
