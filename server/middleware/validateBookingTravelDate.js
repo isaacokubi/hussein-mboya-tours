@@ -14,6 +14,8 @@ const parseDurationDays = (value, fallback = 1) => {
   return Number.isFinite(days) && days >= 1 ? Math.max(1, Math.round(days)) : 1;
 };
 
+const getDurationDays = (...values) => Math.max(1, ...values.map((value) => parseDurationDays(value, 1)));
+
 export const validateBookingTravelDate = async (req, res, next) => {
   try {
     if (!req.body?.travelDate) return next();
@@ -30,15 +32,12 @@ export const validateBookingTravelDate = async (req, res, next) => {
 
       start = startOfDay(tour.startDate || tour.date);
       const storedEnd = startOfDay(tour.endDate);
-      const days = parseDurationDays(tour.durationDetails?.days ?? tour.duration, 1);
+      const days = getDurationDays(tour.durationDetails?.days, tour.duration);
 
-      // Duration is authoritative for multi-day tours. This also repairs the
-      // case where an older record incorrectly stored endDate equal to startDate.
       if (start) {
         const calculatedEnd = new Date(start);
         calculatedEnd.setDate(calculatedEnd.getDate() + days - 1);
-        end = calculatedEnd;
-        if (storedEnd && storedEnd > end) end = storedEnd;
+        end = storedEnd && storedEnd > calculatedEnd ? storedEnd : calculatedEnd;
       }
     } else if (req.body.customTourRequest) {
       const request = await CustomTourRequest.findOne({ _id: req.body.customTourRequest, customer: req.user._id })
@@ -49,7 +48,7 @@ export const validateBookingTravelDate = async (req, res, next) => {
 
       label = "custom tour";
       start = startOfDay(request.startDate);
-      const days = parseDurationDays(request.durationDays ?? request.duration, 1);
+      const days = getDurationDays(request.durationDays, request.duration);
       end = new Date(start);
       end.setDate(end.getDate() + days - 1);
     } else {
