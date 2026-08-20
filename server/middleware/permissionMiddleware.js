@@ -1,12 +1,23 @@
 import Role from "../models/Role.js";
 import { getUserRole } from "../utils/roleUtils.js";
 
+// Permissions that legacy Admin dashboard modules use. Admins are already
+// authenticated by adminMiddleware, so these compatibility permissions must
+// not make ordinary Admin pages return 403 after role records are recreated.
 const ADMIN_COMPATIBILITY_PERMISSIONS = [
   "admin.dashboard",
   "roles.manage",
   "system.audit",
   "system.security",
   "manage_customers",
+  "manage_destinations",
+  "manage_tours",
+  "manage_bookings",
+  "manage_staff",
+  "manage_users",
+  "manage_agents",
+  "manage_guides",
+  "manage_vehicles",
   "payment.manage",
   "report.view",
   "analytics.view",
@@ -17,7 +28,11 @@ const ADMIN_COMPATIBILITY_PERMISSIONS = [
   "coupon.manage",
   "coupons.manage",
   "review.manage",
+  "gallery.manage",
   "settings.manage",
+  "finance.view",
+  "finance.manage",
+  "notification.manage",
 ];
 
 const normalizePermission = (permission) => String(permission || "").trim().toLowerCase();
