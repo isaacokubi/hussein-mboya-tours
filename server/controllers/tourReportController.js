@@ -1,6 +1,7 @@
 import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
 import User from "../models/User.js";
+import Payment from "../models/Payment.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -10,83 +11,86 @@ import User from "../models/User.js";
 
 export const getTourReports = async (req, res, next) => {
     try {
-        /*
-        |--------------------------------------------------------------------------
-        | BOOKINGS
-        |--------------------------------------------------------------------------
-        */
+        const totalBookings = await Booking.countDocuments({ isDeleted: { $ne: true } });
 
-        const totalBookings = await Booking.countDocuments();
-
-        /*
-        |--------------------------------------------------------------------------
-        | REVENUE
-        |--------------------------------------------------------------------------
-        */
-
-        const revenueResult = await Booking.aggregate([
-            {
-                $match: {
-                    paymentStatus: "paid",
-                },
-            },
+        // Revenue is cash actually received, not booking value. Only completed
+        // payments count, with refunded amounts deducted from the recognized revenue.
+        const [revenueResult] = await Payment.aggregate([
+            { $match: { status: "completed" } },
             {
                 $group: {
                     _id: null,
                     total: {
-                        $sum: "$totalAmount",
+                        $sum: {
+                            $max: [
+                                0,
+                                {
+                                    $subtract: [
+                                        { $ifNull: ["$amount", 0] },
+                                        { $ifNull: ["$refundedAmount", 0] },
+                                    ],
+                                },
+                            ],
+                        },
                     },
                 },
             },
         ]);
 
-        const totalRevenue = revenueResult[0]?.total || 0;
-
-        /*
-        |--------------------------------------------------------------------------
-        | BOOKING STATUS
-        |--------------------------------------------------------------------------
-        */
+        const totalRevenue = revenueResult?.total || 0;
 
         const bookingStatus = await Booking.aggregate([
+            { $match: { isDeleted: { $ne: true } } },
             {
                 $group: {
                     _id: "$status",
-                    count: {
-                        $sum: 1,
-                    },
+                    count: { $sum: 1 },
                 },
             },
-            {
-                $sort: {
-                    count: -1,
-                },
-            },
+            { $sort: { count: -1 } },
         ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | POPULAR TOURS
-        |--------------------------------------------------------------------------
-        */
-
-        const popularTours = await Booking.aggregate([
+        // Popular tours are based on completed/paid bookings, not failed or
+        // cancelled booking records. This keeps the analytics consistent with revenue.
+        const popularTours = await Payment.aggregate([
+            { $match: { status: "completed", booking: { $ne: null } } },
+            {
+                $lookup: {
+                    from: "bookings",
+                    localField: "booking",
+                    foreignField: "_id",
+                    as: "bookingDoc",
+                },
+            },
+            { $unwind: "$bookingDoc" },
+            { $match: { "bookingDoc.isDeleted": { $ne: true } } },
             {
                 $group: {
-                    _id: "$tour",
-                    bookings: {
-                        $sum: 1,
+                    _id: "$bookingDoc.tour",
+                    bookings: { $addToSet: "$bookingDoc._id" },
+                    revenue: {
+                        $sum: {
+                            $max: [
+                                0,
+                                {
+                                    $subtract: [
+                                        { $ifNull: ["$amount", 0] },
+                                        { $ifNull: ["$refundedAmount", 0] },
+                                    ],
+                                },
+                            ],
+                        },
                     },
                 },
             },
             {
-                $sort: {
-                    bookings: -1,
+                $project: {
+                    bookings: { $size: "$bookings" },
+                    revenue: 1,
                 },
             },
-            {
-                $limit: 5,
-            },
+            { $sort: { bookings: -1, revenue: -1 } },
+            { $limit: 5 },
             {
                 $lookup: {
                     from: "tours",
@@ -95,12 +99,11 @@ export const getTourReports = async (req, res, next) => {
                     as: "tour",
                 },
             },
-            {
-                $unwind: "$tour",
-            },
+            { $unwind: "$tour" },
             {
                 $project: {
                     bookings: 1,
+                    revenue: 1,
                     title: "$tour.title",
                     slug: "$tour.slug",
                     price: "$tour.price",
@@ -109,71 +112,44 @@ export const getTourReports = async (req, res, next) => {
             },
         ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | MONTHLY REVENUE
-        |--------------------------------------------------------------------------
-        */
-
-        const monthlyRevenue = await Booking.aggregate([
-            {
-                $match: {
-                    paymentStatus: "paid",
-                },
-            },
+        // Monthly revenue follows the same payment-led definition as total revenue.
+        const monthlyRevenue = await Payment.aggregate([
+            { $match: { status: "completed" } },
             {
                 $group: {
                     _id: {
-                        year: {
-                            $year: "$createdAt",
-                        },
-                        month: {
-                            $month: "$createdAt",
-                        },
+                        year: { $year: { $ifNull: ["$paidAt", "$createdAt"] } },
+                        month: { $month: { $ifNull: ["$paidAt", "$createdAt"] } },
                     },
                     revenue: {
-                        $sum: "$totalAmount",
+                        $sum: {
+                            $max: [
+                                0,
+                                {
+                                    $subtract: [
+                                        { $ifNull: ["$amount", 0] },
+                                        { $ifNull: ["$refundedAmount", 0] },
+                                    ],
+                                },
+                            ],
+                        },
                     },
-                    bookings: {
-                        $sum: 1,
-                    },
+                    bookings: { $sum: 1 },
                 },
             },
-            {
-                $sort: {
-                    "_id.year": 1,
-                    "_id.month": 1,
-                },
-            },
+            { $sort: { "_id.year": 1, "_id.month": 1 } },
         ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | CUSTOMERS
-        |--------------------------------------------------------------------------
-        */
-
         const totalCustomers = await User.countDocuments({
-            role: "customer",
+            $or: [{ role: "customer" }, { legacyRole: "customer" }],
         });
 
-        /*
-        |--------------------------------------------------------------------------
-        | TOURS
-        |--------------------------------------------------------------------------
-        */
-
-        const totalTours = await Tour.countDocuments();
+        const totalTours = await Tour.countDocuments({ isDeleted: { $ne: true } });
 
         const completedTours = await Tour.countDocuments({
             status: "completed",
+            isDeleted: { $ne: true },
         });
-
-        /*
-        |--------------------------------------------------------------------------
-        | RESPONSE
-        |--------------------------------------------------------------------------
-        */
 
         return res.status(200).json({
             success: true,
