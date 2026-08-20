@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "react-toastify";
-import { createBooking, getBookingById } from "../api/bookingApi";
+import { createBooking, getBookingById, updateBookingTravelDate } from "../api/bookingApi";
 import { getMyCustomTourRequests } from "../api/customTourApi";
 import { initiateMpesa, checkPaymentStatus } from "../api/mpesaApi";
 import { getTourById } from "../api/tourApi";
 import { useAuth } from "../context/AuthContext";
+import { getCustomTourDateRange, getTourDateRange, isDateWithinRange, toDateInputValue } from "../lib/dateRange";
 
 const normalizePhone = (value) => {
   let phone = String(value || "").replace(/\D/g, "");
@@ -18,15 +19,6 @@ const validPhone = (value) => /^254[17]\d{8}$/.test(value);
 const unwrapBooking = (response) => response?.data?.booking || response?.booking || response?.data || response || null;
 const unwrapTour = (response) => response?.data?.data || response?.data?.tour || response?.data || response?.tour || response || null;
 const unwrapCustomRequests = (response) => response?.data?.requests || response?.requests || response?.data || response || [];
-
-const toDateInputValue = (value) => {
-  if (!value) return "";
-  const raw = String(value).trim();
-  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-};
 
 const toLocalDateTime = (value, dateFallback) => {
   if (!value) return "";
@@ -89,17 +81,21 @@ export default function Checkout() {
   }, [booking?.customTourRequest, customRequestsResponse, customRequestId]);
   const custom = booking?.customTourSnapshot || customRequest || {};
 
+  const dateRange = useMemo(() => {
+    if (isTourCheckout) return getTourDateRange(tour);
+    if (isBookingCheckout && (booking?.customTourRequest || custom?.startDate)) return getCustomTourDateRange(custom);
+    return { min: "", max: "" };
+  }, [isTourCheckout, isBookingCheckout, tour, booking?.customTourRequest, custom]);
+
   const baseTourPrice = Number(tour?.price ?? tour?.tourPrice ?? tour?.pricePerPerson ?? 0);
   const total = isBookingCheckout ? Number(booking?.totalAmount || booking?.quotedAmount || 0) : baseTourPrice * Number(travellers || 1);
   const storedPaid = Number(booking?.depositAmount ?? booking?.amountPaid ?? booking?.paidAmount ?? booking?.paymentSummary?.paid ?? 0);
   const amountPaid = isBookingCheckout && String(booking?.paymentStatus || "").toLowerCase() === "pending" && storedPaid >= total && total > 0 ? 0 : storedPaid;
   const balance = Math.max(total - amountPaid, 0);
 
-  // Populate both checkout modes. Normal tours previously skipped this effect,
-  // leaving travel date, pickup time and customer phone as "Not specified".
   useEffect(() => {
     if (isBookingCheckout && booking) {
-      const bookingTravelDate = booking.travelDate || custom.startDate || "";
+      const bookingTravelDate = booking.travelDate || custom.startDate || dateRange.min || "";
       const bookingPickupTime = booking.pickupTime || custom.pickupTime || "";
       const bookingPickupDate = booking.pickupDate || custom.pickupDate || bookingTravelDate;
       setTravelDate(toDateInputValue(bookingTravelDate));
@@ -114,11 +110,11 @@ export default function Checkout() {
     }
 
     if (isTourCheckout && tour) {
-      const scheduledDate = tour.travelDate || tour.date || tour.startDate || tour.departureDate || tour.nextDepartureDate || tour.startDateTime || "";
+      const scheduledDate = tour.travelDate || tour.date || tour.startDate || tour.departureDate || tour.nextDepartureDate || tour.startDateTime || dateRange.min || "";
       const scheduledPickupTime = tour.pickupTime || tour.departureTime || tour.startTime || tour.meetingTime || "";
       const scheduledPickupLocation = tour.pickupLocation || tour.meetingPoint || tour.meetingLocation || tour.departurePoint || "";
       const tourDate = toDateInputValue(scheduledDate);
-      setTravelDate(tourDate);
+      setTravelDate(tourDate && dateRange.min && tourDate < dateRange.min ? dateRange.min : tourDate);
       setTravellers(1);
       setPhone(user?.phone || user?.contact?.phone || "");
       setPickupLocation(scheduledPickupLocation);
@@ -127,7 +123,15 @@ export default function Checkout() {
       setRoomNumber("");
       setSpecialRequests("");
     }
-  }, [isBookingCheckout, isTourCheckout, booking, custom, tour, user]);
+  }, [isBookingCheckout, isTourCheckout, booking, custom, tour, user, dateRange.min]);
+
+  useEffect(() => {
+    if (!dateRange.min || !dateRange.max) return;
+    setTravelDate((current) => {
+      if (!current) return dateRange.min;
+      return isDateWithinRange(current, dateRange.min, dateRange.max) ? current : dateRange.min;
+    });
+  }, [dateRange.min, dateRange.max]);
 
   useEffect(() => {
     if (balance <= 0) return setPaymentAmount("");
@@ -198,11 +202,21 @@ export default function Checkout() {
     const amount = Number(paymentAmount);
     if (!Number.isInteger(amount) || amount < 1 || amount > balance) return toast.error(`Enter an amount between KES 1 and KES ${balance.toLocaleString()}.`);
     if (!travelDate) return toast.error("Please select a travel date.");
+    if (dateRange.min && dateRange.max && !isDateWithinRange(travelDate, dateRange.min, dateRange.max)) {
+      return toast.error(`Select a travel date between ${dateRange.min} and ${dateRange.max}.`);
+    }
     if (!pickupLocation.trim()) return toast.error("Please enter the pickup location.");
     if (!pickupTime) return toast.error("Please select the pickup time.");
     if (!validPhone(normalizePhone(phone))) return toast.error("Enter a valid Safaricom M-Pesa number.");
 
     if (isBookingCheckout) {
+      if (String(booking?.travelDate || "").slice(0, 10) !== travelDate) {
+        try {
+          await updateBookingTravelDate(booking._id, travelDate);
+        } catch (error) {
+          return toast.error(error?.response?.data?.message || error?.message || "Unable to update the travel date.");
+        }
+      }
       await paymentMutation.mutateAsync({ bookingId: booking._id, phoneNumber: phone, amount });
       return;
     }
@@ -239,6 +253,7 @@ export default function Checkout() {
   const successful = paymentState?.status === "completed";
   const submitting = createBookingMutation.isPending || paymentMutation.isPending;
   const priceIsSuspicious = isTourCheckout && baseTourPrice <= 1;
+  const dateRangeText = dateRange.min && dateRange.max ? `${dateRange.min} to ${dateRange.max}` : "the tour dates";
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-8 md:py-10">
@@ -260,6 +275,7 @@ export default function Checkout() {
 
         <section className="mt-6 grid gap-4 rounded-2xl border border-emerald-100 bg-emerald-50 p-5 sm:grid-cols-2">
           <Detail label="Travel date" value={travelDate || "Select below"} />
+          <Detail label="Allowed dates" value={dateRangeText} />
           <Detail label="Travellers" value={travellers} />
           <Detail label="Pickup" value={pickupLocation || "Enter below"} />
           <Detail label="Pickup time" value={pickupTime || "Select below"} />
@@ -268,7 +284,8 @@ export default function Checkout() {
         {paymentState && <section className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-5"><h2 className="font-bold">{successful ? "Payment successful" : paymentState.status === "pending" ? "Waiting for M-Pesa payment" : "Payment failed"}</h2><p className="mt-2 text-slate-700">{paymentState.message}</p>{paymentState.status === "pending" && <p className="mt-3 font-bold text-amber-800">Check your phone and enter your M-Pesa PIN.</p>}{paymentState.mpesaReceiptNumber && <p className="mt-2 text-sm font-semibold">M-Pesa receipt: {paymentState.mpesaReceiptNumber}</p>}{successful && <button type="button" onClick={() => navigate(`/bookings/${paymentState.bookingId}`)} className="mt-4 rounded-xl bg-emerald-700 px-5 py-3 font-bold text-white">View Booking & Remaining Balance</button>}{["failed", "cancelled", "timeout"].includes(paymentState.status) && <button type="button" onClick={() => setPaymentState(null)} className="mt-4 rounded-xl bg-amber-600 px-5 py-3 font-bold text-white">Retry Payment</button>}</section>}
 
         {balance > 0 && !successful && <form onSubmit={submit} className="mt-6 space-y-5">
-          <Field label="Travel date" required><input type="date" value={travelDate} min={new Date().toISOString().slice(0, 10)} onChange={(e) => setTravelDate(e.target.value)} className="w-full rounded-xl border p-3" required /></Field>
+          <Field label="Travel date" required><input type="date" value={travelDate} min={dateRange.min || undefined} max={dateRange.max || undefined} onChange={(e) => setTravelDate(e.target.value)} className="w-full rounded-xl border p-3" required /></Field>
+          <p className="-mt-3 text-sm text-slate-500">You can only select a date from {dateRange.min || "the tour start"} through {dateRange.max || "the tour end"}. Dates outside this period are disabled.</p>
           <Field label="Number of travellers"><input type="number" min="1" value={travellers} onChange={(e) => setTravellers(Math.max(1, Number(e.target.value) || 1))} className="w-full rounded-xl border p-3" disabled={isBookingCheckout} /></Field>
           <Field label="M-Pesa phone number" required><input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0707476586" autoComplete="tel" className="w-full rounded-xl border p-3" required /></Field>
           <Field label="Exact pickup location" required><input value={pickupLocation} onChange={(e) => setPickupLocation(e.target.value)} placeholder="e.g. Sarova Stanley, Nairobi" className="w-full rounded-xl border p-3" required /></Field>
