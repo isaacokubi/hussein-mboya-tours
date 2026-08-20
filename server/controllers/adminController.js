@@ -6,6 +6,16 @@ import Tour from "../models/Tour.js";
 import Destination from "../models/Destination.js";
 import Payment from "../models/Payment.js";
 
+const activeBookingRevenueStages = [
+  { $lookup: { from: "bookings", localField: "booking", foreignField: "_id", as: "booking" } },
+  { $unwind: "$booking" },
+  { $match: { "booking.isDeleted": { $ne: true }, "booking.status": { $nin: ["cancelled", "refunded"] } } },
+];
+
+const completedPaymentAmount = {
+  $max: [0, { $subtract: [{ $ifNull: ["$amount", 0] }, { $ifNull: ["$refundedAmount", 0] }] }],
+};
+
 export const getDashboardStats = async (req, res, next) => {
   try {
     const [users, bookings, tours, destinations, revenueData, status, monthlyRevenue, popularTours, pendingBookings, confirmedBookings, completedBookings, cancelledBookings, paymentStatsData] = await Promise.all([
@@ -15,12 +25,18 @@ export const getDashboardStats = async (req, res, next) => {
       Destination.countDocuments({ isDeleted: false, active: true }),
       Payment.aggregate([
         { $match: { status: "completed" } },
-        { $group: { _id: null, total: { $sum: { $max: [0, { $subtract: [{ $ifNull: ["$amount", 0] }, { $ifNull: ["$refundedAmount", 0] }] }] } } } },
+        ...activeBookingRevenueStages,
+        { $group: { _id: null, total: { $sum: completedPaymentAmount } } },
       ]),
-      Booking.aggregate([{ $match: { isDeleted: { $ne: true } } }, { $group: { _id: { status: "$status", paymentStatus: "$paymentStatus" }, count: { $sum: 1 } } }, { $sort: { count: -1 } }]),
+      Booking.aggregate([
+        { $match: { isDeleted: { $ne: true } } },
+        { $group: { _id: { status: "$status", paymentStatus: "$paymentStatus" }, count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+      ]),
       Payment.aggregate([
         { $match: { status: "completed" } },
-        { $group: { _id: { year: { $year: { $ifNull: ["$paidAt", "$createdAt"] } }, month: { $month: { $ifNull: ["$paidAt", "$createdAt"] } } }, total: { $sum: { $max: [0, { $subtract: [{ $ifNull: ["$amount", 0] }, { $ifNull: ["$refundedAmount", 0] }] }] } } } },
+        ...activeBookingRevenueStages,
+        { $group: { _id: { year: { $year: { $ifNull: ["$paidAt", "$createdAt"] } }, month: { $month: { $ifNull: ["$paidAt", "$createdAt"] } } }, total: { $sum: completedPaymentAmount } } },
         { $sort: { "_id.year": 1, "_id.month": 1 } },
       ]),
       Booking.aggregate([
@@ -39,7 +55,10 @@ export const getDashboardStats = async (req, res, next) => {
       Booking.countDocuments({ isDeleted: { $ne: true }, status: "confirmed" }),
       Booking.countDocuments({ isDeleted: { $ne: true }, status: "completed" }),
       Booking.countDocuments({ isDeleted: { $ne: true }, status: "cancelled" }),
-      Booking.aggregate([{ $match: { isDeleted: { $ne: true } } }, { $group: { _id: "$paymentStatus", count: { $sum: 1 } } }]),
+      Booking.aggregate([
+        { $match: { isDeleted: { $ne: true } } },
+        { $group: { _id: "$paymentStatus", count: { $sum: 1 } } },
+      ]),
     ]);
 
     const paymentStats = {
@@ -105,7 +124,11 @@ export const getUserAnalytics = async (req, res, next) => {
 
 export const getBookingAnalytics = async (req, res, next) => {
   try {
-    const status = await Booking.aggregate([{ $match: { isDeleted: { $ne: true } } }, { $group: { _id: "$status", count: { $sum: 1 } } }, { $sort: { count: -1 } }]);
+    const status = await Booking.aggregate([
+      { $match: { isDeleted: { $ne: true } } },
+      { $group: { _id: "$status", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+    ]);
     return res.status(200).json({ success: true, data: { status } });
   } catch (error) { next(error); }
 };
@@ -114,7 +137,8 @@ export const getRevenueAnalytics = async (req, res, next) => {
   try {
     const monthly = await Payment.aggregate([
       { $match: { status: "completed" } },
-      { $group: { _id: { year: { $year: { $ifNull: ["$paidAt", "$createdAt"] } }, month: { $month: { $ifNull: ["$paidAt", "$createdAt"] } } }, revenue: { $sum: { $max: [0, { $subtract: [{ $ifNull: ["$amount", 0] }, { $ifNull: ["$refundedAmount", 0] }] }] } }, bookings: { $sum: 1 } } },
+      ...activeBookingRevenueStages,
+      { $group: { _id: { year: { $year: { $ifNull: ["$paidAt", "$createdAt"] } }, month: { $month: { $ifNull: ["$paidAt", "$createdAt"] } } }, revenue: { $sum: completedPaymentAmount }, bookings: { $sum: 1 } } },
       { $sort: { "_id.year": 1, "_id.month": 1 } },
     ]);
     return res.status(200).json({ success: true, data: { monthly } });
