@@ -21,6 +21,29 @@ const unwrapBooking = (response) =>
 const unwrapTour = (response) =>
   response?.data?.data || response?.data?.tour || response?.data || response?.tour || response || null;
 
+// Booking pickupTime is stored as a Date, while older/custom-tour requests may
+// contain a time-only string such as "10:30". Normalize both representations
+// into the value expected by a datetime-local input instead of silently showing
+// "Not specified".
+const toLocalDateTime = (value, dateFallback) => {
+  if (!value) return "";
+
+  const raw = String(value).trim();
+  const timeOnly = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(raw);
+  if (timeOnly) {
+    const base = dateFallback ? new Date(dateFallback) : new Date();
+    if (Number.isNaN(base.getTime())) return "";
+    const hours = String(Number(timeOnly[1])).padStart(2, "0");
+    const minutes = timeOnly[2];
+    return `${base.getFullYear()}-${String(base.getMonth() + 1).padStart(2, "0")}-${String(base.getDate()).padStart(2, "0")}T${hours}:${minutes}`;
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}T${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+};
+
 export default function Checkout() {
   const navigate = useNavigate();
   const { type, id } = useParams();
@@ -76,11 +99,16 @@ export default function Checkout() {
 
   useEffect(() => {
     if (!booking) return;
-    setTravelDate(booking.travelDate || custom.startDate || "");
+
+    const bookingTravelDate = booking.travelDate || custom.startDate || "";
+    const bookingPickupTime = booking.pickupTime || custom.pickupTime || "";
+    const bookingPickupDate = booking.pickupDate || custom.pickupDate || bookingTravelDate;
+
+    setTravelDate(bookingTravelDate);
     setTravellers(Number(booking.numberOfGuests || custom.people || 1));
     setPhone(booking.contact?.phone || booking.phone || booking.customerSnapshot?.phone || booking.user?.phone || "");
     setPickupLocation(booking.pickupLocation || custom.pickupLocation || "");
-    setPickupTime(booking.pickupTime ? new Date(booking.pickupTime).toISOString().slice(0, 16) : "");
+    setPickupTime(toLocalDateTime(bookingPickupTime, bookingPickupDate));
     setHotelName(booking.hotelName || custom.accommodationPreference || "");
     setRoomNumber(booking.roomNumber || "");
     setSpecialRequests(
