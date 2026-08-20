@@ -1,4 +1,3 @@
-import { useSettings } from "../../context/SettingsContext";
 import { motion } from "framer-motion";
 import { useState } from "react";
 

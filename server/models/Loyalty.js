@@ -301,8 +301,6 @@ loyaltySchema.index({ tier: 1 });
 
 loyaltySchema.index({ availablePoints: -1 });
 
-loyaltySchema.index({ referralCode: 1 });
-
 loyaltySchema.index({ createdAt: -1 });
 
 /*

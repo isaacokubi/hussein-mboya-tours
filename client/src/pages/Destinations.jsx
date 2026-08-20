@@ -1,4 +1,3 @@
-import { useSettings } from "../context/SettingsContext";
 import {
   useQuery
 } from "@tanstack/react-query";

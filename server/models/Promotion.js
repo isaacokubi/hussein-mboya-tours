@@ -213,10 +213,6 @@ promotionSchema.index({
 });
 
 promotionSchema.index({
-  code: 1,
-});
-
-promotionSchema.index({
   audience: 1,
 });
 

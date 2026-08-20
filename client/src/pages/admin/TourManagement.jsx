@@ -1,4 +1,3 @@
-import { useSettings } from "../../context/SettingsContext";
 import { useNavigate } from "react-router-dom";
 
 import { useEffect, useState } from "react";

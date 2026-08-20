@@ -135,10 +135,6 @@ const currencySchema = new mongoose.Schema(
 */
 
 currencySchema.index({
-  code: 1,
-});
-
-currencySchema.index({
   isActive: 1,
 });
 

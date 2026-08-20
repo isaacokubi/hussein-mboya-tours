@@ -42,7 +42,6 @@ const campaignSchema = new mongoose.Schema(
         "push_notification",
       ],
       default: "email",
-      index: true,
     },
 
     /*
@@ -93,7 +92,6 @@ const campaignSchema = new mongoose.Schema(
         "custom",
       ],
       default: "all",
-      index: true,
     },
 
     recipients: [
@@ -120,7 +118,6 @@ const campaignSchema = new mongoose.Schema(
         "cancelled",
       ],
       default: "draft",
-      index: true,
     },
 
     /*
@@ -202,7 +199,6 @@ const campaignSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      index: true,
     },
 
     /*

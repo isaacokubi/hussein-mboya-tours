@@ -1,4 +1,3 @@
-import { useSettings } from "../../context/SettingsContext";
 import { motion } from "framer-motion";
 import { FaQuoteLeft } from "react-icons/fa";
 

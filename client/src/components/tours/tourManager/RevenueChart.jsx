@@ -1,4 +1,3 @@
-import { useSettings } from "../../../context/SettingsContext";
 import {
   ResponsiveContainer,
   LineChart,

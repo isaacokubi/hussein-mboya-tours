@@ -32,7 +32,10 @@ const organization = existing || await Organization.create({
 console.log(`Default tenant: ${organization.name} (${organization._id})`);
 await runWithTenant({ bypass: true }, async () => {
   for (const Model of models.filter(Boolean)) {
-    const result = await Model.updateMany({ $or: [{ tenantId: { $exists: false } }, { tenantId: null }] }, { $set: { tenantId: organization._id } });
+    const result = await Model.collection.updateMany(
+      { $or: [{ tenantId: { $exists: false } }, { tenantId: null }] },
+      { $set: { tenantId: organization._id } }
+    );
     console.log(`${Model.modelName}: assigned ${result.modifiedCount || 0} records`);
     try { await Model.syncIndexes(); console.log(`${Model.modelName}: indexes synchronized`); }
     catch (error) { console.warn(`${Model.modelName}: index sync warning: ${error.message}`); }

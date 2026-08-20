@@ -252,10 +252,6 @@ walletTransactionSchema.index({
   type: 1,
 });
 
-walletTransactionSchema.index({
-  reference: 1,
-});
-
 /*
 |--------------------------------------------------------------------------
 | MODEL EXPORT

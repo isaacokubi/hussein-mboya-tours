@@ -1,4 +1,3 @@
-import { useSettings } from "../../context/SettingsContext";
 import { motion } from "framer-motion";
 
 import { FaShield, FaUserTie, FaClock, FaStar } from "react-icons/fa6";

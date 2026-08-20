@@ -1,5 +1,5 @@
 import { toast } from "react-toastify";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Save, RefreshCw, Shield, Database, Bell, CreditCard, Building2, Settings, CheckCircle, AlertTriangle, Percent
 } from "lucide-react";

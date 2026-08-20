@@ -7,7 +7,7 @@ const organizationSchema = new mongoose.Schema(
     legalName: { type: String, trim: true, default: "" },
     logoUrl: { type: String, trim: true, default: "" },
     websiteUrl: { type: String, trim: true, default: "" },
-    domain: { type: String, trim: true, lowercase: true, default: null, index: true },
+    domain: { type: String, trim: true, lowercase: true, default: null },
     supportEmail: { type: String, trim: true, lowercase: true, default: "" },
     supportPhone: { type: String, trim: true, default: "" },
     country: { type: String, trim: true, default: "Kenya" },
