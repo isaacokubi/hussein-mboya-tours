@@ -15,6 +15,7 @@ import { SettingsProvider } from "./context/SettingsContext";
 import { CartProvider } from "./context/CartContext";
 
 import "./index.css";
+import "./utils/syncPickupTimeWithTravelDate";
 
 /*
  * The API/database is the single source of truth for dashboard data.
