@@ -3,200 +3,62 @@ export default function DataTable({
     data = []
 }) {
 
-
-    const safeValue = (value)=>{
-
-
-        if(value === null || value === undefined){
-
-            return "-";
-
-        }
-
-
-
-        if(typeof value === "object"){
-
-            return JSON.stringify(value);
-
-        }
-
-
-
+    const safeValue = (value) => {
+        if (value === null || value === undefined) return "-";
+        if (typeof value === "object") return JSON.stringify(value);
         return value;
-
     };
 
-
-
     return (
-
         <div
-            className="
-                overflow-x-auto
-                bg-white
-                rounded-xl
-                shadow
-            "
+            className="overflow-x-auto bg-white rounded-xl shadow"
+            style={{ WebkitOverflowScrolling: "touch" }}
         >
-
-
-            <table
-                className="
-                    w-full
-                "
-            >
-
-
-                <thead
-                    className="
-                        bg-gray-100
-                    "
-                >
-
+            <table className="w-full whitespace-nowrap">
+                <thead className="bg-gray-100">
                     <tr>
-
-
-                    {
-                        columns.map(col=>(
-
-
+                        {columns.map((col) => (
                             <th
-
                                 key={col.key}
-
-                                className="
-                                    p-4
-                                    text-left
-                                "
-
+                                className="p-4 text-left whitespace-nowrap align-middle"
                             >
-
                                 {col.label}
-
-
                             </th>
-
-
-                        ))
-                    }
-
-
+                        ))}
                     </tr>
-
-
                 </thead>
 
-
-
-
                 <tbody>
-
-
-                {
-                    data.length === 0
-
-                    ?
-
-                    (
-
+                    {data.length === 0 ? (
                         <tr>
-
                             <td
-
                                 colSpan={columns.length}
-
-                                className="
-                                    p-6
-                                    text-center
-                                    text-gray-500
-                                "
-
+                                className="p-6 text-center text-gray-500 whitespace-nowrap"
                             >
-
                                 No data available
-
                             </td>
-
                         </tr>
-
-                    )
-
-                    :
-
-                    data.map(
-                        (row,index)=>(
-
-
-                        <tr
-
-                            key={
-                                row._id || index
-                            }
-
-                            className="
-                                border-b
-                            "
-
-                        >
-
-
-
-                        {
-                            columns.map(col=>(
-
-
-                                <td
-
-                                    key={col.key}
-
-                                    className="
-                                        p-4
-                                    "
-
-                                >
-
-
-                                {
-                                    col.render
-
-                                    ?
-
-                                    col.render(row)
-
-                                    :
-
-                                    safeValue(
-                                        row[col.key]
-                                    )
-
-                                }
-
-
-                                </td>
-
-
-                            ))
-                        }
-
-
-
-                        </tr>
-
-
-                    ))
-                }
-
-
-
+                    ) : (
+                        data.map((row, index) => (
+                            <tr
+                                key={row._id || index}
+                                className="border-b"
+                            >
+                                {columns.map((col) => (
+                                    <td
+                                        key={col.key}
+                                        className="p-4 whitespace-nowrap align-middle"
+                                    >
+                                        {col.render
+                                            ? col.render(row)
+                                            : safeValue(row[col.key])}
+                                    </td>
+                                ))}
+                            </tr>
+                        ))
+                    )}
                 </tbody>
-
-
             </table>
-
-
         </div>
-
     );
-
 }
