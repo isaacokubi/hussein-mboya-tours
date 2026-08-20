@@ -3,7 +3,6 @@ import {
   BarChart3,
   CalendarDays,
   Car,
-  CheckSquare,
   ClipboardCheck,
   ClipboardList,
   LayoutDashboard,
@@ -23,7 +22,6 @@ const links = [
   ["Guides", "/tour-manager/guides", UserRoundCheck],
   ["Vehicles", "/tour-manager/vehicles", Car],
   ["Assignments", "/tour-manager/assignments", ClipboardCheck],
-  ["Availability", "/tour-manager/availability", CheckSquare],
   ["Analytics", "/tour-manager/analytics", BarChart3],
   ["Reports", "/tour-manager/reports", BarChart3],
 ];
