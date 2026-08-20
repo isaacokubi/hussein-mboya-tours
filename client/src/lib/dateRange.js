@@ -11,7 +11,15 @@ export const toDateInputValue = (value) => {
 export const getTourDateRange = (tour) => {
   if (!tour) return { min: "", max: "" };
   const min = toDateInputValue(tour.startDate || tour.date || tour.travelDate || tour.departureDate);
-  const max = toDateInputValue(tour.endDate || tour.startDate || tour.date || tour.travelDate || tour.departureDate);
+  let max = toDateInputValue(tour.endDate);
+  if (!max && min) {
+    const durationDays = Math.max(1, Number(tour.durationDetails?.days || tour.duration || 1));
+    const end = new Date(`${min}T00:00:00`);
+    if (!Number.isNaN(end.getTime())) {
+      end.setDate(end.getDate() + durationDays - 1);
+      max = toDateInputValue(end);
+    }
+  }
   return { min, max: max || min };
 };
 
