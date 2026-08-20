@@ -65,8 +65,12 @@ export const driverDashboard = async (req, res, next) => {
       });
     }
 
+    const assignmentIds = Array.isArray(driver.assignedTours) ? driver.assignedTours : [];
     const tours = await Tour.find({
-      assignedDriver: driver._id,
+      $or: [
+        { assignedDriver: driver._id },
+        ...(assignmentIds.length ? [{ _id: { $in: assignmentIds } }] : []),
+      ],
       isDeleted: { $ne: true },
     })
       .populate("destination")
@@ -109,6 +113,8 @@ export const driverDashboard = async (req, res, next) => {
       bookings: guestMap.get(tour._id.toString())?.bookings || 0,
     }));
 
+    const assignedVehicle = formatted.find((tour) => tour.assignedVehicle)?.assignedVehicle || null;
+
     return res.status(200).json({
       success: true,
       driver: {
@@ -118,6 +124,8 @@ export const driverDashboard = async (req, res, next) => {
         availability: driver.availability,
         licenseNumber: driver.licenseNumber,
       },
+      vehicle: assignedVehicle,
+      assignedVehicle,
       stats: {
         totalTours: formatted.length,
         upcomingTours: formatted.filter((t) => !["completed", "cancelled"].includes(t.status)).length,
@@ -125,7 +133,7 @@ export const driverDashboard = async (req, res, next) => {
         completedTours: formatted.filter((t) => t.status === "completed").length,
       },
       tours: formatted,
-      data: { tours: formatted },
+      data: { tours: formatted, vehicle: assignedVehicle },
     });
   } catch (error) {
     next(error);
