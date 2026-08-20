@@ -18,16 +18,24 @@ export const getAgentDashboard = async (req, res, next) => {
     }
 
     const base = { agent: agent._id, isDeleted: { $ne: true } };
+    const now = new Date();
+    const activeStatuses = ["confirmed", "assigned", "ongoing"];
     const [bookings, upcomingBookings, completedTours, salesResult, guestsResult, commissionResult, pendingBookings, cancelledBookings, recentBookings] = await Promise.all([
       Booking.countDocuments(base),
-      Booking.countDocuments({ ...base, status: { $in: ["confirmed", "assigned", "ongoing"] } }),
+      Booking.countDocuments({ ...base, status: { $in: activeStatuses }, travelDate: { $gte: now } }),
       Booking.countDocuments({ ...base, status: "completed" }),
-      Booking.aggregate([{ $match: { ...base, paymentStatus: { $in: ["paid", "completed"] } } }, { $group: { _id: null, totalSales: { $sum: "$totalAmount" } } }]),
-      Booking.aggregate([{ $match: { ...base, status: { $ne: "cancelled" } } }, { $group: { _id: null, totalGuests: { $sum: { $ifNull: ["$numberOfGuests", 1] } } } }]),
-      Commission.aggregate([{ $match: { agent: agent._id } }, { $group: { _id: null, totalCommission: { $sum: "$amount" } } }]),
+      Booking.aggregate([
+        { $match: { ...base, paymentStatus: { $in: ["paid", "completed"] }, status: { $nin: ["cancelled", "failed"] } } },
+        { $group: { _id: null, totalSales: { $sum: { $ifNull: ["$amountPaid", "$totalAmount"] } } } },
+      ]),
+      Booking.aggregate([
+        { $match: { ...base, status: { $ne: "cancelled" } } },
+        { $group: { _id: null, totalGuests: { $sum: { $ifNull: ["$numberOfGuests", { $size: { $ifNull: ["$travelers", []] } }] } } } },
+      ]),
+      Commission.aggregate([{ $match: { agent: agent._id, status: { $nin: ["cancelled", "reversed"] } } }, { $group: { _id: null, totalCommission: { $sum: { $ifNull: ["$amount", 0] } } } }]),
       Booking.countDocuments({ ...base, status: "pending" }),
       Booking.countDocuments({ ...base, status: "cancelled" }),
-      Booking.find(base).populate("tour", "title name price duration").populate("customer", "name email phone").sort({ createdAt: -1 }).limit(5).lean(),
+      Booking.find(base).populate("tour", "title name price duration destination").populate("customer", "name firstName lastName email phone").sort({ createdAt: -1 }).limit(5).lean(),
     ]);
 
     return res.status(200).json({ success: true, data: {
@@ -47,10 +55,10 @@ export const getAgentBookings = async (req, res, next) => {
     const filter = { agent: agent._id, isDeleted: { $ne: true } };
     if (req.query.status) filter.status = req.query.status;
     const [items, total] = await Promise.all([
-      Booking.find(filter).populate("tour", "title name").populate("customer", "name email phone").sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean(),
+      Booking.find(filter).populate("tour", "title name").populate("customer", "name firstName lastName email phone").sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean(),
       Booking.countDocuments(filter),
     ]);
-    return res.json({ success: true, data: items, pagination: { page, limit, total, pages: Math.ceil(total / limit) } });
+    return res.json({ success: true, data: items, bookings: items, pagination: { page, limit, total, pages: Math.ceil(total / limit) } });
   } catch (error) { next(error); }
 };
 
@@ -58,7 +66,7 @@ export const getAgentCustomers = async (req, res, next) => {
   try {
     const agent = await getAgent(req.user);
     if (!agent) return res.status(404).json({ success: false, message: "Agent profile not found." });
-    const bookings = await Booking.find({ agent: agent._id, isDeleted: { $ne: true } }).populate("customer", "name email phone").select("customer customerSnapshot contact").lean();
+    const bookings = await Booking.find({ agent: agent._id, isDeleted: { $ne: true } }).populate("customer", "name firstName lastName email phone").select("customer customerSnapshot contact").lean();
     const seen = new Map();
     for (const booking of bookings) {
       const customer = booking.customer || booking.customerSnapshot || booking.contact;
