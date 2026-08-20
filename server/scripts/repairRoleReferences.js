@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 import User from "../models/User.js";
 import Role from "../models/Role.js";
 
+const normalize = (value) => String(value || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
+
 const aliases = {
   superadmin: ["super_admin", "superadmin"],
   super_admin: ["super_admin", "superadmin"],
@@ -19,8 +21,6 @@ const aliases = {
   driver: ["driver"],
   customer: ["customer"],
 };
-
-const normalize = (value) => String(value || "").trim().toLowerCase();
 
 const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI;
 if (!mongoUri) {
@@ -39,7 +39,7 @@ try {
   const users = await User.find({}).select("role legacyRole roleId email");
 
   for (const user of users) {
-    const primary = normalize(user.role) || normalize(user.legacyRole);
+    const primary = normalize(user.role) || normalize(user.legacyRole) || "customer";
     const candidates = aliases[primary] || [primary, normalize(user.legacyRole)];
     const target = candidates.map(normalize).map((name) => roleByName.get(name)).find(Boolean);
 
@@ -49,8 +49,11 @@ try {
       continue;
     }
 
-    if (String(user.roleId || "") !== String(target._id)) {
+    const currentRoleId = user.roleId ? String(user.roleId) : "";
+    if (currentRoleId !== String(target._id)) {
       user.roleId = target._id;
+      user.legacyRole = primary;
+      user.role = primary;
       await user.save({ validateBeforeSave: false });
       repaired += 1;
       console.log(`Repaired ${user.email || user._id}: roleId -> ${target.name}`);
