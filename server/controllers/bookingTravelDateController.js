@@ -9,27 +9,33 @@ const startOfDay = (value) => {
   return date;
 };
 
+const parseDurationDays = (value, fallback = 1) => {
+  const match = String(value ?? "").match(/\d+(?:\.\d+)?/);
+  const days = match ? Number(match[0]) : Number(fallback);
+  return Number.isFinite(days) && days >= 1 ? Math.max(1, Math.round(days)) : 1;
+};
+
 const getAllowedRange = async (booking) => {
   if (booking.tour) {
     const tour = await Tour.findById(booking.tour).select("startDate endDate date durationDetails duration").lean();
     if (!tour) return null;
     const start = startOfDay(tour.startDate || tour.date);
-    let end = startOfDay(tour.endDate || tour.startDate || tour.date);
-    if (start && !tour.endDate) {
-      const days = Math.max(1, Number(tour.durationDetails?.days || tour.duration || 1));
-      end = new Date(start);
-      end.setDate(end.getDate() + days - 1);
-    }
+    const storedEnd = startOfDay(tour.endDate);
+    const days = parseDurationDays(tour.durationDetails?.days ?? tour.duration, 1);
+    if (!start) return null;
+    const calculatedEnd = new Date(start);
+    calculatedEnd.setDate(calculatedEnd.getDate() + days - 1);
+    const end = storedEnd && storedEnd > calculatedEnd ? storedEnd : calculatedEnd;
     return { start, end };
   }
 
   if (booking.customTourRequest) {
     const request = await CustomTourRequest.findById(booking.customTourRequest)
-      .select("startDate durationDays")
+      .select("startDate durationDays duration")
       .lean();
     if (!request?.startDate) return null;
     const start = startOfDay(request.startDate);
-    const days = Math.max(1, Number(request.durationDays || 1));
+    const days = parseDurationDays(request.durationDays ?? request.duration, 1);
     const end = new Date(start);
     end.setDate(end.getDate() + days - 1);
     return { start, end };
