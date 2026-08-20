@@ -54,8 +54,20 @@ export function SettingsProvider({ children }) {
     }));
   }, []);
 
+  const companyName = settings.companyName || DEFAULT_SETTINGS.companyName;
+  const supportEmail = settings.supportEmail || "";
+  const supportPhone = settings.supportPhone || "";
+
   return (
-    <SettingsContext.Provider value={{ settings, loading, refreshSettings, updateSettings }}>
+    <SettingsContext.Provider value={{
+      settings,
+      companyName,
+      supportEmail,
+      supportPhone,
+      loading,
+      refreshSettings,
+      updateSettings
+    }}>
       {children}
     </SettingsContext.Provider>
   );
