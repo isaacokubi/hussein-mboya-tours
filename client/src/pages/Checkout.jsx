@@ -49,6 +49,7 @@ export default function Checkout() {
   const [roomNumber, setRoomNumber] = useState("");
   const [specialRequests, setSpecialRequests] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("mpesa");
+  const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentState, setPaymentState] = useState(null);
   const [paymentPolling, setPaymentPolling] = useState(false);
   const [createdBookingId, setCreatedBookingId] = useState(null);
@@ -76,10 +77,7 @@ export default function Checkout() {
     const source = extractTour(tourResponse);
     if (!source?._id) return null;
     const totalSlots = Number(
-      source?.availabilitySettings?.totalSlots ??
-        source?.totalSlots ??
-        source?.capacity ??
-        0
+      source?.availabilitySettings?.totalSlots ?? source?.totalSlots ?? source?.capacity ?? 0
     );
     const bookedSlots = Number(
       source?.availabilitySettings?.bookedSlots ?? source?.bookedSlots ?? 0
@@ -101,15 +99,17 @@ export default function Checkout() {
     ? Number(booking?.totalAmount ?? booking?.quotedAmount ?? booking?.quotedTotal ?? 0)
     : Number(tour?.price ?? 0) * Number(travellerCount);
 
-  const amountPaid = isCustomBooking
-    ? Number(booking?.amountPaid ?? booking?.paidAmount ?? booking?.paymentSummary?.paid ?? 0)
+  const amountPaid = isBookingCheckout
+    ? Number(
+        booking?.amountPaid ??
+          booking?.paidAmount ??
+          booking?.depositAmount ??
+          booking?.paymentSummary?.paid ??
+          0
+      )
     : 0;
 
   const balance = Math.max(total - amountPaid, 0);
-
-  const displayTitle = isCustomBooking
-    ? booking?.title || customSnapshot?.destination || customSnapshot?.title || "Custom Tour Package"
-    : tour?.title || "Tour Booking";
 
   useEffect(() => {
     if (!booking) return;
@@ -129,22 +129,36 @@ export default function Checkout() {
     setSpecialRequests(
       Array.isArray(booking?.specialRequests)
         ? booking.specialRequests.join("\n")
-        : booking?.specialRequests ||
-            customSnapshot?.specialRequests ||
-            customSnapshot?.requirements ||
-            ""
+        : booking?.specialRequests || customSnapshot?.specialRequests || customSnapshot?.requirements || ""
     );
   }, [booking, customSnapshot]);
 
-  const startMpesa = async (bookingId, rawPhone) => {
+  useEffect(() => {
+    if (balance <= 0) {
+      setPaymentAmount("");
+      return;
+    }
+    setPaymentAmount((current) => {
+      const numeric = Number(current);
+      return numeric > 0 && numeric <= balance ? String(numeric) : String(balance);
+    });
+  }, [balance]);
+
+  const startMpesa = async (bookingId, rawPhone, requestedAmount) => {
     const normalizedPhone = normalizeMpesaPhone(rawPhone);
     if (!isValidMpesaPhone(normalizedPhone)) {
       throw new Error("Enter a valid Safaricom M-Pesa number, e.g. 0707476586.");
     }
 
+    const amount = Number(requestedAmount);
+    if (!Number.isFinite(amount) || amount <= 0 || amount > balance) {
+      throw new Error(`Enter an amount between KES 1 and KES ${balance.toLocaleString()}.`);
+    }
+
     const response = await initiateMpesa({
       bookingId,
       phoneNumber: normalizedPhone,
+      amount,
     });
 
     const checkoutRequestId =
@@ -160,22 +174,24 @@ export default function Checkout() {
     setPaymentState({
       bookingId,
       checkoutRequestId,
+      amount,
       status: "pending",
-      message: "M-Pesa prompt sent. Check your phone and enter your M-Pesa PIN.",
+      message: `M-Pesa prompt sent for KES ${amount.toLocaleString()}. Check your phone and enter your M-Pesa PIN.`,
     });
-    toast.success("M-Pesa prompt sent. Enter your PIN on your phone.");
+    toast.success(`M-Pesa prompt sent for KES ${amount.toLocaleString()}. Enter your PIN on your phone.`);
   };
 
   const paymentMutation = useMutation({
-    mutationFn: async ({ bookingId, method, phoneNumber }) => {
+    mutationFn: async ({ bookingId, method, phoneNumber, amount }) => {
       if (method === "mpesa") {
-        await startMpesa(bookingId, phoneNumber);
+        await startMpesa(bookingId, phoneNumber, amount);
         return { bookingId };
       }
 
       if (method === "stripe") {
         const response = await api.post("/payments/stripe/checkout", {
           bookingId,
+          amount,
           origin: window.location.origin,
         });
         if (!response.data?.url) {
@@ -185,19 +201,17 @@ export default function Checkout() {
         return { bookingId };
       }
 
-      await api.post("/payments/stripe/bank-transfer", { bookingId });
+      await api.post("/payments/stripe/bank-transfer", { bookingId, amount });
       return { bookingId };
     },
     onSuccess: ({ bookingId }) => {
       if (paymentMethod === "bank") {
-        toast.success("Booking saved. Bank transfer instructions are available in your booking.");
+        toast.success("Payment instruction recorded. Your booking remains active until the balance is fully paid.");
         navigate(`/bookings/${bookingId}`);
       }
     },
     onError: (error) => {
-      toast.error(
-        error?.response?.data?.message || error?.message || "Unable to start payment."
-      );
+      toast.error(error?.response?.data?.message || error?.message || "Unable to start payment.");
     },
   });
 
@@ -227,10 +241,10 @@ export default function Checkout() {
             ...current,
             status: "completed",
             bookingId: returnedBooking?._id || current.bookingId,
-            message: "Payment received successfully. Your booking has been confirmed.",
+            message: "Payment received successfully. Your payment history and remaining balance have been updated.",
             mpesaReceiptNumber: payment?.mpesaReceiptNumber || payment?.transactionId || "",
           }));
-          toast.success("M-Pesa payment confirmed successfully.");
+          toast.success("Payment confirmed successfully.");
           return;
         }
 
@@ -280,10 +294,12 @@ export default function Checkout() {
       const newBooking = extractBooking(response);
       if (!newBooking?._id) throw new Error("Booking was created without an ID.");
       setCreatedBookingId(newBooking._id);
+      const initialAmount = Number(paymentAmount) > 0 ? Number(paymentAmount) : Number(total);
       await paymentMutation.mutateAsync({
         bookingId: newBooking._id,
         method: paymentMethod,
         phoneNumber: variables?.normalizedPhone || phone,
+        amount: initialAmount,
       });
     },
     onError: (error) => {
@@ -299,8 +315,14 @@ export default function Checkout() {
       return;
     }
 
-    if (isCustomBooking && balance <= 0) {
+    if (balance <= 0) {
       toast.info("This booking is already fully paid.");
+      return;
+    }
+
+    const amount = Number(paymentAmount);
+    if (!Number.isFinite(amount) || amount < 1 || amount > balance) {
+      toast.error(`Enter a payment amount between KES 1 and KES ${balance.toLocaleString()}.`);
       return;
     }
 
@@ -321,6 +343,17 @@ export default function Checkout() {
         bookingId: booking._id,
         method: paymentMethod,
         phoneNumber: phone,
+        amount,
+      });
+      return;
+    }
+
+    if (isBookingCheckout) {
+      await paymentMutation.mutateAsync({
+        bookingId: booking._id,
+        method: paymentMethod,
+        phoneNumber: phone,
+        amount,
       });
       return;
     }
@@ -350,10 +383,7 @@ export default function Checkout() {
       pickupTime: finalPickupTime,
       hotelName: normalize(hotelName),
       roomNumber: normalize(roomNumber),
-      specialRequests: specialRequests
-        .split("\n")
-        .map((item) => item.trim())
-        .filter(Boolean),
+      specialRequests: specialRequests.split("\n").map((item) => item.trim()).filter(Boolean),
       paymentMethod: paymentMethod === "mpesa" ? "MPESA" : paymentMethod === "stripe" ? "CARD" : "BANK_TRANSFER",
       ...(paymentMethod === "mpesa" ? { normalizedPhone } : {}),
     });
@@ -373,7 +403,7 @@ export default function Checkout() {
 
   const isSubmitting = createBookingMutation.isPending || paymentMutation.isPending;
   const successfulPayment = paymentState?.status === "completed";
-  const alreadyPaid = isCustomBooking && balance <= 0;
+  const alreadyPaid = balance <= 0;
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-8 md:py-10">
@@ -382,11 +412,11 @@ export default function Checkout() {
           <div className="mb-7">
             <p className="text-sm font-bold uppercase tracking-wider text-emerald-700">Secure checkout</p>
             <h1 className="mt-1 text-3xl font-bold text-slate-900">Complete your booking</h1>
-            <p className="mt-2 text-slate-500">Review the trip details, confirm the amount and start your payment.</p>
+            <p className="mt-2 text-slate-500">Pay in one or multiple installments. Your booking remains active until the full balance is cleared.</p>
           </div>
 
           <section className="mb-6 rounded-2xl bg-slate-900 p-6 text-white">
-            <h2 className="text-2xl font-bold">{displayTitle}</h2>
+            <h2 className="text-2xl font-bold">{isCustomBooking ? booking?.title || customSnapshot?.destination || "Custom Tour Package" : tour?.title || "Tour Booking"}</h2>
             <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Summary label="Total cost" value={`KES ${total.toLocaleString()}`} />
               <Summary label="Amount paid" value={`KES ${amountPaid.toLocaleString()}`} />
@@ -415,11 +445,14 @@ export default function Checkout() {
               {paymentState.status === "pending" && (
                 <div className="mt-4 rounded-xl bg-white p-4">
                   <p className="font-bold text-amber-800">Check your phone and enter your M-Pesa PIN.</p>
+                  <p className="mt-1 text-sm text-slate-600">Payment amount: KES {Number(paymentState.amount || 0).toLocaleString()}</p>
                   {paymentPolling && <p className="mt-2 text-sm text-slate-500">Waiting for confirmation...</p>}
                 </div>
               )}
               {paymentState.mpesaReceiptNumber && <p className="mt-3 text-sm font-semibold">M-Pesa receipt: {paymentState.mpesaReceiptNumber}</p>}
-              {successfulPayment && <button type="button" onClick={() => navigate(`/bookings/${paymentState.bookingId}`)} className="mt-4 rounded-xl bg-emerald-700 px-5 py-3 font-bold text-white">View Booking</button>}
+              {successfulPayment && (
+                <button type="button" onClick={() => navigate(`/bookings/${paymentState.bookingId}`)} className="mt-4 rounded-xl bg-emerald-700 px-5 py-3 font-bold text-white">View Booking & Remaining Balance</button>
+              )}
               {(paymentState.status === "failed" || paymentState.status === "cancelled" || paymentState.status === "timeout") && (
                 <button type="button" onClick={() => setPaymentState(null)} className="mt-4 rounded-xl bg-amber-600 px-5 py-3 font-bold text-white">Retry Payment</button>
               )}
@@ -433,7 +466,7 @@ export default function Checkout() {
                   <input type="date" value={travelDate} onChange={(e) => setTravelDate(e.target.value)} className="w-full rounded-xl border p-3" required />
                 </Field>
                 <Field label="Number of travellers" required>
-                  <input type="number" min="1" max={Math.max(isCustomBooking ? 999 : Number(tour?.availableSlots || 1), 1)} value={travellerCount} onChange={(e) => setTravellerCount(Number(e.target.value))} className="w-full rounded-xl border p-3" required disabled={isCustomBooking} />
+                  <input type="number" min="1" max={Math.max(isCustomBooking ? 999 : Number(tour?.availableSlots || 1), 1)} value={travellerCount} onChange={(e) => setTravellerCount(Number(e.target.value))} className="w-full rounded-xl border p-3" required disabled={isCustomBooking || isBookingCheckout} />
                 </Field>
               </div>
 
@@ -462,6 +495,32 @@ export default function Checkout() {
                 <textarea value={specialRequests} onChange={(e) => setSpecialRequests(e.target.value)} rows={4} className="w-full rounded-xl border p-3" />
               </Field>
 
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <span className="font-semibold text-slate-700">Payment amount</span>
+                    <p className="mt-1 text-xs text-slate-500">Choose any amount up to your current balance. You can return later and make another payment.</p>
+                  </div>
+                  <span className="font-bold text-emerald-900">Balance: KES {balance.toLocaleString()}</span>
+                </div>
+                <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <div className="flex-1">
+                    <label className="mb-1 block text-sm font-semibold text-slate-700">Pay now (KES)</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max={balance}
+                      step="1"
+                      value={paymentAmount}
+                      onChange={(e) => setPaymentAmount(e.target.value)}
+                      className="w-full rounded-xl border border-emerald-300 bg-white p-3 text-lg font-bold"
+                      required
+                    />
+                  </div>
+                  <button type="button" onClick={() => setPaymentAmount(String(balance))} className="rounded-xl border border-emerald-700 px-4 py-3 font-semibold text-emerald-800 hover:bg-white">Pay full balance</button>
+                </div>
+              </div>
+
               <div className="rounded-2xl border p-4">
                 <p className="mb-3 font-bold">Payment method</p>
                 <div className="grid gap-3 sm:grid-cols-3">
@@ -484,20 +543,13 @@ export default function Checkout() {
                 </div>
               )}
 
-              <div className="rounded-2xl bg-emerald-50 p-5">
-                <div className="flex items-center justify-between gap-4">
-                  <span className="font-semibold text-slate-700">Amount to pay now</span>
-                  <strong className="text-2xl text-emerald-900">KES {balance.toLocaleString()}</strong>
-                </div>
-              </div>
-
-              <button type="submit" disabled={isSubmitting || (!isCustomBooking && Number(tour?.availableSlots || 0) < 1)} className="w-full rounded-xl bg-emerald-700 py-4 font-bold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50">
-                {isSubmitting ? "Starting payment..." : paymentMethod === "mpesa" ? "Proceed to M-Pesa Payment" : paymentMethod === "stripe" ? "Proceed to Card Checkout" : "Confirm Bank Transfer"}
+              <button type="submit" disabled={isSubmitting || (!isCustomBooking && isTourCheckout && Number(tour?.availableSlots || 0) < 1)} className="w-full rounded-xl bg-emerald-700 py-4 font-bold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50">
+                {isSubmitting ? "Starting payment..." : paymentMethod === "mpesa" ? `Pay KES ${Number(paymentAmount || 0).toLocaleString()} with M-Pesa` : paymentMethod === "stripe" ? `Pay KES ${Number(paymentAmount || 0).toLocaleString()} by Card` : "Record Bank Payment"}
               </button>
             </form>
           )}
 
-          {alreadyPaid && <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 font-semibold text-emerald-900">This booking is fully paid. No additional payment is required.</div>}
+          {alreadyPaid && <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 font-semibold text-emerald-900">This booking is fully paid. You are eligible to proceed with the trip once normal operational requirements are satisfied.</div>}
         </div>
       </main>
     </div>
