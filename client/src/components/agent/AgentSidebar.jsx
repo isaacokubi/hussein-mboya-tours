@@ -1,6 +1,5 @@
 import { NavLink } from "react-router-dom";
 import {
-  BarChart3,
   CalendarCheck,
   LayoutDashboard,
   MessageSquareQuote,
