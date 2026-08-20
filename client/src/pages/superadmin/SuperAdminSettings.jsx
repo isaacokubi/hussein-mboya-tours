@@ -4,6 +4,7 @@ import {
   Save, RefreshCw, Shield, Database, Bell, CreditCard, Building2, Settings, CheckCircle, AlertTriangle, Percent
 } from "lucide-react";
 import { getSettings, updateSettings } from "../../api/superAdminApi";
+import { useSettings } from "../../context/SettingsContext";
 
 const Card = ({ icon: Icon, title, children }) => (
   <div className="bg-white rounded-2xl shadow-sm border p-6 space-y-5">
@@ -37,12 +38,15 @@ export default function SuperAdminSettings() {
   const [settings, setSettings] = useState({});
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const { updateSettings: updateGlobalSettings } = useSettings() || {};
 
   const load = async () => {
     try {
       setLoading(true);
       const data = await getSettings();
-      setSettings(data.settings || data || {});
+      const nextSettings = data.settings || data || {};
+      setSettings(nextSettings);
+      updateGlobalSettings?.(nextSettings);
     } catch (err) {
       console.error(err);
       toast.error("Failed to load system settings.");
@@ -57,13 +61,23 @@ export default function SuperAdminSettings() {
   const save = async () => {
     try {
       setSaving(true);
-      await updateSettings({
+      const payload = {
         ...settings,
+        companyName: String(settings.companyName || "Coherent Tours").trim(),
         taxRate: Number(settings.taxRate ?? 0),
         taxServiceType: settings.taxServiceType || "service_fee",
         bookingDepositPercentage: Number(settings.bookingDepositPercentage ?? 30),
         defaultCommissionRate: Number(settings.defaultCommissionRate ?? 10),
-      });
+      };
+      const response = await updateSettings(payload);
+      const savedSettings = response?.settings || response?.data?.settings || response?.data || payload;
+
+      // Update the shared settings context immediately. This is what makes the
+      // company name change appear in SuperAdmin and all other dashboard
+      // sidebars/layouts without requiring a logout or hard refresh.
+      updateGlobalSettings?.(savedSettings);
+      setSettings(prev => ({ ...prev, ...savedSettings }));
+
       toast.success("Global system rates and settings saved successfully.");
       await load();
     } catch (err) {
