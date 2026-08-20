@@ -1,16 +1,6 @@
 import { NavLink } from "react-router-dom";
-import {
-  BarChart3,
-  CalendarDays,
-  Car,
-  ClipboardCheck,
-  ClipboardList,
-  LayoutDashboard,
-  Map,
-  PlusCircle,
-  UserRoundCheck,
-  Users,
-} from "lucide-react";
+import { BarChart3, CalendarDays, Car, ClipboardCheck, ClipboardList, LayoutDashboard, Map, PlusCircle, UserRoundCheck, Users } from "lucide-react";
+import { useSettings } from "../../context/SettingsContext";
 
 const links = [
   ["Dashboard", "/tour-manager", LayoutDashboard],
@@ -27,24 +17,20 @@ const links = [
 ];
 
 export default function TourManagerSidebar() {
+  const { companyName } = useSettings() || {};
   return (
     <div className="h-full w-72 overflow-y-auto bg-slate-950 px-5 py-6 text-white">
       <div className="ops-brand">
         <div className="ops-brand-mark">TM</div>
         <div>
-          <div className="ops-brand-title">COHERENT TOURS</div>
+          <div className="ops-brand-title">{companyName || "Company"}</div>
           <div className="ops-brand-sub">Tour Operations</div>
         </div>
       </div>
       <div className="ops-section">Daily Operations</div>
       <nav className="ops-nav" aria-label="Tour Manager navigation">
         {links.map(([name, path, Icon]) => (
-          <NavLink
-            key={path}
-            to={path}
-            end={path === "/tour-manager"}
-            className={({ isActive }) => `ops-link ${isActive ? "active" : ""}`}
-          >
+          <NavLink key={path} to={path} end={path === "/tour-manager"} className={({ isActive }) => `ops-link ${isActive ? "active" : ""}`}>
             <Icon size={17} />
             <span>{name}</span>
           </NavLink>
