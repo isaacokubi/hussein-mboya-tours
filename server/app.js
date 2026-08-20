@@ -15,6 +15,7 @@ import { resolveTenant } from "./middleware/tenantMiddleware.js";
 const app = express();
 
 if (process.env.NODE_ENV === "production") {
+  // PRODUCTION LOG REDACTION: redact sensitive request/payment fields before logging.
   const originalLog = console.log.bind(console), originalWarn = console.warn.bind(console), originalError = console.error.bind(console);
   const sensitiveKeys = new Set(["body", "callbackResponse", "phone", "phoneNumber", "PhoneNumber", "password", "token", "accessToken", "apiKey", "consumerSecret", "passkey"]);
   const redact = (value, key = "") => {
