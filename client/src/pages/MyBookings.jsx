@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
 import { createReview } from "../api/reviewApi";
 import { getUserRole } from "../utils/roleUtils";
-import { cancelBooking, getMyBookings, initiatePayment, rescheduleBooking } from "../api/bookingApi";
+import { cancelBooking, getMyBookings, rescheduleBooking } from "../api/bookingApi";
 
 const normalizeBookings = (response) => {
   if (Array.isArray(response)) return response;
@@ -67,6 +67,23 @@ const amountOf = (booking) => Number(firstValue(
   booking?.pricing?.total,
   0
 ));
+
+const paidAmountOf = (booking) => Number(firstValue(
+  booking?.amountPaid,
+  booking?.paidAmount,
+  booking?.depositAmount,
+  booking?.paymentSummary?.paid,
+  0
+));
+
+const balanceOf = (booking) => Math.max(
+  Number(firstValue(booking?.balanceAmount, booking?.balance, booking?.paymentSummary?.balance, amountOf(booking) - paidAmountOf(booking))),
+  0
+);
+
+const isCustomBooking = (booking) => Boolean(
+  booking?.customTourSnapshot || booking?.customTourRequest || booking?.customTour || booking?.isCustomTour
+);
 
 const formatDate = (value) => value ? new Date(value).toLocaleDateString(undefined, {
   weekday: "short", year: "numeric", month: "short", day: "numeric",
@@ -153,10 +170,24 @@ export default function MyBookings() {
             {bookings.map((booking) => {
               const status = bookingStatusOf(booking);
               const paymentStatus = paymentStatusOf(booking);
+              const total = amountOf(booking);
+              const paid = paidAmountOf(booking);
+              const balance = balanceOf(booking);
+              const custom = isCustomBooking(booking);
+              const canPay = status !== "cancelled" && status !== "completed" && balance > 0;
+              const failedPayment = paymentStatus === "failed" || paymentStatus === "cancelled";
+              const paymentActionLabel = failedPayment ? "Retry Failed Payment" : paid > 0 ? "Continue Payment" : "Open Checkout & Pay";
+
               return (
                 <article key={booking._id || bookingReferenceOf(booking)} className="overflow-hidden rounded-2xl bg-white p-4 shadow sm:p-6">
                   <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0">
+                      <div className="mb-2 flex flex-wrap items-center gap-2">
+                        <span className={`rounded-full px-3 py-1 text-xs font-bold ${custom ? "bg-purple-100 text-purple-800" : "bg-blue-100 text-blue-800"}`}>
+                          {custom ? "Custom Tour Booking" : "Normal Tour Booking"}
+                        </span>
+                        {failedPayment && <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-700">Payment failed — action required</span>}
+                      </div>
                       <h2 className="break-words text-xl font-bold text-green-800 sm:text-2xl">{tourNameOf(booking)}</h2>
                       <p className="mt-2 break-all text-sm text-gray-600">Booking Reference: <b>{bookingReferenceOf(booking)}</b></p>
                     </div>
@@ -166,18 +197,21 @@ export default function MyBookings() {
                     </div>
                   </div>
 
-                  <div className="my-5 grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                  <div className="my-5 grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6">
                     <BookingDetail label="Tour" value={tourNameOf(booking)} />
                     <BookingDetail label="Date" value={formatDate(booking.travelDate || booking.date)} />
                     <BookingDetail label="Pickup Location" value={pickupLocationOf(booking)} />
                     <BookingDetail label="Pickup Time" value={pickupTimeOf(booking)} />
-                    <BookingDetail label="Amount" value={`KES ${amountOf(booking).toLocaleString()}`} emphasize />
+                    <BookingDetail label="Amount" value={`KES ${total.toLocaleString()}`} emphasize />
+                    <BookingDetail label="Balance" value={`KES ${balance.toLocaleString()}`} emphasize />
                   </div>
 
                   <div className="mb-5 flex flex-wrap gap-x-5 gap-y-2 border-t border-gray-100 pt-4 text-sm text-gray-600">
                     <span>Travellers: <b>{booking.travelers?.length || booking.numberOfGuests || 1}</b></span>
                     <span>Booking Status: <b className="capitalize">{status}</b></span>
                     <span>Payment Status: <b className="capitalize">{paymentStatus}</b></span>
+                    <span>Paid: <b>KES {paid.toLocaleString()}</b></span>
+                    <span>Balance: <b>KES {balance.toLocaleString()}</b></span>
                   </div>
 
                   <div className="flex flex-col gap-4 border-t pt-4 lg:flex-row lg:items-center lg:justify-between">
@@ -186,8 +220,15 @@ export default function MyBookings() {
                       {status !== "cancelled" && status !== "completed" && <RescheduleForm booking={booking} onDone={() => queryClient.invalidateQueries({ queryKey: ["my-bookings"] })} />}
                     </div>
                     <div className="flex w-full flex-wrap gap-2 lg:w-auto lg:justify-end">
-                      <Link to={`/bookings/${booking._id}`} className="flex-1 rounded-xl bg-green-700 px-4 py-2 text-center text-sm font-semibold text-white sm:flex-none sm:px-5">View Trip</Link>
-                      {status !== "cancelled" && status !== "completed" && paymentStatus !== "paid" && <PayNowButton booking={booking} user={user} />}
+                      <Link to={`/bookings/${booking._id}`} className="flex-1 rounded-xl bg-green-700 px-4 py-2 text-center text-sm font-semibold text-white sm:flex-none sm:px-5">Open Booking</Link>
+                      {canPay && (
+                        <Link
+                          to={`/checkout/booking/${booking._id}`}
+                          className={`flex-1 rounded-xl px-4 py-2 text-center text-sm font-bold text-white sm:flex-none sm:px-5 ${failedPayment ? "bg-red-600 hover:bg-red-700" : "bg-black hover:bg-slate-800"}`}
+                        >
+                          {paymentActionLabel}
+                        </Link>
+                      )}
                       {status !== "cancelled" && status !== "completed" && (
                         <button type="button" disabled={cancelMutation.isPending} onClick={() => handleCancel(booking)} className="flex-1 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 sm:flex-none sm:px-5">{cancelMutation.isPending ? "Cancelling..." : "Cancel"}</button>
                       )}
@@ -211,29 +252,9 @@ function BookingDetail({ label, value, emphasize = false }) {
   return <div className="min-w-0 rounded-xl border border-gray-100 bg-gray-50 p-3"><p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</p><p className={`break-words text-sm leading-5 ${emphasize ? "font-bold text-green-800" : "font-semibold text-gray-800"}`}>{value}</p></div>;
 }
 
-function StatusBadge({ value, label, payment = false }) {
+function StatusBadge({ value, label }) {
   const styles = value === "completed" || value === "paid" ? "bg-green-100 text-green-700" : value === "cancelled" || value === "failed" ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700";
   return <span className={`max-w-full break-words rounded-full px-3 py-1.5 text-xs font-bold capitalize sm:px-4 sm:py-2 sm:text-sm ${styles}`}>{label}: {value}</span>;
-}
-
-function PayNowButton({ booking, user }) {
-  const [loading, setLoading] = useState(false);
-  const handlePayment = async () => {
-    const phone = booking.user?.phone || user?.phone || booking.customer?.phone || booking.customerSnapshot?.phone || booking.contact?.phone;
-    const amount = Number(booking.balanceAmount ?? Math.max(0, amountOf(booking) - Number(booking.depositAmount || 0)));
-    if (!phone) return toast.error("No phone number is available. Update your profile phone number first.");
-    if (!amount || amount <= 0) return toast.info("There is no outstanding balance to pay.");
-    try {
-      setLoading(true);
-      await initiatePayment({ bookingId: booking._id, phone, phoneNumber: phone, amount });
-      toast.success("M-Pesa payment request sent.");
-      window.location.href = `/payment-status/${booking._id}`;
-    } catch (error) {
-      console.error("MPESA ERROR:", error.response?.data || error);
-      toast.error(error.response?.data?.message || "Unable to start M-Pesa payment. Please try again.");
-    } finally { setLoading(false); }
-  };
-  return <button type="button" onClick={handlePayment} disabled={loading} className="flex-1 rounded-xl bg-black px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 sm:flex-none sm:px-5">{loading ? "Sending..." : "Pay Now"}</button>;
 }
 
 function RescheduleForm({ booking, onDone }) {
