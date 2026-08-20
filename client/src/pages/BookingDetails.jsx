@@ -3,22 +3,50 @@ import { useNavigate, useParams } from "react-router-dom";
 import { getBooking, getMyBookings } from "../api/bookingApi";
 import ReviewForm from "../components/reviews/ReviewForm";
 
-const number = (value) => {
-  const n = Number(value);
-  return Number.isFinite(n) ? n : 0;
+const toNumber = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
 };
 
-const paymentStatusOf = (booking) => {
+const getPaymentStatus = (booking) => {
   const value = booking?.paymentStatus;
-  if (typeof value === "object") return value?.paymentStatus || value?.status || "pending";
+  if (value && typeof value === "object") {
+    return value.paymentStatus || value.status || "pending";
+  }
   return value || "pending";
+};
+
+const getPaidAmount = (booking) => {
+  const direct = [
+    booking?.amountPaid,
+    booking?.paidAmount,
+    booking?.depositAmount,
+    booking?.paymentSummary?.paid,
+    booking?.payment?.amountPaid,
+  ];
+
+  for (const value of direct) {
+    if (value !== undefined && value !== null && value !== "") {
+      return toNumber(value);
+    }
+  }
+
+  if (Array.isArray(booking?.payments)) {
+    return booking.payments.reduce((sum, payment) => {
+      const status = String(payment?.status || payment?.paymentStatus || "").toLowerCase();
+      const confirmed = ["paid", "confirmed", "success", "successful", "completed"].includes(status);
+      return confirmed ? sum + toNumber(payment?.amount || payment?.amountPaid || payment?.paidAmount) : sum;
+    }, 0);
+  }
+
+  return 0;
 };
 
 export default function BookingDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
+  const query = useQuery({
     queryKey: ["booking", id],
     queryFn: async () => {
       try {
@@ -29,21 +57,34 @@ export default function BookingDetails() {
         const found = Array.isArray(list)
           ? list.find((item) => String(item?._id || item?.id) === String(id))
           : null;
-        if (found) return { success: true, booking: found };
+        if (found) {
+          return { success: true, booking: found };
+        }
         throw requestError;
-      },
+      }
     },
+    enabled: Boolean(id),
   });
 
+  const { data, isLoading, isError, error, refetch, isFetching } = query;
   const booking = data?.booking || data?.data?.booking || data?.data || data;
 
-  if (isLoading) return <div className="p-10">Loading booking details...</div>;
+  if (isLoading) {
+    return <div className="p-10">Loading booking details...</div>;
+  }
 
   if (isError || !booking) {
     return (
       <div className="p-10 text-center text-red-600">
-        <p className="font-semibold">{error?.response?.data?.message || "Unable to load booking details."}</p>
-        <button type="button" onClick={() => refetch()} disabled={isFetching} className="mt-4 rounded-lg bg-green-700 px-5 py-2 text-white disabled:opacity-50">
+        <p className="font-semibold">
+          {error?.response?.data?.message || "Unable to load booking details."}
+        </p>
+        <button
+          type="button"
+          onClick={() => refetch()}
+          disabled={isFetching}
+          className="mt-4 rounded-lg bg-green-700 px-5 py-2 text-white disabled:opacity-50"
+        >
           {isFetching ? "Retrying..." : "Retry"}
         </button>
       </div>
@@ -52,23 +93,21 @@ export default function BookingDetails() {
 
   const custom = booking.customTourSnapshot || booking.customTourRequest || {};
   const title = booking.tour?.title || booking.title || custom.destination || custom.title || "Custom Tour Package";
-  const totalAmount = number(booking.totalAmount ?? booking.quotedAmount ?? booking.quotedTotal);
-  const amountPaid = number(
-    booking.amountPaid ??
-      booking.paidAmount ??
-      booking.depositAmount ??
-      booking.paymentSummary?.paid ??
-      booking.payment?.amountPaid
-  );
+  const totalAmount = toNumber(booking.totalAmount ?? booking.quotedAmount ?? booking.quotedTotal);
+  const amountPaid = getPaidAmount(booking);
+  const storedBalance = booking.balanceAmount ?? booking.balance ?? booking.paymentSummary?.balance;
   const balanceAmount = Math.max(
-    number(booking.balanceAmount ?? booking.balance ?? booking.paymentSummary?.balance ?? totalAmount - amountPaid),
-    0
+    storedBalance !== undefined && storedBalance !== null
+      ? toNumber(storedBalance)
+      : totalAmount - amountPaid,
+    0,
   );
-  const paymentStatus = String(paymentStatusOf(booking)).toLowerCase();
+  const paymentStatus = String(getPaymentStatus(booking)).toLowerCase();
   const customerName = booking.customerSnapshot?.name || booking.customer?.name || booking.user?.name || booking.contact?.name || "Customer";
   const customerPhone = booking.customerSnapshot?.phone || booking.customer?.phone || booking.user?.phone || booking.contact?.phone || "N/A";
   const customerEmail = booking.customerSnapshot?.email || booking.customer?.email || booking.user?.email || booking.contact?.email || "N/A";
   const status = booking.status || booking.bookingStatus || "pending";
+  const checkoutPath = `/checkout/booking/${booking._id || id}`;
 
   return (
     <div className="min-h-screen bg-slate-50 p-6 md:p-10">
@@ -86,7 +125,16 @@ export default function BookingDetails() {
 
           <div className="p-6">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <Info label="Travel date" value={booking.travelDate ? new Date(booking.travelDate).toLocaleDateString() : custom.startDate ? new Date(custom.startDate).toLocaleDateString() : "N/A"} />
+              <Info
+                label="Travel date"
+                value={
+                  booking.travelDate
+                    ? new Date(booking.travelDate).toLocaleDateString()
+                    : custom.startDate
+                      ? new Date(custom.startDate).toLocaleDateString()
+                      : "N/A"
+                }
+              />
               <Info label="Total cost" value={`KES ${totalAmount.toLocaleString()}`} />
               <Info label="Amount paid" value={`KES ${amountPaid.toLocaleString()}`} />
               <Info label="Balance" value={`KES ${balanceAmount.toLocaleString()}`} />
@@ -106,11 +154,17 @@ export default function BookingDetails() {
                 <Info label="Paid" value={`KES ${amountPaid.toLocaleString()}`} />
                 <Info label="Outstanding" value={`KES ${balanceAmount.toLocaleString()}`} />
               </div>
+
               {balanceAmount > 0 && !["cancelled", "refunded"].includes(String(status).toLowerCase()) && (
-                <button type="button" onClick={() => navigate(`/checkout/booking/${booking._id}`)} className="mt-5 rounded-xl bg-emerald-700 px-5 py-3 font-bold text-white hover:bg-emerald-800">
+                <button
+                  type="button"
+                  onClick={() => navigate(checkoutPath)}
+                  className="mt-5 rounded-xl bg-emerald-700 px-5 py-3 font-bold text-white hover:bg-emerald-800"
+                >
                   Pay Outstanding Balance
                 </button>
               )}
+
               {balanceAmount <= 0 && totalAmount > 0 && (
                 <p className="mt-4 font-semibold text-emerald-800">✓ This booking is fully paid.</p>
               )}
@@ -138,5 +192,10 @@ export default function BookingDetails() {
 }
 
 function Info({ label, value }) {
-  return <div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p><p className="mt-1 font-semibold capitalize text-slate-900">{value || "N/A"}</p></div>;
+  return (
+    <div>
+      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      <p className="mt-1 font-semibold capitalize text-slate-900">{value || "N/A"}</p>
+    </div>
+  );
 }
