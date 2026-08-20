@@ -6,11 +6,12 @@ import { updateBookingTravelDate } from "../controllers/bookingTravelDateControl
 import { createCustomerBooking } from "../controllers/customerBookingController.js";
 import { protect, customerOnly, adminOnly, managerOnly } from "../middleware/authMiddleware.js";
 import { requireFullPaymentForTrip } from "../middleware/requireFullPaymentForTrip.js";
+import { validateBookingTravelDate } from "../middleware/validateBookingTravelDate.js";
 
 const router = express.Router();
 router.use(protect);
 router.get("/test", (req, res) => res.status(200).json({ success: true, message: "Booking routes are loaded" }));
-router.post("/", customerOnly, createCustomerBooking);
+router.post("/", customerOnly, validateBookingTravelDate, createCustomerBooking);
 router.get("/my-bookings", customerOnly, getMyBookings);
 router.put("/cancel/:id", customerOnly, cancelBooking);
 router.put("/reschedule/:id", customerOnly, rescheduleBooking);
