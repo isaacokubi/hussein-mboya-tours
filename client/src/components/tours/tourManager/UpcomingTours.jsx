@@ -1,5 +1,11 @@
 import { CalendarDays } from "lucide-react";
 
+const formatDate = (value) => {
+  if (!value) return "Date not set";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "Date not set" : date.toLocaleDateString();
+};
+
 export default function UpcomingTours({ tours = [] }) {
   return (
     <div className="rounded-xl bg-white p-6 shadow">
@@ -15,14 +21,20 @@ export default function UpcomingTours({ tours = [] }) {
             const status = typeof tour.status === "object"
               ? tour.status?.status || "upcoming"
               : tour.status || "upcoming";
+            const guideName = tour.assignedGuide?.name || tour.guide?.name || "Not Assigned";
+            const guests = Number(tour.guests ?? tour.bookedSlots ?? tour.bookedSeats ?? tour.totalGuests ?? 0);
+            const startDate = tour.startDate || tour.date;
+            const endDate = tour.endDate;
             return (
-              <div key={tour._id} className="flex flex-col gap-3 border-b pb-4 last:border-b-0 sm:flex-row sm:items-center sm:justify-between">
+              <div key={tour._id || tour.id} className="flex flex-col gap-3 border-b pb-4 last:border-b-0 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h3 className="text-lg font-semibold">{tour.title || tour.name || "Untitled tour"}</h3>
                   <p className="text-sm text-gray-600">Destination: {tour.destination?.name || "N/A"}</p>
-                  <p className="text-sm text-gray-600">Guests: {tour.bookedSeats ?? tour.totalGuests ?? 0}</p>
-                  <p className="text-sm text-gray-600">Guide: {tour.guide?.name || "Not Assigned"}</p>
-                  <p className="text-sm text-gray-500">{tour.startDate ? new Date(tour.startDate).toLocaleDateString() : "Date not set"}</p>
+                  <p className="text-sm text-gray-600">Guests: {guests}</p>
+                  <p className="text-sm text-gray-600">Guide: {guideName}</p>
+                  <p className="text-sm text-gray-500">
+                    {formatDate(startDate)}{endDate ? ` – ${formatDate(endDate)}` : ""}
+                  </p>
                 </div>
                 <span className="w-fit rounded-full bg-gray-100 px-3 py-1 text-sm font-medium capitalize text-gray-700">{status}</span>
               </div>
