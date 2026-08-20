@@ -5,17 +5,27 @@
   @apply w-full p-3 rounded-xl border border-gray-300 outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500;
 }
 
-/* --------------------------------------------------------------------------
-   Dashboard layout foundation
-   Cards are atomic UI units: text stays on one line where practical and the
-   card itself moves to the next grid row when there is not enough room.
-   Tables scroll horizontally instead of breaking words into ugly fragments.
-   -------------------------------------------------------------------------- */
+/* ========================================================================== 
+   SYSTEM-WIDE DASHBOARD UI FOUNDATION
+   Applied globally so Admin, SuperAdmin, Tour Manager, Agent, Guide, Driver
+   and Customer dashboards use the same responsive card/table behavior.
+   ========================================================================== */
+
 .dashboard-card,
 .dashboard-stat-card {
   min-width: 0;
   max-width: 100%;
   overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* A card is an atomic unit. Its content never creates an oversized grid item. */
+.dashboard-card-grid,
+.dashboard-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  width: 100%;
 }
 
 .dashboard-card h1,
@@ -46,12 +56,14 @@
   text-overflow: ellipsis;
 }
 
-/* Existing Tailwind dashboard statistic cards. */
+/* Existing Tailwind dashboard cards receive the same protection even where
+   individual pages have not yet adopted dashboard-card classes. */
 .bg-white.rounded-xl.shadow,
 .bg-white.rounded-2xl.shadow {
   min-width: 0;
   max-width: 100%;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .bg-white.rounded-xl.shadow h1,
@@ -69,7 +81,6 @@
   text-overflow: ellipsis;
 }
 
-/* Long revenue/currency values stay on one line without widening the card. */
 .bg-white.rounded-xl.shadow h2.text-3xl,
 .bg-white.rounded-xl.shadow h2.text-4xl,
 .bg-white.rounded-2xl.shadow h2.text-3xl,
@@ -79,33 +90,34 @@
   letter-spacing: -0.025em;
 }
 
-/* Icon/value rows must remain inside their card. */
 .bg-white.rounded-xl.shadow > .flex,
-.bg-white.rounded-2xl.shadow > .flex {
+.bg-white.rounded-2xl.shadow > .flex,
+.dashboard-card > .flex,
+.dashboard-stat-card > .flex {
   min-width: 0;
-  align-items: center;
   gap: .75rem;
 }
 
 .bg-white.rounded-xl.shadow > .flex > div,
-.bg-white.rounded-2xl.shadow > .flex > div {
+.bg-white.rounded-2xl.shadow > .flex > div,
+.dashboard-card > .flex > div,
+.dashboard-stat-card > .flex > div {
   min-width: 0;
   max-width: 100%;
 }
 
-/* Card grids naturally place a complete card on the next row. */
-.dashboard-card-grid,
-.dashboard-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1rem;
-}
+/* ========================================================================== 
+   TABLES
+   Never split words such as "Confirm booking" or tour/customer names. The
+   surrounding overflow container scrolls horizontally when necessary.
+   ========================================================================== */
 
-/* Tables: never split words/cells; use the existing horizontal scroller. */
 .dashboard-card .overflow-x-auto,
-.dashboard-stat-card .overflow-x-auto,
-.overflow-x-auto > table {
-  min-width: max-content;
+.dashboard-stat-card .overflow-x-auto {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .dashboard-card table,
@@ -113,6 +125,10 @@
 .bg-white.rounded-xl.shadow table,
 .bg-white.rounded-2xl.shadow table {
   white-space: nowrap;
+  width: max-content;
+  min-width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 .dashboard-card th,
@@ -129,15 +145,50 @@
   vertical-align: middle;
 }
 
-/* Action/select controls should not break their labels into multiple lines. */
 .dashboard-card button,
 .dashboard-card select,
+.dashboard-card a,
 .dashboard-stat-card button,
-.dashboard-stat-card select {
+.dashboard-stat-card select,
+.dashboard-stat-card a {
   white-space: nowrap;
 }
 
-/* Responsive card grids. */
+/* Data-table cells should not be forced into tiny columns by long content. */
+.dashboard-card table td > *,
+.dashboard-card table th > *,
+.dashboard-stat-card table td > *,
+.dashboard-stat-card table th > * {
+  max-width: none;
+}
+
+/* ========================================================================== 
+   SEARCH / FILTER TOOLBARS
+   Inputs remain usable while cards and filter controls wrap as units.
+   ========================================================================== */
+.dashboard-toolbar,
+.dashboard-filter-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .75rem;
+  min-width: 0;
+  width: 100%;
+}
+
+.dashboard-toolbar input,
+.dashboard-toolbar select,
+.dashboard-filter-bar input,
+.dashboard-filter-bar select {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* ========================================================================== 
+   RESPONSIVE GRIDS
+   Cards move as complete units to the next row; text is not used to decide
+   the grid width. 
+   ========================================================================== */
 @media (max-width: 1280px) {
   .dashboard-card-grid,
   .dashboard-stats-grid {
@@ -179,7 +230,6 @@
     padding: 1rem;
   }
 
-  /* Keep compact dashboard cards readable on phones. */
   .bg-white.rounded-xl.shadow h2.text-3xl,
   .bg-white.rounded-xl.shadow h2.text-4xl,
   .bg-white.rounded-2xl.shadow h2.text-3xl,
@@ -187,7 +237,6 @@
     font-size: clamp(1.15rem, 5vw, 1.55rem);
   }
 
-  /* Header/action rows may wrap as rows; individual labels never break words. */
   .dashboard-card .flex,
   .dashboard-stat-card .flex,
   .bg-white.rounded-xl.shadow .flex,
@@ -195,7 +244,6 @@
     min-width: 0;
   }
 
-  /* Tables remain usable on small screens through horizontal scrolling. */
   .dashboard-card table,
   .dashboard-stat-card table,
   .bg-white.rounded-xl.shadow table,
