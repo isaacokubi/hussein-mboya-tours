@@ -5,6 +5,29 @@ import { getDriverDashboard, getDriverAssignedTours, updateDriverTourStatus } fr
 const unwrap = (payload) => payload?.data ?? payload ?? {};
 const idOf = (value) => value?._id || value?.id || value;
 
+const startOfDay = (value) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  date.setHours(0, 0, 0, 0);
+  return date;
+};
+
+const tourStart = (tour) => tour?.startDate || tour?.date || tour?.tourDate;
+const tourEnd = (tour) => tour?.endDate || tour?.startDate || tour?.date || tour?.tourDate;
+
+const isTourActiveOnDate = (tour, value) => {
+  const day = startOfDay(value);
+  const start = startOfDay(tourStart(tour));
+  const end = startOfDay(tourEnd(tour));
+  return Boolean(day && start && end && day >= start && day <= end);
+};
+
+const formatDateTime = (value) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+};
+
 export default function DriverDashboard() {
   const [dashboard, setDashboard] = useState(null);
   const [assignedTours, setAssignedTours] = useState([]);
@@ -37,17 +60,19 @@ export default function DriverDashboard() {
   useEffect(() => { loadDashboard(); }, []);
 
   const tours = useMemo(() => assignedTours.length ? assignedTours : (dashboard?.assignedTours || dashboard?.upcomingTours || dashboard?.tours || []), [assignedTours, dashboard]);
-  const vehicle = dashboard?.vehicle || dashboard?.assignedVehicle || dashboard?.profile?.vehicle;
+  const vehicle = dashboard?.vehicle || dashboard?.assignedVehicle || dashboard?.data?.vehicle || tours.find((tour) => tour?.assignedVehicle)?.assignedVehicle || null;
   const today = new Date();
-  const todayTrips = tours.filter((tour) => {
-    const date = tour?.startDate || tour?.date || tour?.tourDate;
-    return date && new Date(date).toDateString() === today.toDateString();
-  });
-  const nextTour = tours.map((tour) => ({ tour, date: new Date(tour?.startDate || tour?.date || tour?.tourDate || 0) })).filter(({ date }) => date >= today).sort((a, b) => a.date - b.date)[0]?.tour;
+  const todayTrips = tours.filter((tour) => isTourActiveOnDate(tour, today) && !["completed", "cancelled"].includes(String(tour?.status || "").toLowerCase()));
+  const nextTour = tours
+    .map((tour) => ({ tour, date: new Date(tourStart(tour) || 0) }))
+    .filter(({ tour, date }) => !Number.isNaN(date.getTime()) && date >= startOfDay(today) && !["completed", "cancelled"].includes(String(tour?.status || "").toLowerCase()))
+    .sort((a, b) => a.date - b.date)[0]?.tour;
+  const nextPickup = nextTour?.pickupTime || nextTour?.pickupDateTime || tourStart(nextTour);
   const stats = dashboard?.stats || dashboard?.summary || {};
   const totalTours = stats.totalTours ?? dashboard?.totalTours ?? tours.length;
-  const completedTours = stats.completedTours ?? dashboard?.completedTours ?? 0;
-  const ongoingTours = stats.ongoingTours ?? dashboard?.ongoingTours ?? 0;
+  const completedTours = stats.completedTours ?? dashboard?.completedTours ?? tours.filter((tour) => String(tour?.status || "").toLowerCase() === "completed").length;
+  const ongoingTours = stats.ongoingTours ?? dashboard?.ongoingTours ?? tours.filter((tour) => String(tour?.status || "").toLowerCase() === "ongoing").length;
+  const vehicleStatus = vehicle?.status || vehicle?.availability || (vehicle ? "Ready" : "Not assigned");
 
   const changeStatus = async (tour, status) => {
     const tourId = idOf(tour);
@@ -78,9 +103,9 @@ export default function DriverDashboard() {
       {actionMessage && <div className="ops-card ops-alert" role="status">{actionMessage}</div>}
 
       <div className="ops-kpis">
-        <div className="ops-card ops-kpi"><div className="ops-kpi-label">Today's Trips</div><div className="ops-kpi-value">{todayTrips.length}</div><div className="ops-kpi-meta">Assigned movements</div></div>
-        <div className="ops-card ops-kpi"><div className="ops-kpi-label">Next Pickup</div><div className="ops-kpi-value">{nextTour ? new Date(nextTour.startDate || nextTour.date || nextTour.tourDate).toLocaleDateString() : "—"}</div><div className="ops-kpi-meta">Next scheduled tour</div></div>
-        <div className="ops-card ops-kpi"><div className="ops-kpi-label">Vehicle</div><div className="ops-kpi-value">{vehicle?.registrationNumber || vehicle?.plateNumber || vehicle?.registration || vehicle?.name || "—"}</div><div className="ops-kpi-meta">Assigned fleet unit</div></div>
+        <div className="ops-card ops-kpi"><div className="ops-kpi-label">Today's Trips</div><div className="ops-kpi-value">{todayTrips.length}</div><div className="ops-kpi-meta">Tours active today</div></div>
+        <div className="ops-card ops-kpi"><div className="ops-kpi-label">Next Pickup</div><div className="ops-kpi-value">{nextPickup ? formatDateTime(nextPickup) : "—"}</div><div className="ops-kpi-meta">Next scheduled movement</div></div>
+        <div className="ops-card ops-kpi"><div className="ops-kpi-label">Vehicle</div><div className="ops-kpi-value">{vehicle?.registrationNumber || vehicle?.plateNumber || vehicle?.registration || vehicle?.name || "Not assigned"}</div><div className="ops-kpi-meta">Assigned fleet unit</div></div>
         <div className="ops-card ops-kpi"><div className="ops-kpi-label">Completed Tours</div><div className="ops-kpi-value">{completedTours}</div><div className="ops-kpi-meta">{ongoingTours} currently ongoing</div></div>
       </div>
 
@@ -88,9 +113,12 @@ export default function DriverDashboard() {
         <div className="ops-panel-head"><div className="ops-panel-title">Assigned tours</div><CalendarDays size={17} /></div>
         {tours.length === 0 ? <div className="ops-alert">No tours are currently assigned to you.</div> : <div className="ops-list">
           {tours.slice(0, 10).map((tour) => {
-            const tourId = idOf(tour); const status = String(tour?.status || "scheduled").toLowerCase(); const start = new Date(tour?.startDate || tour?.date || tour?.tourDate || 0); const isToday = start.toDateString() === today.toDateString();
+            const tourId = idOf(tour);
+            const status = String(tour?.status || "scheduled").toLowerCase();
+            const start = new Date(tourStart(tour) || 0);
+            const isToday = isTourActiveOnDate(tour, today);
             return <div className="ops-list-item" key={tourId}>
-              <span><MapPin size={15} /> {tour?.destination?.name || tour?.destinationName || tour?.location || "Tour"} · {Number.isNaN(start.getTime()) ? "—" : start.toLocaleDateString()}</span>
+              <span><MapPin size={15} /> {tour?.title || tour?.destination?.name || tour?.destinationName || tour?.location || "Tour"} · {Number.isNaN(start.getTime()) ? "—" : start.toLocaleDateString()}</span>
               <span className="ops-status neutral">{status}</span>
               {status === "scheduled" || status === "upcoming" ? <button className="btn btn-secondary" type="button" disabled={!isToday || actionId === `${tourId}:ongoing`} title={!isToday ? "This tour can only be started on its start date" : "Start tour"} onClick={() => changeStatus(tour, "ongoing")}><Play size={14} /> {actionId === `${tourId}:ongoing` ? "Starting…" : "Start"}</button> : null}
               {status === "ongoing" ? <button className="btn btn-secondary" type="button" disabled={actionId === `${tourId}:completed`} onClick={() => changeStatus(tour, "completed")}><Flag size={14} /> {actionId === `${tourId}:completed` ? "Completing…" : "Complete"}</button> : null}
@@ -103,12 +131,12 @@ export default function DriverDashboard() {
         <div className="ops-card ops-panel"><div className="ops-panel-head"><div className="ops-panel-title">Trip control</div><CalendarDays size={17} /></div><div className="ops-list">
           <div className="ops-list-item"><span><CalendarDays size={15} /> Today's schedule</span><span className="ops-status neutral">{todayTrips.length ? `${todayTrips.length} trip${todayTrips.length > 1 ? "s" : ""}` : "None"}</span></div>
           <div className="ops-list-item"><span><MapPin size={15} /> Next destination</span><span className="ops-status neutral">{nextTour?.destination?.name || nextTour?.destinationName || nextTour?.location || "Not assigned"}</span></div>
-          <div className="ops-list-item"><span><Users size={15} /> Guests</span><span className="ops-status neutral">{nextTour?.guestCount ?? nextTour?.numberOfGuests ?? nextTour?.passengers ?? "—"}</span></div>
+          <div className="ops-list-item"><span><Users size={15} /> Guests</span><span className="ops-status neutral">{nextTour?.guests ?? nextTour?.guestCount ?? nextTour?.numberOfGuests ?? nextTour?.passengers ?? "—"}</span></div>
           <div className="ops-list-item"><span><Clock3 size={15} /> Status</span><span className="ops-status ok">{nextTour?.status || "Ready"}</span></div>
         </div></div>
         <div className="ops-card ops-panel"><div className="ops-panel-head"><div className="ops-panel-title">Vehicle & readiness</div><Car size={17} /></div><div className="ops-list">
-          <div className="ops-list-item"><span><Car size={15} /> Vehicle</span><span>{vehicle?.registrationNumber || vehicle?.plateNumber || "Not assigned"}</span></div>
-          <div className="ops-list-item"><span><Wrench size={15} /> Vehicle status</span><span className="ops-status ok">{vehicle?.status || "Ready"}</span></div>
+          <div className="ops-list-item"><span><Car size={15} /> Vehicle</span><span>{vehicle?.registrationNumber || vehicle?.plateNumber || vehicle?.registration || vehicle?.name || "Not assigned"}</span></div>
+          <div className="ops-list-item"><span><Wrench size={15} /> Vehicle status</span><span className={`ops-status ${vehicle ? "ok" : "neutral"}`}>{vehicleStatus}</span></div>
           <div className="ops-list-item"><span><CheckCircle2 size={15} /> Total tours</span><span>{totalTours}</span></div>
         </div><div className="ops-alert">Report tyre, fuel, mechanical or safety issues before departure.</div></div>
       </div>
