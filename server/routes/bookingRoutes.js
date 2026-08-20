@@ -2,6 +2,7 @@
 
 import express from "express";
 import { getMyBookings, getBooking, cancelBooking, rescheduleBooking, getAllBookings, getConfirmedBookings, updateBookingStatus } from "../controllers/bookingController.js";
+import { updateBookingTravelDate } from "../controllers/bookingTravelDateController.js";
 import { createCustomerBooking } from "../controllers/customerBookingController.js";
 import { protect, customerOnly, adminOnly, managerOnly } from "../middleware/authMiddleware.js";
 import { requireFullPaymentForTrip } from "../middleware/requireFullPaymentForTrip.js";
@@ -13,6 +14,7 @@ router.post("/", customerOnly, createCustomerBooking);
 router.get("/my-bookings", customerOnly, getMyBookings);
 router.put("/cancel/:id", customerOnly, cancelBooking);
 router.put("/reschedule/:id", customerOnly, rescheduleBooking);
+router.put("/:id/travel-date", customerOnly, updateBookingTravelDate);
 router.get("/confirmed", managerOnly, getConfirmedBookings);
 router.get("/admin", managerOnly, getAllBookings);
 router.get("/admin/all", adminOnly, getAllBookings);
