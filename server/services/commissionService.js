@@ -1,5 +1,12 @@
 import Commission from "../models/Commission.js";
 import Agent from "../models/Agent.js";
+import SystemSetting from "../models/SystemSetting.js";
+
+const getGlobalCommissionRate = async () => {
+  const settings = await SystemSetting.findOne({ key: "default" }).select("defaultCommissionRate").lean();
+  const rate = Number(settings?.defaultCommissionRate);
+  return Number.isFinite(rate) && rate >= 0 && rate <= 100 ? rate : 10;
+};
 
 export const createCommission = async (booking) => {
   if (!booking?.agent) return null;
@@ -10,9 +17,15 @@ export const createCommission = async (booking) => {
   const agent = await Agent.findById(booking.agent);
   if (!agent) throw new Error("Agent profile not found.");
 
-  const rate = Number(agent.commissionRate || 0);
+  // Commission is globally controlled by SuperAdmin system settings.
+  const rate = await getGlobalCommissionRate();
   const bookingAmount = Number(booking.totalAmount || 0);
   const amount = Number(((bookingAmount * rate) / 100).toFixed(2));
+
+  // Keep the legacy Agent field synchronized for compatibility with older records/UI.
+  if (Number(agent.commissionRate) !== rate) {
+    await Agent.updateOne({ _id: agent._id }, { $set: { commissionRate: rate } });
+  }
 
   return Commission.create({
     agent: agent._id,
