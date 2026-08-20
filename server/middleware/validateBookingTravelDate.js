@@ -8,6 +8,12 @@ const startOfDay = (value) => {
   return date;
 };
 
+const parseDurationDays = (value, fallback = 1) => {
+  const match = String(value ?? "").match(/\d+(?:\.\d+)?/);
+  const days = match ? Number(match[0]) : Number(fallback);
+  return Number.isFinite(days) && days >= 1 ? Math.max(1, Math.round(days)) : 1;
+};
+
 export const validateBookingTravelDate = async (req, res, next) => {
   try {
     if (!req.body?.travelDate) return next();
@@ -23,22 +29,27 @@ export const validateBookingTravelDate = async (req, res, next) => {
       if (!tour) return res.status(404).json({ success: false, message: "Tour not found." });
 
       start = startOfDay(tour.startDate || tour.date);
-      end = startOfDay(tour.endDate || tour.startDate || tour.date);
-      if (start && !tour.endDate) {
-        const days = Math.max(1, Number(tour.durationDetails?.days || tour.duration || 1));
-        end = new Date(start);
-        end.setDate(end.getDate() + days - 1);
+      const storedEnd = startOfDay(tour.endDate);
+      const days = parseDurationDays(tour.durationDetails?.days ?? tour.duration, 1);
+
+      // Duration is authoritative for multi-day tours. This also repairs the
+      // case where an older record incorrectly stored endDate equal to startDate.
+      if (start) {
+        const calculatedEnd = new Date(start);
+        calculatedEnd.setDate(calculatedEnd.getDate() + days - 1);
+        end = calculatedEnd;
+        if (storedEnd && storedEnd > end) end = storedEnd;
       }
     } else if (req.body.customTourRequest) {
       const request = await CustomTourRequest.findOne({ _id: req.body.customTourRequest, customer: req.user._id })
-        .select("startDate durationDays")
+        .select("startDate durationDays duration")
         .lean();
       if (!request) return res.status(404).json({ success: false, message: "Custom tour request not found." });
       if (!request.startDate) return res.status(400).json({ success: false, message: "The custom tour does not have a start date." });
 
       label = "custom tour";
       start = startOfDay(request.startDate);
-      const days = Math.max(1, Number(request.durationDays || 1));
+      const days = parseDurationDays(request.durationDays ?? request.duration, 1);
       end = new Date(start);
       end.setDate(end.getDate() + days - 1);
     } else {
