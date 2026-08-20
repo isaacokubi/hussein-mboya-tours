@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { getUserRole } from "../../utils/roleUtils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getRoles, getRole, getPermissions, updateRolePermissions } from "../../api/superAdminApi";
 
 const roleKey = (role) => String(role?.name || "").trim().toLowerCase().replace(/[\s_-]+/g, "");
 
 export default function SuperAdminRoles() {
-  const { hasPermission } = useAuth();
+  const { user, hasPermission } = useAuth();
   const queryClient = useQueryClient();
   const [selectedRole, setSelectedRole] = useState(null);
   const [selectedPermissions, setSelectedPermissions] = useState([]);
@@ -36,7 +37,8 @@ export default function SuperAdminRoles() {
     },
   });
 
-  if (!hasPermission("roles.manage")) {
+  const isSuperAdmin = getUserRole(user) === "superadmin";
+  if (!isSuperAdmin && !hasPermission("roles.manage")) {
     return <div className="p-8 text-red-600">You do not have permission to manage roles.</div>;
   }
 
