@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { createCustomTourRequest } from "../api/customTourApi";
 import MobileDashboardNav from "../components/common/MobileDashboardNav";
@@ -18,8 +18,24 @@ const initialForm = {
   specialRequests: "",
 };
 
+const formatDate = (value) => {
+  if (!value) return "";
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("en-KE", { day: "2-digit", month: "short", year: "numeric" });
+};
+
 export default function CustomTourRequest() {
   const [form, setForm] = useState(initialForm);
+
+  const endDate = useMemo(() => {
+    if (!form.startDate) return "";
+    const date = new Date(`${form.startDate}T00:00:00`);
+    const days = Math.max(1, Number(form.durationDays || 1));
+    if (Number.isNaN(date.getTime())) return "";
+    date.setDate(date.getDate() + days - 1);
+    return date.toISOString().slice(0, 10);
+  }, [form.startDate, form.durationDays]);
 
   const mutation = useMutation({
     mutationFn: createCustomTourRequest,
@@ -33,12 +49,14 @@ export default function CustomTourRequest() {
     },
   });
 
-  const updateField = (field) => (event) => {
-    setForm((current) => ({ ...current, [field]: event.target.value }));
-  };
+  const updateField = (field) => (event) => setForm((current) => ({ ...current, [field]: event.target.value }));
 
   const handleSubmit = (event) => {
     event.preventDefault();
+    if (!form.startDate) {
+      alert("Please select the custom tour start date.");
+      return;
+    }
     mutation.mutate({
       ...form,
       durationDays: Number(form.durationDays),
@@ -54,9 +72,7 @@ export default function CustomTourRequest() {
         <div className="mb-6 rounded-3xl bg-gradient-to-r from-emerald-950 to-slate-900 p-6 text-white shadow-sm">
           <p className="text-sm font-semibold uppercase tracking-wide text-emerald-300">Custom Tours</p>
           <h1 className="mt-1 text-3xl font-bold">Build Your Own Tour</h1>
-          <p className="mt-2 max-w-2xl text-slate-300">
-            Tell us where you want to go, how long you want to stay and what you need. We will price the trip and notify you.
-          </p>
+          <p className="mt-2 max-w-2xl text-slate-300">Tell us where you want to go, how long you want to stay and what you need. We will price the trip and notify you.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
@@ -64,7 +80,11 @@ export default function CustomTourRequest() {
             <input required placeholder="Destination / places" value={form.destination} onChange={updateField("destination")} className="rounded-xl border border-slate-200 p-3 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" />
             <input required type="number" min="1" placeholder="Duration (days)" value={form.durationDays} onChange={updateField("durationDays")} className="rounded-xl border border-slate-200 p-3 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" />
             <input required type="number" min="1" placeholder="Number of people" value={form.people} onChange={updateField("people")} className="rounded-xl border border-slate-200 p-3 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" />
-            <input type="date" min={new Date().toISOString().slice(0, 10)} value={form.startDate} onChange={updateField("startDate")} className="rounded-xl border border-slate-200 p-3 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" />
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-slate-700">Tour start date *</label>
+              <input required type="date" min={new Date().toISOString().slice(0, 10)} value={form.startDate} onChange={updateField("startDate")} className="w-full rounded-xl border border-slate-200 p-3 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" />
+              {endDate && <p className="mt-2 text-sm font-medium text-emerald-700">Allowed tour period: {formatDate(form.startDate)} – {formatDate(endDate)}. The checkout will only accept dates inside this period.</p>}
+            </div>
             <input type="number" min="0" placeholder="Budget (optional)" value={form.budget} onChange={updateField("budget")} className="rounded-xl border border-slate-200 p-3 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" />
           </div>
 
