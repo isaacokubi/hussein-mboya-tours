@@ -23,37 +23,18 @@ import {
 
 const router = express.Router();
 
-/*
-|--------------------------------------------------------------------------
-| PUBLIC AUTH ROUTES
-|--------------------------------------------------------------------------
-*/
-
-/**
- * POST /api/auth/bootstrap
- * Create the first tenant and its Super Admin account.
- *
- * This endpoint is intentionally one-time: it refuses to run once any
- * organization or user exists in the database.
- */
+/* Public first-run onboarding. It becomes unavailable after the first user/tenant exists. */
 router.post(
   "/bootstrap",
+  loginRateLimiter,
   bootstrapTenant
 );
 
-/**
- * POST /api/auth/register
- * Register a new customer user
- */
 router.post(
   "/register",
   register
 );
 
-/**
- * POST /api/auth/login
- * Login user
- */
 router.post(
   "/login",
   loginRateLimiter,
@@ -71,12 +52,6 @@ router.post(
   passwordResetRateLimiter,
   resetPasswordWithCode
 );
-
-/*
-|--------------------------------------------------------------------------
-| PROTECTED AUTH ROUTES
-|--------------------------------------------------------------------------
-*/
 
 router.use(protect);
 
