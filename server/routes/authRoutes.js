@@ -10,6 +10,7 @@ import {
   requestPasswordReset,
   resetPasswordWithCode,
 } from "../controllers/authController.js";
+import { bootstrapTenant } from "../controllers/bootstrapController.js";
 
 import {
   protect,
@@ -29,8 +30,20 @@ const router = express.Router();
 */
 
 /**
+ * POST /api/auth/bootstrap
+ * Create the first tenant and its Super Admin account.
+ *
+ * This endpoint is intentionally one-time: it refuses to run once any
+ * organization or user exists in the database.
+ */
+router.post(
+  "/bootstrap",
+  bootstrapTenant
+);
+
+/**
  * POST /api/auth/register
- * Register a new user
+ * Register a new customer user
  */
 router.post(
   "/register",
@@ -67,19 +80,11 @@ router.post(
 
 router.use(protect);
 
-/**
- * GET /api/auth/me
- * Get authenticated user
- */
 router.get(
   "/me",
   getMe
 );
 
-/**
- * PUT /api/auth/change-password
- * Change password
- */
 router.put(
   "/change-password",
   changePassword
