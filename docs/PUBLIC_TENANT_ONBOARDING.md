@@ -4,9 +4,11 @@
 
 Open `/register?company=1` to create a company tenant. The first Administrator is created inside that tenant, a 14-day trial subscription is provisioned, and the new Administrator receives a tenant-scoped session.
 
-## First platform SuperAdmin
+## First platform SuperAdmin setup
 
-The platform SuperAdmin is a global account and must never be freely selectable by an arbitrary public registrant. Configure the first platform identity privately on the backend:
+For the first installation, use `/register?company=1&platformSetup=1`.
+
+The form accepts Platform Owner name, email, phone and password, but the browser is not trusted to choose platform credentials. During the one-time first-SuperAdmin window, the backend requires the submitted values to exactly match these private server variables:
 
 ```dotenv
 BOOTSTRAP_SUPERADMIN_NAME="Platform Owner"
@@ -15,9 +17,7 @@ BOOTSTRAP_SUPERADMIN_PHONE="0712345678"
 BOOTSTRAP_SUPERADMIN_PASSWORD="use-a-private-strong-password"
 ```
 
-These values must never be committed to Git or exposed through `VITE_*` variables.
-
-The onboarding service creates the first SuperAdmin only when no SuperAdmin exists and the backend bootstrap configuration is present. Subsequent company registrations do not create additional SuperAdmins.
+Do not commit these values to Git or expose them through `VITE_*` variables. After a SuperAdmin exists, later company registrations cannot create another SuperAdmin.
 
 ## Trial plans
 
@@ -30,7 +30,7 @@ The onboarding service creates the first SuperAdmin only when no SuperAdmin exis
 
 `POST /api/public/onboarding/register`
 
-The normal request contains company, plan and first-admin details. First platform setup is controlled by private backend configuration and is never returned in API responses.
+Normal company registration sends company, plan and first-admin details. First platform setup additionally sends a `bootstrapSuperAdmin` object. The server validates it against the private environment configuration and never returns the platform password.
 
 ## Security
 
@@ -39,6 +39,7 @@ The normal request contains company, plan and first-admin details. First platfor
 - Administrator passwords are validated server-side.
 - Tenant data is created within tenant context.
 - SuperAdmin creation is restricted to the one-time bootstrap path.
+- Submitted platform credentials must exactly match backend configuration.
 - Platform credentials are never returned to the client.
 
 ## Validation
