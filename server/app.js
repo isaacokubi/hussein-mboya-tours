@@ -12,6 +12,7 @@ import env from "./config/env.js";
 import apiRoutes from "./routes/index.js";
 import publicOnboardingRoutes from "./routes/publicOnboardingRoutes.js";
 import { resolveTenant } from "./middleware/tenantMiddleware.js";
+import tenantBrandingRoutes from "./routes/tenantBrandingRoutes.js";
 
 const app = express();
 
@@ -49,6 +50,7 @@ app.get("/api/health", async (req, res) => {
 });
 
 app.use("/api/public/onboarding", publicOnboardingRoutes);
+app.use("/api/tenant/branding", tenantBrandingRoutes);
 app.use("/api", resolveTenant, apiRoutes);
 app.get("/", (req, res) => res.status(200).json({ success: true, message: "Travel API running successfully" }));
 app.use((req, res) => res.status(404).json({ success: false, message: "Route not found" }));
