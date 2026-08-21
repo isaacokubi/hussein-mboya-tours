@@ -1,3 +1,4 @@
+import "./tenancy/bootstrap.js";
 import systemHealthRoutes from "./routes/systemHealthRoutes.js";
 import databaseRoutes from "./routes/databaseRoutes.js";
 import settingsRoutes from "./routes/settingsRoutes.js";
@@ -28,80 +29,39 @@ await syncTourLifecycle().catch((error) => {
 });
 
 const lifecycleInterval = setInterval(() => {
-  syncTourLifecycle().catch((error) => {
-    console.error("Tour lifecycle sync failed:", error);
-  });
-}, 60 * 1000);
+  syncTourLifecycle().catch((error) => console.error("Tour lifecycle sync failed:", error));
+}, 60 * 60 * 1000);
 
-const server = http.createServer(app);
-
-const io = new Server(server, {
+const httpServer = http.createServer(app);
+const io = new Server(httpServer, {
   cors: {
-    origin: (env.CLIENT_ORIGINS || "")
-      .split(",")
-      .map((origin) => origin.trim())
-      .filter(Boolean),
+    origin: env.CLIENT_URL,
     credentials: true,
   },
 });
 
 initSocket(io);
+app.set("io", io);
 
-export { io };
-
-// SUPER ADMIN ROUTES
-app.use("/api/settings", settingsRoutes);
+app.use("/api/system-health", systemHealthRoutes);
 app.use("/api/database", databaseRoutes);
-app.use("/api/system", systemHealthRoutes);
-app.use("/api/superadmin", superAdminRoutes);
+app.use("/api/settings", settingsRoutes);
+app.use("/api/super-admin", superAdminRoutes);
+app.use("/api/mfa", mfaRoutes);
 
-const shutdown = async (exitCode = 0) => {
+const port = env.PORT || 5000;
+httpServer.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});
+
+const shutdown = async (signal) => {
+  console.log(`${signal} received. Shutting down gracefully...`);
   clearInterval(lifecycleInterval);
-
-  try {
-    await new Promise((resolve) => {
-      if (!server.listening) {
-        resolve();
-        return;
-      }
-
-      server.close(() => resolve());
-    });
-  } catch (error) {
-    console.error("Server shutdown error:", error.message);
-  }
-
-  try {
-    await mongoose.connection.close();
-  } catch (error) {
-    console.error("MongoDB shutdown error:", error.message);
-  }
-
-  process.exit(exitCode);
+  httpServer.close(async () => {
+    await mongoose.disconnect();
+    process.exit(0);
+  });
 };
 
-server.on("error", (error) => {
-  if (error?.code === "EADDRINUSE") {
-    console.error(
-      `PORT ${env.PORT} is already in use. Stop the existing server before starting another instance.`
-    );
-    console.error(
-      `Find it with: sudo lsof -i :${env.PORT} -nP`
-    );
-    console.error(
-      `Then stop the matching Node process, for example: kill <PID>`
-    );
-    void shutdown(1);
-    return;
-  }
-
-  console.error("HTTP server error:", error);
-  void shutdown(1);
-});
-
-server.listen(env.PORT, () => {
-  console.log(`Server running on port ${env.PORT}`);
-});
-
-process.on("SIGINT", () => void shutdown(0));
-process.on("SIGTERM", () => void shutdown(0));
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
