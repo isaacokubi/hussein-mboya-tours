@@ -19,6 +19,7 @@ import mongoose from "mongoose";
 
 const paymentSchema = new mongoose.Schema(
   {
+    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
     customer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

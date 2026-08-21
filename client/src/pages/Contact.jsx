@@ -1,3 +1,4 @@
+import { useTenant } from '../context/TenantContext';
 import { useSettings } from "../context/SettingsContext";
 import { Phone, Mail, MapPin, Send, MessageCircle, Globe, Clock } from "lucide-react";
 import { FaFacebook, FaInstagram } from "react-icons/fa";
@@ -6,7 +7,7 @@ import { useState } from "react";
 
 export default function Contact() {
   const { supportPhone, supportEmail, settings } = useSettings();
-  const companyName = settings?.companyName || "Coherent Tours";
+  const companyName = settings?.companyName || settings?.companyName || tenant?.name || 'Safari Adventures Kenya';
   const [form, setForm] = useState({ name: "", email: "", phone: "", message: "" });
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
@@ -105,7 +106,7 @@ export default function Contact() {
             </p>
             <div className="space-y-5">
               <div className="flex items-start gap-3"><MessageCircle className="mt-0.5 shrink-0 text-yellow-500" /><span>Fast response from our travel consultants</span></div>
-              <div className="flex items-start gap-3"><MapPin className="mt-0.5 shrink-0 text-yellow-500" /><span>Explore Africa with local experts</span></div>
+              <div className="flex items-start gap-3"><MapPin className="mt-0.5 shrink-0 text-yellow-500" /><span>Experience personalized journeys with local experts</span></div>
             </div>
           </div>
 

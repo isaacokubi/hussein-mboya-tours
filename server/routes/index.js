@@ -83,9 +83,21 @@ router.use("/payments", mpesaRoutes);
 router.use("/payments/stripe", stripeRoutes);
 
 router.use("/tenants", tenantRoutes);
+
+/*
+ * IMPORTANT:
+ * Admin authentication must be registered before the protected
+ * /admin router. Otherwise /admin/auth/login is intercepted by
+ * adminRoutes -> protect -> 401 Authentication required.
+ *
+ * Tenant resolution still happens globally in app.js, so the login
+ * remains tenant-aware and requires X-Tenant-ID, X-Tenant-Slug,
+ * or a configured company domain.
+ */
+router.use("/admin/auth", adminAuthRoutes);
+
 router.use("/admin/roles", adminRoleRoutes);
 router.use("/admin", adminRoutes);
-router.use("/admin/auth", adminAuthRoutes);
 router.use("/admin/tours", adminTourRoutes);
 router.use("/admin/bookings", adminBookingRoutes);
 router.use("/admin/payments", adminPaymentRoutes);

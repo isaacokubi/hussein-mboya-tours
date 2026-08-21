@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 
 const agentSchema = new mongoose.Schema(
   {
+    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
     /*
     |--------------------------------------------------------------------------
     | LINKED USER ACCOUNT

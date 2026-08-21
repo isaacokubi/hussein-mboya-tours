@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 const heroSlideSchema = new mongoose.Schema(
 
 {
+    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
 
 title:{
     type:String,

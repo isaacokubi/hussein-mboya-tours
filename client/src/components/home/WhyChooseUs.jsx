@@ -1,150 +1,74 @@
-import { motion } from "framer-motion";
+import { useSettings } from "../../context/SettingsContext";
+import { useTenant } from "../../context/TenantContext";
 
-import { FaShield, FaUserTie, FaClock, FaStar } from "react-icons/fa6";
+export default function WhyChooseUs() {
 
-const reasons = [
-  {
-    icon: <FaUserTie />,
-    title: "Expert Local Guides",
-    text: "Our experienced guides provide authentic Kenyan experiences.",
-  },
+  const { tenant } = useTenant() || {};
 
-  {
-    icon: <FaShield />,
-    title: "Safe Travel",
-    text: "Your safety and comfort are our highest priority.",
-  },
+  const { settings = {} } = useSettings() || {};
 
-  {
-    icon: <FaClock />,
-    title: "24/7 Support",
-    text: "We are available throughout your journey.",
-  },
+  const companyName =
+    settings?.companyName ||
+    tenant?.name ||
+    tenant?.companyName ||
+    "Safari Adventures Kenya";
 
-  {
-    icon: <FaStar />,
-    title: "Premium Experience",
-    text: "Luxury accommodation and personalized service.",
-  },
-];
 
-export default function WhyChooseUs(
-) {
-  return (
-    <section
-      className="
-py-20
-bg-gradient-to-r
-from-green-700
-to-green-800
-text-white
-"
-    >
-      <div
-        className="
-container
-mx-auto
-px-6
-"
-      >
-        <motion.h2
-          initial={{
-            opacity: 0,
 
-            y: 30,
-          }}
-          whileInView={{
-            opacity: 1,
 
-            y: 0,
-          }}
-          transition={{
-            duration: 0.6,
-          }}
-          className="
-text-3xl
-md:text-4xl
-font-bold
-text-center
-mb-12
-"
-        >
-          Why Choose Coherent Tours?
-        </motion.h2>
+  const items = [
+    {
+      title:"Expert Local Guides",
+      text:`${companyName} provides experienced guides for authentic Kenyan experiences.`
+    },
+    {
+      title:"Safe Travel",
+      text:"Your safety and comfort are our highest priority."
+    },
+    {
+      title:"24/7 Support",
+      text:"We are available throughout your journey."
+    },
+    {
+      title:"Premium Experience",
+      text:"Luxury accommodation and personalized travel experiences."
+    }
+  ];
 
-        <div
-          className="
-grid
-grid-cols-1
-sm:grid-cols-2
-md:grid-cols-4
-gap-8
-"
-        >
-          {(Array.isArray(reasons) ? reasons : []).map((item, index) => (
-            <motion.div
-              key={item.title}
-              initial={{
-                opacity: 0,
 
-                y: 40,
-              }}
-              whileInView={{
-                opacity: 1,
+return (
+<section className="py-16">
 
-                y: 0,
-              }}
-              transition={{
-                duration: 0.5,
+<div className="container mx-auto px-6">
 
-                delay: index * 0.1,
-              }}
-              viewport={{
-                once: true,
-              }}
-              className="
-text-center
-"
-            >
-              <div
-                className="
-w-20
-h-20
-mx-auto
-rounded-full
-bg-white/20
-flex
-items-center
-justify-center
-text-4xl
-mb-5
-"
-              >
-                {item.icon}
-              </div>
+<h2 className="text-3xl font-bold text-center">
+Why Choose {companyName}?
+</h2>
 
-              <h3
-                className="
-text-xl
-font-bold
-"
-              >
-                {item.title}
-              </h3>
 
-              <p
-                className="
-mt-3
-text-green-100
-leading-relaxed
-"
-              >
-                {item.text}
-              </p>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
+<div className="grid md:grid-cols-4 gap-6 mt-10">
+
+{items.map((item,index)=>(
+
+<div key={index} className="rounded-xl shadow p-6">
+
+<h3 className="font-bold">
+{item.title}
+</h3>
+
+<p className="mt-3 text-gray-600">
+{item.text}
+</p>
+
+</div>
+
+))}
+
+</div>
+
+</div>
+
+</section>
+);
+
 }

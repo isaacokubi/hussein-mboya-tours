@@ -6,6 +6,7 @@ import mongoose from "mongoose";
 const refundSchema =
 new mongoose.Schema(
 {
+    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
 
 booking:{
 type:mongoose.Schema.Types.ObjectId,

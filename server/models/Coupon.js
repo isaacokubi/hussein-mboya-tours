@@ -10,6 +10,7 @@ import mongoose from "mongoose";
 
 const couponSchema = new mongoose.Schema(
   {
+    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
     /*
     |--------------------------------------------------------------------------
     | BASIC INFORMATION

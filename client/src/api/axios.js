@@ -3,11 +3,19 @@ import axios from "axios";
 const configuredApiUrl = String(import.meta.env.VITE_API_URL || "").trim();
 const isLocalBrowser = typeof window !== "undefined" && ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
 const isNgrokUrl = /ngrok(-free)?\.dev/i.test(configuredApiUrl);
-const baseURL = isLocalBrowser && (!configuredApiUrl || isNgrokUrl) ? "http://localhost:5000/api" : configuredApiUrl || "/api";
+const baseURL = configuredApiUrl || "/api";
 
 const api = axios.create({ baseURL, withCredentials: true, timeout: 30000, headers: { "Content-Type": "application/json" } });
 
 api.interceptors.request.use((config) => {
+
+console.log("TENANT API DEBUG",{
+ url:config.url,
+ tenantId:localStorage.getItem("tenantId"),
+ tenantSlug:localStorage.getItem("tenantSlug"),
+ token:localStorage.getItem("token") ? "YES":"NO"
+});
+
   const token = localStorage.getItem("token") || localStorage.getItem("accessToken") || localStorage.getItem("authToken");
   config.headers = config.headers || {};
   if (token) config.headers.Authorization = `Bearer ${token}`;

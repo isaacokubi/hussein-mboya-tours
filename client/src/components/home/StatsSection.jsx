@@ -5,7 +5,7 @@ const StatsSection = () => {
   const stats = [
     {
       number: 5000,
-      label: "Happy Travelers",
+      label: "Happy Customers",
     },
 
     {
@@ -20,7 +20,7 @@ const StatsSection = () => {
 
     {
       number: 10,
-      label: "Years Experience",
+      label: "Years Serving Travelers",
     },
   ];
 

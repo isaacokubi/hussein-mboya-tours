@@ -1,3 +1,4 @@
+import { useTenant } from '../context/TenantContext';
 import i18n from "i18next";
 
 import { initReactI18next } from "react-i18next";
@@ -14,7 +15,7 @@ i18n
     resources: {
       en: {
         translation: {
-          welcome: "Explore Africa With Us",
+          welcome: "Discover unforgettable journeys with us",
 
           home: "Home",
 

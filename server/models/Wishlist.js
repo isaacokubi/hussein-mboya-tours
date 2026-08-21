@@ -15,6 +15,7 @@ import mongoose from "mongoose";
 
 const wishlistSchema = new mongoose.Schema(
   {
+    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
     /*
     |--------------------------------------------------------------------------
     | OWNER

@@ -1,3 +1,4 @@
+import { useTenant } from "../context/TenantContext";
 import {
   useQuery
 } from "@tanstack/react-query";
@@ -214,7 +215,7 @@ export default function Destinations(
 
         >
 
-          Discover amazing places and unforgettable experiences with Coherent Tours.
+          Discover amazing places and unforgettable experiences with {settings?.companyName || tenant?.name || 'Safari Adventures Kenya'}.
 
 
         </p>

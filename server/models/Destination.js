@@ -13,6 +13,7 @@ import slugify from "slugify";
 const destinationSchema = new mongoose.Schema(
 
     {
+    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
 
         /*
         |--------------------------------------------------------------------------

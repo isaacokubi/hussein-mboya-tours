@@ -9,6 +9,7 @@ import slugify from "slugify";
 
 const itinerarySchema = new mongoose.Schema(
   {
+    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
     day: {
       type: Number,
       required: true,

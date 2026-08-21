@@ -8,6 +8,7 @@ import mongoose from "mongoose";
 
 const travelerSchema = new mongoose.Schema(
   {
+    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
     name: {
       type: String,
       required: true,

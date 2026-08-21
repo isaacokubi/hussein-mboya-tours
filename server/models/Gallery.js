@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 const gallerySchema = new mongoose.Schema(
 
 {
+    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
 
 title:{
 

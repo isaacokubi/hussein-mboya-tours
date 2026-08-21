@@ -12,6 +12,8 @@ export async function resolveTenant(req, res, next) {
     // tenant resolution beforehand.
     if (
       req.path === "/health" ||
+      req.path === "/auth/login" ||
+      req.path === "/auth/register" ||
       req.path === "/auth/bootstrap" ||
       req.path === "/tenants" ||
       req.path.startsWith("/tenants/") ||

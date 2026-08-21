@@ -14,7 +14,10 @@ const ADMIN_CORE_PERMISSIONS = new Set(["admin.dashboard", "booking.manage", "to
 
 export default function AdminSidebar() {
   const { user, hasPermission } = useAuth();
-  const { companyName } = useSettings() || {};
+  const { settings = {} } = useSettings() || {};
+
+  const companyName =
+    settings?.companyName || "Company";
   const adminUser = isAdmin(user);
   const canRender = (permission) => !permission || (adminUser && ADMIN_CORE_PERMISSIONS.has(permission)) || hasPermission(permission);
 

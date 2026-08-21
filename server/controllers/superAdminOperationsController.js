@@ -171,7 +171,7 @@ export const getApiMonitor = async (req, res) => {
     api: {
       status: "online",
       timestamp: new Date(),
-      service: "Coherent Tours API",
+      service: "${companyName} API",
     },
   });
 };

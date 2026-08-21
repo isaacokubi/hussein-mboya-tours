@@ -10,6 +10,7 @@ import mongoose from "mongoose";
 
 const emergencyContactSchema = new mongoose.Schema(
   {
+    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
     name: {
       type: String,
       trim: true,

@@ -1,3 +1,4 @@
+import { useTenant } from '../../context/TenantContext';
 import { useSettings } from "../../context/SettingsContext";
 
 import { Link } from "react-router-dom";
@@ -460,7 +461,7 @@ Admin Panel
           </div>
 
           <p className="text-sm text-gray-500 text-center lg:text-right">
-            Creating unforgettable African travel experiences.
+            {companyName} creates unforgettable African travel experiences.
           </p>
         </div>
       </div>

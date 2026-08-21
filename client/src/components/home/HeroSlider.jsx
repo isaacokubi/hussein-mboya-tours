@@ -1,3 +1,5 @@
+
+import { useTenant } from '../../context/TenantContext';
 import { useSettings } from "../../context/SettingsContext";
 import { useEffect, useRef, useState } from "react";
 
@@ -13,10 +15,23 @@ import "swiper/css";
 import "swiper/css/effect-fade";
 
 export default function HeroSlider() {
+
+  const { tenant } = useTenant() || {};
+
+  const { settings = {} } = useSettings() || {};
+
+  const companyName =
+    settings?.companyName ||
+    tenant?.name ||
+    tenant?.companyName ||
+    "Safari Adventures Kenya";
+
+
+
+
   const videoRefs = useRef([]);
   const [heroReady, setHeroReady] = useState(false);
   const [loadedVideos, setLoadedVideos] = useState({});
-  const { settings } = useSettings();
 
   const {
     data: slides = [],
@@ -123,7 +138,7 @@ export default function HeroSlider() {
                    */}
                   <img
                     src={imageUrl}
-                    alt={slide.title || settings?.companyName || "Coherent Tours"}
+                    alt={slide.title || settings?.companyName || settings?.companyName || tenant?.name || 'Safari Adventures Kenya'}
                     className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${
                       videoLoaded ? "opacity-0" : "opacity-100"
                     }`}

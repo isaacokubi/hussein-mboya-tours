@@ -118,7 +118,18 @@ export const verifyCustomerLoginPin = async (req, res, next) => {
     user.lastLoginAt = new Date();
     await user.save({ validateBeforeSave: false });
 
-    const token = generateToken({ _id: user._id, role: effectiveRole, roleId: user.roleId, email: user.email, permissions });
+      const token = generateToken({
+        _id: user._id,
+        role: effectiveRole,
+        roleId: user.roleId,
+        email: user.email,
+        permissions,
+        tenantId:
+          user?.tenantId ||
+          organization?._id ||
+          req.headers["x-tenant-id"] ||
+          null
+      });
 
     await createAuditLog({ user: user._id, action: "mfa_login_success", resource: "Authentication", description: "Customer successfully completed MFA verification.", severity: "medium" });
 

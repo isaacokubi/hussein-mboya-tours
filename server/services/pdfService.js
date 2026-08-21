@@ -183,7 +183,7 @@ export const generateReceipt = async (booking, res) => {
   doc
     .fontSize(10)
     .text(
-      "Thank you for choosing Coherent Tours.",
+      "Thank you for choosing ${companyName}.",
       {
         align: "center",
       }

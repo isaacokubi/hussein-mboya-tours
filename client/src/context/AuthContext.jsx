@@ -91,10 +91,37 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = async (email, password) => {
-    const { data } = await api.post("/auth/login", { email: String(email || "").trim().toLowerCase(), password });
+    const { data } = await api.post(
+      "/auth/login",
+      {
+        email: String(email || "").trim().toLowerCase(),
+        password
+      },
+      {
+        headers: {
+          "X-Tenant-Slug":
+            localStorage.getItem("tenantSlug") ||
+            "hussein-mboya-tours"
+        }
+      }
+    );
     if (data?.mfaRequired) return data;
     if (!data?.token) throw new Error("Authentication response did not contain a token.");
     localStorage.setItem("token", data.token);
+
+if(data.user?.tenantId){
+ localStorage.setItem(
+  "tenantId",
+  data.user.tenantId
+ );
+}
+
+if(data.user?.tenantSlug){
+ localStorage.setItem(
+  "tenantSlug",
+  data.user.tenantSlug
+ );
+}
     setToken(data.token);
     persistUser(data.user);
     try { await fetchCurrentUser(); } catch (error) { console.warn("AUTH REFRESH FAILED", error.response?.data || error.message); }

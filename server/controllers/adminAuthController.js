@@ -29,6 +29,7 @@ export const adminLogin = async (req, res) => {
       role,
       email: user.email,
       permissions,
+      tenantId: user.tenantId,
     });
 
     return res.status(200).json({

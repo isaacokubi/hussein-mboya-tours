@@ -1,3 +1,4 @@
+import { useTenant } from "../context/TenantContext";
 import {
   Globe2,
   HeartHandshake,
@@ -100,7 +101,7 @@ export default function About(
           mb-6
           "
           >
-            About Coherent Tours
+            About {settings?.companyName || tenant?.name || 'Safari Adventures Kenya'}
           </motion.h1>
 
           <p
@@ -111,7 +112,7 @@ export default function About(
           text-gray-200
           "
           >
-            Creating unforgettable African travel experiences through luxury
+            {companyName} creates unforgettable African travel experiences through luxury
             safaris, beach holidays, cultural adventures and tailor-made
             journeys.
           </p>
@@ -155,7 +156,7 @@ export default function About(
             mb-5
             "
             >
-              Coherent Tours is a premier African travel company dedicated to
+              {settings?.companyName || tenant?.name || 'Safari Adventures Kenya'} is a premier African travel company dedicated to
               creating exceptional journeys for travelers seeking adventure,
               relaxation, and cultural discovery.
             </p>

@@ -1,3 +1,4 @@
+import { useTenant } from '../../context/TenantContext';
 import { useState, useMemo, useEffect, useRef } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
@@ -21,8 +22,16 @@ import { useSettings } from "../../context/SettingsContext";
 
 export default function Navbar(
 ) {
+
+
+
   const { user, logout } = useAuth();
-  const { companyName, supportPhone } = useSettings();
+  const { settings = {}, supportPhone } = useSettings() || {};
+
+  const companyName =
+    settings?.companyName ||
+    "Safari Adventures Kenya";
+
 
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -246,7 +255,7 @@ text-xs
 text-yellow-300
 "
 >
-Explore Africa
+{companyName}
 </p>
 
 

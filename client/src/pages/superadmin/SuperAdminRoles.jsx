@@ -8,10 +8,10 @@ import {
 } from "@tanstack/react-query";
 import {
   getRoles,
-  getRole,
-  getPermissions,
+  getAdminRole,
+  getAdminPermissions,
   updateRolePermissions,
-} from "../../api/superAdminApi";
+} from "../../api/admin/adminRoleApi";
 
 const normalizeRoleName = (role) =>
   String(role?.name || "")
@@ -55,7 +55,10 @@ export default function SuperAdminRoles() {
     isError: permissionsError,
   } = useQuery({
     queryKey: ["rbac-permissions"],
-    queryFn: getPermissions,
+    queryFn: async () => {
+      const response = await getAdminPermissions();
+      return response.permissions || [];
+    },
   });
 
   const updateRole = useMutation({
@@ -115,7 +118,7 @@ export default function SuperAdminRoles() {
     setLoadError("");
 
     try {
-      const fullRole = await getRole(role._id);
+      const fullRole = await getAdminRole(role._id);
 
       setSelectedRole(fullRole);
 
