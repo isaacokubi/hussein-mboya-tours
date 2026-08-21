@@ -22,6 +22,7 @@ const userSchema = new mongoose.Schema(
       default: "customer",
     },
     roleId: { type: mongoose.Schema.Types.ObjectId, ref: "Role", default: null },
+    organizationId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", default: null, index: true },
     permissionsOverride: [{ type: mongoose.Schema.Types.ObjectId, ref: "Permission" }],
     legacyRole: { type: String, default: "customer" },
     profileImage: {
@@ -49,6 +50,9 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+userSchema.index({ organizationId: 1, email: 1 }, { unique: true, sparse: true });
+userSchema.index({ organizationId: 1, role: 1 });
+
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   const salt = await bcrypt.genSalt(10);
@@ -75,5 +79,5 @@ userSchema.virtual("isLocked").get(function () {
   return this.lockUntil && this.lockUntil > Date.now();
 });
 
-const User = mongoose.model("User", userSchema);
+const User = mongoose.models.User || mongoose.model("User", userSchema);
 export default User;
