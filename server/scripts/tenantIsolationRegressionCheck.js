@@ -1,10 +1,11 @@
 import mongoose from "mongoose";
 import env from "../config/env.js";
-import Organization from "../models/Organization.js";
-import Destination from "../models/Destination.js";
 import { runWithTenant } from "../tenancy/context.js";
 
 await import("../tenancy/bootstrap.js");
+const { default: Organization } = await import("../models/Organization.js");
+const { default: Destination } = await import("../models/Destination.js");
+
 await mongoose.connect(env.MONGODB_URI);
 
 const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
