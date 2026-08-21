@@ -102,7 +102,7 @@ export const bootstrapTenant = async (req, res, next) => {
         role: "super_admin",
         roleId: roleMap.get("super_admin")._id,
         legacyRole: "super_admin",
-        organizationId: organization._id,
+        tenantId: organization._id,
       }], { session });
       superAdmin = createdUser;
 
@@ -110,7 +110,7 @@ export const bootstrapTenant = async (req, res, next) => {
     });
 
     const permissionsForToken = buildPermissions({ ...superAdmin.toObject(), role: "super_admin", roleId: superAdmin.roleId, permissionsOverride: [] });
-    const token = generateToken({ _id: superAdmin._id, role: "super_admin", roleId: superAdmin.roleId, organizationId: organization._id, email: superAdmin.email, permissions: permissionsForToken });
+    const token = generateToken({ _id: superAdmin._id, role: "super_admin", roleId: superAdmin.roleId, tenantId: organization._id, email: superAdmin.email, permissions: permissionsForToken });
 
     await SecurityLog.create({ user: superAdmin._id, email: superAdmin.email, action: "bootstrap_register", resource: "Organization", description: "Initial tenant and Super Admin account created.", severity: "high", ipAddress: req.ip, userAgent: req.headers["user-agent"], details: `Organization ${organization._id} created.` });
     await createAuditLog({ user: superAdmin._id, action: "bootstrap_register", resource: "Organization", description: "Initial tenant and Super Admin account created.", severity: "high", ipAddress: req.ip, userAgent: req.headers["user-agent"] });
@@ -120,7 +120,7 @@ export const bootstrapTenant = async (req, res, next) => {
       message: "Tenant and Super Admin created successfully.",
       token,
       organization: { _id: organization._id, name: organization.name, slug: organization.slug, status: organization.status, subscription: organization.subscription },
-      user: { _id: superAdmin._id, name: superAdmin.name, email: superAdmin.email, phone: superAdmin.phone, role: "super_admin", organizationId: organization._id, permissions: permissionsForToken },
+      user: { _id: superAdmin._id, name: superAdmin.name, email: superAdmin.email, phone: superAdmin.phone, role: "super_admin", tenantId: organization._id, permissions: permissionsForToken },
     });
   } catch (error) {
     console.error("BOOTSTRAP TENANT ERROR:", error);
