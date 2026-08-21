@@ -10,12 +10,12 @@ import mongoose from "mongoose";
 import rateLimit from "express-rate-limit";
 import env from "./config/env.js";
 import apiRoutes from "./routes/index.js";
+import publicOnboardingRoutes from "./routes/publicOnboardingRoutes.js";
 import { resolveTenant } from "./middleware/tenantMiddleware.js";
 
 const app = express();
 
 if (process.env.NODE_ENV === "production") {
-  // PRODUCTION LOG REDACTION: redact sensitive request/payment fields before logging.
   const originalLog = console.log.bind(console), originalWarn = console.warn.bind(console), originalError = console.error.bind(console);
   const sensitiveKeys = new Set(["body", "callbackResponse", "phone", "phoneNumber", "PhoneNumber", "password", "token", "accessToken", "apiKey", "consumerSecret", "passkey"]);
   const redact = (value, key = "") => {
@@ -61,6 +61,9 @@ app.get("/api/health", async (req, res) => {
   res.status(dbReady ? 200 : 503).json({ success: dbReady, status: dbReady ? "healthy" : "degraded", database: dbReady ? "connected" : "disconnected", timestamp: new Date().toISOString() });
 });
 
+// Public SaaS onboarding must run before resolveTenant because a new company
+// does not have a tenant context yet.
+app.use("/api/public/onboarding", publicOnboardingRoutes);
 app.use("/api", resolveTenant, apiRoutes);
 
 app.get("/", (req, res) => res.status(200).json({ success: true, message: "Travel API running successfully" }));
