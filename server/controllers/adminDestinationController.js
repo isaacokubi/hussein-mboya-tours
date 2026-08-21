@@ -1,4 +1,3 @@
-import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 // server/controllers/adminDestinationController.js
 
@@ -31,7 +30,7 @@ export const createDestination = async (req, res, next) => {
       });
     }
 
-    const exists = await Destination.findOne(mergeTenantFilter(req,{
+    const exists = await Destination.findOne({
       $or: [
         { slug: slug.trim().toLowerCase() },
         { 
@@ -132,7 +131,7 @@ export const getDestinations = async (req, res, next) => {
 
 export const getDestination = async (req, res, next) => {
   try {
-    const destination = await Destination.findOne(mergeTenantFilter(req,{
+    const destination = await Destination.findOne({
       slug: req.params.slug.toLowerCase(),
     }).lean();
 

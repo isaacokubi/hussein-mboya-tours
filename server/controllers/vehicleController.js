@@ -1,4 +1,3 @@
-import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 import mongoose from "mongoose";
 
 import Vehicle from "../models/Vehicle.js";
@@ -66,7 +65,7 @@ export const createVehicle = async (req, res, next) => {
 
 export const getVehicles = async (req, res, next) => {
     try {
-        const vehicles = await Vehicle.find(mergeTenantFilter(req,{
+        const vehicles = await Vehicle.find({
               isDeleted: { $ne: true }
           })
             .populate("driver", "name phone email")
@@ -273,7 +272,7 @@ export const assignVehicleDriver = async (req, res, next) => {
         const driver = req.body.driverId || req.body.driver || null;
 
         if (driver) {
-            const driverExists = await Staff.findOne(mergeTenantFilter(req,{
+            const driverExists = await Staff.findOne({
                 _id: driver,
                 position: "driver",
                 isActive: true,

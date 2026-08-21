@@ -1,4 +1,3 @@
-import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 import Commission from "../models/Commission.js";
 
@@ -75,7 +74,7 @@ try{
 
 
 const commissions =
-await Commission.find(mergeTenantFilter(req,{
+await Commission.find({
 
 agent:req.params.agentId
 

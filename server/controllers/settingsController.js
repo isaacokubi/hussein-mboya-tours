@@ -1,4 +1,3 @@
-import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 import SystemSetting from "../models/SystemSetting.js";
 import { COMPANY_DEFAULTS } from "../config/companyDefaults.js";
 
@@ -54,7 +53,7 @@ export const updateSettings = async (req, res, next) => {
     if (!updates.companyName) return res.status(400).json({ success: false, message: "Company name cannot be empty." });
     if (updates.supportEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(updates.supportEmail)) return res.status(400).json({ success: false, message: "Enter a valid support email." });
 
-    let settings = await SystemSetting.findOne(mergeTenantFilter(req,{ key: "default" });
+    let settings = await SystemSetting.findOne({ key: "default" });
     if (!settings) settings = new SystemSetting({ key: "default", ...DEFAULTS });
     Object.assign(settings, updates);
     await settings.save();

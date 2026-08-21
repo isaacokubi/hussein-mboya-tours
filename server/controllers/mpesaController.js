@@ -1,4 +1,3 @@
-import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 // server/controllers/mpesaController.js
 
 import Booking from "../models/Booking.js";
@@ -82,7 +81,7 @@ export const stkPush = async (req, res) => {
       });
     }
 
-    const existingPayment = await Payment.findOne(mergeTenantFilter(req,{ booking: booking._id, status: "pending" });
+    const existingPayment = await Payment.findOne({ booking: booking._id, status: "pending" });
     if (existingPayment) {
       return res.status(200).json({
         success: true,
@@ -141,7 +140,7 @@ export const mpesaCallback = async (req, res) => {
     const checkoutRequestID = stkCallback.CheckoutRequestID || stkCallback.checkoutRequestID || stkCallback.checkoutRequestId;
     if (!checkoutRequestID) return res.json({ ResultCode: 0, ResultDesc: "Accepted" });
 
-    const payment = await Payment.findOne(mergeTenantFilter(req,{
+    const payment = await Payment.findOne({
       $or: [{ checkoutRequestID }, { checkoutRequestId: checkoutRequestID }],
     });
     if (!payment) return res.json({ ResultCode: 0, ResultDesc: "Accepted" });
@@ -213,7 +212,7 @@ export const mpesaCallback = async (req, res) => {
     });
 
     try {
-      const managers = await User.find(mergeTenantFilter(req,{
+      const managers = await User.find({
         $or: [
           { role: { $in: ["admin", "superadmin", "super_admin", "manager", "tour_manager", "tourmanager"] } },
           { legacyRole: { $in: ["admin", "superadmin", "super_admin", "manager", "tour_manager", "tourmanager"] } },
@@ -257,7 +256,7 @@ export const getBookingPayments = async (req, res, next) => {
     if (!isStaffRole(req.user) && !ownsBooking(booking, req.user)) {
       return res.status(403).json({ success: false, message: "You do not have permission to view these payments." });
     }
-    const payments = await Payment.find(mergeTenantFilter(req,{ booking: booking._id })
+    const payments = await Payment.find({ booking: booking._id })
       .populate("user", "name email phone")
       .populate("customer", "name email phone")
       .sort({ createdAt: -1 });
@@ -287,7 +286,7 @@ export const getAllPayments = async (req, res, next) => {
 
 export const getPaymentByReceipt = async (req, res, next) => {
   try {
-    const payment = await Payment.findOne(mergeTenantFilter(req,{ mpesaReceiptNumber: req.params.receipt })
+    const payment = await Payment.findOne({ mpesaReceiptNumber: req.params.receipt })
       .populate("booking")
       .populate("user", "name email phone")
       .populate("customer", "name email phone");
@@ -302,7 +301,7 @@ export const handleRefundTimeout = async (req, res) => res.json({ ResultCode: 0,
 export const checkCheckoutStatus = async (req, res, next) => {
   try {
     const checkoutRequestId = req.params.checkoutRequestId;
-    const payment = await Payment.findOne(mergeTenantFilter(req,{
+    const payment = await Payment.findOne({
       $or: [{ checkoutRequestID: checkoutRequestId }, { checkoutRequestId }],
     }).populate("booking").lean();
     if (!payment) return res.status(404).json({ success: false, message: "Payment request not found" });
@@ -314,7 +313,7 @@ export const verifyBookingPayment = async (req, res, next) => {
   try {
     const booking = await Booking.findById(req.params.bookingId).lean();
     if (!booking) return res.status(404).json({ success: false, message: "Booking not found" });
-    const payment = await Payment.findOne(mergeTenantFilter(req,{ booking: booking._id }).sort({ createdAt: -1 }).lean();
+    const payment = await Payment.findOne({ booking: booking._id }).sort({ createdAt: -1 }).lean();
     return res.status(200).json({ success: true, data: { booking, payment, paymentStatus: booking.paymentStatus } });
   } catch (error) { next(error); }
 };

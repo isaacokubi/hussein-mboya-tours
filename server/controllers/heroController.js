@@ -1,4 +1,3 @@
-import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 import HeroSlide from "../models/HeroSlide.js";
 

@@ -1,4 +1,3 @@
-import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 import User from "../models/User.js";
 import generateToken from "../utils/generateToken.js";
 import buildPermissions from "../utils/buildPermissions.js";
@@ -142,7 +141,7 @@ export const register = async (req,res,next)=>{
       });
     }
 
-    const exists = await User.findOne(mergeTenantFilter(req,{
+    const exists = await User.findOne({
       $or:[
         {email:String(email).toLowerCase()},
         {phone}

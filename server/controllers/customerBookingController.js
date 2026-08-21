@@ -1,4 +1,3 @@
-import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
 import User from "../models/User.js";
@@ -55,7 +54,7 @@ export const createCustomerBooking = async (req, res, next) => {
       });
 
       try {
-        const admins = await User.find(mergeTenantFilter(req,{
+        const admins = await User.find({
           $or: [
             { role: { $in: ["admin", "superadmin", "super_admin", "manager", "tour_manager", "tourmanager"] } },
             { legacyRole: { $in: ["admin", "superadmin", "super_admin", "manager", "tour_manager", "tourmanager"] } },

@@ -1,4 +1,3 @@
-import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 import Quotation from "../models/Quotation.js";
 import Agent from "../models/Agent.js";
 import { calculateQuotation } from "../services/quotationCalculator.js";
@@ -13,7 +12,7 @@ import { calculateQuotation } from "../services/quotationCalculator.js";
 
 export const createQuotation = async (req, res, next) => {
   try {
-    const agent = await Agent.findOne(mergeTenantFilter(req,{
+    const agent = await Agent.findOne({
       user: req.user._id,
     });
 
@@ -85,7 +84,7 @@ export const createQuotation = async (req, res, next) => {
 
 export const getAgentQuotations = async (req, res, next) => {
   try {
-    const agent = await Agent.findOne(mergeTenantFilter(req,{
+    const agent = await Agent.findOne({
       user: req.user._id,
     });
 
@@ -96,7 +95,7 @@ export const getAgentQuotations = async (req, res, next) => {
       });
     }
 
-    const quotations = await Quotation.find(mergeTenantFilter(req,{
+    const quotations = await Quotation.find({
       agent: agent._id,
     })
       .populate("customer", "name email phone")
@@ -126,7 +125,7 @@ export const getAgentQuotations = async (req, res, next) => {
 
 export const getQuotationById = async (req, res, next) => {
   try {
-    const agent = await Agent.findOne(mergeTenantFilter(req,{
+    const agent = await Agent.findOne({
       user: req.user._id,
     });
 
@@ -137,7 +136,7 @@ export const getQuotationById = async (req, res, next) => {
       });
     }
 
-    const quotation = await Quotation.findOne(mergeTenantFilter(req,{
+    const quotation = await Quotation.findOne({
       _id: req.params.id,
       agent: agent._id,
     })
@@ -171,7 +170,7 @@ export const getQuotationById = async (req, res, next) => {
 
 export const updateQuotationStatus = async (req, res, next) => {
   try {
-    const agent = await Agent.findOne(mergeTenantFilter(req,{
+    const agent = await Agent.findOne({
       user: req.user._id,
     });
 

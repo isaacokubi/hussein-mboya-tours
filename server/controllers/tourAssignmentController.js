@@ -1,4 +1,3 @@
-import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 
 import { getSystemSettings } from "../services/settingsService.js";
 // server/controllers/tourAssignmentController.js
@@ -144,7 +143,7 @@ export const assignTourResources = async (req, res, next) => {
 
     const [guide, driver, vehicle] = await Promise.all([
       nextGuideId
-        ? Staff.findOne(mergeTenantFilter(req,{
+        ? Staff.findOne({
             _id: nextGuideId,
             position: "guide",
             isActive: true,
@@ -153,7 +152,7 @@ export const assignTourResources = async (req, res, next) => {
         : null,
 
       nextDriverId
-        ? Staff.findOne(mergeTenantFilter(req,{
+        ? Staff.findOne({
             _id: nextDriverId,
             position: "driver",
             isActive: true,
@@ -162,7 +161,7 @@ export const assignTourResources = async (req, res, next) => {
         : null,
 
       nextVehicleId
-        ? Vehicle.findOne(mergeTenantFilter(req,{
+        ? Vehicle.findOne({
             _id: nextVehicleId,
             isActive: true,
           })
@@ -504,7 +503,7 @@ export const assignTourResources = async (req, res, next) => {
         if (linked) return linked;
       }
       if (person.email) {
-        const linked = await User.findOne(mergeTenantFilter(req,{
+        const linked = await User.findOne({
           email: String(person.email).toLowerCase(),
         }).select("_id email").lean();
         if (linked) {

@@ -1,4 +1,3 @@
-import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 // server/controllers/adminController.js
 
 import User from "../models/User.js";
@@ -68,7 +67,7 @@ export const getDashboardStats = async (req, res, next) => {
       failed: paymentStatsData.filter((item) => ["failed", "cancelled"].includes(item._id)).reduce((sum, item) => sum + item.count, 0),
     };
 
-    const recentRaw = await Booking.find(mergeTenantFilter(req,{ isDeleted: { $ne: true } })
+    const recentRaw = await Booking.find({ isDeleted: { $ne: true } })
       .sort({ createdAt: -1 })
       .limit(5)
       .populate("customer", "name email phone")

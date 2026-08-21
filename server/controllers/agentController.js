@@ -1,18 +1,17 @@
-import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 import Booking from "../models/Booking.js";
 import Commission from "../models/Commission.js";
 import Agent from "../models/Agent.js";
 import SystemSetting from "../models/SystemSetting.js";
 
 const getGlobalCommissionRate = async () => {
-  const settings = await SystemSetting.findOne(mergeTenantFilter(req,{ key: "default" }).select("defaultCommissionRate").lean();
+  const settings = await SystemSetting.findOne({ key: "default" }).select("defaultCommissionRate").lean();
   const rate = Number(settings?.defaultCommissionRate);
   return Number.isFinite(rate) && rate >= 0 && rate <= 100 ? rate : 10;
 };
 
 const getAgent = async (user) => {
-  let agent = await Agent.findOne(mergeTenantFilter(req,{ user: user._id }).lean();
-  if (!agent && user.email) agent = await Agent.findOne(mergeTenantFilter(req,{ email: String(user.email).toLowerCase() }).lean();
+  let agent = await Agent.findOne({ user: user._id }).lean();
+  if (!agent && user.email) agent = await Agent.findOne({ email: String(user.email).toLowerCase() }).lean();
   return agent;
 };
 
@@ -80,7 +79,7 @@ export const getAgentCustomers = async (req, res, next) => {
   try {
     const agent = await getAgent(req.user);
     if (!agent) return res.status(404).json({ success: false, message: "Agent profile not found." });
-    const bookings = await Booking.find(mergeTenantFilter(req,{ agent: agent._id, isDeleted: { $ne: true } }).populate("customer", "name firstName lastName email phone").select("customer customerSnapshot contact").lean();
+    const bookings = await Booking.find({ agent: agent._id, isDeleted: { $ne: true } }).populate("customer", "name firstName lastName email phone").select("customer customerSnapshot contact").lean();
     const seen = new Map();
     for (const booking of bookings) {
       const customer = booking.customer || booking.customerSnapshot || booking.contact;
@@ -96,7 +95,7 @@ export const getMyAgentCommission = async (req, res, next) => {
   try {
     const agent = await getAgent(req.user);
     if (!agent) return res.status(404).json({ success: false, message: "Agent profile not found." });
-    const commissions = await Commission.find(mergeTenantFilter(req,{ agent: agent._id }).populate("booking").sort({ createdAt: -1 }).lean();
+    const commissions = await Commission.find({ agent: agent._id }).populate("booking").sort({ createdAt: -1 }).lean();
     const globalCommissionRate = await getGlobalCommissionRate();
     return res.status(200).json({ success: true, commissionRate: globalCommissionRate, data: commissions });
   } catch (error) { next(error); }

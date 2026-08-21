@@ -1,4 +1,3 @@
-import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 import Gallery from "../models/Gallery.js";
 
 
@@ -9,7 +8,7 @@ export const getFeaturedGallery = async(req,res,next)=>{
 try{
 
 
-const images = await Gallery.find(mergeTenantFilter(req,{
+const images = await Gallery.find({
 
 active:true,
 

@@ -1,9 +1,8 @@
-import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 import Review from "../models/Review.js";
 import Tour from "../models/Tour.js";
 
 const recalculateTourRating = async (tourId) => {
-  const reviews = await Review.find(mergeTenantFilter(req,{ tour: tourId, approved: true, isDeleted: false });
+  const reviews = await Review.find({ tour: tourId, approved: true, isDeleted: false });
   const count = reviews.length;
   const average = count ? reviews.reduce((sum, item) => sum + item.rating, 0) / count : 0;
   await Tour.findByIdAndUpdate(tourId, {
@@ -16,7 +15,7 @@ const recalculateTourRating = async (tourId) => {
 
 export const getAdminReviews = async (req, res, next) => {
   try {
-    const reviews = await Review.find(mergeTenantFilter(req,{ isDeleted: false })
+    const reviews = await Review.find({ isDeleted: false })
       .populate("user", "name email")
       .populate("tour", "title")
       .sort({ createdAt: -1 });

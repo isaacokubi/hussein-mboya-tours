@@ -1,4 +1,3 @@
-import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 import mongoose from "mongoose";
 
 import Customer from "../models/Customer.js";
@@ -27,7 +26,7 @@ const allowedCustomerFields = [
 ];
 
 const getAgentProfile = async (req) =>
-  Agent.findOne(mergeTenantFilter(req,{
+  Agent.findOne({
     user: req.user._id,
   });
 
@@ -93,7 +92,7 @@ export const createCustomer = async (req, res, next) => {
     }
 
     if (customerData.email) {
-      const existing = await Customer.findOne(mergeTenantFilter(req,{
+      const existing = await Customer.findOne({
         agent: agent._id,
         email: customerData.email,
         isDeleted: false,
@@ -214,7 +213,7 @@ export const getCustomer = async (req, res, next) => {
       });
     }
 
-    const customer = await Customer.findOne(mergeTenantFilter(req,{
+    const customer = await Customer.findOne({
       _id: req.params.id,
       agent: agent._id,
       isDeleted: false,

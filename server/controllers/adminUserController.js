@@ -1,4 +1,3 @@
-import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 import mongoose from "mongoose";
 import User from "../models/User.js";
 import Role from "../models/Role.js";
@@ -46,7 +45,7 @@ export const createStaffAccount = async (req, res, next) => {
       tour_guide: ["tour.view", "view_assigned_tours", "view_tour_guests", "update_tour_status", "submit_tour_report"],
       driver: ["tour.view", "view_assigned_tours"],
     };
-    let roleDoc = await Role.findOne(mergeTenantFilter(req,{ name: canonicalRole });
+    let roleDoc = await Role.findOne({ name: canonicalRole });
     if (!roleDoc) {
       const permissionIds = [];
       for (const name of permissionNamesByRole[canonicalRole] || []) {

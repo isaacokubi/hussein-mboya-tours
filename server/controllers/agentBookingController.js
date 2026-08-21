@@ -1,4 +1,3 @@
-import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 import mongoose from "mongoose";
 
 
@@ -38,7 +37,7 @@ export const createBooking = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    const agentProfile = await Agent.findOne(mergeTenantFilter(req,{
+    const agentProfile = await Agent.findOne({
       user: req.user._id,
     }).session(session);
 
@@ -144,12 +143,12 @@ export const createBooking = async (req, res, next) => {
 
     const [tourData, customerData] =
       await Promise.all([
-        Tour.findOne(mergeTenantFilter(req,{
+        Tour.findOne({
           _id: tour,
           isDeleted: false,
         }).session(session),
 
-        Customer.findOne(mergeTenantFilter(req,{
+        Customer.findOne({
           _id: customer,
           agent: agentProfile._id,
           isDeleted: false,
@@ -406,7 +405,7 @@ export const getAgentBookings = async (
 ) => {
   try {
     const agentProfile =
-      await Agent.findOne(mergeTenantFilter(req,{
+      await Agent.findOne({
         user: req.user._id,
       });
 
@@ -548,7 +547,7 @@ export const getAgentBooking = async (
     }
 
     const agentProfile =
-      await Agent.findOne(mergeTenantFilter(req,{
+      await Agent.findOne({
         user: req.user._id,
       });
 
@@ -560,7 +559,7 @@ export const getAgentBooking = async (
     }
 
     const booking =
-      await Booking.findOne(mergeTenantFilter(req,{
+      await Booking.findOne({
         _id: req.params.id,
         agent: agentProfile._id,
         isDeleted: false,
@@ -630,7 +629,7 @@ export const updateBookingStatus = async (
     }
 
     const agentProfile =
-      await Agent.findOne(mergeTenantFilter(req,{
+      await Agent.findOne({
         user: req.user._id,
       });
 
@@ -642,7 +641,7 @@ export const updateBookingStatus = async (
     }
 
     const booking =
-      await Booking.findOne(mergeTenantFilter(req,{
+      await Booking.findOne({
         _id: req.params.id,
         agent: agentProfile._id,
         isDeleted: false,
@@ -718,7 +717,7 @@ export const cancelAgentBooking = async (
     }
 
     const agentProfile =
-      await Agent.findOne(mergeTenantFilter(req,{
+      await Agent.findOne({
         user: req.user._id,
       });
 
@@ -730,7 +729,7 @@ export const cancelAgentBooking = async (
     }
 
     const booking =
-      await Booking.findOne(mergeTenantFilter(req,{
+      await Booking.findOne({
         _id: req.params.id,
         agent: agentProfile._id,
         isDeleted: false,

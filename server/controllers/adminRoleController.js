@@ -1,4 +1,3 @@
-import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 import mongoose from "mongoose";
 import Role from "../models/Role.js";
@@ -87,11 +86,11 @@ export const ensureDefaultPermissions = async () => {
       if (error?.code !== 11000 && !error?.writeErrors?.every((e) => e?.code === 11000)) throw error;
     });
 
-    const permissions = await Permission.find(mergeTenantFilter(req,{ name: { $in: allNames } }).select("_id name").lean();
+    const permissions = await Permission.find({ name: { $in: allNames } }).select("_id name").lean();
     const byName = new Map(permissions.map(p => [p.name, p._id]));
 
     for (const [roleName, names] of Object.entries(DEFAULT_PERMISSIONS)) {
-      let role = await Role.findOne(mergeTenantFilter(req,{ name: roleName })
+      let role = await Role.findOne({ name: roleName })
         .select("_id name permissions level")
         .lean();
 
@@ -188,7 +187,7 @@ const permissionIds = Array.from(new Set(
   roleDocs.flatMap((role) => sanitizePermissionIds(role.permissions))
 ));
 const permissionDocs = permissionIds.length
-  ? await Permission.find(mergeTenantFilter(req,{ _id: { $in: permissionIds } }).lean()
+  ? await Permission.find({ _id: { $in: permissionIds } }).lean()
   : [];
 const permissionMap = new Map(permissionDocs.map((permission) => [String(permission._id), permission]));
 const roles = roleDocs.map((role) => ({
@@ -228,7 +227,7 @@ next(error);
 export const getPermissions = async (req, res, next) => {
   try {
     await ensureDefaultPermissions();
-    const permissions = await Permission.find(mergeTenantFilter(req,{ isActive: { $ne: false } })
+    const permissions = await Permission.find({ isActive: { $ne: false } })
       .sort({ module: 1, name: 1 })
       .lean();
     return res.json({ success: true, permissions });
@@ -253,7 +252,7 @@ if (!roleDoc) {
 
 const permissionIds = sanitizePermissionIds(roleDoc.permissions);
 const permissions = permissionIds.length
-  ? await Permission.find(mergeTenantFilter(req,{ _id: { $in: permissionIds } }).lean()
+  ? await Permission.find({ _id: { $in: permissionIds } }).lean()
   : [];
 const permissionMap = new Map(permissions.map((permission) => [String(permission._id), permission]));
 const role = {
@@ -344,7 +343,7 @@ export const createRole = async (req, res, next) => {
       }
     }
 
-    const existingRole = await Role.findOne(mergeTenantFilter(req,{
+    const existingRole = await Role.findOne({
       name: normalizedName,
     });
 

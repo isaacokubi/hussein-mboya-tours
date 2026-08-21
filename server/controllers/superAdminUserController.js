@@ -1,4 +1,3 @@
-import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 import User from "../models/User.js";
 import Role from "../models/Role.js";
 import SecurityLog from "../models/SecurityLog.js";
@@ -184,7 +183,7 @@ export const createCompanyAccount = async (req, res, next) => {
      * Role must belong to the approved system-role set.
      * This prevents arbitrary role injection.
      */
-    const roleDocument = await Role.findOne(mergeTenantFilter(req,{
+    const roleDocument = await Role.findOne({
       name: roleDefinition.name,
       status: "active",
     });
@@ -201,7 +200,7 @@ export const createCompanyAccount = async (req, res, next) => {
      *
      * The tenant ALWAYS comes from the authenticated Super Admin.
      */
-    const existingEmail = await User.findOne(mergeTenantFilter(req,{
+    const existingEmail = await User.findOne({
       email: normalizedEmail,
     })
       .select("_id email")
@@ -214,7 +213,7 @@ export const createCompanyAccount = async (req, res, next) => {
       });
     }
 
-    const existingPhone = await User.findOne(mergeTenantFilter(req,{
+    const existingPhone = await User.findOne({
       phone: normalizedPhone,
     })
       .select("_id phone")

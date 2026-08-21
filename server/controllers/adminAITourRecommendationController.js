@@ -1,4 +1,3 @@
-import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 import User from "../models/User.js";
 import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
@@ -43,7 +42,7 @@ message:"Customer not found"
 
 
 const previousBookings =
-await Booking.find(mergeTenantFilter(req,{
+await Booking.find({
 
 user:customerId
 
@@ -66,7 +65,7 @@ booking.tour?._id
 
 
 const recommendedTours =
-await Tour.find(mergeTenantFilter(req,{
+await Tour.find({
 
 _id:{
 $nin:bookedTourIds
