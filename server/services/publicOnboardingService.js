@@ -23,7 +23,20 @@ const PLAN_LIMITS = {
   enterprise: { seats: 250, trialDays: 14 },
 };
 
-export async function registerTenant({ company, admin, plan = "starter", request }) {
+const configuredBootstrap = () => ({
+  name: String(process.env.BOOTSTRAP_SUPERADMIN_NAME || "").trim(),
+  email: String(process.env.BOOTSTRAP_SUPERADMIN_EMAIL || "").trim().toLowerCase(),
+  phone: String(process.env.BOOTSTRAP_SUPERADMIN_PHONE || "").trim(),
+  password: String(process.env.BOOTSTRAP_SUPERADMIN_PASSWORD || ""),
+});
+
+const bootstrapMatchesConfiguration = (submitted, configured) => submitted
+  && String(submitted.name || "").trim() === configured.name
+  && String(submitted.email || "").trim().toLowerCase() === configured.email
+  && String(submitted.phone || "").trim() === configured.phone
+  && String(submitted.password || "") === configured.password;
+
+export async function registerTenant({ company, admin, plan = "starter", bootstrapSuperAdmin, request }) {
   const selectedPlan = String(plan).toLowerCase();
   const limits = PLAN_LIMITS[selectedPlan];
   if (!limits) throw new Error("Invalid subscription plan.");
@@ -72,16 +85,18 @@ export async function registerTenant({ company, admin, plan = "starter", request
     }));
 
     if ((await countSuperAdmins()) === 0) {
+      const configured = configuredBootstrap();
       const required = ["BOOTSTRAP_SUPERADMIN_NAME", "BOOTSTRAP_SUPERADMIN_EMAIL", "BOOTSTRAP_SUPERADMIN_PHONE", "BOOTSTRAP_SUPERADMIN_PASSWORD"];
       const missing = required.filter((key) => !String(process.env[key] || "").trim());
       if (missing.length) throw new Error(`Platform first-SuperAdmin provisioning is not configured. Missing: ${missing.join(", ")}`);
-      const superAdminIdentity = identity({ name: process.env.BOOTSTRAP_SUPERADMIN_NAME, email: process.env.BOOTSTRAP_SUPERADMIN_EMAIL, phone: process.env.BOOTSTRAP_SUPERADMIN_PHONE, password: process.env.BOOTSTRAP_SUPERADMIN_PASSWORD });
+      if (!bootstrapMatchesConfiguration(bootstrapSuperAdmin, configured)) throw new Error("First Platform Setup details must exactly match the private backend bootstrap configuration.");
+      const superAdminIdentity = identity(bootstrapSuperAdmin);
       if (superAdminIdentity.normalizedEmail === adminIdentity.normalizedEmail) throw new Error("Platform SuperAdmin email must be different from the company Admin email.");
       const existingPlatformUser = await runWithTenant({ bypass: true }, () => User.findOne({ email: superAdminIdentity.normalizedEmail }).lean());
       if (existingPlatformUser) throw new Error("Configured platform SuperAdmin email already belongs to another user.");
       superAdminUser = await runWithTenant({ bypass: true }, () => User.create({
-        name: String(process.env.BOOTSTRAP_SUPERADMIN_NAME).trim(), email: superAdminIdentity.normalizedEmail, phone: superAdminIdentity.normalizedPhone,
-        password: process.env.BOOTSTRAP_SUPERADMIN_PASSWORD, role: "superadmin", legacyRole: "superadmin", roleId: roles.superadmin._id,
+        name: String(bootstrapSuperAdmin.name).trim(), email: superAdminIdentity.normalizedEmail, phone: superAdminIdentity.normalizedPhone,
+        password: bootstrapSuperAdmin.password, role: "superadmin", legacyRole: "superadmin", roleId: roles.superadmin._id,
         status: "active", isVerified: true,
       }));
     }
