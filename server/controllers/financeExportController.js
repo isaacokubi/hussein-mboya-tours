@@ -1,3 +1,4 @@
+import { tenantFilter } from "../tenancy/tenantQuery.js";
 import { getSystemSettings } from "../services/settingsService.js";
 
 import Payment from "../models/Payment.js";
@@ -11,7 +12,7 @@ try{
 
 
 const payments =
-await Payment.find()
+await Payment.find(tenantFilter(req))
 .populate(
 "booking",
 "bookingNumber"
@@ -101,7 +102,7 @@ try{
 
 
 const payments =
-await Payment.find()
+await Payment.find(tenantFilter(req))
 .populate(
 "booking",
 "bookingNumber"

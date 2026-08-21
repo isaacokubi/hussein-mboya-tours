@@ -1,3 +1,4 @@
+import { tenantFilter } from "../tenancy/tenantQuery.js";
 import Agent from "../models/Agent.js";
 import User from "../models/User.js";
 
@@ -13,7 +14,7 @@ export const getAgents = async (req,res)=>{
 
 try{
 
-const agents = await Agent.find()
+const agents = await Agent.find(tenantFilter(req))
 .populate(
 "user",
 "name email phone role"

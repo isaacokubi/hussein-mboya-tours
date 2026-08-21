@@ -1,3 +1,4 @@
+import { tenantFilter } from "../tenancy/tenantQuery.js";
 import mongoose from "mongoose";
 import Organization from "../models/Organization.js";
 import User from "../models/User.js";
@@ -8,7 +9,7 @@ const slugify = (value) => String(value || "").trim().toLowerCase().replace(/[^a
 
 export async function listTenants(req, res, next) {
   try {
-    const tenants = await runWithTenant({ bypass: true }, () => Organization.find({}).sort({ createdAt: -1 }).lean());
+    const tenants = await runWithTenant({ bypass: true }, () => Organization.find(tenantFilter(req)).sort({ createdAt: -1 }).lean());
     res.json({ success: true, data: tenants, tenants });
   } catch (error) { next(error); }
 }

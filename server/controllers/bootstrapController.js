@@ -1,3 +1,4 @@
+import { tenantFilter } from "../tenancy/tenantQuery.js";
 import mongoose from "mongoose";
 import User from "../models/User.js";
 import Role from "../models/Role.js";
@@ -57,7 +58,7 @@ export const bootstrapTenant = async (req, res, next) => {
     const existingPhone = await User.findOne({ phone: normalizedPhone }).select("_id").lean();
     if (existingPhone) return res.status(409).json({ success: false, message: "Phone number is already registered." });
 
-    const permissions = await Permission.find({}).select("_id").lean();
+    const permissions = await Permission.find(tenantFilter(req)).select("_id").lean();
     const permissionIds = permissions.map((permission) => permission._id);
     const baseSlug = slugify(input.companyName);
 

@@ -1,3 +1,4 @@
+import { tenantFilter } from "../tenancy/tenantQuery.js";
 import HeroSlide from "../models/HeroSlide.js";
 
 
@@ -5,7 +6,7 @@ export const getHeroSlides = async (req, res) => {
 
   try {
 
-    const slides = await HeroSlide.find();
+    const slides = await HeroSlide.find(tenantFilter(req));
 
 
     // debug removed

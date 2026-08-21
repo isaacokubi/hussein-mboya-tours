@@ -1,3 +1,4 @@
+import { tenantFilter } from "../tenancy/tenantQuery.js";
 import Review from "../models/Review.js";
 
 
@@ -11,7 +12,7 @@ try{
 
 
 const reviews =
-await Review.find()
+await Review.find(tenantFilter(req))
 .sort({
 createdAt:-1
 })

@@ -1,3 +1,4 @@
+import { tenantFilter } from "../tenancy/tenantQuery.js";
 // server/controllers/adminDestinationController.js
 
 import mongoose from "mongoose";
@@ -158,7 +159,7 @@ export const getDestination = async (req, res, next) => {
 
 export const getAdminDestinations = async (req, res, next) => {
   try {
-    const destinations = await Destination.find()
+    const destinations = await Destination.find(tenantFilter(req))
       .sort({ createdAt: -1 })
       .lean();
 

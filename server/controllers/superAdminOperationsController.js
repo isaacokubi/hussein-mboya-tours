@@ -1,3 +1,4 @@
+import { tenantFilter } from "../tenancy/tenantQuery.js";
 import fs from "fs";
 import path from "path";
 import { exec } from "child_process";
@@ -255,7 +256,7 @@ export const createDatabaseBackup = async (req, res) => {
 
     for (const collection of collections) {
       const name = collection.name;
-      backupData[name] = await db.collection(name).find({}).toArray();
+      backupData[name] = await db.collection(name).find(tenantFilter(req)).toArray();
     }
 
     fs.writeFileSync(filepath, JSON.stringify(backupData, null, 2));
@@ -291,7 +292,7 @@ export const createDatabaseBackup = async (req, res) => {
 
 export const listDatabaseBackups = async (req, res) => {
   try {
-    const backups = await DatabaseBackup.find().sort({ createdAt: -1 }).lean();
+    const backups = await DatabaseBackup.find(tenantFilter(req)).sort({ createdAt: -1 }).lean();
     res.json({ success: true, backups });
   } catch (error) {
     console.error("LIST BACKUPS ERROR", error);

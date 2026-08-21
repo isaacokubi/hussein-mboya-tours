@@ -1,3 +1,4 @@
+import { tenantFilter } from "../tenancy/tenantQuery.js";
 import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
 import User from "../models/User.js";
@@ -38,7 +39,7 @@ role:"customer"
 }),
 
 
-Tour.find()
+Tour.find(tenantFilter(req))
 .limit(10)
 .select(
 "title price destination"

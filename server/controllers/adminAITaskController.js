@@ -1,3 +1,4 @@
+import { tenantFilter } from "../tenancy/tenantQuery.js";
 import AITask from "../models/AITask.js";
 import Booking from "../models/Booking.js";
 import Payment from "../models/Payment.js";
@@ -131,7 +132,7 @@ new:true
 
 
 const saved =
-await AITask.find()
+await AITask.find(tenantFilter(req))
 .sort({
 createdAt:-1
 })

@@ -1,3 +1,4 @@
+import { tenantFilter } from "../tenancy/tenantQuery.js";
 import Commission from "../models/Commission.js";
 
 
@@ -14,7 +15,7 @@ try{
 
 
 const commissions =
-await Commission.find()
+await Commission.find(tenantFilter(req))
 
 .populate({
 path:"agent",

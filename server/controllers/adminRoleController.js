@@ -1,3 +1,4 @@
+import { tenantFilter } from "../tenancy/tenantQuery.js";
 import mongoose from "mongoose";
 import Role from "../models/Role.js";
 import Permission from "../models/Permission.js";
@@ -181,7 +182,7 @@ try{
 
 await ensureDefaultPermissions();
 
-const roleDocs = await Role.find().sort({ level: -1 }).lean();
+const roleDocs = await Role.find(tenantFilter(req)).sort({ level: -1 }).lean();
 const permissionIds = Array.from(new Set(
   roleDocs.flatMap((role) => sanitizePermissionIds(role.permissions))
 ));

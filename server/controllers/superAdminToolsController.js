@@ -1,3 +1,4 @@
+import { tenantFilter } from "../tenancy/tenantQuery.js";
 import { getSystemSettings } from "../services/settingsService.js";
 import AuditLog from "../models/AuditLog.js";
 import SecurityLog from "../models/SecurityLog.js";
@@ -7,7 +8,7 @@ import mongoose from "mongoose";
 export const getAudit = async(req,res)=>{
 try{
 
-const logs = await AuditLog.find()
+const logs = await AuditLog.find(tenantFilter(req))
 .populate("user","name email")
 .sort({
 createdAt:-1
@@ -43,7 +44,7 @@ export const getSecurity = async(req,res)=>{
 try{
 
 
-const events = await SecurityLog.find()
+const events = await SecurityLog.find(tenantFilter(req))
 .sort({
 createdAt:-1
 })

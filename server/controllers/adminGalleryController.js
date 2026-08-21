@@ -1,3 +1,4 @@
+import { tenantFilter } from "../tenancy/tenantQuery.js";
 
 import Gallery from "../models/Gallery.js";
 import cloudinary from "../config/cloudinary.js";
@@ -8,7 +9,7 @@ export const getAdminGallery = async (req,res,next)=>{
 try{
 
 const gallery =
-await Gallery.find()
+await Gallery.find(tenantFilter(req))
 .sort({createdAt:-1});
 
 res.json({

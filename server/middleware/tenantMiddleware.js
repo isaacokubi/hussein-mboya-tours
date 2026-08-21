@@ -1,54 +1,159 @@
-import mongoose from "mongoose";
 import Organization from "../models/Organization.js";
-import { runWithTenant } from "../tenancy/context.js";
 
-const RESERVED_HOSTS = new Set(["www", "api", "localhost", "127", "admin"]);
-const normalizeSlug = (value) => String(value || "").trim().toLowerCase().replace(/^https?:\/\//, "").split("/")[0].split(".")[0];
 
-export async function resolveTenant(req, res, next) {
-  try {
-    // First-run/public platform endpoints must work before any tenant exists.
-    // /auth/bootstrap creates the first Organization, so it cannot require
-    // tenant resolution beforehand.
-    if (
-      req.path === "/health" ||
-      req.path === "/auth/login" ||
-      req.path === "/auth/register" ||
-      req.path === "/auth/bootstrap" ||
-      req.path === "/tenants" ||
-      req.path.startsWith("/tenants/") ||
-      req.path === "/mpesa/callback" ||
-      req.path.startsWith("/mpesa/refund/") ||
-      req.path.startsWith("/superadmin") ||
-      req.path.startsWith("/database") ||
-      req.path.startsWith("/system") ||
-      req.path === "/settings"
-    ) return next();
+/*
+ Resolve tenant from request
 
-    const headerId = req.headers["x-tenant-id"];
-    const headerSlug = req.headers["x-tenant-slug"];
-    const host = String(req.headers.host || "").split(":")[0].toLowerCase();
-    const subdomain = host.includes(".") ? host.split(".")[0] : "";
-    const requested = headerId || headerSlug || (!RESERVED_HOSTS.has(subdomain) ? subdomain : "");
-    const fallbackId = process.env.DEFAULT_TENANT_ID || "";
+ Supports:
+ - X-Tenant-ID header
+ - X-Tenant-Slug header
+ - Logged in user's organization
+*/
 
-    let organization = null;
-    if (requested && mongoose.Types.ObjectId.isValid(String(requested))) {
-      organization = await Organization.findOne({ _id: requested, status: { $ne: "cancelled" } }).lean();
-    } else if (requested) {
-      organization = await Organization.findOne({ $or: [{ slug: normalizeSlug(requested) }, { domain: host }], status: { $ne: "cancelled" } }).lean();
-    } else if (host && !RESERVED_HOSTS.has(subdomain)) {
-      organization = await Organization.findOne({ domain: host, status: { $ne: "cancelled" } }).lean();
-    } else if (fallbackId && mongoose.Types.ObjectId.isValid(fallbackId)) {
-      organization = await Organization.findOne({ _id: fallbackId, status: { $ne: "cancelled" } }).lean();
-    }
+export async function resolveTenant(req,res,next){
 
-    if (!organization) return res.status(400).json({ success: false, code: "TENANT_REQUIRED", message: "A valid tenant is required. Send X-Tenant-ID or X-Tenant-Slug, or use a configured company domain." });
+try{
 
-    return runWithTenant({ tenantId: organization._id, tenant: organization, bypass: false }, () => {
-      req.tenant = organization;
-      req.tenantId = organization._id;
-      next();
-    });
-  } catch (error) { next(error); }
+
+let tenant=null;
+
+
+
+// Header tenant ID
+
+if(req.headers["x-tenant-id"]){
+
+tenant =
+await Organization.findById(
+req.headers["x-tenant-id"]
+);
+
+}
+
+
+
+// Header tenant slug
+
+if(!tenant && req.headers["x-tenant-slug"]){
+
+tenant =
+await Organization.findOne({
+slug:req.headers["x-tenant-slug"]
+});
+
+}
+
+
+
+// User organization fallback
+
+if(
+!tenant &&
+req.user &&
+req.user.organization
+){
+
+tenant =
+await Organization.findById(
+req.user.organization
+);
+
+}
+
+
+
+if(tenant){
+
+req.tenantId = tenant._id;
+req.tenant = tenant;
+
+}
+
+
+
+next();
+
+
+
+}catch(error){
+
+console.error(
+"Tenant resolver error:",
+error
+);
+
+
+res.status(500).json({
+message:"Tenant resolution failed"
+});
+
+
+}
+
+}
+
+
+
+/*
+ Strict tenant middleware
+*/
+
+export default async function tenantMiddleware(req,res,next){
+
+try{
+
+
+if(!req.user){
+
+return res.status(401).json({
+message:"Authentication required"
+});
+
+}
+
+
+
+// SuperAdmin bypass
+
+if(
+req.user.role==="superadmin" ||
+req.user.role==="SuperAdmin"
+){
+
+return next();
+
+}
+
+
+
+
+if(!req.tenantId){
+
+return res.status(403).json({
+message:"No tenant assigned"
+});
+
+}
+
+
+
+next();
+
+
+
+}catch(error){
+
+console.error(
+"Tenant middleware error:",
+error
+);
+
+
+res.status(500).json({
+message:"Tenant access failed"
+});
+
+
+}
+
 }

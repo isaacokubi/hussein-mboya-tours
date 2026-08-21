@@ -1,3 +1,4 @@
+import { tenantFilter } from "../tenancy/tenantQuery.js";
 import Booking from "../models/Booking.js";
 import Payment from "../models/Payment.js";
 import Tour from "../models/Tour.js";
@@ -92,7 +93,7 @@ export const getAIAnalytics = async(req,res,next)=>{
 
 
     const recentBookings =
-      await Booking.find()
+      await Booking.find(tenantFilter(req))
         .sort({createdAt:-1})
         .limit(10)
         .populate("tour");

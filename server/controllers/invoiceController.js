@@ -1,3 +1,4 @@
+import { tenantFilter } from "../tenancy/tenantQuery.js";
 // server/controllers/invoiceController.js
 
 import fs from "fs";
@@ -87,7 +88,7 @@ export const createInvoice = async (req, res, next) => {
 
 export const getInvoices = async (req, res, next) => {
   try {
-    const invoices = await Invoice.find()
+    const invoices = await Invoice.find(tenantFilter(req))
       .populate({
         path: "booking",
         populate: [

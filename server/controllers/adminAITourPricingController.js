@@ -1,3 +1,4 @@
+import { tenantFilter } from "../tenancy/tenantQuery.js";
 import Tour from "../models/Tour.js";
 import Booking from "../models/Booking.js";
 
@@ -13,7 +14,7 @@ try{
 
 
 const tours =
-await Tour.find()
+await Tour.find(tenantFilter(req))
 .select(
 "title price"
 )

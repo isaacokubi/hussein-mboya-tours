@@ -1,3 +1,4 @@
+import { tenantFilter } from "../tenancy/tenantQuery.js";
 // server/controllers/itineraryController.js
 
 import Itinerary from "../models/Itinerary.js";
@@ -45,7 +46,7 @@ export const createItinerary = async (req, res, next) => {
 
 export const getItineraries = async (req, res, next) => {
   try {
-    const itineraries = await Itinerary.find()
+    const itineraries = await Itinerary.find(tenantFilter(req))
       .populate("tour", "title destination")
       .populate("createdBy", "name email")
       .sort({
