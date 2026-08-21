@@ -11,12 +11,13 @@ export default function Register() {
   const { settings } = useSettings();
   const { register } = useContext(AuthContext);
   const companyMode = searchParams.get("company") === "1";
+  const platformSetupMode = companyMode && searchParams.get("platformSetup") === "1";
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", confirmPassword: "", companyName: "", slug: "", country: "Kenya", timezone: "Africa/Nairobi", currency: "KES", plan: "starter" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", confirmPassword: "", companyName: "", slug: "", country: "Kenya", timezone: "Africa/Nairobi", currency: "KES", plan: "starter", platformName: "", platformEmail: "", platformPhone: "", platformPassword: "", platformPasswordConfirm: "" });
 
   const update = (event) => {
     const { name, value } = event.target;
-    const next = name === "phone" ? value.replace(/\D/g, "").slice(0, 10) : name === "slug" ? value.toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 80) : value;
+    const next = name.endsWith("Phone") || name === "phone" ? value.replace(/\D/g, "").slice(0, 10) : name === "slug" ? value.toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 80) : value;
     setForm((current) => ({ ...current, [name]: next, ...(name === "companyName" && !current.slug ? { slug: next.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") } : {}) }));
   };
 
@@ -35,10 +36,16 @@ export default function Register() {
     if (!form.companyName.trim()) throw new Error("Company name is required.");
     if (form.phone.length !== 10) throw new Error("Administrator phone number must contain exactly 10 digits.");
     if (form.password !== form.confirmPassword) throw new Error("Passwords do not match.");
+    if (platformSetupMode) {
+      if (!form.platformName.trim() || !form.platformEmail.trim() || form.platformPhone.length !== 10) throw new Error("Complete all first platform SuperAdmin details.");
+      if (form.platformPassword.length < 12 || !/[A-Z]/.test(form.platformPassword) || !/\d/.test(form.platformPassword)) throw new Error("Platform SuperAdmin password must be at least 12 characters and include an uppercase letter and a number.");
+      if (form.platformPassword !== form.platformPasswordConfirm) throw new Error("Platform SuperAdmin passwords do not match.");
+    }
     const { data } = await api.post("/public/onboarding/register", {
       company: { name: form.companyName.trim(), slug: form.slug.trim(), country: form.country.trim(), timezone: form.timezone.trim(), currency: form.currency.trim().toUpperCase() },
       plan: form.plan,
       admin: { name: form.name.trim(), email: form.email.trim().toLowerCase(), phone: form.phone, password: form.password },
+      ...(platformSetupMode ? { bootstrapSuperAdmin: { name: form.platformName.trim(), email: form.platformEmail.trim().toLowerCase(), phone: form.platformPhone, password: form.platformPassword } } : {}),
     });
     localStorage.setItem("token", data.token);
     localStorage.setItem("tenantId", String(data.tenant.id));
@@ -84,11 +91,24 @@ export default function Register() {
           <input type="password" name="password" autoComplete="new-password" placeholder={companyMode ? "Administrator password (12+ chars)" : "Password"} value={form.password} onChange={update} required className="w-full border rounded-lg p-3" />
           <input type="password" name="confirmPassword" autoComplete="new-password" placeholder="Confirm password" value={form.confirmPassword} onChange={update} required className="w-full border rounded-lg p-3" />
 
+          {platformSetupMode && <div className="border border-amber-300 bg-amber-50 rounded-xl p-4 space-y-3">
+            <h2 className="font-bold text-amber-900">First Platform SuperAdmin</h2>
+            <p className="text-sm text-amber-800">Use this only for the first platform installation. The server accepts these values only when they exactly match the private BOOTSTRAP_SUPERADMIN_* configuration and no SuperAdmin exists yet.</p>
+            <input name="platformName" value={form.platformName} onChange={update} placeholder="Platform Owner" required className="w-full border rounded-lg p-3" />
+            <input type="email" name="platformEmail" autoComplete="email" value={form.platformEmail} onChange={update} placeholder="platform-admin@example.com" required className="w-full border rounded-lg p-3" />
+            <input type="tel" name="platformPhone" autoComplete="tel" inputMode="numeric" maxLength={10} value={form.platformPhone} onChange={update} placeholder="0712345678" required className="w-full border rounded-lg p-3" />
+            <input type="password" name="platformPassword" autoComplete="new-password" value={form.platformPassword} onChange={update} placeholder="Platform SuperAdmin password" required className="w-full border rounded-lg p-3" />
+            <input type="password" name="platformPasswordConfirm" autoComplete="new-password" value={form.platformPasswordConfirm} onChange={update} placeholder="Confirm Platform SuperAdmin password" required className="w-full border rounded-lg p-3" />
+          </div>}
+
           <button type="submit" disabled={loading} className="w-full bg-green-700 hover:bg-green-800 text-white py-3 rounded-xl font-bold disabled:opacity-50">{loading ? "Creating…" : companyMode ? "Start 14-Day Trial" : "Register"}</button>
         </form>
 
         {!companyMode && <button type="button" onClick={() => navigate("/register?company=1")} className="w-full mt-4 border border-green-700 text-green-700 py-3 rounded-xl font-bold">Register a Company</button>}
-        {companyMode && <button type="button" onClick={() => navigate("/register")} className="w-full mt-4 text-green-700 font-semibold">Register as a traveller instead</button>}
+        {companyMode && <>
+          <button type="button" onClick={() => navigate("/register?company=1&platformSetup=1")} className="w-full mt-4 border border-amber-600 text-amber-700 py-3 rounded-xl font-bold">First Platform Setup</button>
+          <button type="button" onClick={() => navigate("/register")} className="w-full mt-4 text-green-700 font-semibold">Register as a traveller instead</button>
+        </>}
         <p className="text-center mt-5 text-gray-600">Already have an account? <button type="button" onClick={() => navigate("/login")} className="text-green-700 font-bold ml-1">Login</button></p>
       </div>
     </div>
