@@ -5,7 +5,7 @@ const SITE_URL = import.meta.env.VITE_SITE_URL || "https://www.husseinmboyatours
 const DEFAULT_IMAGE = "/images/seo/default-og.jpg";
 
 export default function SEO({
-  title,
+  title = "",
   description = "Explore Kenya and East Africa with premium safaris, wildlife adventures, beach holidays, luxury tours, and tailor-made travel experiences.",
   keywords = "Kenya tours, Kenya safaris, Maasai Mara, Diani Beach, Amboseli, East Africa travel, luxury safaris",
   image = DEFAULT_IMAGE,
@@ -19,7 +19,7 @@ export default function SEO({
   const pageTitle = resolvedTitle === siteName ? siteName : `${resolvedTitle} | ${siteName}`;
   const pageUrl = `${SITE_URL}${url}`;
   const imageValue = image?.url || image;
-  const pageImage = String(imageValue || DEFAULT_IMAGE).startsWith("http") ? imageValue : `${SITE_URL}${imageValue}`;
+  const pageImage = imageValue?.startsWith("http") ? imageValue : `${SITE_URL}${imageValue}`;
 
   return (
     <Helmet>

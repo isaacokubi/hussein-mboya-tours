@@ -1,29 +1,50 @@
 import { getTourImage } from "../utils/tourImage";
 import { useQuery } from "@tanstack/react-query";
+
 import { useParams, useNavigate } from "react-router-dom";
+
 import { getTourBySlug } from "../api/tourApi";
+import { useQuery as useReviewsQuery } from "@tanstack/react-query";
 import { MessageCircle, Star } from "lucide-react";
 import { useSettings } from "../context/SettingsContext";
 
-export default function TourDetails() {
-  const { slug } = useParams();
-  const { settings = {}, supportPhone } = useSettings() || {};
+export default function TourDetails(
+) {
+ const { slug } = useParams();
+  const { supportPhone, settings } = useSettings();
+
   const navigate = useNavigate();
 
-  const { data, isLoading, error } = useQuery({
+  const {
+    data,
+
+    isLoading,
+
+    error,
+  } = useQuery({
     queryKey: ["tour", slug],
+
     queryFn: () => getTourBySlug(slug),
+
     enabled: Boolean(slug),
     staleTime: 0,
     refetchInterval: 15000,
   });
 
+  /*
+  |--------------------------------------------------------------------------
+  | FIX RESPONSE STRUCTURE
+  |--------------------------------------------------------------------------
+  */
+
   const tour = data?.data || data;
 
-  const { data: reviewsData } = useQuery({
+  const { data: reviewsData } = useReviewsQuery({
     queryKey: ["tour-reviews", tour?._id],
     queryFn: async () => {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || "/api"}/reviews/tour/${tour._id}`);
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL || "/api"}/reviews/tour/${tour._id}`
+      );
       if (!response.ok) throw new Error("Failed to load reviews");
       return response.json();
     },
@@ -32,14 +53,31 @@ export default function TourDetails() {
 
   const reviews = reviewsData?.reviews || [];
 
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center">Loading tour details...</div>;
-  if (error || !tour) return <div className="min-h-screen flex items-center justify-center text-red-600">Tour not found.</div>;
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading tour details...
+      </div>
+    );
+  }
+
+  if (error || !tour) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-red-600">
+        Tour not found.
+      </div>
+    );
+  }
 
   const image = getTourImage(tour);
-  const handleBooking = () => navigate(`/checkout/tour/${tour._id}`);
+
+  const handleBooking = () => {
+    navigate(`/checkout/tour/${tour._id}`);
+  };
+
   const handleWhatsAppBooking = () => {
     const message = encodeURIComponent(
-      `Hello ${settings.companyName || "Company"}, I would like to book "${tour.title}" on ${tour.date ? new Date(tour.date).toLocaleDateString("en-KE") : "the available date"}. Please share availability and booking details.`
+      `Hello ${settings?.companyName || 'Company'}, I would like to book "${tour.title}" on ${tour.date ? new Date(tour.date).toLocaleDateString("en-KE") : "the available date"}. Please share availability and booking details.`
     );
     const whatsappNumber = String(supportPhone || "+254733439362").replace(/\D/g, "").replace(/^0/, "254");
     window.open(`https://wa.me/${whatsappNumber}?text=${message}`, "_blank", "noopener,noreferrer");
@@ -48,7 +86,9 @@ export default function TourDetails() {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-7xl mx-auto bg-white rounded-3xl shadow-xl p-8 grid md:grid-cols-2 gap-10">
-        <div><img src={image} alt={tour.title} className="w-full h-[500px] object-cover rounded-2xl" /></div>
+        <div>
+          <img src={image} alt={tour.title} className="w-full h-[500px] object-cover rounded-2xl" />
+        </div>
         <div>
           <h1 className="text-5xl font-bold text-green-900">{tour.title}</h1>
           <p className="mt-5 text-gray-600 leading-relaxed">{tour.description}</p>
