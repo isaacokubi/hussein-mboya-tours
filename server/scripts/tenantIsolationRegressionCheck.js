@@ -11,46 +11,38 @@ const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const createdTenantIds = [];
 const createdDestinationIds = [];
 const results = [];
+const fixture = (name, slug) => ({ name, slug, country: "Kenya", description: `Tenant isolation regression fixture for ${name}.` });
 
 const pass = (name) => results.push({ name, ok: true });
 const fail = (name, error) => results.push({ name, ok: false, error: error?.message || String(error) });
 const expect = async (name, fn) => {
-  try {
-    await fn();
-    pass(name);
-  } catch (error) {
-    fail(name, error);
-  }
+  try { await fn(); pass(name); } catch (error) { fail(name, error); }
 };
 
 try {
-  const tenantA = await runWithTenant({ bypass: true }, () => Organization.create({
-    name: `Isolation A ${suffix}`,
-    slug: `isolation-a-${suffix}`,
-    status: "active",
-  }));
-  const tenantB = await runWithTenant({ bypass: true }, () => Organization.create({
-    name: `Isolation B ${suffix}`,
-    slug: `isolation-b-${suffix}`,
-    status: "active",
-  }));
+  const tenantA = await runWithTenant({ bypass: true }, () => Organization.create({ name: `Isolation A ${suffix}`, slug: `isolation-a-${suffix}`, status: "active" }));
+  const tenantB = await runWithTenant({ bypass: true }, () => Organization.create({ name: `Isolation B ${suffix}`, slug: `isolation-b-${suffix}`, status: "active" }));
   createdTenantIds.push(tenantA._id, tenantB._id);
 
   let destinationA;
   let destinationB;
 
   await expect("Tenant A create", async () => {
-    destinationA = await runWithTenant({ tenantId: tenantA._id }, () => Destination.create({ name: `Isolation Destination A ${suffix}`, slug: `isolation-destination-a-${suffix}` }));
+    destinationA = await runWithTenant({ tenantId: tenantA._id }, () => Destination.create(fixture(`Isolation Destination A ${suffix}`, `isolation-destination-a-${suffix}`)));
     createdDestinationIds.push(destinationA._id);
   });
 
   await expect("Tenant B create", async () => {
-    destinationB = await runWithTenant({ tenantId: tenantB._id }, () => Destination.create({ name: `Isolation Destination B ${suffix}`, slug: `isolation-destination-b-${suffix}` }));
+    destinationB = await runWithTenant({ tenantId: tenantB._id }, () => Destination.create(fixture(`Isolation Destination B ${suffix}`, `isolation-destination-b-${suffix}`)));
     createdDestinationIds.push(destinationB._id);
   });
 
   await expect("Missing tenant context fails closed", async () => {
-    await Destination.findOne({ _id: destinationA._id });
+    try { await Destination.findOne({ _id: destinationA._id }); }
+    catch (error) {
+      if (/Tenant context is required/i.test(error.message)) return;
+      throw error;
+    }
     throw new Error("Tenant-scoped query unexpectedly succeeded without tenant context.");
   });
 
@@ -71,8 +63,8 @@ try {
 
   await expect("Tenant-scoped insertMany", async () => {
     const docs = await runWithTenant({ tenantId: tenantA._id }, () => Destination.insertMany([
-      { name: `Isolation Bulk 1 ${suffix}`, slug: `isolation-bulk-1-${suffix}` },
-      { name: `Isolation Bulk 2 ${suffix}`, slug: `isolation-bulk-2-${suffix}` },
+      fixture(`Isolation Bulk 1 ${suffix}`, `isolation-bulk-1-${suffix}`),
+      fixture(`Isolation Bulk 2 ${suffix}`, `isolation-bulk-2-${suffix}`),
     ]));
     createdDestinationIds.push(...docs.map((doc) => doc._id));
     if (docs.some((doc) => String(doc.tenantId) !== String(tenantA._id))) throw new Error("insertMany assigned the wrong tenant.");
@@ -80,24 +72,24 @@ try {
 
   await expect("Tenant-scoped bulkWrite", async () => {
     const result = await runWithTenant({ tenantId: tenantA._id }, () => Destination.bulkWrite([
-      { updateOne: { filter: { _id: destinationA._id }, update: { $set: { description: "tenant-isolation-regression" } } } },
+      { updateOne: { filter: { _id: destinationA._id }, update: { $set: { shortDescription: "tenant-isolation-regression" } } } },
     ]));
     if (result.matchedCount !== 1) throw new Error("bulkWrite did not target the tenant-owned record.");
   });
 
-  await expect("Cross-tenant aggregation blocked", async () => {
+  await expect("Cross-tenant aggregation lookup blocked", async () => {
     const rows = await runWithTenant({ tenantId: tenantA._id }, () => Destination.aggregate([
-      { $lookup: { from: "destinations", localField: "_id", foreignField: "_id", as: "sameTenant" } },
+      { $match: { _id: destinationA._id } },
+      { $lookup: { from: "destinations", pipeline: [{ $match: { country: "Kenya" } }], as: "allKenyaDestinations" } },
     ]));
-    if (rows.some((row) => (row.sameTenant || []).some((joined) => String(joined.tenantId) !== String(tenantA._id)))) {
-      throw new Error("Aggregation lookup returned another tenant's document.");
-    }
+    const joinedIds = (rows[0]?.allKenyaDestinations || []).map((row) => String(row._id));
+    if (joinedIds.includes(String(destinationB._id))) throw new Error("Aggregation lookup returned Tenant B data.");
+    if (!joinedIds.includes(String(destinationA._id))) throw new Error("Aggregation lookup lost Tenant A data.");
   });
 
   await expect("estimatedDocumentCount fails closed", async () => {
-    try {
-      await runWithTenant({ tenantId: tenantA._id }, () => Destination.estimatedDocumentCount());
-    } catch (error) {
+    try { await runWithTenant({ tenantId: tenantA._id }, () => Destination.estimatedDocumentCount()); }
+    catch (error) {
       if (/not tenant-safe|Tenant context/i.test(error.message)) return;
       throw error;
     }
