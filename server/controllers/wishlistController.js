@@ -1,3 +1,4 @@
+import { mergeTenantFilter } from "../tenancy/context.js";
 // server/controllers/wishlistController.js
 
 import mongoose from "mongoose";

@@ -1,3 +1,4 @@
+import { mergeTenantFilter } from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 // server/controllers/adminDestinationController.js
 
@@ -188,7 +189,11 @@ export const updateDestination = async (req, res, next) => {
       });
     }
 
-    const destination = await Destination.findById(req.params.id);
+    const destination = await Destination.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
 
     if (!destination) {
       return res.status(404).json({
@@ -266,7 +271,11 @@ export const deleteDestination = async (req, res, next) => {
       });
     }
 
-    const destination = await Destination.findById(req.params.id);
+    const destination = await Destination.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
 
     if (!destination) {
       return res.status(404).json({
@@ -301,7 +310,11 @@ export const deleteDestination = async (req, res, next) => {
 
 export const getDestinationById = async (req, res) => {
   try {
-    const destination = await Destination.findById(req.params.id);
+    const destination = await Destination.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
 
     if (!destination) {
       return res.status(404).json({

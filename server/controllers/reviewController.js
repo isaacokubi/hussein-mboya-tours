@@ -1,3 +1,4 @@
+import { mergeTenantFilter } from "../tenancy/context.js";
 import Review from "../models/Review.js";
 import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
@@ -146,7 +147,11 @@ export const getTourReviews = async (req, res, next) => {
 
 export const approveReview = async (req, res, next) => {
   try {
-    const review = await Review.findById(req.params.id);
+    const review = await Review.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
 
     if (!review) {
       return res.status(404).json({
@@ -180,7 +185,11 @@ export const approveReview = async (req, res, next) => {
 
 export const voteHelpful = async (req, res, next) => {
   try {
-    const review = await Review.findById(req.params.id);
+    const review = await Review.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
 
     if (!review) {
       return res.status(404).json({
@@ -211,7 +220,11 @@ export const voteHelpful = async (req, res, next) => {
 
 export const deleteReview = async (req, res, next) => {
   try {
-    const review = await Review.findById(req.params.id);
+    const review = await Review.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
 
     if (!review) {
       return res.status(404).json({

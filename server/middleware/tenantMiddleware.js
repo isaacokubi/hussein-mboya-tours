@@ -4,21 +4,18 @@ import { runWithTenant } from "../tenancy/context.js";
 
 export async function resolveTenant(req,res,next){
 
-
 try{
 
 
 const user=req.user;
 
 
-
-// SUPER ADMIN HAS FULL PLATFORM ACCESS
+// SUPER ADMIN PLATFORM ACCESS
 
 if(
 user &&
 user.role==="super_admin"
 ){
-
 
 return runWithTenant(
 {
@@ -28,18 +25,16 @@ bypass:true
 ()=>next()
 );
 
-
 }
 
 
 
-// NORMAL COMPANY USERS
+// AUTHENTICATED TENANT USER
 
 if(
 user &&
 user.tenantId
 ){
-
 
 return runWithTenant(
 {
@@ -49,9 +44,33 @@ role:user.role
 ()=>next()
 );
 
-
 }
 
+
+
+// PUBLIC WEBSITE TENANT
+
+const tenant =
+await Organization.findOne({
+slug:"hussein-mboya-tours"
+});
+
+
+if(tenant){
+
+req.tenantId=tenant._id;
+
+
+return runWithTenant(
+{
+tenantId:tenant._id,
+tenant,
+role:"public"
+},
+()=>next()
+);
+
+}
 
 
 next();
@@ -67,4 +86,3 @@ next(error);
 
 
 }
-

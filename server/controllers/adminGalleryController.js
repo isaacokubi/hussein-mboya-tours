@@ -1,3 +1,4 @@
+import { mergeTenantFilter } from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 
 import Gallery from "../models/Gallery.js";
@@ -163,8 +164,10 @@ publicId:publicId || ""
 
 
 const item =
-await Gallery.findByIdAndUpdate(
-req.params.id,
+await Gallery.findOneAndUpdate(
+mergeTenantFilter(req,{
+_id:req.params.id
+}),
 update,
 {
 new:true,
@@ -209,7 +212,11 @@ try{
 
 
 const item =
-await Gallery.findById(req.params.id);
+await Gallery.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
 
 
 
@@ -224,8 +231,10 @@ message:"Gallery item not found"
 
 
 
-await Gallery.findByIdAndDelete(
-req.params.id
+await Gallery.findOneAndDelete(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
 );
 
 

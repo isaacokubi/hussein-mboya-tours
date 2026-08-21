@@ -1,3 +1,4 @@
+import { mergeTenantFilter } from "../tenancy/context.js";
 import Tour from "../models/Tour.js";
 import Vehicle from "../models/Vehicle.js";
 import Booking from "../models/Booking.js";
@@ -883,8 +884,10 @@ const updatePayload = { ...(req.body || {}) };
     }
 
 const tour =
-await Tour.findByIdAndUpdate(
-req.params.id,
+await Tour.findOneAndUpdate(
+mergeTenantFilter(req,{
+_id:req.params.id
+}),
 updatePayload,
 {
 new:true,
@@ -956,9 +959,10 @@ try{
 
 
 const tour =
-await Tour.findByIdAndUpdate(
-
-req.params.id,
+await Tour.findOneAndUpdate(
+mergeTenantFilter(req,{
+_id:req.params.id
+}),
 
 {
 

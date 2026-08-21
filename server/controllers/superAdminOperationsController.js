@@ -1,3 +1,4 @@
+import { mergeTenantFilter } from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 import fs from "fs";
 import path from "path";
@@ -302,7 +303,11 @@ export const listDatabaseBackups = async (req, res) => {
 
 export const downloadDatabaseBackup = async (req, res) => {
   try {
-    const backup = await DatabaseBackup.findById(req.params.id);
+    const backup = await DatabaseBackup.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
 
     if (!backup) {
       return res.status(404).json({
@@ -342,7 +347,11 @@ export const downloadDatabaseBackup = async (req, res) => {
 
 export const deleteDatabaseBackup = async (req, res) => {
   try {
-    const backup = await DatabaseBackup.findById(req.params.id);
+    const backup = await DatabaseBackup.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
 
     if (!backup) {
       return res.status(404).json({
@@ -362,7 +371,11 @@ export const deleteDatabaseBackup = async (req, res) => {
       fs.rmSync(filepath);
     }
 
-    await DatabaseBackup.findByIdAndDelete(req.params.id);
+    await DatabaseBackup.findOneAndDelete(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
 
     res.json({
       success: true,

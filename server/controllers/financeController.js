@@ -1,3 +1,4 @@
+import { mergeTenantFilter } from "../tenancy/context.js";
 // server/controllers/financeController.js
 
 import Payment from "../models/Payment.js";

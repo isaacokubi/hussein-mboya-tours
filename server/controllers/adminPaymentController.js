@@ -1,3 +1,4 @@
+import { mergeTenantFilter } from "../tenancy/context.js";
 import Refund from "../models/Refund.js";
 import Payment from "../models/Payment.js";
 import {
@@ -153,7 +154,11 @@ next(error);
 
 export const updatePaymentStatus = async (req, res, next) => {
   try {
-    const payment = await Payment.findById(req.params.id);
+    const payment = await Payment.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
 
     if (!payment) {
       return res.status(404).json({ success: false, message: "Payment not found" });
@@ -230,7 +235,11 @@ try{
 
 
 const payment =
-await Payment.findById(req.params.id)
+await Payment.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+)
 .populate("customer")
 .populate("booking");
 
@@ -477,7 +486,11 @@ export const getPaymentAnalytics = async (req, res, next) => {
 
 export const refundBooking = async (req, res, next) => {
   try {
-    const booking = await Booking.findById(req.params.id);
+    const booking = await Booking.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
 
     if (!booking) {
       return res.status(404).json({
@@ -571,7 +584,11 @@ export const refundBooking = async (req, res, next) => {
 
 export const processRefund = async (req, res, next) => {
   try {
-    const refund = await Refund.findById(req.params.id);
+    const refund = await Refund.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
 
     if (!refund) {
       return res.status(404).json({

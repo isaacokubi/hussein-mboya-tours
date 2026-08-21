@@ -1,0 +1,69 @@
+// server/routes/notificationRoutes.js
+
+import express from "express";
+
+import {
+  getNotifications,
+  getMyNotifications,
+  markRead,
+  getNotificationRecipients,
+  sendInternalNotification,
+} from "../controllers/notificationController.js";
+
+import {
+  protect,
+} from "../middleware/authMiddleware.js";
+
+import { roleMiddleware } from "../middleware/roleMiddleware.js";
+
+const router = express.Router();
+
+/*
+|--------------------------------------------------------------------------
+| AUTHORIZATION
+|--------------------------------------------------------------------------
+|
+| All notification routes require authentication.
+|
+|--------------------------------------------------------------------------
+*/
+
+router.use(protect);
+
+router.get("/recipients", roleMiddleware("admin", "super_admin", "superadmin", "tour_manager", "tourmanager", "manager"), getNotificationRecipients);
+router.post("/internal", roleMiddleware("admin", "super_admin", "superadmin", "tour_manager", "tourmanager", "manager"), sendInternalNotification);
+
+/*
+|--------------------------------------------------------------------------
+| NOTIFICATIONS
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * GET /api/notifications
+ * Get notifications for the authenticated user.
+ */
+router.get(
+  "/",
+  getNotifications
+);
+
+/**
+ * GET /api/notifications/mine
+ * Alias for getting the authenticated user's notifications.
+ */
+router.get(
+  "/mine",
+  getMyNotifications
+);
+
+/**
+ * PUT /api/notifications/:id/read
+ * Mark a notification as read.
+ */
+router.put(
+  "/:id/read",
+  markRead
+);
+
+export default router;

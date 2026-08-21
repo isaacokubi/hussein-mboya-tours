@@ -1,3 +1,4 @@
+import { mergeTenantFilter } from "../tenancy/context.js";
 // server/controllers/mpesaController.js
 
 import Booking from "../models/Booking.js";
@@ -240,7 +241,11 @@ export const mpesaCallback = async (req, res) => {
 
 export const checkTransactionStatus = async (req, res, next) => {
   try {
-    const payment = await Payment.findById(req.params.id)
+    const payment = await Payment.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+)
       .populate("booking")
       .populate("user", "name email phone")
       .populate("customer", "name email phone");

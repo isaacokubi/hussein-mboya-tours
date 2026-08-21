@@ -1,3 +1,4 @@
+import { mergeTenantFilter } from "../tenancy/context.js";
 import { getUserRole } from "../utils/roleUtils.js";
 
 export const canAccessBooking = (booking, user) => {

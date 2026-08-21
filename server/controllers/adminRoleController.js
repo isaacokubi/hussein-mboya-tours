@@ -1,3 +1,4 @@
+import { mergeTenantFilter } from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 import mongoose from "mongoose";
 import Role from "../models/Role.js";
@@ -245,7 +246,11 @@ if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
   return res.status(400).json({ success: false, message: "Invalid role ID" });
 }
 
-const roleDoc = await Role.findById(req.params.id).lean();
+const roleDoc = await Role.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+).lean();
 if (!roleDoc) {
   return res.status(404).json({ success: false, message: "Role not found" });
 }
@@ -386,7 +391,11 @@ export const updateRole = async (req, res, next) => {
       });
     }
 
-    const role = await Role.findById(req.params.id);
+    const role = await Role.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
 
     if (!role) {
       return res.status(404).json({
@@ -458,7 +467,11 @@ export const deleteRole = async (req, res, next) => {
       });
     }
 
-    const role = await Role.findById(req.params.id);
+    const role = await Role.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
 
     if (!role) {
       return res.status(404).json({
@@ -517,7 +530,11 @@ export const updatePermissions = async (req, res, next) => {
       });
     }
 
-    const role = await Role.findById(req.params.id);
+    const role = await Role.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
 
     if (!role) {
       return res.status(404).json({

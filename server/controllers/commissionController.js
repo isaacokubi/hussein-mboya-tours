@@ -1,3 +1,4 @@
+import { mergeTenantFilter } from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 import Commission from "../models/Commission.js";
 
@@ -114,7 +115,11 @@ message:error.message
 
 export const approveCommission = async (req, res, next) => {
   try {
-    const commission = await Commission.findById(req.params.id);
+    const commission = await Commission.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
     if (!commission) return res.status(404).json({ success: false, message: "Commission not found." });
     if (commission.status === "paid") return res.status(400).json({ success: false, message: "Commission is already paid." });
 
@@ -138,7 +143,11 @@ export const payCommission = async (req, res, next) => {
       return res.status(400).json({ success: false, message: "Invalid commission payment method." });
     }
 
-    const commission = await Commission.findById(req.params.id);
+    const commission = await Commission.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
     if (!commission) return res.status(404).json({ success: false, message: "Commission not found." });
     if (commission.status === "paid") return res.status(400).json({ success: false, message: "Commission is already paid." });
     if (!["approved", "processing", "pending"].includes(commission.status)) {
