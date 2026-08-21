@@ -1,7 +1,15 @@
 import mongoose from "mongoose";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 const organizationSchema = new mongoose.Schema(
   {
+
+    tenantId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref:"Organization",
+        index:true,
+        required:false
+    },
     name: { type: String, required: true, trim: true, maxlength: 160 },
     slug: { type: String, required: true, unique: true, lowercase: true, trim: true, index: true },
     legalName: { type: String, trim: true, default: "" },
@@ -34,5 +42,12 @@ const organizationSchema = new mongoose.Schema(
 );
 
 organizationSchema.index({ domain: 1 }, { unique: true, sparse: true });
+
+
+
+
+
+
+
 
 export default mongoose.model("Organization", organizationSchema);

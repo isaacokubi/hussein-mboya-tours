@@ -1,3 +1,7 @@
+import loadTenantPlugin from "./tenantPluginLoader.js";
+
+loadTenantPlugin();
+
 import mongoose from "mongoose";
 import env from "./env.js";
 

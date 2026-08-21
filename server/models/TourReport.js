@@ -1,6 +1,7 @@
 // server/models/TourReport.js
 
 import mongoose from "mongoose";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -10,6 +11,13 @@ import mongoose from "mongoose";
 
 const imageSchema = new mongoose.Schema(
   {
+
+    tenantId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref:"Organization",
+        index:true,
+        required:false
+    },
     url: {
       type: String,
       required: true,
@@ -288,5 +296,12 @@ tourReportSchema.index({
 const TourReport =
   mongoose.models.TourReport ||
   mongoose.model("TourReport", tourReportSchema);
+
+
+
+
+
+
+
 
 export default TourReport;

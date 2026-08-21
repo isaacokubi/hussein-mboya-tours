@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 
 const gallerySchema = new mongoose.Schema(
@@ -73,6 +74,13 @@ timestamps:true
 }
 
 );
+
+
+
+
+
+
+
 
 
 

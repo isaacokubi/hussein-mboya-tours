@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -928,5 +929,12 @@ bookingSchema.pre("validate", function(next) {
 
 const Booking =
   mongoose.models.Booking || mongoose.model("Booking", bookingSchema);
+
+
+
+
+
+
+
 
 export default Booking;

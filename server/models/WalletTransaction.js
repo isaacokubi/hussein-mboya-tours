@@ -1,6 +1,7 @@
 // server/models/WalletTransaction.js
 
 import mongoose from "mongoose";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -265,5 +266,12 @@ const WalletTransaction =
     "WalletTransaction",
     walletTransactionSchema
   );
+
+
+
+
+
+
+
 
 export default WalletTransaction;

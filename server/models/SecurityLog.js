@@ -1,6 +1,7 @@
 // server/models/SecurityLog.js
 
 import mongoose from "mongoose";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -15,6 +16,13 @@ import mongoose from "mongoose";
 
 const securityLogSchema = new mongoose.Schema(
   {
+
+    tenantId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref:"Organization",
+        index:true,
+        required:false
+    },
     /*
     |--------------------------------------------------------------------------
     | USER
@@ -274,5 +282,12 @@ securityLogSchema.statics.logEvent = function ({
 const SecurityLog =
   mongoose.models.SecurityLog ||
   mongoose.model("SecurityLog", securityLogSchema);
+
+
+
+
+
+
+
 
 export default SecurityLog;

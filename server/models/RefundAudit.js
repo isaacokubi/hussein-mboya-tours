@@ -1,9 +1,17 @@
 
 import mongoose from "mongoose";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 
 const refundAuditSchema =
 new mongoose.Schema({
+
+    tenantId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref:"Organization",
+        index:true,
+        required:false
+    },
 
 payment:{
 type:mongoose.Schema.Types.ObjectId,
@@ -59,6 +67,13 @@ default:null
 },{
 timestamps:true
 });
+
+
+
+
+
+
+
 
 
 export default mongoose.model(

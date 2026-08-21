@@ -1,16 +1,121 @@
-import { AsyncLocalStorage } from "node:async_hooks";
+import { AsyncLocalStorage } from "async_hooks";
 
-const storage = new AsyncLocalStorage();
 
-export function getTenantContext() { return storage.getStore() || null; }
-export function setTenantContext(context) {
-  const current = storage.getStore() || {};
-  storage.enterWith({ ...current, ...context });
-  return getTenantContext();
+const tenantStorage = new AsyncLocalStorage();
+
+
+
+/*
+ Main tenant wrapper
+*/
+export function runWithTenant(context, callback){
+
+return tenantStorage.run(
+
+{
+ tenantId: context?.tenantId || null,
+
+ role:
+ context?.role || null,
+
+ tenant:
+ context?.tenant || null,
+
+ bypass:
+ context?.bypass === true ||
+ context?.role === "super_admin"
+
+},
+
+callback
+
+);
+
 }
-export function runWithTenant(context, callback) { return storage.run({ ...context }, callback); }
-export function getTenantId() {
-  const value = getTenantContext()?.tenantId;
-  return value ? String(value) : null;
+
+
+
+/*
+ Existing middleware compatibility
+*/
+export function setTenantContext(context){
+
+const store =
+tenantStorage.getStore();
+
+
+if(store){
+
+store.tenantId =
+context?.tenantId || null;
+
+
+store.role =
+context?.role || null;
+
+
+store.tenant =
+context?.tenant || null;
+
+
+store.bypass =
+context?.bypass === true ||
+context?.role === "super_admin";
+
 }
-export function isTenantBypassed() { return Boolean(getTenantContext()?.bypass); }
+
+}
+
+
+
+/*
+ Current context
+*/
+export function getTenantContext(){
+
+return tenantStorage.getStore() || {
+
+tenantId:null,
+
+role:null,
+
+tenant:null,
+
+bypass:false
+
+};
+
+}
+
+
+
+/*
+ Legacy function
+ Used by tenantPlugin.js
+*/
+export function getTenantId(){
+
+const context =
+getTenantContext();
+
+
+return context.tenantId || null;
+
+}
+
+
+
+/*
+ Legacy bypass checker
+ Used by tenantPlugin.js
+*/
+export function isTenantBypassed(){
+
+const context =
+getTenantContext();
+
+
+return context.bypass === true;
+
+}
+

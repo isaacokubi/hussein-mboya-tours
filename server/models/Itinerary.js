@@ -1,6 +1,7 @@
 // server/models/Itinerary.js
 
 import mongoose from "mongoose";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -261,5 +262,12 @@ itinerarySchema.index({
 const Itinerary =
   mongoose.models.Itinerary ||
   mongoose.model("Itinerary", itinerarySchema);
+
+
+
+
+
+
+
 
 export default Itinerary;

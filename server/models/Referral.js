@@ -1,6 +1,7 @@
 // server/models/Referral.js
 
 import mongoose from "mongoose";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -27,6 +28,13 @@ import mongoose from "mongoose";
 
 const referralSchema = new mongoose.Schema(
   {
+
+    tenantId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref:"Organization",
+        index:true,
+        required:false
+    },
     /*
     |--------------------------------------------------------------------------
     | REFERRER
@@ -248,5 +256,12 @@ referralSchema.methods.markPaid = function (reference = "") {
 const Referral =
   mongoose.models.Referral ||
   mongoose.model("Referral", referralSchema);
+
+
+
+
+
+
+
 
 export default Referral;

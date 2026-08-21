@@ -1,6 +1,7 @@
 // server/models/Wishlist.js
 
 import mongoose from "mongoose";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -145,5 +146,12 @@ wishlistSchema.index({
 const Wishlist =
   mongoose.models.Wishlist ||
   mongoose.model("Wishlist", wishlistSchema);
+
+
+
+
+
+
+
 
 export default Wishlist;

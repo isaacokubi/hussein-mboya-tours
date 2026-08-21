@@ -6,15 +6,29 @@ import cors from "cors";
 import compression from "compression";
 import cookieParser from "cookie-parser";
 import morgan from "morgan";
+
 import mongoose from "mongoose";
+import loadTenantPlugin from "./config/tenantPluginLoader.js";
+
+loadTenantPlugin();
+
 import rateLimit from "express-rate-limit";
 import env from "./config/env.js";
+
+
+
+
 import apiRoutes from "./routes/index.js";
 import publicOnboardingRoutes from "./routes/publicOnboardingRoutes.js";
 import { resolveTenant } from "./middleware/tenantMiddleware.js";
+
 import tenantBrandingRoutes from "./routes/tenantBrandingRoutes.js";
 
 const app = express();
+
+// Multi Tenant Resolution Middleware
+app.use(resolveTenant);
+
 
 if (process.env.NODE_ENV === "production") {
   const originalLog = console.log.bind(console), originalWarn = console.warn.bind(console), originalError = console.error.bind(console);

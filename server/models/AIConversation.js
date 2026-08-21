@@ -1,8 +1,16 @@
 import mongoose from "mongoose";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 
 const messageSchema =
 new mongoose.Schema({
+
+    tenantId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref:"Organization",
+        index:true,
+        required:false
+    },
 
   role:{
     type:String,
@@ -82,6 +90,13 @@ new mongoose.Schema({
 {
   timestamps:true
 });
+
+
+
+
+
+
+
 
 
 export default mongoose.model(

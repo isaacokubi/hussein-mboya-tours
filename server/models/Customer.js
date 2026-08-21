@@ -1,6 +1,7 @@
 // server/models/Customer.js
 
 import mongoose from "mongoose";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -475,5 +476,12 @@ customerSchema.methods.softDelete = function () {
 const Customer =
   mongoose.models.Customer ||
   mongoose.model("Customer", customerSchema);
+
+
+
+
+
+
+
 
 export default Customer;

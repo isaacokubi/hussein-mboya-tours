@@ -1,6 +1,7 @@
 // server/models/Destination.js
 
 import mongoose from "mongoose";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 import slugify from "slugify";
 
 
@@ -779,6 +780,13 @@ const Destination =
         "destinations"
 
     );
+
+
+
+
+
+
+
 
 
 

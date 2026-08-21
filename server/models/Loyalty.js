@@ -1,6 +1,7 @@
 // server/models/Loyalty.js
 
 import mongoose from "mongoose";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -10,6 +11,13 @@ import mongoose from "mongoose";
 
 const transactionSchema = new mongoose.Schema(
   {
+
+    tenantId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref:"Organization",
+        index:true,
+        required:false
+    },
     type: {
       type: String,
       enum: [
@@ -312,5 +320,12 @@ loyaltySchema.index({ createdAt: -1 });
 const Loyalty =
   mongoose.models.Loyalty ||
   mongoose.model("Loyalty", loyaltySchema);
+
+
+
+
+
+
+
 
 export default Loyalty;

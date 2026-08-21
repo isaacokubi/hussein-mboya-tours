@@ -1,6 +1,7 @@
 // server/models/Quotation.js
 
 import mongoose from "mongoose";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -376,5 +377,12 @@ quotationSchema.index({
 const Quotation =
   mongoose.models.Quotation ||
   mongoose.model("Quotation", quotationSchema);
+
+
+
+
+
+
+
 
 export default Quotation;

@@ -1,77 +1,66 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-import Organization from "../models/Organization.js";
 
 dotenv.config();
 
+
 await mongoose.connect(process.env.MONGO_URI);
 
-const tenant = await Organization.findOne();
+
+const tenant =
+process.argv[2];
+
 
 if(!tenant){
- console.log("No organization found");
- process.exit();
+
+console.log(
+"Usage: node scripts/migrateTenantData.js TENANT_ID"
+);
+
+process.exit();
+
 }
 
-const models=[
-"User",
-"Customer",
-"Booking",
-"Tour",
-"Destination",
-"Vehicle",
-"Invoice",
-"Commission",
-"Coupon",
-"Gallery",
-"Itinerary",
-"CustomTourRequest"
-];
+
+const collections =
+await mongoose.connection.db
+.listCollections()
+.toArray();
 
 
-for(const name of models){
 
-try{
+for(const c of collections){
 
-const Model =
-(await import(`../models/${name}.js`)).default;
+
+const col =
+mongoose.connection.db.collection(c.name);
 
 
 const result =
-await Model.updateMany(
+await col.updateMany(
 {
-tenantId:{
+tenantId:
+{
 $exists:false
 }
 },
 {
 $set:{
-tenantId:tenant._id
+tenantId:
+new mongoose.Types.ObjectId(tenant)
 }
 }
 );
 
 
 console.log(
-name,
-result.modifiedCount,
-"updated"
+c.name,
+result.modifiedCount
 );
 
-
-}catch(err){
-
-console.log(
-name,
-"skipped"
-);
-
-}
 
 }
 
 
-console.log("Tenant migration complete");
 
-process.exit();
-
+await mongoose.disconnect();

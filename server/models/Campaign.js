@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -8,6 +9,13 @@ import mongoose from "mongoose";
 
 const campaignSchema = new mongoose.Schema(
   {
+
+    tenantId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref:"Organization",
+        index:true,
+        required:false
+    },
     /*
     |--------------------------------------------------------------------------
     | BASIC INFORMATION
@@ -319,5 +327,12 @@ campaignSchema.index({
 const Campaign =
   mongoose.models.Campaign ||
   mongoose.model("Campaign", campaignSchema);
+
+
+
+
+
+
+
 
 export default Campaign;

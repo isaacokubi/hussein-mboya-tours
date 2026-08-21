@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 
 const heroSlideSchema = new mongoose.Schema(
@@ -86,6 +87,13 @@ timestamps:true
 
 
 );
+
+
+
+
+
+
+
 
 
 

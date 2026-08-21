@@ -1,6 +1,7 @@
 // server/models/Vehicle.js
 
 import mongoose from "mongoose";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -387,5 +388,12 @@ const Vehicle =
     "Vehicle",
     vehicleSchema,
   );
+
+
+
+
+
+
+
 
 export default Vehicle;

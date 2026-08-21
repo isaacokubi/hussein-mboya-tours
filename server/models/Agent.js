@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 const agentSchema = new mongoose.Schema(
   {
@@ -233,5 +234,12 @@ agentSchema.virtual("isActive").get(function () {
 const Agent =
   mongoose.models.Agent ||
   mongoose.model("Agent", agentSchema);
+
+
+
+
+
+
+
 
 export default Agent;

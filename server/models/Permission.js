@@ -1,6 +1,7 @@
 // server/models/Permission.js
 
 import mongoose from "mongoose";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -23,6 +24,13 @@ import mongoose from "mongoose";
 
 const permissionSchema = new mongoose.Schema(
   {
+
+    tenantId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref:"Organization",
+        index:true,
+        required:false
+    },
     /*
     |--------------------------------------------------------------------------
     | UNIQUE PERMISSION NAME
@@ -221,5 +229,12 @@ permissionSchema.statics.getByModule = function (module) {
 const Permission =
   mongoose.models.Permission ||
   mongoose.model("Permission", permissionSchema);
+
+
+
+
+
+
+
 
 export default Permission;

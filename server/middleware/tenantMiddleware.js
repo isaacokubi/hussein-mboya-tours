@@ -1,71 +1,54 @@
 import Organization from "../models/Organization.js";
+import { runWithTenant } from "../tenancy/context.js";
 
-
-/*
- Resolve tenant from request
-
- Supports:
- - X-Tenant-ID header
- - X-Tenant-Slug header
- - Logged in user's organization
-*/
 
 export async function resolveTenant(req,res,next){
 
+
 try{
 
 
-let tenant=null;
+const user=req.user;
 
 
 
-// Header tenant ID
-
-if(req.headers["x-tenant-id"]){
-
-tenant =
-await Organization.findById(
-req.headers["x-tenant-id"]
-);
-
-}
-
-
-
-// Header tenant slug
-
-if(!tenant && req.headers["x-tenant-slug"]){
-
-tenant =
-await Organization.findOne({
-slug:req.headers["x-tenant-slug"]
-});
-
-}
-
-
-
-// User organization fallback
+// SUPER ADMIN HAS FULL PLATFORM ACCESS
 
 if(
-!tenant &&
-req.user &&
-req.user.organization
+user &&
+user.role==="super_admin"
 ){
 
-tenant =
-await Organization.findById(
-req.user.organization
+
+return runWithTenant(
+{
+role:"super_admin",
+bypass:true
+},
+()=>next()
 );
+
 
 }
 
 
 
-if(tenant){
+// NORMAL COMPANY USERS
 
-req.tenantId = tenant._id;
-req.tenant = tenant;
+if(
+user &&
+user.tenantId
+){
+
+
+return runWithTenant(
+{
+tenantId:user.tenantId,
+role:user.role
+},
+()=>next()
+);
+
 
 }
 
@@ -74,86 +57,14 @@ req.tenant = tenant;
 next();
 
 
-
-}catch(error){
-
-console.error(
-"Tenant resolver error:",
-error
-);
-
-
-res.status(500).json({
-message:"Tenant resolution failed"
-});
-
-
 }
+
+catch(error){
+
+next(error);
 
 }
 
 
-
-/*
- Strict tenant middleware
-*/
-
-export default async function tenantMiddleware(req,res,next){
-
-try{
-
-
-if(!req.user){
-
-return res.status(401).json({
-message:"Authentication required"
-});
-
 }
 
-
-
-// SuperAdmin bypass
-
-if(
-req.user.role==="superadmin" ||
-req.user.role==="SuperAdmin"
-){
-
-return next();
-
-}
-
-
-
-
-if(!req.tenantId){
-
-return res.status(403).json({
-message:"No tenant assigned"
-});
-
-}
-
-
-
-next();
-
-
-
-}catch(error){
-
-console.error(
-"Tenant middleware error:",
-error
-);
-
-
-res.status(500).json({
-message:"Tenant access failed"
-});
-
-
-}
-
-}

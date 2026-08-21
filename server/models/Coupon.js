@@ -1,6 +1,7 @@
 // server/models/Coupon.js
 
 import mongoose from "mongoose";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -218,5 +219,12 @@ couponSchema.methods.incrementUsage = async function () {
 const Coupon =
   mongoose.models.Coupon ||
   mongoose.model("Coupon", couponSchema);
+
+
+
+
+
+
+
 
 export default Coupon;

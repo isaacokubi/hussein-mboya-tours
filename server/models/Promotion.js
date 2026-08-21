@@ -1,6 +1,7 @@
 // server/models/Promotion.js
 
 import mongoose from "mongoose";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -18,6 +19,13 @@ import mongoose from "mongoose";
 
 const promotionSchema = new mongoose.Schema(
   {
+
+    tenantId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref:"Organization",
+        index:true,
+        required:false
+    },
     /*
     |--------------------------------------------------------------------------
     | BASIC INFORMATION
@@ -290,5 +298,12 @@ promotionSchema.methods.calculateDiscount = function (amount) {
 const Promotion =
   mongoose.models.Promotion ||
   mongoose.model("Promotion", promotionSchema);
+
+
+
+
+
+
+
 
 export default Promotion;

@@ -1,6 +1,7 @@
 // server/models/Currency.js
 
 import mongoose from "mongoose";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -21,6 +22,13 @@ import mongoose from "mongoose";
 
 const currencySchema = new mongoose.Schema(
   {
+
+    tenantId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref:"Organization",
+        index:true,
+        required:false
+    },
     /*
     |--------------------------------------------------------------------------
     | ISO CODE
@@ -209,5 +217,12 @@ currencySchema.statics.getActiveCurrencies = function () {
 const Currency =
   mongoose.models.Currency ||
   mongoose.model("Currency", currencySchema);
+
+
+
+
+
+
+
 
 export default Currency;

@@ -1,7 +1,15 @@
 import mongoose from "mongoose";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 const systemSettingSchema = new mongoose.Schema(
   {
+
+    tenantId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref:"Organization",
+        index:true,
+        required:false
+    },
     key: { type: String, unique: true, default: "default", index: true },
     companyName: { type: String, default: "Company", trim: true },
     companyLogo: { type: String, default: "" },
@@ -50,5 +58,12 @@ const systemSettingSchema = new mongoose.Schema(
 const SystemSetting =
   mongoose.models.SystemSetting ||
   mongoose.model("SystemSetting", systemSettingSchema);
+
+
+
+
+
+
+
 
 export default SystemSetting;

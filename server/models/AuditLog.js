@@ -1,9 +1,17 @@
 // server/models/AuditLog.js
 
 import mongoose from "mongoose";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 const auditLogSchema = new mongoose.Schema(
   {
+
+    tenantId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref:"Organization",
+        index:true,
+        required:false
+    },
     /*
     |--------------------------------------------------------------------------
     | USER
@@ -255,5 +263,12 @@ auditLogSchema.statics.log = function (data) {
 const AuditLog =
   mongoose.models.AuditLog ||
   mongoose.model("AuditLog", auditLogSchema);
+
+
+
+
+
+
+
 
 export default AuditLog;

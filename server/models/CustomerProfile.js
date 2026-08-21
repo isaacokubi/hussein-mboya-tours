@@ -1,6 +1,7 @@
 // server/models/CustomerProfile.js
 
 import mongoose from "mongoose";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -14,6 +15,13 @@ import mongoose from "mongoose";
 
 const customerProfileSchema = new mongoose.Schema(
   {
+
+    tenantId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref:"Organization",
+        index:true,
+        required:false
+    },
     /*
     |--------------------------------------------------------------------------
     | USER ACCOUNT
@@ -437,5 +445,12 @@ const CustomerProfile =
     "CustomerProfile",
     customerProfileSchema
   );
+
+
+
+
+
+
+
 
 export default CustomerProfile;

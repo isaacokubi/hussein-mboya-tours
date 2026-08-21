@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 
@@ -80,4 +81,11 @@ userSchema.virtual("isLocked").get(function () {
 });
 
 const User = mongoose.models.User || mongoose.model("User", userSchema);
+
+
+
+
+
+
+
 export default User;

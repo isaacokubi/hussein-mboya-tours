@@ -1,6 +1,7 @@
 // server/models/Media.js
 
 import mongoose from "mongoose";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -10,6 +11,13 @@ import mongoose from "mongoose";
 
 const mediaSchema = new mongoose.Schema(
   {
+
+    tenantId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref:"Organization",
+        index:true,
+        required:false
+    },
     /*
     |--------------------------------------------------------------------------
     | FILE INFORMATION
@@ -277,5 +285,12 @@ mediaSchema.index({
 const Media =
   mongoose.models.Media ||
   mongoose.model("Media", mediaSchema);
+
+
+
+
+
+
+
 
 export default Media;

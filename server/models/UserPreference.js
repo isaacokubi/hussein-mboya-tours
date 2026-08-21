@@ -1,6 +1,7 @@
 // server/models/UserPreference.js
 
 import mongoose from "mongoose";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -10,6 +11,13 @@ import mongoose from "mongoose";
 
 const budgetRangeSchema = new mongoose.Schema(
   {
+
+    tenantId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref:"Organization",
+        index:true,
+        required:false
+    },
     min: {
       type: Number,
       default: 0,
@@ -271,5 +279,12 @@ const UserPreference =
     "UserPreference",
     userPreferenceSchema,
   );
+
+
+
+
+
+
+
 
 export default UserPreference;
