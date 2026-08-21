@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import Organization from "../models/Organization.js";
-import { setTenantContext } from "../tenancy/context.js";
+import { runWithTenant } from "../tenancy/context.js";
 
 const RESERVED_HOSTS = new Set(["www", "api", "localhost", "127", "admin"]);
 const normalizeSlug = (value) => String(value || "").trim().toLowerCase().replace(/^https?:\/\//, "").split("/")[0].split(".")[0];
@@ -29,9 +29,10 @@ export async function resolveTenant(req, res, next) {
 
     if (!organization) return res.status(400).json({ success: false, code: "TENANT_REQUIRED", message: "A valid tenant is required. Send X-Tenant-ID or X-Tenant-Slug, or use a configured company domain." });
 
-    setTenantContext({ tenantId: organization._id, tenant: organization, bypass: false });
-    req.tenant = organization;
-    req.tenantId = organization._id;
-    next();
+    return runWithTenant({ tenantId: organization._id, tenant: organization, bypass: false }, () => {
+      req.tenant = organization;
+      req.tenantId = organization._id;
+      next();
+    });
   } catch (error) { next(error); }
 }
