@@ -1,14 +1,42 @@
 # Public Tenant Onboarding
 
-## Flow
+## Company registration
 
-1. Visitor opens `/register?company=1` or chooses **Register a Company** from the normal registration page.
-2. Company information and the first Administrator are collected.
-3. A tenant/Organization is created with isolated data context.
-4. The first Administrator is created automatically inside that tenant.
-5. A 14-day trial Subscription is provisioned.
-6. If the platform has no active SuperAdmin, the first global SuperAdmin is created from backend-only environment variables.
-7. The new Administrator receives a tenant-scoped JWT and is sent to `/admin`.
+Open `/register?company=1` to create a new company tenant. The first Administrator is created inside that tenant and receives a tenant-scoped session. A 14-day trial Subscription is provisioned automatically.
+
+## First platform SuperAdmin setup
+
+For the first installation, use the dedicated setup mode:
+
+`/register?company=1&platformSetup=1`
+
+The company registration form then includes:
+
+- Platform Owner name
+- Platform SuperAdmin email
+- Platform SuperAdmin phone
+- Platform SuperAdmin password
+- Platform SuperAdmin password confirmation
+
+The submitted values are **not trusted just because they came from the browser**. During the one-time first-SuperAdmin window, the backend requires the submitted values to exactly match these private server environment variables:
+
+- `BOOTSTRAP_SUPERADMIN_NAME`
+- `BOOTSTRAP_SUPERADMIN_EMAIL`
+- `BOOTSTRAP_SUPERADMIN_PHONE`
+- `BOOTSTRAP_SUPERADMIN_PASSWORD`
+
+After a SuperAdmin exists, the submitted platform fields cannot create another SuperAdmin. No platform credentials are stored in the frontend bundle or repository.
+
+Example backend configuration:
+
+```dotenv
+BOOTSTRAP_SUPERADMIN_NAME="Platform Owner"
+BOOTSTRAP_SUPERADMIN_EMAIL="platform-admin@example.com"
+BOOTSTRAP_SUPERADMIN_PHONE="0712345678"
+BOOTSTRAP_SUPERADMIN_PASSWORD="use-a-private-strong-password"
+```
+
+Do not commit these values to Git or place them in `VITE_*` variables.
 
 ## API
 
@@ -29,9 +57,17 @@
     "email": "jane@example.com",
     "phone": "0712345678",
     "password": "StrongPassword123!"
+  },
+  "bootstrapSuperAdmin": {
+    "name": "Platform Owner",
+    "email": "platform-admin@example.com",
+    "phone": "0712345678",
+    "password": "..."
   }
 }
 ```
+
+`bootstrapSuperAdmin` is required only when the database has no SuperAdmin and must match the private backend configuration.
 
 ## Trial plans
 
@@ -40,19 +76,6 @@
 - Business: 50 seats, 14 days
 - Enterprise: 250 seats, 14 days
 
-## First SuperAdmin
-
-The first public registration requires these backend environment variables:
-
-- `BOOTSTRAP_SUPERADMIN_NAME`
-- `BOOTSTRAP_SUPERADMIN_EMAIL`
-- `BOOTSTRAP_SUPERADMIN_PHONE`
-- `BOOTSTRAP_SUPERADMIN_PASSWORD`
-
-These values must never be exposed to the frontend or committed to Git.
-
-Once a SuperAdmin exists, subsequent company registrations do not create another SuperAdmin.
-
 ## Security
 
 - Registration is rate limited to 5 attempts per IP per hour.
@@ -60,9 +83,11 @@ Once a SuperAdmin exists, subsequent company registrations do not create another
 - Administrator emails are unique.
 - Administrator phones require exactly 10 digits.
 - Administrator passwords require 12+ characters, an uppercase letter and a number.
+- Platform bootstrap details are accepted only during the first-SuperAdmin window and only when they match backend configuration.
 - The first Admin is created inside the new tenant context.
 - The returned JWT contains the tenant ID.
 - Subscription records have independent lifecycle state and trial dates.
+- Platform passwords are never returned in API responses.
 
 ## Validation
 
