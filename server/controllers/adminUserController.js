@@ -32,7 +32,7 @@ export const createStaffAccount = async (req, res, next) => {
   try {
     const { name, email, phone, password, role } = req.body || {};
     const normalizedRole = String(role || "").toLowerCase().replace(/[\s-]/g, "_");
-    const allowed = { admin: "admin", manager: "tour_manager", tour_manager: "tour_manager", guide: "tour_guide", tour_guide: "tour_guide", driver: "driver", agent: "agent", travel_agent: "agent" };
+    const allowed = { admin: "admin", manager: "manager", tour_manager: "manager", guide: "tour_guide", tour_guide: "tour_guide", driver: "driver", agent: "agent", travel_agent: "agent" };
     const canonicalRole = allowed[normalizedRole];
     if (!canonicalRole) return res.status(400).json({ success: false, message: "Choose admin, manager, agent, guide or driver." });
     if (!name?.trim() || !email?.trim() || !/^\d{10}$/.test(String(phone || "")) || String(password || "").length < 8) return res.status(400).json({ success: false, message: "Name, email, 10-digit phone and an 8+ character password are required." });
@@ -41,11 +41,11 @@ export const createStaffAccount = async (req, res, next) => {
     const permissionNamesByRole = {
       admin: ["admin.dashboard", "user.manage", "staff.manage", "tour.manage", "booking.manage", "payment.manage", "refund.manage", "analytics.view", "settings.manage", "roles.manage", "notifications.view", "finance.view"],
       agent: ["booking.create", "booking.view", "customer.view", "commission.view", "view_agent_dashboard", "view_agent_tours", "create_agent_tour", "edit_agent_tour", "delete_agent_tour"],
-      tour_manager: ["tour.view", "tour.create", "tour.update", "booking.view", "booking.cancel", "tour.assign", "tour.availability", "calendar.manage", "customer.view", "guide.view", "vehicle.view", "report.view"],
+      manager: ["tour.view", "tour.create", "tour.update", "booking.view", "booking.cancel", "tour.assign", "tour.availability", "calendar.manage", "customer.view", "guide.view", "vehicle.view", "report.view"],
       tour_guide: ["tour.view", "view_assigned_tours", "view_tour_guests", "update_tour_status", "submit_tour_report"],
       driver: ["tour.view", "view_assigned_tours"],
     };
-    let roleDoc = await Role.findOne({ name: { $in: [canonicalRole, canonicalRole.replace("tour_", "")] } });
+    let roleDoc = await Role.findOne({ name: canonicalRole });
     if (!roleDoc) {
       const permissionIds = [];
       for (const name of permissionNamesByRole[canonicalRole] || []) {
@@ -53,7 +53,7 @@ export const createStaffAccount = async (req, res, next) => {
         const permission = await Permission.findOneAndUpdate({ name }, { $setOnInsert: { name, label: name.replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), module: name.split(/[._]/)[0], category: "system", isActive: true } }, { upsert: true, new: true });
         permissionIds.push(permission._id);
       }
-      roleDoc = await Role.create({ name: canonicalRole, displayName: canonicalRole.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), description: `${canonicalRole} access`, permissions: permissionIds, isSystem: ["admin", "tour_manager", "tour_guide", "driver"].includes(canonicalRole), level: canonicalRole === "admin" ? 100 : 20 });
+      roleDoc = await Role.create({ name: canonicalRole, displayName: canonicalRole.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), description: `${canonicalRole} access`, permissions: permissionIds, isSystem: ["admin", "manager", "tour_guide", "driver", "agent", "customer"].includes(canonicalRole), level: canonicalRole === "admin" ? 100 : 20 });
     }
     const user = await User.create({ name: name.trim(), email: normalizedEmail, phone: String(phone).trim(), password, role: canonicalRole, legacyRole: canonicalRole, roleId: roleDoc?._id || null, status: "active", isVerified: true });
     let staff = null;

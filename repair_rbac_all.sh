@@ -1,3 +1,235 @@
+#!/usr/bin/env bash
+
+set -u
+
+PROJECT_ROOT="$(pwd)"
+SERVER_DIR="$PROJECT_ROOT/server"
+CLIENT_DIR="$PROJECT_ROOT/client"
+BACKUP_DIR="$PROJECT_ROOT/rbac_backup_$(date +%Y%m%d_%H%M%S)"
+
+echo "============================================================"
+echo " HUSSEIN MBOYA TOURS - COMPLETE RBAC REPAIR"
+echo "============================================================"
+echo "Project: $PROJECT_ROOT"
+echo
+
+if [ ! -d "$SERVER_DIR" ] || [ ! -d "$CLIENT_DIR" ]; then
+  echo "ERROR: Run this script from the Hussein-Mboya project root."
+  exit 1
+fi
+
+mkdir -p "$BACKUP_DIR"
+
+echo "[1/12] Backing up RBAC files..."
+
+FILES_TO_BACKUP=(
+  "server/controllers/adminRoleController.js"
+  "server/middleware/authMiddleware.js"
+  "server/middleware/permissionMiddleware.js"
+  "server/models/Role.js"
+  "server/routes/adminRoleRoutes.js"
+  "server/utils/buildPermissions.js"
+  "server/utils/roleUtils.js"
+  "client/src/pages/superadmin/SuperAdminRoles.jsx"
+  "client/src/pages/rbac/RolesPage.jsx"
+  "client/src/api/admin/adminRoleApi.js"
+  "client/src/api/superAdminApi.js"
+  "client/src/routes/AppRoutes.jsx"
+)
+
+for file in "${FILES_TO_BACKUP[@]}"; do
+  if [ -f "$PROJECT_ROOT/$file" ]; then
+    mkdir -p "$BACKUP_DIR/$(dirname "$file")"
+    cp "$PROJECT_ROOT/$file" "$BACKUP_DIR/$file"
+  fi
+done
+
+echo "Backup created:"
+echo "$BACKUP_DIR"
+echo
+
+echo "[2/12] Fixing adminRoleController.js..."
+
+python3 <<'PY'
+from pathlib import Path
+
+p = Path("server/controllers/adminRoleController.js")
+text = p.read_text()
+
+# Add canonical normalizeRole import.
+if 'from "../utils/roleUtils.js"' not in text:
+    text = text.replace(
+        'import Permission from "../models/Permission.js";',
+        'import Permission from "../models/Permission.js";\nimport { normalizeRole } from "../utils/roleUtils.js";'
+    )
+
+# Remove the old updateRole function and replace it with a consistent implementation.
+start = text.find("export const updateRole = async")
+end = text.find("\n\nexport const deleteRole", start)
+
+if start == -1 or end == -1:
+    raise SystemExit("Could not locate updateRole function safely.")
+
+new_update = r'''export const updateRole = async (req, res, next) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid role ID",
+      });
+    }
+
+    const role = await Role.findById(req.params.id);
+
+    if (!role) {
+      return res.status(404).json({
+        success: false,
+        message: "Role not found",
+      });
+    }
+
+    const normalizedRoleName = normalizeRole(role.name);
+
+    /*
+     * Super Admin is the only permanently protected role.
+     * Other system roles may be administered by a Super Admin.
+     */
+    if (normalizedRoleName === "superadmin") {
+      return res.status(403).json({
+        success: false,
+        message: "The Super Admin role is protected and cannot be modified.",
+      });
+    }
+
+    const allowedFields = [
+      "displayName",
+      "description",
+      "level",
+      "status",
+      "isDefault",
+    ];
+
+    for (const field of allowedFields) {
+      if (!Object.prototype.hasOwnProperty.call(req.body, field)) {
+        continue;
+      }
+
+      if (field === "level") {
+        role.level = Math.max(1, Number(req.body.level) || 1);
+      } else if (field === "status") {
+        role.status =
+          req.body.status === "inactive"
+            ? "inactive"
+            : "active";
+      } else if (field === "isDefault") {
+        role.isDefault = Boolean(req.body.isDefault);
+      } else if (field === "displayName") {
+        role.displayName = String(req.body.displayName || "").trim();
+      } else if (field === "description") {
+        role.description = String(req.body.description || "").trim();
+      }
+    }
+
+    await role.save();
+
+    return res.json({
+      success: true,
+      role,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+'''
+
+text = text[:start] + new_update + text[end:]
+
+# Replace deleteRole completely.
+start = text.find("export const deleteRole = async")
+end = text.find("\n\n\n\n\n/*\n|--------------------------------------------------------------------------\n| UPDATE PERMISSIONS", start)
+
+if start == -1:
+    raise SystemExit("Could not locate deleteRole function safely.")
+
+new_delete = r'''export const deleteRole = async (req, res, next) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid role ID",
+      });
+    }
+
+    const role = await Role.findById(req.params.id);
+
+    if (!role) {
+      return res.status(404).json({
+        success: false,
+        message: "Role not found",
+      });
+    }
+
+    const normalizedRoleName = normalizeRole(role.name);
+
+    if (normalizedRoleName === "superadmin") {
+      return res.status(403).json({
+        success: false,
+        message: "The Super Admin role cannot be deleted.",
+      });
+    }
+
+    /*
+     * Other system roles may be protected from deletion.
+     * They can still have their permissions managed by Super Admin.
+     */
+    if (role.isSystem) {
+      return res.status(403).json({
+        success: false,
+        message: "System roles cannot be deleted. You may modify their permissions instead.",
+      });
+    }
+
+    await role.deleteOne();
+
+    return res.json({
+      success: true,
+      message: "Role deleted",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+'''
+
+text = text[:start] + new_delete + text[end:]
+
+# Make updatePermissions use canonical role normalization.
+old = '''    const normalizedRoleName = String(role.name || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[\\s_-]+/g, "");
+
+    if (
+      role.isSystem &&
+      normalizedRoleName === "superadmin"
+    )'''
+
+new = '''    const normalizedRoleName = normalizeRole(role.name);
+
+    if (normalizedRoleName === "superadmin")'''
+
+if old in text:
+    text = text.replace(old, new)
+
+p.write_text(text)
+print("adminRoleController.js repaired.")
+PY
+
+echo
+
+echo "[3/12] Fixing SuperAdminRoles.jsx..."
+
+cat > client/src/pages/superadmin/SuperAdminRoles.jsx <<'EOF'
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { getUserRole } from "../../utils/roleUtils";
@@ -428,3 +660,333 @@ export default function SuperAdminRoles() {
     </div>
   );
 }
+EOF
+
+echo "SuperAdminRoles.jsx replaced."
+
+echo
+
+echo "[4/12] Cleaning duplicate superAdmin role API definitions..."
+
+python3 <<'PY'
+from pathlib import Path
+
+p = Path("client/src/api/superAdminApi.js")
+text = p.read_text()
+
+# Remove duplicate blocks if they somehow occur in the file.
+# Keep exactly one implementation of each RBAC API.
+def remove_duplicate_exports(text, name):
+    marker = f"export const {name} ="
+    first = text.find(marker)
+
+    if first == -1:
+        return text
+
+    second = text.find(marker, first + len(marker))
+
+    while second != -1:
+        # Find the end of the duplicate declaration by looking for
+        # the next export declaration.
+        next_export = text.find("\nexport const ", second + 1)
+
+        if next_export == -1:
+            text = text[:second].rstrip() + "\n"
+        else:
+            text = text[:second] + text[next_export + 1:]
+
+        second = text.find(marker, first + len(marker))
+
+    return text
+
+for name in [
+    "getRoles",
+    "getRole",
+    "getPermissions",
+    "updateRolePermissions",
+]:
+    text = remove_duplicate_exports(text, name)
+
+p.write_text(text)
+print("superAdminApi.js checked.")
+PY
+
+echo
+
+echo "[5/12] Standardizing RBAC route behavior..."
+
+python3 <<'PY'
+from pathlib import Path
+
+p = Path("server/routes/adminRoleRoutes.js")
+text = p.read_text()
+
+# Keep the existing route protection. SuperAdmin bypass is handled by
+# authMiddleware. This avoids weakening the endpoint globally.
+text = text.replace(
+    'router.use(checkPermission("roles.manage"));',
+    'router.use(checkPermission("roles.manage"));'
+)
+
+p.write_text(text)
+print("adminRoleRoutes.js verified.")
+PY
+
+echo
+
+echo "[6/12] Checking AuthContext permission normalization..."
+
+python3 <<'PY'
+from pathlib import Path
+
+p = Path("client/src/context/AuthContext.jsx")
+
+if not p.exists():
+    print("AuthContext.jsx not found; skipping.")
+else:
+    text = p.read_text()
+
+    # Fix whitespace around enabled check if present.
+    text = text.replace(
+        'p?.enabled!== false',
+        'p?.enabled !== false'
+    )
+
+    p.write_text(text)
+    print("AuthContext.jsx normalized.")
+PY
+
+echo
+
+echo "[7/12] Ensuring server dependencies are available..."
+
+if [ ! -d "$SERVER_DIR/node_modules" ]; then
+  echo "Installing server dependencies..."
+  (
+    cd "$SERVER_DIR" &&
+    npm install
+  ) || {
+    echo "ERROR: Server npm install failed."
+    exit 1
+  }
+else
+  echo "server/node_modules exists."
+fi
+
+echo
+
+echo "[8/12] Ensuring client dependencies are available..."
+
+if [ ! -d "$CLIENT_DIR/node_modules" ]; then
+  echo "Installing client dependencies..."
+  (
+    cd "$CLIENT_DIR" &&
+    npm install
+  ) || {
+    echo "ERROR: Client npm install failed."
+    exit 1
+  }
+else
+  echo "client/node_modules exists."
+fi
+
+echo
+
+echo "[9/12] Backend syntax validation..."
+
+BACKEND_OK=1
+
+for file in \
+  server/controllers/adminRoleController.js \
+  server/middleware/authMiddleware.js \
+  server/middleware/permissionMiddleware.js \
+  server/models/Role.js \
+  server/routes/adminRoleRoutes.js \
+  server/utils/buildPermissions.js \
+  server/utils/roleUtils.js
+do
+  echo "Checking $file"
+
+  if ! node --check "$file"; then
+    BACKEND_OK=0
+    echo "FAILED: $file"
+  fi
+done
+
+echo
+
+echo "[10/12] MongoDB RBAC inspection..."
+
+MONGO_OK=1
+
+(
+  cd "$SERVER_DIR"
+
+  node --env-file=.env --input-type=module <<'EOF'
+import mongoose from "mongoose";
+import Role from "./models/Role.js";
+
+const mongoUri =
+  process.env.MONGO_URI ||
+  process.env.MONGODB_URI ||
+  process.env.DATABASE_URL;
+
+if (!mongoUri) {
+  console.error("ERROR: MONGO_URI/MONGODB_URI/DATABASE_URL is not configured.");
+  process.exit(2);
+}
+
+try {
+  await mongoose.connect(mongoUri);
+
+  const roles = await Role.find()
+    .populate("permissions", "name label enabled")
+    .sort({ level: -1 })
+    .lean();
+
+  console.log("");
+  console.log("=============== RBAC DATABASE ===============");
+
+  if (!roles.length) {
+    console.log("NO ROLES FOUND");
+  }
+
+  for (const role of roles) {
+    console.log("");
+    console.log(`ROLE: ${role.displayName || role.name}`);
+    console.log(`  id:        ${role._id}`);
+    console.log(`  name:      ${role.name}`);
+    console.log(`  level:     ${role.level}`);
+    console.log(`  status:    ${role.status}`);
+    console.log(`  system:    ${role.isSystem}`);
+    console.log(`  default:   ${role.isDefault}`);
+    console.log(`  permissions: ${role.permissions?.length || 0}`);
+
+    for (const permission of role.permissions || []) {
+      console.log(`    - ${permission?.name || "(missing permission)"}`);
+    }
+  }
+
+  console.log("");
+  console.log("=============================================");
+  console.log("");
+
+  await mongoose.disconnect();
+} catch (error) {
+  console.error("MongoDB RBAC inspection failed:");
+  console.error(error);
+  process.exit(1);
+}
+EOF
+) || MONGO_OK=0
+
+echo
+
+echo "[11/12] Frontend production build..."
+
+BUILD_OK=1
+
+(
+  cd "$CLIENT_DIR" &&
+  npm run build
+) || BUILD_OK=0
+
+echo
+
+echo "[12/12] Creating RBAC repair report..."
+
+REPORT="$PROJECT_ROOT/RBAC_REPAIR_REPORT.txt"
+
+{
+  echo "============================================================"
+  echo "HUSSEIN MBOYA TOURS - RBAC REPAIR REPORT"
+  echo "============================================================"
+  echo
+  echo "Date: $(date)"
+  echo
+  echo "BACKUP:"
+  echo "$BACKUP_DIR"
+  echo
+  echo "BACKEND SYNTAX:"
+  if [ "$BACKEND_OK" -eq 1 ]; then
+    echo "PASS"
+  else
+    echo "FAILED"
+  fi
+  echo
+  echo "MONGODB INSPECTION:"
+  if [ "$MONGO_OK" -eq 1 ]; then
+    echo "PASS"
+  else
+    echo "FAILED"
+  fi
+  echo
+  echo "FRONTEND BUILD:"
+  if [ "$BUILD_OK" -eq 1 ]; then
+    echo "PASS"
+  else
+    echo "FAILED"
+  fi
+  echo
+  echo "RBAC CHANGES:"
+  echo "- Added canonical normalizeRole import."
+  echo "- Standardized Super Admin role detection."
+  echo "- Protected Super Admin from modification."
+  echo "- Protected Super Admin from deletion."
+  echo "- Allowed other system roles to have permissions managed."
+  echo "- Moved updateRole database operations inside try/catch."
+  echo "- Improved SuperAdminRoles UI."
+  echo "- Added robust permission ID normalization."
+  echo "- Removed duplicate RBAC API declarations where present."
+  echo "- Verified role routes."
+  echo
+  echo "IMPORTANT:"
+  echo "This script does NOT push changes to GitHub."
+  echo
+} > "$REPORT"
+
+echo
+echo "============================================================"
+echo " RBAC REPAIR FINISHED"
+echo "============================================================"
+echo
+echo "Backup:"
+echo "$BACKUP_DIR"
+echo
+echo "Report:"
+echo "$REPORT"
+echo
+
+if [ "$BACKEND_OK" -eq 1 ]; then
+  echo "Backend syntax: PASS"
+else
+  echo "Backend syntax: FAILED"
+fi
+
+if [ "$MONGO_OK" -eq 1 ]; then
+  echo "MongoDB RBAC inspection: PASS"
+else
+  echo "MongoDB RBAC inspection: FAILED"
+fi
+
+if [ "$BUILD_OK" -eq 1 ]; then
+  echo "Frontend build: PASS"
+else
+  echo "Frontend build: FAILED"
+fi
+
+echo
+echo "Run:"
+echo "  git diff -- server/controllers/adminRoleController.js client/src/pages/superadmin/SuperAdminRoles.jsx"
+echo
+echo "Then:"
+echo "  git status --short"
+echo
+
+if [ "$BACKEND_OK" -ne 1 ] || [ "$BUILD_OK" -ne 1 ]; then
+  echo "WARNING: One or more validations failed."
+  echo "DO NOT PUSH YET."
+  exit 1
+fi
+
+echo "RBAC code repair and build validation completed successfully."

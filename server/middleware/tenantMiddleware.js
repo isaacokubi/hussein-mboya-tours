@@ -7,7 +7,21 @@ const normalizeSlug = (value) => String(value || "").trim().toLowerCase().replac
 
 export async function resolveTenant(req, res, next) {
   try {
-    if (req.path === "/health" || req.path === "/tenants" || req.path.startsWith("/tenants/") || req.path === "/mpesa/callback" || req.path.startsWith("/mpesa/refund/") || req.path.startsWith("/superadmin") || req.path.startsWith("/database") || req.path.startsWith("/system") || req.path === "/settings") return next();
+    // First-run/public platform endpoints must work before any tenant exists.
+    // /auth/bootstrap creates the first Organization, so it cannot require
+    // tenant resolution beforehand.
+    if (
+      req.path === "/health" ||
+      req.path === "/auth/bootstrap" ||
+      req.path === "/tenants" ||
+      req.path.startsWith("/tenants/") ||
+      req.path === "/mpesa/callback" ||
+      req.path.startsWith("/mpesa/refund/") ||
+      req.path.startsWith("/superadmin") ||
+      req.path.startsWith("/database") ||
+      req.path.startsWith("/system") ||
+      req.path === "/settings"
+    ) return next();
 
     const headerId = req.headers["x-tenant-id"];
     const headerSlug = req.headers["x-tenant-slug"];

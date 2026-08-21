@@ -61,6 +61,7 @@ import seoRoutes from "./seoRoutes.js";
 import settingsRoutes from "./settingsRoutes.js";
 import { getPublicSettings } from "../controllers/settingsController.js";
 import customTourRequestRoutes from "./customTourRequestRoutes.js";
+import superAdminUserRoutes from "./superAdminUserRoutes.js";
 
 const router = express.Router();
 
@@ -140,6 +141,7 @@ router.use("/", seoRoutes);
 router.use("/superadmin", superAdminRoutes);
 router.use("/superadmin/api-monitor", apiMonitorRoutes);
 router.use("/superadmin", superAdminOperationsRoutes);
+router.use("/superadmin/users", superAdminUserRoutes);
 router.use("/superadmin-tools", superAdminToolsRoutes);
 router.use("/superadmin/maintenance", superAdminMaintenanceRoutes);
 

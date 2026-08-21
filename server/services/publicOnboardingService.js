@@ -77,7 +77,7 @@ export async function registerTenant({ company, admin, plan = "starter", bootstr
       const platform = identity(bootstrapSuperAdmin);
       if (platform.normalizedEmail === adminIdentity.normalizedEmail) throw new Error("Platform SuperAdmin email must be different from the company Admin email.");
       if (await runWithTenant({ bypass: true }, () => User.findOne({ email: platform.normalizedEmail }).lean())) throw new Error("Configured platform SuperAdmin email already belongs to another user.");
-      await runWithTenant({ bypass: true }, () => User.create({ name: String(bootstrapSuperAdmin.name).trim(), email: platform.normalizedEmail, phone: platform.normalizedPhone, password: bootstrapSuperAdmin.password, role: "superadmin", legacyRole: "superadmin", roleId: roles.superadmin._id, status: "active", isVerified: true }));
+      await runWithTenant({ bypass: true }, () => User.create({ name: String(bootstrapSuperAdmin.name).trim(), email: platform.normalizedEmail, phone: platform.normalizedPhone, password: bootstrapSuperAdmin.password, role: "super_admin", legacyRole: "super_admin", roleId: roles.super_admin._id, status: "active", isVerified: true }));
       createdFirstSuperAdmin = true;
     }
 
