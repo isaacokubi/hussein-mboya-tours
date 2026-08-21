@@ -18,9 +18,11 @@
     "check:rbac": "node scripts/rbac-contract-check.js",
     "check:security": "node scripts/security-hardening-check.js",
     "check:multitenancy": "node scripts/multitenancy-check.js",
+    "check:multitenancy:code": "node --check tenancy/tenantPlugin.js && node --check tenancy/bootstrap.js && node --check tenancy/context.js && node --check middleware/tenantMiddleware.js && node --check middleware/resolveMpesaCallbackTenant.js && node --check middleware/resolveMpesaRefundTenant.js && node --check socket/socketManager.js && node --check scripts/tenantIsolationRegressionCheck.js",
+    "check:multitenancy:live": "node scripts/tenantIsolationRegressionCheck.js",
     "migrate:multitenancy": "node scripts/migrateToMultitenancy.js",
     "reconcile:tenant-indexes": "node scripts/reconcileTenantIndexes.js",
-    "check:all": "npm run check && npm run check:controllers && npm run check:models && npm run check:rbac && npm run check:security && npm run check:multitenancy && npm run check:production"
+    "check:all": "npm run check && npm run check:controllers && npm run check:models && npm run check:rbac && npm run check:security && npm run check:multitenancy && npm run check:multitenancy:code && npm run check:production"
   },
   "dependencies": {
     "africastalking": "^0.8.0",
@@ -28,8 +30,8 @@
     "bcryptjs": "^3.0.2",
     "cloudinary": "^2.10.0",
     "compression": "^1.8.1",
-    "cors": "^2.8.5",
     "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
     "dotenv": "^16.6.1",
     "express": "^5.1.0",
     "express-rate-limit": "^7.5.0",
