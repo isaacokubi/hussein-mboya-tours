@@ -50,22 +50,16 @@ export async function registerTenant({ company, admin, plan = "starter", request
 
     organization = await runWithTenant({ bypass: true }, () => Organization.create({
       name: String(company.name).trim(), slug,
-      legalName: String(company.legalName || "").trim(),
-      websiteUrl: String(company.websiteUrl || "").trim(),
-      supportEmail: adminIdentity.normalizedEmail,
-      supportPhone: adminIdentity.normalizedPhone,
-      country: String(company.country || "Kenya").trim(),
-      timezone: String(company.timezone || "Africa/Nairobi").trim(),
-      currency: String(company.currency || "KES").trim().toUpperCase(),
-      status: "trial",
-      subscription: { plan: selectedPlan, seats: limits.seats, trialEndsAt },
-      createdBy: null,
+      legalName: String(company.legalName || "").trim(), websiteUrl: String(company.websiteUrl || "").trim(),
+      supportEmail: adminIdentity.normalizedEmail, supportPhone: adminIdentity.normalizedPhone,
+      country: String(company.country || "Kenya").trim(), timezone: String(company.timezone || "Africa/Nairobi").trim(),
+      currency: String(company.currency || "KES").trim().toUpperCase(), status: "trial",
+      subscription: { plan: selectedPlan, seats: limits.seats, trialEndsAt }, createdBy: null,
     }));
 
     adminUser = await runWithTenant({ tenantId: organization._id, tenant: organization, bypass: false }, () => User.create({
       name: String(admin.name).trim(), email: adminIdentity.normalizedEmail, phone: adminIdentity.normalizedPhone,
-      password: admin.password, role: "admin", legacyRole: "admin", roleId: roles.admin._id,
-      status: "active", isVerified: true,
+      password: admin.password, role: "admin", legacyRole: "admin", roleId: roles.admin._id, status: "active", isVerified: true,
     }));
 
     organization.createdBy = adminUser._id;
@@ -92,10 +86,10 @@ export async function registerTenant({ company, admin, plan = "starter", request
       }));
     }
 
-    await SecurityLog.logEvent({
+    await runWithTenant({ tenantId: organization._id, tenant: organization, bypass: false }, () => SecurityLog.logEvent({
       user: adminUser._id, email: adminUser.email, action: "account_created", ipAddress: request?.ip || "", userAgent: request?.headers?.["user-agent"] || "",
       status: "success", severity: "medium", details: { source: "public_tenant_registration", tenantId: String(organization._id), plan: selectedPlan, trialEndsAt, firstSuperAdminProvisioned: Boolean(superAdminUser) },
-    });
+    }));
 
     return { organization, adminUser, subscription, createdFirstSuperAdmin: Boolean(superAdminUser) };
   } catch (error) {
