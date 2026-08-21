@@ -15,10 +15,6 @@ const LOCK_TIME = 30 * 60 * 1000;
 
 const normalizeRole = (value) => String(value?.name || value || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
 
-/*
- * User.role is the durable role source. roleId is a relational convenience and
- * may legitimately become null/stale after Role records are recreated.
- */
 const effectiveRoleForUser = (user) => {
   const durable = normalizeRole(user?.role);
   if (durable) return durable;
@@ -33,6 +29,7 @@ const publicUser = (user, permissions = []) => ({
   email: user.email,
   phone: user.phone,
   role: effectiveRoleForUser(user),
+  tenantId: user.tenantId || null,
   permissions,
   profileImage: user.profileImage,
   status: user.status,
@@ -47,10 +44,7 @@ export const login = async (req, res, next) => {
   try {
     const normalizedEmail = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
     const password = typeof req.body?.password === "string" ? req.body.password : "";
-
-    if (!normalizedEmail || !password) {
-      return res.status(400).json({ success: false, message: "Email and password are required." });
-    }
+    if (!normalizedEmail || !password) return res.status(400).json({ success: false, message: "Email and password are required." });
 
     const user = await User.findOne({ email: normalizedEmail })
       .select("+password")
@@ -61,7 +55,6 @@ export const login = async (req, res, next) => {
       await SecurityLog.create({ email: normalizedEmail, action: "login_failed", resource: "Authentication", description: "Failed authentication attempt", severity: "high", ipAddress: req.ip, userAgent: req.headers["user-agent"], details: "User not found" });
       return res.status(401).json({ success: false, message: "Invalid email or password." });
     }
-
     if (user.status !== "active") return res.status(403).json({ success: false, message: `Account ${user.status}.` });
     if (user.lockUntil && user.lockUntil > new Date()) return res.status(423).json({ success: false, message: "Account temporarily locked due to multiple failed login attempts." });
 
@@ -76,16 +69,14 @@ export const login = async (req, res, next) => {
 
     const effectiveRole = effectiveRoleForUser(user);
     const permissions = buildPermissions({ ...user.toObject(), role: effectiveRole, roleId: user.roleId, permissionsOverride: user.permissionsOverride });
-
     user.loginAttempts = 0;
     user.lockUntil = null;
     user.lastLoginAt = new Date();
     await user.save({ validateBeforeSave: false });
 
-    const token = generateToken({ _id: user._id, role: effectiveRole, roleId: user.roleId, email: user.email, permissions });
+    const token = generateToken({ _id: user._id, role: effectiveRole, roleId: user.roleId, email: user.email, permissions, tenantId: user.tenantId || null });
     await createAuditLog({ user: user._id, action: "login", resource: "Authentication", description: "User successfully logged in", severity: "medium", ipAddress: req.ip, userAgent: req.headers["user-agent"] });
     await SecurityLog.create({ user: user._id, email: user.email, action: "login_success", resource: "Authentication", description: "User successfully logged in", severity: "medium", ipAddress: req.ip, userAgent: req.headers["user-agent"], details: "Login successful" });
-
     return res.status(200).json({ success: true, token, user: publicUser(user, permissions) });
   } catch (error) {
     console.error("LOGIN ERROR:", error);
@@ -102,14 +93,12 @@ export const register = async (req, res, next) => {
     if (!/^\S+@\S+\.\S+$/.test(normalizedEmail)) return res.status(400).json({ success: false, message: "Enter a valid email address." });
     if (!/^\d{10}$/.test(normalizedPhone)) return res.status(400).json({ success: false, message: "Phone number must contain exactly 10 digits." });
     if (password.length < 8 || !/\d/.test(password) || !/[A-Z]/.test(password)) return res.status(400).json({ success: false, message: "Password must be at least 8 characters and include an uppercase letter and a number." });
-
     const existingUser = await User.findOne({ $or: [{ email: normalizedEmail }, { phone: normalizedPhone }] });
     if (existingUser) return res.status(400).json({ success: false, message: existingUser.email === normalizedEmail ? "Email is already registered." : "Phone number is already registered." });
-
     const customerRole = await Role.findOne({ name: "customer" });
     const user = await User.create({ name: String(name).trim(), email: normalizedEmail, phone: normalizedPhone, password, status: "active", isVerified: true, role: "customer", roleId: customerRole?._id || null, legacyRole: "customer" });
     await SecurityLog.create({ user: user._id, email: user.email, action: "register", resource: "Authentication", description: "User registration", ipAddress: req.ip, userAgent: req.headers["user-agent"], details: "User registration" });
-    const token = generateToken({ _id: user._id, role: "customer", roleId: user.roleId, email: user.email, permissions: [] });
+    const token = generateToken({ _id: user._id, role: "customer", roleId: user.roleId, email: user.email, permissions: [], tenantId: user.tenantId || null });
     return res.status(201).json({ success: true, token, user: publicUser(user, []) });
   } catch (error) {
     console.error("REGISTER ERROR:", error);
