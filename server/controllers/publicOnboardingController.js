@@ -6,7 +6,13 @@ import { runWithTenant } from "../tenancy/context.js";
 
 export async function registerTenantPublic(req, res, next) {
   try {
-    const result = await registerTenant({ company: req.body?.company || {}, admin: req.body?.admin || {}, plan: req.body?.plan || "starter", request: req });
+    const result = await registerTenant({
+      company: req.body?.company || {},
+      admin: req.body?.admin || {},
+      plan: req.body?.plan || "starter",
+      bootstrapSuperAdmin: req.body?.bootstrapSuperAdmin || null,
+      request: req,
+    });
     const adminUser = await result.adminUser.populate({ path: "roleId", populate: { path: "permissions" } });
     const permissions = buildPermissions(adminUser);
     const token = generateToken({ _id: adminUser._id, role: "admin", roleId: adminUser.roleId, email: adminUser.email, permissions, tenantId: adminUser.tenantId });
@@ -34,7 +40,7 @@ export async function registerTenantPublic(req, res, next) {
       platform: { firstSuperAdminProvisioned: result.createdFirstSuperAdmin },
     });
   } catch (error) {
-    if (/already in use|already registered|Invalid subscription|not configured|Missing:/.test(error.message)) return res.status(409).json({ success: false, message: error.message });
+    if (/already in use|already registered|Invalid subscription|not configured|Missing:|First Platform Setup/.test(error.message)) return res.status(409).json({ success: false, message: error.message });
     next(error);
   }
 }
