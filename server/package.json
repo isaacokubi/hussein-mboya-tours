@@ -12,9 +12,12 @@
     "seed:staff": "node scripts/seedStaffVehicles.js",
     "create:admin": "node scripts/createAdmin.js",
     "reset:superadmin": "node scripts/resetSuperAdmin.js",
+    "bootstrap:first": "node scripts/bootstrapFirstSuperAdmin.js",
+    "check:onboarding": "node scripts/onboarding-contract-check.js",
+    "check:public-onboarding": "node scripts/publicTenantOnboardingCheck.js",
     "check:production": "node scripts/production-readiness-check.js",
-    "check:controllers": "node --check controllers/bookingAdminController.js && node --check controllers/adminBookingController.js && node --check controllers/agentBookingController.js && node --check controllers/bookingController.js && node --check controllers/tourManagerController.js && node --check controllers/mpesaController.js && node --check controllers/mpesaRefundController.js && node --check controllers/stripeController.js && node --check controllers/adminPaymentController.js && node --check controllers/paymentController.js",
-    "check:models": "node --check models/Booking.js && node --check models/Payment.js",
+    "check:controllers": "node --check controllers/bookingAdminController.js && node --check controllers/adminBookingController.js && node --check controllers/agentBookingController.js && node --check controllers/bookingController.js && node --check controllers/tourManagerController.js && node --check controllers/mpesaController.js && node --check controllers/mpesaRefundController.js && node --check controllers/stripeController.js && node --check controllers/adminPaymentController.js && node --check controllers/paymentController.js && node --check controllers/adminUserController.js && node --check controllers/tenantController.js && node --check controllers/publicOnboardingController.js",
+    "check:models": "node --check models/Booking.js && node --check models/Payment.js && node --check models/User.js && node --check models/Organization.js && node --check models/Subscription.js",
     "check:rbac": "node scripts/rbac-contract-check.js",
     "check:security": "node scripts/security-hardening-check.js",
     "check:multitenancy": "node scripts/multitenancy-check.js",
@@ -22,7 +25,7 @@
     "check:multitenancy:live": "node scripts/tenantIsolationRegressionCheck.js",
     "migrate:multitenancy": "node scripts/migrateToMultitenancy.js",
     "reconcile:tenant-indexes": "node scripts/reconcileTenantIndexes.js",
-    "check:all": "npm run check && npm run check:controllers && npm run check:models && npm run check:rbac && npm run check:security && npm run check:multitenancy && npm run check:multitenancy:code && npm run check:production"
+    "check:all": "npm run check && npm run check:controllers && npm run check:models && npm run check:rbac && npm run check:onboarding && npm run check:public-onboarding && npm run check:security && npm run check:multitenancy && npm run check:multitenancy:code && npm run check:production"
   },
   "dependencies": {
     "africastalking": "^0.8.0",
@@ -41,7 +44,6 @@
     "jsonwebtoken": "^9.0.0",
     "mongoose": "^8.12.1",
     "mongoose-paginate-v2": "^1.9.5",
-    "morgan": "^1.10.0",
     "multer": "^2.2.0",
     "multer-storage-cloudinary": "^4.0.0",
     "node-cron": "^4.6.0",
