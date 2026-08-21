@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { getTenantId, getTenantContext, isTenantBypassed } from "./context.js";
+import { getTenantId, isTenantBypassed } from "./context.js";
 
 const TENANT_PATH = "tenantId";
 const GLOBAL_COLLECTIONS = new Set(["organizations", "permissions", "currencies"]);
@@ -7,9 +7,7 @@ const GLOBAL_COLLECTIONS = new Set(["organizations", "permissions", "currencies"
 function requireTenantId() {
   if (isTenantBypassed()) return null;
   const tenantId = getTenantId();
-  if (!tenantId) {
-    throw new Error("Tenant context is required for tenant-scoped data access.");
-  }
+  if (!tenantId) throw new Error("Tenant context is required for tenant-scoped data access.");
   return tenantId;
 }
 
@@ -208,11 +206,5 @@ export function tenantPlugin(schema) {
       }
       next();
     } catch (error) { next(error); }
-  });
-
-  schema.post("find", function tenantFindResult(docs) {
-    if (!isTenantBypassed() && getTenantContext()?.tenantId) {
-      for (const doc of docs || []) assertTenantValue(doc?.tenantId, getTenantId(), "Cross-tenant result rejected.");
-    }
   });
 }
