@@ -1,3 +1,4 @@
+import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 import mongoose from "mongoose";
 
 import Booking from "../models/Booking.js";
@@ -114,10 +115,10 @@ export const getNotificationRecipients = async (req, res, next) => {
     };
 
     const allowedRoles = [...new Set(requested.flatMap((r) => roleMap[r] || []))];
-    const roleDocs = await Role.find({ name: { $in: allowedRoles } }).select("_id").lean();
+    const roleDocs = await Role.find(mergeTenantFilter(req,{ name: { $in: allowedRoles } }).select("_id").lean();
     const roleIds = roleDocs.map((role) => role._id);
 
-    const users = await User.find({
+    const users = await User.find(mergeTenantFilter(req,{
       $or: [
         { role: { $in: allowedRoles } },
         { legacyRole: { $in: allowedRoles } },
@@ -131,7 +132,7 @@ export const getNotificationRecipients = async (req, res, next) => {
       .sort({ name: 1, email: 1 })
       .lean();
 
-    const staff = await Staff.find({
+    const staff = await Staff.find(mergeTenantFilter(req,{
       position: {
         $in: requested.flatMap((r) => ({
           guide: ["guide"],
@@ -226,12 +227,12 @@ export const sendInternalNotification = async (req, res, next) => {
     }
 
     const roleDocs = expandedRoles.length
-      ? await Role.find({ name: { $in: expandedRoles } }).select("_id").lean()
+      ? await Role.find(mergeTenantFilter(req,{ name: { $in: expandedRoles } }).select("_id").lean()
       : [];
     const roleIds = roleDocs.map((role) => role._id);
     if (roleIds.length) filter.push({ roleId: { $in: roleIds } });
 
-    const recipients = await User.find({
+    const recipients = await User.find(mergeTenantFilter(req,{
       $or: filter,
       status: "active",
       isActive: { $ne: false },
@@ -378,7 +379,7 @@ export const markRead = async (
     }
 
     const notification =
-      await Notification.findOne({
+      await Notification.findOne(mergeTenantFilter(req,{
         _id: req.params.id,
         recipient: req.user._id,
         isArchived: false,

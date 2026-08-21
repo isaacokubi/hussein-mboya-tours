@@ -1,10 +1,11 @@
+import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 // server/controllers/driverController.js
 import Tour from "../models/Tour.js";
 import Booking from "../models/Booking.js";
 import Staff from "../models/Staff.js";
 
 const resolveDriver = async (user) => {
-  let driver = await Staff.findOne({
+  let driver = await Staff.findOne(mergeTenantFilter(req,{
     $or: [
       { user: user._id },
       { email: String(user.email || "").toLowerCase() },
@@ -66,7 +67,7 @@ export const driverDashboard = async (req, res, next) => {
     }
 
     const assignmentIds = Array.isArray(driver.assignedTours) ? driver.assignedTours : [];
-    const tours = await Tour.find({
+    const tours = await Tour.find(mergeTenantFilter(req,{
       $or: [
         { assignedDriver: driver._id },
         ...(assignmentIds.length ? [{ _id: { $in: assignmentIds } }] : []),

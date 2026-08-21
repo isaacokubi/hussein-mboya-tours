@@ -1,3 +1,4 @@
+import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 // server/controllers/customerController.js
 
 import mongoose from "mongoose";
@@ -15,7 +16,7 @@ export const getCustomers = async (req, res, next) => {
     const pageSize = Math.min(Math.max(Number(limit), 1), 10);
     const skip = (currentPage - 1) * pageSize;
 
-    const nonCustomerRoleIds = await Role.find({ name: { $nin: ["customer", "Customer"] } }).distinct("_id");
+    const nonCustomerRoleIds = await Role.find(mergeTenantFilter(req,{ name: { $nin: ["customer", "Customer"] } }).distinct("_id");
     const filter = {
       isDeleted: { $ne: true },
       $and: [
@@ -38,11 +39,11 @@ export const getCustomers = async (req, res, next) => {
     ]);
 
     const customerIds = customers.map((c) => c._id);
-    const customerRecords = await Customer.find({ user: { $in: customerIds } }).select("_id user customerType").lean();
+    const customerRecords = await Customer.find(mergeTenantFilter(req,{ user: { $in: customerIds } }).select("_id user customerType").lean();
     const legacyCustomerIds = customerRecords.map((c) => c._id);
     const legacyToUser = new Map(customerRecords.map((c) => [c._id.toString(), c.user?.toString()]));
 
-    const bookingStats = await Booking.find({
+    const bookingStats = await Booking.find(mergeTenantFilter(req,{
       isDeleted: { $ne: true },
       $or: [{ user: { $in: customerIds } }, { customer: { $in: legacyCustomerIds } }],
     }).select("user customer status totalAmount depositAmount refundAmount paymentStatus").lean();
@@ -75,14 +76,14 @@ export const getCustomerProfile = async (req, res, next) => {
   try {
     if (!isValidId(req.params.id)) return res.status(400).json({ success: false, message: "Invalid customer ID." });
 
-    const customer = await User.findOne({ _id: req.params.id, isDeleted: { $ne: true }, $or: [{ role: "customer" }, { legacyRole: "customer" }] }).select("-password").lean();
+    const customer = await User.findOne(mergeTenantFilter(req,{ _id: req.params.id, isDeleted: { $ne: true }, $or: [{ role: "customer" }, { legacyRole: "customer" }] }).select("-password").lean();
     if (!customer) return res.status(404).json({ success: false, message: "Customer not found." });
 
-    const legacyCustomer = await Customer.findOne({ user: customer._id }).select("_id customerType").lean();
+    const legacyCustomer = await Customer.findOne(mergeTenantFilter(req,{ user: customer._id }).select("_id customerType").lean();
     const ownership = [{ user: customer._id }];
     if (legacyCustomer?._id) ownership.push({ customer: legacyCustomer._id });
 
-    const bookings = await Booking.find({ isDeleted: { $ne: true }, $or: ownership }).populate("tour", "title destination price").sort({ createdAt: -1 }).lean();
+    const bookings = await Booking.find(mergeTenantFilter(req,{ isDeleted: { $ne: true }, $or: ownership }).populate("tour", "title destination price").sort({ createdAt: -1 }).lean();
     const summary = bookings.reduce((acc, booking) => {
       acc.totalBookings += 1;
       const bookingStatus = String(booking.status || "pending").toLowerCase();

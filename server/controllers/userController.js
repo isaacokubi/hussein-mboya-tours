@@ -1,3 +1,4 @@
+import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 import User from "../models/User.js";
 import Staff from "../models/Staff.js";
 
@@ -103,7 +104,7 @@ export const getGuides = async (req, res, next) => {
         | resource type.
         |----------------------------------------------------------------------
         */
-        const guides = await Staff.find({
+        const guides = await Staff.find(mergeTenantFilter(req,{
             position: "guide",
             status: "active",
             isActive: true,

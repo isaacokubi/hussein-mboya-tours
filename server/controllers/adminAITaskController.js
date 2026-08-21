@@ -1,3 +1,4 @@
+import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 import AITask from "../models/AITask.js";
 import Booking from "../models/Booking.js";

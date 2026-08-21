@@ -1,3 +1,4 @@
+import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 import User from "../models/User.js";
 import generateToken from "../utils/generateToken.js";
 import buildPermissions from "../utils/buildPermissions.js";
@@ -8,7 +9,7 @@ export const adminLogin = async (req, res) => {
     const email = String(req.body?.email || "").trim().toLowerCase();
     const password = String(req.body?.password || "");
 
-    const user = await User.findOne({ email })
+    const user = await User.findOne(mergeTenantFilter(req,{ email })
       .select("+password")
       .populate({ path: "roleId", populate: { path: "permissions" } })
       .populate("permissionsOverride");

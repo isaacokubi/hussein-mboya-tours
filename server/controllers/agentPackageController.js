@@ -1,3 +1,4 @@
+import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 import mongoose from "mongoose";
 import TourPackage from "../models/TourPackage.js";
 

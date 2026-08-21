@@ -1,3 +1,4 @@
+import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 import mongoose from "mongoose";
 import { getSystemSettings } from "../services/settingsService.js";
 import Tour from "../models/Tour.js";
@@ -79,7 +80,7 @@ const buildImages = (files = []) =>
 };const checkDuplicateSlug = async (slug, id = null) => {
   if (!slug) return false;
 
-  const existing = await Tour.findOne({
+  const existing = await Tour.findOne(mergeTenantFilter(req,{
     slug: slug.trim().toLowerCase(),
   });
 
@@ -413,7 +414,7 @@ export const getTour = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    const tour = await Tour.findOne({
+    const tour = await Tour.findOne(mergeTenantFilter(req,{
       _id: req.params.id,
       isDeleted: false,
     })
@@ -481,7 +482,7 @@ export const updateTour = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    const tour = await Tour.findOne({
+    const tour = await Tour.findOne(mergeTenantFilter(req,{
       _id: req.params.id,
       isDeleted: false,
     });
@@ -653,7 +654,7 @@ export const deleteTour = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    const tour = await Tour.findOne({
+    const tour = await Tour.findOne(mergeTenantFilter(req,{
       _id: req.params.id,
       isDeleted: false,
     });
@@ -802,7 +803,7 @@ export const assignGuide = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    const tour = await Tour.findOne({
+    const tour = await Tour.findOne(mergeTenantFilter(req,{
       _id: req.params.id,
       isDeleted: false,
     });
@@ -820,7 +821,7 @@ export const assignGuide = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    const guide = await Staff.findOne({
+    const guide = await Staff.findOne(mergeTenantFilter(req,{
       _id: guideId,
       position: { $in: ["guide", "tour_guide", "tourguide"] },
       isActive: true,
@@ -937,7 +938,7 @@ export const assignDriver = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    const tour = await Tour.findOne({
+    const tour = await Tour.findOne(mergeTenantFilter(req,{
       _id: req.params.id,
       isDeleted: false,
     });
@@ -1098,7 +1099,7 @@ export const assignVehicle = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    const tour = await Tour.findOne({
+    const tour = await Tour.findOne(mergeTenantFilter(req,{
       _id: req.params.id,
       isDeleted: false,
     });
@@ -1151,7 +1152,7 @@ export const assignVehicle = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    const existingAssignment = await Tour.findOne({
+    const existingAssignment = await Tour.findOne(mergeTenantFilter(req,{
       assignedVehicle: vehicle._id,
       isDeleted: false,
       _id: { $ne: tour._id },
@@ -1238,7 +1239,7 @@ export const restoreTour = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    const tour = await Tour.findOne({
+    const tour = await Tour.findOne(mergeTenantFilter(req,{
       _id: req.params.id,
       isDeleted: true,
     });

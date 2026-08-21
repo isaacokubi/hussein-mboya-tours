@@ -1,3 +1,4 @@
+import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 // server/controllers/wishlistController.js
 
 import mongoose from "mongoose";
@@ -14,7 +15,7 @@ import Tour from "../models/Tour.js";
 
 export const getWishlist = async (req, res, next) => {
   try {
-    let wishlist = await Wishlist.findOne({
+    let wishlist = await Wishlist.findOne(mergeTenantFilter(req,{
       user: req.user._id,
     }).populate({
       path: "tours",
@@ -90,7 +91,7 @@ export const addWishlist = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    const tour = await Tour.findOne({
+    const tour = await Tour.findOne(mergeTenantFilter(req,{
       _id: tourId,
       isDeleted: false,
       published: true,
@@ -108,7 +109,7 @@ export const addWishlist = async (req, res, next) => {
 
 
 
-    let wishlist = await Wishlist.findOne({
+    let wishlist = await Wishlist.findOne(mergeTenantFilter(req,{
       user: req.user._id,
     });
 
@@ -194,7 +195,7 @@ export const removeWishlist = async (req, res, next) => {
 
 
 
-    const wishlist = await Wishlist.findOne({
+    const wishlist = await Wishlist.findOne(mergeTenantFilter(req,{
       user: req.user._id,
     });
 

@@ -1,3 +1,4 @@
+import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 // server/controllers/invoiceController.js
 
@@ -33,7 +34,7 @@ export const createInvoice = async (req, res, next) => {
       });
     }
 
-    const existingInvoice = await Invoice.findOne({
+    const existingInvoice = await Invoice.findOne(mergeTenantFilter(req,{
       booking,
     });
 

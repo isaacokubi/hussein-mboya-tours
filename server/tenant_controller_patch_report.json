@@ -1,0 +1,1982 @@
+[
+  {
+    "file": "adminAIAnalyticsController.js",
+    "line": 96,
+    "code": "await Booking.find(tenantFilter(req))"
+  },
+  {
+    "file": "adminAISalesController.js",
+    "line": 42,
+    "code": "Tour.find(tenantFilter(req))"
+  },
+  {
+    "file": "adminAISentimentController.js",
+    "line": 15,
+    "code": "await Review.find(tenantFilter(req))"
+  },
+  {
+    "file": "adminAITaskController.js",
+    "line": 135,
+    "code": "await AITask.find(tenantFilter(req))"
+  },
+  {
+    "file": "adminAITaskController.js",
+    "line": 173,
+    "code": "await AITask.findByIdAndUpdate("
+  },
+  {
+    "file": "adminAITourPricingController.js",
+    "line": 17,
+    "code": "await Tour.find(tenantFilter(req))"
+  },
+  {
+    "file": "adminAITourPricingController.js",
+    "line": 46,
+    "code": "bookingStats.find("
+  },
+  {
+    "file": "adminAITourRecommendationController.js",
+    "line": 22,
+    "code": "await User.findById(customerId)"
+  },
+  {
+    "file": "adminAITourRecommendationController.js",
+    "line": 45,
+    "code": "await Booking.find({"
+  },
+  {
+    "file": "adminAITourRecommendationController.js",
+    "line": 68,
+    "code": "await Tour.find({"
+  },
+  {
+    "file": "adminAgentController.js",
+    "line": 17,
+    "code": "const agents = await Agent.find(tenantFilter(req))"
+  },
+  {
+    "file": "adminAgentController.js",
+    "line": 64,
+    "code": "const agent = await Agent.findById(req.params.id)"
+  },
+  {
+    "file": "adminAgentController.js",
+    "line": 122,
+    "code": "const agent = await Agent.findById("
+  },
+  {
+    "file": "adminAgentController.js",
+    "line": 228,
+    "code": "await Agent.findByIdAndUpdate("
+  },
+  {
+    "file": "adminAuthController.js",
+    "line": 11,
+    "code": "const user = await User.findOne({ email })"
+  },
+  {
+    "file": "adminBookingController.js",
+    "line": 53,
+    "code": "Booking.find(filter)"
+  },
+  {
+    "file": "adminBookingController.js",
+    "line": 70,
+    "code": "? await Payment.find({"
+  },
+  {
+    "file": "adminBookingController.js",
+    "line": 158,
+    "code": "const booking = await Booking.findById(req.params.id)"
+  },
+  {
+    "file": "adminBookingController.js",
+    "line": 174,
+    "code": "const payment = await Payment.findOne({"
+  },
+  {
+    "file": "adminBookingController.js",
+    "line": 222,
+    "code": "const booking = await Booking.findByIdAndUpdate("
+  },
+  {
+    "file": "adminBookingController.js",
+    "line": 253,
+    "code": "const booking = await Booking.findById(req.params.id);"
+  },
+  {
+    "file": "adminBookingController.js",
+    "line": 304,
+    "code": "const booking = await Booking.findById(req.params.id);"
+  },
+  {
+    "file": "adminBookingController.js",
+    "line": 338,
+    "code": "const booking = await Booking.findById(req.params.id)"
+  },
+  {
+    "file": "adminBookingController.js",
+    "line": 350,
+    "code": "const payment = await Payment.findOne({"
+  },
+  {
+    "file": "adminBookingController.js",
+    "line": 381,
+    "code": "const booking = await Booking.findById(req.params.id)"
+  },
+  {
+    "file": "adminController.js",
+    "line": 70,
+    "code": "const recentRaw = await Booking.find({ isDeleted: { $ne: true } })"
+  },
+  {
+    "file": "adminCouponController.js",
+    "line": 6,
+    "code": "const coupons = await Coupon.find(tenantFilter(req)).sort({ createdAt: -1 });"
+  },
+  {
+    "file": "adminCouponController.js",
+    "line": 20,
+    "code": "const coupon = await Coupon.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });"
+  },
+  {
+    "file": "adminDashboardController.js",
+    "line": 25,
+    "code": "Role.findOne({name:\"customer\"}),"
+  },
+  {
+    "file": "adminDashboardController.js",
+    "line": 26,
+    "code": "Role.findOne({name:\"admin\"}),"
+  },
+  {
+    "file": "adminDashboardController.js",
+    "line": 27,
+    "code": "Role.findOne({name:\"agent\"}),"
+  },
+  {
+    "file": "adminDashboardController.js",
+    "line": 28,
+    "code": "Role.findOne({name:{$in:[\"guide\",\"tour_guide\"]}})"
+  },
+  {
+    "file": "adminDashboardController.js",
+    "line": 266,
+    "code": "Booking.find({"
+  },
+  {
+    "file": "adminDashboardController.js",
+    "line": 366,
+    "code": "Notification.find(tenantFilter(req))"
+  },
+  {
+    "file": "adminDashboardController.js",
+    "line": 449,
+    "code": "agents: await Agent.find({"
+  },
+  {
+    "file": "adminDashboardController.js",
+    "line": 455,
+    "code": "guides: await Staff.find({"
+  },
+  {
+    "file": "adminDashboardController.js",
+    "line": 482,
+    "code": "vehicles: await Vehicle.find({"
+  },
+  {
+    "file": "adminDestinationController.js",
+    "line": 33,
+    "code": "const exists = await Destination.findOne({"
+  },
+  {
+    "file": "adminDestinationController.js",
+    "line": 103,
+    "code": "Destination.find(filter)"
+  },
+  {
+    "file": "adminDestinationController.js",
+    "line": 134,
+    "code": "const destination = await Destination.findOne({"
+  },
+  {
+    "file": "adminDestinationController.js",
+    "line": 162,
+    "code": "const destinations = await Destination.find(tenantFilter(req))"
+  },
+  {
+    "file": "adminDestinationController.js",
+    "line": 191,
+    "code": "const destination = await Destination.findById(req.params.id);"
+  },
+  {
+    "file": "adminDestinationController.js",
+    "line": 269,
+    "code": "const destination = await Destination.findById(req.params.id);"
+  },
+  {
+    "file": "adminDestinationController.js",
+    "line": 304,
+    "code": "const destination = await Destination.findById(req.params.id);"
+  },
+  {
+    "file": "adminGalleryController.js",
+    "line": 12,
+    "code": "await Gallery.find(tenantFilter(req))"
+  },
+  {
+    "file": "adminGalleryController.js",
+    "line": 166,
+    "code": "await Gallery.findByIdAndUpdate("
+  },
+  {
+    "file": "adminGalleryController.js",
+    "line": 212,
+    "code": "await Gallery.findById(req.params.id);"
+  },
+  {
+    "file": "adminPaymentController.js",
+    "line": 41,
+    "code": "await Payment.find(query)"
+  },
+  {
+    "file": "adminPaymentController.js",
+    "line": 156,
+    "code": "const payment = await Payment.findById(req.params.id);"
+  },
+  {
+    "file": "adminPaymentController.js",
+    "line": 175,
+    "code": "const booking = await Booking.findById(payment.booking);"
+  },
+  {
+    "file": "adminPaymentController.js",
+    "line": 233,
+    "code": "await Payment.findById(req.params.id)"
+  },
+  {
+    "file": "adminPaymentController.js",
+    "line": 264,
+    "code": "await Payment.findById("
+  },
+  {
+    "file": "adminPaymentController.js",
+    "line": 391,
+    "code": "await Booking.findById("
+  },
+  {
+    "file": "adminPaymentController.js",
+    "line": 480,
+    "code": "const booking = await Booking.findById(req.params.id);"
+  },
+  {
+    "file": "adminPaymentController.js",
+    "line": 489,
+    "code": "const payment = await Payment.findOne({"
+  },
+  {
+    "file": "adminPaymentController.js",
+    "line": 574,
+    "code": "const refund = await Refund.findById(req.params.id);"
+  },
+  {
+    "file": "adminPaymentController.js",
+    "line": 615,
+    "code": "? await Payment.findById("
+  },
+  {
+    "file": "adminPaymentController.js",
+    "line": 659,
+    "code": "await Booking.findById("
+  },
+  {
+    "file": "adminPaymentController.js",
+    "line": 677,
+    "code": "await Booking.findById("
+  },
+  {
+    "file": "adminReviewController.js",
+    "line": 5,
+    "code": "const reviews = await Review.find({ tour: tourId, approved: true, isDeleted: false });"
+  },
+  {
+    "file": "adminReviewController.js",
+    "line": 8,
+    "code": "await Tour.findByIdAndUpdate(tourId, {"
+  },
+  {
+    "file": "adminReviewController.js",
+    "line": 18,
+    "code": "const reviews = await Review.find({ isDeleted: false })"
+  },
+  {
+    "file": "adminReviewController.js",
+    "line": 28,
+    "code": "const review = await Review.findById(req.params.id);"
+  },
+  {
+    "file": "adminReviewController.js",
+    "line": 41,
+    "code": "const review = await Review.findById(req.params.id);"
+  },
+  {
+    "file": "adminReviewController.js",
+    "line": 54,
+    "code": "const review = await Review.findById(req.params.id);"
+  },
+  {
+    "file": "adminRoleController.js",
+    "line": 89,
+    "code": "const permissions = await Permission.find({ name: { $in: allNames } }).select(\"_id name\").lean();"
+  },
+  {
+    "file": "adminRoleController.js",
+    "line": 93,
+    "code": "let role = await Role.findOne({ name: roleName })"
+  },
+  {
+    "file": "adminRoleController.js",
+    "line": 185,
+    "code": "const roleDocs = await Role.find(tenantFilter(req)).sort({ level: -1 }).lean();"
+  },
+  {
+    "file": "adminRoleController.js",
+    "line": 190,
+    "code": "? await Permission.find({ _id: { $in: permissionIds } }).lean()"
+  },
+  {
+    "file": "adminRoleController.js",
+    "line": 230,
+    "code": "const permissions = await Permission.find({ isActive: { $ne: false } })"
+  },
+  {
+    "file": "adminRoleController.js",
+    "line": 248,
+    "code": "const roleDoc = await Role.findById(req.params.id).lean();"
+  },
+  {
+    "file": "adminRoleController.js",
+    "line": 255,
+    "code": "? await Permission.find({ _id: { $in: permissionIds } }).lean()"
+  },
+  {
+    "file": "adminRoleController.js",
+    "line": 346,
+    "code": "const existingRole = await Role.findOne({"
+  },
+  {
+    "file": "adminRoleController.js",
+    "line": 389,
+    "code": "const role = await Role.findById(req.params.id);"
+  },
+  {
+    "file": "adminRoleController.js",
+    "line": 461,
+    "code": "const role = await Role.findById(req.params.id);"
+  },
+  {
+    "file": "adminRoleController.js",
+    "line": 520,
+    "code": "const role = await Role.findById(req.params.id);"
+  },
+  {
+    "file": "adminTourController.js",
+    "line": 82,
+    "code": "const existing = await Tour.findOne({"
+  },
+  {
+    "file": "adminTourController.js",
+    "line": 349,
+    "code": "Tour.find(filter)"
+  },
+  {
+    "file": "adminTourController.js",
+    "line": 416,
+    "code": "const tour = await Tour.findOne({"
+  },
+  {
+    "file": "adminTourController.js",
+    "line": 484,
+    "code": "const tour = await Tour.findOne({"
+  },
+  {
+    "file": "adminTourController.js",
+    "line": 656,
+    "code": "const tour = await Tour.findOne({"
+  },
+  {
+    "file": "adminTourController.js",
+    "line": 689,
+    "code": "const vehicle = await Vehicle.findById("
+  },
+  {
+    "file": "adminTourController.js",
+    "line": 705,
+    "code": "const guide = await Staff.findById(tour.assignedGuide);"
+  },
+  {
+    "file": "adminTourController.js",
+    "line": 723,
+    "code": "const driver = await Staff.findById("
+  },
+  {
+    "file": "adminTourController.js",
+    "line": 805,
+    "code": "const tour = await Tour.findOne({"
+  },
+  {
+    "file": "adminTourController.js",
+    "line": 823,
+    "code": "const guide = await Staff.findOne({"
+  },
+  {
+    "file": "adminTourController.js",
+    "line": 855,
+    "code": "await Staff.findByIdAndUpdate(guide._id, {"
+  },
+  {
+    "file": "adminTourController.js",
+    "line": 940,
+    "code": "const tour = await Tour.findOne({"
+  },
+  {
+    "file": "adminTourController.js",
+    "line": 958,
+    "code": "const driver = await Staff.findById(driverId);"
+  },
+  {
+    "file": "adminTourController.js",
+    "line": 1101,
+    "code": "const tour = await Tour.findOne({"
+  },
+  {
+    "file": "adminTourController.js",
+    "line": 1119,
+    "code": "const vehicle = await Vehicle.findById(vehicleId);"
+  },
+  {
+    "file": "adminTourController.js",
+    "line": 1154,
+    "code": "const existingAssignment = await Tour.findOne({"
+  },
+  {
+    "file": "adminTourController.js",
+    "line": 1241,
+    "code": "const tour = await Tour.findOne({"
+  },
+  {
+    "file": "adminTourController.js",
+    "line": 1278,
+    "code": "const vehicle = await Vehicle.findById("
+  },
+  {
+    "file": "adminUserController.js",
+    "line": 22,
+    "code": "User.find(query).select(\"-password\").populate(\"roleId\", \"name displayName permissions\").sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),"
+  },
+  {
+    "file": "adminUserController.js",
+    "line": 48,
+    "code": "let roleDoc = await Role.findOne({ name: canonicalRole });"
+  },
+  {
+    "file": "adminUserController.js",
+    "line": 63,
+    "code": "const safeUser = await User.findById(user._id).select(\"-password\").populate(\"roleId\", \"name displayName permissions\").lean();"
+  },
+  {
+    "file": "adminUserController.js",
+    "line": 74,
+    "code": "const user = await User.findByIdAndUpdate(id, { $set: { status } }, { new: true, runValidators: true }).select(\"-password\").lean();"
+  },
+  {
+    "file": "adminUserController.js",
+    "line": 86,
+    "code": "const user = await User.findById(id).select(\"_id role\");"
+  },
+  {
+    "file": "agentBookingController.js",
+    "line": 40,
+    "code": "const agentProfile = await Agent.findOne({"
+  },
+  {
+    "file": "agentBookingController.js",
+    "line": 146,
+    "code": "Tour.findOne({"
+  },
+  {
+    "file": "agentBookingController.js",
+    "line": 151,
+    "code": "Customer.findOne({"
+  },
+  {
+    "file": "agentBookingController.js",
+    "line": 408,
+    "code": "await Agent.findOne({"
+  },
+  {
+    "file": "agentBookingController.js",
+    "line": 492,
+    "code": "Booking.find(filter)"
+  },
+  {
+    "file": "agentBookingController.js",
+    "line": 550,
+    "code": "await Agent.findOne({"
+  },
+  {
+    "file": "agentBookingController.js",
+    "line": 562,
+    "code": "await Booking.findOne({"
+  },
+  {
+    "file": "agentBookingController.js",
+    "line": 632,
+    "code": "await Agent.findOne({"
+  },
+  {
+    "file": "agentBookingController.js",
+    "line": 644,
+    "code": "await Booking.findOne({"
+  },
+  {
+    "file": "agentBookingController.js",
+    "line": 720,
+    "code": "await Agent.findOne({"
+  },
+  {
+    "file": "agentBookingController.js",
+    "line": 732,
+    "code": "await Booking.findOne({"
+  },
+  {
+    "file": "agentController.js",
+    "line": 7,
+    "code": "const settings = await SystemSetting.findOne({ key: \"default\" }).select(\"defaultCommissionRate\").lean();"
+  },
+  {
+    "file": "agentController.js",
+    "line": 13,
+    "code": "let agent = await Agent.findOne({ user: user._id }).lean();"
+  },
+  {
+    "file": "agentController.js",
+    "line": 14,
+    "code": "if (!agent && user.email) agent = await Agent.findOne({ email: String(user.email).toLowerCase() }).lean();"
+  },
+  {
+    "file": "agentController.js",
+    "line": 51,
+    "code": "Booking.find(base).populate(\"tour\", \"title name price duration destination\").populate(\"customer\", \"name firstName lastName email phone\").sort({ createdAt: -1 }).limit(5).lean(),"
+  },
+  {
+    "file": "agentController.js",
+    "line": 71,
+    "code": "Booking.find(filter).populate(\"tour\", \"title name\").populate(\"customer\", \"name firstName lastName email phone\").sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean(),"
+  },
+  {
+    "file": "agentController.js",
+    "line": 82,
+    "code": "const bookings = await Booking.find({ agent: agent._id, isDeleted: { $ne: true } }).populate(\"customer\", \"name firstName lastName email phone\").select(\"customer customerSnapshot contact\").lean();"
+  },
+  {
+    "file": "agentController.js",
+    "line": 98,
+    "code": "const commissions = await Commission.find({ agent: agent._id }).populate(\"booking\").sort({ createdAt: -1 }).lean();"
+  },
+  {
+    "file": "agentCustomerController.js",
+    "line": 29,
+    "code": "Agent.findOne({"
+  },
+  {
+    "file": "agentCustomerController.js",
+    "line": 95,
+    "code": "const existing = await Customer.findOne({"
+  },
+  {
+    "file": "agentCustomerController.js",
+    "line": 170,
+    "code": "Customer.find(filter)"
+  },
+  {
+    "file": "agentCustomerController.js",
+    "line": 216,
+    "code": "const customer = await Customer.findOne({"
+  },
+  {
+    "file": "agentPackageController.js",
+    "line": 134,
+    "code": "TourPackage.find(filter)"
+  },
+  {
+    "file": "agentTourController.js",
+    "line": 61,
+    "code": "return Agent.findOne({"
+  },
+  {
+    "file": "agentTourController.js",
+    "line": 265,
+    "code": "await Tour.find(filter)"
+  },
+  {
+    "file": "agentTourController.js",
+    "line": 304,
+    "code": "await Tour.findOne({"
+  },
+  {
+    "file": "agentTourController.js",
+    "line": 349,
+    "code": "await Tour.findOne({"
+  },
+  {
+    "file": "agentTourController.js",
+    "line": 480,
+    "code": "await Tour.findOne({"
+  },
+  {
+    "file": "authController.js",
+    "line": 37,
+    "code": "const user = await User.findOne(userQuery)"
+  },
+  {
+    "file": "authController.js",
+    "line": 144,
+    "code": "const exists = await User.findOne({"
+  },
+  {
+    "file": "authController.js",
+    "line": 194,
+    "code": "const user = await User.findById(req.user._id)"
+  },
+  {
+    "file": "authController.js",
+    "line": 220,
+    "code": "const user=await User.findById(req.user._id)"
+  },
+  {
+    "file": "bookingAdminController.js",
+    "line": 115,
+    "code": "Booking.find(filter)"
+  },
+  {
+    "file": "bookingAdminController.js",
+    "line": 230,
+    "code": "await Booking.findById("
+  },
+  {
+    "file": "bookingAdminController.js",
+    "line": 340,
+    "code": "await Booking.findById(req.params.id);"
+  },
+  {
+    "file": "bookingAdminController.js",
+    "line": 413,
+    "code": "await Booking.findByIdAndUpdate("
+  },
+  {
+    "file": "bookingAdminController.js",
+    "line": 615,
+    "code": "await Booking.findById(req.params.id);"
+  },
+  {
+    "file": "bookingAdminController.js",
+    "line": 691,
+    "code": "await Booking.findByIdAndUpdate("
+  },
+  {
+    "file": "bookingAdminController.js",
+    "line": 802,
+    "code": "await Booking.findById(req.params.id);"
+  },
+  {
+    "file": "bookingAdminController.js",
+    "line": 965,
+    "code": "await Booking.findById(req.params.id)"
+  },
+  {
+    "file": "bookingAdminController.js",
+    "line": 1044,
+    "code": "await Booking.findById(req.params.id)"
+  },
+  {
+    "file": "bookingController.js",
+    "line": 72,
+    "code": "tourData = await Tour.findById(tour);"
+  },
+  {
+    "file": "bookingController.js",
+    "line": 79,
+    "code": "customTourData = await CustomTourRequest.findOne({"
+  },
+  {
+    "file": "bookingController.js",
+    "line": 231,
+    "code": "const admins = await User.find({"
+  },
+  {
+    "file": "bookingController.js",
+    "line": 276,
+    "code": "const systemSettings = await SystemSetting.findOne({ key: \"default\" }).lean().catch(() => null);"
+  },
+  {
+    "file": "bookingController.js",
+    "line": 355,
+    "code": "const customerProfile = await Customer.findOne({"
+  },
+  {
+    "file": "bookingController.js",
+    "line": 382,
+    "code": "await Booking.find(filter)"
+  },
+  {
+    "file": "bookingController.js",
+    "line": 510,
+    "code": "await Booking.find(filter)"
+  },
+  {
+    "file": "bookingController.js",
+    "line": 619,
+    "code": "await Booking.find(filter)"
+  },
+  {
+    "file": "bookingController.js",
+    "line": 719,
+    "code": "await Booking.findById("
+  },
+  {
+    "file": "bookingController.js",
+    "line": 863,
+    "code": "await Booking.findById("
+  },
+  {
+    "file": "bookingController.js",
+    "line": 916,
+    "code": "await Commission.findOne({"
+  },
+  {
+    "file": "bookingController.js",
+    "line": 925,
+    "code": "await Agent.findById("
+  },
+  {
+    "file": "bookingController.js",
+    "line": 1147,
+    "code": "await Booking.findById("
+  },
+  {
+    "file": "bookingController.js",
+    "line": 1366,
+    "code": "await Booking.findById("
+  },
+  {
+    "file": "bookingController.js",
+    "line": 1504,
+    "code": "const booking = await Booking.findOne({ _id:req.params.id, $or:[{user:req.user._id},{\"customerSnapshot.email\":req.user.email}] });"
+  },
+  {
+    "file": "bookingController.js",
+    "line": 1515,
+    "code": "const admins = await User.find({ $or:[{role:{$in:[\"admin\",\"superadmin\",\"super_admin\",\"manager\",\"tour_manager\",\"tourmanager\"]}},{legacyRole:{$in:[\"admin\",\"superadmin\",\"super_admin\",\"manager\",\"tour_manager\",\"tourmanager\"]}}], status:\"active\" }).select(\"_id\").lean();"
+  },
+  {
+    "file": "bookingReportController.js",
+    "line": 37,
+    "code": "await Booking.find({"
+  },
+  {
+    "file": "bookingReportController.js",
+    "line": 127,
+    "code": "await Booking.find({"
+  },
+  {
+    "file": "bookingTravelDateController.js",
+    "line": 22,
+    "code": "const tour = await Tour.findById(booking.tour).select(\"startDate endDate date durationDetails duration\").lean();"
+  },
+  {
+    "file": "bookingTravelDateController.js",
+    "line": 35,
+    "code": "const request = await CustomTourRequest.findById(booking.customTourRequest)"
+  },
+  {
+    "file": "bookingTravelDateController.js",
+    "line": 51,
+    "code": "const booking = await Booking.findOne({ _id: req.params.id, user: req.user._id });"
+  },
+  {
+    "file": "bootstrapController.js",
+    "line": 55,
+    "code": "const existingEmail = await User.findOne({ email: normalizedEmail }).select(\"_id\").lean();"
+  },
+  {
+    "file": "bootstrapController.js",
+    "line": 58,
+    "code": "const existingPhone = await User.findOne({ phone: normalizedPhone }).select(\"_id\").lean();"
+  },
+  {
+    "file": "bootstrapController.js",
+    "line": 61,
+    "code": "const permissions = await Permission.find(tenantFilter(req)).select(\"_id\").lean();"
+  },
+  {
+    "file": "categoryController.js",
+    "line": 17,
+    "code": "const categories = await TourCategory.find({"
+  },
+  {
+    "file": "commissionController.js",
+    "line": 18,
+    "code": "await Commission.find(tenantFilter(req))"
+  },
+  {
+    "file": "commissionController.js",
+    "line": 77,
+    "code": "await Commission.find({"
+  },
+  {
+    "file": "commissionController.js",
+    "line": 117,
+    "code": "const commission = await Commission.findById(req.params.id);"
+  },
+  {
+    "file": "commissionController.js",
+    "line": 141,
+    "code": "const commission = await Commission.findById(req.params.id);"
+  },
+  {
+    "file": "commissionController.js",
+    "line": 158,
+    "code": "const agent = await Agent.findById(commission.agent);"
+  },
+  {
+    "file": "customTourRequestController.js",
+    "line": 24,
+    "code": "}=req.body||{};if(!destination||Number(durationDays)<1||Number(people)<1)return res.status(400).json({success:false,message:\"Destination, duration and number of people are required.\"});const item=await CustomTourRequest.create({customer:req.user._id,destination:String(destination).trim(),durationDays:Number(durationDays),people:Number(people),startDate:startDate?new Date(startDate):null,budget:Number(budget||0),requirements:String(requirements||\"\").trim(),pickupLocation:String(pickupLocation||\"\").trim(),pickupDate:pickupDate?new Date(pickupDate):null,pickupTime:String(pickupTime||\"\").trim(),adults:Number(adults||people||1),children:Number(children||0),accommodationPreference:String(accommodationPreference||\"\").trim(),mealPreference:String(mealPreference||\"\").trim(),transportPreference:String(transportPreference||\"\").trim(),emergencyContact:String(emergencyContact||\"\").trim(),specialRequests:String(specialRequests||\"\").trim()});const admins=await User.find({$or:[{role:{$in:adminRoles}},{legacyRole:{$in:adminRoles}}],status:\"active\"}).select(\"_id\").lean();if(admins.length)await Notification.insertMany(admins.map(a=>({recipient:a._id,user:a._id,title:\"Custom Tour Request\",message:`A customer requested a ${durationDays}-day custom trip to ${destination} for ${people} people.`,type:\"booking\",relatedModel:\"CustomTourRequest\",relatedId:item._id,actionUrl:\"/admin/custom-tour-requests\"})));res.status(201).json({success:true,message:\"Custom tour request submitted. The company will review it and send you a total cost.\",request:item});}catch(e){next(e)}};"
+  },
+  {
+    "file": "customTourRequestController.js",
+    "line": 25,
+    "code": "export const getMyCustomTourRequests=async(req,res,next)=>{try{const requests=await CustomTourRequest.find({customer:req.user._id}).sort({createdAt:-1}).lean();res.json({success:true,requests})}catch(e){next(e)}};"
+  },
+  {
+    "file": "customTourRequestController.js",
+    "line": 26,
+    "code": "export const getAdminCustomTourRequests=async(req,res,next)=>{try{const requests=await CustomTourRequest.find(tenantFilter(req)).populate(\"customer\",\"name email phone\").sort({createdAt:-1}).lean();res.json({success:true,requests})}catch(e){next(e)}};"
+  },
+  {
+    "file": "customTourRequestController.js",
+    "line": 27,
+    "code": "export const quoteCustomTourRequest=async(req,res,next)=>{try{const {status=\"quoted\",quotedAmount,adminNotes=\"\"}=req.body||{};const amount=Number(quotedAmount);if(![\"approved\",\"quoted\",\"rejected\"].includes(status))return res.status(400).json({success:false,message:\"Invalid request status.\"});if(status!==\"rejected\"&&!Number.isFinite(amount)||status!==\"rejected\"&&amount<0)return res.status(400).json({success:false,message:\"A valid quoted amount is required.\"});const item=await CustomTourRequest.findByIdAndUpdate(req.params.id,{status,quotedAmount:status===\"rejected\"?0:amount,adminNotes:String(adminNotes)}, {new:true}).populate(\"customer\",\"name email phone\");if(!item)return res.status(404).json({success:false,message:\"Request not found.\"});await Notification.create({recipient:item.customer._id,user:item.customer._id,title:status===\"rejected\"?\"Custom Tour Request Declined\":\"Custom Tour Quote Ready\",message:status===\"rejected\"?`Your custom tour request was declined. ${adminNotes}`:`Your custom tour request has been priced at KES ${amount.toLocaleString()}. ${adminNotes}`,type:\"booking\",relatedModel:\"CustomTourRequest\",relatedId:item._id,actionUrl:\"/custom-tour\"});res.json({success:true,request:item})}catch(e){next(e)}};"
+  },
+  {
+    "file": "customTourRequestController.js",
+    "line": 28,
+    "code": "export const assignCustomTourResources=async(req,res,next)=>{try{const item=await CustomTourRequest.findByIdAndUpdate(req.params.id,{assignedGuide:req.body.guide||null,assignedDriver:req.body.driver||null,assignedAgent:req.body.agent||null},{new:true});if(!item)return res.status(404).json({success:false,message:\"Request not found.\"});res.json({success:true,request:item})}catch(e){next(e)}};"
+  },
+  {
+    "file": "customTourRequestController.js",
+    "line": 32,
+    "code": "const item=await CustomTourRequest.findOne({_id:req.params.id,customer:req.user._id,status:{$in:[\"quoted\",\"approved\"]}});"
+  },
+  {
+    "file": "customTourRequestController.js",
+    "line": 37,
+    "code": "let customDestination = await Destination.findOne({name:\"Custom Tour\"});"
+  },
+  {
+    "file": "customTourRequestController.js",
+    "line": 39,
+    "code": "let customTour = await Tour.findOne({title:\"Custom Tour Package\"});"
+  },
+  {
+    "file": "customerBookingController.js",
+    "line": 15,
+    "code": "const tourData = await Tour.findById(tour);"
+  },
+  {
+    "file": "customerBookingController.js",
+    "line": 57,
+    "code": "const admins = await User.find({"
+  },
+  {
+    "file": "customerController.js",
+    "line": 18,
+    "code": "const nonCustomerRoleIds = await Role.find({ name: { $nin: [\"customer\", \"Customer\"] } }).distinct(\"_id\");"
+  },
+  {
+    "file": "customerController.js",
+    "line": 36,
+    "code": "User.find(filter).select(\"name email phone role roleId legacyRole status createdAt\").populate(\"roleId\", \"name displayName\").sort({ createdAt: -1 }).skip(skip).limit(pageSize).lean(),"
+  },
+  {
+    "file": "customerController.js",
+    "line": 41,
+    "code": "const customerRecords = await Customer.find({ user: { $in: customerIds } }).select(\"_id user customerType\").lean();"
+  },
+  {
+    "file": "customerController.js",
+    "line": 45,
+    "code": "const bookingStats = await Booking.find({"
+  },
+  {
+    "file": "customerController.js",
+    "line": 66,
+    "code": "const legacy = customerRecords.find((record) => record.user?.toString() === customer._id.toString());"
+  },
+  {
+    "file": "customerController.js",
+    "line": 78,
+    "code": "const customer = await User.findOne({ _id: req.params.id, isDeleted: { $ne: true }, $or: [{ role: \"customer\" }, { legacyRole: \"customer\" }] }).select(\"-password\").lean();"
+  },
+  {
+    "file": "customerController.js",
+    "line": 81,
+    "code": "const legacyCustomer = await Customer.findOne({ user: customer._id }).select(\"_id customerType\").lean();"
+  },
+  {
+    "file": "customerController.js",
+    "line": 85,
+    "code": "const bookings = await Booking.find({ isDeleted: { $ne: true }, $or: ownership }).populate(\"tour\", \"title destination price\").sort({ createdAt: -1 }).lean();"
+  },
+  {
+    "file": "dashboardApiController.js",
+    "line": 24,
+    "code": "const agent = await Agent.findOne({"
+  },
+  {
+    "file": "dashboardApiController.js",
+    "line": 120,
+    "code": "Booking.find({"
+  },
+  {
+    "file": "destinationController.js",
+    "line": 158,
+    "code": "Destination.find(filter)"
+  },
+  {
+    "file": "destinationController.js",
+    "line": 269,
+    "code": "const destination = await Destination.findOne({"
+  },
+  {
+    "file": "destinationController.js",
+    "line": 310,
+    "code": "const tours = await Tour.find({"
+  },
+  {
+    "file": "destinationController.js",
+    "line": 344,
+    "code": "const relatedDestinations = await Destination.find({"
+  },
+  {
+    "file": "destinationController.js",
+    "line": 432,
+    "code": "const destinations = await Destination.find({"
+  },
+  {
+    "file": "documentController.js",
+    "line": 57,
+    "code": "const booking = await Booking.findById(req.params.id);"
+  },
+  {
+    "file": "driverController.js",
+    "line": 7,
+    "code": "let driver = await Staff.findOne({"
+  },
+  {
+    "file": "driverController.js",
+    "line": 69,
+    "code": "const tours = await Tour.find({"
+  },
+  {
+    "file": "driverController.js",
+    "line": 116,
+    "code": "const assignedVehicle = formatted.find((tour) => tour.assignedVehicle)?.assignedVehicle || null;"
+  },
+  {
+    "file": "driverTourController.js",
+    "line": 8,
+    "code": "const resolveDriver = (user) => Staff.findOne({ $or: [{ user: user._id }, { email: String(user.email || \"\").toLowerCase() }], position: \"driver\", isDeleted: { $ne: true } });"
+  },
+  {
+    "file": "driverTourController.js",
+    "line": 12,
+    "code": "try { const driver = await resolveDriver(req.user); if (!driver) return res.status(404).json({ success:false, message:\"Driver profile not found\" }); const tours = await Tour.find({ assignedDriver:driver._id, isDeleted:{ $ne:true } }).populate(\"destination\").populate(\"assignedGuide\").populate(\"assignedVehicle\").sort({ startDate:1, date:1 }).limit(50); res.json({ success:true, count:tours.length, tours, data:tours }); } catch (e) { next(e); }"
+  },
+  {
+    "file": "driverTourController.js",
+    "line": 16,
+    "code": "try { const driver = await resolveDriver(req.user); if (!driver) return res.status(404).json({ success:false, message:\"Driver profile not found\" }); const tour = await Tour.findOne(assigned(driver, req.params.id)).populate(\"destination\").populate(\"assignedGuide\").populate(\"assignedVehicle\"); if (!tour) return res.status(404).json({ success:false, message:\"Tour not found or not assigned to you\" }); res.json({ success:true, tour, data:{ tour } }); } catch (e) { next(e); }"
+  },
+  {
+    "file": "driverTourController.js",
+    "line": 20,
+    "code": "try { const driver = await resolveDriver(req.user); if (!driver) return res.status(404).json({ success:false, message:\"Driver profile not found\" }); const tour = await Tour.findOne(assigned(driver, req.params.id)); if (!tour) return res.status(403).json({ success:false, message:\"You are not assigned to this tour\" }); const bookings = await Booking.find({ tour:tour._id, isDeleted:{ $ne:true }, status:{ $in:[\"confirmed\",\"assigned\",\"ongoing\",\"completed\"] } }).populate(\"customer\",\"name email phone\").sort({ createdAt:-1 }); res.json({ success:true, count:bookings.length, guests:bookings, data:bookings }); } catch (e) { next(e); }"
+  },
+  {
+    "file": "driverTourController.js",
+    "line": 27,
+    "code": "const tour = await Tour.findOne(assigned(driver, req.params.id)); if (!tour) return res.status(404).json({ success:false, message:\"Tour not found or not assigned to you\" });"
+  },
+  {
+    "file": "financeController.js",
+    "line": 209,
+    "code": "User.find({"
+  },
+  {
+    "file": "financeController.js",
+    "line": 217,
+    "code": "Booking.find({"
+  },
+  {
+    "file": "financeController.js",
+    "line": 248,
+    "code": "Payment.find(filter)"
+  },
+  {
+    "file": "financeExportController.js",
+    "line": 15,
+    "code": "await Payment.find(tenantFilter(req))"
+  },
+  {
+    "file": "financeExportController.js",
+    "line": 105,
+    "code": "await Payment.find(tenantFilter(req))"
+  },
+  {
+    "file": "galleryController.js",
+    "line": 11,
+    "code": "const images = await Gallery.find({"
+  },
+  {
+    "file": "guideController.js",
+    "line": 29,
+    "code": "let guide = await Staff.findOne({"
+  },
+  {
+    "file": "guideController.js",
+    "line": 143,
+    "code": "let tours = await Tour.find({"
+  },
+  {
+    "file": "guideController.js",
+    "line": 155,
+    "code": "tours = await Tour.find({"
+  },
+  {
+    "file": "guideController.js",
+    "line": 251,
+    "code": "const tours = await Tour.find({"
+  },
+  {
+    "file": "guideController.js",
+    "line": 283,
+    "code": "const tour = await Tour.findOne({"
+  },
+  {
+    "file": "guideController.js",
+    "line": 318,
+    "code": "const assignedTour = await Tour.findOne({"
+  },
+  {
+    "file": "guideController.js",
+    "line": 331,
+    "code": "const bookings = await Booking.find({"
+  },
+  {
+    "file": "guideController.js",
+    "line": 370,
+    "code": "const assignedTourForDate = await Tour.findOne({"
+  },
+  {
+    "file": "guideController.js",
+    "line": 455,
+    "code": "const assignedTour = await Tour.findOne({"
+  },
+  {
+    "file": "heroController.js",
+    "line": 9,
+    "code": "const slides = await HeroSlide.find(tenantFilter(req));"
+  },
+  {
+    "file": "invoiceController.js",
+    "line": 25,
+    "code": "const bookingData = await Booking.findById(booking)"
+  },
+  {
+    "file": "invoiceController.js",
+    "line": 36,
+    "code": "const existingInvoice = await Invoice.findOne({"
+  },
+  {
+    "file": "invoiceController.js",
+    "line": 61,
+    "code": "const populatedInvoice = await Invoice.findById(invoice._id)"
+  },
+  {
+    "file": "invoiceController.js",
+    "line": 91,
+    "code": "const invoices = await Invoice.find(tenantFilter(req))"
+  },
+  {
+    "file": "invoiceController.js",
+    "line": 124,
+    "code": "const invoice = await Invoice.findById(req.params.id).populate({"
+  },
+  {
+    "file": "invoiceController.js",
+    "line": 159,
+    "code": "const booking = await Booking.findById(req.params.id);"
+  },
+  {
+    "file": "itineraryController.js",
+    "line": 15,
+    "code": "const existingTour = await Tour.findById(tour);"
+  },
+  {
+    "file": "itineraryController.js",
+    "line": 29,
+    "code": "const populated = await Itinerary.findById(itinerary._id)"
+  },
+  {
+    "file": "itineraryController.js",
+    "line": 49,
+    "code": "const itineraries = await Itinerary.find(tenantFilter(req))"
+  },
+  {
+    "file": "itineraryController.js",
+    "line": 72,
+    "code": "const itinerary = await Itinerary.findById(req.params.id)"
+  },
+  {
+    "file": "itineraryController.js",
+    "line": 98,
+    "code": "const itinerary = await Itinerary.findByIdAndUpdate("
+  },
+  {
+    "file": "mfaController.js",
+    "line": 52,
+    "code": "const user = await User.findById(userId).select(\"+loginPinHash +loginPinExpiresAt +loginPinAttempts +loginPinLastSentAt\");"
+  },
+  {
+    "file": "mfaController.js",
+    "line": 84,
+    "code": "const user = await User.findById(userId)"
+  },
+  {
+    "file": "mpesaController.js",
+    "line": 58,
+    "code": "const booking = await Booking.findById(bookingId);"
+  },
+  {
+    "file": "mpesaController.js",
+    "line": 84,
+    "code": "const existingPayment = await Payment.findOne({ booking: booking._id, status: \"pending\" });"
+  },
+  {
+    "file": "mpesaController.js",
+    "line": 143,
+    "code": "const payment = await Payment.findOne({"
+  },
+  {
+    "file": "mpesaController.js",
+    "line": 148,
+    "code": "const booking = await Booking.findById(payment.booking);"
+  },
+  {
+    "file": "mpesaController.js",
+    "line": 169,
+    "code": "const getValue = (name) => items.find((item) => item.Name === name)?.Value ?? null;"
+  },
+  {
+    "file": "mpesaController.js",
+    "line": 215,
+    "code": "const managers = await User.find({"
+  },
+  {
+    "file": "mpesaController.js",
+    "line": 243,
+    "code": "const payment = await Payment.findById(req.params.id)"
+  },
+  {
+    "file": "mpesaController.js",
+    "line": 254,
+    "code": "const booking = await Booking.findById(req.params.bookingId || req.params.id);"
+  },
+  {
+    "file": "mpesaController.js",
+    "line": 259,
+    "code": "const payments = await Payment.find({ booking: booking._id })"
+  },
+  {
+    "file": "mpesaController.js",
+    "line": 275,
+    "code": "const payments = await Payment.find(filter)"
+  },
+  {
+    "file": "mpesaController.js",
+    "line": 289,
+    "code": "const payment = await Payment.findOne({ mpesaReceiptNumber: req.params.receipt })"
+  },
+  {
+    "file": "mpesaController.js",
+    "line": 304,
+    "code": "const payment = await Payment.findOne({"
+  },
+  {
+    "file": "mpesaController.js",
+    "line": 314,
+    "code": "const booking = await Booking.findById(req.params.bookingId).lean();"
+  },
+  {
+    "file": "mpesaController.js",
+    "line": 316,
+    "code": "const payment = await Payment.findOne({ booking: booking._id }).sort({ createdAt: -1 }).lean();"
+  },
+  {
+    "file": "mpesaRefundController.js",
+    "line": 39,
+    "code": "const payment = await Payment.findOne({"
+  },
+  {
+    "file": "notificationController.js",
+    "line": 117,
+    "code": "const roleDocs = await Role.find({ name: { $in: allowedRoles } }).select(\"_id\").lean();"
+  },
+  {
+    "file": "notificationController.js",
+    "line": 120,
+    "code": "const users = await User.find({"
+  },
+  {
+    "file": "notificationController.js",
+    "line": 134,
+    "code": "const staff = await Staff.find({"
+  },
+  {
+    "file": "notificationController.js",
+    "line": 155,
+    "code": "const user = await User.findById(member.user)"
+  },
+  {
+    "file": "notificationController.js",
+    "line": 229,
+    "code": "? await Role.find({ name: { $in: expandedRoles } }).select(\"_id\").lean()"
+  },
+  {
+    "file": "notificationController.js",
+    "line": 234,
+    "code": "const recipients = await User.find({"
+  },
+  {
+    "file": "notificationController.js",
+    "line": 318,
+    "code": "Notification.find(filter)"
+  },
+  {
+    "file": "notificationController.js",
+    "line": 381,
+    "code": "await Notification.findOne({"
+  },
+  {
+    "file": "notificationController.js",
+    "line": 435,
+    "code": "await Booking.findById("
+  },
+  {
+    "file": "paymentController.js",
+    "line": 34,
+    "code": "const payment = await Payment.findById(req.params.id)"
+  },
+  {
+    "file": "paymentController.js",
+    "line": 63,
+    "code": "const payment = await Payment.findOne({"
+  },
+  {
+    "file": "paymentController.js",
+    "line": 124,
+    "code": "Payment.find(query)"
+  },
+  {
+    "file": "paymentController.js",
+    "line": 164,
+    "code": "const booking = await Booking.findById(bookingId);"
+  },
+  {
+    "file": "paymentController.js",
+    "line": 209,
+    "code": "const payment = await Payment.findById(req.params.id);"
+  },
+  {
+    "file": "paymentController.js",
+    "line": 213,
+    "code": "const booking = await Booking.findById(payment.booking);"
+  },
+  {
+    "file": "paymentController.js",
+    "line": 254,
+    "code": "const payment = await Payment.findById(req.params.id);"
+  },
+  {
+    "file": "paymentController.js",
+    "line": 256,
+    "code": "const booking = await Booking.findById(payment.booking);"
+  },
+  {
+    "file": "paymentController.js",
+    "line": 290,
+    "code": "const payment = await Payment.findById(req.params.id);"
+  },
+  {
+    "file": "paymentController.js",
+    "line": 327,
+    "code": "const payment = await Payment.findById(req.params.id);"
+  },
+  {
+    "file": "quotationController.js",
+    "line": 15,
+    "code": "const agent = await Agent.findOne({"
+  },
+  {
+    "file": "quotationController.js",
+    "line": 62,
+    "code": "const populatedQuotation = await Quotation.findById(quotation._id)"
+  },
+  {
+    "file": "quotationController.js",
+    "line": 87,
+    "code": "const agent = await Agent.findOne({"
+  },
+  {
+    "file": "quotationController.js",
+    "line": 98,
+    "code": "const quotations = await Quotation.find({"
+  },
+  {
+    "file": "quotationController.js",
+    "line": 128,
+    "code": "const agent = await Agent.findOne({"
+  },
+  {
+    "file": "quotationController.js",
+    "line": 139,
+    "code": "const quotation = await Quotation.findOne({"
+  },
+  {
+    "file": "quotationController.js",
+    "line": 173,
+    "code": "const agent = await Agent.findOne({"
+  },
+  {
+    "file": "reconciliationController.js",
+    "line": 6,
+    "code": "const payments = await Payment.find(tenantFilter(req))"
+  },
+  {
+    "file": "reportController.js",
+    "line": 50,
+    "code": "const bookings = await Booking.find(filter)"
+  },
+  {
+    "file": "reviewController.js",
+    "line": 12,
+    "code": "const reviews = await Review.find({"
+  },
+  {
+    "file": "reviewController.js",
+    "line": 24,
+    "code": "await Tour.findByIdAndUpdate(tourId, {"
+  },
+  {
+    "file": "reviewController.js",
+    "line": 57,
+    "code": "const booking = await Booking.findOne({"
+  },
+  {
+    "file": "reviewController.js",
+    "line": 74,
+    "code": "const existingReview = await Review.findOne({"
+  },
+  {
+    "file": "reviewController.js",
+    "line": 117,
+    "code": "const reviews = await Review.find({"
+  },
+  {
+    "file": "reviewController.js",
+    "line": 149,
+    "code": "const review = await Review.findById(req.params.id);"
+  },
+  {
+    "file": "reviewController.js",
+    "line": 183,
+    "code": "const review = await Review.findById(req.params.id);"
+  },
+  {
+    "file": "reviewController.js",
+    "line": 214,
+    "code": "const review = await Review.findById(req.params.id);"
+  },
+  {
+    "file": "settingsController.js",
+    "line": 56,
+    "code": "let settings = await SystemSetting.findOne({ key: \"default\" });"
+  },
+  {
+    "file": "staffController.js",
+    "line": 111,
+    "code": "Staff.find(filter)"
+  },
+  {
+    "file": "staffController.js",
+    "line": 143,
+    "code": "const staff = await Staff.findById(req.params.id).populate("
+  },
+  {
+    "file": "staffController.js",
+    "line": 172,
+    "code": "const staff = await Staff.findByIdAndUpdate("
+  },
+  {
+    "file": "staffController.js",
+    "line": 206,
+    "code": "const staff = await Staff.findByIdAndUpdate("
+  },
+  {
+    "file": "staffController.js",
+    "line": 242,
+    "code": "const staff = await Staff.findByIdAndUpdate("
+  },
+  {
+    "file": "staffController.js",
+    "line": 279,
+    "code": "const guides = await Staff.find({"
+  },
+  {
+    "file": "staffController.js",
+    "line": 306,
+    "code": "const drivers = await Staff.find({"
+  },
+  {
+    "file": "staffController.js",
+    "line": 344,
+    "code": "const staff = await Staff.findByIdAndUpdate("
+  },
+  {
+    "file": "stripeController.js",
+    "line": 248,
+    "code": "await Booking.findOne({"
+  },
+  {
+    "file": "stripeController.js",
+    "line": 411,
+    "code": "await Payment.findOne({"
+  },
+  {
+    "file": "stripeController.js",
+    "line": 841,
+    "code": "await Payment.findOne({"
+  },
+  {
+    "file": "stripeController.js",
+    "line": 1215,
+    "code": "await Payment.findOne({"
+  },
+  {
+    "file": "superAdminDashboardController.js",
+    "line": 10,
+    "code": "const adminRoleIds = await Role.find({"
+  },
+  {
+    "file": "superAdminOperationsController.js",
+    "line": 46,
+    "code": "AuditLog.find(filter)"
+  },
+  {
+    "file": "superAdminOperationsController.js",
+    "line": 259,
+    "code": "backupData[name] = await db.collection(name).find(tenantFilter(req)).toArray();"
+  },
+  {
+    "file": "superAdminOperationsController.js",
+    "line": 295,
+    "code": "const backups = await DatabaseBackup.find(tenantFilter(req)).sort({ createdAt: -1 }).lean();"
+  },
+  {
+    "file": "superAdminOperationsController.js",
+    "line": 305,
+    "code": "const backup = await DatabaseBackup.findById(req.params.id);"
+  },
+  {
+    "file": "superAdminOperationsController.js",
+    "line": 345,
+    "code": "const backup = await DatabaseBackup.findById(req.params.id);"
+  },
+  {
+    "file": "superAdminToolsController.js",
+    "line": 11,
+    "code": "const logs = await AuditLog.find(tenantFilter(req))"
+  },
+  {
+    "file": "superAdminToolsController.js",
+    "line": 47,
+    "code": "const events = await SecurityLog.find(tenantFilter(req))"
+  },
+  {
+    "file": "superAdminUserController.js",
+    "line": 186,
+    "code": "const roleDocument = await Role.findOne({"
+  },
+  {
+    "file": "superAdminUserController.js",
+    "line": 203,
+    "code": "const existingEmail = await User.findOne({"
+  },
+  {
+    "file": "superAdminUserController.js",
+    "line": 216,
+    "code": "const existingPhone = await User.findOne({"
+  },
+  {
+    "file": "tenantBrandingController.js",
+    "line": 9,
+    "code": "await Organization.findById("
+  },
+  {
+    "file": "tenantBrandingController.js",
+    "line": 58,
+    "code": "await Organization.findByIdAndUpdate("
+  },
+  {
+    "file": "tenantController.js",
+    "line": 12,
+    "code": "const tenants = await runWithTenant({ bypass: true }, () => Organization.find(tenantFilter(req)).sort({ createdAt: -1 }).lean());"
+  },
+  {
+    "file": "tenantController.js",
+    "line": 26,
+    "code": "if (await Organization.findOne({ slug: tenantSlug }).lean()) return res.status(409).json({ success: false, message: \"That company slug is already in use.\" });"
+  },
+  {
+    "file": "tenantController.js",
+    "line": 33,
+    "code": "let role = await Role.findOne({ name: \"admin\" });"
+  },
+  {
+    "file": "tenantController.js",
+    "line": 47,
+    "code": "const tenant = await runWithTenant({ bypass: true }, () => Organization.findById(req.params.id).lean());"
+  },
+  {
+    "file": "tenantController.js",
+    "line": 57,
+    "code": "const tenant = await runWithTenant({ bypass: true }, () => Organization.findByIdAndUpdate(req.params.id, { $set: updates }, { new: true, runValidators: true }).lean());"
+  },
+  {
+    "file": "tourAssignmentController.js",
+    "line": 64,
+    "code": "const tour = await Tour.findById(tourId);"
+  },
+  {
+    "file": "tourAssignmentController.js",
+    "line": 146,
+    "code": "? Staff.findOne({"
+  },
+  {
+    "file": "tourAssignmentController.js",
+    "line": 155,
+    "code": "? Staff.findOne({"
+  },
+  {
+    "file": "tourAssignmentController.js",
+    "line": 164,
+    "code": "? Vehicle.findOne({"
+  },
+  {
+    "file": "tourAssignmentController.js",
+    "line": 286,
+    "code": "const oldGuide = await Staff.findById("
+  },
+  {
+    "file": "tourAssignmentController.js",
+    "line": 320,
+    "code": "const oldDriver = await Staff.findById("
+  },
+  {
+    "file": "tourAssignmentController.js",
+    "line": 396,
+    "code": "await Staff.findByIdAndUpdate("
+  },
+  {
+    "file": "tourAssignmentController.js",
+    "line": 416,
+    "code": "await Staff.findByIdAndUpdate("
+  },
+  {
+    "file": "tourAssignmentController.js",
+    "line": 436,
+    "code": "await Vehicle.findByIdAndUpdate("
+  },
+  {
+    "file": "tourAssignmentController.js",
+    "line": 453,
+    "code": "const updatedTour = await Tour.findById("
+  },
+  {
+    "file": "tourAssignmentController.js",
+    "line": 502,
+    "code": "const linked = await User.findById(person.user).select(\"_id email\").lean();"
+  },
+  {
+    "file": "tourAssignmentController.js",
+    "line": 506,
+    "code": "const linked = await User.findOne({"
+  },
+  {
+    "file": "tourAvailabilityController.js",
+    "line": 20,
+    "code": "const tour = await Tour.findById(req.params.id);"
+  },
+  {
+    "file": "tourAvailabilityController.js",
+    "line": 119,
+    "code": "const tour = await Tour.findById(req.params.id);"
+  },
+  {
+    "file": "tourAvailabilityController.js",
+    "line": 166,
+    "code": "const updatedTour = await Tour.findById(tour._id)"
+  },
+  {
+    "file": "tourController.js",
+    "line": 175,
+    "code": "Tour.find(filter)"
+  },
+  {
+    "file": "tourController.js",
+    "line": 276,
+    "code": "await Tour.find({"
+  },
+  {
+    "file": "tourController.js",
+    "line": 404,
+    "code": "await Tour.find(filter)"
+  },
+  {
+    "file": "tourController.js",
+    "line": 457,
+    "code": "await Tour.findById("
+  },
+  {
+    "file": "tourController.js",
+    "line": 527,
+    "code": "await Tour.findOne({"
+  },
+  {
+    "file": "tourController.js",
+    "line": 650,
+    "code": "? Staff.findOne({"
+  },
+  {
+    "file": "tourController.js",
+    "line": 658,
+    "code": "? Staff.findOne({"
+  },
+  {
+    "file": "tourController.js",
+    "line": 666,
+    "code": "? Vehicle.findOne({"
+  },
+  {
+    "file": "tourController.js",
+    "line": 764,
+    "code": "await Staff.findByIdAndUpdate(guideDoc._id, {"
+  },
+  {
+    "file": "tourController.js",
+    "line": 771,
+    "code": "await Staff.findByIdAndUpdate(driverDoc._id, {"
+  },
+  {
+    "file": "tourController.js",
+    "line": 778,
+    "code": "await Vehicle.findByIdAndUpdate(vehicleDoc._id, {"
+  },
+  {
+    "file": "tourController.js",
+    "line": 786,
+    "code": "const createdTour = await Tour.findById(tour._id)"
+  },
+  {
+    "file": "tourController.js",
+    "line": 820,
+    "code": "await Tour.find({"
+  },
+  {
+    "file": "tourController.js",
+    "line": 886,
+    "code": "await Tour.findByIdAndUpdate("
+  },
+  {
+    "file": "tourController.js",
+    "line": 959,
+    "code": "await Tour.findByIdAndUpdate("
+  },
+  {
+    "file": "tourController.js",
+    "line": 1043,
+    "code": "await Vehicle.findById("
+  },
+  {
+    "file": "tourController.js",
+    "line": 1069,
+    "code": "await Tour.findById("
+  },
+  {
+    "file": "tourController.js",
+    "line": 1157,
+    "code": "await Tour.findById("
+  },
+  {
+    "file": "tourController.js",
+    "line": 1226,
+    "code": "await Tour.find({"
+  },
+  {
+    "file": "tourManagerController.js",
+    "line": 65,
+    "code": "Tour.find({"
+  },
+  {
+    "file": "tourManagerController.js",
+    "line": 81,
+    "code": "Booking.find({ isDeleted: { $ne: true } })"
+  },
+  {
+    "file": "tourManagerController.js",
+    "line": 206,
+    "code": "guideId ? Staff.findOne({ _id: guideId, position: \"guide\", isActive: true, isDeleted: { $ne: true } }) : null,"
+  },
+  {
+    "file": "tourManagerController.js",
+    "line": 207,
+    "code": "driverId ? Staff.findOne({ _id: driverId, position: \"driver\", isActive: true, isDeleted: { $ne: true } }) : null,"
+  },
+  {
+    "file": "tourManagerController.js",
+    "line": 208,
+    "code": "vehicleId ? Vehicle.findOne({ _id: vehicleId, isActive: true, isDeleted: { $ne: true } }) : null,"
+  },
+  {
+    "file": "tourManagerController.js",
+    "line": 242,
+    "code": "if (guideDoc) await Staff.findByIdAndUpdate(guideDoc._id, { $set: { availability: \"busy\" }, $addToSet: { assignedTours: tour._id } });"
+  },
+  {
+    "file": "tourManagerController.js",
+    "line": 243,
+    "code": "if (driverDoc) await Staff.findByIdAndUpdate(driverDoc._id, { $set: { availability: \"busy\" }, $addToSet: { assignedTours: tour._id } });"
+  },
+  {
+    "file": "tourManagerController.js",
+    "line": 244,
+    "code": "if (vehicleDoc) await Vehicle.findByIdAndUpdate(vehicleDoc._id, { $set: { status: \"assigned\", assignedTour: tour._id } });"
+  },
+  {
+    "file": "tourManagerController.js",
+    "line": 246,
+    "code": "const createdTour = await Tour.findById(tour._id)"
+  },
+  {
+    "file": "tourManagerController.js",
+    "line": 272,
+    "code": "Tour.find(filter)"
+  },
+  {
+    "file": "tourManagerController.js",
+    "line": 292,
+    "code": "const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });"
+  },
+  {
+    "file": "tourManagerController.js",
+    "line": 301,
+    "code": "const tour = await Tour.findOne({ _id: req.params.id, isDeleted: { $ne: true } });"
+  },
+  {
+    "file": "tourManagerController.js",
+    "line": 309,
+    "code": "const guide = await Staff.findById(tour.assignedGuide);"
+  },
+  {
+    "file": "tourManagerController.js",
+    "line": 313,
+    "code": "const driver = await Staff.findById(tour.assignedDriver);"
+  },
+  {
+    "file": "tourManagerController.js",
+    "line": 316,
+    "code": "if (tour.assignedVehicle) await Vehicle.findByIdAndUpdate(tour.assignedVehicle, { status: \"available\", assignedTour: null });"
+  },
+  {
+    "file": "tourManagerController.js",
+    "line": 337,
+    "code": "const booking = await Booking.findById(req.params.id);"
+  },
+  {
+    "file": "tourManagerController.js",
+    "line": 346,
+    "code": "const tour = await Tour.findById(booking.tour);"
+  },
+  {
+    "file": "tourManagerController.js",
+    "line": 354,
+    "code": "const updated = await Booking.findById(booking._id).populate(\"user\", \"name email phone\").populate(\"customer\", \"name email phone\").populate(\"tour\", \"title\").lean();"
+  },
+  {
+    "file": "tourManagerController.js",
+    "line": 362,
+    "code": "const booking = await Booking.findById(req.params.id);"
+  },
+  {
+    "file": "tourManagerController.js",
+    "line": 369,
+    "code": "const updatedBooking = await Booking.findById(booking._id)"
+  },
+  {
+    "file": "userController.js",
+    "line": 12,
+    "code": "const user = await User.findById(req.user._id)"
+  },
+  {
+    "file": "userController.js",
+    "line": 65,
+    "code": "const user = await User.findByIdAndUpdate("
+  },
+  {
+    "file": "userController.js",
+    "line": 106,
+    "code": "const guides = await Staff.find({"
+  },
+  {
+    "file": "userController.js",
+    "line": 134,
+    "code": "const user = await User.findById(req.params.id);"
+  },
+  {
+    "file": "vehicleController.js",
+    "line": 68,
+    "code": "const vehicles = await Vehicle.find({"
+  },
+  {
+    "file": "vehicleController.js",
+    "line": 100,
+    "code": "const vehicle = await Vehicle.findById(req.params.id)"
+  },
+  {
+    "file": "vehicleController.js",
+    "line": 170,
+    "code": "const vehicle = await Vehicle.findByIdAndUpdate("
+  },
+  {
+    "file": "vehicleController.js",
+    "line": 204,
+    "code": "const vehicle = await Vehicle.findByIdAndUpdate("
+  },
+  {
+    "file": "vehicleController.js",
+    "line": 238,
+    "code": "const vehicle = await Vehicle.findByIdAndUpdate("
+  },
+  {
+    "file": "vehicleController.js",
+    "line": 275,
+    "code": "const driverExists = await Staff.findOne({"
+  },
+  {
+    "file": "vehicleController.js",
+    "line": 288,
+    "code": "await Staff.findByIdAndUpdate(driver, {"
+  },
+  {
+    "file": "vehicleController.js",
+    "line": 293,
+    "code": "const vehicle = await Vehicle.findByIdAndUpdate("
+  },
+  {
+    "file": "vehicleController.js",
+    "line": 328,
+    "code": "const vehicle = await Vehicle.findById(req.params.id);"
+  },
+  {
+    "file": "vehicleController.js",
+    "line": 338,
+    "code": "await Staff.findByIdAndUpdate(vehicle.driver, {"
+  },
+  {
+    "file": "vehicleController.js",
+    "line": 374,
+    "code": "const tour = await Tour.findById(req.params.id);"
+  },
+  {
+    "file": "vehicleController.js",
+    "line": 384,
+    "code": "await Staff.findByIdAndUpdate(guideId, {"
+  },
+  {
+    "file": "vehicleController.js",
+    "line": 390,
+    "code": "await Staff.findByIdAndUpdate(driverId, {"
+  },
+  {
+    "file": "vehicleController.js",
+    "line": 409,
+    "code": "await Vehicle.findByIdAndUpdate(vehicleId, {"
+  },
+  {
+    "file": "vehicleController.js",
+    "line": 424,
+    "code": "const updatedTour = await Tour.findById(tour._id)"
+  },
+  {
+    "file": "vehicleController.js",
+    "line": 464,
+    "code": "const vehicle = await Vehicle.findByIdAndUpdate("
+  },
+  {
+    "file": "voucherController.js",
+    "line": 57,
+    "code": "const booking = await Booking.findById(req.params.id)"
+  },
+  {
+    "file": "wishlistController.js",
+    "line": 17,
+    "code": "let wishlist = await Wishlist.findOne({"
+  },
+  {
+    "file": "wishlistController.js",
+    "line": 93,
+    "code": "const tour = await Tour.findOne({"
+  },
+  {
+    "file": "wishlistController.js",
+    "line": 111,
+    "code": "let wishlist = await Wishlist.findOne({"
+  },
+  {
+    "file": "wishlistController.js",
+    "line": 143,
+    "code": "const updatedWishlist = await Wishlist.findById("
+  },
+  {
+    "file": "wishlistController.js",
+    "line": 197,
+    "code": "const wishlist = await Wishlist.findOne({"
+  },
+  {
+    "file": "wishlistController.js",
+    "line": 228,
+    "code": "const updatedWishlist = await Wishlist.findById("
+  }
+]

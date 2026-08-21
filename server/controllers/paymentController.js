@@ -1,3 +1,4 @@
+import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 import { getSystemSettings } from "../services/settingsService.js";
 import Payment from "../models/Payment.js";
 import Booking from "../models/Booking.js";
@@ -60,7 +61,7 @@ export const getPaymentById = async (req, res, next) => {
 
 export const getPaymentByBooking = async (req, res, next) => {
   try {
-    const payment = await Payment.findOne({
+    const payment = await Payment.findOne(mergeTenantFilter(req,{
       booking: req.params.bookingId,
     })
       .sort({ createdAt: -1 })

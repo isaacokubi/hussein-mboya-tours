@@ -1,3 +1,4 @@
+import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 import mongoose from "mongoose";
 import Tour from "../models/Tour.js";
 import Booking from "../models/Booking.js";
@@ -62,7 +63,7 @@ export const getTourManagerDashboard = async (req, res, next) => {
         },
       ]),
 
-      Tour.find({
+      Tour.find(mergeTenantFilter(req,{
         isDeleted: { $ne: true },
         $or: [
           { startDate: { $gte: now } },
@@ -78,7 +79,7 @@ export const getTourManagerDashboard = async (req, res, next) => {
         .limit(10)
         .lean(),
 
-      Booking.find({ isDeleted: { $ne: true } })
+      Booking.find(mergeTenantFilter(req,{ isDeleted: { $ne: true } })
         .populate("customer", "name email")
         .populate("tour", "title")
         .sort({ createdAt: -1 })
@@ -203,9 +204,9 @@ export const createTour = async (req, res, next) => {
     const vehicleId = assignedVehicle || vehicle || null;
 
     const [guideDoc, driverDoc, vehicleDoc] = await Promise.all([
-      guideId ? Staff.findOne({ _id: guideId, position: "guide", isActive: true, isDeleted: { $ne: true } }) : null,
-      driverId ? Staff.findOne({ _id: driverId, position: "driver", isActive: true, isDeleted: { $ne: true } }) : null,
-      vehicleId ? Vehicle.findOne({ _id: vehicleId, isActive: true, isDeleted: { $ne: true } }) : null,
+      guideId ? Staff.findOne(mergeTenantFilter(req,{ _id: guideId, position: "guide", isActive: true, isDeleted: { $ne: true } }) : null,
+      driverId ? Staff.findOne(mergeTenantFilter(req,{ _id: driverId, position: "driver", isActive: true, isDeleted: { $ne: true } }) : null,
+      vehicleId ? Vehicle.findOne(mergeTenantFilter(req,{ _id: vehicleId, isActive: true, isDeleted: { $ne: true } }) : null,
     ]);
 
     if (guideId && (!guideDoc || guideDoc.availability !== "available")) return res.status(400).json({ success: false, message: "Selected guide is unavailable." });
@@ -298,7 +299,7 @@ export const updateTour = async (req, res, next) => {
 export const deleteTour = async (req, res, next) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid tour ID" });
-    const tour = await Tour.findOne({ _id: req.params.id, isDeleted: { $ne: true } });
+    const tour = await Tour.findOne(mergeTenantFilter(req,{ _id: req.params.id, isDeleted: { $ne: true } });
     if (!tour) return res.status(404).json({ success: false, message: "Tour not found" });
     tour.isDeleted = true;
     tour.deletedAt = new Date();

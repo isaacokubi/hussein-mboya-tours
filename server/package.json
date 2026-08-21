@@ -25,7 +25,8 @@
     "check:multitenancy:live": "node scripts/tenantIsolationRegressionCheck.js",
     "migrate:multitenancy": "node scripts/migrateToMultitenancy.js",
     "reconcile:tenant-indexes": "node scripts/reconcileTenantIndexes.js",
-    "check:all": "npm run check && npm run check:controllers && npm run check:models && npm run check:rbac && npm run check:onboarding && npm run check:public-onboarding && npm run check:security && npm run check:multitenancy && npm run check:multitenancy:code && npm run check:production"
+    "check:all": "npm run check && npm run check:controllers && npm run check:models && npm run check:rbac && npm run check:onboarding && npm run check:public-onboarding && npm run check:security && npm run check:multitenancy && npm run check:multitenancy:code && npm run check:production",
+    "test": "node --test tests/*.js"
   },
   "dependencies": {
     "africastalking": "^0.8.0",

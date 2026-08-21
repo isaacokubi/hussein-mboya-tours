@@ -1,3 +1,4 @@
+import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 import Payment from "../models/Payment.js";
 import {
   refundBookingPayment
@@ -36,7 +37,7 @@ export const mpesaRefundResult = async (
       });
     }
 
-    const payment = await Payment.findOne({
+    const payment = await Payment.findOne(mergeTenantFilter(req,{
       refundReference: conversationId
     });
 

@@ -1,3 +1,4 @@
+import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 // server/controllers/staffController.js
 
 import Staff from "../models/Staff.js";
@@ -276,7 +277,7 @@ export const restoreStaff = async (req, res, next) => {
 
 export const getGuides = async (req, res, next) => {
   try {
-    const guides = await Staff.find({
+    const guides = await Staff.find(mergeTenantFilter(req,{
       position: { $in: ["guide", "tour_guide", "tourguide"] },
       isActive: true,
       isDeleted: { $ne: true },
@@ -303,7 +304,7 @@ export const getGuides = async (req, res, next) => {
 
 export const getDrivers = async (req, res, next) => {
   try {
-    const drivers = await Staff.find({
+    const drivers = await Staff.find(mergeTenantFilter(req,{
       position: { $in: ["driver", "tour_driver"] },
       isActive: true,
       isDeleted: { $ne: true },

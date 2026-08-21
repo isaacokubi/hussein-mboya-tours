@@ -1,3 +1,4 @@
+import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 // server/controllers/destinationController.js
 
 import Destination from "../models/Destination.js";
@@ -266,7 +267,7 @@ message:"Destination slug is required."
 
 
 
-const destination = await Destination.findOne({
+const destination = await Destination.findOne(mergeTenantFilter(req,{
 
 slug,
 
@@ -307,7 +308,7 @@ message:"Destination not found."
 */
 
 
-const tours = await Tour.find({
+const tours = await Tour.find(mergeTenantFilter(req,{
 
 destination: destination._id,
 
@@ -341,7 +342,7 @@ destination.tours = tours;
 */
 
 
-const relatedDestinations = await Destination.find({
+const relatedDestinations = await Destination.find(mergeTenantFilter(req,{
 
 _id:{
 $ne:destination._id
@@ -429,7 +430,7 @@ export const getFeaturedDestinations = async(req,res,next)=>{
 try{
 
 
-const destinations = await Destination.find({
+const destinations = await Destination.find(mergeTenantFilter(req,{
 
 
 status:"active",

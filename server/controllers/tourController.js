@@ -1,3 +1,4 @@
+import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 import Tour from "../models/Tour.js";
 import Vehicle from "../models/Vehicle.js";
 import Booking from "../models/Booking.js";
@@ -273,7 +274,7 @@ try{
 
 
 const tours =
-await Tour.find({
+await Tour.find(mergeTenantFilter(req,{
 
   ...publicTourFilter,
 
@@ -524,7 +525,7 @@ try{
 
 
 const tour =
-  await Tour.findOne({
+  await Tour.findOne(mergeTenantFilter(req,{
     slug:req.params.slug,
     $or:[
         {
@@ -647,7 +648,7 @@ export const createTour = async (req, res, next) => {
 
     const [guideDoc, driverDoc, vehicleDoc] = await Promise.all([
       guideId
-        ? Staff.findOne({
+        ? Staff.findOne(mergeTenantFilter(req,{
             _id: guideId,
             position: "guide",
             isActive: true,
@@ -655,7 +656,7 @@ export const createTour = async (req, res, next) => {
           })
         : null,
       driverId
-        ? Staff.findOne({
+        ? Staff.findOne(mergeTenantFilter(req,{
             _id: driverId,
             position: "driver",
             isActive: true,
@@ -663,7 +664,7 @@ export const createTour = async (req, res, next) => {
           })
         : null,
       vehicleId
-        ? Vehicle.findOne({
+        ? Vehicle.findOne(mergeTenantFilter(req,{
             _id: vehicleId,
             isActive: true,
             isDeleted: { $ne: true },
@@ -817,7 +818,7 @@ try{
 
 
 const tours =
-await Tour.find({
+await Tour.find(mergeTenantFilter(req,{
 
 createdBy:req.user._id,
 
@@ -1223,7 +1224,7 @@ try{
 
 
 const tours =
-await Tour.find({
+await Tour.find(mergeTenantFilter(req,{
 
 createdBy:req.user._id
 

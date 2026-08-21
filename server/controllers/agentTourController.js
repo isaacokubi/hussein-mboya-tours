@@ -1,3 +1,4 @@
+import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 import mongoose from "mongoose";
 import slugify from "slugify";
 
@@ -58,7 +59,7 @@ const allowedFields = [
 */
 
 const getAgentProfile = async (userId) => {
-  return Agent.findOne({
+  return Agent.findOne(mergeTenantFilter(req,{
     user: userId,
   });
 };
@@ -301,7 +302,7 @@ export const getAgentTour = async (
     }
 
     const tour =
-      await Tour.findOne({
+      await Tour.findOne(mergeTenantFilter(req,{
         _id: req.params.id,
         createdBy: req.user._id,
         isDeleted: false,
@@ -346,7 +347,7 @@ export const updateAgentTour = async (
     }
 
     const tour =
-      await Tour.findOne({
+      await Tour.findOne(mergeTenantFilter(req,{
         _id: req.params.id,
         createdBy: req.user._id,
         isDeleted: false,
@@ -477,7 +478,7 @@ export const deleteAgentTour = async (
     }
 
     const tour =
-      await Tour.findOne({
+      await Tour.findOne(mergeTenantFilter(req,{
         _id: req.params.id,
         createdBy: req.user._id,
         isDeleted: false,

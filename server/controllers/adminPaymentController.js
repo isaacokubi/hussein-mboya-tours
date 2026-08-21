@@ -1,3 +1,4 @@
+import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 import Refund from "../models/Refund.js";
 import Payment from "../models/Payment.js";
 import {
@@ -486,7 +487,7 @@ export const refundBooking = async (req, res, next) => {
       });
     }
 
-    const payment = await Payment.findOne({
+    const payment = await Payment.findOne(mergeTenantFilter(req,{
       booking: booking._id,
       status: "completed",
     }).sort({ createdAt: -1 });

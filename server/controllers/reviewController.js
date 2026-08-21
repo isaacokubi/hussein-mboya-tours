@@ -1,3 +1,4 @@
+import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 import Review from "../models/Review.js";
 import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
@@ -9,7 +10,7 @@ import Tour from "../models/Tour.js";
 */
 
 const updateTourRating = async (tourId) => {
-  const reviews = await Review.find({
+  const reviews = await Review.find(mergeTenantFilter(req,{
     tour: tourId,
     approved: true,
   });
@@ -54,7 +55,7 @@ export const createReview = async (req, res, next) => {
       });
     }
 
-    const booking = await Booking.findOne({
+    const booking = await Booking.findOne(mergeTenantFilter(req,{
       tour,
       status: "completed",
       $or: [
@@ -71,7 +72,7 @@ export const createReview = async (req, res, next) => {
       });
     }
 
-    const existingReview = await Review.findOne({
+    const existingReview = await Review.findOne(mergeTenantFilter(req,{
       user: req.user._id,
       tour,
     });
@@ -114,7 +115,7 @@ export const createReview = async (req, res, next) => {
 
 export const getTourReviews = async (req, res, next) => {
   try {
-    const reviews = await Review.find({
+    const reviews = await Review.find(mergeTenantFilter(req,{
       tour: req.params.id,
       approved: true,
       isDeleted: false,

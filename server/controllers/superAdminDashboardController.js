@@ -1,3 +1,4 @@
+import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 import User from "../models/User.js";
 import Staff from "../models/Staff.js";
 import Agent from "../models/Agent.js";
@@ -7,7 +8,7 @@ import Role from "../models/Role.js";
 
 export const getSuperAdminDashboard = async (req, res) => {
   try {
-    const adminRoleIds = await Role.find({
+    const adminRoleIds = await Role.find(mergeTenantFilter(req,{
       name: { $in: ["admin", "administrator", "superadmin", "super_admin"] },
     }).distinct("_id");
 

@@ -1,3 +1,4 @@
+import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 import TourCategory from "../models/TourCategory.js";
 
 
@@ -14,7 +15,7 @@ export const getCategories = async(req,res,next)=>{
 try{
 
 
-const categories = await TourCategory.find({
+const categories = await TourCategory.find(mergeTenantFilter(req,{
 
 active:true
 

@@ -1,1 +1,0 @@
-Tenant-scoped models are fail-closed: application code must establish a tenant context before reading or writing them. Platform-wide operations must explicitly opt into bypass mode with `runWithTenant({ bypass: true }, ...)`. This prevents accidental background or utility queries from silently reading every company's data.

@@ -1,3 +1,4 @@
+import {mergeTenantFilter} from "../tenancy/secureQuery.js";
 // server/controllers/tourAvailabilityController.js
 
 import Tour from "../models/Tour.js";
