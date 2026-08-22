@@ -10,20 +10,29 @@ export async function resolveTenant(req, res, next) {
     if (user?.role === "super_admin") return runWithTenant({ role: "super_admin", bypass: true }, () => next());
     if (user?.tenantId) return runWithTenant({ tenantId: user.tenantId, role: user.role }, () => next());
 
-    // Unauthenticated public requests resolve tenants by a public slug or
-    // trusted host/origin. Never accept a raw tenant ObjectId from the client.
+    // Public requests must be anchored to the site that the visitor actually
+    // opened. A client-provided slug is only a fallback; it must never be able
+    // to override a trusted Host/Origin and accidentally select another tenant.
     const requestedTenantSlug = String(req.get("X-Tenant-Slug") || "").trim().toLowerCase();
     const requestHost = normalizeHost(req.get("X-Forwarded-Host") || req.get("Host"));
     const originHost = getOriginHost(req.get("Origin"));
     const activeStatuses = { $in: ["active", "trial"] };
     let tenant = null;
 
-    if (requestedTenantSlug) tenant = await Organization.findOne({ slug: requestedTenantSlug, status: activeStatuses });
-    if (!tenant && requestHost) tenant = await Organization.findOne({ domain: requestHost, status: activeStatuses });
+    // Custom domains take precedence over any client-supplied tenant slug.
+    if (requestHost) tenant = await Organization.findOne({ domain: requestHost, status: activeStatuses });
 
+    // For Vercel frontends, the Origin identifies the public tenant while the
+    // API Host normally points at the shared Render backend.
     if (!tenant && originHost.endsWith(".vercel.app")) {
-      const vercelSlug = originHost.slice(0, -".vercel.app".length).split(".").pop();
+      const vercelSlug = originHost.slice(0, -".vercel.app".length).split(".").filter(Boolean).pop();
       if (vercelSlug) tenant = await Organization.findOne({ slug: vercelSlug, status: activeStatuses });
+    }
+
+    // Explicit slug is retained for controlled/custom deployments where no
+    // trusted domain mapping exists. It can no longer override a trusted host.
+    if (!tenant && requestedTenantSlug) {
+      tenant = await Organization.findOne({ slug: requestedTenantSlug, status: activeStatuses });
     }
 
     const fallbackSlug = String(process.env.DEFAULT_PUBLIC_TENANT_SLUG || "hussein-mboya-tours").trim().toLowerCase();
