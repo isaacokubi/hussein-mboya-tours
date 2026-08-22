@@ -10,15 +10,15 @@ export async function resolveTenant(req, res, next) {
     if (user?.role === "super_admin") return runWithTenant({ role: "super_admin", bypass: true }, () => next());
     if (user?.tenantId) return runWithTenant({ tenantId: user.tenantId, role: user.role }, () => next());
 
-    const requestedTenantId = String(req.get("X-Tenant-ID") || "").trim();
+    // Unauthenticated public requests resolve tenants by a public slug or
+    // trusted host/origin. Never accept a raw tenant ObjectId from the client.
     const requestedTenantSlug = String(req.get("X-Tenant-Slug") || "").trim().toLowerCase();
     const requestHost = normalizeHost(req.get("X-Forwarded-Host") || req.get("Host"));
     const originHost = getOriginHost(req.get("Origin"));
     const activeStatuses = { $in: ["active", "trial"] };
     let tenant = null;
 
-    if (requestedTenantId) tenant = await Organization.findOne({ _id: requestedTenantId, status: activeStatuses });
-    if (!tenant && requestedTenantSlug) tenant = await Organization.findOne({ slug: requestedTenantSlug, status: activeStatuses });
+    if (requestedTenantSlug) tenant = await Organization.findOne({ slug: requestedTenantSlug, status: activeStatuses });
     if (!tenant && requestHost) tenant = await Organization.findOne({ domain: requestHost, status: activeStatuses });
 
     if (!tenant && originHost.endsWith(".vercel.app")) {
