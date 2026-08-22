@@ -12,13 +12,13 @@ import NewsletterSection from "../components/home/NewsletterSection";
 import { useSettings } from "../context/SettingsContext";
 
 export default function Home() {
-  const { companyName = "Hussein Mboya Tours" } = useSettings();
+  const { companyName = "" } = useSettings();
 
   return (
     <main className="overflow-hidden bg-gray-50">
       <SEO
-        title={`Kenya Safaris & Tours | ${companyName}`}
-        description={`Discover Kenya with ${companyName}: safaris, wildlife adventures, beach holidays and tailor-made African travel experiences.`}
+        title={companyName ? `Kenya Safaris & Tours | ${companyName}` : "Kenya Safaris & Tours"}
+        description={companyName ? `Discover Kenya with ${companyName}: safaris, wildlife adventures, beach holidays and tailor-made African travel experiences.` : "Discover Kenya through safaris, wildlife adventures, beach holidays and tailor-made African travel experiences."}
         image="/hero1.jpeg"
       />
       <section><HeroSlider /></section>
@@ -31,7 +31,7 @@ export default function Home() {
           <div className="mb-8 text-center">
             <p className="text-sm font-bold uppercase tracking-[0.2em] text-emerald-700">What we offer</p>
             <h2 className="mt-2 text-3xl font-extrabold text-green-950 md:text-4xl">Travel Services</h2>
-            <p className="mx-auto mt-3 max-w-2xl text-gray-600">From safari planning to airport pickup, {companyName} handles the important details of your African journey.</p>
+            <p className="mx-auto mt-3 max-w-2xl text-gray-600">{companyName ? `From safari planning to airport pickup, ${companyName} handles the important details of your African journey.` : "From safari planning to airport pickup, we handle the important details of your African journey."}</p>
           </div>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {[
