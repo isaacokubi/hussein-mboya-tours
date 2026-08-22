@@ -8,6 +8,14 @@ const normalizeHost = (value = "") =>
     .toLowerCase()
     .replace(/:\d+$/, "");
 
+const getOriginHost = (value = "") => {
+  try {
+    return normalizeHost(new URL(String(value)).hostname);
+  } catch {
+    return "";
+  }
+};
+
 export async function resolveTenant(req, res, next) {
   try {
     const user = req.user;
@@ -31,6 +39,7 @@ export async function resolveTenant(req, res, next) {
     const requestedTenantId = String(req.get("X-Tenant-ID") || "").trim();
     const requestedTenantSlug = String(req.get("X-Tenant-Slug") || "").trim().toLowerCase();
     const requestHost = normalizeHost(req.get("X-Forwarded-Host") || req.get("Host"));
+    const originHost = getOriginHost(req.get("Origin"));
 
     let tenant = null;
     const activeStatuses = { $in: ["active", "trial"] };
@@ -45,6 +54,19 @@ export async function resolveTenant(req, res, next) {
 
     if (!tenant && requestHost) {
       tenant = await Organization.findOne({ domain: requestHost, status: activeStatuses });
+    }
+
+    // Vercel deployments use a shared API domain, so the API Host header
+    // cannot identify the frontend tenant. Derive the tenant slug from a
+    // tenant-named *.vercel.app frontend when available.
+    if (!tenant && originHost.endsWith(".vercel.app")) {
+      const vercelSlug = originHost.slice(0, -".vercel.app".length).split(".").pop();
+      if (vercelSlug) {
+        tenant = await Organization.findOne({
+          slug: vercelSlug,
+          status: activeStatuses,
+        });
+      }
     }
 
     // Preserve the existing public deployment while allowing the default
