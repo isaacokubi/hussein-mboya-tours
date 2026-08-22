@@ -928,16 +928,11 @@ bookingSchema.pre("validate", function(next) {
 |--------------------------------------------------------------------------
 */
 
+if (!mongoose.models.Booking) {
+  bookingSchema.plugin(tenantPlugin);
+}
+
 const Booking =
-  mongoose.models.Booking || bookingSchema.plugin(tenantPlugin);
-
-mongoose.model("Booking", bookingSchema);
-
-
-
-
-
-
-
+  mongoose.models.Booking || mongoose.model("Booking", bookingSchema);
 
 export default Booking;
