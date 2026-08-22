@@ -1,4 +1,3 @@
-import { resolveTenant } from "../middleware/tenantMiddleware.js";
 import express from "express";
 import securityService from "../services/securityService.js";
 import { protect } from "../middleware/authMiddleware.js";
@@ -19,9 +18,11 @@ import { getApiMonitor } from "../controllers/apiMonitorController.js";
 
 const router = express.Router();
 
-/* Platform routes must authenticate before tenant resolution. SuperAdmin is global. */
+/*
+  SuperAdmin is platform-scoped, not tenant-scoped.
+  Do not resolve a tenant here because global users have tenantId:null.
+*/
 router.use(protect);
-router.use(resolveTenant);
 
 router.get("/dashboard", authorize("admin.dashboard"), getSuperAdminDashboard);
 router.get("/audit", authorize("system.audit"), getAuditLogs);
