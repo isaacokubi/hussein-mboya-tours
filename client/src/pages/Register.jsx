@@ -24,12 +24,9 @@ export default function Register() {
   const submitCustomer = async () => {
     if (form.phone.length !== 10) throw new Error("Phone number must contain exactly 10 digits.");
     if (form.password !== form.confirmPassword) throw new Error("Passwords do not match.");
-    const response = await register({ name: form.name.trim(), email: form.email.trim().toLowerCase(), phone: form.phone, password: form.password });
-    toast.success("Account created successfully");
-    const role = String(response?.user?.role || "customer").toLowerCase();
-    if (["admin", "superadmin", "super_admin", "administrator"].includes(role)) navigate("/admin");
-    else if (role === "agent") navigate("/agent");
-    else navigate("/dashboard");
+    await register({ name: form.name.trim(), email: form.email.trim().toLowerCase(), phone: form.phone, password: form.password });
+    toast.success("Account created successfully. Please log in to verify your phone PIN.");
+    navigate("/login", { replace: true });
   };
 
   const submitCompany = async () => {
@@ -66,49 +63,25 @@ export default function Register() {
       <div className="bg-white shadow-xl rounded-2xl p-8 w-full max-w-lg">
         <h1 className="text-3xl font-bold text-center text-green-800">{companyMode ? "Launch Your Company" : `Join ${settings?.companyName || "Company"}`}</h1>
         <p className="text-center text-gray-500 mt-2 mb-6">{companyMode ? "Create a tenant workspace and start your 14-day trial." : "Create your traveller account."}</p>
-
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           {companyMode && <>
             <input name="companyName" value={form.companyName} onChange={update} placeholder="Company name" required className="w-full border rounded-lg p-3" />
             <input name="slug" value={form.slug} onChange={update} placeholder="Company slug" required className="w-full border rounded-lg p-3" />
-            <div className="grid grid-cols-2 gap-3">
-              <input name="country" value={form.country} onChange={update} placeholder="Country" required className="border rounded-lg p-3" />
-              <input name="currency" value={form.currency} onChange={update} placeholder="Currency" maxLength={3} required className="border rounded-lg p-3" />
-            </div>
+            <div className="grid grid-cols-2 gap-3"><input name="country" value={form.country} onChange={update} placeholder="Country" required className="border rounded-lg p-3" /><input name="currency" value={form.currency} onChange={update} placeholder="Currency" maxLength={3} required className="border rounded-lg p-3" /></div>
             <input name="timezone" value={form.timezone} onChange={update} placeholder="Timezone" required className="w-full border rounded-lg p-3" />
-            <select name="plan" value={form.plan} onChange={update} className="w-full border rounded-lg p-3">
-              <option value="starter">Starter — 5 seats</option>
-              <option value="professional">Professional — 15 seats</option>
-              <option value="business">Business — 50 seats</option>
-              <option value="enterprise">Enterprise — 250 seats</option>
-            </select>
+            <select name="plan" value={form.plan} onChange={update} className="w-full border rounded-lg p-3"><option value="starter">Starter — 5 seats</option><option value="professional">Professional — 15 seats</option><option value="business">Business — 50 seats</option><option value="enterprise">Enterprise — 250 seats</option></select>
             <h2 className="font-bold pt-2">First Administrator</h2>
           </>}
-
           <input type="text" name="name" autoComplete="name" placeholder="Full name" value={form.name} onChange={update} required className="w-full border rounded-lg p-3" />
           <input type="email" name="email" autoComplete="email" placeholder="Email address" value={form.email} onChange={update} required className="w-full border rounded-lg p-3" />
           <input type="tel" name="phone" autoComplete="tel" inputMode="numeric" maxLength={10} placeholder="Phone number" value={form.phone} onChange={update} required className="w-full border rounded-lg p-3" />
           <input type="password" name="password" autoComplete="new-password" placeholder={companyMode ? "Administrator password (12+ chars)" : "Password"} value={form.password} onChange={update} required className="w-full border rounded-lg p-3" />
           <input type="password" name="confirmPassword" autoComplete="new-password" placeholder="Confirm password" value={form.confirmPassword} onChange={update} required className="w-full border rounded-lg p-3" />
-
-          {platformSetupMode && <div className="border border-amber-300 bg-amber-50 rounded-xl p-4 space-y-3">
-            <h2 className="font-bold text-amber-900">First Platform SuperAdmin</h2>
-            <p className="text-sm text-amber-800">Use this only for the first platform installation. The server accepts these values only when they exactly match the private BOOTSTRAP_SUPERADMIN_* configuration and no SuperAdmin exists yet.</p>
-            <input name="platformName" value={form.platformName} onChange={update} placeholder="Platform Owner" required className="w-full border rounded-lg p-3" />
-            <input type="email" name="platformEmail" autoComplete="email" value={form.platformEmail} onChange={update} placeholder="platform-admin@example.com" required className="w-full border rounded-lg p-3" />
-            <input type="tel" name="platformPhone" autoComplete="tel" inputMode="numeric" maxLength={10} value={form.platformPhone} onChange={update} placeholder="0712345678" required className="w-full border rounded-lg p-3" />
-            <input type="password" name="platformPassword" autoComplete="new-password" value={form.platformPassword} onChange={update} placeholder="Platform SuperAdmin password" required className="w-full border rounded-lg p-3" />
-            <input type="password" name="platformPasswordConfirm" autoComplete="new-password" value={form.platformPasswordConfirm} onChange={update} placeholder="Confirm Platform SuperAdmin password" required className="w-full border rounded-lg p-3" />
-          </div>}
-
+          {platformSetupMode && <div className="border border-amber-300 bg-amber-50 rounded-xl p-4 space-y-3"><h2 className="font-bold text-amber-900">First Platform SuperAdmin</h2><p className="text-sm text-amber-800">Use this only for the first platform installation. The server accepts these values only when they exactly match the private BOOTSTRAP_SUPERADMIN_* configuration and no SuperAdmin exists yet.</p><input name="platformName" value={form.platformName} onChange={update} placeholder="Platform Owner" required className="w-full border rounded-lg p-3" /><input type="email" name="platformEmail" autoComplete="email" value={form.platformEmail} onChange={update} placeholder="platform-admin@example.com" required className="w-full border rounded-lg p-3" /><input type="tel" name="platformPhone" autoComplete="tel" inputMode="numeric" maxLength={10} value={form.platformPhone} onChange={update} placeholder="0712345678" required className="w-full border rounded-lg p-3" /><input type="password" name="platformPassword" autoComplete="new-password" value={form.platformPassword} onChange={update} placeholder="Platform SuperAdmin password" required className="w-full border rounded-lg p-3" /><input type="password" name="platformPasswordConfirm" autoComplete="new-password" value={form.platformPasswordConfirm} onChange={update} placeholder="Confirm Platform SuperAdmin password" required className="w-full border rounded-lg p-3" /></div>}
           <button type="submit" disabled={loading} className="w-full bg-green-700 hover:bg-green-800 text-white py-3 rounded-xl font-bold disabled:opacity-50">{loading ? "Creating…" : companyMode ? "Start 14-Day Trial" : "Register"}</button>
         </form>
-
         {!companyMode && <button type="button" onClick={() => navigate("/register?company=1")} className="w-full mt-4 border border-green-700 text-green-700 py-3 rounded-xl font-bold">Register a Company</button>}
-        {companyMode && <>
-          <button type="button" onClick={() => navigate("/register?company=1&platformSetup=1")} className="w-full mt-4 border border-amber-600 text-amber-700 py-3 rounded-xl font-bold">First Platform Setup</button>
-          <button type="button" onClick={() => navigate("/register")} className="w-full mt-4 text-green-700 font-semibold">Register as a traveller instead</button>
-        </>}
+        {companyMode && <><button type="button" onClick={() => navigate("/register?company=1&platformSetup=1")} className="w-full mt-4 border border-amber-600 text-amber-700 py-3 rounded-xl font-bold">First Platform Setup</button><button type="button" onClick={() => navigate("/register")} className="w-full mt-4 text-green-700 font-semibold">Register as a traveller instead</button></>}
         <p className="text-center mt-5 text-gray-600">Already have an account? <button type="button" onClick={() => navigate("/login")} className="text-green-700 font-bold ml-1">Login</button></p>
       </div>
     </div>
