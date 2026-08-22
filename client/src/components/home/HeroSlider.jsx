@@ -24,7 +24,7 @@ export default function HeroSlider() {
     settings?.companyName ||
     tenant?.name ||
     tenant?.companyName ||
-    "Safari Adventures Kenya";
+    "Your Travel Company";
 
 
 
@@ -139,7 +139,7 @@ export default function HeroSlider() {
                    */}
                   <img
                     src={imageUrl}
-                    alt={slide.title || settings?.companyName || settings?.companyName || tenant?.name || 'Safari Adventures Kenya'}
+                    alt={slide.title || settings?.companyName || settings?.companyName || tenant?.name || 'Your Travel Company'}
                     className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${
                       videoLoaded ? "opacity-0" : "opacity-100"
                     }`}

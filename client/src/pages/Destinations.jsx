@@ -215,7 +215,7 @@ export default function Destinations(
 
         >
 
-          Discover amazing places and unforgettable experiences with {settings?.companyName || tenant?.name || 'Safari Adventures Kenya'}.
+          Discover amazing places and unforgettable experiences with {settings?.companyName || tenant?.name || 'Your Travel Company'}.
 
 
         </p>

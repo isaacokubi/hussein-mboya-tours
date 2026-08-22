@@ -30,7 +30,7 @@ export default function Navbar(
 
   const companyName =
     settings?.companyName ||
-    "Safari Adventures Kenya";
+    "Your Travel Company";
 
 
   const [mobileOpen, setMobileOpen] = useState(false);

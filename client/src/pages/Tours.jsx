@@ -86,7 +86,7 @@ export default function Tours(
             mt-3
           "
         >
-          Discover unforgettable African adventures with {settings?.companyName || tenant?.name || 'Safari Adventures Kenya'}.
+          Discover unforgettable African adventures with {settings?.companyName || tenant?.name || 'Your Travel Company'}.
         </p>
 
         {slug && (

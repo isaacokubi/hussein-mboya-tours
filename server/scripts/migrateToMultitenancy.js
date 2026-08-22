@@ -20,7 +20,7 @@ const models = await Promise.all(tenantModels.map(async (name) => {
 await mongoose.connect(env.MONGODB_URI);
 const existing = await Organization.findOne({ slug: "hussein-mboya-tours" });
 const organization = existing || await Organization.create({
-  name: process.env.DEFAULT_TENANT_NAME || "Hussein Mboya Tours",
+  name: process.env.DEFAULT_TENANT_NAME || "Your Travel Company",
   slug: "hussein-mboya-tours",
   country: "Kenya",
   timezone: "Africa/Nairobi",

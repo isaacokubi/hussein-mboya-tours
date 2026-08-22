@@ -131,7 +131,7 @@ export default function MyCustomTours() {
                         <div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Quoted total</p><p className="mt-2 text-xl font-bold text-slate-900">KES {quotedAmount.toLocaleString()}</p></div>
                       </div>
 
-                      {message && <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50 p-4"><p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Message from {settings?.companyName || tenant?.name || 'Safari Adventures Kenya'}</p><p className="mt-2 text-sm text-emerald-900">{message}</p></div>}
+                      {message && <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50 p-4"><p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Message from {settings?.companyName || tenant?.name || 'Your Travel Company'}</p><p className="mt-2 text-sm text-emerald-900">{message}</p></div>}
 
                       {canProceed && (
                         <div className="mt-5 flex flex-wrap items-center gap-3">

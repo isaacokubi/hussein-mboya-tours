@@ -2,15 +2,15 @@ import api from "./axios";
 
 const FALLBACK_HERO_SLIDES = [
   {
-    _id: "hussein-mboya-fallback-1",
+    _id: "default-tour-fallback-1",
     image: "/hero1.jpeg",
-    title: "Discover Kenya with Hussein Mboya Tours",
+    title: "Discover Kenya with Your Travel Company",
     description: "Unforgettable safaris, wildlife adventures and tailor-made African experiences.",
     buttonText: "Explore Tours",
     buttonLink: "/tours",
   },
   {
-    _id: "hussein-mboya-fallback-2",
+    _id: "default-tour-fallback-2",
     image: "/hero2.jpeg",
     title: "Experience the Magic of Kenya",
     description: "From the Maasai Mara to the coast, discover extraordinary places with local experts.",
@@ -18,10 +18,10 @@ const FALLBACK_HERO_SLIDES = [
     buttonLink: "/destinations",
   },
   {
-    _id: "hussein-mboya-fallback-3",
+    _id: "default-tour-fallback-3",
     image: "/hero4.jpeg",
     title: "Your African Adventure Starts Here",
-    description: "Travel safely, comfortably and confidently with Hussein Mboya Tours.",
+    description: "Travel safely, comfortably and confidently with Your Travel Company.",
     buttonText: "Book Now",
     buttonLink: "/tours",
   },

@@ -12,7 +12,7 @@ export default function NewsletterSection() {
     settings?.companyName ||
     tenant?.name ||
     tenant?.companyName ||
-    "Safari Adventures Kenya";
+    "Your Travel Company";
 
 
 

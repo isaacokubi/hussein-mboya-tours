@@ -101,7 +101,7 @@ export default function About(
           mb-6
           "
           >
-            About {settings?.companyName || tenant?.name || 'Safari Adventures Kenya'}
+            About {settings?.companyName || tenant?.name || 'Your Travel Company'}
           </motion.h1>
 
           <p
@@ -156,7 +156,7 @@ export default function About(
             mb-5
             "
             >
-              {settings?.companyName || tenant?.name || 'Safari Adventures Kenya'} is a premier African travel company dedicated to
+              {settings?.companyName || tenant?.name || 'Your Travel Company'} is a premier African travel company dedicated to
               creating exceptional journeys for travelers seeking adventure,
               relaxation, and cultural discovery.
             </p>

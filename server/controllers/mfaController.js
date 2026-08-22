@@ -1,4 +1,5 @@
 import User from "../models/User.js";
+import Organization from "../models/Organization.js";
 import { createAuditLog } from "../services/auditService.js";
 import { generateLoginPin, hashLoginPin, verifyLoginPin, normalizeMfaPhone } from "../services/mfaService.js";
 import { sendSMS } from "../services/smsService.js";
@@ -32,7 +33,22 @@ export const createCustomerLoginChallenge = async (user) => {
   await user.save({ validateBeforeSave: false });
 
   try {
-    await sendSMS(phone, `Your Hussein Mboya Tours login PIN is ${pin}. It expires in 5 minutes. Do not share this PIN with anyone.`);
+    let companyName = "Your Travel Company";
+
+    if (user.tenantId) {
+      const organization = await Organization.findById(user.tenantId)
+        .select("name")
+        .lean();
+
+      if (organization?.name) {
+        companyName = organization.name;
+      }
+    }
+
+    await sendSMS(
+      phone,
+      `Your ${companyName} login PIN is ${pin}. It expires in 5 minutes. Do not share this PIN with anyone.`
+    );
   } catch (error) {
     user.loginPinHash = "";
     user.loginPinExpiresAt = null;

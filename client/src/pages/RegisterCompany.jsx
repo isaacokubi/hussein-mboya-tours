@@ -74,7 +74,7 @@ export default function RegisterCompany() {
     <div className="min-h-screen bg-slate-950 px-4 py-12 text-slate-900">
       <div className="mx-auto grid max-w-5xl overflow-hidden rounded-3xl bg-white shadow-2xl md:grid-cols-2">
         <div className="bg-gradient-to-br from-green-900 via-green-800 to-emerald-700 p-8 text-white md:p-12">
-          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-emerald-200">Hussein Mboya Tours</p>
+          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-emerald-200">Your Travel Company</p>
           <h1 className="text-4xl font-black leading-tight">Launch your travel company workspace.</h1>
           <p className="mt-5 text-emerald-50/90">Create your company, receive your first Administrator account and start a 14-day SaaS trial immediately.</p>
           <ul className="mt-8 space-y-4 text-sm text-white/90">

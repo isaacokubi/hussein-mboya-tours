@@ -20,7 +20,7 @@ const db = mongoose.connection.db;
 const organization =
 await db.collection("organizations")
 .findOne({
-slug:"hussein-mboya-tours"
+slug: process.env.DEFAULT_TENANT_SLUG || "hussein-mboya-tours"
 });
 
 

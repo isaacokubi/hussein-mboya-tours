@@ -15,7 +15,7 @@ export default function Footer() {
   const { user } = useAuth();
   const { settings = {} } = useSettings() || {};
 
-  const companyName = settings.companyName || "Hussein Mboya Tours";
+  const companyName = settings.companyName || "Your Travel Company";
   const supportEmail = settings.supportEmail || "";
   const supportPhone = settings.supportPhone || "";
   const year = new Date().getFullYear();

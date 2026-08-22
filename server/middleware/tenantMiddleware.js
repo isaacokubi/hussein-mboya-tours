@@ -35,9 +35,15 @@ export async function resolveTenant(req, res, next) {
       tenant = await Organization.findOne({ slug: requestedTenantSlug, status: activeStatuses });
     }
 
-    const fallbackSlug = String(process.env.DEFAULT_PUBLIC_TENANT_SLUG || "hussein-mboya-tours").trim().toLowerCase();
-    if (!tenant && fallbackSlug) tenant = await Organization.findOne({ slug: fallbackSlug, status: activeStatuses });
-    if (!tenant) tenant = await Organization.findOne({ name: /^Hussein Mboya Tours$/i, status: activeStatuses });
+    const fallbackSlug = String(process.env.DEFAULT_PUBLIC_TENANT_SLUG || "").trim().toLowerCase();
+
+    if (!tenant && fallbackSlug) {
+      tenant = await Organization.findOne({
+        slug: fallbackSlug,
+        status: activeStatuses
+      });
+    }
+    if (!tenant) tenant = await Organization.findOne({ name: /^Your Travel Company$/i, status: activeStatuses });
 
     if (!tenant) return next();
     req.tenantId = tenant._id;

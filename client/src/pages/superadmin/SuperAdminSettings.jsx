@@ -48,7 +48,7 @@ export default function SuperAdminSettings() {
   const save = async () => {
     try {
       setSaving(true);
-      const payload = { ...settings, companyName: String(settings.companyName || settings?.companyName || tenant?.name || 'Safari Adventures Kenya').trim(), taxRate: Number(settings.taxRate ?? 0), taxServiceType: settings.taxServiceType || "service_fee", bookingDepositPercentage: Number(settings.bookingDepositPercentage ?? 30), defaultCommissionRate: Number(settings.defaultCommissionRate ?? 10) };
+      const payload = { ...settings, companyName: String(settings.companyName || settings?.companyName || tenant?.name || 'Your Travel Company').trim(), taxRate: Number(settings.taxRate ?? 0), taxServiceType: settings.taxServiceType || "service_fee", bookingDepositPercentage: Number(settings.bookingDepositPercentage ?? 30), defaultCommissionRate: Number(settings.defaultCommissionRate ?? 10) };
       const response = await updateSettings(payload);
       const savedSettings = response?.settings || response?.data?.settings || response?.data || payload;
       updateGlobalSettings?.(savedSettings);

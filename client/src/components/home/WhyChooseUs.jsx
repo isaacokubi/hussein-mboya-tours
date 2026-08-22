@@ -11,7 +11,7 @@ export default function WhyChooseUs() {
     settings?.companyName ||
     tenant?.name ||
     tenant?.companyName ||
-    "Safari Adventures Kenya";
+    "Your Travel Company";
 
 
 

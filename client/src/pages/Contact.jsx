@@ -7,7 +7,7 @@ import { useState } from "react";
 
 export default function Contact() {
   const { supportPhone, supportEmail, settings } = useSettings();
-  const companyName = settings?.companyName || settings?.companyName || tenant?.name || 'Safari Adventures Kenya';
+  const companyName = settings?.companyName || settings?.companyName || tenant?.name || 'Your Travel Company';
   const [form, setForm] = useState({ name: "", email: "", phone: "", message: "" });
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
