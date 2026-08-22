@@ -1,11 +1,4 @@
-<<<<<<< HEAD
-import loadTenantPlugin from "./config/tenantPluginLoader.js";
-
-loadTenantPlugin();
-
-=======
 import "./tenancy/bootstrap.js";
->>>>>>> feat/first-admin-superadmin-onboarding
 import systemHealthRoutes from "./routes/systemHealthRoutes.js";
 import databaseRoutes from "./routes/databaseRoutes.js";
 import settingsRoutes from "./routes/settingsRoutes.js";

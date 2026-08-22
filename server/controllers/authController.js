@@ -2,10 +2,6 @@ import { mergeTenantFilter } from "../tenancy/context.js";
 import User from "../models/User.js";
 import generateToken from "../utils/generateToken.js";
 import buildPermissions from "../utils/buildPermissions.js";
-<<<<<<< HEAD
-import { normalizeRole } from "../utils/roleUtils.js";
-
-=======
 import { sendSMS } from "../services/smsService.js";
 
 const MAX_LOGIN_ATTEMPTS = 5;
@@ -37,41 +33,12 @@ const publicUser = (user, permissions = []) => ({
   lastLoginAt: user.lastLoginAt,
   createdAt: user.createdAt,
 });
->>>>>>> feat/first-admin-superadmin-onboarding
 
 export const login = async (req, res) => {
   try {
-<<<<<<< HEAD
-
-    const email = String(req.body?.email || "")
-      .trim()
-      .toLowerCase();
-
-    console.log("LOGIN DEBUG TENANT:", {
-      tenantId: req.tenantId,
-      tenant: req.tenant?.slug,
-      email
-    });
-
-    const password = String(req.body?.password || "");
-
-    const tenantId =
-      req.tenantId ||
-      req.headers["x-tenant-id"] ||
-      null;
-
-    const userQuery = {
-      email
-    };
-
-    if (tenantId) {
-      userQuery.tenantId = tenantId;
-    }
-=======
     const normalizedEmail = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
     const password = typeof req.body?.password === "string" ? req.body.password : "";
     if (!normalizedEmail || !password) return res.status(400).json({ success: false, message: "Email and password are required." });
->>>>>>> feat/first-admin-superadmin-onboarding
 
     console.log("LOGIN QUERY:", userQuery);
 
@@ -85,93 +52,15 @@ export const login = async (req, res) => {
       })
       .populate("permissionsOverride");
 
-<<<<<<< HEAD
-
-    if (!user || !(await user.matchPassword(password))) {
-
-      return res.status(401).json({
-        success:false,
-        message:"Invalid email or password"
-      });
-=======
     if (!user) {
       await SecurityLog.create({ email: normalizedEmail, action: "login_failed", resource: "Authentication", description: "Failed authentication attempt", severity: "high", ipAddress: req.ip, userAgent: req.headers["user-agent"], details: "User not found" });
       return res.status(401).json({ success: false, message: "Invalid email or password." });
     }
     if (user.status !== "active") return res.status(403).json({ success: false, message: `Account ${user.status}.` });
     if (user.lockUntil && user.lockUntil > new Date()) return res.status(423).json({ success: false, message: "Account temporarily locked due to multiple failed login attempts." });
->>>>>>> feat/first-admin-superadmin-onboarding
 
     }
 
-<<<<<<< HEAD
-
-    const role = normalizeRole(
-      user.roleId?.name ||
-      user.role ||
-      user.legacyRole
-    );
-
-
-    const permissions = buildPermissions(user);
-
-
-    const token = generateToken({
-
-      _id: user._id,
-
-      roleId: user.roleId?._id || user.roleId,
-
-      role,
-
-      email: user.email,
-      tenantId: user.tenantId || null,
-
-      permissions
-
-    });
-
-
-
-    return res.json({
-
-      success:true,
-
-      token,
-
-      user:{
-
-        _id:user._id,
-
-        name:user.name,
-
-        email:user.email,
-
-        phone:user.phone,
-
-        role,
-
-        tenantId:user.tenantId || null,
-
-        permissions,
-
-        status:user.status
-
-      }
-
-    });
-
-
-  } catch(error){
-
-    console.error("LOGIN ERROR:",error);
-
-    return res.status(500).json({
-      success:false,
-      message:"Login failed"
-    });
-
-=======
     const effectiveRole = effectiveRoleForUser(user);
     const permissions = buildPermissions({ ...user.toObject(), role: effectiveRole, roleId: user.roleId, permissionsOverride: user.permissionsOverride });
     user.loginAttempts = 0;
@@ -186,73 +75,10 @@ export const login = async (req, res) => {
   } catch (error) {
     console.error("LOGIN ERROR:", error);
     next(error);
->>>>>>> feat/first-admin-superadmin-onboarding
   }
 
 };
 
-<<<<<<< HEAD
-
-
-export const customerLogin = login;
-export default login;
-
-
-export const register = async (req,res,next)=>{
-  try{
-    const {name,email,phone,password}=req.body||{};
-
-    if(!name||!email||!phone||!password){
-      return res.status(400).json({
-        success:false,
-        message:"All fields are required."
-      });
-    }
-
-    const exists = await User.findOne({
-      $or:[
-        {email:String(email).toLowerCase()},
-        {phone}
-      ]
-    });
-
-    if(exists){
-      return res.status(400).json({
-        success:false,
-        message:"User already exists."
-      });
-    }
-
-    const user = await User.create({
-      name,
-      email:String(email).toLowerCase(),
-      phone,
-      password,
-      role:"customer",
-      legacyRole:"customer",
-      tenantId:req.tenantId || null,
-      status:"active"
-    });
-
-
-    const token = generateToken({
-      _id:user._id,
-      role:"customer",
-      email:user.email,
-      tenantId:user.tenantId || null,
-      permissions:[]
-    });
-
-
-    return res.status(201).json({
-      success:true,
-      token,
-      user
-    });
-
-
-  }catch(error){
-=======
 export const register = async (req, res, next) => {
   try {
     const { name, email, phone, password } = req.body || {};
@@ -271,7 +97,6 @@ export const register = async (req, res, next) => {
     return res.status(201).json({ success: true, token, user: publicUser(user, []) });
   } catch (error) {
     console.error("REGISTER ERROR:", error);
->>>>>>> feat/first-admin-superadmin-onboarding
     next(error);
   }
 };

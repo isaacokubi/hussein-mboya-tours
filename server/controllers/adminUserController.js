@@ -51,16 +51,12 @@ export const createStaffAccount = async (req, res, next) => {
       tour_guide: ["tour.view", "view_assigned_tours", "view_tour_guests", "update_tour_status", "submit_tour_report"],
       driver: ["tour.view", "view_assigned_tours"],
     };
-<<<<<<< HEAD
-    let roleDoc = await Role.findOne({ name: canonicalRole });
-=======
 
     if (canonicalRole === "admin") {
       await ensureSystemRoles();
     }
 
     let roleDoc = await Role.findOne({ name: { $in: [canonicalRole, canonicalRole.replace("tour_", "")] } });
->>>>>>> feat/first-admin-superadmin-onboarding
     if (!roleDoc) {
       const permissionIds = [];
       for (const permissionName of permissionNamesByRole[canonicalRole] || []) {

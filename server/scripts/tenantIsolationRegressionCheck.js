@@ -1,29 +1,4 @@
 import mongoose from "mongoose";
-<<<<<<< HEAD
-import dotenv from "dotenv";
-
-dotenv.config();
-
-import Organization from "../models/Organization.js";
-import Tour from "../models/Tour.js";
-import Destination from "../models/Destination.js";
-
-
-async function run(){
-
-await mongoose.connect(process.env.MONGODB_URI);
-
-
-console.log("================================================");
-console.log("TENANT ISOLATION REGRESSION TEST");
-console.log("================================================");
-
-
-
-await Organization.deleteMany({
-name:{
-$regex:"Tenant Isolation Test"
-=======
 import env from "../config/env.js";
 import { runWithTenant } from "../tenancy/context.js";
 
@@ -134,7 +109,6 @@ try {
     if (createdTenantIds.length) await Organization.deleteMany({ _id: { $in: createdTenantIds } });
   });
   await mongoose.disconnect();
->>>>>>> feat/first-admin-superadmin-onboarding
 }
 });
 
