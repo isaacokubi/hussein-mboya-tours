@@ -65,7 +65,13 @@ app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 
 app.get("/api/health", async (req, res) => {
   const dbReady = mongoose.connection.readyState === 1;
-  res.status(dbReady ? 200 : 503).json({ success: dbReady, status: dbReady ? "healthy" : "degraded", database: dbReady ? "connected" : "disconnected", timestamp: new Date().toISOString() });
+  res.status(dbReady ? 200 : 503).json({
+    success: dbReady,
+    status: dbReady ? "healthy" : "degraded",
+    database: dbReady ? "connected" : "disconnected",
+    version: process.env.RENDER_GIT_COMMIT || process.env.GIT_COMMIT || "unknown",
+    timestamp: new Date().toISOString(),
+  });
 });
 
 app.use("/api/public/onboarding", publicOnboardingRoutes);
