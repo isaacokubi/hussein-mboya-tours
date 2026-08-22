@@ -1,4 +1,4 @@
-import {mergeTenantFilter} from "../tenancy/secureQuery.js";
+import { mergeTenantFilter } from "../tenancy/context.js";
 
 
 import Booking from "../models/Booking.js";
@@ -35,7 +35,7 @@ end.setHours(
 
 
 const bookings =
-await Booking.find(mergeTenantFilter(req,{
+await Booking.find({
 
 createdAt:{
 $gte:start,
@@ -125,7 +125,7 @@ month,
 
 
 const bookings =
-await Booking.find(mergeTenantFilter(req,{
+await Booking.find({
 
 createdAt:{
 $gte:start,

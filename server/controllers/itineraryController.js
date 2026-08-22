@@ -1,4 +1,4 @@
-import {mergeTenantFilter} from "../tenancy/secureQuery.js";
+import { mergeTenantFilter } from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 // server/controllers/itineraryController.js
 
@@ -70,7 +70,11 @@ export const getItineraries = async (req, res, next) => {
 
 export const getItinerary = async (req, res, next) => {
   try {
-    const itinerary = await Itinerary.findById(req.params.id)
+    const itinerary = await Itinerary.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+)
       .populate("tour", "title destination")
       .populate("createdBy", "name email");
 
@@ -96,8 +100,10 @@ export const getItinerary = async (req, res, next) => {
 
 export const updateItinerary = async (req, res, next) => {
   try {
-    const itinerary = await Itinerary.findByIdAndUpdate(
-      req.params.id,
+    const itinerary = await Itinerary.findOneAndUpdate(
+mergeTenantFilter(req,{
+_id:req.params.id
+}),
       req.body,
       {
         new: true,
@@ -130,7 +136,11 @@ export const updateItinerary = async (req, res, next) => {
 
 export const deleteItinerary = async (req, res, next) => {
   try {
-    const itinerary = await Itinerary.findByIdAndDelete(req.params.id);
+    const itinerary = await Itinerary.findOneAndDelete(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
 
     if (!itinerary) {
       return res.status(404).json({

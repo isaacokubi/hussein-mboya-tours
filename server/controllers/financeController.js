@@ -1,4 +1,4 @@
-import {mergeTenantFilter} from "../tenancy/secureQuery.js";
+import { mergeTenantFilter } from "../tenancy/context.js";
 // server/controllers/financeController.js
 
 import Payment from "../models/Payment.js";
@@ -207,7 +207,7 @@ export const getTransactions = async (req, res, next) => {
       };
 
       const [matchingUsers, matchingBookings] = await Promise.all([
-        User.find(mergeTenantFilter(req,{
+        User.find({
           $or: [
             { name: regex },
             { email: regex },
@@ -215,7 +215,7 @@ export const getTransactions = async (req, res, next) => {
           ],
         }).select("_id").lean(),
 
-        Booking.find(mergeTenantFilter(req,{
+        Booking.find({
           $or: [
             { bookingNumber: regex },
           ],

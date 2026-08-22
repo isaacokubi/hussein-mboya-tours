@@ -1,4 +1,4 @@
-import {mergeTenantFilter} from "../tenancy/secureQuery.js";
+import { mergeTenantFilter } from "../tenancy/context.js";
 // server/controllers/agentDashboardController.js
 
 import Booking from "../models/Booking.js";
@@ -22,7 +22,7 @@ export const getAgentDashboard = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    const agent = await Agent.findOne(mergeTenantFilter(req,{
+    const agent = await Agent.findOne({
       user: req.user._id,
     }).lean();
 
@@ -118,7 +118,7 @@ export const getAgentDashboard = async (req, res, next) => {
         },
       ]),
 
-      Booking.find(mergeTenantFilter(req,{
+      Booking.find({
         agent: agent._id,
       })
         .populate("tour", "title destination")

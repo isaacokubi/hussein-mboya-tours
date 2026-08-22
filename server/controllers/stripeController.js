@@ -1,4 +1,4 @@
-import {mergeTenantFilter} from "../tenancy/secureQuery.js";
+import { mergeTenantFilter } from "../tenancy/context.js";
 /*
 |--------------------------------------------------------------------------
 | STRIPE PAYMENT CONTROLLER
@@ -246,7 +246,7 @@ const getCustomerBooking = async (
   }
 
   const booking =
-    await Booking.findOne(mergeTenantFilter(req,{
+    await Booking.findOne({
       _id: bookingId,
     });
 
@@ -409,7 +409,7 @@ export const createStripeSession = async (
     */
 
     const existingPayment =
-      await Payment.findOne(mergeTenantFilter(req,{
+      await Payment.findOne({
         booking: booking._id,
 
         provider: "STRIPE",
@@ -839,7 +839,7 @@ export const verifyStripeSession = async (
     */
 
     const payment =
-      await Payment.findOne(mergeTenantFilter(req,{
+      await Payment.findOne({
         booking:
           booking._id,
 
@@ -1213,7 +1213,7 @@ export const createBankTransferPayment = async (
     */
 
     const existingPayment =
-      await Payment.findOne(mergeTenantFilter(req,{
+      await Payment.findOne({
         booking:
           booking._id,
 

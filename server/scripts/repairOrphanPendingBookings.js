@@ -1,3 +1,4 @@
+import { backgroundTenantFilter } from "../tenancy/backgroundTenantFilter.js";
 import mongoose from "mongoose";
 import Booking from "../models/Booking.js";
 

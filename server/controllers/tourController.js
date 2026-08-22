@@ -1,4 +1,4 @@
-import {mergeTenantFilter} from "../tenancy/secureQuery.js";
+import { mergeTenantFilter } from "../tenancy/context.js";
 import Tour from "../models/Tour.js";
 import Vehicle from "../models/Vehicle.js";
 import Booking from "../models/Booking.js";
@@ -274,7 +274,7 @@ try{
 
 
 const tours =
-await Tour.find(mergeTenantFilter(req,{
+await Tour.find({
 
   ...publicTourFilter,
 
@@ -525,7 +525,7 @@ try{
 
 
 const tour =
-  await Tour.findOne(mergeTenantFilter(req,{
+  await Tour.findOne({
     slug:req.params.slug,
     $or:[
         {
@@ -648,7 +648,7 @@ export const createTour = async (req, res, next) => {
 
     const [guideDoc, driverDoc, vehicleDoc] = await Promise.all([
       guideId
-        ? Staff.findOne(mergeTenantFilter(req,{
+        ? Staff.findOne({
             _id: guideId,
             position: "guide",
             isActive: true,
@@ -656,7 +656,7 @@ export const createTour = async (req, res, next) => {
           })
         : null,
       driverId
-        ? Staff.findOne(mergeTenantFilter(req,{
+        ? Staff.findOne({
             _id: driverId,
             position: "driver",
             isActive: true,
@@ -664,7 +664,7 @@ export const createTour = async (req, res, next) => {
           })
         : null,
       vehicleId
-        ? Vehicle.findOne(mergeTenantFilter(req,{
+        ? Vehicle.findOne({
             _id: vehicleId,
             isActive: true,
             isDeleted: { $ne: true },
@@ -818,7 +818,7 @@ try{
 
 
 const tours =
-await Tour.find(mergeTenantFilter(req,{
+await Tour.find({
 
 createdBy:req.user._id,
 
@@ -884,8 +884,10 @@ const updatePayload = { ...(req.body || {}) };
     }
 
 const tour =
-await Tour.findByIdAndUpdate(
-req.params.id,
+await Tour.findOneAndUpdate(
+mergeTenantFilter(req,{
+_id:req.params.id
+}),
 updatePayload,
 {
 new:true,
@@ -957,9 +959,10 @@ try{
 
 
 const tour =
-await Tour.findByIdAndUpdate(
-
-req.params.id,
+await Tour.findOneAndUpdate(
+mergeTenantFilter(req,{
+_id:req.params.id
+}),
 
 {
 
@@ -1224,7 +1227,7 @@ try{
 
 
 const tours =
-await Tour.find(mergeTenantFilter(req,{
+await Tour.find({
 
 createdBy:req.user._id
 

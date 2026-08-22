@@ -119,3 +119,34 @@ return context.bypass === true;
 
 }
 
+
+
+/*
+ Compatibility helper
+ Used by controllers/services that need tenant-aware filters
+*/
+export function mergeTenantFilter(filter = {}) {
+
+const context = getTenantContext();
+
+
+if(
+context.tenantId &&
+context.bypass !== true
+){
+
+return {
+
+...filter,
+
+tenantId: context.tenantId
+
+};
+
+}
+
+
+return filter;
+
+}
+

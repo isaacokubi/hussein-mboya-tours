@@ -1,4 +1,4 @@
-import {mergeTenantFilter} from "../tenancy/secureQuery.js";
+import { mergeTenantFilter } from "../tenancy/context.js";
 // server/controllers/guideController.js
 
 import Tour from "../models/Tour.js";
@@ -27,7 +27,7 @@ const TOUR_STATUSES = [
 |--------------------------------------------------------------------------
 */
 const resolveGuide = async (user) => {
-  let guide = await Staff.findOne(mergeTenantFilter(req,{
+  let guide = await Staff.findOne({
     $or: [
       { user: user._id },
       { email: user.email },
@@ -141,7 +141,7 @@ export const guideDashboard = async (req, res, next) => {
     const guide = await getGuideOr404(req, res);
     if (!guide) return;
 
-    let tours = await Tour.find(mergeTenantFilter(req,{
+    let tours = await Tour.find({
       assignedGuide: guide._id,
       isDeleted: { $ne: true },
     })
@@ -153,7 +153,7 @@ export const guideDashboard = async (req, res, next) => {
 
     await syncTourLifecycle(tours);
 
-    tours = await Tour.find(mergeTenantFilter(req,{
+    tours = await Tour.find({
       assignedGuide: guide._id,
       isDeleted: { $ne: true },
     })
@@ -249,7 +249,7 @@ export const getAssignedTours = async (req, res, next) => {
     const guide = await getGuideOr404(req, res);
     if (!guide) return;
 
-    const tours = await Tour.find(mergeTenantFilter(req,{
+    const tours = await Tour.find({
       assignedGuide: guide._id,
       isDeleted: { $ne: true },
     })
@@ -281,7 +281,7 @@ export const getTourDetails = async (req, res, next) => {
     const guide = await getGuideOr404(req, res);
     if (!guide) return;
 
-    const tour = await Tour.findOne(mergeTenantFilter(req,{
+    const tour = await Tour.findOne({
       _id: req.params.id,
       assignedGuide: guide._id,
       isDeleted: { $ne: true },
@@ -316,7 +316,7 @@ export const getTourGuests = async (req, res, next) => {
     const guide = await getGuideOr404(req, res);
     if (!guide) return;
 
-    const assignedTour = await Tour.findOne(mergeTenantFilter(req,{
+    const assignedTour = await Tour.findOne({
       _id: req.params.id,
       assignedGuide: guide._id,
       isDeleted: { $ne: true },
@@ -329,7 +329,7 @@ export const getTourGuests = async (req, res, next) => {
       });
     }
 
-    const bookings = await Booking.find(mergeTenantFilter(req,{
+    const bookings = await Booking.find({
       tour: assignedTour._id,
       isDeleted: { $ne: true },
       status: {
@@ -368,7 +368,7 @@ export const updateTourStatus = async (req, res, next) => {
     const guide = await getGuideOr404(req, res);
     if (!guide) return;
 
-    const assignedTourForDate = await Tour.findOne(mergeTenantFilter(req,{
+    const assignedTourForDate = await Tour.findOne({
       _id: req.params.id,
       assignedGuide: guide._id,
       isDeleted: { $ne: true },
@@ -453,7 +453,7 @@ export const submitTourReport = async (req, res, next) => {
     const guide = await getGuideOr404(req, res);
     if (!guide) return;
 
-    const assignedTour = await Tour.findOne(mergeTenantFilter(req,{
+    const assignedTour = await Tour.findOne({
       _id: req.params.id,
       assignedGuide: guide._id,
       isDeleted: { $ne: true },

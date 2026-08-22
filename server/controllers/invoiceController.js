@@ -1,4 +1,4 @@
-import {mergeTenantFilter} from "../tenancy/secureQuery.js";
+import { mergeTenantFilter } from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 // server/controllers/invoiceController.js
 
@@ -34,7 +34,7 @@ export const createInvoice = async (req, res, next) => {
       });
     }
 
-    const existingInvoice = await Invoice.findOne(mergeTenantFilter(req,{
+    const existingInvoice = await Invoice.findOne({
       booking,
     });
 
@@ -122,7 +122,11 @@ export const getInvoices = async (req, res, next) => {
 
 export const getInvoice = async (req, res, next) => {
   try {
-    const invoice = await Invoice.findById(req.params.id).populate({
+    const invoice = await Invoice.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+).populate({
       path: "booking",
       populate: [
         {
@@ -157,7 +161,11 @@ export const getInvoice = async (req, res, next) => {
 
 export const downloadInvoice = async (req, res, next) => {
   try {
-    const booking = await Booking.findById(req.params.id);
+    const booking = await Booking.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
 
     if (!booking) {
       return res.status(404).json({

@@ -1,3 +1,4 @@
+import { mergeTenantFilter } from "../tenancy/context.js";
 import { SitemapStream, streamToPromise } from "sitemap";
 
 import Tour from "../models/Tour.js";

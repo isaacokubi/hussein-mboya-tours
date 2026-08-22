@@ -1,4 +1,4 @@
-import {mergeTenantFilter} from "../tenancy/secureQuery.js";
+import { mergeTenantFilter } from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 import AITask from "../models/AITask.js";
 import Booking from "../models/Booking.js";
@@ -171,9 +171,10 @@ try{
 
 
 const task =
-await AITask.findByIdAndUpdate(
-
-req.params.id,
+await AITask.findOneAndUpdate(
+mergeTenantFilter(req,{
+_id:req.params.id
+}),
 
 {
 status:req.body.status

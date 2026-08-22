@@ -1,4 +1,4 @@
-import {mergeTenantFilter} from "../tenancy/secureQuery.js";
+import { mergeTenantFilter } from "../tenancy/context.js";
 import Review from "../models/Review.js";
 import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
@@ -10,7 +10,7 @@ import Tour from "../models/Tour.js";
 */
 
 const updateTourRating = async (tourId) => {
-  const reviews = await Review.find(mergeTenantFilter(req,{
+  const reviews = await Review.find({
     tour: tourId,
     approved: true,
   });
@@ -55,7 +55,7 @@ export const createReview = async (req, res, next) => {
       });
     }
 
-    const booking = await Booking.findOne(mergeTenantFilter(req,{
+    const booking = await Booking.findOne({
       tour,
       status: "completed",
       $or: [
@@ -72,7 +72,7 @@ export const createReview = async (req, res, next) => {
       });
     }
 
-    const existingReview = await Review.findOne(mergeTenantFilter(req,{
+    const existingReview = await Review.findOne({
       user: req.user._id,
       tour,
     });
@@ -115,7 +115,7 @@ export const createReview = async (req, res, next) => {
 
 export const getTourReviews = async (req, res, next) => {
   try {
-    const reviews = await Review.find(mergeTenantFilter(req,{
+    const reviews = await Review.find({
       tour: req.params.id,
       approved: true,
       isDeleted: false,
@@ -147,7 +147,11 @@ export const getTourReviews = async (req, res, next) => {
 
 export const approveReview = async (req, res, next) => {
   try {
-    const review = await Review.findById(req.params.id);
+    const review = await Review.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
 
     if (!review) {
       return res.status(404).json({
@@ -181,7 +185,11 @@ export const approveReview = async (req, res, next) => {
 
 export const voteHelpful = async (req, res, next) => {
   try {
-    const review = await Review.findById(req.params.id);
+    const review = await Review.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
 
     if (!review) {
       return res.status(404).json({
@@ -212,7 +220,11 @@ export const voteHelpful = async (req, res, next) => {
 
 export const deleteReview = async (req, res, next) => {
   try {
-    const review = await Review.findById(req.params.id);
+    const review = await Review.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
 
     if (!review) {
       return res.status(404).json({

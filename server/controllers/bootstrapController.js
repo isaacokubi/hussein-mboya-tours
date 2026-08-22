@@ -1,4 +1,4 @@
-import {mergeTenantFilter} from "../tenancy/secureQuery.js";
+import { mergeTenantFilter } from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 import mongoose from "mongoose";
 import User from "../models/User.js";
@@ -53,10 +53,10 @@ export const bootstrapTenant = async (req, res, next) => {
       return res.status(409).json({ success: false, message: "Initial tenant bootstrap is already completed. Use normal tenant administration to create additional accounts." });
     }
 
-    const existingEmail = await User.findOne(mergeTenantFilter(req,{ email: normalizedEmail }).select("_id").lean();
+    const existingEmail = await User.findOne({ email: normalizedEmail }).select("_id").lean();
     if (existingEmail) return res.status(409).json({ success: false, message: "Email is already registered." });
 
-    const existingPhone = await User.findOne(mergeTenantFilter(req,{ phone: normalizedPhone }).select("_id").lean();
+    const existingPhone = await User.findOne({ phone: normalizedPhone }).select("_id").lean();
     if (existingPhone) return res.status(409).json({ success: false, message: "Phone number is already registered." });
 
     const permissions = await Permission.find(tenantFilter(req)).select("_id").lean();

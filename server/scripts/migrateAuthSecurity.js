@@ -1,3 +1,4 @@
+import { backgroundTenantFilter } from "../tenancy/backgroundTenantFilter.js";
 import mongoose from "mongoose";
 import User from "../models/User.js";
 
@@ -22,7 +23,9 @@ const main = async () => {
 
   console.log("Connected to MongoDB.");
 
-  const users = await User.find({})
+  const users = await User.find(
+backgroundTenantFilter({})
+)
     .select("_id email phone role");
 
   console.log(`Users found: ${users.length}`);

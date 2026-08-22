@@ -1,4 +1,4 @@
-import {mergeTenantFilter} from "../tenancy/secureQuery.js";
+import { mergeTenantFilter } from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 import Booking from "../models/Booking.js";
 import Destination from "../models/Destination.js";
@@ -23,10 +23,10 @@ export const getDashboard = async (req, res) => {
       agentRole,
       guideRole
     ] = await Promise.all([
-      Role.findOne(mergeTenantFilter(req,{name:"customer"}),
-      Role.findOne(mergeTenantFilter(req,{name:"admin"}),
-      Role.findOne(mergeTenantFilter(req,{name:"agent"}),
-      Role.findOne(mergeTenantFilter(req,{name:{$in:["guide","tour_guide"]}})
+      Role.findOne({name:"customer"}),
+      Role.findOne({name:"admin"}),
+      Role.findOne({name:"agent"}),
+      Role.findOne({name:{$in:["guide","tour_guide"]}})
     ]);
 
     /*
@@ -264,7 +264,7 @@ export const getDashboard = async (req, res) => {
         { $limit: 5 },
       ]),
 
-      Booking.find(mergeTenantFilter(req,{
+      Booking.find({
         isDeleted: NON_DELETED,
       })
         .sort({ createdAt: -1 })
@@ -447,13 +447,13 @@ export const getDashboard = async (req, res) => {
           vehicles: vehiclesCount,
         },
 
-        agents: await Agent.find(mergeTenantFilter(req,{
+        agents: await Agent.find({
           status: { $ne: "inactive" }
         })
         .select("companyName email phone status")
         .lean(),
 
-        guides: await Staff.find(mergeTenantFilter(req,{
+        guides: await Staff.find({
           $or: [
             {
               position: {
@@ -480,7 +480,7 @@ export const getDashboard = async (req, res) => {
         .select("name email phone position role")
         .lean(),
 
-        vehicles: await Vehicle.find(mergeTenantFilter(req,{
+        vehicles: await Vehicle.find({
           isDeleted: { $ne: true },
           isActive: true
         })
