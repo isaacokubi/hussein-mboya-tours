@@ -1,5 +1,5 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
 import SystemSetting from "../models/SystemSetting.js";
+import Organization from "../models/Organization.js";
 import { COMPANY_DEFAULTS } from "../config/companyDefaults.js";
 
 const DEFAULTS = { ...COMPANY_DEFAULTS };
@@ -13,20 +13,22 @@ export const getSettings = async (req, res, next) => {
     ).lean();
 
     return res.status(200).json({ success: true, data: settings, settings });
-  } catch (error) { next(error); }
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const updateSettings = async (req, res, next) => {
   try {
     const allowed = [
-      "companyName","companyLogo","websiteUrl","supportEmail","supportPhone",
-      "address","city","country","currency","currencySymbol","timezone","language",
-      "taxRate","bookingDepositPercentage","defaultCommissionRate",
-      "maintenanceMode","allowRegistrations","allowAgentRegistrations",
-      "requireEmailVerification","requirePhoneVerification",
-      "enableMpesa","enableStripe","enablePaypal","enableBankTransfer","bankName","bankAccountName","bankAccountNumber","bankBranch","bankSwiftCode",
-      "emailFromName","emailFromAddress","facebook","instagram","twitter","youtube",
-      "seoTitle","seoDescription","seoKeywords","bookingNotifications","paymentNotifications",
+      "companyName", "companyLogo", "websiteUrl", "supportEmail", "supportPhone",
+      "address", "city", "country", "currency", "currencySymbol", "timezone", "language",
+      "taxRate", "bookingDepositPercentage", "defaultCommissionRate",
+      "maintenanceMode", "allowRegistrations", "allowAgentRegistrations",
+      "requireEmailVerification", "requirePhoneVerification",
+      "enableMpesa", "enableStripe", "enablePaypal", "enableBankTransfer", "bankName", "bankAccountName", "bankAccountNumber", "bankBranch", "bankSwiftCode",
+      "emailFromName", "emailFromAddress", "facebook", "instagram", "twitter", "youtube",
+      "seoTitle", "seoDescription", "seoKeywords", "bookingNotifications", "paymentNotifications",
     ];
     const updates = {};
     for (const key of allowed) if (req.body?.[key] !== undefined) updates[key] = req.body[key];
@@ -39,15 +41,25 @@ export const updateSettings = async (req, res, next) => {
     updates.timezone = String(updates.timezone ?? DEFAULTS.timezone).trim();
 
     if (typeof updates.seoKeywords === "string") {
-      try { updates.seoKeywords = JSON.parse(updates.seoKeywords); }
-      catch { updates.seoKeywords = updates.seoKeywords.split(",").map((v) => v.trim()).filter(Boolean); }
+      try {
+        updates.seoKeywords = JSON.parse(updates.seoKeywords);
+      } catch {
+        updates.seoKeywords = updates.seoKeywords.split(",").map((v) => v.trim()).filter(Boolean);
+      }
     }
-    for (const key of ["taxRate","bookingDepositPercentage","defaultCommissionRate"]) {
+
+    for (const key of ["taxRate", "bookingDepositPercentage", "defaultCommissionRate"]) {
       if (updates[key] !== undefined) updates[key] = Number(updates[key]);
     }
-    for (const key of ["bookingNotifications","paymentNotifications","maintenanceMode","allowRegistrations","allowAgentRegistrations","requireEmailVerification","requirePhoneVerification","enableMpesa","enableStripe","enablePaypal","enableBankTransfer"]) {
+
+    for (const key of [
+      "bookingNotifications", "paymentNotifications", "maintenanceMode", "allowRegistrations",
+      "allowAgentRegistrations", "requireEmailVerification", "requirePhoneVerification",
+      "enableMpesa", "enableStripe", "enablePaypal", "enableBankTransfer",
+    ]) {
       if (updates[key] !== undefined && typeof updates[key] === "string") updates[key] = updates[key] === "true";
     }
+
     if (updates.taxRate < 0 || updates.taxRate > 100 || updates.bookingDepositPercentage < 0 || updates.bookingDepositPercentage > 100 || updates.defaultCommissionRate < 0 || updates.defaultCommissionRate > 100) {
       return res.status(400).json({ success: false, message: "Tax, deposit and commission rates must be between 0 and 100." });
     }
@@ -68,38 +80,49 @@ export const updateSettings = async (req, res, next) => {
 
 export const getPublicSettings = async (req, res, next) => {
   try {
-    const settings = await SystemSetting.findOneAndUpdate(
-      { key: "default" },
-      { $setOnInsert: { key: "default", ...DEFAULTS } },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
-    ).lean();
+    const tenant = req.tenantId
+      ? await Organization.findById(req.tenantId).lean()
+      : null;
 
-    return res.json({
-      success: true,
-      settings: {
-        companyName: settings.companyName,
-        supportEmail: settings.supportEmail,
-        supportPhone: settings.supportPhone,
-        currency: settings.currency,
-        timezone: settings.timezone,
-        currencySymbol: settings.currencySymbol || "",
-        taxRate: Number(settings.taxRate || 0),
-        bookingDepositPercentage: Number(settings.bookingDepositPercentage ?? 30),
-        defaultCommissionRate: Number(settings.defaultCommissionRate ?? 10),
-        companyLogo: settings.companyLogo || "",
-        websiteUrl: settings.websiteUrl || "",
-        address: settings.address || "",
-        city: settings.city || "",
-        country: settings.country || "",
-        enableMpesa: settings.enableMpesa !== false,
-        enableStripe: settings.enableStripe === true,
-        enableBankTransfer: settings.enableBankTransfer !== false,
-        bankName: settings.bankName || "",
-        bankAccountName: settings.bankAccountName || "",
-        bankAccountNumber: settings.bankAccountNumber || "",
-        bankBranch: settings.bankBranch || "",
-        bankSwiftCode: settings.bankSwiftCode || "",
-      },
-    });
-  } catch (error) { next(error); }
+    if (!tenant) {
+      return res.status(404).json({ success: false, message: "Tenant not resolved" });
+    }
+
+    // Public settings are read-only. Do not upsert here: a homepage request
+    // must never create a global/default settings record or collide with the
+    // legacy unique key index when another tenant already has settings.
+    const tenantSettings = await SystemSetting.findOne({ key: "default" }).lean();
+    const overrides = tenant?.settings && typeof tenant.settings === "object"
+      ? tenant.settings
+      : {};
+
+    const settings = {
+      companyName: tenant.name || tenantSettings?.companyName || DEFAULTS.companyName,
+      supportEmail: tenant.supportEmail || tenantSettings?.supportEmail || "",
+      supportPhone: tenant.supportPhone || tenantSettings?.supportPhone || "",
+      currency: tenant.currency || tenantSettings?.currency || "KES",
+      timezone: tenant.timezone || tenantSettings?.timezone || "Africa/Nairobi",
+      currencySymbol: tenantSettings?.currencySymbol || "KSh",
+      companyLogo: tenant.logoUrl || tenantSettings?.companyLogo || "",
+      websiteUrl: tenant.websiteUrl || tenantSettings?.websiteUrl || "",
+      address: tenant.address || tenantSettings?.address || "",
+      city: tenant.city || tenantSettings?.city || "",
+      country: tenant.country || tenantSettings?.country || "Kenya",
+      enableMpesa: overrides.enableMpesa ?? tenantSettings?.enableMpesa ?? tenant.features?.mpesa !== false,
+      enableStripe: overrides.enableStripe ?? tenantSettings?.enableStripe ?? tenant.features?.stripe === true,
+      enableBankTransfer: overrides.enableBankTransfer ?? tenantSettings?.enableBankTransfer ?? true,
+      taxRate: Number(tenantSettings?.taxRate || 0),
+      bookingDepositPercentage: Number(tenantSettings?.bookingDepositPercentage ?? 30),
+      defaultCommissionRate: Number(tenantSettings?.defaultCommissionRate ?? 10),
+      bankName: tenantSettings?.bankName || "",
+      bankAccountName: tenantSettings?.bankAccountName || "",
+      bankAccountNumber: tenantSettings?.bankAccountNumber || "",
+      bankBranch: tenantSettings?.bankBranch || "",
+      bankSwiftCode: tenantSettings?.bankSwiftCode || "",
+    };
+
+    return res.json({ success: true, settings });
+  } catch (error) {
+    next(error);
+  }
 };
