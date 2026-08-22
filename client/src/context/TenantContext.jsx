@@ -1,81 +1,43 @@
-import React,{createContext,useContext,useEffect,useState} from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { getTenantBranding } from "../api/tenantBrandingApi";
 
-import {
-getTenantBranding
-} from "../api/tenantBrandingApi";
+const TenantContext = createContext();
 
+export function TenantProvider({ children }) {
+  const [tenant, setTenant] = useState({
+    name: "",
+    currency: "KES",
+    timezone: "Africa/Nairobi",
+  });
 
-const TenantContext=createContext();
+  useEffect(() => {
+    let mounted = true;
 
+    const loadTenant = async () => {
+      try {
+        const res = await getTenantBranding();
+        if (mounted && res?.branding) {
+          setTenant(res.branding);
+          document.title = res.branding.name || document.title;
+        }
+      } catch (error) {
+        console.error("Tenant branding load failed", error);
+      }
+    };
 
-export function TenantProvider({children}){
+    void loadTenant();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
-
-const [tenant,setTenant]=useState({
-name:"Hussein Mboya Tours",
-currency:"KES",
-timezone:"Africa/Nairobi"
-});
-
-
-useEffect(()=>{
-
-loadTenant();
-
-},[]);
-
-
-
-async function loadTenant(){
-
-try{
-
-const res=await getTenantBranding();
-
-if(res.branding){
-
-setTenant(res.branding);
-
-
-document.title=res.branding.name;
-
-
+  return (
+    <TenantContext.Provider value={{ tenant, setTenant }}>
+      {children}
+    </TenantContext.Provider>
+  );
 }
 
-}catch(err){
-
-console.error(
-"Tenant branding load failed",
-err
-);
-
+export function useTenant() {
+  return useContext(TenantContext);
 }
-
-}
-
-
-return (
-
-<TenantContext.Provider
-value={{
-tenant,
-setTenant
-}}
->
-
-{children}
-
-</TenantContext.Provider>
-
-);
-
-
-}
-
-
-export function useTenant(){
-
-return useContext(TenantContext);
-
-}
-
