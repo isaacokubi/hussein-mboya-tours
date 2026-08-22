@@ -113,3 +113,4 @@ tenant_backup*
 *_backup*
 *.old.js
 
+server/backups/
