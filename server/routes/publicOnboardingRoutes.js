@@ -1,11 +1,9 @@
-import { resolveTenant } from "../middleware/tenantMiddleware.js";
 import express from "express";
 import rateLimit from "express-rate-limit";
 import { registerTenantPublic } from "../controllers/publicOnboardingController.js";
 
 const router = express.Router();
 
-router.use(resolveTenant);
 const onboardingRateLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   limit: 5,
@@ -15,4 +13,5 @@ const onboardingRateLimiter = rateLimit({
 });
 
 router.post("/register", onboardingRateLimiter, registerTenantPublic);
+
 export default router;

@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 const subscriptionSchema = new mongoose.Schema({
   tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, unique: true, index: true },
@@ -18,12 +17,5 @@ const subscriptionSchema = new mongoose.Schema({
 
 subscriptionSchema.index({ tenantId: 1, status: 1 });
 subscriptionSchema.index({ trialEndsAt: 1, status: 1 });
-
-
-
-
-
-
-
 
 export default mongoose.models.Subscription || mongoose.model("Subscription", subscriptionSchema);
