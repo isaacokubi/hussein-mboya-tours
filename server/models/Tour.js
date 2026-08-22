@@ -1,110 +1,101 @@
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
-import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 import slugify from "slugify";
 
-/*
-|--------------------------------------------------------------------------
-| ITINERARY SCHEMA
-|--------------------------------------------------------------------------
-*/
-
-const itinerarySchema = new mongoose.Schema(
-  {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
-    day: { type: Number, required: true, min: 1 },
-    title: { type: String, required: true, trim: true },
-    description: { type: String, required: true, trim: true },
-  },
-  { _id: false }
-);
-
-const imageSchema = new mongoose.Schema({
-  url: { type: String, default: "" },
-  publicId: { type: String, default: "" },
-  alt: { type: String, default: "" },
-}, { _id: false });
-
-const pricingRuleSchema = new mongoose.Schema({
-  label: { type: String, default: "" },
-  minGuests: { type: Number, default: 1 },
-  maxGuests: { type: Number, default: null },
-  price: { type: Number, default: 0 },
+const itinerarySchema = new mongoose.Schema({
+  tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true },
+  day: { type: Number, required: true, min: 1 },
+  title: { type: String, required: true, trim: true },
+  description: { type: String, required: true, trim: true },
+  meals: [String],
+  accommodation: { type: String, default: "" },
+  activities: [String],
 }, { _id: false });
 
 const availabilitySchema = new mongoose.Schema({
-  date: Date,
-  totalSlots: { type: Number, default: 20 },
-  bookedSlots: { type: Number, default: 0 },
+  date: { type: Date, required: true },
+  totalSlots: { type: Number, default: 20, min: 0 },
+  bookedSlots: { type: Number, default: 0, min: 0 },
 }, { _id: false });
 
 const seoSchema = new mongoose.Schema({
-  title: { type: String, default: "" },
-  description: { type: String, default: "" },
-  keywords: { type: [String], default: [] },
+  title: String,
+  description: String,
+  keywords: [String],
 }, { _id: false });
 
-const tourSchema = new mongoose.Schema(
-  {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true },
-    title: { type: String, required: true, trim: true },
-    slug: { type: String, unique: true, trim: true },
-    description: { type: String, default: "", trim: true },
-    category: { type: String, enum: ["Safari", "Beach", "Adventure", "Cultural", "Luxury", "Hiking", "Family", "Wildlife"], default: "Safari" },
-    destination: { type: mongoose.Schema.Types.ObjectId, ref: "Destination", required: true },
-    country: { type: String, required: true, trim: true },
-    location: { type: String, required: true, trim: true },
-    meetingPoint: { type: String, default: "", trim: true },
-    coordinates: { type: { type: String, enum: ["Point"], default: "Point" }, coordinates: { type: [Number], default: [36.8219, -1.2921] } },
-    duration: { type: String, default: "" },
-    durationDetails: { days: { type: Number, default: 1 }, nights: { type: Number, default: 0 } },
-    date: { type: Date, required: true },
-    startDate: Date,
-    endDate: Date,
-    capacity: { type: Number, default: 20, min: 1 },
-    price: { type: Number, required: true, min: 0 },
-    agentPrice: { type: Number, default: 0 },
-    discount: { type: Number, default: 0, min: 0, max: 100 },
-    discountPrice: { type: Number, default: null },
-    pricingRules: [pricingRuleSchema],
-    featuredImage: imageSchema,
-    gallery: [imageSchema],
-    video: { url: { type: String, default: "" }, publicId: { type: String, default: "" } },
-    highlights: [{ type: String, trim: true }],
-    inclusions: [{ type: String, trim: true }],
-    exclusions: [{ type: String, trim: true }],
-    languages: [{ type: String, trim: true }],
-    minimumAge: { type: Number, default: 0 },
-    maximumAge: { type: Number, default: 99 },
-    difficulty: { type: String, enum: ["easy", "moderate", "hard"], default: "easy" },
-    itinerary: [itinerarySchema],
-    availability: [availabilitySchema],
-    availabilitySettings: { totalSlots: { type: Number, default: 20 }, bookedSlots: { type: Number, default: 0 }, waitlistEnabled: { type: Boolean, default: false } },
-    depositRequired: { type: Number, default: 0 },
-    cancellationPolicy: { type: String, default: "" },
-    bookingDeadline: { type: Number, default: 1 },
-    instantBooking: { type: Boolean, default: true },
-    assignedGuide: { type: mongoose.Schema.Types.ObjectId, ref: "Staff", default: null },
-    assignedDriver: { type: mongoose.Schema.Types.ObjectId, ref: "Staff", default: null },
-    assignedVehicle: { type: mongoose.Schema.Types.ObjectId, ref: "Vehicle", default: null },
-    assignmentStatus: { type: String, enum: ["pending", "assigned", "completed", "cancelled"], default: "pending" },
-    status: { type: String, enum: ["draft", "scheduled", "upcoming", "ongoing", "fully-booked", "completed", "cancelled"], default: "draft" },
-    published: { type: Boolean, default: false },
-    featured: { type: Boolean, default: false },
-    available: { type: Boolean, default: true },
-    isDeleted: { type: Boolean, default: false },
-    deletedAt: { type: Date, default: null },
-    deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
-    averageRating: { type: Number, default: 0, min: 0, max: 5 },
-    totalReviews: { type: Number, default: 0 },
-    totalBookings: { type: Number, default: 0 },
-    wishlistCount: { type: Number, default: 0 },
-    popularity: { type: Number, default: 0 },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
-    seo: seoSchema,
-  },
-  { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
-);
+const imageSchema = new mongoose.Schema({
+  url: String,
+  publicId: String,
+}, { _id: false });
+
+const pricingRuleSchema = new mongoose.Schema({
+  name: String,
+  minTravelers: Number,
+  maxTravelers: Number,
+  discount: { type: Number, default: 0 },
+}, { _id: false });
+
+const tourSchema = new mongoose.Schema({
+  tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true },
+  title: { type: String, required: true, trim: true, maxlength: 150 },
+  slug: { type: String, unique: true, lowercase: true, trim: true },
+  description: { type: String, required: true, trim: true },
+  shortDescription: { type: String, trim: true, maxlength: 250 },
+  tags: [{ type: String, trim: true }],
+  category: { type: String, enum: ["Safari", "Beach", "Adventure", "Cultural", "Luxury", "Hiking", "Family", "Wildlife"], default: "Safari" },
+  destination: { type: mongoose.Schema.Types.ObjectId, ref: "Destination", required: true },
+  country: { type: String, required: true, trim: true },
+  location: { type: String, required: true, trim: true },
+  meetingPoint: { type: String, default: "", trim: true },
+  coordinates: { type: { type: String, enum: ["Point"], default: "Point" }, coordinates: { type: [Number], default: [36.8219, -1.2921] } },
+  duration: { type: String, default: "" },
+  durationDetails: { days: { type: Number, default: 1 }, nights: { type: Number, default: 0 } },
+  date: { type: Date, required: true },
+  startDate: Date,
+  endDate: Date,
+  capacity: { type: Number, default: 20, min: 1 },
+  price: { type: Number, required: true, min: 0 },
+  agentPrice: { type: Number, default: 0 },
+  discount: { type: Number, default: 0, min: 0, max: 100 },
+  discountPrice: { type: Number, default: null },
+  pricingRules: [pricingRuleSchema],
+  featuredImage: imageSchema,
+  gallery: [imageSchema],
+  video: { url: { type: String, default: "" }, publicId: { type: String, default: "" } },
+  highlights: [{ type: String, trim: true }],
+  inclusions: [{ type: String, trim: true }],
+  exclusions: [{ type: String, trim: true }],
+  languages: [{ type: String, trim: true }],
+  minimumAge: { type: Number, default: 0 },
+  maximumAge: { type: Number, default: 99 },
+  difficulty: { type: String, enum: ["easy", "moderate", "hard"], default: "easy" },
+  itinerary: [itinerarySchema],
+  availability: [availabilitySchema],
+  availabilitySettings: { totalSlots: { type: Number, default: 20 }, bookedSlots: { type: Number, default: 0 }, waitlistEnabled: { type: Boolean, default: false } },
+  depositRequired: { type: Number, default: 0 },
+  cancellationPolicy: { type: String, default: "" },
+  bookingDeadline: { type: Number, default: 1 },
+  instantBooking: { type: Boolean, default: true },
+  assignedGuide: { type: mongoose.Schema.Types.ObjectId, ref: "Staff", default: null },
+  assignedDriver: { type: mongoose.Schema.Types.ObjectId, ref: "Staff", default: null },
+  assignedVehicle: { type: mongoose.Schema.Types.ObjectId, ref: "Vehicle", default: null },
+  assignmentStatus: { type: String, enum: ["pending", "assigned", "completed", "cancelled"], default: "pending" },
+  status: { type: String, enum: ["draft", "scheduled", "upcoming", "ongoing", "fully-booked", "completed", "cancelled"], default: "draft" },
+  published: { type: Boolean, default: false },
+  featured: { type: Boolean, default: false },
+  available: { type: Boolean, default: true },
+  isDeleted: { type: Boolean, default: false },
+  deletedAt: { type: Date, default: null },
+  deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+  averageRating: { type: Number, default: 0, min: 0, max: 5 },
+  totalReviews: { type: Number, default: 0 },
+  totalBookings: { type: Number, default: 0 },
+  wishlistCount: { type: Number, default: 0 },
+  popularity: { type: Number, default: 0 },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+  seo: seoSchema,
+}, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } });
 
 tourSchema.pre("validate", async function (next) {
   if (this.title && (!this.slug || this.isModified("title"))) {
@@ -167,9 +158,6 @@ tourSchema.index({ available: 1 });
 tourSchema.index({ status: 1, date: 1 });
 tourSchema.index({ title: "text", description: "text", location: "text", country: "text", category: "text", tags: "text" });
 
-// Apply tenancy to the schema before compiling it, then export the actual
-// Mongoose model. The previous code exported the Schema object itself,
-// causing runtime failures such as `Tour.find is not a function`.
 tourSchema.plugin(tenantPlugin);
 const Tour = mongoose.models.Tour || mongoose.model("Tour", tourSchema);
 
