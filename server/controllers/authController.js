@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter, runWithTenant } from "../tenancy/context.js";
 import User from "../models/User.js";
 import Role from "../models/Role.js";
 import SecurityLog from "../models/SecurityLog.js";
@@ -19,6 +19,7 @@ const publicUser = (user, permissions = []) => ({
 });
 const createAuditLog = (data) => AuditLog.log(data);
 const isCustomer = (user) => effectiveRoleForUser(user) === "customer";
+const isPlatformOwner = (user) => ["superadmin", "super_admin"].includes(effectiveRoleForUser(user)) && !user.tenantId;
 
 export const login = async (req, res, next) => {
   try {
@@ -26,10 +27,24 @@ export const login = async (req, res, next) => {
     const password = typeof req.body?.password === "string" ? req.body.password : "";
     if (!email || !password) return res.status(400).json({ success: false, message: "Email and password are required." });
 
-    const user = await User.findOne(mergeTenantFilter({ email }))
+    let user = await User.findOne(mergeTenantFilter({ email }))
       .select("+password")
       .populate({ path: "roleId", populate: { path: "permissions" } })
       .populate("permissionsOverride");
+
+    // Platform owners are deliberately tenantless. A tenant-scoped request must
+    // still be able to authenticate a tenantless superadmin without allowing a
+    // tenant admin to escape its own tenant boundary.
+    if (!user) {
+      user = await runWithTenant({ tenantId: null, tenant: null, role: "superadmin", bypass: true }, async () => User.findOne({
+        email,
+        role: { $in: ["superadmin", "super_admin"] },
+        tenantId: null,
+      })
+        .select("+password")
+        .populate({ path: "roleId", populate: { path: "permissions" } })
+        .populate("permissionsOverride"));
+    }
 
     if (!user) {
       await SecurityLog.logEvent({ email, action: "login_failed", status: "failed", severity: "high", ipAddress: req.ip, userAgent: req.headers["user-agent"], details: "User not found" });
@@ -64,6 +79,12 @@ export const login = async (req, res, next) => {
         devPin: String(process.env.MFA_DEV_MODE || "").toLowerCase() === "true" ? challenge.pin : undefined,
         message: String(process.env.MFA_DEV_MODE || "").toLowerCase() === "true" ? `Development PIN: ${challenge.pin}` : "A 4-digit verification PIN has been sent to your registered phone."
       });
+    }
+
+    // SuperAdmin is the platform owner and MUST be tenantless. Never mint a
+    // platform token for a user carrying a tenantId with a superadmin role.
+    if (["superadmin", "super_admin"].includes(effectiveRole) && !isPlatformOwner(user)) {
+      return res.status(403).json({ success: false, message: "Platform owner account must not belong to a tenant." });
     }
 
     user.lastLoginAt = new Date();
@@ -139,7 +160,7 @@ export const requestPasswordReset = async (req, res, next) => {
     user.passwordResetExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
     user.passwordResetAttempts = 0;
     await user.save({ validateBeforeSave: false });
-    try { await sendSMS(phone, `Your Hussein Mboya Tours password reset code is ${code}. It expires in 10 minutes.`); } catch (smsError) { console.error("PASSWORD RESET SMS ERROR:", smsError.message); }
+    try { await sendSMS(phone, `Your Global Tours password reset code is ${code}. It expires in 10 minutes.`); } catch (smsError) { console.error("PASSWORD RESET SMS ERROR:", smsError.message); }
     await SecurityLog.logEvent({ user: user._id, email: user.email, action: "password_reset_requested", status: "success", ipAddress: req.ip, userAgent: req.headers["user-agent"] });
     if (String(process.env.MFA_DEV_MODE || "").toLowerCase() === "true") return res.json({ ...generic, devCode: code, message: `Development reset code: ${code}` });
     return res.json(generic);
