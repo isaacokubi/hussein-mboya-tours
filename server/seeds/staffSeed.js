@@ -8,7 +8,7 @@ dotenv.config();
 
 const staffMembers = [
   {
-    name: "System Admin",
+    name: "Hussein Mboya",
     email: "hussein.mboya@coherenttours.com",
     phone: "+254733439362",
     position: "tour_manager",

@@ -1,4 +1,3 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 // server/controllers/driverController.js
 import Tour from "../models/Tour.js";
 import Booking from "../models/Booking.js";
@@ -57,7 +56,6 @@ const resolveDriver = async (user) => {
 };
 
 export const driverDashboard = async (req, res, next) => {
-  requireTenantId();
   try {
     const driver = await resolveDriver(req.user);
     if (!driver) {

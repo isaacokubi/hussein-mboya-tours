@@ -1,4 +1,3 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
 // services/whatsappService.js
 
 import axios from "axios";

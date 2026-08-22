@@ -44,12 +44,3 @@ export const createStaffAccount = async (payload) => {
   const { data } = await api.post("/admin/users/staff", payload);
   return data;
 };
-
-export const createCompanyAccount = async (payload) => {
-  const { data } = await api.post(
-    "/superadmin/users/accounts",
-    payload
-  );
-
-  return data;
-};

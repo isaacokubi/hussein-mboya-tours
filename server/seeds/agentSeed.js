@@ -52,7 +52,7 @@ const seedAgents = async () => {
         name:"John Kamau",
         email:"john.kamau@coherenttours.com",
         phone:"+254711111111",
-        companyName:"${companyName}",
+        companyName:"Safari Adventures Kenya",
         location:"Nairobi"
       },
 
@@ -60,7 +60,7 @@ const seedAgents = async () => {
         name:"Mary Wanjiku",
         email:"mary.wanjiku@coherenttours.com",
         phone:"+254722222222",
-        companyName:"${companyName}",
+        companyName:"Africa Luxury Travels",
         location:"Mombasa"
       },
 
@@ -68,7 +68,7 @@ const seedAgents = async () => {
         name:"David Otieno",
         email:"david.otieno@coherenttours.com",
         phone:"+254733333333",
-        companyName:"${companyName}",
+        companyName:"East Africa Safaris",
         location:"Kisumu"
       }
     ];

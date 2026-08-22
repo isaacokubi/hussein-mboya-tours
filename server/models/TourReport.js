@@ -2,7 +2,6 @@
 
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
-import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -12,13 +11,6 @@ import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 const imageSchema = new mongoose.Schema(
   {
-
-    tenantId:{
-        type: mongoose.Schema.Types.ObjectId,
-        ref:"Organization",
-        index:true,
-        required:false
-    },
     url: {
       type: String,
       required: true,
@@ -294,14 +286,10 @@ tourReportSchema.index({
 |--------------------------------------------------------------------------
 */
 
-const tenantTourReportSchema = tourReportSchema.plugin(tenantPlugin);
-const TourReport = mongoose.models.TourReport || mongoose.model("TourReport", tenantTourReportSchema);
+const TourReport =
+  mongoose.models.TourReport ||
+  tourReportSchema.plugin(tenantPlugin);
 
-
-
-
-
-
-
+mongoose.model("TourReport", tourReportSchema);
 
 export default TourReport;

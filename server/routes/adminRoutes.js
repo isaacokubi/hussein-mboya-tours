@@ -1,6 +1,5 @@
 // server/routes/adminRoutes.js
 import express from "express";
-import { resolveTenant } from "../middleware/tenantMiddleware.js";
 
 import {
   getAgents,
@@ -40,9 +39,8 @@ import {
 
 const router = express.Router();
 
-/* Authenticate first so tenant resolution uses the database-backed user tenant. */
+/* Every admin endpoint requires an authenticated active Admin/SuperAdmin. */
 router.use(protect);
-router.use(resolveTenant);
 router.use(adminMiddleware);
 
 /* Dashboard must not depend on the user-management permission. */

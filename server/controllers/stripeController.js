@@ -1,4 +1,3 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 /*
 |--------------------------------------------------------------------------
 | STRIPE PAYMENT CONTROLLER
@@ -278,7 +277,6 @@ export const createStripeSession = async (
   res,
   next
 ) => {
-  requireTenantId();
 
   try {
 

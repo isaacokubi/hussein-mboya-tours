@@ -1,18 +1,10 @@
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
-import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 
 const tourCategorySchema = new mongoose.Schema(
 
 {
-
-    tenantId:{
-        type: mongoose.Schema.Types.ObjectId,
-        ref:"Organization",
-        index:true,
-        required:false
-    },
 
 name:{
 
@@ -81,13 +73,6 @@ timestamps:true
 }
 
 );
-
-
-
-
-
-
-
 
 
 

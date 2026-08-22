@@ -2,7 +2,6 @@
 
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
-import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -21,7 +20,6 @@ import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 const notificationSchema = new mongoose.Schema(
   {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
     /*
     |--------------------------------------------------------------------------
     | RECIPIENT
@@ -303,14 +301,10 @@ notificationSchema.statics.markAllAsRead = function (userId) {
 |--------------------------------------------------------------------------
 */
 
-const tenantNotificationSchema = notificationSchema.plugin(tenantPlugin);
-const Notification = mongoose.models.Notification || mongoose.model("Notification", tenantNotificationSchema);
+const Notification =
+  mongoose.models.Notification ||
+  notificationSchema.plugin(tenantPlugin);
 
-
-
-
-
-
-
+mongoose.model("Notification", notificationSchema);
 
 export default Notification;

@@ -1,4 +1,3 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import CustomerProfile from "../models/CustomerProfile.js";
 
 /*
@@ -27,7 +26,6 @@ const CUSTOMER_SEGMENTS = {
 */
 
 export const updateCustomerSegment = async (userId) => {
-  requireTenantId();
   if (!userId) {
     throw new Error("User ID is required.");
   }

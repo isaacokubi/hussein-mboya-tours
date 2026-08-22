@@ -1,4 +1,3 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import Review from "../models/Review.js";
 import Tour from "../models/Tour.js";
 
@@ -15,7 +14,6 @@ const recalculateTourRating = async (tourId) => {
 };
 
 export const getAdminReviews = async (req, res, next) => {
-  requireTenantId();
   try {
     const reviews = await Review.find({ isDeleted: false })
       .populate("user", "name email")
@@ -27,11 +25,7 @@ export const getAdminReviews = async (req, res, next) => {
 
 export const approveAdminReview = async (req, res, next) => {
   try {
-    const review = await Review.findOne(
-mergeTenantFilter(req,{
-_id:req.params.id
-})
-);
+    const review = await Review.findById(req.params.id);
     if (!review) return res.status(404).json({ success: false, message: "Review not found" });
     review.approved = true;
     review.rejected = false;
@@ -44,11 +38,7 @@ _id:req.params.id
 
 export const rejectAdminReview = async (req, res, next) => {
   try {
-    const review = await Review.findOne(
-mergeTenantFilter(req,{
-_id:req.params.id
-})
-);
+    const review = await Review.findById(req.params.id);
     if (!review) return res.status(404).json({ success: false, message: "Review not found" });
     review.approved = false;
     review.rejected = true;
@@ -61,11 +51,7 @@ _id:req.params.id
 
 export const deleteAdminReview = async (req, res, next) => {
   try {
-    const review = await Review.findOne(
-mergeTenantFilter(req,{
-_id:req.params.id
-})
-);
+    const review = await Review.findById(req.params.id);
     if (!review) return res.status(404).json({ success: false, message: "Review not found" });
     const tourId = review.tour;
     review.isDeleted = true;

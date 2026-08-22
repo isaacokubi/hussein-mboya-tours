@@ -178,7 +178,7 @@ export const createInvoice = async ({
         .fontSize(10)
         .fillColor("gray")
         .text(
-          "Thank you for choosing ${companyName}.",
+          "Thank you for choosing Coherent Tours.",
           {
             align: "center",
           }

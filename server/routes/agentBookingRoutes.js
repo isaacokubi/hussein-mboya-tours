@@ -1,4 +1,3 @@
-import { resolveTenant } from "../middleware/tenantMiddleware.js";
 // server/routes/agentBookingRoutes.js
 
 import express from "express";
@@ -13,8 +12,6 @@ import {
 } from "../controllers/agentBookingController.js";
 
 const router = express.Router();
-
-router.use(resolveTenant);
 
 router.use(protect);
 router.use(agentMiddleware);

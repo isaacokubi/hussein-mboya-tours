@@ -1,4 +1,3 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import Booking from "../models/Booking.js";
 import { generateCSV } from "../services/reportService.js";
 
@@ -11,7 +10,6 @@ import { generateCSV } from "../services/reportService.js";
 */
 
 export const exportBookings = async (req, res, next) => {
-  requireTenantId();
   try {
     const { status, paymentStatus, from, to } = req.query;
 

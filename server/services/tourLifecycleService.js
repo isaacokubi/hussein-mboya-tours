@@ -1,8 +1,6 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
 import Tour from "../models/Tour.js";
 import Staff from "../models/Staff.js";
 import Vehicle from "../models/Vehicle.js";
-import { runWithTenant } from "../tenancy/context.js";
 
 const startOfDay = (value) => {
   const d = new Date(value);
@@ -18,7 +16,7 @@ const endForTour = (tour) => {
   return end;
 };
 
-export const syncTourLifecycle = async () => runWithTenant({ bypass: true }, async () => {
+export const syncTourLifecycle = async () => {
   const today = startOfDay(new Date());
   const tours = await Tour.find({
     isDeleted: { $ne: true },
@@ -32,20 +30,32 @@ export const syncTourLifecycle = async () => runWithTenant({ bypass: true }, asy
     if (today > end) {
       await Tour.updateOne(
         { _id: tour._id },
-        { $set: { status: "completed", assignmentStatus: "completed", completedAt: new Date(), endDate: endForTour(tour) } }
+        {
+          $set: {
+            status: "completed",
+            assignmentStatus: "completed",
+            completedAt: new Date(),
+            endDate: endForTour(tour),
+          },
+        }
       );
 
       for (const staffId of [tour.assignedGuide, tour.assignedDriver].filter(Boolean)) {
         const staff = await Staff.findById(staffId);
         if (staff) {
-          staff.assignedTours = (staff.assignedTours || []).filter((id) => id.toString() !== tour._id.toString());
+          staff.assignedTours = (staff.assignedTours || []).filter(
+            (id) => id.toString() !== tour._id.toString()
+          );
           if (staff.assignedTours.length === 0) staff.availability = "available";
           await staff.save();
         }
       }
 
       if (tour.assignedVehicle) {
-        await Vehicle.findByIdAndUpdate(tour.assignedVehicle, { status: "available", assignedTour: null });
+        await Vehicle.findByIdAndUpdate(tour.assignedVehicle, {
+          status: "available",
+          assignedTour: null,
+        });
       }
     } else if (today >= start && tour.status === "scheduled") {
       await Tour.updateOne({ _id: tour._id }, { $set: { status: "upcoming", endDate: endForTour(tour) } });
@@ -53,4 +63,4 @@ export const syncTourLifecycle = async () => runWithTenant({ bypass: true }, asy
       await Tour.updateOne({ _id: tour._id }, { $set: { status: "upcoming" } });
     }
   }
-});
+};

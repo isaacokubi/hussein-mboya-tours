@@ -2,7 +2,6 @@
 
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
-import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -18,7 +17,6 @@ import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 const reviewSchema = new mongoose.Schema(
   {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
     /*
     |--------------------------------------------------------------------------
     | REVIEW AUTHOR
@@ -307,14 +305,10 @@ reviewSchema.methods.voteNotHelpful = function () {
 |--------------------------------------------------------------------------
 */
 
-const tenantReviewSchema = reviewSchema.plugin(tenantPlugin);
-const Review = mongoose.models.Review || mongoose.model("Review", tenantReviewSchema);
+const Review =
+  mongoose.models.Review ||
+  reviewSchema.plugin(tenantPlugin);
 
-
-
-
-
-
-
+mongoose.model("Review", reviewSchema);
 
 export default Review;

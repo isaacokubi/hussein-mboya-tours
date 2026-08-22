@@ -1,5 +1,3 @@
-
-import { useTenant } from '../../context/TenantContext';
 import { useSettings } from "../../context/SettingsContext";
 import { useEffect, useRef, useState } from "react";
 
@@ -15,32 +13,18 @@ import "swiper/css";
 import "swiper/css/effect-fade";
 
 export default function HeroSlider() {
-
-  const { tenant } = useTenant() || {};
-
-  const { settings = {} } = useSettings() || {};
-
-  const companyName =
-    settings?.companyName ||
-    tenant?.name ||
-    tenant?.companyName ||
-    "Your Travel Company";
-
-
-
-
   const videoRefs = useRef([]);
   const [heroReady, setHeroReady] = useState(false);
   const [loadedVideos, setLoadedVideos] = useState({});
+  const { settings } = useSettings();
 
   const {
     data: slides = [],
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ["heroSlides", settings?.companyName || "default"],
+    queryKey: ["heroSlides"],
     queryFn: getHeroSlides,
-    enabled: true,
     staleTime: 1000 * 60 * 30,
     gcTime: 1000 * 60 * 60,
   });
@@ -89,7 +73,7 @@ export default function HeroSlider() {
   if (isError || !slides.length) {
     return (
       <section className="h-[85vh] flex items-center justify-center bg-gray-900 text-white">
-        Homepage banners are not configured
+        No hero slides available
       </section>
     );
   }
@@ -139,7 +123,7 @@ export default function HeroSlider() {
                    */}
                   <img
                     src={imageUrl}
-                    alt={slide.title || settings?.companyName || settings?.companyName || tenant?.name || 'Your Travel Company'}
+                    alt={slide.title || settings?.companyName || "Coherent Tours"}
                     className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${
                       videoLoaded ? "opacity-0" : "opacity-100"
                     }`}

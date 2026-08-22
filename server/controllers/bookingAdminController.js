@@ -1,4 +1,3 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import mongoose from "mongoose";
 import Booking from "../models/Booking.js";
 
@@ -34,7 +33,6 @@ const isValidId = (id) =>
 */
 
 export const getAllBookings = async (req, res, next) => {
-  requireTenantId();
   try {
     const {
       page = 1,
@@ -339,11 +337,7 @@ export const updateBookingStatus = async (
     */
 
     const existingBooking =
-      await Booking.findOne(
-mergeTenantFilter(req,{
-_id:req.params.id
-})
-);
+      await Booking.findById(req.params.id);
 
     if (!existingBooking) {
       return res.status(404).json({
@@ -416,12 +410,8 @@ _id:req.params.id
     */
 
     const booking =
-      await 
-Booking.findOneAndUpdate(
-mergeTenantFilter(req,{
-_id:req.params.id
-}),
-
+      await Booking.findByIdAndUpdate(
+        req.params.id,
         {
           status,
         },
@@ -512,13 +502,9 @@ export const deleteBooking = async (
     */
 
     const booking =
-      await 
-Booking.findOneAndDelete(
-mergeTenantFilter(req,{
-_id:req.params.id
-})
-)
-;
+      await Booking.findByIdAndDelete(
+        req.params.id
+      );
 
     if (!booking) {
 
@@ -626,11 +612,7 @@ export const assignResources = async (
     */
 
     const existingBooking =
-      await Booking.findOne(
-mergeTenantFilter(req,{
-_id:req.params.id
-})
-);
+      await Booking.findById(req.params.id);
 
     if (!existingBooking) {
       return res.status(404).json({
@@ -706,12 +688,8 @@ _id:req.params.id
     */
 
     const booking =
-      await 
-Booking.findOneAndUpdate(
-mergeTenantFilter(req,{
-_id:req.params.id
-}),
-
+      await Booking.findByIdAndUpdate(
+        req.params.id,
         {
           assignedGuide: guide || null,
           assignedDriver: driver || null,
@@ -821,11 +799,7 @@ export const updatePaymentStatus = async (
     */
 
     const booking =
-      await Booking.findOne(
-mergeTenantFilter(req,{
-_id:req.params.id
-})
-);
+      await Booking.findById(req.params.id);
 
     if (!booking) {
       return res.status(404).json({
@@ -988,11 +962,7 @@ next
 try{
 
 const booking =
-await Booking.findOne(
-mergeTenantFilter(req,{
-_id:req.params.id
-})
-)
+await Booking.findById(req.params.id)
 .populate(
 "customer",
 "name email phone"
@@ -1071,11 +1041,7 @@ async(req,res,next)=>{
 try{
 
 const booking =
-await Booking.findOne(
-mergeTenantFilter(req,{
-_id:req.params.id
-})
-)
+await Booking.findById(req.params.id)
 .populate(
 "customer",
 "name email phone"

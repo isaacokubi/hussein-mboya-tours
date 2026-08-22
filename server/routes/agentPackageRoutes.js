@@ -1,4 +1,3 @@
-import { resolveTenant } from "../middleware/tenantMiddleware.js";
 // server/routes/agentPackageRoutes.js
 
 import express from "express";
@@ -7,8 +6,6 @@ import agentMiddleware from "../middleware/agentMiddleware.js";
 import { getAgentPackages, getPackageDetails } from "../controllers/agentPackageController.js";
 
 const router = express.Router();
-
-router.use(resolveTenant);
 
 router.use(protect);
 router.use(agentMiddleware);

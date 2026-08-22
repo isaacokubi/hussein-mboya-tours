@@ -1,4 +1,3 @@
-import { resolveTenant } from "../middleware/tenantMiddleware.js";
 import express from "express";
 import { protect } from "../middleware/authMiddleware.js";
 import { authorize } from "../middleware/permissionMiddleware.js";
@@ -10,8 +9,6 @@ import {
 } from "../controllers/superAdminToolsController.js";
 
 const router = express.Router();
-
-router.use(resolveTenant);
 
 router.use(protect);
 router.use(authorize("system.security"));

@@ -1,10 +1,8 @@
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
-import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 const agentSchema = new mongoose.Schema(
   {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
     /*
     |--------------------------------------------------------------------------
     | LINKED USER ACCOUNT
@@ -232,14 +230,10 @@ agentSchema.virtual("isActive").get(function () {
 |--------------------------------------------------------------------------
 */
 
-const tenantAgentSchema = agentSchema.plugin(tenantPlugin);
-const Agent = mongoose.models.Agent || mongoose.model("Agent", tenantAgentSchema);
+const Agent =
+  mongoose.models.Agent ||
+  agentSchema.plugin(tenantPlugin);
 
-
-
-
-
-
-
+mongoose.model("Agent", agentSchema);
 
 export default Agent;

@@ -1,4 +1,3 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 // server/services/mpesaService.js
 import { getSystemSettings } from "../services/settingsService.js";
 
@@ -37,7 +36,6 @@ const mpesaClient = axios.create({
 */
 
 export const normalizePhoneNumber = (phone) => {
-  requireTenantId();
 
   if (!phone) {
     throw new Error("Phone number is required.");

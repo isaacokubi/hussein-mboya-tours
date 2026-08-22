@@ -17,7 +17,7 @@ const storage = new CloudinaryStorage({
         const isImage = file.mimetype.startsWith("image/");
 
         return {
-            folder: "global-tours",
+            folder: "hussein-mboya-tours",
 
             resource_type: "auto",
 

@@ -1,4 +1,3 @@
-import { resolveTenant } from "../middleware/tenantMiddleware.js";
 // server/routes/financeRoutes.js
 import express from "express";
 
@@ -14,8 +13,6 @@ import { authorize } from "../middleware/permissionMiddleware.js";
 import { getUserRole } from "../utils/roleUtils.js";
 
 const router = express.Router();
-
-router.use(resolveTenant);
 
 /*
  * Finance is an administrator capability. Legacy Admin/SuperAdmin accounts

@@ -1,4 +1,3 @@
-import "./tenancy/bootstrap.js";
 import systemHealthRoutes from "./routes/systemHealthRoutes.js";
 import databaseRoutes from "./routes/databaseRoutes.js";
 import settingsRoutes from "./routes/settingsRoutes.js";

@@ -88,7 +88,7 @@ const createSuperAdmin = async () => {
     }
 
     const admin = await User.create({
-      name: "System Admin",
+      name: "Hussein Mboya",
 
       email,
 

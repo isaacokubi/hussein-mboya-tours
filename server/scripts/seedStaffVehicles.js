@@ -1,9 +1,10 @@
-import { backgroundTenantFilter } from "../tenancy/backgroundTenantFilter.js";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import User from "../models/User.js";
 import Staff from "../models/Staff.js";
 import Vehicle from "../models/Vehicle.js";
+import Organization from "../models/Organization.js";
+import { runWithTenant } from "../tenancy/context.js";
 
 import crypto from "crypto";
 dotenv.config();
@@ -13,9 +14,14 @@ if (!MONGODB_URI) throw new Error("MONGODB_URI is missing from server/.env");
 
 const seed = async () => {
   await mongoose.connect(MONGODB_URI);
+  const tenantId = process.env.DEFAULT_TENANT_ID;
+  if (!tenantId) throw new Error("DEFAULT_TENANT_ID is required. Run npm run migrate:multitenancy first.");
+  const tenant = await Organization.findById(tenantId).lean();
+  if (!tenant) throw new Error("DEFAULT_TENANT_ID does not reference an existing organization.");
 
   const seedPassword = process.env.SEED_STAFF_PASSWORD || crypto.randomBytes(18).toString("base64url");
 
+  await runWithTenant({ tenantId: tenant._id, tenant, bypass: false }, async () => {
   for (let i = 1; i <= 10; i += 1) {
     const guideEmail = `guide${i}@seed.husseintours.local`;
     let guideUser = await User.findOne({ email: guideEmail });
@@ -102,6 +108,7 @@ const seed = async () => {
       { upsert: true, new: true }
     );
   }
+  });
 
   // debug removed
   // debug removed.");

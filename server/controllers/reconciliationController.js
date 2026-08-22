@@ -1,11 +1,8 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
-import { tenantFilter } from "../tenancy/tenantQuery.js";
 import Payment from "../models/Payment.js";
 
 export const getPaymentReconciliation = async (req, res, next) => {
-  requireTenantId();
   try {
-    const payments = await Payment.find(tenantFilter(req))
+    const payments = await Payment.find()
       .populate(
         "booking",
         "bookingNumber paymentStatus totalAmount status"

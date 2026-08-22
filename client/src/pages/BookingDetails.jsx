@@ -1,4 +1,3 @@
-import { useTenant } from "../context/TenantContext";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import ReviewForm from "../components/reviews/ReviewForm";
@@ -81,7 +80,7 @@ export default function BookingDetails() {
     <div className="min-h-screen bg-slate-50 p-6 md:p-10">
       <main className="mx-auto max-w-5xl">
         <div className="mb-6">
-          <p className="text-sm font-bold uppercase tracking-wide text-emerald-700">{settings?.companyName || tenant?.name || 'Your Travel Company'}</p>
+          <p className="text-sm font-bold uppercase tracking-wide text-emerald-700">Coherent Tours</p>
           <h1 className="mt-1 text-4xl font-bold text-slate-900">Booking Details</h1>
         </div>
 

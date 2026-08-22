@@ -1,4 +1,3 @@
-import { resolveTenant } from "../middleware/tenantMiddleware.js";
 import express from "express";
 import {
   getSecurityStatus,
@@ -10,8 +9,6 @@ import {
 } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
-
-router.use(resolveTenant);
 
 router.get(
   "/status",

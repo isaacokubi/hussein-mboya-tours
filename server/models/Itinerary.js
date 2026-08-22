@@ -2,7 +2,6 @@
 
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
-import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -12,7 +11,6 @@ import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 const activitySchema = new mongoose.Schema(
   {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
     title: {
       type: String,
       required: true,
@@ -260,14 +258,10 @@ itinerarySchema.index({
 |--------------------------------------------------------------------------
 */
 
-const tenantItinerarySchema = itinerarySchema.plugin(tenantPlugin);
-const Itinerary = mongoose.models.Itinerary || mongoose.model("Itinerary", tenantItinerarySchema);
+const Itinerary =
+  mongoose.models.Itinerary ||
+  itinerarySchema.plugin(tenantPlugin);
 
-
-
-
-
-
-
+mongoose.model("Itinerary", itinerarySchema);
 
 export default Itinerary;

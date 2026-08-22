@@ -1,4 +1,3 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import mongoose from "mongoose";
 
 import Booking from "../models/Booking.js";
@@ -94,7 +93,6 @@ const requesterCanSendStaffNotifications = (user) =>
 */
 
 export const getNotificationRecipients = async (req, res, next) => {
-  requireTenantId();
   try {
     if (!requesterCanSendStaffNotifications(req.user)) {
       return res.status(403).json({ success: false, message: "Only administrators and managers can send internal notifications." });

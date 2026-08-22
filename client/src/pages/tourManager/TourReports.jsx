@@ -1,3 +1,4 @@
+import { useSettings } from "../../context/SettingsContext";
 import {
     useEffect,
     useState

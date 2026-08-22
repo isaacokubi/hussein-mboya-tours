@@ -1,17 +1,14 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
-import { tenantFilter } from "../tenancy/tenantQuery.js";
 
 import Gallery from "../models/Gallery.js";
 import cloudinary from "../config/cloudinary.js";
 
 
 export const getAdminGallery = async (req,res,next)=>{
-  requireTenantId();
 
 try{
 
 const gallery =
-await Gallery.find(tenantFilter(req))
+await Gallery.find()
 .sort({createdAt:-1});
 
 res.json({
@@ -165,10 +162,8 @@ publicId:publicId || ""
 
 
 const item =
-await Gallery.findOneAndUpdate(
-mergeTenantFilter(req,{
-_id:req.params.id
-}),
+await Gallery.findByIdAndUpdate(
+req.params.id,
 update,
 {
 new:true,
@@ -213,11 +208,7 @@ try{
 
 
 const item =
-await Gallery.findOne(
-mergeTenantFilter(req,{
-_id:req.params.id
-})
-);
+await Gallery.findById(req.params.id);
 
 
 
@@ -232,10 +223,8 @@ message:"Gallery item not found"
 
 
 
-await Gallery.findOneAndDelete(
-mergeTenantFilter(req,{
-_id:req.params.id
-})
+await Gallery.findByIdAndDelete(
+req.params.id
 );
 
 

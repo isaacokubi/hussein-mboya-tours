@@ -1,4 +1,3 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 // server/controllers/wishlistController.js
 
 import mongoose from "mongoose";
@@ -14,7 +13,6 @@ import Tour from "../models/Tour.js";
 */
 
 export const getWishlist = async (req, res, next) => {
-  requireTenantId();
   try {
     let wishlist = await Wishlist.findOne({
       user: req.user._id,

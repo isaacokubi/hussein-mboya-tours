@@ -1,5 +1,3 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
-import { tenantFilter } from "../tenancy/tenantQuery.js";
 // server/controllers/adminDestinationController.js
 
 import mongoose from "mongoose";
@@ -13,7 +11,6 @@ import cloudinary from "../config/cloudinary.js";
 */
 
 export const createDestination = async (req, res, next) => {
-  requireTenantId();
   try {
     const {
       name,
@@ -161,7 +158,7 @@ export const getDestination = async (req, res, next) => {
 
 export const getAdminDestinations = async (req, res, next) => {
   try {
-    const destinations = await Destination.find(tenantFilter(req))
+    const destinations = await Destination.find()
       .sort({ createdAt: -1 })
       .lean();
 
@@ -190,11 +187,7 @@ export const updateDestination = async (req, res, next) => {
       });
     }
 
-    const destination = await Destination.findOne(
-mergeTenantFilter(req,{
-_id:req.params.id
-})
-);
+    const destination = await Destination.findById(req.params.id);
 
     if (!destination) {
       return res.status(404).json({
@@ -272,11 +265,7 @@ export const deleteDestination = async (req, res, next) => {
       });
     }
 
-    const destination = await Destination.findOne(
-mergeTenantFilter(req,{
-_id:req.params.id
-})
-);
+    const destination = await Destination.findById(req.params.id);
 
     if (!destination) {
       return res.status(404).json({
@@ -311,11 +300,7 @@ _id:req.params.id
 
 export const getDestinationById = async (req, res) => {
   try {
-    const destination = await Destination.findOne(
-mergeTenantFilter(req,{
-_id:req.params.id
-})
-);
+    const destination = await Destination.findById(req.params.id);
 
     if (!destination) {
       return res.status(404).json({

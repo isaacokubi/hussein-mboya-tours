@@ -1,4 +1,3 @@
-import { resolveTenant } from "../middleware/tenantMiddleware.js";
 import { authorize } from "../middleware/permissionMiddleware.js";
 import express from "express";
 
@@ -11,9 +10,8 @@ import { protect, adminOnly } from "../middleware/authMiddleware.js";
 
 
 
-const router = express.Router();
-
-router.use(resolveTenant);
+const router =
+express.Router();
 
 
 

@@ -1,4 +1,3 @@
-import { resolveTenant } from "../middleware/tenantMiddleware.js";
 // server/routes/notificationRoutes.js
 
 import express from "express";
@@ -18,8 +17,6 @@ import {
 import { roleMiddleware } from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
-
-router.use(resolveTenant);
 
 /*
 |--------------------------------------------------------------------------

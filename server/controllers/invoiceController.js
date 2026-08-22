@@ -1,5 +1,3 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
-import { tenantFilter } from "../tenancy/tenantQuery.js";
 // server/controllers/invoiceController.js
 
 import fs from "fs";
@@ -13,7 +11,6 @@ import Booking from "../models/Booking.js";
 // ============================================================
 
 export const createInvoice = async (req, res, next) => {
-  requireTenantId();
   try {
     const { booking } = req.body;
 
@@ -90,7 +87,7 @@ export const createInvoice = async (req, res, next) => {
 
 export const getInvoices = async (req, res, next) => {
   try {
-    const invoices = await Invoice.find(tenantFilter(req))
+    const invoices = await Invoice.find()
       .populate({
         path: "booking",
         populate: [
@@ -123,11 +120,7 @@ export const getInvoices = async (req, res, next) => {
 
 export const getInvoice = async (req, res, next) => {
   try {
-    const invoice = await Invoice.findOne(
-mergeTenantFilter(req,{
-_id:req.params.id
-})
-).populate({
+    const invoice = await Invoice.findById(req.params.id).populate({
       path: "booking",
       populate: [
         {
@@ -162,11 +155,7 @@ _id:req.params.id
 
 export const downloadInvoice = async (req, res, next) => {
   try {
-    const booking = await Booking.findOne(
-mergeTenantFilter(req,{
-_id:req.params.id
-})
-);
+    const booking = await Booking.findById(req.params.id);
 
     if (!booking) {
       return res.status(404).json({

@@ -1,4 +1,3 @@
-import { backgroundTenantFilter } from "../tenancy/backgroundTenantFilter.js";
 import "dotenv/config";
 import mongoose from "mongoose";
 import User from "../models/User.js";
@@ -35,13 +34,9 @@ let repaired = 0;
 let skipped = 0;
 
 try {
-  const roles = await Role.find(
-backgroundTenantFilter({})
-).select("_id name").lean();
+  const roles = await Role.find({}).select("_id name").lean();
   const roleByName = new Map(roles.map((role) => [normalize(role.name), role]));
-  const users = await User.find(
-backgroundTenantFilter({})
-).select("role legacyRole roleId email");
+  const users = await User.find({}).select("role legacyRole roleId email");
 
   for (const user of users) {
     const primary = normalize(user.role) || normalize(user.legacyRole) || "customer";

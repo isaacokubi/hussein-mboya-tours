@@ -1,4 +1,3 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
 export const detectIntent = (message = "") => {
 
   const text = message.toLowerCase();

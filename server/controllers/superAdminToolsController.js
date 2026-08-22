@@ -1,5 +1,3 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
-import { tenantFilter } from "../tenancy/tenantQuery.js";
 import { getSystemSettings } from "../services/settingsService.js";
 import AuditLog from "../models/AuditLog.js";
 import SecurityLog from "../models/SecurityLog.js";
@@ -9,7 +7,7 @@ import mongoose from "mongoose";
 export const getAudit = async(req,res)=>{
 try{
 
-const logs = await AuditLog.find(tenantFilter(req))
+const logs = await AuditLog.find()
 .populate("user","name email")
 .sort({
 createdAt:-1
@@ -45,7 +43,7 @@ export const getSecurity = async(req,res)=>{
 try{
 
 
-const events = await SecurityLog.find(tenantFilter(req))
+const events = await SecurityLog.find()
 .sort({
 createdAt:-1
 })

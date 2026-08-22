@@ -2,7 +2,6 @@
 
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
-import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -12,7 +11,6 @@ import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 const invoiceSchema = new mongoose.Schema(
   {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
     /*
     |--------------------------------------------------------------------------
     | BOOKING
@@ -306,14 +304,10 @@ invoiceSchema.index({
 |--------------------------------------------------------------------------
 */
 
-const tenantInvoiceSchema = invoiceSchema.plugin(tenantPlugin);
-const Invoice = mongoose.models.Invoice || mongoose.model("Invoice", tenantInvoiceSchema);
+const Invoice =
+  mongoose.models.Invoice ||
+  invoiceSchema.plugin(tenantPlugin);
 
-
-
-
-
-
-
+mongoose.model("Invoice", invoiceSchema);
 
 export default Invoice;

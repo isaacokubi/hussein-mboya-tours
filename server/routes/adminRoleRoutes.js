@@ -1,4 +1,3 @@
-import { resolveTenant } from "../middleware/tenantMiddleware.js";
 
 import express from "express";
 
@@ -29,9 +28,8 @@ from "../middleware/authMiddleware.js";
 
 
 
-const router = express.Router();
-
-router.use(resolveTenant);
+const router =
+express.Router();
 
 
 

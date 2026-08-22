@@ -1,4 +1,3 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import Tour from "../models/Tour.js";
 
 /*
@@ -7,7 +6,6 @@ import Tour from "../models/Tour.js";
  */
 
 export const validateTourCapacity = async (tourId, requestedGuests) => {
-  requireTenantId();
   if (!Number.isInteger(requestedGuests) || requestedGuests <= 0) {
     throw new Error("Invalid traveler count.");
   }

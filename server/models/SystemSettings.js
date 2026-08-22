@@ -1,7 +1,7 @@
 // server/models/SystemSettings.js
 
 import mongoose from "mongoose";
-import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -15,13 +15,6 @@ import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 const systemSettingsSchema = new mongoose.Schema(
   {
-
-    tenantId:{
-        type: mongoose.Schema.Types.ObjectId,
-        ref:"Organization",
-        index:true,
-        required:false
-    },
     /*
     |--------------------------------------------------------------------------
     | COMPANY INFORMATION
@@ -284,13 +277,8 @@ systemSettingsSchema.index({
 
 const SystemSettings =
   mongoose.models.SystemSettings ||
-  mongoose.model("SystemSettings", systemSettingsSchema);
+  systemSettingsSchema.plugin(tenantPlugin);
 
-
-
-
-
-
-
+mongoose.model("SystemSettings", systemSettingsSchema);
 
 export default SystemSettings;

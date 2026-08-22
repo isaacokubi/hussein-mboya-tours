@@ -1,4 +1,4 @@
-import { useTenant } from "../context/TenantContext";
+import { useSettings } from "../context/SettingsContext";
 import {
   Globe2,
   HeartHandshake,
@@ -101,7 +101,7 @@ export default function About(
           mb-6
           "
           >
-            About {settings?.companyName || tenant?.name || 'Your Travel Company'}
+            About Coherent Tours
           </motion.h1>
 
           <p
@@ -112,7 +112,7 @@ export default function About(
           text-gray-200
           "
           >
-            {companyName} creates unforgettable African travel experiences through luxury
+            Creating unforgettable African travel experiences through luxury
             safaris, beach holidays, cultural adventures and tailor-made
             journeys.
           </p>
@@ -156,7 +156,7 @@ export default function About(
             mb-5
             "
             >
-              {settings?.companyName || tenant?.name || 'Your Travel Company'} is a premier African travel company dedicated to
+              Coherent Tours is a premier African travel company dedicated to
               creating exceptional journeys for travelers seeking adventure,
               relaxation, and cultural discovery.
             </p>

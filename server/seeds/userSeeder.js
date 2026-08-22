@@ -63,7 +63,7 @@ const seedUsers = async () => {
     */
 
     const admin = await User.create({
-      name: "System Admin",
+      name: "Hussein Mboya",
 
       email: "admin@husseinmboyatours.com",
 

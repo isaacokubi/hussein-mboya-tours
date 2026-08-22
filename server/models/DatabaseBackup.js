@@ -1,16 +1,8 @@
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
-import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 const databaseBackupSchema = new mongoose.Schema(
 {
-
-    tenantId:{
-        type: mongoose.Schema.Types.ObjectId,
-        ref:"Organization",
-        index:true,
-        required:false
-    },
   file:{
     type:String,
     required:true
@@ -45,13 +37,6 @@ const databaseBackupSchema = new mongoose.Schema(
 {
   timestamps:true
 });
-
-
-
-
-
-
-
 
 
 export default databaseBackupSchema.plugin(tenantPlugin);

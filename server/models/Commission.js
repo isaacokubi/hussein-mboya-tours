@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
-import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -10,7 +9,6 @@ import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 const commissionSchema = new mongoose.Schema(
   {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
     /*
     |--------------------------------------------------------------------------
     | AGENT
@@ -372,14 +370,10 @@ commissionSchema.index({
 |--------------------------------------------------------------------------
 */
 
-const tenantCommissionSchema = commissionSchema.plugin(tenantPlugin);
-const Commission = mongoose.models.Commission || mongoose.model("Commission", tenantCommissionSchema);
+const Commission =
+  mongoose.models.Commission ||
+  commissionSchema.plugin(tenantPlugin);
 
-
-
-
-
-
-
+mongoose.model("Commission", commissionSchema);
 
 export default Commission;

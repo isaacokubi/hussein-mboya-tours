@@ -1,4 +1,3 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
 import securityService from "../services/securityService.js";
 
 export const getSecurityStatus = async (req,res)=>{

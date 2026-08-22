@@ -1,4 +1,3 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 // server/controllers/tourAvailabilityController.js
 
 import Tour from "../models/Tour.js";
@@ -17,13 +16,8 @@ import Booking from "../models/Booking.js";
 */
 
 export const getTourAvailability = async (req, res, next) => {
-  requireTenantId();
   try {
-    const tour = await Tour.findOne(
-mergeTenantFilter(req,{
-_id:req.params.id
-})
-);
+    const tour = await Tour.findById(req.params.id);
 
     if (!tour) {
       return res.status(404).json({
@@ -122,11 +116,7 @@ export const updateTourAvailability = async (req, res, next) => {
       });
     }
 
-    const tour = await Tour.findOne(
-mergeTenantFilter(req,{
-_id:req.params.id
-})
-);
+    const tour = await Tour.findById(req.params.id);
 
     if (!tour) {
       return res.status(404).json({

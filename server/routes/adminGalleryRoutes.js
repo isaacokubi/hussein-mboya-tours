@@ -1,4 +1,3 @@
-import { resolveTenant } from "../middleware/tenantMiddleware.js";
 import { authorize } from "../middleware/permissionMiddleware.js";
 import express from "express";
 import { uploadSingle } from "../middleware/uploadMiddleware.js";
@@ -13,8 +12,6 @@ import {
 } from "../controllers/adminGalleryController.js";
 
 const router = express.Router();
-
-router.use(resolveTenant);
 router.use(protect, adminMiddleware);
 
 router.use(authorize("settings.manage"));

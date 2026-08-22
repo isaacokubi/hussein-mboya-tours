@@ -1,4 +1,3 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import Quotation from "../models/Quotation.js";
 import Agent from "../models/Agent.js";
 import { calculateQuotation } from "../services/quotationCalculator.js";
@@ -12,7 +11,6 @@ import { calculateQuotation } from "../services/quotationCalculator.js";
 */
 
 export const createQuotation = async (req, res, next) => {
-  requireTenantId();
   try {
     const agent = await Agent.findOne({
       user: req.user._id,

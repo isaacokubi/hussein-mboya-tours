@@ -103,14 +103,3 @@ client/.env.production
 !server/.env.example
 !client/.env.example
 backup_before_*
-
-# tenant backups
-tenant_backup*
-*.tar.gz
-*.backup
-
-# temporary repair scripts
-*_backup*
-*.old.js
-
-server/backups/

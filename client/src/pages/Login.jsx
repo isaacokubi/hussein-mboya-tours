@@ -8,7 +8,7 @@ import CustomerMfa from "./CustomerMfa";
 export default function Login() {
   const navigate = useNavigate();
   const { login } = useContext(AuthContext);
-  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [formData, setFormData] = useState({ email: "", password: "", tenantSlug: localStorage.getItem("tenantSlug") || import.meta.env.VITE_TENANT_SLUG || "" });
   const [loading, setLoading] = useState(false);
   const [mfaData, setMfaData] = useState(null);
 
@@ -18,7 +18,7 @@ export default function Login() {
     event.preventDefault();
     setLoading(true);
     try {
-      const response = await login(formData.email, formData.password);
+      const response = await login(formData.email, formData.password, formData.tenantSlug);
 
       if (response?.mfaRequired) {
 
@@ -64,6 +64,11 @@ export default function Login() {
           <div>
             <label className="block font-medium mb-2">Email</label>
             <input type="email" name="email" value={formData.email} onChange={handleChange} required placeholder="Enter email" className="w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+          <div>
+            <label className="block font-medium mb-2">Company</label>
+            <input type="text" name="tenantSlug" value={formData.tenantSlug} onChange={handleChange} placeholder="e.g. hussein-mboya-tours" className="w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500" />
+            <p className="text-xs text-gray-500 mt-1">Enter your company's tenant slug. Custom domains/subdomains can omit this field when configured.</p>
           </div>
           <div>
             <label className="block font-medium mb-2">Password</label>

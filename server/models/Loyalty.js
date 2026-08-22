@@ -2,7 +2,6 @@
 
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
-import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -12,13 +11,6 @@ import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 const transactionSchema = new mongoose.Schema(
   {
-
-    tenantId:{
-        type: mongoose.Schema.Types.ObjectId,
-        ref:"Organization",
-        index:true,
-        required:false
-    },
     type: {
       type: String,
       enum: [
@@ -310,6 +302,8 @@ loyaltySchema.index({ tier: 1 });
 
 loyaltySchema.index({ availablePoints: -1 });
 
+loyaltySchema.index({ referralCode: 1 });
+
 loyaltySchema.index({ createdAt: -1 });
 
 /*
@@ -318,14 +312,10 @@ loyaltySchema.index({ createdAt: -1 });
 |--------------------------------------------------------------------------
 */
 
-const tenantLoyaltySchema = loyaltySchema.plugin(tenantPlugin);
-const Loyalty = mongoose.models.Loyalty || mongoose.model("Loyalty", tenantLoyaltySchema);
+const Loyalty =
+  mongoose.models.Loyalty ||
+  loyaltySchema.plugin(tenantPlugin);
 
-
-
-
-
-
-
+mongoose.model("Loyalty", loyaltySchema);
 
 export default Loyalty;

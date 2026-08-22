@@ -1,5 +1,3 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
-import { tenantFilter } from "../tenancy/tenantQuery.js";
 import { getSystemSettings } from "../services/settingsService.js";
 
 import Payment from "../models/Payment.js";
@@ -8,13 +6,12 @@ import PDFDocument from "pdfkit";
 
 
 export const exportPaymentsCSV = async(req,res,next)=>{
-  requireTenantId();
 
 try{
 
 
 const payments =
-await Payment.find(tenantFilter(req))
+await Payment.find()
 .populate(
 "booking",
 "bookingNumber"
@@ -104,7 +101,7 @@ try{
 
 
 const payments =
-await Payment.find(tenantFilter(req))
+await Payment.find()
 .populate(
 "booking",
 "bookingNumber"

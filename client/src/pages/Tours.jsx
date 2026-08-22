@@ -1,4 +1,4 @@
-import { useTenant } from "../context/TenantContext";
+import { useSettings } from "../context/SettingsContext";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 
@@ -86,7 +86,7 @@ export default function Tours(
             mt-3
           "
         >
-          Discover unforgettable African adventures with {settings?.companyName || tenant?.name || 'Your Travel Company'}.
+          Discover unforgettable African adventures with Coherent Tours.
         </p>
 
         {slug && (

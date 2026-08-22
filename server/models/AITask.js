@@ -1,18 +1,10 @@
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
-import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 
 const aiTaskSchema = new mongoose.Schema(
 
 {
-
-    tenantId:{
-        type: mongoose.Schema.Types.ObjectId,
-        ref:"Organization",
-        index:true,
-        required:false
-    },
 
 title:{
 type:String,
@@ -68,13 +60,6 @@ timestamps:true
 }
 
 );
-
-
-
-
-
-
-
 
 
 

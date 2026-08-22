@@ -1,9 +1,6 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
-import { tenantFilter } from "../tenancy/tenantQuery.js";
 import mongoose from "mongoose";
 import Role from "../models/Role.js";
 import Permission from "../models/Permission.js";
-import { normalizeRole } from "../utils/roleUtils.js";
 
 
 
@@ -27,7 +24,7 @@ const DEFAULT_PERMISSIONS = {
     "edit_agent_tour",
     "delete_agent_tour",
   ],
-  manager: ["tour.view", "tour.create", "tour.update", "booking.view", "booking.cancel", "tour.assign", "tour.availability", "calendar.manage", "customer.view", "guide.view", "vehicle.view", "report.view"],
+  tour_manager: ["tour.view", "tour.create", "tour.update", "booking.view", "booking.cancel", "tour.assign", "tour.availability", "calendar.manage", "customer.view", "guide.view", "vehicle.view", "report.view"],
   tour_guide: ["tour.view", "view_assigned_tours", "view_tour_guests", "update_tour_status", "submit_tour_report"],
   driver: ["tour.view", "view_assigned_tours"],
   admin: ["admin.dashboard", "user.manage", "staff.manage", "tour.manage", "booking.manage", "payment.manage", "refund.manage", "analytics.view", "finance.view", "notifications.view", "report.view"],
@@ -63,8 +60,7 @@ const sanitizePermissionIds = (values = []) =>
       .map((value) => String(value))
   ));
 
-export const ensureDefaultPermissions = async () => {
-  requireTenantId();
+const ensureDefaultPermissions = async () => {
   if (defaultsBootstrapPromise) return defaultsBootstrapPromise;
 
   defaultsBootstrapPromise = (async () => {
@@ -92,10 +88,7 @@ export const ensureDefaultPermissions = async () => {
     const byName = new Map(permissions.map(p => [p.name, p._id]));
 
     for (const [roleName, names] of Object.entries(DEFAULT_PERMISSIONS)) {
-      let role = await Role.findOne({ name: roleName })
-        .select("_id name permissions level")
-        .lean();
-
+      let role = await Role.findOne({ name: { $in: [roleName, roleName.replace("tour_", "")] } }).select("_id name permissions").lean();
       const roleDocName = role?.name || roleName;
       const ids = names.map((name) => byName.get(name)).filter(Boolean);
       const merged = new Map(
@@ -104,67 +97,16 @@ export const ensureDefaultPermissions = async () => {
       ids.filter(Boolean).forEach((id) => merged.set(String(id), id));
       const permissionsValue = [...merged.values()];
 
-      const ROLE_METADATA = {
-        super_admin: {
-          displayName: "Super Admin",
-          level: 100,
-          isSystem: true,
-          isDefault: false,
-        },
-        admin: {
-          displayName: "Admin",
-          level: 90,
-          isSystem: true,
-          isDefault: false,
-        },
-        manager: {
-          displayName: "Tour Manager",
-          level: 70,
-          isSystem: true,
-          isDefault: false,
-        },
-        tour_guide: {
-          displayName: "Tour Guide",
-          level: 50,
-          isSystem: true,
-          isDefault: false,
-        },
-        driver: {
-          displayName: "Driver",
-          level: 40,
-          isSystem: true,
-          isDefault: false,
-        },
-        agent: {
-          displayName: "Travel Agent",
-          level: 40,
-          isSystem: true,
-          isDefault: false,
-        },
-        customer: {
-          displayName: "Customer",
-          level: 10,
-          isSystem: true,
-          isDefault: true,
-        },
-      };
-
-      const metadata = ROLE_METADATA[roleName] || {
-        displayName: roleName.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
-        level: 20,
-        isSystem: false,
-        isDefault: false,
-      };
-
-      const set = {
-        permissions: permissionsValue,
-        status: "active",
-        displayName: metadata.displayName,
-        description: `${roleName.replace(/_/g, " ")} access`,
-        isSystem: metadata.isSystem,
-        level: metadata.level,
-        isDefault: metadata.isDefault,
-      };
+      const set = { permissions: permissionsValue, status: "active" };
+      if (!role) {
+        set.displayName = roleName.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+        set.description = `${roleName.replace(/_/g, " ")} access`;
+        set.isSystem = ["admin", "superadmin", "manager", "guide", "driver"].includes(roleName);
+        set.level = roleName === "superadmin" ? 200 : roleName === "admin" ? 100 : 20;
+        set.isDefault = roleName === "customer";
+      } else if (!Number.isFinite(Number(role.level)) || Number(role.level) < 1) {
+        set.level = roleName === "superadmin" ? 200 : roleName === "admin" ? 100 : 20;
+      }
 
       await Role.updateOne(
         role ? { _id: role._id } : { name: roleName },
@@ -184,7 +126,7 @@ try{
 
 await ensureDefaultPermissions();
 
-const roleDocs = await Role.find(tenantFilter(req)).sort({ level: -1 }).lean();
+const roleDocs = await Role.find().sort({ level: -1 }).lean();
 const permissionIds = Array.from(new Set(
   roleDocs.flatMap((role) => sanitizePermissionIds(role.permissions))
 ));
@@ -247,11 +189,7 @@ if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
   return res.status(400).json({ success: false, message: "Invalid role ID" });
 }
 
-const roleDoc = await Role.findOne(
-mergeTenantFilter(req,{
-_id:req.params.id
-})
-).lean();
+const roleDoc = await Role.findById(req.params.id).lean();
 if (!roleDoc) {
   return res.status(404).json({ success: false, message: "Role not found" });
 }
@@ -384,6 +322,31 @@ export const createRole = async (req, res, next) => {
 
 
 export const updateRole = async (req, res, next) => {
+
+    const existingRole = await Role.findById(req.params.id);
+
+    if (
+        existingRole &&
+        normalizeRole(existingRole.name) === "superadmin"
+    ) {
+
+        const currentRole =
+          req.user?.roleId?.name ||
+          req.user?.role ||
+          req.user?.legacyRole;
+
+        if(currentRole !== "super_admin") {
+
+          return res.status(403).json({
+            success:false,
+            message:
+            "Only super admin can modify super admin role"
+          });
+
+        }
+
+    }
+
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({
@@ -392,11 +355,7 @@ export const updateRole = async (req, res, next) => {
       });
     }
 
-    const role = await Role.findOne(
-mergeTenantFilter(req,{
-_id:req.params.id
-})
-);
+    const role = await Role.findById(req.params.id);
 
     if (!role) {
       return res.status(404).json({
@@ -405,19 +364,17 @@ _id:req.params.id
       });
     }
 
-    const normalizedRoleName = normalizeRole(role.name);
-
-    /*
-     * Super Admin is the only permanently protected role.
-     * Other system roles may be administered by a Super Admin.
-     */
-    if (normalizedRoleName === "superadmin") {
+    if (role.isSystem) {
       return res.status(403).json({
         success: false,
-        message: "The Super Admin role is protected and cannot be modified.",
+        message: "System roles cannot be modified",
       });
     }
 
+    /*
+     * Only these fields may be changed through the general
+     * role update endpoint.
+     */
     const allowedFields = [
       "displayName",
       "description",
@@ -427,23 +384,19 @@ _id:req.params.id
     ];
 
     for (const field of allowedFields) {
-      if (!Object.prototype.hasOwnProperty.call(req.body, field)) {
-        continue;
-      }
-
-      if (field === "level") {
-        role.level = Math.max(1, Number(req.body.level) || 1);
-      } else if (field === "status") {
-        role.status =
-          req.body.status === "inactive"
-            ? "inactive"
-            : "active";
-      } else if (field === "isDefault") {
-        role.isDefault = Boolean(req.body.isDefault);
-      } else if (field === "displayName") {
-        role.displayName = String(req.body.displayName || "").trim();
-      } else if (field === "description") {
-        role.description = String(req.body.description || "").trim();
+      if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+        if (field === "level") {
+          role.level = Math.max(1, Number(req.body.level) || 1);
+        } else if (field === "status") {
+          role.status =
+            req.body.status === "inactive"
+              ? "inactive"
+              : "active";
+        } else if (field === "isDefault") {
+          role.isDefault = Boolean(req.body.isDefault);
+        } else {
+          role[field] = req.body[field];
+        }
       }
     }
 
@@ -459,58 +412,86 @@ _id:req.params.id
 };
 
 
-export const deleteRole = async (req, res, next) => {
-  try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid role ID",
-      });
+
+export const deleteRole = async(req,res,next)=>{
+
+    const existingRole = await Role.findById(req.params.id);
+
+    if (
+        existingRole &&
+        normalizeRole(existingRole.name) === "superadmin"
+    ) {
+        return res.status(403).json({
+            message:
+            "Super admin role cannot be deleted"
+        });
     }
 
-    const role = await Role.findOne(
-mergeTenantFilter(req,{
-_id:req.params.id
-})
+
+try{
+
+
+const role =
+await Role.findById(
+req.params.id
 );
 
-    if (!role) {
-      return res.status(404).json({
-        success: false,
-        message: "Role not found",
-      });
-    }
 
-    const normalizedRoleName = normalizeRole(role.name);
 
-    if (normalizedRoleName === "superadmin") {
-      return res.status(403).json({
-        success: false,
-        message: "The Super Admin role cannot be deleted.",
-      });
-    }
+if(!role){
 
-    /*
-     * Other system roles may be protected from deletion.
-     * They can still have their permissions managed by Super Admin.
-     */
-    if (role.isSystem) {
-      return res.status(403).json({
-        success: false,
-        message: "System roles cannot be deleted. You may modify their permissions instead.",
-      });
-    }
+return res.status(404).json({
 
-    await role.deleteOne();
+success:false,
 
-    return res.json({
-      success: true,
-      message: "Role deleted",
-    });
-  } catch (error) {
-    next(error);
-  }
+message:"Role not found"
+
+});
+
+}
+
+
+
+
+if(role.isSystem){
+
+return res.status(403).json({
+
+success:false,
+
+message:"System roles cannot be deleted"
+
+});
+
+}
+
+
+
+await role.deleteOne();
+
+
+
+res.json({
+
+success:true,
+
+message:"Role deleted"
+
+});
+
+
+
+}catch(error){
+
+next(error);
+
+}
+
 };
+
+
+
+
 
 
 
@@ -531,11 +512,7 @@ export const updatePermissions = async (req, res, next) => {
       });
     }
 
-    const role = await Role.findOne(
-mergeTenantFilter(req,{
-_id:req.params.id
-})
-);
+    const role = await Role.findById(req.params.id);
 
     if (!role) {
       return res.status(404).json({
@@ -547,9 +524,15 @@ _id:req.params.id
     /*
      * Super Admin permissions must never be removed or altered.
      */
-    const normalizedRoleName = normalizeRole(role.name);
+    const normalizedRoleName = String(role.name || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[\s_-]+/g, "");
 
-    if (normalizedRoleName === "superadmin") {
+    if (
+      role.isSystem &&
+      normalizedRoleName === "superadmin"
+    ) {
       return res.status(403).json({
         success: false,
         message:

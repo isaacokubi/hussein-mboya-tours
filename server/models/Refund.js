@@ -2,13 +2,11 @@
 
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
-import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 
 const refundSchema =
 new mongoose.Schema(
 {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
 
 booking:{
 type:mongoose.Schema.Types.ObjectId,
@@ -76,16 +74,10 @@ timestamps:true
 );
 
 
-
-
-
-
-
-
-
 export default refundSchema.plugin(tenantPlugin);
 
 mongoose.model(
 "Refund",
 refundSchema
 );
+

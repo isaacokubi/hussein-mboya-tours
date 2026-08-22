@@ -78,6 +78,7 @@ lazy(()=>import("../pages/superadmin/SuperAdminDatabase"));
 
 const SuperAdminApiMonitor =
 lazy(()=>import("../pages/superadmin/SuperAdminApiMonitor"));
+const SuperAdminTenants = lazy(() => import("../pages/superadmin/SuperAdminTenants"));
 
 const UserManagement = lazy(() => import("../pages/admin/UserManagement"));
 const TourManagement = lazy(() => import("../pages/admin/TourManagement"));
@@ -486,6 +487,8 @@ element={<SuperAdminDashboard />}
 path="users"
 element={<SuperAdminUsers />}
 />
+
+<Route path="tenants" element={<SuperAdminTenants />} />
 
 
 <Route

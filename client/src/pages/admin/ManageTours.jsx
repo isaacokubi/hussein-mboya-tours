@@ -1,3 +1,4 @@
+import { useSettings } from "../../context/SettingsContext";
 // client/src/pages/admin/ManageTours.jsx
 
 

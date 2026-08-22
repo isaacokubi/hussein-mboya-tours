@@ -1,49 +1,67 @@
-import "../tenancy/bootstrap.js";
 import mongoose from "mongoose";
-import readline from "node:readline/promises";
-import { stdin as input, stdout as output } from "node:process";
+import bcrypt from "bcryptjs";
 import User from "../models/User.js";
+import Role from "../models/Role.js";
 import env from "../config/env.js";
-import { ensureSystemRoles } from "../services/onboardingService.js";
-import { runWithTenant } from "../tenancy/context.js";
 
-const rl = readline.createInterface({ input, output });
-const ask = async (label) => String(await rl.question(`${label}: `) || "").trim();
-const askSecret = async (label) => String(await rl.question(`${label}: `, { hideEchoBack: true }) || "").trim();
+const email = String(process.env.SUPERADMIN_EMAIL || "superadmin@coerent.com").trim().toLowerCase();
+const password = String(process.env.SUPERADMIN_PASSWORD || "").trim();
+
+if (!password || password.length < 8) {
+  console.error("Set SUPERADMIN_PASSWORD to a temporary password of at least 8 characters.");
+  process.exit(1);
+}
+
+const mongoUri = env.MONGO_URI || process.env.MONGO_URI || process.env.MONGODB_URI;
+if (!mongoUri) {
+  console.error("MongoDB connection string is missing (MONGO_URI/MONGODB_URI).");
+  process.exit(1);
+}
 
 try {
-  if (String(process.env.RESET_SUPERADMIN_CONFIRM || "") !== "RESET_SUPERADMIN") {
-    throw new Error("Recovery is locked. Set RESET_SUPERADMIN_CONFIRM=RESET_SUPERADMIN to explicitly authorize a SuperAdmin password reset.");
-  }
-
-  const mongoUri = env.MONGODB_URI || process.env.MONGODB_URI || process.env.MONGO_URI;
-  if (!mongoUri) throw new Error("MONGODB_URI/MONGO_URI is not configured.");
   await mongoose.connect(mongoUri);
 
-  const email = String(process.env.SUPERADMIN_EMAIL || await ask("Existing SuperAdmin email")).trim().toLowerCase();
-  const password = process.env.SUPERADMIN_PASSWORD || await askSecret("New SuperAdmin password (12+ chars, uppercase + number)");
-  if (!/^\S+@\S+\.\S+$/.test(email)) throw new Error("SuperAdmin email is invalid.");
-  if (password.length < 12 || !/[A-Z]/.test(password) || !/\d/.test(password)) throw new Error("Password must be at least 12 characters and include an uppercase letter and a number.");
+  const role = await Role.findOneAndUpdate(
+    { name: { $in: ["superadmin", "super_admin"] } },
+    {
+      $setOnInsert: {
+        name: "superadmin",
+        displayName: "Super Admin",
+        description: "Platform-level administrator",
+        permissions: [],
+        isSystem: true,
+        status: "active",
+        level: 1000,
+      },
+    },
+    { upsert: true, new: true }
+  );
 
-  const { superadmin } = await ensureSystemRoles();
-  const user = await runWithTenant({ bypass: true }, () => User.findOne({ email, role: { $in: ["superadmin", "super_admin"] } }).select("+password"));
-  if (!user) throw new Error("Existing SuperAdmin was not found. Use the one-time bootstrap command for a brand-new installation.");
+  const hashedPassword = await bcrypt.hash(password, 10);
 
-  user.password = password;
-  user.role = "superadmin";
-  user.legacyRole = "superadmin";
-  user.roleId = superadmin._id;
-  user.status = "active";
-  user.isVerified = true;
-  user.loginAttempts = 0;
-  user.lockUntil = null;
-  await runWithTenant({ bypass: true }, () => user.save());
+  const user = await User.findOneAndUpdate(
+    { email },
+    {
+      $set: {
+        password: hashedPassword,
+        role: "superadmin",
+        legacyRole: "superadmin",
+        roleId: role._id,
+        status: "active",
+        isVerified: true,
+        loginAttempts: 0,
+        lockUntil: null,
+      },
+      $setOnInsert: {
+        name: "Super Administrator",
+        phone: String(process.env.SUPERADMIN_PHONE || "0700000000"),
+      },
+    },
+    { upsert: true, new: true, runValidators: true }
+  ).select("_id email role roleId status isVerified");
 
-  console.log(`SuperAdmin password reset successfully for ${user.email}.`);
-} catch (error) {
-  console.error(`SUPERADMIN RECOVERY FAILED: ${error.message}`);
-  process.exitCode = 1;
+  console.log(`SuperAdmin ready: ${user.email} (${user._id})`);
+  console.log("Use the temporary password supplied through SUPERADMIN_PASSWORD, then change it after login.");
 } finally {
-  rl.close();
-  await mongoose.disconnect().catch(() => {});
+  await mongoose.disconnect();
 }

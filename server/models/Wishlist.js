@@ -2,7 +2,6 @@
 
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
-import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -17,7 +16,6 @@ import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 const wishlistSchema = new mongoose.Schema(
   {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
     /*
     |--------------------------------------------------------------------------
     | OWNER
@@ -144,14 +142,10 @@ wishlistSchema.index({
 |--------------------------------------------------------------------------
 */
 
-const tenantWishlistSchema = wishlistSchema.plugin(tenantPlugin);
-const Wishlist = mongoose.models.Wishlist || mongoose.model("Wishlist", tenantWishlistSchema);
+const Wishlist =
+  mongoose.models.Wishlist ||
+  wishlistSchema.plugin(tenantPlugin);
 
-
-
-
-
-
-
+mongoose.model("Wishlist", wishlistSchema);
 
 export default Wishlist;

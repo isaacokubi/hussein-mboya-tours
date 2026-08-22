@@ -1,4 +1,3 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import Tour from "../models/Tour.js";
 
 /*
@@ -8,7 +7,6 @@ import Tour from "../models/Tour.js";
 */
 
 export const recommendTours = async (preferences = {}) => {
-  requireTenantId();
   const {
     preferredCountries = [],
     travelStyle = [],

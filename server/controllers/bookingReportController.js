@@ -1,4 +1,3 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 
 
 import Booking from "../models/Booking.js";
@@ -13,7 +12,6 @@ import Booking from "../models/Booking.js";
 
 export const dailyBookingReport =
 async(req,res,next)=>{
-  requireTenantId();
 
 try{
 

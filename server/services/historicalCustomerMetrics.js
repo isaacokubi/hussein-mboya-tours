@@ -1,4 +1,3 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import Booking from "../models/Booking.js";
 
 /**
@@ -7,7 +6,6 @@ import Booking from "../models/Booking.js";
  * deactivating a customer account cannot erase historical dashboard metrics.
  */
 export async function getHistoricalCustomerCount({ includeDeletedBookings = false } = {}) {
-  requireTenantId();
   const match = includeDeletedBookings ? {} : { isDeleted: { $ne: true } };
 
   const result = await Booking.aggregate([

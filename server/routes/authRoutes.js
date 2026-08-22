@@ -1,4 +1,3 @@
-import { resolveTenant } from "../middleware/tenantMiddleware.js";
 // server/routes/authRoutes.js
 
 import express from "express";
@@ -11,7 +10,6 @@ import {
   requestPasswordReset,
   resetPasswordWithCode,
 } from "../controllers/authController.js";
-import { bootstrapTenant } from "../controllers/bootstrapController.js";
 
 import {
   protect,
@@ -24,20 +22,25 @@ import {
 
 const router = express.Router();
 
-router.use(resolveTenant);
+/*
+|--------------------------------------------------------------------------
+| PUBLIC AUTH ROUTES
+|--------------------------------------------------------------------------
+*/
 
-/* Public first-run onboarding. It becomes unavailable after the first user/tenant exists. */
-router.post(
-  "/bootstrap",
-  loginRateLimiter,
-  bootstrapTenant
-);
-
+/**
+ * POST /api/auth/register
+ * Register a new user
+ */
 router.post(
   "/register",
   register
 );
 
+/**
+ * POST /api/auth/login
+ * Login user
+ */
 router.post(
   "/login",
   loginRateLimiter,
@@ -56,13 +59,27 @@ router.post(
   resetPasswordWithCode
 );
 
+/*
+|--------------------------------------------------------------------------
+| PROTECTED AUTH ROUTES
+|--------------------------------------------------------------------------
+*/
+
 router.use(protect);
 
+/**
+ * GET /api/auth/me
+ * Get authenticated user
+ */
 router.get(
   "/me",
   getMe
 );
 
+/**
+ * PUT /api/auth/change-password
+ * Change password
+ */
 router.put(
   "/change-password",
   changePassword

@@ -1,4 +1,3 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 // server/controllers/guideController.js
 
 import Tour from "../models/Tour.js";
@@ -137,7 +136,6 @@ const syncTourLifecycle = async (tours) => {
 // ============================================================
 
 export const guideDashboard = async (req, res, next) => {
-  requireTenantId();
   try {
     const guide = await getGuideOr404(req, res);
     if (!guide) return;

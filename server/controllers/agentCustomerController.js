@@ -1,4 +1,3 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import mongoose from "mongoose";
 
 import Customer from "../models/Customer.js";
@@ -66,7 +65,6 @@ const normalizeCustomerInput = (body = {}) => {
 */
 
 export const createCustomer = async (req, res, next) => {
-  requireTenantId();
   try {
     const agent = await getAgentProfile(req);
 

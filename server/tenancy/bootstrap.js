@@ -1,28 +1,4 @@
-import mongoose from "mongoose";
-import { tenantPlugin } from "./tenantPlugin.js";
-
-const excluded = new Set([
-  "Organization",
-  "Permission",
-  "Currency"
-]);
-
-if (!mongoose.__tenantBootstrapApplied) {
-
-  mongoose.plugin((schema, options) => {
-
-    const modelName = options?.collection || schema.options?.collection;
-
-    if (!modelName) return;
-
-    if (excluded.has(modelName)) return;
-
-    if (!schema.path("tenantId")) return;
-
-    schema.plugin(tenantPlugin);
-
-  });
-
-  mongoose.__tenantBootstrapApplied = true;
-
-}
+// Tenant bootstrap marker. Tenant-aware schemas import and register the plugin
+// explicitly so global registries such as Organization and Permission remain
+// outside tenant isolation.
+import "./tenantPlugin.js";

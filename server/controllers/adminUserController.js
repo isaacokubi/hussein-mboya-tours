@@ -1,15 +1,13 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import mongoose from "mongoose";
 import User from "../models/User.js";
 import Role from "../models/Role.js";
 import Staff from "../models/Staff.js";
 import Agent from "../models/Agent.js";
-import { ensureSystemRoles } from "../services/onboardingService.js";
+import bcrypt from "bcryptjs";
 
 const STATUS_VALUES = ["active", "inactive", "disabled", "suspended", "blocked"];
 
 export const getUsers = async (req, res, next) => {
-  requireTenantId();
   try {
     const page = Math.max(Number(req.query.page) || 1, 1);
     const limit = Math.min(Math.max(Number(req.query.limit) || 10, 1), 100);
@@ -32,49 +30,32 @@ export const getUsers = async (req, res, next) => {
 
 export const createStaffAccount = async (req, res, next) => {
   try {
-    if (!req.tenantId) return res.status(400).json({ success: false, message: "Select a company before creating a staff account." });
-
     const { name, email, phone, password, role } = req.body || {};
     const normalizedRole = String(role || "").toLowerCase().replace(/[\s-]/g, "_");
-    const allowed = { admin: "admin", manager: "manager", tour_manager: "manager", guide: "tour_guide", tour_guide: "tour_guide", driver: "driver", agent: "agent", travel_agent: "agent" };
+    const allowed = { admin: "admin", manager: "tour_manager", tour_manager: "tour_manager", guide: "tour_guide", tour_guide: "tour_guide", driver: "driver", agent: "agent", travel_agent: "agent" };
     const canonicalRole = allowed[normalizedRole];
     if (!canonicalRole) return res.status(400).json({ success: false, message: "Choose admin, manager, agent, guide or driver." });
-    if (!name?.trim() || !email?.trim() || !/^\d{10}$/.test(String(phone || ""))) return res.status(400).json({ success: false, message: "Name, email and a 10-digit phone are required." });
-    if (String(password || "").length < 12 || !/[A-Z]/.test(password) || !/\d/.test(password)) return res.status(400).json({ success: false, message: "Password must be at least 12 characters and include an uppercase letter and a number." });
-
+    if (!name?.trim() || !email?.trim() || !/^\d{10}$/.test(String(phone || "")) || String(password || "").length < 8) return res.status(400).json({ success: false, message: "Name, email, 10-digit phone and an 8+ character password are required." });
     const normalizedEmail = String(email).trim().toLowerCase();
     if (await User.exists({ email: normalizedEmail })) return res.status(409).json({ success: false, message: "A user with this email already exists." });
-
     const permissionNamesByRole = {
-      admin: ["admin.dashboard", "user.manage", "staff.manage", "tour.manage", "booking.manage", "payment.manage", "refund.manage", "analytics.view", "settings.manage", "roles.manage", "notifications.view", "finance.view", "customer.view", "tour.view", "tour.create", "tour.update", "booking.view", "report.view", "guide.view", "vehicle.view"],
+      admin: ["admin.dashboard", "user.manage", "staff.manage", "tour.manage", "booking.manage", "payment.manage", "refund.manage", "analytics.view", "settings.manage", "roles.manage", "notifications.view", "finance.view"],
       agent: ["booking.create", "booking.view", "customer.view", "commission.view", "view_agent_dashboard", "view_agent_tours", "create_agent_tour", "edit_agent_tour", "delete_agent_tour"],
-      manager: ["tour.view", "tour.create", "tour.update", "booking.view", "booking.cancel", "tour.assign", "tour.availability", "calendar.manage", "customer.view", "guide.view", "vehicle.view", "report.view"],
+      tour_manager: ["tour.view", "tour.create", "tour.update", "booking.view", "booking.cancel", "tour.assign", "tour.availability", "calendar.manage", "customer.view", "guide.view", "vehicle.view", "report.view"],
       tour_guide: ["tour.view", "view_assigned_tours", "view_tour_guests", "update_tour_status", "submit_tour_report"],
       driver: ["tour.view", "view_assigned_tours"],
     };
-
-    if (canonicalRole === "admin") {
-      await ensureSystemRoles();
-    }
-
     let roleDoc = await Role.findOne({ name: { $in: [canonicalRole, canonicalRole.replace("tour_", "")] } });
     if (!roleDoc) {
       const permissionIds = [];
-      for (const permissionName of permissionNamesByRole[canonicalRole] || []) {
+      for (const name of permissionNamesByRole[canonicalRole] || []) {
         const Permission = (await import("../models/Permission.js")).default;
-        const permission = await Permission.findOneAndUpdate(
-          { name: permissionName },
-          { $setOnInsert: { name: permissionName, label: permissionName.replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), module: permissionName.split(/[._]/)[0], category: "system", isActive: true } },
-          { upsert: true, new: true }
-        );
+        const permission = await Permission.findOneAndUpdate({ name }, { $setOnInsert: { name, label: name.replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), module: name.split(/[._]/)[0], category: "system", isActive: true } }, { upsert: true, new: true });
         permissionIds.push(permission._id);
       }
-      roleDoc = await Role.create({ name: canonicalRole, displayName: canonicalRole.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), description: `${canonicalRole} access`, permissions: permissionIds, isSystem: ["admin", "manager", "tour_guide", "driver", "agent", "customer"].includes(canonicalRole), level: canonicalRole === "admin" ? 100 : 20 });
+      roleDoc = await Role.create({ name: canonicalRole, displayName: canonicalRole.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), description: `${canonicalRole} access`, permissions: permissionIds, isSystem: ["admin", "tour_manager", "tour_guide", "driver"].includes(canonicalRole), level: canonicalRole === "admin" ? 100 : 20 });
     }
-
-    if (["superadmin", "super_admin"].includes(roleDoc.name)) return res.status(403).json({ success: false, message: "SuperAdmin accounts can only be created through the one-time platform bootstrap process." });
-
-    const user = await User.create({ name: name.trim(), email: normalizedEmail, phone: String(phone).trim(), password, role: canonicalRole, legacyRole: canonicalRole, roleId: roleDoc._id, status: "active", isVerified: true });
+    const user = await User.create({ name: name.trim(), email: normalizedEmail, phone: String(phone).trim(), password, role: canonicalRole, legacyRole: canonicalRole, roleId: roleDoc?._id || null, status: "active", isVerified: true });
     let staff = null;
     let agent = null;
     if (canonicalRole === "agent") agent = await Agent.create({ user: user._id, companyName: "", phone: user.phone, email: user.email, commissionRate: 10, isApproved: false, status: "active" });
@@ -105,7 +86,11 @@ export const deleteUser = async (req, res, next) => {
     const user = await User.findById(id).select("_id role");
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
     if (["superadmin", "super_admin"].includes(String(user.role || "").toLowerCase())) return res.status(403).json({ success: false, message: "SuperAdmin accounts cannot be deleted." });
-    await Promise.all([Staff.deleteMany({ user: user._id }), Agent.deleteMany({ user: user._id }), User.deleteOne({ _id: user._id })]);
+    await Promise.all([
+      Staff.deleteMany({ user: user._id }),
+      Agent.deleteMany({ user: user._id }),
+      User.deleteOne({ _id: user._id }),
+    ]);
     return res.json({ success: true, deleted: true, message: "User account deleted successfully." });
   } catch (error) { next(error); }
 };

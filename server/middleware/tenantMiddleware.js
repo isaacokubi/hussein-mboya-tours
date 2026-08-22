@@ -1,55 +1,51 @@
+import mongoose from "mongoose";
 import Organization from "../models/Organization.js";
-import { runWithTenant } from "../tenancy/context.js";
+import { setTenantContext } from "../tenancy/context.js";
 
-const normalizeHost = (value = "") => String(value).split(",")[0].trim().toLowerCase().replace(/:\d+$/, "");
-const getOriginHost = (value = "") => { try { return normalizeHost(new URL(String(value)).hostname); } catch { return ""; } };
+const RESERVED_HOSTS = new Set(["www", "api", "localhost", "127", "admin"]);
+
+function normalizeSlug(value) {
+  return String(value || "").trim().toLowerCase().replace(/^https?:\/\//, "").split("/")[0].split(".")[0];
+}
 
 export async function resolveTenant(req, res, next) {
   try {
-    const user = req.user;
-    if (user?.role === "super_admin") return runWithTenant({ role: "super_admin", bypass: true }, () => next());
-    if (user?.tenantId) return runWithTenant({ tenantId: user.tenantId, role: user.role }, () => next());
+    // Platform tenant administration and health checks are global endpoints.
+    if (req.path === "/health" || req.path === "/tenants" || req.path.startsWith("/tenants/") || req.path === "/mpesa/callback" || req.path.startsWith("/mpesa/refund/") || req.path.startsWith("/superadmin") || req.path.startsWith("/database") || req.path.startsWith("/system") || req.path === "/settings") return next();
+    const headerId = req.headers["x-tenant-id"];
+    const headerSlug = req.headers["x-tenant-slug"];
+    const host = String(req.headers.host || "").split(":")[0].toLowerCase();
+    const subdomain = host.includes(".") ? host.split(".")[0] : "";
+    const requested = headerId || headerSlug || (!RESERVED_HOSTS.has(subdomain) ? subdomain : "");
+    const fallbackId = process.env.DEFAULT_TENANT_ID || "";
 
-    // Public requests must be anchored to the site that the visitor actually
-    // opened. A client-provided slug is only a fallback; it must never be able
-    // to override a trusted Host/Origin and accidentally select another tenant.
-    const requestedTenantSlug = String(req.get("X-Tenant-Slug") || "").trim().toLowerCase();
-    const requestHost = normalizeHost(req.get("X-Forwarded-Host") || req.get("Host"));
-    const originHost = getOriginHost(req.get("Origin"));
-    const activeStatuses = { $in: ["active", "trial"] };
-    let tenant = null;
-
-    // Custom domains take precedence over any client-supplied tenant slug.
-    if (requestHost) tenant = await Organization.findOne({ domain: requestHost, status: activeStatuses });
-
-    // For Vercel frontends, the Origin identifies the public tenant while the
-    // API Host normally points at the shared Render backend.
-    if (!tenant && originHost.endsWith(".vercel.app")) {
-      const vercelSlug = originHost.slice(0, -".vercel.app".length).split(".").filter(Boolean).pop();
-      if (vercelSlug) tenant = await Organization.findOne({ slug: vercelSlug, status: activeStatuses });
+    let organization = null;
+    if (requested && mongoose.Types.ObjectId.isValid(String(requested))) {
+      organization = await Organization.findOne({ _id: requested, status: { $ne: "cancelled" } }).lean();
+    } else if (requested) {
+      organization = await Organization.findOne({
+        $or: [{ slug: normalizeSlug(requested) }, { domain: host }],
+        status: { $ne: "cancelled" },
+      }).lean();
+    } else if (host && !RESERVED_HOSTS.has(subdomain)) {
+      organization = await Organization.findOne({ domain: host, status: { $ne: "cancelled" } }).lean();
+    } else if (fallbackId && mongoose.Types.ObjectId.isValid(fallbackId)) {
+      organization = await Organization.findOne({ _id: fallbackId, status: { $ne: "cancelled" } }).lean();
     }
 
-    // Explicit slug is retained for controlled/custom deployments where no
-    // trusted domain mapping exists. It can no longer override a trusted host.
-    if (!tenant && requestedTenantSlug) {
-      tenant = await Organization.findOne({ slug: requestedTenantSlug, status: activeStatuses });
-    }
-
-    const fallbackSlug = String(process.env.DEFAULT_PUBLIC_TENANT_SLUG || "").trim().toLowerCase();
-
-    if (!tenant && fallbackSlug) {
-      tenant = await Organization.findOne({
-        slug: fallbackSlug,
-        status: activeStatuses
+    if (!organization) {
+      return res.status(400).json({
+        success: false,
+        code: "TENANT_REQUIRED",
+        message: "A valid tenant is required. Send X-Tenant-ID or X-Tenant-Slug, or use a configured company domain.",
       });
     }
-    if (!tenant) tenant = await Organization.findOne({ name: /^Your Travel Company$/i, status: activeStatuses });
 
-    if (!tenant) return next();
-    req.tenantId = tenant._id;
-    req.tenant = tenant;
-    return runWithTenant({ tenantId: tenant._id, tenant, role: "public", bypass: false }, () => next());
+    setTenantContext({ tenantId: organization._id, tenant: organization, bypass: false });
+    req.tenant = organization;
+    req.tenantId = organization._id;
+    next();
   } catch (error) {
-    return next(error);
+    next(error);
   }
 }

@@ -1,4 +1,3 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
 import Tour from "../models/Tour.js";
 import Booking from "../models/Booking.js";
 import User from "../models/User.js";

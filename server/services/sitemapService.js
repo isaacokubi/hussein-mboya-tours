@@ -1,4 +1,3 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import { SitemapStream, streamToPromise } from "sitemap";
 
 import Tour from "../models/Tour.js";
@@ -11,7 +10,6 @@ import Destination from "../models/Destination.js";
 */
 
 export const generateSitemap = async () => {
-  requireTenantId();
   try {
     const sitemap = new SitemapStream({
       hostname: process.env.CLIENT_URL,

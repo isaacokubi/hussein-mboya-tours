@@ -71,7 +71,7 @@ const createAdmin = async () => {
     }
 
     const admin = await User.create({
-      name: "Platform Admin",
+      name: "Hussein Mboya Admin",
 
       email,
 

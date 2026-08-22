@@ -1,4 +1,3 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import mongoose from "mongoose";
 
 import Vehicle from "../models/Vehicle.js";
@@ -12,7 +11,6 @@ import Staff from "../models/Staff.js";
 */
 
 export const createVehicle = async (req, res, next) => {
-  requireTenantId();
     try {
         const rawCapacity = req.body.capacity;
         const capacity = Number(rawCapacity);
@@ -99,11 +97,7 @@ export const getVehicle = async (req, res, next) => {
             });
         }
 
-        const vehicle = await Vehicle.findOne(
-mergeTenantFilter(req,{
-_id:req.params.id
-})
-)
+        const vehicle = await Vehicle.findById(req.params.id)
             .populate("driver", "name phone email")
             .lean();
 
@@ -173,12 +167,8 @@ export const updateVehicle = async (req, res, next) => {
             };
         }
 
-        const vehicle = await 
-Vehicle.findOneAndUpdate(
-mergeTenantFilter(req,{
-_id:req.params.id
-}),
-
+        const vehicle = await Vehicle.findByIdAndUpdate(
+            req.params.id,
             updateData,
             {
                 new: true,
@@ -211,12 +201,8 @@ _id:req.params.id
 
 export const deleteVehicle = async (req, res, next) => {
     try {
-        const vehicle = await 
-Vehicle.findOneAndUpdate(
-mergeTenantFilter(req,{
-_id:req.params.id
-}),
-
+        const vehicle = await Vehicle.findByIdAndUpdate(
+            req.params.id,
             {
                 isDeleted: true,
                 isActive: false,
@@ -249,12 +235,8 @@ _id:req.params.id
 
 export const restoreVehicle = async (req, res, next) => {
     try {
-        const vehicle = await 
-Vehicle.findOneAndUpdate(
-mergeTenantFilter(req,{
-_id:req.params.id
-}),
-
+        const vehicle = await Vehicle.findByIdAndUpdate(
+            req.params.id,
             {
                 isDeleted: false,
                 status: "available",
@@ -308,12 +290,8 @@ export const assignVehicleDriver = async (req, res, next) => {
             });
         }
 
-        const vehicle = await 
-Vehicle.findOneAndUpdate(
-mergeTenantFilter(req,{
-_id:req.params.id
-}),
-
+        const vehicle = await Vehicle.findByIdAndUpdate(
+            req.params.id,
             {
                 driver: driver || null,
             },
@@ -347,11 +325,7 @@ _id:req.params.id
 
 export const removeVehicleDriver = async (req, res, next) => {
     try {
-        const vehicle = await Vehicle.findOne(
-mergeTenantFilter(req,{
-_id:req.params.id
-})
-);
+        const vehicle = await Vehicle.findById(req.params.id);
 
         if (!vehicle) {
             return res.status(404).json({
@@ -397,11 +371,7 @@ export const assignTourResources = async (req, res, next) => {
             endDate,
         } = req.body;
 
-        const tour = await Tour.findOne(
-mergeTenantFilter(req,{
-_id:req.params.id
-})
-);
+        const tour = await Tour.findById(req.params.id);
 
         if (!tour) {
             return res.status(404).json({
@@ -491,12 +461,8 @@ export const updateVehicleStatus = async (req, res, next) => {
       });
     }
 
-    const vehicle = await 
-Vehicle.findOneAndUpdate(
-mergeTenantFilter(req,{
-_id:req.params.id
-}),
-
+    const vehicle = await Vehicle.findByIdAndUpdate(
+      req.params.id,
       { status },
       { new: true, runValidators: true }
     );

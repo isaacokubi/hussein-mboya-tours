@@ -1,4 +1,3 @@
-import { resolveTenant } from "../middleware/tenantMiddleware.js";
 // server/routes/guideRoutes.js
 
 import express from "express";
@@ -13,8 +12,6 @@ import {
 import { protect, guideOnly } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
-
-router.use(resolveTenant);
 
 // All guide operations use the canonical authentication/RBAC contract.
 router.use(protect);

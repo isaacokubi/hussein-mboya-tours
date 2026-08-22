@@ -19,10 +19,7 @@ const links = [
 ];
 
 export default function AgentSidebar() {
-  const { settings = {} } = useSettings() || {};
-
-  const companyName =
-    settings?.companyName || "Company";
+  const { companyName } = useSettings() || {};
 
   return (
     <div className="h-full w-72 overflow-y-auto bg-slate-950 px-5 py-6 text-white">

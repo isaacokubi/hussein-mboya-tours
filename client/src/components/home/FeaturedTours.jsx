@@ -1,3 +1,4 @@
+import { useSettings } from "../../context/SettingsContext";
 import { getTourImage } from "../../utils/tourImage";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";

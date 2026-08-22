@@ -193,7 +193,8 @@ export function NotificationProvider({
 
     socket.auth = {
       ...(socket.auth || {}),
-      token
+      token,
+      tenantId: localStorage.getItem("tenantId") || null,
     };
 
 

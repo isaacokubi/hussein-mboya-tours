@@ -1,4 +1,3 @@
-import { resolveTenant } from "../middleware/tenantMiddleware.js";
 // server/routes/adminAuthRoutes.js
 
 import express from "express";
@@ -10,8 +9,6 @@ import {
 import { loginRateLimiter } from "../middleware/authRateLimiters.js";
 
 const router = express.Router();
-
-router.use(resolveTenant);
 
 /*
 |--------------------------------------------------------------------------

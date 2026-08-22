@@ -1,4 +1,3 @@
-import { resolveTenant } from "../middleware/tenantMiddleware.js";
 // server/routes/invoiceRoutes.js
 
 import express from "express";
@@ -8,8 +7,6 @@ import { protect } from "../middleware/authMiddleware.js";
 import { canAccessBooking } from "../controllers/phase3InvoiceAccess.js";
 
 const router = express.Router();
-
-router.use(resolveTenant);
 
 router.use(protect);
 

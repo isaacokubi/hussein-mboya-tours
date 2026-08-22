@@ -1,5 +1,3 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
-import { tenantFilter } from "../tenancy/tenantQuery.js";
 import Tour from "../models/Tour.js";
 import Booking from "../models/Booking.js";
 
@@ -10,13 +8,12 @@ req,
 res,
 next
 )=>{
-  requireTenantId();
 
 try{
 
 
 const tours =
-await Tour.find(tenantFilter(req))
+await Tour.find()
 .select(
 "title price"
 )

@@ -1,5 +1,3 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
-import { tenantFilter } from "../tenancy/tenantQuery.js";
 import AITask from "../models/AITask.js";
 import Booking from "../models/Booking.js";
 import Payment from "../models/Payment.js";
@@ -12,7 +10,6 @@ req,
 res,
 next
 )=>{
-  requireTenantId();
 
 
 try{
@@ -134,7 +131,7 @@ new:true
 
 
 const saved =
-await AITask.find(tenantFilter(req))
+await AITask.find()
 .sort({
 createdAt:-1
 })
@@ -172,10 +169,9 @@ try{
 
 
 const task =
-await AITask.findOneAndUpdate(
-mergeTenantFilter(req,{
-_id:req.params.id
-}),
+await AITask.findByIdAndUpdate(
+
+req.params.id,
 
 {
 status:req.body.status

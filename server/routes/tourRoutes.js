@@ -1,4 +1,3 @@
-import { resolveTenant } from "../middleware/tenantMiddleware.js";
 
 // server/routes/tourRoutes.js
 
@@ -29,8 +28,6 @@ import upload from "../middleware/uploadMiddleware.js";
 import { assignTourResources } from "../controllers/tourAssignmentController.js";
 
 const router = express.Router();
-
-router.use(resolveTenant);
 
 /*
 |--------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-import { useTenant } from "../context/TenantContext";
+import { useSettings } from "../context/SettingsContext";
 import {
   useQuery
 } from "@tanstack/react-query";
@@ -215,7 +215,7 @@ export default function Destinations(
 
         >
 
-          Discover amazing places and unforgettable experiences with {settings?.companyName || tenant?.name || 'Your Travel Company'}.
+          Discover amazing places and unforgettable experiences with Coherent Tours.
 
 
         </p>

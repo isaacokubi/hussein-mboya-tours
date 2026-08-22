@@ -1,5 +1,3 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
-import { tenantFilter } from "../tenancy/tenantQuery.js";
 import Agent from "../models/Agent.js";
 import User from "../models/User.js";
 
@@ -12,11 +10,10 @@ import User from "../models/User.js";
 */
 
 export const getAgents = async (req,res)=>{
-  requireTenantId();
 
 try{
 
-const agents = await Agent.find(tenantFilter(req))
+const agents = await Agent.find()
 .populate(
 "user",
 "name email phone role"
@@ -63,11 +60,7 @@ export const getAgentById = async(req,res)=>{
 try{
 
 
-const agent = await Agent.findOne(
-mergeTenantFilter(req,{
-_id:req.params.id
-})
-)
+const agent = await Agent.findById(req.params.id)
 .populate(
 "user",
 "name email phone role"
@@ -231,10 +224,9 @@ message:"Invalid agent status"
 
 
 const agent =
-await Agent.findOneAndUpdate(
-mergeTenantFilter(req,{
-_id:req.params.id
-}),
+await Agent.findByIdAndUpdate(
+
+req.params.id,
 
 {
 status

@@ -7,8 +7,7 @@ const DEFAULT_SETTINGS = {
   supportPhone: "",
   currency: "KES",
   currencySymbol: "KSh",
-  logo: "",
-  companyLogo: "",
+  logo: ""
 };
 
 const SettingsContext = createContext(null);
@@ -17,7 +16,7 @@ const STORAGE_KEY = "platform-settings";
 const normalize = (next, previous = DEFAULT_SETTINGS) => ({
   ...previous,
   ...next,
-  companyName: String(next?.companyName ?? previous.companyName ?? "").trim(),
+  companyName: String(next?.companyName ?? previous.companyName ?? "").trim()
 });
 
 export function SettingsProvider({ children }) {
@@ -25,28 +24,23 @@ export function SettingsProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   const applySettings = useCallback((nextSettings) => {
-    setSettings((previous) => normalize(nextSettings, previous));
+    setSettings(previous => normalize(nextSettings, previous));
   }, []);
 
   const refreshSettings = useCallback(async () => {
     try {
-      // Public settings are intentionally used here. The old /settings
-      // endpoint requires authentication and settings.manage permission.
-      const response = await api.get("/settings/public", {
-        params: { _t: Date.now() },
-      });
-      const data = response.data?.settings || response.data?.data || response.data || {};
+      const response = await api.get("/settings/public", { params: { _t: Date.now() } });
+      const data = response.data?.data || response.data || {};
       applySettings(data);
       return data;
     } catch (error) {
-      console.error("Public tenant settings load failed:", error);
+      console.error("Settings load failed:", error);
       return null;
     }
   }, [applySettings]);
 
   useEffect(() => {
     let mounted = true;
-
     const load = async () => {
       setLoading(true);
       try {
@@ -55,23 +49,16 @@ export function SettingsProvider({ children }) {
         if (mounted) setLoading(false);
       }
     };
+    load();
 
-    void load();
-
-    const handleStorage = (event) => {
+    const handleStorage = event => {
       if (event.key !== STORAGE_KEY || !event.newValue) return;
-      try {
-        applySettings(JSON.parse(event.newValue));
-      } catch {
-        // Ignore malformed cache.
-      }
+      try { applySettings(JSON.parse(event.newValue)); } catch { /* ignore malformed cache */ }
     };
-
-    const handlePlatformSettings = (event) => applySettings(event.detail || {});
+    const handlePlatformSettings = event => applySettings(event.detail || {});
 
     window.addEventListener("storage", handleStorage);
     window.addEventListener("platform-settings-updated", handlePlatformSettings);
-
     return () => {
       mounted = false;
       window.removeEventListener("storage", handleStorage);
@@ -80,15 +67,13 @@ export function SettingsProvider({ children }) {
   }, [refreshSettings, applySettings]);
 
   const updateSettings = useCallback((nextSettings) => {
-    setSettings((previous) => normalize(nextSettings, previous));
+    setSettings(previous => normalize(nextSettings, previous));
     try {
       const next = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
       const merged = normalize(nextSettings, next);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
       window.dispatchEvent(new CustomEvent("platform-settings-updated", { detail: merged }));
-    } catch {
-      // Settings API remains the source of truth.
-    }
+    } catch { /* settings API remains the source of truth */ }
   }, []);
 
   const companyName = settings.companyName || "";
@@ -96,17 +81,15 @@ export function SettingsProvider({ children }) {
   const supportPhone = settings.supportPhone || "";
 
   return (
-    <SettingsContext.Provider
-      value={{
-        settings,
-        companyName,
-        supportEmail,
-        supportPhone,
-        loading,
-        refreshSettings,
-        updateSettings,
-      }}
-    >
+    <SettingsContext.Provider value={{
+      settings,
+      companyName,
+      supportEmail,
+      supportPhone,
+      loading,
+      refreshSettings,
+      updateSettings
+    }}>
       {children}
     </SettingsContext.Provider>
   );
