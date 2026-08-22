@@ -27,16 +27,18 @@ api.interceptors.request.use((config) => {
   config.headers = config.headers || {};
   if (token) config.headers.Authorization = `Bearer ${token}`;
 
-  const tenantSlug = localStorage.getItem("tenantSlug") || getPublicTenantSlug();
-  const tenantId = localStorage.getItem("tenantId");
   const isAuthenticated = Boolean(token);
+  const hostnameTenantSlug = getPublicTenantSlug();
+  const storedTenantSlug = String(localStorage.getItem("tenantSlug") || "").trim().toLowerCase();
+  const tenantId = localStorage.getItem("tenantId");
 
-  // Anonymous public requests must follow the current hostname/configured slug.
-  // A stale tenantId from another dashboard session must never override it.
   if (isAuthenticated && tenantId) {
     config.headers["X-Tenant-ID"] = tenantId;
-  } else if (tenantSlug) {
-    config.headers["X-Tenant-Slug"] = tenantSlug;
+  } else {
+    // Public pages are bound to their deployment hostname/configuration.
+    // A stale tenantSlug from another tenant session must never override it.
+    const publicTenantSlug = hostnameTenantSlug || storedTenantSlug;
+    if (publicTenantSlug) config.headers["X-Tenant-Slug"] = publicTenantSlug;
   }
 
   return config;
