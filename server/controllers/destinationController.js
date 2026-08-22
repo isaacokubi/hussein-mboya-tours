@@ -10,12 +10,7 @@ export const getDestinations = async (req, res, next) => {
     const pageSize = Math.min(Math.max(Number(limit) || 12, 1), 100);
     const skip = (currentPage - 1) * pageSize;
 
-    const filter = mergeTenantFilter({
-      status: "active",
-      active: true,
-      isDeleted: false,
-    });
-
+    const filter = mergeTenantFilter({ status: "active", active: true, isDeleted: false });
     if (country) filter.country = country;
     if (featured === "true") filter.featured = true;
 
@@ -37,12 +32,7 @@ export const getDestinations = async (req, res, next) => {
     return res.status(200).json({
       success: true,
       count: destinations.length,
-      pagination: {
-        total,
-        page: currentPage,
-        pages: Math.ceil(total / pageSize),
-        limit: pageSize,
-      },
+      pagination: { total, page: currentPage, pages: Math.ceil(total / pageSize), limit: pageSize },
       data: destinations,
     });
   } catch (error) {
@@ -52,26 +42,18 @@ export const getDestinations = async (req, res, next) => {
 
 export const getDestination = async (req, res, next) => {
   try {
-    const tenantId = requireTenantId();
+    requireTenantId();
     const slug = req.params.slug?.trim().toLowerCase();
-    if (!slug) {
-      return res.status(400).json({ success: false, message: "Destination slug is required." });
-    }
+    if (!slug) return res.status(400).json({ success: false, message: "Destination slug is required." });
 
     const destination = await Destination.findOne(
       mergeTenantFilter({ slug, status: "active", active: true, isDeleted: false })
     ).lean();
 
-    if (!destination) {
-      return res.status(404).json({ success: false, message: "Destination not found." });
-    }
+    if (!destination) return res.status(404).json({ success: false, message: "Destination not found." });
 
     const tours = await Tour.find(
-      mergeTenantFilter({
-        destination: destination._id,
-        isDeleted: false,
-        status: { $ne: "inactive" },
-      })
+      mergeTenantFilter({ destination: destination._id, isDeleted: false, status: { $ne: "inactive" } })
     ).select("title slug images price duration category").lean();
 
     const relatedDestinations = await Destination.find(
@@ -85,12 +67,7 @@ export const getDestination = async (req, res, next) => {
     ).select("name slug images country featured").limit(4).lean();
 
     destination.tours = tours;
-
-    return res.status(200).json({
-      success: true,
-      data: { destination, relatedDestinations },
-      tenantId: String(tenantId),
-    });
+    return res.status(200).json({ success: true, data: { destination, relatedDestinations } });
   } catch (error) {
     next(error);
   }
@@ -100,19 +77,10 @@ export const getFeaturedDestinations = async (req, res, next) => {
   try {
     requireTenantId();
     const destinations = await Destination.find(
-      mergeTenantFilter({
-        status: "active",
-        active: true,
-        featured: true,
-        isDeleted: false,
-      })
+      mergeTenantFilter({ status: "active", active: true, featured: true, isDeleted: false })
     ).sort({ createdAt: -1 }).limit(6).lean();
 
-    return res.status(200).json({
-      success: true,
-      count: destinations.length,
-      data: destinations,
-    });
+    return res.status(200).json({ success: true, count: destinations.length, data: destinations });
   } catch (error) {
     next(error);
   }
