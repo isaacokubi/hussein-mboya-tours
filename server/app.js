@@ -6,7 +6,6 @@ import cors from "cors";
 import compression from "compression";
 import cookieParser from "cookie-parser";
 import morgan from "morgan";
-
 import mongoose from "mongoose";
 import loadTenantPlugin from "./config/tenantPluginLoader.js";
 
@@ -14,21 +13,19 @@ loadTenantPlugin();
 
 import rateLimit from "express-rate-limit";
 import env from "./config/env.js";
-
-
-
-
 import apiRoutes from "./routes/index.js";
 import publicOnboardingRoutes from "./routes/publicOnboardingRoutes.js";
 import { resolveTenant } from "./middleware/tenantMiddleware.js";
-
 import tenantBrandingRoutes from "./routes/tenantBrandingRoutes.js";
 
 const app = express();
 
-// Multi Tenant Resolution Middleware
-app.use(resolveTenant);
+// Render and other reverse proxies must be trusted before middleware that
+// reads req.ip. This also prevents rate-limit validation failures on proxied
+// health checks or connection teardown requests.
+app.set("trust proxy", 1);
 
+app.use(resolveTenant);
 
 if (process.env.NODE_ENV === "production") {
   const originalLog = console.log.bind(console), originalWarn = console.warn.bind(console), originalError = console.error.bind(console);
@@ -45,10 +42,18 @@ if (process.env.NODE_ENV === "production") {
 }
 
 app.use("/destinations", express.static("uploads/destinations"));
-app.set("trust proxy", 1);
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" }, hsts: process.env.NODE_ENV === "production" ? undefined : false }));
-const globalLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 300, standardHeaders: true, legacyHeaders: false, skip: (req) => req.path === "/health" });
+
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.path === "/health",
+  keyGenerator: (req) => req.ip || req.socket?.remoteAddress || "anonymous",
+});
 app.use(globalLimiter);
+
 const configuredOrigins = (env.CLIENT_ORIGINS || env.CLIENT_URL || "").split(",").map((origin) => origin.trim()).filter(Boolean);
 const allowedOrigins = ["http://localhost:5173", "http://127.0.0.1:5173", ...configuredOrigins].filter((origin, index, list) => list.indexOf(origin) === index);
 app.use(cors({ origin: (origin, callback) => !origin || allowedOrigins.includes(origin) ? callback(null, true) : callback(new Error(`CORS blocked origin: ${origin}`)), credentials: true, methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin", "X-Tenant-ID", "X-Tenant-Slug"] }));
@@ -65,7 +70,7 @@ app.get("/api/health", async (req, res) => {
 
 app.use("/api/public/onboarding", publicOnboardingRoutes);
 app.use("/api/tenant/branding", tenantBrandingRoutes);
-app.use("/api", resolveTenant, apiRoutes);
+app.use("/api", apiRoutes);
 app.get("/", (req, res) => res.status(200).json({ success: true, message: "Travel API running successfully" }));
 app.use((req, res) => res.status(404).json({ success: false, message: "Route not found" }));
 app.use((err, req, res, next) => {
