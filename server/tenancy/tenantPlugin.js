@@ -3,6 +3,7 @@ import { getTenantId, isTenantBypassed } from "./context.js";
 
 const TENANT_PATH = "tenantId";
 const GLOBAL_COLLECTIONS = new Set(["organizations", "permissions", "currencies"]);
+const PLATFORM_ROLES = new Set(["superadmin", "super_admin"]);
 
 function requireTenantId() {
   if (isTenantBypassed()) return null;
@@ -18,6 +19,11 @@ function tenantObjectId() {
 
 function assertTenantValue(value, tenantId, message = "Cross-tenant write rejected.") {
   if (value != null && String(value) !== String(tenantId)) throw new Error(message);
+}
+
+function isPlatformOwnerDocument(document) {
+  const role = String(document?.role || document?.legacyRole || "").trim().toLowerCase();
+  return PLATFORM_ROLES.has(role) && !document?.tenantId;
 }
 
 function mergeTenantFilter(query) {
@@ -44,8 +50,12 @@ function enforceBulkWriteTenant(operations, tenantId) {
   for (const operation of operations) {
     if (operation.insertOne?.document) {
       const document = operation.insertOne.document;
-      assertTenantValue(document[TENANT_PATH], tenantId);
-      document[TENANT_PATH] = tenantId;
+      if (isPlatformOwnerDocument(document)) {
+        document[TENANT_PATH] = null;
+      } else {
+        assertTenantValue(document[TENANT_PATH], tenantId);
+        document[TENANT_PATH] = tenantId;
+      }
     }
 
     const updateOperation = operation.updateOne || operation.updateMany || operation.replaceOne;
@@ -105,9 +115,6 @@ function enforceGraphLookupStage(stage, tenantId) {
 }
 
 export function tenantPlugin(schema) {
-
-  // Add tenantId only when missing.
-  // Existing tenantId fields must still receive isolation hooks.
   if (!schema.path(TENANT_PATH)) {
     schema.add({
       [TENANT_PATH]: {
@@ -131,6 +138,13 @@ export function tenantPlugin(schema) {
 
   schema.pre("save", function tenantSave(next) {
     try {
+      // Platform owners are global identities. Never inherit the active tenant
+      // from request/context state when a SuperAdmin is saved.
+      if (isPlatformOwnerDocument(this)) {
+        this.tenantId = null;
+        return next();
+      }
+
       const tenantId = requireTenantId();
       if (!tenantId) return next();
       assertTenantValue(this.tenantId, tenantId);
@@ -144,8 +158,12 @@ export function tenantPlugin(schema) {
       const tenantId = requireTenantId();
       if (!tenantId) return next();
       for (const doc of docs || []) {
-        assertTenantValue(doc?.[TENANT_PATH], tenantId);
-        if (doc) doc[TENANT_PATH] = tenantId;
+        if (isPlatformOwnerDocument(doc)) {
+          doc[TENANT_PATH] = null;
+        } else {
+          assertTenantValue(doc?.[TENANT_PATH], tenantId);
+          if (doc) doc[TENANT_PATH] = tenantId;
+        }
       }
       next();
     } catch (error) { next(error); }
@@ -171,9 +189,7 @@ export function tenantPlugin(schema) {
           "estimatedDocumentCount() is blocked for tenant-scoped models. Use countDocuments() instead."
         );
       }
-
       next();
-
     } catch (error) {
       next(error);
     }
