@@ -1,10 +1,11 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import Booking from "../models/Booking.js";
 import Payment from "../models/Payment.js";
 
 // A confirmed payment is the sole financial source of truth. Booking status is deliberately ignored.
 
 export const getRevenueAnalytics = async () => {
+  requireTenantId();
   const [result] = await Payment.aggregate([
     { $match: { status: "completed" } },
     { $group: {

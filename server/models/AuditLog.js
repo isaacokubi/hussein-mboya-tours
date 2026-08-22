@@ -1,6 +1,7 @@
 // server/models/AuditLog.js
 
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 const auditLogSchema = new mongoose.Schema(
@@ -262,7 +263,9 @@ auditLogSchema.statics.log = function (data) {
 
 const AuditLog =
   mongoose.models.AuditLog ||
-  mongoose.model("AuditLog", auditLogSchema);
+  auditLogSchema.plugin(tenantPlugin);
+
+mongoose.model("AuditLog", auditLogSchema);
 
 
 

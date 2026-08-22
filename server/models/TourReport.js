@@ -1,6 +1,7 @@
 // server/models/TourReport.js
 
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
@@ -295,7 +296,9 @@ tourReportSchema.index({
 
 const TourReport =
   mongoose.models.TourReport ||
-  mongoose.model("TourReport", tourReportSchema);
+  tourReportSchema.plugin(tenantPlugin);
+
+mongoose.model("TourReport", tourReportSchema);
 
 
 

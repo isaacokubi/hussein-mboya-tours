@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
@@ -373,7 +374,9 @@ commissionSchema.index({
 
 const Commission =
   mongoose.models.Commission ||
-  mongoose.model("Commission", commissionSchema);
+  commissionSchema.plugin(tenantPlugin);
+
+mongoose.model("Commission", commissionSchema);
 
 
 

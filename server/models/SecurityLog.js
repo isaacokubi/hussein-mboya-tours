@@ -1,6 +1,7 @@
 // server/models/SecurityLog.js
 
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
@@ -281,7 +282,9 @@ securityLogSchema.statics.logEvent = function ({
 
 const SecurityLog =
   mongoose.models.SecurityLog ||
-  mongoose.model("SecurityLog", securityLogSchema);
+  securityLogSchema.plugin(tenantPlugin);
+
+mongoose.model("SecurityLog", securityLogSchema);
 
 
 

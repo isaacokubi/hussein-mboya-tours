@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 
 import { getSystemSettings } from "../services/settingsService.js";
 // server/controllers/tourAssignmentController.js
@@ -36,6 +36,7 @@ import { sendWhatsApp } from "../services/whatsappService.js";
 */
 
 export const assignTourResources = async (req, res, next) => {
+  requireTenantId();
 
     const settings = await getSystemSettings();
     const companyName = settings.companyName || "Company";

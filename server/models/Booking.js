@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
@@ -928,7 +929,9 @@ bookingSchema.pre("validate", function(next) {
 */
 
 const Booking =
-  mongoose.models.Booking || mongoose.model("Booking", bookingSchema);
+  mongoose.models.Booking || bookingSchema.plugin(tenantPlugin);
+
+mongoose.model("Booking", bookingSchema);
 
 
 

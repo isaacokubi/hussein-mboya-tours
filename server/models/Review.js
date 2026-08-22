@@ -1,6 +1,7 @@
 // server/models/Review.js
 
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
@@ -308,7 +309,9 @@ reviewSchema.methods.voteNotHelpful = function () {
 
 const Review =
   mongoose.models.Review ||
-  mongoose.model("Review", reviewSchema);
+  reviewSchema.plugin(tenantPlugin);
+
+mongoose.model("Review", reviewSchema);
 
 
 

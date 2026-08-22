@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import Review from "../models/Review.js";
 import Tour from "../models/Tour.js";
 
@@ -15,6 +15,7 @@ const recalculateTourRating = async (tourId) => {
 };
 
 export const getAdminReviews = async (req, res, next) => {
+  requireTenantId();
   try {
     const reviews = await Review.find({ isDeleted: false })
       .populate("user", "name email")

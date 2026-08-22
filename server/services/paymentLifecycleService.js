@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 /*
 |--------------------------------------------------------------------------
 | PAYMENT LIFECYCLE SERVICE
@@ -32,6 +32,7 @@ import {
 */
 
 export const normalizePaymentMethod = (method) => {
+  requireTenantId();
 
   const value =
     String(method || "")

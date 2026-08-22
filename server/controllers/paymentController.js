@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import { getSystemSettings } from "../services/settingsService.js";
 import Payment from "../models/Payment.js";
 import Booking from "../models/Booking.js";
@@ -22,6 +22,7 @@ import { completeBookingPayment, getPayableBookingAmount, userOwnsBooking } from
 */
 
 export const getPaymentById = async (req, res, next) => {
+  requireTenantId();
   try {
 
     const settings = await getSystemSettings();

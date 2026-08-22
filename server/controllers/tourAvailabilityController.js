@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 // server/controllers/tourAvailabilityController.js
 
 import Tour from "../models/Tour.js";
@@ -17,6 +17,7 @@ import Booking from "../models/Booking.js";
 */
 
 export const getTourAvailability = async (req, res, next) => {
+  requireTenantId();
   try {
     const tour = await Tour.findOne(
 mergeTenantFilter(req,{

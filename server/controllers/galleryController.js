@@ -1,9 +1,10 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import Gallery from "../models/Gallery.js";
 
 
 
 export const getFeaturedGallery = async(req,res,next)=>{
+  requireTenantId();
 
 
 try{

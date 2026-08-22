@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import Booking from "../models/Booking.js";
 import Payment from "../models/Payment.js";
 import Tour from "../models/Tour.js";
@@ -10,6 +10,7 @@ export const getAIRevenueAdvice = async (
   res,
   next
 )=>{
+  requireTenantId();
 
   try {
 

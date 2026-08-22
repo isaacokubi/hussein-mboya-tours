@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
@@ -80,7 +81,9 @@ userSchema.virtual("isLocked").get(function () {
   return this.lockUntil && this.lockUntil > Date.now();
 });
 
-const User = mongoose.models.User || mongoose.model("User", userSchema);
+const User = mongoose.models.User || userSchema.plugin(tenantPlugin);
+
+mongoose.model("User", userSchema);
 
 
 

@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 const schema=new mongoose.Schema({
 
     tenantId:{
@@ -26,6 +27,7 @@ specialRequests:{type:String,default:""},
 bookingId:{type:mongoose.Schema.Types.ObjectId,ref:"Booking",default:null},
 paymentId:{type:mongoose.Schema.Types.ObjectId,default:null}},{timestamps:true});
 
+schema.plugin(tenantPlugin);
 schema.plugin(tenantAggregationPlugin);
 schema.index({customer:1,createdAt:-1});
 

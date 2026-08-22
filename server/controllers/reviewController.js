@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import Review from "../models/Review.js";
 import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
@@ -37,6 +37,7 @@ const updateTourRating = async (tourId) => {
 */
 
 export const createReview = async (req, res, next) => {
+  requireTenantId();
   try {
     const {
       tour: requestedTour,

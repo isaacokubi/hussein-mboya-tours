@@ -1,6 +1,7 @@
 // server/models/UserPreference.js
 
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
@@ -275,7 +276,9 @@ userPreferenceSchema.methods.removeInterest = async function (interest) {
 
 const UserPreference =
   mongoose.models.UserPreference ||
-  mongoose.model(
+  userPreferenceSchema.plugin(tenantPlugin);
+
+mongoose.model(
     "UserPreference",
     userPreferenceSchema,
   );

@@ -1,6 +1,7 @@
 // server/models/Media.js
 
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
@@ -284,7 +285,9 @@ mediaSchema.index({
 
 const Media =
   mongoose.models.Media ||
-  mongoose.model("Media", mediaSchema);
+  mediaSchema.plugin(tenantPlugin);
+
+mongoose.model("Media", mediaSchema);
 
 
 

@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import User from "../models/User.js";
 
 /*
@@ -11,6 +11,7 @@ import User from "../models/User.js";
 */
 
 export const getCustomerGrowth = async () => {
+  requireTenantId();
   const growth = await User.aggregate([
     {
       $match: {

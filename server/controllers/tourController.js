@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import Tour from "../models/Tour.js";
 import Vehicle from "../models/Vehicle.js";
 import Booking from "../models/Booking.js";
@@ -63,6 +63,7 @@ const attachAvailability = (tourLike) => {
 */
 
 export const getTours = async(req,res,next)=>{
+  requireTenantId();
 
   try{
 

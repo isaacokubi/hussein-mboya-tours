@@ -59,7 +59,6 @@ export const login = async (req, res) => {
     if (user.status !== "active") return res.status(403).json({ success: false, message: `Account ${user.status}.` });
     if (user.lockUntil && user.lockUntil > new Date()) return res.status(423).json({ success: false, message: "Account temporarily locked due to multiple failed login attempts." });
 
-    }
 
     const effectiveRole = effectiveRoleForUser(user);
     const permissions = buildPermissions({ ...user.toObject(), role: effectiveRole, roleId: user.roleId, permissionsOverride: user.permissionsOverride });

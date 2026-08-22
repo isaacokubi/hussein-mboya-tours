@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 import slugify from "slugify";
 
@@ -880,7 +881,9 @@ tourSchema.index({
 
 const Tour =
   mongoose.models.Tour ||
-  mongoose.model("Tour", tourSchema);
+  tourSchema.plugin(tenantPlugin);
+
+mongoose.model("Tour", tourSchema);
 
 
 

@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 // server/controllers/invoiceController.js
 
@@ -13,6 +13,7 @@ import Booking from "../models/Booking.js";
 // ============================================================
 
 export const createInvoice = async (req, res, next) => {
+  requireTenantId();
   try {
     const { booking } = req.body;
 

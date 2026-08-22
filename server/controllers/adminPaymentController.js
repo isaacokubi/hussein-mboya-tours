@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import Refund from "../models/Refund.js";
 import Payment from "../models/Payment.js";
 import {
@@ -13,6 +13,7 @@ from "../services/mpesaRefundService.js";
 
 
 export const getPayments = async(req,res,next)=>{
+  requireTenantId();
 
 try{
 

@@ -1,6 +1,7 @@
 // server/models/Loyalty.js
 
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
@@ -319,7 +320,9 @@ loyaltySchema.index({ createdAt: -1 });
 
 const Loyalty =
   mongoose.models.Loyalty ||
-  mongoose.model("Loyalty", loyaltySchema);
+  loyaltySchema.plugin(tenantPlugin);
+
+mongoose.model("Loyalty", loyaltySchema);
 
 
 

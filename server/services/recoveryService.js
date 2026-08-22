@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import Booking from "../models/Booking.js";
 import { getSystemSettings } from "../services/settingsService.js";
 import { sendEmail } from "./emailService.js";
@@ -16,6 +16,7 @@ import { sendEmail } from "./emailService.js";
 */
 
 export const recoverBookings = async () => {
+  requireTenantId();
 
   const settings = await getSystemSettings();
   const companyName = settings.companyName || "Company";

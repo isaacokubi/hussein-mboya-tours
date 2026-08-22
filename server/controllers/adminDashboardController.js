@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 import Booking from "../models/Booking.js";
 import Destination from "../models/Destination.js";
@@ -15,6 +15,7 @@ const ACTIVE_PAYMENT_STATUS = "completed";
 const NON_DELETED = { $ne: true };
 
 export const getDashboard = async (req, res) => {
+  requireTenantId();
   try {
 
     const [

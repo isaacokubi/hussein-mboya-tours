@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 // server/controllers/adminDestinationController.js
 
@@ -13,6 +13,7 @@ import cloudinary from "../config/cloudinary.js";
 */
 
 export const createDestination = async (req, res, next) => {
+  requireTenantId();
   try {
     const {
       name,

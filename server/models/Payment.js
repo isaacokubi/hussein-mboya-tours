@@ -1,6 +1,7 @@
 // server/models/Payment.js
 
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
@@ -324,7 +325,9 @@ paymentSchema.methods.markFailed = function (reason) {
 
 const Payment =
   mongoose.models.Payment ||
-  mongoose.model("Payment", paymentSchema);
+  paymentSchema.plugin(tenantPlugin);
+
+mongoose.model("Payment", paymentSchema);
 
 
 

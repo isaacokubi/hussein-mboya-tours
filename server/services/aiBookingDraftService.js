@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import Booking from "../models/Booking.js";
 import { findTourForBooking } from "./aiBookingService.js";
 
@@ -17,6 +17,7 @@ export const createAIBookingDraft = async (
   message,
   user = null
 ) => {
+  requireTenantId();
 
 
   const tour =

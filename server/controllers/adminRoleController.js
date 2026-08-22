@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 import mongoose from "mongoose";
 import Role from "../models/Role.js";
@@ -64,6 +64,7 @@ const sanitizePermissionIds = (values = []) =>
   ));
 
 export const ensureDefaultPermissions = async () => {
+  requireTenantId();
   if (defaultsBootstrapPromise) return defaultsBootstrapPromise;
 
   defaultsBootstrapPromise = (async () => {

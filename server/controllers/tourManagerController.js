@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import mongoose from "mongoose";
 import Tour from "../models/Tour.js";
 import Booking from "../models/Booking.js";
@@ -15,6 +15,7 @@ import { assignTourResources } from "./tourAssignmentController.js";
 */
 
 export const getTourManagerDashboard = async (req, res, next) => {
+  requireTenantId();
   try {
     const now = new Date();
 

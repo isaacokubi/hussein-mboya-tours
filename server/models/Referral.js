@@ -1,6 +1,7 @@
 // server/models/Referral.js
 
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
@@ -255,7 +256,9 @@ referralSchema.methods.markPaid = function (reference = "") {
 
 const Referral =
   mongoose.models.Referral ||
-  mongoose.model("Referral", referralSchema);
+  referralSchema.plugin(tenantPlugin);
+
+mongoose.model("Referral", referralSchema);
 
 
 

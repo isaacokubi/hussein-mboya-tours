@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import mongoose from "mongoose";
 import Booking from "../models/Booking.js";
 
@@ -34,6 +34,7 @@ const isValidId = (id) =>
 */
 
 export const getAllBookings = async (req, res, next) => {
+  requireTenantId();
   try {
     const {
       page = 1,

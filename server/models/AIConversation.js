@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 
@@ -99,7 +100,9 @@ new mongoose.Schema({
 
 
 
-export default mongoose.model(
+export default aiConversationSchema.plugin(tenantPlugin);
+
+mongoose.model(
   "AIConversation",
   aiConversationSchema
 );

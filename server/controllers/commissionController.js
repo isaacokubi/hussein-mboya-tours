@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 import Commission from "../models/Commission.js";
 
@@ -11,6 +11,7 @@ import Commission from "../models/Commission.js";
 */
 
 export const getCommissions = async(req,res)=>{
+  requireTenantId();
 
 try{
 

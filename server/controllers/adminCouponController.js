@@ -1,8 +1,9 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 import Coupon from "../models/Coupon.js";
 
 export const getAdminCoupons = async (req, res, next) => {
+  requireTenantId();
   try {
     const coupons = await Coupon.find(tenantFilter(req)).sort({ createdAt: -1 });
     res.json({ success: true, count: coupons.length, coupons });

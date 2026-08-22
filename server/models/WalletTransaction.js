@@ -1,6 +1,7 @@
 // server/models/WalletTransaction.js
 
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
@@ -262,7 +263,9 @@ walletTransactionSchema.index({
 
 const WalletTransaction =
   mongoose.models.WalletTransaction ||
-  mongoose.model(
+  walletTransactionSchema.plugin(tenantPlugin);
+
+mongoose.model(
     "WalletTransaction",
     walletTransactionSchema
   );

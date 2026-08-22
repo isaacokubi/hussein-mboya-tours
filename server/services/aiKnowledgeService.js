@@ -1,9 +1,10 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import Tour from "../models/Tour.js";
 import Destination from "../models/Destination.js";
 
 
 export const getTravelKnowledge = async () => {
+  requireTenantId();
 
   const tours = await Tour.find({
     status: {

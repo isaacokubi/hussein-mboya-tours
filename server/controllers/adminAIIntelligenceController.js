@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import Booking from "../models/Booking.js";
 import Payment from "../models/Payment.js";
 import Review from "../models/Review.js";
@@ -8,6 +8,7 @@ import Vehicle from "../models/Vehicle.js";
 
 
 export const getAIIntelligence = async (req,res,next)=>{
+  requireTenantId();
 
   try {
 

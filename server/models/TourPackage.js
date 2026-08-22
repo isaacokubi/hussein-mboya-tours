@@ -1,6 +1,7 @@
 // server/models/TourPackage.js
 
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 import slugify from "slugify";
 
@@ -517,7 +518,9 @@ tourPackageSchema.index({
 
 const TourPackage =
   mongoose.models.TourPackage ||
-  mongoose.model("TourPackage", tourPackageSchema);
+  tourPackageSchema.plugin(tenantPlugin);
+
+mongoose.model("TourPackage", tourPackageSchema);
 
 
 

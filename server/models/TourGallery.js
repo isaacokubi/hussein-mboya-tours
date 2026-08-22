@@ -1,6 +1,7 @@
 // server/models/TourGallery.js
 
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
@@ -190,7 +191,9 @@ tourGallerySchema.index({
 
 const TourGallery =
   mongoose.models.TourGallery ||
-  mongoose.model("TourGallery", tourGallerySchema);
+  tourGallerySchema.plugin(tenantPlugin);
+
+mongoose.model("TourGallery", tourGallerySchema);
 
 
 

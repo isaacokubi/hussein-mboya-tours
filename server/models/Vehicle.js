@@ -1,6 +1,7 @@
 // server/models/Vehicle.js
 
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
@@ -384,7 +385,9 @@ vehicleSchema.methods.scheduleMaintenance = async function (date) {
 
 const Vehicle =
   mongoose.models.Vehicle ||
-  mongoose.model(
+  vehicleSchema.plugin(tenantPlugin);
+
+mongoose.model(
     "Vehicle",
     vehicleSchema,
   );

@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import mongoose from "mongoose";
 
 import Vehicle from "../models/Vehicle.js";
@@ -12,6 +12,7 @@ import Staff from "../models/Staff.js";
 */
 
 export const createVehicle = async (req, res, next) => {
+  requireTenantId();
     try {
         const rawCapacity = req.body.capacity;
         const capacity = Number(rawCapacity);

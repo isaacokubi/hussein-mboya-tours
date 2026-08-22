@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import Commission from "../models/Commission.js";
 import Agent from "../models/Agent.js";
 import SystemSetting from "../models/SystemSetting.js";
@@ -10,6 +10,7 @@ const getGlobalCommissionRate = async () => {
 };
 
 export const createCommission = async (booking) => {
+  requireTenantId();
   if (!booking?.agent) return null;
 
   const existingCommission = await Commission.findOne({ booking: booking._id });

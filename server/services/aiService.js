@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import OpenAI from "openai";
 import { getSystemSettings } from "../services/settingsService.js";
 import env from "../config/env.js";
@@ -22,6 +22,7 @@ const client = new OpenAI({
 });
 
 export const generateTravelAdvice = async (message, user = null) => {
+  requireTenantId();
 
   const settings = await getSystemSettings();
   const companyName = settings.companyName || "Company";

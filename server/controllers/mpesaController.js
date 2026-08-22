@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 // server/controllers/mpesaController.js
 
 import Booking from "../models/Booking.js";
@@ -48,6 +48,7 @@ export const getMpesaToken = async (req, res) =>
   res.status(501).json({ success: false, message: "Direct M-Pesa token access is disabled." });
 
 export const stkPush = async (req, res) => {
+  requireTenantId();
   try {
     const { phoneNumber, phone, bookingId } = req.body || {};
     const requestedAmount = Number(req.body?.amount);

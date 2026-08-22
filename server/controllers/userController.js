@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import User from "../models/User.js";
 import Staff from "../models/Staff.js";
 
@@ -9,6 +9,7 @@ import Staff from "../models/Staff.js";
 */
 
 export const getUserProfile = async (req, res, next) => {
+  requireTenantId();
     try {
         const user = await User.findById(req.user._id)
             .select("-password")

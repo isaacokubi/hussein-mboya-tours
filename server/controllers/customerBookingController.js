@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
 import User from "../models/User.js";
@@ -8,6 +8,7 @@ import { PAYMENT_METHODS } from "../constants/bookingConstants.js";
 import { calculateBookingAmounts } from "../utils/bookingPricing.js";
 
 export const createCustomerBooking = async (req, res, next) => {
+  requireTenantId();
   try {
     const { tour, travelDate, travelers = [], numberOfGuests, contact = {}, paymentMethod = PAYMENT_METHODS.MPESA, pickupLocation, pickupTime, hotelName, roomNumber, emergencyContact, specialRequests = [] } = req.body || {};
 

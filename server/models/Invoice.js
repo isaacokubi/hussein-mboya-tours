@@ -1,6 +1,7 @@
 // server/models/Invoice.js
 
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
@@ -307,7 +308,9 @@ invoiceSchema.index({
 
 const Invoice =
   mongoose.models.Invoice ||
-  mongoose.model("Invoice", invoiceSchema);
+  invoiceSchema.plugin(tenantPlugin);
+
+mongoose.model("Invoice", invoiceSchema);
 
 
 

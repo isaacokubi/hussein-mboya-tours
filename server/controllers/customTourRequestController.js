@@ -1,11 +1,12 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 import CustomTourRequest from "../models/CustomTourRequest.js";
 import Notification from "../models/Notification.js";
 import User from "../models/User.js";
 
 const adminRoles=["admin","superadmin","super_admin","manager","tour_manager","tourmanager"];
-export const createCustomTourRequest=async(req,res,next)=>{try{const {
+export const createCustomTourRequest=async(req,res,next)=>{
+  requireTenantId();try{const {
 destination,
 durationDays,
 people,

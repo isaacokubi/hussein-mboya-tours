@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import mongoose from "mongoose";
 import User from "../models/User.js";
 import Role from "../models/Role.js";
@@ -9,6 +9,7 @@ import { ensureSystemRoles } from "../services/onboardingService.js";
 const STATUS_VALUES = ["active", "inactive", "disabled", "suspended", "blocked"];
 
 export const getUsers = async (req, res, next) => {
+  requireTenantId();
   try {
     const page = Math.max(Number(req.query.page) || 1, 1);
     const limit = Math.min(Math.max(Number(req.query.limit) || 10, 1), 100);

@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 // server/controllers/financeController.js
 
 import Payment from "../models/Payment.js";
@@ -27,6 +27,7 @@ const PAYMENT_STATUSES = [
 */
 
 export const getFinanceStats = async (req, res, next) => {
+  requireTenantId();
   try {
     const [
       revenueResult,

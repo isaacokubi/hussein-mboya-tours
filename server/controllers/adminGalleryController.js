@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 
 import Gallery from "../models/Gallery.js";
@@ -6,6 +6,7 @@ import cloudinary from "../config/cloudinary.js";
 
 
 export const getAdminGallery = async (req,res,next)=>{
+  requireTenantId();
 
 try{
 

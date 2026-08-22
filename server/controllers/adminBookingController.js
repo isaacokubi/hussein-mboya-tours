@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import mongoose from "mongoose";
 
 import {
@@ -24,6 +24,7 @@ const normalizePaymentStatus = (value) => {
 |--------------------------------------------------------------------------
 */
 export const getAllBookings = async (req, res, next) => {
+  requireTenantId();
   try {
     const page = Math.max(Number(req.query.page) || 1, 1);
     const limit = Math.min(Number(req.query.limit) || 20, 100);

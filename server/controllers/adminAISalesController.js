@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
@@ -10,6 +10,7 @@ req,
 res,
 next
 )=>{
+  requireTenantId();
 
 try{
 

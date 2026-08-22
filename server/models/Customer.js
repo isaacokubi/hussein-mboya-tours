@@ -1,6 +1,7 @@
 // server/models/Customer.js
 
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
@@ -475,7 +476,9 @@ customerSchema.methods.softDelete = function () {
 
 const Customer =
   mongoose.models.Customer ||
-  mongoose.model("Customer", customerSchema);
+  customerSchema.plugin(tenantPlugin);
+
+mongoose.model("Customer", customerSchema);
 
 
 

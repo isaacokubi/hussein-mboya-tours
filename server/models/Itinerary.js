@@ -1,6 +1,7 @@
 // server/models/Itinerary.js
 
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
@@ -261,7 +262,9 @@ itinerarySchema.index({
 
 const Itinerary =
   mongoose.models.Itinerary ||
-  mongoose.model("Itinerary", itinerarySchema);
+  itinerarySchema.plugin(tenantPlugin);
+
+mongoose.model("Itinerary", itinerarySchema);
 
 
 

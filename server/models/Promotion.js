@@ -1,6 +1,7 @@
 // server/models/Promotion.js
 
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
@@ -297,7 +298,9 @@ promotionSchema.methods.calculateDiscount = function (amount) {
 
 const Promotion =
   mongoose.models.Promotion ||
-  mongoose.model("Promotion", promotionSchema);
+  promotionSchema.plugin(tenantPlugin);
+
+mongoose.model("Promotion", promotionSchema);
 
 
 

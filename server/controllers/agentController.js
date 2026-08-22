@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import Booking from "../models/Booking.js";
 import Commission from "../models/Commission.js";
 import Agent from "../models/Agent.js";
@@ -17,6 +17,7 @@ const getAgent = async (user) => {
 };
 
 export const getAgentDashboard = async (req, res, next) => {
+  requireTenantId();
   try {
     let agent = await getAgent(req.user);
     if (!agent) {

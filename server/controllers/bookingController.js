@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import mongoose from "mongoose";
 import { getSystemSettings } from "../services/settingsService.js";
 
@@ -39,6 +39,7 @@ import { successResponse } from "../utils/apiResponse.js";
 */
 
 export const createBooking = async (req, res, next) => {
+  requireTenantId();
 
     const settings = await getSystemSettings();
     const companyName = settings.companyName || "Company";

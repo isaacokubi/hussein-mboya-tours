@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import mongoose from "mongoose";
 
 
@@ -27,6 +27,7 @@ const isValidId = (id) =>
 */
 
 export const createBooking = async (req, res, next) => {
+  requireTenantId();
   const session = await mongoose.startSession();
 
   try {

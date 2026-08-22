@@ -1,6 +1,7 @@
 // server/models/Destination.js
 
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 import slugify from "slugify";
 
@@ -767,19 +768,13 @@ function(rating){
 */
 
 
-const Destination =
+destinationSchema.plugin(tenantPlugin);
 
-    mongoose.models.Destination ||
-
-    mongoose.model(
-
-        "Destination",
-
-        destinationSchema,
-
-        "destinations"
-
-    );
+const Destination = mongoose.model(
+    "Destination",
+    destinationSchema,
+    "destinations"
+);
 
 
 

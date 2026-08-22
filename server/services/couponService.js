@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import Coupon from "../models/Coupon.js";
 
 /*
@@ -18,6 +18,7 @@ import Coupon from "../models/Coupon.js";
 */
 
 export const applyCoupon = async (code, amount) => {
+  requireTenantId();
   if (!code) {
     return {
       valid: false,

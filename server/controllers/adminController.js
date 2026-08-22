@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 // server/controllers/adminController.js
 
 import User from "../models/User.js";
@@ -18,6 +18,7 @@ const completedPaymentAmount = {
 };
 
 export const getDashboardStats = async (req, res, next) => {
+  requireTenantId();
   try {
     const [users, bookings, tours, destinations, revenueData, status, monthlyRevenue, popularTours, pendingBookings, confirmedBookings, completedBookings, cancelledBookings, paymentStatsData] = await Promise.all([
       User.countDocuments({ isDeleted: { $ne: true } }),

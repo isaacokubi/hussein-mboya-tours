@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 const databaseBackupSchema = new mongoose.Schema(
@@ -53,7 +54,9 @@ const databaseBackupSchema = new mongoose.Schema(
 
 
 
-export default mongoose.model(
+export default databaseBackupSchema.plugin(tenantPlugin);
+
+mongoose.model(
 "DatabaseBackup",
 databaseBackupSchema
 );

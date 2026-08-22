@@ -1,6 +1,7 @@
 // server/models/Quotation.js
 
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
@@ -376,7 +377,9 @@ quotationSchema.index({
 
 const Quotation =
   mongoose.models.Quotation ||
-  mongoose.model("Quotation", quotationSchema);
+  quotationSchema.plugin(tenantPlugin);
+
+mongoose.model("Quotation", quotationSchema);
 
 
 

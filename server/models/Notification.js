@@ -1,6 +1,7 @@
 // server/models/Notification.js
 
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
@@ -304,7 +305,9 @@ notificationSchema.statics.markAllAsRead = function (userId) {
 
 const Notification =
   mongoose.models.Notification ||
-  mongoose.model("Notification", notificationSchema);
+  notificationSchema.plugin(tenantPlugin);
+
+mongoose.model("Notification", notificationSchema);
 
 
 

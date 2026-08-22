@@ -1,9 +1,10 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 import HeroSlide from "../models/HeroSlide.js";
 
 
 export const getHeroSlides = async (req, res) => {
+  requireTenantId();
 
   try {
 

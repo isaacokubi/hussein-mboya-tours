@@ -105,17 +105,20 @@ function enforceGraphLookupStage(stage, tenantId) {
 }
 
 export function tenantPlugin(schema) {
-  if (schema.path(TENANT_PATH)) return;
 
-  schema.add({
-    [TENANT_PATH]: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Organization",
-      default: null,
-      index: true,
-      immutable: true,
-    },
-  });
+  // Add tenantId only when missing.
+  // Existing tenantId fields must still receive isolation hooks.
+  if (!schema.path(TENANT_PATH)) {
+    schema.add({
+      [TENANT_PATH]: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Organization",
+        default: null,
+        index: true,
+        immutable: true,
+      },
+    });
+  }
 
   for (const path of Object.values(schema.paths || {})) {
     if (!path?.options?.unique || path.path === TENANT_PATH) continue;
@@ -162,10 +165,17 @@ export function tenantPlugin(schema) {
 
   schema.pre("estimatedDocumentCount", function tenantEstimatedCount(next) {
     try {
-      if (!isTenantBypassed()) requireTenantId();
+      if (!isTenantBypassed()) {
+        requireTenantId();
+        throw new Error(
+          "estimatedDocumentCount() is blocked for tenant-scoped models. Use countDocuments() instead."
+        );
+      }
+
       next();
+
     } catch (error) {
-      next(new Error("estimatedDocumentCount() is not tenant-safe. Use countDocuments() instead."));
+      next(error);
     }
   });
 

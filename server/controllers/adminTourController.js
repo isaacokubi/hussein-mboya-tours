@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import mongoose from "mongoose";
 import { getSystemSettings } from "../services/settingsService.js";
 import Tour from "../models/Tour.js";
@@ -100,6 +100,7 @@ const buildImages = (files = []) =>
 */
 
 export const createTour = async (req, res, next) => {
+  requireTenantId();
   try {
     /*
     |--------------------------------------------------------------------------

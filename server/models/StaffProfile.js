@@ -1,6 +1,7 @@
 // server/models/StaffProfile.js
 
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
@@ -225,7 +226,9 @@ staffProfileSchema.index({
 
 const StaffProfile =
   mongoose.models.StaffProfile ||
-  mongoose.model("StaffProfile", staffProfileSchema);
+  staffProfileSchema.plugin(tenantPlugin);
+
+mongoose.model("StaffProfile", staffProfileSchema);
 
 
 

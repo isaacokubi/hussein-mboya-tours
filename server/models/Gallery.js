@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 
@@ -84,7 +85,9 @@ timestamps:true
 
 
 
-export default mongoose.model(
+export default gallerySchema.plugin(tenantPlugin);
+
+mongoose.model(
 "Gallery",
 gallerySchema
 );

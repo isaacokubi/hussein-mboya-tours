@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import { getSystemSettings } from "../services/settingsService.js";
 // controllers/voucherController.js
 
@@ -25,6 +25,7 @@ import User from "../models/User.js";
 */
 
 export const generateVoucher = async (req, res, next) => {
+  requireTenantId();
   try {
 
     const settings = await getSystemSettings();

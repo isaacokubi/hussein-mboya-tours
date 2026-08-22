@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 import Agent from "../models/Agent.js";
 import User from "../models/User.js";
@@ -12,6 +12,7 @@ import User from "../models/User.js";
 */
 
 export const getAgents = async (req,res)=>{
+  requireTenantId();
 
 try{
 

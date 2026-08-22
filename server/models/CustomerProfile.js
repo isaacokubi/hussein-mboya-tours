@@ -1,6 +1,7 @@
 // server/models/CustomerProfile.js
 
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
@@ -441,7 +442,9 @@ customerProfileSchema.methods.updateStatistics = function (amount) {
 
 const CustomerProfile =
   mongoose.models.CustomerProfile ||
-  mongoose.model(
+  customerProfileSchema.plugin(tenantPlugin);
+
+mongoose.model(
     "CustomerProfile",
     customerProfileSchema
   );

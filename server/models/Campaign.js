@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
@@ -326,7 +327,9 @@ campaignSchema.index({
 
 const Campaign =
   mongoose.models.Campaign ||
-  mongoose.model("Campaign", campaignSchema);
+  campaignSchema.plugin(tenantPlugin);
+
+mongoose.model("Campaign", campaignSchema);
 
 
 

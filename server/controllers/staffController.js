@@ -1,4 +1,4 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 // server/controllers/staffController.js
 
 import Staff from "../models/Staff.js";
@@ -10,6 +10,7 @@ import Staff from "../models/Staff.js";
 */
 
 export const createStaff = async (req, res, next) => {
+  requireTenantId();
   try {
     const staff = await Staff.create(req.body);
 
