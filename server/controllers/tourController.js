@@ -1,7 +1,6 @@
 import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import Tour from "../models/Tour.js";
 import Vehicle from "../models/Vehicle.js";
-import Booking from "../models/Booking.js";
 import Staff from "../models/Staff.js";
 import { getSystemSettings } from "../services/settingsService.js";
 
@@ -21,26 +20,30 @@ const attachAvailability = (tourLike) => {
 
 export const getTours = async (req, res, next) => {
   try {
-    const tenantId = requireTenantId();
+    requireTenantId();
     const { page = 1, limit = 12, search, destination, category, featured } = req.query;
     const filter = mergeTenantFilter({ ...publicTourFilter });
     if (destination) filter.destination = destination;
     if (category) filter.category = category;
     if (featured === "true") filter.featured = true;
-    if (search) filter.$or = [
-      { title: { $regex: search, $options: "i" } },
-      { description: { $regex: search, $options: "i" } },
-      { location: { $regex: search, $options: "i" } },
-    ];
-    const currentPage = Math.max(Number(page), 1);
-    const pageSize = Math.min(Math.max(Number(limit), 1), 100);
+    if (search?.trim()) {
+      const keyword = search.trim();
+      filter.$or = [
+        { title: { $regex: keyword, $options: "i" } },
+        { description: { $regex: keyword, $options: "i" } },
+        { location: { $regex: keyword, $options: "i" } },
+      ];
+    }
+    const currentPage = Math.max(Number(page) || 1, 1);
+    const pageSize = Math.min(Math.max(Number(limit) || 12, 1), 100);
     const skip = (currentPage - 1) * pageSize;
-    const [tours, total] = await Promise.all([
+    const [tours, total, settings] = await Promise.all([
       Tour.find(filter).populate("destination").sort({ featured: -1, popularity: -1, createdAt: -1 }).skip(skip).limit(pageSize).lean(),
       Tour.countDocuments(filter),
+      getSystemSettings(),
     ]);
-    const data = tours.map(attachAvailability);
-    return res.json({ success: true, data, tours: data, pagination: { page: currentPage, limit: pageSize, total, pages: Math.ceil(total / pageSize) }, tenantId });
+    const data = tours.map((tour) => ({ ...attachAvailability(tour), currency: settings?.currency || "KES", currencySymbol: settings?.currencySymbol || "KSh" }));
+    return res.json({ success: true, data, tours: data, pagination: { page: currentPage, limit: pageSize, total, pages: Math.ceil(total / pageSize) } });
   } catch (error) { return next(error); }
 };
 
@@ -85,7 +88,9 @@ export const getTourById = async (req, res, next) => {
 export const getTourBySlug = async (req, res, next) => {
   try {
     requireTenantId();
-    const tour = await Tour.findOne(mergeTenantFilter({ slug: req.params.slug, ...publicTourFilter }))
+    const slug = String(req.params.slug || "").trim().toLowerCase();
+    if (!slug) return res.status(400).json({ success: false, message: "Tour slug is required" });
+    const tour = await Tour.findOne(mergeTenantFilter({ slug, ...publicTourFilter }))
       .populate("destination assignedGuide assignedDriver assignedVehicle").lean();
     if (!tour) return res.status(404).json({ success: false, message: "Tour not found" });
     return res.json({ success: true, data: attachAvailability(tour) });
@@ -112,7 +117,7 @@ export const createTour = async (req, res, next) => {
     body.createdBy = req.user?._id || null;
     body.availabilitySettings = body.availabilitySettings || { totalSlots: body.capacity, bookedSlots: 0, waitlistEnabled: false };
     const tour = await Tour.create(body);
-    const data = await Tour.findById(tour._id).populate("destination assignedGuide assignedDriver assignedVehicle").lean();
+    const data = await Tour.findOne(mergeTenantFilter({ _id: tour._id })).populate("destination assignedGuide assignedDriver assignedVehicle").lean();
     return res.status(201).json({ success: true, message: "Tour created successfully", data });
   } catch (error) { return next(error); }
 };
@@ -175,7 +180,7 @@ export const removeVehicle = async (req, res, next) => {
     tour.assignedVehicle = null;
     tour.assignmentStatus = tour.assignedGuide || tour.assignedDriver ? "assigned" : "pending";
     await tour.save();
-    if (vehicleId) await Vehicle.findOneAndUpdate(mergeTenantFilter({ _id: vehicleId }), { $set: { status: "available", assignedTour: null } });
+    if (vehicleId) await Vehicle.findOneAndUpdate(mergeTenantFilter({ _id: vehicleId }), { $set: { status: "available" }, $unset: { assignedTour: 1 } });
     return res.json({ success: true, message: "Vehicle removed successfully", data: tour });
   } catch (error) { return next(error); }
 };
