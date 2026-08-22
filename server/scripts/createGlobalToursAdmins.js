@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
 import User from "../models/User.js";
-import Organization from "../models/Organization.js";
 import { runWithTenant } from "../tenancy/context.js";
 
 const SUPERADMIN_EMAIL = process.env.SUPERADMIN_EMAIL || "platform@globaltours.test";
@@ -10,6 +9,7 @@ const ADMIN_EMAILS = [
   process.env.ADMIN2_EMAIL || "admin2@globaltours.test",
 ];
 const ADMIN_PASSWORDS = [process.env.ADMIN1_PASSWORD, process.env.ADMIN2_PASSWORD];
+const GLOBAL_TOURS_ID = new mongoose.Types.ObjectId("6a87fe1bc3f48c3dcddf4a23");
 
 if (!SUPERADMIN_PASSWORD || ADMIN_PASSWORDS.some((password) => !password)) {
   throw new Error("Set SUPERADMIN_PASSWORD, ADMIN1_PASSWORD and ADMIN2_PASSWORD before running this script.");
@@ -17,8 +17,10 @@ if (!SUPERADMIN_PASSWORD || ADMIN_PASSWORDS.some((password) => !password)) {
 
 await mongoose.connect(process.env.MONGODB_URI);
 
-const org = await Organization.findOne({
-  _id: new mongoose.Types.ObjectId("6a87fe1bc3f48c3dcddf4a23"),
+// Organization is tenant-scoped, so resolve the known platform tenant directly
+// from MongoDB rather than attempting a tenant-scoped Organization query.
+const org = await mongoose.connection.db.collection("organizations").findOne({
+  _id: GLOBAL_TOURS_ID,
 });
 if (!org) throw new Error("Global Tours organization not found.");
 
