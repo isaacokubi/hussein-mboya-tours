@@ -232,11 +232,8 @@ agentSchema.virtual("isActive").get(function () {
 |--------------------------------------------------------------------------
 */
 
-const Agent =
-  mongoose.models.Agent ||
-  agentSchema.plugin(tenantPlugin);
-
-mongoose.model("Agent", agentSchema);
+const tenantAgentSchema = agentSchema.plugin(tenantPlugin);
+const Agent = mongoose.models.Agent || mongoose.model("Agent", tenantAgentSchema);
 
 
 

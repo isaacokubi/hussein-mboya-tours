@@ -189,11 +189,8 @@ tourGallerySchema.index({
 |--------------------------------------------------------------------------
 */
 
-const TourGallery =
-  mongoose.models.TourGallery ||
-  tourGallerySchema.plugin(tenantPlugin);
-
-mongoose.model("TourGallery", tourGallerySchema);
+const tenantTourGallerySchema = tourGallerySchema.plugin(tenantPlugin);
+const TourGallery = mongoose.models.TourGallery || mongoose.model("TourGallery", tenantTourGallerySchema);
 
 
 

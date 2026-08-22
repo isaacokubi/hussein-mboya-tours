@@ -24,7 +24,7 @@ const userSchema = new mongoose.Schema(
       default: "customer",
     },
     roleId: { type: mongoose.Schema.Types.ObjectId, ref: "Role", default: null },
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", default: null, index: true },
+    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", default: null },
     permissionsOverride: [{ type: mongoose.Schema.Types.ObjectId, ref: "Permission" }],
     legacyRole: { type: String, default: "customer" },
     profileImage: {
@@ -52,7 +52,6 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-userSchema.index({ tenantId: 1, email: 1 }, { unique: true, sparse: true });
 userSchema.index({ tenantId: 1, role: 1 });
 
 userSchema.pre("save", async function (next) {

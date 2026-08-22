@@ -260,11 +260,8 @@ itinerarySchema.index({
 |--------------------------------------------------------------------------
 */
 
-const Itinerary =
-  mongoose.models.Itinerary ||
-  itinerarySchema.plugin(tenantPlugin);
-
-mongoose.model("Itinerary", itinerarySchema);
+const tenantItinerarySchema = itinerarySchema.plugin(tenantPlugin);
+const Itinerary = mongoose.models.Itinerary || mongoose.model("Itinerary", tenantItinerarySchema);
 
 
 

@@ -325,11 +325,8 @@ campaignSchema.index({
 |--------------------------------------------------------------------------
 */
 
-const Campaign =
-  mongoose.models.Campaign ||
-  campaignSchema.plugin(tenantPlugin);
-
-mongoose.model("Campaign", campaignSchema);
+const tenantCampaignSchema = campaignSchema.plugin(tenantPlugin);
+const Campaign = mongoose.models.Campaign || mongoose.model("Campaign", tenantCampaignSchema);
 
 
 

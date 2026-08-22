@@ -372,11 +372,8 @@ commissionSchema.index({
 |--------------------------------------------------------------------------
 */
 
-const Commission =
-  mongoose.models.Commission ||
-  commissionSchema.plugin(tenantPlugin);
-
-mongoose.model("Commission", commissionSchema);
+const tenantCommissionSchema = commissionSchema.plugin(tenantPlugin);
+const Commission = mongoose.models.Commission || mongoose.model("Commission", tenantCommissionSchema);
 
 
 

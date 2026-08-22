@@ -283,11 +283,8 @@ mediaSchema.index({
 |--------------------------------------------------------------------------
 */
 
-const Media =
-  mongoose.models.Media ||
-  mediaSchema.plugin(tenantPlugin);
-
-mongoose.model("Media", mediaSchema);
+const tenantMediaSchema = mediaSchema.plugin(tenantPlugin);
+const Media = mongoose.models.Media || mongoose.model("Media", tenantMediaSchema);
 
 
 

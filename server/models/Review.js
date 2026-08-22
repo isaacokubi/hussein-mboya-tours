@@ -307,11 +307,8 @@ reviewSchema.methods.voteNotHelpful = function () {
 |--------------------------------------------------------------------------
 */
 
-const Review =
-  mongoose.models.Review ||
-  reviewSchema.plugin(tenantPlugin);
-
-mongoose.model("Review", reviewSchema);
+const tenantReviewSchema = reviewSchema.plugin(tenantPlugin);
+const Review = mongoose.models.Review || mongoose.model("Review", tenantReviewSchema);
 
 
 

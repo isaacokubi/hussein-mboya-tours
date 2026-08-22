@@ -474,11 +474,8 @@ customerSchema.methods.softDelete = function () {
 |--------------------------------------------------------------------------
 */
 
-const Customer =
-  mongoose.models.Customer ||
-  customerSchema.plugin(tenantPlugin);
-
-mongoose.model("Customer", customerSchema);
+const tenantCustomerSchema = customerSchema.plugin(tenantPlugin);
+const Customer = mongoose.models.Customer || mongoose.model("Customer", tenantCustomerSchema);
 
 
 

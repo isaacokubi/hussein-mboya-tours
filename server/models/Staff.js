@@ -426,11 +426,8 @@ staffSchema.index({
 |--------------------------------------------------------------------------
 */
 
-const Staff =
-  mongoose.models.Staff ||
-  staffSchema.plugin(tenantPlugin);
-
-mongoose.model("Staff", staffSchema);
+const tenantStaffSchema = staffSchema.plugin(tenantPlugin);
+const Staff = mongoose.models.Staff || mongoose.model("Staff", tenantStaffSchema);
 
 
 

@@ -303,11 +303,8 @@ notificationSchema.statics.markAllAsRead = function (userId) {
 |--------------------------------------------------------------------------
 */
 
-const Notification =
-  mongoose.models.Notification ||
-  notificationSchema.plugin(tenantPlugin);
-
-mongoose.model("Notification", notificationSchema);
+const tenantNotificationSchema = notificationSchema.plugin(tenantPlugin);
+const Notification = mongoose.models.Notification || mongoose.model("Notification", tenantNotificationSchema);
 
 
 

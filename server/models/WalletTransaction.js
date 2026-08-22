@@ -261,14 +261,8 @@ walletTransactionSchema.index({
 |--------------------------------------------------------------------------
 */
 
-const WalletTransaction =
-  mongoose.models.WalletTransaction ||
-  walletTransactionSchema.plugin(tenantPlugin);
-
-mongoose.model(
-    "WalletTransaction",
-    walletTransactionSchema
-  );
+const tenantWalletTransactionSchema = walletTransactionSchema.plugin(tenantPlugin);
+const WalletTransaction = mongoose.models.WalletTransaction || mongoose.model("WalletTransaction", tenantWalletTransactionSchema);
 
 
 

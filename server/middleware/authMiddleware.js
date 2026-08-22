@@ -1,5 +1,7 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import "../models/Role.js";
+import "../models/Permission.js";
 import env from "../config/env.js";
 import { normalizeRole, getUserRole } from "../utils/roleUtils.js";
 import { setTenantContext, runWithTenant } from "../tenancy/context.js";

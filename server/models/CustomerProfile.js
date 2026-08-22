@@ -440,14 +440,8 @@ customerProfileSchema.methods.updateStatistics = function (amount) {
 |--------------------------------------------------------------------------
 */
 
-const CustomerProfile =
-  mongoose.models.CustomerProfile ||
-  customerProfileSchema.plugin(tenantPlugin);
-
-mongoose.model(
-    "CustomerProfile",
-    customerProfileSchema
-  );
+const tenantCustomerProfileSchema = customerProfileSchema.plugin(tenantPlugin);
+const CustomerProfile = mongoose.models.CustomerProfile || mongoose.model("CustomerProfile", tenantCustomerProfileSchema);
 
 
 

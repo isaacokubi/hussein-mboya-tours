@@ -144,11 +144,8 @@ wishlistSchema.index({
 |--------------------------------------------------------------------------
 */
 
-const Wishlist =
-  mongoose.models.Wishlist ||
-  wishlistSchema.plugin(tenantPlugin);
-
-mongoose.model("Wishlist", wishlistSchema);
+const tenantWishlistSchema = wishlistSchema.plugin(tenantPlugin);
+const Wishlist = mongoose.models.Wishlist || mongoose.model("Wishlist", tenantWishlistSchema);
 
 
 

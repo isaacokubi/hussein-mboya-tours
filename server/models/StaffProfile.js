@@ -224,11 +224,8 @@ staffProfileSchema.index({
 |--------------------------------------------------------------------------
 */
 
-const StaffProfile =
-  mongoose.models.StaffProfile ||
-  staffProfileSchema.plugin(tenantPlugin);
-
-mongoose.model("StaffProfile", staffProfileSchema);
+const tenantStaffProfileSchema = staffProfileSchema.plugin(tenantPlugin);
+const StaffProfile = mongoose.models.StaffProfile || mongoose.model("StaffProfile", tenantStaffProfileSchema);
 
 
 

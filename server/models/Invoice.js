@@ -306,11 +306,8 @@ invoiceSchema.index({
 |--------------------------------------------------------------------------
 */
 
-const Invoice =
-  mongoose.models.Invoice ||
-  invoiceSchema.plugin(tenantPlugin);
-
-mongoose.model("Invoice", invoiceSchema);
+const tenantInvoiceSchema = invoiceSchema.plugin(tenantPlugin);
+const Invoice = mongoose.models.Invoice || mongoose.model("Invoice", tenantInvoiceSchema);
 
 
 

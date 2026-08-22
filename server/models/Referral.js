@@ -254,11 +254,8 @@ referralSchema.methods.markPaid = function (reference = "") {
 |--------------------------------------------------------------------------
 */
 
-const Referral =
-  mongoose.models.Referral ||
-  referralSchema.plugin(tenantPlugin);
-
-mongoose.model("Referral", referralSchema);
+const tenantReferralSchema = referralSchema.plugin(tenantPlugin);
+const Referral = mongoose.models.Referral || mongoose.model("Referral", tenantReferralSchema);
 
 
 

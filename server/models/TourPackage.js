@@ -516,11 +516,8 @@ tourPackageSchema.index({
 |--------------------------------------------------------------------------
 */
 
-const TourPackage =
-  mongoose.models.TourPackage ||
-  tourPackageSchema.plugin(tenantPlugin);
-
-mongoose.model("TourPackage", tourPackageSchema);
+const tenantTourPackageSchema = tourPackageSchema.plugin(tenantPlugin);
+const TourPackage = mongoose.models.TourPackage || mongoose.model("TourPackage", tenantTourPackageSchema);
 
 
 

@@ -375,11 +375,8 @@ quotationSchema.index({
 |--------------------------------------------------------------------------
 */
 
-const Quotation =
-  mongoose.models.Quotation ||
-  quotationSchema.plugin(tenantPlugin);
-
-mongoose.model("Quotation", quotationSchema);
+const tenantQuotationSchema = quotationSchema.plugin(tenantPlugin);
+const Quotation = mongoose.models.Quotation || mongoose.model("Quotation", tenantQuotationSchema);
 
 
 

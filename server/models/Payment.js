@@ -323,11 +323,8 @@ paymentSchema.methods.markFailed = function (reason) {
   return this.save();
 };
 
-const Payment =
-  mongoose.models.Payment ||
-  paymentSchema.plugin(tenantPlugin);
-
-mongoose.model("Payment", paymentSchema);
+const tenantPaymentSchema = paymentSchema.plugin(tenantPlugin);
+const Payment = mongoose.models.Payment || mongoose.model("Payment", tenantPaymentSchema);
 
 
 

@@ -294,11 +294,8 @@ tourReportSchema.index({
 |--------------------------------------------------------------------------
 */
 
-const TourReport =
-  mongoose.models.TourReport ||
-  tourReportSchema.plugin(tenantPlugin);
-
-mongoose.model("TourReport", tourReportSchema);
+const tenantTourReportSchema = tourReportSchema.plugin(tenantPlugin);
+const TourReport = mongoose.models.TourReport || mongoose.model("TourReport", tenantTourReportSchema);
 
 
 

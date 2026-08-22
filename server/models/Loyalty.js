@@ -318,11 +318,8 @@ loyaltySchema.index({ createdAt: -1 });
 |--------------------------------------------------------------------------
 */
 
-const Loyalty =
-  mongoose.models.Loyalty ||
-  loyaltySchema.plugin(tenantPlugin);
-
-mongoose.model("Loyalty", loyaltySchema);
+const tenantLoyaltySchema = loyaltySchema.plugin(tenantPlugin);
+const Loyalty = mongoose.models.Loyalty || mongoose.model("Loyalty", tenantLoyaltySchema);
 
 
 

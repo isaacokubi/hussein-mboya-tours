@@ -217,11 +217,8 @@ couponSchema.methods.incrementUsage = async function () {
 |--------------------------------------------------------------------------
 */
 
-const Coupon =
-  mongoose.models.Coupon ||
-  couponSchema.plugin(tenantPlugin);
-
-mongoose.model("Coupon", couponSchema);
+const tenantCouponSchema = couponSchema.plugin(tenantPlugin);
+const Coupon = mongoose.models.Coupon || mongoose.model("Coupon", tenantCouponSchema);
 
 
 

@@ -296,11 +296,8 @@ promotionSchema.methods.calculateDiscount = function (amount) {
 |--------------------------------------------------------------------------
 */
 
-const Promotion =
-  mongoose.models.Promotion ||
-  promotionSchema.plugin(tenantPlugin);
-
-mongoose.model("Promotion", promotionSchema);
+const tenantPromotionSchema = promotionSchema.plugin(tenantPlugin);
+const Promotion = mongoose.models.Promotion || mongoose.model("Promotion", tenantPromotionSchema);
 
 
 
