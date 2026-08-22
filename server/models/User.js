@@ -81,14 +81,7 @@ userSchema.virtual("isLocked").get(function () {
   return this.lockUntil && this.lockUntil > Date.now();
 });
 
-const User = mongoose.models.User || userSchema.plugin(tenantPlugin);
-
-mongoose.model("User", userSchema);
-
-
-
-
-
-
+const tenantUserSchema = userSchema.plugin(tenantPlugin);
+const User = mongoose.models.User || mongoose.model("User", tenantUserSchema);
 
 export default User;
