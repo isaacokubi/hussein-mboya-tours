@@ -27,26 +27,32 @@ export const protect = async (req, res, next) => {
     if (!userId) return res.status(401).json({ success: false, message: "Invalid authentication token." });
 
     const tokenRole = normalizeRole(decoded.role);
+    // Identity lookup must be tenant-independent. Tenant authorization is applied
+    // only after the database user and its authoritative tenantId are loaded.
     const loadUser = () => User.findById(userId).select("-password").populate({ path: "roleId", populate: { path: "permissions" } }).populate("permissionsOverride");
-    const user = tokenRole === "superadmin" ? await runWithTenant({ bypass: true }, loadUser) : await loadUser();
+    const user = await runWithTenant({ role: "superadmin", bypass: true }, loadUser);
     if (!user) return res.status(401).json({ success: false, message: "User no longer exists." });
     if (user.status !== "active" || user.isActive === false) return res.status(403).json({ success: false, message: "Account is inactive." });
 
     const role = getUserRole(user);
+    const isPlatformOwner = role === "superadmin" || role === "super_admin";
     const tokenTenantId = decoded.tenantId ? String(decoded.tenantId) : null;
     const requestedTenantId = req.tenantId ? String(req.tenantId) : null;
     const userTenantId = user.tenantId ? String(user.tenantId) : null;
 
-    if (role !== "superadmin") {
+    if (!isPlatformOwner) {
       if (!userTenantId) return res.status(403).json({ success: false, message: "Account is not assigned to a company." });
       if (requestedTenantId && requestedTenantId !== userTenantId) return res.status(403).json({ success: false, message: "You cannot access another company." });
       if (tokenTenantId && tokenTenantId !== userTenantId) return res.status(403).json({ success: false, message: "Authentication tenant mismatch." });
-      setTenantContext({ tenantId: user.tenantId, tenant: req.tenant || null, bypass: false });
+      setTenantContext({ tenantId: user.tenantId, tenant: req.tenant || null, role, bypass: false });
       req.tenantId = user.tenantId;
-    } else if (requestedTenantId) {
-      setTenantContext({ tenantId: req.tenantId, tenant: req.tenant || null, bypass: false });
     } else {
-      setTenantContext({ tenantId: null, tenant: null, bypass: true });
+      if (userTenantId) return res.status(403).json({ success: false, message: "Platform owner account must not belong to a tenant." });
+      // A platform owner is global. Ignore tenant headers and JWT tenant claims;
+      // neither is allowed to narrow or redirect the platform identity.
+      setTenantContext({ tenantId: null, tenant: null, role, bypass: true });
+      req.tenantId = null;
+      req.tenant = null;
     }
 
     req.user = user;
