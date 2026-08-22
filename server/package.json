@@ -25,12 +25,8 @@
     "check:multitenancy:live": "node scripts/tenantIsolationRegressionCheck.js",
     "migrate:multitenancy": "node scripts/migrateToMultitenancy.js",
     "reconcile:tenant-indexes": "node scripts/reconcileTenantIndexes.js",
-<<<<<<< HEAD
-    "check:all": "npm run check && npm run check:controllers && npm run check:models && npm run check:rbac && npm run check:onboarding && npm run check:public-onboarding && npm run check:security && npm run check:multitenancy && npm run check:multitenancy:code && npm run check:production",
+    "check:all": "npm run check && npm run check:controllers && npm run check:models && npm run check:rbac&& npm run check:onboarding && npm run check:public-onboarding && npm run check:security && npm run check:multitenancy && npm run check:multitenancy:code && npm run check:production",
     "test": "node --test tests/*.js"
-=======
-    "check:all": "npm run check && npm run check:controllers && npm run check:models && npm run check:rbac && npm run check:onboarding && npm run check:public-onboarding && npm run check:security && npm run check:multitenancy && npm run check:multitenancy:code && npm run check:production"
->>>>>>> feat/first-admin-superadmin-onboarding
   },
   "dependencies": {
     "africastalking": "^0.8.0",
@@ -49,10 +45,7 @@
     "jsonwebtoken": "^9.0.0",
     "mongoose": "^8.12.1",
     "mongoose-paginate-v2": "^1.9.5",
-<<<<<<< HEAD
     "morgan": "^1.11.0",
-=======
->>>>>>> feat/first-admin-superadmin-onboarding
     "multer": "^2.2.0",
     "multer-storage-cloudinary": "^4.0.0",
     "node-cron": "^4.6.0",
@@ -61,16 +54,10 @@
     "pdfkit": "^0.19.0",
     "qrcode": "^1.5.4",
     "react-i18next": "^17.0.11",
-<<<<<<< HEAD
     "sitemap": "^9.0.1",
     "slugify": "^1.6.9",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
-=======
-    "socket.io": "^4.8.3",
-    "socket.io-client": "^4.8.3",
-    "slugify": "^1.6.9",
->>>>>>> feat/first-admin-superadmin-onboarding
     "validator": "^13.12.0"
   },
   "devDependencies": {
