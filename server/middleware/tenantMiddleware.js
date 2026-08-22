@@ -29,7 +29,7 @@ bypass:true
 
 
 
-// AUTHENTICATED TENANT USER
+// NORMAL TENANT USER
 
 if(
 user &&
@@ -48,30 +48,33 @@ role:user.role
 
 
 
-// PUBLIC WEBSITE TENANT
+// PUBLIC WEBSITE DEFAULT TENANT
 
-const tenant =
-await Organization.findOne({
+const tenant = await Organization.findOne({
 slug:"hussein-mboya-tours"
 });
 
 
 if(tenant){
 
-req.tenantId=tenant._id;
-
+req.tenantId = tenant._id;
+req.tenant = tenant;
 
 return runWithTenant(
 {
 tenantId:tenant._id,
 tenant,
-role:"public"
+role:"public",
+bypass:false
 },
 ()=>next()
 );
 
 }
 
+
+
+// NO TENANT FOUND
 
 next();
 
@@ -83,6 +86,5 @@ catch(error){
 next(error);
 
 }
-
 
 }
