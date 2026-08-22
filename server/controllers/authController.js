@@ -11,15 +11,30 @@ import { sendSMS } from "../services/smsService.js";
 
 const normalizeRole = (value) => String(value?.name || value || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
 const effectiveRoleForUser = (user) => normalizeRole(user?.role) || normalizeRole(user?.legacyRole) || normalizeRole(user?.roleId) || "customer";
-const publicUser = (user, permissions = []) => ({
-  _id: user._id, name: user.name, email: user.email, phone: user.phone,
-  role: effectiveRoleForUser(user), tenantId: user.tenantId || null, permissions,
-  profileImage: user.profileImage, status: user.status, isVerified: user.isVerified,
-  loyaltyPoints: user.loyaltyPoints, referralCode: user.referralCode, lastLoginAt: user.lastLoginAt, createdAt: user.createdAt,
-});
+const isPlatformRole = (user) => ["superadmin", "super_admin"].includes(effectiveRoleForUser(user));
+const isPlatformOwner = (user) => isPlatformRole(user) && !user.tenantId;
+const publicUser = (user, permissions = []) => {
+  const role = effectiveRoleForUser(user);
+  const platformOwner = ["superadmin", "super_admin"].includes(role);
+  return {
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    role,
+    tenantId: platformOwner ? null : (user.tenantId || null),
+    permissions,
+    profileImage: user.profileImage,
+    status: user.status,
+    isVerified: user.isVerified,
+    loyaltyPoints: user.loyaltyPoints,
+    referralCode: user.referralCode,
+    lastLoginAt: user.lastLoginAt,
+    createdAt: user.createdAt,
+  };
+};
 const createAuditLog = (data) => AuditLog.log(data);
 const isCustomer = (user) => effectiveRoleForUser(user) === "customer";
-const isPlatformOwner = (user) => ["superadmin", "super_admin"].includes(effectiveRoleForUser(user)) && !user.tenantId;
 
 export const login = async (req, res, next) => {
   try {
@@ -65,6 +80,12 @@ export const login = async (req, res, next) => {
     user.lockUntil = null;
 
     const effectiveRole = effectiveRoleForUser(user);
+    const platformOwner = isPlatformOwner(user);
+    const platformRoleWithTenant = isPlatformRole(user) && !platformOwner;
+    if (platformRoleWithTenant) {
+      return res.status(403).json({ success: false, message: "Platform owner account must not belong to a tenant." });
+    }
+
     const permissions = buildPermissions(user);
 
     if (isCustomer(user)) {
@@ -81,15 +102,10 @@ export const login = async (req, res, next) => {
       });
     }
 
-    // SuperAdmin is the platform owner and MUST be tenantless. Never mint a
-    // platform token for a user carrying a tenantId with a superadmin role.
-    if (["superadmin", "super_admin"].includes(effectiveRole) && !isPlatformOwner(user)) {
-      return res.status(403).json({ success: false, message: "Platform owner account must not belong to a tenant." });
-    }
-
     user.lastLoginAt = new Date();
     await user.save({ validateBeforeSave: false });
-    const token = generateToken({ _id: user._id, role: effectiveRole, roleId: user.roleId, email: user.email, permissions, tenantId: user.tenantId || null });
+    const tokenTenantId = platformOwner ? null : (user.tenantId || null);
+    const token = generateToken({ _id: user._id, role: effectiveRole, roleId: user.roleId, email: user.email, permissions, tenantId: tokenTenantId });
     await createAuditLog({ user: user._id, action: "login", resource: "Authentication", description: "User successfully logged in.", severity: "medium", ipAddress: req.ip, userAgent: req.headers["user-agent"] });
     await SecurityLog.logEvent({ user: user._id, email: user.email, action: "login_success", status: "success", severity: "medium", ipAddress: req.ip, userAgent: req.headers["user-agent"], details: "Login successful" });
     return res.status(200).json({ success: true, token, user: publicUser(user, permissions) });
