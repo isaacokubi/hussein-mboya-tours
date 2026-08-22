@@ -12,14 +12,15 @@ const api = axios.create({
 
 function getPublicTenantSlug() {
   if (typeof window === "undefined") return "";
-  const configured = String(import.meta.env.VITE_TENANT_SLUG || "").trim().toLowerCase();
-  if (configured) return configured;
+
   const hostname = String(window.location.hostname || "").trim().toLowerCase();
   if (hostname.endsWith(".vercel.app")) {
     const label = hostname.slice(0, -".vercel.app".length).split(".").filter(Boolean).pop();
-    return label || "";
+    if (label) return label;
   }
-  return "";
+
+  // For custom domains, use the explicitly configured public tenant.
+  return String(import.meta.env.VITE_TENANT_SLUG || "").trim().toLowerCase();
 }
 
 api.interceptors.request.use((config) => {
@@ -28,17 +29,14 @@ api.interceptors.request.use((config) => {
   if (token) config.headers.Authorization = `Bearer ${token}`;
 
   const isAuthenticated = Boolean(token);
-  const hostnameTenantSlug = getPublicTenantSlug();
-  const storedTenantSlug = String(localStorage.getItem("tenantSlug") || "").trim().toLowerCase();
+  const publicTenantSlug = getPublicTenantSlug();
   const tenantId = localStorage.getItem("tenantId");
 
   if (isAuthenticated && tenantId) {
     config.headers["X-Tenant-ID"] = tenantId;
-  } else {
-    // Public pages are bound to their deployment hostname/configuration.
-    // A stale tenantSlug from another tenant session must never override it.
-    const publicTenantSlug = hostnameTenantSlug || storedTenantSlug;
-    if (publicTenantSlug) config.headers["X-Tenant-Slug"] = publicTenantSlug;
+  } else if (publicTenantSlug) {
+    // Never allow a stale tenantSlug from localStorage to select a public tenant.
+    config.headers["X-Tenant-Slug"] = publicTenantSlug;
   }
 
   return config;
