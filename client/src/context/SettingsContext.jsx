@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import axios from "axios";
+import api from "../api/axios";
 
 const DEFAULT_SETTINGS = {
   companyName: "",
@@ -31,18 +31,9 @@ export function SettingsProvider({ children }) {
   const refreshSettings = useCallback(async () => {
     try {
       // Public settings are intentionally used here. The old /settings
-      // endpoint requires an authenticated settings.manage permission and
-      // therefore failed on the public homepage.
-      const response = await axios.get("/api/settings/public", {
+      // endpoint requires authentication and settings.manage permission.
+      const response = await api.get("/settings/public", {
         params: { _t: Date.now() },
-        headers: {
-          ...(localStorage.getItem("tenantId")
-            ? { "X-Tenant-ID": localStorage.getItem("tenantId") }
-            : {}),
-          ...(localStorage.getItem("tenantSlug")
-            ? { "X-Tenant-Slug": localStorage.getItem("tenantSlug") }
-            : {}),
-        },
       });
       const data = response.data?.settings || response.data?.data || response.data || {};
       applySettings(data);
@@ -96,7 +87,7 @@ export function SettingsProvider({ children }) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
       window.dispatchEvent(new CustomEvent("platform-settings-updated", { detail: merged }));
     } catch {
-      // Public settings API remains the source of truth.
+      // Settings API remains the source of truth.
     }
   }, []);
 
