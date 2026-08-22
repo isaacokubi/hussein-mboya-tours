@@ -61,12 +61,18 @@ export function AuthProvider({ children }) {
     if (normalized) {
       localStorage.setItem("user", JSON.stringify(normalized));
       localStorage.setItem("permissions", JSON.stringify(normalized.permissions.map((p) => p.name)));
+      if (normalized.tenantId) localStorage.setItem("tenantId", String(normalized.tenantId?._id || normalized.tenantId));
+      if (normalized.tenantSlug) localStorage.setItem("tenantSlug", String(normalized.tenantSlug));
     }
     return normalized;
   };
 
+  const clearAuthStorage = () => {
+    ["token", "accessToken", "authToken", "user", "permissions", "tenantId"].forEach((key) => localStorage.removeItem(key));
+  };
+
   const logout = () => {
-    ["token", "accessToken", "authToken", "user", "permissions"].forEach((key) => localStorage.removeItem(key));
+    clearAuthStorage();
     queryClient.clear();
     setUser(null);
     setToken(null);
@@ -84,64 +90,47 @@ export function AuthProvider({ children }) {
     setToken(savedToken);
     fetchCurrentUser().catch((error) => {
       console.error("AUTH ME ERROR", error.response?.data || error.message);
-      ["token", "user", "permissions"].forEach((key) => localStorage.removeItem(key));
+      clearAuthStorage();
       setToken(null);
       setUser(null);
     }).finally(() => setLoading(false));
   }, []);
 
   const login = async (email, password) => {
-    const { data } = await api.post(
-      "/auth/login",
-      {
-        email: String(email || "").trim().toLowerCase(),
-        password
-      },
-      {
-        headers: {
-          "X-Tenant-Slug":
-            localStorage.getItem("tenantSlug") ||
-            "hussein-mboya-tours"
-        }
-      }
-    );
+    const { data } = await api.post("/auth/login", {
+      email: String(email || "").trim().toLowerCase(),
+      password,
+    });
+
     if (data?.mfaRequired) return data;
     if (!data?.token) throw new Error("Authentication response did not contain a token.");
+
     localStorage.setItem("token", data.token);
-
-if(data.user?.tenantId){
- localStorage.setItem(
-  "tenantId",
-  data.user.tenantId
- );
-}
-
-if(data.user?.tenantSlug){
- localStorage.setItem(
-  "tenantSlug",
-  data.user.tenantSlug
- );
-}
     setToken(data.token);
     persistUser(data.user);
     try { await fetchCurrentUser(); } catch (error) { console.warn("AUTH REFRESH FAILED", error.response?.data || error.message); }
     return data;
   };
 
-  const register = async (userData) => (await api.post("/auth/register", userData)).data;
-  const permissions = user?.permissions || [];
+  const register = async (userData) => {
+    const { data } = await api.post("/auth/register", userData);
+    if (data?.token) {
+      localStorage.setItem("token", data.token);
+      setToken(data.token);
+      persistUser(data.user);
+    }
+    return data;
+  };
 
+  const permissions = user?.permissions || [];
   const hasPermission = (permission) => {
     if (!user || !permission) return false;
     const role = getUserRole(user);
     const wanted = String(permission).trim().toLowerCase();
-    // SuperAdmin is never dependent on a Role document being populated.
     if (role === "superadmin") return true;
-    // Admin navigation remains available even if its Role/Permission documents were deleted/recreated.
     if (role === "admin" && ADMIN_BASE_PERMISSIONS.includes(wanted)) return true;
     return permissions.some((p) => String(p?.name || "").trim().toLowerCase() === wanted && p?.enabled !== false);
   };
-
   const hasAnyPermission = (items = []) => items.some(hasPermission);
   const hasAllPermissions = (items = []) => items.every(hasPermission);
   const hasRole = (roleName) => getUserRole(user) === normalizeRole(roleName);
