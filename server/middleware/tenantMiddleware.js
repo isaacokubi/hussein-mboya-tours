@@ -1,90 +1,79 @@
 import Organization from "../models/Organization.js";
 import { runWithTenant } from "../tenancy/context.js";
 
+const normalizeHost = (value = "") =>
+  String(value)
+    .split(",")[0]
+    .trim()
+    .toLowerCase()
+    .replace(/:\d+$/, "");
 
-export async function resolveTenant(req,res,next){
+export async function resolveTenant(req, res, next) {
+  try {
+    const user = req.user;
 
-try{
+    if (user?.role === "super_admin") {
+      return runWithTenant(
+        { role: "super_admin", bypass: true },
+        () => next()
+      );
+    }
 
+    // Authenticated users are always bound to their own tenant.
+    if (user?.tenantId) {
+      return runWithTenant(
+        { tenantId: user.tenantId, role: user.role },
+        () => next()
+      );
+    }
 
-const user=req.user;
+    // Public websites may select a tenant explicitly or by custom domain.
+    const requestedTenantId = String(req.get("X-Tenant-ID") || "").trim();
+    const requestedTenantSlug = String(req.get("X-Tenant-Slug") || "").trim().toLowerCase();
+    const requestHost = normalizeHost(req.get("X-Forwarded-Host") || req.get("Host"));
 
+    let tenant = null;
+    const activeStatuses = { $in: ["active", "trial"] };
 
-// SUPER ADMIN PLATFORM ACCESS
+    if (requestedTenantId) {
+      tenant = await Organization.findOne({ _id: requestedTenantId, status: activeStatuses });
+    }
 
-if(
-user &&
-user.role==="super_admin"
-){
+    if (!tenant && requestedTenantSlug) {
+      tenant = await Organization.findOne({ slug: requestedTenantSlug, status: activeStatuses });
+    }
 
-return runWithTenant(
-{
-role:"super_admin",
-bypass:true
-},
-()=>next()
-);
+    if (!tenant && requestHost) {
+      tenant = await Organization.findOne({ domain: requestHost, status: activeStatuses });
+    }
 
-}
+    // Preserve the existing public deployment while allowing the default
+    // tenant to be changed without modifying application code.
+    if (!tenant) {
+      const fallbackSlug = String(
+        process.env.DEFAULT_PUBLIC_TENANT_SLUG || "hussein-mboya-tours"
+      ).trim().toLowerCase();
 
+      if (fallbackSlug) {
+        tenant = await Organization.findOne({ slug: fallbackSlug, status: activeStatuses });
+      }
+    }
 
+    if (!tenant) return next();
 
-// NORMAL TENANT USER
+    req.tenantId = tenant._id;
+    req.tenant = tenant;
 
-if(
-user &&
-user.tenantId
-){
-
-return runWithTenant(
-{
-tenantId:user.tenantId,
-role:user.role
-},
-()=>next()
-);
-
-}
-
-
-
-// PUBLIC WEBSITE DEFAULT TENANT
-
-const tenant = await Organization.findOne({
-slug:"hussein-mboya-tours"
-});
-
-
-if(tenant){
-
-req.tenantId = tenant._id;
-req.tenant = tenant;
-
-return runWithTenant(
-{
-tenantId:tenant._id,
-tenant,
-role:"public",
-bypass:false
-},
-()=>next()
-);
-
-}
-
-
-
-// NO TENANT FOUND
-
-next();
-
-
-}
-
-catch(error){
-
-next(error);
-
-}
-
+    return runWithTenant(
+      {
+        tenantId: tenant._id,
+        tenant,
+        role: "public",
+        bypass: false,
+      },
+      () => next()
+    );
+  } catch (error) {
+    return next(error);
+  }
 }
