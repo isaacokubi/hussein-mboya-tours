@@ -1,18 +1,48 @@
 import api from "./axios";
 
-export const getHeroSlides = async () => {
-  const response = await api.get("/hero");
-  const slides = Array.isArray(response.data)
-    ? response.data
-    : Array.isArray(response.data?.slides)
-      ? response.data.slides
-      : Array.isArray(response.data?.data)
-        ? response.data.data
-        : [];
+const FALLBACK_HERO_SLIDES = [
+  {
+    _id: "hussein-mboya-fallback-1",
+    image: "/hero1.jpeg",
+    title: "Discover Kenya with Hussein Mboya Tours",
+    description: "Unforgettable safaris, wildlife adventures and tailor-made African experiences.",
+    buttonText: "Explore Tours",
+    buttonLink: "/tours",
+  },
+  {
+    _id: "hussein-mboya-fallback-2",
+    image: "/hero2.jpeg",
+    title: "Experience the Magic of Kenya",
+    description: "From the Maasai Mara to the coast, discover extraordinary places with local experts.",
+    buttonText: "View Destinations",
+    buttonLink: "/destinations",
+  },
+  {
+    _id: "hussein-mboya-fallback-3",
+    image: "/hero4.jpeg",
+    title: "Your African Adventure Starts Here",
+    description: "Travel safely, comfortably and confidently with Hussein Mboya Tours.",
+    buttonText: "Book Now",
+    buttonLink: "/tours",
+  },
+];
 
-  // Do not substitute another company's branding/content when a tenant has
-  // no configured hero. The public homepage should reflect only this tenant.
-  return slides;
+export const getHeroSlides = async () => {
+  try {
+    const response = await api.get("/hero");
+    const slides = Array.isArray(response.data)
+      ? response.data
+      : Array.isArray(response.data?.slides)
+        ? response.data.slides
+        : Array.isArray(response.data?.data)
+          ? response.data.data
+          : [];
+
+    return slides.length ? slides : FALLBACK_HERO_SLIDES;
+  } catch {
+    // Optional CMS content must not blank the public tenant homepage.
+    return FALLBACK_HERO_SLIDES;
+  }
 };
 
 export const getAll = async () => {
