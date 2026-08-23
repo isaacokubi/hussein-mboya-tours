@@ -1,9 +1,8 @@
 import api from "./axios";
 
 /**
- * Public branding is served by /api/settings/public. The old
- * /api/tenant/branding endpoint is tenant-admin infrastructure and
- * requires tenant resolution, so it must not be used by the public app.
+ * Public branding is resolved from the active tenant by /api/settings/public.
+ * Do not hard-code a business name here: the same frontend must work for every tenant.
  */
 export const getTenantBranding = async () => {
   const response = await api.get("/settings/public", {
@@ -11,15 +10,17 @@ export const getTenantBranding = async () => {
   });
 
   const settings = response.data?.settings || response.data?.data || {};
+  const companyName = settings.companyName || settings.name || "";
+  const logo = settings.companyLogo || settings.logo || "";
 
   return {
     ...response.data,
     branding: {
       ...settings,
-      name: "Your Travel Company",
-      legalName: "Your Travel Company",
-      logo: settings.companyLogo || settings.logo || "",
-      logoUrl: settings.companyLogo || settings.logoUrl || "",
+      name: companyName,
+      legalName: settings.legalName || companyName,
+      logo,
+      logoUrl: settings.companyLogo || settings.logoUrl || logo,
       contactEmail: settings.supportEmail || "",
       contactPhone: settings.supportPhone || "",
       website: settings.websiteUrl || "",
