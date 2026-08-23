@@ -1,5 +1,5 @@
-import { resolveTenant } from "../middleware/tenantMiddleware.js";
 import express from "express";
+import { resolveTenant } from "../middleware/tenantMiddleware.js";
 
 import {
   getTourManagerDashboard,
@@ -27,9 +27,11 @@ import { protect, managerOnly } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.use(resolveTenant);
-
+// Authentication must happen before tenant resolution. Otherwise resolveTenant
+// cannot reliably determine the authenticated user's authoritative tenant and
+// a stale/malicious tenant header can affect manager dashboard requests.
 router.use(protect);
+router.use(resolveTenant);
 router.use(managerOnly);
 
 router.get("/dashboard", getTourManagerDashboard);
