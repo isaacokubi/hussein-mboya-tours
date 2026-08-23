@@ -34,7 +34,14 @@ export default function AgentDashboard() {
     : Array.isArray(payload?.bookings)
       ? payload.bookings
       : [];
+  const agentStatus = String(payload?.agent?.status || "active").toLowerCase();
   const isApproved = Boolean(payload?.agent?.isApproved);
+  const statusLabel = agentStatus === "active" ? "Active" : agentStatus === "suspended" ? "Suspended" : "Inactive";
+  const statusClass = agentStatus === "active"
+    ? "bg-green-100 text-green-700"
+    : agentStatus === "suspended"
+      ? "bg-red-100 text-red-700"
+      : "bg-gray-100 text-gray-700";
   const statusCode = error?.response?.status;
 
   if (isLoading) return <div className="p-6 text-gray-600">Loading agent dashboard...</div>;
@@ -76,14 +83,20 @@ export default function AgentDashboard() {
           <p className="mt-1 text-sm text-gray-500">{payload?.agent?.companyName || "Agent operations"}</p>
         </div>
         <div className="flex items-center gap-3">
-          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${isApproved ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
-            {isApproved ? "Approved" : "Pending approval"}
+          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClass}`}>
+            {statusLabel}
           </span>
           <button onClick={() => refetch()} disabled={isFetching} className="rounded-lg border bg-white px-4 py-2 text-sm font-medium shadow-sm hover:bg-gray-50 disabled:opacity-60">
             {isFetching ? "Refreshing..." : "Refresh"}
           </button>
         </div>
       </div>
+
+      {!isApproved && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <span className="font-semibold">Approval pending:</span> your agent account is active, but it has not yet been approved for agent operations.
+        </div>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Bookings" value={stats.bookings ?? 0} hint="Active agent bookings" />
