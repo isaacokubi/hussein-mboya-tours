@@ -30,17 +30,12 @@ export const getSuperAdminUsers = async (req, res, next) => {
       User.find(query).select("-password").populate("roleId", "name displayName permissions").sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
       User.countDocuments(query),
     ]);
-    const data = users.map((user) => ({
-      ...user,
-      role: user.roleId?.name || user.role || user.legacyRole || "customer",
-      status: user.status || "active",
-      isActive: (user.status || "active") === "active",
-    }));
+    const data = users.map((user) => ({ ...user, role: user.roleId?.name || user.role || user.legacyRole || "customer", status: user.status || "active", isActive: (user.status || "active") === "active" }));
     return res.json({ success: true, page, limit, total, pages: Math.max(1, Math.ceil(total / limit)), count: data.length, users: data, data });
   } catch (error) { next(error); }
 };
 
-export const createSuperAdminCompanyAccount = async (req, res, next) => {
+export const createCompanyAccount = async (req, res, next) => {
   try {
     const { name, email, phone, password, role } = req.body || {};
     const canonicalRole = normalizeRole(role);
@@ -56,14 +51,14 @@ export const createSuperAdminCompanyAccount = async (req, res, next) => {
     const user = await User.create({ name: name.trim(), email: normalizedEmail, phone: String(phone).trim(), password, role: canonicalRole, legacyRole: canonicalRole, roleId: roleDoc._id, status: "active", isVerified: true });
     let staff = null;
     let agent = null;
-    if (["tour_guide", "driver"].includes(canonicalRole)) {
-      staff = await Staff.create({ user: user._id, name: user.name, email: user.email, phone: user.phone, position: canonicalRole === "tour_guide" ? "guide" : "driver", role: canonicalRole === "tour_guide" ? "guide" : "driver", status: "active", isActive: true, availability: "available", createdBy: req.user?._id });
-    }
+    if (["tour_guide", "driver"].includes(canonicalRole)) staff = await Staff.create({ user: user._id, name: user.name, email: user.email, phone: user.phone, position: canonicalRole === "tour_guide" ? "guide" : "driver", role: canonicalRole === "tour_guide" ? "guide" : "driver", status: "active", isActive: true, availability: "available", createdBy: req.user?._id });
     if (canonicalRole === "agent") agent = await Agent.create({ user: user._id, companyName: "", phone: user.phone, email: user.email, commissionRate: 10, isApproved: false, status: "active" });
     const safeUser = await User.findById(user._id).select("-password").populate("roleId", "name displayName permissions").lean();
     return res.status(201).json({ success: true, message: "Company account created successfully.", user: safeUser, staff, agent });
   } catch (error) { next(error); }
 };
+
+export const createSuperAdminCompanyAccount = createCompanyAccount;
 
 export const updateSuperAdminUserStatus = async (req, res, next) => {
   try {
