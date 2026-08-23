@@ -4,7 +4,7 @@ import Role from "../models/Role.js";
 import User from "../models/User.js";
 import { runWithTenant } from "../tenancy/context.js";
 
-const SUPERADMIN_ROLES = ["super_admin", "super_admin"];
+const SUPERADMIN_ROLES = ["super_admin", "superadmin"];
 
 export const ADMIN_PERMISSION_NAMES = [
   "admin.dashboard", "user.manage", "staff.manage", "tour.manage", "booking.manage",

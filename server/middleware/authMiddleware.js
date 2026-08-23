@@ -93,7 +93,7 @@ export const requireRoles = (...allowedRoles) => (req, res, next) => {
 };
 
 export const adminOnly = requireRoles("admin", "super_admin");
-export const superAdminOnly = requireRoles("superadmin");
+export const superAdminOnly = requireRoles("super_admin");
 export const managerOnly = requireRoles("manager", "admin", "super_admin");
 export const agentOnly = requireRoles("agent", "admin", "super_admin");
 export const driverOnly = requireRoles("driver", "admin", "super_admin");

@@ -20,7 +20,7 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true, minlength: 8, select: false },
     role: {
       type: String,
-      enum: ["customer", "admin", "super_admin", "super_admin", "administrator", "agent", "travel_agent", "tour_manager", "tourmanager", "manager", "tour_guide", "tourguide", "guide", "driver"],
+      enum: ["customer", "admin", "super_admin", "superadmin", "administrator", "agent", "travel_agent", "tour_manager", "tourmanager", "manager", "tour_guide", "tourguide", "guide", "driver"],
       default: "customer",
     },
     roleId: { type: mongoose.Schema.Types.ObjectId, ref: "Role", default: null },

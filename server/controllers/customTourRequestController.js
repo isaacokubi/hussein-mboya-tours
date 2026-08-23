@@ -4,7 +4,7 @@ import CustomTourRequest from "../models/CustomTourRequest.js";
 import Notification from "../models/Notification.js";
 import User from "../models/User.js";
 
-const adminRoles=["admin","super_admin","super_admin","manager","tour_manager","tourmanager"];
+const adminRoles=["admin","super_admin", "superadmin","manager","tour_manager","tourmanager"];
 export const createCustomTourRequest=async(req,res,next)=>{
   requireTenantId();try{const {
 destination,

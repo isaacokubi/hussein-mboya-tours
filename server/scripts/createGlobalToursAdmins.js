@@ -50,7 +50,7 @@ const createPlatformOwner = async () => runWithTenant(
   async () => {
     const existing = await User.findOne({
       email: SUPERADMIN_EMAIL,
-      role: { $in: ["super_admin", "super_admin"] },
+      role: { $in: ["super_admin", "superadmin"] },
       tenantId: null,
     });
     if (existing) throw new Error(`Platform owner already exists: ${SUPERADMIN_EMAIL}`);
@@ -80,7 +80,7 @@ const verifyPlatform = await runWithTenant(
   { tenantId: null, tenant: null, role: "super_admin", bypass: true },
   () => User.findOne({ _id: superadmin._id }).select("+password")
 );
-if (!verifyPlatform || verifyPlatform.tenantId !== null || !["super_admin", "super_admin"].includes(verifyPlatform.role)) {
+if (!verifyPlatform || verifyPlatform.tenantId !== null || !["super_admin", "superadmin"].includes(verifyPlatform.role)) {
   throw new Error("Platform owner verification failed.");
 }
 if (!(await verifyPlatform.matchPassword(SUPERADMIN_PASSWORD))) throw new Error("Platform owner password verification failed.");

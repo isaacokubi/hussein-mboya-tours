@@ -216,8 +216,8 @@ export const mpesaCallback = async (req, res) => {
     try {
       const managers = await User.find({
         $or: [
-          { role: { $in: ["admin", "super_admin", "super_admin", "manager", "tour_manager", "tourmanager"] } },
-          { legacyRole: { $in: ["admin", "super_admin", "super_admin", "manager", "tour_manager", "tourmanager"] } },
+          { role: { $in: ["admin", "super_admin", "superadmin", "manager", "tour_manager", "tourmanager"] } },
+          { legacyRole: { $in: ["admin", "super_admin", "superadmin", "manager", "tour_manager", "tourmanager"] } },
         ],
       }).select("_id");
       if (managers.length) {

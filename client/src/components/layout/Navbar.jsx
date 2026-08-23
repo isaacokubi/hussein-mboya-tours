@@ -79,7 +79,7 @@ export default function Navbar(
     return "";
   }, [user]);
 
-  const isAdmin = ["admin", "super_admin", "super_admin"].includes(role.replace(/[\s_-]/g, ""));
+  const isAdmin = ["admin", "super_admin", "superadmin"].includes(role.replace(/[\s_-]/g, ""));
 
   const isAgent = role === "agent";
 

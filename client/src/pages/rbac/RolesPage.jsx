@@ -16,7 +16,7 @@ export default function RolesPage() {
     [permissions]
   );
   const effectiveSelected = selected || (() => {
-    const superRole = roles.find(r => ["super_admin", "super_admin"].includes(String(r.name).toLowerCase()));
+    const superRole = roles.find(r => ["super_admin", "superadmin"].includes(String(r.name).toLowerCase()));
     return superRole?._id || superRole?.id || roles[0]?._id || roles[0]?.id || null;
   })();
 

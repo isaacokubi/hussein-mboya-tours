@@ -11,11 +11,11 @@ import { sendSMS } from "../services/smsService.js";
 
 const normalizeRole = (value) => String(value?.name || value || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
 const effectiveRoleForUser = (user) => normalizeRole(user?.role) || normalizeRole(user?.legacyRole) || normalizeRole(user?.roleId) || "customer";
-const isPlatformRole = (user) => ["super_admin", "super_admin"].includes(effectiveRoleForUser(user));
+const isPlatformRole = (user) => ["super_admin", "superadmin"].includes(effectiveRoleForUser(user));
 const isPlatformOwner = (user) => isPlatformRole(user) && !user.tenantId;
 const publicUser = (user, permissions = []) => {
   const role = effectiveRoleForUser(user);
-  const platformOwner = ["super_admin", "super_admin"].includes(role);
+  const platformOwner = ["super_admin", "superadmin"].includes(role);
   return {
     _id: user._id,
     name: user.name,
@@ -53,7 +53,7 @@ export const login = async (req, res, next) => {
     if (!user) {
       user = await runWithTenant({ tenantId: null, tenant: null, role: "super_admin", bypass: true }, async () => User.findOne({
         email,
-        role: { $in: ["super_admin", "super_admin"] },
+        role: { $in: ["super_admin", "superadmin"] },
         tenantId: null,
       })
         .select("+password")

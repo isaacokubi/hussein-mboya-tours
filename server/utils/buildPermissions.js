@@ -15,7 +15,7 @@ export default function buildPermissions(user) {
     if (permission.enabled === false) { permissionMap.delete(permission.name); return; }
     permissionMap.set(permission.name, { name: permission.name, label: permission.label || permission.name, module: permission.module || null, icon: permission.icon || null, path: permission.path || null });
   };
-  if (["admin", "administrator", "super_admin", "super_admin"].includes(effectiveRole)) ADMIN_BASE_PERMISSIONS.forEach(addPermission);
+  if (["admin", "administrator", "super_admin", "superadmin"].includes(effectiveRole)) ADMIN_BASE_PERMISSIONS.forEach(addPermission);
   rolePermissions.forEach(addPermission);
   overrides.forEach(addPermission);
   return [...permissionMap.values()].sort((a, b) => a.label.localeCompare(b.label));

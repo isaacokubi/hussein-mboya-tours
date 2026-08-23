@@ -7,8 +7,8 @@ import Role from "../models/Role.js";
 const normalize = (value) => String(value || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
 
 const aliases = {
-  superadmin: ["super_admin", "super_admin"],
-  super_admin: ["super_admin", "super_admin"],
+  superadmin: ["super_admin", "superadmin"],
+  super_admin: ["super_admin", "superadmin"],
   administrator: ["admin", "administrator"],
   admin: ["admin", "administrator"],
   manager: ["manager", "tour_manager", "tourmanager"],

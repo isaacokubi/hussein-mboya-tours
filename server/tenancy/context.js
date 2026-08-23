@@ -1,7 +1,7 @@
 import { AsyncLocalStorage } from "async_hooks";
 
 const tenantStorage = new AsyncLocalStorage();
-const PLATFORM_ROLES = new Set(["super_admin", "super_admin"]);
+const PLATFORM_ROLES = new Set(["super_admin", "superadmin"]);
 const isPlatformRole = (role) => PLATFORM_ROLES.has(String(role || "").trim().toLowerCase());
 
 /* Main tenant wrapper */

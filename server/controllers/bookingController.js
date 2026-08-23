@@ -231,8 +231,8 @@ export const createBooking = async (req, res, next) => {
       try {
         const admins = await User.find({
           $or: [
-            { role: { $in: ["admin", "super_admin", "super_admin", "manager", "tour_manager", "tourmanager"] } },
-            { legacyRole: { $in: ["admin", "super_admin", "super_admin", "manager", "tour_manager", "tourmanager"] } },
+            { role: { $in: ["admin", "super_admin", "superadmin", "manager", "tour_manager", "tourmanager"] } },
+            { legacyRole: { $in: ["admin", "super_admin", "superadmin", "manager", "tour_manager", "tourmanager"] } },
           ],
           status: "active",
         }).select("_id").lean();
@@ -1516,7 +1516,7 @@ export const rescheduleBooking = async (req, res, next) => {
     booking.rescheduleHistory.push({ fromDate: previous, toDate: target, reason:String(reason||"").trim() });
     await booking.save();
     await Notification.create({ recipient:req.user._id, user:req.user._id, title:"Booking Rescheduled", message:`Your booking ${booking.bookingNumber} has been rescheduled to ${target.toLocaleDateString("en-KE")}.`, type:"booking", relatedModel:"Booking", relatedId:booking._id, actionUrl:`/bookings/${booking._id}` });
-    const admins = await User.find({ $or:[{role:{$in:["admin","super_admin","super_admin","manager","tour_manager","tourmanager"]}},{legacyRole:{$in:["admin","super_admin","super_admin","manager","tour_manager","tourmanager"]}}], status:"active" }).select("_id").lean();
+    const admins = await User.find({ $or:[{role:{$in:["admin","super_admin", "superadmin","manager","tour_manager","tourmanager"]}},{legacyRole:{$in:["admin","super_admin", "superadmin","manager","tour_manager","tourmanager"]}}], status:"active" }).select("_id").lean();
     if (admins.length) await Notification.insertMany(admins.map(a=>({recipient:a._id,user:a._id,title:"Booking Reschedule Requested",message:`${booking.bookingNumber} was moved to ${target.toLocaleDateString("en-KE")}.`,type:"booking",relatedModel:"Booking",relatedId:booking._id,actionUrl:"/admin/bookings"})));
     res.json({success:true,message:"Booking rescheduled successfully.",booking});
   } catch(error){ next(error); }

@@ -26,7 +26,7 @@ try {
   if (password.length < 12 || !/[A-Z]/.test(password) || !/\d/.test(password)) throw new Error("Password must be at least 12 characters and include an uppercase letter and a number.");
 
   const { superadmin } = await ensureSystemRoles();
-  const user = await runWithTenant({ bypass: true }, () => User.findOne({ email, role: { $in: ["super_admin", "super_admin"] } }).select("+password"));
+  const user = await runWithTenant({ bypass: true }, () => User.findOne({ email, role: { $in: ["super_admin", "superadmin"] } }).select("+password"));
   if (!user) throw new Error("Existing SuperAdmin was not found. Use the one-time bootstrap command for a brand-new installation.");
 
   user.password = password;

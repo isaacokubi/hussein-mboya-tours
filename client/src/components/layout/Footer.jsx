@@ -102,7 +102,7 @@ export default function Footer() {
             <li><Link to="/airport-transfers" className="hover:text-green-400 transition">Airport Transfers</Link></li>
           </ul>
 
-          {userRole === "admin" && !["super_admin", "super_admin"].includes(user?.role) && (
+          {userRole === "admin" && !["super_admin", "superadmin"].includes(user?.role) && (
             <div className="mt-8">
               <h4 className="text-white font-semibold mb-3">Admin Panel</h4>
               <ul className="space-y-2 text-sm">

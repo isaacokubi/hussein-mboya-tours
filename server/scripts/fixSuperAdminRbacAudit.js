@@ -344,7 +344,7 @@ async function main() {
 
     audit = audit.replace(
       /role\.name\s*===\s*["']superadmin["']/g,
-      '["super_admin", "super_admin"].includes(role.name)'
+      '["super_admin", "superadmin"].includes(role.name)'
     );
 
     /*

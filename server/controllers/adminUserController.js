@@ -72,7 +72,7 @@ export const createStaffAccount = async (req, res, next) => {
       roleDoc = await Role.create({ name: canonicalRole, displayName: canonicalRole.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), description: `${canonicalRole} access`, permissions: permissionIds, isSystem: ["admin", "manager", "tour_guide", "driver", "agent", "customer"].includes(canonicalRole), level: canonicalRole === "admin" ? 100 : 20 });
     }
 
-    if (["super_admin", "super_admin"].includes(roleDoc.name)) return res.status(403).json({ success: false, message: "SuperAdmin accounts can only be created through the one-time platform bootstrap process." });
+    if (["super_admin", "superadmin"].includes(roleDoc.name)) return res.status(403).json({ success: false, message: "SuperAdmin accounts can only be created through the one-time platform bootstrap process." });
 
     const user = await User.create({ name: name.trim(), email: normalizedEmail, phone: String(phone).trim(), password, role: canonicalRole, legacyRole: canonicalRole, roleId: roleDoc._id, status: "active", isVerified: true });
     let staff = null;
@@ -104,7 +104,7 @@ export const deleteUser = async (req, res, next) => {
     if (String(req.user?._id) === String(id)) return res.status(400).json({ success: false, message: "You cannot delete your own account." });
     const user = await User.findById(id).select("_id role");
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
-    if (["super_admin", "super_admin"].includes(String(user.role || "").toLowerCase())) return res.status(403).json({ success: false, message: "SuperAdmin accounts cannot be deleted." });
+    if (["super_admin", "superadmin"].includes(String(user.role || "").toLowerCase())) return res.status(403).json({ success: false, message: "SuperAdmin accounts cannot be deleted." });
     await Promise.all([Staff.deleteMany({ user: user._id }), Agent.deleteMany({ user: user._id }), User.deleteOne({ _id: user._id })]);
     return res.json({ success: true, deleted: true, message: "User account deleted successfully." });
   } catch (error) { next(error); }

@@ -17,7 +17,7 @@ if (!process.env.MONGO_URI && !process.env.MONGODB_URI) {
 
 await mongoose.connect(process.env.MONGO_URI || process.env.MONGODB_URI);
 
-const role = await Role.findOne({ name: { $in: ["super_admin", "super_admin"] } }).sort({ createdAt: 1 });
+const role = await Role.findOne({ name: { $in: ["super_admin", "superadmin"] } }).sort({ createdAt: 1 });
 const user = await User.findOne({ email }).select("+password");
 
 if (!user) {
