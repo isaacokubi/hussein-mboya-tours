@@ -14,7 +14,7 @@ import {
   getUserAnalytics,
   getBookingAnalytics,
   getRevenueAnalytics,
-} from "../controllers/adminController.js";
+} from "../controllers/adminDashboardTenantController.js";
 
 import {
   dailyBookingReport,
@@ -40,17 +40,16 @@ import {
 
 const router = express.Router();
 
-/* Authenticate first so tenant resolution uses the database-backed user tenant. */
 router.use(protect);
 router.use(resolveTenant);
 router.use(adminMiddleware);
 
-/* Dashboard must not depend on the user-management permission. */
+/* Dashboard and analytics */
 router.get("/dashboard", getDashboardStats);
 router.get("/bookings/analytics", getBookingAnalytics);
 router.get("/revenue/analytics", getRevenueAnalytics);
 
-/* Booking finance operations. */
+/* Booking finance operations */
 router.put("/bookings/:id/refund", refundBooking);
 router.post("/bookings/:id/refund", refundBooking);
 router.put("/refunds/:id/process", processRefund);
@@ -64,13 +63,13 @@ router.patch("/users/:id/status", updateUserStatus);
 router.put("/users/:id/status", updateUserStatus);
 router.delete("/users/:id", deleteUser);
 
-/* Booking reports. */
+/* Booking reports */
 router.get("/reports/daily", dailyBookingReport);
 router.get("/reports/monthly", monthlyBookingReport);
 router.get("/reports/tours", tourBookingReport);
 router.get("/reports/agents", agentBookingReport);
 
-/* Agent administration. */
+/* Agent administration */
 router.get("/agents", getAgents);
 router.get("/agents/:id", getAgentById);
 router.put("/agents/:id/approve", approveAgent);

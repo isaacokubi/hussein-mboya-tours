@@ -1,137 +1,42 @@
-export default function RecentBookings({
-  bookings = []
-}) {
+const customerName = (booking) => {
+  const customer = booking?.customer;
+  const snapshot = booking?.customerSnapshot;
+  return customer?.name || snapshot?.name || booking?.contact?.name || booking?.user?.name || booking?.customerDisplayName || "Customer";
+};
 
-  const bookingList = Array.isArray(bookings)
-    ? bookings
-    : [];
+const tourName = (booking) => booking?.tour?.title || booking?.tourName || "Tour unavailable";
 
-  const getCustomerName = (booking) => {
-    const customer = booking?.customer;
-    const snapshot = booking?.customerSnapshot;
-    const contact = booking?.contact;
-    const user = booking?.user;
+const statusText = (value) => {
+  if (!value) return "pending";
+  return typeof value === "string" ? value : value.status || value.paymentStatus || "pending";
+};
 
-    const firstName =
-      user?.firstName ||
-      customer?.firstName ||
-      "";
-
-    const lastName =
-      user?.lastName ||
-      customer?.lastName ||
-      "";
-
-    const composedName = `${firstName} ${lastName}`.trim();
-
-    return (
-      customer?.name ||
-      snapshot?.name ||
-      contact?.name ||
-      user?.name ||
-      composedName ||
-      booking?.customerDisplayName ||
-      "Customer"
-    );
-  };
-
-  const getBookingStatus = (status) => {
-    if (!status) {
-      return "pending";
-    }
-
-    return typeof status === "string"
-      ? status
-      : status.status || "pending";
-  };
-
-  const getPaymentStatus = (paymentStatus) => {
-    if (!paymentStatus) {
-      return "pending";
-    }
-
-    if (typeof paymentStatus === "string") {
-      return paymentStatus;
-    }
-
-    if (typeof paymentStatus === "object") {
-      return (
-        paymentStatus.paymentStatus ||
-        paymentStatus.status ||
-        "pending"
-      );
-    }
-
-    return "pending";
-  };
+export default function RecentBookings({ bookings = [] }) {
+  const list = Array.isArray(bookings) ? bookings : [];
 
   return (
-    <section
-      className="
-        bg-white
-        rounded-xl
-        shadow
-        p-6
-      "
-    >
-      <h2
-        className="
-          text-xl
-          font-bold
-          mb-5
-        "
-      >
-        Recent Bookings
-      </h2>
-
-      {bookingList.length === 0 ? (
-        <p className="text-gray-500">
-          No recent bookings available
-        </p>
+    <section className="rounded-xl bg-white p-6 shadow">
+      <div className="mb-5">
+        <h2 className="text-xl font-bold">Recent Bookings</h2>
+        <p className="mt-1 text-sm text-gray-500">Latest bookings for this platform.</p>
+      </div>
+      {list.length === 0 ? (
+        <div className="rounded-lg border border-dashed p-8 text-center text-gray-500">No recent bookings available.</div>
       ) : (
-        <div className="space-y-4">
-          {bookingList.map((booking) => (
-            <div
-              key={booking?._id}
-              className="
-                border
-                rounded-lg
-                p-4
-                flex
-                justify-between
-                items-center
-              "
-            >
-              <div>
-                <h3 className="font-semibold">
-                  {booking?.bookingNumber || "Booking"}
-                </h3>
-
-                <p className="text-gray-500">
-                  {getCustomerName(booking)}
-                </p>
-              </div>
-
-              <div className="text-right">
-                <p className="font-bold">
-                  Ksh {
-                    Number(
-                      booking?.totalAmount ||
-                      booking?.amount ||
-                      0
-                    ).toLocaleString()
-                  }
-                </p>
-
-                <span className="text-sm capitalize">
-                  <p>
-                    Status: {getBookingStatus(booking?.status)}
-                  </p>
-
-                  <p>
-                    Payment: {getPaymentStatus(booking?.paymentStatus)}
-                  </p>
-                </span>
+        <div className="space-y-3">
+          {list.map((booking, index) => (
+            <div key={booking?._id || booking?.bookingNumber || index} className="rounded-lg border p-4">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <h3 className="font-semibold text-slate-900">{booking?.bookingNumber || "Booking"}</h3>
+                  <p className="mt-1 text-sm text-slate-600">{customerName(booking)}</p>
+                  <p className="mt-1 text-xs text-slate-400">{tourName(booking)}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold">Ksh {Number(booking?.amount ?? booking?.totalAmount ?? booking?.subtotal ?? 0).toLocaleString()}</p>
+                  <p className="mt-1 text-xs capitalize text-slate-500">Status: {statusText(booking?.status)}</p>
+                  <p className="text-xs capitalize text-slate-500">Payment: {statusText(booking?.paymentStatus)}</p>
+                </div>
               </div>
             </div>
           ))}

@@ -1,16 +1,22 @@
 import StatCard from "./Statcard";
 
+const number = (value) => Number(value ?? 0).toLocaleString();
+const money = (value) => `Ksh ${number(value)}`;
+
 export default function StatsGrid({ stats = {}, summary = {} }) {
   const cards = [
-    ["Users", stats.users ?? 0],
-    ["Tours", stats.tours ?? 0],
-    ["Bookings", stats.bookings ?? 0],
-    ["Revenue", `Ksh ${Number(stats.revenue || 0).toLocaleString()}`],
-    ["Pending", summary.pendingBookings ?? 0],
+    ["Users", number(stats.users)],
+    ["Customers", number(stats.customers)],
+    ["Tours", number(stats.tours)],
+    ["Destinations", number(stats.destinations)],
+    ["Bookings", number(stats.bookings)],
+    ["Revenue", money(stats.revenue)],
+    ["Pending Bookings", number(summary.pendingBookings)],
+    ["Confirmed Bookings", number(summary.confirmedBookings)],
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {cards.map(([title, value]) => (
         <StatCard key={title} title={title} value={value} />
       ))}
