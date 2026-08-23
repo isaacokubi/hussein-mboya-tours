@@ -18,8 +18,21 @@ export async function repairLegacyTenantUniqueIndex(Model, error) {
     ["User", "Staff"].includes(modelName) &&
     fields.length === 1 &&
     fields[0] === "email";
+  // Older User/Staff schemas used a globally-unique phone index. Phone
+  // uniqueness is now tenant-scoped (and the current schemas do not declare
+  // phone as globally unique), so that legacy index must not block staff from
+  // being created when another tenant already has the same number.
+  const isLegacyGlobalPhoneIndex =
+    ["User", "Staff"].includes(modelName) &&
+    fields.length === 1 &&
+    fields[0] === "phone";
 
-  if (!isLegacyTenantIndex && !isLegacyRoleNameIndex && !isLegacyGlobalEmailIndex) return false;
+  if (
+    !isLegacyTenantIndex &&
+    !isLegacyRoleNameIndex &&
+    !isLegacyGlobalEmailIndex &&
+    !isLegacyGlobalPhoneIndex
+  ) return false;
 
   const collection = Model?.collection;
   if (!collection) return false;
@@ -31,7 +44,8 @@ export async function repairLegacyTenantUniqueIndex(Model, error) {
       if (index.unique !== true || keys.length !== 1) return false;
       if (isLegacyTenantIndex) return keys[0] === "tenantId";
       if (isLegacyRoleNameIndex) return keys[0] === "name";
-      return isLegacyGlobalEmailIndex && keys[0] === "email";
+      if (isLegacyGlobalEmailIndex) return keys[0] === "email";
+      return isLegacyGlobalPhoneIndex && keys[0] === "phone";
     });
 
     if (!legacyIndexes.length) return false;
