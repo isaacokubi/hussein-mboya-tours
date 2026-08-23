@@ -15,12 +15,7 @@ const ADMIN_BASE_PERMISSIONS = [
 
 const getStoredToken = () => {
   if (typeof window === "undefined") return null;
-  return (
-    localStorage.getItem("token")?.trim() ||
-    localStorage.getItem("accessToken")?.trim() ||
-    localStorage.getItem("authToken")?.trim() ||
-    null
-  );
+  return localStorage.getItem("token")?.trim() || localStorage.getItem("accessToken")?.trim() || localStorage.getItem("authToken")?.trim() || null;
 };
 
 const normalizePermissions = (permissions) => {
@@ -78,24 +73,15 @@ export function AuthProvider({ children }) {
   const persistUser = (nextUser) => {
     const normalized = normalizeUser(nextUser);
     setUser(normalized);
-
     if (normalized) {
       localStorage.setItem("user", JSON.stringify(normalized));
       localStorage.setItem("permissions", JSON.stringify(normalized.permissions.map((p) => p.name)));
-
-      if (normalized.tenantId) {
-        localStorage.setItem("tenantId", String(normalized.tenantId?._id || normalized.tenantId));
-      } else {
-        localStorage.removeItem("tenantId");
-      }
-
-      if (normalized.tenantSlug) {
-        localStorage.setItem("tenantSlug", String(normalized.tenantSlug));
-      } else {
-        localStorage.removeItem("tenantSlug");
-      }
+      const tenantId = normalized.tenantId?._id || normalized.tenantId || "";
+      if (tenantId) localStorage.setItem("tenantId", String(tenantId));
+      else localStorage.removeItem("tenantId");
+      if (normalized.tenantSlug) localStorage.setItem("tenantSlug", String(normalized.tenantSlug));
+      else localStorage.removeItem("tenantSlug");
     }
-
     return normalized;
   };
 
@@ -117,9 +103,26 @@ export function AuthProvider({ children }) {
   };
 
   useEffect(() => {
+    const onInvalidSession = (event) => {
+      const message = event?.detail?.message || "Your authentication session is no longer valid. Please log in again.";
+      console.warn("[AUTH SESSION INVALID]", message);
+      clearAuthStorage();
+      queryClient.clear();
+      setUser(null);
+      setToken(null);
+      setLoading(false);
+      if (window.location.pathname !== "/login") {
+        window.location.replace("/login?reason=session-expired");
+      }
+    };
+
+    window.addEventListener("auth:session-invalid", onInvalidSession);
+    return () => window.removeEventListener("auth:session-invalid", onInvalidSession);
+  }, []);
+
+  useEffect(() => {
     const savedToken = getStoredToken();
     const savedUser = readStoredUser();
-
     if (!savedToken) {
       setUser(null);
       setToken(null);
@@ -127,27 +130,15 @@ export function AuthProvider({ children }) {
       return;
     }
 
-    // Migrate legacy token keys to the canonical key so every dashboard uses
-    // exactly the same credential source.
     if (!localStorage.getItem("token")) localStorage.setItem("token", savedToken);
     setToken(savedToken);
     if (savedUser) setUser(savedUser);
 
-    // Validate a persisted session once when the application starts.
-    // Login itself already received a freshly signed token from the server,
-    // so it must not immediately call /auth/me again. Doing that creates an
-    // unnecessary second authentication round-trip and was the source of the
-    // visible "Invalid authentication token" toast during successful login.
     fetchCurrentUser()
       .catch((error) => {
         const status = error?.response?.status;
         console.error("AUTH ME ERROR", error.response?.data || error.message);
-
-        if (status === 401) {
-          clearAuthStorage();
-          setToken(null);
-          setUser(null);
-        }
+        if (status !== 401) console.error("AUTH ME NON-401 FAILURE", error);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -157,23 +148,14 @@ export function AuthProvider({ children }) {
       email: String(email || "").trim().toLowerCase(),
       password,
     });
-
     if (data?.mfaRequired) return data;
     if (!data?.token) throw new Error("Authentication response did not contain a token.");
 
-    // Clear only legacy credentials and tenant hints. Keep the new server-issued
-    // token as the single source of truth and derive tenant identity from the
-    // authenticated user returned by the server.
     ["accessToken", "authToken", "tenantId", "tenantSlug", "tenantKey"].forEach((key) => localStorage.removeItem(key));
-
     const nextToken = String(data.token).trim();
     localStorage.setItem("token", nextToken);
     setToken(nextToken);
     persistUser(data.user);
-
-    // IMPORTANT: Do not call /auth/me here. The login endpoint has already
-    // authenticated the credentials and returned the canonical user + JWT.
-    // The next application mount/request will validate the persisted session.
     return data;
   };
 
@@ -202,6 +184,7 @@ export function AuthProvider({ children }) {
   const hasRole = (roleName) => getUserRole(user) === normalizeRole(roleName);
   const canAccess = hasPermission;
   const getMenuPermissions = () => permissions;
+
   const value = useMemo(() => ({
     user,
     setUser: (valueOrUpdater) => setUser((current) => normalizeUser(typeof valueOrUpdater === "function" ? valueOrUpdater(current) : valueOrUpdater)),
