@@ -1,9 +1,7 @@
 import express from "express";
 import securityService from "../services/securityService.js";
-
 import { protect } from "../middleware/authMiddleware.js";
 import { authorize } from "../middleware/permissionMiddleware.js";
-
 import { getSuperAdminDashboard } from "../controllers/superAdminDashboardController.js";
 import {
   getAuditLogs,
@@ -22,10 +20,11 @@ import {
   updateSuperAdminUserStatus,
   deleteSuperAdminUser,
 } from "../controllers/superAdminUserController.js";
+import { getSettings, updateSettings } from "../controllers/settingsController.js";
 
 const router = express.Router();
 
-/* SuperAdmin is platform-scoped. Never resolve a tenant for these routes. */
+// SuperAdmin is platform-scoped. Do not resolve or require a tenant on these routes.
 router.use(protect);
 
 router.get("/dashboard", authorize("admin.dashboard"), getSuperAdminDashboard);
@@ -49,6 +48,9 @@ router.get("/security", authorize("system.security"), async (req, res) => {
 router.get("/database", authorize("system.database"), getDatabaseStatus);
 router.get("/system", authorize("system.security"), getSystemHealth);
 router.get("/api-monitor", authorize("system.security"), getApiMonitor);
+router.get("/settings", authorize("settings.manage"), getSettings);
+router.put("/settings", authorize("settings.manage"), updateSettings);
+
 router.post("/maintenance/backup", authorize("system.backup"), createDatabaseBackup);
 router.post("/database/backup", authorize("system.backup"), createDatabaseBackup);
 router.post("/maintenance/cache", authorize("admin.dashboard"), clearSystemCache);
