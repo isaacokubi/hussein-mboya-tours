@@ -37,12 +37,14 @@ export const getSuperAdminDashboard = async (req, res) => {
         Payment.aggregate([
           { $match: { status: { $in: REVENUE_STATUSES } } },
           { $project: {
+            status: 1,
             amount: toMoney("$amount"),
             refundedAmount: toMoney("$refundedAmount"),
             refundStatus: { $ifNull: ["$refundStatus", "none"] },
             currency: { $toUpper: { $ifNull: ["$currency", "KES"] } },
           } },
           { $project: {
+            status: 1,
             amount: 1,
             refundedAmount: { $cond: [{ $eq: ["$refundStatus", "completed"] }, "$refundedAmount", 0] },
             currency: 1,
@@ -51,7 +53,8 @@ export const getSuperAdminDashboard = async (req, res) => {
             _id: "$currency",
             gross: { $sum: "$amount" },
             refunds: { $sum: "$refundedAmount" },
-            completedPayments: { $sum: 1 },
+            completedPayments: { $sum: { $cond: [{ $eq: ["$status", "completed"] }, 1, 0] } },
+            refundedPayments: { $sum: { $cond: [{ $eq: ["$status", "refunded"] }, 1, 0] } },
           } },
           { $project: {
             _id: 0,
@@ -60,27 +63,30 @@ export const getSuperAdminDashboard = async (req, res) => {
             refunds: 1,
             revenue: { $max: [0, { $subtract: ["$gross", "$refunds"] }] },
             completedPayments: 1,
+            refundedPayments: 1,
           } },
         ]),
       ]);
 
       const revenueByCurrency = revenueResult || [];
-      const primary = revenueByCurrency.find((item) => item.currency === "KES") || revenueByCurrency[0];
-      const revenue = primary?.revenue || 0;
-      const grossRevenue = primary?.gross || 0;
-      const refundedRevenue = primary?.refunds || 0;
+      const primary = revenueByCurrency.find((item) => item.currency === "KES") || revenueByCurrency[0] || null;
+      const revenue = Number(primary?.revenue || 0);
+      const grossRevenue = Number(primary?.gross || 0);
+      const refundedRevenue = Number(primary?.refunds || 0);
       const completedPayments = revenueByCurrency.reduce((sum, item) => sum + Number(item.completedPayments || 0), 0);
+      const refundedPayments = revenueByCurrency.reduce((sum, item) => sum + Number(item.refundedPayments || 0), 0);
 
       return {
         users, staff, agents, vehicles, bookings, admins, tours, destinations, payments,
-        revenue, grossRevenue, refundedRevenue, completedPayments,
+        revenue, grossRevenue, refundedRevenue, completedPayments, refundedPayments,
+        revenueCurrency: primary?.currency || "KES",
         revenueByCurrency,
       };
     });
 
     return res.status(200).json({
       success: true,
-      stats: Object.fromEntries(Object.entries(data).map(([key, value]) => [key, Array.isArray(value) ? value : Number(value) || 0])),
+      stats: Object.fromEntries(Object.entries(data).map(([key, value]) => [key, Array.isArray(value) ? value : typeof value === "number" ? value : value])),
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
