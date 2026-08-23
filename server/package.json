@@ -25,6 +25,7 @@
     "check:multitenancy:deep": "node scripts/multitenancy-full-check.js && node scripts/multitenancy-deep-audit.js",
     "check:multitenancy:global": "node scripts/globalTenantIsolationCheck.js",
     "check:multitenancy:live": "node scripts/tenantIsolationRegressionCheck.js",
+    "check:auth:tenant": "node scripts/auth-tenant-contract-check.js",
     "migrate:multitenancy": "node scripts/migrateToMultitenancy.js",
     "repair:global-tenant-indexes": "node scripts/repairGlobalTenantIndexes.js",
     "reconcile:tenant-indexes": "node scripts/reconcileTenantIndexes.js",

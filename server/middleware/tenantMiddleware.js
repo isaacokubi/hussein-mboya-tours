@@ -10,13 +10,7 @@ export async function resolveTenant(req, res, next) {
     const normalizedRole = String(user?.role || "").trim().toLowerCase();
 
     if (["super_admin", "superadmin"].includes(normalizedRole)) {
-      return runWithTenant(
-        {
-          role: "super_admin",
-          bypass: true
-        },
-        () => next()
-      );
+      return runWithTenant({ role: "super_admin", bypass: true }, () => next());
     }
     if (user?.tenantId) return runWithTenant({ tenantId: user.tenantId, role: user.role }, () => next());
 
@@ -54,6 +48,20 @@ export async function resolveTenant(req, res, next) {
     const fallbackSlug = String(process.env.DEFAULT_PUBLIC_TENANT_SLUG || "").trim().toLowerCase();
     if (!tenant && fallbackSlug) {
       tenant = await Organization.findOne({ slug: fallbackSlug, status: activeStatuses });
+    }
+
+    // Local development must remain usable when VITE_TENANT_SLUG is not set.
+    // Only allow this fallback when there is exactly one active/trial tenant;
+    // never guess between multiple tenants and never enable this behavior in
+    // production. This preserves tenant isolation while fixing the common
+    // single-company localhost setup.
+    const allowSingleTenantDevFallback =
+      String(process.env.ALLOW_SINGLE_TENANT_DEV_FALLBACK || "").toLowerCase() === "true" ||
+      (process.env.NODE_ENV || "development") !== "production";
+
+    if (!tenant && allowSingleTenantDevFallback) {
+      const tenants = await Organization.find({ status: activeStatuses }).select("_id slug name domain").limit(2).lean();
+      if (tenants.length === 1) tenant = tenants[0];
     }
 
     // Never invent or select a tenant by a hard-coded company name. If no

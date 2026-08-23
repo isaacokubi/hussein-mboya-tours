@@ -20,9 +20,8 @@ function getPublicTenantSlug() {
 }
 
 function getPublicTenantKey() {
-  // Stored tenant identifiers belong to the previous authenticated session and
-  // must never be reused to authenticate a new session. Public tenant identity
-  // comes only from deployment configuration/hostname.
+  // Public tenant identity must come from deployment configuration/hostname,
+  // never from a previous authenticated session.
   return PUBLIC_TENANT_KEY;
 }
 
@@ -42,9 +41,7 @@ function getAuthenticatedTenantId() {
 }
 
 const isPublicAuthRequest = (url = "") =>
-  /(?:^|\/)auth\/(?:login|register|bootstrap|password-reset(?:\/|$))/i.test(
-    String(url)
-  );
+  /(?:^|\/)auth\/(?:login|register|bootstrap|password-reset(?:\/|$))/i.test(String(url));
 
 const api = axios.create({
   baseURL,
@@ -65,6 +62,10 @@ api.interceptors.request.use(
         localStorage.getItem("accessToken")?.trim() ||
         localStorage.getItem("authToken")?.trim();
 
+    // Keep the exact credential used by this request so a delayed 401 from an
+    // old request cannot invalidate a newer login session.
+    config.__authToken = token || "";
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
       config.headers["X-Requested-With"] = "XMLHttpRequest";
@@ -76,8 +77,6 @@ api.interceptors.request.use(
     const publicTenantSlug = getPublicTenantSlug();
     const publicTenantKey = getPublicTenantKey();
 
-    // A login/register request must never inherit the previous user's tenant.
-    // Authenticated requests use the tenant bound to the authenticated user.
     if (token && tenantId) {
       config.headers["X-Tenant-ID"] = tenantId;
       delete config.headers["X-Tenant-Slug"];
@@ -115,16 +114,34 @@ api.interceptors.response.use(
 
     if (status === 401 && typeof window !== "undefined") {
       const isLoginRequest = /\/auth\/login(?:[/?]|$)/i.test(url);
+      const requestToken = String(error?.config?.__authToken || "").trim();
+      const currentToken = String(
+        localStorage.getItem("token") ||
+          localStorage.getItem("accessToken") ||
+          localStorage.getItem("authToken") ||
+          ""
+      ).trim();
+
       console.error("[AUTH 401]", {
         url,
         status,
         response: data,
-        hasToken: Boolean(localStorage.getItem("token") || localStorage.getItem("accessToken") || localStorage.getItem("authToken")),
+        requestTokenPresent: Boolean(requestToken),
+        currentTokenPresent: Boolean(currentToken),
+        staleRequest: Boolean(requestToken && currentToken && requestToken !== currentToken),
       });
 
-      if (!isLoginRequest) {
+      // Do not invalidate the current session when this 401 belongs to an
+      // older request/token. This closes the login -> /auth/me race that could
+      // bounce a successfully authenticated user back to /login.
+      if (!isLoginRequest && (!requestToken || !currentToken || requestToken === currentToken)) {
         window.dispatchEvent(new CustomEvent("auth:session-invalid", {
-          detail: { url, status, message: data?.message || "Authentication session is no longer valid." },
+          detail: {
+            url,
+            status,
+            requestToken,
+            message: data?.message || "Authentication session is no longer valid.",
+          },
         }));
       }
     }
