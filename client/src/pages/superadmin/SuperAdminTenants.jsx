@@ -1,25 +1,43 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createTenant, getTenants, selectTenant, updateTenant } from "../../api/tenantApi";
 import { toast } from "react-toastify";
-
-const initialForm = { name: "", slug: "", country: "Kenya", timezone: "Africa/Nairobi", currency: "KES", adminName: "", adminEmail: "", adminPhone: "", adminPassword: "" };
+import { deleteSuperAdminTenant, getSuperAdminTenants, updateSuperAdminTenantStatus } from "../../api/superAdminTenantsApi";
 
 export default function SuperAdminTenants() {
   const queryClient = useQueryClient();
-  const [form, setForm] = useState(initialForm);
-  const [open, setOpen] = useState(false);
-  const { data, isLoading, isError, error } = useQuery({ queryKey: ["platform-tenants"], queryFn: getTenants, staleTime: 0, refetchOnMount: "always" });
+  const [search, setSearch] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [confirmation, setConfirmation] = useState("");
+  const { data, isLoading, isError, error } = useQuery({ queryKey: ["platform-tenants", search], queryFn: () => getSuperAdminTenants({ search, limit: 100 }), staleTime: 30000, refetchOnMount: "always" });
   const tenants = data?.tenants || data?.data || [];
-  const createMutation = useMutation({ mutationFn: createTenant, onSuccess: (result) => { queryClient.invalidateQueries({ queryKey: ["platform-tenants"] }); setForm(initialForm); setOpen(false); toast.success(`${result.tenant?.name || "Company"} created successfully.`); }, onError: (err) => toast.error(err?.response?.data?.message || err.message || "Unable to create company.") });
-  const toggleMutation = useMutation({ mutationFn: ({ id, status }) => updateTenant(id, { status }), onSuccess: () => queryClient.invalidateQueries({ queryKey: ["platform-tenants"] }), onError: (err) => toast.error(err?.response?.data?.message || "Unable to update company.") });
-  const submit = (event) => { event.preventDefault(); createMutation.mutate({ name: form.name, slug: form.slug, country: form.country, timezone: form.timezone, currency: form.currency, admin: form.adminEmail ? { name: form.adminName, email: form.adminEmail, phone: form.adminPhone, password: form.adminPassword } : undefined }); };
+
+  const statusMutation = useMutation({
+    mutationFn: ({ id, status }) => updateSuperAdminTenantStatus(id, status),
+    onSuccess: (result) => { queryClient.invalidateQueries({ queryKey: ["platform-tenants"] }); toast.success(result.message || "Company status updated."); },
+    onError: (err) => toast.error(err?.response?.data?.message || err.message || "Unable to update company."),
+  });
+  const deleteMutation = useMutation({
+    mutationFn: ({ id }) => deleteSuperAdminTenant(id, "DELETE"),
+    onSuccess: (result) => { setDeleteTarget(null); setConfirmation(""); queryClient.invalidateQueries({ queryKey: ["platform-tenants"] }); queryClient.invalidateQueries({ queryKey: ["superadmin-dashboard"] }); toast.success(result.message || "Company deleted successfully."); },
+    onError: (err) => toast.error(err?.response?.data?.message || err.message || "Unable to delete company."),
+  });
 
   return <main className="space-y-6">
-    <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4"><div><h1 className="text-3xl font-bold text-slate-900">Companies / Tenants</h1><p className="text-slate-600 mt-1">Create and govern isolated tour-operator workspaces from one platform.</p></div><button onClick={() => setOpen((v) => !v)} className="rounded-xl bg-emerald-700 text-white px-5 py-3 font-semibold">{open ? "Close form" : "Add company"}</button></header>
-    {open && <form onSubmit={submit} className="bg-white border rounded-2xl p-6 shadow-sm grid md:grid-cols-2 gap-4"><div className="md:col-span-2"><h2 className="font-semibold text-lg">New company workspace</h2><p className="text-sm text-slate-500">The workspace receives its own users, tours, bookings, staff, finance and settings.</p></div>{[["name","Company name"],["slug","Tenant slug"],["country","Country"],["timezone","Timezone"],["currency","Currency"],["adminName","First admin name"],["adminEmail","First admin email"],["adminPhone","First admin phone"],["adminPassword","First admin password"]].map(([key,label]) => <label key={key} className="block"><span className="text-sm font-medium text-slate-700">{label}</span><input required={key === "name" || key === "slug"} type={key === "adminPassword" ? "password" : key === "adminEmail" ? "email" : "text"} value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} className="mt-1 w-full rounded-xl border p-3" /></label>)}<div className="md:col-span-2"><button disabled={createMutation.isPending} className="rounded-xl bg-emerald-700 text-white px-5 py-3 font-semibold disabled:opacity-50">{createMutation.isPending ? "Creating..." : "Create company"}</button></div></form>}
-    {isLoading && <div className="bg-white border rounded-2xl p-8">Loading companies...</div>}
-    {isError && <div className="bg-red-50 text-red-700 border border-red-200 rounded-2xl p-6">{error?.response?.data?.message || error.message}</div>}
-    {!isLoading && !isError && <div className="grid gap-4">{tenants.map((tenant) => <article key={tenant._id} className="bg-white border rounded-2xl p-5 shadow-sm flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5"><div><div className="flex items-center gap-3"><h2 className="font-bold text-lg">{tenant.name}</h2><span className="px-2 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">{tenant.status}</span></div><p className="text-sm text-slate-500 mt-1">slug: {tenant.slug} · {tenant.country} · {tenant.currency}</p><p className="text-xs text-slate-400 mt-1">Plan: {tenant.subscription?.plan || "starter"} · Seats: {tenant.subscription?.seats || 0}</p></div><div className="flex flex-wrap gap-2"><button onClick={() => selectTenant(tenant)} className="rounded-lg border px-4 py-2 font-medium">Open workspace</button><button onClick={() => toggleMutation.mutate({ id: tenant._id, status: tenant.status === "active" ? "suspended" : "active" })} className="rounded-lg bg-slate-900 text-white px-4 py-2">{tenant.status === "active" ? "Suspend" : "Activate"}</button></div></article>)}{!tenants.length && <div className="bg-white border rounded-2xl p-8 text-slate-500">No company workspaces have been created yet.</div>}</div>}
+    <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div><h1 className="text-3xl font-bold text-slate-900">Companies / Tenants</h1><p className="mt-1 text-slate-600">Platform-wide company management. Each workspace is isolated from the others.</p></div>
+      <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search companies..." className="rounded-xl border bg-white px-4 py-3 shadow-sm" />
+    </header>
+    {isLoading && <div className="rounded-2xl border bg-white p-8">Loading companies...</div>}
+    {isError && <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700">{error?.response?.data?.message || error?.message || "Unable to load companies."}</div>}
+    {!isLoading && !isError && <div className="overflow-x-auto rounded-2xl border bg-white shadow-sm"><table className="min-w-[1050px] w-full text-left"><thead className="border-b bg-slate-50"><tr>{["Company","Owner","Status","Users","Tours","Bookings","Created","Management"].map((label) => <th key={label} className="px-5 py-4 text-sm font-semibold text-slate-600">{label}</th>)}</tr></thead><tbody className="divide-y">
+      {tenants.map((tenant) => { const c = tenant.counts || {}; const protectedTenant = tenant.slug === "platform" || tenant.isSystem; return <tr key={tenant._id} className="hover:bg-slate-50">
+        <td className="px-5 py-4"><div className="font-bold">{tenant.name}</div><div className="text-xs text-slate-500">{tenant.slug}</div></td>
+        <td className="px-5 py-4">{tenant.owner ? <><div>{tenant.owner.name}</div><div className="text-xs text-slate-500">{tenant.owner.email}</div></> : <span className="text-slate-400">No owner</span>}</td>
+        <td className="px-5 py-4"><span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold capitalize">{tenant.status}</span></td>
+        <td className="px-5 py-4">{c.users || 0}</td><td className="px-5 py-4">{c.tours || c.tourpackages || 0}</td><td className="px-5 py-4">{c.bookings || 0}</td><td className="px-5 py-4 text-sm">{tenant.createdAt ? new Date(tenant.createdAt).toLocaleDateString() : "—"}</td>
+        <td className="px-5 py-4"><div className="flex flex-wrap gap-2"><button onClick={() => toast.info(`${tenant.name}: ${c.users || 0} users, ${c.tours || c.tourpackages || 0} tours, ${c.bookings || 0} bookings.`)} className="rounded-lg border px-3 py-2 text-sm font-medium">View</button><button disabled={protectedTenant || statusMutation.isPending} onClick={() => statusMutation.mutate({ id: tenant._id, status: tenant.status === "suspended" ? "active" : "suspended" })} className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-40">{tenant.status === "suspended" ? "Activate" : "Suspend"}</button><button disabled={protectedTenant} onClick={() => { setDeleteTarget(tenant); setConfirmation(""); }} className="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white disabled:opacity-40">Delete</button></div></td>
+      </tr>; })}</tbody></table>{tenants.length === 0 && <div className="p-10 text-center text-slate-500">No companies found.</div>}</div>}
+
+    {deleteTarget && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"><div className="w-full max-w-lg rounded-2xl bg-white p-7 shadow-2xl"><h2 className="text-2xl font-bold text-red-700">Delete {deleteTarget.name} permanently?</h2><p className="mt-3 text-slate-600">This permanently removes the company and tenant-scoped records. Other companies are not affected.</p><p className="mt-4 font-semibold">Type <code className="rounded bg-slate-100 px-2 py-1">DELETE</code> to confirm.</p><input autoFocus value={confirmation} onChange={(e) => setConfirmation(e.target.value)} className="mt-3 w-full rounded-xl border p-3" placeholder="DELETE" /><div className="mt-5 flex justify-end gap-3"><button onClick={() => setDeleteTarget(null)} className="rounded-lg border px-4 py-2">Cancel</button><button disabled={confirmation !== "DELETE" || deleteMutation.isPending} onClick={() => deleteMutation.mutate({ id: deleteTarget._id })} className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white disabled:opacity-40">{deleteMutation.isPending ? "Deleting..." : "Delete Permanently"}</button></div></div></div>}
   </main>;
 }
