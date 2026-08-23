@@ -1,4 +1,4 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
+import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import Tour from "../models/Tour.js";
 import Booking from "../models/Booking.js";
 import Staff from "../models/Staff.js";
@@ -6,23 +6,26 @@ import Staff from "../models/Staff.js";
 const startOfDay = (value) => { const d = new Date(value); return new Date(d.getFullYear(), d.getMonth(), d.getDate()); };
 const tourStart = (tour) => new Date(tour.startDate || tour.date);
 const tourEnd = (tour) => { if (tour.endDate) return new Date(tour.endDate); const d = new Date(tourStart(tour)); const days = Math.max(1, Number(tour.durationDetails?.days || tour.duration || 1)); d.setDate(d.getDate() + days - 1); return d; };
-const resolveDriver = (user) => Staff.findOne({ $or: [{ user: user._id }, { email: String(user.email || "").toLowerCase() }], position: "driver", isDeleted: { $ne: true } });
-const assigned = (driver, id) => ({ _id: id, assignedDriver: driver._id, isDeleted: { $ne: true } });
+const resolveDriver = (user) => Staff.findOne(mergeTenantFilter({ $or: [{ user: user._id }, { email: String(user.email || "").toLowerCase() }], position: "driver", isDeleted: { $ne: true } }));
+const assigned = (driver, id) => mergeTenantFilter({ _id: id, assignedDriver: driver._id, isDeleted: { $ne: true } });
 
 export const getAssignedTours = async (req, res, next) => {
   requireTenantId();
-  try { const driver = await resolveDriver(req.user); if (!driver) return res.status(404).json({ success:false, message:"Driver profile not found" }); const tours = await Tour.find({ assignedDriver:driver._id, isDeleted:{ $ne:true } }).populate("destination").populate("assignedGuide").populate("assignedVehicle").sort({ startDate:1, date:1 }).limit(50); res.json({ success:true, count:tours.length, tours, data:tours }); } catch (e) { next(e); }
+  try { const driver = await resolveDriver(req.user); if (!driver) return res.status(404).json({ success:false, message:"Driver profile not found" }); const tours = await Tour.find(mergeTenantFilter({ assignedDriver:driver._id, isDeleted:{ $ne:true } })).populate("destination").populate("assignedGuide").populate("assignedVehicle").sort({ startDate:1, date:1 }).limit(50); res.json({ success:true, count:tours.length, tours, data:tours }); } catch (e) { next(e); }
 };
 
 export const getTourDetails = async (req, res, next) => {
+  requireTenantId();
   try { const driver = await resolveDriver(req.user); if (!driver) return res.status(404).json({ success:false, message:"Driver profile not found" }); const tour = await Tour.findOne(assigned(driver, req.params.id)).populate("destination").populate("assignedGuide").populate("assignedVehicle"); if (!tour) return res.status(404).json({ success:false, message:"Tour not found or not assigned to you" }); res.json({ success:true, tour, data:{ tour } }); } catch (e) { next(e); }
 };
 
 export const getTourGuests = async (req, res, next) => {
-  try { const driver = await resolveDriver(req.user); if (!driver) return res.status(404).json({ success:false, message:"Driver profile not found" }); const tour = await Tour.findOne(assigned(driver, req.params.id)); if (!tour) return res.status(403).json({ success:false, message:"You are not assigned to this tour" }); const bookings = await Booking.find({ tour:tour._id, isDeleted:{ $ne:true }, status:{ $in:["confirmed","assigned","ongoing","completed"] } }).populate("customer","name email phone").sort({ createdAt:-1 }); res.json({ success:true, count:bookings.length, guests:bookings, data:bookings }); } catch (e) { next(e); }
+  requireTenantId();
+  try { const driver = await resolveDriver(req.user); if (!driver) return res.status(404).json({ success:false, message:"Driver profile not found" }); const tour = await Tour.findOne(assigned(driver, req.params.id)); if (!tour) return res.status(403).json({ success:false, message:"You are not assigned to this tour" }); const bookings = await Booking.find(mergeTenantFilter({ tour:tour._id, isDeleted:{ $ne:true }, status:{ $in:["confirmed","assigned","ongoing","completed"] } })).populate("customer","name email phone").sort({ createdAt:-1 }); res.json({ success:true, count:bookings.length, guests:bookings, data:bookings }); } catch (e) { next(e); }
 };
 
 export const updateTourStatus = async (req, res, next) => {
+  requireTenantId();
   try {
     const { status } = req.body; if (!["ongoing","completed"].includes(status)) return res.status(400).json({ success:false, message:"Driver may only start or complete a tour" });
     const driver = await resolveDriver(req.user); if (!driver) return res.status(404).json({ success:false, message:"Driver profile not found" });
