@@ -129,7 +129,25 @@ export const createStaffAccount = async (req, res, next) => {
       } catch { /* preserve the original error */ }
     }
 
-    if (isDuplicateKeyError(error)) return res.status(409).json({ success: false, message: duplicateMessage(error), repaired: isTenantIndexConflict(error) });
+    if (isDuplicateKeyError(error)) {
+      console.error("\n========== STAFF CREATE DUPLICATE KEY ==========");
+      console.error("MongoDB error code:", error.code);
+      console.error("MongoDB keyPattern:", JSON.stringify(error.keyPattern || null));
+      console.error("MongoDB keyValue:", JSON.stringify(error.keyValue || null));
+      console.error("MongoDB index:", error?.index || "unknown");
+      console.error("Request role:", req.body?.role);
+      console.error("Request email:", req.body?.email);
+      console.error("Created user:", createdUser?._id?.toString() || "none");
+      console.error("Created staff:", createdStaff?._id?.toString() || "none");
+      console.error("================================================\n");
+
+      return res.status(409).json({
+        success: false,
+        message: duplicateMessage(error),
+        repaired: isTenantIndexConflict(error)
+      });
+    }
+
     next(error);
   }
 };
