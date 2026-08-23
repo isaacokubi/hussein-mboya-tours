@@ -9,10 +9,10 @@ export async function resolveTenant(req, res, next) {
     const user = req.user;
     const normalizedRole = String(user?.role || "").trim().toLowerCase();
 
-    if (["super_admin", "super_admin"].includes(normalizedRole)) {
+    if (["super_admin", "superadmin"].includes(normalizedRole)) {
       return runWithTenant(
         {
-          role: normalizedRole,
+          role: "super_admin",
           bypass: true
         },
         () => next()
@@ -20,9 +20,6 @@ export async function resolveTenant(req, res, next) {
     }
     if (user?.tenantId) return runWithTenant({ tenantId: user.tenantId, role: user.role }, () => next());
 
-    // Public requests must be anchored to the site that the visitor actually
-    // opened. A client-provided slug is only a fallback; it must never be able
-    // to override a trusted Host/Origin and accidentally select another tenant.
     const requestedTenantSlug = String(req.get("X-Tenant-Slug") || "").trim().toLowerCase();
     const requestedTenantKey = String(req.get("X-Tenant-Key") || "").trim();
     const requestHost = normalizeHost(req.get("X-Forwarded-Host") || req.get("Host"));
@@ -30,62 +27,40 @@ export async function resolveTenant(req, res, next) {
     const activeStatuses = { $in: ["active", "trial"] };
     let tenant = null;
 
-    // Custom domains take precedence over any client-supplied tenant slug.
+    // Custom domains take precedence over client-supplied tenant identifiers.
     if (requestHost) tenant = await Organization.findOne({ domain: requestHost, status: activeStatuses });
 
-    // For Vercel frontends, the Origin identifies the public tenant while the
-    // API Host normally points at the shared Render backend.
+    // For Vercel frontends, Origin identifies the public tenant while the API
+    // Host points at the shared backend.
     if (!tenant && originHost.endsWith(".vercel.app")) {
       const vercelSlug = originHost.slice(0, -".vercel.app".length).split(".").filter(Boolean).pop();
       if (vercelSlug) tenant = await Organization.findOne({ slug: vercelSlug, status: activeStatuses });
     }
 
-    // Explicit slug is retained for controlled/custom deployments where no
-    // trusted domain mapping exists. It can no longer override a trusted host.
+    // Explicit slug/key is a controlled fallback for custom deployments.
     if (!tenant && requestedTenantSlug) {
-      tenant = await Organization.findOne({
-        slug: requestedTenantSlug,
-        status: activeStatuses
-      });
+      tenant = await Organization.findOne({ slug: requestedTenantSlug, status: activeStatuses });
     }
 
-    /*
-     * X-Tenant-Key compatibility:
-     *
-     * The frontend may send either:
-     *   - tenant slug
-     *   - MongoDB ObjectId
-     *
-     * Never trust the value blindly. Resolve it against the
-     * Organization collection and require an active tenant.
-     */
     if (!tenant && requestedTenantKey) {
       if (/^[a-fA-F0-9]{24}$/.test(requestedTenantKey)) {
-        tenant = await Organization.findOne({
-          _id: requestedTenantKey,
-          status: activeStatuses
-        });
+        tenant = await Organization.findOne({ _id: requestedTenantKey, status: activeStatuses });
       }
-
       if (!tenant) {
-        tenant = await Organization.findOne({
-          slug: requestedTenantKey.toLowerCase(),
-          status: activeStatuses
-        });
+        tenant = await Organization.findOne({ slug: requestedTenantKey.toLowerCase(), status: activeStatuses });
       }
     }
 
     const fallbackSlug = String(process.env.DEFAULT_PUBLIC_TENANT_SLUG || "").trim().toLowerCase();
-
     if (!tenant && fallbackSlug) {
-      tenant = await Organization.findOne({
-        slug: fallbackSlug,
-        status: activeStatuses
-      });
+      tenant = await Organization.findOne({ slug: fallbackSlug, status: activeStatuses });
     }
-    if (!tenant) tenant = await Organization.findOne({ name: /^Your Travel Company$/i, status: activeStatuses });
 
+    // Never invent or select a tenant by a hard-coded company name. If no
+    // trusted tenant can be resolved, leave the request unscoped and let the
+    // endpoint decide whether an unresolved tenant is acceptable.
     if (!tenant) return next();
+
     req.tenantId = tenant._id;
     req.tenant = tenant;
     return runWithTenant({ tenantId: tenant._id, tenant, role: "public", bypass: false }, () => next());
