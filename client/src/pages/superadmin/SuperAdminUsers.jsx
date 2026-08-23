@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import api from "../../api/axios";
-import { createSuperAdminTenant } from "../../api/superAdminTenantsApi";
+import { createSuperAdminTenant, getSuperAdminTenantPlans } from "../../api/superAdminTenantsApi";
 
 const getUsers = async (search) => (await api.get("/superadmin/users", { params: { search, limit: 100 } })).data;
 const updateStatus = async (id, status) => (await api.put(`/superadmin/users/${id}/status`, { status })).data;
@@ -30,8 +30,24 @@ function CompanyTenantForm({ onCreated, onCancel }) {
   const [form, setForm] = useState(INITIAL_FORM);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const { data: planData, isLoading: plansLoading, isError: plansError } = useQuery({
+    queryKey: ["superadmin-tenant-plans"],
+    queryFn: getSuperAdminTenantPlans,
+    staleTime: 10 * 60 * 1000,
+    retry: 1,
+  });
 
-  const handleChange = ({ target: { name, value } }) => setForm((current) => ({ ...current, [name]: value }));
+  const plans = planData?.plans || [];
+  const selectedPlan = plans.find((plan) => plan.value === form.plan);
+
+  const handleChange = ({ target: { name, value } }) => {
+    if (name === "plan") {
+      const nextPlan = plans.find((plan) => plan.value === value);
+      setForm((current) => ({ ...current, plan: value, seats: nextPlan?.seats || current.seats }));
+      return;
+    }
+    setForm((current) => ({ ...current, [name]: value }));
+  };
 
   const submit = async (event) => {
     event.preventDefault();
@@ -76,8 +92,35 @@ function CompanyTenantForm({ onCreated, onCancel }) {
             <Field label="Country" name="country" value={form.country} onChange={handleChange} required />
             <Field label="Currency" name="currency" value={form.currency} onChange={handleChange} required maxLength={3} />
             <Field label="Timezone" name="timezone" value={form.timezone} onChange={handleChange} required />
-            <label className="flex flex-col gap-1"><span className="text-sm font-medium">Subscription Plan</span><select name="plan" value={form.plan} onChange={handleChange} className="rounded-lg border px-3 py-2"><option value="starter">Starter</option><option value="professional">Professional</option><option value="business">Business</option><option value="enterprise">Enterprise</option></select></label>
-            <Field label="User Seats" type="number" name="seats" value={form.seats} onChange={handleChange} required min={1} max={10000} />
+
+            <label className="flex flex-col gap-1">
+              <span className="text-sm font-medium">Subscription Plan</span>
+              <select name="plan" value={form.plan} onChange={handleChange} disabled={plansLoading || plans.length === 0} className="rounded-lg border px-3 py-2 disabled:bg-slate-100">
+                {plans.length > 0 ? plans.map((plan) => <option key={plan.value} value={plan.value}>{plan.label}</option>) : <option value="starter">Starter</option>}
+              </select>
+              {plansError && <span className="text-xs text-amber-600">Unable to load current plan configuration. Server-side validation will still apply.</span>}
+            </label>
+
+            <label className="flex flex-col gap-1">
+              <span className="text-sm font-medium text-slate-700">User Seats</span>
+              <input type="number" name="seats" value={form.seats} onChange={handleChange} required min={selectedPlan?.seats || 1} max={10000} className="rounded-lg border px-3 py-2" />
+              {selectedPlan && <span className="text-xs text-slate-500">
+                {selectedPlan.label} includes {selectedPlan.seats} seats minimum. You can increase the seat limit for this company.
+                {selectedPlan.customSeats ? " Enterprise supports custom seat counts." : ""}
+              </span>}
+            </label>
+          </div>
+        </section>
+
+        <section className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <h3 className="font-semibold text-slate-900">Seat Capacity</h3>
+          <p className="mt-1 text-sm text-slate-600">The selected plan automatically sets the recommended seat capacity. You can override it upward when a company needs more staff accounts.</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {plans.map((plan) => <div key={plan.value} className={`rounded-lg border bg-white p-3 ${form.plan === plan.value ? "border-slate-900 ring-1 ring-slate-900" : "border-slate-200"}`}>
+              <p className="text-sm font-medium text-slate-700">{plan.label}</p>
+              <p className="text-lg font-bold text-slate-900">{plan.seats}{plan.customSeats ? "+" : ""} seats</p>
+              {plan.customSeats && <p className="text-xs text-slate-500">Custom capacity</p>}
+            </div>)}
           </div>
         </section>
 
@@ -94,7 +137,7 @@ function CompanyTenantForm({ onCreated, onCancel }) {
 
         <div className="flex justify-end gap-3 border-t pt-5">
           <button type="button" onClick={onCancel} disabled={saving} className="rounded-lg border px-4 py-2">Cancel</button>
-          <button type="submit" disabled={saving} className="rounded-lg bg-black px-5 py-2 font-medium text-white disabled:opacity-50">{saving ? "Creating Company..." : "Create Company & Administrator"}</button>
+          <button type="submit" disabled={saving || plansLoading || plans.length === 0} className="rounded-lg bg-black px-5 py-2 font-medium text-white disabled:opacity-50">{saving ? "Creating Company..." : "Create Company & Administrator"}</button>
         </div>
       </form>
     </div>
