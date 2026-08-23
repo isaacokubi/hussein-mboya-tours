@@ -13,7 +13,7 @@ function normalizeSystemHealth(payload) {
 
   return {
     ...source,
-    status: source.status || "healthy",
+    status: source.status || "unknown",
     database: source.database?.status || source.database || (source.database?.connected ? "Connected" : "Unknown"),
     uptime: Number(source.uptime ?? source.uptimeSeconds ?? 0),
     nodeVersion: source.nodeVersion || source.node || source.node_version || null,
@@ -45,9 +45,7 @@ export default function SuperAdminSystem() {
     return (
       <div className="space-y-4 p-8">
         <h1 className="text-3xl font-bold">System Health Center</h1>
-        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-red-700">
-          Unable to load system health: {error?.message || "Unknown error"}
-        </div>
+        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-red-700">Unable to load system health: {error?.message || "Unknown error"}</div>
         <button onClick={() => refetch()} className="rounded-lg bg-black px-4 py-2 text-white">Retry</button>
       </div>
     );
@@ -60,45 +58,24 @@ export default function SuperAdminSystem() {
   const uptimeMinutes = Math.floor(Math.max(0, Number(system.uptime) || 0) / 60);
   const uptimeHours = Math.floor(uptimeMinutes / 60);
   const uptimeDisplay = uptimeHours > 0 ? `${uptimeHours}h ${uptimeMinutes % 60}m` : `${uptimeMinutes} minutes`;
+  const databaseHealthy = String(system.database).toLowerCase() === "connected";
+  const systemHealthy = String(system.status).toLowerCase() === "healthy";
+  const healthScore = systemHealthy && databaseHealthy ? 100 : databaseHealthy ? 75 : 25;
 
   return (
     <div className="space-y-6 p-8">
       <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">System Health Center</h1>
-          <p className="mt-1 text-gray-500">Live runtime, database, platform and resource health.</p>
-        </div>
-        <button onClick={() => refetch()} disabled={isFetching} className="rounded-lg bg-black px-4 py-2 text-white disabled:opacity-50">
-          {isFetching ? "Refreshing..." : "Refresh"}
-        </button>
+        <div><h1 className="text-3xl font-bold">System Health Center</h1><p className="mt-1 text-gray-500">Live runtime, database, platform and resource health.</p></div>
+        <button onClick={() => refetch()} disabled={isFetching} className="rounded-lg bg-black px-4 py-2 text-white disabled:opacity-50">{isFetching ? "Refreshing..." : "Refresh"}</button>
       </div>
-
       <div className="grid gap-6 md:grid-cols-3">
-        <div className="rounded-xl border bg-white p-6"><p className="text-gray-500">Status</p><h2 className="text-2xl font-bold text-green-600">{system.status || "Unknown"}</h2></div>
-        <div className="rounded-xl border bg-white p-6"><p className="text-gray-500">Database</p><h2 className={`text-2xl font-bold ${String(system.database).toLowerCase() === "connected" ? "text-green-600" : "text-red-600"}`}>{system.database || "Unknown"}</h2></div>
+        <div className="rounded-xl border bg-white p-6"><p className="text-gray-500">Status</p><h2 className={`text-2xl font-bold ${systemHealthy ? "text-green-600" : "text-red-600"}`}>{system.status || "Unknown"}</h2></div>
+        <div className="rounded-xl border bg-white p-6"><p className="text-gray-500">Database</p><h2 className={`text-2xl font-bold ${databaseHealthy ? "text-green-600" : "text-red-600"}`}>{system.database || "Unknown"}</h2></div>
         <div className="rounded-xl border bg-white p-6"><p className="text-gray-500">Uptime</p><h2 className="text-2xl font-bold">{uptimeDisplay}</h2></div>
       </div>
-
-      <div className="rounded-xl border bg-white p-6">
-        <h2 className="mb-4 text-xl font-bold">Runtime Information</h2>
-        <div className="grid gap-5 md:grid-cols-2">
-          <div><p className="text-gray-500">Node Version</p><strong>{system.nodeVersion || "N/A"}</strong></div>
-          <div><p className="text-gray-500">Environment</p><strong>{system.environment || "N/A"}</strong></div>
-          <div><p className="text-gray-500">Memory Usage</p><strong>{system.memory.used || "N/A"} / {system.memory.total || "N/A"}</strong></div>
-          <div><p className="text-gray-500">Platform</p><strong>{system.platform.os || "N/A"} {system.platform.architecture || ""}</strong></div>
-        </div>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="rounded-xl border bg-white p-6"><p className="text-gray-500">Health Score</p><h2 className="text-3xl font-bold text-green-600">100%</h2></div>
-        <div className="rounded-xl border bg-white p-6"><p className="text-gray-500">Last Checked</p><h2 className="text-lg font-bold">{system.timestamp ? new Date(system.timestamp).toLocaleTimeString() : "N/A"}</h2></div>
-      </div>
-
-      <div className="rounded-xl border bg-white p-6">
-        <h2 className="mb-4 text-xl font-bold">Memory Usage</h2>
-        <div className="h-4 w-full rounded-full bg-gray-200"><div className="h-4 rounded-full bg-green-600 transition-all" style={{ width: `${memoryPercent}%` }} /></div>
-        <p className="mt-2 text-gray-600">{system.memory.used || "N/A"} / {system.memory.total || "N/A"}</p>
-      </div>
+      <div className="rounded-xl border bg-white p-6"><h2 className="mb-4 text-xl font-bold">Runtime Information</h2><div className="grid gap-5 md:grid-cols-2"><div><p className="text-gray-500">Node Version</p><strong>{system.nodeVersion || "N/A"}</strong></div><div><p className="text-gray-500">Environment</p><strong>{system.environment || "N/A"}</strong></div><div><p className="text-gray-500">Memory Usage</p><strong>{system.memory.used || "N/A"} / {system.memory.total || "N/A"}</strong></div><div><p className="text-gray-500">Platform</p><strong>{system.platform.os || "N/A"} {system.platform.architecture || ""}</strong></div></div></div>
+      <div className="grid gap-6 md:grid-cols-2"><div className="rounded-xl border bg-white p-6"><p className="text-gray-500">Health Score</p><h2 className={`text-3xl font-bold ${healthScore >= 90 ? "text-green-600" : healthScore >= 60 ? "text-yellow-600" : "text-red-600"}`}>{healthScore}%</h2></div><div className="rounded-xl border bg-white p-6"><p className="text-gray-500">Last Checked</p><h2 className="text-lg font-bold">{system.timestamp ? new Date(system.timestamp).toLocaleTimeString() : "N/A"}</h2></div></div>
+      <div className="rounded-xl border bg-white p-6"><h2 className="mb-4 text-xl font-bold">Memory Usage</h2><div className="h-4 w-full rounded-full bg-gray-200"><div className="h-4 rounded-full bg-green-600 transition-all" style={{ width: `${memoryPercent}%` }} /></div><p className="mt-2 text-gray-600">{system.memory.used || "N/A"} / {system.memory.total || "N/A"}</p></div>
     </div>
   );
 }
