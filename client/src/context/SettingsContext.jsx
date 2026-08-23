@@ -1,8 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import api from "../api/axios";
 
+export const PUBLIC_BRAND_NAME = "Coherent Tours";
+
 const DEFAULT_SETTINGS = {
-  companyName: "",
+  companyName: PUBLIC_BRAND_NAME,
   supportEmail: "",
   supportPhone: "",
   currency: "KES",
@@ -14,10 +16,10 @@ const DEFAULT_SETTINGS = {
 const SettingsContext = createContext(null);
 const STORAGE_KEY = "platform-settings";
 
-const normalize = (next, previous = DEFAULT_SETTINGS) => ({
+const normalize = (next = {}, previous = DEFAULT_SETTINGS) => ({
   ...previous,
   ...next,
-  companyName: String(next?.companyName ?? previous.companyName ?? "").trim(),
+  companyName: PUBLIC_BRAND_NAME,
 });
 
 export function SettingsProvider({ children }) {
@@ -30,11 +32,7 @@ export function SettingsProvider({ children }) {
 
   const refreshSettings = useCallback(async () => {
     try {
-      // Public settings are intentionally used here. The old /settings
-      // endpoint requires authentication and settings.manage permission.
-      const response = await api.get("/settings/public", {
-        params: { _t: Date.now() },
-      });
+      const response = await api.get("/settings/public", { params: { _t: Date.now() } });
       const data = response.data?.settings || response.data?.data || response.data || {};
       applySettings(data);
       return data;
@@ -46,32 +44,20 @@ export function SettingsProvider({ children }) {
 
   useEffect(() => {
     let mounted = true;
-
     const load = async () => {
       setLoading(true);
-      try {
-        await refreshSettings();
-      } finally {
-        if (mounted) setLoading(false);
-      }
+      try { await refreshSettings(); } finally { if (mounted) setLoading(false); }
     };
-
     void load();
 
     const handleStorage = (event) => {
       if (event.key !== STORAGE_KEY || !event.newValue) return;
-      try {
-        applySettings(JSON.parse(event.newValue));
-      } catch {
-        // Ignore malformed cache.
-      }
+      try { applySettings(JSON.parse(event.newValue)); } catch { /* Ignore malformed cache. */ }
     };
-
     const handlePlatformSettings = (event) => applySettings(event.detail || {});
 
     window.addEventListener("storage", handleStorage);
     window.addEventListener("platform-settings-updated", handlePlatformSettings);
-
     return () => {
       mounted = false;
       window.removeEventListener("storage", handleStorage);
@@ -86,22 +72,16 @@ export function SettingsProvider({ children }) {
       const merged = normalize(nextSettings, next);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
       window.dispatchEvent(new CustomEvent("platform-settings-updated", { detail: merged }));
-    } catch {
-      // Settings API remains the source of truth.
-    }
+    } catch { /* Settings API remains the source of truth. */ }
   }, []);
-
-  const companyName = settings.companyName || "";
-  const supportEmail = settings.supportEmail || "";
-  const supportPhone = settings.supportPhone || "";
 
   return (
     <SettingsContext.Provider
       value={{
-        settings,
-        companyName,
-        supportEmail,
-        supportPhone,
+        settings: { ...settings, companyName: PUBLIC_BRAND_NAME },
+        companyName: PUBLIC_BRAND_NAME,
+        supportEmail: settings.supportEmail || "",
+        supportPhone: settings.supportPhone || "",
         loading,
         refreshSettings,
         updateSettings,
@@ -112,6 +92,4 @@ export function SettingsProvider({ children }) {
   );
 }
 
-export function useSettings() {
-  return useContext(SettingsContext);
-}
+export function useSettings() { return useContext(SettingsContext); }
