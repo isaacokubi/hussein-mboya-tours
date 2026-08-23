@@ -1,9 +1,10 @@
 import mongoose from "mongoose";
-
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+
 const systemSettingSchema = new mongoose.Schema(
   {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true, required: true },
+    // Null tenantId is reserved for platform-level SuperAdmin settings.
+    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true, required: false, default: null },
     key: { type: String, default: "default", index: true },
     companyName: { type: String, default: "Company", trim: true },
     companyLogo: { type: String, default: "" }, websiteUrl: { type: String, default: "", trim: true },
@@ -18,9 +19,6 @@ const systemSettingSchema = new mongoose.Schema(
     facebook: { type: String, default: "", trim: true }, instagram: { type: String, default: "", trim: true }, twitter: { type: String, default: "", trim: true }, youtube: { type: String, default: "", trim: true },
     seoTitle: { type: String, default: "", trim: true }, seoDescription: { type: String, default: "", trim: true }, seoKeywords: { type: [String], default: [] },
     bookingNotifications: { type: Boolean, default: true }, paymentNotifications: { type: Boolean, default: true },
-
-    // Tenant-owned visual system. These values are returned only for the
-    // resolved tenant and are applied by the public client at runtime.
     primaryColor: { type: String, default: "#047857" }, secondaryColor: { type: String, default: "#064e3b" }, accentColor: { type: String, default: "#10b981" },
     backgroundColor: { type: String, default: "#f8fafc" }, surfaceColor: { type: String, default: "#ffffff" }, textColor: { type: String, default: "#0f172a" },
     fontFamily: { type: String, default: "Inter" }, borderRadius: { type: String, enum: ["sm", "md", "lg", "xl", "2xl"], default: "xl" }, buttonStyle: { type: String, enum: ["solid", "rounded", "pill", "outline"], default: "rounded" },
@@ -31,9 +29,7 @@ const systemSettingSchema = new mongoose.Schema(
 );
 
 systemSettingSchema.index({ tenantId: 1, key: 1 }, { unique: true });
-
 tenantPlugin(systemSettingSchema);
-
 
 const SystemSetting = mongoose.models.SystemSetting || mongoose.model("SystemSetting", systemSettingSchema);
 export default SystemSetting;
