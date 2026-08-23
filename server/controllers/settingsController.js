@@ -1,5 +1,6 @@
 import SystemSetting from "../models/SystemSetting.js";
 import Organization from "../models/Organization.js";
+import User from "../models/User.js";
 import { getTenantContext, requireTenantId, isTenantBypassed } from "../tenancy/context.js";
 import { COMPANY_DEFAULTS } from "../config/companyDefaults.js";
 
@@ -53,6 +54,33 @@ const getOrCreateSettings = async (filter) => {
   }
 };
 
+const getTenantProfile = async (tenantId) => {
+  const tenant = await Organization.findById(tenantId).lean();
+  if (!tenant) return null;
+  const primaryAdministrator = await User.findOne({ tenantId: tenant._id, role: { $in: ["admin", "administrator"] } })
+    .select("name email phone status")
+    .sort({ createdAt: 1 })
+    .lean();
+  return {
+    id: tenant._id,
+    companyName: tenant.name,
+    legalName: tenant.legalName || "",
+    slug: tenant.slug,
+    websiteUrl: tenant.websiteUrl || "",
+    companyEmail: tenant.supportEmail || "",
+    companyPhone: tenant.supportPhone || "",
+    country: tenant.country || "Kenya",
+    currency: tenant.currency || "KES",
+    timezone: tenant.timezone || "Africa/Nairobi",
+    status: tenant.status,
+    subscriptionPlan: tenant.subscription?.plan || "starter",
+    userSeats: Number(tenant.subscription?.seats || 0),
+    trialEndsAt: tenant.subscription?.trialEndsAt || null,
+    renewsAt: tenant.subscription?.renewsAt || null,
+    primaryAdministrator: primaryAdministrator || null,
+  };
+};
+
 export const getSettings = async (req, res, next) => {
   try {
     if (isTenantBypassed()) {
@@ -62,7 +90,8 @@ export const getSettings = async (req, res, next) => {
     requireTenantId();
     const { tenantId } = getTenantContext();
     const settings = await getOrCreateSettings({ tenantId, key: "default" });
-    return res.status(200).json({ success: true, data: settings, settings, scope: "tenant" });
+    const tenantProfile = await getTenantProfile(tenantId);
+    return res.status(200).json({ success: true, data: { ...settings, tenantProfile }, settings: { ...settings, tenantProfile }, tenantProfile, scope: "tenant" });
   } catch (error) { next(error); }
 };
 
@@ -82,7 +111,8 @@ export const updateSettings = async (req, res, next) => {
     await settings.save();
     const saved = settings.toObject();
     const scope = filter.key === "platform" ? "platform" : "tenant";
-    return res.status(200).json({ success: true, message: scope === "platform" ? "Platform settings saved successfully." : "Tenant settings saved successfully.", data: saved, settings: saved, scope });
+    const tenantProfile = scope === "tenant" ? await getTenantProfile(filter.tenantId) : null;
+    return res.status(200).json({ success: true, message: scope === "platform" ? "Platform settings saved successfully." : "Tenant settings saved successfully.", data: scope === "tenant" ? { ...saved, tenantProfile } : saved, settings: scope === "tenant" ? { ...saved, tenantProfile } : saved, tenantProfile, scope });
   } catch (error) {
     console.error("UPDATE SETTINGS ERROR:", error);
     return res.status(error?.status || 500).json({ success: false, message: error.message || "Failed to save tenant settings." });
@@ -103,6 +133,9 @@ export const getPublicSettings = async (req, res, next) => {
       supportPhone: tenantSettings?.supportPhone || tenant.supportPhone || "",
       websiteUrl: tenantSettings?.websiteUrl || tenant.websiteUrl || "",
       companyLogo: tenantSettings?.companyLogo || tenant.logoUrl || "",
+      legalName: tenant.legalName || "", companySlug: tenant.slug || "",
+      subscriptionPlan: tenant.subscription?.plan || "starter", userSeats: Number(tenant.subscription?.seats || 0),
+      tenantStatus: tenant.status || "trial", trialEndsAt: tenant.subscription?.trialEndsAt || null,
       address: tenantSettings?.address || tenant.address || "", city: tenantSettings?.city || tenant.city || "", country: tenantSettings?.country || tenant.country || "Kenya",
       currency: tenantSettings?.currency || tenant.currency || "KES", currencySymbol: tenantSettings?.currencySymbol || "KSh", timezone: tenantSettings?.timezone || tenant.timezone || "Africa/Nairobi", language: tenantSettings?.language || "en",
       facebook: tenantSettings?.facebook || "", instagram: tenantSettings?.instagram || "", twitter: tenantSettings?.twitter || "", youtube: tenantSettings?.youtube || "",
