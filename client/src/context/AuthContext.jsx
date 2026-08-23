@@ -133,9 +133,11 @@ export function AuthProvider({ children }) {
     setToken(savedToken);
     if (savedUser) setUser(savedUser);
 
-    // Refresh the user in the background. Only a real 401 means the credential
-    // itself is invalid/expired. A 403 is an authorization/configuration error
-    // and must not destroy an otherwise valid login session.
+    // Validate a persisted session once when the application starts.
+    // Login itself already received a freshly signed token from the server,
+    // so it must not immediately call /auth/me again. Doing that creates an
+    // unnecessary second authentication round-trip and was the source of the
+    // visible "Invalid authentication token" toast during successful login.
     fetchCurrentUser()
       .catch((error) => {
         const status = error?.response?.status;
@@ -159,28 +161,19 @@ export function AuthProvider({ children }) {
     if (data?.mfaRequired) return data;
     if (!data?.token) throw new Error("Authentication response did not contain a token.");
 
+    // Clear only legacy credentials and tenant hints. Keep the new server-issued
+    // token as the single source of truth and derive tenant identity from the
+    // authenticated user returned by the server.
     ["accessToken", "authToken", "tenantId", "tenantSlug", "tenantKey"].forEach((key) => localStorage.removeItem(key));
+
     const nextToken = String(data.token).trim();
     localStorage.setItem("token", nextToken);
     setToken(nextToken);
     persistUser(data.user);
 
-    try {
-      await fetchCurrentUser();
-    } catch (error) {
-      const status = error?.response?.status;
-      console.warn("AUTH REFRESH FAILED", error.response?.data || error.message);
-      // A 403 after successful login is not a reason to erase the session.
-      // Keep the token so the dashboard can surface the actual authorization
-      // problem instead of falsely reporting an expired session.
-      if (status === 401) {
-        clearAuthStorage();
-        setToken(null);
-        setUser(null);
-        throw error;
-      }
-    }
-
+    // IMPORTANT: Do not call /auth/me here. The login endpoint has already
+    // authenticated the credentials and returned the canonical user + JWT.
+    // The next application mount/request will validate the persisted session.
     return data;
   };
 
