@@ -1,56 +1,15 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
+import { requireTenantId } from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 import HeroSlide from "../models/HeroSlide.js";
 
-
 export const getHeroSlides = async (req, res) => {
-  requireTenantId();
-
   try {
-
-    const slides = await HeroSlide.find(tenantFilter(req));
-
-
-    // debug removed
-
-
-    res.status(200).json({
-
-      success: true,
-
-      slides
-
-    });
-
-
+    requireTenantId();
+    const slides = await HeroSlide.find({ ...tenantFilter(req), active: true }).sort({ order: 1, createdAt: 1 }).lean();
+    return res.status(200).json({ success: true, slides });
   } catch (error) {
-
-
-    // debug removed
-
-
-    res.status(500).json({
-
-      success: false,
-
-      message: error.message
-
-    });
-
-
+    return res.status(500).json({ success: false, message: error.message });
   }
-
 };
 
-
-
-/*
- Auto completed fallback handlers
-*/
-
-export const healthCheck = async(req,res)=>{
-    res.json({
-        success:true,
-        message:"Module operational"
-    });
-};
+export const healthCheck = async (req, res) => res.json({ success: true, message: "Module operational" });
