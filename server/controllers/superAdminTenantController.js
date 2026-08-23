@@ -31,9 +31,7 @@ const uniqueSlug = async (name, requestedSlug) => {
   const base = slugify(requestedSlug || name) || `company-${Date.now()}`;
   let slug = base;
   let suffix = 2;
-  while (await Organization.exists({ slug })) {
-    slug = `${base}-${suffix++}`;
-  }
+  while (await Organization.exists({ slug })) slug = `${base}-${suffix++}`;
   return slug;
 };
 
@@ -48,22 +46,9 @@ export const createTenantWithAdmin = async (req, res, next) => {
   const session = await mongoose.startSession();
   try {
     const {
-      companyName,
-      legalName = "",
-      slug: requestedSlug = "",
-      companyEmail,
-      companyPhone,
-      country = "Kenya",
-      timezone = "Africa/Nairobi",
-      currency = "KES",
-      plan = "starter",
-      seats = 5,
-      websiteUrl = "",
-      logoUrl = "",
-      adminName,
-      adminEmail,
-      adminPhone,
-      adminPassword,
+      companyName, legalName = "", slug: requestedSlug = "", companyEmail, companyPhone,
+      country = "Kenya", timezone = "Africa/Nairobi", currency = "KES", plan = "starter", seats = 5,
+      websiteUrl = "", logoUrl = "", adminName, adminEmail, adminPhone, adminPassword,
     } = req.body || {};
 
     if (!String(companyName || "").trim()) return res.status(400).json({ success: false, message: "Company name is required." });
@@ -86,35 +71,22 @@ export const createTenantWithAdmin = async (req, res, next) => {
     let admin;
     await session.withTransaction(async () => {
       [organization] = await Organization.create([{
-        name: String(companyName).trim(),
-        slug,
-        legalName: String(legalName || "").trim(),
-        supportEmail: normalizedCompanyEmail,
-        supportPhone: String(companyPhone).trim(),
-        country: String(country || "Kenya").trim(),
-        timezone: String(timezone || "Africa/Nairobi").trim(),
-        currency: String(currency || "KES").trim().toUpperCase(),
-        websiteUrl: String(websiteUrl || "").trim(),
-        logoUrl: String(logoUrl || "").trim(),
-        status: "trial",
+        name: String(companyName).trim(), slug, legalName: String(legalName || "").trim(),
+        supportEmail: normalizedCompanyEmail, supportPhone: String(companyPhone).trim(),
+        country: String(country || "Kenya").trim(), timezone: String(timezone || "Africa/Nairobi").trim(),
+        currency: String(currency || "KES").trim().toUpperCase(), websiteUrl: String(websiteUrl || "").trim(),
+        logoUrl: String(logoUrl || "").trim(), status: "trial",
         subscription: { plan, seats: Math.max(Number(seats) || 5, 1), trialEndsAt },
         createdBy: req.user?._id || null,
       }], { session });
 
-      const roleDoc = await Role.findOne({ name: "admin" }).session(session);
+      const roleDoc = await runWithTenant({ role: "super_admin", bypass: true }, () => Role.findOne({ name: "admin" }).session(session).lean());
       if (!roleDoc) throw Object.assign(new Error("System role 'admin' is not configured."), { status: 400 });
 
       [admin] = await runWithTenant({ role: "super_admin", bypass: true }, () => User.create([{
-        name: String(adminName).trim(),
-        email: normalizedAdminEmail,
-        phone: String(adminPhone).trim(),
-        password: adminPassword,
-        role: "admin",
-        legacyRole: "admin",
-        roleId: roleDoc._id,
-        tenantId: organization._id,
-        status: "active",
-        isVerified: true,
+        name: String(adminName).trim(), email: normalizedAdminEmail, phone: String(adminPhone).trim(),
+        password: adminPassword, role: "admin", legacyRole: "admin", roleId: roleDoc._id,
+        tenantId: organization._id, status: "active", isVerified: true,
       }], { session }));
     });
 
@@ -141,10 +113,8 @@ export const listTenants = async (req, res, next) => {
     const search = String(req.query.search || "").trim();
     const filter = {};
     if (search) filter.$or = [
-      { name: { $regex: search, $options: "i" } },
-      { legalName: { $regex: search, $options: "i" } },
-      { slug: { $regex: search, $options: "i" } },
-      { supportEmail: { $regex: search, $options: "i" } },
+      { name: { $regex: search, $options: "i" } }, { legalName: { $regex: search, $options: "i" } },
+      { slug: { $regex: search, $options: "i" } }, { supportEmail: { $regex: search, $options: "i" } },
     ];
 
     const [organizations, total] = await Promise.all([
@@ -154,10 +124,7 @@ export const listTenants = async (req, res, next) => {
 
     const tenants = await Promise.all(organizations.map(async (organization) => {
       const counts = await getTenantCounts(organization._id);
-      const owner = await runWithTenant({ role: "super_admin", bypass: true }, () => User.findOne({ tenantId: organization._id, role: { $in: ["admin", "administrator"] } })
-        .select("name email phone status")
-        .sort({ createdAt: 1 })
-        .lean());
+      const owner = await runWithTenant({ role: "super_admin", bypass: true }, () => User.findOne({ tenantId: organization._id, role: { $in: ["admin", "administrator"] } }).select("name email phone status").sort({ createdAt: 1 }).lean());
       return { ...organization, owner: owner || null, counts };
     }));
 
@@ -192,11 +159,9 @@ export const deleteTenant = async (req, res, next) => {
     const { id } = req.params;
     if (!mongoose.isValidObjectId(id)) return res.status(400).json({ success: false, message: "Invalid tenant ID" });
     if (String(req.body?.confirmation || "").trim() !== "DELETE") return res.status(400).json({ success: false, message: "Type DELETE to permanently remove this company." });
-
     const tenant = await Organization.findById(id).lean();
     if (!tenant) return res.status(404).json({ success: false, message: "Company not found" });
     if (!tenant.tenantId && tenant.slug === "platform") return res.status(403).json({ success: false, message: "The platform organization cannot be deleted." });
-
     const db = mongoose.connection.db;
     const collections = await db.listCollections().toArray();
     await session.withTransaction(async () => {
@@ -206,7 +171,6 @@ export const deleteTenant = async (req, res, next) => {
       }
       await Organization.deleteOne({ _id: id }, { session });
     });
-
     return res.json({ success: true, deleted: true, tenantId: id, message: `Company "${tenant.name}" deleted successfully.` });
   } catch (error) { next(error); } finally { await session.endSession(); }
 };
