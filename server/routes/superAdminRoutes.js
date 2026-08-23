@@ -7,6 +7,7 @@ import { getAuditLogs, getDatabaseStatus, getSystemHealth, clearSystemCache } fr
 import { getApiMonitor } from "../controllers/apiMonitorController.js";
 import { createPlatformDatabaseBackup, listPlatformDatabaseBackups, deletePlatformDatabaseBackup, downloadPlatformDatabaseBackup } from "../controllers/superAdminBackupController.js";
 import { getSuperAdminUsers, createSuperAdminCompanyAccount, updateSuperAdminUserStatus, deleteSuperAdminUser } from "../controllers/superAdminUserController.js";
+import { listTenants, getTenant, updateTenantStatus, deleteTenant } from "../controllers/superAdminTenantController.js";
 import { getSettings, updateSettings } from "../controllers/settingsController.js";
 
 const router = express.Router();
@@ -15,6 +16,10 @@ const router = express.Router();
 router.use(protect);
 
 router.get("/dashboard", authorize("admin.dashboard"), getSuperAdminDashboard);
+router.get("/tenants", authorize("user.manage"), listTenants);
+router.get("/tenants/:id", authorize("user.manage"), getTenant);
+router.patch("/tenants/:id/status", authorize("user.manage"), updateTenantStatus);
+router.delete("/tenants/:id", authorize("user.manage"), deleteTenant);
 router.get("/users", authorize("user.manage"), getSuperAdminUsers);
 router.post("/users/accounts", authorize("user.manage"), createSuperAdminCompanyAccount);
 router.patch("/users/:id/status", authorize("user.manage"), updateSuperAdminUserStatus);
