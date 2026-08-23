@@ -36,6 +36,7 @@ import adminAuthRoutes from "./adminAuthRoutes.js";
 import adminDashboardRoutes from "./adminDashboardRoutes.js";
 import adminReviewRoutes from "./adminReviewRoutes.js";
 import adminGalleryRoutes from "./adminGalleryRoutes.js";
+import adminCategoryRoutes from "./adminCategoryRoutes.js";
 import adminCouponRoutes from "./adminCouponRoutes.js";
 import categoryRoutes from "./categoryRoutes.js";
 import analyticsRoutes from "./analyticsRoutes.js";
@@ -63,12 +64,10 @@ import settingsRoutes from "./settingsRoutes.js";
 import { getPublicSettings } from "../controllers/settingsController.js";
 import customTourRequestRoutes from "./customTourRequestRoutes.js";
 import superAdminUserRoutes from "./superAdminUserRoutes.js";
-
 import tenantBrandingRoutes from "./tenantBrandingRoutes.js";
-const router = express.Router()
 
+const router = express.Router();
 router.use("/tenant", tenantBrandingRoutes);
-
 router.use(resolveTenant);
 
 router.use("/categories", categoryRoutes);
@@ -83,25 +82,12 @@ router.use("/custom-tour-requests", customTourRequestRoutes);
 router.use("/wishlist", wishlistRoutes);
 router.use("/gallery", galleryRoutes);
 router.use("/hero", heroRoutes);
-
 router.use("/mpesa", mpesaRoutes);
 router.use("/payments", mpesaRoutes);
 router.use("/payments/stripe", stripeRoutes);
-
 router.use("/tenants", tenantRoutes);
 
-/*
- * IMPORTANT:
- * Admin authentication must be registered before the protected
- * /admin router. Otherwise /admin/auth/login is intercepted by
- * adminRoutes -> protect -> 401 Authentication required.
- *
- * Tenant resolution still happens globally in app.js, so the login
- * remains tenant-aware and requires X-Tenant-ID, X-Tenant-Slug,
- * or a configured company domain.
- */
 router.use("/admin/auth", adminAuthRoutes);
-
 router.use("/admin/roles", adminRoleRoutes);
 router.use("/admin", adminRoutes);
 router.use("/admin/tours", adminTourRoutes);
@@ -113,7 +99,17 @@ router.use("/security", securityRoutes);
 router.get("/admin/system-health", protect, checkPermission("system.security"), async (req, res) => {
   const mongoose = (await import("mongoose")).default;
   const memory = process.memoryUsage();
-  res.json({ status: "healthy", server: "running", nodeVersion: process.version, environment: process.env.NODE_ENV || "development", uptime: Math.floor(process.uptime()), timestamp: new Date().toISOString(), database: mongoose.connection.readyState === 1 ? "connected" : "disconnected", memory: { used: Math.round(memory.heapUsed / 1024 / 1024) + " MB", total: Math.round(memory.heapTotal / 1024 / 1024) + " MB" }, platform: { os: process.platform, architecture: process.arch } });
+  res.json({
+    status: "healthy",
+    server: "running",
+    nodeVersion: process.version,
+    environment: process.env.NODE_ENV || "development",
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+    database: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
+    memory: { used: Math.round(memory.heapUsed / 1024 / 1024) + " MB", total: Math.round(memory.heapTotal / 1024 / 1024) + " MB" },
+    platform: { os: process.platform, architecture: process.arch },
+  });
 });
 
 router.get("/settings/public", getPublicSettings);
@@ -121,6 +117,7 @@ router.use("/admin/settings", settingsRoutes);
 router.use("/admin/dashboard", adminDashboardRoutes);
 router.use("/admin/reviews", adminReviewRoutes);
 router.use("/admin/gallery", adminGalleryRoutes);
+router.use("/admin/experiences", adminCategoryRoutes);
 router.use("/admin/coupons", adminCouponRoutes);
 router.use("/admin/finance", financeRoutes);
 router.use("/admin/customers", customerRoutes);
