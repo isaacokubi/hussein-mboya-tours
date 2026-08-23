@@ -8,16 +8,13 @@ import { ensureSystemRoles } from "../services/onboardingService.js";
 import { createWithTenantIndexRepair, isTenantIndexConflict } from "../services/tenantIndexRepair.js";
 
 const STATUS_VALUES = ["active", "inactive", "disabled", "suspended", "blocked"];
-
 const isDuplicateKeyError = (error) => error?.code === 11000;
 
 const duplicateMessage = (error) => {
   const pattern = error?.keyPattern || {};
   const keys = Object.keys(pattern);
   const key = keys[0];
-  if (keys.length === 1 && key === "tenantId") {
-    return "A legacy tenant index was repaired automatically. Please submit the account creation again.";
-  }
+  if (keys.length === 1 && key === "tenantId") return "A legacy tenant index was repaired automatically. Please submit the account creation again.";
   if (key === "email") return "A user or staff account with this email already exists for this company.";
   if (key === "phone") return "A user with this phone number already exists.";
   return "A record with these details already exists.";
@@ -63,11 +60,14 @@ export const createStaffAccount = async (req, res, next) => {
     if (String(password || "").length < 12 || !/[A-Z]/.test(password) || !/\d/.test(password)) return res.status(400).json({ success: false, message: "Password must be at least 12 characters and include an uppercase letter and a number." });
 
     const normalizedEmail = String(email).trim().toLowerCase();
-    const existingUser = await User.findOne({ email: normalizedEmail }).select("_id role tenantId").lean();
+
+    // IMPORTANT: email uniqueness is tenant-scoped. The previous global lookup
+    // made a user in another company incorrectly block this company's staff.
+    const existingUser = await User.findOne({ email: normalizedEmail, tenantId }).select("_id role tenantId").lean();
     if (existingUser) return res.status(409).json({ success: false, message: "A user with this email already exists for this company." });
 
     if (["tour_guide", "driver"].includes(canonicalRole)) {
-      const existingStaff = await Staff.findOne({ email: normalizedEmail }).select("_id user position").lean();
+      const existingStaff = await Staff.findOne({ email: normalizedEmail, tenantId }).select("_id user position tenantId").lean();
       if (existingStaff) return res.status(409).json({ success: false, message: "A staff profile with this email already exists for this company." });
     }
 
@@ -99,16 +99,9 @@ export const createStaffAccount = async (req, res, next) => {
     if (["super_admin", "superadmin"].includes(roleDoc.name)) return res.status(403).json({ success: false, message: "SuperAdmin accounts can only be created through the one-time platform bootstrap process." });
 
     createdUser = await createWithTenantIndexRepair(User, {
-      name: name.trim(),
-      email: normalizedEmail,
-      phone: String(phone).trim(),
-      password,
-      role: canonicalRole,
-      legacyRole: canonicalRole,
-      roleId: roleDoc._id,
-      tenantId,
-      status: "active",
-      isVerified: true,
+      name: name.trim(), email: normalizedEmail, phone: String(phone).trim(), password,
+      role: canonicalRole, legacyRole: canonicalRole, roleId: roleDoc._id, tenantId,
+      status: "active", isVerified: true,
     });
 
     if (canonicalRole === "agent") {
@@ -116,7 +109,11 @@ export const createStaffAccount = async (req, res, next) => {
     }
 
     if (["tour_guide", "driver"].includes(canonicalRole)) {
-      createdStaff = await createWithTenantIndexRepair(Staff, { user: createdUser._id, tenantId, name: createdUser.name, email: createdUser.email, phone: createdUser.phone, position: canonicalRole === "tour_guide" ? "guide" : "driver", role: canonicalRole === "tour_guide" ? "guide" : "driver", status: "active", isActive: true, availability: "available", createdBy: req.user._id });
+      createdStaff = await createWithTenantIndexRepair(Staff, {
+        user: createdUser._id, tenantId, name: createdUser.name, email: createdUser.email, phone: createdUser.phone,
+        position: canonicalRole === "tour_guide" ? "guide" : "driver", role: canonicalRole === "tour_guide" ? "guide" : "driver",
+        status: "active", isActive: true, availability: "available", createdBy: req.user._id,
+      });
     }
 
     const safeUser = await User.findById(createdUser._id).select("-password").populate("roleId", "name displayName permissions").lean();
@@ -132,9 +129,7 @@ export const createStaffAccount = async (req, res, next) => {
       } catch { /* preserve the original error */ }
     }
 
-    if (isDuplicateKeyError(error)) {
-      return res.status(409).json({ success: false, message: duplicateMessage(error), repaired: isTenantIndexConflict(error) });
-    }
+    if (isDuplicateKeyError(error)) return res.status(409).json({ success: false, message: duplicateMessage(error), repaired: isTenantIndexConflict(error) });
     next(error);
   }
 };
