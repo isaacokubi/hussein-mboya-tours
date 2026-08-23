@@ -39,8 +39,6 @@ function mergeTenantFilter(query) {
 function enforceUpdateTenant(update, tenantId) {
   if (!update) return;
 
-  // MongoDB update pipelines are arrays. They cannot safely receive
-  // $setOnInsert, so explicitly reject attempts to mutate tenant ownership.
   if (Array.isArray(update)) {
     for (const stage of update) {
       const requestedTenant =
@@ -157,7 +155,7 @@ function enforceGraphLookupStage(stage, tenantId) {
   lookup.restrictSearchWithMatch[TENANT_PATH] = new mongoose.Types.ObjectId(tenantId);
 }
 
-export function tenantPlugin(schema) {
+export function tenantPlugin(schema, options = {}) {
   if (schema[TENANT_PLUGIN_MARKER]) return;
 
   Object.defineProperty(schema, TENANT_PLUGIN_MARKER, {
@@ -165,6 +163,13 @@ export function tenantPlugin(schema) {
     enumerable: false,
     configurable: false,
   });
+
+  // Global/platform collections must never inherit tenant query filters or
+  // tenant-prefixed uniqueness. Callers should opt in explicitly with
+  // tenantPlugin(schema, { global: true }). This prevents global records such
+  // as organizations, permissions, and currencies from becoming accidentally
+  // tenant-scoped while still allowing the same plugin to be reused safely.
+  if (options.global === true) return;
 
   if (!schema.path(TENANT_PATH)) {
     schema.add({
@@ -189,8 +194,6 @@ export function tenantPlugin(schema) {
 
   schema.pre("save", function tenantSave(next) {
     try {
-      // Platform owners are global identities. Never inherit the active tenant
-      // from request/context state when a SuperAdmin is saved.
       if (isPlatformOwnerDocument(this)) {
         this.tenantId = null;
         return next();
