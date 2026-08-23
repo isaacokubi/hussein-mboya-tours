@@ -49,9 +49,20 @@ const normalizeUser = (user) => {
   };
 };
 
+const readStoredUser = () => {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem("user");
+    return raw ? normalizeUser(JSON.parse(raw)) : null;
+  } catch {
+    localStorage.removeItem("user");
+    return null;
+  }
+};
+
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(() => localStorage.getItem("token")?.trim());
+  const [user, setUser] = useState(() => readStoredUser());
+  const [token, setToken] = useState(() => localStorage.getItem("token")?.trim() || null);
   const [loading, setLoading] = useState(true);
 
   const persistUser = (nextUser) => {
@@ -62,8 +73,6 @@ export function AuthProvider({ children }) {
       localStorage.setItem("user", JSON.stringify(normalized));
       localStorage.setItem("permissions", JSON.stringify(normalized.permissions.map((p) => p.name)));
 
-      // Never carry tenant state from a previous company/admin session into a
-      // platform-level or newly authenticated dashboard session.
       if (normalized.tenantId) {
         localStorage.setItem("tenantId", String(normalized.tenantId?._id || normalized.tenantId));
       } else {
@@ -99,14 +108,33 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const savedToken = localStorage.getItem("token")?.trim();
-    if (!savedToken) { setLoading(false); return; }
-    setToken(savedToken);
-    fetchCurrentUser().catch((error) => {
-      console.error("AUTH ME ERROR", error.response?.data || error.message);
-      clearAuthStorage();
-      setToken(null);
+    const savedUser = readStoredUser();
+
+    if (!savedToken) {
       setUser(null);
-    }).finally(() => setLoading(false));
+      setToken(null);
+      setLoading(false);
+      return;
+    }
+
+    setToken(savedToken);
+    if (savedUser) setUser(savedUser);
+
+    // Do not make dashboard rendering depend on a second network round-trip.
+    // The persisted session is authoritative enough to render immediately;
+    // /auth/me refreshes it in the background and only a real 401/403 clears it.
+    fetchCurrentUser()
+      .catch((error) => {
+        const status = error?.response?.status;
+        console.error("AUTH ME ERROR", error.response?.data || error.message);
+
+        if (status === 401 || status === 403) {
+          clearAuthStorage();
+          setToken(null);
+          setUser(null);
+        }
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const login = async (email, password) => {
@@ -118,21 +146,34 @@ export function AuthProvider({ children }) {
     if (data?.mfaRequired) return data;
     if (!data?.token) throw new Error("Authentication response did not contain a token.");
 
-    // Replace all previous authentication/tenant identity before persisting the
-    // newly authenticated account. This is important when switching roles.
     ["accessToken", "authToken", "tenantId", "tenantSlug", "tenantKey"].forEach((key) => localStorage.removeItem(key));
-    localStorage.setItem("token", String(data.token).trim());
-    setToken(data.token);
+    const nextToken = String(data.token).trim();
+    localStorage.setItem("token", nextToken);
+    setToken(nextToken);
     persistUser(data.user);
-    try { await fetchCurrentUser(); } catch (error) { console.warn("AUTH REFRESH FAILED", error.response?.data || error.message); }
+
+    try {
+      await fetchCurrentUser();
+    } catch (error) {
+      const status = error?.response?.status;
+      console.warn("AUTH REFRESH FAILED", error.response?.data || error.message);
+      if (status === 401 || status === 403) {
+        clearAuthStorage();
+        setToken(null);
+        setUser(null);
+        throw error;
+      }
+    }
+
     return data;
   };
 
   const register = async (userData) => {
     const { data } = await api.post("/auth/register", userData);
     if (data?.token) {
-      localStorage.setItem("token", String(data.token).trim());
-      setToken(data.token);
+      const nextToken = String(data.token).trim();
+      localStorage.setItem("token", nextToken);
+      setToken(nextToken);
       persistUser(data.user);
     }
     return data;
