@@ -1,99 +1,49 @@
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
-import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
-
 
 const tourCategorySchema = new mongoose.Schema(
-
-{
-
-    tenantId:{
-        type: mongoose.Schema.Types.ObjectId,
-        ref:"Organization",
-        index:true,
-        required:false
+  {
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Organization",
+      index: true,
+      required: false,
     },
-
-name:{
-
-type:String,
-
-required:true,
-
-trim:true
-
-},
-
-
-slug:{
-
-type:String,
-
-required:true,
-
-unique:true,
-
-lowercase:true
-
-},
-
-
-icon:{
-
-type:String,
-
-default:"Map"
-
-},
-
-
-description:{
-
-type:String,
-
-required:true
-
-},
-
-
-image:{
-
-type:String,
-
-default:""
-
-},
-
-
-active:{
-
-type:Boolean,
-
-default:true
-
-}
-
-
-},
-
-{
-timestamps:true
-}
-
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    slug: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+    icon: {
+      type: String,
+      default: "Map",
+    },
+    description: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    image: {
+      type: String,
+      default: "",
+    },
+    active: {
+      type: Boolean,
+      default: true,
+    },
+  },
+  {
+    timestamps: true,
+  }
 );
 
+tourCategorySchema.plugin(tenantPlugin);
 
-
-
-
-
-
-
-
-
-export default tourCategorySchema.plugin(tenantPlugin);
-
-mongoose.model(
-"TourCategory",
-tourCategorySchema
-);
+export default mongoose.models.TourCategory || mongoose.model("TourCategory", tourCategorySchema);
