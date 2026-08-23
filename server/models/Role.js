@@ -33,26 +33,13 @@ const roleSchema = new mongoose.Schema(
         index:true,
         required:false
     },
-    /*
-    |--------------------------------------------------------------------------
-    | ROLE NAME
-    |--------------------------------------------------------------------------
-    */
 
     name: {
       type: String,
       required: true,
-      unique: true,
       trim: true,
       lowercase: true,
-      index: true,
     },
-
-    /*
-    |--------------------------------------------------------------------------
-    | DISPLAY NAME
-    |--------------------------------------------------------------------------
-    */
 
     displayName: {
       type: String,
@@ -60,23 +47,11 @@ const roleSchema = new mongoose.Schema(
       trim: true,
     },
 
-    /*
-    |--------------------------------------------------------------------------
-    | DESCRIPTION
-    |--------------------------------------------------------------------------
-    */
-
     description: {
       type: String,
       default: "",
       trim: true,
     },
-
-    /*
-    |--------------------------------------------------------------------------
-    | PERMISSIONS
-    |--------------------------------------------------------------------------
-    */
 
     permissions: [
       {
@@ -85,26 +60,10 @@ const roleSchema = new mongoose.Schema(
       },
     ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | SYSTEM ROLE
-    |--------------------------------------------------------------------------
-    |
-    | Prevents accidental deletion/editing.
-    |
-    |--------------------------------------------------------------------------
-    */
-
     isSystem: {
       type: Boolean,
       default: false,
     },
-
-    /*
-    |--------------------------------------------------------------------------
-    | STATUS
-    |--------------------------------------------------------------------------
-    */
 
     status: {
       type: String,
@@ -115,38 +74,16 @@ const roleSchema = new mongoose.Schema(
       default: "active",
     },
 
-    /*
-    |--------------------------------------------------------------------------
-    | ROLE LEVEL
-    |--------------------------------------------------------------------------
-    |
-    | Higher number = Higher privilege
-    |
-    |--------------------------------------------------------------------------
-    */
-
     level: {
       type: Number,
       default: 1,
       min: 1,
     },
 
-    /*
-    |--------------------------------------------------------------------------
-    | DEFAULT ROLE
-    |--------------------------------------------------------------------------
-    */
-
     isDefault: {
       type: Boolean,
       default: false,
     },
-
-    /*
-    |--------------------------------------------------------------------------
-    | CREATED BY
-    |--------------------------------------------------------------------------
-    */
 
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -173,6 +110,10 @@ const roleSchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
+// Role names are unique per tenant, not globally. A legacy global name_1
+// index must be removed during the tenant-index reconciliation.
+roleSchema.index({ tenantId: 1, name: 1 }, { unique: true });
+
 roleSchema.index({
   status: 1,
 });
@@ -189,21 +130,9 @@ roleSchema.index({
   isDefault: 1,
 });
 
-/*
-|--------------------------------------------------------------------------
-| VIRTUALS
-|--------------------------------------------------------------------------
-*/
-
 roleSchema.virtual("permissionCount").get(function () {
   return this.permissions.length;
 });
-
-/*
-|--------------------------------------------------------------------------
-| METHODS
-|--------------------------------------------------------------------------
-*/
 
 roleSchema.methods.hasPermission = function (permissionId) {
   return this.permissions.some(
@@ -230,24 +159,10 @@ roleSchema.methods.removePermission = async function (permissionId) {
   return this;
 };
 
-/*
-|--------------------------------------------------------------------------
-| MODEL
-|--------------------------------------------------------------------------
-*/
-
 tenantPlugin(roleSchema);
-
 
 const Role =
   mongoose.models.Role ||
   mongoose.model("Role", roleSchema);
-
-
-
-
-
-
-
 
 export default Role;
