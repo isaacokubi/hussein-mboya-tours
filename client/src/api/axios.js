@@ -20,10 +20,9 @@ function getPublicTenantSlug() {
 }
 
 function getPublicTenantKey() {
-  if (typeof window !== "undefined") {
-    const stored = window.localStorage.getItem("tenantKey") || window.localStorage.getItem("tenantSlug");
-    if (stored) return stored;
-  }
+  // Stored tenant identifiers belong to the previous authenticated session and
+  // must never be reused to authenticate a new session. Public tenant identity
+  // comes only from deployment configuration/hostname.
   return PUBLIC_TENANT_KEY;
 }
 
@@ -42,6 +41,11 @@ function getAuthenticatedTenantId() {
   }
 }
 
+const isPublicAuthRequest = (url = "") =>
+  /(?:^|\/)auth\/(?:login|register|bootstrap|password-reset(?:\/|$))/i.test(
+    String(url)
+  );
+
 const api = axios.create({
   baseURL,
   withCredentials: true,
@@ -54,31 +58,37 @@ api.interceptors.request.use(
     if (typeof window === "undefined") return config;
     config.headers = config.headers || {};
 
-    const token =
-      localStorage.getItem("token")?.trim() ||
-      localStorage.getItem("accessToken")?.trim() ||
-      localStorage.getItem("authToken")?.trim();
+    const publicAuthRequest = isPublicAuthRequest(config.url);
+    const token = publicAuthRequest
+      ? ""
+      : localStorage.getItem("token")?.trim() ||
+        localStorage.getItem("accessToken")?.trim() ||
+        localStorage.getItem("authToken")?.trim();
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
       config.headers["X-Requested-With"] = "XMLHttpRequest";
+    } else {
+      delete config.headers.Authorization;
     }
 
-    const tenantId = getAuthenticatedTenantId();
+    const tenantId = publicAuthRequest ? "" : getAuthenticatedTenantId();
     const publicTenantSlug = getPublicTenantSlug();
     const publicTenantKey = getPublicTenantKey();
 
-    // Every authenticated tenant dashboard request gets the tenant derived
-    // from the authenticated session. Never let a stale public tenant header
-    // override the user's database tenant.
-    if (token) {
-      if (tenantId) config.headers["X-Tenant-ID"] = tenantId;
+    // A login/register request must never inherit the previous user's tenant.
+    // Authenticated requests use the tenant bound to the authenticated user.
+    if (token && tenantId) {
+      config.headers["X-Tenant-ID"] = tenantId;
       delete config.headers["X-Tenant-Slug"];
       delete config.headers["X-Tenant-Key"];
     } else {
+      delete config.headers["X-Tenant-ID"];
       if (publicTenantSlug) config.headers["X-Tenant-Slug"] = publicTenantSlug;
+      else delete config.headers["X-Tenant-Slug"];
       if (publicTenantKey) config.headers["X-Tenant-Key"] = publicTenantKey;
-      if (/^[a-fA-F0-9]{24}$/.test(publicTenantKey) && !config.headers["X-Tenant-ID"]) {
+      else delete config.headers["X-Tenant-Key"];
+      if (/^[a-fA-F0-9]{24}$/.test(publicTenantKey)) {
         config.headers["X-Tenant-ID"] = publicTenantKey;
       }
     }
@@ -112,9 +122,6 @@ api.interceptors.response.use(
         hasToken: Boolean(localStorage.getItem("token") || localStorage.getItem("accessToken") || localStorage.getItem("authToken")),
       });
 
-      // One central session event makes auth failures behave identically on
-      // customer, admin, manager, agent, guide, driver and superadmin dashboards.
-      // Login failures are left to the Login page so credentials are not wiped.
       if (!isLoginRequest) {
         window.dispatchEvent(new CustomEvent("auth:session-invalid", {
           detail: { url, status, message: data?.message || "Authentication session is no longer valid." },
