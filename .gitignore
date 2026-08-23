@@ -140,3 +140,7 @@ BACKUP-BEFORE-ZIP-MERGE-*/
 # Local audit reports / diagnostic output
 /tmp/
 .repair-backups/
+
+# Automated repair/audit artifacts
+server/rbac-repair-backup-*/
+server/superadmin-rbac-audit-*.txt

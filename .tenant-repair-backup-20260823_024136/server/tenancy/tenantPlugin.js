@@ -3,7 +3,7 @@ import { getTenantId, isTenantBypassed } from "./context.js";
 
 const TENANT_PATH = "tenantId";
 const GLOBAL_COLLECTIONS = new Set(["organizations", "permissions", "currencies"]);
-const PLATFORM_ROLES = new Set(["superadmin", "super_admin"]);
+const PLATFORM_ROLES = new Set(["superadmin"]);
 
 function requireTenantId() {
   if (isTenantBypassed()) return null;
