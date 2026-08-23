@@ -13,9 +13,12 @@ const ADMIN_BASE_PERMISSIONS = [
   "tour.create", "tour.update", "booking.view", "report.view", "guide.view", "vehicle.view",
 ];
 
+const AUTH_KEYS = ["token", "accessToken", "authToken"];
+const TENANT_SESSION_KEYS = ["tenantId", "tenantSlug", "tenantKey"];
+
 const getStoredToken = () => {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem("token")?.trim() || localStorage.getItem("accessToken")?.trim() || localStorage.getItem("authToken")?.trim() || null;
+  return AUTH_KEYS.map((key) => localStorage.getItem(key)?.trim()).find(Boolean) || null;
 };
 
 const normalizePermissions = (permissions) => {
@@ -86,7 +89,7 @@ export function AuthProvider({ children }) {
   };
 
   const clearAuthStorage = () => {
-    ["token", "accessToken", "authToken", "user", "permissions", "tenantId", "tenantSlug", "tenantKey"].forEach((key) => localStorage.removeItem(key));
+    [...AUTH_KEYS, "user", "permissions", ...TENANT_SESSION_KEYS].forEach((key) => localStorage.removeItem(key));
   };
 
   const logout = () => {
@@ -144,6 +147,13 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = async (email, password) => {
+    // A new login must start from a clean authentication session. In particular,
+    // never let the previous user's JWT or tenant ID be attached to /auth/login.
+    AUTH_KEYS.forEach((key) => localStorage.removeItem(key));
+    ["user", "permissions", ...TENANT_SESSION_KEYS].forEach((key) => localStorage.removeItem(key));
+    setToken(null);
+    setUser(null);
+
     const { data } = await api.post("/auth/login", {
       email: String(email || "").trim().toLowerCase(),
       password,
@@ -151,12 +161,13 @@ export function AuthProvider({ children }) {
     if (data?.mfaRequired) return data;
     if (!data?.token) throw new Error("Authentication response did not contain a token.");
 
-    ["accessToken", "authToken", "tenantId", "tenantSlug", "tenantKey"].forEach((key) => localStorage.removeItem(key));
     const nextToken = String(data.token).trim();
+    if (!nextToken) throw new Error("Authentication response contained an empty token.");
     localStorage.setItem("token", nextToken);
     setToken(nextToken);
-    persistUser(data.user);
-    return data;
+    const normalizedUser = persistUser(data.user);
+    if (!normalizedUser) throw new Error("Authentication response did not contain a user.");
+    return { ...data, user: normalizedUser };
   };
 
   const register = async (userData) => {
