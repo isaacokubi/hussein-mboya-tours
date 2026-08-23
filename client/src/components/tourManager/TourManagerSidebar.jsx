@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { BarChart3, CalendarDays, Car, ClipboardCheck, ClipboardList, LayoutDashboard, Map, PlusCircle, UserRoundCheck, Users } from "lucide-react";
+import { BarChart3, CalendarDays, Car, ClipboardCheck, ClipboardList, Image, LayoutDashboard, Map, PlusCircle, UserRoundCheck, Users } from "lucide-react";
 import { useSettings } from "../../context/SettingsContext";
 
 const links = [
@@ -12,6 +12,7 @@ const links = [
   ["Guides", "/tour-manager/guides", UserRoundCheck],
   ["Vehicles", "/tour-manager/vehicles", Car],
   ["Assignments", "/tour-manager/assignments", ClipboardCheck],
+  ["Homepage Content", "/admin/gallery", Image],
   ["Analytics", "/tour-manager/analytics", BarChart3],
   ["Reports", "/tour-manager/reports", BarChart3],
 ];
