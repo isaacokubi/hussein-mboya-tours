@@ -48,7 +48,14 @@ export function SettingsProvider({ children }) {
     let mounted = true;
     const load = async () => { setLoading(true); try { await refreshSettings(); } finally { if (mounted) setLoading(false); } };
     void load();
-    const handleStorage = (event) => { if (event.key !== STORAGE_KEY || !event.newValue) return; try { applySettings(JSON.parse(event.newValue)); } catch {} };
+    const handleStorage = (event) => {
+      if (event.key !== STORAGE_KEY || !event.newValue) return;
+      try {
+        applySettings(JSON.parse(event.newValue));
+      } catch (error) {
+        console.warn("Stored platform settings could not be parsed:", error);
+      }
+    };
     const handlePlatformSettings = (event) => applySettings(event.detail || {});
     window.addEventListener("storage", handleStorage); window.addEventListener("platform-settings-updated", handlePlatformSettings);
     return () => { mounted = false; window.removeEventListener("storage", handleStorage); window.removeEventListener("platform-settings-updated", handlePlatformSettings); };
@@ -60,7 +67,9 @@ export function SettingsProvider({ children }) {
       const next = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
       const merged = normalize(nextSettings, next); localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
       window.dispatchEvent(new CustomEvent("platform-settings-updated", { detail: merged }));
-    } catch {}
+    } catch (error) {
+      console.warn("Platform settings could not be persisted locally:", error);
+    }
   }, []);
 
   return <SettingsContext.Provider value={{ settings: { ...settings, companyName: PUBLIC_BRAND_NAME }, companyName: PUBLIC_BRAND_NAME, supportEmail: settings.supportEmail || "", supportPhone: settings.supportPhone || "", loading, refreshSettings, updateSettings }}>{children}</SettingsContext.Provider>;
