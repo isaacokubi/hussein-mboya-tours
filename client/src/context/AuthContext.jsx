@@ -13,6 +13,16 @@ const ADMIN_BASE_PERMISSIONS = [
   "tour.create", "tour.update", "booking.view", "report.view", "guide.view", "vehicle.view",
 ];
 
+const getStoredToken = () => {
+  if (typeof window === "undefined") return null;
+  return (
+    localStorage.getItem("token")?.trim() ||
+    localStorage.getItem("accessToken")?.trim() ||
+    localStorage.getItem("authToken")?.trim() ||
+    null
+  );
+};
+
 const normalizePermissions = (permissions) => {
   if (!Array.isArray(permissions)) return [];
   const seen = new Set();
@@ -62,7 +72,7 @@ const readStoredUser = () => {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => readStoredUser());
-  const [token, setToken] = useState(() => localStorage.getItem("token")?.trim() || null);
+  const [token, setToken] = useState(() => getStoredToken());
   const [loading, setLoading] = useState(true);
 
   const persistUser = (nextUser) => {
@@ -107,7 +117,7 @@ export function AuthProvider({ children }) {
   };
 
   useEffect(() => {
-    const savedToken = localStorage.getItem("token")?.trim();
+    const savedToken = getStoredToken();
     const savedUser = readStoredUser();
 
     if (!savedToken) {
@@ -117,18 +127,21 @@ export function AuthProvider({ children }) {
       return;
     }
 
+    // Migrate legacy token keys to the canonical key so every dashboard uses
+    // exactly the same credential source.
+    if (!localStorage.getItem("token")) localStorage.setItem("token", savedToken);
     setToken(savedToken);
     if (savedUser) setUser(savedUser);
 
-    // Do not make dashboard rendering depend on a second network round-trip.
-    // The persisted session is authoritative enough to render immediately;
-    // /auth/me refreshes it in the background and only a real 401/403 clears it.
+    // Refresh the user in the background. Only a real 401 means the credential
+    // itself is invalid/expired. A 403 is an authorization/configuration error
+    // and must not destroy an otherwise valid login session.
     fetchCurrentUser()
       .catch((error) => {
         const status = error?.response?.status;
         console.error("AUTH ME ERROR", error.response?.data || error.message);
 
-        if (status === 401 || status === 403) {
+        if (status === 401) {
           clearAuthStorage();
           setToken(null);
           setUser(null);
@@ -157,7 +170,10 @@ export function AuthProvider({ children }) {
     } catch (error) {
       const status = error?.response?.status;
       console.warn("AUTH REFRESH FAILED", error.response?.data || error.message);
-      if (status === 401 || status === 403) {
+      // A 403 after successful login is not a reason to erase the session.
+      // Keep the token so the dashboard can surface the actual authorization
+      // problem instead of falsely reporting an expired session.
+      if (status === 401) {
         clearAuthStorage();
         setToken(null);
         setUser(null);
