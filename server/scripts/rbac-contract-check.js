@@ -1,8 +1,10 @@
 import { normalizeRole, getUserRole, isAdmin, isManager, isAgent, isGuide, isDriver, isCustomer } from "../utils/roleUtils.js";
 
+// Canonical platform role is `super_admin`.
+// `superadmin` remains a supported legacy alias and must normalize to `super_admin`.
 const normalizationCases = [
   ["super_admin", "super_admin"],
-  ["super_admin", "super_admin"],
+  ["superadmin", "super_admin"],
   ["tour_manager", "manager"],
   ["tourmanager", "manager"],
   ["travel_agent", "agent"],
@@ -15,6 +17,7 @@ const normalizationCases = [
 
 const hierarchyCases = [
   ["super_admin", ["admin", "manager", "agent", "guide", "driver"]],
+  ["superadmin", ["admin", "manager", "agent", "guide", "driver"]],
   ["admin", ["admin", "manager", "agent", "guide", "driver"]],
   ["manager", ["manager"]],
   ["agent", ["agent"]],
@@ -44,9 +47,13 @@ for (const [input, expected] of normalizationCases) {
 
 for (const [role, expectedRoles] of hierarchyCases) {
   const user = { role };
-  if (getUserRole(user) !== role) {
+  const normalizedExpected = normalizeRole(role);
+
+  if (getUserRole(user) !== normalizedExpected) {
     failed += 1;
-    console.error(`FAIL user role resolution: ${role}`);
+    console.error(
+      `FAIL user role resolution: ${role} -> ${getUserRole(user)}; expected ${normalizedExpected}`
+    );
   }
 
   for (const expectedRole of expectedRoles) {
