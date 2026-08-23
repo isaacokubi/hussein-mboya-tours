@@ -43,6 +43,16 @@ function getAuthenticatedTenantId() {
 const isPublicAuthRequest = (url = "") =>
   /(?:^|\/)auth\/(?:login|register|bootstrap|password-reset(?:\/|$))/i.test(String(url));
 
+const readStoredToken = () => {
+  if (typeof window === "undefined") return "";
+  return String(
+    localStorage.getItem("token") ||
+      localStorage.getItem("accessToken") ||
+      localStorage.getItem("authToken") ||
+      ""
+  ).trim();
+};
+
 const api = axios.create({
   baseURL,
   withCredentials: true,
@@ -56,17 +66,16 @@ api.interceptors.request.use(
     config.headers = config.headers || {};
 
     const publicAuthRequest = isPublicAuthRequest(config.url);
-    const token = publicAuthRequest
-      ? ""
-      : localStorage.getItem("token")?.trim() ||
-        localStorage.getItem("accessToken")?.trim() ||
-        localStorage.getItem("authToken")?.trim();
+    const token = publicAuthRequest ? "" : readStoredToken();
 
     // Keep the exact credential used by this request so a delayed 401 from an
     // old request cannot invalidate a newer login session.
     config.__authToken = token || "";
 
     if (token) {
+      // Explicitly overwrite any stale Authorization value. This is important
+      // after login/logout because dashboard requests can be created while
+      // React is still reconciling authentication state.
       config.headers.Authorization = `Bearer ${token}`;
       config.headers["X-Requested-With"] = "XMLHttpRequest";
     } else {
@@ -115,12 +124,9 @@ api.interceptors.response.use(
     if (status === 401 && typeof window !== "undefined") {
       const isLoginRequest = /\/auth\/login(?:[/?]|$)/i.test(url);
       const requestToken = String(error?.config?.__authToken || "").trim();
-      const currentToken = String(
-        localStorage.getItem("token") ||
-          localStorage.getItem("accessToken") ||
-          localStorage.getItem("authToken") ||
-          ""
-      ).trim();
+      const currentToken = readStoredToken();
+      const sameCurrentSession = Boolean(requestToken && currentToken && requestToken === currentToken);
+      const staleRequest = Boolean(requestToken && currentToken && requestToken !== currentToken);
 
       console.error("[AUTH 401]", {
         url,
@@ -128,13 +134,14 @@ api.interceptors.response.use(
         response: data,
         requestTokenPresent: Boolean(requestToken),
         currentTokenPresent: Boolean(currentToken),
-        staleRequest: Boolean(requestToken && currentToken && requestToken !== currentToken),
+        staleRequest,
       });
 
-      // Do not invalidate the current session when this 401 belongs to an
-      // older request/token. This closes the login -> /auth/me race that could
-      // bounce a successfully authenticated user back to /login.
-      if (!isLoginRequest && (!requestToken || !currentToken || requestToken === currentToken)) {
+      // Never erase a valid local session because a request was sent without a
+      // token. Only a request that actually carried the current token can prove
+      // that the current session is invalid. This prevents dashboard 401s from
+      // bouncing the user back to /login while authentication state is settling.
+      if (!isLoginRequest && sameCurrentSession && !staleRequest) {
         window.dispatchEvent(new CustomEvent("auth:session-invalid", {
           detail: {
             url,
