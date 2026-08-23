@@ -1,20 +1,24 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
+import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import Booking from "../models/Booking.js";
 import Commission from "../models/Commission.js";
 import Agent from "../models/Agent.js";
 import { getSystemSettings } from "../services/settingsService.js";
-const getGlobalCommissionRate = async () => {
+
+const getGlobalCommissionRate = async (req) => {
   const settings = await getSystemSettings({
-      req,
-      tenantId: req.tenantId || req.user?.tenantId || null,
-    });
+    req,
+    tenantId: req.tenantId || req.user?.tenantId || null,
+  });
   const rate = Number(settings?.defaultCommissionRate);
   return Number.isFinite(rate) && rate >= 0 && rate <= 100 ? rate : 10;
 };
 
 const getAgent = async (user) => {
-  let agent = await Agent.findOne({ user: user._id }).lean();
-  if (!agent && user.email) agent = await Agent.findOne({ email: String(user.email).toLowerCase() }).lean();
+  const tenantFilter = mergeTenantFilter({});
+  let agent = await Agent.findOne({ ...tenantFilter, user: user._id }).lean();
+  if (!agent && user.email) {
+    agent = await Agent.findOne({ ...tenantFilter, email: String(user.email).toLowerCase() }).lean();
+  }
   return agent;
 };
 
@@ -23,18 +27,26 @@ export const getAgentDashboard = async (req, res, next) => {
   try {
     let agent = await getAgent(req.user);
     if (!agent) {
-      agent = (await Agent.create({ user: req.user._id, companyName: req.user.name || "", email: String(req.user.email || "").toLowerCase(), phone: req.user.phone || "", status: "active", isApproved: false })).toObject();
+      agent = (await Agent.create({
+        ...mergeTenantFilter({}),
+        user: req.user._id,
+        companyName: req.user.name || "",
+        email: String(req.user.email || "").toLowerCase(),
+        phone: req.user.phone || "",
+        status: "active",
+        isApproved: false,
+      })).toObject();
     } else if (!agent.user) {
-      await Agent.updateOne({ _id: agent._id }, { $set: { user: req.user._id } });
+      await Agent.updateOne(mergeTenantFilter({ _id: agent._id }), { $set: { user: req.user._id } });
     }
 
-    const globalCommissionRate = await getGlobalCommissionRate();
+    const globalCommissionRate = await getGlobalCommissionRate(req);
     if (Number(agent.commissionRate) !== globalCommissionRate) {
-      await Agent.updateOne({ _id: agent._id }, { $set: { commissionRate: globalCommissionRate } });
+      await Agent.updateOne(mergeTenantFilter({ _id: agent._id }), { $set: { commissionRate: globalCommissionRate } });
       agent.commissionRate = globalCommissionRate;
     }
 
-    const base = { agent: agent._id, isDeleted: { $ne: true } };
+    const base = mergeTenantFilter({ agent: agent._id, isDeleted: { $ne: true } });
     const now = new Date();
     const activeStatuses = ["confirmed", "assigned", "ongoing"];
     const [bookings, upcomingBookings, completedTours, salesResult, guestsResult, commissionResult, pendingBookings, cancelledBookings, recentBookings] = await Promise.all([
@@ -49,7 +61,7 @@ export const getAgentDashboard = async (req, res, next) => {
         { $match: { ...base, status: { $ne: "cancelled" } } },
         { $group: { _id: null, totalGuests: { $sum: { $ifNull: ["$numberOfGuests", { $size: { $ifNull: ["$travelers", []] } }] } } } },
       ]),
-      Commission.aggregate([{ $match: { agent: agent._id, status: { $nin: ["cancelled", "reversed"] } } }, { $group: { _id: null, totalCommission: { $sum: { $ifNull: ["$amount", 0] } } } }]),
+      Commission.aggregate([{ $match: mergeTenantFilter({ agent: agent._id, status: { $nin: ["cancelled", "reversed"] } }) }, { $group: { _id: null, totalCommission: { $sum: { $ifNull: ["$amount", 0] } } } }]),
       Booking.countDocuments({ ...base, status: "pending" }),
       Booking.countDocuments({ ...base, status: "cancelled" }),
       Booking.find(base).populate("tour", "title name price duration destination").populate("customer", "name firstName lastName email phone").sort({ createdAt: -1 }).limit(5).lean(),
@@ -69,7 +81,7 @@ export const getAgentBookings = async (req, res, next) => {
     if (!agent) return res.status(404).json({ success: false, message: "Agent profile not found." });
     const page = Math.max(1, Number(req.query.page) || 1);
     const limit = Math.min(10, Math.max(1, Number(req.query.limit) || 10));
-    const filter = { agent: agent._id, isDeleted: { $ne: true } };
+    const filter = mergeTenantFilter({ agent: agent._id, isDeleted: { $ne: true } });
     if (req.query.status) filter.status = req.query.status;
     const [items, total] = await Promise.all([
       Booking.find(filter).populate("tour", "title name").populate("customer", "name firstName lastName email phone").sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean(),
@@ -83,7 +95,7 @@ export const getAgentCustomers = async (req, res, next) => {
   try {
     const agent = await getAgent(req.user);
     if (!agent) return res.status(404).json({ success: false, message: "Agent profile not found." });
-    const bookings = await Booking.find({ agent: agent._id, isDeleted: { $ne: true } }).populate("customer", "name firstName lastName email phone").select("customer customerSnapshot contact").lean();
+    const bookings = await Booking.find(mergeTenantFilter({ agent: agent._id, isDeleted: { $ne: true } })).populate("customer", "name firstName lastName email phone").select("customer customerSnapshot contact").lean();
     const seen = new Map();
     for (const booking of bookings) {
       const customer = booking.customer || booking.customerSnapshot || booking.contact;
@@ -99,8 +111,8 @@ export const getMyAgentCommission = async (req, res, next) => {
   try {
     const agent = await getAgent(req.user);
     if (!agent) return res.status(404).json({ success: false, message: "Agent profile not found." });
-    const commissions = await Commission.find({ agent: agent._id }).populate("booking").sort({ createdAt: -1 }).lean();
-    const globalCommissionRate = await getGlobalCommissionRate();
+    const commissions = await Commission.find(mergeTenantFilter({ agent: agent._id })).populate("booking").sort({ createdAt: -1 }).lean();
+    const globalCommissionRate = await getGlobalCommissionRate(req);
     return res.status(200).json({ success: true, commissionRate: globalCommissionRate, data: commissions });
   } catch (error) { next(error); }
 };
