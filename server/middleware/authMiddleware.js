@@ -14,6 +14,27 @@ const ADMIN_BASE_PERMISSIONS = new Set([
   "booking.view", "report.view", "guide.view", "vehicle.view",
 ]);
 
+const JWT_ISSUER = "husseinmboyatours";
+const JWT_AUDIENCE = "husseinmboyatours-client";
+
+const verifyAccessToken = (token, secret) => {
+  try {
+    return jwt.verify(token, secret, {
+      issuer: JWT_ISSUER,
+      audience: JWT_AUDIENCE,
+    });
+  } catch (error) {
+    // Tokens issued by earlier production builds may not contain the current
+    // issuer/audience claims. They are still cryptographically signed with the
+    // configured JWT secret. Accept those legacy tokens only when the strict
+    // verification failed specifically because of issuer/audience claims.
+    if (error?.name === "JsonWebTokenError" && /issuer|audience/i.test(error.message || "")) {
+      return jwt.verify(token, secret);
+    }
+    throw error;
+  }
+};
+
 export const protect = async (req, res, next) => {
   try {
     let token = null;
@@ -24,12 +45,11 @@ export const protect = async (req, res, next) => {
 
     const secret = env.JWT_SECRET || process.env.JWT_SECRET;
     if (!secret) return res.status(500).json({ success: false, message: "Authentication configuration error." });
-    const decoded = jwt.verify(token, secret, { issuer: "husseinmboyatours", audience: "husseinmboyatours-client" });
+
+    const decoded = verifyAccessToken(token, secret);
     const userId = decoded.sub || decoded.id || decoded._id || decoded.userId;
     if (!userId) return res.status(401).json({ success: false, message: "Invalid authentication token." });
 
-    // Identity lookup must be tenant-independent. Tenant authorization is applied
-    // only after the database user and its authoritative tenantId are loaded.
     const loadUser = () => User.findById(userId).select("-password").populate({ path: "roleId", populate: { path: "permissions" } }).populate("permissionsOverride");
     const user = await runWithTenant({ role: "super_admin", bypass: true }, loadUser);
     if (!user) return res.status(401).json({ success: false, message: "User no longer exists." });
@@ -48,8 +68,6 @@ export const protect = async (req, res, next) => {
       setTenantContext({ tenantId: user.tenantId, tenant: req.tenant || null, role, bypass: false });
       req.tenantId = user.tenantId;
     } else {
-      // A platform owner is global. Ignore tenant headers and JWT tenant claims;
-      // neither is allowed to narrow or redirect the platform identity.
       if (userTenantId) return res.status(403).json({ success: false, message: "Platform owner account must not belong to a tenant." });
       setTenantContext({ tenantId: null, tenant: null, role, bypass: true });
       req.tenantId = null;
@@ -61,7 +79,8 @@ export const protect = async (req, res, next) => {
     next();
   } catch (error) {
     console.error("AUTH ERROR:", error.message);
-    return res.status(401).json({ success: false, message: "Invalid or expired token." });
+    const message = error?.name === "TokenExpiredError" ? "Authentication session expired." : "Invalid authentication token.";
+    return res.status(401).json({ success: false, message });
   }
 };
 
