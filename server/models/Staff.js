@@ -36,7 +36,7 @@ const staffSchema = new mongoose.Schema(
     languages: [{ type: String, trim: true }],
     certifications: [{ type: String, trim: true }],
     experience: { type: Number, default: 0, min: 0 },
-    employeeNumber: { type: String, unique: true, sparse: true },
+    employeeNumber: { type: String, trim: true, default: undefined },
     employmentType: { type: String, enum: ["full_time", "part_time", "contract", "temporary"], default: "full_time" },
     joinedAt: { type: Date, default: Date.now },
     salary: { type: Number, default: 0, min: 0 },
@@ -77,6 +77,13 @@ staffSchema.methods.releaseFromTour = async function (tourId) {
   if (this.assignedTours.length === 0) this.availability = "available";
   return this.save();
 };
+
+staffSchema.pre("validate", function (next) {
+  if (this.employeeNumber === null || this.employeeNumber === "") {
+    this.employeeNumber = undefined;
+  }
+  next();
+});
 
 staffSchema.index({ position: 1 });
 staffSchema.index({ status: 1 });
