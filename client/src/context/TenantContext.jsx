@@ -1,17 +1,17 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { getTenantBranding } from "../api/tenantBrandingApi";
 
-const PUBLIC_BRAND_NAME = "Your Travel Company";
+const DEFAULT_TENANT = {
+  name: "",
+  legalName: "",
+  currency: "KES",
+  timezone: "Africa/Nairobi",
+};
 
 const TenantContext = createContext();
 
 export function TenantProvider({ children }) {
-  const [tenant, setTenant] = useState({
-    name: PUBLIC_BRAND_NAME,
-    legalName: PUBLIC_BRAND_NAME,
-    currency: "KES",
-    timezone: "Africa/Nairobi",
-  });
+  const [tenant, setTenant] = useState(DEFAULT_TENANT);
 
   useEffect(() => {
     let mounted = true;
@@ -22,15 +22,20 @@ export function TenantProvider({ children }) {
         if (!mounted) return;
 
         const branding = res?.branding || {};
+        const name = branding.name || branding.companyName || "";
+        const legalName = branding.legalName || name;
+
         setTenant({
+          ...DEFAULT_TENANT,
           ...branding,
-          name: PUBLIC_BRAND_NAME,
-          legalName: PUBLIC_BRAND_NAME,
+          name,
+          legalName,
         });
-        document.title = PUBLIC_BRAND_NAME;
+
+        document.title = name || "Tours & Travel";
       } catch (error) {
         console.error("Public tenant branding load failed", error);
-        if (mounted) document.title = PUBLIC_BRAND_NAME;
+        if (mounted) document.title = "Tours & Travel";
       }
     };
 
