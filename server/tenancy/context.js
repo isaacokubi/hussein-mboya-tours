@@ -4,7 +4,6 @@ const tenantStorage = new AsyncLocalStorage();
 const PLATFORM_ROLES = new Set(["super_admin", "superadmin"]);
 const isPlatformRole = (role) => PLATFORM_ROLES.has(String(role || "").trim().toLowerCase());
 
-/* Main tenant wrapper */
 export function runWithTenant(context, callback) {
   const role = String(context?.role || "").trim().toLowerCase() || null;
   const platformOwner = isPlatformRole(role);
@@ -19,7 +18,6 @@ export function runWithTenant(context, callback) {
   );
 }
 
-/* Existing middleware compatibility */
 export function setTenantContext(context) {
   const store = tenantStorage.getStore();
   if (store) {
@@ -62,8 +60,14 @@ export function isTenantBypassed() {
 
 export function mergeTenantFilter(filter = {}) {
   const context = getTenantContext();
-  if (context.tenantId && context.bypass !== true) {
-    return { ...filter, tenantId: context.tenantId };
+
+  if (context.bypass === true) return { ...filter };
+  if (!context.tenantId) {
+    const error = new Error("Tenant context is required");
+    error.status = 400;
+    error.code = "TENANT_CONTEXT_REQUIRED";
+    throw error;
   }
-  return filter;
+
+  return { ...filter, tenantId: context.tenantId };
 }

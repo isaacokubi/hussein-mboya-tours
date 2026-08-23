@@ -24,7 +24,7 @@ jobs:
       - run: npm run build
 
   server-check:
-    name: Server syntax checks
+    name: Server syntax and multitenancy checks
     runs-on: ubuntu-latest
     defaults:
       run:

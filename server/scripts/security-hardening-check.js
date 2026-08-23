@@ -2,6 +2,7 @@ import fs from "node:fs";
 
 const read = (path) => fs.readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
+const app = read("app.js");
 const checks = [
   [
     "Dedicated MFA send limiter",
@@ -21,9 +22,12 @@ const checks = [
   ],
   [
     "Production log redaction guard",
-    read("app.js").includes("PRODUCTION LOG REDACTION") &&
-      read("app.js").includes("callbackResponse") &&
-      read("app.js").includes("[REDACTED]"),
+    app.includes('process.env.NODE_ENV === "production"') &&
+      app.includes("sensitiveKeys") &&
+      app.includes("callbackResponse") &&
+      app.includes("[REDACTED]") &&
+      app.includes("console.log =") &&
+      app.includes("console.error ="),
   ],
   [
     "Environment template has no shell command block",
