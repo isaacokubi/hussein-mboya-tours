@@ -7,6 +7,22 @@ import { dashboardPath, getUserRole } from "../utils/roleUtils";
 import MobileDashboardNav from "../components/common/MobileDashboardNav";
 import AssignmentNotifications from "../components/notifications/AssignmentNotifications";
 
+const normalizeBookings = (data) => {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.bookings)) return data.bookings;
+  if (Array.isArray(data?.data?.bookings)) return data.data.bookings;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.results)) return data.results;
+  return [];
+};
+
+const statusOf = (booking) => String(booking?.bookingStatus || booking?.status || "pending").trim().toLowerCase();
+const paymentStatusOf = (booking) => String(
+  typeof booking?.paymentStatus === "object"
+    ? booking.paymentStatus?.paymentStatus || booking.paymentStatus?.status || "pending"
+    : booking?.paymentStatus || "pending"
+).trim().toLowerCase();
+
 export default function Dashboard() {
   const { user } = useAuth();
   const { settings } = useSettings();
@@ -16,36 +32,35 @@ export default function Dashboard() {
     queryKey: ["my-bookings", user?._id],
     queryFn: getMyBookings,
     enabled: !!user && role === "customer",
+    staleTime: 60 * 1000,
   });
 
   if (role !== "customer") return <Navigate to={dashboardPath(user)} replace />;
   if (isLoading) return <div className="customer-ops">Loading dashboard...</div>;
   if (error) return <div className="customer-ops">Unable to load dashboard.</div>;
 
-  const bookings = Array.isArray(data) ? data :
-    Array.isArray(data?.bookings) ? data.bookings :
-    Array.isArray(data?.data?.bookings) ? data.data.bookings :
-    Array.isArray(data?.data) ? data.data :
-    Array.isArray(data?.results) ? data.results : [];
+  const bookings = normalizeBookings(data);
+  const serverStats = data?.stats || data?.data?.stats || {};
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
 
-  const today = new Date();
-  const statusOf = (booking) => String(booking.bookingStatus || booking.status || "pending").toLowerCase();
-  const upcomingTrips = bookings.filter((booking) => booking.travelDate && new Date(booking.travelDate) >= today && statusOf(booking) !== "cancelled");
+  const upcomingTrips = bookings
+    .filter((booking) => booking.travelDate && new Date(booking.travelDate) >= startOfToday && statusOf(booking) !== "cancelled")
+    .sort((a, b) => new Date(a.travelDate) - new Date(b.travelDate));
   const completedTrips = bookings.filter((booking) => statusOf(booking) === "completed");
   const cancelledTrips = bookings.filter((booking) => statusOf(booking) === "cancelled");
 
   const totalSpent = bookings.reduce((total, booking) => {
     const status = statusOf(booking);
-    const paymentStatus = String(typeof booking.paymentStatus === "object"
-      ? booking.paymentStatus?.paymentStatus || booking.paymentStatus?.status || "pending"
-      : booking.paymentStatus || "pending").toLowerCase();
-
-    if (!["confirmed", "completed", "assigned", "ongoing"].includes(status) || !["paid", "completed", "success"].includes(paymentStatus)) return total;
-
-    const amount = Number(booking.depositAmount || 0) || Number(booking.totalAmount || booking.amount || 0);
-    return total + Math.max(0, amount - Number(booking.refundAmount || 0));
+    const paymentStatus = paymentStatusOf(booking);
+    if (!["confirmed", "completed", "assigned", "ongoing"].includes(status)) return total;
+    if (!["paid", "completed", "success"].includes(paymentStatus)) return total;
+    const paid = Number(booking.amountPaid ?? booking.paidAmount ?? booking.depositAmount ?? booking.totalAmount ?? booking.amount ?? 0);
+    return total + Math.max(0, paid - Number(booking.refundAmount || 0));
   }, 0);
 
+  const displayedTotal = Number(serverStats.totalTrips ?? data?.total ?? bookings.length);
+  const displayedSpent = Number(serverStats.totalSpent ?? totalSpent);
   const nextTrip = upcomingTrips[0];
 
   return (
@@ -58,30 +73,23 @@ export default function Dashboard() {
           <div className="flex gap-4 mt-6 flex-wrap">
             <Link to="/tours" className="bg-white text-green-700 px-6 py-3 rounded-xl font-bold">Explore Tours</Link>
             <Link to="/my-bookings" className="bg-black/40 px-6 py-3 rounded-xl font-bold">My Bookings</Link>
-
-<Link to="/custom-tour" className="bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold">Create Custom Tour</Link>
-
-<Link
-  to="/my-custom-tours"
-  className="bg-white text-emerald-700 px-6 py-3 rounded-xl font-bold border border-white/30 hover:bg-emerald-50 transition"
->
-  My Custom Tours
-</Link>
+            <Link to="/custom-tour" className="bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold">Create Custom Tour</Link>
+            <Link to="/my-custom-tours" className="bg-white text-emerald-700 px-6 py-3 rounded-xl font-bold border border-white/30 hover:bg-emerald-50 transition">My Custom Tours</Link>
           </div>
         </div>
 
         <div className="mb-6 mt-6 md:mt-0"><AssignmentNotifications /></div>
 
         <div className="grid md:grid-cols-4 gap-6">
-          <Card title="Total Trips" value={bookings.length} />
-          <Card title="Upcoming Adventures" value={upcomingTrips.length} />
-          <Card title="Completed Trips" value={completedTrips.length} />
-          <Card title="Cancelled Trips" value={cancelledTrips.length} />
+          <Card title="Total Trips" value={displayedTotal} />
+          <Card title="Upcoming Adventures" value={serverStats.upcomingTrips ?? upcomingTrips.length} />
+          <Card title="Completed Trips" value={serverStats.completedTrips ?? completedTrips.length} />
+          <Card title="Cancelled Trips" value={serverStats.cancelledTrips ?? cancelledTrips.length} />
         </div>
 
         <div className="bg-white rounded-2xl shadow p-6 mt-6">
           <p className="text-gray-500">Total Spent</p>
-          <h2 className="text-3xl font-bold">KES {totalSpent.toLocaleString()}</h2>
+          <h2 className="text-3xl font-bold">KES {displayedSpent.toLocaleString()}</h2>
         </div>
 
         {nextTrip && <div className="bg-white rounded-2xl shadow p-8 mt-8">
