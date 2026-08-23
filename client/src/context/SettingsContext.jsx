@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import api from "../api/axios";
 
-export const PUBLIC_BRAND_NAME = "Coherent Tours";
+export const PUBLIC_BRAND_NAME = "Your Travel Company";
 
 const DEFAULT_SETTINGS = {
   companyName: PUBLIC_BRAND_NAME,
