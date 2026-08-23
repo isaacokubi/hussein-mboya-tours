@@ -38,6 +38,7 @@ import adminReviewRoutes from "./adminReviewRoutes.js";
 import adminGalleryRoutes from "./adminGalleryRoutes.js";
 import adminCategoryRoutes from "./adminCategoryRoutes.js";
 import adminCouponRoutes from "./adminCouponRoutes.js";
+import adminHeroRoutes from "./adminHeroRoutes.js";
 import categoryRoutes from "./categoryRoutes.js";
 import analyticsRoutes from "./analyticsRoutes.js";
 import agentRoutes from "./agentRoutes.js";
@@ -69,95 +70,9 @@ import tenantBrandingRoutes from "./tenantBrandingRoutes.js";
 const router = express.Router();
 router.use("/tenant", tenantBrandingRoutes);
 router.use(resolveTenant);
-
 router.use("/categories", categoryRoutes);
-router.use("/auth", authRoutes);
-router.use("/mfa", mfaRoutes);
-router.use("/bookings", bookingRoutes);
-router.use("/tours", tourRoutes);
-router.use("/destinations", destinationRoutes);
-router.use("/admin/destinations", adminDestinationRoutes);
-router.use("/reviews", reviewRoutes);
-router.use("/custom-tour-requests", customTourRequestRoutes);
-router.use("/wishlist", wishlistRoutes);
-router.use("/gallery", galleryRoutes);
-router.use("/hero", heroRoutes);
-router.use("/mpesa", mpesaRoutes);
-router.use("/payments", mpesaRoutes);
-router.use("/payments/stripe", stripeRoutes);
-router.use("/tenants", tenantRoutes);
-
-router.use("/admin/auth", adminAuthRoutes);
-router.use("/admin/roles", adminRoleRoutes);
-router.use("/admin", adminRoutes);
-router.use("/admin/tours", adminTourRoutes);
-router.use("/admin/bookings", adminBookingRoutes);
-router.use("/admin/payments", adminPaymentRoutes);
-router.use("/system", systemHealthRoutes);
-router.use("/security", securityRoutes);
-
-router.get("/admin/system-health", protect, checkPermission("system.security"), async (req, res) => {
-  const mongoose = (await import("mongoose")).default;
-  const memory = process.memoryUsage();
-  res.json({
-    status: "healthy",
-    server: "running",
-    nodeVersion: process.version,
-    environment: process.env.NODE_ENV || "development",
-    uptime: Math.floor(process.uptime()),
-    timestamp: new Date().toISOString(),
-    database: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
-    memory: { used: Math.round(memory.heapUsed / 1024 / 1024) + " MB", total: Math.round(memory.heapTotal / 1024 / 1024) + " MB" },
-    platform: { os: process.platform, architecture: process.arch },
-  });
-});
-
-router.get("/settings/public", getPublicSettings);
-router.use("/admin/settings", settingsRoutes);
-router.use("/admin/dashboard", adminDashboardRoutes);
-router.use("/admin/reviews", adminReviewRoutes);
-router.use("/admin/gallery", adminGalleryRoutes);
-router.use("/admin/experiences", adminCategoryRoutes);
-router.use("/admin/coupons", adminCouponRoutes);
-router.use("/admin/finance", financeRoutes);
-router.use("/admin/customers", customerRoutes);
-router.use("/analytics", analyticsRoutes);
-router.use("/tourmanager", tourManagerRoutes);
-router.use("/tour-manager", tourManagerRoutes);
-router.use("/tour-assignments", tourAssignmentRoutes);
-router.use("/tour-reports", tourReportRoutes);
-router.use("/agents", agentRoutes);
-router.use("/agent", agentRoutes);
-router.use("/agents/bookings", agentBookingRoutes);
-router.use("/agent/bookings", agentBookingRoutes);
-router.use("/agents/customers", agentCustomerRoutes);
-router.use("/agent/customers", agentCustomerRoutes);
-router.use("/agents/packages", agentPackageRoutes);
-router.use("/agent/packages", agentPackageRoutes);
-router.use("/agents/quotes", quotationRoutes);
-router.use("/agent/quotes", quotationRoutes);
-router.use("/customers", customerRoutes);
-router.use("/documents", documentRoutes);
-router.use("/invoices", invoiceRoutes);
-router.use("/notifications", notificationRoutes);
-router.get("/health", (req, res) => res.status(200).json({ success: true, message: "Travel API healthy" }));
-router.use("/recommendations", recommendationRoutes);
-router.use("/guide", guideRoutes);
-router.use("/driver", driverRoutes);
-router.use("/vehicles", vehicleRoutes);
-router.use("/users", userRoutes);
-router.use("/staff", staffRoutes);
-router.use("/commissions", commissionRoutes);
-router.use("/crm", crmRoutes);
-router.use("/coupons", couponRoutes);
-router.use("/ai", aiRoutes);
-router.use("/admin-ai", adminAIRoutes);
-router.use("/", seoRoutes);
-router.use("/superadmin", superAdminRoutes);
-router.use("/superadmin/api-monitor", apiMonitorRoutes);
-router.use("/superadmin", superAdminOperationsRoutes);
-router.use("/superadmin/users", superAdminUserRoutes);
-router.use("/superadmin-tools", superAdminToolsRoutes);
-router.use("/superadmin/maintenance", superAdminMaintenanceRoutes);
-
+router.use("/auth", authRoutes); router.use("/mfa", mfaRoutes); router.use("/bookings", bookingRoutes); router.use("/tours", tourRoutes); router.use("/destinations", destinationRoutes); router.use("/admin/destinations", adminDestinationRoutes); router.use("/reviews", reviewRoutes); router.use("/custom-tour-requests", customTourRequestRoutes); router.use("/wishlist", wishlistRoutes); router.use("/gallery", galleryRoutes); router.use("/hero", heroRoutes); router.use("/mpesa", mpesaRoutes); router.use("/payments", mpesaRoutes); router.use("/payments/stripe", stripeRoutes); router.use("/tenants", tenantRoutes);
+router.use("/admin/auth", adminAuthRoutes); router.use("/admin/roles", adminRoleRoutes); router.use("/admin", adminRoutes); router.use("/admin/tours", adminTourRoutes); router.use("/admin/bookings", adminBookingRoutes); router.use("/admin/payments", adminPaymentRoutes); router.use("/system", systemHealthRoutes); router.use("/security", securityRoutes);
+router.get("/admin/system-health", protect, checkPermission("system.security"), async (req, res) => { const mongoose = (await import("mongoose")).default; const memory = process.memoryUsage(); res.json({ status: "healthy", server: "running", nodeVersion: process.version, environment: process.env.NODE_ENV || "development", uptime: Math.floor(process.uptime()), timestamp: new Date().toISOString(), database: mongoose.connection.readyState === 1 ? "connected" : "disconnected", memory: { used: Math.round(memory.heapUsed / 1024 / 1024) + " MB", total: Math.round(memory.heapTotal / 1024 / 1024) + " MB" }, platform: { os: process.platform, architecture: process.arch } }); });
+router.get("/settings/public", getPublicSettings); router.use("/admin/settings", settingsRoutes); router.use("/admin/dashboard", adminDashboardRoutes); router.use("/admin/reviews", adminReviewRoutes); router.use("/admin/gallery", adminGalleryRoutes); router.use("/admin/experiences", adminCategoryRoutes); router.use("/admin/hero", adminHeroRoutes); router.use("/admin/coupons", adminCouponRoutes); router.use("/admin/finance", financeRoutes); router.use("/admin/customers", customerRoutes); router.use("/analytics", analyticsRoutes); router.use("/tourmanager", tourManagerRoutes); router.use("/tour-manager", tourManagerRoutes); router.use("/tour-assignments", tourAssignmentRoutes); router.use("/tour-reports", tourReportRoutes); router.use("/agents", agentRoutes); router.use("/agent", agentRoutes); router.use("/agents/bookings", agentBookingRoutes); router.use("/agent/bookings", agentBookingRoutes); router.use("/agents/customers", agentCustomerRoutes); router.use("/agent/customers", agentCustomerRoutes); router.use("/agents/packages", agentPackageRoutes); router.use("/agent/packages", agentPackageRoutes); router.use("/agents/quotes", quotationRoutes); router.use("/agent/quotes", quotationRoutes); router.use("/customers", customerRoutes); router.use("/documents", documentRoutes); router.use("/invoices", invoiceRoutes); router.use("/notifications", notificationRoutes); router.get("/health", (req, res) => res.status(200).json({ success: true, message: "Travel API healthy" })); router.use("/recommendations", recommendationRoutes); router.use("/guide", guideRoutes); router.use("/driver", driverRoutes); router.use("/vehicles", vehicleRoutes); router.use("/users", userRoutes); router.use("/staff", staffRoutes); router.use("/commissions", commissionRoutes); router.use("/crm", crmRoutes); router.use("/coupons", couponRoutes); router.use("/ai", aiRoutes); router.use("/admin-ai", adminAIRoutes); router.use("/", seoRoutes); router.use("/superadmin", superAdminRoutes); router.use("/superadmin/api-monitor", apiMonitorRoutes); router.use("/superadmin", superAdminOperationsRoutes); router.use("/superadmin/users", superAdminUserRoutes); router.use("/superadmin-tools", superAdminToolsRoutes); router.use("/superadmin/maintenance", superAdminMaintenanceRoutes);
 export default router;
