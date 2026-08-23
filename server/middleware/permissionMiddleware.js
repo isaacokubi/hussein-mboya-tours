@@ -23,7 +23,7 @@ const PERMISSION_ALIASES = {
   "payment.manage": ["payment.manage", "manage_payments"], "manage_payments": ["manage_payments", "payment.manage"],
   "customer.manage": ["customer.manage", "manage_customers"], "manage_customers": ["manage_customers", "customer.manage"],
   "staff.manage": ["staff.manage", "manage_staff"], "manage_staff": ["manage_staff", "staff.manage"],
-  "user.manage": ["user.manage", "manage_users"], "manage_users": ["user.manage", "manage_users"],
+  "user.manage": ["user.manage", "manage_users"], "manage_users": ["manage_users", "user.manage"],
   "guide.manage": ["guide.manage", "manage_guides"], "manage_guides": ["manage_guides", "guide.manage"],
   "vehicle.manage": ["vehicle.manage", "manage_vehicles"], "manage_vehicles": ["manage_vehicles", "vehicle.manage"],
   "agent.manage": ["agent.manage", "manage_agents"], "manage_agents": ["manage_agents", "agent.manage"],
