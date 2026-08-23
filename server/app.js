@@ -20,11 +20,11 @@ import tenantBrandingRoutes from "./routes/tenantBrandingRoutes.js";
 
 const app = express();
 
-// Render and other reverse proxies must be trusted before middleware that
-// reads req.ip. This also prevents rate-limit validation failures on proxied
-// health checks or connection teardown requests.
 app.set("trust proxy", 1);
 
+// Public tenant resolution is needed for tenant-scoped resources, but the
+// public settings endpoint also has a safe fallback when no tenant header is
+// supplied. Authenticated requests are resolved by their token/user tenant.
 app.use(resolveTenant);
 
 if (process.env.NODE_ENV === "production") {
