@@ -1,7 +1,7 @@
 import { useSettings } from "../../context/SettingsContext";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, Globe2, Palette, Phone, Save, ShieldCheck, WalletCards, LayoutDashboard, Bell, Search } from "lucide-react";
+import { Building2, Globe2, Palette, Phone, Save, ShieldCheck, WalletCards, LayoutDashboard, Bell, Search, Users, CreditCard, UserCircle } from "lucide-react";
 import { toast } from "react-toastify";
 import { getSettings, updateSettings } from "../../api/settingsApi";
 import TenantHeroManager from "../../components/admin/TenantHeroManager";
@@ -14,11 +14,14 @@ export default function AdminSettings() {
   const qc = useQueryClient();
   const { settings: globalSettings = {}, updateSettings: updatePublicSettings } = useSettings();
   const [settings, setSettings] = useState(DEFAULTS);
+  const [tenantProfile, setTenantProfile] = useState(null);
   const [logoFile, setLogoFile] = useState(null);
   const { data, isLoading, isError, refetch } = useQuery({ queryKey: ["admin-settings"], queryFn: getSettings });
 
   useEffect(() => {
     const incoming = data?.data || data?.settings;
+    const profile = data?.tenantProfile || incoming?.tenantProfile;
+    if (profile) setTenantProfile(profile);
     if (incoming) setSettings(s => ({ ...s, ...incoming, homepageSections: { ...SECTIONS, ...(incoming.homepageSections || {}) } }));
   }, [data]);
   useEffect(() => {
@@ -31,8 +34,10 @@ export default function AdminSettings() {
       const saved = r?.data || r?.settings;
       if (saved) {
         setSettings(s => ({ ...s, ...saved }));
+        if (saved.tenantProfile) setTenantProfile(saved.tenantProfile);
         updatePublicSettings(saved);
       }
+      if (r?.tenantProfile) setTenantProfile(r.tenantProfile);
       setLogoFile(null);
       await qc.invalidateQueries({ queryKey: ["admin-settings"] });
       toast.success("Tenant settings saved and applied to the public site.");
@@ -47,9 +52,12 @@ export default function AdminSettings() {
   if (isLoading) return <div className="p-8">Loading system settings...</div>;
   if (isError) return <div className="p-8"><p className="text-red-600">Failed to load system settings.</p><button type="button" onClick={() => refetch()} className="mt-3 rounded-lg bg-emerald-700 px-4 py-2 font-semibold text-white">Retry</button></div>;
 
+  const planLabel = { starter: "Starter", professional: "Professional", business: "Business", enterprise: "Enterprise" }[tenantProfile?.subscriptionPlan] || tenantProfile?.subscriptionPlan || "—";
+
   return <div className="min-h-screen bg-slate-50 p-4 md:p-6"><div className="mx-auto max-w-7xl">
-    <header className="mb-6 rounded-3xl bg-gradient-to-r from-slate-950 via-emerald-950 to-slate-900 p-6 text-white shadow-xl"><p className="text-sm font-semibold uppercase tracking-widest text-emerald-300">Administration</p><h1 className="mt-2 text-3xl font-bold">System & Tenant Settings</h1><p className="mt-2 text-slate-300">Every setting below is saved for this tenant and exposed to the public website where applicable.</p></header>
+    <header className="mb-6 rounded-3xl bg-gradient-to-r from-slate-950 via-emerald-950 to-slate-900 p-6 text-white shadow-xl"><p className="text-sm font-semibold uppercase tracking-widest text-emerald-300">Tenant Administration</p><h1 className="mt-2 text-3xl font-bold">{tenantProfile?.companyName || settings.companyName || "Company"} Settings</h1><p className="mt-2 text-slate-300">Company configuration is isolated to this tenant. Subscription and account information comes from the platform tenant record.</p></header>
     <form onSubmit={save} className="space-y-6">
+      {tenantProfile && <Section icon={<Building2 size={20}/>} title="Tenant account & subscription"><div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"><ReadOnlyField label="Company name" value={tenantProfile.companyName}/><ReadOnlyField label="Legal name" value={tenantProfile.legalName}/><ReadOnlyField label="Company email" value={tenantProfile.companyEmail}/><ReadOnlyField label="Company phone" value={tenantProfile.companyPhone}/><ReadOnlyField label="Company slug" value={tenantProfile.slug}/><ReadOnlyField label="Website" value={tenantProfile.websiteUrl}/><ReadOnlyField label="Country" value={tenantProfile.country}/><ReadOnlyField label="Currency" value={tenantProfile.currency}/><ReadOnlyField label="Timezone" value={tenantProfile.timezone}/><ReadOnlyField label="Subscription plan" value={planLabel}/><ReadOnlyField label="User seats" value={tenantProfile.userSeats ? `${tenantProfile.userSeats} seats` : "—"}/><ReadOnlyField label="Tenant status" value={tenantProfile.status}/></div><div className="mt-5 grid gap-4 md:grid-cols-2"><InfoCard icon={<Users size={18}/>} title="User capacity" value={`${tenantProfile.userSeats || 0} seats`} text="This is the seat capacity assigned by the platform owner. Contact the platform owner to increase the limit."/><InfoCard icon={<CreditCard size={18}/>} title="Subscription" value={planLabel} text={tenantProfile.trialEndsAt ? `Trial ends ${new Date(tenantProfile.trialEndsAt).toLocaleDateString()}.` : "Subscription details are managed by the platform owner."}/></div>{tenantProfile.primaryAdministrator && <div className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50 p-5"><div className="mb-3 flex items-center gap-2 font-bold text-emerald-900"><UserCircle size={20}/> Primary administrator</div><div className="grid gap-3 md:grid-cols-3 text-sm"><ReadOnlyField label="Name" value={tenantProfile.primaryAdministrator.name}/><ReadOnlyField label="Email" value={tenantProfile.primaryAdministrator.email}/><ReadOnlyField label="Phone" value={tenantProfile.primaryAdministrator.phone}/></div></div>}</Section>}
       <TenantHeroManager />
       <Section icon={<Palette size={20}/>} title="Tenant system color & visual theme"><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{[["primaryColor","Primary color"],["secondaryColor","Secondary color"],["accentColor","Accent color"],["backgroundColor","Page background"],["surfaceColor","Surface color"],["textColor","Text color"]].map(([key,label])=><Field key={key} label={label}><div className="flex gap-2"><input type="color" value={settings[key]} onChange={e=>update(key,e.target.value)} className="h-11 w-14 rounded border p-1"/><input value={settings[key]} onChange={e=>update(key,e.target.value)}/></div></Field>)}</div><div className="grid gap-4 md:grid-cols-4"><Field label="Font"><select value={settings.fontFamily} onChange={e=>update("fontFamily",e.target.value)}><option>Inter</option><option>Poppins</option><option>Roboto</option><option>Arial</option><option>Georgia</option><option>system-ui</option></select></Field><Field label="Corner radius"><select value={settings.borderRadius} onChange={e=>update("borderRadius",e.target.value)}><option value="sm">Small</option><option value="md">Medium</option><option value="lg">Large</option><option value="xl">XL</option><option value="2xl">2XL</option></select></Field><Field label="Button style"><select value={settings.buttonStyle} onChange={e=>update("buttonStyle",e.target.value)}><option value="solid">Solid</option><option value="rounded">Rounded</option><option value="pill">Pill</option><option value="outline">Outline</option></select></Field><Field label="Hero overlay %"><input type="number" min="0" max="100" value={settings.heroOverlayOpacity} onChange={e=>update("heroOverlayOpacity",e.target.value)}/></Field></div></Section>
       <Section icon={<LayoutDashboard size={20}/>} title="Homepage modules"><div className="grid gap-3 md:grid-cols-3">{Object.keys(SECTIONS).map(key=><Toggle key={key} label={key.replace(/([A-Z])/g," $1")} value={settings.homepageSections?.[key] !== false} onChange={v=>section(key,v)}/>)}</div></Section>
@@ -65,4 +73,6 @@ export default function AdminSettings() {
 }
 function Section({icon,title,children}) { return <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200 md:p-7"><div className="mb-5 flex items-center gap-3"><span className="rounded-xl bg-emerald-50 p-2 text-emerald-700">{icon}</span><h2 className="text-xl font-bold">{title}</h2></div>{children}</section>; }
 function Field({label,children}) { return <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">{label}</span>{children}</label>; }
+function ReadOnlyField({label,value}) { return <div><span className="mb-2 block text-sm font-semibold text-slate-700">{label}</span><div className="min-h-11 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800">{value || "—"}</div></div>; }
+function InfoCard({icon,title,value,text}) { return <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4"><div className="flex items-center gap-2 text-sm font-bold text-slate-700">{icon}{title}</div><div className="mt-1 text-xl font-bold text-slate-900">{value}</div><p className="mt-1 text-sm text-slate-500">{text}</p></div>; }
 function Toggle({label,value,onChange}) { return <label className="flex cursor-pointer items-center justify-between rounded-xl border p-4"><span className="font-medium capitalize">{label}</span><input type="checkbox" checked={Boolean(value)} onChange={e=>onChange(e.target.checked)} className="h-5 w-5"/></label>; }
