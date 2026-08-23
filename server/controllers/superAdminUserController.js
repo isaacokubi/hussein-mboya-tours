@@ -1,308 +1,91 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import mongoose from "mongoose";
 import User from "../models/User.js";
 import Role from "../models/Role.js";
-import SecurityLog from "../models/SecurityLog.js";
-import { createAuditLog } from "../services/auditService.js";
+import Staff from "../models/Staff.js";
+import Agent from "../models/Agent.js";
 
-const ALLOWED_ROLES = {
-  admin: {
-    name: "admin",
-    displayName: "Admin",
-  },
-  manager: {
-    name: "manager",
-    displayName: "Tour Manager",
-  },
-  tour_guide: {
-    name: "tour_guide",
-    displayName: "Tour Guide",
-  },
-  driver: {
-    name: "driver",
-    displayName: "Driver",
-  },
-  agent: {
-    name: "agent",
-    displayName: "Travel Agent",
-  },
-  customer: {
-    name: "customer",
-    displayName: "Customer",
-  },
+const STATUS_VALUES = ["active", "inactive", "disabled", "suspended", "blocked"];
+const ROLE_MAP = {
+  admin: "admin", administrator: "admin",
+  manager: "manager", tour_manager: "manager", "tour manager": "manager",
+  tour_guide: "tour_guide", guide: "tour_guide", "tour guide": "tour_guide",
+  driver: "driver", agent: "agent", travel_agent: "agent", "travel agent": "agent",
+  customer: "customer",
 };
 
-const normalizeRole = (role) => {
-  const value = String(role || "").trim().toLowerCase();
+const normalizeRole = (value) => ROLE_MAP[String(value || "").toLowerCase().replace(/-/g, "_")] || null;
 
-  const aliases = {
-    administrator: "admin",
-    admin: "admin",
-
-    "tour manager": "manager",
-    manager: "manager",
-
-    "tour guide": "tour_guide",
-    guide: "tour_guide",
-    tour_guide: "tour_guide",
-
-    driver: "driver",
-
-    "travel agent": "agent",
-    agent: "agent",
-
-    customer: "customer",
-  };
-
-  return aliases[value] || value;
-};
-
-const normalizePhone = (phone) =>
-  String(phone || "").replace(/\D/g, "").trim();
-
-const validatePassword = (password) => {
-  const value = String(password || "");
-
-  if (value.length < 8) {
-    return "Password must be at least 8 characters.";
-  }
-
-  if (!/[A-Z]/.test(value)) {
-    return "Password must contain at least one uppercase letter.";
-  }
-
-  if (!/\d/.test(value)) {
-    return "Password must contain at least one number.";
-  }
-
-  return null;
-};
-
-export const createCompanyAccount = async (req, res, next) => {
+export const getSuperAdminUsers = async (req, res, next) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({
-        success: false,
-        message: "Authentication required.",
-      });
+    const page = Math.max(Number(req.query.page) || 1, 1);
+    const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 250);
+    const search = String(req.query.search || "").trim();
+    const query = {};
+    if (search) {
+      const regex = { $regex: search, $options: "i" };
+      query.$or = [{ name: regex }, { email: regex }, { phone: regex }, { role: regex }, { legacyRole: regex }, { status: regex }];
     }
+    const skip = (page - 1) * limit;
+    const [users, total] = await Promise.all([
+      User.find(query).select("-password").populate("roleId", "name displayName permissions").sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+      User.countDocuments(query),
+    ]);
+    const data = users.map((user) => ({
+      ...user,
+      role: user.roleId?.name || user.role || user.legacyRole || "customer",
+      status: user.status || "active",
+      isActive: (user.status || "active") === "active",
+    }));
+    return res.json({ success: true, page, limit, total, pages: Math.max(1, Math.ceil(total / limit)), count: data.length, users: data, data });
+  } catch (error) { next(error); }
+};
 
-    /*
-     * authMiddleware/roleUtils normalizes Super Admin to "super_admin".
-     * Accept the canonical authenticated role instead of relying on the
-     * legacy database spelling "super_admin".
-     */
-    const authenticatedRole = String(
-      req.userRole || req.user.role || ""
-    ).trim().toLowerCase();
-
-    if (
-      authenticatedRole !== "super_admin" &&
-      authenticatedRole !== "super_admin"
-    ) {
-      return res.status(403).json({
-        success: false,
-        message: "Only Super Admin can create company accounts.",
-      });
-    }
-
-    const tenantId = req.user.tenantId;
-
-    if (!tenantId) {
-      return res.status(400).json({
-        success: false,
-        message: "Super Admin is not associated with a tenant.",
-      });
-    }
-
-    const {
-      name,
-      email,
-      phone,
-      password,
-      role,
-    } = req.body || {};
-
-    const normalizedName = String(name || "").trim();
-    const normalizedEmail = String(email || "").trim().toLowerCase();
-    const normalizedPhone = normalizePhone(phone);
+export const createSuperAdminCompanyAccount = async (req, res, next) => {
+  try {
+    const { name, email, phone, password, role } = req.body || {};
     const canonicalRole = normalizeRole(role);
+    if (!canonicalRole) return res.status(400).json({ success: false, message: "Choose a valid company account role." });
+    if (!name?.trim() || !email?.trim() || !/^\d{10}$/.test(String(phone || ""))) return res.status(400).json({ success: false, message: "Name, email and a 10-digit phone are required." });
+    if (String(password || "").length < 12 || !/[A-Z]/.test(password) || !/\d/.test(password)) return res.status(400).json({ success: false, message: "Password must be at least 12 characters and include an uppercase letter and a number." });
+    const normalizedEmail = String(email).trim().toLowerCase();
+    if (await User.exists({ email: normalizedEmail })) return res.status(409).json({ success: false, message: "A user with this email already exists." });
 
-    if (!normalizedName) {
-      return res.status(400).json({
-        success: false,
-        message: "Full name is required.",
-      });
+    const roleDoc = await Role.findOne({ name: canonicalRole });
+    if (!roleDoc) return res.status(400).json({ success: false, message: `System role '${canonicalRole}' is not configured.` });
+
+    const user = await User.create({ name: name.trim(), email: normalizedEmail, phone: String(phone).trim(), password, role: canonicalRole, legacyRole: canonicalRole, roleId: roleDoc._id, status: "active", isVerified: true });
+    let staff = null;
+    let agent = null;
+    if (["tour_guide", "driver"].includes(canonicalRole)) {
+      staff = await Staff.create({ user: user._id, name: user.name, email: user.email, phone: user.phone, position: canonicalRole === "tour_guide" ? "guide" : "driver", role: canonicalRole === "tour_guide" ? "guide" : "driver", status: "active", isActive: true, availability: "available", createdBy: req.user?._id });
     }
+    if (canonicalRole === "agent") agent = await Agent.create({ user: user._id, companyName: "", phone: user.phone, email: user.email, commissionRate: 10, isApproved: false, status: "active" });
+    const safeUser = await User.findById(user._id).select("-password").populate("roleId", "name displayName permissions").lean();
+    return res.status(201).json({ success: true, message: "Company account created successfully.", user: safeUser, staff, agent });
+  } catch (error) { next(error); }
+};
 
-    if (!/^\S+@\S+\.\S+$/.test(normalizedEmail)) {
-      return res.status(400).json({
-        success: false,
-        message: "Enter a valid email address.",
-      });
-    }
+export const updateSuperAdminUserStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body || {};
+    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ success: false, message: "Invalid user ID" });
+    if (!STATUS_VALUES.includes(status)) return res.status(400).json({ success: false, message: "Invalid user status" });
+    const user = await User.findByIdAndUpdate(id, { $set: { status } }, { new: true, runValidators: true }).select("-password").lean();
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    return res.json({ success: true, message: `User status changed to ${status}`, user, data: user });
+  } catch (error) { next(error); }
+};
 
-    if (!/^\d{10}$/.test(normalizedPhone)) {
-      return res.status(400).json({
-        success: false,
-        message: "Phone number must contain exactly 10 digits.",
-      });
-    }
-
-    const passwordError = validatePassword(password);
-
-    if (passwordError) {
-      return res.status(400).json({
-        success: false,
-        message: passwordError,
-      });
-    }
-
-    /*
-     * Never allow creation of another Super Admin from this screen.
-     */
-    if (
-      canonicalRole === "super_admin" ||
-      String(role || "").toLowerCase().includes("super")
-    ) {
-      return res.status(403).json({
-        success: false,
-        message: "Super Admin accounts cannot be created from this screen.",
-      });
-    }
-
-    const roleDefinition = ALLOWED_ROLES[canonicalRole];
-
-    if (!roleDefinition) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Invalid account type. Allowed types are Admin, Tour Manager, Tour Guide, Driver, Travel Agent and Customer.",
-      });
-    }
-
-    /*
-     * Role must belong to the approved system-role set.
-     * This prevents arbitrary role injection.
-     */
-    const roleDocument = await Role.findOne({
-      name: roleDefinition.name,
-      status: "active",
-    });
-
-    if (!roleDocument) {
-      return res.status(500).json({
-        success: false,
-        message: `Required system role '${roleDefinition.name}' was not found.`,
-      });
-    }
-
-    /*
-     * Never trust tenantId supplied by the frontend.
-     *
-     * The tenant ALWAYS comes from the authenticated Super Admin.
-     */
-    const existingEmail = await User.findOne({
-      email: normalizedEmail,
-    })
-      .select("_id email")
-      .lean();
-
-    if (existingEmail) {
-      return res.status(409).json({
-        success: false,
-        message: "A user with this email address already exists.",
-      });
-    }
-
-    const existingPhone = await User.findOne({
-      phone: normalizedPhone,
-    })
-      .select("_id phone")
-      .lean();
-
-    if (existingPhone) {
-      return res.status(409).json({
-        success: false,
-        message: "A user with this phone number already exists.",
-      });
-    }
-
-    const createdUser = await User.create({
-      name: normalizedName,
-      email: normalizedEmail,
-      phone: normalizedPhone,
-      password,
-      role: roleDefinition.name,
-      roleId: roleDocument._id,
-      legacyRole: roleDefinition.name,
-      tenantId,
-      status: "active",
-      isVerified: true,
-    });
-
-    /*
-     * SECURITY LOG
-     */
-    await SecurityLog.create({
-      user: req.user._id,
-      email: req.user.email,
-      action: "account_created",
-      resource: "User",
-      description: `Super Admin created ${roleDefinition.displayName} account ${normalizedEmail}.`,
-      severity: "medium",
-      ipAddress: req.ip,
-      userAgent: req.headers["user-agent"] || "",
-      details: `Created user ${createdUser._id} for tenant ${tenantId}.`,
-    });
-
-    /*
-     * AUDIT LOG
-     */
-    await createAuditLog({
-      user: req.user._id,
-      action: "create",
-      resource: "User",
-      resourceId: createdUser._id.toString(),
-      description: `Super Admin created ${roleDefinition.displayName} account.`,
-      severity: "medium",
-      ipAddress: req.ip,
-      userAgent: req.headers["user-agent"] || "",
-      method: req.method,
-      endpoint: req.originalUrl,
-      metadata: {
-        event: "company_account_created",
-        tenantId: tenantId.toString(),
-        createdUserId: createdUser._id.toString(),
-        createdUserEmail: createdUser.email,
-        createdRole: roleDefinition.name,
-      },
-    });
-
-    return res.status(201).json({
-      success: true,
-      message: `${roleDefinition.displayName} account created successfully.`,
-      user: {
-        _id: createdUser._id,
-        name: createdUser.name,
-        email: createdUser.email,
-        phone: createdUser.phone,
-        role: createdUser.role,
-        roleId: createdUser.roleId,
-        tenantId: createdUser.tenantId,
-        status: createdUser.status,
-        isVerified: createdUser.isVerified,
-      },
-    });
-  } catch (error) {
-    console.error("SUPER ADMIN CREATE COMPANY ACCOUNT ERROR:", error);
-
-    if (error?.code === 11000) {
-      return res.status(409).json({
-        success: false,
-        message: "A user with one of these unique details already exists.",
-      });
-    }
-
-    next(error);
-  }
+export const deleteSuperAdminUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ success: false, message: "Invalid user ID" });
+    if (String(req.user?._id) === String(id)) return res.status(400).json({ success: false, message: "You cannot delete your own account." });
+    const user = await User.findById(id).select("_id role legacyRole");
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    if (["super_admin", "superadmin"].includes(String(user.role || user.legacyRole || "").toLowerCase())) return res.status(403).json({ success: false, message: "SuperAdmin accounts cannot be deleted." });
+    await Promise.all([Staff.deleteMany({ user: user._id }), Agent.deleteMany({ user: user._id }), User.deleteOne({ _id: user._id })]);
+    return res.json({ success: true, deleted: true, message: "User account deleted successfully." });
+  } catch (error) { next(error); }
 };
