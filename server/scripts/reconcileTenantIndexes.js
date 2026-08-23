@@ -41,7 +41,7 @@ function schemaTenantUniqueFields(Model) {
   for (const [key, options] of Model.schema.indexes()) {
     if (!options?.unique) continue;
     const entries = Object.entries(key);
-    if (entries.length === 2 && entries[0][0] === "tenantId" && entries[1][1] === 1) {
+    if (entries.length === 2 && entries[0][0] === "tenantId" && entries[0][1] === 1 && entries[1][1] === 1) {
       fields.add(entries[1][0]);
     }
   }
@@ -61,37 +61,34 @@ try {
     const collection = Model.collection;
     const dbIndexes = await collection.listIndexes().toArray();
     const tenantUniqueFields = schemaTenantUniqueFields(Model);
-    const declaredIndexes = Model.schema.indexes();
-    const declaredKeys = new Set(declaredIndexes.map(([key]) => indexKey({ key })));
 
+    // A tenantId-only unique index is never valid on a tenant-scoped
+    // collection: every tenant must be able to own many records. Older
+    // migrations accidentally created this index and it blocks the second
+    // staff/driver/guide record for the same company.
     for (const dbIndex of dbIndexes) {
-      if (dbIndex.name === "_id_") continue;
       if (!isSingleFieldUnique(dbIndex)) continue;
-
       const field = Object.keys(dbIndex.key || {})[0];
-      if (!tenantUniqueFields.has(field)) continue;
 
-      plannedDrops += 1;
-      console.log(`[drop] ${Model.modelName}.${dbIndex.name} (${field} unique globally)`);
-      if (!dryRun) await collection.dropIndex(dbIndex.name);
+      if (field === "tenantId" || tenantUniqueFields.has(field)) {
+        plannedDrops += 1;
+        console.log(`[drop] ${Model.modelName}.${dbIndex.name} (${field} unique globally)`);
+        if (!dryRun) await collection.dropIndex(dbIndex.name);
+      }
     }
 
     const currentAfterDrops = dryRun ? dbIndexes : await collection.listIndexes().toArray();
     const currentKeys = new Set(currentAfterDrops.map(indexKey));
 
-    for (const [key, options] of declaredIndexes) {
+    for (const [key, options] of Model.schema.indexes()) {
       const normalized = indexKey({ key });
-      if (normalized === "_id:1" || currentKeys.has(normalized)) continue;
+      if (currentKeys.has(normalized)) continue;
       if (options?.unique && Object.keys(key).length === 2 && key.tenantId === 1) {
         created += 1;
         console.log(`[create] ${Model.modelName}.${normalized}`);
         if (!dryRun) await collection.createIndex(key, options);
       }
     }
-
-    // Keep this variable intentionally used so the audit output exposes the
-    // model's declared index set without modifying unrelated indexes.
-    void declaredKeys;
   }
 
   console.log(`\nPlanned global-unique removals: ${plannedDrops}`);
