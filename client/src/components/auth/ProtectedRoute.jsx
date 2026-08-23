@@ -3,6 +3,8 @@ import { useAuth } from "../../context/AuthContext";
 import { dashboardPath, getUserRole, normalizeRole } from "../../utils/roleUtils";
 
 const ROLE_PARENTS = {
+  // Canonical role is `super_admin`; keep `superadmin` as a legacy alias.
+  super_admin: new Set(["super_admin", "admin", "manager", "agent", "guide", "driver"]),
   superadmin: new Set(["super_admin", "admin", "manager", "agent", "guide", "driver"]),
   // Backend adminOnly/managerOnly/agentOnly/driverOnly/guideOnly gates
   // intentionally allow Admin access to operational staff areas.

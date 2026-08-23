@@ -25,7 +25,13 @@ const PERMISSION_ALIASES = {
 };
 
 const normalizePermission = (permission) => String(permission || "").trim().toLowerCase();
-const isPlatformRole = (role) => ["super_admin", "super_admin"].includes(String(role || "").trim().toLowerCase());
+
+// Platform owners are global and must not depend on database permission rows.
+// Keep both spellings supported because legacy users/tokens may contain either.
+const isPlatformRole = (role) => {
+  const normalized = String(role || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
+  return normalized === "super_admin" || normalized === "superadmin";
+};
 
 const extractEnabledPermissions = (items = []) => items
   .filter((item) => item && (typeof item !== "object" || item.enabled !== false))

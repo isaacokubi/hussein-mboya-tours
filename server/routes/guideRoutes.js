@@ -1,7 +1,6 @@
-import { resolveTenant } from "../middleware/tenantMiddleware.js";
 // server/routes/guideRoutes.js
-
 import express from "express";
+import { resolveTenant } from "../middleware/tenantMiddleware.js";
 import {
   guideDashboard,
   getAssignedTours,
@@ -14,10 +13,10 @@ import { protect, guideOnly } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.use(resolveTenant);
-
-// All guide operations use the canonical authentication/RBAC contract.
+// Authenticate before resolving tenant context so guide requests are always
+// scoped to the tenant belonging to the authenticated account.
 router.use(protect);
+router.use(resolveTenant);
 router.use(guideOnly);
 
 router.get("/dashboard", guideDashboard);

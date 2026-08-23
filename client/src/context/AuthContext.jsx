@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import api from "../api/axios";
 import { queryClient } from "../lib/queryClient";
@@ -58,17 +57,31 @@ export function AuthProvider({ children }) {
   const persistUser = (nextUser) => {
     const normalized = normalizeUser(nextUser);
     setUser(normalized);
+
     if (normalized) {
       localStorage.setItem("user", JSON.stringify(normalized));
       localStorage.setItem("permissions", JSON.stringify(normalized.permissions.map((p) => p.name)));
-      if (normalized.tenantId) localStorage.setItem("tenantId", String(normalized.tenantId?._id || normalized.tenantId));
-      if (normalized.tenantSlug) localStorage.setItem("tenantSlug", String(normalized.tenantSlug));
+
+      // Never carry tenant state from a previous company/admin session into a
+      // platform-level or newly authenticated dashboard session.
+      if (normalized.tenantId) {
+        localStorage.setItem("tenantId", String(normalized.tenantId?._id || normalized.tenantId));
+      } else {
+        localStorage.removeItem("tenantId");
+      }
+
+      if (normalized.tenantSlug) {
+        localStorage.setItem("tenantSlug", String(normalized.tenantSlug));
+      } else {
+        localStorage.removeItem("tenantSlug");
+      }
     }
+
     return normalized;
   };
 
   const clearAuthStorage = () => {
-    ["token", "accessToken", "authToken", "user", "permissions", "tenantId"].forEach((key) => localStorage.removeItem(key));
+    ["token", "accessToken", "authToken", "user", "permissions", "tenantId", "tenantSlug", "tenantKey"].forEach((key) => localStorage.removeItem(key));
   };
 
   const logout = () => {
@@ -105,6 +118,9 @@ export function AuthProvider({ children }) {
     if (data?.mfaRequired) return data;
     if (!data?.token) throw new Error("Authentication response did not contain a token.");
 
+    // Replace all previous authentication/tenant identity before persisting the
+    // newly authenticated account. This is important when switching roles.
+    ["accessToken", "authToken", "tenantId", "tenantSlug", "tenantKey"].forEach((key) => localStorage.removeItem(key));
     localStorage.setItem("token", String(data.token).trim());
     setToken(data.token);
     persistUser(data.user);

@@ -9,15 +9,18 @@ import PaymentAnalytics from "./PaymentAnalytics";
 import QuickActions from "./QuickActions";
 import SystemHealth from "./SystemHealth";
 
+const unwrap = (payload) => payload?.data || payload || {};
+
 export default function AdminDashboard() {
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ["admin-dashboard"],
     queryFn: getDashboard,
-    staleTime: 0,
-    refetchInterval: 5000,
-    refetchIntervalInBackground: true,
+    staleTime: 30000,
+    refetchInterval: 60000,
+    refetchIntervalInBackground: false,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
+    retry: 1,
   });
 
   useEffect(() => {
@@ -26,23 +29,28 @@ export default function AdminDashboard() {
     return () => window.removeEventListener("dashboard:data-changed", refresh);
   }, [refetch]);
 
-  if (isLoading) return <div className="p-8">Loading admin dashboard...</div>;
+  if (isLoading) return <div className="min-h-screen bg-gray-50 p-8">Loading admin dashboard...</div>;
 
   if (isError) {
+    const status = error?.response?.status;
+    const message = error?.response?.data?.message || error?.message || "Dashboard request failed.";
     return (
-      <div className="p-8">
-        <div className="rounded-xl bg-red-50 p-6 text-red-700">
+      <div className="min-h-screen bg-gray-50 p-8">
+        <div className="max-w-2xl rounded-xl border bg-white p-6 shadow-sm">
           <h2 className="font-semibold">Unable to load Admin Dashboard</h2>
-          <p className="mt-1">{error?.message || "Dashboard request failed."}</p>
-          <button type="button" onClick={() => refetch()} className="mt-4 rounded-lg bg-red-700 px-4 py-2 text-white">
-            Retry
+          <p className="mt-2 text-gray-600">
+            {status === 401 ? "Your session has expired. Please sign in again." :
+              status === 403 ? "Your account is authenticated but is not authorized to use the Admin Dashboard." : message}
+          </p>
+          <button type="button" onClick={() => refetch()} disabled={isFetching} className="mt-4 rounded-lg bg-gray-900 px-4 py-2 text-white disabled:opacity-60">
+            {isFetching ? "Retrying..." : "Retry"}
           </button>
         </div>
       </div>
     );
   }
 
-  const dashboard = data?.data || data || {};
+  const dashboard = unwrap(data);
   const summary = dashboard.summary || {};
 
   return (
@@ -56,7 +64,7 @@ export default function AdminDashboard() {
       <StatsGrid stats={dashboard} summary={summary} />
       <div className="grid gap-6 xl:grid-cols-3">
         <div className="xl:col-span-2"><RecentBookings bookings={dashboard.recentBookings || []} /></div>
-        <PaymentAnalytics payments={dashboard.paymentStats || { completed: 0, pending: 0, failed: 0 }} />
+        <PaymentAnalytics payments={dashboard.paymentStats || dashboard.payments || { completed: 0, pending: 0, failed: 0 }} />
       </div>
       <div className="grid gap-6 lg:grid-cols-2">
         <PopularTours tours={dashboard.popularTours || []} />

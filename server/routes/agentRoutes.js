@@ -1,5 +1,5 @@
-import { resolveTenant } from "../middleware/tenantMiddleware.js";
 import express from "express";
+import { resolveTenant } from "../middleware/tenantMiddleware.js";
 import { getAgentDashboard, getAgentBookings, getAgentCustomers, getMyAgentCommission } from "../controllers/agentController.js";
 import { getAgentQuotations } from "../controllers/quotationController.js";
 import { createAgentTour, getAgentTours, getAgentTour, updateAgentTour, deleteAgentTour } from "../controllers/agentTourController.js";
@@ -10,8 +10,10 @@ import upload from "../middleware/uploadMiddleware.js";
 
 const router = express.Router();
 
-router.use(resolveTenant);
+// Always authenticate first so tenant resolution is based on the authoritative
+// database user rather than an unauthenticated tenant header.
 router.use(protect);
+router.use(resolveTenant);
 router.use(agentMiddleware);
 
 router.get("/dashboard", getAgentDashboard);
