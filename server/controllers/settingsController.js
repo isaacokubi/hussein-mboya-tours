@@ -38,7 +38,7 @@ const validateUpdates = (updates) => {
   return null;
 };
 
-const getOrCreateSettings = async (filter, key) => {
+const getOrCreateSettings = async (filter) => {
   let settings = await SystemSetting.findOne(filter).lean();
   if (settings) return settings;
   try {
@@ -56,16 +56,14 @@ const getOrCreateSettings = async (filter, key) => {
 export const getSettings = async (req, res, next) => {
   try {
     if (isTenantBypassed()) {
-      const settings = await getOrCreateSettings({ tenantId: null, key: "platform" }, "platform");
+      const settings = await getOrCreateSettings({ tenantId: null, key: "platform" });
       return res.status(200).json({ success: true, data: settings, settings, scope: "platform" });
     }
     requireTenantId();
     const { tenantId } = getTenantContext();
-    const settings = await getOrCreateSettings({ tenantId, key: "default" }, "default");
+    const settings = await getOrCreateSettings({ tenantId, key: "default" });
     return res.status(200).json({ success: true, data: settings, settings, scope: "tenant" });
-  } catch (error) {
-    next(error);
-  }
+  } catch (error) { next(error); }
 };
 
 export const updateSettings = async (req, res, next) => {
@@ -74,25 +72,20 @@ export const updateSettings = async (req, res, next) => {
     if (req.file?.path) updates.companyLogo = req.file.path;
     const validationError = validateUpdates(updates);
     if (validationError) return res.status(400).json({ success: false, message: validationError });
-
     const filter = isTenantBypassed() ? { tenantId: null, key: "platform" } : { tenantId: requireTenantId(), key: "default" };
     let settings = await SystemSetting.findOne(filter);
     if (!settings) {
       try { settings = new SystemSetting({ ...filter, ...DEFAULTS }); await settings.save(); }
-      catch (error) {
-        if (error?.code !== 11000) throw error;
-        settings = await SystemSetting.findOne(filter);
-        if (!settings) throw error;
-      }
+      catch (error) { if (error?.code !== 11000) throw error; settings = await SystemSetting.findOne(filter); if (!settings) throw error; }
     }
     Object.assign(settings, updates);
     await settings.save();
     const saved = settings.toObject();
     const scope = filter.key === "platform" ? "platform" : "tenant";
-    return res.status(200).json({ success: true, message: scope === "platform" ? "Platform settings saved successfully." : "System settings saved successfully.", data: saved, settings: saved, scope });
+    return res.status(200).json({ success: true, message: scope === "platform" ? "Platform settings saved successfully." : "Tenant settings saved successfully.", data: saved, settings: saved, scope });
   } catch (error) {
     console.error("UPDATE SETTINGS ERROR:", error);
-    return res.status(error?.status || 500).json({ success: false, message: error.message || "Failed to save system settings." });
+    return res.status(error?.status || 500).json({ success: false, message: error.message || "Failed to save tenant settings." });
   }
 };
 
@@ -105,18 +98,25 @@ export const getPublicSettings = async (req, res, next) => {
     const tenantSettings = await SystemSetting.findOne({ tenantId, key: "default" }).lean();
     const overrides = tenant.settings && typeof tenant.settings === "object" ? tenant.settings : {};
     const settings = {
-      companyName: tenant.name || tenantSettings?.companyName || DEFAULTS.companyName,
-      supportEmail: tenant.supportEmail || tenantSettings?.supportEmail || "", supportPhone: tenant.supportPhone || tenantSettings?.supportPhone || "",
-      currency: tenant.currency || tenantSettings?.currency || "KES", timezone: tenant.timezone || tenantSettings?.timezone || "Africa/Nairobi", currencySymbol: tenantSettings?.currencySymbol || "KSh",
-      companyLogo: tenant.logoUrl || tenantSettings?.companyLogo || "", websiteUrl: tenant.websiteUrl || tenantSettings?.websiteUrl || "", address: tenant.address || tenantSettings?.address || "", city: tenant.city || tenantSettings?.city || "", country: tenant.country || tenantSettings?.country || "Kenya",
+      companyName: tenantSettings?.companyName || tenant.name || DEFAULTS.companyName,
+      supportEmail: tenantSettings?.supportEmail || tenant.supportEmail || "",
+      supportPhone: tenantSettings?.supportPhone || tenant.supportPhone || "",
+      websiteUrl: tenantSettings?.websiteUrl || tenant.websiteUrl || "",
+      companyLogo: tenantSettings?.companyLogo || tenant.logoUrl || "",
+      address: tenantSettings?.address || tenant.address || "", city: tenantSettings?.city || tenant.city || "", country: tenantSettings?.country || tenant.country || "Kenya",
+      currency: tenantSettings?.currency || tenant.currency || "KES", currencySymbol: tenantSettings?.currencySymbol || "KSh", timezone: tenantSettings?.timezone || tenant.timezone || "Africa/Nairobi", language: tenantSettings?.language || "en",
       facebook: tenantSettings?.facebook || "", instagram: tenantSettings?.instagram || "", twitter: tenantSettings?.twitter || "", youtube: tenantSettings?.youtube || "",
-      enableMpesa: overrides.enableMpesa ?? tenantSettings?.enableMpesa ?? tenant.features?.mpesa !== false, enableStripe: overrides.enableStripe ?? tenantSettings?.enableStripe ?? tenant.features?.stripe === true, enableBankTransfer: overrides.enableBankTransfer ?? tenantSettings?.enableBankTransfer ?? true,
+      seoTitle: tenantSettings?.seoTitle || "", seoDescription: tenantSettings?.seoDescription || "", seoKeywords: tenantSettings?.seoKeywords || [],
+      maintenanceMode: Boolean(tenantSettings?.maintenanceMode), allowRegistrations: tenantSettings?.allowRegistrations !== false, allowAgentRegistrations: tenantSettings?.allowAgentRegistrations !== false,
+      requireEmailVerification: tenantSettings?.requireEmailVerification !== false, requirePhoneVerification: Boolean(tenantSettings?.requirePhoneVerification),
+      enableMpesa: overrides.enableMpesa ?? tenantSettings?.enableMpesa ?? tenant.features?.mpesa !== false, enableStripe: overrides.enableStripe ?? tenantSettings?.enableStripe ?? tenant.features?.stripe === true, enablePaypal: overrides.enablePaypal ?? tenantSettings?.enablePaypal ?? false, enableBankTransfer: overrides.enableBankTransfer ?? tenantSettings?.enableBankTransfer ?? true,
+      bookingNotifications: tenantSettings?.bookingNotifications !== false, paymentNotifications: tenantSettings?.paymentNotifications !== false,
       taxRate: Number(tenantSettings?.taxRate || 0), bookingDepositPercentage: Number(tenantSettings?.bookingDepositPercentage ?? 30), defaultCommissionRate: Number(tenantSettings?.defaultCommissionRate ?? 10),
       bankName: tenantSettings?.bankName || "", bankAccountName: tenantSettings?.bankAccountName || "", bankAccountNumber: tenantSettings?.bankAccountNumber || "", bankBranch: tenantSettings?.bankBranch || "", bankSwiftCode: tenantSettings?.bankSwiftCode || "",
       primaryColor: tenantSettings?.primaryColor || DEFAULTS.primaryColor, secondaryColor: tenantSettings?.secondaryColor || DEFAULTS.secondaryColor, accentColor: tenantSettings?.accentColor || DEFAULTS.accentColor,
       backgroundColor: tenantSettings?.backgroundColor || DEFAULTS.backgroundColor, surfaceColor: tenantSettings?.surfaceColor || DEFAULTS.surfaceColor, textColor: tenantSettings?.textColor || DEFAULTS.textColor,
       fontFamily: tenantSettings?.fontFamily || DEFAULTS.fontFamily, borderRadius: tenantSettings?.borderRadius || DEFAULTS.borderRadius, buttonStyle: tenantSettings?.buttonStyle || DEFAULTS.buttonStyle, heroOverlayOpacity: Number(tenantSettings?.heroOverlayOpacity ?? DEFAULTS.heroOverlayOpacity),
-      homepageSections: tenantSettings?.homepageSections || DEFAULTS.homepageSections,
+      homepageSections: { ...DEFAULTS.homepageSections, ...(tenantSettings?.homepageSections || {}) },
     };
     return res.json({ success: true, settings });
   } catch (error) { next(error); }
