@@ -23,27 +23,26 @@ export async function resolveTenant(req, res, next) {
     const activeStatuses = { $in: ["active", "trial"] };
     let tenant = null;
 
-    // Platform subdomains: <tenant-slug>.<PLATFORM_HOST>.
-    // The hostname is authoritative; do not accept a client-supplied slug when
-    // the request already identifies a tenant by its host.
-    const platformSuffix = `.${configuredPlatformHost}`;
-    if (requestHost.endsWith(platformSuffix)) {
-      const subdomain = requestHost.slice(0, -platformSuffix.length).split(".").filter(Boolean);
-      const tenantSlug = subdomain.length === 1 ? subdomain[0] : null;
-      if (tenantSlug && tenantSlug !== "www") {
-        tenant = await Organization.findOne({ slug: tenantSlug, status: activeStatuses });
+    const resolveHost = async (host) => {
+      if (!host || platformHosts.has(host)) return null;
+
+      const platformSuffix = `.${configuredPlatformHost}`;
+      if (host.endsWith(platformSuffix)) {
+        const parts = host.slice(0, -platformSuffix.length).split(".").filter(Boolean);
+        const slug = parts.length === 1 ? parts[0] : null;
+        if (!slug || slug === "www") return null;
+        return Organization.findOne({ slug, status: activeStatuses });
       }
-      if (!tenant) return res.status(404).json({ success: false, message: "Tenant not found for this hostname" });
-    }
 
-    // Custom domains take precedence over client-supplied tenant identifiers.
-    if (!tenant && requestHost && !platformHosts.has(requestHost)) {
-      tenant = await Organization.findOne({ domain: requestHost, status: activeStatuses });
-    }
+      return Organization.findOne({ domain: host, status: activeStatuses });
+    };
 
-    // For shared Vercel frontends, Origin can identify the tenant when the API
-    // host is shared. Prefer a tenant-specific Vercel deployment only when it
-    // exactly matches a stored tenant slug.
+    // Hostname is authoritative. This covers both direct API/custom-domain
+    // requests and browser requests whose Origin is a tenant subdomain.
+    tenant = await resolveHost(requestHost);
+    if (!tenant && originHost) tenant = await resolveHost(originHost);
+
+    // Shared Vercel deployments can identify a tenant by a matching deployment slug.
     if (!tenant && originHost.endsWith(".vercel.app")) {
       const vercelSlug = originHost.slice(0, -".vercel.app".length).split(".").filter(Boolean).pop();
       if (vercelSlug) tenant = await Organization.findOne({ slug: vercelSlug, status: activeStatuses });
