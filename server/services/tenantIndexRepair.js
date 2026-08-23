@@ -1,17 +1,27 @@
 import mongoose from "mongoose";
 
 /**
- * Older deployments could contain a globally-unique tenantId_1 index on a
- * tenant-scoped collection. That index is invalid because one tenant owns
- * many users/staff/agents/roles. Repair it lazily when an affected write is
- * attempted so the admin does not have to know or run a database migration.
+ * Older deployments could contain globally-unique indexes on fields that are
+ * now tenant-scoped. Repair those indexes lazily when an affected write is
+ * attempted so admins do not have to run database migrations manually.
  */
 export async function repairLegacyTenantUniqueIndex(Model, error) {
   if (error?.code !== 11000) return false;
 
   const keyPattern = error.keyPattern || {};
   const fields = Object.keys(keyPattern);
-  if (fields.length !== 1 || fields[0] !== "tenantId") return false;
+  const modelName = Model?.modelName;
+
+  const isLegacyTenantIndex =
+    fields.length === 1 && fields[0] === "tenantId";
+
+  // Role.name used to be globally unique. Roles are tenant-scoped now, so
+  // the old name_1 index must be removed before the new compound index can
+  // enforce uniqueness correctly per tenant.
+  const isLegacyRoleNameIndex =
+    modelName === "Role" && fields.length === 1 && fields[0] === "name";
+
+  if (!isLegacyTenantIndex && !isLegacyRoleNameIndex) return false;
 
   const collection = Model?.collection;
   if (!collection) return false;
@@ -20,7 +30,10 @@ export async function repairLegacyTenantUniqueIndex(Model, error) {
     const indexes = await collection.listIndexes().toArray();
     const legacyIndexes = indexes.filter((index) => {
       const keys = Object.keys(index.key || {});
-      return index.unique === true && keys.length === 1 && keys[0] === "tenantId";
+
+      if (index.unique !== true || keys.length !== 1) return false;
+      if (isLegacyTenantIndex) return keys[0] === "tenantId";
+      return modelName === "Role" && keys[0] === "name";
     });
 
     if (!legacyIndexes.length) return false;
@@ -37,9 +50,10 @@ export async function repairLegacyTenantUniqueIndex(Model, error) {
 
     return true;
   } catch (repairError) {
-    // Do not hide the original duplicate-key problem if the repair itself
-    // cannot be completed. The caller will return the normal API error.
-    console.error(`Failed to repair legacy tenantId index for ${Model?.modelName || "model"}:`, repairError);
+    console.error(
+      `Failed to repair legacy index for ${modelName || "model"}:`,
+      repairError
+    );
     return false;
   }
 }
@@ -60,6 +74,4 @@ export function isTenantIndexConflict(error) {
   return fields.length === 1 && fields[0] === "tenantId";
 }
 
-// Keep mongoose available to callers that use this helper in scripts without
-// importing it separately.
 export { mongoose };
