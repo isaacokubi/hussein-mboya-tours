@@ -4,18 +4,26 @@ const tenantStorage = new AsyncLocalStorage();
 const PLATFORM_ROLES = new Set(["super_admin", "superadmin"]);
 const isPlatformRole = (role) => PLATFORM_ROLES.has(String(role || "").trim().toLowerCase());
 
+/**
+ * Run work inside an isolated tenant context and keep that context active
+ * until async/thenable work returned by the callback has actually completed.
+ *
+ * This distinction is important with Mongoose: returning a Query directly
+ * from AsyncLocalStorage.run() exits the ALS scope before the query executes,
+ * which can cause a platform SuperAdmin query to inherit the public tenant
+ * context and incorrectly return no user.
+ */
 export function runWithTenant(context, callback) {
   const role = String(context?.role || "").trim().toLowerCase() || null;
   const platformOwner = isPlatformRole(role);
-  return tenantStorage.run(
-    {
-      tenantId: platformOwner ? null : (context?.tenantId || null),
-      role,
-      tenant: platformOwner ? null : (context?.tenant || null),
-      bypass: context?.bypass === true || platformOwner
-    },
-    callback
-  );
+  const store = {
+    tenantId: platformOwner ? null : (context?.tenantId || null),
+    role,
+    tenant: platformOwner ? null : (context?.tenant || null),
+    bypass: context?.bypass === true || platformOwner,
+  };
+
+  return tenantStorage.run(store, async () => await callback());
 }
 
 export function setTenantContext(context) {
@@ -35,7 +43,7 @@ export function getTenantContext() {
     tenantId: null,
     role: null,
     tenant: null,
-    bypass: false
+    bypass: false,
   };
 }
 
