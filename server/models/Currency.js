@@ -3,6 +3,7 @@
 import mongoose from "mongoose";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 /*
 |--------------------------------------------------------------------------
 | CURRENCY SCHEMA
@@ -213,6 +214,9 @@ currencySchema.statics.getActiveCurrencies = function () {
 | EXPORT MODEL
 |--------------------------------------------------------------------------
 */
+
+tenantPlugin(currencySchema);
+
 
 const Currency =
   mongoose.models.Currency ||

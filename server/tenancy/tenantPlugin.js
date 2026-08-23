@@ -4,6 +4,7 @@ import { getTenantId, isTenantBypassed } from "./context.js";
 const TENANT_PATH = "tenantId";
 const GLOBAL_COLLECTIONS = new Set(["organizations", "permissions", "currencies"]);
 const PLATFORM_ROLES = new Set(["super_admin", "superadmin"]);
+const TENANT_PLUGIN_MARKER = Symbol.for("coherentTours.tenantPluginApplied");
 
 function requireTenantId() {
   if (isTenantBypassed()) return null;
@@ -36,13 +37,55 @@ function mergeTenantFilter(query) {
 }
 
 function enforceUpdateTenant(update, tenantId) {
-  if (!update || Array.isArray(update)) return;
-  const requestedTenant = update.$set?.[TENANT_PATH] ?? update[TENANT_PATH] ?? update.$setOnInsert?.[TENANT_PATH];
+  if (!update) return;
+
+  // MongoDB update pipelines are arrays. They cannot safely receive
+  // $setOnInsert, so explicitly reject attempts to mutate tenant ownership.
+  if (Array.isArray(update)) {
+    for (const stage of update) {
+      const requestedTenant =
+        stage?.$set?.[TENANT_PATH] ??
+        stage?.$addFields?.[TENANT_PATH] ??
+        stage?.$setOnInsert?.[TENANT_PATH];
+
+      assertTenantValue(requestedTenant, tenantId);
+
+      const unset = stage?.$unset;
+      const attemptsToUnset =
+        Array.isArray(unset)
+          ? unset.includes(TENANT_PATH)
+          : Boolean(unset && unset[TENANT_PATH] != null);
+
+      if (attemptsToUnset) {
+        throw new Error("Cross-tenant tenantId removal rejected.");
+      }
+    }
+    return;
+  }
+
+  const requestedTenant =
+    update.$set?.[TENANT_PATH] ??
+    update[TENANT_PATH] ??
+    update.$setOnInsert?.[TENANT_PATH];
+
   assertTenantValue(requestedTenant, tenantId);
+
   update.$setOnInsert ||= {};
   update.$setOnInsert[TENANT_PATH] = tenantId;
-  if (update.$unset?.[TENANT_PATH]) delete update.$unset[TENANT_PATH];
-  if (update[TENANT_PATH]) delete update[TENANT_PATH];
+
+  if (update.$unset?.[TENANT_PATH]) {
+    delete update.$unset[TENANT_PATH];
+  }
+
+  if (update[TENANT_PATH]) {
+    delete update[TENANT_PATH];
+  }
+}
+
+function enforceReplacementTenant(replacement, tenantId) {
+  if (!replacement || Array.isArray(replacement)) return;
+  assertTenantValue(replacement[TENANT_PATH], tenantId);
+  replacement[TENANT_PATH] = tenantId;
 }
 
 function enforceBulkWriteTenant(operations, tenantId) {
@@ -115,6 +158,14 @@ function enforceGraphLookupStage(stage, tenantId) {
 }
 
 export function tenantPlugin(schema) {
+  if (schema[TENANT_PLUGIN_MARKER]) return;
+
+  Object.defineProperty(schema, TENANT_PLUGIN_MARKER, {
+    value: true,
+    enumerable: false,
+    configurable: false,
+  });
+
   if (!schema.path(TENANT_PATH)) {
     schema.add({
       [TENANT_PATH]: {
@@ -175,7 +226,13 @@ export function tenantPlugin(schema) {
         const tenantId = requireTenantId();
         if (!tenantId) return next();
         mergeTenantFilter(this);
-        if (["findOneAndUpdate", "updateOne", "updateMany", "replaceOne"].includes(hook)) enforceUpdateTenant(this.getUpdate?.(), tenantId);
+        if (["findOneAndUpdate", "updateOne", "updateMany"].includes(hook)) {
+          enforceUpdateTenant(this.getUpdate?.(), tenantId);
+        }
+
+        if (["findOneAndReplace", "replaceOne"].includes(hook)) {
+          enforceReplacementTenant(this.getUpdate?.(), tenantId);
+        }
         next();
       } catch (error) { next(error); }
     });

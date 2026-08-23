@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 const systemSettingSchema = new mongoose.Schema(
   {
     tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true, required: true },
@@ -30,6 +31,9 @@ const systemSettingSchema = new mongoose.Schema(
 );
 
 systemSettingSchema.index({ tenantId: 1, key: 1 }, { unique: true });
+
+tenantPlugin(systemSettingSchema);
+
 
 const SystemSetting = mongoose.models.SystemSetting || mongoose.model("SystemSetting", systemSettingSchema);
 export default SystemSetting;

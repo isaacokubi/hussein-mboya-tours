@@ -3,6 +3,7 @@
 import mongoose from "mongoose";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 /*
 |--------------------------------------------------------------------------
 | PERMISSION SCHEMA
@@ -225,6 +226,9 @@ permissionSchema.statics.getByModule = function (module) {
 | MODEL
 |--------------------------------------------------------------------------
 */
+
+tenantPlugin(permissionSchema);
+
 
 const Permission =
   mongoose.models.Permission ||

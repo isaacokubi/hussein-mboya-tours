@@ -3,6 +3,7 @@
 import mongoose from "mongoose";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 /*
 |--------------------------------------------------------------------------
 | SYSTEM SETTINGS SCHEMA
@@ -281,6 +282,9 @@ systemSettingsSchema.index({
 | EXPORT MODEL
 |--------------------------------------------------------------------------
 */
+
+tenantPlugin(systemSettingsSchema);
+
 
 const SystemSettings =
   mongoose.models.SystemSettings ||

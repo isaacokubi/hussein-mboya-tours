@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 import "./Permission.js";
 
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 /*
 |--------------------------------------------------------------------------
 | ROLE SCHEMA
@@ -234,6 +235,9 @@ roleSchema.methods.removePermission = async function (permissionId) {
 | MODEL
 |--------------------------------------------------------------------------
 */
+
+tenantPlugin(roleSchema);
+
 
 const Role =
   mongoose.models.Role ||

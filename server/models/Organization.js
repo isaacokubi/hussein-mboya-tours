@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 const organizationSchema = new mongoose.Schema(
   {
 
@@ -42,6 +43,9 @@ const organizationSchema = new mongoose.Schema(
 );
 
 organizationSchema.index({ domain: 1 }, { unique: true, sparse: true });
+
+tenantPlugin(organizationSchema);
+
 
 
 

@@ -1,111 +1,18 @@
-import mongoose from "mongoose";
-import { getTenantContext } from "../tenancy/context.js";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
-
-function applyTenantFilter(query){
-
-
-const context = getTenantContext();
-
-
-
-if(
-context &&
-context.tenantId &&
-!context.bypass
-){
-
-
-query.setQuery({
-
-...query.getQuery(),
-
-tenantId:
-new mongoose.Types.ObjectId(
-context.tenantId
-)
-
-});
-
-
-}
-
-
-}
-
-
-
-function applyAggregateFilter(pipeline){
-
-
-const context=getTenantContext();
-
-
-if(
-context &&
-context.tenantId &&
-!context.bypass
-){
-
-
-pipeline.unshift({
-
-$match:{
-
-tenantId:
-new mongoose.Types.ObjectId(
-context.tenantId
-)
-
-}
-
-});
-
-
-}
-
-
-}
-
-
-
-export default function tenantIsolationPlugin(schema){
-
-
-
-schema.pre(
-[
-"find",
-"findOne",
-"findOneAndUpdate",
-"findOneAndDelete",
-"countDocuments",
-"updateMany",
-"deleteMany"
-],
-
-function(next){
-
-applyTenantFilter(this);
-
-next();
-
-});
-
-
-
-schema.pre(
-"aggregate",
-
-function(next){
-
-applyAggregateFilter(
-this.pipeline()
-);
-
-next();
-
-});
-
-
+/**
+ * Global safety loader for schemas that explicitly declare tenantId.
+ *
+ * The previous implementation only added read/aggregate filters. That left
+ * tenant-aware schemas without tenantPlugin vulnerable to incomplete write
+ * protection. The canonical tenantPlugin now owns both read and write
+ * isolation.
+ *
+ * Schemas that do not declare tenantId are intentionally untouched so global
+ * collections such as permissions, currencies and organizations remain
+ * global.
+ */
+export default function tenantIsolationPlugin(schema) {
+  if (!schema?.path?.("tenantId")) return;
+  tenantPlugin(schema);
 }
