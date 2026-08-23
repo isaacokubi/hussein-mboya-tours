@@ -1,4 +1,4 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
+import { requireTenantId } from "../tenancy/context.js";
 import mongoose from "mongoose";
 import User from "../models/User.js";
 import Role from "../models/Role.js";
@@ -7,6 +7,16 @@ import Agent from "../models/Agent.js";
 import { ensureSystemRoles } from "../services/onboardingService.js";
 
 const STATUS_VALUES = ["active", "inactive", "disabled", "suspended", "blocked"];
+
+const isDuplicateKeyError = (error) => error?.code === 11000;
+
+const duplicateMessage = (error) => {
+  const key = Object.keys(error?.keyPattern || {})[0];
+  if (key === "tenantId") return "A tenant index conflict was detected. Run the tenant index reconciliation before creating staff accounts.";
+  if (key === "email") return "A user or staff account with this email already exists for this company.";
+  if (key === "phone") return "A user with this phone number already exists.";
+  return "A record with these details already exists.";
+};
 
 export const getUsers = async (req, res, next) => {
   requireTenantId();
@@ -31,8 +41,13 @@ export const getUsers = async (req, res, next) => {
 };
 
 export const createStaffAccount = async (req, res, next) => {
+  let createdUser = null;
+  let createdStaff = null;
+  let createdAgent = null;
+
   try {
-    if (!req.tenantId) return res.status(400).json({ success: false, message: "Select a company before creating a staff account." });
+    const tenantId = requireTenantId();
+    if (!tenantId) return res.status(400).json({ success: false, message: "Select a company before creating a staff account." });
 
     const { name, email, phone, password, role } = req.body || {};
     const normalizedRole = String(role || "").toLowerCase().replace(/[\s-]/g, "_");
@@ -43,7 +58,13 @@ export const createStaffAccount = async (req, res, next) => {
     if (String(password || "").length < 12 || !/[A-Z]/.test(password) || !/\d/.test(password)) return res.status(400).json({ success: false, message: "Password must be at least 12 characters and include an uppercase letter and a number." });
 
     const normalizedEmail = String(email).trim().toLowerCase();
-    if (await User.exists({ email: normalizedEmail })) return res.status(409).json({ success: false, message: "A user with this email already exists." });
+    const existingUser = await User.findOne({ email: normalizedEmail }).select("_id role tenantId").lean();
+    if (existingUser) return res.status(409).json({ success: false, message: "A user with this email already exists for this company." });
+
+    if (["tour_guide", "driver"].includes(canonicalRole)) {
+      const existingStaff = await Staff.findOne({ email: normalizedEmail }).select("_id user position").lean();
+      if (existingStaff) return res.status(409).json({ success: false, message: "A staff profile with this email already exists for this company." });
+    }
 
     const permissionNamesByRole = {
       admin: ["admin.dashboard", "user.manage", "staff.manage", "tour.manage", "booking.manage", "payment.manage", "refund.manage", "analytics.view", "settings.manage", "roles.manage", "notifications.view", "finance.view", "customer.view", "tour.view", "tour.create", "tour.update", "booking.view", "report.view", "guide.view", "vehicle.view"],
@@ -53,9 +74,7 @@ export const createStaffAccount = async (req, res, next) => {
       driver: ["tour.view", "view_assigned_tours"],
     };
 
-    if (canonicalRole === "admin") {
-      await ensureSystemRoles();
-    }
+    if (canonicalRole === "admin") await ensureSystemRoles();
 
     let roleDoc = await Role.findOne({ name: { $in: [canonicalRole, canonicalRole.replace("tour_", "")] } });
     if (!roleDoc) {
@@ -74,14 +93,51 @@ export const createStaffAccount = async (req, res, next) => {
 
     if (["super_admin", "superadmin"].includes(roleDoc.name)) return res.status(403).json({ success: false, message: "SuperAdmin accounts can only be created through the one-time platform bootstrap process." });
 
-    const user = await User.create({ name: name.trim(), email: normalizedEmail, phone: String(phone).trim(), password, role: canonicalRole, legacyRole: canonicalRole, roleId: roleDoc._id, status: "active", isVerified: true });
-    let staff = null;
-    let agent = null;
-    if (canonicalRole === "agent") agent = await Agent.create({ user: user._id, companyName: "", phone: user.phone, email: user.email, commissionRate: 10, isApproved: false, status: "active" });
-    if (["tour_guide", "driver"].includes(canonicalRole)) staff = await Staff.create({ user: user._id, name: user.name, email: user.email, phone: user.phone, position: canonicalRole === "tour_guide" ? "guide" : "driver", role: canonicalRole === "tour_guide" ? "guide" : "driver", status: "active", isActive: true, availability: "available", createdBy: req.user._id });
-    const safeUser = await User.findById(user._id).select("-password").populate("roleId", "name displayName permissions").lean();
-    return res.status(201).json({ success: true, message: `${canonicalRole.replace("_", " ")} account created successfully.`, user: safeUser, staff, agent });
-  } catch (error) { next(error); }
+    // The tenant is supplied explicitly as well as being enforced by the tenant
+    // plugin. This makes the write deterministic and protects it from partial
+    // tenant context during account creation.
+    createdUser = await User.create({
+      name: name.trim(),
+      email: normalizedEmail,
+      phone: String(phone).trim(),
+      password,
+      role: canonicalRole,
+      legacyRole: canonicalRole,
+      roleId: roleDoc._id,
+      tenantId,
+      status: "active",
+      isVerified: true,
+    });
+
+    if (canonicalRole === "agent") {
+      createdAgent = await Agent.create({ user: createdUser._id, tenantId, companyName: "", phone: createdUser.phone, email: createdUser.email, commissionRate: 10, isApproved: false, status: "active" });
+    }
+
+    if (["tour_guide", "driver"].includes(canonicalRole)) {
+      createdStaff = await Staff.create({ user: createdUser._id, tenantId, name: createdUser.name, email: createdUser.email, phone: createdUser.phone, position: canonicalRole === "tour_guide" ? "guide" : "driver", role: canonicalRole === "tour_guide" ? "guide" : "driver", status: "active", isActive: true, availability: "available", createdBy: req.user._id });
+    }
+
+    const safeUser = await User.findById(createdUser._id).select("-password").populate("roleId", "name displayName permissions").lean();
+    return res.status(201).json({ success: true, message: `${canonicalRole.replace("_", " ")} account created successfully.`, user: safeUser, staff: createdStaff, agent: createdAgent });
+  } catch (error) {
+    // Never leave a login account behind when its staff/agent profile failed.
+    // The old implementation created User first and returned 500 after Staff
+    // failed, so the next click appeared to create duplicates.
+    if (createdUser?._id) {
+      try {
+        await Promise.allSettled([
+          createdStaff?._id ? Staff.deleteOne({ _id: createdStaff._id }) : Promise.resolve(),
+          createdAgent?._id ? Agent.deleteOne({ _id: createdAgent._id }) : Promise.resolve(),
+          User.deleteOne({ _id: createdUser._id }),
+        ]);
+      } catch { /* preserve the original error */ }
+    }
+
+    if (isDuplicateKeyError(error)) {
+      return res.status(409).json({ success: false, message: duplicateMessage(error) });
+    }
+    next(error);
+  }
 };
 
 export const updateUserStatus = async (req, res, next) => {
