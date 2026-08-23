@@ -71,6 +71,7 @@ const TourManagement = lazy(() => import("../pages/admin/TourManagement"));
 const AddTour = lazy(() => import("../pages/admin/AddTour"));
 const DestinationManagement = lazy(() => import("../pages/admin/DestinationManagement"));
 const CreateDestination = lazy(() => import("../pages/admin/CreateDestination"));
+const EditDestination = lazy(() => import("../pages/admin/EditDestination"));
 const AdminDestinationDetails = lazy(() => import("../pages/admin/DestinationDetails"));
 const BookingManagement = lazy(() => import("../pages/admin/BookingManagement"));
 const StaffManagement = lazy(() => import("../pages/admin/StaffManagement"));
@@ -141,7 +142,6 @@ export default function AppRoutes() {
       <ScrollToTop />
       <Suspense fallback={suspenseFallback}>
         <Routes>
-          {/* Public */}
           <Route path="/" element={<Home />} />
           <Route path="/tours" element={<Tours />} />
           <Route path="/tours/category/:slug" element={<Tours />} />
@@ -184,6 +184,8 @@ export default function AppRoutes() {
             <Route path="quotes" element={<AgentQuotes />} />
             <Route path="packages" element={<AgentPackages />} />
           </Route>
+          <Route path="/agent/:agentId" element={<AgentRoute><AgentDashboard /></AgentRoute>} />
+          <Route path="/agent/packages/:packageId" element={<AgentRoute><AgentPackages /></AgentRoute>} />
 
           {/* Guide */}
           <Route path="/guide" element={<Navigate to="/guide/dashboard" replace />} />
@@ -216,8 +218,8 @@ export default function AppRoutes() {
             <Route path="itineraries" element={<TourManagerItineraries />} />
             <Route path="settings" element={<TourManagerSettings />} />
           </Route>
-          <Route path="/manager/dashboard" element={<Navigate to="/tour-manager/dashboard" replace />} />
           <Route path="/manager" element={<Navigate to="/tour-manager/dashboard" replace />} />
+          <Route path="/manager/dashboard" element={<Navigate to="/tour-manager/dashboard" replace />} />
           <Route path="/manager/tours" element={<Navigate to="/tour-manager/tours" replace />} />
           <Route path="/manager/create-tour" element={<Navigate to="/tour-manager/create-tour" replace />} />
           <Route path="/manager/edit-tour/:id" element={<Navigate to="/tour-manager/edit-tour/:id" replace />} />
@@ -226,7 +228,7 @@ export default function AppRoutes() {
           <Route path="/manager/itineraries" element={<Navigate to="/tour-manager/itineraries" replace />} />
           <Route path="/manager/settings" element={<Navigate to="/tour-manager/settings" replace />} />
 
-          {/* Super Admin: every route under this namespace is protected. */}
+          {/* Super Admin: one protected namespace, no duplicate unguarded deep links. */}
           <Route path="/superadmin" element={<SuperAdminProtected><SuperAdminLayout /></SuperAdminProtected>}>
             <Route index element={<SuperAdminDashboard />} />
             <Route path="dashboard" element={<SuperAdminDashboard />} />
@@ -257,7 +259,7 @@ export default function AppRoutes() {
             <Route path="tours/edit/:id" element={<EditTour />} />
             <Route path="destinations" element={<DestinationManagement />} />
             <Route path="create-destination" element={<CreateDestination />} />
-            <Route path="edit-destination/:id" element={<CreateDestination />} />
+            <Route path="edit-destination/:id" element={<EditDestination />} />
             <Route path="destinations/:id" element={<AdminDestinationDetails />} />
             <Route path="bookings" element={<BookingManagement />} />
             <Route path="payments" element={<AdminPayments />} />
@@ -328,9 +330,7 @@ export default function AppRoutes() {
           <Route path="/admin-ai" element={<AdminProtected><AdminAITools /></AdminProtected>} />
           <Route path="/admin-ai/*" element={<AdminProtected><AdminAITools /></AdminProtected>} />
 
-          {/* Agent deep links */}
-          <Route path="/agent/:agentId" element={<AgentRoute><AgentDashboard /></AgentRoute>} />
-          <Route path="/agent/packages/:packageId" element={<AgentRoute><AgentPackages /></AgentRoute>} />
+          {/* Shared administration aliases */}
           <Route path="/agents" element={<AdminProtected><Agents /></AdminProtected>} />
           <Route path="/agents/:id" element={<AdminProtected><Agents /></AdminProtected>} />
           <Route path="/agents/:id/approve" element={<AdminProtected><Agents /></AdminProtected>} />
@@ -344,7 +344,6 @@ export default function AppRoutes() {
           <Route path="/tour-manager/tours/:id/availability" element={<ProtectedRoute roles={["manager", "tour_manager", "tourmanager", "admin"]}><TourAvailability /></ProtectedRoute>} />
           <Route path="/admin/tours" element={<Navigate to="/admin/manage-tours" replace />} />
 
-          {/* Catch-all */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
