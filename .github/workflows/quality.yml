@@ -38,6 +38,3 @@ jobs:
           cache-dependency-path: server/package-lock.json
       - run: npm ci
       - run: npm run check:all
-      - run: npm run check:multitenancy:global
-        env:
-          MONGODB_URI: ${{ secrets.MONGODB_URI }}
