@@ -1,4 +1,5 @@
-import { tenantFilter, requireTenantId } from "../tenancy/context.js";
+import { requireTenantId } from "../tenancy/context.js";
+import { tenantFilter } from "../tenancy/tenantQuery.js";
 import Booking from "../models/Booking.js";
 import Payment from "../models/Payment.js";
 import User from "../models/User.js";
@@ -29,10 +30,7 @@ export const getAnalytics = async (req, res, next) => {
       ]),
       Payment.aggregate([
         { $match: { ...filter, status: "completed" } },
-        { $group: {
-          _id: { year: { $year: { $ifNull: ["$paidAt", "$createdAt"] } }, month: { $month: { $ifNull: ["$paidAt", "$createdAt"] } } },
-          revenue: { $sum: nonNegativeAmount },
-        } },
+        { $group: { _id: { year: { $year: { $ifNull: ["$paidAt", "$createdAt"] } }, month: { $month: { $ifNull: ["$paidAt", "$createdAt"] } } }, revenue: { $sum: nonNegativeAmount } } },
         { $sort: { "_id.year": 1, "_id.month": 1 } },
       ]),
       Vehicle.aggregate([
@@ -41,7 +39,6 @@ export const getAnalytics = async (req, res, next) => {
         { $sort: { count: -1 } },
       ]),
     ]);
-
     return res.status(200).json({ success: true, data: { revenue, customers, bookings, bookingStatus, monthlyRevenue, popularTours, vehicleStats } });
   } catch (error) {
     next(error);
@@ -51,11 +48,7 @@ export const getAnalytics = async (req, res, next) => {
 export const dashboardAnalytics = async (req, res, next) => {
   try {
     requireTenantId();
-    const [revenue, bookings, popularTours] = await Promise.all([
-      getRevenueAnalytics(req),
-      getBookingAnalytics(req),
-      getPopularTours(req),
-    ]);
+    const [revenue, bookings, popularTours] = await Promise.all([getRevenueAnalytics(req), getBookingAnalytics(req), getPopularTours(req)]);
     return res.status(200).json({ success: true, data: { revenue, bookings, popularTours } });
   } catch (error) {
     next(error);
