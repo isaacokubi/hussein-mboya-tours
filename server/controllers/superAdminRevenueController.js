@@ -1,19 +1,30 @@
 import Payment from "../models/Payment.js";
 
+const REVENUE_STATUSES = ["completed", "refunded"];
+const money = (field) => ({ $convert: { input: field, to: "double", onError: 0, onNull: 0 } });
+
 /**
- * Platform revenue is the net cash received:
- * completed payments minus completed refunds.
- * Payment is the source of truth; booking totals are never used as a fallback.
+ * Platform revenue is net cash received:
+ * eligible successful payments minus refunds that have actually completed.
+ * Booking totals are never used as a revenue fallback.
  */
 export const getSuperAdminRevenue = async (req, res, next) => {
   try {
-    const [summary] = await Payment.aggregate([
-      { $match: { status: "completed" } },
+    const pipeline = [
+      { $match: { status: { $in: REVENUE_STATUSES } } },
       {
         $project: {
-          amount: { $convert: { input: "$amount", to: "double", onError: 0, onNull: 0 } },
-          refundedAmount: { $convert: { input: "$refundedAmount", to: "double", onError: 0, onNull: 0 } },
-          currency: { $ifNull: ["$currency", "KES"] },
+          amount: money("$amount"),
+          refundedAmount: money("$refundedAmount"),
+          refundStatus: { $ifNull: ["$refundStatus", "none"] },
+          currency: { $toUpper: { $ifNull: ["$currency", "KES"] } },
+        },
+      },
+      {
+        $project: {
+          amount: 1,
+          refundedAmount: { $cond: [{ $eq: ["$refundStatus", "completed"] }, "$refundedAmount", 0] },
+          currency: 1,
         },
       },
       {
@@ -34,36 +45,22 @@ export const getSuperAdminRevenue = async (req, res, next) => {
           payments: 1,
         },
       },
-    ]);
+    ];
 
-    const totals = await Payment.aggregate([
-      { $match: { status: "completed" } },
-      {
-        $group: {
-          _id: null,
-          gross: { $sum: { $convert: { input: "$amount", to: "double", onError: 0, onNull: 0 } } },
-          refunds: { $sum: { $convert: { input: "$refundedAmount", to: "double", onError: 0, onNull: 0 } } },
-          payments: { $sum: 1 },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          gross: 1,
-          refunds: 1,
-          payments: 1,
-          revenue: { $max: [0, { $subtract: ["$gross", "$refunds"] }] },
-        },
-      },
-    ]);
+    const byCurrency = await Payment.aggregate(pipeline);
+    const totals = byCurrency.reduce((acc, item) => ({
+      gross: acc.gross + Number(item.gross || 0),
+      refunds: acc.refunds + Number(item.refunds || 0),
+      payments: acc.payments + Number(item.payments || 0),
+    }), { gross: 0, refunds: 0, payments: 0 });
 
     return res.json({
       success: true,
-      revenue: totals[0]?.revenue || 0,
-      grossRevenue: totals[0]?.gross || 0,
-      refundedRevenue: totals[0]?.refunds || 0,
-      completedPayments: totals[0]?.payments || 0,
-      byCurrency: summary || [],
+      revenue: Math.max(0, totals.gross - totals.refunds),
+      grossRevenue: totals.gross,
+      refundedRevenue: totals.refunds,
+      completedPayments: totals.payments,
+      byCurrency,
     });
   } catch (error) {
     next(error);
