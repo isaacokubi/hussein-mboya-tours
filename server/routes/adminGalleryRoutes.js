@@ -1,9 +1,8 @@
-import { resolveTenant } from "../middleware/tenantMiddleware.js";
-import { authorize } from "../middleware/permissionMiddleware.js";
 import express from "express";
+import { resolveTenant } from "../middleware/tenantMiddleware.js";
 import { uploadSingle } from "../middleware/uploadMiddleware.js";
 import { protect } from "../middleware/authMiddleware.js";
-import adminMiddleware from "../middleware/adminMiddleware.js";
+import contentManagerMiddleware from "../middleware/contentManagerMiddleware.js";
 import {
   getAdminGallery,
   createAdminGallery,
@@ -14,10 +13,7 @@ import {
 
 const router = express.Router();
 
-router.use(resolveTenant);
-router.use(protect, adminMiddleware);
-
-router.use(authorize("settings.manage"));
+router.use(resolveTenant, protect, contentManagerMiddleware);
 router.post("/upload", uploadSingle("image"), uploadGalleryImage);
 router.get("/", getAdminGallery);
 router.post("/", createAdminGallery);
