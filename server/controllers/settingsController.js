@@ -11,13 +11,7 @@ const DEFAULTS = {
 };
 
 const COLOR_FIELDS = ["primaryColor", "secondaryColor", "accentColor", "backgroundColor", "surfaceColor", "textColor"];
-const ALLOWED = [
-  "companyName", "companyLogo", "websiteUrl", "supportEmail", "supportPhone", "address", "city", "country", "currency", "currencySymbol", "timezone", "language",
-  "taxRate", "bookingDepositPercentage", "defaultCommissionRate", "maintenanceMode", "allowRegistrations", "allowAgentRegistrations", "requireEmailVerification", "requirePhoneVerification",
-  "enableMpesa", "enableStripe", "enablePaypal", "enableBankTransfer", "bankName", "bankAccountName", "bankAccountNumber", "bankBranch", "bankSwiftCode",
-  "emailFromName", "emailFromAddress", "facebook", "instagram", "twitter", "youtube", "seoTitle", "seoDescription", "seoKeywords", "bookingNotifications", "paymentNotifications",
-  ...COLOR_FIELDS, "fontFamily", "borderRadius", "buttonStyle", "heroOverlayOpacity", "homepageSections",
-];
+const ALLOWED = ["companyName", "companyLogo", "websiteUrl", "supportEmail", "supportPhone", "address", "city", "country", "currency", "currencySymbol", "timezone", "language", "taxRate", "bookingDepositPercentage", "defaultCommissionRate", "maintenanceMode", "allowRegistrations", "allowAgentRegistrations", "requireEmailVerification", "requirePhoneVerification", "enableMpesa", "enableStripe", "enablePaypal", "enableBankTransfer", "bankName", "bankAccountName", "bankAccountNumber", "bankBranch", "bankSwiftCode", "emailFromName", "emailFromAddress", "facebook", "instagram", "twitter", "youtube", "seoTitle", "seoDescription", "seoKeywords", "bookingNotifications", "paymentNotifications", ...COLOR_FIELDS, "fontFamily", "borderRadius", "buttonStyle", "heroOverlayOpacity", "homepageSections"];
 
 const isColor = (value) => /^#[0-9a-fA-F]{6}$/.test(String(value || ""));
 const normalizeUpdates = (body = {}) => {
@@ -38,28 +32,40 @@ const normalizeUpdates = (body = {}) => {
 const validateUpdates = (updates) => {
   for (const key of COLOR_FIELDS) if (updates[key] !== undefined && !isColor(updates[key])) return `${key} must be a valid 6-digit hex color.`;
   if (updates.heroOverlayOpacity !== undefined && (updates.heroOverlayOpacity < 0 || updates.heroOverlayOpacity > 100)) return "Hero overlay opacity must be between 0 and 100.";
-  if (updates.taxRate < 0 || updates.taxRate > 100 || updates.bookingDepositPercentage < 0 || updates.bookingDepositPercentage > 100 || updates.defaultCommissionRate < 0 || updates.defaultCommissionRate > 100) return "Tax, deposit and commission rates must be between 0 and 100.";
+  if ((updates.taxRate ?? 0) < 0 || (updates.taxRate ?? 0) > 100 || (updates.bookingDepositPercentage ?? 0) < 0 || (updates.bookingDepositPercentage ?? 0) > 100 || (updates.defaultCommissionRate ?? 0) < 0 || (updates.defaultCommissionRate ?? 0) > 100) return "Tax, deposit and commission rates must be between 0 and 100.";
   if (!updates.companyName) return "Company name cannot be empty.";
   if (updates.supportEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(updates.supportEmail)) return "Enter a valid support email.";
   return null;
 };
 
+const getOrCreateSettings = async (filter, key) => {
+  let settings = await SystemSetting.findOne(filter).lean();
+  if (settings) return settings;
+  try {
+    settings = await SystemSetting.create({ ...filter, ...DEFAULTS });
+    return settings.toObject();
+  } catch (error) {
+    if (error?.code === 11000) {
+      const existing = await SystemSetting.findOne(filter).lean();
+      if (existing) return existing;
+    }
+    throw error;
+  }
+};
+
 export const getSettings = async (req, res, next) => {
   try {
     if (isTenantBypassed()) {
-      const settings = await SystemSetting.findOneAndUpdate(
-        { tenantId: null, key: "platform" },
-        { $setOnInsert: { tenantId: null, key: "platform", ...DEFAULTS } },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
-      ).lean();
+      const settings = await getOrCreateSettings({ tenantId: null, key: "platform" }, "platform");
       return res.status(200).json({ success: true, data: settings, settings, scope: "platform" });
     }
-
     requireTenantId();
     const { tenantId } = getTenantContext();
-    const settings = await SystemSetting.findOneAndUpdate({ tenantId, key: "default" }, { $setOnInsert: { tenantId, key: "default", ...DEFAULTS } }, { upsert: true, new: true, setDefaultsOnInsert: true }).lean();
+    const settings = await getOrCreateSettings({ tenantId, key: "default" }, "default");
     return res.status(200).json({ success: true, data: settings, settings, scope: "tenant" });
-  } catch (error) { next(error); }
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const updateSettings = async (req, res, next) => {
@@ -69,25 +75,25 @@ export const updateSettings = async (req, res, next) => {
     const validationError = validateUpdates(updates);
     if (validationError) return res.status(400).json({ success: false, message: validationError });
 
-    if (isTenantBypassed()) {
-      const settings = await SystemSetting.findOneAndUpdate(
-        { tenantId: null, key: "platform" },
-        { $set: updates, $setOnInsert: { tenantId: null, key: "platform" } },
-        { upsert: true, new: true, runValidators: true }
-      ).lean();
-      return res.status(200).json({ success: true, message: "Platform settings saved successfully.", data: settings, settings, scope: "platform" });
+    const filter = isTenantBypassed() ? { tenantId: null, key: "platform" } : { tenantId: requireTenantId(), key: "default" };
+    let settings = await SystemSetting.findOne(filter);
+    if (!settings) {
+      try { settings = new SystemSetting({ ...filter, ...DEFAULTS }); await settings.save(); }
+      catch (error) {
+        if (error?.code !== 11000) throw error;
+        settings = await SystemSetting.findOne(filter);
+        if (!settings) throw error;
+      }
     }
-
-    requireTenantId();
-    const { tenantId } = getTenantContext();
-    let settings = await SystemSetting.findOne({ tenantId, key: "default" });
-    if (!settings) settings = new SystemSetting({ tenantId, key: "default", ...DEFAULTS });
     Object.assign(settings, updates);
-    settings.tenantId = tenantId;
     await settings.save();
     const saved = settings.toObject();
-    return res.status(200).json({ success: true, message: "System settings saved successfully.", data: saved, settings: saved, scope: "tenant" });
-  } catch (error) { console.error("UPDATE SETTINGS ERROR:", error); return res.status(500).json({ success: false, message: error.message || "Failed to save system settings." }); }
+    const scope = filter.key === "platform" ? "platform" : "tenant";
+    return res.status(200).json({ success: true, message: scope === "platform" ? "Platform settings saved successfully." : "System settings saved successfully.", data: saved, settings: saved, scope });
+  } catch (error) {
+    console.error("UPDATE SETTINGS ERROR:", error);
+    return res.status(error?.status || 500).json({ success: false, message: error.message || "Failed to save system settings." });
+  }
 };
 
 export const getPublicSettings = async (req, res, next) => {
