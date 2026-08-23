@@ -13,23 +13,18 @@ const normalizeRole = (value) => String(value?.name || value || "").trim().toLow
 const effectiveRoleForUser = (user) => normalizeRole(user?.role) || normalizeRole(user?.legacyRole) || normalizeRole(user?.roleId) || "customer";
 const isPlatformRole = (user) => ["super_admin", "superadmin"].includes(effectiveRoleForUser(user));
 const isPlatformOwner = (user) => isPlatformRole(user) && !user.tenantId;
+const isCustomer = (user) => effectiveRoleForUser(user) === "customer";
+const MFA_ENABLED = String(process.env.MFA_ENABLED || "false").toLowerCase() === "true";
 const publicUser = (user, permissions = []) => {
   const role = effectiveRoleForUser(user);
   const platformOwner = ["super_admin", "superadmin"].includes(role);
   return { _id: user._id, name: user.name, email: user.email, phone: user.phone, role, tenantId: platformOwner ? null : (user.tenantId || null), permissions, profileImage: user.profileImage, status: user.status, isVerified: user.isVerified, loyaltyPoints: user.loyaltyPoints, referralCode: user.referralCode, lastLoginAt: user.lastLoginAt, createdAt: user.createdAt };
 };
 const createAuditLog = (data) => AuditLog.log(data);
-const isCustomer = (user) => effectiveRoleForUser(user) === "customer";
 
 const setAuthCookie = (res, token) => {
   const isProduction = String(process.env.NODE_ENV || "development").toLowerCase() === "production";
-  res.cookie("token", token, {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? "none" : "lax",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-    path: "/",
-  });
+  res.cookie("token", token, { httpOnly: true, secure: isProduction, sameSite: isProduction ? "none" : "lax", maxAge: 7 * 24 * 60 * 60 * 1000, path: "/" });
 };
 
 export const login = async (req, res, next) => {
@@ -37,11 +32,8 @@ export const login = async (req, res, next) => {
     const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
     const password = typeof req.body?.password === "string" ? req.body.password : "";
     if (!email || !password) return res.status(400).json({ success: false, message: "Email and password are required." });
-
     let user = await User.findOne(mergeTenantFilter({ email })).select("+password").populate({ path: "roleId", populate: { path: "permissions" } }).populate("permissionsOverride");
-    if (!user) {
-      user = await runWithTenant({ tenantId: null, tenant: null, role: "super_admin", bypass: true }, async () => User.findOne({ email, role: { $in: ["super_admin", "superadmin"] }, tenantId: null }).select("+password").populate({ path: "roleId", populate: { path: "permissions" } }).populate("permissionsOverride"));
-    }
+    if (!user) user = await runWithTenant({ tenantId: null, tenant: null, role: "super_admin", bypass: true }, async () => User.findOne({ email, role: { $in: ["super_admin", "superadmin"] }, tenantId: null }).select("+password").populate({ path: "roleId", populate: { path: "permissions" } }).populate("permissionsOverride"));
     if (!user) {
       await SecurityLog.logEvent({ email, action: "login_failed", status: "failed", severity: "high", ipAddress: req.ip, userAgent: req.headers["user-agent"], details: "User not found" });
       return res.status(401).json({ success: false, message: "Invalid email or password." });
@@ -55,7 +47,6 @@ export const login = async (req, res, next) => {
       await SecurityLog.logEvent({ user: user._id, email: user.email, action: "login_failed", status: "failed", severity: "high", ipAddress: req.ip, userAgent: req.headers["user-agent"], details: "Invalid password" });
       return res.status(401).json({ success: false, message: "Invalid email or password." });
     }
-
     user.loginAttempts = 0;
     user.lockUntil = null;
     const effectiveRole = effectiveRoleForUser(user);
@@ -64,7 +55,7 @@ export const login = async (req, res, next) => {
     if (platformRoleWithTenant) return res.status(403).json({ success: false, message: "Platform owner account must not belong to a tenant." });
     const permissions = buildPermissions(user);
 
-    if (isCustomer(user)) {
+    if (isCustomer(user) && MFA_ENABLED) {
       await user.save({ validateBeforeSave: false });
       const challenge = await createCustomerLoginChallenge(user);
       await createAuditLog({ user: user._id, action: "mfa_challenge_created", resource: "Authentication", description: "Customer login MFA challenge created.", severity: "medium", ipAddress: req.ip, userAgent: req.headers["user-agent"] });
@@ -80,10 +71,7 @@ export const login = async (req, res, next) => {
     await createAuditLog({ user: user._id, action: "login", resource: "Authentication", description: "User successfully logged in.", severity: "medium", ipAddress: req.ip, userAgent: req.headers["user-agent"] });
     await SecurityLog.logEvent({ user: user._id, email: user.email, action: "login_success", status: "success", severity: "medium", ipAddress: req.ip, userAgent: req.headers["user-agent"], details: "Login successful" });
     return res.status(200).json({ success: true, token, user: publicUser(user, permissions) });
-  } catch (error) {
-    console.error("LOGIN ERROR:", error);
-    return next(error);
-  }
+  } catch (error) { console.error("LOGIN ERROR:", error); return next(error); }
 };
 
 export const register = async (req, res, next) => {
@@ -101,7 +89,7 @@ export const register = async (req, res, next) => {
     const tenantId = req.tenant?._id || req.tenant?.id || req.tenantId || null;
     const user = await User.create({ name: String(name).trim(), email: normalizedEmail, phone: normalizedPhone, password, status: "active", isVerified: true, role: "customer", roleId: customerRole?._id || null, legacyRole: "customer", tenantId });
     await SecurityLog.logEvent({ user: user._id, email: user.email, action: "register", status: "success", ipAddress: req.ip, userAgent: req.headers["user-agent"], details: "User registration" });
-    return res.status(201).json({ success: true, user: publicUser(user, []), message: "Registration successful. Please log in to verify your phone PIN." });
+    return res.status(201).json({ success: true, user: publicUser(user, []), message: "Registration successful. You can now log in." });
   } catch (error) { console.error("REGISTER ERROR:", error); return next(error); }
 };
 
