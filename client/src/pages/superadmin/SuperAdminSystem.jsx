@@ -10,18 +10,20 @@ function normalizeSystemHealth(payload) {
     return String(value);
   };
   const platform = source.platform || {};
+  const database = source.database?.status || source.database || (source.database?.connected ? "Connected" : "Unknown");
+  const databaseHealthy = String(database).toLowerCase() === "connected";
 
   return {
     ...source,
-    status: source.status || "unknown",
-    database: source.database?.status || source.database || (source.database?.connected ? "Connected" : "Unknown"),
+    status: databaseHealthy && source.status ? source.status : databaseHealthy ? "healthy" : "degraded",
+    database,
     uptime: Number(source.uptime ?? source.uptimeSeconds ?? 0),
     nodeVersion: source.nodeVersion || source.node || source.node_version || null,
     environment: source.environment || source.env || null,
     memory: {
       ...rawMemory,
-      used: normalizeMemoryValue(rawMemory.used ?? source.memoryUsed ?? rawMemory.rss),
-      total: normalizeMemoryValue(rawMemory.total ?? source.memoryTotal ?? rawMemory.heapTotal),
+      used: normalizeMemoryValue(rawMemory.heapUsed ?? source.memoryUsed ?? rawMemory.used ?? rawMemory.rss),
+      total: normalizeMemoryValue(rawMemory.heapTotal ?? source.memoryTotal ?? rawMemory.total),
     },
     platform: {
       ...platform,
