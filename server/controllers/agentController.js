@@ -47,32 +47,118 @@ export const getAgentDashboard = async (req, res, next) => {
     }
 
     const base = mergeTenantFilter({ agent: agent._id, isDeleted: { $ne: true } });
+    const commissionBase = mergeTenantFilter({ agent: agent._id, isDeleted: { $ne: true } });
     const now = new Date();
     const activeStatuses = ["confirmed", "assigned", "ongoing"];
-    const [bookings, upcomingBookings, completedTours, salesResult, guestsResult, commissionResult, pendingBookings, cancelledBookings, recentBookings] = await Promise.all([
+
+    const [
+      bookings,
+      upcomingBookings,
+      completedTours,
+      salesResult,
+      guestsResult,
+      customersResult,
+      commissionResult,
+      pendingCommissionResult,
+      paidCommissionResult,
+      pendingBookings,
+      cancelledBookings,
+      recentBookings,
+    ] = await Promise.all([
       Booking.countDocuments(base),
       Booking.countDocuments({ ...base, status: { $in: activeStatuses }, travelDate: { $gte: now } }),
       Booking.countDocuments({ ...base, status: "completed" }),
       Booking.aggregate([
-        { $match: { ...base, paymentStatus: { $in: ["paid", "completed"] }, status: { $nin: ["cancelled", "failed"] } } },
-        { $group: { _id: null, totalSales: { $sum: { $ifNull: ["$amountPaid", "$totalAmount"] } } } },
+        {
+          $match: {
+            ...base,
+            paymentStatus: "paid",
+            status: { $nin: ["cancelled", "failed", "refunded"] },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalSales: { $sum: { $ifNull: ["$totalAmount", 0] } },
+          },
+        },
       ]),
       Booking.aggregate([
         { $match: { ...base, status: { $ne: "cancelled" } } },
-        { $group: { _id: null, totalGuests: { $sum: { $ifNull: ["$numberOfGuests", { $size: { $ifNull: ["$travelers", []] } }] } } } },
+        {
+          $group: {
+            _id: null,
+            totalGuests: {
+              $sum: {
+                $ifNull: ["$numberOfGuests", { $size: { $ifNull: ["$travelers", []] } }],
+              },
+            },
+          },
+        },
       ]),
-      Commission.aggregate([{ $match: mergeTenantFilter({ agent: agent._id, status: { $nin: ["cancelled", "reversed"] } }) }, { $group: { _id: null, totalCommission: { $sum: { $ifNull: ["$amount", 0] } } } }]),
+      Booking.aggregate([
+        { $match: { ...base, status: { $ne: "cancelled" } } },
+        {
+          $group: {
+            _id: "$customer",
+          },
+        },
+        { $match: { _id: { $ne: null } } },
+        { $count: "totalCustomers" },
+      ]),
+      Commission.aggregate([
+        { $match: { ...commissionBase, status: { $nin: ["cancelled", "rejected"] } } },
+        { $group: { _id: null, totalCommission: { $sum: { $ifNull: ["$amount", 0] } } } },
+      ]),
+      Commission.aggregate([
+        { $match: { ...commissionBase, status: { $in: ["pending", "approved", "processing"] } } },
+        { $group: { _id: null, pendingCommission: { $sum: { $ifNull: ["$amount", 0] } } } },
+      ]),
+      Commission.aggregate([
+        { $match: { ...commissionBase, status: "paid" } },
+        { $group: { _id: null, paidCommission: { $sum: { $ifNull: ["$amount", 0] } } } },
+      ]),
       Booking.countDocuments({ ...base, status: "pending" }),
       Booking.countDocuments({ ...base, status: "cancelled" }),
-      Booking.find(base).populate("tour", "title name price duration destination").populate("customer", "name firstName lastName email phone").sort({ createdAt: -1 }).limit(5).lean(),
+      Booking.find(base)
+        .populate("tour", "title name price duration destination")
+        .populate("customer", "name firstName lastName email phone")
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .lean(),
     ]);
 
-    return res.status(200).json({ success: true, data: {
-      agent: { id: agent._id, companyName: agent.companyName, walletBalance: agent.walletBalance, commissionRate: globalCommissionRate, status: agent.status, isApproved: Boolean(agent.isApproved), pendingApproval: !agent.isApproved },
-      statistics: { bookings, upcomingBookings, completedTours, pendingBookings, cancelledBookings, totalSales: salesResult[0]?.totalSales || 0, totalCommission: commissionResult[0]?.totalCommission || 0, totalGuests: guestsResult[0]?.totalGuests || 0 },
-      recentBookings,
-    } });
-  } catch (error) { next(error); }
+    return res.status(200).json({
+      success: true,
+      data: {
+        agent: {
+          id: agent._id,
+          companyName: agent.companyName,
+          walletBalance: Number(agent.walletBalance || 0),
+          commissionRate: globalCommissionRate,
+          status: agent.status,
+          isApproved: Boolean(agent.isApproved),
+          pendingApproval: !agent.isApproved,
+        },
+        statistics: {
+          bookings,
+          upcomingBookings,
+          completedTours,
+          pendingBookings,
+          cancelledBookings,
+          totalSales: salesResult[0]?.totalSales || 0,
+          totalCommission: commissionResult[0]?.totalCommission || 0,
+          pendingCommission: pendingCommissionResult[0]?.pendingCommission || 0,
+          paidCommission: paidCommissionResult[0]?.paidCommission || 0,
+          totalGuests: guestsResult[0]?.totalGuests || 0,
+          totalCustomers: customersResult[0]?.totalCustomers || 0,
+        },
+        recentBookings,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const getAgentBookings = async (req, res, next) => {
@@ -84,18 +170,36 @@ export const getAgentBookings = async (req, res, next) => {
     const filter = mergeTenantFilter({ agent: agent._id, isDeleted: { $ne: true } });
     if (req.query.status) filter.status = req.query.status;
     const [items, total] = await Promise.all([
-      Booking.find(filter).populate("tour", "title name").populate("customer", "name firstName lastName email phone").sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean(),
+      Booking.find(filter)
+        .populate("tour", "title name")
+        .populate("customer", "name firstName lastName email phone")
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
       Booking.countDocuments(filter),
     ]);
-    return res.json({ success: true, data: items, bookings: items, pagination: { page, limit, total, pages: Math.ceil(total / limit) } });
-  } catch (error) { next(error); }
+    return res.json({
+      success: true,
+      data: items,
+      bookings: items,
+      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const getAgentCustomers = async (req, res, next) => {
   try {
     const agent = await getAgent(req.user);
     if (!agent) return res.status(404).json({ success: false, message: "Agent profile not found." });
-    const bookings = await Booking.find(mergeTenantFilter({ agent: agent._id, isDeleted: { $ne: true } })).populate("customer", "name firstName lastName email phone").select("customer customerSnapshot contact").lean();
+    const bookings = await Booking.find(
+      mergeTenantFilter({ agent: agent._id, isDeleted: { $ne: true } })
+    )
+      .populate("customer", "name firstName lastName email phone")
+      .select("customer customerSnapshot contact")
+      .lean();
     const seen = new Map();
     for (const booking of bookings) {
       const customer = booking.customer || booking.customerSnapshot || booking.contact;
@@ -104,15 +208,24 @@ export const getAgentCustomers = async (req, res, next) => {
       if (key && !seen.has(key)) seen.set(key, customer);
     }
     return res.json({ success: true, data: Array.from(seen.values()) });
-  } catch (error) { next(error); }
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const getMyAgentCommission = async (req, res, next) => {
   try {
     const agent = await getAgent(req.user);
     if (!agent) return res.status(404).json({ success: false, message: "Agent profile not found." });
-    const commissions = await Commission.find(mergeTenantFilter({ agent: agent._id })).populate("booking").sort({ createdAt: -1 }).lean();
+    const commissions = await Commission.find(
+      mergeTenantFilter({ agent: agent._id, isDeleted: { $ne: true } })
+    )
+      .populate("booking")
+      .sort({ createdAt: -1 })
+      .lean();
     const globalCommissionRate = await getGlobalCommissionRate(req);
     return res.status(200).json({ success: true, commissionRate: globalCommissionRate, data: commissions });
-  } catch (error) { next(error); }
+  } catch (error) {
+    next(error);
+  }
 };
