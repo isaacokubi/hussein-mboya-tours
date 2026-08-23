@@ -4,10 +4,7 @@ import securityService from "../services/securityService.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { authorize } from "../middleware/permissionMiddleware.js";
 
-import {
-  getSuperAdminDashboard,
-} from "../controllers/superAdminDashboardController.js";
-
+import { getSuperAdminDashboard } from "../controllers/superAdminDashboardController.js";
 import {
   getAuditLogs,
   getDatabaseStatus,
@@ -18,110 +15,46 @@ import {
   deleteDatabaseBackup,
   downloadDatabaseBackup,
 } from "../controllers/superAdminOperationsController.js";
-
 import { getApiMonitor } from "../controllers/apiMonitorController.js";
+import {
+  getSuperAdminUsers,
+  createSuperAdminCompanyAccount,
+  updateSuperAdminUserStatus,
+  deleteSuperAdminUser,
+} from "../controllers/superAdminUserController.js";
 
 const router = express.Router();
 
-/*
- * SuperAdmin is platform-scoped, not tenant-scoped.
- * These routes must not resolve a tenant.
- */
-
+/* SuperAdmin is platform-scoped. Never resolve a tenant for these routes. */
 router.use(protect);
 
-router.get(
-  "/dashboard",
-  authorize("admin.dashboard"),
-  getSuperAdminDashboard
-);
+router.get("/dashboard", authorize("admin.dashboard"), getSuperAdminDashboard);
 
-router.get(
-  "/audit",
-  authorize("system.audit"),
-  getAuditLogs
-);
+router.get("/users", authorize("user.manage"), getSuperAdminUsers);
+router.post("/users/accounts", authorize("user.manage"), createSuperAdminCompanyAccount);
+router.patch("/users/:id/status", authorize("user.manage"), updateSuperAdminUserStatus);
+router.put("/users/:id/status", authorize("user.manage"), updateSuperAdminUserStatus);
+router.delete("/users/:id", authorize("user.manage"), deleteSuperAdminUser);
 
-router.get(
-  "/security",
-  authorize("system.security"),
-  async (req, res) => {
-    try {
-      const data = await securityService.getSecurityStatus();
-
-      return res.json({
-        success: true,
-        data,
-      });
-    } catch (error) {
-      console.error("SuperAdmin security status error:", error);
-
-      return res.status(500).json({
-        success: false,
-        message: error.message,
-      });
-    }
+router.get("/audit", authorize("system.audit"), getAuditLogs);
+router.get("/security", authorize("system.security"), async (req, res) => {
+  try {
+    const data = await securityService.getSecurityStatus();
+    return res.json({ success: true, data });
+  } catch (error) {
+    console.error("SuperAdmin security status error:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
-);
-
-router.get(
-  "/database",
-  authorize("system.database"),
-  getDatabaseStatus
-);
-
-router.get(
-  "/system",
-  authorize("system.security"),
-  getSystemHealth
-);
-
-router.get(
-  "/api-monitor",
-  authorize("system.security"),
-  getApiMonitor
-);
-
-router.post(
-  "/maintenance/backup",
-  authorize("system.backup"),
-  createDatabaseBackup
-);
-
-router.post(
-  "/database/backup",
-  authorize("system.backup"),
-  createDatabaseBackup
-);
-
-router.post(
-  "/maintenance/cache",
-  authorize("admin.dashboard"),
-  clearSystemCache
-);
-
-router.post(
-  "/database/cache-clear",
-  authorize("settings.manage"),
-  clearSystemCache
-);
-
-router.get(
-  "/maintenance/backups",
-  authorize("settings.manage"),
-  listDatabaseBackups
-);
-
-router.delete(
-  "/maintenance/backups/:id",
-  authorize("settings.manage"),
-  deleteDatabaseBackup
-);
-
-router.get(
-  "/database/backup/:id/download",
-  authorize("system.backup"),
-  downloadDatabaseBackup
-);
+});
+router.get("/database", authorize("system.database"), getDatabaseStatus);
+router.get("/system", authorize("system.security"), getSystemHealth);
+router.get("/api-monitor", authorize("system.security"), getApiMonitor);
+router.post("/maintenance/backup", authorize("system.backup"), createDatabaseBackup);
+router.post("/database/backup", authorize("system.backup"), createDatabaseBackup);
+router.post("/maintenance/cache", authorize("admin.dashboard"), clearSystemCache);
+router.post("/database/cache-clear", authorize("settings.manage"), clearSystemCache);
+router.get("/maintenance/backups", authorize("settings.manage"), listDatabaseBackups);
+router.delete("/maintenance/backups/:id", authorize("settings.manage"), deleteDatabaseBackup);
+router.get("/database/backup/:id/download", authorize("system.backup"), downloadDatabaseBackup);
 
 export default router;
