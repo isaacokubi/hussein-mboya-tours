@@ -13,10 +13,17 @@ const organizationSchema = new mongoose.Schema(
     slug: { type: String, required: true, unique: true, lowercase: true, trim: true, index: true },
     legalName: { type: String, trim: true, default: "" },
     logoUrl: { type: String, trim: true, default: "" },
+    favicon: { type: String, trim: true, default: "" },
+    brandColors: {
+      primary: { type: String, trim: true, default: "" },
+      secondary: { type: String, trim: true, default: "" },
+      accent: { type: String, trim: true, default: "" },
+    },
     websiteUrl: { type: String, trim: true, default: "" },
     domain: { type: String, trim: true, lowercase: true, default: null },
     supportEmail: { type: String, trim: true, lowercase: true, default: "" },
     supportPhone: { type: String, trim: true, default: "" },
+    address: { type: String, trim: true, default: "" },
     country: { type: String, trim: true, default: "Kenya" },
     timezone: { type: String, trim: true, default: "Africa/Nairobi" },
     currency: { type: String, trim: true, uppercase: true, default: "KES" },
@@ -42,8 +49,6 @@ const organizationSchema = new mongoose.Schema(
 
 organizationSchema.index({ domain: 1 }, { unique: true, sparse: true });
 
-// Organizations are the tenant registry itself. They are platform-global and
-// must never be filtered or uniquely partitioned by another tenant.
 tenantPlugin(organizationSchema, { global: true });
 
 export default mongoose.model("Organization", organizationSchema);
