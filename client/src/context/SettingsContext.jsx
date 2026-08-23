@@ -3,14 +3,61 @@ import api from "../api/axios";
 
 export const PUBLIC_BRAND_NAME = "Your Travel Company";
 const DEFAULT_SETTINGS = {
-  companyName: PUBLIC_BRAND_NAME, supportEmail: "", supportPhone: "", currency: "KES", currencySymbol: "KSh", logo: "", companyLogo: "",
-  primaryColor: "#047857", secondaryColor: "#064e3b", accentColor: "#10b981", backgroundColor: "#f8fafc", surfaceColor: "#ffffff", textColor: "#0f172a",
-  fontFamily: "Inter", borderRadius: "xl", buttonStyle: "rounded", heroOverlayOpacity: 50,
+  companyName: PUBLIC_BRAND_NAME,
+  websiteUrl: "",
+  companyLogo: "",
+  logo: "",
+  supportEmail: "",
+  supportPhone: "",
+  address: "",
+  city: "Nairobi",
+  country: "Kenya",
+  currency: "KES",
+  currencySymbol: "KSh",
+  timezone: "Africa/Nairobi",
+  language: "en",
+  taxRate: 0,
+  bookingDepositPercentage: 30,
+  defaultCommissionRate: 10,
+  maintenanceMode: false,
+  allowRegistrations: true,
+  allowAgentRegistrations: true,
+  requireEmailVerification: true,
+  requirePhoneVerification: false,
+  enableMpesa: true,
+  enableStripe: false,
+  enablePaypal: false,
+  enableBankTransfer: true,
+  bookingNotifications: true,
+  paymentNotifications: true,
+  facebook: "",
+  instagram: "",
+  twitter: "",
+  youtube: "",
+  seoTitle: "",
+  seoDescription: "",
+  seoKeywords: [],
+  primaryColor: "#047857",
+  secondaryColor: "#064e3b",
+  accentColor: "#10b981",
+  backgroundColor: "#f8fafc",
+  surfaceColor: "#ffffff",
+  textColor: "#0f172a",
+  fontFamily: "Inter",
+  borderRadius: "xl",
+  buttonStyle: "rounded",
+  heroOverlayOpacity: 50,
   homepageSections: { stats: true, tours: true, destinations: true, experiences: true, services: true, testimonials: true, gallery: true, whyChooseUs: true, newsletter: true },
 };
+
 const SettingsContext = createContext(null);
 const STORAGE_KEY = "platform-settings";
-const normalize = (next = {}, previous = DEFAULT_SETTINGS) => ({ ...previous, ...next, companyName: PUBLIC_BRAND_NAME });
+const normalize = (next = {}, previous = DEFAULT_SETTINGS) => ({
+  ...DEFAULT_SETTINGS,
+  ...previous,
+  ...next,
+  homepageSections: { ...DEFAULT_SETTINGS.homepageSections, ...(previous.homepageSections || {}), ...(next.homepageSections || {}) },
+});
 
 function applyTenantTheme(settings) {
   const root = document.documentElement;
@@ -27,6 +74,12 @@ function applyTenantTheme(settings) {
   if (settings.fontFamily) root.style.setProperty("--tenant-font-family", settings.fontFamily);
 }
 
+function applyDocumentMetadata(settings) {
+  if (settings.seoTitle) document.title = settings.seoTitle;
+  const description = document.querySelector('meta[name="description"]');
+  if (description && settings.seoDescription) description.setAttribute("content", settings.seoDescription);
+}
+
 export function SettingsProvider({ children }) {
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
@@ -37,11 +90,15 @@ export function SettingsProvider({ children }) {
       const data = response.data?.settings || response.data?.data || response.data || {};
       applySettings(data);
       return data;
-    } catch (error) { console.error("Public tenant settings load failed:", error); return null; }
+    } catch (error) {
+      console.error("Public tenant settings load failed:", error);
+      return null;
+    }
   }, [applySettings]);
 
   useEffect(() => {
     applyTenantTheme(settings);
+    applyDocumentMetadata(settings);
   }, [settings]);
 
   useEffect(() => {
@@ -50,28 +107,31 @@ export function SettingsProvider({ children }) {
     void load();
     const handleStorage = (event) => {
       if (event.key !== STORAGE_KEY || !event.newValue) return;
-      try {
-        applySettings(JSON.parse(event.newValue));
-      } catch (error) {
-        console.warn("Stored platform settings could not be parsed:", error);
-      }
+      try { applySettings(JSON.parse(event.newValue)); } catch (error) { console.warn("Stored tenant settings could not be parsed:", error); }
     };
     const handlePlatformSettings = (event) => applySettings(event.detail || {});
-    window.addEventListener("storage", handleStorage); window.addEventListener("platform-settings-updated", handlePlatformSettings);
-    return () => { mounted = false; window.removeEventListener("storage", handleStorage); window.removeEventListener("platform-settings-updated", handlePlatformSettings); };
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("platform-settings-updated", handlePlatformSettings);
+    return () => {
+      mounted = false;
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("platform-settings-updated", handlePlatformSettings);
+    };
   }, [refreshSettings, applySettings]);
 
   const updateSettings = useCallback((nextSettings) => {
     setSettings((previous) => normalize(nextSettings, previous));
     try {
       const next = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-      const merged = normalize(nextSettings, next); localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+      const merged = normalize(nextSettings, next);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
       window.dispatchEvent(new CustomEvent("platform-settings-updated", { detail: merged }));
     } catch (error) {
-      console.warn("Platform settings could not be persisted locally:", error);
+      console.warn("Tenant settings could not be persisted locally:", error);
     }
   }, []);
 
-  return <SettingsContext.Provider value={{ settings: { ...settings, companyName: PUBLIC_BRAND_NAME }, companyName: PUBLIC_BRAND_NAME, supportEmail: settings.supportEmail || "", supportPhone: settings.supportPhone || "", loading, refreshSettings, updateSettings }}>{children}</SettingsContext.Provider>;
+  return <SettingsContext.Provider value={{ settings, companyName: settings.companyName || PUBLIC_BRAND_NAME, supportEmail: settings.supportEmail || "", supportPhone: settings.supportPhone || "", loading, refreshSettings, updateSettings }}>{children}</SettingsContext.Provider>;
 }
+
 export function useSettings() { return useContext(SettingsContext); }
