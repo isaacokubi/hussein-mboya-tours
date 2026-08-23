@@ -4,6 +4,13 @@ import User from "../models/User.js";
 import Role from "../models/Role.js";
 import { runWithTenant } from "../tenancy/context.js";
 
+export const TENANT_PLANS = Object.freeze({
+  starter: Object.freeze({ label: "Starter", seats: 5 }),
+  professional: Object.freeze({ label: "Professional", seats: 20 }),
+  business: Object.freeze({ label: "Business", seats: 50 }),
+  enterprise: Object.freeze({ label: "Enterprise", seats: 100, customSeats: true }),
+});
+
 const asObjectId = (id) => new mongoose.Types.ObjectId(id);
 
 const getTenantCounts = async (tenantId) => {
@@ -42,12 +49,17 @@ const validateAdminPassword = (password) => (
   /\d/.test(password)
 );
 
+export const getTenantPlans = async (req, res) => res.json({
+  success: true,
+  plans: Object.entries(TENANT_PLANS).map(([value, plan]) => ({ value, ...plan })),
+});
+
 export const createTenantWithAdmin = async (req, res, next) => {
   const session = await mongoose.startSession();
   try {
     const {
       companyName, legalName = "", slug: requestedSlug = "", companyEmail, companyPhone,
-      country = "Kenya", timezone = "Africa/Nairobi", currency = "KES", plan = "starter", seats = 5,
+      country = "Kenya", timezone = "Africa/Nairobi", currency = "KES", plan = "starter", seats,
       websiteUrl = "", logoUrl = "", adminName, adminEmail, adminPhone, adminPassword,
     } = req.body || {};
 
@@ -57,7 +69,21 @@ export const createTenantWithAdmin = async (req, res, next) => {
     if (!String(adminName || "").trim() || !/^\S+@\S+\.\S+$/.test(String(adminEmail || "").trim())) return res.status(400).json({ success: false, message: "Primary administrator name and valid email are required." });
     if (!/^\d{10}$/.test(String(adminPhone || "").trim())) return res.status(400).json({ success: false, message: "Administrator phone must contain exactly 10 digits." });
     if (!validateAdminPassword(adminPassword)) return res.status(400).json({ success: false, message: "Administrator password must be at least 12 characters and include uppercase, lowercase and a number." });
-    if (!["starter", "professional", "business", "enterprise"].includes(plan)) return res.status(400).json({ success: false, message: "Invalid subscription plan." });
+
+    const selectedPlan = TENANT_PLANS[plan];
+    if (!selectedPlan) return res.status(400).json({ success: false, message: "Invalid subscription plan." });
+
+    const requestedSeats = Number(seats);
+    const effectiveSeats = Number.isFinite(requestedSeats) && requestedSeats > 0 ? Math.floor(requestedSeats) : selectedPlan.seats;
+    if (effectiveSeats < selectedPlan.seats) {
+      return res.status(400).json({
+        success: false,
+        code: "SEAT_LIMIT_BELOW_PLAN_MINIMUM",
+        message: `${selectedPlan.label} includes a minimum of ${selectedPlan.seats} user seats. Increase the seat count or choose a different plan.`,
+        minimumSeats: selectedPlan.seats,
+      });
+    }
+    if (effectiveSeats > 10000) return res.status(400).json({ success: false, message: "User seats cannot exceed 10,000." });
 
     const normalizedCompanyEmail = String(companyEmail).trim().toLowerCase();
     const normalizedAdminEmail = String(adminEmail).trim().toLowerCase();
@@ -76,7 +102,7 @@ export const createTenantWithAdmin = async (req, res, next) => {
         country: String(country || "Kenya").trim(), timezone: String(timezone || "Africa/Nairobi").trim(),
         currency: String(currency || "KES").trim().toUpperCase(), websiteUrl: String(websiteUrl || "").trim(),
         logoUrl: String(logoUrl || "").trim(), status: "trial",
-        subscription: { plan, seats: Math.max(Number(seats) || 5, 1), trialEndsAt },
+        subscription: { plan, seats: effectiveSeats, trialEndsAt },
         createdBy: req.user?._id || null,
       }], { session });
 

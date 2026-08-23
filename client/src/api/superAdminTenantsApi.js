@@ -1,5 +1,6 @@
 import axios from "./axios";
 
+export const getSuperAdminTenantPlans = async () => (await axios.get("/superadmin/tenant-plans")).data;
 export const getSuperAdminTenants = async (params = {}) => (await axios.get("/superadmin/tenants", { params })).data;
 export const getSuperAdminTenant = async (id) => (await axios.get(`/superadmin/tenants/${id}`)).data;
 export const createSuperAdminTenant = async (payload) => (await axios.post("/superadmin/tenants", payload)).data;
