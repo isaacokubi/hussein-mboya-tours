@@ -16,8 +16,8 @@ export const getTenantBranding = async () => {
     ...response.data,
     branding: {
       ...settings,
-      name: "Coherent Tours",
-      legalName: "Coherent Tours",
+      name: "Your Travel Company",
+      legalName: "Your Travel Company",
       logo: settings.companyLogo || settings.logo || "",
       logoUrl: settings.companyLogo || settings.logoUrl || "",
       contactEmail: settings.supportEmail || "",
