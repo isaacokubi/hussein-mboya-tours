@@ -5,14 +5,19 @@ import Role from "../models/Role.js";
 import Staff from "../models/Staff.js";
 import Agent from "../models/Agent.js";
 import { ensureSystemRoles } from "../services/onboardingService.js";
+import { createWithTenantIndexRepair, isTenantIndexConflict } from "../services/tenantIndexRepair.js";
 
 const STATUS_VALUES = ["active", "inactive", "disabled", "suspended", "blocked"];
 
 const isDuplicateKeyError = (error) => error?.code === 11000;
 
 const duplicateMessage = (error) => {
-  const key = Object.keys(error?.keyPattern || {})[0];
-  if (key === "tenantId") return "A tenant index conflict was detected. Run the tenant index reconciliation before creating staff accounts.";
+  const pattern = error?.keyPattern || {};
+  const keys = Object.keys(pattern);
+  const key = keys[0];
+  if (keys.length === 1 && key === "tenantId") {
+    return "A legacy tenant index was repaired automatically. Please submit the account creation again.";
+  }
   if (key === "email") return "A user or staff account with this email already exists for this company.";
   if (key === "phone") return "A user with this phone number already exists.";
   return "A record with these details already exists.";
@@ -88,15 +93,12 @@ export const createStaffAccount = async (req, res, next) => {
         );
         permissionIds.push(permission._id);
       }
-      roleDoc = await Role.create({ name: canonicalRole, displayName: canonicalRole.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), description: `${canonicalRole} access`, permissions: permissionIds, isSystem: ["admin", "manager", "tour_guide", "driver", "agent", "customer"].includes(canonicalRole), level: canonicalRole === "admin" ? 100 : 20 });
+      roleDoc = await createWithTenantIndexRepair(Role, { name: canonicalRole, displayName: canonicalRole.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), description: `${canonicalRole} access`, permissions: permissionIds, isSystem: ["admin", "manager", "tour_guide", "driver", "agent", "customer"].includes(canonicalRole), level: canonicalRole === "admin" ? 100 : 20 });
     }
 
     if (["super_admin", "superadmin"].includes(roleDoc.name)) return res.status(403).json({ success: false, message: "SuperAdmin accounts can only be created through the one-time platform bootstrap process." });
 
-    // The tenant is supplied explicitly as well as being enforced by the tenant
-    // plugin. This makes the write deterministic and protects it from partial
-    // tenant context during account creation.
-    createdUser = await User.create({
+    createdUser = await createWithTenantIndexRepair(User, {
       name: name.trim(),
       email: normalizedEmail,
       phone: String(phone).trim(),
@@ -110,19 +112,16 @@ export const createStaffAccount = async (req, res, next) => {
     });
 
     if (canonicalRole === "agent") {
-      createdAgent = await Agent.create({ user: createdUser._id, tenantId, companyName: "", phone: createdUser.phone, email: createdUser.email, commissionRate: 10, isApproved: false, status: "active" });
+      createdAgent = await createWithTenantIndexRepair(Agent, { user: createdUser._id, tenantId, companyName: "", phone: createdUser.phone, email: createdUser.email, commissionRate: 10, isApproved: false, status: "active" });
     }
 
     if (["tour_guide", "driver"].includes(canonicalRole)) {
-      createdStaff = await Staff.create({ user: createdUser._id, tenantId, name: createdUser.name, email: createdUser.email, phone: createdUser.phone, position: canonicalRole === "tour_guide" ? "guide" : "driver", role: canonicalRole === "tour_guide" ? "guide" : "driver", status: "active", isActive: true, availability: "available", createdBy: req.user._id });
+      createdStaff = await createWithTenantIndexRepair(Staff, { user: createdUser._id, tenantId, name: createdUser.name, email: createdUser.email, phone: createdUser.phone, position: canonicalRole === "tour_guide" ? "guide" : "driver", role: canonicalRole === "tour_guide" ? "guide" : "driver", status: "active", isActive: true, availability: "available", createdBy: req.user._id });
     }
 
     const safeUser = await User.findById(createdUser._id).select("-password").populate("roleId", "name displayName permissions").lean();
     return res.status(201).json({ success: true, message: `${canonicalRole.replace("_", " ")} account created successfully.`, user: safeUser, staff: createdStaff, agent: createdAgent });
   } catch (error) {
-    // Never leave a login account behind when its staff/agent profile failed.
-    // The old implementation created User first and returned 500 after Staff
-    // failed, so the next click appeared to create duplicates.
     if (createdUser?._id) {
       try {
         await Promise.allSettled([
@@ -134,7 +133,7 @@ export const createStaffAccount = async (req, res, next) => {
     }
 
     if (isDuplicateKeyError(error)) {
-      return res.status(409).json({ success: false, message: duplicateMessage(error) });
+      return res.status(409).json({ success: false, message: duplicateMessage(error), repaired: isTenantIndexConflict(error) });
     }
     next(error);
   }
