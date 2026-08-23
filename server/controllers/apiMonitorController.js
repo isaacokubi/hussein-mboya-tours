@@ -1,153 +1,50 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
 import { getSystemSettings } from "../services/settingsService.js";
 import mongoose from "mongoose";
 
-const checkEndpoint = async (name, path) => {
-  const start = Date.now();
+const MONITORED_ENDPOINTS = [
+  ["Security", "/api/superadmin/security"],
+  ["Dashboard", "/api/superadmin/dashboard"],
+  ["Tours", "/api/tours"],
+  ["Bookings", "/api/bookings"],
+];
 
+export const getApiMonitor = async (req, res) => {
   try {
+    const settings = await getSystemSettings();
+    const companyName = settings?.companyName || "Company";
+    const memory = process.memoryUsage();
+    const databaseHealthy = mongoose.connection.readyState === 1;
+    const endpoints = MONITORED_ENDPOINTS.map(([name, path]) => ({
+      name,
+      endpoint: path,
+      status: databaseHealthy ? "registered" : "degraded",
+      responseTime: "n/a",
+    }));
+    const healthScore = databaseHealthy ? 100 : 25;
 
-    const responseTime = Date.now() - start;
-
-    return {
-      endpoint:path,
-      status:"healthy",
-      responseTime:responseTime + "ms"
-    };
-
-  } catch(error){
-
-    return {
-      endpoint:path,
-      status:"failed",
-      error:error.message
-    };
-
+    return res.json({
+      success: true,
+      data: {
+        status: databaseHealthy ? "online" : "degraded",
+        service: `${companyName} API`,
+        healthScore,
+        database: { status: databaseHealthy ? "Connected" : "Disconnected" },
+        response: databaseHealthy ? "normal" : "degraded",
+        server: {
+          nodeVersion: process.version,
+          environment: process.env.NODE_ENV || "development",
+          uptime: `${Math.floor(process.uptime() / 3600)}h ${Math.floor((process.uptime() % 3600) / 60)}m`,
+          memory: {
+            used: `${Math.round(memory.heapUsed / 1024 / 1024)} MB`,
+            total: `${Math.round(memory.heapTotal / 1024 / 1024)} MB`,
+          },
+        },
+        endpoints,
+        timestamp: new Date(),
+      },
+    });
+  } catch (error) {
+    console.error("API MONITOR ERROR", error);
+    return res.status(500).json({ success: false, message: "Unable to load API monitor status." });
   }
-};
-
-
-export const getApiMonitor = async(req,res)=>{
-
-  const settings = await getSystemSettings();
-  const companyName = settings.companyName || "Company";
-
-try{
-
-const memory = process.memoryUsage();
-
-const uptimeSeconds = process.uptime();
-
-
-const endpoints = await Promise.all([
-checkEndpoint(
-"Security",
-"/api/superadmin/security"
-),
-
-checkEndpoint(
-"Dashboard",
-"/api/superadmin/dashboard"
-),
-
-checkEndpoint(
-"Tours",
-"/api/tours"
-),
-
-checkEndpoint(
-"Bookings",
-"/api/bookings"
-)
-
-]);
-
-
-const failedEndpoints =
-endpoints.filter(
-item=>item.status!=="healthy"
-).length;
-
-
-
-const healthScore =
-failedEndpoints === 0 ? 100 :
-Math.max(0,100-(failedEndpoints*25));
-
-
-
-res.json({
-
-success:true,
-
-data:{
-
-status:"online",
-
-service:`${companyName} API`,
-
-healthScore,
-
-
-database:{
-
-status:
-mongoose.connection.readyState===1
-?
-"Connected"
-:
-"Disconnected"
-
-},
-
-
-response:"normal",
-
-
-server:{
-
-nodeVersion:process.version,
-
-environment:
-process.env.NODE_ENV || "development",
-
-uptime:
-Math.floor(uptimeSeconds/3600)+"h "+
-Math.floor((uptimeSeconds%3600)/60)+"m",
-
-memory:{
-
-used:
-Math.round(memory.heapUsed/1024/1024)+" MB",
-
-total:
-Math.round(memory.heapTotal/1024/1024)+" MB"
-
-}
-
-},
-
-
-endpoints,
-
-
-timestamp:new Date()
-
-}
-
-});
-
-
-}catch(error){
-
-res.status(500).json({
-
-success:false,
-
-message:error.message
-
-});
-
-}
-
 };
