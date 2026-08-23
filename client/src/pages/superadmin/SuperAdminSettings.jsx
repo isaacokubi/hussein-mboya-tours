@@ -19,29 +19,36 @@ export default function SuperAdminSettings() {
     try {
       setLoading(true);
       const data = await getSettings();
-      const nextSettings = data.settings || data.data || data || {};
+      const nextSettings = data?.settings || data?.data || data || {};
       setSettings(nextSettings);
       updateGlobalSettings?.(nextSettings);
     } catch (err) {
-      console.error(err);
+      console.error("SUPERADMIN SETTINGS LOAD ERROR", err);
       toast.error(err?.response?.data?.message || "Failed to load platform settings.");
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     let active = true;
-    getSettings().then((data) => {
-      if (!active) return;
-      const nextSettings = data.settings || data.data || data || {};
-      setSettings(nextSettings);
-      updateGlobalSettings?.(nextSettings);
-      setLoading(false);
-    }).catch((err) => {
-      if (!active) return;
-      console.error(err);
-      toast.error(err?.response?.data?.message || "Failed to load platform settings.");
-      setLoading(false);
-    });
+    const loadSettings = async () => {
+      try {
+        setLoading(true);
+        const data = await getSettings();
+        if (!active) return;
+        const nextSettings = data?.settings || data?.data || data || {};
+        setSettings(nextSettings);
+        updateGlobalSettings?.(nextSettings);
+      } catch (err) {
+        if (!active) return;
+        console.error("SUPERADMIN SETTINGS LOAD ERROR", err);
+        toast.error(err?.response?.data?.message || "Failed to load platform settings.");
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    void loadSettings();
     return () => { active = false; };
   }, [updateGlobalSettings]);
 
