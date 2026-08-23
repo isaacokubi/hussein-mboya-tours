@@ -10,7 +10,7 @@ import Payment from "../models/Payment.js";
 import Tour from "../models/Tour.js";
 import Destination from "../models/Destination.js";
 
-const COMPLETED = "completed";
+const REVENUE_STATUSES = ["completed", "refunded"];
 const toMoney = (field) => ({ $convert: { input: field, to: "double", onError: 0, onNull: 0 } });
 
 export const getSuperAdminDashboard = async (req, res) => {
@@ -35,11 +35,17 @@ export const getSuperAdminDashboard = async (req, res) => {
         Destination.countDocuments(),
         Payment.countDocuments(),
         Payment.aggregate([
-          { $match: { status: COMPLETED } },
+          { $match: { status: { $in: REVENUE_STATUSES } } },
           { $project: {
             amount: toMoney("$amount"),
             refundedAmount: toMoney("$refundedAmount"),
-            currency: { $ifNull: ["$currency", "KES"] },
+            refundStatus: { $ifNull: ["$refundStatus", "none"] },
+            currency: { $toUpper: { $ifNull: ["$currency", "KES"] } },
+          } },
+          { $project: {
+            amount: 1,
+            refundedAmount: { $cond: [{ $eq: ["$refundStatus", "completed"] }, "$refundedAmount", 0] },
+            currency: 1,
           } },
           { $group: {
             _id: "$currency",
@@ -58,14 +64,12 @@ export const getSuperAdminDashboard = async (req, res) => {
         ]),
       ]);
 
-      // Revenue is platform-wide net cash received: completed payments less completed refunds.
-      // Booking totals are deliberately excluded because a booking can be unpaid or refunded.
       const revenueByCurrency = revenueResult || [];
       const primary = revenueByCurrency.find((item) => item.currency === "KES") || revenueByCurrency[0];
       const revenue = primary?.revenue || 0;
       const grossRevenue = primary?.gross || 0;
       const refundedRevenue = primary?.refunds || 0;
-      const completedPayments = revenueByCurrency.reduce((sum, item) => sum + (item.completedPayments || 0), 0);
+      const completedPayments = revenueByCurrency.reduce((sum, item) => sum + Number(item.completedPayments || 0), 0);
 
       return {
         users, staff, agents, vehicles, bookings, admins, tours, destinations, payments,
