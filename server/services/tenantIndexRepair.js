@@ -18,20 +18,26 @@ export async function repairLegacyTenantUniqueIndex(Model, error) {
     ["User", "Staff"].includes(modelName) &&
     fields.length === 1 &&
     fields[0] === "email";
-  // Older User/Staff schemas used a globally-unique phone index. Phone
-  // uniqueness is now tenant-scoped (and the current schemas do not declare
-  // phone as globally unique), so that legacy index must not block staff from
-  // being created when another tenant already has the same number.
   const isLegacyGlobalPhoneIndex =
     ["User", "Staff"].includes(modelName) &&
     fields.length === 1 &&
     fields[0] === "phone";
 
+  // Older Staff schemas accidentally made operational fields globally unique.
+  // That means the first driver could be created, but a second driver would
+  // fail with E11000 on position_1/role_1/status_1/etc. These fields are not
+  // unique in the current Staff model and must not block additional staff.
+  const isLegacyStaffOperationalIndex =
+    modelName === "Staff" &&
+    fields.length === 1 &&
+    ["position", "role", "status", "availability", "isDeleted"].includes(fields[0]);
+
   if (
     !isLegacyTenantIndex &&
     !isLegacyRoleNameIndex &&
     !isLegacyGlobalEmailIndex &&
-    !isLegacyGlobalPhoneIndex
+    !isLegacyGlobalPhoneIndex &&
+    !isLegacyStaffOperationalIndex
   ) return false;
 
   const collection = Model?.collection;
@@ -45,7 +51,8 @@ export async function repairLegacyTenantUniqueIndex(Model, error) {
       if (isLegacyTenantIndex) return keys[0] === "tenantId";
       if (isLegacyRoleNameIndex) return keys[0] === "name";
       if (isLegacyGlobalEmailIndex) return keys[0] === "email";
-      return isLegacyGlobalPhoneIndex && keys[0] === "phone";
+      if (isLegacyGlobalPhoneIndex) return keys[0] === "phone";
+      return isLegacyStaffOperationalIndex && ["position", "role", "status", "availability", "isDeleted"].includes(keys[0]);
     });
 
     if (!legacyIndexes.length) return false;
