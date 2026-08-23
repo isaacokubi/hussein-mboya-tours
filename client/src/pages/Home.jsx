@@ -16,8 +16,11 @@ const DEFAULT_SECTIONS = { stats: true, tours: true, destinations: true, experie
 export default function Home() {
   const { companyName = "", settings = {} } = useSettings();
   const sections = { ...DEFAULT_SECTIONS, ...(settings.homepageSections || {}) };
+  const seoTitle = settings.seoTitle || (companyName ? `Kenya Safaris & Tours | ${companyName}` : "Kenya Safaris & Tours");
+  const seoDescription = settings.seoDescription || (companyName ? `Discover Kenya with ${companyName}: safaris, wildlife adventures, beach holidays and tailor-made African travel experiences.` : "Discover Kenya through safaris, wildlife adventures, beach holidays and tailor-made African travel experiences.");
+
   return <main className="overflow-hidden bg-[var(--tenant-background,#f8fafc)]" style={{ color: "var(--tenant-text,#0f172a)", fontFamily: "var(--tenant-font-family,Inter), sans-serif" }}>
-    <SEO title={companyName ? `Kenya Safaris & Tours | ${companyName}` : "Kenya Safaris & Tours"} description={companyName ? `Discover Kenya with ${companyName}: safaris, wildlife adventures, beach holidays and tailor-made African travel experiences.` : "Discover Kenya through safaris, wildlife adventures, beach holidays and tailor-made African travel experiences."} image="/hero1.jpeg" />
+    <SEO title={seoTitle} description={seoDescription} image={settings.companyLogo || "/hero1.jpeg"} />
     <section><HeroSlider /></section>
     <div className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16">
       {sections.stats && <section className="py-12 md:py-16"><StatsSection /></section>}
