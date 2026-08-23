@@ -19,34 +19,43 @@ const JWT_AUDIENCE = "husseinmboyatours-client";
 
 const verifyAccessToken = (token, secret) => {
   try {
-    return jwt.verify(token, secret, {
-      issuer: JWT_ISSUER,
-      audience: JWT_AUDIENCE,
-    });
+    return jwt.verify(token, secret, { issuer: JWT_ISSUER, audience: JWT_AUDIENCE });
   } catch (error) {
-    // Tokens issued by earlier production builds may not contain the current
-    // issuer/audience claims. They are still cryptographically signed with the
-    // configured JWT secret. Accept those legacy tokens only when the strict
-    // verification failed specifically because of issuer/audience claims.
-    if (error?.name === "JsonWebTokenError" && /issuer|audience/i.test(error.message || "")) {
-      return jwt.verify(token, secret);
-    }
+    if (error?.name === "JsonWebTokenError" && /issuer|audience/i.test(error.message || "")) return jwt.verify(token, secret);
     throw error;
   }
 };
 
+const extractAndVerifyToken = (req, secret) => {
+  const bearer = req.headers.authorization?.startsWith("Bearer ") ? req.headers.authorization.substring(7).trim() : "";
+  const cookie = String(req.cookies?.token || "").trim();
+  const candidates = [bearer, cookie].filter(Boolean);
+  if (!candidates.length) return { decoded: null, token: null, error: null };
+
+  let lastError = null;
+  for (const token of candidates) {
+    try {
+      return { decoded: verifyAccessToken(token, secret), token, error: null };
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  return { decoded: null, token: null, error: lastError };
+};
+
 export const protect = async (req, res, next) => {
   try {
-    let token = null;
-    const authHeader = req.headers.authorization;
-    if (authHeader?.startsWith("Bearer ")) token = authHeader.substring(7).trim();
-    if (!token && req.cookies?.token) token = req.cookies.token;
-    if (!token) return res.status(401).json({ success: false, message: "Authentication required." });
-
     const secret = env.JWT_SECRET || process.env.JWT_SECRET;
     if (!secret) return res.status(500).json({ success: false, message: "Authentication configuration error." });
 
-    const decoded = verifyAccessToken(token, secret);
+    const { decoded, error } = extractAndVerifyToken(req, secret);
+    if (error && !decoded) {
+      console.error("AUTH TOKEN VERIFICATION ERROR:", error.name, error.message);
+      const message = error?.name === "TokenExpiredError" ? "Authentication session expired." : "Invalid authentication token.";
+      return res.status(401).json({ success: false, message });
+    }
+    if (!decoded) return res.status(401).json({ success: false, message: "Authentication required." });
+
     const userId = decoded.sub || decoded.id || decoded._id || decoded.userId;
     if (!userId) return res.status(401).json({ success: false, message: "Invalid authentication token." });
 
