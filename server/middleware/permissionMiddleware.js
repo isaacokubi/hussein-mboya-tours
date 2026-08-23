@@ -11,11 +11,6 @@ const ADMIN_COMPATIBILITY_PERMISSIONS = [
   "finance.view", "finance.manage", "notification.manage",
 ];
 
-// Manager Settings is part of the Tour Manager operational workspace. Keep this
-// compatibility permission here so existing manager roles receive access even
-// when their database role was created before the settings page was introduced.
-const MANAGER_COMPATIBILITY_PERMISSIONS = ["settings.manage"];
-
 const PERMISSION_ALIASES = {
   "tour.manage": ["tour.manage", "manage_tours"], "manage_tours": ["manage_tours", "tour.manage"],
   "destination.manage": ["destination.manage", "manage_destinations"], "manage_destinations": ["manage_destinations", "destination.manage"],
@@ -63,9 +58,6 @@ export const getEffectivePermissions = async (user) => {
   }
   permissions.push(...extractEnabledPermissions(user?.permissionsOverride));
   if (roleName === "admin") permissions.push(...ADMIN_COMPATIBILITY_PERMISSIONS.map(normalizePermission));
-  if (roleName === "manager" || roleName === "tour_manager") {
-    permissions.push(...MANAGER_COMPATIBILITY_PERMISSIONS.map(normalizePermission));
-  }
   return [...new Set(expandPermissionAliases(permissions))];
 };
 
