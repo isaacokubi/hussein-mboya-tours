@@ -22,10 +22,13 @@
     "check:security": "node scripts/security-hardening-check.js",
     "check:multitenancy": "node scripts/multitenancy-check.js",
     "check:multitenancy:code": "node --check tenancy/tenantPlugin.js && node --check tenancy/bootstrap.js && node --check tenancy/context.js && node --check middleware/tenantMiddleware.js && node --check middleware/resolveMpesaCallbackTenant.js && node --check middleware/resolveMpesaRefundTenant.js && node --check socket/socketManager.js && node --check scripts/tenantIsolationRegressionCheck.js",
+    "check:multitenancy:deep": "node scripts/multitenancy-full-check.js && node scripts/multitenancy-deep-audit.js",
+    "check:multitenancy:global": "node scripts/globalTenantIsolationCheck.js",
     "check:multitenancy:live": "node scripts/tenantIsolationRegressionCheck.js",
     "migrate:multitenancy": "node scripts/migrateToMultitenancy.js",
+    "repair:global-tenant-indexes": "node scripts/repairGlobalTenantIndexes.js",
     "reconcile:tenant-indexes": "node scripts/reconcileTenantIndexes.js",
-    "check:all": "npm run check && npm run check:controllers && npm run check:models && npm run check:rbac&& npm run check:onboarding && npm run check:public-onboarding && npm run check:security && npm run check:multitenancy && npm run check:multitenancy:code && npm run check:production",
+    "check:all": "npm run check && npm run check:controllers && npm run check:models && npm run check:rbac && npm run check:onboarding && npm run check:public-onboarding && npm run check:security && npm run check:multitenancy && npm run check:multitenancy:code && npm run check:multitenancy:deep && npm run check:production",
     "test": "node --test tests/*.js"
   },
   "dependencies": {
@@ -54,7 +57,7 @@
     "pdfkit": "^0.19.0",
     "qrcode": "^1.5.4",
     "react-i18next": "^17.0.11",
-    "sitemap": "^9.0.1",
+    "sitemap": "^9.0.0",
     "slugify": "^1.6.9",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
