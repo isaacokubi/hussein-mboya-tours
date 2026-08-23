@@ -32,7 +32,6 @@ const resolveDriver = async (user) => {
     mergeTenantFilter({ email: String(user.email).toLowerCase(), position: "driver" }),
     {
       $set: {
-        ...mergeTenantFilter({}),
         user: user._id,
         isActive: true,
         status: "active",
