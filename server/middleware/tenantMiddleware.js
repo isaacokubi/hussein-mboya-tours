@@ -18,20 +18,37 @@ export async function resolveTenant(req, res, next) {
     const requestedTenantKey = String(req.get("X-Tenant-Key") || "").trim();
     const requestHost = normalizeHost(req.get("X-Forwarded-Host") || req.get("Host"));
     const originHost = getOriginHost(req.get("Origin"));
+    const configuredPlatformHost = normalizeHost(process.env.PLATFORM_HOST || "globaltours.com");
+    const platformHosts = new Set([configuredPlatformHost, `www.${configuredPlatformHost}`, "localhost", "127.0.0.1"]);
     const activeStatuses = { $in: ["active", "trial"] };
     let tenant = null;
 
-    // Custom domains take precedence over client-supplied tenant identifiers.
-    if (requestHost) tenant = await Organization.findOne({ domain: requestHost, status: activeStatuses });
+    // Platform subdomains: <tenant-slug>.<PLATFORM_HOST>.
+    // The hostname is authoritative; do not accept a client-supplied slug when
+    // the request already identifies a tenant by its host.
+    const platformSuffix = `.${configuredPlatformHost}`;
+    if (requestHost.endsWith(platformSuffix)) {
+      const subdomain = requestHost.slice(0, -platformSuffix.length).split(".").filter(Boolean);
+      const tenantSlug = subdomain.length === 1 ? subdomain[0] : null;
+      if (tenantSlug && tenantSlug !== "www") {
+        tenant = await Organization.findOne({ slug: tenantSlug, status: activeStatuses });
+      }
+      if (!tenant) return res.status(404).json({ success: false, message: "Tenant not found for this hostname" });
+    }
 
-    // For Vercel frontends, Origin identifies the public tenant while the API
-    // Host points at the shared backend.
+    // Custom domains take precedence over client-supplied tenant identifiers.
+    if (!tenant && requestHost && !platformHosts.has(requestHost)) {
+      tenant = await Organization.findOne({ domain: requestHost, status: activeStatuses });
+    }
+
+    // For shared Vercel frontends, Origin can identify the tenant when the API
+    // host is shared. Prefer a tenant-specific Vercel deployment only when it
+    // exactly matches a stored tenant slug.
     if (!tenant && originHost.endsWith(".vercel.app")) {
       const vercelSlug = originHost.slice(0, -".vercel.app".length).split(".").filter(Boolean).pop();
       if (vercelSlug) tenant = await Organization.findOne({ slug: vercelSlug, status: activeStatuses });
     }
 
-    // Explicit slug/key is a controlled fallback for custom deployments.
     if (!tenant && requestedTenantSlug) {
       tenant = await Organization.findOne({ slug: requestedTenantSlug, status: activeStatuses });
     }
@@ -40,21 +57,12 @@ export async function resolveTenant(req, res, next) {
       if (/^[a-fA-F0-9]{24}$/.test(requestedTenantKey)) {
         tenant = await Organization.findOne({ _id: requestedTenantKey, status: activeStatuses });
       }
-      if (!tenant) {
-        tenant = await Organization.findOne({ slug: requestedTenantKey.toLowerCase(), status: activeStatuses });
-      }
+      if (!tenant) tenant = await Organization.findOne({ slug: requestedTenantKey.toLowerCase(), status: activeStatuses });
     }
 
     const fallbackSlug = String(process.env.DEFAULT_PUBLIC_TENANT_SLUG || "").trim().toLowerCase();
-    if (!tenant && fallbackSlug) {
-      tenant = await Organization.findOne({ slug: fallbackSlug, status: activeStatuses });
-    }
+    if (!tenant && fallbackSlug) tenant = await Organization.findOne({ slug: fallbackSlug, status: activeStatuses });
 
-    // Local development must remain usable when VITE_TENANT_SLUG is not set.
-    // Only allow this fallback when there is exactly one active/trial tenant;
-    // never guess between multiple tenants and never enable this behavior in
-    // production. This preserves tenant isolation while fixing the common
-    // single-company localhost setup.
     const allowSingleTenantDevFallback =
       String(process.env.ALLOW_SINGLE_TENANT_DEV_FALLBACK || "").toLowerCase() === "true" ||
       (process.env.NODE_ENV || "development") !== "production";
@@ -64,9 +72,6 @@ export async function resolveTenant(req, res, next) {
       if (tenants.length === 1) tenant = tenants[0];
     }
 
-    // Never invent or select a tenant by a hard-coded company name. If no
-    // trusted tenant can be resolved, leave the request unscoped and let the
-    // endpoint decide whether an unresolved tenant is acceptable.
     if (!tenant) return next();
 
     req.tenantId = tenant._id;
