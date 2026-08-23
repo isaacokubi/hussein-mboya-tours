@@ -1,6 +1,9 @@
 import { useEffect, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { CheckCircle2, Clock3, Users } from "lucide-react";
+import { toast } from "react-toastify";
 import { getDashboard } from "../../../api/adminApi";
+import { approveAgent, getAgents } from "../../../api/adminAgentApi";
 import DashboardHeader from "./DashboardHeader";
 import StatsGrid from "./StatsGrid";
 import PopularTours from "./PopularTours";
@@ -13,7 +16,15 @@ const unwrap = (payload) => payload?.data ?? payload ?? {};
 const asArray = (value) => (Array.isArray(value) ? value : []);
 
 export default function AdminDashboard() {
-  const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
+  const queryClient = useQueryClient();
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    isFetching,
+  } = useQuery({
     queryKey: ["admin-dashboard"],
     queryFn: getDashboard,
     staleTime: 30_000,
@@ -24,11 +35,41 @@ export default function AdminDashboard() {
     retry: 1,
   });
 
+  const {
+    data: agents = [],
+    isLoading: agentsLoading,
+    isError: agentsError,
+  } = useQuery({
+    queryKey: ["agents"],
+    queryFn: getAgents,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
+    retry: 1,
+  });
+
+  const approve = useMutation({
+    mutationFn: approveAgent,
+    onSuccess: () => {
+      toast.success("Agent approved successfully.");
+      void queryClient.invalidateQueries({ queryKey: ["agents"] });
+      void queryClient.invalidateQueries({ queryKey: ["admin-dashboard"] });
+    },
+    onError: (mutationError) => {
+      toast.error(
+        mutationError?.response?.data?.message || "Unable to approve agent."
+      );
+    },
+  });
+
   useEffect(() => {
-    const refresh = () => void refetch();
+    const refresh = () => {
+      void refetch();
+      void queryClient.invalidateQueries({ queryKey: ["agents"] });
+    };
     window.addEventListener("dashboard:data-changed", refresh);
     return () => window.removeEventListener("dashboard:data-changed", refresh);
-  }, [refetch]);
+  }, [refetch, queryClient]);
 
   const dashboard = useMemo(() => unwrap(data), [data]);
   const summary = dashboard.summary ?? {};
@@ -37,6 +78,10 @@ export default function AdminDashboard() {
   const popularTours = asArray(dashboard.popularTours);
   const monthlyRevenue = asArray(dashboard.monthlyRevenue);
   const bookingStatus = asArray(dashboard.status);
+  const pendingAgents = useMemo(
+    () => agents.filter((agent) => !agent.isApproved),
+    [agents]
+  );
 
   if (isLoading) {
     return <div className="min-h-screen bg-gray-50 p-8 text-gray-600">Loading admin dashboard...</div>;
@@ -75,6 +120,83 @@ export default function AdminDashboard() {
       </div>
 
       <StatsGrid stats={dashboard} summary={summary} />
+
+      <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-amber-200">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <Clock3 className="h-5 w-5 text-amber-600" />
+              <h2 className="text-xl font-bold text-slate-900">Agent Approvals</h2>
+            </div>
+            <p className="mt-1 text-sm text-slate-500">
+              Review and approve agent accounts before they begin agent operations.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1.5 text-sm font-semibold text-amber-700">
+            <Users className="h-4 w-4" />
+            {agentsLoading ? "Loading..." : `${pendingAgents.length} pending`}
+          </div>
+        </div>
+
+        {agentsError ? (
+          <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            Unable to load agent approval requests. Use the Agents management page to retry.
+          </div>
+        ) : agentsLoading ? (
+          <div className="mt-5 rounded-xl bg-slate-50 p-5 text-sm text-slate-500">Loading agent approval requests...</div>
+        ) : pendingAgents.length === 0 ? (
+          <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-5">
+            <div className="flex items-center gap-2 font-semibold text-emerald-800">
+              <CheckCircle2 className="h-5 w-5" />
+              All agent accounts are approved
+            </div>
+            <p className="mt-1 text-sm text-emerald-700">There are no agent approval requests waiting for admin action.</p>
+          </div>
+        ) : (
+          <div className="mt-5 overflow-x-auto rounded-xl border border-slate-200">
+            <table className="w-full min-w-[720px] text-sm">
+              <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th className="px-4 py-3">Agent</th>
+                  <th className="px-4 py-3">Company</th>
+                  <th className="px-4 py-3">Email</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendingAgents.slice(0, 10).map((agent) => (
+                  <tr key={agent._id} className="border-t border-slate-100">
+                    <td className="px-4 py-4 font-semibold text-slate-900">{agent.user?.name || agent.name || "Unnamed agent"}</td>
+                    <td className="px-4 py-4 text-slate-600">{agent.companyName || "—"}</td>
+                    <td className="px-4 py-4 text-slate-600">{agent.user?.email || agent.email || "—"}</td>
+                    <td className="px-4 py-4">
+                      <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
+                        Pending approval
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 text-right">
+                      <button
+                        type="button"
+                        onClick={() => approve.mutate(agent._id)}
+                        disabled={approve.isPending}
+                        className="rounded-lg bg-emerald-600 px-3 py-2 font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {approve.isPending && approve.variables === agent._id ? "Approving..." : "Approve Agent"}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {pendingAgents.length > 10 && (
+              <div className="border-t bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                Showing the first 10 pending requests. Open Agent Management for the complete queue.
+              </div>
+            )}
+          </div>
+        )}
+      </section>
 
       <div className="grid gap-6 xl:grid-cols-3">
         <div className="xl:col-span-2"><RecentBookings bookings={recentBookings} /></div>
