@@ -1,3 +1,4 @@
+import { mergeTenantFilter } from "../tenancy/context.js";
 import Customer from "../models/Customer.js";
 import Booking from "../models/Booking.js";
 import User from "../models/User.js";
@@ -42,4 +43,3 @@ export const healthCheck = async(req,res)=>{
         message:"Module operational"
     });
 };
-

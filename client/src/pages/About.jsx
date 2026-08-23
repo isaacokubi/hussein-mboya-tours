@@ -1,3 +1,4 @@
+import { useTenant } from "../context/TenantContext";
 import { useSettings } from "../context/SettingsContext";
 import {
   Globe2,
@@ -16,6 +17,10 @@ import { Link } from "react-router-dom";
 
 export default function About(
 ) {
+  const { tenant } = useTenant();
+  const { settings } = useSettings();
+  const companyName = settings?.companyName || tenant?.name || "Coherent Tours";
+
   const values = [
     {
       icon: HeartHandshake,
@@ -101,7 +106,7 @@ export default function About(
           mb-6
           "
           >
-            About Coherent Tours
+            About {settings?.companyName || tenant?.name || 'Your Travel Company'}
           </motion.h1>
 
           <p
@@ -112,7 +117,7 @@ export default function About(
           text-gray-200
           "
           >
-            Creating unforgettable African travel experiences through luxury
+            {companyName} creates unforgettable African travel experiences through luxury
             safaris, beach holidays, cultural adventures and tailor-made
             journeys.
           </p>
@@ -156,7 +161,7 @@ export default function About(
             mb-5
             "
             >
-              Coherent Tours is a premier African travel company dedicated to
+              {settings?.companyName || tenant?.name || 'Your Travel Company'} is a premier African travel company dedicated to
               creating exceptional journeys for travelers seeking adventure,
               relaxation, and cultural discovery.
             </p>

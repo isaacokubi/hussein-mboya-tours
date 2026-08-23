@@ -2,6 +2,7 @@
 
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -11,6 +12,7 @@ import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
 const quotationItemSchema = new mongoose.Schema(
   {
+    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
     name: {
       type: String,
       required: true,
@@ -373,10 +375,14 @@ quotationSchema.index({
 |--------------------------------------------------------------------------
 */
 
-const Quotation =
-  mongoose.models.Quotation ||
-  quotationSchema.plugin(tenantPlugin);
+const tenantQuotationSchema = quotationSchema.plugin(tenantPlugin);
+const Quotation = mongoose.models.Quotation || mongoose.model("Quotation", tenantQuotationSchema);
 
-mongoose.model("Quotation", quotationSchema);
+
+
+
+
+
+
 
 export default Quotation;

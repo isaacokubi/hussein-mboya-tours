@@ -5,7 +5,7 @@
   @apply w-full p-3 rounded-xl border border-gray-300 outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500;
 }
 
-/* ========================================================================== 
+/* ==========================================================================
    SYSTEM-WIDE DASHBOARD UI FOUNDATION
    Applied globally so Admin, SuperAdmin, Tour Manager, Agent, Guide, Driver
    and Customer dashboards use the same responsive card/table behavior.
@@ -106,7 +106,7 @@
   max-width: 100%;
 }
 
-/* ========================================================================== 
+/* ==========================================================================
    TABLES
    Never split words such as "Confirm booking" or tour/customer names. The
    surrounding overflow container scrolls horizontally when necessary.
@@ -162,7 +162,7 @@
   max-width: none;
 }
 
-/* ========================================================================== 
+/* ==========================================================================
    SEARCH / FILTER TOOLBARS
    Inputs remain usable while cards and filter controls wrap as units.
    ========================================================================== */
@@ -184,10 +184,10 @@
   max-width: 100%;
 }
 
-/* ========================================================================== 
+/* ==========================================================================
    RESPONSIVE GRIDS
    Cards move as complete units to the next row; text is not used to decide
-   the grid width. 
+   the grid width.
    ========================================================================== */
 @media (max-width: 1280px) {
   .dashboard-card-grid,

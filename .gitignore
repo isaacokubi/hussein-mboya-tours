@@ -103,3 +103,40 @@ client/.env.production
 !server/.env.example
 !client/.env.example
 backup_before_*
+
+# tenant backups
+tenant_backup*
+*.tar.gz
+*.backup
+
+# temporary repair scripts
+*_backup*
+*.old.js
+
+server/backups/
+
+# ============================================================
+# Repository repair artifacts
+# ============================================================
+*.before_*
+*.before-*
+*.old.js
+*.backup
+*.backup.*
+*.bak
+*.bak.*
+*.broken
+*.save
+*-BACKUP*/
+*-BACKUP-*
+.audit-fix-backup-*/
+.fix-backup-*/
+.module-completion-backup-*/
+.final-audit-backup-*/
+.final-repair-backup-*/
+merge-backup-*/
+BACKUP-BEFORE-ZIP-MERGE-*/
+
+# Local audit reports / diagnostic output
+/tmp/
+.repair-backups/

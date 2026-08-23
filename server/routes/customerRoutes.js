@@ -1,3 +1,4 @@
+import { resolveTenant } from "../middleware/tenantMiddleware.js";
 import { authorize } from "../middleware/permissionMiddleware.js";
 // server/routes/customerRoutes.js
 
@@ -15,6 +16,8 @@ import {
 import adminMiddleware from "../middleware/adminMiddleware.js";
 
 const router = express.Router();
+
+router.use(resolveTenant);
 
 /*
 |--------------------------------------------------------------------------

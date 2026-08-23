@@ -1,3 +1,4 @@
+import { resolveTenant } from "../middleware/tenantMiddleware.js";
 // server/routes/recommendationRoutes.js
 
 import express from "express";
@@ -11,6 +12,8 @@ import {
 } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
+
+router.use(resolveTenant);
 
 /*
 |--------------------------------------------------------------------------

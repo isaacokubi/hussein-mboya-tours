@@ -1,3 +1,4 @@
+import { resolveTenant } from "../middleware/tenantMiddleware.js";
 import express from "express";
 
 import {
@@ -35,6 +36,8 @@ const rateLimiter = (req, res, next) => {
 
 
 const router = express.Router();
+
+router.use(resolveTenant);
 
 
 router.get(

@@ -1,3 +1,4 @@
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 
 import AuditLog from "../models/AuditLog.js";
 
@@ -18,6 +19,7 @@ endpoint="",
 metadata={}
 
 })=>{
+  requireTenantId();
 
 try{
 
@@ -51,4 +53,3 @@ return null;
 }
 
 };
-

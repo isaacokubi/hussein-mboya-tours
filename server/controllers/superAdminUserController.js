@@ -87,7 +87,7 @@ export const createCompanyAccount = async (req, res, next) => {
     }
 
     /*
-     * authMiddleware/roleUtils normalizes Super Admin to "superadmin".
+     * authMiddleware/roleUtils normalizes Super Admin to "super_admin".
      * Accept the canonical authenticated role instead of relying on the
      * legacy database spelling "super_admin".
      */
@@ -96,7 +96,7 @@ export const createCompanyAccount = async (req, res, next) => {
     ).trim().toLowerCase();
 
     if (
-      authenticatedRole !== "superadmin" &&
+      authenticatedRole !== "super_admin" &&
       authenticatedRole !== "super_admin"
     ) {
       return res.status(403).json({

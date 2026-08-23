@@ -1,3 +1,4 @@
+import { resolveTenant } from "../middleware/tenantMiddleware.js";
 import express from "express";
 import { auditMiddleware } from "../middleware/auditMiddleware.js";
 
@@ -20,7 +21,9 @@ checkPermission
 from "../middleware/authMiddleware.js";
 
 
-const router=express.Router();
+const router = express.Router();
+
+router.use(resolveTenant);
 
 
 router.use(protect);

@@ -1,3 +1,4 @@
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import Booking from "../models/Booking.js";
 import Payment from "../models/Payment.js";
 import Tour from "../models/Tour.js";
@@ -8,6 +9,7 @@ import { generateTravelAdvice } from "../services/aiService.js";
 
 
 export const getAIDashboard = async (req,res,next)=>{
+  requireTenantId();
   try {
 
     const [

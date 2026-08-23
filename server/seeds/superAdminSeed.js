@@ -55,12 +55,12 @@ const createSuperAdmin = async () => {
     // --------------------------------------------------
 
     let superAdminRole = await Role.findOne({
-      name: "superadmin",
+      name: "super_admin",
     });
 
     if (!superAdminRole) {
       superAdminRole = await Role.create({
-        name: "superadmin",
+        name: "super_admin",
         displayName: "Super Admin",
         permissions: permissionIds,
       });
@@ -88,7 +88,7 @@ const createSuperAdmin = async () => {
     }
 
     const admin = await User.create({
-      name: "Hussein Mboya",
+      name: "System Admin",
 
       email,
 
@@ -103,7 +103,7 @@ const createSuperAdmin = async () => {
       roleId: superAdminRole._id,
 
       // Legacy support
-      legacyRole: "superadmin",
+      legacyRole: "super_admin",
 
       status: "active",
 

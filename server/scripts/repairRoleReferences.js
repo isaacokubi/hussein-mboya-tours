@@ -1,3 +1,4 @@
+import { backgroundTenantFilter } from "../tenancy/backgroundTenantFilter.js";
 import "dotenv/config";
 import mongoose from "mongoose";
 import User from "../models/User.js";
@@ -6,8 +7,8 @@ import Role from "../models/Role.js";
 const normalize = (value) => String(value || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
 
 const aliases = {
-  superadmin: ["super_admin", "superadmin"],
-  super_admin: ["super_admin", "superadmin"],
+  superadmin: ["super_admin", "super_admin"],
+  super_admin: ["super_admin", "super_admin"],
   administrator: ["admin", "administrator"],
   admin: ["admin", "administrator"],
   manager: ["manager", "tour_manager", "tourmanager"],
@@ -34,9 +35,13 @@ let repaired = 0;
 let skipped = 0;
 
 try {
-  const roles = await Role.find({}).select("_id name").lean();
+  const roles = await Role.find(
+backgroundTenantFilter({})
+).select("_id name").lean();
   const roleByName = new Map(roles.map((role) => [normalize(role.name), role]));
-  const users = await User.find({}).select("role legacyRole roleId email");
+  const users = await User.find(
+backgroundTenantFilter({})
+).select("role legacyRole roleId email");
 
   for (const user of users) {
     const primary = normalize(user.role) || normalize(user.legacyRole) || "customer";

@@ -1,3 +1,4 @@
+import { mergeTenantFilter } from "../tenancy/context.js";
 import { getSystemSettings } from "../services/settingsService.js";
 import PDFDocument from "pdfkit";
 
@@ -183,7 +184,7 @@ export const generateReceipt = async (booking, res) => {
   doc
     .fontSize(10)
     .text(
-      "Thank you for choosing Coherent Tours.",
+      "Thank you for choosing ${companyName}.",
       {
         align: "center",
       }

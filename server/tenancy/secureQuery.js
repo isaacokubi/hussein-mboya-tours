@@ -15,7 +15,7 @@ export function getTenantFilter(req){
     // Platform level users
     if(
         role === "super_admin" ||
-        role === "superadmin"
+        role === "super_admin"
     ){
         return {};
     }

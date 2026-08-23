@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -9,6 +10,7 @@ import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
 const travelerSchema = new mongoose.Schema(
   {
+    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
     name: {
       type: String,
       required: true,
@@ -124,7 +126,7 @@ const bookingSchema = new mongoose.Schema(
 
     bookingNumber: {
       type: String,
-      unique: false,
+      unique: true,
       index: true,
     },
 
@@ -134,7 +136,7 @@ const bookingSchema = new mongoose.Schema(
     |--------------------------------------------------------------------------
     */
 
-    
+
 customTourRequest:{
 type:mongoose.Schema.Types.ObjectId,
 ref:"CustomTourRequest",
@@ -926,9 +928,11 @@ bookingSchema.pre("validate", function(next) {
 |--------------------------------------------------------------------------
 */
 
-const Booking =
-  mongoose.models.Booking || bookingSchema.plugin(tenantPlugin);
+if (!mongoose.models.Booking) {
+  bookingSchema.plugin(tenantPlugin);
+}
 
-mongoose.model("Booking", bookingSchema);
+const Booking =
+  mongoose.models.Booking || mongoose.model("Booking", bookingSchema);
 
 export default Booking;

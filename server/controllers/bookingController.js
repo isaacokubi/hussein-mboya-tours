@@ -1,3 +1,4 @@
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import mongoose from "mongoose";
 import { getSystemSettings } from "../services/settingsService.js";
 
@@ -7,7 +8,6 @@ import Commission from "../models/Commission.js";
 import Agent from "../models/Agent.js";
 import User from "../models/User.js";
 import Notification from "../models/Notification.js";
-import SystemSetting from "../models/SystemSetting.js";
 import { sendSMS } from "../services/smsService.js";
 import { sendWhatsApp } from "../services/whatsappService.js";
 
@@ -38,6 +38,7 @@ import { successResponse } from "../utils/apiResponse.js";
 */
 
 export const createBooking = async (req, res, next) => {
+  requireTenantId();
 
     const settings = await getSystemSettings();
     const companyName = settings.companyName || "Company";
@@ -230,8 +231,8 @@ export const createBooking = async (req, res, next) => {
       try {
         const admins = await User.find({
           $or: [
-            { role: { $in: ["admin", "superadmin", "super_admin", "manager", "tour_manager", "tourmanager"] } },
-            { legacyRole: { $in: ["admin", "superadmin", "super_admin", "manager", "tour_manager", "tourmanager"] } },
+            { role: { $in: ["admin", "super_admin", "super_admin", "manager", "tour_manager", "tourmanager"] } },
+            { legacyRole: { $in: ["admin", "super_admin", "super_admin", "manager", "tour_manager", "tourmanager"] } },
           ],
           status: "active",
         }).select("_id").lean();
@@ -273,7 +274,10 @@ export const createBooking = async (req, res, next) => {
       tourData?.title ||
       customTourData?.destination ||
       "Custom Tour Request";
-    const systemSettings = await SystemSetting.findOne({ key: "default" }).lean().catch(() => null);
+    const systemSettings = await getSystemSettings({
+        req,
+        tenantId: req.tenantId || req.user?.tenantId || null,
+      });
     const bookingNotificationsEnabled = systemSettings?.bookingNotifications !== false;
     const customerPhone =
       booking.contact?.phone ||
@@ -688,7 +692,7 @@ const isPrivilegedBookingViewer = (user) => {
 
   return [
     "admin",
-    "superadmin",
+    "super_admin",
     "administrator",
     "manager",
     "tourmanager",
@@ -1512,7 +1516,7 @@ export const rescheduleBooking = async (req, res, next) => {
     booking.rescheduleHistory.push({ fromDate: previous, toDate: target, reason:String(reason||"").trim() });
     await booking.save();
     await Notification.create({ recipient:req.user._id, user:req.user._id, title:"Booking Rescheduled", message:`Your booking ${booking.bookingNumber} has been rescheduled to ${target.toLocaleDateString("en-KE")}.`, type:"booking", relatedModel:"Booking", relatedId:booking._id, actionUrl:`/bookings/${booking._id}` });
-    const admins = await User.find({ $or:[{role:{$in:["admin","superadmin","super_admin","manager","tour_manager","tourmanager"]}},{legacyRole:{$in:["admin","superadmin","super_admin","manager","tour_manager","tourmanager"]}}], status:"active" }).select("_id").lean();
+    const admins = await User.find({ $or:[{role:{$in:["admin","super_admin","super_admin","manager","tour_manager","tourmanager"]}},{legacyRole:{$in:["admin","super_admin","super_admin","manager","tour_manager","tourmanager"]}}], status:"active" }).select("_id").lean();
     if (admins.length) await Notification.insertMany(admins.map(a=>({recipient:a._id,user:a._id,title:"Booking Reschedule Requested",message:`${booking.bookingNumber} was moved to ${target.toLocaleDateString("en-KE")}.`,type:"booking",relatedModel:"Booking",relatedId:booking._id,actionUrl:"/admin/bookings"})));
     res.json({success:true,message:"Booking rescheduled successfully.",booking});
   } catch(error){ next(error); }

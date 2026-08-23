@@ -1,203 +1,127 @@
 import express from "express";
 import securityService from "../services/securityService.js";
 
-import {
-  protect
-} from "../middleware/authMiddleware.js";
+import { protect } from "../middleware/authMiddleware.js";
+import { authorize } from "../middleware/permissionMiddleware.js";
 
 import {
-  authorize
-} from "../middleware/permissionMiddleware.js";
-
-import {
-  getSuperAdminDashboard
+  getSuperAdminDashboard,
 } from "../controllers/superAdminDashboardController.js";
 
 import {
   getAuditLogs,
-  getSecurityStatus,
   getDatabaseStatus,
   getSystemHealth,
   createDatabaseBackup,
   clearSystemCache,
   listDatabaseBackups,
   deleteDatabaseBackup,
-  downloadDatabaseBackup
+  downloadDatabaseBackup,
 } from "../controllers/superAdminOperationsController.js";
 
-import {
-  getApiMonitor
-} from "../controllers/apiMonitorController.js";
-
+import { getApiMonitor } from "../controllers/apiMonitorController.js";
 
 const router = express.Router();
 
 /*
-  SuperAdmin is platform-scoped, not tenant-scoped.
-  Do not resolve a tenant here because global users have tenantId:null.
-*/
+ * SuperAdmin is platform-scoped, not tenant-scoped.
+ * These routes must not resolve a tenant.
+ */
+
 router.use(protect);
 
-
-
-
-
-
-
-
-
-
-
 router.get(
-"/dashboard",
-protect,
-authorize(
-"admin.dashboard"
-),
-getSuperAdminDashboard
+  "/dashboard",
+  authorize("admin.dashboard"),
+  getSuperAdminDashboard
 );
 
-
 router.get(
-"/audit",
-protect,
-authorize(
-"system.audit"
-),
-getAuditLogs
+  "/audit",
+  authorize("system.audit"),
+  getAuditLogs
 );
 
-
 router.get(
-"/security",
-protect,
-authorize(
-"system.security"
-),
-async (req,res)=>{
-  try {
+  "/security",
+  authorize("system.security"),
+  async (req, res) => {
+    try {
+      const data = await securityService.getSecurityStatus();
 
-    const data = await securityService.getSecurityStatus();
+      return res.json({
+        success: true,
+        data,
+      });
+    } catch (error) {
+      console.error("SuperAdmin security status error:", error);
 
-    res.json({
-      success:true,
-      data
-    });
-
-  } catch(error){
-
-    res.status(500).json({
-      success:false,
-      message:error.message
-    });
-
+      return res.status(500).json({
+        success: false,
+        message: error.message,
+      });
+    }
   }
-});
-
+);
 
 router.get(
-"/database",
-protect,
-authorize(
-"system.database"
-),
-getDatabaseStatus
+  "/database",
+  authorize("system.database"),
+  getDatabaseStatus
 );
-
 
 router.get(
-"/system",
-protect,
-authorize(
-"system.security"
-),
-getSystemHealth
+  "/system",
+  authorize("system.security"),
+  getSystemHealth
 );
-
 
 router.get(
-"/api-monitor",
-protect,
-authorize(
-"system.security"
-),
-getApiMonitor
+  "/api-monitor",
+  authorize("system.security"),
+  getApiMonitor
 );
 
-
-
 router.post(
-"/maintenance/backup",
-protect,
-authorize(
-"system.backup"
-),
-createDatabaseBackup
-);
-
-
-
-router.post(
-"/maintenance/cache",
-protect,
-authorize(
-"admin.dashboard"
-),
-clearSystemCache
-);
-
-
-
-
-
-// ========================// DATABASE MANAGEMENT
-// ========================
-router.post(
-  "/database/backup",
-  protect,
+  "/maintenance/backup",
   authorize("system.backup"),
   createDatabaseBackup
 );
 
+router.post(
+  "/database/backup",
+  authorize("system.backup"),
+  createDatabaseBackup
+);
+
+router.post(
+  "/maintenance/cache",
+  authorize("admin.dashboard"),
+  clearSystemCache
+);
 
 router.post(
   "/database/cache-clear",
-  protect,
   authorize("settings.manage"),
   clearSystemCache
 );
 
-
 router.get(
   "/maintenance/backups",
-  protect,
   authorize("settings.manage"),
   listDatabaseBackups
 );
 
-
 router.delete(
   "/maintenance/backups/:id",
-  protect,
   authorize("settings.manage"),
   deleteDatabaseBackup
 );
 
-
-
-
-
-// DOWNLOAD DATABASE BACKUP
-
 router.get(
   "/database/backup/:id/download",
-  protect,
-  authorize(
-    "super_admin",
-    "superadmin"
-  ),
+  authorize("system.backup"),
   downloadDatabaseBackup
 );
-
 
 export default router;

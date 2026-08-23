@@ -151,5 +151,3 @@ export const updateRolePermissions = async (
     return response.data;
 
 };
-
-

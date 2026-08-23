@@ -1,9 +1,17 @@
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 
 const messageSchema =
 new mongoose.Schema({
+
+    tenantId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref:"Organization",
+        index:true,
+        required:false
+    },
 
   role:{
     type:String,
@@ -83,6 +91,13 @@ new mongoose.Schema({
 {
   timestamps:true
 });
+
+
+
+
+
+
+
 
 
 export default aiConversationSchema.plugin(tenantPlugin);

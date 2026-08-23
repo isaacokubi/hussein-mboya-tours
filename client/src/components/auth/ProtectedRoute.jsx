@@ -3,7 +3,7 @@ import { useAuth } from "../../context/AuthContext";
 import { dashboardPath, getUserRole, normalizeRole } from "../../utils/roleUtils";
 
 const ROLE_PARENTS = {
-  superadmin: new Set(["superadmin", "admin", "manager", "agent", "guide", "driver"]),
+  superadmin: new Set(["super_admin", "admin", "manager", "agent", "guide", "driver"]),
   // Backend adminOnly/managerOnly/agentOnly/driverOnly/guideOnly gates
   // intentionally allow Admin access to operational staff areas.
   admin: new Set(["admin", "manager", "agent", "guide", "driver"]),

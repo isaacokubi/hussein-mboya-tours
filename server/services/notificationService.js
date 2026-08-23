@@ -1,3 +1,4 @@
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 // services/notificationService.js
 import { getSystemSettings } from "../services/settingsService.js";
 
@@ -20,6 +21,7 @@ export const createNotification = async ({
   type = "system",
   metadata = {},
 }) => {
+  requireTenantId();
   if (!recipient) {
     throw new Error("Notification recipient is required.");
   }
@@ -250,4 +252,3 @@ export const notifyPaymentSuccess = async (
 
 
 export { sendEmail };
-

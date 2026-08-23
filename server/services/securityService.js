@@ -1,3 +1,4 @@
+import { mergeTenantFilter } from "../tenancy/context.js";
 
 import User from "../models/User.js";
 
@@ -25,7 +26,7 @@ role:{
 $in:[
 "admin",
 "super_admin",
-"superadmin"
+"super_admin"
 ]
 
 }

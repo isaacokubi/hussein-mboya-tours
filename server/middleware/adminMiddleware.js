@@ -23,7 +23,7 @@ const adminMiddleware = async (req, res, next) => {
     }
 
     const roleName = getUserRole(user);
-    if (!["admin", "superadmin"].includes(roleName)) {
+    if (!["admin", "super_admin"].includes(roleName)) {
       return res.status(403).json({ success: false, message: "Admin access required", role: roleName });
     }
 

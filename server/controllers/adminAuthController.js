@@ -1,3 +1,4 @@
+import { mergeTenantFilter } from "../tenancy/context.js";
 import User from "../models/User.js";
 import generateToken from "../utils/generateToken.js";
 import buildPermissions from "../utils/buildPermissions.js";
@@ -18,7 +19,7 @@ export const adminLogin = async (req, res) => {
     }
 
     const role = normalizeRole(user.roleId?.name || user.role || user.legacyRole);
-    if (!["admin", "superadmin"].includes(role)) {
+    if (!["admin", "super_admin"].includes(role)) {
       return res.status(403).json({ success: false, message: "Administrative access required." });
     }
 
@@ -29,6 +30,7 @@ export const adminLogin = async (req, res) => {
       role,
       email: user.email,
       permissions,
+      tenantId: user.tenantId,
     });
 
     return res.status(200).json({

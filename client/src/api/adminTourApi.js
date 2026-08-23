@@ -19,13 +19,13 @@ export const getTours = async (params = {}) => {
 
 export const getTour = async (id) => {
 
-  
+
 
   const { data } = await api.get(
     `/admin/tours/${id}`
   );
 
-  
+
 
   return data.tour;
 
@@ -132,4 +132,3 @@ export const getDestinations = async () => {
   return data.destinations || data.data || data;
 
 };
-

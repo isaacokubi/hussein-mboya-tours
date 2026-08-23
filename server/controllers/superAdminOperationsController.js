@@ -1,3 +1,5 @@
+import { mergeTenantFilter } from "../tenancy/context.js";
+import { tenantFilter } from "../tenancy/tenantQuery.js";
 import fs from "fs";
 import path from "path";
 import { exec } from "child_process";
@@ -171,7 +173,7 @@ export const getApiMonitor = async (req, res) => {
     api: {
       status: "online",
       timestamp: new Date(),
-      service: "Coherent Tours API",
+      service: "${companyName} API",
     },
   });
 };
@@ -255,7 +257,7 @@ export const createDatabaseBackup = async (req, res) => {
 
     for (const collection of collections) {
       const name = collection.name;
-      backupData[name] = await db.collection(name).find({}).toArray();
+      backupData[name] = await db.collection(name).find(tenantFilter(req)).toArray();
     }
 
     fs.writeFileSync(filepath, JSON.stringify(backupData, null, 2));
@@ -291,7 +293,7 @@ export const createDatabaseBackup = async (req, res) => {
 
 export const listDatabaseBackups = async (req, res) => {
   try {
-    const backups = await DatabaseBackup.find().sort({ createdAt: -1 }).lean();
+    const backups = await DatabaseBackup.find(tenantFilter(req)).sort({ createdAt: -1 }).lean();
     res.json({ success: true, backups });
   } catch (error) {
     console.error("LIST BACKUPS ERROR", error);
@@ -301,7 +303,11 @@ export const listDatabaseBackups = async (req, res) => {
 
 export const downloadDatabaseBackup = async (req, res) => {
   try {
-    const backup = await DatabaseBackup.findById(req.params.id);
+    const backup = await DatabaseBackup.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
 
     if (!backup) {
       return res.status(404).json({
@@ -341,7 +347,11 @@ export const downloadDatabaseBackup = async (req, res) => {
 
 export const deleteDatabaseBackup = async (req, res) => {
   try {
-    const backup = await DatabaseBackup.findById(req.params.id);
+    const backup = await DatabaseBackup.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
 
     if (!backup) {
       return res.status(404).json({
@@ -361,7 +371,11 @@ export const deleteDatabaseBackup = async (req, res) => {
       fs.rmSync(filepath);
     }
 
-    await DatabaseBackup.findByIdAndDelete(req.params.id);
+    await DatabaseBackup.findOneAndDelete(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
 
     res.json({
       success: true,

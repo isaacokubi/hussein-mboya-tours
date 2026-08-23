@@ -1,11 +1,14 @@
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
+import { tenantFilter } from "../tenancy/tenantQuery.js";
 import HeroSlide from "../models/HeroSlide.js";
 
 
 export const getHeroSlides = async (req, res) => {
+  requireTenantId();
 
   try {
 
-    const slides = await HeroSlide.find();
+    const slides = await HeroSlide.find(tenantFilter(req));
 
 
     // debug removed
@@ -51,4 +54,3 @@ export const healthCheck = async(req,res)=>{
         message:"Module operational"
     });
 };
-

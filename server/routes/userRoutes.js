@@ -1,3 +1,4 @@
+import { resolveTenant } from "../middleware/tenantMiddleware.js";
 // server/routes/userRoutes.js
 
 import express from "express";
@@ -20,6 +21,8 @@ import {
 } from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
+
+router.use(resolveTenant);
 
 /*
 |--------------------------------------------------------------------------
@@ -72,4 +75,3 @@ router.delete(
 );
 
 export default router;
-

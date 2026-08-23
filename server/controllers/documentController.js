@@ -1,3 +1,4 @@
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 // server/controllers/documentController.js
 
 import mongoose from "mongoose";
@@ -21,6 +22,7 @@ const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
 */
 
 export const uploadDocument = async (req, res, next) => {
+  requireTenantId();
   try {
     /*
     |--------------------------------------------------------------------------
@@ -54,7 +56,11 @@ export const uploadDocument = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    const booking = await Booking.findById(req.params.id);
+    const booking = await Booking.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
 
     if (!booking) {
       return res.status(404).json({

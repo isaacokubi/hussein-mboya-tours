@@ -74,4 +74,3 @@ export const getDestinationBySlug = async(slug)=>{
   );
 
 };
-

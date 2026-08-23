@@ -73,7 +73,7 @@ export default function Profile() {
     // setUser is intentionally excluded: AuthContext recreates that wrapper
     // function when auth state changes, which previously caused this request
     // to run repeatedly and made the profile appear to keep loading.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [authLoading, userId]);
 
   const handleChange = (event) => {

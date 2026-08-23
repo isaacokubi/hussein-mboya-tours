@@ -1,4 +1,3 @@
-import { useSettings } from "../context/SettingsContext";
 import { getTourImage } from "../utils/tourImage";
 // client/src/pages/Wishlist.jsx
 

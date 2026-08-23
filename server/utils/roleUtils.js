@@ -5,8 +5,8 @@ const ROLE_ALIASES = {
   admin: "admin",
   administrator: "admin",
 
-  superadmin: "superadmin",
-  super_admin: "superadmin",
+  superadmin: "super_admin",
+  super_admin: "super_admin",
 
   manager: "manager",
   tourmanager: "manager",
@@ -58,27 +58,27 @@ export function getUserRole(user) {
 }
 
 export function isSuperAdmin(user) {
-  return getUserRole(user) === "superadmin";
+  return getUserRole(user) === "super_admin";
 }
 
 export function isAdmin(user) {
-  return ["admin", "superadmin"].includes(getUserRole(user));
+  return ["admin", "super_admin"].includes(getUserRole(user));
 }
 
 export function isManager(user) {
-  return ["manager", "admin", "superadmin"].includes(getUserRole(user));
+  return ["manager", "admin", "super_admin"].includes(getUserRole(user));
 }
 
 export function isAgent(user) {
-  return ["agent", "admin", "superadmin"].includes(getUserRole(user));
+  return ["agent", "admin", "super_admin"].includes(getUserRole(user));
 }
 
 export function isGuide(user) {
-  return ["guide", "admin", "superadmin"].includes(getUserRole(user));
+  return ["guide", "admin", "super_admin"].includes(getUserRole(user));
 }
 
 export function isDriver(user) {
-  return ["driver", "admin", "superadmin"].includes(getUserRole(user));
+  return ["driver", "admin", "super_admin"].includes(getUserRole(user));
 }
 
 export function isCustomer(user) {
@@ -88,7 +88,7 @@ export function isCustomer(user) {
 export function isStaff(user) {
   return [
     "admin",
-    "superadmin",
+    "super_admin",
     "manager",
     "agent",
     "guide",

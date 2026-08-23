@@ -1,3 +1,4 @@
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import mongoose from "mongoose";
 
 import Booking from "../models/Booking.js";
@@ -82,7 +83,7 @@ const normalizeRole = (value) =>
     .replace(/[\s_-]+/g, "");
 
 const requesterCanSendStaffNotifications = (user) =>
-  ["admin", "superadmin", "administrator", "tourmanager", "manager"].includes(
+  ["admin", "super_admin", "administrator", "tourmanager", "manager"].includes(
     normalizeRole(user?.roleId?.name || user?.role || user?.legacyRole)
   );
 
@@ -93,6 +94,7 @@ const requesterCanSendStaffNotifications = (user) =>
 */
 
 export const getNotificationRecipients = async (req, res, next) => {
+  requireTenantId();
   try {
     if (!requesterCanSendStaffNotifications(req.user)) {
       return res.status(403).json({ success: false, message: "Only administrators and managers can send internal notifications." });
@@ -108,7 +110,7 @@ export const getNotificationRecipients = async (req, res, next) => {
       tourguide: ["guide", "tourguide"],
       driver: ["driver"],
       agent: ["agent", "travelagent"],
-      admin: ["admin", "superadmin", "administrator"],
+      admin: ["admin", "super_admin", "administrator"],
       manager: ["manager", "tourmanager", "tour_manager"],
       tourmanager: ["manager", "tourmanager", "tour_manager"],
     };
@@ -205,7 +207,7 @@ export const sendInternalNotification = async (req, res, next) => {
       tourguide: ["guide", "tourguide"],
       driver: ["driver"],
       agent: ["agent", "travelagent"],
-      admin: ["admin", "superadmin", "administrator"],
+      admin: ["admin", "super_admin", "administrator"],
       manager: ["manager", "tourmanager", "tour_manager"],
       tourmanager: ["manager", "tourmanager", "tour_manager"],
     };

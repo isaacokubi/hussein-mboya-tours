@@ -3,7 +3,6 @@ import { useSettings } from "../../context/SettingsContext";
 import {NavLink} from "react-router-dom";
 import {
 Shield,
-Building2,
 Users,
 KeyRound,
 FileSearch,
@@ -25,7 +24,6 @@ title:"Platform Management",
 items:[
 ["Dashboard","/superadmin/dashboard",Gauge,"Overview and platform metrics"],
 ["User Management","/superadmin/users",Users,"Manage users and accounts"],
-["Companies / Tenants","/superadmin/tenants",Building2,"Manage isolated company workspaces"],
 ["Roles & Permissions","/superadmin/roles",KeyRound,"Control access policies"]
 ]
 },

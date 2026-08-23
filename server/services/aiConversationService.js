@@ -1,3 +1,4 @@
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import AIConversation from "../models/AIConversation.js";
 
 
@@ -5,6 +6,7 @@ export const getConversation = async (
   sessionId,
   user=null
 )=>{
+  requireTenantId();
 
 
   let conversation =

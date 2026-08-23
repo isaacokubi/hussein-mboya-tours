@@ -136,7 +136,7 @@ await collection.countDocuments({
 role:{
 $nin:[
 "super_admin",
-"superadmin"
+"super_admin"
 ]
 },
 

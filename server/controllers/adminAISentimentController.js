@@ -1,3 +1,5 @@
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
+import { tenantFilter } from "../tenancy/tenantQuery.js";
 import Review from "../models/Review.js";
 
 
@@ -6,12 +8,13 @@ req,
 res,
 next
 )=>{
+  requireTenantId();
 
 try{
 
 
 const reviews =
-await Review.find()
+await Review.find(tenantFilter(req))
 .sort({
 createdAt:-1
 })

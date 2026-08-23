@@ -16,4 +16,3 @@ export const getAll = async()=>{
     const {data}=await api.get("/staff");
     return data;
 };
-

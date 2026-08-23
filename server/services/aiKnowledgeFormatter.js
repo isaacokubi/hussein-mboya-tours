@@ -1,3 +1,4 @@
+import { mergeTenantFilter } from "../tenancy/context.js";
 export const formatTravelKnowledge = (knowledge = {}) => {
 
   const tours = (knowledge.tours || [])

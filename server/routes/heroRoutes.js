@@ -1,3 +1,4 @@
+import { resolveTenant } from "../middleware/tenantMiddleware.js";
 import express from "express";
 
 
@@ -8,6 +9,8 @@ from "../controllers/heroController.js";
 
 
 const router = express.Router();
+
+router.use(resolveTenant);
 
 
 

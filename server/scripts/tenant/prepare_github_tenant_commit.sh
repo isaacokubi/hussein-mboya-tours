@@ -40,4 +40,3 @@ echo "======================================"
 echo ""
 echo "Next:"
 echo "git push origin main"
-

@@ -55,4 +55,3 @@ const {data}=await api.get(
 return data;
 
 };
-

@@ -130,7 +130,7 @@ const destinationSchema = new mongoose.Schema(
         },
 
 
-        
+
 
     seo: {
 

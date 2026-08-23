@@ -151,4 +151,3 @@ echo "/api/settings"
 echo "/api/database"
 echo "/api/api-monitor"
 echo "/api/system/health"
-

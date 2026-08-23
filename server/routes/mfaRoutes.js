@@ -1,3 +1,4 @@
+import { resolveTenant } from "../middleware/tenantMiddleware.js";
 import express from "express";
 import {
   sendCustomerLoginPin,
@@ -9,6 +10,8 @@ import {
 } from "../middleware/authRateLimiters.js";
 
 const router = express.Router();
+
+router.use(resolveTenant);
 
 // MFA PIN endpoints are part of the unauthenticated login flow, so they
 // cannot use `protect`; they use dedicated, stricter throttles instead.

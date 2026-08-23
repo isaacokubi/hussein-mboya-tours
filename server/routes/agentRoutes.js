@@ -1,3 +1,4 @@
+import { resolveTenant } from "../middleware/tenantMiddleware.js";
 import express from "express";
 import { getAgentDashboard, getAgentBookings, getAgentCustomers, getMyAgentCommission } from "../controllers/agentController.js";
 import { getAgentQuotations } from "../controllers/quotationController.js";
@@ -8,6 +9,8 @@ import { authorize } from "../middleware/permissionMiddleware.js";
 import upload from "../middleware/uploadMiddleware.js";
 
 const router = express.Router();
+
+router.use(resolveTenant);
 router.use(protect);
 router.use(agentMiddleware);
 

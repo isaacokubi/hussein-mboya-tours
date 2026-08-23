@@ -46,4 +46,3 @@ await mongoose.disconnect();
 
 
 console.log("\n✅ SUPERADMIN NOW GLOBAL");
-

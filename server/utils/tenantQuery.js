@@ -24,4 +24,3 @@ export function platformQuery(extra={}){
 return extra;
 
 }
-

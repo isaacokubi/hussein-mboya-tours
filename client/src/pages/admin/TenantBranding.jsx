@@ -31,11 +31,6 @@ const [form,setForm]=useState({
 const [loading,setLoading]=useState(true);
 
 
-useEffect(()=>{
-
-load();
-
-},[]);
 
 
 
@@ -66,6 +61,11 @@ setLoading(false);
 }
 
 }
+
+useEffect(() => {
+  load();
+}, []);
+
 
 
 

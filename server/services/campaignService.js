@@ -1,3 +1,4 @@
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import User from "../models/User.js";
 
 import { sendEmail } from "./emailService.js";
@@ -9,6 +10,7 @@ import { sendEmail } from "./emailService.js";
 */
 
 export const sendCampaign = async (campaign) => {
+  requireTenantId();
   try {
     /*
     |--------------------------------------------------------------------------

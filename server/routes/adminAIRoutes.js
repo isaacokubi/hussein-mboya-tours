@@ -1,3 +1,4 @@
+import { resolveTenant } from "../middleware/tenantMiddleware.js";
 import express from "express";
 
 import { protect, checkPermission } from "../middleware/authMiddleware.js";
@@ -74,6 +75,8 @@ import {
 
 
 const router = express.Router();
+
+router.use(resolveTenant);
 
 
 /*

@@ -2,6 +2,7 @@
 
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 import slugify from "slugify";
 
 /*
@@ -12,6 +13,13 @@ import slugify from "slugify";
 
 const imageSchema = new mongoose.Schema(
   {
+
+    tenantId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref:"Organization",
+        index:true,
+        required:false
+    },
     url: {
       type: String,
       required: true,
@@ -508,10 +516,14 @@ tourPackageSchema.index({
 |--------------------------------------------------------------------------
 */
 
-const TourPackage =
-  mongoose.models.TourPackage ||
-  tourPackageSchema.plugin(tenantPlugin);
+const tenantTourPackageSchema = tourPackageSchema.plugin(tenantPlugin);
+const TourPackage = mongoose.models.TourPackage || mongoose.model("TourPackage", tenantTourPackageSchema);
 
-mongoose.model("TourPackage", tourPackageSchema);
+
+
+
+
+
+
 
 export default TourPackage;

@@ -1,3 +1,5 @@
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
+import { tenantFilter } from "../tenancy/tenantQuery.js";
 import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
 import User from "../models/User.js";
@@ -8,6 +10,7 @@ req,
 res,
 next
 )=>{
+  requireTenantId();
 
 try{
 
@@ -38,7 +41,7 @@ role:"customer"
 }),
 
 
-Tour.find()
+Tour.find(tenantFilter(req))
 .limit(10)
 .select(
 "title price destination"

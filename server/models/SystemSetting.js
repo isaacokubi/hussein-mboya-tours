@@ -1,9 +1,14 @@
 import mongoose from "mongoose";
-import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
 const systemSettingSchema = new mongoose.Schema(
   {
-    key: { type: String, unique: true, default: "default", index: true },
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Organization",
+      index: true,
+      required: true,
+    },
+    key: { type: String, default: "default", index: true },
     companyName: { type: String, default: "Company", trim: true },
     companyLogo: { type: String, default: "" },
     websiteUrl: { type: String, default: "", trim: true },
@@ -48,10 +53,12 @@ const systemSettingSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// A tenant may have one record for each settings key; tenants must never
+// compete over a globally unique "default" key.
+systemSettingSchema.index({ tenantId: 1, key: 1 }, { unique: true });
+
 const SystemSetting =
   mongoose.models.SystemSetting ||
-  systemSettingSchema.plugin(tenantPlugin);
-
-mongoose.model("SystemSetting", systemSettingSchema);
+  mongoose.model("SystemSetting", systemSettingSchema);
 
 export default SystemSetting;

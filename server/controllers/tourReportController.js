@@ -1,3 +1,4 @@
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
 import User from "../models/User.js";
@@ -10,6 +11,7 @@ import Payment from "../models/Payment.js";
 */
 
 export const getTourReports = async (req, res, next) => {
+  requireTenantId();
     try {
         const totalBookings = await Booking.countDocuments({ isDeleted: { $ne: true } });
 

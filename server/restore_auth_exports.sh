@@ -168,4 +168,3 @@ PY
 node --check controllers/authController.js
 
 echo "AUTH CONTROLLER EXPORTS FIXED"
-

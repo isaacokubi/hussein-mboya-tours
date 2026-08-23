@@ -1,3 +1,4 @@
+import { resolveTenant } from "../middleware/tenantMiddleware.js";
 import express from "express";
 import mongoose from "mongoose";
 import { protect } from "../middleware/authMiddleware.js";
@@ -5,6 +6,8 @@ import adminMiddleware from "../middleware/adminMiddleware.js";
 import { authorize } from "../middleware/permissionMiddleware.js";
 
 const router = express.Router();
+
+router.use(resolveTenant);
 
 router.use(protect);
 router.use(adminMiddleware);

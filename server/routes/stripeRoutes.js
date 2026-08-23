@@ -1,7 +1,10 @@
+import { resolveTenant } from "../middleware/tenantMiddleware.js";
 import express from "express";
 import { protect } from "../middleware/authMiddleware.js";
 import { createStripeSession, verifyStripeSession, createBankTransferPayment } from "../controllers/stripeController.js";
-const router=express.Router();
+const router = express.Router();
+
+router.use(resolveTenant);
 router.use(protect);
 router.post("/checkout",createStripeSession);
 router.get("/verify/:sessionId",verifyStripeSession);

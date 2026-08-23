@@ -1,14 +1,17 @@
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import Commission from "../models/Commission.js";
 import Agent from "../models/Agent.js";
-import SystemSetting from "../models/SystemSetting.js";
-
+import { getSystemSettings } from "./settingsService.js";
 const getGlobalCommissionRate = async () => {
-  const settings = await SystemSetting.findOne({ key: "default" }).select("defaultCommissionRate").lean();
+  const settings = await getSystemSettings({
+    tenantId: options?.tenantId || null,
+  });
   const rate = Number(settings?.defaultCommissionRate);
   return Number.isFinite(rate) && rate >= 0 && rate <= 100 ? rate : 10;
 };
 
 export const createCommission = async (booking) => {
+  requireTenantId();
   if (!booking?.agent) return null;
 
   const existingCommission = await Commission.findOne({ booking: booking._id });

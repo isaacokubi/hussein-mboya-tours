@@ -1,3 +1,4 @@
+import { resolveTenant } from "../middleware/tenantMiddleware.js";
 import { authorize } from "../middleware/permissionMiddleware.js";
 import express from "express";
 
@@ -30,7 +31,9 @@ import adminMiddleware
 from "../middleware/adminMiddleware.js";
 
 
-const router=express.Router();
+const router = express.Router();
+
+router.use(resolveTenant);
 
 
 router.use(protect);
@@ -111,4 +114,3 @@ refundPayment
 
 
 export default router;
-

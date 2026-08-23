@@ -1,8 +1,8 @@
 import { normalizeRole, getUserRole, isAdmin, isManager, isAgent, isGuide, isDriver, isCustomer } from "../utils/roleUtils.js";
 
 const normalizationCases = [
-  ["super_admin", "superadmin"],
-  ["superadmin", "superadmin"],
+  ["super_admin", "super_admin"],
+  ["super_admin", "super_admin"],
   ["tour_manager", "manager"],
   ["tourmanager", "manager"],
   ["travel_agent", "agent"],
@@ -14,7 +14,7 @@ const normalizationCases = [
 ];
 
 const hierarchyCases = [
-  ["superadmin", ["admin", "manager", "agent", "guide", "driver"]],
+  ["super_admin", ["admin", "manager", "agent", "guide", "driver"]],
   ["admin", ["admin", "manager", "agent", "guide", "driver"]],
   ["manager", ["manager"]],
   ["agent", ["agent"]],

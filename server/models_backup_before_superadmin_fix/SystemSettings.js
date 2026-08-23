@@ -1,4 +1,4 @@
-// server/models/SystemSettings.js
+// server/models/SystemSetting.js
 
 import mongoose from "mongoose";
 import tenantIsolationPlugin from "../utils/tenantIsolationPlugin.js";

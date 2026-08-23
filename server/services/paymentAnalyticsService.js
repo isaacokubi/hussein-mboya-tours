@@ -1,3 +1,4 @@
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import Payment from "../models/Payment.js";
 
 /*
@@ -10,6 +11,7 @@ import Payment from "../models/Payment.js";
 */
 
 export const getPaymentStatistics = async () => {
+  requireTenantId();
   const statistics = await Payment.aggregate([
     {
       $match: {

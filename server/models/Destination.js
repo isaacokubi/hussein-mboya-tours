@@ -2,6 +2,7 @@
 
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 import slugify from "slugify";
 
 
@@ -14,6 +15,7 @@ import slugify from "slugify";
 const destinationSchema = new mongoose.Schema(
 
     {
+    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
 
         /*
         |--------------------------------------------------------------------------
@@ -128,7 +130,7 @@ const destinationSchema = new mongoose.Schema(
         },
 
 
-        
+
 
     seo: {
 
@@ -766,21 +768,20 @@ function(rating){
 */
 
 
-const Destination =
+destinationSchema.plugin(tenantPlugin);
 
-    mongoose.models.Destination ||
+const Destination = mongoose.model(
+    "Destination",
+    destinationSchema,
+    "destinations"
+);
 
-    destinationSchema.plugin(tenantPlugin);
 
-mongoose.model(
 
-        "Destination",
 
-        destinationSchema,
 
-        "destinations"
 
-    );
+
 
 
 

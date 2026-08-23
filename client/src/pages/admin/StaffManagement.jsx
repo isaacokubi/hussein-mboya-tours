@@ -57,7 +57,7 @@ useEffect(()=>{
             [
               "admin",
               "super_admin",
-              "superadmin",
+              "super_admin",
               "administrator",
               "tour_manager",
               "manager",

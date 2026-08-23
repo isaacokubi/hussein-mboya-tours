@@ -1,3 +1,4 @@
+import { resolveTenant } from "../middleware/tenantMiddleware.js";
 // server/routes/vehicleRoutes.js
 
 import express from "express";
@@ -19,6 +20,8 @@ import { adminOnly, managerOnly, roleMiddleware } from "../middleware/roleMiddle
 import upload from "../middleware/uploadMiddleware.js";
 
 const router = express.Router();
+
+router.use(resolveTenant);
 
 router.use(protect);
 

@@ -190,7 +190,7 @@ const result=await users.updateMany(
 {
  role:{
    $in:[
-    "superadmin",
+    "super_admin",
     "super_admin"
    ]
  }
@@ -297,4 +297,3 @@ Next:
    - Tenant admin users
 =========================================
 `);
-

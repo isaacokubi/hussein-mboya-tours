@@ -1,3 +1,4 @@
+import { useTenant } from "../context/TenantContext";
 import { useSettings } from "../context/SettingsContext";
 import {
   useQuery
@@ -13,8 +14,8 @@ import DestinationCard from "../components/destinations/DestinationCard";
 
 export default function Destinations(
 ){
-
-
+  const { tenant } = useTenant();
+  const { settings } = useSettings();
 
   const {
 
@@ -215,7 +216,7 @@ export default function Destinations(
 
         >
 
-          Discover amazing places and unforgettable experiences with Coherent Tours.
+          Discover amazing places and unforgettable experiences with {settings?.companyName || tenant?.name || 'Your Travel Company'}.
 
 
         </p>

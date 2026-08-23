@@ -1,4 +1,3 @@
-import { useSettings } from "../../context/SettingsContext";
 import { useQuery } from "@tanstack/react-query";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { Users, CalendarCheck, Car, Trophy, WalletCards } from "lucide-react";

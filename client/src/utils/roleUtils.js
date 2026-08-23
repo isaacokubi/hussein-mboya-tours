@@ -1,7 +1,7 @@
 const ROLE_ALIASES = {
   customer: "customer", user: "customer",
   admin: "admin", administrator: "admin",
-  superadmin: "superadmin", super_admin: "superadmin",
+  superadmin: "super_admin", super_admin: "super_admin",
   manager: "manager", tourmanager: "manager", tour_manager: "manager",
   agent: "agent", travelagent: "agent", travel_agent: "agent",
   driver: "driver",
@@ -32,9 +32,9 @@ export function getUserRole(user) {
   );
 }
 
-export function isSuperAdmin(user) { return getUserRole(user) === "superadmin"; }
-export function isAdmin(user) { return ["admin", "superadmin"].includes(getUserRole(user)); }
-export function isManager(user) { return ["manager", "admin", "superadmin"].includes(getUserRole(user)); }
+export function isSuperAdmin(user) { return getUserRole(user) === "super_admin"; }
+export function isAdmin(user) { return ["admin", "super_admin"].includes(getUserRole(user)); }
+export function isManager(user) { return ["manager", "admin", "super_admin"].includes(getUserRole(user)); }
 export function isAgent(user) { return getUserRole(user) === "agent"; }
 export function isGuide(user) { return getUserRole(user) === "guide"; }
 export function isDriver(user) { return getUserRole(user) === "driver"; }
@@ -42,7 +42,7 @@ export function isCustomer(user) { return getUserRole(user) === "customer"; }
 
 export function dashboardPath(user) {
   switch (getUserRole(user)) {
-    case "superadmin": return "/superadmin/dashboard";
+    case "super_admin": return "/superadmin/dashboard";
     case "admin": return "/admin/dashboard";
     case "manager": return "/tour-manager/dashboard";
     case "agent": return "/agent/dashboard";

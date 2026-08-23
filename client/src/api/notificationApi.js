@@ -18,4 +18,3 @@ export const getAll = async()=>{
     const {data}=await api.get("/notifications");
     return data;
 };
-

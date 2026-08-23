@@ -36,4 +36,3 @@ fs.writeFileSync(file,content);
 console.log(
 "✅ Created tenantQuery helper"
 );
-

@@ -1,7 +1,7 @@
 // server/models/Role.js
 
 import mongoose from "mongoose";
-import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 import "./Permission.js";
 
 /*
@@ -25,6 +25,13 @@ import "./Permission.js";
 
 const roleSchema = new mongoose.Schema(
   {
+
+    tenantId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref:"Organization",
+        index:true,
+        required:false
+    },
     /*
     |--------------------------------------------------------------------------
     | ROLE NAME
@@ -34,7 +41,7 @@ const roleSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
-      unique: false,
+      unique: true,
       trim: true,
       lowercase: true,
       index: true,
@@ -230,8 +237,13 @@ roleSchema.methods.removePermission = async function (permissionId) {
 
 const Role =
   mongoose.models.Role ||
-  roleSchema.plugin(tenantPlugin);
+  mongoose.model("Role", roleSchema);
 
-mongoose.model("Role", roleSchema);
+
+
+
+
+
+
 
 export default Role;

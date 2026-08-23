@@ -1,3 +1,4 @@
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import { getSystemSettings } from "../services/settingsService.js";
 import Payment from "../models/Payment.js";
 import Booking from "../models/Booking.js";
@@ -21,6 +22,7 @@ import { completeBookingPayment, getPayableBookingAmount, userOwnsBooking } from
 */
 
 export const getPaymentById = async (req, res, next) => {
+  requireTenantId();
   try {
 
     const settings = await getSystemSettings();
@@ -31,7 +33,11 @@ export const getPaymentById = async (req, res, next) => {
     const currency =
       settings.currency || "KES";
 
-    const payment = await Payment.findById(req.params.id)
+    const payment = await Payment.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+)
       .populate("booking")
       .populate("customer")
       .populate("user");
@@ -206,7 +212,11 @@ export const createPayment = async (req, res, next) => {
 export const updatePaymentStatus = async (req, res, next) => {
   try {
     const status = String(req.body?.status || "").trim().toLowerCase();
-    const payment = await Payment.findById(req.params.id);
+    const payment = await Payment.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
     if (!payment) return res.status(404).json({ success: false, message: "Payment not found" });
 
     if (status === "completed") {
@@ -251,7 +261,11 @@ export const updatePaymentStatus = async (req, res, next) => {
 
 export const markPaymentCompleted = async (req, res, next) => {
   try {
-    const payment = await Payment.findById(req.params.id);
+    const payment = await Payment.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
     if (!payment) return res.status(404).json({ success: false, message: "Payment not found" });
     const booking = await Booking.findById(payment.booking);
     if (!booking) return res.status(404).json({ success: false, message: "Booking not found for payment" });
@@ -287,7 +301,11 @@ export const markPaymentFailed = async (req, res, next) => {
   try {
     const { reason = "" } = req.body;
 
-    const payment = await Payment.findById(req.params.id);
+    const payment = await Payment.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
 
     if (!payment) {
       return res.status(404).json({
@@ -324,7 +342,11 @@ export const requestRefund = async (req, res, next) => {
       refundReference = "",
     } = req.body;
 
-    const payment = await Payment.findById(req.params.id);
+    const payment = await Payment.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
 
     if (!payment) {
       return res.status(404).json({

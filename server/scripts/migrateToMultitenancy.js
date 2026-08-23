@@ -13,14 +13,14 @@ const tenantModels = [
 ];
 
 const models = await Promise.all(tenantModels.map(async (name) => {
-  try { return (await import(`../models/${name}.js`)).default; } catch (error) { console.warn(`Skipping ${name}: ${error.message}`); return null; }
+  try { return (await import(`../models/${name}.js`)).default; }
+  catch (error) { console.warn(`Skipping ${name}: ${error.message}`); return null; }
 }));
 
 await mongoose.connect(env.MONGODB_URI);
-
 const existing = await Organization.findOne({ slug: "hussein-mboya-tours" });
 const organization = existing || await Organization.create({
-  name: process.env.DEFAULT_TENANT_NAME || "Hussein Mboya Tours",
+  name: process.env.DEFAULT_TENANT_NAME || "Your Travel Company",
   slug: "hussein-mboya-tours",
   country: "Kenya",
   timezone: "Africa/Nairobi",
@@ -30,22 +30,16 @@ const organization = existing || await Organization.create({
 });
 
 console.log(`Default tenant: ${organization.name} (${organization._id})`);
-
 await runWithTenant({ bypass: true }, async () => {
   for (const Model of models.filter(Boolean)) {
-    const result = await Model.updateMany(
+    const result = await Model.collection.updateMany(
       { $or: [{ tenantId: { $exists: false } }, { tenantId: null }] },
-      { $set: { tenantId: organization._id } },
+      { $set: { tenantId: organization._id } }
     );
     console.log(`${Model.modelName}: assigned ${result.modifiedCount || 0} records`);
-    try {
-      await Model.syncIndexes();
-      console.log(`${Model.modelName}: indexes synchronized`);
-    } catch (error) {
-      console.warn(`${Model.modelName}: index sync warning: ${error.message}`);
-    }
+    try { await Model.syncIndexes(); console.log(`${Model.modelName}: indexes synchronized`); }
+    catch (error) { console.warn(`${Model.modelName}: index sync warning: ${error.message}`); }
   }
 });
-
 console.log(`\nDEFAULT_TENANT_ID=${organization._id}`);
 await mongoose.disconnect();

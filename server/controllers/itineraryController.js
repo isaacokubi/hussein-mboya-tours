@@ -1,3 +1,5 @@
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
+import { tenantFilter } from "../tenancy/tenantQuery.js";
 // server/controllers/itineraryController.js
 
 import Itinerary from "../models/Itinerary.js";
@@ -8,6 +10,7 @@ import Tour from "../models/Tour.js";
 // ============================================================
 
 export const createItinerary = async (req, res, next) => {
+  requireTenantId();
   try {
     const { tour } = req.body;
 
@@ -45,7 +48,7 @@ export const createItinerary = async (req, res, next) => {
 
 export const getItineraries = async (req, res, next) => {
   try {
-    const itineraries = await Itinerary.find()
+    const itineraries = await Itinerary.find(tenantFilter(req))
       .populate("tour", "title destination")
       .populate("createdBy", "name email")
       .sort({
@@ -68,7 +71,11 @@ export const getItineraries = async (req, res, next) => {
 
 export const getItinerary = async (req, res, next) => {
   try {
-    const itinerary = await Itinerary.findById(req.params.id)
+    const itinerary = await Itinerary.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+)
       .populate("tour", "title destination")
       .populate("createdBy", "name email");
 
@@ -94,8 +101,10 @@ export const getItinerary = async (req, res, next) => {
 
 export const updateItinerary = async (req, res, next) => {
   try {
-    const itinerary = await Itinerary.findByIdAndUpdate(
-      req.params.id,
+    const itinerary = await Itinerary.findOneAndUpdate(
+mergeTenantFilter(req,{
+_id:req.params.id
+}),
       req.body,
       {
         new: true,
@@ -128,7 +137,11 @@ export const updateItinerary = async (req, res, next) => {
 
 export const deleteItinerary = async (req, res, next) => {
   try {
-    const itinerary = await Itinerary.findByIdAndDelete(req.params.id);
+    const itinerary = await Itinerary.findOneAndDelete(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
 
     if (!itinerary) {
       return res.status(404).json({

@@ -1,4 +1,5 @@
-import React from "react";
+import {TenantProvider} from './context/TenantContext';
+
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 
@@ -58,7 +59,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <AuthProvider>
         <SettingsProvider>
           <CartProvider>
-            <App />
+            <TenantProvider><App /></TenantProvider>
           </CartProvider>
         </SettingsProvider>
       </AuthProvider>

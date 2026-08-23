@@ -11,7 +11,7 @@ const platformJobs=[];
 
 const platformKeywords=[
 "admin",
-"superadmin",
+"super_admin",
 "security",
 "migration",
 "reset",
@@ -88,4 +88,3 @@ ${platformJobs.join("\n")}
 
 =====================================
 `);
-

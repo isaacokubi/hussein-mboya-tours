@@ -67,7 +67,7 @@ export async function registerTenant({ company, admin, plan = "starter", request
       if (await runWithTenant({ bypass: true }, () => User.findOne({ email: platform.normalizedEmail }).lean())) throw new Error("Configured platform SuperAdmin email already belongs to another user.");
       superAdminUser = await runWithTenant({ bypass: true }, () => User.create({
         name: String(process.env.BOOTSTRAP_SUPERADMIN_NAME).trim(), email: platform.normalizedEmail, phone: platform.normalizedPhone,
-        password: process.env.BOOTSTRAP_SUPERADMIN_PASSWORD, role: "superadmin", legacyRole: "superadmin", roleId: roles.superadmin._id,
+        password: process.env.BOOTSTRAP_SUPERADMIN_PASSWORD, role: "super_admin", legacyRole: "super_admin", roleId: roles.superadmin._id,
         status: "active", isVerified: true,
       }));
     }

@@ -106,7 +106,7 @@ const EditTour =()=>{
 
 
 
-    
+
 
 
 
@@ -121,7 +121,7 @@ const EditTour =()=>{
 
     const formInitialized = useRef(false);
 
-    
+
 
 
 
@@ -373,7 +373,7 @@ const EditTour =()=>{
         };
 
 
-        
+
 
 
         saveTour(payload);

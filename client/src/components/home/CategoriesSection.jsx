@@ -33,7 +33,7 @@ export default function CategoriesSection() {
 
       const data = await getCategories();
 
-      
+
 
 
       // Supports:
@@ -69,7 +69,7 @@ useEffect(() => {
   }, []);
 
 
-  
+
 
 
   if (loading) {

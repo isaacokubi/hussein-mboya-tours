@@ -1,3 +1,4 @@
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
 import User from "../models/User.js";
@@ -7,6 +8,7 @@ import { PAYMENT_METHODS } from "../constants/bookingConstants.js";
 import { calculateBookingAmounts } from "../utils/bookingPricing.js";
 
 export const createCustomerBooking = async (req, res, next) => {
+  requireTenantId();
   try {
     const { tour, travelDate, travelers = [], numberOfGuests, contact = {}, paymentMethod = PAYMENT_METHODS.MPESA, pickupLocation, pickupTime, hotelName, roomNumber, emergencyContact, specialRequests = [] } = req.body || {};
 
@@ -56,8 +58,8 @@ export const createCustomerBooking = async (req, res, next) => {
       try {
         const admins = await User.find({
           $or: [
-            { role: { $in: ["admin", "superadmin", "super_admin", "manager", "tour_manager", "tourmanager"] } },
-            { legacyRole: { $in: ["admin", "superadmin", "super_admin", "manager", "tour_manager", "tourmanager"] } },
+            { role: { $in: ["admin", "super_admin", "super_admin", "manager", "tour_manager", "tourmanager"] } },
+            { legacyRole: { $in: ["admin", "super_admin", "super_admin", "manager", "tour_manager", "tourmanager"] } },
           ],
           status: "active",
         }).select("_id").lean();

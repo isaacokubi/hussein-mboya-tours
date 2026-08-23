@@ -1,7 +1,9 @@
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import Tour from "../models/Tour.js";
 
 
 export const findTourForBooking = async (message = "") => {
+  requireTenantId();
 
   const text =
     message.toLowerCase();

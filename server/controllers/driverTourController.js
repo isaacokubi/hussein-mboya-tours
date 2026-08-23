@@ -1,3 +1,4 @@
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import Tour from "../models/Tour.js";
 import Booking from "../models/Booking.js";
 import Staff from "../models/Staff.js";
@@ -9,6 +10,7 @@ const resolveDriver = (user) => Staff.findOne({ $or: [{ user: user._id }, { emai
 const assigned = (driver, id) => ({ _id: id, assignedDriver: driver._id, isDeleted: { $ne: true } });
 
 export const getAssignedTours = async (req, res, next) => {
+  requireTenantId();
   try { const driver = await resolveDriver(req.user); if (!driver) return res.status(404).json({ success:false, message:"Driver profile not found" }); const tours = await Tour.find({ assignedDriver:driver._id, isDeleted:{ $ne:true } }).populate("destination").populate("assignedGuide").populate("assignedVehicle").sort({ startDate:1, date:1 }).limit(50); res.json({ success:true, count:tours.length, tours, data:tours }); } catch (e) { next(e); }
 };
 

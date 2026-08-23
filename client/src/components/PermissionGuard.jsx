@@ -83,7 +83,7 @@ export default function PermissionGuard({
   const isAdmin =
     user?.role === "admin"
     ||
-    user?.role === "superadmin" || user?.role === "super_admin";
+    user?.role === "super_admin" || user?.role === "super_admin";
 
 
 

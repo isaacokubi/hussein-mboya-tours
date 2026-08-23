@@ -1,6 +1,5 @@
 import { formatCurrency } from "../../utils/currency";
 
-import { useSettings } from "../../context/SettingsContext";
 import {
 
 Calendar,

@@ -1,3 +1,4 @@
+import { resolveTenant } from "../middleware/tenantMiddleware.js";
 import express from "express";
 
 import {
@@ -25,6 +26,8 @@ import { getTourReports } from "../controllers/tourReportController.js";
 import { protect, managerOnly } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
+
+router.use(resolveTenant);
 
 router.use(protect);
 router.use(managerOnly);

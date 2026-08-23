@@ -2,6 +2,7 @@
 
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -11,6 +12,7 @@ import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
 const emergencyContactSchema = new mongoose.Schema(
   {
+    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
     name: {
       type: String,
       trim: true,
@@ -472,10 +474,14 @@ customerSchema.methods.softDelete = function () {
 |--------------------------------------------------------------------------
 */
 
-const Customer =
-  mongoose.models.Customer ||
-  customerSchema.plugin(tenantPlugin);
+const tenantCustomerSchema = customerSchema.plugin(tenantPlugin);
+const Customer = mongoose.models.Customer || mongoose.model("Customer", tenantCustomerSchema);
 
-mongoose.model("Customer", customerSchema);
+
+
+
+
+
+
 
 export default Customer;

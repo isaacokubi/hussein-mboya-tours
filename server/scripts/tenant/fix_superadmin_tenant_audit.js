@@ -34,7 +34,7 @@ await users.find({
 role:{
 $in:[
 "super_admin",
-"superadmin"
+"super_admin"
 ]
 },
 

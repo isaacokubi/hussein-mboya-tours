@@ -1,4 +1,4 @@
-/* eslint-disable react-refresh/only-export-components */
+
 
 // client/src/context/NotificationContext.jsx
 
@@ -193,8 +193,7 @@ export function NotificationProvider({
 
     socket.auth = {
       ...(socket.auth || {}),
-      token,
-      tenantId: localStorage.getItem("tenantId") || null,
+      token
     };
 
 

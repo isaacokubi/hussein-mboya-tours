@@ -1,3 +1,4 @@
+import { resolveTenant } from "../middleware/tenantMiddleware.js";
 // server/routes/notificationRoutes.js
 
 import express from "express";
@@ -18,6 +19,8 @@ import { roleMiddleware } from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
 
+router.use(resolveTenant);
+
 /*
 |--------------------------------------------------------------------------
 | AUTHORIZATION
@@ -30,8 +33,8 @@ const router = express.Router();
 
 router.use(protect);
 
-router.get("/recipients", roleMiddleware("admin", "super_admin", "superadmin", "tour_manager", "tourmanager", "manager"), getNotificationRecipients);
-router.post("/internal", roleMiddleware("admin", "super_admin", "superadmin", "tour_manager", "tourmanager", "manager"), sendInternalNotification);
+router.get("/recipients", roleMiddleware("admin", "super_admin", "super_admin", "tour_manager", "tourmanager", "manager"), getNotificationRecipients);
+router.post("/internal", roleMiddleware("admin", "super_admin", "super_admin", "tour_manager", "tourmanager", "manager"), sendInternalNotification);
 
 /*
 |--------------------------------------------------------------------------

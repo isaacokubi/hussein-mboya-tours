@@ -47,7 +47,7 @@ await db.collection("users")
 role:{
 $nin:[
 "super_admin",
-"superadmin"
+"super_admin"
 ]
 },
 

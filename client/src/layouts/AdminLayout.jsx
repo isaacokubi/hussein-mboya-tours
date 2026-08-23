@@ -34,7 +34,7 @@ export default function AdminLayout() {
   const links = useMemo(() => {
     // Admin/SuperAdmin are control-center roles. Their navigation must not disappear
     // because a Role or Permission document was deleted/recreated in MongoDB.
-    if (["admin", "superadmin"].includes(role)) return MENU;
+    if (["admin", "super_admin"].includes(role)) return MENU;
     return MENU.filter(([, , , permission]) => hasPermission(permission));
   }, [role, hasPermission]);
 

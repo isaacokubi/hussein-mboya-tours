@@ -22,7 +22,7 @@ export const isStaff = (user) => {
 
   return [
     "admin",
-    "superadmin",
+    "super_admin",
     "administrator",
     "manager",
     "tourmanager",

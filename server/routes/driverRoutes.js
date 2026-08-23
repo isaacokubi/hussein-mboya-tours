@@ -1,3 +1,4 @@
+import { resolveTenant } from "../middleware/tenantMiddleware.js";
 // Driver operational routes.
 import express from "express";
 import { driverDashboard } from "../controllers/driverController.js";
@@ -5,6 +6,8 @@ import { getAssignedTours, getTourDetails, getTourGuests, updateTourStatus } fro
 import { protect, driverOnly } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
+
+router.use(resolveTenant);
 
 router.use(protect);
 router.use(driverOnly);

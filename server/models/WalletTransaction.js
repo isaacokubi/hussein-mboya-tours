@@ -2,6 +2,7 @@
 
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -22,6 +23,7 @@ import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
 const walletTransactionSchema = new mongoose.Schema(
   {
+    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
     /*
     |--------------------------------------------------------------------------
     | AGENT
@@ -253,23 +255,20 @@ walletTransactionSchema.index({
   type: 1,
 });
 
-walletTransactionSchema.index({
-  reference: 1,
-});
-
 /*
 |--------------------------------------------------------------------------
 | MODEL EXPORT
 |--------------------------------------------------------------------------
 */
 
-const WalletTransaction =
-  mongoose.models.WalletTransaction ||
-  walletTransactionSchema.plugin(tenantPlugin);
+const tenantWalletTransactionSchema = walletTransactionSchema.plugin(tenantPlugin);
+const WalletTransaction = mongoose.models.WalletTransaction || mongoose.model("WalletTransaction", tenantWalletTransactionSchema);
 
-mongoose.model(
-    "WalletTransaction",
-    walletTransactionSchema
-  );
+
+
+
+
+
+
 
 export default WalletTransaction;

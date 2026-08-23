@@ -39,4 +39,3 @@ u.tenantId?.name || "GLOBAL SUPERADMIN"
 
 
 await mongoose.disconnect();
-

@@ -12,7 +12,7 @@ let failures=[];
 console.log("Checking controller syntax...");
 
 for(const file of fs.readdirSync("./controllers")){
-    
+
     if(!file.endsWith(".js")) continue;
 
     try{
@@ -89,4 +89,3 @@ console.log(`
 TENANT VERIFICATION COMPLETE
 =========================================
 `);
-

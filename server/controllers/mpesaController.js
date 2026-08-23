@@ -1,3 +1,4 @@
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 // server/controllers/mpesaController.js
 
 import Booking from "../models/Booking.js";
@@ -27,7 +28,7 @@ const isStaffRole = (user) => {
     .replace(/[\s_-]/g, "");
   return [
     "admin",
-    "superadmin",
+    "super_admin",
     "administrator",
     "manager",
     "tourmanager",
@@ -47,6 +48,7 @@ export const getMpesaToken = async (req, res) =>
   res.status(501).json({ success: false, message: "Direct M-Pesa token access is disabled." });
 
 export const stkPush = async (req, res) => {
+  requireTenantId();
   try {
     const { phoneNumber, phone, bookingId } = req.body || {};
     const requestedAmount = Number(req.body?.amount);
@@ -214,8 +216,8 @@ export const mpesaCallback = async (req, res) => {
     try {
       const managers = await User.find({
         $or: [
-          { role: { $in: ["admin", "superadmin", "super_admin", "manager", "tour_manager", "tourmanager"] } },
-          { legacyRole: { $in: ["admin", "superadmin", "super_admin", "manager", "tour_manager", "tourmanager"] } },
+          { role: { $in: ["admin", "super_admin", "super_admin", "manager", "tour_manager", "tourmanager"] } },
+          { legacyRole: { $in: ["admin", "super_admin", "super_admin", "manager", "tour_manager", "tourmanager"] } },
         ],
       }).select("_id");
       if (managers.length) {
@@ -240,7 +242,11 @@ export const mpesaCallback = async (req, res) => {
 
 export const checkTransactionStatus = async (req, res, next) => {
   try {
-    const payment = await Payment.findById(req.params.id)
+    const payment = await Payment.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+)
       .populate("booking")
       .populate("user", "name email phone")
       .populate("customer", "name email phone");

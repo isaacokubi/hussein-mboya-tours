@@ -1,3 +1,4 @@
+import { resolveTenant } from "../middleware/tenantMiddleware.js";
 import { authorize } from "../middleware/permissionMiddleware.js";
 import express from "express";
 import { protect } from "../middleware/authMiddleware.js";
@@ -10,6 +11,8 @@ import {
 } from "../controllers/adminCouponController.js";
 
 const router = express.Router();
+
+router.use(resolveTenant);
 router.use(protect, adminMiddleware);
 
 router.use(authorize("coupon.manage"));

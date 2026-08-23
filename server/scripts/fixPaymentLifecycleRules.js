@@ -67,4 +67,3 @@ fs.writeFileSync(
 console.log(
   "Payment lifecycle rules patched successfully."
 );
-

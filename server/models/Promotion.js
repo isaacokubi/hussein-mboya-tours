@@ -2,6 +2,7 @@
 
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -19,6 +20,13 @@ import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
 const promotionSchema = new mongoose.Schema(
   {
+
+    tenantId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref:"Organization",
+        index:true,
+        required:false
+    },
     /*
     |--------------------------------------------------------------------------
     | BASIC INFORMATION
@@ -214,10 +222,6 @@ promotionSchema.index({
 });
 
 promotionSchema.index({
-  code: 1,
-});
-
-promotionSchema.index({
   audience: 1,
 });
 
@@ -292,10 +296,14 @@ promotionSchema.methods.calculateDiscount = function (amount) {
 |--------------------------------------------------------------------------
 */
 
-const Promotion =
-  mongoose.models.Promotion ||
-  promotionSchema.plugin(tenantPlugin);
+const tenantPromotionSchema = promotionSchema.plugin(tenantPlugin);
+const Promotion = mongoose.models.Promotion || mongoose.model("Promotion", tenantPromotionSchema);
 
-mongoose.model("Promotion", promotionSchema);
+
+
+
+
+
+
 
 export default Promotion;

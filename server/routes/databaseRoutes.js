@@ -1,9 +1,12 @@
+import { resolveTenant } from "../middleware/tenantMiddleware.js";
 import express from "express";
 import { protect } from "../middleware/authMiddleware.js";
 import { authorize } from "../middleware/permissionMiddleware.js";
 import mongoose from "mongoose";
 
 const router = express.Router();
+
+router.use(resolveTenant);
 
 router.use(protect);
 router.use(authorize("system.database"));

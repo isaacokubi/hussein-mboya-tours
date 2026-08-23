@@ -1,4 +1,3 @@
-import { useSettings } from "../../context/SettingsContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Users, CheckCircle, PauseCircle, MapPin } from "lucide-react";
 import { toast } from "react-toastify";

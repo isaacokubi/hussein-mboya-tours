@@ -14,7 +14,7 @@ const tourManagerOnly = roleMiddleware(
   "tourmanager",
   "manager",
   "admin",
-  "superadmin",
+  "super_admin",
   "super_admin"
 );
 

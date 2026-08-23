@@ -1,3 +1,4 @@
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import mongoose from "mongoose";
 import slugify from "slugify";
 
@@ -74,6 +75,7 @@ export const createAgentTour = async (
   res,
   next
 ) => {
+  requireTenantId();
   try {
     if (
       !req.user ||

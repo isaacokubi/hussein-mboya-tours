@@ -105,7 +105,7 @@ for(const folder of targets){
 
       if(text.includes('import { requireTenantId } from "../tenancy/context.js";')){
 
-      } 
+      }
       else if(text.includes('from "../tenancy/context.js"')){
 
         text=text.replace(
@@ -221,4 +221,3 @@ fs.writeFileSync(
 
 
 console.log("\nReport saved: tenant-hardening-report.json");
-

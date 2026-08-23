@@ -14,7 +14,7 @@ text-3xl
 font-bold
 ">
 
-{settings.companyName || 'Company'} Admin Center
+Admin Control Center
 
 </h1>
 

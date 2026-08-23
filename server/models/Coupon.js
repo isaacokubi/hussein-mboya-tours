@@ -2,6 +2,7 @@
 
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -11,6 +12,7 @@ import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
 const couponSchema = new mongoose.Schema(
   {
+    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
     /*
     |--------------------------------------------------------------------------
     | BASIC INFORMATION
@@ -215,10 +217,14 @@ couponSchema.methods.incrementUsage = async function () {
 |--------------------------------------------------------------------------
 */
 
-const Coupon =
-  mongoose.models.Coupon ||
-  couponSchema.plugin(tenantPlugin);
+const tenantCouponSchema = couponSchema.plugin(tenantPlugin);
+const Coupon = mongoose.models.Coupon || mongoose.model("Coupon", tenantCouponSchema);
 
-mongoose.model("Coupon", couponSchema);
+
+
+
+
+
+
 
 export default Coupon;

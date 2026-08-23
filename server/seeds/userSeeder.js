@@ -24,7 +24,7 @@ const seedUsers = async () => {
     */
 
     const adminRole = await Role.findOne({
-      name: "superadmin",
+      name: "super_admin",
     });
 
     const managerRole = await Role.findOne({
@@ -63,7 +63,7 @@ const seedUsers = async () => {
     */
 
     const admin = await User.create({
-      name: "Hussein Mboya",
+      name: "System Admin",
 
       email: "admin@husseinmboyatours.com",
 
@@ -73,7 +73,7 @@ const seedUsers = async () => {
 
       role: adminRole._id,
 
-      legacyRole: "superadmin",
+      legacyRole: "super_admin",
 
       isActive: true,
 
@@ -112,7 +112,7 @@ const seedUsers = async () => {
       name: admin.name,
       email: admin.email,
       password: process.env.SEED_ADMIN_PASSWORD || crypto.randomBytes(18).toString("base64url"),
-      role: "superadmin",
+      role: "super_admin",
     });
 
     // debug removed

@@ -1,3 +1,4 @@
+import { resolveTenant } from "../middleware/tenantMiddleware.js";
 // server/routes/sitemapRoutes.js
 
 import express from "express";
@@ -7,6 +8,8 @@ import {
 } from "../services/sitemapService.js";
 
 const router = express.Router();
+
+router.use(resolveTenant);
 
 /*
 |--------------------------------------------------------------------------

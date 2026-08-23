@@ -1,4 +1,3 @@
-import { useSettings } from "../../context/SettingsContext";
 import { useNavigate } from "react-router-dom";
 
 import { useEffect, useState } from "react";
@@ -115,13 +114,13 @@ const deleteMutation = useMutation({
   const visibleTours = filteredTours.slice((page - 1) * pageSize, page * pageSize);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+
     setPage(1);
   }, [search]);
 
   useEffect(() => {
     if (page > totalPages) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+
       setPage(totalPages);
     }
   }, [page, totalPages]);

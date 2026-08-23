@@ -2,6 +2,7 @@
 
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -20,6 +21,7 @@ import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
 const paymentSchema = new mongoose.Schema(
   {
+    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
     customer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -321,10 +323,14 @@ paymentSchema.methods.markFailed = function (reason) {
   return this.save();
 };
 
-const Payment =
-  mongoose.models.Payment ||
-  paymentSchema.plugin(tenantPlugin);
+const tenantPaymentSchema = paymentSchema.plugin(tenantPlugin);
+const Payment = mongoose.models.Payment || mongoose.model("Payment", tenantPaymentSchema);
 
-mongoose.model("Payment", paymentSchema);
+
+
+
+
+
+
 
 export default Payment;

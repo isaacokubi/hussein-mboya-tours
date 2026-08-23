@@ -46,11 +46,11 @@ const createTenantAdmin = async (email, password, index) => runWithTenant(
 );
 
 const createPlatformOwner = async () => runWithTenant(
-  { tenantId: null, tenant: null, role: "superadmin", bypass: true },
+  { tenantId: null, tenant: null, role: "super_admin", bypass: true },
   async () => {
     const existing = await User.findOne({
       email: SUPERADMIN_EMAIL,
-      role: { $in: ["superadmin", "super_admin"] },
+      role: { $in: ["super_admin", "super_admin"] },
       tenantId: null,
     });
     if (existing) throw new Error(`Platform owner already exists: ${SUPERADMIN_EMAIL}`);
@@ -59,8 +59,8 @@ const createPlatformOwner = async () => runWithTenant(
       email: SUPERADMIN_EMAIL,
       phone: "0734567890",
       password: SUPERADMIN_PASSWORD,
-      role: "superadmin",
-      legacyRole: "superadmin",
+      role: "super_admin",
+      legacyRole: "super_admin",
       tenantId: null,
       status: "active",
       isVerified: true,
@@ -77,10 +77,10 @@ for (let i = 0; i < ADMIN_EMAILS.length; i += 1) {
 }
 
 const verifyPlatform = await runWithTenant(
-  { tenantId: null, tenant: null, role: "superadmin", bypass: true },
+  { tenantId: null, tenant: null, role: "super_admin", bypass: true },
   () => User.findOne({ _id: superadmin._id }).select("+password")
 );
-if (!verifyPlatform || verifyPlatform.tenantId !== null || !["superadmin", "super_admin"].includes(verifyPlatform.role)) {
+if (!verifyPlatform || verifyPlatform.tenantId !== null || !["super_admin", "super_admin"].includes(verifyPlatform.role)) {
   throw new Error("Platform owner verification failed.");
 }
 if (!(await verifyPlatform.matchPassword(SUPERADMIN_PASSWORD))) throw new Error("Platform owner password verification failed.");

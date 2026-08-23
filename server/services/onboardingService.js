@@ -4,7 +4,7 @@ import Role from "../models/Role.js";
 import User from "../models/User.js";
 import { runWithTenant } from "../tenancy/context.js";
 
-const SUPERADMIN_ROLES = ["superadmin", "super_admin"];
+const SUPERADMIN_ROLES = ["super_admin", "super_admin"];
 
 export const ADMIN_PERMISSION_NAMES = [
   "admin.dashboard", "user.manage", "staff.manage", "tour.manage", "booking.manage",
@@ -47,7 +47,7 @@ export async function ensureSystemRoles() {
   }
 
   const superadmin = await runWithTenant({ bypass: true }, () => Role.findOneAndUpdate(
-    { name: "superadmin" },
+    { name: "super_admin" },
     { $set: {
       displayName: "Super Admin",
       description: "Platform-level administrator with unrestricted system and tenant administration access.",
@@ -124,7 +124,7 @@ export async function bootstrapFirstSuperAdmin({
 
     superAdminUser = await runWithTenant({ bypass: true }, () => User.create({
       name: String(name).trim(), email: superAdminIdentity.normalizedEmail, phone: superAdminIdentity.normalizedPhone,
-      password, role: "superadmin", legacyRole: "superadmin", roleId: superadmin._id,
+      password, role: "super_admin", legacyRole: "super_admin", roleId: superadmin._id,
       status: "active", isVerified: true,
     }));
 
@@ -145,7 +145,7 @@ export async function bootstrapFirstSuperAdmin({
 
   return {
     organization,
-    superAdmin: { _id: superAdminUser._id, name: superAdminUser.name, email: superAdminUser.email, role: "superadmin" },
+    superAdmin: { _id: superAdminUser._id, name: superAdminUser.name, email: superAdminUser.email, role: "super_admin" },
     admin: { _id: adminUser._id, name: adminUser.name, email: adminUser.email, role: "admin", tenantId: adminUser.tenantId },
   };
 }

@@ -1,4 +1,3 @@
-import { useSettings } from "../../../context/SettingsContext";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { WalletCards, CheckCircle, Clock3, CircleDollarSign } from "lucide-react";
 import { toast } from "react-toastify";

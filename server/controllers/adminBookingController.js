@@ -1,3 +1,4 @@
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import mongoose from "mongoose";
 
 import {
@@ -23,6 +24,7 @@ const normalizePaymentStatus = (value) => {
 |--------------------------------------------------------------------------
 */
 export const getAllBookings = async (req, res, next) => {
+  requireTenantId();
   try {
     const page = Math.max(Number(req.query.page) || 1, 1);
     const limit = Math.min(Number(req.query.limit) || 20, 100);
@@ -155,7 +157,11 @@ export const getBookingById = async (req, res, next) => {
       });
     }
 
-    const booking = await Booking.findById(req.params.id)
+    const booking = await Booking.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+)
       .populate("customer", "name email phone")
       .populate("user", "name firstName lastName email phone")
       .populate("tour")
@@ -219,8 +225,10 @@ export const updateBookingStatus = async (req, res, next) => {
       });
     }
 
-    const booking = await Booking.findByIdAndUpdate(
-      req.params.id,
+    const booking = await Booking.findOneAndUpdate(
+mergeTenantFilter(req,{
+_id:req.params.id
+}),
       { status },
       { new: true, runValidators: true }
     );
@@ -250,7 +258,11 @@ export const updateBookingStatus = async (req, res, next) => {
 export const assignResources = async (req, res, next) => {
   try {
     const { guide, driver, vehicle } = req.body;
-    const booking = await Booking.findById(req.params.id);
+    const booking = await Booking.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
 
     if (!booking) {
       return res.status(404).json({
@@ -301,7 +313,11 @@ export const updatePaymentStatus = async (req, res, next) => {
       });
     }
 
-    const booking = await Booking.findById(req.params.id);
+    const booking = await Booking.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
 
     if (!booking) {
       return res.status(404).json({
@@ -335,7 +351,11 @@ export const updatePaymentStatus = async (req, res, next) => {
 */
 export const downloadBookingInvoice = async (req, res, next) => {
   try {
-    const booking = await Booking.findById(req.params.id)
+    const booking = await Booking.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+)
       .populate("customer", "name email phone")
       .populate("tour", "title price")
       .lean();
@@ -378,7 +398,11 @@ export const downloadBookingInvoice = async (req, res, next) => {
 */
 export const getBookingTimeline = async (req, res, next) => {
   try {
-    const booking = await Booking.findById(req.params.id)
+    const booking = await Booking.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+)
       .select("createdAt updatedAt status paymentStatus")
       .lean();
 

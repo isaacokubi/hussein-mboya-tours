@@ -2,128 +2,235 @@ import mongoose from "mongoose";
 import { getTenantId, isTenantBypassed } from "./context.js";
 
 const TENANT_PATH = "tenantId";
+const GLOBAL_COLLECTIONS = new Set(["organizations", "permissions", "currencies"]);
+const PLATFORM_ROLES = new Set(["super_admin", "super_admin"]);
 
-function shouldScope() {
-  return !isTenantBypassed() && Boolean(getTenantId());
+function requireTenantId() {
+  if (isTenantBypassed()) return null;
+  const tenantId = getTenantId();
+  if (!tenantId) throw new Error("Tenant context is required for tenant-scoped data access.");
+  return tenantId;
 }
 
-function tenantFilter() {
-  const tenantId = getTenantId();
-  if (!tenantId) return null;
-  return { [TENANT_PATH]: new mongoose.Types.ObjectId(tenantId) };
+function tenantObjectId() {
+  const tenantId = requireTenantId();
+  return tenantId ? new mongoose.Types.ObjectId(tenantId) : null;
+}
+
+function assertTenantValue(value, tenantId, message = "Cross-tenant write rejected.") {
+  if (value != null && String(value) !== String(tenantId)) throw new Error(message);
+}
+
+function isPlatformOwnerDocument(document) {
+  const role = String(document?.role || document?.legacyRole || "").trim().toLowerCase();
+  return PLATFORM_ROLES.has(role) && !document?.tenantId;
 }
 
 function mergeTenantFilter(query) {
-  if (!shouldScope()) return;
-  const filter = tenantFilter();
-  if (!filter) return;
+  const tenantId = requireTenantId();
+  if (!tenantId) return;
+  const filter = { [TENANT_PATH]: tenantObjectId() };
   const current = query.getFilter?.() || {};
-  if (current[TENANT_PATH] && String(current[TENANT_PATH]) !== String(filter[TENANT_PATH])) {
-    throw new Error("Cross-tenant query rejected.");
-  }
+  if (current[TENANT_PATH]) assertTenantValue(current[TENANT_PATH], tenantId, "Cross-tenant query rejected.");
   query.setQuery({ $and: [current, filter] });
 }
 
-export function tenantPlugin(schema, options = {}) {
-  const modelName = schema.options?.collection || schema.modelName;
-  // Global mongoose.plugin passes the schema before the model exists; inspect
-  // collection/model metadata where available and skip known global schemas.
-  if (options.excludeModels?.includes(modelName)) return;
-  if (schema.path(TENANT_PATH)) return;
+function enforceUpdateTenant(update, tenantId) {
+  if (!update || Array.isArray(update)) return;
+  const requestedTenant = update.$set?.[TENANT_PATH] ?? update[TENANT_PATH] ?? update.$setOnInsert?.[TENANT_PATH];
+  assertTenantValue(requestedTenant, tenantId);
+  update.$setOnInsert ||= {};
+  update.$setOnInsert[TENANT_PATH] = tenantId;
+  if (update.$unset?.[TENANT_PATH]) delete update.$unset[TENANT_PATH];
+  if (update[TENANT_PATH]) delete update[TENANT_PATH];
+}
 
-  schema.add({
-    [TENANT_PATH]: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Organization",
-      default: null,
-      index: true,
-      immutable: true,
-    },
-  });
+function enforceBulkWriteTenant(operations, tenantId) {
+  if (!Array.isArray(operations)) return;
+  for (const operation of operations) {
+    if (operation.insertOne?.document) {
+      const document = operation.insertOne.document;
+      if (isPlatformOwnerDocument(document)) {
+        document[TENANT_PATH] = null;
+      } else {
+        assertTenantValue(document[TENANT_PATH], tenantId);
+        document[TENANT_PATH] = tenantId;
+      }
+    }
 
-  // Convert schema-level unique fields into tenant-local unique indexes.
-  // This prevents one company's booking/tour/customer identifiers from
-  // colliding with another company's records while preserving uniqueness
-  // inside each company.
-  for (const path of schema.eachPath ? Object.values(schema.paths) : []) {
+    const updateOperation = operation.updateOne || operation.updateMany || operation.replaceOne;
+    if (updateOperation) {
+      assertTenantValue(updateOperation.filter?.[TENANT_PATH], tenantId);
+      updateOperation.filter = { ...(updateOperation.filter || {}), [TENANT_PATH]: tenantId };
+      if (updateOperation.update) enforceUpdateTenant(updateOperation.update, tenantId);
+      if (updateOperation.replacement) {
+        assertTenantValue(updateOperation.replacement[TENANT_PATH], tenantId);
+        updateOperation.replacement[TENANT_PATH] = tenantId;
+      }
+    }
+
+    const deleteOperation = operation.deleteOne || operation.deleteMany;
+    if (deleteOperation) {
+      assertTenantValue(deleteOperation.filter?.[TENANT_PATH], tenantId);
+      deleteOperation.filter = { ...(deleteOperation.filter || {}), [TENANT_PATH]: tenantId };
+    }
+  }
+}
+
+function enforceLookupStage(stage, tenantId) {
+  if (!stage?.$lookup || !tenantId) return;
+  const lookup = stage.$lookup;
+  if (!lookup.from || GLOBAL_COLLECTIONS.has(String(lookup.from).toLowerCase())) return;
+  lookup.pipeline ||= [];
+  const tenantMatch = { [TENANT_PATH]: new mongoose.Types.ObjectId(tenantId) };
+  const firstMatch = lookup.pipeline[0]?.$match;
+  if (firstMatch?.[TENANT_PATH]) {
+    assertTenantValue(firstMatch[TENANT_PATH], tenantId, "Cross-tenant lookup rejected.");
+    firstMatch[TENANT_PATH] = tenantMatch[TENANT_PATH];
+  } else {
+    lookup.pipeline.unshift({ $match: tenantMatch });
+  }
+}
+
+function enforceUnionStage(stage, tenantId) {
+  if (!stage?.$unionWith || !tenantId) return;
+  if (typeof stage.$unionWith === "string") {
+    if (GLOBAL_COLLECTIONS.has(stage.$unionWith.toLowerCase())) return;
+    stage.$unionWith = { coll: stage.$unionWith, pipeline: [{ $match: { [TENANT_PATH]: new mongoose.Types.ObjectId(tenantId) } }] };
+    return;
+  }
+  const union = stage.$unionWith;
+  if (!union.coll || GLOBAL_COLLECTIONS.has(String(union.coll).toLowerCase())) return;
+  union.pipeline ||= [];
+  union.pipeline.unshift({ $match: { [TENANT_PATH]: new mongoose.Types.ObjectId(tenantId) } });
+}
+
+function enforceGraphLookupStage(stage, tenantId) {
+  if (!stage?.$graphLookup || !tenantId) return;
+  const lookup = stage.$graphLookup;
+  if (!lookup.from || GLOBAL_COLLECTIONS.has(String(lookup.from).toLowerCase())) return;
+  lookup.restrictSearchWithMatch ||= {};
+  assertTenantValue(lookup.restrictSearchWithMatch[TENANT_PATH], tenantId, "Cross-tenant graph lookup rejected.");
+  lookup.restrictSearchWithMatch[TENANT_PATH] = new mongoose.Types.ObjectId(tenantId);
+}
+
+export function tenantPlugin(schema) {
+  if (!schema.path(TENANT_PATH)) {
+    schema.add({
+      [TENANT_PATH]: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Organization",
+        default: null,
+        index: true,
+        immutable: true,
+      },
+    });
+  }
+
+  for (const path of Object.values(schema.paths || {})) {
     if (!path?.options?.unique || path.path === TENANT_PATH) continue;
     const field = path.path;
     const sparse = Boolean(path.options.sparse);
+    try { schema.removeIndex({ [field]: 1 }); } catch { /* index may be defined only at MongoDB level */ }
     path.options.unique = false;
     schema.index({ [TENANT_PATH]: 1, [field]: 1 }, { unique: true, sparse });
   }
 
   schema.pre("save", function tenantSave(next) {
-    if (isTenantBypassed()) return next();
-    const tenantId = getTenantId();
-    if (!tenantId) {
-      if (this.isNew) return next(new Error(`Tenant context is required to create ${this.constructor.modelName} records.`));
-      return next();
-    }
-    if (this.tenantId && String(this.tenantId) !== String(tenantId)) {
-      return next(new Error("Cross-tenant write rejected."));
-    }
-    if (!this.tenantId) this.tenantId = tenantId;
-    next();
+    try {
+      // Platform owners are global identities. Never inherit the active tenant
+      // from request/context state when a SuperAdmin is saved.
+      if (isPlatformOwnerDocument(this)) {
+        this.tenantId = null;
+        return next();
+      }
+
+      const tenantId = requireTenantId();
+      if (!tenantId) return next();
+      assertTenantValue(this.tenantId, tenantId);
+      if (!this.tenantId) this.tenantId = tenantId;
+      next();
+    } catch (error) { next(error); }
   });
 
   schema.pre("insertMany", function tenantInsertMany(next, docs) {
-    if (isTenantBypassed()) return next();
-    const tenantId = getTenantId();
-    if (!tenantId) return next(new Error("Tenant context is required for bulk inserts."));
-    for (const doc of docs || []) {
-      if (doc.tenantId && String(doc.tenantId) !== String(tenantId)) return next(new Error("Cross-tenant bulk insert rejected."));
-      doc.tenantId ||= tenantId;
-    }
-    next();
+    try {
+      const tenantId = requireTenantId();
+      if (!tenantId) return next();
+      for (const doc of docs || []) {
+        if (isPlatformOwnerDocument(doc)) {
+          doc[TENANT_PATH] = null;
+        } else {
+          assertTenantValue(doc?.[TENANT_PATH], tenantId);
+          if (doc) doc[TENANT_PATH] = tenantId;
+        }
+      }
+      next();
+    } catch (error) { next(error); }
   });
 
-  [
-    "find",
-    "findOne",
-    "findOneAndUpdate",
-    "findOneAndDelete",
-    "findOneAndReplace",
-    "updateOne",
-    "updateMany",
-    "replaceOne",
-    "deleteOne",
-    "deleteMany",
-    "countDocuments",
-    "estimatedDocumentCount",
-    "distinct",
-  ].forEach((hook) => {
+  ["find", "findOne", "findOneAndUpdate", "findOneAndDelete", "findOneAndReplace", "updateOne", "updateMany", "replaceOne", "deleteOne", "deleteMany", "countDocuments", "distinct"].forEach((hook) => {
     schema.pre(hook, function tenantQuery(next) {
-      if (hook === "estimatedDocumentCount") return next();
       try {
+        const tenantId = requireTenantId();
+        if (!tenantId) return next();
         mergeTenantFilter(this);
-        if (["findOneAndUpdate", "updateOne", "updateMany", "replaceOne"].includes(hook) && shouldScope()) {
-          const tenantId = getTenantId();
-          const update = this.getUpdate?.();
-          if (update && !Array.isArray(update)) {
-            const requestedTenant = update.$set?.[TENANT_PATH] || update[TENANT_PATH] || update.$setOnInsert?.[TENANT_PATH];
-            if (requestedTenant && String(requestedTenant) !== String(tenantId)) throw new Error("Cross-tenant write rejected.");
-            update.$setOnInsert ||= {};
-            update.$setOnInsert[TENANT_PATH] = tenantId;
-            if (update.$unset?.[TENANT_PATH]) delete update.$unset[TENANT_PATH];
-          }
-        }
+        if (["findOneAndUpdate", "updateOne", "updateMany", "replaceOne"].includes(hook)) enforceUpdateTenant(this.getUpdate?.(), tenantId);
         next();
-      } catch (error) {
-        next(error);
-      }
+      } catch (error) { next(error); }
     });
   });
 
-  schema.pre("aggregate", function tenantAggregate(next) {
-    if (!shouldScope()) return next();
-    const match = { $match: tenantFilter() };
-    const pipeline = this.pipeline();
-    if (pipeline[0]?.$match) {
-      pipeline[0] = { $match: { $and: [pipeline[0].$match, match.$match] } };
-    } else {
-      pipeline.unshift(match);
+  schema.pre("estimatedDocumentCount", function tenantEstimatedCount(next) {
+    try {
+      if (!isTenantBypassed()) {
+        requireTenantId();
+        throw new Error(
+          "estimatedDocumentCount() is blocked for tenant-scoped models. Use countDocuments() instead."
+        );
+      }
+      next();
+    } catch (error) {
+      next(error);
     }
-    next();
+  });
+
+  schema.pre("bulkWrite", function tenantBulkWrite(next, operations) {
+    try {
+      const tenantId = requireTenantId();
+      if (!tenantId) return next();
+      enforceBulkWriteTenant(operations, tenantId);
+      next();
+    } catch (error) { next(error); }
+  });
+
+  schema.pre("aggregate", function tenantAggregate(next) {
+    try {
+      const tenantId = requireTenantId();
+      if (!tenantId) return next();
+      const pipeline = this.pipeline();
+      const match = { [TENANT_PATH]: new mongoose.Types.ObjectId(tenantId) };
+
+      if (pipeline[0]?.$geoNear) {
+        pipeline[0].$geoNear.query = { ...(pipeline[0].$geoNear.query || {}), ...match };
+      } else if (pipeline[0]?.$match) {
+        const existing = pipeline[0].$match;
+        if (existing[TENANT_PATH]) {
+          assertTenantValue(existing[TENANT_PATH], tenantId, "Cross-tenant aggregation rejected.");
+          existing[TENANT_PATH] = match[TENANT_PATH];
+        } else {
+          pipeline[0] = { $match: { $and: [existing, match] } };
+        }
+      } else {
+        pipeline.unshift({ $match: match });
+      }
+
+      for (const stage of pipeline) {
+        enforceLookupStage(stage, tenantId);
+        enforceUnionStage(stage, tenantId);
+        enforceGraphLookupStage(stage, tenantId);
+      }
+      next();
+    } catch (error) { next(error); }
   });
 }

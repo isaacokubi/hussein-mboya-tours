@@ -1,3 +1,4 @@
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
 import CustomTourRequest from "../models/CustomTourRequest.js";
@@ -47,6 +48,7 @@ const getAllowedRange = async (booking) => {
 };
 
 export const updateBookingTravelDate = async (req, res, next) => {
+  requireTenantId();
   try {
     const booking = await Booking.findOne({ _id: req.params.id, user: req.user._id });
     if (!booking) return res.status(404).json({ success: false, message: "Booking not found." });

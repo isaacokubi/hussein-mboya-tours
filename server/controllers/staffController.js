@@ -1,3 +1,4 @@
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 // server/controllers/staffController.js
 
 import Staff from "../models/Staff.js";
@@ -9,6 +10,7 @@ import Staff from "../models/Staff.js";
 */
 
 export const createStaff = async (req, res, next) => {
+  requireTenantId();
   try {
     const staff = await Staff.create(req.body);
 
@@ -140,7 +142,11 @@ export const getStaff = async (req, res, next) => {
 
 export const getStaffById = async (req, res, next) => {
   try {
-    const staff = await Staff.findById(req.params.id).populate(
+    const staff = await Staff.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+).populate(
       "assignedTours",
       "title startDate endDate tourStatus"
     );
@@ -169,8 +175,10 @@ export const getStaffById = async (req, res, next) => {
 
 export const updateStaff = async (req, res, next) => {
   try {
-    const staff = await Staff.findByIdAndUpdate(
-      req.params.id,
+    const staff = await Staff.findOneAndUpdate(
+mergeTenantFilter(req,{
+_id:req.params.id
+}),
       req.body,
       {
         new: true,
@@ -203,8 +211,10 @@ export const updateStaff = async (req, res, next) => {
 
 export const deleteStaff = async (req, res, next) => {
   try {
-    const staff = await Staff.findByIdAndUpdate(
-      req.params.id,
+    const staff = await Staff.findOneAndUpdate(
+mergeTenantFilter(req,{
+_id:req.params.id
+}),
       {
         isActive: false,
         status: "inactive",
@@ -239,8 +249,10 @@ export const deleteStaff = async (req, res, next) => {
 
 export const restoreStaff = async (req, res, next) => {
   try {
-    const staff = await Staff.findByIdAndUpdate(
-      req.params.id,
+    const staff = await Staff.findOneAndUpdate(
+mergeTenantFilter(req,{
+_id:req.params.id
+}),
       {
         isActive: true,
         status: "active",
@@ -341,8 +353,10 @@ export const updateStaffAvailability = async (req, res, next) => {
       });
     }
 
-    const staff = await Staff.findByIdAndUpdate(
-      req.params.id,
+    const staff = await Staff.findOneAndUpdate(
+mergeTenantFilter(req,{
+_id:req.params.id
+}),
       {
         availability,
       },

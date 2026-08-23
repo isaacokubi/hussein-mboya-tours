@@ -1,3 +1,4 @@
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 // server/controllers/customerController.js
 
 import mongoose from "mongoose";
@@ -9,6 +10,7 @@ import Role from "../models/Role.js";
 const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
 
 export const getCustomers = async (req, res, next) => {
+  requireTenantId();
   try {
     const { search = "", page = 1, limit = 10 } = req.query;
     const currentPage = Math.max(Number(page), 1);

@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -9,6 +10,13 @@ import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
 const campaignSchema = new mongoose.Schema(
   {
+
+    tenantId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref:"Organization",
+        index:true,
+        required:false
+    },
     /*
     |--------------------------------------------------------------------------
     | BASIC INFORMATION
@@ -43,7 +51,6 @@ const campaignSchema = new mongoose.Schema(
         "push_notification",
       ],
       default: "email",
-      index: true,
     },
 
     /*
@@ -94,7 +101,6 @@ const campaignSchema = new mongoose.Schema(
         "custom",
       ],
       default: "all",
-      index: true,
     },
 
     recipients: [
@@ -121,7 +127,6 @@ const campaignSchema = new mongoose.Schema(
         "cancelled",
       ],
       default: "draft",
-      index: true,
     },
 
     /*
@@ -203,7 +208,6 @@ const campaignSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      index: true,
     },
 
     /*
@@ -321,10 +325,14 @@ campaignSchema.index({
 |--------------------------------------------------------------------------
 */
 
-const Campaign =
-  mongoose.models.Campaign ||
-  campaignSchema.plugin(tenantPlugin);
+const tenantCampaignSchema = campaignSchema.plugin(tenantPlugin);
+const Campaign = mongoose.models.Campaign || mongoose.model("Campaign", tenantCampaignSchema);
 
-mongoose.model("Campaign", campaignSchema);
+
+
+
+
+
+
 
 export default Campaign;

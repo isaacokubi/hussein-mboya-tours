@@ -58,7 +58,7 @@ export default function Dashboard() {
           <div className="flex gap-4 mt-6 flex-wrap">
             <Link to="/tours" className="bg-white text-green-700 px-6 py-3 rounded-xl font-bold">Explore Tours</Link>
             <Link to="/my-bookings" className="bg-black/40 px-6 py-3 rounded-xl font-bold">My Bookings</Link>
-            
+
 <Link to="/custom-tour" className="bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold">Create Custom Tour</Link>
 
 <Link

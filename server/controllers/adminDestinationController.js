@@ -1,3 +1,5 @@
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
+import { tenantFilter } from "../tenancy/tenantQuery.js";
 // server/controllers/adminDestinationController.js
 
 import mongoose from "mongoose";
@@ -11,6 +13,7 @@ import cloudinary from "../config/cloudinary.js";
 */
 
 export const createDestination = async (req, res, next) => {
+  requireTenantId();
   try {
     const {
       name,
@@ -32,7 +35,7 @@ export const createDestination = async (req, res, next) => {
     const exists = await Destination.findOne({
       $or: [
         { slug: slug.trim().toLowerCase() },
-        { 
+        {
           name: {
             $regex: `^${name.trim()}$`,
             $options:"i"
@@ -158,7 +161,7 @@ export const getDestination = async (req, res, next) => {
 
 export const getAdminDestinations = async (req, res, next) => {
   try {
-    const destinations = await Destination.find()
+    const destinations = await Destination.find(tenantFilter(req))
       .sort({ createdAt: -1 })
       .lean();
 
@@ -187,7 +190,11 @@ export const updateDestination = async (req, res, next) => {
       });
     }
 
-    const destination = await Destination.findById(req.params.id);
+    const destination = await Destination.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
 
     if (!destination) {
       return res.status(404).json({
@@ -265,7 +272,11 @@ export const deleteDestination = async (req, res, next) => {
       });
     }
 
-    const destination = await Destination.findById(req.params.id);
+    const destination = await Destination.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
 
     if (!destination) {
       return res.status(404).json({
@@ -300,7 +311,11 @@ export const deleteDestination = async (req, res, next) => {
 
 export const getDestinationById = async (req, res) => {
   try {
-    const destination = await Destination.findById(req.params.id);
+    const destination = await Destination.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
 
     if (!destination) {
       return res.status(404).json({
@@ -321,4 +336,3 @@ export const getDestinationById = async (req, res) => {
     });
   }
 };
-

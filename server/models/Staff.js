@@ -2,6 +2,7 @@
 
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -11,6 +12,7 @@ import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
 const emergencyContactSchema = new mongoose.Schema(
   {
+    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
     name: {
       type: String,
       trim: true,
@@ -424,10 +426,14 @@ staffSchema.index({
 |--------------------------------------------------------------------------
 */
 
-const Staff =
-  mongoose.models.Staff ||
-  staffSchema.plugin(tenantPlugin);
+const tenantStaffSchema = staffSchema.plugin(tenantPlugin);
+const Staff = mongoose.models.Staff || mongoose.model("Staff", tenantStaffSchema);
 
-mongoose.model("Staff", staffSchema);
+
+
+
+
+
+
 
 export default Staff;

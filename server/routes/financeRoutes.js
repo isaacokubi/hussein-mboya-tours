@@ -1,3 +1,4 @@
+import { resolveTenant } from "../middleware/tenantMiddleware.js";
 // server/routes/financeRoutes.js
 import express from "express";
 
@@ -14,6 +15,8 @@ import { getUserRole } from "../utils/roleUtils.js";
 
 const router = express.Router();
 
+router.use(resolveTenant);
+
 /*
  * Finance is an administrator capability. Legacy Admin/SuperAdmin accounts
  * may not have a populated Role document after account recreation, so do not
@@ -22,7 +25,7 @@ const router = express.Router();
  */
 const financeAccess = (req, res, next) => {
   const role = getUserRole(req.user);
-  if (["admin", "superadmin"].includes(role)) return next();
+  if (["admin", "super_admin"].includes(role)) return next();
   return authorize("finance.view")(req, res, next);
 };
 

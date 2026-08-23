@@ -1,3 +1,4 @@
+import { resolveTenant } from "../middleware/tenantMiddleware.js";
 import express from "express";
 import {
   protect,
@@ -13,6 +14,8 @@ import {
 } from "../controllers/superAdminOperationsController.js";
 
 const router = express.Router();
+
+router.use(resolveTenant);
 
 router.use(protect, superAdminOnly);
 

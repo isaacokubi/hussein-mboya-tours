@@ -136,7 +136,7 @@ const bookingSchema = new mongoose.Schema(
     |--------------------------------------------------------------------------
     */
 
-    
+
 customTourRequest:{
 type:mongoose.Schema.Types.ObjectId,
 ref:"CustomTourRequest",

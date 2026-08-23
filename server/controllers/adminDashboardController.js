@@ -1,3 +1,5 @@
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
+import { tenantFilter } from "../tenancy/tenantQuery.js";
 import Booking from "../models/Booking.js";
 import Destination from "../models/Destination.js";
 import Notification from "../models/Notification.js";
@@ -13,6 +15,7 @@ const ACTIVE_PAYMENT_STATUS = "completed";
 const NON_DELETED = { $ne: true };
 
 export const getDashboard = async (req, res) => {
+  requireTenantId();
   try {
 
     const [
@@ -362,7 +365,7 @@ export const getDashboard = async (req, res) => {
         { $sort: { name: 1 } },
       ]),
 
-      Notification.find({})
+      Notification.find(tenantFilter(req))
         .sort({ createdAt: -1 })
         .limit(5)
         .lean(),

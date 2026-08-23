@@ -1,3 +1,4 @@
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import { getSystemSettings } from "../services/settingsService.js";
 // controllers/voucherController.js
 
@@ -24,6 +25,7 @@ import User from "../models/User.js";
 */
 
 export const generateVoucher = async (req, res, next) => {
+  requireTenantId();
   try {
 
     const settings = await getSystemSettings();
@@ -54,7 +56,11 @@ export const generateVoucher = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    const booking = await Booking.findById(req.params.id)
+    const booking = await Booking.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+)
 
       .populate({
         path: "customer",

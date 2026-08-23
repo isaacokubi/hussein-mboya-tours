@@ -1,12 +1,13 @@
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 
 const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
-    email: { type: String, required: true, unique: false, lowercase: true, trim: true },
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     phone: {
       type: String,
       required: true,
@@ -19,10 +20,11 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true, minlength: 8, select: false },
     role: {
       type: String,
-      enum: ["customer", "admin", "super_admin", "superadmin", "administrator", "agent", "travel_agent", "tour_manager", "tourmanager", "manager", "tour_guide", "tourguide", "guide", "driver"],
+      enum: ["customer", "admin", "super_admin", "super_admin", "administrator", "agent", "travel_agent", "tour_manager", "tourmanager", "manager", "tour_guide", "tourguide", "guide", "driver"],
       default: "customer",
     },
     roleId: { type: mongoose.Schema.Types.ObjectId, ref: "Role", default: null },
+    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", default: null },
     permissionsOverride: [{ type: mongoose.Schema.Types.ObjectId, ref: "Permission" }],
     legacyRole: { type: String, default: "customer" },
     profileImage: {
@@ -32,7 +34,7 @@ const userSchema = new mongoose.Schema(
     status: { type: String, enum: ["active", "inactive", "disabled", "suspended", "blocked"], default: "active" },
     isVerified: { type: Boolean, default: false },
     loyaltyPoints: { type: Number, default: 0 },
-    referralCode: { type: String, unique: false, sparse: true },
+    referralCode: { type: String, unique: true, sparse: true },
     loginAttempts: { type: Number, default: 0 },
     lockUntil: { type: Date, default: null },
 
@@ -49,6 +51,8 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+userSchema.index({ tenantId: 1, role: 1 });
 
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
@@ -76,7 +80,7 @@ userSchema.virtual("isLocked").get(function () {
   return this.lockUntil && this.lockUntil > Date.now();
 });
 
-const User = userSchema.plugin(tenantPlugin);
+const tenantUserSchema = userSchema.plugin(tenantPlugin);
+const User = mongoose.models.User || mongoose.model("User", tenantUserSchema);
 
-mongoose.model("User", userSchema);
 export default User;

@@ -1,3 +1,4 @@
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import mongoose from "mongoose";
 import Tour from "../models/Tour.js";
 import Booking from "../models/Booking.js";
@@ -14,6 +15,7 @@ import { assignTourResources } from "./tourAssignmentController.js";
 */
 
 export const getTourManagerDashboard = async (req, res, next) => {
+  requireTenantId();
   try {
     const now = new Date();
 
@@ -289,7 +291,12 @@ export const getTours = async (req, res, next) => {
 export const updateTour = async (req, res, next) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid tour ID" });
-    const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const tour = await
+Tour.findOneAndUpdate(
+mergeTenantFilter(req,{
+_id:req.params.id
+}),
+ req.body, { new: true, runValidators: true });
     if (!tour) return res.status(404).json({ success: false, message: "Tour not found" });
     return res.status(200).json({ success: true, message: "Tour updated successfully", data: tour });
   } catch (error) { next(error); }
@@ -334,7 +341,11 @@ export const assignTourGuide = async (req, res, next) => {
 export const cancelBooking = async (req, res, next) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid booking ID" });
-    const booking = await Booking.findById(req.params.id);
+    const booking = await Booking.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
     if (!booking) return res.status(404).json({ success: false, message: "Booking not found" });
     if (["cancelled", "refunded", "completed"].includes(booking.status)) return res.status(400).json({ success: false, message: `A ${booking.status} booking cannot be cancelled.` });
     booking.status = "cancelled";
@@ -359,7 +370,11 @@ export const cancelBooking = async (req, res, next) => {
 export const completeBooking = async (req, res, next) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid booking ID" });
-    const booking = await Booking.findById(req.params.id);
+    const booking = await Booking.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
     if (!booking) return res.status(404).json({ success: false, message: "Booking not found" });
     if (["cancelled", "refunded"].includes(booking.status)) return res.status(400).json({ success: false, message: `A ${booking.status} booking cannot be completed.` });
     if (booking.paymentStatus !== "paid") return res.status(400).json({ success: false, message: "Only paid bookings can be marked as completed." });

@@ -10,7 +10,10 @@ const menu = [
 ];
 
 export default function TourManagerSidebar() {
-  const { companyName } = useSettings() || {};
+  const { settings = {} } = useSettings() || {};
+
+  const companyName =
+    settings?.companyName || "Company";
   return (
     <aside className="w-72 min-h-screen bg-green-900 text-white flex flex-col shadow-xl">
       <div className="px-6 py-8 border-b border-green-800">

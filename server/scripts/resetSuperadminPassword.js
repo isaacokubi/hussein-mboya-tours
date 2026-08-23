@@ -17,7 +17,7 @@ if (!process.env.MONGO_URI && !process.env.MONGODB_URI) {
 
 await mongoose.connect(process.env.MONGO_URI || process.env.MONGODB_URI);
 
-const role = await Role.findOne({ name: { $in: ["superadmin", "super_admin"] } }).sort({ createdAt: 1 });
+const role = await Role.findOne({ name: { $in: ["super_admin", "super_admin"] } }).sort({ createdAt: 1 });
 const user = await User.findOne({ email }).select("+password");
 
 if (!user) {
@@ -25,8 +25,8 @@ if (!user) {
 }
 
 user.password = await bcrypt.hash(password, 10);
-user.role = "superadmin";
-user.legacyRole = "superadmin";
+user.role = "super_admin";
+user.legacyRole = "super_admin";
 user.roleId = role?._id || null;
 user.status = "active";
 user.loginAttempts = 0;

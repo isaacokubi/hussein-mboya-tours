@@ -2,6 +2,7 @@
 
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -11,6 +12,13 @@ import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
 const mediaSchema = new mongoose.Schema(
   {
+
+    tenantId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref:"Organization",
+        index:true,
+        required:false
+    },
     /*
     |--------------------------------------------------------------------------
     | FILE INFORMATION
@@ -275,10 +283,14 @@ mediaSchema.index({
 |--------------------------------------------------------------------------
 */
 
-const Media =
-  mongoose.models.Media ||
-  mediaSchema.plugin(tenantPlugin);
+const tenantMediaSchema = mediaSchema.plugin(tenantPlugin);
+const Media = mongoose.models.Media || mongoose.model("Media", tenantMediaSchema);
 
-mongoose.model("Media", mediaSchema);
+
+
+
+
+
+
 
 export default Media;

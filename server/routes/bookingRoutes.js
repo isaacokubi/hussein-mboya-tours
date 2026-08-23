@@ -1,3 +1,4 @@
+import { resolveTenant } from "../middleware/tenantMiddleware.js";
 // server/routes/bookingRoutes.js
 
 import express from "express";
@@ -9,6 +10,8 @@ import { requireFullPaymentForTrip } from "../middleware/requireFullPaymentForTr
 import { validateBookingTravelDate } from "../middleware/validateBookingTravelDate.js";
 
 const router = express.Router();
+
+router.use(resolveTenant);
 router.use(protect);
 router.get("/test", (req, res) => res.status(200).json({ success: true, message: "Booking routes are loaded" }));
 router.post("/", customerOnly, validateBookingTravelDate, createCustomerBooking);

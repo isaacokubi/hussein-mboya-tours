@@ -2,6 +2,7 @@
 
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -15,6 +16,13 @@ import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
 const customerProfileSchema = new mongoose.Schema(
   {
+
+    tenantId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref:"Organization",
+        index:true,
+        required:false
+    },
     /*
     |--------------------------------------------------------------------------
     | USER ACCOUNT
@@ -432,13 +440,14 @@ customerProfileSchema.methods.updateStatistics = function (amount) {
 |--------------------------------------------------------------------------
 */
 
-const CustomerProfile =
-  mongoose.models.CustomerProfile ||
-  customerProfileSchema.plugin(tenantPlugin);
+const tenantCustomerProfileSchema = customerProfileSchema.plugin(tenantPlugin);
+const CustomerProfile = mongoose.models.CustomerProfile || mongoose.model("CustomerProfile", tenantCustomerProfileSchema);
 
-mongoose.model(
-    "CustomerProfile",
-    customerProfileSchema
-  );
+
+
+
+
+
+
 
 export default CustomerProfile;

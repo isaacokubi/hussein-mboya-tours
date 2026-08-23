@@ -1,11 +1,11 @@
 import fs from "node:fs";
 
 const required = [
-  ["server/routes/publicOnboardingRoutes.js", "/register"],
-  ["server/controllers/publicOnboardingController.js", "registerTenantPublic"],
-  ["server/services/publicOnboardingService.js", "registerTenant"],
-  ["server/models/Subscription.js", "trialEndsAt"],
-  ["client/src/pages/Register.jsx", "company=1"],
+  ["routes/publicOnboardingRoutes.js", "/register"],
+  ["controllers/publicOnboardingController.js", "registerTenantPublic"],
+  ["services/publicOnboardingService.js", "registerTenant"],
+  ["models/Subscription.js", "trialEndsAt"],
+  ["../client/src/pages/Register.jsx", "company=1"],
 ];
 
 let failed = false;
