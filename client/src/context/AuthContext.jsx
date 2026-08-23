@@ -68,6 +68,14 @@ const readStoredUser = () => {
   }
 };
 
+const setApiAuthHeader = (nextToken) => {
+  if (nextToken) {
+    api.defaults.headers.common.Authorization = `Bearer ${String(nextToken).trim()}`;
+  } else {
+    delete api.defaults.headers.common.Authorization;
+  }
+};
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => readStoredUser());
   const [token, setToken] = useState(() => getStoredToken());
@@ -90,6 +98,7 @@ export function AuthProvider({ children }) {
 
   const clearAuthStorage = () => {
     [...AUTH_KEYS, "user", "permissions", ...TENANT_SESSION_KEYS].forEach((key) => localStorage.removeItem(key));
+    setApiAuthHeader("");
   };
 
   const logout = () => {
@@ -127,6 +136,7 @@ export function AuthProvider({ children }) {
     const savedToken = getStoredToken();
     const savedUser = readStoredUser();
     if (!savedToken) {
+      setApiAuthHeader("");
       setUser(null);
       setToken(null);
       setLoading(false);
@@ -134,6 +144,7 @@ export function AuthProvider({ children }) {
     }
 
     if (!localStorage.getItem("token")) localStorage.setItem("token", savedToken);
+    setApiAuthHeader(savedToken);
     setToken(savedToken);
     if (savedUser) setUser(savedUser);
 
@@ -151,6 +162,7 @@ export function AuthProvider({ children }) {
     // never let the previous user's JWT or tenant ID be attached to /auth/login.
     AUTH_KEYS.forEach((key) => localStorage.removeItem(key));
     ["user", "permissions", ...TENANT_SESSION_KEYS].forEach((key) => localStorage.removeItem(key));
+    setApiAuthHeader("");
     setToken(null);
     setUser(null);
 
@@ -164,6 +176,7 @@ export function AuthProvider({ children }) {
     const nextToken = String(data.token).trim();
     if (!nextToken) throw new Error("Authentication response contained an empty token.");
     localStorage.setItem("token", nextToken);
+    setApiAuthHeader(nextToken);
     setToken(nextToken);
     const normalizedUser = persistUser(data.user);
     if (!normalizedUser) throw new Error("Authentication response did not contain a user.");
@@ -175,6 +188,7 @@ export function AuthProvider({ children }) {
     if (data?.token) {
       const nextToken = String(data.token).trim();
       localStorage.setItem("token", nextToken);
+      setApiAuthHeader(nextToken);
       setToken(nextToken);
       persistUser(data.user);
     }
