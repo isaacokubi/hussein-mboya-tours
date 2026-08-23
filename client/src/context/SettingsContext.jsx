@@ -2,94 +2,67 @@ import { createContext, useCallback, useContext, useEffect, useState } from "rea
 import api from "../api/axios";
 
 export const PUBLIC_BRAND_NAME = "Your Travel Company";
-
 const DEFAULT_SETTINGS = {
-  companyName: PUBLIC_BRAND_NAME,
-  supportEmail: "",
-  supportPhone: "",
-  currency: "KES",
-  currencySymbol: "KSh",
-  logo: "",
-  companyLogo: "",
+  companyName: PUBLIC_BRAND_NAME, supportEmail: "", supportPhone: "", currency: "KES", currencySymbol: "KSh", logo: "", companyLogo: "",
+  primaryColor: "#047857", secondaryColor: "#064e3b", accentColor: "#10b981", backgroundColor: "#f8fafc", surfaceColor: "#ffffff", textColor: "#0f172a",
+  fontFamily: "Inter", borderRadius: "xl", buttonStyle: "rounded", heroOverlayOpacity: 50,
+  homepageSections: { stats: true, tours: true, destinations: true, experiences: true, services: true, testimonials: true, gallery: true, whyChooseUs: true, newsletter: true },
 };
-
 const SettingsContext = createContext(null);
 const STORAGE_KEY = "platform-settings";
+const normalize = (next = {}, previous = DEFAULT_SETTINGS) => ({ ...previous, ...next, companyName: PUBLIC_BRAND_NAME });
 
-const normalize = (next = {}, previous = DEFAULT_SETTINGS) => ({
-  ...previous,
-  ...next,
-  companyName: PUBLIC_BRAND_NAME,
-});
+function applyTenantTheme(settings) {
+  const root = document.documentElement;
+  const css = {
+    "--tenant-primary": settings.primaryColor,
+    "--tenant-secondary": settings.secondaryColor,
+    "--tenant-accent": settings.accentColor,
+    "--tenant-background": settings.backgroundColor,
+    "--tenant-surface": settings.surfaceColor,
+    "--tenant-text": settings.textColor,
+    "--tenant-hero-overlay": `${Number(settings.heroOverlayOpacity ?? 50) / 100}`,
+  };
+  Object.entries(css).forEach(([key, value]) => root.style.setProperty(key, value));
+  if (settings.fontFamily) root.style.setProperty("--tenant-font-family", settings.fontFamily);
+}
 
 export function SettingsProvider({ children }) {
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
-
-  const applySettings = useCallback((nextSettings) => {
-    setSettings((previous) => normalize(nextSettings, previous));
-  }, []);
-
+  const applySettings = useCallback((nextSettings) => setSettings((previous) => normalize(nextSettings, previous)), []);
   const refreshSettings = useCallback(async () => {
     try {
       const response = await api.get("/settings/public", { params: { _t: Date.now() } });
       const data = response.data?.settings || response.data?.data || response.data || {};
       applySettings(data);
       return data;
-    } catch (error) {
-      console.error("Public tenant settings load failed:", error);
-      return null;
-    }
+    } catch (error) { console.error("Public tenant settings load failed:", error); return null; }
   }, [applySettings]);
 
   useEffect(() => {
+    applyTenantTheme(settings);
+  }, [settings]);
+
+  useEffect(() => {
     let mounted = true;
-    const load = async () => {
-      setLoading(true);
-      try { await refreshSettings(); } finally { if (mounted) setLoading(false); }
-    };
+    const load = async () => { setLoading(true); try { await refreshSettings(); } finally { if (mounted) setLoading(false); } };
     void load();
-
-    const handleStorage = (event) => {
-      if (event.key !== STORAGE_KEY || !event.newValue) return;
-      try { applySettings(JSON.parse(event.newValue)); } catch { /* Ignore malformed cache. */ }
-    };
+    const handleStorage = (event) => { if (event.key !== STORAGE_KEY || !event.newValue) return; try { applySettings(JSON.parse(event.newValue)); } catch {} };
     const handlePlatformSettings = (event) => applySettings(event.detail || {});
-
-    window.addEventListener("storage", handleStorage);
-    window.addEventListener("platform-settings-updated", handlePlatformSettings);
-    return () => {
-      mounted = false;
-      window.removeEventListener("storage", handleStorage);
-      window.removeEventListener("platform-settings-updated", handlePlatformSettings);
-    };
+    window.addEventListener("storage", handleStorage); window.addEventListener("platform-settings-updated", handlePlatformSettings);
+    return () => { mounted = false; window.removeEventListener("storage", handleStorage); window.removeEventListener("platform-settings-updated", handlePlatformSettings); };
   }, [refreshSettings, applySettings]);
 
   const updateSettings = useCallback((nextSettings) => {
     setSettings((previous) => normalize(nextSettings, previous));
     try {
       const next = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-      const merged = normalize(nextSettings, next);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+      const merged = normalize(nextSettings, next); localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
       window.dispatchEvent(new CustomEvent("platform-settings-updated", { detail: merged }));
-    } catch { /* Settings API remains the source of truth. */ }
+    } catch {}
   }, []);
 
-  return (
-    <SettingsContext.Provider
-      value={{
-        settings: { ...settings, companyName: PUBLIC_BRAND_NAME },
-        companyName: PUBLIC_BRAND_NAME,
-        supportEmail: settings.supportEmail || "",
-        supportPhone: settings.supportPhone || "",
-        loading,
-        refreshSettings,
-        updateSettings,
-      }}
-    >
-      {children}
-    </SettingsContext.Provider>
-  );
+  return <SettingsContext.Provider value={{ settings: { ...settings, companyName: PUBLIC_BRAND_NAME }, companyName: PUBLIC_BRAND_NAME, supportEmail: settings.supportEmail || "", supportPhone: settings.supportPhone || "", loading, refreshSettings, updateSettings }}>{children}</SettingsContext.Provider>;
 }
-
 export function useSettings() { return useContext(SettingsContext); }
