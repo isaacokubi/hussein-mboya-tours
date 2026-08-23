@@ -7,11 +7,10 @@ import { getAuditLogs, getDatabaseStatus, getSystemHealth, clearSystemCache } fr
 import { getApiMonitor } from "../controllers/apiMonitorController.js";
 import { createPlatformDatabaseBackup, listPlatformDatabaseBackups, deletePlatformDatabaseBackup, downloadPlatformDatabaseBackup } from "../controllers/superAdminBackupController.js";
 import { getSuperAdminUsers, createSuperAdminCompanyAccount, updateSuperAdminUserStatus, deleteSuperAdminUser } from "../controllers/superAdminUserController.js";
+import { deleteTenant } from "../controllers/superadminTenantController.js";
 import { getSettings, updateSettings } from "../controllers/settingsController.js";
 
 const router = express.Router();
-
-// SuperAdmin is platform-scoped. Do not resolve or require a tenant on these routes.
 router.use(protect);
 
 router.get("/dashboard", authorize("admin.dashboard"), getSuperAdminDashboard);
@@ -20,23 +19,18 @@ router.post("/users/accounts", authorize("user.manage"), createSuperAdminCompany
 router.patch("/users/:id/status", authorize("user.manage"), updateSuperAdminUserStatus);
 router.put("/users/:id/status", authorize("user.manage"), updateSuperAdminUserStatus);
 router.delete("/users/:id", authorize("user.manage"), deleteSuperAdminUser);
+router.delete("/tenants/:id", authorize("user.manage"), deleteTenant);
 
 router.get("/audit", authorize("system.audit"), getAuditLogs);
 router.get("/security", authorize("system.security"), async (req, res) => {
-  try {
-    const data = await securityService.getSecurityStatus();
-    return res.json({ success: true, data });
-  } catch (error) {
-    console.error("SuperAdmin security status error:", error);
-    return res.status(500).json({ success: false, message: error.message });
-  }
+  try { return res.json({ success: true, data: await securityService.getSecurityStatus() }); }
+  catch (error) { console.error("SuperAdmin security status error:", error); return res.status(500).json({ success: false, message: error.message }); }
 });
 router.get("/database", authorize("system.database"), getDatabaseStatus);
 router.get("/system", authorize("system.security"), getSystemHealth);
 router.get("/api-monitor", authorize("system.security"), getApiMonitor);
 router.get("/settings", authorize("settings.manage"), getSettings);
 router.put("/settings", authorize("settings.manage"), updateSettings);
-
 router.post("/maintenance/backup", authorize("system.backup"), createPlatformDatabaseBackup);
 router.post("/database/backup", authorize("system.backup"), createPlatformDatabaseBackup);
 router.post("/maintenance/cache", authorize("admin.dashboard"), clearSystemCache);
