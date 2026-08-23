@@ -1,15 +1,13 @@
 import mongoose from "mongoose";
-import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
-
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+
 const organizationSchema = new mongoose.Schema(
   {
-
-    tenantId:{
-        type: mongoose.Schema.Types.ObjectId,
-        ref:"Organization",
-        index:true,
-        required:false
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Organization",
+      index: true,
+      required: false,
     },
     name: { type: String, required: true, trim: true, maxlength: 160 },
     slug: { type: String, required: true, unique: true, lowercase: true, trim: true, index: true },
@@ -44,14 +42,8 @@ const organizationSchema = new mongoose.Schema(
 
 organizationSchema.index({ domain: 1 }, { unique: true, sparse: true });
 
-tenantPlugin(organizationSchema);
-
-
-
-
-
-
-
-
+// Organizations are the tenant registry itself. They are platform-global and
+// must never be filtered or uniquely partitioned by another tenant.
+tenantPlugin(organizationSchema, { global: true });
 
 export default mongoose.model("Organization", organizationSchema);
