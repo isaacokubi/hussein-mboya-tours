@@ -5,6 +5,11 @@ export const getSuperAdminDashboard = async () => {
   return response.data;
 };
 
+export const getSuperAdminRevenue = async () => {
+  const response = await axios.get("/superadmin/revenue");
+  return response.data;
+};
+
 export const getAuditLogs = async (params = {}) =>
   (await axios.get("/superadmin/audit", { params })).data;
 
