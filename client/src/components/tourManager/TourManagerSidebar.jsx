@@ -11,7 +11,6 @@ import {
   Map,
   MapPinned,
   PlusCircle,
-  Settings,
   UserRoundCheck,
   Users,
 } from "lucide-react";
@@ -32,7 +31,6 @@ const links = [
   ["Itineraries", "/tour-manager/itineraries", FileText],
   ["Analytics", "/tour-manager/analytics", BarChart3],
   ["Reports", "/tour-manager/reports", BarChart3],
-  ["Settings", "/tour-manager/settings", Settings],
 ];
 
 export default function TourManagerSidebar() {
