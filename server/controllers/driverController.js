@@ -28,27 +28,36 @@ const resolveDriver = async (user) => {
 
   if (!user.email) return null;
 
-  return Staff.findOneAndUpdate(
-    mergeTenantFilter({ email: String(user.email).toLowerCase(), position: "driver" }),
-    {
-      $set: {
-        user: user._id,
-        isActive: true,
-        status: "active",
-        isDeleted: false,
-      },
-      $setOnInsert: {
-        name: user.name || user.email,
-        email: String(user.email).toLowerCase(),
-        phone: user.phone || "",
-        position: "driver",
-        role: "driver",
-        availability: "available",
-        createdBy: user._id,
-      },
-    },
-    { new: true, upsert: true, setDefaultsOnInsert: true }
-  );
+  // Do not use findOneAndUpdate({ upsert: true }) here. The tenant plugin
+  // injects tenantId into the upsert and Mongoose's default handling can then
+  // generate a conflicting tenantId assignment in findAndModify.
+  const email = String(user.email).toLowerCase();
+  driver = await Staff.findOne({
+    ...tenantFilter,
+    email,
+    position: "driver",
+    isDeleted: { $ne: true },
+  });
+
+  if (driver) return driver;
+
+  driver = new Staff({
+    tenantId: requireTenantId(),
+    name: user.name || user.email,
+    email,
+    phone: user.phone || "",
+    position: "driver",
+    role: "driver",
+    user: user._id,
+    availability: "available",
+    isActive: true,
+    status: "active",
+    isDeleted: false,
+    createdBy: user._id,
+  });
+
+  await driver.save();
+  return driver;
 };
 
 export const driverDashboard = async (req, res, next) => {
