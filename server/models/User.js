@@ -1,13 +1,14 @@
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
-import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 
 const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
-    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    // Email uniqueness is tenant-scoped. Global uniqueness caused one company
+    // to block another company from using the same legitimate staff email.
+    email: { type: String, required: true, lowercase: true, trim: true },
     phone: {
       type: String,
       required: true,
@@ -37,22 +38,27 @@ const userSchema = new mongoose.Schema(
     referralCode: { type: String, unique: true, sparse: true },
     loginAttempts: { type: Number, default: 0 },
     lockUntil: { type: Date, default: null },
-
     passwordResetCodeHash: { type: String, default: "", select: false },
     passwordResetExpiresAt: { type: Date, default: null, select: false },
     passwordResetAttempts: { type: Number, default: 0, select: false },
-
     loginPinHash: { type: String, default: "", select: false },
     loginPinExpiresAt: { type: Date, default: null, select: false },
     loginPinAttempts: { type: Number, default: 0, select: false },
     loginPinLastSentAt: { type: Date, default: null, select: false },
-
     lastLoginAt: { type: Date, default: null },
   },
   { timestamps: true }
 );
 
 userSchema.index({ tenantId: 1, role: 1 });
+userSchema.index(
+  { tenantId: 1, email: 1 },
+  {
+    unique: true,
+    name: "tenant_email_unique",
+    partialFilterExpression: { tenantId: { $type: "objectId" } },
+  }
+);
 
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
