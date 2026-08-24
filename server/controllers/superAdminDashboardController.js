@@ -12,19 +12,15 @@ const PLATFORM_OR_LEGACY_SCOPE = {
 const toMoney = (field) => ({ $convert: { input: field, to: "double", onError: 0, onNull: 0 } });
 
 /**
- * SuperAdmin metrics are platform-wide. Counts use the same tenantId data model
- * as the tenant modules and deliberately distinguish tenant administrators from
- * the platform owner/super-admin account.
+ * SuperAdmin metrics are platform-wide. Counts use the canonical collections
+ * used by the current tenant modules and deliberately distinguish tenant
+ * administrators from the platform owner/super-admin account.
  *
- * Important data-model rule:
- * - `users` is the canonical account collection.
- * - `staffs` is the canonical operational staff-profile collection used by
- *   Staff/Tour assignment modules.
- * - `staff` is not used by the current Staff model and must not be counted.
- *
- * Therefore the Staff card counts only active, non-deleted operational Staff
- * profiles. It does not infer staff from user roles, which would double-count
- * linked accounts and make the SuperAdmin dashboard disagree with Staff Management.
+ * Data-model rules:
+ * - users = canonical login/account identities and roles.
+ * - staffs = canonical operational staff profiles used by assignments.
+ * - staff = obsolete and must never be counted.
+ * - agents = canonical agent profiles linked to users.
  */
 export const getSuperAdminDashboard = async (req, res) => {
   try {
@@ -49,12 +45,21 @@ export const getSuperAdminDashboard = async (req, res) => {
       status: "active",
     };
 
+    const activeAgentScope = {
+      ...PLATFORM_OR_LEGACY_SCOPE,
+      isDeleted: { $ne: true },
+      status: "active",
+    };
+
     const [users, staff, agents, vehicles, bookings, admins, tours, destinations, payments, revenueResult] = await Promise.all([
       usersCollection.countDocuments(PLATFORM_OR_LEGACY_SCOPE),
       // Count operational staff profiles, not the obsolete `staff` collection
       // and not user roles. This keeps the dashboard consistent with Staff Management.
       db.collection("staffs").countDocuments(activeStaffScope),
-      db.collection("agents").countDocuments({ ...PLATFORM_OR_LEGACY_SCOPE, isDeleted: { $ne: true }, status: "active", isApproved: true }),
+      // "Active Agents" means active agent profiles. Approval is a separate
+      // business-state flag and must not make an active account disappear from
+      // a card explicitly labelled Active Agents.
+      db.collection("agents").countDocuments(activeAgentScope),
       db.collection("vehicles").countDocuments({ ...PLATFORM_OR_LEGACY_SCOPE, isDeleted: { $ne: true }, isActive: true }),
       db.collection("bookings").countDocuments(PLATFORM_OR_LEGACY_SCOPE),
       usersCollection.countDocuments({
