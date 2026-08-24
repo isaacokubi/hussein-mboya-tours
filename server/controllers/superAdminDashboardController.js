@@ -15,6 +15,16 @@ const toMoney = (field) => ({ $convert: { input: field, to: "double", onError: 0
  * SuperAdmin metrics are platform-wide. Counts use the same tenantId data model
  * as the tenant modules and deliberately distinguish tenant administrators from
  * the platform owner/super-admin account.
+ *
+ * Important data-model rule:
+ * - `users` is the canonical account collection.
+ * - `staffs` is the canonical operational staff-profile collection used by
+ *   Staff/Tour assignment modules.
+ * - `staff` is not used by the current Staff model and must not be counted.
+ *
+ * Therefore the Staff card counts only active, non-deleted operational Staff
+ * profiles. It does not infer staff from user roles, which would double-count
+ * linked accounts and make the SuperAdmin dashboard disagree with Staff Management.
  */
 export const getSuperAdminDashboard = async (req, res) => {
   try {
@@ -32,11 +42,20 @@ export const getSuperAdminDashboard = async (req, res) => {
     }).project({ _id: 1 }).toArray();
     const adminRoleObjectIds = adminRoleIds.map(({ _id }) => _id);
 
+    const activeStaffScope = {
+      ...PLATFORM_OR_LEGACY_SCOPE,
+      isDeleted: { $ne: true },
+      isActive: true,
+      status: "active",
+    };
+
     const [users, staff, agents, vehicles, bookings, admins, tours, destinations, payments, revenueResult] = await Promise.all([
       usersCollection.countDocuments(PLATFORM_OR_LEGACY_SCOPE),
-      db.collection("staffs").countDocuments({ ...PLATFORM_OR_LEGACY_SCOPE, isDeleted: { $ne: true } }),
-      db.collection("agents").countDocuments({ ...PLATFORM_OR_LEGACY_SCOPE, isDeleted: { $ne: true } }),
-      db.collection("vehicles").countDocuments({ ...PLATFORM_OR_LEGACY_SCOPE, isDeleted: { $ne: true } }),
+      // Count operational staff profiles, not the obsolete `staff` collection
+      // and not user roles. This keeps the dashboard consistent with Staff Management.
+      db.collection("staffs").countDocuments(activeStaffScope),
+      db.collection("agents").countDocuments({ ...PLATFORM_OR_LEGACY_SCOPE, isDeleted: { $ne: true }, status: "active", isApproved: true }),
+      db.collection("vehicles").countDocuments({ ...PLATFORM_OR_LEGACY_SCOPE, isDeleted: { $ne: true }, isActive: true, status: "available" }),
       db.collection("bookings").countDocuments(PLATFORM_OR_LEGACY_SCOPE),
       usersCollection.countDocuments({
         ...TENANT_ID_SCOPE,
