@@ -22,11 +22,6 @@ const app = express();
 
 app.set("trust proxy", 1);
 
-// Public tenant resolution is needed for tenant-scoped resources, but the
-// public settings endpoint also has a safe fallback when no tenant header is
-// supplied. Authenticated requests are resolved by their token/user tenant.
-app.use(resolveTenant);
-
 if (process.env.NODE_ENV === "production") {
   const originalLog = console.log.bind(console), originalWarn = console.warn.bind(console), originalError = console.error.bind(console);
   const sensitiveKeys = new Set(["body", "callbackResponse", "phone", "phoneNumber", "PhoneNumber", "password", "token", "accessToken", "apiKey", "consumerSecret", "passkey"]);
@@ -58,10 +53,22 @@ const configuredOrigins = (env.CLIENT_ORIGINS || env.CLIENT_URL || "").split(","
 const allowedOrigins = ["http://localhost:5173", "http://127.0.0.1:5173", ...configuredOrigins].filter((origin, index, list) => list.indexOf(origin) === index);
 app.use(cors({ origin: (origin, callback) => !origin || allowedOrigins.includes(origin) ? callback(null, true) : callback(new Error(`CORS blocked origin: ${origin}`)), credentials: true, methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin", "X-Tenant-ID", "X-Tenant-Slug", "X-Tenant-Key"] }));
 app.use(compression());
+
+// Parse request bodies BEFORE tenant resolution. Public login tenant discovery
+// resolves a tenant from req.body.email when no explicit tenant identity is
+// supplied. Previously resolveTenant ran before express.json(), so the login
+// middleware could not see the email, selected the default tenant, and a valid
+// tenant-admin password was checked against the wrong tenant.
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 app.use(cookieParser());
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
+
+// Public tenant resolution is needed for tenant-scoped resources. Authenticated
+// requests are resolved by their token/user tenant. This middleware is now
+// deliberately placed after body parsing so login/register tenant discovery
+// can safely inspect request data.
+app.use(resolveTenant);
 
 app.get("/api/health", async (req, res) => {
   const dbReady = mongoose.connection.readyState === 1;
