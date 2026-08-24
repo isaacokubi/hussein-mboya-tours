@@ -15,8 +15,9 @@ const EVENT_TYPES = Object.freeze({ BOOKING_CONFIRMATION: "booking_confirmation"
 const bookingContact = (booking) => ({ name: booking.customerSnapshot?.name || booking.contact?.name || "Customer", email: booking.customerSnapshot?.email || booking.contact?.email || "", phone: String(booking.customerSnapshot?.phone || booking.contact?.phone || "").trim() });
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>\"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[char]));
 const formatDate = (value) => value ? new Date(value).toLocaleDateString("en-KE", { dateStyle: "medium" }) : "Not specified";
-const company = async () => (await getSystemSettings()).companyName || "Coherent Tours";
-const alreadySent = async (tenantId, eventKey) => Boolean(await runWithTenant({ role: "super_admin", bypass: true }, () => Notification.exists({ tenantId, "metadata.eventKey": eventKey })));
+const company = async (tenantId = null) => (await getSystemSettings(tenantId ? { tenantId } : {})).companyName || "Coherent Tours";
+const platform = (fn) => runWithTenant({ role: "super_admin", bypass: true }, fn);
+const alreadySent = async (tenantId, eventKey) => Boolean(await platform(() => Notification.exists({ tenantId, "metadata.eventKey": eventKey })));
 
 const recordInApp = async ({ tenantId, recipient, title, message, type, eventKey, relatedId }) => {
   if (!recipient || await alreadySent(tenantId, eventKey)) return null;
@@ -39,7 +40,7 @@ const deliver = async ({ booking, eventKey, title, message, emailSubject, html, 
 
 export const sendBookingConfirmationAutomation = async (booking) => {
   const name = bookingContact(booking).name;
-  const companyName = await company();
+  const companyName = await company(booking.tenantId);
   const eventKey = `${booking._id}:${EVENT_TYPES.BOOKING_CONFIRMATION}`;
   let invoicePath = "";
   try {
@@ -57,33 +58,33 @@ export const sendBookingConfirmationAutomation = async (booking) => {
 
 export const sendPaymentReminderAutomation = async (booking) => {
   const name = bookingContact(booking).name;
-  const companyName = await company();
+  const companyName = await company(booking.tenantId);
   const eventKey = `${booking._id}:${EVENT_TYPES.PAYMENT_REMINDER}:${new Date().toISOString().slice(0, 10)}`;
   return deliver({ booking, eventKey, title: "Payment Reminder", message: `Hello ${name}, this is a payment reminder for booking ${booking.bookingNumber || ""}. Please contact ${companyName} if you need assistance.`, emailSubject: `Payment Reminder - ${booking.bookingNumber || "Booking"}`, html: `<h2>Payment Reminder</h2><p>Hello ${escapeHtml(name)},</p><p>Payment is still pending for booking <strong>${escapeHtml(booking.bookingNumber || "")}</strong>.</p><p>Travel date: ${escapeHtml(formatDate(booking.travelDate))}</p><p>Please contact ${escapeHtml(companyName)} if you need assistance.</p>`, type: "payment" });
 };
 
 export const sendTourReminderAutomation = async (booking) => {
   const name = bookingContact(booking).name;
-  const companyName = await company();
+  const companyName = await company(booking.tenantId);
   const eventKey = `${booking._id}:${EVENT_TYPES.TOUR_REMINDER}:${new Date(booking.travelDate).toISOString().slice(0, 10)}`;
   return deliver({ booking, eventKey, title: "Tour Reminder", message: `Hello ${name}, your ${booking.tour?.title || "tour"} with ${companyName} is coming up on ${formatDate(booking.travelDate)}. We look forward to welcoming you.`, emailSubject: `Tour Reminder - ${booking.bookingNumber || "Booking"}`, html: `<h2>Your Tour Is Coming Up</h2><p>Hello ${escapeHtml(name)},</p><p>Your <strong>${escapeHtml(booking.tour?.title || "tour")}</strong> is scheduled for <strong>${escapeHtml(formatDate(booking.travelDate))}</strong>.</p><p>We look forward to welcoming you.</p>`, type: "tour_update" });
 };
 
 export const sendTourVoucherAutomation = async (booking) => {
   const name = bookingContact(booking).name;
-  const companyName = await company();
+  const companyName = await company(booking.tenantId);
   const eventKey = `${booking._id}:${EVENT_TYPES.TOUR_VOUCHER}`;
   return deliver({ booking, eventKey, title: "Tour Voucher Ready", message: `Your tour voucher for booking ${booking.bookingNumber || ""} is ready. Please keep your booking number available when travelling.`, emailSubject: `Tour Voucher - ${booking.bookingNumber || "Booking"}`, html: `<h2>Tour Voucher</h2><p>Hello ${escapeHtml(name)},</p><p>Your tour voucher is ready.</p><p><strong>Booking:</strong> ${escapeHtml(booking.bookingNumber || "")}</p><p><strong>Tour:</strong> ${escapeHtml(booking.tour?.title || "Tour")}</p><p><strong>Travel date:</strong> ${escapeHtml(formatDate(booking.travelDate))}</p><p>Regards,<br>${escapeHtml(companyName)}</p>`, type: "booking" });
 };
 
-const subscriptionRecipients = async (tenantId) => runWithTenant({ role: "super_admin", bypass: true }, () => User.find({ tenantId, status: "active", isActive: { $ne: false }, role: { $in: ["admin", "administrator", "super_admin", "superadmin", "manager", "tour_manager", "tourmanager"] } }).select("_id email phone name").lean());
+const subscriptionRecipients = async (tenantId) => platform(() => User.find({ tenantId, status: "active", isActive: { $ne: false }, role: { $in: ["admin", "administrator", "super_admin", "superadmin", "manager", "tour_manager", "tourmanager"] } }).select("_id email phone name").lean());
 
 export const sendSubscriptionReminderAutomation = async ({ subscription, daysRemaining, expired = false }) => {
   const tenantId = subscription.tenantId;
   const eventType = expired ? EVENT_TYPES.SUBSCRIPTION_EXPIRED : ({ 7: EVENT_TYPES.SUBSCRIPTION_7, 3: EVENT_TYPES.SUBSCRIPTION_3, 1: EVENT_TYPES.SUBSCRIPTION_1 }[daysRemaining] || `subscription_${daysRemaining}_days`);
   const eventKey = `${tenantId}:${eventType}:${new Date().toISOString().slice(0, 10)}`;
   if (await alreadySent(tenantId, eventKey)) return { skipped: true, eventKey };
-  const organization = await runWithTenant({ role: "super_admin", bypass: true }, () => Organization.findById(tenantId).select("name subscription status").lean());
+  const organization = await platform(() => Organization.findById(tenantId).select("name subscription status").lean());
   const companyName = organization?.name || "Your tour company";
   const recipients = await subscriptionRecipients(tenantId);
   const title = expired ? "Subscription Expired" : `Subscription Expires in ${daysRemaining} Day${daysRemaining === 1 ? "" : "s"}`;
@@ -100,7 +101,7 @@ export const runCommunicationAutomation = async () => {
   const now = new Date();
   const recent = new Date(now.getTime() - 24 * 60 * 60 * 1000);
   const sevenDays = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-  const bookings = await Booking.find({ $or: [{ createdAt: { $gte: recent } }, { travelDate: { $gte: now, $lte: sevenDays } }], status: { $nin: ["cancelled", "completed"] }, isDeleted: { $ne: true } }).populate("tour", "title").lean();
+  const bookings = await platform(() => Booking.find({ $or: [{ createdAt: { $gte: recent } }, { travelDate: { $gte: now, $lte: sevenDays } }], status: { $nin: ["cancelled", "completed"] }, isDeleted: { $ne: true } }).populate("tour", "title").lean());
   for (const booking of bookings) {
     if (new Date(booking.createdAt || 0) >= recent) await sendBookingConfirmationAutomation(booking).catch((error) => console.error("Booking confirmation automation failed:", error.message));
     const travel = new Date(booking.travelDate);
@@ -108,9 +109,9 @@ export const runCommunicationAutomation = async () => {
     if (hours >= 23 && hours <= 49) await sendTourReminderAutomation(booking).catch((error) => console.error("Tour reminder failed:", error.message));
     if (booking.paymentStatus && !["paid", "completed"].includes(String(booking.paymentStatus).toLowerCase())) await sendPaymentReminderAutomation(booking).catch((error) => console.error("Payment reminder failed:", error.message));
   }
-  const paidBookings = await Booking.find({ paymentStatus: { $in: ["paid", "completed"] }, travelDate: { $gte: now, $lte: sevenDays }, status: { $nin: ["cancelled", "completed"] }, isDeleted: { $ne: true } }).populate("tour", "title").lean();
+  const paidBookings = await platform(() => Booking.find({ paymentStatus: { $in: ["paid", "completed"] }, travelDate: { $gte: now, $lte: sevenDays }, status: { $nin: ["cancelled", "completed"] }, isDeleted: { $ne: true } }).populate("tour", "title").lean());
   for (const booking of paidBookings) await sendTourVoucherAutomation(booking).catch((error) => console.error("Tour voucher automation failed:", error.message));
-  const subscriptions = await runWithTenant({ role: "super_admin", bypass: true }, () => Subscription.find({ status: { $in: ["trialing", "active"] }, currentPeriodEndsAt: { $ne: null } }).lean());
+  const subscriptions = await platform(() => Subscription.find({ status: { $in: ["trialing", "active"] }, currentPeriodEndsAt: { $ne: null } }).lean());
   for (const subscription of subscriptions) {
     const days = Math.ceil((new Date(subscription.currentPeriodEndsAt).getTime() - now.getTime()) / 86400000);
     if ([7, 3, 1].includes(days)) await sendSubscriptionReminderAutomation({ subscription, daysRemaining: days }).catch((error) => console.error("Subscription reminder failed:", error.message));
