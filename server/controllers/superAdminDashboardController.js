@@ -1,54 +1,56 @@
 import mongoose from "mongoose";
 
 const REVENUE_STATUSES = ["completed", "refunded"];
+const TENANT_ID_SCOPE = { tenantId: { $type: "objectId" } };
+const PLATFORM_OR_LEGACY_SCOPE = {
+  $or: [
+    TENANT_ID_SCOPE,
+    { tenantId: null },
+    { tenantId: { $exists: false } },
+  ],
+};
 const toMoney = (field) => ({ $convert: { input: field, to: "double", onError: 0, onNull: 0 } });
 
 /**
- * SuperAdmin metrics are platform-wide. Native MongoDB queries are explicitly
- * scoped to records belonging to a tenant (or legacy unscoped records) so the
- * platform control center cannot accidentally perform an unguarded collection
- * scan while still retaining platform-wide visibility.
+ * SuperAdmin metrics are platform-wide. Counts use the same tenantId data model
+ * as the tenant modules and deliberately distinguish tenant administrators from
+ * the platform owner/super-admin account.
  */
 export const getSuperAdminDashboard = async (req, res) => {
   try {
     const db = mongoose.connection.db;
     if (!db) return res.status(503).json({ success: false, message: "Database connection is not ready." });
 
-    const tenantIdScope = {
-      $or: [
-        { tenantId: { $type: "objectId" } },
-        { tenantId: null },
-        { tenantId: { $exists: false } },
-      ],
-    };
-
     const usersCollection = db.collection("users");
     const rolesCollection = db.collection("roles");
+
+    // Only tenant-scoped admin roles belong in the Administrators card. The
+    // platform owner is intentionally not counted as a tenant administrator.
     const adminRoleIds = await rolesCollection.find({
-      ...tenantIdScope,
-      name: { $in: ["admin", "administrator", "superadmin", "super_admin"] },
+      ...TENANT_ID_SCOPE,
+      name: { $in: ["admin", "administrator"] },
     }).project({ _id: 1 }).toArray();
     const adminRoleObjectIds = adminRoleIds.map(({ _id }) => _id);
 
     const [users, staff, agents, vehicles, bookings, admins, tours, destinations, payments, revenueResult] = await Promise.all([
-      usersCollection.countDocuments(tenantIdScope),
-      db.collection("staffs").countDocuments(tenantIdScope),
-      db.collection("agents").countDocuments(tenantIdScope),
-      db.collection("vehicles").countDocuments(tenantIdScope),
-      db.collection("bookings").countDocuments(tenantIdScope),
+      usersCollection.countDocuments(PLATFORM_OR_LEGACY_SCOPE),
+      db.collection("staffs").countDocuments({ ...PLATFORM_OR_LEGACY_SCOPE, isDeleted: { $ne: true } }),
+      db.collection("agents").countDocuments({ ...PLATFORM_OR_LEGACY_SCOPE, isDeleted: { $ne: true } }),
+      db.collection("vehicles").countDocuments({ ...PLATFORM_OR_LEGACY_SCOPE, isDeleted: { $ne: true } }),
+      db.collection("bookings").countDocuments(PLATFORM_OR_LEGACY_SCOPE),
       usersCollection.countDocuments({
-        ...tenantIdScope,
+        ...TENANT_ID_SCOPE,
         $or: [
-          { role: { $in: ["admin", "administrator", "superadmin", "super_admin"] } },
-          { legacyRole: { $in: ["admin", "administrator", "superadmin", "super_admin"] } },
+          { role: { $in: ["admin", "administrator"] } },
+          { legacyRole: { $in: ["admin", "administrator"] } },
           ...(adminRoleObjectIds.length ? [{ roleId: { $in: adminRoleObjectIds } }] : []),
         ],
       }),
-      db.collection("tours").countDocuments(tenantIdScope),
-      db.collection("destinations").countDocuments(tenantIdScope),
-      db.collection("payments").countDocuments(tenantIdScope),
+      db.collection("tours").countDocuments({ ...PLATFORM_OR_LEGACY_SCOPE, isDeleted: { $ne: true } }),
+      db.collection("destinations").countDocuments({ ...PLATFORM_OR_LEGACY_SCOPE, isDeleted: { $ne: true } }),
+      db.collection("payments").countDocuments(PLATFORM_OR_LEGACY_SCOPE),
       db.collection("payments").aggregate([
-        { $match: { ...tenantIdScope, status: { $in: REVENUE_STATUSES } } },
+        { $match: { ...PLATFORM_OR_LEGACY_SCOPE, status: { $in: REVENUE_STATUSES } } },
         { $project: {
           status: 1,
           amount: toMoney("$amount"),
