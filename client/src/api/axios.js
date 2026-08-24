@@ -26,13 +26,8 @@ function getPublicTenantSlug() {
   if (typeof window === "undefined" || isLocalHost()) return "";
 
   const hostname = String(window.location.hostname || "").trim().toLowerCase();
-
-  // A tenant subdomain on the configured platform host is authoritative.
-  const configuredPlatformHost = String(
-    import.meta.env.VITE_PLATFORM_HOST || ""
-  )
-    .trim()
-    .toLowerCase()
+  const configuredPlatformHost = String(import.meta.env.VITE_PLATFORM_HOST || "")
+    .trim().toLowerCase()
     .replace(/^https?:\/\//, "")
     .replace(/\/$/, "");
 
@@ -41,8 +36,6 @@ function getPublicTenantSlug() {
     if (label && label !== "www") return label;
   }
 
-  // The Vercel project hostname is a deployment hostname, not a tenant slug.
-  // Never assume that the Vercel project name identifies a tenant.
   return PUBLIC_TENANT_SLUG;
 }
 
@@ -55,12 +48,10 @@ function getAuthenticatedTenantId() {
   if (typeof window === "undefined") return "";
   const direct = String(window.localStorage.getItem("tenantId") || "").trim();
   if (direct) return direct;
-
   try {
     const raw = window.localStorage.getItem("user");
     const user = raw ? JSON.parse(raw) : null;
-    const tenantId = user?.tenantId?._id || user?.tenantId || "";
-    return String(tenantId).trim();
+    return String(user?.tenantId?._id || user?.tenantId || "").trim();
   } catch {
     return "";
   }
@@ -136,8 +127,22 @@ api.interceptors.response.use(
   },
   (error) => {
     const status = error?.response?.status;
-    const url = String(error?.config?.url || "");
+    const url = String(error?.config?.url || baseURL);
     const data = error?.response?.data;
+
+    if (!error?.response) {
+      const target = url || baseURL;
+      const isDevelopment = typeof window !== "undefined" && ["localhost", "127.0.0.1"].includes(window.location.hostname);
+      error.networkDiagnostic = {
+        target,
+        code: error?.code || "NETWORK_ERROR",
+        development: isDevelopment,
+      };
+      error.message = isDevelopment
+        ? `Unable to reach the Coherent Tours API (${target}). Make sure the backend is running on port 5000.`
+        : `Unable to reach the Coherent Tours API (${target}). Check the API deployment, CORS configuration, and network connection.`;
+      console.error("[API NETWORK ERROR]", error.networkDiagnostic);
+    }
 
     if (status === 401 && typeof window !== "undefined") {
       const isLoginRequest = /\/auth\/login(?:[/?]|$)/i.test(url);
@@ -169,7 +174,7 @@ api.interceptors.response.use(
 
     if (error?.code === "ERR_NETWORK" && typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("api:network-error", {
-        detail: { url, message: "Unable to reach the Travel Company API." },
+        detail: { url, message: error.message || "Unable to reach the Coherent Tours API." },
       }));
     }
 
