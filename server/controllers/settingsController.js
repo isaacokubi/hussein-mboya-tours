@@ -10,7 +10,35 @@ const ALLOWED = ["companyName", "companyLogo", "websiteUrl", "supportEmail", "su
 const isColor = (value) => /^#[0-9a-fA-F]{6}$/.test(String(value || ""));
 const normalizeUpdates = (body = {}) => { const updates = {}; for (const key of ALLOWED) if (body[key] !== undefined) updates[key] = body[key]; updates.companyName = String(updates.companyName ?? DEFAULTS.companyName).trim(); updates.supportEmail = String(updates.supportEmail ?? DEFAULTS.supportEmail).trim().toLowerCase(); updates.supportPhone = String(updates.supportPhone ?? DEFAULTS.supportPhone).trim(); updates.currency = String(updates.currency ?? DEFAULTS.currency).trim().toUpperCase(); updates.timezone = String(updates.timezone ?? DEFAULTS.timezone).trim(); for (const key of ["taxRate", "bookingDepositPercentage", "defaultCommissionRate", "heroOverlayOpacity"]) if (updates[key] !== undefined) updates[key] = Number(updates[key]); for (const key of ["bookingNotifications", "paymentNotifications", "maintenanceMode", "allowRegistrations", "allowAgentRegistrations", "requireEmailVerification", "requirePhoneVerification", "enableMpesa", "enableStripe", "enablePaypal", "enableBankTransfer"]) if (typeof updates[key] === "string") updates[key] = updates[key] === "true"; if (typeof updates.seoKeywords === "string") { try { updates.seoKeywords = JSON.parse(updates.seoKeywords); } catch { updates.seoKeywords = updates.seoKeywords.split(",").map((v) => v.trim()).filter(Boolean); } } if (typeof updates.homepageSections === "string") { try { updates.homepageSections = JSON.parse(updates.homepageSections); } catch { updates.homepageSections = undefined; } } return updates; };
 const validateUpdates = (updates) => { for (const key of COLOR_FIELDS) if (updates[key] !== undefined && !isColor(updates[key])) return `${key} must be a valid 6-digit hex color.`; if (updates.heroOverlayOpacity !== undefined && (updates.heroOverlayOpacity < 0 || updates.heroOverlayOpacity > 100)) return "Hero overlay opacity must be between 0 and 100."; if ((updates.taxRate ?? 0) < 0 || (updates.taxRate ?? 0) > 100 || (updates.bookingDepositPercentage ?? 0) < 0 || (updates.bookingDepositPercentage ?? 0) > 100 || (updates.defaultCommissionRate ?? 0) < 0 || (updates.defaultCommissionRate ?? 0) > 100) return "Tax, deposit and commission rates must be between 0 and 100."; if (!updates.companyName) return "Company name cannot be empty."; if (updates.supportEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(updates.supportEmail)) return "Enter a valid support email."; return null; };
-const getOrCreateSettings = async (filter) => { let settings = await SystemSetting.findOne(filter).lean(); if (settings) return settings; try { settings = await SystemSetting.create({ ...filter, ...DEFAULTS }); return settings.toObject(); } catch (error) { if (error?.code === 11000) { const existing = await SystemSetting.findOne(filter).lean(); if (existing) return existing; } throw error; } };
+
+const getOrCreateSettings = async (filter) => {
+  let settings = await SystemSetting.findOne(filter).lean();
+  if (settings) return settings;
+  const seed = { ...filter, ...DEFAULTS };
+  if (filter.tenantId) {
+    const tenant = await Organization.findById(filter.tenantId).lean();
+    if (tenant) Object.assign(seed, {
+      companyName: tenant.name || DEFAULTS.companyName,
+      companyLogo: tenant.logoUrl || "",
+      websiteUrl: tenant.websiteUrl || "",
+      supportEmail: tenant.supportEmail || "",
+      supportPhone: tenant.supportPhone || "",
+      address: tenant.address || "",
+      country: tenant.country || DEFAULTS.country,
+      currency: tenant.currency || DEFAULTS.currency,
+      timezone: tenant.timezone || DEFAULTS.timezone,
+      emailFromName: tenant.name || DEFAULTS.companyName,
+      emailFromAddress: tenant.supportEmail || "",
+      seoTitle: tenant.name || DEFAULTS.companyName,
+      primaryColor: tenant.brandColors?.primary || DEFAULTS.primaryColor,
+      secondaryColor: tenant.brandColors?.secondary || DEFAULTS.secondaryColor,
+      accentColor: tenant.brandColors?.accent || DEFAULTS.accentColor,
+    });
+  }
+  try { settings = await SystemSetting.create(seed); return settings.toObject(); }
+  catch (error) { if (error?.code === 11000) { const existing = await SystemSetting.findOne(filter).lean(); if (existing) return existing; } throw error; }
+};
+
 const getTenantProfile = async (tenantId) => { const tenant = await Organization.findById(tenantId).lean(); if (!tenant) return null; const primaryAdministrator = await User.findOne({ tenantId: tenant._id, role: { $in: ["admin", "administrator"] } }).select("name email phone status").sort({ createdAt: 1 }).lean(); return { id: tenant._id, companyName: tenant.name, legalName: tenant.legalName || "", slug: tenant.slug, platformUrl: `https://${tenant.slug}.${String(process.env.PLATFORM_HOST || "globaltours.com").replace(/^https?:\/\//, "").replace(/\/$/, "")}`, customDomain: tenant.domain || "", websiteUrl: tenant.websiteUrl || "", companyEmail: tenant.supportEmail || "", companyPhone: tenant.supportPhone || "", country: tenant.country || "Kenya", currency: tenant.currency || "KES", timezone: tenant.timezone || "Africa/Nairobi", logoUrl: tenant.logoUrl || "", favicon: tenant.favicon || "", brandColors: tenant.brandColors || {}, status: tenant.status, subscriptionPlan: tenant.subscription?.plan || "starter", userSeats: Number(tenant.subscription?.seats || 0), trialEndsAt: tenant.subscription?.trialEndsAt || null, renewsAt: tenant.subscription?.renewsAt || null, primaryAdministrator: primaryAdministrator || null }; };
 
 export const getSettings = async (req, res, next) => { try { if (isTenantBypassed()) { const settings = await getOrCreateSettings({ tenantId: null, key: "platform" }); return res.status(200).json({ success: true, data: settings, settings, scope: "platform" }); } requireTenantId(); const { tenantId } = getTenantContext(); const settings = await getOrCreateSettings({ tenantId, key: "default" }); const tenantProfile = await getTenantProfile(tenantId); return res.status(200).json({ success: true, data: { ...settings, tenantProfile }, settings: { ...settings, tenantProfile }, tenantProfile, scope: "tenant" }); } catch (error) { next(error); } };
@@ -23,46 +51,23 @@ export const updateSettings = async (req, res, next) => {
     if (validationError) return res.status(400).json({ success: false, message: validationError });
     const filter = isTenantBypassed() ? { tenantId: null, key: "platform" } : { tenantId: requireTenantId(), key: "default" };
     let settings = await SystemSetting.findOne(filter);
-    if (!settings) {
-      try { settings = new SystemSetting({ ...filter, ...DEFAULTS }); await settings.save(); }
-      catch (error) { if (error?.code !== 11000) throw error; settings = await SystemSetting.findOne(filter); if (!settings) throw error; }
-    }
+    if (!settings) { try { settings = new SystemSetting({ ...filter, ...DEFAULTS }); await settings.save(); } catch (error) { if (error?.code !== 11000) throw error; settings = await SystemSetting.findOne(filter); if (!settings) throw error; } }
     Object.assign(settings, updates);
     await settings.save();
 
-    // Organization is the tenant identity/source for routing, branding and
-    // tenant profile APIs. Keep its canonical company fields synchronized with
-    // Admin Settings so saved settings are reflected across the entire tenant.
     if (!isTenantBypassed()) {
       const tenantId = requireTenantId();
       const organizationUpdates = {};
-      const map = {
-        companyName: "name",
-        companyLogo: "logoUrl",
-        websiteUrl: "websiteUrl",
-        supportEmail: "supportEmail",
-        supportPhone: "supportPhone",
-        address: "address",
-        country: "country",
-        timezone: "timezone",
-        currency: "currency",
-      };
-      for (const [settingKey, organizationKey] of Object.entries(map)) {
-        if (updates[settingKey] !== undefined) organizationUpdates[organizationKey] = updates[settingKey];
-      }
-      if (Object.keys(organizationUpdates).length) await Organization.findByIdAndUpdate(tenantId, { $set: organizationUpdates }, { new: false, runValidators: true });
+      const map = { companyName: "name", companyLogo: "logoUrl", websiteUrl: "websiteUrl", supportEmail: "supportEmail", supportPhone: "supportPhone", address: "address", country: "country", timezone: "timezone", currency: "currency" };
+      for (const [settingKey, organizationKey] of Object.entries(map)) if (updates[settingKey] !== undefined) organizationUpdates[organizationKey] = updates[settingKey];
+      if (Object.keys(organizationUpdates).length) await Organization.findByIdAndUpdate(tenantId, { $set: organizationUpdates }, { runValidators: true });
       if (updates.primaryColor !== undefined || updates.secondaryColor !== undefined || updates.accentColor !== undefined) {
         const tenant = await Organization.findById(tenantId).select("brandColors");
-        if (tenant) {
-          tenant.brandColors = { ...(tenant.brandColors || {}), ...(updates.primaryColor !== undefined ? { primary: updates.primaryColor } : {}), ...(updates.secondaryColor !== undefined ? { secondary: updates.secondaryColor } : {}), ...(updates.accentColor !== undefined ? { accent: updates.accentColor } : {}) };
-          await tenant.save();
-        }
+        if (tenant) { tenant.brandColors = { ...(tenant.brandColors || {}), ...(updates.primaryColor !== undefined ? { primary: updates.primaryColor } : {}), ...(updates.secondaryColor !== undefined ? { secondary: updates.secondaryColor } : {}), ...(updates.accentColor !== undefined ? { accent: updates.accentColor } : {}) }; await tenant.save(); }
       }
     }
 
-    const saved = settings.toObject();
-    const scope = filter.key === "platform" ? "platform" : "tenant";
-    const tenantProfile = scope === "tenant" ? await getTenantProfile(filter.tenantId) : null;
+    const saved = settings.toObject(); const scope = filter.key === "platform" ? "platform" : "tenant"; const tenantProfile = scope === "tenant" ? await getTenantProfile(filter.tenantId) : null;
     return res.status(200).json({ success: true, message: scope === "platform" ? "Platform settings saved successfully." : "Tenant settings saved successfully.", data: scope === "tenant" ? { ...saved, tenantProfile } : saved, settings: scope === "tenant" ? { ...saved, tenantProfile } : saved, tenantProfile, scope });
   } catch (error) { console.error("UPDATE SETTINGS ERROR:", error); return res.status(error?.status || 500).json({ success: false, message: error.message || "Failed to save tenant settings." }); }
 };
@@ -73,7 +78,10 @@ export const getPublicSettings = async (req, res, next) => {
     const { tenantId } = getTenantContext();
     const tenant = await Organization.findById(tenantId).lean();
     if (!tenant) return res.status(404).json({ success: false, message: "Tenant not resolved" });
-    const tenantSettings = await SystemSetting.findOne({ tenantId, key: "default" }).lean();
+    let tenantSettings = await SystemSetting.findOne({ tenantId, key: "default" }).lean();
+    if (!tenantSettings) {
+      tenantSettings = await getOrCreateSettings({ tenantId, key: "default" });
+    }
     const overrides = tenant.settings && typeof tenant.settings === "object" ? tenant.settings : {};
     const settings = {
       companyName: tenantSettings?.companyName || tenant.name || DEFAULTS.companyName,
