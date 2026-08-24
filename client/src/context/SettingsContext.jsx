@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from "rea
 import api from "../api/axios";
 import { useAuth } from "./AuthContext";
 
-export const PUBLIC_BRAND_NAME = "Your Travel Company";
+export const PUBLIC_BRAND_NAME = "Coherent Tours";
 export const PLATFORM_BRAND_NAME = "Global Tours Platform";
 
 const DEFAULT_SETTINGS = {
@@ -23,7 +23,7 @@ const getSettingsStorageKey = () => {
   const tenantId = String(window.localStorage.getItem("tenantId") || "").trim();
   return tenantId ? `tenant-settings:${tenantId}` : "tenant-settings:public";
 };
-const normalize = (next = {}, previous = DEFAULT_SETTINGS) => ({ ...DEFAULT_SETTINGS, ...previous, ...next, homepageSections: { ...DEFAULT_SETTINGS.homepageSections, ...(previous.homepageSections || {}), ...(next.homepageSections || {}) } });
+const normalize = (next = {}, previous = DEFAULT_SETTINGS) => ({ ...DEFAULT_SETTINGS, ...previous, ...next, companyName: PUBLIC_BRAND_NAME, homepageSections: { ...DEFAULT_SETTINGS.homepageSections, ...(previous.homepageSections || {}), ...(next.homepageSections || {}) } });
 
 function normalizeRole(user) {
   if (!user) return "";
@@ -128,7 +128,6 @@ export function SettingsProvider({ children }) {
 
   const updateSettings = useCallback((nextSettings) => {
     if (isPlatformScope) {
-      // Super Admin platform branding is intentionally separate from tenant settings.
       setSettings((previous) => normalize({ ...nextSettings, companyName: PLATFORM_BRAND_NAME }, previous));
       try {
         const merged = normalize({ ...nextSettings, companyName: PLATFORM_BRAND_NAME }, PLATFORM_SETTINGS);
@@ -152,8 +151,8 @@ export function SettingsProvider({ children }) {
 
   return (
     <SettingsContext.Provider value={{
-      settings,
-      companyName: isPlatformScope ? PLATFORM_BRAND_NAME : (settings.companyName || PUBLIC_BRAND_NAME),
+      settings: { ...settings, companyName: isPlatformScope ? PLATFORM_BRAND_NAME : PUBLIC_BRAND_NAME },
+      companyName: isPlatformScope ? PLATFORM_BRAND_NAME : PUBLIC_BRAND_NAME,
       supportEmail: settings.supportEmail || "",
       supportPhone: settings.supportPhone || "",
       loading,
