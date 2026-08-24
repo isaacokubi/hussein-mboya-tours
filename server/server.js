@@ -14,11 +14,13 @@ import { initSocket } from "./socket/socketManager.js";
 import { syncTourLifecycle } from "./services/tourLifecycleService.js";
 import { startPaymentCleanupScheduler } from "./services/paymentCleanupScheduler.js";
 import { startTenantSubscriptionScheduler } from "./services/tenantSubscriptionService.js";
+import { startCustomerCommunicationScheduler } from "./services/customerCommunicationScheduler.js";
 import mfaRoutes from "./routes/mfaRoutes.js";
 
 await connectDatabase();
 startPaymentCleanupScheduler();
 const subscriptionInterval = startTenantSubscriptionScheduler();
+const communicationInterval = startCustomerCommunicationScheduler();
 await syncTourLifecycle().catch((error) => console.error("Initial tour lifecycle sync failed:", error));
 const lifecycleInterval = setInterval(() => { syncTourLifecycle().catch((error) => console.error("Tour lifecycle sync failed:", error)); }, 60 * 1000);
 const server = http.createServer(app);
@@ -34,6 +36,7 @@ app.use("/api/subscription", tenantSubscriptionRoutes);
 const shutdown = async (exitCode = 0) => {
   clearInterval(lifecycleInterval);
   clearInterval(subscriptionInterval);
+  clearInterval(communicationInterval);
   try { await new Promise((resolve) => { if (!server.listening) return resolve(); server.close(() => resolve()); }); } catch (error) { console.error("Server shutdown error:", error.message); }
   try { await mongoose.connection.close(); } catch (error) { console.error("MongoDB shutdown error:", error.message); }
   process.exit(exitCode);
