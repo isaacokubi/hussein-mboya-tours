@@ -6,10 +6,49 @@ import { COMPANY_DEFAULTS } from "../config/companyDefaults.js";
 
 const DEFAULTS = { ...COMPANY_DEFAULTS, primaryColor: "#047857", secondaryColor: "#064e3b", accentColor: "#10b981", backgroundColor: "#f8fafc", surfaceColor: "#ffffff", textColor: "#0f172a", fontFamily: "Inter", borderRadius: "xl", buttonStyle: "rounded", heroOverlayOpacity: 50, homepageSections: { stats: true, tours: true, destinations: true, experiences: true, services: true, testimonials: true, gallery: true, whyChooseUs: true, newsletter: true } };
 const COLOR_FIELDS = ["primaryColor", "secondaryColor", "accentColor", "backgroundColor", "surfaceColor", "textColor"];
+const NUMERIC_FIELDS = ["taxRate", "bookingDepositPercentage", "defaultCommissionRate", "heroOverlayOpacity"];
+const BOOLEAN_FIELDS = ["bookingNotifications", "paymentNotifications", "maintenanceMode", "allowRegistrations", "allowAgentRegistrations", "requireEmailVerification", "requirePhoneVerification", "enableMpesa", "enableStripe", "enablePaypal", "enableBankTransfer"];
 const ALLOWED = ["companyName", "companyLogo", "websiteUrl", "supportEmail", "supportPhone", "address", "city", "country", "currency", "currencySymbol", "timezone", "language", "taxRate", "bookingDepositPercentage", "defaultCommissionRate", "maintenanceMode", "allowRegistrations", "allowAgentRegistrations", "requireEmailVerification", "requirePhoneVerification", "enableMpesa", "enableStripe", "enablePaypal", "enableBankTransfer", "bankName", "bankAccountName", "bankAccountNumber", "bankBranch", "bankSwiftCode", "emailFromName", "emailFromAddress", "facebook", "instagram", "twitter", "youtube", "seoTitle", "seoDescription", "seoKeywords", "bookingNotifications", "paymentNotifications", ...COLOR_FIELDS, "fontFamily", "borderRadius", "buttonStyle", "heroOverlayOpacity", "homepageSections"];
 const isColor = (value) => /^#[0-9a-fA-F]{6}$/.test(String(value || ""));
-const normalizeUpdates = (body = {}) => { const updates = {}; for (const key of ALLOWED) if (body[key] !== undefined) updates[key] = body[key]; updates.companyName = String(updates.companyName ?? DEFAULTS.companyName).trim(); updates.supportEmail = String(updates.supportEmail ?? DEFAULTS.supportEmail).trim().toLowerCase(); updates.supportPhone = String(updates.supportPhone ?? DEFAULTS.supportPhone).trim(); updates.currency = String(updates.currency ?? DEFAULTS.currency).trim().toUpperCase(); updates.timezone = String(updates.timezone ?? DEFAULTS.timezone).trim(); for (const key of ["taxRate", "bookingDepositPercentage", "defaultCommissionRate", "heroOverlayOpacity"]) if (updates[key] !== undefined) updates[key] = Number(updates[key]); for (const key of ["bookingNotifications", "paymentNotifications", "maintenanceMode", "allowRegistrations", "allowAgentRegistrations", "requireEmailVerification", "requirePhoneVerification", "enableMpesa", "enableStripe", "enablePaypal", "enableBankTransfer"]) if (typeof updates[key] === "string") updates[key] = updates[key] === "true"; if (typeof updates.seoKeywords === "string") { try { updates.seoKeywords = JSON.parse(updates.seoKeywords); } catch { updates.seoKeywords = updates.seoKeywords.split(",").map((v) => v.trim()).filter(Boolean); } } if (typeof updates.homepageSections === "string") { try { updates.homepageSections = JSON.parse(updates.homepageSections); } catch { updates.homepageSections = undefined; } } return updates; };
-const validateUpdates = (updates) => { for (const key of COLOR_FIELDS) if (updates[key] !== undefined && !isColor(updates[key])) return `${key} must be a valid 6-digit hex color.`; if (updates.heroOverlayOpacity !== undefined && (updates.heroOverlayOpacity < 0 || updates.heroOverlayOpacity > 100)) return "Hero overlay opacity must be between 0 and 100."; if ((updates.taxRate ?? 0) < 0 || (updates.taxRate ?? 0) > 100 || (updates.bookingDepositPercentage ?? 0) < 0 || (updates.bookingDepositPercentage ?? 0) > 100 || (updates.defaultCommissionRate ?? 0) < 0 || (updates.defaultCommissionRate ?? 0) > 100) return "Tax, deposit and commission rates must be between 0 and 100."; if (!updates.companyName) return "Company name cannot be empty."; if (updates.supportEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(updates.supportEmail)) return "Enter a valid support email."; return null; };
+
+const normalizeUpdates = (body = {}) => {
+  const updates = {};
+  for (const key of ALLOWED) if (body[key] !== undefined) updates[key] = body[key];
+
+  if (updates.companyName !== undefined) updates.companyName = String(updates.companyName).trim();
+  if (updates.supportEmail !== undefined) updates.supportEmail = String(updates.supportEmail).trim().toLowerCase();
+  if (updates.supportPhone !== undefined) updates.supportPhone = String(updates.supportPhone).trim();
+  if (updates.currency !== undefined) updates.currency = String(updates.currency).trim().toUpperCase();
+  if (updates.timezone !== undefined) updates.timezone = String(updates.timezone).trim();
+
+  for (const key of NUMERIC_FIELDS) {
+    if (updates[key] !== undefined) {
+      const value = Number(updates[key]);
+      updates[key] = Number.isFinite(value) ? value : updates[key];
+    }
+  }
+  for (const key of BOOLEAN_FIELDS) if (typeof updates[key] === "string") updates[key] = updates[key] === "true";
+
+  if (typeof updates.seoKeywords === "string") {
+    try { updates.seoKeywords = JSON.parse(updates.seoKeywords); }
+    catch { updates.seoKeywords = updates.seoKeywords.split(",").map((v) => v.trim()).filter(Boolean); }
+  }
+  if (typeof updates.homepageSections === "string") {
+    try { updates.homepageSections = JSON.parse(updates.homepageSections); }
+    catch { updates.homepageSections = undefined; }
+  }
+  return updates;
+};
+
+const validateUpdates = (updates, existing = {}) => {
+  for (const key of COLOR_FIELDS) if (updates[key] !== undefined && !isColor(updates[key])) return `${key} must be a valid 6-digit hex color.`;
+  if (updates.heroOverlayOpacity !== undefined && (!Number.isFinite(updates.heroOverlayOpacity) || updates.heroOverlayOpacity < 0 || updates.heroOverlayOpacity > 100)) return "Hero overlay opacity must be between 0 and 100.";
+  for (const key of ["taxRate", "bookingDepositPercentage", "defaultCommissionRate"]) if (updates[key] !== undefined && (!Number.isFinite(updates[key]) || updates[key] < 0 || updates[key] > 100)) return "Tax, deposit and commission rates must be between 0 and 100.";
+  const companyName = String(updates.companyName ?? existing.companyName ?? DEFAULTS.companyName).trim();
+  if (!companyName) return "Company name cannot be empty.";
+  if (updates.supportEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(updates.supportEmail)) return "Enter a valid support email.";
+  return null;
+};
 
 const getOrCreateSettings = async (filter) => {
   let settings = await SystemSetting.findOne(filter).lean();
@@ -45,13 +84,23 @@ export const getSettings = async (req, res, next) => { try { if (isTenantBypasse
 
 export const updateSettings = async (req, res, next) => {
   try {
-    const updates = normalizeUpdates(req.body);
-    if (req.file?.path) updates.companyLogo = req.file.path;
-    const validationError = validateUpdates(updates);
-    if (validationError) return res.status(400).json({ success: false, message: validationError });
     const filter = isTenantBypassed() ? { tenantId: null, key: "platform" } : { tenantId: requireTenantId(), key: "default" };
     let settings = await SystemSetting.findOne(filter);
-    if (!settings) { try { settings = new SystemSetting({ ...filter, ...DEFAULTS }); await settings.save(); } catch (error) { if (error?.code !== 11000) throw error; settings = await SystemSetting.findOne(filter); if (!settings) throw error; } }
+    if (!settings) {
+      const seed = { ...filter, ...DEFAULTS };
+      if (filter.tenantId) {
+        const tenant = await Organization.findById(filter.tenantId).lean();
+        if (tenant) Object.assign(seed, { companyName: tenant.name || DEFAULTS.companyName, companyLogo: tenant.logoUrl || "", websiteUrl: tenant.websiteUrl || "", supportEmail: tenant.supportEmail || "", supportPhone: tenant.supportPhone || "", address: tenant.address || "", country: tenant.country || DEFAULTS.country, currency: tenant.currency || DEFAULTS.currency, timezone: tenant.timezone || DEFAULTS.timezone, emailFromName: tenant.name || DEFAULTS.companyName, emailFromAddress: tenant.supportEmail || "", seoTitle: tenant.name || DEFAULTS.companyName, primaryColor: tenant.brandColors?.primary || DEFAULTS.primaryColor, secondaryColor: tenant.brandColors?.secondary || DEFAULTS.secondaryColor, accentColor: tenant.brandColors?.accent || DEFAULTS.accentColor });
+      }
+      try { settings = new SystemSetting(seed); await settings.save(); }
+      catch (error) { if (error?.code !== 11000) throw error; settings = await SystemSetting.findOne(filter); if (!settings) throw error; }
+    }
+
+    const updates = normalizeUpdates(req.body);
+    if (req.file?.path) updates.companyLogo = req.file.path;
+    const validationError = validateUpdates(updates, settings);
+    if (validationError) return res.status(400).json({ success: false, message: validationError });
+
     Object.assign(settings, updates);
     await settings.save();
 
@@ -79,9 +128,7 @@ export const getPublicSettings = async (req, res, next) => {
     const tenant = await Organization.findById(tenantId).lean();
     if (!tenant) return res.status(404).json({ success: false, message: "Tenant not resolved" });
     let tenantSettings = await SystemSetting.findOne({ tenantId, key: "default" }).lean();
-    if (!tenantSettings) {
-      tenantSettings = await getOrCreateSettings({ tenantId, key: "default" });
-    }
+    if (!tenantSettings) tenantSettings = await getOrCreateSettings({ tenantId, key: "default" });
     const overrides = tenant.settings && typeof tenant.settings === "object" ? tenant.settings : {};
     const settings = {
       companyName: tenantSettings?.companyName || tenant.name || DEFAULTS.companyName,
