@@ -65,7 +65,28 @@ export async function registerTenantPublic(req, res, next) {
       platform: { firstSuperAdminProvisioned: result.createdFirstSuperAdmin },
     });
   } catch (error) {
-    if (/already in use|already registered|Invalid subscription|not configured|Missing:/.test(error.message)) return res.status(409).json({ success: false, message: error.message });
-    next(error);
+    if (error?.code === "DUPLICATE_KEY" || error?.code === 11000) {
+      const field = error.field || Object.keys(error.keyPattern || {})[0] || "unknown";
+      console.error("PUBLIC TENANT REGISTRATION DUPLICATE KEY", {
+        field,
+        keyPattern: error.keyPattern || {},
+        keyValue: error.keyValue || {},
+        indexName: error.indexName || null,
+      });
+
+      return res.status(409).json({
+        success: false,
+        code: "DUPLICATE_KEY",
+        field,
+        indexName: error.indexName || null,
+        message: error.message || `${field} already exists`,
+      });
+    }
+
+    if (/already in use|already registered|Invalid subscription|not configured|Missing:/.test(String(error?.message || ""))) {
+      return res.status(409).json({ success: false, message: error.message });
+    }
+
+    return next(error);
   }
 }
