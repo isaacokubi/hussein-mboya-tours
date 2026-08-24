@@ -20,7 +20,9 @@ const organizationSchema = new mongoose.Schema(
       accent: { type: String, trim: true, default: "" },
     },
     websiteUrl: { type: String, trim: true, default: "" },
-    domain: { type: String, trim: true, lowercase: true, default: null },
+    // Optional custom domains must be omitted when unset. Explicit null values
+    // can still participate in unique indexes depending on the stored index.
+    domain: { type: String, trim: true, lowercase: true, default: undefined },
     supportEmail: { type: String, trim: true, lowercase: true, default: "" },
     supportPhone: { type: String, trim: true, default: "" },
     address: { type: String, trim: true, default: "" },
