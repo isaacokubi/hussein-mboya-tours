@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
 const subscriptionPaymentSchema = new mongoose.Schema(
   {
@@ -24,5 +25,7 @@ const subscriptionPaymentSchema = new mongoose.Schema(
 
 subscriptionPaymentSchema.index({ provider: 1, transactionReference: 1 }, { unique: true, sparse: true, partialFilterExpression: { transactionReference: { $type: "string", $gt: "" } } });
 subscriptionPaymentSchema.index({ tenantId: 1, status: 1, createdAt: -1 });
+
+subscriptionPaymentSchema.plugin(tenantPlugin);
 
 export default mongoose.models.SubscriptionPayment || mongoose.model("SubscriptionPayment", subscriptionPaymentSchema);

@@ -22,6 +22,10 @@ export default defineConfig([
     },
   },
   {
+    files: ["vite.config.js"],
+    languageOptions: { globals: globals.node },
+  },
+  {
     files: ["src/pages/MyBookings.jsx"],
     rules: { "react-hooks/rules-of-hooks": "off" },
   },
