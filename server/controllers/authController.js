@@ -37,30 +37,70 @@ const isLocalPublicLogin = (req) => {
   return ["localhost", "127.0.0.1", "[::1]"].includes(host) && !hasExplicitTenant;
 };
 
-const findUniqueLocalCustomer = async (req, email) => {
-  if (!isLocalPublicLogin(req) || !mongooseConnectionAvailable()) return null;
-  const matches = await User.collection.find({ email, tenantId: { $type: "objectId" } }).project({ tenantId: 1 }).limit(2).toArray();
-  if (matches.length !== 1 || !matches[0]?.tenantId) return null;
-  setTenantContext({ tenantId: matches[0].tenantId, role: "public", bypass: false });
-  return User.findOne({ email }).select("+password").populate({ path: "roleId", populate: { path: "permissions" } }).populate("permissionsOverride");
-};
-
 const mongooseConnectionAvailable = () => Boolean(User?.db?.readyState === 1 && User?.collection);
+
+// Local/shared public login must identify the tenant deterministically before
+// the normal tenant-scoped Mongoose query. The tenant plugin intentionally
+// rejects unscoped access, so doing the lookup only after a failed scoped query
+// can make a valid tenant administrator look like an invalid credential when
+// the request arrived without an X-Tenant-* header.
+const findUniqueLocalTenantUser = async (req, email) => {
+  if (!isLocalPublicLogin(req) || !mongooseConnectionAvailable()) return null;
+
+  const matches = await User.collection
+    .find({ email, tenantId: { $type: "objectId" } })
+    .project({ _id: 1, tenantId: 1 })
+    .limit(2)
+    .toArray();
+
+  // Never guess between tenants. A public email login is allowed to resolve
+  // automatically only when the email belongs to exactly one tenant account.
+  if (matches.length !== 1 || !matches[0]?.tenantId) return null;
+
+  setTenantContext({ tenantId: matches[0].tenantId, role: "public", bypass: false });
+
+  return User.findById(matches[0]._id)
+    .select("+password")
+    .populate({ path: "roleId", populate: { path: "permissions" } })
+    .populate("permissionsOverride");
+};
 
 export const login = async (req, res, next) => {
   try {
     const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
     const password = typeof req.body?.password === "string" ? req.body.password : "";
     if (!email || !password) return res.status(400).json({ success: false, message: "Email and password are required." });
-    let user = await User.findOne(mergeTenantFilter({ email })).select("+password").populate({ path: "roleId", populate: { path: "permissions" } }).populate("permissionsOverride");
-    if (!user) user = await findUniqueLocalCustomer(req, email);
-    if (!user) user = await runWithTenant({ tenantId: null, tenant: null, role: "super_admin", bypass: true }, async () => User.findOne({ email, role: { $in: ["super_admin", "superadmin"] }, tenantId: null }).select("+password").populate({ path: "roleId", populate: { path: "permissions" } }).populate("permissionsOverride"));
+
+    // For local public login, resolve the unique tenant-owned account first.
+    // This is intentionally limited to localhost/no explicit tenant header and
+    // therefore cannot become a cross-tenant lookup in production tenant-host
+    // authentication flows.
+    let user = await findUniqueLocalTenantUser(req, email);
+
+    if (!user) {
+      user = await User.findOne(mergeTenantFilter({ email }))
+        .select("+password")
+        .populate({ path: "roleId", populate: { path: "permissions" } })
+        .populate("permissionsOverride");
+    }
+
+    if (!user) {
+      user = await runWithTenant(
+        { tenantId: null, tenant: null, role: "super_admin", bypass: true },
+        async () => User.findOne({ email, role: { $in: ["super_admin", "superadmin"] }, tenantId: null })
+          .select("+password")
+          .populate({ path: "roleId", populate: { path: "permissions" } })
+          .populate("permissionsOverride")
+      );
+    }
+
     if (!user) {
       await SecurityLog.logEvent({ email, action: "login_failed", status: "failed", severity: "high", ipAddress: req.ip, userAgent: req.headers["user-agent"], details: "User not found" });
       return res.status(401).json({ success: false, message: "Invalid email or password." });
     }
     if (user.status !== "active") return res.status(403).json({ success: false, message: `Account ${user.status}.` });
     if (user.lockUntil && user.lockUntil > new Date()) return res.status(423).json({ success: false, message: "Account temporarily locked due to multiple failed login attempts." });
+
     if (!(await user.matchPassword(password))) {
       user.loginAttempts = Number(user.loginAttempts || 0) + 1;
       if (user.loginAttempts >= 5) user.lockUntil = new Date(Date.now() + 30 * 60 * 1000);
@@ -68,6 +108,7 @@ export const login = async (req, res, next) => {
       await SecurityLog.logEvent({ user: user._id, email: user.email, action: "login_failed", status: "failed", severity: "high", ipAddress: req.ip, userAgent: req.headers["user-agent"], details: "Invalid password" });
       return res.status(401).json({ success: false, message: "Invalid email or password." });
     }
+
     user.loginAttempts = 0;
     user.lockUntil = null;
     const effectiveRole = effectiveRoleForUser(user);
@@ -92,7 +133,10 @@ export const login = async (req, res, next) => {
     await createAuditLog({ user: user._id, action: "login", resource: "Authentication", description: "User successfully logged in.", severity: "medium", ipAddress: req.ip, userAgent: req.headers["user-agent"] });
     await SecurityLog.logEvent({ user: user._id, email: user.email, action: "login_success", status: "success", severity: "medium", ipAddress: req.ip, userAgent: req.headers["user-agent"], details: "Login successful" });
     return res.status(200).json({ success: true, token, user: publicUser(user, permissions) });
-  } catch (error) { console.error("LOGIN ERROR:", error); return next(error); }
+  } catch (error) {
+    console.error("LOGIN ERROR:", error);
+    return next(error);
+  }
 };
 
 export const register = async (req, res, next) => {
@@ -173,7 +217,7 @@ export const resetPasswordWithCode = async (req, res, next) => {
     if (hash !== user.passwordResetCodeHash) { user.passwordResetAttempts = Number(user.passwordResetAttempts || 0) + 1; await user.save({ validateBeforeSave: false }); return res.status(401).json({ success: false, message: "Invalid reset code." }); }
     user.password = newPassword; user.passwordResetCodeHash = ""; user.passwordResetExpiresAt = null; user.passwordResetAttempts = 0; user.loginAttempts = 0; user.lockUntil = null;
     await user.save();
-    await SecurityLog.logEvent({ user: user._id, email: user.email, action: "password_reset", status: "success", ipAddress: req.ip, userAgent: req.headers["user-agent"] });
+    await SecurityLog.logEvent({ user: user._id, email: user.email, action: "password_reset", status: "success", severity: "high", ipAddress: req.ip, userAgent: req.headers["user-agent"] });
     return res.json({ success: true, message: "Password reset successfully. You can now log in." });
-  } catch (error) { console.error("RESET PASSWORD ERROR:", error); return next(error); }
+  } catch (error) { console.error("PASSWORD RESET ERROR:", error); return next(error); }
 };
