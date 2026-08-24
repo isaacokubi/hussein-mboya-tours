@@ -40,37 +40,37 @@ const isLocalPublicLogin = (req) => {
 const mongooseConnectionAvailable = () => Boolean(User?.db?.readyState === 1 && User?.collection);
 
 // Resolve local/shared tenant-owned accounts before the tenant-scoped query.
-// The tenant plugin is intentionally strict, so a query performed while the
-// request still carries an incorrect/default tenant can hide a valid account.
-// For tenant administrators we hydrate the already-identified raw document;
-// this avoids running the tenant query hook a second time and guarantees that
-// the password hash created during tenant provisioning is the hash we verify.
+// Local login accepts ObjectId and legacy string tenantId values so migrated
+// tenant accounts cannot silently fall through to the wrong/default tenant.
 const findUniqueLocalTenantUser = async (req, email) => {
-  if (!isLocalPublicLogin(req) || !mongooseConnectionAvailable()) return null;
+  if (!isLocalPublicLogin(req) || !mongooseConnectionAvailable()) return { resolved: false, ambiguous: false, user: null };
 
   const matches = await User.collection
-    .find({ email, tenantId: { $type: "objectId" } })
-    .limit(2)
+    .find({ email, tenantId: { $exists: true, $ne: null } })
+    .limit(3)
     .toArray();
 
-  if (matches.length !== 1 || !matches[0]?.tenantId) return null;
+  // Never guess between companies when a local login has no tenant identity.
+  if (matches.length > 1) return { resolved: true, ambiguous: true, user: null };
+  if (matches.length !== 1 || !matches[0]?.tenantId) return { resolved: false, ambiguous: false, user: null };
 
   const tenantId = matches[0].tenantId;
   setTenantContext({ tenantId, role: "public", bypass: false });
 
   const rawUser = matches[0];
-  const rawRole = String(rawUser.role || rawUser.legacyRole || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
+  const rawRole = normalizeRole(rawUser.role || rawUser.legacyRole);
   const tenantAdminRoles = new Set(["admin", "administrator"]);
 
-  // Tenant admins do not require populated Role permissions because
-  // buildPermissions supplies the stable admin permission baseline. Hydrating
-  // the raw record also preserves +password, which is select:false on User.
-  if (tenantAdminRoles.has(rawRole)) return User.hydrate(rawUser);
+  // Hydrate tenant admins directly from the identified document so the
+  // select:false password hash is retained and a second tenant-scoped query
+  // cannot change which account is authenticated.
+  if (tenantAdminRoles.has(rawRole)) return { resolved: true, ambiguous: false, user: User.hydrate(rawUser) };
 
-  return User.findById(rawUser._id)
+  const user = await User.findById(rawUser._id)
     .select("+password")
     .populate({ path: "roleId", populate: { path: "permissions" } })
     .populate("permissionsOverride");
+  return { resolved: true, ambiguous: false, user };
 };
 
 export const login = async (req, res, next) => {
@@ -79,7 +79,12 @@ export const login = async (req, res, next) => {
     const password = typeof req.body?.password === "string" ? req.body.password : "";
     if (!email || !password) return res.status(400).json({ success: false, message: "Email and password are required." });
 
-    let user = await findUniqueLocalTenantUser(req, email);
+    const localResolution = await findUniqueLocalTenantUser(req, email);
+    if (localResolution.ambiguous) {
+      return res.status(409).json({ success: false, code: "TENANT_SELECTION_REQUIRED", message: "This email is registered with more than one company. Open the company login page or provide the company identifier before signing in." });
+    }
+
+    let user = localResolution.user;
 
     if (!user) {
       user = await User.findOne(mergeTenantFilter({ email }))
