@@ -1,8 +1,43 @@
+import mongoose from "mongoose";
 import Organization from "../models/Organization.js";
 import { runWithTenant } from "../tenancy/context.js";
 
 const normalizeHost = (value = "") => String(value).split(",")[0].trim().toLowerCase().replace(/:\d+$/, "");
 const getOriginHost = (value = "") => { try { return normalizeHost(new URL(String(value)).hostname); } catch { return ""; } };
+
+const isLoginRequest = (req) => {
+  const path = String(req.path || req.originalUrl || "").toLowerCase().split("?")[0];
+  return req.method === "POST" && /(?:^|\/)auth\/login$/.test(path);
+};
+
+/**
+ * Resolve the tenant before public authentication. Host/header configuration is
+ * authoritative. For local/shared deployments where the public tenant header
+ * is missing, login may safely resolve an account's tenant by email only when
+ * that email belongs to exactly one tenant. This avoids making a valid newly
+ * registered account appear to have an invalid password while never selecting
+ * an arbitrary tenant when the same email exists in multiple tenants.
+ */
+async function resolveLoginTenantByUniqueEmail(req) {
+  if (!isLoginRequest(req)) return null;
+
+  const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
+  if (!email || !mongoose.connection.db) return null;
+
+  const matches = await mongoose.connection.db
+    .collection("users")
+    .find({ email, tenantId: { $type: "objectId" } })
+    .project({ tenantId: 1 })
+    .limit(2)
+    .toArray();
+
+  if (matches.length !== 1 || !matches[0]?.tenantId) return null;
+
+  return Organization.findOne({
+    _id: matches[0].tenantId,
+    status: { $in: ["active", "trial"] },
+  });
+}
 
 export async function resolveTenant(req, res, next) {
   try {
@@ -70,6 +105,11 @@ export async function resolveTenant(req, res, next) {
       const tenants = await Organization.find({ status: activeStatuses }).select("_id slug name domain").limit(2).lean();
       if (tenants.length === 1) tenant = tenants[0];
     }
+
+    // Local/shared login fallback: if tenant routing is unavailable, resolve
+    // the tenant from a unique email rather than returning a misleading
+    // "Invalid email or password" response for a valid account.
+    if (!tenant) tenant = await resolveLoginTenantByUniqueEmail(req);
 
     if (!tenant) return next();
 
