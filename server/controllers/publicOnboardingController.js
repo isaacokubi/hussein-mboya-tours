@@ -2,6 +2,7 @@ import buildPermissions from "../utils/buildPermissions.js";
 import generateToken from "../utils/generateToken.js";
 import { createAuditLog } from "../services/auditService.js";
 import { registerTenant } from "../services/publicOnboardingService.js";
+import { runWithTenant } from "../tenancy/context.js";
 
 export async function registerTenantPublic(req, res, next) {
   try {
@@ -23,18 +24,33 @@ export async function registerTenantPublic(req, res, next) {
       tenantId: adminUser.tenantId,
     });
 
-    await createAuditLog({
-      user: adminUser._id,
-      action: "tenant_registered",
-      resource: "Organization",
-      resourceId: result.organization._id,
-      description: "Tenant registered through the public SaaS onboarding flow.",
-      severity: "medium",
-      ipAddress: req.ip,
-      userAgent: req.headers["user-agent"],
-      endpoint: req.originalUrl,
-      metadata: { plan: result.subscription.plan, trialEndsAt: result.subscription.trialEndsAt, firstSuperAdminProvisioned: result.createdFirstSuperAdmin },
-    });
+    await runWithTenant(
+      {
+        tenantId: result.organization._id,
+        tenant: result.organization,
+        role: "admin",
+        bypass: false,
+      },
+      async () => {
+        await createAuditLog({
+          user: adminUser._id,
+          action: "create",
+          resource: "Organization",
+          resourceId: result.organization._id,
+          description: "Tenant registered through the public SaaS onboarding flow.",
+          severity: "medium",
+          ipAddress: req.ip,
+          userAgent: req.headers["user-agent"],
+          endpoint: req.originalUrl,
+          metadata: {
+            event: "tenant_registered",
+            plan: result.subscription.plan,
+            trialEndsAt: result.subscription.trialEndsAt,
+            firstSuperAdminProvisioned: result.createdFirstSuperAdmin,
+          },
+        });
+      }
+    );
 
     return res.status(201).json({
       success: true,
