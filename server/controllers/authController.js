@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { mergeTenantFilter, runWithTenant } from "../tenancy/context.js";
+import { mergeTenantFilter, runWithTenant, setTenantContext, getTenantContext } from "../tenancy/context.js";
 import User from "../models/User.js";
 import Role from "../models/Role.js";
 import SecurityLog from "../models/SecurityLog.js";
@@ -27,12 +27,33 @@ const setAuthCookie = (res, token) => {
   res.cookie("token", token, { httpOnly: true, secure: isProduction, sameSite: isProduction ? "none" : "lax", maxAge: 7 * 24 * 60 * 60 * 1000, path: "/" });
 };
 
+const isLocalPublicLogin = (req) => {
+  const host = String(req.get("X-Forwarded-Host") || req.get("Host") || "").split(",")[0].trim().toLowerCase().replace(/:\d+$/, "");
+  const hasExplicitTenant = Boolean(
+    String(req.get("X-Tenant-ID") || "").trim() ||
+    String(req.get("X-Tenant-Slug") || "").trim() ||
+    String(req.get("X-Tenant-Key") || "").trim()
+  );
+  return ["localhost", "127.0.0.1", "[::1]"].includes(host) && !hasExplicitTenant;
+};
+
+const findUniqueLocalCustomer = async (req, email) => {
+  if (!isLocalPublicLogin(req) || !mongooseConnectionAvailable()) return null;
+  const matches = await User.collection.find({ email, tenantId: { $type: "objectId" } }).project({ tenantId: 1 }).limit(2).toArray();
+  if (matches.length !== 1 || !matches[0]?.tenantId) return null;
+  setTenantContext({ tenantId: matches[0].tenantId, role: "public", bypass: false });
+  return User.findOne({ email }).select("+password").populate({ path: "roleId", populate: { path: "permissions" } }).populate("permissionsOverride");
+};
+
+const mongooseConnectionAvailable = () => Boolean(User?.db?.readyState === 1 && User?.collection);
+
 export const login = async (req, res, next) => {
   try {
     const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
     const password = typeof req.body?.password === "string" ? req.body.password : "";
     if (!email || !password) return res.status(400).json({ success: false, message: "Email and password are required." });
     let user = await User.findOne(mergeTenantFilter({ email })).select("+password").populate({ path: "roleId", populate: { path: "permissions" } }).populate("permissionsOverride");
+    if (!user) user = await findUniqueLocalCustomer(req, email);
     if (!user) user = await runWithTenant({ tenantId: null, tenant: null, role: "super_admin", bypass: true }, async () => User.findOne({ email, role: { $in: ["super_admin", "superadmin"] }, tenantId: null }).select("+password").populate({ path: "roleId", populate: { path: "permissions" } }).populate("permissionsOverride"));
     if (!user) {
       await SecurityLog.logEvent({ email, action: "login_failed", status: "failed", severity: "high", ipAddress: req.ip, userAgent: req.headers["user-agent"], details: "User not found" });
@@ -83,10 +104,11 @@ export const register = async (req, res, next) => {
     if (!/^\S+@\S+\.\S+$/.test(normalizedEmail)) return res.status(400).json({ success: false, message: "Enter a valid email address." });
     if (!/^\d{10}$/.test(normalizedPhone)) return res.status(400).json({ success: false, message: "Phone number must contain exactly 10 digits." });
     if (password.length < 8 || !/\d/.test(password) || !/[A-Z]/.test(password)) return res.status(400).json({ success: false, message: "Password must be at least 8 characters and include an uppercase letter and a number." });
+    const tenantId = req.tenant?._id || req.tenant?.id || req.tenantId || null;
+    if (!tenantId) return res.status(400).json({ success: false, message: "Unable to determine the company for this registration. Configure the public tenant or use the company domain and try again." });
     const existingUser = await User.findOne(mergeTenantFilter({ $or: [{ email: normalizedEmail }, { phone: normalizedPhone }] }));
     if (existingUser) return res.status(400).json({ success: false, message: existingUser.email === normalizedEmail ? "Email is already registered." : "Phone number is already registered." });
     const customerRole = await Role.findOne({ name: "customer" });
-    const tenantId = req.tenant?._id || req.tenant?.id || req.tenantId || null;
     const user = await User.create({ name: String(name).trim(), email: normalizedEmail, phone: normalizedPhone, password, status: "active", isVerified: true, role: "customer", roleId: customerRole?._id || null, legacyRole: "customer", tenantId });
     await SecurityLog.logEvent({ user: user._id, email: user.email, action: "register", status: "success", ipAddress: req.ip, userAgent: req.headers["user-agent"], details: "User registration" });
     return res.status(201).json({ success: true, user: publicUser(user, []), message: "Registration successful. You can now log in." });
