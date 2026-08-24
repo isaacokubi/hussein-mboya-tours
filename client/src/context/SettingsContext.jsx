@@ -32,7 +32,7 @@ export function SettingsProvider({ children }) {
       const response = await api.get("/settings/public", { params: { _t: Date.now() } });
       const data = response.data?.settings || response.data?.data || response.data || {};
       applySettings(data);
-      try { localStorage.setItem(getSettingsStorageKey(), JSON.stringify(normalize(data))); } catch {}
+      try { localStorage.setItem(getSettingsStorageKey(), JSON.stringify(normalize(data))); } catch (storageError) { console.warn("Tenant settings cache write failed:", storageError); }
       return data;
     } catch (error) { console.error("Public tenant settings load failed:", error); return null; }
   }, [applySettings]);
@@ -43,11 +43,11 @@ export function SettingsProvider({ children }) {
     let mounted = true;
     const load = async () => { setLoading(true); try {
       const cached = typeof window !== "undefined" ? localStorage.getItem(getSettingsStorageKey()) : null;
-      if (cached) { try { applySettings(JSON.parse(cached)); } catch {} }
+      if (cached) { try { applySettings(JSON.parse(cached)); } catch (cacheError) { console.warn("Cached tenant settings are invalid:", cacheError); } }
       await refreshSettings();
     } finally { if (mounted) setLoading(false); } };
     void load();
-    const handleStorage = (event) => { if (event.key !== getSettingsStorageKey() || !event.newValue) return; try { applySettings(JSON.parse(event.newValue)); } catch {} };
+    const handleStorage = (event) => { if (event.key !== getSettingsStorageKey() || !event.newValue) return; try { applySettings(JSON.parse(event.newValue)); } catch (storageError) { console.warn("Tenant settings storage event was invalid:", storageError); } };
     const handlePlatformSettings = (event) => applySettings(event.detail || {});
     window.addEventListener("storage", handleStorage); window.addEventListener("platform-settings-updated", handlePlatformSettings);
     return () => { mounted = false; window.removeEventListener("storage", handleStorage); window.removeEventListener("platform-settings-updated", handlePlatformSettings); };

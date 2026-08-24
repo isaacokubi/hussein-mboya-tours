@@ -6,7 +6,7 @@ export const getBookings = async (params = {}) => (await api.get("/admin/booking
 
 export const getMyBookings = async (params = {}) => {
   const safeParams = params && typeof params === "object" && !("queryKey" in params) && !("signal" in params) ? params : {};
-  return (await api.get("/bookings/my-bookings", { params: safeParams })).data;
+  return (await api.get("/bookings/my-bookings", { params: { limit: 100, ...safeParams } })).data;
 };
 
 export const createBooking = async (data) => (await api.post("/bookings", data)).data;

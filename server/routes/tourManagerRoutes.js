@@ -1,6 +1,5 @@
 import express from "express";
 import { resolveTenant } from "../middleware/tenantMiddleware.js";
-
 import {
   getTourManagerDashboard,
   createTour,
@@ -24,20 +23,17 @@ import { getCustomers } from "../controllers/customerController.js";
 import { getGuides } from "../controllers/staffController.js";
 import { getTourReports } from "../controllers/tourReportController.js";
 import { protect, managerOnly } from "../middleware/authMiddleware.js";
+import validateFutureTourDate from "../middleware/validateFutureTourDate.js";
 
 const router = express.Router();
 
-// Authentication must happen before tenant resolution. Otherwise resolveTenant
-// cannot reliably determine the authenticated user's authoritative tenant and
-// a stale/malicious tenant header can affect manager dashboard requests.
 router.use(protect);
 router.use(resolveTenant);
 router.use(managerOnly);
 
 router.get("/dashboard", getTourManagerDashboard);
-
 router.get("/tours", getTours);
-router.post("/tours", createTour);
+router.post("/tours", validateFutureTourDate, createTour);
 router.put("/tours/:id", updateTour);
 router.delete("/tours/:id", deleteTour);
 router.post("/assign-guide", assignTourGuide);
@@ -55,7 +51,6 @@ router.patch("/bookings/:id/cancel", cancelBooking);
 router.put("/bookings/:id/cancel", cancelBooking);
 router.get("/customers", getCustomers);
 router.get("/guides", getGuides);
-
 router.get("/reports", getTourReports);
 router.get("/tours/:id/availability", getTourAvailability);
 router.put("/tours/:id/availability", updateTourAvailability);

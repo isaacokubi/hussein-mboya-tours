@@ -25,11 +25,11 @@ const DestinationDetails = () => {
   const images = Array.isArray(data.images) ? data.images : [];
   const destinationId = String(data._id || "");
   const tours = (Array.isArray(data.tours) ? data.tours : []).filter((tour) => {
-    // The destination endpoint is already tenant-scoped and server-filtered.
-    // Keep this defensive check so a malformed/stale API payload can never
-    // display a tour belonging to another destination on this page.
+    // Never display a tour without an explicit destination match. The server
+    // already enforces tenant + destination filtering; this is a final UI
+    // boundary against malformed or stale payloads.
     const tourDestination = tour?.destination?._id || tour?.destination;
-    return !tourDestination || String(tourDestination) === destinationId;
+    return Boolean(destinationId && tourDestination && String(tourDestination) === destinationId);
   });
 
   return (
