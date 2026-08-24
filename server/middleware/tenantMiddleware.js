@@ -77,6 +77,7 @@ export async function resolveTenant(req, res, next) {
       return Organization.findOne({ domain: host, status: activeStatuses });
     };
 
+    // Explicit tenant identity and host/domain are authoritative.
     tenant = await resolveHost(requestHost);
     if (!tenant && originHost) tenant = await resolveHost(originHost);
 
@@ -96,6 +97,12 @@ export async function resolveTenant(req, res, next) {
       if (!tenant) tenant = await Organization.findOne({ slug: requestedTenantKey.toLowerCase(), status: activeStatuses });
     }
 
+    // IMPORTANT: For a local/shared public login, resolve a uniquely-owned
+    // account before applying any default tenant. Otherwise a default public
+    // tenant can capture the request and make a valid tenant-admin password
+    // look invalid because the user is queried inside the wrong tenant.
+    if (!tenant) tenant = await resolveLoginTenantByUniqueEmail(req);
+
     const fallbackSlug = String(process.env.DEFAULT_PUBLIC_TENANT_SLUG || "").trim().toLowerCase();
     if (!tenant && fallbackSlug) tenant = await Organization.findOne({ slug: fallbackSlug, status: activeStatuses });
 
@@ -107,8 +114,6 @@ export async function resolveTenant(req, res, next) {
       const tenants = await Organization.find({ status: activeStatuses }).select("_id slug name domain").limit(2).lean();
       if (tenants.length === 1) tenant = tenants[0];
     }
-
-    if (!tenant) tenant = await resolveLoginTenantByUniqueEmail(req);
 
     if (!tenant) return next();
 
