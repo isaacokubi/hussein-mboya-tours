@@ -3,10 +3,17 @@ import axios from "axios";
 const configuredApiUrl = String(import.meta.env.VITE_API_URL || "").trim();
 export const baseURL = configuredApiUrl || "/api";
 
-const PUBLIC_TENANT_KEY = String(
-  import.meta.env.VITE_PUBLIC_TENANT_KEY ||
-    import.meta.env.VITE_PUBLIC_TENANT_SLUG ||
+// Production deployments on a shared Vercel hostname cannot infer a tenant
+// from the hostname alone. VITE_PUBLIC_TENANT_SLUG is therefore the explicit,
+// deployment-level tenant selector. It is public configuration, not a secret.
+const PUBLIC_TENANT_SLUG = String(
+  import.meta.env.VITE_PUBLIC_TENANT_SLUG ||
+    import.meta.env.VITE_TENANT_SLUG ||
     ""
+).trim().toLowerCase();
+
+const PUBLIC_TENANT_KEY = String(
+  import.meta.env.VITE_PUBLIC_TENANT_KEY || ""
 ).trim();
 
 function isLocalHost() {
@@ -17,17 +24,29 @@ function isLocalHost() {
 
 function getPublicTenantSlug() {
   if (typeof window === "undefined" || isLocalHost()) return "";
+
   const hostname = String(window.location.hostname || "").trim().toLowerCase();
-  if (hostname.endsWith(".vercel.app")) {
-    const label = hostname.slice(0, -".vercel.app".length).split(".").filter(Boolean).pop();
-    if (label) return label;
+
+  // A tenant subdomain on the configured platform host is authoritative.
+  const configuredPlatformHost = String(
+    import.meta.env.VITE_PLATFORM_HOST || ""
+  )
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/\/$/, "");
+
+  if (configuredPlatformHost && hostname.endsWith(`.${configuredPlatformHost}`)) {
+    const label = hostname.slice(0, -`.${configuredPlatformHost}`.length).split(".").filter(Boolean).pop();
+    if (label && label !== "www") return label;
   }
-  return String(import.meta.env.VITE_TENANT_SLUG || "").trim().toLowerCase();
+
+  // The Vercel project hostname is a deployment hostname, not a tenant slug.
+  // Never assume that the Vercel project name identifies a tenant.
+  return PUBLIC_TENANT_SLUG;
 }
 
 function getPublicTenantKey() {
-  // Local development intentionally does not send a configured public tenant
-  // key. The API resolves a unique tenant-owned login account by email.
   if (isLocalHost()) return "";
   return PUBLIC_TENANT_KEY;
 }
