@@ -82,6 +82,7 @@ export async function registerTenant({ company, admin, plan = "starter", request
 
     return { organization, adminUser, subscription, createdFirstSuperAdmin: Boolean(superAdminUser) };
   } catch (error) {
+    if (superAdminUser?._id) await runWithTenant({ bypass: true }, () => User.deleteOne({ _id: superAdminUser._id })).catch(() => {});
     if (subscription?._id) await runWithTenant({ bypass: true }, () => Subscription.deleteOne({ _id: subscription._id })).catch(() => {});
     if (adminUser?._id && organization?._id) await runWithTenant({ tenantId: organization._id, tenant: organization, bypass: false }, () => User.deleteOne({ _id: adminUser._id })).catch(() => {});
     if (organization?._id) await runWithTenant({ bypass: true }, () => Organization.deleteOne({ _id: organization._id })).catch(() => {});
