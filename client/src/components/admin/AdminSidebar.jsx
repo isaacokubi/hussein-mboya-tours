@@ -5,19 +5,18 @@ import { useSettings } from "../../context/SettingsContext";
 import { isAdmin } from "../../utils/roleUtils";
 
 const sections = [
-  { title: "Operations", items: [["Dashboard", "/admin", LayoutDashboard, "admin.dashboard"], ["Bookings", "/admin/bookings", CalendarCheck, "booking.manage"], ["Tours", "/admin/manage-tours", Map, "tour.manage"], ["Customers", "/admin/customers", Users, "customer.view"], ["Guides", "/admin/guides", Users, "staff.manage"], ["Vehicles", "/admin/vehicles", Car, "staff.manage"], ["Custom Tour Requests", "/admin/custom-tour-requests", FileText, "customer.view"]] },
+  { title: "Operations", items: [["Dashboard", "/admin", LayoutDashboard, "admin.dashboard"], ["Bookings", "/admin/bookings", CalendarCheck, "booking.manage"], ["Tours", "/admin/manage-tours", Map, "tour.manage"], ["Customers", "/admin/customers", Users, "customer.view"], ["Agents", "/admin/agents", Users, "agent.manage"], ["Guides", "/admin/guides", Users, "staff.manage"], ["Vehicles", "/admin/vehicles", Car, "staff.manage"], ["Custom Tour Requests", "/admin/custom-tour-requests", FileText, "customer.view"]] },
   { title: "Finance & Insight", items: [["Finance", "/admin/finance", Wallet, "finance.view"], ["M-Pesa Transactions", "/admin/finance/transactions", Smartphone, "finance.view"], ["Reports", "/admin/reports", FileText, "analytics.view"], ["Analytics", "/admin/analytics", BarChart3, "analytics.view"]] },
   { title: "Governance", items: [["Staff & Users", "/admin/staff", UserRoundCog, "staff.manage"], ["Roles & Permissions", "/admin/rbac", Shield, "roles.manage"], ["Settings", "/admin/settings", Settings, "settings.manage"], ["Website", "/", Home, null]] },
 ];
 
-const ADMIN_CORE_PERMISSIONS = new Set(["admin.dashboard", "booking.manage", "tour.manage", "customer.view", "staff.manage", "finance.view", "analytics.view", "roles.manage", "settings.manage"]);
+const ADMIN_CORE_PERMISSIONS = new Set(["admin.dashboard", "booking.manage", "tour.manage", "customer.view", "staff.manage", "agent.manage", "finance.view", "analytics.view", "roles.manage", "settings.manage"]);
 
 export default function AdminSidebar() {
   const { user, hasPermission } = useAuth();
   const { settings = {} } = useSettings() || {};
 
-  const companyName =
-    settings?.companyName || "Company";
+  const companyName = settings?.companyName || "Company";
   const adminUser = isAdmin(user);
   const canRender = (permission) => !permission || (adminUser && ADMIN_CORE_PERMISSIONS.has(permission)) || hasPermission(permission);
 
