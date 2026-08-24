@@ -18,23 +18,9 @@ const availabilitySchema = new mongoose.Schema({
   bookedSlots: { type: Number, default: 0, min: 0 },
 }, { _id: false });
 
-const seoSchema = new mongoose.Schema({
-  title: String,
-  description: String,
-  keywords: [String],
-}, { _id: false });
-
-const imageSchema = new mongoose.Schema({
-  url: String,
-  publicId: String,
-}, { _id: false });
-
-const pricingRuleSchema = new mongoose.Schema({
-  name: String,
-  minTravelers: Number,
-  maxTravelers: Number,
-  discount: { type: Number, default: 0 },
-}, { _id: false });
+const seoSchema = new mongoose.Schema({ title: String, description: String, keywords: [String] }, { _id: false });
+const imageSchema = new mongoose.Schema({ url: String, publicId: String }, { _id: false });
+const pricingRuleSchema = new mongoose.Schema({ name: String, minTravelers: Number, maxTravelers: Number, discount: { type: Number, default: 0 } }, { _id: false });
 
 const tourSchema = new mongoose.Schema({
   tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true },
@@ -43,7 +29,9 @@ const tourSchema = new mongoose.Schema({
   description: { type: String, required: true, trim: true },
   shortDescription: { type: String, trim: true, maxlength: 250 },
   tags: [{ type: String, trim: true }],
-  category: { type: String, enum: ["Safari", "Beach", "Adventure", "Cultural", "Luxury", "Hiking", "Family", "Wildlife"], default: "Safari" },
+  // Category names are tenant-managed through TourCategory. Do not hard-code
+  // an enum here; otherwise an administrator cannot add a new category.
+  category: { type: String, trim: true, maxlength: 80, default: "Safari" },
   destination: { type: mongoose.Schema.Types.ObjectId, ref: "Destination", required: true },
   country: { type: String, required: true, trim: true },
   location: { type: String, required: true, trim: true },
