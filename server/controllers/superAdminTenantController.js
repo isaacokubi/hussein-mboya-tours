@@ -103,17 +103,11 @@ export const createTenantWithAdmin = async (req, res, next) => {
         createdBy: req.user?._id || null,
       };
 
-      // Do not persist an explicit null domain.
-      // The domain field has a unique sparse index.
-      // Only create the field when a real custom domain was supplied.
-      if (domain) {
-        organizationData.domain = domain;
-      }
+      // Do not persist an explicit null domain. The domain field has a unique
+      // sparse index, so only create the field when a real custom domain exists.
+      if (domain) organizationData.domain = domain;
 
-      [organization] = await Organization.create(
-        [organizationData],
-        { session }
-      );
+      [organization] = await Organization.create([organizationData], { session });
 
       const roleDoc = await runWithTenant({ role: "super_admin", bypass: true }, () => Role.findOne({ name: "admin" }).session(session).lean());
       if (!roleDoc) throw Object.assign(new Error("System role 'admin' is not configured."), { status: 400 });
@@ -139,18 +133,10 @@ export const createTenantWithAdmin = async (req, res, next) => {
         message: error?.message || null,
       });
 
-      let message =
-        "A company or administrator with the supplied unique value already exists.";
-
-      if (duplicateFields.includes("domain")) {
-        message =
-          "That custom domain is already assigned to another company.";
-      } else if (duplicateFields.includes("slug")) {
-        message = "That company slug is already in use.";
-      } else if (duplicateFields.includes("email")) {
-        message =
-          "That administrator email is already in use by this company.";
-      }
+      let message = "A company or administrator with the supplied unique value already exists.";
+      if (duplicateFields.includes("domain")) message = "That custom domain is already assigned to another company.";
+      else if (duplicateFields.includes("slug")) message = "That company slug is already in use.";
+      else if (duplicateFields.includes("email")) message = "That administrator email is already in use by this company.";
 
       return res.status(409).json({
         success: false,
@@ -159,11 +145,8 @@ export const createTenantWithAdmin = async (req, res, next) => {
         field: duplicateFields[0] || null,
       });
     }
-
     next(error);
-  } finally {
-    await session.endSession();
-  }
+  } finally { await session.endSession(); }
 };
 
 export const listTenants = async (req, res, next) => {
@@ -212,23 +195,14 @@ export const deleteTenant = async (req, res, next) => {
     if (confirmation !== "DELETE") return res.status(400).json({ success: false, message: 'Permanent company deletion requires confirmation="DELETE".' });
 
     const requesterRole = String(req.user?.role || req.user?.legacyRole || "").toLowerCase();
-    if (!req.user || !["superadmin", "super_admin"].includes(requesterRole)) {
-      return res.status(403).json({ success: false, message: "Only a SuperAdmin can permanently delete a company." });
-    }
+    if (!req.user || !["superadmin", "super_admin"].includes(requesterRole)) return res.status(403).json({ success: false, message: "Only a SuperAdmin can permanently delete a company." });
 
     const tenant = await Organization.findById(id).lean();
     if (!tenant) return res.status(404).json({ success: false, message: "Company not found" });
 
-    // Platform organizations are not customer tenants and must never be deleted.
     const protectedSlugs = new Set(["platform", "system", "superadmin", "super-admin"]);
-    const isPlatformOrganization =
-      protectedSlugs.has(String(tenant.slug || "").trim().toLowerCase()) ||
-      (tenant.settings && tenant.settings.isPlatform === true) ||
-      (tenant.settings && tenant.settings.platform === true);
-
-    if (isPlatformOrganization) {
-      return res.status(403).json({ success: false, message: "The platform/system organization cannot be deleted." });
-    }
+    const isPlatformOrganization = protectedSlugs.has(String(tenant.slug || "").trim().toLowerCase()) || (tenant.settings && tenant.settings.isPlatform === true) || (tenant.settings && tenant.settings.platform === true);
+    if (isPlatformOrganization) return res.status(403).json({ success: false, message: "The platform/system organization cannot be deleted." });
 
     const db = mongoose.connection.db;
     const collections = await db.listCollections().toArray();
@@ -236,21 +210,12 @@ export const deleteTenant = async (req, res, next) => {
     await session.withTransaction(async () => {
       for (const { name } of collections) {
         if (name.startsWith("system.") || name === "organizations") continue;
-
-        // Only remove documents explicitly belonging to this tenant. This avoids
-        // destructive collection-wide deletes and preserves platform records.
         await db.collection(name).deleteMany({ tenantId: asObjectId(id) }, { session });
       }
-
       await Organization.deleteOne({ _id: tenant._id }, { session });
     });
 
-    return res.json({
-      success: true,
-      deleted: true,
-      tenantId: String(tenant._id),
-      message: `Company "${tenant.name || tenant.slug || id}" deleted successfully.`,
-    });
+    return res.json({ success: true, deleted: true, tenantId: String(tenant._id), message: `Company "${tenant.name || tenant.slug || id}" deleted successfully.` });
   } catch (error) {
     return next(error);
   } finally {
