@@ -103,11 +103,13 @@ export const runCommunicationAutomation = async () => {
   const sevenDays = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
   const bookings = await platform(() => Booking.find({ $or: [{ createdAt: { $gte: recent } }, { travelDate: { $gte: now, $lte: sevenDays } }], status: { $nin: ["cancelled", "completed"] }, isDeleted: { $ne: true } }).populate("tour", "title").lean());
   for (const booking of bookings) {
-    if (new Date(booking.createdAt || 0) >= recent) await sendBookingConfirmationAutomation(booking).catch((error) => console.error("Booking confirmation automation failed:", error.message));
+    const bookingStatus = String(booking.status || "").toLowerCase();
+    const paymentStatus = String(booking.paymentStatus || "").toLowerCase();
+    if (new Date(booking.createdAt || 0) >= recent && (bookingStatus === "confirmed" || ["paid", "completed"].includes(paymentStatus))) await sendBookingConfirmationAutomation(booking).catch((error) => console.error("Booking confirmation automation failed:", error.message));
     const travel = new Date(booking.travelDate);
     const hours = (travel.getTime() - now.getTime()) / 3600000;
     if (hours >= 23 && hours <= 49) await sendTourReminderAutomation(booking).catch((error) => console.error("Tour reminder failed:", error.message));
-    if (booking.paymentStatus && !["paid", "completed"].includes(String(booking.paymentStatus).toLowerCase())) await sendPaymentReminderAutomation(booking).catch((error) => console.error("Payment reminder failed:", error.message));
+    if (booking.paymentStatus && !["paid", "completed"].includes(paymentStatus)) await sendPaymentReminderAutomation(booking).catch((error) => console.error("Payment reminder failed:", error.message));
   }
   const paidBookings = await platform(() => Booking.find({ paymentStatus: { $in: ["paid", "completed"] }, travelDate: { $gte: now, $lte: sevenDays }, status: { $nin: ["cancelled", "completed"] }, isDeleted: { $ne: true } }).populate("tour", "title").lean());
   for (const booking of paidBookings) await sendTourVoucherAutomation(booking).catch((error) => console.error("Tour voucher automation failed:", error.message));
