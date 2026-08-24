@@ -4,6 +4,7 @@ import User from "../models/User.js";
 import SecurityLog from "../models/SecurityLog.js";
 import { runWithTenant } from "../tenancy/context.js";
 import { countSuperAdmins, ensureSystemRoles } from "./onboardingService.js";
+import { getDuplicateKeyDetails } from "./duplicateKeyDiagnostic.js";
 
 const slugify = (value) => String(value || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
 const identity = ({ name, email, phone, password }) => {
@@ -27,7 +28,9 @@ export async function registerTenant({ company, admin, plan = "starter", request
   const slug = slugify(company.slug || company.name);
   if (!slug) throw new Error("A valid company slug is required.");
   if (await runWithTenant({ bypass: true }, () => Organization.findOne({ slug }).lean())) throw new Error("That company slug is already in use.");
-  if (await runWithTenant({ bypass: true }, () => User.findOne({ email: adminIdentity.normalizedEmail }).lean())) throw new Error("That administrator email is already registered.");
+
+  // Administrator email uniqueness is tenant-scoped. Do not perform a global
+  // lookup here because the organization/tenant does not exist yet.
 
   let organization;
   let adminUser;
@@ -82,6 +85,19 @@ export async function registerTenant({ company, admin, plan = "starter", request
     if (subscription?._id) await runWithTenant({ bypass: true }, () => Subscription.deleteOne({ _id: subscription._id })).catch(() => {});
     if (adminUser?._id && organization?._id) await runWithTenant({ tenantId: organization._id, tenant: organization, bypass: false }, () => User.deleteOne({ _id: adminUser._id })).catch(() => {});
     if (organization?._id) await runWithTenant({ bypass: true }, () => Organization.deleteOne({ _id: organization._id })).catch(() => {});
+
+    if (error?.code === 11000) {
+      const duplicate = getDuplicateKeyDetails(error);
+      const duplicateError = new Error(duplicate?.message || "A unique value already exists.");
+      duplicateError.code = "DUPLICATE_KEY";
+      duplicateError.field = duplicate?.field;
+      duplicateError.value = duplicate?.value;
+      duplicateError.keyPattern = duplicate?.keyPattern;
+      duplicateError.keyValue = duplicate?.keyValue;
+      duplicateError.indexName = duplicate?.indexName;
+      throw duplicateError;
+    }
+
     throw error;
   }
 }
