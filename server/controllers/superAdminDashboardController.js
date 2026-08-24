@@ -55,7 +55,7 @@ export const getSuperAdminDashboard = async (req, res) => {
       // and not user roles. This keeps the dashboard consistent with Staff Management.
       db.collection("staffs").countDocuments(activeStaffScope),
       db.collection("agents").countDocuments({ ...PLATFORM_OR_LEGACY_SCOPE, isDeleted: { $ne: true }, status: "active", isApproved: true }),
-      db.collection("vehicles").countDocuments({ ...PLATFORM_OR_LEGACY_SCOPE, isDeleted: { $ne: true }, isActive: true, status: "available" }),
+      db.collection("vehicles").countDocuments({ ...PLATFORM_OR_LEGACY_SCOPE, isDeleted: { $ne: true }, isActive: true }),
       db.collection("bookings").countDocuments(PLATFORM_OR_LEGACY_SCOPE),
       usersCollection.countDocuments({
         ...TENANT_ID_SCOPE,
