@@ -80,12 +80,40 @@ export const createTenantWithAdmin = async (req, res, next) => {
     let organization;
     let admin;
     await session.withTransaction(async () => {
-      [organization] = await Organization.create([{
-        name: String(companyName).trim(), slug, legalName: String(legalName || "").trim(), supportEmail: normalizedCompanyEmail,
-        supportPhone: String(companyPhone).trim(), domain, country: String(country || "Kenya").trim(), timezone: String(timezone || "Africa/Nairobi").trim(),
-        currency: String(currency || "KES").trim().toUpperCase(), websiteUrl: String(websiteUrl || "").trim(), logoUrl: String(logoUrl || "").trim(), status: "trial",
-        subscription: { plan, seats: effectiveSeats, trialEndsAt }, features: { customDomain: Boolean(domain) }, createdBy: req.user?._id || null,
-      }], { session });
+      const organizationData = {
+        name: String(companyName).trim(),
+        slug,
+        legalName: String(legalName || "").trim(),
+        supportEmail: normalizedCompanyEmail,
+        supportPhone: String(companyPhone).trim(),
+        country: String(country || "Kenya").trim(),
+        timezone: String(timezone || "Africa/Nairobi").trim(),
+        currency: String(currency || "KES").trim().toUpperCase(),
+        websiteUrl: String(websiteUrl || "").trim(),
+        logoUrl: String(logoUrl || "").trim(),
+        status: "trial",
+        subscription: {
+          plan,
+          seats: effectiveSeats,
+          trialEndsAt,
+        },
+        features: {
+          customDomain: Boolean(domain),
+        },
+        createdBy: req.user?._id || null,
+      };
+
+      // Do not persist an explicit null domain.
+      // The domain field has a unique sparse index.
+      // Only create the field when a real custom domain was supplied.
+      if (domain) {
+        organizationData.domain = domain;
+      }
+
+      [organization] = await Organization.create(
+        [organizationData],
+        { session }
+      );
 
       const roleDoc = await runWithTenant({ role: "super_admin", bypass: true }, () => Role.findOne({ name: "admin" }).session(session).lean());
       if (!roleDoc) throw Object.assign(new Error("System role 'admin' is not configured."), { status: 400 });
@@ -98,9 +126,44 @@ export const createTenantWithAdmin = async (req, res, next) => {
     const safeAdmin = await runWithTenant({ role: "super_admin", bypass: true }, () => User.findById(admin._id).select("-password").populate("roleId", "name displayName permissions").lean());
     return res.status(201).json({ success: true, message: `Company "${organization.name}" and its primary administrator were created successfully.`, tenant: organization, admin: safeAdmin, data: { tenant: organization, admin: safeAdmin } });
   } catch (error) {
-    if (error?.code === 11000) return res.status(409).json({ success: false, message: "A company or administrator with the supplied unique value already exists." });
+    if (error?.code === 11000) {
+      const keyPattern = error?.keyPattern || {};
+      const keyValue = error?.keyValue || {};
+      const duplicateFields = Object.keys(keyPattern);
+
+      console.error("SUPERADMIN TENANT CREATION DUPLICATE KEY", {
+        index: error?.index || null,
+        indexName: error?.indexName || null,
+        keyPattern,
+        keyValue,
+        message: error?.message || null,
+      });
+
+      let message =
+        "A company or administrator with the supplied unique value already exists.";
+
+      if (duplicateFields.includes("domain")) {
+        message =
+          "That custom domain is already assigned to another company.";
+      } else if (duplicateFields.includes("slug")) {
+        message = "That company slug is already in use.";
+      } else if (duplicateFields.includes("email")) {
+        message =
+          "That administrator email is already in use by this company.";
+      }
+
+      return res.status(409).json({
+        success: false,
+        code: "DUPLICATE_KEY",
+        message,
+        field: duplicateFields[0] || null,
+      });
+    }
+
     next(error);
-  } finally { await session.endSession(); }
+  } finally {
+    await session.endSession();
+  }
 };
 
 export const listTenants = async (req, res, next) => {
