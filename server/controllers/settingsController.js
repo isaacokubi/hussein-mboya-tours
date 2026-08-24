@@ -14,7 +14,58 @@ const getOrCreateSettings = async (filter) => { let settings = await SystemSetti
 const getTenantProfile = async (tenantId) => { const tenant = await Organization.findById(tenantId).lean(); if (!tenant) return null; const primaryAdministrator = await User.findOne({ tenantId: tenant._id, role: { $in: ["admin", "administrator"] } }).select("name email phone status").sort({ createdAt: 1 }).lean(); return { id: tenant._id, companyName: tenant.name, legalName: tenant.legalName || "", slug: tenant.slug, platformUrl: `https://${tenant.slug}.${String(process.env.PLATFORM_HOST || "globaltours.com").replace(/^https?:\/\//, "").replace(/\/$/, "")}`, customDomain: tenant.domain || "", websiteUrl: tenant.websiteUrl || "", companyEmail: tenant.supportEmail || "", companyPhone: tenant.supportPhone || "", country: tenant.country || "Kenya", currency: tenant.currency || "KES", timezone: tenant.timezone || "Africa/Nairobi", logoUrl: tenant.logoUrl || "", favicon: tenant.favicon || "", brandColors: tenant.brandColors || {}, status: tenant.status, subscriptionPlan: tenant.subscription?.plan || "starter", userSeats: Number(tenant.subscription?.seats || 0), trialEndsAt: tenant.subscription?.trialEndsAt || null, renewsAt: tenant.subscription?.renewsAt || null, primaryAdministrator: primaryAdministrator || null }; };
 
 export const getSettings = async (req, res, next) => { try { if (isTenantBypassed()) { const settings = await getOrCreateSettings({ tenantId: null, key: "platform" }); return res.status(200).json({ success: true, data: settings, settings, scope: "platform" }); } requireTenantId(); const { tenantId } = getTenantContext(); const settings = await getOrCreateSettings({ tenantId, key: "default" }); const tenantProfile = await getTenantProfile(tenantId); return res.status(200).json({ success: true, data: { ...settings, tenantProfile }, settings: { ...settings, tenantProfile }, tenantProfile, scope: "tenant" }); } catch (error) { next(error); } };
-export const updateSettings = async (req, res, next) => { try { const updates = normalizeUpdates(req.body); if (req.file?.path) updates.companyLogo = req.file.path; const validationError = validateUpdates(updates); if (validationError) return res.status(400).json({ success: false, message: validationError }); const filter = isTenantBypassed() ? { tenantId: null, key: "platform" } : { tenantId: requireTenantId(), key: "default" }; let settings = await SystemSetting.findOne(filter); if (!settings) { try { settings = new SystemSetting({ ...filter, ...DEFAULTS }); await settings.save(); } catch (error) { if (error?.code !== 11000) throw error; settings = await SystemSetting.findOne(filter); if (!settings) throw error; } } Object.assign(settings, updates); await settings.save(); const saved = settings.toObject(); const scope = filter.key === "platform" ? "platform" : "tenant"; const tenantProfile = scope === "tenant" ? await getTenantProfile(filter.tenantId) : null; return res.status(200).json({ success: true, message: scope === "platform" ? "Platform settings saved successfully." : "Tenant settings saved successfully.", data: scope === "tenant" ? { ...saved, tenantProfile } : saved, settings: scope === "tenant" ? { ...saved, tenantProfile } : saved, tenantProfile, scope }); } catch (error) { console.error("UPDATE SETTINGS ERROR:", error); return res.status(error?.status || 500).json({ success: false, message: error.message || "Failed to save tenant settings." }); } };
+
+export const updateSettings = async (req, res, next) => {
+  try {
+    const updates = normalizeUpdates(req.body);
+    if (req.file?.path) updates.companyLogo = req.file.path;
+    const validationError = validateUpdates(updates);
+    if (validationError) return res.status(400).json({ success: false, message: validationError });
+    const filter = isTenantBypassed() ? { tenantId: null, key: "platform" } : { tenantId: requireTenantId(), key: "default" };
+    let settings = await SystemSetting.findOne(filter);
+    if (!settings) {
+      try { settings = new SystemSetting({ ...filter, ...DEFAULTS }); await settings.save(); }
+      catch (error) { if (error?.code !== 11000) throw error; settings = await SystemSetting.findOne(filter); if (!settings) throw error; }
+    }
+    Object.assign(settings, updates);
+    await settings.save();
+
+    // Organization is the tenant identity/source for routing, branding and
+    // tenant profile APIs. Keep its canonical company fields synchronized with
+    // Admin Settings so saved settings are reflected across the entire tenant.
+    if (!isTenantBypassed()) {
+      const tenantId = requireTenantId();
+      const organizationUpdates = {};
+      const map = {
+        companyName: "name",
+        companyLogo: "logoUrl",
+        websiteUrl: "websiteUrl",
+        supportEmail: "supportEmail",
+        supportPhone: "supportPhone",
+        address: "address",
+        country: "country",
+        timezone: "timezone",
+        currency: "currency",
+      };
+      for (const [settingKey, organizationKey] of Object.entries(map)) {
+        if (updates[settingKey] !== undefined) organizationUpdates[organizationKey] = updates[settingKey];
+      }
+      if (Object.keys(organizationUpdates).length) await Organization.findByIdAndUpdate(tenantId, { $set: organizationUpdates }, { new: false, runValidators: true });
+      if (updates.primaryColor !== undefined || updates.secondaryColor !== undefined || updates.accentColor !== undefined) {
+        const tenant = await Organization.findById(tenantId).select("brandColors");
+        if (tenant) {
+          tenant.brandColors = { ...(tenant.brandColors || {}), ...(updates.primaryColor !== undefined ? { primary: updates.primaryColor } : {}), ...(updates.secondaryColor !== undefined ? { secondary: updates.secondaryColor } : {}), ...(updates.accentColor !== undefined ? { accent: updates.accentColor } : {}) };
+          await tenant.save();
+        }
+      }
+    }
+
+    const saved = settings.toObject();
+    const scope = filter.key === "platform" ? "platform" : "tenant";
+    const tenantProfile = scope === "tenant" ? await getTenantProfile(filter.tenantId) : null;
+    return res.status(200).json({ success: true, message: scope === "platform" ? "Platform settings saved successfully." : "Tenant settings saved successfully.", data: scope === "tenant" ? { ...saved, tenantProfile } : saved, settings: scope === "tenant" ? { ...saved, tenantProfile } : saved, tenantProfile, scope });
+  } catch (error) { console.error("UPDATE SETTINGS ERROR:", error); return res.status(error?.status || 500).json({ success: false, message: error.message || "Failed to save tenant settings." }); }
+};
 
 export const getPublicSettings = async (req, res, next) => {
   try {
