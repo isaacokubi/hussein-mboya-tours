@@ -6,8 +6,13 @@ const normalizeHost = (value = "") => String(value).split(",")[0].trim().toLower
 const getOriginHost = (value = "") => { try { return normalizeHost(new URL(String(value)).hostname); } catch { return ""; } };
 
 const isLoginRequest = (req) => {
-  const path = String(req.path || req.originalUrl || "").toLowerCase().split("?")[0];
-  return req.method === "POST" && /(?:^|\/)auth\/login$/.test(path);
+  // Express router middleware sees req.path as "/login" when this router is
+  // mounted at /api/auth, while req.originalUrl remains "/api/auth/login".
+  // Check both values so the unique-email tenant fallback actually runs.
+  const paths = [req.path, req.originalUrl]
+    .filter(Boolean)
+    .map((value) => String(value).toLowerCase().split("?")[0]);
+  return req.method === "POST" && paths.some((path) => /(?:^|\/)auth\/login$/.test(path) || path === "/login");
 };
 
 /**
@@ -72,12 +77,9 @@ export async function resolveTenant(req, res, next) {
       return Organization.findOne({ domain: host, status: activeStatuses });
     };
 
-    // Hostname is authoritative. This covers both direct API/custom-domain
-    // requests and browser requests whose Origin is a tenant subdomain.
     tenant = await resolveHost(requestHost);
     if (!tenant && originHost) tenant = await resolveHost(originHost);
 
-    // Shared Vercel deployments can identify a tenant by a matching deployment slug.
     if (!tenant && originHost.endsWith(".vercel.app")) {
       const vercelSlug = originHost.slice(0, -".vercel.app".length).split(".").filter(Boolean).pop();
       if (vercelSlug) tenant = await Organization.findOne({ slug: vercelSlug, status: activeStatuses });
@@ -106,9 +108,6 @@ export async function resolveTenant(req, res, next) {
       if (tenants.length === 1) tenant = tenants[0];
     }
 
-    // Local/shared login fallback: if tenant routing is unavailable, resolve
-    // the tenant from a unique email rather than returning a misleading
-    // "Invalid email or password" response for a valid account.
     if (!tenant) tenant = await resolveLoginTenantByUniqueEmail(req);
 
     if (!tenant) return next();
