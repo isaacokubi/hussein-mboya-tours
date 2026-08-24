@@ -4,38 +4,51 @@ const REVENUE_STATUSES = ["completed", "refunded"];
 const toMoney = (field) => ({ $convert: { input: field, to: "double", onError: 0, onNull: 0 } });
 
 /**
- * SuperAdmin metrics are platform-wide. Use the MongoDB collections directly
- * here so tenant-scoped Mongoose middleware can never accidentally hide a
- * tenant's records from the platform control center.
+ * SuperAdmin metrics are platform-wide. Native MongoDB queries are explicitly
+ * scoped to records belonging to a tenant (or legacy unscoped records) so the
+ * platform control center cannot accidentally perform an unguarded collection
+ * scan while still retaining platform-wide visibility.
  */
 export const getSuperAdminDashboard = async (req, res) => {
   try {
     const db = mongoose.connection.db;
     if (!db) return res.status(503).json({ success: false, message: "Database connection is not ready." });
 
+    const tenantIdScope = {
+      $or: [
+        { tenantId: { $type: "objectId" } },
+        { tenantId: null },
+        { tenantId: { $exists: false } },
+      ],
+    };
+
     const usersCollection = db.collection("users");
     const rolesCollection = db.collection("roles");
-    const adminRoleIds = await rolesCollection.find({ name: { $in: ["admin", "administrator", "superadmin", "super_admin"] } }).project({ _id: 1 }).toArray();
+    const adminRoleIds = await rolesCollection.find({
+      ...tenantIdScope,
+      name: { $in: ["admin", "administrator", "superadmin", "super_admin"] },
+    }).project({ _id: 1 }).toArray();
     const adminRoleObjectIds = adminRoleIds.map(({ _id }) => _id);
 
     const [users, staff, agents, vehicles, bookings, admins, tours, destinations, payments, revenueResult] = await Promise.all([
-      usersCollection.countDocuments({}),
-      db.collection("staffs").countDocuments({}),
-      db.collection("agents").countDocuments({}),
-      db.collection("vehicles").countDocuments({}),
-      db.collection("bookings").countDocuments({}),
+      usersCollection.countDocuments(tenantIdScope),
+      db.collection("staffs").countDocuments(tenantIdScope),
+      db.collection("agents").countDocuments(tenantIdScope),
+      db.collection("vehicles").countDocuments(tenantIdScope),
+      db.collection("bookings").countDocuments(tenantIdScope),
       usersCollection.countDocuments({
+        ...tenantIdScope,
         $or: [
           { role: { $in: ["admin", "administrator", "superadmin", "super_admin"] } },
           { legacyRole: { $in: ["admin", "administrator", "superadmin", "super_admin"] } },
           ...(adminRoleObjectIds.length ? [{ roleId: { $in: adminRoleObjectIds } }] : []),
         ],
       }),
-      db.collection("tours").countDocuments({}),
-      db.collection("destinations").countDocuments({}),
-      db.collection("payments").countDocuments({}),
+      db.collection("tours").countDocuments(tenantIdScope),
+      db.collection("destinations").countDocuments(tenantIdScope),
+      db.collection("payments").countDocuments(tenantIdScope),
       db.collection("payments").aggregate([
-        { $match: { status: { $in: REVENUE_STATUSES } } },
+        { $match: { ...tenantIdScope, status: { $in: REVENUE_STATUSES } } },
         { $project: {
           status: 1,
           amount: toMoney("$amount"),
