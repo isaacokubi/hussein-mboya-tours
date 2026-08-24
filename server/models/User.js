@@ -3,6 +3,8 @@ import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 
+const BCRYPT_HASH_PATTERN = /^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/;
+
 const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
@@ -62,8 +64,14 @@ userSchema.index(
 
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
+
+  // Never hash an already-hashed password. This protects registration,
+  // password-reset and administrative password updates from accidental
+  // double hashing while keeping plaintext passwords out of MongoDB.
+  if (BCRYPT_HASH_PATTERN.test(String(this.password || ""))) return next();
+
   const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
+  this.password = await bcrypt.hash(String(this.password), salt);
   next();
 });
 
@@ -75,7 +83,24 @@ userSchema.pre("save", function (next) {
 });
 
 userSchema.methods.matchPassword = async function (enteredPassword) {
-  return bcrypt.compare(enteredPassword, this.password);
+  const candidate = String(enteredPassword ?? "");
+  const storedHash = String(this.password || "");
+  if (!candidate || !storedHash) return false;
+
+  if (BCRYPT_HASH_PATTERN.test(storedHash)) {
+    return bcrypt.compare(candidate, storedHash);
+  }
+
+  // One-time compatibility path for legacy accounts whose password was stored
+  // before bcrypt hashing was enforced. A successful legacy login immediately
+  // rehashes the password through the save hook, so plaintext is not retained.
+  if (storedHash === candidate) {
+    this.password = candidate;
+    await this.save({ validateBeforeSave: false });
+    return true;
+  }
+
+  return false;
 };
 
 userSchema.virtual("isActive").get(function () {
