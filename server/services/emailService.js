@@ -1,18 +1,22 @@
 import { getSystemSettings } from "./settingsService.js";
 import nodemailer from "nodemailer";
 
+const smtpHost = process.env.EMAIL_HOST || process.env.SMTP_HOST;
+const smtpPort = Number(process.env.EMAIL_PORT || process.env.SMTP_PORT || 587);
+const smtpUser = process.env.EMAIL_USER || process.env.SMTP_USER;
+const smtpPassword = process.env.EMAIL_PASSWORD || process.env.SMTP_PASSWORD;
+const smtpFrom = process.env.EMAIL_FROM_ADDRESS || process.env.SMTP_FROM || smtpUser;
+
 const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: Number(process.env.EMAIL_PORT || 587),
-  secure: process.env.EMAIL_SECURE === "true",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD,
-  },
+  host: smtpHost,
+  port: smtpPort,
+  secure: process.env.EMAIL_SECURE === "true" || smtpPort === 465,
+  auth: smtpUser ? { user: smtpUser, pass: smtpPassword } : undefined,
 });
 
 export const verifyEmailConnection = async () => {
   try {
+    if (!smtpHost) return;
     await transporter.verify();
   } catch (error) {
     console.error("Email configuration error:", error.message);
@@ -23,10 +27,11 @@ export const sendEmail = async ({ to, subject, html, text, attachments = [], cc,
   if (!to) throw new Error("Recipient email is required.");
   if (!subject) throw new Error("Email subject is required.");
   if (!html && !text) throw new Error("Email content is required.");
+  if (!smtpHost) throw new Error("SMTP email host is not configured.");
   const settings = await getSystemSettings();
   const companyName = fromName || settings.companyName || "Coherent Tours";
   return transporter.sendMail({
-    from: `"${companyName}" <${process.env.EMAIL_USER}>`,
+    from: `"${companyName}" <${smtpFrom}>`,
     to,
     subject,
     html,
