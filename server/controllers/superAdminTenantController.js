@@ -142,20 +142,54 @@ export const deleteTenant = async (req, res, next) => {
   const session = await mongoose.startSession();
   try {
     const { id } = req.params;
+    const confirmation = String(req.body?.confirmation || "").trim();
+
     if (!mongoose.isValidObjectId(id)) return res.status(400).json({ success: false, message: "Invalid tenant ID" });
-    if (String(req.body?.confirmation || "").trim() !== "DELETE") return res.status(400).json({ success: false, message: "Type DELETE to permanently remove this company." });
+    if (confirmation !== "DELETE") return res.status(400).json({ success: false, message: 'Permanent company deletion requires confirmation="DELETE".' });
+
+    const requesterRole = String(req.user?.role || req.user?.legacyRole || "").toLowerCase();
+    if (!req.user || !["superadmin", "super_admin"].includes(requesterRole)) {
+      return res.status(403).json({ success: false, message: "Only a SuperAdmin can permanently delete a company." });
+    }
+
     const tenant = await Organization.findById(id).lean();
     if (!tenant) return res.status(404).json({ success: false, message: "Company not found" });
-    if (!tenant.tenantId && tenant.slug === "platform") return res.status(403).json({ success: false, message: "The platform organization cannot be deleted." });
+
+    // Platform organizations are not customer tenants and must never be deleted.
+    const protectedSlugs = new Set(["platform", "system", "superadmin", "super-admin"]);
+    const isPlatformOrganization =
+      protectedSlugs.has(String(tenant.slug || "").trim().toLowerCase()) ||
+      (tenant.settings && tenant.settings.isPlatform === true) ||
+      (tenant.settings && tenant.settings.platform === true);
+
+    if (isPlatformOrganization) {
+      return res.status(403).json({ success: false, message: "The platform/system organization cannot be deleted." });
+    }
+
     const db = mongoose.connection.db;
     const collections = await db.listCollections().toArray();
+
     await session.withTransaction(async () => {
       for (const { name } of collections) {
         if (name.startsWith("system.") || name === "organizations") continue;
+
+        // Only remove documents explicitly belonging to this tenant. This avoids
+        // destructive collection-wide deletes and preserves platform records.
         await db.collection(name).deleteMany({ tenantId: asObjectId(id) }, { session });
       }
-      await Organization.deleteOne({ _id: id }, { session });
+
+      await Organization.deleteOne({ _id: tenant._id }, { session });
     });
-    return res.json({ success: true, deleted: true, tenantId: id, message: `Company "${tenant.name}" deleted successfully.` });
-  } catch (error) { next(error); } finally { await session.endSession(); }
+
+    return res.json({
+      success: true,
+      deleted: true,
+      tenantId: String(tenant._id),
+      message: `Company "${tenant.name || tenant.slug || id}" deleted successfully.`,
+    });
+  } catch (error) {
+    return next(error);
+  } finally {
+    await session.endSession();
+  }
 };
