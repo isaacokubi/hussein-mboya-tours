@@ -42,7 +42,7 @@ export const getDestinations = async (req, res, next) => {
 
 export const getDestination = async (req, res, next) => {
   try {
-    requireTenantId();
+    const tenantId = requireTenantId();
     const slug = req.params.slug?.trim().toLowerCase();
     if (!slug) return res.status(400).json({ success: false, message: "Destination slug is required." });
 
@@ -52,9 +52,21 @@ export const getDestination = async (req, res, next) => {
 
     if (!destination) return res.status(404).json({ success: false, message: "Destination not found." });
 
-    const tours = await Tour.find(
-      mergeTenantFilter({ destination: destination._id, isDeleted: false, status: { $ne: "inactive" } })
-    ).select("title slug images price duration category").lean();
+    // A destination page must never use the global tours collection as its
+    // source. Restrict by BOTH tenant and the exact destination ObjectId.
+    const tourFilter = mergeTenantFilter({
+      tenantId,
+      destination: destination._id,
+      isDeleted: false,
+      published: true,
+      available: true,
+      status: { $in: ["scheduled", "upcoming", "ongoing"] },
+    });
+
+    const tours = await Tour.find(tourFilter)
+      .select("title slug images featuredImage gallery price duration category destination tenantId startDate endDate")
+      .sort({ featured: -1, popularity: -1, createdAt: -1 })
+      .lean();
 
     const relatedDestinations = await Destination.find(
       mergeTenantFilter({
