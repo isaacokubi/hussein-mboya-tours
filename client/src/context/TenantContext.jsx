@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { getTenantBranding } from "../api/tenantBrandingApi";
+import { useAuth } from "./AuthContext";
+
+export const PLATFORM_BRAND_NAME = "Global Tours Platform";
 
 const DEFAULT_TENANT = {
   name: "",
@@ -12,14 +15,35 @@ const DEFAULT_TENANT = {
   brandColors: {},
 };
 
+const PLATFORM_TENANT = {
+  ...DEFAULT_TENANT,
+  name: PLATFORM_BRAND_NAME,
+  legalName: PLATFORM_BRAND_NAME,
+  slug: "global-tours-platform",
+};
+
 const TenantContext = createContext();
+
+const normalizeRole = (user) => {
+  if (!user) return "";
+  if (typeof user.role === "string") return user.role.toLowerCase().replace(/[\s-]/g, "_");
+  if (user.role?.name) return String(user.role.name).toLowerCase().replace(/[\s-]/g, "_");
+  if (Array.isArray(user.roles) && user.roles[0]?.name) {
+    return String(user.roles[0].name).toLowerCase().replace(/[\s-]/g, "_");
+  }
+  return "";
+};
+
+const isSuperAdminUser = (user) => ["super_admin", "superadmin"].includes(normalizeRole(user));
 
 const getTenantSlugFromHost = () => {
   if (typeof window === "undefined") return "";
   const host = window.location.hostname.toLowerCase();
   const platformHost = String(import.meta.env.VITE_PLATFORM_HOST || "globaltours.com").toLowerCase();
   const suffix = `.${platformHost}`;
-  if (host.endsWith(suffix)) return host.slice(0, -suffix.length).split(".").filter(Boolean).pop() || "";
+  if (host.endsWith(suffix)) {
+    return host.slice(0, -suffix.length).split(".").filter(Boolean).pop() || "";
+  }
   return "";
 };
 
@@ -46,12 +70,22 @@ const applyTenantIdentity = (tenant) => {
 };
 
 export function TenantProvider({ children }) {
+  const { user } = useAuth();
   const [tenant, setTenant] = useState(DEFAULT_TENANT);
 
   useEffect(() => {
     let mounted = true;
 
     const loadTenant = async () => {
+      // Super admins operate at platform scope. Never let tenant branding from
+      // the previous session leak into the platform console.
+      if (isSuperAdminUser(user)) {
+        if (!mounted) return;
+        setTenant(PLATFORM_TENANT);
+        applyTenantIdentity(PLATFORM_TENANT);
+        return;
+      }
+
       try {
         const res = await getTenantBranding();
         if (!mounted) return;
@@ -73,7 +107,10 @@ export function TenantProvider({ children }) {
         applyTenantIdentity(nextTenant);
       } catch (error) {
         console.error("Public tenant branding load failed", error);
-        if (mounted) document.title = "Tours & Travel";
+        if (mounted) {
+          setTenant(DEFAULT_TENANT);
+          document.title = "Tours & Travel";
+        }
       }
     };
 
@@ -81,10 +118,10 @@ export function TenantProvider({ children }) {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [user]);
 
   return (
-    <TenantContext.Provider value={{ tenant, setTenant }}>
+    <TenantContext.Provider value={{ tenant, setTenant, isPlatformScope: isSuperAdminUser(user) }}>
       {children}
     </TenantContext.Provider>
   );
