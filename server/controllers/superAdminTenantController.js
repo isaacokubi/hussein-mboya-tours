@@ -71,8 +71,9 @@ export const createTenantWithAdmin = async (req, res, next) => {
     if (requestedDomain && !domain) return res.status(400).json({ success: false, message: "Enter a valid custom domain, for example www.example.com." });
     if (domain && await Organization.exists({ domain })) return res.status(409).json({ success: false, message: "That custom domain is already assigned to another company." });
 
-    const existingAdmin = await runWithTenant({ role: "super_admin", bypass: true }, () => User.findOne({ email: normalizedAdminEmail }).lean());
-    if (existingAdmin) return res.status(409).json({ success: false, message: "A user with the administrator email already exists." });
+    // Administrator email uniqueness is tenant-scoped. Do not reject an email
+    // merely because it exists in another tenant; the compound
+    // tenantId + email index on User enforces uniqueness within the new tenant.
 
     const slug = await uniqueSlug(companyName, requestedSlug);
     const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
