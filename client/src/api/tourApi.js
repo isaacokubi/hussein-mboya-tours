@@ -1,10 +1,9 @@
 import api from "./axios";
 
 /* Public tours */
-export const getTours = async (category = null) => {
-  const { data } = await api.get("/tours", {
-    params: category ? { category } : {},
-  });
+export const getTours = async (params = null) => {
+  const query = typeof params === "string" ? { category: params } : (params || {});
+  const { data } = await api.get("/tours", { params: query });
   return data;
 };
 
@@ -13,16 +12,12 @@ export const getFeaturedTours = async () => {
     const { data } = await api.get("/tours/featured");
     return Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
   } catch (featuredError) {
-    // The homepage should still show published tours if the optional
-    // featured query fails. Preserve the original error only when the
-    // canonical public tours endpoint also fails.
     try {
       const { data } = await api.get("/tours", { params: { limit: 6, featured: "true" } });
       const fallback = Array.isArray(data?.data) ? data.data : Array.isArray(data?.tours) ? data.tours : Array.isArray(data) ? data : [];
       if (fallback.length) return fallback;
     } catch {
-      // Fall through to the original error so React Query reports the
-      // real backend failure rather than hiding it.
+      // Fall through to the original error.
     }
     throw featuredError;
   }
