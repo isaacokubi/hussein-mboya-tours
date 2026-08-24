@@ -4,6 +4,7 @@ import User from "../models/User.js";
 import Role from "../models/Role.js";
 import SystemSetting from "../models/SystemSetting.js";
 import { runWithTenant } from "../tenancy/context.js";
+import { activateTenantSubscription } from "../services/tenantSubscriptionService.js";
 
 export const TENANT_PLANS = Object.freeze({
   starter: Object.freeze({ label: "Starter", seats: 5 }),
@@ -156,11 +157,39 @@ export const getTenant = async (req, res, next) => {
 
 export const updateTenantStatus = async (req, res, next) => {
   try {
-    const { status } = req.body || {};
+    const { status, plan, periodDays, transactionReference } = req.body || {};
     if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ success: false, message: "Invalid tenant ID" });
     if (!["active", "suspended", "trial", "cancelled"].includes(status)) return res.status(400).json({ success: false, message: "Invalid company status" });
+    const existingTenant = await Organization.findById(req.params.id).lean();
+    if (!existingTenant) return res.status(404).json({ success: false, message: "Company not found" });
+
+    if (status === "active") {
+      const selectedPlan = String(plan || existingTenant.subscription?.plan || "starter").toLowerCase();
+      if (!TENANT_PLANS[selectedPlan]) return res.status(400).json({ success: false, message: "Invalid subscription plan." });
+      const requestedDays = Number(periodDays);
+      const effectivePeriodDays = Number.isFinite(requestedDays) && requestedDays > 0 ? Math.floor(requestedDays) : 30;
+      const activation = await activateTenantSubscription({
+        tenantId: existingTenant._id,
+        plan: selectedPlan,
+        provider: "manual",
+        periodDays: effectivePeriodDays,
+        transactionReference: String(transactionReference || "").trim(),
+      });
+      const tenant = await Organization.findById(existingTenant._id).lean();
+      return res.json({
+        success: true,
+        tenant,
+        subscription: {
+          status: "active",
+          plan: selectedPlan,
+          periodStartsAt: activation.periodStartsAt,
+          periodEndsAt: activation.periodEndsAt,
+        },
+        message: `Company activated for ${effectivePeriodDays} days.`,
+      });
+    }
+
     const tenant = await Organization.findByIdAndUpdate(req.params.id, { $set: { status } }, { new: true, runValidators: true }).lean();
-    if (!tenant) return res.status(404).json({ success: false, message: "Company not found" });
     return res.json({ success: true, tenant, message: `Company status changed to ${status}` });
   } catch (error) { next(error); }
 };
