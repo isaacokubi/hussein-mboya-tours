@@ -17,24 +17,24 @@ export function normalizeRole(role) {
   return ROLE_ALIASES[key] || ROLE_ALIASES[key.replace(/_/g, "")] || key;
 }
 
-// Client and server use the same precedence: a populated durable Role record
-// is authoritative, with legacy string fields retained only as fallbacks.
-// This prevents dashboard routing and authorization from disagreeing when a
-// user's legacy role string and roleId point at different roles.
+// Keep client role resolution aligned with the backend's effectiveRoleForUser:
+// the persisted string role is authoritative, while roleId/legacyRole are
+// compatibility fallbacks. A stale populated Role document must never turn an
+// authenticated admin into a tour manager in the UI.
 export function getUserRole(user) {
   return normalizeRole(
-    user?.roleId?.name ||
-    user?.roleId?.role ||
     user?.role?.name ||
     user?.role ||
     user?.legacyRole ||
+    user?.roleId?.name ||
+    user?.roleId?.role ||
     user?.userRole
   );
 }
 
 export function isSuperAdmin(user) { return getUserRole(user) === "super_admin"; }
 export function isAdmin(user) { return ["admin", "super_admin"].includes(getUserRole(user)); }
-export function isManager(user) { return ["manager", "admin", "super_admin"].includes(getUserRole(user)); }
+export function isManager(user) { return getUserRole(user) === "manager"; }
 export function isAgent(user) { return getUserRole(user) === "agent"; }
 export function isGuide(user) { return getUserRole(user) === "guide"; }
 export function isDriver(user) { return getUserRole(user) === "driver"; }
