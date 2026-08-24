@@ -9,8 +9,14 @@ const PUBLIC_TENANT_KEY = String(
     ""
 ).trim();
 
+function isLocalHost() {
+  if (typeof window === "undefined") return false;
+  const hostname = String(window.location.hostname || "").trim().toLowerCase();
+  return ["localhost", "127.0.0.1", "[::1]"].includes(hostname);
+}
+
 function getPublicTenantSlug() {
-  if (typeof window === "undefined") return "";
+  if (typeof window === "undefined" || isLocalHost()) return "";
   const hostname = String(window.location.hostname || "").trim().toLowerCase();
   if (hostname.endsWith(".vercel.app")) {
     const label = hostname.slice(0, -".vercel.app".length).split(".").filter(Boolean).pop();
@@ -20,8 +26,9 @@ function getPublicTenantSlug() {
 }
 
 function getPublicTenantKey() {
-  // Public tenant identity must come from deployment configuration/hostname,
-  // never from a previous authenticated session.
+  // Local development intentionally does not send a configured public tenant
+  // key. The API resolves a unique tenant-owned login account by email.
+  if (isLocalHost()) return "";
   return PUBLIC_TENANT_KEY;
 }
 
@@ -67,15 +74,9 @@ api.interceptors.request.use(
 
     const publicAuthRequest = isPublicAuthRequest(config.url);
     const token = publicAuthRequest ? "" : readStoredToken();
-
-    // Keep the exact credential used by this request so a delayed 401 from an
-    // old request cannot invalidate a newer login session.
     config.__authToken = token || "";
 
     if (token) {
-      // Explicitly overwrite any stale Authorization value. This is important
-      // after login/logout because dashboard requests can be created while
-      // React is still reconciling authentication state.
       config.headers.Authorization = `Bearer ${token}`;
       config.headers["X-Requested-With"] = "XMLHttpRequest";
     } else {
@@ -96,9 +97,7 @@ api.interceptors.request.use(
       else delete config.headers["X-Tenant-Slug"];
       if (publicTenantKey) config.headers["X-Tenant-Key"] = publicTenantKey;
       else delete config.headers["X-Tenant-Key"];
-      if (/^[a-fA-F0-9]{24}$/.test(publicTenantKey)) {
-        config.headers["X-Tenant-ID"] = publicTenantKey;
-      }
+      if (/^[a-fA-F0-9]{24}$/.test(publicTenantKey)) config.headers["X-Tenant-ID"] = publicTenantKey;
     }
 
     return config;
@@ -137,10 +136,6 @@ api.interceptors.response.use(
         staleRequest,
       });
 
-      // Never erase a valid local session because a request was sent without a
-      // token. Only a request that actually carried the current token can prove
-      // that the current session is invalid. This prevents dashboard 401s from
-      // bouncing the user back to /login while authentication state is settling.
       if (!isLoginRequest && sameCurrentSession && !staleRequest) {
         window.dispatchEvent(new CustomEvent("auth:session-invalid", {
           detail: {
