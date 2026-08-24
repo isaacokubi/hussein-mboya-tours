@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import Role from "../models/Role.js";
 
 const REVENUE_STATUSES = ["completed", "refunded"];
 const toMoney = (field) => ({ $convert: { input: field, to: "double", onError: 0, onNull: 0 } });
