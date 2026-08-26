@@ -1,8 +1,5 @@
 import mongoose from "mongoose";
 
-const tenantScope = { tenantId: { $type: "objectId" } };
-const platformScope = { $or: [tenantScope, { tenantId: null }, { tenantId: { $exists: false } }] };
-
 const count = async (db, collection, filter = {}) => db.collection(collection).countDocuments(filter);
 
 export const getSuperAdminDashboardMetrics = async (_req, res) => {
@@ -10,14 +7,22 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
     const db = mongoose.connection.db;
     if (!db) return res.status(503).json({ success: false, message: "Database connection is not ready." });
 
-    const active = { isDeleted: { $ne: true } };
-    const activeScoped = { ...platformScope, isDeleted: { $ne: true } };
-
     const tenantRows = await db.collection("organizations")
       .find({ status: { $in: ["active", "trial"] } })
-      .project({ _id: 1, name: 1, slug: 1, status: 1 })
+      .project({ _id: 1, name: 1, slug: 1, status: 1, createdAt: 1, subscription: 1 })
       .sort({ createdAt: 1 })
       .toArray();
+
+    const activeTenantRows = tenantRows.filter((tenant) => tenant.status === "active");
+    const trialTenantRows = tenantRows.filter((tenant) => tenant.status === "trial");
+    const activeTenantIds = tenantRows.map((tenant) => tenant._id);
+    const platformTenantScope = activeTenantIds.length
+      ? { tenantId: { $in: activeTenantIds } }
+      : { tenantId: { $in: [] } };
+    const platformScope = {
+      $or: [platformTenantScope, { tenantId: null }, { tenantId: { $exists: false } }],
+    };
+    const activeScoped = { ...platformScope, isDeleted: { $ne: true } };
 
     const [users, staff, agents, approvedAgents, vehicles, availableVehicles, assignedVehicles, maintenanceVehicles, bookings, tours, destinations, payments, completedPayments, customers, pendingBookings, confirmedBookings] = await Promise.all([
       count(db, "users", platformScope),
@@ -69,6 +74,7 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
         name: tenant.name,
         slug: tenant.slug,
         status: tenant.status,
+        subscription: tenant.subscription || {},
         users: tenantUsers,
         staff: tenantStaff,
         agents: tenantAgents,
@@ -83,7 +89,12 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
     const primary = revenueRows.find((row) => row.currency === "KES") || revenueRows[0] || null;
     return res.json({
       success: true,
-      scope: { type: "platform", tenantCount: tenantRows.length },
+      scope: {
+        type: "platform",
+        tenantCount: tenantRows.length,
+        activeTenantCount: activeTenantRows.length,
+        trialTenantCount: trialTenantRows.length,
+      },
       data: {
         users,
         customers,
