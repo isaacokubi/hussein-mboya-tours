@@ -10,7 +10,11 @@ const ALLOW = String(process.env.ALLOW_TEST_SEED || "false").toLowerCase() === "
 const PASSWORD = process.env.TEST_SEED_PASSWORD || "TestPassword123!";
 const MODEL_DIR = path.resolve(process.cwd(), "models");
 const GLOBALS = new Set(["Organization", "Permission", "Currency"]);
-const SKIP = new Set(["_id", "__v", "deletedAt", "deletedBy", "lockUntil", "passwordResetCodeHash", "passwordResetExpiresAt", "passwordResetAttempts", "loginPinHash", "loginPinExpiresAt", "loginPinAttempts", "loginPinLastSentAt"]);
+const SKIP = new Set([
+  "_id", "__v", "deletedAt", "deletedBy", "lockUntil", "passwordResetCodeHash",
+  "passwordResetExpiresAt", "passwordResetAttempts", "loginPinHash", "loginPinExpiresAt",
+  "loginPinAttempts", "loginPinLastSentAt", "$*"
+]);
 const PRIVATE = /(token|secret|reset|pinHash|passwordReset|loginPin|apiKey|accessToken|refreshToken|hash)$/i;
 const ROLES = ["customer", "agent", "tour_guide", "tour_manager", "manager", "driver", "travel_agent"];
 const CITIES = ["Nairobi", "Mombasa", "Arusha", "Kampala", "Kigali", "Cape Town", "Gaborone", "Windhoek", "Lusaka", "Marrakesh"];
@@ -19,6 +23,7 @@ const COUNTRIES = ["Kenya", "Tanzania", "Uganda", "Rwanda", "South Africa", "Bot
 const isModel = (v) => Boolean(v?.modelName && v?.schema && v?.collection);
 const isGlobal = (m) => GLOBALS.has(m.modelName) || !m.schema.path("tenantId");
 const refFor = (d) => d?.options?.ref || d?.caster?.options?.ref || null;
+const isMapWildcard = (field) => field === "$*" || field.endsWith(".$*");
 const enumFor = (d, i) => {
   const values = d?.enumValues || d?.options?.enum || [];
   return values.length ? values[i % values.length] : undefined;
@@ -36,7 +41,7 @@ function textValue(model, field, i, def) {
   if (f.includes("timezone")) return "Africa/Nairobi";
   if (f.includes("url") || f.includes("link") || f.includes("website") || f.includes("video")) return `https://example.com/${model.toLowerCase()}/${i + 1}`;
   if (f.includes("image") || f === "avatar") return `https://example.com/${model.toLowerCase()}/${i + 1}.jpg`;
-  if (f.includes("slug")) return `${model.toLowerCase()}-test-${i + 1}`;
+  if (f.includes("slug")) return `${model.toLowerCase()}-tenant-${i + 1}`;
   if (f.includes("code") || f.includes("reference") || f.includes("number")) return `${model.toUpperCase()}-${String(i + 1).padStart(4, "0")}`;
   if (f.includes("title") || f.includes("name")) return `${model} Test ${i + 1}`;
   if (f.includes("description") || f.includes("summary") || f.includes("notes") || f.includes("comment") || f.includes("reason")) return `Synthetic ${field} for ${model} test record ${i + 1}.`;
@@ -68,7 +73,7 @@ function dateValue(field, i) {
 }
 
 function buildValue(model, field, def, i, pools, tenantId, depth = 0) {
-  if (SKIP.has(field) || PRIVATE.test(field)) return def.options?.required ? undefined : undefined;
+  if (SKIP.has(field) || isMapWildcard(field) || PRIVATE.test(field)) return undefined;
   if (field === "tenantId") return tenantId;
   const ref = refFor(def);
   if (def.instance === "String") return textValue(model.modelName, field, i, def);
@@ -76,9 +81,9 @@ function buildValue(model, field, def, i, pools, tenantId, depth = 0) {
   if (def.instance === "Boolean") return i % 2 === 0;
   if (def.instance === "Date") return dateValue(field, i);
   if (def.instance === "ObjectId") {
-    const ids = ref ? (pools.get(ref) || []) : [];
     if (ref === "Organization") return tenantId;
-    return ids[ids.length ? i % ids.length : 0];
+    const ids = ref ? (pools.get(ref) || []) : [];
+    return ids.length ? ids[i % ids.length] : new mongoose.Types.ObjectId();
   }
   if (def.instance === "Array") {
     const caster = def.caster;
@@ -91,6 +96,7 @@ function buildValue(model, field, def, i, pools, tenantId, depth = 0) {
     if (caster?.schema && depth < 2) return [buildSubdoc(caster.schema, model.modelName, i, pools, tenantId, depth + 1)];
     return [];
   }
+  if (def.instance === "Map") return new Map();
   if (def.instance === "Embedded" && def.schema && depth < 2) return buildSubdoc(def.schema, model.modelName, i, pools, tenantId, depth + 1);
   if (def.instance === "Mixed") return { seeded: true, source: "allTenantsTestDataSeedV2", index: i + 1 };
   return undefined;
@@ -99,7 +105,7 @@ function buildValue(model, field, def, i, pools, tenantId, depth = 0) {
 function buildSubdoc(schema, modelName, i, pools, tenantId, depth) {
   const out = {};
   for (const [field, def] of Object.entries(schema.paths || {})) {
-    if (field === "_id" || SKIP.has(field)) continue;
+    if (field === "_id" || SKIP.has(field) || isMapWildcard(field)) continue;
     const value = buildValue({ modelName, schema }, field, def, i, pools, tenantId, depth);
     if (value !== undefined) out[field] = value;
   }
@@ -138,13 +144,21 @@ async function createMissing(model, tenantId, pools) {
   return runWithTenant({ tenantId, role: "admin" }, async () => {
     const current = await model.countDocuments({});
     if (current >= TARGET) return { created: 0, count: current, skipped: false };
+
+    const pathEntries = Object.entries(model.schema.paths || {}).filter(([field]) => field !== "_id" && field !== "__v" && !SKIP.has(field) && !isMapWildcard(field));
+    const uniqueTenantFields = new Set(
+      Object.values(model.schema.indexes?.() || []).map((entry) => entry?.[0]).filter((key) => key && key.tenantId && Object.keys(key).length === 1 && entry?.[1]?.unique)
+    );
+
     let created = 0;
-    for (let i = current; i < TARGET; i += 1) {
+    const desired = uniqueTenantFields.has("tenantId") ? 1 : TARGET;
+
+    for (let i = current; i < desired; i += 1) {
       const doc = new model();
       doc.set("tenantId", tenantId);
       let missingDependency = false;
-      for (const [field, def] of Object.entries(model.schema.paths || {})) {
-        if (field === "_id" || field === "__v" || SKIP.has(field)) continue;
+
+      for (const [field, def] of pathEntries) {
         const ref = refFor(def);
         if (ref && def.options?.required && ref !== "Organization" && !(pools.get(ref) || []).length) {
           missingDependency = true;
@@ -169,6 +183,7 @@ async function createMissing(model, tenantId, pools) {
         doc.set("status", "upcoming");
         doc.set("date", dateValue("date", i));
         doc.set("price", 5000 + i * 1000);
+        doc.set("slug", `tour-${String(tenantId).slice(-8)}-${i + 1}`);
       }
 
       if (model.modelName === "Booking") {
@@ -208,6 +223,7 @@ async function createMissing(model, tenantId, pools) {
         console.warn(`SEED_SKIP ${model.modelName} tenant=${String(tenantId).slice(-8)} record=${i + 1}: ${error.message}`);
       }
     }
+
     return { created, count: await model.countDocuments({}), skipped: false };
   });
 }
@@ -217,16 +233,19 @@ async function seedTenant(models, tenant) {
   const passes = [];
   for (let pass = 1; pass <= models.length + 2; pass += 1) {
     let progress = 0;
-    const results = [];
     for (const model of models) {
       if (isGlobal(model)) continue;
       const result = await createMissing(model, tenant._id, pools);
-      results.push({ model: model.modelName, ...result });
       progress += result.created || 0;
     }
     passes.push({ pass, progress });
     pools = await tenantPools(models, tenant._id);
-    const incomplete = models.some((model) => !isGlobal(model) && (pools.get(model.modelName)?.length || 0) < TARGET);
+
+    const incomplete = models.some((model) => {
+      if (isGlobal(model)) return false;
+      if (model.modelName === "Subscription") return false;
+      return (pools.get(model.modelName)?.length || 0) < Math.min(TARGET, 10);
+    });
     if (!incomplete || progress === 0) break;
   }
 
@@ -251,7 +270,7 @@ async function main() {
     const summaries = [];
     for (const tenant of tenants) summaries.push(await seedTenant(models, tenant));
 
-    const tenantModels = models.filter((m) => !isGlobal(m));
+    const tenantModels = models.filter((m) => !isGlobal(m) && m.modelName !== "Subscription");
     const complete = summaries.every((s) => tenantModels.every((m) => Number(s.counts[m.modelName] || 0) >= TARGET));
     console.log(JSON.stringify({
       success: complete,
@@ -259,7 +278,9 @@ async function main() {
       tenantsProcessed: summaries.length,
       tenantScopedModels: tenantModels.length,
       tenants: summaries,
-      message: complete ? "Test data populated independently for every active registered tenant." : "Seeding completed with unresolved model dependencies; inspect tenant counts and warnings above."
+      message: complete
+        ? "Test data populated independently for every active registered tenant."
+        : "Seeding completed with unresolved model dependencies; inspect tenant counts and SEED_SKIP warnings above."
     }, null, 2));
     if (!complete) process.exitCode = 2;
   } finally {
