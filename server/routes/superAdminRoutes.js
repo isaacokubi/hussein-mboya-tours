@@ -3,6 +3,7 @@ import securityService from "../services/securityService.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { authorize } from "../middleware/permissionMiddleware.js";
 import { getSuperAdminDashboard } from "../controllers/superAdminDashboardController.js";
+import { getSuperAdminDashboardMetrics } from "../controllers/superAdminDashboardMetricsController.js";
 import { getAuditLogs, getDatabaseStatus, getSystemHealth, clearSystemCache } from "../controllers/superAdminOperationsController.js";
 import { getApiMonitor } from "../controllers/apiMonitorController.js";
 import { createPlatformDatabaseBackup, listPlatformDatabaseBackups, deletePlatformDatabaseBackup, downloadPlatformDatabaseBackup } from "../controllers/superAdminBackupController.js";
@@ -13,6 +14,7 @@ import { getSettings, updateSettings } from "../controllers/settingsController.j
 
 const router = express.Router();
 router.use(protect);
+router.get("/dashboard/metrics", authorize("admin.dashboard"), getSuperAdminDashboardMetrics);
 router.get("/dashboard", authorize("admin.dashboard"), getSuperAdminDashboard);
 router.get("/tenant-plans", authorize("user.manage"), getTenantPlans);
 router.get("/tenants", authorize("user.manage"), listTenants);

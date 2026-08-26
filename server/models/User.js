@@ -37,7 +37,9 @@ const userSchema = new mongoose.Schema(
     status: { type: String, enum: ["active", "inactive", "disabled", "suspended", "blocked"], default: "active" },
     isVerified: { type: Boolean, default: false },
     loyaltyPoints: { type: Number, default: 0 },
-    referralCode: { type: String, unique: true, sparse: true },
+    // Referral uniqueness is tenant-scoped by tenantPlugin. Keeping the path
+    // itself non-unique avoids defining a duplicate standalone unique index.
+    referralCode: { type: String, sparse: true },
     loginAttempts: { type: Number, default: 0 },
     lockUntil: { type: Date, default: null },
     passwordResetCodeHash: { type: String, default: "", select: false },
