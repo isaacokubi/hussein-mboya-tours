@@ -10,7 +10,7 @@
     "repair:guides": "node scripts/repairGuideStaffProfiles.js",
     "repair:roles": "node scripts/repairRoleReferences.js",
     "seed:staff": "node scripts/seedStaffVehicles.js",
-    "seed:test-data": "ALLOW_TEST_SEED=true node seeds/allTenantsTestDataSeedV2.js",
+    "seed:test-data": "ALLOW_TEST_SEED=true node seeds/allTenantsTestDataSeedV3.js",
     "create:admin": "node scripts/createAdmin.js",
     "reset:superadmin": "node scripts/resetSuperAdmin.js",
     "bootstrap:first": "node scripts/bootstrapFirstSuperAdmin.js",
