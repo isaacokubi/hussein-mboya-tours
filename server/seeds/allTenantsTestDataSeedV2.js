@@ -146,12 +146,12 @@ async function createMissing(model, tenantId, pools) {
     if (current >= TARGET) return { created: 0, count: current, skipped: false };
 
     const pathEntries = Object.entries(model.schema.paths || {}).filter(([field]) => field !== "_id" && field !== "__v" && !SKIP.has(field) && !isMapWildcard(field));
-    const uniqueTenantFields = new Set(
-      Object.values(model.schema.indexes?.() || []).map((entry) => entry?.[0]).filter((key) => key && key.tenantId && Object.keys(key).length === 1 && entry?.[1]?.unique)
-    );
+    const tenantOnlyUnique = model.schema.indexes().some(([key, options]) => (
+      Boolean(key?.tenantId) && Object.keys(key).length === 1 && Boolean(options?.unique)
+    ));
 
     let created = 0;
-    const desired = uniqueTenantFields.has("tenantId") ? 1 : TARGET;
+    const desired = tenantOnlyUnique ? 1 : TARGET;
 
     for (let i = current; i < desired; i += 1) {
       const doc = new model();
