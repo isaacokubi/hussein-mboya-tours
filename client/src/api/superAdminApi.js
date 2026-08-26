@@ -5,6 +5,11 @@ export const getSuperAdminDashboard = async () => {
   return response.data;
 };
 
+export const getSuperAdminDashboardMetrics = async () => {
+  const response = await axios.get("/superadmin/dashboard/metrics");
+  return response.data;
+};
+
 export const getSuperAdminRevenue = async () => {
   const response = await axios.get("/superadmin/revenue");
   return response.data;
@@ -25,8 +30,6 @@ export const getSystemHealth = async () =>
 export const getApiMonitor = async () =>
   (await axios.get("/superadmin/api-monitor")).data;
 
-// SuperAdmin settings are platform-scoped and must not call tenant-scoped
-// /settings/public or /admin/settings endpoints.
 export const getSettings = async () => {
   const response = await axios.get("/superadmin/settings");
   return response.data;
@@ -40,7 +43,6 @@ export const updateSettings = async (data) => {
 export const getSecurityEvents = async () =>
   (await axios.get("/security/events")).data;
 
-// Keep the legacy role helpers aligned with the platform-scoped RBAC API.
 export const getRoles = async () => {
   const response = await axios.get("/superadmin/roles");
   return response.data.roles || response.data.data || [];
