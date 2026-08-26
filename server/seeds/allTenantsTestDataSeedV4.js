@@ -10,11 +10,7 @@ const ALLOW = String(process.env.ALLOW_TEST_SEED || "false").toLowerCase() === "
 const PASSWORD = process.env.TEST_SEED_PASSWORD || "TestPassword123!";
 const MODEL_DIR = path.resolve(process.cwd(), "models");
 const GLOBALS = new Set(["Organization", "Permission", "Currency"]);
-const SKIP = new Set([
-  "_id", "__v", "deletedAt", "deletedBy", "lockUntil",
-  "passwordResetCodeHash", "passwordResetExpiresAt", "passwordResetAttempts",
-  "loginPinHash", "loginPinExpiresAt", "loginPinAttempts", "loginPinLastSentAt", "$*"
-]);
+const SKIP = new Set(["_id", "__v", "deletedAt", "deletedBy", "lockUntil", "passwordResetCodeHash", "passwordResetExpiresAt", "passwordResetAttempts", "loginPinHash", "loginPinExpiresAt", "loginPinAttempts", "loginPinLastSentAt", "$*"]);
 const PRIVATE = /(token|secret|reset|pinHash|passwordReset|loginPin|apiKey|accessToken|refreshToken|hash)$/i;
 const ROLES = ["customer", "agent", "tour_guide", "tour_manager", "manager", "driver", "travel_agent"];
 const CITIES = ["Nairobi", "Mombasa", "Arusha", "Kampala", "Kigali", "Cape Town", "Gaborone", "Windhoek", "Lusaka", "Marrakesh"];
@@ -48,15 +44,11 @@ function uniqueSingleFields(model) {
 }
 
 function tenantOnlyUnique(model) {
-  return indexDefinitions(model).some(({ key, options }) => (
-    Boolean(options.unique) && Object.keys(key).length === 1 && Object.keys(key)[0] === "tenantId"
-  ));
+  return indexDefinitions(model).some(({ key, options }) => Boolean(options.unique) && Object.keys(key).length === 1 && Object.keys(key)[0] === "tenantId");
 }
 
 function compoundUnique(model, fields) {
-  return indexDefinitions(model).some(({ key, options }) => (
-    Boolean(options.unique) && Object.keys(key).length === fields.length && fields.every((f) => Object.prototype.hasOwnProperty.call(key, f))
-  ));
+  return indexDefinitions(model).some(({ key, options }) => Boolean(options.unique) && Object.keys(key).length === fields.length && fields.every((f) => Object.prototype.hasOwnProperty.call(key, f)));
 }
 
 function textValue(modelName, field, i, def, tenantId) {
@@ -163,29 +155,28 @@ async function tenantPools(models, tenantId) {
   const pools = new Map();
   for (const model of models) {
     const read = async () => model.find({}).select("_id").limit(TARGET).lean();
-    const rows = isGlobal(model)
-      ? await runWithTenant({ role: "super_admin", bypass: true }, read)
-      : await runWithTenant({ tenantId, role: "admin" }, read);
-    pools.set(model.modelName, rows.map((row) => row._id));
+    const rows = isGlobal(model) ? await runWithTenant({ role: "super_admin", bypass: true }, read) : await runWithTenant({ tenantId, role: "admin" }, read);
+    pools.set(model.modelName, [...new Set(rows.map((row) => String(row._id)))].map((id) => new mongoose.Types.ObjectId(id)));
   }
   return pools;
 }
 
-async function usedCompoundIds(model, tenantId, fieldA, fieldB) {
+async function usedCompoundIds(model, tenantId, fieldB) {
   const rows = await model.find({ tenantId }).select(fieldB).lean();
-  return new Set(rows.map((row) => String(row?.[fieldB])).filter(Boolean));
+  return new Set(rows.map((row) => row?.[fieldB]).filter(Boolean).map((value) => String(value)));
 }
 
-async function pickUnusedReference(model, tenantId, fieldA, fieldB, pool, preferredIndex) {
-  const used = await usedCompoundIds(model, tenantId, fieldA, fieldB);
-  const ordered = [];
+async function pickUnusedReference(model, tenantId, fieldB, pool, preferredIndex) {
+  if (!pool.length) return null;
+  const used = await usedCompoundIds(model, tenantId, fieldB);
   for (let offset = 0; offset < pool.length; offset += 1) {
-    ordered.push(pool[(preferredIndex + offset) % pool.length]);
+    const candidate = pool[(preferredIndex + offset) % pool.length];
+    if (!used.has(String(candidate))) return candidate;
   }
-  return ordered.find((id) => !used.has(String(id))) || null;
+  return null;
 }
 
-function makeSchemaSafeCustomizations(model, doc, i, tenantId, pools) {
+function makeSchemaSafeCustomizations(model, doc, i, tenantId) {
   const t = token(tenantId);
   const name = model.modelName;
   if (name === "Tour") {
@@ -202,26 +193,14 @@ function makeSchemaSafeCustomizations(model, doc, i, tenantId, pools) {
     if (model.schema.path("title")) doc.set("title", `Tenant ${t} Tour Package ${i + 1}`);
     if (model.schema.path("slug")) doc.set("slug", `tourpackage-${t}-${i + 1}`);
   }
-  if (name === "Itinerary" || name === "TourGallery") {
-    const tours = pools.get("Tour") || [];
-    if (!tours.length) return false;
-    doc.set("tour", tours[i % tours.length]);
+  if (name === "Itinerary") {
     if (model.schema.path("title")) doc.set("title", `Tour ${i + 1} itinerary`);
+  }
+  if (name === "TourGallery") {
     if (model.schema.path("name")) doc.set("name", `Tour ${i + 1} gallery`);
   }
-  if (name === "Wishlist") {
-    const users = pools.get("User") || [];
-    if (!users.length) return false;
-    doc.set("user", users[i % users.length]);
-  }
-  if (name === "Subscription") {
-    return i === 0;
-  }
+  if (name === "Subscription") return i === 0;
   if (name === "Booking") {
-    const tours = pools.get("Tour") || [];
-    if (!tours.length) return false;
-    const tour = tours[i % tours.length];
-    doc.set("tour", tour);
     const total = 5000 + i * 500;
     if (model.schema.path("travelDate")) doc.set("travelDate", dateValue("travelDate", i));
     if (model.schema.path("totalAmount")) doc.set("totalAmount", total);
@@ -232,9 +211,6 @@ function makeSchemaSafeCustomizations(model, doc, i, tenantId, pools) {
     if (model.schema.path("status")) doc.set("status", i % 2 ? "pending" : "confirmed");
   }
   if (name === "Campaign") {
-    const users = pools.get("User") || [];
-    if (!users.length) return false;
-    if (model.schema.path("createdBy")) doc.set("createdBy", users[i % users.length]);
     if (model.schema.path("name")) doc.set("name", `Tenant ${t} Campaign ${i + 1}`);
     if (model.schema.path("message")) doc.set("message", `Tenant ${t} campaign message ${i + 1}.`);
     if (model.schema.path("status")) doc.set("status", "draft");
@@ -261,6 +237,14 @@ function enforceUniqueIndexes(model, doc, i, tenantId) {
   }
 }
 
+function desiredFor(model, current, pools) {
+  if (tenantOnlyUnique(model)) return 1;
+  if (model.modelName === "Subscription") return Math.min(1, TARGET);
+  if ((model.modelName === "Itinerary" || model.modelName === "TourGallery") && compoundUnique(model, ["tenantId", "tour"])) return Math.min(TARGET, pools.get("Tour")?.length || 0);
+  if (model.modelName === "Wishlist" && compoundUnique(model, ["tenantId", "user"])) return Math.min(TARGET, pools.get("User")?.length || 0);
+  return TARGET;
+}
+
 async function createMissing(model, tenantId, pools) {
   if (isGlobal(model)) return { created: 0, count: await model.countDocuments(), skipped: true };
   return runWithTenant({ tenantId, role: "admin" }, async () => {
@@ -268,14 +252,14 @@ async function createMissing(model, tenantId, pools) {
     const desired = desiredFor(model, current, pools);
     if (current >= desired) return { created: 0, count: current };
 
-    const entries = Object.entries(model.schema.paths || {}).filter(([field]) => (
-      field !== "_id" && field !== "__v" && !SKIP.has(field) && !isMapWildcard(field)
-    ));
+    const entries = Object.entries(model.schema.paths || {}).filter(([field]) => field !== "_id" && field !== "__v" && !SKIP.has(field) && !isMapWildcard(field));
     let created = 0;
+
     for (let i = current; i < desired; i += 1) {
       const doc = new model();
       doc.set("tenantId", tenantId);
       let missingDependency = false;
+
       for (const [field, def] of entries) {
         const ref = refFor(def);
         if (ref && def.options?.required && ref !== "Organization" && !(pools.get(ref) || []).length) {
@@ -288,19 +272,19 @@ async function createMissing(model, tenantId, pools) {
 
       if (model.modelName === "Wishlist" && compoundUnique(model, ["tenantId", "user"])) {
         const users = pools.get("User") || [];
-        const user = await pickUnusedReference(model, tenantId, "tenantId", "user", users, i);
+        const user = await pickUnusedReference(model, tenantId, "user", users, i);
         if (!user) missingDependency = true;
         else doc.set("user", user);
       }
 
       if ((model.modelName === "Itinerary" || model.modelName === "TourGallery") && compoundUnique(model, ["tenantId", "tour"])) {
         const tours = pools.get("Tour") || [];
-        const tour = await pickUnusedReference(model, tenantId, "tenantId", "tour", tours, i);
+        const tour = await pickUnusedReference(model, tenantId, "tour", tours, i);
         if (!tour) missingDependency = true;
         else doc.set("tour", tour);
       }
 
-      if (!makeSchemaSafeCustomizations(model, doc, i, tenantId, pools)) missingDependency = true;
+      if (!makeSchemaSafeCustomizations(model, doc, i, tenantId)) missingDependency = true;
       enforceUniqueIndexes(model, doc, i, tenantId);
       if (missingDependency) continue;
 
@@ -313,20 +297,9 @@ async function createMissing(model, tenantId, pools) {
         console.warn(`SEED_SKIP ${model.modelName} tenant=${token(tenantId)} record=${i + 1}: ${error.message}`);
       }
     }
+
     return { created, count: await model.countDocuments({}) };
   });
-}
-
-function desiredFor(model, current, pools) {
-  if (tenantOnlyUnique(model)) return 1;
-  if (model.modelName === "Subscription") return Math.min(1, TARGET);
-  if ((model.modelName === "Itinerary" || model.modelName === "TourGallery") && compoundUnique(model, ["tenantId", "tour"])) {
-    return Math.min(TARGET, pools.get("Tour")?.length || 0);
-  }
-  if (model.modelName === "Wishlist" && compoundUnique(model, ["tenantId", "user"])) {
-    return Math.min(TARGET, pools.get("User")?.length || 0);
-  }
-  return TARGET;
 }
 
 async function seedTenant(models, tenant) {
@@ -385,9 +358,7 @@ async function main() {
       tenantsProcessed: summaries.length,
       tenantScopedModels: tenantModels.length,
       tenants: summaries,
-      message: complete
-        ? "Tenant-isolated test data populated with schema-aware unique identifiers and dependency-safe records."
-        : "Seeding completed with unresolved dependencies or schema constraints; inspect SEED_SKIP warnings and tenant counts."
+      message: complete ? "Tenant-isolated test data populated with schema-aware unique identifiers and dependency-safe records." : "Seeding completed with unresolved dependencies or schema constraints; inspect SEED_SKIP warnings and tenant counts."
     }, null, 2));
   } finally {
     await mongoose.disconnect();
