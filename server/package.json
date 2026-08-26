@@ -10,7 +10,7 @@
     "repair:guides": "node scripts/repairGuideStaffProfiles.js",
     "repair:roles": "node scripts/repairRoleReferences.js",
     "seed:staff": "node scripts/seedStaffVehicles.js",
-    "seed:test-data": "ALLOW_TEST_SEED=true node seeds/allTenantsTestDataSeedV3.js",
+    "seed:test-data": "ALLOW_TEST_SEED=true node seeds/allTenantsTestDataSeedV4.js",
     "create:admin": "node scripts/createAdmin.js",
     "reset:superadmin": "node scripts/resetSuperAdmin.js",
     "bootstrap:first": "node scripts/bootstrapFirstSuperAdmin.js",
@@ -30,14 +30,14 @@
     "migrate:multitenancy": "node scripts/migrateToMultitenancy.js",
     "repair:global-tenant-indexes": "node scripts/repairGlobalTenantIndexes.js",
     "reconcile:tenant-indexes": "node scripts/reconcileTenantIndexes.js",
-    "check:all": "npm run check && npm run check:controllers && npm run check:models && npm run check:rbac&& npm run check:onboarding && npm run check:public-onboarding && npm run check:security && npm run check:multitenancy && npm run check:multitenancy:code && npm run check:multitenancy:deep && npm run check:production",
+    "check:all": "npm run check && npm run check:controllers && npm run check:models && npm run check:rbac && npm run check:onboarding && npm run check:public-onboarding && npm run check:security && npm run check:multitenancy && npm run check:multitenancy:code && npm run check:multitenancy:deep && npm run check:production",
     "test": "node --test tests/*.js"
   },
   "dependencies": {
     "africastalking": "^0.8.0",
     "axios": "^1.18.1",
     "bcryptjs": "^3.0.2",
-    "cloudinary": "^2.10.1",
+    "cloudinary": "^2.10.0",
     "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -54,9 +54,9 @@
     "multer": "^2.2.0",
     "multer-storage-cloudinary": "^4.0.0",
     "node-cron": "^4.6.0",
-    "nodemailer": "^9.0.0",
+    "nodemailer": "^7.0.11",
     "openai": "^6.49.0",
-    "pdfkit": "^0.19.0",
+    "pdfkit": "^0.17.1",
     "qrcode": "^1.5.4",
     "react-i18next": "^17.0.11",
     "sitemap": "^9.0.1",
@@ -66,6 +66,6 @@
     "validator": "^13.12.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "nodemon": "^3.1.10"
   }
 }
