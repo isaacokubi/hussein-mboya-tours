@@ -19,7 +19,7 @@
     "check:production": "node scripts/production-readiness-check.js",
     "check:controllers": "node --check controllers/bookingAdminController.js && node --check controllers/adminBookingController.js && node --check controllers/agentBookingController.js && node --check controllers/bookingController.js && node --check controllers/tourManagerController.js && node --check controllers/mpesaController.js && node --check controllers/mpesaRefundController.js && node --check controllers/stripeController.js && node --check controllers/adminPaymentController.js && node --check controllers/paymentController.js && node --check controllers/adminUserController.js && node --check controllers/tenantController.js && node --check controllers/publicOnboardingController.js",
     "check:models": "node --check models/Booking.js && node --check models/Payment.js && node --check models/User.js && node --check models/Organization.js && node --check models/Subscription.js",
-    "check:rbac": "npm run check:rbac",
+    "check:rbac": "node scripts/rbac-contract-check.js",
     "check:security": "node scripts/security-hardening-check.js",
     "check:multitenancy": "node scripts/multitenancy-check.js",
     "check:multitenancy:code": "node --check tenancy/tenantPlugin.js && node --check tenancy/bootstrap.js && node --check tenancy/context.js && node --check middleware/tenantMiddleware.js && node --check middleware/resolveMpesaCallbackTenant.js && node --check middleware/resolveMpesaRefundTenant.js && node --check socket/socketManager.js && node --check scripts/tenantIsolationRegressionCheck.js",
@@ -60,9 +60,9 @@
     "qrcode": "^1.5.4",
     "react-i18next": "^17.0.11",
     "sitemap": "^9.0.1",
+    "slugify": "^1.6.9",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
-    "slugify": "^1.6.9",
     "validator": "^13.12.0"
   },
   "devDependencies": {
