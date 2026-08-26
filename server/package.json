@@ -23,7 +23,7 @@
     "check:public-onboarding": "node scripts/publicTenantOnboardingCheck.js",
     "check:production": "node scripts/production-readiness-check.js",
     "check:controllers": "node --check controllers/bookingAdminController.js && node --check controllers/adminBookingController.js && node --check controllers/agentBookingController.js && node --check controllers/bookingController.js && node --check controllers/tourManagerController.js && node --check controllers/mpesaController.js && node --check controllers/mpesaRefundController.js && node --check controllers/stripeController.js && node --check controllers/adminPaymentController.js && node --check controllers/paymentController.js && node --check controllers/adminUserController.js && node --check controllers/tenantController.js && node --check controllers/publicOnboardingController.js && node --check controllers/adminDashboardMetricsController.js && node --check controllers/superAdminDashboardMetricsController.js",
-    "check:models": "node --check models/Booking.js && node --check models/Payment.js && node --check models/User.js && node --check models/Organization.js && node --check models/Subscription.js",
+    "check:models": "node --check models/Booking.js && node --check models/Payment.js && node --check models/User.js && node --check models/Organization.js && node --check models/Subscription.js && node --check models/Referral.js",
     "check:rbac": "node scripts/rbac-contract-check.js",
     "check:security": "node scripts/security-hardening-check.js",
     "check:multitenancy": "node scripts/multitenancy-check.js",
@@ -41,7 +41,7 @@
   "dependencies": {
     "africastalking": "^0.8.0",
     "axios": "^1.18.1",
-    "bcryptjs": "^3.0.2",
+    "bcryptjs": "^3.0.0",
     "cloudinary": "^2.10.0",
     "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",
@@ -59,18 +59,18 @@
     "multer": "^2.2.0",
     "multer-storage-cloudinary": "^4.0.0",
     "node-cron": "^4.6.0",
-    "nodemailer": "^7.0.11",
+    "nodemailer": "^7.0.0",
     "openai": "^6.49.0",
     "pdfkit": "^0.17.0",
     "qrcode": "^1.5.4",
     "react-i18next": "^17.0.11",
     "sitemap": "^9.0.1",
+    "slugify": "^1.6.9",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
-    "slugify": "^1.6.9",
     "validator": "^13.12.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.14"
   }
 }
