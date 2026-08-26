@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import { dashboardPath, getUserRole } from "../utils/roleUtils";
 import MobileDashboardNav from "../components/common/MobileDashboardNav";
 import AssignmentNotifications from "../components/notifications/AssignmentNotifications";
+import { firstNumeric, unwrapData } from "../utils/dashboardData";
 
 const normalizeBookings = (data) => {
   if (Array.isArray(data)) return data;
@@ -16,51 +17,68 @@ const normalizeBookings = (data) => {
   return [];
 };
 
-const statusOf = (booking) => String(booking?.bookingStatus || booking?.status || "pending").trim().toLowerCase();
-const paymentStatusOf = (booking) => String(
-  typeof booking?.paymentStatus === "object"
-    ? booking.paymentStatus?.paymentStatus || booking.paymentStatus?.status || "pending"
-    : booking?.paymentStatus || "pending"
-).trim().toLowerCase();
+const statusOf = (booking) =>
+  String(booking?.bookingStatus || booking?.status || "pending").trim().toLowerCase();
+
+const paymentStatusOf = (booking) =>
+  String(
+    typeof booking?.paymentStatus === "object"
+      ? booking.paymentStatus?.paymentStatus || booking.paymentStatus?.status || "pending"
+      : booking?.paymentStatus || "pending"
+  )
+    .trim()
+    .toLowerCase();
 
 export default function Dashboard() {
   const { user } = useAuth();
   const { settings } = useSettings();
   const role = getUserRole(user);
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["my-bookings", user?._id],
     queryFn: getMyBookings,
     enabled: !!user && role === "customer",
-    staleTime: 60 * 1000,
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: "always",
+    retry: 1,
   });
 
   if (role !== "customer") return <Navigate to={dashboardPath(user)} replace />;
   if (isLoading) return <div className="customer-ops">Loading dashboard...</div>;
   if (error) return <div className="customer-ops">Unable to load dashboard.</div>;
 
+  const payload = unwrapData(data);
   const bookings = normalizeBookings(data);
-  const serverStats = data?.stats || data?.data?.stats || {};
+  const serverStats = payload?.stats || data?.stats || {};
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
 
   const upcomingTrips = bookings
-    .filter((booking) => booking.travelDate && new Date(booking.travelDate) >= startOfToday && statusOf(booking) !== "cancelled")
+    .filter((booking) => {
+      if (!booking.travelDate) return false;
+      return new Date(booking.travelDate) >= startOfToday && statusOf(booking) !== "cancelled";
+    })
     .sort((a, b) => new Date(a.travelDate) - new Date(b.travelDate));
   const completedTrips = bookings.filter((booking) => statusOf(booking) === "completed");
   const cancelledTrips = bookings.filter((booking) => statusOf(booking) === "cancelled");
 
-  const totalSpent = bookings.reduce((total, booking) => {
+  const localTotalSpent = bookings.reduce((total, booking) => {
     const status = statusOf(booking);
     const paymentStatus = paymentStatusOf(booking);
     if (!["confirmed", "completed", "assigned", "ongoing"].includes(status)) return total;
     if (!["paid", "completed", "success"].includes(paymentStatus)) return total;
-    const paid = Number(booking.amountPaid ?? booking.paidAmount ?? booking.depositAmount ?? booking.totalAmount ?? booking.amount ?? 0);
+    const paid = Number(
+      booking.amountPaid ?? booking.paidAmount ?? booking.depositAmount ?? booking.totalAmount ?? booking.amount ?? 0
+    );
     return total + Math.max(0, paid - Number(booking.refundAmount || 0));
   }, 0);
 
-  const displayedTotal = Number(serverStats.totalTrips ?? data?.total ?? bookings.length);
-  const displayedSpent = Number(serverStats.totalSpent ?? totalSpent);
+  const displayedTotal = firstNumeric(serverStats.totalTrips, data?.total, bookings.length);
+  const displayedUpcoming = firstNumeric(serverStats.upcomingTrips, upcomingTrips.length);
+  const displayedCompleted = firstNumeric(serverStats.completedTrips, completedTrips.length);
+  const displayedCancelled = firstNumeric(serverStats.cancelledTrips, cancelledTrips.length);
+  const displayedSpent = firstNumeric(serverStats.totalSpent, localTotalSpent);
   const nextTrip = upcomingTrips[0];
 
   return (
@@ -82,23 +100,31 @@ export default function Dashboard() {
 
         <div className="grid md:grid-cols-4 gap-6">
           <Card title="Total Trips" value={displayedTotal} />
-          <Card title="Upcoming Adventures" value={serverStats.upcomingTrips ?? upcomingTrips.length} />
-          <Card title="Completed Trips" value={serverStats.completedTrips ?? completedTrips.length} />
-          <Card title="Cancelled Trips" value={serverStats.cancelledTrips ?? cancelledTrips.length} />
+          <Card title="Upcoming Adventures" value={displayedUpcoming} />
+          <Card title="Completed Trips" value={displayedCompleted} />
+          <Card title="Cancelled Trips" value={displayedCancelled} />
         </div>
 
         <div className="bg-white rounded-2xl shadow p-6 mt-6">
           <p className="text-gray-500">Total Spent</p>
-          <h2 className="text-3xl font-bold">KES {displayedSpent.toLocaleString()}</h2>
+          <h2 className="text-3xl font-bold">KES {Number(displayedSpent).toLocaleString()}</h2>
         </div>
 
-        {nextTrip && <div className="bg-white rounded-2xl shadow p-8 mt-8">
-          <h2 className="text-3xl font-bold mb-5">Next Adventure</h2>
-          <div className="bg-green-50 rounded-xl p-6">
-            <h3 className="text-2xl font-bold">{nextTrip.tour?.title || "Tour Package"}</h3>
-            <p>Travel Date: {new Date(nextTrip.travelDate).toDateString()}</p>
+        <div className="mt-6 flex justify-end">
+          <button type="button" onClick={() => void refetch()} disabled={isFetching} className="rounded-lg border bg-white px-4 py-2 text-sm font-medium shadow-sm disabled:opacity-60">
+            {isFetching ? "Refreshing..." : "Refresh Dashboard"}
+          </button>
+        </div>
+
+        {nextTrip && (
+          <div className="bg-white rounded-2xl shadow p-8 mt-8">
+            <h2 className="text-3xl font-bold mb-5">Next Adventure</h2>
+            <div className="bg-green-50 rounded-xl p-6">
+              <h3 className="text-2xl font-bold">{nextTrip.tour?.title || "Tour Package"}</h3>
+              <p>Travel Date: {new Date(nextTrip.travelDate).toDateString()}</p>
+            </div>
           </div>
-        </div>}
+        )}
 
         <div className="bg-white rounded-2xl shadow p-8 mt-10">
           <div className="flex justify-between mb-6">
