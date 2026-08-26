@@ -171,6 +171,20 @@ async function tenantPools(models, tenantId) {
   return pools;
 }
 
+async function usedCompoundIds(model, tenantId, fieldA, fieldB) {
+  const rows = await model.find({ tenantId }).select(fieldB).lean();
+  return new Set(rows.map((row) => String(row?.[fieldB])).filter(Boolean));
+}
+
+async function pickUnusedReference(model, tenantId, fieldA, fieldB, pool, preferredIndex) {
+  const used = await usedCompoundIds(model, tenantId, fieldA, fieldB);
+  const ordered = [];
+  for (let offset = 0; offset < pool.length; offset += 1) {
+    ordered.push(pool[(preferredIndex + offset) % pool.length]);
+  }
+  return ordered.find((id) => !used.has(String(id))) || null;
+}
+
 function makeSchemaSafeCustomizations(model, doc, i, tenantId, pools) {
   const t = token(tenantId);
   const name = model.modelName;
@@ -247,18 +261,6 @@ function enforceUniqueIndexes(model, doc, i, tenantId) {
   }
 }
 
-function desiredFor(model, current, pools) {
-  if (tenantOnlyUnique(model)) return 1;
-  if (model.modelName === "Subscription") return Math.min(1, TARGET);
-  if ((model.modelName === "Itinerary" || model.modelName === "TourGallery") && compoundUnique(model, ["tenantId", "tour"])) {
-    return Math.min(TARGET, pools.get("Tour")?.length || 0);
-  }
-  if (model.modelName === "Wishlist" && compoundUnique(model, ["tenantId", "user"])) {
-    return Math.min(TARGET, pools.get("User")?.length || 0);
-  }
-  return TARGET;
-}
-
 async function createMissing(model, tenantId, pools) {
   if (isGlobal(model)) return { created: 0, count: await model.countDocuments(), skipped: true };
   return runWithTenant({ tenantId, role: "admin" }, async () => {
@@ -283,6 +285,21 @@ async function createMissing(model, tenantId, pools) {
         const value = buildValue(model, field, def, i, pools, tenantId);
         if (value !== undefined) doc.set(field, value);
       }
+
+      if (model.modelName === "Wishlist" && compoundUnique(model, ["tenantId", "user"])) {
+        const users = pools.get("User") || [];
+        const user = await pickUnusedReference(model, tenantId, "tenantId", "user", users, i);
+        if (!user) missingDependency = true;
+        else doc.set("user", user);
+      }
+
+      if ((model.modelName === "Itinerary" || model.modelName === "TourGallery") && compoundUnique(model, ["tenantId", "tour"])) {
+        const tours = pools.get("Tour") || [];
+        const tour = await pickUnusedReference(model, tenantId, "tenantId", "tour", tours, i);
+        if (!tour) missingDependency = true;
+        else doc.set("tour", tour);
+      }
+
       if (!makeSchemaSafeCustomizations(model, doc, i, tenantId, pools)) missingDependency = true;
       enforceUniqueIndexes(model, doc, i, tenantId);
       if (missingDependency) continue;
@@ -298,6 +315,18 @@ async function createMissing(model, tenantId, pools) {
     }
     return { created, count: await model.countDocuments({}) };
   });
+}
+
+function desiredFor(model, current, pools) {
+  if (tenantOnlyUnique(model)) return 1;
+  if (model.modelName === "Subscription") return Math.min(1, TARGET);
+  if ((model.modelName === "Itinerary" || model.modelName === "TourGallery") && compoundUnique(model, ["tenantId", "tour"])) {
+    return Math.min(TARGET, pools.get("Tour")?.length || 0);
+  }
+  if (model.modelName === "Wishlist" && compoundUnique(model, ["tenantId", "user"])) {
+    return Math.min(TARGET, pools.get("User")?.length || 0);
+  }
+  return TARGET;
 }
 
 async function seedTenant(models, tenant) {
