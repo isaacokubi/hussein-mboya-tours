@@ -26,10 +26,10 @@ const unwrapMetrics = (payload) => {
 const unwrapScope = (payload) => payload?.scope || payload?.data?.scope || payload?.data?.data?.scope || {};
 
 const cards = [
-  ["users", "Platform Users"], ["customers", "Active Customers"], ["staff", "Active Staff"],
-  ["agents", "Active Agents"], ["vehicles", "Active Vehicles"], ["availableVehicles", "Available Vehicles"],
-  ["bookings", "Bookings"], ["admins", "Tenant Administrators"], ["tours", "Active Tours"],
-  ["destinations", "Active Destinations"], ["payments", "Payments"], ["completedPayments", "Completed Payments"],
+  ["users", "Platform Users"], ["customers", "Active Customers"], ["staff", "Staff"],
+  ["agents", "Agents"], ["vehicles", "Vehicles"], ["availableVehicles", "Available Vehicles"],
+  ["bookings", "Bookings"], ["admins", "Tenant Administrators"], ["tours", "Tours"],
+  ["destinations", "Destinations"], ["payments", "Payments"], ["completedPayments", "Completed Payments"],
 ];
 
 export default function SuperAdminDashboard() {
