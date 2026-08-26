@@ -10,7 +10,7 @@
     "repair:guides": "node scripts/repairGuideStaffProfiles.js",
     "repair:roles": "node scripts/repairRoleReferences.js",
     "seed:staff": "node scripts/seedStaffVehicles.js",
-    "seed:test-data": "ALLOW_TEST_SEED=true node seeds/testDataBootstrap.js && ALLOW_TEST_SEED=true node seeds/bookingTestDataBootstrap.js && ALLOW_TEST_SEED=true node seeds/comprehensiveTestDataSeed.js",
+    "seed:test-data": "ALLOW_TEST_SEED=true node seeds/allTenantsTestDataSeedV2.js",
     "create:admin": "node scripts/createAdmin.js",
     "reset:superadmin": "node scripts/resetSuperAdmin.js",
     "bootstrap:first": "node scripts/bootstrapFirstSuperAdmin.js",
@@ -57,12 +57,12 @@
     "nodemailer": "^9.0.0",
     "openai": "^6.49.0",
     "pdfkit": "^0.19.0",
-    "qrcode": "^1.5.4",
+    "qrcode": "^1.5.0",
     "react-i18next": "^17.0.11",
     "sitemap": "^9.0.1",
-    "slugify": "^1.6.9",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
+    "slugify": "^1.6.9",
     "validator": "^13.12.0"
   },
   "devDependencies": {
