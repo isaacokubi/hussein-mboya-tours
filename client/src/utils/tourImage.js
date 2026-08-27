@@ -1,13 +1,4 @@
-const FALLBACK_TOUR_IMAGES = [
-  "/gallery/safari.jpg",
-  "/gallery/mara.jpg",
-  "/gallery/amboseli.jpg",
-  "/gallery/diani.jpg",
-  "/gallery/beach.jpg",
-  "/gallery/culture.jpg",
-  "/hero2.jpeg",
-  "/hero4.jpeg",
-];
+const TOUR_IMAGE_PLACEHOLDER = "/images/image-placeholder.jpg";
 
 const isGenericImage = (value) => {
   const raw = typeof value === "string"
@@ -33,14 +24,6 @@ export const resolveMediaUrl = (value) => {
   return raw.startsWith("/") && base ? `${base}${raw}` : raw;
 };
 
-const stableIndex = (tour) => {
-  const stable = String(tour?._id || tour?.slug || tour?.title || "tour");
-  return [...stable].reduce(
-    (sum, char) => ((sum * 31) + char.charCodeAt(0)) >>> 0,
-    0
-  ) % FALLBACK_TOUR_IMAGES.length;
-};
-
 export const getTourImage = (tour) => {
   const candidates = [
     tour?.featuredImage,
@@ -51,12 +34,7 @@ export const getTourImage = (tour) => {
   ];
 
   const realImage = candidates.find((candidate) => !isGenericImage(candidate));
-  const resolved = resolveMediaUrl(realImage);
-  if (resolved) return resolved;
-
-  // Tours without their own uploaded media get a deterministic image based on
-  // the tour identity instead of sharing a single generic hero image.
-  return FALLBACK_TOUR_IMAGES[stableIndex(tour)] || FALLBACK_TOUR_IMAGES[0];
+  return resolveMediaUrl(realImage) || TOUR_IMAGE_PLACEHOLDER;
 };
 
 export const getTourImages = (tour) => {
@@ -69,5 +47,5 @@ export const getTourImages = (tour) => {
     .map(resolveMediaUrl)
     .filter(Boolean);
 
-  return media.length ? [...new Set(media)] : [getTourImage(tour)];
+  return media.length ? [...new Set(media)] : [TOUR_IMAGE_PLACEHOLDER];
 };
