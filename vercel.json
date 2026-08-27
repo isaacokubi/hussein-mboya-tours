@@ -1,8 +1,15 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "cd client && npm install && npm run build",
   "outputDirectory": "client/dist",
   "installCommand": "cd client && npm install",
   "framework": "vite",
+  "build": {
+    "env": {
+      "VITE_PLATFORM_MODE": "true",
+      "VITE_PLATFORM_API_URL": "https://hussein-mboya-tours.onrender.com/api"
+    }
+  },
   "rewrites": [
     {
       "source": "/(.*)",
