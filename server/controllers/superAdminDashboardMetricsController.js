@@ -32,12 +32,16 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
       .toArray();
 
     const tenantIds = tenantRows.map((tenant) => tenant._id);
-    const tenantFilter = tenantIds.length ? { tenantId: { $in: tenantIds } } : { tenantId: null };
+    const tenantFilter = tenantIds.length
+      ? { tenantId: { $in: tenantIds } }
+      : { tenantId: null };
     const nonDeleted = { isDeleted: { $ne: true } };
+    const activeProfile = { isDeleted: { $ne: true }, isActive: { $ne: false } };
 
     const [
       platformUsers,
       customerProfiles,
+      customerAccounts,
       tenantAdmins,
       tenantStaff,
       tenantAgents,
@@ -55,7 +59,12 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
       completedPayments,
     ] = await Promise.all([
       count(db, "users", { status: { $ne: "blocked" } }),
-      count(db, "customers", { ...tenantFilter, ...nonDeleted }),
+      count(db, "customerprofiles", { ...tenantFilter, ...activeProfile }),
+      count(db, "users", {
+        ...tenantFilter,
+        role: "customer",
+        status: "active",
+      }),
       count(db, "users", {
         ...tenantFilter,
         role: { $in: ["admin", "administrator"] },
@@ -70,9 +79,21 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
         isApproved: true,
       }),
       count(db, "vehicles", { ...tenantFilter, ...nonDeleted }),
-      count(db, "vehicles", { ...tenantFilter, ...nonDeleted, status: "available" }),
-      count(db, "vehicles", { ...tenantFilter, ...nonDeleted, status: "assigned" }),
-      count(db, "vehicles", { ...tenantFilter, ...nonDeleted, status: "maintenance" }),
+      count(db, "vehicles", {
+        ...tenantFilter,
+        ...nonDeleted,
+        status: "available",
+      }),
+      count(db, "vehicles", {
+        ...tenantFilter,
+        ...nonDeleted,
+        status: "assigned",
+      }),
+      count(db, "vehicles", {
+        ...tenantFilter,
+        ...nonDeleted,
+        status: "maintenance",
+      }),
       count(db, "tours", tenantFilter),
       count(db, "destinations", tenantFilter),
       count(db, "bookings", tenantFilter),
@@ -127,7 +148,9 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
               currency: "$_id",
               gross: 1,
               refunds: 1,
-              revenue: { $max: [0, { $subtract: ["$gross", "$refunds"] }] },
+              revenue: {
+                $max: [0, { $subtract: ["$gross", "$refunds"] }],
+              },
             },
           },
           { $sort: { currency: 1 } },
@@ -136,31 +159,79 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
       Promise.all(
         tenantRows.map(async (tenant) => {
           const scope = { tenantId: tenant._id };
+          const [
+            users,
+            tours,
+            bookings,
+            payments,
+            customerProfilesForTenant,
+            customerAccountsForTenant,
+            admins,
+            staff,
+            agents,
+            vehicles,
+            availableVehiclesForTenant,
+            destinations,
+            completedPaymentsForTenant,
+          ] = await Promise.all([
+            count(db, "users", scope),
+            count(db, "tours", scope),
+            count(db, "bookings", scope),
+            count(db, "payments", scope),
+            count(db, "customerprofiles", { ...scope, ...activeProfile }),
+            count(db, "users", { ...scope, role: "customer", status: "active" }),
+            count(db, "users", {
+              ...scope,
+              role: { $in: ["admin", "administrator"] },
+              status: "active",
+            }),
+            count(db, "staffs", { ...scope, ...nonDeleted }),
+            count(db, "agents", { ...scope, ...nonDeleted }),
+            count(db, "vehicles", { ...scope, ...nonDeleted }),
+            count(db, "vehicles", {
+              ...scope,
+              ...nonDeleted,
+              status: "available",
+            }),
+            count(db, "destinations", scope),
+            count(db, "payments", { ...scope, status: "completed" }),
+          ]);
+
           return {
             tenantId: String(tenant._id),
             name: tenant.name,
             slug: tenant.slug,
             status: tenant.status,
             subscription: tenant.subscription || {},
-            users: await count(db, "users", scope),
-            tours: await count(db, "tours", scope),
-            bookings: await count(db, "bookings", scope),
-            payments: await count(db, "payments", scope),
-            customers: await count(db, "customers", { ...scope, ...nonDeleted }),
-            agents: await count(db, "agents", { ...scope, ...nonDeleted }),
-            staff: await count(db, "staffs", { ...scope, ...nonDeleted }),
-            vehicles: await count(db, "vehicles", { ...scope, ...nonDeleted }),
-            availableVehicles: await count(db, "vehicles", { ...scope, ...nonDeleted, status: "available" }),
-            destinations: await count(db, "destinations", scope),
+            users,
+            customerProfiles: customerProfilesForTenant,
+            customerAccounts: customerAccountsForTenant,
+            admins,
+            staff,
+            agents,
+            vehicles,
+            availableVehicles: availableVehiclesForTenant,
+            tours,
+            destinations,
+            bookings,
+            payments,
+            completedPayments: completedPaymentsForTenant,
           };
         })
       ),
     ]);
 
-    const primary = revenueRows.find((row) => row.currency === "KES") || revenueRows[0] || null;
+    const primary =
+      revenueRows.find((row) => row.currency === "KES") ||
+      revenueRows[0] ||
+      null;
     const tenantCount = tenantRows.length;
-    const activeTenantCount = tenantRows.filter((tenant) => tenant.status === "active").length;
-    const trialTenantCount = tenantRows.filter((tenant) => tenant.status === "trial").length;
+    const activeTenantCount = tenantRows.filter(
+      (tenant) => tenant.status === "active"
+    ).length;
+    const trialTenantCount = tenantRows.filter(
+      (tenant) => tenant.status === "trial"
+    ).length;
 
     return res.json({
       success: true,
@@ -172,6 +243,8 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
       },
       data: {
         users: platformUsers,
+        customerProfiles,
+        customerAccounts,
         customers: customerProfiles,
         admins: tenantAdmins,
         staff: tenantStaff,
@@ -197,7 +270,9 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
         tenants: tenantSummaries,
         consistency: {
           tenantUsers: sum(tenantSummaries, "users"),
-          tenantCustomers: sum(tenantSummaries, "customers"),
+          tenantCustomerProfiles: sum(tenantSummaries, "customerProfiles"),
+          tenantCustomerAccounts: sum(tenantSummaries, "customerAccounts"),
+          tenantAdmins: sum(tenantSummaries, "admins"),
           tenantStaff: sum(tenantSummaries, "staff"),
           tenantAgents: sum(tenantSummaries, "agents"),
           tenantVehicles: sum(tenantSummaries, "vehicles"),
@@ -205,6 +280,7 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
           tenantDestinations: sum(tenantSummaries, "destinations"),
           tenantBookings: sum(tenantSummaries, "bookings"),
           tenantPayments: sum(tenantSummaries, "payments"),
+          tenantCompletedPayments: sum(tenantSummaries, "completedPayments"),
         },
       },
       timestamp: new Date().toISOString(),
