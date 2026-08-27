@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import getCanonicalSuperAdminCustomerMetrics from "../services/superAdminDataConsistency.js";
 
 const count = async (db, collection, filter = {}) =>
   db.collection(collection).countDocuments(filter);
@@ -36,13 +37,10 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
       ? { tenantId: { $in: tenantIds } }
       : { tenantId: null };
     const nonDeleted = { isDeleted: { $ne: true } };
-    const activeProfile = { isDeleted: { $ne: true }, isActive: { $ne: false } };
+    const customerMetrics = await getCanonicalSuperAdminCustomerMetrics(db, tenantIds);
 
     const [
       platformUsers,
-      customerProfiles,
-      customerAccounts,
-      tenantAdmins,
       tenantStaff,
       tenantAgents,
       approvedAgents,
@@ -59,17 +57,6 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
       completedPayments,
     ] = await Promise.all([
       count(db, "users", { status: { $ne: "blocked" } }),
-      count(db, "customerprofiles", { ...tenantFilter, ...activeProfile }),
-      count(db, "users", {
-        ...tenantFilter,
-        role: "customer",
-        status: "active",
-      }),
-      count(db, "users", {
-        ...tenantFilter,
-        role: { $in: ["admin", "administrator"] },
-        status: "active",
-      }),
       count(db, "staffs", { ...tenantFilter, ...nonDeleted }),
       count(db, "agents", { ...tenantFilter, ...nonDeleted }),
       count(db, "agents", {
@@ -159,14 +146,15 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
       Promise.all(
         tenantRows.map(async (tenant) => {
           const scope = { tenantId: tenant._id };
+          const tenantCustomerMetrics = await getCanonicalSuperAdminCustomerMetrics(
+            db,
+            [tenant._id]
+          );
           const [
             users,
             tours,
             bookings,
             payments,
-            customerProfilesForTenant,
-            customerAccountsForTenant,
-            admins,
             staff,
             agents,
             vehicles,
@@ -178,13 +166,6 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
             count(db, "tours", scope),
             count(db, "bookings", scope),
             count(db, "payments", scope),
-            count(db, "customerprofiles", { ...scope, ...activeProfile }),
-            count(db, "users", { ...scope, role: "customer", status: "active" }),
-            count(db, "users", {
-              ...scope,
-              role: { $in: ["admin", "administrator"] },
-              status: "active",
-            }),
             count(db, "staffs", { ...scope, ...nonDeleted }),
             count(db, "agents", { ...scope, ...nonDeleted }),
             count(db, "vehicles", { ...scope, ...nonDeleted }),
@@ -204,9 +185,9 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
             status: tenant.status,
             subscription: tenant.subscription || {},
             users,
-            customerProfiles: customerProfilesForTenant,
-            customerAccounts: customerAccountsForTenant,
-            admins,
+            customerProfiles: tenantCustomerMetrics.customerProfiles,
+            customerAccounts: tenantCustomerMetrics.customerAccounts,
+            admins: tenantCustomerMetrics.tenantAdmins,
             staff,
             agents,
             vehicles,
@@ -243,10 +224,10 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
       },
       data: {
         users: platformUsers,
-        customerProfiles,
-        customerAccounts,
-        customers: customerProfiles,
-        admins: tenantAdmins,
+        customerProfiles: customerMetrics.customerProfiles,
+        customerAccounts: customerMetrics.customerAccounts,
+        customers: customerMetrics.customerProfiles,
+        admins: customerMetrics.tenantAdmins,
         staff: tenantStaff,
         agents: tenantAgents,
         approvedAgents,
