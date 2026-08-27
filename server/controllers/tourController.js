@@ -1,5 +1,6 @@
 import { getTenantId, mergeTenantFilter, requireTenantId, runWithTenant } from "../tenancy/context.js";
 import Tour from "../models/Tour.js";
+import Destination from "../models/Destination.js";
 import Vehicle from "../models/Vehicle.js";
 import Staff from "../models/Staff.js";
 import { getSystemSettings } from "../services/settingsService.js";
@@ -18,15 +19,31 @@ const attachAvailability = (tourLike) => {
   return { ...tourLike, totalSlots, bookedSlots, availableSlots, isFull: availableSlots === 0 };
 };
 
-/**
- * Public platform pages are allowed to browse published operational content
- * even when the request has no tenant selected. Tenant-branded requests keep
- * their normal tenant isolation. The bypass is scoped to the public read
- * callback and never changes the authenticated tenant context.
- */
 const withPublicTourContext = async (callback) => {
   if (getTenantId()) return callback(false);
   return runWithTenant({ role: "super_admin", tenantId: null, tenant: null, bypass: true }, () => callback(true));
+};
+
+const normalizeDestinationId = (value) => {
+  if (!value || !String(value).trim()) return null;
+  return String(value).trim();
+};
+
+const ensureDestination = async (destinationId, tenantId) => {
+  const id = normalizeDestinationId(destinationId);
+  if (!id) return null;
+  const filter = tenantId ? mergeTenantFilter({ _id: id }) : { _id: id };
+  return Destination.findOne(filter).lean();
+};
+
+const hasRealTourImage = (tour) => {
+  const values = [tour?.featuredImage, ...(Array.isArray(tour?.gallery) ? tour.gallery : [])];
+  return values.some((item) => {
+    const url = typeof item === "string" ? item : item?.url;
+    if (!url) return false;
+    const normalized = String(url).toLowerCase();
+    return !normalized.includes("image-placeholder") && !normalized.endsWith("/hero1.jpeg");
+  });
 };
 
 export const getTours = async (req, res, next) => {
@@ -53,7 +70,7 @@ export const getTours = async (req, res, next) => {
         Tour.countDocuments(filter),
         getSystemSettings(),
       ]);
-      const data = tours.map((tour) => ({ ...attachAvailability(tour), currency: settings?.currency || "KES", currencySymbol: settings?.currencySymbol || "KSh" }));
+      const data = tours.map((tour) => ({ ...attachAvailability(tour), currency: settings?.currency || "KES", currencySymbol: settings?.currencySymbol || "KSh", hasOwnImage: hasRealTourImage(tour) }));
       return res.json({ success: true, data, tours: data, pagination: { page: currentPage, limit: pageSize, total, pages: Math.ceil(total / pageSize) } });
     });
   } catch (error) { return next(error); }
@@ -64,7 +81,7 @@ export const getFeaturedTours = async (req, res, next) => {
     return await withPublicTourContext(async (platformWide) => {
       const filter = platformWide ? { ...publicTourFilter, featured: true } : mergeTenantFilter({ ...publicTourFilter, featured: true });
       const tours = await Tour.find(filter).populate("destination").sort({ popularity: -1, createdAt: -1 }).limit(6).lean();
-      return res.json({ success: true, data: tours.map(attachAvailability) });
+      return res.json({ success: true, data: tours.map((tour) => ({ ...attachAvailability(tour), hasOwnImage: hasRealTourImage(tour) })) });
     });
   } catch (error) { return next(error); }
 };
@@ -84,7 +101,7 @@ export const searchTours = async (req, res, next) => {
       if (country) filter.country = country;
       if (destination) filter.destination = destination;
       const tours = await Tour.find(filter).populate("destination").sort({ createdAt: -1 }).lean();
-      return res.json({ success: true, count: tours.length, data: tours.map(attachAvailability) });
+      return res.json({ success: true, count: tours.length, data: tours.map((tour) => ({ ...attachAvailability(tour), hasOwnImage: hasRealTourImage(tour) })) });
     });
   } catch (error) { return next(error); }
 };
@@ -95,7 +112,7 @@ export const getTourById = async (req, res, next) => {
       const filter = platformWide ? { _id: req.params.id, ...publicTourFilter } : mergeTenantFilter({ _id: req.params.id, ...publicTourFilter });
       const tour = await Tour.findOne(filter).populate("destination assignedGuide assignedDriver assignedVehicle").lean();
       if (!tour) return res.status(404).json({ success: false, message: "Tour not found" });
-      return res.json({ success: true, data: attachAvailability(tour) });
+      return res.json({ success: true, data: { ...attachAvailability(tour), hasOwnImage: hasRealTourImage(tour) } });
     });
   } catch (error) { return next(error); }
 };
@@ -108,7 +125,7 @@ export const getTourBySlug = async (req, res, next) => {
       const filter = platformWide ? { slug, ...publicTourFilter } : mergeTenantFilter({ slug, ...publicTourFilter });
       const tour = await Tour.findOne(filter).populate("destination assignedGuide assignedDriver assignedVehicle").lean();
       if (!tour) return res.status(404).json({ success: false, message: "Tour not found" });
-      return res.json({ success: true, data: attachAvailability(tour) });
+      return res.json({ success: true, data: { ...attachAvailability(tour), hasOwnImage: hasRealTourImage(tour) } });
     });
   } catch (error) { return next(error); }
 };
@@ -120,9 +137,17 @@ export const createTour = async (req, res, next) => {
     const required = ["title", "description", "destination", "country", "location", "date", "price"];
     const missing = required.filter((key) => body[key] === undefined || body[key] === null || String(body[key]).trim() === "");
     if (missing.length) return res.status(400).json({ success: false, message: `Missing required fields: ${missing.join(", ")}` });
+
+    const destination = await ensureDestination(body.destination, tenantId);
+    if (!destination) return res.status(400).json({ success: false, message: "The selected destination does not exist or does not belong to this tenant." });
+
     const uploadedImages = Array.isArray(req.files) ? req.files.filter((file) => file?.path).map((file) => ({ url: file.path, publicId: file.filename || file.public_id || "" })) : [];
-    if (uploadedImages.length) { body.featuredImage = uploadedImages[0]; body.gallery = uploadedImages; }
+    if (!uploadedImages.length) return res.status(400).json({ success: false, message: "A tour image is required. Upload at least one image for this tour." });
+
+    body.destination = destination._id;
     body.tenantId = tenantId;
+    body.featuredImage = uploadedImages[0];
+    body.gallery = uploadedImages;
     body.price = Number(body.price);
     body.capacity = Number(body.capacity || 20);
     body.duration = String(body.duration || 1);
@@ -144,22 +169,32 @@ export const getManagerTours = async (req, res, next) => {
     const filter = mergeTenantFilter({ isDeleted: false });
     if (req.user?._id) filter.createdBy = req.user._id;
     const tours = await Tour.find(filter).populate("destination assignedGuide assignedDriver assignedVehicle").sort({ createdAt: -1 }).lean();
-    return res.json({ success: true, count: tours.length, data: tours.map(attachAvailability) });
+    return res.json({ success: true, count: tours.length, data: tours.map((tour) => ({ ...attachAvailability(tour), hasOwnImage: hasRealTourImage(tour) })) });
   } catch (error) { return next(error); }
 };
 
 export const updateTour = async (req, res, next) => {
   try {
-    requireTenantId();
+    const tenantId = requireTenantId();
     const updatePayload = { ...(req.body || {}) };
+    const existing = await Tour.findOne(mergeTenantFilter({ _id: req.params.id }));
+    if (!existing) return res.status(404).json({ success: false, message: "Tour not found" });
+
+    if (Object.prototype.hasOwnProperty.call(updatePayload, "destination")) {
+      const destination = await ensureDestination(updatePayload.destination, tenantId);
+      if (!destination) return res.status(400).json({ success: false, message: "The selected destination does not exist or does not belong to this tenant." });
+      updatePayload.destination = destination._id;
+    } else if (!existing.destination) {
+      return res.status(400).json({ success: false, message: "This tour has no destination. Assign a destination before saving." });
+    }
+
     if (Array.isArray(req.files) && req.files.length) {
       const images = req.files.filter((file) => file?.path).map((file) => ({ url: file.path, publicId: file.filename || file.public_id || "" }));
       if (images.length) { updatePayload.featuredImage = images[0]; updatePayload.gallery = images; }
     }
     delete updatePayload.tenantId;
     const tour = await Tour.findOneAndUpdate(mergeTenantFilter({ _id: req.params.id }), updatePayload, { new: true, runValidators: true }).populate("destination assignedGuide assignedDriver assignedVehicle").lean();
-    if (!tour) return res.status(404).json({ success: false, message: "Tour not found" });
-    return res.json({ success: true, message: "Tour updated successfully", data: tour });
+    return res.json({ success: true, message: "Tour updated successfully", data: { ...tour, hasOwnImage: hasRealTourImage(tour) } });
   } catch (error) { return next(error); }
 };
 
