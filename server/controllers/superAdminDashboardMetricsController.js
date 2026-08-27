@@ -37,7 +37,7 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
 
     const [
       platformUsers,
-      activeCustomers,
+      customerProfiles,
       tenantAdmins,
       tenantStaff,
       tenantAgents,
@@ -55,7 +55,7 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
       completedPayments,
     ] = await Promise.all([
       count(db, "users", { status: { $ne: "blocked" } }),
-      count(db, "customers", { ...tenantFilter, ...nonDeleted, status: "active" }),
+      count(db, "customers", { ...tenantFilter, ...nonDeleted }),
       count(db, "users", {
         ...tenantFilter,
         role: { $in: ["admin", "administrator"] },
@@ -146,7 +146,7 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
             tours: await count(db, "tours", scope),
             bookings: await count(db, "bookings", scope),
             payments: await count(db, "payments", scope),
-            customers: await count(db, "customers", { ...scope, ...nonDeleted, status: "active" }),
+            customers: await count(db, "customers", { ...scope, ...nonDeleted }),
             agents: await count(db, "agents", { ...scope, ...nonDeleted }),
             staff: await count(db, "staffs", { ...scope, ...nonDeleted }),
             vehicles: await count(db, "vehicles", { ...scope, ...nonDeleted }),
@@ -172,7 +172,7 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
       },
       data: {
         users: platformUsers,
-        customers: activeCustomers,
+        customers: customerProfiles,
         admins: tenantAdmins,
         staff: tenantStaff,
         agents: tenantAgents,
