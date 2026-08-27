@@ -26,7 +26,7 @@ const unwrapMetrics = (payload) => {
 const unwrapScope = (payload) => payload?.scope || payload?.data?.scope || payload?.data?.data?.scope || {};
 
 const cards = [
-  ["users", "Platform User Accounts"], ["customers", "Active Customer Profiles"], ["staff", "Staff"],
+  ["users", "All Platform User Accounts"], ["customers", "Active Customer Profiles"], ["staff", "Staff"],
   ["agents", "Agents"], ["vehicles", "Vehicles"], ["availableVehicles", "Available Vehicles"],
   ["bookings", "Bookings"], ["admins", "Tenant Administrators"], ["tours", "Tours"],
   ["destinations", "Destinations"], ["payments", "Payments"], ["completedPayments", "Completed Payments"],
@@ -62,6 +62,7 @@ export default function SuperAdminDashboard() {
     <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-sm font-semibold uppercase tracking-[0.18em] text-gray-500">Platform Governance</p><h1 className="mt-1 text-3xl font-bold">Global Tours Platform Control Center</h1><p className="mt-2 text-gray-600">Live platform-wide metrics across {number(totalOperationalTenants)} operational tenants ({number(activeTenantCount)} active, {number(trialTenantCount)} trial).</p></div><button type="button" onClick={() => refetch()} disabled={isFetching} className="rounded-lg border bg-white px-4 py-2 text-sm font-medium shadow-sm disabled:opacity-60">{isFetching ? "Refreshing..." : "Refresh"}</button></header>
     <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">{cards.map(([key, label]) => <article key={key} className="rounded-2xl border bg-white p-6 shadow-sm"><p className="text-sm text-gray-500">{label}</p><h2 className="mt-2 text-4xl font-bold">{number(stats[key])}</h2><p className="mt-2 text-xs text-gray-400">Live platform count</p></article>)}</div>
     <section className="grid gap-6 lg:grid-cols-2"><article className="rounded-2xl border bg-white p-6 shadow-sm"><p className="text-sm text-gray-500">Net revenue</p><h2 className="mt-2 text-3xl font-bold">{currency} {number(stats.revenue)}</h2><p className="mt-2 text-xs text-gray-400">Gross {currency} {number(stats.grossRevenue)} − refunds {currency} {number(stats.refundedRevenue)}</p></article><article className="rounded-2xl border bg-white p-6 shadow-sm"><p className="text-sm text-gray-500">Agent approvals</p><div className="mt-2 flex gap-8"><div><p className="text-2xl font-bold">{number(stats.approvedAgents)}</p><p className="text-xs text-gray-500">Approved</p></div><div><p className="text-2xl font-bold">{number(stats.pendingAgents)}</p><p className="text-xs text-gray-500">Pending</p></div></div></article></section>
+    <section className="rounded-2xl border bg-white p-5 text-sm text-gray-500 shadow-sm">Tenant table totals are tenant-scoped records; the global platform owner account is intentionally excluded from company-level tenant totals.</section>
     <section className="rounded-2xl border bg-white p-1 shadow-sm"><SuperAdminTenants /></section>
   </main>;
 }
