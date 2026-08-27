@@ -5,10 +5,12 @@ import User from "../models/User.js";
 import Customer from "../models/Customer.js";
 import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
+import Vehicle from "../models/Vehicle.js";
 import Organization from "../models/Organization.js";
 
 const TARGET = Math.max(10, Number(process.env.TEST_SEED_COUNT || 10));
 const ALLOW = String(process.env.ALLOW_TEST_SEED || "false").toLowerCase() === "true";
+const MIN_AVAILABLE_VEHICLES = Math.min(2, TARGET);
 
 const tenantRead = (tenantId, fn) => runWithTenant({ tenantId, role: "admin" }, fn);
 
@@ -103,6 +105,32 @@ async function repairTenant(tenant) {
       bookingCreated += 1;
     }
 
+    const vehicles = await Vehicle.find({ tenantId: tenant._id, isDeleted: { $ne: true } })
+      .sort({ createdAt: 1 })
+      .limit(TARGET);
+    const currentlyAvailable = vehicles.filter((vehicle) => vehicle.status === "available" && vehicle.isActive).length;
+    const neededVehicles = Math.max(0, MIN_AVAILABLE_VEHICLES - currentlyAvailable);
+    let vehicleUpdates = 0;
+
+    if (neededVehicles > 0) {
+      const candidates = vehicles.filter((vehicle) => vehicle.status !== "available");
+      for (const vehicle of candidates.slice(0, neededVehicles)) {
+        vehicle.status = "available";
+        vehicle.driver = null;
+        vehicle.assignedTour = null;
+        vehicle.isActive = true;
+        await vehicle.save();
+        vehicleUpdates += 1;
+      }
+    }
+
+    const availableVehicles = await Vehicle.countDocuments({
+      tenantId: tenant._id,
+      isDeleted: { $ne: true },
+      isActive: true,
+      status: "available",
+    });
+
     return {
       tenantId: String(tenant._id),
       tenantName: tenant.name,
@@ -112,6 +140,8 @@ async function repairTenant(tenant) {
       bookings: await Booking.countDocuments({ tenantId: tenant._id }),
       bookingUpdates,
       bookingCreated,
+      availableVehicles,
+      vehicleUpdates,
     };
   });
 }
@@ -127,7 +157,7 @@ async function main() {
     if (!tenants.length) throw new Error("No active tenants found.");
     const results = [];
     for (const tenant of tenants) results.push(await repairTenant(tenant));
-    console.log(JSON.stringify({ success: true, targetPerTenant: TARGET, tenants: results }, null, 2));
+    console.log(JSON.stringify({ success: true, targetPerTenant: TARGET, minimumAvailableVehicles: MIN_AVAILABLE_VEHICLES, tenants: results }, null, 2));
   } finally {
     await mongoose.disconnect();
   }
