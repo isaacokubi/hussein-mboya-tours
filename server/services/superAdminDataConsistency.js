@@ -23,7 +23,7 @@ const emptyMetrics = () => ({
  * matches SuperAdmin User Management (roleId.name, then role, then legacyRole).
  * Customer Profiles are active, non-deleted CustomerProfile records. Profile
  * tenantId is preferred; legacy profiles without tenantId inherit tenantId from
- * their linked User. A conflicting explicit profile tenantId is not counted.
+ * their linked User. An explicit conflicting tenantId is excluded.
  */
 export async function getCanonicalSuperAdminCustomerMetrics(db, tenantIds) {
   if (!db) throw new Error("Database connection is not ready.");
@@ -88,6 +88,7 @@ export async function getCanonicalSuperAdminCustomerMetrics(db, tenantIds) {
         },
         {
           $set: {
+            userTenantId: { $arrayElemAt: ["$linkedUser.tenantId", 0] },
             resolvedTenantId: {
               $cond: [
                 { $eq: [{ $type: "$tenantId" }, "objectId"] },
@@ -97,7 +98,16 @@ export async function getCanonicalSuperAdminCustomerMetrics(db, tenantIds) {
             },
           },
         },
-        { $match: { resolvedTenantId: { $in: normalizedTenantIds } } },
+        {
+          $match: {
+            resolvedTenantId: { $in: normalizedTenantIds },
+            $or: [
+              { tenantId: { $exists: false } },
+              { tenantId: null },
+              { $expr: { $eq: ["$tenantId", "$userTenantId"] } },
+            ],
+          },
+        },
         { $count: "customerProfiles" },
       ])
       .toArray(),
