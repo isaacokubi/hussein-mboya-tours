@@ -14,7 +14,7 @@ const isGenericImage = (value) => {
     ? value
     : value?.url || value?.secure_url || value?.path || "";
   if (!raw) return true;
-  const normalized = raw.toLowerCase();
+  const normalized = raw.toLowerCase().trim();
   return normalized.endsWith("/hero1.jpeg") ||
     normalized.includes("image-placeholder") ||
     normalized.includes("destination-placeholder");
@@ -54,7 +54,9 @@ export const getTourImage = (tour) => {
   const resolved = resolveMediaUrl(realImage);
   if (resolved) return resolved;
 
-  return FALLBACK_TOUR_IMAGES[stableIndex(tour)] || "/gallery/safari.jpg";
+  // Tours without their own uploaded media get a deterministic image based on
+  // the tour identity instead of sharing a single generic hero image.
+  return FALLBACK_TOUR_IMAGES[stableIndex(tour)] || FALLBACK_TOUR_IMAGES[0];
 };
 
 export const getTourImages = (tour) => {
