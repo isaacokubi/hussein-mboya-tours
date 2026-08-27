@@ -8,20 +8,35 @@ const isPlatformRole = (role) => PLATFORM_ROLES.has(String(role || "").trim().to
  * Run work inside an isolated tenant context and keep that context active
  * until async/thenable work returned by the callback has actually completed.
  *
- * This distinction is important with Mongoose: returning a Query directly
- * from AsyncLocalStorage.run() exits the ALS scope before the query executes,
- * which can cause a platform SuperAdmin query to inherit the public tenant
- * context and incorrectly return no user.
+ * A platform context is also promoted to the current request store before the
+ * child scope is entered. This is important for authentication: the global
+ * SuperAdmin is resolved inside a bypass scope, but the rest of the same
+ * request (password verification, login bookkeeping, audit/security logs and
+ * the final save) must continue to see that platform bypass. Promoting only
+ * the child scope would cause the bypass to disappear when the callback
+ * resolves and tenant-scoped models would throw "Tenant context is required".
  */
 export function runWithTenant(context, callback) {
   const role = String(context?.role || "").trim().toLowerCase() || null;
   const platformOwner = isPlatformRole(role);
+  const parentStore = tenantStorage.getStore();
+
   const store = {
     tenantId: platformOwner ? null : (context?.tenantId || null),
     role,
     tenant: platformOwner ? null : (context?.tenant || null),
     bypass: context?.bypass === true || platformOwner,
   };
+
+  // If this is already running inside a request context, keep the platform
+  // bypass active after the child AsyncLocalStorage scope completes. Never
+  // promote ordinary tenant contexts, which preserves tenant isolation.
+  if (parentStore && platformOwner) {
+    parentStore.tenantId = null;
+    parentStore.role = role;
+    parentStore.tenant = null;
+    parentStore.bypass = true;
+  }
 
   return tenantStorage.run(store, async () => await callback());
 }
