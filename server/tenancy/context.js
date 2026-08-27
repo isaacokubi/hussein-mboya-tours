@@ -8,19 +8,15 @@ const isPlatformRole = (role) => PLATFORM_ROLES.has(String(role || "").trim().to
  * Run work inside an isolated tenant context and keep that context active
  * until async/thenable work returned by the callback has actually completed.
  *
- * A platform context is also promoted to the current request store before the
- * child scope is entered. This is important for authentication: the global
- * SuperAdmin is resolved inside a bypass scope, but the rest of the same
- * request (password verification, login bookkeeping, audit/security logs and
- * the final save) must continue to see that platform bypass. Promoting only
- * the child scope would cause the bypass to disappear when the callback
- * resolves and tenant-scoped models would throw "Tenant context is required".
+ * Platform contexts are entered into the current execution context instead of
+ * being limited to a child AsyncLocalStorage scope. Authentication resolves a
+ * global SuperAdmin inside this helper and then continues with password
+ * verification, saves, audit/security logging and token creation. Those later
+ * operations must still see the platform bypass after this function returns.
  */
-export function runWithTenant(context, callback) {
+export async function runWithTenant(context, callback) {
   const role = String(context?.role || "").trim().toLowerCase() || null;
   const platformOwner = isPlatformRole(role);
-  const parentStore = tenantStorage.getStore();
-
   const store = {
     tenantId: platformOwner ? null : (context?.tenantId || null),
     role,
@@ -28,29 +24,32 @@ export function runWithTenant(context, callback) {
     bypass: context?.bypass === true || platformOwner,
   };
 
-  // If this is already running inside a request context, keep the platform
-  // bypass active after the child AsyncLocalStorage scope completes. Never
-  // promote ordinary tenant contexts, which preserves tenant isolation.
-  if (parentStore && platformOwner) {
-    parentStore.tenantId = null;
-    parentStore.role = role;
-    parentStore.tenant = null;
-    parentStore.bypass = true;
+  // A platform owner is global rather than tenant-scoped. Enter the platform
+  // store directly so the authenticated request retains the bypass after the
+  // callback resolves. Ordinary tenant contexts remain isolated in run().
+  if (platformOwner) {
+    tenantStorage.enterWith(store);
+    return await callback();
   }
 
   return tenantStorage.run(store, async () => await callback());
 }
 
 export function setTenantContext(context) {
-  const store = tenantStorage.getStore();
-  if (store) {
-    const role = String(context?.role || store.role || "").trim().toLowerCase() || null;
-    const platformOwner = isPlatformRole(role);
-    store.tenantId = platformOwner ? null : (context?.tenantId || null);
-    store.role = role;
-    store.tenant = platformOwner ? null : (context?.tenant || null);
-    store.bypass = context?.bypass === true || platformOwner;
-  }
+  const current = tenantStorage.getStore();
+  const role = String(context?.role || current?.role || "").trim().toLowerCase() || null;
+  const platformOwner = isPlatformRole(role);
+  const store = current || {};
+
+  store.tenantId = platformOwner ? null : (context?.tenantId || null);
+  store.role = role;
+  store.tenant = platformOwner ? null : (context?.tenant || null);
+  store.bypass = context?.bypass === true || platformOwner;
+
+  // setTenantContext may be called after a temporary lookup scope has ended.
+  // Enter the store when no ALS context exists so the current request can
+  // continue safely with the resolved tenant/platform context.
+  if (!current) tenantStorage.enterWith(store);
 }
 
 export function getTenantContext() {
