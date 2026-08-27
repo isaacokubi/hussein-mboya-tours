@@ -5,13 +5,15 @@ import { toast } from "react-toastify";
 import { addWishlist } from "../../api/wishlistApi";
 import { getTourImage } from "../../utils/tourImage";
 
+const NO_IMAGE = "/images/image-placeholder.jpg";
+
 export default function TourCard({ tour }) {
   const { settings = {} } = useSettings() || {};
   const currency = settings.currency || tour.currency || "KES";
   const currencySymbolMap = { KES: "KSh", USD: "$", EUR: "€", GBP: "£" };
   const currencySymbol = currencySymbolMap[currency] || settings.currencySymbol || tour.currencySymbol || currency;
   const [adding, setAdding] = useState(false);
-  const [imageSrc, setImageSrc] = useState(() => getTourImage(tour));
+  const [imageSrc, setImageSrc] = useState(() => getTourImage(tour) || NO_IMAGE);
 
   const price = Number(tour.price || 0);
   const discountedPrice = tour.discount ? price - (price * Number(tour.discount)) / 100 : price;
@@ -34,10 +36,7 @@ export default function TourCard({ tour }) {
     }
   };
 
-  const handleImageError = () => {
-    const fallback = getTourImage({ ...tour, featuredImage: null, image: null, thumbnail: null, gallery: [], images: [] });
-    if (imageSrc !== fallback) setImageSrc(fallback);
-  };
+  const handleImageError = () => setImageSrc(NO_IMAGE);
 
   return (
     <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition">
@@ -51,7 +50,7 @@ export default function TourCard({ tour }) {
           {destinationSlug ? (
             <Link to={`/destinations/${destinationSlug}`} className="text-sm text-green-700 font-medium hover:underline truncate">{destinationName}</Link>
           ) : (
-            <span className="text-sm text-gray-500">{destinationName}</span>
+            <span className="text-sm text-red-600 font-medium">Destination not assigned</span>
           )}
           <span className="text-yellow-600 shrink-0">⭐ {rating || 0}</span>
         </div>
