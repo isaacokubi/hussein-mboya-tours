@@ -5,6 +5,7 @@ import User from "../models/User.js";
 import Customer from "../models/Customer.js";
 import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
+import Destination from "../models/Destination.js";
 import Vehicle from "../models/Vehicle.js";
 import Organization from "../models/Organization.js";
 
@@ -14,13 +15,104 @@ const MIN_AVAILABLE_VEHICLES = Math.min(2, TARGET);
 
 const tenantRead = (tenantId, fn) => runWithTenant({ tenantId, role: "admin" }, fn);
 
+async function ensureTourPrerequisite(tenant, user) {
+  const existingTour = await Tour.findOne({
+    tenantId: tenant._id,
+    isDeleted: { $ne: true },
+  }).sort({ createdAt: 1 });
+  if (existingTour) return existingTour;
+
+  let destination = await Destination.findOne({
+    tenantId: tenant._id,
+    isDeleted: { $ne: true },
+  }).sort({ createdAt: 1 });
+
+  if (!destination) {
+    destination = new Destination({
+      tenantId: tenant._id,
+      name: `${tenant.name} Test Destination`,
+      country: "Kenya",
+      region: "Nairobi",
+      city: "Nairobi",
+      shortDescription: "Test destination for dashboard and booking validation.",
+      description: `Tenant-safe test destination created for ${tenant.name}.`,
+      featuredImage: "",
+      images: [],
+      attractions: ["Nairobi National Park", "Karen", "Giraffe Centre"],
+      activities: ["Safari", "City Tour"],
+      languages: ["English", "Swahili"],
+      currency: "KES",
+      timezone: "Africa/Nairobi",
+      bestSeason: "All Year",
+      weather: "Warm and sunny",
+      averageTemperature: 22,
+      coordinates: { latitude: -1.2921, longitude: 36.8219 },
+      featured: true,
+      popular: true,
+      status: "active",
+      active: true,
+      isDeleted: false,
+    });
+    await destination.save();
+  }
+
+  const date = new Date();
+  date.setDate(date.getDate() + 14);
+  const tour = new Tour({
+    tenantId: tenant._id,
+    title: `${tenant.name} Test Safari`,
+    description: `Tenant-safe test tour created for ${tenant.name}.`,
+    shortDescription: "A seeded test safari for dashboard and booking validation.",
+    category: "Safari",
+    destination: destination._id,
+    country: "Kenya",
+    location: destination.city || "Nairobi",
+    meetingPoint: "Nairobi CBD",
+    duration: "3 Days",
+    durationDetails: { days: 3, nights: 2 },
+    date,
+    startDate: date,
+    capacity: 20,
+    price: 25000,
+    agentPrice: 23000,
+    discount: 0,
+    highlights: ["Wildlife viewing", "Professional guide", "Comfortable transport"],
+    inclusions: ["Transport", "Guide", "Bottled water"],
+    exclusions: ["Personal expenses"],
+    languages: ["English", "Swahili"],
+    difficulty: "easy",
+    itinerary: [],
+    availabilitySettings: { totalSlots: 20, bookedSlots: 0, waitlistEnabled: false },
+    depositRequired: 12500,
+    cancellationPolicy: "Standard test policy",
+    bookingDeadline: 1,
+    instantBooking: true,
+    assignedGuide: null,
+    assignedDriver: null,
+    assignedVehicle: null,
+    assignmentStatus: "pending",
+    status: "upcoming",
+    published: true,
+    featured: true,
+    available: true,
+    isDeleted: false,
+    createdBy: user?._id || null,
+  });
+  await tour.save();
+  return tour;
+}
+
 async function repairTenant(tenant) {
   return tenantRead(tenant._id, async () => {
     const users = await User.find({ tenantId: tenant._id }).sort({ createdAt: 1 }).limit(TARGET).lean();
-    const tours = await Tour.find({ tenantId: tenant._id }).sort({ createdAt: 1 }).limit(TARGET).lean();
-
     if (!users.length) throw new Error(`Tenant ${tenant.name} has no users available for customer relationships.`);
-    if (!tours.length) throw new Error(`Tenant ${tenant.name} has no tours available for bookings.`);
+
+    const repairUser = users[0];
+    const prerequisiteTour = await ensureTourPrerequisite(tenant, repairUser);
+    const tours = await Tour.find({ tenantId: tenant._id, isDeleted: { $ne: true } })
+      .sort({ createdAt: 1 })
+      .limit(TARGET)
+      .lean();
 
     const customers = await Customer.find({ tenantId: tenant._id }).sort({ createdAt: 1 });
     const assignedUsers = new Set(
@@ -43,7 +135,7 @@ async function repairTenant(tenant) {
     if (!customerPool.length) throw new Error(`Tenant ${tenant.name} still has no valid customer records.`);
 
     const existingBookings = await Booking.find({ tenantId: tenant._id }).sort({ createdAt: 1 }).limit(TARGET);
-    const tourIds = tours.map((tour) => tour._id);
+    const tourIds = tours.length ? tours.map((tour) => tour._id) : [prerequisiteTour._id];
     const customerIds = customerPool.map((customer) => customer._id);
 
     let bookingUpdates = 0;
@@ -135,6 +227,7 @@ async function repairTenant(tenant) {
       tenantId: String(tenant._id),
       tenantName: tenant.name,
       users: users.length,
+      tours: await Tour.countDocuments({ tenantId: tenant._id, isDeleted: { $ne: true } }),
       customers: await Customer.countDocuments({ tenantId: tenant._id }),
       customerUpdates,
       bookings: await Booking.countDocuments({ tenantId: tenant._id }),
@@ -153,8 +246,8 @@ async function main() {
   await mongoose.connect(uri);
   try {
     const tenants = await runWithTenant({ role: "super_admin", bypass: true }, () =>
-      Organization.find({ status: "active" }).sort({ createdAt: 1 }).lean());
-    if (!tenants.length) throw new Error("No active tenants found.");
+      Organization.find({ status: { $in: ["active", "trial"] } }).sort({ createdAt: 1 }).lean());
+    if (!tenants.length) throw new Error("No active or trial tenants found.");
     const results = [];
     for (const tenant of tenants) results.push(await repairTenant(tenant));
     console.log(JSON.stringify({ success: true, targetPerTenant: TARGET, minimumAvailableVehicles: MIN_AVAILABLE_VEHICLES, tenants: results }, null, 2));
