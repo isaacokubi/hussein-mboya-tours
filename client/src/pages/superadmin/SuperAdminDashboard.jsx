@@ -26,7 +26,7 @@ const unwrapMetrics = (payload) => {
 const unwrapScope = (payload) => payload?.scope || payload?.data?.scope || payload?.data?.data?.scope || {};
 
 const cards = [
-  ["users", "Platform Users"], ["customers", "Active Customers"], ["staff", "Staff"],
+  ["users", "Platform User Accounts"], ["customers", "Active Customer Profiles"], ["staff", "Staff"],
   ["agents", "Agents"], ["vehicles", "Vehicles"], ["availableVehicles", "Available Vehicles"],
   ["bookings", "Bookings"], ["admins", "Tenant Administrators"], ["tours", "Tours"],
   ["destinations", "Destinations"], ["payments", "Payments"], ["completedPayments", "Completed Payments"],
