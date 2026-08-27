@@ -12,7 +12,51 @@ import Organization from "../models/Organization.js";
 const TARGET = Math.max(10, Number(process.env.TEST_SEED_COUNT || 10));
 const ALLOW = String(process.env.ALLOW_TEST_SEED || "false").toLowerCase() === "true";
 const MIN_AVAILABLE_VEHICLES = Math.min(2, TARGET);
+const TEST_ADMIN_PASSWORD = process.env.TEST_SEED_ADMIN_PASSWORD || process.env.TEST_SEED_PASSWORD || "TestAdmin123!";
 const tenantRead = (tenantId, fn) => runWithTenant({ tenantId, role: "admin" }, fn);
+
+function phoneForTenant(tenantId) {
+  const numeric = Number.parseInt(String(tenantId).slice(-8), 16) % 100000000;
+  return `07${String(numeric).padStart(8, "0")}`;
+}
+
+async function ensureTenantAdministrator(tenant) {
+  return tenantRead(tenant._id, async () => {
+    let admin = await User.findOne({ tenantId: tenant._id, role: { $in: ["admin", "administrator"] } })
+      .sort({ createdAt: 1 });
+
+    if (admin) {
+      let changed = false;
+      if (admin.role !== "admin") { admin.role = "admin"; changed = true; }
+      if (admin.legacyRole !== "admin") { admin.legacyRole = "admin"; changed = true; }
+      if (admin.status !== "active") { admin.status = "active"; changed = true; }
+      if (!admin.isVerified) { admin.isVerified = true; changed = true; }
+      if (changed) await admin.save();
+    } else {
+      const slug = String(tenant.slug || tenant._id).toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      admin = new User({
+        tenantId: tenant._id,
+        name: `${tenant.name} Administrator`,
+        email: `admin-${slug}@test.example`.toLowerCase(),
+        phone: phoneForTenant(tenant._id),
+        password: TEST_ADMIN_PASSWORD,
+        role: "admin",
+        legacyRole: "admin",
+        status: "active",
+        isVerified: true,
+      });
+      await admin.save();
+    }
+
+    if (!tenant.createdBy) {
+      await runWithTenant({ role: "super_admin", bypass: true }, () =>
+        Organization.updateOne({ _id: tenant._id }, { $set: { createdBy: admin._id } })
+      );
+    }
+
+    return admin;
+  });
+}
 
 async function ensureTourPrerequisite(tenant, user) {
   const existingTour = await Tour.findOne({ tenantId: tenant._id, isDeleted: { $ne: true } }).sort({ createdAt: 1 });
@@ -82,8 +126,6 @@ async function ensureCustomerPrerequisites(tenant, users) {
   }
 
   let validCount = await Customer.countDocuments({ tenantId: tenant._id, user: { $ne: null }, phone: { $regex: /^\d{10}$/ } });
-  const existingTestUsers = new Map();
-  for (const user of await User.find({ tenantId: tenant._id, role: "customer" }).select("_id email phone name role status").lean()) existingTestUsers.set(String(user._id), user);
 
   for (let index = validCount; index < TARGET; index += 1) {
     const suffix = `${String(tenant._id).slice(-8)}-${String(index + 1).padStart(2, "0")}`;
@@ -117,9 +159,10 @@ async function ensureCustomerPrerequisites(tenant, users) {
 
 async function repairTenant(tenant) {
   return tenantRead(tenant._id, async () => {
+    const tenantAdmin = await ensureTenantAdministrator(tenant);
     const users = await User.find({ tenantId: tenant._id }).sort({ createdAt: 1 }).limit(TARGET).lean();
     if (!users.length) throw new Error(`Tenant ${tenant.name} has no users available for customer relationships.`);
-    const prerequisiteTour = await ensureTourPrerequisite(tenant, users[0]);
+    const prerequisiteTour = await ensureTourPrerequisite(tenant, tenantAdmin || users[0]);
     const tours = await Tour.find({ tenantId: tenant._id, isDeleted: { $ne: true } }).sort({ createdAt: 1 }).limit(TARGET).lean();
     const customerData = await ensureCustomerPrerequisites(tenant, users);
     const customerPool = customerData.customerPool;
@@ -166,7 +209,11 @@ async function repairTenant(tenant) {
     const availableVehicles = await Vehicle.countDocuments({ tenantId: tenant._id, isDeleted: { $ne: true }, isActive: true, status: "available" });
 
     return {
-      tenantId: String(tenant._id), tenantName: tenant.name, users: await User.countDocuments({ tenantId: tenant._id }),
+      tenantId: String(tenant._id), tenantName: tenant.name,
+      tenantAdministrator: tenantAdmin?.email || null,
+      tenantAdministratorId: tenantAdmin?._id ? String(tenantAdmin._id) : null,
+      users: await User.countDocuments({ tenantId: tenant._id }),
+      tenantAdministrators: await User.countDocuments({ tenantId: tenant._id, role: { $in: ["admin", "administrator"] }, status: "active" }),
       tours: await Tour.countDocuments({ tenantId: tenant._id, isDeleted: { $ne: true }}), customers: await Customer.countDocuments({ tenantId: tenant._id }),
       customerUpdates: customerData.customerUpdates, customerCreated: customerData.customerCreated, userCreated: customerData.userCreated,
       bookings: await Booking.countDocuments({ tenantId: tenant._id }), bookingUpdates, bookingCreated, availableVehicles, vehicleUpdates,
