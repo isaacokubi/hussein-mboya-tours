@@ -2,6 +2,9 @@ import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import api from "../../api/axios";
+import {
+  getSuperAdminDashboardMetrics,
+} from "../../api/superAdminApi";
 import { createSuperAdminTenant, getSuperAdminTenantPlans } from "../../api/superAdminTenantsApi";
 
 const getUsers = async (search) => (await api.get("/superadmin/users", { params: { search, limit: 250 } })).data;
@@ -81,23 +84,25 @@ function Field({ label, name, value, onChange, type = "text", ...props }) { retu
 export default function SuperAdminUsers() {
   const [search, setSearch] = useState(""); const [showCreateAccount, setShowCreateAccount] = useState(false);
   const { data, isLoading, isError, error, refetch } = useQuery({ queryKey: ["superadmin-users", search], queryFn: () => getUsers(search), retry: false, staleTime: 15000 });
+  const { data: metricsData } = useQuery({ queryKey: ["superadmin-dashboard-metrics"], queryFn: getSuperAdminDashboardMetrics, retry: 1, staleTime: 30000, refetchOnMount: "always", refetchOnWindowFocus: true });
+
   const users = data?.users || data?.data || [];
   const totalUsers = Number(data?.total ?? users.length);
   const active = users.filter((u) => (u.status || "active") === "active").length;
-  const tenantAdmins = users.filter((u) => {
-    const role = String(u.role || "").toLowerCase();
-    return Boolean(u.tenantId) && ["admin", "administrator"].includes(role);
-  }).length;
-  const customerAccounts = users.filter((u) => String(u.role || "").toLowerCase() === "customer").length;
+  const metrics = metricsData?.data || metricsData || {};
+  const customerProfiles = Number(metrics.customerProfiles ?? 0);
+  const customerAccounts = Number(metrics.customerAccounts ?? 0);
+  const tenantAdmins = Number(metrics.admins ?? 0);
+
   const status = async (id, value) => { try { await updateStatus(id, value); await refetch(); toast.success(`User ${value === "active" ? "activated" : "suspended"}.`); } catch (err) { toast.error(err?.response?.data?.message || "Unable to update user status."); } };
   const remove = async (id) => { if (!window.confirm("Delete this user permanently?")) return; try { await removeUser(id); await refetch(); toast.success("User account deleted successfully."); } catch (err) { toast.error(err?.response?.data?.message || "Unable to delete user."); } };
 
   return <div className="space-y-6 p-8"><div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"><div><h1 className="text-3xl font-bold">SuperAdmin User Management</h1><p className="mt-1 text-sm text-gray-500">Manage all platform users without tenant-scoped filtering. Tenant administrators belong to their respective company workspaces.</p></div><button type="button" onClick={() => setShowCreateAccount(true)} className="rounded-xl bg-black px-5 py-3 font-medium text-white shadow-sm">+ Create Company / Tenant</button></div>
     {showCreateAccount && <CompanyTenantForm onCancel={() => setShowCreateAccount(false)} onCreated={async () => { await refetch(); setShowCreateAccount(false); }} />}
-    <div className="grid gap-4 md:grid-cols-4"><Card title="Total Platform Users" value={totalUsers} /><Card title="Active Accounts" value={active} /><Card title="Tenant Administrators" value={tenantAdmins} /><Card title="Customer Accounts" value={customerAccounts} /></div>
+    <div className="grid gap-4 md:grid-cols-5"><Card title="Total Platform Users" value={totalUsers} /><Card title="Active Accounts" value={active} /><Card title="Tenant Administrators" value={tenantAdmins} /><Card title="Customer Accounts" value={customerAccounts} /><Card title="Customer Profiles" value={customerProfiles} /></div>
     <input className="w-full rounded-xl border p-3" placeholder="Search users..." value={search} onChange={(e) => setSearch(e.target.value)} />
     <div className="overflow-auto rounded-xl bg-white shadow">{isError ? <div className="p-6 text-red-700">{error?.response?.data?.message || "Unable to load platform users."}</div> : <table className="w-full"><thead className="bg-gray-100"><tr><th className="p-4 text-left">Name</th><th className="text-left">Email</th><th className="text-left">Role</th><th className="text-left">Status</th><th className="text-left">Actions</th></tr></thead><tbody>{isLoading ? <tr><td className="p-5" colSpan="5">Loading...</td></tr> : users.length === 0 ? <tr><td className="p-5 text-gray-500" colSpan="5">No platform users found.</td></tr> : users.map((u) => <tr className="border-t" key={u._id}><td className="p-4">{u.name || "—"}</td><td>{u.email || "—"}</td><td><span className="rounded-full bg-blue-100 px-3 py-1">{u.role || "customer"}</span></td><td>{u.status || "active"}</td><td className="space-x-2"><button className="rounded border px-3 py-1" onClick={() => status(u._id, "active")}>Activate</button><button className="rounded border px-3 py-1" onClick={() => status(u._id, "suspended")}>Suspend</button><button className="rounded bg-red-500 px-3 py-1 text-white" onClick={() => remove(u._id)}>Delete</button></td></tr>)}</tbody></table>}</div>
   </div>;
 }
 
-function Card({ title, value }) { return <div className="rounded-xl border bg-white p-5"><p className="text-gray-500">{title}</p><h2 className="text-3xl font-bold">{value}</h2></div>; }
+function Card({ title, value }) { return <div className="rounded-xl border bg-white p-5"><p className="text-gray-500">{title}</p><h2 className="text-3xl font-bold">{value.toLocaleString ? value.toLocaleString() : value}</h2></div>; }

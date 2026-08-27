@@ -9,14 +9,21 @@ const roleNameExpression = {
   },
 };
 
+const emptyMetrics = () => ({
+  customerAccounts: 0,
+  customerProfiles: 0,
+  activeAccounts: 0,
+  tenantAdmins: 0,
+});
+
 /**
- * Canonical platform customer metrics used by both Super Admin pages.
+ * Canonical customer metrics shared by the two Super Admin pages.
  *
- * Customer account semantics mirror SuperAdmin User Management:
- * roleId.name first, then role, then legacyRole; account must be active and
- * tenant-owned. Profile counts come from CustomerProfile records linked to
- * those customer accounts. A legacy profile without tenantId is reconciled via
- * its linked user's tenantId; an explicitly conflicting tenantId is excluded.
+ * Customer Accounts are active tenant-owned User records whose effective role
+ * matches SuperAdmin User Management (roleId.name, then role, then legacyRole).
+ * Customer Profiles are active, non-deleted CustomerProfile records. Profile
+ * tenantId is preferred; legacy profiles without tenantId inherit tenantId from
+ * their linked User. An explicit conflicting tenantId is excluded.
  */
 export async function getCanonicalSuperAdminCustomerMetrics(db, tenantIds) {
   if (!db) throw new Error("Database connection is not ready.");
@@ -25,117 +32,96 @@ export async function getCanonicalSuperAdminCustomerMetrics(db, tenantIds) {
     id instanceof mongoose.Types.ObjectId ? id : new mongoose.Types.ObjectId(id)
   );
 
-  if (!normalizedTenantIds.length) {
-    return {
-      customerAccounts: 0,
-      customerProfiles: 0,
-      activeAccounts: 0,
-      tenantAdmins: 0,
-    };
-  }
+  if (!normalizedTenantIds.length) return emptyMetrics();
 
-  const [result] = await db
-    .collection("users")
-    .aggregate([
-      {
-        $match: {
-          status: "active",
-          tenantId: { $in: normalizedTenantIds },
+  const [accountResult, profileResult] = await Promise.all([
+    db
+      .collection("users")
+      .aggregate([
+        {
+          $match: {
+            status: "active",
+            tenantId: { $in: normalizedTenantIds },
+          },
         },
-      },
-      {
-        $lookup: {
-          from: "roles",
-          localField: "roleId",
-          foreignField: "_id",
-          as: "roleDoc",
+        {
+          $lookup: {
+            from: "roles",
+            localField: "roleId",
+            foreignField: "_id",
+            as: "roleDoc",
+          },
         },
-      },
-      {
-        $set: {
-          effectiveRole: roleNameExpression,
-        },
-      },
-      {
-        $lookup: {
-          from: "customerprofiles",
-          let: { userId: "$_id", userTenantId: "$tenantId" },
-          pipeline: [
-            {
-              $match: {
-                isDeleted: { $ne: true },
-                isActive: { $ne: false },
-                $expr: {
-                  $and: [
-                    { $eq: ["$user", "$$userId"] },
-                    {
-                      $or: [
-                        { $eq: ["$tenantId", null] },
-                        { $eq: ["$tenantId", "$$userTenantId"] },
-                      ],
-                    },
-                  ],
-                },
+        { $set: { effectiveRole: roleNameExpression } },
+        {
+          $group: {
+            _id: null,
+            customerAccounts: {
+              $sum: { $cond: [{ $eq: ["$effectiveRole", "customer"] }, 1, 0] },
+            },
+            activeAccounts: { $sum: 1 },
+            tenantAdmins: {
+              $sum: {
+                $cond: [
+                  { $in: ["$effectiveRole", ["admin", "administrator"]] },
+                  1,
+                  0,
+                ],
               },
             },
-            { $limit: 1 },
-            { $project: { _id: 1 } },
-          ],
-          as: "customerProfiles",
+          },
         },
-      },
-      {
-        $group: {
-          _id: null,
-          customerAccounts: {
-            $sum: { $cond: [{ $eq: ["$effectiveRole", "customer"] }, 1, 0] },
+        { $project: { _id: 0, customerAccounts: 1, activeAccounts: 1, tenantAdmins: 1 } },
+      ])
+      .toArray(),
+    db
+      .collection("customerprofiles")
+      .aggregate([
+        { $match: { isDeleted: { $ne: true }, isActive: { $ne: false } } },
+        {
+          $lookup: {
+            from: "users",
+            localField: "user",
+            foreignField: "_id",
+            as: "linkedUser",
           },
-          customerProfiles: {
-            $sum: {
+        },
+        {
+          $set: {
+            userTenantId: { $arrayElemAt: ["$linkedUser.tenantId", 0] },
+            resolvedTenantId: {
               $cond: [
-                {
-                  $and: [
-                    { $eq: ["$effectiveRole", "customer"] },
-                    { $gt: [{ $size: "$customerProfiles" }, 0] },
-                  ],
-                },
-                1,
-                0,
-              ],
-            },
-          },
-          activeAccounts: { $sum: 1 },
-          tenantAdmins: {
-            $sum: {
-              $cond: [
-                { $in: ["$effectiveRole", ["admin", "administrator"]] },
-                1,
-                0,
+                { $eq: [{ $type: "$tenantId" }, "objectId"] },
+                "$tenantId",
+                { $arrayElemAt: ["$linkedUser.tenantId", 0] },
               ],
             },
           },
         },
-      },
-      {
-        $project: {
-          _id: 0,
-          customerAccounts: 1,
-          customerProfiles: 1,
-          activeAccounts: 1,
-          tenantAdmins: 1,
+        {
+          $match: {
+            resolvedTenantId: { $in: normalizedTenantIds },
+            $or: [
+              { tenantId: { $exists: false } },
+              { tenantId: null },
+              { $expr: { $eq: ["$tenantId", "$userTenantId"] } },
+            ],
+          },
         },
-      },
-    ])
-    .toArray();
+        { $count: "customerProfiles" },
+      ])
+      .toArray(),
+  ]);
 
-  return (
-    result || {
-      customerAccounts: 0,
-      customerProfiles: 0,
-      activeAccounts: 0,
-      tenantAdmins: 0,
-    }
-  );
+  const accounts = accountResult[0] || {};
+  const profiles = profileResult[0] || {};
+
+  return {
+    customerAccounts: Number(accounts.customerAccounts || 0),
+    customerProfiles: Number(profiles.customerProfiles || 0),
+    activeAccounts: Number(accounts.activeAccounts || 0),
+    tenantAdmins: Number(accounts.tenantAdmins || 0),
+  };
 }
 
 export default getCanonicalSuperAdminCustomerMetrics;
