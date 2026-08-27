@@ -3,18 +3,8 @@ import mongoose from "mongoose";
 const count = async (db, collection, filter = {}) =>
   db.collection(collection).countDocuments(filter);
 
-const tenantCount = async (db, tenants, collection, extra = {}) => {
-  if (!tenants.length) return 0;
-  const counts = await Promise.all(
-    tenants.map((tenant) =>
-      count(db, collection, {
-        tenantId: tenant._id,
-        ...extra,
-      })
-    )
-  );
-  return counts.reduce((sum, value) => sum + value, 0);
-};
+const sum = (rows, key) =>
+  rows.reduce((total, row) => total + Number(row?.counts?.[key] || 0), 0);
 
 export const getSuperAdminDashboardMetrics = async (_req, res) => {
   try {
@@ -41,303 +31,185 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
       .sort({ createdAt: 1 })
       .toArray();
 
-    const activeTenantRows = tenantRows.filter(
-      (tenant) => tenant.status === "active"
-    );
-    const trialTenantRows = tenantRows.filter(
-      (tenant) => tenant.status === "trial"
-    );
-
-    const tenantScopeCount = (collection, extra = {}) =>
-      tenantCount(db, tenantRows, collection, extra);
+    const tenantIds = tenantRows.map((tenant) => tenant._id);
+    const tenantFilter = tenantIds.length ? { tenantId: { $in: tenantIds } } : { tenantId: null };
+    const nonDeleted = { isDeleted: { $ne: true } };
 
     const [
-      users,
-      customers,
-      admins,
-      staff,
-      agents,
+      platformUsers,
+      activeCustomers,
+      tenantAdmins,
+      tenantStaff,
+      tenantAgents,
       approvedAgents,
-      vehicles,
+      tenantVehicles,
       availableVehicles,
       assignedVehicles,
       maintenanceVehicles,
-      tours,
-      destinations,
-      bookings,
+      tenantTours,
+      tenantDestinations,
+      tenantBookings,
       pendingBookings,
       confirmedBookings,
-      payments,
+      tenantPayments,
       completedPayments,
     ] = await Promise.all([
-      tenantScopeCount("users", {
-        status: { $ne: "blocked" },
-      }),
-
-      tenantScopeCount("users", {
-        role: "customer",
-        status: "active",
-      }),
-
-      tenantScopeCount("users", {
+      count(db, "users", { status: { $ne: "blocked" } }),
+      count(db, "customers", { ...tenantFilter, ...nonDeleted, status: "active" }),
+      count(db, "users", {
+        ...tenantFilter,
         role: { $in: ["admin", "administrator"] },
         status: "active",
       }),
-
-      tenantScopeCount("staffs", {
-        isDeleted: { $ne: true },
-      }),
-
-      tenantScopeCount("agents", {
-        isDeleted: { $ne: true },
-      }),
-
-      tenantScopeCount("agents", {
-        isDeleted: { $ne: true },
+      count(db, "staffs", { ...tenantFilter, ...nonDeleted }),
+      count(db, "agents", { ...tenantFilter, ...nonDeleted }),
+      count(db, "agents", {
+        ...tenantFilter,
+        ...nonDeleted,
         status: "active",
         isApproved: true,
       }),
-
-      tenantScopeCount("vehicles", {
-        isDeleted: { $ne: true },
-      }),
-
-      tenantScopeCount("vehicles", {
-        isDeleted: { $ne: true },
-        status: "available",
-      }),
-
-      tenantScopeCount("vehicles", {
-        isDeleted: { $ne: true },
-        status: "assigned",
-      }),
-
-      tenantScopeCount("vehicles", {
-        isDeleted: { $ne: true },
-        status: "maintenance",
-      }),
-
-      tenantScopeCount("tours", {
-        isDeleted: { $ne: true },
-      }),
-
-      tenantScopeCount("destinations", {
-        isDeleted: { $ne: true },
-      }),
-
-      tenantScopeCount("bookings", {
-        isDeleted: { $ne: true },
-      }),
-
-      tenantScopeCount("bookings", {
-        isDeleted: { $ne: true },
-        status: "pending",
-      }),
-
-      tenantScopeCount("bookings", {
-        isDeleted: { $ne: true },
-        status: "confirmed",
-      }),
-
-      tenantScopeCount("payments"),
-
-      tenantScopeCount("payments", {
-        status: "completed",
-      }),
+      count(db, "vehicles", { ...tenantFilter, ...nonDeleted }),
+      count(db, "vehicles", { ...tenantFilter, ...nonDeleted, status: "available" }),
+      count(db, "vehicles", { ...tenantFilter, ...nonDeleted, status: "assigned" }),
+      count(db, "vehicles", { ...tenantFilter, ...nonDeleted, status: "maintenance" }),
+      count(db, "tours", { ...tenantFilter, ...nonDeleted }),
+      count(db, "destinations", { ...tenantFilter, ...nonDeleted }),
+      count(db, "bookings", { ...tenantFilter, ...nonDeleted }),
+      count(db, "bookings", { ...tenantFilter, ...nonDeleted, status: "pending" }),
+      count(db, "bookings", { ...tenantFilter, ...nonDeleted, status: "confirmed" }),
+      count(db, "payments", tenantFilter),
+      count(db, "payments", { ...tenantFilter, status: "completed" }),
     ]);
 
-    const revenueRows = await db
-      .collection("payments")
-      .aggregate([
-        {
-          $match: {
-            tenantId: { $in: tenantRows.map((tenant) => tenant._id) },
-            status: "completed",
-          },
-        },
-        {
-          $project: {
-            currency: {
-              $toUpper: {
-                $ifNull: ["$currency", "KES"],
+    const [revenueRows, tenantSummaries] = await Promise.all([
+      db
+        .collection("payments")
+        .aggregate([
+          { $match: { ...tenantFilter, status: "completed" } },
+          {
+            $project: {
+              currency: { $toUpper: { $ifNull: ["$currency", "KES"] } },
+              amount: {
+                $convert: {
+                  input: "$amount",
+                  to: "double",
+                  onError: 0,
+                  onNull: 0,
+                },
               },
-            },
-            amount: {
-              $convert: {
-                input: "$amount",
-                to: "double",
-                onError: 0,
-                onNull: 0,
-              },
-            },
-            refundedAmount: {
-              $cond: [
-                { $eq: ["$refundStatus", "completed"] },
-                {
-                  $convert: {
-                    input: "$refundedAmount",
-                    to: "double",
-                    onError: 0,
-                    onNull: 0,
+              refundedAmount: {
+                $cond: [
+                  { $eq: ["$refundStatus", "completed"] },
+                  {
+                    $convert: {
+                      input: "$refundedAmount",
+                      to: "double",
+                      onError: 0,
+                      onNull: 0,
+                    },
                   },
-                },
-                0,
-              ],
+                  0,
+                ],
+              },
             },
           },
-        },
-        {
-          $group: {
-            _id: "$currency",
-            gross: { $sum: "$amount" },
-            refunds: { $sum: "$refundedAmount" },
-          },
-        },
-        {
-          $project: {
-            _id: 0,
-            currency: "$_id",
-            gross: 1,
-            refunds: 1,
-            revenue: {
-              $max: [
-                0,
-                {
-                  $subtract: ["$gross", "$refunds"],
-                },
-              ],
+          {
+            $group: {
+              _id: "$currency",
+              gross: { $sum: "$amount" },
+              refunds: { $sum: "$refundedAmount" },
             },
           },
-        },
-        { $sort: { currency: 1 } },
-      ])
-      .toArray();
+          {
+            $project: {
+              _id: 0,
+              currency: "$_id",
+              gross: 1,
+              refunds: 1,
+              revenue: { $max: [0, { $subtract: ["$gross", "$refunds"] }] },
+            },
+          },
+          { $sort: { currency: 1 } },
+        ])
+        .toArray(),
+      Promise.all(
+        tenantRows.map(async (tenant) => {
+          const scope = { tenantId: tenant._id };
+          const counts = {
+            users: await count(db, "users", scope),
+            tours: await count(db, "tours", { ...scope, ...nonDeleted }),
+            bookings: await count(db, "bookings", { ...scope, ...nonDeleted }),
+            payments: await count(db, "payments", scope),
+            customers: await count(db, "customers", { ...scope, ...nonDeleted, status: "active" }),
+            agents: await count(db, "agents", { ...scope, ...nonDeleted }),
+            staff: await count(db, "staffs", { ...scope, ...nonDeleted }),
+            vehicles: await count(db, "vehicles", { ...scope, ...nonDeleted }),
+            availableVehicles: await count(db, "vehicles", { ...scope, ...nonDeleted, status: "available" }),
+            destinations: await count(db, "destinations", { ...scope, ...nonDeleted }),
+          };
 
-    const tenants = await Promise.all(
-      tenantRows.map(async (tenant) => {
-        const scope = { tenantId: tenant._id };
+          return {
+            tenantId: String(tenant._id),
+            name: tenant.name,
+            slug: tenant.slug,
+            status: tenant.status,
+            subscription: tenant.subscription || {},
+            ...counts,
+          };
+        })
+      ),
+    ]);
 
-        const [
-          tenantUsers,
-          tenantCustomers,
-          tenantAdmins,
-          tenantStaff,
-          tenantAgents,
-          tenantVehicles,
-          tenantAvailableVehicles,
-          tenantTours,
-          tenantDestinations,
-          tenantBookings,
-          tenantPayments,
-        ] = await Promise.all([
-          count(db, "users", scope),
-          count(db, "users", {
-            ...scope,
-            role: "customer",
-            status: "active",
-          }),
-          count(db, "users", {
-            ...scope,
-            role: { $in: ["admin", "administrator"] },
-            status: "active",
-          }),
-          count(db, "staffs", {
-            ...scope,
-            isDeleted: { $ne: true },
-          }),
-          count(db, "agents", {
-            ...scope,
-            isDeleted: { $ne: true },
-          }),
-          count(db, "vehicles", {
-            ...scope,
-            isDeleted: { $ne: true },
-          }),
-          count(db, "vehicles", {
-            ...scope,
-            isDeleted: { $ne: true },
-            status: "available",
-          }),
-          count(db, "tours", {
-            ...scope,
-            isDeleted: { $ne: true },
-          }),
-          count(db, "destinations", {
-            ...scope,
-            isDeleted: { $ne: true },
-          }),
-          count(db, "bookings", {
-            ...scope,
-            isDeleted: { $ne: true },
-          }),
-          count(db, "payments", scope),
-        ]);
-
-        return {
-          tenantId: String(tenant._id),
-          name: tenant.name,
-          slug: tenant.slug,
-          status: tenant.status,
-          subscription: tenant.subscription || {},
-          users: tenantUsers,
-          customers: tenantCustomers,
-          admins: tenantAdmins,
-          staff: tenantStaff,
-          agents: tenantAgents,
-          vehicles: tenantVehicles,
-          availableVehicles: tenantAvailableVehicles,
-          tours: tenantTours,
-          destinations: tenantDestinations,
-          bookings: tenantBookings,
-          payments: tenantPayments,
-        };
-      })
-    );
-
-    const primary =
-      revenueRows.find((row) => row.currency === "KES") ||
-      revenueRows[0] ||
-      null;
+    const primary = revenueRows.find((row) => row.currency === "KES") || revenueRows[0] || null;
+    const tenantCount = tenantRows.length;
+    const activeTenantCount = tenantRows.filter((tenant) => tenant.status === "active").length;
+    const trialTenantCount = tenantRows.filter((tenant) => tenant.status === "trial").length;
 
     return res.json({
       success: true,
       scope: {
         type: "platform",
-        tenantCount: tenantRows.length,
-        activeTenantCount: activeTenantRows.length,
-        trialTenantCount: trialTenantRows.length,
+        tenantCount,
+        activeTenantCount,
+        trialTenantCount,
       },
       data: {
-        users,
-        customers,
-        admins,
-        staff,
-        agents,
+        users: platformUsers,
+        customers: activeCustomers,
+        admins: tenantAdmins,
+        staff: tenantStaff,
+        agents: tenantAgents,
         approvedAgents,
-        pendingAgents: Math.max(0, agents - approvedAgents),
-
-        vehicles,
+        pendingAgents: Math.max(0, tenantAgents - approvedAgents),
+        vehicles: tenantVehicles,
         availableVehicles,
         assignedVehicles,
         maintenanceVehicles,
-
-        tours,
-        destinations,
-
-        bookings,
+        tours: tenantTours,
+        destinations: tenantDestinations,
+        bookings: tenantBookings,
         pendingBookings,
         confirmedBookings,
-
-        payments,
+        payments: tenantPayments,
         completedPayments,
-
         revenue: Number(primary?.revenue || 0),
         grossRevenue: Number(primary?.gross || 0),
         refundedRevenue: Number(primary?.refunds || 0),
         revenueCurrency: primary?.currency || "KES",
         revenueByCurrency: revenueRows,
-
-        tenants,
+        tenants: tenantSummaries,
+        consistency: {
+          tenantUsers: sum(tenantSummaries, "users"),
+          tenantCustomers: sum(tenantSummaries, "customers"),
+          tenantStaff: sum(tenantSummaries, "staff"),
+          tenantAgents: sum(tenantSummaries, "agents"),
+          tenantVehicles: sum(tenantSummaries, "vehicles"),
+          tenantTours: sum(tenantSummaries, "tours"),
+          tenantDestinations: sum(tenantSummaries, "destinations"),
+          tenantBookings: sum(tenantSummaries, "bookings"),
+          tenantPayments: sum(tenantSummaries, "payments"),
+        },
       },
       timestamp: new Date().toISOString(),
     });
@@ -346,8 +218,7 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
 
     return res.status(500).json({
       success: false,
-      message:
-        error.message || "Unable to load platform metrics.",
+      message: error.message || "Unable to load platform metrics.",
     });
   }
 };
