@@ -1,7 +1,26 @@
 import axios from "axios";
 
 const configuredApiUrl = String(import.meta.env.VITE_API_URL || "").trim();
-export const baseURL = configuredApiUrl || "/api";
+const configuredPlatformApiUrl = String(import.meta.env.VITE_PLATFORM_API_URL || "").trim();
+
+function isLocalHost() {
+  if (typeof window === "undefined") return false;
+  const hostname = String(window.location.hostname || "").trim().toLowerCase();
+  return ["localhost", "127.0.0.1", "[::1]"].includes(hostname);
+}
+
+function isPlatformDeployment() {
+  const configured = String(import.meta.env.VITE_PLATFORM_MODE || "").trim().toLowerCase();
+  if (configured === "true") return true;
+  if (configured === "false") return false;
+  if (typeof window === "undefined") return false;
+  return String(window.location.hostname || "").trim().toLowerCase() === "hussein-mboya-tours.vercel.app";
+}
+
+const PLATFORM_API_URL = configuredPlatformApiUrl || "https://hussein-mboya-tours.onrender.com/api";
+export const baseURL = isPlatformDeployment()
+  ? PLATFORM_API_URL
+  : (configuredApiUrl || "/api");
 
 // Production deployments on a shared Vercel hostname cannot infer a tenant
 // from the hostname alone. VITE_PUBLIC_TENANT_SLUG is therefore the explicit,
@@ -16,14 +35,8 @@ const PUBLIC_TENANT_KEY = String(
   import.meta.env.VITE_PUBLIC_TENANT_KEY || ""
 ).trim();
 
-function isLocalHost() {
-  if (typeof window === "undefined") return false;
-  const hostname = String(window.location.hostname || "").trim().toLowerCase();
-  return ["localhost", "127.0.0.1", "[::1]"].includes(hostname);
-}
-
 function getPublicTenantSlug() {
-  if (typeof window === "undefined" || isLocalHost()) return "";
+  if (typeof window === "undefined" || isLocalHost() || isPlatformDeployment()) return "";
 
   const hostname = String(window.location.hostname || "").trim().toLowerCase();
   const configuredPlatformHost = String(import.meta.env.VITE_PLATFORM_HOST || "")
@@ -40,7 +53,7 @@ function getPublicTenantSlug() {
 }
 
 function getPublicTenantKey() {
-  if (isLocalHost()) return "";
+  if (isLocalHost() || isPlatformDeployment()) return "";
   return PUBLIC_TENANT_KEY;
 }
 

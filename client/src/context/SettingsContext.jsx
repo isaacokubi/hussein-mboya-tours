@@ -33,6 +33,13 @@ function normalizeRole(user) {
   return "";
 }
 const isSuperAdminUser = (user) => ["super_admin", "superadmin"].includes(normalizeRole(user));
+const isPlatformDeployment = () => {
+  const configured = String(import.meta.env.VITE_PLATFORM_MODE || "").trim().toLowerCase();
+  if (configured === "true") return true;
+  if (configured === "false") return false;
+  if (typeof window === "undefined") return false;
+  return String(window.location.hostname || "").trim().toLowerCase() === "hussein-mboya-tours.vercel.app";
+};
 
 function applyTenantTheme(settings) {
   const root = document.documentElement;
@@ -48,7 +55,8 @@ function applyDocumentMetadata(settings) {
 
 export function SettingsProvider({ children }) {
   const { user } = useAuth();
-  const isPlatformScope = isSuperAdminUser(user);
+  const platformDeployment = isPlatformDeployment();
+  const isPlatformScope = platformDeployment || isSuperAdminUser(user);
   const [settings, setSettings] = useState(isPlatformScope ? PLATFORM_SETTINGS : DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
 
@@ -79,6 +87,7 @@ export function SettingsProvider({ children }) {
   useEffect(() => {
     if (isPlatformScope) {
       setSettings(PLATFORM_SETTINGS);
+      applyDocumentMetadata(PLATFORM_SETTINGS);
       return;
     }
     applyTenantTheme(settings);
