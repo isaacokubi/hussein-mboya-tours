@@ -86,13 +86,10 @@ export const login = async (req, res, next) => {
 
     let user = localResolution.user;
 
-    if (!user) {
-      user = await User.findOne(mergeTenantFilter({ email }))
-        .select("+password")
-        .populate({ path: "roleId", populate: { path: "permissions" } })
-        .populate("permissionsOverride");
-    }
-
+    // Platform SuperAdmins are global accounts and have no tenant context.
+    // Resolve them before mergeTenantFilter(), because a public login request
+    // can legitimately have no tenant yet. The bypass is restricted to the
+    // two supported platform role spellings and tenantId:null.
     if (!user) {
       user = await runWithTenant(
         { tenantId: null, tenant: null, role: "super_admin", bypass: true },
@@ -101,6 +98,16 @@ export const login = async (req, res, next) => {
           .populate({ path: "roleId", populate: { path: "permissions" } })
           .populate("permissionsOverride")
       );
+    }
+
+    // Only non-platform accounts require a tenant-scoped lookup. This keeps
+    // tenant isolation intact while allowing the global platform owner to log
+    // in from the public Coherent Tours site.
+    if (!user) {
+      user = await User.findOne(mergeTenantFilter({ email }))
+        .select("+password")
+        .populate({ path: "roleId", populate: { path: "permissions" } })
+        .populate("permissionsOverride");
     }
 
     if (!user) {
@@ -185,7 +192,7 @@ export const changePassword = async (req, res, next) => {
     if (newPassword.length < 8 || !/\d/.test(newPassword) || !/[A-Z]/.test(newPassword)) return res.status(400).json({ success: false, message: "Password must be at least 8 characters and include an uppercase letter and a number." });
     user.password = newPassword;
     await user.save();
-    await SecurityLog.logEvent({ user: user._id, email: user.email, action: "password_changed", status: "success", ipAddress: req.ip, userAgent: req.headers["user-agent"] });
+    await SecurityLog.logEvent({ user: user._id, email: user.email, action: "password_changed", status: "success", severity: "medium", ipAddress: req.ip, userAgent: req.headers["user-agent"] });
     return res.json({ success: true, message: "Password changed successfully" });
   } catch (error) { return next(error); }
 };
@@ -216,7 +223,7 @@ export const resetPasswordWithCode = async (req, res, next) => {
     const phone = String(req.body?.phone || "").trim();
     const code = String(req.body?.code || "").trim();
     const newPassword = String(req.body?.newPassword || "");
-    if (!email || !phone || !/^\d{6}$/.test(code)) return res.status(400).json({ success: false, message: "Email, phone and a 6-digit reset code are required." });
+    if (!email || !phone || !/^\d{6}$/.test(code)) return res.status(400).json({ success: false, message:"Email, phone and a 6-digit reset code are required." });
     if (newPassword.length < 8 || !/\d/.test(newPassword) || !/[A-Z]/.test(newPassword)) return res.status(400).json({ success: false, message: "Password must be at least 8 characters and include an uppercase letter and a number." });
     const user = await User.findOne(mergeTenantFilter({ email, phone })).select("+password +passwordResetCodeHash +passwordResetExpiresAt +passwordResetAttempts");
     if (!user || !user.passwordResetCodeHash || !user.passwordResetExpiresAt) return res.status(400).json({ success: false, message: "Invalid or expired reset code." });
