@@ -4,7 +4,7 @@ const count = async (db, collection, filter = {}) =>
   db.collection(collection).countDocuments(filter);
 
 const sum = (rows, key) =>
-  rows.reduce((total, row) => total + Number(row?.counts?.[key] || 0), 0);
+  rows.reduce((total, row) => total + Number(row?.[key] || 0), 0);
 
 export const getSuperAdminDashboardMetrics = async (_req, res) => {
   try {
@@ -136,7 +136,12 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
       Promise.all(
         tenantRows.map(async (tenant) => {
           const scope = { tenantId: tenant._id };
-          const counts = {
+          return {
+            tenantId: String(tenant._id),
+            name: tenant.name,
+            slug: tenant.slug,
+            status: tenant.status,
+            subscription: tenant.subscription || {},
             users: await count(db, "users", scope),
             tours: await count(db, "tours", { ...scope, ...nonDeleted }),
             bookings: await count(db, "bookings", { ...scope, ...nonDeleted }),
@@ -147,15 +152,6 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
             vehicles: await count(db, "vehicles", { ...scope, ...nonDeleted }),
             availableVehicles: await count(db, "vehicles", { ...scope, ...nonDeleted, status: "available" }),
             destinations: await count(db, "destinations", { ...scope, ...nonDeleted }),
-          };
-
-          return {
-            tenantId: String(tenant._id),
-            name: tenant.name,
-            slug: tenant.slug,
-            status: tenant.status,
-            subscription: tenant.subscription || {},
-            ...counts,
           };
         })
       ),
