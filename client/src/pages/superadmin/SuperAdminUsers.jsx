@@ -89,6 +89,8 @@ export default function SuperAdminUsers() {
     return Boolean(u.tenantId) && ["admin", "administrator"].includes(role);
   }).length;
   const customers = users.filter((u) => String(u.role || "").toLowerCase() === "customer").length;
+  const status = async (id, value) => { try { await updateStatus(id, value); await refetch(); toast.success(`User ${value === "active" ? "activated" : "suspended"}.`); } catch (err) { toast.error(err?.response?.data?.message || "Unable to update user status."); } };
+  const remove = async (id) => { if (!window.confirm("Delete this user permanently?")) return; try { await removeUser(id); await refetch(); toast.success("User account deleted successfully."); } catch (err) { toast.error(err?.response?.data?.message || "Unable to delete user."); } };
 
   return <div className="space-y-6 p-8"><div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"><div><h1 className="text-3xl font-bold">SuperAdmin User Management</h1><p className="mt-1 text-sm text-gray-500">Manage all platform users without tenant-scoped filtering. Tenant administrators belong to their respective company workspaces.</p></div><button type="button" onClick={() => setShowCreateAccount(true)} className="rounded-xl bg-black px-5 py-3 font-medium text-white shadow-sm">+ Create Company / Tenant</button></div>
     {showCreateAccount && <CompanyTenantForm onCancel={() => setShowCreateAccount(false)} onCreated={async () => { await refetch(); setShowCreateAccount(false); }} />}
