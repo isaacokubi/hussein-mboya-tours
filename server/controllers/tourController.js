@@ -1,4 +1,4 @@
-import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
+import { getTenantId, mergeTenantFilter, requireTenantId, runWithTenant } from "../tenancy/context.js";
 import Tour from "../models/Tour.js";
 import Vehicle from "../models/Vehicle.js";
 import Staff from "../models/Staff.js";
@@ -18,82 +18,98 @@ const attachAvailability = (tourLike) => {
   return { ...tourLike, totalSlots, bookedSlots, availableSlots, isFull: availableSlots === 0 };
 };
 
+/**
+ * Public platform pages are allowed to browse published operational content
+ * even when the request has no tenant selected. Tenant-branded requests keep
+ * their normal tenant isolation. The bypass is scoped to the public read
+ * callback and never changes the authenticated tenant context.
+ */
+const withPublicTourContext = async (callback) => {
+  if (getTenantId()) return callback(false);
+  return runWithTenant({ role: "super_admin", tenantId: null, tenant: null, bypass: true }, () => callback(true));
+};
+
 export const getTours = async (req, res, next) => {
   try {
-    requireTenantId();
-    const { page = 1, limit = 12, search, destination, category, featured } = req.query;
-    const filter = mergeTenantFilter({ ...publicTourFilter });
-    if (destination) filter.destination = destination;
-    if (category) filter.category = category;
-    if (featured === "true") filter.featured = true;
-    if (search?.trim()) {
-      const keyword = search.trim();
-      filter.$or = [
-        { title: { $regex: keyword, $options: "i" } },
-        { description: { $regex: keyword, $options: "i" } },
-        { location: { $regex: keyword, $options: "i" } },
-      ];
-    }
-    const currentPage = Math.max(Number(page) || 1, 1);
-    const pageSize = Math.min(Math.max(Number(limit) || 12, 1), 100);
-    const skip = (currentPage - 1) * pageSize;
-    const [tours, total, settings] = await Promise.all([
-      Tour.find(filter).populate("destination").sort({ featured: -1, popularity: -1, createdAt: -1 }).skip(skip).limit(pageSize).lean(),
-      Tour.countDocuments(filter),
-      getSystemSettings(),
-    ]);
-    const data = tours.map((tour) => ({ ...attachAvailability(tour), currency: settings?.currency || "KES", currencySymbol: settings?.currencySymbol || "KSh" }));
-    return res.json({ success: true, data, tours: data, pagination: { page: currentPage, limit: pageSize, total, pages: Math.ceil(total / pageSize) } });
+    return await withPublicTourContext(async (platformWide) => {
+      const { page = 1, limit = 12, search, destination, category, featured } = req.query;
+      const filter = platformWide ? { ...publicTourFilter } : mergeTenantFilter({ ...publicTourFilter });
+      if (destination) filter.destination = destination;
+      if (category) filter.category = category;
+      if (featured === "true") filter.featured = true;
+      if (search?.trim()) {
+        const keyword = search.trim();
+        filter.$or = [
+          { title: { $regex: keyword, $options: "i" } },
+          { description: { $regex: keyword, $options: "i" } },
+          { location: { $regex: keyword, $options: "i" } },
+        ];
+      }
+      const currentPage = Math.max(Number(page) || 1, 1);
+      const pageSize = Math.min(Math.max(Number(limit) || 12, 1), 100);
+      const skip = (currentPage - 1) * pageSize;
+      const [tours, total, settings] = await Promise.all([
+        Tour.find(filter).populate("destination").sort({ featured: -1, popularity: -1, createdAt: -1 }).skip(skip).limit(pageSize).lean(),
+        Tour.countDocuments(filter),
+        getSystemSettings(),
+      ]);
+      const data = tours.map((tour) => ({ ...attachAvailability(tour), currency: settings?.currency || "KES", currencySymbol: settings?.currencySymbol || "KSh" }));
+      return res.json({ success: true, data, tours: data, pagination: { page: currentPage, limit: pageSize, total, pages: Math.ceil(total / pageSize) } });
+    });
   } catch (error) { return next(error); }
 };
 
 export const getFeaturedTours = async (req, res, next) => {
   try {
-    requireTenantId();
-    const tours = await Tour.find(mergeTenantFilter({ ...publicTourFilter, featured: true }))
-      .populate("destination").sort({ popularity: -1, createdAt: -1 }).limit(6).lean();
-    return res.json({ success: true, data: tours.map(attachAvailability) });
+    return await withPublicTourContext(async (platformWide) => {
+      const filter = platformWide ? { ...publicTourFilter, featured: true } : mergeTenantFilter({ ...publicTourFilter, featured: true });
+      const tours = await Tour.find(filter).populate("destination").sort({ popularity: -1, createdAt: -1 }).limit(6).lean();
+      return res.json({ success: true, data: tours.map(attachAvailability) });
+    });
   } catch (error) { return next(error); }
 };
 
 export const searchTours = async (req, res, next) => {
   try {
-    requireTenantId();
-    const { keyword, search, category, country, destination } = req.query;
-    const filter = mergeTenantFilter({ ...publicTourFilter });
-    const term = keyword || search;
-    if (term) filter.$or = [
-      { title: { $regex: term, $options: "i" } },
-      { description: { $regex: term, $options: "i" } },
-      { location: { $regex: term, $options: "i" } },
-    ];
-    if (category) filter.category = category;
-    if (country) filter.country = country;
-    if (destination) filter.destination = destination;
-    const tours = await Tour.find(filter).populate("destination").sort({ createdAt: -1 }).lean();
-    return res.json({ success: true, count: tours.length, data: tours.map(attachAvailability) });
+    return await withPublicTourContext(async (platformWide) => {
+      const { keyword, search, category, country, destination } = req.query;
+      const filter = platformWide ? { ...publicTourFilter } : mergeTenantFilter({ ...publicTourFilter });
+      const term = keyword || search;
+      if (term) filter.$or = [
+        { title: { $regex: term, $options: "i" } },
+        { description: { $regex: term, $options: "i" } },
+        { location: { $regex: term, $options: "i" } },
+      ];
+      if (category) filter.category = category;
+      if (country) filter.country = country;
+      if (destination) filter.destination = destination;
+      const tours = await Tour.find(filter).populate("destination").sort({ createdAt: -1 }).lean();
+      return res.json({ success: true, count: tours.length, data: tours.map(attachAvailability) });
+    });
   } catch (error) { return next(error); }
 };
 
 export const getTourById = async (req, res, next) => {
   try {
-    requireTenantId();
-    const tour = await Tour.findOne(mergeTenantFilter({ _id: req.params.id }))
-      .populate("destination assignedGuide assignedDriver assignedVehicle").lean();
-    if (!tour) return res.status(404).json({ success: false, message: "Tour not found" });
-    return res.json({ success: true, data: attachAvailability(tour) });
+    return await withPublicTourContext(async (platformWide) => {
+      const filter = platformWide ? { _id: req.params.id, ...publicTourFilter } : mergeTenantFilter({ _id: req.params.id, ...publicTourFilter });
+      const tour = await Tour.findOne(filter).populate("destination assignedGuide assignedDriver assignedVehicle").lean();
+      if (!tour) return res.status(404).json({ success: false, message: "Tour not found" });
+      return res.json({ success: true, data: attachAvailability(tour) });
+    });
   } catch (error) { return next(error); }
 };
 
 export const getTourBySlug = async (req, res, next) => {
   try {
-    requireTenantId();
-    const slug = String(req.params.slug || "").trim().toLowerCase();
-    if (!slug) return res.status(400).json({ success: false, message: "Tour slug is required" });
-    const tour = await Tour.findOne(mergeTenantFilter({ slug, ...publicTourFilter }))
-      .populate("destination assignedGuide assignedDriver assignedVehicle").lean();
-    if (!tour) return res.status(404).json({ success: false, message: "Tour not found" });
-    return res.json({ success: true, data: attachAvailability(tour) });
+    return await withPublicTourContext(async (platformWide) => {
+      const slug = String(req.params.slug || "").trim().toLowerCase();
+      if (!slug) return res.status(400).json({ success: false, message: "Tour slug is required" });
+      const filter = platformWide ? { slug, ...publicTourFilter } : mergeTenantFilter({ slug, ...publicTourFilter });
+      const tour = await Tour.findOne(filter).populate("destination assignedGuide assignedDriver assignedVehicle").lean();
+      if (!tour) return res.status(404).json({ success: false, message: "Tour not found" });
+      return res.json({ success: true, data: attachAvailability(tour) });
+    });
   } catch (error) { return next(error); }
 };
 
