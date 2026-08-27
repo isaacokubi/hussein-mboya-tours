@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import StatCard from "./Statcard";
 import { getDashboardMetrics } from "../../../api/adminApi";
+import { firstNumeric, numeric, unwrapData } from "../../../utils/dashboardData";
 
-const number = (value) => Number(value ?? 0).toLocaleString();
+const number = (value) => numeric(value).toLocaleString();
 const money = (value, currency = "KES") => `${currency} ${number(value)}`;
 
 export default function StatsGrid({ stats = {}, summary = {} }) {
@@ -15,28 +16,29 @@ export default function StatsGrid({ stats = {}, summary = {} }) {
     retry: 1,
   });
 
-  const metrics = metricsPayload?.data || {};
-  const source = Object.keys(metrics).length ? metrics : stats;
+  const metrics = unwrapData(metricsPayload);
+  const fallback = unwrapData(stats);
+  const source = Object.keys(metrics).length ? metrics : fallback;
 
   const cards = [
-    ["Users", number(source.users)],
-    ["Customers", number(source.customers)],
-    ["Admins", number(source.admins)],
-    ["Staff", number(source.staff)],
-    ["Guides", number(source.guides)],
-    ["Drivers", number(source.drivers)],
-    ["Agents", number(source.agents)],
-    ["Approved Agents", number(source.approvedAgents)],
-    ["Vehicles", number(source.vehicles)],
-    ["Available Vehicles", number(source.availableVehicles)],
-    ["Tours", number(source.tours)],
-    ["Destinations", number(source.destinations)],
-    ["Bookings", number(source.bookings)],
-    ["Pending Bookings", number(source.pendingBookings ?? summary.pendingBookings)],
-    ["Confirmed Bookings", number(source.confirmedBookings ?? summary.confirmedBookings)],
-    ["Payments", number(source.payments)],
-    ["Completed Payments", number(source.completedPayments)],
-    ["Revenue", money(source.revenue, source.revenueCurrency || "KES")],
+    ["Users", firstNumeric(source.users, fallback.users)],
+    ["Customers", firstNumeric(source.customers, fallback.customers)],
+    ["Admins", firstNumeric(source.admins, fallback.admins)],
+    ["Staff", firstNumeric(source.staff, fallback.staff)],
+    ["Guides", firstNumeric(source.guides, fallback.guides)],
+    ["Drivers", firstNumeric(source.drivers, fallback.drivers)],
+    ["Agents", firstNumeric(source.agents, fallback.agents)],
+    ["Approved Agents", firstNumeric(source.approvedAgents, fallback.approvedAgents)],
+    ["Vehicles", firstNumeric(source.vehicles, fallback.vehicles)],
+    ["Available Vehicles", firstNumeric(source.availableVehicles, fallback.availableVehicles)],
+    ["Tours", firstNumeric(source.tours, fallback.tours)],
+    ["Destinations", firstNumeric(source.destinations, fallback.destinations)],
+    ["Bookings", firstNumeric(source.bookings, fallback.bookings)],
+    ["Pending Bookings", firstNumeric(source.pendingBookings, summary.pendingBookings, fallback.pendingBookings)],
+    ["Confirmed Bookings", firstNumeric(source.confirmedBookings, summary.confirmedBookings, fallback.confirmedBookings)],
+    ["Payments", firstNumeric(source.payments, fallback.payments)],
+    ["Completed Payments", firstNumeric(source.completedPayments, fallback.completedPayments)],
+    ["Revenue", money(firstNumeric(source.revenue, fallback.revenue), source.revenueCurrency || fallback.revenueCurrency || "KES")],
   ];
 
   return (
