@@ -1,721 +1,163 @@
-import { useTenant } from '../../context/TenantContext';
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useMemo, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
-import {
-  Menu,
-  X,
-  User,
-  LogOut,
-  LayoutDashboard,
-  Map,
-  Plane,
-  Heart,
-  Phone,
-  Info,
-  ChevronDown,
-  Search,
-} from "lucide-react";
-
+import { Menu, X, User, LogOut, LayoutDashboard, Plane, Heart, ChevronDown, Phone, Map, Search } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useSettings } from "../../context/SettingsContext";
 
-export default function Navbar(
-) {
+const normalizeRole = (user) => {
+  if (!user) return "";
+  if (typeof user.role === "string") return user.role.toLowerCase().replace(/[\s-]/g, "_");
+  if (user.role?.name) return String(user.role.name).toLowerCase().replace(/[\s-]/g, "_");
+  if (user.roles?.[0]?.name) return String(user.roles[0].name).toLowerCase().replace(/[\s-]/g, "_");
+  return "";
+};
 
+const initialsFor = (name) => {
+  const words = String(name || "Travel Company").trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return "TC";
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return `${words[0][0]}${words[1][0]}`.toUpperCase();
+};
 
-
+export default function Navbar() {
   const { user, logout } = useAuth();
-  const { settings = {}, supportPhone } = useSettings() || {};
-
-  const companyName =
-    settings?.companyName ||
-    "Your Travel Company";
-
-
+  const { settings = {} } = useSettings() || {};
   const [mobileOpen, setMobileOpen] = useState(false);
-
   const [profileOpen, setProfileOpen] = useState(false);
-  const profileRef = useRef(null);
 
-  useEffect(() => {
-    const handleOutside = (event) => {
-      if (profileRef.current && !profileRef.current.contains(event.target)) {
-        setProfileOpen(false);
-      }
-    };
-    const handleEscape = (event) => {
-      if (event.key === "Escape") setProfileOpen(false);
-    };
-    document.addEventListener("mousedown", handleOutside);
-    document.addEventListener("keydown", handleEscape);
-    return () => {
-      document.removeEventListener("mousedown", handleOutside);
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, []);
-
-  /*
-  |--------------------------------------------------------------------------
-  | NORMALIZE ROLE
-  |--------------------------------------------------------------------------
-  */
-
-  const role = useMemo(() => {
-    if (!user) return "";
-
-    if (typeof user.role === "string") {
-      return user.role.toLowerCase();
-    }
-
-    if (user.role?.name) {
-      return user.role.name.toLowerCase();
-    }
-
-    if (user.roles?.length) {
-      return user.roles[0].name.toLowerCase();
-    }
-
-    return "";
-  }, [user]);
-
-  const isAdmin = ["admin", "super_admin", "superadmin"].includes(role.replace(/[\s_-]/g, ""));
-
+  const companyName = String(settings.companyName || "Travel Company").trim();
+  const logoUrl = settings.companyLogo || settings.logo || "";
+  const initials = useMemo(() => initialsFor(companyName), [companyName]);
+  const role = normalizeRole(user);
+  const compactRole = role.replace(/[\s_-]/g, "");
+  const isAdmin = ["admin", "superadmin"].includes(compactRole);
   const isAgent = role === "agent";
-
   const isGuide = role === "guide";
-
-  const isManager =
-  role === "manager" ||
-  role === "tour_manager" ||
-  role === "tourmanager";
-
+  const isManager = ["manager", "tour_manager", "tourmanager"].includes(role);
   const isFinance = role === "financeofficer";
-
   const isCustomer = !role || role === "customer";
 
-  /*
-  |--------------------------------------------------------------------------
-  | PUBLIC LINKS
-  |--------------------------------------------------------------------------
-  */
+  const dashboardLink = isAdmin
+    ? { label: "Admin", path: "/admin" }
+    : isManager
+      ? { label: "Manager", path: "/tour-manager/dashboard" }
+      : isAgent
+        ? { label: "Agent", path: "/agent" }
+        : isGuide
+          ? { label: "Guide", path: "/guide/dashboard" }
+          : isFinance
+            ? { label: "Finance", path: "/finance/dashboard" }
+            : { label: "Dashboard", path: "/dashboard" };
 
   const publicLinks = [
-    {
-      name: "Home",
-      path: "/",
-    },
-
-    {
-      name: "Destinations",
-      path: "/destinations",
-    },
-
-    {
-      name: "Tours",
-      path: "/tours",
-    },
-
-    {
-      name: "About",
-      path: "/about",
-    },
-
-    {
-      name: "Contact",
-      path: "/contact",
-    },
+    ["Home", "/"],
+    ["Destinations", "/destinations"],
+    ["Tours", "/tours"],
+    ["About", "/about"],
+    ["Contact", "/contact"],
   ];
 
-  /*
-  |--------------------------------------------------------------------------
-  | DASHBOARD LINK
-  |--------------------------------------------------------------------------
-  */
-
-  const dashboardLink = (() => {
-    if (isAdmin)
-      return {
-        label: "Admin",
-        path: "/admin",
-      };
-
-    if (isManager)
-      return {
-        label: "Manager",
-        path: "/tour-manager/dashboard",
-      };
-
-    if (isAgent)
-      return {
-        label: "Agent",
-        path: "/agent",
-      };
-
-    if (isGuide)
-      return {
-        label: "Guide",
-        path: "/guide/dashboard",
-      };
-
-    if (isFinance)
-      return {
-        label: "Finance",
-        path: "/finance/dashboard",
-      };
-
-    return {
-      label: "Dashboard",
-      path: "/dashboard",
-    };
-  })();
-
-  const linkClass = ({ isActive }) =>
-`
-transition
-duration-300
-font-medium
-${
-isActive
-?
-"text-yellow-400 font-bold"
-:
-"text-white hover:text-yellow-300"
-}
-`;
+  const closeMobile = () => setMobileOpen(false);
 
   return (
-    <header
-      className="
-    sticky
-    top-0
-    z-50
-    bg-gradient-to-r
-    from-green-950
-    via-green-900
-    to-emerald-800
-    shadow-xl
-    border-b
-    border-yellow-500/30
-    backdrop-blur-lg
-  "
-    >
-      <div
-        className="
-    max-w-7xl
-    mx-auto
-    h-20
-    px-6
-    flex
-    items-center
-    justify-between
-  "
-      >
-        {/* ------------------------------------------------ */}
-        {/* LOGO */}
-        {/* ------------------------------------------------ */}
-
-        <Link to="/" className="flex items-center gap-3">
-         <div
-  className="
-    h-11
-    w-11
-    rounded-full
-    bg-yellow-500
-    text-green-950
-    flex
-    items-center
-    justify-center
-    font-extrabold
-    text-lg
-    shadow-lg
-  "
->
-  CT
-</div>
-
-
-<div>
-
-<h2
-className="
-font-extrabold
-text-xl
-text-white
-tracking-wide
-"
->
-{companyName}
-</h2>
-
-
-<p
-className="
-text-xs
-text-yellow-300
-"
->
-{companyName}
-</p>
-
-
-</div>
+    <header className="sticky top-0 z-50 bg-gradient-to-r from-green-950 via-green-900 to-emerald-800 shadow-xl border-b border-yellow-500/30 backdrop-blur-lg">
+      <div className="max-w-7xl mx-auto h-20 px-6 flex items-center justify-between">
+        <Link to="/" className="flex items-center gap-3 min-w-0" onClick={closeMobile}>
+          {logoUrl ? (
+            <img src={logoUrl} alt={companyName} className="h-11 w-11 rounded-full object-cover bg-white shadow-lg" />
+          ) : (
+            <div className="h-11 w-11 shrink-0 rounded-full bg-yellow-500 text-green-950 flex items-center justify-center font-extrabold text-lg shadow-lg" aria-hidden="true">
+              {initials}
+            </div>
+          )}
+          <div className="min-w-0">
+            <h2 className="font-extrabold text-xl text-white tracking-wide truncate max-w-[240px]">{companyName}</h2>
+            <p className="text-xs text-yellow-300 truncate max-w-[240px]">{settings.websiteUrl || "Tours & Travel"}</p>
+          </div>
         </Link>
 
-        {/* ------------------------------------------------ */}
-        {/* DESKTOP NAVIGATION */}
-        {/* ------------------------------------------------ */}
-
         <nav className="hidden lg:flex items-center gap-8">
-          {publicLinks.map((link) => (
-            <NavLink
-              key={link.path}
-              to={link.path}
-              end={link.path === "/"}
-              className={linkClass}
-            >
-              {link.name}
+          {publicLinks.map(([label, path]) => (
+            <NavLink key={path} to={path} end={path === "/"} className={({ isActive }) => `font-medium transition duration-300 ${isActive ? "text-yellow-400 font-bold" : "text-white hover:text-yellow-300"}`}>
+              {label}
             </NavLink>
           ))}
         </nav>
 
-        {/* ------------------------------------------------ */}
-        {/* RIGHT SIDE */}
-        {/* ------------------------------------------------ */}
-
         <div className="hidden lg:flex items-center gap-4">
-          <button
-            className="
-p-2
-rounded-full
-text-white
-hover:bg-white/10
-transition
-"
-            aria-label="Search"
-          >
-            <Search size={20} />
-          </button>
-
-          {!user && (
+          <button type="button" className="p-2 rounded-full text-white hover:bg-white/10 transition" aria-label="Search"><Search size={20} /></button>
+          {!user ? (
             <>
-              <Link to="/login" className="
-text-white
-font-medium
-hover:text-yellow-300
-transition
-">
-                Login
-              </Link>
-
-              <Link
-                to="/register"
-                className="bg-yellow-500
-hover:bg-yellow-600
-text-green-950
-shadow-lg px-5 py-2.5 rounded-lg font-semibold transition"
-              >
-                Register
-              </Link>
-
-              <Link
-                to="/tours"
-                className="bg-gradient-to-r
-from-yellow-400
-to-yellow-600
-text-green-950
-hover:scale-105
-shadow-xl px-5 py-2.5 rounded-lg font-semibold transition"
-              >
-                Book Now
-              </Link>
+              <Link to="/login" className="text-white font-medium hover:text-yellow-300 transition">Login</Link>
+              <Link to="/register" className="bg-yellow-500 hover:bg-yellow-600 text-green-950 shadow-lg px-5 py-2.5 rounded-lg font-semibold transition">Register</Link>
+              <Link to="/tours" className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-green-950 hover:scale-105 shadow-xl px-5 py-2.5 rounded-lg font-semibold transition">Book Now</Link>
             </>
-          )}
-
-          {user && (
+          ) : (
             <>
-              <Link
-                to={dashboardLink.path}
-                className="bg-yellow-500
-text-green-950
-hover:bg-yellow-400
-shadow-lg px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-800 transition"
-              >
-                <LayoutDashboard size={18} />
-
-                {dashboardLink.label}
+              <Link to={dashboardLink.path} className="bg-yellow-500 text-green-950 hover:bg-yellow-400 shadow-lg px-4 py-2 rounded-lg flex items-center gap-2 transition">
+                <LayoutDashboard size={18} /> {dashboardLink.label}
               </Link>
-
-              <div className="relative" ref={profileRef}>
-                <button
-                  onClick={() => setProfileOpen(!profileOpen)}
-                  className="flex items-center gap-2 border rounded-lg px-3 py-2 hover:bg-gray-50"
-                >
-                  <User size={18} />
-
-                  <span className="max-w-[120px] truncate">{user.name}</span>
-
-                  <ChevronDown size={16} />
-                </button>{" "}
-                <AnimatePresence>
-                  {profileOpen && (
-                    <motion.div
-                      initial={{
-                        opacity: 0,
-                        y: 10,
-                      }}
-                      animate={{
-                        opacity: 1,
-                        y: 0,
-                      }}
-                      exit={{
-                        opacity: 0,
-                        y: 10,
-                      }}
-                      transition={{
-                        duration: 0.2,
-                      }}
-                      className="
-                      absolute
-                      right-0
-                      mt-3
-                      w-56
-                      bg-white
-                      rounded-xl
-                      shadow-xl
-                      border
-                      overflow-hidden
-                      z-50
-                      "
-                    >
-                      <div className="flex items-center justify-between border-b px-4 py-3">
-                        <span className="text-sm font-semibold text-gray-700">Account menu</span>
-                        <button
-                          type="button"
-                          onClick={() => setProfileOpen(false)}
-                          className="rounded-full p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
-                          aria-label="Close account menu"
-                        >
-                          <X size={18} />
-                        </button>
-                      </div>
-                      {isCustomer && (
-                        <>
-                          <Link
-                            to="/dashboard"
-                            onClick={() => setProfileOpen(false)}
-                            className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100"
-                          >
-                            <LayoutDashboard size={18} />
-                            Dashboard
-                          </Link>
-
-                          <Link
-                            to="/my-bookings"
-                            onClick={() => setProfileOpen(false)}
-                            className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100"
-                          >
-                            <Plane size={18} />
-                            My Bookings
-                          </Link>
-
-                          <Link
-                            to="/wishlist"
-                            onClick={() => setProfileOpen(false)}
-                            className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100"
-                          >
-                            <Heart size={18} />
-                            Wishlist
-                          </Link>
-
-                          <Link
-                            to="/profile"
-                            onClick={() => setProfileOpen(false)}
-                            className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100"
-                          >
-                            <User size={18} />
-                            Profile
-                          </Link>
-                        </>
-                      )}
-
-                      <button
-                        onClick={() => {
-                          setProfileOpen(false);
-                          logout();
-                        }}
-                        className="
-                        w-full
-                        flex
-                        items-center
-                        gap-3
-                        px-4
-                        py-3
-                        text-red-600
-                        hover:bg-red-50
-                        "
-                      >
-                        <LogOut size={18} />
-                        Logout
-                      </button>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+              <div className="relative">
+                <button type="button" onClick={() => setProfileOpen((open) => !open)} className="flex items-center gap-2 border border-white/30 text-white rounded-lg px-3 py-2 hover:bg-white/10">
+                  <User size={18} /><span className="max-w-[120px] truncate">{user.name}</span><ChevronDown size={16} />
+                </button>
+                {profileOpen && (
+                  <div className="absolute right-0 mt-3 w-56 bg-white rounded-xl shadow-xl border overflow-hidden z-50">
+                    <div className="border-b px-4 py-3 font-semibold text-gray-700">Account menu</div>
+                    {isCustomer && (
+                      <>
+                        <Link to="/dashboard" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100"><LayoutDashboard size={18} />Dashboard</Link>
+                        <Link to="/my-bookings" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100"><Plane size={18} />My Bookings</Link>
+                        <Link to="/wishlist" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100"><Heart size={18} />Wishlist</Link>
+                      </>
+                    )}
+                    <button type="button" onClick={() => { setProfileOpen(false); logout(); }} className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50"><LogOut size={18} />Logout</button>
+                  </div>
+                )}
               </div>
             </>
           )}
         </div>
 
-        {/* ------------------------------------------------ */}
-        {/* MOBILE MENU BUTTON */}
-        {/* ------------------------------------------------ */}
-
-        <button
-          onClick={() => setMobileOpen(!mobileOpen)}
-          className="lg:hidden"
-          aria-label="Toggle navigation menu"
-        >
+        <button type="button" onClick={() => setMobileOpen((open) => !open)} className="lg:hidden text-white" aria-label="Toggle navigation menu">
           {mobileOpen ? <X size={30} /> : <Menu size={30} />}
         </button>
-      </div>{" "}
-      {/* ------------------------------------------------ */}
-      {/* MOBILE MENU */}
-      {/* ------------------------------------------------ */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <motion.div
-            initial={{
-              opacity: 0,
-              x: "100%",
-            }}
-            animate={{
-              opacity: 1,
-              x: 0,
-            }}
-            exit={{
-              opacity: 0,
-              x: "100%",
-            }}
-            transition={{
-              duration: 0.25,
-            }}
-            className="
-            lg:hidden
-            fixed
-            top-20
-            right-0
-            w-80
-            max-w-full
-            h-[calc(100vh-5rem)]
-            bg-gradient-to-b
-from-green-950
-to-green-900
-text-white
-            shadow-2xl
-            border-l
-            z-40
-            overflow-y-auto
-            "
-          >
-            <div className="p-6 space-y-2">
-              {/* Public Navigation */}
+      </div>
 
-              {publicLinks.map((link) => (
-                <NavLink
-                  key={link.path}
-                  to={link.path}
-                  end={link.path === "/"}
-                  onClick={() => setMobileOpen(false)}
-                  className={({ isActive }) =>
-                    `block rounded-lg px-4 py-3 transition ${
-                      isActive
-                        ? "bg-green-100 text-green-700 font-semibold"
-                        : "hover:bg-white/10 text-white"
-                    }`
-                  }
-                >
-                  {link.name}
-                </NavLink>
-              ))}
-
-              <hr className="my-4" />
-
-              {!user ? (
-                <>
-                  <Link
-                    to="/login"
-                    onClick={() => setMobileOpen(false)}
-                    className="block rounded-lg px-4 py-3 hover:bg-gray-100"
-                  >
-                    Login
-                  </Link>
-
-                  <Link
-                    to="/register"
-                    onClick={() => setMobileOpen(false)}
-                    className="
-                    block
-                    text-center
-                    bg-green-700
-                    text-white
-                    rounded-lg
-                    py-3
-                    mt-3
-                    hover:bg-green-800
-                    transition
-                    "
-                  >
-                    Register
-                  </Link>
-
-                  <Link
-                    to="/tours"
-                    onClick={() => setMobileOpen(false)}
-                    className="
-                    block
-                    text-center
-                    bg-yellow-500
-                    text-white
-                    rounded-lg
-                    py-3
-                    mt-3
-                    hover:bg-yellow-600
-                    transition
-                    "
-                  >
-                    Book Now
-                  </Link>
-                </>
-              ) : (
-                <>
-                  <div className="pb-4 border-b">
-                    <h3 className="font-bold text-lg">{user.name}</h3>
-
-                    <p className="text-sm text-gray-500 capitalize">
-                      {dashboardLink.label}
-                    </p>
-                  </div>
-
-                  <Link
-                    to={dashboardLink.path}
-                    onClick={() => setMobileOpen(false)}
-                    className="
-                    flex
-                    items-center
-                    gap-3
-                    px-4
-                    py-3
-                    rounded-lg
-                    hover:bg-gray-100
-                    "
-                  >
-                    <LayoutDashboard size={18} />
-                    Dashboard
-                  </Link>
-
-                  {isCustomer && (
-                    <>
-                      <Link
-                        to="/my-bookings"
-                        onClick={() => setMobileOpen(false)}
-                        className="
-                        flex
-                        items-center
-                        gap-3
-                        px-4
-                        py-3
-                        rounded-lg
-                        hover:bg-gray-100
-                        "
-                      >
-                        <Plane size={18} />
-                        My Bookings
-                      </Link>
-
-                      <Link
-                        to="/wishlist"
-                        onClick={() => setMobileOpen(false)}
-                        className="
-                        flex
-                        items-center
-                        gap-3
-                        px-4
-                        py-3
-                        rounded-lg
-                        hover:bg-gray-100
-                        "
-                      >
-                        <Heart size={18} />
-                        Wishlist
-                      </Link>
-
-                      <Link
-                        to="/profile"
-                        onClick={() => setMobileOpen(false)}
-                        className="
-                        flex
-                        items-center
-                        gap-3
-                        px-4
-                        py-3
-                        rounded-lg
-                        hover:bg-gray-100
-                        "
-                      >
-                        <User size={18} />
-                        Profile
-                      </Link>
-                    </>
-                  )}
-
-                  <button
-                    onClick={() => {
-                      setMobileOpen(false);
-                      logout();
-                    }}
-                    className="
-                    mt-6
-                    w-full
-                    bg-red-600
-                    hover:bg-red-700
-                    text-white
-                    py-3
-                    rounded-lg
-                    flex
-                    justify-center
-                    items-center
-                    gap-2
-                    transition
-                    "
-                  >
-                    <LogOut size={18} />
-                    Logout
-                  </button>
-                </>
-              )}
-
-              <hr className="my-6" />
-
-              <div className="space-y-3 text-sm text-gray-600">
-                <div className="flex items-center gap-2">
-                  <Phone size={16} />
-                  {supportPhone}
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Map size={16} />
-                  Nairobi, Kenya
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Info size={16} />
-                  Luxury Safaris • Beach Holidays • Tours
-                </div>
-              </div>
+      {mobileOpen && (
+        <div className="lg:hidden fixed top-20 right-0 w-80 max-w-full h-[calc(100vh-5rem)] bg-gradient-to-b from-green-950 to-green-900 text-white shadow-2xl border-l z-40 overflow-y-auto">
+          <div className="p-6 space-y-2">
+            {publicLinks.map(([label, path]) => (
+              <NavLink key={path} to={path} end={path === "/"} onClick={closeMobile} className={({ isActive }) => `block rounded-lg px-4 py-3 transition ${isActive ? "bg-green-100 text-green-700 font-semibold" : "hover:bg-white/10 text-white"}`}>
+                {label}
+              </NavLink>
+            ))}
+            <hr className="my-4 border-white/20" />
+            {!user ? (
+              <>
+                <Link to="/login" onClick={closeMobile} className="block rounded-lg px-4 py-3 hover:bg-white/10">Login</Link>
+                <Link to="/register" onClick={closeMobile} className="block text-center bg-green-700 text-white rounded-lg py-3 mt-3">Register</Link>
+                <Link to="/tours" onClick={closeMobile} className="block text-center bg-yellow-500 text-green-950 rounded-lg py-3 mt-3">Book Now</Link>
+              </>
+            ) : (
+              <>
+                <div className="pb-4 border-b border-white/20"><h3 className="font-bold text-lg">{user.name}</h3><p className="text-sm text-white/70 capitalize">{dashboardLink.label}</p></div>
+                <Link to={dashboardLink.path} onClick={closeMobile} className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10"><LayoutDashboard size={18} />Dashboard</Link>
+                {isCustomer && <>
+                  <Link to="/my-bookings" onClick={closeMobile} className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10"><Plane size={18} />My Bookings</Link>
+                  <Link to="/wishlist" onClick={closeMobile} className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10"><Heart size={18} />Wishlist</Link>
+                </>}
+                <button type="button" onClick={() => { closeMobile(); logout(); }} className="mt-6 w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg flex justify-center items-center gap-2"><LogOut size={18} />Logout</button>
+              </>
+            )}
+            <hr className="my-6 border-white/20" />
+            <div className="space-y-3 text-sm text-white/80">
+              {settings.supportPhone && <div className="flex items-center gap-2"><Phone size={16} />{settings.supportPhone}</div>}
+              {(settings.city || settings.country) && <div className="flex items-center gap-2"><Map size={16} />{settings.city || ""}{settings.city && settings.country ? ", " : ""}{settings.country || ""}</div>}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
