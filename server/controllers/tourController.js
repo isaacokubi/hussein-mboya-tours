@@ -1,4 +1,4 @@
-import { getTenantId, mergeTenantFilter, requireTenantId, runWithTenant } from "../tenancy/context.js";
+import { getTenantContext, mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import Tour from "../models/Tour.js";
 import Destination from "../models/Destination.js";
 import Vehicle from "../models/Vehicle.js";
@@ -19,9 +19,12 @@ const attachAvailability = (tourLike) => {
   return { ...tourLike, totalSlots, bookedSlots, availableSlots, isFull: availableSlots === 0 };
 };
 
+// Tenant-facing tour reads fail closed when no tenant is resolved.
+// Only an intentional SuperAdmin/platform bypass may read globally.
 const withPublicTourContext = async (callback) => {
-  if (getTenantId()) return callback(false);
-  return runWithTenant({ role: "super_admin", tenantId: null, tenant: null, bypass: true }, () => callback(true));
+  const context = getTenantContext();
+  if (context.bypass === true) return callback(true);
+  return callback(false);
 };
 
 const normalizeDestinationId = (value) => {

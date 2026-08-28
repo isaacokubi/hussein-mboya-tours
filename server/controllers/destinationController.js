@@ -1,4 +1,4 @@
-import { getTenantId, mergeTenantFilter, requireTenantId, runWithTenant } from "../tenancy/context.js";
+import { getTenantContext, mergeTenantFilter } from "../tenancy/context.js";
 import Destination from "../models/Destination.js";
 import Tour from "../models/Tour.js";
 
@@ -11,8 +11,9 @@ const publicTourFilter = {
 };
 
 const withPublicDestinationContext = async (callback) => {
-  if (getTenantId()) return callback(false);
-  return runWithTenant({ role: "super_admin", tenantId: null, tenant: null, bypass: true }, () => callback(true));
+  const context = getTenantContext();
+  if (context.bypass === true) return callback(true);
+  return callback(false);
 };
 
 export const getDestinations = async (req, res, next) => {
