@@ -76,6 +76,22 @@ const setApiAuthHeader = (nextToken) => {
   }
 };
 
+const preloadTenantSettings = async () => {
+  if (typeof window === "undefined") return null;
+  try {
+    const response = await api.get("/settings/public", { params: { _t: Date.now() } });
+    const settings = response.data?.settings || response.data?.data || response.data || {};
+    const tenantId = String(localStorage.getItem("tenantId") || "").trim();
+    const storageKey = tenantId ? `tenant-settings:${tenantId}` : "tenant-settings:public";
+    localStorage.setItem(storageKey, JSON.stringify(settings));
+    window.dispatchEvent(new CustomEvent("settings-updated", { detail: settings }));
+    return settings;
+  } catch (error) {
+    console.warn("Tenant settings preload after login failed; SettingsProvider will retry:", error);
+    return null;
+  }
+};
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => readStoredUser());
   const [token, setToken] = useState(() => getStoredToken());
@@ -111,7 +127,9 @@ export function AuthProvider({ children }) {
 
   const fetchCurrentUser = async () => {
     const { data } = await api.get("/auth/me");
-    return persistUser(data.user || data);
+    const currentUser = persistUser(data.user || data);
+    await preloadTenantSettings();
+    return currentUser;
   };
 
   useEffect(() => {
@@ -180,6 +198,12 @@ export function AuthProvider({ children }) {
     setToken(nextToken);
     const normalizedUser = persistUser(data.user);
     if (!normalizedUser) throw new Error("Authentication response did not contain a user.");
+
+    // Resolve the authenticated tenant's latest settings before returning from
+    // login. This prevents the dashboard/public shell from briefly showing
+    // stale/default branding while the SettingsProvider is still loading.
+    await preloadTenantSettings();
+
     return { ...data, user: normalizedUser };
   };
 
@@ -191,6 +215,7 @@ export function AuthProvider({ children }) {
       setApiAuthHeader(nextToken);
       setToken(nextToken);
       persistUser(data.user);
+      await preloadTenantSettings();
     }
     return data;
   };
