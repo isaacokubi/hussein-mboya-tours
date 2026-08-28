@@ -7,12 +7,12 @@ import Tour from "../models/Tour.js";
 import Booking from "../models/Booking.js";
 import Customer from "../models/Customer.js";
 import Payment from "../models/Payment.js";
+import User from "../models/User.js";
+import { runWithTenant } from "../tenancy/context.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-// Always load the existing server/.env, even when this script is run from the repository root.
 dotenv.config({ path: resolve(__dirname, "../.env") });
-
 dotenv.config();
 
 const STATUSES = [
@@ -28,35 +28,46 @@ const STATUSES = [
   { bookingStatus: "confirmed", paymentStatus: "paid", paymentRecordStatus: "completed" },
 ];
 
-const run = async () => {
-  const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
-  if (!mongoUri) throw new Error("MONGODB_URI or MONGO_URI is required in server/.env");
-  await mongoose.connect(mongoUri);
+async function getTenants() {
+  return runWithTenant({ role: "superadmin", bypass: true }, async () =>
+    Organization.find({}).select("_id name").lean()
+  );
+}
 
-  const tenants = await Organization.find({}).select("_id name").lean();
-  if (!tenants.length) throw new Error("No tenants found");
-
-  let created = 0;
-  for (const tenant of tenants) {
+async function seedTenant(tenant) {
+  return runWithTenant({
+    tenantId: String(tenant._id),
+    role: "admin",
+    bypass: false,
+  }, async () => {
     const tenantId = tenant._id;
     const tenantKey = String(tenantId).slice(-8);
-    const tours = await Tour.find({ tenantId, isDeleted: { $ne: true } }).limit(10).lean();
+    const tours = await Tour.find({ isDeleted: { $ne: true } }).limit(10).lean();
     if (!tours.length) {
       console.log(`Skipping ${tenant.name || tenantId}: no tenant tours available`);
-      continue;
+      return 0;
     }
 
+    // Payment.customer intentionally references User in this schema.
+    const paymentUser = await User.findOne({ status: { $ne: "disabled" } })
+      .select("_id")
+      .lean();
+    if (!paymentUser) {
+      console.log(`Skipping ${tenant.name || tenantId}: no tenant user available for payment records`);
+      return 0;
+    }
+
+    let created = 0;
     for (let i = 0; i < 10; i += 1) {
       const state = STATUSES[i];
       const tour = tours[i % tours.length];
-      const amount = Number(tour.price || tour.pricePerPerson || tour.pricePerDay || 500) || 500;
+      const amount = Number(tour.price || 500) || 500;
       const email = `demo${i + 1}.${tenantKey}@example.test`;
+      const reference = `DEMO-${tenantKey}-${i + 1}`;
 
-      // Reuse an existing deterministic demo customer/booking when present.
-      let customer = await Customer.findOne({ tenantId, email });
+      let customer = await Customer.findOne({ email });
       if (!customer) {
         customer = await Customer.create({
-          tenantId,
           firstName: "Demo",
           lastName: `Customer ${i + 1}`,
           email,
@@ -65,12 +76,11 @@ const run = async () => {
         });
       }
 
-      const existing = await Booking.findOne({ tenantId, customer: customer._id, tour: tour._id }).sort({ createdAt: -1 });
-      if (existing?.staffNotes === `DEMO_TENANT_SEED_${i + 1}`) continue;
+      const existing = await Booking.findOne({ staffNotes: `DEMO_TENANT_SEED_${i + 1}` });
+      if (existing) continue;
 
       const paidAmount = state.paymentStatus === "paid" ? amount : 0;
       const booking = await Booking.create({
-        tenantId,
         customer: customer._id,
         tour: tour._id,
         customerSnapshot: {
@@ -92,15 +102,14 @@ const run = async () => {
         balanceAmount: Math.max(0, amount - paidAmount),
         paymentMethod: "MPESA",
         paymentStatus: state.paymentStatus,
-        paymentReference: `DEMO-${tenantKey}-${i + 1}`,
+        paymentReference: reference,
         status: state.bookingStatus,
         bookingSource: "admin",
         staffNotes: `DEMO_TENANT_SEED_${i + 1}`,
       });
 
       const payment = await Payment.create({
-        tenantId,
-        customer: customer._id,
+        customer: paymentUser._id,
         booking: booking._id,
         provider: "MPESA",
         method: "mpesa",
@@ -109,7 +118,7 @@ const run = async () => {
         currency: "KES",
         phone: customer.phone,
         status: state.paymentRecordStatus,
-        transactionReference: `DEMO-${tenantKey}-${i + 1}`,
+        transactionReference: reference,
         transactionId: `DEMO-TXN-${tenantKey}-${i + 1}`,
         paidAt: state.paymentRecordStatus === "completed" ? new Date() : null,
         failureReason: state.paymentRecordStatus === "failed" ? "Demo payment failure" : "",
@@ -120,15 +129,30 @@ const run = async () => {
       await booking.save();
       created += 1;
     }
+
     console.log(`${tenant.name || tenantId}: ensured 10 demo bookings with mixed paid, pending and failed payments`);
+    return created;
+  });
+}
+
+async function run() {
+  const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
+  if (!mongoUri) throw new Error("MONGODB_URI or MONGO_URI is required in server/.env");
+  await mongoose.connect(mongoUri);
+
+  try {
+    const tenants = await getTenants();
+    if (!tenants.length) throw new Error("No tenants found");
+
+    let created = 0;
+    for (const tenant of tenants) created += await seedTenant(tenant);
+    console.log(`Created ${created} demo bookings/payment records.`);
+  } finally {
+    await mongoose.disconnect();
   }
+}
 
-  console.log(`Created ${created} demo bookings/payment records.`);
-  await mongoose.disconnect();
-};
-
-run().catch(async (error) => {
+run().catch((error) => {
   console.error(error);
-  await mongoose.disconnect();
   process.exit(1);
 });
