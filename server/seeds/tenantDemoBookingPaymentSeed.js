@@ -35,11 +35,7 @@ async function getTenants() {
 }
 
 async function seedTenant(tenant) {
-  return runWithTenant({
-    tenantId: String(tenant._id),
-    role: "admin",
-    bypass: false,
-  }, async () => {
+  return runWithTenant({ tenantId: String(tenant._id), role: "admin", bypass: false }, async () => {
     const tenantId = tenant._id;
     const tenantKey = String(tenantId).slice(-8);
     const tours = await Tour.find({ isDeleted: { $ne: true } }).limit(10).lean();
@@ -48,9 +44,6 @@ async function seedTenant(tenant) {
       return 0;
     }
 
-    // Payment.customer references User, while Customer.user is unique.
-    // Reuse one existing tenant user/customer for all demo bookings instead of
-    // attempting to create multiple customers with user:null.
     const paymentUser = await User.findOne({ status: { $ne: "disabled" } })
       .select("_id email")
       .lean();
@@ -82,39 +75,62 @@ async function seedTenant(tenant) {
       const reference = `DEMO-${tenantKey}-${i + 1}`;
       const marker = `DEMO_TENANT_SEED_${tenantKey}_${i + 1}`;
 
-      const existing = await Booking.findOne({ staffNotes: marker });
-      if (existing) continue;
+      // Recover records from a previous interrupted seed run as well as
+      // records created by this version. This prevents unique-index errors
+      // on provider + transactionReference and makes the seed safely repeatable.
+      let booking = await Booking.findOne({ staffNotes: marker });
+      if (!booking) booking = await Booking.findOne({ paymentReference: reference });
 
       const paidAmount = state.paymentStatus === "paid" ? amount : 0;
-      const booking = await Booking.create({
-        customer: customer._id,
-        tour: tour._id,
-        customerSnapshot: {
-          name: `Demo Customer ${i + 1}`,
-          email: customer.email || `demo${i + 1}.${tenantKey}@example.test`,
-          phone: customer.phone,
-        },
-        contact: {
-          name: `Demo Customer ${i + 1}`,
-          email: customer.email || `demo${i + 1}.${tenantKey}@example.test`,
-          phone: customer.phone,
-        },
-        travelDate: new Date(Date.now() + (30 + i) * 86400000),
-        numberOfGuests: (i % 4) + 1,
-        subtotal: amount,
-        discountAmount: 0,
-        totalAmount: amount,
-        depositAmount: paidAmount,
-        balanceAmount: Math.max(0, amount - paidAmount),
-        paymentMethod: "MPESA",
-        paymentStatus: state.paymentStatus,
-        paymentReference: reference,
-        status: state.bookingStatus,
-        bookingSource: "admin",
-        staffNotes: marker,
-      });
+      if (!booking) {
+        booking = await Booking.create({
+          customer: customer._id,
+          tour: tour._id,
+          customerSnapshot: {
+            name: `Demo Customer ${i + 1}`,
+            email: customer.email || `demo${i + 1}.${tenantKey}@example.test`,
+            phone: customer.phone,
+          },
+          contact: {
+            name: `Demo Customer ${i + 1}`,
+            email: customer.email || `demo${i + 1}.${tenantKey}@example.test`,
+            phone: customer.phone,
+          },
+          travelDate: new Date(Date.now() + (30 + i) * 86400000),
+          numberOfGuests: (i % 4) + 1,
+          subtotal: amount,
+          discountAmount: 0,
+          totalAmount: amount,
+          depositAmount: paidAmount,
+          balanceAmount: Math.max(0, amount - paidAmount),
+          paymentMethod: "MPESA",
+          paymentStatus: state.paymentStatus,
+          paymentReference: reference,
+          status: state.bookingStatus,
+          bookingSource: "admin",
+          staffNotes: marker,
+        });
+        created += 1;
+      } else {
+        booking.tour = tour._id;
+        booking.customer = customer._id;
+        booking.paymentStatus = state.paymentStatus;
+        booking.paymentReference = reference;
+        booking.status = state.bookingStatus;
+        booking.totalAmount = amount;
+        booking.subtotal = amount;
+        booking.depositAmount = paidAmount;
+        booking.balanceAmount = Math.max(0, amount - paidAmount);
+        booking.paymentMethod = "MPESA";
+        booking.staffNotes = marker;
+        await booking.save();
+      }
 
-      const payment = await Payment.create({
+      // The database has a global unique index on MPESA transactionReference.
+      // Always find/update first, including payments left behind by a failed
+      // previous run, instead of blindly inserting a duplicate payment.
+      let payment = await Payment.findOne({ transactionReference: reference });
+      const paymentData = {
         customer: paymentUser._id,
         booking: booking._id,
         provider: "MPESA",
@@ -129,11 +145,17 @@ async function seedTenant(tenant) {
         paidAt: state.paymentRecordStatus === "completed" ? new Date() : null,
         failureReason: state.paymentRecordStatus === "failed" ? "Demo payment failure" : "",
         notes: "Demo tenant test payment",
-      });
+      };
+
+      if (payment) {
+        Object.assign(payment, paymentData);
+        await payment.save();
+      } else {
+        payment = await Payment.create(paymentData);
+      }
 
       booking.payments = [payment._id];
       await booking.save();
-      created += 1;
     }
 
     console.log(`${tenant.name || tenantId}: ensured 10 demo bookings with mixed paid, pending and failed payments`);
