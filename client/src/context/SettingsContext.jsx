@@ -6,7 +6,7 @@ export const PUBLIC_BRAND_NAME = "Coherent Tours";
 export const PLATFORM_BRAND_NAME = "Global Tours Platform";
 
 const DEFAULT_SETTINGS = {
-  companyName: PUBLIC_BRAND_NAME,
+  companyName: "",
   websiteUrl: "", companyLogo: "", logo: "", supportEmail: "", supportPhone: "", address: "", city: "Nairobi", country: "Kenya", currency: "KES", currencySymbol: "KSh", timezone: "Africa/Nairobi", language: "en", taxRate: 0, bookingDepositPercentage: 30, defaultCommissionRate: 10, maintenanceMode: false, allowRegistrations: true, allowAgentRegistrations: true, requireEmailVerification: true, requirePhoneVerification: false, enableMpesa: true, enableStripe: false, enablePaypal: false, enableBankTransfer: true, bookingNotifications: true, paymentNotifications: true, facebook: "", instagram: "", twitter: "", youtube: "", seoTitle: "", seoDescription: "", seoKeywords: [], primaryColor: "#047857", secondaryColor: "#064e3b", accentColor: "#10b981", backgroundColor: "#f8fafc", surfaceColor: "#ffffff", textColor: "#0f172a", fontFamily: "Inter", borderRadius: "xl", buttonStyle: "rounded", heroOverlayOpacity: 50,
   homepageSections: { stats: true, tours: true, destinations: true, experiences: true, services: true, testimonials: true, gallery: true, whyChooseUs: true, newsletter: true },
 };
@@ -23,7 +23,18 @@ const getSettingsStorageKey = () => {
   const tenantId = String(window.localStorage.getItem("tenantId") || "").trim();
   return tenantId ? `tenant-settings:${tenantId}` : "tenant-settings:public";
 };
-const normalize = (next = {}, previous = DEFAULT_SETTINGS) => ({ ...DEFAULT_SETTINGS, ...previous, ...next, companyName: PUBLIC_BRAND_NAME, homepageSections: { ...DEFAULT_SETTINGS.homepageSections, ...(previous.homepageSections || {}), ...(next.homepageSections || {}) } });
+
+const normalize = (next = {}, previous = DEFAULT_SETTINGS) => ({
+  ...DEFAULT_SETTINGS,
+  ...previous,
+  ...next,
+  companyName: String(next.companyName ?? previous.companyName ?? DEFAULT_SETTINGS.companyName).trim(),
+  homepageSections: {
+    ...DEFAULT_SETTINGS.homepageSections,
+    ...(previous.homepageSections || {}),
+    ...(next.homepageSections || {}),
+  },
+});
 
 function normalizeRole(user) {
   if (!user) return "";
@@ -47,8 +58,10 @@ function applyTenantTheme(settings) {
   Object.entries(css).forEach(([key, value]) => root.style.setProperty(key, value));
   if (settings.fontFamily) root.style.setProperty("--tenant-font-family", settings.fontFamily);
 }
+
 function applyDocumentMetadata(settings) {
-  if (settings.seoTitle) document.title = settings.seoTitle;
+  if (typeof document === "undefined") return;
+  if (settings.seoTitle || settings.companyName) document.title = settings.seoTitle || settings.companyName;
   const description = document.querySelector('meta[name="description"]');
   if (description && settings.seoDescription) description.setAttribute("content", settings.seoDescription);
 }
@@ -66,10 +79,19 @@ export function SettingsProvider({ children }) {
 
   const refreshSettings = useCallback(async () => {
     if (isPlatformScope) {
-      const platform = normalize(PLATFORM_SETTINGS, DEFAULT_SETTINGS);
-      setSettings(platform);
-      try { localStorage.setItem("platform-settings:global", JSON.stringify(platform)); } catch (error) { console.warn("Platform settings cache write failed:", error); }
-      return platform;
+      try {
+        const response = await api.get("/admin/settings", { params: { _t: Date.now() } });
+        const data = response.data?.settings || response.data?.data || response.data || {};
+        const platform = normalize(data, PLATFORM_SETTINGS);
+        setSettings(platform);
+        try { localStorage.setItem("platform-settings:global", JSON.stringify(platform)); } catch (error) { console.warn("Platform settings cache write failed:", error); }
+        return platform;
+      } catch (error) {
+        console.error("Platform settings load failed:", error);
+        const fallback = normalize(PLATFORM_SETTINGS);
+        setSettings(fallback);
+        return fallback;
+      }
     }
 
     try {
@@ -85,14 +107,9 @@ export function SettingsProvider({ children }) {
   }, [applySettings, isPlatformScope]);
 
   useEffect(() => {
-    if (isPlatformScope) {
-      setSettings(PLATFORM_SETTINGS);
-      applyDocumentMetadata(PLATFORM_SETTINGS);
-      return;
-    }
     applyTenantTheme(settings);
     applyDocumentMetadata(settings);
-  }, [settings, isPlatformScope]);
+  }, [settings]);
 
   useEffect(() => {
     let mounted = true;
@@ -100,10 +117,7 @@ export function SettingsProvider({ children }) {
       setLoading(true);
       try {
         if (isPlatformScope) {
-          if (mounted) {
-            setSettings(PLATFORM_SETTINGS);
-            document.title = PLATFORM_BRAND_NAME;
-          }
+          await refreshSettings();
           return;
         }
 
@@ -119,49 +133,45 @@ export function SettingsProvider({ children }) {
     void load();
 
     const handleStorage = (event) => {
-      if (isPlatformScope || event.key !== getSettingsStorageKey() || !event.newValue) return;
-      try { applySettings(JSON.parse(event.newValue)); } catch (storageError) { console.warn("Tenant settings storage event was invalid:", storageError); }
+      if (event.key !== getSettingsStorageKey() || !event.newValue) return;
+      try { applySettings(JSON.parse(event.newValue)); } catch (storageError) { console.warn("Settings storage event was invalid:", storageError); }
     };
     const handlePlatformSettings = (event) => {
-      if (!isPlatformScope) applySettings(event.detail || {});
+      if (event.detail) applySettings(event.detail);
     };
+    const handleSettingsChanged = () => { void refreshSettings(); };
 
     window.addEventListener("storage", handleStorage);
     window.addEventListener("platform-settings-updated", handlePlatformSettings);
+    window.addEventListener("settings-updated", handleSettingsChanged);
+    window.addEventListener("dashboard:data-changed", handleSettingsChanged);
     return () => {
       mounted = false;
       window.removeEventListener("storage", handleStorage);
       window.removeEventListener("platform-settings-updated", handlePlatformSettings);
+      window.removeEventListener("settings-updated", handleSettingsChanged);
+      window.removeEventListener("dashboard:data-changed", handleSettingsChanged);
     };
-  }, [refreshSettings, applySettings, isPlatformScope]);
+  }, [refreshSettings, applySettings]);
 
   const updateSettings = useCallback((nextSettings) => {
-    if (isPlatformScope) {
-      setSettings((previous) => normalize({ ...nextSettings, companyName: PLATFORM_BRAND_NAME }, previous));
-      try {
-        const merged = normalize({ ...nextSettings, companyName: PLATFORM_BRAND_NAME }, PLATFORM_SETTINGS);
-        localStorage.setItem("platform-settings:global", JSON.stringify(merged));
-        window.dispatchEvent(new CustomEvent("platform-settings-updated", { detail: merged }));
-      } catch (error) {
-        console.warn("Platform settings could not be persisted locally:", error);
-      }
-      return;
-    }
-
     setSettings((previous) => normalize(nextSettings, previous));
     try {
-      const merged = normalize(nextSettings, JSON.parse(localStorage.getItem(getSettingsStorageKey()) || "{}"));
-      localStorage.setItem(getSettingsStorageKey(), JSON.stringify(merged));
-      window.dispatchEvent(new CustomEvent("platform-settings-updated", { detail: merged }));
+      const key = isPlatformScope ? "platform-settings:global" : getSettingsStorageKey();
+      const merged = normalize(nextSettings, isPlatformScope ? PLATFORM_SETTINGS : JSON.parse(localStorage.getItem(key) || "{}"));
+      localStorage.setItem(key, JSON.stringify(merged));
+      window.dispatchEvent(new CustomEvent(isPlatformScope ? "platform-settings-updated" : "settings-updated", { detail: merged }));
     } catch (error) {
-      console.warn("Tenant settings could not be persisted locally:", error);
+      console.warn("Settings could not be persisted locally:", error);
     }
   }, [isPlatformScope]);
 
+  const companyName = String(settings.companyName || (isPlatformScope ? PLATFORM_BRAND_NAME : PUBLIC_BRAND_NAME)).trim();
+
   return (
     <SettingsContext.Provider value={{
-      settings: { ...settings, companyName: isPlatformScope ? PLATFORM_BRAND_NAME : PUBLIC_BRAND_NAME },
-      companyName: isPlatformScope ? PLATFORM_BRAND_NAME : PUBLIC_BRAND_NAME,
+      settings: { ...settings, companyName },
+      companyName,
       supportEmail: settings.supportEmail || "",
       supportPhone: settings.supportPhone || "",
       loading,
