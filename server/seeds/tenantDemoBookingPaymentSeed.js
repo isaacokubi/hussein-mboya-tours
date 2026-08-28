@@ -48,13 +48,30 @@ async function seedTenant(tenant) {
       return 0;
     }
 
-    // Payment.customer intentionally references User in this schema.
+    // Payment.customer references User, while Customer.user is unique.
+    // Reuse one existing tenant user/customer for all demo bookings instead of
+    // attempting to create multiple customers with user:null.
     const paymentUser = await User.findOne({ status: { $ne: "disabled" } })
-      .select("_id")
+      .select("_id email")
       .lean();
     if (!paymentUser) {
       console.log(`Skipping ${tenant.name || tenantId}: no tenant user available for payment records`);
       return 0;
+    }
+
+    let customer = await Customer.findOne({ user: paymentUser._id });
+    if (!customer) {
+      customer = await Customer.findOne({});
+    }
+    if (!customer) {
+      customer = await Customer.create({
+        user: paymentUser._id,
+        firstName: "Demo",
+        lastName: "Customer",
+        email: paymentUser.email || `demo.${tenantKey}@example.test`,
+        phone: "0700000000",
+        country: "Kenya",
+      });
     }
 
     let created = 0;
@@ -62,21 +79,10 @@ async function seedTenant(tenant) {
       const state = STATUSES[i];
       const tour = tours[i % tours.length];
       const amount = Number(tour.price || 500) || 500;
-      const email = `demo${i + 1}.${tenantKey}@example.test`;
       const reference = `DEMO-${tenantKey}-${i + 1}`;
+      const marker = `DEMO_TENANT_SEED_${tenantKey}_${i + 1}`;
 
-      let customer = await Customer.findOne({ email });
-      if (!customer) {
-        customer = await Customer.create({
-          firstName: "Demo",
-          lastName: `Customer ${i + 1}`,
-          email,
-          phone: `070000${String(i + 1).padStart(4, "0")}`,
-          country: "Kenya",
-        });
-      }
-
-      const existing = await Booking.findOne({ staffNotes: `DEMO_TENANT_SEED_${i + 1}` });
+      const existing = await Booking.findOne({ staffNotes: marker });
       if (existing) continue;
 
       const paidAmount = state.paymentStatus === "paid" ? amount : 0;
@@ -84,13 +90,13 @@ async function seedTenant(tenant) {
         customer: customer._id,
         tour: tour._id,
         customerSnapshot: {
-          name: `${customer.firstName} ${customer.lastName}`,
-          email: customer.email,
+          name: `Demo Customer ${i + 1}`,
+          email: customer.email || `demo${i + 1}.${tenantKey}@example.test`,
           phone: customer.phone,
         },
         contact: {
-          name: `${customer.firstName} ${customer.lastName}`,
-          email: customer.email,
+          name: `Demo Customer ${i + 1}`,
+          email: customer.email || `demo${i + 1}.${tenantKey}@example.test`,
           phone: customer.phone,
         },
         travelDate: new Date(Date.now() + (30 + i) * 86400000),
@@ -105,7 +111,7 @@ async function seedTenant(tenant) {
         paymentReference: reference,
         status: state.bookingStatus,
         bookingSource: "admin",
-        staffNotes: `DEMO_TENANT_SEED_${i + 1}`,
+        staffNotes: marker,
       });
 
       const payment = await Payment.create({
