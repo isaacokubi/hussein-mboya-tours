@@ -10,7 +10,7 @@ const StatsSection = () => {
   ];
 
   return (
-    <section className="py-20 bg-white text-slate-900" aria-label="Global Tours statistics">
+    <section className="py-20 bg-white text-slate-900" aria-label="Travel company statistics">
       <div className="container mx-auto px-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {stats.map((stat, index) => (
