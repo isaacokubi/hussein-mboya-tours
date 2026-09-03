@@ -14,6 +14,7 @@ import SystemHealth from "./SystemHealth";
 
 const unwrap = (payload) => payload?.data ?? payload ?? {};
 const asArray = (value) => (Array.isArray(value) ? value : []);
+const BOOKING_STATUSES = ["confirmed", "pending", "completed", "cancelled"];
 
 export default function AdminDashboard() {
   const queryClient = useQueryClient();
@@ -78,6 +79,15 @@ export default function AdminDashboard() {
   const popularTours = asArray(dashboard.popularTours);
   const monthlyRevenue = asArray(dashboard.monthlyRevenue);
   const bookingStatus = asArray(dashboard.status);
+  const bookingStatusCounts = useMemo(() => {
+    const counts = Object.fromEntries(BOOKING_STATUSES.map((status) => [status, 0]));
+    bookingStatus.forEach((item) => {
+      const rawStatus = typeof item?._id === "object" ? item?._id?.status : item?._id;
+      const status = String(rawStatus || "").trim().toLowerCase();
+      if (status) counts[status] = Number(item?.count || 0);
+    });
+    return counts;
+  }, [bookingStatus]);
   const pendingAgents = useMemo(
     () => agents.filter((agent) => !agent.isApproved),
     [agents]
@@ -225,17 +235,34 @@ export default function AdminDashboard() {
           </section>
 
           <section className="rounded-xl bg-white p-6 shadow">
-            <h2 className="mb-5 text-xl font-bold">Booking Status</h2>
-            {bookingStatus.length === 0 ? <p className="text-gray-500">No bookings available.</p> : (
-              <div className="space-y-3">
-                {bookingStatus.map((item) => (
-                  <div key={item._id || "unknown"} className="flex items-center justify-between border-b pb-2">
-                    <span className="capitalize text-gray-600">{String(item._id || "unknown").replace(/[_-]/g, " ")}</span>
-                    <strong>{Number(item.count || 0).toLocaleString()}</strong>
-                  </div>
-                ))}
+            <div className="mb-5 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-xl font-bold">Booking Status</h2>
+                <p className="mt-1 text-sm text-gray-500">Current booking distribution for this tenant.</p>
               </div>
-            )}
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                {Number(summary.bookings ?? dashboard.bookings ?? 0).toLocaleString()} total
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {BOOKING_STATUSES.map((status) => {
+                const count = Number(bookingStatusCounts[status] || 0);
+                const styles = {
+                  confirmed: "border-emerald-200 bg-emerald-50 text-emerald-800",
+                  pending: "border-amber-200 bg-amber-50 text-amber-800",
+                  completed: "border-blue-200 bg-blue-50 text-blue-800",
+                  cancelled: "border-red-200 bg-red-50 text-red-800",
+                };
+                return (
+                  <div key={status} className={`rounded-xl border p-4 ${styles[status]}`}>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm font-semibold capitalize">{status}</span>
+                      <strong className="text-2xl">{count.toLocaleString()}</strong>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </section>
         </div>
       )}
