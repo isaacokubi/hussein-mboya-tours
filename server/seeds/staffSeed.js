@@ -5,6 +5,7 @@ import Organization from "../models/Organization.js";
 import Staff from "../models/Staff.js";
 import { runWithTenant } from "../tenancy/context.js";
 
+dotenv.config({ path: "./server/.env" });
 dotenv.config();
 
 const staffMembers = [
@@ -19,20 +20,22 @@ const seedStaff = async () => {
   try {
     const requestedTenantId = String(process.env.TENANT_ID || "").trim();
     const requestedTenantSlug = String(process.env.TENANT_SLUG || "").trim().toLowerCase();
+    const requestedTenantName = String(process.env.TENANT_NAME || "").trim();
 
-    if (!requestedTenantId && !requestedTenantSlug) {
-      throw new Error("Set TENANT_ID or TENANT_SLUG before running the staff seed.");
+    if (!requestedTenantId && !requestedTenantSlug && !requestedTenantName) {
+      throw new Error("Set TENANT_ID, TENANT_SLUG, or TENANT_NAME before running the staff seed.");
     }
 
-    await mongoose.connect(process.env.MONGODB_URI);
+    const mongoUri = String(process.env.MONGODB_URI || "").trim();
+    if (!mongoUri) throw new Error("MONGODB_URI is missing in server/.env");
+    await mongoose.connect(mongoUri);
 
-    const organization = requestedTenantId
-      ? await Organization.findById(requestedTenantId).lean()
-      : await Organization.findOne({ slug: requestedTenantSlug }).lean();
+    let organization;
+    if (requestedTenantId) organization = await Organization.findById(requestedTenantId).lean();
+    else if (requestedTenantSlug) organization = await Organization.findOne({ slug: requestedTenantSlug }).lean();
+    else organization = await Organization.findOne({ name: requestedTenantName }).lean();
 
-    if (!organization) {
-      throw new Error("Tenant organization was not found.");
-    }
+    if (!organization) throw new Error("Tenant organization was not found.");
 
     const staff = await runWithTenant(
       { tenantId: organization._id, tenant: organization },
@@ -42,7 +45,7 @@ const seedStaff = async () => {
           results.push(
             await Staff.findOneAndUpdate(
               { email: member.email },
-              { $set: member, $setOnInsert: { tenantId: organization._id } },
+              { $set: { ...member, tenantId: organization._id } },
               { upsert: true, new: true, setDefaultsOnInsert: true },
             ).lean(),
           );
