@@ -6,6 +6,7 @@ import crypto from "crypto";
 dotenv.config();
 
 const PASSWORD = "Admin@123456";
+const PLATFORM_ADMIN_EMAIL = "platformadmin@toursaas.co.ke";
 const image = (id, width = 1800) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${width}&q=90`;
 const IMAGE_POOL = [
   image("photo-1516426122078-c23e76319801"), image("photo-1547970810-dc1eac37d174"),
@@ -15,7 +16,7 @@ const IMAGE_POOL = [
 ];
 
 const TENANTS = [
-  { name: "Global Tours Kenya", slug: "global-tours-kenya", email: "admin@globaltours.co.ke", phone: "0707476586", address: "Nairobi, Kenya" },
+  { name: "Amani Trails Safaris", slug: "amani-trails-safaris", email: "admin@amanitrails.co.ke", phone: "0707476586", address: "Nairobi, Kenya" },
   { name: "Savanna Crown Safaris", slug: "savanna-crown-safaris", email: "admin@savannacrown.co.ke", phone: "0712345678", address: "Nairobi, Kenya" },
   { name: "Coastal Horizon Adventures", slug: "coastal-horizon-adventures", email: "admin@coastalhorizon.co.ke", phone: "0723456789", address: "Mombasa, Kenya" },
 ];
@@ -74,16 +75,11 @@ const run = async () => {
   await db.collection("organizations").insertMany(organizations);
 
   const allUsers = [];
-  const allStaff = [];
-  const allAgents = [];
-  const allCustomers = [];
-  const allVehicles = [];
-  const tenantRuntime = [];
 
   for (let t = 0; t < organizations.length; t += 1) {
     const tenant = organizations[t];
     const company = TENANTS[t];
-    const suffix = ["gt", "scs", "cha"][t];
+    const suffix = ["at", "scs", "cha"][t];
     const makeUser = (name, email, phone, roleName) => {
       const user = { _id: oid(), tenantId: tenant._id, name, email, phone, password: hashedPassword, role: roleName, legacyRole: roleName, roleId: roleByName.get(roleName)._id, status: "active", isVerified: true, createdAt: now, updatedAt: now };
       allUsers.push(user); return user;
@@ -100,9 +96,8 @@ const run = async () => {
     const staffFor = (user, position, role) => ({ _id: oid(), tenantId: tenant._id, user: user._id, name: user.name, email: user.email, phone: user.phone, position, role, status: "active", isActive: true, isDeleted: false, availability: "available", createdBy: admin._id, createdAt: now, updatedAt: now });
     const tenantStaff = [staffFor(manager, "tour_manager", "tour_manager"), staffFor(guide1, "guide", "guide"), staffFor(guide2, "guide", "guide"), staffFor(driver, "driver", "driver")];
     const tenantAgent = { _id: oid(), tenantId: tenant._id, user: agentUser._id, companyName: company.name, name: agentUser.name, email: agentUser.email, phone: agentUser.phone, location: company.address, commissionRate: 10, totalCommission: 0, pendingCommission: 0, paidCommission: 0, walletBalance: 0, totalSales: 0, totalBookings: 0, successfulBookings: 0, cancelledBookings: 0, isApproved: true, status: "active", createdAt: now, updatedAt: now };
-    const tenantCustomers = [1, 2].map((n, i) => ({ _id: oid(), tenantId: tenant._id, user: [customer1, customer2][i]._id, name: [customer1, customer2][i].name, email: [customer1, customer2][i].email, phone: [customer1, customer2][i].phone, country: "Kenya", nationality: "Kenyan", status: "active", isActive: true, totalBookings: n === 1 ? 2 : 1, createdAt: now, updatedAt: now }));
+    const tenantCustomers = [customer1, customer2].map((user, i) => ({ _id: oid(), tenantId: tenant._id, user: user._id, name: user.name, email: user.email, phone: user.phone, country: "Kenya", nationality: "Kenyan", status: "active", isActive: true, totalBookings: i === 0 ? 2 : 1, createdAt: now, updatedAt: now }));
     const tenantVehicles = [1, 2].map((v) => ({ _id: oid(), tenantId: tenant._id, name: `${company.name} Safari Van ${v}`, registrationNumber: `KDA ${t + 10}${v}A`, type: "Safari Van", capacity: 7, seats: 7, status: "available", active: true, isActive: true, driver: driver._id, createdBy: admin._id, createdAt: now, updatedAt: now }));
-    allStaff.push(...tenantStaff); allAgents.push(tenantAgent); allCustomers.push(...tenantCustomers); allVehicles.push(...tenantVehicles);
 
     await db.collection("staffs").insertMany(tenantStaff);
     await db.collection("agents").insertOne(tenantAgent);
@@ -128,7 +123,7 @@ const run = async () => {
       { customer: tenantCustomers[1], tour: tourDocs[5], status: "confirmed", paymentStatus: "paid", guests: 2 },
     ];
     const guideStaff = tenantStaff.filter((s) => s.position === "guide"); const driverStaff = tenantStaff.find((s) => s.position === "driver");
-    const bookingDocs = bookingSpecs.map((spec, index) => { const amount = spec.tour.price * spec.guests; const travelDate = new Date(spec.tour.startDate); const deposit = spec.paymentStatus === "partial" ? Math.round(amount * 0.3) : amount; return { _id: oid(), tenantId: tenant._id, bookingNumber: `GT-${t + 1}${String(index + 1).padStart(4, "0")}-${crypto.randomBytes(2).toString("hex").toUpperCase()}`, customer: spec.customer._id, user: spec.customer.user, customerSnapshot: { name: spec.customer.name, email: spec.customer.email, phone: spec.customer.phone }, contact: { name: spec.customer.name, email: spec.customer.email, phone: spec.customer.phone }, agent: tenantAgent._id, bookingSource: "website", tour: spec.tour._id, travelDate, originalTravelDate: travelDate, travelers: [{ name: spec.customer.name, nationality: "Kenyan", gender: "other" }], numberOfGuests: spec.guests, pickupLocation: "Nairobi CBD", hotelName: "Demo Hotel", specialRequests: [], assignedGuide: guideStaff[index % guideStaff.length]?._id || null, assignedDriver: driverStaff?._id || null, assignedVehicle: tenantVehicles[index % tenantVehicles.length]._id, assigned: index !== 1, subtotal: amount, discountAmount: 0, taxAmount: 0, serviceFee: 0, totalAmount: amount, commissionRate: 10, commissionAmount: Math.round(amount * 0.1), commissionStatus: "pending", depositAmount: deposit, balanceAmount: amount - deposit, paymentMethod: "MPESA", paymentStatus: spec.paymentStatus, paymentReference: `DEMO-${t + 1}-${index + 1}`, mpesaReceipt: spec.paymentStatus === "paid" ? `DEMO${t + 1}${index + 1}MPESA` : "", payments: [], refundAmount: 0, refundStatus: "none", status: spec.status, confirmedAt: spec.status !== "pending" ? now : null, assignedAt: index !== 1 ? now : null, createdBy: admin._id, createdAt: now, updatedAt: now }; });
+    const bookingDocs = bookingSpecs.map((spec, index) => { const amount = spec.tour.price * spec.guests; const travelDate = new Date(spec.tour.startDate); const deposit = spec.paymentStatus === "partial" ? Math.round(amount * 0.3) : amount; return { _id: oid(), tenantId: tenant._id, bookingNumber: `TR-${t + 1}${String(index + 1).padStart(4, "0")}-${crypto.randomBytes(2).toString("hex").toUpperCase()}`, customer: spec.customer._id, user: spec.customer.user, customerSnapshot: { name: spec.customer.name, email: spec.customer.email, phone: spec.customer.phone }, contact: { name: spec.customer.name, email: spec.customer.email, phone: spec.customer.phone }, agent: tenantAgent._id, bookingSource: "website", tour: spec.tour._id, travelDate, originalTravelDate: travelDate, travelers: [{ name: spec.customer.name, nationality: "Kenyan", gender: "other" }], numberOfGuests: spec.guests, pickupLocation: "Nairobi CBD", hotelName: "Demo Hotel", specialRequests: [], assignedGuide: guideStaff[index % guideStaff.length]?._id || null, assignedDriver: driverStaff?._id || null, assignedVehicle: tenantVehicles[index % tenantVehicles.length]._id, assigned: index !== 1, subtotal: amount, discountAmount: 0, taxAmount: 0, serviceFee: 0, totalAmount: amount, commissionRate: 10, commissionAmount: Math.round(amount * 0.1), commissionStatus: "pending", depositAmount: deposit, balanceAmount: amount - deposit, paymentMethod: "MPESA", paymentStatus: spec.paymentStatus, paymentReference: `DEMO-${t + 1}-${index + 1}`, mpesaReceipt: spec.paymentStatus === "paid" ? `DEMO${t + 1}${index + 1}MPESA` : "", payments: [], refundAmount: 0, refundStatus: "none", status: spec.status, confirmedAt: spec.status !== "pending" ? now : null, assignedAt: index !== 1 ? now : null, createdBy: admin._id, createdAt: now, updatedAt: now }; });
     await db.collection("bookings").insertMany(bookingDocs);
     const paymentDocs = bookingDocs.map((booking, index) => ({ _id: oid(), tenantId: tenant._id, customer: booking.user, user: booking.user, booking: booking._id, provider: "MPESA", method: "mpesa", paymentMethod: "MPESA", amount: booking.depositAmount, currency: "KES", phone: booking.contact.phone, phoneNumber: booking.contact.phone, status: "completed", transactionId: `DEMO-TXN-${t + 1}-${index + 1}`, transactionReference: booking.paymentReference, invoiceNumber: `INV-${t + 1}-${String(index + 1).padStart(4, "0")}`, mpesaReceiptNumber: booking.mpesaReceipt || `DEMO${t + 1}${index + 1}MPESA`, transactionDate: now.toISOString(), callbackResponse: { demo: true }, createdAt: now, updatedAt: now }));
     await db.collection("payments").insertMany(paymentDocs);
@@ -137,18 +132,22 @@ const run = async () => {
     await db.collection("invoices").insertMany(bookingDocs.map((booking, index) => ({ _id: oid(), tenantId: tenant._id, invoiceNumber: `INV-${t + 1}-${String(index + 1).padStart(4, "0")}`, booking: booking._id, customer: booking.customer, user: booking.user, subtotal: booking.subtotal, taxAmount: 0, discountAmount: 0, totalAmount: booking.totalAmount, amountPaid: booking.depositAmount, balanceDue: booking.balanceAmount, currency: "KES", status: booking.balanceAmount ? "partial" : "paid", issueDate: now, dueDate: booking.travelDate, createdAt: now, updatedAt: now })));
     await db.collection("notifications").insertMany([{ _id: oid(), tenantId: tenant._id, user: admin._id, title: "Welcome to your dashboard", message: `${company.name} workspace is ready.`, type: "system", read: false, createdAt: now, updatedAt: now }, { _id: oid(), tenantId: tenant._id, user: manager._id, title: "New booking received", message: "A demo booking is ready for management.", type: "booking", read: false, createdAt: now, updatedAt: now }]);
     await db.collection("wishlists").insertOne({ _id: oid(), tenantId: tenant._id, user: tenantCustomers[0].user, tours: [tourDocs[1]._id, tourDocs[4]._id], createdAt: now, updatedAt: now });
-    tenantRuntime.push({ company, admin, manager, agentUser, guide1, guide2, driver, customer1, customer2 });
   }
 
-  await db.collection("users").insertMany([...allUsers, { _id: oid(), tenantId: null, name: "Platform Super Admin", email: "superadmin@globaltours.co.ke", password: hashedPassword, role: "super_admin", legacyRole: "super_admin", roleId: roleByName.get("super_admin")._id, status: "active", isVerified: true, createdAt: now, updatedAt: now }]);
+  // Platform owner is deliberately outside every tenant. It is the only
+  // account that can access /superadmin and it is never assigned an
+  // organization, tenantId, tenant URL, or tenant-owned records.
+  const platformAdmin = { _id: oid(), tenantId: null, name: "Platform Super Admin", email: PLATFORM_ADMIN_EMAIL, password: hashedPassword, role: "super_admin", legacyRole: "super_admin", roleId: roleByName.get("super_admin")._id, status: "active", isVerified: true, createdAt: now, updatedAt: now };
+  await db.collection("users").insertMany([...allUsers, platformAdmin]);
 
   console.log("\nTHREE-TENANT DEMO RESEED COMPLETE");
   console.log("Previous collections and tenant records were deleted before reseeding.");
+  console.log("Platform owner is separate from all tenant accounts and has tenantId=null.");
   console.log("Tenants: 3 | Destinations: 24 | Tours: 30 | Staff: 12 | Agents: 3 | Customers: 6 | Vehicles: 6 | Bookings: 12 | Payments: 12 | Invoices: 12 | Reviews: 12");
   console.log(`Password for every seeded account: ${PASSWORD}`);
   console.log("\nTENANT ADMIN EMAILS:");
   TENANTS.forEach((tenant) => console.log(`- ${tenant.email}`));
-  console.log("- superadmin@globaltours.co.ke");
+  console.log(`- PLATFORM SUPER ADMIN: ${PLATFORM_ADMIN_EMAIL}`);
 };
 
 run().catch((error) => { console.error("Three-tenant demo reseed failed:", error); process.exitCode = 1; }).finally(async () => { await mongoose.connection.close().catch(() => {}); });
