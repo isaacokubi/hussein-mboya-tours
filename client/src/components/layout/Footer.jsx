@@ -15,7 +15,7 @@ export default function Footer() {
   const { user } = useAuth();
   const { settings = {} } = useSettings() || {};
 
-  const companyName = settings.companyName || "Your Travel Company";
+  const companyName = settings.companyName || "Global Tours";
   const supportEmail = settings.supportEmail || "";
   const supportPhone = settings.supportPhone || "";
   const year = new Date().getFullYear();
