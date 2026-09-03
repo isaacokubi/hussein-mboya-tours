@@ -1,8 +1,12 @@
 import { useSettings } from "../../../context/SettingsContext";
+import { useTenant } from "../../../context/TenantContext";
 
 export default function DashboardHeader() {
   const { settings = {} } = useSettings() || {};
-  const companyName = String(settings.companyName || "").trim();
+  const { tenant = {} } = useTenant() || {};
+  const companyName = String(
+    settings.companyName || tenant.name || tenant.companyName || ""
+  ).trim();
 
   return (
     <div>
