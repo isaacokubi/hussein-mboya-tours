@@ -18,9 +18,16 @@ function isPlatformDeployment() {
 }
 
 const PLATFORM_API_URL = configuredPlatformApiUrl || "https://hussein-mboya-tours.onrender.com/api";
-export const baseURL = isPlatformDeployment()
-  ? PLATFORM_API_URL
-  : (configuredApiUrl || "/api");
+
+// Local development must always use the local Vite proxy. This prevents a
+// developer machine from silently displaying stale data from a deployed API
+// when VITE_API_URL happens to contain a production URL. Deployed builds keep
+// using their configured API endpoint exactly as before.
+export const baseURL = isLocalHost()
+  ? "/api"
+  : (isPlatformDeployment()
+      ? PLATFORM_API_URL
+      : (configuredApiUrl || "/api"));
 
 // Production deployments on a shared Vercel hostname cannot infer a tenant
 // from the hostname alone. VITE_PUBLIC_TENANT_SLUG is therefore the explicit,
@@ -40,7 +47,8 @@ function getPublicTenantSlug() {
 
   const hostname = String(window.location.hostname || "").trim().toLowerCase();
   const configuredPlatformHost = String(import.meta.env.VITE_PLATFORM_HOST || "")
-    .trim().toLowerCase()
+    .trim()
+    .toLowerCase()
     .replace(/^https?:\/\//, "")
     .replace(/\/$/, "");
 
