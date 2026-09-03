@@ -6,9 +6,9 @@ import { runWithTenant } from "../tenancy/context.js";
 
 dotenv.config();
 
-// Stable remote images used only as database fallback media. Every repaired record
-// receives both a featured image and gallery images so old records cannot fall back
-// to the application's placeholder image.
+// Stable remote images used only as database fallback media. The pool intentionally
+// contains more images than the destination catalogue so tours do not reuse the
+// same photograph across cards.
 const IMAGE_POOL = [
   "https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=1200&q=85",
   "https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?auto=format&fit=crop&w=1200&q=85",
@@ -18,6 +18,18 @@ const IMAGE_POOL = [
   "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=85",
   "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=85",
   "https://images.unsplash.com/photo-1470214304380-aadaedcfff1b?auto=format&fit=crop&w=1200&q=85",
+  "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1200&q=85",
+  "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1200&q=85",
+  "https://images.unsplash.com/photo-1472396961693-142e6e269027?auto=format&fit=crop&w=1200&q=85",
+  "https://images.unsplash.com/photo-1497250681960-ef046c08a56e?auto=format&fit=crop&w=1200&q=85",
+  "https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&w=1200&q=85",
+  "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=1200&q=85",
+  "https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&w=1200&q=85",
+  "https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fit=crop&w=1200&q=85",
+  "https://images.unsplash.com/photo-1519904981063-b0cf448d479e?auto=format&fit=crop&w=1200&q=85",
+  "https://images.unsplash.com/photo-1482192596544-9eb780fc7f66?auto=format&fit=crop&w=1200&q=85",
+  "https://images.unsplash.com/photo-1526392060635-9d6019884377?auto=format&fit=crop&w=1200&q=85",
+  "https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1200&q=85",
 ];
 
 const DESTINATIONS = [
@@ -81,8 +93,6 @@ async function repair() {
       }
     }
 
-    // Remove known legacy test destinations plus any generated tenant-isolation
-    // test destinations, regardless of the generated hexadecimal tenant suffix.
     const syntheticDestinations = await Destination.find({
       $or: [
         { name: { $in: ["Coherent tours Test Destination", "Africa safaris Test Destination"] } },
@@ -95,8 +105,8 @@ async function repair() {
 
     let fixed = 0;
     let removedDuplicates = 0;
+    const tourTitles = Object.keys(TOUR_DESTINATIONS);
 
-    // First repair the canonical Global Tours catalogue and remove duplicate copies.
     for (const [title, destinationName] of Object.entries(TOUR_DESTINATIONS)) {
       const destination = destinationByName.get(destinationName);
       if (!destination) continue;
@@ -105,8 +115,9 @@ async function repair() {
       if (!matches.length) continue;
 
       const canonical = matches.find((tour) => String(tour.destination || "") === String(destination._id)) || matches[0];
-      const index = Object.keys(TOUR_DESTINATIONS).indexOf(title);
-      const image = IMAGE_POOL[(index + 2) % IMAGE_POOL.length];
+      const index = tourTitles.indexOf(title);
+      const image = IMAGE_POOL[index % IMAGE_POOL.length];
+      const galleryImage = IMAGE_POOL[(index + 1) % IMAGE_POOL.length];
 
       canonical.destination = destination._id;
       canonical.country = "Kenya";
@@ -114,7 +125,7 @@ async function repair() {
       canonical.featuredImage = { url: image };
       canonical.gallery = [
         { url: image },
-        { url: IMAGE_POOL[(index + 3) % IMAGE_POOL.length] },
+        { url: galleryImage },
       ];
       canonical.published = true;
       canonical.available = true;
@@ -130,9 +141,6 @@ async function repair() {
       }
     }
 
-    // Remove synthetic tenant-isolation/test data that must never appear in the
-    // public Global Tours catalogue. These records are identifiable by their
-    // generated test naming and are unrelated to the real Global Tours catalogue.
     const syntheticTours = await Tour.find({
       $or: [
         { title: /^(Coherent tours|Africa safaris)/i },
@@ -144,9 +152,6 @@ async function repair() {
       removedDuplicates += syntheticTours.length;
     }
 
-    // Repair every remaining active tour that has no usable image. This catches
-    // older legitimate records that were created before the Global Tours media
-    // repair, rather than relying only on the 20 seeded titles above.
     const allTours = await Tour.find({ isDeleted: false }).sort({ createdAt: 1 });
     for (const tour of allTours) {
       const destination = tour.destination ? await Destination.findById(tour.destination) : null;
@@ -175,7 +180,6 @@ async function repair() {
       fixed += 1;
     }
 
-    // Remove legacy placeholder/test tours that are still visible under Global Tours.
     const legacyTours = await Tour.find({
       $or: [
         { title: /^Coherent tours/i },
