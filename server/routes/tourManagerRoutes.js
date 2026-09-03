@@ -4,15 +4,13 @@ import { getTourManagerDashboard, createTour, getTours, updateTour, deleteTour, 
 import { createItinerary, getItineraries, getItinerary, updateItinerary, deleteItinerary } from "../controllers/itineraryController.js";
 import { getTourAvailability, updateTourAvailability } from "../controllers/tourAvailabilityController.js";
 import { getBookings } from "../controllers/bookingController.js";
-import { getCustomers } from "../controllers/customerController.js";
-import { getGuides } from "../controllers/staffController.js";
 import { getTourReports } from "../controllers/tourReportController.js";
+import { getTenantGuides, getTenantCustomers, getTenantVehicles } from "../controllers/tenantDirectoryController.js";
 import { protect, managerOnly } from "../middleware/authMiddleware.js";
 import validateFutureTourDate from "../middleware/validateFutureTourDate.js";
 import validateTourAssignmentTenant from "../middleware/validateTourAssignmentTenant.js";
 
 const router = express.Router();
-
 router.use(protect);
 router.use(resolveTenant);
 router.use(managerOnly);
@@ -35,8 +33,9 @@ router.patch("/bookings/:id/complete", completeBooking);
 router.put("/bookings/:id/complete", completeBooking);
 router.patch("/bookings/:id/cancel", cancelBooking);
 router.put("/bookings/:id/cancel", cancelBooking);
-router.get("/customers", getCustomers);
-router.get("/guides", getGuides);
+router.get("/customers", getTenantCustomers);
+router.get("/guides", getTenantGuides);
+router.get("/vehicles", getTenantVehicles);
 router.get("/reports", getTourReports);
 router.get("/tours/:id/availability", getTourAvailability);
 router.put("/tours/:id/availability", updateTourAvailability);
