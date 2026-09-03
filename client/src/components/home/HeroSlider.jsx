@@ -17,9 +17,9 @@ const PROFESSIONAL_HERO_IMAGES = [
 ];
 
 const FALLBACK_HERO_SLIDES = [
-  { _id: "fallback-1", image: PROFESSIONAL_HERO_IMAGES[0], title: "Discover Kenya with Global Tours", description: "Unforgettable safaris, wildlife adventures and tailor-made African experiences.", buttonText: "Explore Tours", buttonLink: "/tours" },
+  { _id: "fallback-1", image: PROFESSIONAL_HERO_IMAGES[0], title: "Discover Kenya with {{companyName}}", description: "Unforgettable safaris, wildlife adventures and tailor-made African experiences.", buttonText: "Explore Tours", buttonLink: "/tours" },
   { _id: "fallback-2", image: PROFESSIONAL_HERO_IMAGES[1], title: "Experience the Magic of Kenya", description: "From the Maasai Mara to the coast, discover extraordinary places with local experts.", buttonText: "View Destinations", buttonLink: "/destinations" },
-  { _id: "fallback-3", image: PROFESSIONAL_HERO_IMAGES[2], title: "Your African Adventure Starts Here", description: "Travel safely, comfortably and confidently with Global Tours.", buttonText: "Book Now", buttonLink: "/tours" },
+  { _id: "fallback-3", image: PROFESSIONAL_HERO_IMAGES[2], title: "Your African Adventure Starts Here", description: "Travel safely, comfortably and confidently with {{companyName}}.", buttonText: "Book Now", buttonLink: "/tours" },
   { _id: "fallback-4", image: PROFESSIONAL_HERO_IMAGES[3], title: "Safari, Coast & Adventure", description: "Build a seamless Kenya journey from wildlife and mountains to the Indian Ocean.", buttonText: "Plan Your Trip", buttonLink: "/tours" },
 ];
 
@@ -28,11 +28,27 @@ const isOldLocalHero = (url = "") => /^\/hero(?:1|2|4)\.jpeg$/i.test(url.trim())
 export default function HeroSlider() {
   const { tenant } = useTenant() || {};
   const { settings = {} } = useSettings() || {};
-  const companyName = settings?.companyName || tenant?.name || tenant?.companyName || "Global Tours";
+  const companyName = settings?.companyName || tenant?.name || tenant?.companyName || "Tours & Travel";
+  const tenantKey = tenant?._id || tenant?.id || tenant?.slug || companyName;
   const videoRefs = useRef([]);
   const [heroReady, setHeroReady] = useState(false);
   const [loadedVideos, setLoadedVideos] = useState({});
-  const { data: slides = FALLBACK_HERO_SLIDES } = useQuery({ queryKey: ["heroSlides", settings?.companyName || "default"], queryFn: getHeroSlides, initialData: FALLBACK_HERO_SLIDES, staleTime: 1000 * 60 * 30, gcTime: 1000 * 60 * 60, refetchOnWindowFocus: false, retry: 0 });
+  const { data: rawSlides = [] } = useQuery({ queryKey: ["heroSlides", tenantKey], queryFn: getHeroSlides, staleTime: 1000 * 60 * 30, gcTime: 1000 * 60 * 60, refetchOnWindowFocus: false, retry: 0 });
+
+  const normalizeBrand = (value) => typeof value === "string"
+    ? value.replace(/\bGlobal Tours\b/gi, companyName).replace(/\{\{companyName\}\}/g, companyName)
+    : value;
+
+  const sourceSlides = Array.isArray(rawSlides) && rawSlides.length > 0 ? rawSlides : FALLBACK_HERO_SLIDES;
+  const slides = sourceSlides.map((slide) => ({
+    ...slide,
+    title: normalizeBrand(slide.title),
+    description: normalizeBrand(slide.description),
+    badge: normalizeBrand(slide.badge),
+    buttonText: normalizeBrand(slide.buttonText),
+    ctaText: normalizeBrand(slide.ctaText),
+  }));
+
   useEffect(() => { const timer = window.setTimeout(() => setHeroReady(true), 1200); return () => window.clearTimeout(timer); }, []);
   const markVideoLoaded = (index) => setLoadedVideos((current) => ({ ...current, [index]: true }));
   const playVideo = (index) => { const video = videoRefs.current[index]; if (!video || !heroReady) return; video.play().catch(() => {}); };
