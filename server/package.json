@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "check": "node --check server.js",
+    "check": "node server.js --check",
     "lint": "npm run check",
     "check:controllers": "node --check controllers/bookingAdminController.js && node --check controllers/adminBookingController.js && node --check controllers/agentBookingController.js && node --check controllers/bookingController.js && node --check controllers/tourManagerController.js && node --check controllers/mpesaController.js && node --check controllers/mpesaRefundController.js && node --check controllers/stripeController.js && node --check controllers/adminPaymentController.js && node --check controllers/paymentController.js && node --check controllers/adminUserController.js && node --check controllers/tenantController.js && node --check controllers/publicOnboardingController.js && node --check controllers/adminDashboardMetricsController.js && node --check controllers/superAdminDashboardMetricsController.js",
     "check:models": "node --check models/Booking.js && node --check models/Payment.js && node --check models/User.js && node --check models/Organization.js && node --check models/Subscription.js && node --check models/Referral.js",
@@ -14,6 +14,7 @@
     "check:all": "npm run check && npm run check:controllers && npm run check:models && npm run check:production",
     "create:admin": "node scripts/createAdmin.js",
     "bootstrap:first": "node scripts/bootstrapFirstSuperAdmin.js",
+    "seed:global-test": "node seeds/globalToursTestSeed.js",
     "test": "node --test tests/*.js"
   },
   "dependencies": {
@@ -31,7 +32,7 @@
     "i18next": "^26.3.6",
     "json2csv": "^6.0.0-alpha.2",
     "jsonwebtoken": "^9.0.0",
-    "mongoose": "^8.12.1",
+    "mongoose": "^8.12.0",
     "mongoose-paginate-v2": "^1.9.5",
     "morgan": "^1.11.0",
     "multer": "^2.2.0",
@@ -42,6 +43,7 @@
     "pdfkit": "^0.17.0",
     "qrcode": "^1.5.0",
     "react-i18next": "^17.0.11",
+    "react-i18nex": "^17.0.11",
     "sitemap": "^9.0.1",
     "slugify": "^1.6.9",
     "socket.io": "^4.8.3",
