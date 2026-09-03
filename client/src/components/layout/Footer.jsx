@@ -34,6 +34,14 @@ export default function Footer() {
     ["YouTube", settings.youtube, FaYoutube],
   ].filter(([, href]) => href);
 
+  const popularDestinations = [
+    ["Tsavo National Park", "/destinations/tsavo-national-park"],
+    ["Lake Naivasha", "/destinations/lake-naivasha"],
+    ["Watamu", "/destinations/watamu"],
+    ["Mount Kenya", "/destinations/mount-kenya"],
+    ["Samburu National Reserve", "/destinations/samburu-national-reserve"],
+  ];
+
   return (
     <footer className="bg-gray-900 text-gray-300">
       <div className="max-w-7xl mx-auto px-6 py-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
@@ -82,12 +90,11 @@ export default function Footer() {
         <div>
           <h3 className="text-lg font-semibold text-white mb-4">Popular Destinations</h3>
           <ul className="space-y-3">
-            <li><Link to="/destinations/maasai-mara" className="hover:text-green-400 transition">Maasai Mara</Link></li>
-            <li><Link to="/destinations/amboseli" className="hover:text-green-400 transition">Amboseli National Park</Link></li>
-            <li><Link to="/destinations/diani-beach" className="hover:text-green-400 transition">Diani Beach</Link></li>
-            <li><Link to="/destinations/tsavo" className="hover:text-green-400 transition">Tsavo National Park</Link></li>
-            <li><Link to="/destinations/lake-naivasha" className="hover:text-green-400 transition">Lake Naivasha</Link></li>
-            <li><Link to="/destinations/watamu" className="hover:text-green-400 transition">Watamu Marine Park</Link></li>
+            {popularDestinations.map(([name, path]) => (
+              <li key={path}>
+                <Link to={path} className="hover:text-green-400 transition">{name}</Link>
+              </li>
+            ))}
           </ul>
         </div>
 
