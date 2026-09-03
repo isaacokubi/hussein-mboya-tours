@@ -1,6 +1,7 @@
 import express from "express";
 import { resolveTenant } from "../middleware/tenantMiddleware.js";
-import { getTourManagerDashboard, createTour, getTours, updateTour, deleteTour, assignTourGuide, completeBooking, cancelBooking } from "../controllers/tourManagerController.js";
+import { getTourManagerDashboard, createTour, getTours, updateTour, deleteTour, completeBooking, cancelBooking } from "../controllers/tourManagerController.js";
+import { assignTourResourcesSafe } from "../controllers/tourResourceAssignmentController.js";
 import { createItinerary, getItineraries, getItinerary, updateItinerary, deleteItinerary } from "../controllers/itineraryController.js";
 import { getTourAvailability, updateTourAvailability } from "../controllers/tourAvailabilityController.js";
 import { getTourReports } from "../controllers/tourReportController.js";
@@ -20,7 +21,8 @@ router.get("/tours", getTours);
 router.post("/tours", validateFutureTourDate, createTour);
 router.put("/tours/:id", updateTour);
 router.delete("/tours/:id", deleteTour);
-router.post("/assign-guide", (req, res, next) => { req.params.id = req.body?.tourId; next(); }, validateTourAssignmentTenant, assignTourGuide);
+router.put("/assign-resources/:id", validateTourAssignmentTenant, assignTourResourcesSafe);
+router.post("/assign-guide", (req, res, next) => { req.params.id = req.body?.tourId; next(); }, validateTourAssignmentTenant, assignTourResourcesSafe);
 
 router.post("/itineraries", createItinerary);
 router.get("/itineraries", getItineraries);
