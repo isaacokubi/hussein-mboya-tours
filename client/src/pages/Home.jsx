@@ -3,6 +3,7 @@ import SEO from "../components/seo/SEO";
 import HeroSlider from "../components/home/HeroSlider";
 import HomeSearch from "../components/home/HomeSearch";
 import { useSettings } from "../context/SettingsContext";
+import { useTenant } from "../context/TenantContext";
 
 const StatsSection = lazy(() => import("../components/home/StatsSection"));
 const FeaturedTours = lazy(() => import("../components/home/FeaturedTours"));
@@ -18,14 +19,16 @@ const DEFAULT_SECTIONS = { stats: true, tours: true, destinations: true, experie
 const SectionFallback = () => <div className="min-h-24" aria-hidden="true" />;
 
 export default function Home() {
-  const { companyName = "", settings = {} } = useSettings();
+  const { tenant = {} } = useTenant() || {};
+  const { companyName: configuredCompanyName = "", settings = {} } = useSettings() || {};
+  const companyName = configuredCompanyName || tenant.name || tenant.companyName || "";
   const sections = { ...DEFAULT_SECTIONS, ...(settings.homepageSections || {}) };
   const seoTitle = settings.seoTitle || (companyName ? `Kenya Safaris & Tours | ${companyName}` : "Kenya Safaris & Tours");
   const seoDescription = settings.seoDescription || (companyName ? `Discover Kenya with ${companyName}: safaris, wildlife adventures, beach holidays and tailor-made African travel experiences.` : "Discover Kenya through safaris, wildlife adventures, beach holidays and tailor-made African travel experiences.");
 
   return (
     <main className="overflow-hidden bg-slate-950 text-slate-100" style={{ fontFamily: "var(--tenant-font-family,Inter), sans-serif" }}>
-      <SEO title={seoTitle} description={seoDescription} image={settings.companyLogo || "/hero1.jpeg"} />
+      <SEO title={seoTitle} description={seoDescription} image={settings.companyLogo || tenant.logoUrl || "/hero1.jpeg"} />
       <div className="relative">
         <HeroSlider />
         <HomeSearch />
