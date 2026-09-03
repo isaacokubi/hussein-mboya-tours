@@ -1,3 +1,5 @@
+import { useSettings } from "../../../context/SettingsContext";
+
 const customerName = (booking) => {
   const customer = booking?.customer;
   const snapshot = booking?.customerSnapshot;
@@ -12,13 +14,18 @@ const statusText = (value) => {
 };
 
 export default function RecentBookings({ bookings = [] }) {
+  const { settings = {} } = useSettings() || {};
   const list = Array.isArray(bookings) ? bookings : [];
+  const companyName = String(settings.companyName || "").trim();
+  const currency = String(settings.currencySymbol || settings.currency || "KSh").trim();
 
   return (
     <section className="rounded-xl bg-white p-6 shadow">
       <div className="mb-5">
         <h2 className="text-xl font-bold">Recent Bookings</h2>
-        <p className="mt-1 text-sm text-gray-500">Latest bookings for this platform.</p>
+        <p className="mt-1 text-sm text-gray-500">
+          {companyName ? `Latest bookings for ${companyName}.` : "Latest tenant bookings."}
+        </p>
       </div>
       {list.length === 0 ? (
         <div className="rounded-lg border border-dashed p-8 text-center text-gray-500">No recent bookings available.</div>
@@ -33,7 +40,7 @@ export default function RecentBookings({ bookings = [] }) {
                   <p className="mt-1 text-xs text-slate-400">{tourName(booking)}</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold">Ksh {Number(booking?.amount ?? booking?.totalAmount ?? booking?.subtotal ?? 0).toLocaleString()}</p>
+                  <p className="font-bold">{currency} {Number(booking?.amount ?? booking?.totalAmount ?? booking?.subtotal ?? 0).toLocaleString()}</p>
                   <p className="mt-1 text-xs capitalize text-slate-500">Status: {statusText(booking?.status)}</p>
                   <p className="text-xs capitalize text-slate-500">Payment: {statusText(booking?.paymentStatus)}</p>
                 </div>
