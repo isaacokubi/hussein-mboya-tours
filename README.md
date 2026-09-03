@@ -1,38 +1,32 @@
-# Hussein Mboya Tours
+# Hussein Mboya Tours — Travel & Tour Management Platform
 
-> Production-oriented multi-tenant African safari and travel management platform built with React, Vite, Node.js, Express, MongoDB/Mongoose, and Socket.IO.
+> A full-stack, multi-tenant travel management platform for tour operators, travel agencies, guides, agents, drivers, finance teams, and customers.
 
-[![Frontend](https://img.shields.io/badge/frontend-React%20%2B%20Vite-61dafb)](client/)
-[![Backend](https://img.shields.io/badge/backend-Node.js%20%2B%20Express-339933)](server/)
-[![Database](https://img.shields.io/badge/database-MongoDB%20%2B%20Mongoose-47A248)](server/models/)
-[![Security](https://img.shields.io/badge/security-multi--tenant%20isolation-0b7285)](docs/PROJECT_DOCUMENTATION.md#multi-tenancy-and-data-isolation)
+## Product Overview
 
-## Overview
+Hussein Mboya Tours is a production-oriented MERN-style travel operations platform built to manage the customer journey and internal tour operations from a single application.
 
-Hussein Mboya Tours is a full-stack travel operations platform for managing destinations, tours, bookings, customers, agents, guides, drivers, vehicles, payments, commissions, documents, notifications, analytics, AI-assisted operations, SEO, and administration from one system.
+The system combines a public travel website, customer booking experience, operational dashboards, financial workflows, administration, and multi-tenant capabilities in one platform.
 
-The platform is designed around a tenant-aware backend so multiple organizations can operate through the same application while application-owned data remains isolated by organization/tenant.
+### Key Business Capabilities
 
-## Core capabilities
-
-- Public travel website with destinations, tours, galleries, reviews, wishlist, recommendations, and SEO support.
-- Customer accounts, profiles, bookings, travel-date validation, pickup details, invoices, vouchers, notifications, and payment history.
-- Agent operations including customers, bookings, packages, quotations, and commissions.
-- Tour management including availability, assignments, staff, vehicles, lifecycle status, reports, and itineraries.
-- Guide and driver workflows for assigned tours and operational reporting.
-- Administration for users, roles, permissions, destinations, tours, bookings, payments, reviews, galleries, coupons, finance, settings, analytics, and system health.
-- SuperAdmin operations for tenant administration, monitoring, maintenance, database operations, audit/security tooling, and platform-level management.
-- M-Pesa and Stripe payment integrations, payment lifecycle handling, refunds, reconciliation, and financial reporting.
-- Cloudinary media handling and SMTP-based email support.
+- Public website for destinations, tours, galleries, reviews, recommendations, and SEO.
+- Customer registration, profiles, bookings, pickup details, invoices, vouchers, notifications, and payment history.
+- Tour and package management with availability, itineraries, assignments, staff, vehicles, and lifecycle tracking.
+- Booking-agent workflows for customers, bookings, quotations, packages, and commissions.
+- Tour-guide and driver workflows for assigned trips and operational reporting.
+- Finance workflows covering payments, commissions, refunds, reconciliation, and reporting.
+- Administrative management for users, roles, permissions, destinations, tours, bookings, reviews, galleries, coupons, settings, analytics, and system health.
+- SuperAdmin platform management for organizations/tenants and platform-level administration.
+- Multi-tenant architecture designed to isolate organization data within a shared application.
+- M-Pesa and Stripe payment integrations.
+- Cloudinary media management and SMTP email support.
 - Socket.IO real-time communication and notifications.
-- AI services for search, recommendations, booking assistance, analytics, risk/fraud, marketing, pricing, revenue, operations, and task workflows.
-- Automated tour lifecycle and payment cleanup processes.
-- Production validation and multi-tenancy regression checks.
+- Optional AI-assisted search, recommendations, booking assistance, analytics, marketing, pricing, and operations features.
 
-## Technology stack
+## Technology Stack
 
-### Frontend
-
+**Frontend**
 - React 19
 - Vite
 - React Router
@@ -45,109 +39,115 @@ The platform is designed around a tenant-aware backend so multiple organizations
 - i18next / react-i18next
 - Vite PWA tooling
 
-### Backend
-
-- Node.js (ES modules)
+**Backend**
+- Node.js with ES modules
 - Express 5
 - MongoDB / Mongoose 8
-- JWT authentication
-- bcryptjs password hashing
-- Helmet, CORS, compression, rate limiting, cookie parsing, and Morgan logging
+- JWT authentication and bcryptjs
+- Helmet, CORS, compression, rate limiting, cookie parsing, and Morgan
 - Socket.IO
 - Cloudinary
 - M-Pesa / Africa's Talking integrations
 - Stripe
 - Nodemailer
 - OpenAI integration
-- PDFKit, QRCode, sitemap, slugify, and CSV export tooling
+- PDFKit, QRCode, sitemap, slugify, and CSV tooling
 
-## Repository layout
+## Repository Structure
 
 ```text
 hussein-mboya-tours/
-├── client/                 # React/Vite frontend
-├── server/                 # Express/Mongoose backend
-├── docs/                   # Detailed engineering and operations documentation
-├── .github/                # CI/CD and repository automation
-├── render.yaml             # Render deployment configuration
-├── vercel.json             # Vercel frontend configuration
-├── SECURITY.md             # Security reporting policy
-└── README.md               # Project overview and quick start
+├── client/          # React/Vite frontend
+├── server/          # Node/Express/Mongoose backend
+├── docs/            # Product, architecture, deployment and operations documentation
+├── .github/         # Repository automation
+├── render.yaml      # Render deployment configuration
+├── vercel.json      # Vercel frontend configuration
+├── SECURITY.md      # Security reporting policy
+└── README.md        # Project overview and setup guide
 ```
 
-## Quick start
+The repository has been cleaned for commercial handover: temporary repair scripts, audit outputs, development backups, and stray root-level development artifacts are not part of the product source tree.
 
-### Prerequisites
+## Local Setup
 
-- Node.js 20+ recommended for local development.
-- npm 10+ recommended.
-- MongoDB 8 for local or CI integration testing.
-- Git.
-- Credentials for external services when their features are enabled.
+### Requirements
 
-### Clone
+- Node.js 20+
+- npm 10+
+- MongoDB
+- Git
+- Credentials for any external services you enable
+
+### 1. Clone
 
 ```bash
 git clone https://github.com/isaacokubi/hussein-mboya-tours.git
 cd hussein-mboya-tours
 ```
 
-### Backend
+### 2. Backend
 
 ```bash
 cd server
 npm ci
 cp .env.example .env
-# Edit .env with your local values
-npm run check:all
+```
+
+Configure the environment variables in `.env`, then run:
+
+```bash
 npm run dev
 ```
 
-The API normally listens on the configured `PORT` (commonly 5000 in local development).
+### 3. Frontend
 
-### Frontend
-
-In another terminal:
+Open a second terminal:
 
 ```bash
 cd client
 npm ci
-npm run lint
-npm run build
 npm run dev
 ```
 
-Set `VITE_API_URL` and, when real-time features are enabled, `VITE_SOCKET_URL` in the frontend environment.
+Configure `VITE_API_URL` and, where required, `VITE_SOCKET_URL` in the frontend environment.
+
+## Production Deployment
+
+Deployment configuration is included for Vercel and Render. Production secrets must be configured in the hosting provider and must never be committed to the repository.
+
+Typical production integrations include:
+
+- MongoDB / MongoDB Atlas
+- JWT and authentication settings
+- Frontend/API origins
+- M-Pesa and/or Stripe
+- Cloudinary
+- SMTP/email provider
+- Optional AI provider
+
+## Security & Multi-Tenancy
+
+Multi-tenancy is part of the platform architecture. Tenant-aware application data is designed to remain isolated by organization, while platform-global resources are handled separately.
+
+Authentication, authorization, tenant context, payment callbacks, and administrative access should be reviewed against the buyer's deployment environment before launch.
+
+See:
+
+- [`docs/MULTITENANCY.md`](docs/MULTITENANCY.md)
+- [`docs/PROJECT_DOCUMENTATION.md`](docs/PROJECT_DOCUMENTATION.md)
+- [`SECURITY.md`](SECURITY.md)
 
 ## Validation
 
-The backend exposes a consolidated validation command:
+Backend validation commands are available from the server package. The main validation command is:
 
 ```bash
 cd server
 npm run check:all
 ```
 
-Individual checks include:
-
-```bash
-npm run check
-npm run check:controllers
-npm run check:models
-npm run check:rbac
-npm run check:security
-npm run check:multitenancy
-npm run check:multitenancy:code
-npm run check:production
-```
-
-The live tenant isolation regression test is:
-
-```bash
-npm run check:multitenancy:live
-```
-
-The frontend validation commands are:
+Frontend validation:
 
 ```bash
 cd client
@@ -155,40 +155,28 @@ npm run lint
 npm run build
 ```
 
-## Multi-tenancy and security
+A buyer or deployment team should run the validation suite using its own environment variables, database, payment credentials, domains, and external-service accounts before production launch.
 
-Multi-tenancy is a core architectural property rather than an application-level convention. Tenant-aware models receive `tenantId` protection through the tenancy bootstrap/plugin system, while platform-global models such as organizations and permissions are intentionally treated differently.
+## Commercial Handover
 
-The isolation layer is designed to protect reads and writes, including common Mongoose operations and regression-tested cross-tenant access patterns. Tenant context is resolved at the API boundary and propagated through application services.
+The source repository is intended to provide a clean foundation for a buyer or development team to continue development, customize branding, connect production services, and deploy the platform under its own infrastructure.
 
-Read the complete design and operational guidance in [`docs/MULTITENANCY.md`](docs/MULTITENANCY.md) and the broader [`docs/PROJECT_DOCUMENTATION.md`](docs/PROJECT_DOCUMENTATION.md).
+A commercial handover should include:
 
-## Production deployment
-
-The repository contains deployment definitions for Render and Vercel. The Render configuration provisions separate Node API and static frontend services, while Vercel is configured for the Vite frontend. citeturn77file0turn78file0
-
-For production, configure secrets in the deployment provider rather than committing them to Git. Required integrations include MongoDB, JWT, frontend origins, payment credentials, Cloudinary, SMTP, and optional AI credentials. See the environment-variable reference in the full documentation.
-
-## Operational principles
-
-1. Never bypass tenant context in application data access.
-2. Never commit secrets, production credentials, database dumps, or user data.
-3. Run backend and frontend validation before release.
-4. Use migrations/reconciliation scripts deliberately and back up production data first.
-5. Validate payment webhooks and callback tenant resolution in a safe environment before production rollout.
-6. Treat SuperAdmin functionality as platform-level access and protect it accordingly.
-7. Monitor API health, logs, database connectivity, payment failures, and deployment status after releases.
+1. Source-code transfer.
+2. Environment-variable and deployment configuration handover without exposing secrets.
+3. Database and hosting ownership transfer where applicable.
+4. Third-party service account transfer or replacement.
+5. Production-domain configuration.
+6. Final security and end-to-end acceptance testing.
+7. Licensing and intellectual-property terms agreed separately between the parties.
 
 ## Documentation
 
-- **[Full Project Documentation](docs/PROJECT_DOCUMENTATION.md)** — architecture, modules, workflows, APIs, security, tenancy, deployment, operations, testing, troubleshooting, and release procedures.
-- **[Multi-tenancy Guide](docs/MULTITENANCY.md)** — tenant architecture and isolation guidance.
+- **[Project Documentation](docs/PROJECT_DOCUMENTATION.md)** — architecture, modules, workflows, APIs, security, tenancy, deployment, operations, testing, and troubleshooting.
+- **[Multi-Tenancy Guide](docs/MULTITENANCY.md)** — tenant architecture and isolation guidance.
 - **[Security Policy](SECURITY.md)** — responsible vulnerability reporting.
 
-## Current engineering status
+## Ownership
 
-The repository includes automated production-readiness, RBAC, security, controller/model, and multi-tenancy checks. Live cross-tenant isolation has also been exercised during engineering validation. Production readiness should still be certified against the actual production environment, credentials, payment providers, deployment platform, and final end-to-end user journeys before a commercial release.
-
-## License and ownership
-
-This repository is maintained for Hussein Mboya Tours. Licensing and commercial distribution terms should be established by the project owner before external redistribution.
+This repository is maintained for Hussein Mboya Tours. Commercial licensing, source-code transfer, branding rights, third-party accounts, and redistribution terms should be agreed with the project owner as part of the sale.
