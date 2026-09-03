@@ -9,6 +9,7 @@ import Organization from "../models/Organization.js";
 import { runWithTenant } from "../tenancy/context.js";
 
 dotenv.config({ path: "./server/.env" });
+dotenv.config();
 
 const agents = [
   { name: "John Kamau", email: "john.kamau@coherenttours.com", phone: "+254711111111", location: "Nairobi" },
@@ -20,14 +21,17 @@ const seedAgents = async () => {
   try {
     const tenantId = String(process.env.TENANT_ID || "").trim();
     const tenantSlug = String(process.env.TENANT_SLUG || "").trim().toLowerCase();
-    if (!tenantId && !tenantSlug) throw new Error("Set TENANT_ID or TENANT_SLUG before running the agent seed.");
-    if (!process.env.MONGODB_URI) throw new Error("MONGODB_URI is missing in .env");
+    const tenantName = String(process.env.TENANT_NAME || "").trim();
+    if (!tenantId && !tenantSlug && !tenantName) throw new Error("Set TENANT_ID, TENANT_SLUG, or TENANT_NAME before running the agent seed.");
+    const mongoUri = String(process.env.MONGODB_URI || "").trim();
+    if (!mongoUri) throw new Error("MONGODB_URI is missing in server/.env");
 
-    await mongoose.connect(process.env.MONGODB_URI);
+    await mongoose.connect(mongoUri);
 
-    const organization = tenantId
-      ? await Organization.findById(tenantId).lean()
-      : await Organization.findOne({ slug: tenantSlug }).lean();
+    let organization;
+    if (tenantId) organization = await Organization.findById(tenantId).lean();
+    else if (tenantSlug) organization = await Organization.findOne({ slug: tenantSlug }).lean();
+    else organization = await Organization.findOne({ name: tenantName }).lean();
     if (!organization) throw new Error("Tenant organization was not found.");
 
     const password = await bcrypt.hash(process.env.SEED_AGENT_PASSWORD || crypto.randomBytes(18).toString("base64url"), 12);
@@ -37,8 +41,8 @@ const seedAgents = async () => {
         const user = await User.findOneAndUpdate(
           { email: data.email },
           {
-            $set: { name: data.name, phone: data.phone, role: "agent", legacyRole: "agent", status: "active" },
-            $setOnInsert: { email: data.email, password, tenantId: organization._id },
+            $set: { name: data.name, phone: data.phone, role: "agent", legacyRole: "agent", status: "active", tenantId: organization._id },
+            $setOnInsert: { email: data.email, password },
           },
           { upsert: true, new: true, setDefaultsOnInsert: true },
         );
@@ -46,8 +50,8 @@ const seedAgents = async () => {
         await Agent.findOneAndUpdate(
           { user: user._id },
           {
-            $set: { companyName: organization.name, phone: data.phone, email: data.email, location: data.location, isApproved: true, status: "active" },
-            $setOnInsert: { user: user._id, commissionRate: 10, totalCommission: 0, pendingCommission: 0, paidCommission: 0, walletBalance: 0, totalSales: 0, totalBookings: 0, successfulBookings: 0, cancelledBookings: 0, tenantId: organization._id },
+            $set: { companyName: organization.name, phone: data.phone, email: data.email, location: data.location, isApproved: true, status: "active", tenantId: organization._id },
+            $setOnInsert: { user: user._id, commissionRate: 10, totalCommission: 0, pendingCommission: 0, paidCommission: 0, walletBalance: 0, totalSales: 0, totalBookings: 0, successfulBookings: 0, cancelledBookings: 0 },
           },
           { upsert: true, new: true, setDefaultsOnInsert: true },
         );
