@@ -37,7 +37,21 @@ if (process.env.NODE_ENV === "production") {
 }
 
 app.use("/destinations", express.static("uploads/destinations"));
-app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" }, hsts: process.env.NODE_ENV === "production" ? undefined : false }));
+
+// Keep Helmet's secure defaults while explicitly allowing the trusted media
+// hosts used by the CMS and existing tour data. Without these img-src/media-src
+// entries, Helmet's default Content-Security-Policy blocks Cloudinary and
+// Unsplash images even when their URLs are valid.
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  hsts: process.env.NODE_ENV === "production" ? undefined : false,
+  contentSecurityPolicy: {
+    directives: {
+      imgSrc: ["'self'", "data:", "blob:", "https://images.unsplash.com", "https://res.cloudinary.com"],
+      mediaSrc: ["'self'", "data:", "blob:", "https://res.cloudinary.com"],
+    },
+  },
+}));
 
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
