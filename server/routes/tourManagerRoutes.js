@@ -6,7 +6,7 @@ import { completeTour, cancelTour, completeBookingAndMaybeRelease, cancelBooking
 import { createItinerary, getItineraries, getItinerary, updateItinerary, deleteItinerary } from "../controllers/itineraryController.js";
 import { getTourAvailability, updateTourAvailability } from "../controllers/tourAvailabilityController.js";
 import { getTourReports } from "../controllers/tourReportController.js";
-import { getTenantGuides, getTenantCustomers, getTenantVehicles } from "../controllers/tenantDirectoryController.js";
+import { getTenantGuides, getTenantDrivers, getTenantCustomers, getTenantVehicles } from "../controllers/tenantDirectoryController.js";
 import { getTourManagerBookings } from "../controllers/tourManagerBookingController.js";
 import { protect, managerOnly } from "../middleware/authMiddleware.js";
 import validateFutureTourDate from "../middleware/validateFutureTourDate.js";
@@ -41,6 +41,7 @@ router.patch("/bookings/:id/cancel", cancelBookingAndUpdateCapacity);
 router.put("/bookings/:id/cancel", cancelBookingAndUpdateCapacity);
 router.get("/customers", getTenantCustomers);
 router.get("/guides", getTenantGuides);
+router.get("/drivers", getTenantDrivers);
 router.get("/vehicles", getTenantVehicles);
 router.get("/reports", getTourReports);
 router.get("/tours/:id/availability", getTourAvailability);
