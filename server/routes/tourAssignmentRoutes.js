@@ -1,6 +1,6 @@
-import { resolveTenant } from "../middleware/tenantMiddleware.js";
 import express from "express";
-import { assignTourResources } from "../controllers/tourAssignmentController.js";
+import { resolveTenant } from "../middleware/tenantMiddleware.js";
+import { assignTourResourcesSafe } from "../controllers/tourResourceAssignmentController.js";
 import { protect, managerOnly } from "../middleware/authMiddleware.js";
 import validateTourAssignmentTenant from "../middleware/validateTourAssignmentTenant.js";
 
@@ -10,6 +10,6 @@ router.use(resolveTenant);
 router.use(protect);
 router.use(managerOnly);
 
-router.put("/:id/assign", validateTourAssignmentTenant, assignTourResources);
+router.put("/:id/assign", validateTourAssignmentTenant, assignTourResourcesSafe);
 
 export default router;
