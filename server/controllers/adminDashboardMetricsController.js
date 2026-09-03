@@ -10,16 +10,19 @@ import { requireTenantId } from "../tenancy/context.js";
 
 const active = { isDeleted: { $ne: true } };
 
-export const getDashboardMetrics = async (_req, res) => {
+export const getDashboardMetrics = async (req, res) => {
   try {
     const tenantId = requireTenantId();
+    const scoped = (query = {}) => ({ tenantId, ...query });
 
     const [
       users,
       customers,
-      admins,
+      adminUsers,
+      adminStaff,
       staff,
       guides,
+      guideUsers,
       drivers,
       agents,
       approvedAgents,
@@ -39,41 +42,56 @@ export const getDashboardMetrics = async (_req, res) => {
       failedPayments,
       revenueResult,
     ] = await Promise.all([
-      User.countDocuments({ status: { $ne: "blocked" } }),
-      User.countDocuments({ role: "customer", status: { $ne: "blocked" } }),
-      User.countDocuments({ role: { $in: ["admin", "administrator"] }, status: { $ne: "blocked" } }),
-      Staff.countDocuments({ ...active }),
-      Staff.countDocuments({
+      User.countDocuments(scoped({ status: { $ne: "blocked" } })),
+      User.countDocuments(scoped({ role: "customer", status: { $ne: "blocked" } })),
+      User.countDocuments(scoped({ role: { $in: ["admin", "administrator", "super_admin"] }, status: { $ne: "blocked" } })),
+      Staff.countDocuments(scoped({ ...active, position: "admin", isActive: { $ne: false }, status: { $ne: "inactive" } })),
+      Staff.countDocuments(scoped({ ...active, isActive: { $ne: false }, status: { $ne: "inactive" } })),
+      Staff.countDocuments(scoped({
         ...active,
-        $or: [{ position: "guide" }, { role: { $in: ["guide", "tour_guide", "tourguide"] } }],
-      }),
-      Staff.countDocuments({
+        isActive: { $ne: false },
+        status: { $ne: "inactive" },
+        $or: [
+          { position: { $in: ["guide", "tour_guide", "tourguide"] } },
+          { role: { $in: ["guide", "tour_guide", "tourguide"] } },
+        ],
+      })),
+      User.countDocuments(scoped({ role: { $in: ["guide", "tour_guide", "tourguide"] }, status: { $ne: "blocked" } })),
+      Staff.countDocuments(scoped({
         ...active,
-        $or: [{ position: "driver" }, { role: "driver" }],
-      }),
-      Agent.countDocuments({ isDeleted: { $ne: true } }),
-      Agent.countDocuments({ isDeleted: { $ne: true }, isApproved: true }),
-      Agent.countDocuments({ isDeleted: { $ne: true }, isApproved: { $ne: true } }),
-      Vehicle.countDocuments({ ...active }),
-      Vehicle.countDocuments({ ...active, status: "available" }),
-      Vehicle.countDocuments({ ...active, status: "assigned" }),
-      Vehicle.countDocuments({ ...active, status: "maintenance" }),
-      Tour.countDocuments({ ...active }),
-      Destination.countDocuments({ ...active }),
-      Booking.countDocuments({ ...active }),
-      Booking.countDocuments({ ...active, status: "pending" }),
-      Booking.countDocuments({ ...active, status: "confirmed" }),
-      Payment.countDocuments({ ...active }),
-      Payment.countDocuments({ ...active, status: "completed" }),
-      Payment.countDocuments({ ...active, status: "pending" }),
-      Payment.countDocuments({ ...active, status: "failed" }),
+        isActive: { $ne: false },
+        status: { $ne: "inactive" },
+        $or: [
+          { position: { $in: ["driver", "chauffeur"] } },
+          { role: { $in: ["driver", "chauffeur"] } },
+        ],
+      })),
+      Agent.countDocuments(scoped({ isDeleted: { $ne: true }, status: { $ne: "inactive" } })),
+      Agent.countDocuments(scoped({
+        isDeleted: { $ne: true },
+        status: { $ne: "inactive" },
+        $or: [{ isApproved: true }, { status: "approved" }],
+      })),
+      Agent.countDocuments(scoped({
+        isDeleted: { $ne: true },
+        status: { $nin: ["inactive", "approved"] },
+        isApproved: { $ne: true },
+      })),
+      Vehicle.countDocuments(scoped({ ...active, isActive: { $ne: false } })),
+      Vehicle.countDocuments(scoped({ ...active, isActive: { $ne: false }, status: "available" })),
+      Vehicle.countDocuments(scoped({ ...active, isActive: { $ne: false }, status: "assigned" })),
+      Vehicle.countDocuments(scoped({ ...active, isActive: { $ne: false }, status: "maintenance" })),
+      Tour.countDocuments(scoped(active)),
+      Destination.countDocuments(scoped(active)),
+      Booking.countDocuments(scoped(active)),
+      Booking.countDocuments(scoped({ ...active, status: "pending" })),
+      Booking.countDocuments(scoped({ ...active, status: "confirmed" })),
+      Payment.countDocuments(scoped(active)),
+      Payment.countDocuments(scoped({ ...active, status: "completed" })),
+      Payment.countDocuments(scoped({ ...active, status: "pending" })),
+      Payment.countDocuments(scoped({ ...active, status: "failed" })),
       Payment.aggregate([
-        {
-          $match: {
-            ...active,
-            status: "completed",
-          },
-        },
+        { $match: scoped({ ...active, status: "completed" }) },
         {
           $project: {
             amount: {
@@ -120,9 +138,9 @@ export const getDashboardMetrics = async (_req, res) => {
       data: {
         users,
         customers,
-        admins,
+        admins: Math.max(adminUsers, adminStaff),
         staff,
-        guides,
+        guides: Math.max(guides, guideUsers),
         drivers,
         agents,
         approvedAgents,
