@@ -6,17 +6,11 @@ export const PUBLIC_BRAND_NAME = "Coherent Tours";
 export const PLATFORM_BRAND_NAME = "Global Tours Platform";
 
 const DEFAULT_SETTINGS = {
-  companyName: "",
-  websiteUrl: "", companyLogo: "", logo: "", supportEmail: "", supportPhone: "", address: "", city: "Nairobi", country: "Kenya", currency: "KES", currencySymbol: "KSh", timezone: "Africa/Nairobi", language: "en", taxRate: 0, bookingDepositPercentage: 30, defaultCommissionRate: 10, maintenanceMode: false, allowRegistrations: true, allowAgentRegistrations: true, requireEmailVerification: true, requirePhoneVerification: false, enableMpesa: true, enableStripe: false, enablePaypal: false, enableBankTransfer: true, bookingNotifications: true, paymentNotifications: true, facebook: "", instagram: "", twitter: "", youtube: "", seoTitle: "", seoDescription: "", seoKeywords: [], primaryColor: "#047857", secondaryColor: "#064e3b", accentColor: "#10b981", backgroundColor: "#f8fafc", surfaceColor: "#ffffff", textColor: "#0f172a", fontFamily: "Inter", borderRadius: "xl", buttonStyle: "rounded", heroOverlayOpacity: 50,
+  companyName: "", websiteUrl: "", companyLogo: "", logo: "", supportEmail: "", supportPhone: "", address: "", city: "Nairobi", country: "Kenya", currency: "KES", currencySymbol: "KSh", timezone: "Africa/Nairobi", language: "en", taxRate: 0, bookingDepositPercentage: 30, defaultCommissionRate: 10, maintenanceMode: false, allowRegistrations: true, allowAgentRegistrations: true, requireEmailVerification: true, requirePhoneVerification: false, enableMpesa: true, enableStripe: false, enablePaypal: false, enableBankTransfer: true, bookingNotifications: true, paymentNotifications: true, facebook: "", instagram: "", twitter: "", youtube: "", seoTitle: "", seoDescription: "", seoKeywords: [], primaryColor: "#047857", secondaryColor: "#064e3b", accentColor: "#10b981", backgroundColor: "#f8fafc", surfaceColor: "#ffffff", textColor: "#0f172a", fontFamily: "Inter", borderRadius: "xl", buttonStyle: "rounded", heroOverlayOpacity: 50,
   homepageSections: { stats: true, tours: true, destinations: true, experiences: true, services: true, testimonials: true, gallery: true, whyChooseUs: true, newsletter: true },
 };
 
-const PLATFORM_SETTINGS = {
-  ...DEFAULT_SETTINGS,
-  companyName: PLATFORM_BRAND_NAME,
-  seoTitle: PLATFORM_BRAND_NAME,
-};
-
+const PLATFORM_SETTINGS = { ...DEFAULT_SETTINGS, companyName: PLATFORM_BRAND_NAME, seoTitle: PLATFORM_BRAND_NAME };
 const SettingsContext = createContext(null);
 const getSettingsStorageKey = () => {
   if (typeof window === "undefined") return "tenant-settings:server";
@@ -29,11 +23,7 @@ const normalize = (next = {}, previous = DEFAULT_SETTINGS) => ({
   ...previous,
   ...next,
   companyName: String(next.companyName ?? previous.companyName ?? DEFAULT_SETTINGS.companyName).trim(),
-  homepageSections: {
-    ...DEFAULT_SETTINGS.homepageSections,
-    ...(previous.homepageSections || {}),
-    ...(next.homepageSections || {}),
-  },
+  homepageSections: { ...DEFAULT_SETTINGS.homepageSections, ...(previous.homepageSections || {}), ...(next.homepageSections || {}) },
 });
 
 function normalizeRole(user) {
@@ -58,7 +48,6 @@ function applyTenantTheme(settings) {
   Object.entries(css).forEach(([key, value]) => root.style.setProperty(key, value));
   if (settings.fontFamily) root.style.setProperty("--tenant-font-family", settings.fontFamily);
 }
-
 function applyDocumentMetadata(settings) {
   if (typeof document === "undefined") return;
   if (settings.seoTitle || settings.companyName) document.title = settings.seoTitle || settings.companyName;
@@ -70,77 +59,54 @@ export function SettingsProvider({ children }) {
   const { user } = useAuth();
   const platformDeployment = isPlatformDeployment();
   const isPlatformScope = platformDeployment || isSuperAdminUser(user);
-  const [settings, setSettings] = useState(isPlatformScope ? PLATFORM_SETTINGS : DEFAULT_SETTINGS);
-  const [loading, setLoading] = useState(true);
-
-  const applySettings = useCallback((nextSettings) => {
-    setSettings((previous) => normalize(nextSettings, previous));
-  }, []);
-
-  const refreshSettings = useCallback(async () => {
+  const [settings, setSettings] = useState(() => {
     if (isPlatformScope) {
       try {
-        const response = await api.get("/admin/settings", { params: { _t: Date.now() } });
-        const data = response.data?.settings || response.data?.data || response.data || {};
-        const platform = normalize(data, PLATFORM_SETTINGS);
-        setSettings(platform);
-        try { localStorage.setItem("platform-settings:global", JSON.stringify(platform)); } catch (error) { console.warn("Platform settings cache write failed:", error); }
-        return platform;
-      } catch (error) {
-        console.error("Platform settings load failed:", error);
-        const fallback = normalize(PLATFORM_SETTINGS);
-        setSettings(fallback);
-        return fallback;
-      }
+        const cached = typeof window !== "undefined" ? localStorage.getItem("platform-settings:global") : null;
+        return cached ? normalize(JSON.parse(cached), PLATFORM_SETTINGS) : PLATFORM_SETTINGS;
+      } catch { return PLATFORM_SETTINGS; }
     }
-
     try {
-      const response = await api.get("/settings/public", { params: { _t: Date.now() } });
+      const cached = typeof window !== "undefined" ? localStorage.getItem(getSettingsStorageKey()) : null;
+      return cached ? normalize(JSON.parse(cached)) : DEFAULT_SETTINGS;
+    } catch { return DEFAULT_SETTINGS; }
+  });
+  const [loading, setLoading] = useState(false);
+
+  const applySettings = useCallback((nextSettings) => setSettings((previous) => normalize(nextSettings, previous)), []);
+
+  const refreshSettings = useCallback(async () => {
+    try {
+      const endpoint = isPlatformScope ? "/admin/settings" : "/settings/public";
+      const response = await api.get(endpoint);
       const data = response.data?.settings || response.data?.data || response.data || {};
-      applySettings(data);
-      try { localStorage.setItem(getSettingsStorageKey(), JSON.stringify(normalize(data))); } catch (storageError) { console.warn("Tenant settings cache write failed:", storageError); }
-      return data;
+      const normalized = normalize(data, isPlatformScope ? PLATFORM_SETTINGS : settings);
+      setSettings(normalized);
+      try {
+        localStorage.setItem(isPlatformScope ? "platform-settings:global" : getSettingsStorageKey(), JSON.stringify(normalized));
+      } catch {}
+      return normalized;
     } catch (error) {
-      console.error("Public tenant settings load failed:", error);
+      console.error(`${isPlatformScope ? "Platform" : "Public tenant"} settings load failed:`, error);
       return null;
     }
-  }, [applySettings, isPlatformScope]);
+  }, [isPlatformScope, settings]);
 
-  useEffect(() => {
-    applyTenantTheme(settings);
-    applyDocumentMetadata(settings);
-  }, [settings]);
+  useEffect(() => { applyTenantTheme(settings); applyDocumentMetadata(settings); }, [settings]);
 
   useEffect(() => {
     let mounted = true;
     const load = async () => {
       setLoading(true);
-      try {
-        if (isPlatformScope) {
-          await refreshSettings();
-          return;
-        }
-
-        const cached = typeof window !== "undefined" ? localStorage.getItem(getSettingsStorageKey()) : null;
-        if (cached) {
-          try { applySettings(JSON.parse(cached)); } catch (cacheError) { console.warn("Cached tenant settings are invalid:", cacheError); }
-        }
-        await refreshSettings();
-      } finally {
-        if (mounted) setLoading(false);
-      }
+      try { await refreshSettings(); } finally { if (mounted) setLoading(false); }
     };
     void load();
-
     const handleStorage = (event) => {
       if (event.key !== getSettingsStorageKey() || !event.newValue) return;
-      try { applySettings(JSON.parse(event.newValue)); } catch (storageError) { console.warn("Settings storage event was invalid:", storageError); }
+      try { applySettings(JSON.parse(event.newValue)); } catch {}
     };
-    const handlePlatformSettings = (event) => {
-      if (event.detail) applySettings(event.detail);
-    };
+    const handlePlatformSettings = (event) => { if (event.detail) applySettings(event.detail); };
     const handleSettingsChanged = () => { void refreshSettings(); };
-
     window.addEventListener("storage", handleStorage);
     window.addEventListener("platform-settings-updated", handlePlatformSettings);
     window.addEventListener("settings-updated", handleSettingsChanged);
@@ -161,29 +127,11 @@ export function SettingsProvider({ children }) {
       const merged = normalize(nextSettings, isPlatformScope ? PLATFORM_SETTINGS : JSON.parse(localStorage.getItem(key) || "{}"));
       localStorage.setItem(key, JSON.stringify(merged));
       window.dispatchEvent(new CustomEvent(isPlatformScope ? "platform-settings-updated" : "settings-updated", { detail: merged }));
-    } catch (error) {
-      console.warn("Settings could not be persisted locally:", error);
-    }
+    } catch (error) { console.warn("Settings could not be persisted locally:", error); }
   }, [isPlatformScope]);
 
   const companyName = String(settings.companyName || (isPlatformScope ? PLATFORM_BRAND_NAME : PUBLIC_BRAND_NAME)).trim();
-
-  return (
-    <SettingsContext.Provider value={{
-      settings: { ...settings, companyName },
-      companyName,
-      supportEmail: settings.supportEmail || "",
-      supportPhone: settings.supportPhone || "",
-      loading,
-      refreshSettings,
-      updateSettings,
-      isPlatformScope,
-    }}>
-      {children}
-    </SettingsContext.Provider>
-  );
+  return <SettingsContext.Provider value={{ settings: { ...settings, companyName }, companyName, supportEmail: settings.supportEmail || "", supportPhone: settings.supportPhone || "", loading, refreshSettings, updateSettings, isPlatformScope }}>{children}</SettingsContext.Provider>;
 }
 
-export function useSettings() {
-  return useContext(SettingsContext);
-}
+export function useSettings() { return useContext(SettingsContext); }
