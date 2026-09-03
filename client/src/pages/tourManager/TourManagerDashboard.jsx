@@ -1,25 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
 import { CalendarDays, Map, Users, Wallet, RefreshCw } from "lucide-react";
-import { getBookings, getDashboardStats } from "../../api/tourManagerApi";
+import { getDashboardStats } from "../../api/tourManagerApi";
 import StatCard from "../../components/tours/tourManager/StatCard";
 import UpcomingTours from "../../components/tours/tourManager/UpcomingTours";
 import BookingTable from "../../components/tours/tourManager/BookingTable";
 import { asArray, firstNumeric, unwrapData } from "../../utils/dashboardData";
+import { useSettings } from "../../context/SettingsContext";
 
 export default function TourManagerDashboard() {
+  const { settings } = useSettings();
+  const currencySymbol = settings?.currencySymbol || settings?.currency || "KSh";
+
   const dashboardQuery = useQuery({
     queryKey: ["tour-manager-dashboard"],
     queryFn: getDashboardStats,
     staleTime: 30_000,
-    refetchOnWindowFocus: true,
-    refetchOnMount: "always",
-    retry: 1,
-  });
-
-  const bookingsQuery = useQuery({
-    queryKey: ["tour-manager-dashboard-bookings"],
-    queryFn: () => getBookings({ page: 1, limit: 6 }),
-    staleTime: 30_000,
+    refetchInterval: 60_000,
     refetchOnWindowFocus: true,
     refetchOnMount: "always",
     retry: 1,
@@ -28,23 +24,19 @@ export default function TourManagerDashboard() {
   const dashboard = unwrapData(dashboardQuery.data);
   const stats = dashboard.stats || dashboard.summary || {};
   const upcomingTours = asArray(dashboard.upcomingTours ?? dashboard.tours);
-  const bookingsPayload = unwrapData(bookingsQuery.data);
-  const recentBookings = asArray(bookingsPayload.data ?? bookingsPayload.bookings ?? dashboard.recentBookings);
+  const recentBookings = asArray(dashboard.recentBookings ?? dashboard.bookings);
 
-  const isLoading = dashboardQuery.isLoading || bookingsQuery.isLoading;
-  const isFetching = dashboardQuery.isFetching || bookingsQuery.isFetching;
-  const isError = dashboardQuery.isError || bookingsQuery.isError;
-  const error = dashboardQuery.error || bookingsQuery.error;
+  const isLoading = dashboardQuery.isLoading;
+  const isFetching = dashboardQuery.isFetching;
+  const isError = dashboardQuery.isError;
+  const error = dashboardQuery.error;
 
   const totalTours = firstNumeric(stats.totalTours, dashboard.totalTours, upcomingTours.length);
   const upcomingCount = firstNumeric(stats.upcomingTours, dashboard.upcomingToursCount, upcomingTours.length);
   const totalCustomers = firstNumeric(stats.totalCustomers, dashboard.totalCustomers, dashboard.customerCount);
   const revenue = firstNumeric(stats.revenue, dashboard.revenue);
 
-  const refreshAll = () => {
-    void dashboardQuery.refetch();
-    void bookingsQuery.refetch();
-  };
+  const refreshAll = () => void dashboardQuery.refetch();
 
   if (isLoading) {
     return <section className="p-6"><div className="rounded-xl bg-white p-8 shadow">Loading Tour Manager dashboard...</div></section>;
@@ -86,7 +78,7 @@ export default function TourManagerDashboard() {
         <StatCard title="Tours" value={totalTours} subtitle="Live tenant tours" icon={<Map />} />
         <StatCard title="Upcoming Tours" value={upcomingCount} subtitle="Scheduled tours" icon={<CalendarDays />} />
         <StatCard title="Customers" value={totalCustomers} subtitle="Tenant customers" icon={<Users />} />
-        <StatCard title="Revenue" value={`KES ${Number(revenue).toLocaleString()}`} subtitle="Completed payments less completed refunds" icon={<Wallet />} />
+        <StatCard title="Revenue" value={`${currencySymbol} ${Number(revenue).toLocaleString()}`} subtitle="Completed payments less completed refunds" icon={<Wallet />} />
       </div>
 
       <UpcomingTours tours={upcomingTours} />
