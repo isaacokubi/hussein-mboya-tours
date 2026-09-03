@@ -81,12 +81,17 @@ async function repair() {
       }
     }
 
-    await Destination.deleteMany({
+    // Remove known legacy test destinations plus any generated tenant-isolation
+    // test destinations, regardless of the generated hexadecimal tenant suffix.
+    const syntheticDestinations = await Destination.find({
       $or: [
         { name: { $in: ["Coherent tours Test Destination", "Africa safaris Test Destination"] } },
-        { name: /^Destination Test ca1945cba0/i },
+        { name: /^Destination Test [a-f0-9]+ \d+$/i },
       ],
-    });
+    }, { _id: 1 });
+    if (syntheticDestinations.length) {
+      await Destination.deleteMany({ _id: { $in: syntheticDestinations.map((destination) => destination._id) } });
+    }
 
     let fixed = 0;
     let removedDuplicates = 0;
@@ -131,7 +136,7 @@ async function repair() {
     const syntheticTours = await Tour.find({
       $or: [
         { title: /^(Coherent tours|Africa safaris)/i },
-        { title: /^Tenant ca1945cba0 Safari Tour \d+$/i },
+        { title: /^Tenant [a-f0-9]+ Safari Tour \d+$/i },
       ],
     }, { _id: 1 });
     if (syntheticTours.length) {
@@ -180,6 +185,10 @@ async function repair() {
     if (legacyTours.length) {
       await Tour.deleteMany({ _id: { $in: legacyTours.map((tour) => tour._id) } });
       removedDuplicates += legacyTours.length;
+    }
+
+    if (syntheticDestinations.length) {
+      removedDuplicates += syntheticDestinations.length;
     }
 
     console.log(`Global Tours media/destination repair complete: ${fixed} tours repaired, ${removedDuplicates} duplicate/synthetic records removed.`);
