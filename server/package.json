@@ -41,7 +41,7 @@
     "openai": "^6.49.0",
     "pdfkit": "^0.17.0",
     "qrcode": "^1.5.0",
-    "react-i18next": "^17.0.0",
+    "react-i18next": "^17.0.11",
     "sitemap": "^9.0.1",
     "slugify": "^1.6.9",
     "socket.io": "^4.8.3",
