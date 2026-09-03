@@ -12,16 +12,15 @@ const normalize = (next = {}, previous = DEFAULT_SETTINGS) => ({ ...DEFAULT_SETT
 const normalizePlatformSettings = (next = {}, previous = PLATFORM_SETTINGS) => ({ ...normalize(next, previous), companyName: PLATFORM_BRAND_NAME, seoTitle: PLATFORM_BRAND_NAME });
 function normalizeRole(user) { if (!user) return ""; if (typeof user.role === "string") return user.role.toLowerCase().replace(/[\s-]/g, "_"); if (user.role?.name) return String(user.role.name).toLowerCase().replace(/[\s-]/g, "_"); if (Array.isArray(user.roles) && user.roles[0]?.name) return String(user.roles[0].name).toLowerCase().replace(/[\s-]/g, "_"); return ""; }
 const isSuperAdminUser = (user) => ["super_admin", "superadmin"].includes(normalizeRole(user));
-const isPlatformDeployment = () => { const configured = String(import.meta.env.VITE_PLATFORM_MODE || "").trim().toLowerCase(); if (configured === "true") return true; if (configured === "false") return false; if (typeof window === "undefined") return false; return String(window.location.hostname || "").trim().toLowerCase() === "hussein-mboya-tours.vercel.app"; };
 function applyTenantTheme(settings) { const root = document.documentElement; const css = { "--tenant-primary": settings.primaryColor, "--tenant-secondary": settings.secondaryColor, "--tenant-accent": settings.accentColor, "--tenant-background": settings.backgroundColor, "--tenant-surface": settings.surfaceColor, "--tenant-text": settings.textColor, "--tenant-hero-overlay": `${Number(settings.heroOverlayOpacity ?? 50) / 100}` }; Object.entries(css).forEach(([key, value]) => root.style.setProperty(key, value)); if (settings.fontFamily) root.style.setProperty("--tenant-font-family", settings.fontFamily); }
 function applyDocumentMetadata(settings) { if (typeof document === "undefined") return; if (settings.seoTitle || settings.companyName) document.title = settings.seoTitle || settings.companyName; const description = document.querySelector('meta[name="description"]'); if (description && settings.seoDescription) description.setAttribute("content", settings.seoDescription); }
 export function SettingsProvider({ children }) {
   const { user } = useAuth();
-  const platformDeployment = isPlatformDeployment();
-  // Tenant scope is determined by the deployment/super-admin role, not by the
-  // presence of a localStorage tenantId. The authenticated API can resolve the
-  // current tenant from the JWT, and public pages resolve it from the request host.
-  const isPlatformScope = platformDeployment || isSuperAdminUser(user);
+  // The authenticated user's tenant must remain authoritative even when the
+  // app is served from the shared platform Vercel hostname. The hostname is a
+  // deployment concern, not proof that the current authenticated user is a
+  // platform/super-admin user.
+  const isPlatformScope = isSuperAdminUser(user);
   const [settings, setSettings] = useState(() => { try { const key = isPlatformScope ? "platform-settings:global" : getSettingsStorageKey(); const cached = typeof window !== "undefined" ? localStorage.getItem(key) : null; return cached ? (isPlatformScope ? normalizePlatformSettings(JSON.parse(cached)) : normalize(JSON.parse(cached), DEFAULT_SETTINGS)) : (isPlatformScope ? PLATFORM_SETTINGS : DEFAULT_SETTINGS); } catch { return isPlatformScope ? PLATFORM_SETTINGS : DEFAULT_SETTINGS; } });
   const [loading, setLoading] = useState(false);
   const applySettings = useCallback((nextSettings) => setSettings((previous) => isPlatformScope ? normalizePlatformSettings(nextSettings, previous) : normalize(nextSettings, previous)), [isPlatformScope]);
