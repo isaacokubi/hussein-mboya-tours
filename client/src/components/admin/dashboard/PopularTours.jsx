@@ -1,5 +1,18 @@
-export default function PopularTours({ tours = [] }) {
+const bookingIsPaid = (booking) => {
+  const paymentStatus = typeof booking?.paymentStatus === "object"
+    ? booking.paymentStatus?.paymentStatus || booking.paymentStatus?.status
+    : booking?.paymentStatus;
+  if (String(paymentStatus || "").toLowerCase() === "paid") return true;
+  const deposit = Number(booking?.depositAmount || booking?.amountPaid || booking?.paidAmount || 0);
+  const balance = Number(booking?.balanceAmount || 0);
+  return deposit > 0 && balance <= 0;
+};
+
+const bookingTourId = (booking) => String(booking?.tour?._id || booking?.tour || "");
+
+export default function PopularTours({ tours = [], recentBookings = [] }) {
   const list = Array.isArray(tours) ? tours : [];
+  const recent = Array.isArray(recentBookings) ? recentBookings : [];
 
   return (
     <section className="rounded-xl bg-white p-6 shadow">
@@ -13,19 +26,19 @@ export default function PopularTours({ tours = [] }) {
         <div className="space-y-3">
           {list.map((tour, index) => {
             const totalBookings = Number(tour?.totalBookings || 0);
-            const paidBookings = Number(tour?.paidBookings ?? tour?.confirmedPaidBookings ?? 0);
+            const serverPaidBookings = tour?.paidBookings ?? tour?.confirmedPaidBookings;
+            const recentPaidBookings = recent.filter((booking) => bookingTourId(booking) === String(tour?._id || "") && bookingIsPaid(booking)).length;
+            const paidBookings = serverPaidBookings == null || (Number(serverPaidBookings) === 0 && recentPaidBookings > 0)
+              ? recentPaidBookings
+              : Number(serverPaidBookings);
 
             return (
               <div key={tour?._id || index} className="flex items-center justify-between gap-4 rounded-lg border p-3">
                 <div className="flex min-w-0 items-center gap-3">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-bold">
-                    {index + 1}
-                  </span>
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-bold">{index + 1}</span>
                   <div className="min-w-0">
                     <p className="truncate font-semibold text-slate-900">{tour?.title || "Untitled tour"}</p>
-                    <p className="text-xs text-slate-500">
-                      {paidBookings.toLocaleString()} paid {paidBookings === 1 ? "booking" : "bookings"}
-                    </p>
+                    <p className="text-xs text-slate-500">{paidBookings.toLocaleString()} paid {paidBookings === 1 ? "booking" : "bookings"}</p>
                   </div>
                 </div>
                 <div className="shrink-0 text-right">
