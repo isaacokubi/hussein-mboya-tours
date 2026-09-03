@@ -14,26 +14,34 @@ const TOUR_STATUSES = [
   "cancelled",
 ];
 
+const GUIDE_POSITIONS = ["guide", "tour_guide", "tourguide"];
+
 /*
 |--------------------------------------------------------------------------
 | RESOLVE GUIDE STAFF PROFILE
 |--------------------------------------------------------------------------
 |
-| Guide accounts live in User while tour assignments reference Staff.
-| Older seed data created only the User record, which caused the guide
-| dashboard to return "Guide profile not found". Resolve by linked user
-| first, then email, and self-heal a missing Staff profile.
+| Tour assignments reference Staff records, while authentication identifies
+| the guide through User. Resolve the staff profile by user id or email and
+| accept all supported guide position aliases so the same staff record used
+| by Tour Manager is also used by Guide Operations.
 |
 |--------------------------------------------------------------------------
 */
 const resolveGuide = async (user) => {
+  if (!user?._id) return null;
+
   let guide = await Staff.findOne({
-    $or: [
-      { user: user._id },
-      { email: user.email },
+    $and: [
+      {
+        $or: [
+          { user: user._id },
+          ...(user.email ? [{ email: user.email }] : []),
+        ],
+      },
+      { position: { $in: GUIDE_POSITIONS } },
+      { isDeleted: { $ne: true } },
     ],
-    position: "guide",
-    isDeleted: { $ne: true },
   });
 
   if (guide) {
@@ -41,6 +49,16 @@ const resolveGuide = async (user) => {
 
     if (!guide.user || guide.user.toString() !== user._id.toString()) {
       guide.user = user._id;
+      changed = true;
+    }
+
+    if (guide.position !== "guide") {
+      guide.position = "guide";
+      changed = true;
+    }
+
+    if (guide.role !== "guide") {
+      guide.role = "guide";
       changed = true;
     }
 
@@ -65,6 +83,7 @@ const resolveGuide = async (user) => {
     isActive: true,
     isDeleted: false,
     availability: "available",
+    assignedTours: [],
     createdBy: user._id,
   });
 
@@ -100,11 +119,8 @@ const getTourEnd = (tour) => {
 
 /*
  * Assignment compatibility filter.
- *
- * Current records use Tour.assignedGuide. Some older records also kept the
- * tour id in Staff.assignedTours, while legacy imports may have used `guide`.
- * Resolve all three forms so a valid assignment is never hidden from the
- * guide dashboard after a data migration.
+ * Current records use Tour.assignedGuide. Older records may also keep the
+ * tour id in Staff.assignedTours or use the legacy `guide` field.
  */
 const guideTourFilter = (guide) => {
   const alternatives = [
@@ -136,8 +152,6 @@ const syncTourLifecycle = async (tours) => {
           { _id: tour._id },
           { $set: { status: "completed", assignmentStatus: "completed", completedAt: tour.completedAt, endDate: getTourEnd(tour) } }
         );
-      } else if (today >= start) {
-        if (tour.status === "upcoming" || tour.status === "scheduled") continue;
       }
     }
   }
