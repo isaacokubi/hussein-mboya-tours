@@ -5,273 +5,180 @@
   @apply w-full p-3 rounded-xl border border-gray-300 outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500;
 }
 
-/* ==========================================================================
-   SYSTEM-WIDE DASHBOARD UI FOUNDATION
-   Applied globally so Admin, SuperAdmin, Tour Manager, Agent, Guide, Driver
-   and Customer dashboards use the same responsive card/table behavior.
-   ========================================================================== */
-
+/* Dashboard-wide responsive foundation */
 .dashboard-card,
-.dashboard-stat-card {
+.dashboard-stat-card,
+.dashboard-panel,
+.dashboard-responsive {
   min-width: 0;
   max-width: 100%;
-  overflow: hidden;
   box-sizing: border-box;
 }
 
-/* A card is an atomic unit. Its content never creates an oversized grid item. */
-.dashboard-card-grid,
-.dashboard-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1rem;
+.dashboard-responsive {
   width: 100%;
+  overflow-x: clip;
+  font-size: clamp(0.82rem, 0.78rem + 0.16vw, 0.95rem);
 }
 
-.dashboard-card h1,
-.dashboard-card h2,
-.dashboard-card h3,
-.dashboard-card h4,
-.dashboard-stat-card h1,
-.dashboard-stat-card h2,
-.dashboard-stat-card h3,
-.dashboard-stat-card h4 {
-  min-width: 0;
+.dashboard-responsive img,
+.dashboard-responsive video,
+.dashboard-responsive svg {
   max-width: 100%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.2;
 }
 
-.dashboard-card .dashboard-value,
-.dashboard-stat-card .dashboard-value {
-  min-width: 0;
-  max-width: 100%;
-  font-size: clamp(1.25rem, 1.1rem + 0.55vw, 2rem);
-  line-height: 1.15;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.dashboard-responsive img,
+.dashboard-responsive video {
+  height: auto;
+  object-fit: cover;
 }
 
-/* Existing Tailwind dashboard cards receive the same protection even where
-   individual pages have not yet adopted dashboard-card classes. */
-.bg-white.rounded-xl.shadow,
-.bg-white.rounded-2xl.shadow {
-  min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
-  box-sizing: border-box;
-}
-
-.bg-white.rounded-xl.shadow h1,
-.bg-white.rounded-xl.shadow h2,
-.bg-white.rounded-xl.shadow h3,
-.bg-white.rounded-xl.shadow h4,
-.bg-white.rounded-2xl.shadow h1,
-.bg-white.rounded-2xl.shadow h2,
-.bg-white.rounded-2xl.shadow h3,
-.bg-white.rounded-2xl.shadow h4 {
-  min-width: 0;
-  max-width: 100%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.bg-white.rounded-xl.shadow h2.text-3xl,
-.bg-white.rounded-xl.shadow h2.text-4xl,
-.bg-white.rounded-2xl.shadow h2.text-3xl,
-.bg-white.rounded-2xl.shadow h2.text-4xl {
-  font-size: clamp(1.35rem, 1.05rem + 1vw, 2.15rem);
-  line-height: 1.15;
-  letter-spacing: -0.025em;
-}
-
-.bg-white.rounded-xl.shadow > .flex,
-.bg-white.rounded-2xl.shadow > .flex,
-.dashboard-card > .flex,
-.dashboard-stat-card > .flex {
-  min-width: 0;
-  gap: .75rem;
-}
-
-.bg-white.rounded-xl.shadow > .flex > div,
-.bg-white.rounded-2xl.shadow > .flex > div,
-.dashboard-card > .flex > div,
-.dashboard-stat-card > .flex > div {
+.dashboard-responsive h1,
+.dashboard-responsive h2,
+.dashboard-responsive h3,
+.dashboard-responsive h4,
+.dashboard-responsive h5,
+.dashboard-responsive h6,
+.dashboard-responsive p,
+.dashboard-responsive span,
+.dashboard-responsive label,
+.dashboard-responsive button,
+.dashboard-responsive a,
+.dashboard-responsive input,
+.dashboard-responsive select,
+.dashboard-responsive textarea,
+.dashboard-responsive th,
+.dashboard-responsive td {
   min-width: 0;
   max-width: 100%;
 }
 
-/* ==========================================================================
-   TABLES
-   Never split words such as "Confirm booking" or tour/customer names. The
-   surrounding overflow container scrolls horizontally when necessary.
-   ========================================================================== */
+.dashboard-responsive h1 { font-size: clamp(1.35rem, 1.05rem + 1vw, 2rem); line-height: 1.15; }
+.dashboard-responsive h2 { font-size: clamp(1.1rem, 0.95rem + 0.7vw, 1.55rem); line-height: 1.2; }
+.dashboard-responsive h3 { font-size: clamp(0.95rem, 0.88rem + 0.35vw, 1.2rem); line-height: 1.25; }
+.dashboard-responsive p,
+.dashboard-responsive label,
+.dashboard-responsive span { line-height: 1.45; }
+.dashboard-responsive .text-4xl { font-size: clamp(1.5rem, 1.15rem + 1.3vw, 2.25rem) !important; }
+.dashboard-responsive .text-3xl { font-size: clamp(1.3rem, 1.05rem + 1vw, 1.9rem) !important; }
+.dashboard-responsive .text-2xl { font-size: clamp(1.15rem, 0.98rem + 0.7vw, 1.55rem) !important; }
+.dashboard-responsive .text-xl { font-size: clamp(1rem, 0.9rem + 0.45vw, 1.25rem) !important; }
+.dashboard-responsive .text-lg { font-size: clamp(0.92rem, 0.85rem + 0.3vw, 1.1rem) !important; }
+.dashboard-responsive .text-sm { font-size: clamp(0.76rem, 0.72rem + 0.18vw, 0.9rem) !important; }
+.dashboard-responsive .text-xs { font-size: clamp(0.68rem, 0.64rem + 0.16vw, 0.78rem) !important; }
 
-.dashboard-card .overflow-x-auto,
-.dashboard-stat-card .overflow-x-auto {
+.dashboard-responsive .p-8 { padding: clamp(1rem, 0.75rem + 1vw, 2rem) !important; }
+.dashboard-responsive .p-6 { padding: clamp(0.85rem, 0.7rem + 0.7vw, 1.5rem) !important; }
+.dashboard-responsive .p-5 { padding: clamp(0.75rem, 0.65rem + 0.5vw, 1.25rem) !important; }
+.dashboard-responsive .p-4 { padding: clamp(0.7rem, 0.6rem + 0.4vw, 1rem) !important; }
+
+.dashboard-responsive .grid {
+  min-width: 0;
+}
+
+.dashboard-responsive .grid > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.dashboard-responsive .flex > * {
+  min-width: 0;
+}
+
+.dashboard-responsive .overflow-x-auto {
   width: 100%;
   max-width: 100%;
   overflow-x: auto;
-  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
-.dashboard-card table,
-.dashboard-stat-card table,
-.bg-white.rounded-xl.shadow table,
-.bg-white.rounded-2xl.shadow table {
-  white-space: nowrap;
+.dashboard-responsive table {
   width: max-content;
   min-width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
+  font-size: clamp(0.7rem, 0.66rem + 0.15vw, 0.85rem);
 }
 
-.dashboard-card th,
-.dashboard-card td,
-.dashboard-stat-card th,
-.dashboard-stat-card td,
-.bg-white.rounded-xl.shadow th,
-.bg-white.rounded-xl.shadow td,
-.bg-white.rounded-2xl.shadow th,
-.bg-white.rounded-2xl.shadow td {
+.dashboard-responsive th,
+.dashboard-responsive td {
+  padding: clamp(0.5rem, 0.4rem + 0.25vw, 0.8rem);
   white-space: nowrap;
-  word-break: normal;
-  overflow-wrap: normal;
   vertical-align: middle;
 }
 
-.dashboard-card button,
-.dashboard-card select,
-.dashboard-card a,
-.dashboard-stat-card button,
-.dashboard-stat-card select,
-.dashboard-stat-card a {
-  white-space: nowrap;
+.dashboard-responsive button,
+.dashboard-responsive a,
+.dashboard-responsive input,
+.dashboard-responsive select,
+.dashboard-responsive textarea {
+  font-size: inherit;
 }
 
-/* Data-table cells should not be forced into tiny columns by long content. */
-.dashboard-card table td > *,
-.dashboard-card table th > *,
-.dashboard-stat-card table td > *,
-.dashboard-stat-card table th > * {
-  max-width: none;
-}
-
-/* ==========================================================================
-   SEARCH / FILTER TOOLBARS
-   Inputs remain usable while cards and filter controls wrap as units.
-   ========================================================================== */
-.dashboard-toolbar,
-.dashboard-filter-bar {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: .75rem;
-  min-width: 0;
-  width: 100%;
-}
-
-.dashboard-toolbar input,
-.dashboard-toolbar select,
-.dashboard-filter-bar input,
-.dashboard-filter-bar select {
-  min-width: 0;
+.dashboard-responsive button,
+.dashboard-responsive a {
   max-width: 100%;
 }
 
-/* ==========================================================================
-   RESPONSIVE GRIDS
-   Cards move as complete units to the next row; text is not used to decide
-   the grid width.
-   ========================================================================== */
-@media (max-width: 1280px) {
-  .dashboard-card-grid,
-  .dashboard-stats-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  [class~="lg:grid-cols-4"],
-  [class~="lg:grid-cols-5"],
-  [class~="xl:grid-cols-4"],
-  [class~="xl:grid-cols-5"] {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  }
+.dashboard-responsive .dashboard-value {
+  font-size: clamp(1.15rem, 0.95rem + 0.75vw, 2rem);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-@media (max-width: 900px) {
-  .dashboard-card-grid,
-  .dashboard-stats-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  [class~="lg:grid-cols-4"],
-  [class~="lg:grid-cols-5"],
-  [class~="xl:grid-cols-4"],
-  [class~="xl:grid-cols-5"] {
+@media (max-width: 1024px) {
+  .dashboard-responsive .grid-cols-4,
+  .dashboard-responsive .grid-cols-5,
+  .dashboard-responsive .lg\\:grid-cols-4,
+  .dashboard-responsive .lg\\:grid-cols-5,
+  .dashboard-responsive .xl\\:grid-cols-4,
+  .dashboard-responsive .xl\\:grid-cols-5 {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
 
 @media (max-width: 640px) {
-  .dashboard-card,
-  .dashboard-stat-card,
-  .bg-white.rounded-xl.shadow,
-  .bg-white.rounded-2xl.shadow {
-    width: 100%;
+  .dashboard-responsive {
+    font-size: 0.8rem;
   }
 
-  .dashboard-card,
-  .dashboard-stat-card {
-    padding: 1rem;
+  .dashboard-responsive .grid-cols-2,
+  .dashboard-responsive .grid-cols-3,
+  .dashboard-responsive .grid-cols-4,
+  .dashboard-responsive .grid-cols-5,
+  .dashboard-responsive .sm\\:grid-cols-2,
+  .dashboard-responsive .md\\:grid-cols-2,
+  .dashboard-responsive .md\\:grid-cols-3,
+  .dashboard-responsive .md\\:grid-cols-4,
+  .dashboard-responsive .lg\\:grid-cols-2,
+  .dashboard-responsive .lg\\:grid-cols-3,
+  .dashboard-responsive .lg\\:grid-cols-4,
+  .dashboard-responsive .lg\\:grid-cols-5,
+  .dashboard-responsive .xl\\:grid-cols-2,
+  .dashboard-responsive .xl\\:grid-cols-3,
+  .dashboard-responsive .xl\\:grid-cols-4,
+  .dashboard-responsive .xl\\:grid-cols-5 {
+    grid-template-columns: minmax(0, 1fr) !important;
   }
 
-  .bg-white.rounded-xl.shadow h2.text-3xl,
-  .bg-white.rounded-xl.shadow h2.text-4xl,
-  .bg-white.rounded-2xl.shadow h2.text-3xl,
-  .bg-white.rounded-2xl.shadow h2.text-4xl {
-    font-size: clamp(1.15rem, 5vw, 1.55rem);
+  .dashboard-responsive .gap-8 { gap: 1rem !important; }
+  .dashboard-responsive .gap-6 { gap: 0.9rem !important; }
+  .dashboard-responsive .gap-5 { gap: 0.75rem !important; }
+
+  .dashboard-responsive .flex-wrap {
+    row-gap: 0.5rem;
   }
 
-  .dashboard-card .flex,
-  .dashboard-stat-card .flex,
-  .bg-white.rounded-xl.shadow .flex,
-  .bg-white.rounded-2xl.shadow .flex {
-    min-width: 0;
-  }
-
-  .dashboard-card table,
-  .dashboard-stat-card table,
-  .bg-white.rounded-xl.shadow table,
-  .bg-white.rounded-2xl.shadow table {
-    min-width: 620px;
-  }
-
-  [class~="min-h-screen"][class~="p-6"] {
-    padding: 1rem !important;
+  .dashboard-responsive input,
+  .dashboard-responsive select,
+  .dashboard-responsive textarea {
+    min-height: 2.4rem;
   }
 }
 
 @media (max-width: 420px) {
-  .dashboard-card-grid,
-  .dashboard-stats-grid,
-  [class~="sm:grid-cols-2"],
-  [class~="md:grid-cols-2"],
-  [class~="lg:grid-cols-4"],
-  [class~="lg:grid-cols-5"],
-  [class~="xl:grid-cols-4"],
-  [class~="xl:grid-cols-5"] {
-    grid-template-columns: 1fr !important;
-  }
-
-  .dashboard-card,
-  .dashboard-stat-card,
-  .bg-white.rounded-xl.shadow,
-  .bg-white.rounded-2xl.shadow {
-    border-radius: .875rem;
-  }
+  .dashboard-responsive .rounded-3xl { border-radius: 1rem !important; }
+  .dashboard-responsive .rounded-2xl { border-radius: 0.85rem !important; }
+  .dashboard-responsive .rounded-xl { border-radius: 0.7rem !important; }
+  .dashboard-responsive table { min-width: 560px; }
 }
