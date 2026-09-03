@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Hussein Mboya Tours uses two privileged levels:
+The platform uses two privileged levels:
 
 - **SuperAdmin** — platform-level administrator. It is not assigned to a company tenant.
 - **Admin** — company-level administrator. Every Admin must belong to exactly one company/tenant.
@@ -122,20 +122,13 @@ The API validates the administrator, refuses duplicate email addresses, creates 
 
 ## Validation
 
-Run:
+From `server/` run:
 
 ```bash
-npm run check:onboarding
-npm run check:rbac
-npm run check:multitenancy
-npm run check:multitenancy:code
 npm run check:all
+npm test
 ```
 
-For the live tenant regression suite:
-
-```bash
-npm run check:multitenancy:live
-```
+The validation suite uses the environment and database configured for the target deployment. Run the full checks before production release.
 
 Do **not** run `npm run bootstrap:first` against a production database unless this is the first installation and you have verified that no SuperAdmin exists.
