@@ -41,7 +41,9 @@ const seedAgents = async () => {
         const user = await User.findOneAndUpdate(
           { email: data.email },
           {
-            $set: { name: data.name, phone: data.phone, role: "agent", legacyRole: "agent", status: "active", tenantId: organization._id },
+            $set: { name: data.name, phone: data.phone, role: "agent", legacyRole: "agent", status: "active" },
+            // tenantPlugin injects tenantId into $setOnInsert and validates the
+            // tenant context, so tenantId must not also appear in $set here.
             $setOnInsert: { email: data.email, password },
           },
           { upsert: true, new: true, setDefaultsOnInsert: true },
@@ -50,7 +52,9 @@ const seedAgents = async () => {
         await Agent.findOneAndUpdate(
           { user: user._id },
           {
-            $set: { companyName: organization.name, phone: data.phone, email: data.email, location: data.location, isApproved: true, status: "active", tenantId: organization._id },
+            $set: { companyName: organization.name, phone: data.phone, email: data.email, location: data.location, isApproved: true, status: "active" },
+            // tenantPlugin injects tenantId into $setOnInsert and enforces the
+            // current tenant for this upsert.
             $setOnInsert: { user: user._id, commissionRate: 10, totalCommission: 0, pendingCommission: 0, paidCommission: 0, walletBalance: 0, totalSales: 0, totalBookings: 0, successfulBookings: 0, cancelledBookings: 0 },
           },
           { upsert: true, new: true, setDefaultsOnInsert: true },
