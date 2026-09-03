@@ -13,14 +13,13 @@ services:
       - key: NODE_ENV
         value: production
 
-
       - key: MONGODB_URI
         sync: false
 
       - key: JWT_SECRET
         sync: false
 
-      - key: JWT_EXPIRE
+      - key: JWT_EXPIRES_IN
         value: 7d
 
       - key: CLIENT_URL
@@ -79,31 +78,6 @@ services:
 
       - key: SMTP_FROM
         sync: false
-
-      - key: SEED_ADMIN_PASSWORD
-        sync: false
-
-      - key: SEED_SUPERADMIN_PASSWORD
-        sync: false
-
-      - key: SEED_MANAGER_PASSWORD
-        sync: false
-
-      - key: SEED_AGENT_PASSWORD
-        sync: false
-
-      - key: SEED_GUIDE_PASSWORD
-        sync: false
-
-      - key: SEED_CUSTOMER_PASSWORD
-        sync: false
-
-      - key: SEED_STAFF_PASSWORD
-        sync: false
-
-      - key: SEED_FINANCE_PASSWORD
-        sync: false
-
 
   - type: web
     name: hussein-mboya-tours-client
