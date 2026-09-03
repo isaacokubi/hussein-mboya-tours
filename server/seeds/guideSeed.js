@@ -35,29 +35,59 @@ const seedGuides = async () => {
     else organization = await Organization.findOne({ name: tenantName }).lean();
     if (!organization) throw new Error("Tenant organization was not found.");
 
-    const permissionNames = ["view_assigned_tours", "view_tour_guests", "update_tour_status", "submit_tour_report"];
-    const permissionIds = [];
-    for (const name of permissionNames) {
-      let permission = await Permission.findOne({ name });
-      if (!permission) permission = await Permission.create({ name, label: name.replace(/_/g, " "), module: "guide", category: "other" });
-      permissionIds.push(permission._id);
-    }
-
-    let guideRole = await Role.findOne({ name: "guide" });
-    if (!guideRole) guideRole = await Role.create({ name: "guide", displayName: "Tour Guide", description: "Tour guide access", permissions: permissionIds, isSystem: true, status: "active", level: 2 });
-    else {
-      guideRole.permissions = permissionIds;
-      guideRole.status = "active";
-      await guideRole.save();
-    }
-
     await runWithTenant({ tenantId: organization._id, tenant: organization }, async () => {
+      // Permission and Role are tenant-scoped models, so they must be queried
+      // only after entering the tenant context.
+      const permissionNames = ["view_assigned_tours", "view_tour_guests", "update_tour_status", "submit_tour_report"];
+      const permissionIds = [];
+      for (const name of permissionNames) {
+        let permission = await Permission.findOne({ name });
+        if (!permission) {
+          permission = await Permission.create({
+            name,
+            label: name.replace(/_/g, " "),
+            module: "guide",
+            category: "other",
+            tenantId: organization._id,
+          });
+        }
+        permissionIds.push(permission._id);
+      }
+
+      let guideRole = await Role.findOne({ name: "guide" });
+      if (!guideRole) {
+        guideRole = await Role.create({
+          name: "guide",
+          displayName: "Tour Guide",
+          description: "Tour guide access",
+          permissions: permissionIds,
+          isSystem: true,
+          status: "active",
+          level: 2,
+          tenantId: organization._id,
+        });
+      } else {
+        guideRole.permissions = permissionIds;
+        guideRole.status = "active";
+        guideRole.tenantId = organization._id;
+        await guideRole.save();
+      }
+
       for (const item of guides) {
         const password = process.env.SEED_GUIDE_PASSWORD || crypto.randomBytes(18).toString("base64url");
         const user = await User.findOneAndUpdate(
           { email: item.email },
           {
-            $set: { name: item.name, phone: item.phone, role: "tour_guide", roleId: guideRole._id, legacyRole: "tour_guide", status: "active", isVerified: true, tenantId: organization._id },
+            $set: {
+              name: item.name,
+              phone: item.phone,
+              role: "tour_guide",
+              roleId: guideRole._id,
+              legacyRole: "tour_guide",
+              status: "active",
+              isVerified: true,
+              tenantId: organization._id,
+            },
             $setOnInsert: { email: item.email, password },
           },
           { upsert: true, new: true, setDefaultsOnInsert: true },
@@ -65,7 +95,21 @@ const seedGuides = async () => {
 
         await Staff.findOneAndUpdate(
           { $or: [{ user: user._id }, { email: user.email }] },
-          { $set: { user: user._id, name: user.name, email: user.email, phone: user.phone || "", position: "guide", role: "guide", status: "active", isActive: true, isDeleted: false, availability: "available", tenantId: organization._id } },
+          {
+            $set: {
+              user: user._id,
+              name: user.name,
+              email: user.email,
+              phone: user.phone || "",
+              position: "guide",
+              role: "guide",
+              status: "active",
+              isActive: true,
+              isDeleted: false,
+              availability: "available",
+              tenantId: organization._id,
+            },
+          },
           { upsert: true, new: true, setDefaultsOnInsert: true },
         );
       }
