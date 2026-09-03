@@ -1,14 +1,14 @@
 export const COMPANY_DEFAULTS = {
-  companyName: "Company",
+  companyName: "Global Tours",
   companyLogo: "",
   supportEmail: "",
   supportPhone: "",
   address: "",
-  city: "",
-  country: "",
+  city: "Nairobi",
+  country: "Kenya",
   currency: "KES",
   currencySymbol: "KSh",
   timezone: "Africa/Nairobi",
-  emailFromName: "Company",
+  emailFromName: "Global Tours",
   emailFromAddress: ""
 };
