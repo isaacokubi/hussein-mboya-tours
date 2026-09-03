@@ -1,3 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
+import { getAdminBookings } from "../../../api/adminApi";
+
 const bookingIsPaid = (booking) => {
   const paymentStatus = typeof booking?.paymentStatus === "object"
     ? booking.paymentStatus?.paymentStatus || booking.paymentStatus?.status
@@ -9,10 +12,26 @@ const bookingIsPaid = (booking) => {
 };
 
 const bookingTourId = (booking) => String(booking?.tour?._id || booking?.tour || "");
+const unwrapBookings = (payload) => {
+  const data = payload?.data ?? payload ?? {};
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data.bookings)) return data.bookings;
+  if (Array.isArray(data.results)) return data.results;
+  if (Array.isArray(data.data)) return data.data;
+  return [];
+};
 
-export default function PopularTours({ tours = [], recentBookings = [] }) {
+export default function PopularTours({ tours = [] }) {
   const list = Array.isArray(tours) ? tours : [];
-  const recent = Array.isArray(recentBookings) ? recentBookings : [];
+  const { data: bookingsPayload } = useQuery({
+    queryKey: ["admin-dashboard-popular-tour-bookings"],
+    queryFn: () => getAdminBookings({ limit: 100 }),
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
+    retry: 1,
+  });
+  const bookings = unwrapBookings(bookingsPayload);
 
   return (
     <section className="rounded-xl bg-white p-6 shadow">
@@ -27,9 +46,11 @@ export default function PopularTours({ tours = [], recentBookings = [] }) {
           {list.map((tour, index) => {
             const totalBookings = Number(tour?.totalBookings || 0);
             const serverPaidBookings = tour?.paidBookings ?? tour?.confirmedPaidBookings;
-            const recentPaidBookings = recent.filter((booking) => bookingTourId(booking) === String(tour?._id || "") && bookingIsPaid(booking)).length;
-            const paidBookings = serverPaidBookings == null || (Number(serverPaidBookings) === 0 && recentPaidBookings > 0)
-              ? recentPaidBookings
+            const fallbackPaidBookings = bookings.filter(
+              (booking) => bookingTourId(booking) === String(tour?._id || "") && bookingIsPaid(booking)
+            ).length;
+            const paidBookings = serverPaidBookings == null || (Number(serverPaidBookings) === 0 && fallbackPaidBookings > 0)
+              ? fallbackPaidBookings
               : Number(serverPaidBookings);
 
             return (
