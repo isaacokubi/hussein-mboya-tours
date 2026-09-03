@@ -6,7 +6,8 @@ const getData = async (request) => {
 };
 
 export const getDashboard = async () => getData(api.get("/admin/dashboard"));
-export const getDashboardMetrics = async () => getData(api.get("/admin/dashboard/metrics"));
+// Kept as a compatibility alias because the backend exposes the consolidated dashboard endpoint.
+export const getDashboardMetrics = getDashboard;
 export const getUsersAnalytics = async () => getData(api.get("/admin/users/analytics"));
 export const getBookingAnalytics = async () => getData(api.get("/admin/bookings/analytics"));
 export const getRevenueAnalytics = async () => getData(api.get("/admin/revenue/analytics"));
