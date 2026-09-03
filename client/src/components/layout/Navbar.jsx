@@ -3,6 +3,7 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import { Menu, X, User, LogOut, LayoutDashboard, Plane, Heart, ChevronDown, Search } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useSettings } from "../../context/SettingsContext";
+import { useTenant } from "../../context/TenantContext";
 
 const normalizeRole = (user) => {
   if (!user) return "";
@@ -16,13 +17,14 @@ const initialsFor = (name) => { const words = String(name || "Company").trim().s
 export default function Navbar() {
   const { user, logout } = useAuth();
   const { settings = {} } = useSettings() || {};
+  const { tenant = {} } = useTenant() || {};
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const companyName = String(settings.companyName || (user ? "Company" : "Global Tours")).trim();
-  const logoUrl = settings.companyLogo || settings.logo || "";
+  const companyName = String(settings.companyName || tenant.name || tenant.companyName || (user ? "Company" : "Global Tours")).trim();
+  const logoUrl = settings.companyLogo || settings.logo || tenant.logoUrl || "";
   const initials = useMemo(() => initialsFor(companyName), [companyName]);
   const role = normalizeRole(user);
   const compactRole = role.replace(/[\s_-]/g, "");
