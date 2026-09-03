@@ -27,13 +27,14 @@ export const getDashboard = async (req, res) => {
       Role.findOne({ name: { $in: ["guide", "tour_guide"] } }),
     ]);
 
-    const [users, tours, bookings, destinations, customers, adminsCount, guidesCount, vehiclesCount, agentsCount, guideUsersCount, agentUsersCount, driversCount, staffCount] = await Promise.all([
+    const [users, tours, bookings, destinations, customers, adminsCount, adminStaffCount, guidesCount, vehiclesCount, agentsCount, guideUsersCount, agentUsersCount, driversCount, staffCount] = await Promise.all([
       User.countDocuments(scoped()),
       Tour.countDocuments(scoped({ isDeleted: NON_DELETED })),
       Booking.countDocuments(scoped({ isDeleted: NON_DELETED })),
       Destination.countDocuments(scoped({ isDeleted: NON_DELETED })),
       User.countDocuments(scoped({ role: "customer" })),
       User.countDocuments(scoped({ role: { $in: ["admin", "super_admin"] } })),
+      Staff.countDocuments(scoped({ position: "admin", isDeleted: NON_DELETED, isActive: { $ne: false }, status: { $ne: "inactive" } })),
       Staff.countDocuments(scoped({ $or: [{ position: { $in: ["guide", "tour_guide", "tourguide"] } }, { role: { $in: ["guide", "tour_guide", "tourguide"] } }], isDeleted: NON_DELETED, isActive: { $ne: false }, status: { $ne: "inactive" } })),
       Vehicle.countDocuments(scoped({ isDeleted: NON_DELETED, isActive: { $ne: false }, status: { $nin: ["out_of_service", "retired", "inactive"] } })),
       User.countDocuments(scoped({ role: "agent" })),
@@ -75,7 +76,7 @@ export const getDashboard = async (req, res) => {
     const availableVehicles = await Vehicle.countDocuments(scoped({ isDeleted: NON_DELETED, isActive: true, status: "available" }));
 
     return res.status(200).json({ success: true, data: {
-      users, customers, admins: adminsCount, staff: staffCount, guides: Math.max(guidesCount, guideUsersCount), drivers: driversCount, agents: Math.max(agentsCount, agentUsersCount), approvedAgents, vehicles: vehiclesCount, availableVehicles, tours, destinations, bookings,
+      users, customers, admins: Math.max(adminsCount, adminStaffCount), staff: staffCount, guides: Math.max(guidesCount, guideUsersCount), drivers: driversCount, agents: Math.max(agentsCount, agentUsersCount), approvedAgents, vehicles: vehiclesCount, availableVehicles, tours, destinations, bookings,
       pendingBookings: bookingStatus.find((x) => x._id === "pending")?.count || 0,
       confirmedBookings: bookingStatus.find((x) => x._id === "confirmed")?.count || 0,
       payments: paymentStats.reduce((sum, x) => sum + (x.count || 0), 0), completedPayments: paidPayments.count, revenue, monthlyRevenue: formattedMonthlyRevenue,
