@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { Menu, X, User, LogOut, LayoutDashboard, Plane, Heart, ChevronDown, Phone, Map, Search } from "lucide-react";
+import { Menu, X, User, LogOut, LayoutDashboard, Plane, Heart, ChevronDown, Search } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useSettings } from "../../context/SettingsContext";
 
@@ -11,7 +11,7 @@ const normalizeRole = (user) => {
   if (user.roles?.[0]?.name) return String(user.roles[0].name).toLowerCase().replace(/[\s-]/g, "_");
   return "";
 };
-const initialsFor = (name) => { const words = String(name || "Global Tours").trim().split(/\s+/).filter(Boolean); if (!words.length) return "GT"; if (words.length === 1) return words[0].slice(0, 2).toUpperCase(); return `${words[0][0]}${words[1][0]}`.toUpperCase(); };
+const initialsFor = (name) => { const words = String(name || "Company").trim().split(/\s+/).filter(Boolean); if (!words.length) return "CO"; if (words.length === 1) return words[0].slice(0, 2).toUpperCase(); return `${words[0][0]}${words[1][0]}`.toUpperCase(); };
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -21,7 +21,7 @@ export default function Navbar() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const companyName = String(settings.companyName || "Global Tours").trim();
+  const companyName = String(settings.companyName || (user ? "Company" : "Global Tours")).trim();
   const logoUrl = settings.companyLogo || settings.logo || "";
   const initials = useMemo(() => initialsFor(companyName), [companyName]);
   const role = normalizeRole(user);
