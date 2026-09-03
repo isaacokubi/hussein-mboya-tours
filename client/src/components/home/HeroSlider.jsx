@@ -10,15 +10,15 @@ import "swiper/css";
 import "swiper/css/effect-fade";
 
 const FALLBACK_HERO_SLIDES = [
-  { _id: "fallback-1", image: "/hero1.jpeg", title: "Discover Kenya with Your Travel Company", description: "Unforgettable safaris, wildlife adventures and tailor-made African experiences.", buttonText: "Explore Tours", buttonLink: "/tours" },
+  { _id: "fallback-1", image: "/hero1.jpeg", title: "Discover Kenya with Global Tours", description: "Unforgettable safaris, wildlife adventures and tailor-made African experiences.", buttonText: "Explore Tours", buttonLink: "/tours" },
   { _id: "fallback-2", image: "/hero2.jpeg", title: "Experience the Magic of Kenya", description: "From the Maasai Mara to the coast, discover extraordinary places with local experts.", buttonText: "View Destinations", buttonLink: "/destinations" },
-  { _id: "fallback-3", image: "/hero4.jpeg", title: "Your African Adventure Starts Here", description: "Travel safely, comfortably and confidently with Your Travel Company.", buttonText: "Book Now", buttonLink: "/tours" },
+  { _id: "fallback-3", image: "/hero4.jpeg", title: "Your African Adventure Starts Here", description: "Travel safely, comfortably and confidently with Global Tours.", buttonText: "Book Now", buttonLink: "/tours" },
 ];
 
 export default function HeroSlider() {
   const { tenant } = useTenant() || {};
   const { settings = {} } = useSettings() || {};
-  const companyName = settings?.companyName || tenant?.name || tenant?.companyName || "Your Travel Company";
+  const companyName = settings?.companyName || tenant?.name || tenant?.companyName || "Global Tours";
   const videoRefs = useRef([]);
   const [heroReady, setHeroReady] = useState(false);
   const [loadedVideos, setLoadedVideos] = useState({});
