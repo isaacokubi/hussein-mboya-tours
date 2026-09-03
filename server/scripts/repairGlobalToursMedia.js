@@ -6,6 +6,9 @@ import { runWithTenant } from "../tenancy/context.js";
 
 dotenv.config();
 
+// Stable remote images used only as database fallback media. Every repaired record
+// receives both a featured image and gallery images so old records cannot fall back
+// to the application's placeholder image.
 const IMAGE_POOL = [
   "https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=1200&q=85",
   "https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?auto=format&fit=crop&w=1200&q=85",
@@ -49,6 +52,10 @@ const TOUR_DESTINATIONS = {
 };
 
 const slugify = (value) => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const hasUsableImage = (value) => {
+  const url = typeof value === "string" ? value.trim() : "";
+  return /^https?:\/\//i.test(url) && !/image-placeholder|placeholder/i.test(url);
+};
 
 async function repair() {
   if (!process.env.MONGODB_URI) throw new Error("MONGODB_URI is missing in .env");
@@ -70,19 +77,21 @@ async function repair() {
         destination.isDeleted = false;
         await destination.save();
       } else {
-        // Keep the first canonical destination and remove duplicate test copies only.
         await Destination.deleteOne({ _id: destination._id });
       }
     }
 
-    // Remove the two old placeholder/test destinations that cannot be useful to Global Tours.
     await Destination.deleteMany({
-      name: { $in: ["Coherent tours Test Destination", "Africa safaris Test Destination"] },
+      $or: [
+        { name: { $in: ["Coherent tours Test Destination", "Africa safaris Test Destination"] } },
+        { name: /^Destination Test ca1945cba0/i },
+      ],
     });
 
     let fixed = 0;
     let removedDuplicates = 0;
 
+    // First repair the canonical Global Tours catalogue and remove duplicate copies.
     for (const [title, destinationName] of Object.entries(TOUR_DESTINATIONS)) {
       const destination = destinationByName.get(destinationName);
       if (!destination) continue;
@@ -116,14 +125,64 @@ async function repair() {
       }
     }
 
-    // Remove old placeholder/test tours that belong to previous branding and are not part of Global Tours test data.
-    const oldTestTours = await Tour.find({ title: { $regex: /^(Coherent tours|Africa safaris)/i } }, { _id: 1 });
-    if (oldTestTours.length) {
-      await Tour.deleteMany({ _id: { $in: oldTestTours.map((tour) => tour._id) } });
-      removedDuplicates += oldTestTours.length;
+    // Remove synthetic tenant-isolation/test data that must never appear in the
+    // public Global Tours catalogue. These records are identifiable by their
+    // generated test naming and are unrelated to the real Global Tours catalogue.
+    const syntheticTours = await Tour.find({
+      $or: [
+        { title: /^(Coherent tours|Africa safaris)/i },
+        { title: /^Tenant ca1945cba0 Safari Tour \d+$/i },
+      ],
+    }, { _id: 1 });
+    if (syntheticTours.length) {
+      await Tour.deleteMany({ _id: { $in: syntheticTours.map((tour) => tour._id) } });
+      removedDuplicates += syntheticTours.length;
     }
 
-    console.log(`Global Tours media/destination repair complete: ${fixed} tours fixed, ${removedDuplicates} duplicate/legacy records removed.`);
+    // Repair every remaining active tour that has no usable image. This catches
+    // older legitimate records that were created before the Global Tours media
+    // repair, rather than relying only on the 20 seeded titles above.
+    const allTours = await Tour.find({ isDeleted: false }).sort({ createdAt: 1 });
+    for (const tour of allTours) {
+      const destination = tour.destination ? await Destination.findById(tour.destination) : null;
+      const featuredUrl = tour.featuredImage?.url;
+      const galleryUrl = tour.gallery?.find((item) => hasUsableImage(item?.url))?.url;
+
+      if (hasUsableImage(featuredUrl) && hasUsableImage(galleryUrl)) continue;
+
+      const index = Math.abs(String(tour._id).split("").reduce((sum, char) => sum + char.charCodeAt(0), 0)) % IMAGE_POOL.length;
+      const primary = hasUsableImage(featuredUrl) ? featuredUrl : IMAGE_POOL[index];
+      const secondary = hasUsableImage(galleryUrl) && galleryUrl !== primary ? galleryUrl : IMAGE_POOL[(index + 1) % IMAGE_POOL.length];
+
+      tour.featuredImage = { url: primary };
+      tour.gallery = [{ url: primary }, { url: secondary }];
+
+      if (destination) {
+        tour.destination = destination._id;
+        tour.country = tour.country || "Kenya";
+        tour.location = tour.location || destination.region || destination.name;
+      }
+
+      tour.published = true;
+      tour.available = true;
+      tour.isDeleted = false;
+      await tour.save();
+      fixed += 1;
+    }
+
+    // Remove legacy placeholder/test tours that are still visible under Global Tours.
+    const legacyTours = await Tour.find({
+      $or: [
+        { title: /^Coherent tours/i },
+        { title: /^Africa safaris/i },
+      ],
+    }, { _id: 1 });
+    if (legacyTours.length) {
+      await Tour.deleteMany({ _id: { $in: legacyTours.map((tour) => tour._id) } });
+      removedDuplicates += legacyTours.length;
+    }
+
+    console.log(`Global Tours media/destination repair complete: ${fixed} tours repaired, ${removedDuplicates} duplicate/synthetic records removed.`);
   });
 }
 
