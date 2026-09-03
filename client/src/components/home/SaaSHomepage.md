@@ -1,1 +1,0 @@
-Global Tours homepage redesign: futuristic travel marketplace UI, responsive discovery search, and tour search results.
