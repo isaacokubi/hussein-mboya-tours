@@ -1,17 +1,17 @@
 import dotenv from "dotenv";
 import mongoose from "mongoose";
-import crypto from "crypto";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 
 import Destination from "../models/Destination.js";
 import Tour from "../models/Tour.js";
 import User from "../models/User.js";
 import Role from "../models/Role.js";
 import Permission from "../models/Permission.js";
-import { runWithTenant } from "../tenancy/context.js";
-import seedGlobalTours from "../seeds/globalToursTestSeed.js";
 
 dotenv.config();
 
+const execFileAsync = promisify(execFile);
 const KEEP_COLLECTIONS = new Set(["destinations", "tours"]);
 const RESET_CONFIRMATION = "YES";
 
@@ -87,7 +87,7 @@ async function seedCleanAccessData() {
   roleDocs.admin.permissions = adminPermissionIds;
   await roleDocs.admin.save();
 
-  const adminEmail = process.env.SEED_ADMIN_EMAIL || "admin@globaltours.co.ke";
+  const adminEmail = (process.env.SEED_ADMIN_EMAIL || "admin@globaltours.co.ke").toLowerCase();
   const adminPassword = process.env.SEED_ADMIN_PASSWORD;
 
   if (!adminPassword) {
@@ -97,11 +97,11 @@ async function seedCleanAccessData() {
   }
 
   await User.findOneAndUpdate(
-    { email: adminEmail.toLowerCase() },
+    { email: adminEmail },
     {
       $set: {
         name: "Global Tours Admin",
-        email: adminEmail.toLowerCase(),
+        email: adminEmail,
         password: adminPassword,
         role: "admin",
         roleId: roleDocs.admin._id,
@@ -109,14 +109,11 @@ async function seedCleanAccessData() {
         status: "active",
         isVerified: true,
       },
-      $setOnInsert: {
-        createdAt: new Date(),
-      },
     },
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
 
-  console.log(`Clean access data seeded: ${adminEmail}`);
+  console.log(`Clean admin access seeded: ${adminEmail}`);
 }
 
 async function resetDatabase() {
@@ -144,27 +141,32 @@ async function resetDatabase() {
     dropped += 1;
   }
 
-  console.log(`Database reset complete: dropped ${dropped} non-tour collections.`);
-  console.log(`Preserved collections: ${[...KEEP_COLLECTIONS].join(", ")}.`);
+  console.log(`Database reset complete: dropped ${dropped} non-catalog collections.`);
+  console.log(`Kept: ${[...KEEP_COLLECTIONS].join(", ")}.`);
   console.log(`Before reset: ${beforeDestinations} destinations, ${beforeTours} tours.`);
 
-  // Rebuild only the current Global Tours catalogue and clean system access data.
-  await runWithTenant(
-    { role: "super_admin", bypass: true, tenantId: null, tenant: null },
-    async () => {
-      await seedGlobalTours();
-      await seedCleanAccessData();
-    }
-  );
+  await mongoose.connection.close();
+
+  // Rebuild the current Global Tours catalogue using the canonical seed.
+  await execFileAsync(process.execPath, ["seeds/globalToursTestSeed.js"], {
+    cwd: process.cwd(),
+    env: process.env,
+    maxBuffer: 10 * 1024 * 1024,
+  });
+
+  await mongoose.connect(process.env.MONGODB_URI);
+  await seedCleanAccessData();
 
   const destinationCount = await Destination.countDocuments();
   const tourCount = await Tour.countDocuments();
 
-  console.log("Global Tours database reset and reseed complete.");
+  console.log("Global Tours clean reset and reseed complete.");
   console.log(`Destinations: ${destinationCount}`);
   console.log(`Tours: ${tourCount}`);
   console.log("Bookings: 0");
   console.log("Payments: 0");
+  console.log("Customers: 0");
+  console.log("Agents/Guides/Vehicles: 0");
   console.log("Other transactional/test data: 0");
 }
 
