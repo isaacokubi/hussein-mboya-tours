@@ -2,7 +2,18 @@
 node_modules/
 */node_modules/
 
-# Environment / secrets
+# Environment and secrets
+.env
+.env.local
+.env.development
+.env.production
+server/.env
+client/.env
+client/.env.local
+client/.env.development
+client/.env.production
+!server/.env.example
+!client/.env.example
 
 # Build / deployment output
 dist/
@@ -12,6 +23,7 @@ build/
 
 # Logs / coverage
 logs/
+server/logs/
 *.log
 coverage/
 npm-debug.log*
@@ -27,16 +39,20 @@ Thumbs.db
 
 # Uploads / generated data
 uploads/
+server/backups/
 server/server/backups/
 
-# Repair / audit backups and temporary artifacts
+# Temporary / repair / audit artifacts
 *.bak
 *.backup
-*.backup*
+*.backup.*
 *.before-*
+*.before_*
 *.old
+*.old.js
 *.save
 *.broken
+*.orig
 *-BACKUP*/
 *-BACKUP-*
 client-BACKUP-*
@@ -48,99 +64,22 @@ server-BACKUP-*
 .final-repair-backup-*/
 merge-backup-*/
 BACKUP-BEFORE-ZIP-MERGE-*/
-hussein-mboya-tours-main/
+backup_before_*
+tenant_backup*
+.repair-backups/
+server/rbac-repair-backup-*/
+server/superadmin-rbac-audit-*.txt
 
-# Python/local repair tooling
-*.pyc
-__pycache__/
+# Local audit / diagnostic output
+/tmp/
+*_report.txt
+*_REPORT.txt
+
+# Local repair tooling
 repair_*.py
 fix_*.py
 upgrade_*.py
 *_audit*.py
-*_report.txt
-*_REPORT.txt
 
-# Local temporary files
-*.tmp
-*.temp
-*.bak*
-*.orig
-client/dist/
-server/logs/
-
-# Safe environment templates may be committed
-# Safe environment templates are allowed in Git
-
-# ------------------------------------------------------------
-# Environment files
-# ------------------------------------------------------------
-# Never commit real environment files.
-
-# Safe example templates may be committed.
-
-# ------------------------------------------------------------
-# Environment files
-# ------------------------------------------------------------
-# Real environment files must never be committed.
-
-# Safe environment templates may be committed.
-
-# ============================================================
-# Environment and secrets
-# ============================================================
-# Never commit real environment files.
-.env
-.env.local
-.env.development
-.env.production
-server/.env
-client/.env
-client/.env.local
-client/.env.development
-client/.env.production
-
-# Safe environment templates may be committed.
-!server/.env.example
-!client/.env.example
-backup_before_*
-
-# tenant backups
-tenant_backup*
+# Archives / temporary exports
 *.tar.gz
-*.backup
-
-# temporary repair scripts
-*_backup*
-*.old.js
-
-server/backups/
-
-# ============================================================
-# Repository repair artifacts
-# ============================================================
-*.before_*
-*.before-*
-*.old.js
-*.backup
-*.backup.*
-*.bak
-*.bak.*
-*.broken
-*.save
-*-BACKUP*/
-*-BACKUP-*
-.audit-fix-backup-*/
-.fix-backup-*/
-.module-completion-backup-*/
-.final-audit-backup-*/
-.final-repair-backup-*/
-merge-backup-*/
-BACKUP-BEFORE-ZIP-MERGE-*/
-
-# Local audit reports / diagnostic output
-/tmp/
-.repair-backups/
-
-# Automated repair/audit artifacts
-server/rbac-repair-backup-*/
-server/superadmin-rbac-audit-*.txt
