@@ -1,24 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
 import StatCard from "./Statcard";
-import { getDashboardMetrics } from "../../../api/adminApi";
 import { firstNumeric, numeric, unwrapData } from "../../../utils/dashboardData";
 
 const number = (value) => numeric(value).toLocaleString();
 const money = (value, currency = "KES") => `${currency} ${number(value)}`;
 
 export default function StatsGrid({ stats = {}, summary = {} }) {
-  const { data: metricsPayload } = useQuery({
-    queryKey: ["admin-dashboard-metrics"],
-    queryFn: getDashboardMetrics,
-    staleTime: 30_000,
-    refetchInterval: 60_000,
-    refetchOnWindowFocus: true,
-    retry: 1,
-  });
-
-  const metrics = unwrapData(metricsPayload);
   const fallback = unwrapData(stats);
-  const source = Object.keys(metrics).length ? metrics : fallback;
+  const source = fallback;
   const paymentStats = fallback.paymentStats || {};
 
   const cards = [
@@ -38,7 +26,7 @@ export default function StatsGrid({ stats = {}, summary = {} }) {
     ["Pending Bookings", firstNumeric(source.pendingBookings, summary.pendingBookings, fallback.pendingBookings)],
     ["Confirmed Bookings", firstNumeric(source.confirmedBookings, summary.confirmedBookings, fallback.confirmedBookings)],
     ["Payments", firstNumeric(source.payments, fallback.payments)],
-    ["Completed Payments", firstNumeric(source.completedPayments, paymentStats.completed, fallback.completedPayments)],
+    ["Completed Payments", firstNumeric(paymentStats.completed, source.completedPayments, fallback.completedPayments)],
     ["Revenue", money(firstNumeric(source.revenue, fallback.revenue), source.revenueCurrency || fallback.revenueCurrency || "KES")],
   ];
 
