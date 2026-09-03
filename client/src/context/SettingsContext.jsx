@@ -4,134 +4,26 @@ import { useAuth } from "./AuthContext";
 
 export const PUBLIC_BRAND_NAME = "Coherent Tours";
 export const PLATFORM_BRAND_NAME = "Global Tours Platform";
-
-const DEFAULT_SETTINGS = {
-  companyName: "", websiteUrl: "", companyLogo: "", logo: "", supportEmail: "", supportPhone: "", address: "", city: "Nairobi", country: "Kenya", currency: "KES", currencySymbol: "KSh", timezone: "Africa/Nairobi", language: "en", taxRate: 0, bookingDepositPercentage: 30, defaultCommissionRate: 10, maintenanceMode: false, allowRegistrations: true, allowAgentRegistrations: true, requireEmailVerification: true, requirePhoneVerification: false, enableMpesa: true, enableStripe: false, enablePaypal: false, enableBankTransfer: true, bookingNotifications: true, paymentNotifications: true, facebook: "", instagram: "", twitter: "", youtube: "", seoTitle: "", seoDescription: "", seoKeywords: [], primaryColor: "#047857", secondaryColor: "#064e3b", accentColor: "#10b981", backgroundColor: "#f8fafc", surfaceColor: "#ffffff", textColor: "#0f172a", fontFamily: "Inter", borderRadius: "xl", buttonStyle: "rounded", heroOverlayOpacity: 50,
-  homepageSections: { stats: true, tours: true, destinations: true, experiences: true, services: true, testimonials: true, gallery: true, whyChooseUs: true, newsletter: true },
-};
-
+const DEFAULT_SETTINGS = { companyName: "", websiteUrl: "", companyLogo: "", logo: "", supportEmail: "", supportPhone: "", address: "", city: "Nairobi", country: "Kenya", currency: "KES", currencySymbol: "KSh", timezone: "Africa/Nairobi", language: "en", taxRate: 0, bookingDepositPercentage: 30, defaultCommissionRate: 10, maintenanceMode: false, allowRegistrations: true, allowAgentRegistrations: true, requireEmailVerification: true, requirePhoneVerification: false, enableMpesa: true, enableStripe: false, enablePaypal: false, enableBankTransfer: true, bookingNotifications: true, paymentNotifications: true, facebook: "", instagram: "", twitter: "", youtube: "", seoTitle: "", seoDescription: "", seoKeywords: [], primaryColor: "#047857", secondaryColor: "#064e3b", accentColor: "#10b981", backgroundColor: "#f8fafc", surfaceColor: "#ffffff", textColor: "#0f172a", fontFamily: "Inter", borderRadius: "xl", buttonStyle: "rounded", heroOverlayOpacity: 50, homepageSections: { stats: true, tours: true, destinations: true, experiences: true, services: true, testimonials: true, gallery: true, whyChooseUs: true, newsletter: true } };
 const PLATFORM_SETTINGS = { ...DEFAULT_SETTINGS, companyName: PLATFORM_BRAND_NAME, seoTitle: PLATFORM_BRAND_NAME };
 const SettingsContext = createContext(null);
-const getSettingsStorageKey = () => {
-  if (typeof window === "undefined") return "tenant-settings:server";
-  const tenantId = String(window.localStorage.getItem("tenantId") || "").trim();
-  return tenantId ? `tenant-settings:${tenantId}` : "tenant-settings:public";
-};
-
-const normalize = (next = {}, previous = DEFAULT_SETTINGS) => ({
-  ...DEFAULT_SETTINGS,
-  ...previous,
-  ...next,
-  companyName: String(next.companyName ?? previous.companyName ?? DEFAULT_SETTINGS.companyName).trim(),
-  homepageSections: { ...DEFAULT_SETTINGS.homepageSections, ...(previous.homepageSections || {}), ...(next.homepageSections || {}) },
-});
-
-function normalizeRole(user) {
-  if (!user) return "";
-  if (typeof user.role === "string") return user.role.toLowerCase().replace(/[\s-]/g, "_");
-  if (user.role?.name) return String(user.role.name).toLowerCase().replace(/[\s-]/g, "_");
-  if (Array.isArray(user.roles) && user.roles[0]?.name) return String(user.roles[0].name).toLowerCase().replace(/[\s-]/g, "_");
-  return "";
-}
+const getSettingsStorageKey = () => { if (typeof window === "undefined") return "tenant-settings:server"; const tenantId = String(window.localStorage.getItem("tenantId") || "").trim(); return tenantId ? `tenant-settings:${tenantId}` : "tenant-settings:public"; };
+const normalize = (next = {}, previous = DEFAULT_SETTINGS) => ({ ...DEFAULT_SETTINGS, ...previous, ...next, companyName: String(next.companyName ?? previous.companyName ?? "").trim(), homepageSections: { ...DEFAULT_SETTINGS.homepageSections, ...(previous.homepageSections || {}), ...(next.homepageSections || {}) } });
+function normalizeRole(user) { if (!user) return ""; if (typeof user.role === "string") return user.role.toLowerCase().replace(/[\s-]/g, "_"); if (user.role?.name) return String(user.role.name).toLowerCase().replace(/[\s-]/g, "_"); if (Array.isArray(user.roles) && user.roles[0]?.name) return String(user.roles[0].name).toLowerCase().replace(/[\s-]/g, "_"); return ""; }
 const isSuperAdminUser = (user) => ["super_admin", "superadmin"].includes(normalizeRole(user));
-const isPlatformDeployment = () => {
-  const configured = String(import.meta.env.VITE_PLATFORM_MODE || "").trim().toLowerCase();
-  if (configured === "true") return true;
-  if (configured === "false") return false;
-  if (typeof window === "undefined") return false;
-  return String(window.location.hostname || "").trim().toLowerCase() === "hussein-mboya-tours.vercel.app";
-};
-
-function applyTenantTheme(settings) {
-  const root = document.documentElement;
-  const css = { "--tenant-primary": settings.primaryColor, "--tenant-secondary": settings.secondaryColor, "--tenant-accent": settings.accentColor, "--tenant-background": settings.backgroundColor, "--tenant-surface": settings.surfaceColor, "--tenant-text": settings.textColor, "--tenant-hero-overlay": `${Number(settings.heroOverlayOpacity ?? 50) / 100}` };
-  Object.entries(css).forEach(([key, value]) => root.style.setProperty(key, value));
-  if (settings.fontFamily) root.style.setProperty("--tenant-font-family", settings.fontFamily);
-}
-function applyDocumentMetadata(settings) {
-  if (typeof document === "undefined") return;
-  if (settings.seoTitle || settings.companyName) document.title = settings.seoTitle || settings.companyName;
-  const description = document.querySelector('meta[name="description"]');
-  if (description && settings.seoDescription) description.setAttribute("content", settings.seoDescription);
-}
-
+const isPlatformDeployment = () => { const configured = String(import.meta.env.VITE_PLATFORM_MODE || "").trim().toLowerCase(); if (configured === "true") return true; if (configured === "false") return false; if (typeof window === "undefined") return false; return String(window.location.hostname || "").trim().toLowerCase() === "hussein-mboya-tours.vercel.app"; };
+function applyTenantTheme(settings) { const root = document.documentElement; const css = { "--tenant-primary": settings.primaryColor, "--tenant-secondary": settings.secondaryColor, "--tenant-accent": settings.accentColor, "--tenant-background": settings.backgroundColor, "--tenant-surface": settings.surfaceColor, "--tenant-text": settings.textColor, "--tenant-hero-overlay": `${Number(settings.heroOverlayOpacity ?? 50) / 100}` }; Object.entries(css).forEach(([key, value]) => root.style.setProperty(key, value)); if (settings.fontFamily) root.style.setProperty("--tenant-font-family", settings.fontFamily); }
+function applyDocumentMetadata(settings) { if (typeof document === "undefined") return; if (settings.seoTitle || settings.companyName) document.title = settings.seoTitle || settings.companyName; const description = document.querySelector('meta[name="description"]'); if (description && settings.seoDescription) description.setAttribute("content", settings.seoDescription); }
 export function SettingsProvider({ children }) {
-  const { user } = useAuth();
-  const platformDeployment = isPlatformDeployment();
-  const isPlatformScope = platformDeployment || isSuperAdminUser(user);
-  const [settings, setSettings] = useState(() => {
-    if (isPlatformScope) {
-      try {
-        const cached = typeof window !== "undefined" ? localStorage.getItem("platform-settings:global") : null;
-        return cached ? normalize(JSON.parse(cached), PLATFORM_SETTINGS) : PLATFORM_SETTINGS;
-      } catch { return PLATFORM_SETTINGS; }
-    }
-    try {
-      const cached = typeof window !== "undefined" ? localStorage.getItem(getSettingsStorageKey()) : null;
-      return cached ? normalize(JSON.parse(cached)) : DEFAULT_SETTINGS;
-    } catch { return DEFAULT_SETTINGS; }
-  });
+  const { user } = useAuth(); const platformDeployment = isPlatformDeployment(); const isPlatformScope = platformDeployment || isSuperAdminUser(user);
+  const [settings, setSettings] = useState(() => { try { const key = isPlatformScope ? "platform-settings:global" : getSettingsStorageKey(); const cached = typeof window !== "undefined" ? localStorage.getItem(key) : null; return cached ? normalize(JSON.parse(cached), isPlatformScope ? PLATFORM_SETTINGS : DEFAULT_SETTINGS) : (isPlatformScope ? PLATFORM_SETTINGS : DEFAULT_SETTINGS); } catch { return isPlatformScope ? PLATFORM_SETTINGS : DEFAULT_SETTINGS; } });
   const [loading, setLoading] = useState(false);
-
   const applySettings = useCallback((nextSettings) => setSettings((previous) => normalize(nextSettings, previous)), []);
-
-  const refreshSettings = useCallback(async () => {
-    try {
-      const endpoint = isPlatformScope ? "/admin/settings" : "/settings/public";
-      const response = await api.get(endpoint);
-      const data = response.data?.settings || response.data?.data || response.data || {};
-      const normalized = normalize(data, isPlatformScope ? PLATFORM_SETTINGS : settings);
-      setSettings(normalized);
-      try {
-        localStorage.setItem(isPlatformScope ? "platform-settings:global" : getSettingsStorageKey(), JSON.stringify(normalized));
-      } catch {}
-      return normalized;
-    } catch (error) {
-      console.error(`${isPlatformScope ? "Platform" : "Public tenant"} settings load failed:`, error);
-      return null;
-    }
-  }, [isPlatformScope, settings]);
-
+  const refreshSettings = useCallback(async () => { try { const endpoint = isPlatformScope ? "/admin/settings" : "/settings/public"; const response = await api.get(endpoint); const data = response.data?.settings || response.data?.data || response.data || {}; const normalized = normalize(data, isPlatformScope ? PLATFORM_SETTINGS : DEFAULT_SETTINGS); setSettings(normalized); try { localStorage.setItem(isPlatformScope ? "platform-settings:global" : getSettingsStorageKey(), JSON.stringify(normalized)); } catch {} return normalized; } catch (error) { console.error(`${isPlatformScope ? "Platform" : "Public tenant"} settings load failed:`, error); return null; } }, [isPlatformScope]);
   useEffect(() => { applyTenantTheme(settings); applyDocumentMetadata(settings); }, [settings]);
-
-  useEffect(() => {
-    let mounted = true;
-    const load = async () => {
-      setLoading(true);
-      try { await refreshSettings(); } finally { if (mounted) setLoading(false); }
-    };
-    void load();
-    const handleStorage = (event) => {
-      if (event.key !== getSettingsStorageKey() || !event.newValue) return;
-      try { applySettings(JSON.parse(event.newValue)); } catch {}
-    };
-    const handlePlatformSettings = (event) => { if (event.detail) applySettings(event.detail); };
-    const handleSettingsChanged = () => { void refreshSettings(); };
-    window.addEventListener("storage", handleStorage);
-    window.addEventListener("platform-settings-updated", handlePlatformSettings);
-    window.addEventListener("settings-updated", handleSettingsChanged);
-    window.addEventListener("dashboard:data-changed", handleSettingsChanged);
-    return () => {
-      mounted = false;
-      window.removeEventListener("storage", handleStorage);
-      window.removeEventListener("platform-settings-updated", handlePlatformSettings);
-      window.removeEventListener("settings-updated", handleSettingsChanged);
-      window.removeEventListener("dashboard:data-changed", handleSettingsChanged);
-    };
-  }, [refreshSettings, applySettings]);
-
-  const updateSettings = useCallback((nextSettings) => {
-    setSettings((previous) => normalize(nextSettings, previous));
-    try {
-      const key = isPlatformScope ? "platform-settings:global" : getSettingsStorageKey();
-      const merged = normalize(nextSettings, isPlatformScope ? PLATFORM_SETTINGS : JSON.parse(localStorage.getItem(key) || "{}"));
-      localStorage.setItem(key, JSON.stringify(merged));
-      window.dispatchEvent(new CustomEvent(isPlatformScope ? "platform-settings-updated" : "settings-updated", { detail: merged }));
-    } catch (error) { console.warn("Settings could not be persisted locally:", error); }
-  }, [isPlatformScope]);
-
+  useEffect(() => { let mounted = true; const load = async () => { setLoading(true); try { await refreshSettings(); } finally { if (mounted) setLoading(false); } }; void load(); const handleStorage = (event) => { if (!event.newValue) return; try { applySettings(JSON.parse(event.newValue)); } catch {} }; const handlePlatformSettings = (event) => { if (event.detail) applySettings(event.detail); }; const handleSettingsChanged = () => { void refreshSettings(); }; window.addEventListener("storage", handleStorage); window.addEventListener("platform-settings-updated", handlePlatformSettings); window.addEventListener("settings-updated", handleSettingsChanged); window.addEventListener("dashboard:data-changed", handleSettingsChanged); return () => { mounted = false; window.removeEventListener("storage", handleStorage); window.removeEventListener("platform-settings-updated", handlePlatformSettings); window.removeEventListener("settings-updated", handleSettingsChanged); window.removeEventListener("dashboard:data-changed", handleSettingsChanged); }; }, [refreshSettings, applySettings]);
+  const updateSettings = useCallback((nextSettings) => { setSettings((previous) => normalize(nextSettings, previous)); try { const key = isPlatformScope ? "platform-settings:global" : getSettingsStorageKey(); const merged = normalize(nextSettings, isPlatformScope ? PLATFORM_SETTINGS : JSON.parse(localStorage.getItem(key) || "{}")); localStorage.setItem(key, JSON.stringify(merged)); window.dispatchEvent(new CustomEvent(isPlatformScope ? "platform-settings-updated" : "settings-updated", { detail: merged })); } catch (error) { console.warn("Settings could not be persisted locally:", error); } }, [isPlatformScope]);
   const companyName = String(settings.companyName || (isPlatformScope ? PLATFORM_BRAND_NAME : PUBLIC_BRAND_NAME)).trim();
   return <SettingsContext.Provider value={{ settings: { ...settings, companyName }, companyName, supportEmail: settings.supportEmail || "", supportPhone: settings.supportPhone || "", loading, refreshSettings, updateSettings, isPlatformScope }}>{children}</SettingsContext.Provider>;
 }
-
 export function useSettings() { return useContext(SettingsContext); }
