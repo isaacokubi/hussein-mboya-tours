@@ -5,16 +5,19 @@ import Vehicle from "../models/Vehicle.js";
 import Booking from "../models/Booking.js";
 import Customer from "../models/Customer.js";
 
-export const getTenantGuides = async (req, res, next) => {
+const getStaffByPosition = async (req, res, next, positions) => {
   requireTenantId();
   try {
-    const guides = await Staff.find(mergeTenantFilter(req, { position: { $in: ["guide", "tour_guide", "tourguide"] }, isActive: true, isDeleted: { $ne: true } }))
+    const staff = await Staff.find(mergeTenantFilter(req, { position: { $in: positions }, isActive: true, isDeleted: { $ne: true } }))
       .select("name email phone position availability assignedTours")
       .populate("assignedTours", "title startDate endDate status")
       .sort({ name: 1 }).lean();
-    return res.status(200).json({ success: true, count: guides.length, data: guides, guides });
+    return res.status(200).json({ success: true, count: staff.length, data: staff, staff });
   } catch (error) { next(error); }
 };
+
+export const getTenantGuides = async (req, res, next) => getStaffByPosition(req, res, next, ["guide", "tour_guide", "tourguide"]);
+export const getTenantDrivers = async (req, res, next) => getStaffByPosition(req, res, next, ["driver"]);
 
 export const getTenantVehicles = async (req, res, next) => {
   requireTenantId();
