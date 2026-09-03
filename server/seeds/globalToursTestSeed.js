@@ -6,15 +6,15 @@ import { runWithTenant } from "../tenancy/context.js";
 
 dotenv.config();
 
+// Direct image URLs known to be usable by browsers. Keep these as remote media
+// references for test data; production uploads should use the platform media flow.
 const IMAGE_POOL = [
   "https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1534177616072-ef7dc120449d?auto=format&fit=crop&w=1200&q=80",
   "https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1200&q=80",
   "https://images.unsplash.com/photo-1547036967-23d11aacaee0?auto=format&fit=crop&w=1200&q=80",
   "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80",
   "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1470214304380-aadaedcfff1b?auto=format&fit=crop&w=1200&q=80",
+  "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80",
 ];
 
 const destinationData = [
@@ -48,13 +48,15 @@ const tourData = [
   ["Samburu Luxury Wilderness Experience", "Samburu National Reserve", "Luxury", 5, 1550],
 ];
 
+const slugifyTitle = (value) => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
 const seed = async () => {
   if (!process.env.MONGODB_URI) throw new Error("MONGODB_URI is missing in .env");
   await mongoose.connect(process.env.MONGODB_URI);
 
   await runWithTenant({ role: "super_admin", bypass: true }, async () => {
     const destinationSlugs = destinationData.map(([, slug]) => slug);
-    const tourSlugs = tourData.map(([title]) => title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""));
+    const tourSlugs = tourData.map(([title]) => slugifyTitle(title));
 
     // Only remove this seed's records, never real Global Tours data.
     await Tour.deleteMany({ slug: { $in: tourSlugs } });
@@ -95,7 +97,7 @@ const seed = async () => {
       const image = IMAGE_POOL[(index + 2) % IMAGE_POOL.length];
       return {
         title,
-        slug: title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+        slug: slugifyTitle(title),
         description: `Join Global Tours for an unforgettable ${days}-day ${category.toLowerCase()} experience in ${destinationName}, Kenya. Enjoy professionally planned travel, memorable activities and comfortable stays.`,
         shortDescription: `${days}-day ${category.toLowerCase()} experience in ${destinationName}.`,
         tags: ["Global Tours", category, destinationName, "Kenya"],
