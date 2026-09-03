@@ -4,17 +4,23 @@ import Organization from "../models/Organization.js";
 import Staff from "../models/Staff.js";
 import { runWithTenant } from "../tenancy/context.js";
 
+dotenv.config({ path: "./server/.env" });
 dotenv.config();
 
 const tenantId = String(process.env.TENANT_ID || "").trim();
 const tenantSlug = String(process.env.TENANT_SLUG || "").trim().toLowerCase();
+const mongoUri = String(process.env.MONGODB_URI || "").trim();
 
 const migrate = async () => {
   if (!tenantId && !tenantSlug) {
     throw new Error("Set TENANT_ID or TENANT_SLUG before running this migration.");
   }
 
-  await mongoose.connect(process.env.MONGODB_URI);
+  if (!mongoUri) {
+    throw new Error("MONGODB_URI is not configured. Put it in server/.env or export MONGODB_URI before running the migration.");
+  }
+
+  await mongoose.connect(mongoUri);
 
   const organization = tenantId
     ? await Organization.findById(tenantId).lean()
