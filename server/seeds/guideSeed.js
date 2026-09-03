@@ -9,6 +9,7 @@ import Staff from "../models/Staff.js";
 import Organization from "../models/Organization.js";
 import { runWithTenant } from "../tenancy/context.js";
 
+dotenv.config({ path: "./server/.env" });
 dotenv.config();
 
 const guides = [
@@ -21,14 +22,17 @@ const seedGuides = async () => {
   try {
     const tenantId = String(process.env.TENANT_ID || "").trim();
     const tenantSlug = String(process.env.TENANT_SLUG || "").trim().toLowerCase();
-    if (!tenantId && !tenantSlug) throw new Error("Set TENANT_ID or TENANT_SLUG before running the guide seed.");
-    if (!process.env.MONGODB_URI) throw new Error("MONGODB_URI is missing in .env");
+    const tenantName = String(process.env.TENANT_NAME || "").trim();
+    if (!tenantId && !tenantSlug && !tenantName) throw new Error("Set TENANT_ID, TENANT_SLUG, or TENANT_NAME before running the guide seed.");
+    const mongoUri = String(process.env.MONGODB_URI || "").trim();
+    if (!mongoUri) throw new Error("MONGODB_URI is missing in server/.env");
 
-    await mongoose.connect(process.env.MONGODB_URI);
+    await mongoose.connect(mongoUri);
 
-    const organization = tenantId
-      ? await Organization.findById(tenantId).lean()
-      : await Organization.findOne({ slug: tenantSlug }).lean();
+    let organization;
+    if (tenantId) organization = await Organization.findById(tenantId).lean();
+    else if (tenantSlug) organization = await Organization.findOne({ slug: tenantSlug }).lean();
+    else organization = await Organization.findOne({ name: tenantName }).lean();
     if (!organization) throw new Error("Tenant organization was not found.");
 
     const permissionNames = ["view_assigned_tours", "view_tour_guests", "update_tour_status", "submit_tour_report"];
@@ -53,15 +57,15 @@ const seedGuides = async () => {
         const user = await User.findOneAndUpdate(
           { email: item.email },
           {
-            $set: { name: item.name, phone: item.phone, role: "tour_guide", roleId: guideRole._id, legacyRole: "tour_guide", status: "active", isVerified: true },
-            $setOnInsert: { email: item.email, password, tenantId: organization._id },
+            $set: { name: item.name, phone: item.phone, role: "tour_guide", roleId: guideRole._id, legacyRole: "tour_guide", status: "active", isVerified: true, tenantId: organization._id },
+            $setOnInsert: { email: item.email, password },
           },
           { upsert: true, new: true, setDefaultsOnInsert: true },
         );
 
         await Staff.findOneAndUpdate(
           { $or: [{ user: user._id }, { email: user.email }] },
-          { $set: { user: user._id, name: user.name, email: user.email, phone: user.phone || "", position: "guide", role: "guide", status: "active", isActive: true, isDeleted: false, availability: "available" }, $setOnInsert: { tenantId: organization._id } },
+          { $set: { user: user._id, name: user.name, email: user.email, phone: user.phone || "", position: "guide", role: "guide", status: "active", isActive: true, isDeleted: false, availability: "available", tenantId: organization._id } },
           { upsert: true, new: true, setDefaultsOnInsert: true },
         );
       }
