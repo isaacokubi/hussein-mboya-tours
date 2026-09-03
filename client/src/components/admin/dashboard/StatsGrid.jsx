@@ -9,6 +9,17 @@ export default function StatsGrid({ stats = {}, summary = {} }) {
   const source = fallback;
   const paymentStats = fallback.paymentStats || {};
 
+  // `paymentStats` is the authoritative tenant-scoped payment breakdown.
+  // The aggregate Payments card must represent every payment status, while
+  // Completed Payments represents only completed transactions.
+  const totalPayments = Object.values(paymentStats).reduce((total, value) => {
+    if (value && typeof value === "object" && Number.isFinite(Number(value.count))) {
+      return total + Number(value.count);
+    }
+    return total;
+  }, 0);
+  const paymentCount = totalPayments || firstNumeric(source.payments, fallback.payments);
+
   const cards = [
     ["Users", firstNumeric(source.users, fallback.users)],
     ["Customers", firstNumeric(source.customers, fallback.customers)],
@@ -25,7 +36,7 @@ export default function StatsGrid({ stats = {}, summary = {} }) {
     ["Bookings", firstNumeric(source.bookings, fallback.bookings)],
     ["Pending Bookings", firstNumeric(source.pendingBookings, summary.pendingBookings, fallback.pendingBookings)],
     ["Confirmed Bookings", firstNumeric(source.confirmedBookings, summary.confirmedBookings, fallback.confirmedBookings)],
-    ["Payments", firstNumeric(source.payments, fallback.payments)],
+    ["Payments", paymentCount],
     ["Completed Payments", firstNumeric(paymentStats.completed, source.completedPayments, fallback.completedPayments)],
     ["Revenue", money(firstNumeric(source.revenue, fallback.revenue), source.revenueCurrency || fallback.revenueCurrency || "KES")],
   ];
