@@ -72,11 +72,21 @@ export const getDashboard = async (req, res) => {
     const normalizedRecentBookings = recentBookings.map((booking) => ({ ...booking, amount: booking.totalAmount || 0, paymentStatus: booking.paymentStatus || "pending" }));
     const formattedMonthlyRevenue = monthlyRevenue.map((item) => ({ month: `${item._id.month}/${item._id.year}`, amount: item.amount || 0 }));
     const revenue = revenueResult[0]?.total || 0;
-    const approvedAgents = await Agent.countDocuments(scoped({ status: "approved" }));
+
+    // An approved agent is represented by either the explicit approval flag
+    // or the normalized approved status. Keep this tenant-scoped so approval
+    // totals cannot leak across organizations.
+    const approvedAgents = await Agent.countDocuments(scoped({
+      $or: [
+        { isApproved: true },
+        { status: "approved" },
+      ],
+    }));
+
     const availableVehicles = await Vehicle.countDocuments(scoped({ isDeleted: NON_DELETED, isActive: true, status: "available" }));
 
     return res.status(200).json({ success: true, data: {
-      users, customers, admins: Math.max(adminsCount, adminStaffCount), staff: staffCount, guides: Math.max(guidesCount, guideUsersCount), drivers: driversCount, agents: Math.max(agentsCount, agentUsersCount), approvedAgents, vehicles: vehiclesCount, availableVehicles, tours, destinations, bookings,
+      users, customers, admins: Math.max(adminsCount, adminStaffCount), staff: staffCount, guides: Math.max(guidesCount, guideUsersCount), drivers: driversCount, agents: Math.max(agentsCount, agentUsersCount, agentsCount), approvedAgents, vehicles: vehiclesCount, availableVehicles, tours, destinations, bookings,
       pendingBookings: bookingStatus.find((x) => x._id === "pending")?.count || 0,
       confirmedBookings: bookingStatus.find((x) => x._id === "confirmed")?.count || 0,
       payments: paymentStats.reduce((sum, x) => sum + (x.count || 0), 0), completedPayments: paidPayments.count, revenue, monthlyRevenue: formattedMonthlyRevenue,
