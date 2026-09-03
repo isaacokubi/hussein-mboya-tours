@@ -1,22 +1,7 @@
 import express from "express";
 import { resolveTenant } from "../middleware/tenantMiddleware.js";
-import {
-  getTourManagerDashboard,
-  createTour,
-  getTours,
-  updateTour,
-  deleteTour,
-  assignTourGuide,
-  completeBooking,
-  cancelBooking,
-} from "../controllers/tourManagerController.js";
-import {
-  createItinerary,
-  getItineraries,
-  getItinerary,
-  updateItinerary,
-  deleteItinerary,
-} from "../controllers/itineraryController.js";
+import { getTourManagerDashboard, createTour, getTours, updateTour, deleteTour, assignTourGuide, completeBooking, cancelBooking } from "../controllers/tourManagerController.js";
+import { createItinerary, getItineraries, getItinerary, updateItinerary, deleteItinerary } from "../controllers/itineraryController.js";
 import { getTourAvailability, updateTourAvailability } from "../controllers/tourAvailabilityController.js";
 import { getBookings } from "../controllers/bookingController.js";
 import { getCustomers } from "../controllers/customerController.js";
@@ -24,6 +9,7 @@ import { getGuides } from "../controllers/staffController.js";
 import { getTourReports } from "../controllers/tourReportController.js";
 import { protect, managerOnly } from "../middleware/authMiddleware.js";
 import validateFutureTourDate from "../middleware/validateFutureTourDate.js";
+import validateTourAssignmentTenant from "../middleware/validateTourAssignmentTenant.js";
 
 const router = express.Router();
 
@@ -36,7 +22,7 @@ router.get("/tours", getTours);
 router.post("/tours", validateFutureTourDate, createTour);
 router.put("/tours/:id", updateTour);
 router.delete("/tours/:id", deleteTour);
-router.post("/assign-guide", assignTourGuide);
+router.post("/assign-guide", (req, res, next) => { req.params.id = req.body?.tourId; next(); }, validateTourAssignmentTenant, assignTourGuide);
 
 router.post("/itineraries", createItinerary);
 router.get("/itineraries", getItineraries);
