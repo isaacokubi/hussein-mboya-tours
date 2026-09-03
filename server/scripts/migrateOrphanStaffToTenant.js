@@ -9,11 +9,12 @@ dotenv.config();
 
 const tenantId = String(process.env.TENANT_ID || "").trim();
 const tenantSlug = String(process.env.TENANT_SLUG || "").trim().toLowerCase();
+const tenantName = String(process.env.TENANT_NAME || "").trim();
 const mongoUri = String(process.env.MONGODB_URI || "").trim();
 
 const migrate = async () => {
-  if (!tenantId && !tenantSlug) {
-    throw new Error("Set TENANT_ID or TENANT_SLUG before running this migration.");
+  if (!tenantId && !tenantSlug && !tenantName) {
+    throw new Error("Set TENANT_ID, TENANT_SLUG, or TENANT_NAME before running this migration.");
   }
 
   if (!mongoUri) {
@@ -22,9 +23,19 @@ const migrate = async () => {
 
   await mongoose.connect(mongoUri);
 
-  const organization = tenantId
-    ? await Organization.findById(tenantId).lean()
-    : await Organization.findOne({ slug: tenantSlug }).lean();
+  let organization;
+
+  if (tenantId) {
+    organization = await Organization.findById(tenantId).lean();
+  } else if (tenantSlug) {
+    organization = await Organization.findOne({ slug: tenantSlug }).lean();
+  } else {
+    const organizations = await Organization.find({ name: tenantName }).lean();
+    if (organizations.length > 1) {
+      throw new Error(`Multiple tenant organizations found with name "${tenantName}". Use TENANT_ID or TENANT_SLUG instead.`);
+    }
+    organization = organizations[0];
+  }
 
   if (!organization) {
     throw new Error("Tenant organization was not found.");
