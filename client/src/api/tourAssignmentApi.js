@@ -11,8 +11,8 @@ export const getGuides = async () => {
 };
 
 export const getDrivers = async () => {
-  const { data } = await api.get("/tourmanager/guides", { params: { role: "driver" } });
-  return Array.isArray(data?.data) ? data.data.filter((staff) => String(staff.position || "").toLowerCase() === "driver") : [];
+  const { data } = await api.get("/tourmanager/drivers");
+  return Array.isArray(data?.data) ? data.data : Array.isArray(data?.staff) ? data.staff : [];
 };
 
 export const getVehicles = async () => {
@@ -22,5 +22,15 @@ export const getVehicles = async () => {
 
 export const assignTour = async (tourId, assignmentData) => {
   const { data } = await api.put(`/tourmanager/tours/${tourId}/assign`, assignmentData);
+  return data;
+};
+
+export const completeTour = async (tourId) => {
+  const { data } = await api.patch(`/tourmanager/tours/${tourId}/complete`);
+  return data;
+};
+
+export const cancelTour = async (tourId, reason) => {
+  const { data } = await api.patch(`/tourmanager/tours/${tourId}/cancel`, { reason });
   return data;
 };
