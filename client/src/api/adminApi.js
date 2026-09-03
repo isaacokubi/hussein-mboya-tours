@@ -1,41 +1,15 @@
 import api from "./axios";
 
-export const getDashboard = async () => {
-  const response = await api.get("/admin/dashboard");
+const getData = async (request) => {
+  const response = await request;
   return response.data;
 };
 
-export const getDashboardMetrics = async () => {
-  const response = await api.get("/admin/dashboard/metrics");
-  return response.data;
-};
-
-export const getUsersAnalytics = async () => {
-  const response = await api.get("/admin/users/analytics");
-  return response.data;
-};
-
-export const getBookingAnalytics = async () => {
-  const response = await api.get("/admin/bookings/analytics");
-  return response.data;
-};
-
-export const getRevenueAnalytics = async () => {
-  const response = await api.get("/admin/revenue/analytics");
-  return response.data;
-};
-
-export const getSystemHealth = async () => {
-  const response = await api.get("/admin/system-health");
-  return response.data;
-};
-
-export const getAdminBookings = async (params = {}) => {
-  const { data } = await api.get('/admin/bookings', { params });
-  return data;
-};
-
-export const getAdminTours = async (params = {}) => {
-  const { data } = await api.get('/admin/tours', { params });
-  return data;
-};
+export const getDashboard = async () => getData(api.get("/admin/dashboard"));
+export const getDashboardMetrics = async () => getData(api.get("/admin/dashboard/metrics"));
+export const getUsersAnalytics = async () => getData(api.get("/admin/users/analytics"));
+export const getBookingAnalytics = async () => getData(api.get("/admin/bookings/analytics"));
+export const getRevenueAnalytics = async () => getData(api.get("/admin/revenue/analytics"));
+export const getSystemHealth = async () => getData(api.get("/admin/system-health"));
+export const getAdminBookings = async (params = {}) => getData(api.get("/admin/bookings", { params }));
+export const getAdminTours = async (params = {}) => getData(api.get("/admin/tours", { params }));
