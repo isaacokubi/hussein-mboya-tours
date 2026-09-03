@@ -86,8 +86,9 @@ const seedGuides = async () => {
               legacyRole: "tour_guide",
               status: "active",
               isVerified: true,
-              tenantId: organization._id,
             },
+            // tenantPlugin automatically adds tenantId to $setOnInsert and
+            // enforces the current tenant for both new and existing records.
             $setOnInsert: { email: item.email, password },
           },
           { upsert: true, new: true, setDefaultsOnInsert: true },
