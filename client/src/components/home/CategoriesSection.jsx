@@ -6,7 +6,7 @@ import {
   FaMountain,
   FaPeopleGroup,
   FaMap,
-  FaWavesLadder,
+  FaWater,
   FaLandmark,
 } from "react-icons/fa6";
 import { getCategories } from "../../api/categoryApi";
@@ -48,13 +48,12 @@ const iconMap = {
   Mountain: FaMountain,
   People: FaPeopleGroup,
   Map: FaMap,
-  Waves: FaWavesLadder,
+  Waves: FaWater,
   Landmark: FaLandmark,
 };
 
 export default function CategoriesSection() {
   const [categories, setCategories] = useState(DEFAULT_EXPERIENCES);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
@@ -73,8 +72,6 @@ export default function CategoriesSection() {
         }
       } catch (error) {
         console.warn("Travel experiences unavailable; using homepage defaults.", error);
-      } finally {
-        if (mounted) setLoading(false);
       }
     };
 
@@ -91,39 +88,31 @@ export default function CategoriesSection() {
           Explore Travel Experiences
         </h2>
 
-        {loading && categories.length === 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" aria-hidden="true">
-            {DEFAULT_EXPERIENCES.map((item) => (
-              <div key={item._id} className="h-64 rounded-xl bg-white shadow-lg animate-pulse" />
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {categories.map((category) => {
-              const Icon = iconMap[category.icon] || FaMap;
-              const slug = category.slug || category.filter || category._id;
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {categories.map((category) => {
+            const Icon = iconMap[category.icon] || FaMap;
+            const slug = category.slug || category.filter || category._id;
 
-              return (
-                <div
-                  key={category._id || category.slug || category.name}
-                  className="bg-white rounded-xl shadow-lg p-8 text-center hover:-translate-y-2 transition duration-300"
-                >
-                  <div className="text-green-600 text-4xl flex justify-center mb-5">
-                    <Icon aria-hidden="true" />
-                  </div>
-                  <h3 className="font-bold text-xl">{category.name}</h3>
-                  <p className="mt-3 text-gray-600">{category.description}</p>
-                  <Link
-                    to={`/tours/category/${slug}`}
-                    className="inline-block mt-5 text-yellow-700 font-semibold hover:text-green-700"
-                  >
-                    View Tours →
-                  </Link>
+            return (
+              <div
+                key={category._id || category.slug || category.name}
+                className="bg-white rounded-xl shadow-lg p-8 text-center hover:-translate-y-2 transition duration-300"
+              >
+                <div className="text-green-600 text-4xl flex justify-center mb-5">
+                  <Icon aria-hidden="true" />
                 </div>
-              );
-            })}
-          </div>
-        )}
+                <h3 className="font-bold text-xl">{category.name}</h3>
+                <p className="mt-3 text-gray-600">{category.description}</p>
+                <Link
+                  to={`/tours/category/${slug}`}
+                  className="inline-block mt-5 text-yellow-700 font-semibold hover:text-green-700"
+                >
+                  View Tours →
+                </Link>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </section>
   );
