@@ -5,6 +5,9 @@ import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
 import Destination from "../models/Destination.js";
 import Payment from "../models/Payment.js";
+import Staff from "../models/Staff.js";
+import Vehicle from "../models/Vehicle.js";
+import Agent from "../models/Agent.js";
 
 const active = { isDeleted: { $ne: true } };
 const completedAmount = {
@@ -19,8 +22,15 @@ export const getDashboardStats = async (req, res, next) => {
     const toursFilter = tenantFilter(req, active);
     const destinationsFilter = tenantFilter(req, { isDeleted: { $ne: true }, active: { $ne: false } });
     const paymentsFilter = tenantFilter(req, { status: "completed" });
+    const staffFilter = tenantFilter(req, { isDeleted: { $ne: true } });
+    const vehicleFilter = tenantFilter(req, { isDeleted: { $ne: true } });
+    const agentFilter = tenantFilter(req, { status: { $ne: "deleted" } });
 
-    const [users, bookings, tours, destinations, customers, revenue, bookingStatus, paymentStatus, pending, confirmed, completed, cancelled, recentBookings, popularTours] = await Promise.all([
+    const [
+      users, bookings, tours, destinations, customers, revenue, bookingStatus, paymentStatus,
+      pending, confirmed, completed, cancelled, recentBookings, popularTours,
+      admins, staff, guides, drivers, agents, approvedAgents, vehicles, availableVehicles,
+    ] = await Promise.all([
       User.countDocuments(usersFilter),
       Booking.countDocuments(bookingsFilter),
       Tour.countDocuments(toursFilter),
@@ -43,12 +53,20 @@ export const getDashboardStats = async (req, res, next) => {
         { $unwind: "$tour" },
         { $project: { _id: 1, title: "$tour.title", totalBookings: 1, bookingValue: 1 } },
       ]),
+      User.countDocuments(tenantFilter(req, { ...active, role: { $in: ["admin", "super_admin", "superadmin", "administrator"] } })),
+      Staff.countDocuments(staffFilter),
+      Staff.countDocuments(tenantFilter(req, { ...staffFilter, position: "guide" })),
+      Staff.countDocuments(tenantFilter(req, { ...staffFilter, position: "driver" })),
+      Agent.countDocuments(agentFilter),
+      Agent.countDocuments(tenantFilter(req, { ...agentFilter, isApproved: true })),
+      Vehicle.countDocuments(vehicleFilter),
+      Vehicle.countDocuments(tenantFilter(req, { ...vehicleFilter, status: "available", isActive: true })),
     ]);
 
     const payments = {
-      completed: paymentStatus.filter((x) => ["paid", "completed", "success"].includes(x._id)).reduce((n, x) => n + x.count, 0),
-      pending: paymentStatus.filter((x) => ["pending", "partial"].includes(x._id)).reduce((n, x) => n + x.count, 0),
-      failed: paymentStatus.filter((x) => ["failed", "cancelled"].includes(x._id)).reduce((n, x) => n + x.count, 0),
+      completed: paymentStatus.filter((x) => ["paid", "completed", "success"].includes(String(x._id || "").toLowerCase())).reduce((n, x) => n + x.count, 0),
+      pending: paymentStatus.filter((x) => ["pending", "partial"].includes(String(x._id || "").toLowerCase())).reduce((n, x) => n + x.count, 0),
+      failed: paymentStatus.filter((x) => ["failed", "cancelled"].includes(String(x._id || "").toLowerCase())).reduce((n, x) => n + x.count, 0),
     };
 
     const normalizedBookings = recentBookings.map((booking) => ({
@@ -68,14 +86,20 @@ export const getDashboardStats = async (req, res, next) => {
     return res.json({
       success: true,
       data: {
-        users, customers, tours, destinations, bookings,
-        revenue: revenue[0]?.total || 0,
+        users, customers, admins, staff, guides, drivers, agents, approvedAgents,
+        vehicles, availableVehicles, tours, destinations, bookings,
+        revenue: Number(revenue[0]?.total || 0),
         recentBookings: normalizedBookings,
         popularTours,
         paymentStats: payments,
         monthlyRevenue: monthlyRevenue.map((x) => ({ month: `${x._id.month}/${x._id.year}`, amount: x.amount || 0 })),
         status: bookingStatus,
-        summary: { pendingBookings: pending, confirmedBookings: confirmed, completedBookings: completed, cancelledBookings: cancelled },
+        summary: {
+          pendingBookings: pending,
+          confirmedBookings: confirmed,
+          completedBookings: completed,
+          cancelledBookings: cancelled,
+        },
       },
     });
   } catch (error) {
