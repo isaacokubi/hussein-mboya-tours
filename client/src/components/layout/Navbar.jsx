@@ -13,8 +13,8 @@ const normalizeRole = (user) => {
 };
 
 const initialsFor = (name) => {
-  const words = String(name || "Travel Company").trim().split(/\s+/).filter(Boolean);
-  if (!words.length) return "TC";
+  const words = String(name || "Global Tours").trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return "GT";
   if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
   return `${words[0][0]}${words[1][0]}`.toUpperCase();
 };
@@ -25,7 +25,7 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
-  const companyName = String(settings.companyName || "Travel Company").trim();
+  const companyName = String(settings.companyName || "Global Tours").trim();
   const logoUrl = settings.companyLogo || settings.logo || "";
   const initials = useMemo(() => initialsFor(companyName), [companyName]);
   const role = normalizeRole(user);
