@@ -118,12 +118,23 @@
   max-width: 100%;
 }
 
+/* Stat values: never truncate financial figures or other dashboard metrics. */
+.dashboard-stat-card .dashboard-value,
 .dashboard-responsive .dashboard-value {
-  font-size: clamp(1.15rem, 0.95rem + 0.75vw, 2rem);
-  line-height: 1.1;
+  font-size: clamp(1rem, 0.88rem + 0.55vw, 1.65rem);
+  line-height: 1.15;
   font-variant-numeric: tabular-nums;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.dashboard-stat-card .dashboard-stat-title {
+  font-size: clamp(0.68rem, 0.64rem + 0.16vw, 0.82rem);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 1024px) {
@@ -174,6 +185,11 @@
   .dashboard-responsive textarea {
     min-height: 2.4rem;
   }
+
+  .dashboard-stat-card .dashboard-value,
+  .dashboard-responsive .dashboard-value {
+    font-size: clamp(0.95rem, 4.2vw, 1.35rem);
+  }
 }
 
 @media (max-width: 420px) {
@@ -181,4 +197,12 @@
   .dashboard-responsive .rounded-2xl { border-radius: 0.85rem !important; }
   .dashboard-responsive .rounded-xl { border-radius: 0.7rem !important; }
   .dashboard-responsive table { min-width: 560px; }
+
+  .dashboard-stat-card {
+    padding: 0.8rem !important;
+  }
+
+  .dashboard-stat-card .dashboard-value {
+    font-size: 1.05rem;
+  }
 }
