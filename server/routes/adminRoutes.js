@@ -2,41 +2,13 @@
 import express from "express";
 import { resolveTenant } from "../middleware/tenantMiddleware.js";
 
-import {
-  getAgents,
-  getAgentById,
-  approveAgent,
-  updateAgentStatus,
-} from "../controllers/adminAgentController.js";
-
-import {
-  getDashboardStats,
-  getUserAnalytics,
-  getBookingAnalytics,
-  getRevenueAnalytics,
-} from "../controllers/adminDashboardTenantController.js";
-
-import {
-  dailyBookingReport,
-  monthlyBookingReport,
-  tourBookingReport,
-  agentBookingReport,
-} from "../controllers/bookingReportController.js";
-
+import { getAgents, getAgentById, approveAgent, updateAgentStatus } from "../controllers/adminAgentController.js";
+import { getDashboardStats, getUserAnalytics, getBookingAnalytics, getRevenueAnalytics } from "../controllers/adminDashboardTenantController.js";
+import { dailyBookingReport, monthlyBookingReport, tourBookingReport, agentBookingReport } from "../controllers/bookingReportController.js";
 import { protect, checkPermission } from "../middleware/authMiddleware.js";
 import adminMiddleware from "../middleware/adminMiddleware.js";
-
-import {
-  refundBooking,
-  processRefund,
-} from "../controllers/adminPaymentController.js";
-
-import {
-  getUsers,
-  updateUserStatus,
-  deleteUser,
-  createStaffAccount,
-} from "../controllers/adminUserController.js";
+import { refundBooking, processRefund } from "../controllers/adminPaymentController.js";
+import { getUsers, updateUserStatus, deleteUser, createStaffAccount } from "../controllers/adminUserController.js";
 
 const router = express.Router();
 
