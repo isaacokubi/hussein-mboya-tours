@@ -19,6 +19,7 @@ export default function StatsGrid({ stats = {}, summary = {} }) {
   const metrics = unwrapData(metricsPayload);
   const fallback = unwrapData(stats);
   const source = Object.keys(metrics).length ? metrics : fallback;
+  const paymentStats = fallback.paymentStats || {};
 
   const cards = [
     ["Users", firstNumeric(source.users, fallback.users)],
@@ -37,7 +38,7 @@ export default function StatsGrid({ stats = {}, summary = {} }) {
     ["Pending Bookings", firstNumeric(source.pendingBookings, summary.pendingBookings, fallback.pendingBookings)],
     ["Confirmed Bookings", firstNumeric(source.confirmedBookings, summary.confirmedBookings, fallback.confirmedBookings)],
     ["Payments", firstNumeric(source.payments, fallback.payments)],
-    ["Completed Payments", firstNumeric(source.completedPayments, fallback.completedPayments)],
+    ["Completed Payments", firstNumeric(source.completedPayments, paymentStats.completed, fallback.completedPayments)],
     ["Revenue", money(firstNumeric(source.revenue, fallback.revenue), source.revenueCurrency || fallback.revenueCurrency || "KES")],
   ];
 
