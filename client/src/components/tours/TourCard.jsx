@@ -3,9 +3,9 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { addWishlist } from "../../api/wishlistApi";
-import { getTourImage } from "../../utils/tourImage";
+import { getTourImage, TOUR_FALLBACK_IMAGES } from "../../utils/tourImage";
 
-const NO_IMAGE = "/images/image-placeholder.jpg";
+const NO_IMAGE = "/gallery/beach.jpg";
 
 export default function TourCard({ tour }) {
   const { settings = {} } = useSettings() || {};
@@ -13,7 +13,8 @@ export default function TourCard({ tour }) {
   const currencySymbolMap = { KES: "KSh", USD: "$", EUR: "€", GBP: "£" };
   const currencySymbol = currencySymbolMap[currency] || settings.currencySymbol || tour.currencySymbol || currency;
   const [adding, setAdding] = useState(false);
-  const [imageSrc, setImageSrc] = useState(() => getTourImage(tour) || NO_IMAGE);
+  const [imageSrc, setImageSrc] = useState(() => getTourImage(tour) || TOUR_FALLBACK_IMAGES[0] || NO_IMAGE);
+  const [failedImageUrls, setFailedImageUrls] = useState(() => new Set());
 
   const price = Number(tour.price || 0);
   const discountedPrice = tour.discount ? price - (price * Number(tour.discount)) / 100 : price;
@@ -36,7 +37,23 @@ export default function TourCard({ tour }) {
     }
   };
 
-  const handleImageError = () => setImageSrc(NO_IMAGE);
+  const handleImageError = () => {
+    const failed = new Set(failedImageUrls);
+    failed.add(imageSrc);
+
+    const nextImage = TOUR_FALLBACK_IMAGES.find(
+      (url) => url && !failed.has(url)
+    );
+
+    if (nextImage) {
+      failed.add(nextImage);
+      setFailedImageUrls(failed);
+      setImageSrc(nextImage);
+      return;
+    }
+
+    setImageSrc(NO_IMAGE);
+  };
 
   return (
     <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition">
