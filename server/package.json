@@ -15,7 +15,7 @@
     "create:admin": "node scripts/createAdmin.js",
     "bootstrap:first": "node scripts/bootstrapFirstSuperAdmin.js",
     "seed:global-test": "node seeds/globalToursTestSeed.js",
-    "repair:global-media": "node seeds/repairGlobalTourMedia.js",
+    "repair:global-media": "node scripts/repairGlobalToursMedia.js",
     "test": "node --test tests/*.js"
   },
   "dependencies": {
