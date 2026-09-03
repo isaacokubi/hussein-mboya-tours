@@ -4,6 +4,7 @@ import { CheckCircle2, Clock3, Users } from "lucide-react";
 import { toast } from "react-toastify";
 import { getDashboard } from "../../../api/adminApi";
 import { approveAgent, getAgents } from "../../../api/adminAgentApi";
+import { useTenant } from "../../../context/TenantContext";
 import DashboardHeader from "./DashboardHeader";
 import StatsGrid from "./StatsGrid";
 import PopularTours from "./PopularTours";
@@ -18,6 +19,8 @@ const BOOKING_STATUSES = ["confirmed", "pending", "completed", "cancelled"];
 
 export default function AdminDashboard() {
   const queryClient = useQueryClient();
+  const { tenant } = useTenant() || {};
+  const tenantKey = tenant?._id || tenant?.id || tenant?.slug || "current";
   const {
     data,
     isLoading,
@@ -26,7 +29,7 @@ export default function AdminDashboard() {
     refetch,
     isFetching,
   } = useQuery({
-    queryKey: ["admin-dashboard"],
+    queryKey: ["admin-dashboard", tenantKey],
     queryFn: getDashboard,
     staleTime: 30_000,
     refetchInterval: 60_000,
@@ -41,7 +44,7 @@ export default function AdminDashboard() {
     isLoading: agentsLoading,
     isError: agentsError,
   } = useQuery({
-    queryKey: ["agents"],
+    queryKey: ["agents", tenantKey],
     queryFn: getAgents,
     staleTime: 30_000,
     refetchInterval: 60_000,
@@ -53,8 +56,8 @@ export default function AdminDashboard() {
     mutationFn: approveAgent,
     onSuccess: () => {
       toast.success("Agent approved successfully.");
-      void queryClient.invalidateQueries({ queryKey: ["agents"] });
-      void queryClient.invalidateQueries({ queryKey: ["admin-dashboard"] });
+      void queryClient.invalidateQueries({ queryKey: ["agents", tenantKey] });
+      void queryClient.invalidateQueries({ queryKey: ["admin-dashboard", tenantKey] });
     },
     onError: (mutationError) => {
       toast.error(
@@ -66,11 +69,11 @@ export default function AdminDashboard() {
   useEffect(() => {
     const refresh = () => {
       void refetch();
-      void queryClient.invalidateQueries({ queryKey: ["agents"] });
+      void queryClient.invalidateQueries({ queryKey: ["agents", tenantKey] });
     };
     window.addEventListener("dashboard:data-changed", refresh);
     return () => window.removeEventListener("dashboard:data-changed", refresh);
-  }, [refetch, queryClient]);
+  }, [refetch, queryClient, tenantKey]);
 
   const dashboard = useMemo(() => unwrap(data), [data]);
   const summary = dashboard.summary ?? {};
