@@ -12,34 +12,10 @@ import {
 import { getCategories } from "../../api/categoryApi";
 
 const DEFAULT_EXPERIENCES = [
-  {
-    _id: "default-safari",
-    name: "Safari Adventures",
-    slug: "safari",
-    icon: "Binoculars",
-    description: "Wildlife safaris, game drives and unforgettable national park experiences.",
-  },
-  {
-    _id: "default-beach",
-    name: "Beach Holidays",
-    slug: "beach",
-    icon: "Beach",
-    description: "Relax on Kenya's coast with beautiful beaches, islands and ocean escapes.",
-  },
-  {
-    _id: "default-mountain",
-    name: "Mountain Adventures",
-    slug: "mountain",
-    icon: "Mountain",
-    description: "Hiking, climbing and highland adventures for every level of explorer.",
-  },
-  {
-    _id: "default-culture",
-    name: "Cultural Experiences",
-    slug: "culture",
-    icon: "Landmark",
-    description: "Discover Kenyan heritage, communities, traditions and authentic local culture.",
-  },
+  { _id: "default-safari", name: "Safari Adventures", slug: "safari", icon: "Binoculars", description: "Wildlife safaris, game drives and unforgettable national park experiences." },
+  { _id: "default-beach", name: "Beach Holidays", slug: "beach", icon: "Beach", description: "Relax on Kenya's coast with beautiful beaches, islands and ocean escapes." },
+  { _id: "default-mountain", name: "Mountain Adventures", slug: "mountain", icon: "Mountain", description: "Hiking, climbing and highland adventures for every level of explorer." },
+  { _id: "default-culture", name: "Cultural Experiences", slug: "culture", icon: "Landmark", description: "Discover Kenyan heritage, communities, traditions and authentic local culture." },
 ];
 
 const iconMap = {
@@ -82,9 +58,9 @@ export default function CategoriesSection() {
   }, []);
 
   return (
-    <section className="py-20 bg-gray-100" aria-labelledby="travel-experiences-heading">
+    <section className="py-20 bg-gray-100 text-slate-900" aria-labelledby="travel-experiences-heading">
       <div className="container mx-auto px-6">
-        <h2 id="travel-experiences-heading" className="text-4xl font-bold text-center mb-12">
+        <h2 id="travel-experiences-heading" className="text-4xl font-bold text-center text-slate-900 mb-12">
           Explore Travel Experiences
         </h2>
 
@@ -96,13 +72,13 @@ export default function CategoriesSection() {
             return (
               <div
                 key={category._id || category.slug || category.name}
-                className="bg-white rounded-xl shadow-lg p-8 text-center hover:-translate-y-2 transition duration-300"
+                className="bg-white border border-slate-200 rounded-xl shadow-lg p-8 text-center hover:-translate-y-2 transition duration-300"
               >
                 <div className="text-green-600 text-4xl flex justify-center mb-5">
                   <Icon aria-hidden="true" />
                 </div>
-                <h3 className="font-bold text-xl">{category.name}</h3>
-                <p className="mt-3 text-gray-600">{category.description}</p>
+                <h3 className="font-bold text-xl text-slate-900">{category.name}</h3>
+                <p className="mt-3 text-slate-600">{category.description}</p>
                 <Link
                   to={`/tours/category/${slug}`}
                   className="inline-block mt-5 text-yellow-700 font-semibold hover:text-green-700"
