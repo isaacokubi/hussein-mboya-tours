@@ -1,11 +1,10 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { getTenantBranding } from "../api/tenantBrandingApi";
-import { queryClient } from "../lib/queryClient";
 import { useAuth } from "./AuthContext";
 import { useSettings } from "./SettingsContext";
 
 export const PLATFORM_BRAND_NAME = "Global Tours Platform";
-
 const DEFAULT_TENANT = { name: "", legalName: "", currency: "KES", timezone: "Africa/Nairobi", slug: "", logoUrl: "", favicon: "", brandColors: {} };
 const PLATFORM_TENANT = { ...DEFAULT_TENANT, name: PLATFORM_BRAND_NAME, legalName: PLATFORM_BRAND_NAME, slug: "global-tours-platform" };
 const TenantContext = createContext();
@@ -43,21 +42,20 @@ const applyTenantIdentity = (tenant) => {
 export function TenantProvider({ children }) {
   const { user } = useAuth();
   const { settings = {}, isPlatformScope } = useSettings() || {};
+  const queryClient = useQueryClient();
   const [tenant, setTenant] = useState(DEFAULT_TENANT);
 
   const scopeKey = useMemo(() => {
     if (isSuperAdminUser(user) || isPlatformScope) return "platform";
-    const tenantId = user?.tenantId?._id || user?.tenantId || localStorage.getItem("tenantId") || "";
+    const tenantId = user?.tenantId?._id || user?.tenantId || (typeof window !== "undefined" ? localStorage.getItem("tenantId") : "") || "";
     return String(tenantId || tenant?.slug || getTenantSlugFromHost() || "public");
   }, [user, isPlatformScope, tenant?.slug]);
 
   useEffect(() => {
-    // React Query keys are not a security boundary, but stale cached data can
-    // make a newly logged-in tenant temporarily see the previous tenant's UI.
-    // Clear the cache whenever the tenant scope changes; the API remains the
-    // authoritative security boundary through tenant middleware/plugin checks.
+    // Cache state is not the security boundary, but it must never display the
+    // previous tenant's dashboard while a new tenant is being loaded.
     queryClient.clear();
-  }, [scopeKey]);
+  }, [queryClient, scopeKey]);
 
   useEffect(() => {
     let mounted = true;
@@ -65,9 +63,7 @@ export function TenantProvider({ children }) {
       if (isSuperAdminUser(user)) {
         if (!mounted) return;
         const platformTenant = { ...PLATFORM_TENANT, name: settings.companyName || PLATFORM_TENANT.name, legalName: settings.companyName || PLATFORM_TENANT.legalName };
-        setTenant(platformTenant);
-        applyTenantIdentity(platformTenant);
-        return;
+        setTenant(platformTenant); applyTenantIdentity(platformTenant); return;
       }
       try {
         const res = await getTenantBranding();
@@ -77,8 +73,7 @@ export function TenantProvider({ children }) {
         const legalName = branding.legalName || name;
         const hostSlug = getTenantSlugFromHost();
         const nextTenant = { ...DEFAULT_TENANT, ...branding, name, legalName, slug: branding.slug || hostSlug };
-        setTenant(nextTenant);
-        applyTenantIdentity(nextTenant);
+        setTenant(nextTenant); applyTenantIdentity(nextTenant);
       } catch (error) {
         console.error("Public tenant branding load failed", error);
         if (mounted) { setTenant(DEFAULT_TENANT); document.title = "Tours & Travel"; }
@@ -103,8 +98,7 @@ export function TenantProvider({ children }) {
         country: settings.country || previous.country || "",
         brandColors: { ...(previous.brandColors || {}), ...(settings.primaryColor ? { primary: settings.primaryColor } : {}), ...(settings.secondaryColor ? { secondary: settings.secondaryColor } : {}), ...(settings.accentColor ? { accent: settings.accentColor } : {}) },
       };
-      applyTenantIdentity(next);
-      return next;
+      applyTenantIdentity(next); return next;
     });
   }, [settings, user, isPlatformScope]);
 
