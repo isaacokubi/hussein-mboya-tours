@@ -15,7 +15,12 @@ const SettingsContext = createContext(null);
 const getTenantId = (user) => String(user?.tenantId?._id || user?.tenantId || (typeof window !== "undefined" ? window.localStorage.getItem("tenantId") : "") || "").trim();
 const getSettingsStorageKey = (tenantId = "") => tenantId ? `tenant-settings:${tenantId}` : "tenant-settings:public";
 const normalize = (next = {}, previous = DEFAULT_SETTINGS) => ({ ...DEFAULT_SETTINGS, ...previous, ...next, companyName: String(next.companyName ?? previous.companyName ?? "").trim(), homepageSections: { ...DEFAULT_SETTINGS.homepageSections, ...(previous.homepageSections || {}), ...(next.homepageSections || {}) } });
-const normalizePlatformSettings = (next = {}, previous = PLATFORM_SETTINGS) => ({ ...normalize(next, previous), companyName: PLATFORM_BRAND_NAME, seoTitle: PLATFORM_BRAND_NAME });
+const normalizePlatformSettings = (next = {}, previous = PLATFORM_SETTINGS) => {
+  const normalized = normalize(next, previous);
+  const companyName = String(next.companyName ?? previous.companyName ?? PLATFORM_BRAND_NAME).trim() || PLATFORM_BRAND_NAME;
+  const seoTitle = String(next.seoTitle ?? previous.seoTitle ?? companyName).trim() || companyName;
+  return { ...normalized, companyName, seoTitle };
+};
 function normalizeRole(user) { if (!user) return ""; if (typeof user.role === "string") return user.role.toLowerCase().replace(/[\s-]/g, "_"); if (user.role?.name) return String(user.role.name).toLowerCase().replace(/[\s-]/g, "_"); if (Array.isArray(user.roles) && user.roles[0]?.name) return String(user.roles[0].name).toLowerCase().replace(/[\s-]/g, "_"); return ""; }
 const isSuperAdminUser = (user) => ["super_admin", "superadmin"].includes(normalizeRole(user));
 function applyTenantTheme(settings) { const root = document.documentElement; const css = { "--tenant-primary": settings.primaryColor, "--tenant-secondary": settings.secondaryColor, "--tenant-accent": settings.accentColor, "--tenant-background": settings.backgroundColor, "--tenant-surface": settings.surfaceColor, "--tenant-text": settings.textColor, "--tenant-hero-overlay": `${Number(settings.heroOverlayOpacity ?? 50) / 100}` }; Object.entries(css).forEach(([key, value]) => root.style.setProperty(key, value)); if (settings.fontFamily) root.style.setProperty("--tenant-font-family", settings.fontFamily); }
