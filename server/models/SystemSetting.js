@@ -24,7 +24,7 @@ const systemSettingSchema = new mongoose.Schema(
     bookingNotifications: { type: Boolean, default: true }, paymentNotifications: { type: Boolean, default: true },
     emailNotifications: { type: Boolean, default: true }, systemAlerts: { type: Boolean, default: true }, twoFactor: { type: Boolean, default: false },
     primaryColor: { type: String, default: "#047857" }, secondaryColor: { type: String, default: "#064e3b" }, accentColor: { type: String, default: "#10b981" },
-    backgroundColor: { type: String, default: "#f8fafc" }, surfaceColor: { type: String, default: "#ffffff" }, textColor: { type: String, default: "#0f172a" },
+    backgroundColor: { type: String, default: "#020617" }, surfaceColor: { type: String, default: "#0f172a" }, textColor: { type: String, default: "#f1f5f9" },
     fontFamily: { type: String, default: "Inter" }, borderRadius: { type: String, enum: ["sm", "md", "lg", "xl", "2xl"], default: "xl" }, buttonStyle: { type: String, enum: ["solid", "rounded", "pill", "outline"], default: "rounded" },
     heroOverlayOpacity: { type: Number, min: 0, max: 100, default: 50 },
     homepageSections: { type: Map, of: Boolean, default: () => ({ stats: true, tours: true, destinations: true, experiences: true, services: true, testimonials: true, gallery: true, whyChooseUs: true, newsletter: true }) },
