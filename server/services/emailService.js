@@ -23,15 +23,17 @@ export const verifyEmailConnection = async () => {
   }
 };
 
-export const sendEmail = async ({ to, subject, html, text, attachments = [], cc, bcc, replyTo, fromName }) => {
+export const sendEmail = async ({ to, subject, html, text, attachments = [], cc, bcc, replyTo, fromName, tenantId }) => {
   if (!to) throw new Error("Recipient email is required.");
   if (!subject) throw new Error("Email subject is required.");
   if (!html && !text) throw new Error("Email content is required.");
   if (!smtpHost) throw new Error("SMTP email host is not configured.");
-  const settings = await getSystemSettings();
-  const companyName = fromName || settings.companyName || "Coherent Tours";
+  const settings = await getSystemSettings(tenantId ? { tenantId } : {});
+  const companyName = fromName || settings.companyName || "Global Tours";
+  const configuredFrom = settings.emailFromAddress || smtpFrom;
+  const senderName = settings.emailFromName || companyName;
   return transporter.sendMail({
-    from: `"${companyName}" <${smtpFrom}>`,
+    from: `"${senderName}" <${configuredFrom}>`,
     to,
     subject,
     html,
@@ -44,10 +46,11 @@ export const sendEmail = async ({ to, subject, html, text, attachments = [], cc,
 };
 
 export const sendBookingEmail = async (email, booking) => {
-  const settings = await getSystemSettings();
-  const companyName = settings.companyName || "Coherent Tours";
+  const settings = await getSystemSettings(booking?.tenantId ? { tenantId: booking.tenantId } : {});
+  const companyName = settings.companyName || "Global Tours";
   return sendEmail({
     to: email,
+    tenantId: booking?.tenantId,
     subject: `Booking Confirmation - ${companyName}`,
     html: `<div style="font-family:Arial,sans-serif"><h2>Booking Confirmed</h2><p>Thank you for choosing ${companyName}.</p><p><strong>Booking Number:</strong> ${booking.bookingNumber || "Pending"}</p><p><strong>Tour:</strong> ${booking.tour?.title || booking.tour?.name || booking.tour || "Tour"}</p><p><strong>Travel Date:</strong> ${booking.travelDate || "Not specified"}</p><p><strong>Total Amount:</strong> ${booking.totalAmount ?? booking.amount ?? 0}</p><p>We look forward to giving you an unforgettable travel experience.</p><p>Regards,<br><strong>${companyName}</strong></p></div>`,
     text: `Booking Confirmed\n\nBooking Number: ${booking.bookingNumber || "Pending"}\nTour: ${booking.tour?.title || booking.tour?.name || booking.tour || "Tour"}\nTravel Date: ${booking.travelDate || "Not specified"}\nTotal Amount: ${booking.totalAmount ?? booking.amount ?? 0}\n\nThank you for choosing ${companyName}.`,
