@@ -1,4 +1,4 @@
-import { getTenantId, mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
+import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import { getSystemSettings } from "../services/settingsService.js";
 import Notification from "../models/Notification.js";
 import User from "../models/User.js";
