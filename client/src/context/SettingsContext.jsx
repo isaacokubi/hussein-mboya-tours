@@ -6,7 +6,7 @@ export const PUBLIC_BRAND_NAME = "Global Tours";
 export const PLATFORM_BRAND_NAME = "Global Tours";
 
 const DEFAULT_SETTINGS = {
-  companyName: "", websiteUrl: "", companyLogo: "", logo: "", supportEmail: "", supportPhone: "", address: "", city: "Nairobi", country: "Kenya", currency: "KES", currencySymbol: "KSh", timezone: "Africa/Nairobi", language: "en", taxRate: 0, bookingDepositPercentage: 30, defaultCommissionRate: 10, maintenanceMode: false, allowRegistrations: true, allowAgentRegistrations: true, requireEmailVerification: true, requirePhoneVerification: false, enableMpesa: true, enableStripe: false, enablePaypal: false, enableBankTransfer: true, bookingNotifications: true, paymentNotifications: true, facebook: "", instagram: "", twitter: "", youtube: "", seoTitle: "", seoDescription: "", seoKeywords: [], primaryColor: "#047857", secondaryColor: "#064e3b", accentColor: "#10b981", backgroundColor: "#f8fafc", surfaceColor: "#ffffff", textColor: "#0f172a", fontFamily: "Inter", borderRadius: "xl", buttonStyle: "rounded", heroOverlayOpacity: 50,
+  companyName: "", websiteUrl: "", companyLogo: "", logo: "", supportEmail: "", supportPhone: "", address: "", city: "Nairobi", country: "Kenya", currency: "KES", currencySymbol: "KSh", timezone: "Africa/Nairobi", language: "en", taxRate: 0, bookingDepositPercentage: 30, defaultCommissionRate: 10, maintenanceMode: false, allowRegistrations: true, allowAgentRegistrations: true, requireEmailVerification: true, requirePhoneVerification: false, enableMpesa: true, enableStripe: false, enablePaypal: false, enableBankTransfer: true, bookingNotifications: true, paymentNotifications: true, facebook: "", instagram: "", twitter: "", youtube: "", seoTitle: "", seoDescription: "", seoKeywords: [], primaryColor: "#047857", secondaryColor: "#064e3b", accentColor: "#10b981", backgroundColor: "#020617", surfaceColor: "#0f172a", textColor: "#f1f5f9", fontFamily: "Inter", borderRadius: "xl", buttonStyle: "rounded", heroOverlayOpacity: 50,
   homepageSections: { stats: true, tours: true, destinations: true, experiences: true, services: true, testimonials: true, gallery: true, whyChooseUs: true, newsletter: true },
 };
 const PLATFORM_SETTINGS = { ...DEFAULT_SETTINGS, companyName: PLATFORM_BRAND_NAME, seoTitle: PLATFORM_BRAND_NAME };
@@ -23,7 +23,37 @@ const normalizePlatformSettings = (next = {}, previous = PLATFORM_SETTINGS) => {
 };
 function normalizeRole(user) { if (!user) return ""; if (typeof user.role === "string") return user.role.toLowerCase().replace(/[\s-]/g, "_"); if (user.role?.name) return String(user.role.name).toLowerCase().replace(/[\s-]/g, "_"); if (Array.isArray(user.roles) && user.roles[0]?.name) return String(user.roles[0].name).toLowerCase().replace(/[\s-]/g, "_"); return ""; }
 const isSuperAdminUser = (user) => ["super_admin", "superadmin"].includes(normalizeRole(user));
-function applyTenantTheme(settings) { const root = document.documentElement; const css = { "--tenant-primary": settings.primaryColor, "--tenant-secondary": settings.secondaryColor, "--tenant-accent": settings.accentColor, "--tenant-background": settings.backgroundColor, "--tenant-surface": settings.surfaceColor, "--tenant-text": settings.textColor, "--tenant-hero-overlay": `${Number(settings.heroOverlayOpacity ?? 50) / 100}` }; Object.entries(css).forEach(([key, value]) => root.style.setProperty(key, value)); if (settings.fontFamily) root.style.setProperty("--tenant-font-family", settings.fontFamily); }
+
+const hexToRgb = (hex) => {
+  const value = String(hex || "").replace("#", "").trim();
+  if (![3, 6].includes(value.length) || !/^[0-9a-f]+$/i.test(value)) return null;
+  const normalized = value.length === 3 ? value.split("").map((part) => part + part).join("") : value;
+  return [0, 2, 4].map((index) => parseInt(normalized.slice(index, index + 2), 16));
+};
+const luminance = (hex) => {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return null;
+  const channels = rgb.map((channel) => {
+    const value = channel / 255;
+    return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+};
+
+function applyTenantTheme(settings) {
+  const root = document.documentElement;
+  const background = settings.backgroundColor || "#020617";
+  const text = settings.textColor || "#f1f5f9";
+  const backgroundLuminance = luminance(background);
+  const textLuminance = luminance(text);
+  // Prevent the broken light-background/light-text combination that makes the public site unreadable.
+  const safeBackground = backgroundLuminance !== null && textLuminance !== null && backgroundLuminance > 0.65 && textLuminance > 0.65 ? "#020617" : background;
+  const safeSurface = settings.surfaceColor || "#0f172a";
+  const safeText = backgroundLuminance !== null && textLuminance !== null && backgroundLuminance > 0.65 && textLuminance > 0.65 ? "#f1f5f9" : text;
+  const css = { "--tenant-primary": settings.primaryColor, "--tenant-secondary": settings.secondaryColor, "--tenant-accent": settings.accentColor, "--tenant-background": safeBackground, "--tenant-surface": safeSurface, "--tenant-text": safeText, "--tenant-hero-overlay": `${Number(settings.heroOverlayOpacity ?? 50) / 100}` };
+  Object.entries(css).forEach(([key, value]) => root.style.setProperty(key, value));
+  if (settings.fontFamily) root.style.setProperty("--tenant-font-family", settings.fontFamily);
+}
 function applyDocumentMetadata(settings) { if (typeof document === "undefined") return; if (settings.seoTitle || settings.companyName) document.title = settings.seoTitle || settings.companyName; }
 
 export function SettingsProvider({ children }) {
