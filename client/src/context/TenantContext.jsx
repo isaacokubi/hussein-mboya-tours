@@ -76,8 +76,13 @@ export function TenantProvider({ children }) {
     const loadTenant = async () => {
       if (isSuperAdminUser(user)) {
         if (!mounted) return;
-        setTenant(PLATFORM_TENANT);
-        applyTenantIdentity(PLATFORM_TENANT);
+        const platformTenant = {
+          ...PLATFORM_TENANT,
+          name: settings.companyName || PLATFORM_TENANT.name,
+          legalName: settings.companyName || PLATFORM_TENANT.legalName,
+        };
+        setTenant(platformTenant);
+        applyTenantIdentity(platformTenant);
         return;
       }
 
@@ -110,11 +115,8 @@ export function TenantProvider({ children }) {
 
     void loadTenant();
     return () => { mounted = false; };
-  }, [user]);
+  }, [user, settings.companyName]);
 
-  // Settings are the authoritative UI representation of the active scope.
-  // Keep tenant identity synchronized when an admin saves branding without
-  // requiring a full page reload or a second branding request.
   useEffect(() => {
     if (isSuperAdminUser(user) || isPlatformScope) return;
     if (!settings?.companyName) return;
