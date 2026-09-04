@@ -3,11 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 
 import { getFeaturedTours } from "../../api/tourApi";
+import { useAuth } from "../../context/AuthContext";
 import LazyImage from "../common/LazyImage";
 
 export default function FeaturedTours() {
+  const { user } = useAuth();
+  const tenantId = String(user?.tenantId?._id || user?.tenantId || "").trim();
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["featuredTours"],
+    queryKey: ["featuredTours", tenantId || "public"],
     queryFn: getFeaturedTours,
     staleTime: 1000 * 60 * 5,
   });
@@ -49,14 +52,10 @@ export default function FeaturedTours() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {tours.map((tour, index) => {
-              const fallbackImage =
-                TOUR_FALLBACK_IMAGES[index % TOUR_FALLBACK_IMAGES.length];
+              const fallbackImage = TOUR_FALLBACK_IMAGES[index % TOUR_FALLBACK_IMAGES.length];
 
               return (
-                <div
-                  key={tour._id}
-                  className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
-                >
+                <div key={tour._id} className="bg-slate-900 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-white/10">
                   <div className="relative">
                     <LazyImage
                       src={getTourImage(tour)}
@@ -70,31 +69,20 @@ export default function FeaturedTours() {
                     </div>
                   </div>
 
-                  <div className="p-6 bg-white">
-                    <h3 className="text-xl font-bold text-slate-900">
+                  <div className="p-6 bg-slate-900">
+                    <h3 className="text-xl font-bold text-white">
                       {tour?.title || "African Adventure Tour"}
                     </h3>
 
-                    <p className="text-slate-600 mt-2">
+                    <p className="text-slate-300 mt-2">
                       {tour?.destination?.name || "Kenya"}
                     </p>
 
-                    {tour?.duration && (
-                      <p className="text-sm text-slate-500 mt-2">
-                        Duration: {tour.duration}
-                      </p>
-                    )}
+                    {tour?.duration && <p className="text-sm text-slate-400 mt-2">Duration: {tour.duration}</p>}
 
-                    {tour?.price && (
-                      <p className="text-emerald-600 font-bold text-lg mt-4">
-                        KES {Number(tour.price).toLocaleString()}
-                      </p>
-                    )}
+                    {tour?.price && <p className="text-emerald-400 font-bold text-lg mt-4">KES {Number(tour.price).toLocaleString()}</p>}
 
-                    <Link
-                      to={`/tours/${tour?.slug || tour?._id}`}
-                      className="block mt-5 bg-emerald-600 hover:bg-emerald-700 text-white text-center py-3 rounded-lg font-semibold transition"
-                    >
+                    <Link to={`/tours/${tour?.slug || tour?._id}`} className="block mt-5 bg-emerald-600 hover:bg-emerald-700 text-white text-center py-3 rounded-lg font-semibold transition">
                       View Tour
                     </Link>
                   </div>
