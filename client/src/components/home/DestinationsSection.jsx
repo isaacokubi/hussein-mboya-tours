@@ -4,23 +4,28 @@ import { Link } from "react-router-dom";
 
 import { getFeaturedDestinations } from "../../api/destinationApi";
 import { useAuth } from "../../context/AuthContext";
-import LazyImage from "../common/LazyImage";
+
+const DESTINATION_IMAGE_FALLBACKS = {
+  "maasai-mara": "https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=1200&q=85",
+  amboseli: "https://images.unsplash.com/photo-1547970810-dc1eac37d174?auto=format&fit=crop&w=1200&q=85",
+  "tsavo-national-park": "https://images.unsplash.com/photo-1549366021-9f761d450615?auto=format&fit=crop&w=1200&q=85",
+  "lake-naivasha": "https://images.unsplash.com/photo-1510414842594-a61c69b5ae57?auto=format&fit=crop&w=1200&q=85",
+  watamu: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85",
+};
 
 const getDestinationImage = (destination) => {
   const firstImage = destination?.images?.[0];
-
-  if (typeof firstImage === "string" && firstImage.trim()) {
-    return firstImage.trim();
-  }
-
-  if (firstImage?.url) {
-    return firstImage.url;
-  }
-
-  return (
+  const imageUrl =
+    (typeof firstImage === "string" && firstImage.trim()) ||
+    firstImage?.url ||
     destination?.featuredImage ||
     destination?.imageUrl ||
-    destination?.image ||
+    destination?.image;
+
+  if (imageUrl) return imageUrl;
+
+  return (
+    DESTINATION_IMAGE_FALLBACKS[destination?.slug] ||
     "/images/image-placeholder.jpg"
   );
 };
@@ -40,6 +45,7 @@ export default function DestinationsSection() {
       try {
         const data = await getFeaturedDestinations();
         if (!mounted) return;
+
         const normalizedDestinations = Array.isArray(data)
           ? data
           : Array.isArray(data?.destinations)
@@ -49,6 +55,7 @@ export default function DestinationsSection() {
               : Array.isArray(data?.data?.destinations)
                 ? data.data.destinations
                 : [];
+
         setDestinations(normalizedDestinations);
       } catch (error) {
         if (!mounted) return;
@@ -60,7 +67,9 @@ export default function DestinationsSection() {
     };
 
     void loadDestinations();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [tenantId]);
 
   if (loading) {
@@ -94,26 +103,43 @@ export default function DestinationsSection() {
         </motion.h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {destinations.map((destination) => (
-            <Link key={destination._id} to={`/destinations/${destination.slug}`}>
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                className="rounded-xl shadow-lg overflow-hidden bg-slate-900 border border-white/10 cursor-pointer hover:shadow-2xl transition"
-              >
-                <LazyImage
-                  src={getDestinationImage(destination)}
-                  alt={destination.name || "Destination"}
-                  fallback="/images/image-placeholder.jpg"
-                  className="h-48 w-full object-cover"
-                />
+          {destinations.map((destination) => {
+            const image = getDestinationImage(destination);
+            const fallback =
+              DESTINATION_IMAGE_FALLBACKS[destination?.slug] ||
+              "/images/image-placeholder.jpg";
 
-                <div className="p-6 bg-slate-900">
-                  <h3 className="text-xl font-semibold text-white mb-3">{destination.name}</h3>
-                  <p className="text-slate-300 line-clamp-3">{destination.description || "Discover an unforgettable Kenyan travel experience."}</p>
-                </div>
-              </motion.div>
-            </Link>
-          ))}
+            return (
+              <Link key={destination._id} to={`/destinations/${destination.slug}`}>
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  className="rounded-xl shadow-lg overflow-hidden bg-slate-900 border border-white/10 cursor-pointer hover:shadow-2xl transition"
+                >
+                  <div className="relative h-48 w-full overflow-hidden bg-slate-800">
+                    <img
+                      src={image}
+                      alt={destination.name || "Destination"}
+                      className="block h-48 w-full object-cover object-center opacity-100"
+                      loading="lazy"
+                      decoding="async"
+                      onError={(event) => {
+                        if (event.currentTarget.dataset.fallbackApplied === "true") return;
+                        event.currentTarget.dataset.fallbackApplied = "true";
+                        event.currentTarget.src = fallback;
+                      }}
+                    />
+                  </div>
+
+                  <div className="p-6 bg-slate-900">
+                    <h3 className="text-xl font-semibold text-white mb-3">{destination.name}</h3>
+                    <p className="text-slate-300 line-clamp-3">
+                      {destination.description || "Discover an unforgettable Kenyan travel experience."}
+                    </p>
+                  </div>
+                </motion.div>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </section>
