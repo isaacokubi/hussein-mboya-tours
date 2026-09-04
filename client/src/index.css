@@ -1,3 +1,6 @@
+@import "./styles/enterprise.css";
+@import "tailwindcss";
+
 /* Tenant theme tokens are applied by SettingsContext for the active tenant/platform. */
 :root {
   --tenant-primary: #047857;
@@ -9,19 +12,13 @@
   --tenant-font-family: Inter, sans-serif;
 }
 
-html, body, #root {
-  min-height: 100%;
-}
-
+html, body, #root { min-height: 100%; }
 body {
   margin: 0;
   background: var(--tenant-background);
   color: var(--tenant-text);
   font-family: var(--tenant-font-family);
 }
-
-@import "./styles/enterprise.css";
-@import "tailwindcss";
 
 .input {
   @apply w-full p-3 rounded-xl border border-gray-300 outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500;
@@ -31,30 +28,13 @@ body {
 .dashboard-card,
 .dashboard-stat-card,
 .dashboard-panel,
-.dashboard-responsive {
-  min-width: 0;
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-.dashboard-responsive {
-  width: 100%;
-  overflow-x: clip;
-  font-size: clamp(0.82rem, 0.78rem + 0.16vw, 0.95rem);
-}
-
+.dashboard-responsive { min-width: 0; max-width: 100%; box-sizing: border-box; }
+.dashboard-responsive { width: 100%; overflow-x: clip; font-size: clamp(0.82rem, 0.78rem + 0.16vw, 0.95rem); }
 .dashboard-responsive img,
 .dashboard-responsive video,
-.dashboard-responsive svg {
-  max-width: 100%;
-}
-
+.dashboard-responsive svg { max-width: 100%; }
 .dashboard-responsive img,
-.dashboard-responsive video {
-  height: auto;
-  object-fit: cover;
-}
-
+.dashboard-responsive video { height: auto; object-fit: cover; }
 .dashboard-responsive h1,
 .dashboard-responsive h2,
 .dashboard-responsive h3,
@@ -70,11 +50,7 @@ body {
 .dashboard-responsive select,
 .dashboard-responsive textarea,
 .dashboard-responsive th,
-.dashboard-responsive td {
-  min-width: 0;
-  max-width: 100%;
-}
-
+.dashboard-responsive td { min-width: 0; max-width: 100%; }
 .dashboard-responsive h1 { font-size: clamp(1.35rem, 1.05rem + 1vw, 2rem); line-height: 1.15; }
 .dashboard-responsive h2 { font-size: clamp(1.1rem, 0.95rem + 0.7vw, 1.55rem); line-height: 1.2; }
 .dashboard-responsive h3 { font-size: clamp(0.95rem, 0.88rem + 0.35vw, 1.2rem); line-height: 1.25; }
@@ -88,12 +64,10 @@ body {
 .dashboard-responsive .text-lg { font-size: clamp(0.92rem, 0.85rem + 0.3vw, 1.1rem) !important; }
 .dashboard-responsive .text-sm { font-size: clamp(0.76rem, 0.72rem + 0.18vw, 0.9rem) !important; }
 .dashboard-responsive .text-xs { font-size: clamp(0.68rem, 0.64rem + 0.16vw, 0.78rem) !important; }
-
 .dashboard-responsive .p-8 { padding: clamp(1rem, 0.75rem + 1vw, 2rem) !important; }
 .dashboard-responsive .p-6 { padding: clamp(0.85rem, 0.7rem + 0.7vw, 1.5rem) !important; }
 .dashboard-responsive .p-5 { padding: clamp(0.75rem, 0.65rem + 0.5vw, 1.25rem) !important; }
 .dashboard-responsive .p-4 { padding: clamp(0.7rem, 0.6rem + 0.4vw, 1rem) !important; }
-
 .dashboard-responsive .grid { min-width: 0; }
 .dashboard-responsive .grid > * { min-width: 0; max-width: 100%; }
 .dashboard-responsive .flex > * { min-width: 0; }
@@ -108,19 +82,8 @@ body {
 .dashboard-responsive textarea { font-size: inherit; }
 .dashboard-responsive button,
 .dashboard-responsive a { max-width: 100%; }
-
 .dashboard-stat-card .dashboard-value,
-.dashboard-responsive .dashboard-value {
-  font-size: clamp(1rem, 0.88rem + 0.55vw, 1.65rem);
-  line-height: 1.15;
-  font-variant-numeric: tabular-nums;
-  white-space: normal;
-  overflow: visible;
-  text-overflow: clip;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
-
+.dashboard-responsive .dashboard-value { font-size: clamp(1rem, 0.88rem + 0.55vw, 1.65rem); line-height: 1.15; font-variant-numeric: tabular-nums; white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; word-break: break-word; }
 .dashboard-stat-card .dashboard-stat-title { font-size: clamp(0.68rem, 0.64rem + 0.16vw, 0.82rem); line-height: 1.25; overflow-wrap: anywhere; }
 
 @media (max-width: 1024px) {
@@ -131,7 +94,6 @@ body {
   .dashboard-responsive .xl\\:grid-cols-4,
   .dashboard-responsive .xl\\:grid-cols-5 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
 }
-
 @media (max-width: 640px) {
   .dashboard-responsive { font-size: 0.8rem; }
   .dashboard-responsive .grid-cols-2,
@@ -160,7 +122,6 @@ body {
   .dashboard-stat-card .dashboard-value,
   .dashboard-responsive .dashboard-value { font-size: clamp(0.95rem, 4.2vw, 1.35rem); }
 }
-
 @media (max-width: 420px) {
   .dashboard-responsive .rounded-3xl { border-radius: 1rem !important; }
   .dashboard-responsive .rounded-2xl { border-radius: 0.85rem !important; }
