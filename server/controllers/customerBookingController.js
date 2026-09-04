@@ -1,4 +1,4 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
+import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
 import User from "../models/User.js";
@@ -56,14 +56,16 @@ export const createCustomerBooking = async (req, res, next) => {
       });
 
       try {
-        const admins = await User.find({
+        const tenantId = requireTenantId();
+        const admins = await User.find(mergeTenantFilter({
           $or: [
-            { role: { $in: ["admin", "super_admin", "superadmin", "manager", "tour_manager", "tourmanager"] } },
-            { legacyRole: { $in: ["admin", "super_admin", "superadmin", "manager", "tour_manager", "tourmanager"] } },
+            { role: { $in: ["admin", "manager", "tour_manager", "tourmanager"] } },
+            { legacyRole: { $in: ["admin", "manager", "tour_manager", "tourmanager"] } },
           ],
           status: "active",
-        }).select("_id").lean();
-        if (admins.length) await Notification.insertMany(admins.map((admin) => ({ recipient: admin._id, user: admin._id, title: "New Booking", message: `New booking ${booking.bookingNumber || booking._id} is awaiting payment/confirmation.`, type: "booking", relatedModel: "Booking", relatedId: booking._id, actionUrl: "/admin/bookings" })));
+        })).select("_id tenantId").lean();
+        const tenantAdmins = admins.filter((admin) => String(admin.tenantId) === String(tenantId));
+        if (tenantAdmins.length) await Notification.insertMany(tenantAdmins.map((admin) => ({ tenantId, recipient: admin._id, user: admin._id, title: "New Booking", message: `New booking ${booking.bookingNumber || booking._id} is awaiting payment/confirmation.`, type: "booking", relatedModel: "Booking", relatedId: booking._id, actionUrl: "/admin/bookings" })));
       } catch (notificationError) {
         console.error("CUSTOMER BOOKING NOTIFICATION ERROR:", notificationError.message);
       }
