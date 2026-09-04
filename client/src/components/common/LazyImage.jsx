@@ -1,134 +1,56 @@
-import {
-    useEffect,
-    useState
-}
-from "react";
+import { useEffect, useState } from "react";
 
+const normalizeImageSource = (value) => {
+  if (!value) return "";
 
+  if (typeof value === "string") {
+    return value.trim();
+  }
 
+  if (Array.isArray(value)) {
+    const first = value.find(Boolean);
+    return normalizeImageSource(first);
+  }
 
+  return (
+    value?.url ||
+    value?.secure_url ||
+    value?.src ||
+    value?.imageUrl ||
+    value?.featuredImage ||
+    value?.path ||
+    ""
+  );
+};
 
 export default function LazyImage({
-
-    src,
-
-    alt = "",
-
-    className = "",
-
-    fallback = "/images/image-placeholder.jpg"
-
-}){
-
-
-
-
-
-const [imageSrc,setImageSrc] = useState(src);
-
-const [loading,setLoading] = useState(true);
-
-useEffect(() => {
-
-    setImageSrc(typeof src === "object" ? src?.url : src);
-    setLoading(true);
-}, [src]);
-
-
-
-
-
-
-
-return (
-
-<div
-
-className="
-relative
-overflow-hidden
-"
-
->
-
-
-
-
-
-
-{
-
-loading &&
-
-<div
-
-className="
-absolute
-inset-0
-bg-gray-200
-animate-pulse
-"
-
-></div>
-
-}
-
-
-
-
-
-
-
-
-
-<img
-
-
-src={imageSrc || fallback}
-
-
-alt={alt}
-
-
-loading="lazy"
-
-
-decoding="async"
-
-
-
-className={`
-transition-opacity
-duration-500
-${loading ? "opacity-0" : "opacity-100"}
-${className}
-`}
-
-
-
-onLoad={()=>setLoading(false)}
-
-
-
-onError={()=>{
-
-
-setImageSrc(fallback);
-
-setLoading(false);
-
-
-}}
-
-
-
-/>
-
-
-
-</div>
-
-);
-
-
+  src,
+  alt = "",
+  className = "",
+  fallback = "/images/image-placeholder.jpg",
+}) {
+  const normalizedSource = normalizeImageSource(src);
+  const normalizedFallback = normalizeImageSource(fallback) || "/images/image-placeholder.jpg";
+  const [imageSrc, setImageSrc] = useState(normalizedSource || normalizedFallback);
+
+  useEffect(() => {
+    setImageSrc(normalizedSource || normalizedFallback);
+  }, [normalizedSource, normalizedFallback]);
+
+  return (
+    <div className="relative overflow-hidden">
+      <img
+        src={imageSrc}
+        alt={alt}
+        loading="lazy"
+        decoding="async"
+        className={`block opacity-100 transition-transform duration-500 ${className}`}
+        onError={(event) => {
+          if (event.currentTarget.dataset.fallbackApplied === "true") return;
+          event.currentTarget.dataset.fallbackApplied = "true";
+          setImageSrc(normalizedFallback);
+        }}
+      />
+    </div>
+  );
 }
