@@ -1,3 +1,25 @@
+/* Tenant theme tokens are applied by SettingsContext for the active tenant/platform. */
+:root {
+  --tenant-primary: #047857;
+  --tenant-secondary: #064e3b;
+  --tenant-accent: #10b981;
+  --tenant-background: #f8fafc;
+  --tenant-surface: #ffffff;
+  --tenant-text: #0f172a;
+  --tenant-font-family: Inter, sans-serif;
+}
+
+html, body, #root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--tenant-background);
+  color: var(--tenant-text);
+  font-family: var(--tenant-font-family);
+}
+
 @import "./styles/enterprise.css";
 @import "tailwindcss";
 
@@ -72,53 +94,21 @@
 .dashboard-responsive .p-5 { padding: clamp(0.75rem, 0.65rem + 0.5vw, 1.25rem) !important; }
 .dashboard-responsive .p-4 { padding: clamp(0.7rem, 0.6rem + 0.4vw, 1rem) !important; }
 
-.dashboard-responsive .grid {
-  min-width: 0;
-}
-
-.dashboard-responsive .grid > * {
-  min-width: 0;
-  max-width: 100%;
-}
-
-.dashboard-responsive .flex > * {
-  min-width: 0;
-}
-
-.dashboard-responsive .overflow-x-auto {
-  width: 100%;
-  max-width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.dashboard-responsive table {
-  width: max-content;
-  min-width: 100%;
-  font-size: clamp(0.7rem, 0.66rem + 0.15vw, 0.85rem);
-}
-
+.dashboard-responsive .grid { min-width: 0; }
+.dashboard-responsive .grid > * { min-width: 0; max-width: 100%; }
+.dashboard-responsive .flex > * { min-width: 0; }
+.dashboard-responsive .overflow-x-auto { width: 100%; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.dashboard-responsive table { width: max-content; min-width: 100%; font-size: clamp(0.7rem, 0.66rem + 0.15vw, 0.85rem); }
 .dashboard-responsive th,
-.dashboard-responsive td {
-  padding: clamp(0.5rem, 0.4rem + 0.25vw, 0.8rem);
-  white-space: nowrap;
-  vertical-align: middle;
-}
-
+.dashboard-responsive td { padding: clamp(0.5rem, 0.4rem + 0.25vw, 0.8rem); white-space: nowrap; vertical-align: middle; }
 .dashboard-responsive button,
 .dashboard-responsive a,
 .dashboard-responsive input,
 .dashboard-responsive select,
-.dashboard-responsive textarea {
-  font-size: inherit;
-}
-
+.dashboard-responsive textarea { font-size: inherit; }
 .dashboard-responsive button,
-.dashboard-responsive a {
-  max-width: 100%;
-}
+.dashboard-responsive a { max-width: 100%; }
 
-/* Stat values: never truncate financial figures or other dashboard metrics. */
 .dashboard-stat-card .dashboard-value,
 .dashboard-responsive .dashboard-value {
   font-size: clamp(1rem, 0.88rem + 0.55vw, 1.65rem);
@@ -131,65 +121,44 @@
   word-break: break-word;
 }
 
-.dashboard-stat-card .dashboard-stat-title {
-  font-size: clamp(0.68rem, 0.64rem + 0.16vw, 0.82rem);
-  line-height: 1.25;
-  overflow-wrap: anywhere;
-}
+.dashboard-stat-card .dashboard-stat-title { font-size: clamp(0.68rem, 0.64rem + 0.16vw, 0.82rem); line-height: 1.25; overflow-wrap: anywhere; }
 
 @media (max-width: 1024px) {
   .dashboard-responsive .grid-cols-4,
   .dashboard-responsive .grid-cols-5,
-  .dashboard-responsive .lg\:grid-cols-4,
-  .dashboard-responsive .lg\:grid-cols-5,
-  .dashboard-responsive .xl\:grid-cols-4,
-  .dashboard-responsive .xl\:grid-cols-5 {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  }
+  .dashboard-responsive .lg\\:grid-cols-4,
+  .dashboard-responsive .lg\\:grid-cols-5,
+  .dashboard-responsive .xl\\:grid-cols-4,
+  .dashboard-responsive .xl\\:grid-cols-5 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
 }
 
 @media (max-width: 640px) {
-  .dashboard-responsive {
-    font-size: 0.8rem;
-  }
-
+  .dashboard-responsive { font-size: 0.8rem; }
   .dashboard-responsive .grid-cols-2,
   .dashboard-responsive .grid-cols-3,
   .dashboard-responsive .grid-cols-4,
   .dashboard-responsive .grid-cols-5,
-  .dashboard-responsive .sm\:grid-cols-2,
-  .dashboard-responsive .md\:grid-cols-2,
-  .dashboard-responsive .md\:grid-cols-3,
-  .dashboard-responsive .md\:grid-cols-4,
-  .dashboard-responsive .lg\:grid-cols-2,
-  .dashboard-responsive .lg\:grid-cols-3,
-  .dashboard-responsive .lg\:grid-cols-4,
-  .dashboard-responsive .lg\:grid-cols-5,
-  .dashboard-responsive .xl\:grid-cols-2,
-  .dashboard-responsive .xl\:grid-cols-3,
-  .dashboard-responsive .xl\:grid-cols-4,
-  .dashboard-responsive .xl\:grid-cols-5 {
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
-
+  .dashboard-responsive .sm\\:grid-cols-2,
+  .dashboard-responsive .md\\:grid-cols-2,
+  .dashboard-responsive .md\\:grid-cols-3,
+  .dashboard-responsive .md\\:grid-cols-4,
+  .dashboard-responsive .lg\\:grid-cols-2,
+  .dashboard-responsive .lg\\:grid-cols-3,
+  .dashboard-responsive .lg\\:grid-cols-4,
+  .dashboard-responsive .lg\\:grid-cols-5,
+  .dashboard-responsive .xl\\:grid-cols-2,
+  .dashboard-responsive .xl\\:grid-cols-3,
+  .dashboard-responsive .xl\\:grid-cols-4,
+  .dashboard-responsive .xl\\:grid-cols-5 { grid-template-columns: minmax(0, 1fr) !important; }
   .dashboard-responsive .gap-8 { gap: 1rem !important; }
   .dashboard-responsive .gap-6 { gap: 0.9rem !important; }
   .dashboard-responsive .gap-5 { gap: 0.75rem !important; }
-
-  .dashboard-responsive .flex-wrap {
-    row-gap: 0.5rem;
-  }
-
+  .dashboard-responsive .flex-wrap { row-gap: 0.5rem; }
   .dashboard-responsive input,
   .dashboard-responsive select,
-  .dashboard-responsive textarea {
-    min-height: 2.4rem;
-  }
-
+  .dashboard-responsive textarea { min-height: 2.4rem; }
   .dashboard-stat-card .dashboard-value,
-  .dashboard-responsive .dashboard-value {
-    font-size: clamp(0.95rem, 4.2vw, 1.35rem);
-  }
+  .dashboard-responsive .dashboard-value { font-size: clamp(0.95rem, 4.2vw, 1.35rem); }
 }
 
 @media (max-width: 420px) {
@@ -197,12 +166,6 @@
   .dashboard-responsive .rounded-2xl { border-radius: 0.85rem !important; }
   .dashboard-responsive .rounded-xl { border-radius: 0.7rem !important; }
   .dashboard-responsive table { min-width: 560px; }
-
-  .dashboard-stat-card {
-    padding: 0.8rem !important;
-  }
-
-  .dashboard-stat-card .dashboard-value {
-    font-size: 1.05rem;
-  }
+  .dashboard-stat-card { padding: 0.8rem !important; }
+  .dashboard-stat-card .dashboard-value { font-size: 1.05rem; }
 }
