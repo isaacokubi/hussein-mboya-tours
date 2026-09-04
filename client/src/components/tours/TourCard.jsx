@@ -3,18 +3,18 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { addWishlist } from "../../api/wishlistApi";
+import LazyImage from "../common/LazyImage";
 import { getTourImage, TOUR_FALLBACK_IMAGES } from "../../utils/tourImage";
 
 const NO_IMAGE = "/gallery/beach.jpg";
 
-export default function TourCard({ tour }) {
+export default function TourCard({ tour = {} }) {
   const { settings = {} } = useSettings() || {};
   const currency = settings.currency || tour.currency || "KES";
   const currencySymbolMap = { KES: "KSh", USD: "$", EUR: "€", GBP: "£" };
   const currencySymbol = currencySymbolMap[currency] || settings.currencySymbol || tour.currencySymbol || currency;
   const [adding, setAdding] = useState(false);
-  const [imageSrc, setImageSrc] = useState(() => getTourImage(tour) || TOUR_FALLBACK_IMAGES[0] || NO_IMAGE);
-  const [failedImageUrls, setFailedImageUrls] = useState(() => new Set());
+  const [imageSrc] = useState(() => getTourImage(tour) || TOUR_FALLBACK_IMAGES[0] || NO_IMAGE);
 
   const price = Number(tour.price || 0);
   const discountedPrice = tour.discount ? price - (price * Number(tour.discount)) / 100 : price;
@@ -37,53 +37,50 @@ export default function TourCard({ tour }) {
     }
   };
 
-  const handleImageError = () => {
-    const failed = new Set(failedImageUrls);
-    failed.add(imageSrc);
-
-    const nextImage = TOUR_FALLBACK_IMAGES.find(
-      (url) => url && !failed.has(url)
-    );
-
-    if (nextImage) {
-      failed.add(nextImage);
-      setFailedImageUrls(failed);
-      setImageSrc(nextImage);
-      return;
-    }
-
-    setImageSrc(NO_IMAGE);
-  };
-
   return (
-    <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition">
-      <div className="relative">
-        <img src={imageSrc} alt={tourTitle} className="w-full h-64 object-cover" loading="lazy" onError={handleImageError} />
-        {Number(tour.discount) > 0 && <span className="absolute top-4 left-4 bg-red-600 text-white px-3 py-1 rounded-full text-sm font-semibold">{tour.discount}% OFF</span>}
+    <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-xl transition hover:-translate-y-1 hover:border-slate-700 hover:shadow-2xl">
+      <div className="relative overflow-hidden bg-slate-800">
+        <LazyImage
+          src={imageSrc}
+          alt={tourTitle}
+          fallback={TOUR_FALLBACK_IMAGES[0] || NO_IMAGE}
+          className="h-64 w-full object-cover"
+        />
+        {Number(tour.discount) > 0 && (
+          <span className="absolute left-4 top-4 rounded-full bg-red-600 px-3 py-1 text-sm font-semibold text-white">
+            {tour.discount}% OFF
+          </span>
+        )}
       </div>
 
-      <div className="p-6">
-        <div className="flex justify-between items-center gap-3">
+      <div className="p-6 text-slate-100">
+        <div className="flex items-center justify-between gap-3">
           {destinationSlug ? (
-            <Link to={`/destinations/${destinationSlug}`} className="text-sm text-green-700 font-medium hover:underline truncate">{destinationName}</Link>
+            <Link to={`/destinations/${destinationSlug}`} className="truncate text-sm font-medium text-emerald-400 hover:text-emerald-300 hover:underline">
+              {destinationName}
+            </Link>
           ) : (
-            <span className="text-sm text-red-600 font-medium">Destination not assigned</span>
+            <span className="text-sm font-medium text-red-400">Destination not assigned</span>
           )}
-          <span className="text-yellow-600 shrink-0">⭐ {rating || 0}</span>
+          <span className="shrink-0 text-yellow-400">⭐ {rating || 0}</span>
         </div>
 
-        <h2 className="text-xl font-bold mt-3">{tourTitle}</h2>
-        <p className="text-gray-600 mt-2 line-clamp-3">{tour.description || "Explore unforgettable destinations with our guided travel experience."}</p>
+        <h2 className="mt-3 text-xl font-bold text-white">{tourTitle}</h2>
+        <p className="mt-2 line-clamp-3 text-slate-300">
+          {tour.description || "Explore unforgettable destinations with our guided travel experience."}
+        </p>
 
-        <div className="mt-5 flex justify-between items-center">
+        <div className="mt-5 flex items-center justify-between">
           <div>
-            {Number(tour.discount) > 0 && <p className="text-gray-400 line-through">{currencySymbol} {price.toLocaleString("en-US")}</p>}
-            <p className="text-2xl font-bold text-green-700">{currencySymbol} {discountedPrice.toLocaleString("en-US")}</p>
+            {Number(tour.discount) > 0 && <p className="text-slate-500 line-through">{currencySymbol} {price.toLocaleString("en-US")}</p>}
+            <p className="text-2xl font-bold text-emerald-400">{currencySymbol} {discountedPrice.toLocaleString("en-US")}</p>
           </div>
-          <Link to={`/tours/${tour.slug || tour._id}`} className="bg-yellow-600 text-white px-5 py-2 rounded-lg hover:bg-yellow-700 transition">View Trip</Link>
+          <Link to={`/tours/${tour.slug || tour._id}`} className="rounded-lg bg-yellow-500 px-5 py-2 font-semibold text-slate-950 transition hover:bg-yellow-400">
+            View Trip
+          </Link>
         </div>
 
-        <button onClick={handleWishlist} disabled={adding} className="mt-3 w-full border border-green-600 text-green-700 py-2 rounded-lg hover:bg-green-600 hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed">
+        <button onClick={handleWishlist} disabled={adding} className="mt-3 w-full rounded-lg border border-emerald-500 py-2 text-emerald-400 transition hover:bg-emerald-500 hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-50">
           {adding ? "Adding..." : "♡ Add to Wishlist"}
         </button>
       </div>
