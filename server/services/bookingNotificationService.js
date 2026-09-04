@@ -12,7 +12,7 @@ export const sendBookingConfirmation = async (booking) => {
     const contactEmail = booking.contactEmail || booking.contact?.email || booking.customerSnapshot?.email;
     if (!contactEmail) throw new Error("Customer email is missing.");
     const settings = await getSystemSettings({ tenantId: booking.tenantId });
-    const companyName = settings.companyName || "Coherent Tours";
+    const companyName = settings.companyName || "Global Tours";
     const uploadDir = path.resolve("uploads");
     await fs.mkdir(uploadDir, { recursive: true });
     invoicePath = path.join(uploadDir, `${booking.bookingNumber}.pdf`);
