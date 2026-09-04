@@ -44,22 +44,17 @@ export function SettingsProvider({ children }) {
 
   const [settings, setSettings] = useState(() => readCachedSettings());
   const [loading, setLoading] = useState(false);
-
   const applySettings = useCallback((nextSettings) => setSettings((previous) => isPlatformScope ? normalizePlatformSettings(nextSettings, previous) : normalize(nextSettings, previous)), [isPlatformScope]);
 
   const refreshSettings = useCallback(async () => {
     try {
-      if (!isPlatformScope && !tenantId) {
-        const fallback = readCachedSettings();
-        setSettings(fallback);
-        return fallback;
-      }
+      if (!isPlatformScope && !tenantId) { const fallback = readCachedSettings(); setSettings(fallback); return fallback; }
       const endpoint = isPlatformScope ? "/admin/settings" : "/settings/public";
       const response = await api.get(endpoint, { params: { _t: Date.now() } });
       const data = response.data?.settings || response.data?.data || response.data || {};
       const normalized = isPlatformScope ? normalizePlatformSettings(data, PLATFORM_SETTINGS) : normalize(data, DEFAULT_SETTINGS);
       setSettings(normalized);
-      try { localStorage.setItem(settingsKey, JSON.stringify(normalized)); } catch {}
+      try { localStorage.setItem(settingsKey, JSON.stringify(normalized)); } catch { return normalized; }
       return normalized;
     } catch (error) {
       console.error(`${isPlatformScope ? "Platform" : "Tenant"} settings load failed:`, error);
@@ -75,7 +70,7 @@ export function SettingsProvider({ children }) {
     const load = async () => { setLoading(true); try { await refreshSettings(); } finally { if (mounted) setLoading(false); } };
     void load();
     const interval = window.setInterval(() => { void refreshSettings(); }, 60_000);
-    const handleStorage = (event) => { if (event.key !== settingsKey || !event.newValue) return; try { applySettings(JSON.parse(event.newValue)); } catch {} };
+    const handleStorage = (event) => { if (event.key !== settingsKey || !event.newValue) return; try { applySettings(JSON.parse(event.newValue)); } catch { return; } };
     const handleSettingsChanged = () => { void refreshSettings(); };
     window.addEventListener("storage", handleStorage);
     window.addEventListener("platform-settings-updated", handleSettingsChanged);
@@ -87,7 +82,7 @@ export function SettingsProvider({ children }) {
   const updateSettings = useCallback((nextSettings) => {
     const merged = isPlatformScope ? normalizePlatformSettings(nextSettings, settings) : normalize(nextSettings, settings);
     setSettings(merged);
-    try { localStorage.setItem(settingsKey, JSON.stringify(merged)); window.dispatchEvent(new CustomEvent(isPlatformScope ? "platform-settings-updated" : "settings-updated", { detail: merged })); } catch (error) { console.warn("Settings could not be persisted locally:", error); }
+    try { localStorage.setItem(settingsKey, JSON.stringify(merged)); window.dispatchEvent(new CustomEvent(isPlatformScope ? "platform-settings-updated" : "settings-updated", { detail: merged })); } catch { return; }
   }, [isPlatformScope, settings, settingsKey]);
 
   const companyName = String(settings.companyName || (isPlatformScope ? PLATFORM_BRAND_NAME : "")).trim();
