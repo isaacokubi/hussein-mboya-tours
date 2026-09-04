@@ -1,4 +1,5 @@
 import { useTenant } from "../context/TenantContext";
+import { useAuth } from "../context/AuthContext";
 import { useSettings } from "../context/SettingsContext";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
@@ -10,15 +11,17 @@ const textOf = (value) => String(value?.name || value?.title || value || "").toL
 
 export default function Tours() {
   const { tenant } = useTenant();
+  const { user } = useAuth();
   const { settings } = useSettings();
   const [searchParams, setSearchParams] = useSearchParams();
   const destinationId = searchParams.get("destination") || "";
   const category = searchParams.get("category") || "";
   const search = searchParams.get("search") || "";
+  const tenantId = String(user?.tenantId?._id || user?.tenantId || tenant?._id || tenant?.id || "").trim();
   const companyName = settings?.companyName || tenant?.name || "Tours & Travel";
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["public-tours", destinationId, category],
+    queryKey: ["public-tours", tenantId || "public", destinationId, category],
     queryFn: () => getTours({ ...(destinationId ? { destination: destinationId } : {}), ...(category ? { category } : {}) }),
   });
 
