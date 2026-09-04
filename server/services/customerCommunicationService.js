@@ -15,7 +15,7 @@ const EVENT_TYPES = Object.freeze({ BOOKING_CONFIRMATION: "booking_confirmation"
 const bookingContact = (booking) => ({ name: booking.customerSnapshot?.name || booking.contact?.name || "Customer", email: booking.customerSnapshot?.email || booking.contact?.email || "", phone: String(booking.customerSnapshot?.phone || booking.contact?.phone || "").trim() });
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>\"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[char]));
 const formatDate = (value) => value ? new Date(value).toLocaleDateString("en-KE", { dateStyle: "medium" }) : "Not specified";
-const company = async (tenantId = null) => (await getSystemSettings(tenantId ? { tenantId } : {})).companyName || "Coherent Tours";
+const company = async (tenantId = null) => (await getSystemSettings(tenantId ? { tenantId } : {})).companyName || "Global Tours";
 const platform = (fn) => runWithTenant({ role: "super_admin", bypass: true }, fn);
 const alreadySent = async (tenantId, eventKey) => Boolean(await platform(() => Notification.exists({ tenantId, "metadata.eventKey": eventKey })));
 
@@ -29,7 +29,7 @@ const deliver = async ({ booking, eventKey, title, message, emailSubject, html, 
   if (await alreadySent(tenantId, eventKey)) return { skipped: true, eventKey };
   const contact = bookingContact(booking);
   const tasks = [];
-  if (contact.email) tasks.push(sendEmail({ to: contact.email, subject: emailSubject, html, text: message, attachments }));
+  if (contact.email) tasks.push(sendEmail({ to: contact.email, tenantId, subject: emailSubject, html, text: message, attachments }));
   if (contact.phone && process.env.WHATSAPP_API_URL && process.env.WHATSAPP_ACCESS_TOKEN) tasks.push(sendWhatsApp({ to: contact.phone, message }));
   if (booking.user) tasks.push(recordInApp({ tenantId, recipient: booking.user, title, message, type, eventKey, relatedId: booking._id }));
   const results = await Promise.allSettled(tasks);
@@ -90,7 +90,7 @@ export const sendSubscriptionReminderAutomation = async ({ subscription, daysRem
   const title = expired ? "Subscription Expired" : `Subscription Expires in ${daysRemaining} Day${daysRemaining === 1 ? "" : "s"}`;
   const message = expired ? `${companyName}'s subscription has expired. Please renew to restore platform access.` : `${companyName}'s ${subscription.plan} subscription expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}.`;
   await Promise.all(recipients.map(async (user) => {
-    if (user.email) await sendEmail({ to: user.email, subject: title, text: message, html: `<h2>${escapeHtml(title)}</h2><p>${escapeHtml(message)}</p>` }).catch((error) => console.error("Subscription email failed:", error.message));
+    if (user.email) await sendEmail({ to: user.email, tenantId, subject: title, text: message, html: `<h2>${escapeHtml(title)}</h2><p>${escapeHtml(message)}</p>` }).catch((error) => console.error("Subscription email failed:", error.message));
     if (user.phone && process.env.WHATSAPP_API_URL && process.env.WHATSAPP_ACCESS_TOKEN) await sendWhatsApp({ to: user.phone, message }).catch((error) => console.error("Subscription WhatsApp failed:", error.message));
     await recordInApp({ tenantId, recipient: user._id, title, message, type: "alert", eventKey: `${eventKey}:${user._id}`, relatedId: null });
   }));
