@@ -61,6 +61,7 @@ export const getAgentDashboard = async (req, res, next) => {
       commissionResult,
       pendingCommissionResult,
       paidCommissionResult,
+      walletResult,
       pendingBookings,
       cancelledBookings,
       recentBookings,
@@ -98,11 +99,7 @@ export const getAgentDashboard = async (req, res, next) => {
       ]),
       Booking.aggregate([
         { $match: { ...base, status: { $ne: "cancelled" } } },
-        {
-          $group: {
-            _id: "$customer",
-          },
-        },
+        { $group: { _id: "$customer" } },
         { $match: { _id: { $ne: null } } },
         { $count: "totalCustomers" },
       ]),
@@ -118,6 +115,10 @@ export const getAgentDashboard = async (req, res, next) => {
         { $match: { ...commissionBase, status: "paid" } },
         { $group: { _id: null, paidCommission: { $sum: { $ifNull: ["$amount", 0] } } } },
       ]),
+      Commission.aggregate([
+        { $match: { ...commissionBase, status: { $in: ["pending", "approved", "processing"] } } },
+        { $group: { _id: null, walletBalance: { $sum: { $ifNull: ["$amount", 0] } } } },
+      ]),
       Booking.countDocuments({ ...base, status: "pending" }),
       Booking.countDocuments({ ...base, status: "cancelled" }),
       Booking.find(base)
@@ -128,13 +129,31 @@ export const getAgentDashboard = async (req, res, next) => {
         .lean(),
     ]);
 
+    const totalSales = Number(salesResult[0]?.totalSales || 0);
+    const expectedCommission = Number(((totalSales * globalCommissionRate) / 100).toFixed(2));
+    const paidCommission = Number(paidCommissionResult[0]?.paidCommission || 0);
+    const ledgerTotalCommission = Number(commissionResult[0]?.totalCommission || 0);
+    const ledgerPendingCommission = Number(pendingCommissionResult[0]?.pendingCommission || 0);
+    const ledgerWallet = Number(walletResult[0]?.walletBalance || 0);
+
+    // Legacy/demo bookings may predate Commission records. Use paid sales as the
+    // authoritative fallback so the dashboard never shows a false KES 0 wallet.
+    const totalCommission = ledgerTotalCommission > 0 ? ledgerTotalCommission : expectedCommission;
+    const effectivePaidCommission = paidCommission;
+    const walletBalance = ledgerWallet > 0
+      ? ledgerWallet
+      : Math.max(0, Number((expectedCommission - effectivePaidCommission).toFixed(2)));
+    const pendingCommission = ledgerPendingCommission > 0
+      ? ledgerPendingCommission
+      : walletBalance;
+
     return res.status(200).json({
       success: true,
       data: {
         agent: {
           id: agent._id,
           companyName: agent.companyName,
-          walletBalance: Number(agent.walletBalance || 0),
+          walletBalance,
           commissionRate: globalCommissionRate,
           status: agent.status,
           isApproved: Boolean(agent.isApproved),
@@ -146,12 +165,18 @@ export const getAgentDashboard = async (req, res, next) => {
           completedTours,
           pendingBookings,
           cancelledBookings,
-          totalSales: salesResult[0]?.totalSales || 0,
-          totalCommission: commissionResult[0]?.totalCommission || 0,
-          pendingCommission: pendingCommissionResult[0]?.pendingCommission || 0,
-          paidCommission: paidCommissionResult[0]?.paidCommission || 0,
+          totalSales,
+          totalCommission,
+          pendingCommission,
+          paidCommission: effectivePaidCommission,
           totalGuests: guestsResult[0]?.totalGuests || 0,
           totalCustomers: customersResult[0]?.totalCustomers || 0,
+          outstandingSales: Number(
+            await Booking.aggregate([
+              { $match: { ...base, status: { $nin: ["cancelled", "refunded"] } } },
+              { $group: { _id: null, total: { $sum: { $ifNull: ["$balanceAmount", 0] } } } },
+            ]).then((rows) => rows[0]?.total || 0)
+          ),
         },
         recentBookings,
       },
