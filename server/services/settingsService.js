@@ -1,4 +1,5 @@
 import SystemSetting from "../models/SystemSetting.js";
+import { getTenantContext } from "../tenancy/context.js";
 
 const DEFAULT_SETTINGS = {
   key: "default",
@@ -50,7 +51,13 @@ const DEFAULT_SETTINGS = {
   twoFactor: false,
 };
 
-const resolveTenantId = (source) => source?.tenantId || source?.user?.tenantId || (source?.user?._id && source?.tenantId) || null;
+const resolveTenantId = (source = {}) => {
+  const explicit = source?.tenantId || source?.user?.tenantId;
+  if (explicit) return explicit?._id ? String(explicit._id) : String(explicit);
+  const context = getTenantContext();
+  if (context?.bypass === true) return null;
+  return context?.tenantId ? String(context.tenantId) : null;
+};
 
 export async function getSystemSettings(source = {}) {
   const tenantId = resolveTenantId(source);
@@ -58,7 +65,6 @@ export async function getSystemSettings(source = {}) {
   if (!tenantId) {
     const platformSettings = await SystemSetting.findOne({ tenantId: null, key: "platform" }).lean().catch(() => null);
     if (platformSettings) return { ...DEFAULT_SETTINGS, ...platformSettings, _tenantScoped: false, _platformScoped: true };
-
     return { ...DEFAULT_SETTINGS, _isDefault: true, _tenantScoped: false, _platformScoped: false };
   }
 
