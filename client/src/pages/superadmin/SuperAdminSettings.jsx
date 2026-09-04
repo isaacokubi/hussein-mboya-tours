@@ -32,7 +32,6 @@ export default function SuperAdminSettings() {
 
   useEffect(() => {
     let active = true;
-
     const loadSettings = async () => {
       try {
         setLoading(true);
@@ -49,7 +48,6 @@ export default function SuperAdminSettings() {
         if (active) setLoading(false);
       }
     };
-
     void loadSettings();
     return () => { active = false; };
   }, [updateGlobalSettings]);
@@ -58,12 +56,21 @@ export default function SuperAdminSettings() {
   const save = async () => {
     try {
       setSaving(true);
-      const payload = { ...settings, companyName: String(settings.companyName || "Coherent Tours").trim(), taxRate: Number(settings.taxRate ?? 0), taxServiceType: settings.taxServiceType || "service_fee", bookingDepositPercentage: Number(settings.bookingDepositPercentage ?? 30), defaultCommissionRate: Number(settings.defaultCommissionRate ?? 10) };
+      const payload = {
+        ...settings,
+        companyName: String(settings.companyName || "Global Tours").trim(),
+        taxRate: Number(settings.taxRate ?? 0),
+        taxServiceType: settings.taxServiceType || "service_fee",
+        bookingStatus: settings.bookingStatus || "confirmed",
+        paymentProvider: String(settings.paymentProvider || "").trim(),
+        bookingDepositPercentage: Number(settings.bookingDepositPercentage ?? 30),
+        defaultCommissionRate: Number(settings.defaultCommissionRate ?? 10),
+      };
       const response = await updateSettings(payload);
       const savedSettings = response?.settings || response?.data?.settings || response?.data || payload;
       updateGlobalSettings?.(savedSettings);
       setSettings((prev) => ({ ...prev, ...savedSettings }));
-      toast.success("Platform rates and settings saved successfully.");
+      toast.success("Platform settings saved successfully.");
     } catch (err) {
       console.error("SUPERADMIN SETTINGS SAVE ERROR", err);
       toast.error(err?.response?.data?.message || "Failed saving platform settings.");
@@ -88,7 +95,7 @@ export default function SuperAdminSettings() {
       <div className="rounded-2xl border bg-white p-6 shadow-sm"><div className="flex items-center justify-between gap-4"><div><h1 className="text-3xl font-bold">Platform Settings</h1><p className="mt-2 text-gray-500">Manage {settings.companyName || "Platform"} global configuration.</p></div><button onClick={load} className="flex items-center gap-2 rounded-xl border px-4 py-2"><RefreshCw size={18} /> Refresh</button></div><div className="mt-4 flex items-center gap-2 text-sm"><CheckCircle size={16} /> System configuration active</div></div>
       <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5"><div className="flex items-start gap-3"><Percent className="mt-1 text-blue-700" size={22} /><div><h2 className="font-semibold text-blue-900">Global Business Rates</h2><p className="mt-1 text-sm text-blue-800">These rates are controlled centrally by SuperAdmin and stored as platform settings.</p></div></div></div>
       <div className="grid gap-6 lg:grid-cols-3"><Card icon={Percent} title="Agent Commission"><RateInput label="Global agent commission" description="Default rate for new agent commission calculations." value={settings.defaultCommissionRate} onChange={(v) => update("defaultCommissionRate", v)} /></Card><Card icon={CreditCard} title="Booking Deposit"><RateInput label="Default booking deposit" description="Default percentage requested as the initial deposit." value={settings.bookingDepositPercentage} onChange={(v) => update("bookingDepositPercentage", v)} /></Card><Card icon={CreditCard} title="Tax / Service Rate"><RateInput label="Global tax/service rate" description="Centrally controlled percentage for eligible calculations." value={settings.taxRate} onChange={(v) => update("taxRate", v)} /><select className="w-full rounded-xl border p-3" value={settings.taxServiceType || "service_fee"} onChange={(e) => update("taxServiceType", e.target.value)}><option value="service_fee">Service fee</option><option value="tax">Tax</option><option value="tax_and_service">Tax / service charge</option></select></Card></div>
-      <div className="grid gap-6 lg:grid-cols-2"><Card icon={Building2} title="General Configuration"><input className="w-full rounded-xl border p-3" placeholder="Company Name" value={settings.companyName || ""} onChange={(e) => update("companyName", e.target.value)} /><input className="w-full rounded-xl border p-3" placeholder="Support Email" value={settings.supportEmail || ""} onChange={(e) => update("supportEmail", e.target.value)} /><input className="w-full rounded-xl border p-3" placeholder="Support Phone" value={settings.supportPhone || ""} onChange={(e) => update("supportPhone", e.target.value)} /><select className="w-full rounded-xl border p-3" value={settings.currency || "KES"} onChange={(e) => update("currency", e.target.value)}><option>KES</option><option>USD</option><option>EUR</option></select></Card><Card icon={CreditCard} title="Booking & Payments"><select className="w-full rounded-xl border p-3" value={settings.bookingStatus || "confirmed"} onChange={(e) => update("bookingStatus", e.target.value)}><option value="pending">Pending</option><option value="confirmed">Confirmed</option></select><input className="w-full rounded-xl border p-3" placeholder="Payment Provider" value={settings.paymentProvider || ""} onChange={(e) => update("paymentProvider", e.target.value)} /></Card><Card icon={Bell} title="Notifications"><Toggle checked={settings.emailNotifications ?? true} label="Booking and payment email notifications" onChange={(v) => update("emailNotifications", v)} /><Toggle checked={settings.systemAlerts ?? true} label="System alerts" onChange={(v) => update("systemAlerts", v)} /></Card><Card icon={Shield} title="Security Controls"><Toggle checked={settings.twoFactor ?? false} label="Enable Two Factor Authentication" onChange={(v) => update("twoFactor", v)} /><div className="flex gap-2 text-sm text-gray-600"><AlertTriangle size={16} /> Security changes are recorded in audit logs</div></Card><Card icon={Database} title="System Maintenance"><button onClick={() => runMaintenance("backup")} className="w-full rounded-xl border p-3 hover:bg-gray-100">Create Database Backup</button><button onClick={() => runMaintenance("cache")} className="w-full rounded-xl border p-3 hover:bg-gray-100">Clear System Cache</button></Card><Card icon={Settings} title="System Information"><div className="space-y-2 text-sm"><p>Platform settings scope: global</p><p>Configuration management enabled</p><p>Global rates controlled by SuperAdmin</p><p>Audit logging active</p></div></Card></div>
+      <div className="grid gap-6 lg:grid-cols-2"><Card icon={Building2} title="General Configuration"><input className="w-full rounded-xl border p-3" placeholder="Platform Name" value={settings.companyName || ""} onChange={(e) => update("companyName", e.target.value)} /><input className="w-full rounded-xl border p-3" placeholder="Support Email" value={settings.supportEmail || ""} onChange={(e) => update("supportEmail", e.target.value)} /><input className="w-full rounded-xl border p-3" placeholder="Support Phone" value={settings.supportPhone || ""} onChange={(e) => update("supportPhone", e.target.value)} /><select className="w-full rounded-xl border p-3" value={settings.currency || "KES"} onChange={(e) => update("currency", e.target.value)}><option>KES</option><option>USD</option><option>EUR</option></select></Card><Card icon={CreditCard} title="Booking & Payments"><select className="w-full rounded-xl border p-3" value={settings.bookingStatus || "confirmed"} onChange={(e) => update("bookingStatus", e.target.value)}><option value="pending">Pending</option><option value="confirmed">Confirmed</option></select><input className="w-full rounded-xl border p-3" placeholder="Payment Provider" value={settings.paymentProvider || ""} onChange={(e) => update("paymentProvider", e.target.value)} /></Card><Card icon={Bell} title="Notifications"><Toggle checked={settings.emailNotifications ?? true} label="Booking and payment email notifications" onChange={(v) => update("emailNotifications", v)} /><Toggle checked={settings.systemAlerts ?? true} label="System alerts" onChange={(v) => update("systemAlerts", v)} /></Card><Card icon={Shield} title="Security Controls"><Toggle checked={settings.twoFactor ?? false} label="Enable Two Factor Authentication" onChange={(v) => update("twoFactor", v)} /><div className="flex gap-2 text-sm text-gray-600"><AlertTriangle size={16} /> Security changes are recorded in audit logs</div></Card><Card icon={Database} title="System Maintenance"><button onClick={() => runMaintenance("backup")} className="w-full rounded-xl border p-3 hover:bg-gray-100">Create Database Backup</button><button onClick={() => runMaintenance("cache")} className="w-full rounded-xl border p-3 hover:bg-gray-100">Clear System Cache</button></Card><Card icon={Settings} title="System Information"><div className="space-y-2 text-sm"><p>Platform settings scope: global</p><p>Configuration management enabled</p><p>Global rates controlled by SuperAdmin</p><p>Audit logging active</p></div></Card></div>
       <div className="flex justify-end"><button disabled={saving} onClick={save} className="flex items-center gap-2 rounded-xl bg-black px-8 py-3 text-white disabled:opacity-50"><Save size={18} /> {saving ? "Saving..." : "Save Settings"}</button></div>
     </div>
   );
