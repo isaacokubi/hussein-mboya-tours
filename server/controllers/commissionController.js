@@ -1,8 +1,7 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
+import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 import Commission from "../models/Commission.js";
-
-
+import Agent from "../models/Agent.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -10,59 +9,19 @@ import Commission from "../models/Commission.js";
 |--------------------------------------------------------------------------
 */
 
-export const getCommissions = async(req,res)=>{
+export const getCommissions = async (req, res) => {
   requireTenantId();
+  try {
+    const commissions = await Commission.find(tenantFilter(req))
+      .populate({ path: "agent", populate: { path: "user", select: "name email" } })
+      .populate("booking")
+      .sort({ createdAt: -1 });
 
-try{
-
-
-const commissions =
-await Commission.find(tenantFilter(req))
-
-.populate({
-path:"agent",
-populate:{
-path:"user",
-select:"name email"
-}
-})
-
-.populate(
-"booking"
-)
-
-.sort({
-createdAt:-1
-});
-
-
-
-res.json({
-
-success:true,
-
-data:commissions
-
-});
-
-
-}catch(error){
-
-res.status(500).json({
-
-success:false,
-
-message:error.message
-
-});
-
-}
-
+    res.json({ success: true, data: commissions });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -70,57 +29,26 @@ message:error.message
 |--------------------------------------------------------------------------
 */
 
-export const getAgentCommissions = async(req,res)=>{
+export const getAgentCommissions = async (req, res) => {
+  requireTenantId();
+  try {
+    const commissions = await Commission.find(
+      mergeTenantFilter(req, { agent: req.params.agentId, isDeleted: { $ne: true } })
+    )
+      .populate("booking")
+      .sort({ createdAt: -1 });
 
-try{
-
-
-const commissions =
-await Commission.find({
-
-agent:req.params.agentId
-
-})
-
-.populate("booking")
-
-.sort({
-createdAt:-1
-});
-
-
-
-res.json({
-
-success:true,
-
-data:commissions
-
-});
-
-
-}catch(error){
-
-res.status(500).json({
-
-success:false,
-
-message:error.message
-
-});
-
-}
-
+    res.json({ success: true, data: commissions });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
-
 
 export const approveCommission = async (req, res, next) => {
   try {
     const commission = await Commission.findOne(
-mergeTenantFilter(req,{
-_id:req.params.id
-})
-);
+      mergeTenantFilter(req, { _id: req.params.id })
+    );
     if (!commission) return res.status(404).json({ success: false, message: "Commission not found." });
     if (commission.status === "paid") return res.status(400).json({ success: false, message: "Commission is already paid." });
 
@@ -145,10 +73,8 @@ export const payCommission = async (req, res, next) => {
     }
 
     const commission = await Commission.findOne(
-mergeTenantFilter(req,{
-_id:req.params.id
-})
-);
+      mergeTenantFilter(req, { _id: req.params.id, isDeleted: { $ne: true } })
+    );
     if (!commission) return res.status(404).json({ success: false, message: "Commission not found." });
     if (commission.status === "paid") return res.status(400).json({ success: false, message: "Commission is already paid." });
     if (!["approved", "processing", "pending"].includes(commission.status)) {
@@ -164,13 +90,35 @@ _id:req.params.id
     if (notes) commission.financeNotes = String(notes).trim();
     await commission.save();
 
-    const Agent = (await import("../models/Agent.js")).default;
-    const agent = await Agent.findById(commission.agent);
+    const agent = await Agent.findOne(
+      mergeTenantFilter(req, { _id: commission.agent })
+    );
+
     if (agent) {
-      const amount = Number(commission.amount || 0);
-      agent.paidCommission = Number(agent.paidCommission || 0) + amount;
-      agent.pendingCommission = Math.max(0, Number(agent.pendingCommission || 0) - amount);
-      agent.walletBalance = Math.max(0, Number(agent.walletBalance || 0) - amount);
+      const agentCommissionFilter = mergeTenantFilter(req, {
+        agent: agent._id,
+        isDeleted: { $ne: true },
+      });
+
+      const [totals, pending, paid] = await Promise.all([
+        Commission.aggregate([
+          { $match: { ...agentCommissionFilter, status: { $nin: ["cancelled", "rejected"] } } },
+          { $group: { _id: null, total: { $sum: { $ifNull: ["$amount", 0] } } } },
+        ]),
+        Commission.aggregate([
+          { $match: { ...agentCommissionFilter, status: { $in: ["pending", "approved", "processing"] } } },
+          { $group: { _id: null, total: { $sum: { $ifNull: ["$amount", 0] } } } },
+        ]),
+        Commission.aggregate([
+          { $match: { ...agentCommissionFilter, status: "paid" } },
+          { $group: { _id: null, total: { $sum: { $ifNull: ["$amount", 0] } } } },
+        ]),
+      ]);
+
+      agent.totalCommission = Number(totals[0]?.total || 0);
+      agent.pendingCommission = Number(pending[0]?.total || 0);
+      agent.paidCommission = Number(paid[0]?.total || 0);
+      agent.walletBalance = agent.pendingCommission;
       await agent.save();
     }
 
