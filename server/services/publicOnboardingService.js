@@ -29,9 +29,6 @@ export async function registerTenant({ company, admin, plan = "starter", request
   if (!slug) throw new Error("A valid company slug is required.");
   if (await runWithTenant({ bypass: true }, () => Organization.findOne({ slug }).lean())) throw new Error("That company slug is already in use.");
 
-  // Administrator email uniqueness is tenant-scoped. Do not perform a global
-  // lookup here because the organization/tenant does not exist yet.
-
   let organization;
   let adminUser;
   let subscription;
@@ -48,9 +45,11 @@ export async function registerTenant({ company, admin, plan = "starter", request
       subscription: { plan: selectedPlan, seats: limits.seats, trialEndsAt }, createdBy: null,
     }));
 
+    // Explicit tenantId binding prevents a newly registered administrator from
+    // ever becoming an unscoped user if model middleware changes in the future.
     adminUser = await runWithTenant({ tenantId: organization._id, tenant: organization, bypass: false }, () => User.create({
       name: String(admin.name).trim(), email: adminIdentity.normalizedEmail, phone: adminIdentity.normalizedPhone, password: admin.password,
-      role: "admin", legacyRole: "admin", roleId: roles.admin._id, status: "active", isVerified: true,
+      role: "admin", legacyRole: "admin", roleId: roles.admin._id, tenantId: organization._id, status: "active", isVerified: true,
     }));
 
     organization.createdBy = adminUser._id;
@@ -71,7 +70,7 @@ export async function registerTenant({ company, admin, plan = "starter", request
       superAdminUser = await runWithTenant({ bypass: true }, () => User.create({
         name: String(process.env.BOOTSTRAP_SUPERADMIN_NAME).trim(), email: platform.normalizedEmail, phone: platform.normalizedPhone,
         password: process.env.BOOTSTRAP_SUPERADMIN_PASSWORD, role: "super_admin", legacyRole: "super_admin", roleId: roles.superadmin._id,
-        status: "active", isVerified: true,
+        tenantId: null, status: "active", isVerified: true,
       }));
     }
 
@@ -86,19 +85,13 @@ export async function registerTenant({ company, admin, plan = "starter", request
     if (subscription?._id) await runWithTenant({ bypass: true }, () => Subscription.deleteOne({ _id: subscription._id })).catch(() => {});
     if (adminUser?._id && organization?._id) await runWithTenant({ tenantId: organization._id, tenant: organization, bypass: false }, () => User.deleteOne({ _id: adminUser._id })).catch(() => {});
     if (organization?._id) await runWithTenant({ bypass: true }, () => Organization.deleteOne({ _id: organization._id })).catch(() => {});
-
     if (error?.code === 11000) {
       const duplicate = getDuplicateKeyDetails(error);
       const duplicateError = new Error(duplicate?.message || "A unique value already exists.");
-      duplicateError.code = "DUPLICATE_KEY";
-      duplicateError.field = duplicate?.field;
-      duplicateError.value = duplicate?.value;
-      duplicateError.keyPattern = duplicate?.keyPattern;
-      duplicateError.keyValue = duplicate?.keyValue;
-      duplicateError.indexName = duplicate?.indexName;
+      duplicateError.code = "DUPLICATE_KEY"; duplicateError.field = duplicate?.field; duplicateError.value = duplicate?.value;
+      duplicateError.keyPattern = duplicate?.keyPattern; duplicateError.keyValue = duplicate?.keyValue; duplicateError.indexName = duplicate?.indexName;
       throw duplicateError;
     }
-
     throw error;
   }
 }
