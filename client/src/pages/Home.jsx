@@ -27,7 +27,14 @@ export default function Home() {
   const seoDescription = settings.seoDescription || (companyName ? `Discover Kenya with ${companyName}: safaris, wildlife adventures, beach holidays and tailor-made African travel experiences.` : "Discover Kenya through safaris, wildlife adventures, beach holidays and tailor-made African travel experiences.");
 
   return (
-    <main className="overflow-hidden bg-slate-950 text-slate-100" style={{ fontFamily: "var(--tenant-font-family,Inter), sans-serif" }}>
+    <main
+      className="tenant-public-site overflow-hidden text-slate-100"
+      style={{
+        fontFamily: "var(--tenant-font-family,Inter), sans-serif",
+        backgroundColor: "var(--tenant-background, #020617)",
+        color: "var(--tenant-text, #f1f5f9)",
+      }}
+    >
       <SEO title={seoTitle} description={seoDescription} image={settings.companyLogo || tenant.logoUrl || "/hero1.jpeg"} />
       <div className="relative">
         <HeroSlider />
