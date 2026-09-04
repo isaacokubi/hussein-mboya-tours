@@ -16,7 +16,7 @@ const MpesaCTA = lazy(() => import("../components/home/MpesaCTA"));
 const NewsletterSection = lazy(() => import("../components/home/NewsletterSection"));
 
 const DEFAULT_SECTIONS = { stats: true, tours: true, destinations: true, experiences: true, services: true, testimonials: true, gallery: true, whyChooseUs: true, newsletter: true };
-const SectionFallback = () => <div className="min-h-24" aria-hidden="true" />;
+const SectionFallback = () => <div className="min-h-24 bg-slate-950" aria-hidden="true" />;
 
 export default function Home() {
   const { tenant = {} } = useTenant() || {};
@@ -28,36 +28,36 @@ export default function Home() {
 
   return (
     <main
-      className="tenant-public-site overflow-hidden text-slate-100"
+      className="tenant-public-site min-h-screen overflow-hidden bg-slate-950 text-slate-100"
       style={{
         fontFamily: "var(--tenant-font-family,Inter), sans-serif",
-        backgroundColor: "var(--tenant-background, #020617)",
-        color: "var(--tenant-text, #f1f5f9)",
+        backgroundColor: "#020617",
+        color: "#f1f5f9",
       }}
     >
       <SEO title={seoTitle} description={seoDescription} image={settings.companyLogo || tenant.logoUrl || "/hero1.jpeg"} />
-      <div className="relative">
+      <div className="relative bg-slate-950">
         <HeroSlider />
         <HomeSearch />
       </div>
 
-      <div className="relative mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16">
+      <div className="relative mx-auto max-w-[1600px] bg-slate-950 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16">
         <div className="pointer-events-none absolute left-1/4 top-24 h-72 w-72 rounded-full bg-emerald-500/10 blur-3xl" />
         <div className="pointer-events-none absolute right-0 top-[45rem] h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl" />
         <Suspense fallback={<SectionFallback />}>
-          {sections.stats && <section className="py-12 md:py-16"><StatsSection /></section>}
-          {sections.tours && <section className="rounded-[2rem] border border-white/10 bg-white/[0.04] px-4 py-12 shadow-2xl backdrop-blur-sm sm:px-7 md:py-16"><FeaturedTours /></section>}
-          {sections.destinations && <section className="py-12 md:py-16"><DestinationsSection /></section>}
-          {sections.experiences && <section className="py-12 md:py-16"><CategoriesSection /></section>}
-          {sections.services && <section className="py-12 md:py-16"><div className="mb-10 text-center"><p className="text-sm font-bold uppercase tracking-[0.25em] text-emerald-300">{companyName ? `${companyName} platform` : "Your travel platform"}</p><h2 className="mt-3 text-3xl font-black tracking-tight md:text-5xl">Everything for your next journey</h2><p className="mx-auto mt-4 max-w-2xl text-slate-400">{companyName ? `${companyName} brings discovery, booking and travel support together in one modern experience.` : "Discover, plan and book unforgettable African experiences in one modern travel platform."}</p></div><div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{[["Luxury Safaris","Private and premium safari experiences across Kenya and East Africa."],["Wildlife Tours","Guided wildlife adventures in Kenya's iconic national parks and reserves."],["Beach Holidays","Relaxing coastal escapes, island stays and tailor-made beach packages."],["Group Adventures","Flexible group travel for families, friends, schools and organizations."],["Honeymoon Packages","Romantic itineraries designed around memorable stays and experiences."],["Airport Transfers","Reliable airport pickups and drop-offs coordinated around your itinerary."]].map(([title,description])=><article key={title} className="group rounded-3xl border border-white/10 bg-white/[0.05] p-7 transition hover:-translate-y-1 hover:border-emerald-400/40 hover:bg-white/[0.08]"><div className="mb-5 h-1 w-12 rounded-full bg-emerald-400 transition-all group-hover:w-20"/><h3 className="text-xl font-bold text-white">{title}</h3><p className="mt-3 leading-7 text-slate-400">{description}</p></article>)}</div></section>}
-          {sections.testimonials && <section className="py-12 md:py-16"><TestimonialsSection /></section>}
-          {sections.gallery && <section className="rounded-[2rem] border border-white/10 bg-white/[0.03] px-4 py-12 sm:px-7 md:py-16"><GallerySection /></section>}
-          {sections.whyChooseUs && <section className="py-12 md:py-16"><WhyChooseUs /></section>}
+          {sections.stats && <section className="bg-slate-950 py-12 text-slate-100 md:py-16"><StatsSection /></section>}
+          {sections.tours && <section className="rounded-[2rem] border border-white/10 bg-slate-900/70 px-4 py-12 text-slate-100 shadow-2xl backdrop-blur-sm sm:px-7 md:py-16"><FeaturedTours /></section>}
+          {sections.destinations && <section className="bg-slate-950 py-12 text-slate-100 md:py-16"><DestinationsSection /></section>}
+          {sections.experiences && <section className="bg-slate-950 py-12 text-slate-100 md:py-16"><CategoriesSection /></section>}
+          {sections.services && <section className="bg-slate-950 py-12 text-slate-100 md:py-16"><div className="mb-10 text-center"><p className="text-sm font-bold uppercase tracking-[0.25em] text-emerald-300">{companyName ? `${companyName} platform` : "Your travel platform"}</p><h2 className="mt-3 text-3xl font-black tracking-tight text-white md:text-5xl">Everything for your next journey</h2><p className="mx-auto mt-4 max-w-2xl text-slate-300">{companyName ? `${companyName} brings discovery, booking and travel support together in one modern experience.` : "Discover, plan and book unforgettable African experiences in one modern travel platform."}</p></div><div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{[["Luxury Safaris","Private and premium safari experiences across Kenya and East Africa."],["Wildlife Tours","Guided wildlife adventures in Kenya's iconic national parks and reserves."],["Beach Holidays","Relaxing coastal escapes, island stays and tailor-made beach packages."],["Group Adventures","Flexible group travel for families, friends, schools and organizations."],["Honeymoon Packages","Romantic itineraries designed around memorable stays and experiences."],["Airport Transfers","Reliable airport pickups and drop-offs coordinated around your itinerary."]].map(([title,description])=><article key={title} className="group rounded-3xl border border-white/10 bg-slate-900/80 p-7 transition hover:-translate-y-1 hover:border-emerald-400/40 hover:bg-slate-800"><div className="mb-5 h-1 w-12 rounded-full bg-emerald-400 transition-all group-hover:w-20"/><h3 className="text-xl font-bold text-white">{title}</h3><p className="mt-3 leading-7 text-slate-300">{description}</p></article>)}</div></section>}
+          {sections.testimonials && <section className="bg-slate-950 py-12 text-slate-100 md:py-16"><TestimonialsSection /></section>}
+          {sections.gallery && <section className="rounded-[2rem] border border-white/10 bg-slate-900/60 px-4 py-12 text-slate-100 sm:px-7 md:py-16"><GallerySection /></section>}
+          {sections.whyChooseUs && <section className="bg-slate-950 py-12 text-slate-100 md:py-16"><WhyChooseUs /></section>}
         </Suspense>
       </div>
       <Suspense fallback={<SectionFallback />}>
         <section className="mt-8 bg-gradient-to-r from-emerald-950 via-emerald-800 to-cyan-900"><MpesaCTA /></section>
-        {sections.newsletter && <section className="mx-auto max-w-[1600px] px-4 py-12 sm:px-6 md:px-8 lg:px-12"><NewsletterSection /></section>}
+        {sections.newsletter && <section className="mx-auto max-w-[1600px] bg-slate-950 px-4 py-12 text-slate-100 sm:px-6 md:px-8 lg:px-12"><NewsletterSection /></section>}
       </Suspense>
     </main>
   );
