@@ -23,7 +23,7 @@ export default function Navbar() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const companyName = String(settings.companyName || tenant.name || tenant.companyName || (user ? "Company" : "Global Tours")).trim();
+  const companyName = String(settings.companyName || tenant.name || tenant.companyName || (user ? "Company" : "")).trim();
   const logoUrl = settings.companyLogo || settings.logo || tenant.logoUrl || "";
   const initials = useMemo(() => initialsFor(companyName), [companyName]);
   const role = normalizeRole(user);
@@ -40,7 +40,7 @@ export default function Navbar() {
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-6">
         <Link to="/" className="flex min-w-0 items-center gap-3" onClick={closeMobile}>
           {logoUrl ? <img src={logoUrl} alt={companyName} className="h-11 w-11 rounded-2xl object-cover shadow-lg ring-1 ring-white/20" /> : <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-400 font-black text-lg text-slate-950 shadow-lg">{initials}</div>}
-          <div className="min-w-0"><h2 className="truncate text-xl font-black tracking-tight text-white">{companyName}</h2><p className="truncate text-xs text-emerald-300">Tours & Travel SaaS</p></div>
+          <div className="min-w-0"><h2 className="truncate text-xl font-black tracking-tight text-white">{companyName || "Tours & Travel"}</h2><p className="truncate text-xs text-emerald-300">Tours & Travel SaaS</p></div>
         </Link>
         <nav className="hidden items-center gap-7 lg:flex">{publicLinks.map(([label, path]) => <NavLink key={path} to={path} end={path === "/"} className={({ isActive }) => `text-sm font-semibold transition ${isActive ? "text-emerald-300" : "text-slate-300 hover:text-white"}`}>{label}</NavLink>)}</nav>
         <div className="hidden items-center gap-3 lg:flex">
