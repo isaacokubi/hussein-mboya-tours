@@ -6,6 +6,25 @@ import { getFeaturedDestinations } from "../../api/destinationApi";
 import { useAuth } from "../../context/AuthContext";
 import LazyImage from "../common/LazyImage";
 
+const getDestinationImage = (destination) => {
+  const firstImage = destination?.images?.[0];
+
+  if (typeof firstImage === "string" && firstImage.trim()) {
+    return firstImage.trim();
+  }
+
+  if (firstImage?.url) {
+    return firstImage.url;
+  }
+
+  return (
+    destination?.featuredImage ||
+    destination?.imageUrl ||
+    destination?.image ||
+    "/images/image-placeholder.jpg"
+  );
+};
+
 export default function DestinationsSection() {
   const { user } = useAuth();
   const tenantId = String(user?.tenantId?._id || user?.tenantId || "").trim();
@@ -82,8 +101,9 @@ export default function DestinationsSection() {
                 className="rounded-xl shadow-lg overflow-hidden bg-slate-900 border border-white/10 cursor-pointer hover:shadow-2xl transition"
               >
                 <LazyImage
-                  src={typeof destination.images?.[0] === "string" ? destination.images[0] : destination.images?.[0]?.url || "/images/placeholder.jpg"}
+                  src={getDestinationImage(destination)}
                   alt={destination.name || "Destination"}
+                  fallback="/images/image-placeholder.jpg"
                   className="h-48 w-full object-cover"
                 />
 
