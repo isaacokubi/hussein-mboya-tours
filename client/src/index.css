@@ -20,46 +20,50 @@ body {
   font-family: var(--tenant-font-family);
 }
 
-/* Public tenant pages intentionally use a dark canvas so light content remains readable. */
+/* Public tenant pages intentionally use a dark canvas so every content block remains readable. */
 .tenant-public-site {
   min-height: 100vh;
-  background: var(--tenant-background, #020617);
-  color: var(--tenant-text, #f1f5f9);
+  background: #020617 !important;
+  color: #f1f5f9;
 }
 
-.tenant-public-site .bg-white {
-  background-color: #0f172a !important;
-}
+.tenant-public-site .bg-white { background-color: #0f172a !important; }
+.tenant-public-site .bg-gray-50,
+.tenant-public-site .bg-slate-50 { background-color: #020617 !important; }
+.tenant-public-site .bg-gray-100,
+.tenant-public-site .bg-slate-100 { background-color: #0f172a !important; }
+.tenant-public-site .bg-gray-200,
+.tenant-public-site .bg-slate-200 { background-color: #1e293b !important; }
 
+.tenant-public-site .text-slate-950,
 .tenant-public-site .text-slate-900,
-.tenant-public-site .text-gray-900 {
-  color: #f8fafc !important;
-}
+.tenant-public-site .text-gray-950,
+.tenant-public-site .text-gray-900 { color: #f8fafc !important; }
 
 .tenant-public-site .text-slate-800,
-.tenant-public-site .text-gray-800 {
-  color: #e2e8f0 !important;
-}
+.tenant-public-site .text-gray-800 { color: #e2e8f0 !important; }
 
 .tenant-public-site .text-slate-700,
-.tenant-public-site .text-gray-700 {
-  color: #cbd5e1 !important;
-}
+.tenant-public-site .text-gray-700 { color: #cbd5e1 !important; }
 
 .tenant-public-site .text-slate-600,
-.tenant-public-site .text-gray-600 {
-  color: #cbd5e1 !important;
-}
+.tenant-public-site .text-gray-600 { color: #cbd5e1 !important; }
 
 .tenant-public-site .text-slate-500,
-.tenant-public-site .text-gray-500 {
-  color: #94a3b8 !important;
-}
+.tenant-public-site .text-gray-500 { color: #94a3b8 !important; }
+
+.tenant-public-site .text-slate-400,
+.tenant-public-site .text-gray-400 { color: #a8b5c7 !important; }
 
 .tenant-public-site .border-slate-200,
-.tenant-public-site .border-gray-200 {
-  border-color: rgb(255 255 255 / 0.12) !important;
-}
+.tenant-public-site .border-gray-200 { border-color: rgb(255 255 255 / 0.12) !important; }
+
+/* Keep form controls readable when a legacy light-theme utility is used inside the public site. */
+.tenant-public-site input.bg-white,
+.tenant-public-site textarea.bg-white,
+.tenant-public-site select.bg-white { background-color: #0f172a !important; color: #f8fafc !important; }
+.tenant-public-site input::placeholder,
+.tenant-public-site textarea::placeholder { color: #94a3b8 !important; opacity: 1; }
 
 .input {
   @apply w-full p-3 rounded-xl border border-gray-300 outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500;
@@ -130,10 +134,10 @@ body {
 @media (max-width: 1024px) {
   .dashboard-responsive .grid-cols-4,
   .dashboard-responsive .grid-cols-5,
-  .dashboard-responsive .lg\:grid-cols-4,
-  .dashboard-responsive .lg\:grid-cols-5,
-  .dashboard-responsive .xl\:grid-cols-4,
-  .dashboard-responsive .xl\:grid-cols-5 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .dashboard-responsive .lg\\:grid-cols-4,
+  .dashboard-responsive .lg\\:grid-cols-5,
+  .dashboard-responsive .xl\\:grid-cols-4,
+  .dashboard-responsive .xl\\:grid-cols-5 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
 }
 @media (max-width: 640px) {
   .dashboard-responsive { font-size: 0.8rem; }
@@ -141,18 +145,18 @@ body {
   .dashboard-responsive .grid-cols-3,
   .dashboard-responsive .grid-cols-4,
   .dashboard-responsive .grid-cols-5,
-  .dashboard-responsive .sm\:grid-cols-2,
-  .dashboard-responsive .md\:grid-cols-2,
-  .dashboard-responsive .md\:grid-cols-3,
-  .dashboard-responsive .md\:grid-cols-4,
-  .dashboard-responsive .lg\:grid-cols-2,
-  .dashboard-responsive .lg\:grid-cols-3,
-  .dashboard-responsive .lg\:grid-cols-4,
-  .dashboard-responsive .lg\:grid-cols-5,
-  .dashboard-responsive .xl\:grid-cols-2,
-  .dashboard-responsive .xl\:grid-cols-3,
-  .dashboard-responsive .xl\:grid-cols-4,
-  .dashboard-responsive .xl\:grid-cols-5 { grid-template-columns: minmax(0, 1fr) !important; }
+  .dashboard-responsive .sm\\:grid-cols-2,
+  .dashboard-responsive .md\\:grid-cols-2,
+  .dashboard-responsive .md\\:grid-cols-3,
+  .dashboard-responsive .md\\:grid-cols-4,
+  .dashboard-responsive .lg\\:grid-cols-2,
+  .dashboard-responsive .lg\\:grid-cols-3,
+  .dashboard-responsive .lg\\:grid-cols-4,
+  .dashboard-responsive .lg\\:grid-cols-5,
+  .dashboard-responsive .xl\\:grid-cols-2,
+  .dashboard-responsive .xl\\:grid-cols-3,
+  .dashboard-responsive .xl\\:grid-cols-4,
+  .dashboard-responsive .xl\\:grid-cols-5 { grid-template-columns: minmax(0, 1fr) !important; }
   .dashboard-responsive .gap-8 { gap: 1rem !important; }
   .dashboard-responsive .gap-6 { gap: 0.9rem !important; }
   .dashboard-responsive .gap-5 { gap: 0.75rem !important; }
