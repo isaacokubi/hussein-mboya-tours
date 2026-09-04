@@ -12,7 +12,7 @@ const ABOUT_IMAGES = {
 export default function About() {
   const { tenant } = useTenant();
   const { settings } = useSettings();
-  const companyName = settings?.companyName || tenant?.name || "Coherent Tours";
+  const companyName = settings?.companyName || tenant?.name || "Tours & Travel";
   const values = [
     { icon: HeartHandshake, title: "Personalized Experiences", text: "Every journey is carefully designed around your interests, comfort, and travel dreams." },
     { icon: ShieldCheck, title: "Trusted Travel Partner", text: "We provide safe, reliable, and professionally managed tours across Africa." },
