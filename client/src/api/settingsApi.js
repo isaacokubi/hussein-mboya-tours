@@ -5,14 +5,9 @@ export const getSettings = async () => {
   return data;
 };
 
-/**
- * The settings route is an Express JSON endpoint. The previous implementation
- * sent FormData even when no logo was being uploaded. Because the route has no
- * multipart parser, req.body was empty and the controller fell back to its
- * defaults, making admin edits appear to save while the values did not stick.
- */
 export const updateSettings = async (settings = {}) => {
   const payload = { ...settings };
+  const logoFile = payload.logoFile;
   delete payload.logoFile;
 
   if (typeof payload.seoKeywords === "string") {
@@ -22,9 +17,24 @@ export const updateSettings = async (settings = {}) => {
       .filter(Boolean);
   }
 
-  const { data } = await api.put("/admin/settings", payload, {
-    headers: { "Content-Type": "application/json" },
+  // The settings endpoint accepts JSON for normal edits and multipart/form-data
+  // when a tenant uploads a logo. Keep the simple JSON path for normal saves.
+  if (!logoFile) {
+    const { data } = await api.put("/admin/settings", payload, {
+      headers: { "Content-Type": "application/json" },
+    });
+    return data;
+  }
+
+  const form = new FormData();
+  Object.entries(payload).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+    if (typeof value === "object") form.append(key, JSON.stringify(value));
+    else form.append(key, String(value));
   });
+  form.append("logo", logoFile);
+
+  const { data } = await api.put("/admin/settings", form);
   return data;
 };
 
