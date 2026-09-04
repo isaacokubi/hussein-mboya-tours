@@ -140,10 +140,10 @@
 @media (max-width: 1024px) {
   .dashboard-responsive .grid-cols-4,
   .dashboard-responsive .grid-cols-5,
-  .dashboard-responsive .lg\\:grid-cols-4,
-  .dashboard-responsive .lg\\:grid-cols-5,
-  .dashboard-responsive .xl\\:grid-cols-4,
-  .dashboard-responsive .xl\\:grid-cols-5 {
+  .dashboard-responsive .lg\:grid-cols-4,
+  .dashboard-responsive .lg\:grid-cols-5,
+  .dashboard-responsive .xl\:grid-cols-4,
+  .dashboard-responsive .xl\:grid-cols-5 {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
@@ -157,18 +157,18 @@
   .dashboard-responsive .grid-cols-3,
   .dashboard-responsive .grid-cols-4,
   .dashboard-responsive .grid-cols-5,
-  .dashboard-responsive .sm\\:grid-cols-2,
-  .dashboard-responsive .md\\:grid-cols-2,
-  .dashboard-responsive .md\\:grid-cols-3,
-  .dashboard-responsive .md\\:grid-cols-4,
-  .dashboard-responsive .lg\\:grid-cols-2,
-  .dashboard-responsive .lg\\:grid-cols-3,
-  .dashboard-responsive .lg\\:grid-cols-4,
-  .dashboard-responsive .lg\\:grid-cols-5,
-  .dashboard-responsive .xl\\:grid-cols-2,
-  .dashboard-responsive .xl\\:grid-cols-3,
-  .dashboard-responsive .xl\\:grid-cols-4,
-  .dashboard-responsive .xl\\:grid-cols-5 {
+  .dashboard-responsive .sm\:grid-cols-2,
+  .dashboard-responsive .md\:grid-cols-2,
+  .dashboard-responsive .md\:grid-cols-3,
+  .dashboard-responsive .md\:grid-cols-4,
+  .dashboard-responsive .lg\:grid-cols-2,
+  .dashboard-responsive .lg\:grid-cols-3,
+  .dashboard-responsive .lg\:grid-cols-4,
+  .dashboard-responsive .lg\:grid-cols-5,
+  .dashboard-responsive .xl\:grid-cols-2,
+  .dashboard-responsive .xl\:grid-cols-3,
+  .dashboard-responsive .xl\:grid-cols-4,
+  .dashboard-responsive .xl\:grid-cols-5 {
     grid-template-columns: minmax(0, 1fr) !important;
   }
 
