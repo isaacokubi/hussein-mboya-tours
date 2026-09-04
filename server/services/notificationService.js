@@ -1,18 +1,26 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
-// services/notificationService.js
+import { getTenantId, mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import { getSystemSettings } from "../services/settingsService.js";
-
 import Notification from "../models/Notification.js";
-
+import User from "../models/User.js";
 import { sendEmail } from "./emailService.js";
-
 import { sendNotificationToUser } from "../socket/socketManager.js";
 
-/*
-|--------------------------------------------------------------------------
-| CREATE NOTIFICATION
-|--------------------------------------------------------------------------
-*/
+const assertRecipientInTenant = async (recipient) => {
+  const tenantId = requireTenantId();
+  const recipientId = recipient?.toString?.() || String(recipient || "");
+  if (!recipientId) throw new Error("Notification recipient is required.");
+
+  const user = await User.findOne(
+    mergeTenantFilter({ _id: recipientId })
+  ).select("_id tenantId status").lean();
+
+  if (!user) throw new Error("Notification recipient does not belong to the active tenant.");
+  if (String(user.tenantId || "") !== String(tenantId)) {
+    throw new Error("Cross-tenant notification rejected.");
+  }
+
+  return user;
+};
 
 export const createNotification = async ({
   recipient,
@@ -20,34 +28,31 @@ export const createNotification = async ({
   message,
   type = "system",
   metadata = {},
+  relatedModel = null,
+  relatedId = null,
 }) => {
-  requireTenantId();
-  if (!recipient) {
-    throw new Error("Notification recipient is required.");
-  }
+  const tenantId = requireTenantId();
 
-  if (!title) {
-    throw new Error("Notification title is required.");
-  }
+  if (!recipient) throw new Error("Notification recipient is required.");
+  if (!title) throw new Error("Notification title is required.");
+  if (!message) throw new Error("Notification message is required.");
 
-  if (!message) {
-    throw new Error("Notification message is required.");
-  }
+  await assertRecipientInTenant(recipient);
 
   const notification = await Notification.create({
+    tenantId,
     recipient,
+    user: recipient,
     title,
     message,
     type,
     metadata,
+    relatedModel,
+    relatedId,
   });
 
   try {
-    sendNotificationToUser(
-      recipient.toString(),
-      "notification",
-      notification
-    );
+    sendNotificationToUser(recipient.toString(), "notification", notification);
   } catch (error) {
     console.error("Socket notification failed:", error.message);
   }
@@ -55,21 +60,7 @@ export const createNotification = async ({
   return notification;
 };
 
-/*
-|--------------------------------------------------------------------------
-| GENERIC NOTIFICATION
-|--------------------------------------------------------------------------
-*/
-
-export const sendNotification = async (data) => {
-  return createNotification(data);
-};
-
-/*
-|--------------------------------------------------------------------------
-| SEND EMAIL + APP NOTIFICATION
-|--------------------------------------------------------------------------
-*/
+export const sendNotification = async (data) => createNotification(data);
 
 export const notifyUser = async ({
   user,
@@ -79,16 +70,14 @@ export const notifyUser = async ({
   message,
   type = "system",
   metadata = {},
+  relatedModel = null,
+  relatedId = null,
 }) => {
   const tasks = [];
 
   if (user?.email) {
     tasks.push(
-      sendEmail({
-        to: user.email,
-        subject,
-        html,
-      }).catch((error) => {
+      sendEmail({ to: user.email, subject, html }).catch((error) => {
         console.error("Email failed:", error.message);
       })
     );
@@ -96,159 +85,78 @@ export const notifyUser = async ({
 
   tasks.push(
     createNotification({
-      recipient: user._id,
+      recipient: user?._id,
       title,
       message,
       type,
       metadata,
+      relatedModel,
+      relatedId,
     })
   );
 
   await Promise.all(tasks);
 };
 
-/*
-|--------------------------------------------------------------------------
-| BOOKING CONFIRMATION
-|--------------------------------------------------------------------------
-*/
-
-export const sendBookingConfirmation = async (
-  user,
-  booking
-) => {
+export const sendBookingConfirmation = async (user, booking) => {
   const settings = await getSystemSettings();
   const companyName = settings.companyName || "Company";
 
   await notifyUser({
     user,
-
     subject: `Booking Confirmed - ${companyName}`,
-
-    html: `
-      <h2>Your booking is confirmed 🎉</h2>
-
-      <p>
-        Booking Number:
-        <strong>${booking.bookingNumber}</strong>
-      </p>
-
-      <p>
-        Thank you for choosing ${companyName}.
-      </p>
-    `,
-
+    html: `<h2>Your booking is confirmed 🎉</h2><p>Booking Number: <strong>${booking.bookingNumber}</strong></p><p>Thank you for choosing ${companyName}.</p>`,
     title: "Booking Confirmed",
-
-    message:
-      "Your travel booking has been confirmed.",
-
+    message: "Your travel booking has been confirmed.",
     type: "booking",
-
-    metadata: {
-      bookingId: booking._id,
-    },
+    relatedModel: "Booking",
+    relatedId: booking._id,
+    metadata: { bookingId: booking._id },
   });
 };
 
-/*
-|--------------------------------------------------------------------------
-| ADMIN BOOKING ALERT
-|--------------------------------------------------------------------------
-*/
-
-export const sendBookingNotification = async ({
-  adminUserId,
-  customer,
-  booking,
-}) =>
+export const sendBookingNotification = async ({ adminUserId, customer, booking }) =>
   sendNotification({
     recipient: adminUserId,
-
     title: "New Booking",
-
     message: `${customer.name} created a booking.`,
-
     type: "booking",
-
-    metadata: {
-      bookingId: booking._id,
-    },
+    relatedModel: "Booking",
+    relatedId: booking._id,
+    metadata: { bookingId: booking._id },
   });
 
-/*
-|--------------------------------------------------------------------------
-| PAYMENT RECEIVED
-|--------------------------------------------------------------------------
-*/
-
-export const sendPaymentNotification = async ({
-  adminUserId,
-  booking,
-}) =>
+export const sendPaymentNotification = async ({ adminUserId, booking }) =>
   sendNotification({
     recipient: adminUserId,
-
     title: "Payment Received",
-
     message: `Booking ${booking.bookingNumber} has been paid.`,
-
     type: "payment",
-
-    metadata: {
-      bookingId: booking._id,
-    },
+    relatedModel: "Booking",
+    relatedId: booking._id,
+    metadata: { bookingId: booking._id },
   });
 
-/*
-|--------------------------------------------------------------------------
-| GUIDE ASSIGNMENT
-|--------------------------------------------------------------------------
-*/
-
-export const sendTourAssignmentNotification = async ({
-  guideUserId,
-  tour,
-}) =>
+export const sendTourAssignmentNotification = async ({ guideUserId, tour }) =>
   sendNotification({
     recipient: guideUserId,
-
     title: "New Tour Assignment",
-
     message: `${tour.title} has been assigned to you.`,
-
     type: "tour_assignment",
-
-    metadata: {
-      tourId: tour._id,
-    },
+    relatedModel: "Tour",
+    relatedId: tour._id,
+    metadata: { tourId: tour._id },
   });
 
-/*
-|--------------------------------------------------------------------------
-| PAYMENT SUCCESS
-|--------------------------------------------------------------------------
-*/
-
-export const notifyPaymentSuccess = async (
-  user,
-  payment
-) =>
+export const notifyPaymentSuccess = async (user, payment) =>
   sendNotification({
     recipient: user._id,
-
     title: "Payment Successful",
-
-    message:
-      "Your payment has been received successfully.",
-
+    message: "Your payment has been received successfully.",
     type: "payment",
-
-    metadata: {
-      paymentId: payment._id,
-    },
+    relatedModel: "Payment",
+    relatedId: payment._id,
+    metadata: { paymentId: payment._id },
   });
-
-
 
 export { sendEmail };
