@@ -1,10 +1,11 @@
 import { useTenant } from "../context/TenantContext";
 import { useSettings } from "../context/SettingsContext";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
+import { useState } from "react";
 import ReviewForm from "../components/reviews/ReviewForm";
-import { getBooking, getMyBookings } from "../api/bookingApi";
-
+import { getBooking, getMyBookings, rescheduleBooking } from "../api/bookingApi";
+import { toast } from "react-toastify";
 
 const toNumber = (value) => {
   const parsed = Number(value);
@@ -79,6 +80,7 @@ export default function BookingDetails() {
   const customerPhone = booking.customerSnapshot?.phone || booking.customer?.phone || booking.user?.phone || booking.contact?.phone || "N/A";
   const customerEmail = booking.customerSnapshot?.email || booking.customer?.email || booking.user?.email || booking.contact?.email || "N/A";
   const status = booking.status || booking.bookingStatus || "pending";
+  const canPostpone = !["cancelled", "completed", "refunded"].includes(String(status).toLowerCase()) && booking.travelDate;
   const checkoutPath = `/checkout/booking/${booking._id || id}`;
 
   return (
@@ -114,6 +116,8 @@ export default function BookingDetails() {
               <Info label="Pickup" value={booking.pickupLocation || custom.pickupLocation || "N/A"} />
             </div>
 
+            {canPostpone && <PostponeBooking booking={booking} onSuccess={() => refetch()} />}
+
             <div className="mt-6 rounded-2xl border border-emerald-100 bg-emerald-50 p-5">
               <h3 className="font-bold text-slate-900">Payment summary</h3>
               <div className="mt-3 grid gap-3 sm:grid-cols-3">
@@ -147,6 +151,59 @@ export default function BookingDetails() {
           </div>
         </div>
       </main>
+    </div>
+  );
+}
+
+function PostponeBooking({ booking, onSuccess }) {
+  const [open, setOpen] = useState(false);
+  const [date, setDate] = useState("");
+  const [reason, setReason] = useState("");
+  const mutation = useMutation({
+    mutationFn: () => rescheduleBooking(booking._id, { newTravelDate: date, reason: reason.trim() }),
+    onSuccess: () => {
+      toast.success("Booking postponed successfully.");
+      setOpen(false);
+      setDate("");
+      setReason("");
+      onSuccess();
+    },
+    onError: (e) => toast.error(e?.response?.data?.message || "Unable to postpone booking."),
+  });
+  const reasonValid = reason.trim().length >= 5 && reason.trim().length <= 500;
+  const dateValid = Boolean(date) && new Date(date).getTime() > new Date().setHours(0, 0, 0, 0);
+
+  return (
+    <div className="mt-6 rounded-2xl border border-sky-200 bg-sky-50 p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="text-lg font-bold text-slate-900">Need to postpone this trip?</h3>
+          <p className="mt-1 text-sm text-slate-600">Choose a new future travel date and provide a reason. Your postponement will be recorded with the booking.</p>
+        </div>
+        <button type="button" onClick={() => setOpen((value) => !value)} className="rounded-xl bg-sky-700 px-5 py-3 font-bold text-white hover:bg-sky-800">
+          {open ? "Close" : "Postpone Booking"}
+        </button>
+      </div>
+
+      {open && (
+        <div className="mt-5 grid gap-4 rounded-xl border border-sky-100 bg-white p-4 md:grid-cols-2">
+          <label className="block">
+            <span className="mb-1 block text-sm font-bold text-slate-800">New travel date *</span>
+            <input type="date" min={new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().slice(0, 10)} value={date} onChange={(event) => setDate(event.target.value)} className="w-full rounded-lg border border-slate-300 p-3 text-slate-900" required />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-sm font-bold text-slate-800">Reason for postponement *</span>
+            <textarea value={reason} onChange={(event) => setReason(event.target.value)} minLength={5} maxLength={500} rows={3} placeholder="Please explain why you need to postpone this trip." className="w-full rounded-lg border border-slate-300 p-3 text-slate-900" required />
+            <span className="mt-1 block text-right text-xs text-slate-500">{reason.length}/500</span>
+          </label>
+          <div className="md:col-span-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+            <p className="text-xs text-slate-500">A meaningful reason of at least 5 characters is required.</p>
+            <button type="button" disabled={!dateValid || !reasonValid || mutation.isPending} onClick={() => mutation.mutate()} className="rounded-lg bg-sky-700 px-5 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-50">
+              {mutation.isPending ? "Postponing..." : "Confirm Postponement"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
