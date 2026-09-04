@@ -57,12 +57,6 @@ export const getAllBookings = async (req, res, next) => {
 
     const filter = {};
 
-    /*
-    |--------------------------------------------------------------------------
-    | SEARCH
-    |--------------------------------------------------------------------------
-    */
-
     if (search) {
       const regex = {
         $regex: String(search).trim(),
@@ -80,142 +74,131 @@ export const getAllBookings = async (req, res, next) => {
       ];
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | FILTERS
-    |--------------------------------------------------------------------------
-    */
+    if (status && BOOKING_STATUSES.includes(status)) filter.status = status;
+    if (paymentStatus && BOOKING_PAYMENT_STATUSES.includes(paymentStatus)) filter.paymentStatus = paymentStatus;
 
-    if (
-      status &&
-      BOOKING_STATUSES.includes(
-        status
-      )
-    ) {
-      filter.status =
-        status;
-    }
-
-    if (
-      paymentStatus &&
-      BOOKING_PAYMENT_STATUSES.includes(
-        paymentStatus
-      )
-    ) {
-      filter.paymentStatus =
-        paymentStatus;
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | QUERY
-    |--------------------------------------------------------------------------
-    */
-
-    const [bookings, total] =
-      await Promise.all([
-
-        Booking.find(filter)
-
-          .populate(
-            "customer",
-            "name email phone user"
-          )
-
-          .populate(
-            "user",
-            "name email phone"
-          )
-
-          .populate(
-            "tour",
-            "title"
-          )
-
-          .populate(
-            "assignedGuide",
-            "name"
-          )
-
-          .populate(
-            "assignedDriver",
-            "name"
-          )
-
-          .populate(
-            "assignedVehicle",
-            "name registrationNumber"
-          )
-
-          .sort({
-            createdAt: -1,
-          })
-
-          .skip(skip)
-
-          .limit(pageSize)
-
-          .lean(),
-
-        Booking.countDocuments(filter),
-
-      ]);
-
-    /*
-    |--------------------------------------------------------------------------
-    | RESPONSE
-    |--------------------------------------------------------------------------
-    */
+    const [bookings, total] = await Promise.all([
+      Booking.find(filter)
+        .populate("customer", "name email phone user")
+        .populate("user", "name email phone")
+        .populate("tour", "title")
+        .populate("assignedGuide", "name")
+        .populate("assignedDriver", "name")
+        .populate("assignedVehicle", "name registrationNumber")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(pageSize)
+        .lean(),
+      Booking.countDocuments(filter),
+    ]);
 
     res.status(200).json({
-
       success: true,
-
       count: bookings.length,
-
-      pagination: {
-
-        total,
-
-        page: currentPage,
-
-        pages: Math.ceil(
-          total / pageSize
-        ),
-
-        limit: pageSize,
-
-      },
-
+      pagination: { total, page: currentPage, pages: Math.ceil(total / pageSize), limit: pageSize },
       data: bookings,
-
     });
-
-  } catch (error) {
-
-    next(error);
-
-  }
+  } catch (error) { next(error); }
 };
 
-/*
-|--------------------------------------------------------------------------
-| ROUTE ALIAS
-|--------------------------------------------------------------------------
-*/
+export const getBookings = getAllBookings;
 
-export const getBookings =
-  getAllBookings;
-
-/*
-|--------------------------------------------------------------------------
-| GET SINGLE BOOKING
-|--------------------------------------------------------------------------
-*/
-
-export const getBookingById = async (
-  req,
-  res,
-  next
-) => {
+export const getBookingById = async (req, res, next) => {
   try {
+    const { id } = req.params;
+    if (!isValidId(id)) return res.status(400).json({ success: false, message: "Invalid booking ID" });
+    const booking = await Booking.findOne(mergeTenantFilter({ _id: id }))
+      .populate("customer", "name email phone user")
+      .populate("user", "name email phone")
+      .populate("tour", "title")
+      .populate("assignedGuide", "name")
+      .populate("assignedDriver", "name")
+      .populate("assignedVehicle", "name registrationNumber")
+      .lean();
+    if (!booking) return res.status(404).json({ success: false, message: "Booking not found" });
+    return res.status(200).json({ success: true, data: booking });
+  } catch (error) { next(error); }
+};
+
+export const updateBookingStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body || {};
+    if (!isValidId(id)) return res.status(400).json({ success: false, message: "Invalid booking ID" });
+    if (!isValidBookingStatus(status)) return res.status(400).json({ success: false, message: "Invalid booking status.", allowedStatuses: BOOKING_STATUSES });
+    const booking = await Booking.findOne(mergeTenantFilter({ _id: id }));
+    if (!booking) return res.status(404).json({ success: false, message: "Booking not found" });
+    if (!canTransitionBookingStatus(booking.status, status)) return res.status(400).json({ success: false, message: `Cannot transition booking from ${booking.status} to ${status}.` });
+    booking.status = status;
+    await booking.save();
+    return res.status(200).json({ success: true, data: booking });
+  } catch (error) { next(error); }
+};
+
+export const updateBookingPaymentStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { paymentStatus } = req.body || {};
+    if (!isValidId(id)) return res.status(400).json({ success: false, message: "Invalid booking ID" });
+    if (!isValidBookingPaymentStatus(paymentStatus)) return res.status(400).json({ success: false, message: "Invalid booking payment status.", allowedStatuses: BOOKING_PAYMENT_STATUSES });
+    const booking = await Booking.findOne(mergeTenantFilter({ _id: id }));
+    if (!booking) return res.status(404).json({ success: false, message: "Booking not found" });
+    if (!canTransitionBookingPaymentStatus(booking.paymentStatus, paymentStatus)) return res.status(400).json({ success: false, message: `Cannot transition payment from ${booking.paymentStatus} to ${paymentStatus}.` });
+    booking.paymentStatus = paymentStatus;
+    await booking.save();
+    return res.status(200).json({ success: true, data: booking });
+  } catch (error) { next(error); }
+};
+
+export const deleteBooking = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!isValidId(id)) return res.status(400).json({ success: false, message: "Invalid booking ID" });
+    const booking = await Booking.findOneAndDelete(mergeTenantFilter({ _id: id }));
+    if (!booking) return res.status(404).json({ success: false, message: "Booking not found" });
+    return res.status(200).json({ success: true, message: "Booking deleted successfully" });
+  } catch (error) { next(error); }
+};
+
+export const getBookingInvoice = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!isValidId(id)) return res.status(400).json({ success: false, message: "Invalid booking ID" });
+    const booking = await Booking.findOne(mergeTenantFilter({ _id: id }))
+      .populate("customer", "name email phone")
+      .populate("tour", "title")
+      .lean();
+    if (!booking) return res.status(404).json({ success: false, message: "Booking not found" });
+
+    const settings = await getSystemSettings({ tenantId: booking.tenantId });
+    const companyName = settings.companyName || "Global Tours";
+
+    res.setHeader("Content-Type", "text/plain");
+    res.send(`
+${companyName}
+
+BOOKING INVOICE
+
+Booking ID:
+${booking._id}
+
+Customer:
+${booking.customer?.name || ""}
+
+Tour:
+${booking.tour?.title || ""}
+
+Amount:
+KES ${booking.totalAmount || 0}
+
+Payment:
+${booking.paymentStatus}
+
+Status:
+${booking.status}
+
+Generated:
+${new Date().toISOString()}
+`);
+  } catch (error) { next(error); }
+};
