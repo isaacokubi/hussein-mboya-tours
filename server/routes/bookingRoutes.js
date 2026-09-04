@@ -9,6 +9,7 @@ import { createCustomerBooking } from "../controllers/customerBookingController.
 import { protect, customerOnly, adminOnly, managerOnly } from "../middleware/authMiddleware.js";
 import { requireFullPaymentForTrip } from "../middleware/requireFullPaymentForTrip.js";
 import { validateBookingTravelDate } from "../middleware/validateBookingTravelDate.js";
+import { validateRescheduleRequest } from "../middleware/validateRescheduleRequest.js";
 
 const router = express.Router();
 
@@ -18,7 +19,7 @@ router.get("/test", (req, res) => res.status(200).json({ success: true, message:
 router.post("/", customerOnly, validateBookingTravelDate, createCustomerBooking);
 router.get("/my-bookings", customerOnly, getCustomerBookings);
 router.put("/cancel/:id", customerOnly, cancelBooking);
-router.put("/reschedule/:id", customerOnly, rescheduleBooking);
+router.put("/reschedule/:id", customerOnly, validateRescheduleRequest, rescheduleBooking);
 router.put("/:id/travel-date", customerOnly, updateBookingTravelDate);
 router.get("/confirmed", managerOnly, getConfirmedBookings);
 router.get("/admin", managerOnly, getAllBookings);
