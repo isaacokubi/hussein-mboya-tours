@@ -1,47 +1,28 @@
+import express from "express";
 import { resolveTenant } from "../middleware/tenantMiddleware.js";
 import { authorize } from "../middleware/permissionMiddleware.js";
-import express from "express";
+import { protect, managerOnly } from "../middleware/authMiddleware.js";
 
 import {
-getCommissions,
-getAgentCommissions,
-approveCommission,
-payCommission
+  getCommissions,
+  getAgentCommissions,
+  approveCommission,
+  payCommission,
 } from "../controllers/commissionController.js";
-
-
-import {
-protect
-} from "../middleware/authMiddleware.js";
-import adminMiddleware from "../middleware/adminMiddleware.js";
-
 
 const router = express.Router();
 
 router.use(resolveTenant);
-
-
-
 router.use(protect);
-router.use(adminMiddleware);
-
+// Managers are explicitly allowed to administer operational commission payouts.
+// This also keeps admin and super_admin access working through managerOnly.
+router.use(managerOnly);
 router.use(authorize("commission.view"));
 
-router.get(
-"/",
-getCommissions
-);
+router.get("/", getCommissions);
+router.get("/agent/:agentId", getAgentCommissions);
 
-
-
-router.get(
-"/agent/:agentId",
-getAgentCommissions
-);
-
-router.patch("/:id/approve", adminMiddleware, approveCommission);
-router.post("/:id/pay", adminMiddleware, payCommission);
-
-
+router.patch("/:id/approve", authorize("commission.approve"), approveCommission);
+router.post("/:id/pay", authorize("commission.pay"), payCommission);
 
 export default router;
