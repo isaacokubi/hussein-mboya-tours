@@ -47,6 +47,11 @@ export default function AgentDashboard() {
   const statusCode = error?.response?.status;
   const walletBalance = Number(payload?.agent?.walletBalance ?? stats.pendingCommission ?? 0);
 
+  const openBooking = (booking, action) => {
+    if (!booking?._id) return;
+    navigate(`/agent/bookings?bookingId=${encodeURIComponent(booking._id)}&action=${action}`);
+  };
+
   if (isLoading) return <div className="p-6 text-gray-600">Loading agent dashboard...</div>;
 
   if (isError) {
@@ -161,7 +166,7 @@ export default function AgentDashboard() {
           <div className="flex items-center justify-between gap-3">
             <div>
               <h2 className="font-semibold text-gray-900">Recent bookings</h2>
-              <p className="mt-1 text-xs text-gray-500">Use View, Edit or Details to manage a booking.</p>
+              <p className="mt-1 text-xs text-gray-500">Use View, Edit or Details to open the selected database record.</p>
             </div>
             <button type="button" onClick={() => navigate("/agent/bookings")} className="text-sm font-medium text-blue-600 hover:underline">View all</button>
           </div>
@@ -191,9 +196,9 @@ export default function AgentDashboard() {
                     <td className="px-3 py-3"><span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs capitalize">{bookingStatus(booking)}</span></td>
                     <td className="px-3 py-3">
                       <div className="flex flex-wrap gap-2">
-                        <button type="button" onClick={() => navigate("/agent/bookings")} className="rounded-md border border-blue-200 px-2.5 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50">View</button>
-                        <button type="button" onClick={() => navigate("/agent/bookings")} className="rounded-md border border-green-200 px-2.5 py-1 text-xs font-medium text-green-600 hover:bg-green-50">Edit</button>
-                        <button type="button" onClick={() => navigate("/agent/bookings")} className="rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50">Details</button>
+                        <button type="button" onClick={() => openBooking(booking, "view")} className="rounded-md border border-blue-200 px-2.5 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50">View</button>
+                        <button type="button" onClick={() => openBooking(booking, "edit")} className="rounded-md border border-green-200 px-2.5 py-1 text-xs font-medium text-green-600 hover:bg-green-50">Edit</button>
+                        <button type="button" onClick={() => openBooking(booking, "details")} className="rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50">Details</button>
                       </div>
                     </td>
                   </tr>
