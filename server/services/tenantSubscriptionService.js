@@ -7,11 +7,27 @@ import { runWithTenant } from "../tenancy/context.js";
 import { mpesaConfig, getMpesaUrls } from "../config/mpesa.js";
 import { generateAccessToken, generateTimestamp, generatePassword } from "./mpesaService.js";
 
+// Default monthly prices keep the SaaS billing screen usable immediately.
+// Deployment environment variables can override these values without changing code.
+const DEFAULT_PLAN_PRICES = Object.freeze({
+  starter: 5000,
+  professional: 10000,
+  business: 20000,
+  enterprise: 50000,
+});
+
+const envPrice = (key, fallback) => {
+  const value = process.env[key];
+  if (value === undefined || value === "") return fallback;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+};
+
 const PLAN_PRICES = Object.freeze({
-  starter: Number(process.env.TENANT_PLAN_STARTER_PRICE_KES || 0),
-  professional: Number(process.env.TENANT_PLAN_PROFESSIONAL_PRICE_KES || 0),
-  business: Number(process.env.TENANT_PLAN_BUSINESS_PRICE_KES || 0),
-  enterprise: Number(process.env.TENANT_PLAN_ENTERPRISE_PRICE_KES || 0),
+  starter: envPrice("TENANT_PLAN_STARTER_PRICE_KES", DEFAULT_PLAN_PRICES.starter),
+  professional: envPrice("TENANT_PLAN_PROFESSIONAL_PRICE_KES", DEFAULT_PLAN_PRICES.professional),
+  business: envPrice("TENANT_PLAN_BUSINESS_PRICE_KES", DEFAULT_PLAN_PRICES.business),
+  enterprise: envPrice("TENANT_PLAN_ENTERPRISE_PRICE_KES", DEFAULT_PLAN_PRICES.enterprise),
 });
 
 export const getTenantPlanPrice = (plan) => Number(PLAN_PRICES[String(plan || "").toLowerCase()] || 0);
