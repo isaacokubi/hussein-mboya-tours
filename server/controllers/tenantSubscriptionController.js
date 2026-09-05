@@ -2,7 +2,7 @@ import Organization from "../models/Organization.js";
 import Subscription from "../models/Subscription.js";
 import SubscriptionPayment from "../models/SubscriptionPayment.js";
 import User from "../models/User.js";
-import { activateTenantSubscription, getTenantPlanPrice, getTenantPlanPrices, initiateTenantMpesaPayment } from "../services/tenantSubscriptionService.js";
+import { activateTenantSubscription, ensureActiveSubscriptionSchedule, getTenantPlanPrice, getTenantPlanPrices, initiateTenantMpesaPayment } from "../services/tenantSubscriptionService.js";
 
 const isAdmin = (user) => ["admin", "administrator", "super_admin", "superadmin"].includes(String(user?.role || user?.legacyRole || "").toLowerCase());
 
@@ -13,9 +13,10 @@ export const getTenantSubscription = async (req, res, next) => {
     const organization = await Organization.findById(tenantId).lean();
     if (!organization) return res.status(404).json({ success: false, message: "Company not found." });
     const subscription = await Subscription.findOne({ tenantId }).lean();
+    const repaired = await ensureActiveSubscriptionSchedule(tenantId, organization, subscription);
     const payments = await SubscriptionPayment.find({ tenantId }).sort({ createdAt: -1 }).limit(10).lean();
-    const plan = organization.subscription?.plan || subscription?.plan || "starter";
-    return res.json({ success: true, tenant: organization, subscription: subscription || null, plan, amountDue: getTenantPlanPrice(plan), planPrices: getTenantPlanPrices(), payments });
+    const plan = repaired.organization.subscription?.plan || repaired.subscription?.plan || "starter";
+    return res.json({ success: true, tenant: repaired.organization, subscription: repaired.subscription || null, plan, amountDue: getTenantPlanPrice(plan), planPrices: getTenantPlanPrices(), payments });
   } catch (error) { next(error); }
 };
 
