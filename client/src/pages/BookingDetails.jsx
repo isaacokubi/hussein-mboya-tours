@@ -35,6 +35,10 @@ const getPaidAmount = (booking) => {
 
 const isCustomBooking = (booking) => Boolean(booking?.customTourSnapshot || booking?.customTourRequest || booking?.customTour || booking?.isCustomTour);
 
+// Keep the minimum selectable date stable during a render. React's purity lint rule
+// correctly rejects Date.now() when it is evaluated directly inside component render.
+const MIN_POSTPONE_DATE = getLocalDateString(new Date(Date.now() + 24 * 60 * 60 * 1000));
+
 export default function BookingDetails() {
   const { tenant } = useTenant();
   const { settings } = useSettings();
@@ -182,7 +186,7 @@ function PostponeBooking({ booking, onSuccess, queryClient }) {
     onError: (e) => toast.error(e?.response?.data?.message || "Unable to postpone booking."),
   });
 
-  const minDate = getLocalDateString(new Date(Date.now() + 24 * 60 * 60 * 1000));
+  const minDate = MIN_POSTPONE_DATE;
   const reasonValid = reason.trim().length >= 5 && reason.trim().length <= 500;
   const dateValid = Boolean(date) && date >= minDate;
 
