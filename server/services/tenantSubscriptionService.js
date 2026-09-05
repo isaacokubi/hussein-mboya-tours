@@ -41,6 +41,68 @@ export const normalizeSubscriptionPhone = (phone) => {
   return value;
 };
 
+// Repairs legacy active subscriptions that predate the paid-period fields.
+// Existing dates are always preserved. If the Subscription record already has
+// a period end, it is copied to the tenant. Only when both records have no
+// usable paid-period date do we create a one-time 30-day continuity period.
+export const ensureActiveSubscriptionSchedule = async (tenantId, organization, subscription) => {
+  if (String(organization?.status || "").toLowerCase() !== "active") return { organization, subscription };
+
+  const organizationRenewal = organization.subscription?.renewsAt;
+  const subscriptionEnd = subscription?.currentPeriodEndsAt;
+  const validDate = (value) => value && !Number.isNaN(new Date(value).getTime());
+
+  if (validDate(organizationRenewal)) return { organization, subscription };
+
+  if (validDate(subscriptionEnd)) {
+    await Organization.updateOne(
+      { _id: tenantId, status: "active", "subscription.renewsAt": null },
+      { $set: { "subscription.renewsAt": new Date(subscriptionEnd) } }
+    );
+    organization.subscription = { ...(organization.subscription || {}), renewsAt: new Date(subscriptionEnd) };
+    return { organization, subscription };
+  }
+
+  // No paid period exists anywhere. This is a legacy active tenant, not a new
+  // purchase, so do not create a payment record or charge the tenant. Give the
+  // existing active workspace a single 30-day continuity period and record it
+  // consistently in both subscription representations.
+  const now = new Date();
+  const end = new Date(now.getTime() + 30 * 86400000);
+  const plan = organization.subscription?.plan || subscription?.plan || "starter";
+  const seats = organization.subscription?.seats || subscription?.seats || 5;
+
+  await Organization.updateOne(
+    { _id: tenantId, status: "active", "subscription.renewsAt": null },
+    { $set: { "subscription.plan": plan, "subscription.seats": seats, "subscription.renewsAt": end } }
+  );
+
+  await runWithTenant({ role: "super_admin", bypass: true }, () =>
+    Subscription.findOneAndUpdate(
+      { tenantId },
+      {
+        $set: {
+          tenantId,
+          plan,
+          status: "active",
+          provider: subscription?.provider || "internal",
+          currentPeriodStartsAt: subscription?.currentPeriodStartsAt || now,
+          currentPeriodEndsAt: end,
+          seats,
+        },
+        $setOnInsert: {
+          trialStartsAt: organization.createdAt || now,
+          trialEndsAt: organization.subscription?.trialEndsAt || now,
+        },
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    )
+  );
+
+  organization.subscription = { ...(organization.subscription || {}), plan, seats, renewsAt: end };
+  return { organization, subscription: { ...(subscription || {}), plan, status: "active", currentPeriodEndsAt: end, seats } };
+};
+
 export const activateTenantSubscription = async ({ tenantId, plan, provider = "mpesa", periodDays = 30, payment, transactionReference = "" }) => {
   if (!mongoose.isValidObjectId(tenantId)) throw new Error("Invalid tenant ID.");
   const organization = await Organization.findById(tenantId);
