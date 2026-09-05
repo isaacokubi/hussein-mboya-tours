@@ -3,7 +3,6 @@ import systemHealthRoutes from "./routes/systemHealthRoutes.js";
 import databaseRoutes from "./routes/databaseRoutes.js";
 import settingsRoutes from "./routes/settingsRoutes.js";
 import superAdminRoutes from "./routes/superAdminRoutes.js";
-import tenantSubscriptionRoutes from "./routes/tenantSubscriptionRoutes.js";
 import http from "http";
 import mongoose from "mongoose";
 import app from "./app.js";
@@ -31,7 +30,6 @@ app.use("/api/settings", settingsRoutes);
 app.use("/api/database", databaseRoutes);
 app.use("/api/system", systemHealthRoutes);
 app.use("/api/superadmin", superAdminRoutes);
-app.use("/api/subscription", tenantSubscriptionRoutes);
 
 const shutdown = async (exitCode = 0) => {
   clearInterval(lifecycleInterval);
