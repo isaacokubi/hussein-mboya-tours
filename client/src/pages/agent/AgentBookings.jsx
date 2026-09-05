@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateBookingStatus } from "../../api/agentBookingApi";
 import useAgentBookings from "../../hooks/useAgentBookings";
@@ -27,6 +28,8 @@ const formatDate = (value) => {
 export default function AgentBookings() {
   const { data = [], isLoading, isError } = useAgentBookings();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [action, setAction] = useState(null);
   const [editStatus, setEditStatus] = useState("");
@@ -38,16 +41,9 @@ export default function AgentBookings() {
       setSelectedBooking(null);
       setAction(null);
       setEditStatus("");
+      navigate(location.pathname, { replace: true });
     },
   });
-
-  if (isLoading) {
-    return <div className="p-6">Loading bookings...</div>;
-  }
-
-  if (isError) {
-    return <div className="p-6 text-red-600">Failed to load bookings</div>;
-  }
 
   const bookings = Array.isArray(data) ? data : [];
 
@@ -57,11 +53,43 @@ export default function AgentBookings() {
     setEditStatus(booking.bookingStatus || booking.status || "pending");
   };
 
+  // Dashboard row actions arrive here as /agent/bookings?bookingId=<id>&action=<view|edit|details>.
+  // Resolve the ID against the already-fetched database records so the action opens the exact booking.
+  useEffect(() => {
+    if (!bookings.length) return;
+
+    const params = new URLSearchParams(location.search);
+    const bookingId = params.get("bookingId");
+    const requestedAction = params.get("action");
+
+    if (!bookingId) return;
+
+    const booking = bookings.find((item) => String(item?._id) === String(bookingId));
+    if (!booking) return;
+
+    const nextAction = ["view", "edit", "details"].includes(requestedAction)
+      ? requestedAction
+      : "view";
+
+    setSelectedBooking(booking);
+    setAction(nextAction);
+    setEditStatus(booking.bookingStatus || booking.status || "pending");
+  }, [bookings, location.search]);
+
+  if (isLoading) {
+    return <div className="p-6">Loading bookings...</div>;
+  }
+
+  if (isError) {
+    return <div className="p-6 text-red-600">Failed to load bookings</div>;
+  }
+
   const closeBooking = () => {
     setSelectedBooking(null);
     setAction(null);
     setEditStatus("");
     statusMutation.reset();
+    navigate(location.pathname, { replace: true });
   };
 
   const saveStatus = () => {
