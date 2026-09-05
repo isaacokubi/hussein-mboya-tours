@@ -58,8 +58,8 @@ export default function TenantBilling() {
     }
   }, [statusQuery.data?.payment?.status, qc]);
 
-  if (isLoading) return <div className="rounded-2xl border bg-white p-8">Loading subscription...</div>;
-  if (isError) return <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700"><p className="font-semibold">{error?.response?.data?.message || "Unable to load subscription."}</p><button type="button" onClick={() => refetch()} className="mt-3 rounded-lg border border-red-300 px-4 py-2">Retry</button></div>;
+  if (isLoading) return <div className="rounded-2xl border bg-white p-8">Loading billing and subscription...</div>;
+  if (isError) return <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700"><p className="font-semibold">{error?.response?.data?.message || "Unable to load billing and subscription."}</p><button type="button" onClick={() => refetch()} className="mt-3 rounded-lg border border-red-300 px-4 py-2">Retry</button></div>;
 
   const tenant = data?.tenant || {};
   const currentPlan = data?.plan || tenant.subscription?.plan || "starter";
