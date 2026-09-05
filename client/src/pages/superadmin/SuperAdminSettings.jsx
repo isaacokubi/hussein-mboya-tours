@@ -39,6 +39,9 @@ export default function SuperAdminSettings() {
         if (!active) return;
         const nextSettings = data?.settings || data?.data || data || {};
         setSettings(nextSettings);
+        // Do not include updateGlobalSettings in this effect dependency list.
+        // SettingsContext recreates that callback whenever settings change, which
+        // previously caused this effect to refetch continuously and stay loading.
         updateGlobalSettings?.(nextSettings);
       } catch (err) {
         if (!active) return;
@@ -50,7 +53,9 @@ export default function SuperAdminSettings() {
     };
     void loadSettings();
     return () => { active = false; };
-  }, [updateGlobalSettings]);
+    // This page should load once on mount. Manual refresh is provided by load().
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const update = (key, value) => setSettings((prev) => ({ ...prev, [key]: value }));
   const save = async () => {
