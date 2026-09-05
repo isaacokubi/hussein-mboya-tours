@@ -45,11 +45,14 @@ const syncEarnedCommissions = async (req) => {
       if (!booking.agent || amount <= 0) return;
 
       const commissionAmount = Number(((amount * rate) / 100).toFixed(2));
+
+      // tenantPlugin automatically injects tenantId into $setOnInsert.
+      // Do not also put tenantId in $set; MongoDB rejects the same path being
+      // written by both $set and $setOnInsert during an upsert.
       await Commission.updateOne(
         mergeTenantFilter({ booking: booking._id }),
         {
           $set: {
-            tenantId: req.tenantId,
             agent: booking.agent,
             booking: booking._id,
             customer: booking.customer || null,
