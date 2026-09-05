@@ -17,9 +17,14 @@ export default function TenantBilling() {
   const planPrices = data?.planPrices || {};
   const availablePlans = useMemo(() => Object.keys(labels).filter((key) => Number(planPrices[key] || 0) > 0), [planPrices]);
 
+  // Wait for the subscription API response before choosing a default. This prevents
+  // the first configured plan (Starter) from being selected before the tenant's
+  // actual current plan (for example Professional) has loaded.
   useEffect(() => {
-    if (!selectedPlan) setSelectedPlan(data?.plan || data?.tenant?.subscription?.plan || availablePlans[0] || "starter");
-  }, [data?.plan, data?.tenant?.subscription?.plan, availablePlans, selectedPlan]);
+    if (selectedPlan || !data) return;
+    const current = String(data?.plan || data?.tenant?.subscription?.plan || "").toLowerCase();
+    setSelectedPlan(availablePlans.includes(current) ? current : availablePlans[0] || "starter");
+  }, [data, availablePlans, selectedPlan]);
 
   const plan = selectedPlan || data?.plan || "starter";
   const amount = Number(planPrices[plan] || (plan === data?.plan ? data?.amountDue : 0));
