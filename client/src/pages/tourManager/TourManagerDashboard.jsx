@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { CalendarDays, Map, Users, Wallet, RefreshCw } from "lucide-react";
-import { Link } from "react-router-dom";
 import { getDashboardStats } from "../../api/tourManagerApi";
 import StatCard from "../../components/tours/tourManager/StatCard";
 import UpcomingTours from "../../components/tours/tourManager/UpcomingTours";
 import BookingTable from "../../components/tours/tourManager/BookingTable";
+import TourManagerCommissions from "./TourManagerCommissions";
 import { asArray, firstNumeric, unwrapData } from "../../utils/dashboardData";
 import { useSettings } from "../../context/SettingsContext";
 
@@ -91,9 +91,9 @@ export default function TourManagerDashboard() {
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           {QUICK_ACTIONS.map((action) => (
-            <Link key={action.to} to={action.to} className="rounded-xl border bg-slate-50 px-4 py-3 text-center text-sm font-semibold text-slate-800 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-sm">
+            <a key={action.to} href={action.to} className="rounded-xl border bg-slate-50 px-4 py-3 text-center text-sm font-semibold text-slate-800 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-sm">
               {action.label}
-            </Link>
+            </a>
           ))}
         </div>
       </div>
@@ -107,6 +107,7 @@ export default function TourManagerDashboard() {
 
       <UpcomingTours tours={upcomingTours} />
       <BookingTable bookings={recentBookings} />
+      <TourManagerCommissions />
     </section>
   );
 }
