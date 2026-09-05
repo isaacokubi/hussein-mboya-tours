@@ -30,7 +30,10 @@ export const rejectAgentWithdrawal = async (id, reason) => {
   return data;
 };
 
-export const completeAgentWithdrawal = async (id, paymentReference) => {
-  const { data } = await api.post(`/agent-withdrawals/${id}/complete`, { paymentReference, transactionId: paymentReference });
+export const completeAgentWithdrawal = async (id, paymentReference = "") => {
+  const { data } = await api.post(`/agent-withdrawals/${id}/complete`, {
+    paymentReference,
+    transactionId: paymentReference,
+  });
   return data;
 };
