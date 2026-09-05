@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { CalendarDays, Map, Users, Wallet, RefreshCw } from "lucide-react";
+import { Link } from "react-router-dom";
 import { getDashboardStats } from "../../api/tourManagerApi";
 import StatCard from "../../components/tours/tourManager/StatCard";
 import UpcomingTours from "../../components/tours/tourManager/UpcomingTours";
@@ -91,9 +92,9 @@ export default function TourManagerDashboard() {
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           {QUICK_ACTIONS.map((action) => (
-            <a key={action.to} href={action.to} className="rounded-xl border bg-slate-50 px-4 py-3 text-center text-sm font-semibold text-slate-800 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-sm">
+            <Link key={action.to} to={action.to} className="rounded-xl border bg-slate-50 px-4 py-3 text-center text-sm font-semibold text-slate-800 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-sm">
               {action.label}
-            </a>
+            </Link>
           ))}
         </div>
       </div>
