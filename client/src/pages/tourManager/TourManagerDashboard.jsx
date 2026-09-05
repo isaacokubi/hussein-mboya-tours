@@ -1,11 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
 import { CalendarDays, Map, Users, Wallet, RefreshCw } from "lucide-react";
+import { Link } from "react-router-dom";
 import { getDashboardStats } from "../../api/tourManagerApi";
 import StatCard from "../../components/tours/tourManager/StatCard";
 import UpcomingTours from "../../components/tours/tourManager/UpcomingTours";
 import BookingTable from "../../components/tours/tourManager/BookingTable";
 import { asArray, firstNumeric, unwrapData } from "../../utils/dashboardData";
 import { useSettings } from "../../context/SettingsContext";
+
+const QUICK_ACTIONS = [
+  { label: "Create Tour", to: "/tour-manager/create-tour" },
+  { label: "Manage Tours", to: "/tour-manager/tours" },
+  { label: "Bookings", to: "/tour-manager/bookings" },
+  { label: "Assignments", to: "/tour-manager/assignments" },
+  { label: "Customers", to: "/tour-manager/customers" },
+  { label: "Analytics", to: "/tour-manager/analytics" },
+];
 
 export default function TourManagerDashboard() {
   const { settings } = useSettings();
@@ -72,6 +82,20 @@ export default function TourManagerDashboard() {
           <RefreshCw size={15} className={isFetching ? "animate-spin" : ""} />
           {isFetching ? "Refreshing..." : "Refresh"}
         </button>
+      </div>
+
+      <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+        <div className="mb-4">
+          <h2 className="text-lg font-bold text-slate-900">Quick Actions</h2>
+          <p className="mt-1 text-sm text-slate-500">Open the Tour Manager workflows directly from your dashboard.</p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          {QUICK_ACTIONS.map((action) => (
+            <Link key={action.to} to={action.to} className="rounded-xl border bg-slate-50 px-4 py-3 text-center text-sm font-semibold text-slate-800 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-sm">
+              {action.label}
+            </Link>
+          ))}
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-4">
