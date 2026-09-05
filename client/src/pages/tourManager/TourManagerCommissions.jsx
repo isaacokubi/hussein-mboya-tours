@@ -4,8 +4,6 @@ import { CheckCircle, CircleDollarSign, Clock3, WalletCards } from "lucide-react
 import { toast } from "react-toastify";
 import { approveCommission, getCommissions, payCommission } from "../../api/commissionApi";
 
-const METHODS = ["MPESA", "BANK_TRANSFER", "CASH", "CHEQUE"];
-
 export default function TourManagerCommissions() {
   const qc = useQueryClient();
   const [payment, setPayment] = useState(null);
