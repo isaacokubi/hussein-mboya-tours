@@ -2,6 +2,7 @@ import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import Booking from "../models/Booking.js";
 import Commission from "../models/Commission.js";
 import Agent from "../models/Agent.js";
+import AgentWithdrawal from "../models/AgentWithdrawal.js";
 import { getSystemSettings } from "../services/settingsService.js";
 
 const getGlobalCommissionRate = async (req) => {
@@ -41,12 +42,14 @@ export const getAgentDashboard = async (req, res, next) => {
 
     const base = mergeTenantFilter({ agent: agent._id, isDeleted: { $ne: true } });
     const commissionBase = mergeTenantFilter({ agent: agent._id, isDeleted: { $ne: true } });
+    const withdrawalBase = mergeTenantFilter({ agent: agent._id });
     const now = new Date();
     const activeStatuses = ["confirmed", "assigned", "ongoing"];
 
     const [
       bookings, upcomingBookings, completedTours, salesResult, guestsResult, customersResult,
       paidCommissionResult, pendingBookings, cancelledBookings, outstandingResult, recentBookings,
+      completedWithdrawalsResult, reservedWithdrawalsResult,
     ] = await Promise.all([
       Booking.countDocuments(base),
       Booking.countDocuments({ ...base, status: { $in: activeStatuses }, travelDate: { $gte: now } }),
@@ -79,16 +82,23 @@ export const getAgentDashboard = async (req, res, next) => {
         .populate("tour", "title name price duration destination")
         .populate("customer", "name firstName lastName email phone")
         .sort({ createdAt: -1 }).limit(5).lean(),
+      AgentWithdrawal.aggregate([
+        { $match: { ...withdrawalBase, status: "completed" } },
+        { $group: { _id: null, total: { $sum: { $ifNull: ["$amount", 0] } } } },
+      ]),
+      AgentWithdrawal.aggregate([
+        { $match: { ...withdrawalBase, status: { $in: ["pending", "approved", "processing"] } } },
+        { $group: { _id: null, total: { $sum: { $ifNull: ["$amount", 0] } } } },
+      ]),
     ]);
 
     const totalSales = Number(salesResult[0]?.totalSales || 0);
     const paidCommission = Number(paidCommissionResult[0]?.paidCommission || 0);
     const totalCommission = Number(((totalSales * globalCommissionRate) / 100).toFixed(2));
-    const walletBalance = Math.max(0, Number((totalCommission - paidCommission).toFixed(2)));
-
-    // The wallet is the unpaid commission actually earned from collected sales.
-    // This also repairs legacy/demo agents whose Agent.walletBalance was never synchronized.
-    const pendingCommission = walletBalance;
+    const pendingCommission = Math.max(0, Number((totalCommission - paidCommission).toFixed(2)));
+    const withdrawnCommission = Number(completedWithdrawalsResult[0]?.total || 0);
+    const reservedWithdrawals = Number(reservedWithdrawalsResult[0]?.total || 0);
+    const walletBalance = Math.max(0, Number((paidCommission - withdrawnCommission - reservedWithdrawals).toFixed(2)));
 
     return res.status(200).json({
       success: true,
@@ -113,6 +123,8 @@ export const getAgentDashboard = async (req, res, next) => {
           totalCommission,
           pendingCommission,
           paidCommission,
+          withdrawnCommission,
+          reservedWithdrawals,
           totalGuests: Number(guestsResult[0]?.totalGuests || 0),
           totalCustomers: Number(customersResult[0]?.totalCustomers || 0),
         },
