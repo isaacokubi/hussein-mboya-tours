@@ -20,9 +20,8 @@ const getCommissionRate = async (req) => {
 |--------------------------------------------------------------------------
 | Agent Dashboard calculates earned commission from paid booking sales.
 | Older/demo bookings may not have a Commission document yet, so the
-| manager payout screen must materialize those earnings before displaying
-| them. The booking is the idempotency key: one booking can create only one
-| commission record because Commission.booking is unique.
+| manager payout screen materializes those earnings before displaying them.
+| The booking is the idempotency key because Commission.booking is unique.
 |--------------------------------------------------------------------------
 */
 const syncEarnedCommissions = async (req) => {
@@ -35,7 +34,7 @@ const syncEarnedCommissions = async (req) => {
   });
 
   const bookings = await Booking.find(bookingFilter)
-    .select("_id agent totalAmount")
+    .select("_id agent customer tour totalAmount")
     .lean();
 
   if (!bookings.length) return;
@@ -53,14 +52,14 @@ const syncEarnedCommissions = async (req) => {
             tenantId: req.tenantId,
             agent: booking.agent,
             booking: booking._id,
+            customer: booking.customer || null,
+            tour: booking.tour || null,
             bookingAmount: amount,
             rate,
             amount: commissionAmount,
             updatedBy: req.user?._id,
           },
           $setOnInsert: {
-            customer: undefined,
-            tour: undefined,
             status: "pending",
             createdBy: req.user?._id,
           },
