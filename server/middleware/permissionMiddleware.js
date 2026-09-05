@@ -11,6 +11,15 @@ const ADMIN_COMPATIBILITY_PERMISSIONS = [
   "finance.view", "finance.manage", "notification.manage",
 ];
 
+// Managers need commission visibility and payout controls, but should not inherit
+// the broader administrator compatibility permissions above.
+const MANAGER_COMPATIBILITY_PERMISSIONS = [
+  "commission.view",
+  "commission.manage",
+  "commission.approve",
+  "commission.pay",
+];
+
 const PERMISSION_ALIASES = {
   "tour.manage": ["tour.manage", "manage_tours"], "manage_tours": ["manage_tours", "tour.manage"],
   "destination.manage": ["destination.manage", "manage_destinations"], "manage_destinations": ["manage_destinations", "destination.manage"],
@@ -26,8 +35,6 @@ const PERMISSION_ALIASES = {
 
 const normalizePermission = (permission) => String(permission || "").trim().toLowerCase();
 
-// Platform owners are global and must not depend on database permission rows.
-// Keep both spellings supported because legacy users/tokens may contain either.
 const isPlatformRole = (role) => {
   const normalized = String(role || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
   return normalized === "super_admin" || normalized === "superadmin";
@@ -58,6 +65,9 @@ export const getEffectivePermissions = async (user) => {
   }
   permissions.push(...extractEnabledPermissions(user?.permissionsOverride));
   if (roleName === "admin") permissions.push(...ADMIN_COMPATIBILITY_PERMISSIONS.map(normalizePermission));
+  if (["manager", "tour_manager", "tourmanager"].includes(roleName)) {
+    permissions.push(...MANAGER_COMPATIBILITY_PERMISSIONS.map(normalizePermission));
+  }
   return [...new Set(expandPermissionAliases(permissions))];
 };
 
