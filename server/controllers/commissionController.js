@@ -2,16 +2,85 @@ import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 import Commission from "../models/Commission.js";
 import Agent from "../models/Agent.js";
+import Booking from "../models/Booking.js";
+import { getSystemSettings } from "../services/settingsService.js";
+
+const getCommissionRate = async (req) => {
+  const settings = await getSystemSettings({
+    req,
+    tenantId: req.tenantId || req.user?.tenantId || null,
+  });
+  const rate = Number(settings?.defaultCommissionRate);
+  return Number.isFinite(rate) && rate >= 0 && rate <= 100 ? rate : 10;
+};
+
+/*
+|--------------------------------------------------------------------------
+| SYNC EARNED COMMISSIONS
+|--------------------------------------------------------------------------
+| Agent Dashboard calculates earned commission from paid booking sales.
+| Older/demo bookings may not have a Commission document yet, so the
+| manager payout screen must materialize those earnings before displaying
+| them. The booking is the idempotency key: one booking can create only one
+| commission record because Commission.booking is unique.
+|--------------------------------------------------------------------------
+*/
+const syncEarnedCommissions = async (req) => {
+  const rate = await getCommissionRate(req);
+  const bookingFilter = mergeTenantFilter({
+    agent: { $ne: null },
+    paymentStatus: "paid",
+    status: { $nin: ["cancelled", "failed", "refunded"] },
+    isDeleted: { $ne: true },
+  });
+
+  const bookings = await Booking.find(bookingFilter)
+    .select("_id agent totalAmount")
+    .lean();
+
+  if (!bookings.length) return;
+
+  await Promise.all(
+    bookings.map(async (booking) => {
+      const amount = Number(booking.totalAmount || 0);
+      if (!booking.agent || amount <= 0) return;
+
+      const commissionAmount = Number(((amount * rate) / 100).toFixed(2));
+      await Commission.updateOne(
+        mergeTenantFilter({ booking: booking._id }),
+        {
+          $set: {
+            tenantId: req.tenantId,
+            agent: booking.agent,
+            booking: booking._id,
+            bookingAmount: amount,
+            rate,
+            amount: commissionAmount,
+            updatedBy: req.user?._id,
+          },
+          $setOnInsert: {
+            customer: undefined,
+            tour: undefined,
+            status: "pending",
+            createdBy: req.user?._id,
+          },
+        },
+        { upsert: true },
+      );
+    }),
+  );
+};
 
 /*
 |--------------------------------------------------------------------------
 | GET ALL COMMISSIONS
 |--------------------------------------------------------------------------
 */
-
 export const getCommissions = async (req, res) => {
   requireTenantId();
   try {
+    await syncEarnedCommissions(req);
+
     const commissions = await Commission.find(tenantFilter(req))
       .populate({ path: "agent", populate: { path: "user", select: "name email" } })
       .populate("booking")
@@ -28,7 +97,6 @@ export const getCommissions = async (req, res) => {
 | GET AGENT COMMISSIONS
 |--------------------------------------------------------------------------
 */
-
 export const getAgentCommissions = async (req, res) => {
   requireTenantId();
   try {
