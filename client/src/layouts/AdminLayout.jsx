@@ -4,6 +4,7 @@ import { Activity, BarChart3, Bell, Bot, Car, CalendarCheck, CreditCard, FileTex
 import { useAuth } from "../context/AuthContext";
 import { useSettings } from "../context/SettingsContext";
 import { getUserRole } from "../utils/roleUtils";
+import TenantBilling from "../pages/admin/TenantBilling";
 
 const MENU = [
   ["Dashboard", "/admin", LayoutDashboard, "admin.dashboard"], ["Users", "/admin/users", Users, "user.manage"], ["Staff", "/admin/staff", UserCog, "staff.manage"], ["Tours", "/admin/manage-tours", Map, "tour.manage"], ["Add Tour", "/admin/tours/add", PlusCircle, "tour.manage"], ["Destinations", "/admin/destinations", Map, "tour.manage"], ["Bookings", "/admin/bookings", CalendarCheck, "booking.manage"], ["Custom Tour Requests", "/admin/custom-tour-requests", CalendarCheck, "booking.manage"], ["Payments", "/admin/payments", CreditCard, "payment.manage"], ["Agents", "/admin/agents", Handshake, "user.manage"], ["Commissions", "/admin/commissions", Wallet, "finance.view"], ["Customers CRM", "/admin/customers", Users, "manage_customers"], ["Guides", "/admin/guides", UserCog, "staff.manage"], ["Vehicles", "/admin/vehicles", Car, "staff.manage"], ["Coupons", "/admin/coupons", Tag, "tour.manage"], ["Reviews", "/admin/reviews", Star, "tour.manage"], ["Gallery", "/admin/gallery", Image, "tour.manage"], ["Reports", "/admin/reports", FileText, "analytics.view"], ["Analytics", "/admin/analytics", BarChart3, "analytics.view"], ["Finance", "/admin/finance", Wallet, "finance.view"], ["M-Pesa Transactions", "/admin/finance/transactions", Smartphone, "payment.manage"], ["Finance Reports", "/admin/finance/reports", FileText, "finance.view"], ["Reconciliation", "/admin/finance/reconciliation", CreditCard, "finance.view"], ["AI Tools", "/admin/ai", Bot, "analytics.view"], ["Notifications", "/admin/notifications", Bell, "notifications.view"], ["Roles & Permissions", "/admin/rbac", Shield, "roles.manage"], ["System Health", "/admin/system-health", Activity, "admin.dashboard"], ["Billing & Subscription", "/admin/billing", CreditCard, "settings.manage"], ["Settings", "/admin/settings", Settings, "settings.manage"],
@@ -20,6 +21,8 @@ export default function AdminLayout() {
     if (["admin", "super_admin"].includes(role)) return MENU;
     return MENU.filter(([, , , permission]) => hasPermission(permission));
   }, [role, hasPermission]);
+
+  const isBillingRoute = ["/admin/billing", "/admin/subscriptions", "/admin/subscription", "/admin/billing/subscription"].includes(location.pathname);
 
   return (
     <div className="dashboard-responsive min-h-screen bg-slate-100">
@@ -43,7 +46,9 @@ export default function AdminLayout() {
           </div>
           <div className="hidden max-w-[35%] text-right sm:block"><p className="truncate text-sm font-semibold text-slate-900">{user?.name || "Administrator"}</p><p className="text-[10px] capitalize text-slate-500 sm:text-xs">{String(role || "admin").replace(/_/g, " ")}</p></div>
         </header>
-        <main className="min-w-0 p-3 sm:p-4 md:p-6 lg:p-8"><Outlet /></main>
+        <main className="min-w-0 p-3 sm:p-4 md:p-6 lg:p-8">
+          {isBillingRoute ? <TenantBilling /> : <Outlet />}
+        </main>
       </div>
     </div>
   );
