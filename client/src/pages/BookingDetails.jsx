@@ -1,6 +1,6 @@
 import { useTenant } from "../context/TenantContext";
 import { useSettings } from "../context/SettingsContext";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState } from "react";
 import ReviewForm from "../components/reviews/ReviewForm";
@@ -40,6 +40,7 @@ export default function BookingDetails() {
   const { settings } = useSettings();
   const { id } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const query = useQuery({
     queryKey: ["booking", id],
     queryFn: async () => {
@@ -87,7 +88,7 @@ export default function BookingDetails() {
     <div className="min-h-screen bg-slate-50 p-6 md:p-10">
       <main className="mx-auto max-w-5xl">
         <div className="mb-6">
-          <p className="text-sm font-bold uppercase tracking-wide text-emerald-700">{settings?.companyName || tenant?.name || 'Your Travel Company'}</p>
+          <p className="text-sm font-bold uppercase tracking-wide text-emerald-700">{settings?.companyName || tenant?.name || "Your Travel Company"}</p>
           <h1 className="mt-1 text-4xl font-bold text-slate-900">Booking Details</h1>
         </div>
 
@@ -116,7 +117,7 @@ export default function BookingDetails() {
               <Info label="Pickup" value={booking.pickupLocation || custom.pickupLocation || "N/A"} />
             </div>
 
-            {canPostpone && <PostponeBooking booking={booking} onSuccess={() => refetch()} />}
+            {canPostpone && <PostponeBooking booking={booking} onSuccess={() => refetch()} queryClient={queryClient} />}
 
             <div className="mt-6 rounded-2xl border border-emerald-100 bg-emerald-50 p-5">
               <h3 className="font-bold text-slate-900">Payment summary</h3>
@@ -155,23 +156,49 @@ export default function BookingDetails() {
   );
 }
 
-function PostponeBooking({ booking, onSuccess }) {
+function getLocalDateString(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function PostponeBooking({ booking, onSuccess, queryClient }) {
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState("");
   const [reason, setReason] = useState("");
+  const [validationError, setValidationError] = useState("");
   const mutation = useMutation({
-    mutationFn: () => rescheduleBooking(booking._id, { newTravelDate: date, reason: reason.trim() }),
+    mutationFn: ({ newTravelDate, reason: nextReason }) => rescheduleBooking(booking._id, { newTravelDate, reason: nextReason }),
     onSuccess: () => {
       toast.success("Booking postponed successfully.");
       setOpen(false);
       setDate("");
       setReason("");
+      setValidationError("");
+      queryClient.invalidateQueries({ queryKey: ["booking", String(booking._id)] });
       onSuccess();
     },
     onError: (e) => toast.error(e?.response?.data?.message || "Unable to postpone booking."),
   });
+
+  const minDate = getLocalDateString(new Date(Date.now() + 24 * 60 * 60 * 1000));
   const reasonValid = reason.trim().length >= 5 && reason.trim().length <= 500;
-  const dateValid = Boolean(date) && new Date(date).getTime() > new Date().setHours(0, 0, 0, 0);
+  const dateValid = Boolean(date) && date >= minDate;
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    setValidationError("");
+    if (!dateValid) {
+      setValidationError("Choose a travel date from tomorrow onward.");
+      return;
+    }
+    if (!reasonValid) {
+      setValidationError("Please provide a meaningful reason of at least 5 characters.");
+      return;
+    }
+    mutation.mutate({ newTravelDate: date, reason: reason.trim() });
+  };
 
   return (
     <div className="mt-6 rounded-2xl border border-sky-200 bg-sky-50 p-5">
@@ -180,29 +207,29 @@ function PostponeBooking({ booking, onSuccess }) {
           <h3 className="text-lg font-bold text-slate-900">Need to postpone this trip?</h3>
           <p className="mt-1 text-sm text-slate-600">Choose a new future travel date and provide a reason. Your postponement will be recorded with the booking.</p>
         </div>
-        <button type="button" onClick={() => setOpen((value) => !value)} className="rounded-xl bg-sky-700 px-5 py-3 font-bold text-white hover:bg-sky-800">
+        <button type="button" onClick={() => { setOpen((value) => !value); setValidationError(""); }} className="rounded-xl bg-sky-700 px-5 py-3 font-bold text-white hover:bg-sky-800">
           {open ? "Close" : "Postpone Booking"}
         </button>
       </div>
 
       {open && (
-        <div className="mt-5 grid gap-4 rounded-xl border border-sky-100 bg-white p-4 md:grid-cols-2">
+        <form onSubmit={handleSubmit} noValidate className="mt-5 grid gap-4 rounded-xl border border-sky-100 bg-white p-4 md:grid-cols-2">
           <label className="block">
             <span className="mb-1 block text-sm font-bold text-slate-800">New travel date *</span>
-            <input type="date" min={new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().slice(0, 10)} value={date} onChange={(event) => setDate(event.target.value)} className="w-full rounded-lg border border-slate-300 p-3 text-slate-900" required />
+            <input type="date" min={minDate} value={date} onChange={(event) => { setDate(event.target.value); setValidationError(""); }} className="w-full rounded-lg border border-slate-300 p-3 text-slate-900 outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-100" required />
           </label>
           <label className="block">
             <span className="mb-1 block text-sm font-bold text-slate-800">Reason for postponement *</span>
-            <textarea value={reason} onChange={(event) => setReason(event.target.value)} minLength={5} maxLength={500} rows={3} placeholder="Please explain why you need to postpone this trip." className="w-full rounded-lg border border-slate-300 p-3 text-slate-900" required />
+            <textarea value={reason} onChange={(event) => { setReason(event.target.value); setValidationError(""); }} minLength={5} maxLength={500} rows={3} placeholder="Please explain why you need to postpone this trip." className="w-full rounded-lg border border-slate-300 p-3 text-slate-900 outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-100" required />
             <span className="mt-1 block text-right text-xs text-slate-500">{reason.length}/500</span>
           </label>
-          <div className="md:col-span-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
-            <p className="text-xs text-slate-500">A meaningful reason of at least 5 characters is required.</p>
-            <button type="button" disabled={!dateValid || !reasonValid || mutation.isPending} onClick={() => mutation.mutate()} className="rounded-lg bg-sky-700 px-5 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-50">
+          <div className="md:col-span-2 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-end">
+            {validationError && <p role="alert" className="text-sm font-semibold text-red-600 sm:mr-auto">{validationError}</p>}
+            <button type="submit" disabled={mutation.isPending} className="rounded-lg bg-sky-700 px-5 py-3 font-bold text-white transition hover:bg-sky-800 disabled:cursor-not-allowed disabled:opacity-50">
               {mutation.isPending ? "Postponing..." : "Confirm Postponement"}
             </button>
           </div>
-        </div>
+        </form>
       )}
     </div>
   );
