@@ -54,7 +54,6 @@ export default function SuperAdminSettings() {
     void loadSettings();
     return () => { active = false; };
     // This page should load once on mount. Manual refresh is provided by load().
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const update = (key, value) => setSettings((prev) => ({ ...prev, [key]: value }));
