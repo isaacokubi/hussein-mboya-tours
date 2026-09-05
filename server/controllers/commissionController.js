@@ -22,6 +22,12 @@ const getCommissionRate = async (req) => {
 | Older/demo bookings may not have a Commission document yet, so the
 | manager payout screen materializes those earnings before displaying them.
 | The booking is the idempotency key because Commission.booking is unique.
+|
+| IMPORTANT: Do not use updateOne(..., { upsert: true }) here. The tenant
+| isolation plugin adds tenantId to $setOnInsert, while the tenant-scoped
+| filter also contains tenantId. MongoDB/Mongoose can then fail with:
+| "cannot infer query fields to set, path 'tenantId' is matched twice".
+| We therefore find the commission first and create/save it when missing.
 |--------------------------------------------------------------------------
 */
 const syncEarnedCommissions = async (req) => {
@@ -39,38 +45,67 @@ const syncEarnedCommissions = async (req) => {
 
   if (!bookings.length) return;
 
-  await Promise.all(
-    bookings.map(async (booking) => {
-      const amount = Number(booking.totalAmount || 0);
-      if (!booking.agent || amount <= 0) return;
+  for (const booking of bookings) {
+    const amount = Number(booking.totalAmount || 0);
+    if (!booking.agent || amount <= 0) continue;
 
-      const commissionAmount = Number(((amount * rate) / 100).toFixed(2));
+    const commissionAmount = Number(((amount * rate) / 100).toFixed(2));
+    const commissionFilter = mergeTenantFilter({ booking: booking._id });
 
-      // tenantPlugin automatically injects tenantId into $setOnInsert.
-      // Do not also put tenantId in $set; MongoDB rejects the same path being
-      // written by both $set and $setOnInsert during an upsert.
-      await Commission.updateOne(
-        mergeTenantFilter({ booking: booking._id }),
-        {
-          $set: {
-            agent: booking.agent,
-            booking: booking._id,
-            customer: booking.customer || null,
-            tour: booking.tour || null,
-            bookingAmount: amount,
-            rate,
-            amount: commissionAmount,
-            updatedBy: req.user?._id,
-          },
-          $setOnInsert: {
-            status: "pending",
-            createdBy: req.user?._id,
-          },
-        },
-        { upsert: true },
-      );
-    }),
-  );
+    // Find first so the tenant plugin does not have to perform a MongoDB
+    // upsert and infer tenantId from a query that already contains tenantId.
+    let commission = await Commission.findOne(commissionFilter);
+
+    if (commission) {
+      // Refresh only the earning/sales fields. Never reset payment/status
+      // fields here, otherwise a previously paid commission could be undone.
+      commission.agent = booking.agent;
+      commission.booking = booking._id;
+      commission.customer = booking.customer || null;
+      commission.tour = booking.tour || null;
+      commission.bookingAmount = amount;
+      commission.rate = rate;
+      commission.amount = commissionAmount;
+      commission.updatedBy = req.user?._id;
+      await commission.save();
+      continue;
+    }
+
+    commission = new Commission({
+      agent: booking.agent,
+      booking: booking._id,
+      customer: booking.customer || null,
+      tour: booking.tour || null,
+      bookingAmount: amount,
+      rate,
+      amount: commissionAmount,
+      status: "pending",
+      createdBy: req.user?._id,
+      updatedBy: req.user?._id,
+    });
+
+    try {
+      await commission.save();
+    } catch (error) {
+      // If another request created the same commission concurrently, keep the
+      // existing record rather than failing the entire commissions endpoint.
+      if (error?.code === 11000) {
+        const existing = await Commission.findOne(commissionFilter);
+        if (!existing) throw error;
+        existing.agent = booking.agent;
+        existing.booking = booking._id;
+        existing.customer = booking.customer || null;
+        existing.tour = booking.tour || null;
+        existing.bookingAmount = amount;
+        existing.rate = rate;
+        existing.amount = commissionAmount;
+        existing.updatedBy = req.user?._id;
+        await existing.save();
+      } else {
+        throw error;
+      }
+    }
+  }
 };
 
 /*
@@ -90,6 +125,7 @@ export const getCommissions = async (req, res) => {
 
     res.json({ success: true, data: commissions });
   } catch (error) {
+    console.error("[Commission] getCommissions failed:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
