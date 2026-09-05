@@ -8,6 +8,7 @@ import cookieParser from "cookie-parser";
 import morgan from "morgan";
 import mongoose from "mongoose";
 import loadTenantPlugin from "./config/tenantPluginLoader.js";
+import tenantSubscriptionRoutes from "./routes/tenantSubscriptionRoutes.js";
 
 loadTenantPlugin();
 
@@ -97,6 +98,12 @@ app.get("/api/health", async (req, res) => {
 
 app.use("/api/public/onboarding", publicOnboardingRoutes);
 app.use("/api/tenant/branding", tenantBrandingRoutes);
+
+// Tenant subscription routes must be registered before the final 404 handler.
+// They were previously mounted from server.js after this handler was created,
+// which meant /api/subscription always returned 404 in both local and Render.
+app.use("/api/subscription", tenantSubscriptionRoutes);
+
 app.use("/api", apiRoutes);
 app.get("/", (req, res) => res.status(200).json({ success: true, message: "Travel API running successfully" }));
 app.use((req, res) => res.status(404).json({ success: false, message: "Route not found" }));
