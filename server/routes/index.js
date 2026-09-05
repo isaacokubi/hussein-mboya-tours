@@ -92,9 +92,9 @@ router.use("/tenants", tenantRoutes);
 router.use("/admin/auth", adminAuthRoutes);
 router.use("/admin/roles", adminRoleRoutes);
 
-// IMPORTANT: register the more specific admin dashboard routes BEFORE the
-// generic /admin router. Express matches middleware in registration order;
-// otherwise /api/admin/dashboard is consumed by adminRoutes first.
+// Register the specific dashboard router before the generic /admin router.
+// Express matches middleware in registration order, so this prevents
+// /api/admin/dashboard from being swallowed by /api/admin first.
 router.use("/admin/dashboard", adminDashboardRoutes);
 
 router.use("/admin", adminRoutes);
@@ -149,7 +149,6 @@ router.use("/crm", crmRoutes);
 router.use("/coupons", couponRoutes);
 router.use("/ai", aiRoutes);
 router.use("/admin-ai", adminAIRoutes);
-router.use("/seo", seoRoutes);
 router.use("/", seoRoutes);
 router.use("/superadmin", superAdminRoutes);
 router.use("/superadmin/revenue", superAdminRevenueRoutes);
