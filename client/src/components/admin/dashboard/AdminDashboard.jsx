@@ -26,9 +26,9 @@ export default function AdminDashboard() {
   const tenantKey = tenant?._id || tenant?.id || tenant?.slug || "current";
   const currency = String(settings.currency || settings.currencyCode || "KES").trim() || "KES";
   const currencyLabel = currency.toUpperCase() === "KES" ? "Ksh" : currency;
-  const { data, isLoading, isError, error, refetch, isFetching } = useQuery({ queryKey: ["admin-dashboard", tenantKey], queryFn: getDashboard, staleTime: 30_000, refetchInterval: 60_000, refetchIntervalInBackground: false, refetchOnMount: "always", refetchOnWindowFocus: true, retry: 1 });
-  const { data: agents = [], isLoading: agentsLoading, isError: agentsError } = useQuery({ queryKey: ["agents", tenantKey], queryFn: getAgents, staleTime: 30_000, refetchInterval: 60_000, refetchOnWindowFocus: true, retry: 1 });
-  const { data: commissions = [], refetch: refetchCommissions } = useQuery({ queryKey: ["commissions"], queryFn: getCommissions, staleTime: 15_000, refetchOnWindowFocus: true });
+  const { data, isLoading, isError, error, refetch, isFetching } = useQuery({ queryKey: ["admin-dashboard", tenantKey], queryFn: getDashboard, staleTime: 60_000, refetchInterval: 120_000, refetchIntervalInBackground: false, refetchOnMount: false, refetchOnWindowFocus: false, retry: 1 });
+  const { data: agents = [], isLoading: agentsLoading, isError: agentsError } = useQuery({ queryKey: ["agents", tenantKey], queryFn: getAgents, staleTime: 60_000, refetchInterval: 120_000, refetchIntervalInBackground: false, refetchOnMount: false, refetchOnWindowFocus: false, retry: 1 });
+  const { data: commissions = [], refetch: refetchCommissions } = useQuery({ queryKey: ["commissions"], queryFn: getCommissions, staleTime: 60_000, refetchOnMount: false, refetchOnWindowFocus: false });
   const approve = useMutation({ mutationFn: approveAgent, onSuccess: () => { toast.success("Agent approved successfully."); void queryClient.invalidateQueries({ queryKey: ["agents", tenantKey] }); void queryClient.invalidateQueries({ queryKey: ["admin-dashboard", tenantKey] }); }, onError: (mutationError) => toast.error(mutationError?.response?.data?.message || "Unable to approve agent.") });
   useEffect(() => { const refresh = () => { void refetch(); void refetchCommissions(); void queryClient.invalidateQueries({ queryKey: ["agents", tenantKey] }); }; window.addEventListener("dashboard:data-changed", refresh); return () => window.removeEventListener("dashboard:data-changed", refresh); }, [refetch, refetchCommissions, queryClient, tenantKey]);
 
