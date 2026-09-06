@@ -8,7 +8,12 @@ import Customer from "../models/Customer.js";
 const getStaffByPosition = async (req, res, next, positions) => {
   requireTenantId();
   try {
-    const staff = await Staff.find(mergeTenantFilter(req, { position: { $in: positions }, isActive: true, isDeleted: { $ne: true } }))
+    const staff = await Staff.find(mergeTenantFilter(req, {
+      position: { $in: positions },
+      role: { $nin: ["admin"] },
+      isActive: true,
+      isDeleted: { $ne: true },
+    }))
       .select("name email phone position availability assignedTours role")
       .populate("assignedTours", "title startDate endDate status")
       .sort({ name: 1 }).lean();
