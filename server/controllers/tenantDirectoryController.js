@@ -5,19 +5,43 @@ import Vehicle from "../models/Vehicle.js";
 import Booking from "../models/Booking.js";
 import Customer from "../models/Customer.js";
 
+const ADMIN_ROLES = new Set(["admin", "administrator", "super_admin", "superadmin", "tenant_admin", "tenantadmin"]);
+
 const getStaffByPosition = async (req, res, next, positions) => {
   requireTenantId();
   try {
     const staff = await Staff.find(mergeTenantFilter(req, {
       position: { $in: positions },
-      role: { $nin: ["admin"] },
+      role: { $nin: [...ADMIN_ROLES] },
       isActive: true,
       isDeleted: { $ne: true },
     }))
-      .select("name email phone position availability assignedTours role")
+      .select("name email phone position availability assignedTours role user")
+      .populate("user", "name email role legacyRole status")
       .populate("assignedTours", "title startDate endDate status")
       .sort({ name: 1 }).lean();
-    return res.status(200).json({ success: true, count: staff.length, data: staff, staff });
+
+    // Some legacy staff records can have a guide position while their linked
+    // User account is actually an administrator. Never expose those accounts
+    // as assignable guides/drivers.
+    const filteredStaff = staff.filter((member) => {
+      const staffRole = String(member?.role || "").trim().toLowerCase().replace(/[\s_-]/g, "");
+      const userRole = String(member?.user?.role || "").trim().toLowerCase().replace(/[\s_-]/g, "");
+      const legacyRole = String(member?.user?.legacyRole || "").trim().toLowerCase().replace(/[\s_-]/g, "");
+      const position = String(member?.position || "").trim().toLowerCase().replace(/[\s_-]/g, "");
+
+      if (["admin", "administrator", "superadmin", "tenantadmin"].includes(staffRole)) return false;
+      if (["admin", "administrator", "superadmin", "tenantadmin"].includes(userRole)) return false;
+      if (["admin", "administrator", "superadmin", "tenantadmin"].includes(legacyRole)) return false;
+      if (position === "admin") return false;
+
+      return true;
+    }).map(({ user, ...member }) => ({
+      ...member,
+      role: member.role || user?.role || null,
+    }));
+
+    return res.status(200).json({ success: true, count: filteredStaff.length, data: filteredStaff, staff: filteredStaff });
   } catch (error) { next(error); }
 };
 
