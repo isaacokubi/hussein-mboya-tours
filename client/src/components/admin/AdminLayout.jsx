@@ -12,14 +12,14 @@ export default function AdminLayout() {
       <div className={`ops-drawer ${open ? "open" : ""}`}>
         <button className="ops-drawer-backdrop" onClick={() => setOpen(false)} aria-label="Close navigation" />
         <aside className="ops-drawer-panel">
-          <div style={{position:"relative"}}><AdminSidebar /></div>
-          <button onClick={() => setOpen(false)} aria-label="Close menu" style={{position:"absolute",top:12,right:12}}><X /></button>
+          <div style={{ position: "relative" }}><AdminSidebar /></div>
+          <button onClick={() => setOpen(false)} aria-label="Close menu" style={{ position: "absolute", top: 12, right: 12 }}><X /></button>
         </aside>
       </div>
       <aside className="ops-sidebar"><AdminSidebar /></aside>
       <div className="ops-main">
         <AdminHeader onMenu={() => setOpen(true)} />
-        <main className="ops-content" key={location.pathname}><Outlet /></main>
+        <main className="ops-content admin-content" key={location.pathname}><Outlet /></main>
       </div>
     </div>
   );
