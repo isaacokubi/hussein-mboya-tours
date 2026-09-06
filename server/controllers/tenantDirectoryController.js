@@ -9,7 +9,7 @@ const getStaffByPosition = async (req, res, next, positions) => {
   requireTenantId();
   try {
     const staff = await Staff.find(mergeTenantFilter(req, { position: { $in: positions }, isActive: true, isDeleted: { $ne: true } }))
-      .select("name email phone position availability assignedTours")
+      .select("name email phone position availability assignedTours role")
       .populate("assignedTours", "title startDate endDate status")
       .sort({ name: 1 }).lean();
     return res.status(200).json({ success: true, count: staff.length, data: staff, staff });
