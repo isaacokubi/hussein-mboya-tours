@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Clock3, Users } from "lucide-react";
 import { toast } from "react-toastify";
@@ -30,7 +30,6 @@ export default function AdminDashboard() {
   const { data: agents = [], isLoading: agentsLoading, isError: agentsError } = useQuery({ queryKey: ["agents", tenantKey], queryFn: getAgents, staleTime: 60_000, refetchInterval: 120_000, refetchIntervalInBackground: false, refetchOnMount: false, refetchOnWindowFocus: false, retry: 1 });
   const { data: commissions = [], refetch: refetchCommissions } = useQuery({ queryKey: ["commissions"], queryFn: getCommissions, staleTime: 60_000, refetchOnMount: false, refetchOnWindowFocus: false });
   const approve = useMutation({ mutationFn: approveAgent, onSuccess: () => { toast.success("Agent approved successfully."); void queryClient.invalidateQueries({ queryKey: ["agents", tenantKey] }); void queryClient.invalidateQueries({ queryKey: ["admin-dashboard", tenantKey] }); }, onError: (mutationError) => toast.error(mutationError?.response?.data?.message || "Unable to approve agent.") });
-  useEffect(() => { const refresh = () => { void refetch(); void refetchCommissions(); void queryClient.invalidateQueries({ queryKey: ["agents", tenantKey] }); }; window.addEventListener("dashboard:data-changed", refresh); return () => window.removeEventListener("dashboard:data-changed", refresh); }, [refetch, refetchCommissions, queryClient, tenantKey]);
 
   const dashboard = useMemo(() => unwrap(data), [data]);
   const summary = dashboard.summary ?? {};
