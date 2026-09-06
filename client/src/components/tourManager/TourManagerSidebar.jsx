@@ -62,11 +62,27 @@ export default function TourManagerSidebar() {
   return (
     <>
       <style>{`
-        .tour-manager-sidebar-scroll::-webkit-scrollbar{width:10px}
-        .tour-manager-sidebar-scroll::-webkit-scrollbar-track{background:#0f172a;border-radius:8px}
-        .tour-manager-sidebar-scroll::-webkit-scrollbar-thumb{background:#64748b;border:2px solid #0f172a;border-radius:8px}
-        .tour-manager-sidebar-scroll::-webkit-scrollbar-thumb:hover{background:#94a3b8}
-        .tour-manager-sidebar-scroll{scrollbar-width:thin;scrollbar-color:#64748b #0f172a}
+        .tour-manager-sidebar-scroll {
+          scrollbar-width: auto;
+          scrollbar-color: #64748b #0f172a;
+          scrollbar-gutter: stable;
+        }
+        .tour-manager-sidebar-scroll::-webkit-scrollbar {
+          width: 12px;
+        }
+        .tour-manager-sidebar-scroll::-webkit-scrollbar-track {
+          background: #0f172a;
+          border-left: 1px solid rgba(148,163,184,.12);
+        }
+        .tour-manager-sidebar-scroll::-webkit-scrollbar-thumb {
+          background: #64748b;
+          border: 3px solid #0f172a;
+          border-radius: 9999px;
+          min-height: 48px;
+        }
+        .tour-manager-sidebar-scroll::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
+        }
       `}</style>
       <div className="relative flex h-full min-h-0 w-72 flex-col overflow-hidden bg-slate-950 px-5 py-6 text-white">
         <div className="ops-brand shrink-0">
@@ -81,7 +97,7 @@ export default function TourManagerSidebar() {
 
         <nav
           ref={navRef}
-          className="tour-manager-sidebar-scroll ops-nav min-h-0 flex-1 overflow-y-auto pr-1 pb-14"
+          className="tour-manager-sidebar-scroll ops-nav min-h-0 flex-1 overflow-y-scroll pr-1 pb-14"
           aria-label="Tour Manager navigation"
         >
           {links.map(([name, path, Icon]) => (
