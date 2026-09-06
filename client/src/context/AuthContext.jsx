@@ -128,7 +128,9 @@ export function AuthProvider({ children }) {
   const fetchCurrentUser = async () => {
     const { data } = await api.get("/auth/me");
     const currentUser = persistUser(data.user || data);
-    await preloadTenantSettings();
+    // Do not block authentication/UI rendering on branding/settings. SettingsProvider
+    // loads cached settings immediately and refreshes them independently.
+    void preloadTenantSettings();
     return currentUser;
   };
 
@@ -169,10 +171,8 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = async (email, password) => {
-    // A new login must start from a clean authentication session.
     AUTH_KEYS.forEach((key) => localStorage.removeItem(key));
     ["user", "permissions", ...TENANT_SESSION_KEYS].forEach((key) => localStorage.removeItem(key));
-    // Never allow the previous tenant's React Query cache to flash after login.
     queryClient.clear();
     setApiAuthHeader("");
     setToken(null);
@@ -192,7 +192,8 @@ export function AuthProvider({ children }) {
     setToken(nextToken);
     const normalizedUser = persistUser(data.user);
     if (!normalizedUser) throw new Error("Authentication response did not contain a user.");
-    await preloadTenantSettings();
+    // Run settings preload in the background so login/navigation is not delayed by it.
+    void preloadTenantSettings();
     return { ...data, user: normalizedUser };
   };
 
@@ -204,7 +205,7 @@ export function AuthProvider({ children }) {
       setApiAuthHeader(nextToken);
       setToken(nextToken);
       persistUser(data.user);
-      await preloadTenantSettings();
+      void preloadTenantSettings();
     }
     return data;
   };
