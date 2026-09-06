@@ -38,25 +38,27 @@ export default function TourManagerSidebar() {
     <>
       <style>{`
         .tour-manager-sidebar-scroll {
+          overflow-y: scroll !important;
           scrollbar-width: auto;
-          scrollbar-color: #64748b #0f172a;
+          scrollbar-color: #94a3b8 #020617;
           scrollbar-gutter: stable;
         }
         .tour-manager-sidebar-scroll::-webkit-scrollbar {
-          width: 12px;
+          width: 14px;
+          display: block;
         }
         .tour-manager-sidebar-scroll::-webkit-scrollbar-track {
-          background: #0f172a;
-          border-left: 1px solid rgba(148,163,184,.12);
+          background: #020617;
+          border-left: 1px solid rgba(255,255,255,.18);
         }
         .tour-manager-sidebar-scroll::-webkit-scrollbar-thumb {
-          background: #64748b;
-          border: 3px solid #0f172a;
+          background: #94a3b8;
+          border: 3px solid #020617;
           border-radius: 9999px;
-          min-height: 48px;
+          min-height: 52px;
         }
         .tour-manager-sidebar-scroll::-webkit-scrollbar-thumb:hover {
-          background: #94a3b8;
+          background: #cbd5e1;
         }
       `}</style>
 
@@ -72,7 +74,7 @@ export default function TourManagerSidebar() {
         <div className="ops-section shrink-0">Daily Operations</div>
 
         <nav
-          className="tour-manager-sidebar-scroll ops-nav min-h-0 flex-1 overflow-x-hidden overflow-y-auto pr-1"
+          className="tour-manager-sidebar-scroll ops-nav min-h-0 flex-1 overflow-x-hidden pr-1"
           aria-label="Tour Manager navigation"
         >
           {links.map(([name, path, Icon]) => (
