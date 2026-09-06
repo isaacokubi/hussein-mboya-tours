@@ -1,30 +1,14 @@
 import { TenantProvider } from "./context/TenantContext";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import App from "./App";
 import { AuthProvider } from "./context/AuthContext";
 import { SettingsProvider } from "./context/SettingsContext";
 import { CartProvider } from "./context/CartContext";
+import { queryClient } from "./lib/queryClient";
 import "./index.css";
 import "./utils/syncPickupTimeWithTravelDate";
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      staleTime: 2 * 60 * 1000,
-      gcTime: 15 * 60 * 1000,
-      refetchOnMount: false,
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: false,
-      networkMode: "online",
-    },
-    mutations: {
-      retry: 0,
-    },
-  },
-});
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <QueryClientProvider client={queryClient}>
