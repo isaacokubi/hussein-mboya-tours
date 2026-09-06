@@ -1,7 +1,7 @@
 import { TenantProvider } from "./context/TenantContext";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
-import { MutationCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./App";
 import { AuthProvider } from "./context/AuthContext";
 import { SettingsProvider } from "./context/SettingsContext";
@@ -9,18 +9,7 @@ import { CartProvider } from "./context/CartContext";
 import "./index.css";
 import "./utils/syncPickupTimeWithTravelDate";
 
-let queryClient;
-
-const mutationCache = new MutationCache({
-  onSuccess: () => {
-    if (!queryClient) return;
-    queryClient.invalidateQueries();
-    if (import.meta.env.DEV) console.debug("Mutation succeeded; dashboard queries invalidated");
-  },
-});
-
-queryClient = new QueryClient({
-  mutationCache,
+const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
