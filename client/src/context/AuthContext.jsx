@@ -128,8 +128,6 @@ export function AuthProvider({ children }) {
   const fetchCurrentUser = async () => {
     const { data } = await api.get("/auth/me");
     const currentUser = persistUser(data.user || data);
-    // Do not block authentication/UI rendering on branding/settings. SettingsProvider
-    // loads cached settings immediately and refreshes them independently.
     void preloadTenantSettings();
     return currentUser;
   };
@@ -192,7 +190,12 @@ export function AuthProvider({ children }) {
     setToken(nextToken);
     const normalizedUser = persistUser(data.user);
     if (!normalizedUser) throw new Error("Authentication response did not contain a user.");
-    // Run settings preload in the background so login/navigation is not delayed by it.
+
+    // Login already has the authenticated user. Mark auth ready immediately so
+    // protected routes can render without waiting for the initial /auth/me call.
+    setLoading(false);
+
+    // Branding/settings are intentionally non-blocking after authentication.
     void preloadTenantSettings();
     return { ...data, user: normalizedUser };
   };
@@ -205,6 +208,7 @@ export function AuthProvider({ children }) {
       setApiAuthHeader(nextToken);
       setToken(nextToken);
       persistUser(data.user);
+      setLoading(false);
       void preloadTenantSettings();
     }
     return data;
