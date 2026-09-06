@@ -46,7 +46,6 @@ function applyTenantTheme(settings) {
   const text = settings.textColor || "#f1f5f9";
   const backgroundLuminance = luminance(background);
   const textLuminance = luminance(text);
-  // Prevent the broken light-background/light-text combination that makes the public site unreadable.
   const safeBackground = backgroundLuminance !== null && textLuminance !== null && backgroundLuminance > 0.65 && textLuminance > 0.65 ? "#020617" : background;
   const safeSurface = settings.surfaceColor || "#0f172a";
   const safeText = backgroundLuminance !== null && textLuminance !== null && backgroundLuminance > 0.65 && textLuminance > 0.65 ? "#f1f5f9" : text;
@@ -101,12 +100,18 @@ export function SettingsProvider({ children }) {
     void load();
     const interval = window.setInterval(() => { void refreshSettings(); }, 60_000);
     const handleStorage = (event) => { if (event.key !== settingsKey || !event.newValue) return; try { applySettings(JSON.parse(event.newValue)); } catch { return; } };
-    const handleSettingsChanged = () => { void refreshSettings(); };
+    const handleSettingsChanged = (event) => {
+      const detail = event?.detail;
+      if (detail && typeof detail === "object" && !Array.isArray(detail)) {
+        applySettings(detail);
+        return;
+      }
+      void refreshSettings();
+    };
     window.addEventListener("storage", handleStorage);
     window.addEventListener("platform-settings-updated", handleSettingsChanged);
     window.addEventListener("settings-updated", handleSettingsChanged);
-    window.addEventListener("dashboard:data-changed", handleSettingsChanged);
-    return () => { mounted = false; window.clearInterval(interval); window.removeEventListener("storage", handleStorage); window.removeEventListener("platform-settings-updated", handleSettingsChanged); window.removeEventListener("settings-updated", handleSettingsChanged); window.removeEventListener("dashboard:data-changed", handleSettingsChanged); };
+    return () => { mounted = false; window.clearInterval(interval); window.removeEventListener("storage", handleStorage); window.removeEventListener("platform-settings-updated", handleSettingsChanged); window.removeEventListener("settings-updated", handleSettingsChanged); };
   }, [refreshSettings, applySettings, settingsKey]);
 
   const updateSettings = useCallback((nextSettings) => {
