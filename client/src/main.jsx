@@ -1,4 +1,4 @@
-import { TenantProvider } from './context/TenantContext';
+import { TenantProvider } from "./context/TenantContext";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { MutationCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -24,13 +24,15 @@ queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
-      // Cache read-heavy public data briefly. Mutations still invalidate the cache,
-      // so admin changes become visible without forcing every request to refetch.
-      staleTime: 30 * 1000,
-      gcTime: 10 * 60 * 1000,
+      staleTime: 2 * 60 * 1000,
+      gcTime: 15 * 60 * 1000,
       refetchOnMount: false,
       refetchOnWindowFocus: false,
-      refetchOnReconnect: true,
+      refetchOnReconnect: false,
+      networkMode: "online",
+    },
+    mutations: {
+      retry: 0,
     },
   },
 });
