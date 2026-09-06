@@ -7,35 +7,33 @@ export default defineConfig(({ mode }) => {
   const apiTarget = env.VITE_DEV_API_TARGET || "http://localhost:5000";
 
   return {
-    plugins: [
-      react(),
-      tailwindcss(),
-    ],
-
+    plugins: [react(), tailwindcss()],
     server: {
       proxy: {
-        "/api": {
-          target: apiTarget,
-          changeOrigin: true,
-          secure: false,
-        },
-        "/socket.io": {
-          target: apiTarget,
-          changeOrigin: true,
-          secure: false,
-          ws: true,
-        },
+        "/api": { target: apiTarget, changeOrigin: true, secure: false },
+        "/socket.io": { target: apiTarget, changeOrigin: true, secure: false, ws: true },
       },
     },
-
     build: {
+      target: "es2020",
+      cssCodeSplit: true,
+      sourcemap: false,
+      assetsInlineLimit: 4096,
+      reportCompressedSize: true,
       rollupOptions: {
         output: {
-          manualChunks: undefined,
+          manualChunks: {
+            "react-vendor": ["react", "react-dom", "react-router-dom"],
+            "query-vendor": ["@tanstack/react-query", "axios"],
+            "ui-vendor": ["lucide-react", "react-toastify"],
+            "charts-vendor": ["recharts"],
+          },
         },
       },
-
-      chunkSizeWarningLimit: 1000,
+      chunkSizeWarningLimit: 700,
+    },
+    esbuild: {
+      legalComments: "none",
     },
   };
 });
