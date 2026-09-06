@@ -70,11 +70,7 @@ api.interceptors.request.use((config) => {
   return config;
 }, (error) => Promise.reject(error));
 
-api.interceptors.response.use((response) => {
-  const method = String(response.config?.method || "").toLowerCase();
-  if (typeof window !== "undefined" && ["post", "put", "patch", "delete"].includes(method)) window.dispatchEvent(new CustomEvent("dashboard:data-changed", { detail: { method, url: response.config?.url || "" } }));
-  return response;
-}, (error) => {
+api.interceptors.response.use((response) => response, (error) => {
   const status = error?.response?.status;
   const url = String(error?.config?.url || baseURL);
   const data = error?.response?.data;
