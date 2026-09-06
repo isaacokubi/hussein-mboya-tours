@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { Activity, BarChart3, Bell, Bot, Car, CalendarCheck, CreditCard, FileText, Handshake, Image, LayoutDashboard, Map, Menu, PlusCircle, Settings, Shield, Smartphone, Star, Tag, UserCog, Users, Wallet, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useSettings } from "../context/SettingsContext";
 import { getUserRole } from "../utils/roleUtils";
-import TenantBilling from "../pages/admin/TenantBilling";
+
+const TenantBilling = lazy(() => import("../pages/admin/TenantBilling"));
 
 const MENU = [
   ["Dashboard", "/admin", LayoutDashboard, "admin.dashboard"], ["Users", "/admin/users", Users, "user.manage"], ["Staff", "/admin/staff", UserCog, "staff.manage"], ["Tours", "/admin/manage-tours", Map, "tour.manage"], ["Add Tour", "/admin/tours/add", PlusCircle, "tour.manage"], ["Destinations", "/admin/destinations", Map, "tour.manage"], ["Bookings", "/admin/bookings", CalendarCheck, "booking.manage"], ["Custom Tour Requests", "/admin/custom-tour-requests", CalendarCheck, "booking.manage"], ["Payments", "/admin/payments", CreditCard, "payment.manage"], ["Agents", "/admin/agents", Handshake, "user.manage"], ["Commissions", "/admin/commissions", Wallet, "finance.view"], ["Customers CRM", "/admin/customers", Users, "manage_customers"], ["Guides", "/admin/guides", UserCog, "staff.manage"], ["Vehicles", "/admin/vehicles", Car, "staff.manage"], ["Coupons", "/admin/coupons", Tag, "tour.manage"], ["Reviews", "/admin/reviews", Star, "tour.manage"], ["Gallery", "/admin/gallery", Image, "tour.manage"], ["Reports", "/admin/reports", FileText, "analytics.view"], ["Analytics", "/admin/analytics", BarChart3, "analytics.view"], ["Finance", "/admin/finance", Wallet, "finance.view"], ["M-Pesa Transactions", "/admin/finance/transactions", Smartphone, "payment.manage"], ["Finance Reports", "/admin/finance/reports", FileText, "finance.view"], ["Reconciliation", "/admin/finance/reconciliation", CreditCard, "finance.view"], ["AI Tools", "/admin/ai", Bot, "analytics.view"], ["Notifications", "/admin/notifications", Bell, "notifications.view"], ["Roles & Permissions", "/admin/rbac", Shield, "roles.manage"], ["System Health", "/admin/system-health", Activity, "admin.dashboard"], ["Billing & Subscription", "/admin/billing", CreditCard, "settings.manage"], ["Settings", "/admin/settings", Settings, "settings.manage"],
