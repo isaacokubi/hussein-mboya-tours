@@ -1,4 +1,4 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { dashboardPath, getUserRole, normalizeRole } from "../../utils/roleUtils";
 
@@ -35,6 +35,8 @@ function roleAllowed(userRole, allowedRoles) {
 
 export default function ProtectedRoute({ children, roles = [], permission }) {
   const { user, token, loading, hasPermission } = useAuth();
+  const location = useLocation();
+  const isMyBookingsRoute = location.pathname === "/my-bookings";
 
   if (loading) {
     return (
@@ -45,6 +47,13 @@ export default function ProtectedRoute({ children, roles = [], permission }) {
   }
 
   if (!token || !user) return <Navigate to="/login" replace />;
+
+  // My Bookings performs its own customer-safe API request and renders an
+  // inline error when the backend rejects a non-customer. Do not perform a
+  // client-side role redirect here: a transient/stale role value during an
+  // authenticated session otherwise makes the route visibly blink back to the
+  // dashboard even when /bookings/my-bookings is healthy.
+  if (isMyBookingsRoute) return children;
 
   const userRole = getUserRole(user);
   const allowedRoles = roles.map(normalizeRole);
