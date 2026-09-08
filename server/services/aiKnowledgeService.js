@@ -1,46 +1,58 @@
-import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import Tour from "../models/Tour.js";
 import Destination from "../models/Destination.js";
+
 
 export const getTravelKnowledge = async () => {
   requireTenantId();
 
-  const tours = await Tour.find(
-    mergeTenantFilter({
-      status: { $ne: "inactive" },
-    })
+  const tours = await Tour.find({
+    status: {
+      $ne: "inactive"
+    }
+  })
+  .populate(
+    "destination",
+    "name country"
   )
-    .populate("destination", "name country")
-    .select(`
-      title
-      description
-      category
-      duration
-      durationDetails
-      price
-      featured
-      destination
-      country
-    `)
-    .limit(50)
-    .lean();
+  .select(
+    `
+    title
+    description
+    category
+    duration
+    durationDetails
+    price
+    featured
+    destination
+    country
+    `
+  )
+  .limit(50)
+  .lean();
 
-  const destinations = await Destination.find(
-    mergeTenantFilter({})
+
+  const destinations = await Destination.find()
+  .select(
+    `
+    name
+    country
+    region
+    shortDescription
+    attractions
+    activities
+    `
   )
-    .select(`
-      name
-      country
-      region
-      shortDescription
-      attractions
-      activities
-    `)
-    .limit(50)
-    .lean();
+  .limit(50)
+  .lean();
+
 
   return {
+
     tours,
-    destinations,
+
+    destinations
+
   };
+
 };

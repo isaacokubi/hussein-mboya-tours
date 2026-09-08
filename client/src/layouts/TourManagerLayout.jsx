@@ -15,7 +15,7 @@ const TourManagerLayout = () => {
 
   return (
     <div className="dashboard-responsive ops-shell min-h-screen">
-      <aside className="ops-sidebar sticky top-0 hidden h-screen lg:block" aria-label="Tour Manager navigation"><TourManagerSidebar /></aside>
+      <aside className="ops-sidebar hidden lg:block" aria-label="Tour Manager navigation"><TourManagerSidebar /></aside>
       {mobileOpen && (
         <div className="ops-drawer open lg:hidden" role="dialog" aria-modal="true" aria-label="Tour Manager navigation">
           <div className="ops-drawer-backdrop" onClick={() => setMobileOpen(false)} aria-hidden="true" />

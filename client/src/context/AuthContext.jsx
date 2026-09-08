@@ -128,7 +128,7 @@ export function AuthProvider({ children }) {
   const fetchCurrentUser = async () => {
     const { data } = await api.get("/auth/me");
     const currentUser = persistUser(data.user || data);
-    void preloadTenantSettings();
+    await preloadTenantSettings();
     return currentUser;
   };
 
@@ -141,8 +141,11 @@ export function AuthProvider({ children }) {
       setUser(null);
       setToken(null);
       setLoading(false);
-      if (window.location.pathname !== "/login") window.location.replace("/login?reason=session-expired");
+      if (window.location.pathname !== "/login") {
+        window.location.replace("/login?reason=session-expired");
+      }
     };
+
     window.addEventListener("auth:session-invalid", onInvalidSession);
     return () => window.removeEventListener("auth:session-invalid", onInvalidSession);
   }, []);
@@ -157,21 +160,26 @@ export function AuthProvider({ children }) {
       setLoading(false);
       return;
     }
+
     if (!localStorage.getItem("token")) localStorage.setItem("token", savedToken);
     setApiAuthHeader(savedToken);
     setToken(savedToken);
     if (savedUser) setUser(savedUser);
-    fetchCurrentUser().catch((error) => {
-      const status = error?.response?.status;
-      console.error("AUTH ME ERROR", error.response?.data || error.message);
-      if (status !== 401) console.error("AUTH ME NON-401 FAILURE", error);
-    }).finally(() => setLoading(false));
+
+    fetchCurrentUser()
+      .catch((error) => {
+        const status = error?.response?.status;
+        console.error("AUTH ME ERROR", error.response?.data || error.message);
+        if (status !== 401) console.error("AUTH ME NON-401 FAILURE", error);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const login = async (email, password) => {
+    // A new login must start from a clean authentication session. In particular,
+    // never let the previous user's JWT or tenant ID be attached to /auth/login.
     AUTH_KEYS.forEach((key) => localStorage.removeItem(key));
     ["user", "permissions", ...TENANT_SESSION_KEYS].forEach((key) => localStorage.removeItem(key));
-    queryClient.clear();
     setApiAuthHeader("");
     setToken(null);
     setUser(null);
@@ -191,12 +199,11 @@ export function AuthProvider({ children }) {
     const normalizedUser = persistUser(data.user);
     if (!normalizedUser) throw new Error("Authentication response did not contain a user.");
 
-    // Login already has the authenticated user. Mark auth ready immediately so
-    // protected routes can render without waiting for the initial /auth/me call.
-    setLoading(false);
+    // Resolve the authenticated tenant's latest settings before returning from
+    // login. This prevents the dashboard/public shell from briefly showing
+    // stale/default branding while the SettingsProvider is still loading.
+    await preloadTenantSettings();
 
-    // Branding/settings are intentionally non-blocking after authentication.
-    void preloadTenantSettings();
     return { ...data, user: normalizedUser };
   };
 
@@ -208,8 +215,7 @@ export function AuthProvider({ children }) {
       setApiAuthHeader(nextToken);
       setToken(nextToken);
       persistUser(data.user);
-      setLoading(false);
-      void preloadTenantSettings();
+      await preloadTenantSettings();
     }
     return data;
   };

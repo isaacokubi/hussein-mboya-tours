@@ -12,6 +12,7 @@ export default function AdminAnalytics() {
   const monthlyRevenue = Array.isArray(payload.monthlyRevenue) ? payload.monthlyRevenue : [];
   const vehicleStats = Array.isArray(payload.vehicleStats) ? payload.vehicleStats : [];
   const popularTours = Array.isArray(payload.popularTours) ? payload.popularTours : [];
+  const profitability = payload.profitability || {};
   const customerCount = Number(payload.customers || 0);
   const bookingCount = bookingsSeries.reduce((sum, item) => sum + Number(item.bookings || 0), 0);
 
@@ -26,8 +27,14 @@ export default function AdminAnalytics() {
   ];
 
   return <div className="min-h-screen bg-slate-50 p-6"><div className="mx-auto max-w-7xl">
-    <div className="mb-8"><p className="text-sm font-semibold uppercase tracking-wider text-emerald-700">Business intelligence</p><h1 className="text-3xl font-bold text-slate-900">Analytics & Performance</h1><p className="mt-1 text-slate-500">Revenue and paid-tour performance are based only on confirmed payments.</p></div>
+    <div className="mb-8"><p className="text-sm font-semibold uppercase tracking-wider text-emerald-700">Business intelligence</p><h1 className="text-3xl font-bold text-slate-900">Analytics & Performance</h1><p className="mt-1 text-slate-500">Revenue and paid-tour performance are based only on confirmed payments. Contribution margin is an operational indicator after recorded agent commissions; supplier and vehicle costs can be added later for full net-profit accounting.</p></div>
     <div className="mb-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">{cards.map(([label, value, Icon]) => <div key={label} className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200"><div className="flex justify-between"><span className="text-sm text-slate-500">{label}</span><Icon className="text-emerald-700" size={20} /></div><p className="mt-3 text-3xl font-bold">{value}</p></div>)}</div>
+    <div className="mt-6 grid gap-4 md:grid-cols-4">
+      <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200"><p className="text-sm text-slate-500">Collected revenue</p><p className="mt-2 text-2xl font-bold">KES {Number(profitability.collectedRevenue || revenue.totalRevenue || 0).toLocaleString()}</p></div>
+      <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200"><p className="text-sm text-slate-500">Commission cost</p><p className="mt-2 text-2xl font-bold">KES {Number(profitability.commissionCost || 0).toLocaleString()}</p></div>
+      <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200"><p className="text-sm text-slate-500">Contribution margin</p><p className="mt-2 text-2xl font-bold">KES {Number(profitability.contributionMargin || 0).toLocaleString()}</p></div>
+      <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200"><p className="text-sm text-slate-500">Margin</p><p className="mt-2 text-2xl font-bold">{Number(profitability.marginPercent || 0)}%</p></div>
+    </div>
     <div className="grid gap-6 lg:grid-cols-2">
       <ChartCard title="Monthly collected revenue"><ResponsiveContainer width="100%" height={320}><BarChart data={monthlyRevenue}><XAxis dataKey="_id.month" /><YAxis /><Tooltip formatter={(v) => `KES ${Number(v).toLocaleString()}`} /><Bar dataKey="revenue" /></BarChart></ResponsiveContainer></ChartCard>
       <ChartCard title="Booking status"><ResponsiveContainer width="100%" height={320}><PieChart><Pie data={bookingStatus} dataKey="count" nameKey="_id" outerRadius={110} label>{bookingStatus.map((_, i) => <Cell key={i} />)}</Pie><Tooltip /></PieChart></ResponsiveContainer></ChartCard>

@@ -1,4 +1,4 @@
-import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
+import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import Tour from "../models/Tour.js";
 
 /*
@@ -20,19 +20,44 @@ export const recommendTours = async (preferences = {}) => {
     limit = 10,
   } = preferences;
 
-  const query = mergeTenantFilter({
+  const query = {
     status: "active",
-  });
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | COUNTRY
+  |--------------------------------------------------------------------------
+  */
 
   if (preferredCountries.length) {
-    query.country = { $in: preferredCountries };
+    query.country = {
+      $in: preferredCountries,
+    };
   }
+
+  /*
+  |--------------------------------------------------------------------------
+  | CATEGORY
+  |--------------------------------------------------------------------------
+  */
 
   if (travelStyle.length) {
-    query.category = { $in: travelStyle };
+    query.category = {
+      $in: travelStyle,
+    };
   }
 
-  if (minBudget !== undefined || maxBudget !== undefined) {
+  /*
+  |--------------------------------------------------------------------------
+  | PRICE
+  |--------------------------------------------------------------------------
+  */
+
+  if (
+    minBudget !== undefined ||
+    maxBudget !== undefined
+  ) {
     query.price = {};
 
     if (minBudget !== undefined) {
@@ -44,7 +69,16 @@ export const recommendTours = async (preferences = {}) => {
     }
   }
 
-  if (minDuration !== undefined || maxDuration !== undefined) {
+  /*
+  |--------------------------------------------------------------------------
+  | DURATION
+  |--------------------------------------------------------------------------
+  */
+
+  if (
+    minDuration !== undefined ||
+    maxDuration !== undefined
+  ) {
     query.duration = {};
 
     if (minDuration !== undefined) {
@@ -55,6 +89,12 @@ export const recommendTours = async (preferences = {}) => {
       query.duration.$lte = maxDuration;
     }
   }
+
+  /*
+  |--------------------------------------------------------------------------
+  | FEATURED
+  |--------------------------------------------------------------------------
+  */
 
   if (featuredOnly) {
     query.featured = true;
@@ -69,12 +109,20 @@ export const recommendTours = async (preferences = {}) => {
     })
     .limit(limit);
 
+  /*
+  |--------------------------------------------------------------------------
+  | FALLBACK
+  |--------------------------------------------------------------------------
+  |
+  | If no tours match the filters,
+  | return the highest-rated active tours.
+  |
+  */
+
   if (!tours.length) {
-    tours = await Tour.find(
-      mergeTenantFilter({
-        status: "active",
-      })
-    )
+    tours = await Tour.find({
+      status: "active",
+    })
       .populate("destination", "name country")
       .sort({
         featured: -1,

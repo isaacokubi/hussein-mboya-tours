@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
 import { fetchAgentDashboard } from "../../api/agentApi";
 
 const money = (value) => `KES ${Number(value || 0).toLocaleString()}`;
@@ -19,7 +18,6 @@ const customerName = (booking) => {
 };
 
 export default function AgentDashboard() {
-  const navigate = useNavigate();
   const { data: response, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ["agent-dashboard"],
     queryFn: fetchAgentDashboard,
@@ -45,12 +43,6 @@ export default function AgentDashboard() {
       ? "bg-red-100 text-red-700"
       : "bg-gray-100 text-gray-700";
   const statusCode = error?.response?.status;
-  const walletBalance = Number(payload?.agent?.walletBalance ?? stats.pendingCommission ?? 0);
-
-  const openBooking = (booking, action) => {
-    if (!booking?._id) return;
-    navigate(`/agent/bookings?bookingId=${encodeURIComponent(booking._id)}&action=${action}`);
-  };
 
   if (isLoading) return <div className="p-6 text-gray-600">Loading agent dashboard...</div>;
 
@@ -66,11 +58,17 @@ export default function AgentDashboard() {
               : error?.response?.data?.message || error?.message || "Unable to load the agent dashboard."}
         </p>
         <div className="mt-4 flex gap-2">
-          <button onClick={() => refetch()} disabled={isFetching} className="rounded-lg bg-red-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-60">
+          <button
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="rounded-lg bg-red-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+          >
             {isFetching ? "Retrying..." : "Retry"}
           </button>
           {statusCode === 401 && (
-            <button onClick={() => navigate("/login")} className="rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium">Sign in</button>
+            <a href="/login" className="rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium">
+              Sign in
+            </a>
           )}
         </div>
       </div>
@@ -84,8 +82,10 @@ export default function AgentDashboard() {
           <h1 className="text-3xl font-bold text-gray-900">Agent Dashboard</h1>
           <p className="mt-1 text-sm text-gray-500">{payload?.agent?.companyName || "Agent operations"}</p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClass}`}>{statusLabel}</span>
+        <div className="flex items-center gap-3">
+          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClass}`}>
+            {statusLabel}
+          </span>
           <button onClick={() => refetch()} disabled={isFetching} className="rounded-lg border bg-white px-4 py-2 text-sm font-medium shadow-sm hover:bg-gray-50 disabled:opacity-60">
             {isFetching ? "Refreshing..." : "Refresh"}
           </button>
@@ -98,53 +98,15 @@ export default function AgentDashboard() {
         </div>
       )}
 
-      <div className="rounded-2xl border bg-white p-5 shadow-sm">
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-          <div>
-            <h2 className="font-semibold text-gray-900">Quick actions</h2>
-            <p className="mt-1 text-sm text-gray-500">Jump directly to the agent workflows that are now functional.</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => navigate("/agent/bookings")} className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800">Manage Bookings</button>
-            <button type="button" onClick={() => navigate("/agent/customers")} className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50">Customers</button>
-            <button type="button" onClick={() => navigate("/agent/quotes")} className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50">Quotes</button>
-            <button type="button" onClick={() => navigate("/agent/packages")} className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50">Packages</button>
-            <button type="button" onClick={() => navigate("/agent/commission")} className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50">Commission</button>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <StatCard label="Bookings" value={stats.bookings ?? 0} hint="All agent bookings" />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="Bookings" value={stats.bookings ?? 0} hint="Active agent bookings" />
         <StatCard label="Upcoming" value={stats.upcomingBookings ?? 0} hint="Confirmed future trips" />
         <StatCard label="Completed" value={stats.completedTours ?? 0} hint="Completed bookings" />
         <StatCard label="Pending" value={stats.pendingBookings ?? 0} hint="Awaiting processing" />
-        <StatCard label="Cancelled" value={stats.cancelledBookings ?? 0} hint="Cancelled bookings" />
         <StatCard label="Total Sales" value={money(stats.totalSales)} hint="Paid booking sales" />
-        <StatCard label="Outstanding" value={money(stats.outstandingSales)} hint="Customer balance still due" />
         <StatCard label="Commission" value={money(stats.totalCommission)} hint={`${Number(payload?.agent?.commissionRate ?? 0)}% earned`} />
-        <StatCard label="Wallet" value={money(walletBalance)} hint="Unpaid commission balance" />
-        <StatCard label="Customers" value={stats.totalCustomers ?? 0} hint={`${stats.totalGuests ?? 0} non-cancelled guests`} />
-      </div>
-
-      <div className="rounded-2xl border border-green-200 bg-green-50 p-5 shadow-sm">
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-          <div>
-            <p className="text-sm font-medium text-green-800">Agent wallet</p>
-            <p className="mt-1 text-3xl font-bold text-green-950">{money(walletBalance)}</p>
-            <p className="mt-1 text-sm text-green-800">Commission earned but not yet paid out.</p>
-          </div>
-          <div className="grid grid-cols-2 gap-6 text-sm sm:min-w-[320px]">
-            <div>
-              <p className="text-green-700">Pending</p>
-              <p className="mt-1 font-semibold text-green-950">{money(stats.pendingCommission)}</p>
-            </div>
-            <div>
-              <p className="text-green-700">Paid</p>
-              <p className="mt-1 font-semibold text-green-950">{money(stats.paidCommission)}</p>
-            </div>
-          </div>
-        </div>
+        <StatCard label="Customers" value={stats.totalCustomers ?? 0} hint="Unique non-cancelled customers" />
+        <StatCard label="Guests" value={stats.totalGuests ?? 0} hint="Guests on non-cancelled bookings" />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -157,18 +119,14 @@ export default function AgentDashboard() {
             <div className="flex justify-between gap-4"><dt className="text-gray-500">Total commission</dt><dd className="font-medium">{money(stats.totalCommission)}</dd></div>
             <div className="flex justify-between gap-4"><dt className="text-gray-500">Pending commission</dt><dd className="font-medium">{money(stats.pendingCommission)}</dd></div>
             <div className="flex justify-between gap-4"><dt className="text-gray-500">Paid commission</dt><dd className="font-medium">{money(stats.paidCommission)}</dd></div>
-            <div className="flex justify-between gap-4 border-t pt-3"><dt className="font-semibold text-gray-700">Wallet balance</dt><dd className="font-semibold text-green-700">{money(walletBalance)}</dd></div>
+            <div className="flex justify-between gap-4 border-t pt-3"><dt className="font-semibold text-gray-700">Wallet balance</dt><dd className="font-semibold text-gray-900">{money(payload?.agent?.walletBalance)}</dd></div>
           </dl>
-          <button type="button" onClick={() => navigate("/agent/commission")} className="mt-5 w-full rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50">View Commission</button>
         </div>
 
         <div className="rounded-xl border bg-white p-5 shadow-sm lg:col-span-2">
           <div className="flex items-center justify-between gap-3">
-            <div>
-              <h2 className="font-semibold text-gray-900">Recent bookings</h2>
-              <p className="mt-1 text-xs text-gray-500">Use View, Edit or Details to open the selected database record.</p>
-            </div>
-            <button type="button" onClick={() => navigate("/agent/bookings")} className="text-sm font-medium text-blue-600 hover:underline">View all</button>
+            <h2 className="font-semibold text-gray-900">Recent bookings</h2>
+            <span className="text-xs text-gray-500">Latest {Math.min(5, recentBookings.length)}</span>
           </div>
           <div className="mt-4 overflow-x-auto">
             <table className="min-w-full text-sm">
@@ -180,27 +138,19 @@ export default function AgentDashboard() {
                   <th className="px-3 py-2">Amount</th>
                   <th className="px-3 py-2">Payment</th>
                   <th className="px-3 py-2">Status</th>
-                  <th className="px-3 py-2">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {recentBookings.length === 0 ? (
-                  <tr><td colSpan="7" className="px-3 py-6 text-center text-gray-500">No recent bookings found.</td></tr>
+                  <tr><td colSpan="6" className="px-3 py-6 text-center text-gray-500">No recent bookings found.</td></tr>
                 ) : recentBookings.map((booking) => (
                   <tr key={booking._id} className="border-b last:border-0">
                     <td className="px-3 py-3">{customerName(booking)}</td>
-                    <td className="px-3 py-3">{booking.tour?.title || booking.tour?.name || booking.tourPackage?.title || "Tour unavailable"}</td>
+                    <td className="px-3 py-3">{booking.tour?.title || booking.tour?.name || "Tour unavailable"}</td>
                     <td className="px-3 py-3">{booking.travelDate ? new Date(booking.travelDate).toLocaleDateString() : "—"}</td>
                     <td className="px-3 py-3">{money(booking.totalAmount ?? booking.amount)}</td>
                     <td className="px-3 py-3"><span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs capitalize">{booking.paymentStatus || "pending"}</span></td>
                     <td className="px-3 py-3"><span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs capitalize">{bookingStatus(booking)}</span></td>
-                    <td className="px-3 py-3">
-                      <div className="flex flex-wrap gap-2">
-                        <button type="button" onClick={() => openBooking(booking, "view")} className="rounded-md border border-blue-200 px-2.5 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50">View</button>
-                        <button type="button" onClick={() => openBooking(booking, "edit")} className="rounded-md border border-green-200 px-2.5 py-1 text-xs font-medium text-green-600 hover:bg-green-50">Edit</button>
-                        <button type="button" onClick={() => openBooking(booking, "details")} className="rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50">Details</button>
-                      </div>
-                    </td>
                   </tr>
                 ))}
               </tbody>

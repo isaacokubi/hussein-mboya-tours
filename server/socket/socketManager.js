@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import env from "../config/env.js";
 import User from "../models/User.js";
-import { getTenantId, isTenantBypassed, runWithTenant } from "../tenancy/context.js";
+import { runWithTenant } from "../tenancy/context.js";
 
 let io = null;
 const onlineUsers = new Map();
@@ -44,21 +44,13 @@ export const initSocket = (socketServer) => {
 
   io.on("connection", (socket) => {
     const id = socket.userId;
-    let entry = onlineUsers.get(id);
-    if (!entry) {
-      entry = { tenantId: socket.tenantId, sockets: new Set() };
-      onlineUsers.set(id, entry);
+    let sockets = onlineUsers.get(id);
+    if (!sockets) {
+      sockets = new Set();
+      onlineUsers.set(id, sockets);
     }
+    sockets.add(socket.id);
 
-    // A user id must never be associated with sockets from different tenant
-    // contexts. Rejecting the connection prevents an accidental cross-tenant
-    // delivery if stale/forged authentication data is ever encountered.
-    if (String(entry.tenantId || "") !== String(socket.tenantId || "")) {
-      socket.disconnect(true);
-      return;
-    }
-
-    entry.sockets.add(socket.id);
     socket.join(`tenant:${socket.tenantId || "platform"}`);
 
     socket.on("register", () => {});
@@ -74,10 +66,10 @@ export const initSocket = (socketServer) => {
     });
 
     socket.on("disconnect", () => {
-      const current = onlineUsers.get(id);
-      if (!current) return;
-      current.sockets.delete(socket.id);
-      if (current.sockets.size === 0) onlineUsers.delete(id);
+      const sockets = onlineUsers.get(id);
+      if (!sockets) return;
+      sockets.delete(socket.id);
+      if (sockets.size === 0) onlineUsers.delete(id);
     });
   });
 
@@ -91,37 +83,17 @@ export const getIO = () => {
 
 export const sendNotificationToUser = (userId, event, data) => {
   if (!io) return;
-
-  const entry = onlineUsers.get(userId.toString());
-  if (!entry) return;
-
-  const activeTenantId = getTenantId();
-  const bypassed = isTenantBypassed();
-
-  // Tenant-scoped callers may only deliver to sockets belonging to their own
-  // tenant. Platform/super-admin jobs may intentionally deliver platform data.
-  if (!bypassed && (!activeTenantId || String(entry.tenantId || "") !== String(activeTenantId))) return;
-
-  entry.sockets.forEach((socketId) => io.to(socketId).emit(event, data));
+  const sockets = onlineUsers.get(userId.toString());
+  if (!sockets) return;
+  sockets.forEach((socketId) => io.to(socketId).emit(event, data));
 };
 
 export const broadcast = (event, data) => {
-  if (!io || !isTenantBypassed()) return;
+  if (!io) return;
   io.emit(event, data);
 };
 
 export const emitToRoom = (room, event, data) => {
-  if (!io || typeof room !== "string") return;
-
-  const activeTenantId = getTenantId();
-  const bypassed = isTenantBypassed();
-  const tenantRoom = activeTenantId ? `tenant:${activeTenantId}` : null;
-  const platformRoom = "tenant:platform";
-
-  // Tenant callers may only emit to their own tenant room. Arbitrary room
-  // broadcasts remain a platform-only capability.
-  if (!bypassed && room !== tenantRoom) return;
-  if (bypassed && !room.startsWith("tenant:") && room !== platformRoom) return;
-
+  if (!io) return;
   io.to(room).emit(event, data);
 };

@@ -14,9 +14,9 @@ import { calculateQuotation } from "../services/quotationCalculator.js";
 export const createQuotation = async (req, res, next) => {
   requireTenantId();
   try {
-    const agent = await Agent.findOne({
+    const agent = await Agent.findOne(mergeTenantFilter(req, {
       user: req.user._id,
-    });
+    }));
 
     if (!agent) {
       return res.status(404).json({
@@ -86,9 +86,9 @@ export const createQuotation = async (req, res, next) => {
 
 export const getAgentQuotations = async (req, res, next) => {
   try {
-    const agent = await Agent.findOne({
+    const agent = await Agent.findOne(mergeTenantFilter(req, {
       user: req.user._id,
-    });
+    }));
 
     if (!agent) {
       return res.status(404).json({
@@ -97,9 +97,9 @@ export const getAgentQuotations = async (req, res, next) => {
       });
     }
 
-    const quotations = await Quotation.find({
+    const quotations = await Quotation.find(mergeTenantFilter(req, {
       agent: agent._id,
-    })
+    }))
       .populate("customer", "name email phone")
       .populate("tourPackage", "title destination price")
       .sort({
@@ -127,9 +127,9 @@ export const getAgentQuotations = async (req, res, next) => {
 
 export const getQuotationById = async (req, res, next) => {
   try {
-    const agent = await Agent.findOne({
+    const agent = await Agent.findOne(mergeTenantFilter(req, {
       user: req.user._id,
-    });
+    }));
 
     if (!agent) {
       return res.status(404).json({
@@ -138,10 +138,10 @@ export const getQuotationById = async (req, res, next) => {
       });
     }
 
-    const quotation = await Quotation.findOne({
+    const quotation = await Quotation.findOne(mergeTenantFilter(req, {
       _id: req.params.id,
       agent: agent._id,
-    })
+    }))
       .populate("customer")
       .populate("tourPackage");
 
@@ -172,9 +172,9 @@ export const getQuotationById = async (req, res, next) => {
 
 export const updateQuotationStatus = async (req, res, next) => {
   try {
-    const agent = await Agent.findOne({
+    const agent = await Agent.findOne(mergeTenantFilter(req, {
       user: req.user._id,
-    });
+    }));
 
     if (!agent) {
       return res.status(404).json({
@@ -201,10 +201,10 @@ export const updateQuotationStatus = async (req, res, next) => {
     }
 
     const quotation = await Quotation.findOneAndUpdate(
-      {
+      mergeTenantFilter(req, {
         _id: req.params.id,
         agent: agent._id,
-      },
+      }),
       {
         status,
       },

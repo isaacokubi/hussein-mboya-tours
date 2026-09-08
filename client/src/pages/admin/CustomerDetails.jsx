@@ -30,6 +30,12 @@ export default function CustomerDetails(
             <Metric label="Confirmed spend" value={`KES ${Number(data?.data?.summary?.totalSpent || 0).toLocaleString()}`} />
           </div>
         </section>
+        <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-4">
+          <InfoPanel title="Quotations" items={data?.data?.quotations || []} renderItem={(q) => <><span>{q.quotationNumber || "Quotation"}</span><span className="font-semibold">KES {Number(q.grandTotal || 0).toLocaleString()}</span></>} />
+          <InfoPanel title="Invoices" items={data?.data?.invoices || []} renderItem={(i) => <><span>{i.invoiceNumber || "Invoice"}</span><span className="font-semibold">{i.status || "pending"}</span></>} />
+          <InfoPanel title="Reviews & feedback" items={data?.data?.reviews || []} renderItem={(r) => <><span>{r.tour?.title || "Tour"} · {r.rating}/5</span><span className="text-xs capitalize">{r.approved ? "Published" : "Pending"}</span></>} />
+          <InfoPanel title="Communications" items={data?.data?.communications || []} renderItem={(n) => <><span className="truncate">{n.title}</span><span className="text-xs text-slate-500">{n.read ? "Read" : "Unread"}</span></>} />
+        </div>
         <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
           <div className="overflow-x-auto"><table className="w-full">
             <thead className="bg-slate-50"><tr><th className="p-4 text-left">Booking</th><th className="p-4 text-left">Tour</th><th className="p-4 text-left">Date</th><th className="p-4 text-left">Status</th><th className="p-4 text-left">Amount</th></tr></thead>
@@ -45,4 +51,8 @@ export default function CustomerDetails(
 }
 function Metric({ label, value }) {
   return <div className="rounded-xl bg-slate-50 p-4"><p className="text-sm text-slate-500">{label}</p><p className="mt-1 text-2xl font-bold">{value}</p></div>;
+}
+
+function InfoPanel({ title, items, renderItem }) {
+  return <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200"><h2 className="font-bold">{title}</h2><div className="mt-3 space-y-2">{items.slice(0,8).map((item,i)=><div key={item._id||i} className="flex justify-between gap-3 rounded-lg bg-slate-50 p-3 text-sm">{renderItem(item)}</div>)}{!items.length&&<p className="text-sm text-slate-500">No records yet.</p>}</div></section>;
 }

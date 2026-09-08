@@ -631,13 +631,10 @@ export default function TourManagerTours() {
 
   function handleView(tour) {
     const id = tour?._id || tour?.id;
-    const slug = tour?.slug || tour?.slugName;
 
-    if (!id && !slug) return;
+    if (!id) return;
 
-    // Public tour details are routed by slug. Fall back to the id only when
-    // no slug is available so existing tour records remain viewable.
-    navigate(`/tours/${slug || id}`);
+    navigate(`/tour-manager/tours/${id}`);
   }
 
   function handleEdit(tour) {
@@ -645,9 +642,7 @@ export default function TourManagerTours() {
 
     if (!id) return;
 
-    // Keep the edit action aligned with the registered Tour Manager route:
-    // /tour-manager/edit-tour/:id
-    navigate(`/tour-manager/edit-tour/${id}`);
+    navigate(`/tour-manager/tours/${id}/edit`);
   }
 
   async function handleDelete(tour) {
@@ -722,7 +717,7 @@ export default function TourManagerTours() {
 
               <button
                 type="button"
-                onClick={() => navigate("/tour-manager/create-tour")}
+                onClick={() => navigate("/tour-manager/tours/create")}
                 className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
               >
                 <Plus size={18} />

@@ -8,7 +8,13 @@ const schema=new mongoose.Schema({
         ref:"Organization",
         index:true,
         required:false
-    },customer:{type:mongoose.Schema.Types.ObjectId,ref:"User",required:true,index:true},destination:{type:String,required:true,trim:true},durationDays:{type:Number,required:true,min:1},people:{type:Number,required:true,min:1},startDate:{type:Date,default:null},budget:{type:Number,default:0,min:0},requirements:{type:String,default:""},status:{type:String,enum:["pending","approved","quoted","rejected","converted"],default:"pending",index:true},quotedAmount:{type:Number,default:0,min:0},adminNotes:{type:String,default:""},assignedGuide:{type:mongoose.Schema.Types.ObjectId,ref:"Staff",default:null},assignedDriver:{type:mongoose.Schema.Types.ObjectId,ref:"Staff",default:null},assignedAgent:{type:mongoose.Schema.Types.ObjectId,ref:"Agent",default:null},
+    },customer:{type:mongoose.Schema.Types.ObjectId,ref:"User",required:false,index:true},
+user:{type:mongoose.Schema.Types.ObjectId,ref:"User",default:null,index:true},
+guestContact:{
+  name:{type:String,default:"",trim:true,maxlength:120},
+  email:{type:String,default:"",trim:true,lowercase:true,maxlength:180},
+  phone:{type:String,default:"",trim:true,maxlength:30}
+},destination:{type:String,required:true,trim:true},durationDays:{type:Number,required:true,min:1},people:{type:Number,required:true,min:1},startDate:{type:Date,default:null},budget:{type:Number,default:0,min:0},requirements:{type:String,default:""},status:{type:String,enum:["pending","approved","quoted","rejected","converted"],default:"pending",index:true},quotedAmount:{type:Number,default:0,min:0},adminNotes:{type:String,default:""},assignedGuide:{type:mongoose.Schema.Types.ObjectId,ref:"Staff",default:null},assignedDriver:{type:mongoose.Schema.Types.ObjectId,ref:"Staff",default:null},assignedAgent:{type:mongoose.Schema.Types.ObjectId,ref:"Agent",default:null},
 
 pickupLocation:{type:String,default:""},
 pickupDate:{type:Date,default:null},

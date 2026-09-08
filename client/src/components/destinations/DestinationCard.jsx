@@ -43,35 +43,34 @@ export default function DestinationCard({ destination = {} }) {
   ];
 
   const imageUrl = resolveMediaUrl(candidates.find(Boolean)) || getFallbackImage(destination);
-  const fallbackImage = getFallbackImage(destination);
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-xl transition hover:-translate-y-1 hover:border-slate-700 hover:shadow-2xl">
-      <div className="overflow-hidden bg-slate-800">
+    <div className="rounded-xl overflow-hidden shadow-lg bg-white transition hover:shadow-2xl">
+      <div className="overflow-hidden">
         <LazyImage
           src={imageUrl}
           alt={destination.name || "Destination"}
-          fallback={fallbackImage}
-          className="h-60 w-full object-cover transition duration-500 hover:scale-105"
+          fallback={getFallbackImage(destination)}
+          className="h-60 w-full object-cover hover:scale-105 transition duration-500"
         />
       </div>
 
       <div className="p-5">
-        <h2 className="text-2xl font-bold text-white">
+        <h2 className="text-2xl font-bold text-gray-800">
           {destination.name || "Destination"}
         </h2>
 
-        <p className="mt-2 text-slate-300">{destination.country || "Kenya"}</p>
+        <p className="text-gray-600 mt-2">{destination.country || "Kenya"}</p>
 
         {destination.description && (
-          <p className="mt-3 line-clamp-3 text-sm text-slate-400">
+          <p className="text-sm text-gray-500 mt-3 line-clamp-3">
             {destination.description}
           </p>
         )}
 
         <Link
           to={`/destinations/${destination.slug || destination._id}`}
-          className="mt-4 inline-block rounded-lg bg-yellow-500 px-4 py-2 font-semibold text-slate-950 transition hover:bg-yellow-400"
+          className="inline-block mt-4 bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700"
         >
           Explore Destination
         </Link>

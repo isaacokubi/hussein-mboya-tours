@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { createCustomTourRequest } from "../api/customTourApi";
-import MobileDashboardNav from "../components/common/MobileDashboardNav";
+
 
 const initialForm = {
   destination: "",
@@ -16,6 +16,9 @@ const initialForm = {
   mealPreference: "",
   transportPreference: "",
   specialRequests: "",
+  guestName: "",
+  guestEmail: "",
+  guestPhone: "",
 };
 
 const formatDate = (value) => {
@@ -67,7 +70,6 @@ export default function CustomTourRequest() {
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8">
-      <MobileDashboardNav />
       <main className="mx-auto max-w-4xl">
         <div className="mb-6 rounded-3xl bg-gradient-to-r from-emerald-950 to-slate-900 p-6 text-white shadow-sm">
           <p className="text-sm font-semibold uppercase tracking-wide text-emerald-300">Custom Tours</p>
@@ -77,6 +79,9 @@ export default function CustomTourRequest() {
 
         <form onSubmit={handleSubmit} className="space-y-5 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
           <div className="grid gap-5 md:grid-cols-2">
+            <input required placeholder="Your name" value={form.guestName} onChange={updateField("guestName")} className="rounded-xl border border-slate-200 p-3 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" />
+            <input required type="email" placeholder="Your email" value={form.guestEmail} onChange={updateField("guestEmail")} className="rounded-xl border border-slate-200 p-3 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" />
+            <input placeholder="Phone number" value={form.guestPhone} onChange={updateField("guestPhone")} className="rounded-xl border border-slate-200 p-3 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" />
             <input required placeholder="Destination / places" value={form.destination} onChange={updateField("destination")} className="rounded-xl border border-slate-200 p-3 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" />
             <input required type="number" min="1" placeholder="Duration (days)" value={form.durationDays} onChange={updateField("durationDays")} className="rounded-xl border border-slate-200 p-3 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" />
             <input required type="number" min="1" placeholder="Number of people" value={form.people} onChange={updateField("people")} className="rounded-xl border border-slate-200 p-3 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" />

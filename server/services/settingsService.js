@@ -1,9 +1,8 @@
 import SystemSetting from "../models/SystemSetting.js";
-import { getTenantContext } from "../tenancy/context.js";
 
 const DEFAULT_SETTINGS = {
   key: "default",
-  companyName: process.env.COMPANY_NAME || "Global Tours",
+  companyName: process.env.COMPANY_NAME || "Coherent Tours",
   companyLogo: process.env.COMPANY_LOGO || "",
   websiteUrl: process.env.COMPANY_WEBSITE || "",
   supportEmail: process.env.SUPPORT_EMAIL || "",
@@ -18,9 +17,6 @@ const DEFAULT_SETTINGS = {
   taxRate: Number(process.env.DEFAULT_TAX_RATE || 0),
   bookingDepositPercentage: Number(process.env.DEFAULT_BOOKING_DEPOSIT_PERCENTAGE || 30),
   defaultCommissionRate: Number(process.env.DEFAULT_COMMISSION_RATE || 10),
-  taxServiceType: process.env.TAX_SERVICE_TYPE || "service_fee",
-  bookingStatus: process.env.DEFAULT_BOOKING_STATUS || "confirmed",
-  paymentProvider: process.env.PAYMENT_PROVIDER || "",
   maintenanceMode: String(process.env.MAINTENANCE_MODE || "false").toLowerCase() === "true",
   allowRegistrations: String(process.env.ALLOW_REGISTRATIONS || "true").toLowerCase() !== "false",
   allowAgentRegistrations: String(process.env.ALLOW_AGENT_REGISTRATIONS || "true").toLowerCase() !== "false",
@@ -35,7 +31,7 @@ const DEFAULT_SETTINGS = {
   bankAccountNumber: process.env.BANK_ACCOUNT_NUMBER || "",
   bankBranch: process.env.BANK_BRANCH || "",
   bankSwiftCode: process.env.BANK_SWIFT_CODE || "",
-  emailFromName: process.env.EMAIL_FROM_NAME || "Global Tours",
+  emailFromName: process.env.EMAIL_FROM_NAME || "Coherent Tours",
   emailFromAddress: process.env.EMAIL_FROM_ADDRESS || "",
   facebook: process.env.FACEBOOK_URL || "",
   instagram: process.env.INSTAGRAM_URL || "",
@@ -46,18 +42,9 @@ const DEFAULT_SETTINGS = {
   seoKeywords: [],
   bookingNotifications: true,
   paymentNotifications: true,
-  emailNotifications: true,
-  systemAlerts: true,
-  twoFactor: false,
 };
 
-const resolveTenantId = (source = {}) => {
-  const explicit = source?.tenantId || source?.user?.tenantId;
-  if (explicit) return explicit?._id ? String(explicit._id) : String(explicit);
-  const context = getTenantContext();
-  if (context?.bypass === true) return null;
-  return context?.tenantId ? String(context.tenantId) : null;
-};
+const resolveTenantId = (source) => source?.tenantId || source?.user?.tenantId || (source?.user?._id && source?.tenantId) || null;
 
 export async function getSystemSettings(source = {}) {
   const tenantId = resolveTenantId(source);
@@ -65,6 +52,7 @@ export async function getSystemSettings(source = {}) {
   if (!tenantId) {
     const platformSettings = await SystemSetting.findOne({ tenantId: null, key: "platform" }).lean().catch(() => null);
     if (platformSettings) return { ...DEFAULT_SETTINGS, ...platformSettings, _tenantScoped: false, _platformScoped: true };
+
     return { ...DEFAULT_SETTINGS, _isDefault: true, _tenantScoped: false, _platformScoped: false };
   }
 

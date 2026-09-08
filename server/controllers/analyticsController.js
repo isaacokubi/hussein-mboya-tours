@@ -4,6 +4,7 @@ import Booking from "../models/Booking.js";
 import Payment from "../models/Payment.js";
 import User from "../models/User.js";
 import Vehicle from "../models/Vehicle.js";
+import Commission from "../models/Commission.js";
 import { getRevenueAnalytics, getBookingAnalytics, getPopularTours } from "../services/analyticsService.js";
 
 const nonNegativeAmount = {
@@ -18,7 +19,7 @@ export const getAnalytics = async (req, res, next) => {
   try {
     requireTenantId();
     const filter = tenantFilter(req);
-    const [revenue, bookings, popularTours, customers, bookingStatus, monthlyRevenue, vehicleStats] = await Promise.all([
+    const [revenue, bookings, popularTours, customers, bookingStatus, monthlyRevenue, vehicleStats, commissions] = await Promise.all([
       getRevenueAnalytics(req),
       getBookingAnalytics(req),
       getPopularTours(req),
@@ -38,8 +39,15 @@ export const getAnalytics = async (req, res, next) => {
         { $group: { _id: "$status", count: { $sum: 1 } } },
         { $sort: { count: -1 } },
       ]),
+      Commission.aggregate([
+        { $match: { ...filter, isDeleted: { $ne: true }, status: { $ne: "cancelled" } } },
+        { $group: { _id: null, totalCommission: { $sum: { $ifNull: ["$amount", 0] } } } },
+      ]),
     ]);
-    return res.status(200).json({ success: true, data: { revenue, customers, bookings, bookingStatus, monthlyRevenue, popularTours, vehicleStats } });
+    const collectedRevenue = Number(revenue?.totalRevenue || 0);
+    const commissionCost = Number(commissions?.[0]?.totalCommission || 0);
+    const profitability = { collectedRevenue, commissionCost, contributionMargin: Math.max(0, collectedRevenue - commissionCost), marginPercent: collectedRevenue ? Math.round(((collectedRevenue - commissionCost) / collectedRevenue) * 10000) / 100 : 0 };
+    return res.status(200).json({ success: true, data: { revenue, customers, bookings, bookingStatus, monthlyRevenue, popularTours, vehicleStats, profitability } });
   } catch (error) {
     next(error);
   }

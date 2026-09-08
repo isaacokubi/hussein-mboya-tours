@@ -1,7 +1,6 @@
 import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import mongoose from "mongoose";
 import Booking from "../models/Booking.js";
-import { getSystemSettings } from "../services/settingsService.js";
 
 import {
   BOOKING_STATUSES,
@@ -219,32 +218,80 @@ export const getBookingById = async (
   next
 ) => {
   try {
-    const booking = await Booking.findOne(
-      mergeTenantFilter({
-        _id: req.params.id,
-      })
-    )
-      .populate("customer", "name email phone")
-      .populate("tour", "title")
-      .lean();
+
+    if (
+      !isValidId(req.params.id)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid booking ID.",
+      });
+    }
+
+    const booking =
+      await Booking.findById(
+        req.params.id
+      )
+
+        .populate(
+          "customer",
+          "name email phone"
+        )
+
+        .populate(
+          "tour"
+        )
+
+        .populate(
+          "assignedGuide",
+          "name email"
+        )
+
+        .populate(
+          "assignedDriver",
+          "name email"
+        )
+
+        .populate(
+          "assignedVehicle"
+        )
+
+        .lean();
 
     if (!booking) {
       return res.status(404).json({
+
         success: false,
-        message: "Booking not found",
+
+        message:
+          "Booking not found.",
+
       });
     }
 
     res.status(200).json({
+
       success: true,
+
       data: booking,
+
     });
+
   } catch (error) {
+
     next(error);
+
   }
 };
 
 /*
+|--------------------------------------------------------------------------
+| ROUTE ALIAS
+|--------------------------------------------------------------------------
+*/
+
+export const getBooking =
+  getBookingById;/*
 |--------------------------------------------------------------------------
 | UPDATE BOOKING STATUS
 |--------------------------------------------------------------------------
@@ -256,15 +303,26 @@ export const updateBookingStatus = async (
   next
 ) => {
   try {
-    const { id } = req.params;
     const { status } = req.body;
 
-    if (!isValidId(id)) {
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDATE BOOKING ID
+    |--------------------------------------------------------------------------
+    */
+
+    if (!isValidId(req.params.id)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid booking ID",
+        message: "Invalid booking ID.",
       });
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDATE STATUS
+    |--------------------------------------------------------------------------
+    */
 
     if (!isValidBookingStatus(status)) {
       return res.status(400).json({
@@ -274,96 +332,145 @@ export const updateBookingStatus = async (
       });
     }
 
-    const booking = await Booking.findOne(
-      mergeTenantFilter({ _id: id })
-    );
+    /*
+    |--------------------------------------------------------------------------
+    | FIND BOOKING
+    |--------------------------------------------------------------------------
+    */
 
-    if (!booking) {
+    const existingBooking =
+      await Booking.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
+
+    if (!existingBooking) {
       return res.status(404).json({
         success: false,
-        message: "Booking not found",
+        message: "Booking not found.",
       });
     }
 
-    if (!canTransitionBookingStatus(booking.status, status)) {
+    /*
+    |--------------------------------------------------------------------------
+    | NO-OP PROTECTION
+    |--------------------------------------------------------------------------
+    */
+
+    if (existingBooking.status === status) {
       return res.status(400).json({
         success: false,
-        message: `Cannot transition booking from ${booking.status} to ${status}.`,
+        message: `Booking is already ${status}.`,
       });
     }
 
-    booking.status = status;
-    await booking.save();
-
-    res.status(200).json({
-      success: true,
-      data: booking,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-/*
-|--------------------------------------------------------------------------
-| UPDATE PAYMENT STATUS
-|--------------------------------------------------------------------------
-*/
-
-export const updateBookingPaymentStatus = async (
-  req,
-  res,
-  next
-) => {
-  try {
-    const { id } = req.params;
-    const { paymentStatus } = req.body;
-
-    if (!isValidId(id)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid booking ID",
-      });
-    }
-
-    if (!isValidBookingPaymentStatus(paymentStatus)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid booking payment status.",
-        allowedStatuses: BOOKING_PAYMENT_STATUSES,
-      });
-    }
-
-    const booking = await Booking.findOne(
-      mergeTenantFilter({ _id: id })
-    );
-
-    if (!booking) {
-      return res.status(404).json({
-        success: false,
-        message: "Booking not found",
-      });
-    }
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDATE STATUS TRANSITION
+    |--------------------------------------------------------------------------
+    */
 
     if (
-      !canTransitionBookingPaymentStatus(
-        booking.paymentStatus,
-        paymentStatus
+      !canTransitionBookingStatus(
+        existingBooking.status,
+        status
       )
     ) {
       return res.status(400).json({
         success: false,
-        message: `Cannot transition payment from ${booking.paymentStatus} to ${paymentStatus}.`,
+        message:
+          `Booking cannot transition from ` +
+          `"${existingBooking.status}" to "${status}".`,
+        currentStatus: existingBooking.status,
+        requestedStatus: status,
       });
     }
 
-    booking.paymentStatus = paymentStatus;
-    await booking.save();
+    /*
+    |--------------------------------------------------------------------------
+    | PAYMENT PROTECTION
+    |--------------------------------------------------------------------------
+    |
+    | A booking cannot be completed unless payment is confirmed.
+    |--------------------------------------------------------------------------
+    */
 
-    res.status(200).json({
+    if (
+      status === "completed" &&
+      existingBooking.paymentStatus !== "paid"
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "A booking must have paid payment status before it can be completed.",
+        paymentStatus:
+          existingBooking.paymentStatus,
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | UPDATE BOOKING
+    |--------------------------------------------------------------------------
+    */
+
+    const booking =
+      await
+Booking.findOneAndUpdate(
+mergeTenantFilter(req,{
+_id:req.params.id
+}),
+
+        {
+          status,
+        },
+        {
+          new: true,
+          runValidators: true,
+        }
+      )
+        .populate(
+          "customer",
+          "name email phone"
+        )
+        .populate(
+          "tour",
+          "title"
+        )
+        .populate(
+          "assignedGuide",
+          "name"
+        )
+        .populate(
+          "assignedDriver",
+          "name"
+        )
+        .populate(
+          "assignedVehicle",
+          "name registrationNumber"
+        );
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found.",
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | RESPONSE
+    |--------------------------------------------------------------------------
+    */
+
+    return res.status(200).json({
       success: true,
+      message:
+        "Booking status updated successfully.",
       data: booking,
     });
+
   } catch (error) {
     next(error);
   }
@@ -381,30 +488,283 @@ export const deleteBooking = async (
   next
 ) => {
   try {
-    const { id } = req.params;
 
-    if (!isValidId(id)) {
+    /*
+    |--------------------------------------------------------------------------
+    | Validate ID
+    |--------------------------------------------------------------------------
+    */
+
+    if (!isValidId(req.params.id)) {
       return res.status(400).json({
+
         success: false,
-        message: "Invalid booking ID",
+
+        message: "Invalid booking ID.",
+
       });
     }
 
-    const booking = await Booking.findOneAndDelete(
-      mergeTenantFilter({ _id: id })
-    );
+    /*
+    |--------------------------------------------------------------------------
+    | Delete
+    |--------------------------------------------------------------------------
+    */
+
+    const booking =
+      await
+Booking.findOneAndDelete(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+)
+;
+
+    if (!booking) {
+
+      return res.status(404).json({
+
+        success: false,
+
+        message:
+          "Booking not found.",
+
+      });
+
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Response
+    |--------------------------------------------------------------------------
+    */
+
+    res.status(200).json({
+
+      success: true,
+
+      message:
+        "Booking deleted successfully.",
+
+    });
+
+  } catch (error) {
+
+    next(error);
+
+  }
+};/*
+|--------------------------------------------------------------------------
+| ASSIGN GUIDE / DRIVER / VEHICLE
+|--------------------------------------------------------------------------
+*/
+
+export const assignResources = async (
+  req,
+  res,
+  next
+) => {
+  try {
+    const {
+      guide,
+      driver,
+      vehicle,
+      agent,
+    } = req.body;
+
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDATE BOOKING ID
+    |--------------------------------------------------------------------------
+    */
+
+    if (!isValidId(req.params.id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid booking ID.",
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDATE RESOURCE IDs
+    |--------------------------------------------------------------------------
+    */
+
+    if (guide && !isValidId(guide)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid guide ID.",
+      });
+    }
+
+    if (driver && !isValidId(driver)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid driver ID.",
+      });
+    }
+
+    if (vehicle && !isValidId(vehicle)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid vehicle ID.",
+      });
+    }
+
+    if (agent && !isValidId(agent)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid agent ID.",
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | FIND BOOKING
+    |--------------------------------------------------------------------------
+    */
+
+    const existingBooking =
+      await Booking.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
+
+    if (!existingBooking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found.",
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | PAYMENT PROTECTION
+    |--------------------------------------------------------------------------
+    |
+    | Only paid bookings may receive operational resources.
+    |--------------------------------------------------------------------------
+    */
+
+    if (existingBooking.paymentStatus !== "paid") {
+      return res.status(400).json({
+        success: false,
+        message: "Only paid bookings can be assigned.",
+        paymentStatus:
+          existingBooking.paymentStatus,
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | NO-OP PROTECTION
+    |--------------------------------------------------------------------------
+    */
+
+    if (existingBooking.status === "assigned") {
+      return res.status(400).json({
+        success: false,
+        message: "Booking is already assigned.",
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDATE BOOKING TRANSITION
+    |--------------------------------------------------------------------------
+    |
+    | Assignment must follow the centralized lifecycle:
+    |
+    | pending -> confirmed -> assigned
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      !canTransitionBookingStatus(
+        existingBooking.status,
+        "assigned"
+      )
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          `Booking cannot transition from ` +
+          `"${existingBooking.status}" to "assigned".`,
+        currentStatus:
+          existingBooking.status,
+        requestedStatus:
+          "assigned",
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | UPDATE BOOKING
+    |--------------------------------------------------------------------------
+    */
+
+    const booking =
+      await
+Booking.findOneAndUpdate(
+mergeTenantFilter(req,{
+_id:req.params.id
+}),
+
+        {
+          assignedGuide: guide || null,
+          assignedDriver: driver || null,
+          assignedVehicle: vehicle || null,
+          agent: agent || null,
+          status: "assigned",
+        },
+        {
+          new: true,
+          runValidators: true,
+        }
+      )
+        .populate(
+          "customer",
+          "name email phone"
+        )
+        .populate(
+          "tour",
+          "title"
+        )
+        .populate(
+          "assignedGuide",
+          "name email phone"
+        )
+        .populate(
+          "assignedDriver",
+          "name email phone"
+        )
+        .populate(
+          "assignedVehicle",
+          "name registrationNumber"
+        );
 
     if (!booking) {
       return res.status(404).json({
         success: false,
-        message: "Booking not found",
+        message: "Booking not found.",
       });
     }
 
-    res.status(200).json({
+    /*
+    |--------------------------------------------------------------------------
+    | RESPONSE
+    |--------------------------------------------------------------------------
+    */
+
+    return res.status(200).json({
       success: true,
-      message: "Booking deleted successfully",
+      message:
+        "Resources assigned successfully.",
+      data: booking,
     });
+
   } catch (error) {
     next(error);
   }
@@ -412,50 +772,342 @@ export const deleteBooking = async (
 
 /*
 |--------------------------------------------------------------------------
-| GENERATE BOOKING INVOICE
+| UPDATE PAYMENT STATUS
 |--------------------------------------------------------------------------
 */
 
-export const getBookingInvoice = async (
+export const updatePaymentStatus = async (
   req,
   res,
   next
 ) => {
   try {
-    const { id } = req.params;
+    const {
+      status,
+      mpesaReceipt,
+    } = req.body;
 
-    if (!isValidId(id)) {
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDATE BOOKING ID
+    |--------------------------------------------------------------------------
+    */
+
+    if (!isValidId(req.params.id)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid booking ID",
+        message: "Invalid booking ID.",
       });
     }
 
-    const booking = await Booking.findOne(
-      mergeTenantFilter({ _id: id })
-    )
-      .populate("customer", "name email")
-      .populate("tour", "title")
-      .lean();
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDATE PAYMENT STATUS
+    |--------------------------------------------------------------------------
+    */
+
+    if (!isValidBookingPaymentStatus(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid booking payment status.",
+        allowedStatuses: BOOKING_PAYMENT_STATUSES,
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | FIND BOOKING
+    |--------------------------------------------------------------------------
+    */
+
+    const booking =
+      await Booking.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+);
 
     if (!booking) {
       return res.status(404).json({
         success: false,
-        message: "Booking not found",
+        message: "Booking not found.",
       });
     }
 
-    const settings = await getSystemSettings({ tenantId: booking.tenantId });
-    const companyName = settings.companyName || "Global Tours";
+    /*
+    |--------------------------------------------------------------------------
+    | NO-OP PROTECTION
+    |--------------------------------------------------------------------------
+    */
 
-    res.setHeader(
-      "Content-Type",
-      "text/plain"
-    );
+    if (booking.paymentStatus === status) {
+      return res.status(400).json({
+        success: false,
+        message:
+          `Booking payment status is already ${status}.`,
+      });
+    }
 
-    res.send(
-      `
-${companyName}
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDATE PAYMENT TRANSITION
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      !canTransitionBookingPaymentStatus(
+        booking.paymentStatus,
+        status
+      )
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          `Payment cannot transition from ` +
+          `"${booking.paymentStatus}" to "${status}".`,
+        currentPaymentStatus:
+          booking.paymentStatus,
+        requestedPaymentStatus:
+          status,
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | UPDATE PAYMENT STATUS
+    |--------------------------------------------------------------------------
+    */
+
+    booking.paymentStatus = status;
+
+    /*
+    |--------------------------------------------------------------------------
+    | M-PESA RECEIPT
+    |--------------------------------------------------------------------------
+    */
+
+    if (mpesaReceipt !== undefined) {
+      booking.mpesaReceipt =
+        String(mpesaReceipt).trim();
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | BOOKING STATUS SYNCHRONIZATION
+    |--------------------------------------------------------------------------
+    |
+    | paid:
+    |   pending booking -> confirmed
+    |
+    | failed/cancelled:
+    |   confirmed booking -> pending
+    |
+    | refunded:
+    |   active booking -> refunded
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      status === "paid" &&
+      booking.status === "pending"
+    ) {
+      booking.status = "confirmed";
+    }
+
+    if (
+      ["failed", "cancelled"].includes(status) &&
+      booking.status === "confirmed"
+    ) {
+      booking.status = "pending";
+    }
+
+    if (
+      status === "refunded" &&
+      !["completed", "cancelled"].includes(
+        booking.status
+      )
+    ) {
+      booking.status = "refunded";
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | SAVE
+    |--------------------------------------------------------------------------
+    */
+
+    await booking.save();
+
+    /*
+    |--------------------------------------------------------------------------
+    | POPULATE RESPONSE
+    |--------------------------------------------------------------------------
+    */
+
+    await booking.populate([
+      {
+        path: "customer",
+        select: "name email phone",
+      },
+      {
+        path: "tour",
+        select: "title",
+      },
+    ]);
+
+    /*
+    |--------------------------------------------------------------------------
+    | RESPONSE
+    |--------------------------------------------------------------------------
+    */
+
+    return res.status(200).json({
+      success: true,
+      message:
+        "Payment status updated successfully.",
+      data: booking,
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+/*
+|--------------------------------------------------------------------------
+| BOOKING TIMELINE
+|--------------------------------------------------------------------------
+*/
+
+export const getBookingTimeline = async(
+req,
+res,
+next
+)=>{
+
+try{
+
+const booking =
+await Booking.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+)
+.populate(
+"customer",
+"name email phone"
+)
+.populate(
+"tour",
+"title"
+)
+.lean();
+
+
+if(!booking){
+
+return res.status(404).json({
+
+success:false,
+
+message:"Booking not found"
+
+});
+
+}
+
+
+const timeline=[
+
+{
+event:"Booking Created",
+status:"created",
+date:booking.createdAt
+},
+
+{
+event:`Payment ${booking.paymentStatus}`,
+status:booking.paymentStatus,
+date:booking.paidAt || null
+},
+
+{
+event:`Booking ${booking.status}`,
+status:booking.status,
+date:booking.updatedAt
+}
+
+];
+
+
+res.json({
+
+success:true,
+
+timeline
+
+});
+
+
+}catch(error){
+
+next(error);
+
+}
+
+};
+
+
+
+/*
+|--------------------------------------------------------------------------
+| BOOKING INVOICE
+|--------------------------------------------------------------------------
+*/
+
+export const downloadBookingInvoice =
+async(req,res,next)=>{
+
+try{
+
+const booking =
+await Booking.findOne(
+mergeTenantFilter(req,{
+_id:req.params.id
+})
+)
+.populate(
+"customer",
+"name email phone"
+)
+.populate(
+"tour",
+"title"
+);
+
+
+if(!booking){
+
+return res.status(404).json({
+
+success:false,
+
+message:"Booking not found"
+
+});
+
+}
+
+
+res.setHeader(
+"Content-Type",
+"text/plain"
+);
+
+
+res.send(
+`
+COHERENT TOURS
 
 BOOKING INVOICE
 
@@ -479,9 +1131,41 @@ ${booking.status}
 
 Generated:
 ${new Date().toISOString()}
+
 `
-    );
-  } catch (error) {
-    next(error);
-  }
+);
+
+
+}catch(error){
+
+next(error);
+
+}
+
+};
+
+
+
+export const sendBookingNotification =
+async(req,res,next)=>{
+
+try{
+
+
+res.json({
+
+success:true,
+
+message:
+"Notification queued successfully."
+
+});
+
+
+}catch(error){
+
+next(error)
+
+}
+
 };

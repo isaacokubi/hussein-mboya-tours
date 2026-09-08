@@ -6,6 +6,10 @@ import User from "../models/User.js";
 import Customer from "../models/Customer.js";
 import Booking from "../models/Booking.js";
 import Role from "../models/Role.js";
+import Invoice from "../models/Invoice.js";
+import Quotation from "../models/Quotation.js";
+import Review from "../models/Review.js";
+import Notification from "../models/Notification.js";
 
 const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
 
@@ -77,14 +81,21 @@ export const getCustomerProfile = async (req, res, next) => {
   try {
     if (!isValidId(req.params.id)) return res.status(400).json({ success: false, message: "Invalid customer ID." });
 
-    const customer = await User.findOne({ _id: req.params.id, isDeleted: { $ne: true }, $or: [{ role: "customer" }, { legacyRole: "customer" }] }).select("-password").lean();
+    requireTenantId();
+    const customer = await User.findOne(mergeTenantFilter(req, { _id: req.params.id, isDeleted: { $ne: true }, $or: [{ role: "customer" }, { legacyRole: "customer" }] })).select("-password").lean();
     if (!customer) return res.status(404).json({ success: false, message: "Customer not found." });
 
     const legacyCustomer = await Customer.findOne({ user: customer._id }).select("_id customerType").lean();
     const ownership = [{ user: customer._id }];
     if (legacyCustomer?._id) ownership.push({ customer: legacyCustomer._id });
 
-    const bookings = await Booking.find({ isDeleted: { $ne: true }, $or: ownership }).populate("tour", "title destination price").sort({ createdAt: -1 }).lean();
+    const bookings = await Booking.find(mergeTenantFilter(req, { isDeleted: { $ne: true }, $or: ownership })).populate("tour", "title destination price").sort({ createdAt: -1 }).lean();
+    const [invoices, quotations, reviews, communications] = await Promise.all([
+      Invoice.find(mergeTenantFilter(req, { customer: customer._id })).populate("tour", "title").sort({ createdAt: -1 }).lean(),
+      legacyCustomer ? Quotation.find(mergeTenantFilter(req, { customer: legacyCustomer._id })).populate("tourPackage", "title").sort({ createdAt: -1 }).lean() : [],
+      Review.find(mergeTenantFilter(req, { user: customer._id, isDeleted: { $ne: true } })).populate("tour", "title").sort({ createdAt: -1 }).lean(),
+      Notification.find(mergeTenantFilter(req, { recipient: customer._id })).select("title message type read createdAt").sort({ createdAt: -1 }).limit(20).lean(),
+    ]);
     const summary = bookings.reduce((acc, booking) => {
       acc.totalBookings += 1;
       const bookingStatus = String(booking.status || "pending").toLowerCase();
@@ -98,6 +109,6 @@ export const getCustomerProfile = async (req, res, next) => {
       return acc;
     }, { totalBookings: 0, totalSpent: 0, totalPaid: 0 });
 
-    return res.status(200).json({ success: true, data: { customer, summary, bookings } });
+    return res.status(200).json({ success: true, data: { customer, summary, bookings, invoices, quotations, reviews, communications } });
   } catch (error) { next(error); }
 };

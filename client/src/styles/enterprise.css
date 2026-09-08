@@ -1,3 +1,4 @@
+
 :root{
   --ops-bg:#f4f7f6;
   --ops-surface:#ffffff;
@@ -74,22 +75,6 @@ body{background:var(--ops-bg);color:var(--ops-ink);}
 .customer-hero{background:#102b24;color:#fff;border-radius:16px;padding:24px;display:flex;justify-content:space-between;gap:20px;align-items:center;margin-bottom:18px;}
 .customer-hero h1{font-size:25px;font-weight:900;letter-spacing:-.02em;}
 .customer-hero p{color:#b9d0c7;font-size:13px;margin-top:5px;}
-
-/* Admin content readability: keep the white header/sidebar styling, but force all dashboard page content to use dark, high-contrast text. */
-.admin-content{color:var(--ops-ink);}
-.admin-content :where(h1,h2,h3,h4,h5,h6,p,span,div,li,dt,dd,label,th,td,caption,small,strong,b){color:var(--ops-ink);}
-.admin-content :where(.text-white,.text-slate-50,.text-slate-100,.text-gray-50,.text-gray-100,.text-zinc-50,.text-zinc-100){color:var(--ops-ink)!important;}
-.admin-content :where(.text-gray-500,.text-gray-600,.text-gray-700,.text-slate-500,.text-slate-600,.text-slate-700,.text-zinc-500,.text-zinc-600,.text-zinc-700){color:#52645c!important;}
-.admin-content :where(a){color:#0f5c45;}
-.admin-content :where(a:hover){color:#0b4736;}
-.admin-content :where(button){color:var(--ops-ink);}
-.admin-content :where(input,textarea,select){color:#17231f;background:#fff;border-color:#cbd7d2;}
-.admin-content :where(input::placeholder,textarea::placeholder){color:#7a8983;opacity:1;}
-.admin-content :where(option){color:#17231f;background:#fff;}
-.admin-content :where(table){color:var(--ops-ink);}
-.admin-content :where(svg){color:currentColor;}
-.admin-content :where(.bg-slate-900,.bg-slate-950,.bg-gray-900,.bg-gray-950){color:#fff;}
-.admin-content :where(.bg-slate-900,.bg-slate-950,.bg-gray-900,.bg-gray-950) :where(h1,h2,h3,h4,h5,h6,p,span,div,li,label,th,td,strong,b){color:#fff;}
 
 @media(max-width:1100px){.ops-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}.ops-grid-2{grid-template-columns:1fr;}}
 @media(max-width:900px){.ops-sidebar{display:none}.ops-mobile-trigger{display:inline-flex}.ops-header{padding:0 16px}.ops-content{padding:18px}.customer-ops{padding:18px}.ops-header-title{font-size:15px}.ops-user-name,.ops-user-role{display:none}.ops-drawer{display:none}.ops-drawer.open{display:block}}

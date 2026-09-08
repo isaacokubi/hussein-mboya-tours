@@ -10,6 +10,7 @@ import {
 import {
   createQuotation,
   getAgentQuotations,
+  getQuotationById,
   updateQuotationStatus,
 } from "../controllers/quotationController.js";
 
@@ -51,6 +52,10 @@ router.post(
 router.get(
   "/",
   getAgentQuotations
+);
+router.get(
+  "/:id",
+  getQuotationById
 );
 
 /**
