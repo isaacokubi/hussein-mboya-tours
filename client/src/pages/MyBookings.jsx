@@ -1,10 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, Navigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
 import { cancelBooking, getMyBookings, rescheduleBooking } from "../api/bookingApi";
-import { dashboardPath, getUserRole } from "../utils/roleUtils";
 
 const bookingsFrom = (response) => {
   if (Array.isArray(response)) return response;
@@ -25,16 +24,17 @@ const dateOf = (v) => v ? new Date(v).toLocaleDateString(undefined, { weekday: "
 export default function MyBookings() {
   const { user, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
-  const role = getUserRole(user);
-  const customer = role === "customer";
   const [editing, setEditing] = useState(null);
   const [newDate, setNewDate] = useState("");
   const [reason, setReason] = useState("");
 
+  // Do not redirect from this page based on a transient/stale role value.
+  // ProtectedRoute already authenticates the session, while the backend
+  // enforces customer ownership on /bookings/my-bookings.
   const query = useQuery({
     queryKey: ["my-bookings", user?._id || user?.id || "current"],
     queryFn: () => getMyBookings({ limit: 100 }),
-    enabled: !authLoading && !!user && customer,
+    enabled: !authLoading && !!user,
     staleTime: 30_000,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
@@ -54,8 +54,7 @@ export default function MyBookings() {
   });
 
   if (authLoading) return <div className="flex min-h-screen items-center justify-center"><p className="font-semibold">Loading your account...</p></div>;
-  if (!user) return <Navigate to="/login" replace />;
-  if (!customer) return <Navigate to={dashboardPath(user)} replace />;
+  if (!user) return <main className="flex min-h-screen items-center justify-center"><div className="rounded-2xl bg-white p-8 text-center shadow"><p className="font-semibold">Your session has expired.</p><Link to="/login" className="mt-4 inline-block rounded-xl bg-green-700 px-6 py-3 font-bold text-white">Sign in again</Link></div></main>;
 
   const bookings = bookingsFrom(query.data);
   const upcoming = bookings.filter((b) => b.travelDate && new Date(b.travelDate) >= new Date() && statusOf(b) !== "cancelled");
