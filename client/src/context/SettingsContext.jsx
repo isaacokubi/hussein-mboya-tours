@@ -54,7 +54,7 @@ export function SettingsProvider({ children }) {
       const data = response.data?.settings || response.data?.data || response.data || {};
       const normalized = isPlatformScope ? normalizePlatformSettings(data, PLATFORM_SETTINGS) : normalize(data, DEFAULT_SETTINGS);
       setSettings(normalized);
-      try { localStorage.setItem(settingsKey, JSON.stringify(normalized)); } catch {}
+      try { localStorage.setItem(settingsKey, JSON.stringify(normalized)); } catch (storageError) { console.warn("Unable to cache settings:", storageError); }
       return normalized;
     } catch (error) {
       console.error(`${isPlatformScope ? "Platform" : "Tenant"} settings load failed:`, error);
@@ -70,7 +70,7 @@ export function SettingsProvider({ children }) {
     const load = async () => { setLoading(true); try { await refreshSettings(); } finally { if (mounted) setLoading(false); } };
     void load();
     const interval = window.setInterval(() => { void refreshSettings(); }, 60_000);
-    const handleStorage = (event) => { if (event.key !== settingsKey || !event.newValue) return; try { applySettings(JSON.parse(event.newValue)); } catch {} };
+    const handleStorage = (event) => { if (event.key !== settingsKey || !event.newValue) return; try { applySettings(JSON.parse(event.newValue)); } catch (parseError) { console.warn("Unable to apply cached settings update:", parseError); } };
     const handleSettingsChanged = () => { void refreshSettings(); };
     window.addEventListener("storage", handleStorage);
     window.addEventListener("platform-settings-updated", handleSettingsChanged);
