@@ -6,10 +6,11 @@ import { firstNumeric, numeric, unwrapData } from "../../utils/dashboardData";
 
 const idOf = (value) => value?._id || value?.id || value;
 const startOfDay = (value) => { const date = new Date(value); if (Number.isNaN(date.getTime())) return null; date.setHours(0, 0, 0, 0); return date; };
-const tourStart = (tour) => tour?.startDate || tour?.date || tour?.tourDate;
-const tourEnd = (tour) => tour?.endDate || tour?.startDate || tour?.date || tour?.tourDate;
+const tourStart = (tour) => tour?.startDate || tour?.date || tour?.tourDate || tour?.travelDate;
+const tourEnd = (tour) => tour?.endDate || tour?.startDate || tour?.date || tour?.tourDate || tour?.travelDate;
 const isTourActiveOnDate = (tour, value) => { const day = startOfDay(value); const start = startOfDay(tourStart(tour)); const end = startOfDay(tourEnd(tour)); return Boolean(day && start && end && day >= start && day <= end); };
 const formatDateTime = (value) => { const date = new Date(value); return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString([], { dateStyle: "medium", timeStyle: "short" }); };
+const formatDate = (value) => { const date = new Date(value); return Number.isNaN(date.getTime()) ? "—" : date.toLocaleDateString(); };
 
 export default function DriverDashboard() {
   const [actionId, setActionId] = useState("");
@@ -21,7 +22,14 @@ export default function DriverDashboard() {
   const dashboard = unwrapData(dashboardQuery.data);
   const tourPayload = unwrapData(toursQuery.data);
   const assignedTours = Array.isArray(tourPayload?.tours) ? tourPayload.tours : Array.isArray(tourPayload) ? tourPayload : [];
-  const tours = useMemo(() => assignedTours.length ? assignedTours : (dashboard?.assignedTours || dashboard?.upcomingTours || dashboard?.tours || []), [assignedTours, dashboard]);
+  const dashboardTours = Array.isArray(dashboard?.tours) ? dashboard.tours : Array.isArray(dashboard?.assignedTours) ? dashboard.assignedTours : Array.isArray(dashboard?.upcomingTours) ? dashboard.upcomingTours : [];
+  const tours = useMemo(() => {
+    const source = assignedTours.length ? assignedTours : dashboardTours;
+    return source.map((tour) => {
+      const dashboardTour = dashboardTours.find((item) => idOf(item) === idOf(tour));
+      return { ...dashboardTour, ...tour, guests: tour?.guests ?? dashboardTour?.guests ?? dashboardTour?.guestCount ?? dashboardTour?.numberOfGuests ?? 0 };
+    });
+  }, [assignedTours, dashboardTours]);
   const vehicle = dashboard?.vehicle || dashboard?.assignedVehicle || tours.find((tour) => tour?.assignedVehicle)?.assignedVehicle || null;
   const today = new Date();
   const todayTrips = tours.filter((tour) => isTourActiveOnDate(tour, today) && !["completed", "cancelled"].includes(String(tour?.status || "").toLowerCase()));
@@ -48,18 +56,18 @@ export default function DriverDashboard() {
       </div>
       <div className="ops-card ops-panel"><div className="ops-panel-head"><div className="ops-panel-title">Assigned tours</div><CalendarDays size={17} /></div>
         {tours.length === 0 ? <div className="ops-alert">No tours are currently assigned to you.</div> : <div className="ops-list">
-          {tours.slice(0, 10).map((tour) => { const tourId = idOf(tour); const status = String(tour?.status || "scheduled").toLowerCase(); const start = new Date(tourStart(tour) || 0); const isToday = isTourActiveOnDate(tour, today); const title = tour?.title || tour?.destination?.name || tour?.destinationName || tour?.location || "Tour"; return (
+          {tours.slice(0, 10).map((tour) => { const tourId = idOf(tour); const status = String(tour?.status || "scheduled").toLowerCase(); const start = new Date(tourStart(tour) || 0); const isToday = isTourActiveOnDate(tour, today); const title = tour?.title || tour?.destination?.name || tour?.destinationName || tour?.location || "Tour"; const startLabel = formatDate(tourStart(tour)); return (
             <div className="ops-list-item" key={tourId}>
-              <span><MapPin size={15} /> {title} · {Number.isNaN(start.getTime()) ? "—" : start.toLocaleDateString()}</span>
+              <span><MapPin size={15} /> {title} · {startLabel}</span>
               <span className="ops-status neutral">{status}</span>
-              {["scheduled", "upcoming"].includes(status) && <button className="btn btn-secondary" type="button" disabled={!isToday || actionId === `${tourId}:ongoing`} title={!isToday ? "This tour can only be started on its start date" : "Start tour"} onClick={() => void changeStatus(tour, "ongoing")}><Play size={14} /> {actionId === `${tourId}:ongoing` ? "Starting..." : "Start"}</button>}
+              {["scheduled", "upcoming"].includes(status) && <button className="btn btn-secondary" type="button" disabled={actionId === `${tourId}:ongoing`} title={isToday ? "Start tour" : `This tour is scheduled for ${startLabel}`} onClick={() => void changeStatus(tour, "ongoing")}><Play size={14} /> {actionId === `${tourId}:ongoing` ? "Starting..." : "Start"}</button>}
               {status === "ongoing" && <button className="btn btn-secondary" type="button" disabled={actionId === `${tourId}:completed`} onClick={() => void changeStatus(tour, "completed")}><Flag size={14} /> {actionId === `${tourId}:completed` ? "Completing..." : "Complete"}</button>}
             </div>
           ); })}
         </div>}
       </div>
       <div className="ops-grid-2">
-        <div className="ops-card ops-panel"><div className="ops-panel-head"><div className="ops-panel-title">Trip control</div><CalendarDays size={17} /></div><div className="ops-list"><div className="ops-list-item"><span><CalendarDays size={15} /> Today&apos;s schedule</span><span className="ops-status neutral">{todayTrips.length ? `${todayTrips.length} trip${todayTrips.length > 1 ? "s" : ""}` : "None"}</span></div><div className="ops-list-item"><span><MapPin size={15} /> Next destination</span><span className="ops-status neutral">{nextTour?.destination?.name || nextTour?.destinationName || nextTour?.location || "Not assigned"}</span></div><div className="ops-list-item"><span><Users size={15} /> Guests</span><span className="ops-status neutral">{nextTour?.guests ?? nextTour?.guestCount ?? nextTour?.numberOfGuests ?? nextTour?.passengers ?? "0"}</span></div><div className="ops-list-item"><span><Clock3 size={15} /> Status</span><span className="ops-status ok">{nextTour?.status || "Ready"}</span></div></div></div>
+        <div className="ops-card ops-panel"><div className="ops-panel-head"><div className="ops-panel-title">Trip control</div><CalendarDays size={17} /></div><div className="ops-list"><div className="ops-list-item"><span><CalendarDays size={15} /> Today&apos;s schedule</span><span className="ops-status neutral">{todayTrips.length ? `${todayTrips.length} trip${todayTrips.length > 1 ? "s" : ""}` : "None"}</span></div><div className="ops-list-item"><span><MapPin size={15} /> Next destination</span><span className="ops-status neutral">{nextTour?.destination?.name || nextTour?.destinationName || nextTour?.location || "Not assigned"}</span></div><div className="ops-list-item"><span><Users size={15} /> Guests</span><span className="ops-status neutral">{numeric(nextTour?.guests ?? nextTour?.guestCount ?? nextTour?.numberOfGuests ?? nextTour?.passengers)}</span></div><div className="ops-list-item"><span><Clock3 size={15} /> Status</span><span className="ops-status ok">{nextTour?.status || "Ready"}</span></div></div></div>
         <div className="ops-card ops-panel"><div className="ops-panel-head"><div className="ops-panel-title">Vehicle & readiness</div><Car size={17} /></div><div className="ops-list"><div className="ops-list-item"><span><Car size={15} /> Vehicle</span><span>{vehicle?.registrationNumber || vehicle?.plateNumber || vehicle?.registration || vehicle?.name || "Not assigned"}</span></div><div className="ops-list-item"><span><Wrench size={15} /> Vehicle status</span><span className={`ops-status ${vehicle ? "ok" : "neutral"}`}>{vehicleStatus}</span></div><div className="ops-list-item"><span><CheckCircle2 size={15} /> Total tours</span><span>{numeric(totalTours)}</span></div></div><div className="ops-alert">Report tyre, fuel, mechanical or safety issues before departure.</div></div>
       </div>
     </div>
