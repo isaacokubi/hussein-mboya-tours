@@ -61,7 +61,6 @@ commissionSchema.index({ isDeleted: 1 });
 commissionSchema.index({ approvedBy: 1 });
 commissionSchema.index({ customer: 1 });
 commissionSchema.index({ tour: 1 });
-commissionSchema.index({ tenantId: 1, booking: 1 }, { unique: true });
 
 const tenantCommissionSchema = commissionSchema.plugin(tenantPlugin);
 const Commission = mongoose.models.Commission || mongoose.model("Commission", tenantCommissionSchema);

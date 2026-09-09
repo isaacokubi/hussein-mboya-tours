@@ -183,6 +183,23 @@ export function tenantPlugin(schema, options = {}) {
     });
   }
 
+  // Prevent Mongoose duplicate-index warnings when a schema declares both
+  // a field-level `index: true` and an equivalent explicit schema.index().
+  // Keep the explicit index definition as the single source of truth.
+  const declaredIndexes = schema.indexes();
+  const singleFieldIndexes = new Set(
+    declaredIndexes
+      .filter(([keys]) => Object.keys(keys || {}).length === 1)
+      .map(([keys]) => Object.keys(keys)[0])
+  );
+
+  for (const [pathName, path] of Object.entries(schema.paths || {})) {
+    if (pathName === TENANT_PATH) continue;
+    if (path?.options?.index === true && singleFieldIndexes.has(pathName)) {
+      path.options.index = false;
+    }
+  }
+
   for (const path of Object.values(schema.paths || {})) {
     if (!path?.options?.unique || path.path === TENANT_PATH) continue;
     const field = path.path;
