@@ -1,9 +1,12 @@
 import mongoose from "mongoose";
 import PrivacyRequest from "../models/PrivacyRequest.js";
+import Customer from "../models/Customer.js";
+import User from "../models/User.js";
 import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 
 const TYPES = ["access", "correction", "deletion", "portability", "objection", "restriction"];
 const STATUSES = ["received", "identity_verification", "in_progress", "completed", "rejected", "cancelled"];
+const TRANSITIONS = { received: ["identity_verification", "in_progress", "rejected", "cancelled"], identity_verification: ["in_progress", "rejected", "cancelled"], in_progress: ["completed", "rejected", "cancelled"], completed: [], rejected: [], cancelled: [] };
 
 export async function createPrivacyRequest(req, res, next) {
   try {
@@ -11,7 +14,13 @@ export async function createPrivacyRequest(req, res, next) {
     const type = String(req.body?.type || "").toLowerCase();
     const requesterName = String(req.body?.requesterName || "").trim();
     if (!TYPES.includes(type) || requesterName.length < 2) return res.status(400).json({ success: false, message: "Valid request type and requester name are required." });
-    const request = await PrivacyRequest.create({ tenantId, type, requesterName, requesterEmail: String(req.body?.requesterEmail || "").trim().toLowerCase(), requesterPhone: String(req.body?.requesterPhone || "").trim(), customer: req.body?.customer && mongoose.isValidObjectId(req.body.customer) ? req.body.customer : null });
+    let customer = null;
+    if (req.body?.customer) {
+      if (!mongoose.isValidObjectId(req.body.customer)) return res.status(400).json({ success: false, message: "Invalid customer ID." });
+      customer = await Customer.findOne(mergeTenantFilter(req, { _id: req.body.customer })).select("_id").lean();
+      if (!customer) return res.status(404).json({ success: false, message: "Customer not found in this tenant." });
+    }
+    const request = await PrivacyRequest.create({ tenantId, type, requesterName, requesterEmail: String(req.body?.requesterEmail || "").trim().toLowerCase(), requesterPhone: String(req.body?.requesterPhone || "").trim(), customer: customer?._id || null });
     return res.status(201).json({ success: true, data: { requestNumber: request.requestNumber, status: request.status, receivedAt: request.receivedAt, dueAt: request.dueAt } });
   } catch (error) { next(error); }
 }
@@ -24,12 +33,22 @@ export async function updatePrivacyRequest(req, res, next) {
   try {
     requireTenantId();
     if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ success: false, message: "Invalid privacy request ID." });
-    const update = {};
-    if (req.body?.status !== undefined) { const status = String(req.body.status).toLowerCase(); if (!STATUSES.includes(status)) return res.status(400).json({ success: false, message: "Invalid privacy request status." }); update.status = status; }
-    if (req.body?.assignedTo !== undefined) update.assignedTo = req.body.assignedTo || null;
-    if (req.body?.resolutionNotes !== undefined) update.resolutionNotes = String(req.body.resolutionNotes || "").trim();
-    const request = await PrivacyRequest.findOneAndUpdate(mergeTenantFilter(req, { _id: req.params.id }), { $set: update }, { new: true, runValidators: true }).populate("assignedTo", "name email");
+    const request = await PrivacyRequest.findOne(mergeTenantFilter(req, { _id: req.params.id }));
     if (!request) return res.status(404).json({ success: false, message: "Privacy request not found." });
-    return res.json({ success: true, data: request });
+    const update = {};
+    if (req.body?.status !== undefined) {
+      const status = String(req.body.status).toLowerCase();
+      if (!STATUSES.includes(status)) return res.status(400).json({ success: false, message: "Invalid privacy request status." });
+      if (status !== request.status && !TRANSITIONS[request.status]?.includes(status)) return res.status(409).json({ success: false, message: `Privacy request cannot transition from ${request.status} to ${status}.` });
+      update.status = status;
+    }
+    if (req.body?.assignedTo !== undefined) {
+      if (req.body.assignedTo && !mongoose.isValidObjectId(req.body.assignedTo)) return res.status(400).json({ success: false, message: "Invalid assignee ID." });
+      if (req.body.assignedTo && !(await User.exists(mergeTenantFilter(req, { _id: req.body.assignedTo })))) return res.status(404).json({ success: false, message: "Assignee not found in this tenant." });
+      update.assignedTo = req.body.assignedTo || null;
+    }
+    if (req.body?.resolutionNotes !== undefined) update.resolutionNotes = String(req.body.resolutionNotes || "").trim();
+    const updated = await PrivacyRequest.findOneAndUpdate({ ...mergeTenantFilter(req, { _id: request._id }) }, { $set: update }, { new: true, runValidators: true }).populate("assignedTo", "name email");
+    return res.json({ success: true, data: updated });
   } catch (error) { next(error); }
 }
