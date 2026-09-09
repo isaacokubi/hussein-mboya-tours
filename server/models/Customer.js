@@ -258,7 +258,7 @@ const customerSchema = new mongoose.Schema(
 
     marketingConsent: {
       type: Boolean,
-      default: true,
+      default: false,
     },
 
     lastContactedAt: {
@@ -476,8 +476,6 @@ customerSchema.methods.softDelete = function () {
 
 const tenantCustomerSchema = customerSchema.plugin(tenantPlugin);
 const Customer = mongoose.models.Customer || mongoose.model("Customer", tenantCustomerSchema);
-
-
 
 
 

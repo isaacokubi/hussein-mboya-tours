@@ -34,8 +34,16 @@ const invoiceSchema = new mongoose.Schema(
 
     customer: {
       type: mongoose.Schema.Types.ObjectId,
+      ref: "Customer",
+      required: false,
+      default: null,
+    },
+
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      required: false,
+      default: null,
     },
 
     /*
@@ -47,7 +55,8 @@ const invoiceSchema = new mongoose.Schema(
     tour: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Tour",
-      required: true,
+      required: false,
+      default: null,
     },
 
     /*
@@ -308,8 +317,6 @@ invoiceSchema.index({
 
 const tenantInvoiceSchema = invoiceSchema.plugin(tenantPlugin);
 const Invoice = mongoose.models.Invoice || mongoose.model("Invoice", tenantInvoiceSchema);
-
-
 
 
 

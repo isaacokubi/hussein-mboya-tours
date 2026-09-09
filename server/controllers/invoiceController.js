@@ -24,9 +24,10 @@ export const createInvoice = async (req, res, next) => {
       });
     }
 
-    const bookingData = await Booking.findById(booking)
+    const bookingData = await Booking.findOne(mergeTenantFilter(req, { _id: booking }))
       .populate("tour")
-      .populate("customer", "name email");
+      .populate("customer", "firstName lastName email phone")
+      .populate("user", "name email phone");
 
     if (!bookingData) {
       return res.status(404).json({
@@ -35,9 +36,7 @@ export const createInvoice = async (req, res, next) => {
       });
     }
 
-    const existingInvoice = await Invoice.findOne({
-      booking,
-    });
+    const existingInvoice = await Invoice.findOne(mergeTenantFilter(req, { booking }));
 
     if (existingInvoice) {
       return res.status(409).json({
@@ -46,18 +45,35 @@ export const createInvoice = async (req, res, next) => {
       });
     }
 
-    // Never trust amount from frontend
-    const amount =
-      bookingData.amount ||
-      bookingData.totalAmount ||
-      bookingData.subtotal ||
-      0;
-
+    // Never trust amount from the frontend. The booking is the financial source
+    // of truth for the invoice.
+    const subtotal = Number(bookingData.subtotal || bookingData.totalAmount || 0);
+    const discount = Number(bookingData.discountAmount || 0);
+    const tax = Number(bookingData.taxAmount || 0);
+    const totalAmount = Number(bookingData.totalAmount || 0);
+    const amountPaid = Number(bookingData.depositAmount || 0);
     const invoice = await Invoice.create({
-      booking,
-      invoiceNumber: `INV-${Date.now()}`,
-      amount,
-      status: "pending",
+      tenantId: req.tenantId,
+      booking: bookingData._id,
+      customer: bookingData.customer?._id || null,
+      user: bookingData.user?._id || null,
+      tour: bookingData.tour?._id || null,
+      agent: bookingData.agent || null,
+      subtotal,
+      discount,
+      tax,
+      totalAmount,
+      amountPaid,
+      balance: Math.max(totalAmount - amountPaid, 0),
+      paymentMethod: bookingData.paymentMethod === "BANK_TRANSFER" ? "BANK_TRANSFER" : (bookingData.paymentMethod || "MPESA"),
+      paymentReference: bookingData.paymentReference || bookingData.transactionId || "",
+      customerSnapshot: bookingData.customerSnapshot || {
+        name: bookingData.contact?.name || "",
+        email: bookingData.contact?.email || "",
+        phone: bookingData.contact?.phone || "",
+      },
+      dueDate: bookingData.travelDate,
+      status: amountPaid >= totalAmount && totalAmount > 0 ? "paid" : amountPaid > 0 ? "partial" : "pending",
     });
 
     const populatedInvoice = await Invoice.findById(invoice._id)
