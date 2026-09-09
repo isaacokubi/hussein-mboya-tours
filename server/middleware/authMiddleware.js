@@ -93,6 +93,15 @@ export const protect = async (req, res, next) => {
   }
 };
 
+// Public endpoints can accept a logged-in customer without requiring login.
+// If credentials are present they are fully verified; invalid credentials are rejected.
+export const optionalProtect = async (req, res, next) => {
+  const hasBearer = req.headers.authorization?.startsWith("Bearer ") && req.headers.authorization.substring(7).trim();
+  const hasCookie = Boolean(String(req.cookies?.token || "").trim());
+  if (!hasBearer && !hasCookie) return next();
+  return protect(req, res, next);
+};
+
 export const requireRoles = (...allowedRoles) => (req, res, next) => {
   if (!req.user) return res.status(401).json({ success: false, message: "Authentication required." });
   const role = getUserRole(req.user);
