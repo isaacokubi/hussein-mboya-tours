@@ -46,6 +46,7 @@ const paymentSchema = new mongoose.Schema(
     refundRequestedAt: { type: Date },
     refundStatus: { type: String, enum: ["none", "requested", "processing", "completed", "failed"], default: "none" },
     refundReference: { type: String, default: "" },
+    refundResponse: { type: mongoose.Schema.Types.Mixed, default: {} },
     refundedAmount: { type: Number, default: 0, min: 0 },
     refundRequestedAmount: { type: Number, default: 0, min: 0 },
     refundedAt: { type: Date, default: null },
@@ -125,7 +126,7 @@ paymentSchema.post("save", async function () {
       tenantId: this.tenantId,
       booking: bookingId,
       status: { $in: ["completed", "refunded"] },
-    }, null, queryOptions).select("amount status refundedAmount refundStatus paymentMethod transactionReference transactionId mpesaReceiptNumber invoiceNumber"),
+    }, null, queryOptions).select("amount status refundedAmount refundStatus paymentMethod transactionReference transactionId mpesaReceiptNumber invoiceNumber updatedAt"),
   ]);
 
   if (!invoice) return;
