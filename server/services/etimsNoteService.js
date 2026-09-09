@@ -1,15 +1,34 @@
+import crypto from "crypto";
 import CreditDebitNote from "../models/CreditDebitNote.js";
 import TaxProfile from "../models/TaxProfile.js";
+import EtimsSubmission from "../models/EtimsSubmission.js";
 import { enqueueJob } from "./jobQueueService.js";
-const adapterUrl = () => String(process.env.ETIMS_ADAPTER_URL || "").trim().replace(/\/$/, "");
+
+const adapterUrl = (profile) => String(profile?.etimsAdapterUrl || process.env.ETIMS_ADAPTER_URL || "").trim().replace(/\/$/, "");
+const assertAdapterUrl = (url) => { const parsed = new URL(url); if (!["https:", "http:"].includes(parsed.protocol)) throw new Error("eTIMS adapter URL must use HTTP(S)."); if (process.env.NODE_ENV === "production" && parsed.protocol !== "https:") throw new Error("Production eTIMS adapter must use HTTPS."); };
+
 export const enqueueNoteForEtims = async (noteId, tenantId) => enqueueJob("etims.credit_debit_note.submit", { noteId: String(noteId), tenantId: String(tenantId) }, { tenantId, idempotencyKey: `etims-note:${noteId}` });
+
 export async function processEtimsNoteJob(payload) {
   const note = await CreditDebitNote.findOne({ tenantId: payload.tenantId, _id: payload.noteId }); if (!note) return;
+  if (note.etimsStatus === "synced" && note.etimsReference) return;
   const profile = await TaxProfile.findOne({ tenantId: payload.tenantId }).lean();
   if (!profile?.etimsEnabled) { note.etimsStatus = "not_submitted"; await note.save(); return; }
-  const url = adapterUrl(); if (!url) { note.etimsStatus = "failed"; await note.save(); throw new Error("No ETIMS_ADAPTER_URL is configured."); }
+  if (note.type === "credit" && note.originalInvoiceNumber && note.etimsSolution && profile.etimsSolution && note.etimsSolution !== profile.etimsSolution) { note.etimsStatus = "failed"; note.etimsLastError = "Credit notes must be generated through the same eTIMS solution used for the original invoice."; await note.save(); throw new Error(note.etimsLastError); }
+  const url = adapterUrl(profile); if (!url) { note.etimsStatus = "failed"; note.etimsLastError = "No eTIMS adapter is configured."; await note.save(); throw new Error(note.etimsLastError); }
+  assertAdapterUrl(url);
+
   note.etimsStatus = "pending"; note.etimsLastAttemptAt = new Date(); note.etimsSubmissionAttempts = Number(note.etimsSubmissionAttempts || 0) + 1; await note.save();
-  const response = await fetch(`${url}/credit-debit-notes`, { method: "POST", headers: { "content-type": "application/json", ...(process.env.ETIMS_ADAPTER_TOKEN ? { authorization: `Bearer ${process.env.ETIMS_ADAPTER_TOKEN}` } : {}) }, body: JSON.stringify({ noteId: String(note._id), noteNumber: note.noteNumber, type: note.type, originalInvoiceNumber: note.originalInvoiceNumber, reason: note.reason, amounts: { amount: note.amount, taxAmount: note.taxAmount, totalAmount: note.totalAmount }, seller: { kraPin: profile.kraPin || "" } }), signal: AbortSignal.timeout(15000) });
-  const body = await response.json().catch(() => ({})); if (!response.ok) { note.etimsStatus = "failed"; note.etimsLastError = String(body?.message || body?.error || `Adapter returned HTTP ${response.status}`).slice(0, 2000); await note.save(); throw new Error(note.etimsLastError); }
-  note.etimsStatus = "synced"; note.etimsReference = String(body?.reference || body?.noteNumber || body?.etimsReference || ""); note.etimsSubmittedAt = new Date(); note.etimsLastError = ""; await note.save();
+  const requestPayload = { noteId: String(note._id), noteNumber: note.noteNumber, type: note.type, originalInvoiceNumber: note.originalInvoiceNumber, originalEtimsInvoiceNumber: note.originalEtimsInvoiceNumber, reason: note.reason, amounts: { amount: note.amount, taxAmount: note.taxAmount, totalAmount: note.totalAmount }, taxRate: note.taxRate, seller: { kraPin: profile.kraPin || "", branchId: profile.etimsBranchId || "", branchName: profile.etimsBranchName || "Head Office", deviceId: profile.etimsDeviceId || "" } };
+  const requestHash = crypto.createHash("sha256").update(JSON.stringify(requestPayload)).digest("hex");
+  const attempt = note.etimsSubmissionAttempts; const idempotencyKey = `etims-note:${note._id}`;
+  const audit = await EtimsSubmission.create({ tenantId: payload.tenantId, documentType: note.type, documentId: note._id, documentNumber: note.noteNumber, attempt, status: "pending", idempotencyKey, requestHash });
+
+  try {
+    const response = await fetch(`${url}/credit-debit-notes`, { method: "POST", headers: { "content-type": "application/json", "x-idempotency-key": idempotencyKey, ...(process.env.ETIMS_ADAPTER_TOKEN ? { authorization: `Bearer ${process.env.ETIMS_ADAPTER_TOKEN}` } : {}) }, body: JSON.stringify(requestPayload), signal: AbortSignal.timeout(15000) });
+    const body = await response.json().catch(() => ({})); audit.httpStatus = response.status; audit.response = body;
+    if (!response.ok) { note.etimsStatus = "failed"; note.etimsLastError = String(body?.message || body?.error || `Adapter returned HTTP ${response.status}`).slice(0, 2000); audit.status = "failed"; audit.error = note.etimsLastError; await Promise.all([note.save(), audit.save()]); throw new Error(note.etimsLastError); }
+    note.etimsStatus = "synced"; note.etimsReference = String(body?.reference || body?.noteNumber || body?.etimsReference || ""); note.etimsReceiptNumber = String(body?.receiptNumber || body?.etimsReceiptNumber || ""); note.etimsSubmittedAt = new Date(); note.etimsLastError = ""; note.etimsResponse = body;
+    audit.status = "synced"; audit.submittedAt = note.etimsSubmittedAt; audit.etimsReference = note.etimsReference; audit.etimsReceiptNumber = note.etimsReceiptNumber; await Promise.all([note.save(), audit.save()]);
+  } catch (error) { if (audit.status === "pending") { audit.status = "failed"; audit.error = String(error?.message || error).slice(0, 2000); await audit.save().catch(() => undefined); } throw error; }
 }
