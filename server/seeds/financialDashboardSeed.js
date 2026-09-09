@@ -105,7 +105,9 @@ async function seedTenant(tenant, tenantIndex) {
       const travelOffset = i < 4 ? -(45 - i * 8) : i < 8 ? 7 + i * 3 : 25 + i * 4;
       const travelDate = daysFromNow(travelOffset);
       const paid = round(amount * plan[2]);
-      const paymentMethod = ["MPESA", "CARD", "BANK_TRANSFER", "PESAPAL", "CASH"][i % 5];
+      // Booking.paymentMethod intentionally uses only the Booking schema enum.
+      // Pesapal remains represented by the Payment.provider/method fields below.
+      const paymentMethod = ["MPESA", "CARD", "BANK_TRANSFER", "CARD", "CASH"][i % 5];
       const status = plan[1];
       const booking = new Booking({
         tenantId: tenant._id,
@@ -195,7 +197,7 @@ async function seedTenant(tenant, tenantIndex) {
         totalAmount: booking.totalAmount,
         amountPaid: paid,
         balance: round(booking.totalAmount - paid),
-        paymentMethod: booking.paymentMethod === "PESAPAL" ? "PESAPAL" : booking.paymentMethod,
+        paymentMethod: booking.paymentMethod,
         paymentReference: booking.paymentReference || "",
         status: plan[0] === "refunded" ? "refunded" : paid >= booking.totalAmount ? "paid" : paid > 0 ? "partial" : "pending",
         customerSnapshot: booking.customerSnapshot,
