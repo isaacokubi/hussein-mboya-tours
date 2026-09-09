@@ -2,10 +2,10 @@ import JournalEntry from "../models/JournalEntry.js";
 import ChartOfAccount from "../models/ChartOfAccount.js";
 
 const round = (n) => Math.round(Number(n || 0) * 100) / 100;
-const account = async (tenantId, code) => ChartOfAccount.findOne({ tenantId, code, isActive: true }).lean();
+const account = async (tenantId, code) => ChartOfAccount.findOne({ tenantId, code, active: true }).lean();
 const ensureAccounts = async (tenantId) => {
   const defaults = [["1000", "Cash", "asset"], ["1010", "Bank", "asset"], ["1020", "M-Pesa", "asset"], ["1100", "Accounts Receivable", "asset"], ["2000", "Accounts Payable", "liability"], ["2100", "Tax Payable", "liability"], ["4000", "Tour Revenue", "revenue"], ["5000", "Tour Direct Costs", "expense"], ["6000", "Operating Expenses", "expense"]];
-  for (const [code, name, type] of defaults) await ChartOfAccount.updateOne({ tenantId, code }, { $setOnInsert: { tenantId, code, name, type, currency: "KES", isActive: true } }, { upsert: true });
+  for (const [code, name, type] of defaults) await ChartOfAccount.updateOne({ tenantId, code }, { $setOnInsert: { tenantId, code, name, type, currency: "KES", active: true } }, { upsert: true });
 };
 const postOnce = async ({ tenantId, sourceType, sourceId, date, description, reference, lines }) => {
   if (!tenantId || !sourceId || !lines?.length) return null;
