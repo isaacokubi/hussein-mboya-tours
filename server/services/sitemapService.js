@@ -1,4 +1,4 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
+import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import { SitemapStream, streamToPromise } from "sitemap";
 
 import Tour from "../models/Tour.js";
@@ -16,12 +16,6 @@ export const generateSitemap = async () => {
     const sitemap = new SitemapStream({
       hostname: process.env.CLIENT_URL,
     });
-
-    /*
-    |--------------------------------------------------------------------------
-    | STATIC PAGES
-    |--------------------------------------------------------------------------
-    */
 
     sitemap.write({
       url: "/",
@@ -53,15 +47,11 @@ export const generateSitemap = async () => {
       priority: 0.5,
     });
 
-    /*
-    |--------------------------------------------------------------------------
-    | TOURS
-    |--------------------------------------------------------------------------
-    */
-
-    const tours = await Tour.find({
-      status: "active",
-    }).select("slug updatedAt");
+    const tours = await Tour.find(
+      mergeTenantFilter({
+        status: "active",
+      })
+    ).select("slug updatedAt");
 
     for (const tour of tours) {
       sitemap.write({
@@ -72,15 +62,9 @@ export const generateSitemap = async () => {
       });
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | DESTINATIONS
-    |--------------------------------------------------------------------------
-    */
-
-    const destinations = await Destination.find().select(
-      "slug updatedAt"
-    );
+    const destinations = await Destination.find(
+      mergeTenantFilter({})
+    ).select("slug updatedAt");
 
     for (const destination of destinations) {
       sitemap.write({
@@ -97,11 +81,7 @@ export const generateSitemap = async () => {
 
     return xml.toString();
   } catch (error) {
-    console.error(
-      "Sitemap generation failed:",
-      error.message
-    );
-
+    console.error("Sitemap generation failed:", error.message);
     throw error;
   }
 };
