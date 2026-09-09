@@ -2,6 +2,7 @@ import crypto from "crypto";
 import ApiKey from "../models/ApiKey.js";
 import Webhook from "../models/Webhook.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
+import { enqueueJob } from "../services/jobQueueService.js";
 import { protectWebhookSecret, validateWebhookUrl } from "../services/webhookDeliveryService.js";
 
 const tenantId = (req) => req.tenant?.tenantId || req.tenant?.id || req.user?.tenantId;
@@ -53,6 +54,33 @@ export const updateWebhook = async (req, res, next) => {
     if (!doc) return res.status(404).json({ success: false, message: "Webhook not found." });
     res.json({ success: true, data: doc });
   } catch (e) { if (/Webhook URL|private|local|resolves|credentials/i.test(String(e.message))) return res.status(400).json({ success: false, message: e.message }); next(e); }
+};
+
+export const testWebhook = async (req, res, next) => {
+  try {
+    const hook = await Webhook.findOne({ ...tenantFilter(req), _id: req.params.id }).select("_id events active").lean();
+    if (!hook) return res.status(404).json({ success: false, message: "Webhook not found." });
+    if (!hook.active) return res.status(409).json({ success: false, message: "Activate the webhook before sending a test delivery." });
+    const event = hook.events?.[0];
+    if (!event) return res.status(409).json({ success: false, message: "Select at least one webhook event before testing delivery." });
+    const eventId = crypto.randomUUID();
+    const job = await enqueueJob("webhook.delivery", {
+      webhookId: hook._id,
+      event,
+      eventId,
+      occurredAt: new Date().toISOString(),
+      data: {
+        test: true,
+        message: "This is a test delivery from Hussein Mboya Tours.",
+        sentAt: new Date().toISOString(),
+      },
+    }, {
+      tenantId: tenantId(req),
+      idempotencyKey: `webhook-test:${hook._id}:${eventId}`,
+      maxAttempts: 3,
+    });
+    res.status(202).json({ success: true, message: "Webhook test queued for delivery.", jobId: job?._id || job?.id || null, event, eventId });
+  } catch (e) { next(e); }
 };
 
 export const deleteWebhook = async (req, res, next) => {

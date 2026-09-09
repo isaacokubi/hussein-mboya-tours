@@ -55,15 +55,20 @@ export async function protectWebhookSecret(secret) {
 export async function queueWebhookEvent({ tenantId, event, data, sourceId = "" }) {
   if (!tenantId || !event) return null;
   const hooks = await Webhook.find({ tenantId, active: true, events: event }).select("_id").lean();
-  return Promise.all(hooks.map((hook) => enqueueJob("webhook.delivery", {
-    webhookId: hook._id,
-    event,
-    data,
-  }, {
-    tenantId,
-    idempotencyKey: `webhook:${hook._id}:${event}:${sourceId || crypto.createHash("sha256").update(JSON.stringify(data || {})).digest("hex")}`,
-    maxAttempts: 8,
-  })));
+  return Promise.all(hooks.map((hook) => {
+    const stableSource = sourceId || crypto.createHash("sha256").update(JSON.stringify(data || {})).digest("hex");
+    const eventId = crypto.randomUUID();
+    return enqueueJob("webhook.delivery", {
+      webhookId: hook._id,
+      event,
+      eventId,
+      data,
+    }, {
+      tenantId,
+      idempotencyKey: `webhook:${hook._id}:${event}:${stableSource}`,
+      maxAttempts: 8,
+    });
+  }));
 }
 
 export async function deliverWebhookJob(payload) {
@@ -72,9 +77,9 @@ export async function deliverWebhookJob(payload) {
   if (!webhook.events.includes(payload.event)) return;
 
   const body = JSON.stringify({
-    id: crypto.randomUUID(),
+    id: payload.eventId || crypto.randomUUID(),
     type: payload.event,
-    occurredAt: new Date().toISOString(),
+    occurredAt: payload.occurredAt || new Date().toISOString(),
     data: payload.data || {},
   });
   if (Buffer.byteLength(body, "utf8") > MAX_BODY_BYTES) throw new Error("Webhook payload exceeds the maximum allowed size.");
@@ -90,8 +95,9 @@ export async function deliverWebhookJob(payload) {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "user-agent": "GlobalTours-Webhook/1.0",
+        "user-agent": "HusseinMboyaTours-Webhook/1.0",
         "x-webhook-event": payload.event,
+        "x-webhook-id": payload.eventId || "",
         "x-webhook-timestamp": timestamp,
         "x-webhook-signature": `v1=${signature}`,
       },

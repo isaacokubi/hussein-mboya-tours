@@ -18,8 +18,12 @@ const corporateAccountSchema = new mongoose.Schema({
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
 }, { timestamps: true });
 
-corporateAccountSchema.pre("save", function(next) { if (!this.accountNumber) this.accountNumber = `CORP-${Date.now()}-${Math.floor(Math.random() * 10000)}`; next(); });
-corporateAccountSchema.pre("validate", function(next) { if (this.currentBalance > this.creditLimit && this.creditLimit > 0) return next(new Error("Corporate account balance exceeds its credit limit.")); next(); });
+corporateAccountSchema.pre("validate", function(next) {
+  if (!this.accountNumber) this.accountNumber = `CORP-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+  if (this.currentBalance > this.creditLimit && this.creditLimit > 0) return next(new Error("Corporate account balance exceeds its credit limit."));
+  next();
+});
+
 corporateAccountSchema.index({ tenantId: 1, accountNumber: 1 }, { unique: true });
 corporateAccountSchema.index({ tenantId: 1, companyName: 1 });
 corporateAccountSchema.index({ tenantId: 1, kraPin: 1 });
