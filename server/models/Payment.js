@@ -2,6 +2,7 @@
 
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+import { queueWebhookEvent } from "../services/webhookDeliveryService.js";
 import Invoice from "./Invoice.js";
 import Commission from "./Commission.js";
 
@@ -60,6 +61,35 @@ paymentSchema.methods.markCompleted = function (receiptNumber, transactionId = "
 paymentSchema.methods.markFailed = function (reason) { this.status = "failed"; this.failureReason = reason; this.failedAt = new Date(); return this.save(); };
 
 paymentSchema.post("save", async function () {
+  // Emit integration events only when the payment reaches a terminal state.
+  // The event is queued after persistence and never blocks the financial save.
+  try {
+    if (this.tenantId && this.booking && this.isModified("status") && ["completed", "failed"].includes(this.status)) {
+      await queueWebhookEvent({
+        tenantId: this.tenantId,
+        event: `payment.${this.status}`,
+        sourceId: String(this._id),
+        data: {
+          id: this._id,
+          booking: this.booking,
+          status: this.status,
+          amount: this.amount,
+          currency: this.currency || "KES",
+          provider: this.provider,
+          paymentMethod: this.paymentMethod || this.method,
+          transactionId: this.transactionId || "",
+          transactionReference: this.transactionReference || "",
+          mpesaReceiptNumber: this.mpesaReceiptNumber || "",
+          paidAt: this.paidAt || null,
+          failureReason: this.status === "failed" ? this.failureReason || "" : "",
+          updatedAt: this.updatedAt,
+        },
+      });
+    }
+  } catch (webhookError) {
+    console.error("PAYMENT WEBHOOK QUEUE ERROR:", webhookError.message);
+  }
+
   if (!this.tenantId || !this.booking) return;
   if (!["completed", "refunded"].includes(this.status) && this.refundStatus !== "completed") return;
   const session = typeof this.$session === "function" ? this.$session() : null;
@@ -87,8 +117,6 @@ paymentSchema.post("save", async function () {
     if (nextRefunded !== Number(commission.refundedAmount || 0)) { commission.refundedAmount = nextRefunded; commission.adjustmentAmount = nextRefunded; commission.adjustmentStatus = nextRefunded > 0 ? "posted" : "none"; commission.adjustmentAt = nextRefunded > 0 ? new Date() : null; commission.financeNotes = nextRefunded > 0 ? `Commission adjustment posted: KES ${nextRefunded.toFixed(2)} due to booking refund.` : commission.financeNotes; await commission.save(queryOptions); }
   }
 
-  // Keep corporate receivable exposure derived from source transactions so a
-  // completed payment or refund cannot leave the credit-control balance stale.
   try {
     const BookingModel = mongoose.models.Booking;
     const CorporateAccountModel = mongoose.models.CorporateAccount;
