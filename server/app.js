@@ -118,7 +118,8 @@ app.get("/", (req, res) => res.status(200).json({ success: true, message: "Trave
 app.use((req, res) => res.status(404).json({ success: false, message: "Route not found", requestId: req.requestId }));
 app.use((err, req, res, next) => {
   console.error({ requestId: req.requestId, error: err });
-  let status = Number(err.statusCode) || 500;
+  let status = Number(err.statusCode ?? err.status ?? 500);
+  if (!Number.isInteger(status) || status < 400 || status > 599) status = 500;
   let message = err.message || "Internal server error";
   if (err.name === "ValidationError" || err.name === "CastError") status = 400;
   if (err.code === 11000) { status = 409; const duplicateField = Object.keys(err.keyPattern || err.keyValue || {})[0]; message = duplicateField ? `A record with this ${duplicateField} already exists.` : "A record with these unique details already exists."; }
