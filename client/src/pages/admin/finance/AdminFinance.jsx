@@ -6,6 +6,7 @@ import { getOperationsOverview } from "../../../api/operationsApi";
 import { getSupplierPayables, getCorporateAccounts } from "../../../api/operationsModuleApi";
 import AccountingLedger from "../AccountingLedger";
 import KenyaTaxCenter from "../../../components/admin/KenyaTaxCenter";
+import GoLiveReadiness from "../GoLiveReadiness";
 
 const money = (value) => `KES ${Number(value || 0).toLocaleString()}`;
 const unwrap = (value) => value?.data?.data ?? value?.data ?? value ?? {};
@@ -33,6 +34,7 @@ export default function AdminFinance() {
     <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200"><div><p className="text-sm font-semibold uppercase tracking-wider text-emerald-700">Accounting workspaces</p><h2 className="text-xl font-bold">Open finance modules</h2></div><div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-5">{[["Finance Reports","/admin/finance/reports","Revenue and financial reports"],["M-Pesa Transactions","/admin/finance/transactions","Payment and M-Pesa activity"],["Reconciliation","/admin/finance/reconciliation","Payment matching and exceptions"],["Compliance & eTIMS","/admin/compliance","KRA/eTIMS, TRA and ODPC workflow"],["Operations & Procurement","/admin/operations","Suppliers, POs, costing and payables"]].map(([title,path,text])=><Link key={path} to={path} className="rounded-xl border border-slate-200 p-5 transition hover:border-emerald-300 hover:bg-emerald-50/30"><FileBarChart size={21} className="text-emerald-700"/><h3 className="mt-3 font-bold text-slate-900">{title}</h3><p className="mt-1 text-sm text-slate-500">{text}</p><span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-emerald-700">Open <ArrowRight size={14}/></span></Link>)}</div></section>
     <KenyaTaxCenter />
     <section id="general-ledger"><AccountingLedger /></section>
+    <GoLiveReadiness />
     <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200"><h2 className="text-xl font-bold">Operational accounting controls</h2><div className="mt-4 grid gap-3 md:grid-cols-2"><p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">✓ Revenue, net revenue, refunds and payment status</p><p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">✓ Supplier payables and procurement exposure</p><p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">✓ Corporate receivable exposure and credit controls</p><p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">✓ Tour costing and profitability records</p><p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">✓ Commission tracking and reconciliation</p><p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">✓ Tax profile, invoice eTIMS status and compliance workflow</p></div></section>
   </div>;
 }
