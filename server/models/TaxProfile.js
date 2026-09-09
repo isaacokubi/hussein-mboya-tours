@@ -14,8 +14,14 @@ const taxProfileSchema = new mongoose.Schema({
   taxRegime: { type: String, enum: ["VAT", "ZERO_RATED", "EXEMPT", "NON_VAT"], default: "VAT" },
   etimsEnabled: { type: Boolean, default: false },
   etimsSolution: { type: String, enum: ["ONLINE", "CLIENT", "VSCU", "OSCU", "ECITIZEN", "OTHER", ""], default: "" },
+  etimsEnvironment: { type: String, enum: ["sandbox", "production"], default: "sandbox" },
   etimsDeviceId: { type: String, trim: true, default: "" },
+  etimsBranchId: { type: String, trim: true, default: "" },
+  etimsBranchName: { type: String, trim: true, default: "Head Office" },
+  etimsTillId: { type: String, trim: true, default: "" },
   etimsInvoicePrefix: { type: String, trim: true, default: "INV" },
+  etimsCredentialRef: { type: String, trim: true, default: "" },
+  etimsAdapterUrl: { type: String, trim: true, default: "" },
   etimsLastSyncedAt: { type: Date, default: null },
   etimsLastError: { type: String, trim: true, default: "" },
   etimsRetryCount: { type: Number, default: 0, min: 0 },
@@ -27,6 +33,7 @@ const taxProfileSchema = new mongoose.Schema({
 taxProfileSchema.pre("save", function(next) {
   this.kraPin = String(this.kraPin || "").trim().toUpperCase();
   this.vatNumber = String(this.vatNumber || "").trim().toUpperCase();
+  this.etimsBranchName = String(this.etimsBranchName || "Head Office").trim();
   if (!this.vatRegistered && this.taxRegime === "VAT") this.taxRegime = "NON_VAT";
   if (this.vatRegistered && this.taxRegime === "NON_VAT") this.taxRegime = "VAT";
   next();
