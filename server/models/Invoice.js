@@ -1,326 +1,68 @@
 // server/models/Invoice.js
-
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
-import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
-/*
-|--------------------------------------------------------------------------
-| INVOICE SCHEMA
-|--------------------------------------------------------------------------
-*/
+const invoiceSchema = new mongoose.Schema({
+  tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true },
+  booking: { type: mongoose.Schema.Types.ObjectId, ref: "Booking", required: true, unique: true },
+  customer: { type: mongoose.Schema.Types.ObjectId, ref: "Customer", default: null },
+  user: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+  tour: { type: mongoose.Schema.Types.ObjectId, ref: "Tour", default: null },
+  agent: { type: mongoose.Schema.Types.ObjectId, ref: "Agent", default: null },
+  invoiceNumber: { type: String, unique: true, trim: true },
+  issueDate: { type: Date, default: Date.now },
+  dueDate: { type: Date },
+  subtotal: { type: Number, default: 0, min: 0 },
+  discount: { type: Number, default: 0, min: 0 },
+  tax: { type: Number, default: 0, min: 0 },
+  taxRate: { type: Number, default: 0, min: 0, max: 100 },
+  taxType: { type: String, enum: ["STANDARD", "ZERO_RATED", "EXEMPT", "NON_VAT", "OTHER"], default: "STANDARD" },
+  totalAmount: { type: Number, required: true, min: 0 },
+  amountPaid: { type: Number, default: 0, min: 0 },
+  balance: { type: Number, default: 0, min: 0 },
+  paymentMethod: { type: String, enum: ["MPESA", "CARD", "BANK_TRANSFER", "PAYPAL", "PESAPAL", "CASH"], default: "MPESA" },
+  paymentReference: { type: String, default: "", trim: true },
+  status: { type: String, enum: ["draft", "pending", "partial", "paid", "cancelled", "refunded", "overdue"], default: "pending" },
+  customerSnapshot: { name: String, email: String, phone: String },
+  buyerPin: { type: String, trim: true, uppercase: true, default: "" },
+  etimsStatus: { type: String, enum: ["not_configured", "pending", "submitted", "synced", "failed"], default: "not_configured" },
+  etimsInvoiceNumber: { type: String, trim: true, default: "" },
+  etimsReceiptNumber: { type: String, trim: true, default: "" },
+  etimsUniqueRegisterIdentifier: { type: String, trim: true, default: "" },
+  etimsQrCode: { type: String, trim: true, default: "" },
+  etimsSubmittedAt: { type: Date, default: null },
+  etimsResponse: { type: mongoose.Schema.Types.Mixed, default: {} },
+  pdfUrl: { type: String, default: "" },
+  notes: { type: String, default: "", trim: true },
+  isDeleted: { type: Boolean, default: false },
+}, { timestamps: true });
 
-const invoiceSchema = new mongoose.Schema(
-  {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
-    /*
-    |--------------------------------------------------------------------------
-    | BOOKING
-    |--------------------------------------------------------------------------
-    */
-
-    booking: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Booking",
-      required: true,
-      unique: true,
-    },
-
-    /*
-    |--------------------------------------------------------------------------
-    | CUSTOMER
-    |--------------------------------------------------------------------------
-    */
-
-    customer: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Customer",
-      required: false,
-      default: null,
-    },
-
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: false,
-      default: null,
-    },
-
-    /*
-    |--------------------------------------------------------------------------
-    | TOUR
-    |--------------------------------------------------------------------------
-    */
-
-    tour: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Tour",
-      required: false,
-      default: null,
-    },
-
-    /*
-    |--------------------------------------------------------------------------
-    | AGENT (OPTIONAL)
-    |--------------------------------------------------------------------------
-    */
-
-    agent: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Agent",
-      default: null,
-    },
-
-    /*
-    |--------------------------------------------------------------------------
-    | INVOICE DETAILS
-    |--------------------------------------------------------------------------
-    */
-
-    invoiceNumber: {
-      type: String,
-      unique: true,
-      trim: true,
-    },
-
-    issueDate: {
-      type: Date,
-      default: Date.now,
-    },
-
-    dueDate: {
-      type: Date,
-    },
-
-    /*
-    |--------------------------------------------------------------------------
-    | AMOUNTS
-    |--------------------------------------------------------------------------
-    */
-
-    subtotal: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
-
-    discount: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
-
-    tax: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
-
-    totalAmount: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
-
-    amountPaid: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
-
-    balance: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
-
-    /*
-    |--------------------------------------------------------------------------
-    | PAYMENT
-    |--------------------------------------------------------------------------
-    */
-
-    paymentMethod: {
-      type: String,
-      enum: [
-        "MPESA",
-        "CARD",
-        "BANK_TRANSFER",
-        "PAYPAL",
-        "CASH",
-      ],
-      default: "MPESA",
-    },
-
-    paymentReference: {
-      type: String,
-      default: "",
-      trim: true,
-    },
-
-    /*
-    |--------------------------------------------------------------------------
-    | STATUS
-    |--------------------------------------------------------------------------
-    */
-
-    status: {
-      type: String,
-      enum: [
-        "draft",
-        "pending",
-        "partial",
-        "paid",
-        "cancelled",
-        "refunded",
-        "overdue",
-      ],
-      default: "pending",
-    },
-
-    /*
-    |--------------------------------------------------------------------------
-    | CUSTOMER SNAPSHOT
-    |--------------------------------------------------------------------------
-    */
-
-    customerSnapshot: {
-      name: String,
-      email: String,
-      phone: String,
-    },
-
-    /*
-    |--------------------------------------------------------------------------
-    | PDF
-    |--------------------------------------------------------------------------
-    */
-
-    pdfUrl: {
-      type: String,
-      default: "",
-    },
-
-    /*
-    |--------------------------------------------------------------------------
-    | NOTES
-    |--------------------------------------------------------------------------
-    */
-
-    notes: {
-      type: String,
-      default: "",
-      trim: true,
-    },
-
-    /*
-    |--------------------------------------------------------------------------
-    | SOFT DELETE
-    |--------------------------------------------------------------------------
-    */
-
-    isDeleted: {
-      type: Boolean,
-      default: false,
-    },
-  },
-  {
-    timestamps: true,
-  }
-);
-
-/*
-|--------------------------------------------------------------------------
-| AUTO INVOICE NUMBER
-|--------------------------------------------------------------------------
-*/
-
-invoiceSchema.pre("save", function (next) {
-  if (!this.invoiceNumber) {
-    this.invoiceNumber =
-      "INV-" +
-      Date.now() +
-      "-" +
-      Math.floor(Math.random() * 10000);
-  }
-
-  this.balance = this.totalAmount - this.amountPaid;
-
-  if (this.balance <= 0) {
-    this.status = "paid";
-  } else if (this.amountPaid > 0) {
-    this.status = "partial";
-  }
-
+invoiceSchema.pre("save", function(next) {
+  if (!this.invoiceNumber) this.invoiceNumber = `INV-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+  this.balance = Math.max(0, Number(this.totalAmount || 0) - Number(this.amountPaid || 0));
+  if (this.balance <= 0 && this.totalAmount > 0) this.status = "paid";
+  else if (this.amountPaid > 0) this.status = "partial";
   next();
 });
 
-/*
-|--------------------------------------------------------------------------
-| METHODS
-|--------------------------------------------------------------------------
-*/
-
-invoiceSchema.methods.calculateBalance = function () {
-  return this.totalAmount - this.amountPaid;
-};
-
-invoiceSchema.methods.markPaid = function (reference = "") {
+invoiceSchema.methods.calculateBalance = function() { return Math.max(0, this.totalAmount - this.amountPaid); };
+invoiceSchema.methods.markPaid = function(reference = "") {
   this.amountPaid = this.totalAmount;
   this.balance = 0;
   this.status = "paid";
-
-  if (reference) {
-    this.paymentReference = reference;
-  }
-
+  if (reference) this.paymentReference = reference;
   return this.save();
 };
 
-/*
-|--------------------------------------------------------------------------
-| INDEXES
-|--------------------------------------------------------------------------
-*/
-
-
-invoiceSchema.index({
-  customer: 1,
-});
-
-invoiceSchema.index({
-  tour: 1,
-});
-
-
-invoiceSchema.index({
-  status: 1,
-});
-
-invoiceSchema.index({
-  createdAt: -1,
-});
-
-invoiceSchema.index({
-  dueDate: 1,
-});
-
-invoiceSchema.index({
-  isDeleted: 1,
-});
-
-/*
-|--------------------------------------------------------------------------
-| EXPORT MODEL
-|--------------------------------------------------------------------------
-*/
+invoiceSchema.index({ tenantId: 1, invoiceNumber: 1 }, { unique: true });
+invoiceSchema.index({ customer: 1 });
+invoiceSchema.index({ tour: 1 });
+invoiceSchema.index({ status: 1 });
+invoiceSchema.index({ createdAt: -1 });
+invoiceSchema.index({ dueDate: 1 });
+invoiceSchema.index({ isDeleted: 1 });
+invoiceSchema.index({ tenantId: 1, etimsStatus: 1, createdAt: -1 });
 
 const tenantInvoiceSchema = invoiceSchema.plugin(tenantPlugin);
 const Invoice = mongoose.models.Invoice || mongoose.model("Invoice", tenantInvoiceSchema);
-
-
-
-
-
-
 export default Invoice;
