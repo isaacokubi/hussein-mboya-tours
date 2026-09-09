@@ -2,11 +2,17 @@ import crypto from "crypto";
 import dns from "dns/promises";
 import net from "net";
 import Webhook from "../models/Webhook.js";
+import WebhookDelivery from "../models/WebhookDelivery.js";
 import { enqueueJob } from "./jobQueueService.js";
 
 const TIMEOUT_MS = Math.min(15000, Math.max(3000, Number(process.env.WEBHOOK_TIMEOUT_MS || 10000)));
 const MAX_BODY_BYTES = 64 * 1024;
-const secretKey = () => crypto.createHash("sha256").update(String(process.env.WEBHOOK_SECRET_KEY || process.env.JWT_SECRET || "")).digest();
+const secretKey = () => {
+  const secret = String(process.env.WEBHOOK_SECRET_KEY || process.env.JWT_SECRET || "");
+  if (!secret) throw new Error("Webhook signing encryption secret is not configured.");
+  if (process.env.NODE_ENV === "production" && !process.env.WEBHOOK_SECRET_KEY) throw new Error("WEBHOOK_SECRET_KEY must be configured in production.");
+  return crypto.createHash("sha256").update(secret).digest();
+};
 
 function encryptSecret(secret) {
   const iv = crypto.randomBytes(12);
@@ -18,6 +24,7 @@ function encryptSecret(secret) {
 function decryptSecret(value) {
   if (!String(value || "").startsWith("v1:")) return String(value || "");
   const [, iv, tag, ciphertext] = String(value).split(":");
+  if (!iv || !tag || !ciphertext) throw new Error("Invalid encrypted webhook secret.");
   const decipher = crypto.createDecipheriv("aes-256-gcm", secretKey(), Buffer.from(iv, "base64url"));
   decipher.setAuthTag(Buffer.from(tag, "base64url"));
   return Buffer.concat([decipher.update(Buffer.from(ciphertext, "base64url")), decipher.final()]).toString("utf8");
@@ -26,25 +33,28 @@ function decryptSecret(value) {
 function isPrivateAddress(address) {
   if (net.isIPv4(address)) {
     const [a, b] = address.split(".").map(Number);
-    return a === 10 || a === 127 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || a === 0;
+    return a === 0 || a === 10 || a === 127 || (a === 100 && b >= 64 && b <= 127) || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 0) || (a === 192 && b === 168) || (a === 198 && (b === 18 || b === 19));
   }
   if (net.isIPv6(address)) {
     const value = address.toLowerCase();
-    return value === "::1" || value === "::" || value.startsWith("fc") || value.startsWith("fd") || value.startsWith("fe80:");
+    return value === "::1" || value === "::" || value.startsWith("fc") || value.startsWith("fd") || value.startsWith("fe80:") || value.startsWith("ff");
   }
   return true;
 }
 
 export async function validateWebhookUrl(rawUrl) {
-  const parsed = new URL(String(rawUrl || "").trim());
+  let parsed;
+  try { parsed = new URL(String(rawUrl || "").trim()); } catch { throw new Error("Invalid webhook URL."); }
   if (parsed.protocol !== "https:") throw new Error("Webhook URL must use HTTPS.");
   if (parsed.username || parsed.password) throw new Error("Webhook URL must not contain credentials.");
-  const host = parsed.hostname.toLowerCase();
-  if (["localhost", "localhost.localdomain", "metadata.google.internal"].includes(host) || net.isIP(host) && isPrivateAddress(host)) {
+  const host = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, "");
+  if (["localhost", "localhost.localdomain", "metadata.google.internal", "metadata", "host.docker.internal"].includes(host) || (net.isIP(host) && isPrivateAddress(host))) {
     throw new Error("Webhook URL cannot target a private or local address.");
   }
-  const records = await dns.lookup(host, { all: true, verbatim: true });
-  if (!records.length || records.some((record) => isPrivateAddress(record.address))) throw new Error("Webhook URL resolves to a private or local address.");
+  if (!net.isIP(host)) {
+    const records = await dns.lookup(host, { all: true, verbatim: true });
+    if (!records.length || records.some(({ address }) => isPrivateAddress(address))) throw new Error("Webhook URL resolves to a private or local address.");
+  }
   return parsed.toString();
 }
 
@@ -55,61 +65,61 @@ export async function protectWebhookSecret(secret) {
 export async function queueWebhookEvent({ tenantId, event, data, sourceId = "" }) {
   if (!tenantId || !event) return null;
   const hooks = await Webhook.find({ tenantId, active: true, events: event }).select("_id").lean();
-  return Promise.all(hooks.map((hook) => {
+  return Promise.all(hooks.map(async (hook) => {
     const stableSource = sourceId || crypto.createHash("sha256").update(JSON.stringify(data || {})).digest("hex");
-    const eventId = crypto.randomUUID();
-    return enqueueJob("webhook.delivery", {
-      webhookId: hook._id,
-      event,
-      eventId,
-      data,
-    }, {
-      tenantId,
-      idempotencyKey: `webhook:${hook._id}:${event}:${stableSource}`,
-      maxAttempts: 8,
-    });
+    const idempotencyKey = `webhook:${hook._id}:${event}:${stableSource}`;
+    const existing = await enqueueJob("webhook.delivery", { webhookId: hook._id, event, eventId: crypto.randomUUID(), data }, { tenantId, idempotencyKey, maxAttempts: 8 });
+    return existing;
   }));
 }
 
-export async function deliverWebhookJob(payload) {
+async function recordDelivery({ tenantId, webhookId, event, eventId, attempt, values }) {
+  const filter = { tenantId, webhookId, eventId, attempt };
+  return WebhookDelivery.findOneAndUpdate(filter, { $set: values }, { upsert: true, new: true, setDefaultsOnInsert: true });
+}
+
+export async function deliverWebhookJob(payload, job = {}) {
   const webhook = await Webhook.findById(payload.webhookId).select("+secret");
   if (!webhook || !webhook.active) return;
   if (!webhook.events.includes(payload.event)) return;
 
-  const body = JSON.stringify({
-    id: payload.eventId || crypto.randomUUID(),
-    type: payload.event,
-    occurredAt: payload.occurredAt || new Date().toISOString(),
-    data: payload.data || {},
-  });
+  const eventId = payload.eventId || crypto.randomUUID();
+  const attempt = Math.max(1, Number(job.attempts || 1));
+  const body = JSON.stringify({ id: eventId, type: payload.event, occurredAt: payload.occurredAt || new Date().toISOString(), data: payload.data || {} });
   if (Buffer.byteLength(body, "utf8") > MAX_BODY_BYTES) throw new Error("Webhook payload exceeds the maximum allowed size.");
+  const requestHash = crypto.createHash("sha256").update(body).digest("hex");
+  await recordDelivery({ tenantId: webhook.tenantId, webhookId: webhook._id, event: payload.event, eventId, attempt, values: { status: "pending", requestHash, error: "", nextRetryAt: null } });
+
+  let validatedUrl;
+  try { validatedUrl = await validateWebhookUrl(webhook.url); } catch (error) {
+    await recordDelivery({ tenantId: webhook.tenantId, webhookId: webhook._id, event: payload.event, eventId, attempt, values: { status: "failed", error: String(error?.message || error).slice(0, 2000), nextRetryAt: null } });
+    throw error;
+  }
 
   const secret = decryptSecret(webhook.secret);
+  if (!secret) throw new Error("Webhook secret is not configured.");
   const timestamp = Math.floor(Date.now() / 1000).toString();
   const signature = crypto.createHmac("sha256", secret).update(`${timestamp}.${body}`).digest("hex");
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
-    const response = await fetch(await validateWebhookUrl(webhook.url), {
+    const response = await fetch(validatedUrl, {
       method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "user-agent": "HusseinMboyaTours-Webhook/1.0",
-        "x-webhook-event": payload.event,
-        "x-webhook-id": payload.eventId || "",
-        "x-webhook-timestamp": timestamp,
-        "x-webhook-signature": `v1=${signature}`,
-      },
+      headers: { "content-type": "application/json", "user-agent": "HusseinMboyaTours-Webhook/1.0", "x-webhook-event": payload.event, "x-webhook-id": eventId, "x-webhook-timestamp": timestamp, "x-webhook-signature": `v1=${signature}` },
       body,
       signal: controller.signal,
     });
-    if (!response.ok) throw new Error(`Webhook endpoint returned HTTP ${response.status}.`);
+    const responseText = await response.text().catch(() => "");
+    if (!response.ok) throw Object.assign(new Error(`Webhook endpoint returned HTTP ${response.status}.`), { statusCode: response.status, responseText });
+    await recordDelivery({ tenantId: webhook.tenantId, webhookId: webhook._id, event: payload.event, eventId, attempt, values: { status: "delivered", httpStatus: response.status, response: responseText.slice(0, 4000), error: "", deliveredAt: new Date(), nextRetryAt: null } });
     webhook.lastDeliveryAt = new Date();
     webhook.lastStatus = response.status;
     webhook.failureCount = 0;
     await webhook.save();
   } catch (error) {
+    const nextRetryAt = new Date(Date.now() + Math.min(1440, 2 ** Math.min(attempt, 9)) * 60 * 1000);
+    await recordDelivery({ tenantId: webhook.tenantId, webhookId: webhook._id, event: payload.event, eventId, attempt, values: { status: "failed", httpStatus: Number(error?.statusCode) || null, response: String(error?.responseText || "").slice(0, 4000), error: String(error?.message || error).slice(0, 2000), nextRetryAt } });
     webhook.lastDeliveryAt = new Date();
     webhook.lastStatus = Number(error?.statusCode) || null;
     webhook.failureCount = Number(webhook.failureCount || 0) + 1;
