@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import JournalEntry from "../models/JournalEntry.js";
 import ChartOfAccount from "../models/ChartOfAccount.js";
 
@@ -18,9 +19,12 @@ export async function postFinanceEntry({ tenantId, sourceType, sourceId, descrip
   try { return await JournalEntry.create({ tenantId, sourceType, sourceId, entryDate: date, description, reference, status: "posted", lines: resolved, postedAt: new Date() }); }
   catch (error) { if (error?.code === 11000) return JournalEntry.findOne({ tenantId, sourceType, sourceId }).lean(); throw error; }
 }
-
 export const postSupplierPayable = (payable) => postFinanceEntry({ tenantId: payable.tenantId, sourceType: "supplier_payable", sourceId: payable._id, description: `Supplier payable ${payable._id}`, reference: payable.paymentReference || "", date: payable.createdAt || new Date(), lines: [{ code: "5000", debit: payable.amount, credit: 0, description: "Supplier cost accrued" }, { code: "2000", debit: 0, credit: payable.amount, description: "Accounts payable" }] });
-export const postSupplierPayment = ({ payable, amount, paymentReference }) => postFinanceEntry({ tenantId: payable.tenantId, sourceType: "supplier_payable_payment", sourceId: payable._id, description: `Supplier payable settlement ${paymentReference || payable._id}`, reference: paymentReference || "", lines: [{ code: "2000", debit: amount, credit: 0, description: "Accounts payable settlement" }, { code: "1010", debit: 0, credit: amount, description: "Bank settlement" }] });
+export const postSupplierPayment = ({ payable, amount, paymentReference }) => {
+  const key = `${payable._id}:${money(amount)}:${String(paymentReference || "").trim()}`;
+  const sourceId = crypto.createHash("sha256").update(key).digest("hex").slice(0, 24);
+  return postFinanceEntry({ tenantId: payable.tenantId, sourceType: "supplier_payable_payment", sourceId, description: `Supplier payable settlement ${paymentReference || payable._id}`, reference: paymentReference || "", lines: [{ code: "2000", debit: amount, credit: 0, description: "Accounts payable settlement" }, { code: "1010", debit: 0, credit: amount, description: "Bank settlement" }] });
+};
 export const postCreditDebitNote = (note) => {
   const credit = note.type === "credit"; const lines = credit ? [{ code: "4000", debit: note.amount, credit: 0, description: "Revenue reversal" }, ...(Number(note.taxAmount) > 0 ? [{ code: "2100", debit: note.taxAmount, credit: 0, description: "Tax reversal" }] : []), { code: "1100", debit: 0, credit: note.totalAmount, description: "Accounts receivable credit" }] : [{ code: "1100", debit: note.totalAmount, credit: 0, description: "Accounts receivable debit" }, { code: "4000", debit: 0, credit: note.amount, description: "Debit note revenue" }, ...(Number(note.taxAmount) > 0 ? [{ code: "2100", debit: 0, credit: note.taxAmount, description: "Tax payable" }] : [])];
   return postFinanceEntry({ tenantId: note.tenantId, sourceType: "credit_debit_note", sourceId: note._id, description: `${credit ? "Credit" : "Debit"} note ${note.noteNumber}`, reference: note.noteNumber, date: note.issuedAt || new Date(), lines });
