@@ -20,10 +20,11 @@ const supplierSchema = new mongoose.Schema({
   updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
 }, { timestamps: true });
 
-supplierSchema.pre("save", function(next) {
+supplierSchema.pre("validate", function(next) {
   if (!this.supplierNumber) this.supplierNumber = `SUP-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
   next();
 });
+
 supplierSchema.index({ tenantId: 1, supplierNumber: 1 }, { unique: true });
 supplierSchema.index({ tenantId: 1, legalName: 1 });
 supplierSchema.plugin(tenantPlugin);
