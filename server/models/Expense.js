@@ -5,6 +5,10 @@ const expenseSchema = new mongoose.Schema({
   tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
   expenseNumber: { type: String, trim: true },
   category: { type: String, trim: true, required: true },
+  supplier: { type: mongoose.Schema.Types.ObjectId, ref: "Supplier", default: null, index: true },
+  purchaseOrder: { type: mongoose.Schema.Types.ObjectId, ref: "PurchaseOrder", default: null, index: true },
+  booking: { type: mongoose.Schema.Types.ObjectId, ref: "Booking", default: null, index: true },
+  tour: { type: mongoose.Schema.Types.ObjectId, ref: "Tour", default: null, index: true },
   supplierName: { type: String, trim: true, default: "" },
   supplierPin: { type: String, trim: true, uppercase: true, default: "" },
   description: { type: String, trim: true, required: true },
@@ -20,11 +24,8 @@ const expenseSchema = new mongoose.Schema({
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
 }, { timestamps: true });
 
-expenseSchema.pre("save", function(next) {
-  if (!this.expenseNumber) this.expenseNumber = `EXP-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
-  next();
-});
-
+expenseSchema.pre("save", function(next) { if (!this.expenseNumber) this.expenseNumber = `EXP-${Date.now()}-${Math.floor(Math.random() * 10000)}`; next(); });
 expenseSchema.index({ tenantId: 1, expenseNumber: 1 }, { unique: true });
+expenseSchema.index({ tenantId: 1, purchaseOrder: 1 }, { unique: true, sparse: true });
 expenseSchema.plugin(tenantPlugin);
 export default mongoose.models.Expense || mongoose.model("Expense", expenseSchema);
