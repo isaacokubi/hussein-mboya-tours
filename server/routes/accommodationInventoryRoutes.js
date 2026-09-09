@@ -1,0 +1,10 @@
+import express from "express";
+import { resolveTenant } from "../middleware/tenantMiddleware.js";
+import { protect, checkPermission } from "../middleware/authMiddleware.js";
+import { listAccommodationInventory, createAccommodationInventory, updateAccommodationInventory } from "../controllers/accommodationInventoryController.js";
+const router=express.Router();
+router.use(resolveTenant,protect,checkPermission("booking.manage"));
+router.get("/",listAccommodationInventory);
+router.post("/",createAccommodationInventory);
+router.patch("/:id",updateAccommodationInventory);
+export default router;
