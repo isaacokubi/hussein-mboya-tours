@@ -1,124 +1,44 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQueries } from "@tanstack/react-query";
+import { ArrowRight, Banknote, Building2, Calculator, CreditCard, FileBarChart, Receipt, Wallet } from "lucide-react";
+import { Link } from "react-router-dom";
 import { getFinanceStats } from "../../../api/financeApi";
+import { getOperationsOverview } from "../../../api/operationsApi";
+import { getSupplierPayables, getCorporateAccounts } from "../../../api/operationsModuleApi";
 
-export default function AdminFinance(
-) {
-  const {
-    data: finance,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ["admin-finance"],
-    queryFn: getFinanceStats,
-  });
+const money = (value) => `KES ${Number(value || 0).toLocaleString()}`;
+const unwrap = (value) => value?.data?.data ?? value?.data ?? value ?? {};
+const list = (value) => Array.isArray(value) ? value : value?.items || value?.data || [];
 
-  if (isLoading) {
-    return (
-      <div className="p-6">
-        Loading finance data...
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-6 text-red-600">
-        Failed to load finance data.
-      </div>
-    );
-  }
-
-  const stats = finance?.data || finance || {};
-
-  const revenue =
-    Number(
-      stats.revenue ??
-      stats.totalRevenue ??
-      0
-    );
-
-  const netRevenue =
-    Number(
-      stats.netRevenue ??
-      stats.paidRevenue ??
-      0
-    );
-
-  const refunded =
-    Number(
-      stats.refundedAmount ??
-      stats.refunded ??
-      0
-    );
-
-  const paidBookings =
-    stats.paidBookings ??
-    stats.bookings ??
-    0;
-
-  const pendingPayments =
-    stats.pendingPayments ??
-    0;
-
-  const failedPayments =
-    stats.failedPayments ??
-    0;
-
+export default function AdminFinance() {
+  const [financeQ, operationsQ, payablesQ, corporateQ] = useQueries({ queries: [
+    { queryKey: ["admin-finance-accounting"], queryFn: getFinanceStats, staleTime: 30000, refetchInterval: 60000 },
+    { queryKey: ["admin-finance-operations"], queryFn: getOperationsOverview, staleTime: 30000, refetchInterval: 60000 },
+    { queryKey: ["admin-finance-payables"], queryFn: getSupplierPayables, staleTime: 30000, refetchInterval: 60000 },
+    { queryKey: ["admin-finance-corporate"], queryFn: getCorporateAccounts, staleTime: 30000, refetchInterval: 60000 },
+  ]});
+  const finance = unwrap(financeQ.data);
+  const operations = unwrap(operationsQ.data);
+  const payables = list(payablesQ.data);
+  const corporate = list(corporateQ.data);
+  const procurement = operations.procurement || {};
+  const outstandingPayables = payables.reduce((sum, item) => sum + Number(item.balance ?? item.outstanding ?? item.amount ?? 0), 0);
+  const corporateExposure = corporate.reduce((sum, item) => sum + Number(item.outstandingBalance ?? item.currentBalance ?? item.balance ?? 0), 0);
   const cards = [
-    {
-      title: "Total Revenue",
-      value: `KES ${revenue.toLocaleString()}`,
-    },
-    {
-      title: "Net Revenue",
-      value: `KES ${netRevenue.toLocaleString()}`,
-    },
-    {
-      title: "Refunded",
-      value: `KES ${refunded.toLocaleString()}`,
-    },
-    {
-      title: "Paid Bookings",
-      value: paidBookings,
-    },
-    {
-      title: "Pending Payments",
-      value: pendingPayments,
-    },
-    {
-      title: "Failed Payments",
-      value: failedPayments,
-    },
+    ["Gross Revenue", money(finance.revenue), Banknote],
+    ["Net Revenue", money(finance.netRevenue), Wallet],
+    ["Refunded", money(finance.refundedAmount), Receipt],
+    ["Supplier Payables", money(outstandingPayables || procurement.outstandingPayables), Building2],
+    ["Corporate Exposure", money(corporateExposure || procurement.corporateExposure), CreditCard],
+    ["Commissions", money(finance.commission), Calculator],
   ];
-
-  return (
-    <section className="p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">
-          Finance Dashboard
-        </h1>
-
-        <p className="mt-2 text-gray-600">
-          Financial overview and payment activity.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        {cards.map((card) => (
-          <div
-            key={card.title}
-            className="rounded-lg bg-white p-6 shadow"
-          >
-            <p className="text-sm text-gray-500">
-              {card.title}
-            </p>
-
-            <p className="mt-2 text-2xl font-bold">
-              {card.value}
-            </p>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
+  const loading = [financeQ, operationsQ, payablesQ, corporateQ].some((query) => query.isLoading);
+  const errors = [financeQ, operationsQ, payablesQ, corporateQ].filter((query) => query.isError).length;
+  return <div className="space-y-8">
+    <header><p className="text-sm font-semibold uppercase tracking-wider text-emerald-700">Finance & Accounting</p><h1 className="text-3xl font-black text-slate-900">Accounting & Finance Center</h1><p className="mt-2 max-w-3xl text-slate-500">Your implemented finance, procurement liability, corporate receivable and compliance workflows are now visible from one dashboard.</p></header>
+    {errors > 0 && <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">{errors} finance data source{errors > 1 ? "s" : ""} could not be loaded. Available figures are still displayed.</div>}
+    {loading && <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-500">Refreshing accounting data...</div>}
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{cards.map(([title, value, Icon]) => <div key={title} className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200"><div className="flex items-center justify-between"><span className="text-sm text-slate-500">{title}</span><Icon size={19} className="text-emerald-700"/></div><p className="mt-3 text-2xl font-black text-slate-900">{value}</p></div>)}</div>
+    <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200"><div className="flex items-center justify-between gap-3"><div><p className="text-sm font-semibold uppercase tracking-wider text-emerald-700">Accounting workspaces</p><h2 className="text-xl font-bold">Open finance modules</h2></div></div><div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">{[["Finance Reports","/admin/finance/reports","Monthly revenue and financial reports"],["M-Pesa Transactions","/admin/finance/transactions","Payment transactions and M-Pesa activity"],["Reconciliation","/admin/finance/reconciliation","Payment matching and exception review"],["Compliance & eTIMS","/admin/compliance","KRA/eTIMS, TRA and ODPC workflow"]].map(([title,path,text])=><Link key={path} to={path} className="rounded-xl border border-slate-200 p-5 transition hover:border-emerald-300 hover:bg-emerald-50/30"><FileBarChart size={21} className="text-emerald-700"/><h3 className="mt-3 font-bold text-slate-900">{title}</h3><p className="mt-1 text-sm text-slate-500">{text}</p><span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-emerald-700">Open <ArrowRight size={14}/></span></Link>)}</div></section>
+    <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200"><h2 className="text-xl font-bold">Implemented accounting-related workflows</h2><div className="mt-4 grid gap-3 md:grid-cols-2"><p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">✓ Revenue, net revenue, refunds and payment status</p><p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">✓ Supplier payables and procurement exposure</p><p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">✓ Corporate receivable exposure and credit controls</p><p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">✓ Tour costing and profitability records</p><p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">✓ Commission tracking and reconciliation</p><p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">✓ Tax profile, invoice eTIMS status and compliance workflow</p></div><div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800"><strong>Important:</strong> this is the accounting/finance control surface for the functionality currently implemented. A full double-entry general ledger, trial balance, balance sheet and cash-flow accounting engine is still a separate accounting implementation and is not being falsely presented as complete.</div></section>
+  </div>;
 }
