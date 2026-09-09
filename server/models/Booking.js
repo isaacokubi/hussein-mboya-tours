@@ -1,13 +1,6 @@
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
-import Invoice from "./Invoice.js";
-
-/*
-|--------------------------------------------------------------------------
-| TRAVELER SCHEMA
-|--------------------------------------------------------------------------
-*/
 
 const travelerSchema = new mongoose.Schema(
   {
@@ -53,95 +46,82 @@ const bookingSchema = new mongoose.Schema(
     externalSource: { type: String, trim: true, default: undefined },
     externalBookingId: { type: String, trim: true, default: undefined },
     integrationKeyId: { type: mongoose.Schema.Types.ObjectId, ref: "WebsiteIntegrationKey", default: null },
-    tour: { type: mongoose.Schema.Types.ObjectId, ref: "Tour", default: null },
-    travelDate: Date,
-    returnDate: Date,
+    externalMetadata: { type: mongoose.Schema.Types.Mixed, default: {} },
+    tour: { type: mongoose.Schema.Types.ObjectId, ref: "Tour", required: false, default: null, index: true },
+    travelDate: { type: Date, required: true },
+    originalTravelDate: { type: Date, default: null },
+    rescheduleHistory: [{
+      fromDate: { type: Date },
+      toDate: { type: Date },
+      reason: { type: String, default: "" },
+      requestedAt: { type: Date, default: Date.now },
+    }],
+    rescheduleCount: { type: Number, default: 0, min: 0 },
     travelers: { type: [travelerSchema], default: [] },
-    emergencyContact: { type: emergencyContactSchema, default: null },
-    totalAmount: { type: Number, required: true, min: 0 },
+    numberOfGuests: { type: Number, default: 1, min: 1 },
+    pickupLocation: { type: String, trim: true, default: "" },
+    pickupTime: Date,
+    hotelName: { type: String, trim: true, default: "" },
+    roomNumber: { type: String, trim: true, default: "" },
+    emergencyContact: emergencyContactSchema,
+    specialRequests: [{ type: String, trim: true }],
+    assignedGuide: { type: mongoose.Schema.Types.ObjectId, ref: "Staff", default: null },
+    assignedDriver: { type: mongoose.Schema.Types.ObjectId, ref: "Staff", default: null },
+    assignedVehicle: { type: mongoose.Schema.Types.ObjectId, ref: "Vehicle", default: null },
+    assigned: { type: Boolean, default: false },
     subtotal: { type: Number, default: 0, min: 0 },
     discountAmount: { type: Number, default: 0, min: 0 },
     taxAmount: { type: Number, default: 0, min: 0 },
-    depositAmount: { type: Number, default: 0, min: 0 },
-    balanceAmount: { type: Number, default: 0, min: 0 },
-    paymentStatus: { type: String, default: "pending" },
-    paymentMethod: { type: String, default: "MPESA" },
-    paymentReference: { type: String, default: "", trim: true },
-    transactionId: { type: String, default: "", trim: true },
-    mpesaReceipt: { type: String, default: "", trim: true },
-    payments: [{ type: mongoose.Schema.Types.ObjectId, ref: "Payment" }],
-    paidAt: { type: Date, default: null },
-    status: { type: String, default: "pending" },
-    refundStatus: { type: String, default: "none" },
-    refundAmount: { type: Number, default: 0, min: 0 },
+    serviceFee: { type: Number, default: 0, min: 0 },
+    couponUsed: { type: String, trim: true, default: "" },
+    totalAmount: { type: Number, required: true, min: 0 },
     commissionRate: { type: Number, default: 0, min: 0, max: 100 },
     commissionAmount: { type: Number, default: 0, min: 0 },
-    commissionStatus: { type: String, default: "pending" },
-    assignedGuide: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
-    assignedDriver: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
-    assignedVehicle: { type: mongoose.Schema.Types.ObjectId, ref: "Vehicle", default: null },
-    cancellationReason: { type: String, default: "", trim: true },
+    commissionStatus: { type: String, enum: ["pending", "approved", "paid", "cancelled"], default: "pending" },
+    commissionPaidAt: { type: Date, default: null },
+    depositAmount: { type: Number, default: 0, min: 0 },
+    balanceAmount: { type: Number, default: 0, min: 0 },
+    paymentMethod: { type: String, enum: ["MPESA", "CARD", "PAYPAL", "BANK_TRANSFER", "CASH"], default: "MPESA" },
+    paymentStatus: { type: String, enum: ["pending", "partial", "paid", "failed", "cancelled", "refunded"], default: "pending", index: true },
+    transactionId: { type: String, trim: true },
+    paymentReference: { type: String, trim: true },
+    mpesaReceipt: { type: String, trim: true, default: "" },
+    payments: [{ type: mongoose.Schema.Types.ObjectId, ref: "Payment" }],
+    refundAmount: { type: Number, default: 0, min: 0 },
+    refundStatus: { type: String, enum: ["none", "requested", "approved", "processing", "completed", "rejected"], default: "none" },
+    refundReason: { type: String, default: "" },
+    status: { type: String, enum: ["pending", "confirmed", "assigned", "ongoing", "completed", "cancelled", "refunded"], default: "pending", index: true },
+    cancellationReason: { type: String, default: "" },
     cancelledAt: { type: Date, default: null },
+    confirmedAt: { type: Date, default: null },
     completedAt: { type: Date, default: null },
-    isDeleted: { type: Boolean, default: false },
+    notes: { type: String, default: "" },
+    documents: [{ name: String, url: String, type: String, uploadedAt: { type: Date, default: Date.now } }],
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    isDeleted: { type: Boolean, default: false, index: true },
   },
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } },
 );
 
 bookingSchema.pre("save", function(next) {
-  if (!this.bookingNumber) this.bookingNumber = `BK-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
-
-  const total = Math.max(0, Number(this.totalAmount || 0));
-  const deposit = Math.min(total, Math.max(0, Number(this.depositAmount || 0)));
-  this.depositAmount = deposit;
-  this.balanceAmount = Math.max(0, total - deposit);
-
-  if (this.paymentStatus === "paid" || this.balanceAmount <= 0 && deposit > 0 && total > 0) {
-    this.paymentStatus = "paid";
-    this.depositAmount = total;
-    this.balanceAmount = 0;
-    this.paidAt = this.paidAt || new Date();
-  } else if (deposit > 0) {
-    this.paymentStatus = "partial";
-  } else if (!["failed", "cancelled", "refunded"].includes(this.paymentStatus)) {
-    this.paymentStatus = "pending";
+  if (!this.bookingNumber) {
+    this.bookingNumber = "BK-" + Date.now() + "-" + Math.floor(Math.random() * 10000);
   }
 
-  if (this.status === "cancelled" && !this.cancelledAt) this.cancelledAt = new Date();
+  if (this.isModified("status") && this.status === "confirmed" && !this.confirmedAt) {
+    this.confirmedAt = new Date();
+  }
+
+  if (this.isModified("status") && this.status === "completed" && !this.completedAt) {
+    this.completedAt = new Date();
+  }
+
+  if (this.isModified("status") && this.status === "cancelled" && !this.cancelledAt) {
+    this.cancelledAt = new Date();
+  }
+
   next();
-});
-
-/* Keep the tenant invoice synchronized whenever booking financial state changes.
- * This updates an existing invoice only; invoice creation remains explicit so
- * booking creation cannot unexpectedly create financial records. */
-bookingSchema.post("save", async function(doc, next) {
-  try {
-    if (!doc.tenantId) return next();
-
-    const session = typeof doc.$session === "function" ? doc.$session() : null;
-    const invoiceQuery = Invoice.findOne({ tenantId: doc.tenantId, booking: doc._id });
-    if (session) invoiceQuery.session(session);
-    const invoice = await invoiceQuery;
-    if (!invoice) return next();
-
-    const total = Math.max(0, Number(doc.totalAmount || 0));
-    const paid = Math.min(total, Math.max(0, Number(doc.depositAmount || 0)));
-    invoice.amountPaid = paid;
-    invoice.balance = Math.max(0, total - paid);
-
-    if (doc.status === "refunded" || doc.paymentStatus === "refunded") invoice.status = "refunded";
-    else if (invoice.balance <= 0 && total > 0) invoice.status = "paid";
-    else if (paid > 0) invoice.status = "partial";
-    else invoice.status = "pending";
-
-    if (doc.paymentMethod) invoice.paymentMethod = String(doc.paymentMethod).toUpperCase() === "BANK" ? "BANK_TRANSFER" : doc.paymentMethod;
-    if (doc.paymentReference || doc.transactionId) invoice.paymentReference = doc.paymentReference || doc.transactionId;
-
-    await invoice.save(session ? { session } : undefined);
-    return next();
-  } catch (error) {
-    return next(error);
-  }
 });
 
 bookingSchema.virtual("remainingBalance").get(function () { return Math.max(0, this.totalAmount - this.depositAmount); });
@@ -177,7 +157,9 @@ bookingSchema.index({ customer: 1, travelDate: 1 });
 bookingSchema.index({ tour: 1, travelDate: 1 });
 
 bookingSchema.pre("validate", function(next) {
-  if (!this.tour && !this.customTourRequest) return next(new Error("Booking must have either a tour or a custom tour request."));
+  if (!this.tour && !this.customTourRequest) {
+    return next(new Error("Booking must have either a tour or a custom tour request."));
+  }
   next();
 });
 
