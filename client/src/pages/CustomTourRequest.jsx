@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createCustomTourRequest } from "../api/customTourApi";
-
 
 const initialForm = {
   destination: "",
@@ -30,6 +29,7 @@ const formatDate = (value) => {
 
 export default function CustomTourRequest() {
   const [form, setForm] = useState(initialForm);
+  const queryClient = useQueryClient();
 
   const endDate = useMemo(() => {
     if (!form.startDate) return "";
@@ -42,7 +42,8 @@ export default function CustomTourRequest() {
 
   const mutation = useMutation({
     mutationFn: createCustomTourRequest,
-    onSuccess: () => {
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["my-custom-tours"] });
       alert("Request submitted. The company will notify you with the total cost.");
       setForm(initialForm);
     },
