@@ -2,7 +2,7 @@ import Payment from "../models/Payment.js";
 import Booking from "../models/Booking.js";
 import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import { queryStkPush, classifyStkQueryResult } from "../services/mpesaQueryService.js";
-import { completeBookingPayment, failBookingPayment } from "../services/paymentLifecycleService.js";
+import { failBookingPayment } from "../services/paymentLifecycleService.js";
 
 const isStaff = (user) => {
   const role = String(user?.roleId?.name || user?.role || user?.legacyRole || "").toLowerCase().replace(/[\s_-]/g, "");
@@ -19,19 +19,15 @@ export const queryMpesaPayment = async (req, res, next) => {
 
     const payment = await Payment.findOne(mergeTenantFilter(req, { $or: [{ checkoutRequestID }, { checkoutRequestId: checkoutRequestID }] }));
     if (!payment) return res.status(404).json({ success: false, message: "Payment request not found." });
-
     const booking = await Booking.findById(payment.booking);
     if (!booking) return res.status(404).json({ success: false, message: "Booking not found." });
     if (!canAccess(booking, req.user)) return res.status(403).json({ success: false, message: "You do not have permission to query this payment." });
 
-    if (["completed", "failed", "cancelled", "refunded"].includes(payment.status)) {
-      return res.json({ success: true, data: { status: payment.status, payment, providerQueried: false } });
-    }
+    if (["completed", "failed", "cancelled", "refunded"].includes(payment.status)) return res.json({ success: true, data: { status: payment.status, payment, providerQueried: false } });
 
     const providerResponse = await queryStkPush(checkoutRequestID);
     const resultCode = String(providerResponse?.ResultCode ?? "");
     const classified = classifyStkQueryResult(resultCode);
-
     payment.providerQueryResponse = providerResponse;
     payment.providerResultCode = resultCode;
     payment.lastQueriedAt = new Date();
@@ -52,7 +48,5 @@ export const queryMpesaPayment = async (req, res, next) => {
     }
 
     return res.json({ success: true, data: { status: classified === "pending" ? payment.status : classified, providerQueried: true, providerResponse, payment } });
-  } catch (error) {
-    next(error);
-  }
+  } catch (error) { next(error); }
 };
