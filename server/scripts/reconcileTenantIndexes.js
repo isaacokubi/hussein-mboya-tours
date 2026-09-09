@@ -4,6 +4,7 @@ import Invoice from "../models/Invoice.js";
 import Payment from "../models/Payment.js";
 import Expense from "../models/Expense.js";
 import CreditDebitNote from "../models/CreditDebitNote.js";
+import Commission from "../models/Commission.js";
 
 // These are indexes whose ownership/uniqueness changed from global to tenant-scoped.
 // The tenant-scoped names are included too so a failed migration can be safely rerun.
@@ -32,6 +33,10 @@ const indexesToReplace = {
     "noteNumber_1",
     "tenantId_1_noteNumber_1",
   ],
+  commissions: [
+    "booking_1",
+    "tenantId_1_booking_1",
+  ],
 };
 
 async function dropIfPresent(collectionName, names) {
@@ -54,11 +59,13 @@ async function main() {
   await dropIfPresent("payments", indexesToReplace.payments);
   await dropIfPresent("expenses", indexesToReplace.expenses);
   await dropIfPresent("creditdebitnotes", indexesToReplace.creditdebitnotes);
+  await dropIfPresent("commissions", indexesToReplace.commissions);
 
   await Invoice.createIndexes();
   await Payment.createIndexes();
   await Expense.createIndexes();
   await CreditDebitNote.createIndexes();
+  await Commission.createIndexes();
 
   console.log("Tenant-scoped finance/payment indexes reconciled successfully.");
 }
