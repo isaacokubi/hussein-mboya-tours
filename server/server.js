@@ -13,6 +13,7 @@ import { startTenantSubscriptionScheduler } from "./services/tenantSubscriptionS
 import { startCustomerCommunicationScheduler } from "./services/customerCommunicationScheduler.js";
 import { enqueueDueEtimsInvoices } from "./services/etimsService.js";
 import { startJobWorker } from "./services/jobWorkerService.js";
+import { startDataRetentionScheduler } from "./services/dataRetentionService.js";
 
 const DB_READY = 1;
 const TASK_RETRY_MS = 60 * 1000;
@@ -55,6 +56,7 @@ export { io };
 const subscriptionInterval = startTenantSubscriptionScheduler();
 const communicationInterval = startCustomerCommunicationScheduler();
 const stopJobWorker = startJobWorker();
+const retentionScheduler = startDataRetentionScheduler();
 
 const runEtimsDispatcher = () => runNonCriticalTask("eTIMS dispatcher", enqueueDueEtimsInvoices);
 const runLifecycleSync = () => runNonCriticalTask("Tour lifecycle sync", syncTourLifecycle);
@@ -79,6 +81,7 @@ const shutdown = async (exitCode = 0) => {
   clearInterval(subscriptionInterval);
   clearInterval(communicationInterval);
   clearInterval(etimsInterval);
+  clearInterval(retentionScheduler.interval);
   stopJobWorker();
   try {
     await new Promise((resolve) => {
@@ -100,6 +103,7 @@ server.listen(env.PORT, () => {
   console.log(`Server running on port ${env.PORT}`);
   void runEtimsDispatcher();
   void runLifecycleSync();
+  void retentionScheduler.run();
   startPaymentCleanupScheduler();
 });
 
