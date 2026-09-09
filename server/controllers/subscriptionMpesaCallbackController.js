@@ -2,12 +2,18 @@ import SubscriptionPayment from "../models/SubscriptionPayment.js";
 import { activateTenantSubscription } from "../services/tenantSubscriptionService.js";
 import { mpesaCallback } from "./mpesaController.js";
 
+const resolvedTenantId = (req) => String(req.tenantId || req.tenant?.tenantId || req.tenant?.id || "").trim();
+
 export const subscriptionMpesaCallback = async (req, res) => {
   try {
     const stkCallback = req.body?.Body?.stkCallback;
     const checkoutRequestID = String(stkCallback?.CheckoutRequestID || stkCallback?.checkoutRequestID || stkCallback?.checkoutRequestId || "").trim();
     if (!checkoutRequestID) return mpesaCallback(req, res);
-    const payment = await SubscriptionPayment.findOne({ checkoutRequestID });
+
+    const tenantId = resolvedTenantId(req);
+    if (!tenantId) return mpesaCallback(req, res);
+
+    const payment = await SubscriptionPayment.findOne({ tenantId, checkoutRequestID });
     if (!payment) return mpesaCallback(req, res);
     if (["completed", "failed", "cancelled"].includes(payment.status)) return res.json({ ResultCode: 0, ResultDesc: "Already processed" });
 
@@ -33,6 +39,9 @@ export const subscriptionMpesaCallback = async (req, res) => {
     }
 
     payment.mpesaReceiptNumber = receipt;
+    payment.transactionReference = receipt;
+    payment.paidAt = new Date();
+    payment.status = "completed";
     payment.metadata = { ...(payment.metadata || {}), callbackResponse: stkCallback, amount: paidAmount, phoneNumber: value("PhoneNumber") || payment.phoneNumber };
     await activateTenantSubscription({ tenantId: payment.tenantId, plan: payment.plan, provider: "mpesa", periodDays: payment.periodDays || 30, payment, transactionReference: receipt });
     return res.json({ ResultCode: 0, ResultDesc: "Accepted" });
