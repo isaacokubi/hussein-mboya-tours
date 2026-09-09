@@ -31,6 +31,9 @@
     "swiper": "^14.0.6",
     "tailwindcss": "^4.3.3"
   },
+  "overrides": {
+    "esbuild": ">=0.28.1"
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@rollup/wasm-node": "^4.62.3",
