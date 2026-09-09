@@ -1,110 +1,47 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
-
 import axios from "axios";
+import { getTenantMpesaConfig, getTenantMpesaUrls } from "./paymentGatewayService.js";
 
-
-const getAccessToken = async()=>{
-
-const consumerKey =
-process.env.MPESA_CONSUMER_KEY;
-
-const consumerSecret =
-process.env.MPESA_CONSUMER_SECRET;
-
-
-const auth =
-Buffer
-.from(
-`${consumerKey}:${consumerSecret}`
-)
-.toString("base64");
-
-
-const response =
-await axios.get(
-"https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
-{
-headers:{
-Authorization:`Basic ${auth}`
-}
-}
-);
-
-
-return response.data.access_token;
-
+const getAccessToken = async (config, urls) => {
+  const auth = Buffer.from(`${config.consumerKey}:${config.consumerSecret}`).toString("base64");
+  const response = await axios.get(urls.auth, {
+    headers: { Authorization: `Basic ${auth}` },
+    timeout: 15000,
+  });
+  return response.data.access_token;
 };
 
+export const requestMpesaRefund = async ({ amount, phone, transactionId }) => {
+  const config = await getTenantMpesaConfig();
+  const urls = getTenantMpesaUrls(config);
 
+  if (!config.initiatorName || !config.securityCredential) {
+    throw new Error("Tenant M-Pesa refund credentials are not configured.");
+  }
 
-export const requestMpesaRefund = async({
-amount,
-phone,
-transactionId
-})=>{
+  if (!config.callbackUrl) {
+    throw new Error("Tenant M-Pesa callback URL is not configured.");
+  }
 
+  const token = await getAccessToken(config, urls);
 
-const token =
-await getAccessToken();
+  const response = await axios.post(
+    urls.b2c,
+    {
+      InitiatorName: config.initiatorName,
+      SecurityCredential: config.securityCredential,
+      CommandID: "BusinessPayment",
+      Amount: Number(amount),
+      PartyA: config.shortcode,
+      PartyB: phone,
+      Remarks: `Refund ${transactionId}`,
+      QueueTimeOutURL: `${config.callbackUrl.replace(/\/$/, "")}/refund/timeout`,
+      ResultURL: `${config.callbackUrl.replace(/\/$/, "")}/refund/result`,
+    },
+    {
+      headers: { Authorization: `Bearer ${token}` },
+      timeout: 20000,
+    }
+  );
 
-
-const response =
-await axios.post(
-
-"https://sandbox.safaricom.co.ke/mpesa/b2c/v1/paymentrequest",
-
-{
-
-InitiatorName:
-process.env.MPESA_INITIATOR_NAME,
-
-
-SecurityCredential:
-process.env.MPESA_SECURITY_CREDENTIAL,
-
-
-CommandID:
-"BusinessPayment",
-
-
-Amount:
-amount,
-
-
-PartyA:
-process.env.MPESA_SHORTCODE,
-
-
-PartyB:
-phone,
-
-
-Remarks:
-`Refund ${transactionId}`,
-
-
-QueueTimeOutURL:
-`${process.env.MPESA_CALLBACK_URL}/refund/timeout`,
-
-
-ResultURL:
-`${process.env.MPESA_CALLBACK_URL}/refund/result`
-
-
-},
-
-{
-
-headers:{
-Authorization:`Bearer ${token}`
-}
-
-}
-
-);
-
-
-return response.data;
-
-
+  return response.data;
 };
