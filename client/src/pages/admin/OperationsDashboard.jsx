@@ -5,7 +5,7 @@ import { getCorporateAccounts, getPurchaseOrders, getResourceConflicts, getSuppl
 import OperationsActionCenter from "../../components/admin/OperationsActionCenter";
 import TravelOperationsCenter from "../../components/admin/TravelOperationsCenter";
 const asList=(value)=>Array.isArray(value)?value:value?.items||value?.data||[]; const money=(value)=>`KES ${Number(value||0).toLocaleString()}`;
-const tourCostValue=(x)=>Number(x.totalCost??x.amount??x.total??(Number(x.quantity||1)*Number(x.unitCost||0))||0);
+const tourCostValue=(x)=>Number(x.totalCost??x.amount??x.total??(Number(x.quantity||1)*Number(x.unitCost||0)));
 export default function OperationsDashboard(){
  const {data,isLoading,isError}=useQuery({queryKey:["operations-overview"],queryFn:getOperationsOverview,refetchInterval:60000}); const moduleQueries=useQueries({queries:[
   {queryKey:["operations-suppliers"],queryFn:getSuppliers,staleTime:30000},{queryKey:["operations-purchase-orders"],queryFn:getPurchaseOrders,staleTime:30000},{queryKey:["operations-tour-costs"],queryFn:getTourCosts,staleTime:30000},{queryKey:["operations-payables"],queryFn:getSupplierPayables,staleTime:30000},{queryKey:["operations-corporate"],queryFn:getCorporateAccounts,staleTime:30000},{queryKey:["operations-conflicts"],queryFn:getResourceConflicts,staleTime:30000}]});
