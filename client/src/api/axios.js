@@ -20,9 +20,9 @@ function isPlatformDeployment() {
 const PLATFORM_API_URL = configuredPlatformApiUrl || "https://hussein-mboya-tours.onrender.com/api";
 
 // Local development must always use the local Vite proxy. This prevents a
-developer machine from silently displaying stale data from a deployed API
-when VITE_API_URL happens to contain a production URL. Deployed builds keep
-using their configured API endpoint exactly as before.
+// developer machine from silently displaying stale data from a deployed API
+// when VITE_API_URL happens to contain a production URL. Deployed builds keep
+// using their configured API endpoint exactly as before.
 export const baseURL = isLocalHost()
   ? "/api"
   : (isPlatformDeployment()
