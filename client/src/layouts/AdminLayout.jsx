@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { Activity, BarChart3, Bell, Bot, Car, CalendarCheck, CreditCard, FileBarChart, FileText, Handshake, Image, LayoutDashboard, Map, Menu, PackageCheck, Receipt, Settings, Shield, Smartphone, Star, Tag, UserCog, Users, Wallet, X, Code2 } from "lucide-react";
+import { Activity, BarChart3, Bell, Bot, Car, CalendarCheck, CreditCard, FileBarChart, FileText, Handshake, Image, LayoutDashboard, Map, Menu, PackageCheck, PlusCircle, Receipt, Settings, Shield, Smartphone, Star, Tag, UserCog, Users, Wallet, X, Code2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useSettings } from "../context/SettingsContext";
 import { getUserRole } from "../utils/roleUtils";
@@ -16,7 +16,7 @@ const MENU = [
   ["Reports", "/admin/reports", FileText, "analytics.view"], ["Analytics", "/admin/analytics", BarChart3, "analytics.view"],
   ["Accounting & Finance", "/admin/finance", Wallet, "finance.view"], ["M-Pesa Transactions", "/admin/finance/transactions", Smartphone, "payment.manage"], ["Finance Reports", "/admin/finance/reports", FileBarChart, "finance.view"], ["Reconciliation", "/admin/finance/reconciliation", Receipt, "finance.view"],
   ["Compliance & eTIMS", "/admin/compliance", Shield, "finance.view"], ["AI Tools", "/admin/ai", Bot, "analytics.view"], ["Notifications", "/admin/notifications", Bell, "notifications.view"],
-  ["Roles & Permissions", "/admin/rbac", Shield, "roles.manage"], ["System Health", "/admin/system-health", Activity, "admin.dashboard"], ["Billing & Subscription", "/admin/billing", CreditCard, "settings.manage"], ["Developer Platform", "/admin/developer-platform", Code2, "settings.manage"], ["Settings", "/admin/settings", Settings, "settings.manage"],
+  ["Roles & Permissions", "/admin/rbac", Shield, "roles.manage"], ["System Health", "/admin/system-health", Activity, "admin.dashboard"], ["Billing & Subscription", "/admin/billing", CreditCard, "settings.manage"], ["Developer Platform", "/admin/platform-architecture", Code2, "settings.manage"], ["Settings", "/admin/settings", Settings, "settings.manage"],
 ];
 
 export default function AdminLayout() {
