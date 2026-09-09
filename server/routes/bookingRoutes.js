@@ -3,6 +3,7 @@ import { resolveTenant } from "../middleware/tenantMiddleware.js";
 
 import express from "express";
 import { getBooking, cancelBooking, rescheduleBooking, getAllBookings, getConfirmedBookings, updateBookingStatus } from "../controllers/bookingController.js";
+import { getBookingById as getBookingByIdOptimized } from "../controllers/bookingRetrievalController.js";
 import { getCustomerBookings } from "../controllers/customerDashboardController.js";
 import { updateBookingTravelDate } from "../controllers/bookingTravelDateController.js";
 import { createCustomerBooking } from "../controllers/customerBookingController.js";
@@ -24,5 +25,5 @@ router.get("/confirmed", managerOnly, getConfirmedBookings);
 router.get("/admin", managerOnly, getAllBookings);
 router.get("/admin/all", adminOnly, getAllBookings);
 router.put("/:id/status", adminOnly, requireFullPaymentForTrip, updateBookingStatus);
-router.get("/:id", getBooking);
+router.get("/:id", getBookingByIdOptimized);
 export default router;
