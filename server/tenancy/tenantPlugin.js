@@ -30,10 +30,19 @@ function isPlatformOwnerDocument(document) {
 function mergeTenantFilter(query) {
   const tenantId = requireTenantId();
   if (!tenantId) return;
-  const filter = { [TENANT_PATH]: tenantObjectId() };
   const current = query.getFilter?.() || {};
-  if (current[TENANT_PATH]) assertTenantValue(current[TENANT_PATH], tenantId, "Cross-tenant query rejected.");
-  query.setQuery({ $and: [current, filter] });
+  if (current[TENANT_PATH]) {
+    assertTenantValue(current[TENANT_PATH], tenantId, "Cross-tenant query rejected.");
+    return;
+  }
+
+  // Keep tenantId as a direct equality predicate instead of wrapping the
+  // entire filter in $and. MongoDB's upsert path inference can otherwise see
+  // tenantId both inside the generated $and predicate and $setOnInsert and
+  // fail with: "cannot infer query fields to set, path 'tenantId' is matched
+  // twice". A direct predicate preserves tenant isolation while remaining
+  // compatible with tenant-scoped upserts.
+  query.setQuery({ ...current, [TENANT_PATH]: tenantObjectId() });
 }
 
 function enforceUpdateTenant(update, tenantId) {
@@ -54,9 +63,7 @@ function enforceUpdateTenant(update, tenantId) {
           ? unset.includes(TENANT_PATH)
           : Boolean(unset && unset[TENANT_PATH] != null);
 
-      if (attemptsToUnset) {
-        throw new Error("Cross-tenant tenantId removal rejected.");
-      }
+      if (attemptsToUnset) throw new Error("Cross-tenant tenantId removal rejected.");
     }
     return;
   }
@@ -71,13 +78,8 @@ function enforceUpdateTenant(update, tenantId) {
   update.$setOnInsert ||= {};
   update.$setOnInsert[TENANT_PATH] = tenantId;
 
-  if (update.$unset?.[TENANT_PATH]) {
-    delete update.$unset[TENANT_PATH];
-  }
-
-  if (update[TENANT_PATH]) {
-    delete update[TENANT_PATH];
-  }
+  if (update.$unset?.[TENANT_PATH]) delete update.$unset[TENANT_PATH];
+  if (update[TENANT_PATH]) delete update[TENANT_PATH];
 }
 
 function enforceReplacementTenant(replacement, tenantId) {
@@ -91,9 +93,8 @@ function enforceBulkWriteTenant(operations, tenantId) {
   for (const operation of operations) {
     if (operation.insertOne?.document) {
       const document = operation.insertOne.document;
-      if (isPlatformOwnerDocument(document)) {
-        document[TENANT_PATH] = null;
-      } else {
+      if (isPlatformOwnerDocument(document)) document[TENANT_PATH] = null;
+      else {
         assertTenantValue(document[TENANT_PATH], tenantId);
         document[TENANT_PATH] = tenantId;
       }
@@ -128,9 +129,7 @@ function enforceLookupStage(stage, tenantId) {
   if (firstMatch?.[TENANT_PATH]) {
     assertTenantValue(firstMatch[TENANT_PATH], tenantId, "Cross-tenant lookup rejected.");
     firstMatch[TENANT_PATH] = tenantMatch[TENANT_PATH];
-  } else {
-    lookup.pipeline.unshift({ $match: tenantMatch });
-  }
+  } else lookup.pipeline.unshift({ $match: tenantMatch });
 }
 
 function enforceUnionStage(stage, tenantId) {
@@ -158,46 +157,20 @@ function enforceGraphLookupStage(stage, tenantId) {
 export function tenantPlugin(schema, options = {}) {
   if (schema[TENANT_PLUGIN_MARKER]) return;
 
-  Object.defineProperty(schema, TENANT_PLUGIN_MARKER, {
-    value: true,
-    enumerable: false,
-    configurable: false,
-  });
+  Object.defineProperty(schema, TENANT_PLUGIN_MARKER, { value: true, enumerable: false, configurable: false });
 
-  // Global/platform collections must never inherit tenant query filters or
-  // tenant-prefixed uniqueness. Callers should opt in explicitly with
-  // tenantPlugin(schema, { global: true }). This prevents global records such
-  // as organizations, permissions, and currencies from becoming accidentally
-  // tenant-scoped while still allowing the same plugin to be reused safely.
   if (options.global === true) return;
 
   if (!schema.path(TENANT_PATH)) {
-    schema.add({
-      [TENANT_PATH]: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Organization",
-        default: null,
-        index: true,
-        immutable: true,
-      },
-    });
+    schema.add({ [TENANT_PATH]: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", default: null, index: true, immutable: true } });
   }
 
-  // Prevent Mongoose duplicate-index warnings when a schema declares both
-  // a field-level `index: true` and an equivalent explicit schema.index().
-  // Keep the explicit index definition as the single source of truth.
   const declaredIndexes = schema.indexes();
-  const singleFieldIndexes = new Set(
-    declaredIndexes
-      .filter(([keys]) => Object.keys(keys || {}).length === 1)
-      .map(([keys]) => Object.keys(keys)[0])
-  );
+  const singleFieldIndexes = new Set(declaredIndexes.filter(([keys]) => Object.keys(keys || {}).length === 1).map(([keys]) => Object.keys(keys)[0]));
 
   for (const [pathName, path] of Object.entries(schema.paths || {})) {
     if (pathName === TENANT_PATH) continue;
-    if (path?.options?.index === true && singleFieldIndexes.has(pathName)) {
-      path.options.index = false;
-    }
+    if (path?.options?.index === true && singleFieldIndexes.has(pathName)) path.options.index = false;
   }
 
   for (const path of Object.values(schema.paths || {})) {
@@ -215,7 +188,6 @@ export function tenantPlugin(schema, options = {}) {
         this.tenantId = null;
         return next();
       }
-
       const tenantId = requireTenantId();
       if (!tenantId) return next();
       assertTenantValue(this.tenantId, tenantId);
@@ -229,9 +201,8 @@ export function tenantPlugin(schema, options = {}) {
       const tenantId = requireTenantId();
       if (!tenantId) return next();
       for (const doc of docs || []) {
-        if (isPlatformOwnerDocument(doc)) {
-          doc[TENANT_PATH] = null;
-        } else {
+        if (isPlatformOwnerDocument(doc)) doc[TENANT_PATH] = null;
+        else {
           assertTenantValue(doc?.[TENANT_PATH], tenantId);
           if (doc) doc[TENANT_PATH] = tenantId;
         }
@@ -246,13 +217,8 @@ export function tenantPlugin(schema, options = {}) {
         const tenantId = requireTenantId();
         if (!tenantId) return next();
         mergeTenantFilter(this);
-        if (["findOneAndUpdate", "updateOne", "updateMany"].includes(hook)) {
-          enforceUpdateTenant(this.getUpdate?.(), tenantId);
-        }
-
-        if (["findOneAndReplace", "replaceOne"].includes(hook)) {
-          enforceReplacementTenant(this.getUpdate?.(), tenantId);
-        }
+        if (["findOneAndUpdate", "updateOne", "updateMany"].includes(hook)) enforceUpdateTenant(this.getUpdate?.(), tenantId);
+        if (["findOneAndReplace", "replaceOne"].includes(hook)) enforceReplacementTenant(this.getUpdate?.(), tenantId);
         next();
       } catch (error) { next(error); }
     });
@@ -262,14 +228,10 @@ export function tenantPlugin(schema, options = {}) {
     try {
       if (!isTenantBypassed()) {
         requireTenantId();
-        throw new Error(
-          "estimatedDocumentCount() is blocked for tenant-scoped models. Use countDocuments() instead."
-        );
+        throw new Error("estimatedDocumentCount() is blocked for tenant-scoped models. Use countDocuments() instead.");
       }
       next();
-    } catch (error) {
-      next(error);
-    }
+    } catch (error) { next(error); }
   });
 
   schema.pre("bulkWrite", function tenantBulkWrite(next, operations) {
@@ -288,19 +250,14 @@ export function tenantPlugin(schema, options = {}) {
       const pipeline = this.pipeline();
       const match = { [TENANT_PATH]: new mongoose.Types.ObjectId(tenantId) };
 
-      if (pipeline[0]?.$geoNear) {
-        pipeline[0].$geoNear.query = { ...(pipeline[0].$geoNear.query || {}), ...match };
-      } else if (pipeline[0]?.$match) {
+      if (pipeline[0]?.$geoNear) pipeline[0].$geoNear.query = { ...(pipeline[0].$geoNear.query || {}), ...match };
+      else if (pipeline[0]?.$match) {
         const existing = pipeline[0].$match;
         if (existing[TENANT_PATH]) {
           assertTenantValue(existing[TENANT_PATH], tenantId, "Cross-tenant aggregation rejected.");
           existing[TENANT_PATH] = match[TENANT_PATH];
-        } else {
-          pipeline[0] = { $match: { $and: [existing, match] } };
-        }
-      } else {
-        pipeline.unshift({ $match: match });
-      }
+        } else pipeline[0] = { $match: { $and: [existing, match] } };
+      } else pipeline.unshift({ $match: match });
 
       for (const stage of pipeline) {
         enforceLookupStage(stage, tenantId);
