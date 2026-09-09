@@ -1,256 +1,60 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
-// server/controllers/wishlistController.js
-
+import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import mongoose from "mongoose";
-
 import Wishlist from "../models/Wishlist.js";
 import Tour from "../models/Tour.js";
 
-
-/*
-|--------------------------------------------------------------------------
-| GET USER WISHLIST
-|--------------------------------------------------------------------------
-*/
+const wishlistFilter = (req, extra = {}) => mergeTenantFilter(req, { user: req.user._id, ...extra });
+const publicTourMatch = { isDeleted: false, published: true };
 
 export const getWishlist = async (req, res, next) => {
   requireTenantId();
   try {
-    let wishlist = await Wishlist.findOne({
-      user: req.user._id,
-    }).populate({
-      path: "tours",
-      match: {
-        isDeleted: false,
-        published: true,
-      },
-    });
-
-
+    let wishlist = await Wishlist.findOne(wishlistFilter(req)).populate({ path: "tours", match: publicTourMatch });
     if (!wishlist) {
-      wishlist = await Wishlist.create({
-        user: req.user._id,
-        tours: [],
-      });
+      wishlist = await Wishlist.create({ tenantId: req.tenantId, user: req.user._id, tours: [] });
     }
-
-
-    return res.status(200).json({
-      success: true,
-      count: wishlist.tours.length,
-      wishlist: wishlist.tours,
-    });
-
-
-  } catch (error) {
-    next(error);
-  }
+    return res.status(200).json({ success: true, count: wishlist.tours.length, wishlist: wishlist.tours });
+  } catch (error) { next(error); }
 };
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| ADD TOUR TO WISHLIST
-|--------------------------------------------------------------------------
-*/
 
 export const addWishlist = async (req, res, next) => {
+  requireTenantId();
   try {
     const { tourId } = req.body;
+    if (!tourId) return res.status(400).json({ success: false, message: "Tour ID is required" });
+    if (!mongoose.Types.ObjectId.isValid(tourId)) return res.status(400).json({ success: false, message: "Invalid tour ID" });
 
+    const tour = await Tour.findOne(mergeTenantFilter(req, { _id: tourId, ...publicTourMatch }));
+    if (!tour) return res.status(404).json({ success: false, message: "Tour not found" });
 
-    if (!tourId) {
-      return res.status(400).json({
-        success: false,
-        message: "Tour ID is required",
-      });
-    }
-
-
-
-    if (!mongoose.Types.ObjectId.isValid(tourId)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid tour ID",
-      });
-    }
-
-
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | CHECK TOUR EXISTS
-    |--------------------------------------------------------------------------
-    |
-    | Tours use published/isDeleted fields for visibility.
-    | They do not use status:"active".
-    |
-    |--------------------------------------------------------------------------
-    */
-
-    const tour = await Tour.findOne({
-      _id: tourId,
-      isDeleted: false,
-      published: true,
-    });
-
-
-
-    if (!tour) {
-      return res.status(404).json({
-        success: false,
-        message: "Tour not found",
-      });
-    }
-
-
-
-
-    let wishlist = await Wishlist.findOne({
-      user: req.user._id,
-    });
-
-
-
-    if (!wishlist) {
-      wishlist = await Wishlist.create({
-        user: req.user._id,
-        tours: [],
-      });
-    }
-
-
-
-
+    let wishlist = await Wishlist.findOne(wishlistFilter(req));
+    if (!wishlist) wishlist = await Wishlist.create({ tenantId: req.tenantId, user: req.user._id, tours: [] });
 
     await Wishlist.updateOne(
-      {
-        _id: wishlist._id,
-      },
-      {
-        $addToSet: {
-          tours: tourId,
-        },
-      }
+      mergeTenantFilter(req, { _id: wishlist._id }),
+      { $addToSet: { tours: tourId } }
     );
 
-
-
-
-
-    const updatedWishlist = await Wishlist.findById(
-      wishlist._id
-    ).populate({
-      path: "tours",
-      match: {
-        isDeleted: false,
-        published: true,
-      },
-    });
-
-
-
-
-
-    return res.status(200).json({
-      success: true,
-      message: "Tour added to wishlist",
-      count: updatedWishlist.tours.length,
-      wishlist: updatedWishlist.tours,
-    });
-
-
-
-  } catch (error) {
-    next(error);
-  }
+    const updatedWishlist = await Wishlist.findOne(wishlistFilter(req)).populate({ path: "tours", match: publicTourMatch });
+    return res.status(200).json({ success: true, message: "Tour added to wishlist", count: updatedWishlist.tours.length, wishlist: updatedWishlist.tours });
+  } catch (error) { next(error); }
 };
 
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| REMOVE TOUR FROM WISHLIST
-|--------------------------------------------------------------------------
-*/
-
 export const removeWishlist = async (req, res, next) => {
+  requireTenantId();
   try {
     const { tourId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(tourId)) return res.status(400).json({ success: false, message: "Invalid tour ID" });
 
-
-
-    if (!mongoose.Types.ObjectId.isValid(tourId)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid tour ID",
-      });
-    }
-
-
-
-    const wishlist = await Wishlist.findOne({
-      user: req.user._id,
-    });
-
-
-
-    if (!wishlist) {
-      return res.status(404).json({
-        success: false,
-        message: "Wishlist not found",
-      });
-    }
-
-
-
+    const wishlist = await Wishlist.findOne(wishlistFilter(req));
+    if (!wishlist) return res.status(404).json({ success: false, message: "Wishlist not found" });
 
     await Wishlist.updateOne(
-      {
-        _id: wishlist._id,
-      },
-      {
-        $pull: {
-          tours: tourId,
-        },
-      }
+      mergeTenantFilter(req, { _id: wishlist._id }),
+      { $pull: { tours: tourId } }
     );
 
-
-
-
-
-    const updatedWishlist = await Wishlist.findById(
-      wishlist._id
-    ).populate({
-      path: "tours",
-      match: {
-        isDeleted: false,
-        published: true,
-      },
-    });
-
-
-
-
-
-    return res.status(200).json({
-      success: true,
-      message: "Tour removed from wishlist",
-      count: updatedWishlist.tours.length,
-      wishlist: updatedWishlist.tours,
-    });
-
-
-
-  } catch (error) {
-    next(error);
-  }
+    const updatedWishlist = await Wishlist.findOne(wishlistFilter(req)).populate({ path: "tours", match: publicTourMatch });
+    return res.status(200).json({ success: true, message: "Tour removed from wishlist", count: updatedWishlist.tours.length, wishlist: updatedWishlist.tours });
+  } catch (error) { next(error); }
 };
