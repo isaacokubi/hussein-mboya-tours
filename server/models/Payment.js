@@ -88,12 +88,7 @@ paymentSchema.post("save", async function () {
     Commission.findOne({ tenantId: this.tenantId, booking: bookingId, isDeleted: { $ne: true } }, null, queryOptions),
   ]);
 
-  const totalPaid = payments.reduce((sum, payment) => {
-    const amount = Number(payment.amount || 0);
-    const refunded = Number(payment.refundedAmount || 0);
-    return sum + Math.max(0, amount - refunded);
-  }, 0);
-
+  const totalPaid = payments.reduce((sum, payment) => sum + Math.max(0, Number(payment.amount || 0) - Number(payment.refundedAmount || 0)), 0);
   const totalRefunded = payments.reduce((sum, payment) => sum + Math.max(0, Number(payment.refundedAmount || 0)), 0);
 
   if (invoice) {
@@ -101,17 +96,14 @@ paymentSchema.post("save", async function () {
     const amountPaid = Math.min(totalAmount, Math.max(0, totalPaid));
     invoice.amountPaid = amountPaid;
     invoice.balance = Math.max(0, totalAmount - amountPaid);
-
     if (amountPaid <= 0) invoice.status = totalRefunded > 0 ? "refunded" : "pending";
     else if (amountPaid >= totalAmount && totalAmount > 0) invoice.status = "paid";
     else invoice.status = "partial";
-
     const latestPayment = payments.slice().sort((a, b) => Number(new Date(b.updatedAt || 0)) - Number(new Date(a.updatedAt || 0)))[0];
     if (latestPayment) {
       invoice.paymentMethod = latestPayment.paymentMethod || invoice.paymentMethod;
       invoice.paymentReference = latestPayment.mpesaReceiptNumber || latestPayment.transactionReference || latestPayment.transactionId || invoice.paymentReference;
     }
-
     await invoice.save(queryOptions);
   }
 
@@ -122,11 +114,11 @@ paymentSchema.post("save", async function () {
     const nextRefunded = Number(proportionalRefund.toFixed(2));
     if (nextRefunded !== Number(commission.refundedAmount || 0)) {
       commission.refundedAmount = nextRefunded;
-      commission.adjustmentAmount = Math.max(0, Number(commission.amount || 0) - nextRefunded);
+      commission.adjustmentAmount = nextRefunded;
       commission.adjustmentStatus = nextRefunded > 0 ? "posted" : "none";
       commission.adjustmentAt = nextRefunded > 0 ? new Date() : null;
       commission.financeNotes = nextRefunded > 0
-        ? `Commission adjusted by KES ${nextRefunded.toFixed(2)} due to booking refund.`
+        ? `Commission adjustment posted: KES ${nextRefunded.toFixed(2)} due to booking refund.`
         : commission.financeNotes;
       await commission.save(queryOptions);
     }
