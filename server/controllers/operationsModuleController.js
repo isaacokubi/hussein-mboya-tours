@@ -28,5 +28,6 @@ export const paySupplierPayable = async (req, res, next) => { try { return ok(re
 
 export const listCorporateAccounts = async (req, res, next) => { try { return ok(res, await CorporateAccount.find(tenantFilter(req)).sort({ companyName: 1 }).lean()); } catch (e) { return fail(next, e); } };
 export const createCorporateAccount = async (req, res, next) => { try { return ok(res, await operations.createCorporateAccount(req.body, userId(req)), 201); } catch (e) { return fail(next, e); } };
+export const reconcileCorporateAccount = async (req, res, next) => { try { return ok(res, await operations.reconcileCorporateAccountBalance(req.params.id)); } catch (e) { return fail(next, e); } };
 
 export const resourceConflicts = async (req, res, next) => { try { return ok(res, await operations.getResourceConflicts(req.query)); } catch (e) { return fail(next, e); } };
