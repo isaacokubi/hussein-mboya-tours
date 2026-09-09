@@ -1,4 +1,4 @@
-import { requireTenantId } from "../tenancy/context.js";
+import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import Commission from "../models/Commission.js";
 import Agent from "../models/Agent.js";
 import { getSystemSettings } from "./settingsService.js";
@@ -13,10 +13,17 @@ export const createCommission = async (booking) => {
   const tenantId = requireTenantId();
   if (!booking?.agent) return null;
 
-  const existingCommission = await Commission.findOne({ booking: booking._id });
+  // Defense-in-depth: never resolve a commission or agent outside the
+  // tenant currently executing this request, even if tenant middleware/plugin
+  // behavior changes later.
+  const existingCommission = await Commission.findOne(
+    mergeTenantFilter({ booking: booking._id })
+  );
   if (existingCommission) return existingCommission;
 
-  const agent = await Agent.findById(booking.agent);
+  const agent = await Agent.findOne(
+    mergeTenantFilter({ _id: booking.agent })
+  );
   if (!agent) throw new Error("Agent profile not found.");
 
   // Commission rates are tenant settings, never platform/global settings.
@@ -26,7 +33,10 @@ export const createCommission = async (booking) => {
 
   // Keep the legacy Agent field synchronized for compatibility with older records/UI.
   if (Number(agent.commissionRate) !== rate) {
-    await Agent.updateOne({ _id: agent._id }, { $set: { commissionRate: rate } });
+    await Agent.updateOne(
+      mergeTenantFilter({ _id: agent._id }),
+      { $set: { commissionRate: rate } }
+    );
   }
 
   return Commission.create({
