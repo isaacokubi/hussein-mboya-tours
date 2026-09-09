@@ -40,8 +40,15 @@ const invoiceSchema = new mongoose.Schema({
 invoiceSchema.pre("save", function(next) {
   if (!this.invoiceNumber) this.invoiceNumber = `INV-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
   this.balance = Math.max(0, Number(this.totalAmount || 0) - Number(this.amountPaid || 0));
-  if (this.balance <= 0 && this.totalAmount > 0) this.status = "paid";
-  else if (this.amountPaid > 0) this.status = "partial";
+
+  // Financial synchronization may intentionally mark an invoice as fully
+  // refunded. Do not let the generic balance calculation turn that state back
+  // into "paid" merely because the remaining balance is zero.
+  if (!["refunded", "cancelled", "draft"].includes(this.status)) {
+    if (this.balance <= 0 && this.totalAmount > 0) this.status = "paid";
+    else if (this.amountPaid > 0) this.status = "partial";
+    else this.status = "pending";
+  }
   next();
 });
 
