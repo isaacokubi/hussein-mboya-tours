@@ -67,19 +67,19 @@ paymentSchema.index({ transactionReference: 1 });
 
 paymentSchema.index(
   { tenantId: 1, provider: 1, transactionReference: 1 },
-  { unique: true, partialFilterExpression: { status: "completed", transactionReference: { $type: "string" } } }
+  { unique: true, partialFilterExpression: { status: "completed", transactionReference: { $type: "string", $ne: "" } } }
 );
 paymentSchema.index(
   { tenantId: 1, checkoutRequestID: 1 },
-  { unique: true, partialFilterExpression: { checkoutRequestID: { $type: "string" } } }
+  { unique: true, partialFilterExpression: { checkoutRequestID: { $type: "string", $ne: "" } } }
 );
 paymentSchema.index(
   { tenantId: 1, checkoutRequestId: 1 },
-  { unique: true, partialFilterExpression: { checkoutRequestId: { $type: "string" } } }
+  { unique: true, partialFilterExpression: { checkoutRequestId: { $type: "string", $ne: "" } } }
 );
 paymentSchema.index(
   { tenantId: 1, mpesaReceiptNumber: 1 },
-  { unique: true, partialFilterExpression: { mpesaReceiptNumber: { $type: "string" } } }
+  { unique: true, partialFilterExpression: { mpesaReceiptNumber: { $type: "string", $ne: "" } } }
 );
 paymentSchema.index({ tenantId: 1, booking: 1, createdAt: -1 });
 paymentSchema.index({ tenantId: 1, status: 1, createdAt: -1 });
@@ -99,34 +99,19 @@ paymentSchema.methods.markFailed = function (reason) {
   return this.save();
 };
 
-/*
-|--------------------------------------------------------------------------
-| SYNCHRONIZE TENANT INVOICE FINANCIAL STATE
-|--------------------------------------------------------------------------
-| Every persisted payment/refund mutation recalculates the invoice from
-| the complete payment ledger for the booking. This makes amountPaid and
-| balance deterministic and prevents duplicate callbacks from double
-| crediting the invoice. eTIMS fields are deliberately left untouched.
-|--------------------------------------------------------------------------
-*/
-
 paymentSchema.post("save", async function () {
   if (!this.tenantId || !this.booking) return;
   if (!["completed", "refunded"].includes(this.status) && this.refundStatus !== "completed") return;
 
   const session = typeof this.$session === "function" ? this.$session() : null;
   const queryOptions = session ? { session } : {};
-
   const PaymentModel = this.constructor;
   const bookingId = this.booking;
 
   const [invoice, payments] = await Promise.all([
     Invoice.findOne({ tenantId: this.tenantId, booking: bookingId, isDeleted: { $ne: true } }, null, queryOptions),
-    PaymentModel.find({
-      tenantId: this.tenantId,
-      booking: bookingId,
-      status: { $in: ["completed", "refunded"] },
-    }, null, queryOptions).select("amount status refundedAmount refundStatus paymentMethod transactionReference transactionId mpesaReceiptNumber invoiceNumber updatedAt"),
+    PaymentModel.find({ tenantId: this.tenantId, booking: bookingId, status: { $in: ["completed", "refunded"] } }, null, queryOptions)
+      .select("amount status refundedAmount refundStatus paymentMethod transactionReference transactionId mpesaReceiptNumber invoiceNumber updatedAt"),
   ]);
 
   if (!invoice) return;
