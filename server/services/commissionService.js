@@ -1,17 +1,16 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
+import { requireTenantId } from "../tenancy/context.js";
 import Commission from "../models/Commission.js";
 import Agent from "../models/Agent.js";
 import { getSystemSettings } from "./settingsService.js";
-const getGlobalCommissionRate = async () => {
-  const settings = await getSystemSettings({
-    tenantId: options?.tenantId || null,
-  });
+
+const getGlobalCommissionRate = async (tenantId) => {
+  const settings = await getSystemSettings({ tenantId });
   const rate = Number(settings?.defaultCommissionRate);
   return Number.isFinite(rate) && rate >= 0 && rate <= 100 ? rate : 10;
 };
 
 export const createCommission = async (booking) => {
-  requireTenantId();
+  const tenantId = requireTenantId();
   if (!booking?.agent) return null;
 
   const existingCommission = await Commission.findOne({ booking: booking._id });
@@ -20,8 +19,8 @@ export const createCommission = async (booking) => {
   const agent = await Agent.findById(booking.agent);
   if (!agent) throw new Error("Agent profile not found.");
 
-  // Commission is globally controlled by SuperAdmin system settings.
-  const rate = await getGlobalCommissionRate();
+  // Commission rates are tenant settings, never platform/global settings.
+  const rate = await getGlobalCommissionRate(tenantId);
   const bookingAmount = Number(booking.totalAmount || 0);
   const amount = Number(((bookingAmount * rate) / 100).toFixed(2));
 
@@ -31,6 +30,7 @@ export const createCommission = async (booking) => {
   }
 
   return Commission.create({
+    tenantId,
     agent: agent._id,
     booking: booking._id,
     customer: booking.user || booking.customer || null,
