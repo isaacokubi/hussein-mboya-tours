@@ -78,7 +78,7 @@ test("frontend coverage: finance lifecycle, payments, accounting and reconciliat
 
 test("frontend coverage: operations, corporate, supplier and accommodation workflows are visible", () => {
   const s = (read("pages/admin/OperationsDashboard.jsx") + read("components/admin/OperationsActionCenter.jsx") + read("components/admin/TravelOperationsCenter.jsx")).toLowerCase();
-  for (const m of ["supplier", "corporate", "purchase", "room", "accommodation", "transfer"]) assert.match(s, new RegExp(m));
+  for (const m of ["supplier", "corporate", "purchase", "room", "accommodation", "transfer", "totalcost", "unitcost"]) assert.match(s, new RegExp(m));
   assert.match(routeSource, /path="operations"/);
 });
 
