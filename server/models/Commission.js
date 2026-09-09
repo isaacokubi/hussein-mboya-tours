@@ -38,9 +38,8 @@ const commissionSchema = new mongoose.Schema(
 commissionSchema.pre("save", function (next) {
   if (!this.amount && this.bookingAmount && this.rate) this.amount = (this.bookingAmount * this.rate) / 100;
   this.refundedAmount = Math.min(Number(this.refundedAmount || 0), Number(this.amount || 0));
-  this.adjustmentAmount = Math.max(0, Number(this.amount || 0) - Number(this.refundedAmount || 0));
-  if (this.adjustmentAmount > 0 && this.refundedAmount > 0) this.adjustmentStatus = "posted";
-  else if (this.refundedAmount > 0) this.adjustmentStatus = "posted";
+  this.adjustmentAmount = this.refundedAmount;
+  this.adjustmentStatus = this.refundedAmount > 0 ? "posted" : "none";
   next();
 });
 
@@ -48,29 +47,9 @@ commissionSchema.virtual("isPaid").get(function () { return this.status === "pai
 commissionSchema.virtual("isPending").get(function () { return this.status === "pending"; });
 commissionSchema.virtual("netAmount").get(function () { return Math.max(0, Number(this.amount || 0) - Number(this.refundedAmount || 0)); });
 
-commissionSchema.methods.approve = function (adminId) {
-  this.status = "approved";
-  this.approvedBy = adminId;
-  this.approvedAt = new Date();
-  return this.save();
-};
-
-commissionSchema.methods.markPaid = function (reference, method) {
-  this.status = "paid";
-  this.paymentReference = reference;
-  this.paymentMethod = method;
-  this.paidAt = new Date();
-  return this.save();
-};
-
-commissionSchema.methods.reject = function (adminId, reason) {
-  this.status = "rejected";
-  this.rejectedBy = adminId;
-  this.rejectedAt = new Date();
-  this.rejectionReason = reason;
-  return this.save();
-};
-
+commissionSchema.methods.approve = function (adminId) { this.status = "approved"; this.approvedBy = adminId; this.approvedAt = new Date(); return this.save(); };
+commissionSchema.methods.markPaid = function (reference, method) { this.status = "paid"; this.paymentReference = reference; this.paymentMethod = method; this.paidAt = new Date(); return this.save(); };
+commissionSchema.methods.reject = function (adminId, reason) { this.status = "rejected"; this.rejectedBy = adminId; this.rejectedAt = new Date(); this.rejectionReason = reason; return this.save(); };
 commissionSchema.statics.getPending = function () { return this.find({ status: "pending", isDeleted: false }); };
 commissionSchema.statics.getPaid = function () { return this.find({ status: "paid", isDeleted: false }); };
 
