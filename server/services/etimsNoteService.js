@@ -4,12 +4,12 @@ import TaxProfile from "../models/TaxProfile.js";
 import EtimsCredential, { decryptEtimsSecret } from "../models/EtimsCredential.js";
 import EtimsSubmission from "../models/EtimsSubmission.js";
 import { enqueueJob } from "./jobQueueService.js";
+import { retryDeadJob } from "./jobRetryService.js";
 
 const adapterUrl = (profile) => String(profile?.etimsAdapterUrl || process.env.ETIMS_ADAPTER_URL || "").trim().replace(/\/$/, "");
 const assertAdapterUrl = (url) => { const parsed = new URL(url); if (!["https:", "http:"].includes(parsed.protocol)) throw new Error("eTIMS adapter URL must use HTTP(S)."); if (process.env.NODE_ENV === "production" && parsed.protocol !== "https:") throw new Error("Production eTIMS adapter must use HTTPS."); };
 const adapterToken = async (tenantId, environment) => { const credential = await EtimsCredential.findOne({ tenantId, environment }).select("+adapterTokenEncrypted").lean(); return credential?.adapterTokenEncrypted ? decryptEtimsSecret(credential.adapterTokenEncrypted) : String(process.env.ETIMS_ADAPTER_TOKEN || ""); };
-
-export const enqueueNoteForEtims = async (noteId, tenantId) => enqueueJob("etims.credit_debit_note.submit", { noteId: String(noteId), tenantId: String(tenantId) }, { tenantId, idempotencyKey: `etims-note:${noteId}` });
+export const enqueueNoteForEtims = async (noteId, tenantId, { manualRetry = false } = {}) => { const idempotencyKey = `etims-note:${noteId}`; if (manualRetry) await retryDeadJob({ tenantId, idempotencyKey }); return enqueueJob("etims.credit_debit_note.submit", { noteId: String(noteId), tenantId: String(tenantId) }, { tenantId, idempotencyKey }); };
 
 export async function processEtimsNoteJob(payload) {
   const note = await CreditDebitNote.findOne({ tenantId: payload.tenantId, _id: payload.noteId }); if (!note) return; if (note.etimsStatus === "synced" && note.etimsReference) return;
