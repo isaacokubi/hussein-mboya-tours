@@ -1,0 +1,32 @@
+import Supplier from "../models/Supplier.js";
+import PurchaseOrder from "../models/PurchaseOrder.js";
+import TourCost from "../models/TourCost.js";
+import SupplierPayable from "../models/SupplierPayable.js";
+import CorporateAccount from "../models/CorporateAccount.js";
+import { tenantFilter } from "../tenancy/tenantQuery.js";
+import * as operations from "../services/operationsService.js";
+
+const userId = (req) => req.user?._id || req.user?.id || null;
+const ok = (res, data, status = 200) => res.status(status).json({ success: true, data });
+const fail = (next, error) => next(error);
+
+export const listSuppliers = async (req, res, next) => { try { const data = await Supplier.find(tenantFilter(req)).sort({ legalName: 1 }).lean(); return ok(res, data); } catch (e) { return fail(next, e); } };
+export const createSupplier = async (req, res, next) => { try { return ok(res, await operations.createSupplier(req.body, userId(req)), 201); } catch (e) { return fail(next, e); } };
+export const updateSupplier = async (req, res, next) => { try { const supplier = await Supplier.findOneAndUpdate({ ...tenantFilter(req), _id: req.params.id }, { ...req.body, updatedBy: userId(req) }, { new: true, runValidators: true }); if (!supplier) return res.status(404).json({ success: false, message: "Supplier not found." }); return ok(res, supplier); } catch (e) { return fail(next, e); } };
+
+export const listPurchaseOrders = async (req, res, next) => { try { const data = await PurchaseOrder.find(tenantFilter(req)).populate("supplier", "legalName supplierNumber").populate("tour", "title").sort({ createdAt: -1 }).lean(); return ok(res, data); } catch (e) { return fail(next, e); } };
+export const createPurchaseOrder = async (req, res, next) => { try { return ok(res, await operations.createPurchaseOrder(req.body, userId(req)), 201); } catch (e) { return fail(next, e); } };
+export const transitionPurchaseOrder = async (req, res, next) => { try { return ok(res, await operations.transitionPurchaseOrder(req.params.id, req.body.status, userId(req))); } catch (e) { return fail(next, e); } };
+
+export const listTourCosts = async (req, res, next) => { try { const filter = tenantFilter(req); if (req.query.tour) filter.tour = req.query.tour; if (req.query.booking) filter.booking = req.query.booking; const data = await TourCost.find(filter).populate("supplier", "legalName").populate("purchaseOrder", "poNumber").sort({ costDate: -1 }).lean(); return ok(res, data); } catch (e) { return fail(next, e); } };
+export const createTourCost = async (req, res, next) => { try { return ok(res, await operations.createTourCost(req.body, userId(req)), 201); } catch (e) { return fail(next, e); } };
+export const tourProfitability = async (req, res, next) => { try { return ok(res, await operations.getTourProfitability(req.params.tourId)); } catch (e) { return fail(next, e); } };
+
+export const listSupplierPayables = async (req, res, next) => { try { const data = await SupplierPayable.find(tenantFilter(req)).populate("supplier", "legalName").sort({ dueDate: 1, createdAt: -1 }).lean(); return ok(res, data); } catch (e) { return fail(next, e); } };
+export const createSupplierPayable = async (req, res, next) => { try { return ok(res, await operations.createSupplierPayable(req.body, userId(req)), 201); } catch (e) { return fail(next, e); } };
+export const paySupplierPayable = async (req, res, next) => { try { return ok(res, await operations.paySupplierPayable(req.params.id, req.body.amount, req.body.paymentReference)); } catch (e) { return fail(next, e); } };
+
+export const listCorporateAccounts = async (req, res, next) => { try { return ok(res, await CorporateAccount.find(tenantFilter(req)).sort({ companyName: 1 }).lean()); } catch (e) { return fail(next, e); } };
+export const createCorporateAccount = async (req, res, next) => { try { return ok(res, await operations.createCorporateAccount(req.body, userId(req)), 201); } catch (e) { return fail(next, e); } };
+
+export const resourceConflicts = async (req, res, next) => { try { return ok(res, await operations.getResourceConflicts(req.query)); } catch (e) { return fail(next, e); } };
