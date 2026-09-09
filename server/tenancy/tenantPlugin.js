@@ -43,14 +43,12 @@ function mergeTenantFilter(query) {
   const current = query.getFilter?.() || {};
   if (Object.prototype.hasOwnProperty.call(current, TENANT_PATH)) {
     assertTenantValue(current[TENANT_PATH], tenantId, "Cross-tenant query rejected.");
-    query.setQuery({ ...current, [TENANT_PATH]: tenantObjectId(tenantId) });
-    return;
   }
   query.setQuery({ ...current, [TENANT_PATH]: tenantObjectId(tenantId) });
 }
 
 function enforceUpdateTenant(update, tenantId) {
-  if (!update) return;
+  if (!update || !tenantId) return;
   if (Array.isArray(update)) {
     for (const stage of update) {
       const requestedTenant = stage?.$set?.[TENANT_PATH] ?? stage?.$addFields?.[TENANT_PATH] ?? stage?.$setOnInsert?.[TENANT_PATH];
@@ -70,21 +68,18 @@ function enforceUpdateTenant(update, tenantId) {
 }
 
 function enforceReplacementTenant(replacement, tenantId) {
-  if (!replacement || Array.isArray(replacement)) return;
+  if (!replacement || Array.isArray(replacement) || !tenantId) return;
   assertTenantValue(replacement[TENANT_PATH], tenantId);
   replacement[TENANT_PATH] = tenantId;
 }
 
 function enforceBulkWriteTenant(operations, tenantId) {
-  if (!Array.isArray(operations)) return;
+  if (!Array.isArray(operations) || !tenantId) return;
   for (const operation of operations) {
     if (operation.insertOne?.document) {
       const document = operation.insertOne.document;
       if (isPlatformOwnerDocument(document)) document[TENANT_PATH] = null;
-      else {
-        assertTenantValue(document[TENANT_PATH], tenantId);
-        document[TENANT_PATH] = tenantId;
-      }
+      else { assertTenantValue(document[TENANT_PATH], tenantId); document[TENANT_PATH] = tenantId; }
     }
     const updateOperation = operation.updateOne || operation.updateMany || operation.replaceOne;
     if (updateOperation) {
@@ -144,20 +139,18 @@ export function tenantPlugin(schema, options = {}) {
   if (schema[TENANT_PLUGIN_MARKER]) return;
   Object.defineProperty(schema, TENANT_PLUGIN_MARKER, { value: true, enumerable: false, configurable: false });
   if (options.global === true) return;
-
   if (!schema.path(TENANT_PATH)) schema.add({ [TENANT_PATH]: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", default: null, index: true, immutable: true } });
 
   const declaredIndexes = schema.indexes();
   const singleFieldIndexes = new Set(declaredIndexes.filter(([keys]) => Object.keys(keys || {}).length === 1).map(([keys]) => Object.keys(keys)[0]));
   for (const [pathName, path] of Object.entries(schema.paths || {})) {
-    if (pathName === TENANT_PATH) continue;
-    if (path?.options?.index === true && singleFieldIndexes.has(pathName)) path.options.index = false;
+    if (pathName !== TENANT_PATH && path?.options?.index === true && singleFieldIndexes.has(pathName)) path.options.index = false;
   }
   for (const path of Object.values(schema.paths || {})) {
     if (!path?.options?.unique || path.path === TENANT_PATH) continue;
     const field = path.path;
     const sparse = Boolean(path.options.sparse);
-    try { schema.removeIndex({ [field]: 1 }); } catch { /* legacy Mongo index may not be declared in schema */ }
+    try { schema.removeIndex({ [field]: 1 }); } catch { /* legacy Mongo index */ }
     path.options.unique = false;
     schema.index({ [TENANT_PATH]: 1, [field]: 1 }, { unique: true, sparse });
   }
@@ -166,6 +159,7 @@ export function tenantPlugin(schema, options = {}) {
     try {
       if (isPlatformOwnerDocument(this)) { this.tenantId = null; return next(); }
       const tenantId = requireTenantId();
+      if (!tenantId) return next();
       assertTenantValue(this.tenantId, tenantId);
       if (!this.tenantId) this.tenantId = tenantId;
       next();
@@ -175,6 +169,7 @@ export function tenantPlugin(schema, options = {}) {
   schema.pre("insertMany", function tenantInsertMany(next, docs) {
     try {
       const tenantId = requireTenantId();
+      if (!tenantId) return next();
       for (const doc of docs || []) {
         if (isPlatformOwnerDocument(doc)) doc[TENANT_PATH] = null;
         else { assertTenantValue(doc?.[TENANT_PATH], tenantId); if (doc) doc[TENANT_PATH] = tenantId; }
@@ -187,6 +182,7 @@ export function tenantPlugin(schema, options = {}) {
     schema.pre(hook, function tenantQuery(next) {
       try {
         const tenantId = requireTenantId();
+        if (!tenantId) return next();
         mergeTenantFilter(this);
         if (["findOneAndUpdate", "updateOne", "updateMany"].includes(hook)) enforceUpdateTenant(this.getUpdate?.(), tenantId);
         if (["findOneAndReplace", "replaceOne"].includes(hook)) enforceReplacementTenant(this.getUpdate?.(), tenantId);
@@ -197,10 +193,7 @@ export function tenantPlugin(schema, options = {}) {
 
   schema.pre("estimatedDocumentCount", function tenantEstimatedCount(next) {
     try {
-      if (!isTenantBypassed()) {
-        requireTenantId();
-        throw new Error("estimatedDocumentCount() is blocked for tenant-scoped models. Use countDocuments() instead.");
-      }
+      if (!isTenantBypassed()) { requireTenantId(); throw new Error("estimatedDocumentCount() is blocked for tenant-scoped models. Use countDocuments() instead."); }
       next();
     } catch (error) { next(error); }
   });
@@ -208,6 +201,7 @@ export function tenantPlugin(schema, options = {}) {
   schema.pre("bulkWrite", function tenantBulkWrite(next, operations) {
     try {
       const tenantId = requireTenantId();
+      if (!tenantId) return next();
       enforceBulkWriteTenant(operations, tenantId);
       next();
     } catch (error) { next(error); }
@@ -216,6 +210,7 @@ export function tenantPlugin(schema, options = {}) {
   schema.pre("aggregate", function tenantAggregate(next) {
     try {
       const tenantId = requireTenantId();
+      if (!tenantId) return next();
       const pipeline = this.pipeline();
       const match = { [TENANT_PATH]: tenantObjectId(tenantId) };
       if (pipeline[0]?.$geoNear) {
@@ -229,11 +224,7 @@ export function tenantPlugin(schema, options = {}) {
           existing[TENANT_PATH] = match[TENANT_PATH];
         } else pipeline[0] = { $match: { $and: [existing, match] } };
       } else pipeline.unshift({ $match: match });
-      for (const stage of pipeline) {
-        enforceLookupStage(stage, tenantId);
-        enforceUnionStage(stage, tenantId);
-        enforceGraphLookupStage(stage, tenantId);
-      }
+      for (const stage of pipeline) { enforceLookupStage(stage, tenantId); enforceUnionStage(stage, tenantId); enforceGraphLookupStage(stage, tenantId); }
       next();
     } catch (error) { next(error); }
   });
