@@ -38,6 +38,7 @@ const bookingSchema = new mongoose.Schema(
     externalMetadata: { type: mongoose.Schema.Types.Mixed, default: {} },
     bookingType: { type: String, enum: ["individual", "group", "corporate"], default: "individual", index: true },
     groupReference: { type: String, trim: true, default: "" },
+    corporateAccount: { type: mongoose.Schema.Types.ObjectId, ref: "CorporateAccount", default: null, index: true },
     corporateCompanyName: { type: String, trim: true, default: "" },
     corporatePin: { type: String, trim: true, uppercase: true, default: "" },
     purchaseOrderNumber: { type: String, trim: true, default: "" },
@@ -136,6 +137,7 @@ bookingSchema.index({ customer: 1, travelDate: 1 });
 bookingSchema.index({ tour: 1, travelDate: 1 });
 bookingSchema.index({ tenantId: 1, bookingType: 1, travelDate: 1 });
 bookingSchema.index({ tenantId: 1, corporatePin: 1 });
+bookingSchema.index({ tenantId: 1, corporateAccount: 1, travelDate: 1 });
 
 bookingSchema.pre("validate", function(next) {
   if (!this.tour && !this.customTourRequest) return next(new Error("Booking must have either a tour or a custom tour request."));
