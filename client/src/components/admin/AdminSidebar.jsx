@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Map, CalendarCheck, Wallet, Users, Car, Settings, Smartphone, FileText, Home, Shield, BarChart3, UserRoundCog, PackageCheck, Receipt, BookOpen } from "lucide-react";
+import { LayoutDashboard, Map, CalendarCheck, Wallet, Users, Car, Settings, Smartphone, FileText, Home, Shield, BarChart3, UserRoundCog, PackageCheck, Receipt, BookOpen, Code2 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useSettings } from "../../context/SettingsContext";
 import { isAdmin } from "../../utils/roleUtils";
@@ -7,7 +7,7 @@ import { isAdmin } from "../../utils/roleUtils";
 const sections = [
   { title: "Operations", items: [["Dashboard", "/admin", LayoutDashboard, "admin.dashboard"], ["Bookings", "/admin/bookings", CalendarCheck, "booking.manage"], ["Operations & Procurement", "/admin/operations", PackageCheck, "booking.manage"], ["Tours", "/admin/manage-tours", Map, "tour.manage"], ["Customers", "/admin/customers", Users, "customer.view"], ["Reviews", "/admin/reviews", FileText, "customer.view"], ["Coupons", "/admin/coupons", FileText, "tour.manage"], ["Agents", "/admin/agents", Users, "agent.manage"], ["Guides", "/admin/guides", Users, "staff.manage"], ["Vehicles", "/admin/vehicles", Car, "staff.manage"], ["Custom Tour Requests", "/admin/custom-tour-requests", FileText, "customer.view"]] },
   { title: "Finance & Insight", items: [["Accounting & Finance", "/admin/finance", Wallet, "finance.view"], ["General Ledger", "/admin/finance#general-ledger", BookOpen, "finance.view"], ["M-Pesa Transactions", "/admin/finance/transactions", Smartphone, "finance.view"], ["Finance Reports", "/admin/finance/reports", FileText, "finance.view"], ["Reconciliation", "/admin/finance/reconciliation", Receipt, "finance.view"], ["Reports", "/admin/reports", FileText, "analytics.view"], ["Analytics", "/admin/analytics", BarChart3, "analytics.view"]] },
-  { title: "Governance", items: [["Compliance & eTIMS", "/admin/compliance", Shield, "finance.view"], ["Staff & Users", "/admin/staff", UserRoundCog, "staff.manage"], ["Roles & Permissions", "/admin/rbac", Shield, "roles.manage"], ["Settings", "/admin/settings", Settings, "settings.manage"], ["Platform Architecture", "/admin/platform-architecture", Shield, "settings.manage"], ["Website", "/", Home, null]] },
+  { title: "Governance", items: [["Compliance & eTIMS", "/admin/compliance", Shield, "finance.view"], ["Developer Platform", "/admin/platform-architecture", Code2, "settings.manage"], ["Staff & Users", "/admin/staff", UserRoundCog, "staff.manage"], ["Roles & Permissions", "/admin/rbac", Shield, "roles.manage"], ["Settings", "/admin/settings", Settings, "settings.manage"], ["Platform Architecture", "/admin/platform-architecture", Shield, "settings.manage"], ["Website", "/", Home, null]] },
 ];
 
 const ADMIN_CORE_PERMISSIONS = new Set(["admin.dashboard", "booking.manage", "tour.manage", "customer.view", "staff.manage", "agent.manage", "finance.view", "analytics.view", "roles.manage", "settings.manage"]);
@@ -35,7 +35,7 @@ export default function AdminSidebar() {
           <nav className="ops-nav">
             {section.items.map(([name, path, Icon, permission]) => (
               canRender(permission) ? (
-                <NavLink key={path} to={path} className={({ isActive }) => `ops-link ${isActive ? "active" : ""}`}>
+                <NavLink key={path + name} to={path} className={({ isActive }) => `ops-link ${isActive ? "active" : ""}`}>
                   <Icon size={17} />
                   <span>{name}</span>
                 </NavLink>
