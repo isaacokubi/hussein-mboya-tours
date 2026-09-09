@@ -2,21 +2,10 @@ import mongoose from "mongoose";
 import CreditDebitNote from "../models/CreditDebitNote.js";
 import Invoice from "../models/Invoice.js";
 import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
-import { postCreditDebitNoteToLedger } from "../services/operationalAccountingService.js";
+import { postCreditDebitNote } from "../services/financeLifecycleService.js";
 
 const money = (value) => Math.round(Number(value || 0) * 100) / 100;
-
-export const listCreditDebitNotes = async (req, res, next) => {
-  requireTenantId();
-  try {
-    const notes = await CreditDebitNote.find(mergeTenantFilter(req, {}))
-      .populate("originalInvoice", "invoiceNumber totalAmount balance status")
-      .sort({ createdAt: -1 })
-      .lean();
-    return res.json({ success: true, count: notes.length, data: notes });
-  } catch (error) { return next(error); }
-};
-
+export const listCreditDebitNotes = async (req, res, next) => { requireTenantId(); try { const notes = await CreditDebitNote.find(mergeTenantFilter(req, {})).populate("originalInvoice", "invoiceNumber totalAmount balance status").sort({ createdAt: -1 }).lean(); return res.json({ success: true, count: notes.length, data: notes }); } catch (error) { return next(error); } };
 export const createCreditDebitNote = async (req, res, next) => {
   requireTenantId();
   try {
@@ -33,25 +22,5 @@ export const createCreditDebitNote = async (req, res, next) => {
     return res.status(201).json({ success: true, data: note });
   } catch (error) { return next(error); }
 };
-
-export const issueCreditDebitNote = async (req, res, next) => {
-  requireTenantId();
-  try {
-    const note = await CreditDebitNote.findOne(mergeTenantFilter(req, { _id: req.params.id }));
-    if (!note) return res.status(404).json({ success: false, message: "Credit/debit note not found." });
-    if (note.status !== "draft") return res.status(409).json({ success: false, message: `Note is already ${note.status}.` });
-    note.status = "issued"; note.issuedAt = new Date(); await note.save();
-    await postCreditDebitNoteToLedger(note);
-    return res.json({ success: true, data: note });
-  } catch (error) { return next(error); }
-};
-
-export const cancelCreditDebitNote = async (req, res, next) => {
-  requireTenantId();
-  try {
-    const note = await CreditDebitNote.findOne(mergeTenantFilter(req, { _id: req.params.id }));
-    if (!note) return res.status(404).json({ success: false, message: "Credit/debit note not found." });
-    if (note.status !== "draft") return res.status(409).json({ success: false, message: "Only draft notes can be cancelled." });
-    note.status = "cancelled"; await note.save(); return res.json({ success: true, data: note });
-  } catch (error) { return next(error); }
-};
+export const issueCreditDebitNote = async (req, res, next) => { requireTenantId(); try { const note = await CreditDebitNote.findOne(mergeTenantFilter(req, { _id: req.params.id })); if (!note) return res.status(404).json({ success: false, message: "Credit/debit note not found." }); if (note.status !== "draft") return res.status(409).json({ success: false, message: `Note is already ${note.status}.` }); note.status = "issued"; note.issuedAt = new Date(); await note.save(); await postCreditDebitNote(note); return res.json({ success: true, data: note }); } catch (error) { return next(error); } };
+export const cancelCreditDebitNote = async (req, res, next) => { requireTenantId(); try { const note = await CreditDebitNote.findOne(mergeTenantFilter(req, { _id: req.params.id })); if (!note) return res.status(404).json({ success: false, message: "Credit/debit note not found." }); if (note.status !== "draft") return res.status(409).json({ success: false, message: "Only draft notes can be cancelled." }); note.status = "cancelled"; await note.save(); return res.json({ success: true, data: note }); } catch (error) { return next(error); } };
