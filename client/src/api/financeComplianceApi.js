@@ -1,7 +1,8 @@
 import api from "./axios";
-
 export const getTaxProfile = async () => (await api.get("/finance-compliance/tax-profile")).data;
 export const saveTaxProfile = async (data) => (await api.put("/finance-compliance/tax-profile", data)).data;
+export const getEtimsCredentialStatus = async (environment = "sandbox") => (await api.get("/finance-compliance/etims/credentials", { params: { environment } })).data;
+export const saveEtimsCredentials = async (data) => (await api.put("/finance-compliance/etims/credentials", data)).data;
 export const getFinanceComplianceSummary = async () => (await api.get("/finance-compliance/compliance-summary")).data;
 export const getCreditDebitNotes = async () => (await api.get("/finance-compliance/notes")).data;
 export const createCreditDebitNote = async (data) => (await api.post("/finance-compliance/notes", data)).data;
