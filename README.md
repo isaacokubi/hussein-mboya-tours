@@ -1,4 +1,4 @@
-# Hussein Mboya Tours
+# Global Tours
 
 Kenya-focused multi-tenant tour-operator platform.
 
