@@ -1,6 +1,6 @@
 import fs from "node:fs";
 
-const requiredFiles=["config/env.js","app.js","server.js","models/Organization.js","models/Payment.js","models/Invoice.js","models/TaxProfile.js","models/TaxRule.js","models/Expense.js","models/CreditDebitNote.js","models/PaymentLink.js","models/Supplier.js","models/PurchaseOrder.js","models/TourCost.js","models/SupplierPayable.js","models/CorporateAccount.js","models/ChartOfAccount.js","models/JournalEntry.js","models/ComplianceRecord.js","models/PrivacyRequest.js","models/BackgroundJob.js","models/WebhookDelivery.js","middleware/tenantMiddleware.js","middleware/permissionMiddleware.js","middleware/integrationAuth.js","middleware/resourceTenantGuard.js","middleware/bookingCommercialGuard.js","tenancy/tenantPlugin.js","services/taxEngineService.js","services/operationalAccountingService.js","services/financeLifecycleService.js","services/operationsService.js","services/jobQueueService.js","services/jobWorkerService.js","services/etimsService.js","services/etimsNoteService.js","services/webhookDeliveryService.js","bootstrap/operationalAccountingHooks.js","controllers/creditDebitNoteController.js","controllers/paymentLinkController.js","routes/creditDebitNoteRoutes.js","routes/paymentLinkRoutes.js","scripts/reconcileTenantIndexes.js"];
+const requiredFiles=["config/env.js","app.js","server.js","models/Organization.js","models/Payment.js","models/Invoice.js","models/TaxProfile.js","models/TaxRule.js","models/Expense.js","models/CreditDebitNote.js","models/PaymentLink.js","models/Supplier.js","models/PurchaseOrder.js","models/TourCost.js","models/SupplierPayable.js","models/CorporateAccount.js","models/ChartOfAccount.js","models/JournalEntry.js","models/ComplianceRecord.js","models/PrivacyRequest.js","models/BackgroundJob.js","models/WebhookDelivery.js","middleware/tenantMiddleware.js","middleware/permissionMiddleware.js","middleware/integrationAuth.js","middleware/resourceTenantGuard.js","middleware/bookingCommercialGuard.js","tenancy/tenantPlugin.js","services/taxEngineService.js","services/operationalAccountingService.js","services/financeLifecycleService.js","services/operationsService.js","services/jobQueueService.js","services/jobWorkerService.js","services/etimsService.js","services/etimsNoteService.js","services/webhookDeliveryService.js","services/dataRetentionService.js","bootstrap/operationalAccountingHooks.js","controllers/creditDebitNoteController.js","controllers/paymentLinkController.js","routes/creditDebitNoteRoutes.js","routes/paymentLinkRoutes.js","scripts/reconcileTenantIndexes.js"];
 const missing=requiredFiles.filter((file)=>!fs.existsSync(file));
 if(missing.length){console.error("Missing production files:",missing.join(", "));process.exit(1);}
 
@@ -35,6 +35,15 @@ if(runtimeValidation){
   const weakPaymentKey = paymentKeyRequired && String(process.env.PAYMENT_CREDENTIAL_ENCRYPTION_KEY || "").length < 32;
   const etimsConfigured = production && Boolean(process.env.ETIMS_ADAPTER_URL || process.env.ETIMS_ADAPTER_TOKEN);
   const missingEtimsKey = etimsConfigured && String(process.env.ETIMS_CREDENTIAL_ENCRYPTION_KEY || "").length < 32;
+  const evidenceFlags = [
+    "PRODUCTION_BACKUP_VERIFIED",
+    "PRODUCTION_MONITORING_VERIFIED",
+    "PRODUCTION_PAYMENT_VERIFIED",
+    "PRODUCTION_ETIMS_VERIFIED",
+    "PRODUCTION_RESTORE_TESTED",
+    "PRODUCTION_WEBHOOKS_VERIFIED",
+  ];
+  const missingEvidence = production ? evidenceFlags.filter((key)=>String(process.env[key] || "false").toLowerCase() !== "true") : [];
   const errors=[];
   if(missingRuntime.length) errors.push(`Missing runtime production environment variables: ${missingRuntime.join(", ")}`);
   if(!hasDefaultTenantRuntime) errors.push("Missing runtime default tenant configuration: DEFAULT_TENANT_ID or DEFAULT_PUBLIC_TENANT_SLUG");
@@ -47,8 +56,10 @@ if(runtimeValidation){
   if(placeholderHost) errors.push("PLATFORM_HOST must be a real production hostname, not a development placeholder.");
   if(weakPaymentKey) errors.push("PAYMENT_CREDENTIAL_ENCRYPTION_KEY must be at least 32 characters when payment credentials are configured in production.");
   if(missingEtimsKey) errors.push("ETIMS_CREDENTIAL_ENCRYPTION_KEY must be at least 32 characters when eTIMS is configured in production.");
+  if(missingEvidence.length) errors.push(`Production evidence gates are incomplete: ${missingEvidence.join(", ")}. Verify the external control before enabling production.`);
   if(errors.length){errors.forEach((error)=>console.error(error));process.exit(1);}
 }
 
 console.log("Production readiness check passed");
 console.log(`Runtime environment validation: ${runtimeValidation?"enabled":"CI/static mode"}`);
+if(runtimeValidation && process.env.NODE_ENV === "production") console.log("External production evidence gates: verified");
