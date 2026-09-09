@@ -8,6 +8,7 @@ import cookieParser from "cookie-parser";
 import morgan from "morgan";
 import mongoose from "mongoose";
 import loadTenantPlugin from "./config/tenantPluginLoader.js";
+import requestContext from "./middleware/requestContext.js";
 
 loadTenantPlugin();
 
@@ -36,6 +37,7 @@ if (process.env.NODE_ENV === "production") {
   console.error = (...args) => originalError(...args.map((value) => redact(value)));
 }
 
+app.use(requestContext);
 app.use("/destinations", express.static("uploads/destinations"));
 
 app.use(helmet({
@@ -62,18 +64,12 @@ app.use(globalLimiter);
 const configuredOrigins = (env.CLIENT_ORIGINS || env.CLIENT_URL || "").split(",").map((origin) => origin.trim()).filter(Boolean);
 const allowedOrigins = ["http://localhost:5173", "http://127.0.0.1:5173", ...configuredOrigins].filter((origin, index, list) => list.indexOf(origin) === index);
 const corsOptions = {
-  origin: (origin, callback) => !origin || allowedOrigins.includes(origin)
-    ? callback(null, true)
-    : callback(new Error(`CORS blocked origin: ${origin}`)),
+  origin: (origin, callback) => !origin || allowedOrigins.includes(origin) ? callback(null, true) : callback(new Error(`CORS blocked origin: ${origin}`)),
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin", "X-Tenant-ID", "X-Tenant-Slug", "X-Tenant-Key", "X-API-Key", "X-Integration-Key", "X-Public-Integration-Key", "Idempotency-Key"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin", "X-Tenant-ID", "X-Tenant-Slug", "X-Tenant-Key", "X-API-Key", "X-Integration-Key", "X-Public-Integration-Key", "Idempotency-Key", "X-Request-ID"],
 };
 
-// Existing tenant APIs remain restricted to configured origins. The external
-// website connector is intentionally public-CORS because the request carries a
-// tenant-scoped integration credential and its own origin allow-list is checked
-// by integrationAuth. No other API route gets the relaxed policy.
 app.use((req, res, next) => {
   if (String(req.path || "").startsWith("/api/integrations/")) {
     const origin = req.get("Origin");
@@ -81,49 +77,36 @@ app.use((req, res, next) => {
     res.setHeader("Vary", "Origin");
     res.setHeader("Access-Control-Allow-Credentials", "false");
     res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization,X-Requested-With,Accept,Origin,X-Tenant-ID,X-Tenant-Slug,X-Tenant-Key,X-API-Key,X-Integration-Key,X-Public-Integration-Key,Idempotency-Key");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization,X-Requested-With,Accept,Origin,X-Tenant-ID,X-Tenant-Slug,X-Tenant-Key,X-API-Key,X-Integration-Key,X-Public-Integration-Key,Idempotency-Key,X-Request-ID");
     if (req.method === "OPTIONS") return res.sendStatus(204);
     return next();
   }
   return cors(corsOptions)(req, res, next);
 });
 app.use(compression());
-
-// Parse request bodies BEFORE tenant resolution. Public login tenant discovery
-// resolves a tenant from req.body.email when no explicit tenant identity is
-// supplied.
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 app.use(cookieParser());
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
-
-// Public tenant resolution is needed for tenant-scoped resources. Authenticated
-// requests are resolved by their token/user tenant.
 app.use(resolveTenant);
 
 app.get("/api/health", async (req, res) => {
   const dbReady = mongoose.connection.readyState === 1;
-  res.status(dbReady ? 200 : 503).json({
-    success: dbReady,
-    status: dbReady ? "healthy" : "degraded",
-    database: dbReady ? "connected" : "disconnected",
-    version: process.env.RENDER_GIT_COMMIT || process.env.GIT_COMMIT || "unknown",
-    timestamp: new Date().toISOString(),
-  });
+  res.status(dbReady ? 200 : 503).json({ success: dbReady, status: dbReady ? "healthy" : "degraded", database: dbReady ? "connected" : "disconnected", version: process.env.RENDER_GIT_COMMIT || process.env.GIT_COMMIT || "unknown", requestId: req.requestId, timestamp: new Date().toISOString() });
 });
 
 app.use("/api/public/onboarding", publicOnboardingRoutes);
 app.use("/api/tenant/branding", tenantBrandingRoutes);
 app.use("/api", apiRoutes);
-app.get("/", (req, res) => res.status(200).json({ success: true, message: "Travel API running successfully" }));
-app.use((req, res) => res.status(404).json({ success: false, message: "Route not found" }));
+app.get("/", (req, res) => res.status(200).json({ success: true, message: "Travel API running successfully", requestId: req.requestId }));
+app.use((req, res) => res.status(404).json({ success: false, message: "Route not found", requestId: req.requestId }));
 app.use((err, req, res, next) => {
-  console.error(err);
+  console.error({ requestId: req.requestId, error: err });
   let status = Number(err.statusCode) || 500;
   let message = err.message || "Internal server error";
   if (err.name === "ValidationError" || err.name === "CastError") status = 400;
   if (err.code === 11000) { status = 409; const duplicateField = Object.keys(err.keyPattern || err.keyValue || {})[0]; message = duplicateField ? `A record with this ${duplicateField} already exists.` : "A record with these unique details already exists."; }
-  res.status(status).json({ success: false, message, ...(err.name === "ValidationError" ? { errors: Object.fromEntries(Object.entries(err.errors || {}).map(([key, value]) => [key, value.message])) } : {}) });
+  res.status(status).json({ success: false, message, requestId: req.requestId, ...(err.name === "ValidationError" ? { errors: Object.fromEntries(Object.entries(err.errors || {}).map(([key, value]) => [key, value.message])) } : {}) });
 });
 
 export default app;
