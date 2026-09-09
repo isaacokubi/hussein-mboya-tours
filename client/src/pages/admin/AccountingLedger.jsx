@@ -2,72 +2,22 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Plus, RefreshCw, Scale, XCircle } from "lucide-react";
 import { createJournalEntry, getAccounts, getJournalEntries, getLedgerSummary, postJournalEntry, voidJournalEntry } from "../../api/accountingApi";
-
 const money = (n) => `KSh ${Number(n || 0).toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export default function AccountingLedger() {
-  const qc = useQueryClient();
-  const [description, setDescription] = useState("");
-  const [reference, setReference] = useState("");
-  const [entryDate, setEntryDate] = useState(new Date().toISOString().slice(0, 10));
-  const [debitAccount, setDebitAccount] = useState("");
-  const [creditAccount, setCreditAccount] = useState("");
-  const [amount, setAmount] = useState("");
-  const [lineDescription, setLineDescription] = useState("");
-
-  const accountsQ = useQuery({ queryKey: ["accounting-accounts"], queryFn: getAccounts });
-  const journalQ = useQuery({ queryKey: ["accounting-journal"], queryFn: () => getJournalEntries({ limit: 100 }) });
-  const summaryQ = useQuery({ queryKey: ["accounting-summary"], queryFn: getLedgerSummary });
-  const createM = useMutation({
-    mutationFn: createJournalEntry,
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["accounting-journal"] }); qc.invalidateQueries({ queryKey: ["accounting-summary"] }); setDescription(""); setReference(""); setAmount(""); setLineDescription(""); },
-  });
-  const postM = useMutation({ mutationFn: postJournalEntry, onSuccess: () => { qc.invalidateQueries({ queryKey: ["accounting-journal"] }); qc.invalidateQueries({ queryKey: ["accounting-summary"] }); } });
-  const voidM = useMutation({ mutationFn: voidJournalEntry, onSuccess: () => qc.invalidateQueries({ queryKey: ["accounting-journal"] }) });
-
-  const accounts = accountsQ.data || [];
-  const rows = summaryQ.data?.accounts || [];
-  const journal = journalQ.data || [];
-  const balanced = useMemo(() => Number(amount) > 0 && debitAccount && creditAccount && debitAccount !== creditAccount, [amount, debitAccount, creditAccount]);
-
-  const submit = (e) => {
-    e.preventDefault();
-    if (!balanced || !description.trim()) return;
-    createM.mutate({ entryDate, description: description.trim(), reference: reference.trim(), lines: [
-      { account: debitAccount, description: lineDescription.trim() || description.trim(), debit: Number(amount), credit: 0 },
-      { account: creditAccount, description: lineDescription.trim() || description.trim(), debit: 0, credit: Number(amount) },
-    ] });
-  };
-
+  const qc = useQueryClient(); const [description, setDescription] = useState(""); const [reference, setReference] = useState(""); const [entryDate, setEntryDate] = useState(new Date().toISOString().slice(0, 10)); const [debitAccount, setDebitAccount] = useState(""); const [creditAccount, setCreditAccount] = useState(""); const [amount, setAmount] = useState(""); const [lineDescription, setLineDescription] = useState("");
+  const accountsQ = useQuery({ queryKey: ["accounting-accounts"], queryFn: getAccounts }); const journalQ = useQuery({ queryKey: ["accounting-journal"], queryFn: () => getJournalEntries({ limit: 100 }) }); const summaryQ = useQuery({ queryKey: ["accounting-summary"], queryFn: getLedgerSummary });
+  const createM = useMutation({ mutationFn: createJournalEntry, onSuccess: () => { qc.invalidateQueries({ queryKey: ["accounting-journal"] }); qc.invalidateQueries({ queryKey: ["accounting-summary"] }); setDescription(""); setReference(""); setAmount(""); setLineDescription(""); } });
+  const postM = useMutation({ mutationFn: postJournalEntry, onSuccess: () => { qc.invalidateQueries({ queryKey: ["accounting-journal"] }); qc.invalidateQueries({ queryKey: ["accounting-summary"] }); } }); const voidM = useMutation({ mutationFn: voidJournalEntry, onSuccess: () => qc.invalidateQueries({ queryKey: ["accounting-journal"] }) });
+  const accounts = accountsQ.data || []; const rows = summaryQ.data?.accounts || []; const journal = journalQ.data || []; const balanced = useMemo(() => Number(amount) > 0 && debitAccount && creditAccount && debitAccount !== creditAccount, [amount, debitAccount, creditAccount]);
+  const submit = (e) => { e.preventDefault(); if (!balanced || !description.trim()) return; createM.mutate({ entryDate, description: description.trim(), reference: reference.trim(), lines: [{ account: debitAccount, description: lineDescription.trim() || description.trim(), debit: Number(amount), credit: 0 }, { account: creditAccount, description: lineDescription.trim() || description.trim(), debit: 0, credit: Number(amount) }] }); };
+  const ps = summaryQ.data?.profitLoss || {}; const bs = summaryQ.data?.balanceSheet || {};
   return <div className="space-y-6">
-    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-      <div><h1 className="text-2xl font-bold">General Ledger</h1><p className="text-sm text-gray-500">Tenant-scoped double-entry accounting, chart of accounts and journal controls.</p></div>
-      <button onClick={() => { accountsQ.refetch(); journalQ.refetch(); summaryQ.refetch(); }} className="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm"><RefreshCw size={16} /> Refresh</button>
-    </div>
-
-    <div className="grid gap-4 md:grid-cols-3">
-      <div className="rounded-xl border bg-white p-5"><div className="text-sm text-gray-500">Posted debits</div><div className="mt-1 text-xl font-semibold">{money(summaryQ.data?.totals?.debit)}</div></div>
-      <div className="rounded-xl border bg-white p-5"><div className="text-sm text-gray-500">Posted credits</div><div className="mt-1 text-xl font-semibold">{money(summaryQ.data?.totals?.credit)}</div></div>
-      <div className="rounded-xl border bg-white p-5"><div className="text-sm text-gray-500">Ledger status</div><div className="mt-1 flex items-center gap-2 text-xl font-semibold"><Scale size={19} /> {Math.abs(Number(summaryQ.data?.totals?.debit || 0) - Number(summaryQ.data?.totals?.credit || 0)) < 0.01 ? "Balanced" : "Review"}</div></div>
-    </div>
-
-    <form onSubmit={submit} className="rounded-xl border bg-white p-5">
-      <div className="mb-4 flex items-center gap-2 text-lg font-semibold"><Plus size={19} /> New Journal Entry</div>
-      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-        <input className="rounded-lg border px-3 py-2" type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} />
-        <input className="rounded-lg border px-3 py-2" placeholder="Description *" value={description} onChange={(e) => setDescription(e.target.value)} />
-        <input className="rounded-lg border px-3 py-2" placeholder="Reference / invoice / receipt" value={reference} onChange={(e) => setReference(e.target.value)} />
-        <input className="rounded-lg border px-3 py-2" type="number" min="0.01" step="0.01" placeholder="Amount (KES) *" value={amount} onChange={(e) => setAmount(e.target.value)} />
-        <select className="rounded-lg border px-3 py-2" value={debitAccount} onChange={(e) => setDebitAccount(e.target.value)}><option value="">Debit account *</option>{accounts.map((a) => <option key={a._id} value={a._id}>{a.code} — {a.name}</option>)}</select>
-        <select className="rounded-lg border px-3 py-2" value={creditAccount} onChange={(e) => setCreditAccount(e.target.value)}><option value="">Credit account *</option>{accounts.map((a) => <option key={a._id} value={a._id}>{a.code} — {a.name}</option>)}</select>
-        <input className="rounded-lg border px-3 py-2" placeholder="Line description" value={lineDescription} onChange={(e) => setLineDescription(e.target.value)} />
-        <button disabled={!balanced || !description.trim() || createM.isPending} className="rounded-lg bg-green-700 px-4 py-2 font-medium text-white disabled:opacity-50">{createM.isPending ? "Saving…" : "Save Draft"}</button>
-      </div>
-      {createM.isError && <p className="mt-3 text-sm text-red-600">{createM.error?.response?.data?.message || createM.error?.message || "Unable to save entry."}</p>}
-    </form>
-
-    <div className="rounded-xl border bg-white p-5"><h2 className="mb-4 text-lg font-semibold">Chart of Accounts</h2><div className="overflow-x-auto"><table className="min-w-full text-sm"><thead><tr className="border-b text-left"><th className="p-2">Code</th><th className="p-2">Account</th><th className="p-2">Type</th><th className="p-2 text-right">Balance</th></tr></thead><tbody>{rows.map((r) => <tr className="border-b last:border-0" key={r.account._id}><td className="p-2 font-mono">{r.account.code}</td><td className="p-2">{r.account.name}</td><td className="p-2 capitalize">{r.account.type}</td><td className="p-2 text-right">{money(r.balance)}</td></tr>)}</tbody></table></div></div>
-
-    <div className="rounded-xl border bg-white p-5"><h2 className="mb-4 text-lg font-semibold">Journal</h2><div className="overflow-x-auto"><table className="min-w-full text-sm"><thead><tr className="border-b text-left"><th className="p-2">Date</th><th className="p-2">Entry</th><th className="p-2">Description</th><th className="p-2">Status</th><th className="p-2">Amount</th><th className="p-2 text-right">Actions</th></tr></thead><tbody>{journal.map((e) => { const total = (e.lines || []).reduce((s, l) => s + Number(l.debit || 0), 0); return <tr className="border-b last:border-0" key={e._id}><td className="p-2">{new Date(e.entryDate).toLocaleDateString("en-KE")}</td><td className="p-2 font-mono">{e.entryNumber}</td><td className="p-2">{e.description}</td><td className="p-2"><span className="rounded-full bg-gray-100 px-2 py-1 text-xs capitalize">{e.status}</span></td><td className="p-2">{money(total)}</td><td className="p-2 text-right">{e.status === "draft" ? <span className="inline-flex gap-2"><button onClick={() => postM.mutate(e._id)} className="inline-flex items-center gap-1 rounded border px-2 py-1 text-xs"><CheckCircle2 size={14} /> Post</button><button onClick={() => voidM.mutate(e._id)} className="inline-flex items-center gap-1 rounded border px-2 py-1 text-xs"><XCircle size={14} /> Void</button></span> : null}</td></tr>; })}</tbody></table></div></div>
+    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"><div><h1 className="text-2xl font-bold">General Ledger</h1><p className="text-sm text-gray-500">Tenant-scoped double-entry accounting, trial balance and journal controls.</p></div><button onClick={() => { accountsQ.refetch(); journalQ.refetch(); summaryQ.refetch(); }} className="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm"><RefreshCw size={16}/> Refresh</button></div>
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><div className="rounded-xl border bg-white p-5"><div className="text-sm text-gray-500">Posted debits</div><div className="mt-1 text-xl font-semibold">{money(summaryQ.data?.totals?.debit)}</div></div><div className="rounded-xl border bg-white p-5"><div className="text-sm text-gray-500">Posted credits</div><div className="mt-1 text-xl font-semibold">{money(summaryQ.data?.totals?.credit)}</div></div><div className="rounded-xl border bg-white p-5"><div className="text-sm text-gray-500">Net profit</div><div className="mt-1 text-xl font-semibold">{money(ps.netProfit)}</div></div><div className="rounded-xl border bg-white p-5"><div className="text-sm text-gray-500">Ledger status</div><div className="mt-1 flex items-center gap-2 text-xl font-semibold"><Scale size={19}/>{Math.abs(Number(summaryQ.data?.totals?.debit || 0)-Number(summaryQ.data?.totals?.credit || 0))<0.01?"Balanced":"Review"}</div></div></div>
+    <div className="grid gap-4 md:grid-cols-3"><div className="rounded-xl border bg-white p-5"><div className="text-sm text-gray-500">Revenue</div><div className="mt-1 text-xl font-bold">{money(ps.revenue)}</div></div><div className="rounded-xl border bg-white p-5"><div className="text-sm text-gray-500">Expenses</div><div className="mt-1 text-xl font-bold">{money(ps.expenses)}</div></div><div className="rounded-xl border bg-white p-5"><div className="text-sm text-gray-500">Assets</div><div className="mt-1 text-xl font-bold">{money(bs.assets)}</div></div></div>
+    <form onSubmit={submit} className="rounded-xl border bg-white p-5"><div className="mb-4 flex items-center gap-2 text-lg font-semibold"><Plus size={19}/> New Journal Entry</div><div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4"><input className="rounded-lg border px-3 py-2" type="date" value={entryDate} onChange={(e)=>setEntryDate(e.target.value)}/><input className="rounded-lg border px-3 py-2" placeholder="Description *" value={description} onChange={(e)=>setDescription(e.target.value)}/><input className="rounded-lg border px-3 py-2" placeholder="Reference / invoice / receipt" value={reference} onChange={(e)=>setReference(e.target.value)}/><input className="rounded-lg border px-3 py-2" type="number" min="0.01" step="0.01" placeholder="Amount (KES) *" value={amount} onChange={(e)=>setAmount(e.target.value)}/><select className="rounded-lg border px-3 py-2" value={debitAccount} onChange={(e)=>setDebitAccount(e.target.value)}><option value="">Debit account *</option>{accounts.map((a)=><option key={a._id} value={a._id}>{a.code} — {a.name}</option>)}</select><select className="rounded-lg border px-3 py-2" value={creditAccount} onChange={(e)=>setCreditAccount(e.target.value)}><option value="">Credit account *</option>{accounts.map((a)=><option key={a._id} value={a._id}>{a.code} — {a.name}</option>)}</select><input className="rounded-lg border px-3 py-2" placeholder="Line description" value={lineDescription} onChange={(e)=>setLineDescription(e.target.value)}/><button disabled={!balanced||!description.trim()||createM.isPending} className="rounded-lg bg-green-700 px-4 py-2 font-medium text-white disabled:opacity-50">{createM.isPending?"Saving…":"Save Draft"}</button></div>{createM.isError&&<p className="mt-3 text-sm text-red-600">{createM.error?.response?.data?.message||createM.error?.message||"Unable to save entry."}</p>}</form>
+    <div className="rounded-xl border bg-white p-5"><h2 className="mb-4 text-lg font-semibold">Trial Balance / Chart of Accounts</h2><div className="overflow-x-auto"><table className="min-w-full text-sm"><thead><tr className="border-b text-left"><th className="p-2">Code</th><th className="p-2">Account</th><th className="p-2">Type</th><th className="p-2 text-right">Debit</th><th className="p-2 text-right">Credit</th><th className="p-2 text-right">Balance</th></tr></thead><tbody>{rows.map((r)=><tr className="border-b last:border-0" key={r.account._id}><td className="p-2 font-mono">{r.account.code}</td><td className="p-2">{r.account.name}</td><td className="p-2 capitalize">{r.account.type}</td><td className="p-2 text-right">{money(r.debit)}</td><td className="p-2 text-right">{money(r.credit)}</td><td className="p-2 text-right">{money(r.balance)}</td></tr>)}</tbody></table></div></div>
+    <div className="rounded-xl border bg-white p-5"><h2 className="mb-4 text-lg font-semibold">Journal</h2><div className="overflow-x-auto"><table className="min-w-full text-sm"><thead><tr className="border-b text-left"><th className="p-2">Date</th><th className="p-2">Entry</th><th className="p-2">Description</th><th className="p-2">Status</th><th className="p-2">Amount</th><th className="p-2 text-right">Actions</th></tr></thead><tbody>{journal.map((e)=>{const total=(e.lines||[]).reduce((s,l)=>s+Number(l.debit||0),0);return <tr className="border-b last:border-0" key={e._id}><td className="p-2">{new Date(e.entryDate).toLocaleDateString("en-KE")}</td><td className="p-2 font-mono">{e.entryNumber}</td><td className="p-2">{e.description}</td><td className="p-2"><span className="rounded-full bg-gray-100 px-2 py-1 text-xs capitalize">{e.status}</span></td><td className="p-2">{money(total)}</td><td className="p-2 text-right">{e.status==="draft"?<span className="inline-flex gap-2"><button onClick={()=>postM.mutate(e._id)} className="inline-flex items-center gap-1 rounded border px-2 py-1 text-xs"><CheckCircle2 size={14}/>Post</button><button onClick={()=>voidM.mutate(e._id)} className="inline-flex items-center gap-1 rounded border px-2 py-1 text-xs"><XCircle size={14}/>Void</button></span>:null}</td></tr>})}</tbody></table></div></div>
   </div>;
 }
