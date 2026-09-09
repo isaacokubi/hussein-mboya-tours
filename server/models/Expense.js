@@ -3,7 +3,7 @@ import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
 const expenseSchema = new mongoose.Schema({
   tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
-  expenseNumber: { type: String, trim: true, unique: true },
+  expenseNumber: { type: String, trim: true },
   category: { type: String, trim: true, required: true },
   supplierName: { type: String, trim: true, default: "" },
   supplierPin: { type: String, trim: true, uppercase: true, default: "" },
@@ -25,5 +25,6 @@ expenseSchema.pre("save", function(next) {
   next();
 });
 
+expenseSchema.index({ tenantId: 1, expenseNumber: 1 }, { unique: true });
 expenseSchema.plugin(tenantPlugin);
 export default mongoose.models.Expense || mongoose.model("Expense", expenseSchema);
