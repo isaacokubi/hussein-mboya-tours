@@ -1,17 +1,10 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
+import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
 
-
 const generateBookingNumber = () => {
-
-  return (
-    "AI-" +
-    Date.now()
-  );
-
+  return "AI-" + Date.now();
 };
-
 
 export const completeAIBooking = async ({
   tourId,
@@ -20,98 +13,43 @@ export const completeAIBooking = async ({
   name,
   email,
   phone,
-  user = null
+  user = null,
 }) => {
-  requireTenantId();
+  const tenantId = requireTenantId();
 
-
-  const tour =
-    await Tour.findById(tourId);
-
+  const tour = await Tour.findOne(
+    mergeTenantFilter({
+      _id: tourId,
+    })
+  );
 
   if (!tour) {
-
-    throw new Error(
-      "Tour not found"
-    );
-
+    throw new Error("Tour not found");
   }
 
+  const guests = Number(travellers) || 1;
+  const amount = (tour.price || 0) * guests;
 
-  const guests =
-    Number(travellers) || 1;
-
-
-  const amount =
-    (tour.price || 0) * guests;
-
-
-  const booking =
-    await Booking.create({
-
-      bookingNumber:
-        generateBookingNumber(),
-
-
-      user:
-        user?._id || null,
-
-
-      tour:
-        tour._id,
-
-
-      travelDate,
-
-
-      numberOfGuests:
-        guests,
-
-
-      travelers: [
-        {
-          name
-        }
-      ],
-
-
-      contact: {
-
-        name,
-
-        email,
-
-        phone
-
-      },
-
-
-      bookingSource:
-        "api",
-
-
-      status:
-        "pending",
-
-
-      paymentStatus:
-        "pending",
-
-
-      subtotal:
-        amount,
-
-
-      totalAmount:
-        amount,
-
-
-      balanceAmount:
-        amount
-
-    });
-
+  const booking = await Booking.create({
+    tenantId,
+    bookingNumber: generateBookingNumber(),
+    user: user?._id || null,
+    tour: tour._id,
+    travelDate,
+    numberOfGuests: guests,
+    travelers: [{ name }],
+    contact: {
+      name,
+      email,
+      phone,
+    },
+    bookingSource: "api",
+    status: "pending",
+    paymentStatus: "pending",
+    subtotal: amount,
+    totalAmount: amount,
+    balanceAmount: amount,
+  });
 
   return booking;
-
 };
