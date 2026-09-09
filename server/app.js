@@ -18,6 +18,11 @@ import apiRoutes from "./routes/index.js";
 import publicOnboardingRoutes from "./routes/publicOnboardingRoutes.js";
 import { resolveTenant } from "./middleware/tenantMiddleware.js";
 import tenantBrandingRoutes from "./routes/tenantBrandingRoutes.js";
+import settingsRoutes from "./routes/settingsRoutes.js";
+import databaseRoutes from "./routes/databaseRoutes.js";
+import systemHealthRoutes from "./routes/systemHealthRoutes.js";
+import superAdminRoutes from "./routes/superAdminRoutes.js";
+import tenantSubscriptionRoutes from "./routes/tenantSubscriptionRoutes.js";
 
 const app = express();
 
@@ -98,6 +103,15 @@ app.get("/api/health", async (req, res) => {
 app.use("/api/public/onboarding", publicOnboardingRoutes);
 app.use("/api/tenant/branding", tenantBrandingRoutes);
 app.use("/api", apiRoutes);
+
+// These routes must be mounted before the terminal 404 handler. They were previously
+// attached from server/server.js after app.js had already registered the 404 handler.
+app.use("/api/settings", settingsRoutes);
+app.use("/api/database", databaseRoutes);
+app.use("/api/system", systemHealthRoutes);
+app.use("/api/superadmin", superAdminRoutes);
+app.use("/api/subscription", tenantSubscriptionRoutes);
+
 app.get("/", (req, res) => res.status(200).json({ success: true, message: "Travel API running successfully", requestId: req.requestId }));
 app.use((req, res) => res.status(404).json({ success: false, message: "Route not found", requestId: req.requestId }));
 app.use((err, req, res, next) => {
