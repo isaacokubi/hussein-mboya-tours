@@ -16,6 +16,7 @@ import Supplier from "../models/Supplier.js";
 import PurchaseOrder from "../models/PurchaseOrder.js";
 import TourCost from "../models/TourCost.js";
 import SupplierPayable from "../models/SupplierPayable.js";
+import JournalEntry from "../models/JournalEntry.js";
 import { runWithTenant } from "../tenancy/context.js";
 
 dotenv.config();
@@ -68,6 +69,7 @@ async function clearTransactionalData(tenantId) {
     PurchaseOrder.deleteMany(filter),
     TourCost.deleteMany(filter),
     SupplierPayable.deleteMany(filter),
+    JournalEntry.deleteMany(filter),
   ]);
 }
 
@@ -252,7 +254,6 @@ async function seedTenant(tenant, tenantIndex) {
       }
     }
 
-    // Supplier-side finance: use existing suppliers only; never alter supplier master data.
     for (let i = 0; i < Math.min(6, suppliers.length, tours.length); i += 1) {
       const supplier = suppliers[i % suppliers.length];
       const tour = tours[i % tours.length];
@@ -309,13 +310,11 @@ async function seedTenant(tenant, tenantIndex) {
       await TourCost.create({ tenantId: tenant._id, tour: tour._id, booking: booking._id, category: "operational", description: `Cost allocation — ${tour.title}`, amount: cost, currency: "KES", status: "approved", createdBy: actor?._id || null }).catch(() => {});
     }
 
-    // Seed one credit and one debit note against real seeded invoices.
     if (invoices.length >= 2) {
       await CreditDebitNote.create({ tenantId: tenant._id, type: "credit", originalInvoice: invoices[0]._id, originalInvoiceNumber: invoices[0].invoiceNumber, reason: "Synthetic partial refund adjustment", amount: 500, taxAmount: 0, totalAmount: 500, taxRate: 0, status: "issued", etimsStatus: "not_submitted", createdBy: actor?._id || null });
       await CreditDebitNote.create({ tenantId: tenant._id, type: "debit", originalInvoice: invoices[1]._id, originalInvoiceNumber: invoices[1].invoiceNumber, reason: "Synthetic service adjustment", amount: 750, taxAmount: 0, totalAmount: 750, taxRate: 0, status: "issued", etimsStatus: "not_submitted", createdBy: actor?._id || null });
     }
 
-    // Rebuild customer dashboard aggregates without changing customer identity/master data.
     for (const customer of customers) {
       const customerBookings = bookings.filter((b) => String(b.customer) === String(customer._id));
       const completed = customerBookings.filter((b) => b.status === "completed").length;
@@ -323,7 +322,6 @@ async function seedTenant(tenant, tenantIndex) {
       await Customer.updateOne({ tenantId: tenant._id, _id: customer._id }, { $set: { totalBookings: customerBookings.length, completedBookings: completed, cancelledBookings: customerBookings.filter((b) => b.status === "cancelled").length, totalSpent: spent, averageBookingValue: customerBookings.length ? round(spent / customerBookings.length) : 0, lastBookingDate: customerBookings.map((b) => b.createdAt).filter(Boolean).sort((a, b) => b - a)[0] || null, loyaltyPoints: Math.floor(spent / 100) } });
     }
 
-    // Keep tour master records and only reset/recalculate booking counters for the new transactions.
     for (const tour of tours) {
       const activeBookings = bookings.filter((b) => String(b.tour) === String(tour._id) && !["cancelled", "refunded"].includes(b.status));
       const bookedSlots = activeBookings.reduce((sum, b) => sum + Number(b.numberOfGuests || 0), 0);
