@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Car, CalendarDays, MapPin, Users, CheckCircle2, Clock3, Wrench, RefreshCw, Play, Flag } from "lucide-react";
 import { getDriverDashboard, getDriverAssignedTours, updateDriverTourStatus } from "../../api/driverApi";
@@ -23,13 +23,11 @@ export default function DriverDashboard() {
   const tourPayload = unwrapData(toursQuery.data);
   const assignedTours = Array.isArray(tourPayload?.tours) ? tourPayload.tours : Array.isArray(tourPayload) ? tourPayload : [];
   const dashboardTours = Array.isArray(dashboard?.tours) ? dashboard.tours : Array.isArray(dashboard?.assignedTours) ? dashboard.assignedTours : Array.isArray(dashboard?.upcomingTours) ? dashboard.upcomingTours : [];
-  const tours = useMemo(() => {
-    const source = assignedTours.length ? assignedTours : dashboardTours;
-    return source.map((tour) => {
-      const dashboardTour = dashboardTours.find((item) => idOf(item) === idOf(tour));
-      return { ...dashboardTour, ...tour, guests: tour?.guests ?? dashboardTour?.guests ?? dashboardTour?.guestCount ?? dashboardTour?.numberOfGuests ?? 0 };
-    });
-  }, [assignedTours, dashboardTours]);
+  const source = assignedTours.length ? assignedTours : dashboardTours;
+  const tours = source.map((tour) => {
+    const dashboardTour = dashboardTours.find((item) => idOf(item) === idOf(tour));
+    return { ...dashboardTour, ...tour, guests: tour?.guests ?? dashboardTour?.guests ?? dashboardTour?.guestCount ?? dashboardTour?.numberOfGuests ?? 0 };
+  });
   const vehicle = dashboard?.vehicle || dashboard?.assignedVehicle || tours.find((tour) => tour?.assignedVehicle)?.assignedVehicle || null;
   const today = new Date();
   const todayTrips = tours.filter((tour) => isTourActiveOnDate(tour, today) && !["completed", "cancelled"].includes(String(tour?.status || "").toLowerCase()));
@@ -60,7 +58,7 @@ export default function DriverDashboard() {
             <div className="ops-list-item" key={tourId}>
               <span><MapPin size={15} /> {title} · {startLabel}</span>
               <span className="ops-status neutral">{status}</span>
-              {["scheduled", "upcoming"].includes(status) && <button className="btn btn-secondary" type="button" disabled={actionId === `${tourId}:ongoing`} title={isToday ? "Start tour" : `This tour is scheduled for ${startLabel}`} onClick={() => void changeStatus(tour, "ongoing")}><Play size={14} /> {actionId === `${tourId}:ongoing` ? "Starting..." : "Start"}</button>}
+              {["scheduled", "upcoming"].includes(status) && <button className="btn btn-secondary" type="button" disabled={actionId === `${tourId}:ongoing` || !isToday} title={isToday ? "Start tour" : `This tour is scheduled for ${startLabel}`} onClick={() => void changeStatus(tour, "ongoing")}><Play size={14} /> {actionId === `${tourId}:ongoing` ? "Starting..." : "Start"}</button>}
               {status === "ongoing" && <button className="btn btn-secondary" type="button" disabled={actionId === `${tourId}:completed`} onClick={() => void changeStatus(tour, "completed")}><Flag size={14} /> {actionId === `${tourId}:completed` ? "Completing..." : "Complete"}</button>}
             </div>
           ); })}

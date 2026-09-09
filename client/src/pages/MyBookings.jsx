@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
 import { cancelBooking, getMyBookings, rescheduleBooking } from "../api/bookingApi";
@@ -27,6 +27,13 @@ export default function MyBookings() {
   const [editing, setEditing] = useState(null);
   const [newDate, setNewDate] = useState("");
   const [reason, setReason] = useState("");
+  const [minimumRescheduleDate, setMinimumRescheduleDate] = useState("");
+
+  useEffect(() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    setMinimumRescheduleDate(tomorrow.toISOString().slice(0, 10));
+  }, []);
 
   // Do not redirect from this page based on a transient/stale role value.
   // ProtectedRoute already authenticates the session, while the backend
@@ -70,7 +77,7 @@ export default function MyBookings() {
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between"><div><h2 className="text-xl font-bold text-green-800 sm:text-2xl">{nameOf(b)}</h2><p className="mt-1 text-sm text-gray-600">Booking Reference: <b>{refOf(b)}</b></p></div><div className="flex flex-wrap gap-2"><Badge label="Booking" value={status}/><Badge label="Payment" value={payment}/></div></div>
       <div className="my-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"><Detail label="Travel Date" value={dateOf(b.travelDate||b.date)}/><Detail label="Pickup" value={b.pickupLocation||b.pickup?.location||b.pickupAddress||"Not specified"}/><Detail label="Total" value={`KES ${total.toLocaleString()}`}/><Detail label="Balance" value={`KES ${due.toLocaleString()}`}/></div>
       <p className="border-t pt-4 text-sm text-gray-600">Travellers: <b>{b.travelers?.length||b.numberOfGuests||1}</b> <span className="ml-5">Paid: <b>KES {amountPaid.toLocaleString()}</b></span></p>
-      {open && <div className="mt-4 rounded-xl bg-sky-50 p-4"><div className="grid gap-3 sm:grid-cols-[1fr_2fr_auto]"><input type="date" min={new Date(Date.now()+86400000).toISOString().slice(0,10)} value={newDate} onChange={(e)=>setNewDate(e.target.value)} className="rounded-lg border p-2"/><input value={reason} onChange={(e)=>setReason(e.target.value)} placeholder="Reason (optional)" className="rounded-lg border p-2"/><button type="button" disabled={!newDate||reschedule.isPending} onClick={()=>reschedule.mutate({id:b._id,date:newDate,changeReason:reason})} className="rounded-lg bg-sky-700 px-4 py-2 font-bold text-white disabled:opacity-50">{reschedule.isPending?"Saving...":"Save Date"}</button></div></div>}
+      {open && <div className="mt-4 rounded-xl bg-sky-50 p-4"><div className="grid gap-3 sm:grid-cols-[1fr_2fr_auto]"><input type="date" min={minimumRescheduleDate} value={newDate} onChange={(e)=>setNewDate(e.target.value)} className="rounded-lg border p-2"/><input value={reason} onChange={(e)=>setReason(e.target.value)} placeholder="Reason (optional)" className="rounded-lg border p-2"/><button type="button" disabled={!newDate||reschedule.isPending} onClick={()=>reschedule.mutate({id:b._id,date:newDate,changeReason:reason})} className="rounded-lg bg-sky-700 px-4 py-2 font-bold text-white disabled:opacity-50">{reschedule.isPending?"Saving...":"Save Date"}</button></div></div>}
       <div className="mt-5 flex flex-wrap gap-2 border-t pt-4"><Link to={`/bookings/${b._id}`} className="rounded-xl bg-green-700 px-5 py-2.5 font-semibold text-white">Open Booking</Link>{canPay&&<Link to={`/checkout/booking/${b._id}`} className={`rounded-xl px-5 py-2.5 font-bold text-white ${failed?"bg-red-600":"bg-black"}`}>{failed?"Retry Payment":"Pay Balance"}</Link>}{!['cancelled','completed'].includes(status)&&<button type="button" onClick={()=>{setEditing(open?null:b._id);setNewDate("");setReason("")}} className="rounded-xl bg-sky-100 px-5 py-2.5 font-semibold text-sky-800">{open?"Close":"Reschedule"}</button>}{!['cancelled','completed'].includes(status)&&<button type="button" disabled={cancel.isPending} onClick={()=>{if(window.confirm(`Cancel booking ${refOf(b)}?`))cancel.mutate(b._id)}} className="rounded-xl bg-red-600 px-5 py-2.5 font-semibold text-white disabled:opacity-50">{cancel.isPending?"Cancelling...":"Cancel"}</button>}</div>
     </article>;})}</div>
   </div></main>;
