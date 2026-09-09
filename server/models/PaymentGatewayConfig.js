@@ -43,6 +43,8 @@ const paymentGatewayConfigSchema = new mongoose.Schema({
   passkeyEncrypted: { type: String, default: "" },
   secretKeyEncrypted: { type: String, default: "" },
   webhookSecretEncrypted: { type: String, default: "" },
+  initiatorNameEncrypted: { type: String, default: "" },
+  securityCredentialEncrypted: { type: String, default: "" },
   updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
 }, { timestamps: true });
 
