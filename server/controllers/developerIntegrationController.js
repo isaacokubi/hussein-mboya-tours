@@ -63,9 +63,12 @@ export const testWebhook = async (req, res, next) => {
     if (!hook.active) return res.status(409).json({ success: false, message: "Activate the webhook before sending a test delivery." });
     const event = hook.events?.[0];
     if (!event) return res.status(409).json({ success: false, message: "Select at least one webhook event before testing delivery." });
+    const eventId = crypto.randomUUID();
     const job = await enqueueJob("webhook.delivery", {
       webhookId: hook._id,
       event,
+      eventId,
+      occurredAt: new Date().toISOString(),
       data: {
         test: true,
         message: "This is a test delivery from Hussein Mboya Tours.",
@@ -73,10 +76,10 @@ export const testWebhook = async (req, res, next) => {
       },
     }, {
       tenantId: tenantId(req),
-      idempotencyKey: `webhook-test:${hook._id}:${Date.now()}:${crypto.randomBytes(6).toString("hex")}`,
+      idempotencyKey: `webhook-test:${hook._id}:${eventId}`,
       maxAttempts: 3,
     });
-    res.status(202).json({ success: true, message: "Webhook test queued for delivery.", jobId: job?._id || job?.id || null, event });
+    res.status(202).json({ success: true, message: "Webhook test queued for delivery.", jobId: job?._id || job?.id || null, event, eventId });
   } catch (e) { next(e); }
 };
 
