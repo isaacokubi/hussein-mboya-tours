@@ -11,7 +11,6 @@ const exists = (r) => fs.existsSync(path.join(client, r));
 const read = (r) => fs.readFileSync(path.join(client, r), "utf8");
 const routeSource = read("routes/AppRoutes.jsx");
 const sidebarSource = read("components/admin/AdminSidebar.jsx");
-const route = (p) => new RegExp(`path="${p.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")}"`);
 const hasRoute = (p) => routeSource.includes(`path="${p}"`) || routeSource.includes(`path='${p}'`);
 
 const requiredUiFiles = [
@@ -39,9 +38,7 @@ test("frontend coverage: every production-critical backend capability has a UI s
 
 test("frontend coverage: Kenya compliance and eTIMS are visible", () => {
   const s = read("pages/admin/AdminCompliance.jsx");
-  for (const m of ["KRA tax profile", "eTIMS", "Credit / debit notes", "Compliance controls"]) {
-    assert.match(s, new RegExp(m.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")));
-  }
+  for (const m of ["KRA tax profile", "eTIMS", "Credit / debit notes", "Compliance controls"]) assert.match(s, new RegExp(m.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")));
   assert.ok(hasRoute("/admin"), "Admin route must exist");
   assert.match(routeSource, /path="compliance"/);
   assert.match(sidebarSource, /Compliance & eTIMS/);
@@ -49,9 +46,7 @@ test("frontend coverage: Kenya compliance and eTIMS are visible", () => {
 
 test("frontend coverage: tenant payment gateways are configurable from the UI", () => {
   const s = read("components/admin/PaymentGatewayCenter.jsx");
-  for (const m of ["M-Pesa", "Stripe", "PayPal", "PESAPAL", "Bank transfer", "Save securely", "encrypted"]) {
-    assert.match(s, new RegExp(m, "i"));
-  }
+  for (const m of ["M-Pesa", "Stripe", "PayPal", "PESAPAL", "Bank transfer", "Save securely", "encrypted"]) assert.match(s, new RegExp(m, "i"));
   assert.match(read("pages/admin/PlatformArchitecture.jsx"), /PaymentGatewayCenter/);
 });
 
@@ -77,8 +72,8 @@ test("frontend coverage: finance lifecycle, payments, accounting and reconciliat
   const s = (read("pages/admin/finance/AdminFinance.jsx") + read("components/admin/FinanceLifecycleCenter.jsx")).toLowerCase();
   for (const m of ["payment", "invoice", "credit", "debit", "ledger", "reconciliation"]) assert.match(s, new RegExp(m));
   assert.match(routeSource, /path="finance"/);
-  assert.match(routeSource, /path="transactions"/);
-  assert.match(routeSource, /path="reconciliation"/);
+  assert.match(routeSource, /path="finance\/transactions"/);
+  assert.match(routeSource, /path="finance\/reconciliation"/);
 });
 
 test("frontend coverage: operations, corporate, supplier and accommodation workflows are visible", () => {
@@ -89,9 +84,7 @@ test("frontend coverage: operations, corporate, supplier and accommodation workf
 
 test("frontend coverage: travel execution backend is directly usable from the UI", () => {
   const s = read("components/admin/TravelOperationsCenter.jsx");
-  for (const m of ["Schedule operation", "Operational record", "Commercial rule", "createTravelOperation", "createOperationalAsset", "createTravelRule", "updateTravelOperation", "updateOperationalAsset", "updateTravelRule", "deleteTravelOperation", "deleteOperationalAsset", "deleteTravelRule"]) {
-    assert.match(s, new RegExp(m.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")));
-  }
+  for (const m of ["Schedule operation", "Operational record", "Commercial rule", "createTravelOperation", "createOperationalAsset", "createTravelRule", "updateTravelOperation", "updateOperationalAsset", "updateTravelRule", "deleteTravelOperation", "deleteOperationalAsset", "deleteTravelRule"]) assert.match(s, new RegExp(m.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")));
   assert.match(read("api/travelOperationsApi.js"), /\/operations|\/operational-assets/);
 });
 
