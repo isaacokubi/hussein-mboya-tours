@@ -36,8 +36,8 @@ test("integration keys enforce origin restrictions and support revocation", () =
   assert.match(controller, /At least one allowed website origin is required for a live browser connector/);
   assert.match(auth, /allowedOrigins/);
   assert.match(auth, /website origin is not authorized/);
-  assert.match(controller, /active: false/);
-  assert.match(controller, /revokedAt: new Date\(\)/);
+  assert.match(controller, /active:false/);
+  assert.match(controller, /revokedAt:new Date\(\)/);
   assert.match(keyModel, /revokedAt/);
 });
 
@@ -47,7 +47,7 @@ test("booking capture has server-side validation and pricing", () => {
   assert.match(controller, /validateTourCapacity/);
   assert.match(controller, /reserveSlots/);
   assert.match(controller, /calculateBookingAmounts/);
-  assert.match(controller, /totalAmount: amounts\.totalAmount/);
+  assert.match(controller, /totalAmount:amounts\.totalAmount/);
   assert.match(controller, /Customer phone number is required/);
 });
 
