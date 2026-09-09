@@ -15,12 +15,17 @@ import { syncTourLifecycle } from "./services/tourLifecycleService.js";
 import { startPaymentCleanupScheduler } from "./services/paymentCleanupScheduler.js";
 import { startTenantSubscriptionScheduler } from "./services/tenantSubscriptionService.js";
 import { startCustomerCommunicationScheduler } from "./services/customerCommunicationScheduler.js";
+import { enqueueDueEtimsInvoices } from "./services/etimsService.js";
+import { startJobWorker } from "./services/jobWorkerService.js";
 import mfaRoutes from "./routes/mfaRoutes.js";
 
 await connectDatabase();
 startPaymentCleanupScheduler();
 const subscriptionInterval = startTenantSubscriptionScheduler();
 const communicationInterval = startCustomerCommunicationScheduler();
+const stopJobWorker = startJobWorker();
+const etimsInterval = setInterval(() => { enqueueDueEtimsInvoices().catch((error) => console.error("eTIMS dispatcher error:", error.message)); }, 60 * 1000);
+enqueueDueEtimsInvoices().catch((error) => console.error("Initial eTIMS dispatcher error:", error.message));
 await syncTourLifecycle().catch((error) => console.error("Initial tour lifecycle sync failed:", error));
 const lifecycleInterval = setInterval(() => { syncTourLifecycle().catch((error) => console.error("Tour lifecycle sync failed:", error)); }, 60 * 1000);
 const server = http.createServer(app);
@@ -37,6 +42,8 @@ const shutdown = async (exitCode = 0) => {
   clearInterval(lifecycleInterval);
   clearInterval(subscriptionInterval);
   clearInterval(communicationInterval);
+  clearInterval(etimsInterval);
+  stopJobWorker();
   try { await new Promise((resolve) => { if (!server.listening) return resolve(); server.close(() => resolve()); }); } catch (error) { console.error("Server shutdown error:", error.message); }
   try { await mongoose.connection.close(); } catch (error) { console.error("MongoDB shutdown error:", error.message); }
   process.exit(exitCode);
