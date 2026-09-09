@@ -2,6 +2,7 @@ import crypto from "crypto";
 import OperationalAsset from "../models/OperationalAsset.js";
 import TravelCommercialRule from "../models/TravelCommercialRule.js";
 import LoyaltyAccount from "../models/LoyaltyAccount.js";
+import Tour from "../models/Tour.js";
 
 const tokenHash = (value) => crypto.createHash("sha256").update(String(value)).digest("hex");
 
@@ -31,21 +32,41 @@ export const redeemVoucher = async (req, res, next) => {
 
 export const calculateDynamicPrice = async (req, res, next) => {
   try {
-    let price = Number(req.body.basePrice);
-    if (!Number.isFinite(price) || price < 0) return res.status(400).json({ success: false, message: "basePrice must be a non-negative number." });
+    const requestedTourId = req.body.tourId || req.body.tour || null;
+    const requestedDate = req.body.travelDate || req.body.date || null;
+    const guests = Number(req.body.guests ?? req.body.numberOfGuests ?? 1);
+    let basePrice = Number(req.body.basePrice);
+
+    if (requestedTourId) {
+      const tour = await Tour.findOne({ _id: requestedTourId, status: { $in: ["scheduled", "upcoming", "ongoing"] }, published: true, available: true, isDeleted: false }).select("price discount discountPrice").lean();
+      if (!tour) return res.status(404).json({ success: false, message: "Tour not found or not available." });
+      if (!Number.isFinite(basePrice)) {
+        const listedPrice = Number(tour.discountPrice ?? tour.price);
+        const discount = Number(tour.discount || 0);
+        basePrice = Number.isFinite(listedPrice) ? listedPrice : Number(tour.price) * (1 - discount / 100);
+      }
+    }
+
+    if (!Number.isFinite(basePrice) || basePrice < 0) return res.status(400).json({ success: false, message: "basePrice must be a non-negative number." });
+    if (!Number.isInteger(guests) || guests <= 0 || guests > 100) return res.status(400).json({ success: false, message: "guests must be a positive integer between 1 and 100." });
+    if (requestedDate && Number.isNaN(new Date(requestedDate).getTime())) return res.status(400).json({ success: false, message: "travelDate must be a valid date." });
+
     const rules = await TravelCommercialRule.find({ tenantId: req.user.tenantId, type: "dynamic_price", active: true }).sort({ priority: -1 }).lean();
+    let price = basePrice;
+    let appliedRules = 0;
     for (const rule of rules) {
       const c = rule.conditions || {};
-      if (c.minGuests && Number(req.body.guests || 1) < Number(c.minGuests)) continue;
-      if (c.maxGuests && Number(req.body.guests || 1) > Number(c.maxGuests)) continue;
-      if (c.from && req.body.date && new Date(req.body.date) < new Date(c.from)) continue;
-      if (c.to && req.body.date && new Date(req.body.date) > new Date(c.to)) continue;
-      const a = rule.action || {};
+      if (c.minGuests && guests < Number(c.minGuests)) continue;
+      if (c.maxGuests && guests > Number(c.maxGuests)) continue;
+      if (c.from && requestedDate && new Date(requestedDate) < new Date(c.from)) continue;
+      if (c.to && requestedDate && new Date(requestedDate) > new Date(c.to)) continue;
+      const a = rule.actions || rule.action || {};
       if (a.percent !== undefined) price *= 1 + Number(a.percent) / 100;
       if (a.fixed !== undefined) price += Number(a.fixed);
       price = Math.max(0, price);
+      appliedRules += 1;
     }
-    res.json({ success: true, data: { basePrice: Number(req.body.basePrice), finalPrice: Math.round(price * 100) / 100, currency: req.body.currency || "KES", rulesApplied: rules.length } });
+    res.json({ success: true, data: { basePrice, finalPrice: Math.round(price * 100) / 100, currency: req.body.currency || "KES", guests, travelDate: requestedDate || null, rulesApplied: appliedRules } });
   } catch (e) { next(e); }
 };
 
