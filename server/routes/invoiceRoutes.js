@@ -6,6 +6,7 @@ import Booking from "../models/Booking.js";
 import { downloadInvoice } from "../controllers/invoiceController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { canAccessBooking } from "../controllers/phase3InvoiceAccess.js";
+import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 
 const router = express.Router();
 
@@ -15,7 +16,13 @@ router.use(protect);
 
 const invoiceOwnerOrPrivileged = async (req, res, next) => {
   try {
-    const booking = await Booking.findById(req.params.id).select("user customer").populate("customer", "user").lean();
+    requireTenantId();
+    const booking = await Booking.findOne(
+      mergeTenantFilter(req, { _id: req.params.id })
+    )
+      .select("user customer")
+      .populate("customer", "user")
+      .lean();
     if (!booking) return res.status(404).json({ success: false, message: "Booking not found" });
     if (!canAccessBooking(booking, req.user)) {
       return res.status(403).json({ success: false, message: "You do not have access to this invoice." });
@@ -23,7 +30,7 @@ const invoiceOwnerOrPrivileged = async (req, res, next) => {
     next();
   } catch (error) {
     console.error("INVOICE AUTHORIZATION ERROR:", error);
-    return res.status(500).json({ success: false, message: "Invoice authorization failed" });
+    return res.status(error?.status || 500).json({ success: false, message: error?.message || "Invoice authorization failed" });
   }
 };
 
