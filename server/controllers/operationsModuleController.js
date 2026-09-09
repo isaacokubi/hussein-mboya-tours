@@ -5,6 +5,7 @@ import SupplierPayable from "../models/SupplierPayable.js";
 import CorporateAccount from "../models/CorporateAccount.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 import * as operations from "../services/operationsService.js";
+import { postSupplierPayable, postSupplierPayment } from "../services/financeLifecycleService.js";
 
 const userId = (req) => req.user?._id || req.user?.id || null;
 const ok = (res, data, status = 200) => res.status(status).json({ success: true, data });
@@ -23,8 +24,8 @@ export const createTourCost = async (req, res, next) => { try { return ok(res, a
 export const tourProfitability = async (req, res, next) => { try { return ok(res, await operations.getTourProfitability(req.params.tourId)); } catch (e) { return fail(next, e); } };
 
 export const listSupplierPayables = async (req, res, next) => { try { const data = await SupplierPayable.find(tenantFilter(req)).populate("supplier", "legalName").sort({ dueDate: 1, createdAt: -1 }).lean(); return ok(res, data); } catch (e) { return fail(next, e); } };
-export const createSupplierPayable = async (req, res, next) => { try { return ok(res, await operations.createSupplierPayable(req.body, userId(req)), 201); } catch (e) { return fail(next, e); } };
-export const paySupplierPayable = async (req, res, next) => { try { return ok(res, await operations.paySupplierPayable(req.params.id, req.body.amount, req.body.paymentReference)); } catch (e) { return fail(next, e); } };
+export const createSupplierPayable = async (req, res, next) => { try { const payable = await operations.createSupplierPayable(req.body, userId(req)); await postSupplierPayable(payable); return ok(res, payable, 201); } catch (e) { return fail(next, e); } };
+export const paySupplierPayable = async (req, res, next) => { try { const amount = Number(req.body.amount); const before = await SupplierPayable.findOne(tenantFilter(req, { _id: req.params.id })); if (!before) return res.status(404).json({ success: false, message: "Supplier payable not found." }); const payable = await operations.paySupplierPayable(req.params.id, amount, req.body.paymentReference); await postSupplierPayment({ payable: before, amount, paymentReference: req.body.paymentReference }); return ok(res, payable); } catch (e) { return fail(next, e); } };
 
 export const listCorporateAccounts = async (req, res, next) => { try { return ok(res, await CorporateAccount.find(tenantFilter(req)).sort({ companyName: 1 }).lean()); } catch (e) { return fail(next, e); } };
 export const createCorporateAccount = async (req, res, next) => { try { return ok(res, await operations.createCorporateAccount(req.body, userId(req)), 201); } catch (e) { return fail(next, e); } };
