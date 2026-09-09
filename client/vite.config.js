@@ -29,6 +29,16 @@ export default defineConfig(({ mode }) => {
     },
 
     build: {
+      // esbuild 0.28.x can reject destructuring even though every configured
+      // browser target already supports it. Explicitly mark the feature as
+      // supported so the secure esbuild version does not attempt an impossible
+      // lowering during Vite's final transpile step.
+      target: ["es2020", "edge88", "firefox78", "chrome87", "safari14"],
+      esbuildOptions: {
+        supported: {
+          destructuring: true,
+        },
+      },
       rollupOptions: {
         output: {
           manualChunks: undefined,
