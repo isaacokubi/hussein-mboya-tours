@@ -6,7 +6,7 @@ import {
   listPurchaseOrders, createPurchaseOrder, transitionPurchaseOrder,
   listTourCosts, createTourCost, tourProfitability,
   listSupplierPayables, createSupplierPayable, paySupplierPayable,
-  listCorporateAccounts, createCorporateAccount, resourceConflicts,
+  listCorporateAccounts, createCorporateAccount, reconcileCorporateAccount, resourceConflicts,
 } from "../controllers/operationsModuleController.js";
 
 const router = express.Router();
@@ -25,5 +25,6 @@ router.post("/supplier-payables", createSupplierPayable);
 router.post("/supplier-payables/:id/pay", paySupplierPayable);
 router.get("/corporate-accounts", listCorporateAccounts);
 router.post("/corporate-accounts", createCorporateAccount);
+router.post("/corporate-accounts/:id/reconcile", reconcileCorporateAccount);
 router.get("/resource-conflicts", resourceConflicts);
 export default router;
