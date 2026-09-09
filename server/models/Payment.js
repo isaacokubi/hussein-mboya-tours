@@ -2,6 +2,7 @@
 
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+import Invoice from "./Invoice.js";
 
 const paymentSchema = new mongoose.Schema(
   {
@@ -63,10 +64,6 @@ paymentSchema.index({ status: 1, provider: 1 });
 paymentSchema.index({ transactionId: 1 });
 paymentSchema.index({ transactionReference: 1 });
 
-// Provider identifiers are tenant-scoped and only indexed when they contain
-// a real string value. This is intentionally partial rather than sparse because
-// legacy documents may contain explicit null values; sparse unique indexes can
-// still collide on those nulls in a compound index.
 paymentSchema.index(
   { tenantId: 1, provider: 1, transactionReference: 1 },
   { unique: true, partialFilterExpression: { status: "completed", transactionReference: { $type: "string" } } }
@@ -100,6 +97,70 @@ paymentSchema.methods.markFailed = function (reason) {
   this.failedAt = new Date();
   return this.save();
 };
+
+/*
+|--------------------------------------------------------------------------
+| SYNCHRONIZE TENANT INVOICE FINANCIAL STATE
+|--------------------------------------------------------------------------
+| Every persisted payment/refund mutation recalculates the invoice from
+| the complete payment ledger for the booking. This makes amountPaid and
+| balance deterministic and prevents duplicate callbacks from double
+| crediting the invoice. eTIMS fields are deliberately left untouched.
+|--------------------------------------------------------------------------
+*/
+
+paymentSchema.post("save", async function () {
+  if (!this.tenantId || !this.booking) return;
+  if (!["completed", "refunded"].includes(this.status) && this.refundStatus !== "completed") return;
+
+  const session = typeof this.$session === "function" ? this.$session() : null;
+  const queryOptions = session ? { session } : {};
+
+  const PaymentModel = this.constructor;
+  const bookingId = this.booking;
+
+  const [invoice, payments] = await Promise.all([
+    Invoice.findOne({ tenantId: this.tenantId, booking: bookingId, isDeleted: { $ne: true } }, null, queryOptions),
+    PaymentModel.find({
+      tenantId: this.tenantId,
+      booking: bookingId,
+      status: { $in: ["completed", "refunded"] },
+    }, null, queryOptions).select("amount status refundedAmount refundStatus paymentMethod transactionReference transactionId mpesaReceiptNumber invoiceNumber"),
+  ]);
+
+  if (!invoice) return;
+
+  const totalPaid = payments.reduce((sum, payment) => {
+    const amount = Number(payment.amount || 0);
+    const refunded = Number(payment.refundedAmount || 0);
+    return sum + Math.max(0, amount - refunded);
+  }, 0);
+
+  const totalAmount = Number(invoice.totalAmount || 0);
+  const amountPaid = Math.min(totalAmount, Math.max(0, totalPaid));
+
+  invoice.amountPaid = amountPaid;
+  invoice.balance = Math.max(0, totalAmount - amountPaid);
+
+  if (amountPaid <= 0) {
+    invoice.status = payments.some((payment) => Number(payment.refundedAmount || 0) > 0) ? "refunded" : "pending";
+  } else if (amountPaid >= totalAmount && totalAmount > 0) {
+    invoice.status = "paid";
+  } else {
+    invoice.status = "partial";
+  }
+
+  const latestPayment = payments
+    .slice()
+    .sort((a, b) => Number(new Date(b.updatedAt || 0)) - Number(new Date(a.updatedAt || 0)))[0];
+
+  if (latestPayment) {
+    invoice.paymentMethod = latestPayment.paymentMethod || invoice.paymentMethod;
+    invoice.paymentReference = latestPayment.mpesaReceiptNumber || latestPayment.transactionReference || latestPayment.transactionId || invoice.paymentReference;
+  }
+
+  await invoice.save(queryOptions);
+});
 
 const tenantPaymentSchema = paymentSchema.plugin(tenantPlugin);
 const Payment = mongoose.models.Payment || mongoose.model("Payment", tenantPaymentSchema);
