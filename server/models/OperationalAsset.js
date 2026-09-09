@@ -5,7 +5,7 @@ const operationalAssetSchema = new mongoose.Schema({
   type: { type: String, enum: ["vehicle", "driver", "guide", "room", "transfer", "park_fee", "voucher", "traveller_document", "incident"], required: true, index: true },
   name: { type: String, required: true, trim: true },
   code: { type: String, trim: true, index: true },
-  status: { type: String, enum: ["active", "inactive", "pending", "completed", "cancelled", "expired"], default: "active", index: true },
+  status: { type: String, enum: ["active", "available", "inactive", "pending", "completed", "cancelled", "expired"], default: "active", index: true },
   bookingId: { type: mongoose.Schema.Types.ObjectId, ref: "Booking", index: true },
   tourId: { type: mongoose.Schema.Types.ObjectId, ref: "Tour", index: true },
   assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: "User", index: true },
