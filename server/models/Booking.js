@@ -213,6 +213,13 @@ customer: {
       default: "website",
     },
 
+    // External website/API attribution. These fields make website-to-ERP
+    // imports traceable and idempotent without creating duplicate bookings.
+    externalSource: { type: String, trim: true, default: undefined },
+    externalBookingId: { type: String, trim: true, default: undefined },
+    integrationKeyId: { type: mongoose.Schema.Types.ObjectId, ref: "WebsiteIntegrationKey", default: null },
+    externalMetadata: { type: mongoose.Schema.Types.Mixed, default: {} },
+
     /*
     |--------------------------------------------------------------------------
     | TOUR
@@ -488,7 +495,6 @@ customer: {
       type: String,
       enum: [
         "pending",
-        "failed",
         "confirmed",
         "assigned",
         "ongoing",
@@ -500,74 +506,45 @@ customer: {
       index: true,
     },
 
-    /*
-    |--------------------------------------------------------------------------
-    | BOOKING TIMELINE
-    |--------------------------------------------------------------------------
-    */
-
-    confirmedAt: Date,
-
-    assignedAt: Date,
-
-    startedAt: Date,
-
-    completedAt: Date,
-
-    cancelledAt: Date,
-
-    cancelledBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    },
-
     cancellationReason: {
       type: String,
       default: "",
     },
 
-    /*
-    |--------------------------------------------------------------------------
-    | ABANDONED BOOKINGS
-    |--------------------------------------------------------------------------
-    */
-
-    abandoned: {
-      type: Boolean,
-      default: false,
+    cancelledAt: {
+      type: Date,
+      default: null,
     },
 
-    abandonedAt: Date,
+    confirmedAt: {
+      type: Date,
+      default: null,
+    },
 
-    lastReminderSent: Date,
+    completedAt: {
+      type: Date,
+      default: null,
+    },
 
     /*
     |--------------------------------------------------------------------------
-    | DOCUMENTS
+    | NOTES & DOCUMENTS
     |--------------------------------------------------------------------------
     */
+
+    notes: {
+      type: String,
+      default: "",
+    },
 
     documents: [
       {
+        name: String,
+        url: String,
         type: String,
+        uploadedAt: { type: Date, default: Date.now },
       },
     ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | NOTES
-    |--------------------------------------------------------------------------
-    */
-
-    customerNotes: {
-      type: String,
-      default: "",
-    },
-
-    staffNotes: {
-      type: String,
-      default: "",
-    },
 
     /*
     |--------------------------------------------------------------------------
@@ -578,161 +555,48 @@ customer: {
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
+      default: null,
     },
 
     updatedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
+      default: null,
     },
-
-    /*
-    |--------------------------------------------------------------------------
-    | SOFT DELETE
-    |--------------------------------------------------------------------------
-    */
 
     isDeleted: {
       type: Boolean,
       default: false,
-    },
-
-    deletedAt: {
-      type: Date,
-      default: null,
+      index: true,
     },
   },
   {
     timestamps: true,
-    toJSON: {
-      virtuals: true,
-    },
-    toObject: {
-      virtuals: true,
-    },
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   },
-); /*
-|--------------------------------------------------------------------------
-| GENERATE BOOKING NUMBER
-|--------------------------------------------------------------------------
-*/
-
-bookingSchema.pre("save", function (next) {
-  if (!this.bookingNumber) {
-    const year = new Date().getFullYear();
-
-    const random = Math.random().toString(36).substring(2, 8).toUpperCase();
-
-    this.bookingNumber = `HMT-${year}-${random}`;
-  }
-
-  next();
-});
+);
 
 /*
 |--------------------------------------------------------------------------
-| CALCULATIONS & VALIDATION
+| PRE SAVE
 |--------------------------------------------------------------------------
 */
 
-bookingSchema.pre("save", function (next) {
-  // Automatically determine guest count
-
-  if (this.travelers?.length > 0) {
-    this.numberOfGuests = this.travelers.length;
+bookingSchema.pre("save", function(next) {
+  if (!this.bookingNumber) {
+    this.bookingNumber = "BK-" + Date.now() + "-" + Math.floor(Math.random() * 10000);
   }
 
-  // Prevent invalid deposits
-
-  if (this.depositAmount > this.totalAmount) {
-    return next(new Error("Deposit amount cannot exceed total amount."));
-  }
-
-  // Calculate financial state from the total amount already paid.
-
-  this.depositAmount = Math.min(
-    Math.max(Number(this.depositAmount || 0), 0),
-    Number(this.totalAmount || 0)
-  );
-
-  this.balanceAmount = Math.max(
-    0,
-    Number(this.totalAmount || 0) -
-      Number(this.depositAmount || 0)
-  );
-
-  // Synchronize payment status with the actual financial state.
-
-  if (
-    Number(this.totalAmount || 0) > 0 &&
-    Number(this.depositAmount || 0) >=
-      Number(this.totalAmount || 0)
-  ) {
-    this.depositAmount =
-      Number(this.totalAmount);
-
-    this.balanceAmount = 0;
-
-    this.paymentStatus = "paid";
-
-  } else if (
-    Number(this.depositAmount || 0) > 0
-  ) {
-    this.paymentStatus = "partial";
-  }
-
-  // Calculate commission
-
-  if (this.agent && this.commissionRate > 0) {
-    this.commissionAmount = (this.totalAmount * this.commissionRate) / 100;
-  } else {
-    this.commissionAmount = 0;
-  }
-
-  // Sync assignment flag
-
-  this.assigned = Boolean(
-    this.assignedGuide || this.assignedDriver || this.assignedVehicle,
-  );
-
-  // Automatic timestamps
-
-  if (
-    this.isModified("status") &&
-    this.status === "confirmed" &&
-    !this.confirmedAt
-  ) {
+  if (this.isModified("status") && this.status === "confirmed" && !this.confirmedAt) {
     this.confirmedAt = new Date();
   }
 
-  if (
-    this.isModified("status") &&
-    this.status === "assigned" &&
-    !this.assignedAt
-  ) {
-    this.assignedAt = new Date();
-  }
-
-  if (
-    this.isModified("status") &&
-    this.status === "ongoing" &&
-    !this.startedAt
-  ) {
-    this.startedAt = new Date();
-  }
-
-  if (
-    this.isModified("status") &&
-    this.status === "completed" &&
-    !this.completedAt
-  ) {
+  if (this.isModified("status") && this.status === "completed" && !this.completedAt) {
     this.completedAt = new Date();
   }
 
-  if (
-    this.isModified("status") &&
-    this.status === "cancelled" &&
-    !this.cancelledAt
-  ) {
+  if (this.isModified("status") && this.status === "cancelled" && !this.cancelledAt) {
     this.cancelledAt = new Date();
   }
 
@@ -783,29 +647,21 @@ bookingSchema.methods.calculateBalance = function () {
 
 bookingSchema.methods.markPaid = function () {
   this.paymentStatus = "paid";
-
   this.depositAmount = this.totalAmount;
-
   this.balanceAmount = 0;
-
   return this.save();
 };
 
 bookingSchema.methods.markCompleted = function () {
   this.status = "completed";
-
   this.completedAt = new Date();
-
   return this.save();
 };
 
 bookingSchema.methods.cancelBooking = function (reason = "") {
   this.status = "cancelled";
-
   this.cancellationReason = reason;
-
   this.cancelledAt = new Date();
-
   return this.save();
 };
 
@@ -817,12 +673,8 @@ bookingSchema.methods.cancelBooking = function (reason = "") {
 
 bookingSchema.statics.findUpcoming = function () {
   return this.find({
-    status: {
-      $in: ["confirmed", "assigned", "ongoing"],
-    },
-    travelDate: {
-      $gte: new Date(),
-    },
+    status: { $in: ["confirmed", "assigned", "ongoing"] },
+    travelDate: { $gte: new Date() },
     isDeleted: false,
   });
 };
@@ -836,9 +688,7 @@ bookingSchema.statics.findCompleted = function () {
 
 bookingSchema.statics.findPendingPayments = function () {
   return this.find({
-    paymentStatus: {
-      $in: ["pending", "partial"],
-    },
+    paymentStatus: { $in: ["pending", "partial"] },
     isDeleted: false,
   });
 };
@@ -849,69 +699,28 @@ bookingSchema.statics.findPendingPayments = function () {
 |--------------------------------------------------------------------------
 */
 
-bookingSchema.index({
-  customer: 1,
-  createdAt: -1,
-});
+bookingSchema.index({ customer: 1, createdAt: -1 });
+bookingSchema.index({ agent: 1 });
+bookingSchema.index({ travelDate: 1 });
+bookingSchema.index({ paymentReference: 1 });
+bookingSchema.index({ transactionId: 1 });
+bookingSchema.index({ assignedGuide: 1 });
+bookingSchema.index({ assignedDriver: 1 });
+bookingSchema.index({ assignedVehicle: 1 });
+bookingSchema.index({ createdAt: -1 });
 
-bookingSchema.index({
-  agent: 1,
-});
+// A partner website can safely retry the same booking using its own ID.
+// Sparse uniqueness means normal/manual bookings are unaffected.
+bookingSchema.index(
+  { tenantId: 1, externalSource: 1, externalBookingId: 1 },
+  { unique: true, sparse: true, partialFilterExpression: { externalBookingId: { $gt: "" } } }
+);
 
-bookingSchema.index({
-  travelDate: 1,
-});
-
-
-
-bookingSchema.index({
-  paymentReference: 1,
-});
-
-bookingSchema.index({
-  transactionId: 1,
-});
-
-
-
-bookingSchema.index({
-  assignedGuide: 1,
-});
-
-bookingSchema.index({
-  assignedDriver: 1,
-});
-
-bookingSchema.index({
-  assignedVehicle: 1,
-});
-
-bookingSchema.index({
-  createdAt: -1,
-});
-
-bookingSchema.index({
-  isDeleted: 1,
-});
-
-bookingSchema.index({
-  refundStatus: 1,
-});
-
-bookingSchema.index({
-  commissionStatus: 1,
-});
-
-bookingSchema.index({
-  customer: 1,
-  travelDate: 1,
-});
-
-bookingSchema.index({
-  tour: 1,
-  travelDate: 1,
-});
-
+bookingSchema.index({ isDeleted: 1 });
+bookingSchema.index({ refundStatus: 1 });
+bookingSchema.index({ commissionStatus: 1 });
+bookingSchema.index({ customer: 1, travelDate: 1 });
+bookingSchema.index({ tour: 1, travelDate: 1 });
 
 // Ensure every booking belongs to either a standard tour or a custom tour request
 bookingSchema.pre("validate", function(next) {

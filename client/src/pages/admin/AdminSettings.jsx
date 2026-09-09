@@ -1,10 +1,11 @@
 import { useSettings } from "../../context/SettingsContext";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, Globe2, Palette, Phone, Save, ShieldCheck, WalletCards, LayoutDashboard, Bell, Search, Users, CreditCard, UserCircle, Lock } from "lucide-react";
+import { Building2, Globe2, Palette, Phone, Save, ShieldCheck, WalletCards, LayoutDashboard, Bell, Search, Users, CreditCard, UserCircle, Lock, PlugZap, Copy, Trash2 } from "lucide-react";
 import { toast } from "react-toastify";
 import { getSettings, updateSettings } from "../../api/settingsApi";
 import TenantHeroManager from "../../components/admin/TenantHeroManager";
+import { listWebsiteIntegrations, createWebsiteIntegration, revokeWebsiteIntegration } from "../../api/integrationApi";
 
 const SECTIONS = { stats: true, tours: true, destinations: true, experiences: true, services: true, testimonials: true, gallery: true, whyChooseUs: true, newsletter: true };
 const THEME = { primaryColor: "#047857", secondaryColor: "#064e3b", accentColor: "#10b981", backgroundColor: "#f8fafc", surfaceColor: "#ffffff", textColor: "#0f172a", fontFamily: "Inter", borderRadius: "xl", buttonStyle: "rounded", heroOverlayOpacity: 50 };
@@ -27,6 +28,27 @@ export default function AdminSettings() {
   useEffect(() => {
     if (globalSettings && Object.keys(globalSettings).length) setSettings(s => ({ ...s, ...globalSettings, homepageSections: { ...SECTIONS, ...(globalSettings.homepageSections || {}) } }));
   }, [globalSettings]);
+
+  const [integrationName, setIntegrationName] = useState("Existing Website");
+  const [integrationOrigins, setIntegrationOrigins] = useState("");
+  const [newIntegrationSecret, setNewIntegrationSecret] = useState("");
+  const integrationsQuery = useQuery({ queryKey: ["website-integrations"], queryFn: listWebsiteIntegrations });
+  const integrationCreate = useMutation({
+    mutationFn: createWebsiteIntegration,
+    onSuccess: (r) => {
+      setNewIntegrationSecret(JSON.stringify({ secretApiKey: r?.key, publicSiteKey: r?.siteKey }, null, 2));
+      integrationsQuery.refetch();
+      toast.success("Website connector created. Copy the keys now; the secret is shown only once.");
+    },
+    onError: (e) => toast.error(e?.response?.data?.message || "Unable to create website connector."),
+  });
+  const integrationRevoke = useMutation({
+    mutationFn: revokeWebsiteIntegration,
+    onSuccess: () => { integrationsQuery.refetch(); toast.success("Website connector revoked."); },
+    onError: (e) => toast.error(e?.response?.data?.message || "Unable to revoke connector."),
+  });
+  const createConnector = () => integrationCreate.mutate({ name: integrationName, environment: "live", allowedOrigins: integrationOrigins.split(/\s*,\s*|\n/).map(v => v.trim()).filter(Boolean), permissions: ["booking:create", "customer:create", "tour:read"] });
+  const copyText = async (text) => { try { await navigator.clipboard.writeText(text); toast.success("Copied to clipboard."); } catch { toast.error("Copy failed. Copy it manually."); } };
 
   const mutation = useMutation({
     mutationFn: updateSettings,
@@ -77,6 +99,24 @@ export default function AdminSettings() {
       <Section icon={<Building2 size={20}/>} title="Company identity"><div className="grid gap-4 md:grid-cols-2"><Field label="Company name"><input required value={settings.companyName} onChange={e=>update("companyName",e.target.value)}/></Field><Field label="Website URL"><input type="url" value={settings.websiteUrl} onChange={e=>update("websiteUrl",e.target.value)}/></Field><Field label="Logo"><input type="file" accept="image/*" onChange={e=>setLogoFile(e.target.files?.[0] || null)} /></Field><Field label="Current logo URL"><input value={settings.companyLogo || ""} onChange={e=>update("companyLogo",e.target.value)}/></Field><Field label="Address"><input value={settings.address} onChange={e=>update("address",e.target.value)}/></Field><Field label="City"><input value={settings.city} onChange={e=>update("city",e.target.value)}/></Field><Field label="Country"><input value={settings.country} onChange={e=>update("country",e.target.value)}/></Field></div></Section>
       <Section icon={<Phone size={20}/>} title="Contact & email"><div className="grid gap-4 md:grid-cols-2"><Field label="Support phone"><input value={settings.supportPhone} onChange={e=>update("supportPhone",e.target.value)}/></Field><Field label="Support email"><input type="email" value={settings.supportEmail} onChange={e=>update("supportEmail",e.target.value)}/></Field><Field label="Email sender name"><input value={settings.emailFromName} onChange={e=>update("emailFromName",e.target.value)}/></Field><Field label="Email sender address"><input type="email" value={settings.emailFromAddress} onChange={e=>update("emailFromAddress",e.target.value)}/></Field></div></Section>
       <Section icon={<WalletCards size={20}/>} title="Regional, tax & payment rules"><div className="grid gap-4 md:grid-cols-3"><Field label="Currency"><input value={settings.currency} onChange={e=>update("currency",e.target.value.toUpperCase())}/></Field><Field label="Currency symbol"><input value={settings.currencySymbol} onChange={e=>update("currencySymbol",e.target.value)}/></Field><Field label="Timezone"><input value={settings.timezone} onChange={e=>update("timezone",e.target.value)}/></Field><Field label="Tax %"><input type="number" min="0" max="100" value={settings.taxRate} onChange={e=>update("taxRate",e.target.value)}/></Field><Field label="Booking deposit %"><input type="number" min="0" max="100" value={settings.bookingDepositPercentage} onChange={e=>update("bookingDepositPercentage",e.target.value)}/></Field><Field label="Agent commission %"><input type="number" min="0" max="100" value={settings.defaultCommissionRate} onChange={e=>update("defaultCommissionRate",e.target.value)}/></Field></div><div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-4">{[["enableMpesa","M-Pesa"],["enableStripe","Stripe"],["enablePaypal","PayPal"],["enableBankTransfer","Bank transfer"]].map(([key,label])=><Toggle key={key} label={label} value={settings[key]} onChange={v=>update(key,v)}/>)}</div><div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3"><Field label="Bank name"><input value={settings.bankName} onChange={e=>update("bankName",e.target.value)}/></Field><Field label="Account name"><input value={settings.bankAccountName} onChange={e=>update("bankAccountName",e.target.value)}/></Field><Field label="Account number"><input value={settings.bankAccountNumber} onChange={e=>update("bankAccountNumber",e.target.value)}/></Field><Field label="Branch"><input value={settings.bankBranch} onChange={e=>update("bankBranch",e.target.value)}/></Field><Field label="SWIFT code"><input value={settings.bankSwiftCode} onChange={e=>update("bankSwiftCode",e.target.value)}/></Field></div></Section>
+      <Section icon={<PlugZap size={20}/>} title="Existing website → automatic booking capture">
+        <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm text-emerald-950">
+          <p className="font-bold">Keep the customer's existing website.</p>
+          <p className="mt-1">Install the small HMT connector on the booking form and every submitted customer/booking field is sent directly into this tenant's CRM and booking system. Staff do not re-type bookings.</p>
+          <p className="mt-2 text-xs">The website owner must install/configure the connector; the platform does not scrape unrelated websites. Never put the secret API key in browser code.</p>
+        </div>
+        <div className="mt-5 grid gap-4 md:grid-cols-2">
+          <Field label="Website connector name"><input value={integrationName} onChange={e=>setIntegrationName(e.target.value)} /></Field>
+          <Field label="Allowed website origins"><textarea rows="2" value={integrationOrigins} onChange={e=>setIntegrationOrigins(e.target.value)} placeholder="https://www.example.co.ke, https://example.co.ke" /></Field>
+        </div>
+        <button type="button" disabled={integrationCreate.isPending} onClick={createConnector} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-3 font-bold text-white disabled:opacity-50"><PlugZap size={18}/>{integrationCreate.isPending ? "Creating..." : "Create website connector"}</button>
+        {newIntegrationSecret && <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4"><p className="font-bold text-amber-950">Save these credentials now</p><p className="mt-1 text-xs text-amber-900">The secret API key is not stored in the browser and will not be shown again by the dashboard.</p><pre className="mt-3 overflow-auto rounded-xl bg-white p-3 text-xs">{newIntegrationSecret}</pre><button type="button" onClick={()=>copyText(newIntegrationSecret)} className="mt-3 inline-flex items-center gap-2 rounded-lg border bg-white px-3 py-2 text-sm font-semibold"><Copy size={15}/>Copy credentials</button></div>}
+        <div className="mt-6 space-y-3">
+          {(integrationsQuery.data?.integrations || []).map(item => <div key={item._id} className="rounded-2xl border border-slate-200 p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="font-bold">{item.name}</p><p className="text-xs text-slate-500">{item.environment} · {item.active ? "Active" : "Revoked"} · used {item.usageCount || 0} times</p></div>{item.active && <button type="button" onClick={()=>integrationRevoke.mutate(item._id)} className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-700"><Trash2 size={15}/>Revoke</button>}</div><p className="mt-2 text-xs text-slate-500">Site key: <code>{item.publicKey || "—"}</code></p><p className="mt-1 text-xs text-slate-500">Allowed origins: {(item.allowedOrigins || []).join(", ") || "Any origin (not recommended for production)"}</p></div>)}
+          {!integrationsQuery.isLoading && !(integrationsQuery.data?.integrations || []).length && <p className="text-sm text-slate-500">No website connectors yet.</p>}
+        </div>
+        <div className="mt-5 rounded-2xl bg-slate-950 p-4 text-xs text-slate-200"><p className="font-bold text-white">Website installation</p><pre className="mt-2 overflow-auto whitespace-pre-wrap">{`<script src="https://YOUR-ERP-DOMAIN/api/integrations/v1/widget.js?siteKey=YOUR_HMT_SITE_KEY"></script>`}</pre><p className="mt-2">Mark the booking form with <code>data-hmt-booking-form</code> and put the tour MongoDB ID in <code>data-tour-id</code>. Common fields such as name, email, phone, travel date, guests, hotel and pickup are captured automatically.</p></div>
+      </Section>
       <Section icon={<Bell size={20}/>} title="Notifications"><div className="grid gap-3 md:grid-cols-2"><Toggle label="Booking & reservation notifications" value={settings.bookingNotifications} onChange={v=>update("bookingNotifications",v)}/><Toggle label="Payment notifications" value={settings.paymentNotifications} onChange={v=>update("paymentNotifications",v)}/></div></Section>
       <Section icon={<ShieldCheck size={20}/>} title="Access & security"><div className="grid gap-3 md:grid-cols-2"><Toggle label="Customer registrations" value={settings.allowRegistrations} onChange={v=>update("allowRegistrations",v)}/><Toggle label="Agent registrations" value={settings.allowAgentRegistrations} onChange={v=>update("allowAgentRegistrations",v)}/><Toggle label="Email verification" value={settings.requireEmailVerification} onChange={v=>update("requireEmailVerification",v)}/><Toggle label="Phone verification" value={settings.requirePhoneVerification} onChange={v=>update("requirePhoneVerification",v)}/><Toggle label="Maintenance mode" value={settings.maintenanceMode} onChange={v=>update("maintenanceMode",v)}/></div></Section>
       <Section icon={<Globe2 size={20}/>} title="Social"><div className="grid gap-4 md:grid-cols-2"><Field label="Facebook"><input type="url" value={settings.facebook} onChange={e=>update("facebook",e.target.value)}/></Field><Field label="Instagram"><input type="url" value={settings.instagram} onChange={e=>update("instagram",e.target.value)}/></Field><Field label="X / Twitter"><input type="url" value={settings.twitter} onChange={e=>update("twitter",e.target.value)}/></Field><Field label="YouTube"><input type="url" value={settings.youtube} onChange={e=>update("youtube",e.target.value)}/></Field></div></Section>

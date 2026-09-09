@@ -69,8 +69,10 @@ import customTourRequestRoutes from "./customTourRequestRoutes.js";
 import superAdminUserRoutes from "./superAdminUserRoutes.js";
 import tenantBrandingRoutes from "./tenantBrandingRoutes.js";
 import operationsRoutes from "./operationsRoutes.js";
+import integrationRoutes from "./integrationRoutes.js";
 
 const router = express.Router();
+router.use("/integrations", integrationRoutes);
 router.use("/tenant", tenantBrandingRoutes);
 router.use(resolveTenant);
 router.use("/categories", categoryRoutes);
