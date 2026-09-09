@@ -18,8 +18,11 @@ const postOnce = async ({ tenantId, sourceType, sourceId, date, description, ref
 };
 export const postInvoiceToLedger = async (invoice) => {
   if (!invoice || invoice.isDeleted || ["draft", "cancelled"].includes(invoice.status)) return null;
-  const net = Math.max(0, round(Number(invoice.subtotal || 0) - Number(invoice.discount || 0))); const tax = Math.max(0, round(invoice.tax)); const total = round(invoice.totalAmount);
-  const lines = [{ code: "1100", debit: total, credit: 0, description: "Accounts receivable" }, { code: "4000", debit: 0, credit: net, description: "Tour revenue" }]; if (tax > 0) lines.push({ code: "2100", debit: 0, credit: tax, description: "Tax payable" });
+  const total = Math.max(0, round(invoice.totalAmount));
+  const tax = Math.max(0, Math.min(total, round(invoice.tax)));
+  const revenue = round(total - tax);
+  const lines = [{ code: "1100", debit: total, credit: 0, description: "Accounts receivable" }, { code: "4000", debit: 0, credit: revenue, description: "Tour revenue" }];
+  if (tax > 0) lines.push({ code: "2100", debit: 0, credit: tax, description: "Tax payable" });
   return postOnce({ tenantId: invoice.tenantId, sourceType: "invoice", sourceId: invoice._id, date: invoice.issueDate, description: `Invoice ${invoice.invoiceNumber}`, reference: invoice.invoiceNumber, lines });
 };
 export const postPaymentToLedger = async (payment) => {
