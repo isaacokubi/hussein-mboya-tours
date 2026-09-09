@@ -1,4 +1,4 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
+import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 // server/controllers/mpesaController.js
 
 import Booking from "../models/Booking.js";
@@ -57,7 +57,7 @@ export const stkPush = async (req, res) => {
       return res.status(400).json({ success: false, message: "Phone number and booking ID are required." });
     }
 
-    const booking = await Booking.findById(bookingId);
+    const booking = await Booking.findOne(mergeTenantFilter(req, { _id: bookingId }));
     if (!booking) {
       return res.status(404).json({ success: false, message: "Booking not found." });
     }
@@ -83,7 +83,11 @@ export const stkPush = async (req, res) => {
       });
     }
 
-    const existingPayment = await Payment.findOne({ booking: booking._id, status: "pending" });
+    const existingPayment = await Payment.findOne(mergeTenantFilter(req, {
+      booking: booking._id,
+      status: { $in: ["pending", "processing"] },
+    }));
+
     if (existingPayment) {
       return res.status(200).json({
         success: true,
@@ -107,6 +111,7 @@ export const stkPush = async (req, res) => {
     });
 
     await Payment.create({
+      tenantId: booking.tenantId,
       booking: booking._id,
       user: booking.user || booking.customer || null,
       customer: booking.user || booking.customer || null,
@@ -139,18 +144,18 @@ export const mpesaCallback = async (req, res) => {
     const stkCallback = req.body?.Body?.stkCallback;
     if (!stkCallback) return res.json({ ResultCode: 0, ResultDesc: "Accepted" });
 
-    const checkoutRequestID = stkCallback.CheckoutRequestID || stkCallback.checkoutRequestID || stkCallback.checkoutRequestId;
+    const checkoutRequestID = String(stkCallback.CheckoutRequestID || stkCallback.checkoutRequestID || stkCallback.checkoutRequestId || "").trim();
     if (!checkoutRequestID) return res.json({ ResultCode: 0, ResultDesc: "Accepted" });
 
-    const payment = await Payment.findOne({
+    const payment = await Payment.findOne(mergeTenantFilter(req, {
       $or: [{ checkoutRequestID }, { checkoutRequestId: checkoutRequestID }],
-    });
+    }));
     if (!payment) return res.json({ ResultCode: 0, ResultDesc: "Accepted" });
 
-    const booking = await Booking.findById(payment.booking);
+    const booking = await Booking.findOne(mergeTenantFilter(req, { _id: payment.booking }));
     if (!booking) return res.json({ ResultCode: 0, ResultDesc: "Accepted" });
 
-    if (["completed", "failed"].includes(String(payment.status).toLowerCase())) {
+    if (["completed", "failed", "refunded"].includes(String(payment.status).toLowerCase())) {
       return res.json({ ResultCode: 0, ResultDesc: "Already processed" });
     }
 
@@ -214,14 +219,16 @@ export const mpesaCallback = async (req, res) => {
     });
 
     try {
-      const managers = await User.find({
+      const managers = await User.find(mergeTenantFilter(req, {
         $or: [
           { role: { $in: ["admin", "super_admin", "superadmin", "manager", "tour_manager", "tourmanager"] } },
           { legacyRole: { $in: ["admin", "super_admin", "superadmin", "manager", "tour_manager", "tourmanager"] } },
         ],
-      }).select("_id");
+      })).select("_id");
+
       if (managers.length) {
         await Notification.insertMany(managers.map((manager) => ({
+          tenantId: booking.tenantId,
           recipient: manager._id,
           user: manager._id,
           title: lifecycleResult?.booking?.paymentStatus === "paid" ? "Booking Fully Paid" : "Booking Payment Received",
@@ -242,11 +249,7 @@ export const mpesaCallback = async (req, res) => {
 
 export const checkTransactionStatus = async (req, res, next) => {
   try {
-    const payment = await Payment.findOne(
-mergeTenantFilter(req,{
-_id:req.params.id
-})
-)
+    const payment = await Payment.findOne(mergeTenantFilter(req, { _id: req.params.id }))
       .populate("booking")
       .populate("user", "name email phone")
       .populate("customer", "name email phone");
@@ -257,12 +260,13 @@ _id:req.params.id
 
 export const getBookingPayments = async (req, res, next) => {
   try {
-    const booking = await Booking.findById(req.params.bookingId || req.params.id);
+    const bookingId = req.params.bookingId || req.params.id;
+    const booking = await Booking.findOne(mergeTenantFilter(req, { _id: bookingId }));
     if (!booking) return res.status(404).json({ success: false, message: "Booking not found" });
     if (!isStaffRole(req.user) && !ownsBooking(booking, req.user)) {
       return res.status(403).json({ success: false, message: "You do not have permission to view these payments." });
     }
-    const payments = await Payment.find({ booking: booking._id })
+    const payments = await Payment.find(mergeTenantFilter(req, { booking: booking._id }))
       .populate("user", "name email phone")
       .populate("customer", "name email phone")
       .sort({ createdAt: -1 });
@@ -278,21 +282,22 @@ export const getAllPayments = async (req, res, next) => {
     if (provider) filter.provider = provider;
     const safeLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
     const safePage = Math.max(Number(page) || 1, 1);
-    const payments = await Payment.find(filter)
+    const tenantFilter = mergeTenantFilter(req, filter);
+    const payments = await Payment.find(tenantFilter)
       .populate("booking", "bookingNumber status paymentStatus totalAmount amountPaid balanceAmount")
       .populate("user", "name email phone")
       .populate("customer", "name email phone")
       .sort({ createdAt: -1 })
       .skip((safePage - 1) * safeLimit)
       .limit(safeLimit);
-    const total = await Payment.countDocuments(filter);
+    const total = await Payment.countDocuments(tenantFilter);
     return res.status(200).json({ success: true, count: payments.length, pagination: { total, page: safePage, pages: Math.ceil(total / safeLimit) }, payments });
   } catch (error) { next(error); }
 };
 
 export const getPaymentByReceipt = async (req, res, next) => {
   try {
-    const payment = await Payment.findOne({ mpesaReceiptNumber: req.params.receipt })
+    const payment = await Payment.findOne(mergeTenantFilter(req, { mpesaReceiptNumber: req.params.receipt }))
       .populate("booking")
       .populate("user", "name email phone")
       .populate("customer", "name email phone");
@@ -306,10 +311,13 @@ export const handleRefundTimeout = async (req, res) => res.json({ ResultCode: 0,
 
 export const checkCheckoutStatus = async (req, res, next) => {
   try {
-    const checkoutRequestId = req.params.checkoutRequestId;
-    const payment = await Payment.findOne({
+    const checkoutRequestId = String(req.params.checkoutRequestId || "").trim();
+    if (!checkoutRequestId) return res.status(400).json({ success: false, message: "Checkout request ID is required" });
+
+    const payment = await Payment.findOne(mergeTenantFilter(req, {
       $or: [{ checkoutRequestID: checkoutRequestId }, { checkoutRequestId }],
-    }).populate("booking").lean();
+    })).populate("booking").lean();
+
     if (!payment) return res.status(404).json({ success: false, message: "Payment request not found" });
     return res.status(200).json({ success: true, data: { status: payment.status, failureReason: payment.failureReason || "", booking: payment.booking || null, payment } });
   } catch (error) { next(error); }
@@ -317,9 +325,9 @@ export const checkCheckoutStatus = async (req, res, next) => {
 
 export const verifyBookingPayment = async (req, res, next) => {
   try {
-    const booking = await Booking.findById(req.params.bookingId).lean();
+    const booking = await Booking.findOne(mergeTenantFilter(req, { _id: req.params.bookingId })).lean();
     if (!booking) return res.status(404).json({ success: false, message: "Booking not found" });
-    const payment = await Payment.findOne({ booking: booking._id }).sort({ createdAt: -1 }).lean();
+    const payment = await Payment.findOne(mergeTenantFilter(req, { booking: booking._id })).sort({ createdAt: -1 }).lean();
     return res.status(200).json({ success: true, data: { booking, payment, paymentStatus: booking.paymentStatus } });
   } catch (error) { next(error); }
 };
