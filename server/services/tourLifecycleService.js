@@ -1,8 +1,7 @@
-import { mergeTenantFilter } from "../tenancy/context.js";
+import { mergeTenantFilter, runWithTenant } from "../tenancy/context.js";
 import Tour from "../models/Tour.js";
 import Staff from "../models/Staff.js";
 import Vehicle from "../models/Vehicle.js";
-import { runWithTenant } from "../tenancy/context.js";
 
 const startOfDay = (value) => {
   const d = new Date(value);
@@ -23,34 +22,51 @@ export const syncTourLifecycle = async () => runWithTenant({ bypass: true }, asy
   const tours = await Tour.find({
     isDeleted: { $ne: true },
     status: { $nin: ["completed", "cancelled"] },
-  }).select("_id status startDate date endDate duration durationDetails assignedGuide assignedDriver assignedVehicle assignmentStatus").lean();
+  }).select("_id tenantId status startDate date endDate duration durationDetails assignedGuide assignedDriver assignedVehicle assignmentStatus").lean();
 
   for (const tour of tours) {
-    const start = startOfDay(tour.startDate || tour.date);
-    const end = startOfDay(endForTour(tour));
+    // The scheduler is platform-wide, but every mutation is executed inside
+    // the tour's tenant context. This prevents an invalid/corrupt assignment
+    // reference from allowing staff or vehicle writes across companies.
+    const tenantId = tour.tenantId;
+    if (!tenantId) continue;
 
-    if (today > end) {
-      await Tour.updateOne(
-        { _id: tour._id },
-        { $set: { status: "completed", assignmentStatus: "completed", completedAt: new Date(), endDate: endForTour(tour) } }
-      );
+    await runWithTenant({ tenantId, role: "system", bypass: false }, async () => {
+      const start = startOfDay(tour.startDate || tour.date);
+      const end = startOfDay(endForTour(tour));
 
-      for (const staffId of [tour.assignedGuide, tour.assignedDriver].filter(Boolean)) {
-        const staff = await Staff.findById(staffId);
-        if (staff) {
-          staff.assignedTours = (staff.assignedTours || []).filter((id) => id.toString() !== tour._id.toString());
-          if (staff.assignedTours.length === 0) staff.availability = "available";
-          await staff.save();
+      if (today > end) {
+        await Tour.updateOne(
+          mergeTenantFilter({ _id: tour._id }),
+          { $set: { status: "completed", assignmentStatus: "completed", completedAt: new Date(), endDate: endForTour(tour) } }
+        );
+
+        for (const staffId of [tour.assignedGuide, tour.assignedDriver].filter(Boolean)) {
+          const staff = await Staff.findOne(mergeTenantFilter({ _id: staffId }));
+          if (staff) {
+            staff.assignedTours = (staff.assignedTours || []).filter((id) => id.toString() !== tour._id.toString());
+            if (staff.assignedTours.length === 0) staff.availability = "available";
+            await staff.save();
+          }
         }
-      }
 
-      if (tour.assignedVehicle) {
-        await Vehicle.findByIdAndUpdate(tour.assignedVehicle, { status: "available", assignedTour: null });
+        if (tour.assignedVehicle) {
+          await Vehicle.findOneAndUpdate(
+            mergeTenantFilter({ _id: tour.assignedVehicle }),
+            { $set: { status: "available", assignedTour: null } }
+          );
+        }
+      } else if (today >= start && tour.status === "scheduled") {
+        await Tour.updateOne(
+          mergeTenantFilter({ _id: tour._id }),
+          { $set: { status: "upcoming", endDate: endForTour(tour) } }
+        );
+      } else if (today < start && tour.status === "ongoing") {
+        await Tour.updateOne(
+          mergeTenantFilter({ _id: tour._id }),
+          { $set: { status: "upcoming" } }
+        );
       }
-    } else if (today >= start && tour.status === "scheduled") {
-      await Tour.updateOne({ _id: tour._id }, { $set: { status: "upcoming", endDate: endForTour(tour) } });
-    } else if (today < start && tour.status === "ongoing") {
-      await Tour.updateOne({ _id: tour._id }, { $set: { status: "upcoming" } });
-    }
+    });
   }
 });
