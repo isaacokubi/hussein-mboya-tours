@@ -1,0 +1,28 @@
+import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+
+const creditDebitNoteSchema = new mongoose.Schema({
+  tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
+  noteNumber: { type: String, trim: true, unique: true },
+  type: { type: String, enum: ["credit", "debit"], required: true },
+  originalInvoice: { type: mongoose.Schema.Types.ObjectId, ref: "Invoice", required: true },
+  originalInvoiceNumber: { type: String, trim: true, required: true },
+  reason: { type: String, trim: true, required: true },
+  amount: { type: Number, min: 0, required: true },
+  taxAmount: { type: Number, min: 0, default: 0 },
+  totalAmount: { type: Number, min: 0, required: true },
+  status: { type: String, enum: ["draft", "issued", "cancelled"], default: "draft", index: true },
+  etimsStatus: { type: String, enum: ["not_submitted", "pending", "synced", "failed"], default: "not_submitted" },
+  etimsReference: { type: String, trim: true, default: "" },
+  issuedAt: { type: Date, default: null },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+}, { timestamps: true });
+
+creditDebitNoteSchema.pre("save", function(next) {
+  if (!this.noteNumber) this.noteNumber = `${this.type === "credit" ? "CN" : "DN"}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+  next();
+});
+
+creditDebitNoteSchema.index({ tenantId: 1, originalInvoice: 1, createdAt: -1 });
+creditDebitNoteSchema.plugin(tenantPlugin);
+export default mongoose.models.CreditDebitNote || mongoose.model("CreditDebitNote", creditDebitNoteSchema);
