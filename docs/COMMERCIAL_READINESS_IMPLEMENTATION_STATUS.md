@@ -23,12 +23,18 @@
 ### Finance and Kenyan tax foundation
 - Tenant-aware Kenyan VAT/tax calculation engine with inclusive/exclusive handling and tax categories.
 - Tenant-scoped invoices, expenses, credit/debit notes and payment lifecycle/reconciliation.
-- Encrypted tenant payment gateway credentials and provider routing foundation.
+- Encrypted tenant payment gateway credentials and provider routing foundation, including M-Pesa, Stripe, PayPal, Pesapal and bank configuration.
 - Corporate account credit exposure and purchase-order controls.
 - Configurable tenant tax rules and tax administration UI.
 - Automatic double-entry posting for issued invoices, completed payments and approved/paid expenses.
-- Idempotent operational-to-GL posting using tenant/source transaction identity.
+- Supplier payable accruals and settlements now post to Accounts Payable/Bank with idempotent source identity.
+- Issued credit/debit notes now post balancing revenue/tax/receivable entries.
+- Completed payment events synchronize invoice amount paid, balance, status and payment reference.
+- Idempotent operational-to-GL posting using tenant/source transaction identity with duplicate-race handling.
 - General ledger, trial balance, profit/loss and balance-sheet-style reporting UI.
+- Payment-link lifecycle with server-authoritative outstanding-balance validation, expiry/cancellation and tenant-safe public lookup.
+- Public payment-link page routes customers into the authenticated secure checkout without exposing customer PII.
+- Finance workspace exposes payment-link creation, link status/cancellation and credit/debit-note draft/issue/cancel workflows.
 
 ### Supplier, procurement and tour profitability
 - Tenant-scoped suppliers and purchase orders with calculated line/tax totals and lifecycle transitions.
@@ -51,14 +57,30 @@
 - Durable Mongo-backed invoice submission jobs with idempotency, retries, exponential backoff and dead state.
 - Provider-neutral certified-adapter boundary for eTIMS/OSCU/VSCU.
 - Manual and scheduled invoice queueing.
-- Invoice response fields for eTIMS invoice/receipt/unique-register/QR data.
+- Credit/debit note submission queue with the same durable retry/adapter boundary.
+- Invoice and credit/debit-note response/status fields for eTIMS references, receipts, unique-register identifiers and QR data where returned by the certified adapter.
 - The application does not fabricate KRA receipts or claim KRA certification without the actual certified integration.
 
 ### Reliability and observability
 - Request correlation IDs exposed as `X-Request-ID`.
 - Production error responses include the correlation ID.
 - Background worker starts with the application and shuts down cleanly.
-- Existing payment, tenant-isolation and lifecycle controls remain in place.
+- Finance lifecycle source records use tenant-scoped unique indexes and duplicate handling.
+- Tenant index reconciliation now includes payment links and all current finance/operations/compliance collections.
+- Production readiness check validates the complete finance lifecycle file set.
+
+## Batch 1 completion boundary
+
+The application-side Batch 1 commercial finance scope is implemented end-to-end across backend APIs, accounting, tax/eTIMS adapter boundaries, supplier/AP lifecycle, invoice synchronization, payment links, credit/debit notes and the finance frontend.
+
+The following remain external production prerequisites and are intentionally not represented as completed by source code:
+
+1. KRA/eTIMS onboarding, certification/vetting and live certified-provider credentials.
+2. Applicable TRA licences/permits and their regulatory issuance.
+3. ODPC registration and final legal/privacy governance approval.
+4. Real tenant payment-provider production credentials and provider callback activation.
+5. Production backup infrastructure, restore drills and monitoring-service configuration.
+6. Final end-to-end tests against the target production deployment and real payment/eTIMS sandbox or production endpoints.
 
 ## External production prerequisites
 
