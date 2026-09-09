@@ -57,14 +57,17 @@ paymentSchema.index({ customer: 1, createdAt: -1 }); paymentSchema.index({ booki
 paymentSchema.index({ tenantId: 1, provider: 1, transactionReference: 1 }, { unique: true, partialFilterExpression: { status: "completed", transactionReference: { $type: "string", $gt: "" } } });
 paymentSchema.index({ tenantId: 1, checkoutRequestID: 1 }, { unique: true, partialFilterExpression: { checkoutRequestID: { $type: "string", $gt: "" } } }); paymentSchema.index({ tenantId: 1, checkoutRequestId: 1 }, { unique: true, partialFilterExpression: { checkoutRequestId: { $type: "string", $gt: "" } } }); paymentSchema.index({ tenantId: 1, mpesaReceiptNumber: 1 }, { unique: true, partialFilterExpression: { mpesaReceiptNumber: { $type: "string", $gt: "" } } }); paymentSchema.index({ tenantId: 1, booking: 1, createdAt: -1 }); paymentSchema.index({ tenantId: 1, status: 1, createdAt: -1 }); paymentSchema.index({ tenantId: 1, callbackEventId: 1 }, { unique: true, partialFilterExpression: { callbackEventId: { $type: "string", $gt: "" } } });
 
+paymentSchema.pre("save", function (next) {
+  this.$statusWasModified = this.isModified("status");
+  next();
+});
+
 paymentSchema.methods.markCompleted = function (receiptNumber, transactionId = "") { this.status = "completed"; this.mpesaReceiptNumber = receiptNumber; this.transactionId = transactionId; this.paidAt = new Date(); return this.save(); };
 paymentSchema.methods.markFailed = function (reason) { this.status = "failed"; this.failureReason = reason; this.failedAt = new Date(); return this.save(); };
 
 paymentSchema.post("save", async function () {
-  // Emit integration events only when the payment reaches a terminal state.
-  // The event is queued after persistence and never blocks the financial save.
   try {
-    if (this.tenantId && this.booking && this.isModified("status") && ["completed", "failed"].includes(this.status)) {
+    if (this.tenantId && this.booking && this.$statusWasModified && ["completed", "failed"].includes(this.status)) {
       await queueWebhookEvent({
         tenantId: this.tenantId,
         event: `payment.${this.status}`,
