@@ -5,6 +5,7 @@ import { createPaymentLink, getPaymentLinks, cancelPaymentLink, createCreditDebi
 
 const money = (v) => `KES ${Number(v || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const list = (v) => Array.isArray(v) ? v : v?.data || [];
+
 export default function FinanceLifecycleCenter() {
   const qc = useQueryClient(); const [bookingId, setBookingId] = useState(""); const [linkAmount, setLinkAmount] = useState(""); const [invoiceId, setInvoiceId] = useState(""); const [noteType, setNoteType] = useState("credit"); const [noteAmount, setNoteAmount] = useState(""); const [taxAmount, setTaxAmount] = useState("0"); const [reason, setReason] = useState(""); const [createdPath, setCreatedPath] = useState("");
   const linksQ = useQuery({ queryKey: ["finance-payment-links"], queryFn: getPaymentLinks }); const notesQ = useQuery({ queryKey: ["finance-credit-debit-notes"], queryFn: getCreditDebitNotes });
@@ -13,7 +14,7 @@ export default function FinanceLifecycleCenter() {
   const cancelLink = useMutation({ mutationFn: cancelPaymentLink, onSuccess: refresh });
   const noteMutation = useMutation({ mutationFn: createCreditDebitNote, onSuccess: () => { setInvoiceId(""); setNoteAmount(""); setReason(""); refresh(); } });
   const issueNote = useMutation({ mutationFn: issueCreditDebitNote, onSuccess: refresh }); const cancelNote = useMutation({ mutationFn: cancelCreditDebitNote, onSuccess: refresh });
-  const copy = async (text) => { try { await navigator.clipboard.writeText(`${window.location.origin}${text}`); } catch {} };
+  const copy = async (text) => { try { await navigator.clipboard.writeText(`${window.location.origin}${text}`); } catch (error) { console.warn("Unable to copy payment link:", error); } };
   return <section className="space-y-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
     <div><p className="text-sm font-semibold uppercase tracking-wider text-emerald-700">Finance lifecycle</p><h2 className="text-xl font-bold">Payment links & credit/debit notes</h2><p className="mt-1 text-sm text-slate-500">Create controlled customer payment links and issue accounting notes without changing the original invoice.</p></div>
     <div className="grid gap-6 xl:grid-cols-2">
