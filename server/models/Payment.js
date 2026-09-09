@@ -62,16 +62,27 @@ paymentSchema.index({ booking: 1 });
 paymentSchema.index({ status: 1, provider: 1 });
 paymentSchema.index({ transactionId: 1 });
 paymentSchema.index({ transactionReference: 1 });
-// Payment identifiers are tenant-scoped. This prevents one company's transaction
-// reference/receipt from blocking an unrelated tenant while still preventing
-// duplicate provider transactions inside the owning tenant.
+
+// Provider identifiers are tenant-scoped and only indexed when they contain
+// a real string value. This is intentionally partial rather than sparse because
+// legacy documents may contain explicit null values; sparse unique indexes can
+// still collide on those nulls in a compound index.
 paymentSchema.index(
   { tenantId: 1, provider: 1, transactionReference: 1 },
-  { unique: true, partialFilterExpression: { status: "completed", transactionReference: { $type: "string", $gt: "" } } }
+  { unique: true, partialFilterExpression: { status: "completed", transactionReference: { $type: "string" } } }
 );
-paymentSchema.index({ tenantId: 1, checkoutRequestID: 1 }, { unique: true, sparse: true });
-paymentSchema.index({ tenantId: 1, checkoutRequestId: 1 }, { unique: true, sparse: true });
-paymentSchema.index({ tenantId: 1, mpesaReceiptNumber: 1 }, { unique: true, sparse: true });
+paymentSchema.index(
+  { tenantId: 1, checkoutRequestID: 1 },
+  { unique: true, partialFilterExpression: { checkoutRequestID: { $type: "string" } } }
+);
+paymentSchema.index(
+  { tenantId: 1, checkoutRequestId: 1 },
+  { unique: true, partialFilterExpression: { checkoutRequestId: { $type: "string" } } }
+);
+paymentSchema.index(
+  { tenantId: 1, mpesaReceiptNumber: 1 },
+  { unique: true, partialFilterExpression: { mpesaReceiptNumber: { $type: "string" } } }
+);
 paymentSchema.index({ tenantId: 1, booking: 1, createdAt: -1 });
 paymentSchema.index({ tenantId: 1, status: 1, createdAt: -1 });
 
