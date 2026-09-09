@@ -9,6 +9,6 @@ journalEntrySchema.pre("save", function(next) { if (!this.entryNumber) this.entr
 
 journalEntrySchema.index({ tenantId: 1, entryNumber: 1 }, { unique: true });
 journalEntrySchema.index({ tenantId: 1, status: 1, entryDate: -1 });
-journalEntrySchema.index({ tenantId: 1, sourceType: 1, sourceId: 1 }, { unique: true, partialFilterExpression: { sourceId: { $type: "objectId" }, sourceType: { $ne: "manual" } } });
+journalEntrySchema.index({ tenantId: 1, sourceType: 1, sourceId: 1 }, { unique: true, partialFilterExpression: { sourceId: { $type: "objectId" } } });
 journalEntrySchema.plugin(tenantPlugin);
 export default mongoose.models.JournalEntry || mongoose.model("JournalEntry", journalEntrySchema);
