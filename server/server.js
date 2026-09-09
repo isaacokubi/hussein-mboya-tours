@@ -1,10 +1,5 @@
 import "./tenancy/bootstrap.js";
 import "./bootstrap/operationalAccountingHooks.js";
-import systemHealthRoutes from "./routes/systemHealthRoutes.js";
-import databaseRoutes from "./routes/databaseRoutes.js";
-import settingsRoutes from "./routes/settingsRoutes.js";
-import superAdminRoutes from "./routes/superAdminRoutes.js";
-import tenantSubscriptionRoutes from "./routes/tenantSubscriptionRoutes.js";
 import http from "http";
 import mongoose from "mongoose";
 import app from "./app.js";
@@ -18,7 +13,6 @@ import { startTenantSubscriptionScheduler } from "./services/tenantSubscriptionS
 import { startCustomerCommunicationScheduler } from "./services/customerCommunicationScheduler.js";
 import { enqueueDueEtimsInvoices } from "./services/etimsService.js";
 import { startJobWorker } from "./services/jobWorkerService.js";
-import mfaRoutes from "./routes/mfaRoutes.js";
 
 await connectDatabase();
 startPaymentCleanupScheduler();
@@ -33,11 +27,6 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: (env.CLIENT_ORIGINS || "").split(",").map((origin) => origin.trim()).filter(Boolean), credentials: true } });
 initSocket(io);
 export { io };
-app.use("/api/settings", settingsRoutes);
-app.use("/api/database", databaseRoutes);
-app.use("/api/system", systemHealthRoutes);
-app.use("/api/superadmin", superAdminRoutes);
-app.use("/api/subscription", tenantSubscriptionRoutes);
 
 const shutdown = async (exitCode = 0) => {
   clearInterval(lifecycleInterval);
