@@ -20,31 +20,50 @@
 - Integration event/audit trail.
 - Admin settings UI for creating/listing/revoking website connectors.
 
-### Invoice reliability fixes
-- Invoice customer reference corrected to the Customer model.
-- Guest invoices can exist without a User account.
-- Added optional invoice User reference.
-- Fixed invoice creation to use booking financial values instead of a non-existent `amount` field.
-- Normal bookings now attempt idempotent invoice creation automatically.
-- External website bookings receive an invoice automatically.
+### Finance and Kenyan tax foundation
+- Tenant-aware Kenyan VAT/tax calculation engine with inclusive/exclusive handling and tax categories.
+- Tenant-scoped invoices, expenses, credit/debit notes and payment lifecycle/reconciliation.
+- Encrypted tenant payment gateway credentials and provider routing foundation.
+- Corporate account credit exposure and purchase-order controls.
 
-### Privacy hardening
-- New Customer records default to `marketingConsent=false`.
-- Browser connector requires an explicit marketing-consent checkbox to set consent true.
-- Sensitive payment/auth fields are excluded from generic form capture.
+### Supplier, procurement and tour profitability
+- Tenant-scoped suppliers and purchase orders with calculated line/tax totals and lifecycle transitions.
+- Receiving a purchase order creates a supplier payable and draft procurement expense idempotently.
+- Tenant-scoped tour costing and profitability reporting.
+- Supplier payable payment tracking with overpayment protection.
+- Corporate balance reconciliation from bookings and completed payments.
+- Booking resource guard prevents same-date double assignment of guides, drivers and vehicles.
+- Group/corporate booking fields including group reference, corporate account, PIN, PO number, payment terms, billing and rooming-list reference.
 
-## Still required before production sale
+### Compliance and privacy
+- Tenant compliance records for TRA licensing, ODPC registration, privacy policy, retention, DPA review, breach response, KRA tax profile and eTIMS onboarding.
+- Compliance expiry/review dashboard data.
+- Data-subject request workflow for access, correction, deletion, portability, objection and restriction.
+- Tenant-safe compliance and privacy APIs.
 
-1. KRA eTIMS/OSCU/VSCU certification and live integration.
-2. Tenant-specific M-Pesa/Pesapal/Stripe credential vault and provider routing.
-3. Full Kenyan tax engine (VAT categories, tax-inclusive/exclusive rules, credit/debit notes).
-4. Accounting ledger, receivables/payables and bank/M-Pesa reconciliation expansion.
-5. Supplier/procurement module.
-6. Tour costing and profitability engine.
-7. TRA/ODPC compliance workflow and document centre.
-8. Corporate/group booking and rooming-list workflows.
-9. Durable background jobs/queues and production observability.
-10. Full payment, tenant-isolation and end-to-end test suites.
+### eTIMS integration boundary
+- Durable Mongo-backed invoice submission jobs with idempotency, retries, exponential backoff and dead state.
+- Provider-neutral certified-adapter boundary for eTIMS/OSCU/VSCU.
+- Manual and scheduled invoice queueing.
+- Invoice response fields for eTIMS invoice/receipt/unique-register/QR data.
+- The application does not fabricate KRA receipts or claim KRA certification without the actual certified integration.
+
+### Reliability and observability
+- Request correlation IDs exposed as `X-Request-ID`.
+- Production error responses include the correlation ID.
+- Background worker starts with the application and shuts down cleanly.
+- Existing payment, tenant-isolation and lifecycle controls remain in place.
+
+## External production prerequisites
+
+1. Complete the applicable KRA/eTIMS onboarding, certification/vetting and live provider configuration.
+2. Complete applicable TRA licences/permits and record them in the compliance centre.
+3. Complete the tenant's ODPC/privacy governance work: notices, lawful bases, retention schedule, processor contracts, access/deletion procedures and breach procedures.
+4. Configure each tenant's real payment-provider credentials and production callbacks.
+5. Configure backups, restore drills, deployment secrets and production monitoring.
+6. Run the final repository checks and end-to-end tests in the target deployment environment.
+
+These are provider/regulatory/deployment prerequisites, not missing application screens or fabricated integration claims.
 
 ## Integration principle
 
