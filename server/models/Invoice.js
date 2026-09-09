@@ -4,12 +4,12 @@ import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
 const invoiceSchema = new mongoose.Schema({
   tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true },
-  booking: { type: mongoose.Schema.Types.ObjectId, ref: "Booking", required: true, unique: true },
+  booking: { type: mongoose.Schema.Types.ObjectId, ref: "Booking", required: true },
   customer: { type: mongoose.Schema.Types.ObjectId, ref: "Customer", default: null },
   user: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
   tour: { type: mongoose.Schema.Types.ObjectId, ref: "Tour", default: null },
   agent: { type: mongoose.Schema.Types.ObjectId, ref: "Agent", default: null },
-  invoiceNumber: { type: String, unique: true, trim: true },
+  invoiceNumber: { type: String, trim: true },
   issueDate: { type: Date, default: Date.now },
   dueDate: { type: Date },
   subtotal: { type: Number, default: 0, min: 0 },
@@ -54,6 +54,9 @@ invoiceSchema.methods.markPaid = function(reference = "") {
   return this.save();
 };
 
+// Invoice identity is tenant-scoped. The old global booking_1 and
+// invoiceNumber_1 indexes are removed by reconcileTenantIndexes.js.
+invoiceSchema.index({ tenantId: 1, booking: 1 }, { unique: true });
 invoiceSchema.index({ tenantId: 1, invoiceNumber: 1 }, { unique: true });
 invoiceSchema.index({ customer: 1 });
 invoiceSchema.index({ tour: 1 });
