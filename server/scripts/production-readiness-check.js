@@ -5,8 +5,16 @@ const requiredFiles = [
   "app.js",
   "server.js",
   "models/Organization.js",
+  "models/Payment.js",
+  "models/Invoice.js",
+  "models/TaxProfile.js",
+  "models/Expense.js",
+  "models/CreditDebitNote.js",
   "middleware/tenantMiddleware.js",
+  "middleware/permissionMiddleware.js",
+  "middleware/integrationAuth.js",
   "tenancy/tenantPlugin.js",
+  "scripts/reconcileTenantIndexes.js",
 ];
 
 const missing = requiredFiles.filter((file) => !fs.existsSync(file));
@@ -28,6 +36,14 @@ const hasDefaultTenantTemplate =
 
 if (!hasDefaultTenantTemplate) {
   console.error("Missing default tenant configuration: DEFAULT_TENANT_ID or DEFAULT_PUBLIC_TENANT_SLUG");
+  process.exit(1);
+}
+
+const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
+const requiredScripts = ["check:all", "test", "reconcile:tenant-indexes"];
+const missingScripts = requiredScripts.filter((name) => !packageJson.scripts?.[name]);
+if (missingScripts.length) {
+  console.error("Missing required server scripts:", missingScripts.join(", "));
   process.exit(1);
 }
 
