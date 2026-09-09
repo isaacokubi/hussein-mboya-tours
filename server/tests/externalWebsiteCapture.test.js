@@ -35,6 +35,9 @@ test("server-to-server booking flow uses secret API-key authentication", () => {
 test("integration keys enforce origin restrictions and support revocation", () => {
   assert.match(controller, /At least one allowed website origin is required for a live browser connector/);
   assert.match(auth, /allowedOrigins/);
+  assert.match(auth, /publicRequest/);
+  assert.match(auth, /A browser Origin is required for the public website connector/);
+  assert.match(auth, /!allowed\.includes\(origin\)/);
   assert.match(auth, /website origin is not authorized/);
   assert.match(controller, /active:false/);
   assert.match(controller, /revokedAt:new Date\(\)/);
