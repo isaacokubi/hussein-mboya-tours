@@ -25,6 +25,10 @@
 - Tenant-scoped invoices, expenses, credit/debit notes and payment lifecycle/reconciliation.
 - Encrypted tenant payment gateway credentials and provider routing foundation.
 - Corporate account credit exposure and purchase-order controls.
+- Configurable tenant tax rules and tax administration UI.
+- Automatic double-entry posting for issued invoices, completed payments and approved/paid expenses.
+- Idempotent operational-to-GL posting using tenant/source transaction identity.
+- General ledger, trial balance, profit/loss and balance-sheet-style reporting UI.
 
 ### Supplier, procurement and tour profitability
 - Tenant-scoped suppliers and purchase orders with calculated line/tax totals and lifecycle transitions.
@@ -34,12 +38,14 @@
 - Corporate balance reconciliation from bookings and completed payments.
 - Booking resource guard prevents same-date double assignment of guides, drivers and vehicles.
 - Group/corporate booking fields including group reference, corporate account, PIN, PO number, payment terms, billing and rooming-list reference.
+- Actionable operations dashboard for supplier, corporate-account, purchase-order, tour-cost and payable workflows.
 
 ### Compliance and privacy
 - Tenant compliance records for TRA licensing, ODPC registration, privacy policy, retention, DPA review, breach response, KRA tax profile and eTIMS onboarding.
 - Compliance expiry/review dashboard data.
 - Data-subject request workflow for access, correction, deletion, portability, objection and restriction.
 - Tenant-safe compliance and privacy APIs.
+- Production Go-Live Readiness Center surfaced in the finance workspace for deployment, compliance, payment, backup and monitoring prerequisites.
 
 ### eTIMS integration boundary
 - Durable Mongo-backed invoice submission jobs with idempotency, retries, exponential backoff and dead state.
