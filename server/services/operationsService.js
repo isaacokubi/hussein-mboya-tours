@@ -4,8 +4,10 @@ import PurchaseOrder from "../models/PurchaseOrder.js";
 import TourCost from "../models/TourCost.js";
 import SupplierPayable from "../models/SupplierPayable.js";
 import CorporateAccount from "../models/CorporateAccount.js";
+import Expense from "../models/Expense.js";
 import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
+import Payment from "../models/Payment.js";
 import { requireTenantId, mergeTenantFilter } from "../tenancy/context.js";
 
 const money = (n) => Math.round(Number(n || 0) * 100) / 100;
@@ -18,8 +20,8 @@ export async function createPurchaseOrder(data, userId) {
   requireTenantId(); assertObjectId(data.supplier, "Supplier"); if (data.booking) assertObjectId(data.booking, "Booking"); if (data.tour) assertObjectId(data.tour, "Tour");
   const supplier = await Supplier.findOne({ ...tenant({ _id: data.supplier }), status: "active" });
   if (!supplier) throw new Error("Supplier not found in this tenant or is inactive.");
-  if (data.booking && !(await Booking.exists({ ...tenant({ _id: data.booking, isDeleted: { $ne: true } }) }))) throw new Error("Booking not found in this tenant.");
-  if (data.tour && !(await Tour.exists({ ...tenant({ _id: data.tour, isDeleted: { $ne: true } }) }))) throw new Error("Tour not found in this tenant.");
+  if (data.booking && !(await Booking.exists(tenant({ _id: data.booking, isDeleted: { $ne: true } })))) throw new Error("Booking not found in this tenant.");
+  if (data.tour && !(await Tour.exists(tenant({ _id: data.tour, isDeleted: { $ne: true } })))) throw new Error("Tour not found in this tenant.");
   return PurchaseOrder.create({ ...data, createdBy: userId });
 }
 
@@ -29,8 +31,17 @@ export async function transitionPurchaseOrder(id, status, userId) {
   const po = await PurchaseOrder.findOne(tenant({ _id: id }));
   if (!po) throw new Error("Purchase order not found.");
   if (!allowed[po.status]?.includes(status)) throw new Error(`Invalid purchase order transition: ${po.status} -> ${status}.`);
-  po.status = status; if (status === "approved") { po.approvedBy = userId || null; po.approvedAt = new Date(); } if (status === "received") po.receivedAt = new Date();
-  return po.save();
+  po.status = status;
+  if (status === "approved") { po.approvedBy = userId || null; po.approvedAt = new Date(); }
+  if (status === "received") po.receivedAt = new Date();
+  const saved = await po.save();
+  if (status === "received") {
+    const existingPayable = await SupplierPayable.findOne(tenant({ purchaseOrder: po._id }));
+    if (!existingPayable) await SupplierPayable.create({ tenantId: po.tenantId, supplier: po.supplier, purchaseOrder: po._id, booking: po.booking, tour: po.tour, amount: po.totalAmount, dueDate: po.expectedDate || null, createdBy: userId });
+    const existingExpense = await Expense.findOne(tenant({ purchaseOrder: po._id }));
+    if (!existingExpense) await Expense.create({ tenantId: po.tenantId, category: "procurement", supplier: po.supplier, purchaseOrder: po._id, booking: po.booking, tour: po.tour, supplierName: "", description: `Received purchase order ${po.poNumber}`, amount: po.totalAmount, taxAmount: po.taxAmount, expenseDate: new Date(), status: "draft", createdBy: userId });
+  }
+  return saved;
 }
 
 export async function createTourCost(data, userId) {
@@ -44,7 +55,9 @@ export async function createTourCost(data, userId) {
 
 export async function getTourProfitability(tourId) {
   requireTenantId(); assertObjectId(tourId, "Tour");
-  const filter = tenant(); const tour = await Tour.findOne({ ...filter, _id: tourId, isDeleted: { $ne: true } }).lean(); if (!tour) throw new Error("Tour not found in this tenant.");
+  const filter = tenant();
+  const tour = await Tour.findOne({ ...filter, _id: tourId, isDeleted: { $ne: true } }).lean();
+  if (!tour) throw new Error("Tour not found in this tenant.");
   const [costs, bookings] = await Promise.all([
     TourCost.find({ ...filter, tour: tourId, status: { $ne: "cancelled" } }).lean(),
     Booking.find({ ...filter, tour: tourId, isDeleted: { $ne: true }, status: { $nin: ["cancelled", "refunded"] } }).select("totalAmount paymentStatus").lean(),
@@ -58,10 +71,12 @@ export async function getTourProfitability(tourId) {
 export async function createSupplierPayable(data, userId) {
   requireTenantId(); assertObjectId(data.supplier, "Supplier");
   if (!(await Supplier.exists(tenant({ _id: data.supplier })))) throw new Error("Supplier not found in this tenant.");
-  for (const [key, label, Model] of [["purchaseOrder", "Purchase order", PurchaseOrder], ["expense", "Expense", null], ["booking", "Booking", Booking], ["tour", "Tour", Tour]]) {
-    if (data[key] && Model && !(await Model.exists(tenant({ _id: data[key] })))) throw new Error(`${label} not found in this tenant.`);
+  for (const [key, label, Model] of [["purchaseOrder", "Purchase order", PurchaseOrder], ["expense", "Expense", Expense], ["booking", "Booking", Booking], ["tour", "Tour", Tour]]) {
+    if (data[key] && !(await Model.exists(tenant({ _id: data[key] })))) throw new Error(`${label} not found in this tenant.`);
   }
-  return SupplierPayable.create({ ...data, createdBy: userId });
+  const amount = money(data.amount || 0);
+  if (!(amount > 0)) throw new Error("Supplier payable amount must be greater than zero.");
+  return SupplierPayable.create({ ...data, amount, createdBy: userId });
 }
 
 export async function paySupplierPayable(id, amount, paymentReference = "") {
@@ -71,6 +86,20 @@ export async function paySupplierPayable(id, amount, paymentReference = "") {
 }
 
 export async function createCorporateAccount(data, userId) { requireTenantId(); return CorporateAccount.create({ ...data, createdBy: userId }); }
+
+export async function reconcileCorporateAccountBalance(accountId) {
+  requireTenantId(); assertObjectId(accountId, "Corporate account");
+  const account = await CorporateAccount.findOne(tenant({ _id: accountId }));
+  if (!account) throw new Error("Corporate account not found.");
+  const bookings = await Booking.find(tenant({ corporateAccount: account._id, isDeleted: { $ne: true }, status: { $nin: ["cancelled", "refunded"] } })).select("_id totalAmount").lean();
+  const ids = bookings.map((b) => b._id);
+  const payments = ids.length ? await Payment.aggregate([{ $match: { ...tenant({ booking: { $in: ids }, status: "completed" }) } }, { $group: { _id: null, total: { $sum: "$amount" } } }]) : [];
+  const booked = money(bookings.reduce((s, b) => s + Number(b.totalAmount || 0), 0));
+  const paid = money(payments[0]?.total || 0);
+  account.currentBalance = Math.max(0, money(booked - paid));
+  await account.save();
+  return account;
+}
 
 export async function getResourceConflicts({ resourceType, resourceId, travelDate, excludeBookingId }) {
   requireTenantId(); assertObjectId(resourceId, "Resource"); if (!travelDate) throw new Error("travelDate is required.");
