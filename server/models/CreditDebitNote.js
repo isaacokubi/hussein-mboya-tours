@@ -3,7 +3,7 @@ import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
 const creditDebitNoteSchema = new mongoose.Schema({
   tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
-  noteNumber: { type: String, trim: true, unique: true },
+  noteNumber: { type: String, trim: true },
   type: { type: String, enum: ["credit", "debit"], required: true },
   originalInvoice: { type: mongoose.Schema.Types.ObjectId, ref: "Invoice", required: true },
   originalInvoiceNumber: { type: String, trim: true, required: true },
@@ -23,6 +23,7 @@ creditDebitNoteSchema.pre("save", function(next) {
   next();
 });
 
+creditDebitNoteSchema.index({ tenantId: 1, noteNumber: 1 }, { unique: true });
 creditDebitNoteSchema.index({ tenantId: 1, originalInvoice: 1, createdAt: -1 });
 creditDebitNoteSchema.plugin(tenantPlugin);
 export default mongoose.models.CreditDebitNote || mongoose.model("CreditDebitNote", creditDebitNoteSchema);
