@@ -2,35 +2,9 @@ import PaymentLink from "../models/PaymentLink.js";
 import Booking from "../models/Booking.js";
 import Invoice from "../models/Invoice.js";
 import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
-
 const money = (n) => Math.round(Number(n || 0) * 100) / 100;
-const publicData = (link) => ({ token: link.token, amount: link.amount, currency: link.currency, status: link.status, expiresAt: link.expiresAt, booking: link.booking, invoice: link.invoice });
-
-export const listPaymentLinks = async (req, res, next) => { requireTenantId(); try { const links = await PaymentLink.find(mergeTenantFilter(req, {})).populate("booking", "bookingNumber totalAmount balanceAmount status").populate("invoice", "invoiceNumber totalAmount balance status").sort({ createdAt: -1 }).lean(); return res.json({ success: true, data: links }); } catch (e) { return next(e); } };
-export const createPaymentLink = async (req, res, next) => {
-  requireTenantId();
-  try {
-    const booking = await Booking.findOne(mergeTenantFilter(req, { _id: req.body?.bookingId }));
-    if (!booking) return res.status(404).json({ success: false, message: "Booking not found." });
-    if (["cancelled", "refunded"].includes(booking.status)) return res.status(400).json({ success: false, message: "Cancelled or refunded bookings cannot receive payment links." });
-    const balance = money(booking.balanceAmount ?? (Number(booking.totalAmount || 0) - Number(booking.depositAmount || 0)));
-    if (balance <= 0) return res.status(400).json({ success: false, message: "Booking has no outstanding balance." });
-    const invoice = await Invoice.findOne(mergeTenantFilter(req, { booking: booking._id })).select("_id").lean();
-    const requested = req.body?.amount == null ? balance : money(req.body.amount);
-    if (requested <= 0 || requested > balance) return res.status(400).json({ success: false, message: `Amount must be between 0 and ${balance}.` });
-    const expiresAt = req.body?.expiresAt ? new Date(req.body.expiresAt) : new Date(Date.now() + 7 * 86400000);
-    if (Number.isNaN(expiresAt.getTime()) || expiresAt <= new Date()) return res.status(400).json({ success: false, message: "Expiry must be a future date." });
-    const link = await PaymentLink.create({ tenantId: req.tenantId, token: PaymentLink.generateToken(), booking: booking._id, invoice: invoice?._id || null, amount: requested, currency: "KES", expiresAt, createdBy: req.user?._id || req.user?.id || null });
-    return res.status(201).json({ success: true, data: link, paymentPath: `/pay/${link.token}` });
-  } catch (e) { return next(e); }
-};
-export const getPaymentLink = async (req, res, next) => {
-  requireTenantId();
-  try {
-    const link = await PaymentLink.findOne({ token: String(req.params.token || "").trim() }).populate("booking", "bookingNumber totalAmount balanceAmount status travelDate customerSnapshot").populate("invoice", "invoiceNumber totalAmount balance status").lean();
-    if (!link || String(link.tenantId) !== String(req.tenantId)) return res.status(404).json({ success: false, message: "Payment link not found." });
-    if (link.status === "active" && link.expiresAt && link.expiresAt <= new Date()) { await PaymentLink.updateOne({ _id: link._id }, { $set: { status: "expired" } }); link.status = "expired"; }
-    return res.json({ success: true, data: publicData(link) });
-  } catch (e) { return next(e); }
-};
+const publicData = (link) => ({ token: link.token, amount: link.amount, currency: link.currency, status: link.status, expiresAt: link.expiresAt, booking: link.booking ? { bookingNumber: link.booking.bookingNumber, totalAmount: link.booking.totalAmount, balanceAmount: link.booking.balanceAmount, status: link.booking.status, travelDate: link.booking.travelDate } : null, invoice: link.invoice ? { invoiceNumber: link.invoice.invoiceNumber, totalAmount: link.invoice.totalAmount, balance: link.invoice.balance, status: link.invoice.status } : null });
+export const listPaymentLinks = async (req, res, next) => { requireTenantId(); try { const links = await PaymentLink.find(mergeTenantFilter(req, {})).populate("booking", "bookingNumber totalAmount balanceAmount status travelDate").populate("invoice", "invoiceNumber totalAmount balance status").sort({ createdAt: -1 }).lean(); return res.json({ success: true, data: links }); } catch (e) { return next(e); } };
+export const createPaymentLink = async (req, res, next) => { requireTenantId(); try { const booking = await Booking.findOne(mergeTenantFilter(req, { _id: req.body?.bookingId })); if (!booking) return res.status(404).json({ success: false, message: "Booking not found." }); if (["cancelled", "refunded"].includes(booking.status)) return res.status(400).json({ success: false, message: "Cancelled or refunded bookings cannot receive payment links." }); const balance = money(booking.balanceAmount ?? (Number(booking.totalAmount || 0) - Number(booking.depositAmount || 0))); if (balance <= 0) return res.status(400).json({ success: false, message: "Booking has no outstanding balance." }); const invoice = await Invoice.findOne(mergeTenantFilter(req, { booking: booking._id })).select("_id").lean(); const requested = req.body?.amount == null ? balance : money(req.body.amount); if (requested <= 0 || requested > balance) return res.status(400).json({ success: false, message: `Amount must be between 0 and ${balance}.` }); const expiresAt = req.body?.expiresAt ? new Date(req.body.expiresAt) : new Date(Date.now() + 7 * 86400000); if (Number.isNaN(expiresAt.getTime()) || expiresAt <= new Date()) return res.status(400).json({ success: false, message: "Expiry must be a future date." }); const link = await PaymentLink.create({ tenantId: req.tenantId, token: PaymentLink.generateToken(), booking: booking._id, invoice: invoice?._id || null, amount: requested, currency: "KES", expiresAt, createdBy: req.user?._id || req.user?.id || null }); return res.status(201).json({ success: true, data: link, paymentPath: `/pay/${link.token}` }); } catch (e) { return next(e); } };
+export const getPaymentLink = async (req, res, next) => { requireTenantId(); try { const link = await PaymentLink.findOne({ token: String(req.params.token || "").trim() }).populate("booking", "bookingNumber totalAmount balanceAmount status travelDate").populate("invoice", "invoiceNumber totalAmount balance status").lean(); if (!link || String(link.tenantId) !== String(req.tenantId)) return res.status(404).json({ success: false, message: "Payment link not found." }); if (link.status === "active" && link.expiresAt && link.expiresAt <= new Date()) { await PaymentLink.updateOne({ _id: link._id }, { $set: { status: "expired" } }); link.status = "expired"; } return res.json({ success: true, data: publicData(link) }); } catch (e) { return next(e); } };
 export const cancelPaymentLink = async (req, res, next) => { requireTenantId(); try { const link = await PaymentLink.findOne(mergeTenantFilter(req, { _id: req.params.id })); if (!link) return res.status(404).json({ success: false, message: "Payment link not found." }); if (link.status !== "active") return res.status(409).json({ success: false, message: `Link is already ${link.status}.` }); link.status = "cancelled"; await link.save(); return res.json({ success: true, data: link }); } catch (e) { return next(e); } };
