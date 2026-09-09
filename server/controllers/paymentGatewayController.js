@@ -1,14 +1,17 @@
 import PaymentGatewayConfig, { encryptSecret } from "../models/PaymentGatewayConfig.js";
 import { requireTenantId } from "../tenancy/context.js";
 
-const SECRET_FIELDS = ["consumerKey", "consumerSecret", "passkey", "secretKey", "webhookSecret"];
+const SECRET_FIELDS = [
+  "consumerKey", "consumerSecret", "passkey", "secretKey", "webhookSecret",
+  "initiatorName", "securityCredential",
+];
 const ALLOWED_PROVIDERS = ["MPESA", "STRIPE", "PAYPAL", "PESAPAL", "BANK"];
 
 export const listGatewayConfigs = async (req, res, next) => {
   try {
     requireTenantId();
     const configs = await PaymentGatewayConfig.find({})
-      .select("-consumerKeyEncrypted -consumerSecretEncrypted -passkeyEncrypted -secretKeyEncrypted -webhookSecretEncrypted")
+      .select("-consumerKeyEncrypted -consumerSecretEncrypted -passkeyEncrypted -secretKeyEncrypted -webhookSecretEncrypted -initiatorNameEncrypted -securityCredentialEncrypted")
       .sort({ provider: 1 }).lean();
     return res.json({ success: true, data: configs.map((c) => ({ ...c, configured: true })) });
   } catch (error) { next(error); }
