@@ -87,6 +87,7 @@ async function seedTenant(tenant, tenantIndex) {
 
     if (!customers.length) throw new Error(`Tenant ${tenant.name || tenant._id} has no customers; refusing to invent replacement master data.`);
     if (!tours.length) throw new Error(`Tenant ${tenant.name || tenant._id} has no tours; refusing to modify master data.`);
+    if (!suppliers.length) throw new Error(`Tenant ${tenant.name || tenant._id} has no suppliers; refusing to create transactional records without supplier master data.`);
 
     const actor = users.find((u) => ["admin", "manager", "super_admin", "superadmin"].includes(String(u.role || "").toLowerCase())) || users[0] || null;
     const customerUsers = users.filter((u) => String(u.role || "").toLowerCase() === "customer");
@@ -307,7 +308,22 @@ async function seedTenant(tenant, tenantIndex) {
         createdBy: actor?._id || null,
         notes: "Synthetic supplier payable for dashboard demonstration.",
       });
-      await TourCost.create({ tenantId: tenant._id, tour: tour._id, booking: booking._id, category: "operational", description: `Cost allocation — ${tour.title}`, amount: cost, currency: "KES", status: "approved", createdBy: actor?._id || null }).catch(() => {});
+      await TourCost.create({
+        tenantId: tenant._id,
+        tour: tour._id,
+        booking: booking._id,
+        category: ["transport", "accommodation", "guide", "supplier"][i % 4],
+        description: `Cost allocation — ${tour.title}`,
+        supplier: supplier._id,
+        purchaseOrder: po._id,
+        quantity: 1,
+        unitCost: cost,
+        taxAmount: 0,
+        costDate: daysFromNow(-10 + i),
+        status: i % 3 === 0 ? "actual" : i % 3 === 1 ? "committed" : "estimated",
+        createdBy: actor?._id || null,
+        notes: "Synthetic tour cost for dashboard demonstration.",
+      });
     }
 
     if (invoices.length >= 2) {
@@ -338,7 +354,7 @@ async function seedTenant(tenant, tenantIndex) {
     if (actualTourCostCount < 1) throw new Error(`Tenant ${tenant.name || tenant._id} produced zero tour costs after seeding.`);
 
     return {
-      tenant: tenant.name || String(tenant._id),
+      tenant: tenant.name,
       bookings: bookings.length,
       payments: payments.length,
       invoices: invoices.length,
@@ -351,29 +367,29 @@ async function seedTenant(tenant, tenantIndex) {
 }
 
 async function main() {
-  if (!process.env.MONGODB_URI) throw new Error("MONGODB_URI is missing.");
+  if (!process.env.MONGODB_URI) throw new Error("MONGODB_URI is required.");
   await mongoose.connect(process.env.MONGODB_URI);
+  const tenants = await Organization.find({ isDeleted: { $ne: true } }).lean();
+  if (tenants.length !== 3) throw new Error(`Expected exactly 3 active tenants, found ${tenants.length}. Refusing to seed.`);
 
-  const tenants = await Organization.find({ isDeleted: { $ne: true } }).sort({ createdAt: 1 }).lean();
-  if (tenants.length !== 3) throw new Error(`SAFE STOP: expected exactly three active tenants, found ${tenants.length}. No data was changed.`);
-
+  console.log("Verified exactly 3 active tenants. Master data will be preserved.");
   console.log("============================================");
   console.log("GLOBAL TOURS FINANCIAL DASHBOARD SEED");
   console.log("============================================");
   console.log("Preserving all three tenants and master data.");
   console.log("Replacing bookings and transactional/financial demo data only.");
 
-  const results = [];
-  for (let i = 0; i < tenants.length; i += 1) results.push(await seedTenant(tenants[i], i));
-  console.table(results);
-  console.log("Seed complete. All generated transactions are synthetic dashboard/demo records.");
+  try {
+    const results = [];
+    for (let i = 0; i < tenants.length; i += 1) results.push(await seedTenant(tenants[i], i));
+    console.table(results);
+    console.log("Seed complete. All generated transactions are synthetic dashboard/demo records.");
+  } finally {
+    await mongoose.disconnect();
+  }
 }
 
-main()
-  .catch((error) => {
-    console.error("Financial dashboard seed failed:", error.message);
-    process.exitCode = 1;
-  })
-  .finally(async () => {
-    await mongoose.connection.close().catch(() => {});
-  });
+main().catch((error) => {
+  console.error(`Financial dashboard seed failed: ${error.message}`);
+  process.exitCode = 1;
+});
