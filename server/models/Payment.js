@@ -65,21 +65,23 @@ paymentSchema.index({ status: 1, provider: 1 });
 paymentSchema.index({ transactionId: 1 });
 paymentSchema.index({ transactionReference: 1 });
 
+// MongoDB partial indexes do not support $ne. `$gt: ""` excludes the empty-string
+// placeholder while remaining a supported partial-index expression.
 paymentSchema.index(
   { tenantId: 1, provider: 1, transactionReference: 1 },
-  { unique: true, partialFilterExpression: { status: "completed", transactionReference: { $type: "string", $ne: "" } } }
+  { unique: true, partialFilterExpression: { status: "completed", transactionReference: { $type: "string", $gt: "" } } }
 );
 paymentSchema.index(
   { tenantId: 1, checkoutRequestID: 1 },
-  { unique: true, partialFilterExpression: { checkoutRequestID: { $type: "string", $ne: "" } } }
+  { unique: true, partialFilterExpression: { checkoutRequestID: { $type: "string", $gt: "" } } }
 );
 paymentSchema.index(
   { tenantId: 1, checkoutRequestId: 1 },
-  { unique: true, partialFilterExpression: { checkoutRequestId: { $type: "string", $ne: "" } } }
+  { unique: true, partialFilterExpression: { checkoutRequestId: { $type: "string", $gt: "" } } }
 );
 paymentSchema.index(
   { tenantId: 1, mpesaReceiptNumber: 1 },
-  { unique: true, partialFilterExpression: { mpesaReceiptNumber: { $type: "string", $ne: "" } } }
+  { unique: true, partialFilterExpression: { mpesaReceiptNumber: { $type: "string", $gt: "" } } }
 );
 paymentSchema.index({ tenantId: 1, booking: 1, createdAt: -1 });
 paymentSchema.index({ tenantId: 1, status: 1, createdAt: -1 });
