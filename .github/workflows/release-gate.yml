@@ -1,0 +1,114 @@
+name: Three-Phase Release Gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  phase-1-security:
+    name: Phase 1 — Security and tenant integrity
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Syntax, model, service and production checks
+        run: npm run check:all
+      - name: Full backend test suite
+        run: npm test
+
+  phase-2-kenya-readiness:
+    name: Phase 2 — Kenya production readiness
+    runs-on: ubuntu-latest
+    needs: phase-1-security
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Production readiness contract
+        run: npm run check:production
+      - name: Verify Kenya compliance and payment modules exist
+        run: |
+          test -f models/EtimsCredential.js
+          test -f models/EtimsSubmission.js
+          test -f models/TaxProfile.js
+          test -f services/etimsService.js
+          test -f services/taxEngineService.js
+          test -f services/mpesaService.js
+          test -f services/paymentLifecycleService.js
+          test -f services/webhookDeliveryService.js
+          test -f controllers/complianceController.js
+          test -f controllers/privacyController.js
+          test -f controllers/financeComplianceController.js
+          test -f models/CreditDebitNote.js
+          test -f models/PurchaseOrder.js
+          test -f models/SupplierPayable.js
+          test -f models/TourCost.js
+          test -f models/CorporateAccount.js
+      - name: Verify external website booking integration
+        run: |
+          test -f middleware/integrationAuth.js
+          test -f controllers/integrationController.js
+          test -f routes/integrationRoutes.js
+          test -f models/WebsiteIntegrationKey.js
+          test -f models/WebsiteIntegrationEvent.js
+
+  phase-3-release:
+    name: Phase 3 — Final release gate
+    runs-on: ubuntu-latest
+    needs: phase-2-kenya-readiness
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - name: Install client dependencies
+        working-directory: client
+        run: npm ci
+      - name: Client lint
+        working-directory: client
+        run: npm run lint
+      - name: Client production build
+        working-directory: client
+        run: npm run build
+      - name: Verify release configuration files
+        run: |
+          test -f vercel.json
+          test -f client/.env.example
+          test -f server/.env.example
+          test -f docs/EXTERNAL_WEBSITE_CONNECTOR.md
+          test -f docs/COMMERCIAL_READINESS_IMPLEMENTATION_STATUS.md
+      - name: Verify no committed environment secrets
+        run: |
+          ! grep -RIn --exclude-dir=node_modules --exclude-dir=dist --exclude='*.lock' \
+            -E '(sk_live_[A-Za-z0-9]+|AKIA[0-9A-Z]{16}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----)' \
+            client server
