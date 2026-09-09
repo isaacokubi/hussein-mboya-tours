@@ -6,8 +6,6 @@ import { Search, SlidersHorizontal } from "lucide-react";
 import TourCard from "../components/tours/TourCard";
 import { getTours } from "../api/tourApi";
 
-const textOf = (value) => String(value?.name || value?.title || value || "").toLowerCase();
-
 export default function Tours() {
   const { tenant } = useTenant();
   const { settings } = useSettings();
@@ -17,16 +15,22 @@ export default function Tours() {
   const search = searchParams.get("search") || "";
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["public-tours", destinationId, category],
-    queryFn: () => getTours({ ...(destinationId ? { destination: destinationId } : {}), ...(category ? { category } : {}) }),
+    queryKey: ["public-tours", destinationId, category, search],
+    queryFn: () => getTours({
+      ...(destinationId ? { destination: destinationId } : {}),
+      ...(category ? { category } : {}),
+      ...(search.trim() ? { search: search.trim() } : {}),
+      page: 1,
+      limit: 100,
+    }),
+    keepPreviousData: true,
   });
 
   if (isLoading) return <div className="min-h-[500px] bg-slate-950 flex items-center justify-center"><div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-400 border-t-transparent" /></div>;
   if (error) return <div className="min-h-[400px] bg-slate-950 px-6 py-20 text-center text-red-400">Failed to load tours.</div>;
 
-  const allTours = Array.isArray(data) ? data : data?.data || [];
-  const normalizedSearch = search.trim().toLowerCase();
-  const tours = normalizedSearch ? allTours.filter((tour) => [tour.title, tour.name, tour.description, tour.shortDescription, tour.location, tour.destination, tour.category, tour.slug].map(textOf).some((value) => value.includes(normalizedSearch))) : allTours;
+  const allTours = Array.isArray(data) ? data : data?.data || data?.tours || [];
+  const tours = Array.isArray(allTours) ? allTours : [];
 
   const updateSearch = (event) => {
     event.preventDefault();
