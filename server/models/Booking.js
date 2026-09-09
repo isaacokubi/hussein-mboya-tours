@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+import { queueWebhookEvent } from "../services/webhookDeliveryService.js";
 
 const travelerSchema = new mongoose.Schema(
   {
@@ -17,10 +18,43 @@ const bookingSchema = new mongoose.Schema(
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
 
-bookingSchema.pre("save", function(next) { if (!this.bookingNumber) this.bookingNumber = "BK-" + Date.now() + "-" + Math.floor(Math.random() * 10000); if (this.isModified("status") && this.status === "confirmed" && !this.confirmedAt) this.confirmedAt = new Date(); if (this.isModified("status") && this.status === "completed" && !this.completedAt) this.completedAt = new Date(); if (this.isModified("status") && this.status === "cancelled" && !this.cancelledAt) this.cancelledAt = new Date(); if (this.bookingType === "corporate" && !this.corporateCompanyName) return next(new Error("Corporate booking requires a company name.")); next(); });
+bookingSchema.pre("save", function(next) {
+  this.$wasNew = this.isNew;
+  if (!this.bookingNumber) this.bookingNumber = "BK-" + Date.now() + "-" + Math.floor(Math.random() * 10000);
+  if (this.isModified("status") && this.status === "confirmed" && !this.confirmedAt) this.confirmedAt = new Date();
+  if (this.isModified("status") && this.status === "completed" && !this.completedAt) this.completedAt = new Date();
+  if (this.isModified("status") && this.status === "cancelled" && !this.cancelledAt) this.cancelledAt = new Date();
+  if (this.bookingType === "corporate" && !this.corporateCompanyName) return next(new Error("Corporate booking requires a company name."));
+  next();
+});
 bookingSchema.pre("validate", function(next) { if (!this.tour && !this.customTourRequest) return next(new Error("Booking must have either a tour or a custom tour request.")); next(); });
 
 bookingSchema.post("save", async function() {
+  try {
+    if (this.tenantId) {
+      const event = this.$wasNew ? "booking.created" : "booking.updated";
+      await queueWebhookEvent({
+        tenantId: this.tenantId,
+        event,
+        sourceId: String(this._id),
+        data: {
+          id: this._id,
+          bookingNumber: this.bookingNumber,
+          status: this.status,
+          paymentStatus: this.paymentStatus,
+          bookingSource: this.bookingSource,
+          tour: this.tour,
+          travelDate: this.travelDate,
+          numberOfGuests: this.numberOfGuests,
+          totalAmount: this.totalAmount,
+          depositAmount: this.depositAmount,
+          balanceAmount: this.balanceAmount,
+          currency: "KES",
+          updatedAt: this.updatedAt,
+        },
+      });
+    }
+  } catch (error) { console.error("BOOKING WEBHOOK QUEUE ERROR:", error.message); }
   try {
     if (!this.tenantId || !this.corporateAccount) return;
     const PaymentModel = mongoose.models.Payment;
