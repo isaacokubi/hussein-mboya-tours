@@ -52,13 +52,13 @@ export default function SuperAdminSettings() {
 
     void loadSettings();
     return () => { active = false; };
-  }, [updateGlobalSettings]);
+  }, []);
 
   const update = (key, value) => setSettings((prev) => ({ ...prev, [key]: value }));
   const save = async () => {
     try {
       setSaving(true);
-      const payload = { ...settings, companyName: String(settings.companyName || "Coherent Tours").trim(), taxRate: Number(settings.taxRate ?? 0), taxServiceType: settings.taxServiceType || "service_fee", bookingDepositPercentage: Number(settings.bookingDepositPercentage ?? 30), defaultCommissionRate: Number(settings.defaultCommissionRate ?? 10) };
+      const payload = { ...settings, companyName: String(settings.companyName || "Global Tours").trim(), taxRate: Number(settings.taxRate ?? 0), taxServiceType: settings.taxServiceType || "service_fee", bookingDepositPercentage: Number(settings.bookingDepositPercentage ?? 30), defaultCommissionRate: Number(settings.defaultCommissionRate ?? 10) };
       const response = await updateSettings(payload);
       const savedSettings = response?.settings || response?.data?.settings || response?.data || payload;
       updateGlobalSettings?.(savedSettings);

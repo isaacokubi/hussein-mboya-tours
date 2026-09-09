@@ -2,7 +2,7 @@ import SystemSetting from "../models/SystemSetting.js";
 
 const DEFAULT_SETTINGS = {
   key: "default",
-  companyName: process.env.COMPANY_NAME || "Coherent Tours",
+  companyName: process.env.COMPANY_NAME || "Global Tours",
   companyLogo: process.env.COMPANY_LOGO || "",
   websiteUrl: process.env.COMPANY_WEBSITE || "",
   supportEmail: process.env.SUPPORT_EMAIL || "",
@@ -31,7 +31,7 @@ const DEFAULT_SETTINGS = {
   bankAccountNumber: process.env.BANK_ACCOUNT_NUMBER || "",
   bankBranch: process.env.BANK_BRANCH || "",
   bankSwiftCode: process.env.BANK_SWIFT_CODE || "",
-  emailFromName: process.env.EMAIL_FROM_NAME || "Coherent Tours",
+  emailFromName: process.env.EMAIL_FROM_NAME || "Global Tours",
   emailFromAddress: process.env.EMAIL_FROM_ADDRESS || "",
   facebook: process.env.FACEBOOK_URL || "",
   instagram: process.env.INSTAGRAM_URL || "",

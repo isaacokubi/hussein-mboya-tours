@@ -1,4 +1,4 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
+import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import Tour from "../models/Tour.js";
 
 /*
@@ -12,7 +12,11 @@ export const validateTourCapacity = async (tourId, requestedGuests) => {
     throw new Error("Invalid traveler count.");
   }
 
-  const tour = await Tour.findById(tourId).lean();
+  const tour = await Tour.findOne(
+    mergeTenantFilter({
+      _id: tourId,
+    })
+  ).lean();
   if (!tour) throw new Error("Tour not found.");
 
   const totalSlots = Number(
@@ -26,12 +30,14 @@ export const validateTourCapacity = async (tourId, requestedGuests) => {
 };
 
 export const reserveSlots = async (tourId, travelers) => {
+  requireTenantId();
+
   if (!Number.isInteger(travelers) || travelers <= 0) {
     throw new Error("Invalid traveler count.");
   }
 
   const tour = await Tour.findOneAndUpdate(
-    {
+    mergeTenantFilter({
       _id: tourId,
       $expr: {
         $lte: [
@@ -44,7 +50,7 @@ export const reserveSlots = async (tourId, travelers) => {
           { $ifNull: ["$availabilitySettings.totalSlots", "$capacity"] },
         ],
       },
-    },
+    }),
     {
       $inc: {
         "availabilitySettings.bookedSlots": travelers,
@@ -54,7 +60,11 @@ export const reserveSlots = async (tourId, travelers) => {
   );
 
   if (!tour) {
-    const exists = await Tour.exists({ _id: tourId });
+    const exists = await Tour.exists(
+      mergeTenantFilter({
+        _id: tourId,
+      })
+    );
     if (!exists) throw new Error("Tour not found.");
     throw new Error("Not enough available tour slots.");
   }
@@ -67,8 +77,12 @@ export const releaseSlots = async (tourId, travelers) => {
     throw new Error("Invalid traveler count.");
   }
 
-  const tour = await Tour.findByIdAndUpdate(
-    tourId,
+  requireTenantId();
+
+  const tour = await Tour.findOneAndUpdate(
+    mergeTenantFilter({
+      _id: tourId,
+    }),
     {
       $inc: {
         "availabilitySettings.bookedSlots": -travelers,

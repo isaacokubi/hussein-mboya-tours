@@ -1,4 +1,4 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
+import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import Tour from "../models/Tour.js";
 
 /*
@@ -29,7 +29,11 @@ export const checkAvailability = async (
   }
 
   // Find tour
-  const tour = await Tour.findById(tourId);
+  const tour = await Tour.findOne(
+    mergeTenantFilter({
+      _id: tourId,
+    })
+  );
 
   if (!tour) {
     throw new Error("Tour not found.");
@@ -78,7 +82,7 @@ export const reserveSlots = async (
   }
 
   const tour = await Tour.findOneAndUpdate(
-    {
+    mergeTenantFilter({
       _id: tourId,
 
       $expr: {
@@ -92,7 +96,7 @@ export const reserveSlots = async (
           numberOfTravelers,
         ],
       },
-    },
+    }),
     {
       $inc: {
         "availabilitySettings.bookedSlots": numberOfTravelers,
@@ -128,11 +132,17 @@ export const releaseSlots = async (
   tourId,
   numberOfTravelers = 1
 ) => {
+  requireTenantId();
+
   if (!Number.isInteger(numberOfTravelers) || numberOfTravelers < 1) {
     throw new Error("Invalid number of travelers.");
   }
 
-  const tour = await Tour.findById(tourId);
+  const tour = await Tour.findOne(
+    mergeTenantFilter({
+      _id: tourId,
+    })
+  );
 
   if (!tour) {
     throw new Error("Tour not found.");

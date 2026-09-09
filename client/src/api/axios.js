@@ -165,8 +165,8 @@ api.interceptors.response.use(
         development: isDevelopment,
       };
       error.message = isDevelopment
-        ? `Unable to reach the Coherent Tours API (${target}). Make sure the backend is running on port 5000.`
-        : `Unable to reach the Coherent Tours API (${target}). Check the API deployment, CORS configuration, and network connection.`;
+        ? `Unable to reach the Global Tours API (${target}). Make sure the backend is running on port 5000.`
+        : `Unable to reach the Global Tours API (${target}). Check the API deployment, CORS configuration, and network connection.`;
       console.error("[API NETWORK ERROR]", error.networkDiagnostic);
     }
 
@@ -200,7 +200,7 @@ api.interceptors.response.use(
 
     if (error?.code === "ERR_NETWORK" && typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("api:network-error", {
-        detail: { url, message: error.message || "Unable to reach the Coherent Tours API." },
+        detail: { url, message: error.message || "Unable to reach the Global Tours API." },
       }));
     }
 

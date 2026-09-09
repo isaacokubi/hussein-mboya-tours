@@ -102,7 +102,7 @@ export const login = async (req, res, next) => {
 
     // Only non-platform accounts require a tenant-scoped lookup. This keeps
     // tenant isolation intact while allowing the global platform owner to log
-    // in from the public Coherent Tours site.
+    // in from the public Global Tours site.
     if (!user) {
       user = await User.findOne(mergeTenantFilter({ email }))
         .select("+password")

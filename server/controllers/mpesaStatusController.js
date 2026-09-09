@@ -17,7 +17,9 @@ export const queryMpesaPayment = async (req, res, next) => {
     if (!checkoutRequestID) return res.status(400).json({ success: false, message: "CheckoutRequestID is required." });
     const payment = await Payment.findOne(mergeTenantFilter(req, { $or: [{ checkoutRequestID }, { checkoutRequestId: checkoutRequestID }] }));
     if (!payment) return res.status(404).json({ success: false, message: "Payment request not found." });
-    const booking = await Booking.findById(payment.booking);
+    const booking = await Booking.findOne(
+      mergeTenantFilter({ _id: payment.booking })
+    );
     if (!booking) return res.status(404).json({ success: false, message: "Booking not found." });
     if (!canAccess(booking, req.user)) return res.status(403).json({ success: false, message: "You do not have permission to query this payment." });
     if (["completed", "failed", "cancelled", "refunded"].includes(payment.status)) return res.json({ success: true, data: { paymentStatus: payment.status, providerQueried: false, payment } });

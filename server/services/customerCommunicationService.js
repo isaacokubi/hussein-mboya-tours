@@ -15,7 +15,7 @@ const EVENT_TYPES = Object.freeze({ BOOKING_CONFIRMATION: "booking_confirmation"
 const bookingContact = (booking) => ({ name: booking.customerSnapshot?.name || booking.contact?.name || "Customer", email: booking.customerSnapshot?.email || booking.contact?.email || "", phone: String(booking.customerSnapshot?.phone || booking.contact?.phone || "").trim() });
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>\"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[char]));
 const formatDate = (value) => value ? new Date(value).toLocaleDateString("en-KE", { dateStyle: "medium" }) : "Not specified";
-const company = async (tenantId = null) => (await getSystemSettings(tenantId ? { tenantId } : {})).companyName || "Coherent Tours";
+const company = async (tenantId = null) => (await getSystemSettings(tenantId ? { tenantId } : {})).companyName || "Global Tours";
 const platform = (fn) => runWithTenant({ role: "super_admin", bypass: true }, fn);
 const alreadySent = async (tenantId, eventKey) => Boolean(await platform(() => Notification.exists({ tenantId, "metadata.eventKey": eventKey })));
 

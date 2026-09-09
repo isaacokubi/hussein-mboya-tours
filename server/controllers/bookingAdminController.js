@@ -1107,7 +1107,7 @@ res.setHeader(
 
 res.send(
 `
-COHERENT TOURS
+GLOBAL TOURS
 
 BOOKING INVOICE
 

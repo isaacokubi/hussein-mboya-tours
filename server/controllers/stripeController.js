@@ -1,4 +1,4 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
+import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 /*
 |--------------------------------------------------------------------------
 | STRIPE PAYMENT CONTROLLER
@@ -246,9 +246,11 @@ const getCustomerBooking = async (
   }
 
   const booking =
-    await Booking.findOne({
-      _id: bookingId,
-    });
+    await Booking.findOne(
+      mergeTenantFilter({
+        _id: bookingId,
+      })
+    );
 
   if (!booking) {
     return null;

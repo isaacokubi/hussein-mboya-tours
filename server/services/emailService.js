@@ -29,7 +29,7 @@ export const sendEmail = async ({ to, subject, html, text, attachments = [], cc,
   if (!html && !text) throw new Error("Email content is required.");
   if (!smtpHost) throw new Error("SMTP email host is not configured.");
   const settings = await getSystemSettings();
-  const companyName = fromName || settings.companyName || "Coherent Tours";
+  const companyName = fromName || settings.companyName || "Global Tours";
   return transporter.sendMail({
     from: `"${companyName}" <${smtpFrom}>`,
     to,
@@ -45,7 +45,7 @@ export const sendEmail = async ({ to, subject, html, text, attachments = [], cc,
 
 export const sendBookingEmail = async (email, booking) => {
   const settings = await getSystemSettings();
-  const companyName = settings.companyName || "Coherent Tours";
+  const companyName = settings.companyName || "Global Tours";
   return sendEmail({
     to: email,
     subject: `Booking Confirmation - ${companyName}`,

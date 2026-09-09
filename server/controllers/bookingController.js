@@ -70,17 +70,23 @@ export const createBooking = async (req, res, next) => {
       let tourData = null;
 
       if (tour) {
-        tourData = await Tour.findById(tour);
+        tourData = await Tour.findOne(
+          mergeTenantFilter({
+            _id: tour,
+          })
+        );
       }
 
 
       let customTourData = null;
 
       if (customTourRequest) {
-        customTourData = await CustomTourRequest.findOne({
-          _id: customTourRequest,
-          customer: req.user._id,
-        });
+        customTourData = await CustomTourRequest.findOne(
+          mergeTenantFilter({
+            _id: customTourRequest,
+            customer: req.user._id,
+          })
+        );
 
         if (!customTourData) {
           return res.status(404).json({
@@ -229,13 +235,15 @@ export const createBooking = async (req, res, next) => {
 
       });
       try {
-        const admins = await User.find({
-          $or: [
-            { role: { $in: ["admin", "super_admin", "superadmin", "manager", "tour_manager", "tourmanager"] } },
-            { legacyRole: { $in: ["admin", "super_admin", "superadmin", "manager", "tour_manager", "tourmanager"] } },
-          ],
-          status: "active",
-        }).select("_id").lean();
+        const admins = await User.find(
+          mergeTenantFilter({
+            $or: [
+              { role: { $in: ["admin", "super_admin", "superadmin", "manager", "tour_manager", "tourmanager"] } },
+              { legacyRole: { $in: ["admin", "super_admin", "superadmin", "manager", "tour_manager", "tourmanager"] } },
+            ],
+            status: "active",
+          })
+        ).select("_id").lean();
 
         if (admins.length) {
           await Notification.insertMany(admins.map((admin) => ({
@@ -356,9 +364,11 @@ export const getMyBookings = async (req, res, next) => {
       (page - 1) * limit;
 
 
-    const customerProfile = await Customer.findOne({
-      user: req.user._id,
-    })
+    const customerProfile = await Customer.findOne(
+      mergeTenantFilter({
+        user: req.user._id,
+      })
+    )
       .select("_id")
       .lean();
 
@@ -720,8 +730,10 @@ message:"Invalid booking ID"
 
 const booking =
 
-await Booking.findById(
-req.params.id
+await Booking.findOne(
+mergeTenantFilter({
+  _id: req.params.id,
+})
 )
 
 .populate("tour")
@@ -864,8 +876,10 @@ throw new Error(
 
 
 const booking =
-await Booking.findById(
-bookingId
+await Booking.findOne(
+mergeTenantFilter({
+  _id: bookingId,
+})
 );
 
 
@@ -1148,8 +1162,10 @@ try{
 
 
 const booking =
-await Booking.findById(
-req.params.id
+await Booking.findOne(
+mergeTenantFilter({
+  _id: req.params.id,
+})
 );
 
 
@@ -1367,8 +1383,10 @@ message:"Invalid booking ID"
 }
 
 const booking =
-await Booking.findById(
-req.params.id
+await Booking.findOne(
+mergeTenantFilter({
+  _id: req.params.id,
+})
 );
 
 
@@ -1505,7 +1523,15 @@ export const rescheduleBooking = async (req, res, next) => {
     const target = new Date(newTravelDate); target.setHours(0,0,0,0);
     const today = new Date(); today.setHours(0,0,0,0);
     if (target <= today) return res.status(400).json({ success:false, message:"The rescheduled date must be in the future." });
-    const booking = await Booking.findOne({ _id:req.params.id, $or:[{user:req.user._id},{"customerSnapshot.email":req.user.email}] });
+    const booking = await Booking.findOne(
+      mergeTenantFilter({
+        _id: req.params.id,
+        $or: [
+          { user: req.user._id },
+          { "customerSnapshot.email": req.user.email },
+        ],
+      })
+    );
     if (!booking) return res.status(404).json({ success:false, message:"Booking not found." });
     if (["cancelled","completed","refunded"].includes(booking.status)) return res.status(400).json({ success:false, message:"This booking cannot be rescheduled." });
     if (booking.travelDate && target.getTime() === new Date(booking.travelDate).setHours(0,0,0,0)) return res.status(400).json({ success:false, message:"Choose a different travel date." });
@@ -1516,7 +1542,15 @@ export const rescheduleBooking = async (req, res, next) => {
     booking.rescheduleHistory.push({ fromDate: previous, toDate: target, reason:String(reason||"").trim() });
     await booking.save();
     await Notification.create({ recipient:req.user._id, user:req.user._id, title:"Booking Rescheduled", message:`Your booking ${booking.bookingNumber} has been rescheduled to ${target.toLocaleDateString("en-KE")}.`, type:"booking", relatedModel:"Booking", relatedId:booking._id, actionUrl:`/bookings/${booking._id}` });
-    const admins = await User.find({ $or:[{role:{$in:["admin","super_admin", "superadmin","manager","tour_manager","tourmanager"]}},{legacyRole:{$in:["admin","super_admin", "superadmin","manager","tour_manager","tourmanager"]}}], status:"active" }).select("_id").lean();
+    const admins = await User.find(
+      mergeTenantFilter({
+        $or: [
+          { role: { $in: ["admin", "super_admin", "superadmin", "manager", "tour_manager", "tourmanager"] } },
+          { legacyRole: { $in: ["admin", "super_admin", "superadmin", "manager", "tour_manager", "tourmanager"] } },
+        ],
+        status: "active",
+      })
+    ).select("_id").lean();
     if (admins.length) await Notification.insertMany(admins.map(a=>({recipient:a._id,user:a._id,title:"Booking Reschedule Requested",message:`${booking.bookingNumber} was moved to ${target.toLocaleDateString("en-KE")}.`,type:"booking",relatedModel:"Booking",relatedId:booking._id,actionUrl:"/admin/bookings"})));
     res.json({success:true,message:"Booking rescheduled successfully.",booking});
   } catch(error){ next(error); }

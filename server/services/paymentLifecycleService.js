@@ -1,4 +1,4 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
+import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 /*
 |--------------------------------------------------------------------------
 | PAYMENT LIFECYCLE SERVICE
@@ -259,15 +259,17 @@ export const findPendingBookingPayment = async (
   bookingId
 ) => {
 
-  return Payment.findOne({
-    booking: bookingId,
-    status: {
-      $in: [
-        "pending",
-        "processing",
-      ],
-    },
-  }).sort({
+  return Payment.findOne(
+    mergeTenantFilter({
+      booking: bookingId,
+      status: {
+        $in: [
+          "pending",
+          "processing",
+        ],
+      },
+    })
+  ).sort({
     createdAt: -1,
   });
 };
@@ -306,14 +308,16 @@ export const failBookingPayment = async ({
     await session.withTransaction(async () => {
 
       const paymentDoc =
-        await Payment.findById(
-          payment._id
-        ).session(session);
+        await Payment.findOne({
+          _id: payment._id,
+          tenantId: payment.tenantId,
+        }).session(session);
 
       const bookingDoc =
-        await Booking.findById(
-          booking._id
-        ).session(session);
+        await Booking.findOne({
+          _id: booking._id,
+          tenantId: payment.tenantId,
+        }).session(session);
 
       if (!paymentDoc) {
         throw new Error(
@@ -463,14 +467,16 @@ export const completeBookingPayment = async ({
       */
 
       const paymentDoc =
-        await Payment.findById(
-          payment._id
-        ).session(session);
+        await Payment.findOne({
+          _id: payment._id,
+          tenantId: payment.tenantId,
+        }).session(session);
 
       const bookingDoc =
-        await Booking.findById(
-          booking._id
-        ).session(session);
+        await Booking.findOne({
+          _id: booking._id,
+          tenantId: payment.tenantId,
+        }).session(session);
 
       if (!paymentDoc) {
         throw new Error(
@@ -1097,9 +1103,10 @@ export const refundBookingPayment = async ({
         */
 
         const paymentDoc =
-          await Payment.findById(
-            payment._id
-          ).session(session);
+          await Payment.findOne({
+            _id: payment._id,
+            tenantId: payment.tenantId,
+          }).session(session);
 
         if (!paymentDoc) {
           throw new Error(
@@ -1118,9 +1125,10 @@ export const refundBookingPayment = async ({
         }
 
         const bookingDoc =
-          await Booking.findById(
-            bookingId
-          ).session(session);
+          await Booking.findOne({
+            _id: bookingId,
+            tenantId: paymentDoc.tenantId,
+          }).session(session);
 
         if (!bookingDoc) {
           throw new Error(

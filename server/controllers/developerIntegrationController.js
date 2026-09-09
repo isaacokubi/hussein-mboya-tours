@@ -71,7 +71,7 @@ export const testWebhook = async (req, res, next) => {
       occurredAt: new Date().toISOString(),
       data: {
         test: true,
-        message: "This is a test delivery from Hussein Mboya Tours.",
+        message: "This is a test delivery from Global Tours.",
         sentAt: new Date().toISOString(),
       },
     }, {

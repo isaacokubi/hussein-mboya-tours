@@ -172,7 +172,7 @@ _id:req.params.id
       .fontSize(24)
       .font("Helvetica-Bold")
       .text(
-        "HUSSEIN MBOYA TOURS",
+        "GLOBAL TOURS",
         {
           align: "center",
         }

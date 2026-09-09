@@ -49,7 +49,7 @@ export function SettingsProvider({ children }) {
         setSettings(fallback);
         return fallback;
       }
-      const endpoint = isPlatformScope ? "/admin/settings" : "/settings/public";
+      const endpoint = isPlatformScope ? "/superadmin/settings" : "/settings/public";
       const response = await api.get(endpoint, { params: { _t: Date.now() } });
       const data = response.data?.settings || response.data?.data || response.data || {};
       const normalized = isPlatformScope ? normalizePlatformSettings(data, PLATFORM_SETTINGS) : normalize(data, DEFAULT_SETTINGS);

@@ -94,11 +94,13 @@ export const createCustomer = async (req, res, next) => {
     }
 
     if (customerData.email) {
-      const existing = await Customer.findOne({
-        agent: agent._id,
-        email: customerData.email,
-        isDeleted: false,
-      });
+      const existing = await Customer.findOne(
+        mergeTenantFilter({
+          agent: agent._id,
+          email: customerData.email,
+          isDeleted: false,
+        })
+      );
 
       if (existing) {
         return res.status(409).json({
@@ -132,6 +134,7 @@ export const createCustomer = async (req, res, next) => {
 */
 
 export const getCustomers = async (req, res, next) => {
+  requireTenantId();
   try {
     const agent = await getAgentProfile(req);
 
@@ -146,10 +149,10 @@ export const getCustomers = async (req, res, next) => {
     const limit = Math.min(Math.max(Number(req.query.limit) || 20, 1), 100);
     const skip = (page - 1) * limit;
 
-    const filter = {
+    const filter = mergeTenantFilter({
       agent: agent._id,
       isDeleted: false,
-    };
+    });
 
     if (req.query.status) {
       filter.status = req.query.status;
@@ -198,6 +201,7 @@ export const getCustomers = async (req, res, next) => {
 */
 
 export const getCustomer = async (req, res, next) => {
+  requireTenantId();
   try {
     if (!isValidId(req.params.id)) {
       return res.status(400).json({
@@ -215,11 +219,13 @@ export const getCustomer = async (req, res, next) => {
       });
     }
 
-    const customer = await Customer.findOne({
-      _id: req.params.id,
-      agent: agent._id,
-      isDeleted: false,
-    }).lean();
+    const customer = await Customer.findOne(
+      mergeTenantFilter({
+        _id: req.params.id,
+        agent: agent._id,
+        isDeleted: false,
+      })
+    ).lean();
 
     if (!customer) {
       return res.status(404).json({

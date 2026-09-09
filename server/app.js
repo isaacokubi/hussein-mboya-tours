@@ -80,7 +80,7 @@ app.use((req, res, next) => {
     const origin = req.get("Origin");
     if (origin) res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Vary", "Origin");
-    res.setHeader("Access-Control-Allow-Credentials", "false");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
     res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization,X-Requested-With,Accept,Origin,X-Tenant-ID,X-Tenant-Slug,X-Tenant-Key,X-API-Key,X-Integration-Key,X-Public-Integration-Key,Idempotency-Key,X-Request-ID");
     if (req.method === "OPTIONS") return res.sendStatus(204);

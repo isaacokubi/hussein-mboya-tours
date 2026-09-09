@@ -26,7 +26,7 @@ try {
   await mongoose.connect(mongoUri);
 
   console.log("\n============================================================");
-  console.log("HUSSEIN MBOYA TOURS — FIRST COMPANY ONBOARDING");
+  console.log("GLOBAL TOURS — FIRST COMPANY ONBOARDING");
   console.log("============================================================");
   console.log("This command is one-time only. It creates the first platform");
   console.log("SuperAdmin, the first company/tenant, and its first Admin.");

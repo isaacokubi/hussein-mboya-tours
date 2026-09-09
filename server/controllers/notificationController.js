@@ -1,4 +1,4 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
+import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import mongoose from "mongoose";
 
 import Booking from "../models/Booking.js";
@@ -116,26 +116,33 @@ export const getNotificationRecipients = async (req, res, next) => {
     };
 
     const allowedRoles = [...new Set(requested.flatMap((r) => roleMap[r] || []))];
-    const roleDocs = await Role.find({ name: { $in: allowedRoles } }).select("_id").lean();
+    const roleDocs = await Role.find(
+      mergeTenantFilter({
+        name: { $in: allowedRoles },
+      })
+    ).select("_id").lean();
     const roleIds = roleDocs.map((role) => role._id);
 
-    const users = await User.find({
-      $or: [
-        { role: { $in: allowedRoles } },
-        { legacyRole: { $in: allowedRoles } },
-        ...(roleIds.length ? [{ roleId: { $in: roleIds } }] : []),
-      ],
-      status: "active",
-      isActive: { $ne: false },
-    })
+    const users = await User.find(
+      mergeTenantFilter({
+        $or: [
+          { role: { $in: allowedRoles } },
+          { legacyRole: { $in: allowedRoles } },
+          ...(roleIds.length ? [{ roleId: { $in: roleIds } }] : []),
+        ],
+        status: "active",
+        isActive: { $ne: false },
+      })
+    )
       .select("_id name firstName lastName email phone role legacyRole roleId")
       .populate("roleId", "name displayName")
       .sort({ name: 1, email: 1 })
       .lean();
 
-    const staff = await Staff.find({
-      position: {
-        $in: requested.flatMap((r) => ({
+    const staff = await Staff.find(
+      mergeTenantFilter({
+        position: {
+          $in: requested.flatMap((r) => ({
           guide: ["guide"],
           tourguide: ["guide"],
           driver: ["driver"],
@@ -144,17 +151,22 @@ export const getNotificationRecipients = async (req, res, next) => {
           manager: ["tour_manager"],
           tourmanager: ["tour_manager"],
         }[r] || [])),
-      },
-      status: "active",
-      isDeleted: { $ne: true },
-    }).select("user name email phone position").lean();
+        },
+        status: "active",
+        isDeleted: { $ne: true },
+      })
+    ).select("user name email phone position").lean();
 
     const linkedIds = new Set(users.map((u) => u._id.toString()));
     const extra = [];
 
     for (const member of staff) {
       if (member.user && !linkedIds.has(member.user.toString())) {
-        const user = await User.findById(member.user)
+        const user = await User.findOne(
+          mergeTenantFilter({
+            _id: member.user,
+          })
+        )
           .select("_id name firstName lastName email phone role legacyRole roleId")
           .populate("roleId", "name displayName")
           .lean();
@@ -228,16 +240,22 @@ export const sendInternalNotification = async (req, res, next) => {
     }
 
     const roleDocs = expandedRoles.length
-      ? await Role.find({ name: { $in: expandedRoles } }).select("_id").lean()
+      ? await Role.find(
+          mergeTenantFilter({
+            name: { $in: expandedRoles },
+          })
+        ).select("_id").lean()
       : [];
     const roleIds = roleDocs.map((role) => role._id);
     if (roleIds.length) filter.push({ roleId: { $in: roleIds } });
 
-    const recipients = await User.find({
-      $or: filter,
-      status: "active",
-      isActive: { $ne: false },
-    }).select("_id");
+    const recipients = await User.find(
+      mergeTenantFilter({
+        $or: filter,
+        status: "active",
+        isActive: { $ne: false },
+      })
+    ).select("_id");
 
     if (!recipients.length) {
       return res.status(404).json({ success: false, message: "No active recipients matched your selection." });
@@ -434,8 +452,10 @@ export const sendBookingNotification =
       }
 
       const booking =
-        await Booking.findById(
-          req.params.id
+        await Booking.findOne(
+          mergeTenantFilter({
+            _id: req.params.id,
+          })
         ).populate(
           "customer",
           "firstName lastName email phone user"

@@ -20,7 +20,9 @@ const getDurationDays = (...values) => Math.max(1, ...values.map((value) => pars
 
 const getAllowedRange = async (booking) => {
   if (booking.tour) {
-    const tour = await Tour.findById(booking.tour).select("startDate endDate date durationDetails duration").lean();
+    const tour = await Tour.findOne(
+      mergeTenantFilter({ _id: booking.tour })
+    ).select("startDate endDate date durationDetails duration").lean();
     if (!tour) return null;
     const start = startOfDay(tour.startDate || tour.date);
     const storedEnd = startOfDay(tour.endDate);
@@ -33,7 +35,9 @@ const getAllowedRange = async (booking) => {
   }
 
   if (booking.customTourRequest) {
-    const request = await CustomTourRequest.findById(booking.customTourRequest)
+    const request = await CustomTourRequest.findOne(
+      mergeTenantFilter({ _id: booking.customTourRequest })
+    )
       .select("startDate durationDays duration")
       .lean();
     if (!request?.startDate) return null;
@@ -50,7 +54,12 @@ const getAllowedRange = async (booking) => {
 export const updateBookingTravelDate = async (req, res, next) => {
   requireTenantId();
   try {
-    const booking = await Booking.findOne({ _id: req.params.id, user: req.user._id });
+    const booking = await Booking.findOne(
+      mergeTenantFilter({
+        _id: req.params.id,
+        user: req.user._id,
+      })
+    );
     if (!booking) return res.status(404).json({ success: false, message: "Booking not found." });
     if (["cancelled", "completed", "refunded"].includes(booking.status)) {
       return res.status(400).json({ success: false, message: "This booking cannot be changed." });
