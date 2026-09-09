@@ -14,14 +14,12 @@ export const guardBookingResources = async (req, res, next) => {
   try {
     if (!validId(req.params.id)) return fail(res, 400, "Invalid booking ID.");
     const booking = await Booking.findOne(mergeTenantFilter(req, { _id: req.params.id }))
-      .select("_id tenantId paymentStatus status")
+      .select("_id tenantId paymentStatus status travelDate assignedGuide assignedDriver assignedVehicle tour")
       .lean();
     if (!booking) return fail(res, 404, "Booking not found.");
 
     const ids = { guide: req.body?.guide, driver: req.body?.driver, vehicle: req.body?.vehicle, agent: req.body?.agent };
-    for (const [name, id] of Object.entries(ids)) {
-      if (id && !validId(id)) return fail(res, 400, `Invalid ${name} ID.`);
-    }
+    for (const [name, id] of Object.entries(ids)) if (id && !validId(id)) return fail(res, 400, `Invalid ${name} ID.`);
 
     const [guideDoc, driverDoc, vehicleDoc, agentDoc] = await Promise.all([
       ids.guide ? Staff.findOne(mergeTenantFilter(req, { _id: ids.guide, position: "guide", status: "active", isDeleted: { $ne: true } })).lean() : null,
@@ -30,24 +28,36 @@ export const guardBookingResources = async (req, res, next) => {
       ids.agent ? Agent.findOne(mergeTenantFilter(req, { _id: ids.agent, status: { $ne: "deleted" } })).lean() : null,
     ]);
 
-    if ((ids.guide && !guideDoc) || (ids.driver && !driverDoc) || (ids.vehicle && !vehicleDoc) || (ids.agent && !agentDoc)) {
-      return fail(res, 409, "One or more assigned resources do not belong to this tenant or are unavailable.");
-    }
-    if (vehicleDoc && ["maintenance", "out_of_service"].includes(vehicleDoc.status)) {
-      return fail(res, 409, "Vehicle is not available for assignment.");
-    }
-    if (guideDoc && guideDoc.availability && !["available", "busy"].includes(guideDoc.availability)) {
-      return fail(res, 409, "Guide is not available for assignment.");
-    }
-    if (driverDoc && driverDoc.availability && !["available", "busy"].includes(driverDoc.availability)) {
-      return fail(res, 409, "Driver is not available for assignment.");
+    if ((ids.guide && !guideDoc) || (ids.driver && !driverDoc) || (ids.vehicle && !vehicleDoc) || (ids.agent && !agentDoc)) return fail(res, 409, "One or more assigned resources do not belong to this tenant or are unavailable.");
+    if (vehicleDoc && ["maintenance", "out_of_service"].includes(vehicleDoc.status)) return fail(res, 409, "Vehicle is not available for assignment.");
+    if (guideDoc && guideDoc.availability && !["available", "busy"].includes(guideDoc.availability)) return fail(res, 409, "Guide is not available for assignment.");
+    if (driverDoc && driverDoc.availability && !["available", "busy"].includes(driverDoc.availability)) return fail(res, 409, "Driver is not available for assignment.");
+
+    const resourceChecks = [
+      ["guide", ids.guide, "assignedGuide"],
+      ["driver", ids.driver, "assignedDriver"],
+      ["vehicle", ids.vehicle, "assignedVehicle"],
+    ];
+    const start = new Date(booking.travelDate);
+    if (!Number.isNaN(start.getTime())) {
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(start); end.setDate(end.getDate() + 1);
+      for (const [label, id, field] of resourceChecks) {
+        if (!id) continue;
+        const conflict = await Booking.findOne(mergeTenantFilter(req, {
+          _id: { $ne: booking._id },
+          [field]: id,
+          travelDate: { $gte: start, $lt: end },
+          status: { $nin: ["cancelled", "refunded", "completed"] },
+          isDeleted: { $ne: true },
+        })).select("bookingNumber travelDate status").lean();
+        if (conflict) return fail(res, 409, `Selected ${label} is already assigned to booking ${conflict.bookingNumber || conflict._id} on this travel date.`);
+      }
     }
 
     req.booking = booking;
     next();
-  } catch (error) {
-    next(error);
-  }
+  } catch (error) { next(error); }
 };
 
 export const guardPaymentRefund = async (req, res, next) => {
@@ -65,13 +75,9 @@ export const guardPaymentRefund = async (req, res, next) => {
     const alreadyRefunded = Number(payment.refundedAmount || 0);
     const requested = Number(req.body?.amount || paid - alreadyRefunded);
     const remaining = Math.max(0, paid - alreadyRefunded);
-    if (!Number.isFinite(requested) || requested <= 0 || requested > remaining) {
-      return fail(res, 400, `Invalid refund amount. Maximum refundable amount is ${remaining}.`);
-    }
+    if (!Number.isFinite(requested) || requested <= 0 || requested > remaining) return fail(res, 400, `Invalid refund amount. Maximum refundable amount is ${remaining}.`);
     req.payment = payment;
     req.refundAmount = requested;
     next();
-  } catch (error) {
-    next(error);
-  }
+  } catch (error) { next(error); }
 };
