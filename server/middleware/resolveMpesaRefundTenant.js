@@ -1,5 +1,5 @@
 import Payment from "../models/Payment.js";
-import { runWithTenant } from "../tenancy/context.js";
+import { runWithTenant, setTenantContext } from "../tenancy/context.js";
 
 export async function resolveMpesaRefundTenant(req, res, next) {
   try {
@@ -13,11 +13,10 @@ export async function resolveMpesaRefundTenant(req, res, next) {
 
     if (!payment?.tenantId) return next();
 
-    return runWithTenant({ tenantId: payment.tenantId, bypass: false }, () => {
-      req.tenantId = payment.tenantId;
-      next();
-    });
+    setTenantContext({ tenantId: payment.tenantId, bypass: false });
+    req.tenantId = payment.tenantId;
+    return next();
   } catch (error) {
-    next(error);
+    return next(error);
   }
 }
