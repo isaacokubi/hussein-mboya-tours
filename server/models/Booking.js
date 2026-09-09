@@ -1,10 +1,9 @@
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
-import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 const travelerSchema = new mongoose.Schema(
   {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
+    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true },
     name: { type: String, required: true, trim: true, maxlength: 100 },
     age: { type: Number, min: 0, max: 120 },
     gender: { type: String, enum: ["male", "female", "other"], default: "other" },
@@ -15,47 +14,40 @@ const travelerSchema = new mongoose.Schema(
     emergencyContactPhone: { type: String, trim: true, default: "" },
     dietaryRequirements: { type: String, default: "" },
     medicalConditions: { type: String, default: "" },
-  },
-  { _id: false },
+  }, { _id: false }
 );
 
-const customerSnapshotSchema = new mongoose.Schema(
-  { name: String, email: String, phone: String },
-  { _id: false },
-);
-
-const emergencyContactSchema = new mongoose.Schema(
-  { name: String, phone: String, relationship: String },
-  { _id: false },
-);
+const customerSnapshotSchema = new mongoose.Schema({ name: String, email: String, phone: String }, { _id: false });
+const emergencyContactSchema = new mongoose.Schema({ name: String, phone: String, relationship: String }, { _id: false });
+const billingContactSchema = new mongoose.Schema({ name: String, email: String, phone: String }, { _id: false });
 
 const bookingSchema = new mongoose.Schema(
   {
+    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true },
     bookingNumber: { type: String, unique: true, index: true },
     customTourRequest: { type: mongoose.Schema.Types.ObjectId, ref: "CustomTourRequest", default: null },
     customer: { type: mongoose.Schema.Types.ObjectId, ref: "Customer", required: false, index: true },
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null, index: true },
     customerSnapshot: customerSnapshotSchema,
-    contact: {
-      name: { type: String, trim: true, default: "" },
-      email: { type: String, lowercase: true, trim: true, default: "" },
-      phone: { type: String, trim: true, default: "" },
-    },
+    contact: { name: { type: String, trim: true, default: "" }, email: { type: String, lowercase: true, trim: true, default: "" }, phone: { type: String, trim: true, default: "" } },
     agent: { type: mongoose.Schema.Types.ObjectId, ref: "Agent", default: null },
     bookingSource: { type: String, enum: ["website", "mobile_app", "agent", "admin", "walk_in", "partner", "api"], default: "website" },
     externalSource: { type: String, trim: true, default: undefined },
     externalBookingId: { type: String, trim: true, default: undefined },
     integrationKeyId: { type: mongoose.Schema.Types.ObjectId, ref: "WebsiteIntegrationKey", default: null },
     externalMetadata: { type: mongoose.Schema.Types.Mixed, default: {} },
+    bookingType: { type: String, enum: ["individual", "group", "corporate"], default: "individual", index: true },
+    groupReference: { type: String, trim: true, default: "" },
+    corporateCompanyName: { type: String, trim: true, default: "" },
+    corporatePin: { type: String, trim: true, uppercase: true, default: "" },
+    purchaseOrderNumber: { type: String, trim: true, default: "" },
+    paymentTerms: { type: String, enum: ["immediate", "deposit", "credit", "staged"], default: "immediate" },
+    billingContact: billingContactSchema,
+    roomingListReference: { type: String, trim: true, default: "" },
     tour: { type: mongoose.Schema.Types.ObjectId, ref: "Tour", required: false, default: null, index: true },
     travelDate: { type: Date, required: true },
     originalTravelDate: { type: Date, default: null },
-    rescheduleHistory: [{
-      fromDate: { type: Date },
-      toDate: { type: Date },
-      reason: { type: String, default: "" },
-      requestedAt: { type: Date, default: Date.now },
-    }],
+    rescheduleHistory: [{ fromDate: { type: Date }, toDate: { type: Date }, reason: { type: String, default: "" }, requestedAt: { type: Date, default: Date.now } }],
     rescheduleCount: { type: Number, default: 0, min: 0 },
     travelers: { type: [travelerSchema], default: [] },
     numberOfGuests: { type: Number, default: 1, min: 1 },
@@ -101,26 +93,15 @@ const bookingSchema = new mongoose.Schema(
     updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
     isDeleted: { type: Boolean, default: false, index: true },
   },
-  { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } },
+  { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
 
 bookingSchema.pre("save", function(next) {
-  if (!this.bookingNumber) {
-    this.bookingNumber = "BK-" + Date.now() + "-" + Math.floor(Math.random() * 10000);
-  }
-
-  if (this.isModified("status") && this.status === "confirmed" && !this.confirmedAt) {
-    this.confirmedAt = new Date();
-  }
-
-  if (this.isModified("status") && this.status === "completed" && !this.completedAt) {
-    this.completedAt = new Date();
-  }
-
-  if (this.isModified("status") && this.status === "cancelled" && !this.cancelledAt) {
-    this.cancelledAt = new Date();
-  }
-
+  if (!this.bookingNumber) this.bookingNumber = "BK-" + Date.now() + "-" + Math.floor(Math.random() * 10000);
+  if (this.isModified("status") && this.status === "confirmed" && !this.confirmedAt) this.confirmedAt = new Date();
+  if (this.isModified("status") && this.status === "completed" && !this.completedAt) this.completedAt = new Date();
+  if (this.isModified("status") && this.status === "cancelled" && !this.cancelledAt) this.cancelledAt = new Date();
+  if (this.bookingType === "corporate" && !this.corporateCompanyName) return next(new Error("Corporate booking requires a company name."));
   next();
 });
 
@@ -129,13 +110,11 @@ bookingSchema.virtual("isPaid").get(function () { return this.paymentStatus === 
 bookingSchema.virtual("isAssigned").get(function () { return Boolean(this.assignedGuide || this.assignedDriver || this.assignedVehicle); });
 bookingSchema.virtual("isCompleted").get(function () { return this.status === "completed"; });
 bookingSchema.virtual("isCancelled").get(function () { return this.status === "cancelled"; });
-
 bookingSchema.methods.calculateCommission = function () { return (this.totalAmount * this.commissionRate) / 100; };
 bookingSchema.methods.calculateBalance = function () { return Math.max(0, this.totalAmount - this.depositAmount); };
 bookingSchema.methods.markPaid = function () { this.paymentStatus = "paid"; this.depositAmount = this.totalAmount; this.balanceAmount = 0; return this.save(); };
 bookingSchema.methods.markCompleted = function () { this.status = "completed"; this.completedAt = new Date(); return this.save(); };
 bookingSchema.methods.cancelBooking = function (reason = "") { this.status = "cancelled"; this.cancellationReason = reason; this.cancelledAt = new Date(); return this.save(); };
-
 bookingSchema.statics.findUpcoming = function () { return this.find({ status: { $in: ["confirmed", "assigned", "ongoing"] }, travelDate: { $gte: new Date() }, isDeleted: false }); };
 bookingSchema.statics.findCompleted = function () { return this.find({ status: "completed", isDeleted: false }); };
 bookingSchema.statics.findPendingPayments = function () { return this.find({ paymentStatus: { $in: ["pending", "partial"] }, isDeleted: false }); };
@@ -155,14 +134,14 @@ bookingSchema.index({ refundStatus: 1 });
 bookingSchema.index({ commissionStatus: 1 });
 bookingSchema.index({ customer: 1, travelDate: 1 });
 bookingSchema.index({ tour: 1, travelDate: 1 });
+bookingSchema.index({ tenantId: 1, bookingType: 1, travelDate: 1 });
+bookingSchema.index({ tenantId: 1, corporatePin: 1 });
 
 bookingSchema.pre("validate", function(next) {
-  if (!this.tour && !this.customTourRequest) {
-    return next(new Error("Booking must have either a tour or a custom tour request."));
-  }
+  if (!this.tour && !this.customTourRequest) return next(new Error("Booking must have either a tour or a custom tour request."));
   next();
 });
 
-if (!mongoose.models.Booking) bookingSchema.plugin(tenantPlugin);
-const Booking = mongoose.models.Booking || mongoose.model("Booking", bookingSchema);
+const tenantBookingSchema = bookingSchema.plugin(tenantPlugin);
+const Booking = mongoose.models.Booking || mongoose.model("Booking", tenantBookingSchema);
 export default Booking;
