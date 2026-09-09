@@ -25,6 +25,7 @@ const invoiceSchema = new mongoose.Schema({
   status: { type: String, enum: ["draft", "pending", "partial", "paid", "cancelled", "refunded", "overdue"], default: "pending" },
   customerSnapshot: { name: String, email: String, phone: String },
   buyerPin: { type: String, trim: true, uppercase: true, default: "" },
+  taxRegistrationNumber: { type: String, trim: true, uppercase: true, default: "" },
   etimsStatus: { type: String, enum: ["not_configured", "pending", "submitted", "synced", "failed"], default: "not_configured" },
   etimsInvoiceNumber: { type: String, trim: true, default: "" },
   etimsReceiptNumber: { type: String, trim: true, default: "" },
@@ -32,6 +33,10 @@ const invoiceSchema = new mongoose.Schema({
   etimsQrCode: { type: String, trim: true, default: "" },
   etimsSubmittedAt: { type: Date, default: null },
   etimsResponse: { type: mongoose.Schema.Types.Mixed, default: {} },
+  etimsSubmissionAttempts: { type: Number, default: 0, min: 0 },
+  etimsLastError: { type: String, trim: true, default: "" },
+  etimsNextRetryAt: { type: Date, default: null },
+  etimsLastAttemptAt: { type: Date, default: null },
   pdfUrl: { type: String, default: "" },
   notes: { type: String, default: "", trim: true },
   isDeleted: { type: Boolean, default: false },
@@ -40,10 +45,6 @@ const invoiceSchema = new mongoose.Schema({
 invoiceSchema.pre("save", function(next) {
   if (!this.invoiceNumber) this.invoiceNumber = `INV-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
   this.balance = Math.max(0, Number(this.totalAmount || 0) - Number(this.amountPaid || 0));
-
-  // Financial synchronization may intentionally mark an invoice as fully
-  // refunded. Do not let the generic balance calculation turn that state back
-  // into "paid" merely because the remaining balance is zero.
   if (!["refunded", "cancelled", "draft"].includes(this.status)) {
     if (this.balance <= 0 && this.totalAmount > 0) this.status = "paid";
     else if (this.amountPaid > 0) this.status = "partial";
@@ -61,8 +62,16 @@ invoiceSchema.methods.markPaid = function(reference = "") {
   return this.save();
 };
 
-// Invoice identity is tenant-scoped. The old global booking_1 and
-// invoiceNumber_1 indexes are removed by reconcileTenantIndexes.js.
+invoiceSchema.methods.markEtimsAttempt = function(errorMessage = "") {
+  this.etimsSubmissionAttempts = Number(this.etimsSubmissionAttempts || 0) + 1;
+  this.etimsLastAttemptAt = new Date();
+  this.etimsLastError = String(errorMessage || "").trim();
+  this.etimsStatus = this.etimsLastError ? "failed" : "pending";
+  const delayMinutes = Math.min(60 * 24, 5 * (2 ** Math.min(this.etimsSubmissionAttempts - 1, 8)));
+  this.etimsNextRetryAt = this.etimsLastError ? new Date(Date.now() + delayMinutes * 60 * 1000) : null;
+  return this.save();
+};
+
 invoiceSchema.index({ tenantId: 1, booking: 1 }, { unique: true });
 invoiceSchema.index({ tenantId: 1, invoiceNumber: 1 }, { unique: true });
 invoiceSchema.index({ customer: 1 });
@@ -72,6 +81,7 @@ invoiceSchema.index({ createdAt: -1 });
 invoiceSchema.index({ dueDate: 1 });
 invoiceSchema.index({ isDeleted: 1 });
 invoiceSchema.index({ tenantId: 1, etimsStatus: 1, createdAt: -1 });
+invoiceSchema.index({ tenantId: 1, etimsStatus: 1, etimsNextRetryAt: 1 });
 
 const tenantInvoiceSchema = invoiceSchema.plugin(tenantPlugin);
 const Invoice = mongoose.models.Invoice || mongoose.model("Invoice", tenantInvoiceSchema);
