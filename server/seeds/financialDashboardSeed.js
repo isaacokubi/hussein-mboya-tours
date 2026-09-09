@@ -32,7 +32,6 @@ dotenv.config();
 
 const round = (n) => Math.round(Number(n) * 100) / 100;
 const daysFromNow = (n) => new Date(Date.now() + n * 86400000);
-const slug = (name) => String(name || "tenant").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
 
 const paymentPlans = [
   ["paid", "completed", 1],
@@ -78,12 +77,12 @@ async function seedTenant(tenant, tenantIndex) {
     await clearTransactionalData(tenant._id);
 
     const [customers, tours, users, staff, agents, suppliers] = await Promise.all([
-      Customer.find({ tenantId: tenant._id, isDeleted: { $ne: true } }).limit(30).lean(),
-      Tour.find({ tenantId: tenant._id, isDeleted: { $ne: true }, published: true }).limit(50).lean(),
-      User.find({ tenantId: tenant._id, isDeleted: { $ne: true } }).limit(100).lean(),
-      Staff.find({ tenantId: tenant._id, isDeleted: { $ne: true }, status: "active" }).lean(),
-      Agent.find({ tenantId: tenant._id, isDeleted: { $ne: true } }).lean(),
-      Supplier.find({ tenantId: tenant._id, isDeleted: { $ne: true } }).lean(),
+      Customer.find({ isDeleted: { $ne: true } }).limit(30).lean(),
+      Tour.find({ isDeleted: { $ne: true }, published: true }).limit(50).lean(),
+      User.find({ isDeleted: { $ne: true } }).limit(100).lean(),
+      Staff.find({ isDeleted: { $ne: true }, status: "active" }).lean(),
+      Agent.find({ isDeleted: { $ne: true } }).lean(),
+      Supplier.find({ isDeleted: { $ne: true } }).lean(),
     ]);
 
     if (!customers.length) throw new Error(`Tenant ${tenant.name || tenant._id} has no customers; refusing to invent replacement master data.`);
@@ -105,8 +104,6 @@ async function seedTenant(tenant, tenantIndex) {
       const travelOffset = i < 4 ? -(45 - i * 8) : i < 8 ? 7 + i * 3 : 25 + i * 4;
       const travelDate = daysFromNow(travelOffset);
       const paid = round(amount * plan[2]);
-      // Booking.paymentMethod intentionally uses only the Booking schema enum.
-      // Pesapal remains represented by the Payment.provider/method fields below.
       const paymentMethod = ["MPESA", "CARD", "BANK_TRANSFER", "CARD", "CASH"][i % 5];
       const status = plan[1];
       const booking = new Booking({
@@ -163,7 +160,7 @@ async function seedTenant(tenant, tenantIndex) {
         notes: "Synthetic dashboard seed data — not a real customer transaction.",
       });
       if (status === "completed") booking.completedAt = travelDate;
-      if (status === "confirmed" || status === "assigned" || status === "ongoing") booking.confirmedAt = new Date(Math.min(Date.now(), travelDate.getTime() - 86400000));
+      if (["confirmed", "assigned", "ongoing"].includes(status)) booking.confirmedAt = new Date(Math.min(Date.now(), travelDate.getTime() - 86400000));
       if (status === "refunded") {
         booking.refundAmount = paid;
         booking.refundStatus = "completed";
@@ -185,8 +182,6 @@ async function seedTenant(tenant, tenantIndex) {
         user: booking.user || paymentUser?._id || actor?._id || null,
         tour: booking.tour,
         agent: booking.agent,
-        // Explicit demo invoice numbers avoid collisions with stale sequence state
-        // while keeping the tenant-scoped unique invoice invariant intact.
         invoiceNumber: `INV-DEMO-${tenantIndex + 1}-${String(i + 1).padStart(3, "0")}`,
         issueDate: new Date(booking.createdAt || Date.now()),
         dueDate: daysFromNow(plan[0] === "pending" || plan[0] === "partial" ? 14 : -10),
@@ -286,7 +281,7 @@ async function seedTenant(tenant, tenantIndex) {
         purchaseOrder: po._id,
         booking: booking._id,
         tour: tour._id,
-        supplierName: supplier.name || `Supplier ${i + 1}`,
+        supplierName: supplier.tradingName || supplier.legalName || `Supplier ${i + 1}`,
         description: `Operating cost — ${tour.title}`,
         amount: cost,
         taxAmount: 0,
@@ -324,16 +319,34 @@ async function seedTenant(tenant, tenantIndex) {
       const customerBookings = bookings.filter((b) => String(b.customer) === String(customer._id));
       const completed = customerBookings.filter((b) => b.status === "completed").length;
       const spent = round(customerBookings.reduce((sum, b) => sum + Number(b.totalAmount || 0), 0));
-      await Customer.updateOne({ tenantId: tenant._id, _id: customer._id }, { $set: { totalBookings: customerBookings.length, completedBookings: completed, cancelledBookings: customerBookings.filter((b) => b.status === "cancelled").length, totalSpent: spent, averageBookingValue: customerBookings.length ? round(spent / customerBookings.length) : 0, lastBookingDate: customerBookings.map((b) => b.createdAt).filter(Boolean).sort((a, b) => b - a)[0] || null, loyaltyPoints: Math.floor(spent / 100) } });
+      await Customer.updateOne({ _id: customer._id }, { $set: { totalBookings: customerBookings.length, completedBookings: completed, cancelledBookings: customerBookings.filter((b) => b.status === "cancelled").length, totalSpent: spent, averageBookingValue: customerBookings.length ? round(spent / customerBookings.length) : 0, lastBookingDate: customerBookings.map((b) => b.createdAt).filter(Boolean).sort((a, b) => b - a)[0] || null, loyaltyPoints: Math.floor(spent / 100) } });
     }
 
     for (const tour of tours) {
       const activeBookings = bookings.filter((b) => String(b.tour) === String(tour._id) && !["cancelled", "refunded"].includes(b.status));
       const bookedSlots = activeBookings.reduce((sum, b) => sum + Number(b.numberOfGuests || 0), 0);
-      await Tour.updateOne({ tenantId: tenant._id, _id: tour._id }, { $set: { "availabilitySettings.bookedSlots": bookedSlots } });
+      await Tour.updateOne({ _id: tour._id }, { $set: { "availabilitySettings.bookedSlots": bookedSlots } });
     }
 
-    return { tenant: tenant.name || String(tenant._id), bookings: bookings.length, payments: payments.length, invoices: invoices.length, expenses: Math.min(6, suppliers.length, tours.length) };
+    const actualExpenseCount = await Expense.countDocuments({});
+    const actualPurchaseOrderCount = await PurchaseOrder.countDocuments({});
+    const actualSupplierPayableCount = await SupplierPayable.countDocuments({});
+    const actualTourCostCount = await TourCost.countDocuments({});
+    if (actualExpenseCount < 1) throw new Error(`Tenant ${tenant.name || tenant._id} produced zero expenses after seeding; refusing to report a successful populated financial dashboard.`);
+    if (actualPurchaseOrderCount < 1) throw new Error(`Tenant ${tenant.name || tenant._id} produced zero purchase orders after seeding.`);
+    if (actualSupplierPayableCount < 1) throw new Error(`Tenant ${tenant.name || tenant._id} produced zero supplier payables after seeding.`);
+    if (actualTourCostCount < 1) throw new Error(`Tenant ${tenant.name || tenant._id} produced zero tour costs after seeding.`);
+
+    return {
+      tenant: tenant.name || String(tenant._id),
+      bookings: bookings.length,
+      payments: payments.length,
+      invoices: invoices.length,
+      expenses: actualExpenseCount,
+      purchaseOrders: actualPurchaseOrderCount,
+      supplierPayables: actualSupplierPayableCount,
+      tourCosts: actualTourCostCount,
+    };
   });
 }
 
@@ -342,7 +355,7 @@ async function main() {
   await mongoose.connect(process.env.MONGODB_URI);
 
   const tenants = await Organization.find({ isDeleted: { $ne: true } }).sort({ createdAt: 1 }).lean();
-  if (tenants.length !== 3) throw new Error(`SAFE STOP: expected exactly 3 active tenants, found ${tenants.length}. No data was changed.`);
+  if (tenants.length !== 3) throw new Error(`SAFE STOP: expected exactly three active tenants, found ${tenants.length}. No data was changed.`);
 
   console.log("============================================");
   console.log("GLOBAL TOURS FINANCIAL DASHBOARD SEED");
