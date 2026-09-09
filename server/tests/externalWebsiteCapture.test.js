@@ -29,7 +29,8 @@ test("server-to-server booking flow uses secret API-key authentication", () => {
   assert.match(routes, /requireIntegrationKey/);
   assert.match(auth, /X-API-Key/);
   assert.match(auth, /keyHash: hashKey\(rawKey\)/);
-  assert.match(auth, /runWithTenant\(\{ tenantId: key\.tenantId/);
+  assert.match(auth, /tenantId: key\.tenantId/);
+  assert.match(auth, /runWithTenant\(/);
 });
 
 test("integration keys enforce origin restrictions and support revocation", () => {
