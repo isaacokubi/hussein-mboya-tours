@@ -55,6 +55,14 @@ test("booking capture has server-side validation and pricing", () => {
   assert.match(controller, /Customer phone number is required/);
 });
 
+test("invalid external bookings validate customer contact before reserving inventory", () => {
+  const phoneValidation = controller.indexOf('if(!ph)return res.status(400).json({success:false,message:"Customer phone number is required."})');
+  const reservation = controller.indexOf('await reserveSlots(tourId,count)');
+  assert.notEqual(phoneValidation, -1, "customer phone validation must remain explicit");
+  assert.notEqual(reservation, -1, "inventory reservation must remain explicit");
+  assert.ok(phoneValidation < reservation, "customer validation must happen before inventory reservation");
+});
+
 test("external booking retries are idempotent and audited", () => {
   assert.match(controller, /externalBookingId/);
   assert.match(controller, /booking\.duplicate/);
