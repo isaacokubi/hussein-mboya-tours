@@ -3,6 +3,7 @@
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import { queueWebhookEvent } from "../services/webhookDeliveryService.js";
+import { postPaymentToLedger } from "../services/operationalAccountingService.js";
 import Invoice from "./Invoice.js";
 import Commission from "./Commission.js";
 
@@ -99,6 +100,15 @@ paymentSchema.post("save", async function () {
   const queryOptions = session ? { session } : {};
   const PaymentModel = this.constructor;
   const bookingId = this.booking;
+
+  if (this.status === "completed" && this.$statusWasModified) {
+    try {
+      await postPaymentToLedger(this);
+    } catch (ledgerError) {
+      console.error("PAYMENT GL POSTING ERROR:", ledgerError.message);
+    }
+  }
+
   const [invoice, payments, commission] = await Promise.all([
     Invoice.findOne({ tenantId: this.tenantId, booking: bookingId, isDeleted: { $ne: true } }, null, queryOptions),
     PaymentModel.find({ tenantId: this.tenantId, booking: bookingId, status: { $in: ["completed", "refunded"] } }, null, queryOptions).select("amount status refundedAmount refundStatus paymentMethod transactionReference transactionId mpesaReceiptNumber invoiceNumber updatedAt"),
