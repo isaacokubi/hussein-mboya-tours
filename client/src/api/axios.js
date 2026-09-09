@@ -20,9 +20,9 @@ function isPlatformDeployment() {
 const PLATFORM_API_URL = configuredPlatformApiUrl || "https://hussein-mboya-tours.onrender.com/api";
 
 // Local development must always use the local Vite proxy. This prevents a
-// developer machine from silently displaying stale data from a deployed API
-// when VITE_API_URL happens to contain a production URL. Deployed builds keep
-// using their configured API endpoint exactly as before.
+developer machine from silently displaying stale data from a deployed API
+when VITE_API_URL happens to contain a production URL. Deployed builds keep
+using their configured API endpoint exactly as before.
 export const baseURL = isLocalHost()
   ? "/api"
   : (isPlatformDeployment()
@@ -43,7 +43,7 @@ const PUBLIC_TENANT_KEY = String(
 ).trim();
 
 function getPublicTenantSlug() {
-  if (typeof window === "undefined" || isLocalHost() || isPlatformDeployment()) return "";
+  if (typeof window === "undefined") return "";
 
   const hostname = String(window.location.hostname || "").trim().toLowerCase();
   const configuredPlatformHost = String(import.meta.env.VITE_PLATFORM_HOST || "")
@@ -51,6 +51,11 @@ function getPublicTenantSlug() {
     .toLowerCase()
     .replace(/^https?:\/\//, "")
     .replace(/\/$/, "");
+
+  // Local development has no tenant-specific hostname, so it must use the
+  // explicit public tenant slug configured by the developer.
+  if (isLocalHost()) return PUBLIC_TENANT_SLUG;
+  if (isPlatformDeployment()) return "";
 
   if (configuredPlatformHost && hostname.endsWith(`.${configuredPlatformHost}`)) {
     const label = hostname.slice(0, -`.${configuredPlatformHost}`.length).split(".").filter(Boolean).pop();
@@ -61,7 +66,7 @@ function getPublicTenantSlug() {
 }
 
 function getPublicTenantKey() {
-  if (isLocalHost() || isPlatformDeployment()) return "";
+  if (isPlatformDeployment()) return "";
   return PUBLIC_TENANT_KEY;
 }
 
