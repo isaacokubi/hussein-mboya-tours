@@ -5,10 +5,9 @@ import crypto from "crypto";
  * Useful for production logs, support tickets, and monitoring systems.
  */
 export default function requestContext(req, res, next) {
-  const requestId = req.headers["x-request-id"] || crypto.randomUUID();
-
+  const incoming = String(req.headers["x-request-id"] || "").trim();
+  const requestId = incoming && /^[A-Za-z0-9._:-]{8,120}$/.test(incoming) ? incoming : crypto.randomUUID();
   req.requestId = requestId;
   res.setHeader("X-Request-ID", requestId);
-
   next();
 }
