@@ -23,11 +23,12 @@ async function main() {
 
   const results = [];
   for (const tenant of tenants) {
-    const users = await User.find({ tenantId: tenant._id, isDeleted: { $ne: true } }).limit(100).lean();
-    const actor = users.find((u) => ["admin", "manager", "super_admin", "superadmin"].includes(String(u.role || "").toLowerCase())) || users[0] || null;
-
     await runWithTenant({ tenantId: tenant._id, role: "super_admin", bypass: true }, async () => {
-      let suppliers = await Supplier.find({ tenantId: tenant._id, isDeleted: { $ne: true } }).lean();
+      // All tenant-scoped reads and writes must execute inside the tenant context.
+      const users = await User.find({ isDeleted: { $ne: true } }).limit(100).lean();
+      const actor = users.find((u) => ["admin", "manager", "super_admin", "superadmin"].includes(String(u.role || "").toLowerCase())) || users[0] || null;
+
+      let suppliers = await Supplier.find({ isDeleted: { $ne: true } }).lean();
       for (let i = suppliers.length; i < 2; i += 1) {
         const template = supplierTemplates[i % supplierTemplates.length];
         const supplier = await Supplier.create({
