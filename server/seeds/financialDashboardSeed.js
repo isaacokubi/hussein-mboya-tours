@@ -185,6 +185,9 @@ async function seedTenant(tenant, tenantIndex) {
         user: booking.user || paymentUser?._id || actor?._id || null,
         tour: booking.tour,
         agent: booking.agent,
+        // Explicit demo invoice numbers avoid collisions with stale sequence state
+        // while keeping the tenant-scoped unique invoice invariant intact.
+        invoiceNumber: `INV-DEMO-${tenantIndex + 1}-${String(i + 1).padStart(3, "0")}`,
         issueDate: new Date(booking.createdAt || Date.now()),
         dueDate: daysFromNow(plan[0] === "pending" || plan[0] === "partial" ? 14 : -10),
         subtotal: booking.totalAmount,
