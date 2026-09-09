@@ -62,10 +62,16 @@ paymentSchema.index({ booking: 1 });
 paymentSchema.index({ status: 1, provider: 1 });
 paymentSchema.index({ transactionId: 1 });
 paymentSchema.index({ transactionReference: 1 });
-paymentSchema.index({ provider: 1, transactionReference: 1 }, { unique: true, partialFilterExpression: { status: "completed", transactionReference: { $type: "string", $gt: "" } } });
-paymentSchema.index({ checkoutRequestID: 1 }, { unique: true, sparse: true });
-paymentSchema.index({ checkoutRequestId: 1 }, { unique: true, sparse: true });
-paymentSchema.index({ mpesaReceiptNumber: 1 }, { unique: true, sparse: true });
+// Payment identifiers are tenant-scoped. This prevents one company's transaction
+// reference/receipt from blocking an unrelated tenant while still preventing
+// duplicate provider transactions inside the owning tenant.
+paymentSchema.index(
+  { tenantId: 1, provider: 1, transactionReference: 1 },
+  { unique: true, partialFilterExpression: { status: "completed", transactionReference: { $type: "string", $gt: "" } } }
+);
+paymentSchema.index({ tenantId: 1, checkoutRequestID: 1 }, { unique: true, sparse: true });
+paymentSchema.index({ tenantId: 1, checkoutRequestId: 1 }, { unique: true, sparse: true });
+paymentSchema.index({ tenantId: 1, mpesaReceiptNumber: 1 }, { unique: true, sparse: true });
 paymentSchema.index({ tenantId: 1, booking: 1, createdAt: -1 });
 paymentSchema.index({ tenantId: 1, status: 1, createdAt: -1 });
 
