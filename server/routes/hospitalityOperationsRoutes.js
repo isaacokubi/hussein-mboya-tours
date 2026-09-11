@@ -1,6 +1,7 @@
 import express from "express";
 import { protect, managerOnly } from "../middleware/authMiddleware.js";
 import { ensureOpsAccess, hospitalityDashboard, hotelCalendar, hotelPerformance, amendHotelBooking, cancelHotelBooking, blockRooms, releaseRoomBlock, ratePlans, saveRatePlan, supplierContracts, saveSupplierContract, deposits, saveDeposit, transferDispatch, assignTransfer, updateTransferStatus, paymentReconciliation, listDrivers, listVehicles } from "../controllers/hospitalityOperationsController.js";
+import { amendHotelBookingProduction } from "../controllers/hospitalityBookingAmendmentController.js";
 import { createCommercialRatePlan, updateCommercialRatePlan, createCommercialSupplierContract, updateCommercialSupplierContract, createCommercialDeposit, updateCommercialDeposit } from "../controllers/hospitalityCommercialController.js";
 
 const router=express.Router();
@@ -8,7 +9,7 @@ router.use(protect,managerOnly,ensureOpsAccess);
 router.get("/dashboard",hospitalityDashboard);
 router.get("/hotels/calendar",hotelCalendar);
 router.get("/hotels/performance",hotelPerformance);
-router.patch("/hotels/bookings/:id/amend",amendHotelBooking);
+router.patch("/hotels/bookings/:id/amend",amendHotelBookingProduction);
 router.patch("/hotels/bookings/:id/cancel",cancelHotelBooking);
 router.post("/hotels/room-blocks",blockRooms);
 router.patch("/hotels/room-blocks/:id/release",releaseRoomBlock);
