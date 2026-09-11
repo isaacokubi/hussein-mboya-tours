@@ -1,6 +1,6 @@
 import fs from "node:fs";
 
-const requiredFiles=["config/env.js","app.js","server.js","models/Organization.js","models/Payment.js","models/Invoice.js","models/TaxProfile.js","models/TaxRule.js","models/Expense.js","models/CreditDebitNote.js","models/PaymentLink.js","models/Supplier.js","models/PurchaseOrder.js","models/TourCost.js","models/SupplierPayable.js","models/CorporateAccount.js","models/ChartOfAccount.js","models/JournalEntry.js","models/ComplianceRecord.js","models/PrivacyRequest.js","models/BackgroundJob.js","models/WebhookDelivery.js","middleware/tenantMiddleware.js","middleware/permissionMiddleware.js","middleware/integrationAuth.js","middleware/resourceTenantGuard.js","middleware/bookingCommercialGuard.js","tenancy/tenantPlugin.js","services/taxEngineService.js","services/operationalAccountingService.js","services/financeLifecycleService.js","services/operationsService.js","services/jobQueueService.js","services/jobWorkerService.js","services/etimsService.js","services/etimsNoteService.js","services/webhookDeliveryService.js","services/dataRetentionService.js","bootstrap/operationalAccountingHooks.js","controllers/creditDebitNoteController.js","controllers/paymentLinkController.js","routes/creditDebitNoteRoutes.js","routes/paymentLinkRoutes.js","scripts/reconcileTenantIndexes.js"];
+const requiredFiles=["config/env.js","app.js","server.js","models/Organization.js","models/Payment.js","models/Invoice.js","models/TaxProfile.js","models/TaxRule.js","models/Expense.js","models/CreditDebitNote.js","models/PaymentLink.js","models/Supplier.js","models/PurchaseOrder.js","models/TourCost.js","models/SupplierPayable.js","models/CorporateAccount.js","models/ChartOfAccount.js","models/JournalEntry.js","models/ComplianceRecord.js","models/PrivacyRequest.js","models/BackgroundJob.js","models/WebhookDelivery.js","middleware/tenantMiddleware.js","middleware/permissionMiddleware.js","middleware/integrationAuth.js","middleware/resourceTenantGuard.js","middleware/bookingCommercialGuard.js","tenancy/tenantPlugin.js","services/taxEngineService.js","services/operationalAccountingService.js","services/financeLifecycleService.js","services/operationsService.js","services/jobQueueService.js","services/jobWorkerService.js","services/etimsService.js","services/etimsNoteService.js","services/webhookDeliveryService.js","services/dataRetentionService.js","services/tenantSubscriptionService.js","services/publicOnboardingService.js","bootstrap/operationalAccountingHooks.js","controllers/creditDebitNoteController.js","controllers/paymentLinkController.js","routes/creditDebitNoteRoutes.js","routes/paymentLinkRoutes.js","scripts/reconcileTenantIndexes.js"];
 const missing=requiredFiles.filter((file)=>!fs.existsSync(file));
 if(missing.length){console.error("Missing production files:",missing.join(", "));process.exit(1);}
 
@@ -15,6 +15,14 @@ const packageJson=JSON.parse(fs.readFileSync("package.json","utf8"));
 const requiredScripts=["check:all","test","reconcile:tenant-indexes"];
 const missingScripts=requiredScripts.filter((name)=>!packageJson.scripts?.[name]);
 if(missingScripts.length){console.error("Missing required server scripts:",missingScripts.join(", "));process.exit(1);}
+
+const releaseDocs=[
+  "docs/STEP3_PRODUCTION_RELEASE_RUNBOOK.md",
+  "docs/EXTERNAL_WEBSITE_CONNECTOR.md",
+  "docs/COMMERCIAL_READINESS_IMPLEMENTATION_STATUS.md",
+];
+const missingReleaseDocs=releaseDocs.filter((file)=>!fs.existsSync(`../${file}`));
+if(missingReleaseDocs.length){console.error("Missing release documentation:",missingReleaseDocs.join(", "));process.exit(1);}
 
 const runtimeValidation = process.env.PRODUCTION_READINESS_RUNTIME === "true";
 if(runtimeValidation){
@@ -35,14 +43,7 @@ if(runtimeValidation){
   const weakPaymentKey = paymentKeyRequired && String(process.env.PAYMENT_CREDENTIAL_ENCRYPTION_KEY || "").length < 32;
   const etimsConfigured = production && Boolean(process.env.ETIMS_ADAPTER_URL || process.env.ETIMS_ADAPTER_TOKEN);
   const missingEtimsKey = etimsConfigured && String(process.env.ETIMS_CREDENTIAL_ENCRYPTION_KEY || "").length < 32;
-  const evidenceFlags = [
-    "PRODUCTION_BACKUP_VERIFIED",
-    "PRODUCTION_MONITORING_VERIFIED",
-    "PRODUCTION_PAYMENT_VERIFIED",
-    "PRODUCTION_ETIMS_VERIFIED",
-    "PRODUCTION_RESTORE_TESTED",
-    "PRODUCTION_WEBHOOKS_VERIFIED",
-  ];
+  const evidenceFlags = ["PRODUCTION_BACKUP_VERIFIED","PRODUCTION_MONITORING_VERIFIED","PRODUCTION_PAYMENT_VERIFIED","PRODUCTION_ETIMS_VERIFIED","PRODUCTION_RESTORE_TESTED","PRODUCTION_WEBHOOKS_VERIFIED"];
   const missingEvidence = production ? evidenceFlags.filter((key)=>String(process.env[key] || "false").toLowerCase() !== "true") : [];
   const errors=[];
   if(missingRuntime.length) errors.push(`Missing runtime production environment variables: ${missingRuntime.join(", ")}`);
