@@ -5,8 +5,9 @@ const getData = async (request) => {
   return response.data;
 };
 
+// Canonical tenant dashboard endpoint. All dashboard consumers use the same
+// normalized backend source so cards cannot drift between pages.
 export const getDashboard = async () => getData(api.get("/admin/dashboard"));
-// Kept as a compatibility alias because the backend exposes the consolidated dashboard endpoint.
 export const getDashboardMetrics = getDashboard;
 export const getUsersAnalytics = async () => getData(api.get("/admin/users/analytics"));
 export const getBookingAnalytics = async () => getData(api.get("/admin/bookings/analytics"));
