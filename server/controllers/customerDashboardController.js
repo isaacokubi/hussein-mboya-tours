@@ -16,7 +16,7 @@ const normalizePaymentStatus = (booking) =>
 
 const ownershipFilter = async (req) => {
   const customerProfile = await Customer.findOne(
-    mergeTenantFilter({ user: req.user._id })
+    mergeTenantFilter({ user: req.user._id, isDeleted: { $ne: true } })
   )
     .select("_id")
     .lean();
@@ -24,13 +24,13 @@ const ownershipFilter = async (req) => {
   const ownership = [{ user: req.user._id }];
   if (customerProfile?._id) ownership.push({ customer: customerProfile._id });
 
-  return mergeTenantFilter({ $or: ownership });
+  return mergeTenantFilter({ $or: ownership, isDeleted: { $ne: true } });
 };
 
 /**
  * Canonical customer booking feed used by the customer dashboard and My
- * Bookings page. Counts are calculated over the complete customer dataset,
- * not just the current pagination page, so dashboard KPIs never under-report.
+ * Bookings page. KPIs are calculated over the complete non-deleted customer
+ * dataset, never just the current pagination page.
  */
 export const getCustomerBookings = async (req, res, next) => {
   try {
@@ -60,7 +60,7 @@ export const getCustomerBookings = async (req, res, next) => {
     const upcoming = allBookings.filter((booking) => {
       if (!booking.travelDate) return false;
       const travelDate = new Date(booking.travelDate);
-      return travelDate >= startOfToday && normalizeStatus(booking) !== "cancelled";
+      return travelDate >= startOfToday && !["cancelled", "refunded"].includes(normalizeStatus(booking));
     });
 
     const completed = allBookings.filter(
@@ -68,7 +68,7 @@ export const getCustomerBookings = async (req, res, next) => {
     );
 
     const cancelled = allBookings.filter(
-      (booking) => normalizeStatus(booking) === "cancelled"
+      (booking) => ["cancelled", "refunded"].includes(normalizeStatus(booking))
     );
 
     const totalSpent = allBookings.reduce((sum, booking) => {
