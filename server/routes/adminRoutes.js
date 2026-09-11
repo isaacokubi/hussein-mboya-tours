@@ -3,7 +3,7 @@ import express from "express";
 import { resolveTenant } from "../middleware/tenantMiddleware.js";
 
 import { getAgents, getAgentById, approveAgent, updateAgentStatus } from "../controllers/adminAgentController.js";
-import { getDashboardStats, getUserAnalytics, getBookingAnalytics, getRevenueAnalytics } from "../controllers/adminDashboardTenantController.js";
+import { getUserAnalytics, getBookingAnalytics, getRevenueAnalytics } from "../controllers/adminDashboardTenantController.js";
 import { dailyBookingReport, monthlyBookingReport, tourBookingReport, agentBookingReport } from "../controllers/bookingReportController.js";
 import { protect, checkPermission } from "../middleware/authMiddleware.js";
 import adminMiddleware from "../middleware/adminMiddleware.js";
@@ -16,8 +16,7 @@ router.use(protect);
 router.use(resolveTenant);
 router.use(adminMiddleware);
 
-/* Dashboard and analytics */
-router.get("/dashboard", getDashboardStats);
+/* Dashboard analytics that are not the canonical dashboard metrics endpoint. */
 router.get("/bookings/analytics", getBookingAnalytics);
 router.get("/revenue/analytics", getRevenueAnalytics);
 
