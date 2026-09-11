@@ -1,27 +1,15 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Car, Clock3, Luggage, Plane, Users } from "lucide-react";
+import { createTransferBooking, getAirportTransfers } from "../api/airportTransferApi";
 
+const input = "w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-emerald-500";
 export default function AirportTransfers() {
-  return (
-    <div className="max-w-5xl mx-auto p-6 md:p-10">
-      <div className="bg-white rounded-2xl shadow p-8">
-        <h1 className="text-4xl font-bold mb-4">Airport Transfers</h1>
-        <p className="text-gray-600 leading-7 mb-6">
-          Arrange a private or group transfer between Kenyan airports, hotels,
-          lodges and other agreed destinations. Availability and pricing are
-          confirmed by the operations team.
-        </p>
-        <div className="grid md:grid-cols-3 gap-5 mb-8">
-          {["Airport pickup", "Hotel transfer", "Custom transfer"].map((item) => (
-            <div key={item} className="border rounded-xl p-5">
-              <h2 className="font-semibold">{item}</h2>
-              <p className="text-sm text-gray-500 mt-2">Request a tailored transfer for your itinerary.</p>
-            </div>
-          ))}
-        </div>
-        <Link to="/contact" className="inline-block px-5 py-3 rounded-lg bg-blue-600 text-white">
-          Request a transfer
-        </Link>
-      </div>
-    </div>
-  );
+  const { data = [], isLoading } = useQuery({ queryKey: ["airport-transfers"], queryFn: () => getAirportTransfers() });
+  const [selected, setSelected] = useState(null); const [form, setForm] = useState({ pickupDateTime: "", pickupLocation: "", dropoffLocation: "", passengerName: "", passengerPhone: "", passengerEmail: "", passengers: 1, luggage: 0, flightNumber: "", airline: "", terminal: "", specialRequests: "" });
+  const booking = useMutation({ mutationFn: createTransferBooking, onSuccess: (data) => { setSelected(null); alert(`Transfer ${data.reference} requested. Our operations team will confirm the driver and payment.`); }, onError: (e) => alert(e?.response?.data?.message || "Unable to create transfer booking. Please sign in and try again.") });
+  const choose = (item) => setSelected(item) || setForm(f => ({...f, pickupLocation:item.pickupLocation, dropoffLocation:item.dropoffLocation, passengers:1}));
+  return <div className="mx-auto max-w-7xl px-5 py-10 md:px-8"><header className="mb-8"><p className="text-sm font-semibold uppercase tracking-wider text-emerald-700">Ground transport</p><h1 className="mt-2 text-4xl font-black text-slate-900">Airport transfers</h1><p className="mt-3 max-w-3xl text-slate-600">Reserve airport pickups, hotel drop-offs and point-to-point transfers with the right vehicle for your group and luggage.</p></header>{isLoading ? <div className="rounded-2xl bg-white p-8 shadow-sm">Loading transfer services...</div> : data.length === 0 ? <div className="rounded-2xl border border-dashed border-slate-300 p-10 text-center"><Plane className="mx-auto mb-3"/><p className="font-semibold">No transfer services are published yet.</p><p className="mt-1 text-sm text-slate-500">The operations team can add airport routes, vehicle capacities and KES pricing from the admin module.</p></div> : <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">{data.map(item => <article key={item._id} className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wide text-emerald-700">{item.airportCode || "Airport"}</p><h2 className="mt-1 text-xl font-bold">{item.name}</h2></div><Car className="text-slate-400"/></div><p className="mt-3 text-sm text-slate-600">{item.pickupLocation || "Pickup"} → {item.dropoffLocation || "Destination"}</p><div className="mt-4 grid grid-cols-2 gap-2 text-xs text-slate-500"><span><Users size={14} className="mr-1 inline"/>Up to {item.passengerCapacity}</span><span><Luggage size={14} className="mr-1 inline"/>Luggage {item.luggageCapacity}</span><span><Clock3 size={14} className="mr-1 inline"/>{item.durationMinutes} min</span><span className="font-semibold text-slate-900">KES {Number(item.price || 0).toLocaleString()} {item.pricingModel === "per_passenger" ? "/ person" : "/ vehicle"}</span></div><button onClick={() => choose(item)} className="mt-5 w-full rounded-xl bg-slate-900 px-4 py-3 font-semibold text-white">Book transfer</button></article>)}</div>}
+{selected && <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/50 p-4"><div className="mx-auto my-8 max-w-2xl rounded-2xl bg-white p-6 shadow-xl"><div className="flex items-start justify-between"><div><h2 className="text-2xl font-bold">{selected.name}</h2><p className="text-sm text-slate-500">{selected.vehicleType} · {selected.airportName || selected.airportCode}</p></div><button onClick={() => setSelected(null)} className="text-slate-500">✕</button></div><div className="mt-5 grid gap-4 md:grid-cols-2"><label className="text-sm md:col-span-2">Pickup date & time<input className={input} type="datetime-local" value={form.pickupDateTime} onChange={e=>setForm({...form,pickupDateTime:e.target.value})}/></label><label className="text-sm">Pickup location<input className={input} value={form.pickupLocation} onChange={e=>setForm({...form,pickupLocation:e.target.value})}/></label><label className="text-sm">Drop-off location<input className={input} value={form.dropoffLocation} onChange={e=>setForm({...form,dropoffLocation:e.target.value})}/></label><label className="text-sm">Passenger name<input className={input} value={form.passengerName} onChange={e=>setForm({...form,passengerName:e.target.value})}/></label><label className="text-sm">Phone<input className={input} value={form.passengerPhone} onChange={e=>setForm({...form,passengerPhone:e.target.value})}/></label><label className="text-sm">Email<input className={input} type="email" value={form.passengerEmail} onChange={e=>setForm({...form,passengerEmail:e.target.value})}/></label><label className="text-sm">Passengers<input className={input} type="number" min="1" max={selected.passengerCapacity} value={form.passengers} onChange={e=>setForm({...form,passengers:e.target.value})}/></label><label className="text-sm">Luggage<input className={input} type="number" min="0" max={selected.luggageCapacity} value={form.luggage} onChange={e=>setForm({...form,luggage:e.target.value})}/></label><label className="text-sm">Flight number<input className={input} value={form.flightNumber} onChange={e=>setForm({...form,flightNumber:e.target.value})}/></label><label className="text-sm">Airline<input className={input} value={form.airline} onChange={e=>setForm({...form,airline:e.target.value})}/></label><label className="text-sm">Terminal<input className={input} value={form.terminal} onChange={e=>setForm({...form,terminal:e.target.value})}/></label><label className="text-sm md:col-span-2">Special requests<textarea className={input} rows="3" value={form.specialRequests} onChange={e=>setForm({...form,specialRequests:e.target.value})}/></label></div><div className="mt-6 flex items-center justify-between gap-3"><Link to="/login" className="text-sm text-emerald-700">Sign in first</Link><button disabled={booking.isPending} onClick={()=>booking.mutate({...form,transferId:selected._id})} className="rounded-xl bg-emerald-600 px-5 py-3 font-semibold text-white disabled:opacity-50">{booking.isPending?"Requesting...":"Request transfer"}</button></div></div></div>}</div>;
 }
