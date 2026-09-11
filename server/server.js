@@ -14,6 +14,7 @@ import { startCustomerCommunicationScheduler } from "./services/customerCommunic
 import { enqueueDueEtimsInvoices } from "./services/etimsService.js";
 import { startJobWorker } from "./services/jobWorkerService.js";
 import { startDataRetentionScheduler } from "./services/dataRetentionService.js";
+import { startComplianceExpiryScheduler } from "./services/complianceExpiryService.js";
 import { migrateInvoiceIndexes } from "./bootstrap/invoiceIndexMigration.js";
 
 const DB_READY = 1;
@@ -43,18 +44,19 @@ const subscriptionInterval = startTenantSubscriptionScheduler();
 const communicationInterval = startCustomerCommunicationScheduler();
 const stopJobWorker = startJobWorker();
 const retentionScheduler = startDataRetentionScheduler();
+const complianceExpiryScheduler = startComplianceExpiryScheduler();
 const runEtimsDispatcher = () => runNonCriticalTask("eTIMS dispatcher", enqueueDueEtimsInvoices);
 const runLifecycleSync = () => runNonCriticalTask("Tour lifecycle sync", syncTourLifecycle);
 const etimsInterval = setInterval(runEtimsDispatcher, TASK_RETRY_MS);
 const lifecycleInterval = setInterval(runLifecycleSync, TASK_RETRY_MS);
 
 server.on("error", (error) => {
-  if (error?.code === "EADDRINUSE") { console.error(`PORT ${env.PORT} is already in use. Stop the existing server before starting another instance.`); console.error(`Find it with: sudo lsof -i :${env.PORT} -nP`); console.error(`Then stop the matching Node process, for example: kill <PID>`); void shutdown(1); return; }
+  if (error?.code === "EADDRINUSE") { console.error(`PORT ${env.PORT} is already in use. Stop the existing server before starting another instance.`); void shutdown(1); return; }
   console.error("HTTP server error:", error); void shutdown(1);
 });
 
 const shutdown = async (exitCode = 0) => {
-  clearInterval(lifecycleInterval); clearInterval(subscriptionInterval); clearInterval(communicationInterval); clearInterval(etimsInterval); clearInterval(retentionScheduler.interval); stopJobWorker();
+  clearInterval(lifecycleInterval); clearInterval(subscriptionInterval); clearInterval(communicationInterval); clearInterval(etimsInterval); clearInterval(retentionScheduler.interval); clearInterval(complianceExpiryScheduler.interval); stopJobWorker();
   try { await new Promise((resolve) => { if (!server.listening) return resolve(); server.close(() => resolve()); }); } catch (error) { console.error("Server shutdown error:", error.message); }
   try { await mongoose.connection.close(); } catch (error) { console.error("MongoDB shutdown error:", error.message); }
   process.exit(exitCode);
@@ -62,7 +64,7 @@ const shutdown = async (exitCode = 0) => {
 
 server.listen(env.PORT, () => {
   console.log(`Server running on port ${env.PORT}`);
-  void runEtimsDispatcher(); void runLifecycleSync(); void retentionScheduler.run(); startPaymentCleanupScheduler();
+  void runEtimsDispatcher(); void runLifecycleSync(); void retentionScheduler.run(); void complianceExpiryScheduler.run(); startPaymentCleanupScheduler();
 });
 process.on("SIGINT", () => void shutdown(0));
 process.on("SIGTERM", () => void shutdown(0));
