@@ -4,7 +4,7 @@ const ROLE_ALIASES = {
   superadmin: "super_admin", super_admin: "super_admin",
   manager: "manager", tourmanager: "manager", tour_manager: "manager",
   agent: "agent", travelagent: "agent", travel_agent: "agent",
-  driver: "driver",
+  driver: "driver", chauffeur: "driver",
   guide: "guide", tourguide: "guide", tour_guide: "guide",
 };
 
@@ -17,10 +17,10 @@ export function normalizeRole(role) {
   return ROLE_ALIASES[key] || ROLE_ALIASES[key.replace(/_/g, "")] || key;
 }
 
-// Keep client role resolution aligned with the backend's effectiveRoleForUser:
-// the persisted string role is authoritative, while roleId/legacyRole are
-// compatibility fallbacks. A stale populated Role document must never turn an
-// authenticated admin into a tour manager in the UI.
+// Keep client role resolution aligned with the backend's effective role. The
+// persisted string role remains authoritative; roleId/legacyRole are only
+// compatibility fallbacks so stale populated role documents cannot redirect a
+// user into the wrong dashboard.
 export function getUserRole(user) {
   return normalizeRole(
     user?.role?.name ||
@@ -45,7 +45,7 @@ export function dashboardPath(user) {
     case "super_admin": return "/superadmin/dashboard";
     case "admin": return "/admin/dashboard";
     case "manager": return "/tour-manager/dashboard";
-    case "agent": return "/agent";
+    case "agent": return "/agent/dashboard";
     case "guide": return "/guide/dashboard";
     case "driver": return "/driver/dashboard";
     case "customer": return "/dashboard";
