@@ -6,6 +6,7 @@ import { authorize } from "../middleware/permissionMiddleware.js";
 import { getUserRole } from "../utils/roleUtils.js";
 import financeComplianceRoutes from "./financeComplianceRoutes.js";
 import accountingRoutes from "./accountingRoutes.js";
+import kenyaReadinessRoutes from "./kenyaReadinessRoutes.js";
 
 const router = express.Router();
 router.use(resolveTenant);
@@ -23,6 +24,7 @@ router.get("/stats", getFinanceStats);
 router.get("/transactions", getTransactions);
 router.get("/reports", getReports);
 router.use("/compliance", financeComplianceRoutes);
+router.use("/kenya-readiness", kenyaReadinessRoutes);
 router.use("/accounting", accountingRoutes);
 
 export default router;
