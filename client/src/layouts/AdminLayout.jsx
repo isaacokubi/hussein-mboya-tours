@@ -14,7 +14,7 @@ const MENU = [
   ["Hotels", "/admin/hospitality?tab=hotels", Hotel, "booking.manage"],
   ["Airport Transfers", "/admin/hospitality?tab=transfers", Plane, "booking.manage"],
   ["Hospitality Reservations", "/admin/hospitality?tab=bookings", CalendarCheck, "booking.manage"],
-  ["Hospitality Operations", "/admin/hospitality-operations", BriefcaseBusiness, "booking.manage"],
+  ["Hospitality Operations", "/admin/hospitality/reservation-operations", BriefcaseBusiness, "booking.manage"],
   ["Hospitality Commercial", "/admin/hospitality/commercial", BadgeDollarSign, "booking.manage"],
   ["Payments", "/admin/payments", CreditCard, "payment.manage"],
   ["Agents", "/admin/agents", Handshake, "user.manage"], ["Commissions", "/admin/commissions", Wallet, "finance.view"], ["Customers CRM", "/admin/customers", Users, "manage_customers"],
