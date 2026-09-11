@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import AgentSidebar from "../components/agent/AgentSidebar";
 
@@ -7,6 +7,13 @@ export default function AgentLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   useEffect(() => setMobileOpen(false), [location.pathname]);
+
+  // /agent is the single canonical agent dashboard route. Keep the historical
+  // /agent/dashboard URL as a compatibility redirect so bookmarks and role
+  // routing never land on an empty nested route.
+  if (location.pathname === "/agent/dashboard") {
+    return <Navigate to="/agent" replace />;
+  }
 
   return (
     <div className="dashboard-responsive min-h-screen bg-slate-100">
