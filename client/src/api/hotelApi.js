@@ -7,7 +7,8 @@ export const getHotelAvailability = (params = {}) => api.get("/hotels/availabili
 export const createHotelBooking = (payload) => api.post("/hotels/bookings", payload).then(unwrap);
 export const getHotelBookings = (params = {}) => api.get("/hotels/bookings", { params }).then(unwrap);
 export const updateHotelBooking = (id, payload) => api.patch(`/hotels/bookings/${id}`, payload).then(unwrap);
-export const getAdminHotels = (params = {}) => api.get("/hotels/admin/catalog", { params }).then(unwrap);
+export const syncHotelInventory = () => api.post("/hotels/admin/sync-inventory").then(unwrap);
+export const getAdminHotels = async (params = {}) => { await syncHotelInventory().catch(() => null); return api.get("/hotels/admin/catalog", { params }).then(unwrap); };
 export const createHotel = (payload) => api.post("/hotels/admin/catalog", payload).then(unwrap);
 export const updateHotel = (id, payload) => api.patch(`/hotels/admin/catalog/${id}`, payload).then(unwrap);
 export const createRoomType = (hotelId, payload) => api.post(`/hotels/admin/catalog/${hotelId}/rooms`, { ...payload, mealPlans: (Array.isArray(payload?.mealPlans) ? payload.mealPlans : [payload?.mealPlans]).map(normalizeMealPlan) }).then(unwrap);
