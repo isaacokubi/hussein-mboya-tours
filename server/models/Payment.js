@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import { queueWebhookEvent } from "../services/webhookDeliveryService.js";
 import { postPaymentToLedger } from "../services/operationalAccountingService.js";
+import { syncHospitalityInvoicePayments } from "../services/hospitalityInvoiceService.js";
 import Invoice from "./Invoice.js";
 import Commission from "./Commission.js";
 
@@ -65,6 +66,17 @@ paymentSchema.post("save", async function () {
   if (invoice) { const totalAmount = Number(invoice.totalAmount || 0); const amountPaid = Math.min(totalAmount, Math.max(0, totalPaid)); invoice.amountPaid = amountPaid; invoice.balance = Math.max(0, totalAmount - amountPaid); if (amountPaid <= 0) invoice.status = totalRefunded > 0 ? "refunded" : "pending"; else if (amountPaid >= totalAmount && totalAmount > 0) invoice.status = "paid"; else invoice.status = "partial"; const latestPayment = payments.slice().sort((a, b) => Number(new Date(b.updatedAt || 0)) - Number(new Date(a.updatedAt || 0)))[0]; if (latestPayment) { invoice.paymentMethod = latestPayment.paymentMethod || invoice.paymentMethod; invoice.paymentReference = latestPayment.mpesaReceiptNumber || latestPayment.transactionReference || latestPayment.transactionId || invoice.paymentReference; } await invoice.save(queryOptions); }
   if (commission) { const bookingAmount = Number(commission.bookingAmount || 0); const rate = Number(commission.rate || 0); const proportionalRefund = bookingAmount > 0 ? Math.min(Number(commission.amount || 0), (totalRefunded * rate) / 100) : 0; const nextRefunded = Number(proportionalRefund.toFixed(2)); if (nextRefunded !== Number(commission.refundedAmount || 0)) { commission.refundedAmount = nextRefunded; commission.adjustmentAmount = nextRefunded; commission.adjustmentStatus = nextRefunded > 0 ? "posted" : "none"; commission.adjustmentAt = nextRefunded > 0 ? new Date() : null; commission.financeNotes = nextRefunded > 0 ? `Commission adjustment posted: KES ${nextRefunded.toFixed(2)} due to booking refund.` : commission.financeNotes; await commission.save(queryOptions); } }
   try { const BookingModel = mongoose.models.Booking; const CorporateAccountModel = mongoose.models.CorporateAccount; if (BookingModel && CorporateAccountModel) { const booking = await BookingModel.findOne({ tenantId: this.tenantId, _id: bookingId }).select("corporateAccount").lean(); if (booking?.corporateAccount) { const corporateBookings = await BookingModel.find({ tenantId: this.tenantId, corporateAccount: booking.corporateAccount, isDeleted: { $ne: true }, status: { $nin: ["cancelled", "refunded"] } }).select("_id totalAmount").lean(); const corporateBookingIds = corporateBookings.map((item) => item._id); const corporatePayments = corporateBookingIds.length ? await PaymentModel.aggregate([{ $match: { tenantId: this.tenantId, booking: { $in: corporateBookingIds }, status: { $in: ["completed", "refunded"] } } }, { $project: { net: { $max: [0, { $subtract: ["$amount", { $ifNull: ["$refundedAmount", 0] }] }] } } }, { $group: { _id: null, total: { $sum: "$net" } } }]) : []; const exposure = Math.max(0, corporateBookings.reduce((sum, item) => sum + Number(item.totalAmount || 0), 0) - Number(corporatePayments[0]?.total || 0)); await CorporateAccountModel.updateOne({ tenantId: this.tenantId, _id: booking.corporateAccount }, { $set: { currentBalance: Math.round(exposure * 100) / 100 } }, queryOptions); } } } catch (corporateSyncError) { console.error("CORPORATE BALANCE SYNC ERROR:", corporateSyncError.message); }
+});
+
+paymentSchema.post("save", async function () {
+  if (!this.tenantId || !this.hospitalityBooking || !this.hospitalityType) return;
+  if (!["completed", "refunded"].includes(this.status) && this.refundStatus !== "completed") return;
+  try {
+    if (this.status === "completed" && this.$statusWasModified) await postPaymentToLedger(this);
+    const Model = this.hospitalityBookingModel === "HotelBooking" ? mongoose.models.HotelBooking : mongoose.models.AirportTransferBooking;
+    const booking = Model ? await Model.findOne({ tenantId: this.tenantId, _id: this.hospitalityBooking }) : null;
+    if (booking) await syncHospitalityInvoicePayments({ type: this.hospitalityType, booking });
+  } catch (error) { console.error("HOSPITALITY PAYMENT FINANCE SYNC ERROR:", error.message); }
 });
 
 const tenantPaymentSchema = paymentSchema.plugin(tenantPlugin);
