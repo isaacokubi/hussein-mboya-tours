@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import "./HospitalityRatePlan.js";
 const { Schema } = mongoose;
 
 const GuestSchema = new Schema({
@@ -15,6 +16,7 @@ const HotelBookingSchema = new Schema({
   reference: { type: String, required: true, trim: true, uppercase: true },
   hotel: { type: Schema.Types.ObjectId, ref: "Hotel", required: true, index: true },
   roomType: { type: Schema.Types.ObjectId, ref: "HotelRoomType", required: true, index: true },
+  ratePlan: { type: Schema.Types.ObjectId, ref: "HospitalityRatePlan", default: null, index: true },
   customer: { type: Schema.Types.ObjectId, ref: "Customer", default: null, index: true },
   user: { type: Schema.Types.ObjectId, ref: "User", default: null, index: true },
   linkedBooking: { type: Schema.Types.ObjectId, ref: "Booking", default: null, index: true },
@@ -47,5 +49,6 @@ const HotelBookingSchema = new Schema({
 HotelBookingSchema.index({ tenantId: 1, reference: 1 }, { unique: true });
 HotelBookingSchema.index({ tenantId: 1, checkIn: 1, checkOut: 1, status: 1 });
 HotelBookingSchema.index({ tenantId: 1, customer: 1, createdAt: -1 });
+HotelBookingSchema.index({ tenantId: 1, ratePlan: 1, createdAt: -1 });
 
 export default mongoose.models.HotelBooking || mongoose.model("HotelBooking", HotelBookingSchema);
