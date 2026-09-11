@@ -1,6 +1,7 @@
 import express from "express";
 import { protect, managerOnly } from "../middleware/authMiddleware.js";
 import { ensureOpsAccess, hospitalityDashboard, hotelCalendar, hotelPerformance, amendHotelBooking, cancelHotelBooking, blockRooms, releaseRoomBlock, ratePlans, saveRatePlan, supplierContracts, saveSupplierContract, deposits, saveDeposit, transferDispatch, assignTransfer, updateTransferStatus, paymentReconciliation, listDrivers, listVehicles } from "../controllers/hospitalityOperationsController.js";
+import { createCommercialRatePlan, updateCommercialRatePlan, createCommercialSupplierContract, updateCommercialSupplierContract, createCommercialDeposit, updateCommercialDeposit } from "../controllers/hospitalityCommercialController.js";
 
 const router=express.Router();
 router.use(protect,managerOnly,ensureOpsAccess);
@@ -12,14 +13,14 @@ router.patch("/hotels/bookings/:id/cancel",cancelHotelBooking);
 router.post("/hotels/room-blocks",blockRooms);
 router.patch("/hotels/room-blocks/:id/release",releaseRoomBlock);
 router.get("/rate-plans",ratePlans);
-router.post("/rate-plans",saveRatePlan);
-router.patch("/rate-plans/:id",saveRatePlan);
+router.post("/rate-plans",createCommercialRatePlan);
+router.patch("/rate-plans/:id",updateCommercialRatePlan);
 router.get("/suppliers/contracts",supplierContracts);
-router.post("/suppliers/contracts",saveSupplierContract);
-router.patch("/suppliers/contracts/:id",saveSupplierContract);
+router.post("/suppliers/contracts",createCommercialSupplierContract);
+router.patch("/suppliers/contracts/:id",updateCommercialSupplierContract);
 router.get("/deposits",deposits);
-router.post("/deposits",saveDeposit);
-router.patch("/deposits/:id",saveDeposit);
+router.post("/deposits",createCommercialDeposit);
+router.patch("/deposits/:id",updateCommercialDeposit);
 router.get("/transfers/dispatch",transferDispatch);
 router.patch("/transfers/:id/assign",assignTransfer);
 router.patch("/transfers/:id/status",updateTransferStatus);
