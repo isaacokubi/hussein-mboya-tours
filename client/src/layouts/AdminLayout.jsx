@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { Activity, BarChart3, Bell, Bot, Car, CalendarCheck, CreditCard, FileBarChart, FileText, Handshake, Image, LayoutDashboard, Map, Menu, PackageCheck, PlusCircle, Receipt, Settings, Shield, Smartphone, Star, Tag, UserCog, Users, Wallet, X, Code2 } from "lucide-react";
+import { Activity, BarChart3, Bell, Bot, Car, CalendarCheck, CreditCard, FileBarChart, FileText, Handshake, Image, LayoutDashboard, Map, Menu, PackageCheck, PlusCircle, Receipt, Settings, Shield, Smartphone, Star, Tag, UserCog, Users, Wallet, X, Code2, Hotel, Plane } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useSettings } from "../context/SettingsContext";
 import { getUserRole } from "../utils/roleUtils";
@@ -10,7 +10,11 @@ const MENU = [
   ["Users", "/admin/users", Users, "user.manage"], ["Staff", "/admin/staff", UserCog, "staff.manage"],
   ["Tours", "/admin/manage-tours", Map, "tour.manage"], ["Add Tour", "/admin/tours/add", PlusCircle, "tour.manage"], ["Destinations", "/admin/destinations", Map, "tour.manage"],
   ["Bookings", "/admin/bookings", CalendarCheck, "booking.manage"], ["Custom Tour Requests", "/admin/custom-tour-requests", CalendarCheck, "booking.manage"],
-  ["Operations & Procurement", "/admin/operations", PackageCheck, "booking.manage"], ["Payments", "/admin/payments", CreditCard, "payment.manage"],
+  ["Operations & Procurement", "/admin/operations", PackageCheck, "booking.manage"],
+  ["Hotels", "/admin/hospitality?tab=hotels", Hotel, "booking.manage"],
+  ["Airport Transfers", "/admin/hospitality?tab=transfers", Plane, "booking.manage"],
+  ["Hospitality Reservations", "/admin/hospitality?tab=bookings", CalendarCheck, "booking.manage"],
+  ["Payments", "/admin/payments", CreditCard, "payment.manage"],
   ["Agents", "/admin/agents", Handshake, "user.manage"], ["Commissions", "/admin/commissions", Wallet, "finance.view"], ["Customers CRM", "/admin/customers", Users, "manage_customers"],
   ["Guides", "/admin/guides", UserCog, "staff.manage"], ["Vehicles", "/admin/vehicles", Car, "staff.manage"], ["Coupons", "/admin/coupons", Tag, "tour.manage"], ["Reviews", "/admin/reviews", Star, "tour.manage"], ["Gallery", "/admin/gallery", Image, "tour.manage"],
   ["Reports", "/admin/reports", FileText, "analytics.view"], ["Analytics", "/admin/analytics", BarChart3, "analytics.view"],
