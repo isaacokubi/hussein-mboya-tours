@@ -7,8 +7,11 @@ import HotelRoomType from "../models/HotelRoomType.js";
  */
 export async function acquireRoomInventoryGuard({ roomTypeId, tenantId, expectedVersion }) {
   const current = Number(expectedVersion || 0);
+  const versionFilter = current === 0
+    ? { $or: [{ inventoryVersion: 0 }, { inventoryVersion: { $exists: false } }] }
+    : { inventoryVersion: current };
   const updated = await HotelRoomType.findOneAndUpdate(
-    { _id: roomTypeId, tenantId, inventoryVersion: current },
+    { _id: roomTypeId, tenantId, ...versionFilter },
     { $inc: { inventoryVersion: 1 } },
     { new: true }
   ).select("_id inventoryVersion totalRooms").lean();
