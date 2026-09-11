@@ -15,9 +15,9 @@ test("Kenya readiness passes with complete compliant configuration", () => {
   assert.equal(checks.every((item) => item.ok), true);
 });
 
-test("Kenya readiness does not mark an expired licence as due-soon", () => {
+test("Kenya readiness rejects an expired TRA licence", () => {
   const records = [{ type: "TRA_LICENSE", status: "approved", expiryDate: "2026-09-10T00:00:00.000Z" }];
   const checks = buildKenyaReadinessChecks({ kraPin: "P000000000A", kraPinStatus: "verified", vatRegistered: false, etimsEnabled: false }, records, new Date("2026-09-11T00:00:00.000Z"));
-  assert.equal(checks.find((item) => item.key === "tra").ok, true);
+  assert.equal(checks.find((item) => item.key === "tra").ok, false);
   assert.equal(checks.find((item) => item.key === "privacy").ok, false);
 });
