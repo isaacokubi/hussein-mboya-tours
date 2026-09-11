@@ -5,6 +5,7 @@ import HospitalityRoomBlock from "../models/HospitalityRoomBlock.js";
 import HospitalityRatePlan from "../models/HospitalityRatePlan.js";
 import { syncHospitalityInvoicePayments } from "../services/hospitalityInvoiceService.js";
 import { createAuditLog } from "../services/auditService.js";
+import { acquireRoomInventoryGuard } from "../services/hospitalityInventoryConcurrencyService.js";
 
 const tenantIdOf = req => req.tenantId || req.user?.tenantId;
 const clean = value => String(value ?? "").trim();
@@ -49,6 +50,12 @@ export const amendHotelBookingProduction = async (req, res, next) => {
     const room = await HotelRoomType.findOne({ _id: booking.roomType, hotel: booking.hotel, tenantId }).lean();
     if (!room) return res.status(404).json({ success: false, message: "The booked room type is no longer available." });
 
+    const guardVersion = Number(room.inventoryVersion || 0);
+    const guardedRoom = await acquireRoomInventoryGuard({ roomTypeId: room._id, tenantId, expectedVersion: guardVersion });
+    if (!guardedRoom) {
+      return res.status(409).json({ success: false, message: "Room inventory changed while this amendment was being processed. Please retry the amendment." });
+    }
+
     const nights = Math.ceil((checkOut - checkIn) / 86400000);
     const requestedRateId = clean(req.body.ratePlanId || booking.ratePlan);
     const rateFilter = {
@@ -66,7 +73,6 @@ export const amendHotelBookingProduction = async (req, res, next) => {
     const validRates = rates.filter(rate => nights >= Number(rate.minNights || 1) && (!rate.maxNights || nights <= Number(rate.maxNights)));
     let rate = requestedRateId ? validRates.find(item => String(item._id) === requestedRateId) : validRates.find(Boolean);
     if (requestedRateId && !rate) return res.status(409).json({ success: false, message: "The selected rate plan is not valid for the amended stay." });
-    if (!rate && requestedRateId) return res.status(409).json({ success: false, message: "The selected rate plan is unavailable." });
 
     const bookingConflict = await HotelBooking.aggregate([
       { $match: { tenantId, hotel: booking.hotel, roomType: booking.roomType, _id: { $ne: booking._id }, status: activeBookingStatuses, checkIn: { $lt: checkOut }, checkOut: { $gt: checkIn } } },
@@ -78,7 +84,7 @@ export const amendHotelBookingProduction = async (req, res, next) => {
     ]);
     const bookedRooms = Number(bookingConflict[0]?.rooms || 0);
     const blockedRooms = Number(blockConflict[0]?.quantity || 0);
-    const totalRooms = Number(room.totalRooms || 0);
+    const totalRooms = Number(guardedRoom.totalRooms || room.totalRooms || 0);
     if (bookedRooms + blockedRooms + rooms > totalRooms) {
       return res.status(409).json({ success: false, message: "The amended stay would oversell the selected room type." });
     }
