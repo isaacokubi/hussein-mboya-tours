@@ -1,0 +1,153 @@
+import mongoose from "mongoose";
+import Hotel from "../models/Hotel.js";
+import HotelRoomType from "../models/HotelRoomType.js";
+import HotelBooking from "../models/HotelBooking.js";
+import Customer from "../models/Customer.js";
+
+const tenantIdOf = (req) => req.tenantId || req.user?.tenantId;
+const clean = (v) => String(v ?? "").trim();
+const slugify = (v) => clean(v).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 170);
+const ref = () => `HTL-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+const daysBetween = (a, b) => Math.ceil((new Date(b) - new Date(a)) / 86400000);
+
+export const listHotels = async (req, res, next) => {
+  try {
+    const filter = { tenantId: tenantIdOf(req), status: "active" };
+    if (req.query.city) filter.city = new RegExp(`^${clean(req.query.city).replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&")}$`, "i");
+    if (req.query.featured === "true") filter.featured = true;
+    const hotels = await Hotel.find(filter).sort({ featured: -1, name: 1 }).lean();
+    res.json({ success: true, data: hotels });
+  } catch (e) { next(e); }
+};
+
+export const getHotel = async (req, res, next) => {
+  try {
+    const filter = { tenantId: tenantIdOf(req), $or: [{ _id: mongoose.isValidObjectId(req.params.id) ? req.params.id : null }, { slug: clean(req.params.id).toLowerCase() }] };
+    const hotel = await Hotel.findOne(filter).lean();
+    if (!hotel) return res.status(404).json({ success: false, message: "Hotel not found." });
+    const rooms = await HotelRoomType.find({ tenantId: hotel.tenantId, hotel: hotel._id, status: "active" }).sort({ nightlyRate: 1 }).lean();
+    res.json({ success: true, data: { ...hotel, roomTypes: rooms } });
+  } catch (e) { next(e); }
+};
+
+export const listAdminHotels = async (req, res, next) => {
+  try {
+    const filter = { tenantId: tenantIdOf(req) };
+    if (req.query.status) filter.status = req.query.status;
+    const hotels = await Hotel.find(filter).sort({ createdAt: -1 }).lean();
+    res.json({ success: true, data: hotels });
+  } catch (e) { next(e); }
+};
+
+export const createHotel = async (req, res, next) => {
+  try {
+    const tenantId = tenantIdOf(req);
+    const name = clean(req.body.name);
+    if (!name) return res.status(400).json({ success: false, message: "Hotel name is required." });
+    const baseSlug = slugify(req.body.slug || name) || `hotel-${Date.now()}`;
+    let slug = baseSlug; let n = 2;
+    while (await Hotel.exists({ tenantId, slug })) slug = `${baseSlug}-${n++}`;
+    const hotel = await Hotel.create({ ...req.body, name, slug, tenantId, createdBy: req.user?._id || null, updatedBy: req.user?._id || null });
+    res.status(201).json({ success: true, data: hotel });
+  } catch (e) { next(e); }
+};
+
+export const updateHotel = async (req, res, next) => {
+  try {
+    const hotel = await Hotel.findOne({ _id: req.params.id, tenantId: tenantIdOf(req) });
+    if (!hotel) return res.status(404).json({ success: false, message: "Hotel not found." });
+    const allowed = ["name", "description", "location", "address", "city", "county", "country", "latitude", "longitude", "starRating", "amenities", "images", "contactPhone", "contactEmail", "checkInTime", "checkOutTime", "cancellationPolicy", "status", "featured", "currency"];
+    for (const key of allowed) if (req.body[key] !== undefined) hotel[key] = req.body[key];
+    hotel.updatedBy = req.user?._id || null;
+    await hotel.save();
+    res.json({ success: true, data: hotel });
+  } catch (e) { next(e); }
+};
+
+export const createRoomType = async (req, res, next) => {
+  try {
+    const tenantId = tenantIdOf(req);
+    const hotel = await Hotel.findOne({ _id: req.params.hotelId, tenantId });
+    if (!hotel) return res.status(404).json({ success: false, message: "Hotel not found." });
+    const totalRooms = Number(req.body.totalRooms);
+    const availableRooms = req.body.availableRooms === undefined ? totalRooms : Number(req.body.availableRooms);
+    if (!clean(req.body.name) || !Number.isFinite(totalRooms) || totalRooms < 0 || !Number.isFinite(availableRooms) || availableRooms < 0 || availableRooms > totalRooms) return res.status(400).json({ success: false, message: "Valid room name and inventory are required." });
+    const room = await HotelRoomType.create({ ...req.body, tenantId, hotel: hotel._id, totalRooms, availableRooms, createdBy: req.user?._id || null, updatedBy: req.user?._id || null });
+    res.status(201).json({ success: true, data: room });
+  } catch (e) { next(e); }
+};
+
+export const updateRoomType = async (req, res, next) => {
+  try {
+    const room = await HotelRoomType.findOne({ _id: req.params.id, tenantId: tenantIdOf(req) });
+    if (!room) return res.status(404).json({ success: false, message: "Room type not found." });
+    const allowed = ["name", "description", "maxAdults", "maxChildren", "beds", "amenities", "totalRooms", "availableRooms", "nightlyRate", "mealPlans", "currency", "status"];
+    for (const key of allowed) if (req.body[key] !== undefined) room[key] = req.body[key];
+    if (room.availableRooms > room.totalRooms) return res.status(400).json({ success: false, message: "Available rooms cannot exceed total rooms." });
+    room.updatedBy = req.user?._id || null;
+    await room.save();
+    res.json({ success: true, data: room });
+  } catch (e) { next(e); }
+};
+
+const resolveCustomer = async (req, payload) => {
+  if (!req.user?._id) return null;
+  let customer = await Customer.findOne({ tenantId: tenantIdOf(req), user: req.user._id });
+  if (customer) return customer;
+  const firstName = clean(payload.firstName || req.user.firstName || req.user.name?.split(" ")[0] || "Guest");
+  const lastName = clean(payload.lastName || req.user.lastName || req.user.name?.split(" ").slice(1).join(" ") || "Customer");
+  const phone = clean(payload.phone || req.user.phone || "");
+  if (!phone) return null;
+  customer = await Customer.create({ tenantId: tenantIdOf(req), user: req.user._id, firstName, lastName, email: clean(payload.email || req.user.email), phone, createdBy: req.user._id, updatedBy: req.user._id });
+  return customer;
+};
+
+export const createHotelBooking = async (req, res, next) => {
+  try {
+    const tenantId = tenantIdOf(req);
+    const hotel = await Hotel.findOne({ _id: req.body.hotelId, tenantId, status: "active" });
+    const room = await HotelRoomType.findOne({ _id: req.body.roomTypeId, tenantId, hotel: req.body.hotelId, status: "active" });
+    if (!hotel || !room) return res.status(404).json({ success: false, message: "Hotel or room type not found." });
+    const checkIn = new Date(req.body.checkIn); const checkOut = new Date(req.body.checkOut);
+    const nights = daysBetween(checkIn, checkOut);
+    const rooms = Number(req.body.rooms || 1); const adults = Number(req.body.adults || 1); const children = Number(req.body.children || 0);
+    if (!Number.isFinite(nights) || nights <= 0 || !Number.isInteger(rooms) || rooms < 1 || adults < 1) return res.status(400).json({ success: false, message: "Valid check-in, check-out, rooms and guests are required." });
+    if (adults > rooms * room.maxAdults || children > rooms * room.maxChildren) return res.status(400).json({ success: false, message: "Guest count exceeds the selected room capacity." });
+    const reservedRoom = await HotelRoomType.findOneAndUpdate({ _id: room._id, tenantId, availableRooms: { $gte: rooms } }, { $inc: { availableRooms: -rooms } }, { new: true });
+    if (!reservedRoom) return res.status(409).json({ success: false, message: "Not enough rooms available." });
+    const subtotal = nights * rooms * Number(room.nightlyRate || 0);
+    const taxes = Number(req.body.taxes || 0); const fees = Number(req.body.fees || 0); const totalAmount = subtotal + taxes + fees;
+    const customer = await resolveCustomer(req, req.body);
+    if (req.user?.role === "customer" && !customer) { await HotelRoomType.updateOne({ _id: room._id, tenantId }, { $inc: { availableRooms: rooms } }); return res.status(400).json({ success: false, message: "A customer phone number is required to complete the booking." }); }
+    const booking = await HotelBooking.create({ tenantId, reference: ref(), hotel: hotel._id, roomType: room._id, customer: customer?._id || null, user: req.user?._id || null, linkedBooking: req.body.linkedBooking || null, checkIn, checkOut, rooms, adults, children, guests: Array.isArray(req.body.guests) ? req.body.guests : [], mealPlan: req.body.mealPlan || "room_only", specialRequests: clean(req.body.specialRequests), status: "pending", paymentStatus: "pending", source: req.body.source || "website", subtotal, taxes, fees, totalAmount, currency: hotel.currency || room.currency || "KES", createdBy: req.user?._id || null, updatedBy: req.user?._id || null });
+    res.status(201).json({ success: true, data: booking });
+  } catch (e) { next(e); }
+};
+
+export const listHotelBookings = async (req, res, next) => {
+  try {
+    const filter = { tenantId: tenantIdOf(req) };
+    if (req.query.status) filter.status = req.query.status;
+    if (req.query.customerId) filter.customer = req.query.customerId;
+    if (req.user?.role === "customer") filter.user = req.user._id;
+    const rows = await HotelBooking.find(filter).populate("hotel", "name city").populate("roomType", "name nightlyRate").sort({ checkIn: 1, createdAt: -1 }).lean();
+    res.json({ success: true, data: rows });
+  } catch (e) { next(e); }
+};
+
+export const updateHotelBooking = async (req, res, next) => {
+  try {
+    const booking = await HotelBooking.findOne({ _id: req.params.id, tenantId: tenantIdOf(req) });
+    if (!booking) return res.status(404).json({ success: false, message: "Hotel booking not found." });
+    if (req.user?.role === "customer" && String(booking.user) !== String(req.user._id)) return res.status(403).json({ success: false, message: "Not allowed." });
+    const previous = booking.status; const allowed = ["pending", "confirmed", "checked_in", "checked_out", "cancelled", "no_show"];
+    if (req.body.status && allowed.includes(req.body.status)) booking.status = req.body.status;
+    if (req.body.paymentStatus) booking.paymentStatus = req.body.paymentStatus;
+    if (req.body.specialRequests !== undefined) booking.specialRequests = clean(req.body.specialRequests);
+    if (req.body.notes !== undefined) booking.notes = clean(req.body.notes);
+    booking.updatedBy = req.user?._id || null;
+    if (booking.status === "cancelled" && previous !== "cancelled") await HotelRoomType.updateOne({ _id: booking.roomType, tenantId: tenantIdOf(req) }, { $inc: { availableRooms: booking.rooms } });
+    await booking.save();
+    res.json({ success: true, data: booking });
+  } catch (e) { next(e); }
+};
