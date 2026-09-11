@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { Activity, BarChart3, Bell, Bot, Car, CalendarCheck, CreditCard, FileBarChart, FileText, Handshake, Image, LayoutDashboard, Map, Menu, PackageCheck, PlusCircle, Receipt, Settings, Shield, Smartphone, Star, Tag, UserCog, Users, Wallet, X, Code2, Hotel, Plane, BriefcaseBusiness, BadgeDollarSign } from "lucide-react";
+import { Activity, BarChart3, Bell, Bot, Car, CalendarCheck, CreditCard, FileBarChart, FileText, Handshake, Image, LayoutDashboard, Menu, PackageCheck, Plane, BriefcaseBusiness, BadgeDollarSign, Receipt, Settings, Shield, Smartphone, Star, Tag, UserCog, Users, Wallet, X, Code2, Hotel } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useSettings } from "../context/SettingsContext";
 import { getUserRole } from "../utils/roleUtils";
 
+// Admin owns enterprise control, governance, finance, CRM, fleet master data,
+// hospitality and reporting. Tour creation/operations are owned by Tour Manager.
 const MENU = [
   ["Dashboard", "/admin", LayoutDashboard, "admin.dashboard"],
   ["Users", "/admin/users", Users, "user.manage"], ["Staff", "/admin/staff", UserCog, "staff.manage"],
-  ["Tours", "/admin/manage-tours", Map, "tour.manage"], ["Add Tour", "/admin/tours/add", PlusCircle, "tour.manage"], ["Destinations", "/admin/destinations", Map, "tour.manage"],
-  ["Bookings", "/admin/bookings", CalendarCheck, "booking.manage"], ["Custom Tour Requests", "/admin/custom-tour-requests", CalendarCheck, "booking.manage"],
+  ["Destinations", "/admin/destinations", BriefcaseBusiness, "tour.manage"],
+  ["Bookings & Refunds", "/admin/bookings", CalendarCheck, "booking.manage"], ["Custom Tour Requests", "/admin/custom-tour-requests", CalendarCheck, "booking.manage"],
   ["Operations & Procurement", "/admin/operations", PackageCheck, "booking.manage"],
   ["Hotels", "/admin/hospitality?tab=hotels", Hotel, "booking.manage"],
   ["Airport Transfers", "/admin/hospitality?tab=transfers", Plane, "booking.manage"],
@@ -18,7 +20,7 @@ const MENU = [
   ["Hospitality Commercial", "/admin/hospitality/commercial", BadgeDollarSign, "booking.manage"],
   ["Payments", "/admin/payments", CreditCard, "payment.manage"],
   ["Agents", "/admin/agents", Handshake, "user.manage"], ["Commissions", "/admin/commissions", Wallet, "finance.view"], ["Customers CRM", "/admin/customers", Users, "manage_customers"],
-  ["Guides", "/admin/guides", UserCog, "staff.manage"], ["Vehicles", "/admin/vehicles", Car, "staff.manage"], ["Coupons", "/admin/coupons", Tag, "tour.manage"], ["Reviews", "/admin/reviews", Star, "tour.manage"], ["Gallery", "/admin/gallery", Image, "tour.manage"],
+  ["Fleet Management", "/admin/vehicles", Car, "staff.manage"], ["Coupons", "/admin/coupons", Tag, "tour.manage"], ["Reviews", "/admin/reviews", Star, "tour.manage"], ["Gallery", "/admin/gallery", Image, "tour.manage"],
   ["Reports", "/admin/reports", FileText, "analytics.view"], ["Analytics", "/admin/analytics", BarChart3, "analytics.view"],
   ["Accounting & Finance", "/admin/finance", Wallet, "finance.view"], ["M-Pesa Transactions", "/admin/finance/transactions", Smartphone, "payment.manage"], ["Finance Reports", "/admin/finance/reports", FileBarChart, "finance.view"], ["Reconciliation", "/admin/finance/reconciliation", Receipt, "finance.view"],
   ["Compliance & eTIMS", "/admin/compliance", Shield, "finance.view"], ["AI Tools", "/admin/ai", Bot, "analytics.view"], ["Notifications", "/admin/notifications", Bell, "notifications.view"],
