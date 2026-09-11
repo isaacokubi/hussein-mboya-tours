@@ -10,6 +10,10 @@ import { requireTenantId } from "../tenancy/context.js";
 
 const active = { isDeleted: { $ne: true } };
 
+const paymentNetAmount = {
+  $max: [0, { $subtract: [{ $ifNull: ["$amount", 0] }, { $ifNull: ["$refundedAmount", 0] }] }],
+};
+
 export const getDashboardMetrics = async (req, res) => {
   try {
     const tenantId = requireTenantId();
@@ -41,6 +45,8 @@ export const getDashboardMetrics = async (req, res) => {
       pendingPayments,
       failedPayments,
       revenueResult,
+      bookingStatus,
+      monthlyRevenue,
     ] = await Promise.all([
       User.countDocuments(scoped({ status: { $ne: "blocked" } })),
       User.countDocuments(scoped({ role: "customer", status: { $ne: "blocked" } })),
@@ -62,8 +68,8 @@ export const getDashboardMetrics = async (req, res) => {
         isActive: { $ne: false },
         status: { $ne: "inactive" },
         $or: [
-          { position: { $in: ["driver", "chauffeur"] } },
-          { role: { $in: ["driver", "chauffeur"] } },
+          { position: { $in: ["driver", "chauffeur", "tour_driver", "tourdriver"] } },
+          { role: { $in: ["driver", "chauffeur", "tour_driver", "tourdriver"] } },
         ],
       })),
       Agent.countDocuments(scoped({ isDeleted: { $ne: true }, status: { $ne: "inactive" } })),
@@ -93,44 +99,55 @@ export const getDashboardMetrics = async (req, res) => {
       Payment.aggregate([
         { $match: scoped({ ...active, status: "completed" }) },
         {
-          $project: {
-            amount: {
-              $convert: {
-                input: "$amount",
-                to: "double",
-                onError: 0,
-                onNull: 0,
-              },
-            },
-            refundedAmount: {
-              $cond: [
-                { $eq: ["$refundStatus", "completed"] },
-                {
-                  $convert: {
-                    input: "$refundedAmount",
-                    to: "double",
-                    onError: 0,
-                    onNull: 0,
-                  },
-                },
-                0,
-              ],
-            },
-          },
-        },
-        {
           $group: {
             _id: null,
-            gross: { $sum: "$amount" },
-            refunds: { $sum: "$refundedAmount" },
+            gross: { $sum: { $ifNull: ["$amount", 0] } },
+            refunds: {
+              $sum: {
+                $cond: [
+                  { $eq: ["$refundStatus", "completed"] },
+                  { $ifNull: ["$refundedAmount", 0] },
+                  0,
+                ],
+              },
+            },
           },
         },
+      ]),
+      Booking.aggregate([
+        { $match: scoped(active) },
+        { $group: { _id: "$status", count: { $sum: 1 } } },
+        { $sort: { _id: 1 } },
+      ]),
+      Payment.aggregate([
+        { $match: scoped({ ...active, status: "completed" }) },
+        {
+          $group: {
+            _id: {
+              year: { $year: { $ifNull: ["$paidAt", "$createdAt"] } },
+              month: { $month: { $ifNull: ["$paidAt", "$createdAt"] } },
+            },
+            amount: { $sum: paymentNetAmount },
+          },
+        },
+        { $sort: { "_id.year": 1, "_id.month": 1 } },
       ]),
     ]);
 
     const gross = Number(revenueResult[0]?.gross || 0);
     const refunds = Number(revenueResult[0]?.refunds || 0);
     const revenue = Math.max(0, gross - refunds);
+    const paymentStats = {
+      completed: completedPayments,
+      completedAmount: revenue,
+      pending: pendingPayments,
+      failed: failedPayments,
+    };
+    const statusData = bookingStatus.map((item) => ({ status: item._id || "unknown", count: Number(item.count || 0) }));
+    const formattedMonthlyRevenue = monthlyRevenue.map((item) => ({
+      month: `${item._id.month}/${item._id.year}`,
+      amount: Number(item.amount || 0),
+    }));
 
     return res.json({
       success: true,
@@ -162,6 +179,10 @@ export const getDashboardMetrics = async (req, res) => {
         grossRevenue: gross,
         refundedRevenue: refunds,
         revenueCurrency: "KES",
+        paymentStats,
+        status: statusData,
+        statusData,
+        monthlyRevenue: formattedMonthlyRevenue,
       },
       timestamp: new Date().toISOString(),
     });
