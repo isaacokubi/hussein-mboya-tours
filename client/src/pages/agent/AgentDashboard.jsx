@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "../../context/AuthContext";
 import { fetchAgentDashboard } from "../../api/agentApi";
 
 const money = (value) => `KES ${Number(value || 0).toLocaleString()}`;
@@ -18,10 +19,13 @@ const customerName = (booking) => {
 };
 
 export default function AgentDashboard() {
+  const { user } = useAuth();
+  const agentKey = user?._id || user?.id || user?.email || "current";
   const { data: response, isLoading, isError, error, refetch, isFetching } = useQuery({
-    queryKey: ["agent-dashboard"],
+    queryKey: ["agent-dashboard", agentKey],
     queryFn: fetchAgentDashboard,
-    retry: false,
+    enabled: Boolean(user),
+    retry: 1,
     staleTime: 30000,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
@@ -58,11 +62,7 @@ export default function AgentDashboard() {
               : error?.response?.data?.message || error?.message || "Unable to load the agent dashboard."}
         </p>
         <div className="mt-4 flex gap-2">
-          <button
-            onClick={() => refetch()}
-            disabled={isFetching}
-            className="rounded-lg bg-red-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
-          >
+          <button onClick={() => refetch()} disabled={isFetching} className="rounded-lg bg-red-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-60">
             {isFetching ? "Retrying..." : "Retry"}
           </button>
           {statusCode === 401 && (
@@ -83,9 +83,7 @@ export default function AgentDashboard() {
           <p className="mt-1 text-sm text-gray-500">{payload?.agent?.companyName || "Agent operations"}</p>
         </div>
         <div className="flex items-center gap-3">
-          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClass}`}>
-            {statusLabel}
-          </span>
+          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClass}`}>{statusLabel}</span>
           <button onClick={() => refetch()} disabled={isFetching} className="rounded-lg border bg-white px-4 py-2 text-sm font-medium shadow-sm hover:bg-gray-50 disabled:opacity-60">
             {isFetching ? "Refreshing..." : "Refresh"}
           </button>
@@ -130,16 +128,7 @@ export default function AgentDashboard() {
           </div>
           <div className="mt-4 overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead>
-                <tr className="border-b text-left text-gray-500">
-                  <th className="px-3 py-2">Customer</th>
-                  <th className="px-3 py-2">Tour</th>
-                  <th className="px-3 py-2">Travel date</th>
-                  <th className="px-3 py-2">Amount</th>
-                  <th className="px-3 py-2">Payment</th>
-                  <th className="px-3 py-2">Status</th>
-                </tr>
-              </thead>
+              <thead><tr className="border-b text-left text-gray-500"><th className="px-3 py-2">Customer</th><th className="px-3 py-2">Tour</th><th className="px-3 py-2">Travel date</th><th className="px-3 py-2">Amount</th><th className="px-3 py-2">Payment</th><th className="px-3 py-2">Status</th></tr></thead>
               <tbody>
                 {recentBookings.length === 0 ? (
                   <tr><td colSpan="6" className="px-3 py-6 text-center text-gray-500">No recent bookings found.</td></tr>
@@ -147,7 +136,7 @@ export default function AgentDashboard() {
                   <tr key={booking._id} className="border-b last:border-0">
                     <td className="px-3 py-3">{customerName(booking)}</td>
                     <td className="px-3 py-3">{booking.tour?.title || booking.tour?.name || "Tour unavailable"}</td>
-                    <td className="px-3 py-3">{booking.travelDate ? new Date(booking.travelDate).toLocaleDateString() : "—"}</td>
+                    <td className="px-3 py-3">{booking.travelDate ? new Date(booking.travelDate).toLocaleDateString("en-KE") : "—"}</td>
                     <td className="px-3 py-3">{money(booking.totalAmount ?? booking.amount)}</td>
                     <td className="px-3 py-3"><span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs capitalize">{booking.paymentStatus || "pending"}</span></td>
                     <td className="px-3 py-3"><span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs capitalize">{bookingStatus(booking)}</span></td>
