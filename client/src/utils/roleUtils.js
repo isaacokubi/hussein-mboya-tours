@@ -45,7 +45,7 @@ export function dashboardPath(user) {
     case "super_admin": return "/superadmin/dashboard";
     case "admin": return "/admin/dashboard";
     case "manager": return "/tour-manager/dashboard";
-    case "agent": return "/agent/dashboard";
+    case "agent": return "/agent";
     case "guide": return "/guide/dashboard";
     case "driver": return "/driver/dashboard";
     case "customer": return "/dashboard";
