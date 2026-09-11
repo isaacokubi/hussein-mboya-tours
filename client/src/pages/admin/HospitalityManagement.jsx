@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, BedDouble, Building2, Car, CheckCircle2, ChevronRight, Clock3, MapPin, Plane, Plus, RefreshCw, ShieldCheck, Star, Users } from "lucide-react";
 import { createHotel, createRoomType, getAdminHotels, getHotelBookings, updateHotel, updateHotelBooking } from "../../api/hotelApi";
-import { createTransfer, getAdminTransfers, getTransferBookings, updateHotelBooking as updateHotelReservation, updateTransfer, updateTransferBooking } from "../../api/airportTransferApi";
+import { createTransfer, getAdminTransfers, getTransferBookings, updateTransfer, updateTransferBooking } from "../../api/airportTransferApi";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
