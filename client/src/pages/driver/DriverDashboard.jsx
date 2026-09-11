@@ -7,7 +7,15 @@ import { firstNumeric, numeric, unwrapData } from "../../utils/dashboardData";
 const idOf = (value) => value?._id || value?.id || value;
 const startOfDay = (value) => { const date = new Date(value); if (Number.isNaN(date.getTime())) return null; date.setHours(0, 0, 0, 0); return date; };
 const tourStart = (tour) => tour?.startDate || tour?.date || tour?.tourDate || tour?.travelDate;
-const tourEnd = (tour) => tour?.endDate || tour?.startDate || tour?.date || tour?.tourDate || tour?.travelDate;
+const tourEnd = (tour) => {
+  if (tour?.endDate) return tour.endDate;
+  const start = tourStart(tour);
+  if (!start) return null;
+  const days = Math.max(1, Number(tour?.durationDetails?.days || tour?.duration || 1));
+  const end = new Date(start);
+  end.setDate(end.getDate() + days - 1);
+  return end;
+};
 const isTourActiveOnDate = (tour, value) => { const day = startOfDay(value); const start = startOfDay(tourStart(tour)); const end = startOfDay(tourEnd(tour)); return Boolean(day && start && end && day >= start && day <= end); };
 const formatDateTime = (value) => { const date = new Date(value); return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString([], { dateStyle: "medium", timeStyle: "short" }); };
 const formatDate = (value) => { const date = new Date(value); return Number.isNaN(date.getTime()) ? "—" : date.toLocaleDateString(); };
@@ -25,13 +33,13 @@ export default function DriverDashboard() {
   const dashboardTours = Array.isArray(dashboard?.tours) ? dashboard.tours : Array.isArray(dashboard?.assignedTours) ? dashboard.assignedTours : Array.isArray(dashboard?.upcomingTours) ? dashboard.upcomingTours : [];
   const source = assignedTours.length ? assignedTours : dashboardTours;
   const tours = source.map((tour) => {
-    const dashboardTour = dashboardTours.find((item) => idOf(item) === idOf(tour));
+    const dashboardTour = dashboardTours.find((item) => String(idOf(item)) === String(idOf(tour)));
     return { ...dashboardTour, ...tour, guests: tour?.guests ?? dashboardTour?.guests ?? dashboardTour?.guestCount ?? dashboardTour?.numberOfGuests ?? 0 };
   });
   const vehicle = dashboard?.vehicle || dashboard?.assignedVehicle || tours.find((tour) => tour?.assignedVehicle)?.assignedVehicle || null;
   const today = new Date();
   const todayTrips = tours.filter((tour) => isTourActiveOnDate(tour, today) && !["completed", "cancelled"].includes(String(tour?.status || "").toLowerCase()));
-  const nextTour = tours.map((tour) => ({ tour, date: new Date(tourStart(tour) || 0) })).filter(({ tour, date }) => { const start = startOfDay(today); return !Number.isNaN(date.getTime()) && start && date >= start && !["completed", "cancelled"].includes(String(tour?.status || "").toLowerCase()); }).sort((a, b) => a.date - b.date)[0]?.tour;
+  const nextTour = tours.map((tour) => ({ tour, date: new Date(tourStart(tour) || 0) })).filter(({ tour, date }) => { const start = startOfDay(today); const tourDay = startOfDay(date); return !Number.isNaN(date.getTime()) && start && tourDay && tourDay >= start && !["completed", "cancelled"].includes(String(tour?.status || "").toLowerCase()); }).sort((a, b) => a.date - b.date)[0]?.tour;
   const nextPickup = nextTour?.pickupTime || nextTour?.pickupDateTime || tourStart(nextTour);
   const stats = dashboard?.stats || dashboard?.summary || {};
   const completedTours = firstNumeric(stats.completedTours, dashboard?.completedTours, tours.filter((tour) => String(tour?.status || "").toLowerCase() === "completed").length);
@@ -54,7 +62,7 @@ export default function DriverDashboard() {
       </div>
       <div className="ops-card ops-panel"><div className="ops-panel-head"><div className="ops-panel-title">Assigned tours</div><CalendarDays size={17} /></div>
         {tours.length === 0 ? <div className="ops-alert">No tours are currently assigned to you.</div> : <div className="ops-list">
-          {tours.slice(0, 10).map((tour) => { const tourId = idOf(tour); const status = String(tour?.status || "scheduled").toLowerCase(); const start = new Date(tourStart(tour) || 0); const isToday = isTourActiveOnDate(tour, today); const title = tour?.title || tour?.destination?.name || tour?.destinationName || tour?.location || "Tour"; const startLabel = formatDate(tourStart(tour)); return (
+          {tours.slice(0, 10).map((tour) => { const tourId = idOf(tour); const status = String(tour?.status || "scheduled").toLowerCase(); const isToday = isTourActiveOnDate(tour, today); const title = tour?.title || tour?.destination?.name || tour?.destinationName || tour?.location || "Tour"; const startLabel = formatDate(tourStart(tour)); return (
             <div className="ops-list-item" key={tourId}>
               <span><MapPin size={15} /> {title} · {startLabel}</span>
               <span className="ops-status neutral">{status}</span>
