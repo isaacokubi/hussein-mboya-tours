@@ -1,6 +1,7 @@
 import express from "express";
 import rateLimit from "express-rate-limit";
 import { createPrivacyRequest, listPrivacyRequests, updatePrivacyRequest } from "../controllers/privacyController.js";
+import { getPrivacyComplianceSummary } from "../controllers/privacyComplianceController.js";
 import { resolveTenant } from "../middleware/tenantMiddleware.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { authorize } from "../middleware/permissionMiddleware.js";
@@ -10,5 +11,6 @@ const publicLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 20, standardH
 router.use(resolveTenant);
 router.post("/requests", publicLimiter, createPrivacyRequest);
 router.get("/admin/requests", protect, authorize("finance.view"), listPrivacyRequests);
+router.get("/admin/summary", protect, authorize("finance.view"), getPrivacyComplianceSummary);
 router.patch("/admin/requests/:id", protect, authorize("finance.manage"), updatePrivacyRequest);
 export default router;
