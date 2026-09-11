@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import AccommodationInventory from "./AccommodationInventory.js";
 const { Schema } = mongoose;
 
 const HotelRoomTypeSchema = new Schema({
@@ -22,5 +23,20 @@ const HotelRoomTypeSchema = new Schema({
 
 HotelRoomTypeSchema.index({ tenantId: 1, hotel: 1, name: 1 }, { unique: true });
 HotelRoomTypeSchema.index({ tenantId: 1, hotel: 1, status: 1 });
+
+const syncLegacyInventory = async (room) => {
+  if (!room?.tenantId || !room?.hotel) return;
+  const Hotel = mongoose.model("Hotel");
+  const hotel = await Hotel.findOne({ _id: room.hotel, tenantId: room.tenantId }).select("name location").lean();
+  if (!hotel) return;
+  await AccommodationInventory.findOneAndUpdate(
+    { tenantId: room.tenantId, propertyName: hotel.name, roomType: room.name },
+    { tenantId: room.tenantId, propertyName: hotel.name, location: hotel.location || "", roomType: room.name, totalRooms: room.totalRooms, availableRooms: room.availableRooms, nightlyRate: room.nightlyRate, currency: room.currency, status: room.status, notes: room.description || "", updatedBy: room.updatedBy || null },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
+};
+
+HotelRoomTypeSchema.post("save", async (room) => { try { await syncLegacyInventory(room); } catch (error) { console.error("HOTEL ROOM LEGACY SYNC ERROR:", error.message); } });
+HotelRoomTypeSchema.post("findOneAndUpdate", async (room) => { try { await syncLegacyInventory(room); } catch (error) { console.error("HOTEL ROOM LEGACY SYNC ERROR:", error.message); } });
 
 export default mongoose.models.HotelRoomType || mongoose.model("HotelRoomType", HotelRoomTypeSchema);
