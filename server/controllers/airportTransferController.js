@@ -1,101 +1,12 @@
 import AirportTransfer from "../models/AirportTransfer.js";
 import AirportTransferBooking from "../models/AirportTransferBooking.js";
 import Customer from "../models/Customer.js";
-
-const tenantIdOf = (req) => req.tenantId || req.user?.tenantId;
-const clean = (v) => String(v ?? "").trim();
-const ref = () => `TRF-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
-
-export const listTransfers = async (req, res, next) => {
-  try {
-    const filter = { tenantId: tenantIdOf(req), status: "active" };
-    if (req.query.airportCode) filter.airportCode = clean(req.query.airportCode).toUpperCase();
-    if (req.query.direction) filter.direction = req.query.direction;
-    const rows = await AirportTransfer.find(filter).sort({ airportCode: 1, price: 1, name: 1 }).lean();
-    res.json({ success: true, data: rows });
-  } catch (e) { next(e); }
-};
-
-export const listAdminTransfers = async (req, res, next) => {
-  try {
-    const filter = { tenantId: tenantIdOf(req) };
-    if (req.query.status) filter.status = req.query.status;
-    const rows = await AirportTransfer.find(filter).sort({ createdAt: -1 }).lean();
-    res.json({ success: true, data: rows });
-  } catch (e) { next(e); }
-};
-
-export const createTransfer = async (req, res, next) => {
-  try {
-    const name = clean(req.body.name); const vehicleType = clean(req.body.vehicleType);
-    if (!name || !vehicleType || Number(req.body.passengerCapacity) < 1 || Number(req.body.price) < 0) return res.status(400).json({ success: false, message: "Name, vehicle capacity and valid price are required." });
-    const item = await AirportTransfer.create({ ...req.body, tenantId: tenantIdOf(req), name, vehicleType, createdBy: req.user?._id || null, updatedBy: req.user?._id || null });
-    res.status(201).json({ success: true, data: item });
-  } catch (e) { next(e); }
-};
-
-export const updateTransfer = async (req, res, next) => {
-  try {
-    const item = await AirportTransfer.findOne({ _id: req.params.id, tenantId: tenantIdOf(req) });
-    if (!item) return res.status(404).json({ success: false, message: "Transfer service not found." });
-    const allowed = ["name", "airportName", "airportCode", "direction", "pickupLocation", "dropoffLocation", "vehicleType", "passengerCapacity", "luggageCapacity", "pricingModel", "price", "currency", "durationMinutes", "amenities", "operatingHours", "notes", "status"];
-    for (const key of allowed) if (req.body[key] !== undefined) item[key] = req.body[key];
-    item.updatedBy = req.user?._id || null;
-    await item.save();
-    res.json({ success: true, data: item });
-  } catch (e) { next(e); }
-};
-
-const resolveCustomer = async (req, body) => {
-  if (!req.user?._id) return null;
-  let customer = await Customer.findOne({ tenantId: tenantIdOf(req), user: req.user._id });
-  if (customer) return customer;
-  const firstName = clean(body.firstName || req.user.firstName || req.user.name?.split(" ")[0] || "Guest");
-  const lastName = clean(body.lastName || req.user.lastName || req.user.name?.split(" ").slice(1).join(" ") || "Customer");
-  const phone = clean(body.passengerPhone || body.phone || req.user.phone || "");
-  if (!phone) return null;
-  return Customer.create({ tenantId: tenantIdOf(req), user: req.user._id, firstName, lastName, email: clean(body.passengerEmail || body.email || req.user.email), phone, createdBy: req.user._id, updatedBy: req.user._id });
-};
-
-export const createTransferBooking = async (req, res, next) => {
-  try {
-    const tenantId = tenantIdOf(req);
-    const transfer = await AirportTransfer.findOne({ _id: req.body.transferId, tenantId, status: "active" });
-    if (!transfer) return res.status(404).json({ success: false, message: "Transfer service not found." });
-    const passengers = Number(req.body.passengers || 1); const luggage = Number(req.body.luggage || 0);
-    if (passengers < 1 || passengers > transfer.passengerCapacity || luggage > transfer.luggageCapacity) return res.status(400).json({ success: false, message: "Passenger or luggage count exceeds vehicle capacity." });
-    const pickupDateTime = new Date(req.body.pickupDateTime);
-    if (Number.isNaN(pickupDateTime.getTime())) return res.status(400).json({ success: false, message: "A valid pickup date and time are required." });
-    const customer = await resolveCustomer(req, req.body);
-    if (req.user?.role === "customer" && !customer) return res.status(400).json({ success: false, message: "A passenger phone number is required to complete the booking." });
-    const subtotal = transfer.pricingModel === "per_passenger" ? Number(transfer.price || 0) * passengers : Number(transfer.price || 0);
-    const taxes = Number(req.body.taxes || 0); const fees = Number(req.body.fees || 0);
-    const booking = await AirportTransferBooking.create({ tenantId, reference: ref(), transfer: transfer._id, customer: customer?._id || null, user: req.user?._id || null, linkedBooking: req.body.linkedBooking || null, pickupDateTime, pickupLocation: clean(req.body.pickupLocation || transfer.pickupLocation), dropoffLocation: clean(req.body.dropoffLocation || transfer.dropoffLocation), flightNumber: clean(req.body.flightNumber), airline: clean(req.body.airline), terminal: clean(req.body.terminal), passengerName: clean(req.body.passengerName), passengerPhone: clean(req.body.passengerPhone), passengerEmail: clean(req.body.passengerEmail), passengers, luggage, specialRequests: clean(req.body.specialRequests), status: "pending", paymentStatus: "pending", subtotal, taxes, fees, totalAmount: subtotal + taxes + fees, currency: transfer.currency || "KES", source: req.body.source || "website", notes: clean(req.body.notes), createdBy: req.user?._id || null, updatedBy: req.user?._id || null });
-    res.status(201).json({ success: true, data: booking });
-  } catch (e) { next(e); }
-};
-
-export const listTransferBookings = async (req, res, next) => {
-  try {
-    const filter = { tenantId: tenantIdOf(req) };
-    if (req.query.status) filter.status = req.query.status;
-    if (req.user?.role === "customer") filter.user = req.user._id;
-    const rows = await AirportTransferBooking.find(filter).populate("transfer", "name airportName airportCode vehicleType").populate("assignedVehicle", "registrationNumber plateNumber").sort({ pickupDateTime: 1, createdAt: -1 }).lean();
-    res.json({ success: true, data: rows });
-  } catch (e) { next(e); }
-};
-
-export const updateTransferBooking = async (req, res, next) => {
-  try {
-    const booking = await AirportTransferBooking.findOne({ _id: req.params.id, tenantId: tenantIdOf(req) });
-    if (!booking) return res.status(404).json({ success: false, message: "Transfer booking not found." });
-    if (req.user?.role === "customer" && String(booking.user) !== String(req.user._id)) return res.status(403).json({ success: false, message: "Not allowed." });
-    const statuses = ["pending", "confirmed", "assigned", "driver_en_route", "picked_up", "completed", "cancelled", "no_show"];
-    if (req.body.status && statuses.includes(req.body.status)) booking.status = req.body.status;
-    if (req.body.paymentStatus) booking.paymentStatus = req.body.paymentStatus;
-    for (const key of ["assignedVehicle", "assignedDriver", "specialRequests", "notes"]) if (req.body[key] !== undefined) booking[key] = req.body[key];
-    booking.updatedBy = req.user?._id || null;
-    await booking.save();
-    res.json({ success: true, data: booking });
-  } catch (e) { next(e); }
-};
+const tenantIdOf=req=>req.tenantId||req.user?.tenantId; const clean=v=>String(v??"").trim(); const ref=()=>`TRF-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2,7).toUpperCase()}`; const staffRoles=new Set(["admin","manager","tour_manager","tourmanager","agent"]);
+export const listTransfers=async(req,res,next)=>{try{const filter={tenantId:tenantIdOf(req),status:"active"};if(req.query.airportCode)filter.airportCode=clean(req.query.airportCode).toUpperCase();if(req.query.direction)filter.direction=req.query.direction;res.json({success:true,data:await AirportTransfer.find(filter).sort({airportCode:1,price:1,name:1}).lean()});}catch(e){next(e);}};
+export const listAdminTransfers=async(req,res,next)=>{try{const filter={tenantId:tenantIdOf(req)};if(req.query.status)filter.status=req.query.status;res.json({success:true,data:await AirportTransfer.find(filter).sort({createdAt:-1}).lean()});}catch(e){next(e);}};
+export const createTransfer=async(req,res,next)=>{try{const name=clean(req.body.name),vehicleType=clean(req.body.vehicleType);if(!name||!vehicleType||Number(req.body.passengerCapacity)<1||Number(req.body.price)<0)return res.status(400).json({success:false,message:"Name, vehicle capacity and valid price are required."});const item=await AirportTransfer.create({...req.body,tenantId:tenantIdOf(req),name,vehicleType,createdBy:req.user?._id||null,updatedBy:req.user?._id||null});res.status(201).json({success:true,data:item});}catch(e){next(e);}};
+export const updateTransfer=async(req,res,next)=>{try{const item=await AirportTransfer.findOne({_id:req.params.id,tenantId:tenantIdOf(req)});if(!item)return res.status(404).json({success:false,message:"Transfer service not found."});const allowed=["name","airportName","airportCode","direction","pickupLocation","dropoffLocation","vehicleType","passengerCapacity","luggageCapacity","pricingModel","price","currency","durationMinutes","amenities","operatingHours","notes","status"];for(const key of allowed)if(req.body[key]!==undefined)item[key]=req.body[key];item.updatedBy=req.user?._id||null;await item.save();res.json({success:true,data:item});}catch(e){next(e);}};
+const resolveCustomer=async(req,body)=>{if(!req.user?._id)return null;let customer=await Customer.findOne({tenantId:tenantIdOf(req),user:req.user._id});if(customer)return customer;const firstName=clean(body.firstName||req.user.firstName||req.user.name?.split(" ")[0]||"Guest"),lastName=clean(body.lastName||req.user.lastName||req.user.name?.split(" ").slice(1).join(" ")||"Customer"),phone=clean(body.passengerPhone||body.phone||req.user.phone||"");if(!phone)return null;return Customer.create({tenantId:tenantIdOf(req),user:req.user._id,firstName,lastName,email:clean(body.passengerEmail||body.email||req.user.email),phone,createdBy:req.user._id,updatedBy:req.user._id});};
+export const createTransferBooking=async(req,res,next)=>{try{const tenantId=tenantIdOf(req),transfer=await AirportTransfer.findOne({_id:req.body.transferId,tenantId,status:"active"});if(!transfer)return res.status(404).json({success:false,message:"Transfer service not found."});const passengers=Number(req.body.passengers||1),luggage=Number(req.body.luggage||0),pickupDateTime=new Date(req.body.pickupDateTime);if(passengers<1||passengers>transfer.passengerCapacity||luggage>transfer.luggageCapacity)return res.status(400).json({success:false,message:"Passenger or luggage count exceeds vehicle capacity."});if(Number.isNaN(pickupDateTime.getTime()))return res.status(400).json({success:false,message:"A valid pickup date and time are required."});const customer=await resolveCustomer(req,req.body);if(req.user?.role==="customer"&&!customer)return res.status(400).json({success:false,message:"A passenger phone number is required to complete the booking."});const subtotal=transfer.pricingModel==="per_passenger"?Number(transfer.price||0)*passengers:Number(transfer.price||0),taxes=Number(req.body.taxes||0),fees=Number(req.body.fees||0);const booking=await AirportTransferBooking.create({tenantId,reference:ref(),transfer:transfer._id,customer:customer?._id||null,user:req.user?._id||null,linkedBooking:req.body.linkedBooking||null,pickupDateTime,pickupLocation:clean(req.body.pickupLocation||transfer.pickupLocation),dropoffLocation:clean(req.body.dropoffLocation||transfer.dropoffLocation),flightNumber:clean(req.body.flightNumber),airline:clean(req.body.airline),terminal:clean(req.body.terminal),passengerName:clean(req.body.passengerName),passengerPhone:clean(req.body.passengerPhone),passengerEmail:clean(req.body.passengerEmail),passengers,luggage,specialRequests:clean(req.body.specialRequests),status:"pending",paymentStatus:"pending",subtotal,taxes,fees,totalAmount:subtotal+taxes+fees,currency:transfer.currency||"KES",source:req.body.source||"website",notes:clean(req.body.notes),createdBy:req.user?._id||null,updatedBy:req.user?._id||null});res.status(201).json({success:true,data:booking});}catch(e){next(e);}};
+export const listTransferBookings=async(req,res,next)=>{try{const role=String(req.user?.role||"").toLowerCase();if(role!=="customer"&&!staffRoles.has(role))return res.status(403).json({success:false,message:"Not allowed."});const filter={tenantId:tenantIdOf(req)};if(req.query.status)filter.status=req.query.status;if(role==="customer")filter.user=req.user._id;const rows=await AirportTransferBooking.find(filter).populate("transfer","name airportName airportCode vehicleType").populate("assignedVehicle","registrationNumber plateNumber").sort({pickupDateTime:1,createdAt:-1}).lean();res.json({success:true,data:rows});}catch(e){next(e);}};
+export const updateTransferBooking=async(req,res,next)=>{try{const booking=await AirportTransferBooking.findOne({_id:req.params.id,tenantId:tenantIdOf(req)});if(!booking)return res.status(404).json({success:false,message:"Transfer booking not found."});if(req.user?.role==="customer"&&String(booking.user)!==String(req.user._id))return res.status(403).json({success:false,message:"Not allowed."});const statuses=["pending","confirmed","assigned","driver_en_route","picked_up","completed","cancelled","no_show"];if(req.body.status&&statuses.includes(req.body.status))booking.status=req.body.status;if(req.body.paymentStatus)booking.paymentStatus=req.body.paymentStatus;for(const key of ["assignedVehicle","assignedDriver","specialRequests","notes"])if(req.body[key]!==undefined)booking[key]=req.body[key];booking.updatedBy=req.user?._id||null;await booking.save();res.json({success:true,data:booking});}catch(e){next(e);}};
