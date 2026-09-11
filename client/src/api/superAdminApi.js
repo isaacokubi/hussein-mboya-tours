@@ -1,14 +1,13 @@
 import axios from "./axios";
 
+// Canonical platform dashboard endpoint. Keep both exported names for
+// compatibility, but never maintain two different dashboard data sources.
 export const getSuperAdminDashboard = async () => {
   const response = await axios.get("/superadmin/dashboard");
   return response.data;
 };
 
-export const getSuperAdminDashboardMetrics = async () => {
-  const response = await axios.get("/superadmin/dashboard/metrics");
-  return response.data;
-};
+export const getSuperAdminDashboardMetrics = getSuperAdminDashboard;
 
 export const getSuperAdminRevenue = async () => {
   const response = await axios.get("/superadmin/revenue");
