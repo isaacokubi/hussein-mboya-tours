@@ -4,6 +4,7 @@ import { listHotels, getHotel, createHotel, updateHotel, createRoomType, updateR
 import { checkHotelAvailability } from "../controllers/hotelAvailabilityController.js";
 import { createEnhancedHotelBooking } from "../controllers/enhancedHotelBookingController.js";
 import { listAdminHotelsSafe, listHotelBookingsSafe } from "../controllers/hospitalityAdminController.js";
+import { syncAccommodationInventoryToHotelPms } from "../controllers/hospitalityInventorySyncController.js";
 
 const router = express.Router();
 router.get("/", listHotels);
@@ -13,6 +14,7 @@ router.post("/admin/catalog", protect, managerOnly, createHotel);
 router.patch("/admin/catalog/:id", protect, managerOnly, updateHotel);
 router.post("/admin/catalog/:hotelId/rooms", protect, managerOnly, createRoomType);
 router.patch("/admin/rooms/:id", protect, managerOnly, updateRoomType);
+router.post("/admin/sync-inventory", protect, managerOnly, syncAccommodationInventoryToHotelPms);
 router.post("/bookings", protect, createEnhancedHotelBooking);
 router.get("/bookings", protect, listHotelBookingsSafe);
 router.patch("/bookings/:id", protect, updateHotelBooking);
