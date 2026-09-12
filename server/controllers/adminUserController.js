@@ -16,7 +16,7 @@ const duplicateMessage = (error) => {
   const key = keys[0];
   if (keys.length === 1 && key === "tenantId") return "A legacy tenant index was repaired automatically. Please submit the account creation again.";
   if (key === "email") return "A user or staff account with this email already exists for this company.";
-  if (key === "phone") return "A user with this phone number already exists.";
+  if (key === "phone") return "A user with this phone number already exists for this company.";
   return "A record with these details already exists.";
 };
 
@@ -60,15 +60,18 @@ export const createStaffAccount = async (req, res, next) => {
     if (String(password || "").length < 12 || !/[A-Z]/.test(password) || !/\d/.test(password)) return res.status(400).json({ success: false, message: "Password must be at least 12 characters and include an uppercase letter and a number." });
 
     const normalizedEmail = String(email).trim().toLowerCase();
+    const normalizedPhone = String(phone).trim();
 
-    // IMPORTANT: email uniqueness is tenant-scoped. The previous global lookup
-    // made a user in another company incorrectly block this company's staff.
-    const existingUser = await User.findOne({ email: normalizedEmail, tenantId }).select("_id role tenantId").lean();
-    if (existingUser) return res.status(409).json({ success: false, message: "A user with this email already exists for this company." });
+    const existingUser = await User.findOne({ tenantId, $or: [{ email: normalizedEmail }, { phone: normalizedPhone }] }).select("_id role email phone tenantId").lean();
+    if (existingUser) {
+      const field = existingUser.email === normalizedEmail ? "email" : "phone number";
+      return res.status(409).json({ success: false, message: `A user with this ${field} already exists for this company.` });
+    }
 
-    if (["tour_guide", "driver"].includes(canonicalRole)) {
-      const existingStaff = await Staff.findOne({ email: normalizedEmail, tenantId }).select("_id user position tenantId").lean();
-      if (existingStaff) return res.status(409).json({ success: false, message: "A staff profile with this email already exists for this company." });
+    const existingStaff = await Staff.findOne({ tenantId, isDeleted: { $ne: true }, $or: [{ email: normalizedEmail }, { phone: normalizedPhone }] }).select("_id user email phone position tenantId").lean();
+    if (existingStaff) {
+      const field = existingStaff.email === normalizedEmail ? "email" : "phone number";
+      return res.status(409).json({ success: false, message: `A staff profile with this ${field} already exists for this company.` });
     }
 
     const permissionNamesByRole = {
@@ -99,7 +102,7 @@ export const createStaffAccount = async (req, res, next) => {
     if (["super_admin", "superadmin"].includes(roleDoc.name)) return res.status(403).json({ success: false, message: "SuperAdmin accounts can only be created through the one-time platform bootstrap process." });
 
     createdUser = await createWithTenantIndexRepair(User, {
-      name: name.trim(), email: normalizedEmail, phone: String(phone).trim(), password,
+      name: name.trim(), email: normalizedEmail, phone: normalizedPhone, password,
       role: canonicalRole, legacyRole: canonicalRole, roleId: roleDoc._id, tenantId,
       status: "active", isVerified: true,
     });
@@ -130,22 +133,7 @@ export const createStaffAccount = async (req, res, next) => {
     }
 
     if (isDuplicateKeyError(error)) {
-      console.error("\n========== STAFF CREATE DUPLICATE KEY ==========");
-      console.error("MongoDB error code:", error.code);
-      console.error("MongoDB keyPattern:", JSON.stringify(error.keyPattern || null));
-      console.error("MongoDB keyValue:", JSON.stringify(error.keyValue || null));
-      console.error("MongoDB index:", error?.index || "unknown");
-      console.error("Request role:", req.body?.role);
-      console.error("Request email:", req.body?.email);
-      console.error("Created user:", createdUser?._id?.toString() || "none");
-      console.error("Created staff:", createdStaff?._id?.toString() || "none");
-      console.error("================================================\n");
-
-      return res.status(409).json({
-        success: false,
-        message: duplicateMessage(error),
-        repaired: isTenantIndexConflict(error)
-      });
+      return res.status(409).json({ success: false, message: duplicateMessage(error), repaired: isTenantIndexConflict(error) });
     }
 
     next(error);
