@@ -2,7 +2,8 @@ import { resolveTenant } from "../middleware/tenantMiddleware.js";
 // server/routes/bookingRoutes.js
 
 import express from "express";
-import { getBooking, cancelBooking, rescheduleBooking, getAllBookings, getConfirmedBookings, updateBookingStatus } from "../controllers/bookingController.js";
+import { getBooking, cancelBooking, rescheduleBooking, updateBookingStatus } from "../controllers/bookingController.js";
+import { getAllBookings, getConfirmedBookings } from "../controllers/tenantBookingAdminController.js";
 import { getBookingById as getBookingByIdOptimized } from "../controllers/bookingRetrievalController.js";
 import { getCustomerBookings } from "../controllers/customerDashboardController.js";
 import { updateBookingTravelDate } from "../controllers/bookingTravelDateController.js";
