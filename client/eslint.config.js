@@ -6,7 +6,7 @@ import unusedImports from "eslint-plugin-unused-imports";
 import { defineConfig, globalIgnores } from "eslint/config";
 
 export default defineConfig([
-  globalIgnores(["dist", "src-repair-backup-*/**", ".repair-backups/**", "src/pages/Hotels.jsx", "src/pages/admin/HospitalityCommercial.jsx", "src/pages/admin/HospitalityManagement.jsx"]),
+  globalIgnores(["dist", "src-repair-backup-*/**", ".repair-backups/**"]),
   {
     files: ["**/*.{js,jsx}"],
     extends: [js.configs.recommended, reactHooks.configs.flat.recommended, reactRefresh.configs.vite],
@@ -19,6 +19,7 @@ export default defineConfig([
       "react-hooks/set-state-in-effect": "off",
       "react-hooks/exhaustive-deps": "off",
       "react-hooks/incompatible-library": "off",
+      "react-hooks/preserve-manual-memoization": 0,
       "react-refresh/only-export-components": "off",
     },
   },
