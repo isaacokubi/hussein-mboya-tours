@@ -24,8 +24,6 @@ queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
-      // Cache read-heavy public data briefly. Mutations still invalidate the cache,
-      // so admin changes become visible without forcing every request to refetch.
       staleTime: 30 * 1000,
       gcTime: 10 * 60 * 1000,
       refetchOnMount: false,
@@ -50,6 +48,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(
 );
 
 if (import.meta.env.DEV) {
-  console.log("VITE_API_URL =", import.meta.env.VITE_API_URL);
-  console.log("VITE_SOCKET_URL =", import.meta.env.VITE_SOCKET_URL);
+  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+  const socketUrl = import.meta.env.VITE_SOCKET_URL || window.location.origin;
+  console.log("Effective API URL =", apiUrl);
+  console.log("Effective Socket URL =", socketUrl);
 }
