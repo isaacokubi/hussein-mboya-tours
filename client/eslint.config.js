@@ -18,6 +18,7 @@ export default defineConfig([
       "unused-imports/no-unused-vars": "off",
       "react-hooks/set-state-in-effect": "off",
       "react-hooks/exhaustive-deps": "off",
+      "react-hooks/incompatible-library": "off",
       "react-refresh/only-export-components": "off",
     },
   },
