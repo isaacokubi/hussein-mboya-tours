@@ -1,11 +1,21 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../../api/axios";
+import { useAuth } from "../../context/AuthContext";
 
 const PAGE_SIZE = 5;
+const malformedGreeting = /\bundefined\s+undefined\b/i;
+
+const notificationMessage = (message, user) => {
+  const text = String(message ?? "");
+  if (!malformedGreeting.test(text)) return text;
+  const name = String(user?.name || "Customer").replace(/\s+/g, " ").trim() || "Customer";
+  return text.replace(/\bundefined\s+undefined\b/gi, name);
+};
 
 export default function AssignmentNotifications() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [page, setPage] = useState(1);
   const { data, isLoading } = useQuery({
     queryKey: ["assignment-notifications", page],
@@ -27,7 +37,7 @@ export default function AssignmentNotifications() {
         <div><h2 className="text-xl font-bold text-slate-900">Notifications</h2><p className="text-sm text-slate-500">System, booking, payment and operational updates.</p></div>
         <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">{notifications.filter((n) => !n.read).length} unread</span>
       </div>
-      {isLoading ? <p className="mt-5 text-slate-500">Loading notifications...</p> : notifications.length === 0 ? <p className="mt-5 rounded-xl bg-slate-50 p-4 text-sm text-slate-500">No notifications on this page.</p> : <div className="mt-4 space-y-3">{notifications.map((item) => <button key={item._id} type="button" onClick={() => !item.read && readMutation.mutate(item._id)} className={`block w-full rounded-xl border p-4 text-left ${item.read ? "border-slate-100 bg-white" : "border-emerald-200 bg-emerald-50/50"}`}><div className="flex justify-between gap-4"><strong className="text-slate-900">{item.title}</strong><span className="text-xs text-slate-400">{item.createdAt ? new Date(item.createdAt).toLocaleString() : ""}</span></div><p className="mt-1 text-sm text-slate-600">{item.message}</p>{item.actionUrl && <p className="mt-2 text-xs font-semibold text-emerald-700">Open →</p>}</button>)}</div>}
+      {isLoading ? <p className="mt-5 text-slate-500">Loading notifications...</p> : notifications.length === 0 ? <p className="mt-5 rounded-xl bg-slate-50 p-4 text-sm text-slate-500">No notifications on this page.</p> : <div className="mt-4 space-y-3">{notifications.map((item) => <button key={item._id} type="button" onClick={() => !item.read && readMutation.mutate(item._id)} className={`block w-full rounded-xl border p-4 text-left ${item.read ? "border-slate-100 bg-white" : "border-emerald-200 bg-emerald-50/50"}`}><div className="flex justify-between gap-4"><strong className="text-slate-900">{item.title}</strong><span className="text-xs text-slate-400">{item.createdAt ? new Date(item.createdAt).toLocaleString("en-KE") : ""}</span></div><p className="mt-1 text-sm text-slate-600">{notificationMessage(item.message, user)}</p>{item.actionUrl && <p className="mt-2 text-xs font-semibold text-emerald-700">Open →</p>}</button>)}</div>}
       <div className="mt-5 flex items-center justify-between border-t pt-4"><button disabled={page<=1} onClick={()=>setPage(p=>Math.max(1,p-1))} className="rounded-lg border px-3 py-2 text-sm disabled:opacity-40">Previous</button><span className="text-sm font-semibold text-slate-500">Page {page} of {pages}</span><button disabled={page>=pages} onClick={()=>setPage(p=>Math.min(pages,p+1))} className="rounded-lg border px-3 py-2 text-sm disabled:opacity-40">Next</button></div>
     </section>
   );
