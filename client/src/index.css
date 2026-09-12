@@ -5,6 +5,51 @@
   @apply w-full p-3 rounded-xl border border-gray-300 outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500;
 }
 
+/* Native select/dropdown readability across Chromium/Linux and dark browser themes */
+select {
+  color-scheme: light;
+}
+
+select option {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+select option:checked,
+select option:hover {
+  background-color: #e0e7ff;
+  color: #312e81;
+}
+
+/* Payment lifecycle status controls */
+select[aria-label^="Payment status for"] {
+  min-width: 7.75rem;
+  color: #0f172a !important;
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 9999px !important;
+  cursor: pointer;
+  color-scheme: light;
+}
+
+select[aria-label^="Payment status for"] option {
+  min-height: 2rem;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  font-weight: 700;
+}
+
+select[aria-label^="Payment status for"]:focus {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.14) !important;
+  outline: none;
+}
+
+select[aria-label^="Payment status for"]:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
 /* Dashboard-wide responsive foundation */
 .dashboard-card,
 .dashboard-stat-card,
