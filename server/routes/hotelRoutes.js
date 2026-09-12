@@ -1,6 +1,7 @@
 import express from "express";
 import { protect, managerOnly } from "../middleware/authMiddleware.js";
-import { listHotels, getHotel, createHotel, updateHotel, createRoomType, updateRoomType, createHotelBooking, updateHotelBooking } from "../controllers/hotelController.js";
+import { listHotels, getHotel, updateHotel, createRoomType, updateRoomType, createHotelBooking, updateHotelBooking } from "../controllers/hotelController.js";
+import { createAdminHotel } from "../controllers/adminHotelCreationController.js";
 import { checkHotelAvailability } from "../controllers/hotelAvailabilityController.js";
 import { listAdminHotelsSafe, listHotelBookingsSafe } from "../controllers/hospitalityAdminController.js";
 import { syncAccommodationInventoryToHotelPms } from "../controllers/hospitalityInventorySyncController.js";
@@ -10,7 +11,7 @@ const router = express.Router();
 router.get("/", listHotels);
 router.get("/availability", checkHotelAvailability);
 router.get("/admin/catalog", protect, managerOnly, listAdminHotelsSafe);
-router.post("/admin/catalog", protect, managerOnly, createHotel);
+router.post("/admin/catalog", protect, managerOnly, createAdminHotel);
 router.patch("/admin/catalog/:id", protect, managerOnly, updateHotel);
 router.post("/admin/catalog/:hotelId/rooms", protect, managerOnly, createRoomType);
 router.patch("/admin/rooms/:id", protect, managerOnly, updateRoomType);
