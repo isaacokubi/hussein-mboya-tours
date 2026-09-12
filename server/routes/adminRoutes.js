@@ -9,6 +9,7 @@ import { protect, checkPermission } from "../middleware/authMiddleware.js";
 import adminMiddleware from "../middleware/adminMiddleware.js";
 import { refundBooking, processRefund } from "../controllers/adminPaymentController.js";
 import { getUsers, updateUserStatus, deleteUser, createStaffAccount } from "../controllers/adminUserController.js";
+import { updateUserProfile } from "../controllers/adminUserProfileController.js";
 
 const router = express.Router();
 
@@ -32,6 +33,7 @@ router.post("/users/staff", createStaffAccount);
 router.get("/users/analytics", getUserAnalytics);
 router.patch("/users/:id/status", updateUserStatus);
 router.put("/users/:id/status", updateUserStatus);
+router.put("/users/:id", updateUserProfile);
 router.delete("/users/:id", deleteUser);
 
 /* Booking reports */
