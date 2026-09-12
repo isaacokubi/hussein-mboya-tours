@@ -74,7 +74,7 @@ export default function StatsGrid({ stats = {}, summary = {} }) {
       <div>
         <div className="mb-3">
           <h2 className="text-base font-semibold text-gray-900 sm:text-lg">Operational metrics</h2>
-          <p className="text-xs text-gray-500 sm:text-sm">Users exclude customer accounts; Customers are tracked separately in the CRM.</p>
+          <p className="text-xs text-gray-500 sm:text-sm">Users are all active tenant user accounts; Customers are the customer accounts within those users.</p>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
