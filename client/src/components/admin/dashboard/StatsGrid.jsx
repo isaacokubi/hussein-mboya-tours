@@ -10,10 +10,16 @@ export default function StatsGrid({ stats = {}, summary = {} }) {
   const paymentBreakdownTotal = [paymentStats.completed, paymentStats.pending, paymentStats.failed]
     .reduce((total, value) => total + numeric(value), 0);
   const paymentCount = paymentBreakdownTotal || firstNumeric(source.payments);
+  const customerCount = firstNumeric(source.customers);
+  const rawUserCount = firstNumeric(source.users);
+  // The User collection may contain customer login accounts. The dashboard's
+  // Users card represents non-customer platform accounts; Customers is shown
+  // separately from the CRM/customer-account population.
+  const userCount = Math.max(0, rawUserCount - customerCount);
 
   const cards = {
-    users: ["Users", firstNumeric(source.users)],
-    customers: ["Customers", firstNumeric(source.customers)],
+    users: ["Users", userCount],
+    customers: ["Customers", customerCount],
     staff: ["Staff", firstNumeric(source.staff)],
     guides: ["Guides", firstNumeric(source.guides)],
     drivers: ["Drivers", firstNumeric(source.drivers)],
@@ -74,7 +80,7 @@ export default function StatsGrid({ stats = {}, summary = {} }) {
       <div>
         <div className="mb-3">
           <h2 className="text-base font-semibold text-gray-900 sm:text-lg">Operational metrics</h2>
-          <p className="text-xs text-gray-500 sm:text-sm">Staffing, fleet, inventory and booking workload.</p>
+          <p className="text-xs text-gray-500 sm:text-sm">Users here exclude customer accounts; Customers are tracked separately in the CRM.</p>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
