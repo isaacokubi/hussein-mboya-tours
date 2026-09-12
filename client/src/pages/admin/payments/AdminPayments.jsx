@@ -19,9 +19,9 @@ const statusOf = (payment) => {
   return status === "paid" ? "completed" : PAYMENT_STATUSES.includes(status) ? status : "pending";
 };
 const customerOf = (payment) => clean(payment?.customer?.name || payment?.customer?.fullName || payment?.customerName || "Guest");
-const bookingOf = (payment) => clean(payment?.booking?.bookingNumber || payment?.bookingNumber || payment?.booking?.reference || "—");
+const bookingOf = (payment) => clean(payment?.bookingDisplay || payment?.booking?.bookingNumber || payment?.bookingNumber || payment?.booking?.reference || "—");
 const phoneOf = (payment) => clean(payment?.phoneNumber || payment?.phone || payment?.customer?.phone || "—");
-const receiptOf = (payment) => clean(payment?.mpesaReceiptNumber || payment?.mpesaReceipt || payment?.receiptNumber || "—");
+const receiptOf = (payment) => clean(payment?.receiptDisplay || payment?.receiptNumber || payment?.mpesaReceiptNumber || payment?.mpesaReceipt || payment?.transactionReference || payment?.transactionId || payment?.refundReference || "—");
 const labelStatus = (status) => status.charAt(0).toUpperCase() + status.slice(1);
 
 const statusStyles = {
@@ -87,7 +87,7 @@ export default function AdminPayments() {
   const filteredPayments = useMemo(() => {
     const term = search.trim().toLowerCase();
     return payments.filter((payment) => {
-      const haystack = [customerOf(payment), bookingOf(payment), receiptOf(payment), phoneOf(payment)].join(" ").toLowerCase();
+      const haystack = [customerOf(payment), bookingOf(payment), receiptOf(payment), phoneOf(payment), clean(payment?.paymentReference)].join(" ").toLowerCase();
       return (!term || haystack.includes(term)) && (statusFilter === "all" || statusOf(payment) === statusFilter);
     });
   }, [payments, search, statusFilter]);
@@ -138,7 +138,7 @@ export default function AdminPayments() {
       <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[980px] text-sm">
-            <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr className="border-b border-slate-200"><th className="px-5 py-4 text-left font-bold">Customer</th><th className="px-5 py-4 text-left font-bold">Booking</th><th className="px-5 py-4 text-left font-bold">Amount</th><th className="px-5 py-4 text-left font-bold">Receipt</th><th className="px-5 py-4 text-left font-bold">Phone</th><th className="px-5 py-4 text-left font-bold">Status</th><th className="px-5 py-4 text-right font-bold">Actions</th></tr></thead>
+            <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr className="border-b border-slate-200"><th className="px-5 py-4 text-left font-bold">Customer</th><th className="px-5 py-4 text-left font-bold">Booking</th><th className="px-5 py-4 text-left font-bold">Amount</th><th className="px-5 py-4 text-left font-bold">Receipt / Reference</th><th className="px-5 py-4 text-left font-bold">Phone</th><th className="px-5 py-4 text-left font-bold">Status</th><th className="px-5 py-4 text-right font-bold">Actions</th></tr></thead>
             <tbody className="divide-y divide-slate-100">
               {filteredPayments.map((payment) => {
                 const status = statusOf(payment);
@@ -159,7 +159,7 @@ export default function AdminPayments() {
         </div>
       </section>
 
-      {selectedPayment && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelectedPayment(null); }}><div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-white/20"><div className="flex items-start justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-wider text-indigo-600">Payment record</p><h2 className="mt-1 text-xl font-extrabold text-slate-900">Transaction details</h2></div><button type="button" onClick={() => setSelectedPayment(null)} className="rounded-lg px-3 py-1.5 text-sm font-semibold text-slate-500 hover:bg-slate-100">Close</button></div><dl className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">{[["Customer", customerOf(selectedPayment)], ["Booking", bookingOf(selectedPayment)], ["Amount", money(selectedPayment.amount)], ["Phone", phoneOf(selectedPayment)], ["Receipt", receiptOf(selectedPayment)], ["Status", statusOf(selectedPayment)]].map(([label, value]) => <div key={label} className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-100"><dt className="text-[11px] font-bold uppercase tracking-wide text-slate-500">{label}</dt><dd className="mt-1 break-words font-semibold capitalize text-slate-900">{value || "—"}</dd></div>)}</dl></div></div>}
+      {selectedPayment && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelectedPayment(null); }}><div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-white/20"><div className="flex items-start justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-wider text-indigo-600">Payment record</p><h2 className="mt-1 text-xl font-extrabold text-slate-900">Transaction details</h2></div><button type="button" onClick={() => setSelectedPayment(null)} className="rounded-lg px-3 py-1.5 text-sm font-semibold text-slate-500 hover:bg-slate-100">Close</button></div><dl className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">{[["Customer", customerOf(selectedPayment)], ["Booking", bookingOf(selectedPayment)], ["Amount", money(selectedPayment.amount)], ["Phone", phoneOf(selectedPayment)], ["Receipt / Reference", receiptOf(selectedPayment)], ["Status", statusOf(selectedPayment)]].map(([label, value]) => <div key={label} className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-100"><dt className="text-[11px] font-bold uppercase tracking-wide text-slate-500">{label}</dt><dd className="mt-1 break-words font-semibold capitalize text-slate-900">{value || "—"}</dd></div>)}</dl></div></div>}
     </div>
   );
 }
