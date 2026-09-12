@@ -20,7 +20,15 @@ export const getPayments = async (req, res, next) => {
 
     const payments = await Payment.find(query)
       .populate("customer", "name email phone")
-      .populate({ path: "booking", select: "bookingNumber travelDate totalAmount status", populate: { path: "tour", select: "title" } })
+      .populate({
+        path: "booking",
+        select: "bookingNumber reference travelDate totalAmount status paymentStatus",
+        populate: { path: "tour", select: "title name" },
+      })
+      .populate({
+        path: "hospitalityBooking",
+        select: "bookingNumber bookingReference reference confirmationNumber status paymentStatus",
+      })
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit);
@@ -95,7 +103,8 @@ export const getPayment = async (req, res, next) => {
   try {
     const payment = await Payment.findOne(mergeTenantFilter(req, { _id: req.params.id }))
       .populate("customer")
-      .populate("booking");
+      .populate("booking")
+      .populate("hospitalityBooking");
     if (!payment) return res.status(404).json({ success: false, message: "Payment not found" });
     return res.json({ success: true, payment });
   } catch (error) {
@@ -192,7 +201,6 @@ export const refundBooking = async (req, res, next) => {
       phone,
     });
 
-    // Do not mark the payment/booking refunded until M-Pesa confirms success.
     return res.status(200).json({ success: true, message: "Refund request submitted", refundResponse, refundAmount, payment, booking });
   } catch (error) {
     return next(error);
