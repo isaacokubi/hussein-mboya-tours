@@ -13,6 +13,7 @@
     "check:services": "node --check services/mpesaService.js && node --check services/mpesaQueryService.js && node --check services/mpesaRefundService.js && node --check services/paymentLifecycleService.js && node --check services/taxEngineService.js && node --check services/operationsService.js && node --check services/jobQueueService.js && node --check services/jobRetryService.js && node --check services/jobWorkerService.js && node --check services/etimsService.js && node --check services/etimsNoteService.js && node --check services/webhookDeliveryService.js && node --check services/dataRetentionService.js",
     "check:seeds": "node --check seeds/financialDashboardSeed.js && node --check seeds/financialDashboardSeedRunner.js && node --check seeds/ensureDashboardMasterData.js && node --check seeds/dashboardOperationalSeed.js && node --check seeds/hospitalityDeveloperSeed.js",
     "check:production": "node scripts/production-readiness-check.js",
+    "check:multitenancy:live": "node scripts/tenantIsolationRegressionCheck.js",
     "check:all": "npm run check && npm run check:controllers && npm run check:models && npm run check:services && npm run check:seeds && npm run check:production",
     "reconcile:tenant-indexes": "node scripts/reconcileTenantIndexes.js",
     "create:admin": "node scripts/createAdmin.js",
