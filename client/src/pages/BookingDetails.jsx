@@ -5,10 +5,23 @@ import { useNavigate, useParams } from "react-router-dom";
 import ReviewForm from "../components/reviews/ReviewForm";
 import { getBooking, getMyBookings } from "../api/bookingApi";
 
-
 const toNumber = (value) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const cleanText = (value, fallback = "N/A") => {
+  const text = String(value ?? "").replace(/\s+/g, " ").trim();
+  if (!text || /^(undefined|null)(\s+(undefined|null))*$/i.test(text)) return fallback;
+  return text;
+};
+
+const displayName = (source) => {
+  if (!source) return "";
+  if (typeof source === "string") return cleanText(source, "");
+  const direct = cleanText(source.name, "");
+  if (direct) return direct;
+  return cleanText([source.firstName, source.lastName].filter(Boolean).join(" "), "");
 };
 
 const getPaymentStatus = (booking) => {
@@ -33,6 +46,9 @@ const getPaidAmount = (booking) => {
 };
 
 const isCustomBooking = (booking) => Boolean(booking?.customTourSnapshot || booking?.customTourRequest || booking?.customTour || booking?.isCustomTour);
+
+const statusLabel = (value) => cleanText(value, "Pending").replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+const dateLabel = (value) => value ? new Date(value).toLocaleDateString("en-KE", { year: "numeric", month: "short", day: "numeric" }) : "N/A";
 
 export default function BookingDetails() {
   const { tenant } = useTenant();
@@ -68,50 +84,51 @@ export default function BookingDetails() {
 
   const custom = booking.customTourSnapshot || booking.customTourRequest || {};
   const customBooking = isCustomBooking(booking);
-  const title = booking.tour?.title || booking.title || custom.destination || custom.title || "Custom Tour Package";
+  const title = cleanText(booking.tour?.title || booking.title || custom.destination || custom.title, "Custom tour package");
   const totalAmount = toNumber(booking.totalAmount ?? booking.quotedAmount ?? booking.quotedTotal);
   const amountPaid = getPaidAmount(booking);
   const storedBalance = booking.balanceAmount ?? booking.balance ?? booking.paymentSummary?.balance;
   const balanceAmount = Math.max(storedBalance !== undefined && storedBalance !== null ? toNumber(storedBalance) : totalAmount - amountPaid, 0);
   const paymentStatus = String(getPaymentStatus(booking)).toLowerCase();
   const failedPayment = ["failed", "cancelled"].includes(paymentStatus);
-  const customerName = booking.customerSnapshot?.name || booking.customer?.name || booking.user?.name || booking.contact?.name || "Customer";
-  const customerPhone = booking.customerSnapshot?.phone || booking.customer?.phone || booking.user?.phone || booking.contact?.phone || "N/A";
-  const customerEmail = booking.customerSnapshot?.email || booking.customer?.email || booking.user?.email || booking.contact?.email || "N/A";
-  const status = booking.status || booking.bookingStatus || "pending";
+  const customerSources = [booking.customerSnapshot, booking.customer, booking.user, booking.contact];
+  const customerName = customerSources.map(displayName).find(Boolean) || "Customer";
+  const customerPhone = customerSources.map((source) => cleanText(source?.phone, "")).find(Boolean) || "N/A";
+  const customerEmail = customerSources.map((source) => cleanText(source?.email, "")).find(Boolean) || "N/A";
+  const status = String(booking.status || booking.bookingStatus || "pending").toLowerCase();
   const checkoutPath = `/checkout/booking/${booking._id || id}`;
 
   return (
     <div className="min-h-screen bg-slate-50 p-6 md:p-10">
       <main className="mx-auto max-w-5xl">
         <div className="mb-6">
-          <p className="text-sm font-bold uppercase tracking-wide text-emerald-700">{settings?.companyName || tenant?.name || 'Your Travel Company'}</p>
-          <h1 className="mt-1 text-4xl font-bold text-slate-900">Booking Details</h1>
+          <p className="text-sm font-bold tracking-wide text-emerald-700">{cleanText(settings?.companyName || tenant?.name, "Your travel company")}</p>
+          <h1 className="mt-1 text-4xl font-bold text-slate-900">Booking details</h1>
         </div>
 
         <div className="overflow-hidden rounded-2xl bg-white shadow ring-1 ring-slate-200">
           <div className="bg-slate-900 p-6 text-white">
             <div className="mb-3 flex flex-wrap gap-2">
-              <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-bold">{customBooking ? "Custom Tour Booking" : "Normal Tour Booking"}</span>
+              <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-bold">{customBooking ? "Custom tour booking" : "Tour booking"}</span>
               {failedPayment && <span className="rounded-full bg-red-500/90 px-3 py-1 text-xs font-bold">Payment failed — retry required</span>}
             </div>
             <h2 className="text-2xl font-bold">{title}</h2>
-            <p className="mt-2 text-slate-300">Booking #{booking.bookingNumber || booking._id || "N/A"}</p>
+            <p className="mt-2 text-slate-300">Booking #{cleanText(booking.bookingNumber || booking._id, "N/A")}</p>
           </div>
 
           <div className="p-6">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <Info label="Travel date" value={booking.travelDate ? new Date(booking.travelDate).toLocaleDateString() : custom.startDate ? new Date(custom.startDate).toLocaleDateString() : "N/A"} />
+              <Info label="Travel date" value={booking.travelDate ? dateLabel(booking.travelDate) : custom.startDate ? dateLabel(custom.startDate) : "N/A"} />
               <Info label="Total cost" value={`KES ${totalAmount.toLocaleString()}`} />
               <Info label="Amount paid" value={`KES ${amountPaid.toLocaleString()}`} />
               <Info label="Balance" value={`KES ${balanceAmount.toLocaleString()}`} />
             </div>
 
             <div className="mt-6 grid gap-4 md:grid-cols-2">
-              <Info label="Booking status" value={status} />
-              <Info label="Payment status" value={paymentStatus} />
+              <Info label="Booking status" value={statusLabel(status)} />
+              <Info label="Payment status" value={statusLabel(paymentStatus)} />
               <Info label="Travellers" value={String(booking.numberOfGuests ?? custom.people ?? booking.travelers?.length ?? 1)} />
-              <Info label="Pickup" value={booking.pickupLocation || custom.pickupLocation || "N/A"} />
+              <Info label="Pickup" value={cleanText(booking.pickupLocation || custom.pickupLocation, "N/A")} />
             </div>
 
             <div className="mt-6 rounded-2xl border border-emerald-100 bg-emerald-50 p-5">
@@ -122,12 +139,12 @@ export default function BookingDetails() {
                 <Info label="Outstanding" value={`KES ${balanceAmount.toLocaleString()}`} />
               </div>
 
-              {balanceAmount > 0 && !["cancelled", "refunded"].includes(String(status).toLowerCase()) && (
+              {balanceAmount > 0 && !["cancelled", "refunded"].includes(status) && (
                 <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
                   <button type="button" onClick={() => navigate(checkoutPath)} className={`rounded-xl px-5 py-3 font-bold text-white ${failedPayment ? "bg-red-600 hover:bg-red-700" : "bg-emerald-700 hover:bg-emerald-800"}`}>
-                    {failedPayment ? "Retry Failed Payment" : amountPaid > 0 ? "Continue Payment" : "Open Checkout & Pay"}
+                    {failedPayment ? "Retry failed payment" : amountPaid > 0 ? "Continue payment" : "Open checkout & pay"}
                   </button>
-                  <p className="text-sm text-slate-600">Open the full checkout, review or update your phone and pickup details, then request a new M-Pesa prompt and enter the PIN on the customer's phone.</p>
+                  <p className="text-sm text-slate-600">Open checkout to review or update your phone and pickup details, then request a new M-Pesa prompt.</p>
                 </div>
               )}
 
@@ -135,7 +152,7 @@ export default function BookingDetails() {
             </div>
 
             <div className="mt-6 border-t pt-5">
-              <h3 className="mb-3 text-lg font-bold">Customer Information</h3>
+              <h3 className="mb-3 text-lg font-bold">Customer information</h3>
               <div className="grid gap-3 md:grid-cols-3">
                 <Info label="Name" value={customerName} />
                 <Info label="Phone" value={customerPhone} />
@@ -143,7 +160,7 @@ export default function BookingDetails() {
               </div>
             </div>
 
-            {(booking.completedAt || ["completed", "complete", "finished"].includes(String(status).toLowerCase())) && booking.tour?._id && <div className="mt-8"><ReviewForm tourId={booking.tour._id} onSuccess={() => refetch()} /></div>}
+            {(booking.completedAt || ["completed", "complete", "finished"].includes(status)) && booking.tour?._id && <div className="mt-8"><ReviewForm tourId={booking.tour._id} onSuccess={() => refetch()} /></div>}
           </div>
         </div>
       </main>
@@ -152,5 +169,5 @@ export default function BookingDetails() {
 }
 
 function Info({ label, value }) {
-  return <div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p><p className="mt-1 font-semibold capitalize text-slate-900">{value || "N/A"}</p></div>;
+  return <div><p className="text-xs font-semibold tracking-wide text-slate-500">{label}</p><p className="mt-1 font-semibold text-slate-900">{value || "N/A"}</p></div>;
 }
