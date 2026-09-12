@@ -13,7 +13,12 @@ export const listGatewayConfigs = async (req, res, next) => {
     const configs = await PaymentGatewayConfig.find({})
       .select("-consumerKeyEncrypted -consumerSecretEncrypted -passkeyEncrypted -secretKeyEncrypted -webhookSecretEncrypted -initiatorNameEncrypted -securityCredentialEncrypted")
       .sort({ provider: 1 }).lean();
-    return res.json({ success: true, data: configs.map((c) => ({ ...c, configured: true })) });
+    return res.json({ success: true, data: configs.map((c) => ({
+      ...c,
+      configured: c.provider === "MPESA"
+        ? Boolean(c.consumerKeyEncrypted && c.consumerSecretEncrypted && c.passkeyEncrypted && c.shortcode && c.callbackUrl)
+        : true,
+    })) });
   } catch (error) { next(error); }
 };
 
@@ -37,16 +42,22 @@ export const upsertGatewayConfig = async (req, res, next) => {
     };
 
     if (provider === "MPESA" && update.enabled) {
-      if (!body.consumerKey || !body.consumerSecret || !body.passkey || !update.shortcode) {
-        const existing = await PaymentGatewayConfig.findOne({ tenantId, provider }).lean();
-        const hasExistingCredentials = Boolean(
-          existing?.consumerKeyEncrypted && existing?.consumerSecretEncrypted &&
-          existing?.passkeyEncrypted && existing?.shortcode
-        );
-        if (!hasExistingCredentials) {
-          return res.status(400).json({ success: false, message: "Provide the tenant M-Pesa consumer key, consumer secret, passkey and shortcode when enabling M-Pesa." });
-        }
+      const existing = await PaymentGatewayConfig.findOne({ tenantId, provider }).lean();
+      const hasExistingCredentials = Boolean(
+        existing?.consumerKeyEncrypted && existing?.consumerSecretEncrypted &&
+        existing?.passkeyEncrypted && existing?.shortcode && existing?.callbackUrl
+      );
+      const hasSubmittedCredentials = Boolean(
+        body.consumerKey && body.consumerSecret && body.passkey && update.shortcode && update.callbackUrl
+      );
+      if (!hasExistingCredentials && !hasSubmittedCredentials) {
+        return res.status(400).json({
+          success: false,
+          message: "To enable M-Pesa, provide Consumer Key, Consumer Secret, Passkey, Shortcode and a public HTTPS Callback URL.",
+        });
       }
+      if (!update.callbackUrl && existing?.callbackUrl) update.callbackUrl = existing.callbackUrl;
+      if (!update.shortcode && existing?.shortcode) update.shortcode = existing.shortcode;
     }
 
     for (const field of SECRET_FIELDS) {
@@ -61,10 +72,14 @@ export const upsertGatewayConfig = async (req, res, next) => {
       { new: true, upsert: true, runValidators: true }
     ).lean();
 
-    return res.json({ success: true, message: `${provider} configuration saved securely.`, data: {
+    const configured = provider === "MPESA"
+      ? Boolean(config.consumerKeyEncrypted && config.consumerSecretEncrypted && config.passkeyEncrypted && config.shortcode && config.callbackUrl)
+      : true;
+
+    return res.json({ success: true, message: `${provider} configuration saved securely${config.enabled ? " and enabled" : ""}.`, data: {
       id: config._id, provider: config.provider, environment: config.environment, enabled: config.enabled,
       accountName: config.accountName, shortcode: config.shortcode, publicKey: config.publicKey, merchantId: config.merchantId,
-      callbackUrl: config.callbackUrl, configured: true,
+      callbackUrl: config.callbackUrl, configured,
     } });
   } catch (error) { next(error); }
 };
@@ -79,7 +94,10 @@ export const getGatewayConfig = async (req, res, next) => {
     return res.json({ success: true, data: {
       id: config._id, provider: config.provider, environment: config.environment, enabled: config.enabled,
       accountName: config.accountName, shortcode: config.shortcode, publicKey: config.publicKey, merchantId: config.merchantId,
-      callbackUrl: config.callbackUrl, configured: true,
+      callbackUrl: config.callbackUrl,
+      configured: provider === "MPESA"
+        ? Boolean(config.consumerKeyEncrypted && config.consumerSecretEncrypted && config.passkeyEncrypted && config.shortcode && config.callbackUrl)
+        : true,
       secretsConfigured: SECRET_FIELDS.reduce((out, field) => { out[field] = Boolean(config[`${field}Encrypted`]); return out; }, {}),
     } });
   } catch (error) { next(error); }
