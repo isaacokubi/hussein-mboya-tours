@@ -1,8 +1,10 @@
 import mongoose from "mongoose";
-import { mergeTenantFilter, requireTenantId, getTenantId } from "../tenancy/context.js";
+import { requireTenantId, getTenantId } from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 import Agent from "../models/Agent.js";
 import User from "../models/User.js";
+import Booking from "../models/Booking.js";
+import Commission from "../models/Commission.js";
 
 const extractId = (value) => {
   if (value == null) return "";
@@ -30,20 +32,77 @@ const toObjectId = (value, fieldName) => {
 };
 
 const getSafeTenantId = () => toObjectId(getTenantId(), "tenant ID");
-
-const tenantScopedFilter = (filter = {}) => ({
-  ...filter,
-  tenantId: getSafeTenantId(),
-});
+const tenantScopedFilter = (filter = {}) => ({ ...filter, tenantId: getSafeTenantId() });
 
 export const getAgents = async (req, res) => {
   requireTenantId();
   try {
+    const tenantId = getSafeTenantId();
     const agents = await Agent.find(tenantFilter(req))
       .populate("user", "name email phone role status")
       .sort({ createdAt: -1 })
       .lean();
-    return res.json({ success: true, data: agents });
+
+    const agentIds = agents.map((agent) => agent._id).filter(Boolean);
+    const [bookingStats, commissionStats] = await Promise.all([
+      agentIds.length
+        ? Booking.aggregate([
+            { $match: { tenantId, agent: { $in: agentIds } } },
+            { $group: { _id: "$agent", totalBookings: { $sum: 1 } } },
+          ])
+        : [],
+      agentIds.length
+        ? Commission.aggregate([
+            { $match: { tenantId, agent: { $in: agentIds }, isDeleted: { $ne: true } } },
+            {
+              $group: {
+                _id: "$agent",
+                totalCommission: { $sum: { $max: [0, { $subtract: ["$amount", { $ifNull: ["$refundedAmount", 0] }] }] } },
+                pendingCommission: {
+                  $sum: {
+                    $cond: [
+                      { $in: ["$status", ["pending", "approved", "processing"]] },
+                      { $max: [0, { $subtract: ["$amount", { $ifNull: ["$refundedAmount", 0] }] }] },
+                      0,
+                    ],
+                  },
+                },
+                paidCommission: {
+                  $sum: {
+                    $cond: [
+                      { $eq: ["$status", "paid"] },
+                      { $max: [0, { $subtract: ["$amount", { $ifNull: ["$refundedAmount", 0] }] }] },
+                      0,
+                    ],
+                  },
+                },
+              },
+            },
+          ])
+        : [],
+    ]);
+
+    const bookingMap = new Map(bookingStats.map((item) => [String(item._id), Number(item.totalBookings || 0)]));
+    const commissionMap = new Map(commissionStats.map((item) => [String(item._id), item]));
+
+    const normalized = agents.map((agent) => {
+      const bookingCount = bookingMap.get(String(agent._id));
+      const commission = commissionMap.get(String(agent._id));
+      return {
+        ...agent,
+        companyName: String(agent.companyName || "").trim(),
+        phone: String(agent.phone || agent.user?.phone || "").trim(),
+        email: String(agent.email || agent.user?.email || "").trim(),
+        location: String(agent.location || "").trim(),
+        totalBookings: bookingCount !== undefined ? bookingCount : Number(agent.totalBookings || 0),
+        totalCommission: commission ? Number(commission.totalCommission || 0) : Number(agent.totalCommission || 0),
+        pendingCommission: commission ? Number(commission.pendingCommission || 0) : Number(agent.pendingCommission || 0),
+        paidCommission: commission ? Number(commission.paidCommission || 0) : Number(agent.paidCommission || 0),
+        isActive: agent.status === "active" && agent.isApproved === true,
+      };
+    });
+
+    return res.json({ success: true, data: normalized });
   } catch (error) {
     console.error("Admin get agents error:", error);
     return res.status(error.status || 500).json({ success: false, message: error.message });
@@ -68,120 +127,50 @@ export const getAgentById = async (req, res) => {
 export const approveAgent = async (req, res) => {
   requireTenantId();
   try {
-    // Convert every identifier to a primitive ObjectId before it reaches Mongoose.
-    // This prevents hydrated Express/Mongoose objects from being serialized into
-    // BSON and causing "Cannot convert circular structure to BSON" failures.
     const agentId = toObjectId(req.params.id, "agent ID");
     const approverId = toObjectId(req.user?._id ?? req.user?.id ?? req.auth?.userId, "approver ID");
     const tenantId = getSafeTenantId();
-
     const filter = { _id: agentId, tenantId };
-    const agent = await Agent.findOne(filter)
-      .select("_id tenantId user isApproved status approvedBy approvedAt")
-      .lean();
-
+    const agent = await Agent.findOne(filter).select("_id tenantId user isApproved status approvedBy approvedAt").lean();
     if (!agent) return res.status(404).json({ success: false, code: "AGENT_NOT_FOUND", message: "Agent not found in the current tenant." });
 
     const linkedUserId = toObjectId(agent.user, "agent user ID");
     const linkedUser = await User.findOne({ _id: linkedUserId, tenantId })
       .select("_id tenantId name email phone role legacyRole status isActive")
       .lean();
+    if (!linkedUser) return res.status(422).json({ success: false, code: "AGENT_USER_NOT_FOUND", message: "The agent's linked user account could not be found in this tenant." });
 
-    if (!linkedUser) {
-      return res.status(422).json({
-        success: false,
-        code: "AGENT_USER_NOT_FOUND",
-        message: "The agent's linked user account could not be found in this tenant.",
-      });
-    }
-
-    // Update the linked account first. Both the filter and update values are
-    // primitive values, so no request/document object can enter the BSON payload.
     const activatedUser = await User.findOneAndUpdate(
       { _id: linkedUserId, tenantId },
-      {
-        $set: {
-          role: "agent",
-          legacyRole: "agent",
-          status: "active",
-          isActive: true,
-        },
-      },
+      { $set: { role: "agent", legacyRole: "agent", status: "active", isActive: true } },
       { new: true, runValidators: true }
-    )
-      .select("_id tenantId name email phone role legacyRole status isActive")
-      .lean();
-
-    if (!activatedUser) {
-      return res.status(422).json({
-        success: false,
-        code: "AGENT_USER_ACTIVATION_FAILED",
-        message: "The linked agent user account could not be activated.",
-      });
-    }
+    ).select("_id tenantId name email phone role legacyRole status isActive").lean();
+    if (!activatedUser) return res.status(422).json({ success: false, code: "AGENT_USER_ACTIVATION_FAILED", message: "The linked agent user account could not be activated." });
 
     const approvedAt = new Date();
     const updatedAgent = await Agent.findOneAndUpdate(
       filter,
-      {
-        $set: {
-          isApproved: true,
-          status: "active",
-          approvedBy: approverId,
-          approvedAt,
-        },
-      },
+      { $set: { isApproved: true, status: "active", approvedBy: approverId, approvedAt } },
       { new: true, runValidators: true }
-    )
-      .populate("user", "name email phone role status")
-      .lean();
+    ).populate("user", "name email phone role status").lean();
 
     if (!updatedAgent) {
-      // Best-effort rollback of the user activation if the agent update fails.
       await User.updateOne(
         { _id: linkedUserId, tenantId },
-        {
-          $set: {
-            role: linkedUser.role || "customer",
-            legacyRole: linkedUser.legacyRole || linkedUser.role || "customer",
-            status: linkedUser.status || "inactive",
-            isActive: linkedUser.isActive !== false,
-          },
-        }
+        { $set: { role: linkedUser.role || "customer", legacyRole: linkedUser.legacyRole || linkedUser.role || "customer", status: linkedUser.status || "inactive", isActive: linkedUser.isActive !== false } }
       ).catch((rollbackError) => console.error("Agent approval user rollback failed:", rollbackError));
-
-      return res.status(422).json({
-        success: false,
-        code: "AGENT_APPROVAL_UPDATE_FAILED",
-        message: "The agent approval could not be completed.",
-      });
+      return res.status(422).json({ success: false, code: "AGENT_APPROVAL_UPDATE_FAILED", message: "The agent approval could not be completed." });
     }
 
-    return res.json({
-      success: true,
-      message: "Agent approved successfully",
-      data: updatedAgent,
-    });
+    return res.json({ success: true, message: "Agent approved successfully", data: updatedAgent });
   } catch (error) {
-    console.error("Admin agent approval failed:", {
-      name: error?.name,
-      code: error?.code,
-      status: error?.status,
-      message: error?.message,
-      stack: error?.stack,
-    });
-
+    console.error("Admin agent approval failed:", { name: error?.name, code: error?.code, status: error?.status, message: error?.message, stack: error?.stack });
     const message = error?.status === 400
       ? error.message
       : error?.name === "ValidationError"
         ? Object.values(error.errors || {}).map((item) => item.message).join("; ") || error.message
         : error?.message || "Unable to approve this agent right now. Please try again.";
-
-    return res.status(error.status || 500).json({
-      success: false,
-      code: error.code || "AGENT_APPROVAL_FAILED",
-      message,
-    });
+    return res.status(error.status || 500).json({ success: false, code: error.code || "AGENT_APPROVAL_FAILED", message });
   }
 };
 
@@ -189,17 +178,9 @@ export const updateAgentStatus = async (req, res) => {
   requireTenantId();
   try {
     const status = String(req.body?.status || "").trim().toLowerCase();
-    if (!["active", "inactive", "suspended"].includes(status)) {
-      return res.status(400).json({ success: false, message: "Invalid agent status" });
-    }
-
+    if (!["active", "inactive", "suspended"].includes(status)) return res.status(400).json({ success: false, message: "Invalid agent status" });
     const agentId = toObjectId(req.params.id, "agent ID");
-    const agent = await Agent.findOneAndUpdate(
-      tenantScopedFilter({ _id: agentId }),
-      { $set: { status } },
-      { new: true, runValidators: true }
-    ).lean();
-
+    const agent = await Agent.findOneAndUpdate(tenantScopedFilter({ _id: agentId }), { $set: { status } }, { new: true, runValidators: true }).lean();
     if (!agent) return res.status(404).json({ success: false, message: "Agent not found" });
     return res.json({ success: true, message: "Agent status updated", data: agent });
   } catch (error) {
