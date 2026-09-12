@@ -12,7 +12,27 @@ import fs from "fs/promises";
 import path from "path";
 
 const EVENT_TYPES = Object.freeze({ BOOKING_CONFIRMATION: "booking_confirmation", PAYMENT_REMINDER: "payment_reminder", TOUR_REMINDER: "tour_reminder", TOUR_VOUCHER: "tour_voucher", SUBSCRIPTION_7: "subscription_7_days", SUBSCRIPTION_3: "subscription_3_days", SUBSCRIPTION_1: "subscription_1_day", SUBSCRIPTION_EXPIRED: "subscription_expired" });
-const bookingContact = (booking) => ({ name: booking.customerSnapshot?.name || booking.contact?.name || "Customer", email: booking.customerSnapshot?.email || booking.contact?.email || "", phone: String(booking.customerSnapshot?.phone || booking.contact?.phone || "").trim() });
+
+const cleanName = (...values) => {
+  for (const value of values) {
+    const name = String(value ?? "").replace(/\s+/g, " ").trim();
+    if (name && !/^(?:undefined|null)(?:\s+(?:undefined|null))*$/i.test(name)) return name;
+  }
+  return "Customer";
+};
+
+const bookingContact = (booking) => ({
+  name: cleanName(
+    booking.customerSnapshot?.name,
+    [booking.customerSnapshot?.firstName, booking.customerSnapshot?.lastName].filter(Boolean).join(" "),
+    booking.contact?.name,
+    [booking.contact?.firstName, booking.contact?.lastName].filter(Boolean).join(" "),
+    booking.customer?.name,
+    booking.user?.name
+  ),
+  email: String(booking.customerSnapshot?.email || booking.contact?.email || booking.customer?.email || booking.user?.email || "").trim(),
+  phone: String(booking.customerSnapshot?.phone || booking.contact?.phone || booking.customer?.phone || booking.user?.phone || "").trim()
+});
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>\"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[char]));
 const formatDate = (value) => value ? new Date(value).toLocaleDateString("en-KE", { dateStyle: "medium" }) : "Not specified";
 const company = async (tenantId = null) => (await getSystemSettings(tenantId ? { tenantId } : {})).companyName || "Global Tours";
