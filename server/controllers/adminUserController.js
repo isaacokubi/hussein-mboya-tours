@@ -4,6 +4,7 @@ import User from "../models/User.js";
 import Role from "../models/Role.js";
 import Staff from "../models/Staff.js";
 import Agent from "../models/Agent.js";
+import Customer from "../models/Customer.js";
 import { ensureSystemRoles } from "../services/onboardingService.js";
 import { createWithTenantIndexRepair, isTenantIndexConflict } from "../services/tenantIndexRepair.js";
 
@@ -18,6 +19,35 @@ const duplicateMessage = (error) => {
   if (key === "email") return "A user or staff account with this email already exists for this company.";
   if (key === "phone") return "A user with this phone number already exists for this company.";
   return "A record with these details already exists.";
+};
+
+const canonicalizeUsers = async (users) => {
+  if (!users.length) return users;
+  const ids = users.map((user) => user._id);
+  const [customers, staff, agents] = await Promise.all([
+    Customer.find({ user: { $in: ids }, isDeleted: { $ne: true } }).select("user").lean(),
+    Staff.find({ user: { $in: ids }, isDeleted: { $ne: true } }).select("user").lean(),
+    Agent.find({ user: { $in: ids } }).select("user").lean(),
+  ]);
+  const customerIds = new Set(customers.filter((item) => item.user).map((item) => String(item.user)));
+  const operationalIds = new Set([...staff, ...agents].filter((item) => item.user).map((item) => String(item.user)));
+  const customerRole = await Role.findOne({ name: "customer" }).select("_id name").lean();
+
+  for (const user of users) {
+    const id = String(user._id);
+    const hasCustomerProfile = customerIds.has(id);
+    const hasOperationalIdentity = operationalIds.has(id);
+    if (hasCustomerProfile && !hasOperationalIdentity && !["super_admin", "superadmin"].includes(String(user.role || "").toLowerCase())) {
+      user.role = "customer";
+      user.legacyRole = "customer";
+      if (customerRole) user.roleId = customerRole;
+      if (String(user.role || "").toLowerCase() !== "customer" || user.legacyRole !== "customer") {
+        await User.updateOne({ _id: user._id }, { $set: { role: "customer", legacyRole: "customer", ...(customerRole ? { roleId: customerRole._id } : {}) } });
+      }
+    }
+    user.role = hasCustomerProfile && !hasOperationalIdentity ? "customer" : user.role || user.legacyRole || "customer";
+  }
+  return users;
 };
 
 export const getUsers = async (req, res, next) => {
@@ -36,8 +66,9 @@ export const getUsers = async (req, res, next) => {
       User.find(query).select("-password").populate("roleId", "name displayName permissions").sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
       User.countDocuments(query),
     ]);
+    await canonicalizeUsers(users);
     const pages = Math.max(1, Math.ceil(total / limit));
-    const data = users.map((user) => ({ ...user, role: user.roleId?.name || user.role || user.legacyRole || "customer", isActive: user.status === "active" }));
+    const data = users.map((user) => ({ ...user, role: user.role || user.roleId?.name || user.legacyRole || "customer", isActive: user.status === "active" }));
     return res.json({ success: true, page, limit, total, pages, count: data.length, data, users: data, pagination: { page, limit, total, pages } });
   } catch (error) { next(error); }
 };
@@ -61,13 +92,11 @@ export const createStaffAccount = async (req, res, next) => {
 
     const normalizedEmail = String(email).trim().toLowerCase();
     const normalizedPhone = String(phone).trim();
-
     const existingUser = await User.findOne({ tenantId, $or: [{ email: normalizedEmail }, { phone: normalizedPhone }] }).select("_id role email phone tenantId").lean();
     if (existingUser) {
       const field = existingUser.email === normalizedEmail ? "email" : "phone number";
       return res.status(409).json({ success: false, message: `A user with this ${field} already exists for this company.` });
     }
-
     const existingStaff = await Staff.findOne({ tenantId, isDeleted: { $ne: true }, $or: [{ email: normalizedEmail }, { phone: normalizedPhone }] }).select("_id user email phone position tenantId").lean();
     if (existingStaff) {
       const field = existingStaff.email === normalizedEmail ? "email" : "phone number";
@@ -81,69 +110,35 @@ export const createStaffAccount = async (req, res, next) => {
       tour_guide: ["tour.view", "view_assigned_tours", "view_tour_guests", "update_tour_status", "submit_tour_report"],
       driver: ["tour.view", "view_assigned_tours"],
     };
-
     if (canonicalRole === "admin") await ensureSystemRoles();
-
     let roleDoc = await Role.findOne({ name: { $in: [canonicalRole, canonicalRole.replace("tour_", "")] } });
     if (!roleDoc) {
       const permissionIds = [];
       for (const permissionName of permissionNamesByRole[canonicalRole] || []) {
         const Permission = (await import("../models/Permission.js")).default;
-        const permission = await Permission.findOneAndUpdate(
-          { name: permissionName },
-          { $setOnInsert: { name: permissionName, label: permissionName.replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), module: permissionName.split(/[._]/)[0], category: "system", isActive: true } },
-          { upsert: true, new: true }
-        );
+        const permission = await Permission.findOneAndUpdate({ name: permissionName }, { $setOnInsert: { name: permissionName, label: permissionName.replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), module: permissionName.split(/[._]/)[0], category: "system", isActive: true } }, { upsert: true, new: true });
         permissionIds.push(permission._id);
       }
       roleDoc = await createWithTenantIndexRepair(Role, { name: canonicalRole, displayName: canonicalRole.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), description: `${canonicalRole} access`, permissions: permissionIds, isSystem: ["admin", "manager", "tour_guide", "driver", "agent", "customer"].includes(canonicalRole), level: canonicalRole === "admin" ? 100 : 20 });
     }
-
     if (["super_admin", "superadmin"].includes(roleDoc.name)) return res.status(403).json({ success: false, message: "SuperAdmin accounts can only be created through the one-time platform bootstrap process." });
-
-    createdUser = await createWithTenantIndexRepair(User, {
-      name: name.trim(), email: normalizedEmail, phone: normalizedPhone, password,
-      role: canonicalRole, legacyRole: canonicalRole, roleId: roleDoc._id, tenantId,
-      status: "active", isVerified: true,
-    });
-
-    if (canonicalRole === "agent") {
-      createdAgent = await createWithTenantIndexRepair(Agent, { user: createdUser._id, tenantId, companyName: "", phone: createdUser.phone, email: createdUser.email, commissionRate: 10, isApproved: false, status: "active" });
-    }
-
-    if (["tour_guide", "driver"].includes(canonicalRole)) {
-      createdStaff = await createWithTenantIndexRepair(Staff, {
-        user: createdUser._id, tenantId, name: createdUser.name, email: createdUser.email, phone: createdUser.phone,
-        position: canonicalRole === "tour_guide" ? "guide" : "driver", role: canonicalRole === "tour_guide" ? "guide" : "driver",
-        status: "active", isActive: true, availability: "available", createdBy: req.user._id,
-      });
-    }
-
+    createdUser = await createWithTenantIndexRepair(User, { name: name.trim(), email: normalizedEmail, phone: normalizedPhone, password, role: canonicalRole, legacyRole: canonicalRole, roleId: roleDoc._id, tenantId, status: "active", isVerified: true });
+    if (canonicalRole === "agent") createdAgent = await createWithTenantIndexRepair(Agent, { user: createdUser._id, tenantId, companyName: "", phone: createdUser.phone, email: createdUser.email, commissionRate: 10, isApproved: false, status: "active" });
+    if (["tour_guide", "driver"].includes(canonicalRole)) createdStaff = await createWithTenantIndexRepair(Staff, { user: createdUser._id, tenantId, name: createdUser.name, email: createdUser.email, phone: createdUser.phone, position: canonicalRole === "tour_guide" ? "guide" : "driver", role: canonicalRole === "tour_guide" ? "guide" : "driver", status: "active", isActive: true, availability: "available", createdBy: req.user._id });
     const safeUser = await User.findById(createdUser._id).select("-password").populate("roleId", "name displayName permissions").lean();
     return res.status(201).json({ success: true, message: `${canonicalRole.replace("_", " ")} account created successfully.`, user: safeUser, staff: createdStaff, agent: createdAgent });
   } catch (error) {
     if (createdUser?._id) {
-      try {
-        await Promise.allSettled([
-          createdStaff?._id ? Staff.deleteOne({ _id: createdStaff._id }) : Promise.resolve(),
-          createdAgent?._id ? Agent.deleteOne({ _id: createdAgent._id }) : Promise.resolve(),
-          User.deleteOne({ _id: createdUser._id }),
-        ]);
-      } catch { /* preserve the original error */ }
+      try { await Promise.allSettled([createdStaff?._id ? Staff.deleteOne({ _id: createdStaff._id }) : Promise.resolve(), createdAgent?._id ? Agent.deleteOne({ _id: createdAgent._id }) : Promise.resolve(), User.deleteOne({ _id: createdUser._id })]); } catch { /* preserve the original error */ }
     }
-
-    if (isDuplicateKeyError(error)) {
-      return res.status(409).json({ success: false, message: duplicateMessage(error), repaired: isTenantIndexConflict(error) });
-    }
-
+    if (isDuplicateKeyError(error)) return res.status(409).json({ success: false, message: duplicateMessage(error), repaired: isTenantIndexConflict(error) });
     next(error);
   }
 };
 
 export const updateUserStatus = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const { status } = req.body;
+    const { id } = req.params; const { status } = req.body;
     if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ success: false, message: "Invalid user ID" });
     if (!STATUS_VALUES.includes(status)) return res.status(400).json({ success: false, message: "Invalid user status" });
     const user = await User.findByIdAndUpdate(id, { $set: { status } }, { new: true, runValidators: true }).select("-password").lean();
