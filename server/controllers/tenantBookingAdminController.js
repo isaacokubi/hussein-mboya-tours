@@ -33,6 +33,33 @@ const loadOwnership = async (model, ids) => {
   return new Map(rows.map((row) => [String(row._id), row.tenantId ? String(row.tenantId) : null]));
 };
 
+const normalizeEmail = (value) => String(value || "").trim().toLowerCase();
+
+const loadEmailTenantOwnership = async (emails) => {
+  const normalized = [...new Set(emails.map(normalizeEmail).filter(Boolean))];
+  if (!normalized.length) return new Map();
+
+  const [customerRows, userRows] = await Promise.all([
+    Customer.collection.find(
+      { email: { $in: normalized } },
+      { projection: { email: 1, tenantId: 1 } },
+    ).toArray(),
+    User.collection.find(
+      { email: { $in: normalized } },
+      { projection: { email: 1, tenantId: 1 } },
+    ).toArray(),
+  ]);
+
+  const ownership = new Map();
+  for (const row of [...customerRows, ...userRows]) {
+    const email = normalizeEmail(row.email);
+    if (!email || !row.tenantId) continue;
+    if (!ownership.has(email)) ownership.set(email, new Set());
+    ownership.get(email).add(String(row.tenantId));
+  }
+  return ownership;
+};
+
 const getReferenceOwnership = async (bookings) => {
   const customerIds = bookings.map((b) => refId(b.customer)).filter(Boolean);
   const userIds = bookings.map((b) => refId(b.user)).filter(Boolean);
@@ -40,15 +67,39 @@ const getReferenceOwnership = async (bookings) => {
   const guideIds = bookings.map((b) => refId(b.assignedGuide)).filter(Boolean);
   const driverIds = bookings.map((b) => refId(b.assignedDriver)).filter(Boolean);
   const vehicleIds = bookings.map((b) => refId(b.assignedVehicle)).filter(Boolean);
-  const [customers, users, tours, guides, drivers, vehicles] = await Promise.all([
+  const emails = bookings.flatMap((b) => [
+    b?.customerSnapshot?.email,
+    b?.contact?.email,
+    b?.billingContact?.email,
+  ]);
+
+  const [customers, users, tours, guides, drivers, vehicles, emailOwners] = await Promise.all([
     loadOwnership(Customer, customerIds),
     loadOwnership(User, userIds),
     loadOwnership(Tour, tourIds),
     loadOwnership(Staff, guideIds),
     loadOwnership(Staff, driverIds),
     loadOwnership(Vehicle, vehicleIds),
+    loadEmailTenantOwnership(emails),
   ]);
-  return { customers, users, tours, guides, drivers, vehicles };
+  return { customers, users, tours, guides, drivers, vehicles, emailOwners };
+};
+
+const snapshotIdentityBelongsToTenant = (booking, tenantId, emailOwners) => {
+  const expected = String(tenantId);
+  const emails = [
+    booking?.customerSnapshot?.email,
+    booking?.contact?.email,
+    booking?.billingContact?.email,
+  ].map(normalizeEmail).filter(Boolean);
+
+  return emails.every((email) => {
+    const owners = emailOwners.get(email);
+    // An email not belonging to any tenant account can be a legitimate guest.
+    // But if it belongs to an account, the booking must belong to that same tenant.
+    if (!owners) return true;
+    return owners.has(expected);
+  });
 };
 
 const belongsToTenant = (booking, tenantId, ownership) => {
@@ -61,6 +112,9 @@ const belongsToTenant = (booking, tenantId, ownership) => {
     [booking.assignedDriver, ownership.drivers],
     [booking.assignedVehicle, ownership.vehicles],
   ];
+
+  if (!snapshotIdentityBelongsToTenant(booking, tenantId, ownership.emailOwners)) return false;
+
   return checks.every(([reference, owners]) => {
     const id = refId(reference);
     if (!id) return true;
