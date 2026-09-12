@@ -1,8 +1,7 @@
-import { ArrowRight, BarChart3, CalendarCheck, Image, Plus, Users } from "lucide-react";
+import { ArrowRight, BarChart3, CalendarCheck, Image, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const actions = [
-  { name: "Create Tour", path: "/admin/tours/add", icon: Plus, description: "Add a new tour package" },
   { name: "Manage Users", path: "/admin/users", icon: Users, description: "Review customers and users" },
   { name: "View Bookings", path: "/admin/bookings", icon: CalendarCheck, description: "Manage current bookings" },
   { name: "Homepage Content", path: "/admin/gallery", icon: Image, description: "Update site media" },
@@ -16,7 +15,7 @@ export default function QuickActions() {
         <h2 className="text-xl font-bold text-slate-900">Quick Actions</h2>
         <p className="mt-1 text-sm text-slate-500">Jump directly to the tools you use most.</p>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {actions.map(({ name, path, icon: Icon, description }) => (
           <Link
             key={name}
