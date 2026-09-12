@@ -1,175 +1,63 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Users, Search, UserCheck, UserX, Shield } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Search, UserCheck, UserX, UserPlus, Pencil, Trash2, X, Users, UserRoundCheck, UserRoundX, BriefcaseBusiness } from "lucide-react";
 import { toast } from "react-toastify";
 import api from "../../api/axios";
+import { createStaff, updateStaff, updateStaffStatus, deleteStaff } from "../../api/adminUserApi";
+
+const emptyForm = { name: "", email: "", phone: "", position: "guide", role: "guide", department: "", employeeNumber: "", employmentType: "full_time", availability: "available", notes: "" };
+const positionLabels = { admin: "Administrator", tour_manager: "Tour Manager", guide: "Guide", driver: "Driver", support: "Support" };
 
 export default function StaffManagement() {
   const qc = useQueryClient();
-const [search,setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+  const [modal, setModal] = useState(null);
+  const [form, setForm] = useState(emptyForm);
 
-const [searchInput,setSearchInput] = useState("");
+  useEffect(() => { const timer = setTimeout(() => setSearch(searchInput), 350); return () => clearTimeout(timer); }, [searchInput]);
 
-useEffect(()=>{
-  const timer=setTimeout(()=>{
-    setSearch(searchInput);
-  },500);
-
-  return ()=>clearTimeout(timer);
-
-},[searchInput]);
-
-  const staffQuery = useQuery({
-    queryKey: ["staff", "admin", search],
-    queryFn: async () => (await api.get("/staff", {
-      params: { includeInactive: true, limit: 100, search: search },
-    })).data,
-  });
-
-  const usersQuery = useQuery({
-    queryKey: ["admin-users", "staff-list", search],
-    queryFn: async () => (await api.get("/admin/users", {
-      params: { limit: 100, search: search },
-    })).data,
-  });
-
-  const mutation = useMutation({
-    mutationFn: ({ id, active }) =>
-      api.put(`/staff/${ id }/status`, { isActive: active, status: active ? "active" : "inactive", availability: active ? "available" : "offline" }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["staff", "admin"] });
-      toast.success("Staff status updated.");
-    },
-    onError: (e) => toast.error(e?.response?.data?.message || "Could not update staff."),
-  });
-
-  const staff = useMemo(
-    () =>
-      Array.isArray(staffQuery.data?.data)
-        ? staffQuery.data.data
-        : [],
-    [staffQuery.data]
-  );
-  const adminUsers = useMemo(
-    () =>
-      Array.isArray(usersQuery.data?.data)
-        ? usersQuery.data.data.filter((u) =>
-            [
-              "admin",
-              "super_admin",
-              "super_admin",
-              "administrator",
-              "tour_manager",
-              "manager",
-              "agent",
-            ].includes(String(u.role || "").toLowerCase())
-          )
-        : [],
-    [usersQuery.data]
-  );
-
-  const rows = useMemo(() => {
-    const staffRows = staff.map((m) => ({ ...m, rowType: "staff" }));
-    const staffEmails = new Set(staff.map((m) => String(m.email || "").toLowerCase()));
-    const accountRows = adminUsers
-      .filter((u) => !staffEmails.has(String(u.email || "").toLowerCase()))
-      .map((u) => ({
-        ...u,
-        rowType: "account",
-        position: u.role || "account",
-        availability: "account",
-        isActive: u.isActive !== false,
-        status: u.status || "active",
-      }));
-    return [...staffRows, ...accountRows];
-  }, [staff, adminUsers]);
-
-  if (staffQuery.isLoading || usersQuery.isLoading) return <div className="p-6">Loading staff...</div>;
-  if (staffQuery.isError || usersQuery.isError) return <div className="p-6 text-red-600">Failed to load staff.</div>;
-
+  const staffQuery = useQuery({ queryKey: ["staff", "admin", search], queryFn: async () => (await api.get("/staff", { params: { includeInactive: true, limit: 100, search } })).data, staleTime: 15_000 });
+  const usersQuery = useQuery({ queryKey: ["admin-users", "staff-list", search], queryFn: async () => (await api.get("/admin/users", { params: { limit: 100, search } })).data, staleTime: 15_000 });
+  const staff = useMemo(() => Array.isArray(staffQuery.data?.data) ? staffQuery.data.data : [], [staffQuery.data]);
+  const accountRows = useMemo(() => {
+    const operational = new Set(staff.map((m) => String(m.email || "").toLowerCase()));
+    return (Array.isArray(usersQuery.data?.data) ? usersQuery.data.data : []).filter((u) => ["admin", "manager", "agent"].includes(String(u.role || "").toLowerCase()) && !operational.has(String(u.email || "").toLowerCase()));
+  }, [usersQuery.data, staff]);
+  const rows = useMemo(() => [...staff.map((m) => ({ ...m, rowType: "staff" })), ...accountRows.map((u) => ({ ...u, rowType: "account", position: u.role, availability: "account", isActive: u.isActive !== false }))], [staff, accountRows]);
   const active = rows.filter((s) => s.isActive !== false && s.status === "active").length;
 
+  const refresh = () => { qc.invalidateQueries({ queryKey: ["staff", "admin"] }); qc.invalidateQueries({ queryKey: ["admin-users", "staff-list"] }); qc.invalidateQueries({ queryKey: ["admin-users"] }); };
+  const saveMutation = useMutation({ mutationFn: modal?.mode === "edit" ? updateStaff : createStaff, onSuccess: () => { setModal(null); setForm(emptyForm); refresh(); toast.success(modal?.mode === "edit" ? "Staff member updated." : "Staff member created."); }, onError: (e) => toast.error(e?.response?.data?.message || "Could not save staff member.") });
+  const statusMutation = useMutation({ mutationFn: updateStaffStatus, onSuccess: () => { refresh(); toast.success("Staff status updated."); }, onError: (e) => toast.error(e?.response?.data?.message || "Could not update status.") });
+  const deleteMutation = useMutation({ mutationFn: deleteStaff, onSuccess: () => { refresh(); toast.success("Staff member removed."); }, onError: (e) => toast.error(e?.response?.data?.message || "Could not remove staff member.") });
+
+  const openCreate = () => { setForm(emptyForm); setModal({ mode: "create" }); };
+  const openEdit = (m) => { setForm({ id: m._id, name: m.name || "", email: m.email || "", phone: m.phone || "", position: m.position || "guide", role: m.role || "guide", department: m.department || "", employeeNumber: m.employeeNumber || "", employmentType: m.employmentType || "full_time", availability: m.availability || "available", notes: m.notes || "" }); setModal({ mode: "edit" }); };
+  const submit = (e) => { e.preventDefault(); saveMutation.mutate(form); };
+
+  if (staffQuery.isLoading || usersQuery.isLoading) return <div className="p-8">Loading staff...</div>;
+  if (staffQuery.isError || usersQuery.isError) return <div className="p-8 text-red-600">Failed to load staff. Please refresh and try again.</div>;
+
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-6">
-          <p className="text-sm font-semibold uppercase tracking-wider text-emerald-700">People operations</p>
-          <h1 className="text-3xl font-bold text-slate-900">Staff Management</h1>
-          <p className="text-slate-500">Manage operational staff and registered management accounts.</p>
-        </div>
+    <section className="min-h-full bg-slate-50 p-4 sm:p-6 lg:p-8">
+      <div className="mx-auto max-w-7xl space-y-6">
+        <header className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end"><div><div className="mb-2 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-emerald-700"><BriefcaseBusiness size={16}/> People operations</div><h1 className="text-3xl font-bold tracking-tight text-slate-950">Staff Management</h1><p className="mt-1 max-w-2xl text-slate-500">Create, edit, activate and safely retire operational staff profiles without duplicating company accounts.</p></div><button onClick={openCreate} className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white shadow-sm hover:bg-emerald-800"><UserPlus size={18}/> Add staff member</button></header>
 
-        <div className="mb-6 grid gap-4 md:grid-cols-3">
-          {[["Total accounts", rows.length], ["Active", active], ["Inactive", rows.length - active]].map(([label, value]) => (
-            <div key={label} className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-              <div className="flex justify-between"><span className="text-sm text-slate-500">{label}</span><Users size={19} className="text-emerald-700" /></div>
-              <p className="mt-2 text-3xl font-bold">{value}</p>
-            </div>
-          ))}
-        </div>
+        <div className="grid gap-4 sm:grid-cols-3"><Metric icon={Users} label="Total records" value={rows.length}/><Metric icon={UserRoundCheck} label="Active" value={active}/><Metric icon={UserRoundX} label="Inactive" value={rows.length - active}/></div>
 
-        <div className="mb-5 flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
-          <Search size={18} className="text-slate-400" />
-          <input
-            value={searchInput}
-            onChange={(e)=>setSearchInput(e.target.value)}
-            placeholder="Search name, email, phone, role or position..."
-            className="w-full outline-none"
-          />
-          {search && <button onClick={() => setSearch("")} className="text-sm text-slate-500">Clear</button>}
-        </div>
+        <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200"><div className="flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-2.5 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100"><Search size={19} className="text-slate-400"/><input value={searchInput} onChange={(e) => setSearchInput(e.target.value)} placeholder="Search name, email, phone, position or status..." className="w-full outline-none"/>{search && <button onClick={() => { setSearchInput(""); setSearch(""); }} className="text-sm font-medium text-slate-500">Clear</button>}</div></div>
 
-        <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-slate-50">
-                <tr>
-                  <th className="p-4 text-left">Staff member</th>
-                  <th className="p-4 text-left">Position / Role</th>
-                  <th className="p-4 text-left">Availability</th>
-                  <th className="p-4 text-left">Status</th>
-                  <th className="p-4 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((m) => {
-                  const on = m.isActive !== false && m.status === "active";
-                  const isAccount = m.rowType === "account";
-                  return (
-                    <tr key={`${m.rowType}-${m._id}`} className="border-t hover:bg-slate-50">
-                      <td className="p-4">
-                        <div className="font-semibold">{m.name || "-"}</div>
-                        <div className="text-sm text-slate-500">{m.email || "-"} · {m.phone || "-"}</div>
-                      </td>
-                      <td className="p-4 capitalize">
-                        {isAccount ? <><Shield size={15} className="mr-1 inline" />{String(m.role || "account").replace(/_/g, " ")}</> : String(m.position || "-").replace(/_/g, " ")}
-                      </td>
-                      <td className="p-4 capitalize">{m.availability || "-"}</td>
-                      <td className="p-4">
-                        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${on ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
-                          {on ? "Active" : "Inactive"}
-                        </span>
-                      </td>
-                      <td className="p-4 text-right">
-                        {isAccount ? (
-                          <span className="text-xs text-slate-400">Manage in Users</span>
-                        ) : (
-                          <button
-                            onClick={() => mutation.mutate({ id: m._id, active: !on })}
-                            className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white"
-                          >
-                            {on ? <><UserX size={15} />Disable</> : <><UserCheck size={15} />Enable</>}
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-                {!rows.length && <tr><td colSpan="5" className="p-10 text-center text-slate-500">No staff found.</td></tr>}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200"><div className="overflow-x-auto"><table className="w-full min-w-[960px]"><thead className="bg-slate-50"><tr>{["Staff member","Position / Role","Availability","Status","Actions"].map((h) => <th key={h} className={`whitespace-nowrap px-5 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500 ${h === "Actions" ? "text-right" : ""}`}>{h}</th>)}</tr></thead><tbody>
+          {rows.map((m) => { const on = m.isActive !== false && m.status === "active"; const account = m.rowType === "account"; return <tr key={`${m.rowType}-${m._id}`} className="border-t border-slate-100 transition hover:bg-slate-50/80"><td className="px-5 py-4"><div className="font-semibold text-slate-900">{m.name || "Unnamed staff"}</div><div className="text-sm text-slate-500">{m.email || "No email"} · {m.phone || "No phone"}</div></td><td className="px-5 py-4"><span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold capitalize text-slate-700">{positionLabels[m.position] || String(m.position || "Account").replace(/_/g, " ")}</span></td><td className="px-5 py-4 text-sm capitalize text-slate-600">{m.availability || "—"}</td><td className="px-5 py-4"><span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${on ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>{on ? "Active" : "Inactive"}</span></td><td className="px-5 py-4"><div className="flex justify-end gap-2">{account ? <span className="self-center text-xs text-slate-400">Manage in Users</span> : <><button title="Edit staff" onClick={() => openEdit(m)} className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-100"><Pencil size={17}/></button><button title={on ? "Disable staff" : "Enable staff"} onClick={() => statusMutation.mutate({ id: m._id, active: !on })} className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-100">{on ? <UserX size={17}/> : <UserCheck size={17}/>}</button><button title="Remove staff profile" onClick={() => window.confirm(`Remove ${m.name || "this staff member"}? The linked login account, if any, will not be deleted.`) && deleteMutation.mutate(m._id)} className="rounded-lg border border-red-100 bg-red-50 p-2 text-red-600 hover:bg-red-100"><Trash2 size={17}/></button></>}</div></td></tr>; })}
+          {!rows.length && <tr><td colSpan="5" className="p-12 text-center text-slate-500">No staff records match your search.</td></tr>}
+        </tbody></table></div></div>
       </div>
-    </div>
+
+      {modal && <Modal title={modal.mode === "edit" ? "Edit staff member" : "Add staff member"} onClose={() => setModal(null)}><form onSubmit={submit} className="space-y-4"><div className="grid gap-4 sm:grid-cols-2"><Field label="Full name"><input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input"/></Field><Field label="Email address"><input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="input"/></Field><Field label="Phone number"><input required inputMode="numeric" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "").slice(0, 13) })} placeholder="0700000000 or +254..." className="input"/></Field><Field label="Position"><select required value={form.position} onChange={(e) => { const position = e.target.value; setForm({ ...form, position, role: position === "tour_manager" ? "manager" : position }); }} className="input">{Object.entries(positionLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field><Field label="Department"><input value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} placeholder="Operations, Finance, Tours..." className="input"/></Field><Field label="Employee number"><input value={form.employeeNumber} onChange={(e) => setForm({ ...form, employeeNumber: e.target.value })} placeholder="Optional internal ID" className="input"/></Field><Field label="Employment type"><select value={form.employmentType} onChange={(e) => setForm({ ...form, employmentType: e.target.value })} className="input"><option value="full_time">Full time</option><option value="part_time">Part time</option><option value="contract">Contract</option><option value="temporary">Temporary</option></select></Field><Field label="Availability"><select value={form.availability} onChange={(e) => setForm({ ...form, availability: e.target.value })} className="input"><option value="available">Available</option><option value="busy">Busy</option><option value="leave">On leave</option><option value="offline">Offline</option></select></Field></div><Field label="Notes"><textarea rows="3" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="input" placeholder="Internal operational notes..."/></Field><div className="flex justify-end gap-3 border-t pt-5"><button type="button" onClick={() => setModal(null)} className="rounded-xl border px-4 py-2.5 font-semibold">Cancel</button><button disabled={saveMutation.isPending} className="rounded-xl bg-emerald-700 px-5 py-2.5 font-semibold text-white disabled:opacity-50">{saveMutation.isPending ? "Saving..." : modal.mode === "edit" ? "Save changes" : "Create staff"}</button></div></form></Modal>}
+    </section>
   );
 }
+function Metric({ icon: Icon, label, value }) { return <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200"><Icon size={19} className="text-emerald-700"/><p className="mt-3 text-sm text-slate-500">{label}</p><p className="mt-1 text-3xl font-bold tracking-tight text-slate-950">{value}</p></div>; }
+function Field({ label, children }) { return <label className="block"><span className="mb-1.5 block text-sm font-semibold text-slate-700">{label}</span>{children}</label>; }
+function Modal({ title, onClose, children }) { return <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm"><div className="w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl"><div className="flex items-center justify-between border-b px-6 py-5"><div><h2 className="text-xl font-bold text-slate-950">{title}</h2><p className="mt-0.5 text-sm text-slate-500">Duplicate email and phone values are rejected server-side per company.</p></div><button onClick={onClose} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"><X size={20}/></button></div><div className="max-h-[78vh] overflow-y-auto p-6">{children}</div></div></div>; }
