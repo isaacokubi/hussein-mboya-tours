@@ -1,5 +1,4 @@
 import Booking from "../models/Booking.js";
-import Customer from "../models/Customer.js";
 import Destination from "../models/Destination.js";
 import Payment from "../models/Payment.js";
 import Staff from "../models/Staff.js";
@@ -11,6 +10,8 @@ import { requireTenantId } from "../tenancy/context.js";
 
 const active = { isDeleted: { $ne: true } };
 const paidStatuses = ["paid", "completed", "success"];
+const customerUserFilter = { $or: [{ role: "customer" }, { legacyRole: "customer" }] };
+const nonCustomerUserFilter = { role: { $nin: ["customer"] }, legacyRole: { $nin: ["customer"] } };
 const clean = (v) => String(v ?? "").trim().replace(/\s+/g, " ");
 const good = (v) => { const s = clean(v); return s && !/^undefined(?: undefined)?$/i.test(s) && !/^null(?: null)?$/i.test(s) ? s : ""; };
 const customerName = (customer, user, booking) => good(customer?.name) || `${good(customer?.firstName) || good(user?.firstName) || good(booking?.customerSnapshot?.firstName)} ${good(customer?.lastName) || good(user?.lastName) || good(booking?.customerSnapshot?.lastName)}`.trim() || good(user?.name) || good(booking?.customerSnapshot?.name) || good(booking?.contact?.name) || "Customer";
@@ -21,8 +22,8 @@ export const getDashboardMetrics = async (req, res) => {
     const tenantId = requireTenantId();
     const scoped = (q = {}) => ({ tenantId, ...q });
     const [users, customers, staff, guides, drivers, agents, approvedAgents, pendingAgents, vehicles, availableVehicles, assignedVehicles, maintenanceVehicles, tours, destinations, bookings, pendingBookings, confirmedBookings, completedBookings, cancelledBookings, refundedBookings, payments, completedPayments, pendingPayments, failedPayments, revenueResult, bookingStatus, monthlyRevenue, recentBookingsRaw, popularTours] = await Promise.all([
-      User.countDocuments(scoped({ ...active, status: { $ne: "blocked" } })),
-      Customer.countDocuments(scoped({ ...active, status: { $ne: "blocked" } })),
+      User.countDocuments(scoped({ ...active, ...nonCustomerUserFilter, status: { $ne: "blocked" } })),
+      User.countDocuments(scoped({ ...active, ...customerUserFilter, status: { $ne: "blocked" } })),
       Staff.countDocuments(scoped({ ...active, isActive: { $ne: false }, status: { $nin: ["inactive", "suspended"] } })),
       Staff.countDocuments(scoped({ ...active, isActive: { $ne: false }, status: { $nin: ["inactive", "suspended"] }, $or: [{ position: "guide" }, { role: "guide" }] })),
       Staff.countDocuments(scoped({ ...active, isActive: { $ne: false }, status: { $nin: ["inactive", "suspended"] }, $or: [{ position: "driver" }, { role: "driver" }] })),
@@ -51,6 +52,6 @@ export const getDashboardMetrics = async (req, res) => {
   } catch (error) { console.error("Admin dashboard metrics error:", error); return res.status(error.status || 500).json({ success: false, message: error.message || "Unable to load dashboard metrics." }); }
 };
 
-export const getUserAnalytics = async (req, res) => { try { const tenantId = requireTenantId(); const filter = { tenantId, ...active }; const [total, activeUsers, customers, agents] = await Promise.all([User.countDocuments(filter), User.countDocuments({ ...filter, isActive: { $ne: false } }), Customer.countDocuments(filter), Agent.countDocuments({ ...filter, status: { $ne: "inactive" } })]); return res.json({ success: true, data: { total, active: activeUsers, customers, agents } }); } catch (error) { return res.status(error.status || 500).json({ success: false, message: error.message }); } };
+export const getUserAnalytics = async (req, res) => { try { const tenantId = requireTenantId(); const filter = { tenantId, ...active, ...nonCustomerUserFilter }; const [total, activeUsers, customers, agents] = await Promise.all([User.countDocuments(filter), User.countDocuments({ ...filter, isActive: { $ne: false } }), User.countDocuments({ tenantId, ...active, ...customerUserFilter }), Agent.countDocuments({ tenantId, ...active, status: { $ne: "inactive" } })]); return res.json({ success: true, data: { total, active: activeUsers, customers, agents } }); } catch (error) { return res.status(error.status || 500).json({ success: false, message: error.message }); } };
 export const getBookingAnalytics = async (req, res) => { try { const tenantId = requireTenantId(); const status = await Booking.aggregate([{ $match: { tenantId, ...active } }, { $group: { _id: "$status", count: { $sum: 1 } } }]); return res.json({ success: true, data: { status: status.map((x) => ({ status: clean(x._id).toLowerCase(), count: Number(x.count || 0) })) } }); } catch (error) { return res.status(error.status || 500).json({ success: false, message: error.message }); } };
 export const getRevenueAnalytics = async (req, res) => { try { const tenantId = requireTenantId(); const monthly = await Payment.aggregate([{ $match: { tenantId, ...active, status: { $in: paidStatuses } } }, { $group: { _id: { year: { $year: { $ifNull: ["$paidAt", "$createdAt"] } }, month: { $month: { $ifNull: ["$paidAt", "$createdAt"] } } }, revenue: { $sum: netAmount }, bookings: { $sum: 1 } } }]); return res.json({ success: true, data: { monthly } }); } catch (error) { return res.status(error.status || 500).json({ success: false, message: error.message }); } };
