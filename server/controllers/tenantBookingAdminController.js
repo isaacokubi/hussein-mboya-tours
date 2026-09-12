@@ -1,12 +1,9 @@
-import mongoose from "mongoose";
 import Booking from "../models/Booking.js";
 import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import {
   BOOKING_STATUSES,
   BOOKING_PAYMENT_STATUSES,
 } from "../constants/bookingConstants.js";
-
-const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
 
 const populateBookings = (query) =>
   query
@@ -20,10 +17,10 @@ const populateBookings = (query) =>
 /**
  * Tenant-isolated admin booking reads.
  *
- * This controller deliberately applies the active tenant filter at the
- * controller boundary as well as relying on the Booking tenant plugin. The
- * explicit filter prevents an accidental context bypass from exposing one
- * company's bookings through the admin operational queue.
+ * The tenant filter is applied explicitly at the controller boundary and
+ * again through mergeTenantFilter(). This prevents cross-company booking
+ * leakage even if a caller reaches this controller with an unexpected query
+ * context.
  */
 export const getAllBookings = async (req, res, next) => {
   try {
@@ -81,12 +78,13 @@ export const getAllBookings = async (req, res, next) => {
       },
       data: bookings,
       bookings,
-      tenantId,
     });
   } catch (error) {
     return next(error);
   }
 };
+
+export const getBookings = getAllBookings;
 
 export const getConfirmedBookings = async (req, res, next) => {
   try {
@@ -120,7 +118,6 @@ export const getConfirmedBookings = async (req, res, next) => {
       count: bookings.length,
       bookings,
       data: bookings,
-      tenantId,
     });
   } catch (error) {
     return next(error);
