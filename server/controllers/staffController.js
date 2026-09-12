@@ -88,9 +88,16 @@ export const updateStaff = async (req, res, next) => {
 
 export const deleteStaff = async (req, res, next) => {
   try {
-    const staff = await Staff.findOneAndUpdate(mergeTenantFilter(req, { _id: req.params.id }), { isActive: false, status: "inactive", availability: "offline", isDeleted: true }, { new: true });
+    const filter = mergeTenantFilter(req, { _id: req.params.id });
+    const staff = await Staff.findOne(filter).select("_id name").lean();
     if (!staff) return res.status(404).json({ success: false, message: "Staff member not found" });
-    return res.status(200).json({ success: true, message: "Staff removed successfully" });
+
+    // Delete the Staff document itself. This is intentionally a hard delete: the
+    // Delete action in People Operations means the record must no longer exist.
+    const result = await Staff.deleteOne(filter);
+    if (result.deletedCount !== 1) return res.status(409).json({ success: false, message: "Staff member could not be deleted. Please refresh and try again." });
+
+    return res.status(200).json({ success: true, message: "Staff member permanently deleted", data: { id: staff._id } });
   } catch (error) { next(error); }
 };
 
