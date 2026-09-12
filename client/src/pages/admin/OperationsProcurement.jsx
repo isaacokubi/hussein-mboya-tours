@@ -32,18 +32,24 @@ export default function OperationsProcurement() {
   const payableRows = unwrap(payables.data);
   const corporateRows = unwrap(corporate.data);
   const upcoming = (Array.isArray(o.schedule) ? o.schedule : []).filter((b) => b?.tour?.title || b?.customTourRequest?.destination || b?.customTourRequest?.title);
-  const loadError = queries.find((q) => q.isError)?.error;
+  const failedModules = [
+    ["overview", overview],
+    ["suppliers", suppliers],
+    ["purchase orders", purchaseOrders],
+    ["payables", payables],
+    ["corporate accounts", corporate],
+  ].filter(([, q]) => q.isError).map(([name]) => name);
 
   return <main className="min-h-screen bg-gradient-to-br from-slate-100 via-sky-50 to-indigo-100">
     <div className="mx-auto max-w-[1550px] px-4 py-6 sm:px-6 lg:px-8">
       <header className="overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-950 via-indigo-950 to-violet-950 p-6 text-white shadow-xl sm:p-8">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div><p className="text-xs font-black uppercase tracking-[.18em] text-cyan-300">Operations & procurement</p><h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">Operations Control Centre</h1><p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">Manage suppliers, purchasing, tour costs, supplier payables, resource coverage and upcoming trip delivery from one tenant-scoped workspace.</p></div>
+          <div><p className="text-xs font-black uppercase tracking-[.18em] text-cyan-300">Operations & procurement</p><h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">Operations Control Centre</h1><p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">A tenant-isolated workspace for suppliers, purchasing, tour costs, payables, corporate exposure and trip delivery.</p></div>
           <button type="button" onClick={refresh} disabled={refreshing} className="rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-black shadow-lg transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-60"><RefreshCw size={16} className={`mr-2 inline ${refreshing ? "animate-spin" : ""}`}/>{refreshing ? "Refreshing…" : "Refresh data"}</button>
         </div>
       </header>
 
-      {loadError && <div className="mt-5 flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800"><XCircle size={19} className="mt-0.5 shrink-0"/><div><p className="font-black">Some operational data could not be loaded.</p><p className="mt-1 text-xs text-rose-700">Refresh the workspace to retry. Data from failed requests is not substituted with unrelated records.</p></div></div>}
+      {failedModules.length > 0 && <div className="mt-5 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 shadow-sm"><XCircle size={19} className="mt-0.5 shrink-0 text-amber-700"/><div><p className="font-black">Some workspace modules need a retry.</p><p className="mt-1 text-xs text-amber-800">Unavailable: {failedModules.join(", ")}. No failed request is replaced with data from another tenant or another module.</p></div></div>}
 
       <section className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi icon={Boxes} label="Active suppliers" value={p.activeSuppliers ?? ps.length} tone="sky"/>
