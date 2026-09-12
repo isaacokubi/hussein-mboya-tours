@@ -11,19 +11,23 @@ import {
   exportPaymentsPDF,
 } from "../../../api/admin/adminPaymentApi";
 
+const PAYMENT_STATUSES = ["pending", "processing", "completed", "failed", "cancelled", "refunded"];
 const money = (value) => `KES ${Number(value || 0).toLocaleString("en-KE", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 const clean = (value) => (value === null || value === undefined ? "" : String(value).trim());
-const statusOf = (payment) => clean(payment?.status || payment?.paymentStatus || "pending").toLowerCase();
+const statusOf = (payment) => {
+  const status = clean(payment?.status || payment?.paymentStatus || "pending").toLowerCase();
+  return status === "paid" ? "completed" : PAYMENT_STATUSES.includes(status) ? status : "pending";
+};
 const customerOf = (payment) => clean(payment?.customer?.name || payment?.customer?.fullName || payment?.customerName || "Guest");
 const bookingOf = (payment) => clean(payment?.booking?.bookingNumber || payment?.bookingNumber || payment?.booking?.reference || "—");
 const phoneOf = (payment) => clean(payment?.phoneNumber || payment?.phone || payment?.customer?.phone || "—");
 const receiptOf = (payment) => clean(payment?.mpesaReceiptNumber || payment?.mpesaReceipt || payment?.receiptNumber || "—");
+const labelStatus = (status) => status.charAt(0).toUpperCase() + status.slice(1);
 
 const statusStyles = {
   pending: "bg-amber-50 text-amber-700 ring-amber-200",
   processing: "bg-sky-50 text-sky-700 ring-sky-200",
   completed: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-  paid: "bg-emerald-50 text-emerald-700 ring-emerald-200",
   failed: "bg-rose-50 text-rose-700 ring-rose-200",
   cancelled: "bg-slate-100 text-slate-700 ring-slate-200",
   refunded: "bg-violet-50 text-violet-700 ring-violet-200",
@@ -127,7 +131,7 @@ export default function AdminPayments() {
         <div className="mb-4 flex flex-col justify-between gap-2 sm:flex-row sm:items-center"><div><h2 className="font-bold text-slate-900">Payment ledger</h2><p className="text-xs text-slate-500">Search, review and safely update payment lifecycle status.</p></div><span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">{filteredPayments.length} records</span></div>
         <div className="grid gap-3 md:grid-cols-[1fr_220px]">
           <div className="relative"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input type="search" autoComplete="off" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Customer, booking, receipt or phone…" className="w-full rounded-lg border border-slate-300 bg-slate-50 py-2.5 pl-10 pr-3 text-sm outline-none focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100" /></div>
-          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="rounded-lg border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100"><option value="all">All statuses</option>{["pending", "processing", "completed", "failed", "cancelled", "refunded"].map((status) => <option key={status} value={status}>{status.charAt(0).toUpperCase() + status.slice(1)}</option>)}</select>
+          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="rounded-lg border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100"><option value="all">All statuses</option>{PAYMENT_STATUSES.map((status) => <option key={status} value={status}>{labelStatus(status)}</option>)}</select>
         </div>
       </section>
 
@@ -145,7 +149,7 @@ export default function AdminPayments() {
                   <td className="px-5 py-4 font-extrabold text-slate-900">{money(payment.amount)}</td>
                   <td className="px-5 py-4 font-mono text-xs text-slate-600">{receiptOf(payment)}</td>
                   <td className="px-5 py-4 text-slate-600">{phoneOf(payment)}</td>
-                  <td className="px-5 py-4"><select aria-label={`Payment status for ${customerOf(payment)}`} value={status} onChange={(event) => statusMutation.mutate({ id: payment._id, status: event.target.value })} className={`rounded-full border-0 px-3 py-1.5 text-xs font-bold capitalize ring-1 outline-none ${statusStyles[status] || statusStyles.pending}`} disabled={statusMutation.isPending && statusMutation.variables?.id === payment._id}>{status}</select></td>
+                  <td className="px-5 py-4"><select aria-label={`Payment status for ${customerOf(payment)}`} value={status} onChange={(event) => statusMutation.mutate({ id: payment._id, status: event.target.value })} className={`rounded-full border-0 px-3 py-1.5 text-xs font-bold capitalize ring-1 outline-none ${statusStyles[status]}`} disabled={statusMutation.isPending && statusMutation.variables?.id === payment._id}>{PAYMENT_STATUSES.map((option) => <option key={option} value={option}>{labelStatus(option)}</option>)}</select></td>
                   <td className="px-5 py-4"><div className="flex justify-end gap-2"><button type="button" onClick={() => setSelectedPayment(payment)} className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100"><Eye className="h-3.5 w-3.5" />View</button><button type="button" disabled={!canRefund || refundMutation.isPending} onClick={() => { if (window.confirm(`Start a refund for ${customerOf(payment)} — ${money(payment.amount)}?`)) refundMutation.mutate(payment._id); }} className="inline-flex items-center gap-1.5 rounded-lg bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-40"><RotateCcw className="h-3.5 w-3.5" />{refundingPaymentId === payment._id ? "Refunding…" : "Refund"}</button></div></td>
                 </tr>;
               })}
