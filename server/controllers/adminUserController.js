@@ -75,6 +75,9 @@ export const createStaffAccount = async (req, res, next) => {
     if (!canonicalRole) return res.status(400).json({ success: false, message: "Choose admin, manager, agent, guide or driver." });
     if (!name?.trim() || !email?.trim() || !/^\d{10}$/.test(String(phone || ""))) return res.status(400).json({ success: false, message: "Name, email and a 10-digit phone are required." });
     if (String(password || "").length < 12 || !/[A-Z]/.test(password) || !/\d/.test(password)) return res.status(400).json({ success: false, message: "Password must be at least 12 characters and include an uppercase letter and a number." });
+    const agentCompanyName = String(req.body?.companyName || "").trim();
+    if (canonicalRole === "agent" && !agentCompanyName) return res.status(400).json({ success: false, message: "Agent company name is required when creating an agent account." });
+    if (canonicalRole === "agent" && agentCompanyName.length > 150) return res.status(400).json({ success: false, message: "Agent company name must be 150 characters or fewer." });
     const normalizedEmail = String(email).trim().toLowerCase(); const normalizedPhone = String(phone).trim();
     const existingUser = await User.findOne({ tenantId, $or: [{ email: normalizedEmail }, { phone: normalizedPhone }] }).select("_id role email phone tenantId").lean();
     if (existingUser) { const field = existingUser.email === normalizedEmail ? "email" : "phone number"; return res.status(409).json({ success: false, message: `A user with this ${field} already exists for this company.` }); }
@@ -96,7 +99,7 @@ export const createStaffAccount = async (req, res, next) => {
     }
     if (["super_admin", "superadmin"].includes(roleDoc.name)) return res.status(403).json({ success: false, message: "SuperAdmin accounts can only be created through the one-time platform bootstrap process." });
     createdUser = await createWithTenantIndexRepair(User, { name: name.trim(), email: normalizedEmail, phone: normalizedPhone, password, role: canonicalRole, legacyRole: canonicalRole, roleId: roleDoc._id, tenantId, status: "active", isVerified: true });
-    if (canonicalRole === "agent") createdAgent = await createWithTenantIndexRepair(Agent, { user: createdUser._id, tenantId, companyName: "", phone: createdUser.phone, email: createdUser.email, commissionRate: 10, isApproved: false, status: "active" });
+    if (canonicalRole === "agent") createdAgent = await createWithTenantIndexRepair(Agent, { user: createdUser._id, tenantId, companyName: agentCompanyName, phone: createdUser.phone, email: createdUser.email, commissionRate: 10, isApproved: false, status: "active" });
     if (["tour_guide", "driver"].includes(canonicalRole)) createdStaff = await createWithTenantIndexRepair(Staff, { user: createdUser._id, tenantId, name: createdUser.name, email: createdUser.email, phone: createdUser.phone, position: canonicalRole === "tour_guide" ? "guide" : "driver", role: canonicalRole === "tour_guide" ? "guide" : "driver", status: "active", isActive: true, availability: "available", createdBy: req.user._id });
     if (canonicalRole === "manager") createdStaff = await createWithTenantIndexRepair(Staff, { user: createdUser._id, tenantId, name: createdUser.name, email: createdUser.email, phone: createdUser.phone, position: "tour_manager", role: "manager", status: "active", isActive: true, availability: "available", createdBy: req.user._id });
     const safeUser = await User.findById(createdUser._id).select("-password").populate("roleId", "name displayName permissions").lean();
