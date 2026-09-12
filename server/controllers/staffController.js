@@ -16,20 +16,11 @@ export const createStaff = async (req, res, next) => {
     const email = String(body.email || "").trim().toLowerCase();
     const phone = String(body.phone || "").trim();
     if (!body.name?.trim() || !email || !phone || !body.position) return res.status(400).json({ success: false, message: "Name, email, phone and position are required." });
-
-    const existing = await Staff.findOne(mergeTenantFilter(req, {
-      isDeleted: { $ne: true },
-      $or: [
-        { email },
-        { phone },
-        ...(body.user ? [{ user: body.user }] : []),
-      ],
-    })).select("_id email phone user position").lean();
+    const existing = await Staff.findOne(mergeTenantFilter(req, { isDeleted: { $ne: true }, $or: [{ email }, { phone }, ...(body.user ? [{ user: body.user }] : [])] })).select("_id email phone user position").lean();
     if (existing) {
       const field = String(existing.email).toLowerCase() === email ? "email" : String(existing.phone) === phone ? "phone number" : "user account";
       return res.status(409).json({ success: false, message: `A staff member with this ${field} already exists for this company.` });
     }
-
     const staff = await Staff.create({ ...body, tenantId, email, phone });
     return res.status(201).json({ success: true, message: "Staff created successfully", data: staff });
   } catch (error) {
@@ -51,12 +42,14 @@ export const getStaff = async (req, res, next) => {
     if (position) filter.position = position === "guide" ? { $in: ["guide", "tour_guide", "tourguide"] } : position === "driver" ? { $in: ["driver", "tour_driver"] } : position;
     if (availability) filter.availability = availability;
     if (search) filter.$or = [{ name: { $regex: search, $options: "i" } }, { email: { $regex: search, $options: "i" } }, { phone: { $regex: search, $options: "i" } }, { position: { $regex: search, $options: "i" } }, { status: { $regex: search, $options: "i" } }];
-    const skip = (Number(page) - 1) * Number(limit);
+    const scopedFilter = mergeTenantFilter(req, filter);
+    const skip = Math.max(Number(page) - 1, 0) * Number(limit);
+    const safeLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
     const [staff, total] = await Promise.all([
-      Staff.find(filter).populate("assignedTours", "title startDate endDate tourStatus").sort({ createdAt: -1 }).skip(skip).limit(Number(limit)),
-      Staff.countDocuments(filter),
+      Staff.find(scopedFilter).populate("assignedTours", "title startDate endDate tourStatus").sort({ createdAt: -1 }).skip(skip).limit(safeLimit),
+      Staff.countDocuments(scopedFilter),
     ]);
-    return res.status(200).json({ success: true, pagination: { total, page: Number(page), pages: Math.ceil(total / Number(limit)) }, data: staff });
+    return res.status(200).json({ success: true, pagination: { total, page: Number(page), limit: safeLimit, pages: Math.max(1, Math.ceil(total / safeLimit)) }, data: staff });
   } catch (error) { next(error); }
 };
 
