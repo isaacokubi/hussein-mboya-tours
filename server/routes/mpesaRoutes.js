@@ -8,12 +8,13 @@ import { protect } from "../middleware/authMiddleware.js";
 import { prepareBookingForMpesa } from "../middleware/prepareBookingForMpesa.js";
 import { resolveMpesaCallbackTenant } from "../middleware/resolveMpesaCallbackTenant.js";
 import { resolveMpesaRefundTenant } from "../middleware/resolveMpesaRefundTenant.js";
+import { verifyMpesaCallbackIntegrity } from "../middleware/mpesaCallbackIntegrity.js";
 
 const router = express.Router();
 router.use(resolveTenant);
 router.post("/stkpush", protect, prepareBookingForMpesa, stkPush);
 router.post("/mpesa", protect, prepareBookingForMpesa, stkPush);
-router.post("/callback", resolveMpesaCallbackTenant, subscriptionMpesaCallback);
+router.post("/callback", resolveMpesaCallbackTenant, verifyMpesaCallbackIntegrity, subscriptionMpesaCallback);
 router.get("/status/:checkoutRequestId", protect, checkCheckoutStatus);
 router.get("/query/:checkoutRequestId", protect, queryMpesaPayment);
 router.get("/verify/:bookingId", protect, verifyBookingPayment);
