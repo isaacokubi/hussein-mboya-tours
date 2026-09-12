@@ -6,6 +6,7 @@ import { checkHotelAvailability } from "../controllers/hotelAvailabilityControll
 import { listAdminHotelsSafe, listHotelBookingsSafe } from "../controllers/hospitalityAdminController.js";
 import { syncAccommodationInventoryToHotelPms } from "../controllers/hospitalityInventorySyncController.js";
 import { createConcurrentSafeHotelBooking } from "../controllers/hospitalityInventoryConcurrencyController.js";
+import { paymentMutationGuard } from "../middleware/paymentMutationGuard.js";
 
 const router = express.Router();
 router.get("/", listHotels);
@@ -18,6 +19,6 @@ router.patch("/admin/rooms/:id", protect, managerOnly, updateRoomType);
 router.post("/admin/sync-inventory", protect, managerOnly, syncAccommodationInventoryToHotelPms);
 router.post("/bookings", protect, createConcurrentSafeHotelBooking);
 router.get("/bookings", protect, listHotelBookingsSafe);
-router.patch("/bookings/:id", protect, updateHotelBooking);
+router.patch("/bookings/:id", protect, paymentMutationGuard, updateHotelBooking);
 router.get("/:id", getHotel);
 export default router;
