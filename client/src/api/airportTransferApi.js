@@ -1,6 +1,7 @@
 import api from "./axios";
 const unwrap = (r) => r?.data?.data ?? r?.data ?? [];
 export const getAirportTransfers = (params = {}) => api.get("/airport-transfers", { params }).then(unwrap);
+export const getAirportTransfer = (id) => api.get(`/airport-transfers/${id}`).then(unwrap);
 export const createTransferBooking = (payload) => api.post("/airport-transfers/bookings", payload).then((response) => {
   const booking = unwrap(response);
   const bookingId = booking?._id || booking?.id;
