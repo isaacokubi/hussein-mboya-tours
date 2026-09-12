@@ -5,10 +5,19 @@ import { getTenantMpesaConfig, getTenantMpesaUrls } from "../services/paymentGat
 
 const checkCloudinary = async () => {
   try {
+    const configured = Boolean(
+      process.env.CLOUDINARY_CLOUD_NAME &&
+      process.env.CLOUDINARY_API_KEY &&
+      process.env.CLOUDINARY_API_SECRET
+    );
+    if (!configured) {
+      return { status: "not_configured", message: "Cloudinary credentials are not configured" };
+    }
+
     await cloudinary.api.ping();
     return { status: "connected", message: "Cloudinary is reachable" };
   } catch (error) {
-    return { status: "unavailable", message: "Cloudinary connection failed" };
+    return { status: "unavailable", message: "Cloudinary is configured but the connection check failed" };
   }
 };
 
@@ -21,11 +30,23 @@ const checkMpesa = async () => {
       timeout: 10000,
       headers: { Authorization: `Basic ${auth}` },
     });
+
     if (!data?.access_token) throw new Error("M-Pesa authentication token was not returned");
-    return { status: "connected", message: `M-Pesa ${config.environment || "sandbox"} gateway is reachable`, environment: config.environment || "sandbox" };
+
+    return {
+      status: "connected",
+      message: `M-Pesa ${config.environment || "sandbox"} gateway is reachable`,
+      environment: config.environment || "sandbox",
+    };
   } catch (error) {
-    const message = error?.message || "M-Pesa gateway check failed";
-    return { status: "unavailable", message: message.length > 120 ? "M-Pesa gateway check failed" : message };
+    const message = String(error?.message || "M-Pesa gateway check failed");
+    const notConfigured = /not configured for this tenant|configuration is incomplete|missing|credentials/i.test(message);
+    return {
+      status: notConfigured ? "not_configured" : "unavailable",
+      message: notConfigured
+        ? "M-Pesa credentials are not configured for this tenant"
+        : "M-Pesa is configured but the gateway connection check failed",
+    };
   }
 };
 
