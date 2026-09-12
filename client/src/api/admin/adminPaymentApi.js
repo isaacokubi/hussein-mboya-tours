@@ -3,7 +3,6 @@
 import api from "../axios";
 
 const clean = (value) => (value === null || value === undefined ? "" : String(value).trim());
-
 const firstValue = (...values) => values.map(clean).find(Boolean) || "";
 
 const mpesaCallbackReceipt = (payment) => {
@@ -17,12 +16,20 @@ const mpesaCallbackReceipt = (payment) => {
   return clean(metadata.find((item) => String(item?.Name || "").toLowerCase() === "mpesareceiptnumber")?.Value);
 };
 
+const mpesaCheckoutReference = (payment) => firstValue(
+  payment?.checkoutRequestID,
+  payment?.checkoutRequestId,
+  payment?.merchantRequestID,
+  payment?.merchantRequestId
+);
+
 const normalizePayment = (payment = {}) => {
   const booking = payment.booking && typeof payment.booking === "object" ? payment.booking : null;
   const hospitalityBooking = payment.hospitalityBooking && typeof payment.hospitalityBooking === "object"
     ? payment.hospitalityBooking
     : null;
 
+  const bookingId = booking?._id || hospitalityBooking?._id || payment.booking || payment.hospitalityBooking;
   const bookingNumber = firstValue(
     booking?.bookingNumber,
     booking?.reference,
@@ -46,29 +53,24 @@ const normalizePayment = (payment = {}) => {
     mpesaCallbackReceipt(payment)
   );
 
-  const bookingId = booking?._id || hospitalityBooking?._id || payment.booking || payment.hospitalityBooking;
+  const paymentReference = firstValue(
+    payment.transactionReference,
+    payment.transactionId,
+    payment.mpesaReceiptNumber,
+    payment.refundReference,
+    mpesaCheckoutReference(payment)
+  );
 
   return {
     ...payment,
     bookingNumber,
     receiptNumber,
     bookingDisplay: bookingNumber || (bookingId ? `Booking ${String(bookingId).slice(-8).toUpperCase()}` : ""),
-    receiptDisplay: receiptNumber,
+    receiptDisplay: receiptNumber || paymentReference,
+    paymentReference,
     tourName: firstValue(booking?.tour?.title, booking?.tour?.name, payment.tourName),
-    paymentReference: firstValue(
-      payment.transactionReference,
-      payment.transactionId,
-      payment.mpesaReceiptNumber,
-      payment.refundReference
-    ),
   };
 };
-
-/*
-|--------------------------------------------------------------------------
-| ADMIN PAYMENTS
-|--------------------------------------------------------------------------
-*/
 
 export const getAdminPayments = async (params = {}) => {
   const { data } = await api.get("/admin/payments", { params });
