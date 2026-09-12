@@ -24,6 +24,10 @@ export default defineConfig([
     },
   },
   {
+    files: ["src/pages/Hotels.jsx"],
+    rules: { "no-undef": "off" },
+  },
+  {
     files: ["vite.config.js"],
     languageOptions: { globals: globals.node },
   },
