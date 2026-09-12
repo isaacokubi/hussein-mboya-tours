@@ -25,6 +25,38 @@ const roleToStaffIdentity = (role) => {
   return map[normalized] || null;
 };
 
+const ensureManagerStaffProfiles = async (req) => {
+  const tenantId = requireTenantId();
+  const managerUsers = await User.find({
+    tenantId,
+    status: "active",
+    $or: [{ role: "manager" }, { role: "tour_manager" }, { legacyRole: "manager" }, { legacyRole: "tour_manager" }],
+  }).select("_id name email phone").lean();
+  if (!managerUsers.length) return;
+
+  const userIds = managerUsers.map((user) => user._id);
+  const existing = await Staff.find({ tenantId, user: { $in: userIds } }).select("user").lean();
+  const existingIds = new Set(existing.filter((staff) => staff.user).map((staff) => String(staff.user)));
+  const missing = managerUsers.filter((user) => !existingIds.has(String(user._id)));
+  if (!missing.length) return;
+
+  await Promise.all(missing.map((user) => Staff.create({
+    user: user._id,
+    tenantId,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    position: "tour_manager",
+    role: "manager",
+    status: "active",
+    isActive: true,
+    availability: "available",
+    createdBy: req.user?._id,
+  }).catch(async (error) => {
+    if (error?.code !== 11000) throw error;
+  })));
+};
+
 const synchronizeStaffIdentities = async (staff) => {
   if (!staff.length) return staff;
   const userIds = staff.map((member) => member.user).filter(Boolean);
@@ -65,6 +97,7 @@ export const createStaff = async (req, res, next) => {
 
 export const getStaff = async (req, res, next) => {
   try {
+    await ensureManagerStaffProfiles(req);
     const { position, availability, status, search, page = 1, limit = 20 } = req.query;
     const filter = {};
     if (status) filter.status = status;
