@@ -1,4 +1,4 @@
-import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
+import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 // server/controllers/adminController.js
 
 import User from "../models/User.js";
@@ -17,32 +17,64 @@ const completedPaymentAmount = {
   $max: [0, { $subtract: [{ $ifNull: ["$amount", 0] }, { $ifNull: ["$refundedAmount", 0] }] }],
 };
 
+const cleanName = (value) => {
+  const text = String(value ?? "").trim().replace(/\s+/g, " ");
+  return text && !/^undefined( undefined)?$/i.test(text) && !/^null( null)?$/i.test(text) ? text : "";
+};
+
+const bookingCustomerFallback = (booking) => {
+  const snapshot = booking?.customerSnapshot || {};
+  const contact = booking?.contact || {};
+  const user = booking?.user || {};
+  const name = cleanName(snapshot.name) || cleanName(contact.name) || cleanName(user.name) || [cleanName(snapshot.firstName), cleanName(snapshot.lastName)].filter(Boolean).join(" ");
+  return {
+    name: name || "Customer",
+    email: cleanName(snapshot.email) || cleanName(contact.email) || cleanName(user.email),
+    phone: cleanName(snapshot.phone) || cleanName(contact.phone) || cleanName(user.phone),
+    deleted: !booking?.customer && !booking?.user,
+  };
+};
+
+const bookingTourFallback = (booking) => {
+  if (booking?.tour) return booking.tour;
+  if (booking?.customTourRequest?.destination) {
+    return { title: `Custom tour — ${booking.customTourRequest.destination}`, custom: true };
+  }
+  return { title: "Tour unavailable", deleted: true };
+};
+
 export const getDashboardStats = async (req, res, next) => {
-  requireTenantId();
   try {
+    requireTenantId();
+    const userFilter = mergeTenantFilter({ isDeleted: { $ne: true } });
+    const bookingFilter = mergeTenantFilter({ isDeleted: { $ne: true } });
+    const tourFilter = mergeTenantFilter({ isDeleted: { $ne: true } });
+    const destinationFilter = mergeTenantFilter({ isDeleted: false, active: true });
+    const paymentFilter = mergeTenantFilter({ status: "completed" });
+
     const [users, bookings, tours, destinations, revenueData, status, monthlyRevenue, popularTours, pendingBookings, confirmedBookings, completedBookings, cancelledBookings, paymentStatsData] = await Promise.all([
-      User.countDocuments({ isDeleted: { $ne: true } }),
-      Booking.countDocuments({ isDeleted: { $ne: true } }),
-      Tour.countDocuments({ isDeleted: { $ne: true } }),
-      Destination.countDocuments({ isDeleted: false, active: true }),
+      User.countDocuments(userFilter),
+      Booking.countDocuments(bookingFilter),
+      Tour.countDocuments(tourFilter),
+      Destination.countDocuments(destinationFilter),
       Payment.aggregate([
-        { $match: { status: "completed" } },
+        { $match: paymentFilter },
         ...activeBookingRevenueStages,
         { $group: { _id: null, total: { $sum: completedPaymentAmount } } },
       ]),
       Booking.aggregate([
-        { $match: { isDeleted: { $ne: true } } },
+        { $match: bookingFilter },
         { $group: { _id: { status: "$status", paymentStatus: "$paymentStatus" }, count: { $sum: 1 } } },
         { $sort: { count: -1 } },
       ]),
       Payment.aggregate([
-        { $match: { status: "completed" } },
+        { $match: paymentFilter },
         ...activeBookingRevenueStages,
         { $group: { _id: { year: { $year: { $ifNull: ["$paidAt", "$createdAt"] } }, month: { $month: { $ifNull: ["$paidAt", "$createdAt"] } } }, total: { $sum: completedPaymentAmount } } },
         { $sort: { "_id.year": 1, "_id.month": 1 } },
       ]),
       Booking.aggregate([
-        { $match: { isDeleted: { $ne: true }, status: { $nin: ["cancelled", "refunded"] }, tour: { $ne: null } } },
+        { $match: mergeTenantFilter({ isDeleted: { $ne: true }, status: { $nin: ["cancelled", "refunded"] }, tour: { $ne: null } }) },
         { $lookup: { from: "tours", localField: "tour", foreignField: "_id", as: "tour" } },
         { $unwind: "$tour" },
         { $match: { "tour.isDeleted": { $ne: true } } },
@@ -53,12 +85,12 @@ export const getDashboardStats = async (req, res, next) => {
         { $unwind: "$tour" },
         { $project: { _id: 1, title: "$tour.title", price: "$tour.price", destination: "$tour.destination", totalBookings: 1, confirmedPaidBookings: 1, revenue: 1 } },
       ]),
-      Booking.countDocuments({ isDeleted: { $ne: true }, status: "pending" }),
-      Booking.countDocuments({ isDeleted: { $ne: true }, status: "confirmed" }),
-      Booking.countDocuments({ isDeleted: { $ne: true }, status: "completed" }),
-      Booking.countDocuments({ isDeleted: { $ne: true }, status: "cancelled" }),
+      Booking.countDocuments(mergeTenantFilter({ isDeleted: { $ne: true }, status: "pending" })),
+      Booking.countDocuments(mergeTenantFilter({ isDeleted: { $ne: true }, status: "confirmed" })),
+      Booking.countDocuments(mergeTenantFilter({ isDeleted: { $ne: true }, status: "completed" })),
+      Booking.countDocuments(mergeTenantFilter({ isDeleted: { $ne: true }, status: "cancelled" })),
       Booking.aggregate([
-        { $match: { isDeleted: { $ne: true } } },
+        { $match: bookingFilter },
         { $group: { _id: "$paymentStatus", count: { $sum: 1 } } },
       ]),
     ]);
@@ -69,25 +101,19 @@ export const getDashboardStats = async (req, res, next) => {
       failed: paymentStatsData.filter((item) => ["failed", "cancelled"].includes(item._id)).reduce((sum, item) => sum + item.count, 0),
     };
 
-    const recentRaw = await Booking.find({ isDeleted: { $ne: true } })
+    const recentRaw = await Booking.find(bookingFilter)
       .sort({ createdAt: -1 })
       .limit(5)
       .populate("customer", "name email phone")
+      .populate("user", "name email phone")
       .populate("tour", "title")
+      .populate("customTourRequest", "destination")
       .lean();
 
     const recentBookings = recentRaw.map((booking) => ({
       ...booking,
-      customer: booking.customer || {
-        name: booking.customerSnapshot?.name || "Deleted User",
-        email: booking.customerSnapshot?.email || booking.customerEmail || "",
-        phone: booking.customerSnapshot?.phone || booking.customerPhone || "",
-        deleted: true,
-      },
-      tour: booking.tour || {
-        title: "Deleted/Unavailable Tour",
-        deleted: true,
-      },
+      customer: booking.customer || bookingCustomerFallback(booking),
+      tour: bookingTourFallback(booking),
     }));
 
     return res.status(200).json({
@@ -115,10 +141,10 @@ export const getDashboardStats = async (req, res, next) => {
 export const getUserAnalytics = async (req, res, next) => {
   try {
     const [total, active, customers, agents] = await Promise.all([
-      User.countDocuments({ isDeleted: { $ne: true } }),
-      User.countDocuments({ isDeleted: { $ne: true }, isActive: { $ne: false } }),
-      User.countDocuments({ isDeleted: { $ne: true }, role: "customer" }),
-      User.countDocuments({ isDeleted: { $ne: true }, role: "agent" }),
+      User.countDocuments(mergeTenantFilter({ isDeleted: { $ne: true } })),
+      User.countDocuments(mergeTenantFilter({ isDeleted: { $ne: true }, isActive: { $ne: false } })),
+      User.countDocuments(mergeTenantFilter({ isDeleted: { $ne: true }, role: "customer" })),
+      User.countDocuments(mergeTenantFilter({ isDeleted: { $ne: true }, role: "agent" })),
     ]);
     return res.status(200).json({ success: true, data: { total, active, customers, agents } });
   } catch (error) { next(error); }
@@ -127,7 +153,7 @@ export const getUserAnalytics = async (req, res, next) => {
 export const getBookingAnalytics = async (req, res, next) => {
   try {
     const status = await Booking.aggregate([
-      { $match: { isDeleted: { $ne: true } } },
+      { $match: mergeTenantFilter({ isDeleted: { $ne: true } }) },
       { $group: { _id: "$status", count: { $sum: 1 } } },
       { $sort: { count: -1 } },
     ]);
@@ -138,7 +164,7 @@ export const getBookingAnalytics = async (req, res, next) => {
 export const getRevenueAnalytics = async (req, res, next) => {
   try {
     const monthly = await Payment.aggregate([
-      { $match: { status: "completed" } },
+      { $match: mergeTenantFilter({ status: "completed" }) },
       ...activeBookingRevenueStages,
       { $group: { _id: { year: { $year: { $ifNull: ["$paidAt", "$createdAt"] } }, month: { $month: { $ifNull: ["$paidAt", "$createdAt"] } } }, revenue: { $sum: completedPaymentAmount }, bookings: { $sum: 1 } } },
       { $sort: { "_id.year": 1, "_id.month": 1 } },
