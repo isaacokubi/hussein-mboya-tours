@@ -13,7 +13,6 @@ const checkCloudinary = async () => {
     if (!configured) {
       return { status: "not_configured", message: "Cloudinary credentials are not configured" };
     }
-
     await cloudinary.api.ping();
     return { status: "connected", message: "Cloudinary is reachable" };
   } catch (error) {
@@ -30,9 +29,7 @@ const checkMpesa = async () => {
       timeout: 10000,
       headers: { Authorization: `Basic ${auth}` },
     });
-
     if (!data?.access_token) throw new Error("M-Pesa authentication token was not returned");
-
     return {
       status: "connected",
       message: `M-Pesa ${config.environment || "sandbox"} gateway is reachable`,
@@ -74,6 +71,6 @@ export const getSystemHealth = async (req, res) => {
   }
 };
 
-export const healthCheck = async (req, res) => {
-  res.json({ success: true, message: "Module operational" });
-};
+// Keep the mounted /system/admin/system-health endpoint compatible with the
+// dashboard while returning the same real integration checks as /system/health.
+export const healthCheck = async (req, res) => getSystemHealth(req, res);
