@@ -4,6 +4,7 @@ import net from "net";
 import Webhook from "../models/Webhook.js";
 import WebhookDelivery from "../models/WebhookDelivery.js";
 import { enqueueJob } from "./jobQueueService.js";
+import { postJsonToPinnedHttpsUrl } from "./ssrfSafeHttpsService.js";
 
 const TIMEOUT_MS = Math.min(15000, Math.max(3000, Number(process.env.WEBHOOK_TIMEOUT_MS || 10000)));
 const MAX_BODY_BYTES = 64 * 1024;
@@ -100,18 +101,15 @@ export async function deliverWebhookJob(payload, job = {}) {
   if (!secret) throw new Error("Webhook secret is not configured.");
   const timestamp = Math.floor(Date.now() / 1000).toString();
   const signature = crypto.createHmac("sha256", secret).update(`${timestamp}.${body}`).digest("hex");
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
-    const response = await fetch(validatedUrl, {
-      method: "POST",
+    const response = await postJsonToPinnedHttpsUrl(validatedUrl, body, {
+      timeoutMs: TIMEOUT_MS,
       headers: { "content-type": "application/json", "user-agent": "HusseinMboyaTours-Webhook/1.0", "x-webhook-event": payload.event, "x-webhook-id": eventId, "x-webhook-timestamp": timestamp, "x-webhook-signature": `v1=${signature}` },
-      body,
-      signal: controller.signal,
     });
-    const responseText = await response.text().catch(() => "");
-    if (!response.ok) throw Object.assign(new Error(`Webhook endpoint returned HTTP ${response.status}.`), { statusCode: response.status, responseText });
+    const responseText = response.body || "";
+    if (response.status >= 300 && response.status < 400) throw Object.assign(new Error("Webhook endpoint returned a redirect, which is not permitted."), { statusCode: response.status, responseText });
+    if (response.status < 200 || response.status >= 300) throw Object.assign(new Error(`Webhook endpoint returned HTTP ${response.status}.`), { statusCode: response.status, responseText });
     await recordDelivery({ tenantId: webhook.tenantId, webhookId: webhook._id, event: payload.event, eventId, attempt, values: { status: "delivered", httpStatus: response.status, response: responseText.slice(0, 4000), error: "", deliveredAt: new Date(), nextRetryAt: null } });
     webhook.lastDeliveryAt = new Date();
     webhook.lastStatus = response.status;
@@ -119,14 +117,12 @@ export async function deliverWebhookJob(payload, job = {}) {
     await webhook.save();
   } catch (error) {
     const nextRetryAt = new Date(Date.now() + Math.min(1440, 2 ** Math.min(attempt, 9)) * 60 * 1000);
-    await recordDelivery({ tenantId: webhook.tenantId, webhookId: webhook._id, event: payload.event, eventId, attempt, values: { status: "failed", httpStatus: Number(error?.statusCode) || null, response: String(error?.responseText || "").slice(0, 4000), error: String(error?.message || error).slice(0, 2000), nextRetryAt } });
+    await recordDelivery({ tenantId: webhook.tenantId, webhookId: webhook.tenantId, event: payload.event, eventId, attempt, values: { status: "failed", httpStatus: Number(error?.statusCode) || null, response: String(error?.responseText || "").slice(0, 4000), error: String(error?.message || error).slice(0, 2000), nextRetryAt } });
     webhook.lastDeliveryAt = new Date();
     webhook.lastStatus = Number(error?.statusCode) || null;
     webhook.failureCount = Number(webhook.failureCount || 0) + 1;
     if (webhook.failureCount >= 8) webhook.active = false;
     await webhook.save();
     throw error;
-  } finally {
-    clearTimeout(timer);
   }
 }
