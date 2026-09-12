@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 import User from "../models/User.js";
 import Role from "../models/Role.js";
 import Staff from "../models/Staff.js";
+import Agent from "../models/Agent.js";
+import Customer from "../models/Customer.js";
 import { requireTenantId } from "../tenancy/context.js";
 
 const normalizeRole = (value) => String(value || "").toLowerCase().replace(/[\s-]/g, "_");
@@ -23,10 +25,18 @@ export const updateUserProfile = async (req, res, next) => {
     const duplicate = await User.findOne({ tenantId, _id: { $ne: user._id }, $or: [{ email }, { phone }] }).select("email phone").lean();
     if (duplicate) return res.status(409).json({ success: false, message: `Another user with this ${duplicate.email === email ? "email" : "phone number"} already exists for this company.` });
 
+    const [customerProfile, staffProfile, agentProfile] = await Promise.all([
+      Customer.findOne({ tenantId, user: user._id, isDeleted: { $ne: true } }).select("_id").lean(),
+      Staff.findOne({ tenantId, user: user._id, isDeleted: { $ne: true } }).select("_id").lean(),
+      Agent.findOne({ tenantId, user: user._id }).select("_id").lean(),
+    ]);
+    const customerOnly = Boolean(customerProfile && !staffProfile && !agentProfile);
+
     user.name = name; user.email = email; user.phone = phone;
     if (req.body?.role !== undefined) {
       const requested = normalizeRole(req.body.role);
-      const canonicalRole = roleMap[requested];
+      if (customerOnly && requested !== "customer") return res.status(409).json({ success: false, message: "This account is linked to a customer profile. Keep the role as Customer or convert the customer through the dedicated customer workflow." });
+      const canonicalRole = customerOnly ? "customer" : roleMap[requested];
       if (!canonicalRole) return res.status(400).json({ success: false, message: "Invalid role." });
       const roleDoc = await Role.findOne({ name: canonicalRole }).select("_id name");
       if (!roleDoc) return res.status(400).json({ success: false, message: "The selected role is not configured." });
