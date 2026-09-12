@@ -16,100 +16,24 @@ export default function UserManagement() {
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const debouncedSearch = useDebouncedValue(search, 350);
-
-  const query = useQuery({
-    queryKey: ["admin-users", debouncedSearch, page],
-    queryFn: () => getAdminUsers({ search: debouncedSearch, page, limit: 10 }),
-    placeholderData: (previous) => previous,
-    staleTime: 15_000,
-  });
+  const query = useQuery({ queryKey: ["admin-users", debouncedSearch, page], queryFn: () => getAdminUsers({ search: debouncedSearch, page, limit: 10 }), placeholderData: (previous) => previous, staleTime: 15_000 });
   const users = useMemo(() => Array.isArray(query.data?.data) ? query.data.data : [], [query.data]);
   const totalPages = Math.max(1, Number(query.data?.pages || query.data?.pagination?.pages || 1));
   const active = users.filter((u) => u.isActive).length;
   const disabled = users.length - active;
-
-  const refresh = () => {
-    queryClient.invalidateQueries({ queryKey: ["admin-users"] });
-    queryClient.invalidateQueries({ queryKey: ["staff", "admin"] });
-  };
+  const refresh = () => { queryClient.invalidateQueries({ queryKey: ["admin-users"] }); queryClient.invalidateQueries({ queryKey: ["staff", "admin"] }); };
   const statusMutation = useMutation({ mutationFn: updateUserStatus, onSuccess: () => { refresh(); toast.success("User status updated."); }, onError: (e) => toast.error(e?.response?.data?.message || "Could not update user.") });
   const saveMutation = useMutation({ mutationFn: modal?.mode === "edit" ? updateUserProfile : createStaffAccount, onSuccess: () => { setModal(null); setForm(emptyForm); refresh(); toast.success(modal?.mode === "edit" ? "User updated successfully." : "Account created successfully."); }, onError: (e) => toast.error(e?.response?.data?.message || "Could not save account.") });
   const deleteMutation = useMutation({ mutationFn: deleteUser, onSuccess: () => { refresh(); toast.success("User account deleted."); }, onError: (e) => toast.error(e?.response?.data?.message || "Could not delete user.") });
-
   const openCreate = () => { setForm(emptyForm); setModal({ mode: "create" }); };
   const openEdit = (user) => { setForm({ id: user._id, name: user.name || "", email: user.email || "", phone: user.phone || "", password: "", role: user.role || "customer" }); setModal({ mode: "edit" }); };
   const submit = (e) => { e.preventDefault(); const payload = { ...form }; if (!payload.password) delete payload.password; saveMutation.mutate(payload); };
-
+  const roleOptions = modal?.mode === "edit" && form.role === "customer" ? ["customer", ...roles] : roles;
+  const customerLocked = modal?.mode === "edit" && form.role === "customer";
   if (query.isLoading) return <div className="p-8">Loading users...</div>;
   if (query.isError) return <div className="p-8 text-red-600">Failed to load users. Please refresh and try again.</div>;
-
-  return (
-    <section className="min-h-full bg-slate-50 p-4 sm:p-6 lg:p-8">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <header className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
-          <div>
-            <div className="mb-2 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-emerald-700"><ShieldCheck size={16}/> Administration</div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-950">User & Staff Management</h1>
-            <p className="mt-1 max-w-2xl text-slate-500">Manage login identities, access roles and account lifecycle from one secure workspace.</p>
-          </div>
-          <button onClick={openCreate} className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white shadow-sm transition hover:bg-emerald-800"><UserPlus size={18}/> Create account</button>
-        </header>
-
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Metric icon={Users} label="Accounts shown" value={query.data?.total ?? users.length}/>
-          <Metric icon={UserRoundCheck} label="Active on this page" value={active}/>
-          <Metric icon={UserRoundX} label="Disabled on this page" value={disabled}/>
-        </div>
-
-        <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
-          <div className="flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-2.5 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100">
-            <Search className="shrink-0 text-slate-400" size={19}/>
-            <input type="search" autoComplete="off" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Search name, email, phone, role or status..." className="w-full bg-transparent outline-none"/>
-            {search && <button onClick={() => { setSearch(""); setPage(1); }} className="text-sm font-medium text-slate-500 hover:text-slate-900">Clear</button>}
-          </div>
-        </div>
-
-        <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[820px]">
-              <thead className="bg-slate-50"><tr>{["User","Role","Phone","Status","Actions"].map((h) => <th key={h} className={`whitespace-nowrap px-5 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500 ${h === "Actions" ? "text-right" : ""}`}>{h}</th>)}</tr></thead>
-              <tbody>
-                {users.map((user) => <tr key={user._id} className="border-t border-slate-100 transition hover:bg-slate-50/80">
-                  <td className="px-5 py-4"><div className="font-semibold text-slate-900">{user.name || "Unnamed user"}</div><div className="mt-0.5 text-sm text-slate-500">{user.email || "No email"}</div></td>
-                  <td className="px-5 py-4"><span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold capitalize text-slate-700">{labelRole(user.role)}</span></td>
-                  <td className="px-5 py-4 text-sm text-slate-600">{user.phone || "—"}</td>
-                  <td className="px-5 py-4"><span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${user.isActive ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>{user.isActive ? "Active" : "Disabled"}</span></td>
-                  <td className="px-5 py-4"><div className="flex justify-end gap-2">
-                    <button title="Edit user" onClick={() => openEdit(user)} className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-100"><Pencil size={17}/></button>
-                    <button title={user.isActive ? "Disable user" : "Enable user"} disabled={statusMutation.isPending} onClick={() => statusMutation.mutate({ id: user._id, status: user.isActive ? "disabled" : "active" })} className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-100 disabled:opacity-50">{user.isActive ? <UserX size={17}/> : <UserCheck size={17}/>}</button>
-                    <button title="Delete user" disabled={deleteMutation.isPending} onClick={() => window.confirm(`Delete ${user.name || "this user"}? Historical bookings and payments will be preserved.`) && deleteMutation.mutate(user._id)} className="rounded-lg border border-red-100 bg-red-50 p-2 text-red-600 hover:bg-red-100 disabled:opacity-50"><Trash2 size={17}/></button>
-                  </div></td>
-                </tr>)}
-                {!users.length && <tr><td colSpan="5" className="p-12 text-center text-slate-500">No users match your search.</td></tr>}
-              </tbody>
-            </table>
-          </div>
-          <div className="flex items-center justify-between border-t border-slate-100 px-5 py-4"><span className="text-sm text-slate-500">Page {page} of {totalPages} · {query.data?.total ?? users.length} total</span><div className="flex gap-2"><button disabled={page <= 1} onClick={() => setPage((p) => p - 1)} className="rounded-lg border px-3 py-2 text-sm disabled:opacity-40">Previous</button><button disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)} className="rounded-lg border px-3 py-2 text-sm disabled:opacity-40">Next</button></div></div>
-        </div>
-      </div>
-
-      {modal && <Modal title={modal.mode === "edit" ? "Edit user account" : "Create user account"} onClose={() => setModal(null)}>
-        <form onSubmit={submit} className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Full name"><input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} autoComplete="name" className="input"/></Field>
-            <Field label="Email address"><input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} autoComplete="email" className="input"/></Field>
-            <Field label="Phone number"><input required inputMode="numeric" pattern="[0-9]{10}" maxLength={10} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })} placeholder="0700000000" className="input"/></Field>
-            <Field label="Role"><select required value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} className="input">{roles.map((r) => <option key={r} value={r}>{labelRole(r)}</option>)}</select></Field>
-          </div>
-          {modal.mode === "create" && <Field label="Temporary password" hint="Minimum 12 characters, including an uppercase letter and a number."><input required minLength={12} type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} autoComplete="new-password" className="input"/></Field>}
-          {modal.mode === "edit" && <Field label="New password (optional)" hint="Leave blank to keep the current password. Password changes are handled separately by the secure account service."><input disabled type="password" value="" placeholder="Password reset workflow" className="input bg-slate-50"/></Field>}
-          <div className="flex justify-end gap-3 border-t pt-5"><button type="button" onClick={() => setModal(null)} className="rounded-xl border px-4 py-2.5 font-semibold">Cancel</button><button disabled={saveMutation.isPending} className="rounded-xl bg-emerald-700 px-5 py-2.5 font-semibold text-white disabled:opacity-50">{saveMutation.isPending ? "Saving..." : modal.mode === "edit" ? "Save changes" : "Create account"}</button></div>
-        </form>
-      </Modal>}
-    </section>
-  );
+  return <section className="min-h-full bg-slate-50 p-4 sm:p-6 lg:p-8"><div className="mx-auto max-w-7xl space-y-6"><header className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end"><div><div className="mb-2 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-emerald-700"><ShieldCheck size={16}/> Administration</div><h1 className="text-3xl font-bold tracking-tight text-slate-950">User & Staff Management</h1><p className="mt-1 max-w-2xl text-slate-500">Manage login identities, access roles and account lifecycle from one secure workspace.</p></div><button onClick={openCreate} className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white shadow-sm transition hover:bg-emerald-800"><UserPlus size={18}/> Create account</button></header><div className="grid gap-4 sm:grid-cols-3"><Metric icon={Users} label="Accounts shown" value={query.data?.total ?? users.length}/><Metric icon={UserRoundCheck} label="Active on this page" value={active}/><Metric icon={UserRoundX} label="Disabled on this page" value={disabled}/></div><div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200"><div className="flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-2.5 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100"><Search className="shrink-0 text-slate-400" size={19}/><input type="search" autoComplete="off" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Search name, email, phone, role or status..." className="w-full bg-transparent outline-none"/>{search && <button onClick={() => { setSearch(""); setPage(1); }} className="text-sm font-medium text-slate-500 hover:text-slate-900">Clear</button>}</div></div><div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200"><div className="overflow-x-auto"><table className="w-full min-w-[820px]"><thead className="bg-slate-50"><tr>{["User","Role","Phone","Status","Actions"].map((h) => <th key={h} className={`whitespace-nowrap px-5 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500 ${h === "Actions" ? "text-right" : ""}`}>{h}</th>)}</tr></thead><tbody>{users.map((user) => <tr key={user._id} className="border-t border-slate-100 transition hover:bg-slate-50/80"><td className="px-5 py-4"><div className="font-semibold text-slate-900">{user.name || "Unnamed user"}</div><div className="mt-0.5 text-sm text-slate-500">{user.email || "No email"}</div></td><td className="px-5 py-4"><span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${String(user.role).toLowerCase() === "customer" ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-700"}`}>{labelRole(user.role)}</span></td><td className="px-5 py-4 text-sm text-slate-600">{user.phone || "—"}</td><td className="px-5 py-4"><span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${user.isActive ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>{user.isActive ? "Active" : "Disabled"}</span></td><td className="px-5 py-4"><div className="flex justify-end gap-2"><button title="Edit user" onClick={() => openEdit(user)} className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-100"><Pencil size={17}/></button><button title={user.isActive ? "Disable user" : "Enable user"} disabled={statusMutation.isPending} onClick={() => statusMutation.mutate({ id: user._id, status: user.isActive ? "disabled" : "active" })} className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-100 disabled:opacity-50">{user.isActive ? <UserX size={17}/> : <UserCheck size={17}/>}</button><button title="Delete user" disabled={deleteMutation.isPending} onClick={() => window.confirm(`Delete ${user.name || "this user"}? Historical bookings and payments will be preserved.`) && deleteMutation.mutate(user._id)} className="rounded-lg border border-red-100 bg-red-50 p-2 text-red-600 hover:bg-red-100 disabled:opacity-50"><Trash2 size={17}/></button></div></td></tr>)}{!users.length && <tr><td colSpan="5" className="p-12 text-center text-slate-500">No users match your search.</td></tr>}</tbody></table></div><div className="flex items-center justify-between border-t border-slate-100 px-5 py-4"><span className="text-sm text-slate-500">Page {page} of {totalPages} · {query.data?.total ?? users.length} total</span><div className="flex gap-2"><button disabled={page <= 1} onClick={() => setPage((p) => p - 1)} className="rounded-lg border px-3 py-2 text-sm disabled:opacity-40">Previous</button><button disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)} className="rounded-lg border px-3 py-2 text-sm disabled:opacity-40">Next</button></div></div></div></div>{modal && <Modal title={modal.mode === "edit" ? "Edit user account" : "Create user account"} onClose={() => setModal(null)}><form onSubmit={submit} className="space-y-4"><div className="grid gap-4 sm:grid-cols-2"><Field label="Full name"><input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} autoComplete="name" className="input"/></Field><Field label="Email address"><input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} autoComplete="email" className="input"/></Field><Field label="Phone number"><input required inputMode="numeric" pattern="[0-9]{10}" maxLength={10} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })} placeholder="0700000000" className="input"/></Field><Field label="Role"><select required disabled={customerLocked} value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} className={`input ${customerLocked ? "cursor-not-allowed bg-slate-100 text-slate-600" : ""}`}>{roleOptions.map((r) => <option key={r} value={r}>{labelRole(r)}</option>)}</select>{customerLocked && <span className="mt-1 block text-xs text-blue-700">Customer role is locked because this account is linked to a CRM customer profile.</span>}</Field></div>{modal.mode === "create" && <Field label="Temporary password" hint="Minimum 12 characters, including an uppercase letter and a number."><input required minLength={12} type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} autoComplete="new-password" className="input"/></Field>}{modal.mode === "edit" && <Field label="New password (optional)" hint="Leave blank to keep the current password. Password changes are handled separately by the secure account service."><input disabled type="password" value="" placeholder="Password reset workflow" className="input bg-slate-50"/></Field>}<div className="flex justify-end gap-3 border-t pt-5"><button type="button" onClick={() => setModal(null)} className="rounded-xl border px-4 py-2.5 font-semibold">Cancel</button><button disabled={saveMutation.isPending} className="rounded-xl bg-emerald-700 px-5 py-2.5 font-semibold text-white disabled:opacity-50">{saveMutation.isPending ? "Saving..." : modal.mode === "edit" ? "Save changes" : "Create account"}</button></div></form></Modal>}</section>;
 }
-
 function Metric({ icon: Icon, label, value }) { return <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200"><Icon size={19} className="text-emerald-700"/><p className="mt-3 text-sm text-slate-500">{label}</p><p className="mt-1 text-3xl font-bold tracking-tight text-slate-950">{value}</p></div>; }
 function Field({ label, hint, children }) { return <label className="block"><span className="mb-1.5 block text-sm font-semibold text-slate-700">{label}</span>{children}{hint && <span className="mt-1 block text-xs text-slate-500">{hint}</span>}</label>; }
 function Modal({ title, onClose, children }) { return <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm"><div className="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl"><div className="flex items-center justify-between border-b px-6 py-5"><div><h2 className="text-xl font-bold text-slate-950">{title}</h2><p className="mt-0.5 text-sm text-slate-500">Changes apply only to the current company.</p></div><button onClick={onClose} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"><X size={20}/></button></div><div className="max-h-[75vh] overflow-y-auto p-6">{children}</div></div></div>; }
