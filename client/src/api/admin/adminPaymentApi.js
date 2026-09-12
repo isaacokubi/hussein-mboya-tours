@@ -19,12 +19,23 @@ const mpesaCallbackReceipt = (payment) => {
 
 const normalizePayment = (payment = {}) => {
   const booking = payment.booking && typeof payment.booking === "object" ? payment.booking : null;
+  const hospitalityBooking = payment.hospitalityBooking && typeof payment.hospitalityBooking === "object"
+    ? payment.hospitalityBooking
+    : null;
+
   const bookingNumber = firstValue(
     booking?.bookingNumber,
     booking?.reference,
+    hospitalityBooking?.bookingNumber,
+    hospitalityBooking?.bookingReference,
+    hospitalityBooking?.reference,
+    hospitalityBooking?.confirmationNumber,
     payment.bookingNumber,
-    payment.bookingReference
+    payment.bookingReference,
+    payment.hospitalityBookingNumber,
+    payment.hospitalityBookingReference
   );
+
   const receiptNumber = firstValue(
     payment.mpesaReceiptNumber,
     payment.mpesaReceipt,
@@ -35,14 +46,21 @@ const normalizePayment = (payment = {}) => {
     mpesaCallbackReceipt(payment)
   );
 
+  const bookingId = booking?._id || hospitalityBooking?._id || payment.booking || payment.hospitalityBooking;
+
   return {
     ...payment,
     bookingNumber,
     receiptNumber,
-    bookingDisplay: bookingNumber || (booking?._id ? `Booking ${String(booking._id).slice(-8).toUpperCase()}` : ""),
+    bookingDisplay: bookingNumber || (bookingId ? `Booking ${String(bookingId).slice(-8).toUpperCase()}` : ""),
     receiptDisplay: receiptNumber,
     tourName: firstValue(booking?.tour?.title, booking?.tour?.name, payment.tourName),
-    paymentReference: firstValue(payment.transactionReference, payment.transactionId, payment.mpesaReceiptNumber),
+    paymentReference: firstValue(
+      payment.transactionReference,
+      payment.transactionId,
+      payment.mpesaReceiptNumber,
+      payment.refundReference
+    ),
   };
 };
 
