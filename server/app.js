@@ -67,27 +67,21 @@ const globalLimiter = rateLimit({
 app.use(globalLimiter);
 
 const configuredOrigins = (env.CLIENT_ORIGINS || env.CLIENT_URL || "").split(",").map((origin) => origin.trim()).filter(Boolean);
-const allowedOrigins = ["http://localhost:5173", "http://127.0.0.1:5173", ...configuredOrigins].filter((origin, index, list) => list.indexOf(origin) === index);
+const allowedOrigins = [
+  ...(process.env.NODE_ENV === "production" ? [] : ["http://localhost:5173", "http://127.0.0.1:5173"]),
+  ...configuredOrigins,
+].filter((origin, index, list) => list.indexOf(origin) === index);
+
 const corsOptions = {
-  origin: (origin, callback) => !origin || allowedOrigins.includes(origin) ? callback(null, true) : callback(new Error(`CORS blocked origin: ${origin}`)),
+  origin: (origin, callback) => !origin || allowedOrigins.includes(origin)
+    ? callback(null, true)
+    : callback(new Error(`CORS blocked origin: ${origin}`)),
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin", "X-Tenant-ID", "X-Tenant-Slug", "X-Tenant-Key", "X-API-Key", "X-Integration-Key", "X-Public-Integration-Key", "Idempotency-Key", "X-Request-ID"],
 };
 
-app.use((req, res, next) => {
-  if (String(req.path || "").startsWith("/api/integrations/")) {
-    const origin = req.get("Origin");
-    if (origin) res.setHeader("Access-Control-Allow-Origin", origin);
-    res.setHeader("Vary", "Origin");
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-    res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization,X-Requested-With,Accept,Origin,X-Tenant-ID,X-Tenant-Slug,X-Tenant-Key,X-API-Key,X-Integration-Key,X-Public-Integration-Key,Idempotency-Key,X-Request-ID");
-    if (req.method === "OPTIONS") return res.sendStatus(204);
-    return next();
-  }
-  return cors(corsOptions)(req, res, next);
-});
+app.use(cors(corsOptions));
 app.use(compression());
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
