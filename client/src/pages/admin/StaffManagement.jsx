@@ -7,6 +7,7 @@ import { createStaff, updateStaff, updateStaffStatus, deleteStaff } from "../../
 
 const emptyForm = { name: "", email: "", phone: "", position: "guide", role: "guide", department: "", employeeNumber: "", employmentType: "full_time", availability: "available", notes: "" };
 const positionLabels = { admin: "Administrator", tour_manager: "Tour Manager", guide: "Guide", driver: "Driver", support: "Support" };
+const positionTone = { admin: "bg-violet-100 text-violet-700 ring-violet-200", tour_manager: "bg-indigo-100 text-indigo-700 ring-indigo-200", guide: "bg-cyan-100 text-cyan-700 ring-cyan-200", driver: "bg-orange-100 text-orange-700 ring-orange-200", support: "bg-sky-100 text-sky-700 ring-sky-200" };
 
 export default function StaffManagement() {
   const qc = useQueryClient();
@@ -15,240 +16,25 @@ export default function StaffManagement() {
   const [modal, setModal] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [form, setForm] = useState(emptyForm);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setSearch(searchInput), 350);
-    return () => clearTimeout(timer);
-  }, [searchInput]);
-
-  // Staff is the operational personnel collection. User/Agent accounts are not
-  // duplicated into this list; they have their own management modules.
-  const staffQuery = useQuery({
-    queryKey: ["staff", "admin", search],
-    queryFn: async () => (await api.get("/staff", { params: { includeInactive: true, limit: 100, search } })).data,
-    staleTime: 15_000,
-  });
-
-  const staff = useMemo(
-    () => Array.isArray(staffQuery.data?.data) ? staffQuery.data.data : [],
-    [staffQuery.data]
-  );
-
+  useEffect(() => { const timer = setTimeout(() => setSearch(searchInput), 350); return () => clearTimeout(timer); }, [searchInput]);
+  const staffQuery = useQuery({ queryKey: ["staff", "admin", search], queryFn: async () => (await api.get("/staff", { params: { includeInactive: true, limit: 100, search } })).data, staleTime: 15_000 });
+  const staff = useMemo(() => Array.isArray(staffQuery.data?.data) ? staffQuery.data.data : [], [staffQuery.data]);
   const active = staff.filter((member) => member.isActive !== false && member.status === "active").length;
-
-  const refresh = () => {
-    qc.invalidateQueries({ queryKey: ["staff", "admin"] });
-    qc.invalidateQueries({ queryKey: ["admin-users"] });
-  };
-
-  const saveMutation = useMutation({
-    mutationFn: modal?.mode === "edit" ? updateStaff : createStaff,
-    onSuccess: () => {
-      setModal(null);
-      setForm(emptyForm);
-      refresh();
-      toast.success(modal?.mode === "edit" ? "Staff member updated." : "Staff member created.");
-    },
-    onError: (e) => toast.error(e?.response?.data?.message || "Could not save staff member."),
-  });
-
-  const statusMutation = useMutation({
-    mutationFn: updateStaffStatus,
-    onSuccess: () => {
-      refresh();
-      toast.success("Staff status updated.");
-    },
-    onError: (e) => toast.error(e?.response?.data?.message || "Could not update status."),
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: deleteStaff,
-    onSuccess: () => {
-      setDeleteTarget(null);
-      refresh();
-      toast.success("Staff member permanently deleted.");
-    },
-    onError: (e) => toast.error(e?.response?.data?.message || "Could not permanently delete staff member."),
-  });
-
-  const openCreate = () => {
-    setForm(emptyForm);
-    setModal({ mode: "create" });
-  };
-
-  const openEdit = (member) => {
-    setForm({
-      id: member._id,
-      name: member.name || "",
-      email: member.email || "",
-      phone: member.phone || "",
-      position: member.position || "guide",
-      role: member.role || "guide",
-      department: member.department || "",
-      employeeNumber: member.employeeNumber || "",
-      employmentType: member.employmentType || "full_time",
-      availability: member.availability || "available",
-      notes: member.notes || "",
-    });
-    setModal({ mode: "edit" });
-  };
-
-  if (staffQuery.isLoading) return <div className="p-8">Loading staff...</div>;
-  if (staffQuery.isError) return <div className="p-8 text-red-600">Failed to load staff. Please refresh and try again.</div>;
-
-  return (
-    <section className="min-h-full bg-slate-50 p-4 sm:p-6 lg:p-8">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <header className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
-          <div>
-            <div className="mb-2 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-emerald-700">
-              <BriefcaseBusiness size={16} /> People operations
-            </div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-950">Staff Management</h1>
-            <p className="mt-1 max-w-2xl text-slate-500">
-              Manage operational staff profiles, roles, availability and employment records. User accounts and agents are managed in their dedicated modules and are not duplicated here.
-            </p>
-          </div>
-          <button onClick={openCreate} className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white shadow-sm transition hover:bg-emerald-800">
-            <UserPlus size={18} /> Add staff member
-          </button>
-        </header>
-
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Metric icon={Users} label="Total staff" value={staff.length} />
-          <Metric icon={UserRoundCheck} label="Active staff" value={active} />
-          <Metric icon={UserRoundX} label="Inactive staff" value={staff.length - active} />
-        </div>
-
-        <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
-          <div className="flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-2.5 transition focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100">
-            <Search size={19} className="shrink-0 text-slate-400" />
-            <input
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Search staff name, email, phone, position or status..."
-              className="w-full bg-transparent outline-none"
-            />
-            {search && (
-              <button onClick={() => { setSearchInput(""); setSearch(""); }} className="text-sm font-medium text-slate-500 hover:text-slate-900">
-                Clear
-              </button>
-            )}
-          </div>
-        </div>
-
-        <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[960px]">
-              <thead className="bg-slate-50">
-                <tr>
-                  {["Staff member", "Position / Role", "Availability", "Status", "Actions"].map((heading) => (
-                    <th key={heading} className={`whitespace-nowrap px-5 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500 ${heading === "Actions" ? "text-right" : ""}`}>
-                      {heading}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {staff.map((member) => {
-                  const on = member.isActive !== false && member.status === "active";
-                  return (
-                    <tr key={member._id} className="border-t border-slate-100 transition hover:bg-slate-50/80">
-                      <td className="px-5 py-4">
-                        <div className="font-semibold text-slate-900">{member.name || "Unnamed staff"}</div>
-                        <div className="text-sm text-slate-500">{member.email || "No email"} · {member.phone || "No phone"}</div>
-                      </td>
-                      <td className="px-5 py-4">
-                        <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold capitalize text-slate-700">
-                          {positionLabels[member.position] || String(member.position || member.role || "Unassigned").replace(/_/g, " ")}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4 text-sm capitalize text-slate-600">{member.availability || "—"}</td>
-                      <td className="px-5 py-4">
-                        <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${on ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
-                          {on ? "Active" : "Inactive"}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="flex justify-end gap-2">
-                          <button disabled={deleteMutation.isPending || statusMutation.isPending} title="Edit staff" onClick={() => openEdit(member)} className="rounded-lg border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50">
-                            <Pencil size={17} />
-                          </button>
-                          <button disabled={deleteMutation.isPending || statusMutation.isPending} title={on ? "Disable staff" : "Enable staff"} onClick={() => statusMutation.mutate({ id: member._id, active: !on })} className="rounded-lg border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50">
-                            {on ? <UserX size={17} /> : <UserCheck size={17} />}
-                          </button>
-                          <button disabled={deleteMutation.isPending} title="Permanently delete staff record" onClick={() => setDeleteTarget(member)} className="rounded-lg border border-red-100 bg-red-50 p-2 text-red-600 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50">
-                            <Trash2 size={17} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {!staff.length && (
-                  <tr>
-                    <td colSpan="5" className="p-12 text-center">
-                      <div className="font-semibold text-slate-700">No staff records found</div>
-                      <div className="mt-1 text-sm text-slate-500">Try a different search or add a new staff member.</div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      {modal && (
-        <Modal title={modal.mode === "edit" ? "Edit staff member" : "Add staff member"} onClose={() => setModal(null)}>
-          <form onSubmit={(e) => { e.preventDefault(); saveMutation.mutate(form); }} className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Full name"><input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input" /></Field>
-              <Field label="Email address"><input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="input" /></Field>
-              <Field label="Phone number"><input required value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "").slice(0, 13) })} placeholder="0700000000 or +254..." className="input" /></Field>
-              <Field label="Position"><select required value={form.position} onChange={(e) => { const position = e.target.value; setForm({ ...form, position, role: position === "tour_manager" ? "manager" : position }); }} className="input">{Object.entries(positionLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
-              <Field label="Department"><input value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} placeholder="Operations, Finance, Tours..." className="input" /></Field>
-              <Field label="Employee number"><input value={form.employeeNumber} onChange={(e) => setForm({ ...form, employeeNumber: e.target.value })} placeholder="Optional internal ID" className="input" /></Field>
-              <Field label="Employment type"><select value={form.employmentType} onChange={(e) => setForm({ ...form, employmentType: e.target.value })} className="input"><option value="full_time">Full time</option><option value="part_time">Part time</option><option value="contract">Contract</option><option value="temporary">Temporary</option></select></Field>
-              <Field label="Availability"><select value={form.availability} onChange={(e) => setForm({ ...form, availability: e.target.value })} className="input"><option value="available">Available</option><option value="busy">Busy</option><option value="leave">On leave</option><option value="offline">Offline</option></select></Field>
-            </div>
-            <Field label="Notes"><textarea rows="3" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="input" placeholder="Internal operational notes..." /></Field>
-            <div className="flex justify-end gap-3 border-t pt-5">
-              <button type="button" onClick={() => setModal(null)} className="rounded-xl border px-4 py-2.5 font-semibold">Cancel</button>
-              <button disabled={saveMutation.isPending} className="rounded-xl bg-emerald-700 px-5 py-2.5 font-semibold text-white disabled:opacity-50">{saveMutation.isPending ? "Saving..." : modal.mode === "edit" ? "Save changes" : "Create staff"}</button>
-            </div>
-          </form>
-        </Modal>
-      )}
-
-      {deleteTarget && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200">
-            <div className="p-6">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-100 text-red-600"><AlertTriangle size={22} /></div>
-              <h2 className="mt-4 text-xl font-bold text-slate-950">Delete staff record permanently?</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-600">You are about to permanently delete <strong>{deleteTarget.name || "this staff member"}</strong>. This removes the Staff profile from the database and cannot be undone.</p>
-              <p className="mt-2 text-sm leading-6 text-slate-500">The linked login account, if any, is not deleted. Manage that account separately from Users.</p>
-            </div>
-            <div className="flex justify-end gap-3 border-t bg-slate-50 px-6 py-4">
-              <button disabled={deleteMutation.isPending} onClick={() => setDeleteTarget(null)} className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">Cancel</button>
-              <button disabled={deleteMutation.isPending} onClick={() => deleteMutation.mutate(deleteTarget._id)} className="rounded-xl bg-red-600 px-4 py-2.5 font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50">{deleteMutation.isPending ? "Deleting..." : "Delete permanently"}</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </section>
-  );
+  const refresh = () => { qc.invalidateQueries({ queryKey: ["staff", "admin"] }); qc.invalidateQueries({ queryKey: ["admin-users"] }); };
+  const saveMutation = useMutation({ mutationFn: modal?.mode === "edit" ? updateStaff : createStaff, onSuccess: () => { setModal(null); setForm(emptyForm); refresh(); toast.success(modal?.mode === "edit" ? "Staff member updated." : "Staff member created."); }, onError: (e) => toast.error(e?.response?.data?.message || "Could not save staff member.") });
+  const statusMutation = useMutation({ mutationFn: updateStaffStatus, onSuccess: () => { refresh(); toast.success("Staff status updated."); }, onError: (e) => toast.error(e?.response?.data?.message || "Could not update status.") });
+  const deleteMutation = useMutation({ mutationFn: deleteStaff, onSuccess: () => { setDeleteTarget(null); refresh(); toast.success("Staff member permanently deleted."); }, onError: (e) => toast.error(e?.response?.data?.message || "Could not permanently delete staff member.") });
+  const openCreate = () => { setForm(emptyForm); setModal({ mode: "create" }); };
+  const openEdit = (member) => { setForm({ id: member._id, name: member.name || "", email: member.email || "", phone: member.phone || "", position: member.position || "guide", role: member.role || "guide", department: member.department || "", employeeNumber: member.employeeNumber || "", employmentType: member.employmentType || "full_time", availability: member.availability || "available", notes: member.notes || "" }); setModal({ mode: "edit" }); };
+  if (staffQuery.isLoading) return <div className="min-h-full bg-gradient-to-br from-slate-100 via-sky-50 to-indigo-100 p-8 text-slate-600">Loading staff...</div>;
+  if (staffQuery.isError) return <div className="min-h-full bg-gradient-to-br from-slate-100 via-rose-50 to-indigo-100 p-8 text-red-600">Failed to load staff. Please refresh and try again.</div>;
+  return <section className="min-h-full bg-gradient-to-br from-slate-100 via-sky-50 to-indigo-100 p-4 sm:p-6 lg:p-8"><div className="mx-auto max-w-7xl space-y-6">
+    <header className="overflow-hidden rounded-3xl bg-gradient-to-r from-sky-700 via-indigo-700 to-violet-700 p-6 text-white shadow-xl sm:p-8"><div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-center"><div><div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-sky-100"><BriefcaseBusiness size={17}/> People operations</div><h1 className="text-2xl font-black tracking-tight sm:text-3xl">Staff Management</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-indigo-100">Manage operational staff profiles, roles, availability and employment records. User accounts and agents remain in their dedicated modules.</p></div><button type="button" onClick={openCreate} className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 font-bold text-indigo-700 shadow-lg transition hover:-translate-y-0.5 hover:bg-sky-50"><UserPlus size={18}/> Add staff member</button></div></header>
+    <div className="grid gap-4 sm:grid-cols-3"><Metric icon={Users} label="Total staff" value={staff.length} tone="sky"/><Metric icon={UserRoundCheck} label="Active staff" value={active} tone="emerald"/><Metric icon={UserRoundX} label="Inactive staff" value={staff.length - active} tone="rose"/></div>
+    <div className="rounded-2xl bg-white/95 p-4 shadow-lg ring-1 ring-indigo-100"><div className="flex items-center gap-3 rounded-xl border-2 border-slate-200 bg-slate-50 px-4 py-3 focus-within:border-indigo-500 focus-within:bg-white focus-within:ring-4 focus-within:ring-indigo-100"><Search size={19} className="shrink-0 text-indigo-500"/><input value={searchInput} onChange={(e) => setSearchInput(e.target.value)} placeholder="Search staff name, email, phone, position or status..." className="w-full bg-transparent text-slate-800 outline-none"/>{search && <button type="button" onClick={() => { setSearchInput(""); setSearch(""); }} className="text-sm font-bold text-indigo-600 hover:text-indigo-800">Clear</button>}</div></div>
+    <div className="overflow-hidden rounded-3xl bg-white shadow-xl ring-1 ring-indigo-100"><div className="overflow-x-auto"><table className="w-full min-w-[960px]"><thead className="bg-gradient-to-r from-slate-100 via-sky-50 to-indigo-100"><tr>{["Staff member","Position / Role","Availability","Status","Actions"].map((heading) => <th key={heading} className={`whitespace-nowrap px-5 py-4 text-left text-xs font-black uppercase tracking-wider text-indigo-700 ${heading === "Actions" ? "text-right" : ""}`}>{heading}</th>)}</tr></thead><tbody>{staff.map((member, index) => { const on = member.isActive !== false && member.status === "active"; const tone = positionTone[member.position] || "bg-slate-100 text-slate-700 ring-slate-200"; return <tr key={member._id} className={`border-t border-slate-100 transition hover:bg-sky-50/70 ${index % 2 ? "bg-slate-50/40" : "bg-white"}`}><td className="px-5 py-4"><div className="font-bold text-slate-900">{member.name || "Unnamed staff"}</div><div className="mt-0.5 text-sm text-slate-500">{member.email || "No email"} · {member.phone || "No phone"}</div></td><td className="px-5 py-4"><span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ring-1 ${tone}`}>{positionLabels[member.position] || String(member.position || member.role || "Unassigned").replace(/_/g, " ")}</span></td><td className="px-5 py-4"><span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${member.availability === "available" ? "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200" : member.availability === "busy" ? "bg-amber-100 text-amber-700 ring-1 ring-amber-200" : "bg-slate-100 text-slate-600 ring-1 ring-slate-200"}`}>{member.availability || "—"}</span></td><td className="px-5 py-4"><span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ${on ? "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200" : "bg-rose-100 text-rose-700 ring-1 ring-rose-200"}`}>{on ? "Active" : "Inactive"}</span></td><td className="px-5 py-4"><div className="flex justify-end gap-2"><button type="button" disabled={deleteMutation.isPending || statusMutation.isPending} title="Edit staff" onClick={() => openEdit(member)} className="rounded-xl border border-indigo-200 bg-indigo-50 p-2.5 text-indigo-700 shadow-sm transition hover:bg-indigo-100 disabled:opacity-50"><Pencil size={17}/></button><button type="button" disabled={deleteMutation.isPending || statusMutation.isPending} title={on ? "Disable staff" : "Enable staff"} onClick={() => statusMutation.mutate({ id: member._id, active: !on })} className="rounded-xl border border-emerald-200 bg-emerald-50 p-2.5 text-emerald-700 shadow-sm transition hover:bg-emerald-100 disabled:opacity-50">{on ? <UserX size={17}/> : <UserCheck size={17}/>}</button><button type="button" disabled={deleteMutation.isPending} title="Permanently delete staff record" onClick={() => setDeleteTarget(member)} className="rounded-xl border border-rose-200 bg-rose-50 p-2.5 text-rose-600 shadow-sm transition hover:bg-rose-100 disabled:opacity-50"><Trash2 size={17}/></button></div></td></tr>; })}{!staff.length && <tr><td colSpan="5" className="p-12 text-center text-slate-500">No staff records found. Try another search or add a staff member.</td></tr>}</tbody></table></div></div>
+  </div>{modal && <Modal title={modal.mode === "edit" ? "Edit staff member" : "Add staff member"} onClose={() => setModal(null)}><form onSubmit={(e) => { e.preventDefault(); saveMutation.mutate(form); }} className="space-y-4"><div className="grid gap-4 sm:grid-cols-2"><Field label="Full name"><input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input" /></Field><Field label="Email address"><input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="input" /></Field><Field label="Phone number"><input required value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "").slice(0, 13) })} placeholder="0700000000 or +254..." className="input" /></Field><Field label="Position"><select required value={form.position} onChange={(e) => { const position = e.target.value; setForm({ ...form, position, role: position === "tour_manager" ? "manager" : position }); }} className="input">{Object.entries(positionLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field><Field label="Department"><input value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} placeholder="Operations, Finance, Tours..." className="input" /></Field><Field label="Employee number"><input value={form.employeeNumber} onChange={(e) => setForm({ ...form, employeeNumber: e.target.value })} placeholder="Optional internal ID" className="input" /></Field><Field label="Employment type"><select value={form.employmentType} onChange={(e) => setForm({ ...form, employmentType: e.target.value })} className="input"><option value="full_time">Full time</option><option value="part_time">Part time</option><option value="contract">Contract</option><option value="temporary">Temporary</option></select></Field><Field label="Availability"><select value={form.availability} onChange={(e) => setForm({ ...form, availability: e.target.value })} className="input"><option value="available">Available</option><option value="busy">Busy</option><option value="leave">On leave</option><option value="offline">Offline</option></select></Field></div><Field label="Notes"><textarea rows="3" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="input" placeholder="Internal operational notes..." /></Field><div className="flex justify-end gap-3 border-t pt-5"><button type="button" onClick={() => setModal(null)} className="rounded-xl border border-slate-200 px-4 py-2.5 font-semibold text-slate-700 hover:bg-slate-50">Cancel</button><button disabled={saveMutation.isPending} className="rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2.5 font-bold text-white shadow-lg disabled:opacity-50">{saveMutation.isPending ? "Saving..." : modal.mode === "edit" ? "Save changes" : "Create staff"}</button></div></form></Modal>}{deleteTarget && <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"><div className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-rose-200"><div className="bg-gradient-to-r from-rose-600 to-orange-500 p-6 text-white"><div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15"><AlertTriangle size={22}/></div><h2 className="mt-4 text-xl font-black">Delete staff record permanently?</h2></div><div className="p-6"><p className="text-sm leading-6 text-slate-600">You are about to permanently delete <strong>{deleteTarget.name || "this staff member"}</strong>. This removes the Staff profile and cannot be undone.</p><p className="mt-2 text-sm leading-6 text-slate-500">The linked login account, if any, is not deleted. Manage that account separately from Users.</p></div><div className="flex justify-end gap-3 border-t bg-slate-50 px-6 py-4"><button type="button" disabled={deleteMutation.isPending} onClick={() => setDeleteTarget(null)} className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">Cancel</button><button type="button" disabled={deleteMutation.isPending} onClick={() => deleteMutation.mutate(deleteTarget._id)} className="rounded-xl bg-rose-600 px-4 py-2.5 font-bold text-white hover:bg-rose-700 disabled:opacity-50">{deleteMutation.isPending ? "Deleting..." : "Delete permanently"}</button></div></div></div>}</section>;
 }
-
-function Metric({ icon: Icon, label, value }) {
-  return <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200"><Icon size={19} className="text-emerald-700" /><p className="mt-3 text-sm text-slate-500">{label}</p><p className="mt-1 text-3xl font-bold tracking-tight text-slate-950">{value}</p></div>;
-}
-
-function Field({ label, children }) {
-  return <label className="block"><span className="mb-1.5 block text-sm font-semibold text-slate-700">{label}</span>{children}</label>;
-}
-
-function Modal({ title, onClose, children }) {
-  return <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm"><div className="w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl"><div className="flex items-center justify-between border-b px-6 py-5"><div><h2 className="text-xl font-bold text-slate-950">{title}</h2><p className="mt-0.5 text-sm text-slate-500">Duplicate email and phone values are rejected server-side per company.</p></div><button onClick={onClose} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"><X size={20} /></button></div><div className="max-h-[78vh] overflow-y-auto p-6">{children}</div></div></div>;
-}
+function Metric({ icon: Icon, label, value, tone }) { const tones = { sky: "bg-gradient-to-br from-sky-500 to-indigo-600", emerald: "bg-gradient-to-br from-emerald-500 to-teal-600", rose: "bg-gradient-to-br from-rose-500 to-fuchsia-600" }; return <div className={`relative overflow-hidden rounded-2xl p-5 text-white shadow-xl ${tones[tone] || tones.sky}`}><div className="absolute -right-5 -top-5 h-20 w-20 rounded-full bg-white/10"/><Icon size={20}/><p className="mt-3 text-sm font-semibold text-white/80">{label}</p><p className="mt-1 text-3xl font-black">{value}</p></div>; }
+function Field({ label, children }) { return <label className="block"><span className="mb-1.5 block text-sm font-bold text-slate-700">{label}</span>{children}</label>; }
+function Modal({ title, onClose, children }) { return <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"><div className="w-full max-w-3xl overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-indigo-200"><div className="flex items-center justify-between bg-gradient-to-r from-indigo-700 to-violet-700 px-6 py-5 text-white"><div><h2 className="text-xl font-black">{title}</h2><p className="mt-0.5 text-sm text-indigo-100">Changes apply only to the current company.</p></div><button type="button" onClick={onClose} className="rounded-xl bg-white/10 p-2 hover:bg-white/20"><X size={20}/></button></div><div className="max-h-[75vh] overflow-y-auto p-6">{children}</div></div></div>; }
