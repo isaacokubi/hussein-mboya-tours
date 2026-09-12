@@ -8,8 +8,10 @@ const statusTone = (status) => {
   return "degraded";
 };
 
+const normalizeHealth = (payload) => payload?.system || payload?.data?.system || payload?.data || payload || {};
+
 export default function SystemHealth() {
-  const { data, isLoading, isError, dataUpdatedAt, refetch } = useQuery({
+  const { data, isLoading, isError, dataUpdatedAt, refetch, isFetching } = useQuery({
     queryKey: ["admin-system-health"],
     queryFn: getSystemHealth,
     staleTime: 15000,
@@ -17,15 +19,18 @@ export default function SystemHealth() {
     retry: 1,
   });
 
-  const databaseStatus = isLoading ? "Checking" : isError ? "Unavailable" : data?.database === "connected" ? "Online" : "Offline";
+  const health = normalizeHealth(data);
+  const databaseStatus = isLoading ? "Checking" : isError ? "Unavailable" : health.database === "connected" ? "Online" : "Offline";
   const apiStatus = isError ? "Unavailable" : "Online";
+  const cloudinaryStatus = isLoading ? "Checking" : isError ? "Unavailable" : health.cloudinary === "connected" ? "Online" : "Unavailable";
+  const mpesaStatus = isLoading ? "Checking" : isError ? "Unavailable" : health.mpesa === "connected" ? "Online" : "Unavailable";
   const systems = [
     { name: "Database", status: databaseStatus },
     { name: "API Server", status: apiStatus },
-    { name: "Cloudinary", status: "Not checked" },
-    { name: "M-Pesa Gateway", status: "Not checked" },
+    { name: "Cloudinary", status: cloudinaryStatus },
+    { name: "M-Pesa Gateway", status: mpesaStatus },
   ];
-  const allCoreHealthy = !isLoading && !isError && databaseStatus === "Online";
+  const allCoreHealthy = !isLoading && !isError && [databaseStatus, apiStatus, cloudinaryStatus, mpesaStatus].every((status) => status === "Online");
 
   return (
     <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
@@ -38,8 +43,8 @@ export default function SystemHealth() {
           <span className={`rounded-full px-3 py-1 text-xs font-semibold ${allCoreHealthy ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
             {isLoading ? "Checking systems" : allCoreHealthy ? "Core systems operational" : "Attention required"}
           </span>
-          <button type="button" onClick={() => refetch()} className="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50">
-            Refresh
+          <button type="button" disabled={isFetching} onClick={() => refetch()} className="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50">
+            {isFetching ? "Refreshing..." : "Refresh"}
           </button>
         </div>
       </div>
@@ -57,6 +62,8 @@ export default function SystemHealth() {
                 </span>
               </div>
               <p className={`mt-2 text-sm font-medium ${healthy ? "text-emerald-700" : tone === "checking" ? "text-amber-700" : "text-slate-500"}`}>{system.status}</p>
+              {system.name === "M-Pesa Gateway" && health.services?.mpesa?.environment && <p className="mt-1 text-xs text-slate-400">Environment: {health.services.mpesa.environment}</p>}
+              {system.name === "Cloudinary" && health.services?.cloudinary?.message && <p className="mt-1 text-xs text-slate-400">{health.services.cloudinary.message}</p>}
             </div>
           );
         })}
