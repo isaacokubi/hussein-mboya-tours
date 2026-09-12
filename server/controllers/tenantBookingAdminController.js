@@ -59,7 +59,7 @@ export const getAllBookings = async (req, res, next) => {
     const tenantFilter = mergeTenantFilter(filter);
     const [bookings, total] = await Promise.all([
       populateBookings(
-        Booking.find(tenantFilter, { tenantId: 1 })
+        Booking.find(tenantFilter)
           .sort({ createdAt: -1 })
           .skip(skip)
           .limit(pageSize)
@@ -102,7 +102,7 @@ export const getConfirmedBookings = async (req, res, next) => {
 
     const [bookings, total] = await Promise.all([
       populateBookings(
-        Booking.find(filter, { tenantId: 1 })
+        Booking.find(filter)
           .sort({ travelDate: 1 })
           .skip(skip)
           .limit(pageSize)
