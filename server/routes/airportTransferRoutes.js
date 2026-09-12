@@ -1,6 +1,6 @@
 import express from "express";
 import { protect, managerOnly } from "../middleware/authMiddleware.js";
-import { listTransfers, getTransfer, createTransfer, updateTransfer, createTransferBooking } from "../controllers/airportTransferController.js";
+import { listTransfers, getTransfer, createTransfer, updateTransfer, createTransferBooking, updateTransferBooking } from "../controllers/airportTransferController.js";
 import { createEnhancedTransferBooking } from "../controllers/enhancedAirportTransferBookingController.js";
 import { listAdminTransfersSafe, listTransferBookingsSafe } from "../controllers/hospitalityAdminController.js";
 
