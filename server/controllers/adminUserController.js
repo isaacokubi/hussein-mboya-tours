@@ -10,16 +10,7 @@ import { createWithTenantIndexRepair, isTenantIndexConflict } from "../services/
 
 const STATUS_VALUES = ["active", "inactive", "disabled", "suspended", "blocked"];
 const isDuplicateKeyError = (error) => error?.code === 11000;
-
-const duplicateMessage = (error) => {
-  const pattern = error?.keyPattern || {};
-  const keys = Object.keys(pattern);
-  const key = keys[0];
-  if (keys.length === 1 && key === "tenantId") return "A legacy tenant index was repaired automatically. Please submit the account creation again.";
-  if (key === "email") return "A user or staff account with this email already exists for this company.";
-  if (key === "phone") return "A user with this phone number already exists for this company.";
-  return "A record with these details already exists.";
-};
+const duplicateMessage = (error) => { const pattern = error?.keyPattern || {}; const keys = Object.keys(pattern); const key = keys[0]; if (keys.length === 1 && key === "tenantId") return "A legacy tenant index was repaired automatically. Please submit the account creation again."; if (key === "email") return "A user or staff account with this email already exists for this company."; if (key === "phone") return "A user with this phone number already exists for this company."; return "A record with these details already exists."; };
 
 const canonicalizeUsers = async (users) => {
   if (!users.length) return users;
@@ -37,15 +28,17 @@ const canonicalizeUsers = async (users) => {
     const id = String(user._id);
     const hasCustomerProfile = customerIds.has(id);
     const hasOperationalIdentity = operationalIds.has(id);
-    if (hasCustomerProfile && !hasOperationalIdentity && !["super_admin", "superadmin"].includes(String(user.role || "").toLowerCase())) {
+    const isProtected = ["super_admin", "superadmin"].includes(String(user.role || "").toLowerCase());
+    const shouldBeCustomer = hasCustomerProfile && !hasOperationalIdentity && !isProtected;
+    if (shouldBeCustomer) {
+      const needsRepair = String(user.role || "").toLowerCase() !== "customer" || String(user.legacyRole || "").toLowerCase() !== "customer" || (customerRole && String(user.roleId || "") !== String(customerRole._id));
+      if (needsRepair) await User.updateOne({ _id: user._id }, { $set: { role: "customer", legacyRole: "customer", ...(customerRole ? { roleId: customerRole._id } : {}) } });
       user.role = "customer";
       user.legacyRole = "customer";
       if (customerRole) user.roleId = customerRole;
-      if (String(user.role || "").toLowerCase() !== "customer" || user.legacyRole !== "customer") {
-        await User.updateOne({ _id: user._id }, { $set: { role: "customer", legacyRole: "customer", ...(customerRole ? { roleId: customerRole._id } : {}) } });
-      }
+    } else {
+      user.role = user.roleId?.name || user.role || user.legacyRole || "customer";
     }
-    user.role = hasCustomerProfile && !hasOperationalIdentity ? "customer" : user.role || user.legacyRole || "customer";
   }
   return users;
 };
@@ -57,10 +50,7 @@ export const getUsers = async (req, res, next) => {
     const limit = Math.min(Math.max(Number(req.query.limit) || 10, 1), 100);
     const search = String(req.query.search || "").trim();
     const query = {};
-    if (search) {
-      const regex = { $regex: search, $options: "i" };
-      query.$or = [{ name: regex }, { email: regex }, { phone: regex }, { role: regex }, { legacyRole: regex }, { status: regex }];
-    }
+    if (search) { const regex = { $regex: search, $options: "i" }; query.$or = [{ name: regex }, { email: regex }, { phone: regex }, { role: regex }, { legacyRole: regex }, { status: regex }]; }
     const skip = (page - 1) * limit;
     const [users, total] = await Promise.all([
       User.find(query).select("-password").populate("roleId", "name displayName permissions").sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
@@ -74,14 +64,10 @@ export const getUsers = async (req, res, next) => {
 };
 
 export const createStaffAccount = async (req, res, next) => {
-  let createdUser = null;
-  let createdStaff = null;
-  let createdAgent = null;
-
+  let createdUser = null; let createdStaff = null; let createdAgent = null;
   try {
     const tenantId = requireTenantId();
     if (!tenantId) return res.status(400).json({ success: false, message: "Select a company before creating a staff account." });
-
     const { name, email, phone, password, role } = req.body || {};
     const normalizedRole = String(role || "").toLowerCase().replace(/[\s-]/g, "_");
     const allowed = { admin: "admin", manager: "manager", tour_manager: "manager", guide: "tour_guide", tour_guide: "tour_guide", driver: "driver", agent: "agent", travel_agent: "agent" };
@@ -89,20 +75,11 @@ export const createStaffAccount = async (req, res, next) => {
     if (!canonicalRole) return res.status(400).json({ success: false, message: "Choose admin, manager, agent, guide or driver." });
     if (!name?.trim() || !email?.trim() || !/^\d{10}$/.test(String(phone || ""))) return res.status(400).json({ success: false, message: "Name, email and a 10-digit phone are required." });
     if (String(password || "").length < 12 || !/[A-Z]/.test(password) || !/\d/.test(password)) return res.status(400).json({ success: false, message: "Password must be at least 12 characters and include an uppercase letter and a number." });
-
-    const normalizedEmail = String(email).trim().toLowerCase();
-    const normalizedPhone = String(phone).trim();
+    const normalizedEmail = String(email).trim().toLowerCase(); const normalizedPhone = String(phone).trim();
     const existingUser = await User.findOne({ tenantId, $or: [{ email: normalizedEmail }, { phone: normalizedPhone }] }).select("_id role email phone tenantId").lean();
-    if (existingUser) {
-      const field = existingUser.email === normalizedEmail ? "email" : "phone number";
-      return res.status(409).json({ success: false, message: `A user with this ${field} already exists for this company.` });
-    }
+    if (existingUser) { const field = existingUser.email === normalizedEmail ? "email" : "phone number"; return res.status(409).json({ success: false, message: `A user with this ${field} already exists for this company.` }); }
     const existingStaff = await Staff.findOne({ tenantId, isDeleted: { $ne: true }, $or: [{ email: normalizedEmail }, { phone: normalizedPhone }] }).select("_id user email phone position tenantId").lean();
-    if (existingStaff) {
-      const field = existingStaff.email === normalizedEmail ? "email" : "phone number";
-      return res.status(409).json({ success: false, message: `A staff profile with this ${field} already exists for this company.` });
-    }
-
+    if (existingStaff) { const field = existingStaff.email === normalizedEmail ? "email" : "phone number"; return res.status(409).json({ success: false, message: `A staff profile with this ${field} already exists for this company.` }); }
     const permissionNamesByRole = {
       admin: ["admin.dashboard", "user.manage", "staff.manage", "tour.manage", "booking.manage", "payment.manage", "refund.manage", "analytics.view", "settings.manage", "roles.manage", "notifications.view", "finance.view", "customer.view", "tour.view", "tour.create", "tour.update", "booking.view", "report.view", "guide.view", "vehicle.view"],
       agent: ["booking.create", "booking.view", "customer.view", "commission.view", "view_agent_dashboard", "view_agent_tours", "create_agent_tour", "edit_agent_tour", "delete_agent_tour"],
@@ -114,11 +91,7 @@ export const createStaffAccount = async (req, res, next) => {
     let roleDoc = await Role.findOne({ name: { $in: [canonicalRole, canonicalRole.replace("tour_", "")] } });
     if (!roleDoc) {
       const permissionIds = [];
-      for (const permissionName of permissionNamesByRole[canonicalRole] || []) {
-        const Permission = (await import("../models/Permission.js")).default;
-        const permission = await Permission.findOneAndUpdate({ name: permissionName }, { $setOnInsert: { name: permissionName, label: permissionName.replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), module: permissionName.split(/[._]/)[0], category: "system", isActive: true } }, { upsert: true, new: true });
-        permissionIds.push(permission._id);
-      }
+      for (const permissionName of permissionNamesByRole[canonicalRole] || []) { const Permission = (await import("../models/Permission.js")).default; const permission = await Permission.findOneAndUpdate({ name: permissionName }, { $setOnInsert: { name: permissionName, label: permissionName.replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), module: permissionName.split(/[._]/)[0], category: "system", isActive: true } }, { upsert: true, new: true }); permissionIds.push(permission._id); }
       roleDoc = await createWithTenantIndexRepair(Role, { name: canonicalRole, displayName: canonicalRole.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), description: `${canonicalRole} access`, permissions: permissionIds, isSystem: ["admin", "manager", "tour_guide", "driver", "agent", "customer"].includes(canonicalRole), level: canonicalRole === "admin" ? 100 : 20 });
     }
     if (["super_admin", "superadmin"].includes(roleDoc.name)) return res.status(403).json({ success: false, message: "SuperAdmin accounts can only be created through the one-time platform bootstrap process." });
@@ -128,9 +101,7 @@ export const createStaffAccount = async (req, res, next) => {
     const safeUser = await User.findById(createdUser._id).select("-password").populate("roleId", "name displayName permissions").lean();
     return res.status(201).json({ success: true, message: `${canonicalRole.replace("_", " ")} account created successfully.`, user: safeUser, staff: createdStaff, agent: createdAgent });
   } catch (error) {
-    if (createdUser?._id) {
-      try { await Promise.allSettled([createdStaff?._id ? Staff.deleteOne({ _id: createdStaff._id }) : Promise.resolve(), createdAgent?._id ? Agent.deleteOne({ _id: createdAgent._id }) : Promise.resolve(), User.deleteOne({ _id: createdUser._id })]); } catch { /* preserve the original error */ }
-    }
+    if (createdUser?._id) { try { await Promise.allSettled([createdStaff?._id ? Staff.deleteOne({ _id: createdStaff._id }) : Promise.resolve(), createdAgent?._id ? Agent.deleteOne({ _id: createdAgent._id }) : Promise.resolve(), User.deleteOne({ _id: createdUser._id })]); } catch { /* preserve original error */ } }
     if (isDuplicateKeyError(error)) return res.status(409).json({ success: false, message: duplicateMessage(error), repaired: isTenantIndexConflict(error) });
     next(error);
   }
@@ -143,8 +114,7 @@ export const updateUserStatus = async (req, res, next) => {
     if (!STATUS_VALUES.includes(status)) return res.status(400).json({ success: false, message: "Invalid user status" });
     const user = await User.findByIdAndUpdate(id, { $set: { status } }, { new: true, runValidators: true }).select("-password").lean();
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
-    const result = { ...user, isActive: user.status === "active" };
-    return res.status(200).json({ success: true, message: `User status changed to ${status}`, user: result, data: result });
+    const result = { ...user, isActive: user.status === "active" }; return res.status(200).json({ success: true, message: `User status changed to ${status}`, user: result, data: result });
   } catch (error) { next(error); }
 };
 
