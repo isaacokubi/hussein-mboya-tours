@@ -1,86 +1,54 @@
 import api from "./axios";
 
+const getActiveTenantId = () => {
+  try {
+    const raw = localStorage.getItem("user");
+    if (!raw) return "";
+    const user = JSON.parse(raw);
+    return String(user?.tenantId || user?.tenant?._id || user?.organizationId || "").trim();
+  } catch {
+    return "";
+  }
+};
+
+const bookingBelongsToActiveTenant = (booking) => {
+  const tenantId = getActiveTenantId();
+  if (!tenantId) return true;
+  const bookingTenantId = booking?.tenantId || booking?.tenant?._id;
+  return bookingTenantId ? String(bookingTenantId) === tenantId : false;
+};
+
 /*
 |--------------------------------------------------------------------------
-| CUSTOMER DISPLAY NORMALIZATION
+| CUSTOMER DISPLAY NORMALIZATION + TENANT SAFETY
 |--------------------------------------------------------------------------
 |
-| Bookings can identify a customer through several supported fields:
-| - populated Customer document
-| - authenticated User document
-| - customerSnapshot saved with the booking
-| - contact snapshot saved with the booking
-|
-| Keep a consistent customer object for every dashboard so deleted/unlinked
-| customer references do not turn into "Unknown" when the booking still has
-| the customer's historical contact information.
+| The API is responsible for authoritative tenant isolation. This client
+| applies a second, fail-closed tenant check before an admin booking can
+| enter the UI. A booking without an explicit tenantId is not displayed when
+| an authenticated tenantId is available.
 |--------------------------------------------------------------------------
 */
 
 const normalizeBookingCustomer = (booking) => {
   if (!booking || typeof booking !== "object") return booking;
+  if (!bookingBelongsToActiveTenant(booking)) return null;
 
-  const customer =
-    booking.customer && typeof booking.customer === "object"
-      ? booking.customer
-      : null;
+  const customer = booking.customer && typeof booking.customer === "object" ? booking.customer : null;
+  const user = booking.user && typeof booking.user === "object" ? booking.user : null;
+  const snapshot = booking.customerSnapshot && typeof booking.customerSnapshot === "object" ? booking.customerSnapshot : null;
+  const contact = booking.contact && typeof booking.contact === "object" ? booking.contact : null;
 
-  const user =
-    booking.user && typeof booking.user === "object"
-      ? booking.user
-      : null;
-
-  const snapshot =
-    booking.customerSnapshot && typeof booking.customerSnapshot === "object"
-      ? booking.customerSnapshot
-      : null;
-
-  const contact =
-    booking.contact && typeof booking.contact === "object"
-      ? booking.contact
-      : null;
-
-  const firstName =
-    user?.firstName ||
-    customer?.firstName ||
-    "";
-
-  const lastName =
-    user?.lastName ||
-    customer?.lastName ||
-    "";
-
+  const firstName = user?.firstName || customer?.firstName || "";
+  const lastName = user?.lastName || customer?.lastName || "";
   const composedName = `${firstName} ${lastName}`.trim();
-
-  const name =
-    customer?.name ||
-    snapshot?.name ||
-    contact?.name ||
-    user?.name ||
-    composedName ||
-    "";
-
-  const email =
-    customer?.email ||
-    snapshot?.email ||
-    contact?.email ||
-    user?.email ||
-    "";
-
-  const phone =
-    customer?.phone ||
-    snapshot?.phone ||
-    contact?.phone ||
-    user?.phone ||
-    "";
-
-  const normalizedCustomer =
-    customer || user || snapshot || contact || null;
+  const name = customer?.name || snapshot?.name || contact?.name || user?.name || composedName || "";
+  const email = customer?.email || snapshot?.email || contact?.email || user?.email || "";
+  const phone = customer?.phone || snapshot?.phone || contact?.phone || user?.phone || "";
+  const normalizedCustomer = customer || user || snapshot || contact || null;
 
   return {
     ...booking,
-
-    // Preserve the original populated references when available.
     customer: normalizedCustomer
       ? {
           ...normalizedCustomer,
@@ -89,207 +57,78 @@ const normalizeBookingCustomer = (booking) => {
           phone: normalizedCustomer.phone || phone,
         }
       : booking.customer,
-
-    // Compatibility aliases for older dashboard components.
-    _customer: {
-      ...(customer || {}),
-      name,
-      email,
-      phone,
-    },
-
-    _customerSnapshot: {
-      ...(snapshot || {}),
-      name,
-      email,
-      phone,
-    },
-
+    _customer: { ...(customer || {}), name, email, phone },
+    _customerSnapshot: { ...(snapshot || {}), name, email, phone },
     customerDisplayName: name,
     customerDisplayEmail: email,
     customerDisplayPhone: phone,
   };
 };
 
+const normalizeBookingList = (bookings) =>
+  bookings.map(normalizeBookingCustomer).filter(Boolean);
+
 const normalizeBookingResponse = (response) => {
   if (!response || typeof response !== "object") return response;
-
-  if (Array.isArray(response)) {
-    return response.map(normalizeBookingCustomer);
-  }
-
-  if (Array.isArray(response.data)) {
-    return {
-      ...response,
-      data: response.data.map(normalizeBookingCustomer),
-    };
-  }
-
-  if (Array.isArray(response.bookings)) {
-    return {
-      ...response,
-      bookings: response.bookings.map(normalizeBookingCustomer),
-    };
-  }
-
+  if (Array.isArray(response)) return normalizeBookingList(response);
+  if (Array.isArray(response.data)) return { ...response, data: normalizeBookingList(response.data) };
+  if (Array.isArray(response.bookings)) return { ...response, bookings: normalizeBookingList(response.bookings) };
   if (response.data && typeof response.data === "object") {
-    return {
-      ...response,
-      data: normalizeBookingCustomer(response.data),
-    };
+    const normalized = normalizeBookingCustomer(response.data);
+    return { ...response, data: normalized };
   }
-
   return response;
 };
 
-/*
-|--------------------------------------------------------------------------
-| BOOKINGS
-|--------------------------------------------------------------------------
-*/
-
 export const getBookings = async (params = {}) => {
-  const response = await api.get("/admin/bookings", {
-    params,
-  });
-
+  const response = await api.get("/admin/bookings", { params });
   return normalizeBookingResponse(response.data);
 };
 
 export const getBooking = async (id) => {
-  const { data } = await api.get(
-    `/admin/bookings/${id}`
-  );
-
+  const { data } = await api.get(`/admin/bookings/${id}`);
   return normalizeBookingResponse(data);
 };
 
-export const updateBookingStatus = async (
-  id,
-  status
-) => {
-  const { data } = await api.put(
-    `/admin/bookings/${id}/status`,
-    {
-      status
-    }
-  );
-
+export const updateBookingStatus = async (id, status) => {
+  const { data } = await api.put(`/admin/bookings/${id}/status`, { status });
   return normalizeBookingResponse(data);
 };
 
-export const assignBookingResources = async (
-  id,
-  payload
-) => {
-  const { data } = await api.put(
-    `/admin/bookings/${id}/assign`,
-    payload
-  );
-
+export const assignBookingResources = async (id, payload) => {
+  const { data } = await api.put(`/admin/bookings/${id}/assign`, payload);
   return normalizeBookingResponse(data);
 };
 
-export const updateBookingPayment = async (
-  id,
-  payload
-) => {
-  const { data } = await api.put(
-    `/admin/bookings/${id}/payment`,
-    payload
-  );
-
+export const updateBookingPayment = async (id, payload) => {
+  const { data } = await api.put(`/admin/bookings/${id}/payment`, payload);
   return normalizeBookingResponse(data);
 };
 
-export const getBookingDetails = async(id)=>{
-
-const {data}=await api.get(
-`/admin/bookings/${id}`
-);
-
-return normalizeBookingResponse(data);
-
+export const getBookingDetails = async (id) => {
+  const { data } = await api.get(`/admin/bookings/${id}`);
+  return normalizeBookingResponse(data);
 };
 
-
-
-export const getBookingTimeline = async(id)=>{
-  const {data}=await api.get(
-    `/admin/bookings/${id}/timeline`
-  );
-
+export const getBookingTimeline = async (id) => {
+  const { data } = await api.get(`/admin/bookings/${id}/timeline`);
   return data;
 };
 
-
-export const downloadInvoice = async(id)=>{
-  const response=await api.get(
-    `/admin/bookings/${id}/invoice`,
-    {
-      responseType:"blob"
-    }
-  );
-
-  return response;
+export const downloadInvoice = async (id) => {
+  return api.get(`/admin/bookings/${id}/invoice`, { responseType: "blob" });
 };
 
-
-
-/*
-|--------------------------------------------------------------------------
-| BOOKING REPORTING
-|--------------------------------------------------------------------------
-*/
-
-export const exportBookings = async(type="csv")=>{
-
-  const response = await api.get(
-    `/admin/bookings/export?type=${type}`,
-    {
-      responseType:"blob"
-    }
-  );
-
-  return response;
-
+export const exportBookings = async (type = "csv") => {
+  return api.get(`/admin/bookings/export?type=${type}`, { responseType: "blob" });
 };
 
-
-
-/*
-|--------------------------------------------------------------------------
-| CUSTOMER COMMUNICATION
-|--------------------------------------------------------------------------
-*/
-
-
-export const sendBookingNotification = async(
- id,
- payload
-)=>{
-
- const {data}=await api.post(
-   `/admin/bookings/${id}/notify`,
-   payload
- );
-
- return data;
-
+export const sendBookingNotification = async (id, payload) => {
+  const { data } = await api.post(`/admin/bookings/${id}/notify`, payload);
+  return data;
 };
 
-
-
-
-
-export const refundBooking = async(
-id,
-payload={}
-)=>{
-const {data}=await api.put(
-`/admin/bookings/${id}/refund`,
-payload
-);
-
-return data;
+export const refundBooking = async (id, payload = {}) => {
+  const { data } = await api.put(`/admin/bookings/${id}/refund`, payload);
+  return data;
 };
