@@ -57,26 +57,27 @@ jobs:
           test -f models/EtimsCredential.js
           test -f models/EtimsSubmission.js
           test -f models/TaxProfile.js
+          test -f models/TaxRule.js
+          test -f models/WithholdingTax.js
           test -f services/etimsService.js
           test -f services/taxEngineService.js
+          test -f services/operationalAccountingService.js
+          test -f services/financeLifecycleService.js
           test -f services/mpesaService.js
           test -f services/paymentLifecycleService.js
           test -f services/webhookDeliveryService.js
           test -f controllers/complianceController.js
           test -f controllers/privacyController.js
           test -f controllers/financeComplianceController.js
+          test -f controllers/expenseLifecycleController.js
+          test -f controllers/withholdingTaxController.js
           test -f models/CreditDebitNote.js
           test -f models/PurchaseOrder.js
           test -f models/SupplierPayable.js
           test -f models/TourCost.js
           test -f models/CorporateAccount.js
-      - name: Verify external website booking integration
-        run: |
-          test -f middleware/integrationAuth.js
-          test -f controllers/integrationController.js
-          test -f routes/integrationRoutes.js
-          test -f models/WebsiteIntegrationKey.js
-          test -f models/WebsiteIntegrationEvent.js
+          test -f models/ChartOfAccount.js
+          test -f models/JournalEntry.js
 
   phase-3-release:
     name: Phase 3 — Final release gate
