@@ -38,8 +38,9 @@ export const ensureDefaultTaxRules = async () => {
   ];
   for (const rule of defaults) {
     const existing = await TaxRule.findOne({ tenantId, code: rule.code }).lean();
+    const missingRate = existing && (existing.rate === null || existing.rate === undefined || existing.rate === "" || !Number.isFinite(Number(existing.rate)));
     if (!existing) await TaxRule.create({ ...rule, tenantId });
-    else if (!Number.isFinite(Number(existing.rate))) await TaxRule.updateOne({ tenantId, code: rule.code }, { $set: { rate: rule.rate, name: rule.name, taxType: rule.taxType, appliesTo: rule.appliesTo } });
+    else if (missingRate) await TaxRule.updateOne({ tenantId, code: rule.code }, { $set: { rate: rule.rate, name: rule.name, taxType: rule.taxType, appliesTo: rule.appliesTo } });
   }
   return TaxRule.find({ tenantId }).sort({ code: 1 }).lean();
 };
