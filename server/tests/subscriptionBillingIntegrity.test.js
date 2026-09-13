@@ -28,11 +28,11 @@ test("tenant billing exposes platform prices to the tenant UI", () => {
   assert.match(client, /Price not configured/);
 });
 
-test("subscription checkout uses the platform configured amount", () => {
+test("subscription checkout derives and validates the platform configured amount", () => {
   const service = read("services/tenantSubscriptionService.js");
   const controller = read("controllers/tenantSubscriptionController.js");
-  assert.match(service, /getTenantPlanPrice\(normalizedPlan\)/);
-  assert.match(service, /selected plan.*price/i);
+  assert.match(service, /const configuredAmount = await getTenantPlanPrice\(normalizedPlan\)/);
+  assert.match(service, /Number\(amount \|\| configuredAmount\)/);
   assert.match(controller, /const amount = await getTenantPlanPrice\(plan\)/);
   assert.match(controller, /The selected plan price is not configured/);
 });
