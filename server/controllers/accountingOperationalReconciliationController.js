@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import Payment from "../models/Payment.js";
 import Expense from "../models/Expense.js";
+import SupplierPayable from "../models/SupplierPayable.js";
 import JournalEntry from "../models/JournalEntry.js";
 import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import {
@@ -8,10 +9,18 @@ import {
   postPaymentRefundToLedger,
   postExpenseToLedger,
   postExpensePaymentToLedger,
+  postSupplierPayableToLedger,
+  postSupplierPaymentToLedger,
 } from "../services/operationalAccountingService.js";
 
 const exists = async (tenantId, sourceType, sourceId) =>
   JournalEntry.exists({ tenantId, sourceType, sourceId });
+
+const hashedSourceId = (payable, amount, reference = "") =>
+  crypto.createHash("sha256")
+    .update(`${payable._id}:${String(reference || `SUPPLIER-${payable._id}-${amount}`).trim()}:${amount}`)
+    .digest("hex")
+    .slice(0, 24);
 
 const refundSourceId = (payment, amount, reference = "") =>
   crypto.createHash("sha256")
@@ -25,9 +34,9 @@ export const reconcileOperationalAccounting = async (req, res, next) => {
     const tenantId = req.tenantId;
     const filter = mergeTenantFilter(req, {});
     const summary = {
-      scanned: { payments: 0, refunds: 0, expenses: 0, expensePayments: 0 },
-      posted: { payments: 0, refunds: 0, expenses: 0, expensePayments: 0 },
-      alreadyPosted: { payments: 0, refunds: 0, expenses: 0, expensePayments: 0 },
+      scanned: { payments: 0, refunds: 0, expenses: 0, expensePayments: 0, supplierPayables: 0, supplierPayments: 0 },
+      posted: { payments: 0, refunds: 0, expenses: 0, expensePayments: 0, supplierPayables: 0, supplierPayments: 0 },
+      alreadyPosted: { payments: 0, refunds: 0, expenses: 0, expensePayments: 0, supplierPayables: 0, supplierPayments: 0 },
       errors: [],
     };
 
@@ -71,6 +80,30 @@ export const reconcileOperationalAccounting = async (req, res, next) => {
         else {
           try { await postExpensePaymentToLedger(expense); summary.posted.expensePayments += 1; }
           catch (error) { summary.errors.push({ type: "expense_payment", id: String(expense._id), message: error.message }); }
+        }
+      }
+    }
+
+    const payables = await SupplierPayable.find(filter).sort({ createdAt: 1 }).lean();
+    summary.scanned.supplierPayables = payables.length;
+    for (const payable of payables) {
+      if (String(payable.status || "").toLowerCase() !== "cancelled") {
+        if (await exists(tenantId, "supplier_payable", payable._id)) summary.alreadyPosted.supplierPayables += 1;
+        else {
+          try { await postSupplierPayableToLedger(payable); summary.posted.supplierPayables += 1; }
+          catch (error) { summary.errors.push({ type: "supplier_payable", id: String(payable._id), message: error.message }); }
+        }
+      }
+
+      const amountPaid = Number(payable.amountPaid || 0);
+      if (amountPaid > 0) {
+        summary.scanned.supplierPayments += 1;
+        const reference = String(payable.paymentReference || `SUPPLIER-${payable._id}-${amountPaid}`).trim();
+        const sourceId = hashedSourceId(payable, amountPaid, reference);
+        if (await exists(tenantId, "supplier_payable_payment", sourceId)) summary.alreadyPosted.supplierPayments += 1;
+        else {
+          try { await postSupplierPaymentToLedger(payable, amountPaid, reference, payable.paymentMethod); summary.posted.supplierPayments += 1; }
+          catch (error) { summary.errors.push({ type: "supplier_payment", id: String(payable._id), message: error.message }); }
         }
       }
     }
