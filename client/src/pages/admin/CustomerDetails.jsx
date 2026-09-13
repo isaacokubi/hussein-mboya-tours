@@ -34,7 +34,7 @@ const statusTone = (status) => {
   const value = String(status || "").toLowerCase();
   if (["completed", "confirmed", "paid", "published"].includes(value)) return "bg-emerald-50 text-emerald-700 ring-emerald-100";
   if (["pending", "processing", "partial"].includes(value)) return "bg-amber-50 text-amber-700 ring-amber-100";
-  if (["cancelled", "cancelled", "failed", "rejected", "refunded"].includes(value)) return "bg-red-50 text-red-700 ring-red-100";
+  if (["cancelled", "failed", "rejected", "refunded"].includes(value)) return "bg-red-50 text-red-700 ring-red-100";
   return "bg-slate-100 text-slate-700 ring-slate-200";
 };
 
@@ -45,6 +45,8 @@ const formatDate = (value) => {
     ? "—"
     : date.toLocaleDateString("en-KE", { day: "2-digit", month: "short", year: "numeric" });
 };
+
+const successfulBookingStatuses = new Set(["confirmed", "assigned", "ongoing", "completed"]);
 
 export default function CustomerDetails() {
   const { id } = useParams();
@@ -64,10 +66,13 @@ export default function CustomerDetails() {
   const communications = Array.isArray(profile.communications) ? profile.communications : [];
 
   const metrics = useMemo(() => ({
-    bookings: Number(profile.summary?.totalBookings || bookings.length || 0),
+    bookings: Number(profile.summary?.totalBookings ?? bookings.length ?? 0),
     paid: Number(profile.summary?.totalPaid || 0),
-    spend: Number(profile.summary?.totalSpent || 0),
-    confirmed: bookings.filter((booking) => String(booking.status || "").toLowerCase() === "confirmed").length,
+    spend: Number(profile.summary?.confirmedSpend ?? profile.summary?.totalSpent ?? 0),
+    confirmed: Number(
+      profile.summary?.confirmedBookings ??
+      bookings.filter((booking) => successfulBookingStatuses.has(String(booking.status || "").toLowerCase())).length
+    ),
   }), [profile.summary, bookings]);
 
   if (isLoading) {
@@ -128,7 +133,7 @@ export default function CustomerDetails() {
 
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Metric icon={CalendarDays} label="Total bookings" value={metrics.bookings.toLocaleString("en-KE")} />
-          <Metric icon={CheckCircle2} label="Confirmed bookings" value={metrics.confirmed.toLocaleString("en-KE")} />
+          <Metric icon={CheckCircle2} label="Confirmed / completed bookings" value={metrics.confirmed.toLocaleString("en-KE")} />
           <Metric icon={WalletCards} label="Total paid" value={money(metrics.paid)} compact />
           <Metric icon={WalletCards} label="Confirmed spend" value={money(metrics.spend)} compact />
         </section>
