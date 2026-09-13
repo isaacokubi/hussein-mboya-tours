@@ -8,6 +8,7 @@ import { SettingsProvider } from "./context/SettingsContext";
 import { CartProvider } from "./context/CartContext";
 import "./index.css";
 import "./styles/admin-settings.css";
+import "./styles/admin-dashboard.css";
 import "./utils/syncPickupTimeWithTravelDate";
 
 let queryClient;
