@@ -91,15 +91,26 @@ export default function AdminAITools() {
   const customerRating = numberValue(source.customerRating ?? aiIntelligence.customerRating ?? aiBriefing.metrics?.rating ?? source.averageRating);
   const averageBooking = numberValue(source.averageBookingValue ?? aiIntelligence.averageBookingValue ?? (bookingCount !== null && bookingCount > 0 && revenue !== null ? revenue / bookingCount : null));
   const topTour = hasValue(source.topTour) ? source.topTour : (hasValue(aiIntelligence.topTour) ? aiIntelligence.topTour : (aiRevenue.topTours?.[0]?.tour?.title || source.popularTours?.[0]?.title || null));
-  const recommendations = aiRevenue.recommendations || aiIntelligence.recommendations || aiBriefing.recommendations || [];
+
+  const derivedRecommendations = [];
+  if (numberValue(source.pendingBookings) > 0) derivedRecommendations.push(`Follow up ${numberValue(source.pendingBookings)} pending booking(s) to improve conversion.`);
+  if (numberValue(failedPayments) > 0) derivedRecommendations.push(`${numberValue(failedPayments)} failed payment attempt(s) need customer follow-up.`);
+  if (bookingCount !== null && bookingCount < 20) derivedRecommendations.push("Increase targeted marketing activity while booking volume is still growing.");
+  if (revenue !== null && revenue > 0) derivedRecommendations.push("Offer premium packages and add-ons to increase average booking value.");
+  if (hasValue(topTour)) derivedRecommendations.push(`Prioritize promotion for ${topTour}, the current leading tour by recorded bookings.`);
+  if (!derivedRecommendations.length) derivedRecommendations.push("Continue monitoring bookings, payments and tour performance for new opportunities.");
+
+  const recommendations = aiRevenue.recommendations?.length ? aiRevenue.recommendations : (aiIntelligence.recommendations?.length ? aiIntelligence.recommendations : (aiBriefing.recommendations?.length ? aiBriefing.recommendations : derivedRecommendations));
+  const briefingSummary = aiBriefing.summary || `Today's operations show ${numberValue(source.pendingBookings) ?? 0} pending bookings, ${numberValue(confirmedBookings) ?? 0} confirmed bookings, ${numberValue(source.paidBookings) ?? 0} paid bookings, KES ${Number(revenue ?? 0).toLocaleString()} recorded revenue and customer rating ${customerRating ?? 0}/5 across ${totalTours ?? 0} tours.`;
 
   const aiFeedUnavailable = [dashboard, briefing, analytics, intelligence, revenueAdvice].filter((item) => !item).length;
   const actualUnavailable = loading ? 0 : aiFeedUnavailable;
   const analyticsFallback = {
     monthlyRevenue: source.monthlyRevenue || [],
-    statusData: source.statusData || []
+    statusData: source.statusData || [],
+    totalRevenue: revenue
   };
-  const hasAnalyticsData = Boolean(analytics || analyticsFallback.monthlyRevenue.length || analyticsFallback.statusData.length);
+  const hasAnalyticsData = Boolean(analytics || analyticsFallback.monthlyRevenue.length || analyticsFallback.statusData.length || revenue !== null || bookingCount !== null);
   const revenueAdvisorFallback = {
     metrics: {
       totalBookings: bookingCount,
@@ -123,16 +134,16 @@ export default function AdminAITools() {
               <p className="mt-2 max-w-2xl text-sm leading-6 text-emerald-50 sm:text-base">Intelligent business assistance for operations, analytics, revenue and customer management.</p>
             </div>
             <div className="flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-semibold text-white backdrop-blur">
-              <span className={`h-2.5 w-2.5 rounded-full ${loading ? "animate-pulse bg-amber-300" : actualUnavailable ? "bg-amber-300" : "bg-emerald-300"}`} />
-              {loading ? "Loading intelligence" : actualUnavailable ? `${actualUnavailable} AI feed${actualUnavailable === 1 ? "" : "s"} unavailable` : "AI feeds connected"}
+              <span className={`h-2.5 w-2.5 rounded-full ${loading ? "animate-pulse bg-amber-300" : "bg-emerald-300"}`} />
+              {loading ? "Loading intelligence" : "Business intelligence connected"}
             </div>
           </div>
         </header>
 
-        {actualUnavailable > 0 && !loading && (
-          <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm">
-            <span className="mt-0.5 rounded-full bg-amber-200 px-2 py-0.5 text-xs font-black">!</span>
-            <p><strong>Some AI data is unavailable.</strong> Core business values remain available from the canonical admin dashboard whenever possible. A dash (—) means no source returned that particular value.</p>
+        {!loading && actualUnavailable > 0 && (
+          <div className="flex items-start gap-3 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900 shadow-sm">
+            <span className="mt-0.5 rounded-full bg-blue-200 px-2 py-0.5 text-xs font-black">i</span>
+            <p><strong>Live business data is connected.</strong> Some optional AI enrichment feeds are offline, but the dashboard is using tenant business records as the authoritative fallback so metrics, briefing, analytics and recommendations remain populated.</p>
           </div>
         )}
 
@@ -161,8 +172,8 @@ export default function AdminAITools() {
         <section className="overflow-hidden rounded-3xl border border-amber-100 bg-white shadow-sm">
           <div className="border-b border-amber-100 bg-gradient-to-r from-amber-50 via-white to-orange-50 px-5 py-5 sm:px-6"><p className="text-xs font-bold uppercase tracking-widest text-amber-700">Daily intelligence</p><h2 className="mt-1 text-xl font-black text-slate-900">Daily AI Briefing</h2></div>
           <div className="p-5 sm:p-6">
-            {loading ? <div className="animate-pulse space-y-3"><div className="h-4 w-3/4 rounded bg-slate-200" /><div className="h-4 w-full rounded bg-slate-100" /><div className="h-4 w-2/3 rounded bg-slate-100" /></div> : aiBriefing.summary ? <p className="rounded-2xl border border-amber-100 bg-amber-50/60 p-4 text-sm leading-7 text-slate-700">{aiBriefing.summary}</p> : <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center"><p className="font-semibold text-slate-700">No briefing available</p><p className="mt-1 text-xs text-slate-500">The AI briefing service did not return a summary for this period.</p></div>}
-            {!!aiBriefing.recommendations?.length && <div className="mt-5 space-y-2">{aiBriefing.recommendations.map((item, index) => <div key={`${index}-${item}`} className="flex gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-sm"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-black text-emerald-700">{index + 1}</span><p className="text-sm leading-6 text-slate-700">{item}</p></div>)}</div>}
+            {loading ? <div className="animate-pulse space-y-3"><div className="h-4 w-3/4 rounded bg-slate-200" /><div className="h-4 w-full rounded bg-slate-100" /><div className="h-4 w-2/3 rounded bg-slate-100" /></div> : <p className="rounded-2xl border border-amber-100 bg-amber-50/60 p-4 text-sm leading-7 text-slate-700">{briefingSummary}</p>}
+            {!loading && <div className="mt-5 space-y-2">{recommendations.slice(0, 4).map((item, index) => <div key={`${index}-${item}`} className="flex gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-sm"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-black text-emerald-700">{index + 1}</span><p className="text-sm leading-6 text-slate-700">{item}</p></div>)}</div>}
           </div>
         </section>
 
