@@ -6,7 +6,7 @@ import { calculateTax, getTaxRules, initializeTaxRules, saveTaxRule } from "../.
 const money = (v) => `KES ${Number(v || 0).toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const unwrapList = (value) => Array.isArray(value) ? value : value?.items || value?.data || [];
 const errorText = (e) => e?.response?.data?.message || e?.message || "The request could not be completed.";
-const ruleRate = (rule) => Number.isFinite(Number(rule?.rate)) ? Number(rule.rate) : null;
+const ruleRate = (rule) => rule?.rate === null || rule?.rate === undefined || rule?.rate === "" || !Number.isFinite(Number(rule?.rate)) ? null : Number(rule.rate);
 
 export default function KenyaTaxCenter() {
   const qc = useQueryClient(); const rulesQ = useQuery({ queryKey: ["kenya-tax-rules"], queryFn: getTaxRules, staleTime: 30000, retry: 2 });
