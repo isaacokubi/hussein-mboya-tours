@@ -5,12 +5,13 @@ const round = (n) => Math.round(Number(n || 0) * 100) / 100;
 const account = async (tenantId, code) => ChartOfAccount.findOne({ tenantId, code, active: true }).lean();
 const ensureAccounts = async (tenantId) => {
   const defaults = [
-    ["1000", "Cash", "asset"], ["1010", "Bank", "asset"], ["1020", "M-Pesa", "asset"],
-    ["1100", "Accounts Receivable", "asset"], ["2000", "Accounts Payable", "liability"], ["2100", "Tax Payable", "liability"],
-    ["4000", "Tour Revenue", "revenue"], ["4010", "Hotel Revenue", "revenue"], ["4020", "Airport Transfer Revenue", "revenue"],
-    ["5000", "Tour Direct Costs", "expense"], ["6000", "Operating Expenses", "expense"],
+    ["1000", "Cash on Hand", "asset", "cash"], ["1010", "Bank Account", "asset", "bank"], ["1020", "M-Pesa", "asset", "mobile_money"], ["1030", "Card / Gateway Clearing", "asset", "payment_clearing"],
+    ["1100", "Accounts Receivable", "asset", "receivable"], ["1110", "Corporate Receivables", "asset", "corporate_receivable"], ["1200", "Inventory", "asset", "inventory"], ["1300", "Prepayments", "asset", "prepayment"], ["1400", "Property, Plant & Equipment", "asset", "fixed_asset"], ["1490", "Accumulated Depreciation", "asset", "accumulated_depreciation"],
+    ["2000", "Accounts Payable", "liability", "payable"], ["2100", "VAT / Tax Payable", "liability", "tax"], ["2110", "Output VAT", "liability", "vat_output"], ["2120", "Input VAT", "asset", "vat_input"], ["2130", "Withholding Tax Payable", "liability", "withholding_tax"], ["2140", "Payroll Liabilities", "liability", "payroll"], ["2150", "Customer Deposits", "liability", "customer_deposit"],
+    ["4000", "Tour Revenue", "revenue", "sales"], ["4010", "Hotel Revenue", "revenue", "sales"], ["4020", "Airport Transfer Revenue", "revenue", "sales"], ["4030", "Excursion Revenue", "revenue", "sales"], ["4100", "Other Revenue", "revenue", "other_revenue"],
+    ["5000", "Tour / Supplier Costs", "expense", "cost_of_sales"], ["5010", "Hotel Direct Costs", "expense", "cost_of_sales"], ["5020", "Transport Direct Costs", "expense", "cost_of_sales"], ["5100", "Commissions", "expense", "commission"], ["5200", "General Operating Expenses", "expense", "operating"], ["6000", "Operating Expenses", "expense", "operating"], ["6100", "Interest Expense", "expense", "finance_cost"],
   ];
-  for (const [code, name, type] of defaults) await ChartOfAccount.updateOne({ tenantId, code }, { $setOnInsert: { tenantId, code, name, type, currency: "KES", active: true } }, { upsert: true });
+  for (const [code, name, type, subtype] of defaults) await ChartOfAccount.updateOne({ tenantId, code }, { $setOnInsert: { tenantId, code, name, type, subtype, currency: "KES", active: true, system: true } }, { upsert: true });
 };
 const postOnce = async ({ tenantId, sourceType, sourceId, date, description, reference, lines }) => {
   if (!tenantId || !sourceId || !lines?.length) return null;
@@ -26,7 +27,12 @@ const postOnce = async ({ tenantId, sourceType, sourceId, date, description, ref
   const totalDebit = round(resolved.reduce((s, l) => s + l.debit, 0));
   const totalCredit = round(resolved.reduce((s, l) => s + l.credit, 0));
   if (totalDebit <= 0 || Math.abs(totalDebit - totalCredit) > 0.01) throw new Error("Operational accounting entry must be balanced and non-zero.");
-  return JournalEntry.create({ tenantId, entryDate: date || new Date(), description, reference: reference || "", sourceType, sourceId, status: "posted", lines: resolved, postedAt: new Date() });
+  try {
+    return await JournalEntry.create({ tenantId, entryDate: date || new Date(), description, reference: reference || "", sourceType, sourceId, status: "posted", lines: resolved, postedAt: new Date() });
+  } catch (error) {
+    if (error?.code === 11000) return JournalEntry.findOne({ tenantId, sourceType, sourceId }).lean();
+    throw error;
+  }
 };
 
 export const postInvoiceToLedger = async (invoice) => {
@@ -36,20 +42,38 @@ export const postInvoiceToLedger = async (invoice) => {
   const revenue = round(total - tax);
   const revenueCode = invoice.hospitalityType === "hotel" ? "4010" : invoice.hospitalityType === "airport_transfer" ? "4020" : "4000";
   const lines = [{ code: "1100", debit: total, credit: 0, description: "Accounts receivable" }, { code: revenueCode, debit: 0, credit: revenue, description: invoice.hospitalityType === "hotel" ? "Hotel revenue" : invoice.hospitalityType === "airport_transfer" ? "Airport transfer revenue" : "Tour revenue" }];
-  if (tax > 0) lines.push({ code: "2100", debit: 0, credit: tax, description: "Tax payable" });
+  if (tax > 0) lines.push({ code: "2110", debit: 0, credit: tax, description: "Output VAT" });
   return postOnce({ tenantId: invoice.tenantId, sourceType: "invoice", sourceId: invoice._id, date: invoice.issueDate, description: `Invoice ${invoice.invoiceNumber}`, reference: invoice.invoiceNumber, lines });
 };
 
 export const postPaymentToLedger = async (payment) => {
   if (!payment || payment.status !== "completed") return null;
   const provider = String(payment.provider || payment.paymentMethod || "").toUpperCase();
-  const cashCode = provider === "MPESA" ? "1020" : provider === "CASH" ? "1000" : "1010";
+  const cashCode = provider === "MPESA" ? "1020" : provider === "CARD" ? "1030" : provider === "CASH" ? "1000" : "1010";
   return postOnce({ tenantId: payment.tenantId, sourceType: "payment", sourceId: payment._id, date: payment.paidAt || payment.updatedAt, description: `${payment.hospitalityType ? `${payment.hospitalityType} ` : ""}Payment ${payment.transactionReference || payment.transactionId || payment.mpesaReceiptNumber || payment._id}`, reference: payment.transactionReference || payment.transactionId || payment.mpesaReceiptNumber || "", lines: [{ code: cashCode, debit: round(payment.amount), credit: 0, description: "Payment received" }, { code: "1100", debit: 0, credit: round(payment.amount), description: "Accounts receivable" }] });
 };
 
 export const postExpenseToLedger = async (expense) => {
   if (!expense || expense.status === "draft" || expense.status === "cancelled") return null;
+  const gross = round(Number(expense.amount || 0) + Number(expense.taxAmount || 0));
+  const inputTax = round(Number(expense.taxAmount || 0));
+  const net = round(Number(expense.amount || 0));
+  const expenseCode = ["hotel", "accommodation"].includes(String(expense.category || "").toLowerCase()) ? "5010" : ["transport", "fuel"].includes(String(expense.category || "").toLowerCase()) ? "5020" : ["commission", "commissions"].includes(String(expense.category || "").toLowerCase()) ? "5100" : "5000";
+  const lines = [{ code: expenseCode, debit: net, credit: 0, description: expense.description }];
+  if (inputTax > 0) lines.push({ code: "2120", debit: inputTax, credit: 0, description: "Input VAT" });
+  if (expense.supplier) lines.push({ code: "2000", debit: 0, credit: gross, description: "Supplier payable" });
+  else {
+    const method = String(expense.paymentMethod || "").toUpperCase();
+    const cashCode = method === "MPESA" ? "1020" : method === "CARD" ? "1030" : method === "CASH" ? "1000" : "1010";
+    lines.push({ code: cashCode, debit: 0, credit: gross, description: "Expense settlement" });
+  }
+  return postOnce({ tenantId: expense.tenantId, sourceType: "expense_accrual", sourceId: expense._id, date: expense.expenseDate, description: `Expense ${expense.expenseNumber}: ${expense.description}`, reference: expense.expenseNumber, lines });
+};
+
+export const postExpensePaymentToLedger = async (expense) => {
+  if (!expense || expense.status !== "paid" || !expense.supplier) return null;
   const amount = round(Number(expense.amount || 0) + Number(expense.taxAmount || 0));
-  const cashCode = String(expense.paymentMethod || "").toUpperCase() === "MPESA" ? "1020" : String(expense.paymentMethod || "").toUpperCase() === "CASH" ? "1000" : "1010";
-  return postOnce({ tenantId: expense.tenantId, sourceType: "expense", sourceId: expense._id, date: expense.expenseDate, description: `Expense ${expense.expenseNumber}: ${expense.description}`, reference: expense.expenseNumber, lines: [{ code: "5000", debit: amount, credit: 0, description: expense.description }, { code: cashCode, debit: 0, credit: amount, description: "Expense settlement" }] });
+  const method = String(expense.paymentMethod || "").toUpperCase();
+  const cashCode = method === "MPESA" ? "1020" : method === "CARD" ? "1030" : method === "CASH" ? "1000" : "1010";
+  return postOnce({ tenantId: expense.tenantId, sourceType: "expense_payment", sourceId: expense._id, date: expense.expenseDate, description: `Expense payment ${expense.expenseNumber}`, reference: expense.paymentReference || expense.expenseNumber, lines: [{ code: "2000", debit: amount, credit: 0, description: "Accounts payable settlement" }, { code: cashCode, debit: 0, credit: amount, description: "Expense payment" }] });
 };
