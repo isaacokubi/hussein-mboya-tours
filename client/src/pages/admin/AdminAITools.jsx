@@ -73,8 +73,6 @@ export default function AdminAITools() {
     return () => { active = false; };
   }, []);
 
-  // Core figures come from the canonical tenant dashboard. AI endpoints enrich
-  // them, but a secondary AI outage must never make existing business data vanish.
   const source = canonicalDashboard?.data || canonicalDashboard || {};
   const aiDashboard = dashboard?.data || dashboard || {};
   const aiIntelligence = intelligence?.data || intelligence || {};
@@ -86,13 +84,9 @@ export default function AdminAITools() {
   const customers = numberValue(source.customers ?? aiDashboard.customers ?? aiIntelligence.totalCustomers);
   const vehicles = numberValue(source.vehicles ?? aiDashboard.vehicles ?? aiIntelligence.totalVehicles);
   const totalTours = numberValue(source.tours ?? aiDashboard.tours ?? aiIntelligence.totalTours ?? aiRevenue.metrics?.totalTours ?? aiBriefing.metrics?.totalTours);
-
   const confirmedBookings = numberValue(source.confirmedBookings ?? aiIntelligence.confirmedBookings ?? aiBriefing.metrics?.confirmedBookings);
-  const conversionRate = numberValue(
-    source.conversionRate ??
-    aiIntelligence.conversionRate ??
-    (bookingCount !== null && bookingCount > 0 && confirmedBookings !== null ? (((confirmedBookings + numberValue(source.completedBookings ?? 0)) / bookingCount) * 100).toFixed(1) : null)
-  );
+  const completedBookings = numberValue(source.completedBookings ?? 0);
+  const conversionRate = numberValue(source.conversionRate ?? aiIntelligence.conversionRate ?? (bookingCount !== null && bookingCount > 0 && confirmedBookings !== null ? (((confirmedBookings + completedBookings) / bookingCount) * 100).toFixed(1) : null));
   const failedPayments = numberValue(source.failedPayments ?? aiIntelligence.failedPayments ?? source.paymentStats?.failed);
   const customerRating = numberValue(source.customerRating ?? aiIntelligence.customerRating ?? aiBriefing.metrics?.rating ?? source.averageRating);
   const averageBooking = numberValue(source.averageBookingValue ?? aiIntelligence.averageBookingValue ?? (bookingCount !== null && bookingCount > 0 && revenue !== null ? revenue / bookingCount : null));
@@ -101,6 +95,11 @@ export default function AdminAITools() {
 
   const aiFeedUnavailable = [dashboard, briefing, analytics, intelligence, revenueAdvice].filter((item) => !item).length;
   const actualUnavailable = loading ? 0 : aiFeedUnavailable;
+  const analyticsFallback = {
+    monthlyRevenue: source.monthlyRevenue || [],
+    statusData: source.statusData || []
+  };
+  const hasAnalyticsData = Boolean(analytics || analyticsFallback.monthlyRevenue.length || analyticsFallback.statusData.length);
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 sm:p-6 lg:p-8">
@@ -158,7 +157,11 @@ export default function AdminAITools() {
           </div>
         </section>
 
-        <section className="rounded-3xl border border-blue-100 bg-white p-5 shadow-sm sm:p-6"><div className="mb-5"><p className="text-xs font-bold uppercase tracking-widest text-blue-700">Performance</p><h2 className="mt-1 text-xl font-black text-slate-900">AI Analytics</h2><p className="mt-1 text-sm text-slate-500">Visual trends for revenue and booking activity.</p></div>{analytics ? <AIAnalyticsCharts analytics={analytics} /> : <UnavailableState label="Analytics data unavailable" />}</section>
+        <section className="rounded-3xl border border-blue-100 bg-white p-5 shadow-sm sm:p-6">
+          <div className="mb-5"><p className="text-xs font-bold uppercase tracking-widest text-blue-700">Performance</p><h2 className="mt-1 text-xl font-black text-slate-900">AI Analytics</h2><p className="mt-1 text-sm text-slate-500">Visual trends for revenue and booking activity.</p></div>
+          {hasAnalyticsData ? <AIAnalyticsCharts analytics={analytics || {}} fallback={analyticsFallback} /> : <UnavailableState label="Analytics data unavailable" />}
+        </section>
+
         <section className="rounded-3xl border border-violet-100 bg-white p-5 shadow-sm sm:p-6"><AIOperationsCopilot /></section>
         <section className="rounded-3xl border border-cyan-100 bg-white p-5 shadow-sm sm:p-6"><AICustomerSupport /></section>
         <section className="rounded-3xl border border-amber-100 bg-white p-5 shadow-sm sm:p-6"><AIRevenueAdvisor data={aiRevenue} /></section>
