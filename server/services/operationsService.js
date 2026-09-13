@@ -8,6 +8,7 @@ import Expense from "../models/Expense.js";
 import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
 import Payment from "../models/Payment.js";
+import { postSupplierPayable } from "./financeLifecycleService.js";
 import { requireTenantId, mergeTenantFilter } from "../tenancy/context.js";
 
 const money = (n) => Math.round(Number(n || 0) * 100) / 100;
@@ -36,8 +37,9 @@ export async function transitionPurchaseOrder(id, status, userId) {
   if (status === "received") po.receivedAt = new Date();
   const saved = await po.save();
   if (status === "received") {
-    const existingPayable = await SupplierPayable.findOne(tenant({ purchaseOrder: po._id }));
-    if (!existingPayable) await SupplierPayable.create({ tenantId: po.tenantId, supplier: po.supplier, purchaseOrder: po._id, booking: po.booking, tour: po.tour, amount: po.totalAmount, dueDate: po.expectedDate || null, createdBy: userId });
+    let payable = await SupplierPayable.findOne(tenant({ purchaseOrder: po._id }));
+    if (!payable) payable = await SupplierPayable.create({ tenantId: po.tenantId, supplier: po.supplier, purchaseOrder: po._id, booking: po.booking, tour: po.tour, amount: po.totalAmount, dueDate: po.expectedDate || null, createdBy: userId });
+    await postSupplierPayable(payable);
     const existingExpense = await Expense.findOne(tenant({ purchaseOrder: po._id }));
     if (!existingExpense) await Expense.create({ tenantId: po.tenantId, category: "procurement", supplier: po.supplier, purchaseOrder: po._id, booking: po.booking, tour: po.tour, supplierName: "", description: `Received purchase order ${po.poNumber}`, amount: po.totalAmount, taxAmount: po.taxAmount, expenseDate: new Date(), status: "draft", createdBy: userId });
   }
