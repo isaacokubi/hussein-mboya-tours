@@ -12,6 +12,19 @@ import Review from "../models/Review.js";
 import Notification from "../models/Notification.js";
 
 const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
+const successfulBookingStatuses = new Set(["confirmed", "assigned", "ongoing", "completed"]);
+const excludedPaymentStatuses = new Set(["failed", "cancelled", "refunded"]);
+
+const getConfirmedSpend = (booking) => {
+  const bookingStatus = String(booking.status || "pending").toLowerCase();
+  const paymentStatus = String(booking.paymentStatus || "pending").toLowerCase();
+  if (!successfulBookingStatuses.has(bookingStatus) || excludedPaymentStatuses.has(paymentStatus)) return 0;
+
+  const bookingValue = Number(booking.totalAmount || 0);
+  const deposit = Number(booking.depositAmount || 0);
+  const baseAmount = deposit > 0 ? deposit : bookingValue;
+  return Math.max(0, baseAmount - Number(booking.refundAmount || 0));
+};
 
 export const getCustomers = async (req, res, next) => {
   requireTenantId();
@@ -80,21 +93,15 @@ export const getCustomers = async (req, res, next) => {
       if (!ownerId) continue;
 
       if (!statsMap[ownerId]) {
-        statsMap[ownerId] = { totalBookings: 0, confirmedBookings: 0, totalSpent: 0 };
+        statsMap[ownerId] = { totalBookings: 0, confirmedBookings: 0, confirmedSpend: 0 };
       }
 
       statsMap[ownerId].totalBookings += 1;
-
       const bookingStatus = String(booking.status || "pending").toLowerCase();
-      const paymentStatus = String(booking.paymentStatus || "pending").toLowerCase();
 
-      if (bookingStatus === "confirmed") {
+      if (successfulBookingStatuses.has(bookingStatus)) {
         statsMap[ownerId].confirmedBookings += 1;
-      }
-
-      if (bookingStatus === "confirmed" && ["paid", "completed"].includes(paymentStatus)) {
-        const amount = Number(booking.depositAmount || 0) || Number(booking.totalAmount || 0);
-        statsMap[ownerId].totalSpent += Math.max(0, amount - Number(booking.refundAmount || 0));
+        statsMap[ownerId].confirmedSpend += getConfirmedSpend(booking);
       }
     }
 
@@ -102,7 +109,7 @@ export const getCustomers = async (req, res, next) => {
       const stats = statsMap[customer._id.toString()] || {
         totalBookings: 0,
         confirmedBookings: 0,
-        totalSpent: 0,
+        confirmedSpend: 0,
       };
       const legacy = customerRecords.find(
         (record) => record.user?.toString() === customer._id.toString()
@@ -114,7 +121,8 @@ export const getCustomers = async (req, res, next) => {
         isActive: customer.status === "active",
         totalBookings: stats.totalBookings,
         confirmedBookings: stats.confirmedBookings,
-        totalSpent: stats.totalSpent,
+        confirmedSpend: stats.confirmedSpend,
+        totalSpent: stats.confirmedSpend,
       };
     });
 
@@ -150,9 +158,7 @@ export const getCustomerProfile = async (req, res, next) => {
       })
     ).select("-password").lean();
 
-    if (!customer) {
-      return res.status(404).json({ success: false, message: "Customer not found." });
-    }
+    if (!customer) return res.status(404).json({ success: false, message: "Customer not found." });
 
     const legacyCustomer = await Customer.findOne(
       mergeTenantFilter({ user: customer._id })
@@ -177,7 +183,10 @@ export const getCustomerProfile = async (req, res, next) => {
       const bookingStatus = String(booking.status || "pending").toLowerCase();
       const paymentStatus = String(booking.paymentStatus || "pending").toLowerCase();
 
-      if (bookingStatus === "confirmed") acc.confirmedBookings += 1;
+      if (successfulBookingStatuses.has(bookingStatus)) {
+        acc.confirmedBookings += 1;
+        acc.confirmedSpend += getConfirmedSpend(booking);
+      }
 
       if (bookingStatus === "confirmed" && ["paid", "completed"].includes(paymentStatus)) {
         const paidAmount = Number(booking.depositAmount || 0) || Number(booking.totalAmount || 0);
@@ -186,7 +195,7 @@ export const getCustomerProfile = async (req, res, next) => {
         acc.totalPaid += netPaid;
       }
       return acc;
-    }, { totalBookings: 0, confirmedBookings: 0, totalSpent: 0, totalPaid: 0 });
+    }, { totalBookings: 0, confirmedBookings: 0, confirmedSpend: 0, totalSpent: 0, totalPaid: 0 });
 
     return res.status(200).json({
       success: true,
