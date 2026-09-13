@@ -18,6 +18,10 @@ const expenseSchema = new mongoose.Schema({
   expenseDate: { type: Date, default: Date.now, index: true },
   paymentMethod: { type: String, enum: ["MPESA", "CARD", "BANK_TRANSFER", "CASH", "OTHER"], default: "BANK_TRANSFER" },
   paymentReference: { type: String, trim: true, default: "" },
+  paidAt: { type: Date, default: null },
+  approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+  paidBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+  cancelledBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
   etimsInvoiceNumber: { type: String, trim: true, default: "" },
   status: { type: String, enum: ["draft", "approved", "paid", "cancelled"], default: "draft", index: true },
   notes: { type: String, trim: true, default: "" },
@@ -27,5 +31,6 @@ const expenseSchema = new mongoose.Schema({
 expenseSchema.pre("save", function(next) { if (!this.expenseNumber) this.expenseNumber = `EXP-${Date.now()}-${Math.floor(Math.random() * 10000)}`; next(); });
 expenseSchema.index({ tenantId: 1, expenseNumber: 1 }, { unique: true });
 expenseSchema.index({ tenantId: 1, purchaseOrder: 1 }, { unique: true, sparse: true });
+expenseSchema.index({ tenantId: 1, status: 1, expenseDate: -1 });
 expenseSchema.plugin(tenantPlugin);
 export default mongoose.models.Expense || mongoose.model("Expense", expenseSchema);
