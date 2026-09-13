@@ -1,4 +1,5 @@
 import { resolveTenant } from "../middleware/tenantMiddleware.js";
+import { enforcePlanFeature } from "../middleware/planFeatureMiddleware.js";
 import "../tenancy/bootstrap.js";
 import express from "express";
 import { protect, checkPermission } from "../middleware/authMiddleware.js";
@@ -89,6 +90,7 @@ const router = express.Router();
 router.use("/integrations", integrationRoutes);
 router.use("/tenant", tenantBrandingRoutes);
 router.use(resolveTenant);
+router.use(enforcePlanFeature);
 router.use("/categories", categoryRoutes);
 router.use("/auth", authRoutes); router.use("/mfa", mfaRoutes); router.use("/bookings", bookingRoutes); router.use("/tours", tourRoutes); router.use("/destinations", destinationRoutes); router.use("/admin/destinations", adminDestinationRoutes); router.use("/reviews", reviewRoutes); router.use("/custom-tour-requests", customTourRequestRoutes); router.use("/wishlist", wishlistRoutes); router.use("/gallery", galleryRoutes); router.use("/hero", heroRoutes); router.use("/mpesa", mpesaRoutes); router.use("/payments", mpesaRoutes); router.use("/payments/stripe", stripeRoutes); router.use("/tenants", tenantRoutes);
 router.use("/admin/auth", adminAuthRoutes); router.use("/admin/roles", adminRoleRoutes); router.use("/admin/payment-links", paymentLinkRoutes); router.use("/payment-links", paymentLinkRoutes); router.use("/admin", adminRoutes); router.use("/admin/tours", adminTourRoutes); router.use("/admin/bookings", adminBookingRoutes); router.use("/admin/payments", adminPaymentRoutes); router.use("/system", systemHealthRoutes); router.use("/security", securityRoutes);
