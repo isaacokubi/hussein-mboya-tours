@@ -4,29 +4,14 @@ import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
-/*
-|--------------------------------------------------------------------------
-| NOTIFICATION SCHEMA
-|--------------------------------------------------------------------------
-|
-| Stores notifications for users including:
-| - Booking updates
-| - Payments
-| - Tour assignments
-| - Promotions
-| - System alerts
-|
-|--------------------------------------------------------------------------
-*/
-
 const notificationSchema = new mongoose.Schema(
   {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
-    /*
-    |--------------------------------------------------------------------------
-    | RECIPIENT
-    |--------------------------------------------------------------------------
-    */
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Organization",
+      index: true,
+      immutable: true,
+    },
 
     recipient: {
       type: mongoose.Schema.Types.ObjectId,
@@ -35,23 +20,11 @@ const notificationSchema = new mongoose.Schema(
       index: true,
     },
 
-    /*
-    |--------------------------------------------------------------------------
-    | BACKWARD COMPATIBILITY
-    |--------------------------------------------------------------------------
-    */
-
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       default: null,
     },
-
-    /*
-    |--------------------------------------------------------------------------
-    | TITLE
-    |--------------------------------------------------------------------------
-    */
 
     title: {
       type: String,
@@ -60,24 +33,12 @@ const notificationSchema = new mongoose.Schema(
       maxlength: 150,
     },
 
-    /*
-    |--------------------------------------------------------------------------
-    | MESSAGE
-    |--------------------------------------------------------------------------
-    */
-
     message: {
       type: String,
       required: true,
       trim: true,
       maxlength: 2000,
     },
-
-    /*
-    |--------------------------------------------------------------------------
-    | CATEGORY
-    |--------------------------------------------------------------------------
-    */
 
     type: {
       type: String,
@@ -95,23 +56,11 @@ const notificationSchema = new mongoose.Schema(
       index: true,
     },
 
-    /*
-    |--------------------------------------------------------------------------
-    | PRIORITY
-    |--------------------------------------------------------------------------
-    */
-
     priority: {
       type: String,
       enum: ["low", "normal", "high", "urgent"],
       default: "normal",
     },
-
-    /*
-    |--------------------------------------------------------------------------
-    | READ STATUS
-    |--------------------------------------------------------------------------
-    */
 
     read: {
       type: Boolean,
@@ -124,23 +73,12 @@ const notificationSchema = new mongoose.Schema(
       default: null,
     },
 
-    /*
-    |--------------------------------------------------------------------------
-    | ACTION URL
-    |--------------------------------------------------------------------------
-    */
-
     actionUrl: {
       type: String,
       default: "",
       trim: true,
+      maxlength: 500,
     },
-
-    /*
-    |--------------------------------------------------------------------------
-    | RELATED DOCUMENT
-    |--------------------------------------------------------------------------
-    */
 
     relatedModel: {
       type: String,
@@ -162,22 +100,10 @@ const notificationSchema = new mongoose.Schema(
       default: null,
     },
 
-    /*
-    |--------------------------------------------------------------------------
-    | METADATA
-    |--------------------------------------------------------------------------
-    */
-
     metadata: {
       type: mongoose.Schema.Types.Mixed,
-      default: {},
+      default: () => ({}),
     },
-
-    /*
-    |--------------------------------------------------------------------------
-    | DELIVERY STATUS
-    |--------------------------------------------------------------------------
-    */
 
     isSent: {
       type: Boolean,
@@ -187,6 +113,7 @@ const notificationSchema = new mongoose.Schema(
     isArchived: {
       type: Boolean,
       default: false,
+      index: true,
     },
   },
   {
@@ -194,68 +121,19 @@ const notificationSchema = new mongoose.Schema(
   }
 );
 
-/*
-|--------------------------------------------------------------------------
-| INDEXES
-|--------------------------------------------------------------------------
-*/
-
-notificationSchema.index({
-  recipient: 1,
-  createdAt: -1,
-});
-
-notificationSchema.index({
-  recipient: 1,
-  read: 1,
-});
-
-notificationSchema.index({
-  recipient: 1,
-  type: 1,
-});
-
-notificationSchema.index({
-  createdAt: -1,
-});
-
-notificationSchema.index({
-  isArchived: 1,
-});
-
-/*
-|--------------------------------------------------------------------------
-| VIRTUAL RECEIVER
-|--------------------------------------------------------------------------
-*/
+notificationSchema.index({ tenantId: 1, recipient: 1, createdAt: -1 });
+notificationSchema.index({ tenantId: 1, recipient: 1, read: 1, isArchived: 1, createdAt: -1 });
+notificationSchema.index({ tenantId: 1, recipient: 1, type: 1, createdAt: -1 });
 
 notificationSchema.virtual("receiver").get(function () {
   return this.recipient || this.user;
 });
 
-/*
-|--------------------------------------------------------------------------
-| AUTO SYNC LEGACY USER FIELD
-|--------------------------------------------------------------------------
-*/
-
 notificationSchema.pre("save", function (next) {
-  if (!this.user && this.recipient) {
-    this.user = this.recipient;
-  }
-
-  if (this.read && !this.readAt) {
-    this.readAt = new Date();
-  }
-
+  if (!this.user && this.recipient) this.user = this.recipient;
+  if (this.read && !this.readAt) this.readAt = new Date();
   next();
 });
-
-/*
-|--------------------------------------------------------------------------
-| INSTANCE METHODS
-|--------------------------------------------------------------------------
-*/
 
 notificationSchema.methods.markAsRead = async function () {
   this.read = true;
@@ -267,12 +145,6 @@ notificationSchema.methods.archive = async function () {
   this.isArchived = true;
   return this.save();
 };
-
-/*
-|--------------------------------------------------------------------------
-| STATIC METHODS
-|--------------------------------------------------------------------------
-*/
 
 notificationSchema.statics.getUnreadCount = function (userId) {
   return this.countDocuments({
@@ -297,20 +169,7 @@ notificationSchema.statics.markAllAsRead = function (userId) {
   );
 };
 
-/*
-|--------------------------------------------------------------------------
-| MODEL
-|--------------------------------------------------------------------------
-*/
-
 const tenantNotificationSchema = notificationSchema.plugin(tenantPlugin);
 const Notification = mongoose.models.Notification || mongoose.model("Notification", tenantNotificationSchema);
-
-
-
-
-
-
-
 
 export default Notification;
