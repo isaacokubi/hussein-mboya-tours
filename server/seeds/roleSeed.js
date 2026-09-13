@@ -15,22 +15,13 @@ const seedRoles = async () => {
     for (const role of roles) {
       await Role.findOneAndUpdate(
         { name: role.name },
-        {
-          $set: {
-            ...role,
-            status: "active",
-          },
-        },
-        {
-          upsert: true,
-          new: true,
-          runValidators: true,
-          setDefaultsOnInsert: true,
-        }
+        { $set: { ...role, status: "active" } },
+        { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
       );
     }
 
-    // debug removed
+    // Legacy aliases are intentionally not seeded. Existing data is normalized
+    // by the dedicated migration before production deployment.
   } catch (error) {
     console.error("❌ Role Seeder Error:", error.message);
     throw error;
