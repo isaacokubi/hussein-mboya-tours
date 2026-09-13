@@ -1,9 +1,15 @@
 const hasValue = (value) => value !== undefined && value !== null && value !== "";
+const numeric = (value) => hasValue(value) && Number.isFinite(Number(value)) ? Number(value) : null;
 
-export default function AIRevenueAdvisor({ data = {} }) {
+export default function AIRevenueAdvisor({ data = {}, fallback = {} }) {
   const metrics = data.metrics || {};
-  const recommendations = data.recommendations || [];
-  const topTours = data.topTours || [];
+  const fallbackMetrics = fallback.metrics || {};
+  const recommendations = data.recommendations?.length ? data.recommendations : fallback.recommendations || [];
+  const topTours = data.topTours?.length ? data.topTours : fallback.topTours || [];
+
+  const totalBookings = numeric(metrics.totalBookings) ?? numeric(fallbackMetrics.totalBookings);
+  const totalRevenue = numeric(metrics.totalRevenue) ?? numeric(fallbackMetrics.totalRevenue);
+  const totalTours = numeric(metrics.totalTours) ?? numeric(fallbackMetrics.totalTours);
 
   return (
     <div>
@@ -14,9 +20,9 @@ export default function AIRevenueAdvisor({ data = {} }) {
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <Metric label="Bookings" value={hasValue(metrics.totalBookings) ? Number(metrics.totalBookings).toLocaleString() : "—"} tone="emerald" />
-        <Metric label="Revenue" value={hasValue(metrics.totalRevenue) ? `KES ${Number(metrics.totalRevenue).toLocaleString()}` : "—"} tone="amber" />
-        <Metric label="Tours" value={hasValue(metrics.totalTours) ? Number(metrics.totalTours).toLocaleString() : "—"} tone="blue" />
+        <Metric label="Bookings" value={hasValue(totalBookings) ? totalBookings.toLocaleString() : "—"} tone="emerald" />
+        <Metric label="Revenue" value={hasValue(totalRevenue) ? `KES ${totalRevenue.toLocaleString()}` : "—"} tone="amber" />
+        <Metric label="Tours" value={hasValue(totalTours) ? totalTours.toLocaleString() : "—"} tone="blue" />
       </div>
 
       {topTours.length > 0 && (
@@ -26,10 +32,10 @@ export default function AIRevenueAdvisor({ data = {} }) {
             {topTours.map((item, index) => (
               <div key={`${item._id || index}`} className="flex items-center justify-between rounded-xl border border-white bg-white px-4 py-3 shadow-sm">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-bold text-slate-800">{item.tour?.title || "Tour record"}</p>
+                  <p className="truncate text-sm font-bold text-slate-800">{item.tour?.title || item.title || "Tour record"}</p>
                   <p className="text-xs text-slate-500">Rank #{index + 1}</p>
                 </div>
-                <span className="ml-3 rounded-full bg-violet-100 px-2.5 py-1 text-xs font-black text-violet-700">{Number(item.bookings || 0)} bookings</span>
+                <span className="ml-3 rounded-full bg-violet-100 px-2.5 py-1 text-xs font-black text-violet-700">{Number(item.bookings ?? item.totalBookings ?? 0)} bookings</span>
               </div>
             ))}
           </div>
