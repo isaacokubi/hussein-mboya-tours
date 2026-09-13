@@ -5,7 +5,7 @@ import { tenantFilter } from "../tenancy/tenantQuery.js";
 
 const userId = (req) => req.user?._id || req.user?.id || null;
 const ok = (res, data, status = 200) => res.status(status).json({ success: true, data });
-const DEFAULT_ACCOUNTS = [["1000", "Cash on Hand", "asset", "cash"], ["1010", "Bank Account", "asset", "bank"], ["1020", "M-Pesa", "asset", "mobile_money"], ["1100", "Accounts Receivable", "asset", "receivable"], ["2000", "Accounts Payable", "liability", "payable"], ["2100", "VAT / Tax Payable", "liability", "tax"], ["3000", "Owner Equity", "equity", "capital"], ["4000", "Tour Revenue", "revenue", "sales"], ["4100", "Other Revenue", "revenue", "other_revenue"], ["5000", "Tour / Supplier Costs", "expense", "cost_of_sales"], ["5100", "Commissions", "expense", "commission"], ["5200", "Operating Expenses", "expense", "operating"]];
+const DEFAULT_ACCOUNTS = [["1000", "Cash on Hand", "asset", "cash"], ["1010", "Bank Account", "asset", "bank"], ["1020", "M-Pesa", "asset", "mobile_money"], ["1100", "Accounts Receivable", "asset", "receivable"], ["2000", "Accounts Payable", "liability", "payable"], ["2100", "VAT / Tax Payable", "liability", "tax"], ["3000", "Owner Equity", "equity", "capital"], ["4000", "Tour Revenue", "revenue", "sales"], ["4010", "Hotel Revenue", "revenue", "sales"], ["4020", "Airport Transfer Revenue", "revenue", "sales"], ["4100", "Other Revenue", "revenue", "other_revenue"], ["5000", "Tour / Supplier Costs", "expense", "cost_of_sales"], ["5100", "Commissions", "expense", "commission"], ["5200", "Operating Expenses", "expense", "operating"]];
 
 // ChartOfAccount has the tenant plugin enabled. Keep the tenant out of the
 // explicit upsert filter so the plugin can add it exactly once. Supplying
