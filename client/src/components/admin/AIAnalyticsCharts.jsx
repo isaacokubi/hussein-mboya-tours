@@ -19,13 +19,10 @@ export default function AIAnalyticsCharts({ analytics = {}, fallback = {} }) {
   const canonicalRevenue = fallback.monthlyRevenue || [];
   const canonicalRevenueTotal = canonicalRevenue.reduce((sum, item) => sum + amountOf(item), 0);
   const aiRevenueTotal = aiRevenue.reduce((sum, item) => sum + amountOf(item), 0);
-  const fallbackRevenueTotal = Number(fallback.totalRevenue || 0);
+  const fallbackRevenueTotal = Number(fallback.totalRevenue || fallback.revenue || analytics.totalRevenue || analytics.revenue || 0);
 
-  // Never let an AI feed containing only zero placeholders hide real tenant revenue.
   let revenueSource = aiRevenue;
-  if (!aiRevenue.length || (aiRevenueTotal === 0 && canonicalRevenueTotal > 0)) {
-    revenueSource = canonicalRevenue;
-  }
+  if (!aiRevenue.length || (aiRevenueTotal === 0 && canonicalRevenueTotal > 0)) revenueSource = canonicalRevenue;
 
   let revenue = revenueSource.map((item) => ({
     ...item,
@@ -33,8 +30,6 @@ export default function AIAnalyticsCharts({ analytics = {}, fallback = {} }) {
     revenue: amountOf(item)
   }));
 
-  // If the monthly series is empty/zero but the canonical dashboard has real revenue,
-  // surface that amount as a current-period point instead of drawing a misleading zero line.
   if ((!revenue.length || revenue.every((item) => item.revenue === 0)) && fallbackRevenueTotal > 0) {
     revenue = [{ label: "Recorded revenue", revenue: fallbackRevenueTotal }];
   }
@@ -45,14 +40,11 @@ export default function AIAnalyticsCharts({ analytics = {}, fallback = {} }) {
   const canonicalBookingTotal = canonicalBookings.reduce((sum, item) => sum + Number(item?.count || 0), 0);
   const useCanonicalBookings = canonicalBookings.length > 0 && aiBookingTotal === 0 && canonicalBookingTotal > 0;
   const bookingsSource = useCanonicalBookings || !aiBookings.length ? canonicalBookings : aiBookings;
-  const bookings = bookingsSource
-    .map((item) => ({
-      ...item,
-      label: titleCase(item.status || item.label || item._id?.day),
-      bookings: Number(item.bookings ?? item.count ?? 0)
-    }))
-    .filter((item) => item.bookings > 0);
-
+  const bookings = bookingsSource.map((item) => ({
+    ...item,
+    label: titleCase(item.status || item.label || item._id?.day),
+    bookings: Number(item.bookings ?? item.count ?? 0)
+  })).filter((item) => item.bookings > 0);
   const hasDailyActivity = aiBookings.length > 0 && !useCanonicalBookings;
 
   return (
@@ -91,11 +83,7 @@ function ChartCard({ title, subtitle, empty, children }) {
         <h3 className="font-black text-slate-900">{title}</h3>
         <p className="mt-1 text-xs text-slate-500">{subtitle}</p>
       </div>
-      {empty ? (
-        <div className="flex h-[300px] items-center justify-center rounded-xl border border-dashed border-slate-200 bg-white px-5 text-center text-sm text-slate-500">
-          No records are available for this chart yet.
-        </div>
-      ) : children}
+      {empty ? <div className="flex h-[300px] items-center justify-center rounded-xl border border-dashed border-slate-200 bg-white px-5 text-center text-sm text-slate-500">No records are available for this chart yet.</div> : children}
     </div>
   );
 }
