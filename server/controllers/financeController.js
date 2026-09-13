@@ -5,26 +5,38 @@ import Commission from "../models/Commission.js";
 import User from "../models/User.js";
 
 const PAYMENT_STATUSES = ["pending", "completed", "failed", "cancelled", "refunded"];
+const DEMO_MARKER = /synthetic|DEMO[-_]/i;
+const livePaymentFilter = (status) => mergeTenantFilter({ status, $nor: [
+  { notes: DEMO_MARKER },
+  { transactionId: DEMO_MARKER },
+  { transactionReference: DEMO_MARKER },
+  { mpesaReceiptNumber: DEMO_MARKER },
+] });
+const liveBookingFilter = (extra = {}) => mergeTenantFilter({ ...extra, $nor: [
+  { notes: DEMO_MARKER },
+  { paymentReference: DEMO_MARKER },
+  { transactionId: DEMO_MARKER },
+] });
 
 export const getFinanceStats = async (req, res, next) => {
   requireTenantId();
   try {
     const [revenueResult, completedPayments, pendingPayments, failedPayments, refundedPayments, refundedAmountResult, paidBookings, commissionResult] = await Promise.all([
       Payment.aggregate([
-        { $match: mergeTenantFilter({ status: "completed" }) },
+        { $match: livePaymentFilter("completed") },
         { $group: { _id: null, total: { $sum: { $ifNull: ["$amount", 0] } } } },
       ]),
-      Payment.countDocuments(mergeTenantFilter({ status: "completed" })),
-      Payment.countDocuments(mergeTenantFilter({ status: "pending" })),
-      Payment.countDocuments(mergeTenantFilter({ status: "failed" })),
-      Payment.countDocuments(mergeTenantFilter({ status: "refunded" })),
+      Payment.countDocuments(livePaymentFilter("completed")),
+      Payment.countDocuments(livePaymentFilter("pending")),
+      Payment.countDocuments(livePaymentFilter("failed")),
+      Payment.countDocuments(livePaymentFilter("refunded")),
       Payment.aggregate([
-        { $match: mergeTenantFilter({ status: "refunded" }) },
+        { $match: livePaymentFilter("refunded") },
         { $group: { _id: null, total: { $sum: { $ifNull: ["$amount", 0] } } } },
       ]),
-      Booking.countDocuments(mergeTenantFilter({ paymentStatus: "paid" })),
+      Booking.countDocuments(liveBookingFilter({ paymentStatus: "paid" })),
       Commission.aggregate([
-        { $match: mergeTenantFilter({}) },
+        { $match: mergeTenantFilter({ $nor: [{ notes: DEMO_MARKER }, { paymentReference: DEMO_MARKER }] }) },
         { $group: { _id: null, total: { $sum: { $ifNull: ["$amount", 0] } } } },
       ]),
     ]);
@@ -41,7 +53,12 @@ export const getTransactions = async (req, res, next) => {
     const currentPage = Math.max(Number(page), 1);
     const pageSize = Math.min(Math.max(Number(limit), 1), 100);
     const skip = (currentPage - 1) * pageSize;
-    const filter = mergeTenantFilter({});
+    const filter = mergeTenantFilter({ $nor: [
+      { notes: DEMO_MARKER },
+      { transactionId: DEMO_MARKER },
+      { transactionReference: DEMO_MARKER },
+      { mpesaReceiptNumber: DEMO_MARKER },
+    ] });
     if (status && PAYMENT_STATUSES.includes(status)) filter.status = status;
     if (startDate || endDate) {
       filter.createdAt = {};
@@ -52,7 +69,7 @@ export const getTransactions = async (req, res, next) => {
       const regex = { $regex: String(search).trim(), $options: "i" };
       const [matchingUsers, matchingBookings] = await Promise.all([
         User.find(mergeTenantFilter({ $or: [{ name: regex }, { email: regex }, { phone: regex }] })).select("_id").lean(),
-        Booking.find(mergeTenantFilter({ bookingNumber: regex })).select("_id").lean(),
+        Booking.find(liveBookingFilter({ bookingNumber: regex })).select("_id").lean(),
       ]);
       filter.$or = [
         { transactionId: regex }, { transactionReference: regex }, { mpesaReceiptNumber: regex },
@@ -76,7 +93,7 @@ export const getReports = async (req, res, next) => {
   requireTenantId();
   try {
     const monthlyRevenue = await Payment.aggregate([
-      { $match: mergeTenantFilter({ status: "completed" }) },
+      { $match: livePaymentFilter("completed") },
       { $group: { _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } }, revenue: { $sum: { $ifNull: ["$amount", 0] } }, transactions: { $sum: 1 } } },
       { $sort: { "_id.year": 1, "_id.month": 1 } },
     ]);
