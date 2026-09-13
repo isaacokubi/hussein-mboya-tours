@@ -1,6 +1,7 @@
 import SystemSetting from "../models/SystemSetting.js";
 import { runWithTenant } from "../tenancy/context.js";
 import { hasLegacyMpesaConfig, mpesaConfig } from "../config/mpesa.js";
+import { DEFAULT_PLAN_FEATURES, PLAN_FEATURE_CATALOG, PLAN_ORDER, getPlanFeatures, validatePlanFeatures } from "../services/planFeatureService.js";
 
 const PRICE_FIELDS = { starter: "tenantPlanStarterPriceKes", professional: "tenantPlanProfessionalPriceKes", business: "tenantPlanBusinessPriceKes", enterprise: "tenantPlanEnterprisePriceKes" };
 const envPrices = () => ({ starter: Number(process.env.TENANT_PLAN_STARTER_PRICE_KES || 0), professional: Number(process.env.TENANT_PLAN_PROFESSIONAL_PRICE_KES || 0), business: Number(process.env.TENANT_PLAN_BUSINESS_PRICE_KES || 0), enterprise: Number(process.env.TENANT_PLAN_ENTERPRISE_PRICE_KES || 0) });
@@ -14,7 +15,9 @@ export const getPlatformBillingConfig = async (req, res, next) => {
     const settings = await readPlatformSettings();
     const env = envPrices();
     const prices = Object.fromEntries(Object.entries(PRICE_FIELDS).map(([plan, field]) => [plan, Number(settings?.[field] ?? env[plan] ?? 0)]));
-    return res.json({ success: true, prices, currency: "KES", mpesa: paymentStatus() });
+    const configuredFeatures = settings?.subscriptionPlanFeatures || {};
+    const features = Object.fromEntries(PLAN_ORDER.map((plan) => [plan, Array.isArray(configuredFeatures?.[plan]) && configuredFeatures[plan].length ? configuredFeatures[plan] : DEFAULT_PLAN_FEATURES[plan]]));
+    return res.json({ success: true, prices, currency: "KES", mpesa: paymentStatus(), features, featureCatalog: PLAN_FEATURE_CATALOG.map(([id, name, description]) => ({ id, name, description })) });
   } catch (error) { next(error); }
 };
 
@@ -33,10 +36,21 @@ export const updatePlatformBillingConfig = async (req, res, next) => {
         }
         values[field] = value;
       }
+      const features = validatePlanFeatures(req.body?.features || DEFAULT_PLAN_FEATURES);
+      settings.subscriptionPlanFeatures = features;
       Object.assign(settings, values);
       await settings.save();
-      return Object.fromEntries(Object.entries(PRICE_FIELDS).map(([plan, field]) => [plan, Number(settings[field] || 0)]));
+      return {
+        prices: Object.fromEntries(Object.entries(PRICE_FIELDS).map(([plan, field]) => [plan, Number(settings[field] || 0)])),
+        features: Object.fromEntries(PLAN_ORDER.map((plan) => [plan, [...(settings.subscriptionPlanFeatures?.get?.(plan) || settings.subscriptionPlanFeatures?.[plan] || features[plan])]])),
+      };
     });
-    return res.json({ success: true, message: "Platform subscription pricing saved successfully.", prices: result, currency: "KES", mpesa: paymentStatus() });
+    return res.json({ success: true, message: "Subscription pricing and plan features saved successfully.", prices: result.prices, features: result.features, currency: "KES", mpesa: paymentStatus() });
+  } catch (error) { next(error); }
+};
+
+export const getPlatformPlanFeatureCatalog = async (req, res, next) => {
+  try {
+    return res.json({ success: true, plans: await getPlanFeatures(), catalog: PLAN_FEATURE_CATALOG.map(([id, name, description]) => ({ id, name, description })) });
   } catch (error) { next(error); }
 };
