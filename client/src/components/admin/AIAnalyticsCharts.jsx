@@ -11,45 +11,53 @@ import {
 } from "recharts";
 
 const monthName = (month) => new Date(2000, Number(month) - 1, 1).toLocaleString(undefined, { month: "short" });
-const amountOf = (item) => Number(item?.revenue ?? item?.amount ?? 0);
+const amountOf = (item) => Number(item?.revenue ?? item?.amount ?? item?.totalRevenue ?? 0);
+const titleCase = (value) => String(value || "Unknown").replace(/[_-]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 
 export default function AIAnalyticsCharts({ analytics = {}, fallback = {} }) {
   const aiRevenue = analytics.monthlyRevenue || [];
   const canonicalRevenue = fallback.monthlyRevenue || [];
   const canonicalRevenueTotal = canonicalRevenue.reduce((sum, item) => sum + amountOf(item), 0);
   const aiRevenueTotal = aiRevenue.reduce((sum, item) => sum + amountOf(item), 0);
-  const useCanonicalRevenue = canonicalRevenue.length > 0 && aiRevenueTotal === 0 && canonicalRevenueTotal > 0;
-  const revenueSource = useCanonicalRevenue || !aiRevenue.length ? canonicalRevenue.map((item) => ({
-    _id: { month: item.month, year: item.year },
-    revenue: amountOf(item),
-    label: item.label || item.month
-  })) : aiRevenue;
-  const revenue = revenueSource.map((item) => ({
+  const fallbackRevenueTotal = Number(fallback.totalRevenue || 0);
+
+  // Never let an AI feed containing only zero placeholders hide real tenant revenue.
+  let revenueSource = aiRevenue;
+  if (!aiRevenue.length || (aiRevenueTotal === 0 && canonicalRevenueTotal > 0)) {
+    revenueSource = canonicalRevenue;
+  }
+
+  let revenue = revenueSource.map((item) => ({
     ...item,
-    label: item.label || `${monthName(item._id?.month)} ${item._id?.year || ""}`.trim(),
+    label: item.label || item.month || `${monthName(item._id?.month)} ${item._id?.year || ""}`.trim(),
     revenue: amountOf(item)
   }));
+
+  // If the monthly series is empty/zero but the canonical dashboard has real revenue,
+  // surface that amount as a current-period point instead of drawing a misleading zero line.
+  if ((!revenue.length || revenue.every((item) => item.revenue === 0)) && fallbackRevenueTotal > 0) {
+    revenue = [{ label: "Recorded revenue", revenue: fallbackRevenueTotal }];
+  }
 
   const aiBookings = analytics.bookingActivity || [];
   const canonicalBookings = fallback.statusData || [];
   const aiBookingTotal = aiBookings.reduce((sum, item) => sum + Number(item?.bookings || 0), 0);
   const canonicalBookingTotal = canonicalBookings.reduce((sum, item) => sum + Number(item?.count || 0), 0);
   const useCanonicalBookings = canonicalBookings.length > 0 && aiBookingTotal === 0 && canonicalBookingTotal > 0;
-  const bookingsSource = useCanonicalBookings || !aiBookings.length ? canonicalBookings.map((item) => ({
-    _id: { day: item.status },
-    bookings: Number(item.count || 0)
-  })) : aiBookings;
-  const bookings = bookingsSource.map((item) => ({
-    ...item,
-    label: item.label || `${item._id?.day || ""}/${item._id?.month || ""}`.replace(/\/$/, ""),
-    bookings: Number(item.bookings || 0)
-  }));
+  const bookingsSource = useCanonicalBookings || !aiBookings.length ? canonicalBookings : aiBookings;
+  const bookings = bookingsSource
+    .map((item) => ({
+      ...item,
+      label: titleCase(item.status || item.label || item._id?.day),
+      bookings: Number(item.bookings ?? item.count ?? 0)
+    }))
+    .filter((item) => item.bookings > 0);
 
   const hasDailyActivity = aiBookings.length > 0 && !useCanonicalBookings;
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
-      <ChartCard title="Revenue Trend" subtitle="Completed payment revenue by month" empty={!revenue.length}>
+      <ChartCard title="Revenue Trend" subtitle="Recorded payment revenue by period" empty={!revenue.length}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={revenue} margin={{ top: 10, right: 12, left: 0, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
