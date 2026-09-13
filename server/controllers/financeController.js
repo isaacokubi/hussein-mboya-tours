@@ -5,43 +5,20 @@ import Commission from "../models/Commission.js";
 import User from "../models/User.js";
 
 const PAYMENT_STATUSES = ["pending", "completed", "failed", "cancelled", "refunded"];
-const DEMO_MARKER = /synthetic|DEMO[-_]/i;
-const livePaymentFilter = (status) => mergeTenantFilter({ status, $nor: [
-  { notes: DEMO_MARKER },
-  { transactionId: DEMO_MARKER },
-  { transactionReference: DEMO_MARKER },
-  { mpesaReceiptNumber: DEMO_MARKER },
-] });
-const liveBookingFilter = (extra = {}) => mergeTenantFilter({ ...extra, $nor: [
-  { notes: DEMO_MARKER },
-  { paymentReference: DEMO_MARKER },
-  { transactionId: DEMO_MARKER },
-] });
+const tenantPaymentFilter = (status) => mergeTenantFilter({ status });
+const tenantBookingFilter = (extra = {}) => mergeTenantFilter(extra);
 
 export const getFinanceStats = async (req, res, next) => {
   requireTenantId();
   try {
     const [revenueResult, completedPayments, pendingPayments, failedPayments, refundedPayments, refundedAmountResult, paidBookings, commissionResult] = await Promise.all([
-      Payment.aggregate([
-        { $match: livePaymentFilter("completed") },
-        { $group: { _id: null, total: { $sum: { $ifNull: ["$amount", 0] } } } },
-      ]),
-      Payment.countDocuments(livePaymentFilter("completed")),
-      Payment.countDocuments(livePaymentFilter("pending")),
-      Payment.countDocuments(livePaymentFilter("failed")),
-      Payment.countDocuments(livePaymentFilter("refunded")),
-      Payment.aggregate([
-        { $match: livePaymentFilter("refunded") },
-        { $group: { _id: null, total: { $sum: { $ifNull: ["$amount", 0] } } } },
-      ]),
-      Booking.countDocuments(liveBookingFilter({ paymentStatus: "paid" })),
-      Commission.aggregate([
-        { $match: mergeTenantFilter({ $nor: [{ notes: DEMO_MARKER }, { paymentReference: DEMO_MARKER }] }) },
-        { $group: { _id: null, total: { $sum: { $ifNull: ["$amount", 0] } } } },
-      ]),
+      Payment.aggregate([{ $match: tenantPaymentFilter("completed") }, { $group: { _id: null, total: { $sum: { $ifNull: ["$amount", 0] } } } }]),
+      Payment.countDocuments(tenantPaymentFilter("completed")), Payment.countDocuments(tenantPaymentFilter("pending")), Payment.countDocuments(tenantPaymentFilter("failed")), Payment.countDocuments(tenantPaymentFilter("refunded")),
+      Payment.aggregate([{ $match: tenantPaymentFilter("refunded") }, { $group: { _id: null, total: { $sum: { $ifNull: ["$amount", 0] } } } }]),
+      Booking.countDocuments(tenantBookingFilter({ paymentStatus: "paid" })),
+      Commission.aggregate([{ $match: mergeTenantFilter({}) }, { $group: { _id: null, total: { $sum: { $ifNull: ["$amount", 0] } } } }]),
     ]);
-    const revenue = revenueResult[0]?.total || 0;
-    const refundedAmount = refundedAmountResult[0]?.total || 0;
+    const revenue = revenueResult[0]?.total || 0; const refundedAmount = refundedAmountResult[0]?.total || 0;
     return res.status(200).json({ success: true, data: { revenue, netRevenue: revenue - refundedAmount, refundedAmount, completedPayments, pendingPayments, failedPayments, refundedPayments, paidBookings, commission: commissionResult[0]?.total || 0 } });
   } catch (error) { next(error); }
 };
@@ -49,54 +26,17 @@ export const getFinanceStats = async (req, res, next) => {
 export const getTransactions = async (req, res, next) => {
   requireTenantId();
   try {
-    const { page = 1, limit = 20, status, search, startDate, endDate } = req.query;
-    const currentPage = Math.max(Number(page), 1);
-    const pageSize = Math.min(Math.max(Number(limit), 1), 100);
-    const skip = (currentPage - 1) * pageSize;
-    const filter = mergeTenantFilter({ $nor: [
-      { notes: DEMO_MARKER },
-      { transactionId: DEMO_MARKER },
-      { transactionReference: DEMO_MARKER },
-      { mpesaReceiptNumber: DEMO_MARKER },
-    ] });
+    const { page = 1, limit = 20, status, search, startDate, endDate } = req.query; const currentPage = Math.max(Number(page), 1); const pageSize = Math.min(Math.max(Number(limit), 1), 100); const skip = (currentPage - 1) * pageSize; const filter = mergeTenantFilter({});
     if (status && PAYMENT_STATUSES.includes(status)) filter.status = status;
-    if (startDate || endDate) {
-      filter.createdAt = {};
-      if (startDate) filter.createdAt.$gte = new Date(startDate);
-      if (endDate) filter.createdAt.$lte = new Date(endDate);
-    }
-    if (search) {
-      const regex = { $regex: String(search).trim(), $options: "i" };
-      const [matchingUsers, matchingBookings] = await Promise.all([
-        User.find(mergeTenantFilter({ $or: [{ name: regex }, { email: regex }, { phone: regex }] })).select("_id").lean(),
-        Booking.find(liveBookingFilter({ bookingNumber: regex })).select("_id").lean(),
-      ]);
-      filter.$or = [
-        { transactionId: regex }, { transactionReference: regex }, { mpesaReceiptNumber: regex },
-        { customer: { $in: matchingUsers.map((user) => user._id) } },
-        { booking: { $in: matchingBookings.map((booking) => booking._id) } },
-      ];
-    }
-    const [payments, total] = await Promise.all([
-      Payment.find(filter)
-        .populate("booking", "bookingNumber travelDate mpesaReceipt transactionId paymentStatus status")
-        .populate("customer", "name email phone")
-        .populate("user", "name email phone")
-        .sort({ createdAt: -1 }).skip(skip).limit(pageSize).lean(),
-      Payment.countDocuments(filter),
-    ]);
+    if (startDate || endDate) { filter.createdAt = {}; if (startDate) filter.createdAt.$gte = new Date(startDate); if (endDate) filter.createdAt.$lte = new Date(endDate); }
+    if (search) { const regex = { $regex: String(search).trim(), $options: "i" }; const [matchingUsers, matchingBookings] = await Promise.all([User.find(mergeTenantFilter({ $or: [{ name: regex }, { email: regex }, { phone: regex }] })).select("_id").lean(), Booking.find(tenantBookingFilter({ bookingNumber: regex })).select("_id").lean()]); filter.$or = [{ transactionId: regex }, { transactionReference: regex }, { mpesaReceiptNumber: regex }, { customer: { $in: matchingUsers.map((user) => user._id) } }, { booking: { $in: matchingBookings.map((booking) => booking._id) } }]; }
+    const [payments, total] = await Promise.all([Payment.find(filter).populate("booking", "bookingNumber travelDate mpesaReceipt transactionId paymentStatus status").populate("customer", "name email phone").populate("user", "name email phone").sort({ createdAt: -1 }).skip(skip).limit(pageSize).lean(), Payment.countDocuments(filter)]);
     return res.status(200).json({ success: true, count: payments.length, pagination: { total, page: currentPage, pages: Math.ceil(total / pageSize), limit: pageSize }, data: payments });
   } catch (error) { next(error); }
 };
 
 export const getReports = async (req, res, next) => {
   requireTenantId();
-  try {
-    const monthlyRevenue = await Payment.aggregate([
-      { $match: livePaymentFilter("completed") },
-      { $group: { _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } }, revenue: { $sum: { $ifNull: ["$amount", 0] } }, transactions: { $sum: 1 } } },
-      { $sort: { "_id.year": 1, "_id.month": 1 } },
-    ]);
-    return res.status(200).json({ success: true, data: { monthlyRevenue } });
-  } catch (error) { next(error); }
+  try { const monthlyRevenue = await Payment.aggregate([{ $match: tenantPaymentFilter("completed") }, { $group: { _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } }, revenue: { $sum: { $ifNull: ["$amount", 0] } }, transactions: { $sum: 1 } } }, { $sort: { "_id.year": 1, "_id.month": 1 } }]); return res.status(200).json({ success: true, data: { monthlyRevenue } }); }
+  catch (error) { next(error); }
 };
