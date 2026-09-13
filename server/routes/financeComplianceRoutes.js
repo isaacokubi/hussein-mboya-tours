@@ -1,5 +1,6 @@
 import express from "express";
 import { getTaxProfile, upsertTaxProfile, getEtimsCredentialStatus, saveEtimsCredentials, listExpenses, createExpense, listNotes, createNote, queueNoteEtims, listEtimsSubmissions, getFinanceComplianceSummary } from "../controllers/financeComplianceController.js";
+import { transitionExpense } from "../controllers/expenseLifecycleController.js";
 import { authorize } from "../middleware/permissionMiddleware.js";
 
 const router = express.Router();
@@ -10,6 +11,7 @@ router.put("/etims/credentials", authorize("finance.manage"), saveEtimsCredentia
 router.get("/compliance-summary", authorize("finance.view"), getFinanceComplianceSummary);
 router.get("/expenses", authorize("finance.view"), listExpenses);
 router.post("/expenses", authorize("finance.manage"), createExpense);
+router.post("/expenses/:id/status", authorize("finance.manage"), transitionExpense);
 router.get("/notes", authorize("finance.view"), listNotes);
 router.post("/notes", authorize("finance.manage"), createNote);
 router.post("/notes/:id/queue", authorize("finance.manage"), queueNoteEtims);
