@@ -9,6 +9,7 @@ import { createPlatformDatabaseBackup, listPlatformDatabaseBackups, deletePlatfo
 import { getSuperAdminUsers, createSuperAdminCompanyAccount, updateSuperAdminUserStatus, deleteSuperAdminUser } from "../controllers/superAdminUserController.js";
 import { listTenants, getTenant, createTenantWithAdmin, updateTenantStatus, deleteTenant, getTenantPlans } from "../controllers/superAdminTenantController.js";
 import { approveTenantSubscription, listSubscriptionPayments } from "../controllers/tenantSubscriptionController.js";
+import { getPlatformBillingConfig, updatePlatformBillingConfig } from "../controllers/platformBillingController.js";
 import { getSettings, updateSettings } from "../controllers/settingsController.js";
 
 const router = express.Router();
@@ -24,6 +25,8 @@ router.patch("/tenants/:id/status", updateTenantStatus);
 router.post("/tenants/:id/subscription/activate", approveTenantSubscription);
 router.delete("/tenants/:id", deleteTenant);
 router.get("/subscription-payments", listSubscriptionPayments);
+router.get("/billing/config", getPlatformBillingConfig);
+router.put("/billing/config", updatePlatformBillingConfig);
 router.get("/users", getSuperAdminUsers);
 router.post("/users/accounts", createSuperAdminCompanyAccount);
 router.patch("/users/:id/status", updateSuperAdminUserStatus);
