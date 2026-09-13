@@ -16,7 +16,17 @@ export const listWithholdingTax = async (req, res, next) => {
     if (req.query.payee) filter.payee = req.query.payee;
     const data = await WithholdingTax.find(mergeTenantFilter(req, filter)).populate("payee", "legalName supplierNumber pin").sort({ createdAt: -1 }).limit(Math.min(Number(req.query.limit) || 200, 500)).lean();
     const totals = data.reduce((a, row) => { a.baseAmount += Number(row.baseAmount || 0); a.taxAmount += Number(row.taxAmount || 0); if (row.status === "remitted") a.remitted += Number(row.taxAmount || 0); if (row.status === "accrued") a.accrued += Number(row.taxAmount || 0); return a; }, { baseAmount: 0, taxAmount: 0, remitted: 0, accrued: 0 });
-    return res.json({ success: true, data, totals: Object.fromEntries(Object.entries(totals).map(([k, v]) => [k, money(v)])) });
+    const sourceData = data.map((row) => ({
+      ...row,
+      source: {
+        type: row.sourceType || "other",
+        id: row.sourceId || null,
+        reference: row.reference || null,
+        paymentReference: row.paymentReference || null,
+        certificateNumber: row.certificateNumber || null,
+      },
+    }));
+    return res.json({ success: true, data: sourceData, totals: Object.fromEntries(Object.entries(totals).map(([k, v]) => [k, money(v)])) });
   } catch (error) { return next(error); }
 };
 
