@@ -6,6 +6,8 @@ import Commission from "../models/Commission.js";
 
 const money = (value) => Number(Number(value || 0).toFixed(2));
 const activePaymentStatuses = ["completed", "refunded"];
+const pendingPaymentStatuses = ["pending", "processing"];
+const failedPaymentStatuses = ["failed", "cancelled"];
 
 export const getPaymentReconciliation = async (req, res, next) => {
   try {
@@ -54,14 +56,16 @@ export const getPaymentReconciliation = async (req, res, next) => {
       }
 
       const invoice = invoiceMap.get(key);
-      if (!invoice) {
-        missingInvoices.push({ bookingId: booking._id, bookingNumber: booking.bookingNumber, totalAmount });
-      } else {
+      // An invoice is required only when the booking has a qualifying financial payment.
+      // Unpaid bookings are not invoice exceptions merely because they lack an invoice.
+      if (!invoice && completedPayments.length > 0) {
+        missingInvoices.push({ bookingId: booking._id, bookingNumber: booking.bookingNumber, totalAmount, paidAmount: paidFromPayments });
+      } else if (invoice) {
         const invoicePaid = money(invoice.amountPaid);
         if (Math.abs(invoicePaid - expectedPaid) > 0.01 || Math.abs(money(invoice.balance) - expectedBalance) > 0.01) {
           mismatches.push({ type: "invoice_payment", bookingId: booking._id, bookingNumber: booking.bookingNumber, invoiceNumber: invoice.invoiceNumber, expectedPaid, invoicePaid, expectedBalance, invoiceBalance: money(invoice.balance) });
         }
-        const expectedInvoiceStatus = expectedPaid <= 0 ? (refundedFromPayments > 0 ? "refunded" : "pending") : expectedPaid >= totalAmount ? "paid" : "partial";
+        const expectedInvoiceStatus = expectedPaid <= 0 ? (refundedFromPayments > 0 ? "refunded" : "pending") : expectedPaid >= totalAmount && totalAmount > 0 ? "paid" : "partial";
         if (invoice.status !== expectedInvoiceStatus && !["draft", "cancelled", "overdue"].includes(invoice.status)) {
           mismatches.push({ type: "invoice_status", bookingId: booking._id, bookingNumber: booking.bookingNumber, invoiceNumber: invoice.invoiceNumber, expectedStatus: expectedInvoiceStatus, actualStatus: invoice.status });
         }
@@ -77,8 +81,14 @@ export const getPaymentReconciliation = async (req, res, next) => {
       }
     }
 
-    const orphanPayments = payments.filter((payment) => !payment.booking || !bookingMap.has(String(payment.booking))).map((payment) => ({ paymentId: payment._id, transactionReference: payment.transactionReference || payment.mpesaReceiptNumber || payment.transactionId || "", status: payment.status }));
+    // Only payments that represent actual or reversed financial activity are orphan exceptions.
+    // Failed/cancelled attempts without a booking are operational noise, not reconciliation breaks.
+    const orphanPayments = payments
+      .filter((payment) => activePaymentStatuses.includes(payment.status) && (!payment.booking || !bookingMap.has(String(payment.booking))))
+      .map((payment) => ({ paymentId: payment._id, transactionReference: payment.transactionReference || payment.mpesaReceiptNumber || payment.transactionId || "", status: payment.status, amount: money(payment.amount), refundedAmount: money(payment.refundedAmount) }));
+
     const missingReceipts = payments.filter((payment) => payment.status === "completed" && String(payment.provider || "").toUpperCase() === "MPESA" && !String(payment.mpesaReceiptNumber || "").trim());
+
     const duplicateReferences = [];
     const referenceMap = new Map();
     for (const payment of payments.filter((item) => activePaymentStatuses.includes(item.status))) {
@@ -92,8 +102,8 @@ export const getPaymentReconciliation = async (req, res, next) => {
       tenantId,
       totalPayments: payments.length,
       completedPayments: payments.filter((p) => p.status === "completed").length,
-      pendingPayments: payments.filter((p) => ["pending", "processing"].includes(p.status)).length,
-      failedPayments: payments.filter((p) => ["failed", "cancelled"].includes(p.status)).length,
+      pendingPayments: payments.filter((p) => pendingPaymentStatuses.includes(p.status)).length,
+      failedPayments: payments.filter((p) => failedPaymentStatuses.includes(p.status)).length,
       refundedPayments: payments.filter((p) => p.status === "refunded").length,
       totalCollected: money(payments.filter((p) => activePaymentStatuses.includes(p.status)).reduce((sum, p) => sum + Math.max(0, Number(p.amount || 0) - Number(p.refundedAmount || 0)), 0)),
       totalRefunded: money(payments.reduce((sum, p) => sum + Math.max(0, Number(p.refundedAmount || 0)), 0)),
