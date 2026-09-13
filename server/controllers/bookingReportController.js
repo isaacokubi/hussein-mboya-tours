@@ -7,8 +7,6 @@ const agentLookupStages = [
   { $unwind: { path: "$agentProfile", preserveNullAndEmptyArrays: true } },
   { $lookup: { from: "users", localField: "agentProfile.user", foreignField: "_id", as: "agentUser" } },
   { $unwind: { path: "$agentUser", preserveNullAndEmptyArrays: true } },
-  // Some older bookings may contain a User _id in the Agent field. Resolve that
-  // legacy shape as a fallback without changing the canonical Booking schema.
   { $lookup: { from: "users", localField: "_id", foreignField: "_id", as: "legacyAgentUser" } },
   { $unwind: { path: "$legacyAgentUser", preserveNullAndEmptyArrays: true } },
 ];
@@ -168,7 +166,20 @@ export const agentBookingReport = async (req, res, next) => {
           email: agentEmailExpression,
           phone: agentPhoneExpression,
           companyName: { $ifNull: ["$agentProfile.companyName", ""] },
-          status: firstNonEmpty("$agentProfile.status", "$legacyAgentUser.status"),
+          status: {
+            $let: {
+              vars: {
+                resolvedStatus: firstNonEmpty("$agentProfile.status", "$agentUser.status", "$legacyAgentUser.status"),
+              },
+              in: {
+                $cond: [
+                  { $ne: ["$$resolvedStatus", ""] },
+                  "$$resolvedStatus",
+                  { $cond: [{ $eq: [{ $ifNull: ["$agentProfile._id", null] }, null] }, "unlinked", { $cond: [{ $eq: ["$agentProfile.isApproved", true] }, "active", "pending"] }] },
+                ],
+              },
+            },
+          },
           isApproved: { $ifNull: ["$agentProfile.isApproved", false] },
           profileAvailable: { $ne: [{ $ifNull: ["$agentProfile._id", null] }, null] },
           userAvailable: {
