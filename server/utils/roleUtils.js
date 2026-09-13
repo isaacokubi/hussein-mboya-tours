@@ -8,17 +8,17 @@ const ROLE_ALIASES = {
   superadmin: "super_admin",
   super_admin: "super_admin",
 
-  manager: "manager",
-  tourmanager: "manager",
-  tour_manager: "manager",
+  manager: "tour_manager",
+  tourmanager: "tour_manager",
+  tour_manager: "tour_manager",
 
   agent: "agent",
   travelagent: "agent",
   travel_agent: "agent",
 
-  guide: "guide",
-  tourguide: "guide",
-  tour_guide: "guide",
+  guide: "tour_guide",
+  tourguide: "tour_guide",
+  tour_guide: "tour_guide",
 
   driver: "driver",
 };
@@ -51,7 +51,6 @@ export function getUserRole(user) {
   return normalizeRole(
     user?.roleId?.name ||
       user?.role?.name ||
-      user?.role ||
       user?.legacyRole ||
       user?.userRole
   );
@@ -66,7 +65,7 @@ export function isAdmin(user) {
 }
 
 export function isManager(user) {
-  return ["manager", "admin", "super_admin"].includes(getUserRole(user));
+  return ["tour_manager", "admin", "super_admin"].includes(getUserRole(user));
 }
 
 export function isAgent(user) {
@@ -74,7 +73,7 @@ export function isAgent(user) {
 }
 
 export function isGuide(user) {
-  return ["guide", "admin", "super_admin"].includes(getUserRole(user));
+  return ["tour_guide", "admin", "super_admin"].includes(getUserRole(user));
 }
 
 export function isDriver(user) {
@@ -89,9 +88,9 @@ export function isStaff(user) {
   return [
     "admin",
     "super_admin",
-    "manager",
+    "tour_manager",
     "agent",
-    "guide",
+    "tour_guide",
     "driver",
   ].includes(getUserRole(user));
 }
