@@ -7,9 +7,29 @@ import { tenantFilter } from "../tenancy/tenantQuery.js";
 const money = (n) => Math.round(Number(n || 0) * 100) / 100;
 const ageBucket = (days) => days <= 0 ? "current" : days <= 30 ? "1_30" : days <= 60 ? "31_60" : days <= 90 ? "61_90" : "90_plus";
 
+const dateFilter = (req, field = "entryDate") => {
+  const filter = {};
+  if (req.query.from || req.query.to) {
+    filter[field] = {};
+    if (req.query.from) {
+      const from = new Date(req.query.from);
+      if (Number.isNaN(from.getTime())) throw new Error("Invalid from date.");
+      from.setHours(0, 0, 0, 0);
+      filter[field].$gte = from;
+    }
+    if (req.query.to) {
+      const to = new Date(req.query.to);
+      if (Number.isNaN(to.getTime())) throw new Error("Invalid to date.");
+      to.setHours(23, 59, 59, 999);
+      filter[field].$lte = to;
+    }
+  }
+  return filter;
+};
+
 const getLedger = async (req) => {
   const accounts = await ChartOfAccount.find({ ...tenantFilter(req), active: { $ne: false } }).sort({ code: 1 }).lean();
-  const entries = await JournalEntry.find({ ...tenantFilter(req), status: "posted" }).select("entryDate lines").lean();
+  const entries = await JournalEntry.find({ ...tenantFilter(req), status: "posted", ...dateFilter(req) }).select("entryDate lines").lean();
   const balances = new Map(accounts.map((a) => [String(a._id), { account: a, debit: 0, credit: 0 }]));
   for (const entry of entries) for (const line of entry.lines || []) {
     const row = balances.get(String(line.account));
@@ -77,12 +97,7 @@ export const getApAging = async (req, res, next) => {
 
 export const getCashFlow = async (req, res, next) => {
   try {
-    const filter = { ...tenantFilter(req), status: "posted" };
-    if (req.query.from || req.query.to) {
-      filter.entryDate = {};
-      if (req.query.from) filter.entryDate.$gte = new Date(req.query.from);
-      if (req.query.to) { const to = new Date(req.query.to); to.setHours(23, 59, 59, 999); filter.entryDate.$lte = to; }
-    }
+    const filter = { ...tenantFilter(req), status: "posted", ...dateFilter(req) };
     const cashCodes = new Map((await ChartOfAccount.find({ ...tenantFilter(req), code: { $in: ["1000", "1010", "1020", "1030"] } }).select("_id code").lean()).map((a) => [String(a._id), a.code]));
     const entries = await JournalEntry.find(filter).select("entryDate lines description sourceType reference").sort({ entryDate: 1 }).lean();
     const movements = [];
@@ -93,7 +108,6 @@ export const getCashFlow = async (req, res, next) => {
       if (amount === 0) continue;
       movements.push({ date: entry.entryDate, accountCode: code, amount, description: entry.description, sourceType: entry.sourceType, reference: entry.reference });
     }
-    const netMovement = money(movements.reduce((s, m) => s + m.amount, 0));
-    return res.json({ success: true, data: { movements, netMovement, inflows: money(movements.filter((m) => m.amount > 0).reduce((s, m) => s + m.amount, 0)), outflows: money(Math.abs(movements.filter((m) => m.amount < 0).reduce((s, m) => s + m.amount, 0))) } });
+    return res.json({ success: true, data: { movements, netMovement: money(movements.reduce((s, m) => s + m.amount, 0)), inflows: money(movements.filter((m) => m.amount > 0).reduce((s, m) => s + m.amount, 0)), outflows: money(Math.abs(movements.filter((m) => m.amount < 0).reduce((s, m) => s + m.amount, 0))) } });
   } catch (error) { return next(error); }
 };
