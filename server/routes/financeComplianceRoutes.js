@@ -1,6 +1,7 @@
 import express from "express";
 import { getTaxProfile, upsertTaxProfile, getEtimsCredentialStatus, saveEtimsCredentials, listExpenses, createExpense, listNotes, createNote, queueNoteEtims, listEtimsSubmissions, getFinanceComplianceSummary } from "../controllers/financeComplianceController.js";
 import { transitionExpense } from "../controllers/expenseLifecycleController.js";
+import { listWithholdingTax, createWithholdingTax, remitWithholdingTax, cancelWithholdingTax } from "../controllers/withholdingTaxController.js";
 import { authorize } from "../middleware/permissionMiddleware.js";
 
 const router = express.Router();
@@ -12,6 +13,10 @@ router.get("/compliance-summary", authorize("finance.view"), getFinanceComplianc
 router.get("/expenses", authorize("finance.view"), listExpenses);
 router.post("/expenses", authorize("finance.manage"), createExpense);
 router.post("/expenses/:id/status", authorize("finance.manage"), transitionExpense);
+router.get("/withholding-tax", authorize("finance.view"), listWithholdingTax);
+router.post("/withholding-tax", authorize("finance.manage"), createWithholdingTax);
+router.post("/withholding-tax/:id/remit", authorize("finance.manage"), remitWithholdingTax);
+router.post("/withholding-tax/:id/cancel", authorize("finance.manage"), cancelWithholdingTax);
 router.get("/notes", authorize("finance.view"), listNotes);
 router.post("/notes", authorize("finance.manage"), createNote);
 router.post("/notes/:id/queue", authorize("finance.manage"), queueNoteEtims);
