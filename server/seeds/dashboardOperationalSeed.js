@@ -60,7 +60,6 @@ async function seedTenant(tenant, tenantIndex) {
       corporates.push(account);
     }
 
-    // Attach a portion of the seeded corporate bookings to real corporate-account records.
     for (let i = 0; i < bookings.length; i += 1) {
       if (i % 5 === 0 && corporates.length) {
         await Booking.updateOne(
@@ -83,7 +82,6 @@ async function seedTenant(tenant, tenantIndex) {
       );
     }
 
-    // Service desk workload for transfers, accommodation, documents, manifests and incidents.
     const requestTypes = ["airport_transfer", "accommodation", "rooming_list", "travel_document", "manifest", "incident"];
     const requestStatuses = ["open", "in_progress", "awaiting_customer", "resolved", "in_progress", "open"];
     for (let i = 0; i < requestTypes.length; i += 1) {
@@ -114,7 +112,6 @@ async function seedTenant(tenant, tenantIndex) {
       );
     }
 
-    // Kenya compliance workspace: populated records without falsely claiming a government submission.
     const complianceTypes = [
       ["TRA_LICENSE", "in_progress", "TRA-DEMO"],
       ["ODPC_REGISTRATION", "in_progress", "ODPC-DEMO"],
@@ -147,19 +144,22 @@ async function seedTenant(tenant, tenantIndex) {
       );
     }
 
-    // Privacy/data-subject workload for the governance dashboard.
     const privacyTypes = ["access", "correction", "portability"];
     const privacyStatuses = ["received", "in_progress", "completed"];
     for (let i = 0; i < privacyTypes.length; i += 1) {
+      const requestCustomer = customers[i % Math.max(customers.length, 1)] || null;
+      const requestName = requestCustomer ? `${requestCustomer.firstName || ""} ${requestCustomer.lastName || ""}`.trim() : `Demo Requester ${i + 1}`;
+      const requestEmail = requestCustomer?.email || `privacy${tenantIndex + 1}${i + 1}@demo.co.ke`;
+      const requestPhone = requestCustomer?.phone || "0712000000";
       await PrivacyRequest.findOneAndUpdate(
         { tenantId: tenant._id, requestNumber: `DSR-DEMO-${tenantIndex + 1}-${i + 1}` },
         {
           $set: {
             type: privacyTypes[i],
-            customer: customers[i % Math.max(customers.length, 1)]?._id || null,
-            requesterName: customer ? `${customer.firstName} ${customer.lastName}` : `Demo Requester ${i + 1}`,
-            requesterEmail: customer?.email || `privacy${tenantIndex + 1}${i + 1}@demo.co.ke`,
-            requesterPhone: customer?.phone || "0712000000",
+            customer: requestCustomer?._id || null,
+            requesterName: requestName,
+            requesterEmail: requestEmail,
+            requesterPhone: requestPhone,
             status: privacyStatuses[i],
             receivedAt: daysFromNow(-i - 2),
             dueAt: daysFromNow(30 - i - 2),
@@ -173,7 +173,6 @@ async function seedTenant(tenant, tenantIndex) {
       );
     }
 
-    // External website connector activity: one active demo key and several captured/rejected events.
     const rawKey = `gt_demo_${tenantIndex + 1}_website_${hash(`${tenant._id}:website`).slice(0, 20)}`;
     const publicKey = `gt_pub_${hash(`${tenant._id}:public`).slice(0, 28)}`;
     const integrationKey = await WebsiteIntegrationKey.findOneAndUpdate(
@@ -210,7 +209,6 @@ async function seedTenant(tenant, tenantIndex) {
       });
     }
 
-    // Payment gateway control-plane coverage. All records are sandbox/disabled so demo data can never be mistaken for live credentials.
     for (const provider of ["MPESA", "STRIPE", "PESAPAL", "BANK"]) {
       await PaymentGatewayConfig.updateOne(
         { tenantId: tenant._id, provider },
