@@ -1,6 +1,7 @@
 import Booking from "../models/Booking.js";
 import Destination from "../models/Destination.js";
 import Payment from "../models/Payment.js";
+import Review from "../models/Review.js";
 import Staff from "../models/Staff.js";
 import Tour from "../models/Tour.js";
 import User from "../models/User.js";
@@ -20,8 +21,7 @@ export const getDashboardMetrics = async (req, res) => {
   try {
     const tenantId = requireTenantId();
     const scoped = (q = {}) => ({ tenantId, ...q });
-    const [users, customers, staff, guides, drivers, agents, approvedAgents, pendingAgents, vehicles, availableVehicles, assignedVehicles, maintenanceVehicles, tours, destinations, bookings, pendingBookings, confirmedBookings, completedBookings, cancelledBookings, refundedBookings, payments, completedPayments, pendingPayments, failedPayments, revenueResult, bookingStatus, monthlyRevenue, recentBookingsRaw, popularTours] = await Promise.all([
-      // Users is the canonical tenant-scoped User account count. Customer accounts are still users.
+    const [users, customers, staff, guides, drivers, agents, approvedAgents, pendingAgents, vehicles, availableVehicles, assignedVehicles, maintenanceVehicles, tours, destinations, bookings, pendingBookings, confirmedBookings, completedBookings, cancelledBookings, refundedBookings, payments, completedPayments, pendingPayments, failedPayments, revenueResult, bookingStatus, monthlyRevenue, recentBookingsRaw, popularTours, averageBookingResult, customerRatingResult] = await Promise.all([
       User.countDocuments(scoped({ ...active, status: { $ne: "blocked" } })),
       User.countDocuments(scoped({ ...active, ...customerUserFilter, status: { $ne: "blocked" } })),
       Staff.countDocuments(scoped({ ...active, isActive: { $ne: false }, status: { $nin: ["inactive", "suspended"] } })),
@@ -34,22 +34,60 @@ export const getDashboardMetrics = async (req, res) => {
       Vehicle.countDocuments(scoped({ ...active, isActive: { $ne: false }, status: "available" })),
       Vehicle.countDocuments(scoped({ ...active, isActive: { $ne: false }, status: "assigned" })),
       Vehicle.countDocuments(scoped({ ...active, isActive: { $ne: false }, status: "maintenance" })),
-      Tour.countDocuments(scoped(active)), Destination.countDocuments(scoped(active)), Booking.countDocuments(scoped(active)),
-      Booking.countDocuments(scoped({ ...active, status: "pending" })), Booking.countDocuments(scoped({ ...active, status: "confirmed" })), Booking.countDocuments(scoped({ ...active, status: "completed" })), Booking.countDocuments(scoped({ ...active, status: "cancelled" })), Booking.countDocuments(scoped({ ...active, status: "refunded" })),
-      Payment.countDocuments(scoped(active)), Payment.countDocuments(scoped({ ...active, status: { $in: paidStatuses } })), Payment.countDocuments(scoped({ ...active, status: { $in: ["pending", "partial"] } })), Payment.countDocuments(scoped({ ...active, status: { $in: ["failed", "cancelled"] } })),
+      Tour.countDocuments(scoped(active)),
+      Destination.countDocuments(scoped(active)),
+      Booking.countDocuments(scoped(active)),
+      Booking.countDocuments(scoped({ ...active, status: "pending" })),
+      Booking.countDocuments(scoped({ ...active, status: "confirmed" })),
+      Booking.countDocuments(scoped({ ...active, status: "completed" })),
+      Booking.countDocuments(scoped({ ...active, status: "cancelled" })),
+      Booking.countDocuments(scoped({ ...active, status: "refunded" })),
+      Payment.countDocuments(scoped(active)),
+      Payment.countDocuments(scoped({ ...active, status: { $in: paidStatuses } })),
+      Payment.countDocuments(scoped({ ...active, status: { $in: ["pending", "partial"] } })),
+      Payment.countDocuments(scoped({ ...active, status: { $in: ["failed", "cancelled"] } })),
       Payment.aggregate([{ $match: scoped({ ...active, status: { $in: paidStatuses } }) }, { $group: { _id: null, gross: { $sum: { $ifNull: ["$amount", 0] } }, refunds: { $sum: { $cond: [{ $eq: ["$refundStatus", "completed"] }, { $ifNull: ["$refundedAmount", 0] }, 0] } } } }]),
       Booking.aggregate([{ $match: scoped(active) }, { $group: { _id: "$status", count: { $sum: 1 } } }, { $sort: { _id: 1 } }]),
       Payment.aggregate([{ $match: scoped({ ...active, status: { $in: paidStatuses } }) }, { $group: { _id: { year: { $year: { $ifNull: ["$paidAt", "$createdAt"] } }, month: { $month: { $ifNull: ["$paidAt", "$createdAt"] } } }, amount: { $sum: netAmount } } }, { $sort: { "_id.year": 1, "_id.month": 1 } }]),
       Booking.find(scoped(active)).sort({ createdAt: -1 }).limit(5).populate("customer", "name firstName lastName email phone").populate("user", "name firstName lastName email phone").populate("tour", "title").lean(),
       Booking.aggregate([{ $match: scoped({ ...active, status: { $nin: ["cancelled", "refunded"] }, tour: { $ne: null } }) }, { $group: { _id: "$tour", totalBookings: { $sum: 1 }, paidBookings: { $sum: { $cond: [{ $in: [{ $toLower: { $ifNull: ["$paymentStatus", ""] } }, paidStatuses] }, 1, 0] } }, bookingValue: { $sum: { $ifNull: ["$totalAmount", 0] } } } }, { $sort: { paidBookings: -1, totalBookings: -1, bookingValue: -1 } }, { $limit: 5 }, { $lookup: { from: "tours", localField: "_id", foreignField: "_id", as: "tour" } }, { $unwind: "$tour" }, { $match: { "tour.isDeleted": { $ne: true } } }, { $project: { _id: 1, title: "$tour.title", totalBookings: 1, paidBookings: 1, bookingValue: 1 } }]),
+      Booking.aggregate([{ $match: scoped(active) }, { $group: { _id: null, average: { $avg: { $ifNull: ["$totalAmount", 0] } } } }]),
+      Review.aggregate([{ $match: scoped(active) }, { $group: { _id: null, average: { $avg: "$rating" }, count: { $sum: 1 } } }])
     ]);
-    const gross = Number(revenueResult[0]?.gross || 0), refunds = Number(revenueResult[0]?.refunds || 0), revenue = Math.max(0, gross - refunds);
+
+    const gross = Number(revenueResult[0]?.gross || 0);
+    const refunds = Number(revenueResult[0]?.refunds || 0);
+    const revenue = Math.max(0, gross - refunds);
     const statusData = bookingStatus.map((x) => ({ status: clean(x._id).toLowerCase() || "unknown", count: Number(x.count || 0) }));
     const recentBookings = recentBookingsRaw.map((b) => ({ ...b, customer: { ...(b.customer || {}), name: customerName(b.customer, b.user, b), email: b.customer?.email || b.user?.email || b.customerSnapshot?.email || b.contact?.email || "", phone: b.customer?.phone || b.user?.phone || b.customerSnapshot?.phone || b.contact?.phone || "" }, tour: b.tour || { title: b.customTourRequest ? "Custom tour request" : "Tour unavailable" }, amount: Number(b.totalAmount ?? b.amount ?? b.subtotal ?? 0), paymentStatus: clean(b.paymentStatus).toLowerCase() || "pending" }));
     const monthly = monthlyRevenue.map((x) => ({ month: `${x._id.month}/${x._id.year}`, amount: Number(x.amount || 0) }));
     const paymentStats = { completed: completedPayments, completedAmount: revenue, pending: pendingPayments, failed: failedPayments };
-    return res.json({ success: true, scope: { tenantId: String(tenantId), type: "tenant" }, data: { users, customers, staff, guides, drivers, agents, approvedAgents, pendingAgents, vehicles, availableVehicles, assignedVehicles, maintenanceVehicles, tours, destinations, bookings, pendingBookings, confirmedBookings, completedBookings, cancelledBookings, refundedBookings, payments, completedPayments, pendingPayments, failedPayments, revenue, grossRevenue: gross, refundedRevenue: refunds, revenueCurrency: "KES", paymentStats, status: statusData, statusData, monthlyRevenue: monthly, recentBookings, popularTours, summary: { bookings, pendingBookings, confirmedBookings, completedBookings, cancelledBookings, refundedBookings } }, timestamp: new Date().toISOString() });
-  } catch (error) { console.error("Admin dashboard metrics error:", error); return res.status(error.status || 500).json({ success: false, message: error.message || "Unable to load dashboard metrics." }); }
+    const conversionRate = bookings > 0 ? Number((((confirmedBookings + completedBookings) / bookings) * 100).toFixed(1)) : 0;
+    const averageBookingValue = averageBookingResult[0]?.average != null ? Number(averageBookingResult[0].average) : 0;
+    const customerRating = customerRatingResult[0]?.average != null ? Number(customerRatingResult[0].average.toFixed(1)) : 0;
+    const topTour = popularTours[0] || null;
+
+    return res.json({
+      success: true,
+      scope: { tenantId: String(tenantId), type: "tenant" },
+      data: {
+        users, customers, staff, guides, drivers, agents, approvedAgents, pendingAgents,
+        vehicles, availableVehicles, assignedVehicles, maintenanceVehicles,
+        tours, destinations, bookings, pendingBookings, confirmedBookings, completedBookings, cancelledBookings, refundedBookings,
+        payments, completedPayments, pendingPayments, failedPayments,
+        revenue, grossRevenue: gross, refundedRevenue: refunds, revenueCurrency: "KES", paymentStats,
+        conversionRate, averageBookingValue, customerRating,
+        topTour: topTour?.title || null,
+        popularTours,
+        status: statusData, statusData, monthlyRevenue: monthly, recentBookings,
+        summary: { bookings, pendingBookings, confirmedBookings, completedBookings, cancelledBookings, refundedBookings }
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error("Admin dashboard metrics error:", error);
+    return res.status(error.status || 500).json({ success: false, message: error.message || "Unable to load dashboard metrics." });
+  }
 };
 
 export const getUserAnalytics = async (req, res) => { try { const tenantId = requireTenantId(); const filter = { tenantId, ...active }; const [total, activeUsers, customers, agents] = await Promise.all([User.countDocuments(filter), User.countDocuments({ ...filter, status: { $ne: "blocked" } }), User.countDocuments({ tenantId, ...active, ...customerUserFilter }), Agent.countDocuments({ tenantId, ...active, status: { $ne: "inactive" } })]); return res.json({ success: true, data: { total, active: activeUsers, customers, agents } }); } catch (error) { return res.status(error.status || 500).json({ success: false, message: error.message }); } };
