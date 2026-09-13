@@ -52,11 +52,11 @@ export default function AdminAITools() {
       if (!active) return;
 
       const [dashboardRes, briefingRes, analyticsRes, intelligenceRes, revenueAdviceRes] = results;
-      setDashboard(dashboardRes.status === "fulfilled" ? dashboardRes.value.data || {} : null);
-      setBriefing(briefingRes.status === "fulfilled" ? briefingRes.value.data || {} : null);
-      setAnalytics(analyticsRes.status === "fulfilled" ? analyticsRes.value.data || {} : null);
-      setIntelligence(intelligenceRes.status === "fulfilled" ? intelligenceRes.value.data || {} : null);
-      setRevenueAdvice(revenueAdviceRes.status === "fulfilled" ? revenueAdviceRes.value.data || {} : null);
+      setDashboard(dashboardRes.status === "fulfilled" ? dashboardRes.value?.data || null : null);
+      setBriefing(briefingRes.status === "fulfilled" ? briefingRes.value?.data || null : null);
+      setAnalytics(analyticsRes.status === "fulfilled" ? analyticsRes.value?.data || null : null);
+      setIntelligence(intelligenceRes.status === "fulfilled" ? intelligenceRes.value?.data || null : null);
+      setRevenueAdvice(revenueAdviceRes.status === "fulfilled" ? revenueAdviceRes.value?.data || null : null);
       setFailedSections(results.filter((result) => result.status === "rejected").length);
       setLoading(false);
     };
@@ -71,10 +71,23 @@ export default function AdminAITools() {
     return () => { active = false; };
   }, []);
 
-  const bookingCount = numberValue(dashboard?.bookings);
-  const revenue = numberValue(dashboard?.revenue);
-  const customers = numberValue(dashboard?.customers);
-  const vehicles = numberValue(dashboard?.vehicles);
+  // The dashboard endpoint is the authoritative fallback for the core snapshot.
+  // This prevents one secondary AI feed from hiding values that are already available.
+  const bookingCount = numberValue(dashboard?.bookings ?? intelligence?.totalBookings ?? revenueAdvice?.metrics?.totalBookings);
+  const revenue = numberValue(dashboard?.revenue ?? intelligence?.revenue ?? revenueAdvice?.metrics?.totalRevenue ?? briefing?.metrics?.revenue);
+  const customers = numberValue(dashboard?.customers ?? intelligence?.totalCustomers);
+  const vehicles = numberValue(dashboard?.vehicles ?? intelligence?.totalVehicles);
+  const totalTours = numberValue(dashboard?.tours ?? intelligence?.totalTours ?? revenueAdvice?.metrics?.totalTours ?? briefing?.metrics?.totalTours);
+
+  const conversionRate = numberValue(intelligence?.conversionRate);
+  const failedPayments = numberValue(intelligence?.failedPayments);
+  const customerRating = numberValue(intelligence?.customerRating ?? briefing?.metrics?.rating);
+  const averageBooking = numberValue(intelligence?.averageBookingValue);
+  const topTour = hasValue(intelligence?.topTour) ? intelligence.topTour : null;
+  const recommendations = revenueAdvice?.recommendations || intelligence?.recommendations || briefing?.recommendations || [];
+
+  const availableFeeds = [dashboard, briefing, analytics, intelligence, revenueAdvice].filter(Boolean).length;
+  const actualUnavailable = loading ? 0 : 5 - availableFeeds;
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 sm:p-6 lg:p-8">
@@ -89,16 +102,16 @@ export default function AdminAITools() {
               <p className="mt-2 max-w-2xl text-sm leading-6 text-emerald-50 sm:text-base">Intelligent business assistance for operations, analytics, revenue and customer management.</p>
             </div>
             <div className="flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-semibold text-white backdrop-blur">
-              <span className={`h-2.5 w-2.5 rounded-full ${loading ? "animate-pulse bg-amber-300" : failedSections ? "bg-amber-300" : "bg-emerald-300"}`} />
-              {loading ? "Loading intelligence" : failedSections ? `${failedSections} AI feed${failedSections === 1 ? "" : "s"} unavailable` : "AI feeds connected"}
+              <span className={`h-2.5 w-2.5 rounded-full ${loading ? "animate-pulse bg-amber-300" : actualUnavailable ? "bg-amber-300" : "bg-emerald-300"}`} />
+              {loading ? "Loading intelligence" : actualUnavailable ? `${actualUnavailable} AI feed${actualUnavailable === 1 ? "" : "s"} unavailable` : "AI feeds connected"}
             </div>
           </div>
         </header>
 
-        {failedSections > 0 && !loading && (
+        {actualUnavailable > 0 && !loading && (
           <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm">
             <span className="mt-0.5 rounded-full bg-amber-200 px-2 py-0.5 text-xs font-black">!</span>
-            <p><strong>Some AI data is unavailable.</strong> A dash (—) means the service did not return a value; it is not being reported as zero.</p>
+            <p><strong>Some AI data is unavailable.</strong> Available business values are still displayed from the other connected feeds. A dash (—) means no source returned that particular value.</p>
           </div>
         )}
 
@@ -115,12 +128,12 @@ export default function AdminAITools() {
         <section className="overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm">
           <div className="border-b border-slate-100 bg-gradient-to-r from-emerald-50/80 via-white to-teal-50/50 px-5 py-5 sm:px-6"><p className="text-xs font-bold uppercase tracking-widest text-emerald-700">Intelligence</p><h2 className="mt-1 text-xl font-black text-slate-900">AI Business Intelligence</h2><p className="mt-1 text-sm text-slate-500">Key indicators generated from the available business data.</p></div>
           <div className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3 sm:p-6">
-            <Card title="Conversion Rate" value={loading ? "…" : metricValue(intelligence?.conversionRate, (value) => `${value}%`)} tone="emerald" />
-            <Card title="Failed Payments" value={loading ? "…" : metricValue(intelligence?.failedPayments)} tone="rose" detail={intelligence?.failedPayments === 0 ? "No failed payments recorded" : "Failed payment records"} />
-            <Card title="Customer Rating" value={loading ? "…" : metricValue(intelligence?.customerRating, (value) => `${value}/5`)} tone="amber" />
-            <Card title="Average Booking" value={loading ? "…" : metricValue(intelligence?.averageBookingValue, (value) => `KES ${Math.round(Number(value)).toLocaleString()}`)} tone="blue" />
-            <Card title="Top Tour" value={loading ? "…" : metricValue(intelligence?.topTour)} tone="violet" detail={!hasValue(intelligence?.topTour) ? "No tour performance data" : "Leading tour by available data"} />
-            <Card title="Total Tours" value={loading ? "…" : metricValue(intelligence?.totalTours)} tone="emerald" detail={intelligence?.totalTours === 0 ? "No tours recorded" : "Available tour records"} />
+            <Card title="Conversion Rate" value={loading ? "…" : metricValue(conversionRate, (value) => `${value}%`)} tone="emerald" detail={conversionRate === 0 ? "No converted bookings recorded" : "Confirmed/completed booking rate"} />
+            <Card title="Failed Payments" value={loading ? "…" : metricValue(failedPayments)} tone="rose" detail={failedPayments === 0 ? "No failed payments recorded" : "Failed payment records"} />
+            <Card title="Customer Rating" value={loading ? "…" : metricValue(customerRating, (value) => `${value}/5`)} tone="amber" detail={customerRating === 0 ? "No ratings recorded" : "Average customer rating"} />
+            <Card title="Average Booking" value={loading ? "…" : metricValue(averageBooking, (value) => `KES ${Math.round(Number(value)).toLocaleString()}`)} tone="blue" detail={averageBooking === 0 ? "No booking value available" : "Average booking value"} />
+            <Card title="Top Tour" value={loading ? "…" : metricValue(topTour)} tone="violet" detail={!hasValue(topTour) ? "No tour performance data" : "Leading tour by bookings"} />
+            <Card title="Total Tours" value={loading ? "…" : metricValue(totalTours)} tone="emerald" detail={totalTours === 0 ? "No tours recorded" : "Available tour records"} />
           </div>
         </section>
 
