@@ -5,6 +5,7 @@ import User from "../models/User.js";
 import { activateTenantSubscription, getTenantPlanPrice, getTenantPlanPrices, initiateTenantMpesaPayment } from "../services/tenantSubscriptionService.js";
 
 const isAdmin = (user) => ["admin", "administrator", "super_admin", "superadmin"].includes(String(user?.role || user?.legacyRole || "").toLowerCase());
+const isPlatformSuperAdmin = (user) => ["super_admin", "superadmin"].includes(String(user?.role || user?.legacyRole || "").toLowerCase());
 
 export const getTenantSubscription = async (req, res, next) => {
   try {
@@ -15,7 +16,8 @@ export const getTenantSubscription = async (req, res, next) => {
     const subscription = await Subscription.findOne({ tenantId }).lean();
     const payments = await SubscriptionPayment.find({ tenantId }).sort({ createdAt: -1 }).limit(10).lean();
     const plan = organization.subscription?.plan || subscription?.plan || "starter";
-    return res.json({ success: true, tenant: organization, subscription: subscription || null, plan, amountDue: getTenantPlanPrice(plan), planPrices: getTenantPlanPrices(), payments });
+    const planPrices = await getTenantPlanPrices();
+    return res.json({ success: true, tenant: organization, subscription: subscription || null, plan, amountDue: planPrices[plan] || 0, planPrices, payments });
   } catch (error) { next(error); }
 };
 
@@ -25,7 +27,7 @@ export const startTenantSubscriptionPayment = async (req, res, next) => {
     if (!tenantId || !isAdmin(req.user)) return res.status(403).json({ success: false, message: "Only the company administrator can pay for the company subscription." });
     const plan = String(req.body?.plan || "").toLowerCase();
     const phone = String(req.body?.phone || req.user?.phone || "").trim();
-    const amount = getTenantPlanPrice(plan);
+    const amount = await getTenantPlanPrice(plan);
     if (!amount) return res.status(400).json({ success: false, message: "The selected plan price is not configured by the platform owner." });
     const result = await initiateTenantMpesaPayment({ tenantId, userId: req.user._id, plan, phone, amount });
     return res.status(200).json({ success: true, message: `M-Pesa payment request sent for KES ${amount.toLocaleString()}.`, payment: result.payment, data: result.response });
@@ -42,14 +44,18 @@ export const getTenantSubscriptionPaymentStatus = async (req, res, next) => {
 
 export const approveTenantSubscription = async (req, res, next) => {
   try {
-    if (!isAdmin(req.user) || String(req.user.role || "").toLowerCase() === "admin") return res.status(403).json({ success: false, message: "Only the platform SuperAdmin can manually activate subscriptions." });
+    if (!isPlatformSuperAdmin(req.user)) return res.status(403).json({ success: false, message: "Only the platform SuperAdmin can manually activate subscriptions." });
     const tenantId = req.params.id;
     const tenant = await Organization.findById(tenantId);
     if (!tenant) return res.status(404).json({ success: false, message: "Company not found." });
     const plan = String(req.body?.plan || tenant.subscription?.plan || "starter").toLowerCase();
     const days = Math.max(1, Math.min(Number(req.body?.periodDays) || 30, 3660));
-    const amount = Number(req.body?.amount || getTenantPlanPrice(plan));
-    const payment = await SubscriptionPayment.create({ tenantId, userId: req.user._id, plan, amount: Math.max(1, amount), provider: "manual", status: "completed", periodDays: days, transactionReference: String(req.body?.reference || `MANUAL-${Date.now()}`), paidAt: new Date(), metadata: { approvedBy: req.user._id, note: req.body?.note || "" } });
+    const configuredAmount = await getTenantPlanPrice(plan);
+    const amount = Number(req.body?.amount || configuredAmount);
+    if (!Number.isInteger(amount) || amount < 1) return res.status(400).json({ success: false, message: "A valid payment amount is required for manual activation." });
+    const reference = String(req.body?.reference || "").trim();
+    if (!reference) return res.status(400).json({ success: false, message: "A verified payment reference is required for manual activation." });
+    const payment = await SubscriptionPayment.create({ tenantId, userId: req.user._id, plan, amount, provider: "manual", status: "completed", periodDays: days, transactionReference: reference, paidAt: new Date(), metadata: { approvedBy: req.user._id, note: req.body?.note || "" } });
     const result = await activateTenantSubscription({ tenantId, plan, provider: "manual", periodDays: days, payment, transactionReference: payment.transactionReference });
     return res.json({ success: true, message: `Subscription activated for ${days} days.`, tenant: result.organization, payment });
   } catch (error) { next(error); }
@@ -57,7 +63,7 @@ export const approveTenantSubscription = async (req, res, next) => {
 
 export const listSubscriptionPayments = async (req, res, next) => {
   try {
-    if (!isAdmin(req.user) || String(req.user.role || "").toLowerCase() === "admin") return res.status(403).json({ success: false, message: "Only the platform SuperAdmin can view all subscription payments." });
+    if (!isPlatformSuperAdmin(req.user)) return res.status(403).json({ success: false, message: "Only the platform SuperAdmin can view all subscription payments." });
     const payments = await SubscriptionPayment.find({}).sort({ createdAt: -1 }).limit(100).lean();
     return res.json({ success: true, payments });
   } catch (error) { next(error); }
