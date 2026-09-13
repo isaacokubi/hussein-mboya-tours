@@ -37,7 +37,6 @@ export default function AdminAITools() {
   const [intelligence, setIntelligence] = useState(null);
   const [revenueAdvice, setRevenueAdvice] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [failedSections, setFailedSections] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -62,23 +61,21 @@ export default function AdminAITools() {
       setAnalytics(analyticsRes.status === "fulfilled" ? unwrap(analyticsRes.value) : null);
       setIntelligence(intelligenceRes.status === "fulfilled" ? unwrap(intelligenceRes.value) : null);
       setRevenueAdvice(revenueAdviceRes.status === "fulfilled" ? unwrap(revenueAdviceRes.value) : null);
-      setFailedSections(results.filter((result) => result.status === "rejected").length);
       setLoading(false);
     };
 
     load().catch((error) => {
       if (!active) return;
       console.error("AI dashboard loading failed", error);
-      setFailedSections(6);
       setLoading(false);
     });
 
     return () => { active = false; };
   }, []);
 
-  // Prefer the canonical admin dashboard for core business numbers. AI-specific
-  // feeds remain responsible for derived intelligence, but a failed AI feed must
-  // never erase business data that the normal admin dashboard already has.
+  // Core figures come from the canonical admin dashboard first. AI feeds then
+  // enrich those figures, and derived values are calculated when an AI feed is
+  // temporarily unavailable so the page does not hide data that already exists.
   const source = canonicalDashboard?.data || canonicalDashboard || {};
   const aiDashboard = dashboard?.data || dashboard || {};
   const aiIntelligence = intelligence?.data || intelligence || {};
@@ -95,11 +92,20 @@ export default function AdminAITools() {
   const vehicles = numberValue(source.vehicles ?? aiDashboard.vehicles ?? aiIntelligence.totalVehicles);
   const totalTours = numberValue(source.tours ?? aiDashboard.tours ?? aiIntelligence.totalTours ?? aiRevenue.metrics?.totalTours ?? aiBriefing.metrics?.totalTours);
 
-  const conversionRate = numberValue(aiIntelligence.conversionRate);
-  const failedPayments = numberValue(aiIntelligence.failedPayments);
-  const customerRating = numberValue(aiIntelligence.customerRating ?? aiBriefing.metrics?.rating);
-  const averageBooking = numberValue(aiIntelligence.averageBookingValue);
-  const topTour = hasValue(aiIntelligence.topTour) ? aiIntelligence.topTour : null;
+  const confirmedBookings = numberValue(aiIntelligence.confirmedBookings ?? aiBriefing.metrics?.confirmedBookings);
+  const conversionRate = numberValue(
+    aiIntelligence.conversionRate ??
+    (bookingCount !== null && bookingCount > 0 && confirmedBookings !== null ? ((confirmedBookings / bookingCount) * 100).toFixed(1) : null)
+  );
+  const failedPayments = numberValue(aiIntelligence.failedPayments ?? source.failedPayments ?? source.paymentStats?.failed);
+  const customerRating = numberValue(aiIntelligence.customerRating ?? aiBriefing.metrics?.rating ?? source.customerRating ?? source.averageRating);
+  const averageBooking = numberValue(
+    aiIntelligence.averageBookingValue ??
+    (bookingCount !== null && bookingCount > 0 && revenue !== null ? revenue / bookingCount : null)
+  );
+  const topTour = hasValue(aiIntelligence.topTour)
+    ? aiIntelligence.topTour
+    : (aiRevenue.topTours?.[0]?.tour?.title || null);
   const recommendations = aiRevenue.recommendations || aiIntelligence.recommendations || aiBriefing.recommendations || [];
 
   const aiFeedUnavailable = [dashboard, briefing, analytics, intelligence, revenueAdvice].filter((item) => !item).length;
