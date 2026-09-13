@@ -7,6 +7,7 @@ import { getTaxControlReport, getCustomerLedgerReport, getSupplierLedgerReport, 
 import { listSubledger, createSubledger, amortizeSubledger, reverseAccrual } from "../controllers/accountingSubledgerController.js";
 import { exportGeneralLedgerCSV, exportTaxControlCSV } from "../controllers/accountingExportController.js";
 import { reconcileOperationalAccounting } from "../controllers/accountingOperationalReconciliationController.js";
+import { listReconciliationTransactions, createReconciliationTransaction, matchReconciliationTransaction, markReconciliationException } from "../controllers/accountingReconciliationController.js";
 
 const router = express.Router();
 router.get("/accounts", authorize("finance.view"), listAccounts);
@@ -30,6 +31,10 @@ router.get("/subledgers", authorize("finance.view"), listSubledger);
 router.post("/subledgers", authorize("finance.manage"), createSubledger);
 router.post("/subledgers/:id/amortize", authorize("finance.manage"), amortizeSubledger);
 router.post("/subledgers/:id/reverse", authorize("finance.manage"), reverseAccrual);
+router.get("/reconciliation/transactions", authorize("finance.view"), listReconciliationTransactions);
+router.post("/reconciliation/transactions", authorize("finance.manage"), createReconciliationTransaction);
+router.post("/reconciliation/transactions/:id/match", authorize("finance.manage"), matchReconciliationTransaction);
+router.post("/reconciliation/transactions/:id/exception", authorize("finance.manage"), markReconciliationException);
 router.post("/operational-reconciliation", authorize("finance.manage"), reconcileOperationalAccounting);
 router.get("/assets", authorize("finance.view"), listAssets);
 router.post("/assets", authorize("finance.manage"), createAsset);
