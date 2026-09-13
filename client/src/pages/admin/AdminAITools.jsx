@@ -73,39 +73,30 @@ export default function AdminAITools() {
     return () => { active = false; };
   }, []);
 
-  // Core figures come from the canonical admin dashboard first. AI feeds then
-  // enrich those figures, and derived values are calculated when an AI feed is
-  // temporarily unavailable so the page does not hide data that already exists.
+  // Core figures come from the canonical tenant dashboard. AI endpoints enrich
+  // them, but a secondary AI outage must never make existing business data vanish.
   const source = canonicalDashboard?.data || canonicalDashboard || {};
   const aiDashboard = dashboard?.data || dashboard || {};
   const aiIntelligence = intelligence?.data || intelligence || {};
   const aiRevenue = revenueAdvice?.data || revenueAdvice || {};
   const aiBriefing = briefing?.data || briefing || {};
 
-  const bookingCount = numberValue(
-    source.bookings ?? aiDashboard.bookings ?? aiIntelligence.totalBookings ?? aiRevenue.metrics?.totalBookings
-  );
-  const revenue = numberValue(
-    source.revenue ?? aiDashboard.revenue ?? aiIntelligence.revenue ?? aiRevenue.metrics?.totalRevenue ?? aiBriefing.metrics?.revenue
-  );
+  const bookingCount = numberValue(source.bookings ?? aiDashboard.bookings ?? aiIntelligence.totalBookings ?? aiRevenue.metrics?.totalBookings);
+  const revenue = numberValue(source.revenue ?? aiDashboard.revenue ?? aiIntelligence.revenue ?? aiRevenue.metrics?.totalRevenue ?? aiBriefing.metrics?.revenue);
   const customers = numberValue(source.customers ?? aiDashboard.customers ?? aiIntelligence.totalCustomers);
   const vehicles = numberValue(source.vehicles ?? aiDashboard.vehicles ?? aiIntelligence.totalVehicles);
   const totalTours = numberValue(source.tours ?? aiDashboard.tours ?? aiIntelligence.totalTours ?? aiRevenue.metrics?.totalTours ?? aiBriefing.metrics?.totalTours);
 
-  const confirmedBookings = numberValue(aiIntelligence.confirmedBookings ?? aiBriefing.metrics?.confirmedBookings);
+  const confirmedBookings = numberValue(source.confirmedBookings ?? aiIntelligence.confirmedBookings ?? aiBriefing.metrics?.confirmedBookings);
   const conversionRate = numberValue(
+    source.conversionRate ??
     aiIntelligence.conversionRate ??
-    (bookingCount !== null && bookingCount > 0 && confirmedBookings !== null ? ((confirmedBookings / bookingCount) * 100).toFixed(1) : null)
+    (bookingCount !== null && bookingCount > 0 && confirmedBookings !== null ? (((confirmedBookings + numberValue(source.completedBookings ?? 0)) / bookingCount) * 100).toFixed(1) : null)
   );
-  const failedPayments = numberValue(aiIntelligence.failedPayments ?? source.failedPayments ?? source.paymentStats?.failed);
-  const customerRating = numberValue(aiIntelligence.customerRating ?? aiBriefing.metrics?.rating ?? source.customerRating ?? source.averageRating);
-  const averageBooking = numberValue(
-    aiIntelligence.averageBookingValue ??
-    (bookingCount !== null && bookingCount > 0 && revenue !== null ? revenue / bookingCount : null)
-  );
-  const topTour = hasValue(aiIntelligence.topTour)
-    ? aiIntelligence.topTour
-    : (aiRevenue.topTours?.[0]?.tour?.title || null);
+  const failedPayments = numberValue(source.failedPayments ?? aiIntelligence.failedPayments ?? source.paymentStats?.failed);
+  const customerRating = numberValue(source.customerRating ?? aiIntelligence.customerRating ?? aiBriefing.metrics?.rating ?? source.averageRating);
+  const averageBooking = numberValue(source.averageBookingValue ?? aiIntelligence.averageBookingValue ?? (bookingCount !== null && bookingCount > 0 && revenue !== null ? revenue / bookingCount : null));
+  const topTour = hasValue(source.topTour) ? source.topTour : (hasValue(aiIntelligence.topTour) ? aiIntelligence.topTour : (aiRevenue.topTours?.[0]?.tour?.title || source.popularTours?.[0]?.title || null));
   const recommendations = aiRevenue.recommendations || aiIntelligence.recommendations || aiBriefing.recommendations || [];
 
   const aiFeedUnavailable = [dashboard, briefing, analytics, intelligence, revenueAdvice].filter((item) => !item).length;
@@ -148,13 +139,13 @@ export default function AdminAITools() {
         </section>
 
         <section className="overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm">
-          <div className="border-b border-slate-100 bg-gradient-to-r from-emerald-50/80 via-white to-teal-50/50 px-5 py-5 sm:px-6"><p className="text-xs font-bold uppercase tracking-widest text-emerald-700">Intelligence</p><h2 className="mt-1 text-xl font-black text-slate-900">AI Business Intelligence</h2><p className="mt-1 text-sm text-slate-500">Key indicators generated from the available business data.</p></div>
+          <div className="border-b border-slate-100 bg-gradient-to-r from-emerald-50/80 via-white to-teal-50/50 px-5 py-5 sm:px-6"><p className="text-xs font-bold uppercase tracking-widest text-emerald-700">Intelligence</p><h2 className="mt-1 text-xl font-black text-slate-900">AI Business Intelligence</h2><p className="mt-1 text-sm text-slate-500">Key indicators generated from the tenant's recorded business activity.</p></div>
           <div className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3 sm:p-6">
             <Card title="Conversion Rate" value={loading ? "…" : metricValue(conversionRate, (value) => `${value}%`)} tone="emerald" detail={conversionRate === 0 ? "No converted bookings recorded" : "Confirmed/completed booking rate"} />
-            <Card title="Failed Payments" value={loading ? "…" : metricValue(failedPayments)} tone="rose" detail={failedPayments === 0 ? "No failed payments recorded" : "Failed payment records"} />
+            <Card title="Failed Payments" value={loading ? "…" : metricValue(failedPayments)} tone="rose" detail={failedPayments === 0 ? "No failed payments recorded" : "Failed or cancelled payment records"} />
             <Card title="Customer Rating" value={loading ? "…" : metricValue(customerRating, (value) => `${value}/5`)} tone="amber" detail={customerRating === 0 ? "No ratings recorded" : "Average customer rating"} />
-            <Card title="Average Booking" value={loading ? "…" : metricValue(averageBooking, (value) => `KES ${Math.round(Number(value)).toLocaleString()}`)} tone="blue" detail={averageBooking === 0 ? "No booking value available" : "Average booking value"} />
-            <Card title="Top Tour" value={loading ? "…" : metricValue(topTour)} tone="violet" detail={!hasValue(topTour) ? "No tour performance data" : "Leading tour by bookings"} />
+            <Card title="Average Booking" value={loading ? "…" : metricValue(averageBooking, (value) => `KES ${Math.round(Number(value)).toLocaleString()}`)} tone="blue" detail={averageBooking === 0 ? "No booking value available" : "Average recorded booking value"} />
+            <Card title="Top Tour" value={loading ? "…" : metricValue(topTour)} tone="violet" detail={!hasValue(topTour) ? "No tour performance data" : "Leading tour by recorded bookings"} />
             <Card title="Total Tours" value={loading ? "…" : metricValue(totalTours)} tone="emerald" detail={totalTours === 0 ? "No tours recorded" : "Available tour records"} />
           </div>
         </section>
