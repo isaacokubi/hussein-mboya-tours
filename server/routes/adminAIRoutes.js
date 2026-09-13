@@ -73,187 +73,31 @@ import {
   getAISalesAssistant
 } from "../controllers/adminAISalesController.js";
 
-
 const router = express.Router();
 
+// Admin AI endpoints are authenticated before tenant resolution so tenant
+// context can reliably fall back to the authenticated user's tenantId.
+router.use(protect);
 router.use(resolveTenant);
 
-
-/*
-|--------------------------------------------------------------------------
-| ADMIN AI DASHBOARD
-|--------------------------------------------------------------------------
-*/
-
-router.get(
-  "/dashboard",
-  protect,
-  checkPermission("analytics.view"),
-  getAIDashboard
-);
-
-
-/*
-|--------------------------------------------------------------------------
-| AI BUSINESS QUERY
-|--------------------------------------------------------------------------
-*/
-
-router.post(
-  "/query",
-  protect,
-  checkPermission("analytics.view"),
-  adminAIQuery
-);
-
-
-/*
-|--------------------------------------------------------------------------
-| AI ANALYTICS
-|--------------------------------------------------------------------------
-*/
-
-router.get(
-  "/analytics",
-  protect,
-  checkPermission("analytics.view"),
-  getAIAnalytics
-);
-
-
-/*
-|--------------------------------------------------------------------------
-| DAILY AI BRIEFING
-|--------------------------------------------------------------------------
-*/
-
-router.get(
-  "/briefing",
-  protect,
-  checkPermission("analytics.view"),
-  getAIBriefing
-);
-
-
-
-router.get(
-  "/intelligence",
-  protect,
-  checkPermission("analytics.view"),
-  getAIIntelligence
-);
-
-
-router.get(
-  "/alerts",
-  protect,
-  checkPermission("analytics.view"),
-  getAIAlerts
-);
-
-
-router.post(
-  "/customer-support",
-  protect,
-  checkPermission("analytics.view"),
-  generateCustomerReply
-);
-
-
-router.get(
-  "/revenue-advice",
-  protect,
-  checkPermission("analytics.view"),
-  getAIRevenueAdvice
-);
-
-
-router.get(
-  "/booking-risks",
-  protect,
-  checkPermission("analytics.view"),
-  getBookingRiskAnalysis
-);
-
-
-router.get(
-  "/tasks",
-  protect,
-  checkPermission("analytics.view"),
-  generateAITasks
-);
-
-
-router.patch(
-  "/tasks/:id",
-  protect,
-  checkPermission("analytics.view"),
-  updateAITask
-);
-
-
-router.get(
-  "/pricing-advice",
-  protect,
-  checkPermission("analytics.view"),
-  getTourPricingAdvice
-);
-
-
-router.get(
-  "/recommendations/:customerId",
-  protect,
-  checkPermission("analytics.view"),
-  getTourRecommendations
-);
-
-
-router.get(
-  "/fraud-monitoring",
-  protect,
-  checkPermission("analytics.view"),
-  getAIFraudMonitoring
-);
-
-
-router.get(
-  "/sentiment",
-  protect,
-  checkPermission("analytics.view"),
-  getAISentimentAnalysis
-);
-
-
-router.get(
-  "/marketing-campaigns",
-  protect,
-  checkPermission("analytics.view"),
-  generateAIMarketingCampaign
-);
-
-
-router.get(
-  "/financial-forecast",
-  protect,
-  checkPermission("analytics.view"),
-  getAIFinancialForecast
-);
-
-
-router.get(
-  "/operations-center",
-  protect,
-  checkPermission("analytics.view"),
-  getAIOperationsCenter
-);
-
-
-router.get(
-  "/sales-assistant",
-  protect,
-  checkPermission("analytics.view"),
-  getAISalesAssistant
-);
-
+router.get("/dashboard", checkPermission("analytics.view"), getAIDashboard);
+router.post("/query", checkPermission("analytics.view"), adminAIQuery);
+router.get("/analytics", checkPermission("analytics.view"), getAIAnalytics);
+router.get("/briefing", checkPermission("analytics.view"), getAIBriefing);
+router.get("/intelligence", checkPermission("analytics.view"), getAIIntelligence);
+router.get("/alerts", checkPermission("analytics.view"), getAIAlerts);
+router.post("/customer-support", checkPermission("analytics.view"), generateCustomerReply);
+router.get("/revenue-advice", checkPermission("analytics.view"), getAIRevenueAdvice);
+router.get("/booking-risks", checkPermission("analytics.view"), getBookingRiskAnalysis);
+router.get("/tasks", checkPermission("analytics.view"), generateAITasks);
+router.patch("/tasks/:id", checkPermission("analytics.view"), updateAITask);
+router.get("/pricing-advice", checkPermission("analytics.view"), getTourPricingAdvice);
+router.get("/recommendations/:customerId", checkPermission("analytics.view"), getTourRecommendations);
+router.get("/fraud-monitoring", checkPermission("analytics.view"), getAIFraudMonitoring);
+router.get("/sentiment", checkPermission("analytics.view"), getAISentimentAnalysis);
+router.get("/marketing-campaigns", checkPermission("analytics.view"), generateAIMarketingCampaign);
+router.get("/financial-forecast", checkPermission("analytics.view"), getAIFinancialForecast);
+router.get("/operations-center", checkPermission("analytics.view"), getAIOperationsCenter);
+router.get("/sales-assistant", checkPermission("analytics.view"), getAISalesAssistant);
 
 export default router;
