@@ -7,6 +7,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { SettingsProvider } from "./context/SettingsContext";
 import { CartProvider } from "./context/CartContext";
 import "./index.css";
+import "./styles/admin-settings.css";
 import "./utils/syncPickupTimeWithTravelDate";
 
 let queryClient;
