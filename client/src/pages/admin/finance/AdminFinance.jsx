@@ -1,9 +1,8 @@
 import { useMemo } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
-import { Activity, ArrowRight, Banknote, BarChart3, Building2, Calculator, CheckCircle2, CreditCard, FileBarChart, Landmark, Receipt, RefreshCw, ShieldCheck, Wallet } from "lucide-react";
+import { Activity, ArrowRight, Banknote, BarChart3, Building2, Calculator, CheckCircle2, CreditCard, Landmark, Receipt, RefreshCw, ShieldCheck, Wallet } from "lucide-react";
 import { Link } from "react-router-dom";
 import { getFinanceStats } from "../../../api/financeApi";
-import { getOperationsOverview } from "../../../api/operationsApi";
 import { getSupplierPayables, getCorporateAccounts } from "../../../api/operationsModuleApi";
 import { getLedgerSummary } from "../../../api/accountingApi";
 import AccountingLedger from "../AccountingLedger";
@@ -25,21 +24,18 @@ const workspaceCards = [
 ];
 
 export default function AdminFinance() {
-  const [financeQ, operationsQ, payablesQ, corporateQ] = useQueries({ queries: [
+  const [financeQ, payablesQ, corporateQ] = useQueries({ queries: [
     { queryKey: ["admin-finance-accounting"], queryFn: getFinanceStats, staleTime: 30000, refetchInterval: 60000, retry: 2 },
-    { queryKey: ["admin-finance-operations"], queryFn: getOperationsOverview, staleTime: 30000, refetchInterval: 60000, retry: 2 },
     { queryKey: ["admin-finance-payables"], queryFn: getSupplierPayables, staleTime: 30000, refetchInterval: 60000, retry: 2 },
     { queryKey: ["admin-finance-corporate"], queryFn: getCorporateAccounts, staleTime: 30000, refetchInterval: 60000, retry: 2 },
   ]});
   const ledgerQ = useQuery({ queryKey: ["accounting-summary"], queryFn: getLedgerSummary, staleTime: 30000, retry: 2 });
   const finance = unwrap(financeQ.data);
-  const operations = unwrap(operationsQ.data);
   const payables = list(payablesQ.data);
   const corporate = list(corporateQ.data);
-  const procurement = operations.procurement || {};
   const ledger = unwrap(ledgerQ.data);
-  const outstandingPayables = payables.reduce((sum, item) => sum + Number(item.balance ?? item.outstanding ?? item.amount ?? 0), 0) || Number(procurement.outstandingPayables || 0);
-  const corporateExposure = corporate.reduce((sum, item) => sum + Number(item.outstandingBalance ?? item.currentBalance ?? item.balance ?? 0), 0) || Number(procurement.corporateExposure || 0);
+  const outstandingPayables = payables.reduce((sum, item) => sum + Number(item.balance ?? item.outstanding ?? item.amount ?? 0), 0);
+  const corporateExposure = corporate.reduce((sum, item) => sum + Number(item.outstandingBalance ?? item.currentBalance ?? item.balance ?? 0), 0);
   const profit = Number(ledger.profitLoss?.netProfit || 0);
   const revenue = Number(finance.revenue || 0);
   const cashAccounts = useMemo(() => (ledger.accounts || []).filter((row) => ["cash", "bank", "mobile_money"].includes(row.account?.subtype)), [ledger.accounts]);
@@ -52,7 +48,7 @@ export default function AdminFinance() {
     ["Supplier Payables", money(outstandingPayables), "Outstanding supplier exposure", Building2, "text-violet-600"],
     ["Corporate Exposure", money(corporateExposure), "Receivable / credit exposure", CreditCard, "text-rose-600"],
   ];
-  const queries = [financeQ, operationsQ, payablesQ, corporateQ, ledgerQ];
+  const queries = [financeQ, payablesQ, corporateQ, ledgerQ];
   const errors = queries.filter((q) => q.isError).length;
   const refreshing = queries.some((q) => q.isFetching);
 
