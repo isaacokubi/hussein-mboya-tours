@@ -100,6 +100,15 @@ export default function AdminAITools() {
     statusData: source.statusData || []
   };
   const hasAnalyticsData = Boolean(analytics || analyticsFallback.monthlyRevenue.length || analyticsFallback.statusData.length);
+  const revenueAdvisorFallback = {
+    metrics: {
+      totalBookings: bookingCount,
+      totalRevenue: revenue,
+      totalTours
+    },
+    topTours: source.popularTours || [],
+    recommendations
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 sm:p-6 lg:p-8">
@@ -164,7 +173,7 @@ export default function AdminAITools() {
 
         <section className="rounded-3xl border border-violet-100 bg-white p-5 shadow-sm sm:p-6"><AIOperationsCopilot /></section>
         <section className="rounded-3xl border border-cyan-100 bg-white p-5 shadow-sm sm:p-6"><AICustomerSupport /></section>
-        <section className="rounded-3xl border border-amber-100 bg-white p-5 shadow-sm sm:p-6"><AIRevenueAdvisor data={aiRevenue} /></section>
+        <section className="rounded-3xl border border-amber-100 bg-white p-5 shadow-sm sm:p-6"><AIRevenueAdvisor data={aiRevenue} fallback={revenueAdvisorFallback} /></section>
 
         <section className="overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm">
           <div className="border-b border-emerald-100 bg-gradient-to-r from-emerald-50 via-white to-teal-50 px-5 py-5 sm:px-6"><p className="text-xs font-bold uppercase tracking-widest text-emerald-700">Customer experience</p><h2 className="mt-1 text-xl font-black text-slate-900">Customer AI Assistant</h2><p className="mt-1 text-sm text-slate-500">AI-powered assistance for customer conversations and travel questions.</p></div>
