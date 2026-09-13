@@ -20,6 +20,10 @@ const paymentSchema = new mongoose.Schema({
   method: { type: String, enum: ["mpesa", "card", "paypal", "pesapal", "bank", "cash"], default: "mpesa" },
   paymentMethod: { type: String, enum: ["MPESA", "CARD", "PAYPAL", "PESAPAL", "BANK_TRANSFER", "CASH", "M-Pesa", "Cash", "Card", "Bank", "PayPal", "Pesapal"], default: "MPESA" },
   amount: { type: Number, required: true, min: 0, validate: { validator: (value) => Number.isFinite(Number(value)) && Number(value) >= 0 && Number(value) <= 1000000000, message: "Invalid payment amount." } },
+  feeAmount: { type: Number, default: 0, min: 0 },
+  paymentFee: { type: Number, default: 0, min: 0 },
+  transactionFee: { type: Number, default: 0, min: 0 },
+  gatewayFee: { type: Number, default: 0, min: 0 },
   currency: { type: String, default: "KES", uppercase: true, trim: true },
   phone: { type: String, trim: true, default: "" },
   phoneNumber: { type: String, trim: true, default: "" },
@@ -59,7 +63,7 @@ paymentSchema.post("save", async function () {
   if (this.status === "completed" && this.$statusWasModified) { try { await postPaymentToLedger(this); } catch (ledgerError) { console.error("PAYMENT GL POSTING ERROR:", ledgerError.message); } }
   const [invoice, payments, commission] = await Promise.all([
     Invoice.findOne({ tenantId: this.tenantId, booking: bookingId, isDeleted: { $ne: true } }, null, queryOptions),
-    PaymentModel.find({ tenantId: this.tenantId, booking: bookingId, status: { $in: ["completed", "refunded"] } }, null, queryOptions).select("amount status refundedAmount refundStatus paymentMethod transactionReference transactionId mpesaReceiptNumber invoiceNumber updatedAt"),
+    PaymentModel.find({ tenantId: this.tenantId, booking: bookingId, status: { $in: ["completed", "refunded"] } }, null, queryOptions).select("amount status refundedAmount refundStatus paymentMethod transactionReference transactionId mpesaReceiptNumber invoiceNumber updatedAt feeAmount paymentFee transactionFee gatewayFee"),
     Commission.findOne({ tenantId: this.tenantId, booking: bookingId, isDeleted: { $ne: true } }, null, queryOptions),
   ]);
   const totalPaid = payments.reduce((sum, payment) => sum + Math.max(0, Number(payment.amount || 0) - Number(payment.refundedAmount || 0)), 0); const totalRefunded = payments.reduce((sum, payment) => sum + Math.max(0, Number(payment.refundedAmount || 0)), 0);
