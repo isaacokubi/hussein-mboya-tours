@@ -8,63 +8,17 @@ const ok = (res, data, status = 200) => res.status(status).json({ success: true,
 
 // Stable system accounts. Existing codes are preserved so current journals and modules keep working.
 const DEFAULT_ACCOUNTS = [
-  ["1000", "Cash on Hand", "asset", "cash"],
-  ["1010", "Bank Account", "asset", "bank"],
-  ["1020", "M-Pesa", "asset", "mobile_money"],
-  ["1030", "Card / Gateway Clearing", "asset", "payment_clearing"],
-  ["1100", "Accounts Receivable", "asset", "receivable"],
-  ["1110", "Corporate Receivables", "asset", "corporate_receivable"],
-  ["1200", "Inventory", "asset", "inventory"],
-  ["1300", "Prepayments", "asset", "prepayment"],
-  ["1400", "Property, Plant & Equipment", "asset", "fixed_asset"],
-  ["1490", "Accumulated Depreciation", "asset", "accumulated_depreciation"],
-  ["2000", "Accounts Payable", "liability", "payable"],
-  ["2010", "Supplier Deposits", "liability", "supplier_deposit"],
-  ["2100", "VAT / Tax Payable", "liability", "tax"],
-  ["2110", "Output VAT", "liability", "vat_output"],
-  ["2120", "Input VAT", "asset", "vat_input"],
-  ["2130", "Withholding Tax Payable", "liability", "withholding_tax"],
-  ["2140", "Payroll Liabilities", "liability", "payroll"],
-  ["2150", "Customer Deposits", "liability", "customer_deposit"],
-  ["2200", "Loans Payable", "liability", "loan"],
-  ["3000", "Owner Equity", "equity", "capital"],
-  ["3010", "Retained Earnings", "equity", "retained_earnings"],
-  ["3020", "Current Year Earnings", "equity", "current_year_earnings"],
-  ["4000", "Tour Revenue", "revenue", "sales"],
-  ["4010", "Hotel Revenue", "revenue", "sales"],
-  ["4020", "Airport Transfer Revenue", "revenue", "sales"],
-  ["4030", "Excursion Revenue", "revenue", "sales"],
-  ["4100", "Other Revenue", "revenue", "other_revenue"],
-  ["5000", "Tour / Supplier Costs", "expense", "cost_of_sales"],
-  ["5010", "Hotel Direct Costs", "expense", "cost_of_sales"],
-  ["5020", "Transport Direct Costs", "expense", "cost_of_sales"],
-  ["5100", "Commissions", "expense", "commission"],
-  ["5200", "General Operating Expenses", "expense", "operating"],
-  ["5210", "Salaries & Wages", "expense", "payroll_expense"],
-  ["5220", "Rent & Occupancy", "expense", "operating"],
-  ["5230", "Utilities", "expense", "operating"],
-  ["5240", "Fuel & Transport", "expense", "operating"],
-  ["5250", "Marketing", "expense", "operating"],
-  ["5260", "Bank & Payment Charges", "expense", "operating"],
-  ["5270", "Depreciation Expense", "expense", "depreciation"],
-  ["5280", "Professional Fees", "expense", "operating"],
-  ["6000", "Interest Expense", "expense", "finance_cost"],
-  ["7000", "Foreign Exchange Gain", "revenue", "fx_gain"],
-  ["7010", "Foreign Exchange Loss", "expense", "fx_loss"],
+  ["1000", "Cash on Hand", "asset", "cash"], ["1010", "Bank Account", "asset", "bank"], ["1020", "M-Pesa", "asset", "mobile_money"], ["1030", "Card / Gateway Clearing", "asset", "payment_clearing"],
+  ["1100", "Accounts Receivable", "asset", "receivable"], ["1110", "Corporate Receivables", "asset", "corporate_receivable"], ["1200", "Inventory", "asset", "inventory"], ["1300", "Prepayments", "asset", "prepayment"], ["1400", "Property, Plant & Equipment", "asset", "fixed_asset"], ["1490", "Accumulated Depreciation", "asset", "accumulated_depreciation"],
+  ["2000", "Accounts Payable", "liability", "payable"], ["2010", "Supplier Deposits", "liability", "supplier_deposit"], ["2100", "VAT / Tax Payable", "liability", "tax"], ["2110", "Output VAT", "liability", "vat_output"], ["2120", "Input VAT", "asset", "vat_input"], ["2130", "Withholding Tax Payable", "liability", "withholding_tax"], ["2140", "Payroll Liabilities", "liability", "payroll"], ["2150", "Customer Deposits", "liability", "customer_deposit"], ["2200", "Loans Payable", "liability", "loan"],
+  ["3000", "Owner Equity", "equity", "capital"], ["3010", "Retained Earnings", "equity", "retained_earnings"], ["3020", "Current Year Earnings", "equity", "current_year_earnings"],
+  ["4000", "Tour Revenue", "revenue", "sales"], ["4010", "Hotel Revenue", "revenue", "sales"], ["4020", "Airport Transfer Revenue", "revenue", "sales"], ["4030", "Excursion Revenue", "revenue", "sales"], ["4100", "Other Revenue", "revenue", "other_revenue"],
+  ["5000", "Tour / Supplier Costs", "expense", "cost_of_sales"], ["5010", "Hotel Direct Costs", "expense", "cost_of_sales"], ["5020", "Transport Direct Costs", "expense", "cost_of_sales"], ["5100", "Commissions", "expense", "commission"], ["5200", "General Operating Expenses", "expense", "operating"], ["5210", "Salaries & Wages", "expense", "payroll_expense"], ["5220", "Rent & Occupancy", "expense", "operating"], ["5230", "Utilities", "expense", "operating"], ["5240", "Fuel & Transport", "expense", "operating"], ["5250", "Marketing", "expense", "operating"], ["5260", "Bank & Payment Charges", "expense", "operating"], ["5270", "Depreciation Expense", "expense", "depreciation"], ["5280", "Professional Fees", "expense", "operating"], ["6000", "Operating Expenses", "expense", "operating"], ["6100", "Interest Expense", "expense", "finance_cost"], ["7000", "Foreign Exchange Gain", "revenue", "fx_gain"], ["7010", "Foreign Exchange Loss", "expense", "fx_loss"],
 ];
 
 async function ensureDefaults(tenantId) {
   const filter = tenantFilter({ tenantId });
-  for (const [code, name, type, subtype] of DEFAULT_ACCOUNTS) {
-    await ChartOfAccount.updateOne(
-      { ...filter, code },
-      { $setOnInsert: { tenantId, code, name, type, subtype, currency: "KES", system: true, active: true } },
-      { upsert: true }
-    );
-  }
-  const legacy = await ChartOfAccount.findOne({ ...filter, code: "6000", active: { $ne: false } }).select("_id").lean();
-  // 6000 remains active for backwards compatibility as interest expense if it is already in use.
-  if (legacy) await ChartOfAccount.updateOne({ ...filter, _id: legacy._id }, { $set: { system: true } });
+  for (const [code, name, type, subtype] of DEFAULT_ACCOUNTS) await ChartOfAccount.updateOne({ ...filter, code }, { $setOnInsert: { tenantId, code, name, type, subtype, currency: "KES", system: true, active: true } }, { upsert: true });
 }
 
 async function assertTenantAccounts(req, lines) {
