@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import Booking from "../models/Booking.js";
 
@@ -6,37 +7,45 @@ const agentLookupStages = [
   { $unwind: { path: "$agentProfile", preserveNullAndEmptyArrays: true } },
   { $lookup: { from: "users", localField: "agentProfile.user", foreignField: "_id", as: "agentUser" } },
   { $unwind: { path: "$agentUser", preserveNullAndEmptyArrays: true } },
+  // Some older bookings may contain a User _id in the Agent field. Resolve that
+  // legacy shape as a fallback without changing the canonical Booking schema.
+  { $lookup: { from: "users", localField: "_id", foreignField: "_id", as: "legacyAgentUser" } },
+  { $unwind: { path: "$legacyAgentUser", preserveNullAndEmptyArrays: true } },
 ];
 
-const agentNameExpression = {
+const firstNonEmpty = (...values) => ({
   $let: {
-    vars: {
-      userName: { $ifNull: ["$agentUser.name", ""] },
-      companyName: { $ifNull: ["$agentProfile.companyName", ""] },
-      profileEmail: { $ifNull: ["$agentProfile.email", ""] },
-      userEmail: { $ifNull: ["$agentUser.email", ""] },
-    },
+    vars: { values },
     in: {
-      $cond: [
-        { $ne: ["$$userName", ""] },
-        "$$userName",
-        {
-          $cond: [
-            { $ne: ["$$companyName", ""] },
-            "$$companyName",
-            {
-              $cond: [
-                { $ne: ["$$profileEmail", ""] },
-                "$$profileEmail",
-                { $ifNull: ["$$userEmail", "Unknown agent"] },
-              ],
-            },
-          ],
-        },
-      ],
+      $reduce: {
+        input: "$$values",
+        initialValue: "",
+        in: { $cond: [{ $ne: ["$$value", ""] }, "$$value", { $ifNull: ["$$this", ""] }] },
+      },
     },
   },
-};
+});
+
+const agentNameExpression = firstNonEmpty(
+  "$agentUser.name",
+  "$agentProfile.companyName",
+  "$agentProfile.email",
+  "$agentUser.email",
+  "$legacyAgentUser.name",
+  "$legacyAgentUser.email"
+);
+
+const agentEmailExpression = firstNonEmpty(
+  "$agentUser.email",
+  "$agentProfile.email",
+  "$legacyAgentUser.email"
+);
+
+const agentPhoneExpression = firstNonEmpty(
+  "$agentUser.phone",
+  "$agentProfile.phone",
+  "$legacyAgentUser.phone"
+);
 
 const populateAgent = (query) =>
   query.populate({
@@ -44,6 +53,8 @@ const populateAgent = (query) =>
     select: "companyName email phone status isApproved user",
     populate: { path: "user", select: "name email phone status" },
   });
+
+const isValidObjectId = (value) => mongoose.Types.ObjectId.isValid(value);
 
 export const dailyBookingReport = async (req, res, next) => {
   try {
@@ -54,7 +65,7 @@ export const dailyBookingReport = async (req, res, next) => {
     end.setHours(23, 59, 59, 999);
 
     let bookingQuery = Booking.find(
-      mergeTenantFilter(req, { createdAt: { $gte: start, $lte: end } })
+      mergeTenantFilter(req, { createdAt: { $gte: start, $lte: end }, isDeleted: { $ne: true } })
     )
       .populate("tour", "title")
       .sort({ createdAt: -1 });
@@ -79,7 +90,7 @@ export const monthlyBookingReport = async (req, res, next) => {
     const end = new Date(year, month, 0, 23, 59, 59, 999);
 
     let bookingQuery = Booking.find(
-      mergeTenantFilter(req, { createdAt: { $gte: start, $lte: end } })
+      mergeTenantFilter(req, { createdAt: { $gte: start, $lte: end }, isDeleted: { $ne: true } })
     )
       .populate("tour", "title")
       .sort({ createdAt: -1 });
@@ -104,7 +115,14 @@ export const tourBookingReport = async (req, res, next) => {
         $project: {
           _id: 0,
           tourId: "$_id",
-          title: { $ifNull: ["$tour.title", "Tour unavailable"] },
+          title: {
+            $cond: [
+              { $ne: [{ $ifNull: ["$tour.title", ""] }, ""] },
+              "$tour.title",
+              { $concat: ["Tour ID: ", { $toString: "$_id" }] },
+            ],
+          },
+          tourAvailable: { $ne: [{ $ifNull: ["$tour._id", null] }, null] },
           totalBookings: 1,
           revenue: 1,
         },
@@ -135,22 +153,30 @@ export const agentBookingReport = async (req, res, next) => {
         $project: {
           _id: 0,
           agentId: "$_id",
-          name: agentNameExpression,
-          email: {
-            $ifNull: [
-              "$agentUser.email",
-              { $ifNull: ["$agentProfile.email", ""] },
-            ],
+          name: {
+            $let: {
+              vars: { resolvedName: agentNameExpression },
+              in: {
+                $cond: [
+                  { $ne: ["$$resolvedName", ""] },
+                  "$$resolvedName",
+                  { $concat: ["Agent ID: ", { $toString: "$_id" }] },
+                ],
+              },
+            },
           },
-          phone: {
-            $ifNull: [
-              "$agentUser.phone",
-              { $ifNull: ["$agentProfile.phone", ""] },
-            ],
-          },
+          email: agentEmailExpression,
+          phone: agentPhoneExpression,
           companyName: { $ifNull: ["$agentProfile.companyName", ""] },
-          status: { $ifNull: ["$agentProfile.status", "unknown"] },
+          status: firstNonEmpty("$agentProfile.status", "$legacyAgentUser.status"),
           isApproved: { $ifNull: ["$agentProfile.isApproved", false] },
+          profileAvailable: { $ne: [{ $ifNull: ["$agentProfile._id", null] }, null] },
+          userAvailable: {
+            $ne: [
+              { $ifNull: ["$agentUser._id", { $ifNull: ["$legacyAgentUser._id", null] }] },
+              null,
+            ],
+          },
           totalBookings: 1,
           revenue: 1,
           commission: 1,
