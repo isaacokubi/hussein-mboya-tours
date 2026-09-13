@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { Activity, ArrowRight, Banknote, BarChart3, Building2, Calculator, CheckCircle2, CreditCard, Landmark, Receipt, RefreshCw, ShieldCheck, Wallet } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -14,6 +14,7 @@ const money = (value) => `KES ${Number(value || 0).toLocaleString("en-KE", { min
 const unwrap = (value) => value?.data?.data ?? value?.data ?? value ?? {};
 const list = (value) => Array.isArray(value) ? value : value?.items || value?.data || [];
 const pct = (a, b) => Number(b) ? `${((Number(a || 0) / Number(b)) * 100).toFixed(1)}%` : "0.0%";
+const errorMessage = (query) => query?.error?.response?.data?.message || query?.error?.message || "The service did not respond successfully.";
 
 const workspaceCards = [
   ["Finance Reports", "/admin/finance/reports", "P&L trends, revenue and transaction reporting", BarChart3],
@@ -24,12 +25,13 @@ const workspaceCards = [
 ];
 
 export default function AdminFinance() {
+  const [refreshError, setRefreshError] = useState("");
   const [financeQ, payablesQ, corporateQ] = useQueries({ queries: [
-    { queryKey: ["admin-finance-accounting"], queryFn: getFinanceStats, staleTime: 30000, refetchInterval: 60000, retry: 2 },
-    { queryKey: ["admin-finance-payables"], queryFn: getSupplierPayables, staleTime: 30000, refetchInterval: 60000, retry: 2 },
-    { queryKey: ["admin-finance-corporate"], queryFn: getCorporateAccounts, staleTime: 30000, refetchInterval: 60000, retry: 2 },
+    { queryKey: ["admin-finance-accounting"], queryFn: getFinanceStats, staleTime: 30000, refetchInterval: false, refetchOnWindowFocus: false, retry: 3 },
+    { queryKey: ["admin-finance-payables"], queryFn: getSupplierPayables, staleTime: 30000, refetchInterval: false, refetchOnWindowFocus: false, retry: 3 },
+    { queryKey: ["admin-finance-corporate"], queryFn: getCorporateAccounts, staleTime: 30000, refetchInterval: false, refetchOnWindowFocus: false, retry: 3 },
   ]});
-  const ledgerQ = useQuery({ queryKey: ["accounting-summary"], queryFn: getLedgerSummary, staleTime: 30000, retry: 2 });
+  const ledgerQ = useQuery({ queryKey: ["accounting-summary"], queryFn: getLedgerSummary, staleTime: 30000, refetchInterval: false, refetchOnWindowFocus: false, retry: 3 });
   const finance = unwrap(financeQ.data);
   const payables = list(payablesQ.data);
   const corporate = list(corporateQ.data);
@@ -49,18 +51,31 @@ export default function AdminFinance() {
     ["Corporate Exposure", money(corporateExposure), "Receivable / credit exposure", CreditCard, "text-rose-600"],
   ];
   const queries = [financeQ, payablesQ, corporateQ, ledgerQ];
-  const errors = queries.filter((q) => q.isError).length;
+  const initialErrors = queries.filter((q) => q.isError && !q.data);
   const refreshing = queries.some((q) => q.isFetching);
+
+  const refreshFinance = async () => {
+    setRefreshError("");
+    const results = [];
+    for (const [label, query] of [["Finance totals", financeQ], ["Supplier payables", payablesQ], ["Corporate accounts", corporateQ], ["General ledger", ledgerQ]]) {
+      try {
+        await query.refetch({ throwOnError: true });
+      } catch (error) {
+        results.push(`${label}: ${error?.response?.data?.message || error?.message || "refresh failed"}`);
+      }
+    }
+    if (results.length) setRefreshError(results.join(" • "));
+  };
 
   return <div className="space-y-8 pb-10">
     <header className="overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-emerald-950 to-slate-900 p-7 text-white shadow-xl">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-3xl"><p className="text-sm font-bold uppercase tracking-[0.18em] text-sky-300">Finance & Accounting</p><h1 className="mt-2 text-3xl font-black tracking-tight md:text-4xl">Accounting & Finance Center</h1><p className="mt-3 text-sm leading-6 text-slate-300 md:text-base">A tenant-scoped financial command center for collections, cash, receivables, supplier liabilities, tax controls, reconciliation and double-entry accounting.</p></div>
-        <div className="flex items-center gap-3"><span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-300"><Activity size={14} className={refreshing ? "animate-pulse" : ""}/> {refreshing ? "Syncing" : "Live finance data"}</span><button onClick={() => queries.forEach((q) => q.refetch())} className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-950/30 hover:bg-indigo-500"><RefreshCw size={16} className={refreshing ? "animate-spin" : ""}/> Refresh</button></div>
+        <div className="flex items-center gap-3"><span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-300"><Activity size={14} className={refreshing ? "animate-pulse" : ""}/> {refreshing ? "Syncing" : "Live finance data"}</span><button onClick={refreshFinance} disabled={refreshing} className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-950/30 hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"><RefreshCw size={16} className={refreshing ? "animate-spin" : ""}/> {refreshing ? "Refreshing" : "Refresh"}</button></div>
       </div>
     </header>
 
-    {errors > 0 && <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">{errors} finance data source{errors > 1 ? "s" : ""} could not be refreshed. Existing figures remain visible; retry after checking the affected service.</div>}
+    {(initialErrors.length > 0 || refreshError) && <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"><p className="font-bold">Finance refresh needs attention</p><p className="mt-1">{refreshError || `${initialErrors.length} finance data source${initialErrors.length > 1 ? "s" : ""} could not be loaded.`}</p>{initialErrors.length > 0 && <div className="mt-2 space-y-1 text-xs">{initialErrors.map((q, index) => <p key={`${q.queryKey?.join("-") || "finance"}-${index}`}>{errorMessage(q)}</p>)}</div>}</div>}
 
     <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {cards.map(([title, value, hint, Icon, tone]) => <div key={title} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"><div className="flex items-start justify-between gap-4"><div><p className="text-sm font-medium text-slate-500">{title}</p><p className="mt-2 text-2xl font-black tracking-tight text-slate-950">{value}</p><p className="mt-1 text-xs text-slate-400">{hint}</p></div><div className="rounded-xl bg-slate-100 p-2.5"><Icon size={20} className={tone}/></div></div></div>)}
