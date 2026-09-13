@@ -15,6 +15,7 @@ const supplierPayableSchema = new mongoose.Schema({
   dueDate: { type: Date, default: null, index: true },
   status: { type: String, enum: ["open", "partially_paid", "paid", "overdue", "cancelled"], default: "open", index: true },
   paymentReference: { type: String, trim: true, default: "" },
+  paymentMethod: { type: String, enum: ["MPESA", "CARD", "BANK_TRANSFER", "CASH"], default: "BANK_TRANSFER" },
   notes: { type: String, trim: true, default: "" },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
 }, { timestamps: true });
