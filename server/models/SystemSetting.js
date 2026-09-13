@@ -3,7 +3,6 @@ import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
 const systemSettingSchema = new mongoose.Schema(
   {
-    // Null tenantId is reserved for platform-level SuperAdmin settings.
     tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true, required: false, default: null },
     key: { type: String, default: "default", index: true },
     companyName: { type: String, default: "Company", trim: true },
@@ -12,6 +11,10 @@ const systemSettingSchema = new mongoose.Schema(
     address: { type: String, default: "", trim: true }, city: { type: String, default: "Nairobi", trim: true }, country: { type: String, default: "Kenya", trim: true },
     currency: { type: String, default: "KES", trim: true, uppercase: true }, currencySymbol: { type: String, default: "KSh", trim: true }, timezone: { type: String, default: "Africa/Nairobi" }, language: { type: String, default: "en", trim: true },
     taxRate: { type: Number, default: 0, min: 0, max: 100 }, bookingDepositPercentage: { type: Number, default: 30, min: 0, max: 100 }, defaultCommissionRate: { type: Number, default: 10, min: 0, max: 100 },
+    tenantPlanStarterPriceKes: { type: Number, default: 0, min: 0, max: 100000000 },
+    tenantPlanProfessionalPriceKes: { type: Number, default: 0, min: 0, max: 100000000 },
+    tenantPlanBusinessPriceKes: { type: Number, default: 0, min: 0, max: 100000000 },
+    tenantPlanEnterprisePriceKes: { type: Number, default: 0, min: 0, max: 100000000 },
     maintenanceMode: { type: Boolean, default: false }, allowRegistrations: { type: Boolean, default: true }, allowAgentRegistrations: { type: Boolean, default: true }, requireEmailVerification: { type: Boolean, default: true }, requirePhoneVerification: { type: Boolean, default: false },
     enableMpesa: { type: Boolean, default: true }, enableStripe: { type: Boolean, default: false }, enablePaypal: { type: Boolean, default: false }, enableBankTransfer: { type: Boolean, default: true },
     bankName: { type: String, default: "", trim: true }, bankAccountName: { type: String, default: "", trim: true }, bankAccountNumber: { type: String, default: "", trim: true }, bankBranch: { type: String, default: "", trim: true }, bankSwiftCode: { type: String, default: "", trim: true },
