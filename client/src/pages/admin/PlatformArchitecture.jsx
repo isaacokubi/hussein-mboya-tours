@@ -3,6 +3,60 @@ import DeveloperPlatformCenter from "../../components/admin/DeveloperPlatformCen
 import PaymentGatewayCenter from "../../components/admin/PaymentGatewayCenter";
 import PrivacyRequests from "./PrivacyRequests";
 
-const layers=[["Customer experience","React + Vite","Public website, tour discovery, booking, custom requests, checkout and reviews",Boxes],["Business services","Node.js + Express","Sales, CRM, quotations, bookings, finance, operations, RBAC and notifications",Server],["Data layer","MongoDB + Mongoose","Tenant-isolated customers, tours, bookings, payments, resources and audit data",Database],["Integrations","M-Pesa · Stripe · PayPal · Cloudinary · Email · AI","Payments, media, customer communications and intelligent assistance",Cloud]];
+const layers = [
+  ["Customer experience", "React + Vite", "Public website, tour discovery, booking, custom requests, checkout and reviews", Boxes],
+  ["Business services", "Node.js + Express", "Sales, CRM, quotations, bookings, finance, operations, RBAC and notifications", Server],
+  ["Data layer", "MongoDB + Mongoose", "Tenant-isolated customers, tours, bookings, payments, resources and audit data", Database],
+  ["Integrations", "M-Pesa · Stripe · PayPal · PesaPal · Cloudinary · Email · AI", "Payments, media, customer communications and intelligent assistance", Cloud],
+];
 
-export default function PlatformArchitecture(){return <div className="min-h-screen bg-slate-50 p-6"><div className="mx-auto max-w-7xl"><div className="mb-8"><p className="text-sm font-semibold uppercase tracking-wider text-emerald-700">Platform architecture</p><h1 className="text-3xl font-bold">Tourism platform ecosystem</h1><p className="mt-1 text-slate-500">Production architecture, security controls, tenant payment infrastructure, privacy governance and integration management.</p></div><div className="grid gap-5 md:grid-cols-2">{layers.map(([title,tech,desc,Icon])=><section key={title} className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200"><div className="flex items-start gap-4"><div className="rounded-xl bg-emerald-50 p-3 text-emerald-700"><Icon/></div><div><h2 className="text-xl font-bold">{title}</h2><p className="mt-1 font-semibold text-slate-700">{tech}</p><p className="mt-2 text-sm leading-6 text-slate-500">{desc}</p></div></div></section>)}</div><div className="mt-6 grid gap-5 md:grid-cols-3"><section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200"><ShieldCheck className="text-emerald-700"/><h2 className="mt-3 font-bold">Multi-tenant isolation</h2><p className="mt-2 text-sm text-slate-500">Tenant-aware models, queries, permissions and branding keep business data separated.</p></section><section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200"><GitBranch className="text-emerald-700"/><h2 className="mt-3 font-bold">Scalable delivery</h2><p className="mt-2 text-sm text-slate-500">Frontend, API, database and integrations remain independently extensible.</p></section><section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200"><Sparkles className="text-emerald-700"/><h2 className="mt-3 font-bold">Intelligent operations</h2><p className="mt-2 text-sm text-slate-500">AI assists support, booking risk, operations, analytics and finance while humans retain approval control.</p></section></div><PaymentGatewayCenter/><DeveloperPlatformCenter/><PrivacyRequests/></div></div>}
+const controlCards = [
+  ["Multi-tenant isolation", "Tenant-aware models, queries, permissions and branding keep business data separated.", ShieldCheck],
+  ["Scalable delivery", "Frontend, API, database and integrations remain independently extensible.", GitBranch],
+  ["Intelligent operations", "AI assists support, booking risk, operations, analytics and finance while humans retain approval control.", Sparkles],
+];
+
+export default function PlatformArchitecture() {
+  return (
+    <div className="admin-control-center min-h-screen bg-[var(--tenant-background,#f8fafc)] p-4 text-[var(--tenant-text,#0f172a)] md:p-6">
+      <div className="mx-auto max-w-7xl">
+        <header className="admin-dashboard-hero mb-7 rounded-3xl p-6 text-white shadow-xl md:p-8">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-200">Platform architecture</p>
+          <h1 className="mt-2 text-3xl font-black tracking-tight md:text-4xl">Tourism platform ecosystem</h1>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-emerald-50/80 md:text-base">Production architecture, security controls, tenant payment infrastructure, privacy governance and integration management.</p>
+        </header>
+
+        <section className="grid gap-5 md:grid-cols-2" aria-label="Platform architecture layers">
+          {layers.map(([title, tech, desc, Icon]) => (
+            <section key={title} className="admin-panel rounded-2xl p-6 transition-transform duration-200 hover:-translate-y-0.5">
+              <div className="flex items-start gap-4">
+                <div className="admin-icon-badge rounded-xl p-3"><Icon size={22} /></div>
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">{title}</h2>
+                  <p className="mt-1 font-semibold text-emerald-800">{tech}</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{desc}</p>
+                </div>
+              </div>
+            </section>
+          ))}
+        </section>
+
+        <section className="mt-6 grid gap-5 md:grid-cols-3" aria-label="Platform controls">
+          {controlCards.map(([title, desc, Icon]) => (
+            <section key={title} className="admin-panel rounded-2xl p-6">
+              <Icon className="text-emerald-700" size={22} />
+              <h2 className="mt-3 font-bold text-slate-900">{title}</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">{desc}</p>
+            </section>
+          ))}
+        </section>
+
+        <div className="mt-6 space-y-6">
+          <PaymentGatewayCenter />
+          <DeveloperPlatformCenter />
+          <PrivacyRequests />
+        </div>
+      </div>
+    </div>
+  );
+}
