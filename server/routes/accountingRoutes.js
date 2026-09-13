@@ -3,6 +3,7 @@ import { authorize } from "../middleware/permissionMiddleware.js";
 import { createAccount, createJournalEntry, getLedgerSummary, listAccounts, listJournalEntries, postJournalEntry, voidJournalEntry } from "../controllers/accountingController.js";
 import { getFinancialStatements, getArAging, getApAging, getCashFlow } from "../controllers/accountingReportsController.js";
 import { listAssets, createAsset, postAssetDepreciation, listBudgets, upsertBudget, approveBudget, budgetVsActual, listPeriods, closePeriod, reopenPeriod } from "../controllers/managementAccountingController.js";
+import { getTaxControlReport, getCustomerLedgerReport, getSupplierLedgerReport, getProfitabilityReport } from "../controllers/accountingControlReportsController.js";
 
 const router = express.Router();
 router.get("/accounts", authorize("finance.view"), listAccounts);
@@ -16,6 +17,10 @@ router.get("/statements", authorize("finance.view"), getFinancialStatements);
 router.get("/ar-aging", authorize("finance.view"), getArAging);
 router.get("/ap-aging", authorize("finance.view"), getApAging);
 router.get("/cash-flow", authorize("finance.view"), getCashFlow);
+router.get("/tax-control", authorize("finance.view"), getTaxControlReport);
+router.get("/customer-ledger", authorize("finance.view"), getCustomerLedgerReport);
+router.get("/supplier-ledger", authorize("finance.view"), getSupplierLedgerReport);
+router.get("/profitability", authorize("finance.view"), getProfitabilityReport);
 router.get("/assets", authorize("finance.view"), listAssets);
 router.post("/assets", authorize("finance.manage"), createAsset);
 router.post("/assets/:id/depreciate", authorize("finance.manage"), postAssetDepreciation);
