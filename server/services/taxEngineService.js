@@ -36,7 +36,11 @@ export const ensureDefaultTaxRules = async () => {
     { code: "VAT_EXEMPT", name: "VAT exempt", taxType: "EXEMPT", rate: 0, appliesTo: ["exempt"] },
     { code: "NON_VAT", name: "Non-VAT supply", taxType: "NON_VAT", rate: 0, appliesTo: ["non_vat"] },
   ];
-  for (const rule of defaults) await TaxRule.updateOne({ tenantId, code: rule.code }, { $setOnInsert: { ...rule, tenantId } }, { upsert: true });
+  for (const rule of defaults) {
+    const existing = await TaxRule.findOne({ tenantId, code: rule.code }).lean();
+    if (!existing) await TaxRule.create({ ...rule, tenantId });
+    else if (!Number.isFinite(Number(existing.rate))) await TaxRule.updateOne({ tenantId, code: rule.code }, { $set: { rate: rule.rate, name: rule.name, taxType: rule.taxType, appliesTo: rule.appliesTo } });
+  }
   return TaxRule.find({ tenantId }).sort({ code: 1 }).lean();
 };
 
