@@ -6,6 +6,7 @@ import AIOperationsCopilot from "../../components/admin/AIOperationsCopilot";
 import AICustomerSupport from "../../components/admin/AICustomerSupport";
 import AIRevenueAdvisor from "../../components/admin/AIRevenueAdvisor";
 
+import { getDashboard } from "../../api/adminApi";
 import {
   getAIDashboard,
   getAIBriefing,
@@ -17,6 +18,7 @@ import {
 const hasValue = (value) => value !== undefined && value !== null && value !== "";
 const numberValue = (value) => hasValue(value) && Number.isFinite(Number(value)) ? Number(value) : null;
 const metricValue = (value, formatter = (item) => item) => hasValue(value) ? formatter(value) : "—";
+const unwrap = (response) => response?.data && typeof response.data === "object" ? response.data : (response || {});
 
 const metricTone = {
   emerald: "border-emerald-100 bg-gradient-to-br from-emerald-50 to-white text-emerald-950",
@@ -29,6 +31,7 @@ const metricTone = {
 
 export default function AdminAITools() {
   const [dashboard, setDashboard] = useState(null);
+  const [canonicalDashboard, setCanonicalDashboard] = useState(null);
   const [briefing, setBriefing] = useState(null);
   const [analytics, setAnalytics] = useState(null);
   const [intelligence, setIntelligence] = useState(null);
@@ -42,6 +45,7 @@ export default function AdminAITools() {
     const load = async () => {
       setLoading(true);
       const results = await Promise.allSettled([
+        getDashboard(),
         getAIDashboard(),
         getAIBriefing(),
         getAIAnalytics(),
@@ -51,12 +55,13 @@ export default function AdminAITools() {
 
       if (!active) return;
 
-      const [dashboardRes, briefingRes, analyticsRes, intelligenceRes, revenueAdviceRes] = results;
-      setDashboard(dashboardRes.status === "fulfilled" ? dashboardRes.value?.data || null : null);
-      setBriefing(briefingRes.status === "fulfilled" ? briefingRes.value?.data || null : null);
-      setAnalytics(analyticsRes.status === "fulfilled" ? analyticsRes.value?.data || null : null);
-      setIntelligence(intelligenceRes.status === "fulfilled" ? intelligenceRes.value?.data || null : null);
-      setRevenueAdvice(revenueAdviceRes.status === "fulfilled" ? revenueAdviceRes.value?.data || null : null);
+      const [canonicalRes, dashboardRes, briefingRes, analyticsRes, intelligenceRes, revenueAdviceRes] = results;
+      setCanonicalDashboard(canonicalRes.status === "fulfilled" ? unwrap(canonicalRes.value) : null);
+      setDashboard(dashboardRes.status === "fulfilled" ? unwrap(dashboardRes.value) : null);
+      setBriefing(briefingRes.status === "fulfilled" ? unwrap(briefingRes.value) : null);
+      setAnalytics(analyticsRes.status === "fulfilled" ? unwrap(analyticsRes.value) : null);
+      setIntelligence(intelligenceRes.status === "fulfilled" ? unwrap(intelligenceRes.value) : null);
+      setRevenueAdvice(revenueAdviceRes.status === "fulfilled" ? unwrap(revenueAdviceRes.value) : null);
       setFailedSections(results.filter((result) => result.status === "rejected").length);
       setLoading(false);
     };
@@ -64,30 +69,41 @@ export default function AdminAITools() {
     load().catch((error) => {
       if (!active) return;
       console.error("AI dashboard loading failed", error);
-      setFailedSections(5);
+      setFailedSections(6);
       setLoading(false);
     });
 
     return () => { active = false; };
   }, []);
 
-  // The dashboard endpoint is the authoritative fallback for the core snapshot.
-  // This prevents one secondary AI feed from hiding values that are already available.
-  const bookingCount = numberValue(dashboard?.bookings ?? intelligence?.totalBookings ?? revenueAdvice?.metrics?.totalBookings);
-  const revenue = numberValue(dashboard?.revenue ?? intelligence?.revenue ?? revenueAdvice?.metrics?.totalRevenue ?? briefing?.metrics?.revenue);
-  const customers = numberValue(dashboard?.customers ?? intelligence?.totalCustomers);
-  const vehicles = numberValue(dashboard?.vehicles ?? intelligence?.totalVehicles);
-  const totalTours = numberValue(dashboard?.tours ?? intelligence?.totalTours ?? revenueAdvice?.metrics?.totalTours ?? briefing?.metrics?.totalTours);
+  // Prefer the canonical admin dashboard for core business numbers. AI-specific
+  // feeds remain responsible for derived intelligence, but a failed AI feed must
+  // never erase business data that the normal admin dashboard already has.
+  const source = canonicalDashboard?.data || canonicalDashboard || {};
+  const aiDashboard = dashboard?.data || dashboard || {};
+  const aiIntelligence = intelligence?.data || intelligence || {};
+  const aiRevenue = revenueAdvice?.data || revenueAdvice || {};
+  const aiBriefing = briefing?.data || briefing || {};
 
-  const conversionRate = numberValue(intelligence?.conversionRate);
-  const failedPayments = numberValue(intelligence?.failedPayments);
-  const customerRating = numberValue(intelligence?.customerRating ?? briefing?.metrics?.rating);
-  const averageBooking = numberValue(intelligence?.averageBookingValue);
-  const topTour = hasValue(intelligence?.topTour) ? intelligence.topTour : null;
-  const recommendations = revenueAdvice?.recommendations || intelligence?.recommendations || briefing?.recommendations || [];
+  const bookingCount = numberValue(
+    source.bookings ?? aiDashboard.bookings ?? aiIntelligence.totalBookings ?? aiRevenue.metrics?.totalBookings
+  );
+  const revenue = numberValue(
+    source.revenue ?? aiDashboard.revenue ?? aiIntelligence.revenue ?? aiRevenue.metrics?.totalRevenue ?? aiBriefing.metrics?.revenue
+  );
+  const customers = numberValue(source.customers ?? aiDashboard.customers ?? aiIntelligence.totalCustomers);
+  const vehicles = numberValue(source.vehicles ?? aiDashboard.vehicles ?? aiIntelligence.totalVehicles);
+  const totalTours = numberValue(source.tours ?? aiDashboard.tours ?? aiIntelligence.totalTours ?? aiRevenue.metrics?.totalTours ?? aiBriefing.metrics?.totalTours);
 
-  const availableFeeds = [dashboard, briefing, analytics, intelligence, revenueAdvice].filter(Boolean).length;
-  const actualUnavailable = loading ? 0 : 5 - availableFeeds;
+  const conversionRate = numberValue(aiIntelligence.conversionRate);
+  const failedPayments = numberValue(aiIntelligence.failedPayments);
+  const customerRating = numberValue(aiIntelligence.customerRating ?? aiBriefing.metrics?.rating);
+  const averageBooking = numberValue(aiIntelligence.averageBookingValue);
+  const topTour = hasValue(aiIntelligence.topTour) ? aiIntelligence.topTour : null;
+  const recommendations = aiRevenue.recommendations || aiIntelligence.recommendations || aiBriefing.recommendations || [];
+
+  const aiFeedUnavailable = [dashboard, briefing, analytics, intelligence, revenueAdvice].filter((item) => !item).length;
+  const actualUnavailable = loading ? 0 : aiFeedUnavailable;
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 sm:p-6 lg:p-8">
@@ -111,7 +127,7 @@ export default function AdminAITools() {
         {actualUnavailable > 0 && !loading && (
           <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm">
             <span className="mt-0.5 rounded-full bg-amber-200 px-2 py-0.5 text-xs font-black">!</span>
-            <p><strong>Some AI data is unavailable.</strong> Available business values are still displayed from the other connected feeds. A dash (—) means no source returned that particular value.</p>
+            <p><strong>Some AI data is unavailable.</strong> Core business values remain available from the canonical admin dashboard whenever possible. A dash (—) means no source returned that particular value.</p>
           </div>
         )}
 
@@ -140,15 +156,15 @@ export default function AdminAITools() {
         <section className="overflow-hidden rounded-3xl border border-amber-100 bg-white shadow-sm">
           <div className="border-b border-amber-100 bg-gradient-to-r from-amber-50 via-white to-orange-50 px-5 py-5 sm:px-6"><p className="text-xs font-bold uppercase tracking-widest text-amber-700">Daily intelligence</p><h2 className="mt-1 text-xl font-black text-slate-900">Daily AI Briefing</h2></div>
           <div className="p-5 sm:p-6">
-            {loading ? <div className="animate-pulse space-y-3"><div className="h-4 w-3/4 rounded bg-slate-200" /><div className="h-4 w-full rounded bg-slate-100" /><div className="h-4 w-2/3 rounded bg-slate-100" /></div> : briefing?.summary ? <p className="rounded-2xl border border-amber-100 bg-amber-50/60 p-4 text-sm leading-7 text-slate-700">{briefing.summary}</p> : <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center"><p className="font-semibold text-slate-700">No briefing available</p><p className="mt-1 text-xs text-slate-500">The AI briefing service did not return a summary for this period.</p></div>}
-            {!!briefing?.recommendations?.length && <div className="mt-5 space-y-2">{briefing.recommendations.map((item, index) => <div key={`${index}-${item}`} className="flex gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-sm"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-black text-emerald-700">{index + 1}</span><p className="text-sm leading-6 text-slate-700">{item}</p></div>)}</div>}
+            {loading ? <div className="animate-pulse space-y-3"><div className="h-4 w-3/4 rounded bg-slate-200" /><div className="h-4 w-full rounded bg-slate-100" /><div className="h-4 w-2/3 rounded bg-slate-100" /></div> : aiBriefing.summary ? <p className="rounded-2xl border border-amber-100 bg-amber-50/60 p-4 text-sm leading-7 text-slate-700">{aiBriefing.summary}</p> : <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center"><p className="font-semibold text-slate-700">No briefing available</p><p className="mt-1 text-xs text-slate-500">The AI briefing service did not return a summary for this period.</p></div>}
+            {!!aiBriefing.recommendations?.length && <div className="mt-5 space-y-2">{aiBriefing.recommendations.map((item, index) => <div key={`${index}-${item}`} className="flex gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-sm"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-black text-emerald-700">{index + 1}</span><p className="text-sm leading-6 text-slate-700">{item}</p></div>)}</div>}
           </div>
         </section>
 
         <section className="rounded-3xl border border-blue-100 bg-white p-5 shadow-sm sm:p-6"><div className="mb-5"><p className="text-xs font-bold uppercase tracking-widest text-blue-700">Performance</p><h2 className="mt-1 text-xl font-black text-slate-900">AI Analytics</h2><p className="mt-1 text-sm text-slate-500">Visual trends for revenue and booking activity.</p></div>{analytics ? <AIAnalyticsCharts analytics={analytics} /> : <UnavailableState label="Analytics data unavailable" />}</section>
         <section className="rounded-3xl border border-violet-100 bg-white p-5 shadow-sm sm:p-6"><AIOperationsCopilot /></section>
         <section className="rounded-3xl border border-cyan-100 bg-white p-5 shadow-sm sm:p-6"><AICustomerSupport /></section>
-        <section className="rounded-3xl border border-amber-100 bg-white p-5 shadow-sm sm:p-6"><AIRevenueAdvisor data={revenueAdvice || {}} /></section>
+        <section className="rounded-3xl border border-amber-100 bg-white p-5 shadow-sm sm:p-6"><AIRevenueAdvisor data={aiRevenue} /></section>
 
         <section className="overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm">
           <div className="border-b border-emerald-100 bg-gradient-to-r from-emerald-50 via-white to-teal-50 px-5 py-5 sm:px-6"><p className="text-xs font-bold uppercase tracking-widest text-emerald-700">Customer experience</p><h2 className="mt-1 text-xl font-black text-slate-900">Customer AI Assistant</h2><p className="mt-1 text-sm text-slate-500">AI-powered assistance for customer conversations and travel questions.</p></div>
