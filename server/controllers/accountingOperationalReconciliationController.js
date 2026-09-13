@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import Payment from "../models/Payment.js";
 import Expense from "../models/Expense.js";
 import JournalEntry from "../models/JournalEntry.js";
@@ -11,6 +12,12 @@ import {
 
 const exists = async (tenantId, sourceType, sourceId) =>
   JournalEntry.exists({ tenantId, sourceType, sourceId });
+
+const refundSourceId = (payment, amount, reference = "") =>
+  crypto.createHash("sha256")
+    .update(`${payment._id}:${String(reference || `REFUND-${payment._id}-${amount}`).trim()}:${amount}`)
+    .digest("hex")
+    .slice(0, 24);
 
 export const reconcileOperationalAccounting = async (req, res, next) => {
   requireTenantId();
@@ -36,11 +43,13 @@ export const reconcileOperationalAccounting = async (req, res, next) => {
       }
 
       const refundAmount = Number(payment.refundedAmount || 0);
-      if (payment.refundStatus === "completed" && refundAmount > 0) {
+      if ((payment.refundStatus === "completed" || payment.status === "refunded") && refundAmount > 0) {
         summary.scanned.refunds += 1;
-        if (await exists(tenantId, "payment_refund", payment._id)) summary.alreadyPosted.refunds += 1;
+        const reference = String(payment.refundReference || `REFUND-${payment._id}-${refundAmount}`).trim();
+        const sourceId = refundSourceId(payment, refundAmount, reference);
+        if (await exists(tenantId, "payment_refund", sourceId)) summary.alreadyPosted.refunds += 1;
         else {
-          try { await postPaymentRefundToLedger(payment, refundAmount, payment.refundReference || ""); summary.posted.refunds += 1; }
+          try { await postPaymentRefundToLedger(payment, refundAmount, reference); summary.posted.refunds += 1; }
           catch (error) { summary.errors.push({ type: "refund", id: String(payment._id), message: error.message }); }
         }
       }
