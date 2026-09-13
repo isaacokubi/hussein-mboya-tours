@@ -3,6 +3,7 @@ import Subscription from "../models/Subscription.js";
 import SubscriptionPayment from "../models/SubscriptionPayment.js";
 import User from "../models/User.js";
 import { activateTenantSubscription, getTenantPlanPrice, getTenantPlanPrices, initiateTenantMpesaPayment } from "../services/tenantSubscriptionService.js";
+import { getPlanFeatureCatalog, getTenantPlanFeatures } from "../services/planFeatureService.js";
 
 const isAdmin = (user) => ["admin", "administrator", "super_admin", "superadmin"].includes(String(user?.role || user?.legacyRole || "").toLowerCase());
 const isPlatformSuperAdmin = (user) => ["super_admin", "superadmin"].includes(String(user?.role || user?.legacyRole || "").toLowerCase());
@@ -15,9 +16,10 @@ export const getTenantSubscription = async (req, res, next) => {
     if (!organization) return res.status(404).json({ success: false, message: "Company not found." });
     const subscription = await Subscription.findOne({ tenantId }).lean();
     const payments = await SubscriptionPayment.find({ tenantId }).sort({ createdAt: -1 }).limit(10).lean();
-    const plan = organization.subscription?.plan || subscription?.plan || "starter";
+    const plan = String(organization.subscription?.plan || subscription?.plan || "starter").toLowerCase();
     const planPrices = await getTenantPlanPrices();
-    return res.json({ success: true, tenant: organization, subscription: subscription || null, plan, amountDue: planPrices[plan] || 0, planPrices, payments });
+    const features = await getTenantPlanFeatures(plan);
+    return res.json({ success: true, tenant: organization, subscription: subscription || null, plan, amountDue: planPrices[plan] || 0, planPrices, features, featureCatalog: getPlanFeatureCatalog(), payments });
   } catch (error) { next(error); }
 };
 
