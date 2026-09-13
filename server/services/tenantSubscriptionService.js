@@ -11,10 +11,10 @@ import { generateAccessToken, generateTimestamp, generatePassword } from "./mpes
 const ENV_PLAN_PRICES = Object.freeze({ starter: Number(process.env.TENANT_PLAN_STARTER_PRICE_KES || 0), professional: Number(process.env.TENANT_PLAN_PROFESSIONAL_PRICE_KES || 0), business: Number(process.env.TENANT_PLAN_BUSINESS_PRICE_KES || 0), enterprise: Number(process.env.TENANT_PLAN_ENTERPRISE_PRICE_KES || 0) });
 const PLAN_FIELDS = Object.freeze({ starter: "tenantPlanStarterPriceKes", professional: "tenantPlanProfessionalPriceKes", business: "tenantPlanBusinessPriceKes", enterprise: "tenantPlanEnterprisePriceKes" });
 
-export const getTenantPlanPrices = async () => {
+export const getTenantPlanPrices = async () => runWithTenant({ role: "super_admin", bypass: true }, async () => {
   const settings = await SystemSetting.findOne({ tenantId: null, key: "platform" }).lean();
-  return Object.fromEntries(Object.entries(PLAN_FIELDS).map(([plan, field]) => [plan, Number(settings?.[field] || ENV_PLAN_PRICES[plan] || 0)]));
-};
+  return Object.fromEntries(Object.entries(PLAN_FIELDS).map(([plan, field]) => [plan, Number(settings?.[field] ?? ENV_PLAN_PRICES[plan] ?? 0)]));
+});
 export const getTenantPlanPrice = async (plan) => Number((await getTenantPlanPrices())[String(plan || "").toLowerCase()] || 0);
 
 export const normalizeSubscriptionPhone = (phone) => {
