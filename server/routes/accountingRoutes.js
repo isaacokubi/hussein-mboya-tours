@@ -6,6 +6,7 @@ import { listAssets, createAsset, postAssetDepreciation, listBudgets, upsertBudg
 import { getTaxControlReport, getCustomerLedgerReport, getSupplierLedgerReport, getProfitabilityReport } from "../controllers/accountingControlReportsController.js";
 import { listSubledger, createSubledger } from "../controllers/accountingSubledgerController.js";
 import { exportGeneralLedgerCSV, exportTaxControlCSV } from "../controllers/accountingExportController.js";
+import { reconcileOperationalAccounting } from "../controllers/accountingOperationalReconciliationController.js";
 
 const router = express.Router();
 router.get("/accounts", authorize("finance.view"), listAccounts);
@@ -27,6 +28,7 @@ router.get("/exports/general-ledger.csv", authorize("finance.view"), exportGener
 router.get("/exports/tax-control.csv", authorize("finance.view"), exportTaxControlCSV);
 router.get("/subledgers", authorize("finance.view"), listSubledger);
 router.post("/subledgers", authorize("finance.manage"), createSubledger);
+router.post("/operational-reconciliation", authorize("finance.manage"), reconcileOperationalAccounting);
 router.get("/assets", authorize("finance.view"), listAssets);
 router.post("/assets", authorize("finance.manage"), createAsset);
 router.post("/assets/:id/depreciate", authorize("finance.manage"), postAssetDepreciation);
