@@ -6,7 +6,6 @@ import { DEFAULT_PLAN_FEATURES, PLAN_FEATURE_CATALOG, PLAN_ORDER, getPlanFeature
 const PRICE_FIELDS = { starter: "tenantPlanStarterPriceKes", professional: "tenantPlanProfessionalPriceKes", business: "tenantPlanBusinessPriceKes", enterprise: "tenantPlanEnterprisePriceKes" };
 const envPrices = () => ({ starter: Number(process.env.TENANT_PLAN_STARTER_PRICE_KES || 0), professional: Number(process.env.TENANT_PLAN_PROFESSIONAL_PRICE_KES || 0), business: Number(process.env.TENANT_PLAN_BUSINESS_PRICE_KES || 0), enterprise: Number(process.env.TENANT_PLAN_ENTERPRISE_PRICE_KES || 0) });
 const paymentStatus = () => ({ provider: "mpesa", environment: mpesaConfig.environment, configured: hasLegacyMpesaConfig(), callbackConfigured: Boolean(mpesaConfig.callbackUrl), shortcodeConfigured: Boolean(mpesaConfig.shortcode) });
-
 const readPlatformSettings = () => runWithTenant({ role: "super_admin", bypass: true }, () => SystemSetting.findOne({ tenantId: null, key: "platform" }).lean());
 const writePlatformSettings = (work) => runWithTenant({ role: "super_admin", bypass: true }, work);
 
@@ -36,21 +35,18 @@ export const updatePlatformBillingConfig = async (req, res, next) => {
         }
         values[field] = value;
       }
-      const features = validatePlanFeatures(req.body?.features || DEFAULT_PLAN_FEATURES);
+      const rawFeatures = req.body?.features;
+      const features = rawFeatures === undefined ? await getPlanFeatures() : validatePlanFeatures(rawFeatures);
       settings.subscriptionPlanFeatures = features;
       Object.assign(settings, values);
       await settings.save();
-      return {
-        prices: Object.fromEntries(Object.entries(PRICE_FIELDS).map(([plan, field]) => [plan, Number(settings[field] || 0)])),
-        features: Object.fromEntries(PLAN_ORDER.map((plan) => [plan, [...(settings.subscriptionPlanFeatures?.get?.(plan) || settings.subscriptionPlanFeatures?.[plan] || features[plan])]])),
-      };
+      return { prices: Object.fromEntries(Object.entries(PRICE_FIELDS).map(([plan, field]) => [plan, Number(settings[field] || 0)])), features: Object.fromEntries(PLAN_ORDER.map((plan) => [plan, [...(settings.subscriptionPlanFeatures?.get?.(plan) || settings.subscriptionPlanFeatures?.[plan] || features[plan])]])) };
     });
     return res.json({ success: true, message: "Subscription pricing and plan features saved successfully.", prices: result.prices, features: result.features, currency: "KES", mpesa: paymentStatus() });
   } catch (error) { next(error); }
 };
 
 export const getPlatformPlanFeatureCatalog = async (req, res, next) => {
-  try {
-    return res.json({ success: true, plans: await getPlanFeatures(), catalog: PLAN_FEATURE_CATALOG.map(([id, name, description]) => ({ id, name, description })) });
-  } catch (error) { next(error); }
+  try { return res.json({ success: true, plans: await getPlanFeatures(), catalog: PLAN_FEATURE_CATALOG.map(([id, name, description]) => ({ id, name, description })) }); }
+  catch (error) { next(error); }
 };
