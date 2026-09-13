@@ -11,32 +11,41 @@ import {
 } from "recharts";
 
 const monthName = (month) => new Date(2000, Number(month) - 1, 1).toLocaleString(undefined, { month: "short" });
+const amountOf = (item) => Number(item?.revenue ?? item?.amount ?? 0);
 
 export default function AIAnalyticsCharts({ analytics = {}, fallback = {} }) {
   const aiRevenue = analytics.monthlyRevenue || [];
   const canonicalRevenue = fallback.monthlyRevenue || [];
-  const revenue = (aiRevenue.length ? aiRevenue : canonicalRevenue.map((item) => ({
+  const canonicalRevenueTotal = canonicalRevenue.reduce((sum, item) => sum + amountOf(item), 0);
+  const aiRevenueTotal = aiRevenue.reduce((sum, item) => sum + amountOf(item), 0);
+  const useCanonicalRevenue = canonicalRevenue.length > 0 && aiRevenueTotal === 0 && canonicalRevenueTotal > 0;
+  const revenueSource = useCanonicalRevenue || !aiRevenue.length ? canonicalRevenue.map((item) => ({
     _id: { month: item.month, year: item.year },
-    revenue: Number(item.amount ?? item.revenue ?? 0),
-    label: item.month
-  }))).map((item) => ({
+    revenue: amountOf(item),
+    label: item.label || item.month
+  })) : aiRevenue;
+  const revenue = revenueSource.map((item) => ({
     ...item,
     label: item.label || `${monthName(item._id?.month)} ${item._id?.year || ""}`.trim(),
-    revenue: Number(item.revenue ?? item.amount ?? 0)
+    revenue: amountOf(item)
   }));
 
   const aiBookings = analytics.bookingActivity || [];
   const canonicalBookings = fallback.statusData || [];
-  const bookings = (aiBookings.length ? aiBookings : canonicalBookings.map((item) => ({
+  const aiBookingTotal = aiBookings.reduce((sum, item) => sum + Number(item?.bookings || 0), 0);
+  const canonicalBookingTotal = canonicalBookings.reduce((sum, item) => sum + Number(item?.count || 0), 0);
+  const useCanonicalBookings = canonicalBookings.length > 0 && aiBookingTotal === 0 && canonicalBookingTotal > 0;
+  const bookingsSource = useCanonicalBookings || !aiBookings.length ? canonicalBookings.map((item) => ({
     _id: { day: item.status },
     bookings: Number(item.count || 0)
-  }))).map((item) => ({
+  })) : aiBookings;
+  const bookings = bookingsSource.map((item) => ({
     ...item,
     label: item.label || `${item._id?.day || ""}/${item._id?.month || ""}`.replace(/\/$/, ""),
     bookings: Number(item.bookings || 0)
   }));
 
-  const hasDailyActivity = aiBookings.length > 0;
+  const hasDailyActivity = aiBookings.length > 0 && !useCanonicalBookings;
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
