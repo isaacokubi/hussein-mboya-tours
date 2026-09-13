@@ -5,8 +5,13 @@ import { ensureDefaultTaxRules, calculateTenantTax } from "../services/taxEngine
 const actorId = (req) => req.user?._id || req.user?.id || null;
 
 export const listTaxRules = async (req, res, next) => {
-  try { return res.json({ success: true, data: await TaxRule.find(tenantFilter(req)).sort({ code: 1 }).lean() }); }
-  catch (error) { return next(error); }
+  try {
+    // A new tenant should receive the configurable Kenya tax baseline on first
+    // visit. This is idempotent and keeps the UI production-ready without
+    // requiring an administrator to remember a separate initialization step.
+    const rules = await ensureDefaultTaxRules();
+    return res.json({ success: true, data: rules });
+  } catch (error) { return next(error); }
 };
 
 export const initializeTaxRules = async (req, res, next) => {
