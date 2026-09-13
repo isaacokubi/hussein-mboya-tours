@@ -12,17 +12,31 @@ import {
 
 const monthName = (month) => new Date(2000, Number(month) - 1, 1).toLocaleString(undefined, { month: "short" });
 
-export default function AIAnalyticsCharts({ analytics = {} }) {
-  const revenue = (analytics.monthlyRevenue || []).map((item) => ({
+export default function AIAnalyticsCharts({ analytics = {}, fallback = {} }) {
+  const aiRevenue = analytics.monthlyRevenue || [];
+  const canonicalRevenue = fallback.monthlyRevenue || [];
+  const revenue = (aiRevenue.length ? aiRevenue : canonicalRevenue.map((item) => ({
+    _id: { month: item.month, year: item.year },
+    revenue: Number(item.amount ?? item.revenue ?? 0),
+    label: item.month
+  }))).map((item) => ({
     ...item,
-    label: `${monthName(item._id?.month)} ${item._id?.year || ""}`.trim(),
-    revenue: Number(item.revenue || 0)
+    label: item.label || `${monthName(item._id?.month)} ${item._id?.year || ""}`.trim(),
+    revenue: Number(item.revenue ?? item.amount ?? 0)
   }));
-  const bookings = (analytics.bookingActivity || []).map((item) => ({
+
+  const aiBookings = analytics.bookingActivity || [];
+  const canonicalBookings = fallback.statusData || [];
+  const bookings = (aiBookings.length ? aiBookings : canonicalBookings.map((item) => ({
+    _id: { day: item.status },
+    bookings: Number(item.count || 0)
+  }))).map((item) => ({
     ...item,
-    label: `${item._id?.day || ""}/${item._id?.month || ""}`,
+    label: item.label || `${item._id?.day || ""}/${item._id?.month || ""}`.replace(/\/$/, ""),
     bookings: Number(item.bookings || 0)
   }));
+
+  const hasDailyActivity = aiBookings.length > 0;
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
@@ -38,7 +52,7 @@ export default function AIAnalyticsCharts({ analytics = {} }) {
         </ResponsiveContainer>
       </ChartCard>
 
-      <ChartCard title="Booking Activity" subtitle="Recorded bookings by day" empty={!bookings.length}>
+      <ChartCard title={hasDailyActivity ? "Booking Activity" : "Booking Status"} subtitle={hasDailyActivity ? "Recorded bookings by day" : "Current tenant booking distribution"} empty={!bookings.length}>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={bookings} margin={{ top: 10, right: 12, left: 0, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
