@@ -7,6 +7,7 @@ import { getUserRole } from "../utils/roleUtils.js";
 import financeComplianceRoutes from "./financeComplianceRoutes.js";
 import accountingRoutes from "./accountingRoutes.js";
 import kenyaReadinessRoutes from "./kenyaReadinessRoutes.js";
+import { listWithholdingTax, createWithholdingTax, remitWithholdingTax, cancelWithholdingTax } from "../controllers/withholdingTaxController.js";
 
 const router = express.Router();
 router.use(resolveTenant);
@@ -23,6 +24,10 @@ router.get("/", getFinanceStats);
 router.get("/stats", getFinanceStats);
 router.get("/transactions", getTransactions);
 router.get("/reports", getReports);
+router.get("/withholding-tax", listWithholdingTax);
+router.post("/withholding-tax", authorize("finance.manage"), createWithholdingTax);
+router.post("/withholding-tax/:id/remit", authorize("finance.manage"), remitWithholdingTax);
+router.post("/withholding-tax/:id/cancel", authorize("finance.manage"), cancelWithholdingTax);
 router.use("/compliance", financeComplianceRoutes);
 router.use("/kenya-readiness", kenyaReadinessRoutes);
 router.use("/accounting", accountingRoutes);
