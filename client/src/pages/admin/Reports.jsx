@@ -1,31 +1,10 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Activity,
-  AlertCircle,
-  BarChart3,
-  CalendarDays,
-  CheckCircle2,
-  Clock3,
-  RefreshCw,
-  TrendingUp,
-  Users,
-} from "lucide-react";
-import {
-  getDailyReport,
-  getTourReport,
-  getAgentReport,
-} from "../../api/adminReportApi";
+import { Activity, AlertCircle, BarChart3, CalendarDays, CheckCircle2, Clock3, RefreshCw, TrendingUp, Users } from "lucide-react";
+import { getDailyReport, getTourReport, getAgentReport } from "../../api/adminReportApi";
 
-const money = (value) =>
-  new Intl.NumberFormat("en-KE", {
-    style: "currency",
-    currency: "KES",
-    maximumFractionDigits: 0,
-  }).format(Number(value) || 0);
-
+const money = (value) => new Intl.NumberFormat("en-KE", { style: "currency", currency: "KES", maximumFractionDigits: 0 }).format(Number(value) || 0);
 const number = (value) => new Intl.NumberFormat("en-KE").format(Number(value) || 0);
-
 const listFrom = (value, keys = []) => {
   if (Array.isArray(value)) return value;
   for (const key of keys) if (Array.isArray(value?.[key])) return value[key];
@@ -39,240 +18,32 @@ const StatCard = ({ icon: Icon, label, value, detail, tone = "indigo" }) => {
     violet: "bg-violet-50 text-violet-700 ring-violet-100",
     emerald: "bg-emerald-50 text-emerald-700 ring-emerald-100",
   };
-
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-sm font-medium text-slate-500">{label}</p>
-          <p className="mt-2 text-3xl font-bold tracking-tight text-slate-950">{value}</p>
-          {detail && <p className="mt-1 text-xs text-slate-500">{detail}</p>}
-        </div>
-        <div className={`rounded-xl p-3 ring-1 ${tones[tone]}`}>
-          <Icon className="h-5 w-5" />
-        </div>
-      </div>
-    </div>
-  );
+  return <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"><div className="flex items-start justify-between gap-4"><div><p className="text-sm font-medium text-slate-500">{label}</p><p className="mt-2 text-3xl font-bold tracking-tight text-slate-950">{value}</p>{detail && <p className="mt-1 text-xs text-slate-500">{detail}</p>}</div><div className={`rounded-xl p-3 ring-1 ${tones[tone]}`}><Icon className="h-5 w-5" /></div></div></div>;
 };
 
-const Section = ({ icon: Icon, title, description, children, action }) => (
-  <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-    <div className="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex items-start gap-3">
-        <div className="rounded-lg bg-slate-100 p-2 text-indigo-700">
-          <Icon className="h-5 w-5" />
-        </div>
-        <div>
-          <h2 className="font-semibold text-slate-950">{title}</h2>
-          <p className="text-sm text-slate-500">{description}</p>
-        </div>
-      </div>
-      {action}
-    </div>
-    {children}
-  </section>
-);
-
-const LoadingBlock = () => (
-  <div className="animate-pulse space-y-3 p-5">
-    <div className="h-10 rounded-lg bg-slate-100" />
-    <div className="h-10 rounded-lg bg-slate-100" />
-    <div className="h-10 rounded-lg bg-slate-100" />
-  </div>
-);
-
-const ErrorBlock = ({ onRetry }) => (
-  <div className="flex flex-col items-center justify-center px-5 py-12 text-center">
-    <div className="rounded-full bg-red-50 p-3 text-red-600">
-      <AlertCircle className="h-6 w-6" />
-    </div>
-    <p className="mt-3 font-semibold text-slate-900">Unable to load this report</p>
-    <p className="mt-1 max-w-md text-sm text-slate-500">
-      The report service did not return usable data. Refresh and try again.
-    </p>
-    <button
-      type="button"
-      onClick={onRetry}
-      className="mt-4 inline-flex items-center gap-2 rounded-lg bg-indigo-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-800"
-    >
-      <RefreshCw className="h-4 w-4" /> Retry
-    </button>
-  </div>
-);
+const Section = ({ icon: Icon, title, description, children }) => <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="flex items-start gap-3 border-b border-slate-100 px-5 py-4"><div className="rounded-lg bg-slate-100 p-2 text-indigo-700"><Icon className="h-5 w-5" /></div><div><h2 className="font-semibold text-slate-950">{title}</h2><p className="text-sm text-slate-500">{description}</p></div></div>{children}</section>;
+const LoadingBlock = () => <div className="animate-pulse space-y-3 p-5"><div className="h-10 rounded-lg bg-slate-100" /><div className="h-10 rounded-lg bg-slate-100" /><div className="h-10 rounded-lg bg-slate-100" /></div>;
+const ErrorBlock = ({ onRetry }) => <div className="flex flex-col items-center justify-center px-5 py-12 text-center"><div className="rounded-full bg-red-50 p-3 text-red-600"><AlertCircle className="h-6 w-6" /></div><p className="mt-3 font-semibold text-slate-900">Unable to load this report</p><p className="mt-1 max-w-md text-sm text-slate-500">The report service did not return usable data. Refresh and try again.</p><button type="button" onClick={onRetry} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-indigo-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-800"><RefreshCw className="h-4 w-4" />Retry</button></div>;
 
 export default function Reports() {
-  const dailyQuery = useQuery({
-    queryKey: ["daily-report"],
-    queryFn: getDailyReport,
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-  });
-  const toursQuery = useQuery({
-    queryKey: ["tour-report"],
-    queryFn: getTourReport,
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-  });
-  const agentsQuery = useQuery({
-    queryKey: ["agent-report"],
-    queryFn: getAgentReport,
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-  });
+  const dailyQuery = useQuery({ queryKey: ["daily-report"], queryFn: getDailyReport, staleTime: 30_000, retry: 2, refetchOnWindowFocus: false });
+  const toursQuery = useQuery({ queryKey: ["tour-report"], queryFn: getTourReport, staleTime: 30_000, retry: 2, refetchOnWindowFocus: false });
+  const agentsQuery = useQuery({ queryKey: ["agent-report"], queryFn: getAgentReport, staleTime: 30_000, retry: 2, refetchOnWindowFocus: false });
 
   const dailyBookings = listFrom(dailyQuery.data, ["bookings", "data"]);
   const tours = listFrom(toursQuery.data, ["data", "tours"]);
   const agents = listFrom(agentsQuery.data, ["data", "agents"]);
+  const metrics = useMemo(() => ({ revenue: tours.reduce((sum, item) => sum + (Number(item.revenue) || 0), 0), bookings: tours.reduce((sum, item) => sum + (Number(item.totalBookings) || 0), 0) }), [tours]);
+  const refreshAll = () => { dailyQuery.refetch(); toursQuery.refetch(); agentsQuery.refetch(); };
+  const anyLoading = dailyQuery.isFetching || toursQuery.isFetching || agentsQuery.isFetching;
+  const hasErrorWithoutData = (query, items) => query.isError && !query.data && items.length === 0;
 
-  const metrics = useMemo(() => {
-    const revenue = tours.reduce((sum, item) => sum + (Number(item.revenue) || 0), 0);
-    const bookings = tours.reduce((sum, item) => sum + (Number(item.totalBookings) || 0), 0);
-    return { revenue, bookings };
-  }, [tours]);
-
-  const refreshAll = () => {
-    dailyQuery.refetch();
-    toursQuery.refetch();
-    agentsQuery.refetch();
-  };
-
-  const anyLoading = dailyQuery.isLoading || toursQuery.isLoading || agentsQuery.isLoading;
-  const anyError = dailyQuery.isError || toursQuery.isError || agentsQuery.isError;
-
-  return (
-    <div className="min-h-full bg-slate-100 p-4 sm:p-6 lg:p-8">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <header className="overflow-hidden rounded-2xl bg-gradient-to-r from-slate-950 via-emerald-950 to-slate-900 shadow-lg">
-          <div className="flex flex-col gap-5 px-5 py-6 sm:px-7 sm:py-7 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <div className="flex items-center gap-2 text-sm font-semibold text-sky-300">
-                <BarChart3 className="h-4 w-4" /> Administration / Reporting
-              </div>
-              <h1 className="mt-2 text-2xl font-bold tracking-tight text-white sm:text-3xl">
-                Booking Reports
-              </h1>
-              <p className="mt-1 max-w-2xl text-sm text-slate-300 sm:text-base">
-                Monitor booking activity, tour performance and agent contribution from one operational view.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={refreshAll}
-              disabled={anyLoading}
-              className="inline-flex w-fit items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <RefreshCw className={`h-4 w-4 ${anyLoading ? "animate-spin" : ""}`} />
-              Refresh reports
-            </button>
-          </div>
-        </header>
-
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            icon={CalendarDays}
-            label="Today's bookings"
-            value={number(dailyQuery.data?.count ?? dailyBookings.length)}
-            detail="Created today"
-            tone="indigo"
-          />
-          <StatCard
-            icon={TrendingUp}
-            label="Tour bookings"
-            value={number(metrics.bookings)}
-            detail={`${number(tours.length)} tours with activity`}
-            tone="sky"
-          />
-          <StatCard
-            icon={Users}
-            label="Active agents"
-            value={number(agents.length)}
-            detail="Agents with report data"
-            tone="violet"
-          />
-          <StatCard
-            icon={CheckCircle2}
-            label="Reported revenue"
-            value={money(metrics.revenue)}
-            detail="Across reported tour bookings"
-            tone="emerald"
-          />
-        </div>
-
-        {anyError && (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            One or more report sections could not be loaded. Available sections remain visible below.
-          </div>
-        )}
-
-        <Section
-          icon={Clock3}
-          title="Today's bookings"
-          description="Recent bookings created today"
-        >
-          {dailyQuery.isLoading ? <LoadingBlock /> : dailyQuery.isError ? <ErrorBlock onRetry={dailyQuery.refetch} /> : dailyBookings.length === 0 ? (
-            <div className="px-5 py-12 text-center text-sm text-slate-500">No bookings have been created today.</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-left text-sm">
-                <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                  <tr>
-                    <th className="px-5 py-3 font-semibold">Booking</th>
-                    <th className="px-5 py-3 font-semibold">Tour</th>
-                    <th className="px-5 py-3 font-semibold">Agent</th>
-                    <th className="px-5 py-3 font-semibold">Status</th>
-                    <th className="px-5 py-3 font-semibold">Amount</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {dailyBookings.slice(0, 10).map((booking, index) => (
-                    <tr key={booking._id || booking.id || index} className="hover:bg-slate-50">
-                      <td className="px-5 py-3 font-medium text-slate-900">{booking.bookingReference || booking.reference || booking._id?.slice(-8) || "—"}</td>
-                      <td className="px-5 py-3 text-slate-600">{booking.tour?.title || booking.tour?.name || booking.tourTitle || "—"}</td>
-                      <td className="px-5 py-3 text-slate-600">{booking.agent?.name || booking.agentName || "Direct"}</td>
-                      <td className="px-5 py-3"><span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold capitalize text-slate-700">{booking.status || "pending"}</span></td>
-                      <td className="px-5 py-3 font-semibold text-slate-900">{money(booking.totalAmount ?? booking.amount)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {dailyBookings.length > 10 && <p className="border-t border-slate-100 px-5 py-3 text-xs text-slate-500">Showing the latest 10 of {number(dailyBookings.length)} bookings.</p>}
-            </div>
-          )}
-        </Section>
-
-        <div className="grid gap-6 xl:grid-cols-2">
-          <Section icon={TrendingUp} title="Tour performance" description="Bookings and revenue by tour">
-            {toursQuery.isLoading ? <LoadingBlock /> : toursQuery.isError ? <ErrorBlock onRetry={toursQuery.refetch} /> : tours.length === 0 ? (
-              <div className="px-5 py-12 text-center text-sm text-slate-500">No tour performance data is available yet.</div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-left text-sm">
-                  <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-5 py-3">Tour</th><th className="px-5 py-3">Bookings</th><th className="px-5 py-3">Revenue</th></tr></thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {tours.slice(0, 10).map((item, index) => <tr key={item.tourId || item._id || index} className="hover:bg-slate-50"><td className="px-5 py-3 font-medium text-slate-900">{item.title || item.tour?.title || "Unknown tour"}</td><td className="px-5 py-3 text-slate-600">{number(item.totalBookings)}</td><td className="px-5 py-3 font-semibold text-slate-900">{money(item.revenue)}</td></tr>)}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </Section>
-
-          <Section icon={Activity} title="Agent performance" description="Booking contribution by agent">
-            {agentsQuery.isLoading ? <LoadingBlock /> : agentsQuery.isError ? <ErrorBlock onRetry={agentsQuery.refetch} /> : agents.length === 0 ? (
-              <div className="px-5 py-12 text-center text-sm text-slate-500">No agent performance data is available yet.</div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-left text-sm">
-                  <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-5 py-3">Agent</th><th className="px-5 py-3">Bookings</th><th className="px-5 py-3">Revenue</th></tr></thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {agents.slice(0, 10).map((item, index) => <tr key={item.agentId || item._id || index} className="hover:bg-slate-50"><td className="px-5 py-3"><p className="font-medium text-slate-900">{item.name || item.agent?.name || "Unknown agent"}</p>{item.email && <p className="text-xs text-slate-500">{item.email}</p>}</td><td className="px-5 py-3 text-slate-600">{number(item.totalBookings)}</td><td className="px-5 py-3 font-semibold text-slate-900">{money(item.revenue)}</td></tr>)}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </Section>
-        </div>
-      </div>
-    </div>
-  );
+  return <div className="min-h-full bg-slate-100 p-4 sm:p-6 lg:p-8"><div className="mx-auto max-w-7xl space-y-6">
+    <header className="overflow-hidden rounded-2xl bg-gradient-to-r from-slate-950 via-emerald-950 to-slate-900 shadow-lg"><div className="flex flex-col gap-5 px-5 py-6 sm:px-7 sm:py-7 lg:flex-row lg:items-center lg:justify-between"><div><div className="flex items-center gap-2 text-sm font-semibold text-sky-300"><BarChart3 className="h-4 w-4" />Administration / Reporting</div><h1 className="mt-2 text-2xl font-bold tracking-tight text-white sm:text-3xl">Booking Reports</h1><p className="mt-1 max-w-2xl text-sm text-slate-300 sm:text-base">Monitor booking activity, tour performance and agent contribution from one operational view.</p></div><button type="button" onClick={refreshAll} disabled={anyLoading} className="inline-flex w-fit items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${anyLoading ? "animate-spin" : ""}`} />Refresh reports</button></div></header>
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><StatCard icon={CalendarDays} label="Today's bookings" value={number(dailyQuery.data?.count ?? dailyBookings.length)} detail="Created today" /><StatCard icon={TrendingUp} label="Tour bookings" value={number(metrics.bookings)} detail={`${number(tours.length)} tours with activity`} tone="sky" /><StatCard icon={Users} label="Active agents" value={number(agents.length)} detail="Agents with report data" tone="violet" /><StatCard icon={CheckCircle2} label="Reported revenue" value={money(metrics.revenue)} detail="Across reported tour bookings" tone="emerald" /></div>
+    {(hasErrorWithoutData(dailyQuery, dailyBookings) || hasErrorWithoutData(toursQuery, tours) || hasErrorWithoutData(agentsQuery, agents)) && <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">One or more report sections could not be loaded. Available sections remain visible below.</div>}
+    <Section icon={Clock3} title="Today's bookings" description="Recent bookings created today">{dailyQuery.isLoading ? <LoadingBlock /> : hasErrorWithoutData(dailyQuery, dailyBookings) ? <ErrorBlock onRetry={dailyQuery.refetch} /> : dailyBookings.length === 0 ? <div className="px-5 py-12 text-center text-sm text-slate-500">No bookings have been created today.</div> : <div className="overflow-x-auto"><table className="min-w-full text-left text-sm"><thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-5 py-3">Booking</th><th className="px-5 py-3">Tour</th><th className="px-5 py-3">Agent</th><th className="px-5 py-3">Status</th><th className="px-5 py-3">Amount</th></tr></thead><tbody className="divide-y divide-slate-100">{dailyBookings.slice(0, 10).map((booking, index) => <tr key={booking._id || booking.id || index} className="hover:bg-slate-50"><td className="px-5 py-3 font-medium text-slate-900">{booking.bookingNumber || booking.bookingReference || booking.reference || booking._id?.slice(-8) || "—"}</td><td className="px-5 py-3 text-slate-600">{booking.tour?.title || booking.tour?.name || booking.tourTitle || "—"}</td><td className="px-5 py-3 text-slate-600">{booking.agent?.name || booking.agentName || "Direct"}</td><td className="px-5 py-3"><span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold capitalize text-slate-700">{booking.status || "pending"}</span></td><td className="px-5 py-3 font-semibold text-slate-900">{money(booking.totalAmount ?? booking.amount)}</td></tr>)}</tbody></table>{dailyBookings.length > 10 && <p className="border-t border-slate-100 px-5 py-3 text-xs text-slate-500">Showing the latest 10 of {number(dailyBookings.length)} bookings.</p>}</div>}</Section>
+    <div className="grid gap-6 xl:grid-cols-2"><Section icon={TrendingUp} title="Tour performance" description="Bookings and revenue by tour">{toursQuery.isLoading ? <LoadingBlock /> : hasErrorWithoutData(toursQuery, tours) ? <ErrorBlock onRetry={toursQuery.refetch} /> : tours.length === 0 ? <div className="px-5 py-12 text-center text-sm text-slate-500">No tour performance data is available yet.</div> : <div className="overflow-x-auto"><table className="min-w-full text-left text-sm"><thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-5 py-3">Tour</th><th className="px-5 py-3">Bookings</th><th className="px-5 py-3">Revenue</th></tr></thead><tbody className="divide-y divide-slate-100">{tours.slice(0, 10).map((item, index) => <tr key={item.tourId || item._id || index} className="hover:bg-slate-50"><td className="px-5 py-3 font-medium text-slate-900">{item.title || item.tour?.title || "Unknown tour"}</td><td className="px-5 py-3 text-slate-600">{number(item.totalBookings)}</td><td className="px-5 py-3 font-semibold text-slate-900">{money(item.revenue)}</td></tr>)}</tbody></table></div>}</Section>
+      <Section icon={Activity} title="Agent performance" description="Booking contribution by agent">{agentsQuery.isLoading ? <LoadingBlock /> : hasErrorWithoutData(agentsQuery, agents) ? <ErrorBlock onRetry={agentsQuery.refetch} /> : agents.length === 0 ? <div className="px-5 py-12 text-center text-sm text-slate-500">No agent performance data is available yet.</div> : <div className="overflow-x-auto"><table className="min-w-full text-left text-sm"><thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-5 py-3">Agent</th><th className="px-5 py-3">Bookings</th><th className="px-5 py-3">Revenue</th></tr></thead><tbody className="divide-y divide-slate-100">{agents.slice(0, 10).map((item, index) => <tr key={item.agentId || item._id || index} className="hover:bg-slate-50"><td className="px-5 py-3"><p className="font-medium text-slate-900">{item.name || item.agent?.name || "Unknown agent"}</p>{item.email && <p className="text-xs text-slate-500">{item.email}</p>}</td><td className="px-5 py-3 text-slate-600">{number(item.totalBookings)}</td><td className="px-5 py-3 font-semibold text-slate-900">{money(item.revenue)}</td></tr>)}</tbody></table></div>}</Section></div>
+  </div></div>;
 }
