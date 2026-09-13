@@ -36,11 +36,10 @@ export const createSubledger = async (req, res, next) => {
     if (!allowed.has(type)) return res.status(400).json({ success: false, message: "Unsupported accounting subledger type." });
     if (!b.reference || !b.description || amount <= 0 || !Number.isFinite(rate) || rate <= 0) return res.status(400).json({ success: false, message: "Reference, description, positive amount and exchange rate are required." });
     if (type === "inventory" && quantity < 0) return res.status(400).json({ success: false, message: "Inventory quantity cannot be negative." });
-    const baseAmount = money(amount * rate);
-    const metadata = b.metadata || {};
+    const baseAmount = money(amount * rate); const metadata = b.metadata || {};
     const row = await AccountingSubledger.create({ tenantId, type, reference: String(b.reference).trim(), transactionDate: b.transactionDate || new Date(), description: String(b.description).trim(), amount, currency: String(b.currency || "KES").toUpperCase(), exchangeRate: rate, baseAmount, quantity, unitCost: money(b.unitCost), accountCode: String(b.accountCode || "").trim(), contraAccountCode: String(b.contraAccountCode || "").trim(), metadata, createdBy: req.user?._id || null });
     const posting = buildPosting(row, b); const entry = await postFinanceEntry({ tenantId, sourceType: posting.sourceType, sourceId: row._id, description: row.description, reference: row.reference, date: row.transactionDate, lines: posting.lines });
-    row.journalEntry = entry?._id || null; row.status = "posted"; await row.save();
+    row.journalEntry = entry?._id || null; row.status = "posted"; row.postedBy = req.user?._id || null; row.postedAt = new Date(); await row.save();
     return res.status(201).json({ success: true, data: row });
   } catch (e) { if (e?.code === 11000) return res.status(409).json({ success: false, message: "This subledger reference already exists for the tenant." }); next(e); }
 };
@@ -51,7 +50,7 @@ export const amortizeSubledger = async (req, res, next) => {
     if (row.type !== "prepayment") return res.status(400).json({ success: false, message: "Only prepayments can be amortized here." });
     const amount = money(req.body?.amount); if (amount <= 0 || amount > money(row.baseAmount)) return res.status(400).json({ success: false, message: "Amortization amount must be positive and cannot exceed the prepayment balance." });
     const posting = await postFinanceEntry({ tenantId, sourceType: "prepayment_amortization", sourceId: hashId(`${row._id}:${req.body?.reference || ""}:${amount}`), description: `Prepayment amortization: ${row.description}`, reference: String(req.body?.reference || `AMORT-${row.reference}`).trim(), date: req.body?.transactionDate || new Date(), lines: [{ code: row.accountCode || "5200", debit: amount, credit: 0, description: "Expense recognized from prepayment" }, { code: "1300", debit: 0, credit: amount, description: "Prepayment amortization" }] });
-    row.baseAmount = money(row.baseAmount - amount); row.status = row.baseAmount <= 0 ? "closed" : "posted"; row.journalEntry = posting?._id || row.journalEntry; await row.save(); return res.json({ success: true, data: row });
+    row.baseAmount = money(row.baseAmount - amount); row.status = row.baseAmount <= 0 ? "settled" : "posted"; await row.save(); return res.json({ success: true, data: row, journalEntry: posting?._id || null });
   } catch (e) { next(e); }
 };
 
@@ -60,6 +59,6 @@ export const reverseAccrual = async (req, res, next) => {
     const tenantId = requireTenantId(); const row = await AccountingSubledger.findOne(mergeTenantFilter(req, { _id: req.params.id })); if (!row) return res.status(404).json({ success: false, message: "Subledger record not found." }); if (row.type !== "accrual") return res.status(400).json({ success: false, message: "Only accruals can be reversed here." });
     const amount = money(req.body?.amount || row.baseAmount); if (amount <= 0 || amount > money(row.baseAmount)) return res.status(400).json({ success: false, message: "Invalid accrual reversal amount." });
     const posting = await postFinanceEntry({ tenantId, sourceType: "accrual_reversal", sourceId: hashId(`${row._id}:reverse:${req.body?.reference || ""}:${amount}`), description: `Accrual reversal: ${row.description}`, reference: String(req.body?.reference || `REV-${row.reference}`).trim(), date: req.body?.transactionDate || new Date(), lines: [{ code: "2000", debit: amount, credit: 0, description: "Accrued liability reversal" }, { code: row.accountCode || "5200", debit: 0, credit: amount, description: "Accrued expense reversal" }] });
-    row.baseAmount = money(row.baseAmount - amount); row.status = row.baseAmount <= 0 ? "closed" : "posted"; row.journalEntry = posting?._id || row.journalEntry; await row.save(); return res.json({ success: true, data: row });
+    row.baseAmount = money(row.baseAmount - amount); row.status = row.baseAmount <= 0 ? "reversed" : "posted"; await row.save(); return res.json({ success: true, data: row, journalEntry: posting?._id || null });
   } catch (e) { next(e); }
 };
