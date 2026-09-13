@@ -2,10 +2,10 @@ const ROLE_ALIASES = {
   customer: "customer", user: "customer",
   admin: "admin", administrator: "admin",
   superadmin: "super_admin", super_admin: "super_admin",
-  manager: "manager", tourmanager: "manager", tour_manager: "manager",
+  manager: "tour_manager", tourmanager: "tour_manager", tour_manager: "tour_manager",
   agent: "agent", travelagent: "agent", travel_agent: "agent",
   driver: "driver", chauffeur: "driver",
-  guide: "guide", tourguide: "guide", tour_guide: "guide",
+  guide: "tour_guide", tourguide: "tour_guide", tour_guide: "tour_guide",
 };
 
 export function normalizeRole(role) {
@@ -17,10 +17,6 @@ export function normalizeRole(role) {
   return ROLE_ALIASES[key] || ROLE_ALIASES[key.replace(/_/g, "")] || key;
 }
 
-// Keep client role resolution aligned with the backend's effective role. The
-// persisted string role remains authoritative; roleId/legacyRole are only
-// compatibility fallbacks so stale populated role documents cannot redirect a
-// user into the wrong dashboard.
 export function getUserRole(user) {
   return normalizeRole(
     user?.role?.name ||
@@ -34,9 +30,9 @@ export function getUserRole(user) {
 
 export function isSuperAdmin(user) { return getUserRole(user) === "super_admin"; }
 export function isAdmin(user) { return ["admin", "super_admin"].includes(getUserRole(user)); }
-export function isManager(user) { return getUserRole(user) === "manager"; }
+export function isManager(user) { return getUserRole(user) === "tour_manager"; }
 export function isAgent(user) { return getUserRole(user) === "agent"; }
-export function isGuide(user) { return getUserRole(user) === "guide"; }
+export function isGuide(user) { return getUserRole(user) === "tour_guide"; }
 export function isDriver(user) { return getUserRole(user) === "driver"; }
 export function isCustomer(user) { return getUserRole(user) === "customer"; }
 
@@ -44,9 +40,9 @@ export function dashboardPath(user) {
   switch (getUserRole(user)) {
     case "super_admin": return "/superadmin/dashboard";
     case "admin": return "/admin/dashboard";
-    case "manager": return "/tour-manager/dashboard";
+    case "tour_manager": return "/tour-manager/dashboard";
     case "agent": return "/agent/dashboard";
-    case "guide": return "/guide/dashboard";
+    case "tour_guide": return "/guide/dashboard";
     case "driver": return "/driver/dashboard";
     case "customer": return "/dashboard";
     default: return "/login";
