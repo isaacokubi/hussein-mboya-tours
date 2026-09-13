@@ -15,6 +15,7 @@ const systemSettingSchema = new mongoose.Schema(
     tenantPlanProfessionalPriceKes: { type: Number, default: 0, min: 0, max: 100000000 },
     tenantPlanBusinessPriceKes: { type: Number, default: 0, min: 0, max: 100000000 },
     tenantPlanEnterprisePriceKes: { type: Number, default: 0, min: 0, max: 100000000 },
+    subscriptionPlanFeatures: { type: Map, of: [String], default: undefined },
     maintenanceMode: { type: Boolean, default: false }, allowRegistrations: { type: Boolean, default: true }, allowAgentRegistrations: { type: Boolean, default: true }, requireEmailVerification: { type: Boolean, default: true }, requirePhoneVerification: { type: Boolean, default: false },
     enableMpesa: { type: Boolean, default: true }, enableStripe: { type: Boolean, default: false }, enablePaypal: { type: Boolean, default: false }, enableBankTransfer: { type: Boolean, default: true },
     bankName: { type: String, default: "", trim: true }, bankAccountName: { type: String, default: "", trim: true }, bankAccountNumber: { type: String, default: "", trim: true }, bankBranch: { type: String, default: "", trim: true }, bankSwiftCode: { type: String, default: "", trim: true },
