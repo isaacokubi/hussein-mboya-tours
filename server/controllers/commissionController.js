@@ -4,8 +4,8 @@ import { tenantFilter } from "../tenancy/tenantQuery.js";
 import Commission from "../models/Commission.js";
 import Agent from "../models/Agent.js";
 
-const commissionQuery = () =>
-  Commission.find(tenantFilter({}))
+const commissionQuery = (req) =>
+  Commission.find(tenantFilter(req))
     .populate({
       path: "agent",
       select: "user companyName phone email location commissionRate status isApproved totalBookings totalSales totalCommission pendingCommission paidCommission walletBalance",
@@ -62,7 +62,7 @@ const serializeCommission = (commission) => {
 export const getCommissions = async (req, res) => {
   requireTenantId();
   try {
-    const commissions = await commissionQuery();
+    const commissions = await commissionQuery(req);
     return res.json({ success: true, data: commissions.map(serializeCommission) });
   } catch (error) {
     console.error("Admin get commissions error:", error);
