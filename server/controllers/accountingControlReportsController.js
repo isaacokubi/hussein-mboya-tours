@@ -23,8 +23,7 @@ const before = (from, field = "entryDate") => from ? { [field]: { $lt: new Date(
 async function journalBalances(tenantId, from, to, codes = TAX_ACCOUNT_CODES) {
   const accounts = await ChartOfAccount.find({ tenantId, code: { $in: codes }, active: true }).lean();
   const ids = new Map(accounts.map((a) => [String(a._id), a]));
-  const filter = { tenantId, status: "posted", ...bounds(from, to) };
-  const entries = await JournalEntry.find(filter).select("entryDate reference entryNumber description sourceType sourceId lines").lean();
+  const entries = await JournalEntry.find({ tenantId, status: "posted", ...bounds(from, to) }).select("entryDate reference entryNumber description sourceType sourceId lines").lean();
   const balances = new Map();
   for (const entry of entries) {
     for (const line of entry.lines || []) {
@@ -36,12 +35,7 @@ async function journalBalances(tenantId, from, to, codes = TAX_ACCOUNT_CODES) {
       balances.set(account.code, row);
     }
   }
-  return { accounts, rows: [...balances.values()].map((row) => ({
-    ...row,
-    debit: money(row.debit),
-    credit: money(row.credit),
-    balance: money(["asset", "expense"].includes(row.type) ? row.debit - row.credit : row.credit - row.debit),
-  })) };
+  return { accounts, rows: [...balances.values()].map((row) => ({ ...row, debit: money(row.debit), credit: money(row.credit), balance: money(["asset", "expense"].includes(row.type) ? row.debit - row.credit : row.credit - row.debit) })) };
 }
 
 const periodFilter = (from, to) => bounds(from, to, "issueDate");
@@ -72,6 +66,7 @@ export const getTaxControlReport = async (req, res, next) => {
         withholdingTaxPayable: money(wht),
         reconciliation: {
           configuredTaxAccounts: journal.accounts.length,
+          availableTaxAccounts: journal.accounts.map((account) => account.code),
           invoiceCount: invoices.length,
           invoiceVatBasis,
           postedTaxActivity,
@@ -88,9 +83,7 @@ export const getTaxControlReport = async (req, res, next) => {
 async function getControlLedger({ tenantId, code, from, to, normalDebit }) {
   const account = await ChartOfAccount.findOne({ tenantId, code, active: true }).lean();
   if (!account) return { account: code, rows: [], openingBalance: null, periodDebit: null, periodCredit: null, closingBalance: null, accountFound: false };
-  const openingEntries = from
-    ? await JournalEntry.find({ tenantId, status: "posted", ...before(from) }).select("lines").lean()
-    : [];
+  const openingEntries = from ? await JournalEntry.find({ tenantId, status: "posted", ...before(from) }).select("lines").lean() : [];
   let openingBalance = 0;
   for (const entry of openingEntries) {
     for (const line of entry.lines || []) {
@@ -112,48 +105,18 @@ async function getControlLedger({ tenantId, code, from, to, normalDebit }) {
       periodCredit += credit;
       balance += normalDebit ? debit - credit : credit - debit;
       const reference = String(entry.reference || entry.entryNumber || "").trim();
-      rows.push({
-        _id: entry._id,
-        entryDate: entry.entryDate,
-        entryNumber: entry.entryNumber || "",
-        reference,
-        description: entry.description || "",
-        sourceType: entry.sourceType || "manual",
-        sourceId: entry.sourceId || null,
-        isDemoReference: /(^|[-_\s])DEMO([-_\s]|$)/i.test(reference),
-        debit: money(debit),
-        credit: money(credit),
-        balance: money(balance),
-      });
+      rows.push({ _id: entry._id, entryDate: entry.entryDate, entryNumber: entry.entryNumber || "", reference, description: entry.description || "", sourceType: entry.sourceType || "manual", sourceId: entry.sourceId || null, isDemoReference: /(^|[-_\s])DEMO([-_\s]|$)/i.test(reference), debit: money(debit), credit: money(credit), balance: money(balance) });
     }
   }
-  return {
-    account: code,
-    rows,
-    openingBalance: money(openingBalance),
-    periodDebit: money(periodDebit),
-    periodCredit: money(periodCredit),
-    closingBalance: money(balance),
-    accountFound: true,
-  };
+  return { account: code, rows, openingBalance: money(openingBalance), periodDebit: money(periodDebit), periodCredit: money(periodCredit), closingBalance: money(balance), accountFound: true };
 }
 
 export const getCustomerLedgerReport = async (req, res, next) => {
-  try {
-    const tenantId = requireTenantId();
-    return res.json({ success: true, data: await getControlLedger({ tenantId, code: "1100", from: req.query.from, to: req.query.to, normalDebit: true }) });
-  } catch (error) {
-    next(error);
-  }
+  try { const tenantId = requireTenantId(); return res.json({ success: true, data: await getControlLedger({ tenantId, code: "1100", from: req.query.from, to: req.query.to, normalDebit: true }) }); } catch (error) { next(error); }
 };
 
 export const getSupplierLedgerReport = async (req, res, next) => {
-  try {
-    const tenantId = requireTenantId();
-    return res.json({ success: true, data: await getControlLedger({ tenantId, code: "2000", from: req.query.from, to: req.query.to, normalDebit: false }) });
-  } catch (error) {
-    next(error);
-  }
+  try { const tenantId = requireTenantId(); return res.json({ success: true, data: await getControlLedger({ tenantId, code: "2000", from: req.query.from, to: req.query.to, normalDebit: false }) }); } catch (error) { next(error); }
 };
 
 const serviceForInvoice = (invoice) => invoice.hospitalityType || (invoice.hospitalityBooking ? "hotel" : "tour");
@@ -168,11 +131,7 @@ const paymentServiceMatches = (payment, invoice) => {
 export const getProfitabilityReport = async (req, res, next) => {
   try {
     const tenantId = requireTenantId();
-    const invoiceFilter = mergeTenantFilter(req, {
-      isDeleted: { $ne: true },
-      status: { $nin: ["draft", "cancelled"] },
-      ...periodFilter(req.query.from, req.query.to),
-    });
+    const invoiceFilter = mergeTenantFilter(req, { isDeleted: { $ne: true }, status: { $nin: ["draft", "cancelled"] }, ...periodFilter(req.query.from, req.query.to) });
     const paymentFilter = mergeTenantFilter(req, { status: { $in: PAYMENT_STATUSES } });
     if (req.query.from || req.query.to) paymentFilter.paidAt = bounds(req.query.from, req.query.to, "paidAt").paidAt;
     const [invoices, payments] = await Promise.all([
@@ -194,10 +153,7 @@ export const getProfitabilityReport = async (req, res, next) => {
     let unmatchedPaymentCount = 0;
     let unmatchedPaymentAmount = 0;
     for (const payment of payments) {
-      const linkedInvoice = (payment.invoiceNumber && invoiceByNumber.get(String(payment.invoiceNumber)))
-        || (payment.booking && invoiceByBooking.get(String(payment.booking)))
-        || (payment.hospitalityBooking && invoiceByHospitalityBooking.get(String(payment.hospitalityBooking)))
-        || null;
+      const linkedInvoice = (payment.invoiceNumber && invoiceByNumber.get(String(payment.invoiceNumber))) || (payment.booking && invoiceByBooking.get(String(payment.booking))) || (payment.hospitalityBooking && invoiceByHospitalityBooking.get(String(payment.hospitalityBooking))) || null;
       if (!paymentServiceMatches(payment, linkedInvoice)) {
         unmatchedPaymentCount += 1;
         unmatchedPaymentAmount += Math.max(0, Number(payment.amount || 0));
@@ -213,31 +169,8 @@ export const getProfitabilityReport = async (req, res, next) => {
     const data = [...groups.values()].map((row) => {
       const netCollected = Math.max(0, row.collected - row.refunded);
       const outstanding = Math.max(0, row.invoiced - netCollected);
-      return {
-        serviceType: row.serviceType,
-        invoiced: money(row.invoiced),
-        collected: money(row.collected),
-        refunded: money(row.refunded),
-        netCollected: money(netCollected),
-        outstanding: money(outstanding),
-        collectionRate: row.invoiced ? money((netCollected / row.invoiced) * 100) : null,
-        invoiceCount: row.invoiceCount,
-        linkedPaymentCount: row.linkedPaymentCount,
-        vat: money(row.vat),
-        reconciliationStatus: row.linkedPaymentCount === 0 && row.invoiced > 0 ? "uncollected_or_unlinked" : "linked",
-      };
+      return { serviceType: row.serviceType, invoiced: money(row.invoiced), collected: money(row.collected), refunded: money(row.refunded), netCollected: money(netCollected), outstanding: money(outstanding), collectionRate: row.invoiced ? money((netCollected / row.invoiced) * 100) : null, invoiceCount: row.invoiceCount, linkedPaymentCount: row.linkedPaymentCount, vat: money(row.vat), reconciliationStatus: row.linkedPaymentCount === 0 && row.invoiced > 0 ? "uncollected_or_unlinked" : "linked" };
     });
-    return res.json({
-      success: true,
-      data,
-      reconciliation: {
-        unmatchedPaymentCount,
-        unmatchedPaymentAmount: money(unmatchedPaymentAmount),
-        status: unmatchedPaymentCount ? "review_required" : "reconciled",
-        note: unmatchedPaymentCount ? "Completed/refunded payments in the period could not be linked to a qualifying invoice by invoice number, tour booking or hospitality booking. They are excluded from service totals to prevent misclassification." : "All qualifying payments are linked to a qualifying invoice.",
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
+    return res.json({ success: true, data, reconciliation: { unmatchedPaymentCount, unmatchedPaymentAmount: money(unmatchedPaymentAmount), status: unmatchedPaymentCount ? "review_required" : "reconciled", note: unmatchedPaymentCount ? "Completed/refunded payments in the period could not be linked to a qualifying invoice by invoice number, tour booking or hospitality booking. They are excluded from service totals to prevent misclassification." : "All qualifying payments are linked to a qualifying invoice." } });
+  } catch (error) { next(error); }
 };
