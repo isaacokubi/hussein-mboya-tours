@@ -20,8 +20,13 @@ const FEATURE_ROUTES = [
   [/^\/custom-tour-requests\/admin(?:\/|$)/, "custom_tours"],
 ];
 
-export const resolveFeatureForPath = (path) => {
+export const resolveFeatureForPath = (path, search = "") => {
   const normalized = String(path || "").split("?")[0].replace(/^\/api/, "") || "/";
+  if (/^\/admin\/hospitality(?:\/|$)/.test(normalized)) {
+    const tab = new URLSearchParams(String(search || "")).get("tab");
+    if (tab === "hotels") return "hotels";
+    if (tab === "transfers") return "airport_transfers";
+  }
   return FEATURE_ROUTES.find(([pattern]) => pattern.test(normalized))?.[1] || null;
 };
 
@@ -36,7 +41,7 @@ export const enforcePlanFeature = async (req, res, next) => {
   try {
     const role = String(req.user?.role || req.user?.legacyRole || req.userRole || "").toLowerCase();
     if (["super_admin", "superadmin"].includes(role)) return next();
-    const feature = resolveFeatureForPath(req.originalUrl || req.baseUrl || req.path);
+    const feature = resolveFeatureForPath(req.path, req.originalUrl?.includes("?") ? req.originalUrl.slice(req.originalUrl.indexOf("?")) : "");
     if (!feature) return next();
     const tenantId = req.tenantId || req.user?.tenantId;
     if (!tenantId) return next();
