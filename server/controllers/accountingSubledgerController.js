@@ -32,17 +32,16 @@ export const listSubledger = async (req, res, next) => {
       .limit(500)
       .lean();
 
-    // Normalise legacy records at read time so the UI never hides a valid
-    // transaction simply because older documents did not persist derived fields.
     const data = rows.map((row) => {
       const amount = money(row.amount);
       const currency = normalizeCurrency(row.currency);
-      const exchangeRate = Number.isFinite(Number(row.exchangeRate)) && Number(row.exchangeRate) > 0
-        ? Number(row.exchangeRate)
-        : 1;
-      const baseAmount = Number.isFinite(Number(row.baseAmount)) && Number(row.baseAmount) >= 0
-        ? money(row.baseAmount)
-        : money(amount * exchangeRate);
+      const storedRate = Number(row.exchangeRate);
+      const hasValidRate = Number.isFinite(storedRate) && storedRate > 0 && (currency === "KES" ? storedRate === 1 : storedRate !== 1);
+      const exchangeRate = currency === "KES" ? 1 : (hasValidRate ? storedRate : null);
+      const storedBase = Number(row.baseAmount);
+      const baseAmount = Number.isFinite(storedBase) && storedBase >= 0
+        ? money(storedBase)
+        : (exchangeRate !== null ? money(amount * exchangeRate) : null);
       const journalEntry = row.journalEntry || null;
       return {
         ...row,
@@ -50,8 +49,8 @@ export const listSubledger = async (req, res, next) => {
         currency,
         exchangeRate,
         baseAmount,
-        quantity: Number.isFinite(Number(row.quantity)) ? Number(row.quantity) : 0,
-        unitCost: money(row.unitCost),
+        quantity: row.quantity === null || row.quantity === undefined || row.quantity === "" ? null : Number(row.quantity),
+        unitCost: row.unitCost === null || row.unitCost === undefined || row.unitCost === "" ? null : money(row.unitCost),
         accountCode: String(row.accountCode || "").trim(),
         contraAccountCode: String(row.contraAccountCode || "").trim(),
         status: row.status || "draft",
@@ -60,10 +59,13 @@ export const listSubledger = async (req, res, next) => {
       };
     });
 
+    const reliableBaseRows = data.filter((row) => Number.isFinite(Number(row.baseAmount)));
     const summary = {
       count: data.length,
-      baseTotal: money(data.reduce((sum, row) => sum + Number(row.baseAmount || 0), 0)),
+      baseTotal: money(reliableBaseRows.reduce((sum, row) => sum + Number(row.baseAmount), 0)),
       foreign: data.filter((row) => row.currency !== "KES").length,
+      missingFxRate: data.filter((row) => row.currency !== "KES" && row.exchangeRate === null).length,
+      missingBaseAmount: data.filter((row) => row.baseAmount === null).length,
     };
 
     return res.json({ success: true, data, summary });
