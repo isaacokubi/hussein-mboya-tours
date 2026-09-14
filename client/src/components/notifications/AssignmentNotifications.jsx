@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 10;
 const malformedGreeting = /\bundefined\s+undefined\b/i;
 
 const notificationMessage = (message, user) => {
