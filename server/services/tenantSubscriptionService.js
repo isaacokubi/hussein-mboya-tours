@@ -11,6 +11,8 @@ import { generateAccessToken, generateTimestamp, generatePassword } from "./mpes
 const ENV_PLAN_PRICES = Object.freeze({ starter: Number(process.env.TENANT_PLAN_STARTER_PRICE_KES || 0), professional: Number(process.env.TENANT_PLAN_PROFESSIONAL_PRICE_KES || 0), business: Number(process.env.TENANT_PLAN_BUSINESS_PRICE_KES || 0), enterprise: Number(process.env.TENANT_PLAN_ENTERPRISE_PRICE_KES || 0) });
 const PLAN_FIELDS = Object.freeze({ starter: "tenantPlanStarterPriceKes", professional: "tenantPlanProfessionalPriceKes", business: "tenantPlanBusinessPriceKes", enterprise: "tenantPlanEnterprisePriceKes" });
 const PLAN_SEATS = Object.freeze({ starter: 5, professional: 15, business: 50, enterprise: 250 });
+const SUBSCRIPTION_GRACE_PERIOD_DAYS = Math.max(0, Math.min(Number(process.env.SUBSCRIPTION_GRACE_PERIOD_DAYS || 3), 30));
+const DAY_MS = 86400000;
 
 export const getTenantPlanPrices = async () => runWithTenant({ role: "super_admin", bypass: true }, async () => {
   const settings = await SystemSetting.findOne({ tenantId: null, key: "platform" }).lean();
@@ -34,7 +36,7 @@ export const activateTenantSubscription = async ({ tenantId, plan, provider = "m
   if (!organization) throw new Error("Company not found.");
   const now = new Date();
   const days = Math.max(1, Math.min(Number(periodDays) || 30, 3660));
-  const end = new Date(now.getTime() + days * 86400000);
+  const end = new Date(now.getTime() + days * DAY_MS);
   const existingSubscription = organization.subscription?.toObject?.() || organization.subscription || {};
   const seats = PLAN_SEATS[normalizedPlan];
   organization.status = "active";
@@ -48,12 +50,24 @@ export const activateTenantSubscription = async ({ tenantId, plan, provider = "m
 export const expireTenantSubscriptions = async () => {
   const now = new Date();
   const trialOrgs = await Organization.find({ status: "trial", "subscription.trialEndsAt": { $lte: now } }).select("_id").lean();
-  const paidOrgs = await Organization.find({ status: "active", "subscription.renewsAt": { $lte: now } }).select("_id").lean();
-  const ids = [...new Map([...trialOrgs, ...paidOrgs].map((item) => [String(item._id), item])).values()].map((item) => item._id);
-  if (!ids.length) return 0;
-  await runWithTenant({ role: "super_admin", bypass: true }, () => Subscription.updateMany({ tenantId: { $in: ids }, status: { $in: ["trialing", "active", "past_due"] } }, { $set: { status: "expired", currentPeriodEndsAt: now } }));
-  await Organization.updateMany({ _id: { $in: ids } }, { $set: { status: "suspended", "subscription.renewsAt": null } });
-  return ids.length;
+  const expiredPaidOrgs = await Organization.find({ status: "active", "subscription.renewsAt": { $lte: now } }).select("_id").lean();
+  const graceOrgs = await Organization.find({ status: "active", "subscription.renewsAt": { $lte: now } }).select("_id subscription.renewsAt").lean();
+  const pastDueSubscriptions = await runWithTenant({ role: "super_admin", bypass: true }, () => Subscription.find({ status: "past_due", currentPeriodEndsAt: { $lte: new Date(now.getTime() - SUBSCRIPTION_GRACE_PERIOD_DAYS * DAY_MS) } }).select("tenantId").lean());
+
+  const trialIds = trialOrgs.map((item) => item._id);
+  const graceIds = graceOrgs.map((item) => item._id);
+  if (graceIds.length) {
+    await runWithTenant({ role: "super_admin", bypass: true }, () => Subscription.updateMany({ tenantId: { $in: graceIds }, status: "active", currentPeriodEndsAt: { $lte: now } }, { $set: { status: "past_due" } }));
+  }
+
+  const paidPastDueIds = pastDueSubscriptions.map((item) => item.tenantId);
+  const expiredIds = [...new Map([...trialIds.map((id) => [String(id), id]), ...paidPastDueIds.map((id) => [String(id), id])]).values()];
+  if (expiredIds.length) {
+    await runWithTenant({ role: "super_admin", bypass: true }, () => Subscription.updateMany({ tenantId: { $in: expiredIds }, status: { $in: ["trialing", "past_due"] } }, { $set: { status: "expired", currentPeriodEndsAt: now } }));
+    await Organization.updateMany({ _id: { $in: expiredIds } }, { $set: { status: "suspended", "subscription.renewsAt": null } });
+  }
+
+  return expiredIds.length + graceIds.length;
 };
 
 export const startTenantSubscriptionScheduler = () => { const run = () => expireTenantSubscriptions().catch((error) => console.error("Tenant subscription expiry sync failed:", error)); run(); return setInterval(run, 60 * 60 * 1000); };
