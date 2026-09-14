@@ -28,13 +28,22 @@ test("tenant billing exposes platform prices to the tenant UI", () => {
   assert.match(client, /Price not configured/);
 });
 
-test("subscription checkout derives and validates the platform configured amount", () => {
+test("subscription checkout uses only the platform configured amount", () => {
   const service = read("services/tenantSubscriptionService.js");
   const controller = read("controllers/tenantSubscriptionController.js");
-  assert.match(service, /const configuredAmount = await getTenantPlanPrice\(normalizedPlan\)/);
-  assert.match(service, /Number\(amount \|\| configuredAmount\)/);
+  assert.match(service, /const paymentAmount = await getTenantPlanPrice\(normalizedPlan\)/);
+  assert.doesNotMatch(service, /Number\(amount \|\| configuredAmount\)/);
   assert.match(controller, /const amount = await getTenantPlanPrice\(plan\)/);
   assert.match(controller, /The selected plan price is not configured/);
+  assert.doesNotMatch(controller, /req\.body\?\.amount/);
+});
+
+test("expired paid subscriptions enter a bounded grace period before suspension", () => {
+  const service = read("services/tenantSubscriptionService.js");
+  assert.match(service, /SUBSCRIPTION_GRACE_PERIOD_DAYS/);
+  assert.match(service, /status: "past_due"/);
+  assert.match(service, /currentPeriodEndsAt: \{ \$lte: new Date\(now\.getTime\(\) - SUBSCRIPTION_GRACE_PERIOD_DAYS \* DAY_MS\) \}/);
+  assert.match(service, /status: "suspended"/);
 });
 
 test("subscription callback verifies tenant, amount and receipt before activation", () => {
