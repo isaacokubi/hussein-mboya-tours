@@ -19,7 +19,6 @@ const startOfNextDay = (value) => {
   date.setUTCDate(date.getUTCDate() + 1);
   return date;
 };
-
 const bounds = (from, to, field = "entryDate") => {
   const filter = {};
   const start = startOfDay(from);
@@ -34,12 +33,12 @@ const before = (from, field = "entryDate") => {
 };
 const isWithin = (value, from, to) => {
   if (!value) return false;
-  const date = new Date(value).getTime();
-  if (!Number.isFinite(date)) return false;
+  const timestamp = new Date(value).getTime();
+  if (!Number.isFinite(timestamp)) return false;
   const start = startOfDay(from)?.getTime();
   const end = startOfNextDay(to)?.getTime();
-  if (Number.isFinite(start) && date < start) return false;
-  if (Number.isFinite(end) && date >= end) return false;
+  if (Number.isFinite(start) && timestamp < start) return false;
+  if (Number.isFinite(end) && timestamp >= end) return false;
   return true;
 };
 const pagination = (query) => {
@@ -65,13 +64,7 @@ async function journalBalances(tenantId, from, to, codes = CONTROL_ACCOUNT_CODES
   }
   return {
     accounts,
-    rows: [...balances.values()].map((row) => ({
-      ...row,
-      category: TAX_ACCOUNT_CODES.includes(row.code) ? "tax" : "statutory",
-      debit: money(row.debit),
-      credit: money(row.credit),
-      balance: money(["asset", "expense"].includes(row.type) ? row.debit - row.credit : row.credit - row.debit),
-    })),
+    rows: [...balances.values()].map((row) => ({ ...row, category: TAX_ACCOUNT_CODES.includes(row.code) ? "tax" : "statutory", debit: money(row.debit), credit: money(row.credit), balance: money(["asset", "expense"].includes(row.type) ? row.debit - row.credit : row.credit - row.debit) })),
   };
 }
 
@@ -96,32 +89,17 @@ export const getTaxControlReport = async (req, res, next) => {
     const invoiceOutputVatVariance = outputVat == null ? null : money(invoiceVatBasis - outputVat);
     const configuredTaxAccounts = journal.accounts.filter((account) => TAX_ACCOUNT_CODES.includes(account.code));
     const configuredStatutoryAccounts = journal.accounts.filter((account) => STATUTORY_CONTROL_ACCOUNT_CODES.includes(account.code));
-    return res.json({
-      success: true,
-      data: {
-        period: { from: from || null, to: to || null },
-        rows,
-        outputVat: money(outputVat),
-        inputVat: money(inputVat),
-        netVat: outputVat == null || inputVat == null ? null : money(outputVat - inputVat),
-        withholdingTaxPayable: money(wht),
-        generalTaxPayable: money(generalTaxPayable),
-        reconciliation: {
-          configuredTaxAccounts: configuredTaxAccounts.length,
-          expectedTaxAccounts: TAX_ACCOUNT_CODES.length,
-          availableTaxAccounts: configuredTaxAccounts.map((account) => account.code),
-          configuredStatutoryAccounts: configuredStatutoryAccounts.length,
-          expectedStatutoryAccounts: STATUTORY_CONTROL_ACCOUNT_CODES.length,
-          availableStatutoryAccounts: configuredStatutoryAccounts.map((account) => account.code),
-          invoiceCount: invoices.length,
-          invoiceVatBasis,
-          postedTaxActivity,
-          invoiceOutputVatVariance,
-          status: invoices.length === 0 && rows.length === 0 ? "no_activity" : "reviewable",
-          note: "Invoice VAT is a supporting basis only; posted tax journals remain the accounting control balance. The invoice VAT basis is compared with the posted Output VAT control only; differences may represent opening balances, adjustments, reversals or timing and require review rather than automatic correction.",
-        },
+    return res.json({ success: true, data: {
+      period: { from: from || null, to: to || null }, rows,
+      outputVat: money(outputVat), inputVat: money(inputVat), netVat: outputVat == null || inputVat == null ? null : money(outputVat - inputVat), withholdingTaxPayable: money(wht), generalTaxPayable: money(generalTaxPayable),
+      reconciliation: {
+        configuredTaxAccounts: configuredTaxAccounts.length, expectedTaxAccounts: TAX_ACCOUNT_CODES.length, availableTaxAccounts: configuredTaxAccounts.map((account) => account.code),
+        configuredStatutoryAccounts: configuredStatutoryAccounts.length, expectedStatutoryAccounts: STATUTORY_CONTROL_ACCOUNT_CODES.length, availableStatutoryAccounts: configuredStatutoryAccounts.map((account) => account.code),
+        invoiceCount: invoices.length, invoiceVatBasis, postedTaxActivity, invoiceOutputVatVariance,
+        status: invoices.length === 0 && rows.length === 0 ? "no_activity" : "reviewable",
+        note: "Invoice VAT is a supporting basis only; posted tax journals remain the accounting control balance. The invoice VAT basis is compared with the posted Output VAT control only; differences may represent opening balances, adjustments, reversals or timing and require review rather than automatic correction.",
       },
-    });
+    } });
   } catch (error) { next(error); }
 };
 
@@ -160,7 +138,12 @@ export const getSupplierLedgerReport = async (req, res, next) => {
   try { const tenantId = requireTenantId(); const { page, pageSize } = pagination(req.query); return res.json({ success: true, data: await getControlLedger({ tenantId, code: "2000", from: req.query.from, to: req.query.to, normalDebit: false, page, pageSize }) }); } catch (error) { next(error); }
 };
 
-const serviceForInvoice = (invoice) => invoice.hospitalityType || (invoice.hospitalityBooking ? "hotel" : "tour");
+const serviceForInvoice = (invoice) => {
+  if (invoice.hospitalityType === "hotel" || invoice.hospitalityType === "airport_transfer") return invoice.hospitalityType;
+  if (invoice.hospitalityBookingModel === "AirportTransferBooking") return "airport_transfer";
+  if (invoice.hospitalityBookingModel === "HotelBooking") return "hotel";
+  return invoice.hospitalityBooking ? "hotel" : "tour";
+};
 const paymentServiceMatches = (payment, invoice) => {
   if (!invoice) return false;
   if (payment.invoiceNumber && invoice.invoiceNumber && String(payment.invoiceNumber) === String(invoice.invoiceNumber)) return true;
@@ -180,20 +163,12 @@ export const getProfitabilityReport = async (req, res, next) => {
     const to = req.query.to;
     const invoiceFilter = mergeTenantFilter(req, { isDeleted: { $ne: true }, status: { $nin: ["draft", "cancelled"] }, ...periodFilter(from, to) });
     const paymentFilter = mergeTenantFilter(req, { status: { $in: PAYMENT_STATUSES } });
-    const paymentDateOr = [];
-    if (from || to) {
-      if (from || to) paymentDateOr.push(bounds(from, to, "paidAt"));
-      if (from || to) paymentDateOr.push(bounds(from, to, "refundedAt"));
-      paymentFilter.$or = paymentDateOr;
-    }
+    if (from || to) paymentFilter.$or = [bounds(from, to, "paidAt"), bounds(from, to, "refundedAt")];
     const [invoices, payments] = await Promise.all([
-      Invoice.find(invoiceFilter).select("_id booking hospitalityBooking hospitalityType invoiceNumber totalAmount tax taxableAmount taxType status issueDate").lean(),
+      Invoice.find(invoiceFilter).select("_id booking hospitalityBooking hospitalityBookingModel hospitalityType invoiceNumber totalAmount tax taxableAmount taxType status issueDate").lean(),
       Payment.find(paymentFilter).select("_id booking hospitalityBooking hospitalityType invoiceNumber amount refundedAmount status paidAt refundedAt transactionReference transactionId mpesaReceiptNumber").lean(),
     ]);
 
-    // The service totals use invoices issued in the selected period, but a collection can
-    // legitimately settle an invoice issued before the period. Resolve those payment links
-    // against the referenced invoices instead of falsely classifying them as unmatched.
     const candidateInvoiceNumbers = [...new Set(payments.map((p) => String(p.invoiceNumber || "").trim()).filter(Boolean))];
     const candidateBookings = [...new Set(payments.map((p) => p.booking).filter(Boolean).map(String))];
     const candidateHospitalityBookings = [...new Set(payments.map((p) => p.hospitalityBooking).filter(Boolean).map(String))];
@@ -201,7 +176,7 @@ export const getProfitabilityReport = async (req, res, next) => {
     if (candidateInvoiceNumbers.length) linkFilters.push({ invoiceNumber: { $in: candidateInvoiceNumbers } });
     if (candidateBookings.length) linkFilters.push({ booking: { $in: candidateBookings } });
     if (candidateHospitalityBookings.length) linkFilters.push({ hospitalityBooking: { $in: candidateHospitalityBookings } });
-    const linkedInvoices = linkFilters.length ? await Invoice.find(mergeTenantFilter(req, { isDeleted: { $ne: true }, $or: linkFilters })).select("_id booking hospitalityBooking hospitalityType invoiceNumber totalAmount issueDate").lean() : [];
+    const linkedInvoices = linkFilters.length ? await Invoice.find(mergeTenantFilter(req, { isDeleted: { $ne: true }, $or: linkFilters })).select("_id booking hospitalityBooking hospitalityBookingModel hospitalityType invoiceNumber totalAmount issueDate").lean() : [];
 
     const allLinkableInvoices = [...linkedInvoices, ...invoices];
     const invoiceByNumber = new Map(allLinkableInvoices.filter((i) => i.invoiceNumber).map((invoice) => [String(invoice.invoiceNumber), invoice]));
@@ -256,36 +231,14 @@ export const getProfitabilityReport = async (req, res, next) => {
       const netCollected = row.collected - row.refunded;
       const outstanding = Math.max(0, row.invoiced - Math.max(0, netCollected));
       return {
-        serviceType: row.serviceType,
-        invoiced: money(row.invoiced),
-        collected: money(row.collected),
-        refunded: money(row.refunded),
-        netCollected: money(netCollected),
-        outstanding: money(outstanding),
-        collectionRate: row.invoiced ? money((netCollected / row.invoiced) * 100) : null,
-        invoiceCount: row.invoiceCount,
-        linkedPaymentCount: row.linkedPaymentCount,
-        unlinkedTypedPaymentCount: row.unlinkedTypedPaymentCount,
-        outsidePeriodLinkedPaymentCount: row.outsidePeriodLinkedPaymentCount,
-        vat: money(row.vat),
+        serviceType: row.serviceType, invoiced: money(row.invoiced), collected: money(row.collected), refunded: money(row.refunded), netCollected: money(netCollected), outstanding: money(outstanding),
+        collectionRate: row.invoiced ? money((netCollected / row.invoiced) * 100) : null, invoiceCount: row.invoiceCount, linkedPaymentCount: row.linkedPaymentCount, unlinkedTypedPaymentCount: row.unlinkedTypedPaymentCount, outsidePeriodLinkedPaymentCount: row.outsidePeriodLinkedPaymentCount, vat: money(row.vat),
         reconciliationStatus: row.unlinkedTypedPaymentCount ? "typed_payment_unlinked" : row.linkedPaymentCount === 0 && row.invoiced > 0 ? "uncollected_or_unlinked" : "linked",
       };
     });
-    return res.json({
-      success: true,
-      data,
-      reconciliation: {
-        unmatchedPaymentCount,
-        unmatchedPaymentAmount: money(unmatchedPaymentAmount),
-        outsidePeriodLinkedPaymentCount,
-        outsidePeriodLinkedPaymentAmount: money(outsidePeriodLinkedPaymentAmount),
-        status: unmatchedPaymentCount ? "review_required" : "reconciled",
-        note: unmatchedPaymentCount
-          ? "Qualifying payments were linked to invoices where a reliable invoice, booking or hospitality-booking relationship exists. Unlinked payments remain flagged; payments linked to invoices issued outside the reporting period are retained as valid collections and identified separately."
-          : outsidePeriodLinkedPaymentCount
-            ? "All qualifying payments are linked. Some collections settle invoices issued outside the reporting period and are identified separately from period invoice billing."
-            : "All qualifying payments are linked to qualifying invoices.",
-      },
-    });
+    return res.json({ success: true, data, reconciliation: {
+      unmatchedPaymentCount, unmatchedPaymentAmount: money(unmatchedPaymentAmount), outsidePeriodLinkedPaymentCount, outsidePeriodLinkedPaymentAmount: money(outsidePeriodLinkedPaymentAmount), status: unmatchedPaymentCount ? "review_required" : "reconciled",
+      note: unmatchedPaymentCount ? "Qualifying payments were linked to invoices where a reliable invoice, booking or hospitality-booking relationship exists. Unlinked payments remain flagged; payments linked to invoices issued outside the reporting period are retained as valid collections and identified separately." : outsidePeriodLinkedPaymentCount ? "All qualifying payments are linked. Some collections settle invoices issued outside the reporting period and are identified separately from period invoice billing." : "All qualifying payments are linked to qualifying invoices.",
+    } });
   } catch (error) { next(error); }
 };
