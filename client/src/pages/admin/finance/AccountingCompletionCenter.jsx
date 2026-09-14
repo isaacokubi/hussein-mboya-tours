@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  AlertCircle, CheckCircle2, CircleDollarSign, FileBarChart3, Landmark,
+  AlertCircle, CheckCircle2, CircleDollarSign, FileText, Landmark,
   LockKeyhole, Plus, RefreshCw, ShieldCheck, WalletCards, XCircle
 } from "lucide-react";
 import api from "../../../api/axios";
@@ -160,7 +160,7 @@ export default function AccountingCompletionCenter() {
           </div>
           <div className="flex flex-wrap items-end gap-3 border-t border-slate-100 p-5 md:p-6">
             <label className="text-xs font-extrabold text-slate-600">Reporting year<input type="number" min="2000" max="2100" value={year} onChange={(e) => { const y = Number(e.target.value); setYear(y); setBudget((b) => ({ ...b, fiscalYear: e.target.value })); }} className="mt-1 block w-32 rounded-xl border border-slate-300 bg-white p-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" /></label>
-            <NavButton href="/admin/finance/reports" icon={FileBarChart3}>Financial reports</NavButton><NavButton href="/admin/finance/reconciliation" icon={WalletCards}>Reconciliation</NavButton><NavButton href="/admin/finance/withholding-tax" icon={CircleDollarSign}>Withholding Tax</NavButton><NavButton href="/admin/finance/management" icon={Landmark}>Management accounting</NavButton>
+            <NavButton href="/admin/finance/reports" icon={FileText}>Financial reports</NavButton><NavButton href="/admin/finance/reconciliation" icon={WalletCards}>Reconciliation</NavButton><NavButton href="/admin/finance/withholding-tax" icon={CircleDollarSign}>Withholding Tax</NavButton><NavButton href="/admin/finance/management" icon={Landmark}>Management accounting</NavButton>
           </div>
         </header>
 
