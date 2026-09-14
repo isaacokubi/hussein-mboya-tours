@@ -47,26 +47,45 @@ export const activateTenantSubscription = async ({ tenantId, plan, provider = "m
   return { organization, periodStartsAt: now, periodEndsAt: end };
 };
 
+export const switchTenantSubscriptionPlan = async ({ tenantId, plan }) => {
+  if (!mongoose.isValidObjectId(tenantId)) throw new Error("Invalid tenant ID.");
+  const normalizedPlan = String(plan || "").toLowerCase();
+  if (!Object.prototype.hasOwnProperty.call(PLAN_FIELDS, normalizedPlan)) throw new Error("Invalid subscription plan.");
+  const organization = await Organization.findById(tenantId);
+  if (!organization) throw new Error("Company not found.");
+
+  const existing = organization.subscription?.toObject?.() || organization.subscription || {};
+  const currentEnd = existing.renewsAt || null;
+  const seats = PLAN_SEATS[normalizedPlan];
+  organization.status = organization.status === "suspended" ? "active" : organization.status;
+  organization.subscription = { ...existing, plan: normalizedPlan, seats, renewsAt: currentEnd };
+  await organization.save();
+
+  const now = new Date();
+  const subscription = await runWithTenant({ role: "super_admin", bypass: true }, () => Subscription.findOneAndUpdate(
+    { tenantId: organization._id },
+    { $set: { tenantId: organization._id, plan: normalizedPlan, seats, status: currentEnd && new Date(currentEnd) > now ? "active" : "active" } },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  ));
+
+  return { organization, subscription, previousPlan: String(existing.plan || "starter").toLowerCase(), plan: normalizedPlan };
+};
+
 export const expireTenantSubscriptions = async () => {
   const now = new Date();
   const trialOrgs = await Organization.find({ status: "trial", "subscription.trialEndsAt": { $lte: now } }).select("_id").lean();
   const expiredPaidOrgs = await Organization.find({ status: "active", "subscription.renewsAt": { $lte: now } }).select("_id").lean();
   const graceOrgs = await Organization.find({ status: "active", "subscription.renewsAt": { $lte: now } }).select("_id subscription.renewsAt").lean();
   const pastDueSubscriptions = await runWithTenant({ role: "super_admin", bypass: true }, () => Subscription.find({ status: "past_due", currentPeriodEndsAt: { $lte: new Date(now.getTime() - SUBSCRIPTION_GRACE_PERIOD_DAYS * DAY_MS) } }).select("tenantId").lean());
-
   const trialIds = trialOrgs.map((item) => item._id);
   const graceIds = graceOrgs.map((item) => item._id);
-  if (graceIds.length) {
-    await runWithTenant({ role: "super_admin", bypass: true }, () => Subscription.updateMany({ tenantId: { $in: graceIds }, status: "active", currentPeriodEndsAt: { $lte: now } }, { $set: { status: "past_due" } }));
-  }
-
+  if (graceIds.length) await runWithTenant({ role: "super_admin", bypass: true }, () => Subscription.updateMany({ tenantId: { $in: graceIds }, status: "active", currentPeriodEndsAt: { $lte: now } }, { $set: { status: "past_due" } }));
   const paidPastDueIds = pastDueSubscriptions.map((item) => item.tenantId);
   const expiredIds = [...new Map([...trialIds.map((id) => [String(id), id]), ...paidPastDueIds.map((id) => [String(id), id])]).values()];
   if (expiredIds.length) {
     await runWithTenant({ role: "super_admin", bypass: true }, () => Subscription.updateMany({ tenantId: { $in: expiredIds }, status: { $in: ["trialing", "past_due"] } }, { $set: { status: "expired", currentPeriodEndsAt: now } }));
     await Organization.updateMany({ _id: { $in: expiredIds } }, { $set: { status: "suspended", "subscription.renewsAt": null } });
   }
-
   return expiredIds.length + graceIds.length;
 };
 
