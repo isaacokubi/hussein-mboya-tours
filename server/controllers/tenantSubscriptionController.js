@@ -30,8 +30,8 @@ export const startTenantSubscriptionPayment = async (req, res, next) => {
     const plan = String(req.body?.plan || "").toLowerCase();
     const phone = String(req.body?.phone || req.user?.phone || "").trim();
     const amount = await getTenantPlanPrice(plan);
-    if (!amount) return res.status(400).json({ success: false, message: "The selected plan price is not configured by the platform owner." });
-    const result = await initiateTenantMpesaPayment({ tenantId, userId: req.user._id, plan, phone, amount });
+    if (!Number.isInteger(amount) || amount < 1) return res.status(400).json({ success: false, message: "The selected plan price is not configured by the platform owner." });
+    const result = await initiateTenantMpesaPayment({ tenantId, userId: req.user._id, plan, phone });
     return res.status(200).json({ success: true, message: `M-Pesa payment request sent for KES ${amount.toLocaleString()}.`, payment: result.payment, data: result.response });
   } catch (error) { next(error); }
 };
@@ -52,13 +52,12 @@ export const approveTenantSubscription = async (req, res, next) => {
     if (!tenant) return res.status(404).json({ success: false, message: "Company not found." });
     const plan = String(req.body?.plan || tenant.subscription?.plan || "starter").toLowerCase();
     const days = Math.max(1, Math.min(Number(req.body?.periodDays) || 30, 3660));
-    const configuredAmount = await getTenantPlanPrice(plan);
-    const amount = Number(req.body?.amount || configuredAmount);
-    if (!Number.isInteger(amount) || amount < 1) return res.status(400).json({ success: false, message: "A valid payment amount is required for manual activation." });
+    const amount = await getTenantPlanPrice(plan);
+    if (!Number.isInteger(amount) || amount < 1) return res.status(400).json({ success: false, message: "The selected plan price is not configured by the platform owner." });
     const reference = String(req.body?.reference || "").trim();
     if (!reference) return res.status(400).json({ success: false, message: "A verified payment reference is required for manual activation." });
-    const payment = await SubscriptionPayment.create({ tenantId, userId: req.user._id, plan, amount, provider: "manual", status: "completed", periodDays: days, transactionReference: reference, paidAt: new Date(), metadata: { approvedBy: req.user._id, note: req.body?.note || "" } });
-    const result = await activateTenantSubscription({ tenantId, plan, provider: "manual", periodDays: days, payment, transactionReference: payment.transactionReference });
+    const payment = await SubscriptionPayment.create({ tenantId, userId: req.user._id, plan, amount, provider: "manual", status: "pending", periodDays: days, transactionReference: reference, metadata: { approvedBy: req.user._id, note: req.body?.note || "" } });
+    const result = await activateTenantSubscription({ tenantId, plan, provider: "manual", periodDays: days, payment, transactionReference: reference });
     return res.json({ success: true, message: `Subscription activated for ${days} days.`, tenant: result.organization, payment });
   } catch (error) { next(error); }
 };
