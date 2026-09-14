@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
+import Organization from "./Organization.js";
 
 const agentSchema = new mongoose.Schema(
   {
@@ -200,11 +201,32 @@ const agentSchema = new mongoose.Schema(
 
 /*
 |--------------------------------------------------------------------------
+| LOCATION FALLBACK
+|--------------------------------------------------------------------------
+| Agent accounts created from a normal user account do not necessarily carry
+| a separate business location. Resolve the tenant's configured address/country
+| when the profile is first created or saved, so agent management never loses
+| the operational location simply because the account was user-created.
+|--------------------------------------------------------------------------
+*/
+agentSchema.pre("save", async function populateAgentLocation(next) {
+  try {
+    if (String(this.location || "").trim() || !this.tenantId) return next();
+    const organization = await Organization.findById(this.tenantId).select("address country").lean();
+    const address = String(organization?.address || "").trim();
+    const country = String(organization?.country || "").trim();
+    this.location = [address, country].filter(Boolean).join(", ");
+    return next();
+  } catch (error) {
+    return next(error);
+  }
+});
+
+/*
+|--------------------------------------------------------------------------
 | INDEXES
 |--------------------------------------------------------------------------
 */
-
-
 
 agentSchema.index({
   status: 1,
