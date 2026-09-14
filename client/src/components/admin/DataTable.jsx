@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Pagination from "./Pagination";
 
-const DEFAULT_PAGE_SIZE = 25;
+const DEFAULT_PAGE_SIZE = 10;
 
 export default function DataTable({ columns = [], data = [], pageSize = DEFAULT_PAGE_SIZE, paginate = true }) {
     const [page, setPage] = useState(1);
