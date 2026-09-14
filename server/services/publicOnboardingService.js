@@ -3,7 +3,7 @@ import Subscription from "../models/Subscription.js";
 import User from "../models/User.js";
 import SecurityLog from "../models/SecurityLog.js";
 import { runWithTenant } from "../tenancy/context.js";
-import { countSuperAdmins, ensureSystemRoles } from "./onboardingService.js";
+import { ensureSystemRoles } from "./onboardingService.js";
 import { getDuplicateKeyDetails } from "./duplicateKeyDiagnostic.js";
 
 const slugify = (value) => String(value || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
@@ -35,7 +35,6 @@ export async function registerTenant({ company, admin, plan = "starter", request
   let organization;
   let adminUser;
   let subscription;
-  let superAdminUser;
   try {
     const roles = await ensureSystemRoles();
     const trialStartsAt = new Date();
@@ -61,28 +60,13 @@ export async function registerTenant({ company, admin, plan = "starter", request
       trialStartsAt, trialEndsAt, currentPeriodStartsAt: trialStartsAt, currentPeriodEndsAt: trialEndsAt, metadata: { source: "public_registration" },
     }));
 
-    if ((await countSuperAdmins()) === 0) {
-      const required = ["BOOTSTRAP_SUPERADMIN_NAME", "BOOTSTRAP_SUPERADMIN_EMAIL", "BOOTSTRAP_SUPERADMIN_PHONE", "BOOTSTRAP_SUPERADMIN_PASSWORD"];
-      const missing = required.filter((key) => !String(process.env[key] || "").trim());
-      if (missing.length) throw new Error(`Platform first-SuperAdmin provisioning is not configured. Missing: ${missing.join(", ")}`);
-      const platform = identity({ name: process.env.BOOTSTRAP_SUPERADMIN_NAME, email: process.env.BOOTSTRAP_SUPERADMIN_EMAIL, phone: process.env.BOOTSTRAP_SUPERADMIN_PHONE, password: process.env.BOOTSTRAP_SUPERADMIN_PASSWORD });
-      if (platform.normalizedEmail === adminIdentity.normalizedEmail) throw new Error("Platform SuperAdmin email must be different from the company Admin email.");
-      if (await runWithTenant({ bypass: true }, () => User.findOne({ email: platform.normalizedEmail }).lean())) throw new Error("Configured platform SuperAdmin email already belongs to another user.");
-      superAdminUser = await runWithTenant({ bypass: true }, () => User.create({
-        name: String(process.env.BOOTSTRAP_SUPERADMIN_NAME).trim(), email: platform.normalizedEmail, phone: platform.normalizedPhone,
-        password: process.env.BOOTSTRAP_SUPERADMIN_PASSWORD, role: "super_admin", legacyRole: "super_admin", roleId: roles.superadmin._id,
-        status: "active", isVerified: true,
-      }));
-    }
-
     await runWithTenant({ tenantId: organization._id, tenant: organization, bypass: false }, () => SecurityLog.logEvent({
       user: adminUser._id, email: adminUser.email, action: "account_created", ipAddress: request?.ip || "", userAgent: request?.headers?.["user-agent"] || "",
-      status: "success", severity: "medium", details: { source: "public_tenant_registration", tenantId: String(organization._id), plan: selectedPlan, trialEndsAt, firstSuperAdminProvisioned: Boolean(superAdminUser) },
+      status: "success", severity: "medium", details: { source: "public_tenant_registration", tenantId: String(organization._id), plan: selectedPlan, trialEndsAt, firstSuperAdminProvisioned: false },
     }));
 
-    return { organization, adminUser, subscription, createdFirstSuperAdmin: Boolean(superAdminUser) };
+    return { organization, adminUser, subscription, createdFirstSuperAdmin: false };
   } catch (error) {
-    if (superAdminUser?._id) await runWithTenant({ bypass: true }, () => User.deleteOne({ _id: superAdminUser._id })).catch(() => {});
     if (subscription?._id) await runWithTenant({ bypass: true }, () => Subscription.deleteOne({ _id: subscription._id })).catch(() => {});
     if (adminUser?._id && organization?._id) await runWithTenant({ tenantId: organization._id, tenant: organization, bypass: false }, () => User.deleteOne({ _id: adminUser._id })).catch(() => {});
     if (organization?._id) await runWithTenant({ bypass: true }, () => Organization.deleteOne({ _id: organization._id })).catch(() => {});
