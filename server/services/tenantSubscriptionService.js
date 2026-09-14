@@ -10,6 +10,7 @@ import { generateAccessToken, generateTimestamp, generatePassword } from "./mpes
 
 const ENV_PLAN_PRICES = Object.freeze({ starter: Number(process.env.TENANT_PLAN_STARTER_PRICE_KES || 0), professional: Number(process.env.TENANT_PLAN_PROFESSIONAL_PRICE_KES || 0), business: Number(process.env.TENANT_PLAN_BUSINESS_PRICE_KES || 0), enterprise: Number(process.env.TENANT_PLAN_ENTERPRISE_PRICE_KES || 0) });
 const PLAN_FIELDS = Object.freeze({ starter: "tenantPlanStarterPriceKes", professional: "tenantPlanProfessionalPriceKes", business: "tenantPlanBusinessPriceKes", enterprise: "tenantPlanEnterprisePriceKes" });
+const PLAN_SEATS = Object.freeze({ starter: 5, professional: 15, business: 50, enterprise: 250 });
 
 export const getTenantPlanPrices = async () => runWithTenant({ role: "super_admin", bypass: true }, async () => {
   const settings = await SystemSetting.findOne({ tenantId: null, key: "platform" }).lean();
@@ -35,10 +36,11 @@ export const activateTenantSubscription = async ({ tenantId, plan, provider = "m
   const days = Math.max(1, Math.min(Number(periodDays) || 30, 3660));
   const end = new Date(now.getTime() + days * 86400000);
   const existingSubscription = organization.subscription?.toObject?.() || organization.subscription || {};
+  const seats = PLAN_SEATS[normalizedPlan];
   organization.status = "active";
-  organization.subscription = { ...existingSubscription, plan: normalizedPlan, seats: Number(existingSubscription.seats) || 5, trialEndsAt: existingSubscription.trialEndsAt || null, renewsAt: end };
+  organization.subscription = { ...existingSubscription, plan: normalizedPlan, seats, trialEndsAt: existingSubscription.trialEndsAt || null, renewsAt: end };
   await organization.save();
-  await runWithTenant({ role: "super_admin", bypass: true }, () => Subscription.findOneAndUpdate({ tenantId: organization._id }, { $set: { tenantId: organization._id, plan: normalizedPlan, status: "active", provider, currentPeriodStartsAt: now, currentPeriodEndsAt: end, cancelledAt: null, trialStartsAt: existingSubscription.trialStartsAt || organization.createdAt || now, trialEndsAt: existingSubscription.trialEndsAt || now, seats: Number(existingSubscription.seats) || 5 } }, { upsert: true, new: true, setDefaultsOnInsert: true }));
+  await runWithTenant({ role: "super_admin", bypass: true }, () => Subscription.findOneAndUpdate({ tenantId: organization._id }, { $set: { tenantId: organization._id, plan: normalizedPlan, status: "active", provider, currentPeriodStartsAt: now, currentPeriodEndsAt: end, cancelledAt: null, trialStartsAt: existingSubscription.trialStartsAt || organization.createdAt || now, trialEndsAt: existingSubscription.trialEndsAt || now, seats } }, { upsert: true, new: true, setDefaultsOnInsert: true }));
   if (payment) { payment.status = "completed"; payment.paidAt = payment.paidAt || now; payment.transactionReference = transactionReference || payment.transactionReference || payment.mpesaReceiptNumber || ""; await payment.save(); }
   return { organization, periodStartsAt: now, periodEndsAt: end };
 };
@@ -56,14 +58,13 @@ export const expireTenantSubscriptions = async () => {
 
 export const startTenantSubscriptionScheduler = () => { const run = () => expireTenantSubscriptions().catch((error) => console.error("Tenant subscription expiry sync failed:", error)); run(); return setInterval(run, 60 * 60 * 1000); };
 
-export const initiateTenantMpesaPayment = async ({ tenantId, userId, plan, phone, amount }) => {
+export const initiateTenantMpesaPayment = async ({ tenantId, userId, plan, phone }) => {
   const organization = await Organization.findById(tenantId).lean();
   if (!organization) throw new Error("Company not found.");
   if (!hasLegacyMpesaConfig() || !mpesaConfig.callbackUrl) throw new Error("Platform M-Pesa subscription checkout is not configured. Configure the M-Pesa credentials and callback URL in the server deployment environment.");
   const normalizedPlan = String(plan || "").toLowerCase();
   if (!Object.prototype.hasOwnProperty.call(PLAN_FIELDS, normalizedPlan)) throw new Error("Invalid subscription plan.");
-  const configuredAmount = await getTenantPlanPrice(normalizedPlan);
-  const paymentAmount = Number(amount || configuredAmount);
+  const paymentAmount = await getTenantPlanPrice(normalizedPlan);
   if (!Number.isInteger(paymentAmount) || paymentAmount < 1) throw new Error("This subscription plan has no configured payment amount. Ask the platform owner to configure the plan price.");
   const normalizedPhone = normalizeSubscriptionPhone(phone);
   const token = await generateAccessToken();
