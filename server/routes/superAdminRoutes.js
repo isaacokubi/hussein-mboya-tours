@@ -8,7 +8,7 @@ import { getApiMonitor } from "../controllers/apiMonitorController.js";
 import { createPlatformDatabaseBackup, listPlatformDatabaseBackups, deletePlatformDatabaseBackup, downloadPlatformDatabaseBackup } from "../controllers/superAdminBackupController.js";
 import { getSuperAdminUsers, createSuperAdminCompanyAccount, updateSuperAdminUserStatus, deleteSuperAdminUser } from "../controllers/superAdminUserController.js";
 import { listTenants, getTenant, createTenantWithAdmin, updateTenantStatus, deleteTenant, getTenantPlans } from "../controllers/superAdminTenantController.js";
-import { approveTenantSubscription, listSubscriptionPayments } from "../controllers/tenantSubscriptionController.js";
+import { approveTenantSubscription, switchTenantSubscription, listSubscriptionPayments } from "../controllers/tenantSubscriptionController.js";
 import { getPlatformBillingConfig, updatePlatformBillingConfig, getPlatformPlanFeatureCatalog } from "../controllers/platformBillingController.js";
 import { getSettings, updateSettings } from "../controllers/settingsController.js";
 
@@ -23,6 +23,7 @@ router.post("/tenants", createTenantWithAdmin);
 router.get("/tenants/:id", getTenant);
 router.patch("/tenants/:id/status", updateTenantStatus);
 router.post("/tenants/:id/subscription/activate", approveTenantSubscription);
+router.patch("/tenants/:id/subscription/plan", switchTenantSubscription);
 router.delete("/tenants/:id", deleteTenant);
 router.get("/subscription-payments", listSubscriptionPayments);
 router.get("/billing/config", getPlatformBillingConfig);
