@@ -5,6 +5,7 @@ import Agent from "../models/Agent.js";
 import User from "../models/User.js";
 import Booking from "../models/Booking.js";
 import Commission from "../models/Commission.js";
+import Organization from "../models/Organization.js";
 
 const extractId = (value) => {
   if (value == null) return "";
@@ -33,16 +34,21 @@ const toObjectId = (value, fieldName) => {
 
 const getSafeTenantId = () => toObjectId(getTenantId(), "tenant ID");
 const tenantScopedFilter = (filter = {}) => ({ ...filter, tenantId: getSafeTenantId() });
+const formatTenantLocation = (organization) => [String(organization?.address || "").trim(), String(organization?.country || "").trim()].filter(Boolean).join(", ");
 
 export const getAgents = async (req, res) => {
   requireTenantId();
   try {
     const tenantId = getSafeTenantId();
-    const agents = await Agent.find(tenantFilter(req))
-      .populate("user", "name email phone role status")
-      .sort({ createdAt: -1 })
-      .lean();
+    const [agents, organization] = await Promise.all([
+      Agent.find(tenantFilter(req))
+        .populate("user", "name email phone role status")
+        .sort({ createdAt: -1 })
+        .lean(),
+      Organization.findById(tenantId).select("address country").lean(),
+    ]);
 
+    const tenantLocation = formatTenantLocation(organization);
     const agentIds = agents.map((agent) => agent._id).filter(Boolean);
     const [bookingStats, commissionStats] = await Promise.all([
       agentIds.length
@@ -93,7 +99,7 @@ export const getAgents = async (req, res) => {
         companyName: String(agent.companyName || "").trim(),
         phone: String(agent.phone || agent.user?.phone || "").trim(),
         email: String(agent.email || agent.user?.email || "").trim(),
-        location: String(agent.location || "").trim(),
+        location: String(agent.location || "").trim() || tenantLocation,
         totalBookings: bookingCount !== undefined ? bookingCount : Number(agent.totalBookings || 0),
         totalCommission: commission ? Number(commission.totalCommission || 0) : Number(agent.totalCommission || 0),
         pendingCommission: commission ? Number(commission.pendingCommission || 0) : Number(agent.pendingCommission || 0),
