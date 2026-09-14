@@ -1,0 +1,63 @@
+.subledger-page {
+  --sl-primary: #047857;
+  --sl-primary-dark: #065f46;
+  --sl-primary-soft: #ecfdf5;
+  --sl-ink: #0f172a;
+  --sl-muted: #64748b;
+  --sl-border: #e2e8f0;
+  --sl-surface: #ffffff;
+  --sl-bg: #f8fafc;
+  color: var(--sl-ink);
+}
+
+.subledger-page .subledger-header {
+  background: linear-gradient(135deg, #064e3b 0%, #0f766e 55%, #047857 100%);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 18px 45px rgba(15, 23, 42, .12);
+}
+
+.subledger-page .field-label {
+  color: #475569;
+  font-weight: 600;
+}
+
+.subledger-page .field-control {
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #0f172a;
+  transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+}
+
+.subledger-page .field-control:hover { border-color: #94a3b8; }
+.subledger-page .field-control:focus {
+  outline: none;
+  border-color: var(--sl-primary);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, .16);
+}
+
+.subledger-page .primary-action {
+  background: linear-gradient(135deg, #047857, #059669);
+  box-shadow: 0 8px 18px rgba(4, 120, 87, .2);
+}
+.subledger-page .primary-action:hover:not(:disabled) { background: linear-gradient(135deg, #065f46, #047857); }
+.subledger-page .primary-action:disabled { opacity: .55; cursor: not-allowed; box-shadow: none; }
+
+.subledger-page .table-row:hover { background: #f8fafc; }
+.subledger-page .table-head { background: #f1f5f9; color: #475569; }
+
+.subledger-page .status-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  padding: .25rem .625rem;
+  font-size: .75rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+.subledger-page .status-posted,
+.subledger-page .status-settled { background: #dcfce7; color: #166534; }
+.subledger-page .status-draft { background: #fef3c7; color: #92400e; }
+.subledger-page .status-reversed { background: #fee2e2; color: #991b1b; }
+.subledger-page .currency-pill { background: #f0fdfa; color: #115e59; border: 1px solid #ccfbf1; }
+.subledger-page .summary-card { border: 1px solid var(--sl-border); background: #fff; }
