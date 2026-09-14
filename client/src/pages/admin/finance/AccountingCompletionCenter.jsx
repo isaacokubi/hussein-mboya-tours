@@ -1,37 +1,232 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  AlertCircle, CheckCircle2, CircleDollarSign, FileBarChart3, Landmark,
+  LockKeyhole, Plus, RefreshCw, ShieldCheck, WalletCards, XCircle
+} from "lucide-react";
 import api from "../../../api/axios";
 
-const money = (n) => `KES ${Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-const call = (method, url, data) => api({ method, url, data }).then((r) => r.data);
+const money = (value) => {
+  const n = Number(value);
+  return Number.isFinite(n)
+    ? `KES ${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    : "—";
+};
+const finite = (value) => Number.isFinite(Number(value));
+const first = (...values) => values.find((v) => v !== null && v !== undefined && v !== "");
+const unwrap = (response) => response?.data ?? response;
+
+function metricValue(query, value) {
+  if (query.isError) return "Unavailable";
+  if (query.isLoading) return "Loading…";
+  return money(value);
+}
+
+function queryMessage(query, label) {
+  return query.error?.response?.data?.message || `${label} could not be loaded.`;
+}
 
 export default function AccountingCompletionCenter() {
   const qc = useQueryClient();
-  const [year, setYear] = useState(new Date().getFullYear());
-  const [period, setPeriod] = useState(new Date().toISOString().slice(0, 7));
-  const [asset, setAsset] = useState({ assetNumber: "", name: "", acquisitionDate: new Date().toISOString().slice(0, 10), acquisitionCost: "", residualValue: "0", usefulLifeMonths: "60" });
-  const [budget, setBudget] = useState({ name: "", accountCode: "5200", fiscalYear: String(new Date().getFullYear()), month: "", amount: "" });
-  const statements = useQuery({ queryKey: ["accounting-statements", year], queryFn: async () => (await api.get(`/admin/finance/accounting/statements?from=${year}-01-01&to=${year}-12-31`)).data });
-  const ar = useQuery({ queryKey: ["accounting-ar"], queryFn: async () => (await api.get("/admin/finance/accounting/ar-aging")).data });
-  const ap = useQuery({ queryKey: ["accounting-ap"], queryFn: async () => (await api.get("/admin/finance/accounting/ap-aging")).data });
-  const cash = useQuery({ queryKey: ["accounting-cash", year], queryFn: async () => (await api.get(`/admin/finance/accounting/cash-flow?from=${year}-01-01&to=${year}-12-31`)).data });
-  const assets = useQuery({ queryKey: ["accounting-assets"], queryFn: async () => (await api.get("/admin/finance/accounting/assets")).data });
-  const budgets = useQuery({ queryKey: ["accounting-budgets", year], queryFn: async () => (await api.get(`/admin/finance/accounting/budgets?fiscalYear=${year}`)).data });
-  const variance = useQuery({ queryKey: ["accounting-variance", year], queryFn: async () => (await api.get(`/admin/finance/accounting/budgets-vs-actual?fiscalYear=${year}`)).data });
-  const periods = useQuery({ queryKey: ["accounting-periods"], queryFn: async () => (await api.get("/admin/finance/accounting/periods")).data });
-  const wht = useQuery({ queryKey: ["accounting-wht"], queryFn: async () => (await api.get("/admin/finance/withholding-tax")).data });
-  const reconciliation = useQuery({ queryKey: ["accounting-reconciliation"], queryFn: async () => (await api.get("/admin/payments/reconciliation")).data });
-  const createAsset = useMutation({ mutationFn: () => call("post", "/admin/finance/accounting/assets", { ...asset, acquisitionCost: Number(asset.acquisitionCost), residualValue: Number(asset.residualValue), usefulLifeMonths: Number(asset.usefulLifeMonths) }), onSuccess: () => { qc.invalidateQueries({ queryKey: ["accounting-assets"] }); setAsset({ ...asset, assetNumber: "", name: "", acquisitionCost: "" }); } });
-  const createBudget = useMutation({ mutationFn: () => call("post", "/admin/finance/accounting/budgets", { ...budget, fiscalYear: Number(budget.fiscalYear), month: budget.month ? Number(budget.month) : null, amount: Number(budget.amount) }), onSuccess: () => { qc.invalidateQueries({ queryKey: ["accounting-budgets", year] }); qc.invalidateQueries({ queryKey: ["accounting-variance", year] }); setBudget({ ...budget, name: "", amount: "" }); } });
-  const close = useMutation({ mutationFn: () => call("post", `/admin/finance/accounting/periods/${period}/close`, { note: "Closed from Accounting Control Center" }), onSuccess: () => qc.invalidateQueries({ queryKey: ["accounting-periods"] }) });
-  const reopen = useMutation({ mutationFn: (p) => call("post", `/admin/finance/accounting/periods/${p}/reopen`, {}), onSuccess: () => qc.invalidateQueries({ queryKey: ["accounting-periods"] }) });
-  const summary = useMemo(() => ({ revenue: statements.data?.data?.profitAndLoss?.revenue ?? statements.data?.data?.revenue ?? 0, expenses: statements.data?.data?.profitAndLoss?.expenses ?? statements.data?.data?.expenses ?? 0, ar: ar.data?.data?.total ?? ar.data?.total ?? 0, ap: ap.data?.data?.total ?? ap.data?.total ?? 0, cash: cash.data?.data?.netCashFlow ?? cash.data?.netCashFlow ?? 0, wht: wht.data?.totals?.taxAmount ?? 0, unmatched: reconciliation.data?.data?.summary?.duplicateReferences ?? 0 }), [statements.data, ar.data, ap.data, cash.data, wht.data, reconciliation.data]);
-  return <div className="min-h-screen bg-slate-50 p-6 space-y-6"><header><p className="text-sm font-semibold text-emerald-700">Production accounting</p><h1 className="text-3xl font-bold text-slate-900">Complete Accounting Control Center</h1><p className="mt-1 text-sm text-slate-600">Tenant-scoped financial control surface for the GL, tax, subledgers, reconciliation, management accounting and period close.</p></header>
-    <div className="flex flex-wrap gap-2 items-end"><label className="text-xs text-slate-500">Reporting year<input type="number" value={year} onChange={(e) => setYear(e.target.value)} className="mt-1 block rounded border p-2 text-sm text-slate-900" /></label><a href="/admin/finance/reports" className="rounded border bg-white px-3 py-2 text-sm font-semibold">Financial reports</a><a href="/admin/finance/reconciliation" className="rounded border bg-white px-3 py-2 text-sm font-semibold">Reconciliation</a><a href="/admin/finance/withholding-tax" className="rounded border bg-white px-3 py-2 text-sm font-semibold">Withholding Tax</a><a href="/admin/finance/management" className="rounded border bg-white px-3 py-2 text-sm font-semibold">Management accounting</a></div>
-    <section className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">{[["Revenue", summary.revenue],["Expenses", summary.expenses],["AR", summary.ar],["AP", summary.ap],["Net cash flow", summary.cash],["WHT accrued", summary.wht]].map(([t,v]) => <div key={t} className="rounded-xl border bg-white p-4 shadow-sm"><p className="text-xs text-slate-500">{t}</p><p className="mt-1 font-bold">{money(v)}</p></div>)}</section>
-    <div className="grid gap-6 lg:grid-cols-2"><section className="rounded-xl border bg-white p-5 shadow-sm"><h2 className="text-xl font-semibold">Fixed assets</h2><div className="grid gap-2 md:grid-cols-2 mt-4">{[["assetNumber","Asset number"],["name","Name"],["acquisitionDate","Acquisition date"],["acquisitionCost","Cost"],["residualValue","Residual value"],["usefulLifeMonths","Useful life months"]].map(([k,l]) => <label key={k} className="text-xs text-slate-500">{l}<input type={k.includes("Cost")||k.includes("Months")||k==="residualValue"?"number":k==="acquisitionDate"?"date":"text"} value={asset[k]} onChange={(e) => setAsset({ ...asset, [k]: e.target.value })} className="mt-1 w-full rounded border p-2 text-sm text-slate-900" /></label>)}</div><button onClick={() => createAsset.mutate()} disabled={createAsset.isPending} className="mt-3 rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white">Add asset</button><div className="mt-4 text-sm text-slate-600">Register: {assets.data?.data?.length ?? 0} assets</div></section>
-      <section className="rounded-xl border bg-white p-5 shadow-sm"><h2 className="text-xl font-semibold">Budgets</h2><div className="grid gap-2 md:grid-cols-2 mt-4">{[["name","Budget name"],["accountCode","Account code"],["fiscalYear","Fiscal year"],["month","Month 1–12 optional"],["amount","Amount"]].map(([k,l]) => <label key={k} className="text-xs text-slate-500">{l}<input type={k==="amount"||k==="fiscalYear"||k==="month"?"number":"text"} value={budget[k]} onChange={(e) => setBudget({ ...budget, [k]: e.target.value })} className="mt-1 w-full rounded border p-2 text-sm text-slate-900" /></label>)}</div><button onClick={() => createBudget.mutate()} disabled={createBudget.isPending} className="mt-3 rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white">Save budget</button><div className="mt-4 text-sm text-slate-600">Approved/planned rows: {budgets.data?.data?.length ?? 0} · variance rows: {variance.data?.data?.rows?.length ?? 0}</div></section></div>
-    <section className="rounded-xl border bg-white p-5 shadow-sm"><div className="flex flex-wrap justify-between gap-3"><div><h2 className="text-xl font-semibold">Accounting periods</h2><p className="text-sm text-slate-500">Close only after draft journals are cleared. Reopening is explicitly recorded.</p></div><div className="flex gap-2 items-end"><label className="text-xs text-slate-500">Period<input type="month" value={period} onChange={(e) => setPeriod(e.target.value)} className="mt-1 rounded border p-2 text-sm text-slate-900" /></label><button onClick={() => close.mutate()} disabled={close.isPending} className="rounded bg-slate-900 px-3 py-2 text-sm font-semibold text-white">Close period</button></div></div><div className="mt-4 grid gap-2 md:grid-cols-3">{(periods.data?.data || []).map((p) => <div key={p._id || p.period} className="rounded border p-3"><div className="flex justify-between"><b>{p.period}</b><span>{p.status}</span></div>{p.status === "closed" && <button onClick={() => reopen.mutate(p.period)} className="mt-2 text-xs font-semibold text-red-700">Reopen with authorization</button>}</div>)}</div></section>
-    <section className="grid gap-6 lg:grid-cols-2"><div className="rounded-xl border bg-white p-5 shadow-sm"><h2 className="text-xl font-semibold">Tax controls</h2><p className="mt-2 text-sm text-slate-600">WHT records: {wht.data?.data?.length ?? 0}. Accrued: {money(wht.data?.totals?.taxAmount)} · Remitted: {money(wht.data?.totals?.remittedAmount)}.</p><a href="/admin/compliance" className="mt-3 inline-block text-sm font-semibold text-emerald-700">Open KRA/eTIMS compliance</a></div><div className="rounded-xl border bg-white p-5 shadow-sm"><h2 className="text-xl font-semibold">Reconciliation posture</h2><p className="mt-2 text-sm text-slate-600">Payments: {reconciliation.data?.data?.summary?.totalPayments ?? 0} · duplicate references: {reconciliation.data?.data?.summary?.duplicateReferences ?? 0} · missing receipts: {reconciliation.data?.data?.summary?.missingReceipts ?? 0} · orphan payments: {reconciliation.data?.data?.summary?.orphanPayments ?? 0}.</p><a href="/admin/finance/reconciliation" className="mt-3 inline-block text-sm font-semibold text-emerald-700">Review reconciliation exceptions</a></div></section>
-  </div>;
+  const currentYear = new Date().getFullYear();
+  const [year, setYear] = useState(currentYear);
+  const [period, setPeriod] = useState(`${currentYear}-${String(new Date().getMonth() + 1).padStart(2, "0")}`);
+  const [asset, setAsset] = useState({
+    assetNumber: "", name: "", acquisitionDate: new Date().toISOString().slice(0, 10),
+    acquisitionCost: "", residualValue: "0", usefulLifeMonths: "60"
+  });
+  const [budget, setBudget] = useState({ name: "", accountCode: "5200", fiscalYear: String(currentYear), month: "", amount: "" });
+  const [notice, setNotice] = useState("");
+
+  const statements = useQuery({
+    queryKey: ["accounting-statements", year],
+    queryFn: async () => unwrap(await api.get(`/admin/finance/accounting/statements?from=${year}-01-01&to=${year}-12-31`)),
+    retry: 1,
+  });
+  const ar = useQuery({
+    queryKey: ["accounting-ar"],
+    queryFn: async () => unwrap(await api.get("/admin/finance/accounting/ar-aging")), retry: 1,
+  });
+  const ap = useQuery({
+    queryKey: ["accounting-ap"],
+    queryFn: async () => unwrap(await api.get("/admin/finance/accounting/ap-aging")), retry: 1,
+  });
+  const cash = useQuery({
+    queryKey: ["accounting-cash", year],
+    queryFn: async () => unwrap(await api.get(`/admin/finance/accounting/cash-flow?from=${year}-01-01&to=${year}-12-31`)), retry: 1,
+  });
+  const assets = useQuery({
+    queryKey: ["accounting-assets"],
+    queryFn: async () => unwrap(await api.get("/admin/finance/accounting/assets")), retry: 1,
+  });
+  const budgets = useQuery({
+    queryKey: ["accounting-budgets", year],
+    queryFn: async () => unwrap(await api.get(`/admin/finance/accounting/budgets?fiscalYear=${year}`)), retry: 1,
+  });
+  const variance = useQuery({
+    queryKey: ["accounting-variance", year],
+    queryFn: async () => unwrap(await api.get(`/admin/finance/accounting/budgets-vs-actual?fiscalYear=${year}`)), retry: 1,
+  });
+  const periods = useQuery({
+    queryKey: ["accounting-periods"],
+    queryFn: async () => unwrap(await api.get("/admin/finance/accounting/periods")), retry: 1,
+  });
+  const wht = useQuery({
+    queryKey: ["accounting-wht"],
+    queryFn: async () => unwrap(await api.get("/admin/finance/withholding-tax")), retry: 1,
+  });
+  const reconciliation = useQuery({
+    queryKey: ["accounting-reconciliation"],
+    queryFn: async () => unwrap(await api.get("/admin/payments/reconciliation")), retry: 1,
+  });
+
+  const createAsset = useMutation({
+    mutationFn: () => api.post("/admin/finance/accounting/assets", {
+      ...asset,
+      acquisitionCost: Number(asset.acquisitionCost),
+      residualValue: Number(asset.residualValue),
+      usefulLifeMonths: Number(asset.usefulLifeMonths),
+    }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["accounting-assets"] });
+      setAsset({ ...asset, assetNumber: "", name: "", acquisitionCost: "" });
+      setNotice("Fixed asset registered successfully.");
+    },
+  });
+  const createBudget = useMutation({
+    mutationFn: () => api.post("/admin/finance/accounting/budgets", {
+      ...budget, fiscalYear: Number(budget.fiscalYear), month: budget.month ? Number(budget.month) : null, amount: Number(budget.amount),
+    }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["accounting-budgets", year] });
+      qc.invalidateQueries({ queryKey: ["accounting-variance", year] });
+      setBudget({ ...budget, name: "", amount: "" });
+      setNotice("Budget saved successfully.");
+    },
+  });
+  const close = useMutation({
+    mutationFn: () => api.post(`/admin/finance/accounting/periods/${period}/close`, { note: "Closed from Accounting Control Center" }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["accounting-periods"] }); setNotice(`${period} closed successfully.`); },
+  });
+  const reopen = useMutation({
+    mutationFn: (p) => api.post(`/admin/finance/accounting/periods/${p}/reopen`, {}),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["accounting-periods"] }); setNotice("Accounting period reopened and audit event recorded."); },
+  });
+
+  const summary = useMemo(() => {
+    const s = statements.data?.data || statements.data || {};
+    const pl = s.profitAndLoss || {};
+    const arData = ar.data?.data || ar.data || {};
+    const apData = ap.data?.data || ap.data || {};
+    const cashData = cash.data?.data || cash.data || {};
+    const w = wht.data?.totals || {};
+    return {
+      revenue: first(pl.revenue, s.revenue),
+      expenses: first(pl.expenses, s.expenses),
+      ar: first(arData.total, arData.totalOutstanding, arData.outstanding),
+      ap: first(apData.total, apData.totalOutstanding, apData.outstanding),
+      cash: first(cashData.netCashFlow, cashData.net, cashData.netCash),
+      whtAccrued: first(w.accrued, w.accruedAmount, w.taxAmount),
+      whtRemitted: first(w.remitted, w.remittedAmount),
+      whtOutstanding: first(w.outstanding, w.balance, (Number(w.accrued ?? w.taxAmount) || 0) - (Number(w.remitted ?? w.remittedAmount) || 0)),
+    };
+  }, [statements.data, ar.data, ap.data, cash.data, wht.data]);
+
+  const allQueries = [statements, ar, ap, cash, assets, budgets, variance, periods, wht, reconciliation];
+  const refreshAll = () => allQueries.forEach((q) => q.refetch());
+  const assetsRows = assets.data?.data || [];
+  const budgetRows = budgets.data?.data || [];
+  const varianceRows = variance.data?.data?.rows || variance.data?.rows || [];
+  const periodRows = periods.data?.data || [];
+  const whtRows = wht.data?.data || [];
+  const recSummary = reconciliation.data?.data?.summary || reconciliation.data?.summary || {};
+
+  const assetValid = asset.assetNumber.trim() && asset.name.trim() && finite(asset.acquisitionCost) && Number(asset.acquisitionCost) > 0 && finite(asset.residualValue) && Number(asset.residualValue) >= 0 && Number(asset.residualValue) <= Number(asset.acquisitionCost) && finite(asset.usefulLifeMonths) && Number(asset.usefulLifeMonths) > 0;
+  const budgetValid = budget.name.trim() && budget.accountCode.trim() && finite(budget.fiscalYear) && finite(budget.amount) && Number(budget.amount) >= 0 && (!budget.month || (Number(budget.month) >= 1 && Number(budget.month) <= 12));
+
+  return (
+    <div className="min-h-full bg-slate-50 p-4 md:p-6 lg:p-8">
+      <div className="mx-auto max-w-[1600px] space-y-6">
+        <header className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+          <div className="relative overflow-hidden bg-gradient-to-br from-emerald-950 via-emerald-900 to-slate-950 px-5 py-7 text-white md:px-8 md:py-8">
+            <div className="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-emerald-400/10 blur-3xl" />
+            <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/15"><ShieldCheck size={25} /></div>
+                <div><p className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-emerald-300">Production accounting</p><h1 className="mt-1 text-2xl font-black tracking-tight md:text-3xl">Complete Accounting Control Center</h1><p className="mt-2 max-w-4xl text-sm leading-6 text-slate-300">Tenant-scoped control surface for the GL, tax, subledgers, reconciliation, management accounting and period close.</p></div>
+              </div>
+              <button onClick={refreshAll} disabled={allQueries.some((q) => q.isFetching)} className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-sm font-bold hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-60"><RefreshCw size={16} className={allQueries.some((q) => q.isFetching) ? "animate-spin" : ""} /> Refresh controls</button>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-end gap-3 border-t border-slate-100 p-5 md:p-6">
+            <label className="text-xs font-extrabold text-slate-600">Reporting year<input type="number" min="2000" max="2100" value={year} onChange={(e) => { const y = Number(e.target.value); setYear(y); setBudget((b) => ({ ...b, fiscalYear: e.target.value })); }} className="mt-1 block w-32 rounded-xl border border-slate-300 bg-white p-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" /></label>
+            <NavButton href="/admin/finance/reports" icon={FileBarChart3}>Financial reports</NavButton><NavButton href="/admin/finance/reconciliation" icon={WalletCards}>Reconciliation</NavButton><NavButton href="/admin/finance/withholding-tax" icon={CircleDollarSign}>Withholding Tax</NavButton><NavButton href="/admin/finance/management" icon={Landmark}>Management accounting</NavButton>
+          </div>
+        </header>
+
+        {notice && <div className="flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 shadow-sm"><span className="flex items-center gap-2 font-semibold"><CheckCircle2 size={17} /> {notice}</span><button onClick={() => setNotice("")}><XCircle size={17} /></button></div>}
+
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          <Kpi title="Revenue" value={metricValue(statements, summary.revenue)} icon={CircleDollarSign} query={statements} />
+          <Kpi title="Expenses" value={metricValue(statements, summary.expenses)} icon={Landmark} query={statements} />
+          <Kpi title="Accounts receivable" value={metricValue(ar, summary.ar)} icon={WalletCards} query={ar} />
+          <Kpi title="Accounts payable" value={metricValue(ap, summary.ap)} icon={WalletCards} query={ap} />
+          <Kpi title="Net cash flow" value={metricValue(cash, summary.cash)} icon={CircleDollarSign} query={cash} />
+          <Kpi title="WHT accrued" value={metricValue(wht, summary.whtAccrued)} icon={Landmark} query={wht} />
+        </section>
+
+        <DataError queries={[statements, ar, ap, cash, wht]} />
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm md:p-6"><SectionTitle title="Fixed assets" text="Register capital assets with validated acquisition, residual value and useful life data." />
+            <div className="grid gap-3 md:grid-cols-2">{[["assetNumber","Asset number","text"],["name","Name","text"],["acquisitionDate","Acquisition date","date"],["acquisitionCost","Cost","number"],["residualValue","Residual value","number"],["usefulLifeMonths","Useful life months","number"]].map(([k,l,t]) => <Field key={k} label={l} type={t} value={asset[k]} onChange={(v) => setAsset({ ...asset, [k]: v })} />)}</div>
+            {finite(asset.acquisitionCost) && finite(asset.residualValue) && Number(asset.residualValue) > Number(asset.acquisitionCost) && <InlineError message="Residual value cannot exceed acquisition cost." />}
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3"><p className="text-sm text-slate-500">Register: <b className="text-slate-800">{assets.isError ? "Unavailable" : assets.isLoading ? "Loading…" : `${assetsRows.length} ${assetsRows.length === 1 ? "asset" : "assets"}`}</b></p><button onClick={() => createAsset.mutate()} disabled={!assetValid || createAsset.isPending} className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-extrabold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-300"><Plus size={16} /> {createAsset.isPending ? "Registering…" : "Add asset"}</button></div>
+            {createAsset.isError && <InlineError message={createAsset.error?.response?.data?.message || "Unable to register the asset."} />}
+          </section>
+
+          <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm md:p-6"><SectionTitle title="Budgets" text="Create approved/planned budget rows and compare them with actual accounting activity." />
+            <div className="grid gap-3 md:grid-cols-2">{[["name","Budget name","text"],["accountCode","Account code","text"],["fiscalYear","Fiscal year","number"],["month","Month 1–12 optional","number"],["amount","Amount","number"]].map(([k,l,t]) => <Field key={k} label={l} type={t} value={budget[k]} onChange={(v) => setBudget({ ...budget, [k]: v })} />)}</div>
+            {budget.month && (Number(budget.month) < 1 || Number(budget.month) > 12) && <InlineError message="Month must be between 1 and 12." />}
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3"><p className="text-sm text-slate-500">Planned rows: <b className="text-slate-800">{budgets.isError ? "Unavailable" : budgetRows.length}</b> · Variance rows: <b className="text-slate-800">{variance.isError ? "Unavailable" : varianceRows.length}</b></p><button onClick={() => createBudget.mutate()} disabled={!budgetValid || createBudget.isPending} className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-extrabold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-300"><Plus size={16} /> {createBudget.isPending ? "Saving…" : "Save budget"}</button></div>
+            {createBudget.isError && <InlineError message={createBudget.error?.response?.data?.message || "Unable to save the budget."} />}
+          </section>
+        </div>
+
+        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm md:p-6"><SectionTitle title="Accounting periods" text="Close only after draft journals are cleared. Reopening requires authorization and is explicitly audited." />
+          <div className="mb-5 flex flex-wrap items-end gap-3"><label className="text-xs font-extrabold text-slate-600">Period<input type="month" value={period} onChange={(e) => setPeriod(e.target.value)} className="mt-1 block rounded-xl border border-slate-300 p-2.5 text-sm font-semibold text-slate-900" /></label><button onClick={() => close.mutate()} disabled={!/^\d{4}-(0[1-9]|1[0-2])$/.test(period) || close.isPending} className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-extrabold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300">{close.isPending ? "Closing…" : "Close period"}</button></div>
+          {periods.isError ? <InlineError message={queryMessage(periods, "Accounting periods")} /> : periods.isLoading ? <Loading /> : periodRows.length ? <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">{periodRows.map((p) => <div key={p._id || p.period} className="rounded-2xl border border-slate-200 bg-slate-50 p-4"><div className="flex items-center justify-between gap-2"><b className="text-slate-900">{p.period}</b><Status status={p.status} /></div>{p.draftJournalsCount > 0 && <p className="mt-2 text-xs font-semibold text-amber-700">{p.draftJournalsCount} draft journal(s) pending</p>}{p.status === "closed" && <button onClick={() => reopen.mutate(p.period)} disabled={reopen.isPending} className="mt-3 text-xs font-extrabold text-red-700 hover:underline">Reopen with authorization</button>}</div>)}</div> : <Empty text="No accounting periods returned for the current tenant." />}
+          {close.isError && <InlineError message={close.error?.response?.data?.message || "Unable to close the accounting period."} />}{reopen.isError && <InlineError message={reopen.error?.response?.data?.message || "Unable to reopen the accounting period."} />}
+        </section>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm md:p-6"><SectionTitle title="Tax controls" text="Monitor WHT accrual, remittance and outstanding liability from the tenant tax register." />
+            {wht.isError ? <InlineError message={queryMessage(wht, "Withholding-tax records")} /> : <><div className="grid gap-3 sm:grid-cols-3"><MiniMetric label="Records" value={String(whtRows.length)} /><MiniMetric label="Accrued" value={money(summary.whtAccrued)} /><MiniMetric label="Remitted" value={money(summary.whtRemitted)} /></div><div className="mt-3 rounded-2xl border border-amber-100 bg-amber-50 p-4"><p className="text-xs font-extrabold uppercase tracking-wide text-amber-800">Outstanding WHT</p><p className="mt-1 text-xl font-black text-slate-900">{money(summary.whtOutstanding)}</p></div></>}
+            <a href="/admin/compliance" className="mt-4 inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-extrabold text-emerald-800 hover:bg-emerald-100">Open KRA/eTIMS compliance</a>
+          </section>
+
+          <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm md:p-6"><SectionTitle title="Reconciliation posture" text="Exception counts must come from the reconciliation service; failed data loads are never displayed as zero." />
+            {reconciliation.isError ? <InlineError message={queryMessage(reconciliation, "Reconciliation posture")} /> : <div className="grid gap-3 sm:grid-cols-2"><MiniMetric label="Payments" value={reconciliation.isLoading ? "Loading…" : String(recSummary.totalPayments ?? 0)} /><MiniMetric label="Duplicate references" value={reconciliation.isLoading ? "Loading…" : String(recSummary.duplicateReferences ?? 0)} /><MiniMetric label="Missing receipts" value={reconciliation.isLoading ? "Loading…" : String(recSummary.missingReceipts ?? 0)} /><MiniMetric label="Orphan payments" value={reconciliation.isLoading ? "Loading…" : String(recSummary.orphanPayments ?? 0)} /></div>}
+            <a href="/admin/finance/reconciliation" className="mt-4 inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-extrabold text-slate-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800">Review reconciliation exceptions</a>
+          </section>
+        </div>
+
+        <footer className="rounded-2xl border border-slate-200 bg-white px-5 py-4 text-xs text-slate-500 shadow-sm"><b className="text-slate-700">Reporting period:</b> {year}-01-01 — {year}-12-31 · Values are tenant-scoped. <span className="ml-1">Zero is shown only when the underlying control successfully reports zero qualifying activity; failed controls show Unavailable.</span></footer>
+      </div>
+    </div>
+  );
 }
+
+function Kpi({ title, value, icon: Icon, query }) {
+  const unavailable = query.isError;
+  return <div className={`rounded-2xl border bg-white p-4 shadow-sm ${unavailable ? "border-red-200" : "border-slate-200"}`}><div className="flex items-center justify-between gap-2"><p className="text-xs font-extrabold uppercase tracking-wide text-slate-500">{title}</p><div className={`rounded-xl p-2 ${unavailable ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}`}><Icon size={17} /></div></div><p className={`mt-3 text-lg font-black ${unavailable ? "text-red-700" : "text-slate-950"}`}>{value}</p><p className={`mt-1 text-[11px] font-semibold ${unavailable ? "text-red-600" : "text-slate-400"}`}>{unavailable ? "Data unavailable" : query.isFetching ? "Refreshing…" : "Verified control value"}</p></div>;
+}
+function NavButton({ href, icon: Icon, children }) { return <a href={href} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-bold text-slate-700 shadow-sm hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800"><Icon size={16} />{children}</a>; }
+function SectionTitle({ title, text }) { return <div className="mb-5"><h2 className="text-lg font-black text-slate-900">{title}</h2><p className="mt-1 text-sm leading-6 text-slate-500">{text}</p></div>; }
+function Field({ label, type = "text", value, onChange }) { return <label className="block text-xs font-extrabold text-slate-600">{label}<input type={type} value={value} onChange={(e) => onChange(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-300 bg-white p-2.5 text-sm text-slate-900 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" /></label>; }
+function MiniMetric({ label, value }) { return <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4"><p className="text-[11px] font-extrabold uppercase tracking-wide text-slate-500">{label}</p><p className="mt-1 text-base font-black text-slate-900">{value}</p></div>; }
+function Status({ status }) { const s = String(status || "unknown").toLowerCase(); const cls = s === "closed" || s === "remitted" ? "bg-emerald-100 text-emerald-800" : s === "open" ? "bg-blue-100 text-blue-800" : s === "cancelled" ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-800"; return <span className={`rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide ${cls}`}>{String(status || "unknown").replace(/_/g, " ")}</span>; }
+function InlineError({ message }) { return <div className="mt-3 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-800"><AlertCircle size={16} className="mt-0.5 shrink-0" />{message}</div>; }
+function Loading() { return <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-center text-sm font-semibold text-slate-500">Loading accounting controls…</div>; }
+function Empty({ text }) { return <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">{text}</div>; }
+function DataError({ queries }) { const failed = queries.filter((q) => q.isError); if (!failed.length) return null; return <div className="rounded-2xl border border-red-200 bg-red-50 p-4"><p className="flex items-center gap-2 text-sm font-black text-red-900"><LockKeyhole size={17} /> One or more accounting controls are unavailable</p><p className="mt-1 text-xs leading-5 text-red-700">The affected controls are intentionally marked as unavailable instead of being converted to misleading KES 0.00 values.</p></div>; }
