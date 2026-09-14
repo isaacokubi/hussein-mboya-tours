@@ -36,12 +36,12 @@ async function journalBalances(tenantId, from, to, codes = TAX_ACCOUNT_CODES) {
       balances.set(account.code, row);
     }
   }
-  return [...balances.values()].map((row) => ({
+  return { accounts, rows: [...balances.values()].map((row) => ({
     ...row,
     debit: money(row.debit),
     credit: money(row.credit),
     balance: money(["asset", "expense"].includes(row.type) ? row.debit - row.credit : row.credit - row.debit),
-  }));
+  })) };
 }
 
 const periodFilter = (from, to) => bounds(from, to, "issueDate");
@@ -51,7 +51,8 @@ export const getTaxControlReport = async (req, res, next) => {
     const tenantId = requireTenantId();
     const from = req.query.from;
     const to = req.query.to;
-    const rows = await journalBalances(tenantId, from, to);
+    const journal = await journalBalances(tenantId, from, to);
+    const rows = journal.rows;
     const by = new Map(rows.map((row) => [row.code, row]));
     const output = by.get("2110")?.balance || 0;
     const input = by.get("2120")?.balance || 0;
@@ -70,6 +71,7 @@ export const getTaxControlReport = async (req, res, next) => {
         netVat: money(output - input),
         withholdingTaxPayable: money(wht),
         reconciliation: {
+          configuredTaxAccounts: journal.accounts.length,
           invoiceCount: invoices.length,
           invoiceVatBasis,
           postedTaxActivity,
@@ -85,7 +87,7 @@ export const getTaxControlReport = async (req, res, next) => {
 
 async function getControlLedger({ tenantId, code, from, to, normalDebit }) {
   const account = await ChartOfAccount.findOne({ tenantId, code, active: true }).lean();
-  if (!account) return { account: code, rows: [], openingBalance: 0, periodDebit: 0, periodCredit: 0, closingBalance: 0, accountFound: false };
+  if (!account) return { account: code, rows: [], openingBalance: null, periodDebit: null, periodCredit: null, closingBalance: null, accountFound: false };
   const openingEntries = from
     ? await JournalEntry.find({ tenantId, status: "posted", ...before(from) }).select("lines").lean()
     : [];
@@ -177,14 +179,13 @@ export const getProfitabilityReport = async (req, res, next) => {
       Invoice.find(invoiceFilter).select("_id booking hospitalityBooking hospitalityType invoiceNumber totalAmount tax taxableAmount taxType status issueDate").lean(),
       Payment.find(paymentFilter).select("_id booking hospitalityBooking hospitalityType invoiceNumber amount refundedAmount status paidAt transactionReference transactionId mpesaReceiptNumber").lean(),
     ]);
-    const invoiceById = new Map(invoices.map((invoice) => [String(invoice._id), invoice]));
     const invoiceByNumber = new Map(invoices.filter((i) => i.invoiceNumber).map((invoice) => [String(invoice.invoiceNumber), invoice]));
     const invoiceByBooking = new Map(invoices.filter((i) => i.booking).map((invoice) => [String(invoice.booking), invoice]));
     const invoiceByHospitalityBooking = new Map(invoices.filter((i) => i.hospitalityBooking).map((invoice) => [String(invoice.hospitalityBooking), invoice]));
     const groups = new Map();
     for (const invoice of invoices) {
       const key = serviceForInvoice(invoice);
-      const row = groups.get(key) || { serviceType: key, invoiced: 0, collected: 0, refunded: 0, invoiceCount: 0, linkedPaymentCount: 0, unmatchedPaymentCount: 0, unmatchedPaymentAmount: 0, vat: 0 };
+      const row = groups.get(key) || { serviceType: key, invoiced: 0, collected: 0, refunded: 0, invoiceCount: 0, linkedPaymentCount: 0, vat: 0 };
       row.invoiced += Math.max(0, Number(invoice.totalAmount || 0));
       row.vat += Math.max(0, Number(invoice.tax || 0));
       row.invoiceCount += 1;
@@ -203,7 +204,7 @@ export const getProfitabilityReport = async (req, res, next) => {
         continue;
       }
       const key = serviceForInvoice(linkedInvoice);
-      const row = groups.get(key) || { serviceType: key, invoiced: 0, collected: 0, refunded: 0, invoiceCount: 0, linkedPaymentCount: 0, unmatchedPaymentCount: 0, unmatchedPaymentAmount: 0, vat: 0 };
+      const row = groups.get(key) || { serviceType: key, invoiced: 0, collected: 0, refunded: 0, invoiceCount: 0, linkedPaymentCount: 0, vat: 0 };
       if (String(payment.status).toLowerCase() === "completed") row.collected += Math.max(0, Number(payment.amount || 0));
       row.refunded += Math.max(0, Number(payment.refundedAmount || 0));
       row.linkedPaymentCount += 1;
