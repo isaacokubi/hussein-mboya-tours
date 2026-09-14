@@ -39,11 +39,18 @@ export const subscriptionMpesaCallback = async (req, res) => {
     }
 
     payment.mpesaReceiptNumber = receipt;
-    payment.transactionReference = receipt;
     payment.paidAt = new Date();
-    payment.status = "completed";
     payment.metadata = { ...(payment.metadata || {}), callbackResponse: stkCallback, amount: paidAmount, phoneNumber: value("PhoneNumber") || payment.phoneNumber };
-    await activateTenantSubscription({ tenantId: payment.tenantId, plan: payment.plan, provider: "mpesa", periodDays: payment.periodDays || 30, payment, transactionReference: receipt });
+    await payment.save();
+
+    await activateTenantSubscription({
+      tenantId: payment.tenantId,
+      plan: payment.plan,
+      provider: "mpesa",
+      periodDays: payment.periodDays || 30,
+      payment,
+      transactionReference: receipt,
+    });
     return res.json({ ResultCode: 0, ResultDesc: "Accepted" });
   } catch (error) {
     console.error("SUBSCRIPTION MPESA CALLBACK ERROR:", error);
