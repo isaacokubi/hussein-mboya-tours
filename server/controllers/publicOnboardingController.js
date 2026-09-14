@@ -46,7 +46,6 @@ export async function registerTenantPublic(req, res, next) {
             event: "tenant_registered",
             plan: result.subscription.plan,
             trialEndsAt: result.subscription.trialEndsAt,
-            firstSuperAdminProvisioned: result.createdFirstSuperAdmin,
           },
         });
       }
@@ -78,7 +77,6 @@ export async function registerTenantPublic(req, res, next) {
         tenantId: adminUser.tenantId,
         permissions,
       },
-      platform: { firstSuperAdminProvisioned: result.createdFirstSuperAdmin },
     });
   } catch (error) {
     if (error?.code === "DUPLICATE_KEY" || error?.code === 11000) {
