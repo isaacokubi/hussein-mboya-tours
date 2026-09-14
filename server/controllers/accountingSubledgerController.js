@@ -50,8 +50,8 @@ const buildPosting = (row, body = {}) => {
   if (type === "accrual") return { sourceType: "accrual", lines: [{ code: row.accountCode || "5200", debit: amount, credit: 0, description: "Accrued expense" }, { code: row.contraAccountCode || "2000", debit: 0, credit: amount, description: "Accrued liability" }] };
   if (type === "prepayment") return { sourceType: "prepayment", lines: [{ code: row.accountCode || "1300", debit: amount, credit: 0, description: "Prepayment asset" }, { code: row.contraAccountCode || cashCode(meta.paymentMethod), debit: 0, credit: amount, description: "Prepayment settlement" }] };
   if (type === "fx") {
-    const direction = String(body.direction || meta.direction || "gain").toLowerCase();
-    return direction === "loss"
+    const direction = String(body.direction || meta.direction || "in").toLowerCase();
+    return direction === "out"
       ? { sourceType: "fx_loss", lines: [{ code: "7010", debit: amount, credit: 0, description: "Foreign exchange loss" }, { code: row.contraAccountCode || "1100", debit: 0, credit: amount, description: "FX revaluation" }] }
       : { sourceType: "fx_gain", lines: [{ code: row.contraAccountCode || "1100", debit: amount, credit: 0, description: "FX revaluation" }, { code: "7000", debit: 0, credit: amount, description: "Foreign exchange gain" }] };
   }
@@ -68,6 +68,7 @@ export const createSubledger = async (req, res, next) => {
     const rate = Number(b.exchangeRate);
     const quantity = Number(b.quantity || 0);
     const unitCost = money(b.unitCost);
+    const direction = String(b.direction || "in").toLowerCase();
 
     if (!allowed.has(type)) return res.status(400).json({ success: false, message: "Unsupported accounting subledger type." });
     if (!b.reference || !String(b.reference).trim()) return res.status(400).json({ success: false, message: "Reference is required." });
@@ -77,11 +78,10 @@ export const createSubledger = async (req, res, next) => {
     if (currencyError) return res.status(400).json({ success: false, message: currencyError });
     if (type === "inventory" && (!Number.isFinite(quantity) || quantity <= 0)) return res.status(400).json({ success: false, message: "Inventory quantity must be greater than zero." });
     if (type === "inventory" && unitCost <= 0) return res.status(400).json({ success: false, message: "Inventory unit cost must be greater than zero." });
-    if (!["in", "out"].includes(String(b.direction || "in"))) return res.status(400).json({ success: false, message: "Direction must be in or out." });
-    if (type === "fx" && !["in", "out"].includes(String(b.direction || "in"))) return res.status(400).json({ success: false, message: "FX direction must be in or out." });
+    if (!["in", "out"].includes(direction)) return res.status(400).json({ success: false, message: "Direction must be in or out." });
 
     const baseAmount = money(amount * rate);
-    const metadata = { ...(b.metadata || {}), direction: String(b.direction || "in") };
+    const metadata = { ...(b.metadata || {}), direction };
     const row = await AccountingSubledger.create({
       tenantId,
       type,
