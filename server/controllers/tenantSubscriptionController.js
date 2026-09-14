@@ -2,7 +2,7 @@ import Organization from "../models/Organization.js";
 import Subscription from "../models/Subscription.js";
 import SubscriptionPayment from "../models/SubscriptionPayment.js";
 import User from "../models/User.js";
-import { activateTenantSubscription, getTenantPlanPrice, getTenantPlanPrices, initiateTenantMpesaPayment } from "../services/tenantSubscriptionService.js";
+import { activateTenantSubscription, getTenantPlanPrice, getTenantPlanPrices, initiateTenantMpesaPayment, switchTenantSubscriptionPlan } from "../services/tenantSubscriptionService.js";
 import { getPlanFeatureCatalog, getTenantPlanFeatures } from "../services/planFeatureService.js";
 
 const isAdmin = (user) => ["admin", "administrator", "super_admin", "superadmin"].includes(String(user?.role || user?.legacyRole || "").toLowerCase());
@@ -59,6 +59,17 @@ export const approveTenantSubscription = async (req, res, next) => {
     const payment = await SubscriptionPayment.create({ tenantId, userId: req.user._id, plan, amount, provider: "manual", status: "pending", periodDays: days, transactionReference: reference, metadata: { approvedBy: req.user._id, note: req.body?.note || "" } });
     const result = await activateTenantSubscription({ tenantId, plan, provider: "manual", periodDays: days, payment, transactionReference: reference });
     return res.json({ success: true, message: `Subscription activated for ${days} days.`, tenant: result.organization, payment });
+  } catch (error) { next(error); }
+};
+
+export const switchTenantSubscription = async (req, res, next) => {
+  try {
+    if (!isPlatformSuperAdmin(req.user)) return res.status(403).json({ success: false, message: "Only the platform SuperAdmin can switch tenant subscription plans." });
+    const tenantId = req.params.id;
+    const plan = String(req.body?.plan || "").toLowerCase();
+    if (!plan) return res.status(400).json({ success: false, message: "A subscription plan is required." });
+    const result = await switchTenantSubscriptionPlan({ tenantId, plan });
+    return res.json({ success: true, message: `${result.organization.name} switched from ${result.previousPlan} to ${result.plan} for testing. Existing renewal period was preserved.`, tenant: result.organization, subscription: result.subscription });
   } catch (error) { next(error); }
 };
 
