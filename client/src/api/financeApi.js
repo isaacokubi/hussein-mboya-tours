@@ -44,3 +44,8 @@ export const getCashFlow = async (params = {}) => {
   const { data } = await api.get("/admin/finance/accounting/cash-flow", { params });
   return data;
 };
+
+export const reconcileOperationalAccounting = async () => {
+  const { data } = await api.post("/admin/finance/accounting/operational-reconciliation");
+  return data;
+};
