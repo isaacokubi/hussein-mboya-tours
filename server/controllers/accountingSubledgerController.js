@@ -31,7 +31,42 @@ export const listSubledger = async (req, res, next) => {
       .sort({ transactionDate: -1, createdAt: -1 })
       .limit(500)
       .lean();
-    return res.json({ success: true, data: rows });
+
+    // Normalise legacy records at read time so the UI never hides a valid
+    // transaction simply because older documents did not persist derived fields.
+    const data = rows.map((row) => {
+      const amount = money(row.amount);
+      const currency = normalizeCurrency(row.currency);
+      const exchangeRate = Number.isFinite(Number(row.exchangeRate)) && Number(row.exchangeRate) > 0
+        ? Number(row.exchangeRate)
+        : 1;
+      const baseAmount = Number.isFinite(Number(row.baseAmount)) && Number(row.baseAmount) >= 0
+        ? money(row.baseAmount)
+        : money(amount * exchangeRate);
+      const journalEntry = row.journalEntry || null;
+      return {
+        ...row,
+        amount,
+        currency,
+        exchangeRate,
+        baseAmount,
+        quantity: Number.isFinite(Number(row.quantity)) ? Number(row.quantity) : 0,
+        unitCost: money(row.unitCost),
+        accountCode: String(row.accountCode || "").trim(),
+        contraAccountCode: String(row.contraAccountCode || "").trim(),
+        status: row.status || "draft",
+        journalEntry,
+        journalReference: journalEntry?.entryNumber || journalEntry?.reference || null,
+      };
+    });
+
+    const summary = {
+      count: data.length,
+      baseTotal: money(data.reduce((sum, row) => sum + Number(row.baseAmount || 0), 0)),
+      foreign: data.filter((row) => row.currency !== "KES").length,
+    };
+
+    return res.json({ success: true, data, summary });
   } catch (e) { next(e); }
 };
 
