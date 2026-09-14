@@ -9,37 +9,114 @@ const allowed = new Set(["inventory", "payroll", "accrual", "prepayment", "fx"])
 const hashId = (value) => new mongoose.Types.ObjectId(crypto.createHash("sha256").update(String(value)).digest("hex").slice(0, 24));
 const cashCode = (method) => { const m = String(method || "BANK").toUpperCase(); return m === "MPESA" ? "1020" : m === "CARD" ? "1030" : m === "CASH" ? "1000" : "1010"; };
 
+const normalizeCurrency = (value) => String(value || "KES").trim().toUpperCase();
+const validateCurrencyAndRate = (currency, rate) => {
+  if (!/^[A-Z]{3}$/.test(currency)) return "Currency must be a valid three-letter ISO-style code.";
+  if (!Number.isFinite(rate) || rate <= 0) return "Exchange rate to KES must be greater than zero.";
+  if (currency === "KES" && rate !== 1) return "KES entries must use an exchange rate of 1.00.";
+  if (currency !== "KES" && rate === 1) return "A valid explicit exchange rate to KES is required for non-KES entries.";
+  return null;
+};
+
 export const listSubledger = async (req, res, next) => {
-  try { requireTenantId(); const q = mergeTenantFilter(req, {}); if (req.query.type && allowed.has(String(req.query.type).toLowerCase())) q.type = String(req.query.type).toLowerCase(); const rows = await AccountingSubledger.find(q).sort({ transactionDate: -1, createdAt: -1 }).limit(500).lean(); return res.json({ success: true, data: rows }); } catch (e) { next(e); }
+  try {
+    requireTenantId();
+    const q = mergeTenantFilter(req, {});
+    if (req.query.type) {
+      const type = String(req.query.type).toLowerCase();
+      if (allowed.has(type)) q.type = type;
+    }
+    const rows = await AccountingSubledger.find(q)
+      .populate({ path: "journalEntry", select: "entryNumber reference status date" })
+      .sort({ transactionDate: -1, createdAt: -1 })
+      .limit(500)
+      .lean();
+    return res.json({ success: true, data: rows });
+  } catch (e) { next(e); }
 };
 
 const buildPosting = (row, body = {}) => {
-  const amount = money(row.baseAmount || row.amount); const type = row.type; const meta = row.metadata || {};
+  const amount = money(row.baseAmount || row.amount);
+  const type = row.type;
+  const meta = row.metadata || {};
   if (amount <= 0) throw new Error("Subledger base amount must be positive.");
+
   if (type === "inventory") {
-    const action = String(body.transactionType || meta.transactionType || "receipt").toLowerCase();
+    const action = String(body.transactionType || meta.transactionType || (meta.direction === "out" ? "issue" : "receipt")).toLowerCase();
     if (action === "issue" || action === "cogs") return { sourceType: "inventory_cogs", lines: [{ code: row.accountCode || "5000", debit: amount, credit: 0, description: "Inventory issue / COGS" }, { code: row.contraAccountCode || "1200", debit: 0, credit: amount, description: "Inventory consumed" }] };
     return { sourceType: "inventory_receipt", lines: [{ code: row.accountCode || "1200", debit: amount, credit: 0, description: "Inventory received" }, { code: row.contraAccountCode || cashCode(meta.paymentMethod), debit: 0, credit: amount, description: "Inventory funding / payable" }] };
   }
   if (type === "payroll") return { sourceType: "payroll_journal", lines: [{ code: row.accountCode || "5200", debit: amount, credit: 0, description: "Payroll expense" }, { code: row.contraAccountCode || "2140", debit: 0, credit: amount, description: "Payroll liabilities" }] };
   if (type === "accrual") return { sourceType: "accrual", lines: [{ code: row.accountCode || "5200", debit: amount, credit: 0, description: "Accrued expense" }, { code: row.contraAccountCode || "2000", debit: 0, credit: amount, description: "Accrued liability" }] };
   if (type === "prepayment") return { sourceType: "prepayment", lines: [{ code: row.accountCode || "1300", debit: amount, credit: 0, description: "Prepayment asset" }, { code: row.contraAccountCode || cashCode(meta.paymentMethod), debit: 0, credit: amount, description: "Prepayment settlement" }] };
-  if (type === "fx") { const direction = String(body.direction || meta.direction || "gain").toLowerCase(); return direction === "loss" ? { sourceType: "fx_loss", lines: [{ code: "7010", debit: amount, credit: 0, description: "Foreign exchange loss" }, { code: row.contraAccountCode || "1100", debit: 0, credit: amount, description: "FX revaluation" }] } : { sourceType: "fx_gain", lines: [{ code: row.contraAccountCode || "1100", debit: amount, credit: 0, description: "FX revaluation" }, { code: "7000", debit: 0, credit: amount, description: "Foreign exchange gain" }] }; }
+  if (type === "fx") {
+    const direction = String(body.direction || meta.direction || "gain").toLowerCase();
+    return direction === "loss"
+      ? { sourceType: "fx_loss", lines: [{ code: "7010", debit: amount, credit: 0, description: "Foreign exchange loss" }, { code: row.contraAccountCode || "1100", debit: 0, credit: amount, description: "FX revaluation" }] }
+      : { sourceType: "fx_gain", lines: [{ code: row.contraAccountCode || "1100", debit: amount, credit: 0, description: "FX revaluation" }, { code: "7000", debit: 0, credit: amount, description: "Foreign exchange gain" }] };
+  }
   throw new Error("Unsupported accounting subledger type.");
 };
 
 export const createSubledger = async (req, res, next) => {
   try {
-    const tenantId = requireTenantId(); const b = req.body || {}; const type = String(b.type || "").trim().toLowerCase(); const amount = money(b.amount); const rate = Number(b.exchangeRate || 1); const quantity = Number(b.quantity || 0);
+    const tenantId = requireTenantId();
+    const b = req.body || {};
+    const type = String(b.type || "").trim().toLowerCase();
+    const amount = money(b.amount);
+    const currency = normalizeCurrency(b.currency);
+    const rate = Number(b.exchangeRate);
+    const quantity = Number(b.quantity || 0);
+    const unitCost = money(b.unitCost);
+
     if (!allowed.has(type)) return res.status(400).json({ success: false, message: "Unsupported accounting subledger type." });
-    if (!b.reference || !b.description || amount <= 0 || !Number.isFinite(rate) || rate <= 0) return res.status(400).json({ success: false, message: "Reference, description, positive amount and exchange rate are required." });
-    if (type === "inventory" && quantity < 0) return res.status(400).json({ success: false, message: "Inventory quantity cannot be negative." });
-    const baseAmount = money(amount * rate); const metadata = b.metadata || {};
-    const row = await AccountingSubledger.create({ tenantId, type, reference: String(b.reference).trim(), transactionDate: b.transactionDate || new Date(), description: String(b.description).trim(), amount, currency: String(b.currency || "KES").toUpperCase(), exchangeRate: rate, baseAmount, quantity, unitCost: money(b.unitCost), accountCode: String(b.accountCode || "").trim(), contraAccountCode: String(b.contraAccountCode || "").trim(), metadata, createdBy: req.user?._id || null });
-    const posting = buildPosting(row, b); const entry = await postFinanceEntry({ tenantId, sourceType: posting.sourceType, sourceId: row._id, description: row.description, reference: row.reference, date: row.transactionDate, lines: posting.lines });
-    row.journalEntry = entry?._id || null; row.status = "posted"; row.postedBy = req.user?._id || null; row.postedAt = new Date(); await row.save();
-    return res.status(201).json({ success: true, data: row });
-  } catch (e) { if (e?.code === 11000) return res.status(409).json({ success: false, message: "This subledger reference already exists for the tenant." }); next(e); }
+    if (!b.reference || !String(b.reference).trim()) return res.status(400).json({ success: false, message: "Reference is required." });
+    if (!b.description || !String(b.description).trim()) return res.status(400).json({ success: false, message: "Description is required." });
+    if (!Number.isFinite(amount) || amount <= 0) return res.status(400).json({ success: false, message: "Amount must be greater than zero." });
+    const currencyError = validateCurrencyAndRate(currency, rate);
+    if (currencyError) return res.status(400).json({ success: false, message: currencyError });
+    if (type === "inventory" && (!Number.isFinite(quantity) || quantity <= 0)) return res.status(400).json({ success: false, message: "Inventory quantity must be greater than zero." });
+    if (type === "inventory" && unitCost <= 0) return res.status(400).json({ success: false, message: "Inventory unit cost must be greater than zero." });
+    if (!["in", "out"].includes(String(b.direction || "in"))) return res.status(400).json({ success: false, message: "Direction must be in or out." });
+    if (type === "fx" && !["in", "out"].includes(String(b.direction || "in"))) return res.status(400).json({ success: false, message: "FX direction must be in or out." });
+
+    const baseAmount = money(amount * rate);
+    const metadata = { ...(b.metadata || {}), direction: String(b.direction || "in") };
+    const row = await AccountingSubledger.create({
+      tenantId,
+      type,
+      reference: String(b.reference).trim(),
+      transactionDate: b.transactionDate || new Date(),
+      description: String(b.description).trim(),
+      amount,
+      currency,
+      exchangeRate: rate,
+      baseAmount,
+      quantity: Number.isFinite(quantity) ? quantity : 0,
+      unitCost,
+      accountCode: String(b.accountCode || "").trim(),
+      contraAccountCode: String(b.contraAccountCode || "").trim(),
+      metadata,
+      createdBy: req.user?._id || null
+    });
+
+    try {
+      const posting = buildPosting(row, b);
+      const entry = await postFinanceEntry({ tenantId, sourceType: posting.sourceType, sourceId: row._id, description: row.description, reference: row.reference, date: row.transactionDate, lines: posting.lines });
+      row.journalEntry = entry?._id || null;
+      row.status = "posted";
+      row.postedBy = req.user?._id || null;
+      row.postedAt = new Date();
+      await row.save();
+      return res.status(201).json({ success: true, data: row });
+    } catch (postingError) {
+      await AccountingSubledger.deleteOne({ _id: row._id, tenantId });
+      throw postingError;
+    }
+  } catch (e) {
+    if (e?.code === 11000) return res.status(409).json({ success: false, message: "This subledger reference already exists for the tenant." });
+    next(e);
+  }
 };
 
 export const amortizeSubledger = async (req, res, next) => {
