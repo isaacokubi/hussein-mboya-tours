@@ -4,10 +4,10 @@ Kenya-focused multi-tenant tour-operator platform.
 
 ## Production readiness baseline
 
-**Baseline CI status: PASSED** — the repository's current release-gate baseline has passed all three verification phases on `main`.
+**Baseline CI status: PASSED** — the repository's latest verified application baseline passed all three release-gate phases on `main`.
 
-- Release gate run: **34940798854**
-- Verified commit: **9fee53c1ed8d6ce95cf4a9177d719666d4f8ad0c**
+- Release gate run: **34942492468**
+- Verified application commit: **0b00897efa85ab8e4097755670091d2abaa63285**
 - Phase 1 — Security and tenant integrity: **PASSED**
 - Phase 2 — Kenya production readiness: **PASSED**
 - Phase 3 — Final release gate: **PASSED**
@@ -19,11 +19,11 @@ Kenya-focused multi-tenant tour-operator platform.
 - Kenya compliance/payment module verification: **PASSED**
 - Release configuration and committed-secret checks: **PASSED**
 
-**Future test runs must treat this commit and release-gate run as the existing baseline.** Tests should start by checking the current `main` history and this document, then run the existing release gate and report only regressions or newly introduced gaps rather than re-opening already-passed repository checks without cause.
+**Future test runs must treat this verified application commit and release-gate run as the existing baseline.** Documentation and deployment-acceptance commits made afterward do not invalidate that application baseline; tests should start from the current `main` history and this document, then run the existing release gate and report only regressions or newly introduced gaps.
 
 ### What this baseline proves
 
-The automated repository checks establish that the implemented security, multi-tenancy, subscription lifecycle, financial/compliance infrastructure, production safeguards, and frontend release checks are currently passing in CI.
+The automated repository checks establish that the implemented security, multi-tenancy, subscription lifecycle, financial/compliance infrastructure, production safeguards, and frontend release checks were passing in CI at the verified application baseline.
 
 ### What this baseline does not prove
 
