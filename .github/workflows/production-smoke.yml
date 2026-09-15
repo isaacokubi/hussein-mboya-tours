@@ -34,6 +34,8 @@ payload = json.loads(sys.argv[1])
 if payload.get("success") is not True or payload.get("status") != "healthy" or payload.get("database") != "connected":
     raise SystemExit(f"Production health check failed: {payload}")
 PY
+          root="$(curl --fail-with-body --silent --show-error --max-time 20 "$base/")"
+          printf '%s\n' "$root" | grep -Fq 'Travel API running successfully'
 
       - name: Check public web endpoint when configured
         env:
@@ -45,5 +47,8 @@ PY
             exit 0
           fi
           url="${PRODUCTION_WEB_URL%/}/"
-          curl --fail --silent --show-error --max-time 20 -I "$url" >/dev/null
-          echo "Production web endpoint responded successfully: $url"
+          headers="$(curl --fail --silent --show-error --max-time 20 -D - -o /tmp/site.html "$url")"
+          printf '%s\n' "$headers" | grep -Eq '^HTTP/[0-9.]+ 2[0-9][0-9]'
+          test -s /tmp/site.html
+          grep -Eiq '<html|<!doctype html' /tmp/site.html
+          echo "Production web endpoint responded with a valid HTML document."
