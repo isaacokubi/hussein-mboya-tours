@@ -63,26 +63,23 @@ jobs:
           MONGODB_PRODUCTION_URI: ${{ secrets.MONGODB_PRODUCTION_URI }}
           RESTORE_TARGET_ISOLATED: ${{ secrets.RESTORE_TARGET_ISOLATED }}
         run: |
+          set -euo pipefail
           if [ -z "${MONGODB_RESTORE_URI:-}" ]; then
             echo "BLOCKED: MONGODB_RESTORE_URI is not configured."
             exit 1
           fi
-
           if [ -z "${MONGODB_PRODUCTION_URI:-}" ]; then
             echo "BLOCKED: MONGODB_PRODUCTION_URI is not configured."
             exit 1
           fi
-
           if [ "${RESTORE_TARGET_ISOLATED:-}" != "true" ]; then
             echo "BLOCKED: RESTORE_TARGET_ISOLATED must be exactly true."
             exit 1
           fi
-
           if [ "$MONGODB_RESTORE_URI" = "$MONGODB_PRODUCTION_URI" ]; then
             echo "BLOCKED: restore target matches production target."
             exit 1
           fi
-
           echo "Restore target safety checks passed."
 
       - name: Restore backup
@@ -92,9 +89,9 @@ jobs:
         run: |
           set -euo pipefail
           archive="$(find restore-artifact -name '*.archive.gz.enc' -type f | head -n 1)"
-          openssl enc -d -aes-256-cbc -pbkdf2 -in "$archive" -pass env:BACKUP_ENCRYPTION_PASSPHRASE \
-            | docker run --rm -i -e MONGODB_RESTORE_URI="$MONGODB_RESTORE_URI" mongo:8 \
-              sh -lc 'cat > /tmp/restore.archive.gz && mongorestore --uri="$MONGODB_RESTORE_URI" --archive=/tmp/restore.archive.gz --gzip --drop'
+          openssl enc -d -aes-256-cbc -pbkdf2 -in "$archive" -pass env:BACKUP_ENCRYPTION_PASSPHRASE > restore.archive.gz
+          docker run --rm -i -e MONGODB_RESTORE_URI="$MONGODB_RESTORE_URI" mongo:8 \
+            sh -lc 'cat > /tmp/restore.archive.gz && mongorestore --uri="$MONGODB_RESTORE_URI" --archive=/tmp/restore.archive.gz --gzip --drop --nsFrom="husseindb.*" --nsTo="${MONGODB_RESTORE_URI#*//}"'
 
       - name: Validate restored database
         env:
