@@ -1,0 +1,42 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import test from "node:test";
+
+const root = path.resolve(process.cwd());
+const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
+
+test("production readiness contract covers tenancy and payment boundaries", () => {
+  const check = read("scripts/production-readiness-check.js");
+  for (const file of ["middleware/tenantMiddleware.js", "middleware/resourceTenantGuard.js", "middleware/permissionMiddleware.js", "middleware/mpesaCallbackIntegrity.js", "middleware/resolveMpesaCallbackTenant.js", "tenancy/tenantPlugin.js", "services/tenantSubscriptionService.js", "services/etimsService.js"]) {
+    assert.match(check, new RegExp(file.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")));
+  }
+});
+
+test("subscription enforcement supports grace and billing recovery", () => {
+  const middleware = read("middleware/planFeatureMiddleware.js");
+  const service = read("services/tenantSubscriptionService.js");
+  assert.match(middleware, /SUBSCRIPTION_REQUIRED/);
+  assert.match(middleware, /GRACE_DAYS/);
+  assert.match(middleware, /feature === "billing"/);
+  assert.match(service, /SUBSCRIPTION_GRACE_PERIOD_DAYS/);
+  assert.match(service, /status: "past_due"/);
+  assert.match(service, /status: "expired"/);
+});
+
+test("production evidence gates are explicit", () => {
+  const check = read("scripts/production-readiness-check.js");
+  const checklist = read("../docs/PRODUCTION_GO_LIVE_CHECKLIST.md");
+  for (const key of ["PRODUCTION_PAYMENT_VERIFIED", "PRODUCTION_ETIMS_VERIFIED", "PRODUCTION_WEBHOOKS_VERIFIED", "PRODUCTION_BACKUP_VERIFIED", "PRODUCTION_RESTORE_TESTED", "PRODUCTION_MONITORING_VERIFIED"]) {
+    assert.match(check, new RegExp(key));
+    assert.match(checklist, new RegExp(key));
+  }
+});
+
+test("CI validates server, live tenant isolation, and client production build", () => {
+  const workflow = read("../.github/workflows/ci.yml");
+  assert.match(workflow, /npm run check:all/);
+  assert.match(workflow, /npm run check:multitenancy:live/);
+  assert.match(workflow, /npm run lint/);
+  assert.match(workflow, /npm run build/);
+});
