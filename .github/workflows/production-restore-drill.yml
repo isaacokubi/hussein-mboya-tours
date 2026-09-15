@@ -7,11 +7,6 @@ on:
         description: GitHub Actions run ID containing the encrypted backup artifact
         required: true
         type: string
-      restore_uri_secret:
-        description: Name of the GitHub secret containing a non-production MongoDB restore URI
-        required: false
-        default: MONGODB_RESTORE_URI
-        type: string
 
 permissions:
   actions: read
@@ -23,6 +18,24 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      - name: Validate backup run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ inputs.backup_run_id }}
+        run: |
+          set -euo pipefail
+          test "$RUN_ID" -gt 0 || { echo "backup_run_id must be a positive GitHub Actions run ID."; exit 1; }
+          run_json="$(gh run view "$RUN_ID" --repo "$GITHUB_REPOSITORY" --json workflowName,status,conclusion,event)"
+          echo "$run_json"
+          python - <<'PY' "$run_json"
+import json, sys
+run = json.loads(sys.argv[1])
+if run.get("workflowName") != "Production MongoDB Backup":
+    raise SystemExit(f"Run {run.get('workflowName')!r} is not the production backup workflow.")
+if run.get("status") != "completed" or run.get("conclusion") != "success":
+    raise SystemExit(f"Backup run is not a successful completed run: {run}")
+PY
+
       - name: Download backup artifact
         env:
           GH_TOKEN: ${{ github.token }}
@@ -31,6 +44,8 @@ jobs:
           set -euo pipefail
           mkdir -p restore-artifact
           gh run download "$RUN_ID" --repo "$GITHUB_REPOSITORY" --pattern 'production-mongodb-backup-*' --dir restore-artifact
+          archive_count="$(find restore-artifact -name '*.archive.gz.enc' -type f | wc -l)"
+          test "$archive_count" -eq 1 || { echo "Expected exactly one encrypted backup archive; found $archive_count."; exit 1; }
 
       - name: Validate restore secrets
         env:
@@ -41,15 +56,22 @@ jobs:
           test -n "${BACKUP_ENCRYPTION_PASSPHRASE:-}" || { echo "BACKUP_ENCRYPTION_PASSPHRASE is required."; exit 1; }
           test -n "${MONGODB_RESTORE_URI:-}" || { echo "MONGODB_RESTORE_URI is required and must point to a non-production restore target."; exit 1; }
 
-      - name: Restore and validate database
+      - name: Restore backup
         env:
           BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
           MONGODB_RESTORE_URI: ${{ secrets.MONGODB_RESTORE_URI }}
         run: |
           set -euo pipefail
           archive="$(find restore-artifact -name '*.archive.gz.enc' -type f | head -n 1)"
-          test -n "$archive"
           openssl enc -d -aes-256-cbc -pbkdf2 -in "$archive" -pass env:BACKUP_ENCRYPTION_PASSPHRASE \
             | docker run --rm -i -e MONGODB_RESTORE_URI="$MONGODB_RESTORE_URI" mongo:8 \
               sh -lc 'cat > /tmp/restore.archive.gz && mongorestore --uri="$MONGODB_RESTORE_URI" --archive=/tmp/restore.archive.gz --gzip --drop'
-          echo "Restore drill completed against the configured non-production target."
+
+      - name: Validate restored database
+        env:
+          MONGODB_RESTORE_URI: ${{ secrets.MONGODB_RESTORE_URI }}
+        run: |
+          set -euo pipefail
+          docker run --rm -e MONGODB_RESTORE_URI="$MONGODB_RESTORE_URI" mongo:8 \
+            sh -lc 'mongosh "$MONGODB_RESTORE_URI" --quiet --eval '\''const names=db.getCollectionNames(); if (!names.length) throw new Error("Restore produced no collections"); printjson({database:db.getName(), collectionCount:names.length, collections:names.slice(0,20)}); if (!names.includes("tenants") && !names.includes("users")) throw new Error("Restore is missing expected application collections (tenants/users)");'\'''
+          echo "Restore drill completed and restored database structure was validated."
