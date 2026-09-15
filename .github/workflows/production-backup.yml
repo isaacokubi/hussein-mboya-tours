@@ -1,0 +1,62 @@
+name: Production MongoDB Backup
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 2 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    name: Encrypted MongoDB backup
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Validate backup secrets
+        env:
+          MONGODB_BACKUP_URI: ${{ secrets.MONGODB_BACKUP_URI }}
+          BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          test -n "${MONGODB_BACKUP_URI:-}" || { echo "MONGODB_BACKUP_URI is required."; exit 1; }
+          test -n "${BACKUP_ENCRYPTION_PASSPHRASE:-}" || { echo "BACKUP_ENCRYPTION_PASSPHRASE is required."; exit 1; }
+
+      - name: Create encrypted database archive
+        env:
+          MONGODB_BACKUP_URI: ${{ secrets.MONGODB_BACKUP_URI }}
+          BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          mkdir -p backup
+          stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+          archive="backup/hussein-mboya-${stamp}.archive.gz.enc"
+          docker run --rm \
+            -e MONGODB_BACKUP_URI="$MONGODB_BACKUP_URI" \
+            -v "$PWD/backup:/backup" \
+            mongo:8 \
+            sh -lc 'mongodump --uri="$MONGODB_BACKUP_URI" --archive --gzip > /tmp/backup.archive.gz && cat /tmp/backup.archive.gz' \
+            | openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:BACKUP_ENCRYPTION_PASSPHRASE \
+            > "$archive"
+          sha256sum "$archive" > "$archive.sha256"
+          printf '%s\n' "$archive" > backup/latest.txt
+        env:
+          BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
+
+      - name: Upload encrypted backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-mongodb-backup-${{ github.run_id }}
+          path: backup/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Verify encrypted archive can be decrypted
+        env:
+          BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          archive="$(cat backup/latest.txt)"
+          openssl enc -d -aes-256-cbc -pbkdf2 -in "$archive" -pass env:BACKUP_ENCRYPTION_PASSPHRASE | gzip -t
+          echo "Encrypted backup integrity verification passed."
