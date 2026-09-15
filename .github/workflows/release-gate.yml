@@ -90,9 +90,9 @@ jobs:
         run: |
           test -f README.md
           test -f docs/PRODUCTION_READINESS.md
-          grep -q 'Release gate run: **34942492468**' README.md
-          grep -q 'Verified application commit: **0b00897efa85ab8e4097755670091d2abaa63285**' README.md
-          grep -q 'Baseline: PASSED' docs/PRODUCTION_READINESS.md
+          grep -Fq 'Release gate run: **34942492468**' README.md
+          grep -Fq 'Verified application commit: **0b00897efa85ab8e4097755670091d2abaa63285**' README.md
+          grep -Fq 'Baseline: PASSED' docs/PRODUCTION_READINESS.md
           echo "Existing production-readiness baseline is recorded; continue testing from this baseline."
           echo "Baseline release gate: 34942492468"
           echo "Baseline application commit: 0b00897efa85ab8e4097755670091d2abaa63285"
