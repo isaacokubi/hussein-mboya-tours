@@ -20,6 +20,9 @@ const FEATURE_ROUTES = [
   [/^\/custom-tour-requests\/admin(?:\/|$)/, "custom_tours"],
 ];
 
+const DAY_MS = 86400000;
+const GRACE_DAYS = Math.max(0, Math.min(Number(process.env.SUBSCRIPTION_GRACE_PERIOD_DAYS || 3), 30));
+
 export const resolveFeatureForPath = (path, search = "") => {
   const normalized = String(path || "").split("?")[0].replace(/^\/api/, "") || "/";
   if (/^\/admin\/hospitality(?:\/|$)/.test(normalized)) {
@@ -45,12 +48,40 @@ export const enforcePlanFeature = async (req, res, next) => {
     if (!feature) return next();
     const tenantId = req.tenantId || req.user?.tenantId;
     if (!tenantId) return next();
-    const { plan, features } = await getPlanFeaturesForTenant(tenantId);
-    if (features.includes(feature)) {
-      req.tenantPlan = plan;
-      req.tenantFeatures = features;
-      return next();
+
+    const organization = await Organization.findById(tenantId).select("status subscription.plan subscription.trialEndsAt subscription.renewsAt").lean();
+    if (!organization) return res.status(403).json({ success: false, code: "TENANT_NOT_FOUND", message: "The company workspace could not be resolved." });
+
+    const plan = String(organization.subscription?.plan || "starter").toLowerCase();
+    const now = Date.now();
+    const trialEndsAt = organization.subscription?.trialEndsAt ? new Date(organization.subscription.trialEndsAt).getTime() : null;
+    const renewsAt = organization.subscription?.renewsAt ? new Date(organization.subscription.renewsAt).getTime() : null;
+    const graceEndsAt = renewsAt ? renewsAt + GRACE_DAYS * DAY_MS : null;
+    const billingFeature = feature === "billing";
+    const trialExpired = organization.status === "trial" && trialEndsAt && now > trialEndsAt;
+    const paidExpired = organization.status === "active" && renewsAt && now > renewsAt;
+    const withinGrace = paidExpired && graceEndsAt && now <= graceEndsAt;
+    const hardSuspended = ["suspended", "cancelled"].includes(String(organization.status || "").toLowerCase());
+
+    // Billing remains available after expiry so a tenant can self-recover.
+    if (!billingFeature && (hardSuspended || trialExpired || (paidExpired && !withinGrace))) {
+      return res.status(402).json({
+        success: false,
+        code: "SUBSCRIPTION_REQUIRED",
+        message: "This workspace subscription has expired. Open Billing to renew the subscription and restore access.",
+        plan,
+        status: organization.status,
+        renewsAt: organization.subscription?.renewsAt || null,
+        trialEndsAt: organization.subscription?.trialEndsAt || null,
+      });
     }
+
+    const features = await getTenantPlanFeatures(plan);
+    req.tenantPlan = plan;
+    req.tenantFeatures = features;
+    req.subscriptionState = withinGrace ? "grace" : trialExpired ? "expired" : hardSuspended ? "suspended" : "active";
+
+    if (features.includes(feature)) return next();
     return res.status(403).json({ success: false, code: "PLAN_FEATURE_LOCKED", message: `The ${feature.replace(/_/g, " ")} feature is not included in the ${plan} plan. Upgrade the workspace subscription to unlock it.`, feature, plan });
   } catch (error) {
     console.error("Plan feature middleware error:", error);
