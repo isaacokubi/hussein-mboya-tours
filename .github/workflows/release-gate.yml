@@ -90,12 +90,12 @@ jobs:
         run: |
           test -f README.md
           test -f docs/PRODUCTION_READINESS.md
-          grep -q 'Release gate run: **34940798854**' README.md
-          grep -q 'Verified commit: **9fee53c1ed8d6ce95cf4a9177d719666d4f8ad0c**' README.md
+          grep -q 'Release gate run: **34942492468**' README.md
+          grep -q 'Verified application commit: **0b00897efa85ab8e4097755670091d2abaa63285**' README.md
           grep -q 'Baseline: PASSED' docs/PRODUCTION_READINESS.md
           echo "Existing production-readiness baseline is recorded; continue testing from this baseline."
-          echo "Baseline release gate: 34940798854"
-          echo "Baseline verified commit: 9fee53c1ed8d6ce95cf4a9177d719666d4f8ad0c"
+          echo "Baseline release gate: 34942492468"
+          echo "Baseline application commit: 0b00897efa85ab8e4097755670091d2abaa63285"
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
