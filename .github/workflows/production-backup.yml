@@ -34,15 +34,12 @@ jobs:
           archive="backup/hussein-mboya-${stamp}.archive.gz.enc"
           docker run --rm \
             -e MONGODB_BACKUP_URI="$MONGODB_BACKUP_URI" \
-            -v "$PWD/backup:/backup" \
             mongo:8 \
-            sh -lc 'mongodump --uri="$MONGODB_BACKUP_URI" --archive --gzip > /tmp/backup.archive.gz && cat /tmp/backup.archive.gz' \
+            sh -lc 'mongodump --uri="$MONGODB_BACKUP_URI" --archive --gzip' \
             | openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:BACKUP_ENCRYPTION_PASSPHRASE \
             > "$archive"
           sha256sum "$archive" > "$archive.sha256"
           printf '%s\n' "$archive" > backup/latest.txt
-        env:
-          BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
 
       - name: Upload encrypted backup artifact
         uses: actions/upload-artifact@v4
