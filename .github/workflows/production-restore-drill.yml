@@ -99,16 +99,13 @@ jobs:
               esac
               URI_REST="${MONGODB_RESTORE_URI#*://}"
               AUTHORITY="${URI_REST%%/*}"
-              if [ "$AUTHORITY" = "$URI_REST" ]; then
-                RESTORE_SERVER_URI="$MONGODB_RESTORE_URI"
-              else
-                RESTORE_SERVER_URI="${MONGODB_RESTORE_URI%%/*}"
-                RESTORE_SERVER_URI="${RESTORE_SERVER_URI}"
-                case "$RESTORE_SERVER_URI" in
-                  mongodb://*|mongodb+srv://*) ;;
-                  *) echo "Could not derive MongoDB server URI safely."; exit 1 ;;
-                esac
+              SCHEME="${MONGODB_RESTORE_URI%%://*}"
+              if [ "$SCHEME" != "mongodb" ] && [ "$SCHEME" != "mongodb+srv" ]; then
+                echo "Unsupported MongoDB URI scheme."
+                exit 1
               fi
+              RESTORE_SERVER_URI="${SCHEME}://${AUTHORITY}"
+              echo "Using MongoDB server URI with database selection removed."
               mongorestore --uri="$RESTORE_SERVER_URI" --archive=/tmp/restore.archive.gz --gzip --drop --nsFrom="husseindb.*" --nsTo="backups.*" --verbose
             '
 
