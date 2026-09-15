@@ -83,7 +83,7 @@ jobs:
             < "$decrypted_archive" \
             2>&1 | tee backup/dry-run.log
 
-          grep -Eq '\.(tenants|users)([[:space:]]|$)' backup/dry-run.log || {
+          grep -Eq 'husseindb\\.(tenants|users)([^[:alnum:]_]|$)' backup/dry-run.log || {
             echo "Backup archive does not contain expected application collections (tenants/users)."
             echo "The configured MONGODB_BACKUP_URI may point to the wrong database."
             exit 1
