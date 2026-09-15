@@ -4,11 +4,11 @@ Kenya-focused multi-tenant tour-operator platform.
 
 ## Production test status
 
-**Current repository HEAD:** `c44db929ea9660572dd3177a0ef8b8a23aee29d8`
+**Current repository HEAD:** `f0203925` — Add production monitoring and alert verification.
 
-The current `main` branch has a successful CI release baseline and successful production endpoint smoke test. The first production MongoDB backup artifact was encrypted and integrity-verified, but the subsequent isolated restore drill proved that backup run `34993023892` contained the wrong database (`backups.backup`) rather than the application database. The backup workflow has now been hardened to reject archives that do not contain expected application collections before an artifact is uploaded.
+The repository has completed the current Step 1 production infrastructure/disaster-recovery/monitoring acceptance and has begun Step 2 Kenya financial acceptance using the **M-Pesa sandbox**. External production deployment currency is still not certified because the Render and Vercel integrations were intentionally disconnected from GitHub.
 
-### Verified automated tests
+### Verified automated and live tests
 
 | Test | Result | Evidence |
 |---|---|---|
@@ -17,61 +17,73 @@ The current `main` branch has a successful CI release baseline and successful pr
 | Live tenant-isolation regression | PASS | CI run `34990056154` |
 | Client ESLint | PASS | CI run `34990056154` |
 | Client production build | PASS | CI run `34990056154` |
-| Security and tenant-integrity release gate | PASS | Release gate previously certified; current CI remains green |
-| Kenya production-readiness checks | PASS | Release gate previously certified; current CI remains green |
-| Final release gate | PASS | Release gate previously certified; current CI remains green |
-| Production API health endpoint | PASS | Live check: HTTP 200, healthy, database connected |
-| Production API root endpoint | PASS | Live check: HTTP 200, expected API message |
-| Production website endpoint | PASS | Live check: HTTP 200 from Vercel |
+| Security and tenant-integrity release gate | PASS | Release gate `34942492468` |
+| Kenya production-readiness release phase | PASS | Release gate `34942492468` |
+| Final release gate | PASS | Release gate `34942492468` |
+| Production API `/api/health` | PASS | Live HTTP 200; healthy; database connected |
+| Production API `/` | PASS | Live HTTP 200; expected API success response |
+| Production website | PASS | Live HTTP 200 from Vercel |
 | Production smoke workflow | PASS | Run `34990056067` |
-| Backup encryption/upload/integrity | PASS | Run `34993023892`; encrypted artifact uploaded and decryption/gzip verification passed |
-| Backup application-data validation | FAIL | Restore drill showed only `backups.backup`; workflow now rejects archives without `tenants`/`users` |
-| Isolated MongoDB restore drill | FAIL | Run `34995112932`; restore completed but validation found only `backups.backup` |
+| Corrected encrypted MongoDB backup | PASS | Run `34998687985`; encrypted artifact, checksum and isolated application-data validation |
+| Isolated MongoDB restore drill | PASS | Run `35003760520`; restore and restored-database validation passed |
+| Production monitoring normal-path test | PASS | Run `35004893911`; API and website checks passed |
+| Production monitoring intentional alert test | PASS | Run `35005078875`; simulated failure created alert issue #135 |
+| Customer authentication for payment acceptance | PASS | Local customer login succeeded; no secret/token recorded |
+| Sandbox booking creation | PASS | Booking `6aa98e90589f95fc1fad1276`; KES 690; pending payment |
+| M-Pesa sandbox STK initiation | PASS | Checkout request `ws_CO_150920262132451700100001`; provider response code `0` |
 
-### Live tenant-isolation checks
+### M-Pesa sandbox acceptance status
 
-The following tenant-context behavior has been verified against the production API:
+The M-Pesa sandbox STK request for booking `6aa98e90589f95fc1fad1276` was accepted by the provider for **KES 690**. The application returned `success: true`, provider response code `0`, and `Success. Request accepted for processing`.
 
-- Request without tenant context: safely rejected with HTTP 400 and `Tenant context is required`.
-- Amani Trails Safaris tenant context: HTTP 200.
-- Savanna Crown Safaris tenant context: HTTP 200.
-- Coastal Horizon Adventures tenant context: HTTP 200.
-- Production API health reports MongoDB as `connected`.
+This proves **STK initiation**, not payment completion. The callback currently points to the existing Render URL, while Render is intentionally disconnected and is not running the latest repository commit. Therefore the following remain pending until callback delivery is captured against an approved test target:
 
-Tenant isolation remains a release-blocking control: production must never silently fall back to a single tenant when tenant context is missing.
+- STK callback receipt and callback integrity validation.
+- Payment completion and booking status transition.
+- Invoice/payment journal and reconciliation verification.
+- Duplicate callback/idempotency acceptance.
+- Failed/expired M-Pesa acceptance.
 
-### Production backup evidence
+Sandbox evidence must not be represented as live production payment acceptance.
 
-Backup run `34993023892` demonstrated that encryption, artifact upload and cryptographic/gzip integrity checks work, but it **must not be treated as a valid application backup**. The subsequent restore drill `34995112932` restored database `backups` with a single collection named `backup`, so the required application data was absent.
+### Production monitoring evidence
 
-The backup workflow has been hardened in `c44db929ea9660572dd3177a0ef8b8a23aee29d8` to decrypt the archive temporarily in the runner, perform a `mongorestore --dryRun --verbose` inspection, require expected application collections such as `tenants` or `users`, and delete the temporary plaintext archive before artifact upload.
+Normal monitoring run `35004893911` passed the production API and website checks. The API reported healthy/connected status; observed API latency was approximately 821 ms and website latency approximately 278 ms.
 
-The `MONGODB_BACKUP_URI` repository secret must point to the actual production application database. Do not record the URI value in documentation or issue comments. After correcting the secret, a new backup run must pass application-data validation before the restore drill is repeated.
+Intentional failure run `35005078875` deliberately exercised the alert path without modifying production. The run failed as designed and created GitHub issue **#135 — Production monitoring alert**, proving the monitoring alert path.
+
+### Backup and restore evidence
+
+The earlier backup/restore investigation found a bad source database and the workflow was hardened to reject archives without expected application collections. The corrected backup run `34998687985` then passed encrypted backup creation and isolated application-data validation. The artifact was retained with its checksum and the restore drill `35003760520` successfully restored and validated the application database in an isolated target.
+
+The backup evidence includes application collections such as users, bookings, tours, payments, invoices, journal entries, security logs, notifications, eTIMS submissions/credentials and other operational data. No backup secret or connection string is documented here.
+
+### Production deployment currency
+
+Live production smoke checks are healthy, but the production API reported deployed version `73a5127695b2b8461c50ec034420af252881b5e6`, which is older than current repository `f0203925`. Render and Vercel were intentionally disconnected from GitHub and must not be reconnected unless explicitly requested. Therefore **deployment currency is NOT VERIFIED** against current `main`.
 
 ### Tests still pending external evidence
 
-These are **not marked PASS** merely because automated CI is green:
+These are not marked PASS without the required evidence:
 
-- Correct production MongoDB backup containing application data.
-- Successful isolated MongoDB restore of the corrected backup.
-- Production monitoring and alert firing test.
-- Real M-Pesa STK → callback → booking → reconciliation transaction.
-- Duplicate M-Pesa callback/idempotency acceptance using provider-supported evidence.
-- Failed/expired M-Pesa acceptance.
-- Live KRA/eTIMS submission and receipt/control-number acceptance.
-- Full manual desktop/mobile browser acceptance across customer, admin, finance, tour manager, driver and SuperAdmin flows.
+- M-Pesa sandbox callback → payment completion → booking update → accounting/reconciliation.
+- Duplicate M-Pesa callback/idempotency replay.
+- Failed/expired M-Pesa behavior.
+- Live KRA/eTIMS production submission and receipt/control-number evidence.
+- Full manual desktop/mobile browser acceptance across customer, Admin, Finance, Tour Manager, Driver and SuperAdmin flows.
+- Deployment of the intended current `main` release to production.
 
-A test is recorded as **PASS** only when its required evidence exists. External integrations may be recorded as **BLOCKED** when credentials/onboarding or provider access is unavailable; they must not be represented as successful based on code inspection alone.
+A test is recorded as **PASS** only when its required evidence exists. Provider/infrastructure limitations may be recorded as **BLOCKED** or **NOT VERIFIED**; they must not be represented as successful based on code inspection alone.
 
 ## Production readiness baseline
 
-The repository's automated security, multi-tenancy, subscription lifecycle, financial/compliance infrastructure, production safeguards, and frontend release checks have a passing baseline. See [`docs/PRODUCTION_READINESS.md`](docs/PRODUCTION_READINESS.md) for the authoritative test matrix and evidence history.
+The repository's automated security, multi-tenancy, subscription lifecycle, financial/compliance infrastructure, production safeguards, monitoring, backup/restore validation, and frontend release checks have a passing baseline. See [`docs/PRODUCTION_READINESS.md`](docs/PRODUCTION_READINESS.md) for the authoritative readiness matrix and [`docs/TEST_EVIDENCE.md`](docs/TEST_EVIDENCE.md) for the chronological evidence register.
 
 ## Current implementation scope
 
 The platform includes tenant-scoped bookings, customers, tours, payments, invoices, Kenyan tax configuration, eTIMS integration architecture, supplier/procurement workflows, profitability, corporate controls, external-website booking capture, developer API/webhooks, and operational foundations.
 
-Subscription lifecycle enforcement, tenant isolation safeguards, financial reconciliation infrastructure, security controls, production error handling, health/observability infrastructure, and release-gate automation are part of the current production-readiness baseline.
+Subscription lifecycle enforcement, tenant isolation safeguards, financial reconciliation infrastructure, security controls, production error handling, health/observability infrastructure, backup/restore safeguards, monitoring and release-gate automation are part of the current production-readiness baseline.
 
 Optional enterprise integrations such as GDS/flight booking, hotel inventory APIs, travel insurance, enterprise SSO and advanced bank integrations are not prerequisites for the core Kenyan tour-operator product.
 
