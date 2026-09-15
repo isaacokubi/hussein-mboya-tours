@@ -47,18 +47,20 @@ jobs:
         run: |
           set -euo pipefail
           archive="$(cat backup/latest.txt)"
+          decrypted_archive="/tmp/production.archive.gz"
           openssl enc -d -aes-256-cbc -pbkdf2 -in "$archive" -pass env:BACKUP_ENCRYPTION_PASSPHRASE \
-            > backup/production.archive.gz
-          gzip -t backup/production.archive.gz
+            > "$decrypted_archive"
+          gzip -t "$decrypted_archive"
           docker run --rm -i mongo:8 \
             mongorestore --archive --gzip --dryRun --verbose \
-            < backup/production.archive.gz \
+            < "$decrypted_archive" \
             2>&1 | tee backup/dry-run.log
           grep -Eq '\.(tenants|users)([[:space:]]|$)' backup/dry-run.log || {
             echo "Backup archive does not contain expected application collections (tenants/users)."
             echo "The configured MONGODB_BACKUP_URI may point to the wrong database."
             exit 1
           }
+          rm -f "$decrypted_archive"
           echo "Backup archive contains expected application collections."
 
       - name: Upload encrypted backup artifact
