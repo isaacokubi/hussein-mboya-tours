@@ -48,19 +48,47 @@ jobs:
           set -euo pipefail
           archive="$(cat backup/latest.txt)"
           decrypted_archive="/tmp/production.archive.gz"
+          network="backup-validation-network"
+          container="backup-validation-mongo"
+
+          cleanup() {
+            docker rm -f "$container" >/dev/null 2>&1 || true
+            docker network rm "$network" >/dev/null 2>&1 || true
+            rm -f "$decrypted_archive"
+          }
+          trap cleanup EXIT
+
           openssl enc -d -aes-256-cbc -pbkdf2 -in "$archive" -pass env:BACKUP_ENCRYPTION_PASSPHRASE \
             > "$decrypted_archive"
           gzip -t "$decrypted_archive"
-          docker run --rm -i mongo:8 \
-            mongorestore --archive --gzip --dryRun --verbose \
+
+          docker network create "$network" >/dev/null
+          docker run -d --name "$container" --network "$network" mongo:8 --bind_ip_all >/dev/null
+
+          ready=false
+          for attempt in $(seq 1 30); do
+            if docker exec "$container" mongosh --quiet --eval 'db.adminCommand({ ping: 1 }).ok' 2>/dev/null | grep -qx '1'; then
+              ready=true
+              break
+            fi
+            sleep 2
+          done
+          if [ "$ready" != "true" ]; then
+            echo "Temporary MongoDB validation server did not become ready."
+            exit 1
+          fi
+
+          docker run --rm -i --network "$network" mongo:8 \
+            mongorestore --host "$container" --archive --gzip --dryRun --verbose \
             < "$decrypted_archive" \
             2>&1 | tee backup/dry-run.log
+
           grep -Eq '\.(tenants|users)([[:space:]]|$)' backup/dry-run.log || {
             echo "Backup archive does not contain expected application collections (tenants/users)."
             echo "The configured MONGODB_BACKUP_URI may point to the wrong database."
             exit 1
           }
-          rm -f "$decrypted_archive"
+
           echo "Backup archive contains expected application collections."
 
       - name: Upload encrypted backup artifact
