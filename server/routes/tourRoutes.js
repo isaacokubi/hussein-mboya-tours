@@ -54,6 +54,12 @@ router.get("/search", searchTours);
 // GET /api/tours/slug/:slug
 router.get("/slug/:slug", getTourBySlug);
 
+// TOUR AVAILABILITY
+// GET /api/tours/:id/availability
+// Keep this read-only availability endpoint public, as it was before the
+// protected tour-manager section below.
+router.get("/:id/availability", getTourAvailability);
+
 /*
 |--------------------------------------------------------------------------
 | PROTECTED TOUR MANAGER ROUTES
@@ -81,10 +87,6 @@ router.post("/", upload.array("images", 10), createTour);
 | TOUR AVAILABILITY MANAGEMENT
 |--------------------------------------------------------------------------
 */
-
-// GET TOUR AVAILABILITY
-// GET /api/tours/:id/availability
-router.get("/:id/availability", getTourAvailability);
 
 // PATCH /api/tours/:id/availability
 router.patch("/:id/availability", updateTourAvailability);
