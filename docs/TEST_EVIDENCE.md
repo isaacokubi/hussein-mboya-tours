@@ -4,22 +4,16 @@ This file is the chronological evidence register for tests that have actually pa
 
 ## 2026-09-15 — Current verification
 
-### CI release checks — PASS
+### Repository / CI baseline — PASS
 
-GitHub Actions CI run `34990056154` completed successfully for `main`.
-
-Passed jobs:
-
-- **Server production checks**
-  - dependency installation
-  - `npm run check:all`
-  - `npm test`
-- **Live tenant isolation regression**
-  - MongoDB service health
-  - `npm run check:multitenancy:live`
-- **Client lint and production build**
-  - `npm run lint`
-  - `npm run build`
+- Current repository head: `f0203925` — Add production monitoring and alert verification.
+- CI release checks run `34990056154` — PASS.
+- Server production checks (`npm run check:all`) — PASS.
+- Backend automated tests (`npm test`) — PASS.
+- Live tenant-isolation regression (`npm run check:multitenancy:live`) — PASS.
+- Client ESLint — PASS.
+- Client production build — PASS.
+- Previously certified security/tenant-integrity, Kenya readiness and final release-gate phases — PASS in release gate `34942492468`.
 
 ### Production endpoint smoke — PASS
 
@@ -28,108 +22,132 @@ Production smoke run `34990056067` completed successfully.
 Verified:
 
 - Production API `/api/health` returned HTTP 200.
-- Health response reported `success: true`, `status: healthy`, and `database: connected`.
-- Production API `/` returned HTTP 200 and the expected Travel API success message.
+- Health reported `success: true`, `status: healthy`, and `database: connected`.
+- Production API `/` returned HTTP 200 with the expected Travel API success response.
 - Production website returned HTTP 200.
 
-The production API reported deployed version `73a5127695b2b8461c50ec034420af252881b5e6` during this test. Current repository `main` is now `c44db929ea9660572dd3177a0ef8b8a23aee29d8`; therefore this smoke test proves the deployed endpoints were healthy, but does **not** prove that the latest `main` commit is deployed.
+The live API reported deployed version `73a5127695b2b8461c50ec034420af252881b5e6`. Current repository head is `f0203925`, so endpoint health is PASS but deployment currency against current `main` is **NOT VERIFIED**. Render and Vercel were intentionally disconnected from GitHub.
 
-### Production MongoDB backup — encryption/integrity PASS, application-data validation FAIL
+### Tenant isolation — PASS
 
-Backup workflow run `34993023892` completed successfully under the original validation rules.
+Live production tenant-context checks established:
 
-Evidence:
-
-- Encrypted archive generated.
-- AES-256-CBC with PBKDF2 encryption used by the workflow.
-- SHA-256 checksum generated.
-- Artifact upload completed.
-- Artifact name: `production-mongodb-backup-34993023892.zip`.
-- Artifact ID: `10405803526`.
-- Artifact size: `90415` bytes.
-- Artifact SHA-256: `131828e2f91a2ff12e205a3a35de4133584b70cfab30561c286b277258dfd281`.
-- Encrypted archive was decrypted and passed gzip integrity verification.
-
-However, these checks did not prove that the archive contained the application database.
-
-### Production MongoDB restore drill — FAIL
-
-Restore drill run `34995112932` used backup run `34993023892` and completed the restore operation into the isolated target, but the final database-content validation failed.
-
-Evidence from job `104469287780`:
-
-- Validate backup run — PASS.
-- Download backup artifact — PASS.
-- Validate restore secrets — PASS.
-- Validate isolated restore target — PASS.
-- Restore backup — PASS.
-- Validate restored database — FAIL.
-
-The restored target reported:
-
-- database: `backups`
-- collection count: `1`
-- collection: `backup`
-
-The validator correctly rejected this because expected application collections such as `tenants` or `users` were absent.
-
-**Conclusion:** the backup/restore pipeline is not yet accepted as a production application backup. The evidence strongly indicates that `MONGODB_BACKUP_URI` is pointing to the wrong database/source. No secret value is recorded here.
-
-### Backup workflow hardening — implemented
-
-Commit `c44db929ea9660572dd3177a0ef8b8a23aee29d8` hardened `.github/workflows/production-backup.yml` so a future backup cannot be uploaded as a successful production backup unless the decrypted archive passes `mongorestore --dryRun --verbose` inspection and contains expected application collections (`tenants` or `users`). The temporary decrypted archive is written outside the artifact directory and removed before artifact upload.
-
-After `MONGODB_BACKUP_URI` is corrected to the actual production application database, a **new backup run** must pass this validation before the restore drill is repeated.
-
-### Production tenant-context checks — PASS
-
-Live production API checks established:
-
-- No tenant context → HTTP 400, `Tenant context is required`.
+- Missing tenant context → HTTP 400, `Tenant context is required`.
 - Amani Trails Safaris tenant context → HTTP 200.
 - Savanna Crown Safaris tenant context → HTTP 200.
 - Coastal Horizon Adventures tenant context → HTTP 200.
 
-This confirms the tested tenant resolution behavior and that missing tenant context does not silently select a tenant.
+Missing tenant context does not silently select a default tenant for the tested endpoint.
 
-## Previously certified release baseline
+### MongoDB backup investigation and correction — PASS
 
-Release gate run `34942492468` certified the application baseline at commit `0b00897efa85ab8e4097755670091d2abaa63285`.
+An earlier backup run `34993023892` proved encryption/upload/decryption/gzip integrity but failed application-data validation during restore because it contained `backups.backup` rather than the application database. Restore run `34995112932` correctly rejected that content. The workflow was then hardened to validate application collections before accepting/uploading a production backup.
 
-Passed phases and checks included:
+Corrected backup run `34998687985` subsequently passed the hardened application-data validation. Evidence recorded for that run:
 
-- Security and tenant integrity.
-- Kenya production readiness.
-- Final release gate.
-- Backend test suite.
-- Production/model/service/controller checks.
-- Tenant-isolation and production-readiness contract checks.
-- Kenya compliance/payment module verification.
-- Client lint.
-- Client production build.
-- Release configuration checks.
-- Committed environment-secret checks.
+- Encrypted MongoDB backup completed.
+- Artifact: `production-mongodb-backup-34998687985.zip`.
+- Artifact size: approximately 92,554 bytes.
+- SHA-256: `fe8a488e161c91d222098235d66aad9ff19733bc1bc3d8829727d5a76b67a08`.
+- Retention: through 2026-10-15.
+- Isolated validation discovered expected application collections including `husseindb.users` and other booking, payment, accounting, finance, security, notification, eTIMS, vehicle, hotel and lead data.
 
-Historical application hardening references:
+No backup URI, passphrase or other secret is recorded here.
+
+### Isolated MongoDB restore drill — PASS
+
+Restore run `35003760520` completed successfully using the corrected backup and an isolated target.
+
+Verified:
+
+- Restore target isolation — PASS.
+- Backup restore operation — PASS.
+- Restored database validation — PASS.
+- Application collections were present after restore.
+
+This supersedes the earlier failed restore evidence as the current accepted backup/restore result; the earlier failure remains documented as a historical diagnostic event.
+
+### Production monitoring — PASS
+
+Normal monitoring run `35004893911` passed:
+
+- Production API health check.
+- Database-connected health contract.
+- Production website HTTP check.
+- API latency observed at approximately 821 ms.
+- Website latency observed at approximately 278 ms.
+
+Intentional alert-path run `35005078875` was then executed with `simulate_failure=true`. It failed **as designed**, without modifying production, and created GitHub issue **#135 — Production monitoring alert**. This verifies the monitoring failure/alert path. The intentional failure is not treated as an application defect.
+
+### Customer authentication and booking acceptance — PASS
+
+Local sandbox acceptance used an active customer account. Authentication succeeded without exposing the JWT or password.
+
+A customer booking was created for the available **Amboseli Wildlife Escape** tour:
+
+- Booking ID: `6aa98e90589f95fc1fad1276`.
+- Travel date: 2026-09-17.
+- Payment method: MPESA.
+- Total: KES 690.
+- Deposit: KES 0.
+- Balance: KES 690.
+- Booking status: `pending`.
+- Payment status: `pending`.
+
+The booking creation response was HTTP 201/successful and the stored pickup time correctly represented the requested 07:00 EAT pickup.
+
+### M-Pesa sandbox STK initiation — PASS
+
+M-Pesa configuration was inspected without printing secrets:
+
+- `MPESA_ENVIRONMENT=sandbox`.
+- Sandbox shortcode `174379` configured.
+- Consumer key configured.
+- Consumer secret configured.
+- Passkey configured.
+- HTTPS callback configured as `https://hussein-mboya-tours.onrender.com/api/mpesa/callback`.
+
+The sandbox STK request was sent to the local backend for booking `6aa98e90589f95fc1fad1276`:
+
+- Amount: **KES 690**.
+- Phone used: the customer's configured sandbox test phone.
+- Application response: `success: true`.
+- Provider response code: `0`.
+- Provider message: `Success. Request accepted for processing`.
+- Checkout request ID: `ws_CO_150920262132451700100001`.
+- Merchant request ID: recorded by the application but not required for future documentation.
+
+**Acceptance boundary:** this proves that the application successfully authenticated the customer, located the booking, generated and sent a sandbox STK Push, and received provider acceptance. It does **not** prove that the sandbox payment was completed or that the callback updated the booking/accounting records.
+
+The callback currently points to the existing Render deployment, while Render is intentionally disconnected and is not running current `main`. Therefore callback delivery must be captured against an approved public HTTPS test target or an explicitly updated sandbox callback before payment completion is marked PASS.
+
+## Step 2 — Kenya financial/compliance acceptance status
+
+| Test | Status | Evidence / blocker |
+|---|---|---|
+| M-Pesa sandbox STK initiation | PASS | Local booking + provider response code `0` |
+| M-Pesa sandbox callback | PENDING | Callback delivery to approved test target not yet captured |
+| Booking/payment completion after callback | PENDING | Requires successful callback processing |
+| Payment/invoice/accounting reconciliation | PENDING | Requires completed sandbox payment and matching records |
+| Duplicate M-Pesa callback/idempotency | PENDING | Requires callback replay/provider-supported evidence |
+| Failed/expired M-Pesa | PENDING | Requires sandbox/provider-supported failure scenario |
+| Live KRA/eTIMS submission | PENDING | Requires production KRA/eTIMS onboarding, credentials and receipt/control-number evidence |
+| Full desktop/mobile browser acceptance | PENDING | Manual evidence still required across customer, Admin, Finance, Tour Manager, Driver and SuperAdmin |
+| Current-main deployment acceptance | NOT VERIFIED | Production is healthy but reports older deployed version `73a51276` |
+
+Sandbox testing must remain clearly separated from live production payment acceptance.
+
+## Historical release evidence
+
+Release gate `34942492468` certified the application baseline and included security/tenant integrity, Kenya production readiness, final release gate, backend tests, service/controller checks, tenant-isolation checks, compliance/payment module verification, client lint/build, release configuration and committed-secret checks.
+
+Historical hardening references:
 
 - Subscription hardening: `b077f25a698322f1d0f95c804a9ee001f0ee573f`.
 - Production-readiness contract coverage: `088d4b27cc1ce03c4eb9a2923449c3e5c76fe79c`.
 - Calendar lint repair: `46e11bcffe0f2069ef1446bd21a2ad3dc79d3b80`.
 - Temporary lint repair workflow removed: `9fee53c1ed8d6ce95cf4a9177d719666d4f8ad0c`.
-
-## Not yet PASS
-
-The following require live/external evidence and remain pending until actually tested:
-
-1. Correct production MongoDB backup containing application data.
-2. Successful isolated MongoDB restore of the corrected backup.
-3. Production monitoring and alert firing.
-4. Real M-Pesa STK → callback → booking → reconciliation.
-5. Duplicate M-Pesa callback protection.
-6. Failed/expired M-Pesa behavior.
-7. Live KRA/eTIMS submission and receipt/control-number evidence.
-8. Full manual desktop/mobile browser acceptance across customer, Admin, Finance, Tour Manager, Driver and SuperAdmin flows.
-9. Deployment currency proving the intended current `main` release is running on the production hosts.
+- Backup validation hardening and subsequent restore-drill fixes are recorded in repository history before current head `f0203925`.
 
 ## Evidence rules
 
@@ -137,6 +155,6 @@ The following require live/external evidence and remain pending until actually t
 - **FAIL:** test executed and expected behavior was not met.
 - **BLOCKED:** test cannot be executed because an external prerequisite is unavailable; record the prerequisite.
 - **PENDING:** test has not yet been completed.
-- **NOT VERIFIED:** information may be observed but does not prove the requested acceptance criterion.
+- **NOT VERIFIED:** an observation exists but does not prove the requested acceptance criterion.
 
-Never document passwords, secrets, access tokens, private keys or full payment-provider credentials. Record only secret names and whether required configuration is present.
+Never document passwords, secrets, access tokens, private keys, JWTs, MFA PINs, M-Pesa consumer secrets/passkeys or full payment-provider credentials. Record only secret names and whether required configuration is present.
