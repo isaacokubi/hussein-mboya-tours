@@ -1,46 +1,78 @@
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { AlertTriangle, CheckCircle2, Clock3, DollarSign, RefreshCw, ShieldCheck, Users, UserRound, Wallet, CalendarDays } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { fetchAgentDashboard } from "../../api/agentApi";
 
-const money = (value) => `KES ${Number(value || 0).toLocaleString()}`;
-const StatCard = ({ label, value, hint, tone = "blue" }) => (
-  <div className={`agent-stat-card rounded-2xl border p-5 shadow-sm agent-stat-${tone}`}>
-    <p className="text-sm font-semibold text-slate-600">{label}</p>
-    <p className="mt-2 text-2xl font-black text-indigo-950">{value}</p>
-    {hint && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
-  </div>
-);
+const hasValue = (value) => value !== undefined && value !== null && value !== "";
+const numberOrNull = (value) => {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+};
+const money = (value) => {
+  const number = numberOrNull(value);
+  return number === null ? "—" : `KES ${number.toLocaleString("en-KE", { minimumFractionDigits: 0 })}`;
+};
+const displayNumber = (value) => numberOrNull(value) === null ? "—" : numberOrNull(value).toLocaleString("en-KE");
+const customerName = (booking) => {
+  const customer = booking?.customer;
+  if (customer?.name) return customer.name;
+  const full = `${customer?.firstName || ""} ${customer?.lastName || ""}`.trim();
+  return full || booking?.customerSnapshot?.name || booking?.contact?.name || "Customer unavailable";
+};
 const bookingStatus = (booking) => booking?.status || booking?.bookingStatus || "pending";
-const customerName = (booking) => { const c = booking?.customer; if (c?.name) return c.name; const full = `${c?.firstName || ""} ${c?.lastName || ""}`.trim(); return full || booking?.customerSnapshot?.name || booking?.contact?.name || "Customer unavailable"; };
+const formatDate = (value) => {
+  if (!value) return "—";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "—" : date.toLocaleDateString("en-KE", { day: "2-digit", month: "2-digit", year: "numeric" });
+};
+const tone = {
+  indigo: "bg-indigo-50 text-indigo-700 ring-indigo-100",
+  emerald: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+  amber: "bg-amber-50 text-amber-700 ring-amber-100",
+  rose: "bg-rose-50 text-rose-700 ring-rose-100",
+  cyan: "bg-cyan-50 text-cyan-700 ring-cyan-100",
+  violet: "bg-violet-50 text-violet-700 ring-violet-100",
+};
+
+function StatCard({ label, value, hint, icon: Icon, color = "indigo" }) {
+  return <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+    <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-wider text-slate-500">{label}</p><p className="mt-2 text-2xl font-black text-slate-950">{value}</p><p className="mt-1 text-xs text-slate-500">{hint}</p></div><div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ring-1 ${tone[color]}`}><Icon className="h-5 w-5" /></div></div>
+  </article>;
+}
 
 export default function AgentDashboard() {
   const { user } = useAuth();
   const agentKey = user?._id || user?.id || user?.email || "current";
-  const { data: response, isLoading, isError, error, refetch, isFetching } = useQuery({ queryKey: ["agent-dashboard", agentKey], queryFn: fetchAgentDashboard, enabled: Boolean(user), retry: 1, staleTime: 30000, refetchOnMount: "always", refetchOnWindowFocus: true });
-  const payload = response?.data || {};
+  const query = useQuery({ queryKey: ["agent-dashboard", agentKey], queryFn: fetchAgentDashboard, enabled: Boolean(user), retry: 1, staleTime: 30000, refetchOnMount: "always", refetchOnWindowFocus: true });
+  const payload = query.data?.data || query.data || {};
   const stats = payload?.statistics || payload?.stats || {};
   const recentBookings = Array.isArray(payload?.recentBookings) ? payload.recentBookings : Array.isArray(payload?.bookings) ? payload.bookings : [];
-  const agentStatus = String(payload?.agent?.status || "active").toLowerCase();
-  const isApproved = Boolean(payload?.agent?.isApproved);
-  const statusLabel = agentStatus === "active" ? "Active" : agentStatus === "suspended" ? "Suspended" : "Inactive";
-  const statusClass = agentStatus === "active" ? "bg-emerald-100 text-emerald-700" : agentStatus === "suspended" ? "bg-red-100 text-red-700" : "bg-slate-100 text-slate-700";
-  const statusCode = error?.response?.status;
-  if (isLoading) return <div className="p-6 text-slate-600">Loading agent dashboard...</div>;
-  if (isError) return <div className="m-6 rounded-2xl border border-red-200 bg-gradient-to-r from-red-50 to-orange-50 p-5 text-red-700"><p className="font-semibold">Agent dashboard unavailable</p><p className="mt-1 text-sm">{statusCode === 401 ? "Your session has expired. Please sign in again." : statusCode === 403 ? "Your account is not authorized for the agent dashboard." : error?.response?.data?.message || error?.message || "Unable to load the agent dashboard."}</p><div className="mt-4 flex gap-2"><button onClick={() => refetch()} disabled={isFetching} className="rounded-lg bg-gradient-to-r from-red-600 to-orange-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-60">{isFetching ? "Retrying..." : "Retry"}</button>{statusCode === 401 && <a href="/login" className="rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium">Sign in</a>}</div></div>;
+  const agent = payload?.agent || {};
+  const agentStatus = String(agent.status || "unknown").toLowerCase();
+  const isApproved = agent.isApproved === true || agent.approved === true;
+  const statusLabel = agentStatus === "active" ? "Active" : agentStatus === "suspended" ? "Suspended" : agentStatus === "inactive" ? "Inactive" : "Unknown";
+  const statusClass = agentStatus === "active" ? "bg-emerald-100 text-emerald-700" : agentStatus === "suspended" ? "bg-rose-100 text-rose-700" : "bg-slate-100 text-slate-700";
+  const commissionRate = numberOrNull(agent.commissionRate);
+  const statsMap = useMemo(() => ({
+    bookings: displayNumber(stats.bookings),
+    upcoming: displayNumber(stats.upcomingBookings),
+    completed: displayNumber(stats.completedTours),
+    pending: displayNumber(stats.pendingBookings),
+    sales: money(stats.totalSales),
+    commission: money(stats.totalCommission),
+    customers: displayNumber(stats.totalCustomers),
+    guests: displayNumber(stats.totalGuests),
+  }), [stats]);
 
-  return (
-    <section className="agent-dashboard space-y-6 p-4 sm:p-6">
-      <div className="rounded-3xl bg-gradient-to-r from-blue-700 via-indigo-700 to-violet-700 p-5 text-white shadow-xl sm:p-7">
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><h1 className="text-3xl font-black">Agent Dashboard</h1><p className="mt-1 text-sm text-blue-100">{payload?.agent?.companyName || "Agent operations"}</p></div><div className="flex items-center gap-3"><span className={`rounded-full px-3 py-1 text-xs font-bold ${statusClass}`}>{statusLabel}</span><button onClick={() => refetch()} disabled={isFetching} className="rounded-xl border border-white/30 bg-white/15 px-4 py-2 text-sm font-bold text-white backdrop-blur hover:bg-white/25 disabled:opacity-60">{isFetching ? "Refreshing..." : "Refresh"}</button></div></div>
-      </div>
-      {!isApproved && <div className="rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-yellow-50 px-4 py-3 text-sm text-amber-800"><span className="font-semibold">Approval pending:</span> your agent account is active, but it has not yet been approved for agent operations.</div>}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard tone="blue" label="Bookings" value={stats.bookings ?? 0} hint="Active agent bookings" /><StatCard tone="violet" label="Upcoming" value={stats.upcomingBookings ?? 0} hint="Confirmed future trips" /><StatCard tone="green" label="Completed" value={stats.completedTours ?? 0} hint="Completed bookings" /><StatCard tone="amber" label="Pending" value={stats.pendingBookings ?? 0} hint="Awaiting processing" /><StatCard tone="rose" label="Total Sales" value={money(stats.totalSales)} hint="Paid booking sales" /><StatCard tone="indigo" label="Commission" value={money(stats.totalCommission)} hint={`${Number(payload?.agent?.commissionRate ?? 0)}% earned`} /><StatCard tone="cyan" label="Customers" value={stats.totalCustomers ?? 0} hint="Unique non-cancelled customers" /><StatCard tone="orange" label="Guests" value={stats.totalGuests ?? 0} hint="Guests on non-cancelled bookings" />
-      </div>
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="rounded-2xl border border-indigo-100 bg-white/95 p-5 shadow-lg"><h2 className="font-bold text-indigo-950">Agent account</h2><dl className="mt-4 space-y-3 text-sm"><div className="flex justify-between gap-4"><dt className="text-slate-500">Status</dt><dd className="font-medium capitalize">{payload?.agent?.status || "—"}</dd></div><div className="flex justify-between gap-4"><dt className="text-slate-500">Approval</dt><dd className="font-medium">{isApproved ? "Approved" : "Pending"}</dd></div><div className="flex justify-between gap-4"><dt className="text-slate-500">Commission rate</dt><dd className="font-medium">{payload?.agent?.commissionRate ?? 0}%</dd></div><div className="flex justify-between gap-4"><dt className="text-slate-500">Total commission</dt><dd className="font-medium">{money(stats.totalCommission)}</dd></div><div className="flex justify-between gap-4"><dt className="text-slate-500">Pending commission</dt><dd className="font-medium">{money(stats.pendingCommission)}</dd></div><div className="flex justify-between gap-4"><dt className="text-slate-500">Paid commission</dt><dd className="font-medium">{money(stats.paidCommission)}</dd></div><div className="flex justify-between gap-4 border-t border-indigo-100 pt-3"><dt className="font-semibold text-indigo-900">Wallet balance</dt><dd className="font-semibold text-indigo-900">{money(payload?.agent?.walletBalance)}</dd></div></dl></div>
-        <div className="rounded-2xl border border-violet-100 bg-white/95 p-5 shadow-lg lg:col-span-2"><div className="flex items-center justify-between gap-3"><h2 className="font-bold text-violet-950">Recent bookings</h2><span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold text-violet-700">Latest {Math.min(5, recentBookings.length)}</span></div><div className="mt-4 overflow-x-auto"><table className="min-w-full text-sm"><thead><tr className="border-b border-violet-100 bg-violet-50/60 text-left text-violet-700"><th className="px-3 py-2">Customer</th><th className="px-3 py-2">Tour</th><th className="px-3 py-2">Travel date</th><th className="px-3 py-2">Amount</th><th className="px-3 py-2">Payment</th><th className="px-3 py-2">Status</th></tr></thead><tbody>{recentBookings.length === 0 ? <tr><td colSpan="6" className="px-3 py-6 text-center text-slate-500">No recent bookings found.</td></tr> : recentBookings.map((booking) => <tr key={booking._id} className="border-b border-slate-100 last:border-0 hover:bg-indigo-50/40"><td className="px-3 py-3">{customerName(booking)}</td><td className="px-3 py-3">{booking.tour?.title || booking.tour?.name || "Tour unavailable"}</td><td className="px-3 py-3">{booking.travelDate ? new Date(booking.travelDate).toLocaleDateString("en-KE") : "—"}</td><td className="px-3 py-3 font-bold text-indigo-700">{money(booking.totalAmount ?? booking.amount)}</td><td className="px-3 py-3"><span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold capitalize text-emerald-700">{booking.paymentStatus || "pending"}</span></td><td className="px-3 py-3"><span className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold capitalize text-blue-700">{bookingStatus(booking)}</span></td></tr>)}</tbody></table></div></div>
-      </div>
-    </section>
-  );
+  if (query.isLoading) return <div className="min-h-full bg-slate-50 p-6"><div className="mx-auto max-w-7xl animate-pulse space-y-5"><div className="h-40 rounded-3xl bg-slate-200"/><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="h-32 rounded-2xl bg-white"/>)}</div></div></div>;
+  if (query.isError) return <div className="min-h-full bg-slate-50 p-6"><div className="mx-auto max-w-4xl rounded-3xl border border-rose-200 bg-white p-8 shadow-sm"><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-50 text-rose-600"><AlertTriangle className="h-6 w-6"/></div><h1 className="mt-5 text-2xl font-bold text-slate-900">Agent dashboard unavailable</h1><p className="mt-2 text-sm text-slate-600">Dashboard telemetry could not be loaded. Missing data is not represented as zero.</p><p className="mt-3 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{query.error?.response?.data?.message || query.error?.message || "Unable to load the agent dashboard."}</p><button type="button" onClick={() => query.refetch()} disabled={query.isFetching} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${query.isFetching ? "animate-spin" : ""}`}/> Retry</button></div></div>;
+
+  return <section className="min-h-full bg-slate-50 p-4 sm:p-6 lg:p-8"><div className="mx-auto max-w-7xl space-y-6">
+    <header className="overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white shadow-xl"><div className="p-6 sm:p-8"><div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between"><div><div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold text-indigo-100"><ShieldCheck className="h-4 w-4"/> Agent workspace</div><h1 className="mt-4 text-3xl font-black tracking-tight sm:text-4xl">Agent Dashboard</h1><p className="mt-2 text-sm text-slate-300">{agent.companyName || "Sales operations"}</p></div><div className="flex items-center gap-3"><span className={`rounded-full px-3 py-1.5 text-xs font-bold ${statusClass}`}>{statusLabel}</span><button type="button" onClick={() => query.refetch()} disabled={query.isFetching} className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-sm font-bold hover:bg-white/15 disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${query.isFetching ? "animate-spin" : ""}`}/> Refresh</button></div></div></div></header>
+    {!isApproved && <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-900"><AlertTriangle className="mt-0.5 h-5 w-5 shrink-0"/><div><p className="font-bold">Agent approval requires attention</p><p className="mt-1 text-sm">The account is not marked as approved by the dashboard data. Confirm approval before treating sales operations as fully enabled.</p></div></div>}
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><StatCard label="Bookings" value={statsMap.bookings} hint="Active agent bookings" icon={CalendarDays} color="indigo"/><StatCard label="Upcoming" value={statsMap.upcoming} hint="Confirmed future trips" icon={Clock3} color="violet"/><StatCard label="Completed" value={statsMap.completed} hint="Completed bookings" icon={CheckCircle2} color="emerald"/><StatCard label="Pending" value={statsMap.pending} hint="Awaiting processing" icon={AlertTriangle} color="amber"/><StatCard label="Total sales" value={statsMap.sales} hint="Reported paid booking sales" icon={DollarSign} color="rose"/><StatCard label="Commission" value={statsMap.commission} hint={commissionRate === null ? "Commission rate unavailable" : `${commissionRate}% reported rate`} icon={Wallet} color="violet"/><StatCard label="Customers" value={statsMap.customers} hint="Unique non-cancelled customers" icon={Users} color="cyan"/><StatCard label="Guests" value={statsMap.guests} hint="Guests on non-cancelled bookings" icon={UserRound} color="indigo"/></div>
+    <div className="grid gap-6 lg:grid-cols-3"><section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-indigo-600"/><h2 className="font-bold text-slate-900">Agent account</h2></div><dl className="mt-5 space-y-3 text-sm"><div className="flex justify-between gap-4"><dt className="text-slate-500">Status</dt><dd className="font-semibold capitalize text-slate-800">{hasValue(agent.status) ? agent.status : "—"}</dd></div><div className="flex justify-between gap-4"><dt className="text-slate-500">Approval</dt><dd className="font-semibold text-slate-800">{agent.isApproved === true || agent.approved === true ? "Approved" : hasValue(agent.isApproved) || hasValue(agent.approved) ? "Pending / not approved" : "—"}</dd></div><div className="flex justify-between gap-4"><dt className="text-slate-500">Commission rate</dt><dd className="font-semibold text-slate-800">{commissionRate === null ? "—" : `${commissionRate}%`}</dd></div><div className="flex justify-between gap-4"><dt className="text-slate-500">Total commission</dt><dd className="font-semibold text-slate-800">{money(stats.totalCommission)}</dd></div><div className="flex justify-between gap-4"><dt className="text-slate-500">Pending commission</dt><dd className="font-semibold text-amber-700">{money(stats.pendingCommission)}</dd></div><div className="flex justify-between gap-4"><dt className="text-slate-500">Paid commission</dt><dd className="font-semibold text-emerald-700">{money(stats.paidCommission)}</dd></div><div className="flex justify-between gap-4 border-t border-slate-100 pt-3"><dt className="font-bold text-indigo-900">Wallet balance</dt><dd className="font-bold text-indigo-900">{money(agent.walletBalance)}</dd></div></dl></section>
+    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:col-span-2"><div className="flex items-center justify-between border-b border-slate-100 px-5 py-4"><div><h2 className="font-bold text-slate-900">Recent bookings</h2><p className="mt-0.5 text-xs text-slate-500">Latest agent booking activity returned by the API.</p></div><span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">Latest {Math.min(5, recentBookings.length)}</span></div><div className="overflow-x-auto"><table className="min-w-full text-sm"><thead className="bg-slate-50 text-left text-xs font-bold uppercase tracking-wide text-slate-500"><tr><th className="px-4 py-3">Customer</th><th className="px-4 py-3">Tour</th><th className="px-4 py-3">Travel date</th><th className="px-4 py-3">Amount</th><th className="px-4 py-3">Payment</th><th className="px-4 py-3">Status</th></tr></thead><tbody>{recentBookings.length === 0 ? <tr><td colSpan="6" className="px-4 py-8 text-center text-slate-500">No recent bookings were returned.</td></tr> : recentBookings.map((booking) => <tr key={booking._id || booking.id} className="border-t border-slate-100 hover:bg-indigo-50/40"><td className="whitespace-nowrap px-4 py-3 font-medium text-slate-800">{customerName(booking)}</td><td className="px-4 py-3 text-slate-700">{booking.tour?.title || booking.tour?.name || booking.tourPackage?.title || "Tour unavailable"}</td><td className="whitespace-nowrap px-4 py-3 text-slate-600">{formatDate(booking.travelDate)}</td><td className="whitespace-nowrap px-4 py-3 font-bold text-indigo-700">{money(booking.totalAmount ?? booking.amount)}</td><td className="px-4 py-3"><span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold capitalize text-slate-700">{booking.paymentStatus || "—"}</span></td><td className="px-4 py-3"><span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-bold capitalize text-indigo-700">{bookingStatus(booking)}</span></td></tr>)}</tbody></table></div></section></div>
+  </div></section>;
 }
