@@ -48,8 +48,8 @@ These flags are evidence controls, not substitutes for the underlying live tests
 - [x] Release gate baseline exists and is documented.
 - [x] Production API health endpoint exists at `/api/health`.
 - [x] Production smoke workflow committed to `main`.
-- [ ] `PRODUCTION_API_URL` configured as a GitHub Actions secret.
-- [ ] `PRODUCTION_WEB_URL` configured as a GitHub Actions secret.
+- [x] `PRODUCTION_API_URL` configured as a GitHub Actions secret.
+- [x] `PRODUCTION_WEB_URL` configured as a GitHub Actions secret.
 - [ ] Deployed API returns healthy/connected from the smoke workflow.
 - [ ] Deployed frontend responds successfully from the smoke workflow.
 - [ ] Production backup and restore evidence collected.
