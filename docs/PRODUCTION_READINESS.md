@@ -6,12 +6,12 @@ This document is the persistent hand-off point for production-readiness testing.
 
 ## Baseline: PASSED
 
-The current `main` branch has a completed release-gate run with all three phases passing.
+The verified application baseline is commit `0b00897efa85ab8e4097755670091d2abaa63285`, which passed the complete release gate in run `34942492468`.
 
 | Item | Baseline result |
 |---|---|
-| Release gate run | `34940798854` |
-| Verified commit | `9fee53c1ed8d6ce95cf4a9177d719666d4f8ad0c` |
+| Release gate run | `34942492468` |
+| Verified application commit | `0b00897efa85ab8e4097755670091d2abaa63285` |
 | Phase 1 — Security and tenant integrity | PASS |
 | Phase 2 — Kenya production readiness | PASS |
 | Phase 3 — Final release gate | PASS |
@@ -24,7 +24,7 @@ The current `main` branch has a completed release-gate run with all three phases
 | Release configuration checks | PASS |
 | Committed environment-secret check | PASS |
 
-The documentation update itself was committed after that gate as commit `54748ee17db99246b1037a109b3cbbfeccea1f3b`. This documentation commit does not change the application logic covered by the baseline gate; future CI should nevertheless run against the current `main` head as normal.
+Documentation and deployment-acceptance commits were made after the verified application baseline. They do not change the application baseline; current `main` must still be tested normally, and any newly introduced regression remains a release blocker.
 
 ## The nine readiness areas
 
@@ -78,19 +78,19 @@ Production configuration, health endpoints/services, observability, monitoring, 
 
 ### 9. UI/UX QA
 
-The client release gate now includes lint and a production build, and the known calendar lint purity failure was repaired before the passing baseline. The repository should continue to use the client build as a minimum release check.
+The client release gate includes lint and a production build, and the known calendar lint purity failure was repaired before the passing baseline.
 
 **Future tests:** continue manual/device QA for 404 routes, driver dashboard data, tour-manager flows, mobile hero media, loading/empty/error/payment states, responsive navigation, accessibility, and performance. These require real browser/device acceptance in addition to CI.
 
 ## Required future test procedure
 
 1. Read this document and the root `README.md` before testing.
-2. Identify the current `main` HEAD and compare it with the baseline commit above.
+2. Identify the current `main` HEAD and compare it with the verified application baseline above.
 3. Run the existing release-gate workflow first.
-4. Treat all baseline PASS items as established unless code changes invalidate them.
+4. Treat the baseline PASS items as established unless code changes invalidate them.
 5. Investigate only regressions, newly added code paths, or external evidence that has not yet been supplied.
 6. If a regression is found, fix it on `main`, rerun the affected checks, then rerun the complete release gate.
-7. Update this document with the new passing run ID and commit SHA after a materially changed baseline is re-certified.
+7. Update this document with a new passing run ID and application commit SHA after a materially changed application baseline is re-certified.
 8. Never mark live provider, compliance, backup/restore, monitoring, or deployment acceptance as PASS solely because repository CI passed.
 
 ## Release decision rule
@@ -103,4 +103,4 @@ A passing repository release gate means the **codebase baseline is passing autom
 - Production-readiness contract coverage: `088d4b27cc1ce03c4eb9a2923449c3e5c76fe79c`
 - Calendar lint repair: `46e11bcffe0f2069ef1446bd21a2ad3dc79d3b80`
 - Temporary lint repair workflow removed: `9fee53c1ed8d6ce95cf4a9177d719666d4f8ad0c`
-- Passing release gate: `34940798854`
+- Verified passing application release gate: `34942492468`
