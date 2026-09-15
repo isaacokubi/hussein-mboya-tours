@@ -22,6 +22,40 @@ const getAgent = async (user) => {
   return agent;
 };
 
+const cleanText = (value) => {
+  if (value === undefined || value === null) return "";
+  const text = String(value).trim();
+  if (!text || /^undefined(?:\s+undefined)?$/i.test(text) || /^null(?:\s+null)?$/i.test(text)) return "";
+  return text;
+};
+
+const bookingCustomerFallback = (booking) => {
+  const customer = booking?.customer;
+  const snapshot = booking?.customerSnapshot || {};
+  const contact = booking?.contact || {};
+  const name = cleanText(customer?.name)
+    || [cleanText(customer?.firstName), cleanText(customer?.lastName)].filter(Boolean).join(" ")
+    || cleanText(snapshot.name)
+    || cleanText(contact.name);
+  const email = cleanText(customer?.email) || cleanText(snapshot.email) || cleanText(contact.email);
+  const phone = cleanText(customer?.phone) || cleanText(snapshot.phone) || cleanText(contact.phone);
+  return name || email || phone ? { ...(customer || {}), name: name || undefined, email: email || undefined, phone: phone || undefined } : null;
+};
+
+const bookingTourFallback = (booking) => {
+  if (booking?.tour) return booking.tour;
+  const custom = booking?.customTourRequest;
+  if (!custom) return null;
+  const destination = cleanText(custom.destination);
+  return destination ? { title: `Custom trip — ${destination}`, destination } : { title: "Custom trip" };
+};
+
+const normalizeRecentBooking = (booking) => ({
+  ...booking,
+  customer: bookingCustomerFallback(booking),
+  tour: bookingTourFallback(booking),
+});
+
 export const getAgentDashboard = async (req, res, next) => {
   requireTenantId();
   try {
@@ -63,47 +97,23 @@ export const getAgentDashboard = async (req, res, next) => {
       paidCommissionResult,
       pendingBookings,
       cancelledBookings,
-      recentBookings,
+      recentRaw,
     ] = await Promise.all([
       Booking.countDocuments(base),
       Booking.countDocuments({ ...base, status: { $in: activeStatuses }, travelDate: { $gte: now } }),
       Booking.countDocuments({ ...base, status: "completed" }),
       Booking.aggregate([
-        {
-          $match: {
-            ...base,
-            paymentStatus: "paid",
-            status: { $nin: ["cancelled", "failed", "refunded"] },
-          },
-        },
-        {
-          $group: {
-            _id: null,
-            totalSales: { $sum: { $ifNull: ["$totalAmount", 0] } },
-          },
-        },
+        { $match: { ...base, paymentStatus: "paid", status: { $nin: ["cancelled", "failed", "refunded"] } } },
+        { $group: { _id: null, totalSales: { $sum: { $ifNull: ["$totalAmount", 0] } } } },
       ]),
       Booking.aggregate([
         { $match: { ...base, status: { $ne: "cancelled" } } },
-        {
-          $group: {
-            _id: null,
-            totalGuests: {
-              $sum: {
-                $ifNull: ["$numberOfGuests", { $size: { $ifNull: ["$travelers", []] } }],
-              },
-            },
-          },
-        },
+        { $group: { _id: null, totalGuests: { $sum: { $ifNull: ["$numberOfGuests", { $size: { $ifNull: ["$travelers", []] } }] } } } },
       ]),
       Booking.aggregate([
         { $match: { ...base, status: { $ne: "cancelled" } } },
-        {
-          $group: {
-            _id: "$customer",
-          },
-        },
-        { $match: { _id: { $ne: null } } },
+        { $group: { _id: { $ifNull: ["$customer", { $ifNull: ["$customerSnapshot.phone", "$contact.phone"] }] } } },
+        { $match: { _id: { $ne: null, $ne: "" } } },
         { $count: "totalCustomers" },
       ]),
       Commission.aggregate([
@@ -122,11 +132,14 @@ export const getAgentDashboard = async (req, res, next) => {
       Booking.countDocuments({ ...base, status: "cancelled" }),
       Booking.find(base)
         .populate("tour", "title name price duration destination")
+        .populate("customTourRequest", "destination durationDays people startDate")
         .populate("customer", "name firstName lastName email phone")
         .sort({ createdAt: -1 })
         .limit(5)
         .lean(),
     ]);
+
+    const recentBookings = recentRaw.map(normalizeRecentBooking);
 
     return res.status(200).json({
       success: true,
