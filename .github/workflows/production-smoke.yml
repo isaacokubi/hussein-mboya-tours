@@ -1,0 +1,49 @@
+name: Production Smoke Check
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 */6 * * *"
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Production endpoint smoke check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check API health when configured
+        env:
+          PRODUCTION_API_URL: ${{ secrets.PRODUCTION_API_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${PRODUCTION_API_URL:-}" ]; then
+            echo "PRODUCTION_API_URL is not configured; external API smoke test is skipped."
+            exit 0
+          fi
+          base="${PRODUCTION_API_URL%/}"
+          response="$(curl --fail-with-body --silent --show-error --max-time 20 -H 'Accept: application/json' "$base/api/health")"
+          echo "$response"
+          python - <<'PY' "$response"
+import json
+import sys
+payload = json.loads(sys.argv[1])
+if payload.get("success") is not True or payload.get("status") != "healthy" or payload.get("database") != "connected":
+    raise SystemExit(f"Production health check failed: {payload}")
+PY
+
+      - name: Check public web endpoint when configured
+        env:
+          PRODUCTION_WEB_URL: ${{ secrets.PRODUCTION_WEB_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${PRODUCTION_WEB_URL:-}" ]; then
+            echo "PRODUCTION_WEB_URL is not configured; public web smoke test is skipped."
+            exit 0
+          fi
+          url="${PRODUCTION_WEB_URL%/}/"
+          curl --fail --silent --show-error --max-time 20 -I "$url" >/dev/null
+          echo "Production web endpoint responded successfully: $url"
