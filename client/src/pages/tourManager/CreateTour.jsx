@@ -1,414 +1,60 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { CalendarDays, CarFront, CheckCircle2, ChevronLeft, CircleAlert, Compass, ImagePlus, MapPin, ShieldCheck, Users, UserRound, X } from "lucide-react";
 
 import { getDestinations } from "../../api/destinationApi";
 import { createTour, getDrivers, getGuides, getVehicles } from "../../api/tourApi";
 
-const emptyForm = {
-  title: "",
-  description: "",
-  category: "Safari",
-  destination: "",
-  country: "Kenya",
-  location: "",
-  date: "",
-  capacity: 20,
-  duration: 1,
-  difficulty: "easy",
-  price: "",
-  discount: 0,
-  guide: "",
-  driver: "",
-  vehicle: "",
-  status: "upcoming",
-};
+const emptyForm = { title: "", description: "", category: "Safari", destination: "", country: "Kenya", location: "", date: "", capacity: 20, duration: 1, difficulty: "easy", price: "", discount: 0, guide: "", driver: "", vehicle: "", status: "upcoming" };
+const unwrapList = (response, keys = []) => { if (Array.isArray(response)) return response; for (const key of keys) if (Array.isArray(response?.[key])) return response[key]; if (Array.isArray(response?.data)) return response.data; if (Array.isArray(response?.data?.data)) return response.data.data; for (const key of keys) if (Array.isArray(response?.data?.[key])) return response.data[key]; return []; };
+const cleanLabel = (value, fallback) => { const text = String(value ?? "").trim(); return text && !/^undefined|^null$/i.test(text) ? text : fallback; };
+const todayIso = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+const inputClass = "mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-slate-100";
+const labelClass = "text-sm font-semibold text-slate-700";
 
-const unwrapList = (response, keys = []) => {
-  if (Array.isArray(response)) return response;
-
-  for (const key of keys) {
-    if (Array.isArray(response?.[key])) return response[key];
-  }
-
-  if (Array.isArray(response?.data)) return response.data;
-  if (Array.isArray(response?.data?.data)) return response.data.data;
-  for (const key of keys) {
-    if (Array.isArray(response?.data?.[key])) return response.data[key];
-  }
-
-  return [];
-};
-
-export default function CreateTour(
-) {
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const [form, setForm] = useState(emptyForm);
-  const [imageFiles, setImageFiles] = useState([]);
-
-  const { data: destinationsData, isLoading: destinationsLoading } = useQuery({
-    queryKey: ["destinations"],
-    queryFn: getDestinations,
-  });
-
-  const { data: guidesData, isLoading: guidesLoading, error: guidesError } = useQuery({
-    queryKey: ["tour-assignment-guides"],
-    queryFn: getGuides,
-  });
-
-  const { data: driversData, isLoading: driversLoading, error: driversError } = useQuery({
-    queryKey: ["tour-assignment-drivers"],
-    queryFn: getDrivers,
-  });
-
-  const { data: vehiclesData, isLoading: vehiclesLoading, error: vehiclesError } = useQuery({
-    queryKey: ["tour-assignment-vehicles"],
-    queryFn: getVehicles,
-  });
-
+export default function CreateTour() {
+  const navigate = useNavigate(); const queryClient = useQueryClient();
+  const [form, setForm] = useState(emptyForm); const [imageFiles, setImageFiles] = useState([]); const [imageError, setImageError] = useState("");
+  const { data: destinationsData, isLoading: destinationsLoading, isError: destinationsError, refetch: refetchDestinations } = useQuery({ queryKey: ["destinations"], queryFn: getDestinations, retry: 1 });
+  const { data: guidesData, isLoading: guidesLoading, error: guidesError, refetch: refetchGuides } = useQuery({ queryKey: ["tour-assignment-guides"], queryFn: getGuides, retry: 1 });
+  const { data: driversData, isLoading: driversLoading, error: driversError, refetch: refetchDrivers } = useQuery({ queryKey: ["tour-assignment-drivers"], queryFn: getDrivers, retry: 1 });
+  const { data: vehiclesData, isLoading: vehiclesLoading, error: vehiclesError, refetch: refetchVehicles } = useQuery({ queryKey: ["tour-assignment-vehicles"], queryFn: getVehicles, retry: 1 });
   const destinations = unwrapList(destinationsData, ["destinations"]);
   const guides = unwrapList(guidesData, ["guides"]).filter((item) => item.availability === "available" && !item.assignedTour && !item.assignedTours?.length);
   const drivers = unwrapList(driversData, ["drivers"]).filter((item) => item.availability === "available" && !item.assignedTour && !item.assignedTours?.length);
-  const vehicles = unwrapList(vehiclesData, ["vehicles"]).filter((vehicle) => (vehicle.status === "available" || !vehicle.status) && !vehicle.assignedTour);
+  const vehicles = unwrapList(vehiclesData, ["vehicles"]).filter((item) => (item.status === "available" || !item.status) && !item.assignedTour);
+  const selectedDestination = useMemo(() => destinations.find((item) => String(item._id) === String(form.destination)), [destinations, form.destination]);
+  const estimatedTotal = useMemo(() => { const price = Number(form.price) || 0; const discount = Math.min(100, Math.max(0, Number(form.discount) || 0)); return Math.max(0, price * (1 - discount / 100)); }, [form.price, form.discount]);
+  const assignmentLoading = guidesLoading || driversLoading || vehiclesLoading; const assignmentError = guidesError || driversError || vehiclesError;
 
-  const { mutate: saveTour, isPending } = useMutation({
-    mutationFn: createTour,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tour-manager-tours"] });
-      queryClient.invalidateQueries({ queryKey: ["tour-manager-dashboard"] });
-      queryClient.invalidateQueries({ queryKey: ["tour-assignment-guides"] });
-      queryClient.invalidateQueries({ queryKey: ["tour-assignment-drivers"] });
-      queryClient.invalidateQueries({ queryKey: ["tour-assignment-vehicles"] });
-      toast.success("Tour created successfully.");
-      navigate("/tour-manager/tours");
-    },
-    onError: (error) => {
-      toast.error(
-        error?.response?.data?.message || "Tour creation failed."
-      );
-    },
-  });
+  const { mutate: saveTour, isPending } = useMutation({ mutationFn: createTour, onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["tour-manager-tours"] }); queryClient.invalidateQueries({ queryKey: ["tour-manager-dashboard"] }); queryClient.invalidateQueries({ queryKey: ["tour-assignment-guides"] }); queryClient.invalidateQueries({ queryKey: ["tour-assignment-drivers"] }); queryClient.invalidateQueries({ queryKey: ["tour-assignment-vehicles"] }); toast.success("Tour created successfully."); navigate("/tour-manager/tours"); }, onError: (error) => toast.error(error?.response?.data?.message || "Tour creation failed. No changes were applied.") });
+  const handleChange = (event) => { const { name, value } = event.target; setForm((current) => ({ ...current, [name]: value })); };
+  const handleImages = (event) => { const files = Array.from(event.target.files || []); const allowed = ["image/jpeg", "image/png", "image/webp"]; if (files.some((file) => !allowed.includes(file.type))) { setImageError("Only JPG, PNG and WebP images are supported."); setImageFiles([]); event.target.value = ""; return; } if (files.length > 10) setImageError("A maximum of 10 images can be uploaded."); else setImageError(""); setImageFiles(files.slice(0, 10)); };
+  const removeImage = (index) => setImageFiles((files) => files.filter((_, itemIndex) => itemIndex !== index));
+  const retryResources = () => { if (destinationsError) refetchDestinations(); if (guidesError) refetchGuides(); if (driversError) refetchDrivers(); if (vehiclesError) refetchVehicles(); };
+  const submitHandler = (event) => { event.preventDefault(); const title = form.title.trim(), description = form.description.trim(), location = form.location.trim(), price = Number(form.price), capacity = Number(form.capacity), duration = Number(form.duration), discount = Number(form.discount || 0); if (!title || !description) return toast.error("Tour title and description are required."); if (!form.destination) return toast.error("Select a destination before creating the tour."); if (!location) return toast.error("Tour location is required."); if (!form.date) return toast.error("Select a travel date."); if (form.date < todayIso) return toast.error("Travel date cannot be in the past."); if (!Number.isFinite(price) || price < 0) return toast.error("Enter a valid KES tour price."); if (!Number.isInteger(capacity) || capacity < 1) return toast.error("Capacity must be at least 1 guest."); if (!Number.isInteger(duration) || duration < 1) return toast.error("Duration must be at least 1 day."); if (!Number.isFinite(discount) || discount < 0 || discount > 100) return toast.error("Discount must be between 0% and 100%."); const payload = new FormData(); const values = { title, description, category: form.category, destination: form.destination, country: form.country.trim() || "Kenya", location, date: form.date, price, discount, capacity, duration, difficulty: form.difficulty, guide: form.guide || "", driver: form.driver || "", vehicle: form.vehicle || "", status: form.status, published: true }; Object.entries(values).forEach(([key, value]) => payload.append(key, String(value))); imageFiles.forEach((file) => payload.append("images", file)); saveTour(payload); };
 
-  const handleChange = (event) => {
-    const { name, value } = event.target;
-    setForm((current) => ({ ...current, [name]: value }));
-  };
-
-  const submitHandler = (event) => {
-    event.preventDefault();
-
-    if (!form.title.trim() || !form.description.trim()) {
-      toast.error("Title and description are required.");
-      return;
-    }
-
-    if (!form.destination || !form.date || !form.location.trim()) {
-      toast.error("Destination, date and location are required.");
-      return;
-    }
-
-    if (Number(form.price) < 0 || form.price === "") {
-      toast.error("Enter a valid tour price.");
-      return;
-    }
-
-    const payload = new FormData();
-    const values = {
-      title: form.title.trim(), description: form.description.trim(), category: form.category,
-      destination: form.destination, country: form.country.trim(), location: form.location.trim(),
-      date: form.date, price: Number(form.price), discount: Number(form.discount || 0),
-      capacity: Number(form.capacity || 20), duration: Number(form.duration || 1),
-      difficulty: form.difficulty, guide: form.guide || "", driver: form.driver || "",
-      vehicle: form.vehicle || "", status: form.status, published: true,
-    };
-    Object.entries(values).forEach(([key, value]) => payload.append(key, String(value)));
-    imageFiles.forEach((file) => payload.append("images", file));
-    saveTour(payload);
-  };
-
-  const assignmentLoading =
-    guidesLoading || driversLoading || vehiclesLoading;
-
-  const assignmentError =
-    guidesError || driversError || vehiclesError;
-
-  return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="mx-auto max-w-5xl rounded-xl bg-white p-8 shadow">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold">Create New Tour</h1>
-          <p className="mt-1 text-gray-600">
-            Create the tour and optionally assign a guide, driver and vehicle.
-          </p>
-        </div>
-
-        <form onSubmit={submitHandler} className="grid gap-5 md:grid-cols-2">
-          <input
-            name="title"
-            value={form.title}
-            onChange={handleChange}
-            placeholder="Tour title"
-            className="input"
-            required
-          />
-
-          <select
-            name="category"
-            value={form.category}
-            onChange={handleChange}
-            className="input"
-            required
-          >
-            <option value="Safari">Safari</option>
-            <option value="Beach">Beach</option>
-            <option value="Adventure">Adventure</option>
-            <option value="Cultural">Cultural</option>
-            <option value="Luxury">Luxury</option>
-            <option value="Hiking">Hiking</option>
-            <option value="Family">Family</option>
-            <option value="Wildlife">Wildlife</option>
-          </select>
-
-          <select
-            name="destination"
-            value={form.destination}
-            onChange={handleChange}
-            className="input"
-            required
-            disabled={destinationsLoading}
-          >
-            <option value="">
-              {destinationsLoading ? "Loading destinations..." : "Select Destination"}
-            </option>
-            {destinations.map((destination) => (
-              <option key={destination._id} value={destination._id}>
-                {destination.name || destination.title}
-              </option>
-            ))}
-          </select>
-
-          <input
-            name="location"
-            value={form.location}
-            onChange={handleChange}
-            placeholder="Location"
-            className="input"
-            required
-          />
-
-          <input
-            name="country"
-            value={form.country}
-            onChange={handleChange}
-            placeholder="Country"
-            className="input"
-            required
-          />
-
-          <input
-            type="date"
-            name="date"
-            value={form.date}
-            onChange={handleChange}
-            className="input"
-            required
-          />
-
-          <input
-            type="number"
-            name="capacity"
-            min="1"
-            value={form.capacity}
-            onChange={handleChange}
-            placeholder="Capacity"
-            className="input"
-            required
-          />
-
-          <input
-            type="number"
-            name="duration"
-            min="1"
-            value={form.duration}
-            onChange={handleChange}
-            placeholder="Duration in days"
-            className="input"
-            required
-          />
-
-          <select
-            name="difficulty"
-            value={form.difficulty}
-            onChange={handleChange}
-            className="input"
-          >
-            <option value="easy">Easy</option>
-            <option value="moderate">Moderate</option>
-            <option value="hard">Hard</option>
-          </select>
-
-          <select
-            name="status"
-            value={form.status}
-            onChange={handleChange}
-            className="input"
-          >
-            <option value="draft">Draft</option>
-            <option value="upcoming">Upcoming</option>
-            <option value="scheduled">Scheduled</option>
-          </select>
-
-          <input
-            type="number"
-            name="price"
-            min="0"
-            step="0.01"
-            value={form.price}
-            onChange={handleChange}
-            placeholder={"Price (" + ("KES") + ")"}
-            className="input"
-            required
-          />
-
-          <input
-            type="number"
-            name="discount"
-            min="0"
-            max="100"
-            step="0.01"
-            value={form.discount}
-            onChange={handleChange}
-            placeholder="Discount (%)"
-            className="input"
-          />
-
-          <textarea
-            name="description"
-            value={form.description}
-            onChange={handleChange}
-            placeholder="Description"
-            className="input md:col-span-2"
-            rows="5"
-            required
-          />
-
-          <div className="md:col-span-2 rounded-xl border bg-white p-5">
-            <label className="block">
-              <span className="mb-2 block text-lg font-bold">Tour Images</span>
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                multiple
-                onChange={(e) => setImageFiles(Array.from(e.target.files || []).slice(0, 10))}
-                className="w-full rounded-xl border bg-gray-50 p-3"
-              />
-              <span className="mt-2 block text-xs text-gray-500">
-                Upload up to 10 images. The first image becomes the featured image.
-              </span>
-              {imageFiles.length > 0 && (
-                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                  {imageFiles.map((file) => (
-                    <div key={`${file.name}-${file.lastModified}`} className="truncate rounded-lg border bg-gray-50 p-2 text-xs">
-                      {file.name}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </label>
-          </div>
-
-          <div className="md:col-span-2 rounded-xl border bg-gray-50 p-5">
-            <div className="mb-4">
-              <h2 className="text-xl font-bold">Tour Resources</h2>
-              <p className="text-sm text-gray-600">
-                Available guides, drivers and vehicles are loaded directly from
-                the staff and vehicle APIs.
-              </p>
-            </div>
-
-            {assignmentError && (
-              <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">
-                Some assignment resources could not be loaded. You can retry
-                the page or create the tour without an assignment.
-              </div>
-            )}
-
-            <div className="grid gap-5 md:grid-cols-3">
-              <select
-                name="guide"
-                value={form.guide}
-                onChange={handleChange}
-                className="input"
-                disabled={assignmentLoading}
-              >
-                <option value="">
-                  {guidesLoading ? "Loading guides..." : "No guide / Select guide"}
-                </option>
-                {guides.map((guide) => (
-                  <option key={guide._id} value={guide._id}>
-                    {guide.name} {guide.phone ? `— ${guide.phone}` : ""}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                name="driver"
-                value={form.driver}
-                onChange={handleChange}
-                className="input"
-                disabled={assignmentLoading}
-              >
-                <option value="">
-                  {driversLoading ? "Loading drivers..." : "No driver / Select driver"}
-                </option>
-                {drivers.map((driver) => (
-                  <option key={driver._id} value={driver._id}>
-                    {driver.name} {driver.phone ? `— ${driver.phone}` : ""}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                name="vehicle"
-                value={form.vehicle}
-                onChange={handleChange}
-                className="input"
-                disabled={assignmentLoading}
-              >
-                <option value="">
-                  {vehiclesLoading ? "Loading vehicles..." : "No vehicle / Select vehicle"}
-                </option>
-                {vehicles.map((vehicle) => (
-                  <option key={vehicle._id} value={vehicle._id}>
-                    {vehicle.name || vehicle.model} —{" "}
-                    {vehicle.registrationNumber || vehicle.registration || "No registration"}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="flex gap-3 md:col-span-2">
-            <button
-              type="submit"
-              disabled={isPending}
-              className="rounded-xl bg-green-700 px-6 py-3 font-bold text-white disabled:opacity-50"
-            >
-              {isPending ? "Creating Tour..." : "Create Tour"}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => navigate("/tour-manager/tours")}
-              className="rounded-xl bg-gray-200 px-6 py-3 font-bold text-gray-800"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
+  return <div className="min-h-screen bg-slate-50">
+    <div className="border-b border-emerald-950/20 bg-slate-950 text-white"><div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8"><button type="button" onClick={() => navigate("/tour-manager/tours")} className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-emerald-300 hover:text-white"><ChevronLeft size={18}/> Back to Tours</button><div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end"><div><div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-emerald-300"><Compass size={14}/> Tour Operations</div><h1 className="text-3xl font-black tracking-tight sm:text-4xl">Create New Tour</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">Build a complete tour product with pricing, availability, destination and optional operational resources.</p></div><div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm"><div className="font-bold">Amani Trails Safaris</div><div className="mt-1 text-xs text-slate-400">Tenant-scoped tour creation • Currency: KES</div></div></div></div></div>
+    <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8"><form onSubmit={submitHandler} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]"><div className="space-y-6">
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7"><div className="mb-6 flex items-start gap-3"><div className="rounded-xl bg-emerald-100 p-2.5 text-emerald-700"><Compass size={20}/></div><div><h2 className="text-xl font-extrabold text-slate-900">Tour details</h2><p className="mt-1 text-sm text-slate-500">Define how the tour will appear to customers and operations staff.</p></div></div><div className="grid gap-5 md:grid-cols-2">
+        <div className="md:col-span-2"><label className={labelClass}>Tour title<span className="text-rose-500"> *</span></label><input name="title" value={form.title} onChange={handleChange} placeholder="e.g. Amboseli Wildlife Escape" className={inputClass} maxLength={120} required/></div>
+        <div><label className={labelClass}>Category</label><select name="category" value={form.category} onChange={handleChange} className={inputClass}><option>Safari</option><option>Beach</option><option>Adventure</option><option>Cultural</option><option>Luxury</option><option>Hiking</option><option>Family</option><option>Wildlife</option></select></div>
+        <div><label className={labelClass}>Destination<span className="text-rose-500"> *</span></label><select name="destination" value={form.destination} onChange={handleChange} className={inputClass} required disabled={destinationsLoading}><option value="">{destinationsLoading ? "Loading destinations…" : destinationsError ? "Destinations unavailable" : "Select destination"}</option>{destinations.map((item) => <option key={item._id} value={item._id}>{cleanLabel(item.name || item.title, "Unnamed destination")}</option>)}</select>{destinationsError && <p className="mt-2 text-xs font-medium text-rose-600">Destination data could not be loaded. Retry before creating the tour.</p>}</div>
+        <div><label className={labelClass}>Location<span className="text-rose-500"> *</span></label><div className="relative"><MapPin className="absolute left-3 top-5 text-slate-400" size={17}/><input name="location" value={form.location} onChange={handleChange} placeholder="e.g. Nairobi CBD / Amboseli" className={`${inputClass} pl-10`} required/></div></div>
+        <div><label className={labelClass}>Country<span className="text-rose-500"> *</span></label><input name="country" value={form.country} onChange={handleChange} placeholder="Kenya" className={inputClass} required/></div>
+        <div><label className={labelClass}>Travel date<span className="text-rose-500"> *</span></label><div className="relative"><CalendarDays className="absolute left-3 top-5 text-slate-400" size={17}/><input type="date" min={todayIso} name="date" value={form.date} onChange={handleChange} className={`${inputClass} pl-10`} required/></div></div>
+        <div><label className={labelClass}>Duration<span className="text-rose-500"> *</span></label><input type="number" min="1" max="365" step="1" name="duration" value={form.duration} onChange={handleChange} className={inputClass} required/><p className="mt-1 text-xs text-slate-400">Number of tour days.</p></div>
+        <div><label className={labelClass}>Guest capacity<span className="text-rose-500"> *</span></label><div className="relative"><Users className="absolute left-3 top-5 text-slate-400" size={17}/><input type="number" min="1" max="10000" step="1" name="capacity" value={form.capacity} onChange={handleChange} className={`${inputClass} pl-10`} required/></div></div>
+        <div><label className={labelClass}>Difficulty</label><select name="difficulty" value={form.difficulty} onChange={handleChange} className={inputClass}><option value="easy">Easy</option><option value="moderate">Moderate</option><option value="hard">Hard</option></select></div>
+        <div><label className={labelClass}>Publication status</label><select name="status" value={form.status} onChange={handleChange} className={inputClass}><option value="draft">Draft</option><option value="upcoming">Upcoming</option><option value="scheduled">Scheduled</option></select></div>
+        <div className="md:col-span-2"><label className={labelClass}>Description<span className="text-rose-500"> *</span></label><textarea name="description" value={form.description} onChange={handleChange} placeholder="Describe the experience, inclusions and key highlights…" className={`${inputClass} min-h-32 resize-y`} maxLength={4000} required/><div className="mt-1 text-right text-xs text-slate-400">{form.description.length}/4000</div></div>
+      </div></section>
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7"><div className="mb-6 flex items-start gap-3"><div className="rounded-xl bg-blue-100 p-2.5 text-blue-700"><CheckCircle2 size={20}/></div><div><h2 className="text-xl font-extrabold text-slate-900">Pricing & availability</h2><p className="mt-1 text-sm text-slate-500">Set the customer-facing price and optional promotional discount.</p></div></div><div className="grid gap-5 md:grid-cols-2"><div><label className={labelClass}>Price per guest (KES)<span className="text-rose-500"> *</span></label><div className="relative"><span className="absolute left-3 top-5 text-xs font-black text-emerald-700">KES</span><input type="number" min="0" step="0.01" name="price" value={form.price} onChange={handleChange} placeholder="0.00" className={`${inputClass} pl-14`} required/></div></div><div><label className={labelClass}>Discount (%)</label><input type="number" min="0" max="100" step="0.01" name="discount" value={form.discount} onChange={handleChange} placeholder="0" className={inputClass}/><p className="mt-1 text-xs text-slate-400">Enter 0 if there is no promotion.</p></div></div><div className="mt-5 grid gap-3 sm:grid-cols-3"><div className="rounded-xl bg-slate-50 p-4"><div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Base price</div><div className="mt-1 text-lg font-black text-slate-900">KES {Number(form.price || 0).toLocaleString("en-KE", {minimumFractionDigits:2})}</div></div><div className="rounded-xl bg-emerald-50 p-4"><div className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Customer price</div><div className="mt-1 text-lg font-black text-emerald-800">KES {estimatedTotal.toLocaleString("en-KE", {minimumFractionDigits:2})}</div></div><div className="rounded-xl bg-blue-50 p-4"><div className="text-xs font-semibold uppercase tracking-wide text-blue-700">Capacity</div><div className="mt-1 text-lg font-black text-blue-900">{Number(form.capacity || 0).toLocaleString("en-KE")} guests</div></div></div></section>
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7"><div className="mb-5 flex items-start gap-3"><div className="rounded-xl bg-violet-100 p-2.5 text-violet-700"><ImagePlus size={20}/></div><div><h2 className="text-xl font-extrabold text-slate-900">Tour images</h2><p className="mt-1 text-sm text-slate-500">Upload up to 10 JPG, PNG or WebP images. The first image is the featured image.</p></div></div><label className="flex min-h-36 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 px-5 py-6 text-center hover:border-emerald-400 hover:bg-emerald-50/50"><ImagePlus className="text-emerald-600" size={30}/><span className="mt-2 font-bold text-slate-800">Choose tour images</span><span className="mt-1 text-xs text-slate-500">JPG, PNG or WebP • maximum 10 files</span><input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={handleImages} className="sr-only"/></label>{imageError && <div className="mt-3 flex items-center gap-2 rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700"><CircleAlert size={17}/>{imageError}</div>}{imageFiles.length > 0 && <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4"><div className="col-span-full text-xs font-bold uppercase tracking-wide text-slate-500">{imageFiles.length} image{imageFiles.length === 1 ? "" : "s"} selected</div>{imageFiles.map((file, index) => <div key={`${file.name}-${file.lastModified}`} className="relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2"><div className="truncate pr-6 text-xs font-semibold text-slate-700">{index === 0 ? "Featured • " : ""}{file.name}</div><button type="button" onClick={() => removeImage(index)} className="absolute right-1 top-1 rounded-full bg-white p-1 text-slate-500 shadow-sm hover:text-rose-600" aria-label={`Remove ${file.name}`}><X size={14}/></button></div>)}</div>}</section>
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7"><div className="mb-6 flex items-start justify-between gap-4"><div className="flex items-start gap-3"><div className="rounded-xl bg-amber-100 p-2.5 text-amber-700"><CarFront size={20}/></div><div><h2 className="text-xl font-extrabold text-slate-900">Tour resources</h2><p className="mt-1 text-sm text-slate-500">Optionally reserve available operational resources when the tour is created.</p></div></div><ShieldCheck className="hidden text-emerald-600 sm:block" size={22}/></div>{assignmentError && <div className="mb-5 flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-start gap-2"><CircleAlert size={18} className="mt-0.5 shrink-0"/><span>One or more resource services could not be loaded. The affected selector remains unavailable rather than showing false availability.</span></div><button type="button" onClick={retryResources} className="shrink-0 rounded-lg bg-amber-700 px-3 py-2 text-xs font-bold text-white hover:bg-amber-800">Retry resources</button></div>}<div className="mb-5 grid grid-cols-3 gap-2 sm:gap-3"><div className="rounded-xl bg-slate-50 p-3 text-center"><UserRound className="mx-auto text-emerald-600" size={18}/><div className="mt-1 text-lg font-black text-slate-900">{guidesLoading ? "—" : guidesError ? "Unavailable" : guides.length}</div><div className="text-[11px] font-semibold text-slate-500">Available guides</div></div><div className="rounded-xl bg-slate-50 p-3 text-center"><UserRound className="mx-auto text-blue-600" size={18}/><div className="mt-1 text-lg font-black text-slate-900">{driversLoading ? "—" : driversError ? "Unavailable" : drivers.length}</div><div className="text-[11px] font-semibold text-slate-500">Available drivers</div></div><div className="rounded-xl bg-slate-50 p-3 text-center"><CarFront className="mx-auto text-violet-600" size={18}/><div className="mt-1 text-lg font-black text-slate-900">{vehiclesLoading ? "—" : vehiclesError ? "Unavailable" : vehicles.length}</div><div className="text-[11px] font-semibold text-slate-500">Available vehicles</div></div></div><div className="grid gap-5 md:grid-cols-3"><div><label className={labelClass}>Guide</label><select name="guide" value={form.guide} onChange={handleChange} className={inputClass} disabled={guidesLoading || !!guidesError}><option value="">{guidesLoading ? "Loading guides…" : guidesError ? "Guides unavailable" : "No guide / Select guide"}</option>{guides.map((guide) => <option key={guide._id} value={guide._id}>{cleanLabel(guide.name, "Unnamed guide")}{guide.phone ? ` — ${guide.phone}` : ""}</option>)}</select></div><div><label className={labelClass}>Driver</label><select name="driver" value={form.driver} onChange={handleChange} className={inputClass} disabled={driversLoading || !!driversError}><option value="">{driversLoading ? "Loading drivers…" : driversError ? "Drivers unavailable" : "No driver / Select driver"}</option>{drivers.map((driver) => <option key={driver._id} value={driver._id}>{cleanLabel(driver.name, "Unnamed driver")}{driver.phone ? ` — ${driver.phone}` : ""}</option>)}</select></div><div><label className={labelClass}>Vehicle</label><select name="vehicle" value={form.vehicle} onChange={handleChange} className={inputClass} disabled={vehiclesLoading || !!vehiclesError}><option value="">{vehiclesLoading ? "Loading vehicles…" : vehiclesError ? "Vehicles unavailable" : "No vehicle / Select vehicle"}</option>{vehicles.map((vehicle) => <option key={vehicle._id} value={vehicle._id}>{cleanLabel(vehicle.name || vehicle.model, "Unnamed vehicle")} — {cleanLabel(vehicle.registrationNumber || vehicle.registration, "No registration")}</option>)}</select></div></div></section>
+    </div><aside className="lg:sticky lg:top-6 lg:h-fit"><div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="bg-gradient-to-br from-emerald-950 to-slate-900 p-5 text-white"><div className="text-xs font-bold uppercase tracking-widest text-emerald-300">Creation summary</div><h2 className="mt-2 text-xl font-black">Ready to create</h2><p className="mt-1 text-xs leading-5 text-slate-300">Review the essentials before submitting the tour.</p></div><div className="space-y-4 p-5"><div className="flex items-start gap-3"><MapPin size={17} className="mt-0.5 text-emerald-600"/><div><div className="text-xs font-bold uppercase tracking-wide text-slate-400">Destination</div><div className="mt-1 text-sm font-bold text-slate-800">{selectedDestination ? cleanLabel(selectedDestination.name || selectedDestination.title, "Unnamed destination") : "Not selected"}</div></div></div><div className="flex items-start gap-3"><CalendarDays size={17} className="mt-0.5 text-blue-600"/><div><div className="text-xs font-bold uppercase tracking-wide text-slate-400">Travel date</div><div className="mt-1 text-sm font-bold text-slate-800">{form.date ? new Date(`${form.date}T00:00:00`).toLocaleDateString("en-KE", {day:"2-digit", month:"short", year:"numeric"}) : "Not selected"}</div></div></div><div className="flex items-start gap-3"><Users size={17} className="mt-0.5 text-violet-600"/><div><div className="text-xs font-bold uppercase tracking-wide text-slate-400">Capacity</div><div className="mt-1 text-sm font-bold text-slate-800">{Number(form.capacity || 0).toLocaleString("en-KE")} guests • {form.duration || 0} day{Number(form.duration) === 1 ? "" : "s"}</div></div></div><div className="border-t border-slate-100 pt-4"><div className="text-xs font-bold uppercase tracking-wide text-slate-400">Customer price</div><div className="mt-1 text-2xl font-black text-emerald-700">KES {estimatedTotal.toLocaleString("en-KE", {minimumFractionDigits:2})}</div>{Number(form.discount) > 0 && <div className="mt-1 text-xs text-slate-500">{form.discount}% promotional discount applied</div>}</div><div className="rounded-xl bg-emerald-50 p-3 text-xs leading-5 text-emerald-800"><strong>Operational note:</strong> Resource assignments are optional. Only resources confirmed as available are offered for selection.</div><button type="submit" disabled={isPending || destinationsLoading || !!destinationsError} className="w-full rounded-xl bg-emerald-700 px-5 py-3.5 text-sm font-extrabold text-white shadow-lg shadow-emerald-900/10 hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-300">{isPending ? "Creating tour…" : "Create Tour"}</button><button type="button" onClick={() => navigate("/tour-manager/tours")} disabled={isPending} className="w-full rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50">Cancel</button></div></div></aside></form></main>
+  </div>;
 }
