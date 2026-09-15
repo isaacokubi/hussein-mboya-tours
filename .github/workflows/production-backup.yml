@@ -41,6 +41,26 @@ jobs:
           sha256sum "$archive" > "$archive.sha256"
           printf '%s\n' "$archive" > backup/latest.txt
 
+      - name: Verify archive contains application data
+        env:
+          BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          archive="$(cat backup/latest.txt)"
+          openssl enc -d -aes-256-cbc -pbkdf2 -in "$archive" -pass env:BACKUP_ENCRYPTION_PASSPHRASE \
+            > backup/production.archive.gz
+          gzip -t backup/production.archive.gz
+          docker run --rm -i mongo:8 \
+            mongorestore --archive --gzip --dryRun --verbose \
+            < backup/production.archive.gz \
+            2>&1 | tee backup/dry-run.log
+          grep -Eq '\.(tenants|users)([[:space:]]|$)' backup/dry-run.log || {
+            echo "Backup archive does not contain expected application collections (tenants/users)."
+            echo "The configured MONGODB_BACKUP_URI may point to the wrong database."
+            exit 1
+          }
+          echo "Backup archive contains expected application collections."
+
       - name: Upload encrypted backup artifact
         uses: actions/upload-artifact@v4
         with:
