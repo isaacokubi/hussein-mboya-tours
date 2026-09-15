@@ -21,10 +21,14 @@ jobs:
       - name: Validate backup run
         env:
           GH_TOKEN: ${{ github.token }}
-          RUN_ID: ${{ inputs.backup_run_id }}
+          RUN_ID_INPUT: ${{ inputs.backup_run_id }}
         run: |
           set -euo pipefail
-          test "$RUN_ID" -gt 0 || { echo "backup_run_id must be a positive GitHub Actions run ID."; exit 1; }
+          RUN_ID="$(printf '%s' "$RUN_ID_INPUT" | tr -d '[:space:]')"
+          if ! [[ "$RUN_ID" =~ ^[1-9][0-9]*$ ]]; then
+            echo "backup_run_id must contain only a positive GitHub Actions run ID."
+            exit 1
+          fi
           run_json="$(gh run view "$RUN_ID" --repo "$GITHUB_REPOSITORY" --json workflowName,status,conclusion,event)"
           echo "$run_json"
           python - <<'PY' "$run_json"
@@ -40,9 +44,14 @@ jobs:
       - name: Download backup artifact
         env:
           GH_TOKEN: ${{ github.token }}
-          RUN_ID: ${{ inputs.backup_run_id }}
+          RUN_ID_INPUT: ${{ inputs.backup_run_id }}
         run: |
           set -euo pipefail
+          RUN_ID="$(printf '%s' "$RUN_ID_INPUT" | tr -d '[:space:]')"
+          if ! [[ "$RUN_ID" =~ ^[1-9][0-9]*$ ]]; then
+            echo "backup_run_id must contain only a positive GitHub Actions run ID."
+            exit 1
+          fi
           mkdir -p restore-artifact
           gh run download "$RUN_ID" --repo "$GITHUB_REPOSITORY" --pattern 'production-mongodb-backup-*' --dir restore-artifact
           archive_count="$(find restore-artifact -name '*.archive.gz.enc' -type f | wc -l)"
