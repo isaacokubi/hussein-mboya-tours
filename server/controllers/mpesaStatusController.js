@@ -36,7 +36,12 @@ export const queryMpesaPayment = async (req, res, next) => {
       payment.failureReason = providerResponse?.ResultDesc || "M-Pesa payment was cancelled or timed out.";
       payment.failedAt = payment.failedAt || new Date();
       booking.paymentStatus = "failed";
-      if (!["completed", "cancelled", "refunded"].includes(booking.status)) booking.status = "failed";
+      if (!["completed", "cancelled", "refunded"].includes(booking.status)) {
+        booking.status = "cancelled";
+        booking.cancellationReason =
+          booking.cancellationReason || "M-Pesa payment was cancelled.";
+        booking.cancelledAt = booking.cancelledAt || new Date();
+      }
       await payment.save();
       await booking.save();
     } else if (providerStatus === "failed") {
