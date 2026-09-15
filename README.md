@@ -2,32 +2,72 @@
 
 Kenya-focused multi-tenant tour-operator platform.
 
+## Production test status
+
+**Current repository HEAD:** `d60fec35e895d42eed3f49e26c8da1f03226e479`
+
+The current `main` branch has a successful CI release run and successful production endpoint smoke test. The production MongoDB encrypted-backup workflow has also completed successfully.
+
+### Verified automated tests
+
+| Test | Result | Evidence |
+|---|---|---|
+| Server production checks (`npm run check:all`) | PASS | CI run `34990056154` |
+| Backend automated tests (`npm test`) | PASS | CI run `34990056154` |
+| Live tenant-isolation regression | PASS | CI run `34990056154` |
+| Client ESLint | PASS | CI run `34990056154` |
+| Client production build | PASS | CI run `34990056154` |
+| Security and tenant-integrity release gate | PASS | Release gate previously certified; current CI remains green |
+| Kenya production-readiness checks | PASS | Release gate previously certified; current CI remains green |
+| Final release gate | PASS | Release gate previously certified; current CI remains green |
+| Production API health endpoint | PASS | Live check: HTTP 200, healthy, database connected |
+| Production API root endpoint | PASS | Live check: HTTP 200, expected API message |
+| Production website endpoint | PASS | Live check: HTTP 200 from Vercel |
+| Production smoke workflow | PASS | Run `34990056067` |
+| Encrypted MongoDB backup | PASS | Run `34993023892`, artifact uploaded and integrity verified |
+
+### Live tenant-isolation checks
+
+The following tenant-context behavior has been verified against the production API:
+
+- Request without tenant context: safely rejected with HTTP 400 and `Tenant context is required`.
+- Amani Trails Safaris tenant context: HTTP 200.
+- Savanna Crown Safaris tenant context: HTTP 200.
+- Coastal Horizon Adventures tenant context: HTTP 200.
+- Production API health reports MongoDB as `connected`.
+
+Tenant isolation remains a release-blocking control: production must never silently fall back to a single tenant when tenant context is missing.
+
+### Production backup evidence
+
+The Production MongoDB Backup workflow completed successfully in run `34993023892`.
+
+- Encrypted MongoDB archive created with AES-256-CBC and PBKDF2.
+- SHA-256 checksum generated.
+- GitHub Actions artifact uploaded successfully.
+- Artifact: `production-mongodb-backup-34993023892.zip`.
+- Artifact ID: `10405803526`.
+- Artifact size: `90415` bytes.
+- Artifact SHA-256: `131828e2f91a2ff12e205a3a35de4133584b70cfab30561c286b277258dfd281`.
+- The workflow successfully decrypted the archive and passed gzip integrity verification.
+
+### Tests still pending external evidence
+
+These are **not marked PASS** merely because automated CI is green:
+
+- Isolated MongoDB restore drill.
+- Production monitoring and alert firing test.
+- Real M-Pesa STK → callback → booking → reconciliation transaction.
+- Duplicate M-Pesa callback/idempotency acceptance using provider-supported evidence.
+- Failed/expired M-Pesa acceptance.
+- Live KRA/eTIMS submission and receipt/control-number acceptance.
+- Full manual desktop/mobile browser acceptance across customer, admin, finance, tour manager, driver and SuperAdmin flows.
+
+A test is recorded as **PASS** only when its required evidence exists. External integrations may be recorded as **BLOCKED** when credentials/onboarding or provider access is unavailable; they must not be represented as successful based on code inspection alone.
+
 ## Production readiness baseline
 
-**Baseline CI status: PASSED** — the repository's latest verified application baseline passed all three release-gate phases on `main`.
-
-- Release gate run: **34942492468**
-- Verified application commit: **0b00897efa85ab8e4097755670091d2abaa63285**
-- Phase 1 — Security and tenant integrity: **PASSED**
-- Phase 2 — Kenya production readiness: **PASSED**
-- Phase 3 — Final release gate: **PASSED**
-- Client lint: **PASSED**
-- Client production build: **PASSED**
-- Backend test suite: **PASSED**
-- Production/model/service/controller checks: **PASSED**
-- Tenant-isolation and production-readiness contract checks: **PASSED**
-- Kenya compliance/payment module verification: **PASSED**
-- Release configuration and committed-secret checks: **PASSED**
-
-**Future test runs must treat this verified application commit and release-gate run as the existing baseline.** Documentation and deployment-acceptance commits made afterward do not invalidate that application baseline; tests should start from the current `main` history and this document, then run the existing release gate and report only regressions or newly introduced gaps.
-
-### What this baseline proves
-
-The automated repository checks establish that the implemented security, multi-tenancy, subscription lifecycle, financial/compliance infrastructure, production safeguards, and frontend release checks were passing in CI at the verified application baseline.
-
-### What this baseline does not prove
-
-Automated CI cannot by itself prove live third-party operation. Before a commercial production launch, the remaining external acceptance evidence still needs to be obtained where applicable: live KRA/eTIMS onboarding and credentials, live tenant M-Pesa/provider credentials and callback registration, applicable TRA/ODPC compliance, production backup/restore drills, monitoring/alert configuration, and live integration acceptance transactions.
+The repository's automated security, multi-tenancy, subscription lifecycle, financial/compliance infrastructure, production safeguards, and frontend release checks have a passing baseline. See [`docs/PRODUCTION_READINESS.md`](docs/PRODUCTION_READINESS.md) for the authoritative test matrix and evidence history.
 
 ## Current implementation scope
 
@@ -39,4 +79,5 @@ Optional enterprise integrations such as GDS/flight booking, hotel inventory API
 
 ## Production documentation
 
-See [`docs/PRODUCTION_READINESS.md`](docs/PRODUCTION_READINESS.md) for the authoritative test baseline, the nine production-readiness areas, evidence requirements, and instructions for future test runs.
+- [`docs/PRODUCTION_READINESS.md`](docs/PRODUCTION_READINESS.md) — authoritative readiness matrix, test evidence and release rules.
+- [`docs/TEST_EVIDENCE.md`](docs/TEST_EVIDENCE.md) — chronological record of verified tests and remaining acceptance gaps.
