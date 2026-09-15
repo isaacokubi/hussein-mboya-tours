@@ -98,7 +98,7 @@ export const guideDashboard = async (req, res, next) => {
     const assignmentFilter = guideTourFilter(req, guide);
     let tours = await Tour.find(assignmentFilter).populate("destination").populate("assignedVehicle").populate("assignedDriver").sort({ startDate: 1, date: 1 }).lean();
     await syncTourLifecycle(req, tours);
-    tours = await Tour.find(assignmentFilter).populate("destination").populate("assignedVehicle").populate("assignedDriver").sort({ startDate: 1, date: 1 }).limit(10).lean();
+    tours = await Tour.find(assignmentFilter).populate("destination").populate("assignedVehicle").populate("assignedDriver").sort({ startDate: 1, date: 1 }).lean();
     const tourIds = tours.map((tour) => tour._id);
     const guestStats = tourIds.length ? await Booking.aggregate([
       { $match: { tenantId: req.tenantId, tour: { $in: tourIds }, isDeleted: { $ne: true }, status: { $in: ["confirmed", "assigned", "ongoing"] } } },
@@ -120,7 +120,7 @@ export const getAssignedTours = async (req, res, next) => {
   try {
     const guide = await getGuideOr404(req, res);
     if (!guide) return;
-    const tours = await Tour.find(guideTourFilter(req, guide)).populate("destination").populate("assignedVehicle").populate("assignedDriver").sort({ startDate: 1, date: 1 }).limit(10);
+    const tours = await Tour.find(guideTourFilter(req, guide)).populate("destination").populate("assignedVehicle").populate("assignedDriver").sort({ startDate: 1, date: 1 }).limit(50);
     await syncTourLifecycle(req, tours);
     return res.status(200).json({ success: true, count: tours.length, tours, data: tours });
   } catch (error) { next(error); }
@@ -145,7 +145,9 @@ export const getTourGuests = async (req, res, next) => {
     if (!guide) return;
     const assignedTour = await Tour.findOne(scope(req, { $and: [guideTourFilter(req, guide), { _id: req.params.id }] }));
     if (!assignedTour) return res.status(403).json({ success: false, message: "You are not assigned to this tour" });
-    const bookings = await Booking.find(scope(req, { tour: assignedTour._id, isDeleted: { $ne: true }, status: { $in: ["confirmed", "assigned", "ongoing", "completed"] } })).populate("customer", "name email phone").sort({ createdAt: -1 });
+    const bookings = await Booking.find(scope(req, { tour: assignedTour._id, isDeleted: { $ne: true }, status: { $in: ["confirmed", "assigned", "ongoing", "completed"] } }))
+      .populate("customer", "name firstName lastName email phone")
+      .sort({ createdAt: -1 });
     return res.status(200).json({ success: true, count: bookings.length, guests: bookings, data: bookings });
   } catch (error) { next(error); }
 };
