@@ -64,22 +64,10 @@ jobs:
           RESTORE_TARGET_ISOLATED: ${{ secrets.RESTORE_TARGET_ISOLATED }}
         run: |
           set -euo pipefail
-          if [ -z "${MONGODB_RESTORE_URI:-}" ]; then
-            echo "BLOCKED: MONGODB_RESTORE_URI is not configured."
-            exit 1
-          fi
-          if [ -z "${MONGODB_PRODUCTION_URI:-}" ]; then
-            echo "BLOCKED: MONGODB_PRODUCTION_URI is not configured."
-            exit 1
-          fi
-          if [ "${RESTORE_TARGET_ISOLATED:-}" != "true" ]; then
-            echo "BLOCKED: RESTORE_TARGET_ISOLATED must be exactly true."
-            exit 1
-          fi
-          if [ "$MONGODB_RESTORE_URI" = "$MONGODB_PRODUCTION_URI" ]; then
-            echo "BLOCKED: restore target matches production target."
-            exit 1
-          fi
+          test -n "${MONGODB_RESTORE_URI:-}" || { echo "BLOCKED: MONGODB_RESTORE_URI is not configured."; exit 1; }
+          test -n "${MONGODB_PRODUCTION_URI:-}" || { echo "BLOCKED: MONGODB_PRODUCTION_URI is not configured."; exit 1; }
+          test "${RESTORE_TARGET_ISOLATED:-}" = "true" || { echo "BLOCKED: RESTORE_TARGET_ISOLATED must be exactly true."; exit 1; }
+          test "$MONGODB_RESTORE_URI" != "$MONGODB_PRODUCTION_URI" || { echo "BLOCKED: restore target matches production target."; exit 1; }
           echo "Restore target safety checks passed."
 
       - name: Restore backup
@@ -90,14 +78,12 @@ jobs:
           set -euo pipefail
           archive="$(find restore-artifact -name '*.archive.gz.enc' -type f | head -n 1)"
           openssl enc -d -aes-256-cbc -pbkdf2 -in "$archive" -pass env:BACKUP_ENCRYPTION_PASSPHRASE > restore.archive.gz
-          docker run --rm -i -e MONGODB_RESTORE_URI="$MONGODB_RESTORE_URI" mongo:8 \
-            sh -lc 'cat > /tmp/restore.archive.gz && mongorestore --uri="$MONGODB_RESTORE_URI" --archive=/tmp/restore.archive.gz --gzip --drop --nsFrom="husseindb.*" --nsTo="${MONGODB_RESTORE_URI#*//}"'
+          docker run --rm -i -e MONGODB_RESTORE_URI="$MONGODB_RESTORE_URI" mongo:8 sh -lc 'cat > /tmp/restore.archive.gz && mongorestore --uri="$MONGODB_RESTORE_URI" --archive=/tmp/restore.archive.gz --gzip --drop --nsFrom="husseindb.*" --nsTo="backups.*"'
 
       - name: Validate restored database
         env:
           MONGODB_RESTORE_URI: ${{ secrets.MONGODB_RESTORE_URI }}
         run: |
           set -euo pipefail
-          docker run --rm -e MONGODB_RESTORE_URI="$MONGODB_RESTORE_URI" mongo:8 \
-            sh -lc 'mongosh "$MONGODB_RESTORE_URI" --quiet --eval '\''const names=db.getCollectionNames(); if (!names.length) throw new Error("Restore produced no collections"); printjson({database:db.getName(), collectionCount:names.length, collections:names.slice(0,20)}); if (!names.includes("tenants") && !names.includes("users")) throw new Error("Restore is missing expected application collections (tenants/users)");'\'''
+          docker run --rm -e MONGODB_RESTORE_URI="$MONGODB_RESTORE_URI" mongo:8 sh -lc 'mongosh "$MONGODB_RESTORE_URI" --quiet --eval '\''const names=db.getCollectionNames(); if (!names.length) throw new Error("Restore produced no collections"); printjson({database:db.getName(), collectionCount:names.length, collections:names.slice(0,20)}); if (!names.includes("tenants") && !names.includes("users")) throw new Error("Restore is missing expected application collections (tenants/users)");'\'''
           echo "Restore drill completed and restored database structure was validated."
