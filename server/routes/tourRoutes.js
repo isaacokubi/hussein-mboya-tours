@@ -54,18 +54,13 @@ router.get("/search", searchTours);
 // GET /api/tours/slug/:slug
 router.get("/slug/:slug", getTourBySlug);
 
-// TOUR AVAILABILITY
-// GET /api/tours/:id/availability
-router.get("/:id/availability", getTourAvailability);
-
-// GET SINGLE TOUR
-// GET /api/tours/:id
-// Public read-only tour details.
-router.get("/:id", getTourById);
-
 /*
 |--------------------------------------------------------------------------
 | PROTECTED TOUR MANAGER ROUTES
+|--------------------------------------------------------------------------
+|
+| IMPORTANT: named routes must be registered before /:id. Express matches
+| routes in declaration order, so /manager must not be captured as a tour id.
 |--------------------------------------------------------------------------
 */
 
@@ -74,11 +69,35 @@ router.use(tourManagerOnly);
 
 // GET MANAGER TOURS
 // GET /api/tours/manager
+// Must remain above /:id to avoid treating "manager" as a tour id.
 router.get("/manager", getManagerTours);
 
 // CREATE TOUR
 // POST /api/tours
 router.post("/", upload.array("images", 10), createTour);
+
+/*
+|--------------------------------------------------------------------------
+| TOUR AVAILABILITY MANAGEMENT
+|--------------------------------------------------------------------------
+*/
+
+// GET TOUR AVAILABILITY
+// GET /api/tours/:id/availability
+router.get("/:id/availability", getTourAvailability);
+
+// PATCH /api/tours/:id/availability
+router.patch("/:id/availability", updateTourAvailability);
+
+/*
+|--------------------------------------------------------------------------
+| SINGLE TOUR / CRUD
+|--------------------------------------------------------------------------
+*/
+
+// GET SINGLE TOUR
+// GET /api/tours/:id
+router.get("/:id", getTourById);
 
 // UPDATE TOUR
 // PUT /api/tours/:id
@@ -90,25 +109,13 @@ router.delete("/:id", deleteTour);
 
 /*
 |--------------------------------------------------------------------------
-| TOUR AVAILABILITY MANAGEMENT
-|--------------------------------------------------------------------------
-*/
-
-// PATCH /api/tours/:id/availability
-router.patch("/:id/availability", updateTourAvailability);
-
-/*
-|--------------------------------------------------------------------------
-| VEHICLE ASSIGNMENT
+| TOUR RESOURCE ASSIGNMENT
 |--------------------------------------------------------------------------
 */
 
 // PUT /api/tours/:id/assign
 // Frontend compatibility alias for assigning guide/driver/vehicle.
-router.put(
-  "/:id/assign",
-  assignTourResources
-);
+router.put("/:id/assign", assignTourResources);
 
 // PATCH /api/tours/:id/assign-vehicle
 router.patch("/:id/assign-vehicle", assignVehicle);
