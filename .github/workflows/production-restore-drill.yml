@@ -81,20 +81,12 @@ jobs:
           docker run --rm -i \
             -e MONGODB_RESTORE_URI="$MONGODB_RESTORE_URI" \
             mongo:8 sh -lc '
-              python3 - <<'"'"'PY'"'"'
-          import os
-          import re
-          uri = os.environ["MONGODB_RESTORE_URI"]
-          match = re.match(r"^(mongodb(?:\\+srv)?://[^/]+)(/[^?]*)?(\\?.*)?$", uri)
-          if not match:
-              raise SystemExit("MONGODB_RESTORE_URI format could not be parsed safely.")
-          target = match.group(1) + (match.group(3) or "")
-          with open("/tmp/restore-target-uri", "w", encoding="utf-8") as handle:
-              handle.write(target)
-          PY
-              target_uri="$(cat /tmp/restore-target-uri)"
+              case "$MONGODB_RESTORE_URI" in
+                mongodb://*|mongodb+srv://*) ;;
+                *) echo "MONGODB_RESTORE_URI format could not be parsed safely."; exit 1 ;;
+              esac
               cat > /tmp/restore.archive.gz
-              mongorestore --uri="$target_uri" --archive=/tmp/restore.archive.gz --gzip --drop --nsInclude="husseindb.*" --nsFrom="husseindb.*" --nsTo="backups.*"
+              mongorestore --uri="$MONGODB_RESTORE_URI" --archive=/tmp/restore.archive.gz --gzip --drop --nsInclude="husseindb.*" --nsFrom="husseindb.*" --nsTo="backups.*"
             '
 
       - name: Validate restored database
