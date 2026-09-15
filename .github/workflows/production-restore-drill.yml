@@ -78,12 +78,30 @@ jobs:
           set -euo pipefail
           archive="$(find restore-artifact -name '*.archive.gz.enc' -type f | head -n 1)"
           openssl enc -d -aes-256-cbc -pbkdf2 -in "$archive" -pass env:BACKUP_ENCRYPTION_PASSPHRASE > restore.archive.gz
-          docker run --rm -i -e MONGODB_RESTORE_URI="$MONGODB_RESTORE_URI" mongo:8 sh -lc 'cat > /tmp/restore.archive.gz && mongorestore --uri="$MONGODB_RESTORE_URI" --archive=/tmp/restore.archive.gz --gzip --drop --nsFrom="husseindb.*" --nsTo="backups.*"'
+          docker run --rm -i \
+            -e MONGODB_RESTORE_URI="$MONGODB_RESTORE_URI" \
+            mongo:8 sh -lc '
+              python3 - <<'"'"'PY'"'"'
+          import os
+          import re
+          uri = os.environ["MONGODB_RESTORE_URI"]
+          match = re.match(r"^(mongodb(?:\\+srv)?://[^/]+)(/[^?]*)?(\\?.*)?$", uri)
+          if not match:
+              raise SystemExit("MONGODB_RESTORE_URI format could not be parsed safely.")
+          target = match.group(1) + (match.group(3) or "")
+          with open("/tmp/restore-target-uri", "w", encoding="utf-8") as handle:
+              handle.write(target)
+          PY
+              target_uri="$(cat /tmp/restore-target-uri)"
+              cat > /tmp/restore.archive.gz
+              mongorestore --uri="$target_uri" --archive=/tmp/restore.archive.gz --gzip --drop --nsInclude="husseindb.*" --nsFrom="husseindb.*" --nsTo="backups.*"
+            '
 
       - name: Validate restored database
         env:
           MONGODB_RESTORE_URI: ${{ secrets.MONGODB_RESTORE_URI }}
         run: |
           set -euo pipefail
-          docker run --rm -e MONGODB_RESTORE_URI="$MONGODB_RESTORE_URI" mongo:8 sh -lc 'mongosh "$MONGODB_RESTORE_URI" --quiet --eval '\''const names=db.getCollectionNames(); if (!names.length) throw new Error("Restore produced no collections"); printjson({database:db.getName(), collectionCount:names.length, collections:names.slice(0,20)}); if (!names.includes("tenants") && !names.includes("users")) throw new Error("Restore is missing expected application collections (tenants/users)");'\'''
+          docker run --rm -e MONGODB_RESTORE_URI="$MONGODB_RESTORE_URI" mongo:8 \
+            sh -lc 'mongosh "$MONGODB_RESTORE_URI" --quiet --eval '\''const names=db.getCollectionNames(); if (!names.length) throw new Error("Restore produced no collections"); printjson({database:db.getName(), collectionCount:names.length, collections:names.slice(0,20)}); if (!names.includes("tenants") && !names.includes("users")) throw new Error("Restore is missing expected application collections (tenants/users)");'\'''
           echo "Restore drill completed and restored database structure was validated."
