@@ -164,7 +164,7 @@ export default function TourManagerCalendar() {
     if (!selectedDay || !title.trim()) return;
 
     const item = {
-      id: `${Date.now()}`,
+      id: `${dateKey(selectedDay)}-${title.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
       date: dateKey(selectedDay),
       title: title.trim(),
     };
