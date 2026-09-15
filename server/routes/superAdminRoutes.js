@@ -45,7 +45,11 @@ router.post("/maintenance/backup", createPlatformDatabaseBackup);
 router.post("/database/backup", createPlatformDatabaseBackup);
 router.post("/maintenance/cache", clearSystemCache);
 router.post("/database/cache-clear", clearSystemCache);
+// Canonical platform backup read endpoint. Kept under /database so it cannot
+// be confused with tenant maintenance routes mounted at /superadmin/maintenance.
+router.get("/database/backups", listPlatformDatabaseBackups);
 router.get("/maintenance/backups", listPlatformDatabaseBackups);
 router.delete("/maintenance/backups/:id", deletePlatformDatabaseBackup);
+router.delete("/database/backups/:id", deletePlatformDatabaseBackup);
 router.get("/database/backup/:id/download", downloadPlatformDatabaseBackup);
 export default router;
