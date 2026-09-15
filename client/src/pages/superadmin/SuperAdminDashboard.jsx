@@ -2,22 +2,21 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import {
   Activity,
-  ArrowUpRight,
   Building2,
+  CalendarCheck2,
+  CarFront,
   CheckCircle2,
   CreditCard,
   Database,
   Gauge,
   Globe2,
   LayoutDashboard,
+  Map,
+  MapPinned,
   RefreshCw,
   ShieldCheck,
-  Users,
   UserCheck,
-  CarFront,
-  Map,
-  CalendarCheck2,
-  MapPinned,
+  Users,
   WalletCards,
   AlertCircle,
 } from "lucide-react";
@@ -141,20 +140,11 @@ export default function SuperAdminDashboard() {
                 : message || "Unable to load platform metrics."}
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <button
-              type="button"
-              className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 font-bold text-white transition hover:bg-slate-800 disabled:opacity-60"
-              onClick={() => refetch()}
-              disabled={isFetching}
-            >
+            <button type="button" className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 font-bold text-white transition hover:bg-slate-800 disabled:opacity-60" onClick={() => refetch()} disabled={isFetching}>
               <RefreshCw size={17} className={isFetching ? "animate-spin" : ""} />
               {isFetching ? "Retrying…" : "Retry"}
             </button>
-            {sessionExpired && (
-              <Link to="/login" className="rounded-xl border border-slate-200 px-4 py-2.5 font-bold text-slate-700 hover:bg-slate-50">
-                Sign in again
-              </Link>
-            )}
+            {sessionExpired && <Link to="/login" className="rounded-xl border border-slate-200 px-4 py-2.5 font-bold text-slate-700 hover:bg-slate-50">Sign in again</Link>}
           </div>
         </div>
       </main>
@@ -170,54 +160,25 @@ export default function SuperAdminDashboard() {
           <div className="relative flex flex-col gap-7 xl:flex-row xl:items-end xl:justify-between">
             <div className="max-w-4xl">
               <div className="flex flex-wrap items-center gap-3">
-                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-emerald-200 backdrop-blur">
-                  <Gauge size={14} /> Super Admin
-                </span>
-                <span className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-400/10 px-3 py-1.5 text-xs font-semibold text-emerald-100">
-                  <Activity size={14} /> Live platform data
-                </span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-emerald-200 backdrop-blur"><Gauge size={14} /> Super Admin</span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-400/10 px-3 py-1.5 text-xs font-semibold text-emerald-100"><Activity size={14} /> Live platform data</span>
               </div>
               <h1 className="mt-5 text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl">Global Tours Platform Control Center</h1>
-              <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300 sm:text-base">
-                Govern tenants, users, operations, payments and platform health from one tenant-aware control surface.
-              </p>
+              <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300 sm:text-base">Govern tenants, users, operations, payments and platform health from one tenant-aware control surface.</p>
             </div>
-            <button
-              type="button"
-              onClick={() => refetch()}
-              disabled={isFetching}
-              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-bold text-white backdrop-blur transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <RefreshCw size={17} className={isFetching ? "animate-spin" : ""} />
-              {isFetching ? "Refreshing…" : "Refresh data"}
-            </button>
+            <button type="button" onClick={() => refetch()} disabled={isFetching} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-bold text-white backdrop-blur transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-60"><RefreshCw size={17} className={isFetching ? "animate-spin" : ""} />{isFetching ? "Refreshing…" : "Refresh data"}</button>
           </div>
-
           <div className="relative mt-8 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Operational tenants</p>
-              <p className="mt-1 text-2xl font-black">{tenantCount === null ? "—" : number(tenantCount)}</p>
-            </div>
-            <div className="rounded-2xl border border-emerald-300/10 bg-emerald-400/10 p-4 backdrop-blur">
-              <p className="text-xs font-semibold uppercase tracking-wider text-emerald-200">Active tenants</p>
-              <p className="mt-1 text-2xl font-black">{activeTenantCount === null ? "—" : number(activeTenantCount)}</p>
-            </div>
-            <div className="rounded-2xl border border-amber-300/10 bg-amber-400/10 p-4 backdrop-blur">
-              <p className="text-xs font-semibold uppercase tracking-wider text-amber-200">Trial tenants</p>
-              <p className="mt-1 text-2xl font-black">{trialTenantCount === null ? "—" : number(trialTenantCount)}</p>
-            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur"><p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Operational tenants</p><p className="mt-1 text-2xl font-black">{tenantCount === null ? "—" : number(tenantCount)}</p></div>
+            <div className="rounded-2xl border border-emerald-300/10 bg-emerald-400/10 p-4 backdrop-blur"><p className="text-xs font-semibold uppercase tracking-wider text-emerald-200">Active tenants</p><p className="mt-1 text-2xl font-black">{activeTenantCount === null ? "—" : number(activeTenantCount)}</p></div>
+            <div className="rounded-2xl border border-amber-300/10 bg-amber-400/10 p-4 backdrop-blur"><p className="text-xs font-semibold uppercase tracking-wider text-amber-200">Trial tenants</p><p className="mt-1 text-2xl font-black">{trialTenantCount === null ? "—" : number(trialTenantCount)}</p></div>
           </div>
         </section>
 
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {cards.map(({ key, label, icon: Icon, tone }) => (
             <article key={key} className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg">
-              <div className="flex items-start justify-between gap-4">
-                <div className={`flex h-11 w-11 items-center justify-center rounded-xl ring-1 ${toneClasses[tone]}`}>
-                  <Icon size={20} />
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Platform total</span>
-              </div>
+              <div className="flex items-start justify-between gap-4"><div className={`flex h-11 w-11 items-center justify-center rounded-xl ring-1 ${toneClasses[tone]}`}><Icon size={20} /></div><span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Platform total</span></div>
               <p className="mt-5 text-sm font-semibold text-slate-500">{label}</p>
               <p className="mt-1 text-3xl font-black tracking-tight text-slate-950">{displayCount(stats[key])}</p>
             </article>
@@ -226,76 +187,24 @@ export default function SuperAdminDashboard() {
 
         <section className="grid gap-5 lg:grid-cols-3">
           <article className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-950 to-emerald-800 p-6 text-white shadow-lg lg:col-span-2">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-200">Revenue control</p>
-                <h2 className="mt-2 text-2xl font-black">Net revenue</h2>
-              </div>
-              <div className="rounded-xl bg-white/10 p-3"><WalletCards size={22} /></div>
-            </div>
+            <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-200">Revenue control</p><h2 className="mt-2 text-2xl font-black">Net revenue</h2></div><div className="rounded-xl bg-white/10 p-3"><WalletCards size={22} /></div></div>
             <p className="mt-6 text-4xl font-black tracking-tight">{displayMoney(stats.revenue, currency)}</p>
-            <div className="mt-5 flex flex-wrap gap-x-8 gap-y-3 border-t border-white/10 pt-4 text-sm">
-              <div><span className="text-emerald-200">Gross revenue</span><p className="mt-1 font-bold">{displayMoney(stats.grossRevenue, currency)}</p></div>
-              <div><span className="text-emerald-200">Refunds</span><p className="mt-1 font-bold">{displayMoney(stats.refundedRevenue, currency)}</p></div>
-              <div><span className="text-emerald-200">Currency</span><p className="mt-1 font-bold">{currency}</p></div>
-            </div>
+            <div className="mt-5 flex flex-wrap gap-x-8 gap-y-3 border-t border-white/10 pt-4 text-sm"><div><span className="text-emerald-200">Gross revenue</span><p className="mt-1 font-bold">{displayMoney(stats.grossRevenue, currency)}</p></div><div><span className="text-emerald-200">Refunds</span><p className="mt-1 font-bold">{displayMoney(stats.refundedRevenue, currency)}</p></div><div><span className="text-emerald-200">Currency</span><p className="mt-1 font-bold">{currency}</p></div></div>
           </article>
-
           <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-indigo-600">Partner pipeline</p>
-                <h2 className="mt-2 text-2xl font-black text-slate-950">Agent approvals</h2>
-              </div>
-              <div className="rounded-xl bg-indigo-50 p-3 text-indigo-700"><UserCheck size={22} /></div>
-            </div>
-            <div className="mt-7 grid grid-cols-2 gap-3">
-              <div className="rounded-2xl bg-emerald-50 p-4">
-                <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">Approved</p>
-                <p className="mt-1 text-3xl font-black text-emerald-950">{displayCount(stats.approvedAgents)}</p>
-              </div>
-              <div className="rounded-2xl bg-amber-50 p-4">
-                <p className="text-xs font-bold uppercase tracking-wider text-amber-700">Pending</p>
-                <p className="mt-1 text-3xl font-black text-amber-950">{displayCount(stats.pendingAgents)}</p>
-              </div>
-            </div>
+            <div className="flex items-start justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-indigo-600">Partner pipeline</p><h2 className="mt-2 text-2xl font-black text-slate-950">Agent approvals</h2></div><div className="rounded-xl bg-indigo-50 p-3 text-indigo-700"><UserCheck size={22} /></div></div>
+            <div className="mt-7 grid grid-cols-2 gap-3"><div className="rounded-2xl bg-emerald-50 p-4"><p className="text-xs font-bold uppercase tracking-wider text-emerald-700">Approved</p><p className="mt-1 text-3xl font-black text-emerald-950">{displayCount(stats.approvedAgents)}</p></div><div className="rounded-2xl bg-amber-50 p-4"><p className="text-xs font-bold uppercase tracking-wider text-amber-700">Pending</p><p className="mt-1 text-3xl font-black text-amber-950">{displayCount(stats.pendingAgents)}</p></div></div>
           </article>
         </section>
 
-        <section className="rounded-2xl border border-sky-200 bg-sky-50 p-5 shadow-sm">
-          <div className="flex items-start gap-3">
-            <div className="mt-0.5 rounded-xl bg-white p-2 text-sky-700 shadow-sm"><Database size={18} /></div>
-            <div>
-              <h2 className="font-bold text-sky-950">Data scope & interpretation</h2>
-              <p className="mt-1 text-sm leading-6 text-sky-900/75">
-                Customer Profiles are profile records, while Customer Accounts are active user accounts with the customer role. Staff, agents, vehicles, tours, destinations, bookings and payments are restricted to operational tenant data. The global platform owner account is excluded from tenant-level totals. An em dash (—) means the API did not supply a value; it is intentionally not presented as zero.
-              </p>
-            </div>
-          </div>
-        </section>
+        <section className="rounded-2xl border border-sky-200 bg-sky-50 p-5 shadow-sm"><div className="flex items-start gap-3"><div className="mt-0.5 rounded-xl bg-white p-2 text-sky-700 shadow-sm"><Database size={18} /></div><div><h2 className="font-bold text-sky-950">Data scope & interpretation</h2><p className="mt-1 text-sm leading-6 text-sky-900/75">Customer Profiles are profile records, while Customer Accounts are active user accounts with the customer role. Staff, agents, vehicles, tours, destinations, bookings and payments are restricted to operational tenant data. The global platform owner account is excluded from tenant-level totals. An em dash (—) means the API did not supply a value; it is intentionally not presented as zero.</p></div></div></section>
 
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 bg-slate-50/80 px-5 py-4 sm:px-6">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-3">
-                <div className="rounded-xl bg-indigo-50 p-2 text-indigo-700"><Building2 size={20} /></div>
-                <div>
-                  <h2 className="font-black text-slate-950">Tenant governance</h2>
-                  <p className="text-xs text-slate-500">Lifecycle, subscription and operational controls</p>
-                </div>
-              </div>
-              <Link to="/superadmin/tenants" className="inline-flex items-center gap-1 text-sm font-bold text-indigo-700 hover:text-indigo-900">
-                Open tenant management <ArrowUpRight size={16} />
-              </Link>
-            </div>
-          </div>
+          <div className="border-b border-slate-200 bg-slate-50/80 px-5 py-4 sm:px-6"><div className="flex items-center gap-3"><div className="rounded-xl bg-indigo-50 p-2 text-indigo-700"><Building2 size={20} /></div><div><h2 className="font-black text-slate-950">Tenant governance</h2><p className="text-xs text-slate-500">Lifecycle, subscription and operational controls</p></div></div></div>
           <div className="p-3 sm:p-5"><SuperAdminTenants /></div>
         </section>
 
-        <footer className="flex flex-col gap-2 border-t border-slate-200 py-4 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
-          <span className="inline-flex items-center gap-2"><Globe2 size={14} /> Global Tours platform governance</span>
-          <span className="inline-flex items-center gap-2"><LayoutDashboard size={14} /> Metrics are tenant-scoped where indicated</span>
-        </footer>
+        <footer className="flex flex-col gap-2 border-t border-slate-200 py-4 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between"><span className="inline-flex items-center gap-2"><Globe2 size={14} /> Global Tours platform governance</span><span className="inline-flex items-center gap-2"><LayoutDashboard size={14} /> Metrics are tenant-scoped where indicated</span></footer>
       </div>
     </main>
   );
