@@ -83,3 +83,4 @@ upgrade_*.py
 
 # Archives / temporary exports
 *.tar.gz
+clean-env.sh
