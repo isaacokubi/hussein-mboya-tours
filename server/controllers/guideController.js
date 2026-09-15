@@ -8,18 +8,43 @@ const TOUR_STATUSES = ["scheduled", "upcoming", "ongoing", "completed", "cancell
 const GUIDE_POSITIONS = ["guide", "tour_guide", "tourguide"];
 const scope = (req, filter = {}) => mergeTenantFilter(req, filter);
 
+const normalize = (value) => String(value || "").trim().toLowerCase();
+
 const resolveGuide = async (req) => {
   const user = req.user;
   if (!user?._id) return null;
   requireTenantId();
 
+  const baseFilter = {
+    position: { $in: GUIDE_POSITIONS },
+    isDeleted: { $ne: true },
+  };
+
   let guide = await Staff.findOne(scope(req, {
-    $and: [
-      { $or: [{ user: user._id }, ...(user.email ? [{ email: user.email }] : [])] },
-      { position: { $in: GUIDE_POSITIONS } },
-      { isDeleted: { $ne: true } },
-    ],
+    ...baseFilter,
+    $or: [{ user: user._id }, ...(user.email ? [{ email: user.email }] : [])],
   }));
+
+  // Compatibility recovery for staff records created before the User ↔ Staff
+  // link was introduced. Only link automatically when there is exactly one
+  // tenant-scoped guide candidate matching a stable identity field.
+  if (!guide) {
+    const candidates = await Staff.find(scope(req, baseFilter))
+      .select("_id user name email phone position role status isActive assignedTours availability isDeleted")
+      .lean();
+    const email = normalize(user.email);
+    const phone = normalize(user.phone);
+    const name = normalize(user.name);
+    const matches = candidates.filter((candidate) => {
+      const candidateEmail = normalize(candidate.email);
+      const candidatePhone = normalize(candidate.phone);
+      const candidateName = normalize(candidate.name);
+      return (email && candidateEmail === email) || (phone && candidatePhone === phone) || (name && candidateName === name);
+    });
+    if (matches.length === 1) {
+      guide = await Staff.findOne(scope(req, { _id: matches[0]._id }));
+    }
+  }
 
   if (guide) {
     let changed = false;
