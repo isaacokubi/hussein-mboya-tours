@@ -4,6 +4,8 @@ import { tenantFilter } from "../tenancy/tenantQuery.js";
 import Itinerary from "../models/Itinerary.js";
 import Tour from "../models/Tour.js";
 
+const activeFilter = (req, extra = {}) => mergeTenantFilter(req, { isDeleted: { $ne: true }, ...extra });
+
 export const createItinerary = async (req, res, next) => {
   requireTenantId();
   try {
@@ -11,27 +13,46 @@ export const createItinerary = async (req, res, next) => {
     if (!tour || !mongoose.Types.ObjectId.isValid(tour)) return res.status(400).json({ success: false, message: "A valid tour is required." });
     const existingTour = await Tour.findOne(mergeTenantFilter(req, { _id: tour, isDeleted: { $ne: true } })).lean();
     if (!existingTour) return res.status(404).json({ success: false, message: "Tour not found" });
-    const itinerary = await Itinerary.create({ ...req.body, createdBy: req.user._id });
-    const populated = await Itinerary.findOne(mergeTenantFilter(req, { _id: itinerary._id }))
-      .populate("tour", "title destination").populate("createdBy", "name email");
+
+    const existingItinerary = await Itinerary.findOne(activeFilter(req, { tour })).lean();
+    if (existingItinerary) return res.status(409).json({ success: false, message: "This tour already has an active itinerary. Edit the existing itinerary instead." });
+
+    const itinerary = await Itinerary.create({
+      ...req.body,
+      createdBy: req.user._id,
+      updatedBy: req.user._id,
+      isDeleted: false,
+    });
+    const populated = await Itinerary.findOne(activeFilter(req, { _id: itinerary._id }))
+      .populate("tour", "title destination")
+      .populate("createdBy", "name email");
     return res.status(201).json({ success: true, message: "Itinerary created successfully", itinerary: populated, data: populated });
-  } catch (error) { next(error); }
+  } catch (error) {
+    if (error?.code === 11000) return res.status(409).json({ success: false, message: "This tour already has an itinerary. Edit the existing itinerary instead." });
+    next(error);
+  }
 };
 
 export const getItineraries = async (req, res, next) => {
   try {
     const filter = tenantFilter(req);
+    filter.isDeleted = { $ne: true };
     if (req.query.tour) filter.tour = req.query.tour;
+    if (req.query.status && ["draft", "published", "archived"].includes(req.query.status)) filter.status = req.query.status;
     const itineraries = await Itinerary.find(filter)
-      .populate("tour", "title destination").populate("createdBy", "name email").sort({ createdAt: -1 });
+      .populate("tour", "title destination")
+      .populate("createdBy", "name email")
+      .sort({ createdAt: -1 });
     return res.status(200).json({ success: true, count: itineraries.length, itineraries, data: itineraries });
   } catch (error) { next(error); }
 };
 
 export const getItinerary = async (req, res, next) => {
   try {
-    const itinerary = await Itinerary.findOne(mergeTenantFilter(req, { _id: req.params.id }))
-      .populate("tour", "title destination").populate("createdBy", "name email");
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid itinerary id." });
+    const itinerary = await Itinerary.findOne(activeFilter(req, { _id: req.params.id }))
+      .populate("tour", "title destination")
+      .populate("createdBy", "name email");
     if (!itinerary) return res.status(404).json({ success: false, message: "Itinerary not found" });
     return res.status(200).json({ success: true, itinerary, data: itinerary });
   } catch (error) { next(error); }
@@ -39,20 +60,36 @@ export const getItinerary = async (req, res, next) => {
 
 export const updateItinerary = async (req, res, next) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid itinerary id." });
     if (req.body?.tour) {
+      if (!mongoose.Types.ObjectId.isValid(req.body.tour)) return res.status(400).json({ success: false, message: "A valid tour is required." });
       const tour = await Tour.findOne(mergeTenantFilter(req, { _id: req.body.tour, isDeleted: { $ne: true } })).lean();
       if (!tour) return res.status(400).json({ success: false, message: "Selected tour does not belong to this tenant." });
+      const duplicate = await Itinerary.findOne(activeFilter(req, { tour, _id: { $ne: req.params.id } })).lean();
+      if (duplicate) return res.status(409).json({ success: false, message: "The selected tour already has another active itinerary." });
     }
-    const itinerary = await Itinerary.findOneAndUpdate(mergeTenantFilter(req, { _id: req.params.id }), req.body, { new: true, runValidators: true })
-      .populate("tour", "title destination").populate("createdBy", "name email");
+    const update = { ...req.body, updatedBy: req.user?._id };
+    delete update.createdBy;
+    delete update.isDeleted;
+    const itinerary = await Itinerary.findOneAndUpdate(activeFilter(req, { _id: req.params.id }), update, { new: true, runValidators: true })
+      .populate("tour", "title destination")
+      .populate("createdBy", "name email");
     if (!itinerary) return res.status(404).json({ success: false, message: "Itinerary not found" });
     return res.status(200).json({ success: true, message: "Itinerary updated successfully", itinerary, data: itinerary });
-  } catch (error) { next(error); }
+  } catch (error) {
+    if (error?.code === 11000) return res.status(409).json({ success: false, message: "This tour already has an active itinerary." });
+    next(error);
+  }
 };
 
 export const deleteItinerary = async (req, res, next) => {
   try {
-    const itinerary = await Itinerary.findOneAndDelete(mergeTenantFilter(req, { _id: req.params.id }));
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid itinerary id." });
+    const itinerary = await Itinerary.findOneAndUpdate(
+      activeFilter(req, { _id: req.params.id }),
+      { $set: { isDeleted: true, updatedBy: req.user?._id || null } },
+      { new: true }
+    );
     if (!itinerary) return res.status(404).json({ success: false, message: "Itinerary not found" });
     return res.status(200).json({ success: true, message: "Itinerary deleted successfully" });
   } catch (error) { next(error); }
