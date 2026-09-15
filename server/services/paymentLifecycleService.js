@@ -404,7 +404,14 @@ export const failBookingPayment = async ({
           bookingDoc.status !== "refunded"
         ) {
           bookingDoc.status =
-            "failed";
+            "cancelled";
+
+          bookingDoc.cancellationReason =
+            bookingDoc.cancellationReason ||
+            "M-Pesa payment failed.";
+
+          bookingDoc.cancelledAt =
+            bookingDoc.cancelledAt || new Date();
         }
       }
 
