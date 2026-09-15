@@ -78,14 +78,16 @@ jobs:
           set -euo pipefail
           archive="$(find restore-artifact -name '*.archive.gz.enc' -type f | head -n 1)"
           openssl enc -d -aes-256-cbc -pbkdf2 -in "$archive" -pass env:BACKUP_ENCRYPTION_PASSPHRASE > restore.archive.gz
-          docker run --rm -i \
+          test -s restore.archive.gz
+          gzip -t restore.archive.gz
+          docker run --rm \
             -e MONGODB_RESTORE_URI="$MONGODB_RESTORE_URI" \
+            -v "$PWD/restore.archive.gz:/tmp/restore.archive.gz:ro" \
             mongo:8 sh -lc '
               case "$MONGODB_RESTORE_URI" in
                 mongodb://*|mongodb+srv://*) ;;
                 *) echo "MONGODB_RESTORE_URI format could not be parsed safely."; exit 1 ;;
               esac
-              cat > /tmp/restore.archive.gz
               mongorestore --uri="$MONGODB_RESTORE_URI" --archive=/tmp/restore.archive.gz --gzip --drop --nsInclude="husseindb.*" --nsFrom="husseindb.*" --nsTo="backups.*"
             '
 
