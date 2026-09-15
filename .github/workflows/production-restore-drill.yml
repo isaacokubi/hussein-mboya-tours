@@ -97,7 +97,19 @@ jobs:
                 mongodb://*|mongodb+srv://*) ;;
                 *) echo "MONGODB_RESTORE_URI format could not be parsed safely."; exit 1 ;;
               esac
-              mongorestore --uri="$MONGODB_RESTORE_URI" --archive=/tmp/restore.archive.gz --gzip --drop --nsFrom="husseindb.*" --nsTo="backups.*" --verbose
+              URI_REST="${MONGODB_RESTORE_URI#*://}"
+              AUTHORITY="${URI_REST%%/*}"
+              if [ "$AUTHORITY" = "$URI_REST" ]; then
+                RESTORE_SERVER_URI="$MONGODB_RESTORE_URI"
+              else
+                RESTORE_SERVER_URI="${MONGODB_RESTORE_URI%%/*}"
+                RESTORE_SERVER_URI="${RESTORE_SERVER_URI}"
+                case "$RESTORE_SERVER_URI" in
+                  mongodb://*|mongodb+srv://*) ;;
+                  *) echo "Could not derive MongoDB server URI safely."; exit 1 ;;
+                esac
+              fi
+              mongorestore --uri="$RESTORE_SERVER_URI" --archive=/tmp/restore.archive.gz --gzip --drop --nsFrom="husseindb.*" --nsTo="backups.*" --verbose
             '
 
       - name: Validate restored database
