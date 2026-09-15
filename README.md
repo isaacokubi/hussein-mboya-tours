@@ -4,9 +4,9 @@ Kenya-focused multi-tenant tour-operator platform.
 
 ## Production test status
 
-**Current repository HEAD:** `d60fec35e895d42eed3f49e26c8da1f03226e479`
+**Current repository HEAD:** `c44db929ea9660572dd3177a0ef8b8a23aee29d8`
 
-The current `main` branch has a successful CI release run and successful production endpoint smoke test. The production MongoDB encrypted-backup workflow has also completed successfully.
+The current `main` branch has a successful CI release baseline and successful production endpoint smoke test. The first production MongoDB backup artifact was encrypted and integrity-verified, but the subsequent isolated restore drill proved that backup run `34993023892` contained the wrong database (`backups.backup`) rather than the application database. The backup workflow has now been hardened to reject archives that do not contain expected application collections before an artifact is uploaded.
 
 ### Verified automated tests
 
@@ -24,7 +24,9 @@ The current `main` branch has a successful CI release run and successful product
 | Production API root endpoint | PASS | Live check: HTTP 200, expected API message |
 | Production website endpoint | PASS | Live check: HTTP 200 from Vercel |
 | Production smoke workflow | PASS | Run `34990056067` |
-| Encrypted MongoDB backup | PASS | Run `34993023892`, artifact uploaded and integrity verified |
+| Backup encryption/upload/integrity | PASS | Run `34993023892`; encrypted artifact uploaded and decryption/gzip verification passed |
+| Backup application-data validation | FAIL | Restore drill showed only `backups.backup`; workflow now rejects archives without `tenants`/`users` |
+| Isolated MongoDB restore drill | FAIL | Run `34995112932`; restore completed but validation found only `backups.backup` |
 
 ### Live tenant-isolation checks
 
@@ -40,22 +42,18 @@ Tenant isolation remains a release-blocking control: production must never silen
 
 ### Production backup evidence
 
-The Production MongoDB Backup workflow completed successfully in run `34993023892`.
+Backup run `34993023892` demonstrated that encryption, artifact upload and cryptographic/gzip integrity checks work, but it **must not be treated as a valid application backup**. The subsequent restore drill `34995112932` restored database `backups` with a single collection named `backup`, so the required application data was absent.
 
-- Encrypted MongoDB archive created with AES-256-CBC and PBKDF2.
-- SHA-256 checksum generated.
-- GitHub Actions artifact uploaded successfully.
-- Artifact: `production-mongodb-backup-34993023892.zip`.
-- Artifact ID: `10405803526`.
-- Artifact size: `90415` bytes.
-- Artifact SHA-256: `131828e2f91a2ff12e205a3a35de4133584b70cfab30561c286b277258dfd281`.
-- The workflow successfully decrypted the archive and passed gzip integrity verification.
+The backup workflow has been hardened in `c44db929ea9660572dd3177a0ef8b8a23aee29d8` to decrypt the archive temporarily in the runner, perform a `mongorestore --dryRun --verbose` inspection, require expected application collections such as `tenants` or `users`, and delete the temporary plaintext archive before artifact upload.
+
+The `MONGODB_BACKUP_URI` repository secret must point to the actual production application database. Do not record the URI value in documentation or issue comments. After correcting the secret, a new backup run must pass application-data validation before the restore drill is repeated.
 
 ### Tests still pending external evidence
 
 These are **not marked PASS** merely because automated CI is green:
 
-- Isolated MongoDB restore drill.
+- Correct production MongoDB backup containing application data.
+- Successful isolated MongoDB restore of the corrected backup.
 - Production monitoring and alert firing test.
 - Real M-Pesa STK → callback → booking → reconciliation transaction.
 - Duplicate M-Pesa callback/idempotency acceptance using provider-supported evidence.
