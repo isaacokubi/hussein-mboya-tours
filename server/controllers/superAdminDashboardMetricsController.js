@@ -41,6 +41,9 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
 
     const [
       platformUsers,
+      activePlatformUsers,
+      suspendedPlatformUsers,
+      blockedPlatformUsers,
       tenantStaff,
       tenantAgents,
       approvedAgents,
@@ -56,7 +59,10 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
       tenantPayments,
       completedPayments,
     ] = await Promise.all([
-      count(db, "users", { status: { $ne: "blocked" } }),
+      count(db, "users", {}),
+      count(db, "users", { status: "active" }),
+      count(db, "users", { status: { $in: ["suspended", "inactive", "disabled"] } }),
+      count(db, "users", { status: "blocked" }),
       count(db, "staffs", { ...tenantFilter, ...nonDeleted }),
       count(db, "agents", { ...tenantFilter, ...nonDeleted }),
       count(db, "agents", {
@@ -146,10 +152,7 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
       Promise.all(
         tenantRows.map(async (tenant) => {
           const scope = { tenantId: tenant._id };
-          const tenantCustomerMetrics = await getCanonicalSuperAdminCustomerMetrics(
-            db,
-            [tenant._id]
-          );
+          const tenantCustomerMetrics = await getCanonicalSuperAdminCustomerMetrics(db, [tenant._id]);
           const [
             users,
             tours,
@@ -169,11 +172,7 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
             count(db, "staffs", { ...scope, ...nonDeleted }),
             count(db, "agents", { ...scope, ...nonDeleted }),
             count(db, "vehicles", { ...scope, ...nonDeleted }),
-            count(db, "vehicles", {
-              ...scope,
-              ...nonDeleted,
-              status: "available",
-            }),
+            count(db, "vehicles", { ...scope, ...nonDeleted, status: "available" }),
             count(db, "destinations", scope),
             count(db, "payments", { ...scope, status: "completed" }),
           ]);
@@ -202,17 +201,10 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
       ),
     ]);
 
-    const primary =
-      revenueRows.find((row) => row.currency === "KES") ||
-      revenueRows[0] ||
-      null;
+    const primary = revenueRows.find((row) => row.currency === "KES") || revenueRows[0] || null;
     const tenantCount = tenantRows.length;
-    const activeTenantCount = tenantRows.filter(
-      (tenant) => tenant.status === "active"
-    ).length;
-    const trialTenantCount = tenantRows.filter(
-      (tenant) => tenant.status === "trial"
-    ).length;
+    const activeTenantCount = tenantRows.filter((tenant) => tenant.status === "active").length;
+    const trialTenantCount = tenantRows.filter((tenant) => tenant.status === "trial").length;
 
     return res.json({
       success: true,
@@ -224,6 +216,9 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
       },
       data: {
         users: platformUsers,
+        activeUsers: activePlatformUsers,
+        suspendedUsers: suspendedPlatformUsers,
+        blockedUsers: blockedPlatformUsers,
         customerProfiles: customerMetrics.customerProfiles,
         customerAccounts: customerMetrics.customerAccounts,
         customers: customerMetrics.customerProfiles,
@@ -268,7 +263,6 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
     });
   } catch (error) {
     console.error("SuperAdmin dashboard metrics error:", error);
-
     return res.status(500).json({
       success: false,
       message: error.message || "Unable to load platform metrics.",
