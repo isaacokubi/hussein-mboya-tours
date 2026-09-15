@@ -28,12 +28,12 @@ jobs:
           response="$(curl --fail-with-body --silent --show-error --max-time 20 -H 'Accept: application/json' "$base/api/health")"
           echo "$response"
           python - <<'PY' "$response"
-import json
-import sys
-payload = json.loads(sys.argv[1])
-if payload.get("success") is not True or payload.get("status") != "healthy" or payload.get("database") != "connected":
-    raise SystemExit(f"Production health check failed: {payload}")
-PY
+          import json
+          import sys
+          payload = json.loads(sys.argv[1])
+          if payload.get("success") is not True or payload.get("status") != "healthy" or payload.get("database") != "connected":
+              raise SystemExit(f"Production health check failed: {payload}")
+          PY
           root="$(curl --fail-with-body --silent --show-error --max-time 20 "$base/")"
           printf '%s\n' "$root" | grep -Fq 'Travel API running successfully'
 

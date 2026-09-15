@@ -28,13 +28,14 @@ jobs:
           run_json="$(gh run view "$RUN_ID" --repo "$GITHUB_REPOSITORY" --json workflowName,status,conclusion,event)"
           echo "$run_json"
           python - <<'PY' "$run_json"
-import json, sys
-run = json.loads(sys.argv[1])
-if run.get("workflowName") != "Production MongoDB Backup":
-    raise SystemExit(f"Run {run.get('workflowName')!r} is not the production backup workflow.")
-if run.get("status") != "completed" or run.get("conclusion") != "success":
-    raise SystemExit(f"Backup run is not a successful completed run: {run}")
-PY
+          import json
+          import sys
+          run = json.loads(sys.argv[1])
+          if run.get("workflowName") != "Production MongoDB Backup":
+              raise SystemExit(f"Run {run.get('workflowName')!r} is not the production backup workflow.")
+          if run.get("status") != "completed" or run.get("conclusion") != "success":
+              raise SystemExit(f"Backup run is not a successful completed run: {run}")
+          PY
 
       - name: Download backup artifact
         env:
@@ -55,6 +56,34 @@ PY
           set -euo pipefail
           test -n "${BACKUP_ENCRYPTION_PASSPHRASE:-}" || { echo "BACKUP_ENCRYPTION_PASSPHRASE is required."; exit 1; }
           test -n "${MONGODB_RESTORE_URI:-}" || { echo "MONGODB_RESTORE_URI is required and must point to a non-production restore target."; exit 1; }
+
+      - name: Validate isolated restore target
+        env:
+          MONGODB_RESTORE_URI: ${{ secrets.MONGODB_RESTORE_URI }}
+          MONGODB_PRODUCTION_URI: ${{ secrets.MONGODB_PRODUCTION_URI }}
+          RESTORE_TARGET_ISOLATED: ${{ secrets.RESTORE_TARGET_ISOLATED }}
+        run: |
+          if [ -z "${MONGODB_RESTORE_URI:-}" ]; then
+            echo "BLOCKED: MONGODB_RESTORE_URI is not configured."
+            exit 1
+          fi
+
+          if [ -z "${MONGODB_PRODUCTION_URI:-}" ]; then
+            echo "BLOCKED: MONGODB_PRODUCTION_URI is not configured."
+            exit 1
+          fi
+
+          if [ "${RESTORE_TARGET_ISOLATED:-}" != "true" ]; then
+            echo "BLOCKED: RESTORE_TARGET_ISOLATED must be exactly true."
+            exit 1
+          fi
+
+          if [ "$MONGODB_RESTORE_URI" = "$MONGODB_PRODUCTION_URI" ]; then
+            echo "BLOCKED: restore target matches production target."
+            exit 1
+          fi
+
+          echo "Restore target safety checks passed."
 
       - name: Restore backup
         env:
