@@ -1,0 +1,55 @@
+name: Production Backup Restore Drill
+
+on:
+  workflow_dispatch:
+    inputs:
+      backup_run_id:
+        description: GitHub Actions run ID containing the encrypted backup artifact
+        required: true
+        type: string
+      restore_uri_secret:
+        description: Name of the GitHub secret containing a non-production MongoDB restore URI
+        required: false
+        default: MONGODB_RESTORE_URI
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  restore:
+    name: Restore backup into isolated target
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Download backup artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ inputs.backup_run_id }}
+        run: |
+          set -euo pipefail
+          mkdir -p restore-artifact
+          gh run download "$RUN_ID" --repo "$GITHUB_REPOSITORY" --pattern 'production-mongodb-backup-*' --dir restore-artifact
+
+      - name: Validate restore secrets
+        env:
+          BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
+          MONGODB_RESTORE_URI: ${{ secrets.MONGODB_RESTORE_URI }}
+        run: |
+          set -euo pipefail
+          test -n "${BACKUP_ENCRYPTION_PASSPHRASE:-}" || { echo "BACKUP_ENCRYPTION_PASSPHRASE is required."; exit 1; }
+          test -n "${MONGODB_RESTORE_URI:-}" || { echo "MONGODB_RESTORE_URI is required and must point to a non-production restore target."; exit 1; }
+
+      - name: Restore and validate database
+        env:
+          BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
+          MONGODB_RESTORE_URI: ${{ secrets.MONGODB_RESTORE_URI }}
+        run: |
+          set -euo pipefail
+          archive="$(find restore-artifact -name '*.archive.gz.enc' -type f | head -n 1)"
+          test -n "$archive"
+          openssl enc -d -aes-256-cbc -pbkdf2 -in "$archive" -pass env:BACKUP_ENCRYPTION_PASSPHRASE \
+            | docker run --rm -i -e MONGODB_RESTORE_URI="$MONGODB_RESTORE_URI" mongo:8 \
+              sh -lc 'cat > /tmp/restore.archive.gz && mongorestore --uri="$MONGODB_RESTORE_URI" --archive=/tmp/restore.archive.gz --gzip --drop'
+          echo "Restore drill completed against the configured non-production target."
