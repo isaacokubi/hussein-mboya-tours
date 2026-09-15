@@ -28,6 +28,27 @@ services:
       - key: CLIENT_ORIGINS
         sync: false
 
+      - key: PLATFORM_HOST
+        sync: false
+
+      - key: ALLOW_SINGLE_TENANT_DEV_FALLBACK
+        value: false
+
+      - key: ALLOW_GLOBAL_MPESA_FALLBACK
+        value: false
+
+      - key: MFA_DEV_MODE
+        value: false
+
+      - key: PAYMENT_CREDENTIAL_ENCRYPTION_KEY
+        sync: false
+
+      - key: ETIMS_CREDENTIAL_ENCRYPTION_KEY
+        sync: false
+
+      - key: WEBHOOK_SECRET_KEY
+        sync: false
+
       - key: OPENAI_API_KEY
         sync: false
 
@@ -97,4 +118,7 @@ services:
         sync: false
 
       - key: VITE_SOCKET_URL
+        sync: false
+
+      - key: VITE_PLATFORM_HOST
         sync: false
