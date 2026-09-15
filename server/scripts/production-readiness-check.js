@@ -81,11 +81,14 @@ if (missingTemplate.length) {
   process.exit(1);
 }
 
-const hasDefaultTenantTemplate = /^DEFAULT_TENANT_ID=/m.test(envTemplate) || /^DEFAULT_PUBLIC_TENANT_SLUG=/m.test(envTemplate);
-if (!hasDefaultTenantTemplate) {
-  console.error("Missing default tenant configuration: DEFAULT_TENANT_ID or DEFAULT_PUBLIC_TENANT_SLUG");
-  process.exit(1);
-}
+// This application supports multiple active tenant organizations.
+// A single DEFAULT_TENANT_ID / DEFAULT_PUBLIC_TENANT_SLUG is therefore
+// optional rather than a mandatory production configuration. Tenant
+// resolution is handled by tenantMiddleware.js using authenticated tenant
+// claims, tenant headers, host/origin mapping, login identity, or an
+// explicitly configured public tenant slug.
+//
+// Production must never rely on the single-tenant development fallback.
 
 const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
 const requiredScripts = ["check:all", "test", "check:production", "reconcile:tenant-indexes", "bootstrap:first"];
@@ -126,7 +129,8 @@ if (missingDocumentedEvidence.length) {
 const runtimeValidation = process.env.PRODUCTION_READINESS_RUNTIME === "true";
 if (runtimeValidation) {
   const missingRuntime = requiredEnv.filter((key) => !process.env[key]);
-  const hasDefaultTenantRuntime = Boolean(process.env.DEFAULT_TENANT_ID || process.env.DEFAULT_PUBLIC_TENANT_SLUG);
+  // Multi-tenant deployments do not require an arbitrary default tenant.
+  // A default public tenant may still be configured when explicitly needed.
   const production = process.env.NODE_ENV === "production";
   const securityKeys = ["ETIMS_CREDENTIAL_ENCRYPTION_KEY", "WEBHOOK_SECRET_KEY"];
   const weakSecurityKeys = securityKeys.filter((key) => production && String(process.env[key] || "").length < 32);
@@ -146,7 +150,7 @@ if (runtimeValidation) {
   const errors = [];
 
   if (missingRuntime.length) errors.push(`Missing runtime production environment variables: ${missingRuntime.join(", ")}`);
-  if (!hasDefaultTenantRuntime) errors.push("Missing runtime default tenant configuration: DEFAULT_TENANT_ID or DEFAULT_PUBLIC_TENANT_SLUG");
+  // No default-tenant runtime error: tenant resolution is intentionally multi-tenant.
   if (weakSecurityKeys.length) errors.push(`Production security keys must be at least 32 characters: ${weakSecurityKeys.join(", ")}`);
   if (unsafeFallback) errors.push("ALLOW_SINGLE_TENANT_DEV_FALLBACK must be false in production.");
   if (globalMpesaFallback) errors.push("ALLOW_GLOBAL_MPESA_FALLBACK must be false in production; configure M-Pesa per tenant.");
