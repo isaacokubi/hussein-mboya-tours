@@ -52,6 +52,6 @@ ReactDOM.createRoot(document.getElementById("root")).render(
 if (import.meta.env.DEV) {
   const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
   const socketUrl = import.meta.env.VITE_SOCKET_URL || window.location.origin;
-  console.log("Effective API URL =", apiUrl);
-  console.log("Effective Socket URL =", socketUrl);
+  console.debug("Effective API URL =", apiUrl);
+  console.debug("Effective Socket URL =", socketUrl);
 }
