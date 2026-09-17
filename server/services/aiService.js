@@ -7,11 +7,8 @@ import { searchRelevantTours } from "./aiTourSearchService.js";
 import { createAIBookingDraft } from "./aiBookingDraftService.js";
 import { detectIntent } from "./aiIntentService.js";
 
-console.log("OPENAI KEY STATUS:", env.OPENAI_API_KEY ? "Loaded" : "Missing");
-console.log("AI MODEL:", env.AI_MODEL);
-
-// AI is an optional application capability. The API must still boot and the
-// deterministic tour-search fallback must remain available when no key is set.
+// AI is optional. Never log API-key presence, model configuration, customer
+// prompts, phone numbers, or provider responses at application startup.
 const client = env.OPENAI_API_KEY ? new OpenAI({ apiKey: env.OPENAI_API_KEY }) : null;
 
 export const generateTravelAdvice = async (message, user = null) => {
@@ -71,7 +68,9 @@ Once I have these details, I will prepare your booking.
 
     return response.output_text;
   } catch (error) {
-    console.error("OpenAI Error:", error.message);
+    if (process.env.NODE_ENV !== "production") {
+      console.debug("AI provider request failed; using fallback:", error.message);
+    }
 
     try {
       const fallbackTours = relevantTours;
@@ -161,7 +160,9 @@ Please tell me:
 - travel style
 `;
     } catch (fallbackError) {
-      console.error("AI fallback error:", fallbackError.message);
+      if (process.env.NODE_ENV !== "production") {
+        console.debug("AI fallback failed:", fallbackError.message);
+      }
       return `
 Our travel assistant is temporarily unavailable.
 
