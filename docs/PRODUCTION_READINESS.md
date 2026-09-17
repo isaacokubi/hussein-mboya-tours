@@ -2,11 +2,14 @@
 
 This document is the production-readiness hand-off point. Live/provider tests require evidence and must not be marked PASS from source inspection alone.
 
-## Current state — 2026-09-15
+## Current state — 2026-09-17
 
-- Repository head: `f0203925` — monitoring and alert verification.
-- CI/release baseline: PASS — CI `34990056154`; release gate `34942492468`.
-- Production API/website smoke: PASS — run `34990056067`.
+- Repository head: `5227ddc874bd48d1eef73f965aa822b23dd58747` — production-readiness hardening through Steps 1–3.
+- Step 1 merged to `main`: M-Pesa callback lifecycle integrity contracts and tenant-unique provider identifiers.
+- Step 2 merged to `main`: tenant-safe operational accounting reconciliation integrity contracts.
+- Step 3 merged to `main`: eTIMS production safety, adapter SSRF controls, durable audit and idempotency contracts.
+- Historical CI/release baseline: PASS — CI `34990056154`; release gate `34942492468`.
+- Historical production API/website smoke: PASS — run `34990056067`.
 - Corrected encrypted MongoDB backup: PASS — run `34998687985`.
 - Isolated MongoDB restore: PASS — run `35003760520`.
 - Production monitoring normal path: PASS — run `35004893911`.
@@ -19,7 +22,7 @@ This document is the production-readiness hand-off point. Live/provider tests re
 
 | Area | Result | Evidence |
 |---|---|---|
-| Server checks / backend tests | PASS | CI `34990056154` |
+| Server checks / backend tests | PASS | Historical CI `34990056154`; new contract tests merged through Steps 1–3 |
 | Live tenant isolation regression | PASS | CI `34990056154` |
 | Client lint / production build | PASS | CI `34990056154` |
 | Security / Kenya readiness / final release gate | PASS | `34942492468` |
@@ -32,6 +35,25 @@ This document is the production-readiness hand-off point. Live/provider tests re
 | Monitoring healthy path | PASS | `35004893911` |
 | Monitoring alert path | PASS | `35005078875`, issue #135 |
 | M-Pesa sandbox STK initiation | PASS | KES 690, provider response `0` |
+| M-Pesa callback code-level safeguards | PASS | Merged Step 1 contract coverage |
+| Operational accounting reconciliation code-level safeguards | PASS | Merged Step 2 contract coverage |
+| eTIMS adapter production safety code-level safeguards | PASS | Merged Step 3 contract coverage |
+
+## Implemented production hardening
+
+### Step 1 — M-Pesa callback lifecycle
+
+The repository now contains automated contract coverage requiring tenant resolution and callback-integrity middleware, provider-result/amount/receipt validation, central payment completion/failure lifecycle usage, idempotency/overpayment protections and tenant-unique provider identifiers.
+
+### Step 2 — Accounting reconciliation
+
+The repository now contains contract coverage for tenant-scoped operational reconciliation. Payment, refund, expense, supplier-payable and supplier-payment flows must use tenant-aware existence checks before posting; posting failures are collected as reconciliation errors rather than reported as a clean success.
+
+### Step 3 — eTIMS production safety
+
+The eTIMS service is contract-tested for HTTPS-only production adapters, rejection of private/local targets, tenant-scoped invoice/tax/credential access, durable submission auditing, idempotency keys, fail-closed behavior when no adapter is configured, retry state and persistence of provider identifiers.
+
+These are code-level controls. They do not constitute KRA certification or live provider acceptance.
 
 ## Backup / restore
 
@@ -45,7 +67,7 @@ Normal monitoring run `35004893911` passed the production API/database and websi
 
 ## M-Pesa sandbox
 
-The current sandbox test proves:
+The current sandbox evidence proves:
 
 1. Customer authentication succeeds.
 2. A KES 690 MPESA booking can be created.
@@ -54,13 +76,13 @@ The current sandbox test proves:
 
 The checkout request used for this evidence is `ws_CO_150920262132451700100001`.
 
-**Important:** STK initiation is not payment completion. Callback delivery, payment completion, booking update, invoice/journal/reconciliation, duplicate callback protection and failed/expired payment scenarios remain pending. The configured callback points at the existing Render deployment, which is intentionally disconnected from GitHub and is not running current `main`; callback acceptance therefore needs an approved public HTTPS sandbox target.
+**Important:** STK initiation is not payment completion. Callback delivery, payment completion, booking update, invoice/journal/reconciliation, duplicate callback replay and failed/expired payment scenarios still require provider-level evidence. The configured callback previously pointed at a Render deployment that was not running current `main`; callback acceptance therefore needs an approved public HTTPS sandbox target.
 
 Sandbox evidence must remain separate from live production payment acceptance.
 
 ## Deployment currency
 
-Production smoke is healthy, but the production API reported deployed version `73a5127695b2b8461c50ec034420af252881b5e6` while current repository head is `f0203925`. Therefore deployment currency is **NOT VERIFIED**. Render and Vercel must not be reconnected unless explicitly requested.
+Historical production smoke was healthy, but the production API previously reported deployed version `73a5127695b2b8461c50ec034420af252881b5e6` while repository head was `f0203925`. Therefore current-main deployment remains **NOT VERIFIED** until the deployment target reports the new `main` commit. Render/Vercel changes are not performed automatically by this repository work.
 
 ## Remaining acceptance
 
@@ -68,12 +90,13 @@ Production smoke is healthy, but the production API reported deployed version `7
 |---|---|
 | M-Pesa sandbox callback | PENDING |
 | Payment/booking completion after callback | PENDING |
-| Payment, invoice and accounting reconciliation | PENDING |
-| Duplicate M-Pesa callback/idempotency | PENDING |
-| Failed/expired M-Pesa | PENDING |
+| Payment, invoice and accounting reconciliation against real provider data | PENDING |
+| Duplicate M-Pesa callback/replay evidence | PENDING |
+| Failed/expired M-Pesa provider evidence | PENDING |
 | Live KRA/eTIMS submission and receipt evidence | PENDING |
 | Full desktop/mobile browser acceptance | PENDING |
 | Current-main production deployment | NOT VERIFIED |
+| Kenya operator-specific TRA/ODPC compliance | EXTERNAL / OPERATOR-SPECIFIC |
 
 ## Acceptance rules
 
@@ -93,4 +116,5 @@ Production smoke is healthy, but the production API reported deployed version `7
 - Corrected restore: `35003760520`
 - Monitoring healthy path: `35004893911`
 - Monitoring alert path: `35005078875`
-- Current head: `f0203925`
+- Previous documented head: `f0203925`
+- Current main after production-readiness hardening: `5227ddc874bd48d1eef73f965aa822b23dd58747`
