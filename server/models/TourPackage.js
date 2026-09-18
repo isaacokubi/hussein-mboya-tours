@@ -400,10 +400,7 @@ const tourPackageSchema = new mongoose.Schema(
 */
 
 tourPackageSchema.pre("validate", function (next) {
-  if (
-    this.title &&
-    (!this.slug || this.isModified("title"))
-  ) {
+  if (this.title && !this.slug) {
     this.slug = slugify(this.title, {
       lower: true,
       strict: true,
