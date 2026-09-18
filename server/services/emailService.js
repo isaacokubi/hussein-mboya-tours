@@ -31,14 +31,14 @@ export const verifyEmailConnection = async () => {
   }
 };
 
-export const sendEmail = async ({ to, subject, html, text, attachments = [], cc, bcc, replyTo, fromName }) => {
+export const sendEmail = async ({ to, subject, html, text, attachments = [], cc, bcc, replyTo, fromName, settingsSource }) => {
   if (!to) throw new Error("Recipient email is required.");
   if (!subject) throw new Error("Email subject is required.");
   if (!html && !text) throw new Error("Email content is required.");
   if (!smtpHost) throw new Error("SMTP email host is not configured.");
   if (!smtpUser || !smtpPassword) throw new Error("SMTP email credentials are not configured.");
   if (!smtpFrom) throw new Error("SMTP sender email is not configured.");
-  const settings = await getSystemSettings();
+  const settings = await getSystemSettings(settingsSource);
   const companyName = clean(fromName || settings.companyName, "Global Tours");
   return transporter.sendMail({
     from: `"${companyName}" <${smtpFrom}>`,
