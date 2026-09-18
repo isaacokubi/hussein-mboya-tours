@@ -23,7 +23,7 @@ async function main() {
 
   const results = [];
   for (const tenant of tenants) {
-    await runWithTenant({ tenantId: tenant._id, role: "super_admin", bypass: true }, async () => {
+    await runWithTenant({ tenantId: tenant._id, role: "manager", bypass: false }, async () => {
       // All tenant-scoped reads and writes must execute inside the tenant context.
       const users = await User.find({ isDeleted: { $ne: true } }).limit(100).lean();
       const actor = users.find((u) => ["admin", "manager", "super_admin", "superadmin"].includes(String(u.role || "").toLowerCase())) || users[0] || null;
