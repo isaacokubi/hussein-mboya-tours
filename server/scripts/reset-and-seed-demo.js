@@ -1,6 +1,9 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import crypto from "crypto";
+import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
 
 import Organization from "../models/Organization.js";
 import User from "../models/User.js";
@@ -287,6 +290,25 @@ const main = async () => {
   const permissions = await seedRbac();
   for (let i=0;i<tenants.length;i++) {
     await runWithTenant({ tenantId: tenants[i]._id, tenant: tenants[i], role: "super_admin", bypass: false }, () => seedTenant(tenants[i], i, permissions));
+  }
+
+  // Extend the core reset with the existing production-style demo seeders.
+  // This fills hospitality, airport transfers, accounting/finance, compliance,
+  // operations, and external website test-mode integrations for all tenants.
+  const serverDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+  await mongoose.disconnect();
+  const demoSeeders = [
+    ["seeds/financialDashboardSeedRunner.js", "accounting/finance"],
+    ["seeds/dashboardOperationalSeed.js", "website integrations/operations"],
+    ["seeds/hospitalityDeveloperSeed.js", "hotels/airport transfers"],
+  ];
+  for (const [script, label] of demoSeeders) {
+    console.log("\n=== SEEDING " + label.toUpperCase() + " TEST DATA ===");
+    execFileSync(process.execPath, [path.join(serverDir, script)], {
+      cwd: serverDir,
+      env: process.env,
+      stdio: "inherit",
+    });
   }
   console.log(JSON.stringify({
     success:true,
