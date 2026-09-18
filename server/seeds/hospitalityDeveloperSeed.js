@@ -22,7 +22,7 @@ const daysFromNow = (n) => new Date(Date.now() + n * 86400000);
 const clean = (v) => String(v || "").trim();
 
 async function seedTenant(tenant, tenantIndex) {
-  return runWithTenant({ tenantId: tenant._id, role: "super_admin", bypass: true }, async () => {
+  return runWithTenant({ tenantId: tenant._id, role: "manager", bypass: false }, async () => {
     const [users, customers, bookings] = await Promise.all([
       User.find({ tenantId: tenant._id, isDeleted: { $ne: true } }).limit(100).lean(),
       Customer.find({ tenantId: tenant._id, isDeleted: { $ne: true } }).limit(30).lean(),
