@@ -73,7 +73,7 @@ async function clearTransactionalData(tenantId) {
 }
 
 async function seedTenant(tenant, tenantIndex) {
-  return runWithTenant({ tenantId: tenant._id, role: "super_admin", bypass: true }, async () => {
+  return runWithTenant({ tenantId: tenant._id, role: "manager", bypass: false }, async () => {
     await clearTransactionalData(tenant._id);
 
     const [customers, tours, users, staff, agents, suppliers] = await Promise.all([
