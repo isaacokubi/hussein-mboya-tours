@@ -1,10 +1,15 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { useSettings } from "../context/SettingsContext";
+import { useTenant } from "../context/TenantContext";
 import { requestPasswordReset, resetPasswordWithCode } from "../api/passwordResetApi";
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
+  const { settings = {} } = useSettings() || {};
+  const { tenant = {} } = useTenant() || {};
+  const companyName = String(settings?.companyName || tenant?.name || tenant?.companyName || "Global Tours").trim();
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -56,7 +61,7 @@ export default function ForgotPassword() {
     <div className="min-h-screen bg-gray-100 px-4 py-10">
       <div className="mx-auto max-w-md rounded-2xl bg-white p-8 shadow-xl">
         <h1 className="text-3xl font-bold text-green-900">Reset your password</h1>
-        <p className="mt-2 text-gray-600">Enter the email address on your Global Tours account. We will send a secure reset code by email.</p>
+        <p className="mt-2 text-gray-600">Enter the email address on your {companyName} account. We will send a secure reset code by email.</p>
         {step === 1 ? (
           <form onSubmit={requestCode} className="mt-6 space-y-4">
             <input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Registered email address" className="w-full rounded-lg border p-3" required />
