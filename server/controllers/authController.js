@@ -214,7 +214,7 @@ export const requestPasswordReset = async (req, res, next) => {
     user.passwordResetAttempts = 0;
     await user.save({ validateBeforeSave: false });
 
-    const companyName = String(process.env.MAIL_FROM_NAME || "Global Tours").trim() || "Global Tours";
+    const companyName = String(req.tenant?.name || req.tenant?.companyName || process.env.MAIL_FROM_NAME || "Global Tours").trim() || "Global Tours";
     const safeCompanyName = companyName.replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[char]));
     const subject = `Password reset code - ${companyName}`;
     const text = `We received a request to reset your ${companyName} password.\n\nYour password reset code is: ${code}\n\nThis code expires in 10 minutes. If you did not request a password reset, you can ignore this email.`;
@@ -222,7 +222,7 @@ export const requestPasswordReset = async (req, res, next) => {
 
     try {
       const { sendEmail } = await import("../services/emailService.js");
-      await sendEmail({ to: user.email, subject, html, text, fromName: companyName });
+      await sendEmail({ to: user.email, subject, html, text, fromName: companyName, settingsSource: req });
     } catch (emailError) {
       console.error("PASSWORD RESET EMAIL ERROR:", emailError.message);
       return res.status(503).json({ success: false, message: "We could not send the reset email right now. Please try again shortly." });
