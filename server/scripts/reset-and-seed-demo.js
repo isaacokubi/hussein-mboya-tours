@@ -214,7 +214,7 @@ async function seedTenant(tenant, tenantIndex, permissions) {
   })));
 
   const vehicle = await Vehicle.create({
-    tenantId:tenant._id, name:"Demo Safari Cruiser", registrationNumber:`KDA ${100+iPad(tenantIndex)} DEM`,
+    tenantId:tenant._id, name:"Demo Safari Cruiser", registrationNumber:`KDA ${100 + tenantIndex} DEM`,
     model:"Land Cruiser 79", manufacturer:"Toyota", year:2023, type:"LAND_CRUISER", capacity:7,
     driver:driverStaff._id, assignedTour:tours[0]._id, status:"assigned", isActive:true, fuelType:"Diesel",
     transmission:"Automatic", mileage:58000, insuranceNumber:`INS-DEMO-${tenantIndex}`,
