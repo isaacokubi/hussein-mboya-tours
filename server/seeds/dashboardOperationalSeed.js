@@ -21,7 +21,7 @@ const daysFromNow = (n) => new Date(Date.now() + n * 86400000);
 const hash = (value) => crypto.createHash("sha256").update(String(value)).digest("hex");
 
 async function seedTenant(tenant, tenantIndex) {
-  return runWithTenant({ tenantId: tenant._id, role: "super_admin", bypass: true }, async () => {
+  return runWithTenant({ tenantId: tenant._id, role: "manager", bypass: false }, async () => {
     const [users, customers, bookings] = await Promise.all([
       User.find({ isDeleted: { $ne: true } }).limit(100).lean(),
       Customer.find({ isDeleted: { $ne: true } }).limit(30).lean(),
