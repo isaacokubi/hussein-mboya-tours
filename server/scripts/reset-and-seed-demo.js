@@ -298,6 +298,7 @@ const main = async () => {
   const serverDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
   await mongoose.disconnect();
   const demoSeeders = [
+    ["seeds/ensureDashboardMasterData.js", "financial master data (suppliers)"],
     ["seeds/financialDashboardSeedRunner.js", "accounting/finance"],
     ["seeds/dashboardOperationalSeed.js", "website integrations/operations"],
     ["seeds/hospitalityDeveloperSeed.js", "hotels/airport transfers"],
