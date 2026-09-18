@@ -11,6 +11,12 @@ const userSchema = new mongoose.Schema(
     // Email uniqueness is tenant-scoped. Global uniqueness caused one company
     // to block another company from using the same legitimate staff email.
     email: { type: String, required: true, lowercase: true, trim: true },
+    // Pending email changes are verified by a one-time code before the
+    // canonical login/recovery email is replaced.
+    pendingEmail: { type: String, default: "", lowercase: true, trim: true, select: false },
+    emailChangeCodeHash: { type: String, default: "", select: false },
+    emailChangeExpiresAt: { type: Date, default: null, select: false },
+    emailChangeAttempts: { type: Number, default: 0, select: false },
     phone: {
       type: String,
       required: true,

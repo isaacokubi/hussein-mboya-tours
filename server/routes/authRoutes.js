@@ -10,6 +10,8 @@ import {
   changePassword,
   requestPasswordReset,
   resetPasswordWithCode,
+  requestEmailChange,
+  confirmEmailChange,
 } from "../controllers/authController.js";
 import { bootstrapTenant } from "../controllers/bootstrapController.js";
 
@@ -28,6 +30,11 @@ router.post("/register", resolveTenant, register);
 router.post("/login", resolveTenant, loginRateLimiter, login);
 router.post("/password-reset/request", resolveTenant, passwordResetRateLimiter, requestPasswordReset);
 router.post("/password-reset/confirm", resolveTenant, passwordResetRateLimiter, resetPasswordWithCode);
+
+// Authenticated account-email changes do not use resolveTenant because
+// platform SuperAdmins intentionally have no tenant.
+router.post("/email-change/request", protect, passwordResetRateLimiter, requestEmailChange);
+router.post("/email-change/confirm", protect, passwordResetRateLimiter, confirmEmailChange);
 
 // Authentication must establish the canonical tenant context before the
 // customer profile synchronizer runs. This also backfills CRM profiles for

@@ -3,6 +3,7 @@ import { toast } from "react-toastify";
 
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
+import { Mail, ShieldCheck, KeyRound, UserRound, Phone } from "lucide-react";
 
 const normalizeProfile = (response) =>
   response?.data?.user ||
@@ -19,6 +20,10 @@ export default function Profile() {
     name: user?.name || "",
     phone: user?.phone || "",
   });
+  const [emailForm, setEmailForm] = useState({ newEmail: "", currentPassword: "" });
+  const [emailVerificationCode, setEmailVerificationCode] = useState("");
+  const [emailPending, setEmailPending] = useState(false);
+  const [emailConfirming, setEmailConfirming] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -187,10 +192,114 @@ export default function Profile() {
               />
             </label>
 
-            <div className="min-w-0 rounded-xl bg-gray-50 p-5">
-              <p className="text-sm text-gray-500">Email Address</p>
-              <p className="mt-2 break-all text-lg font-bold">{profile.email || "N/A"}</p>
+            <div className="min-w-0 rounded-2xl border border-emerald-100 bg-emerald-50/70 p-5 md:col-span-2">
+            <div className="flex items-start gap-3">
+              <div className="rounded-xl bg-emerald-700 p-2 text-white"><Mail size={20} /></div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold uppercase tracking-wide text-emerald-700">Account Email</p>
+                <p className="mt-1 break-all text-lg font-bold text-slate-900">{profile.email || "N/A"}</p>
+                <p className="mt-1 text-sm text-slate-600">This email is used for login and password recovery.</p>
+              </div>
             </div>
+
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              <label className="block">
+                <span className="mb-2 block text-sm font-semibold text-slate-700">New email address</span>
+                <input
+                  type="email"
+                  value={emailForm.newEmail}
+                  onChange={(event) => setEmailForm((current) => ({ ...current, newEmail: event.target.value }))}
+                  autoComplete="email"
+                  placeholder="new@email.com"
+                  className="input w-full"
+                  disabled={emailPending || emailConfirming}
+                />
+              </label>
+              <label className="block">
+                <span className="mb-2 block text-sm font-semibold text-slate-700">Current password</span>
+                <input
+                  type="password"
+                  value={emailForm.currentPassword}
+                  onChange={(event) => setEmailForm((current) => ({ ...current, currentPassword: event.target.value }))}
+                  autoComplete="current-password"
+                  placeholder="Confirm your current password"
+                  className="input w-full"
+                  disabled={emailPending || emailConfirming}
+                />
+              </label>
+            </div>
+
+            {!emailPending ? (
+              <button
+                type="button"
+                onClick={async () => {
+                  const newEmail = emailForm.newEmail.trim().toLowerCase();
+                  if (!/^\S+@\S+\.\S+$/.test(newEmail)) return toast.error("Enter a valid new email address.");
+                  if (!emailForm.currentPassword) return toast.error("Enter your current password to authorize the change.");
+                  setEmailPending(true);
+                  try {
+                    const response = await api.post("/auth/email-change/request", {
+                      newEmail,
+                      currentPassword: emailForm.currentPassword,
+                    });
+                    toast.success(response.data?.message || "Verification code sent.");
+                  } catch (error) {
+                    setEmailPending(false);
+                    toast.error(error.response?.data?.message || "Unable to start the email change.");
+                  }
+                }}
+                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-3 font-bold text-white transition hover:bg-slate-800 disabled:opacity-50"
+              >
+                <ShieldCheck size={18} /> Send verification code
+              </button>
+            ) : (
+              <div className="mt-5 rounded-xl border border-emerald-200 bg-white p-4">
+                <p className="text-sm font-semibold text-slate-800">Check your new email</p>
+                <p className="mt-1 text-sm text-slate-600">Enter the 6-digit code we sent to {emailForm.newEmail.trim().toLowerCase()}. The code expires in 10 minutes.</p>
+                <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={emailVerificationCode}
+                    onChange={(event) => setEmailVerificationCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                    placeholder="123456"
+                    className="input w-full sm:max-w-xs"
+                    autoComplete="one-time-code"
+                    disabled={emailConfirming}
+                  />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!/^\d{6}$/.test(emailVerificationCode)) return toast.error("Enter the 6-digit verification code.");
+                      setEmailConfirming(true);
+                      try {
+                        const response = await api.post("/auth/email-change/confirm", { code: emailVerificationCode });
+                        const updatedUser = normalizeProfile(response) || response.data?.user;
+                        if (updatedUser) {
+                          setProfile(updatedUser);
+                          setUser(updatedUser);
+                          localStorage.setItem("user", JSON.stringify(updatedUser));
+                        }
+                        setEmailForm({ newEmail: "", currentPassword: "" });
+                        setEmailVerificationCode("");
+                        setEmailPending(false);
+                        toast.success(response.data?.message || "Email address changed successfully.");
+                      } catch (error) {
+                        toast.error(error.response?.data?.message || "Unable to confirm the email change.");
+                      } finally {
+                        setEmailConfirming(false);
+                      }
+                    }}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 font-bold text-white transition hover:bg-emerald-800 disabled:opacity-50"
+                    disabled={emailConfirming}
+                  >
+                    <KeyRound size={18} /> {emailConfirming ? "Verifying..." : "Confirm email"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
 
             <div className="rounded-xl bg-gray-50 p-5">
               <p className="text-sm text-gray-500">Account Type</p>

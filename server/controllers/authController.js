@@ -8,6 +8,8 @@ import generateToken from "../utils/generateToken.js";
 import buildPermissions from "../utils/buildPermissions.js";
 import { createCustomerLoginChallenge } from "./mfaController.js";
 import { sendSMS } from "../services/smsService.js";
+import Staff from "../models/Staff.js";
+import Agent from "../models/Agent.js";
 
 const normalizeRole = (value) => String(value?.name || value || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
 const effectiveRoleForUser = (user) => normalizeRole(user?.role) || normalizeRole(user?.legacyRole) || normalizeRole(user?.roleId) || "customer";
@@ -197,6 +199,177 @@ export const changePassword = async (req, res, next) => {
   } catch (error) { return next(error); }
 };
 
+const findPasswordResetUser = async (email) => {
+  let user = await User.findOne(mergeTenantFilter({ email }))
+    .select("+passwordResetCodeHash +passwordResetExpiresAt +passwordResetAttempts");
+  if (!user) {
+    user = await runWithTenant(
+      { tenantId: null, tenant: null, role: "super_admin", bypass: true },
+      async () => User.findOne({ email, role: { $in: ["super_admin", "superadmin"] }, tenantId: null })
+        .select("+passwordResetCodeHash +passwordResetExpiresAt +passwordResetAttempts")
+    );
+  }
+  return user;
+};
+
+const escapeHtml = (value) => String(value || "").replace(/[&<>"']/g, (char) => ({
+  "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+}[char]));
+
+const accountEmailCompanyName = (req) => String(
+  req.tenant?.name ||
+  req.tenant?.companyName ||
+  process.env.MAIL_FROM_NAME ||
+  "Global Tours"
+).trim() || "Global Tours";
+
+export const requestEmailChange = async (req, res, next) => {
+  try {
+    const currentPassword = String(req.body?.currentPassword || "");
+    const newEmail = String(req.body?.newEmail || "").trim().toLowerCase();
+
+    if (!currentPassword) {
+      return res.status(400).json({ success: false, message: "Your current password is required." });
+    }
+    if (!/^\\S+@\\S+\\.\\S+$/.test(newEmail)) {
+      return res.status(400).json({ success: false, message: "Enter a valid new email address." });
+    }
+
+    const user = await User.findById(req.user._id)
+      .select("+password +emailChangeCodeHash +emailChangeExpiresAt +emailChangeAttempts")
+      .populate({ path: "roleId", populate: { path: "permissions" } })
+      .populate("permissionsOverride");
+
+    if (!user) return res.status(404).json({ success: false, message: "User not found." });
+    if (!(await user.matchPassword(currentPassword))) {
+      await SecurityLog.logEvent({ user: user._id, email: user.email, action: "email_change_failed", status: "failed", severity: "high", ipAddress: req.ip, userAgent: req.headers["user-agent"], details: "Incorrect current password." });
+      return res.status(401).json({ success: false, message: "Current password is incorrect." });
+    }
+    if (newEmail === String(user.email || "").trim().toLowerCase()) {
+      return res.status(400).json({ success: false, message: "The new email address must be different from your current email." });
+    }
+
+    const existing = await runWithTenant(
+      { tenantId: user.tenantId || null, tenant: req.tenant || null, role: effectiveRoleForUser(user), bypass: isPlatformOwner(user) },
+      async () => {
+        if (isPlatformOwner(user)) return User.findOne({ email: newEmail, role: { $in: ["super_admin", "superadmin"] }, tenantId: null }).select("_id email");
+        return User.findOne({ email: newEmail, tenantId: user.tenantId }).select("_id email");
+      }
+    );
+    if (existing && String(existing._id) !== String(user._id)) {
+      return res.status(409).json({ success: false, message: "That email address is already in use by another account." });
+    }
+
+    const code = String(crypto.randomInt(100000, 1000000));
+    user.pendingEmail = newEmail;
+    user.emailChangeCodeHash = crypto.createHash("sha256").update(code).digest("hex");
+    user.emailChangeExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    user.emailChangeAttempts = 0;
+    await user.save({ validateBeforeSave: false });
+
+    const companyName = accountEmailCompanyName(req);
+    const safeCompanyName = escapeHtml(companyName);
+    const subject = `Confirm your new email address - ${companyName}`;
+    const text = `We received a request to change your ${companyName} account email to ${newEmail}. Your verification code is: ${code}. This code expires in 10 minutes. If you did not request this change, ignore this email.`;
+    const html = `<div style="max-width:620px;margin:0 auto;padding:28px;font-family:Arial,sans-serif;color:#1f2937;line-height:1.6;border:1px solid #e5e7eb;border-radius:12px"><h2 style="margin-top:0;color:#166534">Confirm your email address</h2><p>Your ${safeCompanyName} account email is being changed to <strong>${escapeHtml(newEmail)}</strong>.</p><p>Enter this one-time verification code in your dashboard:</p><div style="margin:22px 0;padding:18px;text-align:center;background:#f0fdf4;border-radius:12px;font-size:30px;font-weight:700;letter-spacing:8px;color:#166534">${code}</div><p>This code expires in <strong>10 minutes</strong>.</p><p>If you did not request this change, ignore this email and keep your current account email.</p><p>Regards,<br>${safeCompanyName}</p></div>`;
+
+    try {
+      const { sendEmail } = await import("../services/emailService.js");
+      await sendEmail({ to: newEmail, subject, html, text, fromName: companyName, settingsSource: req });
+    } catch (emailError) {
+      user.pendingEmail = "";
+      user.emailChangeCodeHash = "";
+      user.emailChangeExpiresAt = null;
+      user.emailChangeAttempts = 0;
+      await user.save({ validateBeforeSave: false });
+      console.error("EMAIL CHANGE VERIFICATION ERROR:", emailError.message);
+      return res.status(503).json({ success: false, message: "We could not send the verification email right now. Please try again shortly." });
+    }
+
+    await SecurityLog.logEvent({ user: user._id, email: user.email, action: "email_change_requested", status: "success", severity: "medium", ipAddress: req.ip, userAgent: req.headers["user-agent"], details: `Verification code sent to pending address ${newEmail}.` });
+    return res.json({ success: true, message: `A verification code has been sent to ${newEmail}.`, pendingEmail: newEmail });
+  } catch (error) {
+    console.error("EMAIL CHANGE REQUEST ERROR:", error);
+    return next(error);
+  }
+};
+
+export const confirmEmailChange = async (req, res, next) => {
+  try {
+    const code = String(req.body?.code || "").trim();
+    if (!/^\\d{6}$/.test(code)) return res.status(400).json({ success: false, message: "Enter the 6-digit verification code." });
+
+    const user = await User.findById(req.user._id)
+      .select("+password +emailChangeCodeHash +emailChangeExpiresAt +emailChangeAttempts")
+      .populate({ path: "roleId", populate: { path: "permissions" } })
+      .populate("permissionsOverride");
+
+    if (!user || !user.pendingEmail || !user.emailChangeCodeHash || !user.emailChangeExpiresAt) {
+      return res.status(400).json({ success: false, message: "There is no active email-change request. Request a new verification code." });
+    }
+    if (new Date(user.emailChangeExpiresAt).getTime() < Date.now()) {
+      user.pendingEmail = "";
+      user.emailChangeCodeHash = "";
+      user.emailChangeExpiresAt = null;
+      user.emailChangeAttempts = 0;
+      await user.save({ validateBeforeSave: false });
+      return res.status(400).json({ success: false, message: "The verification code has expired. Request a new code." });
+    }
+    if (Number(user.emailChangeAttempts || 0) >= 5) {
+      return res.status(429).json({ success: false, message: "Too many incorrect verification attempts. Request a new code." });
+    }
+
+    const hash = crypto.createHash("sha256").update(code).digest("hex");
+    if (hash !== user.emailChangeCodeHash) {
+      user.emailChangeAttempts = Number(user.emailChangeAttempts || 0) + 1;
+      await user.save({ validateBeforeSave: false });
+      return res.status(401).json({ success: false, message: "Invalid verification code." });
+    }
+
+    const oldEmail = user.email;
+    const newEmail = String(user.pendingEmail).trim().toLowerCase();
+
+    const duplicate = await runWithTenant(
+      { tenantId: user.tenantId || null, tenant: req.tenant || null, role: effectiveRoleForUser(user), bypass: isPlatformOwner(user) },
+      async () => isPlatformOwner(user)
+        ? User.findOne({ email: newEmail, role: { $in: ["super_admin", "superadmin"] }, tenantId: null }).select("_id")
+        : User.findOne({ email: newEmail, tenantId: user.tenantId }).select("_id")
+    );
+    if (duplicate && String(duplicate._id) !== String(user._id)) {
+      user.pendingEmail = "";
+      user.emailChangeCodeHash = "";
+      user.emailChangeExpiresAt = null;
+      user.emailChangeAttempts = 0;
+      await user.save({ validateBeforeSave: false });
+      return res.status(409).json({ success: false, message: "That email address is now in use by another account. Request a new email change." });
+    }
+
+    user.email = newEmail;
+    user.pendingEmail = "";
+    user.emailChangeCodeHash = "";
+    user.emailChangeExpiresAt = null;
+    user.emailChangeAttempts = 0;
+    await user.save();
+
+    const tenantFilter = user.tenantId ? { tenantId: user.tenantId } : {};
+    await Promise.allSettled([
+      Staff.updateOne({ ...tenantFilter, user: user._id }, { $set: { email: newEmail } }),
+      Agent.updateOne({ ...tenantFilter, user: user._id }, { $set: { email: newEmail } }),
+    ]);
+
+    const permissions = buildPermissions(user);
+    const tokenTenantId = isPlatformOwner(user) ? null : (user.tenantId || null);
+    const token = generateToken({ _id: user._id, role: effectiveRoleForUser(user), roleId: user.roleId, email: newEmail, permissions, tenantId: tokenTenantId });
+    setAuthCookie(res, token);
+
+    await SecurityLog.logEvent({ user: user._id, email: newEmail, action: "email_changed", status: "success", severity: "high", ipAddress: req.ip, userAgent: req.headers["user-agent"], details: `Account email changed from ${oldEmail} to ${newEmail}.` });
+    return res.json({ success: true, message: "Email address changed successfully. Your new email is now used for login and password recovery.", user: publicUser(user, permissions), token });
+  } catch (error) {
+    console.error("EMAIL CHANGE CONFIRM ERROR:", error);
+    return next(error);
+  }
+};
+
 export const requestPasswordReset = async (req, res, next) => {
   try {
     const email = String(req.body?.email || "").trim().toLowerCase();
@@ -204,8 +377,7 @@ export const requestPasswordReset = async (req, res, next) => {
     if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
       return res.status(400).json({ success: false, message: "A valid email address is required." });
     }
-    const user = await User.findOne(mergeTenantFilter({ email }))
-      .select("+passwordResetCodeHash +passwordResetExpiresAt +passwordResetAttempts");
+    const user = await findPasswordResetUser(email);
     if (!user) return res.json(generic);
 
     const code = String(crypto.randomInt(100000, 1000000));
@@ -243,7 +415,14 @@ export const resetPasswordWithCode = async (req, res, next) => {
     const newPassword = String(req.body?.newPassword || "");
     if (!email || !/^\d{6}$/.test(code)) return res.status(400).json({ success: false, message:"Email and a 6-digit reset code are required." });
     if (newPassword.length < 8 || !/\d/.test(newPassword) || !/[A-Z]/.test(newPassword)) return res.status(400).json({ success: false, message: "Password must be at least 8 characters and include an uppercase letter and a number." });
-    const user = await User.findOne(mergeTenantFilter({ email })).select("+password +passwordResetCodeHash +passwordResetExpiresAt +passwordResetAttempts");
+    let user = await User.findOne(mergeTenantFilter({ email })).select("+password +passwordResetCodeHash +passwordResetExpiresAt +passwordResetAttempts");
+    if (!user) {
+      user = await runWithTenant(
+        { tenantId: null, tenant: null, role: "super_admin", bypass: true },
+        async () => User.findOne({ email, role: { $in: ["super_admin", "superadmin"] }, tenantId: null })
+          .select("+password +passwordResetCodeHash +passwordResetExpiresAt +passwordResetAttempts")
+      );
+    }
     if (!user || !user.passwordResetCodeHash || !user.passwordResetExpiresAt) return res.status(400).json({ success: false, message: "Invalid or expired reset code." });
     if (new Date(user.passwordResetExpiresAt).getTime() < Date.now()) return res.status(400).json({ success: false, message: "The reset code has expired. Request a new code." });
     if (Number(user.passwordResetAttempts || 0) >= 5) return res.status(429).json({ success: false, message: "Too many incorrect reset attempts. Request a new code." });
