@@ -13,7 +13,8 @@ Database,
 Server,
 X,
 Gauge,
-ChevronRight
+ChevronRight,
+UserRound
 } from "lucide-react";
 
 
