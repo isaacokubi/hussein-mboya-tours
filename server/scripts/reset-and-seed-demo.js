@@ -19,6 +19,7 @@ import Review from "../models/Review.js";
 import Notification from "../models/Notification.js";
 import Vehicle from "../models/Vehicle.js";
 import Lead from "../models/Lead.js";
+import { runWithTenant } from "../tenancy/context.js";
 
 dotenv.config();
 
@@ -37,7 +38,7 @@ const oid = () => new mongoose.Types.ObjectId();
 async function resetCollectionsPreservingOwners() {
   const db = mongoose.connection.db;
   const collections = await db.listCollections({}, { nameOnly: true }).toArray();
-  const owners = await User.find({ role: { $in: ["super_admin", "superadmin"] } }).lean();
+  const owners = await db.collection("users").find({ role: { $in: ["super_admin", "superadmin"] } }).toArray();
 
   for (const collection of collections) {
     if (["organizations", "users"].includes(collection.name)) continue;
@@ -282,7 +283,9 @@ const main = async () => {
   await mongoose.connect(process.env.MONGODB_URI);
   const {tenants, ownerCount} = await resetCollectionsPreservingOwners();
   const permissions = await seedRbac();
-  for (let i=0;i<tenants.length;i++) await seedTenant(tenants[i], i, permissions);
+  for (let i=0;i<tenants.length;i++) {
+    await runWithTenant({ tenantId: tenants[i]._id, tenant: tenants[i], role: "super_admin", bypass: false }, () => seedTenant(tenants[i], i, permissions));
+  }
   console.log(JSON.stringify({
     success:true,
     message:"Demo reset complete. Platform owner accounts and tenant identities were preserved; all other data was replaced with seeded dashboard test data.",
