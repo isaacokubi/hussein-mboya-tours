@@ -200,19 +200,38 @@ export const changePassword = async (req, res, next) => {
 export const requestPasswordReset = async (req, res, next) => {
   try {
     const email = String(req.body?.email || "").trim().toLowerCase();
-    const phone = String(req.body?.phone || "").trim();
-    const generic = { success: true, message: "If the account details are valid, a reset code has been sent." };
-    if (!email || !phone) return res.status(400).json({ success: false, message: "Email and phone are required." });
-    const user = await User.findOne(mergeTenantFilter({ email, phone })).select("+passwordResetCodeHash +passwordResetExpiresAt +passwordResetAttempts");
+    const generic = { success: true, message: "If an account exists for that email address, a password reset code has been sent." };
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+      return res.status(400).json({ success: false, message: "A valid email address is required." });
+    }
+    const user = await User.findOne(mergeTenantFilter({ email }))
+      .select("+passwordResetCodeHash +passwordResetExpiresAt +passwordResetAttempts");
     if (!user) return res.json(generic);
+
     const code = String(crypto.randomInt(100000, 1000000));
     user.passwordResetCodeHash = crypto.createHash("sha256").update(code).digest("hex");
     user.passwordResetExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
     user.passwordResetAttempts = 0;
     await user.save({ validateBeforeSave: false });
-    try { await sendSMS(phone, `Your Global Tours password reset code is ${code}. It expires in 10 minutes.`); } catch (smsError) { console.error("PASSWORD RESET SMS ERROR:", smsError.message); }
-    await SecurityLog.logEvent({ user: user._id, email: user.email, action: "password_reset_requested", status: "success", severity: "medium", ipAddress: req.ip, userAgent: req.headers["user-agent"] });
-    if (String(process.env.MFA_DEV_MODE || "").toLowerCase() === "true") return res.json({ ...generic, devCode: code, message: `Development reset code: ${code}` });
+
+    const companyName = String(process.env.MAIL_FROM_NAME || "Global Tours").trim() || "Global Tours";
+    const safeCompanyName = companyName.replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[char]));
+    const subject = `Password reset code - ${companyName}`;
+    const text = `We received a request to reset your ${companyName} password.\n\nYour password reset code is: ${code}\n\nThis code expires in 10 minutes. If you did not request a password reset, you can ignore this email.`;
+    const html = `<div style="max-width:620px;margin:0 auto;padding:28px;font-family:Arial,sans-serif;color:#1f2937;line-height:1.6;border:1px solid #e5e7eb;border-radius:12px"><h2 style="margin-top:0;color:#166534">Reset your password</h2><p>We received a request to reset your <strong>${safeCompanyName}</strong> password.</p><p>Your one-time password reset code is:</p><div style="margin:22px 0;padding:18px;text-align:center;background:#f0fdf4;border-radius:12px;font-size:30px;font-weight:700;letter-spacing:8px;color:#166534">${code}</div><p>This code expires in <strong>10 minutes</strong>.</p><p>If you did not request this, you can safely ignore this email.</p><p>Regards,<br>${safeCompanyName}</p></div>`;
+
+    try {
+      const { sendEmail } = await import("../services/emailService.js");
+      await sendEmail({ to: user.email, subject, html, text, fromName: companyName });
+    } catch (emailError) {
+      console.error("PASSWORD RESET EMAIL ERROR:", emailError.message);
+      return res.status(503).json({ success: false, message: "We could not send the reset email right now. Please try again shortly." });
+    }
+
+    await SecurityLog.logEvent({ user: user._id, email: user.email, action: "password_reset_requested", status: "success", severity: "medium", ipAddress: req.ip, userAgent: req.headers["user-agent"], details: "Password reset code sent by email." });
+    if (String(process.env.MFA_DEV_MODE || "").toLowerCase() === "true") {
+      return res.json({ ...generic, devCode: code, message: `Development reset code: ${code}` });
+    }
     return res.json(generic);
   } catch (error) { console.error("PASSWORD RESET REQUEST ERROR:", error); return next(error); }
 };
@@ -220,12 +239,11 @@ export const requestPasswordReset = async (req, res, next) => {
 export const resetPasswordWithCode = async (req, res, next) => {
   try {
     const email = String(req.body?.email || "").trim().toLowerCase();
-    const phone = String(req.body?.phone || "").trim();
     const code = String(req.body?.code || "").trim();
     const newPassword = String(req.body?.newPassword || "");
-    if (!email || !phone || !/^\d{6}$/.test(code)) return res.status(400).json({ success: false, message:"Email, phone and a 6-digit reset code are required." });
+    if (!email || !/^\d{6}$/.test(code)) return res.status(400).json({ success: false, message:"Email and a 6-digit reset code are required." });
     if (newPassword.length < 8 || !/\d/.test(newPassword) || !/[A-Z]/.test(newPassword)) return res.status(400).json({ success: false, message: "Password must be at least 8 characters and include an uppercase letter and a number." });
-    const user = await User.findOne(mergeTenantFilter({ email, phone })).select("+password +passwordResetCodeHash +passwordResetExpiresAt +passwordResetAttempts");
+    const user = await User.findOne(mergeTenantFilter({ email })).select("+password +passwordResetCodeHash +passwordResetExpiresAt +passwordResetAttempts");
     if (!user || !user.passwordResetCodeHash || !user.passwordResetExpiresAt) return res.status(400).json({ success: false, message: "Invalid or expired reset code." });
     if (new Date(user.passwordResetExpiresAt).getTime() < Date.now()) return res.status(400).json({ success: false, message: "The reset code has expired. Request a new code." });
     if (Number(user.passwordResetAttempts || 0) >= 5) return res.status(429).json({ success: false, message: "Too many incorrect reset attempts. Request a new code." });
