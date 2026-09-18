@@ -1,11 +1,11 @@
 import { getSystemSettings } from "./settingsService.js";
 import nodemailer from "nodemailer";
 
-const smtpHost = process.env.EMAIL_HOST || process.env.SMTP_HOST;
-const smtpPort = Number(process.env.EMAIL_PORT || process.env.SMTP_PORT || 587);
-const smtpUser = process.env.EMAIL_USER || process.env.SMTP_USER;
-const smtpPassword = process.env.EMAIL_PASSWORD || process.env.SMTP_PASSWORD;
-const smtpFrom = process.env.EMAIL_FROM_ADDRESS || process.env.SMTP_FROM || smtpUser;
+const smtpHost = process.env.EMAIL_HOST || process.env.SMTP_HOST || process.env.MAIL_HOST;
+const smtpPort = Number(process.env.EMAIL_PORT || process.env.SMTP_PORT || process.env.MAIL_PORT || 587);
+const smtpUser = process.env.EMAIL_USER || process.env.SMTP_USER || process.env.MAIL_USERNAME;
+const smtpPassword = process.env.EMAIL_PASSWORD || process.env.SMTP_PASSWORD || process.env.MAIL_PASSWORD;
+const smtpFrom = process.env.EMAIL_FROM_ADDRESS || process.env.SMTP_FROM || process.env.MAIL_FROM_ADDRESS || smtpUser;
 
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>\"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[char]));
 const clean = (value, fallback = "Not specified") => {
@@ -18,7 +18,7 @@ const money = (value) => `KES ${Number(value ?? 0).toLocaleString("en-KE")}`;
 const transporter = nodemailer.createTransport({
   host: smtpHost,
   port: smtpPort,
-  secure: process.env.EMAIL_SECURE === "true" || smtpPort === 465,
+  secure: String(process.env.EMAIL_SECURE || process.env.MAIL_SECURE || "").toLowerCase() === "true" || smtpPort === 465,
   auth: smtpUser ? { user: smtpUser, pass: smtpPassword } : undefined,
 });
 
@@ -36,6 +36,8 @@ export const sendEmail = async ({ to, subject, html, text, attachments = [], cc,
   if (!subject) throw new Error("Email subject is required.");
   if (!html && !text) throw new Error("Email content is required.");
   if (!smtpHost) throw new Error("SMTP email host is not configured.");
+  if (!smtpUser || !smtpPassword) throw new Error("SMTP email credentials are not configured.");
+  if (!smtpFrom) throw new Error("SMTP sender email is not configured.");
   const settings = await getSystemSettings();
   const companyName = clean(fromName || settings.companyName, "Global Tours");
   return transporter.sendMail({
