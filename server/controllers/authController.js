@@ -231,7 +231,7 @@ export const requestEmailChange = async (req, res, next) => {
     if (!currentPassword) {
       return res.status(400).json({ success: false, message: "Your current password is required." });
     }
-    if (!/^\\S+@\\S+\\.\\S+$/.test(newEmail)) {
+    if (!/^\S+@\S+\.\S+$/.test(newEmail)) {
       return res.status(400).json({ success: false, message: "Enter a valid new email address." });
     }
 
@@ -258,6 +258,16 @@ export const requestEmailChange = async (req, res, next) => {
     );
     if (existing && String(existing._id) !== String(user._id)) {
       return res.status(409).json({ success: false, message: "That email address is already in use by another account." });
+    }
+
+    if (!isPlatformOwner(user)) {
+      const [staffConflict, agentConflict] = await Promise.all([
+        Staff.findOne({ tenantId: user.tenantId, email: newEmail, user: { $ne: user._id } }).select("_id").lean(),
+        Agent.findOne({ tenantId: user.tenantId, email: newEmail, user: { $ne: user._id } }).select("_id").lean(),
+      ]);
+      if (staffConflict || agentConflict) {
+        return res.status(409).json({ success: false, message: "That email address is already assigned to another staff or agent profile in this company." });
+      }
     }
 
     const code = String(crypto.randomInt(100000, 1000000));
@@ -297,7 +307,7 @@ export const requestEmailChange = async (req, res, next) => {
 export const confirmEmailChange = async (req, res, next) => {
   try {
     const code = String(req.body?.code || "").trim();
-    if (!/^\\d{6}$/.test(code)) return res.status(400).json({ success: false, message: "Enter the 6-digit verification code." });
+    if (!/^\d{6}$/.test(code)) return res.status(400).json({ success: false, message: "Enter the 6-digit verification code." });
 
     const user = await User.findById(req.user._id)
       .select("+password +emailChangeCodeHash +emailChangeExpiresAt +emailChangeAttempts")
@@ -335,6 +345,15 @@ export const confirmEmailChange = async (req, res, next) => {
         ? User.findOne({ email: newEmail, role: { $in: ["super_admin", "superadmin"] }, tenantId: null }).select("_id")
         : User.findOne({ email: newEmail, tenantId: user.tenantId }).select("_id")
     );
+    if (!isPlatformOwner(user)) {
+      const [staffConflict, agentConflict] = await Promise.all([
+        Staff.findOne({ tenantId: user.tenantId, email: newEmail, user: { $ne: user._id } }).select("_id").lean(),
+        Agent.findOne({ tenantId: user.tenantId, email: newEmail, user: { $ne: user._id } }).select("_id").lean(),
+      ]);
+      if (staffConflict || agentConflict) {
+        return res.status(409).json({ success: false, message: "That email address is already assigned to another staff or agent profile in this company." });
+      }
+    }
     if (duplicate && String(duplicate._id) !== String(user._id)) {
       user.pendingEmail = "";
       user.emailChangeCodeHash = "";
@@ -386,7 +405,9 @@ export const requestPasswordReset = async (req, res, next) => {
     user.passwordResetAttempts = 0;
     await user.save({ validateBeforeSave: false });
 
-    const companyName = String(req.tenant?.name || req.tenant?.companyName || process.env.MAIL_FROM_NAME || "Global Tours").trim() || "Global Tours";
+    const companyName = isPlatformOwner(user)
+      ? String(process.env.MAIL_FROM_NAME || "Global Tours").trim() || "Global Tours"
+      : String(req.tenant?.name || req.tenant?.companyName || process.env.MAIL_FROM_NAME || "Global Tours").trim() || "Global Tours";
     const safeCompanyName = companyName.replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[char]));
     const subject = `Password reset code - ${companyName}`;
     const text = `We received a request to reset your ${companyName} password.\n\nYour password reset code is: ${code}\n\nThis code expires in 10 minutes. If you did not request a password reset, you can ignore this email.`;

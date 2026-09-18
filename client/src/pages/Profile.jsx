@@ -3,7 +3,7 @@ import { toast } from "react-toastify";
 
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
-import { Mail, ShieldCheck, KeyRound, UserRound, Phone } from "lucide-react";
+import { Mail, ShieldCheck, KeyRound } from "lucide-react";
 
 const normalizeProfile = (response) =>
   response?.data?.user ||
