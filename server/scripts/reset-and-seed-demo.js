@@ -228,6 +228,7 @@ async function seedTenant(tenant, tenantIndex, permissions) {
     const tour=tours[i%tours.length];
     const amount=Number(tour.price)*(i%2?2:1);
     bookingDocs.push({
+      bookingNumber:`DEMO-${String(tenantIndex + 1).padStart(2, "0")}-${String(i + 1).padStart(4, "0")}`,
       tenantId:tenant._id, customer:customer._id, user:users.customer._id,
       customerSnapshot:{name:customer.firstName+" "+customer.lastName,email:customer.email,phone:customer.phone},
       contact:{name:customer.firstName+" "+customer.lastName,email:customer.email,phone:customer.phone},
