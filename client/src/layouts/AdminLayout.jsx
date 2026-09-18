@@ -159,6 +159,10 @@ function SidebarContent({ companyName, user, groups, plan }) {
           </section>
         ))}
       </nav>
+      <NavLink to="/profile" className={({ isActive }) => `mt-5 flex items-center gap-3 rounded-xl border border-white/10 px-3 py-3 text-sm font-semibold transition ${isActive ? "bg-emerald-500 text-slate-950" : "text-slate-200 hover:bg-white/10"}`}>
+        <UserCog size={17} />
+        <span>My Profile & Email</span>
+      </NavLink>
     </div>
   );
 }

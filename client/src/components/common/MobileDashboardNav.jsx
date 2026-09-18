@@ -6,7 +6,7 @@ import { Menu, X, LayoutDashboard, CalendarCheck, UserRound, Heart, FileText, Sp
 const NAV = {
   customer: [["/dashboard", "Dashboard", LayoutDashboard], ["/my-bookings", "My Bookings", CalendarCheck], ["/custom-tour", "Custom Tour", Sparkles], ["/tours", "Explore Tours", FileText], ["/profile", "Profile", UserRound], ["/wishlist", "Wishlist", Heart]],
   guide: [["/guide/dashboard", "Dashboard", LayoutDashboard], ["/guide/assigned-tours", "Assigned Tours", CalendarCheck], ["/profile", "Profile", UserRound]],
-  driver: [["/driver/dashboard", "Dashboard", LayoutDashboard], ["/profile", "Profile", UserRound]],
+  driver: [["/driver/dashboard", "Dashboard", LayoutDashboard], ["/profile", "Profile & Email", UserRound]],
 };
 
 export default function MobileDashboardNav({ role = "customer", title }) {

@@ -215,7 +215,7 @@ className="opacity-50"
 
 </nav>
 
-
+<NavLink to="/profile" onClick={()=>setOpen(false)} className={({isActive})=>`mt-8 flex items-center gap-3 rounded-xl px-4 py-3 font-semibold transition ${isActive?"bg-[#1b7658] text-white":"text-slate-300 hover:bg-white/10"}`}><UserRound size={20}/><span>My Profile & Email</span></NavLink>
 
 <div className="
 mt-10

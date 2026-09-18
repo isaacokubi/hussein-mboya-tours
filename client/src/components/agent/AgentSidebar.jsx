@@ -6,6 +6,7 @@ import {
   Package,
   Users,
   WalletCards,
+  UserRound,
 } from "lucide-react";
 import { useSettings } from "../../context/SettingsContext";
 
@@ -47,6 +48,7 @@ export default function AgentSidebar() {
           </NavLink>
         ))}
       </nav>
+      <NavLink to="/profile" className={({ isActive }) => `ops-link mt-2 ${isActive ? "active" : ""}`}><UserRound size={17} /><span>My Profile & Email</span></NavLink>
     </div>
   );
 }

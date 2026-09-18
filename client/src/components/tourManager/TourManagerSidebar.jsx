@@ -9,6 +9,7 @@ import {
   Map,
   PlusCircle,
   UserRoundCheck,
+  UserRound,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useSettings } from "../../context/SettingsContext";
@@ -66,6 +67,7 @@ export default function TourManagerSidebar() {
           </NavLink>
         ))}
       </nav>
+      <NavLink to="/profile" end className={({ isActive }) => `ops-link shrink-0 ${isActive ? "active" : ""}`}><UserRound size={17} aria-hidden="true" /><span>My Profile & Email</span></NavLink>
       {showScrollButton && (
         <button type="button" onClick={scrollToBottom} className="absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full border border-white/15 bg-slate-800/95 px-4 py-2 text-xs font-semibold text-white shadow-lg backdrop-blur transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-white/50" aria-label="Scroll sidebar to bottom" title="Scroll to bottom">
           <ChevronDown size={15} aria-hidden="true" />
