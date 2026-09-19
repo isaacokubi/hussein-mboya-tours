@@ -6,7 +6,7 @@ import User from "../models/User.js";
 
 const adminRoles=["admin","super_admin", "superadmin","manager","tour_manager","tourmanager"];
 export const createCustomTourRequest=async(req,res,next)=>{
-  requireTenantId();
+  const tenantId = requireTenantId();
   try {
     const { destination,durationDays,people,startDate,budget,requirements,pickupLocation,pickupDate,pickupTime,adults,children,accommodationPreference,mealPreference,transportPreference,emergencyContact,specialRequests,guestName,guestEmail,guestPhone }=req.body||{};
     if(!destination||Number(durationDays)<1||Number(people)<1) return res.status(400).json({success:false,message:"Destination, duration and number of people are required."});
@@ -15,7 +15,7 @@ export const createCustomTourRequest=async(req,res,next)=>{
     const email=String(guestEmail||req.user?.email||"").trim();
     const phone=String(guestPhone||req.user?.phone||"").trim();
     if(!isAuthenticated && (!name||!email)) return res.status(400).json({success:false,message:"Name and email are required for guest custom-tour requests."});
-    const item=await CustomTourRequest.create({customer:isAuthenticated?req.user._id:null,user:isAuthenticated?req.user._id:null,guestContact:{name,email,phone},destination:String(destination).trim(),durationDays:Number(durationDays),people:Number(people),startDate:startDate?new Date(startDate):null,budget:Number(budget||0),requirements:String(requirements||"").trim(),pickupLocation:String(pickupLocation||"").trim(),pickupDate:pickupDate?new Date(pickupDate):null,pickupTime:String(pickupTime||"").trim(),adults:Number(adults||people||1),children:Number(children||0),accommodationPreference:String(accommodationPreference||"").trim(),mealPreference:String(mealPreference||"").trim(),transportPreference:String(transportPreference||"").trim(),emergencyContact:String(emergencyContact||"").trim(),specialRequests:String(specialRequests||"").trim()});
+    const item=await CustomTourRequest.create({tenantId,customer:isAuthenticated?req.user._id:null,user:isAuthenticated?req.user._id:null,guestContact:{name,email,phone},destination:String(destination).trim(),durationDays:Number(durationDays),people:Number(people),startDate:startDate?new Date(startDate):null,budget:Number(budget||0),requirements:String(requirements||"").trim(),pickupLocation:String(pickupLocation||"").trim(),pickupDate:pickupDate?new Date(pickupDate):null,pickupTime:String(pickupTime||"").trim(),adults:Number(adults||people||1),children:Number(children||0),accommodationPreference:String(accommodationPreference||"").trim(),mealPreference:String(mealPreference||"").trim(),transportPreference:String(transportPreference||"").trim(),emergencyContact:String(emergencyContact||"").trim(),specialRequests:String(specialRequests||"").trim()});
     const admins=await User.find(mergeTenantFilter({$or:[{role:{$in:adminRoles}},{legacyRole:{$in:adminRoles}}],status:"active"})).select("_id").lean();
     if(admins.length) await Notification.insertMany(admins.map(a=>({recipient:a._id,user:a._id,title:"Custom Tour Request",message:`A customer requested a ${durationDays}-day custom trip to ${destination} for ${people} people.`,type:"booking",relatedModel:"CustomTourRequest",relatedId:item._id,actionUrl:"/admin/custom-tour-requests"})));
     res.status(201).json({success:true,message:"Custom tour request submitted. The company will review it and send you a total cost.",request:item});
