@@ -101,6 +101,59 @@ export const postPaymentRefundToLedger = async (payment, refundAmount = null, re
         ? await Invoice.findOne({ tenantId: payment.tenantId, hospitalityBooking: payment.hospitalityBooking, isDeleted: { $ne: true } }).lean()
         : null;
 
+  // Repair a legacy refund journal that incorrectly debited AR. Posted journals
+  // are immutable, so reverse the old entry and post corrected accounting.
+  const existingRefund = await JournalEntry.findOne({ tenantId: payment.tenantId, sourceType: "payment_refund", sourceId }).lean();
+  if (existingRefund) {
+    const lineAccounts = await ChartOfAccount.find({
+      tenantId: payment.tenantId,
+      _id: { $in: (existingRefund.lines || []).map((line) => line.account) },
+      active: true,
+    }).select("code").lean();
+    const codeById = new Map(lineAccounts.map((item) => [String(item._id), item.code]));
+    const arLine = (existingRefund.lines || []).find((line) => codeById.get(String(line.account)) === "1100" && Number(line.debit || 0) > 0);
+    const existingCashLine = (existingRefund.lines || []).find((line) => ["1000", "1010", "1020", "1030"].includes(codeById.get(String(line.account))) && Number(line.credit || 0) > 0);
+    if (!arLine || !existingCashLine) return existingRefund;
+
+    if (!(await JournalEntry.findOne({ tenantId: payment.tenantId, sourceType: "payment_refund_reversal", sourceId: existingRefund._id }).lean())) {
+      await postOnce({
+        tenantId: payment.tenantId,
+        sourceType: "payment_refund_reversal",
+        sourceId: existingRefund._id,
+        date: new Date(),
+        description: "Reverse legacy refund accounting " + reference,
+        reference: "CORRECT-" + reference,
+        lines: existingRefund.lines.map((line) => ({ account: line.account, description: "Reversal of legacy refund journal", debit: round(line.credit), credit: round(line.debit) })),
+      });
+    }
+
+    if (!(await JournalEntry.findOne({ tenantId: payment.tenantId, sourceType: "payment_refund_correction", sourceId: existingRefund._id }).lean())) {
+      const invoiceTotal = Math.max(0, round(invoice?.totalAmount));
+      const invoiceTax = Math.max(0, Math.min(invoiceTotal, round(invoice?.tax)));
+      const ratio = invoiceTotal > 0 ? Math.min(1, amount / invoiceTotal) : 1;
+      const taxReversal = round(invoiceTax * ratio);
+      const revenueReversal = round(amount - taxReversal);
+      const revenueCode = invoice?.hospitalityType === "hotel" ? "4010" : invoice?.hospitalityType === "airport_transfer" ? "4020" : "4000";
+      const revenueAccount = await account(payment.tenantId, revenueCode);
+      const cashAccount = await account(payment.tenantId, codeById.get(String(existingCashLine.account)));
+      const correctionLines = [
+        { account: revenueAccount._id, description: "Revenue reversal for customer refund", debit: revenueReversal, credit: 0 },
+        { account: cashAccount._id, description: "Refund paid to customer", debit: 0, credit: amount },
+      ];
+      if (taxReversal > 0) correctionLines.splice(1, 0, { account: (await account(payment.tenantId, "2110"))._id, description: "Output VAT reversal on customer refund", debit: taxReversal, credit: 0 });
+      await postOnce({
+        tenantId: payment.tenantId,
+        sourceType: "payment_refund_correction",
+        sourceId: existingRefund._id,
+        date: existingRefund.entryDate || payment.refundedAt || new Date(),
+        description: "Correct legacy refund accounting " + reference,
+        reference,
+        lines: correctionLines,
+      });
+    }
+    return existingRefund;
+  }
+
   // A refund reverses recognised revenue (and output VAT when present).
   // It must not debit AR because the original payment already cleared AR.
   const invoiceTotal = Math.max(0, round(invoice?.totalAmount));
