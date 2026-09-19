@@ -4,7 +4,7 @@ export default function PaymentAnalytics({ payments = {} }) {
   const { settings = {} } = useSettings() || {};
   const items = [
     ["Completed", payments.completed, payments.completedAmount, "border-emerald-200 bg-emerald-50 text-emerald-800"],
-    ["Pending", payments.pending, payments.pendingAmount, "border-amber-200 bg-amber-50 text-amber-800"],
+    ["Pending / Processing", payments.pending, payments.pendingAmount, "border-amber-200 bg-amber-50 text-amber-800"],
     ["Failed", payments.failed, payments.failedAmount, "border-red-200 bg-red-50 text-red-800"],
   ];
   const currency = String(settings.currencySymbol || settings.currency || "KSh").trim();
