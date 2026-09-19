@@ -26,6 +26,10 @@ import { runWithTenant } from "../tenancy/context.js";
 
 dotenv.config();
 
+// This command creates synthetic QA data. Prevent model hooks from enqueueing
+// webhook deliveries or touching external integrations while the reset runs.
+process.env.DEMO_SEED_MODE = "true";
+
 const CONFIRM = process.env.CONFIRM_DEMO_RESET;
 const DEMO_PASSWORD = String(process.env.SEED_DEMO_PASSWORD || "");
 if (CONFIRM !== "YES") throw new Error("Refusing destructive reset. Set CONFIRM_DEMO_RESET=YES.");
@@ -285,7 +289,14 @@ async function seedTenant(tenant, tenantIndex, permissions) {
 }
 
 const main = async () => {
-  await mongoose.connect(process.env.MONGODB_URI);
+  await mongoose.connect(process.env.MONGODB_URI, {
+    maxPoolSize: 5,
+    minPoolSize: 0,
+    serverSelectionTimeoutMS: 15000,
+    connectTimeoutMS: 15000,
+    socketTimeoutMS: 120000,
+    waitQueueTimeoutMS: 30000,
+  });
   const {tenants, ownerCount} = await resetCollectionsPreservingOwners();
   const permissions = await seedRbac();
   for (let i=0;i<tenants.length;i++) {
