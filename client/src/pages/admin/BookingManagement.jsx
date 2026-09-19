@@ -219,6 +219,16 @@ export default function BookingManagement() {
   const invalidateBookings = () =>
     queryClient.invalidateQueries({ queryKey: ["admin-bookings"] });
 
+  // Booking/payment mutations affect every dashboard that consumes revenue,
+  // booking counts, analytics, reports or finance metrics.
+  const invalidateFinancialDashboards = () =>
+    queryClient.invalidateQueries({
+      predicate: (query) => {
+        const key = query.queryKey?.map((part) => String(part).toLowerCase()).join("/");
+        return /(dashboard|analytics|revenue|finance|report|payment)/.test(key);
+      },
+    });
+
   const invalidateSelectedBooking = () => {
     if (!selectedBooking?._id) return;
     queryClient.invalidateQueries({
@@ -235,6 +245,7 @@ export default function BookingManagement() {
       setActionError("");
       setActionMessage("Booking status updated successfully.");
       invalidateBookings();
+      invalidateFinancialDashboards();
       invalidateSelectedBooking();
     },
     onError: (mutationError) =>
