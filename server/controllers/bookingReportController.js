@@ -105,8 +105,85 @@ export const tourBookingReport = async (req, res, next) => {
   try {
     requireTenantId();
     const data = await Booking.aggregate([
-      { $match: { tenantId: req.tenantId, isDeleted: { $ne: true } } },
-      { $group: { _id: "$tour", totalBookings: { $sum: 1 }, revenue: { $sum: { $ifNull: ["$totalAmount", 0] } } } },
+      {
+        $match: {
+          tenantId: req.tenantId,
+          isDeleted: { $ne: true },
+          paymentStatus: { $in: ["paid", "completed", "success"] },
+          status: { $nin: ["cancelled", "refunded"] },
+        },
+      },
+      {
+        $lookup: {
+          from: "payments",
+          let: { bookingId: "$_id", tenantId: "$tenantId" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$booking", "$bookingId"] },
+                    { $eq: ["$tenantId", "$tenantId"] },
+                    { $in: ["$status", ["completed", "refunded"]] },
+                  ],
+                },
+              },
+            },
+            {
+              $project: {
+                net: {
+                  $max: [
+                    0,
+                    {
+                      $subtract: [
+                        { $ifNull: ["$amount", 0] },
+                        { $ifNull: ["$refundedAmount", 0] },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "paymentLedger",
+        },
+      },
+      {
+        $project: {
+          tour: 1,
+          bookingValue: {
+            $max: [
+              0,
+              {
+                $subtract: [
+                  { $ifNull: ["$totalAmount", 0] },
+                  { $ifNull: ["$refundAmount", 0] },
+                ],
+              },
+            ],
+          },
+          ledgerValue: { $sum: "$paymentLedger.net" },
+        },
+      },
+      {
+        $project: {
+          tour: 1,
+          recognizedValue: {
+            $cond: [
+              { $gt: ["$bookingValue", 0] },
+              "$bookingValue",
+              "$ledgerValue",
+            ],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$tour",
+          totalBookings: { $sum: 1 },
+          revenue: { $sum: "$recognizedValue" },
+        },
+      },
       { $lookup: { from: "tours", localField: "_id", foreignField: "_id", as: "tour" } },
       { $unwind: { path: "$tour", preserveNullAndEmptyArrays: true } },
       {
