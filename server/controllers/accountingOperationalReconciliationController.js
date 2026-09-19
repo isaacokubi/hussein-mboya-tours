@@ -56,10 +56,13 @@ export const reconcileOperationalAccounting = async (req, res, next) => {
         summary.scanned.refunds += 1;
         const reference = String(payment.refundReference || `REFUND-${payment._id}-${refundAmount}`).trim();
         const sourceId = refundSourceId(payment, refundAmount, reference);
-        if (await exists(tenantId, "payment_refund", sourceId)) summary.alreadyPosted.refunds += 1;
-        else {
-          try { await postPaymentRefundToLedger(payment, refundAmount, reference); summary.posted.refunds += 1; }
-          catch (error) { summary.errors.push({ type: "refund", id: String(payment._id), message: error.message }); }
+        try {
+          const existing = await JournalEntry.findOne({ tenantId, sourceType: "payment_refund", sourceId }).lean();
+          await postPaymentRefundToLedger(payment, refundAmount, reference);
+          if (existing) summary.alreadyPosted.refunds += 1;
+          else summary.posted.refunds += 1;
+        } catch (error) {
+          summary.errors.push({ type: "refund", id: String(payment._id), message: error.message });
         }
       }
     }
