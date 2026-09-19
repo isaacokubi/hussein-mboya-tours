@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import Booking from "../models/Booking.js";
 import Notification from "../models/Notification.js";
 import Payment from "../models/Payment.js";
+import { getBookingRevenueMetrics } from "../services/bookingRevenueService.js";
 
 import {
   BOOKING_STATUSES,
@@ -166,7 +167,7 @@ export const getAllBookings = async (req, res, next) => {
         // Dashboard KPIs must be calculated from the complete filtered result,
         // not only the current pagination page. This prevents page 1 from
         // reporting a partial revenue total when there are more bookings.
-        Booking.find(filter).select("paymentStatus totalAmount depositAmount").lean(),
+        Booking.find(filter).select("paymentStatus totalAmount depositAmount refundAmount").lean(),
 
       ]);
 
@@ -187,12 +188,44 @@ export const getAllBookings = async (req, res, next) => {
     // not on the optional Payment ledger: legacy/manual paid bookings may not
     // have a Payment document, and those bookings must still contribute to the
     // admin revenue KPI. Refunds are deducted from the booking value.
+    const paidBookingIds = paidBookings.map((booking) => booking._id).filter(Boolean);
+    const paymentTotals = paidBookingIds.length
+      ? await Payment.aggregate([
+          {
+            $match: {
+              ...mergeTenantFilter(req, {}),
+              booking: { $in: paidBookingIds },
+              status: { $in: ["completed", "refunded"] },
+            },
+          },
+          {
+            $group: {
+              _id: "$booking",
+              net: {
+                $sum: {
+                  $max: [
+                    0,
+                    {
+                      $subtract: [
+                        { $ifNull: ["$amount", 0] },
+                        { $ifNull: ["$refundedAmount", 0] },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        ])
+      : [];
+    const paymentMap = new Map(paymentTotals.map((item) => [String(item._id), Number(item.net || 0)]));
     const revenue = paidBookings.reduce((sum, booking) => {
-      const bookingValue = Number(
-        booking.totalAmount ?? booking.depositAmount ?? 0
-      );
+      const bookingValue = Number(booking.totalAmount ?? 0);
       const refunded = Number(booking.refundAmount ?? 0);
-      return sum + Math.max(0, bookingValue - refunded);
+      const operationalValue = bookingValue > 0
+        ? Math.max(0, bookingValue - refunded)
+        : Number(paymentMap.get(String(booking._id)) || booking.depositAmount || 0);
+      return sum + operationalValue;
     }, 0);
 
     res.status(200).json({
