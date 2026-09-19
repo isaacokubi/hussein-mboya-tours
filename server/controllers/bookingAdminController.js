@@ -56,7 +56,10 @@ export const getAllBookings = async (req, res, next) => {
     const skip =
       (currentPage - 1) * pageSize;
 
-    const filter = {};
+    // Every admin booking query must be tenant scoped. The previous KPI change
+    // accidentally built an unscoped filter, which could also produce incorrect
+    // cross-tenant metrics in a multi-tenant installation.
+    const filter = mergeTenantFilter(req, {});
 
     /*
     |--------------------------------------------------------------------------
@@ -174,9 +177,65 @@ export const getAllBookings = async (req, res, next) => {
     */
 
     const paidBookings = metricBookings.filter((booking) => booking.paymentStatus === "paid");
-    const pendingPayments = metricBookings.filter((booking) => booking.paymentStatus === "pending").length;
+    const pendingPayments = metricBookings.filter((booking) =>
+      ["pending", "partial"].includes(String(booking.paymentStatus || "").toLowerCase())
+    ).length;
     const cancelled = metricBookings.filter((booking) => booking.status === "cancelled").length;
-    const revenue = paidBookings.reduce((sum, booking) => sum + Math.max(0, Number(booking.totalAmount ?? booking.depositAmount ?? 0)), 0);
+
+    // Revenue must remain populated for legacy bookings as well as newer
+    // bookings whose cash received is represented in the Payment ledger.
+    // Prefer net completed/refunded payments per paid booking; if no ledger
+    // entry exists, fall back to the booking's recorded total/deposit.
+    const paidBookingIds = paidBookings.map((booking) => booking._id);
+    const paymentTotals = paidBookingIds.length
+      ? await Payment.aggregate([
+          {
+            $match: mergeTenantFilter(req, {
+              booking: { $in: paidBookingIds },
+              status: { $in: ["completed", "refunded"] },
+            }),
+          },
+          {
+            $project: {
+              booking: 1,
+              netAmount: {
+                $max: [
+                  0,
+                  {
+                    $subtract: [
+                      { $ifNull: ["$amount", 0] },
+                      { $ifNull: ["$refundedAmount", 0] },
+                    ],
+                  },
+                ],
+              },
+            },
+          },
+          {
+            $group: {
+              _id: "$booking",
+              total: { $sum: "$netAmount" },
+            },
+          },
+        ])
+      : [];
+
+    const ledgerByBooking = new Map(
+      paymentTotals.map((item) => [String(item._id), Number(item.total || 0)])
+    );
+
+    const revenue = paidBookings.reduce((sum, booking) => {
+      const ledgerAmount = ledgerByBooking.get(String(booking._id));
+      const fallbackAmount = Number(
+        booking.totalAmount ?? booking.depositAmount ?? 0
+      );
+      return sum + Math.max(
+        0,
+        ledgerAmount !== undefined && ledgerAmount > 0
+          ? ledgerAmount
+          : fallbackAmount
+      );
+    }, 0);
 
     res.status(200).json({
 
