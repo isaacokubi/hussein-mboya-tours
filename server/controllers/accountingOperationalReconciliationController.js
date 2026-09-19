@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import Payment from "../models/Payment.js";
+import Invoice from "../models/Invoice.js";
 import Expense from "../models/Expense.js";
 import SupplierPayable from "../models/SupplierPayable.js";
 import JournalEntry from "../models/JournalEntry.js";
@@ -11,6 +12,7 @@ import {
   postExpensePaymentToLedger,
   postSupplierPayableToLedger,
   postSupplierPaymentToLedger,
+  reverseJournalOnce,
 } from "../services/operationalAccountingService.js";
 
 const exists = async (tenantId, sourceType, sourceId) =>
@@ -30,16 +32,16 @@ export const reconcileOperationalAccounting = async (req, res, next) => {
     const tenantId = req.tenantId;
     const filter = mergeTenantFilter(req, {});
     const summary = {
-      scanned: { payments: 0, refunds: 0, expenses: 0, expensePayments: 0, supplierPayables: 0, supplierPayments: 0 },
-      posted: { payments: 0, refunds: 0, expenses: 0, expensePayments: 0, supplierPayables: 0, supplierPayments: 0 },
-      alreadyPosted: { payments: 0, refunds: 0, expenses: 0, expensePayments: 0, supplierPayables: 0, supplierPayments: 0 },
+      scanned: { payments: 0, refunds: 0, invoices: 0, expenses: 0, expensePayments: 0, supplierPayables: 0, supplierPayments: 0 },
+      posted: { payments: 0, refunds: 0, invoices: 0, expenses: 0, expensePayments: 0, supplierPayables: 0, supplierPayments: 0 },
+      alreadyPosted: { payments: 0, refunds: 0, invoices: 0, expenses: 0, expensePayments: 0, supplierPayables: 0, supplierPayments: 0 },
       errors: [],
     };
 
     const payments = await Payment.find(filter).sort({ createdAt: 1 }).lean();
     summary.scanned.payments = payments.length;
     for (const payment of payments) {
-      if (payment.status === "completed") {
+      if (["completed", "refunded"].includes(String(payment.status || "").toLowerCase())) {
         if (await exists(tenantId, "payment", payment._id)) summary.alreadyPosted.payments += 1;
         else {
           try { await postPaymentToLedger(payment); summary.posted.payments += 1; }
@@ -63,22 +65,77 @@ export const reconcileOperationalAccounting = async (req, res, next) => {
       }
     }
 
+    // Reconcile issued invoices first so the AR control account is built from
+    // the same operational invoice ledger used by AR aging.
+    const invoices = await Invoice.find({ ...filter, isDeleted: { $ne: true } }).sort({ createdAt: 1 }).lean();
+    summary.scanned.invoices = invoices.length;
+    summary.posted.invoices = 0;
+    summary.alreadyPosted.invoices = 0;
+    for (const invoice of invoices) {
+      if (["draft", "cancelled"].includes(String(invoice.status || "").toLowerCase())) continue;
+      if (await exists(tenantId, "invoice", invoice._id)) summary.alreadyPosted.invoices += 1;
+      else {
+        try { await (await import("../services/operationalAccountingService.js")).postInvoiceToLedger(invoice); summary.posted.invoices += 1; }
+        catch (error) { summary.errors.push({ type: "invoice", id: String(invoice._id), message: error.message }); }
+      }
+    }
+
     const expenses = await Expense.find(filter).sort({ createdAt: 1 }).lean();
     summary.scanned.expenses = expenses.length;
     for (const expense of expenses) {
-      if (["approved", "paid"].includes(String(expense.status || "").toLowerCase())) {
+      const linkedPayable = expense.purchaseOrder
+        ? await SupplierPayable.findOne({ ...filter, purchaseOrder: expense.purchaseOrder, expense: expense._id }).lean()
+        : expense.supplier
+          ? await SupplierPayable.findOne({ ...filter, expense: expense._id }).lean()
+          : null;
+      if (["approved", "paid"].includes(String(expense.status || "").toLowerCase()) && !linkedPayable) {
         if (await exists(tenantId, "expense_accrual", expense._id)) summary.alreadyPosted.expenses += 1;
         else {
           try { await postExpenseToLedger(expense); summary.posted.expenses += 1; }
           catch (error) { summary.errors.push({ type: "expense", id: String(expense._id), message: error.message }); }
         }
+      } else if (linkedPayable && await exists(tenantId, "expense_accrual", expense._id)) {
+        const original = await JournalEntry.findOne({ tenantId, sourceType: "expense_accrual", sourceId: expense._id }).lean();
+        try {
+          await reverseJournalOnce({
+            tenantId,
+            originalJournal: original,
+            sourceType: "expense_accrual_reversal",
+            sourceId: expense._id,
+            description: `Reverse duplicate expense accrual for supplier payable ${linkedPayable.payableNumber || linkedPayable._id}`,
+            reference: `REV-EXP-${expense._id}`,
+          });
+          summary.posted.expenses += 1;
+        } catch (error) {
+          summary.errors.push({ type: "expense_reversal", id: String(expense._id), message: error.message });
+        }
       }
       if (String(expense.status || "").toLowerCase() === "paid" && expense.supplier) {
         summary.scanned.expensePayments += 1;
-        if (await exists(tenantId, "expense_payment", expense._id)) summary.alreadyPosted.expensePayments += 1;
-        else {
-          try { await postExpensePaymentToLedger(expense); summary.posted.expensePayments += 1; }
-          catch (error) { summary.errors.push({ type: "expense_payment", id: String(expense._id), message: error.message }); }
+        const linkedPayable = expense.purchaseOrder
+          ? await SupplierPayable.findOne({ ...filter, purchaseOrder: expense.purchaseOrder, expense: expense._id }).lean()
+          : await SupplierPayable.findOne({ ...filter, expense: expense._id }).lean();
+        if (!linkedPayable) {
+          if (await exists(tenantId, "expense_payment", expense._id)) summary.alreadyPosted.expensePayments += 1;
+          else {
+            try { await postExpensePaymentToLedger(expense); summary.posted.expensePayments += 1; }
+            catch (error) { summary.errors.push({ type: "expense_payment", id: String(expense._id), message: error.message }); }
+          }
+        } else if (await exists(tenantId, "expense_payment", expense._id)) {
+          const original = await JournalEntry.findOne({ tenantId, sourceType: "expense_payment", sourceId: expense._id }).lean();
+          try {
+            await reverseJournalOnce({
+              tenantId,
+              originalJournal: original,
+              sourceType: "expense_payment_reversal",
+              sourceId: expense._id,
+              description: `Reverse duplicate expense payment; linked supplier payable is authoritative`,
+              reference: `REV-EXP-PAY-${expense._id}`,
+            });
+            summary.posted.expensePayments += 1;
+          } catch (error) {
+            summary.errors.push({ type: "expense_payment_reversal", id: String(expense._id), message: error.message });
+          }
         }
       }
     }
