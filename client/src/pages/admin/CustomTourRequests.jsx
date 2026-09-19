@@ -59,7 +59,7 @@ export default function CustomTourRequests() {
   const stats = useMemo(() => ({
     total: requests.length,
     pending: requests.filter((r) => r.status === "pending").length,
-    quoted: requests.filter((r) => r.status === "quoted").length,
+    quoted: requests.filter((r) => r.status === "quoted" || r.status === "approved").length,
     converted: requests.filter((r) => r.status === "converted").length,
     value: requests.reduce((sum, r) => sum + Number(r.quotedAmount || 0), 0),
   }), [requests]);
@@ -104,7 +104,7 @@ export default function CustomTourRequests() {
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
             <div className="relative flex-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={17} /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search destination, customer, email or requirements…" className="w-full rounded-xl border border-slate-300 bg-slate-50 py-2.5 pl-10 pr-3 text-sm font-medium text-slate-900 outline-none placeholder:text-slate-500 focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100" /></div>
             <div className="flex items-center gap-2 text-xs font-bold text-slate-600"><SlidersHorizontal size={15} /> Status</div>
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-bold text-slate-800 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"><option value="all">All statuses</option><option value="pending">Pending</option><option value="quoted">Quoted</option><option value="converted">Converted</option><option value="declined">Declined</option><option value="cancelled">Cancelled</option></select>
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-bold text-slate-800 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"><option value="all">All statuses</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="quoted">Quoted</option><option value="converted">Converted</option><option value="declined">Declined</option><option value="rejected">Rejected</option><option value="cancelled">Cancelled</option></select>
           </div>
           <div className="mt-3 text-xs font-bold text-slate-600">{filteredRequests.length} of {requests.length} requests shown</div>
         </section>
