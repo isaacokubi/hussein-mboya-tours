@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { Activity, BarChart3, Bell, Bot, Car, CalendarCheck, CreditCard, FileBarChart, FileText, Handshake, Image, LayoutDashboard, Menu, PackageCheck, Plane, BriefcaseBusiness, BadgeDollarSign, Receipt, Settings, Shield, Smartphone, Star, Tag, UserCog, Users, Wallet, X, Code2, Hotel } from "lucide-react";
+import { Activity, BarChart3, Bell, Bot, Car, CalendarCheck, CreditCard, FileBarChart, FileText, Handshake, Image, LayoutDashboard, Menu, PackageCheck, Plane, BriefcaseBusiness, BadgeDollarSign, Receipt, Settings, Shield, Smartphone, Star, Tag, UserCog, Users, Wallet, X, Code2, Hotel, Home } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useSettings } from "../context/SettingsContext";
 import api from "../api/axios";
@@ -121,7 +121,7 @@ export default function AdminLayout() {
       <div className="min-h-screen lg:pl-72">
         <header className="admin-portal-header sticky top-0 z-40 flex items-center justify-between border-b bg-white/95 px-3 py-2.5 shadow-sm backdrop-blur sm:px-4 sm:py-3 lg:px-8">
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-            <button onClick={() => setMobileOpen(true)} className="shrink-0 rounded-xl bg-indigo-700 p-2 text-white shadow lg:hidden" aria-label="Open admin menu"><Menu size={21} /></button>
+            <button onClick={() => setMobileOpen(true)} className="shrink-0 rounded-xl bg-indigo-700 p-2 text-white shadow lg:hidden" aria-label="Open admin menu"><Menu size={21} /></button><NavLink to="/admin" end aria-label="Go to dashboard" className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50 lg:hidden"><Home size={16} /><span>Dashboard</span></NavLink>
             <div className="min-w-0"><p className="truncate text-[10px] font-semibold uppercase tracking-wider text-indigo-700 sm:text-xs">Administration</p><h1 className="truncate text-sm font-bold text-slate-900 sm:text-base lg:text-lg">{companyName} Control Center</h1></div>
           </div>
           <div className="hidden max-w-[35%] text-right sm:block"><p className="truncate text-sm font-semibold text-slate-900">{user?.name || "Administrator"}</p><p className="text-[10px] capitalize text-slate-500 sm:text-xs">{String(role || "admin").replace(/_/g, " ")}{plan ? ` · ${plan}` : ""}</p></div>
