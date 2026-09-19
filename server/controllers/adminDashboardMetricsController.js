@@ -8,6 +8,7 @@ import User from "../models/User.js";
 import Vehicle from "../models/Vehicle.js";
 import Agent from "../models/Agent.js";
 import { requireTenantId } from "../tenancy/context.js";
+import { getBookingRevenueMetrics } from "../services/bookingRevenueService.js";
 
 const active = { isDeleted: { $ne: true } };
 const paidStatuses = ["paid", "completed", "success"];
@@ -46,7 +47,7 @@ export const getDashboardMetrics = async (req, res) => {
       Payment.countDocuments(scoped({ ...active, status: { $in: paidStatuses } })),
       Payment.countDocuments(scoped({ ...active, status: { $in: ["pending", "processing", "partial"] } })),
       Payment.countDocuments(scoped({ ...active, status: { $in: ["failed", "cancelled"] } })),
-      Payment.aggregate([{ $match: scoped({ ...active, status: { $in: paidStatuses } }) }, { $group: { _id: null, gross: { $sum: { $ifNull: ["$amount", 0] } }, refunds: { $sum: { $cond: [{ $eq: ["$refundStatus", "completed"] }, { $ifNull: ["$refundedAmount", 0] }, 0] } } } }]),
+      getBookingRevenueMetrics(req),
       Booking.aggregate([{ $match: scoped(active) }, { $group: { _id: "$status", count: { $sum: 1 } } }, { $sort: { _id: 1 } }]),
       Payment.aggregate([{ $match: scoped({ ...active, status: { $in: paidStatuses } }) }, { $group: { _id: { year: { $year: { $ifNull: ["$paidAt", "$createdAt"] } }, month: { $month: { $ifNull: ["$paidAt", "$createdAt"] } } }, amount: { $sum: netAmount } } }, { $sort: { "_id.year": 1, "_id.month": 1 } }]),
       Booking.find(scoped(active)).sort({ createdAt: -1 }).limit(5).populate("customer", "name firstName lastName email phone").populate("user", "name firstName lastName email phone").populate("tour", "title").lean(),
@@ -55,9 +56,9 @@ export const getDashboardMetrics = async (req, res) => {
       Review.aggregate([{ $match: scoped(active) }, { $group: { _id: null, average: { $avg: "$rating" }, count: { $sum: 1 } } }])
     ]);
 
-    const gross = Number(revenueResult[0]?.gross || 0);
-    const refunds = Number(revenueResult[0]?.refunds || 0);
-    const revenue = Math.max(0, gross - refunds);
+    const revenue = Number(revenueResult?.revenue || 0);
+    const gross = revenue;
+    const refunds = 0;
     const statusData = bookingStatus.map((x) => ({ status: clean(x._id).toLowerCase() || "unknown", count: Number(x.count || 0) }));
     const recentBookings = recentBookingsRaw.map((b) => ({ ...b, customer: { ...(b.customer || {}), name: customerName(b.customer, b.user, b), email: b.customer?.email || b.user?.email || b.customerSnapshot?.email || b.contact?.email || "", phone: b.customer?.phone || b.user?.phone || b.customerSnapshot?.phone || b.contact?.phone || "" }, tour: b.tour || { title: b.customTourRequest ? "Custom tour request" : "Tour unavailable" }, amount: Number(b.totalAmount ?? b.amount ?? b.subtotal ?? 0), paymentStatus: clean(b.paymentStatus).toLowerCase() || "pending" }));
     const monthly = monthlyRevenue.map((x) => ({ month: `${x._id.month}/${x._id.year}`, amount: Number(x.amount || 0) }));
