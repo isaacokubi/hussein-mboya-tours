@@ -81,17 +81,61 @@ export const getArAging = async (req, res, next) => {
 
 export const getApAging = async (req, res, next) => {
   try {
-    const payables = await SupplierPayable.find({ ...tenantFilter(req), status: { $nin: ["cancelled", "paid"] }, balance: { $gt: 0 } }).populate("supplier", "legalName supplierNumber").sort({ dueDate: 1 }).lean();
+    const filter = tenantFilter(req);
+    const payables = await SupplierPayable.find({ ...filter, status: { $nin: ["cancelled", "paid"] }, balance: { $gt: 0 } })
+      .populate("supplier", "legalName supplierNumber").sort({ dueDate: 1 }).lean();
+
+    // Supplier-backed expenses can create an AP control entry before a
+    // SupplierPayable exists. Include those unpaid liabilities, but exclude
+    // expenses already represented by a SupplierPayable to avoid duplication.
+    const linkedExpenseIds = new Set(payables.filter((p) => p.expense).map((p) => String(p.expense)));
+    const expenses = await (await import("../models/Expense.js")).default.find({
+      ...filter,
+      supplier: { $ne: null },
+      status: "approved",
+    }).select("expenseNumber supplier supplierName amount taxAmount expenseDate paidAt purchaseOrder").lean();
+
+    const rows = [
+      ...payables.map((payable) => ({
+        ...payable,
+        liabilityType: "supplier_payable",
+        balance: money(payable.balance),
+        dueDate: payable.dueDate || payable.createdAt,
+      })),
+      ...expenses
+        .filter((expense) => !linkedExpenseIds.has(String(expense._id)))
+        .map((expense) => ({
+          _id: expense._id,
+          expenseNumber: expense.expenseNumber,
+          supplier: expense.supplier,
+          supplierName: expense.supplierName,
+          liabilityType: "supplier_expense",
+          amount: money(Number(expense.amount || 0) + Number(expense.taxAmount || 0)),
+          amountPaid: 0,
+          balance: money(Number(expense.amount || 0) + Number(expense.taxAmount || 0)),
+          dueDate: expense.expenseDate,
+          status: "open",
+        })),
+    ];
+
     const buckets = { current: 0, "1_30": 0, "31_60": 0, "61_90": 0, "90_plus": 0 };
     const today = Date.now();
-    const data = payables.map((payable) => {
-      const due = new Date(payable.dueDate || payable.createdAt || today).getTime();
+    const data = rows.map((payable) => {
+      const due = new Date(payable.dueDate || today).getTime();
       const days = Math.ceil((today - due) / 86400000);
       const bucket = ageBucket(days);
       buckets[bucket] += Number(payable.balance || 0);
       return { ...payable, balance: money(payable.balance), daysOverdue: Math.max(0, days), bucket };
     });
-    return res.json({ success: true, data: { buckets: Object.fromEntries(Object.entries(buckets).map(([k, v]) => [k, money(v)])), totalOutstanding: money(data.reduce((s, r) => s + r.balance, 0)), payables: data } });
+
+    return res.json({
+      success: true,
+      data: {
+        buckets: Object.fromEntries(Object.entries(buckets).map(([k, v]) => [k, money(v)])),
+        totalOutstanding: money(data.reduce((s, r) => s + r.balance, 0)),
+        payables: data,
+      },
+    });
   } catch (error) { return next(error); }
 };
 
