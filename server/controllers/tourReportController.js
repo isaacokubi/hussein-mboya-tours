@@ -43,6 +43,6 @@ export const getTourReports = async (req, res, next) => {
       Tour.countDocuments(mergeTenantFilter(req, { status: "completed", isDeleted: { $ne: true } })),
     ]);
 
-    return res.status(200).json({ success: true, data: { totalBookings, totalRevenue: Number(revenueResult[0]?.total || 0), totalCustomers, totalTours, completedTours, bookingStatus, popularTours, monthlyRevenue } });
+    return res.status(200).json({ success: true, data: { totalBookings, totalRevenue: Number(revenueResult?.revenue || 0), totalCustomers, totalTours, completedTours, bookingStatus, popularTours, monthlyRevenue } });
   } catch (error) { console.error("TOUR REPORT ERROR:", error); next(error); }
 };
