@@ -50,43 +50,60 @@ export const getAgents = async (req, res) => {
 
     const tenantLocation = formatTenantLocation(organization);
     const agentIds = agents.map((agent) => agent._id).filter(Boolean);
-    const [bookingStats, commissionStats] = await Promise.all([
-      agentIds.length
-        ? Booking.aggregate([
-            { $match: { tenantId, agent: { $in: agentIds } } },
-            { $group: { _id: "$agent", totalBookings: { $sum: 1 } } },
-          ])
-        : [],
-      agentIds.length
-        ? Commission.aggregate([
-            { $match: { tenantId, agent: { $in: agentIds }, isDeleted: { $ne: true } } },
-            {
-              $group: {
-                _id: "$agent",
-                totalCommission: { $sum: { $max: [0, { $subtract: ["$amount", { $ifNull: ["$refundedAmount", 0] }] }] } },
-                pendingCommission: {
-                  $sum: {
-                    $cond: [
-                      { $in: ["$status", ["pending", "approved", "processing"]] },
-                      { $max: [0, { $subtract: ["$amount", { $ifNull: ["$refundedAmount", 0] }] }] },
-                      0,
+    const bookingStats = agentIds.length
+      ? await Booking.aggregate([
+          { $match: { tenantId, agent: { $in: agentIds } } },
+          { $group: { _id: "$agent", totalBookings: { $sum: 1 } } },
+        ])
+      : [];
+
+    let commissionStats = [];
+    if (agentIds.length) {
+      try {
+        commissionStats = await Commission.aggregate([
+          { $match: { tenantId, agent: { $in: agentIds }, isDeleted: { $ne: true } } },
+          {
+            $project: {
+              agent: 1,
+              status: 1,
+              netAmount: {
+                $max: [
+                  0,
+                  {
+                    $subtract: [
+                      { $ifNull: ["$amount", 0] },
+                      { $ifNull: ["$refundedAmount", 0] },
                     ],
                   },
+                ],
+              },
+            },
+          },
+          {
+            $group: {
+              _id: "$agent",
+              totalCommission: { $sum: "$netAmount" },
+              pendingCommission: {
+                $sum: {
+                  $cond: [
+                    { $in: ["$status", ["pending", "approved", "processing"]] },
+                    "$netAmount",
+                    0,
+                  ],
                 },
-                paidCommission: {
-                  $sum: {
-                    $cond: [
-                      { $eq: ["$status", "paid"] },
-                      { $max: [0, { $subtract: ["$amount", { $ifNull: ["$refundedAmount", 0] }] }] },
-                      0,
-                    ],
-                  },
+              },
+              paidCommission: {
+                $sum: {
+                  $cond: [{ $eq: ["$status", "paid"] }, "$netAmount", 0],
                 },
               },
             },
-          ])
-        : [],
-    ]);
+          },
+        ]);
+      } catch (commissionError) {
+        console.error("Admin agent commission stats unavailable:", commissionError);
+      }
+    }
 
     const bookingMap = new Map(bookingStats.map((item) => [String(item._id), Number(item.totalBookings || 0)]));
     const commissionMap = new Map(commissionStats.map((item) => [String(item._id), item]));
@@ -111,7 +128,11 @@ export const getAgents = async (req, res) => {
     return res.json({ success: true, data: normalized });
   } catch (error) {
     console.error("Admin get agents error:", error);
-    return res.status(error.status || 500).json({ success: false, message: error.message });
+    return res.status(error.status || 500).json({
+      success: false,
+      code: error.code || "ADMIN_AGENTS_FETCH_FAILED",
+      message: error.message || "Unable to load agent accounts.",
+    });
   }
 };
 

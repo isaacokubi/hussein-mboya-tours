@@ -2,7 +2,6 @@
 import express from "express";
 import { resolveTenant } from "../middleware/tenantMiddleware.js";
 
-import { getAgents, getAgentById, approveAgent, updateAgentStatus } from "../controllers/adminAgentController.js";
 import { getUserAnalytics, getBookingAnalytics, getRevenueAnalytics } from "../controllers/adminDashboardTenantController.js";
 import { dailyBookingReport, monthlyBookingReport, tourBookingReport, agentBookingReport } from "../controllers/bookingReportController.js";
 import { protect, checkPermission } from "../middleware/authMiddleware.js";
@@ -42,10 +41,5 @@ router.get("/reports/monthly", monthlyBookingReport);
 router.get("/reports/tours", tourBookingReport);
 router.get("/reports/agents", agentBookingReport);
 
-/* Agent administration */
-router.get("/agents", getAgents);
-router.get("/agents/:id", getAgentById);
-router.put("/agents/:id/approve", approveAgent);
-router.put("/agents/:id/status", updateAgentStatus);
 
 export default router;

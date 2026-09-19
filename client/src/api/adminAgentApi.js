@@ -28,17 +28,9 @@ const normalizeAgentPayload = (payload, companyName = "") => {
   return data.map((agent) => normalizeAgent(agent, companyName));
 };
 
-const getCompanyName = (branding) => {
-  const settings = branding?.data?.settings || branding?.data?.data || branding?.data || {};
-  return clean(settings.companyName || settings.name || settings.businessName);
-};
-
 export const getAgents = async () => {
-  const [res, branding] = await Promise.all([
-    axios.get("/admin/agents"),
-    axios.get("/settings/public", { params: { _t: Date.now() } }).catch(() => null),
-  ]);
-  return normalizeAgentPayload(res.data, getCompanyName(branding));
+  const res = await axios.get("/admin/agents");
+  return normalizeAgentPayload(res.data);
 };
 
 export const getAgentById = async (id) => {
