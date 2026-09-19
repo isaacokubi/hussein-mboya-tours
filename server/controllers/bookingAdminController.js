@@ -664,25 +664,19 @@ _id:req.params.id
     |--------------------------------------------------------------------------
     */
 
-    if (existingBooking.status === "assigned") {
-      return res.status(400).json({
-        success: false,
-        message: "Booking is already assigned.",
-      });
-    }
-
     /*
     |--------------------------------------------------------------------------
-    | VALIDATE BOOKING TRANSITION
+    | ASSIGN OR REASSIGN
     |--------------------------------------------------------------------------
     |
-    | Assignment must follow the centralized lifecycle:
-    |
-    | pending -> confirmed -> assigned
+    | A paid confirmed booking can be assigned. Once assigned, administrators
+    | may change the guide, driver or vehicle without forcing another lifecycle
+    | transition.
     |--------------------------------------------------------------------------
     */
 
     if (
+      existingBooking.status !== "assigned" &&
       !canTransitionBookingStatus(
         existingBooking.status,
         "assigned"
@@ -693,10 +687,8 @@ _id:req.params.id
         message:
           `Booking cannot transition from ` +
           `"${existingBooking.status}" to "assigned".`,
-        currentStatus:
-          existingBooking.status,
-        requestedStatus:
-          "assigned",
+        currentStatus: existingBooking.status,
+        requestedStatus: "assigned",
       });
     }
 
