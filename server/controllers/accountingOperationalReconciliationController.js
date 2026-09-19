@@ -22,11 +22,7 @@ const hashedSourceId = (payable, amount, reference = "") =>
     .digest("hex")
     .slice(0, 24);
 
-const refundSourceId = (payment, amount, reference = "") =>
-  crypto.createHash("sha256")
-    .update(`${payment._id}:${String(reference || `REFUND-${payment._id}-${amount}`).trim()}:${amount}`)
-    .digest("hex")
-    .slice(0, 24);
+const refundSourceId = (payment) => payment._id;
 
 export const reconcileOperationalAccounting = async (req, res, next) => {
   requireTenantId();
@@ -55,7 +51,7 @@ export const reconcileOperationalAccounting = async (req, res, next) => {
       if ((payment.refundStatus === "completed" || payment.status === "refunded") && refundAmount > 0) {
         summary.scanned.refunds += 1;
         const reference = String(payment.refundReference || `REFUND-${payment._id}-${refundAmount}`).trim();
-        const sourceId = refundSourceId(payment, refundAmount, reference);
+        const sourceId = refundSourceId(payment);
         try {
           const existing = await JournalEntry.findOne({ tenantId, sourceType: "payment_refund", sourceId }).lean();
           await postPaymentRefundToLedger(payment, refundAmount, reference);
