@@ -56,6 +56,43 @@ bookingSchema.post("save", async function() {
     }
   } catch (error) { console.error("BOOKING WEBHOOK QUEUE ERROR:", error.message); }
   try {
+    if (this.tenantId && this.paymentStatus === "paid" && Number(this.totalAmount || 0) > 0 && this.user) {
+      const { default: PaymentModel } = await import("./Payment.js");
+      const existingPayments = await PaymentModel.find({
+        tenantId: this.tenantId,
+        booking: this._id,
+        status: { $in: ["completed", "refunded"] },
+      }).select("amount refundedAmount").lean();
+      const netPaid = existingPayments.reduce((sum, payment) => sum + Math.max(0, Number(payment.amount || 0) - Number(payment.refundedAmount || 0)), 0);
+      const outstanding = Math.max(0, Number(this.totalAmount || 0) - netPaid);
+      if (outstanding > 0) {
+        const paymentMethod = String(this.paymentMethod || "MPESA").toUpperCase();
+        const provider = paymentMethod === "BANK_TRANSFER" ? "BANK" : ["CARD", "PAYPAL", "MPESA", "CASH"].includes(paymentMethod) ? paymentMethod : "CASH";
+        const createdPayment = await PaymentModel.create({
+          tenantId: this.tenantId,
+          customer: this.user,
+          user: this.user,
+          booking: this._id,
+          provider,
+          method: paymentMethod === "BANK_TRANSFER" ? "bank" : paymentMethod.toLowerCase(),
+          paymentMethod,
+          amount: outstanding,
+          currency: "KES",
+          status: "completed",
+          transactionReference: this.paymentReference || ("BOOKING-MANUAL-" + this.bookingNumber + "-" + Date.now()),
+          transactionId: this.transactionId || "",
+          mpesaReceiptNumber: this.mpesaReceipt || "",
+          paidAt: new Date(),
+          notes: "Payment ledger synchronized from paid booking status.",
+        });
+        if (!Array.isArray(this.payments)) this.payments = [];
+        if (!this.payments.some((id) => String(id) === String(createdPayment._id))) {
+          await this.constructor.updateOne({ _id: this._id }, { $addToSet: { payments: createdPayment._id } });
+        }
+      }
+    }
+  } catch (error) { console.error("BOOKING PAYMENT LEDGER SYNC ERROR:", error.message); }
+  try {
     if (!this.tenantId || !this.corporateAccount) return;
     const PaymentModel = mongoose.models.Payment;
     const CorporateAccountModel = mongoose.models.CorporateAccount;
