@@ -8,10 +8,9 @@ import { getGuides, getDrivers } from "../../api/tourApi";
 const STATUS_STYLES = {
   pending: "border-amber-200 bg-amber-50 text-amber-800",
   quoted: "border-blue-200 bg-blue-50 text-blue-800",
+  approved: "border-cyan-200 bg-cyan-50 text-cyan-800",
   converted: "border-emerald-200 bg-emerald-50 text-emerald-800",
-  declined: "border-rose-200 bg-rose-50 text-rose-800",
   rejected: "border-rose-200 bg-rose-50 text-rose-800",
-  cancelled: "border-slate-300 bg-slate-100 text-slate-700",
 };
 
 const money = (value) => `Ksh ${Number(value || 0).toLocaleString("en-KE")}`;
@@ -25,6 +24,7 @@ export default function CustomTourRequests() {
   const [resources, setResources] = useState({});
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [actionError, setActionError] = useState("");
 
   const requestsQuery = useQuery({
     queryKey: ["admin-custom-tour-requests"],
@@ -38,12 +38,14 @@ export default function CustomTourRequests() {
 
   const assignMutation = useMutation({
     mutationFn: assignCustomTourResources,
-    onSuccess: refresh,
+    onSuccess: () => { setActionError(""); refresh(); },
+    onError: (error) => setActionError(error?.response?.data?.message || "Unable to save the resource assignment."),
   });
 
   const quoteMutation = useMutation({
     mutationFn: quoteCustomTourRequest,
-    onSuccess: refresh,
+    onSuccess: () => { setActionError(""); refresh(); },
+    onError: (error) => setActionError(error?.response?.data?.message || "Unable to update the request."),
   });
 
   const requests = requestsQuery.data?.requests || [];
@@ -64,9 +66,9 @@ export default function CustomTourRequests() {
     value: requests.reduce((sum, r) => sum + Number(r.quotedAmount || 0), 0),
   }), [requests]);
 
-  const guideOptions = (guidesQuery.data || []).filter((x) => x.availability === "available");
-  const driverOptions = (driversQuery.data || []).filter((x) => x.availability === "available");
-  const agentOptions = (agentsQuery.data || []).filter((x) => x.status === "active" && x.isApproved !== false);
+  const guideOptions = (guidesQuery.data || []).filter((x) => x.availability === "available" && x.status !== "inactive" && x.isDeleted !== true);
+  const driverOptions = (driversQuery.data || []).filter((x) => x.availability === "available" && x.status !== "inactive" && x.isDeleted !== true);
+  const agentOptions = (agentsQuery.data || []).filter((x) => x.status === "active" && x.isApproved === true);
 
   if (requestsQuery.isLoading) {
     return <div className="min-h-screen bg-slate-100 p-6"><div className="mx-auto max-w-7xl animate-pulse space-y-5"><div className="h-36 rounded-3xl bg-slate-300" /><div className="h-24 rounded-2xl bg-white" /><div className="h-72 rounded-3xl bg-white" /></div></div>;
@@ -104,9 +106,9 @@ export default function CustomTourRequests() {
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
             <div className="relative flex-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={17} /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search destination, customer, email or requirements…" className="w-full rounded-xl border border-slate-300 bg-slate-50 py-2.5 pl-10 pr-3 text-sm font-medium text-slate-900 outline-none placeholder:text-slate-500 focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100" /></div>
             <div className="flex items-center gap-2 text-xs font-bold text-slate-600"><SlidersHorizontal size={15} /> Status</div>
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-bold text-slate-800 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"><option value="all">All statuses</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="quoted">Quoted</option><option value="converted">Converted</option><option value="declined">Declined</option><option value="rejected">Rejected</option><option value="cancelled">Cancelled</option></select>
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-bold text-slate-800 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"><option value="all">All statuses</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="quoted">Quoted</option><option value="converted">Converted</option><option value="rejected">Rejected</option></select>
           </div>
-          <div className="mt-3 text-xs font-bold text-slate-600">{filteredRequests.length} of {requests.length} requests shown</div>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-slate-600"><span>{filteredRequests.length} of {requests.length} requests shown</span>{actionError && <span className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-rose-700">{actionError}</span>}</div>
         </section>
 
         <section className="space-y-5">
@@ -118,7 +120,7 @@ export default function CustomTourRequests() {
                 <div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 via-white to-indigo-50/70 p-5 sm:p-6">
                   <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                     <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2"><span className="rounded-lg bg-indigo-100 px-2 py-1 text-[10px] font-black uppercase tracking-wider text-indigo-800">Request #{index + 1}</span><span className={`rounded-full border px-3 py-1 text-[11px] font-black capitalize ${STATUS_STYLES[status] || STATUS_STYLES.cancelled}`}>{status}</span></div>
+                      <div className="flex flex-wrap items-center gap-2"><span className="rounded-lg bg-indigo-100 px-2 py-1 text-[10px] font-black uppercase tracking-wider text-indigo-800">Request #{index + 1}</span><span className={`rounded-full border px-3 py-1 text-[11px] font-black capitalize ${STATUS_STYLES[status] || "border-slate-300 bg-slate-100 text-slate-700"}`}>{status}</span></div>
                       <h2 className="mt-3 flex items-center gap-2 text-xl font-black text-slate-950 sm:text-2xl"><MapPin size={21} className="shrink-0 text-indigo-600" /> {r.destination || "Custom itinerary"}</h2>
                       <div className="mt-2 flex flex-wrap gap-x-5 gap-y-2 text-xs font-semibold text-slate-700"><span className="inline-flex items-center gap-1.5"><UserRound size={14} className="text-indigo-600" /> {customerName(r)}</span><span className="text-slate-400">{customerEmail(r)}</span><span className="inline-flex items-center gap-1.5"><Clock3 size={14} className="text-sky-600" /> {r.durationDays || 0} days</span><span className="inline-flex items-center gap-1.5"><Users size={14} className="text-emerald-600" /> {r.people || 0} people</span></div>
                     </div>
@@ -140,7 +142,7 @@ export default function CustomTourRequests() {
                       <label className="block"><span className="mb-1.5 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide text-slate-700"><Car size={13} /> Driver</span><select value={selected.driver || ""} onChange={(e) => setResources({ ...resources, [r._id]: { ...selected, driver: e.target.value } })} className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs font-bold text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"><option value="">Unassigned</option>{driverOptions.map((x) => <option key={x._id} value={x._id}>{x.name || x.user?.name || x.email}</option>)}</select></label>
                       <label className="block"><span className="mb-1.5 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide text-slate-700"><BriefcaseBusiness size={13} /> Agent</span><select value={selected.agent || ""} onChange={(e) => setResources({ ...resources, [r._id]: { ...selected, agent: e.target.value } })} className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs font-bold text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"><option value="">Unassigned</option>{agentOptions.map((x) => <option key={x._id} value={x._id}>{x.user?.name || x.companyName || x.email}</option>)}</select></label>
                     </div>
-                    <button onClick={() => assignMutation.mutate({ id: r._id, ...selected })} disabled={assignMutation.isPending} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-xs font-black text-white hover:bg-indigo-950 disabled:opacity-60"><Save size={15} /> {assignMutation.isPending ? "Saving assignment…" : "Save resource assignment"}</button>
+                    <button onClick={() => { setActionError(""); assignMutation.mutate({ id: r._id, ...selected }); }} disabled={assignMutation.isPending} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-xs font-black text-white hover:bg-indigo-950 disabled:opacity-60"><Save size={15} /> {assignMutation.isPending ? "Saving assignment…" : "Save resource assignment"}</button>
 
                     <div className="my-5 border-t border-slate-300" />
                     <div className="grid gap-3 md:grid-cols-[180px_1fr]">
@@ -148,8 +150,8 @@ export default function CustomTourRequests() {
                       <label className="block"><span className="mb-1.5 block text-[11px] font-black uppercase tracking-wide text-slate-700">Message to customer</span><input value={notes[r._id] ?? r.adminNotes ?? ""} onChange={(e) => setNotes({ ...notes, [r._id]: e.target.value })} placeholder="Add a professional customer message…" className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-medium text-slate-950 outline-none placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100" /></label>
                     </div>
                     <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-                      <button onClick={() => quoteMutation.mutate({ id: r._id, status: "quoted", quotedAmount: Number(amounts[r._id] ?? r.quotedAmount ?? 0), adminNotes: notes[r._id] ?? r.adminNotes ?? "" })} disabled={quoteMutation.isPending} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-black text-white shadow-sm hover:bg-emerald-700 disabled:opacity-60"><Send size={15} /> {quoteMutation.isPending ? "Sending…" : "Send quote"}</button>
-                      <button onClick={() => quoteMutation.mutate({ id: r._id, status: "rejected", quotedAmount: 0, adminNotes: notes[r._id] || "Request declined" })} disabled={quoteMutation.isPending} className="inline-flex items-center justify-center gap-2 rounded-xl border border-rose-300 bg-white px-4 py-2.5 text-xs font-black text-rose-700 hover:bg-rose-50 disabled:opacity-60"><XCircle size={15} /> Decline</button>
+                      <button onClick={() => { setActionError(""); quoteMutation.mutate({ id: r._id, status: "quoted", quotedAmount: Number(amounts[r._id] ?? r.quotedAmount ?? 0), adminNotes: notes[r._id] ?? r.adminNotes ?? "" }); }} disabled={quoteMutation.isPending} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-black text-white shadow-sm hover:bg-emerald-700 disabled:opacity-60"><Send size={15} /> {quoteMutation.isPending ? "Sending…" : "Send quote"}</button>
+                      <button onClick={() => { setActionError(""); quoteMutation.mutate({ id: r._id, status: "rejected", quotedAmount: 0, adminNotes: notes[r._id] || "Request rejected" }); }} disabled={quoteMutation.isPending} className="inline-flex items-center justify-center gap-2 rounded-xl border border-rose-300 bg-white px-4 py-2.5 text-xs font-black text-rose-700 hover:bg-rose-50 disabled:opacity-60"><XCircle size={15} /> Decline</button>
                     </div>
                   </div>
                 </div>
