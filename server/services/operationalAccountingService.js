@@ -4,6 +4,7 @@ import ChartOfAccount from "../models/ChartOfAccount.js";
 import Invoice from "../models/Invoice.js";
 
 const round = (n) => Math.round(Number(n || 0) * 100) / 100;
+const safeReference = (...values) => values.map((value) => String(value ?? "").trim()).find((value) => value && !/^(undefined|null|nan)$/i.test(value)) || "";
 const accountCache = new Map();
 const account = async (tenantId, code) => {
   const key = String(tenantId) + ":" + code;
@@ -112,7 +113,7 @@ export const postPaymentToLedger = async (payment) => {
   if (fee > gross) throw new Error("Payment fee cannot exceed the payment amount.");
   const lines = [{ code: cashCode, debit: round(gross - fee), credit: 0, description: "Net payment settlement" }, { code: "1100", debit: 0, credit: gross, description: "Accounts receivable" }];
   if (fee > 0) lines.push({ code: "5260", debit: fee, credit: 0, description: "Payment provider fee" });
-  return postOnce({ tenantId: payment.tenantId, sourceType: "payment", sourceId: payment._id, date: payment.paidAt || payment.updatedAt, description: `${payment.hospitalityType ? `${payment.hospitalityType} ` : ""}Payment ${payment.transactionReference || payment.transactionId || payment.mpesaReceiptNumber || payment._id}`, reference: payment.transactionReference || payment.transactionId || payment.mpesaReceiptNumber || "", lines });
+  return postOnce({ tenantId: payment.tenantId, sourceType: "payment", sourceId: payment._id, date: payment.paidAt || payment.updatedAt, description: `${payment.hospitalityType ? `${payment.hospitalityType} ` : ""}Payment ${safeReference(payment.transactionReference, payment.transactionId, payment.mpesaReceiptNumber, payment._id)}`, reference: safeReference(payment.transactionReference, payment.transactionId, payment.mpesaReceiptNumber), lines });
 };
 
 export const postPaymentRefundToLedger = async (payment, refundAmount = null, refundReference = "") => {
@@ -123,7 +124,7 @@ export const postPaymentRefundToLedger = async (payment, refundAmount = null, re
   if (amount > originalAmount) throw new Error("Refund cannot exceed the original payment amount.");
   const provider = String(payment.provider || payment.paymentMethod || "").toUpperCase();
   const cashCode = provider === "MPESA" ? "1020" : provider === "CARD" || provider === "STRIPE" || provider === "PAYPAL" || provider === "PESAPAL" ? "1030" : provider === "CASH" ? "1000" : "1010";
-  const reference = String(refundReference || payment.refundReference || ("REFUND-" + payment._id + "-" + amount)).trim();
+  const reference = safeReference(refundReference, payment.refundReference, "REFUND-" + payment._id + "-" + amount);
   const sourceId = payment._id;
 
   const invoice = payment.invoiceNumber
@@ -249,7 +250,7 @@ export const postSupplierPaymentToLedger = async (payable, amount = null, paymen
   if (paid > round(payable.amount)) throw new Error("Supplier settlement cannot exceed the payable amount.");
   const method = String(paymentMethod || "BANK_TRANSFER").toUpperCase();
   const cashCode = method === "MPESA" ? "1020" : method === "CARD" ? "1030" : method === "CASH" ? "1000" : "1010";
-  const reference = String(paymentReference || payable.paymentReference || `SUPPLIER-${payable._id}-${paid}`).trim();
+  const reference = safeReference(paymentReference, payable.paymentReference, `SUPPLIER-${payable._id}-${paid}`);
   const sourceId = crypto.createHash("sha256").update(`${payable._id}:${reference}:${paid}`).digest("hex").slice(0, 24);
   return postOnce({ tenantId: payable.tenantId, sourceType: "supplier_payable_payment", sourceId, description: `Supplier payable settlement ${payable.payableNumber || payable._id}`, reference, date: new Date(), lines: [{ code: "2000", debit: paid, credit: 0, description: "Accounts payable settlement" }, { code: cashCode, debit: 0, credit: paid, description: "Supplier payment" }] });
 };
