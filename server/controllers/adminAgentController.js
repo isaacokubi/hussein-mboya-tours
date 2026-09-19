@@ -52,7 +52,7 @@ export const getAgents = async (req, res) => {
     const agentIds = agents.map((agent) => agent._id).filter(Boolean);
     const bookingStats = agentIds.length
       ? await Booking.aggregate([
-          { $match: { tenantId, agent: { $in: agentIds } } },
+          { $match: { tenantId, agent: { $in: agentIds }, isDeleted: { $ne: true } } },
           { $group: { _id: "$agent", totalBookings: { $sum: 1 } } },
         ])
       : [];
@@ -207,9 +207,38 @@ export const updateAgentStatus = async (req, res) => {
     const status = String(req.body?.status || "").trim().toLowerCase();
     if (!["active", "inactive", "suspended"].includes(status)) return res.status(400).json({ success: false, message: "Invalid agent status" });
     const agentId = toObjectId(req.params.id, "agent ID");
-    const agent = await Agent.findOneAndUpdate(tenantScopedFilter({ _id: agentId }), { $set: { status } }, { new: true, runValidators: true }).lean();
+    const agent = await Agent.findOne(tenantScopedFilter({ _id: agentId }))
+      .select("_id tenantId user status isApproved")
+      .lean();
     if (!agent) return res.status(404).json({ success: false, message: "Agent not found" });
-    return res.json({ success: true, message: "Agent status updated", data: agent });
+
+    const linkedUserId = agent.user ? toObjectId(agent.user, "agent user ID") : null;
+    if (linkedUserId) {
+      const userUpdate = status === "active"
+        ? { $set: { status: "active", isActive: true, role: "agent", legacyRole: "agent" } }
+        : { $set: { status, isActive: false } };
+      const linkedUser = await User.findOneAndUpdate(
+        { _id: linkedUserId, tenantId: getSafeTenantId() },
+        userUpdate,
+        { new: true, runValidators: true }
+      ).select("_id status isActive role legacyRole").lean();
+      if (!linkedUser) {
+        return res.status(422).json({
+          success: false,
+          code: "AGENT_USER_NOT_FOUND",
+          message: "The agent's linked user account could not be found in this tenant.",
+        });
+      }
+    }
+
+    const updatedAgent = await Agent.findOneAndUpdate(
+      tenantScopedFilter({ _id: agentId }),
+      { $set: { status } },
+      { new: true, runValidators: true }
+    ).populate("user", "name email phone role status").lean();
+
+    if (!updatedAgent) return res.status(404).json({ success: false, message: "Agent not found" });
+    return res.json({ success: true, message: "Agent status and access updated", data: updatedAgent });
   } catch (error) {
     console.error("Admin agent status update failed:", error);
     return res.status(error.status || 500).json({ success: false, message: error.message });
