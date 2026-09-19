@@ -44,7 +44,7 @@ export const getDashboardMetrics = async (req, res) => {
       Booking.countDocuments(scoped({ ...active, status: "refunded" })),
       Payment.countDocuments(scoped(active)),
       Payment.countDocuments(scoped({ ...active, status: { $in: paidStatuses } })),
-      Payment.countDocuments(scoped({ ...active, status: { $in: ["pending", "partial"] } })),
+      Payment.countDocuments(scoped({ ...active, status: { $in: ["pending", "processing", "partial"] } })),
       Payment.countDocuments(scoped({ ...active, status: { $in: ["failed", "cancelled"] } })),
       Payment.aggregate([{ $match: scoped({ ...active, status: { $in: paidStatuses } }) }, { $group: { _id: null, gross: { $sum: { $ifNull: ["$amount", 0] } }, refunds: { $sum: { $cond: [{ $eq: ["$refundStatus", "completed"] }, { $ifNull: ["$refundedAmount", 0] }, 0] } } } }]),
       Booking.aggregate([{ $match: scoped(active) }, { $group: { _id: "$status", count: { $sum: 1 } } }, { $sort: { _id: 1 } }]),
