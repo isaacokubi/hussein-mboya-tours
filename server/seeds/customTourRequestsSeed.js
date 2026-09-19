@@ -27,7 +27,7 @@ const seed = async () => {
       for (const data of requests) {
         await CustomTourRequest.findOneAndUpdate(
           { tenantId: organization._id, "guestContact.email": data.guestContact.email },
-          { $set: { tenantId: organization._id, ...data }, $setOnInsert: { user: null, customer: null } },
+          { $set: { ...data }, $setOnInsert: { tenantId: organization._id, user: null, customer: null } },
           { upsert: true, new: true, setDefaultsOnInsert: true, runValidators: true },
         );
         console.log("Seeded: " + data.guestContact.email + " / " + data.status);
