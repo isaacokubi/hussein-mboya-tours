@@ -177,57 +177,24 @@ export const getAllBookings = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    const paidBookings = metricBookings.filter((booking) => booking.paymentStatus === "paid");
+    // Revenue is calculated by the canonical tenant-scoped revenue service.
+    // This keeps Booking Management consistent with the rest of the admin
+    // financial surfaces and prevents a paid booking from displaying KES 0
+    // when its booking value exists but no Payment ledger row exists.
+    const revenueMetrics = await getBookingRevenueMetrics(req);
+
+    const paidBookings = metricBookings.filter(
+      (booking) => booking.paymentStatus === "paid"
+    );
     const pendingPayments = metricBookings.filter((booking) =>
-      ["pending", "partial"].includes(String(booking.paymentStatus || "").toLowerCase())
+      ["pending", "partial"].includes(
+        String(booking.paymentStatus || "").toLowerCase()
+      )
     ).length;
-    const cancelled = metricBookings.filter((booking) => booking.status === "cancelled").length;
-
-    // Booking Management defines revenue from the value of bookings that are
-    // currently marked paid. This is deliberately based on the Booking record,
-    // not on the optional Payment ledger: legacy/manual paid bookings may not
-    // have a Payment document, and those bookings must still contribute to the
-    // admin revenue KPI. Refunds are deducted from the booking value.
-    const paidBookingIds = paidBookings.map((booking) => booking._id).filter(Boolean);
-    const paymentTotals = paidBookingIds.length
-      ? await Payment.aggregate([
-          {
-            $match: {
-              ...mergeTenantFilter(req, {}),
-              booking: { $in: paidBookingIds },
-              status: { $in: ["completed", "refunded"] },
-            },
-          },
-          {
-            $group: {
-              _id: "$booking",
-              net: {
-                $sum: {
-                  $max: [
-                    0,
-                    {
-                      $subtract: [
-                        { $ifNull: ["$amount", 0] },
-                        { $ifNull: ["$refundedAmount", 0] },
-                      ],
-                    },
-                  ],
-                },
-              },
-            },
-          },
-        ])
-      : [];
-    const paymentMap = new Map(paymentTotals.map((item) => [String(item._id), Number(item.net || 0)]));
-    const revenue = paidBookings.reduce((sum, booking) => {
-      const bookingValue = Number(booking.totalAmount ?? 0);
-      const refunded = Number(booking.refundAmount ?? 0);
-      const operationalValue = bookingValue > 0
-        ? Math.max(0, bookingValue - refunded)
-        : Number(paymentMap.get(String(booking._id)) || booking.depositAmount || 0);
-      return sum + operationalValue;
-    }, 0);
-
+    const cancelled = metricBookings.filter(
+      (booking) => booking.status === "cancelled"
+    ).length;
+    const revenue = Number(revenueMetrics.revenue || 0);
     res.status(200).json({
 
       success: true,
