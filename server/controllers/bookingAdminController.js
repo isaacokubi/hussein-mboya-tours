@@ -3,7 +3,6 @@ import mongoose from "mongoose";
 import Booking from "../models/Booking.js";
 import Notification from "../models/Notification.js";
 import Payment from "../models/Payment.js";
-import { getBookingRevenueMetrics } from "../services/bookingRevenueService.js";
 
 import {
   BOOKING_STATUSES,
@@ -177,24 +176,17 @@ export const getAllBookings = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    // Revenue is calculated by the canonical tenant-scoped revenue service.
-    // This keeps Booking Management consistent with the rest of the admin
-    // financial surfaces and prevents a paid booking from displaying KES 0
-    // when its booking value exists but no Payment ledger row exists.
-    const revenueMetrics = await getBookingRevenueMetrics(req);
-
-    // Keep the Paid KPI on the same canonical tenant-scoped financial
-    // definition as Revenue, including legacy/manual paid bookings.
-    const paidBookingCount = Number(revenueMetrics.paidBookings || 0);
     const pendingPayments = metricBookings.filter((booking) =>
       ["pending", "partial"].includes(
         String(booking.paymentStatus || "").toLowerCase()
       )
     ).length;
+    const paidBookingCount = metricBookings.filter(
+      (booking) => String(booking.paymentStatus || "").toLowerCase() === "paid"
+    ).length;
     const cancelled = metricBookings.filter(
       (booking) => booking.status === "cancelled"
     ).length;
-    const revenue = Number(revenueMetrics.revenue || 0);
     res.status(200).json({
 
       success: true,
@@ -206,7 +198,9 @@ export const getAllBookings = async (req, res, next) => {
         pendingPayments,
         paid: paidBookingCount,
         cancelled,
-        revenue: Math.round(revenue * 100) / 100,
+        // Booking Management intentionally does not expose a revenue KPI.
+        // Revenue is calculated by the dedicated canonical financial service
+        // so operational booking totals cannot be mistaken for accounting revenue.
       },
 
       pagination: {
