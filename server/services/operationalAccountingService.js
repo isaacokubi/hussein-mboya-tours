@@ -91,7 +91,7 @@ export const postPaymentRefundToLedger = async (payment, refundAmount = null, re
   const provider = String(payment.provider || payment.paymentMethod || "").toUpperCase();
   const cashCode = provider === "MPESA" ? "1020" : provider === "CARD" || provider === "STRIPE" || provider === "PAYPAL" || provider === "PESAPAL" ? "1030" : provider === "CASH" ? "1000" : "1010";
   const reference = String(refundReference || payment.refundReference || ("REFUND-" + payment._id + "-" + amount)).trim();
-  const sourceId = crypto.createHash("sha256").update(payment._id + ":" + reference + ":" + amount).digest("hex").slice(0, 24);
+  const sourceId = payment._id;
 
   const invoice = payment.invoiceNumber
     ? await Invoice.findOne({ tenantId: payment.tenantId, invoiceNumber: payment.invoiceNumber, isDeleted: { $ne: true } }).lean()
