@@ -8,6 +8,7 @@ import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import {
   postPaymentToLedger,
   postPaymentRefundToLedger,
+  postInvoiceToLedger,
   postExpenseToLedger,
   postExpensePaymentToLedger,
   postSupplierPayableToLedger,
@@ -75,7 +76,7 @@ export const reconcileOperationalAccounting = async (req, res, next) => {
       if (["draft", "cancelled"].includes(String(invoice.status || "").toLowerCase())) continue;
       if (await exists(tenantId, "invoice", invoice._id)) summary.alreadyPosted.invoices += 1;
       else {
-        try { await (await import("../services/operationalAccountingService.js")).postInvoiceToLedger(invoice); summary.posted.invoices += 1; }
+        try { await postInvoiceToLedger(invoice); summary.posted.invoices += 1; }
         catch (error) { summary.errors.push({ type: "invoice", id: String(invoice._id), message: error.message }); }
       }
     }
