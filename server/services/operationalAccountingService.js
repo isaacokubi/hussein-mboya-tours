@@ -3,8 +3,17 @@ import JournalEntry from "../models/JournalEntry.js";
 import ChartOfAccount from "../models/ChartOfAccount.js";
 
 const round = (n) => Math.round(Number(n || 0) * 100) / 100;
-const account = async (tenantId, code) => ChartOfAccount.findOne({ tenantId, code, active: true }).lean();
+const accountCache = new Map();
+const account = async (tenantId, code) => {
+  const key = String(tenantId) + ":" + code;
+  if (accountCache.has(key)) return accountCache.get(key);
+  const value = await ChartOfAccount.findOne({ tenantId, code, active: true }).lean();
+  if (value) accountCache.set(key, value);
+  return value;
+};
 const ensureAccounts = async (tenantId) => {
+  const tenantKey = String(tenantId);
+  if (accountCache.get("__ready__:" + tenantKey)) return;
   const defaults = [
     ["1000", "Cash on Hand", "asset", "cash"], ["1010", "Bank Account", "asset", "bank"], ["1020", "M-Pesa", "asset", "mobile_money"], ["1030", "Card / Gateway Clearing", "asset", "payment_clearing"],
     ["1100", "Accounts Receivable", "asset", "receivable"], ["1110", "Corporate Receivables", "asset", "corporate_receivable"], ["1200", "Inventory", "asset", "inventory"], ["1300", "Prepayments", "asset", "prepayment"], ["1400", "Property, Plant & Equipment", "asset", "fixed_asset"], ["1490", "Accumulated Depreciation", "asset", "accumulated_depreciation"],
@@ -13,7 +22,17 @@ const ensureAccounts = async (tenantId) => {
     ["4000", "Tour Revenue", "revenue", "sales"], ["4010", "Hotel Revenue", "revenue", "sales"], ["4020", "Airport Transfer Revenue", "revenue", "sales"], ["4030", "Excursion Revenue", "revenue", "sales"], ["4100", "Other Revenue", "revenue", "other_revenue"],
     ["5000", "Tour / Supplier Costs", "expense", "cost_of_sales"], ["5010", "Hotel Direct Costs", "expense", "cost_of_sales"], ["5020", "Transport Direct Costs", "expense", "cost_of_sales"], ["5100", "Commissions", "expense", "commission"], ["5200", "General Operating Expenses", "expense", "operating"], ["5260", "Bank & Payment Charges", "expense", "payment_charges"], ["5270", "Depreciation Expense", "expense", "depreciation"], ["6100", "Interest Expense", "expense", "finance_cost"], ["7000", "Foreign Exchange Gain", "revenue", "fx_gain"], ["7010", "Foreign Exchange Loss", "expense", "fx_loss"],
   ];
-  for (const [code, name, type, subtype] of defaults) await ChartOfAccount.updateOne({ tenantId, code }, { $setOnInsert: { tenantId, code, name, type, subtype, currency: "KES", active: true, system: true } }, { upsert: true });
+  await ChartOfAccount.bulkWrite(
+    defaults.map(([code, name, type, subtype]) => ({
+      updateOne: {
+        filter: { tenantId, code },
+        update: { $setOnInsert: { tenantId, code, name, type, subtype, currency: "KES", active: true, system: true } },
+        upsert: true,
+      },
+    })),
+    { ordered: false }
+  );
+  accountCache.set("__ready__:" + tenantKey, true);
 };
 
 const postOnce = async ({ tenantId, sourceType, sourceId, date, description, reference, lines }) => {
