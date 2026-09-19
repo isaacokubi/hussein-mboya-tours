@@ -5,7 +5,7 @@ import Commission from "../models/Commission.js";
 import Agent from "../models/Agent.js";
 
 const commissionQuery = (req) =>
-  Commission.find(tenantFilter(req))
+  Commission.find(tenantFilter(req, { isDeleted: { $ne: true } }))
     .populate({
       path: "agent",
       select: "user companyName phone email location commissionRate status isApproved totalBookings totalSales totalCommission pendingCommission paidCommission walletBalance",
@@ -130,21 +130,41 @@ export const payCommission = async (req, res, next) => {
     if (!allowedMethods.includes(paymentMethod)) {
       return res.status(400).json({ success: false, message: "Invalid commission payment method." });
     }
-    if (!String(paymentReference || transactionId || "").trim()) {
+    const normalizedReference = String(paymentReference || transactionId || "").trim();
+    if (!normalizedReference) {
       return res.status(400).json({ success: false, message: "A payment reference or transaction ID is required." });
     }
 
     const commission = await Commission.findOne(mergeTenantFilter(req, { _id: req.params.id }));
     if (!commission) return res.status(404).json({ success: false, message: "Commission not found." });
     if (commission.status === "paid") return res.status(400).json({ success: false, message: "Commission is already paid." });
-    if (!["approved", "processing", "pending"].includes(commission.status)) {
-      return res.status(400).json({ success: false, message: "Only an active commission can be paid." });
+    if (!["approved", "processing"].includes(commission.status)) {
+      return res.status(400).json({ success: false, message: "Only an approved or processing commission can be paid." });
+    }
+
+    const duplicatePayment = await Commission.findOne(
+      mergeTenantFilter({
+        _id: { $ne: commission._id },
+        isDeleted: { $ne: true },
+        $or: [
+          { paymentReference: normalizedReference },
+          { transactionId: normalizedReference },
+        ],
+      })
+    ).select("_id booking agent paymentReference transactionId").lean();
+
+    if (duplicatePayment) {
+      return res.status(409).json({
+        success: false,
+        code: "COMMISSION_PAYMENT_REFERENCE_EXISTS",
+        message: "That payment reference or transaction ID has already been recorded for another commission.",
+      });
     }
 
     commission.status = "paid";
     commission.paymentMethod = paymentMethod;
-    commission.paymentReference = String(paymentReference || transactionId || "").trim();
-    commission.transactionId = String(transactionId || paymentReference || "").trim();
+    commission.paymentReference = normalizedReference;
+    commission.transactionId = String(transactionId || normalizedReference).trim();
     commission.paidAt = new Date();
     commission.updatedBy = req.user._id;
     if (notes) commission.financeNotes = String(notes).trim();
