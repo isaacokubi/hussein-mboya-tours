@@ -69,7 +69,12 @@ export const getOperationsOverview = async (req, res, next) => {
     const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
     const todayBookings = bookings.filter((b) => { const d = new Date(b.travelDate); return d >= today && d < tomorrow; });
     const assigned = schedule.filter((b) => b.assignedDriver || b.assignedGuide || b.assignedVehicle).length;
-    // Only submitted/approved/received POs represent committed procurement value.\n    // Draft and cancelled POs must not inflate operational commitments.\n    const committedPoStatuses = new Set(["submitted", "approved", "partially_received", "received"]);\n    const procurementValue = purchaseOrders\n      .filter((item) => committedPoStatuses.has(String(item.status || "").toLowerCase()))\n      .reduce((sum, item) => sum + Number(item.totalAmount || 0), 0);
+    // Only submitted/approved/received POs represent committed procurement value.
+    // Draft and cancelled POs must not inflate operational commitments.
+    const committedPoStatuses = new Set(["submitted", "approved", "partially_received", "received"]);
+    const procurementValue = purchaseOrders
+      .filter((item) => committedPoStatuses.has(String(item.status || "").toLowerCase()))
+      .reduce((sum, item) => sum + Number(item.totalAmount || 0), 0);
     const outstandingPayables = payables.reduce((sum, item) => sum + Number(item.balance || 0), 0);
     const totalTourCost = tourCosts.reduce((sum, item) => sum + Number(item.totalCost || 0), 0);
     const corporateExposure = corporateAccounts.reduce((sum, item) => sum + Number(item.currentBalance || 0), 0);
