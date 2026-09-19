@@ -182,59 +182,17 @@ export const getAllBookings = async (req, res, next) => {
     ).length;
     const cancelled = metricBookings.filter((booking) => booking.status === "cancelled").length;
 
-    // Revenue must remain populated for legacy bookings as well as newer
-    // bookings whose cash received is represented in the Payment ledger.
-    // Prefer net completed/refunded payments per paid booking; if no ledger
-    // entry exists, fall back to the booking's recorded total/deposit.
-    const paidBookingIds = paidBookings.map((booking) => booking._id);
-    const paymentTotals = paidBookingIds.length
-      ? await Payment.aggregate([
-          {
-            $match: mergeTenantFilter(req, {
-              booking: { $in: paidBookingIds },
-              status: { $in: ["completed", "refunded"] },
-            }),
-          },
-          {
-            $project: {
-              booking: 1,
-              netAmount: {
-                $max: [
-                  0,
-                  {
-                    $subtract: [
-                      { $ifNull: ["$amount", 0] },
-                      { $ifNull: ["$refundedAmount", 0] },
-                    ],
-                  },
-                ],
-              },
-            },
-          },
-          {
-            $group: {
-              _id: "$booking",
-              total: { $sum: "$netAmount" },
-            },
-          },
-        ])
-      : [];
-
-    const ledgerByBooking = new Map(
-      paymentTotals.map((item) => [String(item._id), Number(item.total || 0)])
-    );
-
+    // Booking Management defines revenue from the value of bookings that are
+    // currently marked paid. This is deliberately based on the Booking record,
+    // not on the optional Payment ledger: legacy/manual paid bookings may not
+    // have a Payment document, and those bookings must still contribute to the
+    // admin revenue KPI. Refunds are deducted from the booking value.
     const revenue = paidBookings.reduce((sum, booking) => {
-      const ledgerAmount = ledgerByBooking.get(String(booking._id));
-      const fallbackAmount = Number(
+      const bookingValue = Number(
         booking.totalAmount ?? booking.depositAmount ?? 0
       );
-      return sum + Math.max(
-        0,
-        ledgerAmount !== undefined && ledgerAmount > 0
-          ? ledgerAmount
-          : fallbackAmount
-      );
+      const refunded = Number(booking.refundAmount ?? 0);
+      return sum + Math.max(0, bookingValue - refunded);
     }, 0);
 
     res.status(200).json({
