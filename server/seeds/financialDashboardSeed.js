@@ -368,8 +368,15 @@ async function seedTenant(tenant, tenantIndex) {
 
 async function main() {
   if (!process.env.MONGODB_URI) throw new Error("MONGODB_URI is required.");
-  await mongoose.connect(process.env.MONGODB_URI);
-  const tenants = await Organization.find({ isDeleted: { $ne: true } }).lean();
+  await mongoose.connect(process.env.MONGODB_URI, {
+    maxPoolSize: 5,
+    minPoolSize: 0,
+    serverSelectionTimeoutMS: 15000,
+    connectTimeoutMS: 15000,
+    socketTimeoutMS: 120000,
+    waitQueueTimeoutMS: 30000,
+  });
+  const tenants = await Organization.find({ isDeleted: { $ne: true } }).sort({ createdAt: 1 }).lean();
   if (tenants.length !== 3) throw new Error(`Expected exactly 3 active tenants, found ${tenants.length}. Refusing to seed.`);
 
   console.log("Verified exactly 3 active tenants. Master data will be preserved.");
