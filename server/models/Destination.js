@@ -41,8 +41,7 @@ const destinationSchema = new mongoose.Schema(
 
             type: String,
 
-            unique: true,
-
+      
             lowercase: true,
 
             trim: true,
@@ -666,6 +665,8 @@ destinationSchema.index({
     country:1
 
 });
+
+destinationSchema.index({ tenantId: 1, slug: 1 }, { unique: true, partialFilterExpression: { slug: { $type: "string" } } });
 
 
 destinationSchema.index({
