@@ -51,7 +51,7 @@ export default function Dashboard() {
   if (isLoading)
     return <div className="dashboard-responsive customer-ops p-4 text-sm">Loading dashboard...</div>;
   if (error)
-    return <div className="dashboard-responsive customer-ops p-4 text-sm">Unable to load dashboard.</div>;
+    return (\n      <div className="dashboard-responsive customer-ops min-h-[50vh] p-4 sm:p-6">\n        <div className="mx-auto max-w-2xl rounded-2xl border border-rose-200 bg-white p-6 shadow-sm">\n          <p className="text-xs font-bold uppercase tracking-wider text-rose-600">Customer dashboard unavailable</p>\n          <h1 className="mt-2 text-xl font-bold text-slate-900">Unable to load your dashboard</h1>\n          <p className="mt-2 text-sm leading-6 text-slate-600">{error?.response?.status === 401 ? "Your session has expired. Please sign in again." : error?.response?.status === 403 ? "Your account is not authorized to view this dashboard." : error?.response?.data?.message || error?.message || "The dashboard request failed. No figures are being shown as zero."}</p>\n          <button type="button" onClick={() => void refetch()} disabled={isFetching} className="mt-5 rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-800 disabled:opacity-60">{isFetching ? "Retrying..." : "Retry dashboard"}</button>\n        </div>\n      </div>\n    );
 
   const payload = unwrapData(data);
   const bookings = normalizeBookings(data);
