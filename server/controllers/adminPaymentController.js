@@ -45,7 +45,8 @@ export const getPaymentStats = async (req, res, next) => {
   try {
     const stats = await Payment.aggregate([
       { $match: mergeTenantFilter(req, {}) },
-      { $group: { _id: "$status", count: { $sum: 1 }, amount: { $sum: "$amount" } } },
+      { $project: { status: 1, amount: { $ifNull: ["$amount", 0] }, refundedAmount: { $ifNull: ["$refundedAmount", 0] } } },
+      { $group: { _id: "$status", count: { $sum: 1 }, amount: { $sum: "$amount" }, netAmount: { $sum: { $max: [0, { $subtract: ["$amount", "$refundedAmount"] }] } } } },
     ]);
     return res.json({ success: true, stats });
   } catch (error) {
