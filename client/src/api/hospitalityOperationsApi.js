@@ -14,6 +14,7 @@ export const getSupplierContracts=(params={})=>api.get("/admin/hospitality-opera
 export const createSupplierContract=payload=>api.post("/admin/hospitality-operations/suppliers/contracts",payload).then(unwrap);
 export const updateSupplierContract=(id,payload)=>api.patch(`/admin/hospitality-operations/suppliers/contracts/${id}`,payload).then(unwrap);
 export const getHospitalityDeposits=(params={})=>api.get("/admin/hospitality-operations/deposits",{params}).then(unwrap);
+export const getHospitalityRoomBlocks=(params={})=>api.get("/admin/hospitality-operations/hotels/room-blocks",{params}).then(unwrap);
 export const createHospitalityDeposit=payload=>api.post("/admin/hospitality-operations/deposits",payload).then(unwrap);
 export const updateHospitalityDeposit=(id,payload)=>api.patch(`/admin/hospitality-operations/deposits/${id}`,payload).then(unwrap);
 export const getTransferDispatch=(params={})=>api.get("/admin/hospitality-operations/transfers/dispatch",{params}).then(unwrap);
