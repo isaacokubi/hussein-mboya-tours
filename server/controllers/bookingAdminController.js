@@ -1119,6 +1119,22 @@ message:"Booking not found"
 }
 
 
+const paymentRecord = await Payment.findOne(
+mergeTenantFilter(req,{
+booking: booking._id,
+status: { $in: ["completed", "refunded"] }
+})
+)
+.sort({ paidAt: -1, updatedAt: -1, createdAt: -1 })
+.select("status amount paidAt updatedAt createdAt transactionReference transactionId mpesaReceiptNumber")
+.lean();
+
+const paymentDate =
+paymentRecord?.paidAt ||
+(paymentRecord?.status === "completed" ? paymentRecord?.updatedAt : null) ||
+(paymentRecord?.status === "completed" ? paymentRecord?.createdAt : null) ||
+null;
+
 const timeline=[
 
 {
@@ -1130,7 +1146,13 @@ date:booking.createdAt
 {
 event:`Payment ${booking.paymentStatus}`,
 status:booking.paymentStatus,
-date:booking.paidAt || null
+date:paymentDate,
+amount: paymentRecord?.amount ?? null,
+paymentReference:
+paymentRecord?.transactionReference ||
+paymentRecord?.transactionId ||
+paymentRecord?.mpesaReceiptNumber ||
+null,
 },
 
 {
