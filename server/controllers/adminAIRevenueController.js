@@ -3,6 +3,7 @@ import { tenantFilter } from "../tenancy/tenantQuery.js";
 import Booking from "../models/Booking.js";
 import Payment from "../models/Payment.js";
 import Tour from "../models/Tour.js";
+import { getBookingRevenueMetrics } from "../services/bookingRevenueService.js";
 
 export const getAIRevenueAdvice = async (req, res, next) => {
   try {
@@ -11,10 +12,7 @@ export const getAIRevenueAdvice = async (req, res, next) => {
     const bookingFilter = { ...filter, isDeleted: { $ne: true } };
     const [totalBookings, revenue, tours, topTours] = await Promise.all([
       Booking.countDocuments(bookingFilter),
-      Payment.aggregate([
-        { $match: { ...filter, status: "completed" } },
-        { $group: { _id: null, total: { $sum: "$amount" } } }
-      ]),
+      getBookingRevenueMetrics(req),
       Tour.countDocuments({ ...filter, isDeleted: { $ne: true } }),
       Booking.aggregate([
         { $match: { ...bookingFilter, tour: { $ne: null } } },
@@ -26,7 +24,7 @@ export const getAIRevenueAdvice = async (req, res, next) => {
       ])
     ]);
 
-    const totalRevenue = revenue[0]?.total || 0;
+    const totalRevenue = Number(revenue?.revenue || 0);
     const recommendations = [];
     if (totalBookings < 20) recommendations.push("Increase marketing campaigns because booking volume is currently low.");
     if (totalRevenue > 0) recommendations.push("Create premium packages to increase average booking value.");
