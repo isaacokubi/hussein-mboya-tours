@@ -466,7 +466,6 @@ export default function BookingManagement() {
   const metrics = data?.metrics || data?.data?.metrics || {};
   const cancelled = Number(metrics.cancelled ?? bookings.filter((booking) => booking.status === "cancelled").length);
   const paid = Number(metrics.paid ?? bookings.filter((booking) => paymentStatusOf(booking) === "paid").length);
-  const revenue = Number(metrics.revenue ?? 0);
   const pendingPayments = Number(metrics.pendingPayments ?? bookings.filter((booking) => paymentStatusOf(booking) === "pending").length);
 
   const primaryCards = [
@@ -474,7 +473,6 @@ export default function BookingManagement() {
     ["Pending Payments", pendingPayments, "text-amber-800"],
     ["Paid", paid, "text-emerald-800"],
     ["Cancelled", cancelled, "text-rose-800"],
-    ["Revenue", formatMoney(revenue), "text-violet-800"],
   ];
 
   return (
@@ -513,7 +511,7 @@ export default function BookingManagement() {
         </div>
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {primaryCards.map(([title, value, valueColor]) => (
           <div
             key={title}
