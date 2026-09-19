@@ -93,7 +93,7 @@ export default function AdminPayments() {
   }, [payments, search, statusFilter]);
 
   const statCount = (name) => Number(stats.find((item) => String(item?._id || item?.status).toLowerCase() === name)?.count || 0);
-  const revenue = stats.filter((item) => ["completed", "paid"].includes(String(item?._id || item?.status).toLowerCase())).reduce((sum, item) => sum + Number(item?.amount || 0), 0);
+  const revenue = stats.filter((item) => ["completed", "paid"].includes(String(item?._id || item?.status).toLowerCase())).reduce((sum, item) => sum + Number(item?.netAmount ?? item?.amount ?? 0), 0);
 
   if (paymentsQuery.isLoading || statsQuery.isLoading) {
     return <div className="min-h-[60vh] bg-gradient-to-br from-slate-100 via-sky-50 to-indigo-100 p-4 sm:p-6"><div className="animate-pulse rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">Loading payment management…</div></div>;
@@ -121,14 +121,14 @@ export default function AdminPayments() {
       </section>
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric icon={WalletCards} label="Total payments" value={payments.length} accent="bg-sky-100 text-sky-700" />
-        <Metric icon={CheckCircle2} label="Completed revenue" value={money(revenue)} accent="bg-emerald-100 text-emerald-700" />
+        <Metric icon={WalletCards} label="Total payments" value={Number(paymentsQuery.data?.total ?? payments.length)} accent="bg-sky-100 text-sky-700" />
+        <Metric icon={CheckCircle2} label="Completed collections" value={money(revenue)} accent="bg-emerald-100 text-emerald-700" />
         <Metric icon={Clock3} label="Pending" value={statCount("pending")} accent="bg-amber-100 text-amber-700" />
         <Metric icon={XCircle} label="Failed" value={statCount("failed")} accent="bg-rose-100 text-rose-700" />
       </section>
 
       <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200 sm:p-5">
-        <div className="mb-4 flex flex-col justify-between gap-2 sm:flex-row sm:items-center"><div><h2 className="font-bold text-slate-900">Payment ledger</h2><p className="text-xs text-slate-500">Search, review and safely update payment lifecycle status.</p></div><span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">{filteredPayments.length} records</span></div>
+        <div className="mb-4 flex flex-col justify-between gap-2 sm:flex-row sm:items-center"><div><h2 className="font-bold text-slate-900">Payment ledger</h2><p className="text-xs text-slate-500">Search, review and safely update payment lifecycle status. Completed payments require provider verification; refunds use the refund workflow.</p></div><span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">{filteredPayments.length} records</span></div>
         <div className="grid gap-3 md:grid-cols-[1fr_220px]">
           <div className="relative"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input type="search" autoComplete="off" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Customer, booking, receipt or phone…" className="w-full rounded-lg border border-slate-300 bg-slate-50 py-2.5 pl-10 pr-3 text-sm outline-none focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100" /></div>
           <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="rounded-lg border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100"><option value="all">All statuses</option>{PAYMENT_STATUSES.map((status) => <option key={status} value={status}>{labelStatus(status)}</option>)}</select>
@@ -149,7 +149,7 @@ export default function AdminPayments() {
                   <td className="px-5 py-4 font-extrabold text-slate-900">{money(payment.amount)}</td>
                   <td className="px-5 py-4 font-mono text-xs text-slate-600">{receiptOf(payment)}</td>
                   <td className="px-5 py-4 text-slate-600">{phoneOf(payment)}</td>
-                  <td className="px-5 py-4"><select aria-label={`Payment status for ${customerOf(payment)}`} value={status} onChange={(event) => statusMutation.mutate({ id: payment._id, status: event.target.value })} className={`rounded-full border-0 px-3 py-1.5 text-xs font-bold capitalize ring-1 outline-none ${statusStyles[status]}`} disabled={statusMutation.isPending && statusMutation.variables?.id === payment._id}>{PAYMENT_STATUSES.map((option) => <option key={option} value={option}>{labelStatus(option)}</option>)}</select></td>
+                  <td className="px-5 py-4"><select aria-label={`Payment status for ${customerOf(payment)}`} value={status} onChange={(event) => statusMutation.mutate({ id: payment._id, status: event.target.value })} className={`rounded-full border-0 px-3 py-1.5 text-xs font-bold capitalize ring-1 outline-none ${statusStyles[status]}`} disabled={statusMutation.isPending && statusMutation.variables?.id === payment._id}>{PAYMENT_STATUSES.map((option) => <option key={option} value={option} disabled={option === "completed" || option === "refunded"}>{labelStatus(option)}{option === "completed" ? " (provider verified)" : option === "refunded" ? " (refund workflow)" : ""}</option>)}</select></td>
                   <td className="px-5 py-4"><div className="flex justify-end gap-2"><button type="button" onClick={() => setSelectedPayment(payment)} className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100"><Eye className="h-3.5 w-3.5" />View</button><button type="button" disabled={!canRefund || refundMutation.isPending} onClick={() => { if (window.confirm(`Start a refund for ${customerOf(payment)} — ${money(payment.amount)}?`)) refundMutation.mutate(payment._id); }} className="inline-flex items-center gap-1.5 rounded-lg bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-40"><RotateCcw className="h-3.5 w-3.5" />{refundingPaymentId === payment._id ? "Refunding…" : "Refund"}</button></div></td>
                 </tr>;
               })}
