@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import JournalEntry from "../models/JournalEntry.js";
 import ChartOfAccount from "../models/ChartOfAccount.js";
+import Invoice from "../models/Invoice.js";
 
 const round = (n) => Math.round(Number(n || 0) * 100) / 100;
 const accountCache = new Map();
@@ -89,11 +90,29 @@ export const postPaymentRefundToLedger = async (payment, refundAmount = null, re
   if (amount > originalAmount) throw new Error("Refund cannot exceed the original payment amount.");
   const provider = String(payment.provider || payment.paymentMethod || "").toUpperCase();
   const cashCode = provider === "MPESA" ? "1020" : provider === "CARD" || provider === "STRIPE" || provider === "PAYPAL" || provider === "PESAPAL" ? "1030" : provider === "CASH" ? "1000" : "1010";
-  const reference = String(refundReference || payment.refundReference || `REFUND-${payment._id}-${amount}`).trim();
-  const sourceId = crypto.createHash("sha256").update(`${payment._id}:${reference}:${amount}`).digest("hex").slice(0, 24);
-  return postOnce({ tenantId: payment.tenantId, sourceType: "payment_refund", sourceId, date: payment.refundedAt || new Date(), description: `Payment refund ${payment.transactionReference || payment._id}`, reference, lines: [{ code: "1100", debit: amount, credit: 0, description: "Refund reinstates customer receivable" }, { code: cashCode, debit: 0, credit: amount, description: "Refund paid to customer" }] });
-};
+  const reference = String(refundReference || payment.refundReference || ("REFUND-" + payment._id + "-" + amount)).trim();
+  const sourceId = crypto.createHash("sha256").update(payment._id + ":" + reference + ":" + amount).digest("hex").slice(0, 24);
 
+  const invoice = payment.invoiceNumber
+    ? await Invoice.findOne({ tenantId: payment.tenantId, invoiceNumber: payment.invoiceNumber, isDeleted: { $ne: true } }).lean()
+    : payment.booking
+      ? await Invoice.findOne({ tenantId: payment.tenantId, booking: payment.booking, isDeleted: { $ne: true } }).lean()
+      : payment.hospitalityBooking
+        ? await Invoice.findOne({ tenantId: payment.tenantId, hospitalityBooking: payment.hospitalityBooking, isDeleted: { $ne: true } }).lean()
+        : null;
+
+  // A refund reverses recognised revenue (and output VAT when present).
+  // It must not debit AR because the original payment already cleared AR.
+  const invoiceTotal = Math.max(0, round(invoice?.totalAmount));
+  const invoiceTax = Math.max(0, Math.min(invoiceTotal, round(invoice?.tax)));
+  const refundRatio = invoiceTotal > 0 ? Math.min(1, amount / invoiceTotal) : 1;
+  const taxReversal = round(invoiceTax * refundRatio);
+  const revenueReversal = round(amount - taxReversal);
+  const revenueCode = invoice?.hospitalityType === "hotel" ? "4010" : invoice?.hospitalityType === "airport_transfer" ? "4020" : "4000";
+  const lines = [{ code: revenueCode, debit: revenueReversal, credit: 0, description: "Revenue reversal for customer refund" }, { code: cashCode, debit: 0, credit: amount, description: "Refund paid to customer" }];
+  if (taxReversal > 0) lines.splice(1, 0, { code: "2110", debit: taxReversal, credit: 0, description: "Output VAT reversal on customer refund" });
+  return postOnce({ tenantId: payment.tenantId, sourceType: "payment_refund", sourceId, date: payment.refundedAt || new Date(), description: "Payment refund " + (payment.transactionReference || payment._id), reference, lines });
+};
 export const postExpenseToLedger = async (expense) => {
   if (!expense || expense.status === "draft" || expense.status === "cancelled") return null;
   const gross = round(Number(expense.amount || 0) + Number(expense.taxAmount || 0));
