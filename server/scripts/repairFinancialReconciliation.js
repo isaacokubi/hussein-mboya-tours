@@ -91,8 +91,8 @@ const repairTenant = async (tenant) => runWithTenant({ tenantId: tenant._id, ten
         const provider = paymentMethod === "BANK_TRANSFER" ? "BANK" : ["CARD", "PAYPAL", "MPESA", "CASH"].includes(paymentMethod) ? paymentMethod : "CASH";
         const createdPayment = await Payment.create({
           tenantId: tenant._id,
-          customer: booking.user,
-          user: booking.user,
+          customer: booking.user || booking.customer,
+          user: booking.user || undefined,
           booking: booking._id,
           provider,
           method: paymentMethod === "BANK_TRANSFER" ? "bank" : paymentMethod.toLowerCase(),
