@@ -2,6 +2,7 @@ import { tenantFilter } from "../tenancy/tenantQuery.js";
 import { requireTenantId } from "../tenancy/context.js";
 import Booking from "../models/Booking.js";
 import Payment from "../models/Payment.js";
+import { getBookingRevenueMetrics } from "./bookingRevenueService.js";
 
 const amountAfterRefund = {
   $subtract: [
@@ -19,12 +20,13 @@ const nonNegativeAmount = {
 };
 
 export const getRevenueAnalytics = async (req) => {
-  requireTenantId();
-  const [result] = await Payment.aggregate([
-    { $match: { ...tenantFilter(req), status: "completed" } },
-    { $group: { _id: null, totalRevenue: { $sum: nonNegativeAmount }, totalPayments: { $sum: 1 } } },
-  ]);
-  return result || { totalRevenue: 0, totalPayments: 0 };
+  const metrics = await getBookingRevenueMetrics(req);
+  return {
+    totalRevenue: metrics.revenue,
+    totalPayments: metrics.paidBookings,
+    revenueBasis: metrics.basis,
+    currency: metrics.currency,
+  };
 };
 
 export const getBookingAnalytics = async (req) => {
