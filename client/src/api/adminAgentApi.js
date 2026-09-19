@@ -34,12 +34,9 @@ export const getAgents = async () => {
 };
 
 export const getAgentById = async (id) => {
-  const [res, branding] = await Promise.all([
-    axios.get(`/admin/agents/${id}`),
-    axios.get("/settings/public", { params: { _t: Date.now() } }).catch(() => null),
-  ]);
+  const res = await axios.get(`/admin/agents/${id}`);
   const agent = res.data?.data || res.data || {};
-  return normalizeAgent(agent, getCompanyName(branding));
+  return normalizeAgent(agent);
 };
 
 export const approveAgent = async (id) => {
