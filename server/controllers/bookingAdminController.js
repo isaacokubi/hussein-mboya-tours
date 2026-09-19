@@ -113,7 +113,7 @@ export const getAllBookings = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    const [bookings, total] =
+    const [bookings, total, metricBookings] =
       await Promise.all([
 
         Booking.find(filter)
@@ -160,6 +160,11 @@ export const getAllBookings = async (req, res, next) => {
 
         Booking.countDocuments(filter),
 
+        // Dashboard KPIs must be calculated from the complete filtered result,
+        // not only the current pagination page. This prevents page 1 from
+        // reporting a partial revenue total when there are more bookings.
+        Booking.find(filter).select("paymentStatus totalAmount depositAmount").lean(),
+
       ]);
 
     /*
@@ -168,11 +173,24 @@ export const getAllBookings = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
+    const paidBookings = metricBookings.filter((booking) => booking.paymentStatus === "paid");
+    const pendingPayments = metricBookings.filter((booking) => booking.paymentStatus === "pending").length;
+    const cancelled = metricBookings.filter((booking) => booking.status === "cancelled").length;
+    const revenue = paidBookings.reduce((sum, booking) => sum + Math.max(0, Number(booking.totalAmount ?? booking.depositAmount ?? 0)), 0);
+
     res.status(200).json({
 
       success: true,
 
       count: bookings.length,
+
+      metrics: {
+        totalBookings: total,
+        pendingPayments,
+        paid: paidBookings.length,
+        cancelled,
+        revenue: Math.round(revenue * 100) / 100,
+      },
 
       pagination: {
 
