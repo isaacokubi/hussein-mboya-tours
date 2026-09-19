@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
-import { X } from "lucide-react";
+import { X, LayoutDashboard } from "lucide-react";
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import AdminHeader from "../../components/admin/AdminHeader";
 
@@ -18,7 +18,7 @@ export default function AdminLayout() {
       </div>
       <aside className="ops-sidebar"><AdminSidebar /></aside>
       <div className="ops-main">
-        <AdminHeader onMenu={() => setOpen(true)} />
+        <div className="ops-mobile-dashboard-link"><a href="/admin"><LayoutDashboard size={16} />Dashboard</a></div><AdminHeader onMenu={() => setOpen(true)} />
         <main className="ops-content" key={location.pathname}><Outlet /></main>
       </div>
     </div>
