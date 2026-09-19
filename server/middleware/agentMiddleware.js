@@ -2,9 +2,11 @@
 import User from "../models/User.js";
 import Agent from "../models/Agent.js";
 import { getUserRole } from "../utils/roleUtils.js";
+import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 
 const agentMiddleware = async (req, res, next) => {
   try {
+    requireTenantId();
     if (!req.user?._id) {
       return res.status(401).json({ success: false, message: "Authentication required" });
     }
@@ -24,12 +26,12 @@ const agentMiddleware = async (req, res, next) => {
       return res.status(403).json({ success: false, message: "Travel Agent access required" });
     }
 
-    let agent = await Agent.findOne({ user: user._id }).lean();
+    let agent = await Agent.findOne(mergeTenantFilter({ user: user._id })).lean();
 
     if (!agent && user.email) {
-      agent = await Agent.findOne({ email: String(user.email).trim().toLowerCase() }).lean();
+      agent = await Agent.findOne(mergeTenantFilter({ email: String(user.email).trim().toLowerCase() })).lean();
       if (agent) {
-        await Agent.updateOne({ _id: agent._id }, { $set: { user: user._id } });
+        await Agent.updateOne(mergeTenantFilter({ _id: agent._id }), { $set: { user: user._id } });
       }
     }
 
@@ -57,6 +59,12 @@ export const requireApprovedAgent = (req, res, next) => {
     return res.status(403).json({
       success: false,
       message: "Agent account is pending approval. Ask an administrator to approve the agent account before using operational agent features.",
+    });
+  }
+  if (String(req.agent?.status || "").toLowerCase() !== "active") {
+    return res.status(403).json({
+      success: false,
+      message: `Agent account is ${String(req.agent?.status || "inactive").toLowerCase()}. Ask an administrator to reactivate the account before using operational agent features.`,
     });
   }
   next();
