@@ -3,6 +3,7 @@ import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
 import User from "../models/User.js";
 import Payment from "../models/Payment.js";
+import { getBookingRevenueMetrics } from "../services/bookingRevenueService.js";
 
 export const getTourReports = async (req, res, next) => {
   requireTenantId();
@@ -14,7 +15,7 @@ export const getTourReports = async (req, res, next) => {
 
     const [totalBookings, revenueResult, bookingStatus, popularTours, monthlyRevenue, totalCustomers, totalTours, completedTours] = await Promise.all([
       Booking.countDocuments(bookingFilter),
-      Payment.aggregate([{ $match: paymentFilter }, { $group: { _id: null, total: { $sum: { $max: [0, { $subtract: [{ $ifNull: ["$amount", 0] }, { $ifNull: ["$refundedAmount", 0] }] }] } } } }]),
+      getBookingRevenueMetrics(req, { isDeleted: { $ne: true } }),
       Booking.aggregate([{ $match: bookingFilter }, { $group: { _id: "$status", count: { $sum: 1 } } }, { $sort: { count: -1 } }]),
       Payment.aggregate([
         { $match: paymentFilter },
