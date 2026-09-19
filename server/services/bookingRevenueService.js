@@ -1,5 +1,6 @@
 import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import Booking from "../models/Booking.js";
+import mongoose from "mongoose";
 
 /**
  * Canonical booking revenue for operational/admin reporting.
@@ -12,6 +13,12 @@ import Booking from "../models/Booking.js";
  */
 export const getBookingRevenueMetrics = async (req, extraFilter = {}) => {
   const tenantId = requireTenantId();
+  // Mongoose casts tenantId for normal queries, but aggregation $match stages
+  // do not reliably cast string IDs. Convert the active tenant ID to ObjectId
+  // so revenue works against the actual multi-tenant booking documents.
+  const aggregateTenantId = mongoose.Types.ObjectId.isValid(tenantId)
+    ? new mongoose.Types.ObjectId(tenantId)
+    : tenantId;
   const filter = mergeTenantFilter(req, {
     ...extraFilter,
     isDeleted: { $ne: true, ...(extraFilter.isDeleted || {}) },
@@ -20,7 +27,7 @@ export const getBookingRevenueMetrics = async (req, extraFilter = {}) => {
   });
 
   const [result] = await Booking.aggregate([
-    { $match: filter },
+    { $match: { ...filter, tenantId: aggregateTenantId } },
     {
       $lookup: {
         from: "payments",
