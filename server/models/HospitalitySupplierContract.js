@@ -10,7 +10,7 @@ const schema = new Schema({
   commissionPercent:{type:Number,min:0,max:100,default:0},depositPercent:{type:Number,min:0,max:100,default:0},
   rates:{type:[{name:String,roomType:String,vehicleType:String,unit:String,amount:Number}],default:[]},
   validFrom:{type:Date,default:null},validTo:{type:Date,default:null},paymentTerms:{type:String,trim:true,default:""},cancellationTerms:{type:String,trim:true,default:""},
-  status:{type:String,enum:["draft","active","expired","terminated"],default:"draft",index:true},notes:{type:String,trim:true,default:""},
+  status:{type:String,enum:["draft","active","inactive","expired","terminated"],default:"draft",index:true},notes:{type:String,trim:true,default:""},
   createdBy:{type:Schema.Types.ObjectId,ref:"User",default:null},updatedBy:{type:Schema.Types.ObjectId,ref:"User",default:null}
 },{timestamps:true});
 schema.index({tenantId:1,supplierType:1,status:1,validTo:1});
