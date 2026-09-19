@@ -4,6 +4,7 @@ import Booking from "../models/Booking.js";
 import Payment from "../models/Payment.js";
 import Review from "../models/Review.js";
 import Tour from "../models/Tour.js";
+import { getBookingRevenueMetrics } from "../services/bookingRevenueService.js";
 
 export const getAIBriefing = async (req, res, next) => {
   try {
@@ -14,10 +15,7 @@ export const getAIBriefing = async (req, res, next) => {
       Booking.countDocuments({ ...bookingFilter, status: "pending" }),
       Booking.countDocuments({ ...bookingFilter, status: "confirmed" }),
       Booking.countDocuments({ ...bookingFilter, paymentStatus: "paid" }),
-      Payment.aggregate([
-        { $match: { ...filter, status: "completed" } },
-        { $group: { _id: null, total: { $sum: "$amount" } } }
-      ]),
+      getBookingRevenueMetrics(req),
       Review.aggregate([
         { $match: filter },
         { $group: { _id: null, average: { $avg: "$rating" } } }
@@ -25,7 +23,7 @@ export const getAIBriefing = async (req, res, next) => {
       Tour.countDocuments({ ...filter, isDeleted: { $ne: true } })
     ]);
 
-    const revenue = completedPayments[0]?.total || 0;
+    const revenue = Number(completedPayments?.revenue || 0);
     const rating = reviews[0]?.average != null ? Number(reviews[0].average.toFixed(1)) : 0;
     const recommendations = [];
 
