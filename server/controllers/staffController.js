@@ -57,11 +57,11 @@ const ensureManagerStaffProfiles = async (req) => {
   })));
 };
 
-const synchronizeStaffIdentities = async (staff) => {
-  if (!staff.length) return staff;
+const synchronizeStaffIdentities = async (staff, tenantId) => {
+  if (!staff.length || !tenantId) return staff;
   const userIds = staff.map((member) => member.user).filter(Boolean);
   if (!userIds.length) return staff;
-  const users = await User.find({ _id: { $in: userIds } }).select("_id role legacyRole roleId").populate("roleId", "name").lean();
+  const users = await User.find({ tenantId, _id: { $in: userIds } }).select("_id role legacyRole roleId").populate("roleId", "name").lean();
   const userMap = new Map(users.map((user) => [String(user._id), user]));
   await Promise.all(staff.map(async (member) => {
     const user = userMap.get(String(member.user));
@@ -69,7 +69,7 @@ const synchronizeStaffIdentities = async (staff) => {
     if (!canonical || (member.position === canonical.position && member.role === canonical.role)) return;
     member.position = canonical.position;
     member.role = canonical.role;
-    await Staff.updateOne({ _id: member._id }, { $set: canonical });
+    await Staff.updateOne({ _id: member._id, tenantId }, { $set: canonical });
   }));
   return staff;
 };
@@ -116,7 +116,7 @@ export const getStaff = async (req, res, next) => {
       Staff.find(scopedFilter).populate("assignedTours", "title startDate endDate tourStatus").sort({ createdAt: -1 }).skip(skip).limit(safeLimit),
       Staff.countDocuments(scopedFilter),
     ]);
-    await synchronizeStaffIdentities(staff);
+    await synchronizeStaffIdentities(staff, requireTenantId());
     return res.status(200).json({ success: true, pagination: { total, page: Number(page), limit: safeLimit, pages: Math.max(1, Math.ceil(total / safeLimit)) }, data: staff });
   } catch (error) { next(error); }
 };
@@ -125,7 +125,7 @@ export const getStaffById = async (req, res, next) => {
   try {
     const staff = await Staff.findOne(mergeTenantFilter(req, { _id: req.params.id })).populate("assignedTours", "title startDate endDate tourStatus");
     if (!staff) return res.status(404).json({ success: false, message: "Staff member not found" });
-    await synchronizeStaffIdentities([staff]);
+    await synchronizeStaffIdentities([staff], requireTenantId());
     return res.status(200).json({ success: true, data: staff });
   } catch (error) { next(error); }
 };
@@ -153,7 +153,7 @@ export const updateStaff = async (req, res, next) => {
       const user = await User.findOne(mergeTenantFilter(req, { _id: staff.user }));
       const userRole = roleToStaffIdentity(staff.role || staff.position);
       if (user && userRole) {
-        const roleDoc = await Role.findOne({ name: userRole.role }).select("_id name").lean();
+        const roleDoc = await Role.findOne(mergeTenantFilter(req, { name: userRole.role })).select("_id name").lean();
         user.role = userRole.role;
         user.legacyRole = userRole.role;
         if (roleDoc) user.roleId = roleDoc._id;
