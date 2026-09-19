@@ -183,9 +183,9 @@ export const getAllBookings = async (req, res, next) => {
     // when its booking value exists but no Payment ledger row exists.
     const revenueMetrics = await getBookingRevenueMetrics(req);
 
-    const paidBookings = metricBookings.filter(
-      (booking) => booking.paymentStatus === "paid"
-    );
+    // Keep the Paid KPI on the same canonical tenant-scoped financial
+    // definition as Revenue, including legacy/manual paid bookings.
+    const paidBookingCount = Number(revenueMetrics.paidBookings || 0);
     const pendingPayments = metricBookings.filter((booking) =>
       ["pending", "partial"].includes(
         String(booking.paymentStatus || "").toLowerCase()
@@ -204,7 +204,7 @@ export const getAllBookings = async (req, res, next) => {
       metrics: {
         totalBookings: total,
         pendingPayments,
-        paid: paidBookings.length,
+        paid: paidBookingCount,
         cancelled,
         revenue: Math.round(revenue * 100) / 100,
       },
