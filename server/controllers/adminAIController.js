@@ -7,6 +7,7 @@ import User from "../models/User.js";
 import Vehicle from "../models/Vehicle.js";
 import Review from "../models/Review.js";
 import { generateTravelAdvice } from "../services/aiService.js";
+import { getBookingRevenueMetrics } from "../services/bookingRevenueService.js";
 
 export const getAIDashboard = async (req, res, next) => {
   try {
@@ -14,14 +15,14 @@ export const getAIDashboard = async (req, res, next) => {
     const filter = tenantFilter(req);
     const [bookings, revenue, pendingPayments, tours, customers, vehicles, reviews] = await Promise.all([
       Booking.countDocuments({ ...filter, isDeleted: { $ne: true } }),
-      Payment.aggregate([{ $match: { ...filter, status: "completed" } }, { $group: { _id: null, total: { $sum: "$amount" } } }]),
+      getBookingRevenueMetrics(req),
       Booking.countDocuments({ ...filter, paymentStatus: "pending", isDeleted: { $ne: true } }),
       Tour.countDocuments({ ...filter, isDeleted: { $ne: true } }),
       User.countDocuments({ ...filter, $or: [{ role: "customer" }, { legacyRole: "customer" }] }),
       Vehicle.countDocuments({ ...filter, isDeleted: { $ne: true } }),
       Review.countDocuments(filter),
     ]);
-    return res.json({ success: true, data: { bookings, revenue: revenue[0]?.total || 0, pendingPayments, tours, customers, vehicles, reviews } });
+    return res.json({ success: true, data: { bookings, revenue: revenue?.revenue || 0, pendingPayments, tours, customers, vehicles, reviews } });
   } catch (error) { next(error); }
 };
 
