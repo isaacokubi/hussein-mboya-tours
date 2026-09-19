@@ -2,6 +2,7 @@ import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import mongoose from "mongoose";
 import Booking from "../models/Booking.js";
 import Notification from "../models/Notification.js";
+import Payment from "../models/Payment.js";
 
 import {
   BOOKING_STATUSES,
@@ -928,6 +929,46 @@ _id:req.params.id
     | SAVE
     |--------------------------------------------------------------------------
     */
+
+    // Manual "paid" changes must also create a completed Payment record because
+    // finance and analytics dashboards use the Payment ledger as their revenue source.
+    if (status === "paid") {
+      const paymentCustomer = booking.user || null;
+      if (!paymentCustomer) {
+        return res.status(400).json({ success: false, message: "This booking has no customer user account, so the paid status cannot be posted to the financial ledger." });
+      }
+      const completedPayments = await Payment.find(
+        mergeTenantFilter(req, { booking: booking._id, status: { $in: ["completed", "refunded"] } })
+      ).select("amount refundedAmount").lean();
+      const paidAmount = completedPayments.reduce(
+        (sum, payment) => sum + Math.max(0, Number(payment.amount || 0) - Number(payment.refundedAmount || 0)),
+        0
+      );
+      const outstanding = Math.max(0, Number(booking.totalAmount || 0) - paidAmount);
+      if (outstanding > 0) {
+        const paymentMethod = String(booking.paymentMethod || "MPESA").toUpperCase();
+        const provider = paymentMethod === "BANK_TRANSFER" ? "BANK" : ["CARD", "PAYPAL", "MPESA", "CASH"].includes(paymentMethod) ? paymentMethod : "CASH";
+        await Payment.create({
+          tenantId: booking.tenantId,
+          customer: paymentCustomer,
+          user: paymentCustomer,
+          booking: booking._id,
+          provider,
+          method: paymentMethod === "BANK_TRANSFER" ? "bank" : paymentMethod.toLowerCase(),
+          paymentMethod,
+          amount: outstanding,
+          currency: "KES",
+          status: "completed",
+          transactionReference: booking.paymentReference || ("ADMIN-MANUAL-" + booking.bookingNumber + "-" + Date.now()),
+          transactionId: booking.transactionId || "",
+          mpesaReceiptNumber: booking.mpesaReceipt || "",
+          paidAt: new Date(),
+          notes: "Manual payment settlement recorded from Admin Booking Management.",
+        });
+      }
+      booking.depositAmount = Number(booking.totalAmount || 0);
+      booking.balanceAmount = 0;
+    }
 
     await booking.save();
 
