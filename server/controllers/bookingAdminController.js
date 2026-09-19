@@ -968,7 +968,7 @@ _id:req.params.id
     // Manual "paid" changes must also create a completed Payment record because
     // finance and analytics dashboards use the Payment ledger as their revenue source.
     if (status === "paid") {
-      const paymentCustomer = booking.user || null;
+      const paymentCustomer = booking.user || booking.customer || null;
       if (!paymentCustomer) {
         return res.status(400).json({ success: false, message: "This booking has no customer user account, so the paid status cannot be posted to the financial ledger." });
       }
