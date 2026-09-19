@@ -78,7 +78,38 @@ const repairTenant = async (tenant) => runWithTenant({ tenantId: tenant._id, ten
   let commissionChanges = 0;
 
   for (const booking of bookings) {
-    const payments = await Payment.find({ booking: booking._id, status: { $in: ["completed", "refunded"] } }).select("amount refundedAmount status").lean();
+    let payments = await Payment.find({ booking: booking._id, status: { $in: ["completed", "refunded"] } }).select("amount refundedAmount status").lean();
+
+    // A booking can legitimately be marked paid by an admin/import while the
+    // payment ledger is missing. Reconcile the missing cash entry before
+    // calculating booking, invoice and commission balances.
+    if (booking.paymentStatus === "paid" && Number(booking.totalAmount || 0) > 0 && booking.user) {
+      const netPaid = round(payments.reduce((sum, payment) => sum + Math.max(0, Number(payment.amount || 0) - Number(payment.refundedAmount || 0)), 0));
+      const outstanding = round(Math.max(0, Number(booking.totalAmount || 0) - netPaid));
+      if (outstanding > 0) {
+        const paymentMethod = String(booking.paymentMethod || "MPESA").toUpperCase();
+        const provider = paymentMethod === "BANK_TRANSFER" ? "BANK" : ["CARD", "PAYPAL", "MPESA", "CASH"].includes(paymentMethod) ? paymentMethod : "CASH";
+        const createdPayment = await Payment.create({
+          tenantId: tenant._id,
+          customer: booking.user,
+          user: booking.user,
+          booking: booking._id,
+          provider,
+          method: paymentMethod === "BANK_TRANSFER" ? "bank" : paymentMethod.toLowerCase(),
+          paymentMethod,
+          amount: outstanding,
+          currency: "KES",
+          status: "completed",
+          transactionReference: booking.paymentReference || ("RECONCILE-PAID-" + booking.bookingNumber + "-" + Date.now()),
+          transactionId: booking.transactionId || "",
+          mpesaReceiptNumber: booking.mpesaReceipt || "",
+          paidAt: new Date(),
+          notes: "Financial reconciliation: completed payment created for paid booking with missing ledger entry.",
+        });
+        payments = [...payments, { amount: createdPayment.amount, refundedAmount: createdPayment.refundedAmount, status: createdPayment.status }];
+      }
+    }
+
     if (!payments.length) continue;
 
     const result = await syncBooking(booking, payments);
