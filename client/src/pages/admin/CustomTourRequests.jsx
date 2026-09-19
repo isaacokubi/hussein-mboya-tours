@@ -13,7 +13,7 @@ const STATUS_STYLES = {
   rejected: "border-rose-200 bg-rose-50 text-rose-800",
 };
 
-const money = (value) => `Ksh ${Number(value || 0).toLocaleString("en-KE")}`;
+const money = (value) => `KES ${Number(value || 0).toLocaleString("en-KE")}`;
 const customerName = (request) => request.customer?.name || request.guestContact?.name || "Guest customer";
 const customerEmail = (request) => request.customer?.email || request.guestContact?.email || "No email provided";
 const terminalStatuses = new Set(["converted", "rejected"]);
@@ -66,7 +66,7 @@ export default function CustomTourRequests() {
     quoted: requests.filter((r) => r.status === "quoted").length,
     converted: requests.filter((r) => r.status === "converted").length,
     rejected: requests.filter((r) => r.status === "rejected").length,
-    value: requests.reduce((sum, r) => sum + Number(r.quotedAmount || 0), 0),
+    value: requests.reduce((sum, r) => sum + (r.status === "quoted" ? Number(r.quotedAmount || 0) : 0), 0),
   }), [requests]);
 
   const guideOptions = (guidesQuery.data || []).filter((x) => x.availability === "available" && x.status !== "inactive" && x.isDeleted !== true);
