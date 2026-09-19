@@ -16,9 +16,9 @@ const canonicalizeUsers = async (users, tenantId) => {
   if (!users.length || !tenantId) return users;
   const ids = users.map((user) => user._id);
   const [customers, staff, agents] = await Promise.all([
-    Customer.find({ user: { $in: ids }, isDeleted: { $ne: true } }).select("user").lean(),
-    Staff.find({ user: { $in: ids }, isDeleted: { $ne: true } }).select("user").lean(),
-    Agent.find({ user: { $in: ids } }).select("user").lean(),
+    Customer.find({ tenantId, user: { $in: ids }, isDeleted: { $ne: true } }).select("user").lean(),
+    Staff.find({ tenantId, user: { $in: ids }, isDeleted: { $ne: true } }).select("user").lean(),
+    Agent.find({ tenantId, user: { $in: ids } }).select("user").lean(),
   ]);
   const customerIds = new Set(customers.filter((item) => item.user).map((item) => String(item.user)));
   const operationalIds = new Set([...staff, ...agents].filter((item) => item.user).map((item) => String(item.user)));
@@ -44,7 +44,7 @@ const canonicalizeUsers = async (users, tenantId) => {
 };
 
 export const getUsers = async (req, res, next) => {
-  requireTenantId();
+  const tenantId = requireTenantId();
   try {
     const page = Math.max(Number(req.query.page) || 1, 1);
     const limit = Math.min(Math.max(Number(req.query.limit) || 10, 1), 100);
@@ -105,7 +105,7 @@ export const createStaffAccount = async (req, res, next) => {
     const safeUser = await User.findById(createdUser._id).select("-password").populate("roleId", "name displayName permissions").lean();
     return res.status(201).json({ success: true, message: `${canonicalRole.replace("_", " ")} account created successfully.`, user: safeUser, staff: createdStaff, agent: createdAgent });
   } catch (error) {
-    if (createdUser?._id) { try { await Promise.allSettled([createdStaff?._id ? Staff.deleteOne({ _id: createdStaff._id }) : Promise.resolve(), createdAgent?._id ? Agent.deleteOne({ _id: createdAgent._id }) : Promise.resolve(), User.deleteOne({ _id: createdUser._id })]); } catch { /* preserve original error */ } }
+    if (createdUser?._id) { try { await Promise.allSettled([createdStaff?._id ? Staff.deleteOne({ _id: createdStaff._id, tenantId }) : Promise.resolve(), createdAgent?._id ? Agent.deleteOne({ _id: createdAgent._id, tenantId }) : Promise.resolve(), User.deleteOne({ _id: createdUser._id, tenantId })]); } catch { /* preserve original error */ } }
     if (isDuplicateKeyError(error)) return res.status(409).json({ success: false, message: duplicateMessage(error), repaired: isTenantIndexConflict(error) });
     next(error);
   }
