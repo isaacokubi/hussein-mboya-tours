@@ -966,9 +966,18 @@ export default function BookingManagement() {
                               </p>
                               <p className="text-xs text-slate-500">
                                 {event.date
-                                  ? new Date(event.date).toLocaleString("en-KE")
+                                  ? new Date(event.date).toLocaleString("en-KE", {
+                                      dateStyle: "medium",
+                                      timeStyle: "short",
+                                    })
                                   : "Date not recorded"}
                               </p>
+                              {event.event?.toLowerCase().startsWith("payment") &&
+                                event.paymentReference && (
+                                  <p className="mt-1 text-[11px] font-medium text-slate-400">
+                                    Reference: {event.paymentReference}
+                                  </p>
+                                )}
                             </div>
                           </div>
                         )
