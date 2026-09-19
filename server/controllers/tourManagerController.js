@@ -7,6 +7,7 @@ import Payment from "../models/Payment.js";
 import Staff from "../models/Staff.js";
 import Vehicle from "../models/Vehicle.js";
 import { assignTourResources } from "./tourAssignmentController.js";
+import { getBookingRevenueMetrics } from "../services/bookingRevenueService.js";
 
 const ACTIVE_TOUR_STATUSES = ["scheduled", "upcoming", "confirmed", "active", "ongoing"];
 const BOOKING_GUEST_STATUSES = ["confirmed", "assigned", "ongoing", "completed"];
@@ -29,11 +30,7 @@ export const getTourManagerDashboard = async (req, res, next) => {
       Tour.countDocuments(tourFilter),
       Tour.countDocuments(upcomingFilter),
       User.countDocuments(customerFilter),
-      Payment.aggregate([
-        { $match: paymentFilter },
-        { $group: { _id: null, gross: { $sum: { $ifNull: ["$amount", 0] } }, refunded: { $sum: { $ifNull: ["$refundedAmount", 0] } } } },
-        { $project: { _id: 0, total: { $max: [0, { $subtract: ["$gross", "$refunded"] }] } } },
-      ]),
+      getBookingRevenueMetrics(req),
       Tour.find(upcomingFilter)
         .populate("destination", "name country location image")
         .populate("assignedGuide", "name email phone position availability assignedTours")
@@ -81,7 +78,7 @@ export const getTourManagerDashboard = async (req, res, next) => {
     }));
 
     return res.status(200).json({ success: true, data: {
-      stats: { totalTours, upcomingTours: upcomingToursCount, totalCustomers, revenue: Number(revenueResult[0]?.total || 0), revenueSource: "completed_payments" },
+      stats: { totalTours, upcomingTours: upcomingToursCount, totalCustomers, revenue: Number(revenueResult?.revenue || 0), revenueSource: "paid_booking_value" },
       upcomingTours: formattedTours, recentBookings: formattedBookings,
     } });
   } catch (error) { console.error("TOUR MANAGER DASHBOARD ERROR:", error); next(error); }
