@@ -12,8 +12,8 @@ const STATUS_VALUES = ["active", "inactive", "disabled", "suspended", "blocked"]
 const isDuplicateKeyError = (error) => error?.code === 11000;
 const duplicateMessage = (error) => { const pattern = error?.keyPattern || {}; const keys = Object.keys(pattern); const key = keys[0]; if (keys.length === 1 && key === "tenantId") return "A legacy tenant index was repaired automatically. Please submit the account creation again."; if (key === "email") return "A user or staff account with this email already exists for this company."; if (key === "phone") return "A user with this phone number already exists for this company."; return "A record with these details already exists."; };
 
-const canonicalizeUsers = async (users) => {
-  if (!users.length) return users;
+const canonicalizeUsers = async (users, tenantId) => {
+  if (!users.length || !tenantId) return users;
   const ids = users.map((user) => user._id);
   const [customers, staff, agents] = await Promise.all([
     Customer.find({ user: { $in: ids }, isDeleted: { $ne: true } }).select("user").lean(),
@@ -32,7 +32,7 @@ const canonicalizeUsers = async (users) => {
     const shouldBeCustomer = hasCustomerProfile && !hasOperationalIdentity && !isProtected;
     if (shouldBeCustomer) {
       const needsRepair = String(user.role || "").toLowerCase() !== "customer" || String(user.legacyRole || "").toLowerCase() !== "customer" || (customerRole && String(user.roleId || "") !== String(customerRole._id));
-      if (needsRepair) await User.updateOne({ _id: user._id }, { $set: { role: "customer", legacyRole: "customer", ...(customerRole ? { roleId: customerRole._id } : {}) } });
+      if (needsRepair) await User.updateOne({ _id: user._id, tenantId }, { $set: { role: "customer", legacyRole: "customer", ...(customerRole ? { roleId: customerRole._id } : {}) } });
       user.role = "customer";
       user.legacyRole = "customer";
       if (customerRole) user.roleId = customerRole;
@@ -49,14 +49,14 @@ export const getUsers = async (req, res, next) => {
     const page = Math.max(Number(req.query.page) || 1, 1);
     const limit = Math.min(Math.max(Number(req.query.limit) || 10, 1), 100);
     const search = String(req.query.search || "").trim();
-    const query = {};
+    const query = { tenantId };
     if (search) { const regex = { $regex: search, $options: "i" }; query.$or = [{ name: regex }, { email: regex }, { phone: regex }, { role: regex }, { legacyRole: regex }, { status: regex }]; }
     const skip = (page - 1) * limit;
     const [users, total] = await Promise.all([
       User.find(query).select("-password").populate("roleId", "name displayName permissions").sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
       User.countDocuments(query),
     ]);
-    await canonicalizeUsers(users);
+    await canonicalizeUsers(users, tenantId);
     const pages = Math.max(1, Math.ceil(total / limit));
     const data = users.map((user) => ({ ...user, role: user.role || user.roleId?.name || user.legacyRole || "customer", isActive: user.status === "active" }));
     return res.json({ success: true, page, limit, total, pages, count: data.length, data, users: data, pagination: { page, limit, total, pages } });
@@ -113,10 +113,11 @@ export const createStaffAccount = async (req, res, next) => {
 
 export const updateUserStatus = async (req, res, next) => {
   try {
+    const tenantId = requireTenantId();
     const { id } = req.params; const { status } = req.body;
     if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ success: false, message: "Invalid user ID" });
     if (!STATUS_VALUES.includes(status)) return res.status(400).json({ success: false, message: "Invalid user status" });
-    const user = await User.findByIdAndUpdate(id, { $set: { status } }, { new: true, runValidators: true }).select("-password").lean();
+    const user = await User.findOneAndUpdate({ _id: id, tenantId }, { $set: { status } }, { new: true, runValidators: true }).select("-password").lean();
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
     const result = { ...user, isActive: user.status === "active" }; return res.status(200).json({ success: true, message: `User status changed to ${status}`, user: result, data: result });
   } catch (error) { next(error); }
@@ -124,13 +125,14 @@ export const updateUserStatus = async (req, res, next) => {
 
 export const deleteUser = async (req, res, next) => {
   try {
+    const tenantId = requireTenantId();
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ success: false, message: "Invalid user ID" });
     if (String(req.user?._id) === String(id)) return res.status(400).json({ success: false, message: "You cannot delete your own account." });
-    const user = await User.findById(id).select("_id role");
+    const user = await User.findOne({ _id: id, tenantId }).select("_id role");
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
     if (["super_admin", "superadmin"].includes(String(user.role || "").toLowerCase())) return res.status(403).json({ success: false, message: "SuperAdmin accounts cannot be deleted." });
-    await Promise.all([Staff.deleteMany({ user: user._id }), Agent.deleteMany({ user: user._id }), User.deleteOne({ _id: user._id })]);
+    await Promise.all([Staff.deleteMany({ tenantId, user: user._id }), Agent.deleteMany({ tenantId, user: user._id }), User.deleteOne({ _id: user._id, tenantId })]);
     return res.json({ success: true, deleted: true, message: "User account deleted successfully." });
   } catch (error) { next(error); }
 };
