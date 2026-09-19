@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Activity, AlertTriangle, Boxes, CheckCircle2, ClipboardCheck, FileText, RefreshCw, Truck, WalletCards, XCircle } from "lucide-react";
 import { getOperationsOverview } from "../../api/operationsApi";
-import { getSuppliers, getPurchaseOrders, getSupplierPayables, getCorporateAccounts } from "../../api/operationsModuleApi";
+import { getSuppliers, getPurchaseOrders, getTourCosts, getSupplierPayables, getCorporateAccounts } from "../../api/operationsModuleApi";
 import OperationsActionCenter from "../../components/admin/OperationsActionCenter";
 
 const money = (v) => `KES ${Number(v || 0).toLocaleString("en-KE", { maximumFractionDigits: 2 })}`;
@@ -20,22 +20,30 @@ export default function OperationsProcurement() {
   const overview = useQuery({ queryKey: ["operations-overview"], queryFn: getOperationsOverview, staleTime: 15000 });
   const suppliers = useQuery({ queryKey: ["operations-suppliers"], queryFn: getSuppliers, staleTime: 15000 });
   const purchaseOrders = useQuery({ queryKey: ["operations-purchase-orders"], queryFn: getPurchaseOrders, staleTime: 15000 });
+  const tourCosts = useQuery({ queryKey: ["operations-tour-costs"], queryFn: getTourCosts, staleTime: 15000 });
   const payables = useQuery({ queryKey: ["operations-payables"], queryFn: getSupplierPayables, staleTime: 15000 });
   const corporate = useQuery({ queryKey: ["operations-corporate"], queryFn: getCorporateAccounts, staleTime: 15000 });
-  const queries = [overview, suppliers, purchaseOrders, payables, corporate];
+  const queries = [overview, suppliers, purchaseOrders, tourCosts, payables, corporate];
   const refreshing = queries.some((q) => q.isFetching);
   const refresh = async () => { await Promise.all(queries.map((q) => q.refetch())); };
   const o = overview.data?.data || overview.data || {};
   const p = o.procurement || {};
   const po = unwrap(purchaseOrders.data);
   const ps = unwrap(suppliers.data);
+  const tourCostRows = unwrap(tourCosts.data);
   const payableRows = unwrap(payables.data);
   const corporateRows = unwrap(corporate.data);
+  const committedPoStatuses = new Set(["submitted", "approved", "partially_received", "received"]);
+  const fallbackPoValue = po.filter((item) => committedPoStatuses.has(String(item.status || "").toLowerCase())).reduce((sum, item) => sum + Number(item.totalAmount || 0), 0);
+  const fallbackPayables = payableRows.reduce((sum, item) => sum + Number(item.balance || 0), 0);
+  const fallbackTourCosts = tourCostRows.filter((item) => String(item.status || "").toLowerCase() !== "cancelled").reduce((sum, item) => sum + Number(item.totalCost || 0), 0);
+  const fallbackCorporateExposure = corporateRows.filter((item) => String(item.status || "").toLowerCase() === "active").reduce((sum, item) => sum + Number(item.currentBalance || 0), 0);
   const upcoming = (Array.isArray(o.schedule) ? o.schedule : []).filter((b) => b?.tour?.title || b?.customTourRequest?.destination || b?.customTourRequest?.title);
   const failedModules = [
     ["overview", overview],
     ["suppliers", suppliers],
     ["purchase orders", purchaseOrders],
+    ["tour costs", tourCosts],
     ["payables", payables],
     ["corporate accounts", corporate],
   ].filter(([, q]) => q.isError).map(([name]) => name);
@@ -54,14 +62,14 @@ export default function OperationsProcurement() {
       <section className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi icon={Boxes} label="Active suppliers" value={p.activeSuppliers ?? ps.length} tone="sky"/>
         <Kpi icon={FileText} label="Purchase orders" value={p.purchaseOrderCount ?? po.length} tone="indigo"/>
-        <Kpi icon={WalletCards} label="Outstanding payables" value={money(p.outstandingPayables)} tone="violet"/>
+        <Kpi icon={WalletCards} label="Outstanding payables" value={p.outstandingPayables != null ? money(p.outstandingPayables) : money(fallbackPayables)} tone="violet"/>
         <Kpi icon={Truck} label="Resource coverage" value={`${o.stats?.resourceCoverage ?? 0}%`} tone="emerald"/>
       </section>
 
       <section className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Mini title="PO committed value" value={money(p.purchaseOrderValue)} tone="sky"/>
-        <Mini title="Tour costs" value={money(p.totalTourCost)} tone="indigo"/>
-        <Mini title="Corporate exposure" value={money(p.corporateExposure)} tone="violet"/>
+        <Mini title="PO committed value" value={p.purchaseOrderValue != null ? money(p.purchaseOrderValue) : money(fallbackPoValue)} tone="sky"/>
+        <Mini title="Tour costs" value={p.totalTourCost != null ? money(p.totalTourCost) : money(fallbackTourCosts)} tone="indigo"/>
+        <Mini title="Corporate exposure" value={p.corporateExposure != null ? money(p.corporateExposure) : money(fallbackCorporateExposure)} tone="violet"/>
         <Mini title="Upcoming trips" value={o.stats?.upcomingTrips ?? upcoming.length} tone="emerald"/>
       </section>
 
