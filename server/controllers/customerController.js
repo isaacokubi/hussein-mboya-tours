@@ -19,11 +19,16 @@ const CUSTOMER_PAGE_SIZE = 10;
 const getConfirmedSpend = (booking) => {
   const bookingStatus = String(booking.status || "pending").toLowerCase();
   const paymentStatus = String(booking.paymentStatus || "pending").toLowerCase();
-  if (!successfulBookingStatuses.has(bookingStatus) || excludedPaymentStatuses.has(paymentStatus)) return 0;
+  // "Confirmed spend" represents an actually paid confirmed booking, not the
+  // booking's requested deposit. A depositAmount can be a required deposit and
+  // is therefore not proof that the customer has paid that amount.
+  if (
+    !successfulBookingStatuses.has(bookingStatus) ||
+    !["paid", "completed", "success"].includes(paymentStatus)
+  ) return 0;
+
   const bookingValue = Number(booking.totalAmount || 0);
-  const deposit = Number(booking.depositAmount || 0);
-  const baseAmount = deposit > 0 ? deposit : bookingValue;
-  return Math.max(0, baseAmount - Number(booking.refundAmount || 0));
+  return Math.max(0, bookingValue - Number(booking.refundAmount || 0));
 };
 
 export const getCustomers = async (req, res, next) => {
