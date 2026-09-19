@@ -72,7 +72,7 @@ const syncCommission = async (commission, totalRefunded) => {
 };
 
 const repairTenant = async (tenant) => runWithTenant({ tenantId: tenant._id, tenant, role: "admin" }, async () => {
-  const bookings = await Booking.find({ isDeleted: { $ne: true } }).select("_id tenantId totalAmount depositAmount balanceAmount paymentStatus status refundAmount refundStatus").lean();
+  const bookings = await Booking.find({ isDeleted: { $ne: true } }).select("_id tenantId user customer totalAmount depositAmount balanceAmount paymentStatus status refundAmount refundStatus createdAt updatedAt").lean();
   let bookingChanges = 0;
   let invoiceChanges = 0;
   let commissionChanges = 0;
@@ -83,7 +83,7 @@ const repairTenant = async (tenant) => runWithTenant({ tenantId: tenant._id, ten
     // A booking can legitimately be marked paid by an admin/import while the
     // payment ledger is missing. Reconcile the missing cash entry before
     // calculating booking, invoice and commission balances.
-    if (booking.paymentStatus === "paid" && Number(booking.totalAmount || 0) > 0 && booking.user) {
+    if (booking.paymentStatus === "paid" && Number(booking.totalAmount || 0) > 0 && (booking.user || booking.customer)) {
       const netPaid = round(payments.reduce((sum, payment) => sum + Math.max(0, Number(payment.amount || 0) - Number(payment.refundedAmount || 0)), 0));
       const outstanding = round(Math.max(0, Number(booking.totalAmount || 0) - netPaid));
       if (outstanding > 0) {
@@ -103,7 +103,7 @@ const repairTenant = async (tenant) => runWithTenant({ tenantId: tenant._id, ten
           transactionReference: booking.paymentReference || ("RECONCILE-PAID-" + booking.bookingNumber + "-" + Date.now()),
           transactionId: booking.transactionId || "",
           mpesaReceiptNumber: booking.mpesaReceipt || "",
-          paidAt: new Date(),
+          paidAt: booking.updatedAt || booking.createdAt || new Date(),
           notes: "Financial reconciliation: completed payment created for paid booking with missing ledger entry.",
         });
         payments = [...payments, { amount: createdPayment.amount, refundedAmount: createdPayment.refundedAmount, status: createdPayment.status }];
