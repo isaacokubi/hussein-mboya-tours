@@ -219,7 +219,30 @@ export const agentBookingReport = async (req, res, next) => {
         $group: {
           _id: "$agent",
           totalBookings: { $sum: 1 },
-          revenue: { $sum: { $ifNull: ["$totalAmount", 0] } },
+          revenue: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $in: [{ $toLower: { $ifNull: ["$paymentStatus", ""] } }, ["paid", "completed", "success"]] },
+                    { $not: [{ $in: [{ $toLower: { $ifNull: ["$status", ""] } }, ["cancelled", "refunded"]] }] },
+                  ],
+                },
+                {
+                  $max: [
+                    0,
+                    {
+                      $subtract: [
+                        { $ifNull: ["$totalAmount", 0] },
+                        { $ifNull: ["$refundAmount", 0] },
+                      ],
+                    },
+                  ],
+                },
+                0,
+              ],
+            },
+          },
           commission: { $sum: { $ifNull: ["$commissionAmount", 0] } },
         },
       },
