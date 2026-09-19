@@ -87,19 +87,6 @@ async function main() {
         ].includes(user.role)
     );
 
-        {
-          projection: {
-            _id: 1,
-            email: 1,
-            role: 1,
-            tenantId: 1,
-            status: 1,
-          },
-        }
-      )
-      .sort({ email: 1 })
-      .toArray();
-
     console.log("\n=== DEMO PASSWORD RESET PRECHECK ===");
     console.log(`Matching demo accounts: ${demoUsers.length}`);
 
