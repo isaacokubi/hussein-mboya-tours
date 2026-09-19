@@ -62,8 +62,10 @@ export default function CustomTourRequests() {
   const stats = useMemo(() => ({
     total: requests.length,
     pending: requests.filter((r) => r.status === "pending").length,
-    quoted: requests.filter((r) => r.status === "quoted" || r.status === "approved").length,
+    approved: requests.filter((r) => r.status === "approved").length,
+    quoted: requests.filter((r) => r.status === "quoted").length,
     converted: requests.filter((r) => r.status === "converted").length,
+    rejected: requests.filter((r) => r.status === "rejected").length,
     value: requests.reduce((sum, r) => sum + Number(r.quotedAmount || 0), 0),
   }), [requests]);
 
@@ -93,12 +95,14 @@ export default function CustomTourRequests() {
           </div>
         </section>
 
-        <section className="grid grid-cols-2 gap-3 md:grid-cols-5">
+        <section className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
           {[
             ["Total Requests", stats.total, "bg-sky-50 border-sky-200", "text-sky-700"],
             ["Pending", stats.pending, "bg-amber-50 border-amber-200", "text-amber-700"],
+            ["Approved", stats.approved, "bg-cyan-50 border-cyan-200", "text-cyan-700"],
             ["Quoted", stats.quoted, "bg-blue-50 border-blue-200", "text-blue-700"],
             ["Converted", stats.converted, "bg-emerald-50 border-emerald-200", "text-emerald-700"],
+            ["Rejected", stats.rejected, "bg-rose-50 border-rose-200", "text-rose-700"],
             ["Quoted Value", money(stats.value), "bg-violet-50 border-violet-200 col-span-2 md:col-span-1", "text-violet-700"],
           ].map(([label, value, card, valueColor]) => <div key={label} className={`rounded-2xl border p-4 shadow-sm ${card}`}><p className="text-[11px] font-extrabold uppercase tracking-wide text-slate-600">{label}</p><p className={`mt-1 text-xl font-black ${valueColor}`}>{value}</p></div>)}
         </section>
@@ -138,7 +142,7 @@ export default function CustomTourRequests() {
                   <div className="space-y-4">
                     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4"><div className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-wide text-slate-700"><MessageSquareText size={15} className="text-indigo-600" /> Customer requirements</div><p className="whitespace-pre-wrap text-sm font-medium leading-6 text-slate-800">{r.requirements || "No additional requirements provided."}</p></div>
                     {r.adminNotes && <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4"><p className="mb-2 text-[10px] font-black uppercase tracking-wider text-blue-800">Latest admin message</p><p className="text-sm font-semibold leading-6 text-blue-950">{r.adminNotes}</p></div>}
-                    <div className="rounded-2xl border border-slate-200 bg-white p-4"><div className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-wide text-slate-700"><WalletCards size={15} className="text-violet-600" /> Quote</div><p className="text-sm text-slate-600">Set the total customer-facing quote in Kenyan Shillings and include a clear message.</p></div>
+                    {!isLocked && <div className="rounded-2xl border border-slate-200 bg-white p-4"><div className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-wide text-slate-700"><WalletCards size={15} className="text-violet-600" /> Quote</div><p className="text-sm text-slate-600">{status === "approved" ? "Review or update the customer-facing quote in Kenyan Shillings and keep the message clear." : "Set the total customer-facing quote in Kenyan Shillings and include a clear message."}</p></div>}
                   </div>
 
                   <div className={`rounded-2xl border p-4 sm:p-5 ${isLocked ? "border-slate-200 bg-slate-100" : "border-slate-300 bg-slate-50"}`}>
@@ -166,7 +170,7 @@ export default function CustomTourRequests() {
                       <label className="block"><span className="mb-1.5 block text-[11px] font-black uppercase tracking-wide text-slate-700">Message to customer</span><input value={notes[r._id] ?? r.adminNotes ?? ""} onChange={(e) => setNotes({ ...notes, [r._id]: e.target.value })} placeholder="Add a professional customer message…" className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-medium text-slate-950 outline-none placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100" /></label>
                     </div>
                     <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-                      <button onClick={() => { setActionError(""); quoteMutation.mutate({ id: r._id, status: "quoted", quotedAmount: Number(amounts[r._id] ?? r.quotedAmount ?? 0), adminNotes: notes[r._id] ?? r.adminNotes ?? "" }); }} disabled={quoteMutation.isPending} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-black text-white shadow-sm hover:bg-emerald-700 disabled:opacity-60"><Send size={15} /> {quoteMutation.isPending ? "Sending…" : "Send quote"}</button>
+                      <button onClick={() => { setActionError(""); quoteMutation.mutate({ id: r._id, status: "quoted", quotedAmount: Number(amounts[r._id] ?? r.quotedAmount ?? 0), adminNotes: notes[r._id] ?? r.adminNotes ?? "" }); }} disabled={quoteMutation.isPending} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-black text-white shadow-sm hover:bg-emerald-700 disabled:opacity-60"><Send size={15} /> {quoteMutation.isPending ? "Saving…" : status === "quoted" || status === "approved" ? "Update quote" : "Send quote"}</button>
                       <button onClick={() => { setActionError(""); quoteMutation.mutate({ id: r._id, status: "rejected", quotedAmount: 0, adminNotes: notes[r._id] || "Request rejected" }); }} disabled={quoteMutation.isPending} className="inline-flex items-center justify-center gap-2 rounded-xl border border-rose-300 bg-white px-4 py-2.5 text-xs font-black text-rose-700 hover:bg-rose-50 disabled:opacity-60"><XCircle size={15} /> Decline</button>
                     </div>
                     </>
