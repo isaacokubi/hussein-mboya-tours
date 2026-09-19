@@ -1,6 +1,7 @@
 import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import mongoose from "mongoose";
 import Booking from "../models/Booking.js";
+import Notification from "../models/Notification.js";
 
 import {
   BOOKING_STATUSES,
@@ -229,8 +230,8 @@ export const getBookingById = async (
     }
 
     const booking =
-      await Booking.findById(
-        req.params.id
+      await Booking.findOne(
+        mergeTenantFilter(req, { _id: req.params.id })
       )
 
         .populate(
@@ -1146,26 +1147,37 @@ next(error);
 
 
 
-export const sendBookingNotification =
-async(req,res,next)=>{
+export const sendBookingNotification = async (req, res, next) => {
+  try {
+    requireTenantId();
+    if (!isValidId(req.params.id)) return res.status(400).json({ success:false, message:"Invalid booking ID." });
+    const message = String(req.body?.message || "").trim();
+    if (!message) return res.status(400).json({ success:false, message:"Notification message is required." });
 
-try{
+    const booking = await Booking.findOne(mergeTenantFilter(req, { _id: req.params.id }))
+      .populate("customer", "name email phone user")
+      .populate("user", "name email phone")
+      .lean();
+    if (!booking) return res.status(404).json({ success:false, message:"Booking not found." });
 
+    const recipient = booking.user?._id || booking.user || booking.customer?.user;
+    if (!recipient) return res.status(400).json({ success:false, message:"This booking does not have a customer user account for in-app notifications." });
 
-res.json({
-
-success:true,
-
-message:
-"Notification queued successfully."
-
-});
-
-
-}catch(error){
-
-next(error)
-
-}
-
+    const notification = await Notification.create({
+      recipient,
+      user: recipient,
+      title: "Booking Update",
+      message,
+      type: "booking",
+      priority: "normal",
+      read: false,
+      actionUrl: "/bookings/" + booking._id,
+      relatedModel: "Booking",
+      relatedId: booking._id,
+      metadata: { bookingId: booking._id, bookingNumber: booking.bookingNumber, sentBy: req.user?._id || null, channel: "in_app" },
+      isSent: true,
+      isArchived: false,
+    });
+    return res.status(200).json({ success:true, message:"Booking notification sent successfully.", notification, channel:"in_app" });
+  } catch (error) { next(error); }
 };
