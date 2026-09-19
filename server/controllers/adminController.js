@@ -6,6 +6,7 @@ import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
 import Destination from "../models/Destination.js";
 import Payment from "../models/Payment.js";
+import { getBookingRevenueMetrics } from "../services/bookingRevenueService.js";
 
 const activeBookingRevenueStages = [
   { $lookup: { from: "bookings", localField: "booking", foreignField: "_id", as: "booking" } },
@@ -57,11 +58,7 @@ export const getDashboardStats = async (req, res, next) => {
       Booking.countDocuments(bookingFilter),
       Tour.countDocuments(tourFilter),
       Destination.countDocuments(destinationFilter),
-      Payment.aggregate([
-        { $match: paymentFilter },
-        ...activeBookingRevenueStages,
-        { $group: { _id: null, total: { $sum: completedPaymentAmount } } },
-      ]),
+      getBookingRevenueMetrics(req),
       Booking.aggregate([
         { $match: bookingFilter },
         { $group: { _id: { status: "$status", paymentStatus: "$paymentStatus" }, count: { $sum: 1 } } },
@@ -123,7 +120,7 @@ export const getDashboardStats = async (req, res, next) => {
         bookings,
         tours,
         destinations,
-        revenue: revenueData[0]?.total || 0,
+        revenue: Number(revenueData?.revenue || 0),
         status,
         monthlyRevenue,
         popularTours,
