@@ -109,8 +109,6 @@ export const tourBookingReport = async (req, res, next) => {
         $match: {
           tenantId: req.tenantId,
           isDeleted: { $ne: true },
-          paymentStatus: { $in: ["paid", "completed", "success"] },
-          status: { $nin: ["cancelled", "refunded"] },
         },
       },
       {
@@ -163,6 +161,18 @@ export const tourBookingReport = async (req, res, next) => {
             ],
           },
           ledgerValue: { $sum: "$paymentLedger.net" },
+          isPaidBooking: {
+            $in: [
+              { $toLower: { $ifNull: ["$paymentStatus", ""] } },
+              ["paid", "completed", "success"],
+            ],
+          },
+          isExcludedBooking: {
+            $in: [
+              { $toLower: { $ifNull: ["$status", ""] } },
+              ["cancelled", "refunded"],
+            ],
+          },
         },
       },
       {
@@ -170,9 +180,15 @@ export const tourBookingReport = async (req, res, next) => {
           tour: 1,
           recognizedValue: {
             $cond: [
-              { $gt: ["$bookingValue", 0] },
-              "$bookingValue",
-              "$ledgerValue",
+              { $and: ["$isPaidBooking", { $not: ["$isExcludedBooking"] }] },
+              {
+                $cond: [
+                  { $gt: ["$bookingValue", 0] },
+                  "$bookingValue",
+                  "$ledgerValue",
+                ],
+              },
+              0,
             ],
           },
         },
