@@ -103,7 +103,16 @@ export const postPaymentRefundToLedger = async (payment, refundAmount = null, re
 
   // Repair a legacy refund journal that incorrectly debited AR. Posted journals
   // are immutable, so reverse the old entry and post corrected accounting.
-  const existingRefund = await JournalEntry.findOne({ tenantId: payment.tenantId, sourceType: "payment_refund", sourceId }).lean();
+  const existingRefund = await JournalEntry.findOne({
+    tenantId: payment.tenantId,
+    sourceType: "payment_refund",
+    $or: [
+      { sourceId },
+      { reference },
+      ...(payment.transactionReference ? [{ reference: String(payment.transactionReference).trim() }] : []),
+      ...(payment.refundReference ? [{ reference: String(payment.refundReference).trim() }] : []),
+    ],
+  }).sort({ createdAt: 1 }).lean();
   if (existingRefund) {
     const lineAccounts = await ChartOfAccount.find({
       tenantId: payment.tenantId,
