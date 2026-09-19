@@ -262,6 +262,7 @@ export default function BookingManagement() {
       setActionError("");
       setActionMessage("Payment status updated successfully.");
       invalidateBookings();
+      invalidateFinancialDashboards();
       invalidateSelectedBooking();
     },
     onError: (mutationError) =>
@@ -460,27 +461,13 @@ export default function BookingManagement() {
     );
   }
 
-  const cancelled = bookings.filter((booking) => booking.status === "cancelled").length;
-  const paidBookings = bookings.filter(
-    (booking) => paymentStatusOf(booking) === "paid"
-  );
-  const paid = paidBookings.length;
-  const revenue = paidBookings.reduce(
-    (sum, booking) =>
-      sum +
-      Math.max(
-        0,
-        Number(
-          booking.paidAmount ??
-            booking.depositAmount ??
-            bookingAmount(booking)
-        )
-      ),
-    0
-  );
-  const pendingPayments = bookings.filter(
-    (booking) => paymentStatusOf(booking) === "pending"
-  ).length;
+  // KPI metrics come from the complete server-side filtered dataset,
+  // rather than the currently visible pagination page.
+  const metrics = data?.metrics || data?.data?.metrics || {};
+  const cancelled = Number(metrics.cancelled ?? bookings.filter((booking) => booking.status === "cancelled").length);
+  const paid = Number(metrics.paid ?? bookings.filter((booking) => paymentStatusOf(booking) === "paid").length);
+  const revenue = Number(metrics.revenue ?? 0);
+  const pendingPayments = Number(metrics.pendingPayments ?? bookings.filter((booking) => paymentStatusOf(booking) === "pending").length);
 
   const primaryCards = [
     ["Total Bookings", total, "text-sky-800"],
