@@ -18,6 +18,26 @@ import Pagination from "../../components/admin/Pagination";
 
 const PAGE_SIZE = 10;
 
+const BOOKING_STATUS_TRANSITIONS = {
+  pending: ["confirmed", "failed", "cancelled"],
+  failed: ["pending", "confirmed", "cancelled"],
+  confirmed: ["assigned", "cancelled", "refunded"],
+  assigned: ["ongoing", "completed", "cancelled", "refunded"],
+  ongoing: ["completed", "cancelled", "refunded"],
+  completed: [],
+  cancelled: [],
+  refunded: [],
+};
+
+const PAYMENT_STATUS_TRANSITIONS = {
+  pending: ["partial", "paid", "failed", "cancelled"],
+  partial: ["paid", "failed", "cancelled", "refunded"],
+  paid: ["refunded"],
+  failed: ["pending", "partial", "paid"],
+  cancelled: ["pending", "partial", "paid"],
+  refunded: [],
+};
+
 const cleanText = (value) => {
   if (value === null || value === undefined) return "";
   const text = String(value).trim();
@@ -285,11 +305,16 @@ export default function BookingManagement() {
     staleTime: 10000,
   });
 
-  const detail =
-    bookingDetailsQuery.data?.data ||
-    bookingDetailsQuery.data?.booking ||
-    bookingDetailsQuery.data ||
-    selectedBooking;
+  const detail = useMemo(() => {
+    const response = bookingDetailsQuery.data;
+    const candidate =
+      response?.data?.data ||
+      response?.data?.booking ||
+      (response?.data?._id ? response.data : null) ||
+      response?.booking ||
+      (response?._id ? response : null);
+    return candidate || selectedBooking;
+  }, [bookingDetailsQuery.data, selectedBooking]);
 
   const filteredBookings = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -776,14 +801,12 @@ export default function BookingManagement() {
                         className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-bold outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                       >
                         {[
-                          "pending",
-                          "confirmed",
-                          "assigned",
-                          "ongoing",
-                          "completed",
-                          "cancelled",
-                          "refunded",
-                        ].map((status) => (
+                          detail?.status,
+                          ...(BOOKING_STATUS_TRANSITIONS[detail?.status] || []),
+                        ]
+                          .filter(Boolean)
+                          .filter((status, index, list) => list.indexOf(status) === index)
+                          .map((status) => (
                           <option key={status} value={status}>
                             {status.charAt(0).toUpperCase() + status.slice(1)}
                           </option>
@@ -809,13 +832,12 @@ export default function BookingManagement() {
                         className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-bold outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                       >
                         {[
-                          "pending",
-                          "paid",
-                          "failed",
-                          "partial",
-                          "cancelled",
-                          "refunded",
-                        ].map((status) => (
+                          paymentStatusOf(detail),
+                          ...(PAYMENT_STATUS_TRANSITIONS[paymentStatusOf(detail)] || []),
+                        ]
+                          .filter(Boolean)
+                          .filter((status, index, list) => list.indexOf(status) === index)
+                          .map((status) => (
                           <option key={status} value={status}>
                             {status.charAt(0).toUpperCase() + status.slice(1)}
                           </option>
@@ -919,7 +941,7 @@ export default function BookingManagement() {
                     >
                       {notificationMutation.isPending
                         ? "Sending..."
-                        : "Notify customer"}
+                        : "Send customer notification"}
                     </button>
                   </div>
 
