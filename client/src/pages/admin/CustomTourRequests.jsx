@@ -16,6 +16,7 @@ const STATUS_STYLES = {
 const money = (value) => `Ksh ${Number(value || 0).toLocaleString("en-KE")}`;
 const customerName = (request) => request.customer?.name || request.guestContact?.name || "Guest customer";
 const customerEmail = (request) => request.customer?.email || request.guestContact?.email || "No email provided";
+const terminalStatuses = new Set(["converted", "rejected"]);
 
 export default function CustomTourRequests() {
   const qc = useQueryClient();
@@ -113,8 +114,13 @@ export default function CustomTourRequests() {
 
         <section className="space-y-5">
           {filteredRequests.map((r, index) => {
-            const selected = resources[r._id] || {};
             const status = String(r.status || "pending").toLowerCase();
+            const isLocked = terminalStatuses.has(status);
+            const selected = resources[r._id] || {
+              guide: r.assignedGuide?._id || r.assignedGuide || "",
+              driver: r.assignedDriver?._id || r.assignedDriver || "",
+              agent: r.assignedAgent?._id || r.assignedAgent || "",
+            };
             return (
               <article key={r._id} className="overflow-hidden rounded-3xl border border-slate-300 bg-white shadow-lg shadow-slate-200/70 ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:shadow-xl">
                 <div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 via-white to-indigo-50/70 p-5 sm:p-6">
@@ -135,16 +141,26 @@ export default function CustomTourRequests() {
                     <div className="rounded-2xl border border-slate-200 bg-white p-4"><div className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-wide text-slate-700"><WalletCards size={15} className="text-violet-600" /> Quote</div><p className="text-sm text-slate-600">Set the total customer-facing quote in Kenyan Shillings and include a clear message.</p></div>
                   </div>
 
-                  <div className="rounded-2xl border border-slate-300 bg-slate-50 p-4 sm:p-5">
-                    <div className="mb-4"><h3 className="text-sm font-black text-slate-950">Operational assignment</h3><p className="mt-1 text-xs font-medium text-slate-600">Allocate available resources for this request.</p></div>
+                  <div className={`rounded-2xl border p-4 sm:p-5 ${isLocked ? "border-slate-200 bg-slate-100" : "border-slate-300 bg-slate-50"}`}>
+                    <div className="mb-4"><h3 className="text-sm font-black text-slate-950">Operational assignment</h3><p className="mt-1 text-xs font-medium text-slate-600">{isLocked ? "This request is closed and cannot receive new resource assignments." : "Allocate available resources for this request."}</p></div>
                     <div className="grid gap-3 md:grid-cols-3">
-                      <label className="block"><span className="mb-1.5 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide text-slate-700"><UserRound size={13} /> Guide</span><select value={selected.guide || ""} onChange={(e) => setResources({ ...resources, [r._id]: { ...selected, guide: e.target.value } })} className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs font-bold text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"><option value="">Unassigned</option>{guideOptions.map((x) => <option key={x._id} value={x._id}>{x.name || x.user?.name || x.email}</option>)}</select></label>
-                      <label className="block"><span className="mb-1.5 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide text-slate-700"><Car size={13} /> Driver</span><select value={selected.driver || ""} onChange={(e) => setResources({ ...resources, [r._id]: { ...selected, driver: e.target.value } })} className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs font-bold text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"><option value="">Unassigned</option>{driverOptions.map((x) => <option key={x._id} value={x._id}>{x.name || x.user?.name || x.email}</option>)}</select></label>
-                      <label className="block"><span className="mb-1.5 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide text-slate-700"><BriefcaseBusiness size={13} /> Agent</span><select value={selected.agent || ""} onChange={(e) => setResources({ ...resources, [r._id]: { ...selected, agent: e.target.value } })} className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs font-bold text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"><option value="">Unassigned</option>{agentOptions.map((x) => <option key={x._id} value={x._id}>{x.user?.name || x.companyName || x.email}</option>)}</select></label>
+                      <label className="block"><span className="mb-1.5 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide text-slate-700"><UserRound size={13} /> Guide</span><select value={selected.guide || ""} disabled={isLocked} onChange={(e) => setResources({ ...resources, [r._id]: { ...selected, guide: e.target.value } })} className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs font-bold text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"><option value="">Unassigned</option>{guideOptions.map((x) => <option key={x._id} value={x._id}>{x.name || x.user?.name || x.email}</option>)}</select></label>
+                      <label className="block"><span className="mb-1.5 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide text-slate-700"><Car size={13} /> Driver</span><select value={selected.driver || ""} disabled={isLocked} onChange={(e) => setResources({ ...resources, [r._id]: { ...selected, driver: e.target.value } })} className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs font-bold text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"><option value="">Unassigned</option>{driverOptions.map((x) => <option key={x._id} value={x._id}>{x.name || x.user?.name || x.email}</option>)}</select></label>
+                      <label className="block"><span className="mb-1.5 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide text-slate-700"><BriefcaseBusiness size={13} /> Agent</span><select value={selected.agent || ""} disabled={isLocked} onChange={(e) => setResources({ ...resources, [r._id]: { ...selected, agent: e.target.value } })} className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs font-bold text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"><option value="">Unassigned</option>{agentOptions.map((x) => <option key={x._id} value={x._id}>{x.user?.name || x.companyName || x.email}</option>)}</select></label>
                     </div>
-                    <button onClick={() => { setActionError(""); assignMutation.mutate({ id: r._id, ...selected }); }} disabled={assignMutation.isPending} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-xs font-black text-white hover:bg-indigo-950 disabled:opacity-60"><Save size={15} /> {assignMutation.isPending ? "Saving assignment…" : "Save resource assignment"}</button>
+                    <button onClick={() => { setActionError(""); assignMutation.mutate({ id: r._id, ...selected }); }} disabled={isLocked || assignMutation.isPending} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-xs font-black text-white hover:bg-indigo-950 disabled:cursor-not-allowed disabled:opacity-50"><Save size={15} /> {isLocked ? "Assignment locked" : assignMutation.isPending ? "Saving assignment…" : "Save resource assignment"}</button>
 
                     <div className="my-5 border-t border-slate-300" />
+                    {isLocked ? (
+                      <div className="rounded-2xl border border-slate-300 bg-white p-4">
+                        <p className="text-xs font-black uppercase tracking-wide text-slate-700">Workflow closed</p>
+                        <p className="mt-1 text-sm font-medium leading-6 text-slate-600">
+                          {status === "converted" ? "This request has already been converted into a booking and can no longer be repriced or declined." : "This request was rejected and can no longer be quoted, declined or reassigned."}
+                        </p>
+                        {r.bookingId && <p className="mt-2 text-xs font-bold text-slate-500">Booking reference: {String(r.bookingId)}</p>}
+                      </div>
+                    ) : (
+                    <>
                     <div className="grid gap-3 md:grid-cols-[180px_1fr]">
                       <label className="block"><span className="mb-1.5 block text-[11px] font-black uppercase tracking-wide text-slate-700">Quote amount (KES)</span><input type="number" min="0" value={amounts[r._id] ?? r.quotedAmount ?? ""} onChange={(e) => setAmounts({ ...amounts, [r._id]: e.target.value })} className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-black text-slate-950 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100" /></label>
                       <label className="block"><span className="mb-1.5 block text-[11px] font-black uppercase tracking-wide text-slate-700">Message to customer</span><input value={notes[r._id] ?? r.adminNotes ?? ""} onChange={(e) => setNotes({ ...notes, [r._id]: e.target.value })} placeholder="Add a professional customer message…" className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-medium text-slate-950 outline-none placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100" /></label>
@@ -153,6 +169,8 @@ export default function CustomTourRequests() {
                       <button onClick={() => { setActionError(""); quoteMutation.mutate({ id: r._id, status: "quoted", quotedAmount: Number(amounts[r._id] ?? r.quotedAmount ?? 0), adminNotes: notes[r._id] ?? r.adminNotes ?? "" }); }} disabled={quoteMutation.isPending} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-black text-white shadow-sm hover:bg-emerald-700 disabled:opacity-60"><Send size={15} /> {quoteMutation.isPending ? "Sending…" : "Send quote"}</button>
                       <button onClick={() => { setActionError(""); quoteMutation.mutate({ id: r._id, status: "rejected", quotedAmount: 0, adminNotes: notes[r._id] || "Request rejected" }); }} disabled={quoteMutation.isPending} className="inline-flex items-center justify-center gap-2 rounded-xl border border-rose-300 bg-white px-4 py-2.5 text-xs font-black text-rose-700 hover:bg-rose-50 disabled:opacity-60"><XCircle size={15} /> Decline</button>
                     </div>
+                    </>
+                    )}
                   </div>
                 </div>
               </article>
