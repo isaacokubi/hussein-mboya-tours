@@ -26,7 +26,8 @@
     "seed:dashboard-complete": "npm run seed:dashboard-master-data && npm run seed:financial-dashboard && npm run seed:dashboard-operational && npm run seed:hospitality-developer",
     "repair:global-media": "node scripts/repairGlobalMedia.js",
     "repair:financial-reconciliation": "node scripts/repairFinancialReconciliation.js",
-    "test": "node --test tests/*.js"
+    "test": "node --test tests/*.js",
+    "audit:mongodb": "node scripts/mongodb-application-audit.js"
   },
   "dependencies": {
     "africastalking": "^0.8.0",

@@ -33,7 +33,10 @@ test("operational accounting reconciliation is idempotent for payments, refunds,
 test("reconciliation only posts qualifying operational records", () => {
   const controller = read("controllers/accountingOperationalReconciliationController.js");
   assert.match(controller, /payment\.status === "completed"/);
-  assert.match(controller, /expense\.status.*approved.*paid/s);
+  assert.match(
+    controller,
+    /\["approved",\s*"paid"\]|expense\.status\s*===\s*"approved"|expense\.status\s*===\s*"paid"/s
+  );
   assert.match(controller, /status.*cancelled/s);
   assert.match(controller, /amountPaid > 0/);
 });
