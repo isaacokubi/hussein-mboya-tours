@@ -7,9 +7,10 @@ const money = (value, currency = "KES") => `${currency} ${number(value)}`;
 export default function StatsGrid({ stats = {}, summary = {} }) {
   const source = unwrapData(stats);
   const paymentStats = source.paymentStats || {};
-  const paymentBreakdownTotal = [paymentStats.completed, paymentStats.pending, paymentStats.failed]
-    .reduce((total, value) => total + numeric(value), 0);
-  const paymentCount = paymentBreakdownTotal || firstNumeric(source.payments);
+  // The canonical payment count comes from the payments collection. Do not derive
+  // it from the visible status buckets because processing/legacy states may not be
+  // represented by the three dashboard buckets.
+  const paymentCount = firstNumeric(source.payments, paymentStats.completed, paymentStats.pending, paymentStats.failed);
 
   const cards = {
     users: ["Users", firstNumeric(source.users)],
