@@ -58,6 +58,37 @@ const postOnce = async ({ tenantId, sourceType, sourceId, date, description, ref
   }
 };
 
+export const reverseJournalOnce = async ({ tenantId, originalJournal, sourceType, sourceId, date, description, reference }) => {
+  if (!tenantId || !originalJournal?._id || !sourceType || !sourceId) return null;
+  const existing = await JournalEntry.findOne({ tenantId, sourceType, sourceId }).lean();
+  if (existing) return existing;
+  const lines = (originalJournal.lines || []).map((line) => ({
+    account: line.account,
+    description: description || `Reversal of ${originalJournal.reference || originalJournal._id}`,
+    debit: round(line.credit),
+    credit: round(line.debit),
+  }));
+  const totalDebit = round(lines.reduce((sum, line) => sum + line.debit, 0));
+  const totalCredit = round(lines.reduce((sum, line) => sum + line.credit, 0));
+  if (totalDebit <= 0 || Math.abs(totalDebit - totalCredit) > 0.01) throw new Error("Journal reversal must be balanced and non-zero.");
+  try {
+    return await JournalEntry.create({
+      tenantId,
+      entryDate: date || new Date(),
+      description: description || `Reversal of ${originalJournal.reference || originalJournal._id}`,
+      reference: reference || `REV-${originalJournal.reference || originalJournal._id}`,
+      sourceType,
+      sourceId,
+      status: "posted",
+      lines,
+      postedAt: new Date(),
+    });
+  } catch (error) {
+    if (error?.code === 11000) return JournalEntry.findOne({ tenantId, sourceType, sourceId }).lean();
+    throw error;
+  }
+};
+
 export const postInvoiceToLedger = async (invoice) => {
   if (!invoice || invoice.isDeleted || ["draft", "cancelled"].includes(invoice.status)) return null;
   const total = Math.max(0, round(invoice.totalAmount));
@@ -70,7 +101,9 @@ export const postInvoiceToLedger = async (invoice) => {
 };
 
 export const postPaymentToLedger = async (payment) => {
-  if (!payment || payment.status !== "completed") return null;
+  // A refunded payment still represents an original completed settlement. The
+  // refund is a separate journal that reverses the cash movement/revenue.
+  if (!payment || !["completed", "refunded"].includes(String(payment.status || "").toLowerCase())) return null;
   const provider = String(payment.provider || payment.paymentMethod || "").toUpperCase();
   const cashCode = provider === "MPESA" ? "1020" : provider === "CARD" || provider === "STRIPE" || provider === "PAYPAL" || provider === "PESAPAL" ? "1030" : provider === "CASH" ? "1000" : "1010";
   const gross = round(payment.amount);
