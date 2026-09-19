@@ -7,7 +7,7 @@ import Destination from "../models/Destination.js";
 import cloudinary from "../config/cloudinary.js";
 
 export const createDestination = async (req, res, next) => {
-  requireTenantId();
+  const tenantId = requireTenantId();
   try {
     const { name, slug, description, country, city, featured, seo } = req.body;
 
@@ -16,10 +16,36 @@ export const createDestination = async (req, res, next) => {
     }
 
     const normalizedSlug = slug.trim().toLowerCase();
-    const exists = await Destination.findOne({
+    const escapedName = name.trim().replace(/[.*+?^${}()|[\\]\\]/g, "\\    const exists = await Destination.findOne({
       $or: [
         { slug: normalizedSlug },
         { name: { $regex: `^${name.trim()}$`, $options: "i" } },
+      ],
+    });");
+    const exists = await Destination.findOne({
+      tenantId,
+      isDeleted: { $ne: true },
+      $or: [
+        { slug: normalizedSlug },
+        { name: { $regex: `^${escapedName}import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
+import { tenantFilter } from "../tenancy/tenantQuery.js";
+// server/controllers/adminDestinationController.js
+
+import mongoose from "mongoose";
+import Destination from "../models/Destination.js";
+import cloudinary from "../config/cloudinary.js";
+
+export const createDestination = async (req, res, next) => {
+  const tenantId = requireTenantId();
+  try {
+    const { name, slug, description, country, city, featured, seo } = req.body;
+
+    if (!name || !slug) {
+      return res.status(400).json({ success: false, message: "Name and slug are required." });
+    }
+
+    const normalizedSlug = slug.trim().toLowerCase();
+, $options: "i" } },
       ],
     });
 
@@ -30,6 +56,7 @@ export const createDestination = async (req, res, next) => {
     const images = req.files?.map((file) => ({ url: file.path, publicId: file.filename })) || [];
 
     const destination = await Destination.create({
+      tenantId,
       name: name.trim(),
       slug: normalizedSlug,
       description,
@@ -52,7 +79,8 @@ export const getDestinations = async (req, res, next) => {
     const page = Math.max(Number(req.query.page) || 1, 1);
     const limit = Math.min(Number(req.query.limit) || 20, 100);
     const skip = (page - 1) * limit;
-    const filter = {};
+    const tenantId = requireTenantId();
+    const filter = { tenantId, isDeleted: { $ne: true } };
 
     if (req.query.featured === "true") filter.featured = true;
     if (req.query.country) filter.country = req.query.country;
@@ -78,7 +106,8 @@ export const getDestinations = async (req, res, next) => {
 
 export const getDestination = async (req, res, next) => {
   try {
-    const destination = await Destination.findOne({ slug: req.params.slug.toLowerCase() }).lean();
+    const tenantId = requireTenantId();
+    const destination = await Destination.findOne({ tenantId, slug: req.params.slug.toLowerCase(), status: "active", active: true, isDeleted: { $ne: true } }).lean();
     if (!destination) return res.status(404).json({ success: false, message: "Destination not found." });
     res.status(200).json({ success: true, destination });
   } catch (error) {
@@ -112,7 +141,12 @@ export const updateDestination = async (req, res, next) => {
     }
 
     if (req.body.name !== undefined) destination.name = String(req.body.name).trim();
-    if (req.body.slug !== undefined) destination.slug = String(req.body.slug).trim().toLowerCase();
+    if (req.body.slug !== undefined) {
+      const normalizedSlug = String(req.body.slug).trim().toLowerCase();
+      const duplicate = await Destination.findOne({ tenantId, slug: normalizedSlug, _id: { $ne: destination._id }, isDeleted: { $ne: true } }).lean();
+      if (duplicate) return res.status(409).json({ success: false, message: "Another destination already uses this slug in the current tenant." });
+      destination.slug = normalizedSlug;
+    }
     if (req.body.description !== undefined) destination.description = req.body.description;
     if (req.body.country !== undefined) destination.country = req.body.country;
     if (req.body.city !== undefined) destination.city = req.body.city;
