@@ -16,10 +16,11 @@ export default function validateTourCommand({ allowPast = false } = {}) {
       if (body.depositType !== undefined && !["fixed","percentage"].includes(String(body.depositType).toLowerCase())) return res.status(400).json({ success:false, message:"depositType must be fixed or percentage." });
       if (body.duration !== undefined && (!Number.isFinite(Number(body.duration)) || Number(body.duration) < 1 || Number(body.duration) > 365)) return res.status(400).json({ success:false, message:"Duration must be between 1 and 365 days." });
       if (body.durationDays !== undefined && (!Number.isInteger(Number(body.durationDays)) || Number(body.durationDays) < 1 || Number(body.durationDays) > 365)) return res.status(400).json({ success:false, message:"durationDays must be a whole number between 1 and 365." });
-      if (body.date !== undefined) {
-        const date = parseDate(body.date);
-        if (!date) return res.status(400).json({ success:false, message:"Tour date must be valid." });
-        if (!allowPast) { const today = new Date(); today.setHours(0,0,0,0); date.setHours(0,0,0,0); if (date < today) return res.status(400).json({ success:false, message:"Tour date cannot be in the past." }); }
+      for (const field of ["date", "startDate"]) {
+        if (body[field] === undefined) continue;
+        const date = parseDate(body[field]);
+        if (!date) return res.status(400).json({ success:false, message:`Tour ${field} must be valid.` });
+        if (!allowPast) { const today = new Date(); today.setHours(0,0,0,0); date.setHours(0,0,0,0); if (date < today) return res.status(400).json({ success:false, message:`Tour ${field} cannot be in the past.` }); }
       }
     }
     return next();
