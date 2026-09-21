@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import AccommodationInventory from "./AccommodationInventory.js";
 const { Schema } = mongoose;
 
@@ -40,5 +41,7 @@ const syncLegacyInventory = async (room) => {
 
 HotelRoomTypeSchema.post("save", async (room) => { try { await syncLegacyInventory(room); } catch (error) { console.error("HOTEL ROOM LEGACY SYNC ERROR:", error.message); } });
 HotelRoomTypeSchema.post("findOneAndUpdate", async (room) => { try { await syncLegacyInventory(room); } catch (error) { console.error("HOTEL ROOM LEGACY SYNC ERROR:", error.message); } });
+
+HotelRoomTypeSchema.plugin(tenantPlugin);
 
 export default mongoose.models.HotelRoomType || mongoose.model("HotelRoomType", HotelRoomTypeSchema);
