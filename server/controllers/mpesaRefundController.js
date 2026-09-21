@@ -1,10 +1,13 @@
-import { requireTenantId } from "../tenancy/context.js";
+import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import Payment from "../models/Payment.js";
 import { refundBookingPayment } from "../services/paymentLifecycleService.js";
 
 const getConversationId = (result = {}) => String(
   result.ConversationID || result.OriginatorConversationID || ""
 ).trim();
+
+const findRefundPayment = (req, conversationId) =>
+  Payment.findOne(mergeTenantFilter(req, { refundReference: conversationId }));
 
 export const mpesaRefundResult = async (req, res) => {
   requireTenantId();
@@ -17,10 +20,9 @@ export const mpesaRefundResult = async (req, res) => {
     const conversationId = getConversationId(result);
     if (!conversationId) return res.json({ ResultCode: 0, ResultDesc: "Accepted" });
 
-    const payment = await Payment.findOne({ refundReference: conversationId });
+    const payment = await findRefundPayment(req, conversationId);
     if (!payment) return res.json({ ResultCode: 0, ResultDesc: "Accepted" });
 
-    // Duplicate successful callbacks must be harmless.
     if (payment.refundStatus === "completed" && payment.refundReference === conversationId) {
       return res.json({ ResultCode: 0, ResultDesc: "Accepted" });
     }
@@ -56,7 +58,7 @@ export const mpesaRefundTimeout = async (req, res) => {
     const result = req.body?.Result || {};
     const conversationId = getConversationId(result);
     if (conversationId) {
-      const payment = await Payment.findOne({ refundReference: conversationId });
+      const payment = await findRefundPayment(req, conversationId);
       if (payment && payment.refundStatus !== "completed") {
         payment.refundStatus = "failed";
         payment.refundRequestedAmount = 0;
