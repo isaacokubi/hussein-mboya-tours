@@ -33,7 +33,32 @@ const tourSchema = new mongoose.Schema({
 }, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } });
 
 tourSchema.pre("validate", async function (next) { if (this.title && (!this.slug || this.isModified("title"))) { const baseSlug = slugify(this.title, { lower: true, strict: true, trim: true }); let slug = baseSlug; let counter = 1; while (await mongoose.models.Tour.findOne({ slug, _id: { $ne: this._id } })) { counter += 1; slug = `${baseSlug}-${counter}`; } this.slug = slug; } next(); });
-tourSchema.pre("validate", function (next) { const parsedDuration = Number(this.durationDays || this.durationDetails?.days || this.duration || 1); if (!Number.isFinite(parsedDuration) || parsedDuration < 1 || parsedDuration > 365) return next(new Error("Tour duration must be a whole number of days between 1 and 365.")); this.durationDays = Math.floor(parsedDuration); this.durationDetails.days = this.durationDays; this.duration = String(this.durationDays); const start = this.startDate || this.date; const days = this.durationDays; if (start) { const startDate = new Date(start); if (!Number.isNaN(startDate.getTime())) { this.startDate = startDate; const calculatedEnd = new Date(startDate); calculatedEnd.setDate(calculatedEnd.getDate() + days - 1); const existingEnd = this.endDate ? new Date(this.endDate) : null; if (!existingEnd || Number.isNaN(existingEnd.getTime()) || (days > 1 && existingEnd.getTime() <= startDate.getTime())) this.endDate = calculatedEnd; } } next(); });
+tourSchema.pre("validate", function (next) {
+  let rawDuration;
+  if (this.isModified("durationDays") && this.durationDays != null) rawDuration = this.durationDays;
+  else if (this.isModified("durationDetails.days") && this.durationDetails?.days != null) rawDuration = this.durationDetails.days;
+  else if (this.isModified("duration") && this.duration) rawDuration = this.duration;
+  else rawDuration = this.durationDays ?? this.durationDetails?.days ?? this.duration ?? 1;
+  const match = String(rawDuration).match(/\d+(?:\.\d+)?/);
+  const parsedDuration = Number(match?.[0]);
+  if (!Number.isFinite(parsedDuration) || parsedDuration < 1 || parsedDuration > 365) return next(new Error("Tour duration must be a whole number of days between 1 and 365."));
+  this.durationDays = Math.floor(parsedDuration);
+  this.durationDetails.days = this.durationDays;
+  this.duration = String(this.durationDays);
+  const start = this.startDate || this.date;
+  const days = this.durationDays;
+  if (start) {
+    const startDate = new Date(start);
+    if (!Number.isNaN(startDate.getTime())) {
+      this.startDate = startDate;
+      const calculatedEnd = new Date(startDate);
+      calculatedEnd.setDate(calculatedEnd.getDate() + days - 1);
+      const existingEnd = this.endDate ? new Date(this.endDate) : null;
+      if (!existingEnd || Number.isNaN(existingEnd.getTime()) || (days > 1 && existingEnd.getTime() <= startDate.getTime())) this.endDate = calculatedEnd;
+    }
+  }
+  next();
+});
 tourSchema.virtual("images").get(function () { const result = []; if (this.featuredImage?.url) result.push(this.featuredImage); if (Array.isArray(this.gallery)) result.push(...this.gallery); return result; });
 tourSchema.virtual("image").get(function () { return this.featuredImage?.url || this.gallery?.[0]?.url || ""; });
 tourSchema.virtual("finalPrice").get(function () { if (this.discountPrice !== null && this.discountPrice !== undefined) return this.discountPrice; if (this.discount > 0) return this.price - (this.price * this.discount) / 100; return this.price; });
