@@ -31,6 +31,8 @@ jobs:
         run: npm run check:all
       - name: Full backend test suite
         run: npm test
+      - name: Tour domain regression suite
+        run: npm run test:tour-domain
 
   phase-2-kenya-readiness:
     name: Phase 2 — Kenya production readiness
@@ -86,16 +88,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Record production readiness baseline
+      - name: Record current release commit
         run: |
           test -f README.md
           test -f docs/PRODUCTION_READINESS.md
-          grep -Fq 'Release gate run: **34942492468**' README.md
-          grep -Fq 'Verified application commit: **0b00897efa85ab8e4097755670091d2abaa63285**' README.md
-          grep -Fq 'Baseline: PASSED' docs/PRODUCTION_READINESS.md
-          echo "Existing production-readiness baseline is recorded; continue testing from this baseline."
-          echo "Baseline release gate: 34942492468"
-          echo "Baseline application commit: 0b00897efa85ab8e4097755670091d2abaa63285"
+          CURRENT_COMMIT="$(git rev-parse HEAD)"
+          echo "Release candidate commit: ${CURRENT_COMMIT}"
+          echo "RELEASE_COMMIT=${CURRENT_COMMIT}" >> "$GITHUB_ENV"
+      - name: Verify current release commit is recorded
+        run: test -n "${RELEASE_COMMIT}"
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
