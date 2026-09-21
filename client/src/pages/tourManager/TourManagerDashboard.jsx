@@ -76,7 +76,7 @@ export default function TourManagerDashboard() {
             <div>
               <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-100"><CheckCircle2 size={14} /> Live tenant operations</div>
               <h1 className="text-3xl font-black tracking-tight sm:text-4xl">Tour Manager Dashboard</h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-emerald-50/80">Monitor scheduled tours, guest capacity, operational assignments and completed-payment revenue for Amani Trails Safaris.</p>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-emerald-50/80">Monitor scheduled tours, guest capacity, operational assignments and completed-payment revenue for {companyName}.</p>
             </div>
             <button onClick={refreshAll} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/15 disabled:opacity-60" disabled={isFetching}>
               <RefreshCw size={16} className={isFetching ? "animate-spin" : ""} /> {isFetching ? "Refreshing..." : "Refresh data"}
