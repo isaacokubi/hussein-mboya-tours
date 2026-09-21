@@ -17,30 +17,34 @@ const ADMIN_BASE_PERMISSIONS = new Set([
 const JWT_ISSUER = "husseinmboyatours";
 const JWT_AUDIENCE = "husseinmboyatours-client";
 
-const verifyAccessToken = (token, secret) => {
-  try {
-    return jwt.verify(token, secret, { issuer: JWT_ISSUER, audience: JWT_AUDIENCE });
-  } catch (error) {
-    if (error?.name === "JsonWebTokenError" && /issuer|audience/i.test(error.message || "")) return jwt.verify(token, secret);
-    throw error;
-  }
-};
+const verifyAccessToken = (token, secret) =>
+  jwt.verify(token, secret, { issuer: JWT_ISSUER, audience: JWT_AUDIENCE });
 
 const extractAndVerifyToken = (req, secret) => {
-  const bearer = req.headers.authorization?.startsWith("Bearer ") ? req.headers.authorization.substring(7).trim() : "";
+  const bearer = req.headers.authorization?.startsWith("Bearer ")
+    ? req.headers.authorization.substring(7).trim()
+    : "";
   const cookie = String(req.cookies?.token || "").trim();
-  const candidates = [bearer, cookie].filter(Boolean);
-  if (!candidates.length) return { decoded: null, token: null, error: null };
+  const candidates = [
+    ...(bearer ? [{ token: bearer, source: "bearer" }] : []),
+    ...(cookie ? [{ token: cookie, source: "cookie" }] : []),
+  ];
+  if (!candidates.length) return { decoded: null, token: null, source: null, error: null };
 
   let lastError = null;
-  for (const token of candidates) {
+  for (const candidate of candidates) {
     try {
-      return { decoded: verifyAccessToken(token, secret), token, error: null };
+      return {
+        decoded: verifyAccessToken(candidate.token, secret),
+        token: candidate.token,
+        source: candidate.source,
+        error: null,
+      };
     } catch (error) {
       lastError = error;
     }
   }
-  return { decoded: null, token: null, error: lastError };
+  return { decoded: null, token: null, source: null, error: lastError };
 };
 
 export const protect = async (req, res, next) => {
@@ -48,13 +52,21 @@ export const protect = async (req, res, next) => {
     const secret = env.JWT_SECRET || process.env.JWT_SECRET;
     if (!secret) return res.status(500).json({ success: false, message: "Authentication configuration error." });
 
-    const { decoded, error } = extractAndVerifyToken(req, secret);
+    const { decoded, source, error } = extractAndVerifyToken(req, secret);
     if (error && !decoded) {
       console.error("AUTH TOKEN VERIFICATION ERROR:", error.name, error.message);
       const message = error?.name === "TokenExpiredError" ? "Authentication session expired." : "Invalid authentication token.";
       return res.status(401).json({ success: false, message });
     }
     if (!decoded) return res.status(401).json({ success: false, message: "Authentication required." });
+
+    if (source === "cookie" && !["GET", "HEAD", "OPTIONS"].includes(String(req.method || "").toUpperCase())) {
+      const csrfCookie = String(req.cookies?.csrfToken || "").trim();
+      const csrfHeader = String(req.get("X-CSRF-Token") || "").trim();
+      if (!csrfCookie || !csrfHeader || csrfCookie !== csrfHeader) {
+        return res.status(403).json({ success: false, message: "CSRF validation failed." });
+      }
+    }
 
     const userId = decoded.sub || decoded.id || decoded._id || decoded.userId;
     if (!userId) return res.status(401).json({ success: false, message: "Invalid authentication token." });

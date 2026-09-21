@@ -5,6 +5,7 @@ import { generateLoginPin, hashLoginPin, verifyLoginPin, normalizeMfaPhone } fro
 import { sendSMS } from "../services/smsService.js";
 import generateToken from "../utils/generateToken.js";
 import buildPermissions from "../utils/buildPermissions.js";
+import { setAuthCookie } from "../utils/authCookie.js";
 
 const MAX_MFA_ATTEMPTS = 5;
 const MFA_EXPIRY_MS = 5 * 60 * 1000;
@@ -144,6 +145,8 @@ export const verifyCustomerLoginPin = async (req, res, next) => {
       ipAddress: req.ip,
       userAgent: req.headers["user-agent"]
     });
+
+    setAuthCookie(res, token);
 
     return res.status(200).json({
       success: true,

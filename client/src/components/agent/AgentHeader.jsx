@@ -18,11 +18,7 @@ const navigate = useNavigate();
 
 
 
-const {
-    user
-}
-=
-useAuth();
+const { user, logout } = useAuth();
 
 
 
@@ -31,23 +27,7 @@ useAuth();
 
 
 
-const logout = ()=>{
-
-
-localStorage.removeItem("token");
-
-localStorage.removeItem("user");
-
-localStorage.removeItem("permissions");
-
-
-
-navigate("/agent/login");
-
-
-};
-
-
+const handleLogout = async () => { await logout(); navigate("/agent/login"); };
 
 
 
@@ -218,7 +198,7 @@ user.name
 
 <button
 
-onClick={logout}
+onClick={handleLogout}
 
 className="
 bg-red-600

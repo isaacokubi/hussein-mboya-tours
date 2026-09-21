@@ -2,6 +2,7 @@
 
 import multer from "multer";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
+import path from "node:path";
 import cloudinary from "../config/cloudinary.js";
 
 /*
@@ -17,9 +18,9 @@ const storage = new CloudinaryStorage({
         const isImage = file.mimetype.startsWith("image/");
 
         return {
-            folder: "global-tours",
+            folder: `global-tours/${String(req.tenantId || req.tenant?._id || "public")}`,
 
-            resource_type: "auto",
+            resource_type: file.mimetype === "application/pdf" ? "raw" : "image",
 
             public_id: `${Date.now()}-${Math.round(
                 Math.random() * 1e9
@@ -48,24 +49,31 @@ const storage = new CloudinaryStorage({
 |--------------------------------------------------------------------------
 */
 
-const allowedMimeTypes = [
-    "image/jpeg",
-    "image/png",
-    "image/webp",
-    "application/pdf",
-];
+const allowedFileTypes = new Map([
+    [".jpg", "image/jpeg"],
+    [".jpeg", "image/jpeg"],
+    [".png", "image/png"],
+    [".webp", "image/webp"],
+    [".pdf", "application/pdf"],
+]);
 
 const fileFilter = (req, file, cb) => {
-    if (allowedMimeTypes.includes(file.mimetype)) {
-        return cb(null, true);
+    const originalName = String(file.originalname || "");
+    const extension = path.extname(originalName).toLowerCase();
+    const expectedMime = allowedFileTypes.get(extension);
+
+    if (!expectedMime || expectedMime !== String(file.mimetype || "").toLowerCase()) {
+        return cb(
+            new Error("File type and extension do not match. Only JPG, PNG, WEBP images and PDF files are allowed."),
+            false
+        );
     }
 
-    cb(
-        new Error(
-            "Only JPG, PNG, WEBP images and PDF files are allowed."
-        ),
-        false
-    );
+    if (/[\u0000-\u001f\u007f]/.test(originalName) || originalName.length > 180) {
+        return cb(new Error("The uploaded filename is invalid."), false);
+    }
+
+    return cb(null, true);
 };
 
 /*

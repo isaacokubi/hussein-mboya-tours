@@ -16,11 +16,6 @@ const ADMIN_BASE_PERMISSIONS = [
 const AUTH_KEYS = ["token", "accessToken", "authToken"];
 const TENANT_SESSION_KEYS = ["tenantId", "tenantSlug", "tenantKey"];
 
-const getStoredToken = () => {
-  if (typeof window === "undefined") return null;
-  return AUTH_KEYS.map((key) => localStorage.getItem(key)?.trim()).find(Boolean) || null;
-};
-
 const normalizePermissions = (permissions) => {
   if (!Array.isArray(permissions)) return [];
   const seen = new Set();
@@ -68,14 +63,6 @@ const readStoredUser = () => {
   }
 };
 
-const setApiAuthHeader = (nextToken) => {
-  if (nextToken) {
-    api.defaults.headers.common.Authorization = `Bearer ${String(nextToken).trim()}`;
-  } else {
-    delete api.defaults.headers.common.Authorization;
-  }
-};
-
 const preloadTenantSettings = async () => {
   if (typeof window === "undefined") return null;
   try {
@@ -94,7 +81,7 @@ const preloadTenantSettings = async () => {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => readStoredUser());
-  const [token, setToken] = useState(() => getStoredToken());
+  const [token, setToken] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const persistUser = (nextUser) => {
@@ -114,14 +101,14 @@ export function AuthProvider({ children }) {
 
   const clearAuthStorage = () => {
     [...AUTH_KEYS, "user", "permissions", ...TENANT_SESSION_KEYS].forEach((key) => localStorage.removeItem(key));
-    setApiAuthHeader("");
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try { await api.post("/auth/logout"); } catch (error) { console.warn("AUTH LOGOUT REQUEST FAILED", error?.message || error); }
     clearAuthStorage();
     queryClient.clear();
     setUser(null);
-    setToken(null);
+    setToken(false);
     window.location.href = "/login";
   };
 
@@ -139,7 +126,7 @@ export function AuthProvider({ children }) {
       clearAuthStorage();
       queryClient.clear();
       setUser(null);
-      setToken(null);
+      setToken(false);
       setLoading(false);
       if (window.location.pathname !== "/login") {
         window.location.replace("/login?reason=session-expired");
@@ -151,26 +138,19 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    const savedToken = getStoredToken();
     const savedUser = readStoredUser();
-    if (!savedToken) {
-      setApiAuthHeader("");
-      setUser(null);
-      setToken(null);
-      setLoading(false);
-      return;
-    }
-
-    if (!localStorage.getItem("token")) localStorage.setItem("token", savedToken);
-    setApiAuthHeader(savedToken);
-    setToken(savedToken);
     if (savedUser) setUser(savedUser);
 
     fetchCurrentUser()
+      .then((currentUser) => {
+        setToken(Boolean(currentUser));
+      })
       .catch((error) => {
         const status = error?.response?.status;
-        console.error("AUTH ME ERROR", error.response?.data || error.message);
         if (status !== 401) console.error("AUTH ME NON-401 FAILURE", error);
+        clearAuthStorage();
+        setUser(null);
+        setToken(false);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -180,8 +160,7 @@ export function AuthProvider({ children }) {
     // never let the previous user's JWT or tenant ID be attached to /auth/login.
     AUTH_KEYS.forEach((key) => localStorage.removeItem(key));
     ["user", "permissions", ...TENANT_SESSION_KEYS].forEach((key) => localStorage.removeItem(key));
-    setApiAuthHeader("");
-    setToken(null);
+    setToken(false);
     setUser(null);
 
     const { data } = await api.post("/auth/login", {
@@ -189,13 +168,8 @@ export function AuthProvider({ children }) {
       password,
     });
     if (data?.mfaRequired) return data;
-    if (!data?.token) throw new Error("Authentication response did not contain a token.");
-
-    const nextToken = String(data.token).trim();
-    if (!nextToken) throw new Error("Authentication response contained an empty token.");
-    localStorage.setItem("token", nextToken);
-    setApiAuthHeader(nextToken);
-    setToken(nextToken);
+    if (!data?.user) throw new Error("Authentication response did not contain a user.");
+    setToken(true);
     const normalizedUser = persistUser(data.user);
     if (!normalizedUser) throw new Error("Authentication response did not contain a user.");
 
@@ -209,11 +183,8 @@ export function AuthProvider({ children }) {
 
   const register = async (userData) => {
     const { data } = await api.post("/auth/register", userData);
-    if (data?.token) {
-      const nextToken = String(data.token).trim();
-      localStorage.setItem("token", nextToken);
-      setApiAuthHeader(nextToken);
-      setToken(nextToken);
+    if (data?.user) {
+      setToken(true);
       persistUser(data.user);
       await preloadTenantSettings();
     }

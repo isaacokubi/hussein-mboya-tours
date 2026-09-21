@@ -44,7 +44,6 @@ export default function Register() {
       admin: { name: form.name.trim(), email: form.email.trim().toLowerCase(), phone: form.phone, password: form.password },
       ...(platformSetupMode ? { bootstrapSuperAdmin: { name: form.platformName.trim(), email: form.platformEmail.trim().toLowerCase(), phone: form.platformPhone, password: form.platformPassword } } : {}),
     });
-    localStorage.setItem("token", data.token);
     localStorage.setItem("tenantId", String(data.tenant.id));
     localStorage.setItem("tenantSlug", data.tenant.slug);
     toast.success("Company registered. Your 14-day trial is active.");

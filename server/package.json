@@ -14,7 +14,7 @@
     "check:seeds": "node --check seeds/financialDashboardSeed.js && node --check seeds/financialDashboardSeedRunner.js && node --check seeds/ensureDashboardMasterData.js && node --check seeds/dashboardOperationalSeed.js && node --check seeds/hospitalityDeveloperSeed.js && node --check seeds/customTourRequestsSeed.js",
     "check:production": "node scripts/production-readiness-check.js",
     "check:multitenancy:live": "node scripts/tenantIsolationRegressionCheck.js",
-    "check:all": "npm run check && npm run check:controllers && npm run check:models && npm run check:services && npm run check:seeds && npm run check:production",
+    "check:all": "npm run check && npm run check:controllers && npm run check:models && npm run check:services && npm run check:seeds && npm run check:security && npm run check:production",
     "reconcile:tenant-indexes": "node scripts/reconcileTenantIndexes.js",
     "create:admin": "node scripts/createAdmin.js",
     "bootstrap:first": "node scripts/bootstrapFirstSuperAdmin.js",
@@ -30,7 +30,10 @@
     "test": "node --test tests/*.js",
     "audit:mongodb": "node scripts/mongodb-application-audit.js",
     "migrate:booking-ledger": "node scripts/migrateBookingPaymentLedger.js",
-    "test:tour-domain": "node --test tests/tourDomainIntegrity.test.js"
+    "test:tour-domain": "node --test tests/tourDomainIntegrity.test.js",
+    "migrate:roles": "node seeds/migrateLegacyRoles.js",
+    "test:security": "node --test tests/authCookie.test.js tests/roleNormalization.test.js",
+    "check:security": "node --check middleware/authMiddleware.js && node --check middleware/uploadMiddleware.js && node --check utils/authCookie.js && node --check seeds/migrateLegacyRoles.js && node --check tests/authCookie.test.js && node --check tests/roleNormalization.test.js"
   },
   "dependencies": {
     "africastalking": "^0.8.0",
