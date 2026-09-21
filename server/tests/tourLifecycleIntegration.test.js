@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import Tour from "../models/Tour.js";
 import Booking from "../models/Booking.js";
 import Payment from "../models/Payment.js";
+import JournalEntry from "../models/JournalEntry.js";
 import { completeBookingPayment } from "../services/paymentLifecycleService.js";
 import { cancelTourAndBookings } from "../services/tourCancellationService.js";
 import { createBookingAtomically } from "../services/bookingCreationService.js";
@@ -89,6 +90,17 @@ test("tour lifecycle atomically reserves dated capacity with booking creation an
     assert.equal(completedPayment.booking.amountPaid, 1000);
     assert.equal(completedPayment.booking.balanceAmount, 0);
     assert.equal(completedPayment.payment.status, "completed");
+    const paymentJournal = await JournalEntry.findOne({
+      tenantId,
+      sourceType: "payment",
+      sourceId: completedPayment.payment._id,
+      status: "posted",
+    }).lean();
+    assert.ok(paymentJournal, "completed payment must create a posted accounting journal inside the lifecycle transaction");
+    assert.equal(
+      Math.round(paymentJournal.lines.reduce((sum, line) => sum + Number(line.debit || 0), 0) * 100),
+      Math.round(paymentJournal.lines.reduce((sum, line) => sum + Number(line.credit || 0), 0) * 100),
+    );
 
     const cancelled = await cancelTourAndBookings({
       tourId: tour._id,
@@ -107,6 +119,7 @@ test("tour lifecycle atomically reserves dated capacity with booking creation an
     assert.equal(released.availability[0].bookedSlots, 0);
     assert.equal(released.available, false);
 
+    await JournalEntry.deleteMany({ tenantId });
     await Payment.deleteMany({ tenantId });
     await Booking.deleteMany({ tenantId });
     await Tour.deleteMany({ tenantId });
@@ -115,4 +128,60 @@ test("tour lifecycle atomically reserves dated capacity with booking creation an
 
 test.after(async () => {
   if (mongoose.connection.readyState !== 0) await mongoose.disconnect();
+});
+
+
+test("payment completion rolls back financial state when accounting posting fails", { skip: !integrationEnabled }, async () => {
+  if (mongoose.connection.readyState === 0) await mongoose.connect(process.env.MONGODB_URI);
+  const tenantId = new mongoose.Types.ObjectId();
+
+  await runWithTenant({ tenantId, role: "manager" }, async () => {
+    const booking = await Booking.create({
+      tenantId,
+      bookingNumber: "BK-ACCOUNTING-ROLLBACK",
+      customer: new mongoose.Types.ObjectId(),
+      tour: new mongoose.Types.ObjectId(),
+      travelDate: new Date("2099-07-01T00:00:00.000Z"),
+      numberOfGuests: 1,
+      totalAmount: 1000,
+      amountPaid: 0,
+      balanceAmount: 1000,
+      paymentStatus: "pending",
+      status: "pending",
+    });
+
+    const payment = await Payment.create({
+      tenantId,
+      customer: booking.customer,
+      user: new mongoose.Types.ObjectId(),
+      booking: booking._id,
+      provider: "MPESA",
+      paymentMethod: "MPESA",
+      amount: 1000,
+      currency: "KES",
+      status: "pending",
+    });
+
+    const original = await JournalEntry.countDocuments({ tenantId });
+
+    await assert.rejects(
+      () => completeBookingPayment({
+        payment,
+        booking,
+        paymentData: { amount: 1000, paymentMethod: "UNSUPPORTED_METHOD" },
+      }),
+      /payment method|Accounting account|Operational accounting/i,
+    );
+
+    const freshPayment = await Payment.findById(payment._id).lean();
+    const freshBooking = await Booking.findById(booking._id).lean();
+    assert.equal(freshPayment.status, "pending");
+    assert.equal(freshBooking.amountPaid, 0);
+    assert.equal(freshBooking.paymentStatus, "pending");
+    assert.equal(await JournalEntry.countDocuments({ tenantId }), original);
+
+    await JournalEntry.deleteMany({ tenantId });
+    await Payment.deleteMany({ tenantId });
+    await Booking.deleteMany({ tenantId });
+  });
 });
