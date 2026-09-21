@@ -11,7 +11,7 @@ export const bookingConfirmationEmail = ({
   amount,
   travelDate,
   paymentMethod,
-  companyName = "Company",
+  companyName = "Global Tours",
 }) => {
   return `
 <!DOCTYPE html>
@@ -118,7 +118,7 @@ We look forward to creating unforgettable memories with you.
 
 <strong>${companyName}</strong><br>
 
-Email: info@husseinmboyatours.com<br>
+${process.env.SUPPORT_EMAIL ? `Email: ${process.env.SUPPORT_EMAIL}<br>` : ""}
 
 Phone: +254 XXX XXX XXX<br>
 
