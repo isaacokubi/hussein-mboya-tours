@@ -293,7 +293,7 @@ export const createBooking = async (req, res, next) => {
       // Roll back the reserved capacity when booking creation fails.
         try {
           if (tour) {
-            await releaseSlots(tour, totalTravellers);
+            await releaseSlots(tour, totalTravellers, travelDate);
           }
         } catch (releaseError) {
           console.error("BOOKING CAPACITY ROLLBACK ERROR:", releaseError);
@@ -938,6 +938,21 @@ return booking;
 
 booking.paymentStatus =
 paymentStatus;
+
+if (paymentStatus === "paid") {
+  const paymentAmount = Number(paymentData?.amount || 0);
+  booking.amountPaid = Math.min(
+    Number(booking.totalAmount || 0),
+    Number(booking.amountPaid || 0) + (paymentAmount > 0 ? paymentAmount : Number(booking.totalAmount || 0))
+  );
+  booking.balanceAmount = Math.max(0, Number(booking.totalAmount || 0) - booking.amountPaid);
+} else if (paymentStatus === "partial" && Number(paymentData?.amount || 0) > 0) {
+  booking.amountPaid = Math.min(
+    Number(booking.totalAmount || 0),
+    Number(booking.amountPaid || 0) + Number(paymentData.amount)
+  );
+  booking.balanceAmount = Math.max(0, Number(booking.totalAmount || 0) - booking.amountPaid);
+}
 
 
 
