@@ -8,6 +8,18 @@ const normalizeDate = (value) => {
   return d;
 };
 
+const syncDerivedAvailability = async (tour) => {
+  const entries = Array.isArray(tour.availability) ? tour.availability : [];
+  const total = entries.length ? entries.reduce((sum, item) => sum + Number(item.totalSlots || 0), 0) : Number(tour.availabilitySettings?.totalSlots ?? tour.capacity ?? 0);
+  const booked = entries.length ? entries.reduce((sum, item) => sum + Number(item.bookedSlots || 0), 0) : Number(tour.availabilitySettings?.bookedSlots || 0);
+  const hasSpace = entries.length ? entries.some((item) => Number(item.bookedSlots || 0) < Number(item.totalSlots || 0)) : booked < total;
+  tour.available = hasSpace;
+  if (!hasSpace && total > 0 && !["completed","cancelled"].includes(tour.status)) tour.status = "fully-booked";
+  else if (hasSpace && tour.status === "fully-booked") tour.status = "upcoming";
+  await tour.save();
+  return tour;
+};
+
 const sameDay = (a, b) => {
   const da = normalizeDate(a); const db = normalizeDate(b);
   return Boolean(da && db && da.getTime() === db.getTime());
@@ -61,7 +73,7 @@ export const reserveSlots = async (tourId, travelers, travelDate) => {
       { new: true }
     );
     if (!tour) throw new Error("Not enough available tour slots for the selected travel date.");
-    return tour;
+    return syncDerivedAvailability(tour);
   }
 
   const tour = await Tour.findOneAndUpdate(
@@ -73,7 +85,7 @@ export const reserveSlots = async (tourId, travelers, travelDate) => {
     { new: true }
   );
   if (!tour) throw new Error("Not enough available tour slots.");
-  return tour;
+  return syncDerivedAvailability(tour);
 };
 
 export const releaseSlots = async (tourId, travelers, travelDate) => {
@@ -93,12 +105,12 @@ export const releaseSlots = async (tourId, travelers, travelDate) => {
     );
     if (!tour) throw new Error("Tour travel date not found.");
     const item = tour.availability.find((entry) => sameDay(entry.date, target));
-    if (item && item.bookedSlots < 0) { item.bookedSlots = 0; await tour.save(); }
-    return tour;
+    if (item && item.bookedSlots < 0) item.bookedSlots = 0;
+    return syncDerivedAvailability(tour);
   }
 
   const tour = await Tour.findOneAndUpdate(mergeTenantFilter({ _id: tourId }), { $inc: { "availabilitySettings.bookedSlots": -travelers } }, { new: true });
   if (!tour) throw new Error("Tour not found.");
-  if (tour.availabilitySettings.bookedSlots < 0) { tour.availabilitySettings.bookedSlots = 0; await tour.save(); }
-  return tour;
+  if (tour.availabilitySettings.bookedSlots < 0) tour.availabilitySettings.bookedSlots = 0;
+  return syncDerivedAvailability(tour);
 };
