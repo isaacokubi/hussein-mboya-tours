@@ -42,11 +42,11 @@ test("CI validates server, live tenant isolation, and client production build", 
 });
 
 test("hospitality booking mutations cannot directly set payment status", () => {
-  const hotel = read("../controllers/hotelController.js");
-  const transfer = read("../controllers/airportTransferController.js");
+  const hotel = read("controllers/hotelController.js");
+  const transfer = read("controllers/airportTransferController.js");
   assert.doesNotMatch(hotel, /booking\.paymentStatus\s*=/);
   assert.doesNotMatch(transfer, /booking\.paymentStatus\s*=/);
-  assert.match(read("../middleware/paymentMutationGuard.js"), /verified payment lifecycle/);
+  assert.match(read("middleware/paymentMutationGuard.js"), /verified payment lifecycle/);
 });
 
 test("hospitality customer mutations are restricted to safe request fields", () => {
