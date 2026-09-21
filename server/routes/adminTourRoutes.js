@@ -16,6 +16,8 @@ import { protect } from "../middleware/authMiddleware.js";
 import adminMiddleware from "../middleware/adminMiddleware.js";
 import upload from "../middleware/uploadMiddleware.js";
 import validateFutureTourDate from "../middleware/validateFutureTourDate.js";
+import validateTourCommand from "../middleware/validateTourCommand.js";
+import { assignTourResourcesSafe } from "../controllers/tourResourceAssignmentController.js";
 
 const router = express.Router();
 router.use(resolveTenant);
@@ -26,11 +28,11 @@ router.use(authorize("tour.manage"));
 router.get("/", getAllTours);
 router.get("/:id", getTour);
 router.post("/", validateFutureTourDate, upload.array("images", 10), createTour);
-router.put("/:id", upload.array("images", 10), updateTour);
+router.put("/:id", validateTourCommand(), upload.array("images", 10), updateTour);
 router.delete("/:id", deleteTour);
 router.patch("/:id/restore", restoreTour);
-router.patch("/:id/guide", assignGuide);
-router.patch("/:id/driver", assignDriver);
-router.patch("/:id/vehicle", assignVehicle);
+router.patch("/:id/guide", assignTourResourcesSafe);
+router.patch("/:id/driver", assignTourResourcesSafe);
+router.patch("/:id/vehicle", assignTourResourcesSafe);
 
 export default router;
