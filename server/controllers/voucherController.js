@@ -6,7 +6,6 @@ import mongoose from "mongoose";
 import PDFDocument from "pdfkit";
 
 import Booking from "../models/Booking.js";
-import User from "../models/User.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -35,6 +34,10 @@ export const generateVoucher = async (req, res, next) => {
 
     const currency =
       settings.currency || "KES";
+    const bookingNumber = booking?.bookingNumber || String(req.params.id);
+    const travelDate = booking?.travelDate ? new Date(booking.travelDate).toLocaleDateString("en-KE") : "Not specified";
+    const guests = Number(booking?.numberOfGuests || booking?.travelers?.length || 1);
+    const amount = Number(booking?.amountPaid || 0);
 
 
     /*
@@ -77,7 +80,10 @@ _id:req.params.id
         populate: {
           path: "destination",
         },
-      });
+      })
+      .populate({ path: "assignedGuide", select: "name phone" })
+      .populate({ path: "assignedDriver", select: "name phone" })
+      .populate({ path: "assignedVehicle", select: "name registrationNumber type" });
 
     if (!booking) {
       return res.status(404).json({
@@ -196,7 +202,7 @@ _id:req.params.id
     );
 
     doc.text(
-      "Email: info@husseinmboyatours.com",
+      settings.supportEmail ? `Email: ${settings.supportEmail}` : "",
       {
         align: "center",
       }
@@ -261,11 +267,11 @@ _id:req.params.id
 
     doc.fontSize(11);
 
-    doc.text(`Booking Number : ${bookingNumber}`);
+    doc.text(`Booking Number : ${booking.bookingNumber || booking._id}`);
     doc.text(`Booking ID     : ${booking._id}`);
     doc.text(`Status         : ${booking.status || booking.status || "Pending"}`);
     doc.text(`Payment Status : ${booking.paymentStatus || "Pending"}`);
-    doc.text(`Travel Date    : ${travelDate}`);
+    doc.text(`Travel Date    : ${booking.travelDate ? new Date(booking.travelDate).toLocaleDateString("en-KE") : "Not specified"}`);
 
     doc.moveDown();
 
@@ -331,7 +337,7 @@ _id:req.params.id
       }`
     );
 
-    doc.text(`Guests : ${guests}`);
+    doc.text(`Guests : ${Number(booking.numberOfGuests || booking.travelers?.length || 1)}`);
 
     if (booking.roomType) {
       doc.text(`Room Type : ${booking.roomType}`);
@@ -473,7 +479,7 @@ _id:req.params.id
 
     doc.fontSize(11);
 
-    doc.text(`Amount Paid : KES ${amount.toLocaleString()}`);
+    doc.text(`Amount Paid : ${currency} ${Number(booking.amountPaid || 0).toLocaleString("en-KE")}`);
 
     doc.text(
       `Payment Status : ${
@@ -558,8 +564,8 @@ _id:req.params.id
     doc.text(companyName);
     doc.text("Nairobi, Kenya");
     doc.text("Phone: +254 XXX XXX XXX");
-    doc.text("Email: info@husseinmboyatours.com");
-    doc.text("Website: www.husseinmboyatours.com");
+    if (settings.supportEmail) doc.text(`Email: ${settings.supportEmail}`);
+    if (settings.websiteUrl) doc.text(`Website: ${settings.websiteUrl}`);
 
     doc.moveDown(3);
 
@@ -631,7 +637,7 @@ _id:req.params.id
     );
 
     doc.text(
-      `Booking Reference: ${bookingNumber}`,
+      `Booking Reference: ${booking.bookingNumber || booking._id}`,
       {
         align: "center",
       }
