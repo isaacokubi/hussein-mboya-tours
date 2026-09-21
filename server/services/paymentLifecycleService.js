@@ -17,6 +17,7 @@ import mongoose from "mongoose";
 import Booking from "../models/Booking.js";
 import Payment from "../models/Payment.js";
 import Commission from "../models/Commission.js";
+import { postPaymentToLedger, postPaymentRefundToLedger } from "./operationalAccountingService.js";
 
 import {
   BOOKING_PAYMENT_STATUSES,
@@ -772,6 +773,11 @@ export const completeBookingPayment = async ({
         session,
       });
 
+      // Financial posting participates in the same MongoDB transaction as
+      // payment completion. The post-save hook remains as an idempotent
+      // compatibility fallback for legacy write paths.
+      await postPaymentToLedger(paymentDoc, { session });
+
 
       /*
       |--------------------------------------------------------------------------
@@ -1335,6 +1341,13 @@ export const refundBookingPayment = async ({
         await paymentDoc.save({
           session,
         });
+
+        await postPaymentRefundToLedger(
+          paymentDoc,
+          requestedRefund,
+          refundReference,
+          { session },
+        );
 
         /*
         |--------------------------------------------------------------------------

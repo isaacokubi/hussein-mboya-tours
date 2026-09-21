@@ -37,9 +37,11 @@ const ensureAccounts = async (tenantId) => {
   accountCache.set("__ready__:" + tenantKey, true);
 };
 
-const postOnce = async ({ tenantId, sourceType, sourceId, date, description, reference, lines }) => {
+const postOnce = async ({ tenantId, sourceType, sourceId, date, description, reference, lines, session = null }) => {
   if (!tenantId || !sourceId || !lines?.length) return null;
-  const existing = await JournalEntry.findOne({ tenantId, sourceType, sourceId }).lean();
+  const existingQuery = JournalEntry.findOne({ tenantId, sourceType, sourceId });
+  if (session) existingQuery.session(session);
+  const existing = await existingQuery.lean();
   if (existing) return existing;
   await ensureAccounts(tenantId);
   const resolved = [];
@@ -52,9 +54,15 @@ const postOnce = async ({ tenantId, sourceType, sourceId, date, description, ref
   const totalCredit = round(resolved.reduce((s, l) => s + l.credit, 0));
   if (totalDebit <= 0 || Math.abs(totalDebit - totalCredit) > 0.01) throw new Error("Operational accounting entry must be balanced and non-zero.");
   try {
-    return await JournalEntry.create({ tenantId, entryDate: date || new Date(), description, reference: reference || "", sourceType, sourceId, status: "posted", lines: resolved, postedAt: new Date() });
+    const entry = { tenantId, entryDate: date || new Date(), description, reference: reference || "", sourceType, sourceId, status: "posted", lines: resolved, postedAt: new Date() };
+    if (session) return (await JournalEntry.create([entry], { session }))[0];
+    return await JournalEntry.create(entry);
   } catch (error) {
-    if (error?.code === 11000) return JournalEntry.findOne({ tenantId, sourceType, sourceId }).lean();
+    if (error?.code === 11000) {
+      const retryQuery = JournalEntry.findOne({ tenantId, sourceType, sourceId });
+      if (session) retryQuery.session(session);
+      return retryQuery.lean();
+    }
     throw error;
   }
 };
@@ -101,7 +109,7 @@ export const postInvoiceToLedger = async (invoice) => {
   return postOnce({ tenantId: invoice.tenantId, sourceType: "invoice", sourceId: invoice._id, date: invoice.issueDate, description: `Invoice ${invoice.invoiceNumber}`, reference: invoice.invoiceNumber, lines });
 };
 
-export const postPaymentToLedger = async (payment) => {
+export const postPaymentToLedger = async (payment, { session = null } = {}) => {
   // A refunded payment still represents an original completed settlement. The
   // refund is a separate journal that reverses the cash movement/revenue.
   if (!payment || !["completed", "refunded"].includes(String(payment.status || "").toLowerCase())) return null;
@@ -113,10 +121,10 @@ export const postPaymentToLedger = async (payment) => {
   if (fee > gross) throw new Error("Payment fee cannot exceed the payment amount.");
   const lines = [{ code: cashCode, debit: round(gross - fee), credit: 0, description: "Net payment settlement" }, { code: "1100", debit: 0, credit: gross, description: "Accounts receivable" }];
   if (fee > 0) lines.push({ code: "5260", debit: fee, credit: 0, description: "Payment provider fee" });
-  return postOnce({ tenantId: payment.tenantId, sourceType: "payment", sourceId: payment._id, date: payment.paidAt || payment.updatedAt, description: `${payment.hospitalityType ? `${payment.hospitalityType} ` : ""}Payment ${safeReference(payment.transactionReference, payment.transactionId, payment.mpesaReceiptNumber, payment._id)}`, reference: safeReference(payment.transactionReference, payment.transactionId, payment.mpesaReceiptNumber), lines });
+  return postOnce({ session, tenantId: payment.tenantId, sourceType: "payment", sourceId: payment._id, date: payment.paidAt || payment.updatedAt, description: `${payment.hospitalityType ? `${payment.hospitalityType} ` : ""}Payment ${safeReference(payment.transactionReference, payment.transactionId, payment.mpesaReceiptNumber, payment._id)}`, reference: safeReference(payment.transactionReference, payment.transactionId, payment.mpesaReceiptNumber), lines });
 };
 
-export const postPaymentRefundToLedger = async (payment, refundAmount = null, refundReference = "") => {
+export const postPaymentRefundToLedger = async (payment, refundAmount = null, refundReference = "", { session = null } = {}) => {
   if (!payment || !payment.tenantId) return null;
   const amount = round(refundAmount ?? payment.refundedAmount ?? 0);
   if (amount <= 0) return null;
@@ -207,7 +215,7 @@ export const postPaymentRefundToLedger = async (payment, refundAmount = null, re
   const revenueCode = invoice?.hospitalityType === "hotel" ? "4010" : invoice?.hospitalityType === "airport_transfer" ? "4020" : "4000";
   const lines = [{ code: revenueCode, debit: revenueReversal, credit: 0, description: "Revenue reversal for customer refund" }, { code: cashCode, debit: 0, credit: amount, description: "Refund paid to customer" }];
   if (taxReversal > 0) lines.splice(1, 0, { code: "2110", debit: taxReversal, credit: 0, description: "Output VAT reversal on customer refund" });
-  return postOnce({ tenantId: payment.tenantId, sourceType: "payment_refund", sourceId, date: payment.refundedAt || new Date(), description: "Payment refund " + (payment.transactionReference || payment._id), reference, lines });
+  return postOnce({ session, tenantId: payment.tenantId, sourceType: "payment_refund", sourceId, date: payment.refundedAt || new Date(), description: "Payment refund " + (payment.transactionReference || payment._id), reference, lines });
 };
 export const postExpenseToLedger = async (expense) => {
   if (!expense || expense.status === "draft" || expense.status === "cancelled") return null;

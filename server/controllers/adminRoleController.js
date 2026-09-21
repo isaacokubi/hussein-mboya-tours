@@ -3,12 +3,13 @@ import { tenantFilter } from "../tenancy/tenantQuery.js";
 import mongoose from "mongoose";
 import Role from "../models/Role.js";
 import Permission from "../models/Permission.js";
+import User from "../models/User.js";
 import { normalizeRole } from "../utils/roleUtils.js";
 
 const DEFAULT_PERMISSIONS = {
   customer: ["profile.view", "booking.create", "booking.view", "wishlist.manage"],
   agent: ["admin.dashboard", "booking.create", "booking.view", "customer.view", "commission.view", "view_agent_dashboard", "view_agent_tours", "create_agent_tour", "edit_agent_tour", "delete_agent_tour"],
-  manager: ["tour.view", "tour.create", "tour.update", "booking.view", "booking.cancel", "tour.assign", "tour.availability", "calendar.manage", "customer.view", "guide.view", "vehicle.view", "report.view"],
+  tour_manager: ["tour.view", "tour.create", "tour.update", "booking.view", "booking.cancel", "tour.assign", "tour.availability", "calendar.manage", "customer.view", "guide.view", "vehicle.view", "report.view"],
   tour_guide: ["tour.view", "view_assigned_tours", "view_tour_guests", "update_tour_status", "submit_tour_report"],
   driver: ["tour.view", "view_assigned_tours"],
   admin: ["admin.dashboard", "user.manage", "staff.manage", "tour.manage", "booking.manage", "payment.manage", "refund.manage", "analytics.view", "finance.view", "notifications.view", "report.view"],
@@ -18,7 +19,7 @@ const DEFAULT_PERMISSIONS = {
 const ROLE_METADATA = {
   super_admin: { displayName: "Super Admin", level: 100, isSystem: true, isDefault: false },
   admin: { displayName: "Admin", level: 90, isSystem: true, isDefault: false },
-  manager: { displayName: "Tour Manager", level: 70, isSystem: true, isDefault: false },
+  tour_manager: { displayName: "Tour Manager", level: 70, isSystem: true, isDefault: false },
   tour_guide: { displayName: "Tour Guide", level: 50, isSystem: true, isDefault: false },
   driver: { displayName: "Driver", level: 40, isSystem: true, isDefault: false },
   agent: { displayName: "Travel Agent", level: 40, isSystem: true, isDefault: false },
@@ -27,6 +28,68 @@ const ROLE_METADATA = {
 
 let defaultsBootstrapPromise = null;
 let roleIndexesPromise = null;
+
+const ROLE_ALIAS_GROUPS = {
+  super_admin: ["superadmin"],
+  admin: ["administrator"],
+  tour_manager: ["manager", "tourmanager"],
+  tour_guide: ["guide", "tourguide"],
+  agent: ["travel_agent", "travelagent"],
+};
+
+const consolidateRoleAliases = async () => {
+  for (const [canonical, aliases] of Object.entries(ROLE_ALIAS_GROUPS)) {
+    const names = [canonical, ...aliases];
+    const roles = await Role.find({ name: { $in: names } })
+      .sort({ name: 1 })
+      .lean();
+
+    if (!roles.length) continue;
+
+    const canonicalRole = roles.find((role) => role.name === canonical);
+    let target = canonicalRole;
+
+    if (!target) {
+      const source = roles[0];
+      target = await Role.create({
+        name: canonical,
+        displayName: ROLE_METADATA[canonical]?.displayName || source.displayName || canonical,
+        description: source.description || `${canonical.replace(/_/g, " ")} access`,
+        permissions: source.permissions || [],
+        status: source.status || "active",
+        level: source.level || ROLE_METADATA[canonical]?.level || 1,
+        isDefault: Boolean(source.isDefault),
+        isSystem: ROLE_METADATA[canonical]?.isSystem ?? Boolean(source.isSystem),
+        createdBy: source.createdBy || null,
+      });
+      target = target.toObject();
+    }
+
+    const targetPermissions = new Set((target.permissions || []).map((id) => String(id)));
+    const aliasIds = [];
+
+    for (const role of roles) {
+      if (String(role._id) === String(target._id)) continue;
+      aliasIds.push(role._id);
+      for (const permissionId of role.permissions || []) targetPermissions.add(String(permissionId));
+    }
+
+    if (aliasIds.length) {
+      await User.updateMany(
+        { roleId: { $in: aliasIds } },
+        { $set: { roleId: target._id } },
+      );
+      await Role.deleteMany({ _id: { $in: aliasIds } });
+    }
+
+    if (targetPermissions.size !== (target.permissions || []).length) {
+      await Role.updateOne(
+        { _id: target._id },
+        { $set: { permissions: [...targetPermissions] } },
+      );
+    }
+  }
+};
 
 const validObjectId = (value) => mongoose.Types.ObjectId.isValid(value);
 
@@ -76,6 +139,7 @@ export const ensureDefaultPermissions = async () => {
 
   defaultsBootstrapPromise = (async () => {
     await ensureRoleIndexes();
+    await consolidateRoleAliases();
 
     const allNames = [...new Set(Object.values(DEFAULT_PERMISSIONS).flat())];
     await Permission.bulkWrite(allNames.map((name) => ({
@@ -184,7 +248,9 @@ export const createRole = async (req, res, next) => {
     const { name, displayName, description = "", permissions = [], level = 1, status = "active", isDefault = false } = req.body;
     if (!name || !displayName) return res.status(400).json({ success: false, message: "Role name and display name are required." });
 
-    const normalizedName = String(name).trim().toLowerCase().replace(/\s+/g, "_");
+    const normalizedName = normalizeRole(String(name).trim());
+    if (!normalizedName) return res.status(400).json({ success: false, message: "A valid role name is required." });
+    if (normalizedName !== String(name).trim().toLowerCase().replace(/\s+/g, "_")) return res.status(400).json({ success: false, message: "Use the canonical role name for this role." });
     const permissionIds = sanitizePermissionIds(permissions);
     if (permissionIds.length) {
       const validPermissions = await Permission.countDocuments({ _id: { $in: permissionIds }, isActive: { $ne: false } });
