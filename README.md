@@ -93,8 +93,8 @@ This section is maintained automatically by `scripts/update-documentation.js` an
 
 - **Repository:** Global Tours — multi-tenant tours & travel SaaS
 - **Branch:** `main`
-- **Current commit:** `ae2763d3187682340b0d5f0f0e999d248dd118ce`
-- **Short commit:** `ae2763d3`
+- **Current commit:** `6ae04803645d15ef5bada1c30cafe7f0195521a3`
+- **Short commit:** `6ae04803`
 - **Documentation snapshot date (UTC):** 2026-09-21
 - **Server package:** `hussein-mboya-tours-server@1.0.0`
 - **Client package:** `client@0.0.0`
