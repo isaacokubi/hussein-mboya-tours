@@ -3,8 +3,6 @@ import Payment from "../models/Payment.js";
 import Booking from "../models/Booking.js";
 import Commission from "../models/Commission.js";
 import User from "../models/User.js";
-import JournalEntry from "../models/JournalEntry.js";
-import ChartOfAccount from "../models/ChartOfAccount.js";
 import { getPostedRevenueReport } from "../services/financeReportingService.js";
 
 const PAYMENT_STATUSES = ["pending", "completed", "failed", "cancelled", "refunded"];
