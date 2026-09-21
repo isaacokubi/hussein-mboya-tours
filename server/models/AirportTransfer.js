@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 const { Schema } = mongoose;
 
 const AirportTransferSchema = new Schema({
@@ -26,5 +27,7 @@ const AirportTransferSchema = new Schema({
 
 AirportTransferSchema.index({ tenantId: 1, status: 1, airportCode: 1 });
 AirportTransferSchema.index({ tenantId: 1, name: 1 });
+
+AirportTransferSchema.plugin(tenantPlugin);
 
 export default mongoose.models.AirportTransfer || mongoose.model("AirportTransfer", AirportTransferSchema);
