@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import AirportTransfer from "../models/AirportTransfer.js";
 import AirportTransferBooking from "../models/AirportTransferBooking.js";
 import Customer from "../models/Customer.js";
