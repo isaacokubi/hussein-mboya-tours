@@ -10,9 +10,9 @@ Every organization has a unique slug. With `PLATFORM_HOST=globaltours.com`, the 
 
 Examples:
 
-- `https://hussein-mboya-tours.globaltours.com`
-- `https://africa-safaris.globaltours.com`
-- `https://kenya-travel.globaltours.com`
+- `https://amani-trails-safaris.globaltours.com`
+- `https://savanna-crown-safaris.globaltours.com`
+- `https://coastal-horizon-adventures.globaltours.com`
 
 The platform owner remains at `https://globaltours.com/superadmin`.
 
@@ -59,4 +59,4 @@ cd server
 npm run migrate:multitenancy
 ```
 
-The script creates the default `hussein-mboya-tours` organization when necessary, assigns existing business records to it, synchronizes indexes, and prints `DEFAULT_TENANT_ID`.
+The script creates the default `amani-trails-safaris` organization when necessary, assigns existing business records to it, synchronizes indexes, and prints `DEFAULT_TENANT_ID`.
