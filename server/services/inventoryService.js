@@ -92,7 +92,7 @@ export const releaseSlots = async (tourId, travelers, travelDate, session = null
   requireTenantId();
   if (!Number.isInteger(travelers) || travelers <= 0) throw new Error("Invalid traveler count.");
   const target = normalizeDate(travelDate);
-  const current = await Tour.findOne(mergeTenantFilter({ _id: tourId })).lean();
+  const current = await Tour.findOne(mergeTenantFilter({ _id: tourId })).session(session).lean();
   if (!current) throw new Error("Tour not found.");
 
   if (Array.isArray(current.availability) && current.availability.length) {
@@ -109,7 +109,7 @@ export const releaseSlots = async (tourId, travelers, travelDate, session = null
     return syncDerivedAvailability(tour);
   }
 
-  const tour = await Tour.findOneAndUpdate(mergeTenantFilter({ _id: tourId }), { $inc: { "availabilitySettings.bookedSlots": -travelers } }, { new: true });
+  const tour = await Tour.findOneAndUpdate(mergeTenantFilter({ _id: tourId }), { $inc: { "availabilitySettings.bookedSlots": -travelers } }, { new: true, session });
   if (!tour) throw new Error("Tour not found.");
   if (tour.availabilitySettings.bookedSlots < 0) tour.availabilitySettings.bookedSlots = 0;
   return syncDerivedAvailability(tour);
