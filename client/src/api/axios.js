@@ -86,16 +86,6 @@ function getAuthenticatedTenantId() {
 const isPublicAuthRequest = (url = "") =>
   /(?:^|\/)auth\/(?:login|register|bootstrap|password-reset(?:\/|$))/i.test(String(url));
 
-const readStoredToken = () => {
-  if (typeof window === "undefined") return "";
-  return String(
-    localStorage.getItem("token") ||
-      localStorage.getItem("accessToken") ||
-      localStorage.getItem("authToken") ||
-      ""
-  ).trim();
-};
-
 const api = axios.create({
   baseURL,
   withCredentials: true,
@@ -109,17 +99,15 @@ api.interceptors.request.use(
     config.headers = config.headers || {};
 
     const publicAuthRequest = isPublicAuthRequest(config.url);
-    const token = publicAuthRequest ? "" : readStoredToken();
-    config.__authToken = token || "";
-
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-      config.headers["X-Requested-With"] = "XMLHttpRequest";
-    } else {
-      delete config.headers.Authorization;
-    }
+    config.__cookieAuth = !publicAuthRequest;
+    delete config.headers.Authorization;
 
     const tenantId = publicAuthRequest ? "" : getAuthenticatedTenantId();
+    const csrfToken = String(document.cookie.split(";").map((item) => item.trim()).find((item) => item.startsWith("csrfToken="))?.split("=")[1] || "").trim();
+    if (!publicAuthRequest && ["post", "put", "patch", "delete"].includes(String(config.method || "").toLowerCase()) && csrfToken) {
+      config.headers["X-CSRF-Token"] = decodeURIComponent(csrfToken);
+      config.headers["X-Requested-With"] = "XMLHttpRequest";
+    }
     const publicTenantSlug = getPublicTenantSlug();
     const publicTenantKey = getPublicTenantKey();
 
@@ -171,27 +159,13 @@ api.interceptors.response.use(
     }
 
     if (status === 401 && typeof window !== "undefined") {
-      const isLoginRequest = /\/auth\/login(?:[/?]|$)/i.test(url);
-      const requestToken = String(error?.config?.__authToken || "").trim();
-      const currentToken = readStoredToken();
-      const sameCurrentSession = Boolean(requestToken && currentToken && requestToken === currentToken);
-      const staleRequest = Boolean(requestToken && currentToken && requestToken !== currentToken);
-
-      console.error("[AUTH 401]", {
-        url,
-        status,
-        response: data,
-        requestTokenPresent: Boolean(requestToken),
-        currentTokenPresent: Boolean(currentToken),
-        staleRequest,
-      });
-
-      if (!isLoginRequest && sameCurrentSession && !staleRequest) {
+      const isLoginRequest = /\/auth\/(?:login|register|bootstrap)(?:[/?]|$)/i.test(url);
+      const hasKnownUser = Boolean(localStorage.getItem("user"));
+      if (!isLoginRequest && hasKnownUser) {
         window.dispatchEvent(new CustomEvent("auth:session-invalid", {
           detail: {
             url,
             status,
-            requestToken,
             message: data?.message || "Authentication session is no longer valid.",
           },
         }));
