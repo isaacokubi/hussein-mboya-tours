@@ -10,7 +10,6 @@ import {
   getBookingTimeline,
   downloadInvoice,
   updateBookingStatus,
-  updateBookingPayment,
   assignBookingResources,
   sendBookingNotification,
 } from "../../api/adminBookingApi";
@@ -29,14 +28,6 @@ const BOOKING_STATUS_TRANSITIONS = {
   refunded: [],
 };
 
-const PAYMENT_STATUS_TRANSITIONS = {
-  pending: ["partial", "paid", "failed", "cancelled"],
-  partial: ["paid", "failed", "cancelled", "refunded"],
-  paid: ["refunded"],
-  failed: ["pending", "partial", "paid"],
-  cancelled: ["pending", "partial", "paid"],
-  refunded: [],
-};
 
 const cleanText = (value) => {
   if (value === null || value === undefined) return "";
@@ -253,23 +244,6 @@ export default function BookingManagement() {
         mutationError?.response?.data?.message ||
           mutationError.message ||
           "Unable to update booking status."
-      ),
-  });
-
-  const paymentMutation = useMutation({
-    mutationFn: ({ id, status }) => updateBookingPayment(id, { status }),
-    onSuccess: () => {
-      setActionError("");
-      setActionMessage("Payment status updated successfully.");
-      invalidateBookings();
-      invalidateFinancialDashboards();
-      invalidateSelectedBooking();
-    },
-    onError: (mutationError) =>
-      setActionError(
-        mutationError?.response?.data?.message ||
-          mutationError.message ||
-          "Unable to update payment status."
       ),
   });
 
@@ -799,37 +773,6 @@ export default function BookingManagement() {
                         {[
                           detail?.status,
                           ...(BOOKING_STATUS_TRANSITIONS[detail?.status] || []),
-                        ]
-                          .filter(Boolean)
-                          .filter((status, index, list) => list.indexOf(status) === index)
-                          .map((status) => (
-                          <option key={status} value={status}>
-                            {status.charAt(0).toUpperCase() + status.slice(1)}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-500">
-                        Payment
-                      </label>
-                      <select
-                        value={paymentStatusOf(detail)}
-                        onChange={(event) => {
-                          setActionError("");
-                          setActionMessage("");
-                          paymentMutation.mutate({
-                            id: detail._id,
-                            status: event.target.value,
-                          });
-                        }}
-                        disabled={paymentMutation.isPending}
-                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-bold outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                      >
-                        {[
-                          paymentStatusOf(detail),
-                          ...(PAYMENT_STATUS_TRANSITIONS[paymentStatusOf(detail)] || []),
                         ]
                           .filter(Boolean)
                           .filter((status, index, list) => list.indexOf(status) === index)
