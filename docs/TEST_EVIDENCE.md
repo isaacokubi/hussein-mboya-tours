@@ -1,5 +1,34 @@
 # Global Tours — Test Evidence Register
 
+## 2026-09-21 — Production audit remediation
+
+### Code remediation — MERGED
+
+- Audit-remediation PR **#144** was merged into the main branch.
+- Current main commit: 6f530243993b847e887595b9247b6435aaa12541.
+- Browser authentication now uses an HttpOnly session cookie plus a separate CSRF token for state-changing cookie-authenticated requests.
+- JWT issuer/audience verification is strict; the previous compatibility fallback is removed.
+- MFA and public tenant onboarding now establish the same secure session cookie.
+- Legacy browser JWT persistence and the dedicated M-Pesa browser bearer-token client were removed.
+- Upload type/filename validation and tenant media scoping were hardened.
+- Accounting account-cache entries now expire instead of remaining indefinitely.
+- Legacy role migration is now tenant-aware and dry-run-first, with canonical RBAC normalization.
+- New security/RBAC regression tests are included in the server test suite.
+
+### Verification boundary — NOT YET PASS
+
+The remediation merge itself is not test evidence. Current-head automated CI execution was not available through the repository connector at the time this section was recorded, so no new PASS is claimed here.
+
+The following still require live/current-head evidence before production certification:
+
+- current main server checks and automated tests;
+- current-head live tenant-isolation regression;
+- current-head client lint/build;
+- browser/mobile acceptance;
+- M-Pesa sandbox callback completion, duplicate callback, failed/expired payment and accounting reconciliation;
+- current production deployment SHA verification;
+- read-only production data-integrity reconciliation.
+
 This file is the chronological evidence register for tests that have actually passed. Do not convert a pending or code-only check into a PASS without the required evidence.
 
 ## 2026-09-15 — Current verification
