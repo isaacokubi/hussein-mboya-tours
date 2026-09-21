@@ -84,7 +84,7 @@ function getAuthenticatedTenantId() {
 }
 
 const isPublicAuthRequest = (url = "") =>
-  /(?:^|\/)auth\/(?:login|register|bootstrap|password-reset(?:\/|$))/i.test(String(url));
+  /(?:^|\/)(?:auth\/(?:login|register|bootstrap|password-reset(?:\/|$))|public\/onboarding\/register)/i.test(String(url));
 
 const api = axios.create({
   baseURL,
