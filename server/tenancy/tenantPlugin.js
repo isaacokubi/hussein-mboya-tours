@@ -155,6 +155,20 @@ export function tenantPlugin(schema, options = {}) {
     schema.index({ [TENANT_PATH]: 1, [field]: 1 }, { unique: true, sparse });
   }
 
+  // Populate tenantId during validation so required tenantId paths are set
+  // before Mongoose's required-field validators run. The save hook below remains
+  // as a second enforcement layer for mutated documents.
+  schema.pre("validate", function tenantValidate(next) {
+    try {
+      if (isPlatformOwnerDocument(this)) { this.tenantId = null; return next(); }
+      const tenantId = requireTenantId();
+      if (!tenantId) return next();
+      assertTenantValue(this.tenantId, tenantId);
+      if (!this.tenantId) this.tenantId = tenantId;
+      next();
+    } catch (error) { next(error); }
+  });
+
   schema.pre("save", function tenantSave(next) {
     try {
       if (isPlatformOwnerDocument(this)) { this.tenantId = null; return next(); }
