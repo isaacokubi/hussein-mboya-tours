@@ -12,6 +12,7 @@ import {
   resetPasswordWithCode,
   requestEmailChange,
   confirmEmailChange,
+  logout,
 } from "../controllers/authController.js";
 import { bootstrapTenant } from "../controllers/bootstrapController.js";
 
@@ -39,6 +40,7 @@ router.post("/email-change/confirm", protect, passwordResetRateLimiter, confirmE
 // Authentication must establish the canonical tenant context before the
 // customer profile synchronizer runs. This also backfills CRM profiles for
 // existing customer accounts the next time they authenticate/use /me.
+router.post("/logout", protect, logout);
 router.get("/me", protect, syncCustomerProfile, getMe);
 router.put("/change-password", protect, syncCustomerProfile, changePassword);
 
