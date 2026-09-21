@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
 const operationalAssetSchema = new mongoose.Schema({
   tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
@@ -19,5 +20,7 @@ const operationalAssetSchema = new mongoose.Schema({
 
 operationalAssetSchema.index({ tenantId: 1, type: 1, status: 1, startAt: 1 });
 operationalAssetSchema.index({ tenantId: 1, code: 1 }, { unique: true, sparse: true });
+
+operationalAssetSchema.plugin(tenantPlugin);
 
 export default mongoose.models.OperationalAsset || mongoose.model("OperationalAsset", operationalAssetSchema);
