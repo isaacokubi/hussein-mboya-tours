@@ -40,3 +40,20 @@ test("CI validates server, live tenant isolation, and client production build", 
   assert.match(workflow, /npm run lint/);
   assert.match(workflow, /npm run build/);
 });
+
+test("hospitality booking mutations cannot directly set payment status", () => {
+  const hotel = read("../controllers/hotelController.js");
+  const transfer = read("../controllers/airportTransferController.js");
+  assert.doesNotMatch(hotel, /booking\.paymentStatus\s*=/);
+  assert.doesNotMatch(transfer, /booking\.paymentStatus\s*=/);
+  assert.match(read("../middleware/paymentMutationGuard.js"), /verified payment lifecycle/);
+});
+
+test("hospitality customer mutations are restricted to safe request fields", () => {
+  const hotel = read("../controllers/hotelController.js");
+  const transfer = read("../controllers/airportTransferController.js");
+  assert.match(hotel, /Customers may only update special requests/);
+  assert.match(transfer, /Customers may only update special requests/);
+  assert.match(transfer, /Vehicle is already assigned to transfer/);
+  assert.match(transfer, /Driver is already assigned to transfer/);
+});
