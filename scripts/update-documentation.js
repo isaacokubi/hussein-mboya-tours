@@ -1,0 +1,17 @@
+import fs from 'node:fs';
+import { execSync } from 'node:child_process';
+const root=process.cwd();
+const run=(cmd)=>{try{return execSync(cmd,{cwd:root,stdio:['ignore','pipe','pipe'],encoding:'utf8'}).trim();}catch{return '';}};
+const sha=run('git rev-parse HEAD')||'unknown';
+const shortSha=run('git rev-parse --short HEAD')||sha.slice(0,7);
+const branch=run('git rev-parse --abbrev-ref HEAD')||'unknown';
+const date=new Date().toISOString().slice(0,10);
+const serverPkg=JSON.parse(fs.readFileSync('server/package.json','utf8'));
+const clientPkg=JSON.parse(fs.readFileSync('client/package.json','utf8'));
+const generated='<!-- DOCS-AUTO:START -->\n## Current repository state\n\nThis section is maintained automatically by `scripts/update-documentation.js` and the GitHub Actions documentation workflow.\n\n- **Repository:** Global Tours — multi-tenant tours & travel SaaS\n- **Branch:** `'+branch+'`\n- **Current commit:** `'+sha+'`\n- **Short commit:** `'+shortSha+'`\n- **Documentation snapshot date (UTC):** '+date+'\n- **Server package:** `'+serverPkg.name+'@'+serverPkg.version+'`\n- **Client package:** `'+clientPkg.name+'@'+clientPkg.version+'`\n- **Server verification commands:** `npm run check:all`, `npm test`, `npm run test:security`, `npm run test:tour-domain`\n- **Client verification commands:** `npm run lint`, `npm run build`\n- **Production contract:** `npm run check:production`\n- **Release rule:** production certification requires current deployment/provider evidence; local or CI source checks alone do not certify live production.\n\n### Documentation automation\n\nEvery push to `main` runs the documentation workflow. It refreshes this generated repository-state section and commits documentation-only changes when the generated content changes. Manual edits outside the generated markers are preserved.\n\n<!-- DOCS-AUTO:END -->';
+function replaceSection(content,start,end,replacement){const a=content.indexOf(start);const b=content.indexOf(end);if(a===-1||b===-1||b<a)return content;return content.slice(0,a)+replacement+content.slice(b+end.length);}
+for(const file of ['README.md','docs/PRODUCTION_READINESS.md']){const content=fs.readFileSync(file,'utf8');const updated=content.includes('<!-- DOCS-AUTO:START -->')?replaceSection(content,'<!-- DOCS-AUTO:START -->','<!-- DOCS-AUTO:END -->',generated):content.trimEnd()+'\n\n'+generated+'\n';fs.writeFileSync(file,updated);}
+const evidence=fs.readFileSync('docs/TEST_EVIDENCE.md','utf8');
+const evidenceBlock='<!-- DOCS-AUTO:START -->\n## Automatically captured repository state\n\n- Snapshot date (UTC): '+date+'\n- Branch: `'+branch+'`\n- Commit: `'+sha+'`\n- Server package: `'+serverPkg.name+'@'+serverPkg.version+'`\n- Client package: `'+clientPkg.name+'@'+clientPkg.version+'`\n- Automated documentation updater: `scripts/update-documentation.js`\n- CI automation: `.github/workflows/documentation.yml`\n\nThe generated state above is refreshed automatically after pushes to `main`. Historical test evidence below this section is retained and must only be updated when the corresponding test actually runs and produces evidence.\n\n<!-- DOCS-AUTO:END -->';
+const updatedEvidence=evidence.includes('<!-- DOCS-AUTO:START -->')?replaceSection(evidence,'<!-- DOCS-AUTO:START -->','<!-- DOCS-AUTO:END -->',evidenceBlock):evidence.trimEnd()+'\n\n'+evidenceBlock+'\n';
+fs.writeFileSync('docs/TEST_EVIDENCE.md',updatedEvidence);
