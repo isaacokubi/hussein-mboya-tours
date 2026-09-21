@@ -28,7 +28,8 @@
     "repair:global-media": "node scripts/repairGlobalMedia.js",
     "repair:financial-reconciliation": "node scripts/repairFinancialReconciliation.js",
     "test": "node --test tests/*.js",
-    "audit:mongodb": "node scripts/mongodb-application-audit.js"
+    "audit:mongodb": "node scripts/mongodb-application-audit.js",
+    "migrate:booking-ledger": "node scripts/migrateBookingPaymentLedger.js"
   },
   "dependencies": {
     "africastalking": "^0.8.0",
