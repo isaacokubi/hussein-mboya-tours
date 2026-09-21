@@ -5,6 +5,7 @@ import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
 import Destination from "../models/Destination.js";
 import Payment from "../models/Payment.js";
+import { getPostedRevenueReport } from "../services/financeReportingService.js";
 import Staff from "../models/Staff.js";
 import Vehicle from "../models/Vehicle.js";
 import Agent from "../models/Agent.js";
@@ -25,10 +26,10 @@ export const getDashboardStats = async (req, res, next) => {
     const vehicleFilter = tenantFilter(req, { isDeleted: { $ne: true } });
     const agentFilter = tenantFilter(req, { status: { $ne: "deleted" } });
 
-    const [users, bookings, tours, destinations, customers, revenue, bookingStatus, paymentStatus, pending, confirmed, completed, cancelled, recentBookings, popularTours, admins, staff, guides, drivers, agents, approvedAgents, vehicles, availableVehicles] = await Promise.all([
+    const [users, bookings, tours, destinations, customers, revenueReport, bookingStatus, paymentStatus, pending, confirmed, completed, cancelled, recentBookings, popularTours, admins, staff, guides, drivers, agents, approvedAgents, vehicles, availableVehicles] = await Promise.all([
       User.countDocuments(usersFilter), Booking.countDocuments(bookingsFilter), Tour.countDocuments(toursFilter), Destination.countDocuments(destinationsFilter),
       User.countDocuments(tenantFilter(req, { ...active, role: "customer" })),
-      Payment.aggregate([{ $match: paymentsFilter }, { $group: { _id: null, total: { $sum: completedAmount } } }]),
+      getPostedRevenueReport(),
       Booking.aggregate([{ $match: bookingsFilter }, { $group: { _id: "$status", count: { $sum: 1 } } }, { $sort: { count: -1 } }]),
       Booking.aggregate([{ $match: bookingsFilter }, { $group: { _id: "$paymentStatus", count: { $sum: 1 } } }]),
       Booking.countDocuments(tenantFilter(req, { ...active, status: "pending" })), Booking.countDocuments(tenantFilter(req, { ...active, status: "confirmed" })),
@@ -53,9 +54,9 @@ export const getDashboardStats = async (req, res, next) => {
       failed: paymentStatus.filter((x) => ["failed", "cancelled"].includes(String(x._id || "").toLowerCase())).reduce((n, x) => n + x.count, 0),
     };
     const normalizedBookings = recentBookings.map((booking) => ({ ...booking, customer: booking.customer || { name: booking.customerSnapshot?.name || "Customer" }, tour: booking.tour || { title: "Unavailable tour" }, amount: Number(booking.totalAmount ?? booking.amount ?? booking.subtotal ?? 0), paymentStatus: booking.paymentStatus || "pending" }));
-    const monthlyRevenue = await Payment.aggregate([{ $match: paymentsFilter }, { $group: { _id: { year: { $year: { $ifNull: ["$paidAt", "$createdAt"] } }, month: { $month: { $ifNull: ["$paidAt", "$createdAt"] } } }, amount: { $sum: completedAmount } } }, { $sort: { "_id.year": 1, "_id.month": 1 } }]);
+    const monthlyRevenue = revenueReport.monthly;
 
-    return res.json({ success: true, data: { users, customers, admins, staff, guides, drivers, agents, approvedAgents, vehicles, availableVehicles, tours, destinations, bookings, revenue: Number(revenue[0]?.total || 0), recentBookings: normalizedBookings, popularTours, paymentStats: payments, monthlyRevenue: monthlyRevenue.map((x) => ({ month: `${x._id.month}/${x._id.year}`, amount: x.amount || 0 })), status: bookingStatus, summary: { pendingBookings: pending, confirmedBookings: confirmed, completedBookings: completed, cancelledBookings: cancelled } } });
+    return res.json({ success: true, data: { users, customers, admins, staff, guides, drivers, agents, approvedAgents, vehicles, availableVehicles, tours, destinations, bookings, revenue: Number(revenueReport.total || 0), recentBookings: normalizedBookings, popularTours, paymentStats: payments, monthlyRevenue: monthlyRevenue.map((x) => ({ month: `${x._id.month}/${x._id.year}`, amount: Number(x.revenue || 0) })), status: bookingStatus, summary: { pendingBookings: pending, confirmedBookings: confirmed, completedBookings: completed, cancelledBookings: cancelled } } });
   } catch (error) { console.error("Admin dashboard error:", error); next(error); }
 };
 
