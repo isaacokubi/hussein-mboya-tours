@@ -7,7 +7,8 @@ import Vehicle from "../models/Vehicle.js";
 import Staff from "../models/Staff.js";
 import Notification from "../models/Notification.js";
 import { sendSMS } from "../services/smsService.js";
-import { sendWhatsApp } from "../services/whatsappService.js";\nimport { cancelTourAndBookings } from "../services/tourCancellationService.js";
+import { sendWhatsApp } from "../services/whatsappService.js";
+import { cancelTourAndBookings } from "../services/tourCancellationService.js";
 
 
 /*
