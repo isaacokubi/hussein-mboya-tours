@@ -17,7 +17,7 @@ function isPlatformDeployment() {
   return String(window.location.hostname || "").trim().toLowerCase() === "hussein-mboya-tours.vercel.app";
 }
 
-const PLATFORM_API_URL = configuredPlatformApiUrl || "https://hussein-mboya-tours.onrender.com/api";
+const PLATFORM_API_URL = configuredPlatformApiUrl || "/api";
 
 // Local development must always use the local Vite proxy. This prevents a
 // developer machine from silently displaying stale data from a deployed API
