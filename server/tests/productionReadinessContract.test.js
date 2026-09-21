@@ -91,3 +91,10 @@ test("agent booking status updates enforce lifecycle and payment boundaries", ()
   assert.match(source, /PAYMENT_REQUIRED_BEFORE_COMPLETION/);
   assert.doesNotMatch(source, /booking\.status = status;\s*\n\s*booking\.updatedBy/);
 });
+
+test("admin booking status updates enforce lifecycle and payment boundaries", () => {
+  const source = read("controllers/adminBookingController.js");
+  assert.match(source, /canTransitionBookingStatus/);
+  assert.match(source, /PAYMENT_REQUIRED_BEFORE_COMPLETION/);
+  assert.doesNotMatch(source, /findOneAndUpdate\([\s\S]*?\{ status \}/);
+});
