@@ -85,95 +85,6 @@ export const getTourManagerDashboard = async (req, res, next) => {
   } catch (error) { console.error("TOUR MANAGER DASHBOARD ERROR:", error); next(error); }
 };
 
-export const createTour = async (req, res, next) => {
-  requireTenantId();
-  const session = await mongoose.startSession();
-  try {
-    let createdTour;
-    await session.withTransaction(async () => {
-      const body = req.body || {};
-      const { guide, assignedGuide, driver, assignedDriver, vehicle, assignedVehicle, capacity, duration, price, ...rest } = body;
-      if (!rest.title?.trim() || !rest.description?.trim() || !rest.destination || !rest.country?.trim() || !rest.location?.trim() || !rest.date || price === undefined || Number(price) < 0) {
-        throw Object.assign(new Error("Title, description, destination, country, location, date and a valid price are required."), { status: 400 });
-      }
-
-      const guideId = assignedGuide || guide || null;
-      const driverId = assignedDriver || driver || null;
-      const vehicleId = assignedVehicle || vehicle || null;
-      const [guideDoc, driverDoc, vehicleDoc] = await Promise.all([
-        guideId ? Staff.findOne(mergeTenantFilter({ _id: guideId, position: "guide", isActive: true, isDeleted: { $ne: true } })).session(session) : null,
-        driverId ? Staff.findOne(mergeTenantFilter({ _id: driverId, position: "driver", isActive: true, isDeleted: { $ne: true } })).session(session) : null,
-        vehicleId ? Vehicle.findOne(mergeTenantFilter({ _id: vehicleId, isActive: true, isDeleted: { $ne: true } })).session(session) : null,
-      ]);
-      if (guideId && (!guideDoc || guideDoc.availability !== "available")) throw Object.assign(new Error("Selected guide is unavailable."), { status: 409 });
-      if (driverId && (!driverDoc || driverDoc.availability !== "available")) throw Object.assign(new Error("Selected driver is unavailable."), { status: 409 });
-      if (vehicleId && (!vehicleDoc || vehicleDoc.status !== "available")) throw Object.assign(new Error("Selected vehicle is unavailable."), { status: 409 });
-
-      const numericCapacity = Number(capacity) > 0 ? Number(capacity) : 20;
-      const durationSource = duration ?? rest.durationDays ?? rest.durationDetails?.days ?? 1;
-      const durationMatch = String(durationSource).match(/\d+(?:\.\d+)?/);
-      const numericDuration = Number(durationMatch?.[0]);
-      if (!Number.isFinite(numericDuration) || numericDuration < 1 || numericDuration > 365) {
-        throw Object.assign(new Error("Duration must be a whole number of days between 1 and 365."), { status: 400 });
-      }
-      const numericPrice = Number(price);
-      const numericDiscount = Math.max(0, Number(rest.discount) || 0);
-
-      const [tour] = await Tour.create([{
-        ...rest,
-        title: rest.title.trim(),
-        description: rest.description.trim(),
-        country: rest.country.trim(),
-        location: rest.location.trim(),
-        price: numericPrice,
-        capacity: numericCapacity,
-        duration: String(Math.floor(numericDuration)),
-        durationDays: Math.floor(numericDuration),
-        durationDetails: { days: Math.floor(numericDuration), nights: 0 },
-        discount: numericDiscount,
-        assignedGuide: guideDoc?._id || null,
-        assignedDriver: driverDoc?._id || null,
-        assignedVehicle: vehicleDoc?._id || null,
-        assignmentStatus: guideDoc || driverDoc || vehicleDoc ? "assigned" : "pending",
-        status: rest.status || "upcoming",
-        published: rest.published ?? true,
-        available: true,
-        availabilitySettings: { totalSlots: numericCapacity, bookedSlots: 0, waitlistEnabled: false },
-        createdBy: req.user._id,
-      }], { session });
-
-      if (guideDoc) {
-        guideDoc.availability = "busy";
-        guideDoc.assignedTours = [...new Set([...(guideDoc.assignedTours || []).map(String), String(tour._id)])];
-        await guideDoc.save({ session });
-      }
-      if (driverDoc) {
-        driverDoc.availability = "busy";
-        driverDoc.assignedTours = [...new Set([...(driverDoc.assignedTours || []).map(String), String(tour._id)])];
-        await driverDoc.save({ session });
-      }
-      if (vehicleDoc) {
-        vehicleDoc.status = "assigned";
-        vehicleDoc.assignedTour = tour._id;
-        await vehicleDoc.save({ session });
-      }
-      createdTour = tour;
-    });
-
-    const responseTour = await Tour.findOne(mergeTenantFilter({ _id: createdTour._id }))
-      .populate("destination")
-      .populate("assignedGuide", "name email phone position availability")
-      .populate("assignedDriver", "name email phone position availability")
-      .populate("assignedVehicle", "name registrationNumber registration model type capacity status")
-      .lean();
-    return res.status(201).json({ success: true, message: "Tour created successfully", data: responseTour, tour: responseTour });
-  } catch (error) {
-    next(error);
-  } finally {
-    await session.endSession();
-  }
-};
-
 export const getTours = async (req, res, next) => {
   requireTenantId();
   try {
@@ -192,31 +103,6 @@ export const getTours = async (req, res, next) => {
       Tour.countDocuments(filter),
     ]);
     return res.status(200).json({ success: true, count: tours.length, total, data: tours, tours, pagination: { total, page: currentPage, limit: pageLimit, pages: Math.ceil(total / pageLimit) } });
-  } catch (error) { next(error); }
-};
-
-export const updateTour = async (req, res, next) => {
-  requireTenantId();
-  try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid tour ID" });
-    if (req.body?.assignedGuide || req.body?.assignedDriver || req.body?.assignedVehicle) return res.status(400).json({ success: false, message: "Use the assignment endpoint to change tour resources." });
-    const tour = await Tour.findOneAndUpdate(mergeTenantFilter(req, { _id: req.params.id, isDeleted: { $ne: true } }), req.body, { new: true, runValidators: true });
-    if (!tour) return res.status(404).json({ success: false, message: "Tour not found" });
-    return res.status(200).json({ success: true, message: "Tour updated successfully", data: tour });
-  } catch (error) { next(error); }
-};
-
-export const deleteTour = async (req, res, next) => {
-  requireTenantId();
-  try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid tour ID" });
-    const result = await cancelTourAndBookings({
-      tourId: req.params.id,
-      reason: req.body?.reason || "Tour deleted/cancelled by tour manager",
-      deleted: true,
-      userId: req.user?._id || null,
-    });
-    return res.status(200).json({ success: true, message: "Tour deleted after cancelling/reconciling active bookings.", data: result.tour, bookingsAffected: result.bookingsAffected });
   } catch (error) { next(error); }
 };
 
