@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import "./HospitalityRatePlan.js";
 const { Schema } = mongoose;
 
@@ -50,5 +51,7 @@ HotelBookingSchema.index({ tenantId: 1, reference: 1 }, { unique: true });
 HotelBookingSchema.index({ tenantId: 1, checkIn: 1, checkOut: 1, status: 1 });
 HotelBookingSchema.index({ tenantId: 1, customer: 1, createdAt: -1 });
 HotelBookingSchema.index({ tenantId: 1, ratePlan: 1, createdAt: -1 });
+
+HotelBookingSchema.plugin(tenantPlugin);
 
 export default mongoose.models.HotelBooking || mongoose.model("HotelBooking", HotelBookingSchema);
