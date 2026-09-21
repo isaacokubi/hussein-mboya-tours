@@ -99,7 +99,8 @@ invoiceSchema.methods.markPaid = function(reference = "") { this.amountPaid = th
 invoiceSchema.methods.markEtimsAttempt = function(errorMessage = "") { this.etimsSubmissionAttempts = Number(this.etimsSubmissionAttempts || 0) + 1; this.etimsLastAttemptAt = new Date(); this.etimsLastError = String(errorMessage || "").trim(); this.etimsStatus = this.etimsLastError ? "failed" : "pending"; const delayMinutes = Math.min(60 * 24, 5 * (2 ** Math.min(this.etimsSubmissionAttempts - 1, 8))); this.etimsNextRetryAt = this.etimsLastError ? new Date(Date.now() + delayMinutes * 60 * 1000) : null; return this.save(); };
 
 invoiceSchema.post("save", async function(doc) {
-  try { await postInvoiceToLedger(doc); } catch (error) { console.error("INVOICE GL POSTING ERROR:", error.message); }
+  const session = typeof doc.$session === "function" ? doc.$session() : null;
+  try { await postInvoiceToLedger(doc, { session }); } catch (error) { console.error("INVOICE GL POSTING ERROR:", error.message); }
   try {
     if (doc.tenantId && (doc.booking || doc.hospitalityBooking)) {
       await queueWebhookEvent({ tenantId: doc.tenantId, event: doc.$wasNew ? "invoice.created" : "invoice.updated", sourceId: String(doc._id), data: { id: doc._id, booking: doc.booking || null, hospitalityBooking: doc.hospitalityBooking || null, hospitalityType: doc.hospitalityType || null, invoiceNumber: doc.invoiceNumber, status: doc.status, totalAmount: doc.totalAmount, amountPaid: doc.amountPaid, balance: doc.balance, currency: "KES", paymentReference: doc.paymentReference || "", dueDate: doc.dueDate || null, etimsStatus: doc.etimsStatus, etimsInvoiceNumber: doc.etimsInvoiceNumber || "", updatedAt: doc.updatedAt } });
