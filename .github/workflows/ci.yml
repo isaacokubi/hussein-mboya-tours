@@ -11,23 +11,11 @@ jobs:
     name: Server production checks
     runs-on: ubuntu-latest
 
-    services:
-      mongodb:
-        image: mongo:8
-        ports:
-          - 27017:27017
-        options: >-
-          --health-cmd "mongosh --quiet --eval 'db.adminCommand({ ping: 1 }).ok'"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
-
     defaults:
       run:
         working-directory: server
 
     env:
-      MONGODB_URI: mongodb://127.0.0.1:27017/hussein_mboya_ci?replicaSet=rs0
       JWT_SECRET: ci-only-test-secret
       DEFAULT_TENANT_ID: 000000000000000000000000
       NODE_ENV: test
@@ -45,9 +33,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Initialize Mongo replica set
-        run: mongosh --host 127.0.0.1:27017 --eval 'rs.initiate()'
 
       - name: Syntax, security, RBAC and multitenancy checks
         run: npm run check:all
@@ -96,6 +81,49 @@ jobs:
 
       - name: Run live tenant isolation regression
         run: npm run check:multitenancy:live
+
+  server-tour-lifecycle-integration:
+    name: Tour lifecycle runtime integration
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: server
+
+    env:
+      MONGODB_URI: mongodb://127.0.0.1:27017/hussein_mboya_ci?replicaSet=rs0
+      JWT_SECRET: ci-only-test-secret
+      DEFAULT_TENANT_ID: 000000000000000000000000
+      NODE_ENV: test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Start Mongo replica set
+        working-directory: .
+        run: |
+          docker run -d --name mongo-tour-ci -p 27017:27017 mongo:8 --replSet rs0 --bind_ip_all
+          until docker exec mongo-tour-ci mongosh --quiet --eval 'db.adminCommand({ ping: 1 }).ok' | grep -q 1; do sleep 1; done
+          docker exec mongo-tour-ci mongosh --quiet --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"127.0.0.1:27017"}]})'
+
+      - name: Run tour lifecycle integration
+        run: node --test tests/tourLifecycleIntegration.test.js
+
+      - name: Cleanup Mongo replica set
+        if: always()
+        working-directory: .
+        run: docker rm -f mongo-tour-ci || true
 
   client-checks:
     name: Client lint and production build
