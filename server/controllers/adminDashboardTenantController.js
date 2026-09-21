@@ -11,7 +11,6 @@ import Vehicle from "../models/Vehicle.js";
 import Agent from "../models/Agent.js";
 
 const active = { isDeleted: { $ne: true } };
-const completedAmount = { $max: [0, { $subtract: [{ $ifNull: ["$amount", 0] }, { $ifNull: ["$refundedAmount", 0] }] }] };
 const paidPaymentStatuses = ["paid", "completed", "success"];
 
 export const getDashboardStats = async (req, res, next) => {
@@ -21,7 +20,6 @@ export const getDashboardStats = async (req, res, next) => {
     const bookingsFilter = tenantFilter(req, active);
     const toursFilter = tenantFilter(req, active);
     const destinationsFilter = tenantFilter(req, { isDeleted: { $ne: true }, active: { $ne: false } });
-    const paymentsFilter = tenantFilter(req, { status: "completed" });
     const staffFilter = tenantFilter(req, { isDeleted: { $ne: true } });
     const vehicleFilter = tenantFilter(req, { isDeleted: { $ne: true } });
     const agentFilter = tenantFilter(req, { status: { $ne: "deleted" } });
