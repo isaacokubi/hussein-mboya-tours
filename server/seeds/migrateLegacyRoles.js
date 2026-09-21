@@ -62,7 +62,7 @@ const migrateRoles = async () => {
 
     if (!APPLY) continue;
 
-    if (deleteIds.length) {
+    if (duplicateIds.length) {
       // Remove aliases before renaming the retained role so the tenant-scoped
       // unique (tenantId, name) index cannot reject a canonical-name collision.
       await db.collection("roles").deleteMany({ _id: { $in: duplicateIds } });
