@@ -30,7 +30,9 @@
     "test": "node --test tests/*.js",
     "audit:mongodb": "node scripts/mongodb-application-audit.js",
     "migrate:booking-ledger": "node scripts/migrateBookingPaymentLedger.js",
-    "test:tour-domain": "node --test tests/tourDomainIntegrity.test.js"
+    "test:tour-domain": "node --test tests/tourDomainIntegrity.test.js",
+    "migrate:roles": "node seeds/migrateLegacyRoles.js",
+    "test:security": "node --test tests/authCookie.test.js tests/roleNormalization.test.js"
   },
   "dependencies": {
     "africastalking": "^0.8.0",
