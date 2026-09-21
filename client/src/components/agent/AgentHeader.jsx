@@ -218,7 +218,7 @@ user.name
 
 <button
 
-onClick={logout}
+onClick={handleLogout}
 
 className="
 bg-red-600
