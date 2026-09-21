@@ -102,7 +102,7 @@ Never document secrets, passwords, access tokens, private keys, MFA PINs or paym
 
 - Snapshot date (UTC): 2026-09-21
 - Branch: `main`
-- Commit: `027b3614421233d46fe0dd311211e3289fb30132`
+- Commit: `bcc086d69e5d3ce8061fd3d36c7b2eac385113b8`
 - Server package: `hussein-mboya-tours-server@1.0.0`
 - Client package: `client@0.0.0`
 - Automated documentation updater: `scripts/update-documentation.js`
