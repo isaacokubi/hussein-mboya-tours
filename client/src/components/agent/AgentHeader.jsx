@@ -27,23 +27,7 @@ const { user, logout } = useAuth();
 
 
 
-const logout = ()=>{
-
-
-localStorage.removeItem("token");
-
-localStorage.removeItem("user");
-
-localStorage.removeItem("permissions");
-
-
-
-navigate("/agent/login");
-
-
-};
-
-
+const handleLogout = async () => { await logout(); navigate("/agent/login"); };
 
 
 
