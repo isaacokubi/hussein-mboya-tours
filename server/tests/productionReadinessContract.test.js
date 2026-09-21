@@ -84,3 +84,10 @@ test("unsafe fallback examples default to disabled", () => {
   assert.match(env, /ALLOW_SINGLE_TENANT_DEV_FALLBACK=false/);
   assert.match(env, /ALLOW_GLOBAL_MPESA_FALLBACK=false/);
 });
+
+test("agent booking status updates enforce lifecycle and payment boundaries", () => {
+  const source = read("controllers/agentBookingController.js");
+  assert.match(source, /canTransitionBookingStatus/);
+  assert.match(source, /PAYMENT_REQUIRED_BEFORE_COMPLETION/);
+  assert.doesNotMatch(source, /booking\.status = status;\s*\n\s*booking\.updatedBy/);
+});
