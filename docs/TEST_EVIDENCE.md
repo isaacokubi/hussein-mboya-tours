@@ -150,6 +150,30 @@ The sandbox STK request was sent to the local backend for booking `6aa98e90589f9
 
 The callback currently points to the existing Render deployment, while Render is intentionally disconnected and is not running current `main`. Therefore callback delivery must be captured against an approved public HTTPS test target or an explicitly updated sandbox callback before payment completion is marked PASS.
 
+## Current audit remediation — 2026-09-21
+
+The following production-audit remediation work has now been applied to `main` and verified locally where the required environment is available:
+
+- Authentication now enforces the configured JWT issuer and audience consistently in both authentication middleware and tenant resolution; issuer/audience compatibility fallback has been removed.
+- Browser session authentication uses the HttpOnly auth cookie plus CSRF protection rather than persisting the JWT in localStorage.
+- Upload validation requires extension/MIME agreement, rejects unsafe filenames, and uses tenant-scoped Cloudinary storage.
+- Accounting chart-of-accounts caching has a bounded TTL.
+- RBAC canonicalization was applied to the production database on 2026-09-21: 19 canonical role records were updated, 22 users were normalized, and no duplicate role records were removed. A subsequent dry-run returned `groupsRequiringNormalization: 0`.
+- M-Pesa refund callbacks now enforce the resolved tenant context before locating or mutating a payment.
+- Security static checks include tenant-resolution and M-Pesa refund callback files.
+- Security tests and targeted RBAC regression tests passed after the database normalization.
+
+The following evidence gates remain external-runtime/provider gates rather than source-code remediation items:
+
+- current-main production deployment SHA and launch certification;
+- live M-Pesa callback/completion, replay and failure/expiry evidence;
+- production tenant-isolation regression against the deployed current main;
+- full browser acceptance across customer, administration, finance and operations roles;
+- production read-only MongoDB integrity/reconciliation scan;
+- live KRA/eTIMS submission evidence.
+
+These gates must not be recorded as PASS until their corresponding runtime/provider evidence exists.
+
 ## Step 2 — Kenya financial/compliance acceptance status
 
 | Test | Status | Evidence / blocker |
