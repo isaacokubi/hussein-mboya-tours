@@ -5,19 +5,8 @@ import User from "../models/User.js";
 import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
 import Destination from "../models/Destination.js";
-import Payment from "../models/Payment.js";
 import { getBookingRevenueMetrics } from "../services/bookingRevenueService.js";
 import { getPostedRevenueReport } from "../services/financeReportingService.js";
-
-const activeBookingRevenueStages = [
-  { $lookup: { from: "bookings", localField: "booking", foreignField: "_id", as: "booking" } },
-  { $unwind: "$booking" },
-  { $match: { "booking.isDeleted": { $ne: true }, "booking.status": { $nin: ["cancelled", "refunded"] } } },
-];
-
-const completedPaymentAmount = {
-  $max: [0, { $subtract: [{ $ifNull: ["$amount", 0] }, { $ifNull: ["$refundedAmount", 0] }] }],
-};
 
 const cleanName = (value) => {
   const text = String(value ?? "").trim().replace(/\s+/g, " ");
@@ -52,7 +41,6 @@ export const getDashboardStats = async (req, res, next) => {
     const bookingFilter = mergeTenantFilter({ isDeleted: { $ne: true } });
     const tourFilter = mergeTenantFilter({ isDeleted: { $ne: true } });
     const destinationFilter = mergeTenantFilter({ isDeleted: false, active: true });
-    const paymentFilter = mergeTenantFilter({ status: "completed" });
 
     const [users, bookings, tours, destinations, revenueData, status, monthlyRevenue, popularTours, pendingBookings, confirmedBookings, completedBookings, cancelledBookings, paymentStatsData] = await Promise.all([
       User.countDocuments(userFilter),
