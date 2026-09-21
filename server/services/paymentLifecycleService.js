@@ -187,8 +187,8 @@ export const getPayableBookingAmount = (booking) => {
   const balanceAmount =
     Number(booking.balanceAmount || 0);
 
-  const depositAmount =
-    Number(booking.depositAmount || 0);
+  const depositDue = Number(booking.depositAmount || 0);
+  const amountPaid = Number(booking.amountPaid || 0);
 
   if (totalAmount <= 0) {
     throw new Error("Booking has an invalid total amount.");
@@ -199,14 +199,12 @@ export const getPayableBookingAmount = (booking) => {
    * Otherwise pay the configured deposit/total.
    */
 
-  if (balanceAmount > 0) {
+  if (balanceAmount > 0 && amountPaid > 0) {
     return Math.round(balanceAmount);
   }
 
-  if (depositAmount > 0) {
-    return Math.round(
-      Math.min(depositAmount, totalAmount)
-    );
+  if (amountPaid === 0 && depositDue > 0) {
+    return Math.round(Math.min(depositDue, totalAmount));
   }
 
   return Math.round(totalAmount);
@@ -611,7 +609,7 @@ export const completeBookingPayment = async ({
       | verification must not be able to inflate depositAmount.
       |--------------------------------------------------------------------------
       */
-      const currentPaidAmount = Number(bookingDoc.depositAmount || 0);
+      const currentPaidAmount = Number(bookingDoc.amountPaid || 0);
       const remainingDue = Math.max(0, totalAmount - currentPaidAmount);
 
       if (paymentAmount > remainingDue) {
@@ -780,7 +778,7 @@ export const completeBookingPayment = async ({
       | CALCULATE TOTAL PAID
       |--------------------------------------------------------------------------
       |
-      | depositAmount represents the cumulative amount paid against
+      | amountPaid represents the cumulative amount actually paid. depositAmount remains the configured deposit requirement.
       | this booking.
       |
       */
@@ -799,7 +797,7 @@ export const completeBookingPayment = async ({
       |--------------------------------------------------------------------------
       */
 
-      bookingDoc.depositAmount =
+      bookingDoc.amountPaid =
         newPaidAmount;
 
       bookingDoc.balanceAmount =
@@ -1349,30 +1347,14 @@ export const refundBookingPayment = async ({
             bookingDoc.totalAmount || 0
           );
 
-        const currentDeposit =
+        const currentPaid =
           Number(
-            bookingDoc.depositAmount || 0
+            bookingDoc.amountPaid || 0
           );
 
-        const newDeposit =
-          Math.max(
-            0,
-            currentDeposit -
-              requestedRefund
-          );
-
-        bookingDoc.depositAmount =
-          Math.min(
-            totalAmount,
-            newDeposit
-          );
-
-        bookingDoc.balanceAmount =
-          Math.max(
-            0,
-            totalAmount -
-              bookingDoc.depositAmount
-          );
+        const newPaid = Math.max(0, currentPaid - requestedRefund);
+        bookingDoc.amountPaid = Math.min(totalAmount, newPaid);
+        bookingDoc.balanceAmount = Math.max(0, totalAmount - bookingDoc.amountPaid);
 
         bookingDoc.refundAmount =
           newRefundedAmount;
@@ -1412,7 +1394,7 @@ export const refundBookingPayment = async ({
               "paid";
 
           } else if (
-            bookingDoc.depositAmount > 0
+            bookingDoc.amountPaid > 0
           ) {
 
             bookingDoc.paymentStatus =
