@@ -1,5 +1,3 @@
-import { getUserRole } from "../utils/roleUtils.js";
-
 export const paymentMutationGuard = (req, res, next) => {
   if (Object.prototype.hasOwnProperty.call(req.body || {}, "paymentStatus")) {
     return res.status(403).json({
