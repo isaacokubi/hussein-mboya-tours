@@ -46,14 +46,19 @@ export const reserveSlots = async (tourId, travelers, travelDate) => {
 
   if (Array.isArray(current.availability) && current.availability.length) {
     if (!target) throw new Error("A valid travel date is required.");
-    const start = new Date(target); const end = new Date(target); end.setDate(end.getDate() + 1);
+    const index = current.availability.findIndex((item) => sameDay(item.date, target));
+    if (index < 0) throw new Error("The selected travel date is not offered for this tour.");
+    const entry = current.availability[index];
+    const totalSlots = Number(entry.totalSlots || 0);
+    const bookedSlots = Number(entry.bookedSlots || 0);
+    if (bookedSlots + travelers > totalSlots) throw new Error("Not enough available tour slots for the selected travel date.");
     const tour = await Tour.findOneAndUpdate(
       mergeTenantFilter({
         _id: tourId,
-        availability: { $elemMatch: { date: { $gte: start, $lt: end }, $expr: { $lte: [{ $add: ["$$this.bookedSlots", travelers] }, "$$this.totalSlots"] } } }
+        [`availability.${index}.bookedSlots`]: { $lte: totalSlots - travelers }
       }),
-      { $inc: { "availability.$[day].bookedSlots": travelers } },
-      { arrayFilters: [{ "day.date": { $gte: start, $lt: end }, $expr: { $lte: [{ $add: ["$day.bookedSlots", travelers] }, "$day.totalSlots"] } }], new: true }
+      { $inc: { [`availability.${index}.bookedSlots`]: travelers } },
+      { new: true }
     );
     if (!tour) throw new Error("Not enough available tour slots for the selected travel date.");
     return tour;
