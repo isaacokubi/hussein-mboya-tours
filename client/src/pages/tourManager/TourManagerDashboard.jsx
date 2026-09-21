@@ -12,6 +12,7 @@ const formatCurrency = (value, symbol) => `${symbol} ${Number(value || 0).toLoca
 export default function TourManagerDashboard() {
   const { settings } = useSettings();
   const currencySymbol = settings?.currencySymbol || settings?.currency || "KSh";
+  const companyName = String(settings?.companyName || settings?.displayName || "Global Tours").trim();
 
   const dashboardQuery = useQuery({
     queryKey: ["tour-manager-dashboard"],
