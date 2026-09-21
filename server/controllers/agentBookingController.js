@@ -2,7 +2,7 @@ import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import mongoose from "mongoose";
 
 
-import { BOOKING_STATUSES } from "../constants/bookingConstants.js";
+import { BOOKING_STATUSES, canTransitionBookingStatus } from "../constants/bookingConstants.js";
 import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
 import Customer from "../models/Customer.js";
@@ -656,25 +656,27 @@ export const updateBookingStatus = async (
       });
     }
 
-    if (
-      booking.status === "completed" &&
-      status !== "completed"
-    ) {
+    if (booking.status === status) {
       return res.status(400).json({
         success: false,
-        message:
-          "Completed bookings cannot be modified.",
+        message: `Booking is already ${status}.`,
       });
     }
 
-    if (
-      booking.status === "cancelled" &&
-      status !== "cancelled"
-    ) {
-      return res.status(400).json({
+    if (!canTransitionBookingStatus(booking.status, status)) {
+      return res.status(409).json({
         success: false,
-        message:
-          "Cancelled bookings cannot be reopened.",
+        message: `Booking cannot transition from "${booking.status}" to "${status}".`,
+        currentStatus: booking.status,
+        requestedStatus: status,
+      });
+    }
+
+    if (status === "completed" && String(booking.paymentStatus || "").toLowerCase() !== "paid") {
+      return res.status(409).json({
+        success: false,
+        code: "PAYMENT_REQUIRED_BEFORE_COMPLETION",
+        message: "Only paid bookings can be marked as completed.",
       });
     }
 
