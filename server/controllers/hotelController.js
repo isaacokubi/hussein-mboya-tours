@@ -17,4 +17,44 @@ export const updateRoomType=async(req,res,next)=>{try{const tenantId=requireTena
 const resolveCustomer=async(req,payload)=>{if(!req.user?._id)return null;let customer=await Customer.findOne({tenantId:tenantIdOf(req),user:req.user._id});if(customer)return customer;const firstName=clean(payload.firstName||req.user.firstName||req.user.name?.split(" ")[0]||"Guest"),lastName=clean(payload.lastName||req.user.lastName||req.user.name?.split(" ").slice(1).join(" ")||"Customer"),phone=clean(payload.phone||req.user.phone||"");if(!phone)return null;return Customer.create({tenantId:tenantIdOf(req),user:req.user._id,firstName,lastName,email:clean(payload.email||req.user.email),phone,createdBy:req.user._id,updatedBy:req.user._id});};
 export const createHotelBooking=async(req,res,next)=>{try{const tenantId=tenantIdOf(req),hotel=await Hotel.findOne({_id:req.body.hotelId,tenantId,status:"active"}),room=await HotelRoomType.findOne({_id:req.body.roomTypeId,tenantId,hotel:req.body.hotelId,status:"active"});if(!hotel||!room)return res.status(404).json({success:false,message:"Hotel or room type not found."});const checkIn=new Date(req.body.checkIn),checkOut=new Date(req.body.checkOut),nights=daysBetween(checkIn,checkOut),rooms=Number(req.body.rooms||1),adults=Number(req.body.adults||1),children=Number(req.body.children||0);if(Number.isNaN(checkIn.getTime())||Number.isNaN(checkOut.getTime())||!Number.isFinite(nights)||nights<=0||!Number.isInteger(rooms)||rooms<1||adults<1)return res.status(400).json({success:false,message:"Valid check-in, check-out, rooms and guests are required."});if(adults>rooms*room.maxAdults||children>rooms*room.maxChildren)return res.status(400).json({success:false,message:"Guest count exceeds the selected room capacity."});const overlap=await HotelBooking.aggregate([{ $match:{tenantId,roomType:room._id,status:{$nin:["cancelled","no_show"]},checkIn:{$lt:checkOut},checkOut:{$gt:checkIn}}},{ $group:{_id:null,rooms:{$sum:"$rooms"}}}]);const bookedRooms=Number(overlap[0]?.rooms||0);if(bookedRooms+rooms>room.totalRooms)return res.status(409).json({success:false,message:`Only ${Math.max(room.totalRooms-bookedRooms,0)} room(s) are available for those dates.`});const subtotal=nights*rooms*Number(room.nightlyRate||0),taxes=Number(req.body.taxes||0),fees=Number(req.body.fees||0),customer=await resolveCustomer(req,req.body);if(req.user?.role==="customer"&&!customer)return res.status(400).json({success:false,message:"A customer phone number is required to complete the booking."});const booking=await HotelBooking.create({tenantId,reference:ref(),hotel:hotel._id,roomType:room._id,customer:customer?._id||null,user:req.user?._id||null,linkedBooking:req.body.linkedBooking||null,checkIn,checkOut,rooms,adults,children,guests:Array.isArray(req.body.guests)?req.body.guests:[],mealPlan:req.body.mealPlan||"room_only",specialRequests:clean(req.body.specialRequests),status:"pending",paymentStatus:"pending",source:req.body.source||"website",subtotal,taxes,fees,totalAmount:subtotal+taxes+fees,currency:hotel.currency||room.currency||"KES",createdBy:req.user?._id||null,updatedBy:req.user?._id||null});res.status(201).json({success:true,data:booking});}catch(e){next(e);}};
 export const listHotelBookings=async(req,res,next)=>{try{if(roleOf(req)!=="customer"&&!staffRoles.has(roleOf(req)))return res.status(403).json({success:false,message:"Not allowed."});const filter={tenantId:tenantIdOf(req)};if(req.query.status)filter.status=req.query.status;if(req.query.customerId)filter.customer=req.query.customerId;if(req.user?.role==="customer")filter.user=req.user._id;const rows=await HotelBooking.find(filter).populate("hotel","name city").populate("roomType","name nightlyRate").sort({checkIn:1,createdAt:-1}).lean();res.json({success:true,data:rows});}catch(e){next(e);}};
-export const updateHotelBooking=async(req,res,next)=>{try{const booking=await HotelBooking.findOne({_id:req.params.id,tenantId:tenantIdOf(req)});if(!booking)return res.status(404).json({success:false,message:"Hotel booking not found."});if(req.user?.role==="customer"&&String(booking.user)!==String(req.user._id))return res.status(403).json({success:false,message:"Not allowed."});const allowed=["pending","confirmed","checked_in","checked_out","cancelled","no_show"];if(req.body.status&&allowed.includes(req.body.status))booking.status=req.body.status;if(req.body.paymentStatus)booking.paymentStatus=req.body.paymentStatus;if(req.body.specialRequests!==undefined)booking.specialRequests=clean(req.body.specialRequests);if(req.body.notes!==undefined)booking.notes=clean(req.body.notes);booking.updatedBy=req.user?._id||null;await booking.save();res.json({success:true,data:booking});}catch(e){next(e);}};
+const HOTEL_STATUS_TRANSITIONS = {
+  pending: new Set(["confirmed", "cancelled", "no_show"]),
+  confirmed: new Set(["checked_in", "cancelled", "no_show"]),
+  checked_in: new Set(["checked_out"]),
+  checked_out: new Set([]),
+  cancelled: new Set([]),
+  no_show: new Set([]),
+};
+
+export const updateHotelBooking=async(req,res,next)=>{try{
+  const tenantId=tenantIdOf(req);
+  const booking=await HotelBooking.findOne({_id:req.params.id,tenantId});
+  if(!booking)return res.status(404).json({success:false,message:"Hotel booking not found."});
+
+  const role=roleOf(req);
+  const isCustomer=role==="customer";
+  if(isCustomer&&String(booking.user)!==String(req.user._id))return res.status(403).json({success:false,message:"Not allowed."});
+
+  const requestedKeys=Object.keys(req.body||{});
+  if(isCustomer&&requestedKeys.some(key=>key!=="specialRequests")){
+    return res.status(403).json({success:false,message:"Customers may only update special requests on an existing reservation."});
+  }
+
+  if(req.body.status!==undefined){
+    if(isCustomer)return res.status(403).json({success:false,message:"Customers cannot change reservation status."});
+    const nextStatus=clean(req.body.status).toLowerCase();
+    const allowed=HOTEL_STATUS_TRANSITIONS[booking.status]||new Set();
+    if(!allowed.has(nextStatus))return res.status(409).json({success:false,message:`Invalid hotel reservation status transition: ${booking.status} → ${nextStatus}.`});
+    booking.status=nextStatus;
+  }
+
+  if(req.body.specialRequests!==undefined)booking.specialRequests=clean(req.body.specialRequests);
+  if(req.body.notes!==undefined){
+    if(isCustomer)return res.status(403).json({success:false,message:"Customers cannot modify internal reservation notes."});
+    booking.notes=clean(req.body.notes);
+  }
+
+  booking.updatedBy=req.user?._id||null;
+  await booking.save();
+  res.json({success:true,data:booking});
+}catch(e){next(e);}};
