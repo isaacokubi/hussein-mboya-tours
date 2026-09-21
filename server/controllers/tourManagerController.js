@@ -8,6 +8,7 @@ import Staff from "../models/Staff.js";
 import Vehicle from "../models/Vehicle.js";
 import { assignTourResources } from "./tourAssignmentController.js";
 import { getBookingRevenueMetrics } from "../services/bookingRevenueService.js";
+import { cancelTourAndBookings } from "../services/tourCancellationService.js";
 
 const ACTIVE_TOUR_STATUSES = ["scheduled", "upcoming", "confirmed", "active", "ongoing"];
 const BOOKING_GUEST_STATUSES = ["confirmed", "assigned", "ongoing", "completed"];
