@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 const { Schema } = mongoose;
 
 const AirportTransferBookingSchema = new Schema({
@@ -48,6 +49,8 @@ const AirportTransferBookingSchema = new Schema({
 AirportTransferBookingSchema.index({ tenantId: 1, reference: 1 }, { unique: true });
 AirportTransferBookingSchema.index({ tenantId: 1, pickupDateTime: 1, status: 1 });
 AirportTransferBookingSchema.index({ tenantId: 1, customer: 1, createdAt: -1 });
+
+AirportTransferBookingSchema.plugin(tenantPlugin);
 
 AirportTransferBookingSchema.plugin(tenantPlugin);
 
