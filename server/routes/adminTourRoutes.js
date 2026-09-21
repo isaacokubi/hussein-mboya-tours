@@ -2,7 +2,6 @@ import { resolveTenant } from "../middleware/tenantMiddleware.js";
 import { authorize } from "../middleware/permissionMiddleware.js";
 import express from "express";
 import {
-  createTour,
   getAllTours,
   getTour,
   updateTour,
@@ -12,6 +11,7 @@ import {
   assignDriver,
   assignVehicle,
 } from "../controllers/adminTourController.js";
+import { createTour, updateTour, deleteTour, setPublication } from "../controllers/tourCrudController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import adminMiddleware from "../middleware/adminMiddleware.js";
 import upload from "../middleware/uploadMiddleware.js";
@@ -29,7 +29,7 @@ router.get("/", getAllTours);
 router.get("/:id", getTour);
 router.post("/", validateFutureTourDate, upload.array("images", 10), createTour);
 router.put("/:id", validateTourCommand(), upload.array("images", 10), updateTour);
-router.delete("/:id", deleteTour);
+router.delete("/:id", deleteTour);\nrouter.patch("/:id/publication", setPublication);
 router.patch("/:id/restore", restoreTour);
 router.patch("/:id/guide", assignTourResourcesSafe);
 router.patch("/:id/driver", assignTourResourcesSafe);
