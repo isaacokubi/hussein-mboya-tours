@@ -31,7 +31,7 @@ jobs:
           set -euo pipefail
           mkdir -p backup
           stamp="$(date -u +%Y%m%dT%H%M%SZ)"
-          archive="backup/hussein-mboya-${stamp}.archive.gz.enc"
+          archive="backup/global-tours-${stamp}.archive.gz.enc"
           docker run --rm \
             -e MONGODB_BACKUP_URI="$MONGODB_BACKUP_URI" \
             mongo:8 \
@@ -83,8 +83,8 @@ jobs:
             < "$decrypted_archive" \
             2>&1 | tee backup/dry-run.log
 
-          grep -Eq 'husseindb[.](tenants|users)([^[:alnum:]_]|$)' backup/dry-run.log || {
-            echo "Backup archive does not contain expected application collections (tenants/users)."
+          grep -Eq '([.]organizations|[.]users)([^[:alnum:]_]|$)' backup/dry-run.log || {
+            echo "Backup archive does not contain expected application collections (organizations/users)."
             echo "The configured MONGODB_BACKUP_URI may point to the wrong database."
             exit 1
           }
