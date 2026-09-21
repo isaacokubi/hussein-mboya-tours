@@ -1,9 +1,7 @@
 import { useSettings } from "../../context/SettingsContext";
 import { Helmet } from "react-helmet-async";
 
-const SITE_URL =
-  import.meta.env.VITE_SITE_URL ||
-  "https://www.husseinmboyatours.com";
+const SITE_URL = String(import.meta.env.VITE_SITE_URL || (typeof window !== "undefined" ? window.location.origin : "")).replace(/\/$/, "");
 
 export default function TourSchema({ tour }) {
   const { settings = {} } = useSettings() || {};
