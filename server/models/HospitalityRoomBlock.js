@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 const { Schema } = mongoose;
 const schema = new Schema({
   tenantId:{type:Schema.Types.ObjectId,ref:"Organization",required:true,index:true},
@@ -13,4 +14,6 @@ const schema = new Schema({
   updatedBy:{type:Schema.Types.ObjectId,ref:"User",default:null}
 },{timestamps:true});
 schema.index({tenantId:1,roomType:1,startDate:1,endDate:1,status:1});
+schema.plugin(tenantPlugin);
+
 export default mongoose.models.HospitalityRoomBlock||mongoose.model("HospitalityRoomBlock",schema);
