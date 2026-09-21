@@ -4,8 +4,6 @@ import express from "express";
 import {
   getAllTours,
   getTour,
-  updateTour,
-  deleteTour,
   restoreTour,
   assignGuide,
   assignDriver,
