@@ -28,6 +28,8 @@ import {
 
 import { calculateBookingAmounts } from "../utils/bookingPricing.js";
 import { calculateTax } from "../services/taxEngineService.js";
+import { createBookingAtomically } from "../services/bookingCreationService.js";
+import { queueWebhookEvent } from "../services/webhookDeliveryService.js";
 
 import { successResponse } from "../utils/apiResponse.js";
 
@@ -167,138 +169,74 @@ export const createBooking = async (req, res, next) => {
       amounts.serviceFee = 0;
     }
 
-    // Capacity is date-scoped when the tour publishes availability dates.
-    // The update is a single atomic document operation; the catch block
-    // compensates if the subsequent booking write fails.
-      if (tour) {
-        await reserveSlots(tour, totalTravellers, travelDate);
-      }
+    const customerProfile = await Customer.findOne(
+      mergeTenantFilter({ user: req.user._id })
+    );
 
-    let booking;
+    const bookingData = {
+      customer: customerProfile?._id || null,
+      user: req.user._id,
+      customerSnapshot: {
+        name: req.user.name || "",
+        email: req.user.email || "",
+        phone: req.user.phone || "",
+      },
+      tour: tour || null,
+      customTourRequest: customTourRequest || null,
+      travelDate,
+      travelers,
+      numberOfGuests: totalTravellers,
+      contact,
+      pickupLocation: String(pickupLocation || "").trim(),
+      pickupTime: pickupTime ? new Date(pickupTime) : null,
+      hotelName: String(hotelName || "").trim(),
+      roomNumber: String(roomNumber || "").trim(),
+      emergencyContact: emergencyContact || undefined,
+      specialRequests: Array.isArray(specialRequests)
+        ? specialRequests.map((item) => String(item).trim()).filter(Boolean)
+        : [],
+      subtotal: amounts.subtotal,
+      discountAmount: amounts.discountAmount,
+      taxAmount: Number(amounts.taxAmount || 0),
+      serviceFee: Number(amounts.serviceFee || 0),
+      totalAmount: amounts.totalAmount,
+      depositAmount: amounts.depositAmount,
+      amountPaid: 0,
+      balanceAmount: amounts.totalAmount,
+      paymentMethod: paymentMethod || PAYMENT_METHODS.MPESA,
+      paymentStatus: "pending",
+      status: "pending",
+      assigned: false,
+    };
+
+    const booking = await createBookingAtomically({
+      tourId: tour || null,
+      travelers: totalTravellers,
+      travelDate,
+      bookingData,
+    });
 
     try {
-      const customerProfile = await Customer.findOne(
-        mergeTenantFilter({ user: req.user._id })
-      );
-      booking = await Booking.create({
-
-        customer: customerProfile?._id || null,
-
-        user:req.user._id,
-
-
-        customerSnapshot:{
-          name:req.user.name || "",
-          email:req.user.email || "",
-          phone:req.user.phone || ""
-        },
-
-
-          tour: tour || null,
-
-          customTourRequest: customTourRequest || null,
-        travelDate,
-
-
-        travelers,
-
-
-        numberOfGuests:
-          totalTravellers,
-
-
-        contact,
-
-        pickupLocation: String(pickupLocation || "").trim(),
-        pickupTime: pickupTime ? new Date(pickupTime) : null,
-        hotelName: String(hotelName || "").trim(),
-        roomNumber: String(roomNumber || "").trim(),
-        emergencyContact: emergencyContact || undefined,
-        specialRequests: Array.isArray(specialRequests)
-          ? specialRequests.map((item) => String(item).trim()).filter(Boolean)
-          : [],
-
-        subtotal:
-          amounts.subtotal,
-
-
-        discountAmount:
-          amounts.discountAmount,
-
-        taxAmount:
-          Number(amounts.taxAmount || 0),
-
-        serviceFee:
-          Number(amounts.serviceFee || 0),
-
-        totalAmount:
-          amounts.totalAmount,
-
-        depositAmount:
-          amounts.depositAmount,
-
-        amountPaid:
-          0,
-
-        balanceAmount:
-          amounts.totalAmount,
-
-
-        paymentMethod:
-          paymentMethod ||
-          PAYMENT_METHODS.MPESA,
-
-
-        paymentStatus:
-          "pending",
-
-
-        status:
-          "pending",
-
-
-
-
-        assigned:false
-
-      });
-      try {
-        const admins = await User.find(
-          mergeTenantFilter({
-            $or: [
-              { role: { $in: ["admin", "super_admin", "superadmin", "manager", "tour_manager", "tourmanager"] } },
-              { legacyRole: { $in: ["admin", "super_admin", "superadmin", "manager", "tour_manager", "tourmanager"] } },
-            ],
-            status: "active",
-          })
-        ).select("_id").lean();
-
-        if (admins.length) {
-          await Notification.insertMany(admins.map((admin) => ({
-            recipient: admin._id,
-            user: admin._id,
-            title: "New Booking",
-            message: `New booking ${booking.bookingNumber || booking._id} is awaiting payment/confirmation.`,
-            type: "booking",
-            relatedModel: "Booking",
-            relatedId: booking._id,
-            actionUrl: `/admin/bookings`,
-          })));
-        }
-      } catch (notificationError) {
-        console.error("ADMIN BOOKING NOTIFICATION ERROR:", notificationError.message);
+      const tenantId = booking.tenantId;
+      if (tenantId) {
+        await queueWebhookEvent({
+          tenantId,
+          event: "booking.created",
+          sourceId: String(booking._id),
+          data: {
+            id: booking._id,
+            bookingNumber: booking.bookingNumber,
+            status: booking.status,
+            paymentStatus: booking.paymentStatus,
+            travelDate: booking.travelDate,
+            numberOfGuests: booking.numberOfGuests,
+            totalAmount: booking.totalAmount,
+            currency: "KES",
+          },
+        });
       }
-
-    } catch (createError) {
-      // Roll back the reserved capacity when booking creation fails.
-        try {
-          if (tour) {
-            await releaseSlots(tour, totalTravellers, travelDate);
-          }
-        } catch (releaseError) {
-          console.error("BOOKING CAPACITY ROLLBACK ERROR:", releaseError);
-        }
-      throw createError;
+    } catch (queueError) {
+      console.error("BOOKING WEBHOOK QUEUE ERROR:", queueError.message);
     }
 
     // External notifications must never make a successful booking fail.
