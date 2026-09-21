@@ -6,6 +6,7 @@ import User from "../models/User.js";
 import Vehicle from "../models/Vehicle.js";
 import Commission from "../models/Commission.js";
 import { getRevenueAnalytics, getBookingAnalytics, getPopularTours } from "../services/analyticsService.js";
+import { getPostedRevenueReport } from "../services/financeReportingService.js";
 
 const nonNegativeAmount = {
   $cond: [
@@ -29,11 +30,7 @@ export const getAnalytics = async (req, res, next) => {
         { $group: { _id: "$status", count: { $sum: 1 } } },
         { $sort: { count: -1 } },
       ]),
-      Payment.aggregate([
-        { $match: { ...filter, status: "completed" } },
-        { $group: { _id: { year: { $year: { $ifNull: ["$paidAt", "$createdAt"] } }, month: { $month: { $ifNull: ["$paidAt", "$createdAt"] } } }, revenue: { $sum: nonNegativeAmount } } },
-        { $sort: { "_id.year": 1, "_id.month": 1 } },
-      ]),
+      getPostedRevenueReport(),
       Vehicle.aggregate([
         { $match: { ...filter, isDeleted: { $ne: true } } },
         { $group: { _id: "$status", count: { $sum: 1 } } },
@@ -47,7 +44,7 @@ export const getAnalytics = async (req, res, next) => {
     const collectedRevenue = Number(revenue?.totalRevenue || 0);
     const commissionCost = Number(commissions?.[0]?.totalCommission || 0);
     const profitability = { collectedRevenue, commissionCost, contributionMargin: Math.max(0, collectedRevenue - commissionCost), marginPercent: collectedRevenue ? Math.round(((collectedRevenue - commissionCost) / collectedRevenue) * 10000) / 100 : 0 };
-    return res.status(200).json({ success: true, data: { revenue, customers, bookings, bookingStatus, monthlyRevenue, popularTours, vehicleStats, profitability } });
+    return res.status(200).json({ success: true, data: { revenue, customers, bookings, bookingStatus, monthlyRevenue: monthlyRevenue.monthly, popularTours, vehicleStats, profitability } });
   } catch (error) {
     next(error);
   }
