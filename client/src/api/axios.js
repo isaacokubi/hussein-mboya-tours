@@ -13,8 +13,7 @@ function isPlatformDeployment() {
   const configured = String(import.meta.env.VITE_PLATFORM_MODE || "").trim().toLowerCase();
   if (configured === "true") return true;
   if (configured === "false") return false;
-  if (typeof window === "undefined") return false;
-  return String(window.location.hostname || "").trim().toLowerCase() === "hussein-mboya-tours.vercel.app";
+  return false;
 }
 
 const PLATFORM_API_URL = configuredPlatformApiUrl || "/api";
