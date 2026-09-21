@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import env from "../config/env.js";
 import Organization from "../models/Organization.js";
 import Destination from "../models/Destination.js";
+import AccommodationInventory from "../models/AccommodationInventory.js";
 import { runWithTenant } from "../tenancy/context.js";
 
 await import("../tenancy/bootstrap.js");
@@ -10,6 +11,7 @@ await mongoose.connect(env.MONGODB_URI);
 const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const createdTenantIds = [];
 const createdDestinationIds = [];
+const createdAccommodationIds = [];
 const results = [];
 const fixture = (name, slug) => ({ name, slug, country: "Kenya", description: `Tenant isolation regression fixture for ${name}.` });
 const pass = (name) => results.push({ name, ok: true });
@@ -24,6 +26,30 @@ try {
   let destinationB;
 
   await expect("Tenant A create", async () => { destinationA = await runWithTenant({ tenantId: tenantA._id }, () => Destination.create(fixture(`Isolation Destination A ${suffix}`, `isolation-destination-a-${suffix}`))); createdDestinationIds.push(destinationA._id); });
+  await expect("Tenant-scoped accommodation inventory create", async () => {
+    const inventory = await runWithTenant({ tenantId: tenantA._id }, () => AccommodationInventory.create({
+      propertyName: `Isolation Hotel ${suffix}`,
+      roomType: "Standard",
+      totalRooms: 10,
+      availableRooms: 10,
+      nightlyRate: 1000,
+      currency: "KES",
+    }));
+    createdAccommodationIds.push(inventory._id);
+    if (String(inventory.tenantId) !== String(tenantA._id)) throw new Error("Accommodation inventory was not assigned to Tenant A.");
+  });
+  await expect("Cross-tenant accommodation read blocked", async () => {
+    const inventory = await runWithTenant({ tenantId: tenantB._id }, () => AccommodationInventory.findById(createdAccommodationIds[0]).lean());
+    if (inventory) throw new Error("Tenant B read Tenant A accommodation inventory.");
+  });
+  await expect("Cross-tenant accommodation update blocked", async () => {
+    const result = await runWithTenant({ tenantId: tenantB._id }, () => AccommodationInventory.updateOne(
+      { _id: createdAccommodationIds[0] },
+      { $set: { nightlyRate: 1 } },
+    ));
+    if (result.matchedCount !== 0) throw new Error("Tenant B updated Tenant A accommodation inventory.");
+  });
+
   await expect("Tenant B create", async () => { destinationB = await runWithTenant({ tenantId: tenantB._id }, () => Destination.create(fixture(`Isolation Destination B ${suffix}`, `isolation-destination-b-${suffix}`))); createdDestinationIds.push(destinationB._id); });
   await expect("Missing tenant context fails closed", async () => {
     try { await Destination.findOne({ _id: destinationA._id }); } catch (error) { if (/Tenant context is required/i.test(error.message)) return; throw error; }
@@ -38,7 +64,8 @@ try {
   await expect("estimatedDocumentCount fails closed", async () => { try { await runWithTenant({ tenantId: tenantA._id }, () => Destination.estimatedDocumentCount()); } catch (error) { if (/not tenant-safe|Tenant context|blocked for tenant-scoped models/i.test(error.message)) return; throw error; } throw new Error("estimatedDocumentCount unexpectedly succeeded in tenant context."); });
   await expect("Tenant data survives cross-tenant attacks", async () => { const own = await runWithTenant({ tenantId: tenantA._id }, () => Destination.findById(destinationA._id).lean()); const other = await runWithTenant({ tenantId: tenantB._id }, () => Destination.findById(destinationA._id).lean()); if (!own) throw new Error("Tenant A lost its own record."); if (other) throw new Error("Tenant B can read Tenant A data."); });
 } finally {
-  await runWithTenant({ bypass: true }, async () => { if (createdDestinationIds.length) await Destination.deleteMany({ _id: { $in: createdDestinationIds } }); if (createdTenantIds.length) await Organization.deleteMany({ _id: { $in: createdTenantIds } }); });
+  await runWithTenant({ bypass: true }, async () => { if (createdDestinationIds.length) await Destination.deleteMany({ _id: { $in: createdDestinationIds } });
+    if (createdAccommodationIds.length) await AccommodationInventory.deleteMany({ _id: { $in: createdAccommodationIds } }); if (createdTenantIds.length) await Organization.deleteMany({ _id: { $in: createdTenantIds } }); });
   await mongoose.disconnect();
 }
 
