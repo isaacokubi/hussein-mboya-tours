@@ -26,7 +26,9 @@ import {
 import { protect } from "../middleware/authMiddleware.js";
 import tourManagerOnly from "../middleware/tourManagerMiddleware.js";
 import upload from "../middleware/uploadMiddleware.js";
-import { assignTourResources } from "../controllers/tourAssignmentController.js";
+import validateTourCommand from "../middleware/validateTourCommand.js";
+import { assignTourResourcesSafe } from "../controllers/tourResourceAssignmentController.js";
+
 
 const router = express.Router();
 
@@ -80,7 +82,7 @@ router.get("/manager", getManagerTours);
 
 // CREATE TOUR
 // POST /api/tours
-router.post("/", upload.array("images", 10), createTour);
+router.post("/", validateTourCommand(), upload.array("images", 10), createTour);
 
 /*
 |--------------------------------------------------------------------------
@@ -103,7 +105,7 @@ router.get("/:id", getTourById);
 
 // UPDATE TOUR
 // PUT /api/tours/:id
-router.put("/:id", upload.array("images", 10), updateTour);
+router.put("/:id", validateTourCommand(), upload.array("images", 10), updateTour);
 
 // DELETE TOUR
 // DELETE /api/tours/:id
@@ -117,10 +119,10 @@ router.delete("/:id", deleteTour);
 
 // PUT /api/tours/:id/assign
 // Frontend compatibility alias for assigning guide/driver/vehicle.
-router.put("/:id/assign", assignTourResources);
+router.put("/:id/assign", assignTourResourcesSafe);
 
 // PATCH /api/tours/:id/assign-vehicle
-router.patch("/:id/assign-vehicle", assignVehicle);
+router.patch("/:id/assign-vehicle", assignTourResourcesSafe);
 
 // PATCH /api/tours/:id/remove-vehicle
 router.patch("/:id/remove-vehicle", removeVehicle);
