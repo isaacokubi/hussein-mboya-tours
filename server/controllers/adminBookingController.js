@@ -302,46 +302,12 @@ _id:req.params.id
 | UPDATE PAYMENT STATUS
 |--------------------------------------------------------------------------
 */
-export const updatePaymentStatus = async (req, res, next) => {
-  try {
-    const { status, mpesaReceipt } = req.body;
-
-    if (!BOOKING_PAYMENT_STATUSES.includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid payment status",
-      });
-    }
-
-    const booking = await Booking.findOne(
-mergeTenantFilter(req,{
-_id:req.params.id
-})
-);
-
-    if (!booking) {
-      return res.status(404).json({
-        success: false,
-        message: "Booking not found",
-      });
-    }
-
-    booking.paymentStatus = status;
-
-    if (mpesaReceipt) {
-      booking.mpesaReceipt = mpesaReceipt.trim();
-    }
-
-    await booking.save();
-
-    return res.status(200).json({
-      success: true,
-      message: "Booking payment status updated successfully",
-      booking,
-    });
-  } catch (error) {
-    next(error);
-  }
+export const updatePaymentStatus = async (req, res) => {
+  return res.status(410).json({
+    success: false,
+    code: "BOOKING_PAYMENT_STATUS_READ_ONLY",
+    message: "Booking payment status is derived from the verified Payment ledger. Use the payment lifecycle workflow instead of editing booking.paymentStatus directly.",
+  });
 };
 
 /*
