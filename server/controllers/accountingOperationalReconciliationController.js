@@ -60,7 +60,6 @@ export const reconcileOperationalAccounting = async (req, res, next) => {
           if (alreadyPosted) summary.alreadyPosted.refunds += 1;
           else await postPaymentRefundToLedger(payment, refundAmount, reference);
           if (!alreadyPosted) summary.posted.refunds += 1;
-          else summary.posted.refunds += 1;
         } catch (error) {
           summary.errors.push({ type: "refund", id: String(payment._id), message: error.message });
         }
