@@ -5,7 +5,7 @@
 ### Code remediation — MERGED
 
 - Audit-remediation PR **#144** was merged into the main branch.
-- Current main commit: 6f530243993b847e887595b9247b6435aaa12541.
+- Remediation merge commit: 6f530243993b847e887595b9247b6435aaa12541.
 - Browser authentication now uses an HttpOnly session cookie plus a separate CSRF token for state-changing cookie-authenticated requests.
 - JWT issuer/audience verification is strict; the previous compatibility fallback is removed.
 - MFA and public tenant onboarding now establish the same secure session cookie.
