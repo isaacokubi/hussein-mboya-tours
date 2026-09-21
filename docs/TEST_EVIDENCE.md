@@ -100,6 +100,14 @@ Never document secrets, passwords, access tokens, private keys, MFA PINs or paym
 <!-- DOCS-AUTO:START -->
 ## Automatically captured repository state
 
-This section is maintained automatically by `scripts/update-documentation.js` and the GitHub Actions documentation workflow.
+- Snapshot date (UTC): 2026-09-21
+- Branch: `main`
+- Commit: `08a43ae9562e1cf3465c0728bcc4d66de8eb4a60`
+- Server package: `hussein-mboya-tours-server@1.0.0`
+- Client package: `client@0.0.0`
+- Automated documentation updater: `scripts/update-documentation.js`
+- CI automation: `.github/workflows/documentation.yml`
+
+The generated state above is refreshed automatically after pushes to `main`. Historical test evidence below this section is retained and must only be updated when the corresponding test actually runs and produces evidence.
 
 <!-- DOCS-AUTO:END -->

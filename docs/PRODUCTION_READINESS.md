@@ -101,4 +101,20 @@ Never record passwords, tokens, private keys, MFA PINs, M-Pesa secrets/passkeys 
 
 This section is maintained automatically by `scripts/update-documentation.js` and the GitHub Actions documentation workflow.
 
+- **Repository:** Global Tours — multi-tenant tours & travel SaaS
+- **Branch:** `main`
+- **Current commit:** `08a43ae9562e1cf3465c0728bcc4d66de8eb4a60`
+- **Short commit:** `08a43ae9`
+- **Documentation snapshot date (UTC):** 2026-09-21
+- **Server package:** `hussein-mboya-tours-server@1.0.0`
+- **Client package:** `client@0.0.0`
+- **Server verification commands:** `npm run check:all`, `npm test`, `npm run test:security`, `npm run test:tour-domain`
+- **Client verification commands:** `npm run lint`, `npm run build`
+- **Production contract:** `npm run check:production`
+- **Release rule:** production certification requires current deployment/provider evidence; local or CI source checks alone do not certify live production.
+
+### Documentation automation
+
+Every push to `main` runs the documentation workflow. It refreshes this generated repository-state section and commits documentation-only changes when the generated content changes. Manual edits outside the generated markers are preserved.
+
 <!-- DOCS-AUTO:END -->
