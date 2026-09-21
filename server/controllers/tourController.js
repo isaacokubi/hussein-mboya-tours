@@ -134,39 +134,6 @@ export const getTourBySlug = async (req, res, next) => {
   } catch (error) { return next(error); }
 };
 
-export const createTour = async (req, res, next) => {
-  try {
-    const tenantId = requireTenantId();
-    const body = { ...(req.body || {}) };
-    const required = ["title", "description", "destination", "country", "location", "date", "price"];
-    const missing = required.filter((key) => body[key] === undefined || body[key] === null || String(body[key]).trim() === "");
-    if (missing.length) return res.status(400).json({ success: false, message: `Missing required fields: ${missing.join(", ")}` });
-
-    const destination = await ensureDestination(body.destination, tenantId);
-    if (!destination) return res.status(400).json({ success: false, message: "The selected destination does not exist or does not belong to this tenant." });
-
-    const uploadedImages = Array.isArray(req.files) ? req.files.filter((file) => file?.path).map((file) => ({ url: file.path, publicId: file.filename || file.public_id || "" })) : [];
-    if (!uploadedImages.length) return res.status(400).json({ success: false, message: "A tour image is required. Upload at least one image for this tour." });
-
-    body.destination = destination._id;
-    body.tenantId = tenantId;
-    body.featuredImage = uploadedImages[0];
-    body.gallery = uploadedImages;
-    body.price = Number(body.price);
-    body.capacity = Number(body.capacity || 20);
-    body.duration = String(body.duration || 1);
-    body.status = body.status || "upcoming";
-    body.published = body.published === undefined ? true : body.published;
-    body.available = true;
-    body.isDeleted = false;
-    body.createdBy = req.user?._id || null;
-    body.availabilitySettings = body.availabilitySettings || { totalSlots: body.capacity, bookedSlots: 0, waitlistEnabled: false };
-    const tour = await Tour.create(body);
-    const data = await Tour.findOne(mergeTenantFilter({ _id: tour._id })).populate("destination assignedGuide assignedDriver assignedVehicle").lean();
-    return res.status(201).json({ success: true, message: "Tour created successfully", data });
-  } catch (error) { return next(error); }
-};
-
 export const getManagerTours = async (req, res, next) => {
   try {
     requireTenantId();
@@ -174,43 +141,6 @@ export const getManagerTours = async (req, res, next) => {
     if (req.user?._id) filter.createdBy = req.user._id;
     const tours = await Tour.find(filter).populate("destination assignedGuide assignedDriver assignedVehicle").sort({ createdAt: -1 }).lean();
     return res.json({ success: true, count: tours.length, data: tours.map((tour) => ({ ...attachAvailability(tour), hasOwnImage: hasRealTourImage(tour) })) });
-  } catch (error) { return next(error); }
-};
-
-export const updateTour = async (req, res, next) => {
-  try {
-    const tenantId = requireTenantId();
-    const updatePayload = { ...(req.body || {}) };
-    const existing = await Tour.findOne(mergeTenantFilter({ _id: req.params.id }));
-    if (!existing) return res.status(404).json({ success: false, message: "Tour not found" });
-
-    if (Object.prototype.hasOwnProperty.call(updatePayload, "destination")) {
-      const destination = await ensureDestination(updatePayload.destination, tenantId);
-      if (!destination) return res.status(400).json({ success: false, message: "The selected destination does not exist or does not belong to this tenant." });
-      updatePayload.destination = destination._id;
-    } else if (!existing.destination) {
-      return res.status(400).json({ success: false, message: "This tour has no destination. Assign a destination before saving." });
-    }
-
-    if (Array.isArray(req.files) && req.files.length) {
-      const images = req.files.filter((file) => file?.path).map((file) => ({ url: file.path, publicId: file.filename || file.public_id || "" }));
-      if (images.length) { updatePayload.featuredImage = images[0]; updatePayload.gallery = images; }
-    }
-    delete updatePayload.tenantId;
-    const tour = await Tour.findOneAndUpdate(mergeTenantFilter({ _id: req.params.id }), updatePayload, { new: true, runValidators: true }).populate("destination assignedGuide assignedDriver assignedVehicle").lean();
-    return res.json({ success: true, message: "Tour updated successfully", data: { ...tour, hasOwnImage: hasRealTourImage(tour) } });
-  } catch (error) { return next(error); }
-};
-
-export const deleteTour = async (req, res, next) => {
-  try {
-    const result = await cancelTourAndBookings({
-      tourId: req.params.id,
-      reason: req.body?.reason || "Tour deleted/cancelled",
-      deleted: true,
-      userId: req.user?._id || null,
-    });
-    return res.json({ success: true, message: "Tour deleted after cancelling/reconciling active bookings.", data: result.tour, bookingsAffected: result.bookingsAffected });
   } catch (error) { return next(error); }
 };
 
