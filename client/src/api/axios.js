@@ -111,7 +111,7 @@ api.interceptors.request.use(
     const publicTenantSlug = getPublicTenantSlug();
     const publicTenantKey = getPublicTenantKey();
 
-    if (token && tenantId) {
+    if (tenantId && !publicAuthRequest) {
       config.headers["X-Tenant-ID"] = tenantId;
       delete config.headers["X-Tenant-Slug"];
       delete config.headers["X-Tenant-Key"];
