@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 const loyaltyAccountSchema = new mongoose.Schema({
   tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
   customerId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
@@ -10,4 +11,6 @@ const loyaltyAccountSchema = new mongoose.Schema({
 }, { timestamps: true });
 loyaltyAccountSchema.index({ tenantId: 1, customerId: 1 }, { unique: true });
 loyaltyAccountSchema.index({ tenantId: 1, referralCode: 1 }, { unique: true });
+loyaltyAccountSchema.plugin(tenantPlugin);
+
 export default mongoose.models.LoyaltyAccount || mongoose.model("LoyaltyAccount", loyaltyAccountSchema);
