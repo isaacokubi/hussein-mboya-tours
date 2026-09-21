@@ -48,11 +48,15 @@ They must be exercised in an environment with the required database transaction/
 
 ### Deployment
 
+**Current-main production deployment:** NOT VERIFIED
+
 **Status: NOT VERIFIED**
 
 The deployed production environment must report the intended current `main` commit before current-main launch certification can be claimed.
 
 ### M-Pesa
+
+**M-Pesa sandbox callback:** PENDING
 
 **Status: PENDING external evidence**
 
@@ -69,6 +73,8 @@ Required:
 STK initiation alone does not prove payment completion.
 
 ### eTIMS/KRA
+
+**Live KRA/eTIMS submission:** PENDING
 
 **Status: PENDING external evidence**
 
