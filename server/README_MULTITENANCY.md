@@ -18,8 +18,7 @@ The platform uses request-scoped tenant context plus a Mongoose tenant plugin.
 Static checks:
 
 ```bash
-npm run check:multitenancy
-npm run check:multitenancy:code
+npm run check:multitenancy:live
 ```
 
 Live database regression:
