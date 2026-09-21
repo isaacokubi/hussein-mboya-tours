@@ -10,6 +10,7 @@ import { createCustomerLoginChallenge } from "./mfaController.js";
 import { sendSMS } from "../services/smsService.js";
 import Staff from "../models/Staff.js";
 import Agent from "../models/Agent.js";
+import { setAuthCookie, clearAuthCookies } from "../utils/authCookie.js";
 
 const normalizeRole = (value) => String(value?.name || value || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
 const effectiveRoleForUser = (user) => normalizeRole(user?.role) || normalizeRole(user?.legacyRole) || normalizeRole(user?.roleId) || "customer";
@@ -23,11 +24,6 @@ const publicUser = (user, permissions = []) => {
   return { _id: user._id, name: user.name, email: user.email, phone: user.phone, role, tenantId: platformOwner ? null : (user.tenantId || null), permissions, profileImage: user.profileImage, status: user.status, isVerified: user.isVerified, loyaltyPoints: user.loyaltyPoints, referralCode: user.referralCode, lastLoginAt: user.lastLoginAt, createdAt: user.createdAt };
 };
 const createAuditLog = (data) => AuditLog.log(data);
-
-const setAuthCookie = (res, token) => {
-  const isProduction = String(process.env.NODE_ENV || "development").toLowerCase() === "production";
-  res.cookie("token", token, { httpOnly: true, secure: isProduction, sameSite: isProduction ? "none" : "lax", maxAge: 7 * 24 * 60 * 60 * 1000, path: "/" });
-};
 
 const isLocalPublicLogin = (req) => {
   const host = String(req.get("X-Forwarded-Host") || req.get("Host") || "").split(",")[0].trim().toLowerCase().replace(/:\d+$/, "");
@@ -175,6 +171,15 @@ export const register = async (req, res, next) => {
     await SecurityLog.logEvent({ user: user._id, email: user.email, action: "register", status: "success", ipAddress: req.ip, userAgent: req.headers["user-agent"], details: "User registration" });
     return res.status(201).json({ success: true, user: publicUser(user, []), message: "Registration successful. You can now log in." });
   } catch (error) { console.error("REGISTER ERROR:", error); return next(error); }
+};
+
+export const logout = async (req, res, next) => {
+  try {
+    clearAuthCookies(res);
+    return res.status(204).send();
+  } catch (error) {
+    return next(error);
+  }
 };
 
 export const getMe = async (req, res, next) => {
