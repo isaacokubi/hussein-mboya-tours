@@ -20,7 +20,7 @@ const generateSitemap = async () => {
 
     const hostname =
       process.env.CLIENT_URL ||
-      "https://husseinmboyatours.com";
+      (process.env.PLATFORM_HOST ? `https://${String(process.env.PLATFORM_HOST).replace(/^https?:\/\//, "").replace(/\/$/, "")}` : "https://globaltours.com");
 
     const sitemap = new SitemapStream({
       hostname,
