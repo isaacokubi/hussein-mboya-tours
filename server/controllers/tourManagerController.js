@@ -6,7 +6,6 @@ import User from "../models/User.js";
 import Payment from "../models/Payment.js";
 import Staff from "../models/Staff.js";
 import Vehicle from "../models/Vehicle.js";
-import { assignTourResources } from "./tourAssignmentController.js";
 import { getBookingRevenueMetrics } from "../services/bookingRevenueService.js";
 import { cancelTourAndBookings } from "../services/tourCancellationService.js";
 
@@ -103,15 +102,6 @@ export const getTours = async (req, res, next) => {
       Tour.countDocuments(filter),
     ]);
     return res.status(200).json({ success: true, count: tours.length, total, data: tours, tours, pagination: { total, page: currentPage, limit: pageLimit, pages: Math.ceil(total / pageLimit) } });
-  } catch (error) { next(error); }
-};
-
-export const assignTourGuide = async (req, res, next) => {
-  try {
-    const { tourId, guideId } = req.body;
-    if (!tourId || !guideId) return res.status(400).json({ success: false, message: "tourId and guideId are required" });
-    if (!mongoose.Types.ObjectId.isValid(tourId) || !mongoose.Types.ObjectId.isValid(guideId)) return res.status(400).json({ success: false, message: "Invalid tour or guide ID" });
-    req.params.id = tourId; req.body = { guideId }; return assignTourResources(req, res, next);
   } catch (error) { next(error); }
 };
 
