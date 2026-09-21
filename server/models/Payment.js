@@ -60,7 +60,7 @@ paymentSchema.post("save", async function () {
   if (!this.tenantId || !this.booking) return;
   if (!["completed", "refunded"].includes(this.status) && this.refundStatus !== "completed") return;
   const session = typeof this.$session === "function" ? this.$session() : null; const queryOptions = session ? { session } : {}; const PaymentModel = this.constructor; const bookingId = this.booking;
-  if (this.status === "completed" && this.$statusWasModified) { try { await postPaymentToLedger(this); } catch (ledgerError) { console.error("PAYMENT GL POSTING ERROR:", ledgerError.message); } }
+  if (this.status === "completed" && this.$statusWasModified) { try { await postPaymentToLedger(this, { session }); } catch (ledgerError) { console.error("PAYMENT GL POSTING ERROR:", ledgerError.message); } }
   const [invoice, payments, commission] = await Promise.all([
     Invoice.findOne({ tenantId: this.tenantId, booking: bookingId, isDeleted: { $ne: true } }, null, queryOptions),
     PaymentModel.find({ tenantId: this.tenantId, booking: bookingId, status: { $in: ["completed", "refunded"] } }, null, queryOptions).select("amount status refundedAmount refundStatus paymentMethod transactionReference transactionId mpesaReceiptNumber invoiceNumber updatedAt feeAmount paymentFee transactionFee gatewayFee"),
