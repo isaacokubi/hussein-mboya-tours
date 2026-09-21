@@ -1,9 +1,10 @@
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
 const { Schema } = mongoose;
 
 const TravelServiceRequestSchema = new Schema({
-  tenantId: { type: Schema.Types.ObjectId, ref: "Tenant", required: true, index: true },
+  tenantId: { type: Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
   booking: { type: Schema.Types.ObjectId, ref: "Booking", index: true },
   customer: { type: Schema.Types.ObjectId, ref: "User", index: true },
   type: { type: String, enum: ["airport_transfer", "accommodation", "rooming_list", "travel_document", "insurance", "manifest", "incident", "schedule", "cancellation", "special_service"], required: true, index: true },
@@ -25,5 +26,7 @@ const TravelServiceRequestSchema = new Schema({
 
 TravelServiceRequestSchema.index({ tenantId: 1, type: 1, status: 1, requestedDate: 1 });
 TravelServiceRequestSchema.index({ tenantId: 1, booking: 1, createdAt: -1 });
+
+TravelServiceRequestSchema.plugin(tenantPlugin);
 
 export default mongoose.models.TravelServiceRequest || mongoose.model("TravelServiceRequest", TravelServiceRequestSchema);
