@@ -66,7 +66,7 @@ export default function TourDetails() {
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-7xl mx-auto bg-white rounded-3xl shadow-xl p-8 grid md:grid-cols-2 gap-10">
         <div>
-          <img src={image} alt={tour.title} className="w-full aspect-[16/9] max-h-[500px] object-cover rounded-2xl" />
+          <img src={image} alt={tour.title} className="w-full aspect-[16/9] object-cover rounded-2xl" />
         </div>
         <div>
           <h1 className="text-5xl font-bold text-green-900">{tour.title}</h1>
