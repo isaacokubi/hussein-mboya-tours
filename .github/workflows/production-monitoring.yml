@@ -19,9 +19,6 @@ concurrency:
   group: production-monitoring
   cancel-in-progress: true
 
-env:
-  PRODUCTION_API_URL: https://hussein-mboya-tours.onrender.com
-  PRODUCTION_WEB_URL: https://hussein-mboya-tours.vercel.app
 
 jobs:
   monitor:
@@ -30,6 +27,17 @@ jobs:
     timeout-minutes: 5
 
     steps:
+      - name: Validate production endpoint configuration
+        env:
+          PRODUCTION_API_URL: ${{ secrets.PRODUCTION_API_URL }}
+          PRODUCTION_WEB_URL: ${{ secrets.PRODUCTION_WEB_URL }}
+        run: |
+          set -euo pipefail
+          test -n "${PRODUCTION_API_URL:-}" || { echo "PRODUCTION_API_URL is required."; exit 1; }
+          test -n "${PRODUCTION_WEB_URL:-}" || { echo "PRODUCTION_WEB_URL is required."; exit 1; }
+          case "$PRODUCTION_API_URL" in https://*) ;; *) echo "PRODUCTION_API_URL must use HTTPS."; exit 1;; esac
+          case "$PRODUCTION_WEB_URL" in https://*) ;; *) echo "PRODUCTION_WEB_URL must use HTTPS."; exit 1;; esac
+
       - name: Check production API health and latency
         id: api
         shell: bash
@@ -88,6 +96,8 @@ jobs:
         if: ${{ failure() }}
         uses: actions/github-script@v7
         env:
+          PRODUCTION_API_URL: ${{ secrets.PRODUCTION_API_URL }}
+          PRODUCTION_WEB_URL: ${{ secrets.PRODUCTION_WEB_URL }}
           API_LATENCY_MS: ${{ steps.api.outputs.latency_ms }}
           WEB_LATENCY_MS: ${{ steps.web.outputs.latency_ms }}
         with:
