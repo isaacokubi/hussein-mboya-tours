@@ -3,6 +3,7 @@ import generateToken from "../utils/generateToken.js";
 import { createAuditLog } from "../services/auditService.js";
 import { registerTenant } from "../services/publicOnboardingService.js";
 import { runWithTenant } from "../tenancy/context.js";
+import { setAuthCookie } from "../utils/authCookie.js";
 
 export async function registerTenantPublic(req, res, next) {
   try {
@@ -23,6 +24,8 @@ export async function registerTenantPublic(req, res, next) {
       permissions,
       tenantId: adminUser.tenantId,
     });
+
+    setAuthCookie(res, token);
 
     await runWithTenant(
       {
