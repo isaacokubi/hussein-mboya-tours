@@ -98,3 +98,12 @@ test("admin booking status updates enforce lifecycle and payment boundaries", ()
   assert.match(source, /PAYMENT_REQUIRED_BEFORE_COMPLETION/);
   assert.doesNotMatch(source, /findOneAndUpdate\([\s\S]*?\{ status \}/);
 });
+
+test("admin client cannot manually mutate booking payment status", () => {
+  const management = fs.readFileSync(path.join(root, "../client/src/pages/admin/BookingManagement.jsx"), "utf8");
+  const manage = fs.readFileSync(path.join(root, "../client/src/pages/admin/ManageBookings.jsx"), "utf8");
+  assert.doesNotMatch(management, /updateBookingPayment/);
+  assert.doesNotMatch(management, /paymentMutation/);
+  assert.doesNotMatch(manage, /updateBookingPayment/);
+  assert.doesNotMatch(manage, /paymentMutation/);
+});
