@@ -27,6 +27,7 @@ import {
 } from "../constants/bookingConstants.js";
 
 import { calculateBookingAmounts } from "../utils/bookingPricing.js";
+import { calculateTax } from "../services/taxEngineService.js";
 
 import { successResponse } from "../utils/apiResponse.js";
 
@@ -149,18 +150,39 @@ export const createBooking = async (req, res, next) => {
           balanceAmount: 0,
         };
 
-    // Reserve capacity before creating the booking. If booking creation
-    // fails, the reservation is released in the catch block below.
+    if (tourData?.taxEnabled) {
+      const tax = calculateTax({
+        amount: amounts.subtotal,
+        discount: amounts.discountAmount,
+        category: tourData.taxCategory || "STANDARD",
+        rate: tourData.taxRate,
+        mode: tourData.taxMode || "exclusive",
+      });
+      amounts.taxAmount = tax.taxAmount;
+      amounts.serviceFee = 0;
+      amounts.totalAmount = tax.totalAmount;
+      amounts.balanceAmount = tax.totalAmount;
+    } else {
+      amounts.taxAmount = 0;
+      amounts.serviceFee = 0;
+    }
+
+    // Capacity is date-scoped when the tour publishes availability dates.
+    // The update is a single atomic document operation; the catch block
+    // compensates if the subsequent booking write fails.
       if (tour) {
-        await reserveSlots(tour, totalTravellers);
+        await reserveSlots(tour, totalTravellers, travelDate);
       }
 
     let booking;
 
     try {
+      const customerProfile = await Customer.findOne(
+        mergeTenantFilter({ user: req.user._id })
+      );
       booking = await Booking.create({
 
-        customer:null,
+        customer: customerProfile?._id || null,
 
         user:req.user._id,
 
@@ -203,17 +225,23 @@ export const createBooking = async (req, res, next) => {
         discountAmount:
           amounts.discountAmount,
 
+        taxAmount:
+          Number(amounts.taxAmount || 0),
+
+        serviceFee:
+          Number(amounts.serviceFee || 0),
 
         totalAmount:
           amounts.totalAmount,
 
-
         depositAmount:
           amounts.depositAmount,
 
+        amountPaid:
+          0,
 
         balanceAmount:
-          amounts.balanceAmount,
+          amounts.totalAmount,
 
 
         paymentMethod:
@@ -1477,7 +1505,8 @@ booking.paymentStatus =
 if (booking.tour) {
   await releaseSlots(
     booking.tour,
-    booking.numberOfGuests
+    booking.numberOfGuests,
+    booking.travelDate
   );
 }
 
