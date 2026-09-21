@@ -73,7 +73,7 @@ export const reserveSlots = async (tourId, travelers, travelDate, session = null
       { new: true, session }
     );
     if (!tour) throw new Error("Not enough available tour slots for the selected travel date.");
-    return syncDerivedAvailability(tour);
+    return syncDerivedAvailability(tour, session);
   }
 
   const tour = await Tour.findOneAndUpdate(
@@ -85,7 +85,7 @@ export const reserveSlots = async (tourId, travelers, travelDate, session = null
     { new: true, session }
   );
   if (!tour) throw new Error("Not enough available tour slots.");
-  return syncDerivedAvailability(tour);
+  return syncDerivedAvailability(tour, session);
 };
 
 export const releaseSlots = async (tourId, travelers, travelDate, session = null) => {
@@ -106,11 +106,11 @@ export const releaseSlots = async (tourId, travelers, travelDate, session = null
     if (!tour) throw new Error("Tour travel date not found.");
     const item = tour.availability.find((entry) => sameDay(entry.date, target));
     if (item && item.bookedSlots < 0) item.bookedSlots = 0;
-    return syncDerivedAvailability(tour);
+    return syncDerivedAvailability(tour, session);
   }
 
   const tour = await Tour.findOneAndUpdate(mergeTenantFilter({ _id: tourId }), { $inc: { "availabilitySettings.bookedSlots": -travelers } }, { new: true, session });
   if (!tour) throw new Error("Tour not found.");
   if (tour.availabilitySettings.bookedSlots < 0) tour.availabilitySettings.bookedSlots = 0;
-  return syncDerivedAvailability(tour);
+  return syncDerivedAvailability(tour, session);
 };
