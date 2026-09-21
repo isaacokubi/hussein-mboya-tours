@@ -7,6 +7,7 @@ import Tour from "../models/Tour.js";
 import Destination from "../models/Destination.js";
 import Payment from "../models/Payment.js";
 import { getBookingRevenueMetrics } from "../services/bookingRevenueService.js";
+import { getPostedRevenueReport } from "../services/financeReportingService.js";
 
 const activeBookingRevenueStages = [
   { $lookup: { from: "bookings", localField: "booking", foreignField: "_id", as: "booking" } },
@@ -64,12 +65,7 @@ export const getDashboardStats = async (req, res, next) => {
         { $group: { _id: { status: "$status", paymentStatus: "$paymentStatus" }, count: { $sum: 1 } } },
         { $sort: { count: -1 } },
       ]),
-      Payment.aggregate([
-        { $match: paymentFilter },
-        ...activeBookingRevenueStages,
-        { $group: { _id: { year: { $year: { $ifNull: ["$paidAt", "$createdAt"] } }, month: { $month: { $ifNull: ["$paidAt", "$createdAt"] } } }, total: { $sum: completedPaymentAmount } } },
-        { $sort: { "_id.year": 1, "_id.month": 1 } },
-      ]),
+      getPostedRevenueReport(),
       Booking.aggregate([
         { $match: mergeTenantFilter({ isDeleted: { $ne: true }, status: { $nin: ["cancelled", "refunded"] }, tour: { $ne: null } }) },
         { $lookup: { from: "tours", localField: "tour", foreignField: "_id", as: "tour" } },
@@ -122,7 +118,8 @@ export const getDashboardStats = async (req, res, next) => {
         destinations,
         revenue: Number(revenueData?.revenue || 0),
         status,
-        monthlyRevenue,
+        monthlyRevenue: monthlyRevenue.monthly,
+        revenueBasis: "posted_journals",
         popularTours,
         paymentStats,
         vehicleStats: [],
@@ -160,12 +157,8 @@ export const getBookingAnalytics = async (req, res, next) => {
 
 export const getRevenueAnalytics = async (req, res, next) => {
   try {
-    const monthly = await Payment.aggregate([
-      { $match: mergeTenantFilter({ status: "completed" }) },
-      ...activeBookingRevenueStages,
-      { $group: { _id: { year: { $year: { $ifNull: ["$paidAt", "$createdAt"] } }, month: { $month: { $ifNull: ["$paidAt", "$createdAt"] } } }, revenue: { $sum: completedPaymentAmount }, bookings: { $sum: 1 } } },
-      { $sort: { "_id.year": 1, "_id.month": 1 } },
-    ]);
-    return res.status(200).json({ success: true, data: { monthly } });
+    const report = await getPostedRevenueReport();
+    const monthly = report.monthly;
+    return res.status(200).json({ success: true, data: { monthly, revenueBasis: "posted_journals" } });
   } catch (error) { next(error); }
 };
