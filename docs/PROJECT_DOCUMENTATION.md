@@ -221,7 +221,8 @@ Authorization is role/permission based. The repository contains explicit RBAC co
 
 ```bash
 cd server
-npm run check:rbac
+npm run test:security
+APPLY_ROLE_NORMALIZATION=false npm run migrate:roles
 ```
 
 Administrative routes should use both authentication and the appropriate permission checks. Platform-level routes require stronger authorization than ordinary business operations.
@@ -276,8 +277,7 @@ The system must prevent:
 Run the static check:
 
 ```bash
-npm run check:multitenancy
-npm run check:multitenancy:code
+npm run check:multitenancy:live
 ```
 
 Run the live regression test when MongoDB is available:
@@ -551,15 +551,15 @@ npm run check:models
 ### Authorization and security
 
 ```bash
-npm run check:rbac
+npm run test:security
+APPLY_ROLE_NORMALIZATION=false npm run migrate:roles
 npm run check:security
 ```
 
 ### Tenancy
 
 ```bash
-npm run check:multitenancy
-npm run check:multitenancy:code
+npm run check:multitenancy:live
 npm run check:multitenancy:live
 ```
 
@@ -739,7 +739,8 @@ Check authentication, role/permission assignment, API response status, tenant co
 Validate:
 
 ```bash
-npm run check:rbac
+npm run test:security
+APPLY_ROLE_NORMALIZATION=false npm run migrate:roles
 ```
 
 Then inspect role permissions, authenticated user permissions, admin role routes, and frontend API calls.
