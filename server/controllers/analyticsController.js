@@ -1,20 +1,11 @@
 import { requireTenantId } from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 import Booking from "../models/Booking.js";
-import Payment from "../models/Payment.js";
 import User from "../models/User.js";
 import Vehicle from "../models/Vehicle.js";
 import Commission from "../models/Commission.js";
 import { getRevenueAnalytics, getBookingAnalytics, getPopularTours } from "../services/analyticsService.js";
 import { getPostedRevenueReport } from "../services/financeReportingService.js";
-
-const nonNegativeAmount = {
-  $cond: [
-    { $gt: [{ $subtract: [{ $ifNull: ["$amount", 0] }, { $ifNull: ["$refundedAmount", 0] }] }, 0] },
-    { $subtract: [{ $ifNull: ["$amount", 0] }, { $ifNull: ["$refundedAmount", 0] }] },
-    0,
-  ],
-};
 
 export const getAnalytics = async (req, res, next) => {
   try {
@@ -41,9 +32,9 @@ export const getAnalytics = async (req, res, next) => {
         { $group: { _id: null, totalCommission: { $sum: { $ifNull: ["$amount", 0] } } } },
       ]),
     ]);
-    const collectedRevenue = Number(revenue?.totalRevenue || 0);
+    const reportedRevenue = Number(revenue?.totalRevenue || 0);
     const commissionCost = Number(commissions?.[0]?.totalCommission || 0);
-    const profitability = { collectedRevenue, commissionCost, contributionMargin: Math.max(0, collectedRevenue - commissionCost), marginPercent: collectedRevenue ? Math.round(((collectedRevenue - commissionCost) / collectedRevenue) * 10000) / 100 : 0 };
+    const profitability = { reportedRevenue, commissionCost, contributionMargin: Math.max(0, reportedRevenue - commissionCost), marginPercent: reportedRevenue ? Math.round(((reportedRevenue - commissionCost) / reportedRevenue) * 10000) / 100 : 0 };
     return res.status(200).json({ success: true, data: { revenue, customers, bookings, bookingStatus, monthlyRevenue: monthlyRevenue.monthly, popularTours, vehicleStats, profitability } });
   } catch (error) {
     next(error);
