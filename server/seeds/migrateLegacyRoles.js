@@ -38,7 +38,7 @@ const migrateRoles = async () => {
   for (const [key, members] of groups) {
     const canonicalRole = members.find((role) => String(role.name || "").toLowerCase() === role.canonical) || members[0];
     const canonicalName = canonicalRole.canonical;
-    const mergedPermissions = [...new Set(members.flatMap((role) => (role.permissions || []).map((id) => String(id))))];
+    const mergedPermissions = [...new Set(members.flatMap((role) => (role.permissions || []).map((id) => String(id)).filter((id) => mongoose.isValidObjectId(id))))];
     const duplicateIds = members.filter((role) => String(role._id) !== String(canonicalRole._id)).map((role) => role._id);
 
     const affectedUsers = users.filter((user) =>
@@ -61,6 +61,12 @@ const migrateRoles = async () => {
     }
 
     if (!APPLY) continue;
+
+    if (deleteIds.length) {
+      // Remove aliases before renaming the retained role so the tenant-scoped
+      // unique (tenantId, name) index cannot reject a canonical-name collision.
+      await db.collection("roles").deleteMany({ _id: { $in: duplicateIds } });
+    }
 
     roleOps.push({
       updateOne: {
