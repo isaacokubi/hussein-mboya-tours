@@ -25,7 +25,8 @@ if (!Expense.schema.__operationalAccountingHookAttached) {
 
 if (!Invoice.schema.__operationalAccountingHookAttached) {
   Invoice.schema.post("save", async function(doc) {
-    try { await postInvoiceToLedger(doc); } catch (error) { console.error("INVOICE GL POSTING ERROR:", error.message); }
+    const session = typeof doc.$session === "function" ? doc.$session() : null;
+    try { await postInvoiceToLedger(doc, { session }); } catch (error) { console.error("INVOICE GL POSTING ERROR:", error.message); }
   });
   Invoice.schema.__operationalAccountingHookAttached = true;
 }

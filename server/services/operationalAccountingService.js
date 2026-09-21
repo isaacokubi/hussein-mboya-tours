@@ -98,7 +98,7 @@ export const reverseJournalOnce = async ({ tenantId, originalJournal, sourceType
   }
 };
 
-export const postInvoiceToLedger = async (invoice) => {
+export const postInvoiceToLedger = async (invoice, { session = null } = {}) => {
   if (!invoice || invoice.isDeleted || ["draft", "cancelled"].includes(invoice.status)) return null;
   const total = Math.max(0, round(invoice.totalAmount));
   const tax = Math.max(0, Math.min(total, round(invoice.tax)));
@@ -106,7 +106,7 @@ export const postInvoiceToLedger = async (invoice) => {
   const revenueCode = invoice.hospitalityType === "hotel" ? "4010" : invoice.hospitalityType === "airport_transfer" ? "4020" : "4000";
   const lines = [{ code: "1100", debit: total, credit: 0, description: "Accounts receivable" }, { code: revenueCode, debit: 0, credit: revenue, description: invoice.hospitalityType === "hotel" ? "Hotel revenue" : invoice.hospitalityType === "airport_transfer" ? "Airport transfer revenue" : "Tour revenue" }];
   if (tax > 0) lines.push({ code: "2110", debit: 0, credit: tax, description: "Output VAT" });
-  return postOnce({ tenantId: invoice.tenantId, sourceType: "invoice", sourceId: invoice._id, date: invoice.issueDate, description: `Invoice ${invoice.invoiceNumber}`, reference: invoice.invoiceNumber, lines });
+  return postOnce({ session, tenantId: invoice.tenantId, sourceType: "invoice", sourceId: invoice._id, date: invoice.issueDate, description: `Invoice ${invoice.invoiceNumber}`, reference: invoice.invoiceNumber, lines });
 };
 
 export const postPaymentToLedger = async (payment, { session = null } = {}) => {

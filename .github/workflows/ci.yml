@@ -118,7 +118,7 @@ jobs:
           docker exec mongo-tour-ci mongosh --quiet --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"127.0.0.1:27017"}]})'
 
       - name: Run tour lifecycle integration
-        run: node --test tests/tourLifecycleIntegration.test.js
+        run: node --test tests/tourLifecycleIntegration.test.js tests/hospitalityPaymentLifecycleIntegration.test.js
 
       - name: Cleanup Mongo replica set
         if: always()
