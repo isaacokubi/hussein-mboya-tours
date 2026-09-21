@@ -672,11 +672,11 @@ export const updateBookingStatus = async (
       });
     }
 
-    if (status === "completed" && String(booking.paymentStatus || "").toLowerCase() !== "paid") {
+    if (["ongoing", "completed"].includes(status) && String(booking.paymentStatus || "").toLowerCase() !== "paid") {
       return res.status(409).json({
         success: false,
         code: "PAYMENT_REQUIRED_BEFORE_COMPLETION",
-        message: "Only paid bookings can be marked as completed.",
+        message: "Only fully paid bookings can be moved into an active or completed trip state.",
       });
     }
 
