@@ -7,8 +7,9 @@ import { syncInvoiceFromPayment } from "../services/invoiceLifecycleService.js";
 
 if (!Payment.schema.__operationalAccountingHookAttached) {
   Payment.schema.post("save", async function(doc) {
-    try { await postPaymentToLedger(doc); } catch (error) { console.error("PAYMENT GL POSTING ERROR:", error.message); }
-    try { if (Number(doc.refundedAmount || 0) > 0 && (doc.refundStatus === "completed" || doc.status === "refunded")) await postPaymentRefundToLedger(doc, doc.refundedAmount, doc.refundReference); } catch (error) { console.error("PAYMENT REFUND GL POSTING ERROR:", error.message); }
+    const session = typeof doc.$session === "function" ? doc.$session() : null;
+    try { await postPaymentToLedger(doc, { session }); } catch (error) { console.error("PAYMENT GL POSTING ERROR:", error.message); }
+    try { if (Number(doc.refundedAmount || 0) > 0 && (doc.refundStatus === "completed" || doc.status === "refunded")) await postPaymentRefundToLedger(doc, doc.refundedAmount, doc.refundReference, { session }); } catch (error) { console.error("PAYMENT REFUND GL POSTING ERROR:", error.message); }
     try { if (doc.status === "completed") await syncInvoiceFromPayment(doc); } catch (error) { console.error("INVOICE PAYMENT SYNC ERROR:", error.message); }
   });
   Payment.schema.__operationalAccountingHookAttached = true;
