@@ -1173,7 +1173,7 @@ export const updateBookingStatus = async (req, res, next) => {
       return res.status(409).json({
         success: false,
         code: "PAYMENT_REQUIRED_BEFORE_COMPLETION",
-        message: "Only paid bookings can be marked as completed.",
+        message: "Only fully paid bookings can be moved into an active or completed trip state.",
       });
     }
 
