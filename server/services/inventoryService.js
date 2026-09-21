@@ -101,7 +101,7 @@ export const releaseSlots = async (tourId, travelers, travelDate, session = null
     const tour = await Tour.findOneAndUpdate(
       mergeTenantFilter({ _id: tourId, availability: { $elemMatch: { date: { $gte: start, $lt: end } } } }),
       { $inc: { "availability.$[day].bookedSlots": -travelers } },
-      { arrayFilters: [{ "day.date": { $gte: start, $lt: end } }], new: true }
+      { arrayFilters: [{ "day.date": { $gte: start, $lt: end } }], new: true, session }
     );
     if (!tour) throw new Error("Tour travel date not found.");
     const item = tour.availability.find((entry) => sameDay(entry.date, target));
