@@ -125,6 +125,6 @@ router.put("/:id/assign", assignTourResourcesSafe);
 router.patch("/:id/assign-vehicle", assignTourResourcesSafe);
 
 // PATCH /api/tours/:id/remove-vehicle
-router.patch("/:id/remove-vehicle", removeVehicle);
+router.patch("/:id/remove-vehicle", (req, res, next) => { req.body = { ...(req.body || {}), vehicleId: null }; return assignTourResourcesSafe(req, res, next); });
 
 export default router;
