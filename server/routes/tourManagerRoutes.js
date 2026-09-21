@@ -11,6 +11,7 @@ import { getTourManagerBookings } from "../controllers/tourManagerBookingControl
 import { protect, managerOnly } from "../middleware/authMiddleware.js";
 import validateFutureTourDate from "../middleware/validateFutureTourDate.js";
 import validateTourAssignmentTenant from "../middleware/validateTourAssignmentTenant.js";
+import validateTourCommand from "../middleware/validateTourCommand.js";
 
 const router = express.Router();
 router.use(protect);
@@ -19,8 +20,8 @@ router.use(managerOnly);
 
 router.get("/dashboard", getTourManagerDashboard);
 router.get("/tours", getTours);
-router.post("/tours", validateFutureTourDate, createTour);
-router.put("/tours/:id", updateTour);
+router.post("/tours", validateFutureTourDate, validateTourCommand(), createTour);
+router.put("/tours/:id", validateTourCommand(), updateTour);
 router.delete("/tours/:id", deleteTour);
 router.put("/tours/:id/assign", validateTourAssignmentTenant, assignTourResourcesSafe);
 router.patch("/tours/:id/complete", completeTour);
