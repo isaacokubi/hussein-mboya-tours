@@ -89,10 +89,9 @@ Run the contract checks before deployment:
 
 ```bash
 cd server
-npm run check:public-onboarding
 npm run check:models
 npm run check:controllers
-npm run check:multitenancy
+npm run check:multitenancy:live
 npm test
 ```
 
