@@ -160,6 +160,7 @@ test("payment completion rolls back financial state when accounting posting fail
       amount: 1000,
       currency: "KES",
       status: "pending",
+      transactionFee: 2000,
     });
 
     const original = await JournalEntry.countDocuments({ tenantId });
@@ -168,9 +169,9 @@ test("payment completion rolls back financial state when accounting posting fail
       () => completeBookingPayment({
         payment,
         booking,
-        paymentData: { amount: 1000, paymentMethod: "UNSUPPORTED_METHOD" },
+        paymentData: { amount: 1000, paymentMethod: "MPESA" },
       }),
-      /payment method|Accounting account|Operational accounting/i,
+      /Payment fee cannot exceed the payment amount|Operational accounting/i,
     );
 
     const freshPayment = await Payment.findById(payment._id).lean();
