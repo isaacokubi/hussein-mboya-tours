@@ -19,7 +19,7 @@ for (const file of fs.readdirSync(root).filter((name) => name.endsWith(".js")).s
     continue;
   }
 
-  if (!/\.plugin\(tenantPlugin\)/.test(source)) {
+  if (!source.includes("tenantPlugin(")) {
     failures.push(`${modelName}: declares tenantId but does not apply tenantPlugin before model compilation`);
   }
 }
