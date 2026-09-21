@@ -2,7 +2,8 @@ import mongoose from "mongoose";
 import Tour from "../models/Tour.js";
 import Staff from "../models/Staff.js";
 import Vehicle from "../models/Vehicle.js";
-import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
+import { getTenantContext, mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
+import { queueWebhookEvent } from "../services/webhookDeliveryService.js";
 
 const ACTIVE_TOUR_STATUSES = new Set(["scheduled", "upcoming", "confirmed", "active", "ongoing"]);
 
@@ -164,6 +165,26 @@ export const assignTourResourcesSafe = async (req, res, next) => {
       response = { success: true, message: guide || driver || vehicle ? "Tour resources assigned successfully." : "Tour resources cleared successfully.", data: updatedTour };
     });
 
+    try {
+      const tenantId = getTenantContext()?.tenantId;
+      if (tenantId) {
+        await queueWebhookEvent({
+          tenantId,
+          event: "tour.resources.assigned",
+          sourceId: String(req.params.id),
+          data: {
+            tourId: req.params.id,
+            guideId: req.body?.guideId || null,
+            driverId: req.body?.driverId || null,
+            vehicleId: req.body?.vehicleId || null,
+            assignedBy: req.user?._id || null,
+            occurredAt: new Date(),
+          },
+        });
+      }
+    } catch (notificationError) {
+      console.error("DURABLE ASSIGNMENT NOTIFICATION QUEUE ERROR:", notificationError.message);
+    }
     return res.status(200).json(response);
   } catch (error) {
     console.error("SAFE TOUR RESOURCE ASSIGNMENT ERROR:", error);
