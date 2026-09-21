@@ -116,7 +116,7 @@ export const postPaymentToLedger = async (payment, { session = null } = {}) => {
   const provider = String(payment.provider || payment.paymentMethod || "").toUpperCase();
   const cashCode = provider === "MPESA" ? "1020" : provider === "CARD" || provider === "STRIPE" || provider === "PAYPAL" || provider === "PESAPAL" ? "1030" : provider === "CASH" ? "1000" : "1010";
   const gross = round(payment.amount);
-  const fee = round(payment.feeAmount ?? payment.paymentFee ?? payment.transactionFee ?? payment.gatewayFee ?? 0);
+  const fee = round(payment.feeAmount || payment.paymentFee || payment.transactionFee || payment.gatewayFee || 0);
   if (gross <= 0) return null;
   if (fee > gross) throw new Error("Payment fee cannot exceed the payment amount.");
   const lines = [{ code: cashCode, debit: round(gross - fee), credit: 0, description: "Net payment settlement" }, { code: "1100", debit: 0, credit: gross, description: "Accounts receivable" }];
