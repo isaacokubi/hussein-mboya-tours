@@ -6,8 +6,7 @@ useQueryClient
 
 import {
 getBookings,
-updateBookingStatus,
-updateBookingPayment
+updateBookingStatus
 } from "../../api/adminBookingApi";
 
 
@@ -32,20 +31,6 @@ const statusMutation = useMutation({
 
 mutationFn:({id,status})=>
 updateBookingStatus(id,status),
-
-onSuccess:()=>{
-queryClient.invalidateQueries(
-["admin-bookings"]
-);
-}
-
-});
-
-
-const paymentMutation = useMutation({
-
-mutationFn:({id,payload})=>
-updateBookingPayment(id,payload),
 
 onSuccess:()=>{
 queryClient.invalidateQueries(
@@ -259,30 +244,7 @@ Confirm
 
 
 
-<button
 
-onClick={()=>paymentMutation.mutate({
-
-id:booking._id,
-
-payload:{
-paymentStatus:"paid"
-}
-
-})}
-
-className="
-bg-blue-600
-text-white
-px-3 py-1
-rounded
-"
-
->
-
-Paid
-
-</button>
 
 
 
