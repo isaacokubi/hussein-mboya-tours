@@ -1,102 +1,99 @@
 import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import Tour from "../models/Tour.js";
 
-/*
- * Capacity is maintained on Tour.availabilitySettings and updated atomically
- * so two simultaneous bookings cannot oversell the same tour.
- */
+const normalizeDate = (value) => {
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  d.setHours(0, 0, 0, 0);
+  return d;
+};
 
-export const validateTourCapacity = async (tourId, requestedGuests) => {
+const sameDay = (a, b) => {
+  const da = normalizeDate(a); const db = normalizeDate(b);
+  return Boolean(da && db && da.getTime() === db.getTime());
+};
+
+const getDateAvailability = (tour, travelDate) => {
+  const target = normalizeDate(travelDate);
+  if (!target) throw new Error("A valid travel date is required.");
+  const entries = Array.isArray(tour.availability) ? tour.availability : [];
+  if (entries.length === 0) return null;
+  const entry = entries.find((item) => sameDay(item.date, target));
+  if (!entry) throw new Error("The selected travel date is not offered for this tour.");
+  return entry;
+};
+
+export const validateTourCapacity = async (tourId, requestedGuests, travelDate) => {
   requireTenantId();
-  if (!Number.isInteger(requestedGuests) || requestedGuests <= 0) {
-    throw new Error("Invalid traveler count.");
-  }
-
-  const tour = await Tour.findOne(
-    mergeTenantFilter({
-      _id: tourId,
-    })
-  ).lean();
+  if (!Number.isInteger(requestedGuests) || requestedGuests <= 0) throw new Error("Invalid traveler count.");
+  const tour = await Tour.findOne(mergeTenantFilter({ _id: tourId })).lean();
   if (!tour) throw new Error("Tour not found.");
 
-  const totalSlots = Number(
-    tour.availabilitySettings?.totalSlots ?? tour.capacity ?? 0
-  );
-  const bookedSlots = Number(
-    tour.availabilitySettings?.bookedSlots ?? 0
-  );
+  const dated = getDateAvailability(tour, travelDate);
+  if (dated) return requestedGuests <= Math.max(Number(dated.totalSlots || 0) - Number(dated.bookedSlots || 0), 0);
 
+  const totalSlots = Number(tour.availabilitySettings?.totalSlots ?? tour.capacity ?? 0);
+  const bookedSlots = Number(tour.availabilitySettings?.bookedSlots ?? 0);
   return requestedGuests <= Math.max(totalSlots - bookedSlots, 0);
 };
 
-export const reserveSlots = async (tourId, travelers) => {
+export const reserveSlots = async (tourId, travelers, travelDate) => {
   requireTenantId();
+  if (!Number.isInteger(travelers) || travelers <= 0) throw new Error("Invalid traveler count.");
+  const target = normalizeDate(travelDate);
+  const current = await Tour.findOne(mergeTenantFilter({ _id: tourId })).lean();
+  if (!current) throw new Error("Tour not found.");
 
-  if (!Number.isInteger(travelers) || travelers <= 0) {
-    throw new Error("Invalid traveler count.");
+  if (Array.isArray(current.availability) && current.availability.length) {
+    if (!target) throw new Error("A valid travel date is required.");
+    const start = new Date(target); const end = new Date(target); end.setDate(end.getDate() + 1);
+    const tour = await Tour.findOneAndUpdate(
+      mergeTenantFilter({
+        _id: tourId,
+        availability: { $elemMatch: { date: { $gte: start, $lt: end }, $expr: { $lte: [{ $add: ["$$this.bookedSlots", travelers] }, "$$this.totalSlots"] } } }
+      }),
+      { $inc: { "availability.$[day].bookedSlots": travelers } },
+      { arrayFilters: [{ "day.date": { $gte: start, $lt: end }, $expr: { $lte: [{ $add: ["$day.bookedSlots", travelers] }, "$day.totalSlots"] } }], new: true }
+    );
+    if (!tour) throw new Error("Not enough available tour slots for the selected travel date.");
+    return tour;
   }
 
   const tour = await Tour.findOneAndUpdate(
     mergeTenantFilter({
       _id: tourId,
-      $expr: {
-        $lte: [
-          {
-            $add: [
-              { $ifNull: ["$availabilitySettings.bookedSlots", 0] },
-              travelers,
-            ],
-          },
-          { $ifNull: ["$availabilitySettings.totalSlots", "$capacity"] },
-        ],
-      },
+      $expr: { $lte: [{ $add: [{ $ifNull: ["$availabilitySettings.bookedSlots", 0] }, travelers] }, { $ifNull: ["$availabilitySettings.totalSlots", "$capacity"] }] }
     }),
-    {
-      $inc: {
-        "availabilitySettings.bookedSlots": travelers,
-      },
-    },
+    { $inc: { "availabilitySettings.bookedSlots": travelers } },
     { new: true }
   );
-
-  if (!tour) {
-    const exists = await Tour.exists(
-      mergeTenantFilter({
-        _id: tourId,
-      })
-    );
-    if (!exists) throw new Error("Tour not found.");
-    throw new Error("Not enough available tour slots.");
-  }
-
+  if (!tour) throw new Error("Not enough available tour slots.");
   return tour;
 };
 
-export const releaseSlots = async (tourId, travelers) => {
-  if (!Number.isInteger(travelers) || travelers <= 0) {
-    throw new Error("Invalid traveler count.");
-  }
-
+export const releaseSlots = async (tourId, travelers, travelDate) => {
   requireTenantId();
+  if (!Number.isInteger(travelers) || travelers <= 0) throw new Error("Invalid traveler count.");
+  const target = normalizeDate(travelDate);
+  const current = await Tour.findOne(mergeTenantFilter({ _id: tourId })).lean();
+  if (!current) throw new Error("Tour not found.");
 
-  const tour = await Tour.findOneAndUpdate(
-    mergeTenantFilter({
-      _id: tourId,
-    }),
-    {
-      $inc: {
-        "availabilitySettings.bookedSlots": -travelers,
-      },
-    },
-    { new: true }
-  );
-
-  if (!tour) throw new Error("Tour not found.");
-
-  if (tour.availabilitySettings.bookedSlots < 0) {
-    tour.availabilitySettings.bookedSlots = 0;
-    await tour.save();
+  if (Array.isArray(current.availability) && current.availability.length) {
+    if (!target) throw new Error("A valid travel date is required.");
+    const start = new Date(target); const end = new Date(target); end.setDate(end.getDate() + 1);
+    const tour = await Tour.findOneAndUpdate(
+      mergeTenantFilter({ _id: tourId, availability: { $elemMatch: { date: { $gte: start, $lt: end } } } }),
+      { $inc: { "availability.$[day].bookedSlots": -travelers } },
+      { arrayFilters: [{ "day.date": { $gte: start, $lt: end } }], new: true }
+    );
+    if (!tour) throw new Error("Tour travel date not found.");
+    const item = tour.availability.find((entry) => sameDay(entry.date, target));
+    if (item && item.bookedSlots < 0) { item.bookedSlots = 0; await tour.save(); }
+    return tour;
   }
 
+  const tour = await Tour.findOneAndUpdate(mergeTenantFilter({ _id: tourId }), { $inc: { "availabilitySettings.bookedSlots": -travelers } }, { new: true });
+  if (!tour) throw new Error("Tour not found.");
+  if (tour.availabilitySettings.bookedSlots < 0) { tour.availabilitySettings.bookedSlots = 0; await tour.save(); }
   return tour;
 };
