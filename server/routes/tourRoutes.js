@@ -11,8 +11,6 @@ import {
   getTourById,
   getTourBySlug,
   getManagerTours,
-  assignVehicle,
-  removeVehicle,
 } from "../controllers/tourController.js";
 import { createTour, updateTour, deleteTour, setPublication } from "../controllers/tourCrudController.js";
 
@@ -107,7 +105,8 @@ router.put("/:id", validateTourCommand(), upload.array("images", 10), updateTour
 
 // DELETE TOUR
 // DELETE /api/tours/:id
-router.delete("/:id", deleteTour);\nrouter.patch("/:id/publication", setPublication);
+router.delete("/:id", deleteTour);
+router.patch("/:id/publication", setPublication);
 
 /*
 |--------------------------------------------------------------------------
