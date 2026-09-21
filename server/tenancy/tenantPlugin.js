@@ -161,8 +161,13 @@ export function tenantPlugin(schema, options = {}) {
   schema.pre("validate", function tenantValidate(next) {
     try {
       if (isPlatformOwnerDocument(this)) { this.tenantId = null; return next(); }
-      const tenantId = requireTenantId();
+      // Validation-only operations (for example new Model(...).validateSync())
+      // may legitimately run outside a request tenant. If a tenant context is
+      // present, bind/verify it before required-field validation. Actual writes
+      // remain fail-closed in the save/insertMany middleware below.
+      const tenantId = getTenantId();
       if (!tenantId) return next();
+      if (!mongoose.Types.ObjectId.isValid(tenantId)) throw new Error("Invalid tenant context.");
       assertTenantValue(this.tenantId, tenantId);
       if (!this.tenantId) this.tenantId = tenantId;
       next();
