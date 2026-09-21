@@ -25,12 +25,12 @@ jobs:
     name: Production uptime, latency and alert monitor
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    env:
+      PRODUCTION_API_URL: ${{ secrets.PRODUCTION_API_URL }}
+      PRODUCTION_WEB_URL: ${{ secrets.PRODUCTION_WEB_URL }}
 
     steps:
       - name: Validate production endpoint configuration
-        env:
-          PRODUCTION_API_URL: ${{ secrets.PRODUCTION_API_URL }}
-          PRODUCTION_WEB_URL: ${{ secrets.PRODUCTION_WEB_URL }}
         run: |
           set -euo pipefail
           test -n "${PRODUCTION_API_URL:-}" || { echo "PRODUCTION_API_URL is required."; exit 1; }
