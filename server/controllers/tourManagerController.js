@@ -87,34 +87,91 @@ export const getTourManagerDashboard = async (req, res, next) => {
 
 export const createTour = async (req, res, next) => {
   requireTenantId();
+  const session = await mongoose.startSession();
   try {
-    const body = req.body || {};
-    const { guide, assignedGuide, driver, assignedDriver, vehicle, assignedVehicle, capacity, duration, price, ...rest } = body;
-    if (!rest.title?.trim() || !rest.description?.trim() || !rest.destination || !rest.country?.trim() || !rest.location?.trim() || !rest.date || price === undefined || Number(price) < 0) {
-      return res.status(400).json({ success: false, message: "Title, description, destination, country, location, date and a valid price are required." });
-    }
-    const guideId = assignedGuide || guide || null;
-    const driverId = assignedDriver || driver || null;
-    const vehicleId = assignedVehicle || vehicle || null;
-    const [guideDoc, driverDoc, vehicleDoc] = await Promise.all([
-      guideId ? Staff.findOne(mergeTenantFilter(req, { _id: guideId, position: "guide", isActive: true, isDeleted: { $ne: true } })) : null,
-      driverId ? Staff.findOne(mergeTenantFilter(req, { _id: driverId, position: "driver", isActive: true, isDeleted: { $ne: true } })) : null,
-      vehicleId ? Vehicle.findOne(mergeTenantFilter(req, { _id: vehicleId, isActive: true, isDeleted: { $ne: true } })) : null,
-    ]);
-    if (guideId && (!guideDoc || guideDoc.availability !== "available")) return res.status(400).json({ success: false, message: "Selected guide is unavailable." });
-    if (driverId && (!driverDoc || driverDoc.availability !== "available")) return res.status(400).json({ success: false, message: "Selected driver is unavailable." });
-    if (vehicleId && (!vehicleDoc || vehicleDoc.status !== "available")) return res.status(400).json({ success: false, message: "Selected vehicle is unavailable." });
-    const numericCapacity = Number(capacity) > 0 ? Number(capacity) : 20;
-    const numericDuration = Number(duration) > 0 ? Number(duration) : 1;
-    const numericPrice = Number(price);
-    const numericDiscount = Math.max(0, Number(rest.discount) || 0);
-    const tour = await Tour.create({ ...rest, title: rest.title.trim(), description: rest.description.trim(), country: rest.country.trim(), location: rest.location.trim(), price: numericPrice, capacity: numericCapacity, duration: String(duration ?? numericDuration), durationDetails: { days: numericDuration, nights: 0 }, discount: numericDiscount, assignedGuide: guideDoc?._id || null, assignedDriver: driverDoc?._id || null, assignedVehicle: vehicleDoc?._id || null, assignmentStatus: guideDoc || driverDoc || vehicleDoc ? "assigned" : "pending", status: rest.status || "upcoming", published: rest.published ?? true, available: true, availabilitySettings: { totalSlots: numericCapacity, bookedSlots: 0, waitlistEnabled: false }, createdBy: req.user._id });
-    if (guideDoc) await Staff.findOneAndUpdate(mergeTenantFilter(req, { _id: guideDoc._id }), { $set: { availability: "busy" }, $addToSet: { assignedTours: tour._id } });
-    if (driverDoc) await Staff.findOneAndUpdate(mergeTenantFilter(req, { _id: driverDoc._id }), { $set: { availability: "busy" }, $addToSet: { assignedTours: tour._id } });
-    if (vehicleDoc) await Vehicle.findOneAndUpdate(mergeTenantFilter(req, { _id: vehicleDoc._id }), { $set: { status: "assigned", assignedTour: tour._id } });
-    const createdTour = await Tour.findOne(mergeTenantFilter(req, { _id: tour._id })).populate("destination").populate("assignedGuide", "name email phone position availability").populate("assignedDriver", "name email phone position availability").populate("assignedVehicle", "name registrationNumber registration model type capacity status").lean();
-    return res.status(201).json({ success: true, message: "Tour created successfully", data: createdTour, tour: createdTour });
-  } catch (error) { next(error); }
+    let createdTour;
+    await session.withTransaction(async () => {
+      const body = req.body || {};
+      const { guide, assignedGuide, driver, assignedDriver, vehicle, assignedVehicle, capacity, duration, price, ...rest } = body;
+      if (!rest.title?.trim() || !rest.description?.trim() || !rest.destination || !rest.country?.trim() || !rest.location?.trim() || !rest.date || price === undefined || Number(price) < 0) {
+        throw Object.assign(new Error("Title, description, destination, country, location, date and a valid price are required."), { status: 400 });
+      }
+
+      const guideId = assignedGuide || guide || null;
+      const driverId = assignedDriver || driver || null;
+      const vehicleId = assignedVehicle || vehicle || null;
+      const [guideDoc, driverDoc, vehicleDoc] = await Promise.all([
+        guideId ? Staff.findOne(mergeTenantFilter({ _id: guideId, position: "guide", isActive: true, isDeleted: { $ne: true } })).session(session) : null,
+        driverId ? Staff.findOne(mergeTenantFilter({ _id: driverId, position: "driver", isActive: true, isDeleted: { $ne: true } })).session(session) : null,
+        vehicleId ? Vehicle.findOne(mergeTenantFilter({ _id: vehicleId, isActive: true, isDeleted: { $ne: true } })).session(session) : null,
+      ]);
+      if (guideId && (!guideDoc || guideDoc.availability !== "available")) throw Object.assign(new Error("Selected guide is unavailable."), { status: 409 });
+      if (driverId && (!driverDoc || driverDoc.availability !== "available")) throw Object.assign(new Error("Selected driver is unavailable."), { status: 409 });
+      if (vehicleId && (!vehicleDoc || vehicleDoc.status !== "available")) throw Object.assign(new Error("Selected vehicle is unavailable."), { status: 409 });
+
+      const numericCapacity = Number(capacity) > 0 ? Number(capacity) : 20;
+      const durationSource = duration ?? rest.durationDays ?? rest.durationDetails?.days ?? 1;
+      const durationMatch = String(durationSource).match(/\d+(?:\.\d+)?/);
+      const numericDuration = Number(durationMatch?.[0]);
+      if (!Number.isFinite(numericDuration) || numericDuration < 1 || numericDuration > 365) {
+        throw Object.assign(new Error("Duration must be a whole number of days between 1 and 365."), { status: 400 });
+      }
+      const numericPrice = Number(price);
+      const numericDiscount = Math.max(0, Number(rest.discount) || 0);
+
+      const [tour] = await Tour.create([{
+        ...rest,
+        title: rest.title.trim(),
+        description: rest.description.trim(),
+        country: rest.country.trim(),
+        location: rest.location.trim(),
+        price: numericPrice,
+        capacity: numericCapacity,
+        duration: String(Math.floor(numericDuration)),
+        durationDays: Math.floor(numericDuration),
+        durationDetails: { days: Math.floor(numericDuration), nights: 0 },
+        discount: numericDiscount,
+        assignedGuide: guideDoc?._id || null,
+        assignedDriver: driverDoc?._id || null,
+        assignedVehicle: vehicleDoc?._id || null,
+        assignmentStatus: guideDoc || driverDoc || vehicleDoc ? "assigned" : "pending",
+        status: rest.status || "upcoming",
+        published: rest.published ?? true,
+        available: true,
+        availabilitySettings: { totalSlots: numericCapacity, bookedSlots: 0, waitlistEnabled: false },
+        createdBy: req.user._id,
+      }], { session });
+
+      if (guideDoc) {
+        guideDoc.availability = "busy";
+        guideDoc.assignedTours = [...new Set([...(guideDoc.assignedTours || []).map(String), String(tour._id)])];
+        await guideDoc.save({ session });
+      }
+      if (driverDoc) {
+        driverDoc.availability = "busy";
+        driverDoc.assignedTours = [...new Set([...(driverDoc.assignedTours || []).map(String), String(tour._id)])];
+        await driverDoc.save({ session });
+      }
+      if (vehicleDoc) {
+        vehicleDoc.status = "assigned";
+        vehicleDoc.assignedTour = tour._id;
+        await vehicleDoc.save({ session });
+      }
+      createdTour = tour;
+    });
+
+    const responseTour = await Tour.findOne(mergeTenantFilter({ _id: createdTour._id }))
+      .populate("destination")
+      .populate("assignedGuide", "name email phone position availability")
+      .populate("assignedDriver", "name email phone position availability")
+      .populate("assignedVehicle", "name registrationNumber registration model type capacity status")
+      .lean();
+    return res.status(201).json({ success: true, message: "Tour created successfully", data: responseTour, tour: responseTour });
+  } catch (error) {
+    next(error);
+  } finally {
+    await session.endSession();
+  }
 };
 
 export const getTours = async (req, res, next) => {
