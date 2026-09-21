@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
-import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import HotelBooking from "./HotelBooking.js";
 import AirportTransferBooking from "./AirportTransferBooking.js";
 
@@ -47,8 +46,6 @@ schema.pre("validate", async function(next) {
     return next(error);
   }
 });
-
-schema.plugin(tenantPlugin);
 
 schema.plugin(tenantPlugin);
 
