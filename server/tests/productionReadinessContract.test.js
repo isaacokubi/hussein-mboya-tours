@@ -57,3 +57,10 @@ test("hospitality customer mutations are restricted to safe request fields", () 
   assert.match(transfer, /Vehicle is already assigned to transfer/);
   assert.match(transfer, /Driver is already assigned to transfer/);
 });
+
+test("admin booking payment endpoint is read-only", () => {
+  const source = read("../controllers/bookingAdminController.js");
+  assert.match(source, /BOOKING_PAYMENT_STATUS_READ_ONLY/);
+  assert.doesNotMatch(source, /booking\.paymentStatus = status/);
+  assert.doesNotMatch(source, /Manual "paid" changes must also create/);
+});
