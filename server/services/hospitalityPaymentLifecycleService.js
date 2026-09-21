@@ -20,7 +20,7 @@ export const getHospitalityPayableAmount = async (booking, { session = null } = 
     { $project: { net: { $max: [0, { $subtract: ["$amount", { $ifNull: ["$refundedAmount", 0] }] }] } } },
     { $group: { _id: null, total: { $sum: "$net" } } },
   ]);
-  if (session) query.options({ session });
+  if (session) query.session(session);
   const [paid] = await query;
   return Math.max(0, Math.round((total - Number(paid?.total || 0)) * 100) / 100);
 };
@@ -73,7 +73,7 @@ export const completeHospitalityPayment = async ({ payment, booking, paymentData
         { $project: { net: { $max: [0, { $subtract: ["$amount", { $ifNull: ["$refundedAmount", 0] }] }] } } },
         { $group: { _id: null, total: { $sum: "$net" } } },
       ]);
-      priorQuery.options({ session });
+      priorQuery.session(session);
       const [prior] = await priorQuery;
 
       const total = Number(bookingDoc.totalAmount || 0);
