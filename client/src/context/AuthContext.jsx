@@ -126,7 +126,7 @@ export function AuthProvider({ children }) {
       clearAuthStorage();
       queryClient.clear();
       setUser(null);
-      setToken(null);
+      setToken(false);
       setLoading(false);
       if (window.location.pathname !== "/login") {
         window.location.replace("/login?reason=session-expired");
