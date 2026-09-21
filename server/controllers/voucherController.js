@@ -34,10 +34,6 @@ export const generateVoucher = async (req, res, next) => {
 
     const currency =
       settings.currency || "KES";
-    const bookingNumber = booking?.bookingNumber || String(req.params.id);
-    const travelDate = booking?.travelDate ? new Date(booking.travelDate).toLocaleDateString("en-KE") : "Not specified";
-    const guests = Number(booking?.numberOfGuests || booking?.travelers?.length || 1);
-    const amount = Number(booking?.amountPaid || 0);
 
 
     /*
@@ -91,6 +87,11 @@ _id:req.params.id
         message: "Booking not found",
       });
     }
+
+    const bookingNumber = booking.bookingNumber || String(booking._id);
+    const travelDate = booking.travelDate ? new Date(booking.travelDate).toLocaleDateString("en-KE") : "Not specified";
+    const guests = Number(booking.numberOfGuests || booking.travelers?.length || 1);
+    const amount = Number(booking.amountPaid || 0);
 
     /*
     |--------------------------------------------------------------------------
