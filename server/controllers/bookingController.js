@@ -1132,214 +1132,61 @@ return booking;
 |--------------------------------------------------------------------------
 */
 
-export const updateBookingStatus = async (
-req,
-res,
-next
-)=>{
-
-
-try{
-
-
-const booking =
-await Booking.findOne(
-mergeTenantFilter({
-  _id: req.params.id,
-})
-);
-
-
-
-if(!booking){
-
-return res.status(404).json({
-
-success:false,
-
-message:"Booking not found"
-
-});
-
-}
-
-
-
-
-
-if(req.body.status){
-
-
-if(
-!BOOKING_STATUSES.includes(
-req.body.status
-)
-){
-
-return res.status(400).json({
-
-success:false,
-
-message:"Invalid booking status"
-
-});
-
-}
-
-
-
-booking.status =
-req.body.status;
-
-}
-
-
-
-
-
-if(req.body.status){
-
-
-if(
-!BOOKING_STATUSES.includes(
-req.body.status
-)
-){
-
-return res.status(400).json({
-
-success:false,
-
-message:"Invalid booking status"
-
-});
-
-}
-
-
-booking.status =
-req.body.status;
-
-}
-
-
-
-
-
-if(req.body.paymentStatus){
-
-
-if(
-!BOOKING_PAYMENT_STATUSES.includes(
-req.body.paymentStatus
-)
-){
-
-return res.status(400).json({
-
-success:false,
-
-message:"Invalid payment status"
-
-});
-
-}
-
-
-booking.paymentStatus =
-req.body.paymentStatus;
-
-}
-
-
-
-
-if(
-req.body.assigned !== undefined
-){
-
-booking.assigned =
-req.body.assigned;
-
-}
-
-
-
-
-
-if(
-booking.paymentStatus==="paid"
-){
-
-booking.status =
-"confirmed";
-
-
-booking.status =
-"confirmed";
-
-
-if(!booking.paidAt){
-
-booking.paidAt =
-new Date();
-
-}
-
-}
-
-
-
-
-
-if(
-booking.paymentStatus==="cancelled"
-){
-
-booking.status =
-"cancelled";
-
-
-booking.status =
-"cancelled";
-
-}
-
-
-
-
-await booking.save();
-
-
-
-return res.status(200).json({
-
-success:true,
-
-message:
-"Booking updated successfully",
-
-booking
-
-});
-
-
-
-}
-
-catch(error){
-
-next(error);
-
-}
-
+export const updateBookingStatus = async (req, res, next) => {
+  try {
+    const booking = await Booking.findOne(
+      mergeTenantFilter({ _id: req.params.id })
+    );
+
+    if (!booking) {
+      return res.status(404).json({ success: false, message: "Booking not found" });
+    }
+
+    const requestedStatus = String(req.body?.status || "").trim().toLowerCase();
+    if (!isValidBookingStatus(requestedStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid booking status",
+        allowedStatuses: BOOKING_STATUSES,
+      });
+    }
+
+    if (requestedStatus === booking.status) {
+      return res.status(400).json({
+        success: false,
+        message: `Booking is already ${requestedStatus}.`,
+      });
+    }
+
+    if (!canTransitionBookingStatus(booking.status, requestedStatus)) {
+      return res.status(409).json({
+        success: false,
+        message: `Booking cannot transition from "${booking.status}" to "${requestedStatus}".`,
+        currentStatus: booking.status,
+        requestedStatus,
+      });
+    }
+
+    if (requestedStatus === "completed" && booking.paymentStatus !== "paid") {
+      return res.status(409).json({
+        success: false,
+        code: "PAYMENT_REQUIRED_BEFORE_COMPLETION",
+        message: "Only paid bookings can be marked as completed.",
+      });
+    }
+
+    booking.status = requestedStatus;
+    await booking.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Booking status updated successfully",
+      booking,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
