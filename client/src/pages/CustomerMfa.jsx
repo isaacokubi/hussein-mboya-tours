@@ -18,9 +18,6 @@ export default function CustomerMfa({ userId, devPin }) {
     try {
       setLoading(true);
       const { data } = await api.post("/mfa/customer/verify-pin", { userId, pin });
-      if (!data?.token) throw new Error("Verification succeeded but no authentication token was returned.");
-
-      localStorage.setItem("token", data.token);
       if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
       if (data.user?.tenantId) localStorage.setItem("tenantId", String(data.user.tenantId?._id || data.user.tenantId));
       if (data.user?.tenantSlug) localStorage.setItem("tenantSlug", String(data.user.tenantSlug));
