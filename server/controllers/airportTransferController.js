@@ -30,6 +30,7 @@ export const updateTransferBooking=async(req,res,next)=>{try{
   const role=roleOf(req);
   const isCustomer=role==="customer";
   if(isCustomer&&String(booking.user)!==String(req.user._id))return res.status(403).json({success:false,message:"Not allowed."});
+  if(!isCustomer&&!staffRoles.has(role))return res.status(403).json({success:false,message:"Only authorized booking operations staff may modify this reservation."});
 
   const requestedKeys=Object.keys(req.body||{});
   if(isCustomer&&requestedKeys.some(key=>key!=="specialRequests")){
