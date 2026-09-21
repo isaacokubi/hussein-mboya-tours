@@ -3,8 +3,10 @@ import assert from "node:assert/strict";
 import mongoose from "mongoose";
 import Tour from "../models/Tour.js";
 import Booking from "../models/Booking.js";
+import Payment from "../models/Payment.js";
+import { completeBookingPayment } from "../services/paymentLifecycleService.js";
+import { cancelTourAndBookings } from "../services/tourCancellationService.js";
 import { createBookingAtomically } from "../services/bookingCreationService.js";
-import { releaseSlots } from "../services/inventoryService.js";
 import { runWithTenant } from "../tenancy/context.js";
 
 const integrationEnabled = Boolean(process.env.MONGODB_URI);
@@ -66,10 +68,46 @@ test("tour lifecycle atomically reserves dated capacity with booking creation an
 
     assert.equal(await Booking.countDocuments({ tenantId, tour: tour._id }), 1);
 
-    await releaseSlots(tour._id, 1, travelDate);
+    const payment = await Payment.create({
+      tenantId,
+      customer: new mongoose.Types.ObjectId(),
+      user: new mongoose.Types.ObjectId(),
+      booking: first._id,
+      provider: "MPESA",
+      method: "mpesa",
+      paymentMethod: "MPESA",
+      amount: 1000,
+      currency: "KES",
+      status: "pending",
+    });
+
+    const completedPayment = await completeBookingPayment({
+      payment,
+      booking: first,
+      paymentData: { amount: 1000, paymentMethod: "MPESA", mpesaReceiptNumber: "CI-LIFECYCLE-001" },
+    });
+    assert.equal(completedPayment.booking.amountPaid, 1000);
+    assert.equal(completedPayment.booking.balanceAmount, 0);
+    assert.equal(completedPayment.payment.status, "completed");
+
+    const cancelled = await cancelTourAndBookings({
+      tourId: tour._id,
+      reason: "Lifecycle integration cancellation",
+      deleted: false,
+    });
+    assert.equal(cancelled.bookingsAffected, 1);
+    assert.equal(cancelled.tour.status, "cancelled");
+
+    const cancelledBooking = await Booking.findById(first._id).lean();
+    assert.equal(cancelledBooking.status, "cancelled");
+    assert.equal(cancelledBooking.refundStatus, "requested");
+    assert.equal(cancelledBooking.refundAmount, 1000);
+
     const released = await Tour.findById(tour._id).lean();
     assert.equal(released.availability[0].bookedSlots, 0);
+    assert.equal(released.available, false);
 
+    await Payment.deleteMany({ tenantId });
     await Booking.deleteMany({ tenantId });
     await Tour.deleteMany({ tenantId });
   });
