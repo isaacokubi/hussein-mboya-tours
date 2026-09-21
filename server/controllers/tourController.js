@@ -4,6 +4,7 @@ import Destination from "../models/Destination.js";
 import Vehicle from "../models/Vehicle.js";
 import Staff from "../models/Staff.js";
 import { getSystemSettings } from "../services/settingsService.js";
+import { cancelTourAndBookings } from "../services/tourCancellationService.js";
 
 const publicTourFilter = {
   available: true,
@@ -203,10 +204,13 @@ export const updateTour = async (req, res, next) => {
 
 export const deleteTour = async (req, res, next) => {
   try {
-    requireTenantId();
-    const tour = await Tour.findOneAndUpdate(mergeTenantFilter({ _id: req.params.id }), { $set: { isDeleted: true, available: false, status: "cancelled", deletedAt: new Date(), deletedBy: req.user?._id || null } }, { new: true }).lean();
-    if (!tour) return res.status(404).json({ success: false, message: "Tour not found" });
-    return res.json({ success: true, message: "Tour deleted successfully", data: tour });
+    const result = await cancelTourAndBookings({
+      tourId: req.params.id,
+      reason: req.body?.reason || "Tour deleted/cancelled",
+      deleted: true,
+      userId: req.user?._id || null,
+    });
+    return res.json({ success: true, message: "Tour deleted after cancelling/reconciling active bookings.", data: result.tour, bookingsAffected: result.bookingsAffected });
   } catch (error) { return next(error); }
 };
 
