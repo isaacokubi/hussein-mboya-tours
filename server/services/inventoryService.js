@@ -8,7 +8,7 @@ const normalizeDate = (value) => {
   return d;
 };
 
-const syncDerivedAvailability = async (tour) => {
+const syncDerivedAvailability = async (tour, session = null) => {
   const entries = Array.isArray(tour.availability) ? tour.availability : [];
   const total = entries.length ? entries.reduce((sum, item) => sum + Number(item.totalSlots || 0), 0) : Number(tour.availabilitySettings?.totalSlots ?? tour.capacity ?? 0);
   const booked = entries.length ? entries.reduce((sum, item) => sum + Number(item.bookedSlots || 0), 0) : Number(tour.availabilitySettings?.bookedSlots || 0);
@@ -16,7 +16,7 @@ const syncDerivedAvailability = async (tour) => {
   tour.available = hasSpace;
   if (!hasSpace && total > 0 && !["completed","cancelled"].includes(tour.status)) tour.status = "fully-booked";
   else if (hasSpace && tour.status === "fully-booked") tour.status = "upcoming";
-  await tour.save();
+  await tour.save({ session });
   return tour;
 };
 
