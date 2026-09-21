@@ -3,6 +3,7 @@ import Tour from "../models/Tour.js";
 import Booking from "../models/Booking.js";
 import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import { releaseTourResources } from "../services/tourResourceLifecycleService.js";
+import { cancelTourAndBookings } from "../services/tourCancellationService.js";
 
 const bookingGuests = (booking) => Number(booking.numberOfGuests || booking.guests || booking.numberOfPeople || 1);
 
@@ -30,24 +31,15 @@ export const completeTour = async (req, res, next) => {
 };
 
 export const cancelTour = async (req, res, next) => {
-  requireTenantId();
-  const session = await mongoose.startSession();
   try {
-    let result;
-    await session.withTransaction(async () => {
-      if (!mongoose.Types.ObjectId.isValid(req.params.id)) throw Object.assign(new Error("Invalid tour ID."), { status: 400 });
-      const tour = await Tour.findOne(mergeTenantFilter({ _id: req.params.id, isDeleted: { $ne: true } })).session(session);
-      if (!tour) throw Object.assign(new Error("Tour not found."), { status: 404 });
-      if (tour.status === "completed") throw Object.assign(new Error("A completed tour cannot be cancelled."), { status: 409 });
-      tour.status = "cancelled";
-      tour.cancelledAt = new Date();
-      tour.cancellationReason = String(req.body?.reason || "Cancelled by tour manager");
-      await releaseTourResources(tour, session);
-      result = { success: true, message: "Tour cancelled and assigned resources released.", data: tour };
+    const result = await cancelTourAndBookings({
+      tourId: req.params.id,
+      reason: req.body?.reason || "Cancelled by tour manager",
+      deleted: false,
+      userId: req.user?._id || null,
     });
-    return res.status(200).json(result);
+    return res.status(200).json({ success: true, message: "Tour cancelled, bookings reconciled and resources released.", data: result.tour, bookingsAffected: result.bookingsAffected });
   } catch (error) { return next(error); }
-  finally { await session.endSession(); }
 };
 
 export const completeBookingAndMaybeRelease = async (req, res, next) => {
