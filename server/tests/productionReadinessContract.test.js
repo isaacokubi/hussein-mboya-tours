@@ -64,3 +64,23 @@ test("admin booking payment endpoint is read-only", () => {
   assert.doesNotMatch(source, /booking\.paymentStatus = status/);
   assert.doesNotMatch(source, /Manual "paid" changes must also create/);
 });
+
+test("canonical booking status route cannot mutate payment status directly", () => {
+  const source = read("controllers/bookingController.js");
+  assert.match(source, /canTransitionBookingStatus/);
+  assert.match(source, /PAYMENT_REQUIRED_BEFORE_COMPLETION/);
+  assert.doesNotMatch(source, /if\s*\(req\.body\.paymentStatus\)/);
+  assert.doesNotMatch(source, /booking\.paymentStatus\s*=\s*req\.body\.paymentStatus/);
+});
+
+test("legacy admin booking payment endpoint is disabled", () => {
+  const source = read("controllers/adminBookingController.js");
+  assert.match(source, /BOOKING_PAYMENT_STATUS_READ_ONLY/);
+  assert.doesNotMatch(source, /booking\.paymentStatus\s*=\s*status/);
+});
+
+test("unsafe fallback examples default to disabled", () => {
+  const env = read(".env.example");
+  assert.match(env, /ALLOW_SINGLE_TENANT_DEV_FALLBACK=false/);
+  assert.match(env, /ALLOW_GLOBAL_MPESA_FALLBACK=false/);
+});
