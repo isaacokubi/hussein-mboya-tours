@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import {
   BOOKING_STATUSES,
   BOOKING_PAYMENT_STATUSES,
+  canTransitionBookingStatus,
 } from "../constants/bookingConstants.js";
 import Booking from "../models/Booking.js";
 import Payment from "../models/Payment.js";
@@ -216,29 +217,39 @@ _id:req.params.id
 */
 export const updateBookingStatus = async (req, res, next) => {
   try {
-    const { status } = req.body;
-
-    if (!BOOKING_STATUSES.includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid booking status",
-      });
+    const requestedStatus = String(req.body?.status || "").trim().toLowerCase();
+    if (!BOOKING_STATUSES.includes(requestedStatus)) {
+      return res.status(400).json({ success: false, message: "Invalid booking status", allowedStatuses: BOOKING_STATUSES });
     }
 
-    const booking = await Booking.findOneAndUpdate(
-mergeTenantFilter(req,{
-_id:req.params.id
-}),
-      { status },
-      { new: true, runValidators: true }
+    const booking = await Booking.findOne(
+      mergeTenantFilter(req, { _id: req.params.id })
     );
+    if (!booking) return res.status(404).json({ success: false, message: "Booking not found" });
 
-    if (!booking) {
-      return res.status(404).json({
+    if (requestedStatus === booking.status) {
+      return res.status(400).json({ success: false, message: `Booking is already ${requestedStatus}.` });
+    }
+
+    if (!canTransitionBookingStatus(booking.status, requestedStatus)) {
+      return res.status(409).json({
         success: false,
-        message: "Booking not found",
+        message: `Booking cannot transition from "${booking.status}" to "${requestedStatus}".`,
+        currentStatus: booking.status,
+        requestedStatus,
       });
     }
+
+    if (requestedStatus === "completed" && String(booking.paymentStatus || "").toLowerCase() !== "paid") {
+      return res.status(409).json({
+        success: false,
+        code: "PAYMENT_REQUIRED_BEFORE_COMPLETION",
+        message: "Only paid bookings can be marked as completed.",
+      });
+    }
+
+    booking.status = requestedStatus;
+    await booking.save();
 
     return res.status(200).json({
       success: true,
