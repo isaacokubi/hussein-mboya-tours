@@ -49,11 +49,11 @@ export const validateTourCapacity = async (tourId, requestedGuests, travelDate) 
   return requestedGuests <= Math.max(totalSlots - bookedSlots, 0);
 };
 
-export const reserveSlots = async (tourId, travelers, travelDate) => {
+export const reserveSlots = async (tourId, travelers, travelDate, session = null) => {
   requireTenantId();
   if (!Number.isInteger(travelers) || travelers <= 0) throw new Error("Invalid traveler count.");
   const target = normalizeDate(travelDate);
-  const current = await Tour.findOne(mergeTenantFilter({ _id: tourId })).lean();
+  const current = await Tour.findOne(mergeTenantFilter({ _id: tourId })).session(session).lean();
   if (!current) throw new Error("Tour not found.");
 
   if (Array.isArray(current.availability) && current.availability.length) {
@@ -70,7 +70,7 @@ export const reserveSlots = async (tourId, travelers, travelDate) => {
         [`availability.${index}.bookedSlots`]: { $lte: totalSlots - travelers }
       }),
       { $inc: { [`availability.${index}.bookedSlots`]: travelers } },
-      { new: true }
+      { new: true, session }
     );
     if (!tour) throw new Error("Not enough available tour slots for the selected travel date.");
     return syncDerivedAvailability(tour);
@@ -82,13 +82,13 @@ export const reserveSlots = async (tourId, travelers, travelDate) => {
       $expr: { $lte: [{ $add: [{ $ifNull: ["$availabilitySettings.bookedSlots", 0] }, travelers] }, { $ifNull: ["$availabilitySettings.totalSlots", "$capacity"] }] }
     }),
     { $inc: { "availabilitySettings.bookedSlots": travelers } },
-    { new: true }
+    { new: true, session }
   );
   if (!tour) throw new Error("Not enough available tour slots.");
   return syncDerivedAvailability(tour);
 };
 
-export const releaseSlots = async (tourId, travelers, travelDate) => {
+export const releaseSlots = async (tourId, travelers, travelDate, session = null) => {
   requireTenantId();
   if (!Number.isInteger(travelers) || travelers <= 0) throw new Error("Invalid traveler count.");
   const target = normalizeDate(travelDate);
