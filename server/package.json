@@ -33,7 +33,7 @@
     "test:tour-domain": "node --test tests/tourDomainIntegrity.test.js",
     "migrate:roles": "node seeds/migrateLegacyRoles.js",
     "test:security": "node --test tests/authCookie.test.js tests/roleNormalization.test.js",
-    "check:security": "node --check middleware/authMiddleware.js && node --check middleware/uploadMiddleware.js && node --check utils/authCookie.js && node --check seeds/migrateLegacyRoles.js && node --check tests/authCookie.test.js && node --check tests/roleNormalization.test.js"
+    "check:security": "node --check middleware/authMiddleware.js && node --check middleware/tenantMiddleware.js && node --check middleware/uploadMiddleware.js && node --check middleware/resolveMpesaRefundTenant.js && node --check controllers/mpesaRefundController.js && node --check utils/authCookie.js && node --check seeds/migrateLegacyRoles.js && node --check tests/authCookie.test.js && node --check tests/roleNormalization.test.js"
   },
   "dependencies": {
     "africastalking": "^0.8.0",
