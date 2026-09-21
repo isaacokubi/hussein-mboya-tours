@@ -5,17 +5,33 @@ import Invoice from "../models/Invoice.js";
 
 const round = (n) => Math.round(Number(n || 0) * 100) / 100;
 const safeReference = (...values) => values.map((value) => String(value ?? "").trim()).find((value) => value && !/^(undefined|null|nan)$/i.test(value)) || "";
+const ACCOUNT_CACHE_TTL_MS = Math.max(5_000, Number(process.env.ACCOUNT_CACHE_TTL_MS || 60_000));
 const accountCache = new Map();
+
+const invalidateAccountCache = (tenantId = null) => {
+  const prefix = tenantId ? `${String(tenantId)}:` : "";
+  for (const key of accountCache.keys()) {
+    if (!prefix || key === `__ready__:${String(tenantId)}` || key.startsWith(prefix)) {
+      accountCache.delete(key);
+    }
+  }
+};
+
 const account = async (tenantId, code) => {
   const key = String(tenantId) + ":" + code;
-  if (accountCache.has(key)) return accountCache.get(key);
+  const cached = accountCache.get(key);
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
+  accountCache.delete(key);
   const value = await ChartOfAccount.findOne({ tenantId, code, active: true }).lean();
-  if (value) accountCache.set(key, value);
+  if (value) accountCache.set(key, { value, expiresAt: Date.now() + ACCOUNT_CACHE_TTL_MS });
   return value;
 };
 const ensureAccounts = async (tenantId) => {
   const tenantKey = String(tenantId);
-  if (accountCache.get("__ready__:" + tenantKey)) return;
+  const readyKey = "__ready__:" + tenantKey;
+  const readyAt = accountCache.get(readyKey);
+  if (readyAt && readyAt > Date.now()) return;
+  accountCache.delete(readyKey);
   const defaults = [
     ["1000", "Cash on Hand", "asset", "cash"], ["1010", "Bank Account", "asset", "bank"], ["1020", "M-Pesa", "asset", "mobile_money"], ["1030", "Card / Gateway Clearing", "asset", "payment_clearing"],
     ["1100", "Accounts Receivable", "asset", "receivable"], ["1110", "Corporate Receivables", "asset", "corporate_receivable"], ["1200", "Inventory", "asset", "inventory"], ["1300", "Prepayments", "asset", "prepayment"], ["1400", "Property, Plant & Equipment", "asset", "fixed_asset"], ["1490", "Accumulated Depreciation", "asset", "accumulated_depreciation"],
@@ -34,7 +50,7 @@ const ensureAccounts = async (tenantId) => {
     })),
     { ordered: false }
   );
-  accountCache.set("__ready__:" + tenantKey, true);
+  accountCache.set(readyKey, Date.now() + ACCOUNT_CACHE_TTL_MS);
 };
 
 const postOnce = async ({ tenantId, sourceType, sourceId, date, description, reference, lines, session = null }) => {
@@ -262,3 +278,5 @@ export const postSupplierPaymentToLedger = async (payable, amount = null, paymen
   const sourceId = crypto.createHash("sha256").update(`${payable._id}:${reference}:${paid}`).digest("hex").slice(0, 24);
   return postOnce({ tenantId: payable.tenantId, sourceType: "supplier_payable_payment", sourceId, description: `Supplier payable settlement ${payable.payableNumber || payable._id}`, reference, date: new Date(), lines: [{ code: "2000", debit: paid, credit: 0, description: "Accounts payable settlement" }, { code: cashCode, debit: 0, credit: paid, description: "Supplier payment" }] });
 };
+
+export { invalidateAccountCache };
