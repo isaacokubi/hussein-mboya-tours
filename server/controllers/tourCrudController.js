@@ -65,7 +65,8 @@ const normalizedPayload = (body, files, userId, existing = null) => {
   const source = existing ? { ...existing.toObject(), ...body } : { ...body };
   const payload = {};
   for (const field of MUTABLE_FIELDS) if (Object.prototype.hasOwnProperty.call(source, field)) payload[field] = source[field];
-  if (!payload.title?.trim() || !payload.description?.trim() || !payload.destination || !payload.country?.trim() || !payload.location?.trim()) throw Object.assign(new Error("Title, description, destination, country and location are required."), { status: 400 });\n  if (!payload.date && !payload.startDate) throw Object.assign(new Error("A tour date or startDate is required."), { status: 400 });
+  if (!payload.title?.trim() || !payload.description?.trim() || !payload.destination || !payload.country?.trim() || !payload.location?.trim()) throw Object.assign(new Error("Title, description, destination, country and location are required."), { status: 400 });
+  if (!payload.date && !payload.startDate) throw Object.assign(new Error("A tour date or startDate is required."), { status: 400 });
   if (payload.price === undefined || !Number.isFinite(Number(payload.price)) || Number(payload.price) < 0) throw Object.assign(new Error("A valid non-negative price is required."), { status: 400 });
   const durationDays = parseDuration(payload.durationDays ?? payload.durationDetails?.days ?? payload.duration ?? 1);
   payload.durationDays = durationDays;
