@@ -24,6 +24,6 @@ export async function resolveTenant(req, res, next) { try {
   if (!tenant) tenant = await resolveLoginTenantByUniqueEmail(req);
   const fallbackSlug = String(process.env.DEFAULT_PUBLIC_TENANT_SLUG || process.env.PUBLIC_TENANT_SLUG || "").trim().toLowerCase();
   if (!tenant && fallbackSlug) tenant = await Organization.findOne({ slug: fallbackSlug, status: activeStatuses });
-  const allowSingleTenantDevFallback = String(process.env.ALLOW_SINGLE_TENANT_DEV_FALLBACK || "").toLowerCase() === "true" || (process.env.NODE_ENV || "development") !== "production"; if (!tenant && allowSingleTenantDevFallback) { const tenants = await Organization.find({ status: activeStatuses }).select("_id slug name domain").limit(2).lean(); if (tenants.length === 1) tenant = tenants[0]; }
+  const allowSingleTenantDevFallback = String(process.env.ALLOW_SINGLE_TENANT_DEV_FALLBACK || "").toLowerCase() === "true"; if (!tenant && allowSingleTenantDevFallback) { const tenants = await Organization.find({ status: activeStatuses }).select("_id slug name domain").limit(2).lean(); if (tenants.length === 1) tenant = tenants[0]; }
   if (!tenant) return next(); req.tenantId = tenant._id; req.tenant = tenant; return runWithTenant({ tenantId: tenant._id, tenant, role: "public", bypass: false }, () => next());
 } catch (error) { return next(error); } }
