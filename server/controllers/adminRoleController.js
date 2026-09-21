@@ -9,7 +9,7 @@ import { normalizeRole } from "../utils/roleUtils.js";
 const DEFAULT_PERMISSIONS = {
   customer: ["profile.view", "booking.create", "booking.view", "wishlist.manage"],
   agent: ["admin.dashboard", "booking.create", "booking.view", "customer.view", "commission.view", "view_agent_dashboard", "view_agent_tours", "create_agent_tour", "edit_agent_tour", "delete_agent_tour"],
-  manager: ["tour.view", "tour.create", "tour.update", "booking.view", "booking.cancel", "tour.assign", "tour.availability", "calendar.manage", "customer.view", "guide.view", "vehicle.view", "report.view"],
+  tour_manager: ["tour.view", "tour.create", "tour.update", "booking.view", "booking.cancel", "tour.assign", "tour.availability", "calendar.manage", "customer.view", "guide.view", "vehicle.view", "report.view"],
   tour_guide: ["tour.view", "view_assigned_tours", "view_tour_guests", "update_tour_status", "submit_tour_report"],
   driver: ["tour.view", "view_assigned_tours"],
   admin: ["admin.dashboard", "user.manage", "staff.manage", "tour.manage", "booking.manage", "payment.manage", "refund.manage", "analytics.view", "finance.view", "notifications.view", "report.view"],
@@ -19,7 +19,7 @@ const DEFAULT_PERMISSIONS = {
 const ROLE_METADATA = {
   super_admin: { displayName: "Super Admin", level: 100, isSystem: true, isDefault: false },
   admin: { displayName: "Admin", level: 90, isSystem: true, isDefault: false },
-  manager: { displayName: "Tour Manager", level: 70, isSystem: true, isDefault: false },
+  tour_manager: { displayName: "Tour Manager", level: 70, isSystem: true, isDefault: false },
   tour_guide: { displayName: "Tour Guide", level: 50, isSystem: true, isDefault: false },
   driver: { displayName: "Driver", level: 40, isSystem: true, isDefault: false },
   agent: { displayName: "Travel Agent", level: 40, isSystem: true, isDefault: false },
