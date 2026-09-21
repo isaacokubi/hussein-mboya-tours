@@ -115,7 +115,7 @@ link.href=url;
 
 link.download =
 
-`Hussein-Mboya-Invoice-${bookingId}.pdf`;
+`Global-Tours-Invoice-${bookingId}.pdf`;
 
 
 
