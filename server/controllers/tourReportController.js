@@ -4,6 +4,7 @@ import Tour from "../models/Tour.js";
 import User from "../models/User.js";
 import Payment from "../models/Payment.js";
 import { getBookingRevenueMetrics } from "../services/bookingRevenueService.js";
+import { getPostedRevenueReport } from "../services/financeReportingService.js";
 
 export const getTourReports = async (req, res, next) => {
   requireTenantId();
@@ -33,16 +34,12 @@ export const getTourReports = async (req, res, next) => {
         { $unwind: "$tour" },
         { $project: { bookings: 1, revenue: 1, title: "$tour.title", slug: "$tour.slug", price: "$tour.price", image: "$tour.images" } },
       ]),
-      Payment.aggregate([
-        { $match: paymentFilter },
-        { $group: { _id: { year: { $year: { $ifNull: ["$paidAt", "$createdAt"] } }, month: { $month: { $ifNull: ["$paidAt", "$createdAt"] } } }, revenue: { $sum: { $max: [0, { $subtract: [{ $ifNull: ["$amount", 0] }, { $ifNull: ["$refundedAmount", 0] }] }] } }, bookings: { $sum: 1 } } },
-        { $sort: { "_id.year": 1, "_id.month": 1 } },
-      ]),
+      getPostedRevenueReport(),
       User.countDocuments(mergeTenantFilter(req, { $or: [{ role: "customer" }, { legacyRole: "customer" }] })),
       Tour.countDocuments(tourFilter),
       Tour.countDocuments(mergeTenantFilter(req, { status: "completed", isDeleted: { $ne: true } })),
     ]);
 
-    return res.status(200).json({ success: true, data: { totalBookings, totalRevenue: Number(revenueResult?.revenue || 0), totalCustomers, totalTours, completedTours, bookingStatus, popularTours, monthlyRevenue } });
+    return res.status(200).json({ success: true, data: { totalBookings, totalRevenue: Number(revenueResult?.revenue || 0), totalCustomers, totalTours, completedTours, bookingStatus, popularTours, monthlyRevenue: monthlyRevenue.monthly, revenueBasis: "posted_journals" } });
   } catch (error) { console.error("TOUR REPORT ERROR:", error); next(error); }
 };
