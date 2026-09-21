@@ -5,18 +5,16 @@ import { resolveTenant } from "../middleware/tenantMiddleware.js";
 import express from "express";
 
 import {
-  createTour,
   getTours,
   getFeaturedTours,
   searchTours,
   getTourById,
   getTourBySlug,
   getManagerTours,
-  updateTour,
-  deleteTour,
   assignVehicle,
   removeVehicle,
 } from "../controllers/tourController.js";
+import { createTour, updateTour, deleteTour, setPublication } from "../controllers/tourCrudController.js";
 
 import {
   getTourAvailability,
@@ -109,7 +107,7 @@ router.put("/:id", validateTourCommand(), upload.array("images", 10), updateTour
 
 // DELETE TOUR
 // DELETE /api/tours/:id
-router.delete("/:id", deleteTour);
+router.delete("/:id", deleteTour);\nrouter.patch("/:id/publication", setPublication);
 
 /*
 |--------------------------------------------------------------------------
