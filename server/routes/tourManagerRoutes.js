@@ -1,6 +1,6 @@
 import express from "express";
 import { resolveTenant } from "../middleware/tenantMiddleware.js";
-import { getTourManagerDashboard, createTour, getTours, updateTour, deleteTour } from "../controllers/tourManagerController.js";
+import { getTourManagerDashboard, getTours } from "../controllers/tourManagerController.js";\nimport { createTour, updateTour, deleteTour, setPublication } from "../controllers/tourCrudController.js";
 import { assignTourResourcesSafe } from "../controllers/tourResourceAssignmentController.js";
 import { completeTour, cancelTour, completeBookingAndMaybeRelease, cancelBookingAndUpdateCapacity } from "../controllers/tourLifecycleController.js";
 import { createItinerary, getItineraries, getItinerary, updateItinerary, deleteItinerary } from "../controllers/itineraryController.js";
@@ -22,7 +22,7 @@ router.get("/dashboard", getTourManagerDashboard);
 router.get("/tours", getTours);
 router.post("/tours", validateFutureTourDate, validateTourCommand(), createTour);
 router.put("/tours/:id", validateTourCommand(), updateTour);
-router.delete("/tours/:id", deleteTour);
+router.delete("/tours/:id", deleteTour);\nrouter.patch("/tours/:id/publication", setPublication);
 router.put("/tours/:id/assign", validateTourAssignmentTenant, assignTourResourcesSafe);
 router.patch("/tours/:id/complete", completeTour);
 router.patch("/tours/:id/cancel", cancelTour);
