@@ -11,9 +11,26 @@ jobs:
     name: Server production checks
     runs-on: ubuntu-latest
 
+    services:
+      mongodb:
+        image: mongo:8
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand({ ping: 1 }).ok'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
     defaults:
       run:
         working-directory: server
+
+    env:
+      MONGODB_URI: mongodb://127.0.0.1:27017/hussein_mboya_ci?replicaSet=rs0
+      JWT_SECRET: ci-only-test-secret
+      DEFAULT_TENANT_ID: 000000000000000000000000
+      NODE_ENV: test
 
     steps:
       - name: Checkout
@@ -28,6 +45,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Initialize Mongo replica set
+        run: mongosh --host 127.0.0.1:27017 --eval 'rs.initiate()'
 
       - name: Syntax, security, RBAC and multitenancy checks
         run: npm run check:all
