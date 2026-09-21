@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
 const travelCommercialRuleSchema = new mongoose.Schema({
   tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
@@ -12,4 +13,6 @@ const travelCommercialRuleSchema = new mongoose.Schema({
 }, { timestamps: true, minimize: false });
 
 travelCommercialRuleSchema.index({ tenantId: 1, type: 1, active: 1, priority: -1 });
+travelCommercialRuleSchema.plugin(tenantPlugin);
+
 export default mongoose.models.TravelCommercialRule || mongoose.model("TravelCommercialRule", travelCommercialRuleSchema);
