@@ -118,3 +118,26 @@ Historical production smoke was healthy, but the production API previously repor
 - Monitoring alert path: `35005078875`
 - Previous documented head: `f0203925`
 - Current main after production-readiness hardening: `5227ddc874bd48d1eef73f965aa822b23dd58747`
+
+<!-- DOCS-AUTO:START -->
+## Current repository state
+
+This section is maintained automatically by `scripts/update-documentation.js` and the GitHub Actions documentation workflow.
+
+- **Repository:** Global Tours — multi-tenant tours & travel SaaS
+- **Branch:** `main`
+- **Current commit:** `23a130728619460c0952b6e45faef32352e3fd5c`
+- **Short commit:** `23a13072`
+- **Documentation snapshot date (UTC):** 2026-09-21
+- **Server package:** `hussein-mboya-tours-server@1.0.0`
+- **Client package:** `client@0.0.0`
+- **Server verification commands:** `npm run check:all`, `npm test`, `npm run test:security`, `npm run test:tour-domain`
+- **Client verification commands:** `npm run lint`, `npm run build`
+- **Production contract:** `npm run check:production`
+- **Release rule:** production certification requires current deployment/provider evidence; local or CI source checks alone do not certify live production.
+
+### Documentation automation
+
+Every push to `main` runs the documentation workflow. It refreshes this generated repository-state section and commits documentation-only changes when the generated content changes. Manual edits outside the generated markers are preserved.
+
+<!-- DOCS-AUTO:END -->

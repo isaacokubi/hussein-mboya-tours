@@ -211,3 +211,18 @@ Historical hardening references:
 - **NOT VERIFIED:** an observation exists but does not prove the requested acceptance criterion.
 
 Never document passwords, secrets, access tokens, private keys, JWTs, MFA PINs, M-Pesa consumer secrets/passkeys or full payment-provider credentials. Record only secret names and whether required configuration is present.
+
+<!-- DOCS-AUTO:START -->
+## Automatically captured repository state
+
+- Snapshot date (UTC): 2026-09-21
+- Branch: `main`
+- Commit: `23a130728619460c0952b6e45faef32352e3fd5c`
+- Server package: `hussein-mboya-tours-server@1.0.0`
+- Client package: `client@0.0.0`
+- Automated documentation updater: `scripts/update-documentation.js`
+- CI automation: `.github/workflows/documentation.yml`
+
+The generated state above is refreshed automatically after pushes to `main`. Historical test evidence below this section is retained and must only be updated when the corresponding test actually runs and produces evidence.
+
+<!-- DOCS-AUTO:END -->
