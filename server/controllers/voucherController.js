@@ -99,24 +99,14 @@ _id:req.params.id
     |--------------------------------------------------------------------------
     */
 
-    const allowedRoles = [
-      "admin",
-      "tour_manager",
-      "finance",
-      "customer",
-    ];
+    const allowedRoles = new Set([
+      "admin", "tour_manager", "finance", "manager", "super_admin", "superadmin",
+    ]);
 
-    const userRole =
-      req.user.role?.name ||
-      req.user.role ||
-      "";
-
-    const isAdmin =
-      allowedRoles.includes(userRole);
-
-    const isOwner =
-      booking.customer?.toString() ===
-      req.user._id.toString();
+    const userRole = String(req.user?.role?.name || req.user?.role || "").trim().toLowerCase();
+    const isAdmin = allowedRoles.has(userRole);
+    const bookingUserId = booking.user?._id || booking.user;
+    const isOwner = bookingUserId && String(bookingUserId) === String(req.user?._id);
 
     if (!isAdmin && !isOwner) {
       return res.status(403).json({
@@ -189,25 +179,21 @@ _id:req.params.id
       .fontSize(10)
       .font("Helvetica")
       .text(
-        "Nairobi, Kenya",
+        [settings.address, settings.city, settings.country].filter(Boolean).join(", "),
         {
           align: "center",
         }
       );
 
     doc.text(
-      "Phone: +254 XXX XXX XXX",
+      settings.supportPhone ? `Phone: ${settings.supportPhone}` : "",
       {
         align: "center",
       }
     );
 
-    doc.text(
-      settings.supportEmail ? `Email: ${settings.supportEmail}` : "",
-      {
-        align: "center",
-      }
-    );
+    if (settings.supportEmail) doc.text(`Email: ${settings.supportEmail}`,
+    { align: "center" });
 
     doc.moveDown(2);
 
