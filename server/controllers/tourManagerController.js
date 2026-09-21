@@ -153,14 +153,13 @@ export const deleteTour = async (req, res, next) => {
   requireTenantId();
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid tour ID" });
-    const tour = await Tour.findOne(mergeTenantFilter(req, { _id: req.params.id, isDeleted: { $ne: true } }));
-    if (!tour) return res.status(404).json({ success: false, message: "Tour not found" });
-    const guideId = tour.assignedGuide; const driverId = tour.assignedDriver; const vehicleId = tour.assignedVehicle;
-    tour.isDeleted = true; tour.deletedAt = new Date(); tour.status = "cancelled"; tour.assignmentStatus = "cancelled"; await tour.save();
-    if (guideId) { const guide = await Staff.findOne(mergeTenantFilter(req, { _id: guideId })); if (guide) { guide.assignedTours = (guide.assignedTours || []).filter(id => id.toString() !== tour._id.toString()); if (!guide.assignedTours.length) guide.availability = "available"; await guide.save(); } }
-    if (driverId) { const driver = await Staff.findOne(mergeTenantFilter(req, { _id: driverId })); if (driver) { driver.assignedTours = (driver.assignedTours || []).filter(id => id.toString() !== tour._id.toString()); if (!driver.assignedTours.length) driver.availability = "available"; await driver.save(); } }
-    if (vehicleId) await Vehicle.findOneAndUpdate(mergeTenantFilter(req, { _id: vehicleId, assignedTour: tour._id }), { $set: { status: "available", assignedTour: null } });
-    return res.status(200).json({ success: true, message: "Tour deleted successfully" });
+    const result = await cancelTourAndBookings({
+      tourId: req.params.id,
+      reason: req.body?.reason || "Tour deleted/cancelled by tour manager",
+      deleted: true,
+      userId: req.user?._id || null,
+    });
+    return res.status(200).json({ success: true, message: "Tour deleted after cancelling/reconciling active bookings.", data: result.tour, bookingsAffected: result.bookingsAffected });
   } catch (error) { next(error); }
 };
 
