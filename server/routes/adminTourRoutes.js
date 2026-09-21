@@ -5,9 +5,6 @@ import {
   getAllTours,
   getTour,
   restoreTour,
-  assignGuide,
-  assignDriver,
-  assignVehicle,
 } from "../controllers/adminTourController.js";
 import { createTour, updateTour, deleteTour, setPublication } from "../controllers/tourCrudController.js";
 import { protect } from "../middleware/authMiddleware.js";
@@ -27,7 +24,8 @@ router.get("/", getAllTours);
 router.get("/:id", getTour);
 router.post("/", validateFutureTourDate, upload.array("images", 10), createTour);
 router.put("/:id", validateTourCommand(), upload.array("images", 10), updateTour);
-router.delete("/:id", deleteTour);\nrouter.patch("/:id/publication", setPublication);
+router.delete("/:id", deleteTour);
+router.patch("/:id/publication", setPublication);
 router.patch("/:id/restore", restoreTour);
 router.patch("/:id/guide", assignTourResourcesSafe);
 router.patch("/:id/driver", assignTourResourcesSafe);
