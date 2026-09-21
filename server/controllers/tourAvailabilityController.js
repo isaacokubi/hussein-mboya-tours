@@ -16,17 +16,51 @@ export const getTourAvailability = async (req, res, next) => {
     const tour = await Tour.findOne(mergeTenantFilter(req, { _id: req.params.id, isDeleted: { $ne: true } })).lean();
     if (!tour) return res.status(404).json({ success: false, message: "Tour not found" });
 
-    const bookingStats = await Booking.aggregate([
-      { $match: activeBookingFilter(req, tour._id) },
-      { $group: { _id: null, totalGuests: { $sum: guestExpression }, totalBookings: { $sum: 1 } } },
-    ]);
-    const bookedSlots = Number(bookingStats[0]?.totalGuests || 0);
-    const totalBookings = Number(bookingStats[0]?.totalBookings || 0);
-    const totalSlots = Math.max(0, Number(tour.availabilitySettings?.totalSlots ?? tour.capacity ?? tour.maxGuests ?? 0));
+    const normalize = (value) => { const d = new Date(value); if (Number.isNaN(d.getTime())) return null; d.setHours(0,0,0,0); return d; };
+    const requestedDate = req.query?.travelDate ? normalize(req.query.travelDate) : null;
+    const entries = Array.isArray(tour.availability) ? tour.availability : [];
+    let selected = null;
+    if (requestedDate) selected = entries.find((entry) => { const d = normalize(entry.date); return d && d.getTime() === requestedDate.getTime(); });
+    if (requestedDate && entries.length && !selected) return res.status(400).json({ success:false, message:"The requested travel date is not offered for this tour." });
+
+    const totalSlots = Math.max(0, Number(selected?.totalSlots ?? tour.availabilitySettings?.totalSlots ?? tour.capacity ?? tour.maxGuests ?? 0));
+    const bookedSlots = Math.max(0, Number(selected?.bookedSlots ?? tour.availabilitySettings?.bookedSlots ?? 0));
     const availableSlots = Math.max(totalSlots - bookedSlots, 0);
+    const availability = entries.map((entry) => ({
+      date: entry.date,
+      totalSlots: Number(entry.totalSlots || 0),
+      bookedSlots: Number(entry.bookedSlots || 0),
+      availableSlots: Math.max(Number(entry.totalSlots || 0) - Number(entry.bookedSlots || 0), 0),
+    }));
+
+    const bookingFilter = activeBookingFilter(req, tour._id);
+    if (requestedDate) {
+      const end = new Date(requestedDate); end.setDate(end.getDate() + 1);
+      bookingFilter.travelDate = { $gte: requestedDate, $lt: end };
+    }
+    const bookingStats = await Booking.aggregate([
+      { $match: bookingFilter },
+      { $group: { _id: null, totalBookings: { $sum: 1 } } },
+    ]);
+    const totalBookings = Number(bookingStats[0]?.totalBookings || 0);
     const occupancyRate = totalSlots ? Number(((bookedSlots / totalSlots) * 100).toFixed(1)) : 0;
 
-    return res.status(200).json({ success: true, data: { tourId: tour._id, tourName: tour.title, totalSlots, bookedSlots, availableSlots, totalBookings, occupancyRate, isFull: totalSlots > 0 && availableSlots === 0 } });
+    return res.status(200).json({
+      success: true,
+      data: {
+        tourId: tour._id,
+        tourName: tour.title,
+        travelDate: requestedDate,
+        totalSlots,
+        bookedSlots,
+        availableSlots,
+        totalBookings,
+        occupancyRate,
+        isFull: totalSlots > 0 && availableSlots === 0,
+        availability,
+        sourceOfTruth: "Tour.availability",
+      },
+    });
   } catch (error) { next(error); }
 };
 
