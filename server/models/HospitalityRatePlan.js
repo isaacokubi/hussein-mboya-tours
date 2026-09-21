@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 const { Schema } = mongoose;
 const schema = new Schema({
   tenantId:{type:Schema.Types.ObjectId,ref:"Organization",required:true,index:true},
@@ -20,4 +21,6 @@ const schema = new Schema({
   createdBy:{type:Schema.Types.ObjectId,ref:"User",default:null},updatedBy:{type:Schema.Types.ObjectId,ref:"User",default:null}
 },{timestamps:true});
 schema.index({tenantId:1,hotel:1,roomType:1,status:1,validFrom:1,validTo:1});
+schema.plugin(tenantPlugin);
+
 export default mongoose.models.HospitalityRatePlan||mongoose.model("HospitalityRatePlan",schema);
