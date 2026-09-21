@@ -107,3 +107,10 @@ test("admin client cannot manually mutate booking payment status", () => {
   assert.doesNotMatch(manage, /updateBookingPayment/);
   assert.doesNotMatch(manage, /paymentMutation/);
 });
+
+test("hospitality booking mutation controllers enforce authorized staff roles", () => {
+  const hotel = read("controllers/hotelController.js");
+  const transfer = read("controllers/airportTransferController.js");
+  assert.match(hotel, /Only authorized booking operations staff may modify this reservation/);
+  assert.match(transfer, /Only authorized booking operations staff may modify this reservation/);
+});
