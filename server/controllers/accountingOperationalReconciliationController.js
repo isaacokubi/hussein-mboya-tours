@@ -42,7 +42,7 @@ export const reconcileOperationalAccounting = async (req, res, next) => {
     const payments = await Payment.find(filter).sort({ createdAt: 1 }).lean();
     summary.scanned.payments = payments.length;
     for (const payment of payments) {
-      if (["completed", "refunded"].includes(String(payment.status || "").toLowerCase())) {
+      if (payment.status === "completed" || payment.status === "refunded") {
         if (await exists(tenantId, "payment", payment._id)) summary.alreadyPosted.payments += 1;
         else {
           try { await postPaymentToLedger(payment); summary.posted.payments += 1; }
@@ -56,9 +56,10 @@ export const reconcileOperationalAccounting = async (req, res, next) => {
         const reference = String(payment.refundReference || `REFUND-${payment._id}-${refundAmount}`).trim();
         const sourceId = refundSourceId(payment);
         try {
-          const existing = await JournalEntry.findOne({ tenantId, sourceType: "payment_refund", sourceId }).lean();
-          await postPaymentRefundToLedger(payment, refundAmount, reference);
-          if (existing) summary.alreadyPosted.refunds += 1;
+          const alreadyPosted = await exists(tenantId, "payment_refund", sourceId);
+          if (alreadyPosted) summary.alreadyPosted.refunds += 1;
+          else await postPaymentRefundToLedger(payment, refundAmount, reference);
+          if (!alreadyPosted) summary.posted.refunds += 1;
           else summary.posted.refunds += 1;
         } catch (error) {
           summary.errors.push({ type: "refund", id: String(payment._id), message: error.message });
