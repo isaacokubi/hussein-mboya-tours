@@ -32,6 +32,8 @@ bookingSchema.pre("save", function(next) {
 bookingSchema.pre("validate", function(next) { if (!this.tour && !this.customTourRequest) return next(new Error("Booking must have either a tour or a custom tour request.")); next(); });
 
 bookingSchema.post("save", async function() {
+  // Transactional booking creation defers external/webhook side effects until commit.
+  if (this.$session?.()) return;
   try {
     if (this.tenantId) {
       const event = this.$wasNew ? "booking.created" : "booking.updated";
