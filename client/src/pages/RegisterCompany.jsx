@@ -58,7 +58,6 @@ export default function RegisterCompany() {
         },
       });
 
-      localStorage.setItem("token", data.token);
       localStorage.setItem("tenantId", String(data.tenant.id));
       localStorage.setItem("tenantSlug", data.tenant.slug);
       toast.success("Company registered. Your trial is active.");
