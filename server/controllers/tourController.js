@@ -144,31 +144,3 @@ export const getManagerTours = async (req, res, next) => {
   } catch (error) { return next(error); }
 };
 
-export const assignVehicle = async (req, res, next) => {
-  try {
-    requireTenantId();
-    const vehicleId = req.body?.vehicleId || req.body?.assignedVehicle || req.body?.vehicle;
-    if (!vehicleId) return res.status(400).json({ success: false, message: "vehicleId is required" });
-    const vehicle = await Vehicle.findOne(mergeTenantFilter({ _id: vehicleId, isDeleted: { $ne: true } }));
-    if (!vehicle) return res.status(404).json({ success: false, message: "Vehicle not found" });
-    if (vehicle.status && !["available", "assigned"].includes(vehicle.status)) return res.status(400).json({ success: false, message: "Vehicle is not available" });
-    const tour = await Tour.findOneAndUpdate(mergeTenantFilter({ _id: req.params.id }), { $set: { assignedVehicle: vehicle._id, assignmentStatus: "assigned" } }, { new: true, runValidators: true }).populate("assignedVehicle").lean();
-    if (!tour) return res.status(404).json({ success: false, message: "Tour not found" });
-    await Vehicle.findOneAndUpdate(mergeTenantFilter({ _id: vehicle._id }), { $set: { status: "assigned", assignedTour: tour._id } });
-    return res.json({ success: true, message: "Vehicle assigned successfully", data: tour });
-  } catch (error) { return next(error); }
-};
-
-export const removeVehicle = async (req, res, next) => {
-  try {
-    requireTenantId();
-    const tour = await Tour.findOne(mergeTenantFilter({ _id: req.params.id }));
-    if (!tour) return res.status(404).json({ success: false, message: "Tour not found" });
-    const vehicleId = tour.assignedVehicle;
-    tour.assignedVehicle = null;
-    tour.assignmentStatus = tour.assignedGuide || tour.assignedDriver ? "assigned" : "pending";
-    await tour.save();
-    if (vehicleId) await Vehicle.findOneAndUpdate(mergeTenantFilter({ _id: vehicleId }), { $set: { status: "available" }, $unset: { assignedTour: 1 } });
-    return res.json({ success: true, message: "Vehicle removed successfully", data: tour });
-  } catch (error) { return next(error); }
-};
