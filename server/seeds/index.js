@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 
 import seedRoles from "./roleSeed.js";
 import seedPermissions from "./permissionSeed.js";
@@ -15,7 +15,7 @@ const runSeeds = async () => {
 
     // debug removed
 
-    await mongoose.connect(process.env.MONGODB_URI);
+    await firestore.connect(process.env.MONGODB_URI);
 
     // debug removed
 
@@ -28,7 +28,7 @@ const runSeeds = async () => {
     console.error("Seeder failed:", error);
     process.exitCode = 1;
   } finally {
-    await mongoose.connection.close().catch(() => {});
+    await firestore.connection.close().catch(() => {});
     // debug removed
   }
 };
