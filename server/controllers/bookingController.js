@@ -1,5 +1,5 @@
 import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { getSystemSettings } from "../services/settingsService.js";
 
 import Booking from "../models/Booking.js";
@@ -689,7 +689,7 @@ next
 
 try{
 
-if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+if (!firestore.Types.ObjectId.isValid(req.params.id)) {
 return res.status(400).json({
 success:false,
 message:"Invalid booking ID"
@@ -1205,7 +1205,7 @@ next
 
 try{
 
-if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+if (!firestore.Types.ObjectId.isValid(req.params.id)) {
 return res.status(400).json({
 success:false,
 message:"Invalid booking ID"
