@@ -1,14 +1,14 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
-const tourCostSchema = new mongoose.Schema({
-  tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
-  tour: { type: mongoose.Schema.Types.ObjectId, ref: "Tour", required: true, index: true },
-  booking: { type: mongoose.Schema.Types.ObjectId, ref: "Booking", default: null, index: true },
+const tourCostSchema = new firestore.Schema({
+  tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
+  tour: { type: firestore.Schema.Types.ObjectId, ref: "Tour", required: true, index: true },
+  booking: { type: firestore.Schema.Types.ObjectId, ref: "Booking", default: null, index: true },
   category: { type: String, enum: ["accommodation", "transport", "guide", "driver", "activity", "supplier", "park", "meals", "miscellaneous"], required: true, index: true },
   description: { type: String, required: true, trim: true },
-  supplier: { type: mongoose.Schema.Types.ObjectId, ref: "Supplier", default: null },
-  purchaseOrder: { type: mongoose.Schema.Types.ObjectId, ref: "PurchaseOrder", default: null },
+  supplier: { type: firestore.Schema.Types.ObjectId, ref: "Supplier", default: null },
+  purchaseOrder: { type: firestore.Schema.Types.ObjectId, ref: "PurchaseOrder", default: null },
   quantity: { type: Number, min: 0, default: 1 },
   unitCost: { type: Number, min: 0, required: true },
   taxAmount: { type: Number, min: 0, default: 0 },
@@ -16,7 +16,7 @@ const tourCostSchema = new mongoose.Schema({
   costDate: { type: Date, default: Date.now },
   status: { type: String, enum: ["estimated", "committed", "actual", "cancelled"], default: "estimated", index: true },
   notes: { type: String, trim: true, default: "" },
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+  createdBy: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null },
 }, { timestamps: true });
 
 tourCostSchema.pre("validate", function(next) {
@@ -25,4 +25,4 @@ tourCostSchema.pre("validate", function(next) {
 });
 tourCostSchema.index({ tenantId: 1, tour: 1, category: 1, status: 1 });
 tourCostSchema.plugin(tenantPlugin);
-export default mongoose.models.TourCost || mongoose.model("TourCost", tourCostSchema);
+export default firestore.models.TourCost || firestore.model("TourCost", tourCostSchema);
