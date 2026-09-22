@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 
 /**
  * API credentials used by a tenant's existing website to send bookings into
@@ -6,10 +6,10 @@ import mongoose from "mongoose";
  * the hash is looked up before a tenant context exists, then the request is
  * switched into the key's tenant context by integrationAuth middleware.
  */
-const websiteIntegrationKeySchema = new mongoose.Schema(
+const websiteIntegrationKeySchema = new firestore.Schema(
   {
     tenantId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "Organization",
       required: true,
       index: true,
@@ -33,7 +33,7 @@ const websiteIntegrationKeySchema = new mongoose.Schema(
     lastUsedAt: { type: Date, default: null },
     usageCount: { type: Number, default: 0, min: 0 },
     revokedAt: { type: Date, default: null },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    createdBy: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null },
   },
   { timestamps: true }
 );
@@ -41,5 +41,5 @@ const websiteIntegrationKeySchema = new mongoose.Schema(
 // No tenantPlugin here: this model must be searchable by keyHash before the
 // tenant has been established. Access is protected by the secret key itself.
 
-export default mongoose.models.WebsiteIntegrationKey ||
-  mongoose.model("WebsiteIntegrationKey", websiteIntegrationKeySchema);
+export default firestore.models.WebsiteIntegrationKey ||
+  firestore.model("WebsiteIntegrationKey", websiteIntegrationKeySchema);
