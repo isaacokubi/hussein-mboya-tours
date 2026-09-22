@@ -203,6 +203,6 @@ export const isValidObjectId=(value)=>value!=null && String(value).length>0;
 export const models={};
 export const model=(name,schema)=>buildModel(name,schema);
 export const connection=firebase.connection;
-export const startSession=async()=>({withTransaction:async fn=>db.runTransaction(async transaction=>fn(transaction)),startTransaction(){},commitTransaction:async()=>{},abortTransaction:async()=>{},endSession:async()=>{}});
+export const startSession=async()=>{let tx=null;const session={get:(ref)=>tx?tx.get(ref):ref.get(),set:(ref,data,opts)=>tx?tx.set(ref,data,opts):ref.set(data,opts),update:(ref,data)=>tx?tx.update(ref,data):ref.update(data),delete:(ref)=>tx?tx.delete(ref):ref.delete(),withTransaction:async fn=>db.runTransaction(async transaction=>{tx=transaction;try{return await fn();}finally{tx=null;}}),startTransaction(){},commitTransaction:async()=>{},abortTransaction:async()=>{},endSession:async()=>{tx=null;}};return session;};
 
 export async function connectFirestore(){await db.listCollections();return db;}
