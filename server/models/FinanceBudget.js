@@ -1,8 +1,8 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
-const financeBudgetSchema = new mongoose.Schema({
-  tenantId:{type:mongoose.Schema.Types.ObjectId,ref:"Organization",required:true,index:true},
+const financeBudgetSchema = new firestore.Schema({
+  tenantId:{type:firestore.Schema.Types.ObjectId,ref:"Organization",required:true,index:true},
   name:{type:String,required:true,trim:true},
   fiscalYear:{type:Number,required:true,index:true},
   period:{type:String,enum:["annual","monthly"],default:"annual"},
@@ -12,10 +12,10 @@ const financeBudgetSchema = new mongoose.Schema({
   currency:{type:String,uppercase:true,default:"KES"},
   costCenter:{type:String,trim:true,default:""},
   status:{type:String,enum:["draft","approved","closed"],default:"draft",index:true},
-  createdBy:{type:mongoose.Schema.Types.ObjectId,ref:"User",default:null},
-  approvedBy:{type:mongoose.Schema.Types.ObjectId,ref:"User",default:null},
+  createdBy:{type:firestore.Schema.Types.ObjectId,ref:"User",default:null},
+  approvedBy:{type:firestore.Schema.Types.ObjectId,ref:"User",default:null},
   approvedAt:{type:Date,default:null},
 },{timestamps:true});
 financeBudgetSchema.index({tenantId:1,fiscalYear:1,accountCode:1,month:1,costCenter:1},{unique:true});
 financeBudgetSchema.plugin(tenantPlugin);
-export default mongoose.models.FinanceBudget || mongoose.model("FinanceBudget",financeBudgetSchema);
+export default firestore.models.FinanceBudget || firestore.model("FinanceBudget",financeBudgetSchema);
