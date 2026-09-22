@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import CorporateAccount from "../models/CorporateAccount.js";
 import Booking from "../models/Booking.js";
 import Tour from "../models/Tour.js";
@@ -16,13 +16,13 @@ export async function guardCorporateBooking(req, res, next) {
     const guests = Math.max(Number(body.numberOfGuests) || (Array.isArray(body.travelers) ? body.travelers.length : 1), 1);
     if (type === "group" && guests < 2) return fail(res, 400, "Group bookings require at least two guests.");
     if (type !== "corporate") return next();
-    if (!body.corporateAccount || !mongoose.isValidObjectId(body.corporateAccount)) return fail(res, 400, "A valid corporate account is required for corporate bookings.");
+    if (!body.corporateAccount || !firestore.isValidObjectId(body.corporateAccount)) return fail(res, 400, "A valid corporate account is required for corporate bookings.");
     const account = await CorporateAccount.findOne(mergeTenantFilter(req, { _id: body.corporateAccount }));
     if (!account || account.status !== "active") return fail(res, 409, "Corporate account is not active in this tenant.");
     if (account.requiresPurchaseOrder && !String(body.purchaseOrderNumber || "").trim()) return fail(res, 400, "This corporate account requires a purchase order number.");
 
     let amount = Number(body.totalAmount || body.amount || 0);
-    if (body.tour && mongoose.isValidObjectId(body.tour)) {
+    if (body.tour && firestore.isValidObjectId(body.tour)) {
       const tour = await Tour.findOne(mergeTenantFilter(req, { _id: body.tour, isDeleted: { $ne: true } })).lean();
       if (!tour) return fail(res, 404, "Tour not found.");
       amount = Number(calculateBookingAmounts(tour, guests).totalAmount || 0);
