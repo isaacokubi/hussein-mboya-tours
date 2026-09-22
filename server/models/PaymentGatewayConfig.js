@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import crypto from "crypto";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
@@ -28,8 +28,8 @@ export function decryptSecret(value) {
   return Buffer.concat([decipher.update(Buffer.from(encryptedEncoded, "base64url")), decipher.final()]).toString("utf8");
 }
 
-const paymentGatewayConfigSchema = new mongoose.Schema({
-  tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
+const paymentGatewayConfigSchema = new firestore.Schema({
+  tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
   provider: { type: String, enum: ["MPESA", "STRIPE", "PAYPAL", "PESAPAL", "BANK"], required: true },
   environment: { type: String, enum: ["sandbox", "production"], default: "sandbox" },
   enabled: { type: Boolean, default: false },
@@ -45,10 +45,10 @@ const paymentGatewayConfigSchema = new mongoose.Schema({
   webhookSecretEncrypted: { type: String, default: "" },
   initiatorNameEncrypted: { type: String, default: "" },
   securityCredentialEncrypted: { type: String, default: "" },
-  updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+  updatedBy: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null },
 }, { timestamps: true });
 
 paymentGatewayConfigSchema.index({ tenantId: 1, provider: 1 }, { unique: true });
 paymentGatewayConfigSchema.plugin(tenantPlugin);
 
-export default mongoose.models.PaymentGatewayConfig || mongoose.model("PaymentGatewayConfig", paymentGatewayConfigSchema);
+export default firestore.models.PaymentGatewayConfig || firestore.model("PaymentGatewayConfig", paymentGatewayConfigSchema);
