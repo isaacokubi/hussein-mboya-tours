@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import dotenv from "dotenv";
 
 import Vehicle from "../models/Vehicle.js";
@@ -44,7 +44,7 @@ const seedVehicles = async()=>{
 
     try{
 
-        await mongoose.connect(
+        await firestore.connect(
             process.env.MONGODB_URI
         );
 
