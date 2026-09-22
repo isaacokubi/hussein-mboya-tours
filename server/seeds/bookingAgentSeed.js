@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import dotenv from "dotenv";
 
 import User from "../models/User.js";
@@ -10,7 +10,7 @@ dotenv.config();
 
 const createBookingAgent = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
+    await firestore.connect(process.env.MONGODB_URI);
 
     // debug removed
 
@@ -81,7 +81,7 @@ const createBookingAgent = async () => {
     if (existingAgent) {
       // debug removed
 
-      await mongoose.connection.close();
+      await firestore.connection.close();
       return;
     }
 
@@ -113,11 +113,11 @@ const createBookingAgent = async () => {
     // debug removed
     // debug removed
 
-    await mongoose.connection.close();
+    await firestore.connection.close();
   } catch (error) {
     console.error("❌ BOOKING AGENT SEED ERROR:", error);
 
-    await mongoose.connection.close().catch(() => {});
+    await firestore.connection.close().catch(() => {});
     process.exit(1);
   }
 };
