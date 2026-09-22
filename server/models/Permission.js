@@ -1,12 +1,12 @@
 // server/models/Permission.js
 
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
-const permissionSchema = new mongoose.Schema(
+const permissionSchema = new firestore.Schema(
   {
     tenantId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "Organization",
       index: true,
       required: false,
@@ -105,7 +105,7 @@ permissionSchema.statics.getByModule = function (module) {
 tenantPlugin(permissionSchema, { global: true });
 
 const Permission =
-  mongoose.models.Permission ||
-  mongoose.model("Permission", permissionSchema);
+  firestore.models.Permission ||
+  firestore.model("Permission", permissionSchema);
 
 export default Permission;
