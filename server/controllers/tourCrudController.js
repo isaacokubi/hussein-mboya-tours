@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import Tour from "../models/Tour.js";
 import Staff from "../models/Staff.js";
 import Vehicle from "../models/Vehicle.js";
@@ -94,7 +94,7 @@ const normalizedPayload = (body, files, userId, existing = null) => {
 
 export const createTour = async (req, res, next) => {
   requireTenantId();
-  const session = await mongoose.startSession();
+  const session = await firestore.startSession();
   try {
     let created;
     await session.withTransaction(async () => {
@@ -105,7 +105,7 @@ export const createTour = async (req, res, next) => {
         guideId: req.body?.assignedGuide || req.body?.guide || null,
         driverId: req.body?.assignedDriver || req.body?.driver || null,
         vehicleId: req.body?.assignedVehicle || req.body?.vehicle || null,
-        tour: { ...payload, _id: new mongoose.Types.ObjectId() },
+        tour: { ...payload, _id: new firestore.Types.ObjectId() },
         session,
       });
       payload.assignedGuide = resources.guide?._id || null;
@@ -124,7 +124,7 @@ export const createTour = async (req, res, next) => {
 export const updateTour = async (req, res, next) => {
   requireTenantId();
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid tour ID." });
+    if (!firestore.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid tour ID." });
     const existing = await Tour.findOne(mergeTenantFilter({ _id: req.params.id, isDeleted: { $ne: true } }));
     if (!existing) return res.status(404).json({ success: false, message: "Tour not found." });
     if (["assignedGuide","assignedDriver","assignedVehicle","guide","driver","vehicle"].some((key) => req.body?.[key] !== undefined)) return res.status(400).json({ success: false, message: "Use the dedicated tour resource assignment endpoint to change guides, drivers or vehicles." });
@@ -139,7 +139,7 @@ export const updateTour = async (req, res, next) => {
 export const deleteTour = async (req, res, next) => {
   requireTenantId();
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid tour ID." });
+    if (!firestore.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid tour ID." });
     const result = await cancelTourAndBookings({ tourId: req.params.id, reason: req.body?.reason || "Tour deleted/cancelled", deleted: true, userId: req.user?._id || null });
     return res.json({ success: true, message: "Tour deleted after cancelling/reconciling active bookings.", data: result.tour, bookingsAffected: result.bookingsAffected });
   } catch (error) { return next(error); }
@@ -148,7 +148,7 @@ export const deleteTour = async (req, res, next) => {
 export const setPublication = async (req, res, next) => {
   requireTenantId();
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid tour ID." });
+    if (!firestore.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid tour ID." });
     const published = req.body?.published;
     if (typeof published !== "boolean" && !["true","false"].includes(String(published))) return res.status(400).json({ success: false, message: "published must be a boolean." });
     const tour = await Tour.findOneAndUpdate(mergeTenantFilter({ _id: req.params.id, isDeleted: { $ne: true } }), { $set: { published: String(published) === "true" } }, { new: true, runValidators: true }).populate("destination assignedGuide assignedDriver assignedVehicle").lean();
