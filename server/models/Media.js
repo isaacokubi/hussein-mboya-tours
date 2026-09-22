@@ -1,6 +1,6 @@
 // server/models/Media.js
 
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
@@ -10,11 +10,11 @@ import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 |--------------------------------------------------------------------------
 */
 
-const mediaSchema = new mongoose.Schema(
+const mediaSchema = new firestore.Schema(
   {
 
     tenantId:{
-        type: mongoose.Schema.Types.ObjectId,
+        type: firestore.Schema.Types.ObjectId,
         ref:"Organization",
         index:true,
         required:false
@@ -160,7 +160,7 @@ const mediaSchema = new mongoose.Schema(
     },
 
     relatedId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       default: null,
     },
 
@@ -171,7 +171,7 @@ const mediaSchema = new mongoose.Schema(
     */
 
     uploadedBy: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
@@ -284,7 +284,7 @@ mediaSchema.index({
 */
 
 const tenantMediaSchema = mediaSchema.plugin(tenantPlugin);
-const Media = mongoose.models.Media || mongoose.model("Media", tenantMediaSchema);
+const Media = firestore.models.Media || firestore.model("Media", tenantMediaSchema);
 
 
 
