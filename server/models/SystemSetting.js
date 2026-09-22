@@ -1,9 +1,9 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
-const systemSettingSchema = new mongoose.Schema(
+const systemSettingSchema = new firestore.Schema(
   {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true, required: false, default: null },
+    tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", index: true, required: false, default: null },
     key: { type: String, default: "default", index: true },
     companyName: { type: String, default: "Company", trim: true },
     companyLogo: { type: String, default: "" }, websiteUrl: { type: String, default: "", trim: true },
@@ -35,5 +35,5 @@ const systemSettingSchema = new mongoose.Schema(
 systemSettingSchema.index({ tenantId: 1, key: 1 }, { unique: true });
 tenantPlugin(systemSettingSchema);
 
-const SystemSetting = mongoose.models.SystemSetting || mongoose.model("SystemSetting", systemSettingSchema);
+const SystemSetting = firestore.models.SystemSetting || firestore.model("SystemSetting", systemSettingSchema);
 export default SystemSetting;
