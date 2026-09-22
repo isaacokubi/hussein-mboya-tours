@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import dotenv from "dotenv";
 import Organization from "../models/Organization.js";
 import Booking from "../models/Booking.js";
@@ -127,8 +127,8 @@ const repairTenant = async (tenant) => runWithTenant({ tenantId: tenant._id, ten
 });
 
 const main = async () => {
-  if (!process.env.MONGODB_URI) throw new Error("MONGODB_URI is required.");
-  await mongoose.connect(process.env.MONGODB_URI);
+  if (!process.env.FIREBASE_PROJECT_ID) throw new Error("MONGODB_URI is required.");
+  await firestore.connectFirestore?.();
 
   const tenants = await Organization.find({ isDeleted: { $ne: true } }).select("_id name").lean();
   const results = [];
@@ -148,5 +148,5 @@ main().catch((error) => {
   console.error(`Financial reconciliation repair failed: ${error.message}`);
   process.exitCode = 1;
 }).finally(async () => {
-  await mongoose.disconnect().catch(() => {});
+  await firestore.disconnect().catch(() => {});
 });
