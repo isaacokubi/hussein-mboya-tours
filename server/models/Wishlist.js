@@ -1,6 +1,6 @@
 // server/models/Wishlist.js
 
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
@@ -15,9 +15,9 @@ import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 |--------------------------------------------------------------------------
 */
 
-const wishlistSchema = new mongoose.Schema(
+const wishlistSchema = new firestore.Schema(
   {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
+    tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", index:true },
     /*
     |--------------------------------------------------------------------------
     | OWNER
@@ -25,7 +25,7 @@ const wishlistSchema = new mongoose.Schema(
     */
 
     user: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "User",
       required: true,
       unique: true,
@@ -40,7 +40,7 @@ const wishlistSchema = new mongoose.Schema(
 
     tours: [
       {
-        type: mongoose.Schema.Types.ObjectId,
+        type: firestore.Schema.Types.ObjectId,
         ref: "Tour",
       },
     ],
@@ -145,7 +145,7 @@ wishlistSchema.index({
 */
 
 const tenantWishlistSchema = wishlistSchema.plugin(tenantPlugin);
-const Wishlist = mongoose.models.Wishlist || mongoose.model("Wishlist", tenantWishlistSchema);
+const Wishlist = firestore.models.Wishlist || firestore.model("Wishlist", tenantWishlistSchema);
 
 
 
