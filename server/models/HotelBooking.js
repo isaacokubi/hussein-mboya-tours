@@ -1,7 +1,7 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import "./HospitalityRatePlan.js";
-const { Schema } = mongoose;
+const { Schema } = firestore;
 
 const GuestSchema = new Schema({
   firstName: { type: String, trim: true, required: true },
@@ -54,4 +54,4 @@ HotelBookingSchema.index({ tenantId: 1, ratePlan: 1, createdAt: -1 });
 
 HotelBookingSchema.plugin(tenantPlugin);
 
-export default mongoose.models.HotelBooking || mongoose.model("HotelBooking", HotelBookingSchema);
+export default firestore.models.HotelBooking || firestore.model("HotelBooking", HotelBookingSchema);
