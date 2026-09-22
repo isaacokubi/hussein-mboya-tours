@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import Booking from "../models/Booking.js";
 import Payment from "../models/Payment.js";
 import { runWithTenant } from "../tenancy/context.js";
@@ -25,7 +25,7 @@ export const cancelExpiredPendingBookings = async () =>
     let expiredPayments = 0;
 
     for (const candidate of expiredBookings) {
-      const session = await mongoose.startSession();
+      const session = await firestore.startSession();
 
       try {
         let transactionCancelled = false;
