@@ -1,5 +1,5 @@
 import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { getSystemSettings } from "../services/settingsService.js";
 import Tour from "../models/Tour.js";
 import User from "../models/User.js";
@@ -37,7 +37,7 @@ const ASSIGNMENT_STATUSES = [
 |--------------------------------------------------------------------------
 */
 
-const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
+const isValidId = (id) => firestore.Types.ObjectId.isValid(id);
 
 const cleanString = (value) =>
   typeof value === "string" ? value.trim() : value;
