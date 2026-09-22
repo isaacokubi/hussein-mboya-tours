@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import User from "../models/User.js";
 import { runWithTenant } from "../tenancy/context.js";
 
@@ -9,17 +9,17 @@ const ADMIN_EMAILS = [
   process.env.ADMIN2_EMAIL || "admin2@globaltours.test",
 ];
 const ADMIN_PASSWORDS = [process.env.ADMIN1_PASSWORD, process.env.ADMIN2_PASSWORD];
-const GLOBAL_TOURS_ID = new mongoose.Types.ObjectId("6a87fe1bc3f48c3dcddf4a23");
+const GLOBAL_TOURS_ID = new firestore.Types.ObjectId("6a87fe1bc3f48c3dcddf4a23");
 
 if (!SUPERADMIN_PASSWORD || ADMIN_PASSWORDS.some((password) => !password)) {
   throw new Error("Set SUPERADMIN_PASSWORD, ADMIN1_PASSWORD and ADMIN2_PASSWORD before running this script.");
 }
 
-await mongoose.connect(process.env.MONGODB_URI);
+await firestore.connectFirestore?.();
 
 // Organization is tenant-scoped, so resolve the known platform tenant directly
 // from MongoDB rather than attempting a tenant-scoped Organization query.
-const org = await mongoose.connection.db.collection("organizations").findOne({
+const org = await firestore.connection.db.collection("organizations").findOne({
   _id: GLOBAL_TOURS_ID,
 });
 if (!org) throw new Error("Global Tours organization not found.");
@@ -101,4 +101,4 @@ console.log(`SUPERADMIN: ${SUPERADMIN_EMAIL} (tenantId=null)`);
 console.log(`ADMIN: ${ADMIN_EMAILS[0]} (tenantId=${org._id})`);
 console.log(`ADMIN: ${ADMIN_EMAILS[1]} (tenantId=${org._id})`);
 
-await mongoose.disconnect();
+await firestore.disconnect();
