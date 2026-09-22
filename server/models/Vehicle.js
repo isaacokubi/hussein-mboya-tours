@@ -1,16 +1,16 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
-const imageSchema = new mongoose.Schema(
+const imageSchema = new firestore.Schema(
   {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true },
+    tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", index: true },
     url: { type: String, default: "" },
     publicId: { type: String, default: "" },
   },
   { _id: false },
 );
 
-const maintenanceSchema = new mongoose.Schema(
+const maintenanceSchema = new firestore.Schema(
   {
     serviceDate: { type: Date, required: true },
     description: { type: String, trim: true, default: "" },
@@ -20,7 +20,7 @@ const maintenanceSchema = new mongoose.Schema(
   { _id: false },
 );
 
-const vehicleSchema = new mongoose.Schema(
+const vehicleSchema = new firestore.Schema(
   {
     name: { type: String, required: true, trim: true },
     registrationNumber: { type: String, required: true, uppercase: true, trim: true },
@@ -34,8 +34,8 @@ const vehicleSchema = new mongoose.Schema(
       required: true,
     },
     capacity: { type: Number, required: true, min: 1 },
-    driver: { type: mongoose.Schema.Types.ObjectId, ref: "Staff", default: null },
-    assignedTour: { type: mongoose.Schema.Types.ObjectId, ref: "Tour", default: null },
+    driver: { type: firestore.Schema.Types.ObjectId, ref: "Staff", default: null },
+    assignedTour: { type: firestore.Schema.Types.ObjectId, ref: "Tour", default: null },
     status: {
       type: String,
       enum: ["available", "assigned", "maintenance", "out_of_service"],
@@ -54,7 +54,7 @@ const vehicleSchema = new mongoose.Schema(
     image: imageSchema,
     gallery: [imageSchema],
     description: { type: String, default: "", trim: true },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    createdBy: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null },
   },
   { timestamps: true },
 );
@@ -94,6 +94,6 @@ vehicleSchema.methods.scheduleMaintenance = async function (date) {
 
 vehicleSchema.plugin(tenantPlugin);
 
-const Vehicle = mongoose.models.Vehicle || mongoose.model("Vehicle", vehicleSchema);
+const Vehicle = firestore.models.Vehicle || firestore.model("Vehicle", vehicleSchema);
 
 export default Vehicle;
