@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import Coupon from "../models/Coupon.js";
 
@@ -102,7 +102,7 @@ export const updateAdminCoupon = async (req, res, next) => {
     const validationError = validateCouponPayload(payload);
     if (validationError) return res.status(400).json({ success: false, message: validationError });
 
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    if (!firestore.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ success: false, message: "Invalid coupon id" });
     }
 
@@ -124,7 +124,7 @@ export const updateAdminCoupon = async (req, res, next) => {
 export const deleteAdminCoupon = async (req, res, next) => {
   try {
     requireTenantId();
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    if (!firestore.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ success: false, message: "Invalid coupon id" });
     }
 
