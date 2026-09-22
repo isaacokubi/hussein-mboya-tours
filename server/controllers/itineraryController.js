@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 import Itinerary from "../models/Itinerary.js";
@@ -10,7 +10,7 @@ export const createItinerary = async (req, res, next) => {
   requireTenantId();
   try {
     const { tour } = req.body || {};
-    if (!tour || !mongoose.Types.ObjectId.isValid(tour)) return res.status(400).json({ success: false, message: "A valid tour is required." });
+    if (!tour || !firestore.Types.ObjectId.isValid(tour)) return res.status(400).json({ success: false, message: "A valid tour is required." });
     const existingTour = await Tour.findOne(mergeTenantFilter(req, { _id: tour, isDeleted: { $ne: true } })).lean();
     if (!existingTour) return res.status(404).json({ success: false, message: "Tour not found" });
 
@@ -49,7 +49,7 @@ export const getItineraries = async (req, res, next) => {
 
 export const getItinerary = async (req, res, next) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid itinerary id." });
+    if (!firestore.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid itinerary id." });
     const itinerary = await Itinerary.findOne(activeFilter(req, { _id: req.params.id }))
       .populate("tour", "title destination")
       .populate("createdBy", "name email");
@@ -60,9 +60,9 @@ export const getItinerary = async (req, res, next) => {
 
 export const updateItinerary = async (req, res, next) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid itinerary id." });
+    if (!firestore.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid itinerary id." });
     if (req.body?.tour) {
-      if (!mongoose.Types.ObjectId.isValid(req.body.tour)) return res.status(400).json({ success: false, message: "A valid tour is required." });
+      if (!firestore.Types.ObjectId.isValid(req.body.tour)) return res.status(400).json({ success: false, message: "A valid tour is required." });
       const tour = await Tour.findOne(mergeTenantFilter(req, { _id: req.body.tour, isDeleted: { $ne: true } })).lean();
       if (!tour) return res.status(400).json({ success: false, message: "Selected tour does not belong to this tenant." });
       const duplicate = await Itinerary.findOne(activeFilter(req, { tour, _id: { $ne: req.params.id } })).lean();
@@ -84,7 +84,7 @@ export const updateItinerary = async (req, res, next) => {
 
 export const deleteItinerary = async (req, res, next) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid itinerary id." });
+    if (!firestore.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid itinerary id." });
     const itinerary = await Itinerary.findOneAndUpdate(
       activeFilter(req, { _id: req.params.id }),
       { $set: { isDeleted: true, updatedBy: req.user?._id || null } },
