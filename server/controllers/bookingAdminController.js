@@ -1,5 +1,5 @@
 import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import Booking from "../models/Booking.js";
 import Notification from "../models/Notification.js";
 import Payment from "../models/Payment.js";
@@ -20,7 +20,7 @@ import {
 */
 
 const isValidId = (id) =>
-  mongoose.Types.ObjectId.isValid(id);
+  firestore.Types.ObjectId.isValid(id);
 
 /*
 |--------------------------------------------------------------------------
