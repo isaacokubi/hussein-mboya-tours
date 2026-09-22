@@ -1,27 +1,27 @@
 // server/models/Notification.js
 
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
-const notificationSchema = new mongoose.Schema(
+const notificationSchema = new firestore.Schema(
   {
     tenantId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "Organization",
       index: true,
       immutable: true,
     },
 
     recipient: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "User",
       required: true,
       index: true,
     },
 
     user: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "User",
       default: null,
     },
@@ -96,12 +96,12 @@ const notificationSchema = new mongoose.Schema(
     },
 
     relatedId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       default: null,
     },
 
     metadata: {
-      type: mongoose.Schema.Types.Mixed,
+      type: firestore.Schema.Types.Mixed,
       default: () => ({}),
     },
 
@@ -170,6 +170,6 @@ notificationSchema.statics.markAllAsRead = function (userId) {
 };
 
 const tenantNotificationSchema = notificationSchema.plugin(tenantPlugin);
-const Notification = mongoose.models.Notification || mongoose.model("Notification", tenantNotificationSchema);
+const Notification = firestore.models.Notification || firestore.model("Notification", tenantNotificationSchema);
 
 export default Notification;
