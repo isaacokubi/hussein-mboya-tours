@@ -1,6 +1,6 @@
 // scripts/seedDestinations.js
 
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import dotenv from "dotenv";
 
 import Destination from "../models/Destination.js";
@@ -79,7 +79,7 @@ const destinations = [
 
 const seedDestinations = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
+    await firestore.connect(process.env.MONGODB_URI);
 
     // debug removed
 
@@ -95,7 +95,7 @@ const seedDestinations = async () => {
     console.error(error);
     process.exitCode = 1;
   } finally {
-    await mongoose.connection.close().catch(() => {});
+    await firestore.connection.close().catch(() => {});
     // debug removed
   }
 };
