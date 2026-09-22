@@ -1,8 +1,8 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
-const supplierSchema = new mongoose.Schema({
-  tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
+const supplierSchema = new firestore.Schema({
+  tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
   supplierNumber: { type: String, trim: true },
   legalName: { type: String, required: true, trim: true, maxlength: 160 },
   tradingName: { type: String, trim: true, default: "" },
@@ -16,8 +16,8 @@ const supplierSchema = new mongoose.Schema({
   mpesaPaybill: { type: String, trim: true, default: "" },
   status: { type: String, enum: ["active", "inactive", "blocked"], default: "active", index: true },
   notes: { type: String, trim: true, default: "" },
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
-  updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+  createdBy: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null },
+  updatedBy: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null },
 }, { timestamps: true });
 
 supplierSchema.pre("validate", function(next) {
@@ -28,4 +28,4 @@ supplierSchema.pre("validate", function(next) {
 supplierSchema.index({ tenantId: 1, supplierNumber: 1 }, { unique: true });
 supplierSchema.index({ tenantId: 1, legalName: 1 });
 supplierSchema.plugin(tenantPlugin);
-export default mongoose.models.Supplier || mongoose.model("Supplier", supplierSchema);
+export default firestore.models.Supplier || firestore.model("Supplier", supplierSchema);
