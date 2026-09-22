@@ -1,9 +1,9 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import HotelBooking from "./HotelBooking.js";
 import AirportTransferBooking from "./AirportTransferBooking.js";
 
-const { Schema } = mongoose;
+const { Schema } = firestore;
 
 const schema = new Schema({
   tenantId: { type: Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
@@ -49,4 +49,4 @@ schema.pre("validate", async function(next) {
 
 schema.plugin(tenantPlugin);
 
-export default mongoose.models.HospitalityDeposit || mongoose.model("HospitalityDeposit", schema);
+export default firestore.models.HospitalityDeposit || firestore.model("HospitalityDeposit", schema);
