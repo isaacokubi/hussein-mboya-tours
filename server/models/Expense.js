@@ -1,14 +1,14 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
-const expenseSchema = new mongoose.Schema({
-  tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
+const expenseSchema = new firestore.Schema({
+  tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
   expenseNumber: { type: String, trim: true },
   category: { type: String, trim: true, required: true },
-  supplier: { type: mongoose.Schema.Types.ObjectId, ref: "Supplier", default: null, index: true },
-  purchaseOrder: { type: mongoose.Schema.Types.ObjectId, ref: "PurchaseOrder", default: null, index: true },
-  booking: { type: mongoose.Schema.Types.ObjectId, ref: "Booking", default: null, index: true },
-  tour: { type: mongoose.Schema.Types.ObjectId, ref: "Tour", default: null, index: true },
+  supplier: { type: firestore.Schema.Types.ObjectId, ref: "Supplier", default: null, index: true },
+  purchaseOrder: { type: firestore.Schema.Types.ObjectId, ref: "PurchaseOrder", default: null, index: true },
+  booking: { type: firestore.Schema.Types.ObjectId, ref: "Booking", default: null, index: true },
+  tour: { type: firestore.Schema.Types.ObjectId, ref: "Tour", default: null, index: true },
   supplierName: { type: String, trim: true, default: "" },
   supplierPin: { type: String, trim: true, uppercase: true, default: "" },
   description: { type: String, trim: true, required: true },
@@ -19,13 +19,13 @@ const expenseSchema = new mongoose.Schema({
   paymentMethod: { type: String, enum: ["MPESA", "CARD", "BANK_TRANSFER", "CASH", "OTHER"], default: "BANK_TRANSFER" },
   paymentReference: { type: String, trim: true, default: "" },
   paidAt: { type: Date, default: null },
-  approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
-  paidBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
-  cancelledBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+  approvedBy: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null },
+  paidBy: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null },
+  cancelledBy: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null },
   etimsInvoiceNumber: { type: String, trim: true, default: "" },
   status: { type: String, enum: ["draft", "approved", "paid", "cancelled"], default: "draft", index: true },
   notes: { type: String, trim: true, default: "" },
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+  createdBy: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null },
 }, { timestamps: true });
 
 expenseSchema.pre("save", function(next) { if (!this.expenseNumber) this.expenseNumber = `EXP-${Date.now()}-${Math.floor(Math.random() * 10000)}`; next(); });
@@ -33,4 +33,4 @@ expenseSchema.index({ tenantId: 1, expenseNumber: 1 }, { unique: true });
 expenseSchema.index({ tenantId: 1, purchaseOrder: 1 }, { unique: true, sparse: true });
 expenseSchema.index({ tenantId: 1, status: 1, expenseDate: -1 });
 expenseSchema.plugin(tenantPlugin);
-export default mongoose.models.Expense || mongoose.model("Expense", expenseSchema);
+export default firestore.models.Expense || firestore.model("Expense", expenseSchema);
