@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import dotenv from "dotenv";
 
 import Tour from "../models/Tour.js";
@@ -12,7 +12,7 @@ const seedTours = async () => {
       throw new Error("MONGODB_URI is missing in .env");
     }
 
-    await mongoose.connect(process.env.MONGODB_URI);
+    await firestore.connect(process.env.MONGODB_URI);
 
     // debug removed
 
@@ -268,7 +268,7 @@ const seedTours = async () => {
     console.error("❌ Tour seed failed:", error.message);
     process.exitCode = 1;
   } finally {
-    await mongoose.connection.close().catch(() => {});
+    await firestore.connection.close().catch(() => {});
     // debug removed
   }
 };
