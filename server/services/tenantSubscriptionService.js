@@ -1,5 +1,5 @@
 import axios from "axios";
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import Organization from "../models/Organization.js";
 import SystemSetting from "../models/SystemSetting.js";
 import Subscription from "../models/Subscription.js";
@@ -29,7 +29,7 @@ export const normalizeSubscriptionPhone = (phone) => {
 };
 
 export const activateTenantSubscription = async ({ tenantId, plan, provider = "mpesa", periodDays = 30, payment, transactionReference = "" }) => {
-  if (!mongoose.isValidObjectId(tenantId)) throw new Error("Invalid tenant ID.");
+  if (!firestore.isValidObjectId(tenantId)) throw new Error("Invalid tenant ID.");
   const normalizedPlan = String(plan || "").toLowerCase();
   if (!Object.prototype.hasOwnProperty.call(PLAN_FIELDS, normalizedPlan)) throw new Error("Invalid subscription plan.");
   const organization = await Organization.findById(tenantId);
@@ -48,7 +48,7 @@ export const activateTenantSubscription = async ({ tenantId, plan, provider = "m
 };
 
 export const switchTenantSubscriptionPlan = async ({ tenantId, plan }) => {
-  if (!mongoose.isValidObjectId(tenantId)) throw new Error("Invalid tenant ID.");
+  if (!firestore.isValidObjectId(tenantId)) throw new Error("Invalid tenant ID.");
   const normalizedPlan = String(plan || "").toLowerCase();
   if (!Object.prototype.hasOwnProperty.call(PLAN_FIELDS, normalizedPlan)) throw new Error("Invalid subscription plan.");
   const organization = await Organization.findById(tenantId);
