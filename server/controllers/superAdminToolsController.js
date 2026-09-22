@@ -3,7 +3,7 @@ import { tenantFilter } from "../tenancy/tenantQuery.js";
 import { getSystemSettings } from "../services/settingsService.js";
 import AuditLog from "../models/AuditLog.js";
 import SecurityLog from "../models/SecurityLog.js";
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 
 
 export const getAudit = async(req,res)=>{
@@ -88,13 +88,13 @@ message:"Database tools operational",
 
 status:
 
-mongoose.connection.readyState===1
+firestore.connection.readyState===1
 ?"healthy"
 :"disconnected",
 
 database:{
-host:mongoose.connection.host,
-name:mongoose.connection.name
+host:firestore.connection.host,
+name:firestore.connection.name
 }
 
 
