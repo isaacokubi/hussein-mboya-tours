@@ -1,24 +1,24 @@
 
 
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 
 const refundSchema =
-new mongoose.Schema(
+new firestore.Schema(
 {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
+    tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", index:true },
 
 booking:{
-type:mongoose.Schema.Types.ObjectId,
+type:firestore.Schema.Types.ObjectId,
 ref:"Booking",
 required:true
 },
 
 
 payment:{
-type:mongoose.Schema.Types.ObjectId,
+type:firestore.Schema.Types.ObjectId,
 ref:"Payment"
 },
 
@@ -85,7 +85,7 @@ timestamps:true
 
 export default refundSchema.plugin(tenantPlugin);
 
-mongoose.model(
+firestore.model(
 "Refund",
 refundSchema
 );
