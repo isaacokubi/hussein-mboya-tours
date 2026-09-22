@@ -2,7 +2,7 @@ import User from "../models/User.js";
 import Role from "../models/Role.js";
 import Permission from "../models/Permission.js";
 import SecurityLog from "../models/SecurityLog.js";
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 
 const PLATFORM_ADMIN_ROLES = ["admin", "administrator", "super_admin", "superadmin"];
 const normalizeRoleName = (value = "") => String(value || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
@@ -32,7 +32,7 @@ const securityService = {
     const roles = uniqueRoleNames.size;
     const threatLevel = criticalEvents > 0 || failedAttempts > 200 ? "high" : failedAttempts > 50 ? "medium" : "low";
     const securityScore = Math.max(0, Math.min(100, 100 - (threatLevel === "high" ? 40 : threatLevel === "medium" ? 20 : 0) - Math.min(20, criticalEvents * 5)));
-    const database = mongoose.connection.readyState === 1 ? "Connected" : "Disconnected";
+    const database = firestore.connection.readyState === 1 ? "Connected" : "Disconnected";
     const authorizationActive = roles > 0 && permissionCount > 0;
 
     return {
