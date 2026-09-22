@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
@@ -123,21 +123,21 @@ async function resetDatabase() {
     );
   }
 
-  if (!process.env.MONGODB_URI) {
+  if (!process.env.FIREBASE_PROJECT_ID) {
     throw new Error("MONGODB_URI is missing.");
   }
 
-  await mongoose.connect(process.env.MONGODB_URI);
+  await firestore.connectFirestore?.();
 
   const beforeDestinations = await Destination.countDocuments().catch(() => 0);
   const beforeTours = await Tour.countDocuments().catch(() => 0);
 
-  const collections = await mongoose.connection.db.listCollections().toArray();
+  const collections = await firestore.connection.db.listCollections().toArray();
   let dropped = 0;
 
   for (const collection of collections) {
     if (KEEP_COLLECTIONS.has(collection.name)) continue;
-    await mongoose.connection.db.dropCollection(collection.name);
+    await firestore.connection.db.dropCollection(collection.name);
     dropped += 1;
   }
 
@@ -145,7 +145,7 @@ async function resetDatabase() {
   console.log(`Kept: ${[...KEEP_COLLECTIONS].join(", ")}.`);
   console.log(`Before reset: ${beforeDestinations} destinations, ${beforeTours} tours.`);
 
-  await mongoose.connection.close();
+  await firestore.connection.close();
 
   // Rebuild the current Global Tours catalogue using the canonical seed.
   await execFileAsync(process.execPath, ["seeds/globalToursTestSeed.js"], {
@@ -154,7 +154,7 @@ async function resetDatabase() {
     maxBuffer: 10 * 1024 * 1024,
   });
 
-  await mongoose.connect(process.env.MONGODB_URI);
+  await firestore.connectFirestore?.();
   await seedCleanAccessData();
 
   const destinationCount = await Destination.countDocuments();
@@ -176,5 +176,5 @@ resetDatabase()
     process.exitCode = 1;
   })
   .finally(async () => {
-    await mongoose.connection.close().catch(() => {});
+    await firestore.connection.close().catch(() => {});
   });
