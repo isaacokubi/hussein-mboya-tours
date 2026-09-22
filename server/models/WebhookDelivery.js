@@ -1,9 +1,9 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
-const webhookDeliverySchema = new mongoose.Schema({
-  tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
-  webhookId: { type: mongoose.Schema.Types.ObjectId, ref: "Webhook", required: true, index: true },
+const webhookDeliverySchema = new firestore.Schema({
+  tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
+  webhookId: { type: firestore.Schema.Types.ObjectId, ref: "Webhook", required: true, index: true },
   event: { type: String, required: true, trim: true, index: true },
   eventId: { type: String, required: true, trim: true, index: true },
   attempt: { type: Number, min: 1, default: 1 },
@@ -19,4 +19,4 @@ const webhookDeliverySchema = new mongoose.Schema({
 webhookDeliverySchema.index({ tenantId: 1, webhookId: 1, eventId: 1, attempt: 1 }, { unique: true });
 webhookDeliverySchema.plugin(tenantPlugin);
 
-export default mongoose.models.WebhookDelivery || mongoose.model("WebhookDelivery", webhookDeliverySchema);
+export default firestore.models.WebhookDelivery || firestore.model("WebhookDelivery", webhookDeliverySchema);
