@@ -1,10 +1,10 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
-const heroSlideSchema = new mongoose.Schema(
+const heroSlideSchema = new firestore.Schema(
   {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true },
+    tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", index: true },
     title: { type: String, required: true, trim: true },
     subtitle: { type: String, default: "" },
     video: { url: String, publicId: String },
@@ -26,4 +26,4 @@ const heroSlideSchema = new mongoose.Schema(
 
 heroSlideSchema.plugin(tenantPlugin);
 
-export default mongoose.models.HeroSlide || mongoose.model("HeroSlide", heroSlideSchema);
+export default firestore.models.HeroSlide || firestore.model("HeroSlide", heroSlideSchema);
