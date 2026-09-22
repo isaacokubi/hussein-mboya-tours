@@ -1,5 +1,5 @@
 import { requireTenantId } from "../tenancy/context.js";
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import User from "../models/User.js";
 import Role from "../models/Role.js";
 import Staff from "../models/Staff.js";
@@ -115,7 +115,7 @@ export const updateUserStatus = async (req, res, next) => {
   try {
     const tenantId = requireTenantId();
     const { id } = req.params; const { status } = req.body;
-    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ success: false, message: "Invalid user ID" });
+    if (!firestore.Types.ObjectId.isValid(id)) return res.status(400).json({ success: false, message: "Invalid user ID" });
     if (!STATUS_VALUES.includes(status)) return res.status(400).json({ success: false, message: "Invalid user status" });
     const user = await User.findOneAndUpdate({ _id: id, tenantId }, { $set: { status } }, { new: true, runValidators: true }).select("-password").lean();
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
@@ -127,7 +127,7 @@ export const deleteUser = async (req, res, next) => {
   try {
     const tenantId = requireTenantId();
     const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ success: false, message: "Invalid user ID" });
+    if (!firestore.Types.ObjectId.isValid(id)) return res.status(400).json({ success: false, message: "Invalid user ID" });
     if (String(req.user?._id) === String(id)) return res.status(400).json({ success: false, message: "You cannot delete your own account." });
     const user = await User.findOne({ _id: id, tenantId }).select("_id role");
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
