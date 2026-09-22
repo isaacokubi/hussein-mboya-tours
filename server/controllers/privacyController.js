@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import PrivacyRequest from "../models/PrivacyRequest.js";
 import Customer from "../models/Customer.js";
 import User from "../models/User.js";
@@ -16,7 +16,7 @@ export async function createPrivacyRequest(req, res, next) {
     if (!TYPES.includes(type) || requesterName.length < 2) return res.status(400).json({ success: false, message: "Valid request type and requester name are required." });
     let customer = null;
     if (req.body?.customer) {
-      if (!mongoose.isValidObjectId(req.body.customer)) return res.status(400).json({ success: false, message: "Invalid customer ID." });
+      if (!firestore.isValidObjectId(req.body.customer)) return res.status(400).json({ success: false, message: "Invalid customer ID." });
       customer = await Customer.findOne(mergeTenantFilter(req, { _id: req.body.customer })).select("_id").lean();
       if (!customer) return res.status(404).json({ success: false, message: "Customer not found in this tenant." });
     }
@@ -32,7 +32,7 @@ export async function listPrivacyRequests(req, res, next) {
 export async function updatePrivacyRequest(req, res, next) {
   try {
     requireTenantId();
-    if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ success: false, message: "Invalid privacy request ID." });
+    if (!firestore.isValidObjectId(req.params.id)) return res.status(400).json({ success: false, message: "Invalid privacy request ID." });
     const request = await PrivacyRequest.findOne(mergeTenantFilter(req, { _id: req.params.id }));
     if (!request) return res.status(404).json({ success: false, message: "Privacy request not found." });
     const update = {};
@@ -43,7 +43,7 @@ export async function updatePrivacyRequest(req, res, next) {
       update.status = status;
     }
     if (req.body?.assignedTo !== undefined) {
-      if (req.body.assignedTo && !mongoose.isValidObjectId(req.body.assignedTo)) return res.status(400).json({ success: false, message: "Invalid assignee ID." });
+      if (req.body.assignedTo && !firestore.isValidObjectId(req.body.assignedTo)) return res.status(400).json({ success: false, message: "Invalid assignee ID." });
       if (req.body.assignedTo && !(await User.exists(mergeTenantFilter(req, { _id: req.body.assignedTo })))) return res.status(404).json({ success: false, message: "Assignee not found in this tenant." });
       update.assignedTo = req.body.assignedTo || null;
     }
