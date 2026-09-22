@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import axios from "axios";
 import cloudinary from "../config/cloudinary.js";
 import { getTenantMpesaConfig, getTenantMpesaUrls } from "../services/paymentGatewayService.js";
@@ -50,7 +50,7 @@ const checkMpesa = async () => {
 export const getSystemHealth = async (req, res) => {
   try {
     const memory = process.memoryUsage();
-    const dbStatus = mongoose.connection.readyState === 1 ? "connected" : "disconnected";
+    const dbStatus = firestore.connection.readyState === 1 ? "connected" : "disconnected";
     const [cloudinaryCheck, mpesaCheck] = await Promise.all([checkCloudinary(), checkMpesa()]);
     const system = {
       server: "online",
