@@ -1,6 +1,6 @@
 // server/models/Role.js
 
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 import "./Permission.js";
 
@@ -24,11 +24,11 @@ import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 |--------------------------------------------------------------------------
 */
 
-const roleSchema = new mongoose.Schema(
+const roleSchema = new firestore.Schema(
   {
 
     tenantId:{
-        type: mongoose.Schema.Types.ObjectId,
+        type: firestore.Schema.Types.ObjectId,
         ref:"Organization",
         index:true,
         required:false
@@ -55,7 +55,7 @@ const roleSchema = new mongoose.Schema(
 
     permissions: [
       {
-        type: mongoose.Schema.Types.ObjectId,
+        type: firestore.Schema.Types.ObjectId,
         ref: "Permission",
       },
     ],
@@ -86,7 +86,7 @@ const roleSchema = new mongoose.Schema(
     },
 
     createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "User",
       default: null,
     },
@@ -162,7 +162,7 @@ roleSchema.methods.removePermission = async function (permissionId) {
 tenantPlugin(roleSchema);
 
 const Role =
-  mongoose.models.Role ||
-  mongoose.model("Role", roleSchema);
+  firestore.models.Role ||
+  firestore.model("Role", roleSchema);
 
 export default Role;
