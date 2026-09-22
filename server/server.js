@@ -1,7 +1,7 @@
 import "./tenancy/bootstrap.js";
 import "./bootstrap/operationalAccountingHooks.js";
 import http from "http";
-import mongoose from "mongoose";
+import * as firestore from "./config/firestore.js";
 import app from "./app.js";
 import connectDatabase from "./config/database.js";
 import env from "./config/env.js";
@@ -22,7 +22,7 @@ const TASK_RETRY_MS = 60 * 1000;
 const taskState = new Map();
 
 const runNonCriticalTask = async (name, task) => {
-  if (mongoose.connection.readyState !== DB_READY) return false;
+  if (firestore.connection.readyState !== DB_READY) return false;
   const state = taskState.get(name) || { running: false, failures: 0 };
   if (state.running) return false;
   state.running = true;
@@ -58,7 +58,7 @@ server.on("error", (error) => {
 const shutdown = async (exitCode = 0) => {
   clearInterval(lifecycleInterval); clearInterval(subscriptionInterval); clearInterval(communicationInterval); clearInterval(etimsInterval); clearInterval(retentionScheduler.interval); clearInterval(complianceExpiryScheduler.interval); stopJobWorker();
   try { await new Promise((resolve) => { if (!server.listening) return resolve(); server.close(() => resolve()); }); } catch (error) { console.error("Server shutdown error:", error.message); }
-  try { await mongoose.connection.close(); } catch (error) { console.error("MongoDB shutdown error:", error.message); }
+  try { await firestore.connection.close(); } catch (error) { console.error("MongoDB shutdown error:", error.message); }
   process.exit(exitCode);
 };
 
