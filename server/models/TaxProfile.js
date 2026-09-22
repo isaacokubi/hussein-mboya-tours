@@ -1,8 +1,8 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
-const taxProfileSchema = new mongoose.Schema({
-  tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, unique: true, index: true },
+const taxProfileSchema = new firestore.Schema({
+  tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", required: true, unique: true, index: true },
   kraPin: { type: String, trim: true, uppercase: true, default: "" },
   kraPinStatus: { type: String, enum: ["not_verified", "verified", "invalid", "pending"], default: "not_verified" },
   kraPinVerifiedAt: { type: Date, default: null },
@@ -27,7 +27,7 @@ const taxProfileSchema = new mongoose.Schema({
   etimsRetryCount: { type: Number, default: 0, min: 0 },
   etimsNextRetryAt: { type: Date, default: null },
   complianceNotes: { type: String, trim: true, default: "" },
-  updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+  updatedBy: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null },
 }, { timestamps: true });
 
 taxProfileSchema.pre("save", function(next) {
@@ -48,4 +48,4 @@ taxProfileSchema.methods.recordEtimsFailure = function(message = "") {
 };
 
 taxProfileSchema.plugin(tenantPlugin);
-export default mongoose.models.TaxProfile || mongoose.model("TaxProfile", taxProfileSchema);
+export default firestore.models.TaxProfile || firestore.model("TaxProfile", taxProfileSchema);
