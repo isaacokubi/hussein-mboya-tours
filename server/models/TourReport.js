@@ -1,6 +1,6 @@
 // server/models/TourReport.js
 
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
@@ -10,11 +10,11 @@ import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 |--------------------------------------------------------------------------
 */
 
-const imageSchema = new mongoose.Schema(
+const imageSchema = new firestore.Schema(
   {
 
     tenantId:{
-        type: mongoose.Schema.Types.ObjectId,
+        type: firestore.Schema.Types.ObjectId,
         ref:"Organization",
         index:true,
         required:false
@@ -48,7 +48,7 @@ const imageSchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
-const tourReportSchema = new mongoose.Schema(
+const tourReportSchema = new firestore.Schema(
   {
     /*
     |--------------------------------------------------------------------------
@@ -57,13 +57,13 @@ const tourReportSchema = new mongoose.Schema(
     */
 
     tour: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "Tour",
       required: true,
     },
 
     booking: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "Booking",
       default: null,
     },
@@ -75,19 +75,19 @@ const tourReportSchema = new mongoose.Schema(
     */
 
     guide: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "Staff",
       required: true,
     },
 
     driver: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "Staff",
       default: null,
     },
 
     vehicle: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "Vehicle",
       default: null,
     },
@@ -182,7 +182,7 @@ const tourReportSchema = new mongoose.Schema(
     },
 
     approvedBy: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "User",
       default: null,
     },
@@ -295,7 +295,7 @@ tourReportSchema.index({
 */
 
 const tenantTourReportSchema = tourReportSchema.plugin(tenantPlugin);
-const TourReport = mongoose.models.TourReport || mongoose.model("TourReport", tenantTourReportSchema);
+const TourReport = firestore.models.TourReport || firestore.model("TourReport", tenantTourReportSchema);
 
 
 
