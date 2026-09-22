@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import crypto from "crypto";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
@@ -31,17 +31,17 @@ export const decryptEtimsSecret = (value) => {
   return Buffer.concat([decipher.update(Buffer.from(data, "base64url")), decipher.final()]).toString("utf8");
 };
 
-const schema = new mongoose.Schema({
-  tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
+const schema = new firestore.Schema({
+  tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
   environment: { type: String, enum: ["sandbox", "production"], default: "sandbox" },
   credentialRef: { type: String, trim: true, default: "" },
   adapterTokenEncrypted: { type: String, select: false, default: "" },
   clientIdEncrypted: { type: String, select: false, default: "" },
   clientSecretEncrypted: { type: String, select: false, default: "" },
   certificateRef: { type: String, trim: true, default: "" },
-  updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+  updatedBy: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null },
 }, { timestamps: true });
 
 schema.index({ tenantId: 1, environment: 1 }, { unique: true });
 schema.plugin(tenantPlugin);
-export default mongoose.models.EtimsCredential || mongoose.model("EtimsCredential", schema);
+export default firestore.models.EtimsCredential || firestore.model("EtimsCredential", schema);
