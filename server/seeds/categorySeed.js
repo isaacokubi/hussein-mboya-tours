@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import dotenv from "dotenv";
 import TourCategory from "../models/TourCategory.js";
 
@@ -36,7 +36,7 @@ const categories = [
 
 const seed = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
+    await firestore.connect(process.env.MONGODB_URI);
 
     await TourCategory.deleteMany();
 
