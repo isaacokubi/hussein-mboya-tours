@@ -1,6 +1,6 @@
 // server/models/Itinerary.js
 
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
@@ -10,9 +10,9 @@ import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 |--------------------------------------------------------------------------
 */
 
-const activitySchema = new mongoose.Schema(
+const activitySchema = new firestore.Schema(
   {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
+    tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", index:true },
     title: {
       type: String,
       required: true,
@@ -86,7 +86,7 @@ const activitySchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
-const daySchema = new mongoose.Schema(
+const daySchema = new firestore.Schema(
   {
     dayNumber: {
       type: Number,
@@ -119,7 +119,7 @@ const daySchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
-const itinerarySchema = new mongoose.Schema(
+const itinerarySchema = new firestore.Schema(
   {
     /*
     |--------------------------------------------------------------------------
@@ -128,7 +128,7 @@ const itinerarySchema = new mongoose.Schema(
     */
 
     tour: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "Tour",
       required: true,
       unique: true,
@@ -194,13 +194,13 @@ const itinerarySchema = new mongoose.Schema(
     */
 
     createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
 
     updatedBy: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "User",
       default: null,
     },
@@ -261,7 +261,7 @@ itinerarySchema.index({
 */
 
 const tenantItinerarySchema = itinerarySchema.plugin(tenantPlugin);
-const Itinerary = mongoose.models.Itinerary || mongoose.model("Itinerary", tenantItinerarySchema);
+const Itinerary = firestore.models.Itinerary || firestore.model("Itinerary", tenantItinerarySchema);
 
 
 
