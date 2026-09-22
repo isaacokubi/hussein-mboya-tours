@@ -1,8 +1,8 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import Role from "../models/Role.js";
 import Permission from "../models/Permission.js";
 
-const normalizeIds = (values = []) => Array.from(new Set((Array.isArray(values) ? values : []).filter((v) => mongoose.Types.ObjectId.isValid(v)).map(String)));
+const normalizeIds = (values = []) => Array.from(new Set((Array.isArray(values) ? values : []).filter((v) => firestore.Types.ObjectId.isValid(v)).map(String)));
 const normalizeRoleName = (value = "") => String(value || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
 
 const PLATFORM_ROLE_METADATA = {
@@ -82,7 +82,7 @@ export const getPlatformPermissions = async (req, res, next) => {
 
 export const getPlatformRole = async (req, res, next) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid role ID" });
+    if (!firestore.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid role ID" });
     const role = await Role.findById(req.params.id).populate("permissions", "name label description module category isActive").lean();
     if (!role) return res.status(404).json({ success: false, message: "Role not found" });
     const [hydrated] = await populateRolePermissions([role]);
@@ -95,7 +95,7 @@ export const getPlatformRole = async (req, res, next) => {
 
 export const updatePlatformRolePermissions = async (req, res, next) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid role ID" });
+    if (!firestore.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid role ID" });
     const role = await Role.findById(req.params.id);
     if (!role) return res.status(404).json({ success: false, message: "Role not found" });
     const normalized = normalizeRoleName(role.name);
