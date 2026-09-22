@@ -1,8 +1,8 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
-const taxRuleSchema = new mongoose.Schema({
-  tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
+const taxRuleSchema = new firestore.Schema({
+  tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
   code: { type: String, required: true, trim: true, uppercase: true },
   name: { type: String, required: true, trim: true },
   taxType: { type: String, enum: ["VAT", "ZERO_RATED", "EXEMPT", "NON_VAT", "WITHHOLDING", "LEVY", "OTHER"], default: "VAT" },
@@ -13,11 +13,11 @@ const taxRuleSchema = new mongoose.Schema({
   effectiveTo: { type: Date, default: null },
   isActive: { type: Boolean, default: true, index: true },
   notes: { type: String, trim: true, default: "" },
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
-  updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+  createdBy: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null },
+  updatedBy: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null },
 }, { timestamps: true });
 
 taxRuleSchema.index({ tenantId: 1, code: 1 }, { unique: true });
 taxRuleSchema.index({ tenantId: 1, isActive: 1, effectiveFrom: 1 });
 taxRuleSchema.plugin(tenantPlugin);
-export default mongoose.models.TaxRule || mongoose.model("TaxRule", taxRuleSchema);
+export default firestore.models.TaxRule || firestore.model("TaxRule", taxRuleSchema);
