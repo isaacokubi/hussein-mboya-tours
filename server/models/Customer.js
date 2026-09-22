@@ -1,6 +1,6 @@
 // server/models/Customer.js
 
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
@@ -10,9 +10,9 @@ import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 |--------------------------------------------------------------------------
 */
 
-const emergencyContactSchema = new mongoose.Schema(
+const emergencyContactSchema = new firestore.Schema(
   {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
+    tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", index:true },
     name: {
       type: String,
       trim: true,
@@ -42,7 +42,7 @@ const emergencyContactSchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
-const customerSchema = new mongoose.Schema(
+const customerSchema = new firestore.Schema(
   {
     /*
     |--------------------------------------------------------------------------
@@ -51,7 +51,7 @@ const customerSchema = new mongoose.Schema(
     */
 
     agent: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "Agent",
       default: null,
       index: true,
@@ -64,7 +64,7 @@ const customerSchema = new mongoose.Schema(
     */
 
     user: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "User",
       default: null,
       unique: true,
@@ -346,13 +346,13 @@ const customerSchema = new mongoose.Schema(
     */
 
     createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "User",
       default: null,
     },
 
     updatedBy: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "User",
       default: null,
     },
@@ -475,7 +475,7 @@ customerSchema.methods.softDelete = function () {
 */
 
 const tenantCustomerSchema = customerSchema.plugin(tenantPlugin);
-const Customer = mongoose.models.Customer || mongoose.model("Customer", tenantCustomerSchema);
+const Customer = firestore.models.Customer || firestore.model("Customer", tenantCustomerSchema);
 
 
 
