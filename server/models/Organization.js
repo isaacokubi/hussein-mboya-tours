@@ -1,10 +1,10 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
-const organizationSchema = new mongoose.Schema(
+const organizationSchema = new firestore.Schema(
   {
     tenantId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "Organization",
       index: true,
       required: false,
@@ -43,8 +43,8 @@ const organizationSchema = new mongoose.Schema(
       ai: { type: Boolean, default: false },
       customDomain: { type: Boolean, default: false },
     },
-    settings: { type: mongoose.Schema.Types.Mixed, default: {} },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    settings: { type: firestore.Schema.Types.Mixed, default: {} },
+    createdBy: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null },
   },
   { timestamps: true }
 );
@@ -53,4 +53,4 @@ organizationSchema.index({ domain: 1 }, { unique: true, sparse: true });
 
 tenantPlugin(organizationSchema, { global: true });
 
-export default mongoose.model("Organization", organizationSchema);
+export default firestore.model("Organization", organizationSchema);
