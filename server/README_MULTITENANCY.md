@@ -1,6 +1,6 @@
 # Multi-Tenancy Production Hardening
 
-The platform uses request-scoped tenant context plus a Mongoose tenant plugin.
+The platform uses request-scoped tenant context plus a Firestore tenant plugin.
 
 ## Rules
 
@@ -18,13 +18,13 @@ The platform uses request-scoped tenant context plus a Mongoose tenant plugin.
 Static checks:
 
 ```bash
-npm run check:multitenancy:live
+npm run check:all
 ```
 
 Live database regression:
 
 ```bash
-npm run check:multitenancy:live
+npm run check:all
 ```
 
 The live regression creates temporary tenants and records, validates cross-tenant read/update/delete rejection, tests bulk writes and aggregation lookups, verifies fail-closed behavior without context, and removes its fixtures afterward.
