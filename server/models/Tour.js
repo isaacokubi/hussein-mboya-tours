@@ -1,22 +1,22 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import slugify from "slugify";
 
-const itinerarySchema = new mongoose.Schema({ tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true }, day: { type: Number, required: true, min: 1 }, title: { type: String, required: true, trim: true }, description: { type: String, required: true, trim: true }, meals: [String], accommodation: { type: String, default: "" }, activities: [String] }, { _id: false });
-const availabilitySchema = new mongoose.Schema({ date: { type: Date, required: true }, totalSlots: { type: Number, default: 20, min: 0 }, bookedSlots: { type: Number, default: 0, min: 0 } }, { _id: false });
-const seoSchema = new mongoose.Schema({ title: String, description: String, keywords: [String] }, { _id: false });
-const imageSchema = new mongoose.Schema({ url: String, publicId: String }, { _id: false });
-const pricingRuleSchema = new mongoose.Schema({ name: String, minTravelers: Number, maxTravelers: Number, discount: { type: Number, default: 0 } }, { _id: false });
+const itinerarySchema = new firestore.Schema({ tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", index: true }, day: { type: Number, required: true, min: 1 }, title: { type: String, required: true, trim: true }, description: { type: String, required: true, trim: true }, meals: [String], accommodation: { type: String, default: "" }, activities: [String] }, { _id: false });
+const availabilitySchema = new firestore.Schema({ date: { type: Date, required: true }, totalSlots: { type: Number, default: 20, min: 0 }, bookedSlots: { type: Number, default: 0, min: 0 } }, { _id: false });
+const seoSchema = new firestore.Schema({ title: String, description: String, keywords: [String] }, { _id: false });
+const imageSchema = new firestore.Schema({ url: String, publicId: String }, { _id: false });
+const pricingRuleSchema = new firestore.Schema({ name: String, minTravelers: Number, maxTravelers: Number, discount: { type: Number, default: 0 } }, { _id: false });
 
-const tourSchema = new mongoose.Schema({
-  tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true },
+const tourSchema = new firestore.Schema({
+  tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", index: true },
   title: { type: String, required: true, trim: true, maxlength: 150 },
   slug: { type: String, unique: true, lowercase: true, trim: true },
   description: { type: String, required: true, trim: true },
   shortDescription: { type: String, trim: true, maxlength: 250 },
   tags: [{ type: String, trim: true }],
   category: { type: String, trim: true, maxlength: 80, default: "Safari" },
-  destination: { type: mongoose.Schema.Types.ObjectId, ref: "Destination", required: true },
+  destination: { type: firestore.Schema.Types.ObjectId, ref: "Destination", required: true },
   country: { type: String, required: true, trim: true },
   location: { type: String, required: true, trim: true },
   meetingPoint: { type: String, default: "", trim: true },
@@ -29,10 +29,10 @@ const tourSchema = new mongoose.Schema({
   depositType: { type: String, enum: ["fixed", "percentage"], default: "fixed" },
   taxEnabled: { type: Boolean, default: false }, taxCategory: { type: String, enum: ["STANDARD", "ZERO_RATED", "EXEMPT", "NON_VAT"], default: "STANDARD" }, taxMode: { type: String, enum: ["exclusive", "inclusive"], default: "exclusive" }, taxRate: { type: Number, min: 0, max: 100, default: null },
   featuredImage: imageSchema, gallery: [imageSchema], video: { url: { type: String, default: "" }, publicId: { type: String, default: "" } }, highlights: [{ type: String, trim: true }], inclusions: [{ type: String, trim: true }], exclusions: [{ type: String, trim: true }], languages: [{ type: String, trim: true }], minimumAge: { type: Number, default: 0 }, maximumAge: { type: Number, default: 99 }, difficulty: { type: String, enum: ["easy", "moderate", "hard"], default: "easy" }, itinerary: [itinerarySchema], availability: [availabilitySchema], availabilitySettings: { totalSlots: { type: Number, default: 20 }, bookedSlots: { type: Number, default: 0 }, waitlistEnabled: { type: Boolean, default: false } }, depositRequired: { type: Number, default: 0 }, cancellationPolicy: { type: String, default: "" }, bookingDeadline: { type: Number, default: 1 }, instantBooking: { type: Boolean, default: true },
-  assignedGuide: { type: mongoose.Schema.Types.ObjectId, ref: "Staff", default: null }, assignedDriver: { type: mongoose.Schema.Types.ObjectId, ref: "Staff", default: null }, assignedVehicle: { type: mongoose.Schema.Types.ObjectId, ref: "Vehicle", default: null }, assignmentStatus: { type: String, enum: ["pending", "assigned", "completed", "cancelled"], default: "pending" }, status: { type: String, enum: ["draft", "scheduled", "upcoming", "ongoing", "fully-booked", "completed", "cancelled"], default: "draft" }, published: { type: Boolean, default: false }, featured: { type: Boolean, default: false }, available: { type: Boolean, default: true }, isDeleted: { type: Boolean, default: false }, deletedAt: { type: Date, default: null }, deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null }, averageRating: { type: Number, default: 0, min: 0, max: 5 }, totalReviews: { type: Number, default: 0 }, totalBookings: { type: Number, default: 0 }, wishlistCount: { type: Number, default: 0 }, popularity: { type: Number, default: 0 }, createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null }, seo: seoSchema
+  assignedGuide: { type: firestore.Schema.Types.ObjectId, ref: "Staff", default: null }, assignedDriver: { type: firestore.Schema.Types.ObjectId, ref: "Staff", default: null }, assignedVehicle: { type: firestore.Schema.Types.ObjectId, ref: "Vehicle", default: null }, assignmentStatus: { type: String, enum: ["pending", "assigned", "completed", "cancelled"], default: "pending" }, status: { type: String, enum: ["draft", "scheduled", "upcoming", "ongoing", "fully-booked", "completed", "cancelled"], default: "draft" }, published: { type: Boolean, default: false }, featured: { type: Boolean, default: false }, available: { type: Boolean, default: true }, isDeleted: { type: Boolean, default: false }, deletedAt: { type: Date, default: null }, deletedBy: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null }, averageRating: { type: Number, default: 0, min: 0, max: 5 }, totalReviews: { type: Number, default: 0 }, totalBookings: { type: Number, default: 0 }, wishlistCount: { type: Number, default: 0 }, popularity: { type: Number, default: 0 }, createdBy: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null }, seo: seoSchema
 }, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } });
 
-tourSchema.pre("validate", async function (next) { if (this.title && (!this.slug || this.isModified("title"))) { const baseSlug = slugify(this.title, { lower: true, strict: true, trim: true }); let slug = baseSlug; let counter = 1; while (await mongoose.models.Tour.findOne({ slug, _id: { $ne: this._id } })) { counter += 1; slug = `${baseSlug}-${counter}`; } this.slug = slug; } next(); });
+tourSchema.pre("validate", async function (next) { if (this.title && (!this.slug || this.isModified("title"))) { const baseSlug = slugify(this.title, { lower: true, strict: true, trim: true }); let slug = baseSlug; let counter = 1; while (await firestore.models.Tour.findOne({ slug, _id: { $ne: this._id } })) { counter += 1; slug = `${baseSlug}-${counter}`; } this.slug = slug; } next(); });
 tourSchema.pre("validate", function (next) {
   let rawDuration;
   if (this.isModified("durationDays") && this.durationDays != null) rawDuration = this.durationDays;
@@ -71,5 +71,5 @@ tourSchema.statics.getActiveTours = function () { return this.find({ available: 
 
 tourSchema.index({ destination: 1, status: 1 }); tourSchema.index({ featured: 1, available: 1 }); tourSchema.index({ published: 1 }); tourSchema.index({ createdBy: 1 }); tourSchema.index({ category: 1 }); tourSchema.index({ country: 1 }); tourSchema.index({ price: 1 }); tourSchema.index({ averageRating: -1 }); tourSchema.index({ totalBookings: -1 }); tourSchema.index({ popularity: -1 }); tourSchema.index({ assignedGuide: 1 }); tourSchema.index({ assignedDriver: 1 }); tourSchema.index({ assignedVehicle: 1 }); tourSchema.index({ assignmentStatus: 1 }); tourSchema.index({ isDeleted: 1 }); tourSchema.index({ available: 1 }); tourSchema.index({ status: 1, date: 1 }); tourSchema.index({ title: "text", description: "text", location: "text", country: "text", category: "text", tags: "text" });
 tourSchema.plugin(tenantPlugin);
-const Tour = mongoose.models.Tour || mongoose.model("Tour", tourSchema);
+const Tour = firestore.models.Tour || firestore.model("Tour", tourSchema);
 export default Tour;
