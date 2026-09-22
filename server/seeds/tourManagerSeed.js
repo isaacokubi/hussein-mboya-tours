@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import dotenv from "dotenv";
 
 import User from "../models/User.js";
@@ -14,7 +14,7 @@ const createTourManager = async () => {
       throw new Error("MONGODB_URI is missing in .env");
     }
 
-    await mongoose.connect(process.env.MONGODB_URI);
+    await firestore.connect(process.env.MONGODB_URI);
 
     // debug removed
 
@@ -207,7 +207,7 @@ const createTourManager = async () => {
     console.error("TOUR MANAGER SEED ERROR:", error);
     process.exitCode = 1;
   } finally {
-    await mongoose.connection.close().catch(() => {});
+    await firestore.connection.close().catch(() => {});
     // debug removed
   }
 };
