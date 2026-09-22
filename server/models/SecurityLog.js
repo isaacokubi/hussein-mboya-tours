@@ -1,10 +1,10 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
-const securityLogSchema = new mongoose.Schema(
+const securityLogSchema = new firestore.Schema(
   {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true, default: null },
-    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null, index: true },
+    tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", index: true, default: null },
+    user: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null, index: true },
     email: { type: String, trim: true, lowercase: true, default: "" },
     action: {
       type: String,
@@ -25,7 +25,7 @@ const securityLogSchema = new mongoose.Schema(
     endpoint: { type: String, default: "" },
     status: { type: String, enum: ["success", "failed", "warning"], default: "success", index: true },
     severity: { type: String, enum: ["low", "medium", "high", "critical"], default: "low", index: true },
-    details: { type: mongoose.Schema.Types.Mixed, default: {} },
+    details: { type: firestore.Schema.Types.Mixed, default: {} },
     country: { type: String, default: "" },
     city: { type: String, default: "" },
   },
@@ -48,6 +48,6 @@ securityLogSchema.statics.logEvent = function ({
 };
 
 const tenantSecurityLogSchema = securityLogSchema.plugin(tenantPlugin);
-const SecurityLog = mongoose.models.SecurityLog || mongoose.model("SecurityLog", tenantSecurityLogSchema);
+const SecurityLog = firestore.models.SecurityLog || firestore.model("SecurityLog", tenantSecurityLogSchema);
 
 export default SecurityLog;
