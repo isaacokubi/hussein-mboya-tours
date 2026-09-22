@@ -1,12 +1,12 @@
 // server/models/Currency.js
 
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
-const currencySchema = new mongoose.Schema(
+const currencySchema = new firestore.Schema(
   {
     tenantId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "Organization",
       index: true,
       required: false,
@@ -97,7 +97,7 @@ currencySchema.statics.getActiveCurrencies = function () {
 tenantPlugin(currencySchema, { global: true });
 
 const Currency =
-  mongoose.models.Currency ||
-  mongoose.model("Currency", currencySchema);
+  firestore.models.Currency ||
+  firestore.model("Currency", currencySchema);
 
 export default Currency;
