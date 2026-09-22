@@ -1,10 +1,10 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import Tour from "../models/Tour.js";
 import Staff from "../models/Staff.js";
 import Vehicle from "../models/Vehicle.js";
 
-const validObjectId = (value) => mongoose.Types.ObjectId.isValid(value);
+const validObjectId = (value) => firestore.Types.ObjectId.isValid(value);
 
 export default async function validateTourAssignmentTenant(req, res, next) {
   requireTenantId();
