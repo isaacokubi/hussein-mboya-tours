@@ -1,8 +1,8 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
-const corporateAccountSchema = new mongoose.Schema({
-  tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
+const corporateAccountSchema = new firestore.Schema({
+  tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
   accountNumber: { type: String, trim: true },
   companyName: { type: String, required: true, trim: true, maxlength: 180 },
   kraPin: { type: String, trim: true, uppercase: true, default: "" },
@@ -15,7 +15,7 @@ const corporateAccountSchema = new mongoose.Schema({
   requiresPurchaseOrder: { type: Boolean, default: false },
   status: { type: String, enum: ["active", "suspended", "closed"], default: "active", index: true },
   notes: { type: String, trim: true, default: "" },
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+  createdBy: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null },
 }, { timestamps: true });
 
 corporateAccountSchema.pre("validate", function(next) {
@@ -28,4 +28,4 @@ corporateAccountSchema.index({ tenantId: 1, accountNumber: 1 }, { unique: true }
 corporateAccountSchema.index({ tenantId: 1, companyName: 1 });
 corporateAccountSchema.index({ tenantId: 1, kraPin: 1 });
 corporateAccountSchema.plugin(tenantPlugin);
-export default mongoose.models.CorporateAccount || mongoose.model("CorporateAccount", corporateAccountSchema);
+export default firestore.models.CorporateAccount || firestore.model("CorporateAccount", corporateAccountSchema);
