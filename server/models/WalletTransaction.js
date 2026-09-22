@@ -1,6 +1,6 @@
 // server/models/WalletTransaction.js
 
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
@@ -21,9 +21,9 @@ import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 |--------------------------------------------------------------------------
 */
 
-const walletTransactionSchema = new mongoose.Schema(
+const walletTransactionSchema = new firestore.Schema(
   {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
+    tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", index:true },
     /*
     |--------------------------------------------------------------------------
     | AGENT
@@ -31,7 +31,7 @@ const walletTransactionSchema = new mongoose.Schema(
     */
 
     agent: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "Agent",
       required: true,
       index: true,
@@ -44,7 +44,7 @@ const walletTransactionSchema = new mongoose.Schema(
     */
 
     user: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "User",
       default: null,
     },
@@ -56,7 +56,7 @@ const walletTransactionSchema = new mongoose.Schema(
     */
 
     commission: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "Commission",
       default: null,
     },
@@ -68,7 +68,7 @@ const walletTransactionSchema = new mongoose.Schema(
     */
 
     booking: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "Booking",
       default: null,
     },
@@ -201,7 +201,7 @@ const walletTransactionSchema = new mongoose.Schema(
     */
 
     approvedBy: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "User",
       default: null,
     },
@@ -262,7 +262,7 @@ walletTransactionSchema.index({
 */
 
 const tenantWalletTransactionSchema = walletTransactionSchema.plugin(tenantPlugin);
-const WalletTransaction = mongoose.models.WalletTransaction || mongoose.model("WalletTransaction", tenantWalletTransactionSchema);
+const WalletTransaction = firestore.models.WalletTransaction || firestore.model("WalletTransaction", tenantWalletTransactionSchema);
 
 
 
