@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import Organization from "../models/Organization.js";
 import User from "../models/User.js";
 import Role from "../models/Role.js";
@@ -13,7 +13,7 @@ export const TENANT_PLANS = Object.freeze({
   enterprise: Object.freeze({ label: "Enterprise", seats: 100, customSeats: true }),
 });
 
-const asObjectId = (id) => new mongoose.Types.ObjectId(id);
+const asObjectId = (id) => new firestore.Types.ObjectId(id);
 const slugify = (value) => String(value || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 100);
 const normalizeDomain = (value) => {
   const raw = String(value || "").trim().toLowerCase();
@@ -33,7 +33,7 @@ const uniqueSlug = async (name, requestedSlug) => {
 const validateAdminPassword = (password) => String(password || "").length >= 12 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /\d/.test(password);
 
 const getTenantCounts = async (tenantId) => {
-  const db = mongoose.connection.db;
+  const db = firestore.connection.db;
   const collections = ["users", "tours", "tourpackages", "bookings", "payments", "customers", "agents", "staffs", "vehicles", "destinations"];
   const counts = {};
   await Promise.all(collections.map(async (name) => {
@@ -45,7 +45,7 @@ const getTenantCounts = async (tenantId) => {
 export const getTenantPlans = async (req, res) => res.json({ success: true, plans: Object.entries(TENANT_PLANS).map(([value, plan]) => ({ value, ...plan })) });
 
 export const createTenantWithAdmin = async (req, res, next) => {
-  const session = await mongoose.startSession();
+  const session = await firestore.startSession();
   try {
     const { companyName, legalName = "", slug: requestedSlug = "", companyEmail, companyPhone, domain: requestedDomain = "", country = "Kenya", timezone = "Africa/Nairobi", currency = "KES", plan = "starter", seats, websiteUrl = "", logoUrl = "", adminName, adminEmail, adminPhone, adminPassword } = req.body || {};
     if (!String(companyName || "").trim()) return res.status(400).json({ success: false, message: "Company name is required." });
@@ -147,7 +147,7 @@ export const listTenants = async (req, res, next) => {
 
 export const getTenant = async (req, res, next) => {
   try {
-    if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ success: false, message: "Invalid tenant ID" });
+    if (!firestore.isValidObjectId(req.params.id)) return res.status(400).json({ success: false, message: "Invalid tenant ID" });
     const tenant = await Organization.findById(req.params.id).lean();
     if (!tenant) return res.status(404).json({ success: false, message: "Company not found" });
     const owner = await runWithTenant({ role: "super_admin", bypass: true }, () => User.findOne({ tenantId: tenant._id, role: { $in: ["admin", "administrator"] } }).select("name email phone status").sort({ createdAt: 1 }).lean());
@@ -158,7 +158,7 @@ export const getTenant = async (req, res, next) => {
 export const updateTenantStatus = async (req, res, next) => {
   try {
     const { status, plan, periodDays, transactionReference } = req.body || {};
-    if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ success: false, message: "Invalid tenant ID" });
+    if (!firestore.isValidObjectId(req.params.id)) return res.status(400).json({ success: false, message: "Invalid tenant ID" });
     if (!["active", "suspended", "trial", "cancelled"].includes(status)) return res.status(400).json({ success: false, message: "Invalid company status" });
     const existingTenant = await Organization.findById(req.params.id).lean();
     if (!existingTenant) return res.status(404).json({ success: false, message: "Company not found" });
@@ -195,11 +195,11 @@ export const updateTenantStatus = async (req, res, next) => {
 };
 
 export const deleteTenant = async (req, res, next) => {
-  const session = await mongoose.startSession();
+  const session = await firestore.startSession();
   try {
     const { id } = req.params;
     const confirmation = String(req.body?.confirmation || "").trim();
-    if (!mongoose.isValidObjectId(id)) return res.status(400).json({ success: false, message: "Invalid tenant ID" });
+    if (!firestore.isValidObjectId(id)) return res.status(400).json({ success: false, message: "Invalid tenant ID" });
     if (confirmation !== "DELETE") return res.status(400).json({ success: false, message: 'Permanent company deletion requires confirmation="DELETE".' });
     const requesterRole = String(req.user?.role || req.user?.legacyRole || "").toLowerCase();
     if (!req.user || !["superadmin", "super_admin"].includes(requesterRole)) return res.status(403).json({ success: false, message: "Only a SuperAdmin can permanently delete a company." });
@@ -208,7 +208,7 @@ export const deleteTenant = async (req, res, next) => {
     const protectedSlugs = new Set(["platform", "system", "superadmin", "super-admin"]);
     const isPlatformOrganization = protectedSlugs.has(String(tenant.slug || "").trim().toLowerCase()) || (tenant.settings && tenant.settings.isPlatform === true) || (tenant.settings && tenant.settings.platform === true);
     if (isPlatformOrganization) return res.status(403).json({ success: false, message: "The platform/system organization cannot be deleted." });
-    const db = mongoose.connection.db;
+    const db = firestore.connection.db;
     const collections = await db.listCollections().toArray();
     await session.withTransaction(async () => {
       for (const { name } of collections) {
