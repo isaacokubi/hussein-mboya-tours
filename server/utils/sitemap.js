@@ -1,7 +1,7 @@
 // scripts/generateSitemap.js
 
 import dotenv from "dotenv";
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import fs from "fs";
 import path from "path";
 
@@ -14,7 +14,7 @@ dotenv.config();
 
 const generateSitemap = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
+    await firestore.connect(process.env.MONGODB_URI);
 
     // debug removed
 
@@ -117,7 +117,7 @@ const generateSitemap = async () => {
 
     // debug removed
 
-    await mongoose.connection.close();
+    await firestore.connection.close();
 
     process.exit(0);
   } catch (error) {
@@ -126,7 +126,7 @@ const generateSitemap = async () => {
       error.message
     );
 
-    await mongoose.connection.close().catch(() => {});
+    await firestore.connection.close().catch(() => {});
 
     process.exit(1);
   }
