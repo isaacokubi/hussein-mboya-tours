@@ -373,7 +373,7 @@ export default function AdminCompliance() {
               <p className="mt-1 text-sm text-slate-500">The original invoice must already be successfully synced to eTIMS.</p>
               <div className="mt-5 grid gap-3">
                 <select className={inputClass} value={noteForm.type} onChange={(e) => setNoteForm({ ...noteForm, type: e.target.value })}><option value="credit">Credit note</option><option value="debit">Debit note</option></select>
-                <input className={inputClass} placeholder="Original invoice MongoDB ID" value={noteForm.originalInvoice} onChange={(e) => setNoteForm({ ...noteForm, originalInvoice: e.target.value })} />
+                <input className={inputClass} placeholder="Original invoice Firebase Firestore ID" value={noteForm.originalInvoice} onChange={(e) => setNoteForm({ ...noteForm, originalInvoice: e.target.value })} />
                 <input className={inputClass} type="number" min="0.01" step="0.01" placeholder="Total amount" value={noteForm.totalAmount} onChange={(e) => setNoteForm({ ...noteForm, totalAmount: e.target.value })} />
                 <input className={inputClass} type="number" min="0" step="0.01" placeholder="Tax amount" value={noteForm.taxAmount} onChange={(e) => setNoteForm({ ...noteForm, taxAmount: e.target.value })} />
                 <textarea className={`${inputClass} min-h-24`} placeholder="Reason" value={noteForm.reason} onChange={(e) => setNoteForm({ ...noteForm, reason: e.target.value })} />
