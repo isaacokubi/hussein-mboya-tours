@@ -1,6 +1,6 @@
 // server/models/Promotion.js
 
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
@@ -18,11 +18,11 @@ import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 |--------------------------------------------------------------------------
 */
 
-const promotionSchema = new mongoose.Schema(
+const promotionSchema = new firestore.Schema(
   {
 
     tenantId:{
-        type: mongoose.Schema.Types.ObjectId,
+        type: firestore.Schema.Types.ObjectId,
         ref:"Organization",
         index:true,
         required:false
@@ -127,7 +127,7 @@ const promotionSchema = new mongoose.Schema(
 
     tours: [
       {
-        type: mongoose.Schema.Types.ObjectId,
+        type: firestore.Schema.Types.ObjectId,
         ref: "Tour",
       },
     ],
@@ -193,7 +193,7 @@ const promotionSchema = new mongoose.Schema(
     */
 
     createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "User",
       default: null,
     },
@@ -297,7 +297,7 @@ promotionSchema.methods.calculateDiscount = function (amount) {
 */
 
 const tenantPromotionSchema = promotionSchema.plugin(tenantPlugin);
-const Promotion = mongoose.models.Promotion || mongoose.model("Promotion", tenantPromotionSchema);
+const Promotion = firestore.models.Promotion || firestore.model("Promotion", tenantPromotionSchema);
 
 
 
