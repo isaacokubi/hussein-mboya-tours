@@ -1,14 +1,14 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
-const supplierPayableSchema = new mongoose.Schema({
-  tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
+const supplierPayableSchema = new firestore.Schema({
+  tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
   payableNumber: { type: String, trim: true },
-  supplier: { type: mongoose.Schema.Types.ObjectId, ref: "Supplier", required: true, index: true },
-  purchaseOrder: { type: mongoose.Schema.Types.ObjectId, ref: "PurchaseOrder", default: null, index: true },
-  expense: { type: mongoose.Schema.Types.ObjectId, ref: "Expense", default: null, index: true },
-  booking: { type: mongoose.Schema.Types.ObjectId, ref: "Booking", default: null, index: true },
-  tour: { type: mongoose.Schema.Types.ObjectId, ref: "Tour", default: null, index: true },
+  supplier: { type: firestore.Schema.Types.ObjectId, ref: "Supplier", required: true, index: true },
+  purchaseOrder: { type: firestore.Schema.Types.ObjectId, ref: "PurchaseOrder", default: null, index: true },
+  expense: { type: firestore.Schema.Types.ObjectId, ref: "Expense", default: null, index: true },
+  booking: { type: firestore.Schema.Types.ObjectId, ref: "Booking", default: null, index: true },
+  tour: { type: firestore.Schema.Types.ObjectId, ref: "Tour", default: null, index: true },
   amount: { type: Number, required: true, min: 0 },
   amountPaid: { type: Number, min: 0, default: 0 },
   balance: { type: Number, min: 0, default: 0 },
@@ -17,7 +17,7 @@ const supplierPayableSchema = new mongoose.Schema({
   paymentReference: { type: String, trim: true, default: "" },
   paymentMethod: { type: String, enum: ["MPESA", "CARD", "BANK_TRANSFER", "CASH"], default: "BANK_TRANSFER" },
   notes: { type: String, trim: true, default: "" },
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+  createdBy: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null },
 }, { timestamps: true });
 
 supplierPayableSchema.pre("validate", function(next) {
@@ -29,4 +29,4 @@ supplierPayableSchema.pre("validate", function(next) {
 supplierPayableSchema.pre("save", function(next) { if (!this.payableNumber) this.payableNumber = `PAY-${Date.now()}-${Math.floor(Math.random() * 10000)}`; next(); });
 supplierPayableSchema.index({ tenantId: 1, payableNumber: 1 }, { unique: true });
 supplierPayableSchema.plugin(tenantPlugin);
-export default mongoose.models.SupplierPayable || mongoose.model("SupplierPayable", supplierPayableSchema);
+export default firestore.models.SupplierPayable || firestore.model("SupplierPayable", supplierPayableSchema);
