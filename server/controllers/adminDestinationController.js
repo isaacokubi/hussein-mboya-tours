@@ -1,6 +1,6 @@
 import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import Destination from "../models/Destination.js";
 import cloudinary from "../config/cloudinary.js";
 
@@ -121,7 +121,7 @@ export const updateDestination = async (req, res, next) => {
   try {
     const tenantId = requireTenantId();
 
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    if (!firestore.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ success: false, message: "Invalid destination ID." });
     }
 
@@ -195,7 +195,7 @@ export const updateDestination = async (req, res, next) => {
 
 export const deleteDestination = async (req, res, next) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    if (!firestore.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ success: false, message: "Invalid destination ID." });
     }
 
@@ -222,7 +222,7 @@ export const getDestinationById = async (req, res, next) => {
   try {
     const tenantId = requireTenantId();
 
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    if (!firestore.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ success: false, message: "Invalid destination ID." });
     }
 
