@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { requireTenantId, getTenantId } from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 import Agent from "../models/Agent.js";
@@ -10,7 +10,7 @@ import Organization from "../models/Organization.js";
 const extractId = (value) => {
   if (value == null) return "";
   if (typeof value === "string" || typeof value === "number") return String(value).trim();
-  if (mongoose.isValidObjectId(value)) return String(value);
+  if (firestore.isValidObjectId(value)) return String(value);
   if (value._id != null) return extractId(value._id);
   if (value.id != null) return extractId(value.id);
   if (typeof value.toHexString === "function") return value.toHexString();
@@ -23,13 +23,13 @@ const extractId = (value) => {
 
 const toObjectId = (value, fieldName) => {
   const id = extractId(value);
-  if (!mongoose.isValidObjectId(id)) {
+  if (!firestore.isValidObjectId(id)) {
     const error = new Error(`Invalid ${fieldName}.`);
     error.status = 400;
     error.code = "INVALID_OBJECT_ID";
     throw error;
   }
-  return new mongoose.Types.ObjectId(id);
+  return new firestore.Types.ObjectId(id);
 };
 
 const getSafeTenantId = () => toObjectId(getTenantId(), "tenant ID");
