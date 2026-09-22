@@ -1,6 +1,6 @@
 // server/models/TourPackage.js
 
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 import slugify from "slugify";
@@ -11,11 +11,11 @@ import slugify from "slugify";
 |--------------------------------------------------------------------------
 */
 
-const imageSchema = new mongoose.Schema(
+const imageSchema = new firestore.Schema(
   {
 
     tenantId:{
-        type: mongoose.Schema.Types.ObjectId,
+        type: firestore.Schema.Types.ObjectId,
         ref:"Organization",
         index:true,
         required:false
@@ -49,7 +49,7 @@ const imageSchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
-const itinerarySchema = new mongoose.Schema(
+const itinerarySchema = new firestore.Schema(
   {
     day: {
       type: Number,
@@ -80,7 +80,7 @@ const itinerarySchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
-const seoSchema = new mongoose.Schema(
+const seoSchema = new firestore.Schema(
   {
     title: String,
 
@@ -99,7 +99,7 @@ const seoSchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
-const tourPackageSchema = new mongoose.Schema(
+const tourPackageSchema = new firestore.Schema(
   {
     /*
     |--------------------------------------------------------------------------
@@ -358,7 +358,7 @@ const tourPackageSchema = new mongoose.Schema(
     */
 
     createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
@@ -514,7 +514,7 @@ tourPackageSchema.index({
 */
 
 const tenantTourPackageSchema = tourPackageSchema.plugin(tenantPlugin);
-const TourPackage = mongoose.models.TourPackage || mongoose.model("TourPackage", tenantTourPackageSchema);
+const TourPackage = firestore.models.TourPackage || firestore.model("TourPackage", tenantTourPackageSchema);
 
 
 
