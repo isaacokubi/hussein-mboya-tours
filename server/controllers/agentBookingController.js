@@ -1,5 +1,5 @@
 import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 
 
 import { BOOKING_STATUSES, canTransitionBookingStatus } from "../constants/bookingConstants.js";
@@ -16,7 +16,7 @@ import { createCommission } from "../services/commissionService.js";
 */
 
 const isValidId = (id) =>
-  mongoose.Types.ObjectId.isValid(id);
+  firestore.Types.ObjectId.isValid(id);
 
 
 
@@ -28,7 +28,7 @@ const isValidId = (id) =>
 
 export const createBooking = async (req, res, next) => {
   requireTenantId();
-  const session = await mongoose.startSession();
+  const session = await firestore.startSession();
 
   try {
     session.startTransaction();
