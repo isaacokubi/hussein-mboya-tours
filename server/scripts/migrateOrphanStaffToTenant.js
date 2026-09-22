@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import dotenv from "dotenv";
 import Organization from "../models/Organization.js";
 import Staff from "../models/Staff.js";
@@ -10,7 +10,7 @@ dotenv.config();
 const tenantId = String(process.env.TENANT_ID || "").trim();
 const tenantSlug = String(process.env.TENANT_SLUG || "").trim().toLowerCase();
 const tenantName = String(process.env.TENANT_NAME || "").trim();
-const mongoUri = String(process.env.MONGODB_URI || "").trim();
+const mongoUri = String(process.env.FIREBASE_PROJECT_ID || "").trim();
 
 const migrate = async () => {
   if (!tenantId && !tenantSlug && !tenantName) {
@@ -21,7 +21,7 @@ const migrate = async () => {
     throw new Error("MONGODB_URI is not configured. Put it in server/.env or export MONGODB_URI before running the migration.");
   }
 
-  await mongoose.connect(mongoUri);
+  await firestore.connectFirestore?.();
 
   let organization;
 
@@ -74,5 +74,5 @@ migrate()
     process.exitCode = 1;
   })
   .finally(async () => {
-    await mongoose.connection.close().catch(() => {});
+    await firestore.connection.close().catch(() => {});
   });
