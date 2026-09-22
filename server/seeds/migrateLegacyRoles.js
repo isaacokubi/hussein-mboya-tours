@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 
 import { normalizeRole } from "../utils/roleUtils.js";
 
@@ -15,9 +15,9 @@ const tenantKey = (tenantId) => String(tenantId || "platform");
 const migrateRoles = async () => {
   if (!process.env.MONGODB_URI) throw new Error("MONGODB_URI is missing.");
 
-  await mongoose.connect(process.env.MONGODB_URI);
+  await firestore.connect(process.env.MONGODB_URI);
 
-  const db = mongoose.connection.db;
+  const db = firestore.connection.db;
   const roles = await db.collection("roles").find({}).sort({ createdAt: 1, _id: 1 }).toArray();
   const users = await db.collection("users").find({}).project({ _id: 1, tenantId: 1, roleId: 1, role: 1, legacyRole: 1 }).toArray();
 
@@ -38,7 +38,7 @@ const migrateRoles = async () => {
   for (const [key, members] of groups) {
     const canonicalRole = members.find((role) => String(role.name || "").toLowerCase() === role.canonical) || members[0];
     const canonicalName = canonicalRole.canonical;
-    const mergedPermissions = [...new Set(members.flatMap((role) => (role.permissions || []).map((id) => String(id)).filter((id) => mongoose.isValidObjectId(id))))];
+    const mergedPermissions = [...new Set(members.flatMap((role) => (role.permissions || []).map((id) => String(id)).filter((id) => firestore.isValidObjectId(id))))];
     const duplicateIds = members.filter((role) => String(role._id) !== String(canonicalRole._id)).map((role) => role._id);
 
     const affectedUsers = users.filter((user) =>
@@ -74,7 +74,7 @@ const migrateRoles = async () => {
         update: {
           $set: {
             name: canonicalName,
-            permissions: mergedPermissions.map((id) => new mongoose.Types.ObjectId(id)),
+            permissions: mergedPermissions.map((id) => new firestore.Types.ObjectId(id)),
           },
         },
       },
@@ -130,5 +130,5 @@ migrateRoles()
     process.exitCode = 1;
   })
   .finally(async () => {
-    await mongoose.connection.close().catch(() => {});
+    await firestore.connection.close().catch(() => {});
   });
