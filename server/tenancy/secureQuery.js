@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 
 
 export function getTenantFilter(req){
@@ -35,7 +35,7 @@ export function getTenantFilter(req){
 
     return {
         tenantId:
-        new mongoose.Types.ObjectId(tenantId)
+        new firestore.Types.ObjectId(tenantId)
     };
 
 }
