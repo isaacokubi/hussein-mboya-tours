@@ -1,7 +1,7 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import AccommodationInventory from "./AccommodationInventory.js";
-const { Schema } = mongoose;
+const { Schema } = firestore;
 
 const HotelRoomTypeSchema = new Schema({
   tenantId: { type: Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
@@ -29,7 +29,7 @@ HotelRoomTypeSchema.index({ tenantId: 1, hotel: 1, inventoryVersion: 1 });
 
 const syncLegacyInventory = async (room) => {
   if (!room?.tenantId || !room?.hotel) return;
-  const Hotel = mongoose.model("Hotel");
+  const Hotel = firestore.model("Hotel");
   const hotel = await Hotel.findOne({ _id: room.hotel, tenantId: room.tenantId }).select("name location").lean();
   if (!hotel) return;
   await AccommodationInventory.findOneAndUpdate(
@@ -44,4 +44,4 @@ HotelRoomTypeSchema.post("findOneAndUpdate", async (room) => { try { await syncL
 
 HotelRoomTypeSchema.plugin(tenantPlugin);
 
-export default mongoose.models.HotelRoomType || mongoose.model("HotelRoomType", HotelRoomTypeSchema);
+export default firestore.models.HotelRoomType || firestore.model("HotelRoomType", HotelRoomTypeSchema);
