@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import Tour from "../models/Tour.js";
 import Staff from "../models/Staff.js";
 import Vehicle from "../models/Vehicle.js";
@@ -9,7 +9,7 @@ const ACTIVE_TOUR_STATUSES = new Set(["scheduled", "upcoming", "confirmed", "act
 
 const idOrNull = (value) => (value === undefined || value === null || value === "" ? null : value);
 
-const validId = (value) => value == null || mongoose.Types.ObjectId.isValid(value);
+const validId = (value) => value == null || firestore.Types.ObjectId.isValid(value);
 
 const getTourWindow = (tour) => {
   const start = new Date(tour.startDate || tour.date);
@@ -74,13 +74,13 @@ async function assertResourceAvailable(Model, resourceId, field, currentTourId, 
 
 export const assignTourResourcesSafe = async (req, res, next) => {
   requireTenantId();
-  const session = await mongoose.startSession();
+  const session = await firestore.startSession();
 
   try {
     let response;
     await session.withTransaction(async () => {
       const tourId = req.params.id;
-      if (!mongoose.Types.ObjectId.isValid(tourId)) {
+      if (!firestore.Types.ObjectId.isValid(tourId)) {
         throw Object.assign(new Error("Invalid tour ID."), { status: 400 });
       }
 
