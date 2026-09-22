@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import dotenv from "dotenv";
 
 import User from "../models/User.js";
@@ -14,7 +14,7 @@ const createTourGuide = async () => {
       throw new Error("MONGODB_URI is missing in .env");
     }
 
-    await mongoose.connect(process.env.MONGODB_URI);
+    await firestore.connect(process.env.MONGODB_URI);
 
     // debug removed
 
@@ -130,7 +130,7 @@ const createTourGuide = async () => {
     console.error("❌ TOUR GUIDE SEED ERROR:", error.message);
     process.exitCode = 1;
   } finally {
-    await mongoose.connection.close().catch(() => {});
+    await firestore.connection.close().catch(() => {});
     // debug removed
   }
 };
