@@ -1,12 +1,12 @@
 // server/models/Invoice.js
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import { postInvoiceToLedger } from "../services/operationalAccountingService.js";
 import { queueWebhookEvent } from "../services/webhookDeliveryService.js";
 import InvoiceSequence from "./InvoiceSequence.js";
 import TaxProfile from "./TaxProfile.js";
 
-const invoiceItemSchema = new mongoose.Schema({
+const invoiceItemSchema = new firestore.Schema({
   description: { type: String, trim: true, required: true },
   quantity: { type: Number, min: 0, default: 1 },
   unitPrice: { type: Number, min: 0, required: true },
@@ -18,16 +18,16 @@ const invoiceItemSchema = new mongoose.Schema({
   totalAmount: { type: Number, min: 0, required: true },
 }, { _id: false });
 
-const invoiceSchema = new mongoose.Schema({
-  tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true },
-  booking: { type: mongoose.Schema.Types.ObjectId, ref: "Booking", default: null },
-  hospitalityBooking: { type: mongoose.Schema.Types.ObjectId, refPath: "hospitalityBookingModel", default: null, index: true },
+const invoiceSchema = new firestore.Schema({
+  tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", index: true },
+  booking: { type: firestore.Schema.Types.ObjectId, ref: "Booking", default: null },
+  hospitalityBooking: { type: firestore.Schema.Types.ObjectId, refPath: "hospitalityBookingModel", default: null, index: true },
   hospitalityBookingModel: { type: String, enum: ["HotelBooking", "AirportTransferBooking"], default: null },
   hospitalityType: { type: String, enum: ["hotel", "airport_transfer"], default: null, index: true },
-  customer: { type: mongoose.Schema.Types.ObjectId, ref: "Customer", default: null },
-  user: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
-  tour: { type: mongoose.Schema.Types.ObjectId, ref: "Tour", default: null },
-  agent: { type: mongoose.Schema.Types.ObjectId, ref: "Agent", default: null },
+  customer: { type: firestore.Schema.Types.ObjectId, ref: "Customer", default: null },
+  user: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null },
+  tour: { type: firestore.Schema.Types.ObjectId, ref: "Tour", default: null },
+  agent: { type: firestore.Schema.Types.ObjectId, ref: "Agent", default: null },
   invoiceNumber: { type: String, trim: true },
   issueDate: { type: Date, default: Date.now },
   dueDate: { type: Date },
@@ -54,7 +54,7 @@ const invoiceSchema = new mongoose.Schema({
   etimsUniqueRegisterIdentifier: { type: String, trim: true, default: "" },
   etimsQrCode: { type: String, trim: true, default: "" },
   etimsSubmittedAt: { type: Date, default: null },
-  etimsResponse: { type: mongoose.Schema.Types.Mixed, default: {} },
+  etimsResponse: { type: firestore.Schema.Types.Mixed, default: {} },
   etimsSubmissionAttempts: { type: Number, default: 0, min: 0 },
   etimsLastError: { type: String, trim: true, default: "" },
   etimsNextRetryAt: { type: Date, default: null },
@@ -115,5 +115,5 @@ invoiceSchema.index({ customer: 1 }); invoiceSchema.index({ tour: 1 }); invoiceS
 invoiceSchema.index({ tenantId: 1, etimsStatus: 1, createdAt: -1 }); invoiceSchema.index({ tenantId: 1, etimsStatus: 1, etimsNextRetryAt: 1 });
 
 const tenantInvoiceSchema = invoiceSchema.plugin(tenantPlugin);
-const Invoice = mongoose.models.Invoice || mongoose.model("Invoice", tenantInvoiceSchema);
+const Invoice = firestore.models.Invoice || firestore.model("Invoice", tenantInvoiceSchema);
 export default Invoice;
