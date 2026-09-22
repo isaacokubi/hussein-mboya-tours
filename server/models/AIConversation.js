@@ -1,13 +1,13 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 
 const messageSchema =
-new mongoose.Schema({
+new firestore.Schema({
 
     tenantId:{
-        type: mongoose.Schema.Types.ObjectId,
+        type: firestore.Schema.Types.ObjectId,
         ref:"Organization",
         index:true,
         required:false
@@ -41,10 +41,10 @@ new mongoose.Schema({
 
 
 const aiConversationSchema =
-new mongoose.Schema({
+new firestore.Schema({
 
   user:{
-    type:mongoose.Schema.Types.ObjectId,
+    type:firestore.Schema.Types.ObjectId,
     ref:"User",
     required:false,
     index:true
@@ -65,7 +65,7 @@ new mongoose.Schema({
 
 
   selectedTour:{
-    type:mongoose.Schema.Types.ObjectId,
+    type:firestore.Schema.Types.ObjectId,
     ref:"Tour",
     default:null
   },
@@ -102,7 +102,7 @@ new mongoose.Schema({
 
 export default aiConversationSchema.plugin(tenantPlugin);
 
-mongoose.model(
+firestore.model(
   "AIConversation",
   aiConversationSchema
 );
