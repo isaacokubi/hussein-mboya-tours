@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import Tour from "../models/Tour.js";
 import Booking from "../models/Booking.js";
 import Notification from "../models/Notification.js";
@@ -26,11 +26,11 @@ const releaseBookingCapacity = async (tour, booking, session) => {
 
 export const cancelTourAndBookings = async ({ tourId, reason = "Tour cancelled", deleted = false, userId = null }) => {
   requireTenantId();
-  const session = await mongoose.startSession();
+  const session = await firestore.startSession();
   try {
     let result;
     await session.withTransaction(async () => {
-      if (!mongoose.Types.ObjectId.isValid(tourId)) throw Object.assign(new Error("Invalid tour ID."), { status: 400 });
+      if (!firestore.Types.ObjectId.isValid(tourId)) throw Object.assign(new Error("Invalid tour ID."), { status: 400 });
       const tour = await Tour.findOne(mergeTenantFilter({ _id: tourId, isDeleted: { $ne: true } })).session(session);
       if (!tour) throw Object.assign(new Error("Tour not found."), { status: 404 });
       if (tour.status === "completed") throw Object.assign(new Error("A completed tour cannot be cancelled."), { status: 409 });
