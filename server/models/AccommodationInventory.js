@@ -1,6 +1,6 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
-const { Schema } = mongoose;
+const { Schema } = firestore;
 const AccommodationInventorySchema = new Schema({
   tenantId:{type:Schema.Types.ObjectId,ref:"Organization",required:true,index:true},
   propertyName:{type:String,required:true,trim:true,maxlength:180},
@@ -18,4 +18,4 @@ const AccommodationInventorySchema = new Schema({
 AccommodationInventorySchema.index({tenantId:1,propertyName:1,roomType:1},{unique:true});
 AccommodationInventorySchema.plugin(tenantPlugin);
 
-export default mongoose.models.AccommodationInventory || mongoose.model("AccommodationInventory",AccommodationInventorySchema);
+export default firestore.models.AccommodationInventory || firestore.model("AccommodationInventory",AccommodationInventorySchema);
