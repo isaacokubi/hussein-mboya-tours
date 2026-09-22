@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import AccountingSubledger from "../models/AccountingSubledger.js";
 import JournalEntry from "../models/JournalEntry.js";
 import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
@@ -7,7 +7,7 @@ import { postFinanceEntry } from "../services/financeLifecycleService.js";
 
 const money = (n) => Math.round(Number(n || 0) * 100) / 100;
 const allowed = new Set(["inventory", "payroll", "accrual", "prepayment", "fx"]);
-const hashId = (value) => new mongoose.Types.ObjectId(crypto.createHash("sha256").update(String(value)).digest("hex").slice(0, 24));
+const hashId = (value) => new firestore.Types.ObjectId(crypto.createHash("sha256").update(String(value)).digest("hex").slice(0, 24));
 const cashCode = (method) => { const m = String(method || "BANK").toUpperCase(); return m === "MPESA" ? "1020" : m === "CARD" ? "1030" : m === "CASH" ? "1000" : "1010"; };
 
 const normalizeCurrency = (value) => String(value || "KES").trim().toUpperCase();
