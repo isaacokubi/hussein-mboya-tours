@@ -3,7 +3,7 @@ import { isTenantBypassed } from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 import fs from "fs";
 import path from "path";
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import DatabaseBackup from "../models/DatabaseBackup.js";
 import AuditLog from "../models/AuditLog.js";
 import User from "../models/User.js";
@@ -19,12 +19,12 @@ const backupCollectionFilter = (req) => (isTenantBypassed() ? {} : tenantFilter(
 export const getAuditLogs = async (req, res) => { try { const { page = 1, search = "", action = "", resource = "", status = "", severity = "" } = req.query; const currentPage = Math.max(Number(page) || 1, 1); const limit = AUDIT_PAGE_SIZE; const filter = {}; if (action) filter.action = action; if (resource) filter.resource = resource; if (status) filter.status = status; if (severity) filter.severity = severity; if (search) filter.$or = [{ description: { $regex: search, $options: "i" } }, { resource: { $regex: search, $options: "i" } }, { action: { $regex: search, $options: "i" } }]; const skip = (currentPage - 1) * limit; const [logs, total, success, failed, critical] = await Promise.all([AuditLog.find(filter).populate("user", "name email role").sort({ createdAt: -1 }).skip(skip).limit(limit), AuditLog.countDocuments(filter), AuditLog.countDocuments({ status: "success" }), AuditLog.countDocuments({ status: "failed" }), AuditLog.countDocuments({ severity: "critical" })]); return res.json({ success: true, statistics: { total, success, failed, critical }, pagination: { page: currentPage, limit, pages: Math.max(1, Math.ceil(total / limit)) }, logs }); } catch (error) { res.status(500).json({ success: false, message: error.message }); } };
 
 export const getSecurityStatus = async (req, res) => { try { const securityService = await import("../services/securityService.js"); const data = await securityService.default.getSecurityStatus(); await createAuditLog({ user: req.user?._id, action: "view", resource: "Security", description: "Viewed security center status", severity: "low", ipAddress: req.ip, userAgent: req.headers["user-agent"], endpoint: req.originalUrl, method: req.method }); res.json({ success: true, data }); } catch (error) { res.status(500).json({ success: false, message: error.message }); } };
-export const getDatabaseStatus = async (req, res) => { try { const state = mongoose.connection.readyState; res.json({ success: true, database: { status: state === 1 ? "Connected" : "Disconnected", connected: state === 1, host: mongoose.connection.host || "Unknown", name: mongoose.connection.name || "Unknown", environment: process.env.NODE_ENV || "production", checkedAt: new Date() } }); } catch (error) { console.error("DATABASE STATUS ERROR", error); res.status(500).json({ success: false, message: "Unable to read database status" }); } };
+export const getDatabaseStatus = async (req, res) => { try { const state = firestore.connection.readyState; res.json({ success: true, database: { status: state === 1 ? "Connected" : "Disconnected", connected: state === 1, host: firestore.connection.host || "Unknown", name: firestore.connection.name || "Unknown", environment: process.env.NODE_ENV || "production", checkedAt: new Date() } }); } catch (error) { console.error("DATABASE STATUS ERROR", error); res.status(500).json({ success: false, message: "Unable to read database status" }); } };
 
 export const getSystemHealth = async (req, res) => {
   try {
     const memory = process.memoryUsage();
-    const databaseState = mongoose.connection.readyState;
+    const databaseState = firestore.connection.readyState;
     const databaseConnected = databaseState === 1;
     const timestamp = new Date();
     const rssMb = Math.round((memory.rss / 1024 / 1024) * 100) / 100;
@@ -63,8 +63,8 @@ export const clearSystemCache = async (req, res) => { try { const folders = [pat
 
 export const createDatabaseBackup = async (req, res) => {
   try {
-    if (!mongoose.connection.db) return res.status(503).json({ success: false, message: "Database connection unavailable" });
-    const db = mongoose.connection.db;
+    if (!firestore.connection.db) return res.status(503).json({ success: false, message: "Database connection unavailable" });
+    const db = firestore.connection.db;
     if (!fs.existsSync(BACKUP_DIR)) fs.mkdirSync(BACKUP_DIR, { recursive: true });
 
     const filename = `database-backup-${Date.now()}.json`;
@@ -73,7 +73,7 @@ export const createDatabaseBackup = async (req, res) => {
     const backupData = {
       createdAt: new Date(),
       environment: process.env.NODE_ENV || "production",
-      database: mongoose.connection.name || "unknown",
+      database: firestore.connection.name || "unknown",
       scope: platformBackup ? "platform" : "tenant",
       tenantId: platformBackup ? null : (req.tenantId || null),
       createdBy: req.user?.email || req.user?._id || "system",
@@ -95,7 +95,7 @@ export const createDatabaseBackup = async (req, res) => {
       file: filename,
       size: `${(fs.statSync(filepath).size / 1024 / 1024).toFixed(2)} MB`,
       collections: collectionNames,
-      databaseName: mongoose.connection.name || "unknown",
+      databaseName: firestore.connection.name || "unknown",
       environment: process.env.NODE_ENV || "production",
       createdBy: req.user?.email || req.user?._id || "system",
       tenantId: platformBackup ? null : (req.tenantId || null),
