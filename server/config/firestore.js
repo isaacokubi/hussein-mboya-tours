@@ -18,6 +18,7 @@ const credential = env.FIREBASE_CLIENT_EMAIL && privateKey
 if (!getApps().length) initializeApp({ credential, projectId });
 
 export const db = getFirestore();
+export async function connectFirestore(){ await db.listCollections(); return db; }
 export const firebase = { connection: { readyState: 1, close: async () => db.terminate() } };
 export const FieldValues = FieldValue;
 export const TimestampValue = Timestamp;
