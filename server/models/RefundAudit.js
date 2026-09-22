@@ -1,21 +1,21 @@
 
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 
 const refundAuditSchema =
-new mongoose.Schema({
+new firestore.Schema({
 
     tenantId:{
-        type: mongoose.Schema.Types.ObjectId,
+        type: firestore.Schema.Types.ObjectId,
         ref:"Organization",
         index:true,
         required:false
     },
 
 payment:{
-type:mongoose.Schema.Types.ObjectId,
+type:firestore.Schema.Types.ObjectId,
 ref:"Payment",
 required:true,
 index:true
@@ -23,7 +23,7 @@ index:true
 
 
 booking:{
-type:mongoose.Schema.Types.ObjectId,
+type:firestore.Schema.Types.ObjectId,
 ref:"Booking",
 default:null
 },
@@ -53,7 +53,7 @@ default:""
 
 
 requestedBy:{
-type:mongoose.Schema.Types.ObjectId,
+type:firestore.Schema.Types.ObjectId,
 ref:"User",
 default:null
 },
@@ -79,7 +79,7 @@ timestamps:true
 
 export default refundAuditSchema.plugin(tenantPlugin);
 
-mongoose.model(
+firestore.model(
 "RefundAudit",
 refundAuditSchema
 );
