@@ -1,6 +1,6 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
-const { Schema } = mongoose;
+const { Schema } = firestore;
 const schema = new Schema({
   tenantId:{type:Schema.Types.ObjectId,ref:"Organization",required:true,index:true},
   supplierName:{type:String,required:true,trim:true},
@@ -17,4 +17,4 @@ const schema = new Schema({
 schema.index({tenantId:1,supplierType:1,status:1,validTo:1});
 schema.plugin(tenantPlugin);
 
-export default mongoose.models.HospitalitySupplierContract||mongoose.model("HospitalitySupplierContract",schema);
+export default firestore.models.HospitalitySupplierContract||firestore.model("HospitalitySupplierContract",schema);
