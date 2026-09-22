@@ -1,6 +1,6 @@
 // server/models/UserPreference.js
 
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
@@ -10,11 +10,11 @@ import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 |--------------------------------------------------------------------------
 */
 
-const budgetRangeSchema = new mongoose.Schema(
+const budgetRangeSchema = new firestore.Schema(
   {
 
     tenantId:{
-        type: mongoose.Schema.Types.ObjectId,
+        type: firestore.Schema.Types.ObjectId,
         ref:"Organization",
         index:true,
         required:false
@@ -42,7 +42,7 @@ const budgetRangeSchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
-const userPreferenceSchema = new mongoose.Schema(
+const userPreferenceSchema = new firestore.Schema(
   {
     /*
     |--------------------------------------------------------------------------
@@ -51,7 +51,7 @@ const userPreferenceSchema = new mongoose.Schema(
     */
 
     user: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "User",
       required: true,
       unique: true,
@@ -86,7 +86,7 @@ const userPreferenceSchema = new mongoose.Schema(
 
     preferredDestinations: [
       {
-        type: mongoose.Schema.Types.ObjectId,
+        type: firestore.Schema.Types.ObjectId,
         ref: "Destination",
       },
     ],
@@ -215,7 +215,7 @@ const userPreferenceSchema = new mongoose.Schema(
     */
 
     lastUpdatedBy: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "User",
       default: null,
     },
@@ -275,10 +275,10 @@ userPreferenceSchema.methods.removeInterest = async function (interest) {
 */
 
 const UserPreference =
-  mongoose.models.UserPreference ||
+  firestore.models.UserPreference ||
   userPreferenceSchema.plugin(tenantPlugin);
 
-mongoose.model(
+firestore.model(
     "UserPreference",
     userPreferenceSchema,
   );
