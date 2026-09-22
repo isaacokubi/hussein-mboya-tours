@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 
 const roleNameExpression = {
   $toLower: {
@@ -29,7 +29,7 @@ export async function getCanonicalSuperAdminCustomerMetrics(db, tenantIds) {
   if (!db) throw new Error("Database connection is not ready.");
 
   const normalizedTenantIds = (tenantIds || []).map((id) =>
-    id instanceof mongoose.Types.ObjectId ? id : new mongoose.Types.ObjectId(id)
+    id instanceof firestore.Types.ObjectId ? id : new firestore.Types.ObjectId(id)
   );
 
   if (!normalizedTenantIds.length) return emptyMetrics();
