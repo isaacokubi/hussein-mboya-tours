@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import Payment from "../models/Payment.js";
 import AirportTransferBooking from "../models/AirportTransferBooking.js";
 import Invoice from "../models/Invoice.js";
@@ -11,16 +11,16 @@ import { runWithTenant } from "../tenancy/context.js";
 const integrationEnabled = Boolean(process.env.MONGODB_URI);
 
 test("airport transfer payment completion atomically updates booking, invoice and accounting", { skip: !integrationEnabled }, async () => {
-  if (mongoose.connection.readyState === 0) await mongoose.connect(process.env.MONGODB_URI);
-  const tenantId = new mongoose.Types.ObjectId();
-  const bookingId = new mongoose.Types.ObjectId();
+  if (firestore.connection.readyState === 0) await firestore.connect(process.env.MONGODB_URI);
+  const tenantId = new firestore.Types.ObjectId();
+  const bookingId = new firestore.Types.ObjectId();
 
   await runWithTenant({ tenantId, role: "manager" }, async () => {
     const booking = await AirportTransferBooking.create({
       _id: bookingId,
       tenantId,
       reference: "TR-CI-ATOMIC-001",
-      transfer: new mongoose.Types.ObjectId(),
+      transfer: new firestore.Types.ObjectId(),
       pickupDateTime: new Date("2099-08-01T08:00:00.000Z"),
       pickupLocation: "Mombasa Airport",
       dropoffLocation: "Nyali",
@@ -34,8 +34,8 @@ test("airport transfer payment completion atomically updates booking, invoice an
 
     const payment = await Payment.create({
       tenantId,
-      customer: new mongoose.Types.ObjectId(),
-      user: new mongoose.Types.ObjectId(),
+      customer: new firestore.Types.ObjectId(),
+      user: new firestore.Types.ObjectId(),
       hospitalityBooking: booking._id,
       hospitalityBookingModel: "AirportTransferBooking",
       hospitalityType: "airport_transfer",
@@ -76,5 +76,5 @@ test("airport transfer payment completion atomically updates booking, invoice an
 });
 
 test.after(async () => {
-  if (mongoose.connection.readyState !== 0) await mongoose.disconnect();
+  if (firestore.connection.readyState !== 0) await firestore.disconnect();
 });
