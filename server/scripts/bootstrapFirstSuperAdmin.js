@@ -1,5 +1,5 @@
 import "../tenancy/bootstrap.js";
-import mongoose from "mongoose";
+import { connectFirestore, connection } from "../config/firestore.js";
 import readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import env from "../config/env.js";
@@ -20,10 +20,7 @@ const askSecret = async (label) => {
 const envOrAsk = async (key, label) => process.env[key]?.trim() || ask(label);
 
 try {
-  const mongoUri = env.MONGODB_URI || process.env.MONGODB_URI || process.env.MONGO_URI;
-  if (!mongoUri) throw new Error("MONGODB_URI/MONGO_URI is not configured.");
-
-  await mongoose.connect(mongoUri);
+  await connectFirestore();
 
   console.log("\n============================================================");
   console.log("GLOBAL TOURS — FIRST COMPANY ONBOARDING");
@@ -87,5 +84,5 @@ try {
   process.exitCode = 1;
 } finally {
   rl.close();
-  await mongoose.disconnect().catch(() => {});
+  await firestore.disconnect().catch(() => {});
 }
