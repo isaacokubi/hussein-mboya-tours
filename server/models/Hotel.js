@@ -1,6 +1,6 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
-const { Schema } = mongoose;
+const { Schema } = firestore;
 
 const HotelSchema = new Schema({
   tenantId: { type: Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
@@ -36,4 +36,4 @@ HotelSchema.index({ tenantId: 1, name: "text", description: "text", location: "t
 
 HotelSchema.plugin(tenantPlugin);
 
-export default mongoose.models.Hotel || mongoose.model("Hotel", HotelSchema);
+export default firestore.models.Hotel || firestore.model("Hotel", HotelSchema);
