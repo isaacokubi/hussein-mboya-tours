@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import dotenv from "dotenv";
 
 import User from "../models/User.js";
@@ -10,7 +10,7 @@ dotenv.config();
 
 const createCustomer = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
+    await firestore.connect(process.env.MONGODB_URI);
 
     // debug removed
 
@@ -80,7 +80,7 @@ const createCustomer = async () => {
     if (existingCustomer) {
       // debug removed
 
-      await mongoose.connection.close();
+      await firestore.connection.close();
       return;
     }
 
@@ -112,11 +112,11 @@ const createCustomer = async () => {
     // debug removed
     // debug removed
 
-    await mongoose.connection.close();
+    await firestore.connection.close();
   } catch (error) {
     console.error("❌ CUSTOMER SEED ERROR:", error);
 
-    await mongoose.connection.close().catch(() => {});
+    await firestore.connection.close().catch(() => {});
     process.exit(1);
   }
 };
