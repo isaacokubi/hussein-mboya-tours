@@ -1,5 +1,5 @@
 import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 
 import Vehicle from "../models/Vehicle.js";
 import Tour from "../models/Tour.js";
@@ -92,7 +92,7 @@ export const getVehicles = async (req, res, next) => {
 
 export const getVehicle = async (req, res, next) => {
     try {
-        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        if (!firestore.Types.ObjectId.isValid(req.params.id)) {
             return res.status(400).json({
                 success: false,
                 message: "Invalid vehicle ID",
@@ -131,7 +131,7 @@ _id:req.params.id
 
 export const updateVehicle = async (req, res, next) => {
     try {
-        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        if (!firestore.Types.ObjectId.isValid(req.params.id)) {
             return res.status(400).json({
                 success: false,
                 message: "Invalid vehicle ID",
