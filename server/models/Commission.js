@@ -1,13 +1,13 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
-const commissionSchema = new mongoose.Schema(
+const commissionSchema = new firestore.Schema(
   {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true },
-    agent: { type: mongoose.Schema.Types.ObjectId, ref: "Agent", required: true, index: true },
-    booking: { type: mongoose.Schema.Types.ObjectId, ref: "Booking", required: true, unique: true },
-    customer: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-    tour: { type: mongoose.Schema.Types.ObjectId, ref: "Tour" },
+    tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", index: true },
+    agent: { type: firestore.Schema.Types.ObjectId, ref: "Agent", required: true, index: true },
+    booking: { type: firestore.Schema.Types.ObjectId, ref: "Booking", required: true, unique: true },
+    customer: { type: firestore.Schema.Types.ObjectId, ref: "User" },
+    tour: { type: firestore.Schema.Types.ObjectId, ref: "Tour" },
     bookingAmount: { type: Number, required: true, min: 0 },
     rate: { type: Number, required: true, default: 10, min: 0, max: 100 },
     amount: { type: Number, required: true, min: 0 },
@@ -20,15 +20,15 @@ const commissionSchema = new mongoose.Schema(
     paymentReference: { type: String, trim: true, default: "" },
     transactionId: { type: String, trim: true, default: "" },
     paidAt: { type: Date, default: null },
-    approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    approvedBy: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null },
     approvedAt: { type: Date, default: null },
-    rejectedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    rejectedBy: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null },
     rejectedAt: { type: Date, default: null },
     rejectionReason: { type: String, default: "", trim: true },
     notes: { type: String, default: "", trim: true },
     financeNotes: { type: String, default: "", trim: true },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-    updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    createdBy: { type: firestore.Schema.Types.ObjectId, ref: "User" },
+    updatedBy: { type: firestore.Schema.Types.ObjectId, ref: "User" },
     isDeleted: { type: Boolean, default: false },
     deletedAt: { type: Date, default: null },
   },
@@ -63,5 +63,5 @@ commissionSchema.index({ customer: 1 });
 commissionSchema.index({ tour: 1 });
 
 const tenantCommissionSchema = commissionSchema.plugin(tenantPlugin);
-const Commission = mongoose.models.Commission || mongoose.model("Commission", tenantCommissionSchema);
+const Commission = firestore.models.Commission || firestore.model("Commission", tenantCommissionSchema);
 export default Commission;
