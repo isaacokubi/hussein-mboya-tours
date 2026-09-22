@@ -6,7 +6,7 @@ import PrivacyRequests from "./PrivacyRequests";
 const layers = [
   ["Customer experience", "React + Vite", "Public website, tour discovery, booking, custom requests, checkout and reviews", Boxes],
   ["Business services", "Node.js + Express", "Sales, CRM, quotations, bookings, finance, operations, RBAC and notifications", Server],
-  ["Data layer", "MongoDB + Mongoose", "Tenant-isolated customers, tours, bookings, payments, resources and audit data", Database],
+  ["Data layer", "Firebase Firestore", "Tenant-isolated customers, tours, bookings, payments, resources and audit data", Database],
   ["Integrations", "M-Pesa · Stripe · PayPal · PesaPal · Cloudinary · Email · AI", "Payments, media, customer communications and intelligent assistance", Cloud],
 ];
 
