@@ -1,11 +1,11 @@
 // server/models/Staff.js
 
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
-const emergencyContactSchema = new mongoose.Schema(
+const emergencyContactSchema = new firestore.Schema(
   {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true },
+    tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", index: true },
     name: { type: String, trim: true, default: "" },
     relationship: { type: String, trim: true, default: "" },
     phone: { type: String, trim: true, default: "" },
@@ -13,9 +13,9 @@ const emergencyContactSchema = new mongoose.Schema(
   { _id: false }
 );
 
-const staffSchema = new mongoose.Schema(
+const staffSchema = new firestore.Schema(
   {
-    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null, index: true },
+    user: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null, index: true },
     name: { type: String, required: true, trim: true },
     // Staff emails are unique within a tenant, not globally.
     email: { type: String, required: true, lowercase: true, trim: true },
@@ -41,7 +41,7 @@ const staffSchema = new mongoose.Schema(
     joinedAt: { type: Date, default: Date.now },
     salary: { type: Number, default: 0, min: 0 },
     availability: { type: String, enum: ["available", "busy", "leave", "offline"], default: "available" },
-    assignedTours: [{ type: mongoose.Schema.Types.ObjectId, ref: "Tour" }],
+    assignedTours: [{ type: firestore.Schema.Types.ObjectId, ref: "Tour" }],
     completedTours: { type: Number, default: 0, min: 0 },
     averageRating: { type: Number, default: 0, min: 0, max: 5 },
     emergencyContact: emergencyContactSchema,
@@ -49,7 +49,7 @@ const staffSchema = new mongoose.Schema(
     isActive: { type: Boolean, default: true },
     isDeleted: { type: Boolean, default: false },
     notes: { type: String, default: "", trim: true },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    createdBy: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null },
   },
   {
     timestamps: true,
@@ -99,6 +99,6 @@ staffSchema.index(
 );
 
 const tenantStaffSchema = staffSchema.plugin(tenantPlugin);
-const Staff = mongoose.models.Staff || mongoose.model("Staff", tenantStaffSchema);
+const Staff = firestore.models.Staff || firestore.model("Staff", tenantStaffSchema);
 
 export default Staff;
