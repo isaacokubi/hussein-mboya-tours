@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import Tour from "../models/Tour.js";
 import Booking from "../models/Booking.js";
 import Payment from "../models/Payment.js";
@@ -13,8 +13,8 @@ import { runWithTenant } from "../tenancy/context.js";
 const integrationEnabled = Boolean(process.env.MONGODB_URI);
 
 test("tour lifecycle atomically reserves dated capacity with booking creation and releases it transactionally", { skip: !integrationEnabled }, async () => {
-  if (mongoose.connection.readyState === 0) await mongoose.connect(process.env.MONGODB_URI);
-  const tenantId = new mongoose.Types.ObjectId();
+  if (firestore.connection.readyState === 0) await firestore.connect(process.env.MONGODB_URI);
+  const tenantId = new firestore.Types.ObjectId();
   const travelDate = new Date("2099-06-15T00:00:00.000Z");
 
   await runWithTenant({ tenantId, role: "manager" }, async () => {
@@ -22,7 +22,7 @@ test("tour lifecycle atomically reserves dated capacity with booking creation an
       tenantId,
       title: "Lifecycle Integration Tour",
       description: "Deterministic integration fixture",
-      destination: new mongoose.Types.ObjectId(),
+      destination: new firestore.Types.ObjectId(),
       country: "Kenya",
       location: "Amboseli",
       date: travelDate,
@@ -71,8 +71,8 @@ test("tour lifecycle atomically reserves dated capacity with booking creation an
 
     const payment = await Payment.create({
       tenantId,
-      customer: new mongoose.Types.ObjectId(),
-      user: new mongoose.Types.ObjectId(),
+      customer: new firestore.Types.ObjectId(),
+      user: new firestore.Types.ObjectId(),
       booking: first._id,
       provider: "MPESA",
       method: "mpesa",
@@ -127,20 +127,20 @@ test("tour lifecycle atomically reserves dated capacity with booking creation an
 });
 
 test.after(async () => {
-  if (mongoose.connection.readyState !== 0) await mongoose.disconnect();
+  if (firestore.connection.readyState !== 0) await firestore.disconnect();
 });
 
 
 test("payment completion rolls back financial state when accounting posting fails", { skip: !integrationEnabled }, async () => {
-  if (mongoose.connection.readyState === 0) await mongoose.connect(process.env.MONGODB_URI);
-  const tenantId = new mongoose.Types.ObjectId();
+  if (firestore.connection.readyState === 0) await firestore.connect(process.env.MONGODB_URI);
+  const tenantId = new firestore.Types.ObjectId();
 
   await runWithTenant({ tenantId, role: "manager" }, async () => {
     const booking = await Booking.create({
       tenantId,
       bookingNumber: "BK-ACCOUNTING-ROLLBACK",
-      customer: new mongoose.Types.ObjectId(),
-      tour: new mongoose.Types.ObjectId(),
+      customer: new firestore.Types.ObjectId(),
+      tour: new firestore.Types.ObjectId(),
       travelDate: new Date("2099-07-01T00:00:00.000Z"),
       numberOfGuests: 1,
       totalAmount: 1000,
@@ -153,7 +153,7 @@ test("payment completion rolls back financial state when accounting posting fail
     const payment = await Payment.create({
       tenantId,
       customer: booking.customer,
-      user: new mongoose.Types.ObjectId(),
+      user: new firestore.Types.ObjectId(),
       booking: booking._id,
       provider: "MPESA",
       paymentMethod: "MPESA",
