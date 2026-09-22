@@ -1,10 +1,10 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
-const subscriptionPaymentSchema = new mongoose.Schema(
+const subscriptionPaymentSchema = new firestore.Schema(
   {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
+    userId: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null },
     plan: { type: String, enum: ["starter", "professional", "business", "enterprise"], required: true },
     amount: { type: Number, required: true, min: 1 },
     currency: { type: String, default: "KES", uppercase: true },
@@ -18,7 +18,7 @@ const subscriptionPaymentSchema = new mongoose.Schema(
     paidAt: { type: Date, default: null },
     periodDays: { type: Number, default: 30, min: 1 },
     failureReason: { type: String, default: "" },
-    metadata: { type: mongoose.Schema.Types.Mixed, default: {} },
+    metadata: { type: firestore.Schema.Types.Mixed, default: {} },
   },
   { timestamps: true }
 );
@@ -28,4 +28,4 @@ subscriptionPaymentSchema.index({ tenantId: 1, status: 1, createdAt: -1 });
 
 subscriptionPaymentSchema.plugin(tenantPlugin);
 
-export default mongoose.models.SubscriptionPayment || mongoose.model("SubscriptionPayment", subscriptionPaymentSchema);
+export default firestore.models.SubscriptionPayment || firestore.model("SubscriptionPayment", subscriptionPaymentSchema);
