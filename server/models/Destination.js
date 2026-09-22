@@ -1,6 +1,6 @@
 // server/models/Destination.js
 
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 import slugify from "slugify";
@@ -12,10 +12,10 @@ import slugify from "slugify";
 |--------------------------------------------------------------------------
 */
 
-const destinationSchema = new mongoose.Schema(
+const destinationSchema = new firestore.Schema(
 
     {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
+    tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", index:true },
 
         /*
         |--------------------------------------------------------------------------
@@ -771,7 +771,7 @@ function(rating){
 
 destinationSchema.plugin(tenantPlugin);
 
-const Destination = mongoose.model(
+const Destination = firestore.model(
     "Destination",
     destinationSchema,
     "destinations"
