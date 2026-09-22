@@ -1,6 +1,6 @@
 import { requireTenantId } from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import Role from "../models/Role.js";
 import Permission from "../models/Permission.js";
 import User from "../models/User.js";
@@ -91,7 +91,7 @@ const consolidateRoleAliases = async () => {
   }
 };
 
-const validObjectId = (value) => mongoose.Types.ObjectId.isValid(value);
+const validObjectId = (value) => firestore.Types.ObjectId.isValid(value);
 
 const sanitizePermissionIds = (values = []) => Array.from(new Set(
   (Array.isArray(values) ? values : []).filter(validObjectId).map((value) => String(value))
@@ -232,7 +232,7 @@ export const getPermissions = async (req, res, next) => {
 
 export const getRole = async (req, res, next) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid role ID" });
+    if (!firestore.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid role ID" });
     const roleDoc = await Role.findOne(tenantFilter(req, { _id: req.params.id })).lean();
     if (!roleDoc) return res.status(404).json({ success: false, message: "Role not found" });
     const [role] = await hydrateRoles([roleDoc]);
@@ -282,7 +282,7 @@ export const createRole = async (req, res, next) => {
 
 export const updateRole = async (req, res, next) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid role ID" });
+    if (!firestore.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid role ID" });
     const role = await Role.findOne(tenantFilter(req, { _id: req.params.id }));
     if (!role) return res.status(404).json({ success: false, message: "Role not found" });
     if (normalizeRole(role.name) === "super_admin") return res.status(403).json({ success: false, message: "The Super Admin role is protected and cannot be modified." });
@@ -302,7 +302,7 @@ export const updateRole = async (req, res, next) => {
 
 export const deleteRole = async (req, res, next) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid role ID" });
+    if (!firestore.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid role ID" });
     const role = await Role.findOne(tenantFilter(req, { _id: req.params.id }));
     if (!role) return res.status(404).json({ success: false, message: "Role not found" });
     if (normalizeRole(role.name) === "super_admin") return res.status(403).json({ success: false, message: "The Super Admin role cannot be deleted." });
@@ -316,7 +316,7 @@ export const deleteRole = async (req, res, next) => {
 
 export const updatePermissions = async (req, res, next) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid role ID" });
+    if (!firestore.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid role ID" });
     const role = await Role.findOne(tenantFilter(req, { _id: req.params.id }));
     if (!role) return res.status(404).json({ success: false, message: "Role not found" });
     if (normalizeRole(role.name) === "super_admin") return res.status(403).json({ success: false, message: "The Super Admin role permissions cannot be modified." });
