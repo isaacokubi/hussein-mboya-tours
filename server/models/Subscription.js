@@ -1,10 +1,10 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
-const subscriptionSchema = new mongoose.Schema(
+const subscriptionSchema = new firestore.Schema(
   {
     tenantId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "Organization",
       required: true,
       unique: true,
@@ -33,7 +33,7 @@ const subscriptionSchema = new mongoose.Schema(
     currentPeriodStartsAt: { type: Date, default: null },
     currentPeriodEndsAt: { type: Date, default: null },
     cancelledAt: { type: Date, default: null },
-    metadata: { type: mongoose.Schema.Types.Mixed, default: {} },
+    metadata: { type: firestore.Schema.Types.Mixed, default: {} },
   },
   { timestamps: true }
 );
@@ -44,6 +44,6 @@ subscriptionSchema.index({ trialEndsAt: 1, status: 1 });
 subscriptionSchema.plugin(tenantPlugin);
 
 const Subscription =
-  mongoose.models.Subscription || mongoose.model("Subscription", subscriptionSchema);
+  firestore.models.Subscription || firestore.model("Subscription", subscriptionSchema);
 
 export default Subscription;
