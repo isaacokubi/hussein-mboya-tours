@@ -1,6 +1,6 @@
 // server/models/Quotation.js
 
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
@@ -10,9 +10,9 @@ import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 |--------------------------------------------------------------------------
 */
 
-const quotationItemSchema = new mongoose.Schema(
+const quotationItemSchema = new firestore.Schema(
   {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
+    tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", index:true },
     name: {
       type: String,
       required: true,
@@ -71,7 +71,7 @@ const quotationItemSchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
-const quotationSchema = new mongoose.Schema(
+const quotationSchema = new firestore.Schema(
   {
     /*
     |--------------------------------------------------------------------------
@@ -92,7 +92,7 @@ const quotationSchema = new mongoose.Schema(
     */
 
     agent: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "Agent",
       required: true,
       index: true,
@@ -105,7 +105,7 @@ const quotationSchema = new mongoose.Schema(
     */
 
     customer: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "Customer",
       required: true,
       index: true,
@@ -118,7 +118,7 @@ const quotationSchema = new mongoose.Schema(
     */
 
     tour: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "Tour",
       default: null,
     },
@@ -130,7 +130,7 @@ const quotationSchema = new mongoose.Schema(
     */
 
     tourPackage: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "TourPackage",
       default: null,
     },
@@ -243,7 +243,7 @@ const quotationSchema = new mongoose.Schema(
     */
 
     booking: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "Booking",
       default: null,
     },
@@ -255,7 +255,7 @@ const quotationSchema = new mongoose.Schema(
     */
 
     createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "User",
       default: null,
     },
@@ -376,7 +376,7 @@ quotationSchema.index({
 */
 
 const tenantQuotationSchema = quotationSchema.plugin(tenantPlugin);
-const Quotation = mongoose.models.Quotation || mongoose.model("Quotation", tenantQuotationSchema);
+const Quotation = firestore.models.Quotation || firestore.model("Quotation", tenantQuotationSchema);
 
 
 
