@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import Booking from "../models/Booking.js";
 
@@ -52,7 +52,7 @@ const populateAgent = (query) =>
     populate: { path: "user", select: "name email phone status" },
   });
 
-const isValidObjectId = (value) => mongoose.Types.ObjectId.isValid(value);
+const isValidObjectId = (value) => firestore.Types.ObjectId.isValid(value);
 
 export const dailyBookingReport = async (req, res, next) => {
   try {
