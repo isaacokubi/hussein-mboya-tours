@@ -28,13 +28,13 @@
     "repair:global-media": "node scripts/repairGlobalMedia.js",
     "repair:financial-reconciliation": "node scripts/repairFinancialReconciliation.js",
     "test": "node --test tests/*.js",
-    "audit:mongodb": "node scripts/mongodb-application-audit.js",
     "migrate:booking-ledger": "node scripts/migrateBookingPaymentLedger.js",
     "test:tour-domain": "node --test tests/tourDomainIntegrity.test.js",
     "migrate:roles": "node seeds/migrateLegacyRoles.js",
     "test:security": "node --test tests/authCookie.test.js tests/roleNormalization.test.js",
     "check:security": "node --check middleware/authMiddleware.js && node --check middleware/tenantMiddleware.js && node --check middleware/uploadMiddleware.js && node --check middleware/resolveMpesaRefundTenant.js && node --check controllers/mpesaRefundController.js && node --check utils/authCookie.js && node --check seeds/migrateLegacyRoles.js && node --check tests/authCookie.test.js && node --check tests/roleNormalization.test.js",
-    "check:tenant-models": "node scripts/tenantModelContractCheck.js"
+    "check:tenant-models": "node scripts/tenantModelContractCheck.js",
+    "audit:firebase": "node scripts/firebase-application-audit.js"
   },
   "dependencies": {
     "africastalking": "^0.8.0",
@@ -51,8 +51,6 @@
     "i18next": "^26.3.6",
     "json2csv": "^6.0.0-alpha.2",
     "jsonwebtoken": "^9.0.0",
-    "mongoose": "^8.12.0",
-    "mongoose-paginate-v2": "^1.9.5",
     "morgan": "^1.12.0",
     "multer": "^2.3.0",
     "multer-storage-cloudinary": "^4.0.0",
@@ -66,7 +64,8 @@
     "slugify": "^1.6.9",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
-    "validator": "^13.12.0"
+    "validator": "^13.12.0",
+    "firebase-admin": "^14.4.0"
   },
   "overrides": {
     "joi": "^18.2.5"
