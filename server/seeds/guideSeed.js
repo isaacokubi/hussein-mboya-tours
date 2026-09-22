@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import dotenv from "dotenv";
 import crypto from "crypto";
 
@@ -27,7 +27,7 @@ const seedGuides = async () => {
     const mongoUri = String(process.env.MONGODB_URI || "").trim();
     if (!mongoUri) throw new Error("MONGODB_URI is missing in server/.env");
 
-    await mongoose.connect(mongoUri);
+    await firestore.connect(mongoUri);
 
     let organization;
     if (tenantId) organization = await Organization.findById(tenantId).lean();
@@ -121,7 +121,7 @@ const seedGuides = async () => {
     console.error("Tour guide seed failed:", error);
     process.exitCode = 1;
   } finally {
-    await mongoose.connection.close().catch(() => {});
+    await firestore.connection.close().catch(() => {});
   }
 };
 
