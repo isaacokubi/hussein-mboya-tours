@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import dotenv from "dotenv";
 
 import Organization from "../models/Organization.js";
@@ -28,7 +28,7 @@ const seedStaff = async () => {
 
     const mongoUri = String(process.env.MONGODB_URI || "").trim();
     if (!mongoUri) throw new Error("MONGODB_URI is missing in server/.env");
-    await mongoose.connect(mongoUri);
+    await firestore.connect(mongoUri);
 
     let organization;
     if (requestedTenantId) organization = await Organization.findById(requestedTenantId).lean();
@@ -59,7 +59,7 @@ const seedStaff = async () => {
     console.error("Staff seed failed:", error);
     process.exitCode = 1;
   } finally {
-    await mongoose.connection.close().catch(() => {});
+    await firestore.connection.close().catch(() => {});
   }
 };
 
