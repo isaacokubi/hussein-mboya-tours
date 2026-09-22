@@ -1,11 +1,11 @@
 // server/models/Coupon.js
 
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
-const couponSchema = new mongoose.Schema(
+const couponSchema = new firestore.Schema(
   {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true },
+    tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", index: true },
     code: {
       type: String,
       required: true,
@@ -24,7 +24,7 @@ const couponSchema = new mongoose.Schema(
     minimumBookingAmount: { type: Number, default: 0, min: 0 },
     maximumDiscount: { type: Number, default: null, min: 0 },
     active: { type: Boolean, default: true },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    createdBy: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null },
   },
   { timestamps: true }
 );
@@ -69,6 +69,6 @@ couponSchema.methods.incrementUsage = async function () {
 };
 
 const tenantCouponSchema = couponSchema.plugin(tenantPlugin);
-const Coupon = mongoose.models.Coupon || mongoose.model("Coupon", tenantCouponSchema);
+const Coupon = firestore.models.Coupon || firestore.model("Coupon", tenantCouponSchema);
 
 export default Coupon;
