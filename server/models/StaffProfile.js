@@ -1,6 +1,6 @@
 // server/models/StaffProfile.js
 
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
@@ -15,11 +15,11 @@ import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 |--------------------------------------------------------------------------
 */
 
-const emergencyContactSchema = new mongoose.Schema(
+const emergencyContactSchema = new firestore.Schema(
   {
 
     tenantId:{
-        type: mongoose.Schema.Types.ObjectId,
+        type: firestore.Schema.Types.ObjectId,
         ref:"Organization",
         index:true,
         required:false
@@ -47,7 +47,7 @@ const emergencyContactSchema = new mongoose.Schema(
   }
 );
 
-const staffProfileSchema = new mongoose.Schema(
+const staffProfileSchema = new firestore.Schema(
   {
     /*
     |--------------------------------------------------------------------------
@@ -56,7 +56,7 @@ const staffProfileSchema = new mongoose.Schema(
     */
 
     user: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "User",
       required: true,
       unique: true,
@@ -70,7 +70,7 @@ const staffProfileSchema = new mongoose.Schema(
     */
 
     staff: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "Staff",
       required: true,
       unique: true,
@@ -225,7 +225,7 @@ staffProfileSchema.index({
 */
 
 const tenantStaffProfileSchema = staffProfileSchema.plugin(tenantPlugin);
-const StaffProfile = mongoose.models.StaffProfile || mongoose.model("StaffProfile", tenantStaffProfileSchema);
+const StaffProfile = firestore.models.StaffProfile || firestore.model("StaffProfile", tenantStaffProfileSchema);
 
 
 
