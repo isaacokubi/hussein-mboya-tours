@@ -1,6 +1,6 @@
 // server/models/Review.js
 
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
@@ -16,9 +16,9 @@ import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 |--------------------------------------------------------------------------
 */
 
-const reviewSchema = new mongoose.Schema(
+const reviewSchema = new firestore.Schema(
   {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
+    tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", index:true },
     /*
     |--------------------------------------------------------------------------
     | REVIEW AUTHOR
@@ -26,7 +26,7 @@ const reviewSchema = new mongoose.Schema(
     */
 
     user: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "User",
       required: true,
       index: true,
@@ -34,7 +34,7 @@ const reviewSchema = new mongoose.Schema(
 
     // Legacy compatibility
     customer: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "User",
       default: null,
     },
@@ -46,7 +46,7 @@ const reviewSchema = new mongoose.Schema(
     */
 
     tour: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "Tour",
       required: true,
       index: true,
@@ -59,7 +59,7 @@ const reviewSchema = new mongoose.Schema(
     */
 
     booking: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "Booking",
       required: true,
       unique: true,
@@ -169,7 +169,7 @@ const reviewSchema = new mongoose.Schema(
       },
 
       repliedBy: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: firestore.Schema.Types.ObjectId,
         ref: "User",
         default: null,
       },
@@ -308,7 +308,7 @@ reviewSchema.methods.voteNotHelpful = function () {
 */
 
 const tenantReviewSchema = reviewSchema.plugin(tenantPlugin);
-const Review = mongoose.models.Review || mongoose.model("Review", tenantReviewSchema);
+const Review = firestore.models.Review || firestore.model("Review", tenantReviewSchema);
 
 
 
