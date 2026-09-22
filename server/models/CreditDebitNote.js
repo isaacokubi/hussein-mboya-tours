@@ -1,11 +1,11 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
-const creditDebitNoteSchema = new mongoose.Schema({
-  tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
+const creditDebitNoteSchema = new firestore.Schema({
+  tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
   noteNumber: { type: String, trim: true },
   type: { type: String, enum: ["credit", "debit"], required: true },
-  originalInvoice: { type: mongoose.Schema.Types.ObjectId, ref: "Invoice", required: true },
+  originalInvoice: { type: firestore.Schema.Types.ObjectId, ref: "Invoice", required: true },
   originalInvoiceNumber: { type: String, trim: true, required: true },
   originalEtimsInvoiceNumber: { type: String, trim: true, default: "" },
   etimsSolution: { type: String, trim: true, default: "" },
@@ -22,9 +22,9 @@ const creditDebitNoteSchema = new mongoose.Schema({
   etimsSubmissionAttempts: { type: Number, default: 0, min: 0 },
   etimsLastAttemptAt: { type: Date, default: null },
   etimsSubmittedAt: { type: Date, default: null },
-  etimsResponse: { type: mongoose.Schema.Types.Mixed, default: {} },
+  etimsResponse: { type: firestore.Schema.Types.Mixed, default: {} },
   issuedAt: { type: Date, default: null },
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+  createdBy: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null },
 }, { timestamps: true });
 
 creditDebitNoteSchema.pre("save", function(next) {
@@ -38,4 +38,4 @@ creditDebitNoteSchema.index({ tenantId: 1, originalInvoice: 1, createdAt: -1 });
 creditDebitNoteSchema.index({ tenantId: 1, etimsStatus: 1, createdAt: -1 });
 creditDebitNoteSchema.plugin(tenantPlugin);
 
-export default mongoose.models.CreditDebitNote || mongoose.model("CreditDebitNote", creditDebitNoteSchema);
+export default firestore.models.CreditDebitNote || firestore.model("CreditDebitNote", creditDebitNoteSchema);
