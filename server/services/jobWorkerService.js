@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { claimNextJob, completeJob, failJob } from "./jobQueueService.js";
 import { processEtimsInvoiceJob } from "./etimsService.js";
 import { processEtimsNoteJob } from "./etimsNoteService.js";
@@ -16,7 +16,7 @@ const DB_READY = 1;
 const MIN_IDLE_DELAY_MS = 1500;
 const MAX_ERROR_BACKOFF_MS = 60 * 1000;
 
-const isDatabaseReady = () => mongoose.connection.readyState === DB_READY;
+const isDatabaseReady = () => firestore.connection.readyState === DB_READY;
 
 export async function processOneJob() {
   if (!isDatabaseReady()) return false;
