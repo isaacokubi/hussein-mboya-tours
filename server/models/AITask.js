@@ -1,14 +1,14 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 
-const aiTaskSchema = new mongoose.Schema(
+const aiTaskSchema = new firestore.Schema(
 
 {
 
     tenantId:{
-        type: mongoose.Schema.Types.ObjectId,
+        type: firestore.Schema.Types.ObjectId,
         ref:"Organization",
         index:true,
         required:false
@@ -55,7 +55,7 @@ default:"general"
 
 
 assignedTo:{
-type:mongoose.Schema.Types.ObjectId,
+type:firestore.Schema.Types.ObjectId,
 ref:"User",
 default:null
 }
@@ -80,7 +80,7 @@ timestamps:true
 
 export default aiTaskSchema.plugin(tenantPlugin);
 
-mongoose.model(
+firestore.model(
 "AITask",
 aiTaskSchema
 );
