@@ -1,9 +1,9 @@
 import { backgroundTenantFilter } from "../tenancy/backgroundTenantFilter.js";
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import Booking from "../models/Booking.js";
 
 const uri =
-  process.env.MONGODB_URI ||
+  process.env.FIREBASE_PROJECT_ID ||
   process.env.MONGO_URI;
 
 if (!uri) {
@@ -11,7 +11,7 @@ if (!uri) {
   process.exit(1);
 }
 
-await mongoose.connect(uri);
+await firestore.connectFirestore?.();
 
 const cutoff =
   new Date(Date.now() - 30 * 60 * 1000);
@@ -45,4 +45,4 @@ console.log({
   modified: result.modifiedCount
 });
 
-await mongoose.disconnect();
+await firestore.disconnect();
