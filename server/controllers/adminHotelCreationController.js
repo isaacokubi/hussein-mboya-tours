@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import Hotel from "../models/Hotel.js";
 
 const clean = (value) => String(value ?? "").trim();
@@ -22,7 +22,7 @@ const normalizeNumber = (value, fallback = null) => {
 export const createAdminHotel = async (req, res, next) => {
   try {
     const tenantId = tenantIdOf(req);
-    if (!tenantId || !mongoose.isValidObjectId(tenantId)) {
+    if (!tenantId || !firestore.isValidObjectId(tenantId)) {
       return res.status(400).json({
         success: false,
         message: "A valid company/tenant context is required before creating a hotel.",
