@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 import Commission from "../models/Commission.js";
@@ -73,11 +73,11 @@ export const getCommissions = async (req, res) => {
 export const getAgentCommissions = async (req, res) => {
   requireTenantId();
   try {
-    if (!mongoose.isValidObjectId(req.params.agentId)) {
+    if (!firestore.isValidObjectId(req.params.agentId)) {
       return res.status(400).json({ success: false, message: "Invalid agent ID." });
     }
     const commissions = await Commission.find(
-      mergeTenantFilter({ agent: new mongoose.Types.ObjectId(req.params.agentId) })
+      mergeTenantFilter({ agent: new firestore.Types.ObjectId(req.params.agentId) })
     )
       .populate({
         path: "agent",
