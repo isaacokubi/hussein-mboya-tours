@@ -1,8 +1,8 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
-const fixedAssetSchema = new mongoose.Schema({
-  tenantId:{type:mongoose.Schema.Types.ObjectId,ref:"Organization",required:true,index:true},
+const fixedAssetSchema = new firestore.Schema({
+  tenantId:{type:firestore.Schema.Types.ObjectId,ref:"Organization",required:true,index:true},
   assetNumber:{type:String,required:true,trim:true},
   name:{type:String,required:true,trim:true},
   category:{type:String,default:"general",trim:true},
@@ -14,8 +14,8 @@ const fixedAssetSchema = new mongoose.Schema({
   status:{type:String,enum:["active","disposed","fully_depreciated"],default:"active",index:true},
   disposalDate:{type:Date,default:null},
   disposalProceeds:{type:Number,min:0,default:0},
-  createdBy:{type:mongoose.Schema.Types.ObjectId,ref:"User",default:null},
+  createdBy:{type:firestore.Schema.Types.ObjectId,ref:"User",default:null},
 },{timestamps:true});
 fixedAssetSchema.index({tenantId:1,assetNumber:1},{unique:true});
 fixedAssetSchema.plugin(tenantPlugin);
-export default mongoose.models.FixedAsset || mongoose.model("FixedAsset",fixedAssetSchema);
+export default firestore.models.FixedAsset || firestore.model("FixedAsset",fixedAssetSchema);
