@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import dotenv from "dotenv";
 import Organization from "../models/Organization.js";
 import Supplier from "../models/Supplier.js";
@@ -15,8 +15,8 @@ const supplierTemplates = [
 ];
 
 async function main() {
-  if (!process.env.MONGODB_URI) throw new Error("MONGODB_URI is missing.");
-  await mongoose.connect(process.env.MONGODB_URI);
+  if (!process.env.FIREBASE_PROJECT_ID) throw new Error("MONGODB_URI is missing.");
+  await firestore.connectFirestore?.();
 
   const tenants = await Organization.find({ isDeleted: { $ne: true } }).sort({ createdAt: 1 }).lean();
   if (tenants.length !== 3) throw new Error(`SAFE STOP: expected exactly 3 tenants, found ${tenants.length}.`);
@@ -61,5 +61,5 @@ main()
     process.exitCode = 1;
   })
   .finally(async () => {
-    await mongoose.connection.close().catch(() => {});
+    await firestore.connection.close().catch(() => {});
   });
