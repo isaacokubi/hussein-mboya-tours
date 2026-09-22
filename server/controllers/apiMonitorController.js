@@ -1,5 +1,5 @@
 import { getSystemSettings } from "../services/settingsService.js";
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 
 const MONITORED_ENDPOINTS = [
   ["Security", "/api/superadmin/security"],
@@ -13,7 +13,7 @@ export const getApiMonitor = async (req, res) => {
     const settings = await getSystemSettings();
     const companyName = settings?.companyName || "Company";
     const memory = process.memoryUsage();
-    const databaseHealthy = mongoose.connection.readyState === 1;
+    const databaseHealthy = firestore.connection.readyState === 1;
     const endpoints = MONITORED_ENDPOINTS.map(([name, path]) => ({
       name,
       endpoint: path,
