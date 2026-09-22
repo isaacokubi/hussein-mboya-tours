@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import dotenv from "dotenv";
 import Destination from "../models/Destination.js";
 import Tour from "../models/Tour.js";
@@ -47,8 +47,8 @@ const tourTitles = [
 ];
 
 const repair = async () => {
-  if (!process.env.MONGODB_URI) throw new Error("MONGODB_URI is missing in .env");
-  await mongoose.connect(process.env.MONGODB_URI);
+  if (!process.env.FIREBASE_PROJECT_ID) throw new Error("MONGODB_URI is missing in .env");
+  await firestore.connectFirestore?.();
 
   await runWithTenant({ role: "super_admin", bypass: true }, async () => {
     const destinations = await Destination.find({
@@ -138,5 +138,5 @@ repair()
     process.exitCode = 1;
   })
   .finally(async () => {
-    await mongoose.connection.close().catch(() => {});
+    await firestore.connection.close().catch(() => {});
   });
