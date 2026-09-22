@@ -1,6 +1,6 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
-const { Schema } = mongoose;
+const { Schema } = firestore;
 
 const AirportTransferBookingSchema = new Schema({
   tenantId: { type: Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
@@ -51,4 +51,4 @@ AirportTransferBookingSchema.index({ tenantId: 1, customer: 1, createdAt: -1 });
 
 AirportTransferBookingSchema.plugin(tenantPlugin);
 
-export default mongoose.models.AirportTransferBooking || mongoose.model("AirportTransferBooking", AirportTransferBookingSchema);
+export default firestore.models.AirportTransferBooking || firestore.model("AirportTransferBooking", AirportTransferBookingSchema);
