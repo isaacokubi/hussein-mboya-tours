@@ -1,10 +1,10 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
-const gallerySchema = new mongoose.Schema(
+const gallerySchema = new firestore.Schema(
   {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true },
+    tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", index: true },
     title: { type: String, required: true, trim: true },
     image: { url: String, publicId: String },
     category: {
@@ -20,4 +20,4 @@ const gallerySchema = new mongoose.Schema(
 
 gallerySchema.plugin(tenantPlugin);
 
-export default mongoose.models.Gallery || mongoose.model("Gallery", gallerySchema);
+export default firestore.models.Gallery || firestore.model("Gallery", gallerySchema);
