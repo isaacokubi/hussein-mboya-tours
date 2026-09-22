@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import dotenv from "dotenv";
 import crypto from "crypto";
 
@@ -16,7 +16,7 @@ const createAdmin = async () => {
     const tenantSlug = String(process.env.TENANT_SLUG || "").trim().toLowerCase();
     if (!tenantId && !tenantSlug) throw new Error("Set TENANT_ID or TENANT_SLUG before running the admin seed.");
 
-    await mongoose.connect(process.env.MONGODB_URI);
+    await firestore.connect(process.env.MONGODB_URI);
 
     const organization = tenantId
       ? await Organization.findById(tenantId).lean()
@@ -58,7 +58,7 @@ const createAdmin = async () => {
     console.error("Admin seed failed:", error);
     process.exitCode = 1;
   } finally {
-    await mongoose.connection.close().catch(() => {});
+    await firestore.connection.close().catch(() => {});
   }
 };
 
