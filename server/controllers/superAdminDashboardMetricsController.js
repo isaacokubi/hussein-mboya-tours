@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import getCanonicalSuperAdminCustomerMetrics from "../services/superAdminDataConsistency.js";
 
 const count = async (db, collection, filter = {}) =>
@@ -9,7 +9,7 @@ const sum = (rows, key) =>
 
 export const getSuperAdminDashboardMetrics = async (_req, res) => {
   try {
-    const db = mongoose.connection.db;
+    const db = firestore.connection.db;
 
     if (!db) {
       return res.status(503).json({
