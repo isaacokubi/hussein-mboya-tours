@@ -1,6 +1,6 @@
 // server/models/TourGallery.js
 
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
@@ -10,11 +10,11 @@ import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 |--------------------------------------------------------------------------
 */
 
-const imageSchema = new mongoose.Schema(
+const imageSchema = new firestore.Schema(
   {
 
     tenantId:{
-        type: mongoose.Schema.Types.ObjectId,
+        type: firestore.Schema.Types.ObjectId,
         ref:"Organization",
         index:true,
         required:false
@@ -45,7 +45,7 @@ const imageSchema = new mongoose.Schema(
     },
 
     uploadedBy: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "User",
       default: null,
     },
@@ -71,7 +71,7 @@ const imageSchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
-const tourGallerySchema = new mongoose.Schema(
+const tourGallerySchema = new firestore.Schema(
   {
     /*
     |--------------------------------------------------------------------------
@@ -80,7 +80,7 @@ const tourGallerySchema = new mongoose.Schema(
     */
 
     tour: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "Tour",
       required: true,
       unique: true,
@@ -118,7 +118,7 @@ const tourGallerySchema = new mongoose.Schema(
     */
 
     createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "User",
       default: null,
     },
@@ -190,7 +190,7 @@ tourGallerySchema.index({
 */
 
 const tenantTourGallerySchema = tourGallerySchema.plugin(tenantPlugin);
-const TourGallery = mongoose.models.TourGallery || mongoose.model("TourGallery", tenantTourGallerySchema);
+const TourGallery = firestore.models.TourGallery || firestore.model("TourGallery", tenantTourGallerySchema);
 
 
 
