@@ -160,9 +160,9 @@ function buildModel(name,schema){
   Model.distinct=async(field,f={})=>[...new Set((await Model.find(f).lean()).map(x=>getPath(x,field)).filter(x=>x!==undefined))];
   Model.create=async(data)=>{if(Array.isArray(data)){const out=[];for(const d of data)out.push(await new Model(d).save());return out;}return new Model(data).save();};
   Model.insertMany=async(arr)=>Promise.all(arr.map(x=>new Model(x).save()));
-  Model.updateOne=async(filter,update,options={})=>{const d=await Model.findOne(filter);if(!d)return {matchedCount:0,modifiedCount:0};await applyUpdate(d,update);await d.save();return {matchedCount:1,modifiedCount:1};};
-  Model.updateMany=async(filter,update)=>{const docs=await Model.find(filter);for(const d of docs){await applyUpdate(d,update);await d.save();}return {matchedCount:docs.length,modifiedCount:docs.length};};
-  Model.findOneAndUpdate=async(filter,update,options={})=>{let d=await Model.findOne(filter);if(!d&&options.upsert)d=new Model({...filter,...(update.$set||update)});if(!d)return null;await applyUpdate(d,update);await d.save();return d;};
+  Model.updateOne=async(filter,update,options={})=>{const d=await Model.findOne(filter).session(options.session);if(!d)return {matchedCount:0,modifiedCount:0};await applyUpdate(d,update);await d.save({session:options.session});return {matchedCount:1,modifiedCount:1};};
+  Model.updateMany=async(filter,update,options={})=>{const docs=await Model.find(filter).session(options.session);for(const d of docs){await applyUpdate(d,update);await d.save({session:options.session});}return {matchedCount:docs.length,modifiedCount:docs.length};};
+  Model.findOneAndUpdate=async(filter,update,options={})=>{let d=await Model.findOne(filter).session(options.session);if(!d&&options.upsert)d=new Model({...filter,...(update.$set||update)});if(!d)return null;await applyUpdate(d,update);await d.save({session:options.session});return d;};
   Model.findByIdAndUpdate=(id,u,o={})=>Model.findOneAndUpdate({_id:String(id)},u,o);
   Model.deleteOne=async(f)=>{const d=await Model.findOne(f).lean();if(!d)return {deletedCount:0};await colDelete(collectionName(name),d._id);return {deletedCount:1};};
   Model.deleteMany=async(f)=>{const docs=await Model.find(f).lean();for(const d of docs)await colDelete(collectionName(name),d._id);return {deletedCount:docs.length};};
