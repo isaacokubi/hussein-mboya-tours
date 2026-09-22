@@ -1,11 +1,11 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 import Organization from "./Organization.js";
 
-const agentSchema = new mongoose.Schema(
+const agentSchema = new firestore.Schema(
   {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
+    tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", index:true },
     /*
     |--------------------------------------------------------------------------
     | LINKED USER ACCOUNT
@@ -13,7 +13,7 @@ const agentSchema = new mongoose.Schema(
     */
 
     user: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "User",
       required: true,
       unique: true,
@@ -152,7 +152,7 @@ const agentSchema = new mongoose.Schema(
     },
 
     approvedBy: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "User",
     },
 
@@ -255,7 +255,7 @@ agentSchema.virtual("isActive").get(function () {
 */
 
 const tenantAgentSchema = agentSchema.plugin(tenantPlugin);
-const Agent = mongoose.models.Agent || mongoose.model("Agent", tenantAgentSchema);
+const Agent = firestore.models.Agent || firestore.model("Agent", tenantAgentSchema);
 
 
 
