@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import DatabaseBackup from "../models/DatabaseBackup.js";
 import { createAuditLog } from "../services/auditService.js";
 
@@ -14,7 +14,7 @@ const serializeBackup = (backup) => {
 
 export const createPlatformDatabaseBackup = async (req, res) => {
   try {
-    if (!mongoose.connection.db) {
+    if (!firestore.connection.db) {
       return res.status(503).json({ success: false, message: "Database connection unavailable" });
     }
 
@@ -22,18 +22,18 @@ export const createPlatformDatabaseBackup = async (req, res) => {
 
     const filename = `database-backup-${Date.now()}.json`;
     const filepath = path.join(BACKUP_DIR, filename);
-    const collections = await mongoose.connection.db.listCollections().toArray();
+    const collections = await firestore.connection.db.listCollections().toArray();
     const backupData = {
       createdAt: new Date(),
       environment: process.env.NODE_ENV || "production",
-      database: mongoose.connection.name || "unknown",
+      database: firestore.connection.name || "unknown",
       scope: "platform",
       tenantId: null,
       createdBy: req.user?.email || String(req.user?._id || "system"),
     };
 
     for (const collection of collections) {
-      backupData[collection.name] = await mongoose.connection.db
+      backupData[collection.name] = await firestore.connection.db
         .collection(collection.name)
         .find({})
         .toArray();
@@ -49,7 +49,7 @@ export const createPlatformDatabaseBackup = async (req, res) => {
       file: filename,
       size: fileSize,
       collections: collections.map((item) => item.name),
-      databaseName: mongoose.connection.name || "unknown",
+      databaseName: firestore.connection.name || "unknown",
       environment: process.env.NODE_ENV || "production",
       createdBy: req.user?.email || String(req.user?._id || "system"),
       createdAt: new Date(),
@@ -101,12 +101,12 @@ export const listPlatformDatabaseBackups = async (req, res) => {
 
 export const downloadPlatformDatabaseBackup = async (req, res) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    if (!firestore.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ success: false, message: "Invalid backup identifier" });
     }
 
     const backup = await DatabaseBackup.collection.findOne({
-      _id: new mongoose.Types.ObjectId(req.params.id),
+      _id: new firestore.Types.ObjectId(req.params.id),
       ...PLATFORM_BACKUP_FILTER,
     });
 
@@ -124,12 +124,12 @@ export const downloadPlatformDatabaseBackup = async (req, res) => {
 
 export const deletePlatformDatabaseBackup = async (req, res) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    if (!firestore.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ success: false, message: "Invalid backup identifier" });
     }
 
     const backup = await DatabaseBackup.collection.findOne({
-      _id: new mongoose.Types.ObjectId(req.params.id),
+      _id: new firestore.Types.ObjectId(req.params.id),
       ...PLATFORM_BACKUP_FILTER,
     });
 
