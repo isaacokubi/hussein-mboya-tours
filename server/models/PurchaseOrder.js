@@ -1,7 +1,7 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
-const lineSchema = new mongoose.Schema({
+const lineSchema = new firestore.Schema({
   description: { type: String, required: true, trim: true },
   quantity: { type: Number, required: true, min: 0.001 },
   unitCost: { type: Number, required: true, min: 0 },
@@ -12,12 +12,12 @@ const lineSchema = new mongoose.Schema({
   total: { type: Number, min: 0, default: 0 },
 }, { _id: true });
 
-const purchaseOrderSchema = new mongoose.Schema({
-  tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
+const purchaseOrderSchema = new firestore.Schema({
+  tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
   poNumber: { type: String, trim: true },
-  supplier: { type: mongoose.Schema.Types.ObjectId, ref: "Supplier", required: true, index: true },
-  booking: { type: mongoose.Schema.Types.ObjectId, ref: "Booking", default: null, index: true },
-  tour: { type: mongoose.Schema.Types.ObjectId, ref: "Tour", default: null, index: true },
+  supplier: { type: firestore.Schema.Types.ObjectId, ref: "Supplier", required: true, index: true },
+  booking: { type: firestore.Schema.Types.ObjectId, ref: "Booking", default: null, index: true },
+  tour: { type: firestore.Schema.Types.ObjectId, ref: "Tour", default: null, index: true },
   issueDate: { type: Date, default: Date.now },
   expectedDate: { type: Date, default: null },
   currency: { type: String, uppercase: true, default: "KES" },
@@ -26,11 +26,11 @@ const purchaseOrderSchema = new mongoose.Schema({
   taxAmount: { type: Number, min: 0, default: 0 },
   totalAmount: { type: Number, min: 0, default: 0 },
   status: { type: String, enum: ["draft", "submitted", "approved", "partially_received", "received", "cancelled"], default: "draft", index: true },
-  approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+  approvedBy: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null },
   approvedAt: { type: Date, default: null },
   receivedAt: { type: Date, default: null },
   notes: { type: String, trim: true, default: "" },
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+  createdBy: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null },
 }, { timestamps: true });
 
 purchaseOrderSchema.pre("validate", function(next) {
@@ -54,4 +54,4 @@ purchaseOrderSchema.pre("save", function(next) {
 purchaseOrderSchema.index({ tenantId: 1, poNumber: 1 }, { unique: true });
 purchaseOrderSchema.index({ tenantId: 1, supplier: 1, status: 1 });
 purchaseOrderSchema.plugin(tenantPlugin);
-export default mongoose.models.PurchaseOrder || mongoose.model("PurchaseOrder", purchaseOrderSchema);
+export default firestore.models.PurchaseOrder || firestore.model("PurchaseOrder", purchaseOrderSchema);
