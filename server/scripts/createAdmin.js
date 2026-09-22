@@ -1,5 +1,5 @@
 import "../tenancy/bootstrap.js";
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import Organization from "../models/Organization.js";
@@ -18,7 +18,7 @@ const askSecret = async (label) => String(await rl.question(`${label}: `, { hide
 try {
   const mongoUri = env.MONGODB_URI || process.env.MONGODB_URI || process.env.MONGO_URI;
   if (!mongoUri) throw new Error("MONGODB_URI/MONGO_URI is not configured.");
-  await mongoose.connect(mongoUri);
+  await firestore.connect(mongoUri);
 
   const tenantId = process.env.ADMIN_TENANT_ID || process.argv[2] || await ask("Company/Tenant ID");
   const name = process.env.ADMIN_NAME || process.argv[3] || await ask("Admin full name");
@@ -26,7 +26,7 @@ try {
   const phone = String(process.env.ADMIN_PHONE || process.argv[5] || await ask("Admin phone (10 digits)")).trim();
   const password = process.env.ADMIN_PASSWORD || await askSecret("Admin password (12+ chars, uppercase + number)");
 
-  if (!mongoose.Types.ObjectId.isValid(tenantId)) throw new Error("Company/Tenant ID is invalid.");
+  if (!firestore.Types.ObjectId.isValid(tenantId)) throw new Error("Company/Tenant ID is invalid.");
   if (!name) throw new Error("Admin name is required.");
   if (!/^\S+@\S+\.\S+$/.test(email)) throw new Error("Admin email is invalid.");
   if (!/^\d{10}$/.test(phone)) throw new Error("Admin phone must contain exactly 10 digits.");
@@ -50,5 +50,5 @@ try {
   process.exitCode = 1;
 } finally {
   rl.close();
-  await mongoose.disconnect().catch(() => {});
+  await firestore.disconnect().catch(() => {});
 }
