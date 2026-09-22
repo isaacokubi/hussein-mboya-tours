@@ -78,7 +78,7 @@ export function isTenantBypassed() {
 }
 
 /**
- * Merge the active tenant into a Mongo filter.
+ * Merge the active tenant into a Firestore filter.
  *
  * Preferred usage:
  *   mergeTenantFilter({ status: "active" })
@@ -86,8 +86,8 @@ export function isTenantBypassed() {
  * Legacy controllers may still call:
  *   mergeTenantFilter(req, { status: "active" })
  *
- * Never spread the Express request object into a Mongo query. Apart from being
- * unnecessary, req contains circular references and causes Mongoose/MongoDB
+ * Never spread the Express request object into a Firestore query. Apart from being
+ * unnecessary, req contains circular references and causes Mongoose/Firestore
  * to throw "Cannot convert circular structure to BSON".
  */
 export function mergeTenantFilter(filter = {}, maybeFilter) {
