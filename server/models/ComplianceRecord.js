@@ -1,8 +1,8 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
-const complianceRecordSchema = new mongoose.Schema({
-  tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
+const complianceRecordSchema = new firestore.Schema({
+  tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
   type: {
     type: String,
     enum: ["TRA_LICENSE", "ODPC_REGISTRATION", "PRIVACY_POLICY", "DATA_RETENTION", "DPA_REVIEW", "BREACH_RESPONSE", "KRA_TAX_PROFILE", "ETIMS_ONBOARDING"],
@@ -14,16 +14,16 @@ const complianceRecordSchema = new mongoose.Schema({
   authority: { type: String, trim: true, default: "" },
   issueDate: { type: Date, default: null },
   expiryDate: { type: Date, default: null, index: true },
-  owner: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+  owner: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null },
   notes: { type: String, trim: true, default: "" },
   documents: [{ name: String, url: String, type: String, uploadedAt: { type: Date, default: Date.now } }],
   lastReviewedAt: { type: Date, default: null },
   nextReviewAt: { type: Date, default: null, index: true },
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+  createdBy: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null },
 }, { timestamps: true });
 
 complianceRecordSchema.index({ tenantId: 1, type: 1 }, { unique: true });
 complianceRecordSchema.index({ tenantId: 1, status: 1, expiryDate: 1 });
 complianceRecordSchema.plugin(tenantPlugin);
 
-export default mongoose.models.ComplianceRecord || mongoose.model("ComplianceRecord", complianceRecordSchema);
+export default firestore.models.ComplianceRecord || firestore.model("ComplianceRecord", complianceRecordSchema);
