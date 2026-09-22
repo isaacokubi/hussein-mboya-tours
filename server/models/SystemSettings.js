@@ -1,6 +1,6 @@
 // server/models/SystemSetting.js
 
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
@@ -14,11 +14,11 @@ import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 |
 */
 
-const systemSettingsSchema = new mongoose.Schema(
+const systemSettingsSchema = new firestore.Schema(
   {
 
     tenantId:{
-        type: mongoose.Schema.Types.ObjectId,
+        type: firestore.Schema.Types.ObjectId,
         ref:"Organization",
         index:true,
         required:false
@@ -287,8 +287,8 @@ tenantPlugin(systemSettingsSchema);
 
 
 const SystemSettings =
-  mongoose.models.SystemSettings ||
-  mongoose.model("SystemSettings", systemSettingsSchema);
+  firestore.models.SystemSettings ||
+  firestore.model("SystemSettings", systemSettingsSchema);
 
 
 
