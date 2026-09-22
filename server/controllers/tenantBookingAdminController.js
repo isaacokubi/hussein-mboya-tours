@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import Booking from "../models/Booking.js";
 import Customer from "../models/Customer.js";
 import User from "../models/User.js";
@@ -23,8 +23,8 @@ const refId = (value) => {
 };
 
 const loadOwnership = async (model, ids) => {
-  const validIds = [...new Set(ids.filter((id) => id && mongoose.Types.ObjectId.isValid(id)).map(String))]
-    .map((id) => new mongoose.Types.ObjectId(id));
+  const validIds = [...new Set(ids.filter((id) => id && firestore.Types.ObjectId.isValid(id)).map(String))]
+    .map((id) => new firestore.Types.ObjectId(id));
   if (!validIds.length) return new Map();
   const rows = await model.collection.find(
     { _id: { $in: validIds } },
@@ -175,7 +175,7 @@ export const getBookings = getAllBookings;
 export const getBooking = async (req, res, next) => {
   try {
     const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ success: false, message: "Invalid booking ID." });
+    if (!firestore.Types.ObjectId.isValid(id)) return res.status(400).json({ success: false, message: "Invalid booking ID." });
     const tenantId = requireTenantId();
     const booking = await populateBookings(
       Booking.findOne(mergeTenantFilter({ _id: id, isDeleted: { $ne: true } }))
