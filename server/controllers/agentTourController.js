@@ -1,10 +1,10 @@
 import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import slugify from "slugify";
 import Tour from "../models/Tour.js";
 import Agent from "../models/Agent.js";
 
-const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
+const isValidId = (id) => firestore.Types.ObjectId.isValid(id);
 const cleanString = (value = "") => String(value).trim().replace(/\s+/g, " ");
 const buildImages = (files = []) => files.map((file) => ({ url: file.path, publicId: file.filename || "" }));
 const allowedFields = ["title", "description", "shortDescription", "destination", "country", "location", "category", "duration", "difficulty", "capacity", "maxGuests", "price", "agentPrice", "discount", "startDate", "endDate", "tourStatus", "status", "featured", "available", "included", "excluded", "itinerary", "highlights"];
