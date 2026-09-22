@@ -12,7 +12,7 @@ import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 |--------------------------------------------------------------------------
 */
 
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 
 import Booking from "../models/Booking.js";
 import Payment from "../models/Payment.js";
@@ -298,7 +298,7 @@ export const failBookingPayment = async ({
   }
 
   const session =
-    await mongoose.startSession();
+    await firestore.startSession();
 
   try {
 
@@ -458,7 +458,7 @@ export const completeBookingPayment = async ({
   }
 
   const session =
-    await mongoose.startSession();
+    await firestore.startSession();
 
   try {
 
@@ -1098,7 +1098,7 @@ export const refundBookingPayment = async ({
   }
 
   const session =
-    await mongoose.startSession();
+    await firestore.startSession();
 
   let result;
 
