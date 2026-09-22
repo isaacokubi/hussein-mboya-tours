@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import Tour from "../models/Tour.js";
 import Booking from "../models/Booking.js";
 import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
@@ -9,11 +9,11 @@ const bookingGuests = (booking) => Number(booking.numberOfGuests || booking.gues
 
 export const completeTour = async (req, res, next) => {
   requireTenantId();
-  const session = await mongoose.startSession();
+  const session = await firestore.startSession();
   try {
     let result;
     await session.withTransaction(async () => {
-      if (!mongoose.Types.ObjectId.isValid(req.params.id)) throw Object.assign(new Error("Invalid tour ID."), { status: 400 });
+      if (!firestore.Types.ObjectId.isValid(req.params.id)) throw Object.assign(new Error("Invalid tour ID."), { status: 400 });
       const tour = await Tour.findOne(mergeTenantFilter({ _id: req.params.id, isDeleted: { $ne: true } })).session(session);
       if (!tour) throw Object.assign(new Error("Tour not found."), { status: 404 });
       if (tour.status === "completed") {
@@ -44,11 +44,11 @@ export const cancelTour = async (req, res, next) => {
 
 export const completeBookingAndMaybeRelease = async (req, res, next) => {
   requireTenantId();
-  const session = await mongoose.startSession();
+  const session = await firestore.startSession();
   try {
     let result;
     await session.withTransaction(async () => {
-      if (!mongoose.Types.ObjectId.isValid(req.params.id)) throw Object.assign(new Error("Invalid booking ID."), { status: 400 });
+      if (!firestore.Types.ObjectId.isValid(req.params.id)) throw Object.assign(new Error("Invalid booking ID."), { status: 400 });
       const booking = await Booking.findOne(mergeTenantFilter({ _id: req.params.id })).session(session);
       if (!booking) throw Object.assign(new Error("Booking not found."), { status: 404 });
       if (["cancelled", "refunded"].includes(booking.status)) throw Object.assign(new Error(`A ${booking.status} booking cannot be completed.`), { status: 400 });
@@ -94,11 +94,11 @@ export const completeBookingAndMaybeRelease = async (req, res, next) => {
 
 export const cancelBookingAndUpdateCapacity = async (req, res, next) => {
   requireTenantId();
-  const session = await mongoose.startSession();
+  const session = await firestore.startSession();
   try {
     let result;
     await session.withTransaction(async () => {
-      if (!mongoose.Types.ObjectId.isValid(req.params.id)) throw Object.assign(new Error("Invalid booking ID."), { status: 400 });
+      if (!firestore.Types.ObjectId.isValid(req.params.id)) throw Object.assign(new Error("Invalid booking ID."), { status: 400 });
       const booking = await Booking.findOne(mergeTenantFilter({ _id: req.params.id })).session(session);
       if (!booking) throw Object.assign(new Error("Booking not found."), { status: 404 });
       if (["cancelled", "refunded", "completed"].includes(booking.status)) throw Object.assign(new Error(`A ${booking.status} booking cannot be cancelled.`), { status: 400 });
