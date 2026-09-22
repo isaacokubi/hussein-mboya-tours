@@ -106,7 +106,7 @@ const applyDefaults = (schema, data) => {
 const invokeHooks = async (schema,event,ctx) => { for(const fn of schema._pre[event]||[]) await new Promise((resolve,reject)=>{let done=false; const next=e=>{done=true;e?reject(e):resolve();}; const r=fn.call(ctx,next); if(r?.then)r.then(()=>{if(!done)resolve();}).catch(reject); else if(fn.length===0&&!done)resolve();}); };
 
 class Query {
-  constructor(model, filter={}, op="find"){this.model=model;this.filter=filter;this.op=op;this._sort=null;this._limit=null;this._skip=0;this._select=null;this._pop=[];this._session=null;this._lean=false;}
+  constructor(model, filter={}, op="find"){this.model=model;const ctx=getTenantContext();this.filter=(ctx.bypass||model.modelName==="Organization"||model.modelName==="User"&&ctx.role==="super_admin")?filter:(ctx.tenantId?{...filter,tenantId:filter.tenantId??ctx.tenantId}:filter);this.op=op;this._sort=null;this._limit=null;this._skip=0;this._select=null;this._pop=[];this._session=null;this._lean=false;}
   sort(spec){this._sort=spec;return this;} limit(n){this._limit=n;return this;} skip(n){this._skip=n;return this;} select(s){this._select=typeof s==="string"?Object.fromEntries(s.split(/\s+/).filter(Boolean).map(x=>[x.startsWith("-")?x.slice(1):x,x.startsWith("-")?0:1])):s;return this;}
   populate(p){if(Array.isArray(p))this._pop.push(...p);else this._pop.push(p);return this;} lean(){this._lean=true;return this;} session(s){this._session=s;return this;}
   async exec(){return this.model._execute(this);}
@@ -133,7 +133,7 @@ function buildModel(name,schema){
     toJSON(){const o={...this};delete o.__schema;return o;}
     toObject(){return this.toJSON();}
     isModified(){return true;}
-    async save(options={}){const wasNew=this.isNew; if(!this._id)this._id=crypto.randomUUID(); this.isNew=false; const data=this.toJSON(); await invokeHooks(schema,"validate",this); await invokeHooks(schema,"save",this); data.updatedAt=schema.options?.timestamps?new Date():data.updatedAt; if(!data.createdAt&&schema.options?.timestamps)data.createdAt=new Date(); await db.collection(collectionName(name)).doc(String(this._id)).set(data,{merge:false}); for(const fn of schema._post.save||[]) await fn.call(this); return this;}
+    async save(options={}){const wasNew=this.isNew;const ctx=getTenantContext();if(ctx.tenantId&&this.tenantId==null&&!ctx.bypass)this.tenantId=ctx.tenantId; if(!this._id)this._id=crypto.randomUUID(); this.isNew=false; const data=this.toJSON(); await invokeHooks(schema,"validate",this); await invokeHooks(schema,"save",this); data.updatedAt=schema.options?.timestamps?new Date():data.updatedAt; if(!data.createdAt&&schema.options?.timestamps)data.createdAt=new Date(); const target=options.session?.set ? options.session : db; if(options.session?.set) options.session.set(db.collection(collectionName(name)).doc(String(this._id)),data,{merge:false}); else await target.collection(collectionName(name)).doc(String(this._id)).set(data,{merge:false}); for(const fn of schema._post.save||[]) await fn.call(this); return this;}
   }
   for(const [n,fn] of Object.entries(schema.statics||{})) Model[n]=fn.bind(Model);
   Model.modelName=name; Model.schema=schema; Model.collection=()=>db.collection(collectionName(name));
@@ -203,6 +203,6 @@ export const isValidObjectId=(value)=>value!=null && String(value).length>0;
 export const models={};
 export const model=(name,schema)=>buildModel(name,schema);
 export const connection=firebase.connection;
-export const startSession=async()=>({withTransaction:async fn=>fn({}),endSession:async()=>{}});
+export const startSession=async()=>({withTransaction:async fn=>db.runTransaction(async transaction=>fn(transaction)),startTransaction(){},commitTransaction:async()=>{},abortTransaction:async()=>{},endSession:async()=>{}});
 
 export async function connectFirestore(){await db.listCollections();return db;}
