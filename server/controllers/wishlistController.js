@@ -1,5 +1,5 @@
 import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import Wishlist from "../models/Wishlist.js";
 import Tour from "../models/Tour.js";
 
@@ -22,7 +22,7 @@ export const addWishlist = async (req, res, next) => {
   try {
     const { tourId } = req.body;
     if (!tourId) return res.status(400).json({ success: false, message: "Tour ID is required" });
-    if (!mongoose.Types.ObjectId.isValid(tourId)) return res.status(400).json({ success: false, message: "Invalid tour ID" });
+    if (!firestore.Types.ObjectId.isValid(tourId)) return res.status(400).json({ success: false, message: "Invalid tour ID" });
 
     const tour = await Tour.findOne(mergeTenantFilter(req, { _id: tourId, ...publicTourMatch }));
     if (!tour) return res.status(404).json({ success: false, message: "Tour not found" });
@@ -44,7 +44,7 @@ export const removeWishlist = async (req, res, next) => {
   requireTenantId();
   try {
     const { tourId } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(tourId)) return res.status(400).json({ success: false, message: "Invalid tour ID" });
+    if (!firestore.Types.ObjectId.isValid(tourId)) return res.status(400).json({ success: false, message: "Invalid tour ID" });
 
     const wishlist = await Wishlist.findOne(wishlistFilter(req));
     if (!wishlist) return res.status(404).json({ success: false, message: "Wishlist not found" });
