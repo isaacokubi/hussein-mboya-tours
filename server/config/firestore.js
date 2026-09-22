@@ -168,7 +168,7 @@ function buildModel(name,schema){
   Model.deleteMany=async(f)=>{const docs=await Model.find(f).lean();for(const d of docs)await colDelete(collectionName(name),d._id);return {deletedCount:docs.length};};
   Model.aggregate=async(pipeline=[])=>runAggregate(name,pipeline);
   Model.paginate=async(f={},opts={})=>{const all=await Model.find(f).sort(opts.sort||{}).skip(((opts.page||1)-1)*(opts.limit||10)).limit(opts.limit||10).lean();const total=await Model.countDocuments(f);return {docs:all,totalDocs:total,limit:opts.limit||10,page:opts.page||1,totalPages:Math.ceil(total/(opts.limit||10)),hasNextPage:(opts.page||1)<Math.ceil(total/(opts.limit||10)),hasPrevPage:(opts.page||1)>1};};
-  registry.set(name,Model); return Model;
+  registry.set(name,Model); models[name]=Model; return Model;
 }
 async function colDelete(name,id){await db.collection(name).doc(String(id)).delete();}
 async function applyUpdate(doc,u){
@@ -200,7 +200,7 @@ async function runAggregate(name,pipeline){
 export { Schema, buildModel as model, buildModel as defaultModel, matches as matchesFilter };
 export const Types={ObjectId:(value)=>String(value ?? crypto.randomUUID()), Mixed:Object};
 export const isValidObjectId=(value)=>value!=null && String(value).length>0;
-export const models=Object.fromEntries([]);
+export const models={};
 export const model=(name,schema)=>buildModel(name,schema);
 export const connection=firebase.connection;
 export const startSession=async()=>({withTransaction:async fn=>fn({}),endSession:async()=>{}});
