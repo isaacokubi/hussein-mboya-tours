@@ -1,12 +1,12 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
-const databaseBackupSchema = new mongoose.Schema(
+const databaseBackupSchema = new firestore.Schema(
 {
 
     tenantId:{
-        type: mongoose.Schema.Types.ObjectId,
+        type: firestore.Schema.Types.ObjectId,
         ref:"Organization",
         index:true,
         required:false
@@ -56,7 +56,7 @@ const databaseBackupSchema = new mongoose.Schema(
 
 export default databaseBackupSchema.plugin(tenantPlugin);
 
-mongoose.model(
+firestore.model(
 "DatabaseBackup",
 databaseBackupSchema
 );
