@@ -1,5 +1,5 @@
 import "dotenv/config";
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import bcrypt from "bcryptjs";
 
 const CONFIRM = process.env.CONFIRM_DEMO_PASSWORD_RESET;
@@ -34,17 +34,14 @@ async function main() {
 
   validatePassword(DEMO_PASSWORD);
 
-  if (!process.env.MONGODB_URI) {
+  if (!process.env.FIREBASE_PROJECT_ID) {
     throw new Error("MONGODB_URI is not configured.");
   }
 
-  await mongoose.connect(process.env.MONGODB_URI, {
-    serverSelectionTimeoutMS: 10000,
-    maxPoolSize: 1,
-  });
+  await firestore.connectFirestore?.();
 
   try {
-    const db = mongoose.connection.db;
+    const db = firestore.connection.db;
     const users = db.collection("users");
 
     const allDemoUsers = await users
@@ -197,7 +194,7 @@ async function main() {
     console.log("\nPASSWORD RESET SUCCESSFUL.");
     console.log("No plaintext password was printed.");
   } finally {
-    await mongoose.disconnect().catch(() => {});
+    await firestore.disconnect().catch(() => {});
   }
 }
 
