@@ -1,6 +1,6 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
-const { Schema } = mongoose;
+const { Schema } = firestore;
 const schema = new Schema({
   tenantId:{type:Schema.Types.ObjectId,ref:"Organization",required:true,index:true},
   hotel:{type:Schema.Types.ObjectId,ref:"Hotel",required:true,index:true},
@@ -23,4 +23,4 @@ const schema = new Schema({
 schema.index({tenantId:1,hotel:1,roomType:1,status:1,validFrom:1,validTo:1});
 schema.plugin(tenantPlugin);
 
-export default mongoose.models.HospitalityRatePlan||mongoose.model("HospitalityRatePlan",schema);
+export default firestore.models.HospitalityRatePlan||firestore.model("HospitalityRatePlan",schema);
