@@ -16,6 +16,11 @@ jobs:
     defaults:
       run:
         working-directory: server
+    env:
+      FIREBASE_PROJECT_ID: demo-global-tours
+      FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
+      GCLOUD_PROJECT: demo-global-tours
+      JWT_SECRET: ci-only-test-secret
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -23,10 +28,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: server/package-lock.json
       - name: Install dependencies
         run: npm install
+      - name: Install Firebase CLI
+        run: npm install --global firebase-tools
+      - name: Start Firestore emulator
+        run: |
+          firebase emulators:start --only firestore --project demo-global-tours > /tmp/firestore-emulator.log 2>&1 &
+          sleep 10
       - name: Syntax, model, service and production checks
         run: npm run check:all
       - name: Full backend test suite
@@ -48,8 +57,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: server/package-lock.json
       - name: Install dependencies
         run: npm install
       - name: Production readiness contract
