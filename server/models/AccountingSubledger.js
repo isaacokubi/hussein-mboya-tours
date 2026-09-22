@@ -1,8 +1,8 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
-const accountingSubledgerSchema = new mongoose.Schema({
-  tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
+const accountingSubledgerSchema = new firestore.Schema({
+  tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
   type: { type: String, enum: ["inventory", "payroll", "accrual", "prepayment", "fx"], required: true, index: true },
   reference: { type: String, required: true, trim: true },
   transactionDate: { type: Date, default: Date.now, index: true },
@@ -16,10 +16,10 @@ const accountingSubledgerSchema = new mongoose.Schema({
   accountCode: { type: String, trim: true, default: "" },
   contraAccountCode: { type: String, trim: true, default: "" },
   status: { type: String, enum: ["draft", "posted", "settled", "reversed"], default: "draft", index: true },
-  metadata: { type: mongoose.Schema.Types.Mixed, default: {} },
-  journalEntry: { type: mongoose.Schema.Types.ObjectId, ref: "JournalEntry", default: null },
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
-  postedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+  metadata: { type: firestore.Schema.Types.Mixed, default: {} },
+  journalEntry: { type: firestore.Schema.Types.ObjectId, ref: "JournalEntry", default: null },
+  createdBy: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null },
+  postedBy: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null },
   postedAt: { type: Date, default: null },
 }, { timestamps: true });
 
@@ -27,4 +27,4 @@ accountingSubledgerSchema.index({ tenantId: 1, type: 1, reference: 1 }, { unique
 accountingSubledgerSchema.index({ tenantId: 1, type: 1, transactionDate: -1 });
 accountingSubledgerSchema.plugin(tenantPlugin);
 
-export default mongoose.models.AccountingSubledger || mongoose.model("AccountingSubledger", accountingSubledgerSchema);
+export default firestore.models.AccountingSubledger || firestore.model("AccountingSubledger", accountingSubledgerSchema);
