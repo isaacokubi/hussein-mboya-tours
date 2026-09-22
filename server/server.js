@@ -15,7 +15,6 @@ import { enqueueDueEtimsInvoices } from "./services/etimsService.js";
 import { startJobWorker } from "./services/jobWorkerService.js";
 import { startDataRetentionScheduler } from "./services/dataRetentionService.js";
 import { startComplianceExpiryScheduler } from "./services/complianceExpiryService.js";
-import { migrateInvoiceIndexes } from "./bootstrap/invoiceIndexMigration.js";
 
 const DB_READY = 1;
 const TASK_RETRY_MS = 60 * 1000;
@@ -33,7 +32,6 @@ const runNonCriticalTask = async (name, task) => {
 };
 
 await connectDatabase();
-await migrateInvoiceIndexes();
 
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: (env.CLIENT_ORIGINS || "").split(",").map((origin) => origin.trim()).filter(Boolean), credentials: true } });
