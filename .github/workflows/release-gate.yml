@@ -26,7 +26,7 @@ jobs:
           cache: npm
           cache-dependency-path: server/package-lock.json
       - name: Install dependencies
-        run: npm ci
+        run: npm install
       - name: Syntax, model, service and production checks
         run: npm run check:all
       - name: Full backend test suite
@@ -51,7 +51,7 @@ jobs:
           cache: npm
           cache-dependency-path: server/package-lock.json
       - name: Install dependencies
-        run: npm ci
+        run: npm install
       - name: Production readiness contract
         run: npm run check:production
       - name: Verify Kenya compliance and payment modules exist
@@ -105,7 +105,7 @@ jobs:
           cache-dependency-path: client/package-lock.json
       - name: Install client dependencies
         working-directory: client
-        run: npm ci
+        run: npm install
       - name: Client lint
         working-directory: client
         run: npm run lint
