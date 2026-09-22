@@ -1,31 +1,31 @@
 // server/models/Referral.js
 
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
-const referralSchema = new mongoose.Schema(
+const referralSchema = new firestore.Schema(
   {
     tenantId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "Organization",
       index: true,
       required: false,
     },
     referrer: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "User",
       required: true,
       index: true,
     },
     referredUser: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "User",
       required: true,
       unique: true,
       index: true,
     },
     booking: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "Booking",
       default: null,
     },
@@ -74,7 +74,7 @@ const referralSchema = new mongoose.Schema(
       trim: true,
     },
     createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "User",
       default: null,
     },
@@ -110,6 +110,6 @@ referralSchema.methods.markPaid = function (reference = "") {
 };
 
 const tenantReferralSchema = referralSchema.plugin(tenantPlugin);
-const Referral = mongoose.models.Referral || mongoose.model("Referral", tenantReferralSchema);
+const Referral = firestore.models.Referral || firestore.model("Referral", tenantReferralSchema);
 
 export default Referral;
