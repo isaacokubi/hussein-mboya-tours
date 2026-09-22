@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import dotenv from "dotenv";
 import Organization from "../models/Organization.js";
 import CustomTourRequest from "../models/CustomTourRequest.js";
@@ -17,8 +17,8 @@ const requests = [
 ];
 
 const seed = async () => {
-  if (!process.env.MONGODB_URI) throw new Error("MONGODB_URI is missing in .env");
-  await mongoose.connect(process.env.MONGODB_URI);
+  if (!process.env.FIREBASE_PROJECT_ID) throw new Error("MONGODB_URI is missing in .env");
+  await firestore.connectFirestore?.();
   try {
     const organization = await Organization.findOne({ slug: TENANT_SLUG, isDeleted: { $ne: true } }).lean();
     if (!organization) throw new Error("Tenant " + TENANT_SLUG + " was not found.");
@@ -36,7 +36,7 @@ const seed = async () => {
       console.log("Amani Trails Safaris custom tour requests: " + count + " total.");
     });
   } finally {
-    await mongoose.connection.close().catch(() => {});
+    await firestore.connection.close().catch(() => {});
   }
 };
 
