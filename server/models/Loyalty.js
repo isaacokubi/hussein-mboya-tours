@@ -1,6 +1,6 @@
 // server/models/Loyalty.js
 
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
@@ -10,11 +10,11 @@ import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 |--------------------------------------------------------------------------
 */
 
-const transactionSchema = new mongoose.Schema(
+const transactionSchema = new firestore.Schema(
   {
 
     tenantId:{
-        type: mongoose.Schema.Types.ObjectId,
+        type: firestore.Schema.Types.ObjectId,
         ref:"Organization",
         index:true,
         required:false
@@ -45,13 +45,13 @@ const transactionSchema = new mongoose.Schema(
     },
 
     booking: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "Booking",
       default: null,
     },
 
     createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "User",
       default: null,
     },
@@ -72,7 +72,7 @@ const transactionSchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
-const loyaltySchema = new mongoose.Schema(
+const loyaltySchema = new firestore.Schema(
   {
     /*
     |--------------------------------------------------------------------------
@@ -81,7 +81,7 @@ const loyaltySchema = new mongoose.Schema(
     */
 
     user: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "User",
       required: true,
       unique: true,
@@ -155,7 +155,7 @@ const loyaltySchema = new mongoose.Schema(
     },
 
     referredBy: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "User",
       default: null,
     },
@@ -319,7 +319,7 @@ loyaltySchema.index({ createdAt: -1 });
 */
 
 const tenantLoyaltySchema = loyaltySchema.plugin(tenantPlugin);
-const Loyalty = mongoose.models.Loyalty || mongoose.model("Loyalty", tenantLoyaltySchema);
+const Loyalty = firestore.models.Loyalty || firestore.model("Loyalty", tenantLoyaltySchema);
 
 
 
