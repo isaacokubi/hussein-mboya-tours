@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
@@ -8,11 +8,11 @@ import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 |--------------------------------------------------------------------------
 */
 
-const campaignSchema = new mongoose.Schema(
+const campaignSchema = new firestore.Schema(
   {
 
     tenantId:{
-        type: mongoose.Schema.Types.ObjectId,
+        type: firestore.Schema.Types.ObjectId,
         ref:"Organization",
         index:true,
         required:false
@@ -105,7 +105,7 @@ const campaignSchema = new mongoose.Schema(
 
     recipients: [
       {
-        type: mongoose.Schema.Types.ObjectId,
+        type: firestore.Schema.Types.ObjectId,
         ref: "User",
       },
     ],
@@ -205,7 +205,7 @@ const campaignSchema = new mongoose.Schema(
     */
 
     createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: firestore.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
@@ -326,7 +326,7 @@ campaignSchema.index({
 */
 
 const tenantCampaignSchema = campaignSchema.plugin(tenantPlugin);
-const Campaign = mongoose.models.Campaign || mongoose.model("Campaign", tenantCampaignSchema);
+const Campaign = firestore.models.Campaign || firestore.model("Campaign", tenantCampaignSchema);
 
 
 
