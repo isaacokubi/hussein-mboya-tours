@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import User from "../models/User.js";
 import Role from "../models/Role.js";
 import Staff from "../models/Staff.js";
@@ -13,7 +13,7 @@ export const updateUserProfile = async (req, res, next) => {
   try {
     const tenantId = requireTenantId();
     const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ success: false, message: "Invalid user ID." });
+    if (!firestore.Types.ObjectId.isValid(id)) return res.status(400).json({ success: false, message: "Invalid user ID." });
     const user = await User.findOne({ _id: id, tenantId });
     if (!user) return res.status(404).json({ success: false, message: "User not found." });
     if (["super_admin", "superadmin"].includes(String(user.role || "").toLowerCase())) return res.status(403).json({ success: false, message: "SuperAdmin accounts cannot be edited here." });
