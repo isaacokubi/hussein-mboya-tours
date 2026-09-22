@@ -6,7 +6,7 @@ import cors from "cors";
 import compression from "compression";
 import cookieParser from "cookie-parser";
 import morgan from "morgan";
-import mongoose from "mongoose";
+import * as firestore from "./config/firestore.js";
 import loadTenantPlugin from "./config/tenantPluginLoader.js";
 import requestContext from "./middleware/requestContext.js";
 
@@ -90,7 +90,7 @@ app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 app.use(resolveTenant);
 
 app.get("/api/health", async (req, res) => {
-  const dbReady = mongoose.connection.readyState === 1;
+  const dbReady = firestore.connection.readyState === 1;
   res.status(dbReady ? 200 : 503).json({ success: dbReady, status: dbReady ? "healthy" : "degraded", database: dbReady ? "connected" : "disconnected", version: process.env.RENDER_GIT_COMMIT || process.env.GIT_COMMIT || "unknown", requestId: req.requestId, timestamp: new Date().toISOString() });
 });
 
