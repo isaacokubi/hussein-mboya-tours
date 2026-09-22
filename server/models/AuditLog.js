@@ -1,9 +1,9 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
-const auditLogSchema = new mongoose.Schema({
-  tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true, default: null },
-  user: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+const auditLogSchema = new firestore.Schema({
+  tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", index: true, default: null },
+  user: { type: firestore.Schema.Types.ObjectId, ref: "User", default: null },
   action: {
     type: String, required: true, trim: true,
     enum: ["login","login_success","login_failed","mfa_challenge_created","mfa_verified","mfa_failed","logout","create","update","delete","restore","approve","reject","assign","payment","refund","download","export","import","view","other"],
@@ -23,9 +23,9 @@ const auditLogSchema = new mongoose.Schema({
   method: { type: String, default: "" },
   endpoint: { type: String, default: "" },
   requestId: { type: String, default: "", index: true },
-  oldValues: { type: mongoose.Schema.Types.Mixed, default: null },
-  newValues: { type: mongoose.Schema.Types.Mixed, default: null },
-  metadata: { type: mongoose.Schema.Types.Mixed, default: {} },
+  oldValues: { type: firestore.Schema.Types.Mixed, default: null },
+  newValues: { type: firestore.Schema.Types.Mixed, default: null },
+  metadata: { type: firestore.Schema.Types.Mixed, default: {} },
 }, { timestamps: true });
 
 auditLogSchema.index({ createdAt: -1 });
@@ -37,6 +37,6 @@ auditLogSchema.index({ severity: 1 });
 auditLogSchema.statics.log = function (data) { return this.create(data); };
 
 const tenantAuditLogSchema = auditLogSchema.plugin(tenantPlugin);
-const AuditLog = mongoose.models.AuditLog || mongoose.model("AuditLog", tenantAuditLogSchema);
+const AuditLog = firestore.models.AuditLog || firestore.model("AuditLog", tenantAuditLogSchema);
 
 export default AuditLog;
