@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import Payment from "../models/Payment.js";
 import HotelBooking from "../models/HotelBooking.js";
 import AirportTransferBooking from "../models/AirportTransferBooking.js";
@@ -48,7 +48,7 @@ export const syncHospitalityPaymentStatus = async ({ type, booking, payment, ses
 export const completeHospitalityPayment = async ({ payment, booking, paymentData = {} }) => {
   if (!payment || !booking) throw new Error("Payment and hospitality booking are required.");
 
-  const session = await mongoose.startSession();
+  const session = await firestore.startSession();
   let result;
   try {
     await session.withTransaction(async () => {
@@ -125,7 +125,7 @@ export const completeHospitalityPayment = async ({ payment, booking, paymentData
 export const failHospitalityPayment = async ({ payment, booking, reason = "Payment failed.", paymentData = {} }) => {
   if (!payment) throw new Error("Payment is required.");
 
-  const session = await mongoose.startSession();
+  const session = await firestore.startSession();
   let result;
   try {
     await session.withTransaction(async () => {
