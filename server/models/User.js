@@ -1,11 +1,11 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 
 const BCRYPT_HASH_PATTERN = /^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/;
 
-const userSchema = new mongoose.Schema(
+const userSchema = new firestore.Schema(
   {
     name: { type: String, required: true, trim: true },
     // Email uniqueness is tenant-scoped. Global uniqueness caused one company
@@ -32,9 +32,9 @@ const userSchema = new mongoose.Schema(
       enum: ["customer", "admin", "super_admin", "superadmin", "administrator", "agent", "travel_agent", "tour_manager", "tourmanager", "manager", "tour_guide", "tourguide", "guide", "driver"],
       default: "customer",
     },
-    roleId: { type: mongoose.Schema.Types.ObjectId, ref: "Role", default: null },
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", default: null },
-    permissionsOverride: [{ type: mongoose.Schema.Types.ObjectId, ref: "Permission" }],
+    roleId: { type: firestore.Schema.Types.ObjectId, ref: "Role", default: null },
+    tenantId: { type: firestore.Schema.Types.ObjectId, ref: "Organization", default: null },
+    permissionsOverride: [{ type: firestore.Schema.Types.ObjectId, ref: "Permission" }],
     legacyRole: { type: String, default: "customer" },
     profileImage: {
       url: { type: String, default: "" },
@@ -120,6 +120,6 @@ userSchema.virtual("isLocked").get(function () {
 });
 
 const tenantUserSchema = userSchema.plugin(tenantPlugin);
-const User = mongoose.models.User || mongoose.model("User", tenantUserSchema);
+const User = firestore.models.User || firestore.model("User", tenantUserSchema);
 
 export default User;
