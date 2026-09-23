@@ -45,7 +45,7 @@ The following are deliberately **not** marked PASS from the local run:
 - completed payment, invoice and accounting reconciliation using provider data;
 - live KRA/eTIMS submission evidence;
 - full desktop/mobile browser acceptance;
-- production read-only MongoDB integrity/reconciliation scan.
+- production read-only Firestore integrity/reconciliation scan.
 
 ## 2026-09-21 — Audit remediation completed
 
@@ -111,3 +111,8 @@ Never document secrets, passwords, access tokens, private keys, MFA PINs or paym
 The generated state above is refreshed automatically after pushes to `main`. Historical test evidence below this section is retained and must only be updated when the corresponding test actually runs and produces evidence.
 
 <!-- DOCS-AUTO:END -->
+
+
+## Phase 18 — Firestore production integrity
+
+The repository now contains a read-only Firestore production integrity/reconciliation scanner. It is not production evidence until executed against the intended deployed environment. A passing result requires `readOnly: true`, `ok: true` and `issueCount: 0`, with the deployment commit and environment retained alongside the evidence.
