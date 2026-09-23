@@ -434,3 +434,21 @@ npx playwright test e2e/authenticatedRoleAcceptance.spec.js
 ```
 
 Do not store credentials in Git and do not use production credentials. A missing role-account secret means authenticated role acceptance is not certified.
+
+
+## Phase 18 — Firestore production integrity & reconciliation
+
+Automated contract:
+```bash
+cd server
+node --test tests/firestoreProductionIntegrityScan.test.js
+```
+
+Read-only production/staging scan:
+```bash
+cd server
+npm install
+FIREBASE_PROJECT_ID=<approved-project> npm run audit:firestore-integrity
+```
+
+The scan must report `readOnly: true`, `ok: true` and `issueCount: 0` before setting `PRODUCTION_DATA_INTEGRITY_VERIFIED=true`. Retain timestamp, deployed commit, environment/project and issue count as evidence. Never store credentials or customer data exports in Git.
