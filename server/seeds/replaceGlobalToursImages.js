@@ -83,7 +83,7 @@ const gallery = [
 
 const run = async () => {
   if (!process.env.FIREBASE_PROJECT_ID) {
-    throw new Error("MONGODB_URI is missing in .env");
+    throw new Error("FIREBASE_PROJECT_ID is missing in the environment.");
   }
 
   await firestore.connectFirestore?.();
