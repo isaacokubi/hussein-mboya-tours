@@ -736,6 +736,10 @@ export const completeBookingPayment = async ({
           paymentData.checkoutRequestID;
       }
 
+      if (paymentData.callbackEventId) {
+        paymentDoc.callbackEventId = paymentData.callbackEventId;
+      }
+
 
       /*
       |--------------------------------------------------------------------------
