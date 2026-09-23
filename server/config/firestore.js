@@ -236,6 +236,57 @@ const eq = (a,b) => {
   if (Array.isArray(a)) return a.some(x=>eq(x,b));
   return String(a) === String(b);
 };
+const evaluateExpression = (expression, doc, vars = {}) => {
+  if (typeof expression === "string") {
+    if (expression === "$ROOT") return doc;
+    if (expression.startsWith("$")) return vars[expression.slice(2)];
+    if (expression.startsWith("$")) return getPath(doc, expression.slice(1));
+    return expression;
+  }
+  if (Array.isArray(expression)) return expression.map((item) => evaluateExpression(item, doc, vars));
+  if (expression == null || typeof expression !== "object" || expression instanceof Date || expression instanceof Timestamp) return expression;
+  const [op] = Object.keys(expression);
+  const value = expression[op];
+  const values = Array.isArray(value) ? value.map((item) => evaluateExpression(item, doc, vars)) : evaluateExpression(value, doc, vars);
+  switch (op) {
+    case "$ifNull": return Array.isArray(values) && values[0] != null ? values[0] : Array.isArray(values) ? values[1] : null;
+    case "$add": return Array.isArray(values) ? values.reduce((sum, item) => sum + Number(item || 0), 0) : Number(values || 0);
+    case "$subtract": return Array.isArray(values) ? Number(values[0] || 0) - Number(values[1] || 0) : 0;
+    case "$multiply": return Array.isArray(values) ? values.reduce((product, item) => product * Number(item || 0), 1) : Number(values || 0);
+    case "$divide": return Array.isArray(values) ? Number(values[1] || 0) === 0 ? null : Number(values[0] || 0) / Number(values[1]) : null;
+    case "$max": return Array.isArray(values) ? Math.max(...values.map((v) => Number(v || 0))) : values;
+    case "$min": return Array.isArray(values) ? Math.min(...values.map((v) => Number(v || 0))) : values;
+    case "$round": return Array.isArray(values) ? Number(Number(values[0] || 0).toFixed(Number(values[1] ?? 0))) : Number(values || 0);
+    case "$toLower": return String(values ?? "").toLowerCase();
+    case "$toUpper": return String(values ?? "").toUpperCase();
+    case "$toString": return values == null ? null : String(values);
+    case "$size": return Array.isArray(values) ? values.length : 0;
+    case "$arrayElemAt": return Array.isArray(values) && Array.isArray(values[0]) ? values[0][Number(values[1])] : undefined;
+    case "$in": return Array.isArray(values) && Array.isArray(values[1]) && values[1].some((item) => deepEqual(item, values[0]));
+    case "$nin": return Array.isArray(values) && Array.isArray(values[1]) && !values[1].some((item) => deepEqual(item, values[0]));
+    case "$eq": return Array.isArray(values) && deepEqual(values[0], values[1]);
+    case "$ne": return Array.isArray(values) && !deepEqual(values[0], values[1]);
+    case "$gt": return Array.isArray(values) && values[0] > values[1];
+    case "$gte": return Array.isArray(values) && values[0] >= values[1];
+    case "$lt": return Array.isArray(values) && values[0] < values[1];
+    case "$lte": return Array.isArray(values) && values[0] <= values[1];
+    case "$and": return Array.isArray(values) && values.every(Boolean);
+    case "$or": return Array.isArray(values) && values.some(Boolean);
+    case "$not": return Array.isArray(values) ? !values[0] : !Boolean(values);
+    case "$cond": return Array.isArray(values) ? (values[0] ? values[1] : values[2]) : null;
+    case "$type": {
+      const actual = Array.isArray(values) ? values[0] : values;
+      if (typeof actual === "string") return "string";
+      if (typeof actual === "number") return "double";
+      if (typeof actual === "boolean") return "bool";
+      if (actual instanceof Date) return "date";
+      if (Array.isArray(actual)) return "array";
+      if (actual === null || actual === undefined) return "null";
+      return "object";
+    }
+    default: return evaluateExpression(value, doc, vars);
+  }
+};
 const matchValue = (actual, expected) => {
   if (expected && typeof expected === "object" && !Array.isArray(expected) && !(expected instanceof Date) && !(expected instanceof Timestamp)) {
     return Object.entries(expected).every(([op,val])=>{
@@ -265,6 +316,7 @@ const matchValue = (actual, expected) => {
       if(op==="$options") return true;
       if(op==="$size") return Array.isArray(actual) && actual.length === val;
       if(op==="$all") return Array.isArray(actual) && val.every(x=>actual.some(y=>eq(x,y)));
+      if(op==="$elemMatch") return Array.isArray(actual) && actual.some((item) => item && typeof item === "object" ? matches(item, val) : matchValue(item, val));
       return eq(actual,expected);
     });
   }
@@ -275,6 +327,7 @@ const matches = (doc, filter={}) => Object.entries(filter).every(([key,expected]
   if(key==="$or") return expected.some(f=>matches(doc,f));
   if(key==="$and") return expected.every(f=>matches(doc,f));
   if(key==="$nor") return !expected.some(f=>matches(doc,f));
+  if(key==="$expr") return Boolean(evaluateExpression(expected, doc));
   return matchValue(getPath(doc,key),expected);
 });
 const project = (doc, spec) => {
@@ -444,10 +497,10 @@ function buildModel(name,schema){
   Model.distinct=async(field,f={})=>[...new Set((await Model.find(f).lean()).map(x=>getPath(x,field)).filter(x=>x!==undefined))];
   Model.create=async(data,options={})=>{if(Array.isArray(data)){const out=[];for(const d of data)out.push(await new Model(d).save(options));return out;}return new Model(data).save(options);};
   Model.insertMany=async(arr,options={})=>Promise.all(arr.map(x=>new Model(x).save(options)));
-  Model.bulkWrite=async(ops=[],options={})=>{let matchedCount=0,modifiedCount=0,upsertedCount=0;for(const op of ops){const item=op?.updateOne;if(!item)continue;let d=await Model.findOne(item.filter||{}).session(options.session);if(!d&&item.upsert){d=new Model({...item.filter,...(item.update?.$set||{}),...(item.update?.$setOnInsert||{})});await d.save({session:options.session});upsertedCount+=1;continue;}if(!d)continue;matchedCount+=1;await applyUpdate(d,item.update||{});await d.save({session:options.session});modifiedCount+=1;}return {matchedCount,modifiedCount,upsertedCount};};
-  Model.updateOne=async(filter,update,options={})=>{const d=await Model.findOne(filter).session(options.session);if(!d)return {matchedCount:0,modifiedCount:0};await applyUpdate(d,update);await d.save({session:options.session});return {matchedCount:1,modifiedCount:1};};
+  Model.bulkWrite=async(ops=[],options={})=>{let matchedCount=0,modifiedCount=0,upsertedCount=0;for(const op of ops){const item=op?.updateOne;if(!item)continue;let d=await Model.findOne(item.filter||{}).session(options.session);if(!d&&item.upsert){d=new Model({...item.filter,...(item.update?.$set||{}),...(item.update?.$setOnInsert||{})});await d.save({session:options.session});upsertedCount+=1;continue;}if(!d)continue;matchedCount+=1;await applyUpdate(d,item.update||{},options);await d.save({session:options.session});modifiedCount+=1;}return {matchedCount,modifiedCount,upsertedCount};};
+  Model.updateOne=async(filter,update,options={})=>{const d=await Model.findOne(filter).session(options.session);if(!d)return {matchedCount:0,modifiedCount:0};await applyUpdate(d,update,options);await d.save({session:options.session});return {matchedCount:1,modifiedCount:1};};
   Model.updateMany=async(filter,update,options={})=>{const docs=await Model.find(filter).session(options.session);for(const d of docs){await applyUpdate(d,update);await d.save({session:options.session});}return {matchedCount:docs.length,modifiedCount:docs.length};};
-  Model.findOneAndUpdate=async(filter,update,options={})=>{let d=await Model.findOne(filter).session(options.session);if(!d&&options.upsert)d=new Model({...filter,...(update.$set||update)});if(!d)return null;await applyUpdate(d,update);await d.save({session:options.session});return d;};
+  Model.findOneAndUpdate=async(filter,update,options={})=>{let d=await Model.findOne(filter).session(options.session);if(!d&&options.upsert)d=new Model({...filter,...(update.$set||update)});if(!d)return null;await applyUpdate(d,update,options);await d.save({session:options.session});return d;};
   Model.findByIdAndUpdate=(id,u,o={})=>Model.findOneAndUpdate({_id:String(id)},u,o);
   Model.deleteOne=async(f)=>{const d=await Model.findOne(f).lean();if(!d)return {deletedCount:0};await colDelete(collectionName(name),d._id);return {deletedCount:1};};
   Model.deleteMany=async(f)=>{const docs=await Model.find(f).lean();for(const d of docs)await colDelete(collectionName(name),d._id);return {deletedCount:docs.length};};
@@ -456,11 +509,53 @@ function buildModel(name,schema){
   registry.set(name,Model); models[name]=Model; return Model;
 }
 async function colDelete(name,id){await db.collection(name).doc(String(id)).delete();}
-async function applyUpdate(doc,u){
+const arrayFilterFor = (identifier, arrayFilters = []) => {
+  const filter = {};
+  for (const candidate of arrayFilters) {
+    for (const [key, value] of Object.entries(candidate || {})) {
+      const prefix = `${identifier}.`;
+      if (key === identifier) Object.assign(filter, value);
+      else if (key.startsWith(prefix)) setPath(filter, key.slice(prefix.length), value);
+    }
+  }
+  return filter;
+};
+const applyPathOperation = (doc, path, operation, value, options = {}, filterContext = {}) => {
+  const tokens = String(path).split(".");
+  const walk = (current, index) => {
+    if (index >= tokens.length) return;
+    const token = tokens[index];
+    if (token === "$" || token.startsWith("$[")) {
+      if (!Array.isArray(current)) return;
+      const identifier = token.startsWith("$[") ? token.slice(2, -1) : null;
+      const filter = identifier ? arrayFilterFor(identifier, options.arrayFilters || []) : filterContext.positional;
+      current.forEach((item, itemIndex) => {
+        if (filter && !matches(item, filter)) return;
+        if (index === tokens.length - 1) {
+          if (operation === "unset") delete current[itemIndex];
+          else if (operation === "inc") current[itemIndex] = Number(current[itemIndex] || 0) + Number(value || 0);
+          else current[itemIndex] = clone(value);
+        } else walk(item, index + 1);
+      });
+      return;
+    }
+    if (index === tokens.length - 1) {
+      if (operation === "unset") delete current[token];
+      else if (operation === "inc") current[token] = Number(current[token] || 0) + Number(value || 0);
+      else current[token] = clone(value);
+      return;
+    }
+    if (!current[token] || typeof current[token] !== "object") current[token] = {};
+    walk(current[token], index + 1);
+  };
+  walk(doc, 0);
+};
+async function applyUpdate(doc,u,options={}){
   if(!u)return;
-  if(u.$set)for(const[k,v]of Object.entries(u.$set))setPath(doc,k,v);
-  if(u.$unset)for(const k of Object.keys(u.$unset))delPath(doc,k);
-  if(u.$inc)for(const[k,v]of Object.entries(u.$inc))setPath(doc,k,Number(getPath(doc,k)||0)+Number(v));
+  const positional = options.positionalFilter || {};
+  if(u.$set)for(const[k,v]of Object.entries(u.$set))applyPathOperation(doc,k,"set",v,options,{positional});
+  if(u.$unset)for(const k of Object.keys(u.$unset))applyPathOperation(doc,k,"unset",true,options,{positional});
+  if(u.$inc)for(const[k,v]of Object.entries(u.$inc))applyPathOperation(doc,k,"inc",v,options,{positional});
   if(u.$push)for(const[k,v]of Object.entries(u.$push)){const a=Array.isArray(getPath(doc,k))?getPath(doc,k):[];a.push(v);setPath(doc,k,a);}
   if(u.$addToSet)for(const[k,v]of Object.entries(u.$addToSet)){const a=Array.isArray(getPath(doc,k))?getPath(doc,k):[];if(!a.some(x=>eq(x,v)))a.push(v);setPath(doc,k,a);}
   if(u.$pull)for(const[k,v]of Object.entries(u.$pull)){const a=Array.isArray(getPath(doc,k))?getPath(doc,k):[];setPath(doc,k,a.filter(x=>!matchValue(x,v)));}
