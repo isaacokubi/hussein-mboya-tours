@@ -90,7 +90,7 @@ The browser harness now provides an automated authenticated acceptance path for 
 
 **Status: PENDING**
 
-A read-only production MongoDB integrity/reconciliation scan must be completed against the intended deployed release.
+A read-only Firestore integrity/reconciliation scan must be completed against the intended deployed release. It checks tenant consistency, booking/payment/invoice reconciliation, provider-reference uniqueness and posted journal balance.
 
 ## Acceptance rules
 
