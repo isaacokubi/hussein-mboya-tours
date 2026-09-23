@@ -194,7 +194,7 @@ async function main() {
     console.log("\nPASSWORD RESET SUCCESSFUL.");
     console.log("No plaintext password was printed.");
   } finally {
-    await firestore.disconnect().catch(() => {});
+    await firestore.connection.close().catch(() => {});
   }
 }
 
