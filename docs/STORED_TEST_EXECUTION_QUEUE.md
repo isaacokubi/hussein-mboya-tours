@@ -537,3 +537,24 @@ npm run test:firestore:field-unique
 ```
 
 Acceptance boundary: Phase 22 enforces model fields declared with `unique: true` in the Firestore compatibility layer, including sparse unique fields. It does not certify that existing production data contains no duplicates; run the Phase 18 production integrity scan for live data evidence.
+
+
+## Phase 23 — Firestore runtime semantics hardening
+
+Stored automated suite:
+
+    cd server
+    node --test tests/firestoreRuntimeSemantics.test.js tests/firestoreRuntimeSemanticsStatic.test.js
+
+Preferred package command:
+
+    cd server
+    npm run test:firestore:runtime-semantics
+
+Firestore emulator:
+
+    cd server
+    npm install
+    FIREBASE_PROJECT_ID=demo-global-tours FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 GCLOUD_PROJECT=demo-global-tours npm run test:firestore:runtime-semantics
+
+Acceptance boundary: this suite verifies the compatibility layer schema validation, setters/defaults, schema-level projections, partial-document save preservation, modification tracking and populated-reference selection/nesting. A pending emulator run is not a production pass.
