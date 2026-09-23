@@ -30,6 +30,32 @@ const clone = (value) => {
   return value;
 };
 const getPath = (obj, path) => String(path).split(".").reduce((v,k) => v == null ? undefined : v[k], obj);
+const indexApplies = (index, data) => {
+  const partial = index?.options?.partialFilterExpression;
+  return !partial || matches(data, partial);
+};
+const enforceUniqueIndexes = async (schema, modelName, data, session, currentId) => {
+  for (const index of schema._indexes || []) {
+    if (!index?.options?.unique || !indexApplies(index, data)) continue;
+    const fields = Object.entries(index.fields || {});
+    if (!fields.length) continue;
+    const values = fields.map(([field]) => [field, getPath(data, field)]);
+    if (values.some(([, value]) => value === undefined || value === null)) continue;
+    let query = db.collection(collectionName(modelName));
+    for (const [field, value] of values) query = query.where(field, "==", value);
+    const snapshot = session?.get ? await session.get(query) : await query.get();
+    const conflict = snapshot.docs.find((doc) => String(doc.id) !== String(currentId));
+    if (conflict) {
+      const fieldsLabel = values.map(([field, value]) => `${field}=${String(value)}`).join(", ");
+      const error = new Error(`Duplicate key for unique index on ${modelName}: ${fieldsLabel}`);
+      error.code = 11000;
+      error.keyPattern = Object.fromEntries(fields.map(([field]) => [field, 1]));
+      error.keyValue = Object.fromEntries(values);
+      throw error;
+    }
+  }
+};
+
 const setPath = (obj, path, value) => {
   const parts=String(path).split("."); let cur=obj;
   parts.slice(0,-1).forEach(k=>{ if (!cur[k] || typeof cur[k] !== "object") cur[k]={}; cur=cur[k]; });
@@ -78,8 +104,8 @@ const project = (doc, spec) => {
 };
 
 class Schema {
-  constructor(definition={}, options={}) { this.definition=definition; this.options=options; this._pre={}; this._post={}; this._virtuals={}; this.methods={}; this.statics={}; this.plugins=[]; }
-  index(){ return this; }
+  constructor(definition={}, options={}) { this.definition=definition; this.options=options; this._pre={}; this._post={}; this._virtuals={}; this.methods={}; this.statics={}; this.plugins=[]; this._indexes=[]; }
+  index(fields={}, options={}) { this._indexes.push({ fields, options }); return this; }
   pre(event, fn){ (this._pre[event] ||= []).push(fn); return this; }
   post(event, fn){ (this._post[event] ||= []).push(fn); return this; }
   virtual(name){ const self=this; return { get(fn){self._virtuals[name]={get:fn}; return self;}, set(fn){self._virtuals[name]={...(self._virtuals[name]||{}),set:fn}; return self;} }; }
@@ -134,7 +160,7 @@ function buildModel(name,schema){
     toJSON(){const o={...this};delete o.__schema;return o;}
     toObject(){return this.toJSON();}
     isModified(){return true;}
-    async save(options={}){const wasNew=this.isNew;this.__session=options.session||this.__session||null;const ctx=getTenantContext();if(ctx.tenantId&&this.tenantId==null&&!ctx.bypass)this.tenantId=ctx.tenantId; if(!this._id)this._id=crypto.randomUUID(); this.isNew=false; const data=this.toJSON(); await invokeHooks(schema,"validate",this); await invokeHooks(schema,"save",this); data.updatedAt=schema.options?.timestamps?new Date():data.updatedAt; if(!data.createdAt&&schema.options?.timestamps)data.createdAt=new Date(); const target=options.session?.set ? options.session : db; if(options.session?.set) options.session.set(db.collection(collectionName(name)).doc(String(this._id)),data,{merge:false}); else await target.collection(collectionName(name)).doc(String(this._id)).set(data,{merge:false}); for(const fn of schema._post.save||[]) await fn.call(this,this); return this;}
+    async save(options={}){const wasNew=this.isNew;this.__session=options.session||this.__session||null;const ctx=getTenantContext();if(ctx.tenantId&&this.tenantId==null&&!ctx.bypass)this.tenantId=ctx.tenantId; if(!this._id)this._id=crypto.randomUUID(); this.isNew=false; const data=this.toJSON(); await invokeHooks(schema,"validate",this); await invokeHooks(schema,"save",this); data.updatedAt=schema.options?.timestamps?new Date():data.updatedAt; if(!data.createdAt&&schema.options?.timestamps)data.createdAt=new Date(); const target=options.session?.set ? options.session : db; await enforceUniqueIndexes(schema, name, data, options.session, this._id); if(options.session?.set) options.session.set(db.collection(collectionName(name)).doc(String(this._id)),data,{merge:false}); else await target.collection(collectionName(name)).doc(String(this._id)).set(data,{merge:false}); for(const fn of schema._post.save||[]) await fn.call(this,this); return this;}
   }
   for(const [n,fn] of Object.entries(schema.statics||{})) Model[n]=fn.bind(Model);
   Model.modelName=name; Model.schema=schema; Model.collection=()=>db.collection(collectionName(name));
