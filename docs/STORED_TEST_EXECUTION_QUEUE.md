@@ -297,3 +297,42 @@ node --test tests/hospitalityPaymentLifecycleIntegration.test.js
 
 These tests replace the old MongoDB-gated integration path. They must not be recorded as passed until they execute successfully against the Firestore emulator.
 
+
+
+## Phase 12 — Firestore backup & restore cutover
+
+Automated contract:
+```bash
+cd server
+node --check scripts/firestoreBackup.js
+node --check scripts/firestoreRestore.js
+node --test tests/firestoreBackupRestoreCutover.test.js
+```
+
+Create a Firestore backup manually:
+```bash
+cd server
+FIREBASE_PROJECT_ID=<production-project> \
+FIREBASE_SERVICE_ACCOUNT_JSON='<service-account-json>' \
+npm run backup:firestore backup/firestore.json
+```
+
+Restore only into an isolated Firebase project:
+```bash
+cd server
+FIREBASE_PROJECT_ID=<isolated-project> \
+PRODUCTION_FIREBASE_PROJECT_ID=<production-project> \
+FIREBASE_SERVICE_ACCOUNT_JSON='<restore-service-account-json>' \
+RESTORE_TARGET_ISOLATED=true \
+npm run restore:firestore restore/firestore.json
+```
+
+Phase 12 safety requirements:
+- production backup no longer depends on the retired MongoDB backup URI or `mongodump`;
+- backups are encrypted before GitHub artifact upload;
+- restore requires an explicitly different Firebase project and `RESTORE_TARGET_ISOLATED=true`;
+- restore verifies the backup format/checksum and validates tenantId references against restored organizations;
+- GitHub Actions secrets must contain credentials only; never commit service-account JSON or encryption passphrases;
+- backup retention, off-site destination/SLA, actual production backup execution and real restore evidence remain external acceptance items.
+
+Do not record Phase 12 as passed until the workflow or equivalent commands have actually executed successfully.

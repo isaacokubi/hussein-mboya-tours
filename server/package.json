@@ -36,7 +36,9 @@
     "check:multitenancy:live": "node scripts/tenantIsolationRegressionCheck.js",
     "migrate:booking-ledger": "node scripts/migrateBookingPaymentLedger.js",
     "migrate:orphan-staff": "node scripts/migrateOrphanStaffToTenant.js",
-    "reset:demo": "node scripts/reset-and-seed-demo.js"
+    "reset:demo": "node scripts/reset-and-seed-demo.js",
+    "backup:firestore": "node scripts/firestoreBackup.js",
+    "restore:firestore": "node scripts/firestoreRestore.js"
   },
   "dependencies": {
     "africastalking": "^0.8.0",
