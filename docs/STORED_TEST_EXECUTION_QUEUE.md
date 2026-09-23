@@ -140,6 +140,16 @@ These cannot be certified from source code alone:
 This file stores tests and commands; it does not mean they have passed. Record actual results only after running them on a real environment.
 
 
+## Phase 5 — Payment & M-Pesa hardening
+
+Automated contract test:
+```bash
+cd server
+node --test tests/paymentMpesaHardening.test.js
+```
+
+Manual payment acceptance remains external: STK success/failure, duplicate callback, callback amount mismatch, unknown checkout/receipt, late callback, provider timeout/auth failure, refund, duplicate provider reference, accounting posting failure, reconciliation, and tenant-isolation checks.
+
 ## Phase 4 — Deployment & infrastructure acceptance contract
 
 Automated contract:
@@ -147,6 +157,7 @@ Automated contract:
 ```bash
 cd server
 node --test tests/deploymentInfrastructureAcceptance.test.js
+node --test tests/paymentMpesaHardening.test.js
 ```
 
 External deployment smoke checks, once provider secrets are configured in GitHub Actions:

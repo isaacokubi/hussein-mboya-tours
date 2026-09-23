@@ -1,4 +1,4 @@
-name: Four-Phase Release Gate
+name: Five-Phase Release Gate
 
 on:
   push:
@@ -160,3 +160,25 @@ jobs:
           ! grep -RIn --exclude-dir=node_modules --exclude-dir=dist --exclude='*.lock' \
             -E '(sk_live_[A-Za-z0-9]+|AKIA[0-9A-Z]{16}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----)' \
             client server
+
+
+  phase-5-payment-mpesa:
+    name: Phase 5 — Payment & M-Pesa hardening
+    runs-on: ubuntu-latest
+    needs: phase-4-deployment-infrastructure
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - name: Install server dependencies
+        run: npm install
+      - name: Payment and M-Pesa hardening contract
+        run: node --test tests/paymentMpesaHardening.test.js
