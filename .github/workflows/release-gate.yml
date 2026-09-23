@@ -679,3 +679,7 @@ jobs:
         run: npm run test:firestore:runtime-semantics
       - name: Firestore runtime semantics syntax
         run: node --check config/firestore.js
+      - name: Firestore legacy-reference cleanup
+        run: npm run test:firestore:legacy-cleanup
+      - name: Firestore maintained utility syntax
+        run: node --check seeds/destinationSeed.js && node --check seeds/replaceGlobalToursImages.js && node --check middleware/errorMiddleware.js
