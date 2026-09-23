@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import dotenv from "dotenv";
 import Organization from "../models/Organization.js";
 import User from "../models/User.js";
@@ -367,15 +367,8 @@ async function seedTenant(tenant, tenantIndex) {
 }
 
 async function main() {
-  if (!process.env.MONGODB_URI) throw new Error("MONGODB_URI is required.");
-  await mongoose.connect(process.env.MONGODB_URI, {
-    maxPoolSize: 5,
-    minPoolSize: 0,
-    serverSelectionTimeoutMS: 15000,
-    connectTimeoutMS: 15000,
-    socketTimeoutMS: 120000,
-    waitQueueTimeoutMS: 30000,
-  });
+  if (!process.env.FIREBASE_PROJECT_ID) throw new Error("FIREBASE_PROJECT_ID is required.");
+  await firestore.connectFirestore();
   const tenants = await Organization.find({ isDeleted: { $ne: true } }).sort({ createdAt: 1 }).lean();
   if (tenants.length !== 3) throw new Error(`Expected exactly 3 active tenants, found ${tenants.length}. Refusing to seed.`);
 
@@ -392,7 +385,7 @@ async function main() {
     console.table(results);
     console.log("Seed complete. All generated transactions are synthetic dashboard/demo records.");
   } finally {
-    await mongoose.disconnect();
+    await firestore.connection.close();
   }
 }
 

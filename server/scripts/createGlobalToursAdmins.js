@@ -101,4 +101,4 @@ console.log(`SUPERADMIN: ${SUPERADMIN_EMAIL} (tenantId=null)`);
 console.log(`ADMIN: ${ADMIN_EMAILS[0]} (tenantId=${org._id})`);
 console.log(`ADMIN: ${ADMIN_EMAILS[1]} (tenantId=${org._id})`);
 
-await firestore.disconnect();
+await firestore.connection.close();

@@ -44,9 +44,7 @@ const seedVehicles = async()=>{
 
     try{
 
-        await firestore.connect(
-            process.env.MONGODB_URI
-        );
+        await firestore.connectFirestore();
 
 
         await Vehicle.deleteMany();

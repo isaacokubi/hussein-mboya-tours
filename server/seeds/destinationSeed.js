@@ -7,7 +7,7 @@ import Destination from "../models/Destination.js";
 
 dotenv.config();
 
-if (!process.env.MONGODB_URI) {
+if (!process.env.FIREBASE_PROJECT_ID) {
   console.error("❌ MONGODB_URI is not defined in the environment.");
   process.exit(1);
 }
@@ -79,7 +79,7 @@ const destinations = [
 
 const seedDestinations = async () => {
   try {
-    await firestore.connect(process.env.MONGODB_URI);
+    await firestore.connectFirestore();
 
     // debug removed
 

@@ -24,10 +24,10 @@ const seedGuides = async () => {
     const tenantSlug = String(process.env.TENANT_SLUG || "").trim().toLowerCase();
     const tenantName = String(process.env.TENANT_NAME || "").trim();
     if (!tenantId && !tenantSlug && !tenantName) throw new Error("Set TENANT_ID, TENANT_SLUG, or TENANT_NAME before running the guide seed.");
-    const mongoUri = String(process.env.MONGODB_URI || "").trim();
-    if (!mongoUri) throw new Error("MONGODB_URI is missing in server/.env");
+    const mongoUri = String(process.env.FIREBASE_PROJECT_ID || "").trim();
+    if (!mongoUri) throw new Error("FIREBASE_PROJECT_ID is missing in server/.env");
 
-    await firestore.connect(mongoUri);
+    await firestore.connectFirestore();
 
     let organization;
     if (tenantId) organization = await Organization.findById(tenantId).lean();

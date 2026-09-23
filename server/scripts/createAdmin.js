@@ -16,9 +16,9 @@ const ask = async (label, fallback = "") => {
 const askSecret = async (label) => String(await rl.question(`${label}: `, { hideEchoBack: true }) || "").trim();
 
 try {
-  const mongoUri = env.MONGODB_URI || process.env.MONGODB_URI || process.env.MONGO_URI;
-  if (!mongoUri) throw new Error("MONGODB_URI/MONGO_URI is not configured.");
-  await firestore.connect(mongoUri);
+  const mongoUri = env.FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || process.env.MONGO_URI;
+  if (!mongoUri) throw new Error("FIREBASE_PROJECT_ID is not configured.");
+  await firestore.connectFirestore();
 
   const tenantId = process.env.ADMIN_TENANT_ID || process.argv[2] || await ask("Company/Tenant ID");
   const name = process.env.ADMIN_NAME || process.argv[3] || await ask("Admin full name");
@@ -50,5 +50,5 @@ try {
   process.exitCode = 1;
 } finally {
   rl.close();
-  await firestore.disconnect().catch(() => {});
+  await firestore.connection.close().catch(() => {});
 }
