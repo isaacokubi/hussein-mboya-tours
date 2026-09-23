@@ -402,8 +402,9 @@ Browser acceptance against an approved HTTPS staging/production target:
 ```bash
 cd client
 npm install
-BROWSER_ACCEPTANCE_BASE_URL=https://<approved-host> npx --yes playwright@1.55.0 install --with-deps chromium
-BROWSER_ACCEPTANCE_BASE_URL=https://<approved-host> npx --yes playwright@1.55.0 test
+npm install --no-save playwright@1.55.0
+npx playwright install --with-deps chromium
+BROWSER_ACCEPTANCE_BASE_URL=https://<approved-host> npx playwright test
 ```
 
 GitHub Actions workflow: `.github/workflows/browser-acceptance.yml`. Configure `BROWSER_ACCEPTANCE_BASE_URL` as a repository/environment secret or provide an HTTPS `base_url` on manual dispatch.
