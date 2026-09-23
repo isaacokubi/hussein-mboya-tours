@@ -199,3 +199,27 @@ node --test tests/firestoreTransactionIntegrity.test.js
 The Phase 6 test verifies both commit and rollback behavior for tour capacity reservation plus booking creation. It requires a running Firestore emulator and must not be recorded as passed unless the test actually executes.
 
 Phase 6 also removes the direct `mongoose` transaction dependency from the booking-creation path and verifies that model `create`, `insertMany`, and bulk upserts propagate transaction sessions to the Firestore adapter.
+
+## Phase 8 — Firestore maintenance & migration cutover
+
+Automated contract:
+
+```bash
+cd server
+node --test tests/firestoreMaintenanceCutover.test.js
+```
+
+Maintenance commands:
+
+```bash
+npm run migrate:booking-ledger
+npm run migrate:orphan-staff
+```
+
+Preview the booking ledger migration without writes:
+
+```bash
+DRY_RUN=true npm run migrate:booking-ledger
+```
+
+The orphan-staff migration requires explicit tenant selection and does not mutate records unless CONFIRM_ORPHAN_STAFF_MIGRATION=true is set. No Phase 8 command is considered passed until actually executed against the intended Firestore environment.

@@ -10,21 +10,19 @@ dotenv.config();
 const tenantId = String(process.env.TENANT_ID || "").trim();
 const tenantSlug = String(process.env.TENANT_SLUG || "").trim().toLowerCase();
 const tenantName = String(process.env.TENANT_NAME || "").trim();
-const mongoUri = String(process.env.FIREBASE_PROJECT_ID || "").trim();
+const firebaseProjectId = String(process.env.FIREBASE_PROJECT_ID || "").trim();
 
 const migrate = async () => {
   if (!tenantId && !tenantSlug && !tenantName) {
     throw new Error("Set TENANT_ID, TENANT_SLUG, or TENANT_NAME before running this migration.");
   }
-
-  if (!mongoUri) {
-    throw new Error("MONGODB_URI is not configured. Put it in server/.env or export MONGODB_URI before running the migration.");
+  if (!firebaseProjectId) {
+    throw new Error("FIREBASE_PROJECT_ID is not configured. Put it in server/.env or export it before running the migration.");
   }
 
-  await firestore.connectFirestore?.();
+  await firestore.connectFirestore();
 
   let organization;
-
   if (tenantId) {
     organization = await Organization.findById(tenantId).lean();
   } else if (tenantSlug) {
@@ -37,14 +35,10 @@ const migrate = async () => {
     organization = organizations[0];
   }
 
-  if (!organization) {
-    throw new Error("Tenant organization was not found.");
-  }
+  if (!organization) throw new Error("Tenant organization was not found.");
 
-  const orphanFilter = {
-    $or: [{ tenantId: { $exists: false } }, { tenantId: null }],
-  };
-  const orphanCount = await Staff.collection.countDocuments(orphanFilter);
+  const orphanFilter = { $or: [{ tenantId: { $exists: false } }, { tenantId: null }] };
+  const orphanCount = await Staff.countDocuments(orphanFilter);
 
   if (orphanCount === 0) {
     console.log(`No orphan staff records found for tenant ${organization.name}.`);
@@ -59,10 +53,7 @@ const migrate = async () => {
 
   const result = await runWithTenant(
     { tenantId: organization._id, tenant: organization },
-    () =>
-      Staff.collection.updateMany(orphanFilter, {
-        $set: { tenantId: organization._id },
-      }),
+    () => Staff.updateMany(orphanFilter, { $set: { tenantId: organization._id } }),
   );
 
   console.log(`Assigned ${result.modifiedCount} orphan staff record(s) to ${organization.name}.`);
