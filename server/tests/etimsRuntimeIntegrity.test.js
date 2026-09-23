@@ -1,1 +1,56 @@
-import assert from "node:assert/strict";\nimport fs from "node:fs";\nimport path from "node:path";\nimport test from "node:test";\n\nconst root = path.resolve(process.cwd());\nconst read = (file) => fs.readFileSync(path.join(root, file), "utf8");\n\ntest("eTIMS creates the submission audit before selecting OSCU or adapter mode", () => {\n  const source = read("services/etimsService.js");\n  const auditMarker = "const audit = await createSubmissionAudit(";\n  const oscuMarker = 'if (String(profile.etimsSolution || "").toUpperCase() === "OSCU") {';\n  assert.ok(source.indexOf(auditMarker) >= 0);\n  assert.ok(source.indexOf(auditMarker) < source.indexOf(oscuMarker), "audit must exist before OSCU execution");\n  assert.equal((source.match(/const audit = await createSubmissionAudit\\(\\{/g) || []).length, 1, "audit must be created exactly once per submission attempt");\n});\n\ntest("eTIMS OSCU success persists the real KRA payload hash and audit result", () => {\n  const source = read("services/etimsService.js");\n  for (const marker of [\n    "if (result.payload) audit.requestHash = crypto.createHash",\n    'audit.status = "synced"',\n    "audit.etimsInvoiceNumber",\n    "audit.etimsReceiptNumber",\n    "audit.uniqueRegisterIdentifier",\n    "audit.qrCode",\n    "await Promise.all([invoice.save(), audit.save()])",\n  ]) assert.ok(source.includes(marker), "Missing " + marker);\n});\n\ntest("eTIMS OSCU failure persists the failure audit and retry schedule", () => {\n  const source = read("services/etimsService.js");\n  for (const marker of [\n    'audit.status = "failed"',\n    "audit.error = invoice.etimsLastError",\n    "audit.response = error?.kraResponse || {}",\n    "invoice.etimsNextRetryAt",\n  ]) assert.ok(source.includes(marker), "Missing " + marker);\n});\n\ntest("eTIMS adapter mode keeps one durable audit identity and request hash", () => {\n  const source = read("services/etimsService.js");\n  for (const marker of [\n    "const idempotencyKey = `etims-invoice:${invoice._id}`",\n    "const requestHash = crypto.createHash",\n    "audit.requestHash = requestHash",\n    '"x-idempotency-key": idempotencyKey',\n    "createSubmissionAudit",\n  ]) assert.ok(source.includes(marker), "Missing " + marker);\n});\n\ntest("Phase 14 does not certify live KRA evidence in source", () => {\n  const checklist = fs.readFileSync(path.join(root, "../docs/PRODUCTION_GO_LIVE_CHECKLIST.md"), "utf8");\n  assert.ok(checklist.includes("PRODUCTION_ETIMS_VERIFIED=true"));\n  assert.ok(checklist.includes("Do not mark an evidence flag true unless the corresponding external test was actually completed."));\n});\n
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import test from "node:test";
+
+const root = path.resolve(process.cwd());
+const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
+
+test("eTIMS creates the submission audit before selecting OSCU or adapter mode", () => {
+  const source = read("services/etimsService.js");
+  const auditMarker = "const audit = await createSubmissionAudit(";
+  const oscuMarker = 'if (String(profile.etimsSolution || "").toUpperCase() === "OSCU") {';
+  assert.ok(source.indexOf(auditMarker) >= 0);
+  assert.ok(source.indexOf(auditMarker) < source.indexOf(oscuMarker), "audit must exist before OSCU execution");
+  assert.equal((source.match(/const audit = await createSubmissionAudit\\(\\{/g) || []).length, 1, "audit must be created exactly once per submission attempt");
+});
+
+test("eTIMS OSCU success persists the real KRA payload hash and audit result", () => {
+  const source = read("services/etimsService.js");
+  for (const marker of [
+    "if (result.payload) audit.requestHash = crypto.createHash",
+    'audit.status = "synced"',
+    "audit.etimsInvoiceNumber",
+    "audit.etimsReceiptNumber",
+    "audit.uniqueRegisterIdentifier",
+    "audit.qrCode",
+    "await Promise.all([invoice.save(), audit.save()])",
+  ]) assert.ok(source.includes(marker), "Missing " + marker);
+});
+
+test("eTIMS OSCU failure persists the failure audit and retry schedule", () => {
+  const source = read("services/etimsService.js");
+  for (const marker of [
+    'audit.status = "failed"',
+    "audit.error = invoice.etimsLastError",
+    "audit.response = error?.kraResponse || {}",
+    "invoice.etimsNextRetryAt",
+  ]) assert.ok(source.includes(marker), "Missing " + marker);
+});
+
+test("eTIMS adapter mode keeps one durable audit identity and request hash", () => {
+  const source = read("services/etimsService.js");
+  for (const marker of [
+    "const idempotencyKey = `etims-invoice:${invoice._id}`",
+    "const requestHash = crypto.createHash",
+    "audit.requestHash = requestHash",
+    '"x-idempotency-key": idempotencyKey',
+    "createSubmissionAudit",
+  ]) assert.ok(source.includes(marker), "Missing " + marker);
+});
+
+test("Phase 14 does not certify live KRA evidence in source", () => {
+  const checklist = fs.readFileSync(path.join(root, "../docs/PRODUCTION_GO_LIVE_CHECKLIST.md"), "utf8");
+  assert.ok(checklist.includes("PRODUCTION_ETIMS_VERIFIED=true"));
+  assert.ok(checklist.includes("Do not mark an evidence flag true unless the corresponding external test was actually completed."));
+});
