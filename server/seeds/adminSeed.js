@@ -16,7 +16,7 @@ const createAdmin = async () => {
     const tenantSlug = String(process.env.TENANT_SLUG || "").trim().toLowerCase();
     if (!tenantId && !tenantSlug) throw new Error("Set TENANT_ID or TENANT_SLUG before running the admin seed.");
 
-    await firestore.connect(process.env.MONGODB_URI);
+    await firestore.connectFirestore();
 
     const organization = tenantId
       ? await Organization.findById(tenantId).lean()
