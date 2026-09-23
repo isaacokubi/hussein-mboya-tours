@@ -70,3 +70,8 @@ Do not mark an evidence flag true unless the corresponding external test was act
 - [ ] Firestore emulator unique-index suite passes for the compatibility layer and Payment provider identities.
 - [ ] Production integrity evidence confirms no duplicate tenant-scoped M-Pesa/provider references.
 
+
+
+### Phase 22 — Firestore field-level unique integrity
+- [ ] Firestore emulator field-level uniqueness suite passes.
+- [ ] Production Firestore integrity scan confirms no duplicates for records relying on field-level uniqueness.

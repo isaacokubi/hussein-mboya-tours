@@ -510,3 +510,30 @@ npm run test:firestore:unique
 
 Acceptance boundary: this proves the Firestore compatibility layer enforces declared unique indexes, including tenant-scoped Payment identities and partial indexes. It does not prove live M-Pesa provider connectivity, production callback delivery, or production reconciliation.
 
+
+
+## Phase 22 — Firestore field-level unique integrity
+
+Automated tests:
+```bash
+cd server
+node --test tests/firestoreFieldUniqueIntegrity.test.js tests/firestoreFieldUniqueIntegrityStatic.test.js
+```
+
+Or:
+```bash
+cd server
+npm run test:firestore:field-unique
+```
+
+Firestore emulator:
+```bash
+cd server
+npm install
+FIREBASE_PROJECT_ID=demo-global-tours \
+FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
+GCLOUD_PROJECT=demo-global-tours \
+npm run test:firestore:field-unique
+```
+
+Acceptance boundary: Phase 22 enforces model fields declared with `unique: true` in the Firestore compatibility layer, including sparse unique fields. It does not certify that existing production data contains no duplicates; run the Phase 18 production integrity scan for live data evidence.

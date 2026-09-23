@@ -127,3 +127,9 @@ The repository now contains a machine-checkable production evidence manifest val
 - Pending: actual emulator execution in an environment with Node dependencies/Firebase CLI.
 - External evidence still required for live M-Pesa callbacks and production financial reconciliation.
 
+
+
+## Phase 22 — Firestore field-level unique integrity
+- Stored: emulator/static tests for `unique: true` field declarations and sparse uniqueness.
+- Pending: actual emulator execution in an environment with Node dependencies/Firebase CLI.
+- Production duplicate-data evidence remains dependent on the Phase 18 read-only Firestore integrity scan.

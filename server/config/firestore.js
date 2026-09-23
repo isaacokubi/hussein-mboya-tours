@@ -35,12 +35,23 @@ const indexApplies = (index, data) => {
   return !partial || matches(data, partial);
 };
 const enforceUniqueIndexes = async (schema, modelName, data, session, currentId) => {
-  for (const index of schema._indexes || []) {
+  const checks = [
+    ...(schema._indexes || []).map((index) => ({ kind: "index", ...index })),
+    ...(schema._uniqueFields || []).map((field) => ({
+      kind: "field",
+      fields: { [field]: 1 },
+      options: { unique: true, sparse: schema.definition?.[field]?.sparse === true },
+    })),
+  ];
+  for (const index of checks) {
     if (!index?.options?.unique || !indexApplies(index, data)) continue;
     const fields = Object.entries(index.fields || {});
     if (!fields.length) continue;
     const values = fields.map(([field]) => [field, getPath(data, field)]);
-    if (values.some(([, value]) => value === undefined || value === null)) continue;
+    if (values.some(([, value]) => value === undefined || value === null)) {
+      if (index.options?.sparse) continue;
+      continue;
+    }
     let query = db.collection(collectionName(modelName));
     for (const [field, value] of values) query = query.where(field, "==", value);
     const snapshot = session?.get ? await session.get(query) : await query.get();
@@ -104,7 +115,7 @@ const project = (doc, spec) => {
 };
 
 class Schema {
-  constructor(definition={}, options={}) { this.definition=definition; this.options=options; this._pre={}; this._post={}; this._virtuals={}; this.methods={}; this.statics={}; this.plugins=[]; this._indexes=[]; }
+  constructor(definition={}, options={}) { this.definition=definition; this.options=options; this._pre={}; this._post={}; this._virtuals={}; this.methods={}; this.statics={}; this.plugins=[]; this._indexes=[]; this._uniqueFields=Object.entries(definition).filter(([,rule]) => rule && typeof rule === "object" && !Array.isArray(rule) && rule.unique === true).map(([field]) => field); }
   index(fields={}, options={}) { this._indexes.push({ fields, options }); return this; }
   pre(event, fn){ (this._pre[event] ||= []).push(fn); return this; }
   post(event, fn){ (this._post[event] ||= []).push(fn); return this; }
