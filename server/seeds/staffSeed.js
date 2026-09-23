@@ -26,9 +26,9 @@ const seedStaff = async () => {
       throw new Error("Set TENANT_ID, TENANT_SLUG, or TENANT_NAME before running the staff seed.");
     }
 
-    const mongoUri = String(process.env.MONGODB_URI || "").trim();
-    if (!mongoUri) throw new Error("MONGODB_URI is missing in server/.env");
-    await firestore.connect(mongoUri);
+    const mongoUri = String(process.env.FIREBASE_PROJECT_ID || "").trim();
+    if (!mongoUri) throw new Error("FIREBASE_PROJECT_ID is missing in server/.env");
+    await firestore.connectFirestore();
 
     let organization;
     if (requestedTenantId) organization = await Organization.findById(requestedTenantId).lean();
