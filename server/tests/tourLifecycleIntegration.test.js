@@ -10,11 +10,11 @@ import { cancelTourAndBookings } from "../services/tourCancellationService.js";
 import { createBookingAtomically } from "../services/bookingCreationService.js";
 import { runWithTenant } from "../tenancy/context.js";
 
-const integrationEnabled = Boolean(process.env.MONGODB_URI);
+const integrationEnabled = Boolean(process.env.FIRESTORE_EMULATOR_HOST || process.env.FIREBASE_EMULATOR_HOST);
 
 test("tour lifecycle atomically reserves dated capacity with booking creation and releases it transactionally", { skip: !integrationEnabled }, async () => {
-  if (firestore.connection.readyState === 0) await firestore.connect(process.env.MONGODB_URI);
-  const tenantId = new firestore.Types.ObjectId();
+  await firestore.connectFirestore();
+  const tenantId = firestore.Types.ObjectId();
   const travelDate = new Date("2099-06-15T00:00:00.000Z");
 
   await runWithTenant({ tenantId, role: "manager" }, async () => {
@@ -22,7 +22,7 @@ test("tour lifecycle atomically reserves dated capacity with booking creation an
       tenantId,
       title: "Lifecycle Integration Tour",
       description: "Deterministic integration fixture",
-      destination: new firestore.Types.ObjectId(),
+      destination: firestore.Types.ObjectId(),
       country: "Kenya",
       location: "Amboseli",
       date: travelDate,
@@ -71,8 +71,8 @@ test("tour lifecycle atomically reserves dated capacity with booking creation an
 
     const payment = await Payment.create({
       tenantId,
-      customer: new firestore.Types.ObjectId(),
-      user: new firestore.Types.ObjectId(),
+      customer: firestore.Types.ObjectId(),
+      user: firestore.Types.ObjectId(),
       booking: first._id,
       provider: "MPESA",
       method: "mpesa",
@@ -133,14 +133,14 @@ test.after(async () => {
 
 test("payment completion rolls back financial state when accounting posting fails", { skip: !integrationEnabled }, async () => {
   if (firestore.connection.readyState === 0) await firestore.connect(process.env.MONGODB_URI);
-  const tenantId = new firestore.Types.ObjectId();
+  const tenantId = firestore.Types.ObjectId();
 
   await runWithTenant({ tenantId, role: "manager" }, async () => {
     const booking = await Booking.create({
       tenantId,
       bookingNumber: "BK-ACCOUNTING-ROLLBACK",
-      customer: new firestore.Types.ObjectId(),
-      tour: new firestore.Types.ObjectId(),
+      customer: firestore.Types.ObjectId(),
+      tour: firestore.Types.ObjectId(),
       travelDate: new Date("2099-07-01T00:00:00.000Z"),
       numberOfGuests: 1,
       totalAmount: 1000,
@@ -153,7 +153,7 @@ test("payment completion rolls back financial state when accounting posting fail
     const payment = await Payment.create({
       tenantId,
       customer: booking.customer,
-      user: new firestore.Types.ObjectId(),
+      user: firestore.Types.ObjectId(),
       booking: booking._id,
       provider: "MPESA",
       paymentMethod: "MPESA",
