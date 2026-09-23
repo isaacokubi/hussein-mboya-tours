@@ -223,3 +223,37 @@ DRY_RUN=true npm run migrate:booking-ledger
 ```
 
 The orphan-staff migration requires explicit tenant selection and does not mutate records unless CONFIRM_ORPHAN_STAFF_MIGRATION=true is set. No Phase 8 command is considered passed until actually executed against the intended Firestore environment.
+
+## Phase 9 — Firestore demo seed cutover
+
+Automated contract test:
+```bash
+cd server
+node --test tests/firestoreDemoSeedCutover.test.js
+```
+
+Firestore emulator contract:
+```bash
+cd server
+FIREBASE_PROJECT_ID=demo-global-tours \
+FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
+GCLOUD_PROJECT=demo-global-tours \
+JWT_SECRET=ci-only-test-secret \
+node --test tests/firestoreDemoSeedCutover.test.js
+```
+
+Explicit demo reset command:
+```bash
+cd server
+FIREBASE_PROJECT_ID=demo-global-tours \
+FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
+GCLOUD_PROJECT=demo-global-tours \
+CONFIRM_DEMO_RESET=YES \
+npm run reset:demo
+```
+
+Phase 9 safety boundary:
+- The demo reset no longer connects to MongoDB or drops arbitrary collections.
+- It removes only the known synthetic Global Tours catalog before running Firestore-native seeders.
+- Organizations, users, bookings and payments are intentionally preserved.
+- Do not record the demo reset as passed until it has actually been executed against the intended Firestore environment.
