@@ -373,3 +373,18 @@ node --test tests/etimsRuntimeIntegrity.test.js
 This contract verifies that every eTIMS invoice attempt creates its durable submission audit before OSCU or adapter execution, that OSCU success/failure updates the audit, and that the adapter path preserves idempotency and request hashing.
 
 Phase 14 does **not** certify live KRA/eTIMS connectivity or production evidence. Do not set `PRODUCTION_ETIMS_VERIFIED=true` until the real provider/regulatory acceptance test has been completed.
+
+
+## Phase 15 — Webhook runtime integrity
+
+Automated contract:
+```bash
+cd server
+node --test tests/webhookRuntimeIntegrity.test.js
+```
+
+This contract verifies that webhook delivery jobs carry explicit tenant identity, that the worker rejects tenant-mismatched webhook jobs, and that HTTPS/SSRF pinning, HMAC signing and delivery idempotency controls remain present.
+
+External webhook evidence remains required: deliver a real signed webhook to an approved consuming system, verify the signature/event ID/tenant payload, and record the receiving-system evidence before setting `PRODUCTION_WEBHOOKS_VERIFIED=true`.
+
+Do not record Phase 15 as passed until the automated contract actually executes successfully. Do not mark the production webhook evidence flag true based on source-code inspection alone.
