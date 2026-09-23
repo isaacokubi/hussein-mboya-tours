@@ -52,12 +52,24 @@ const collectionNames = new Set(documents.map((item) => item.path.split("/")[0])
 const counts = {};
 for (const collectionName of collectionNames) counts[collectionName] = (await db.collection(collectionName).get()).size;
 
+const organizationIds = new Set((await db.collection("organization").get()).docs.map((doc) => doc.id));
+let tenantScopedDocuments = 0;
+let invalidTenantReferences = 0;
+for (const item of documents) {
+  const tenantId = item?.data?.tenantId;
+  if (tenantId == null || tenantId === "") continue;
+  tenantScopedDocuments += 1;
+  if (!organizationIds.has(String(tenantId))) invalidTenantReferences += 1;
+}
+if (invalidTenantReferences > 0) throw new Error(`Restore tenant-isolation validation failed: ${invalidTenantReferences} documents reference missing organizations.`);
+
 console.log(JSON.stringify({
   restoredProjectId: projectId,
   sourceProjectId: payload.projectId,
   documentCount: documents.length,
   topLevelCollections: Object.keys(counts).length,
   collectionCounts: counts,
+  tenantIsolation: { tenantScopedDocuments, invalidTenantReferences, validated: true },
   checksum: payload.checksum,
 }));
 
