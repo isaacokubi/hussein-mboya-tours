@@ -112,6 +112,12 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: client/package-lock.json
+      - name: Install server dependencies
+        working-directory: server
+        run: npm install
+      - name: Final release contract
+        working-directory: server
+        run: node --test tests/finalReleaseGateContract.test.js
       - name: Install client dependencies
         working-directory: client
         run: npm install

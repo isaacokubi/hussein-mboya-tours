@@ -15,6 +15,7 @@ npm test
 npm run test:tour-domain
 npm run test:security
 node --test tests/kenyaProductionReadiness.test.js
+node --test tests/finalReleaseGateContract.test.js
 npm run check:production
 ```
 
