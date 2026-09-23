@@ -22,6 +22,7 @@ const taxProfileSchema = new firestore.Schema({
   etimsInvoicePrefix: { type: String, trim: true, default: "INV" },
   etimsCredentialRef: { type: String, trim: true, default: "" },
   etimsAdapterUrl: { type: String, trim: true, default: "" },
+  etimsDeviceSerial: { type: String, trim: true, default: "" },
   etimsLastSyncedAt: { type: Date, default: null },
   etimsLastError: { type: String, trim: true, default: "" },
   etimsRetryCount: { type: Number, default: 0, min: 0 },
