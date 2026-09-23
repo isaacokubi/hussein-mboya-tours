@@ -1,0 +1,67 @@
+name: Browser Acceptance
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Optional HTTPS production/staging URL override; leave blank to use BROWSER_ACCEPTANCE_BASE_URL"
+        required: false
+        type: string
+  schedule:
+    - cron: "17 3 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  browser-acceptance:
+    name: Desktop/mobile browser acceptance
+    runs-on: ubuntu-latest
+    env:
+      BROWSER_ACCEPTANCE_BASE_URL: ${{ inputs.base_url || secrets.BROWSER_ACCEPTANCE_BASE_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate browser acceptance target
+        id: target
+        shell: bash
+        run: |
+          if [ -z "${BROWSER_ACCEPTANCE_BASE_URL}" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "No BROWSER_ACCEPTANCE_BASE_URL configured; browser acceptance is not certified by this run."
+            exit 0
+          fi
+          case "${BROWSER_ACCEPTANCE_BASE_URL}" in
+            https://*) ;;
+            *) echo "Browser acceptance target must use HTTPS."; exit 1 ;;
+          esac
+          echo "configured=true" >> "$GITHUB_OUTPUT"
+      - name: Setup Node
+        if: steps.target.outputs.configured == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - name: Install client dependencies
+        if: steps.target.outputs.configured == 'true'
+        working-directory: client
+        run: npm install
+      - name: Install Playwright browser dependencies
+        if: steps.target.outputs.configured == 'true'
+        working-directory: client
+        run: npx --yes playwright@1.55.0 install --with-deps chromium
+      - name: Run browser acceptance
+        if: steps.target.outputs.configured == 'true'
+        working-directory: client
+        run: npx --yes playwright@1.55.0 test
+      - name: Upload browser evidence
+        if: always() && steps.target.outputs.configured == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-acceptance-report
+          path: |
+            client/playwright-report
+            client/test-results
+          if-no-files-found: ignore
+          retention-days: 14
