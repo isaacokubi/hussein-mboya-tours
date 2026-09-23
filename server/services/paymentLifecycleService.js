@@ -378,6 +378,10 @@ export const failBookingPayment = async ({
           paymentData.merchantRequestID;
       }
 
+      if (paymentData.callbackEventId) {
+        paymentDoc.callbackEventId = paymentData.callbackEventId;
+      }
+
       paymentDoc.failedAt =
         new Date();
 
