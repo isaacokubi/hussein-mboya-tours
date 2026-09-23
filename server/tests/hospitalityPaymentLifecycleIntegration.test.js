@@ -8,19 +8,19 @@ import JournalEntry from "../models/JournalEntry.js";
 import { completeHospitalityPayment } from "../services/hospitalityPaymentLifecycleService.js";
 import { runWithTenant } from "../tenancy/context.js";
 
-const integrationEnabled = Boolean(process.env.MONGODB_URI);
+const integrationEnabled = Boolean(process.env.FIRESTORE_EMULATOR_HOST || process.env.FIREBASE_EMULATOR_HOST);
 
 test("airport transfer payment completion atomically updates booking, invoice and accounting", { skip: !integrationEnabled }, async () => {
-  if (firestore.connection.readyState === 0) await firestore.connect(process.env.MONGODB_URI);
-  const tenantId = new firestore.Types.ObjectId();
-  const bookingId = new firestore.Types.ObjectId();
+  await firestore.connectFirestore();
+  const tenantId = firestore.Types.ObjectId();
+  const bookingId = firestore.Types.ObjectId();
 
   await runWithTenant({ tenantId, role: "manager" }, async () => {
     const booking = await AirportTransferBooking.create({
       _id: bookingId,
       tenantId,
       reference: "TR-CI-ATOMIC-001",
-      transfer: new firestore.Types.ObjectId(),
+      transfer: firestore.Types.ObjectId(),
       pickupDateTime: new Date("2099-08-01T08:00:00.000Z"),
       pickupLocation: "Mombasa Airport",
       dropoffLocation: "Nyali",
@@ -34,8 +34,8 @@ test("airport transfer payment completion atomically updates booking, invoice an
 
     const payment = await Payment.create({
       tenantId,
-      customer: new firestore.Types.ObjectId(),
-      user: new firestore.Types.ObjectId(),
+      customer: firestore.Types.ObjectId(),
+      user: firestore.Types.ObjectId(),
       hospitalityBooking: booking._id,
       hospitalityBookingModel: "AirportTransferBooking",
       hospitalityType: "airport_transfer",

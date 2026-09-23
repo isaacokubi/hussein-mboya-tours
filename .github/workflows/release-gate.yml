@@ -1,4 +1,4 @@
-name: Ten-Phase Release Gate
+name: Eleven-Phase Release Gate
 
 on:
   push:
@@ -328,3 +328,38 @@ jobs:
       - name: Firestore authentication and seed cutover contract
         run: node --test tests/firestoreAuthSeedCutover.test.js
 
+  phase-11-firestore-integration-tests:
+    name: Phase 11 — Firestore integration test cutover
+    runs-on: ubuntu-latest
+    needs: phase-10-firestore-auth-seed
+    defaults:
+      run:
+        working-directory: server
+    env:
+      FIREBASE_PROJECT_ID: demo-global-tours
+      FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
+      GCLOUD_PROJECT: demo-global-tours
+      JWT_SECRET: ci-only-test-secret
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - name: Install server dependencies
+        run: npm install
+      - name: Install Firebase CLI
+        run: npm install --global firebase-tools
+      - name: Start Firestore emulator
+        run: |
+          firebase emulators:start --only firestore --project demo-global-tours > /tmp/firestore-emulator.log 2>&1 &
+          sleep 10
+      - name: Integration test cutover contract
+        run: node --test tests/firestoreIntegrationTestCutover.test.js
+      - name: Tour lifecycle integration
+        run: node --test tests/tourLifecycleIntegration.test.js
+      - name: Hospitality payment lifecycle integration
+        run: node --test tests/hospitalityPaymentLifecycleIntegration.test.js

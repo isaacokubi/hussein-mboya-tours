@@ -270,3 +270,30 @@ This verifies that local/shared-account authentication uses the Firestore model 
 
 Do not record Phase 10 as passed unless the command is actually executed successfully.
 
+## Phase 11 — Firestore integration test cutover
+
+Run with the Firestore emulator:
+
+```bash
+cd server
+FIREBASE_PROJECT_ID=demo-global-tours \
+FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
+GCLOUD_PROJECT=demo-global-tours \
+JWT_SECRET=ci-only-test-secret \
+node --test tests/firestoreIntegrationTestCutover.test.js
+
+FIREBASE_PROJECT_ID=demo-global-tours \
+FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
+GCLOUD_PROJECT=demo-global-tours \
+JWT_SECRET=ci-only-test-secret \
+node --test tests/tourLifecycleIntegration.test.js
+
+FIREBASE_PROJECT_ID=demo-global-tours \
+FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
+GCLOUD_PROJECT=demo-global-tours \
+JWT_SECRET=ci-only-test-secret \
+node --test tests/hospitalityPaymentLifecycleIntegration.test.js
+```
+
+These tests replace the old MongoDB-gated integration path. They must not be recorded as passed until they execute successfully against the Firestore emulator.
+
