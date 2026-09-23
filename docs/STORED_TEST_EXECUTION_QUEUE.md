@@ -483,3 +483,30 @@ node --check controllers/mpesaController.js
 ```
 
 Live acceptance remains separate: use an approved Safaricom/M-Pesa sandbox tenant to send success, failure, duplicate/replay, amount-mismatch, missing-receipt and provider-timeout callbacks, then retain payment/invoice/accounting reconciliation evidence without storing credentials.
+
+## Phase 21 — Firestore unique payment integrity
+
+Automated tests:
+```bash
+cd server
+node --test tests/firestoreUniqueIndexIntegrity.test.js tests/firestoreUniqueIndexIntegrityStatic.test.js
+```
+
+Or:
+```bash
+cd server
+npm run test:firestore:unique
+```
+
+Firestore emulator execution:
+```bash
+cd server
+npm install
+FIREBASE_PROJECT_ID=demo-global-tours \
+FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
+GCLOUD_PROJECT=demo-global-tours \
+npm run test:firestore:unique
+```
+
+Acceptance boundary: this proves the Firestore compatibility layer enforces declared unique indexes, including tenant-scoped Payment identities and partial indexes. It does not prove live M-Pesa provider connectivity, production callback delivery, or production reconciliation.
+
