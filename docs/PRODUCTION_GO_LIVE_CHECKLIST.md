@@ -31,6 +31,7 @@ Before setting `NODE_ENV=production`, the deployment owner must verify all of th
 - [ ] `PRODUCTION_WEBHOOKS_VERIFIED=true` — at least one signed webhook delivery has been received and verified by the consuming system.
 - [ ] Browser acceptance — approved staging/production HTTPS target passes the stored desktop/mobile Playwright suite, including public navigation and unauthenticated protected-route checks.
 - [ ] Authenticated role acceptance — approved non-production test accounts pass Customer, Admin, Finance, Tour Manager, Guide, Driver and SuperAdmin browser surfaces; credentials remain outside Git.
+- [ ] `PRODUCTION_DATA_INTEGRITY_VERIFIED=true` — read-only Firestore production integrity/reconciliation scan returns zero issues against the intended deployed environment.
 
 The release gate rejects production mode when any evidence flag is missing. These checks deliberately cannot be faked by application code because they represent external infrastructure, payment-provider and KRA/eTIMS verification.
 
@@ -57,8 +58,10 @@ The platform provides the software controls for TRA/licensing records, ODPC/priv
 5. Run tenant-isolated payment, refund and reconciliation tests.
 6. Run eTIMS production verification where applicable.
 7. Run signed webhook verification.
-8. Set all six `PRODUCTION_*_VERIFIED=true` values.
-9. Run `PRODUCTION_READINESS_RUNTIME=true npm run check:production`.
-10. Run the full release workflow and only then enable production traffic.
+8. Run the read-only Firestore production integrity/reconciliation scan and retain its evidence.
+9. Set all applicable `PRODUCTION_*_VERIFIED=true` values, including `PRODUCTION_DATA_INTEGRITY_VERIFIED=true`.
+
+10. Run `PRODUCTION_READINESS_RUNTIME=true npm run check:production`.
+11. Run the full release workflow and only then enable production traffic.
 
 Do not mark an evidence flag true unless the corresponding external test was actually completed.
