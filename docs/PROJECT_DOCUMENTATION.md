@@ -27,7 +27,7 @@ Express API (server/)
         +--------------------+
         |                    |
         v                    v
-MongoDB / Mongoose       External services
+Firebase / Firestore      External services
                          - M-Pesa
                          - Stripe
                          - Cloudinary
@@ -49,7 +49,7 @@ The backend package includes production, controller, model, RBAC, security, and 
 
 ### Database
 
-MongoDB is accessed through Mongoose. Application models are tenant-aware through the tenancy bootstrap/plugin system. Platform-global models are explicitly treated as global rather than receiving ordinary organization scoping.
+Firestore is accessed through the Firebase Admin SDK and the repository Firestore compatibility layer. Application models are tenant-aware through the tenancy bootstrap/plugin system. Platform-global models are explicitly treated as global rather than receiving ordinary organization scoping.
 
 ---
 
@@ -70,7 +70,7 @@ MongoDB is accessed through Mongoose. Application models are tenant-aware throug
 │   ├── config/               # environment/database configuration
 │   ├── controllers/          # request/business controllers
 │   ├── middleware/           # auth, tenancy, security, validation
-│   ├── models/               # Mongoose models
+│   ├── models/               # Firestore-backed compatibility models
 │   ├── routes/               # API route modules
 │   ├── scripts/              # validation, migration, repair, seed utilities
 │   ├── seeds/                # development/demo seed utilities
@@ -280,7 +280,7 @@ Run the static check:
 npm run check:multitenancy:live
 ```
 
-Run the live regression test when MongoDB is available:
+Run the live regression test against the Firestore-backed environment:
 
 ```bash
 npm run check:multitenancy:live
@@ -412,7 +412,7 @@ CLOUDINARY_API_SECRET
 
 Upload middleware must enforce file-type/size rules and should never allow arbitrary executable content to become publicly executable.
 
-Store only references/metadata in MongoDB where appropriate; use Cloudinary for durable media storage.
+Store only references/metadata in Firestore where appropriate; use Cloudinary for durable media storage.
 
 ---
 
@@ -532,7 +532,7 @@ Stop the stale process or configure another development port.
 
 ### Common local issue: environment variables
 
-Check that `server/.env` exists and contains a reachable `MONGODB_URI`, valid JWT secret, correct frontend origin, and credentials for any integration being tested.
+Check that `server/.env` exists and contains the approved Firebase project/credential configuration, a valid JWT secret, the correct frontend origin, and credentials for any integration being tested.
 
 ---
 
@@ -646,7 +646,7 @@ The Vercel configuration should be kept aligned with the actual deployment proje
 
 ### Backups
 
-Production backups must be enabled at the MongoDB provider level. Application-level database tools must not be considered a replacement for provider backups.
+Production backups use the Firestore backup/restore tooling and an approved off-site retention destination. Application-level backup files must be retained according to the documented RPO/RTO policy and must not be treated as a substitute for independent recovery validation.
 
 ### Migrations
 
@@ -728,7 +728,7 @@ Verify `CLIENT_URL`/`CLIENT_ORIGINS` and ensure the browser origin exactly match
 
 ### MongoDB disconnected
 
-Verify `MONGODB_URI`, network access rules, database credentials, and provider availability. Then check `/api/health`.
+Verify the Firebase project ID/service-account configuration, Firestore access, network/provider availability and deployment environment. Then check `/api/health`.
 
 ### Dashboard appears empty
 
@@ -762,7 +762,7 @@ Before production release:
 - [ ] Production `NODE_ENV=production`
 - [ ] Strong unique JWT secret
 - [ ] No development seed passwords reused
-- [ ] MongoDB network access restricted appropriately
+- [ ] Firestore access and service-account permissions restricted appropriately
 - [ ] HTTPS enabled
 - [ ] CORS restricted to known origins
 - [ ] Rate limiting enabled
@@ -863,7 +863,7 @@ After review, merge through the repository's normal pull-request process rather 
 
 The repository has a strong production-oriented foundation, including tenant-aware model protection, live isolation regression tooling, RBAC/security checks, health checks, deployment definitions, payment integrations, and broad operational modules.
 
-A production-ready claim must still be tied to the actual deployment environment. Passing static checks does not prove that external payment credentials, DNS, SMTP, Cloudinary, MongoDB networking, provider webhooks, or production deployment limits are configured correctly.
+A production-ready claim must still be tied to the actual deployment environment. Passing static checks does not prove that external payment credentials, DNS, SMTP, Cloudinary, Firebase/Firestore permissions, provider webhooks, or production deployment limits are configured correctly.
 
 The final release decision should therefore be based on a green CI run plus environment-specific end-to-end smoke testing.
 
