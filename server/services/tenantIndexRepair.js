@@ -1,8 +1,8 @@
 /**
- * Firestore compatibility layer for callers that previously repaired MongoDB
+ * Firestore compatibility layer for callers that previously repaired legacy database
  * unique indexes at runtime.
  *
- * Firestore does not expose MongoDB-style collection indexes through the model
+ * Firestore does not expose collection indexes through the model
  * adapter, so index repair is intentionally a no-op. Uniqueness is enforced
  * by the application's tenant-scoped lookup/creation flow instead.
  */
