@@ -8,6 +8,12 @@ import TaxProfile from "./TaxProfile.js";
 
 const invoiceItemSchema = new firestore.Schema({
   description: { type: String, trim: true, required: true },
+  itemCode: { type: String, trim: true, default: "" },
+  itemClassCode: { type: String, trim: true, default: "" },
+  barcode: { type: String, trim: true, default: "" },
+  packageUnitCode: { type: String, trim: true, default: "NT" },
+  packageQuantity: { type: Number, min: 0, default: 1 },
+  quantityUnitCode: { type: String, trim: true, default: "U" },
   quantity: { type: Number, min: 0, default: 1 },
   unitPrice: { type: Number, min: 0, required: true },
   discount: { type: Number, min: 0, default: 0 },
@@ -50,6 +56,7 @@ const invoiceSchema = new firestore.Schema({
   taxRegistrationNumber: { type: String, trim: true, uppercase: true, default: "" },
   etimsStatus: { type: String, enum: ["not_configured", "pending", "submitted", "synced", "failed"], default: "not_configured" },
   etimsInvoiceNumber: { type: String, trim: true, default: "" },
+  etimsKraInvoiceNo: { type: Number, min: 0, default: 0 },
   etimsReceiptNumber: { type: String, trim: true, default: "" },
   etimsUniqueRegisterIdentifier: { type: String, trim: true, default: "" },
   etimsQrCode: { type: String, trim: true, default: "" },
