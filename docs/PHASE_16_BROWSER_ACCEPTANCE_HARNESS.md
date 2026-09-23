@@ -20,8 +20,9 @@ Phase 16 adds a repeatable desktop/mobile browser acceptance harness for the web
 ```bash
 cd client
 npm install
-BROWSER_ACCEPTANCE_BASE_URL=https://<approved-staging-or-production-host> npx --yes playwright@1.55.0 install --with-deps chromium
-BROWSER_ACCEPTANCE_BASE_URL=https://<approved-staging-or-production-host> npx --yes playwright@1.55.0 test
+npm install --no-save playwright@1.55.0
+npx playwright install --with-deps chromium
+BROWSER_ACCEPTANCE_BASE_URL=https://<approved-staging-or-production-host> npx playwright test
 ```
 
 ## Workflow
