@@ -113,7 +113,7 @@ A buyer should verify:
 
 ## eTIMS acquisition position
 
-The platform contains a KRA OSCU integration foundation. KRA states that system-to-system integration can use OSCU or VSCU and that self-integrators and third-party integrators must go through the applicable development, testing, vetting and certification process before integration/production use. citeturn0search0turn0search4
+The platform contains a KRA OSCU integration foundation. KRA states that system-to-system integration can use OSCU or VSCU and that self-integrators and third-party integrators must go through the applicable development, testing, vetting and certification process before integration/production use.
 
 Therefore the sales material must say:
 
