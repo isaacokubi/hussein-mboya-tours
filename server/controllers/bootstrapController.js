@@ -1,6 +1,6 @@
 import { mergeTenantFilter } from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import User from "../models/User.js";
 import Role from "../models/Role.js";
 import Permission from "../models/Permission.js";
@@ -38,7 +38,7 @@ const validateInput = ({ companyName, name, email, phone, password }) => {
 };
 
 export const bootstrapTenant = async (req, res, next) => {
-  const session = await mongoose.startSession();
+  const session = await firestore.startSession();
   try {
     const input = req.body || {};
     const validationError = validateInput(input);
