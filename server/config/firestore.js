@@ -30,6 +30,130 @@ const clone = (value) => {
   return value;
 };
 const getPath = (obj, path) => String(path).split(".").reduce((v,k) => v == null ? undefined : v[k], obj);
+
+const deepEqual = (a, b) => {
+  if (a === b) return true;
+  if (a == null || b == null) return a == null && b == null;
+  if (a instanceof Date || b instanceof Date) return new Date(a).getTime() === new Date(b).getTime();
+  if (a instanceof Timestamp || b instanceof Timestamp) return new Date(a.toDate ? a.toDate() : a).getTime() === new Date(b.toDate ? b.toDate() : b).getTime();
+  if (Array.isArray(a) || Array.isArray(b)) return Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((v, i) => deepEqual(v, b[i]));
+  if (typeof a === "object" && typeof b === "object") {
+    const ak = Object.keys(a), bk = Object.keys(b);
+    return ak.length === bk.length && ak.every((k) => Object.prototype.hasOwnProperty.call(b, k) && deepEqual(a[k], b[k]));
+  }
+  return String(a) === String(b);
+};
+
+const fieldRules = (schema, prefix = "") => {
+  const out = [];
+  const walk = (defs, base) => {
+    for (const [key, rule] of Object.entries(defs || {})) {
+      const path = base ? `${base}.${key}` : key;
+      if (Array.isArray(rule)) {
+        const child = rule[0];
+        if (child && typeof child === "object" && !("type" in child)) walk(child, path);
+        else if (child && typeof child === "object") out.push([path, child]);
+        continue;
+      }
+      if (rule && typeof rule === "object" && !Array.isArray(rule) && !("type" in rule)) {
+        walk(rule, path);
+      } else if (rule && typeof rule === "object") {
+        out.push([path, rule]);
+      }
+    }
+  };
+  walk(schema.definition, prefix);
+  return out;
+};
+
+const validationError = (path, message, value) => {
+  const error = new Error(`Validation failed for ${path}: ${message}`);
+  error.name = "ValidationError";
+  error.path = path;
+  error.value = value;
+  return error;
+};
+
+const validateSchema = async (schema, data) => {
+  for (const [path, rule] of fieldRules(schema)) {
+    const value = getPath(data, path);
+    const missing = value === undefined || value === null || value === "";
+    if (rule.required && missing) throw validationError(path, typeof rule.required === "string" ? rule.required : "Path is required.", value);
+    if (missing) continue;
+    if (rule.enum && !rule.enum.some((allowed) => deepEqual(allowed, value))) throw validationError(path, `${value} is not an allowed value.`, value);
+    if (rule.min != null && Number(value) < Number(rule.min)) throw validationError(path, `must be greater than or equal to ${rule.min}.`, value);
+    if (rule.max != null && Number(value) > Number(rule.max)) throw validationError(path, `must be less than or equal to ${rule.max}.`, value);
+    if (rule.minlength != null && String(value).length < Number(rule.minlength)) throw validationError(path, `must be at least ${rule.minlength} characters long.`, value);
+    if (rule.maxlength != null && String(value).length > Number(rule.maxlength)) throw validationError(path, `must be at most ${rule.maxlength} characters long.`, value);
+    if (rule.match && !(rule.match instanceof RegExp ? rule.match : new RegExp(rule.match)).test(String(value))) throw validationError(path, "value does not match the required pattern.", value);
+    if (rule.validate) {
+      const validator = typeof rule.validate === "function" ? rule.validate : rule.validate.validator;
+      if (typeof validator === "function") {
+        const result = await validator(value);
+        if (!result) throw validationError(path, rule.validate.message || "validator failed.", value);
+      }
+    }
+    const type = rule.type;
+    if (type === String && typeof value !== "string") throw validationError(path, "must be a string.", value);
+    if (type === Number && !Number.isFinite(Number(value))) throw validationError(path, "must be a number.", value);
+    if (type === Boolean && typeof value !== "boolean") throw validationError(path, "must be a boolean.", value);
+    if (type === Date && Number.isNaN(new Date(value).getTime())) throw validationError(path, "must be a valid date.", value);
+    if (rule.type === Array && !Array.isArray(value)) throw validationError(path, "must be an array.", value);
+  }
+};
+
+const applySetters = (schema, data) => {
+  const out = clone(data);
+  for (const [path, rule] of fieldRules(schema)) {
+    let value = getPath(out, path);
+    if (value === undefined || value === null || !rule || typeof rule !== "object") continue;
+    if (rule.trim && typeof value === "string") value = value.trim();
+    if (rule.lowercase && typeof value === "string") value = value.toLowerCase();
+    if (rule.uppercase && typeof value === "string") value = value.toUpperCase();
+    setPath(out, path, value);
+  }
+  return out;
+};
+
+const applySchemaProjection = (schema, doc, spec) => {
+  const base = clone(doc);
+  const hidden = new Set(fieldRules(schema).filter(([, rule]) => rule?.select === false).map(([path]) => path));
+  if (!spec) {
+    for (const path of hidden) delPath(base, path);
+    return base;
+  }
+  const entries = Object.entries(spec);
+  const forced = new Set(entries.filter(([k,v]) => k.startsWith("+") && v).map(([k]) => k.slice(1)));
+  const normalized = Object.fromEntries(entries.filter(([k]) => !k.startsWith("+")).map(([k,v]) => [k,v]));
+  const include = Object.entries(normalized).some(([,v]) => v === 1 || v === true);
+  let out;
+  if (include) {
+    out = {};
+    for (const [path, value] of Object.entries(normalized)) if (value === 1 || value === true) {
+      const v = getPath(base, path); if (v !== undefined) setPath(out, path, v);
+    }
+    if (normalized._id !== 0 && base._id !== undefined) out._id = base._id;
+  } else {
+    out = clone(base);
+    for (const [path, value] of Object.entries(normalized)) if (value === 0 || value === false) delPath(out, path);
+    for (const path of hidden) if (!forced.has(path)) delPath(out, path);
+  }
+  for (const path of forced) {
+    const v = getPath(base, path);
+    if (v !== undefined) setPath(out, path, v);
+  }
+  return out;
+};
+
+const deepMerge = (base, patch) => {
+  if (!base || typeof base !== "object" || Array.isArray(base)) return clone(patch);
+  const out = clone(base);
+  for (const [key, value] of Object.entries(patch || {})) {
+    if (value && typeof value === "object" && !Array.isArray(value) && out[key] && typeof out[key] === "object" && !Array.isArray(out[key])) out[key] = deepMerge(out[key], value);
+    else out[key] = clone(value);
+  }
+  return out;
+};
 const indexApplies = (index, data) => {
   const partial = index?.options?.partialFilterExpression;
   return !partial || matches(data, partial);
@@ -139,39 +263,101 @@ const applyDefaults = (schema, data) => {
   };
   walk(schema.definition,out);
   if(schema.options?.timestamps){const now=new Date(); if(!out.createdAt)out.createdAt=now; out.updatedAt=now;}
-  return out;
+  return applySetters(schema, out);
 };
 const invokeHooks = async (schema,event,ctx) => { for(const fn of schema._pre[event]||[]) await new Promise((resolve,reject)=>{let done=false; const next=e=>{done=true;e?reject(e):resolve();}; const r=fn.call(ctx,next); if(r?.then)r.then(()=>{if(!done)resolve();}).catch(reject); else if(fn.length===0&&!done)resolve();}); };
 
 class Query {
   constructor(model, filter={}, op="find"){this.model=model;const ctx=getTenantContext();this.filter=(ctx.bypass||model.modelName==="Organization"||model.modelName==="User"&&ctx.role==="super_admin")?filter:(ctx.tenantId?{...filter,tenantId:filter.tenantId??ctx.tenantId}:filter);this.op=op;this._sort=null;this._limit=null;this._skip=0;this._select=null;this._pop=[];this._session=null;this._lean=false;}
-  sort(spec){this._sort=spec;return this;} limit(n){this._limit=n;return this;} skip(n){this._skip=n;return this;} select(s){this._select=typeof s==="string"?Object.fromEntries(s.split(/\s+/).filter(Boolean).map(x=>[x.startsWith("-")?x.slice(1):x,x.startsWith("-")?0:1])):s;return this;}
-  populate(p){if(Array.isArray(p))this._pop.push(...p);else this._pop.push(p);return this;} lean(){this._lean=true;return this;} session(s){this._session=s;return this;}
+  sort(spec){this._sort=spec;return this;} limit(n){this._limit=n;return this;} skip(n){this._skip=n;return this;} select(s){
+    if (Array.isArray(s)) s=s.join(" ");
+    if (typeof s === "string") this._select=Object.fromEntries(s.split(/\s+/).filter(Boolean).map(x=>[x.startsWith("-")||x.startsWith("+")?x:x,x.startsWith("-")?0:1]));
+    else this._select=s;
+    return this;
+  }
+  populate(p, select){
+    if (Array.isArray(p)) this._pop.push(...p);
+    else if (typeof p === "string" && select) this._pop.push({ path:p, select });
+    else this._pop.push(p);
+    return this;
+  } lean(){this._lean=true;return this;} session(s){this._session=s;return this;}
   async exec(){return this.model._execute(this);}
   then(a,b){return this.exec().then(a,b);}
   catch(b){return this.exec().catch(b);}
   finally(f){return this.exec().finally(f);}
 }
 const collectionName = name => name.charAt(0).toLowerCase()+name.slice(1);
-const populateOne = async (doc, spec) => {
+const populateOne = async (doc, spec, parentSchema) => {
   const path=typeof spec==="string"?spec:spec?.path; if(!path)return doc;
-  const def=doc.__schema?.definition?.[path]; const ref=spec?.model || def?.ref || def?.type?.ref;
+  const def=parentSchema?.definition?.[path];
+  const refPath=def?.refPath || def?.type?.refPath;
+  const ref=spec?.model || (refPath ? getPath(doc, refPath) : null) || def?.ref || def?.type?.ref;
   const id=getPath(doc,path); if(!ref || id==null)return doc;
   const Model=registry.get(ref); if(!Model)return doc;
-  if(Array.isArray(id)){const vals=[];for(const x of id){const v=await Model.findById(x).lean();if(v)vals.push(v);}setPath(doc,path,vals);}
-  else {const v=await Model.findById(id).lean();if(v)setPath(doc,path,v);}
+  const match=spec?.match || {};
+  const childSpec=spec?.populate;
+  const load=async (value)=>{
+    const found=await Model.findOne({ _id:String(value), ...match }).lean();
+    if (!found) return null;
+    let visible=applySchemaProjection(Model.schema, found, parseSelectSpec(spec?.select));
+    if (childSpec) {
+      const nested=Array.isArray(childSpec)?childSpec:[childSpec];
+      for (const nestedSpec of nested) await populateOne(visible,nestedSpec,Model.schema);
+    }
+    return visible;
+  };
+  if(Array.isArray(id)){const vals=[];for(const x of id){const v=await load(x);if(v)vals.push(v);}setPath(doc,path,vals);}
+  else {const v=await load(id);if(v)setPath(doc,path,v);}
   return doc;
+};
+const parseSelectSpec = (value) => {
+  if (!value) return null;
+  if (typeof value === "object") return value;
+  return Object.fromEntries(String(value).split(/\s+/).filter(Boolean).map((x)=>[x,x.startsWith("-")?0:1]));
 };
 
 const registry=new Map();
 function buildModel(name,schema){
   if(registry.has(name)) return registry.get(name);
   class Model {
-    constructor(data={}){Object.assign(this,applyDefaults(schema,data));this.__schema=schema;this.isNew=!this._id;this.$session=()=>this.__session||null;this.$wasNew=this.isNew;for(const [n,v] of Object.entries(schema.methods||{}))this[n]=v.bind(this);for(const [n,v] of Object.entries(schema._virtuals||{}))Object.defineProperty(this,n,{enumerable:true,get:()=>v.get? v.get.call(this):undefined,set:x=>v.set?.call(this,x)});}
-    toJSON(){const o={...this};delete o.__schema;return o;}
+    constructor(data={}, meta={}){
+      Object.assign(this,applyDefaults(schema,data));
+      this.__schema=schema;
+      this.__persisted=meta.persisted ? clone(meta.persisted) : null;
+      this.isNew=!this._id;
+      this.$session=()=>this.__session||null;
+      this.$wasNew=this.isNew;
+      for(const [n,v] of Object.entries(schema.methods||{}))this[n]=v.bind(this);
+      for(const [n,v] of Object.entries(schema._virtuals||{}))Object.defineProperty(this,n,{enumerable:true,get:()=>v.get?v.get.call(this):undefined,set:x=>v.set?.call(this,x)});
+      this.__original=clone(this.toJSON());
+    }
+    toJSON(){const o={...this};delete o.__schema;delete o.__persisted;delete o.__original;delete o.__session;return o;}
     toObject(){return this.toJSON();}
-    isModified(){return true;}
-    async save(options={}){const wasNew=this.isNew;this.__session=options.session||this.__session||null;const ctx=getTenantContext();if(ctx.tenantId&&this.tenantId==null&&!ctx.bypass)this.tenantId=ctx.tenantId; if(!this._id)this._id=crypto.randomUUID(); this.isNew=false; const data=this.toJSON(); await invokeHooks(schema,"validate",this); await invokeHooks(schema,"save",this); data.updatedAt=schema.options?.timestamps?new Date():data.updatedAt; if(!data.createdAt&&schema.options?.timestamps)data.createdAt=new Date(); const target=options.session?.set ? options.session : db; await enforceUniqueIndexes(schema, name, data, options.session, this._id); if(options.session?.set) options.session.set(db.collection(collectionName(name)).doc(String(this._id)),data,{merge:false}); else await target.collection(collectionName(name)).doc(String(this._id)).set(data,{merge:false}); for(const fn of schema._post.save||[]) await fn.call(this,this); return this;}
+    isModified(path){
+      if(!path) return !deepEqual(this.toJSON(), this.__original);
+      return String(path).split(/\s+/).some((p)=>!deepEqual(getPath(this,p),getPath(this.__original,p)));
+    }
+    async save(options={}){
+      const wasNew=this.isNew;
+      this.__session=options.session||this.__session||null;
+      const ctx=getTenantContext();
+      if(ctx.tenantId&&this.tenantId==null&&!ctx.bypass)this.tenantId=ctx.tenantId;
+      if(!this._id)this._id=crypto.randomUUID();
+      this.isNew=false;
+      const current=this.toJSON();
+      if(options.validateBeforeSave !== false) await validateSchema(schema,current);
+      await invokeHooks(schema,"validate",this);
+      await invokeHooks(schema,"save",this);
+      const transformed=applySetters(schema,current);
+      const data=this.__persisted && !wasNew ? deepMerge(this.__persisted,transformed) : transformed;
+      if(schema.options?.timestamps && options.timestamps !== false){ if(!data.createdAt)data.createdAt=new Date(); data.updatedAt=new Date(); this.createdAt=data.createdAt; this.updatedAt=data.updatedAt; }
+      const target=options.session?.set ? options.session : db;
+      await enforceUniqueIndexes(schema,name,data,options.session,this._id);
+      if(options.session?.set) options.session.set(db.collection(collectionName(name)).doc(String(this._id)),data,{merge:false}); else await target.collection(collectionName(name)).doc(String(this._id)).set(data,{merge:false});
+      this.__persisted=clone(data); this.__original=clone(this.toJSON());
+      for(const fn of schema._post.save||[]) await fn.call(this,this);
+      return this;
+    }
   }
   for(const [n,fn] of Object.entries(schema.statics||{})) Model[n]=fn.bind(Model);
   Model.modelName=name; Model.schema=schema; Model.collection=()=>db.collection(collectionName(name));
@@ -182,9 +368,9 @@ function buildModel(name,schema){
     docs=docs.filter(d=>matches(d,q.filter));
     if(q._sort){const specs=Object.entries(q._sort);docs.sort((a,b)=>{for(const [k,dir] of specs){const av=getPath(a,k),bv=getPath(b,k);if(eq(av,bv))continue;return (av>bv?1:-1)*(Number(dir)||1);}return 0;});}
     if(q._skip)docs=docs.slice(q._skip);if(q._limit!=null)docs=docs.slice(0,q._limit);
-    docs=docs.map(d=>project(d,q._select));
-    if(q._pop.length){for(const d of docs)for(const p of q._pop)await populateOne(d,p);}
-    const result=docs.map(d=>new Model(d));
+    const projected=docs.map(d=>applySchemaProjection(schema,d,q._select));
+    if(q._pop.length){for(const d of projected)for(const p of q._pop)await populateOne(d,p,schema);}
+    const result=projected.map((d,i)=>new Model(d,{persisted:docs[i]}));
     if(q._lean)return result.map(x=>x.toJSON());
     if(q.op==="findOne")return result[0]||null;
     if(q.op==="findById")return result[0]||null;
@@ -193,6 +379,8 @@ function buildModel(name,schema){
   Model.find=(f={})=>new Query(Model,f,"find");
   Model.findOne=(f={})=>new Query(Model,f,"findOne");
   Model.findById=(id)=>new Query(Model,{_id:String(id)},"findById");
+  Model.findOneAndDelete=async(filter,options={})=>{const d=await Model.findOne(filter).session(options.session);if(!d)return null;const id=d._id;if(options.session?.delete)options.session.delete(db.collection(collectionName(name)).doc(String(id)));else await db.collection(collectionName(name)).doc(String(id)).delete();return d;};
+  Model.findByIdAndDelete=(id,options={})=>Model.findOneAndDelete({_id:String(id)},options);
   Model.exists=async(f={})=>Boolean((await Model.findOne(f).lean()));
   Model.countDocuments=async(f={})=>(await Model.find(f).lean()).length;
   Model.distinct=async(field,f={})=>[...new Set((await Model.find(f).lean()).map(x=>getPath(x,field)).filter(x=>x!==undefined))];
