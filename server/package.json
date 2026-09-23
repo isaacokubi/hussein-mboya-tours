@@ -33,7 +33,9 @@
     "check:tenant-models": "node scripts/tenantModelContractCheck.js",
     "audit:firebase": "node scripts/firebase-application-audit.js",
     "etims:init-oscu": "node scripts/initializeEtimsOscu.js",
-    "check:multitenancy:live": "node scripts/tenantIsolationRegressionCheck.js"
+    "check:multitenancy:live": "node scripts/tenantIsolationRegressionCheck.js",
+    "migrate:booking-ledger": "node scripts/migrateBookingPaymentLedger.js",
+    "migrate:orphan-staff": "node scripts/migrateOrphanStaffToTenant.js"
   },
   "dependencies": {
     "africastalking": "^0.8.0",
