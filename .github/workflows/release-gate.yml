@@ -1,4 +1,4 @@
-name: Three-Phase Release Gate
+name: Four-Phase Release Gate
 
 on:
   push:
