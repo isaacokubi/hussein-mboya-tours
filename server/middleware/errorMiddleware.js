@@ -35,9 +35,13 @@ const errorHandler = (err, req, res, next) => {
     if (err?.name === "ValidationError") {
         statusCode = 400;
 
-        message = Object.values(err.errors)
-            .map((item) => item.message)
-            .join(", ");
+        if (err.errors && typeof err.errors === "object") {
+            message = Object.values(err.errors)
+                .map((item) => item?.message || String(item))
+                .join(", ") || message;
+        } else {
+            message = err.message || "Validation failed";
+        }
     }
 
     /*
