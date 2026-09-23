@@ -28,6 +28,8 @@ jobs:
     env:
       PRODUCTION_API_URL: ${{ secrets.PRODUCTION_API_URL }}
       PRODUCTION_WEB_URL: ${{ secrets.PRODUCTION_WEB_URL }}
+      PRODUCTION_API_MAX_LATENCY_MS: ${{ vars.PRODUCTION_API_MAX_LATENCY_MS || 5000 }}
+      PRODUCTION_WEB_MAX_LATENCY_MS: ${{ vars.PRODUCTION_WEB_MAX_LATENCY_MS || 5000 }}
 
     steps:
       - name: Validate production endpoint configuration
@@ -37,6 +39,8 @@ jobs:
           test -n "${PRODUCTION_WEB_URL:-}" || { echo "PRODUCTION_WEB_URL is required."; exit 1; }
           case "$PRODUCTION_API_URL" in https://*) ;; *) echo "PRODUCTION_API_URL must use HTTPS."; exit 1;; esac
           case "$PRODUCTION_WEB_URL" in https://*) ;; *) echo "PRODUCTION_WEB_URL must use HTTPS."; exit 1;; esac
+          [[ "$PRODUCTION_API_MAX_LATENCY_MS" =~ ^[0-9]+$ ]] || { echo "PRODUCTION_API_MAX_LATENCY_MS must be an integer."; exit 1; }
+          [[ "$PRODUCTION_WEB_MAX_LATENCY_MS" =~ ^[0-9]+$ ]] || { echo "PRODUCTION_WEB_MAX_LATENCY_MS must be an integer."; exit 1; }
 
       - name: Check production API health and latency
         id: api
@@ -51,6 +55,10 @@ jobs:
 
           echo "$response"
           echo "latency_ms=$latency_ms" >> "$GITHUB_OUTPUT"
+          if [ "$latency_ms" -gt "$PRODUCTION_API_MAX_LATENCY_MS" ]; then
+            echo "Production API latency ${latency_ms}ms exceeded ${PRODUCTION_API_MAX_LATENCY_MS}ms."
+            exit 1
+          fi
 
           RESPONSE="$response" python - <<'PY'
           import json
@@ -83,6 +91,10 @@ jobs:
 
           cat /tmp/production-web-headers.txt
           echo "latency_ms=$latency_ms" >> "$GITHUB_OUTPUT"
+          if [ "$latency_ms" -gt "$PRODUCTION_WEB_MAX_LATENCY_MS" ]; then
+            echo "Production website latency ${latency_ms}ms exceeded ${PRODUCTION_WEB_MAX_LATENCY_MS}ms."
+            exit 1
+          fi
 
       - name: Verify alert path
         if: ${{ inputs.simulate_failure == true }}
@@ -100,6 +112,8 @@ jobs:
           PRODUCTION_WEB_URL: ${{ secrets.PRODUCTION_WEB_URL }}
           API_LATENCY_MS: ${{ steps.api.outputs.latency_ms }}
           WEB_LATENCY_MS: ${{ steps.web.outputs.latency_ms }}
+          API_LATENCY_MAX_MS: ${{ env.PRODUCTION_API_MAX_LATENCY_MS }}
+          WEB_LATENCY_MAX_MS: ${{ env.PRODUCTION_WEB_MAX_LATENCY_MS }}
         with:
           script: |
             const title = 'Production monitoring alert';
@@ -110,6 +124,8 @@ jobs:
               `Workflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
               `API latency: ${process.env.API_LATENCY_MS || 'unavailable'} ms`,
               `Website latency: ${process.env.WEB_LATENCY_MS || 'unavailable'} ms`,
+              `API latency threshold: ${process.env.API_LATENCY_MAX_MS || 'configured'} ms`,
+              `Website latency threshold: ${process.env.WEB_LATENCY_MAX_MS || 'configured'} ms`,
               `Commit: ${context.sha}`,
               '',
               'Investigate the failed monitoring run before treating production as healthy.'
@@ -141,3 +157,5 @@ jobs:
           echo "Production monitoring PASS"
           echo "API latency: ${{ steps.api.outputs.latency_ms }} ms"
           echo "Website latency: ${{ steps.web.outputs.latency_ms }} ms"
+          echo "API latency threshold: ${PRODUCTION_API_MAX_LATENCY_MS} ms"
+          echo "Website latency threshold: ${PRODUCTION_WEB_MAX_LATENCY_MS} ms"
