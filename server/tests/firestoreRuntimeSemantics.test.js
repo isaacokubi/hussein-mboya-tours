@@ -56,6 +56,7 @@ test("Firestore runtime applies setters/defaults and preserves hidden fields acr
   assert.equal(created.title, "Nairobi");
   assert.equal(created.code, "AB-123");
   assert.equal(created.status, "active");
+  await assert.doesNotReject(() => created.validate());
 
   const loaded = await Parent.findById(created._id);
   assert.equal(loaded.hidden, undefined);
@@ -67,6 +68,10 @@ test("Firestore runtime applies setters/defaults and preserves hidden fields acr
   const reloaded = await Parent.findById(created._id).select("+hidden");
   assert.equal(reloaded.hidden, "keep-me");
   assert.equal(reloaded.amount, 55);
+
+  const deleted = await reloaded.deleteOne();
+  assert.equal(deleted.deletedCount, 1);
+  assert.equal(await Parent.findById(created._id), null);
 });
 
 test("Firestore runtime supports select plus syntax and populate selection/nesting", { skip: !integrationEnabled }, async () => {
