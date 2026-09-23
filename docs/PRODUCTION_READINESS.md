@@ -2,25 +2,24 @@
 
 ## Current application baseline
 
-**Verified application commit:** `8f9e90bb`  
-**Verification date:** 2026-09-21
+**Verification date:** 2026-09-23
+**Verification scope:** current local working tree; see the commit recorded after this verification.
 
-The repository completed the latest production-audit remediation and local verification. The code-level production contract passes. This document separates source-code verification from evidence that can only be obtained from the live deployment/provider environment.
+The current working tree passed the local checks listed below. This is not a production launch certification: production runtime configuration and external provider/infrastructure evidence are still required.
 
 ## Verification matrix
 
 | Area | Status | Evidence |
 |---|---|---|
-| Server static/security/production checks | PASS | `npm run check:all` |
-| Backend automated suite | PASS | 95 tests; 92 passed, 0 failed, 3 skipped |
-| Security suite | PASS | 4 passed, 0 failed, 0 skipped |
-| Tour-domain suite | PASS | 5 passed, 0 failed |
-| Targeted regression suite | PASS | 8 tests; 5 passed, 0 failed, 3 skipped |
-| RBAC migration dry run | PASS | 19 groups; 0 normalization required |
-| Client lint | PASS | `npm run lint` |
-| Client production build | PASS | Vite build completed |
-| Production readiness contract | PASS | `npm run check:production` |
-| Production launch certification | NOT VERIFIED | External evidence gates remain |
+| Server static/security/production checks | PASS | `cd server && npm run check:all` |
+| Backend automated suite | PASS | `cd server && npm test`; 29 passed, 0 failed |
+| Client lint | PASS | `cd client && npm run lint` |
+| Client production build | PASS | `cd client && npm run build` |
+| Live MongoDB tenant-isolation regression | PASS | `cd server && npm run check:multitenancy:live`; 14 cross-tenant checks passed |
+| Production contract (static mode) | PASS | `cd server && npm run check:production` |
+| Dependency audit | PASS | Server and client `npm audit --omit=dev --audit-level=high`; 0 vulnerabilities reported |
+| Production runtime readiness | BLOCKED | Runtime check correctly rejects missing deployment-only configuration/evidence; see external gates below |
+| Production launch certification | NOT VERIFIED | External deployment/provider evidence remains |
 
 ## Latest remediation covered by the verification
 
@@ -31,18 +30,23 @@ The repository completed the latest production-audit remediation and local verif
 - Accounting chart-of-accounts cache entries have bounded lifetime.
 - RBAC canonicalization is tenant-aware and dry-run-first; the final dry run reported zero groups requiring normalization.
 - M-Pesa refund callback handling enforces tenant context before payment lookup/mutation.
-- Security static checks cover the tenant-resolution and M-Pesa refund paths.
-- Security and targeted regression tests passed.
+- Tenant URL resolution rejects unknown explicit tenant selectors rather than silently resolving another tenant; tenant-origin CORS is tied to a registered tenant subdomain, custom domain or active website integration origin.
+- Raw customer/user/tour/staff/vehicle lookups used in tenant booking administration include tenant scope.
+- M-Pesa callback completion requires a correlated payment, valid provider status and tenant context; failed callbacks are validated as well as successful callbacks.
+- eTIMS invoice/note synchronization only records success when the normalized provider response explicitly succeeds and includes provider reference data.
+- Production readiness now requires a configured platform hostname and the deployment's external evidence flags.
+
+The live tenant-isolation script used the configured MongoDB connection and cleaned up its regression fixtures. The client lint command completed successfully; it takes longer than the server checks because it scans the full client tree.
 
 ## Intentionally skipped local integration tests
 
-These were not failed; they require runtime conditions unavailable in the local verification environment:
+These are not covered by the passing local suite and require provider/database capabilities or dedicated integration harnesses:
 
 1. airport-transfer payment completion atomic lifecycle;
 2. tour lifecycle transactional capacity reservation/release;
 3. payment-completion rollback when accounting posting fails.
 
-They must be exercised in an environment with the required database transaction/provider capabilities before being used as production evidence.
+They must be exercised against the intended deployment before being used as production evidence.
 
 ## External acceptance gates
 
@@ -53,6 +57,8 @@ They must be exercised in an environment with the required database transaction/
 **Status: NOT VERIFIED**
 
 The deployed production environment must report the intended current `main` commit before current-main launch certification can be claimed.
+
+The production runtime readiness check was explicitly exercised with `NODE_ENV=production`. It rejected the runtime because the required deployment-specific eTIMS/webhook encryption secrets, HTTPS client origins, platform hostname and evidence flags were unavailable in that invocation. No credential values are included here. The local non-production `.env` is not evidence that production is configured.
 
 ### M-Pesa
 
@@ -78,7 +84,7 @@ STK initiation alone does not prove payment completion.
 
 **Status: PENDING external evidence**
 
-Required production onboarding/configuration and actual submission evidence, including provider receipt/control-number information where applicable. Source-code safety contracts are not KRA certification.
+The application boundary now fails closed unless the provider returns explicit success plus invoice and receipt references. Required production onboarding/configuration and an actual submission receipt/control number remain external evidence; source-code checks are not KRA certification.
 
 ### Browser acceptance
 
@@ -109,9 +115,8 @@ This section is maintained automatically by `scripts/update-documentation.js` an
 
 - **Repository:** Global Tours — multi-tenant tours & travel SaaS
 - **Branch:** `main`
-- **Current commit:** `9b274843d5dd00cf2522a6d09967a875c924598f`
-- **Short commit:** `9b274843`
-- **Documentation snapshot date (UTC):** 2026-09-21
+- **Current commit:** refreshed by the documentation workflow after push
+- **Documentation snapshot date (UTC):** 2026-09-23
 - **Server package:** `hussein-mboya-tours-server@1.0.0`
 - **Client package:** `client@0.0.0`
 - **Server verification commands:** `npm run check:all`, `npm test`, `npm run test:security`, `npm run test:tour-domain`

@@ -22,12 +22,12 @@ const refId = (value) => {
   return value;
 };
 
-const loadOwnership = async (model, ids) => {
+const loadOwnership = async (model, ids, tenantId) => {
   const validIds = [...new Set(ids.filter((id) => id && mongoose.Types.ObjectId.isValid(id)).map(String))]
     .map((id) => new mongoose.Types.ObjectId(id));
   if (!validIds.length) return new Map();
   const rows = await model.collection.find(
-    { _id: { $in: validIds } },
+    { _id: { $in: validIds }, tenantId: new mongoose.Types.ObjectId(tenantId) },
     { projection: { _id: 1, tenantId: 1 } },
   ).toArray();
   return new Map(rows.map((row) => [String(row._id), row.tenantId ? String(row.tenantId) : null]));
@@ -35,17 +35,17 @@ const loadOwnership = async (model, ids) => {
 
 const normalizeEmail = (value) => String(value || "").trim().toLowerCase();
 
-const loadEmailTenantOwnership = async (emails) => {
+const loadEmailTenantOwnership = async (emails, tenantId) => {
   const normalized = [...new Set(emails.map(normalizeEmail).filter(Boolean))];
   if (!normalized.length) return new Map();
 
   const [customerRows, userRows] = await Promise.all([
     Customer.collection.find(
-      { email: { $in: normalized } },
+      { email: { $in: normalized }, tenantId: new mongoose.Types.ObjectId(tenantId) },
       { projection: { email: 1, tenantId: 1 } },
     ).toArray(),
     User.collection.find(
-      { email: { $in: normalized } },
+      { email: { $in: normalized }, tenantId: new mongoose.Types.ObjectId(tenantId) },
       { projection: { email: 1, tenantId: 1 } },
     ).toArray(),
   ]);
@@ -60,7 +60,7 @@ const loadEmailTenantOwnership = async (emails) => {
   return ownership;
 };
 
-const getReferenceOwnership = async (bookings) => {
+const getReferenceOwnership = async (bookings, tenantId) => {
   const customerIds = bookings.map((b) => refId(b.customer)).filter(Boolean);
   const userIds = bookings.map((b) => refId(b.user)).filter(Boolean);
   const tourIds = bookings.map((b) => refId(b.tour)).filter(Boolean);
@@ -74,13 +74,13 @@ const getReferenceOwnership = async (bookings) => {
   ]);
 
   const [customers, users, tours, guides, drivers, vehicles, emailOwners] = await Promise.all([
-    loadOwnership(Customer, customerIds),
-    loadOwnership(User, userIds),
-    loadOwnership(Tour, tourIds),
-    loadOwnership(Staff, guideIds),
-    loadOwnership(Staff, driverIds),
-    loadOwnership(Vehicle, vehicleIds),
-    loadEmailTenantOwnership(emails),
+    loadOwnership(Customer, customerIds, tenantId),
+    loadOwnership(User, userIds, tenantId),
+    loadOwnership(Tour, tourIds, tenantId),
+    loadOwnership(Staff, guideIds, tenantId),
+    loadOwnership(Staff, driverIds, tenantId),
+    loadOwnership(Vehicle, vehicleIds, tenantId),
+    loadEmailTenantOwnership(emails, tenantId),
   ]);
   return { customers, users, tours, guides, drivers, vehicles, emailOwners };
 };
@@ -127,7 +127,7 @@ const belongsToTenant = (booking, tenantId, ownership) => {
 };
 
 const filterTenantConsistentBookings = async (bookings, tenantId) => {
-  const ownership = await getReferenceOwnership(bookings);
+  const ownership = await getReferenceOwnership(bookings, tenantId);
   return bookings.filter((booking) => belongsToTenant(booking, tenantId, ownership));
 };
 

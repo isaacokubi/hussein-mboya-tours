@@ -1,3 +1,4 @@
+import "dotenv/config";
 import fs from "node:fs";
 
 const requiredFiles = [
@@ -141,7 +142,9 @@ if (runtimeValidation) {
   const weakJwt = production && (jwt.length < 32 || new Set(jwt).size < 12);
   const origins = String(process.env.CLIENT_ORIGINS || process.env.CLIENT_URL || "").split(",").map((value) => value.trim()).filter(Boolean);
   const insecureOrigins = production && origins.some((origin) => !/^https:\/\//i.test(origin));
-  const placeholderHost = production && /^(your-domain\.com|localhost|127\.0\.0\.1)$/i.test(String(process.env.PLATFORM_HOST || "").trim());
+  const platformHost = String(process.env.PLATFORM_HOST || "").trim();
+  const missingPlatformHost = production && !platformHost;
+  const placeholderHost = production && /^(your-domain\.com|localhost|127\.0\.0\.1)$/i.test(platformHost);
   const paymentKeyRequired = production && (Boolean(process.env.PAYMENT_CREDENTIAL_ENCRYPTION_KEY) || Boolean(process.env.MPESA_CONSUMER_KEY) || Boolean(process.env.MPESA_CONSUMER_SECRET) || Boolean(process.env.MPESA_PASSKEY));
   const weakPaymentKey = paymentKeyRequired && String(process.env.PAYMENT_CREDENTIAL_ENCRYPTION_KEY || "").length < 32;
   const etimsConfigured = production && Boolean(process.env.ETIMS_ADAPTER_URL || process.env.ETIMS_ADAPTER_TOKEN);
@@ -157,6 +160,7 @@ if (runtimeValidation) {
   if (devMfa) errors.push("MFA_DEV_MODE must be false in production.");
   if (weakJwt) errors.push("JWT_SECRET must be at least 32 characters and contain sufficient character diversity in production.");
   if (insecureOrigins) errors.push("CLIENT_URL/CLIENT_ORIGINS must use HTTPS in production.");
+  if (missingPlatformHost) errors.push("PLATFORM_HOST must be configured in production for tenant subdomain resolution.");
   if (placeholderHost) errors.push("PLATFORM_HOST must be a real production hostname, not a development placeholder.");
   if (weakPaymentKey) errors.push("PAYMENT_CREDENTIAL_ENCRYPTION_KEY must be at least 32 characters when payment credentials are configured in production.");
   if (missingEtimsKey) errors.push("ETIMS_CREDENTIAL_ENCRYPTION_KEY must be at least 32 characters when eTIMS is configured in production.");

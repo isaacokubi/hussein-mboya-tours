@@ -9,6 +9,12 @@ import { enqueueJob } from "./jobQueueService.js";
 import { retryDeadJob } from "./jobRetryService.js";
 
 const adapterUrl = (profile) => String(profile?.etimsAdapterUrl || process.env.ETIMS_ADAPTER_URL || "").trim().replace(/\/$/, "");
+export function getEtimsNoteConfirmation(httpOk, body) {
+  if (!httpOk || body?.success !== true) return null;
+  const reference = String(body.reference || body.noteNumber || body.etimsReference || "").trim();
+  const receiptNumber = String(body.receiptNumber || body.etimsReceiptNumber || "").trim();
+  return reference && receiptNumber ? { reference, receiptNumber } : null;
+}
 const isPrivateAddress = (address) => {
   if (net.isIPv4(address)) { const [a,b] = address.split(".").map(Number); return a===0 || a===10 || a===127 || (a===100&&b>=64&&b<=127) || (a===169&&b===254) || (a===172&&b>=16&&b<=31) || (a===192&&b===0) || (a===192&&b===168) || (a===198&&(b===18||b===19)); }
   if (net.isIPv6(address)) { const v=address.toLowerCase(); return v==="::" || v==="::1" || v.startsWith("fc") || v.startsWith("fd") || v.startsWith("fe80:") || v.startsWith("ff"); }
@@ -43,7 +49,8 @@ export async function processEtimsNoteJob(payload) {
   try {
     const response=await fetch(`${url}/credit-debit-notes`,{method:"POST",headers:{"content-type":"application/json","x-idempotency-key":idempotencyKey,...(token?{authorization:`Bearer ${token}`}:{})},body:JSON.stringify(requestPayload),signal:AbortSignal.timeout(15000)});
     const body=await response.json().catch(()=>({})); audit.httpStatus=response.status;audit.response=body;
-    if(!response.ok){note.etimsStatus="failed";note.etimsLastError=String(body?.message||body?.error||`Adapter returned HTTP ${response.status}`).slice(0,2000);const delayMinutes=Math.min(1440,5*(2**Math.min(note.etimsSubmissionAttempts-1,8)));note.etimsNextRetryAt=new Date(Date.now()+delayMinutes*60000);audit.status="failed";audit.error=note.etimsLastError;await Promise.all([note.save(),audit.save()]);throw new Error(note.etimsLastError);}
-    note.etimsStatus="synced";note.etimsReference=String(body?.reference||body?.noteNumber||body?.etimsReference||"");note.etimsReceiptNumber=String(body?.receiptNumber||body?.etimsReceiptNumber||"");note.etimsSubmittedAt=new Date();note.etimsNextRetryAt=null;note.etimsLastError="";note.etimsResponse=body;audit.status="synced";audit.submittedAt=note.etimsSubmittedAt;audit.etimsReference=note.etimsReference;audit.etimsReceiptNumber=note.etimsReceiptNumber;await Promise.all([note.save(),audit.save()]);
+    const confirmation=getEtimsNoteConfirmation(response.ok,body);
+    if(!confirmation){note.etimsStatus="failed";note.etimsLastError=String(body?.message||body?.error||(!response.ok?`Adapter returned HTTP ${response.status}`:"Adapter response did not include explicit success and official eTIMS note and receipt references.")).slice(0,2000);const delayMinutes=Math.min(1440,5*(2**Math.min(note.etimsSubmissionAttempts-1,8)));note.etimsNextRetryAt=new Date(Date.now()+delayMinutes*60000);audit.status="failed";audit.error=note.etimsLastError;await Promise.all([note.save(),audit.save()]);throw new Error(note.etimsLastError);}
+    note.etimsStatus="synced";note.etimsReference=confirmation.reference;note.etimsReceiptNumber=confirmation.receiptNumber;note.etimsSubmittedAt=new Date();note.etimsNextRetryAt=null;note.etimsLastError="";note.etimsResponse=body;audit.status="synced";audit.submittedAt=note.etimsSubmittedAt;audit.etimsReference=note.etimsReference;audit.etimsReceiptNumber=note.etimsReceiptNumber;await Promise.all([note.save(),audit.save()]);
   } catch(error){if(audit.status==="pending"){audit.status="failed";audit.error=String(error?.message||error).slice(0,2000);await audit.save().catch(()=>undefined);}throw error;}
 }

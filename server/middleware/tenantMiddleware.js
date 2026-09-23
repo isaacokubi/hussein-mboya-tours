@@ -6,6 +6,14 @@ import { runWithTenant } from "../tenancy/context.js";
 const PLATFORM_ROLES = new Set(["super_admin", "superadmin"]);
 const normalizeHost = (value = "") => String(value).split(",")[0].trim().toLowerCase().replace(/:\d+$/, "");
 const getOriginHost = (value = "") => { try { return normalizeHost(new URL(String(value)).hostname); } catch { return ""; } };
+export const isTenantSubdomainHost = (host, platformHost, reserved = ["www", "api", "app", "admin"]) => {
+  const normalizedHost = normalizeHost(host);
+  const normalizedPlatformHost = normalizeHost(platformHost);
+  const suffix = `.${normalizedPlatformHost}`;
+  if (!normalizedHost || !normalizedPlatformHost || !normalizedHost.endsWith(suffix)) return false;
+  const labels = normalizedHost.slice(0, -suffix.length).split(".").filter(Boolean);
+  return labels.length === 1 && !reserved.includes(labels[0]);
+};
 const normalizeRole = (value = "") => String(value || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
 const JWT_ISSUER = "husseinmboyatours"; const JWT_AUDIENCE = "husseinmboyatours-client";
 const isLoginRequest = (req) => { const paths = [req.path, req.originalUrl].filter(Boolean).map((value) => String(value).toLowerCase().split("?")[0]); return req.method === "POST" && paths.some((path) => /(?:^|\/)auth\/login$/.test(path) || path === "/login"); };
@@ -18,10 +26,25 @@ export async function resolveTenant(req, res, next) { try {
   if (claims && PLATFORM_ROLES.has(tokenRole)) return runWithTenant({ role: "super_admin", tenantId: null, tenant: null, bypass: true }, () => next());
   if (claims && tokenTenantId && mongoose.Types.ObjectId.isValid(tokenTenantId)) { const allowedStatuses = isSubscriptionRequest(req) || isLoginRequest(req) ? ["active", "trial", "suspended"] : ["active", "trial"]; const tokenTenant = await Organization.findOne({ _id: tokenTenantId, status: { $in: allowedStatuses } }); if (tokenTenant) { req.tenantId = tokenTenant._id; req.tenant = tokenTenant; return runWithTenant({ tenantId: tokenTenant._id, tenant: tokenTenant, role: tokenRole || "authenticated", bypass: false }, () => next()); } return next(); }
   const user = req.user; const normalizedRole = normalizeRole(user?.role); if (PLATFORM_ROLES.has(normalizedRole)) return runWithTenant({ role: "super_admin", bypass: true }, () => next()); if (user?.tenantId) return runWithTenant({ tenantId: user.tenantId, role: user.role }, () => next());
-  const requestedTenantSlug = String(req.get("X-Tenant-Slug") || "").trim().toLowerCase(); const requestedTenantKey = String(req.get("X-Tenant-Key") || "").trim(); const requestHost = normalizeHost(req.get("X-Forwarded-Host") || req.get("Host")); const originHost = getOriginHost(req.get("Origin")); const configuredPlatformHost = normalizeHost(process.env.PLATFORM_HOST || "globaltours.com"); const platformHosts = new Set([configuredPlatformHost, `www.${configuredPlatformHost}`, "localhost", "127.0.0.1", "[::1]"]); const activeStatuses = { $in: ["active", "trial"] }; let tenant = null;
+  const requestedTenantSlug = String(req.get("X-Tenant-Slug") || "").trim().toLowerCase(); const requestedTenantKey = String(req.get("X-Tenant-Key") || "").trim(); const explicitTenantRequested = Boolean(requestedTenantSlug || requestedTenantKey); const requestHost = normalizeHost(req.get("X-Forwarded-Host") || req.get("Host")); const originHost = getOriginHost(req.get("Origin")); const configuredPlatformHost = normalizeHost(process.env.PLATFORM_HOST || "globaltours.com"); const platformHosts = new Set([configuredPlatformHost, `www.${configuredPlatformHost}`, `api.${configuredPlatformHost}`, `app.${configuredPlatformHost}`, `admin.${configuredPlatformHost}`, "localhost", "127.0.0.1", "[::1]"]); const activeStatuses = { $in: ["active", "trial"] }; let tenant = null;
   const resolveHost = async (host) => { if (!host || platformHosts.has(host)) return null; const platformSuffix = `.${configuredPlatformHost}`; if (host.endsWith(platformSuffix)) { const parts = host.slice(0, -platformSuffix.length).split(".").filter(Boolean); const slug = parts.length === 1 ? parts[0] : null; if (!slug || slug === "www") return null; return Organization.findOne({ slug, status: activeStatuses }); } return Organization.findOne({ domain: host, status: activeStatuses }); };
   tenant = await resolveHost(requestHost); if (!tenant && originHost) tenant = await resolveHost(originHost); if (!tenant && originHost.endsWith(".vercel.app")) { const vercelSlug = originHost.slice(0, -".vercel.app".length).split(".").filter(Boolean).pop(); if (vercelSlug) tenant = await Organization.findOne({ slug: vercelSlug, status: activeStatuses }); } if (!tenant && requestedTenantSlug) tenant = await Organization.findOne({ slug: requestedTenantSlug, status: activeStatuses }); if (!tenant && requestedTenantKey) { if (/^[a-fA-F0-9]{24}$/.test(requestedTenantKey)) tenant = await Organization.findOne({ _id: requestedTenantKey, status: activeStatuses }); if (!tenant) tenant = await Organization.findOne({ slug: requestedTenantKey.toLowerCase(), status: activeStatuses }); }
+  if (tenant && requestedTenantSlug && String(tenant.slug || "").toLowerCase() !== requestedTenantSlug) {
+    return res.status(404).json({ success: false, message: "Tenant not found." });
+  }
+  if (tenant && requestedTenantKey && String(tenant._id) !== requestedTenantKey && String(tenant.slug || "").toLowerCase() !== requestedTenantKey.toLowerCase()) {
+    return res.status(404).json({ success: false, message: "Tenant not found." });
+  }
+  if (!tenant && explicitTenantRequested) return res.status(404).json({ success: false, message: "Tenant not found." });
   if (!tenant) tenant = await resolveLoginTenantByUniqueEmail(req);
+  const integrationRequest = String(req.originalUrl || req.path || "").toLowerCase().startsWith("/api/integrations/v1/");
+  const platformSuffix = `.${configuredPlatformHost}`;
+  const tenantHostRequested = !platformHosts.has(requestHost) && isTenantSubdomainHost(requestHost, configuredPlatformHost)
+    || !platformHosts.has(originHost) && isTenantSubdomainHost(originHost, configuredPlatformHost);
+  const customOriginRequested = Boolean(originHost && !platformHosts.has(originHost) && !originHost.endsWith(platformSuffix) && !integrationRequest);
+  if (!tenant && (explicitTenantRequested || tenantHostRequested || customOriginRequested)) {
+    return res.status(404).json({ success: false, message: "Tenant not found." });
+  }
   const fallbackSlug = String(process.env.DEFAULT_PUBLIC_TENANT_SLUG || process.env.PUBLIC_TENANT_SLUG || "").trim().toLowerCase();
   if (!tenant && fallbackSlug) tenant = await Organization.findOne({ slug: fallbackSlug, status: activeStatuses });
   const allowSingleTenantDevFallback = String(process.env.ALLOW_SINGLE_TENANT_DEV_FALLBACK || "").toLowerCase() === "true"; if (!tenant && allowSingleTenantDevFallback) { const tenants = await Organization.find({ status: activeStatuses }).select("_id slug name domain").limit(2).lean(); if (tenants.length === 1) tenant = tenants[0]; }

@@ -9,7 +9,6 @@ export const verifyMpesaCallbackIntegrity = async (req, res, next) => {
   try {
     const callback = req.body?.Body?.stkCallback;
     if (!callback) return next();
-    if (Number(callback.ResultCode) !== 0) return next();
 
     const checkoutRequestID = checkoutIdOf(req);
     if (!checkoutRequestID) return res.status(400).json({ ResultCode: 1, ResultDesc: "Missing CheckoutRequestID." });
@@ -29,8 +28,9 @@ export const verifyMpesaCallbackIntegrity = async (req, res, next) => {
     const config = tenantId ? undefined : null;
     const queryResult = await queryStkPush(checkoutRequestID, config);
     const providerState = classifyStkQueryResult(queryResult?.ResultCode);
-    if (providerState !== "completed") {
-      return res.status(409).json({ ResultCode: 1, ResultDesc: "M-Pesa provider verification did not confirm a completed payment." });
+    const callbackState = classifyStkQueryResult(callback.ResultCode);
+    if (providerState === "pending" || callbackState !== providerState) {
+      return res.status(409).json({ ResultCode: 1, ResultDesc: "M-Pesa callback state could not be verified with the provider." });
     }
     return next();
   } catch (error) {

@@ -7,6 +7,8 @@ import compression from "compression";
 import cookieParser from "cookie-parser";
 import morgan from "morgan";
 import mongoose from "mongoose";
+import Organization from "./models/Organization.js";
+import WebsiteIntegrationKey from "./models/WebsiteIntegrationKey.js";
 import loadTenantPlugin from "./config/tenantPluginLoader.js";
 import requestContext from "./middleware/requestContext.js";
 
@@ -73,9 +75,42 @@ const allowedOrigins = [
 ].filter((origin, index, list) => list.indexOf(origin) === index);
 
 const corsOptions = {
-  origin: (origin, callback) => !origin || allowedOrigins.includes(origin)
-    ? callback(null, true)
-    : callback(new Error(`CORS blocked origin: ${origin}`)),
+  origin: async (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    try {
+      const parsedOrigin = new URL(origin);
+      if (process.env.NODE_ENV === "production" && parsedOrigin.protocol !== "https:") {
+        return callback(null, false);
+      }
+      const normalizedOrigin = parsedOrigin.origin.toLowerCase();
+      const hostname = parsedOrigin.hostname.toLowerCase();
+      const configuredPlatformHost = String(process.env.PLATFORM_HOST || "globaltours.com").trim().toLowerCase();
+      const platformSuffix = `.${configuredPlatformHost}`;
+      let tenantOrigin = null;
+
+      if (hostname.endsWith(platformSuffix)) {
+        const labels = hostname.slice(0, -platformSuffix.length).split(".").filter(Boolean);
+        if (labels.length === 1 && !["www", "api", "app", "admin"].includes(labels[0])) {
+          tenantOrigin = await Organization.findOne({ slug: labels[0], status: { $in: ["active", "trial"] } }).select("_id").lean();
+        }
+      } else {
+        tenantOrigin = await Organization.findOne({ domain: hostname, status: { $in: ["active", "trial"] } }).select("_id").lean();
+      }
+
+      if (!tenantOrigin) {
+        tenantOrigin = await WebsiteIntegrationKey.findOne({
+          active: true,
+          revokedAt: null,
+          allowedOrigins: normalizedOrigin,
+        }).select("_id").lean();
+      }
+      return tenantOrigin
+        ? callback(null, true)
+        : callback(null, false);
+    } catch {
+      return callback(null, false);
+    }
+  },
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin", "X-Tenant-ID", "X-Tenant-Slug", "X-Tenant-Key", "X-API-Key", "X-Integration-Key", "X-Public-Integration-Key", "Idempotency-Key", "X-Request-ID"],

@@ -10,6 +10,19 @@ import { retryDeadJob } from "./jobRetryService.js";
 
 const adapterUrl = (profile) => String(profile?.etimsAdapterUrl || process.env.ETIMS_ADAPTER_URL || "").trim().replace(/\/$/, "");
 
+export function getEtimsConfirmation(httpOk, body) {
+  if (!httpOk || body?.success !== true) return null;
+  const invoiceNumber = String(body.invoiceNumber || body.etimsInvoiceNumber || "").trim();
+  const receiptReference = String(body.receiptNumber || body.etimsReceiptNumber || body.uniqueRegisterIdentifier || body.uir || "").trim();
+  if (!invoiceNumber || !receiptReference) return null;
+  return {
+    invoiceNumber,
+    receiptReference,
+    uniqueRegisterIdentifier: String(body.uniqueRegisterIdentifier || body.uir || "").trim(),
+    qrCode: String(body.qrCode || "").trim(),
+  };
+}
+
 function isPrivateAddress(address) {
   if (net.isIPv4(address)) {
     const [a, b] = address.split(".").map(Number);
@@ -115,10 +128,13 @@ export async function processEtimsInvoiceJob(payload) {
     const body = await response.json().catch(() => ({}));
     audit.httpStatus = response.status;
     audit.response = body;
+    const confirmation = getEtimsConfirmation(response.ok, body);
 
-    if (!response.ok) {
+    if (!confirmation) {
       invoice.etimsStatus = "failed";
-      invoice.etimsLastError = String(body?.message || body?.error || `Adapter returned HTTP ${response.status}`).slice(0, 2000);
+      invoice.etimsLastError = String(body?.message || body?.error || (!response.ok
+        ? `Adapter returned HTTP ${response.status}`
+        : "Adapter response did not include explicit success and official eTIMS invoice and receipt references.")).slice(0, 2000);
       const delayMinutes = Math.min(1440, 5 * (2 ** Math.min(invoice.etimsSubmissionAttempts - 1, 8)));
       invoice.etimsNextRetryAt = new Date(Date.now() + delayMinutes * 60 * 1000);
       audit.status = "failed";
@@ -132,10 +148,10 @@ export async function processEtimsInvoiceJob(payload) {
     invoice.etimsNextRetryAt = null;
     invoice.etimsLastError = "";
     invoice.etimsResponse = body;
-    invoice.etimsInvoiceNumber = String(body?.invoiceNumber || body?.etimsInvoiceNumber || invoice.etimsInvoiceNumber || "");
-    invoice.etimsReceiptNumber = String(body?.receiptNumber || body?.etimsReceiptNumber || invoice.etimsReceiptNumber || "");
-    invoice.etimsUniqueRegisterIdentifier = String(body?.uniqueRegisterIdentifier || body?.uir || invoice.etimsUniqueRegisterIdentifier || "");
-    invoice.etimsQrCode = String(body?.qrCode || invoice.etimsQrCode || "");
+    invoice.etimsInvoiceNumber = confirmation.invoiceNumber;
+    invoice.etimsReceiptNumber = confirmation.receiptReference;
+    invoice.etimsUniqueRegisterIdentifier = confirmation.uniqueRegisterIdentifier;
+    invoice.etimsQrCode = confirmation.qrCode;
     audit.status = "synced";
     audit.submittedAt = invoice.etimsSubmittedAt;
     audit.etimsInvoiceNumber = invoice.etimsInvoiceNumber;

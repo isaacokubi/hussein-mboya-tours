@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
+import { getEtimsConfirmation } from "../services/etimsService.js";
+import { getEtimsNoteConfirmation } from "../services/etimsNoteService.js";
 
 const root = path.resolve(process.cwd());
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
@@ -42,4 +44,25 @@ test("eTIMS adapter failures retain retry state and successful responses persist
   assert.match(service, /etimsReceiptNumber/);
   assert.match(service, /etimsUniqueRegisterIdentifier/);
   assert.match(service, /etimsQrCode/);
+});
+
+test("eTIMS success requires explicit provider confirmation and official references", () => {
+  assert.equal(getEtimsConfirmation(false, { success: true, invoiceNumber: "INV-1", receiptNumber: "R-1" }), null);
+  assert.equal(getEtimsConfirmation(true, {}), null);
+  assert.equal(getEtimsConfirmation(true, { success: false, invoiceNumber: "INV-1", receiptNumber: "R-1" }), null);
+  assert.equal(getEtimsConfirmation(true, { success: true, invoiceNumber: "INV-1" }), null);
+  assert.deepEqual(
+    getEtimsConfirmation(true, { success: true, etimsInvoiceNumber: "INV-1", uir: "UIR-1", qrCode: "qr" }),
+    { invoiceNumber: "INV-1", receiptReference: "UIR-1", uniqueRegisterIdentifier: "UIR-1", qrCode: "qr" },
+  );
+});
+
+test("eTIMS credit/debit note success requires explicit provider references", () => {
+  assert.equal(getEtimsNoteConfirmation(false, { success: true, reference: "NOTE-1", receiptNumber: "R-1" }), null);
+  assert.equal(getEtimsNoteConfirmation(true, {}), null);
+  assert.equal(getEtimsNoteConfirmation(true, { success: true, reference: "NOTE-1" }), null);
+  assert.deepEqual(
+    getEtimsNoteConfirmation(true, { success: true, etimsReference: "NOTE-1", etimsReceiptNumber: "R-1" }),
+    { reference: "NOTE-1", receiptNumber: "R-1" },
+  );
 });

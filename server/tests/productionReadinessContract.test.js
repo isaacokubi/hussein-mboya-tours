@@ -33,6 +33,12 @@ test("production evidence gates are explicit", () => {
   }
 });
 
+test("runtime production readiness requires a platform host for tenant URLs", () => {
+  const check = read("scripts/production-readiness-check.js");
+  assert.match(check, /const missingPlatformHost = production && !platformHost/);
+  assert.match(check, /PLATFORM_HOST must be configured in production for tenant subdomain resolution/);
+});
+
 test("CI validates server, live tenant isolation, and client production build", () => {
   const workflow = read("../.github/workflows/ci.yml");
   assert.match(workflow, /npm run check:all/);
@@ -87,9 +93,21 @@ test("unsafe fallback examples default to disabled", () => {
 
 test("agent booking status updates enforce lifecycle and payment boundaries", () => {
   const source = read("controllers/agentBookingController.js");
-  assert.match(source, /canTransitionBookingStatus/);
-  assert.match(source, /PAYMENT_REQUIRED_BEFORE_COMPLETION/);
-  assert.doesNotMatch(source, /booking\.status = status;\s*\n\s*booking\.updatedBy/);
+  const transitionGuard = source.indexOf("if (!canTransitionBookingStatus(booking.status, status))");
+  const paymentGuard = source.indexOf("PAYMENT_REQUIRED_BEFORE_COMPLETION", transitionGuard);
+  const statusMutation = source.indexOf("booking.status = status;", paymentGuard);
+  assert.ok(transitionGuard >= 0, "status transition authorization must be enforced");
+  assert.ok(paymentGuard > transitionGuard, "payment authorization must follow the transition check");
+  assert.ok(statusMutation > paymentGuard, "status cannot change before both guards pass");
+
+  const route = read("routes/agentBookingRoutes.js");
+  const tenantMiddleware = route.indexOf("router.use(resolveTenant)");
+  const authentication = route.indexOf("router.use(protect)");
+  const agentAuthorization = route.indexOf("router.use(agentMiddleware)");
+  assert.ok(tenantMiddleware >= 0 && authentication > tenantMiddleware && agentAuthorization > authentication,
+    "agent status updates must resolve tenant, authenticate, and authorize the agent in order");
+  assert.match(source, /Agent\.findOne\(\{\s*user: req\.user\._id,\s*\}\)/);
+  assert.match(source, /Booking\.findOne\(\{\s*_id: req\.params\.id,\s*agent: agentProfile\._id,/);
 });
 
 test("admin booking status updates enforce lifecycle and payment boundaries", () => {
