@@ -367,8 +367,18 @@ function buildModel(name,schema){
     toJSON(){const o={...this};delete o.__schema;delete o.__persisted;delete o.__original;delete o.__session;return o;}
     toObject(){return this.toJSON();}
     isModified(path){
+      if(this.$wasNew) return path ? String(path).split(/\s+/).some((p)=>getPath(this,p)!==undefined) : true;
       if(!path) return !deepEqual(this.toJSON(), this.__original);
       return String(path).split(/\s+/).some((p)=>!deepEqual(getPath(this,p),getPath(this.__original,p)));
+    }
+    async validate(){ await validateSchema(schema,this.toJSON()); return this; }
+    validateSync(){ try { const pending=validateSchema(schema,this.toJSON()); if(pending?.then) throw new Error("Async validation requires validate()."); return null; } catch(error){ return error; } }
+    async deleteOne(options={}){
+      if(!this._id) return { deletedCount: 0 };
+      const ref=db.collection(collectionName(name)).doc(String(this._id));
+      if(options.session?.delete) options.session.delete(ref); else await ref.delete();
+      this.isNew=true;
+      return { deletedCount: 1 };
     }
     async save(options={}){
       const wasNew=this.isNew;
@@ -389,6 +399,7 @@ function buildModel(name,schema){
       if(options.session?.set) options.session.set(db.collection(collectionName(name)).doc(String(this._id)),data,{merge:false}); else await target.collection(collectionName(name)).doc(String(this._id)).set(data,{merge:false});
       this.__persisted=clone(data); this.__original=clone(this.toJSON());
       for(const fn of schema._post.save||[]) await fn.call(this,this);
+      this.$wasNew=false;
       return this;
     }
   }
