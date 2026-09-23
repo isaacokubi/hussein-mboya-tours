@@ -1,4 +1,4 @@
-name: Seven-Phase Release Gate
+name: Eight-Phase Release Gate
 
 on:
   push:
