@@ -31,7 +31,7 @@ Before setting `NODE_ENV=production`, the deployment owner must verify all of th
 - [ ] `PRODUCTION_WEBHOOKS_VERIFIED=true` — at least one signed webhook delivery has been received and verified by the consuming system.
 - [ ] Browser acceptance — approved staging/production HTTPS target passes the stored desktop/mobile Playwright suite, including public navigation and unauthenticated protected-route checks.
 - [ ] Authenticated role acceptance — approved non-production test accounts pass Customer, Admin, Finance, Tour Manager, Guide, Driver and SuperAdmin browser surfaces; credentials remain outside Git.
-- [ ] `PRODUCTION_DATA_INTEGRITY_VERIFIED=true` — read-only Firestore production integrity/reconciliation scan returns zero issues against the intended deployed environment.
+- [ ] `PRODUCTION_DATA_INTEGRITY_VERIFIED=true` — read-only Firestore production integrity/reconciliation scan returns zero issues against the intended deployed environment.\n- [ ] Production evidence manifest validates with the exact deployed Git SHA and PASS references for every required external gate.
 
 The release gate rejects production mode when any evidence flag is missing. These checks deliberately cannot be faked by application code because they represent external infrastructure, payment-provider and KRA/eTIMS verification.
 
