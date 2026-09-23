@@ -41,7 +41,7 @@ The following are deliberately **not** marked PASS from the local run:
 
 - current-main production deployment SHA;
 - live tenant-isolation regression against the current deployment;
-- M-Pesa callback/completion/replay/failure evidence;
+- M-Pesa callback/completion/replay/failure evidence; Phase 20 now adds offline callback-contract coverage, but live provider evidence remains pending.
 - completed payment, invoice and accounting reconciliation using provider data;
 - live KRA/eTIMS submission evidence;
 - full desktop/mobile browser acceptance;

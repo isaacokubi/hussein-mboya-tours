@@ -470,3 +470,16 @@ PRODUCTION_EVIDENCE_MANIFEST=/secure/evidence/manifest.json npm run check:produc
 ```
 
 The manifest must reference the exact deployed 40-character Git SHA and PASS evidence for every required external gate. Never put credentials or customer data in the manifest. A passing validator is structural validation, not proof that the referenced external evidence is genuine.
+
+
+## Phase 20 — M-Pesa callback contract
+
+Offline automated tests:
+```bash
+cd server
+node --test tests/mpesaCallbackContract.test.js tests/mpesaCallbackContractStatic.test.js
+node --check services/mpesaCallbackContract.js
+node --check controllers/mpesaController.js
+```
+
+Live acceptance remains separate: use an approved Safaricom/M-Pesa sandbox tenant to send success, failure, duplicate/replay, amount-mismatch, missing-receipt and provider-timeout callbacks, then retain payment/invoice/accounting reconciliation evidence without storing credentials.
