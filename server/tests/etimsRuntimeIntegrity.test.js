@@ -12,7 +12,7 @@ test("eTIMS creates the submission audit before selecting OSCU or adapter mode",
   const oscuMarker = 'if (String(profile.etimsSolution || "").toUpperCase() === "OSCU") {';
   assert.ok(source.indexOf(auditMarker) >= 0);
   assert.ok(source.indexOf(auditMarker) < source.indexOf(oscuMarker), "audit must exist before OSCU execution");
-  assert.equal((source.match(/const audit = await createSubmissionAudit\\(\\{/g) || []).length, 1, "audit must be created exactly once per submission attempt");
+  assert.equal(source.split("const audit = await createSubmissionAudit({").length - 1, 1, "audit must be created exactly once per submission attempt");
 });
 
 test("eTIMS OSCU success persists the real KRA payload hash and audit result", () => {
