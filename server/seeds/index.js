@@ -9,13 +9,13 @@ dotenv.config();
 
 const runSeeds = async () => {
   try {
-    if (!process.env.MONGODB_URI) {
-      throw new Error("MONGODB_URI is missing.");
+    if (!process.env.FIREBASE_PROJECT_ID) {
+      throw new Error("FIREBASE_PROJECT_ID is missing.");
     }
 
     // debug removed
 
-    await firestore.connect(process.env.MONGODB_URI);
+    await firestore.connectFirestore();
 
     // debug removed
 
