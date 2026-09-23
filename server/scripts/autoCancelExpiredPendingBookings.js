@@ -7,7 +7,7 @@ const uri =
   process.env.MONGO_URI;
 
 if (!uri) {
-  console.log("Missing Mongo URI");
+  console.log("Missing Firebase Firestore configuration");
   process.exit(1);
 }
 
@@ -45,4 +45,4 @@ console.log({
   modified: result.modifiedCount
 });
 
-await firestore.disconnect();
+await firestore.connection.close();
