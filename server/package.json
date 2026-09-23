@@ -35,7 +35,8 @@
     "etims:init-oscu": "node scripts/initializeEtimsOscu.js",
     "check:multitenancy:live": "node scripts/tenantIsolationRegressionCheck.js",
     "migrate:booking-ledger": "node scripts/migrateBookingPaymentLedger.js",
-    "migrate:orphan-staff": "node scripts/migrateOrphanStaffToTenant.js"
+    "migrate:orphan-staff": "node scripts/migrateOrphanStaffToTenant.js",
+    "reset:demo": "node scripts/reset-and-seed-demo.js"
   },
   "dependencies": {
     "africastalking": "^0.8.0",
