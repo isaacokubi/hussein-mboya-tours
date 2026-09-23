@@ -169,3 +169,21 @@ External deployment smoke checks, once provider secrets are configured in GitHub
 - absent production URL secrets skip external checks rather than fabricating success
 
 External evidence remains required for backups, restore, monitoring/alerts, payment callbacks, eTIMS, signed webhooks and rollback.
+
+
+## Phase 6 — Firestore transaction integrity
+
+Automated integration test:
+
+```bash
+cd server
+FIREBASE_PROJECT_ID=demo-global-tours \
+FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
+GCLOUD_PROJECT=demo-global-tours \
+JWT_SECRET=ci-only-test-secret \
+node --test tests/firestoreTransactionIntegrity.test.js
+```
+
+The Phase 6 test verifies both commit and rollback behavior for tour capacity reservation plus booking creation. It requires a running Firestore emulator and must not be recorded as passed unless the test actually executes.
+
+Phase 6 also removes the direct `mongoose` transaction dependency from the booking-creation path and verifies that model `create`, `insertMany`, and bulk upserts propagate transaction sessions to the Firestore adapter.
