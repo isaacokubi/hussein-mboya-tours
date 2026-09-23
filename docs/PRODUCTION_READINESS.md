@@ -56,7 +56,7 @@ The deployed production environment must report the intended current `main` comm
 
 ### M-Pesa
 
-**M-Pesa sandbox callback:** PENDING
+**M-Pesa sandbox callback:** PENDING\n\nPhase 20 centralizes callback parsing/validation and deterministic event identity; live sandbox callback evidence remains pending.
 
 **Status: PENDING external evidence**
 
