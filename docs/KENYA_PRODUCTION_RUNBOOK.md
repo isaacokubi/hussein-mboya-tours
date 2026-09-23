@@ -2,7 +2,7 @@
 
 ## KRA and eTIMS
 
-The application contains a Kenyan tax calculation engine, tenant tax profiles, invoice eTIMS state, a durable submission queue, and a provider-neutral adapter boundary.
+The application contains a Kenyan tax calculation engine, tenant tax profiles, invoice eTIMS state, a durable submission queue, and a KRA OSCU/certified-adapter boundary.
 
 Before enabling live submissions for a tenant:
 
@@ -33,8 +33,8 @@ Approved purchase orders can move to received; receipt creates a supplier payabl
 
 ## Background jobs
 
-Jobs are stored in MongoDB with idempotency keys, attempts, exponential backoff and dead-letter (`dead`) state. The server worker processes supported jobs continuously. Monitor dead jobs and adapter failures through operational logs and the job collection.
+Jobs are stored in Firestore with idempotency keys, attempts, exponential backoff and dead-letter (`dead`) state. The server worker processes supported jobs continuously. Monitor dead jobs and adapter failures through operational logs and the job collection.
 
 ## Deployment gate
 
-Before production deployment, run the repository's server checks and tests from the `server` directory, confirm MongoDB indexes are reconciled, verify CORS origins, confirm backups/restores, and test payment callbacks using provider sandbox tooling. Live KRA/eTIMS and TRA/ODPC status remain external regulatory/provider prerequisites, not software claims.
+Before production deployment, run the repository's server checks and tests from the `server` directory, confirm Firestore collections/index requirements are reconciled, verify CORS origins, confirm backups/restores, and test payment callbacks using provider sandbox tooling. Live KRA/eTIMS and TRA/ODPC status remain external regulatory/provider prerequisites, not software claims.

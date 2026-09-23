@@ -7,6 +7,7 @@ import EtimsCredential, { decryptEtimsSecret } from "../models/EtimsCredential.j
 import EtimsSubmission from "../models/EtimsSubmission.js";
 import { enqueueJob } from "./jobQueueService.js";
 import { retryDeadJob } from "./jobRetryService.js";
+import { submitInvoiceToKra } from "./kraEtimsOscuService.js";
 
 const adapterUrl = (profile) => String(profile?.etimsAdapterUrl || process.env.ETIMS_ADAPTER_URL || "").trim().replace(/\/$/, "");
 
@@ -98,6 +99,43 @@ export async function processEtimsInvoiceJob(payload) {
   invoice.etimsLastAttemptAt = new Date();
   invoice.etimsSubmissionAttempts = Number(invoice.etimsSubmissionAttempts || 0) + 1;
   await invoice.save();
+
+  if (String(profile.etimsSolution || "").toUpperCase() === "OSCU") {
+    try {
+      const result = await submitInvoiceToKra({ tenantId: payload.tenantId, invoice, profile });
+      invoice.etimsKraInvoiceNo = Number(result.kraInvoiceNo || invoice.etimsKraInvoiceNo || 0);
+      invoice.etimsStatus = "synced";
+      invoice.etimsSubmittedAt = new Date();
+      invoice.etimsNextRetryAt = null;
+      invoice.etimsLastError = "";
+      invoice.etimsResponse = result.response;
+      const data = result.response?.data || {};
+      invoice.etimsInvoiceNumber = String(data?.invcNo || result.kraInvoiceNo || invoice.etimsInvoiceNumber || "");
+      invoice.etimsReceiptNumber = String(data?.curRcptNo || data?.totRcptNo || invoice.etimsReceiptNumber || "");
+      invoice.etimsUniqueRegisterIdentifier = String(data?.intrlData || invoice.etimsUniqueRegisterIdentifier || "");
+      invoice.etimsQrCode = String(data?.qrCode || invoice.etimsQrCode || "");
+      audit.status = "synced";
+      audit.submittedAt = invoice.etimsSubmittedAt;
+      audit.httpStatus = 200;
+      audit.response = result.response;
+      audit.etimsInvoiceNumber = invoice.etimsInvoiceNumber;
+      audit.etimsReceiptNumber = invoice.etimsReceiptNumber;
+      audit.uniqueRegisterIdentifier = invoice.etimsUniqueRegisterIdentifier;
+      audit.qrCode = invoice.etimsQrCode;
+      await Promise.all([invoice.save(), audit.save()]);
+      return;
+    } catch (error) {
+      invoice.etimsStatus = "failed";
+      invoice.etimsLastError = String(error?.message || error).slice(0, 2000);
+      const delayMinutes = Math.min(1440, 5 * (2 ** Math.min(invoice.etimsSubmissionAttempts - 1, 8)));
+      invoice.etimsNextRetryAt = new Date(Date.now() + delayMinutes * 60 * 1000);
+      audit.status = "failed";
+      audit.error = invoice.etimsLastError;
+      audit.response = error?.kraResponse || {};
+      await Promise.all([invoice.save(), audit.save()]);
+      throw error;
+    }
+  }
 
   const requestPayload = buildInvoicePayload(invoice, profile);
   const requestHash = crypto.createHash("sha256").update(JSON.stringify(requestPayload)).digest("hex");
