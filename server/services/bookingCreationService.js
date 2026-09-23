@@ -1,11 +1,11 @@
-import mongoose from "mongoose";
+import * as firestore from "../config/firestore.js";
 import Booking from "../models/Booking.js";
 import { reserveSlots } from "./inventoryService.js";
 import { requireTenantId } from "../tenancy/context.js";
 
 export const createBookingAtomically = async ({ tourId, travelers, travelDate, bookingData }) => {
   requireTenantId();
-  const session = await mongoose.startSession();
+  const session = await firestore.startSession();
   try {
     let booking;
     await session.withTransaction(async () => {
