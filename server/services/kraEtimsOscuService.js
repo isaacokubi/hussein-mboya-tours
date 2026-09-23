@@ -64,8 +64,8 @@ export async function initializeOscu({ tenantId, environment = "sandbox", pin, b
   const info = payload?.data?.info || payload?.data || {};
   const cmcKey = info?.cmcKey || payload?.cmcKey;
   if (!cmcKey) throw new Error("KRA OSCU initialization succeeded but no communication key was returned.");
-  const existing = await EtimsCredential.findOne({ tenantId, environment }).select("+cmcKeyEncrypted").lean();
-  const credential = existing ? await EtimsCredential.findOne({ tenantId, environment }).select("+cmcKeyEncrypted") : new EtimsCredential({ tenantId, environment });
+  const existing = await EtimsCredential.findOne({ tenantId, environment }).lean();
+  const credential = existing ? await EtimsCredential.findOne({ tenantId, environment }) : new EtimsCredential({ tenantId, environment });
   credential.kraPin = String(pin).trim().toUpperCase();
   credential.branchId = String(branchId);
   credential.deviceSerial = String(deviceSerial).trim();
@@ -76,7 +76,7 @@ export async function initializeOscu({ tenantId, environment = "sandbox", pin, b
 }
 
 async function getCmcKey({ tenantId, environment }) {
-  const credential = await EtimsCredential.findOne({ tenantId, environment }).select("+cmcKeyEncrypted").lean();
+  const credential = await EtimsCredential.findOne({ tenantId, environment }).lean();
   if (!credential?.cmcKeyEncrypted) throw new Error("OSCU is not initialized for this tenant/environment. Run KRA OSCU initialization first.");
   return decryptEtimsSecret(credential.cmcKeyEncrypted);
 }
