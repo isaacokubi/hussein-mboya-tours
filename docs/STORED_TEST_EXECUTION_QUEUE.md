@@ -336,3 +336,27 @@ Phase 12 safety requirements:
 - backup retention, off-site destination/SLA, actual production backup execution and real restore evidence remain external acceptance items.
 
 Do not record Phase 12 as passed until the workflow or equivalent commands have actually executed successfully.
+
+
+## Phase 13 — Production monitoring & observability acceptance
+
+Automated contract:
+    cd server
+    node --test tests/productionMonitoringAcceptance.test.js
+
+Production monitoring workflow:
+- runs every 15 minutes;
+- requires HTTPS API and web endpoints;
+- measures API and website latency;
+- enforces configurable latency budgets via `PRODUCTION_API_MAX_LATENCY_MS` and `PRODUCTION_WEB_MAX_LATENCY_MS`;
+- creates a deduplicated `Production monitoring alert` issue when a monitoring run fails;
+- supports a manual `simulate_failure=true` drill without modifying production.
+
+External monitoring evidence:
+- configure `PRODUCTION_API_URL` and `PRODUCTION_WEB_URL` in GitHub Actions;
+- run the simulated failure drill and verify the alert issue path;
+- run a normal monitoring check and record the successful workflow run;
+- compare observed latency with the agreed production SLA;
+- record the alert/run references before setting `PRODUCTION_MONITORING_VERIFIED=true`.
+
+Do not record Phase 13 as passed until the automated contract and the real monitoring/alert drill have actually executed successfully.
