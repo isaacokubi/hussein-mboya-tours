@@ -13,9 +13,9 @@ const normalizeRoleDocument = (role) =>
 const tenantKey = (tenantId) => String(tenantId || "platform");
 
 const migrateRoles = async () => {
-  if (!process.env.MONGODB_URI) throw new Error("MONGODB_URI is missing.");
+  if (!process.env.FIREBASE_PROJECT_ID) throw new Error("FIREBASE_PROJECT_ID is missing.");
 
-  await firestore.connect(process.env.MONGODB_URI);
+  await firestore.connectFirestore();
 
   const db = firestore.connection.db;
   const roles = await db.collection("roles").find({}).sort({ createdAt: 1, _id: 1 }).toArray();
