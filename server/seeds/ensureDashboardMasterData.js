@@ -15,7 +15,7 @@ const supplierTemplates = [
 ];
 
 async function main() {
-  if (!process.env.FIREBASE_PROJECT_ID) throw new Error("MONGODB_URI is missing.");
+  if (!process.env.FIREBASE_PROJECT_ID) throw new Error("FIREBASE_PROJECT_ID is missing.");
   await firestore.connectFirestore?.();
 
   const tenants = await Organization.find({ isDeleted: { $ne: true } }).sort({ createdAt: 1 }).lean();

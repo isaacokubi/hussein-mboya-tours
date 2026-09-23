@@ -35,7 +35,7 @@ async function main() {
   validatePassword(DEMO_PASSWORD);
 
   if (!process.env.FIREBASE_PROJECT_ID) {
-    throw new Error("MONGODB_URI is not configured.");
+    throw new Error("FIREBASE_PROJECT_ID is not configured.");
   }
 
   await firestore.connectFirestore?.();

@@ -257,3 +257,16 @@ Phase 9 safety boundary:
 - It removes only the known synthetic Global Tours catalog before running Firestore-native seeders.
 - Organizations, users, bookings and payments are intentionally preserved.
 - Do not record the demo reset as passed until it has actually been executed against the intended Firestore environment.
+
+## Phase 10 — Firestore authentication & seed cutover
+
+Automated contract:
+```bash
+cd server
+node --test tests/firestoreAuthSeedCutover.test.js
+```
+
+This verifies that local/shared-account authentication uses the Firestore model adapter rather than raw MongoDB connection/collection APIs, and that the maintained seed/repair scripts require and advertise `FIREBASE_PROJECT_ID` instead of obsolete MongoDB configuration.
+
+Do not record Phase 10 as passed unless the command is actually executed successfully.
+

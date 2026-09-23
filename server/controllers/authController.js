@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { mergeTenantFilter, runWithTenant, setTenantContext, getTenantContext } from "../tenancy/context.js";
+import { mergeTenantFilter, runWithTenant, getTenantContext } from "../tenancy/context.js";
 import User from "../models/User.js";
 import Role from "../models/Role.js";
 import SecurityLog from "../models/SecurityLog.js";
@@ -35,39 +35,28 @@ const isLocalPublicLogin = (req) => {
   return ["localhost", "127.0.0.1", "[::1]"].includes(host) && !hasExplicitTenant;
 };
 
-const mongooseConnectionAvailable = () => Boolean(User?.db?.readyState === 1 && User?.collection);
-
 // Resolve local/shared tenant-owned accounts before the tenant-scoped query.
-// Local login accepts ObjectId and legacy string tenantId values so migrated
-// tenant accounts cannot silently fall through to the wrong/default tenant.
+// Firestore is the only runtime datastore, so this path uses the model adapter
+// rather than raw MongoDB connection or collection APIs.
 const findUniqueLocalTenantUser = async (req, email) => {
-  if (!isLocalPublicLogin(req) || !mongooseConnectionAvailable()) return { resolved: false, ambiguous: false, user: null };
+  if (!isLocalPublicLogin(req)) return { resolved: false, ambiguous: false, user: null };
 
-  const matches = await User.collection
-    .find({ email, tenantId: { $exists: true, $ne: null } })
-    .limit(3)
-    .toArray();
+  const matches = await runWithTenant(
+    { tenantId: null, tenant: null, role: "super_admin", bypass: true },
+    () => User.find({ email, tenantId: { $exists: true, $ne: null } }).limit(3).lean()
+  );
 
-  // Never guess between companies when a local login has no tenant identity.
   if (matches.length > 1) return { resolved: true, ambiguous: true, user: null };
   if (matches.length !== 1 || !matches[0]?.tenantId) return { resolved: false, ambiguous: false, user: null };
 
   const tenantId = matches[0].tenantId;
-  setTenantContext({ tenantId, role: "public", bypass: false });
-
-  const rawUser = matches[0];
-  const rawRole = normalizeRole(rawUser.role || rawUser.legacyRole);
-  const tenantAdminRoles = new Set(["admin", "administrator"]);
-
-  // Hydrate tenant admins directly from the identified document so the
-  // select:false password hash is retained and a second tenant-scoped query
-  // cannot change which account is authenticated.
-  if (tenantAdminRoles.has(rawRole)) return { resolved: true, ambiguous: false, user: User.hydrate(rawUser) };
-
-  const user = await User.findById(rawUser._id)
-    .select("+password")
-    .populate({ path: "roleId", populate: { path: "permissions" } })
-    .populate("permissionsOverride");
+  const user = await runWithTenant(
+    { tenantId, role: "public", bypass: false },
+    () => User.findById(matches[0]._id)
+      .select("+password")
+      .populate({ path: "roleId", populate: { path: "permissions" } })
+      .populate("permissionsOverride")
+  );
   return { resolved: true, ambiguous: false, user };
 };
 
