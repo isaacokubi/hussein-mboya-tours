@@ -1,10 +1,10 @@
-name: Production Backup Restore Drill
+name: Production Firestore Backup Restore Drill
 
 on:
   workflow_dispatch:
     inputs:
       backup_run_id:
-        description: GitHub Actions run ID containing the encrypted backup artifact
+        description: GitHub Actions run ID containing the encrypted Firestore backup artifact
         required: true
         type: string
 
@@ -14,10 +14,24 @@ permissions:
 
 jobs:
   restore:
-    name: Restore backup into isolated target
+    name: Restore Firestore backup into isolated target
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install server dependencies
+        working-directory: server
+        run: npm install
+
       - name: Validate backup run
         env:
           GH_TOKEN: ${{ github.token }}
@@ -25,20 +39,15 @@ jobs:
         run: |
           set -euo pipefail
           RUN_ID="$(printf '%s' "$RUN_ID_INPUT" | tr -d '[:space:]')"
-          if ! [[ "$RUN_ID" =~ ^[1-9][0-9]*$ ]]; then
-            echo "backup_run_id must contain only a positive GitHub Actions run ID."
-            exit 1
-          fi
-          run_json="$(gh run view "$RUN_ID" --repo "$GITHUB_REPOSITORY" --json workflowName,status,conclusion,event)"
-          echo "$run_json"
+          if ! [[ "$RUN_ID" =~ ^[1-9][0-9]*$ ]]; then exit 1; fi
+          run_json="$(gh run view "$RUN_ID" --repo "$GITHUB_REPOSITORY" --json workflowName,status,conclusion)"
           python - <<'PY' "$run_json"
-          import json
-          import sys
-          run = json.loads(sys.argv[1])
-          if run.get("workflowName") != "Production MongoDB Backup":
-              raise SystemExit(f"Run {run.get('workflowName')!r} is not the production backup workflow.")
+          import json, sys
+          run=json.loads(sys.argv[1])
+          if run.get("workflowName") != "Production Firestore Backup":
+              raise SystemExit("Selected run is not the Firestore backup workflow.")
           if run.get("status") != "completed" or run.get("conclusion") != "success":
-              raise SystemExit(f"Backup run is not a successful completed run: {run}")
+              raise SystemExit("Selected backup run did not complete successfully.")
           PY
 
       - name: Download backup artifact
@@ -48,72 +57,39 @@ jobs:
         run: |
           set -euo pipefail
           RUN_ID="$(printf '%s' "$RUN_ID_INPUT" | tr -d '[:space:]')"
-          if ! [[ "$RUN_ID" =~ ^[1-9][0-9]*$ ]]; then
-            echo "backup_run_id must contain only a positive GitHub Actions run ID."
-            exit 1
-          fi
           mkdir -p restore-artifact
-          gh run download "$RUN_ID" --repo "$GITHUB_REPOSITORY" --pattern 'production-mongodb-backup-*' --dir restore-artifact
-          archive_count="$(find restore-artifact -name '*.archive.gz.enc' -type f | wc -l)"
-          test "$archive_count" -eq 1 || { echo "Expected exactly one encrypted backup archive; found $archive_count."; exit 1; }
-
-      - name: Validate restore secrets
-        env:
-          BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
-          MONGODB_RESTORE_URI: ${{ secrets.MONGODB_RESTORE_URI }}
-        run: |
-          set -euo pipefail
-          test -n "${BACKUP_ENCRYPTION_PASSPHRASE:-}" || { echo "BACKUP_ENCRYPTION_PASSPHRASE is required."; exit 1; }
-          test -n "${MONGODB_RESTORE_URI:-}" || { echo "MONGODB_RESTORE_URI is required and must point to a non-production restore target."; exit 1; }
+          gh run download "$RUN_ID" --repo "$GITHUB_REPOSITORY" --pattern 'production-firestore-backup-*' --dir restore-artifact
+          archive_count="$(find restore-artifact -name '*.json.enc' -type f | wc -l)"
+          test "$archive_count" -eq 1
 
       - name: Validate isolated restore target
         env:
-          MONGODB_RESTORE_URI: ${{ secrets.MONGODB_RESTORE_URI }}
-          MONGODB_PRODUCTION_URI: ${{ secrets.MONGODB_PRODUCTION_URI }}
+          FIREBASE_PROJECT_ID: ${{ secrets.RESTORE_FIREBASE_PROJECT_ID }}
+          PRODUCTION_FIREBASE_PROJECT_ID: ${{ secrets.PRODUCTION_FIREBASE_PROJECT_ID }}
           RESTORE_TARGET_ISOLATED: ${{ secrets.RESTORE_TARGET_ISOLATED }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.RESTORE_FIREBASE_SERVICE_ACCOUNT_JSON }}
+          BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
         run: |
           set -euo pipefail
-          test -n "${MONGODB_RESTORE_URI:-}" || { echo "BLOCKED: MONGODB_RESTORE_URI is not configured."; exit 1; }
-          test -n "${MONGODB_PRODUCTION_URI:-}" || { echo "BLOCKED: MONGODB_PRODUCTION_URI is not configured."; exit 1; }
-          test "${RESTORE_TARGET_ISOLATED:-}" = "true" || { echo "BLOCKED: RESTORE_TARGET_ISOLATED must be exactly true."; exit 1; }
-          test "$MONGODB_RESTORE_URI" != "$MONGODB_PRODUCTION_URI" || { echo "BLOCKED: restore target matches production target."; exit 1; }
-          echo "Restore target safety checks passed."
+          test -n "${FIREBASE_PROJECT_ID:-}"
+          test -n "${PRODUCTION_FIREBASE_PROJECT_ID:-}"
+          test "${RESTORE_TARGET_ISOLATED:-}" = "true"
+          test "$FIREBASE_PROJECT_ID" != "$PRODUCTION_FIREBASE_PROJECT_ID"
+          test -n "${FIREBASE_SERVICE_ACCOUNT_JSON:-}"
+          test -n "${BACKUP_ENCRYPTION_PASSPHRASE:-}"
 
-      - name: Restore backup
+      - name: Decrypt backup
         env:
           BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
-          MONGODB_RESTORE_URI: ${{ secrets.MONGODB_RESTORE_URI }}
         run: |
           set -euo pipefail
-          archive="$(find restore-artifact -name '*.archive.gz.enc' -type f | head -n 1)"
-          openssl enc -d -aes-256-cbc -pbkdf2 -in "$archive" -pass env:BACKUP_ENCRYPTION_PASSPHRASE > restore.archive.gz
-          test -s restore.archive.gz
-          gzip -t restore.archive.gz
-          docker run --rm \
-            -e MONGODB_RESTORE_URI="$MONGODB_RESTORE_URI" \
-            -v "$PWD/restore.archive.gz:/tmp/restore.archive.gz:ro" \
-            mongo:8 sh -lc '
-              case "$MONGODB_RESTORE_URI" in
-                mongodb://*|mongodb+srv://*) ;;
-                *) echo "MONGODB_RESTORE_URI format could not be parsed safely."; exit 1 ;;
-              esac
-              URI_REST="${MONGODB_RESTORE_URI#*://}"
-              AUTHORITY="${URI_REST%%/*}"
-              SCHEME="${MONGODB_RESTORE_URI%%://*}"
-              if [ "$SCHEME" != "mongodb" ] && [ "$SCHEME" != "mongodb+srv" ]; then
-                echo "Unsupported MongoDB URI scheme."
-                exit 1
-              fi
-              RESTORE_SERVER_URI="${SCHEME}://${AUTHORITY}"
-              echo "Using MongoDB server URI with database selection removed."
-              mongorestore --uri="$RESTORE_SERVER_URI" --archive=/tmp/restore.archive.gz --gzip --drop --nsFrom="husseindb.*" --nsTo="backups.*" --verbose
-            '
+          archive="$(find restore-artifact -name '*.json.enc' -type f | head -n 1)"
+          openssl enc -d -aes-256-cbc -pbkdf2 -in "$archive" -pass env:BACKUP_ENCRYPTION_PASSPHRASE -out restore.json
 
-      - name: Validate restored database
+      - name: Restore and validate tenant references
         env:
-          MONGODB_RESTORE_URI: ${{ secrets.MONGODB_RESTORE_URI }}
-        run: |
-          set -euo pipefail
-          docker run --rm -e MONGODB_RESTORE_URI="$MONGODB_RESTORE_URI" mongo:8 \
-            sh -lc 'mongosh "$MONGODB_RESTORE_URI" --quiet --eval '\''const names=db.getCollectionNames(); if (!names.length) throw new Error("Restore produced no collections"); printjson({database:db.getName(), collectionCount:names.length, collections:names.slice(0,20)}); if (!names.includes("tenants") && !names.includes("users")) throw new Error("Restore is missing expected application collections (tenants/users)");'\'''
-          echo "Restore drill completed and restored database structure was validated."
+          FIREBASE_PROJECT_ID: ${{ secrets.RESTORE_FIREBASE_PROJECT_ID }}
+          PRODUCTION_FIREBASE_PROJECT_ID: ${{ secrets.PRODUCTION_FIREBASE_PROJECT_ID }}
+          RESTORE_TARGET_ISOLATED: ${{ secrets.RESTORE_TARGET_ISOLATED }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.RESTORE_FIREBASE_SERVICE_ACCOUNT_JSON }}
+        run: node server/scripts/firestoreRestore.js restore.json
