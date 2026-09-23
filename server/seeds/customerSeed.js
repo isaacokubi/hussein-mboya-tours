@@ -10,7 +10,7 @@ dotenv.config();
 
 const createCustomer = async () => {
   try {
-    await firestore.connect(process.env.MONGODB_URI);
+    await firestore.connectFirestore();
 
     // debug removed
 
