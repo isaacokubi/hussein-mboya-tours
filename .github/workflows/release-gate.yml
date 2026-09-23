@@ -61,6 +61,8 @@ jobs:
         run: npm install
       - name: Production readiness contract
         run: npm run check:production
+      - name: Kenya production-readiness contracts
+        run: node --test tests/kenyaProductionReadiness.test.js
       - name: Verify Kenya compliance and payment modules exist
         run: |
           test -f models/EtimsCredential.js
