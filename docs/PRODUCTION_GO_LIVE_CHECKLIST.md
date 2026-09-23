@@ -75,3 +75,8 @@ Do not mark an evidence flag true unless the corresponding external test was act
 ### Phase 22 — Firestore field-level unique integrity
 - [ ] Firestore emulator field-level uniqueness suite passes.
 - [ ] Production Firestore integrity scan confirms no duplicates for records relying on field-level uniqueness.
+
+
+### Phase 23 — Firestore runtime semantics hardening
+- [ ] Firestore runtime semantics emulator suite passes.
+- [ ] Production smoke confirms authentication, populated role/permission reads and payment lifecycle behavior on the intended deployed release.
