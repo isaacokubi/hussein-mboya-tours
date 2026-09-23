@@ -64,7 +64,9 @@ export const testWebhook = async (req, res, next) => {
     const event = hook.events?.[0];
     if (!event) return res.status(409).json({ success: false, message: "Select at least one webhook event before testing delivery." });
     const eventId = crypto.randomUUID();
+    const currentTenantId = tenantId(req);
     const job = await enqueueJob("webhook.delivery", {
+      tenantId: currentTenantId,
       webhookId: hook._id,
       event,
       eventId,
