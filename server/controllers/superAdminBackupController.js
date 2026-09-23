@@ -14,7 +14,7 @@ const serializeBackup = (backup) => {
 
 export const createPlatformDatabaseBackup = async (req, res) => {
   try {
-    if (!firestore.connection.db) {
+    if (!firestore.db) {
       return res.status(503).json({ success: false, message: "Database connection unavailable" });
     }
 
@@ -26,7 +26,7 @@ export const createPlatformDatabaseBackup = async (req, res) => {
     const backupData = {
       createdAt: new Date(),
       environment: process.env.NODE_ENV || "production",
-      database: firestore.connection.name || "unknown",
+      database: process.env.FIREBASE_PROJECT_ID || process.env.GCLOUD_PROJECT || "unknown",
       scope: "platform",
       tenantId: null,
       createdBy: req.user?.email || String(req.user?._id || "system"),
@@ -35,8 +35,7 @@ export const createPlatformDatabaseBackup = async (req, res) => {
     for (const collection of collections) {
       backupData[collection.name] = await firestore.connection.db
         .collection(collection.name)
-        .find({})
-        .toArray();
+        .get();
     }
 
     fs.writeFileSync(filepath, JSON.stringify(backupData, null, 2));
