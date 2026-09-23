@@ -132,3 +132,7 @@ The Firestore compatibility layer now records and enforces declared unique schem
 
 ### Phase 22 — Firestore field-level unique integrity
 The Firestore compatibility layer now enforces top-level model fields declared with `unique: true`, including sparse unique declarations. Emulator execution remains pending in this environment; this does not certify production data cleanliness.
+
+
+### Phase 23 — Firestore runtime semantics hardening
+The active Firestore compatibility layer now enforces core schema validation/setter semantics, preserves hidden fields during partial-document saves, tracks actual modifications, and supports populated-reference selection/nesting. Emulator execution remains pending until the stored suite is run in an environment with the required dependencies and Firebase emulator.
