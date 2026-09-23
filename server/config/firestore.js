@@ -199,7 +199,9 @@ async function runAggregate(name,pipeline){
 }
 
 export { Schema, buildModel as model, buildModel as defaultModel, matches as matchesFilter };
-export const Types={ObjectId:(value)=>String(value ?? crypto.randomUUID()), Mixed:Object};
+const ObjectId = (value) => String(value ?? crypto.randomUUID());
+ObjectId.isValid = (value) => value != null && String(value).length > 0;
+export const Types={ObjectId, Mixed:Object};
 export const isValidObjectId=(value)=>value!=null && String(value).length>0;
 export const models={};
 export const model=(name,schema)=>buildModel(name,schema);
