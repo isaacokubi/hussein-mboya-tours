@@ -360,3 +360,16 @@ External monitoring evidence:
 - record the alert/run references before setting `PRODUCTION_MONITORING_VERIFIED=true`.
 
 Do not record Phase 13 as passed until the automated contract and the real monitoring/alert drill have actually executed successfully.
+
+
+## Phase 14 — eTIMS runtime integrity
+
+Automated contract:
+```bash
+cd server
+node --test tests/etimsRuntimeIntegrity.test.js
+```
+
+This contract verifies that every eTIMS invoice attempt creates its durable submission audit before OSCU or adapter execution, that OSCU success/failure updates the audit, and that the adapter path preserves idempotency and request hashing.
+
+Phase 14 does **not** certify live KRA/eTIMS connectivity or production evidence. Do not set `PRODUCTION_ETIMS_VERIFIED=true` until the real provider/regulatory acceptance test has been completed.
