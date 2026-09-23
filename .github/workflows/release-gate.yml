@@ -1,4 +1,4 @@
-name: Eighteen-Phase Release Gate
+name: Twenty-Three-Phase Release Gate
 
 on:
   push:
