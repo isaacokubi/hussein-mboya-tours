@@ -51,14 +51,19 @@ const fieldRules = (schema, prefix = "") => {
       const path = base ? `${base}.${key}` : key;
       if (Array.isArray(rule)) {
         const child = rule[0];
-        if (child && typeof child === "object" && !("type" in child)) walk(child, path);
-        else if (child && typeof child === "object") out.push([path, child]);
+        const arrayRule = { type: Array, _itemRule: child };
+        out.push([path, arrayRule]);
+        if (child && typeof child === "object" && child.definition) {
+          for (const [childPath, childRule] of fieldRules(child, `${path}.*`)) out.push([childPath, childRule]);
+        }
         continue;
       }
-      if (rule && typeof rule === "object" && !Array.isArray(rule) && !("type" in rule)) {
+      if (rule && typeof rule === "object" && !Array.isArray(rule) && !("type" in rule) && !rule.definition) {
         walk(rule, path);
       } else if (rule && typeof rule === "object") {
         out.push([path, rule]);
+      } else if (rule === Array) {
+        out.push([path, { type: Array }]);
       }
     }
   };
@@ -74,32 +79,59 @@ const validationError = (path, message, value) => {
   return error;
 };
 
-const validateSchema = async (schema, data) => {
-  for (const [path, rule] of fieldRules(schema)) {
-    const value = getPath(data, path);
-    const missing = value === undefined || value === null || value === "";
-    if (rule.required && missing) throw validationError(path, typeof rule.required === "string" ? rule.required : "Path is required.", value);
-    if (missing) continue;
-    if (rule.enum && !rule.enum.some((allowed) => deepEqual(allowed, value))) throw validationError(path, `${value} is not an allowed value.`, value);
-    if (rule.min != null && Number(value) < Number(rule.min)) throw validationError(path, `must be greater than or equal to ${rule.min}.`, value);
-    if (rule.max != null && Number(value) > Number(rule.max)) throw validationError(path, `must be less than or equal to ${rule.max}.`, value);
-    if (rule.minlength != null && String(value).length < Number(rule.minlength)) throw validationError(path, `must be at least ${rule.minlength} characters long.`, value);
-    if (rule.maxlength != null && String(value).length > Number(rule.maxlength)) throw validationError(path, `must be at most ${rule.maxlength} characters long.`, value);
-    if (rule.match && !(rule.match instanceof RegExp ? rule.match : new RegExp(rule.match)).test(String(value))) throw validationError(path, "value does not match the required pattern.", value);
-    if (rule.validate) {
-      const validator = typeof rule.validate === "function" ? rule.validate : rule.validate.validator;
-      if (typeof validator === "function") {
-        const result = await validator(value);
-        if (!result) throw validationError(path, rule.validate.message || "validator failed.", value);
+const normalizeOption = (value) => Array.isArray(value) ? value[0] : (value && typeof value === "object" && "value" in value ? value.value : value);
+const normalizeMessage = (value, fallback) => Array.isArray(value) ? value[1] || fallback : (value && typeof value === "object" && value.message ? value.message : fallback);
+
+const validateRule = async (path, rule, value) => {
+  const missing = value === undefined || value === null || value === "";
+  const required = normalizeOption(rule.required);
+  if (required && missing) throw validationError(path, normalizeMessage(rule.required, "Path is required."), value);
+  if (missing) return;
+  if (rule._itemRule && Array.isArray(value)) {
+    for (let i=0;i<value.length;i++) {
+      const itemRule=rule._itemRule;
+      if (itemRule?.definition) {
+        await validateSchema(itemRule, value[i] || {});
+      } else if (itemRule && typeof itemRule === "object") {
+        await validateRule(`${path}.${i}`, itemRule, value[i]);
+      } else if (typeof itemRule === "function" && itemRule === String && typeof value[i] !== "string") {
+        throw validationError(`${path}.${i}`, "must be a string.", value[i]);
+      } else if (typeof itemRule === "function" && itemRule === Number && !Number.isFinite(Number(value[i]))) {
+        throw validationError(`${path}.${i}`, "must be a number.", value[i]);
       }
     }
-    const type = rule.type;
-    if (type === String && typeof value !== "string") throw validationError(path, "must be a string.", value);
-    if (type === Number && !Number.isFinite(Number(value))) throw validationError(path, "must be a number.", value);
-    if (type === Boolean && typeof value !== "boolean") throw validationError(path, "must be a boolean.", value);
-    if (type === Date && Number.isNaN(new Date(value).getTime())) throw validationError(path, "must be a valid date.", value);
-    if (rule.type === Array && !Array.isArray(value)) throw validationError(path, "must be an array.", value);
+    return;
   }
+  if (rule.enum) {
+    const enumValues = Array.isArray(rule.enum) ? rule.enum : rule.enum.values;
+    if (enumValues && !enumValues.some((allowed) => deepEqual(allowed, value))) throw validationError(path, normalizeMessage(rule.enum, `${value} is not an allowed value.`), value);
+  }
+  const min = normalizeOption(rule.min);
+  const max = normalizeOption(rule.max);
+  const minLength = normalizeOption(rule.minLength ?? rule.minlength);
+  const maxLength = normalizeOption(rule.maxLength ?? rule.maxlength);
+  if (min != null && Number(value) < Number(min)) throw validationError(path, normalizeMessage(rule.min, `must be greater than or equal to ${min}.`), value);
+  if (max != null && Number(value) > Number(max)) throw validationError(path, normalizeMessage(rule.max, `must be less than or equal to ${max}.`), value);
+  if (minLength != null && String(value).length < Number(minLength)) throw validationError(path, normalizeMessage(rule.minLength ?? rule.minlength, `must be at least ${minLength} characters long.`), value);
+  if (maxLength != null && String(value).length > Number(maxLength)) throw validationError(path, normalizeMessage(rule.maxLength ?? rule.maxlength, `must be at most ${maxLength} characters long.`), value);
+  if (rule.match && !(rule.match instanceof RegExp ? rule.match : new RegExp(normalizeOption(rule.match))).test(String(value))) throw validationError(path, "value does not match the required pattern.", value);
+  if (rule.validate) {
+    const validator = typeof rule.validate === "function" ? rule.validate : rule.validate.validator;
+    if (typeof validator === "function") {
+      const result = await validator(value);
+      if (!result) throw validationError(path, normalizeMessage(rule.validate, "validator failed."), value);
+    }
+  }
+  const type = rule.type;
+  if (type === String && typeof value !== "string") throw validationError(path, "must be a string.", value);
+  if (type === Number && !Number.isFinite(Number(value))) throw validationError(path, "must be a number.", value);
+  if (type === Boolean && typeof value !== "boolean") throw validationError(path, "must be a boolean.", value);
+  if (type === Date && Number.isNaN(new Date(value).getTime())) throw validationError(path, "must be a valid date.", value);
+  if (type === Array && !Array.isArray(value)) throw validationError(path, "must be an array.", value);
+};
+
+const validateSchema = async (schema, data) => {
+  for (const [path, rule] of fieldRules(schema)) await validateRule(path, rule, getPath(data, path));
 };
 
 const applySetters = (schema, data) => {
@@ -258,6 +290,7 @@ const applyDefaults = (schema, data) => {
   const walk=(defs,target)=>{
     for(const [key,rule] of Object.entries(defs||{})){
       if(rule && typeof rule==="object" && !Array.isArray(rule) && !("type" in rule)) { if(target[key]==null) target[key]={}; walk(rule,target[key]); continue; }
+      if(target[key]===undefined && Array.isArray(rule) && rule.length) target[key]=[];
       if(target[key]===undefined && rule && typeof rule==="object" && "default" in rule) target[key]=typeof rule.default==="function"?rule.default():rule.default;
     }
   };
