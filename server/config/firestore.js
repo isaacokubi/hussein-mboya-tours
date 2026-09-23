@@ -159,8 +159,8 @@ function buildModel(name,schema){
   Model.exists=async(f={})=>Boolean((await Model.findOne(f).lean()));
   Model.countDocuments=async(f={})=>(await Model.find(f).lean()).length;
   Model.distinct=async(field,f={})=>[...new Set((await Model.find(f).lean()).map(x=>getPath(x,field)).filter(x=>x!==undefined))];
-  Model.create=async(data)=>{if(Array.isArray(data)){const out=[];for(const d of data)out.push(await new Model(d).save());return out;}return new Model(data).save();};
-  Model.insertMany=async(arr)=>Promise.all(arr.map(x=>new Model(x).save()));
+  Model.create=async(data,options={})=>{if(Array.isArray(data)){const out=[];for(const d of data)out.push(await new Model(d).save(options));return out;}return new Model(data).save(options);};
+  Model.insertMany=async(arr,options={})=>Promise.all(arr.map(x=>new Model(x).save(options)));
   Model.updateOne=async(filter,update,options={})=>{const d=await Model.findOne(filter).session(options.session);if(!d)return {matchedCount:0,modifiedCount:0};await applyUpdate(d,update);await d.save({session:options.session});return {matchedCount:1,modifiedCount:1};};
   Model.updateMany=async(filter,update,options={})=>{const docs=await Model.find(filter).session(options.session);for(const d of docs){await applyUpdate(d,update);await d.save({session:options.session});}return {matchedCount:docs.length,modifiedCount:docs.length};};
   Model.findOneAndUpdate=async(filter,update,options={})=>{let d=await Model.findOne(filter).session(options.session);if(!d&&options.upsert)d=new Model({...filter,...(update.$set||update)});if(!d)return null;await applyUpdate(d,update);await d.save({session:options.session});return d;};
