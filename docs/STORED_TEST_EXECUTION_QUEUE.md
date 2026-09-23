@@ -138,3 +138,23 @@ These cannot be certified from source code alone:
 ## Status rule
 
 This file stores tests and commands; it does not mean they have passed. Record actual results only after running them on a real environment.
+
+
+## Phase 4 — Deployment & infrastructure acceptance contract
+
+Automated contract:
+
+```bash
+cd server
+node --test tests/deploymentInfrastructureAcceptance.test.js
+```
+
+External deployment smoke checks, once provider secrets are configured in GitHub Actions:
+
+- `PRODUCTION_API_URL/api/health` returns HTTP success with `success=true`, `status=healthy`, and `database=connected`
+- API root responds with the expected running-service marker
+- `PRODUCTION_WEB_URL` returns a successful HTML document
+- smoke checks run on pushes to `main`, on schedule, and manually
+- absent production URL secrets skip external checks rather than fabricating success
+
+External evidence remains required for backups, restore, monitoring/alerts, payment callbacks, eTIMS, signed webhooks and rollback.
