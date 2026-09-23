@@ -1,1 +1,40 @@
-import test from "node:test";\nimport assert from "node:assert/strict";\nimport fs from "node:fs";\nimport path from "node:path";\n\nconst root = process.cwd();\nconst read = (relativePath) => fs.readFileSync(path.join(root, relativePath), "utf8");\n\ntest("Phase 8 maintenance tooling is Firestore-based", () => {\n  const repair = read("services/tenantIndexRepair.js");\n  const ledger = read("scripts/migrateBookingPaymentLedger.js");\n  const orphan = read("scripts/migrateOrphanStaffToTenant.js");\n  const pkg = JSON.parse(read("package.json"));\n\n  assert.doesNotMatch(repair, /mongoose/);\n  assert.doesNotMatch(ledger, /mongoose|MONGO_URI|MONGODB_URI/);\n  assert.doesNotMatch(orphan, /mongoose|MONGO_URI|MONGODB_URI/);\n  assert.match(ledger, /config\\/firestore\\.js/);\n  assert.match(ledger, /runWithTenant/);\n  assert.match(ledger, /DRY_RUN/);\n  assert.match(ledger, /skippedMissingTenant/);\n  assert.match(orphan, /FIREBASE_PROJECT_ID/);\n  assert.match(orphan, /CONFIRM_ORPHAN_STAFF_MIGRATION/);\n  assert.match(orphan, /Staff\\.updateMany/);\n  assert.equal(pkg.scripts["migrate:booking-ledger"], "node scripts/migrateBookingPaymentLedger.js");\n  assert.equal(pkg.scripts["migrate:orphan-staff"], "node scripts/migrateOrphanStaffToTenant.js");\n});\n\ntest("booking ledger calculation preserves payment and deposit rules", async () => {\n  const { calculateBookingLedger } = await import("../scripts/migrateBookingPaymentLedger.js");\n  const result = calculateBookingLedger({\n    booking: { totalAmount: 100000, paymentStatus: "partial", amountPaid: 0, depositAmount: 0 },\n    payments: [\n      { amount: 60000, refundedAmount: 10000, status: "completed" },\n      { amount: 20000, refundedAmount: 0, status: "completed" },\n    ],\n    tour: { depositRequired: 25, depositType: "percentage" },\n  });\n  assert.deepEqual(result, { amountPaid: 70000, depositAmount: 25000, balanceAmount: 30000, paymentStatus: "partial" });\n});
+import test from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+
+const root = process.cwd();
+const read = (relativePath) => fs.readFileSync(path.join(root, relativePath), "utf8");
+
+test("Phase 8 maintenance tooling is Firestore-based", () => {
+  const repair = read("services/tenantIndexRepair.js");
+  const ledger = read("scripts/migrateBookingPaymentLedger.js");
+  const orphan = read("scripts/migrateOrphanStaffToTenant.js");
+  const pkg = JSON.parse(read("package.json"));
+
+  assert.doesNotMatch(repair, /mongoose/);
+  assert.doesNotMatch(ledger, /mongoose|MONGO_URI|MONGODB_URI/);
+  assert.doesNotMatch(orphan, /mongoose|MONGO_URI|MONGODB_URI/);
+  assert.match(ledger, /config\\/firestore\\.js/);
+  assert.match(ledger, /runWithTenant/);
+  assert.match(ledger, /DRY_RUN/);
+  assert.match(ledger, /skippedMissingTenant/);
+  assert.match(orphan, /FIREBASE_PROJECT_ID/);
+  assert.match(orphan, /CONFIRM_ORPHAN_STAFF_MIGRATION/);
+  assert.match(orphan, /Staff\\.updateMany/);
+  assert.equal(pkg.scripts["migrate:booking-ledger"], "node scripts/migrateBookingPaymentLedger.js");
+  assert.equal(pkg.scripts["migrate:orphan-staff"], "node scripts/migrateOrphanStaffToTenant.js");
+});
+
+test("booking ledger calculation preserves payment and deposit rules", async () => {
+  const { calculateBookingLedger } = await import("../scripts/migrateBookingPaymentLedger.js");
+  const result = calculateBookingLedger({
+    booking: { totalAmount: 100000, paymentStatus: "partial", amountPaid: 0, depositAmount: 0 },
+    payments: [
+      { amount: 60000, refundedAmount: 10000, status: "completed" },
+      { amount: 20000, refundedAmount: 0, status: "completed" },
+    ],
+    tour: { depositRequired: 25, depositType: "percentage" },
+  });
+  assert.deepEqual(result, { amountPaid: 70000, depositAmount: 25000, balanceAmount: 30000, paymentStatus: "partial" });
+});
