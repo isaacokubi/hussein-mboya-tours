@@ -8,7 +8,7 @@ import Destination from "../models/Destination.js";
 dotenv.config();
 
 if (!process.env.FIREBASE_PROJECT_ID) {
-  console.error("❌ MONGODB_URI is not defined in the environment.");
+  console.error("❌ FIREBASE_PROJECT_ID is not defined in the environment.");
   process.exit(1);
 }
 
