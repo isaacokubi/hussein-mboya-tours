@@ -42,7 +42,8 @@
     "audit:firestore-integrity": "node scripts/firestoreProductionIntegrityScan.js",
     "check:production:evidence": "node scripts/productionEvidenceCheck.js",
     "test:firestore:unique": "node --test tests/firestoreUniqueIndexIntegrity.test.js tests/firestoreUniqueIndexIntegrityStatic.test.js",
-    "test:firestore:field-unique": "node --test tests/firestoreFieldUniqueIntegrity.test.js tests/firestoreFieldUniqueIntegrityStatic.test.js"
+    "test:firestore:field-unique": "node --test tests/firestoreFieldUniqueIntegrity.test.js tests/firestoreFieldUniqueIntegrityStatic.test.js",
+    "test:firestore:runtime-semantics": "node --test tests/firestoreRuntimeSemantics.test.js tests/firestoreRuntimeSemanticsStatic.test.js"
   },
   "dependencies": {
     "africastalking": "^0.8.0",
