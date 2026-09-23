@@ -239,7 +239,6 @@ const eq = (a,b) => {
 const evaluateExpression = (expression, doc, vars = {}) => {
   if (typeof expression === "string") {
     if (expression === "$ROOT") return doc;
-    if (expression.startsWith("$")) return vars[expression.slice(2)];
     if (expression.startsWith("$")) return getPath(doc, expression.slice(1));
     return expression;
   }
