@@ -65,3 +65,8 @@ The platform provides the software controls for TRA/licensing records, ODPC/priv
 11. Run the full release workflow and only then enable production traffic.
 
 Do not mark an evidence flag true unless the corresponding external test was actually completed.
+
+### Phase 21 — Firestore unique payment integrity
+- [ ] Firestore emulator unique-index suite passes for the compatibility layer and Payment provider identities.
+- [ ] Production integrity evidence confirms no duplicate tenant-scoped M-Pesa/provider references.
+
