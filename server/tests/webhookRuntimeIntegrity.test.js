@@ -12,8 +12,7 @@ test("webhook delivery jobs carry an explicit tenant identity", () => {
 
   assert.match(service, /enqueueJob\("webhook\.delivery", \{ tenantId, webhookId: hook\._id, event, eventId: crypto\.randomUUID\(\), data \}/);
   assert.match(controller, /const currentTenantId = tenantId\(req\);/);
-  assert.match(controller, /enqueueJob\("webhook\.delivery", \{
-\s*tenantId: currentTenantId,/);
+  assert.ok(controller.includes(`enqueueJob("webhook.delivery", {\n      tenantId: currentTenantId,`));
 });
 
 test("webhook worker rejects cross-tenant or incomplete delivery jobs", () => {
