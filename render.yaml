@@ -1,5 +1,4 @@
 services:
-
   - type: web
     name: hussein-mboya-tours-api
     runtime: node
@@ -8,111 +7,112 @@ services:
     startCommand: npm start
     healthCheckPath: /api/health
     autoDeploy: true
-
     envVars:
       - key: NODE_ENV
         value: production
-
       - key: FIREBASE_PROJECT_ID
         sync: false
-
       - key: FIREBASE_CLIENT_EMAIL
         sync: false
-
       - key: FIREBASE_PRIVATE_KEY
         sync: false
-
       - key: FIREBASE_SERVICE_ACCOUNT_JSON
         sync: false
-
       - key: FIREBASE_SERVICE_ACCOUNT_PATH
         sync: false
-
       - key: FIREBASE_STORAGE_BUCKET
         sync: false
-
+      - key: GOOGLE_APPLICATION_CREDENTIALS
+        sync: false
       - key: JWT_SECRET
         sync: false
-
       - key: JWT_EXPIRES_IN
         value: 7d
-
       - key: CLIENT_URL
         sync: false
-
       - key: CLIENT_ORIGINS
         sync: false
-
       - key: PLATFORM_HOST
         sync: false
-
+      - key: DEFAULT_TENANT_ID
+        sync: false
+      - key: DEFAULT_PUBLIC_TENANT_SLUG
+        sync: false
       - key: ALLOW_SINGLE_TENANT_DEV_FALLBACK
         value: false
-
       - key: ALLOW_GLOBAL_MPESA_FALLBACK
         value: false
-
       - key: MFA_DEV_MODE
         value: false
-
       - key: PAYMENT_CREDENTIAL_ENCRYPTION_KEY
         sync: false
-
       - key: ETIMS_CREDENTIAL_ENCRYPTION_KEY
         sync: false
-
       - key: WEBHOOK_SECRET_KEY
         sync: false
-
+      - key: WEBHOOK_TIMEOUT_MS
+        value: 10000
       - key: OPENAI_API_KEY
         sync: false
-
+      - key: AI_MODEL
+        value: gpt-4.1-mini
+      - key: MPESA_ENVIRONMENT
+        value: production
       - key: MPESA_CONSUMER_KEY
         sync: false
-
       - key: MPESA_CONSUMER_SECRET
         sync: false
-
       - key: MPESA_SHORTCODE
         sync: false
-
       - key: MPESA_PASSKEY
         sync: false
-
       - key: MPESA_CALLBACK_URL
         sync: false
-
+      - key: MPESA_INITIATOR_NAME
+        sync: false
       - key: MPESA_SECURITY_CREDENTIAL
         sync: false
-
       - key: STRIPE_SECRET_KEY
         sync: false
-
       - key: STRIPE_WEBHOOK_SECRET
         sync: false
-
       - key: CLOUDINARY_CLOUD_NAME
         sync: false
-
       - key: CLOUDINARY_API_KEY
         sync: false
-
       - key: CLOUDINARY_API_SECRET
         sync: false
-
       - key: SMTP_HOST
         sync: false
-
       - key: SMTP_PORT
         value: 587
-
       - key: SMTP_USER
         sync: false
-
       - key: SMTP_PASSWORD
         sync: false
-
       - key: SMTP_FROM
+        sync: false
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_PORT
+        value: 587
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASSWORD
+        sync: false
+      - key: EMAIL_FROM_ADDRESS
+        sync: false
+      - key: EMAIL_SECURE
+        value: false
+      - key: AT_USERNAME
+        sync: false
+      - key: AT_API_KEY
+        sync: false
+      - key: AT_SENDER_ID
+        sync: false
+      - key: ETIMS_ADAPTER_URL
+        sync: false
+      - key: ETIMS_ADAPTER_TOKEN
         sync: false
 
   - type: web
@@ -122,18 +122,22 @@ services:
     buildCommand: npm install && npm run build
     staticPublishPath: dist
     autoDeploy: true
-
     routes:
       - type: rewrite
         source: /*
         destination: /index.html
-
     envVars:
       - key: VITE_API_URL
         sync: false
-
       - key: VITE_SOCKET_URL
         sync: false
-
+      - key: VITE_PLATFORM_MODE
+        value: true
+      - key: VITE_PLATFORM_API_URL
+        sync: false
       - key: VITE_PLATFORM_HOST
+        sync: false
+      - key: VITE_PUBLIC_TENANT_SLUG
+        sync: false
+      - key: VITE_PUBLIC_TENANT_KEY
         sync: false
