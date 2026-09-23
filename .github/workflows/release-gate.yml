@@ -1,4 +1,4 @@
-name: Eight-Phase Release Gate
+name: Nine-Phase Release Gate
 
 on:
   push:
@@ -268,3 +268,36 @@ jobs:
           sleep 10
       - name: Firestore maintenance cutover contract
         run: node --test tests/firestoreMaintenanceCutover.test.js
+
+
+  phase-9-firestore-demo-seed:
+    name: Phase 9 — Firestore demo seed cutover
+    runs-on: ubuntu-latest
+    needs: phase-8-firestore-maintenance
+    defaults:
+      run:
+        working-directory: server
+    env:
+      FIREBASE_PROJECT_ID: demo-global-tours
+      FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
+      GCLOUD_PROJECT: demo-global-tours
+      JWT_SECRET: ci-only-test-secret
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - name: Install server dependencies
+        run: npm install
+      - name: Install Firebase CLI
+        run: npm install --global firebase-tools
+      - name: Start Firestore emulator
+        run: |
+          firebase emulators:start --only firestore --project demo-global-tours > /tmp/firestore-emulator.log 2>&1 &
+          sleep 10
+      - name: Firestore demo seed cutover contract
+        run: node --test tests/firestoreDemoSeedCutover.test.js
