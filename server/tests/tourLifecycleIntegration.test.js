@@ -132,7 +132,7 @@ test.after(async () => {
 
 
 test("payment completion rolls back financial state when accounting posting fails", { skip: !integrationEnabled }, async () => {
-  if (firestore.connection.readyState === 0) await firestore.connect(process.env.MONGODB_URI);
+  await firestore.connectFirestore();
   const tenantId = firestore.Types.ObjectId();
 
   await runWithTenant({ tenantId, role: "manager" }, async () => {
