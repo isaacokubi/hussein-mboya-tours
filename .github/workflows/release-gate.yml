@@ -1,4 +1,4 @@
-name: Three-Phase Release Gate
+name: Four-Phase Release Gate
 
 on:
   push:
@@ -89,6 +89,27 @@ jobs:
           test -f models/CorporateAccount.js
           test -f models/ChartOfAccount.js
           test -f models/JournalEntry.js
+
+  phase-4-deployment-infrastructure:
+    name: Phase 4 — Deployment & infrastructure acceptance contract
+    runs-on: ubuntu-latest
+    needs: phase-3-release
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - name: Install server dependencies
+        run: npm install
+      - name: Deployment infrastructure contract
+        run: node --test tests/deploymentInfrastructureAcceptance.test.js
 
   phase-3-release:
     name: Phase 3 — Final release gate
