@@ -561,18 +561,116 @@ async function applyUpdate(doc,u,options={}){
   if(u.$pull)for(const[k,v]of Object.entries(u.$pull)){const a=Array.isArray(getPath(doc,k))?getPath(doc,k):[];setPath(doc,k,a.filter(x=>!matchValue(x,v)));}
   for(const[k,v]of Object.entries(u))if(!k.startsWith("$"))setPath(doc,k,v);
 }
+const modelForCollection = (name) => {
+  const normalized = String(name || "").replace(/^[^a-zA-Z]/, "");
+  for (const Model of registry.values()) {
+    const collection = Model.collection?.().path || "";
+    if (collection === normalized || collection === normalized.replace(/s$/, "")) return Model;
+    if (collection.toLowerCase() === normalized.toLowerCase()) return Model;
+  }
+  return null;
+};
+
+const projectAggregate = (doc, spec) => {
+  if (!spec) return clone(doc);
+  const entries=Object.entries(spec);
+  const include=entries.some(([,v])=>v===1||v===true);
+  const out={};
+  if (include) {
+    for (const [key,value] of entries) {
+      if (value===1||value===true) {
+        const v=getPath(doc,key);
+        if(v!==undefined)setPath(out,key,v);
+      } else if (value!==0 && value!==false) {
+        const v=evaluateExpression(value,doc);
+        if(v!==undefined)setPath(out,key,v);
+      }
+    }
+    if(spec._id!==0 && doc._id!==undefined) out._id=doc._id;
+    return out;
+  }
+  const outDoc=clone(doc);
+  for(const [key,value] of entries) if(value===0||value===false) delPath(outDoc,key);
+  return outDoc;
+};
+
 async function runAggregate(name,pipeline){
-  let rows=await db.collection(collectionName(name)).get(); let data=rows.docs.map(d=>normalize(d.data(),d.id));
+  const root=await db.collection(collectionName(name)).get();
+  let data=root.docs.map(d=>normalize(d.data(),d.id));
   for(const stage of pipeline){
-    if(stage.$match)data=data.filter(d=>matches(d,stage.$match));
+    if(stage.$match) data=data.filter(d=>matches(d,stage.$match));
+    else if(stage.$lookup){
+      const { from, localField, foreignField, as, pipeline: lookupPipeline }=stage.$lookup;
+      const Target=modelForCollection(from);
+      let foreign=[];
+      if(Target) {
+        const snap=await Target.collection().get();
+        foreign=snap.docs.map(d=>normalize(d.data(),d.id));
+      } else {
+        const snap=await db.collection(String(from)).get();
+        foreign=snap.docs.map(d=>normalize(d.data(),d.id));
+      }
+      data=data.map(d=>{
+        const local=getPath(d,localField);
+        let matchesRows=foreign.filter(f=>{
+          const fv=getPath(f,foreignField);
+          return Array.isArray(local) ? local.some(v=>eq(v,fv)) : eq(local,fv);
+        });
+        if(lookupPipeline?.length){
+          for(const lookupStage of lookupPipeline){
+            if(lookupStage.$match) matchesRows=matchesRows.filter(row=>matches(row,lookupStage.$match));
+            else if(lookupStage.$project) matchesRows=matchesRows.map(row=>projectAggregate(row,lookupStage.$project));
+            else if(lookupStage.$sort){const s=lookupStage.$sort;matchesRows.sort((a,b)=>{for(const[k,dir]of Object.entries(s)){const av=getPath(a,k),bv=getPath(b,k);if(eq(av,bv))continue;return(av>bv?1:-1)*(dir||1);}return 0;});}
+            else if(lookupStage.$limit) matchesRows=matchesRows.slice(0,lookupStage.$limit);
+          }
+        }
+        return {...d,[as]:matchesRows};
+      });
+    }
+    else if(stage.$unwind){
+      const p=typeof stage.$unwind==="string"?stage.$unwind:stage.$unwind.path;
+      const k=String(p).replace(/^\$/,"");
+      const preserve=typeof stage.$unwind==="object" && stage.$unwind.preserveNullAndEmptyArrays;
+      const out=[];
+      for(const d of data){
+        const a=getPath(d,k);
+        if(Array.isArray(a) && a.length){for(const v of a){const x=clone(d);setPath(x,k,v);out.push(x);}}
+        else if(preserve)out.push(d);
+      }
+      data=out;
+    }
+    else if(stage.$group){
+      const g=stage.$group; const groups=new Map();
+      for(const d of data){
+        const keyValue=evaluateExpression(g._id,d); const key=JSON.stringify(keyValue);
+        if(!groups.has(key))groups.set(key,{_id:keyValue});
+        const out=groups.get(key);
+        for(const [field,expr] of Object.entries(g)){
+          if(field==="_id")continue;
+          const op=Object.keys(expr || {})[0]; const operand=expr?.[op];
+          const value=evaluateExpression(operand,d);
+          if(op==="$sum")out[field]=(out[field]||0)+Number(value||0);
+          else if(op==="$max")out[field]=out[field]===undefined?value:Math.max(Number(out[field]||0),Number(value||0));
+          else if(op==="$min")out[field]=out[field]===undefined?value:Math.min(Number(out[field]||0),Number(value||0));
+          else if(op==="$avg"){out[`__avg_sum_${field}`]=(out[`__avg_sum_${field}`]||0)+Number(value||0);out[`__avg_count_${field}`]=(out[`__avg_count_${field}`]||0)+1;out[field]=out[`__avg_sum_${field}`]/out[`__avg_count_${field}`];}
+          else if(op==="$push")(out[field] ||= []).push(value);
+          else if(op==="$addToSet"){out[field] ||= [];if(!out[field].some(x=>deepEqual(x,value)))out[field].push(value);}
+          else if(op==="$first" && out[field]===undefined)out[field]=value;
+          else if(op==="$last")out[field]=value;
+        }
+      }
+      data=[...groups.values()].map(row=>{for(const key of Object.keys(row))if(key.startsWith("__avg_"))delete row[key];return row;});
+    }
+    else if(stage.$project)data=data.map(d=>projectAggregate(d,stage.$project));
+    else if(stage.$unset){const keys=Array.isArray(stage.$unset)?stage.$unset:[stage.$unset];data=data.map(d=>{const x=clone(d);keys.forEach(k=>delPath(x,k));return x;});}
     else if(stage.$sort){const s=stage.$sort;data.sort((a,b)=>{for(const[k,dir]of Object.entries(s)){const av=getPath(a,k),bv=getPath(b,k);if(eq(av,bv))continue;return(av>bv?1:-1)*(dir||1);}return 0;});}
     else if(stage.$skip)data=data.slice(stage.$skip);
     else if(stage.$limit)data=data.slice(0,stage.$limit);
-    else if(stage.$project)data=data.map(d=>project(d,stage.$project));
-    else if(stage.$unset){const keys=Array.isArray(stage.$unset)?stage.$unset:[stage.$unset];data=data.map(d=>{const x={...d};keys.forEach(k=>delPath(x,k));return x;});}
-    else if(stage.$unwind){const p=typeof stage.$unwind==="string"?stage.$unwind:stage.$unwind.path;const k=p.replace(/^\$/,"");const out=[];for(const d of data){const a=getPath(d,k);if(Array.isArray(a)){for(const v of a){const x=JSON.parse(JSON.stringify(d));setPath(x,k,v);out.push(x);}}else if(a!==undefined)out.push(d);}data=out;}
-    else if(stage.$count){data=[{[stage.$count]:data.length}];}
-    else if(stage.$group){const g=stage.$group;const groups=new Map();for(const d of data){const key=JSON.stringify(g._id===null?null:typeof g._id==="string"?getPath(d,g._id.replace(/^\$/,"")):g._id);if(!groups.has(key))groups.set(key,{_id:g._id===null?null:typeof g._id==="string"?getPath(d,g._id.replace(/^\$/,"")):g._id});const out=groups.get(key);for(const[k,expr]of Object.entries(g)){if(k==="_id")continue;const op=Object.keys(expr)[0],field=expr[op];if(op==="$sum")out[k]=(out[k]||0)+(field===1?1:Number(getPath(d,String(field).replace(/^\$/,""))||0));else if(op==="$max")out[k]=out[k]==null?getPath(d,String(field).replace(/^\$/,"")):Math.max(out[k],Number(getPath(d,String(field).replace(/^\$/,""))||0));else if(op==="$min")out[k]=out[k]==null?getPath(d,String(field).replace(/^\$/,"")):Math.min(out[k],Number(getPath(d,String(field).replace(/^\$/,""))||0));else if(op==="$push")(out[k] ||= []).push(field==="$$ROOT"?d:getPath(d,String(field).replace(/^\$/,"")));else if(op==="$addToSet"){out[k] ||= [];const v=field==="$$ROOT"?d:getPath(d,String(field).replace(/^\$/,""));if(!out[k].some(x=>eq(x,v)))out[k].push(v);}}}data=[...groups.values()];}
+    else if(stage.$count)data=[{[stage.$count]:data.length}];
+    else if(stage.$replaceRoot || stage.$replaceWith){
+      const expression=stage.$replaceRoot?.newRoot ?? stage.$replaceWith;
+      data=data.map(d=>evaluateExpression(expression,d) || {});
+    }
   }
   return data;
 }
