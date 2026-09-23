@@ -1,4 +1,4 @@
-name: Sixteen-Phase Release Gate
+name: Seventeen-Phase Release Gate
 
 on:
   push:
@@ -484,3 +484,24 @@ jobs:
         run: npm install
       - name: Browser acceptance harness contract
         run: node --test tests/browserAcceptanceHarness.test.js
+  phase-17-authenticated-role-acceptance:
+    name: Phase 17 — Authenticated role acceptance harness contract
+    runs-on: ubuntu-latest
+    needs: phase-16-browser-acceptance-harness
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - name: Install server dependencies
+        run: npm install
+      - name: Authenticated role acceptance harness contract
+        run: node --test tests/authenticatedRoleAcceptanceHarness.test.js
+

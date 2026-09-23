@@ -84,7 +84,7 @@ Required production onboarding/configuration and actual submission evidence, inc
 
 **Status: PENDING**
 
-Manual desktop/mobile acceptance remains required for customer, Admin, Finance, Tour Manager, Driver and SuperAdmin workflows.
+The browser harness now provides an automated authenticated acceptance path for customer, Admin, Finance, Tour Manager, Driver, Guide and SuperAdmin using dedicated non-production accounts. Acceptance remains PENDING until the configured target and test accounts actually pass.
 
 ### Data integrity
 
