@@ -84,5 +84,5 @@ try {
   process.exitCode = 1;
 } finally {
   rl.close();
-  await firestore.disconnect().catch(() => {});
+  await firestore.connection.close().catch(() => {});
 }
