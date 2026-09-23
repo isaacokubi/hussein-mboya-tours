@@ -100,6 +100,22 @@ export async function processEtimsInvoiceJob(payload) {
   invoice.etimsSubmissionAttempts = Number(invoice.etimsSubmissionAttempts || 0) + 1;
   await invoice.save();
 
+  const attempt = invoice.etimsSubmissionAttempts;
+  const idempotencyKey = `etims-invoice:${invoice._id}`;
+  const auditSeedHash = crypto.createHash("sha256").update(JSON.stringify({
+    tenantId: payload.tenantId,
+    invoiceId: String(invoice._id),
+    attempt,
+    solution: String(profile.etimsSolution || "").toUpperCase(),
+  })).digest("hex");
+  const audit = await createSubmissionAudit({
+    tenantId: payload.tenantId,
+    invoice,
+    attempt,
+    requestHash: auditSeedHash,
+    idempotencyKey,
+  });
+
   if (String(profile.etimsSolution || "").toUpperCase() === "OSCU") {
     try {
       const result = await submitInvoiceToKra({ tenantId: payload.tenantId, invoice, profile });
@@ -114,6 +130,7 @@ export async function processEtimsInvoiceJob(payload) {
       invoice.etimsReceiptNumber = String(data?.curRcptNo || data?.totRcptNo || invoice.etimsReceiptNumber || "");
       invoice.etimsUniqueRegisterIdentifier = String(data?.intrlData || invoice.etimsUniqueRegisterIdentifier || "");
       invoice.etimsQrCode = String(data?.qrCode || invoice.etimsQrCode || "");
+      if (result.payload) audit.requestHash = crypto.createHash("sha256").update(JSON.stringify(result.payload)).digest("hex");
       audit.status = "synced";
       audit.submittedAt = invoice.etimsSubmittedAt;
       audit.httpStatus = 200;
@@ -139,9 +156,7 @@ export async function processEtimsInvoiceJob(payload) {
 
   const requestPayload = buildInvoicePayload(invoice, profile);
   const requestHash = crypto.createHash("sha256").update(JSON.stringify(requestPayload)).digest("hex");
-  const attempt = invoice.etimsSubmissionAttempts;
-  const idempotencyKey = `etims-invoice:${invoice._id}`;
-  const audit = await createSubmissionAudit({ tenantId: payload.tenantId, invoice, attempt, requestHash, idempotencyKey });
+  audit.requestHash = requestHash;
 
   try {
     const response = await fetch(`${url}/invoices`, {
