@@ -388,3 +388,25 @@ This contract verifies that webhook delivery jobs carry explicit tenant identity
 External webhook evidence remains required: deliver a real signed webhook to an approved consuming system, verify the signature/event ID/tenant payload, and record the receiving-system evidence before setting `PRODUCTION_WEBHOOKS_VERIFIED=true`.
 
 Do not record Phase 15 as passed until the automated contract actually executes successfully. Do not mark the production webhook evidence flag true based on source-code inspection alone.
+
+
+## Phase 16 — Browser acceptance harness
+
+Automated contract:
+```bash
+cd server
+node --test tests/browserAcceptanceHarness.test.js
+```
+
+Browser acceptance against an approved HTTPS staging/production target:
+```bash
+cd client
+npm install
+npm install --no-save playwright@1.55.0
+npx playwright install --with-deps chromium
+BROWSER_ACCEPTANCE_BASE_URL=https://<approved-host> npx playwright test
+```
+
+GitHub Actions workflow: `.github/workflows/browser-acceptance.yml`. Configure `BROWSER_ACCEPTANCE_BASE_URL` as a repository/environment secret or provide an HTTPS `base_url` on manual dispatch.
+
+The browser harness covers public pages, unauthenticated protected-route redirects, login form behavior, desktop Chrome and mobile Pixel 5. It does not certify authenticated role workflows or provider integrations. Do not record browser acceptance as PASS until the target environment test actually executes successfully.
