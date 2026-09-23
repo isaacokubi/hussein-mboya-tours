@@ -171,6 +171,18 @@ External deployment smoke checks, once provider secrets are configured in GitHub
 External evidence remains required for backups, restore, monitoring/alerts, payment callbacks, eTIMS, signed webhooks and rollback.
 
 
+## Phase 7 — Runtime Firestore cutover
+
+Run from `server/`:
+
+```bash
+node --test tests/runtimeFirestoreCutover.test.js
+```
+
+This contract checks that the identified HTTP request paths no longer import Mongoose, that Firestore-backed ObjectId compatibility is used for request validation, that tenant bootstrap uses the Firestore transaction adapter, and that global error handling is database-runtime neutral.
+
+Do not record Phase 7 as passed unless the command is actually executed successfully.
+
 ## Phase 6 — Firestore transaction integrity
 
 Automated integration test:
