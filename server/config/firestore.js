@@ -241,6 +241,20 @@ const matchValue = (actual, expected) => {
     return Object.entries(expected).every(([op,val])=>{
       if(op==="$in") return Array.isArray(val) && val.some(x=>eq(actual,x));
       if(op==="$nin") return Array.isArray(val) && !val.some(x=>eq(actual,x));
+      if(op==="$type") {
+        const types = Array.isArray(val) ? val : [val];
+        return types.some((type) => {
+          if (type === "objectId") return typeof actual === "string" && actual.length > 0;
+          if (type === "string") return typeof actual === "string";
+          if (type === "number") return typeof actual === "number" && Number.isFinite(actual);
+          if (type === "bool" || type === "boolean") return typeof actual === "boolean";
+          if (type === "date") return actual instanceof Date;
+          if (type === "array") return Array.isArray(actual);
+          if (type === "object") return actual !== null && typeof actual === "object" && !Array.isArray(actual) && !(actual instanceof Date);
+          if (type === "null") return actual === null;
+          return false;
+        });
+      }
       if(op==="$ne") return !eq(actual,val);
       if(op==="$gt") return actual != null && actual > val;
       if(op==="$gte") return actual != null && actual >= val;
