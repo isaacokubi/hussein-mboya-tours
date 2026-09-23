@@ -1,4 +1,4 @@
-name: Seventeen-Phase Release Gate
+name: Eighteen-Phase Release Gate
 
 on:
   push:
@@ -505,3 +505,30 @@ jobs:
       - name: Authenticated role acceptance harness contract
         run: node --test tests/authenticatedRoleAcceptanceHarness.test.js
 
+  phase-18-firestore-production-integrity:
+    name: Phase 18 — Firestore production integrity contract
+    runs-on: ubuntu-latest
+    needs: phase-17-authenticated-role-acceptance
+    defaults:
+      run:
+        working-directory: server
+    env:
+      FIREBASE_PROJECT_ID: demo-global-tours
+      FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
+      GCLOUD_PROJECT: demo-global-tours
+      JWT_SECRET: ci-only-test-secret
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - name: Install server dependencies
+        run: npm install
+      - name: Firestore production integrity contract
+        run: node --test tests/firestoreProductionIntegrityScan.test.js
+      - name: Firestore production integrity script syntax
+        run: node --check scripts/firestoreProductionIntegrityScan.js
