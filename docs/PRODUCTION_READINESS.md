@@ -128,3 +128,7 @@ Every push to `main` runs the documentation workflow. It refreshes this generate
 ### Phase 21 — Firestore unique payment integrity
 The Firestore compatibility layer now records and enforces declared unique schema indexes, including tenant-scoped Payment provider identities. Emulator execution remains pending in this environment; this does not certify live M-Pesa or production reconciliation.
 
+
+
+### Phase 22 — Firestore field-level unique integrity
+The Firestore compatibility layer now enforces top-level model fields declared with `unique: true`, including sparse unique declarations. Emulator execution remains pending in this environment; this does not certify production data cleanliness.
