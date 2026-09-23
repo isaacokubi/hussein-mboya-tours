@@ -1,12 +1,12 @@
-import mongoose from "mongoose";
 import Booking from "../models/Booking.js";
 import Payment from "../models/Payment.js";
 import Staff from "../models/Staff.js";
 import Vehicle from "../models/Vehicle.js";
 import Agent from "../models/Agent.js";
 import { requireTenantId, mergeTenantFilter } from "../tenancy/context.js";
+import { Types } from "../config/firestore.js";
 
-const validId = (value) => Boolean(value) && mongoose.Types.ObjectId.isValid(value);
+const validId = (value) => Boolean(value) && Types.ObjectId.isValid(value);
 const fail = (res, status, message) => res.status(status).json({ success: false, message });
 
 export const guardBookingResources = async (req, res, next) => {

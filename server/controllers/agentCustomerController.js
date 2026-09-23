@@ -1,10 +1,9 @@
 import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
-import mongoose from "mongoose";
-
 import Customer from "../models/Customer.js";
 import Agent from "../models/Agent.js";
+import { Types } from "../config/firestore.js";
 
-const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
+const isValidId = (id) => Types.ObjectId.isValid(id);
 
 const allowedCustomerFields = [
   "firstName",

@@ -1,5 +1,4 @@
 import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
-import mongoose from "mongoose";
 import Tour from "../models/Tour.js";
 import Booking from "../models/Booking.js";
 import User from "../models/User.js";

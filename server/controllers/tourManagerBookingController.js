@@ -1,6 +1,6 @@
-import mongoose from "mongoose";
 import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import Booking from "../models/Booking.js";
+import { Types } from "../config/firestore.js";
 
 const customerProjection = "firstName lastName fullName name email phone user";
 const userProjection = "name firstName lastName email phone";
@@ -15,7 +15,7 @@ export const getTourManagerBookings = async (req, res, next) => {
 
     if (status) filter.status = status;
     if (paymentStatus) filter.paymentStatus = paymentStatus;
-    if (tour && mongoose.Types.ObjectId.isValid(tour)) filter.tour = tour;
+    if (tour && Types.ObjectId.isValid(tour)) filter.tour = tour;
 
     if (search?.trim()) {
       const regex = { $regex: search.trim(), $options: "i" };

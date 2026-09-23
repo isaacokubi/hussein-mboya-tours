@@ -1,10 +1,10 @@
 import { mergeTenantFilter } from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
-import mongoose from "mongoose";
 import Organization from "../models/Organization.js";
 import User from "../models/User.js";
 import { runWithTenant } from "../tenancy/context.js";
 import { ensureSystemRoles } from "../services/onboardingService.js";
+import { Types } from "../config/firestore.js";
 
 const slugify = (value) => String(value || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
 
@@ -67,7 +67,7 @@ export async function createTenant(req, res, next) {
 
 export async function getTenant(req, res, next) {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid tenant ID." });
+    if (!Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid tenant ID." });
     const tenant = await runWithTenant({ bypass: true }, () => Organization.findOne(
 mergeTenantFilter(req,{
 _id:req.params.id
