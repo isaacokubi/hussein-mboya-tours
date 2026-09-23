@@ -12,3 +12,8 @@ Phase 20 centralizes M-Pesa STK callback parsing and success validation into a d
 ## Evidence boundary
 
 These are offline application-contract tests. They do not prove a live Safaricom/M-Pesa sandbox callback, provider query, public callback URL, real credentials, deployed payment completion or financial reconciliation. Those remain external acceptance gates.
+
+
+## Stored execution
+
+The persistent test queue contains the exact commands for the offline contract tests and the separate live sandbox acceptance matrix.
