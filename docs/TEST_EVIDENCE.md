@@ -121,3 +121,9 @@ The repository now contains a read-only Firestore production integrity/reconcili
 ## Phase 19 — Production evidence ledger
 
 The repository now contains a machine-checkable production evidence manifest validator. It remains a source-code contract until a real manifest references current external evidence. No production evidence flag is marked PASS by this phase alone.
+
+## Phase 21 — Firestore unique payment integrity
+- Stored: Firestore emulator tests for unique schema indexes, partial indexes and tenant-scoped Payment identities.
+- Pending: actual emulator execution in an environment with Node dependencies/Firebase CLI.
+- External evidence still required for live M-Pesa callbacks and production financial reconciliation.
+
