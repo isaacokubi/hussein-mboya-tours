@@ -44,7 +44,7 @@ export const createPlatformDatabaseBackup = async (req, res) => {
 
     // Use the native collection for platform-owned records so tenant middleware
     // cannot accidentally reject a legitimate platform-scoped backup.
-    const result = await DatabaseBackup.collection.insertOne({
+    const backup = await DatabaseBackup.create({
       tenantId: null,
       file: filename,
       size: fileSize,
@@ -55,8 +55,6 @@ export const createPlatformDatabaseBackup = async (req, res) => {
       createdAt: new Date(),
       updatedAt: new Date(),
     });
-
-    const backup = await DatabaseBackup.collection.findOne({ _id: result.insertedId });
 
     await createAuditLog({
       user: req.user?._id,
@@ -81,11 +79,7 @@ export const createPlatformDatabaseBackup = async (req, res) => {
 
 export const listPlatformDatabaseBackups = async (req, res) => {
   try {
-    const backups = await DatabaseBackup.collection
-      .find(PLATFORM_BACKUP_FILTER)
-      .sort({ createdAt: -1 })
-      .limit(50)
-      .toArray();
+    const backups = await DatabaseBackup.find(PLATFORM_BACKUP_FILTER).sort({ createdAt: -1 }).limit(50).lean();
 
     return res.json({
       success: true,
@@ -105,10 +99,10 @@ export const downloadPlatformDatabaseBackup = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid backup identifier" });
     }
 
-    const backup = await DatabaseBackup.collection.findOne({
+    const backup = await DatabaseBackup.findOne({
       _id: new firestore.Types.ObjectId(req.params.id),
       ...PLATFORM_BACKUP_FILTER,
-    });
+    }).lean();
 
     if (!backup) return res.status(404).json({ success: false, message: "Backup not found" });
 
@@ -128,17 +122,17 @@ export const deletePlatformDatabaseBackup = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid backup identifier" });
     }
 
-    const backup = await DatabaseBackup.collection.findOne({
+    const backup = await DatabaseBackup.findOne({
       _id: new firestore.Types.ObjectId(req.params.id),
       ...PLATFORM_BACKUP_FILTER,
-    });
+    }).lean();
 
     if (!backup) return res.status(404).json({ success: false, message: "Backup not found" });
 
     const filepath = path.join(BACKUP_DIR, path.basename(backup.file));
     if (fs.existsSync(filepath)) fs.rmSync(filepath, { force: true });
 
-    await DatabaseBackup.collection.deleteOne({
+    await DatabaseBackup.deleteOne({
       _id: backup._id,
       ...PLATFORM_BACKUP_FILTER,
     });
