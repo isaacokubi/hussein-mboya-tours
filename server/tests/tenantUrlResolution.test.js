@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
-import { isTenantSubdomainHost } from "../middleware/tenantMiddleware.js";
+import { isTenantSubdomainHost } from "../utils/tenantHost.js";
 
 const read = (file) => fs.readFileSync(path.join(process.cwd(), file), "utf8");
 
