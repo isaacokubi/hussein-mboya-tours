@@ -7,7 +7,7 @@
 - Verified application commit: `8f9e90bb`.
 - Branch: `main`.
 - The only pre-existing local worktree change was the user's `.gitignore` modification; it was preserved and not overwritten.
-- Documentation automation was added immediately after the application verification so future pushes keep repository-state documentation synchronized.
+- A documentation workflow generates a repository-state artifact for review; it does not modify or push repository contents.
 
 ### Full verification results
 
@@ -100,14 +100,14 @@ Never document secrets, passwords, access tokens, private keys, MFA PINs or paym
 <!-- DOCS-AUTO:START -->
 ## Automatically captured repository state
 
-- Snapshot date (UTC): 2026-09-21
+- Snapshot date (UTC): 2026-09-23
 - Branch: `main`
-- Commit: `9b274843d5dd00cf2522a6d09967a875c924598f`
+- Commit: `336038c9c43f9e504b3638e605cfdcab476a7003`
 - Server package: `hussein-mboya-tours-server@1.0.0`
 - Client package: `client@0.0.0`
 - Automated documentation updater: `scripts/update-documentation.js`
 - CI automation: `.github/workflows/documentation.yml`
 
-The generated state above is refreshed automatically after pushes to `main`. Historical test evidence below this section is retained and must only be updated when the corresponding test actually runs and produces evidence.
+The workflow generates this state for artifact review; it does not alter the repository. Historical test evidence below this section is retained and must only be updated when the corresponding test actually runs and produces evidence.
 
 <!-- DOCS-AUTO:END -->

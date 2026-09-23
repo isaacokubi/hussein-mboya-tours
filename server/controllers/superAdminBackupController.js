@@ -1,3 +1,4 @@
+import { publicErrorMessage } from "../utils/publicError.js";
 import fs from "fs";
 import path from "path";
 import mongoose from "mongoose";
@@ -75,7 +76,7 @@ export const createPlatformDatabaseBackup = async (req, res) => {
     });
   } catch (error) {
     console.error("PLATFORM BACKUP ERROR", error);
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: publicErrorMessage(error) });
   }
 };
 

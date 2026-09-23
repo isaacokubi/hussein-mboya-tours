@@ -1,3 +1,4 @@
+import { publicErrorMessage } from "../utils/publicError.js";
 import { mergeTenantFilter } from "../tenancy/context.js";
 import Customer from "../models/Customer.js";
 import Booking from "../models/Booking.js";
@@ -26,7 +27,7 @@ export const getCRMStats = async (req, res) => {
 
     res.status(500).json({
       success: false,
-      message: error.message
+      message: publicErrorMessage(error)
     });
   }
 };

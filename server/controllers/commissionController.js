@@ -1,3 +1,4 @@
+import { publicErrorMessage } from "../utils/publicError.js";
 import mongoose from "mongoose";
 import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
@@ -66,7 +67,7 @@ export const getCommissions = async (req, res) => {
     return res.json({ success: true, data: commissions.map(serializeCommission) });
   } catch (error) {
     console.error("Admin get commissions error:", error);
-    return res.status(error.status || 500).json({ success: false, message: error.message });
+    return res.status(error.status || 500).json({ success: false, message: publicErrorMessage(error) });
   }
 };
 
@@ -98,7 +99,7 @@ export const getAgentCommissions = async (req, res) => {
     return res.json({ success: true, data: commissions.map(serializeCommission) });
   } catch (error) {
     console.error("Admin get agent commissions error:", error);
-    return res.status(error.status || 500).json({ success: false, message: error.message });
+    return res.status(error.status || 500).json({ success: false, message: publicErrorMessage(error) });
   }
 };
 

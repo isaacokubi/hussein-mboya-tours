@@ -1,3 +1,4 @@
+import { publicErrorMessage } from "../utils/publicError.js";
 import Organization from "../models/Organization.js";
 
 export async function getBranding(req, res) {
@@ -31,7 +32,7 @@ export async function getBranding(req, res) {
       },
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: publicErrorMessage(error) });
   }
 }
 
@@ -56,6 +57,6 @@ export async function updateBranding(req, res) {
     return res.json({ success: true, organization: updated });
   } catch (error) {
     if (error?.code === 11000) return res.status(409).json({ success: false, message: "That custom domain is already assigned to another company." });
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: publicErrorMessage(error) });
   }
 }

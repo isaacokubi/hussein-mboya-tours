@@ -1,3 +1,4 @@
+import { publicErrorMessage } from "../utils/publicError.js";
 import { mergeTenantFilter } from "../tenancy/context.js";
 import { isTenantBypassed } from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
@@ -16,9 +17,9 @@ const backupFilter = (req) => (isTenantBypassed() ? {} : tenantFilter(req));
 
 const backupCollectionFilter = (req) => (isTenantBypassed() ? {} : tenantFilter(req));
 
-export const getAuditLogs = async (req, res) => { try { const { page = 1, search = "", action = "", resource = "", status = "", severity = "" } = req.query; const currentPage = Math.max(Number(page) || 1, 1); const limit = AUDIT_PAGE_SIZE; const filter = {}; if (action) filter.action = action; if (resource) filter.resource = resource; if (status) filter.status = status; if (severity) filter.severity = severity; if (search) filter.$or = [{ description: { $regex: search, $options: "i" } }, { resource: { $regex: search, $options: "i" } }, { action: { $regex: search, $options: "i" } }]; const skip = (currentPage - 1) * limit; const [logs, total, success, failed, critical] = await Promise.all([AuditLog.find(filter).populate("user", "name email role").sort({ createdAt: -1 }).skip(skip).limit(limit), AuditLog.countDocuments(filter), AuditLog.countDocuments({ status: "success" }), AuditLog.countDocuments({ status: "failed" }), AuditLog.countDocuments({ severity: "critical" })]); return res.json({ success: true, statistics: { total, success, failed, critical }, pagination: { page: currentPage, limit, pages: Math.max(1, Math.ceil(total / limit)) }, logs }); } catch (error) { res.status(500).json({ success: false, message: error.message }); } };
+export const getAuditLogs = async (req, res) => { try { const { page = 1, search = "", action = "", resource = "", status = "", severity = "" } = req.query; const currentPage = Math.max(Number(page) || 1, 1); const limit = AUDIT_PAGE_SIZE; const filter = {}; if (action) filter.action = action; if (resource) filter.resource = resource; if (status) filter.status = status; if (severity) filter.severity = severity; if (search) filter.$or = [{ description: { $regex: search, $options: "i" } }, { resource: { $regex: search, $options: "i" } }, { action: { $regex: search, $options: "i" } }]; const skip = (currentPage - 1) * limit; const [logs, total, success, failed, critical] = await Promise.all([AuditLog.find(filter).populate("user", "name email role").sort({ createdAt: -1 }).skip(skip).limit(limit), AuditLog.countDocuments(filter), AuditLog.countDocuments({ status: "success" }), AuditLog.countDocuments({ status: "failed" }), AuditLog.countDocuments({ severity: "critical" })]); return res.json({ success: true, statistics: { total, success, failed, critical }, pagination: { page: currentPage, limit, pages: Math.max(1, Math.ceil(total / limit)) }, logs }); } catch (error) { res.status(500).json({ success: false, message: publicErrorMessage(error) }); } };
 
-export const getSecurityStatus = async (req, res) => { try { const securityService = await import("../services/securityService.js"); const data = await securityService.default.getSecurityStatus(); await createAuditLog({ user: req.user?._id, action: "view", resource: "Security", description: "Viewed security center status", severity: "low", ipAddress: req.ip, userAgent: req.headers["user-agent"], endpoint: req.originalUrl, method: req.method }); res.json({ success: true, data }); } catch (error) { res.status(500).json({ success: false, message: error.message }); } };
+export const getSecurityStatus = async (req, res) => { try { const securityService = await import("../services/securityService.js"); const data = await securityService.default.getSecurityStatus(); await createAuditLog({ user: req.user?._id, action: "view", resource: "Security", description: "Viewed security center status", severity: "low", ipAddress: req.ip, userAgent: req.headers["user-agent"], endpoint: req.originalUrl, method: req.method }); res.json({ success: true, data }); } catch (error) { res.status(500).json({ success: false, message: publicErrorMessage(error) }); } };
 export const getDatabaseStatus = async (req, res) => { try { const state = mongoose.connection.readyState; res.json({ success: true, database: { status: state === 1 ? "Connected" : "Disconnected", connected: state === 1, host: mongoose.connection.host || "Unknown", name: mongoose.connection.name || "Unknown", environment: process.env.NODE_ENV || "production", checkedAt: new Date() } }); } catch (error) { console.error("DATABASE STATUS ERROR", error); res.status(500).json({ success: false, message: "Unable to read database status" }); } };
 
 export const getSystemHealth = async (req, res) => {
@@ -59,7 +60,7 @@ export const getSystemHealth = async (req, res) => {
 };
 
 export const getApiMonitor = async (req, res) => { res.json({ success: true, api: { status: "online", timestamp: new Date(), service: "Global Tours API" } }); };
-export const clearSystemCache = async (req, res) => { try { const folders = [path.join(process.cwd(), "cache"), path.join(process.cwd(), "tmp"), path.join(process.cwd(), "uploads", "tmp")]; const cleared = []; for (const folder of folders) if (fs.existsSync(folder)) { for (const item of fs.readdirSync(folder)) fs.rmSync(path.join(folder, item), { recursive: true, force: true }); cleared.push(folder); } res.json({ success: true, message: "System cache cleared successfully", cleared, timestamp: new Date() }); } catch (error) { try { await createAuditLog({ user: req.user?._id, action: "error", resource: "Database", description: error.message, status: "failed", severity: "high" }); } catch {} res.status(500).json({ success: false, message: error.message }); } };
+export const clearSystemCache = async (req, res) => { try { const folders = [path.join(process.cwd(), "cache"), path.join(process.cwd(), "tmp"), path.join(process.cwd(), "uploads", "tmp")]; const cleared = []; for (const folder of folders) if (fs.existsSync(folder)) { for (const item of fs.readdirSync(folder)) fs.rmSync(path.join(folder, item), { recursive: true, force: true }); cleared.push(folder); } res.json({ success: true, message: "System cache cleared successfully", cleared, timestamp: new Date() }); } catch (error) { try { await createAuditLog({ user: req.user?._id, action: "error", resource: "Database", description: error.message, status: "failed", severity: "high" }); } catch {} res.status(500).json({ success: false, message: publicErrorMessage(error) }); } };
 
 export const createDatabaseBackup = async (req, res) => {
   try {
@@ -105,7 +106,7 @@ export const createDatabaseBackup = async (req, res) => {
     res.json({ success: true, message: "Database backup created successfully", file: filename, scope: platformBackup ? "platform" : "tenant" });
   } catch (error) {
     console.error("BACKUP ERROR DETAILS:", error.message, error.stack);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: publicErrorMessage(error) });
   }
 };
 
@@ -115,7 +116,7 @@ export const listDatabaseBackups = async (req, res) => {
     res.json({ success: true, backups });
   } catch (error) {
     console.error("LIST BACKUPS ERROR", error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: publicErrorMessage(error) });
   }
 };
 
@@ -128,7 +129,7 @@ export const downloadDatabaseBackup = async (req, res) => {
     res.download(filepath);
   } catch (error) {
     await createAuditLog({ user: req.user?._id, action: "error", resource: "Database", description: error.message, status: "failed", severity: "high" });
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: publicErrorMessage(error) });
   }
 };
 
@@ -141,6 +142,6 @@ export const deleteDatabaseBackup = async (req, res) => {
     await DatabaseBackup.findOneAndDelete(mergeTenantFilter(req, { _id: req.params.id }));
     res.json({ success: true, message: "Backup deleted successfully" });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: publicErrorMessage(error) });
   }
 };

@@ -1,3 +1,4 @@
+import { publicErrorMessage } from "../utils/publicError.js";
 import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import User from "../models/User.js";
 import Staff from "../models/Staff.js";
@@ -170,7 +171,7 @@ res.status(500).json({
 
 success:false,
 
-message:error.message
+message: publicErrorMessage(error)
 
 });
 

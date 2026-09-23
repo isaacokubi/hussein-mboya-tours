@@ -51,10 +51,18 @@ function enforceUpdateTenant(update, tenantId) {
   if (!update || !tenantId) return;
   if (Array.isArray(update)) {
     for (const stage of update) {
+      if (stage?.$replaceRoot || stage?.$replaceWith || stage?.$project) {
+        throw new Error("Tenant-scoped update pipelines cannot replace or project the document root.");
+      }
       const requestedTenant = stage?.$set?.[TENANT_PATH] ?? stage?.$addFields?.[TENANT_PATH] ?? stage?.$setOnInsert?.[TENANT_PATH];
       assertTenantValue(requestedTenant, tenantId);
       const unset = stage?.$unset;
-      const attemptsToUnset = Array.isArray(unset) ? unset.includes(TENANT_PATH) : Boolean(unset && Object.prototype.hasOwnProperty.call(unset, TENANT_PATH));
+      const unsetPaths = Array.isArray(unset)
+        ? unset
+        : typeof unset === "string"
+          ? [unset]
+          : Object.keys(unset || {});
+      const attemptsToUnset = unsetPaths.includes(TENANT_PATH);
       if (attemptsToUnset) throw new Error("Cross-tenant tenantId removal rejected.");
     }
     return;
@@ -133,6 +141,22 @@ function enforceGraphLookupStage(stage, tenantId) {
   lookup.restrictSearchWithMatch ||= {};
   assertTenantValue(lookup.restrictSearchWithMatch[TENANT_PATH], tenantId, "Cross-tenant graph lookup rejected.");
   lookup.restrictSearchWithMatch[TENANT_PATH] = tenantObjectId(tenantId);
+}
+
+function enforceNestedAggregatePipelines(pipeline, tenantId) {
+  for (const stage of pipeline || []) {
+    enforceLookupStage(stage, tenantId);
+    enforceUnionStage(stage, tenantId);
+    enforceGraphLookupStage(stage, tenantId);
+
+    if (stage?.$facet && typeof stage.$facet === "object") {
+      for (const nestedPipeline of Object.values(stage.$facet)) {
+        if (Array.isArray(nestedPipeline)) enforceNestedAggregatePipelines(nestedPipeline, tenantId);
+      }
+    }
+    if (Array.isArray(stage?.$lookup?.pipeline)) enforceNestedAggregatePipelines(stage.$lookup.pipeline, tenantId);
+    if (Array.isArray(stage?.$unionWith?.pipeline)) enforceNestedAggregatePipelines(stage.$unionWith.pipeline, tenantId);
+  }
 }
 
 export function tenantPlugin(schema, options = {}) {
@@ -243,7 +267,7 @@ export function tenantPlugin(schema, options = {}) {
           existing[TENANT_PATH] = match[TENANT_PATH];
         } else pipeline[0] = { $match: { $and: [existing, match] } };
       } else pipeline.unshift({ $match: match });
-      for (const stage of pipeline) { enforceLookupStage(stage, tenantId); enforceUnionStage(stage, tenantId); enforceGraphLookupStage(stage, tenantId); }
+      enforceNestedAggregatePipelines(pipeline, tenantId);
       next();
     } catch (error) { next(error); }
   });

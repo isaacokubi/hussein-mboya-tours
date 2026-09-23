@@ -78,24 +78,24 @@ The platform includes:
 - [Production readiness](docs/PRODUCTION_READINESS.md) — current readiness matrix and release rules.
 - [Test evidence register](docs/TEST_EVIDENCE.md) — chronological evidence and explicit pending/not-verified gates.
 - [Documentation automation](scripts/update-documentation.js) — generates the current repository-state section.
-- [Documentation workflow](.github/workflows/documentation.yml) — automatically refreshes documentation on pushes to `main`.
+- [Documentation workflow](.github/workflows/documentation.yml) — generates a reviewable documentation snapshot artifact on pushes to `main`.
 
 ## Documentation policy
 
-Documentation is part of the release process. The GitHub Actions documentation workflow automatically refreshes repository metadata after every push to `main` and commits documentation-only changes when required.
+Documentation is part of the release process. The GitHub Actions documentation workflow generates repository metadata after every push to `main` and publishes it as an artifact for review; it does not write to the repository.
 
 Historical test evidence is **not** auto-marked PASS. A test is recorded as PASS only when its required evidence actually exists. External/provider results remain explicitly PENDING, BLOCKED or NOT VERIFIED until verified.
 
 <!-- DOCS-AUTO:START -->
 ## Current repository state
 
-This section is maintained automatically by `scripts/update-documentation.js` and the GitHub Actions documentation workflow.
+This section is maintained by `scripts/update-documentation.js`. The GitHub Actions workflow uploads a generated snapshot artifact for review.
 
 - **Repository:** Global Tours — multi-tenant tours & travel SaaS
 - **Branch:** `main`
-- **Current commit:** `9b274843d5dd00cf2522a6d09967a875c924598f`
-- **Short commit:** `9b274843`
-- **Documentation snapshot date (UTC):** 2026-09-21
+- **Current commit:** `336038c9c43f9e504b3638e605cfdcab476a7003`
+- **Short commit:** `336038c`
+- **Documentation snapshot date (UTC):** 2026-09-23
 - **Server package:** `hussein-mboya-tours-server@1.0.0`
 - **Client package:** `client@0.0.0`
 - **Server verification commands:** `npm run check:all`, `npm test`, `npm run test:security`, `npm run test:tour-domain`
@@ -105,6 +105,6 @@ This section is maintained automatically by `scripts/update-documentation.js` an
 
 ### Documentation automation
 
-Every push to `main` runs the documentation workflow. It refreshes this generated repository-state section and commits documentation-only changes when the generated content changes. Manual edits outside the generated markers are preserved.
+The workflow has read-only repository permissions and does not modify or push repository contents. Manual changes to generated files should be reviewed as regular repository updates.
 
 <!-- DOCS-AUTO:END -->

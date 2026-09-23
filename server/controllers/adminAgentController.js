@@ -1,3 +1,4 @@
+import { publicErrorMessage } from "../utils/publicError.js";
 import mongoose from "mongoose";
 import { requireTenantId, getTenantId } from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
@@ -131,7 +132,7 @@ export const getAgents = async (req, res) => {
     return res.status(error.status || 500).json({
       success: false,
       code: error.code || "ADMIN_AGENTS_FETCH_FAILED",
-      message: error.message || "Unable to load agent accounts.",
+      message: publicErrorMessage(error, "Unable to load agent accounts."),
     });
   }
 };
@@ -147,7 +148,7 @@ export const getAgentById = async (req, res) => {
     return res.json({ success: true, data: agent });
   } catch (error) {
     console.error("Admin get agent error:", error);
-    return res.status(error.status || 500).json({ success: false, message: error.message });
+    return res.status(error.status || 500).json({ success: false, message: publicErrorMessage(error) });
   }
 };
 
@@ -241,6 +242,6 @@ export const updateAgentStatus = async (req, res) => {
     return res.json({ success: true, message: "Agent status and access updated", data: updatedAgent });
   } catch (error) {
     console.error("Admin agent status update failed:", error);
-    return res.status(error.status || 500).json({ success: false, message: error.message });
+    return res.status(error.status || 500).json({ success: false, message: publicErrorMessage(error) });
   }
 };

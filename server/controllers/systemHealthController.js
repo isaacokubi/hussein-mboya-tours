@@ -1,3 +1,4 @@
+import { publicErrorMessage } from "../utils/publicError.js";
 import mongoose from "mongoose";
 import axios from "axios";
 import cloudinary from "../config/cloudinary.js";
@@ -67,7 +68,7 @@ export const getSystemHealth = async (req, res) => {
     };
     return res.json({ success: true, ...system, system });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: publicErrorMessage(error) });
   }
 };
 

@@ -61,6 +61,31 @@ try {
   await expect("Tenant-scoped insertMany", async () => { const docs = await runWithTenant({ tenantId: tenantA._id }, () => Destination.insertMany([fixture(`Isolation Bulk 1 ${suffix}`, `isolation-bulk-1-${suffix}`), fixture(`Isolation Bulk 2 ${suffix}`, `isolation-bulk-2-${suffix}`)])); createdDestinationIds.push(...docs.map((doc) => doc._id)); if (docs.some((doc) => String(doc.tenantId) !== String(tenantA._id))) throw new Error("insertMany assigned the wrong tenant."); });
   await expect("Tenant-scoped bulkWrite", async () => { const result = await runWithTenant({ tenantId: tenantA._id }, () => Destination.bulkWrite([{ updateOne: { filter: { _id: destinationA._id }, update: { $set: { shortDescription: "tenant-isolation-regression" } } } }])); if (result.matchedCount !== 1) throw new Error("bulkWrite did not target the tenant-owned record."); });
   await expect("Cross-tenant aggregation lookup blocked", async () => { const rows = await runWithTenant({ tenantId: tenantA._id }, () => Destination.aggregate([{ $match: { _id: destinationA._id } }, { $lookup: { from: "destinations", pipeline: [{ $match: { country: "Kenya" } }], as: "allKenyaDestinations" } }])); const joinedIds = (rows[0]?.allKenyaDestinations || []).map((row) => String(row._id)); if (joinedIds.includes(String(destinationB._id))) throw new Error("Aggregation lookup returned Tenant B data."); if (!joinedIds.includes(String(destinationA._id))) throw new Error("Aggregation lookup lost Tenant A data."); });
+  await expect("Nested facet lookup remains tenant-scoped", async () => {
+    const rows = await runWithTenant({ tenantId: tenantA._id }, () => Destination.aggregate([
+      { $match: { _id: destinationA._id } },
+      { $facet: { related: [{ $lookup: { from: Destination.collection.name, pipeline: [{ $match: { _id: destinationB._id } }], as: "otherTenant" } }] } },
+    ]));
+    if (rows[0]?.related?.[0]?.otherTenant?.length) throw new Error("Nested facet lookup returned Tenant B data.");
+  });
+  await expect("Aggregation update cannot remove tenantId with string unset", async () => {
+    try {
+      await runWithTenant({ tenantId: tenantA._id }, () => Destination.updateOne({ _id: destinationA._id }, [{ $unset: "tenantId" }]));
+    } catch (error) {
+      if (/Cross-tenant tenantId removal rejected/.test(error.message)) return;
+      throw error;
+    }
+    throw new Error("Tenant-scoped update pipeline removed tenantId.");
+  });
+  await expect("Aggregation update cannot replace the tenant-scoped document root", async () => {
+    try {
+      await runWithTenant({ tenantId: tenantA._id }, () => Destination.updateOne({ _id: destinationA._id }, [{ $replaceWith: { $literal: { name: "replaced" } } }]));
+    } catch (error) {
+      if (/cannot replace or project the document root/.test(error.message)) return;
+      throw error;
+    }
+    throw new Error("Tenant-scoped update pipeline replaced the document root.");
+  });
   await expect("estimatedDocumentCount fails closed", async () => { try { await runWithTenant({ tenantId: tenantA._id }, () => Destination.estimatedDocumentCount()); } catch (error) { if (/not tenant-safe|Tenant context|blocked for tenant-scoped models/i.test(error.message)) return; throw error; } throw new Error("estimatedDocumentCount unexpectedly succeeded in tenant context."); });
   await expect("Tenant data survives cross-tenant attacks", async () => { const own = await runWithTenant({ tenantId: tenantA._id }, () => Destination.findById(destinationA._id).lean()); const other = await runWithTenant({ tenantId: tenantB._id }, () => Destination.findById(destinationA._id).lean()); if (!own) throw new Error("Tenant A lost its own record."); if (other) throw new Error("Tenant B can read Tenant A data."); });
 } finally {

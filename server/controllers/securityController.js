@@ -1,3 +1,4 @@
+import { publicErrorMessage } from "../utils/publicError.js";
 import { mergeTenantFilter } from "../tenancy/context.js";
 import securityService from "../services/securityService.js";
 
@@ -15,7 +16,7 @@ export const getSecurityStatus = async (req,res)=>{
 
     res.status(500).json({
       success:false,
-      message:error.message
+      message: publicErrorMessage(error)
     });
 
   }
@@ -36,7 +37,7 @@ export const getSecurityEvents = async (req,res)=>{
 
     res.status(500).json({
       success:false,
-      message:error.message
+      message: publicErrorMessage(error)
     });
 
   }

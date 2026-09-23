@@ -1,3 +1,4 @@
+import { publicErrorMessage } from "../utils/publicError.js";
 import mongoose from "mongoose";
 import getCanonicalSuperAdminCustomerMetrics from "../services/superAdminDataConsistency.js";
 
@@ -265,7 +266,7 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
     console.error("SuperAdmin dashboard metrics error:", error);
     return res.status(500).json({
       success: false,
-      message: error.message || "Unable to load platform metrics.",
+      message: publicErrorMessage(error, "Unable to load platform metrics."),
     });
   }
 };

@@ -1,3 +1,4 @@
+import { publicErrorMessage } from "../utils/publicError.js";
 import Booking from "../models/Booking.js";
 import Destination from "../models/Destination.js";
 import Payment from "../models/Payment.js";
@@ -87,10 +88,10 @@ export const getDashboardMetrics = async (req, res) => {
     });
   } catch (error) {
     console.error("Admin dashboard metrics error:", error);
-    return res.status(error.status || 500).json({ success: false, message: error.message || "Unable to load dashboard metrics." });
+    return res.status(error.status || 500).json({ success: false, message: publicErrorMessage(error, "Unable to load dashboard metrics.") });
   }
 };
 
-export const getUserAnalytics = async (req, res) => { try { const tenantId = requireTenantId(); const filter = { tenantId, ...active }; const [total, activeUsers, customers, agents] = await Promise.all([User.countDocuments(filter), User.countDocuments({ ...filter, status: { $ne: "blocked" } }), User.countDocuments({ tenantId, ...active, ...customerUserFilter }), Agent.countDocuments({ tenantId, ...active, status: { $ne: "inactive" } })]); return res.json({ success: true, data: { total, active: activeUsers, customers, agents } }); } catch (error) { return res.status(error.status || 500).json({ success: false, message: error.message }); } };
-export const getBookingAnalytics = async (req, res) => { try { const tenantId = requireTenantId(); const status = await Booking.aggregate([{ $match: { tenantId, ...active } }, { $group: { _id: "$status", count: { $sum: 1 } } }]); return res.json({ success: true, data: { status: status.map((x) => ({ status: clean(x._id).toLowerCase(), count: Number(x.count || 0) })) } }); } catch (error) { return res.status(error.status || 500).json({ success: false, message: error.message }); } };
-export const getRevenueAnalytics = async (req, res) => { try { requireTenantId(); const report = await getPostedRevenueReport(); return res.json({ success: true, data: { monthly: report.monthly, revenueBasis: "posted_journals" } }); } catch (error) { return res.status(error.status || 500).json({ success: false, message: error.message }); } };
+export const getUserAnalytics = async (req, res) => { try { const tenantId = requireTenantId(); const filter = { tenantId, ...active }; const [total, activeUsers, customers, agents] = await Promise.all([User.countDocuments(filter), User.countDocuments({ ...filter, status: { $ne: "blocked" } }), User.countDocuments({ tenantId, ...active, ...customerUserFilter }), Agent.countDocuments({ tenantId, ...active, status: { $ne: "inactive" } })]); return res.json({ success: true, data: { total, active: activeUsers, customers, agents } }); } catch (error) { return res.status(error.status || 500).json({ success: false, message: publicErrorMessage(error) }); } };
+export const getBookingAnalytics = async (req, res) => { try { const tenantId = requireTenantId(); const status = await Booking.aggregate([{ $match: { tenantId, ...active } }, { $group: { _id: "$status", count: { $sum: 1 } } }]); return res.json({ success: true, data: { status: status.map((x) => ({ status: clean(x._id).toLowerCase(), count: Number(x.count || 0) })) } }); } catch (error) { return res.status(error.status || 500).json({ success: false, message: publicErrorMessage(error) }); } };
+export const getRevenueAnalytics = async (req, res) => { try { requireTenantId(); const report = await getPostedRevenueReport(); return res.json({ success: true, data: { monthly: report.monthly, revenueBasis: "posted_journals" } }); } catch (error) { return res.status(error.status || 500).json({ success: false, message: publicErrorMessage(error) }); } };

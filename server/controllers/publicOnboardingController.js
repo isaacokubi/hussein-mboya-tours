@@ -1,3 +1,4 @@
+import { publicErrorMessage } from "../utils/publicError.js";
 import buildPermissions from "../utils/buildPermissions.js";
 import generateToken from "../utils/generateToken.js";
 import { createAuditLog } from "../services/auditService.js";
@@ -96,12 +97,12 @@ export async function registerTenantPublic(req, res, next) {
         code: "DUPLICATE_KEY",
         field,
         indexName: error.indexName || null,
-        message: error.message || `${field} already exists`,
+        message: publicErrorMessage(error) || `${field} already exists`,
       });
     }
 
     if (/already in use|already registered|Invalid subscription|not configured|Missing:/.test(String(error?.message || ""))) {
-      return res.status(409).json({ success: false, message: error.message });
+      return res.status(409).json({ success: false, message: publicErrorMessage(error) });
     }
 
     return next(error);

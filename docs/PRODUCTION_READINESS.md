@@ -12,10 +12,10 @@ The current working tree passed the local checks listed below. This is not a pro
 | Area | Status | Evidence |
 |---|---|---|
 | Server static/security/production checks | PASS | `cd server && npm run check:all` |
-| Backend automated suite | PASS | `cd server && npm test`; 29 passed, 0 failed |
+| Backend automated suite | PASS | `cd server && npm test`; 31 passed, 0 failed |
 | Client lint | PASS | `cd client && npm run lint` |
 | Client production build | PASS | `cd client && npm run build` |
-| Live MongoDB tenant-isolation regression | PASS | `cd server && npm run check:multitenancy:live`; 14 cross-tenant checks passed |
+| Live MongoDB tenant-isolation regression | PASS | `cd server && npm run check:multitenancy:live`; 17 cross-tenant checks passed |
 | Production contract (static mode) | PASS | `cd server && npm run check:production` |
 | Dependency audit | PASS | Server and client `npm audit --omit=dev --audit-level=high`; 0 vulnerabilities reported |
 | Production runtime readiness | BLOCKED | Runtime check correctly rejects missing deployment-only configuration/evidence; see external gates below |
@@ -32,9 +32,13 @@ The current working tree passed the local checks listed below. This is not a pro
 - M-Pesa refund callback handling enforces tenant context before payment lookup/mutation.
 - Tenant URL resolution rejects unknown explicit tenant selectors rather than silently resolving another tenant; tenant-origin CORS is tied to a registered tenant subdomain, custom domain or active website integration origin.
 - Raw customer/user/tour/staff/vehicle lookups used in tenant booking administration include tenant scope.
+- Tenant-scoped Mongoose update pipelines reject string-form tenantId removal and document-root replacement/projection; aggregate tenant enforcement also descends into facet, lookup and union subpipelines.
+- Production API errors now suppress internal exception details while preserving explicitly safe client-facing payment-configuration errors.
 - M-Pesa callback completion requires a correlated payment, valid provider status and tenant context; failed callbacks are validated as well as successful callbacks.
+- Legacy/global M-Pesa credentials require explicit opt-in outside production; production can never use the global fallback.
 - eTIMS invoice/note synchronization only records success when the normalized provider response explicitly succeeds and includes provider reference data.
 - Production readiness now requires a configured platform hostname and the deployment's external evidence flags.
+- Documentation CI uploads a generated snapshot artifact with read-only repository permissions; it no longer commits or pushes changes to `main`.
 
 The live tenant-isolation script used the configured MongoDB connection and cleaned up its regression fixtures. The client lint command completed successfully; it takes longer than the server checks because it scans the full client tree.
 
@@ -111,11 +115,12 @@ Never record passwords, tokens, private keys, MFA PINs, M-Pesa secrets/passkeys 
 <!-- DOCS-AUTO:START -->
 ## Current repository state
 
-This section is maintained automatically by `scripts/update-documentation.js` and the GitHub Actions documentation workflow.
+This section is maintained by `scripts/update-documentation.js`. The GitHub Actions workflow uploads a generated snapshot artifact for review.
 
 - **Repository:** Global Tours — multi-tenant tours & travel SaaS
 - **Branch:** `main`
-- **Current commit:** refreshed by the documentation workflow after push
+- **Current commit:** `336038c9c43f9e504b3638e605cfdcab476a7003`
+- **Short commit:** `336038c`
 - **Documentation snapshot date (UTC):** 2026-09-23
 - **Server package:** `hussein-mboya-tours-server@1.0.0`
 - **Client package:** `client@0.0.0`
@@ -126,6 +131,6 @@ This section is maintained automatically by `scripts/update-documentation.js` an
 
 ### Documentation automation
 
-Every push to `main` runs the documentation workflow. It refreshes this generated repository-state section and commits documentation-only changes when the generated content changes. Manual edits outside the generated markers are preserved.
+The workflow has read-only repository permissions and does not modify or push repository contents. Manual changes to generated files should be reviewed as regular repository updates.
 
 <!-- DOCS-AUTO:END -->

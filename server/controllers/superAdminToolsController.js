@@ -1,3 +1,4 @@
+import { publicErrorMessage } from "../utils/publicError.js";
 import { mergeTenantFilter } from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 import { getSystemSettings } from "../services/settingsService.js";
@@ -32,7 +33,7 @@ logs
 
 res.status(500).json({
 success:false,
-message:error.message
+message: publicErrorMessage(error)
 });
 
 }
@@ -67,7 +68,7 @@ events
 
 res.status(500).json({
 success:false,
-message:error.message
+message: publicErrorMessage(error)
 });
 
 }
@@ -105,7 +106,7 @@ name:mongoose.connection.name
 
 res.status(500).json({
 success:false,
-message:error.message
+message: publicErrorMessage(error)
 });
 
 }
@@ -162,7 +163,7 @@ endpoints:routes
 
 res.status(500).json({
 success:false,
-message:error.message
+message: publicErrorMessage(error)
 });
 
 }
@@ -208,7 +209,7 @@ timestamp:new Date()
 
 res.status(500).json({
 success:false,
-message:error.message
+message: publicErrorMessage(error)
 });
 
 }
@@ -236,7 +237,7 @@ settings:{}
 
 res.status(500).json({
 success:false,
-message:error.message
+message: publicErrorMessage(error)
 });
 
 }

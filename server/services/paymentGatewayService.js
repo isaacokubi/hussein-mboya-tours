@@ -2,6 +2,16 @@ import { requireTenantId } from "../tenancy/context.js";
 import PaymentGatewayConfig, { decryptSecret } from "../models/PaymentGatewayConfig.js";
 import { mpesaConfig as legacyMpesaConfig, hasLegacyMpesaConfig } from "../config/mpesa.js";
 
+export const isLegacyMpesaFallbackAllowed = (nodeEnv, setting) => (
+  nodeEnv !== "production" && String(setting || "").toLowerCase() === "true"
+);
+
+const gatewayConfigurationError = (message) => Object.assign(new Error(message), {
+  status: 503,
+  code: "PAYMENT_GATEWAY_NOT_CONFIGURED",
+  expose: true,
+});
+
 /** Resolve the active M-Pesa configuration for the current tenant. */
 export const getTenantMpesaConfig = async () => {
   const tenantId = requireTenantId();
@@ -21,13 +31,13 @@ export const getTenantMpesaConfig = async () => {
     };
 
     if (!config.consumerKey || !config.consumerSecret || !config.shortcode || !config.passkey) {
-      throw new Error("Tenant M-Pesa configuration is incomplete.");
+      throw gatewayConfigurationError("M-Pesa configuration is incomplete for this tenant.");
     }
     return config;
   }
 
-  if (process.env.ALLOW_GLOBAL_MPESA_FALLBACK === "false" || !hasLegacyMpesaConfig()) {
-    throw new Error("M-Pesa is not configured for this tenant.");
+  if (!isLegacyMpesaFallbackAllowed(process.env.NODE_ENV, process.env.ALLOW_GLOBAL_MPESA_FALLBACK) || !hasLegacyMpesaConfig()) {
+    throw gatewayConfigurationError("M-Pesa is not configured for this tenant.");
   }
 
   return { ...legacyMpesaConfig, source: "legacy" };

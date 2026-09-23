@@ -1,3 +1,4 @@
+import { publicErrorMessage } from "../utils/publicError.js";
 import crypto from "node:crypto";
 import Payment from "../models/Payment.js";
 import Invoice from "../models/Invoice.js";
@@ -46,7 +47,7 @@ export const reconcileOperationalAccounting = async (req, res, next) => {
         if (await exists(tenantId, "payment", payment._id)) summary.alreadyPosted.payments += 1;
         else {
           try { await postPaymentToLedger(payment); summary.posted.payments += 1; }
-          catch (error) { summary.errors.push({ type: "payment", id: String(payment._id), message: error.message }); }
+          catch (error) { summary.errors.push({ type: "payment", id: String(payment._id), message: publicErrorMessage(error) }); }
         }
       }
 
@@ -61,7 +62,7 @@ export const reconcileOperationalAccounting = async (req, res, next) => {
           else await postPaymentRefundToLedger(payment, refundAmount, reference);
           if (!alreadyPosted) summary.posted.refunds += 1;
         } catch (error) {
-          summary.errors.push({ type: "refund", id: String(payment._id), message: error.message });
+          summary.errors.push({ type: "refund", id: String(payment._id), message: publicErrorMessage(error) });
         }
       }
     }
@@ -77,7 +78,7 @@ export const reconcileOperationalAccounting = async (req, res, next) => {
       if (await exists(tenantId, "invoice", invoice._id)) summary.alreadyPosted.invoices += 1;
       else {
         try { await postInvoiceToLedger(invoice); summary.posted.invoices += 1; }
-        catch (error) { summary.errors.push({ type: "invoice", id: String(invoice._id), message: error.message }); }
+        catch (error) { summary.errors.push({ type: "invoice", id: String(invoice._id), message: publicErrorMessage(error) }); }
       }
     }
 
@@ -93,7 +94,7 @@ export const reconcileOperationalAccounting = async (req, res, next) => {
         if (await exists(tenantId, "expense_accrual", expense._id)) summary.alreadyPosted.expenses += 1;
         else {
           try { await postExpenseToLedger(expense); summary.posted.expenses += 1; }
-          catch (error) { summary.errors.push({ type: "expense", id: String(expense._id), message: error.message }); }
+          catch (error) { summary.errors.push({ type: "expense", id: String(expense._id), message: publicErrorMessage(error) }); }
         }
       } else if (linkedPayable && await exists(tenantId, "expense_accrual", expense._id)) {
         const original = await JournalEntry.findOne({ tenantId, sourceType: "expense_accrual", sourceId: expense._id }).lean();
@@ -108,7 +109,7 @@ export const reconcileOperationalAccounting = async (req, res, next) => {
           });
           summary.posted.expenses += 1;
         } catch (error) {
-          summary.errors.push({ type: "expense_reversal", id: String(expense._id), message: error.message });
+          summary.errors.push({ type: "expense_reversal", id: String(expense._id), message: publicErrorMessage(error) });
         }
       }
       if (String(expense.status || "").toLowerCase() === "paid" && expense.supplier) {
@@ -120,7 +121,7 @@ export const reconcileOperationalAccounting = async (req, res, next) => {
           if (await exists(tenantId, "expense_payment", expense._id)) summary.alreadyPosted.expensePayments += 1;
           else {
             try { await postExpensePaymentToLedger(expense); summary.posted.expensePayments += 1; }
-            catch (error) { summary.errors.push({ type: "expense_payment", id: String(expense._id), message: error.message }); }
+            catch (error) { summary.errors.push({ type: "expense_payment", id: String(expense._id), message: publicErrorMessage(error) }); }
           }
         } else if (await exists(tenantId, "expense_payment", expense._id)) {
           const original = await JournalEntry.findOne({ tenantId, sourceType: "expense_payment", sourceId: expense._id }).lean();
@@ -135,7 +136,7 @@ export const reconcileOperationalAccounting = async (req, res, next) => {
             });
             summary.posted.expensePayments += 1;
           } catch (error) {
-            summary.errors.push({ type: "expense_payment_reversal", id: String(expense._id), message: error.message });
+            summary.errors.push({ type: "expense_payment_reversal", id: String(expense._id), message: publicErrorMessage(error) });
           }
         }
       }
@@ -148,7 +149,7 @@ export const reconcileOperationalAccounting = async (req, res, next) => {
         if (await exists(tenantId, "supplier_payable", payable._id)) summary.alreadyPosted.supplierPayables += 1;
         else {
           try { await postSupplierPayableToLedger(payable); summary.posted.supplierPayables += 1; }
-          catch (error) { summary.errors.push({ type: "supplier_payable", id: String(payable._id), message: error.message }); }
+          catch (error) { summary.errors.push({ type: "supplier_payable", id: String(payable._id), message: publicErrorMessage(error) }); }
         }
       }
 
@@ -160,7 +161,7 @@ export const reconcileOperationalAccounting = async (req, res, next) => {
         if (await exists(tenantId, "supplier_payable_payment", sourceId)) summary.alreadyPosted.supplierPayments += 1;
         else {
           try { await postSupplierPaymentToLedger(payable, amountPaid, reference, payable.paymentMethod); summary.posted.supplierPayments += 1; }
-          catch (error) { summary.errors.push({ type: "supplier_payment", id: String(payable._id), message: error.message }); }
+          catch (error) { summary.errors.push({ type: "supplier_payment", id: String(payable._id), message: publicErrorMessage(error) }); }
         }
       }
     }

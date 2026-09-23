@@ -11,6 +11,7 @@ import Organization from "./models/Organization.js";
 import WebsiteIntegrationKey from "./models/WebsiteIntegrationKey.js";
 import loadTenantPlugin from "./config/tenantPluginLoader.js";
 import requestContext from "./middleware/requestContext.js";
+import { publicErrorMessage } from "./utils/publicError.js";
 
 loadTenantPlugin();
 
@@ -146,13 +147,16 @@ app.use("/api/superadmin", superAdminRoutes);
 app.get("/", (req, res) => res.status(200).json({ success: true, message: "Travel API running successfully", requestId: req.requestId }));
 app.use((req, res) => res.status(404).json({ success: false, message: "Route not found", requestId: req.requestId }));
 app.use((err, req, res, next) => {
-  console.error({ requestId: req.requestId, error: err });
+  console.error(process.env.NODE_ENV === "production"
+    ? { requestId: req.requestId, name: err?.name, code: err?.code }
+    : { requestId: req.requestId, error: err });
   let status = Number(err.statusCode ?? err.status ?? 500);
   if (!Number.isInteger(status) || status < 400 || status > 599) status = 500;
-  let message = err.message || "Internal server error";
   if (err.name === "ValidationError" || err.name === "CastError") status = 400;
-  if (err.code === 11000) { status = 409; const duplicateField = Object.keys(err.keyPattern || err.keyValue || {})[0]; message = duplicateField ? `A record with this ${duplicateField} already exists.` : "A record with these unique details already exists."; }
-  res.status(status).json({ success: false, message, requestId: req.requestId, ...(err.name === "ValidationError" ? { errors: Object.fromEntries(Object.entries(err.errors || {}).map(([key, value]) => [key, value.message])) } : {}) });
+  if (err.code === 11000) status = 409;
+  const message = publicErrorMessage(err, "Internal server error", status);
+  const includeValidationErrors = err.name === "ValidationError" && process.env.NODE_ENV !== "production";
+  res.status(status).json({ success: false, message, requestId: req.requestId, ...(includeValidationErrors ? { errors: Object.fromEntries(Object.entries(err.errors || {}).map(([key, value]) => [key, value.message])) } : {}) });
 });
 
 export default app;
