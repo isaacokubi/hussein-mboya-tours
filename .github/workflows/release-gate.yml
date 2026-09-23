@@ -1,4 +1,4 @@
-name: Fifteen-Phase Release Gate
+name: Sixteen-Phase Release Gate
 
 on:
   push:
@@ -462,3 +462,4 @@ jobs:
         run: npm install
       - name: Webhook runtime integrity contract
         run: node --test tests/webhookRuntimeIntegrity.test.js
+\n\n  phase-16-browser-acceptance-harness:\n    name: Phase 16 — Browser acceptance harness contract\n    runs-on: ubuntu-latest\n    needs: phase-15-webhook-runtime-integrity\n    defaults:\n      run:\n        working-directory: server\n    steps:\n      - name: Checkout\n        uses: actions/checkout@v4\n      - name: Setup Node\n        uses: actions/setup-node@v4\n        with:\n          node-version: 22\n          cache: npm\n          cache-dependency-path: server/package-lock.json\n      - name: Install server dependencies\n        run: npm install\n      - name: Browser acceptance harness contract\n        run: node --test tests/browserAcceptanceHarness.test.js\n
