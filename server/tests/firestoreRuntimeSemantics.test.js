@@ -74,6 +74,44 @@ test("Firestore runtime applies setters/defaults and preserves hidden fields acr
   assert.equal(await Parent.findById(created._id), null);
 });
 
+
+test("Firestore runtime supports expression filters, elemMatch, filtered array updates and aggregate lookup expressions", { skip: !integrationEnabled }, async () => {
+  const child = await Child.create({ tenantId: "tenant-a", name: "Aggregate Child" });
+  const parent = await Parent.create({
+    tenantId: "tenant-a",
+    title: "Capacity",
+    amount: 80,
+    child: child._id,
+    availability: [{ date: new Date("2026-10-01T00:00:00.000Z"), bookedSlots: 2 }, { date: new Date("2026-10-02T00:00:00.000Z"), bookedSlots: 1 }],
+  });
+
+  const exprMatch = await Parent.findOne({ _id: parent._id, $expr: { $gte: ["$amount", 75] } }).lean();
+  assert.equal(String(exprMatch._id), String(parent._id));
+
+  const elemMatch = await Parent.findOne({
+    _id: parent._id,
+    availability: { $elemMatch: { date: { $gte: new Date("2026-10-01T00:00:00.000Z"), $lt: new Date("2026-10-02T00:00:00.000Z") } } },
+  }).lean();
+  assert.equal(String(elemMatch._id), String(parent._id));
+
+  const updated = await Parent.findOneAndUpdate(
+    { _id: parent._id },
+    { $inc: { "availability.$[day].bookedSlots": 3 } },
+    { arrayFilters: [{ "day.date": { $gte: new Date("2026-10-01T00:00:00.000Z"), $lt: new Date("2026-10-02T00:00:00.000Z") } }], new: true },
+  );
+  assert.equal(updated.availability[0].bookedSlots, 5);
+  assert.equal(updated.availability[1].bookedSlots, 1);
+
+  const aggregate = await Parent.aggregate([
+    { $match: { _id: parent._id } },
+    { $lookup: { from: "phase23RuntimeChildren", localField: "child", foreignField: "_id", as: "childDoc" } },
+    { $unwind: "$childDoc" },
+    { $project: { _id: 1, childName: "$childDoc.name", net: { $subtract: ["$amount", 10] } } },
+  ]);
+  assert.equal(aggregate[0].childName, "Aggregate Child");
+  assert.equal(aggregate[0].net, 70);
+});
+
 test("Firestore runtime supports select plus syntax and populate selection/nesting", { skip: !integrationEnabled }, async () => {
   const permission = await Permission.create({ tenantId: "tenant-a", name: "finance.read" });
   const role = await Role.create({ tenantId: "tenant-a", name: "finance", permissions: [permission._id] });
