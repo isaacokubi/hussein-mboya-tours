@@ -116,3 +116,8 @@ The generated state above is refreshed automatically after pushes to `main`. His
 ## Phase 18 — Firestore production integrity
 
 The repository now contains a read-only Firestore production integrity/reconciliation scanner. It is not production evidence until executed against the intended deployed environment. A passing result requires `readOnly: true`, `ok: true` and `issueCount: 0`, with the deployment commit and environment retained alongside the evidence.
+
+
+## Phase 19 — Production evidence ledger
+
+The repository now contains a machine-checkable production evidence manifest validator. It remains a source-code contract until a real manifest references current external evidence. No production evidence flag is marked PASS by this phase alone.

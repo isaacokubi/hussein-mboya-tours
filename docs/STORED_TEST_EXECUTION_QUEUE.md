@@ -452,3 +452,21 @@ FIREBASE_PROJECT_ID=<approved-project> npm run audit:firestore-integrity
 ```
 
 The scan must report `readOnly: true`, `ok: true` and `issueCount: 0` before setting `PRODUCTION_DATA_INTEGRITY_VERIFIED=true`. Retain timestamp, deployed commit, environment/project and issue count as evidence. Never store credentials or customer data exports in Git.
+
+
+## Phase 19 — Production evidence ledger
+
+Automated contract:
+```bash
+cd server
+node --test tests/productionEvidenceManifest.test.js
+node --check scripts/productionEvidenceCheck.js
+```
+
+Validate a real external evidence register only when the evidence exists:
+```bash
+cd server
+PRODUCTION_EVIDENCE_MANIFEST=/secure/evidence/manifest.json npm run check:production:evidence
+```
+
+The manifest must reference the exact deployed 40-character Git SHA and PASS evidence for every required external gate. Never put credentials or customer data in the manifest. A passing validator is structural validation, not proof that the referenced external evidence is genuine.

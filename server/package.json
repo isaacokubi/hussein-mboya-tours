@@ -39,7 +39,8 @@
     "reset:demo": "node scripts/reset-and-seed-demo.js",
     "backup:firestore": "node scripts/firestoreBackup.js",
     "restore:firestore": "node scripts/firestoreRestore.js",
-    "audit:firestore-integrity": "node scripts/firestoreProductionIntegrityScan.js"
+    "audit:firestore-integrity": "node scripts/firestoreProductionIntegrityScan.js",
+    "check:production:evidence": "node scripts/productionEvidenceCheck.js"
   },
   "dependencies": {
     "africastalking": "^0.8.0",
