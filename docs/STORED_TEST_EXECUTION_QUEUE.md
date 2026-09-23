@@ -410,3 +410,27 @@ BROWSER_ACCEPTANCE_BASE_URL=https://<approved-host> npx playwright test
 GitHub Actions workflow: `.github/workflows/browser-acceptance.yml`. Configure `BROWSER_ACCEPTANCE_BASE_URL` as a repository/environment secret or provide an HTTPS `base_url` on manual dispatch.
 
 The browser harness covers public pages, unauthenticated protected-route redirects, login form behavior, desktop Chrome and mobile Pixel 5. It does not certify authenticated role workflows or provider integrations. Do not record browser acceptance as PASS until the target environment test actually executes successfully.
+
+
+## Phase 17 — Authenticated role browser acceptance
+
+Automated contract:
+```bash
+cd server
+node --test tests/authenticatedRoleAcceptanceHarness.test.js
+```
+
+Authenticated browser acceptance requires an approved HTTPS target plus non-production test accounts supplied through `BROWSER_ACCEPTANCE_ROLE_USERS_JSON`. The JSON must contain Customer, Admin, Finance, Tour Manager, Guide, Driver and SuperAdmin entries with `email`, `password` and `route`, plus optional `paths`.
+
+Run:
+```bash
+cd client
+npm install
+npm install --no-save playwright@1.55.0
+npx playwright install --with-deps chromium
+BROWSER_ACCEPTANCE_BASE_URL=https://<approved-host> \
+BROWSER_ACCEPTANCE_ROLE_USERS_JSON='{"customer":...}' \
+npx playwright test e2e/authenticatedRoleAcceptance.spec.js
+```
+
+Do not store credentials in Git and do not use production credentials. A missing role-account secret means authenticated role acceptance is not certified.
