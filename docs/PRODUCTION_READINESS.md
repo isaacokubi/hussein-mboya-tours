@@ -124,3 +124,7 @@ This section is maintained automatically by `scripts/update-documentation.js` an
 Every push to `main` runs the documentation workflow. It refreshes this generated repository-state section and commits documentation-only changes when the generated content changes. Manual edits outside the generated markers are preserved.
 
 <!-- DOCS-AUTO:END -->
+
+### Phase 21 — Firestore unique payment integrity
+The Firestore compatibility layer now records and enforces declared unique schema indexes, including tenant-scoped Payment provider identities. Emulator execution remains pending in this environment; this does not certify live M-Pesa or production reconciliation.
+
