@@ -36,7 +36,7 @@ const categories = [
 
 const seed = async () => {
   try {
-    await firestore.connect(process.env.MONGODB_URI);
+    await firestore.connectFirestore();
 
     await TourCategory.deleteMany();
 
