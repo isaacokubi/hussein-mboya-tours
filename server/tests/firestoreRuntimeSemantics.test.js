@@ -104,7 +104,7 @@ test("Firestore runtime supports expression filters, elemMatch, filtered array u
 
   const aggregate = await Parent.aggregate([
     { $match: { _id: parent._id } },
-    { $lookup: { from: "phase23RuntimeChildren", localField: "child", foreignField: "_id", as: "childDoc" } },
+    { $lookup: { from: "phase23RuntimeChild", localField: "child", foreignField: "_id", as: "childDoc" } },
     { $unwind: "$childDoc" },
     { $project: { _id: 1, childName: "$childDoc.name", net: { $subtract: ["$amount", 10] } } },
   ]);
