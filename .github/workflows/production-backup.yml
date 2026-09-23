@@ -1,4 +1,4 @@
-name: Production MongoDB Backup
+name: Production Firestore Backup
 
 on:
   workflow_dispatch:
@@ -10,100 +10,77 @@ permissions:
 
 jobs:
   backup:
-    name: Encrypted MongoDB backup
+    name: Encrypted Firestore backup
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install server dependencies
+        working-directory: server
+        run: npm install
+
       - name: Validate backup secrets
         env:
-          MONGODB_BACKUP_URI: ${{ secrets.MONGODB_BACKUP_URI }}
+          FIREBASE_PROJECT_ID: ${{ secrets.PRODUCTION_FIREBASE_PROJECT_ID }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.PRODUCTION_FIREBASE_SERVICE_ACCOUNT_JSON }}
           BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
         run: |
           set -euo pipefail
-          test -n "${MONGODB_BACKUP_URI:-}" || { echo "MONGODB_BACKUP_URI is required."; exit 1; }
+          test -n "${FIREBASE_PROJECT_ID:-}" || { echo "PRODUCTION_FIREBASE_PROJECT_ID is required."; exit 1; }
+          test -n "${FIREBASE_SERVICE_ACCOUNT_JSON:-}" || { echo "PRODUCTION_FIREBASE_SERVICE_ACCOUNT_JSON is required."; exit 1; }
           test -n "${BACKUP_ENCRYPTION_PASSPHRASE:-}" || { echo "BACKUP_ENCRYPTION_PASSPHRASE is required."; exit 1; }
 
-      - name: Create encrypted database archive
+      - name: Export Firestore
         env:
-          MONGODB_BACKUP_URI: ${{ secrets.MONGODB_BACKUP_URI }}
-          BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
+          FIREBASE_PROJECT_ID: ${{ secrets.PRODUCTION_FIREBASE_PROJECT_ID }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.PRODUCTION_FIREBASE_SERVICE_ACCOUNT_JSON }}
         run: |
           set -euo pipefail
           mkdir -p backup
+          node server/scripts/firestoreBackup.js backup/firestore.json
+
+      - name: Create encrypted backup archive
+        env:
+          BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
+        run: |
+          set -euo pipefail
           stamp="$(date -u +%Y%m%dT%H%M%SZ)"
-          archive="backup/global-tours-${stamp}.archive.gz.enc"
-          docker run --rm \
-            -e MONGODB_BACKUP_URI="$MONGODB_BACKUP_URI" \
-            mongo:8 \
-            sh -lc 'mongodump --uri="$MONGODB_BACKUP_URI" --archive --gzip' \
-            | openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:BACKUP_ENCRYPTION_PASSPHRASE \
-            > "$archive"
+          archive="backup/global-tours-firestore-${stamp}.json.enc"
+          openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:BACKUP_ENCRYPTION_PASSPHRASE -in backup/firestore.json -out "$archive"
           sha256sum "$archive" > "$archive.sha256"
+          rm -f backup/firestore.json
           printf '%s\n' "$archive" > backup/latest.txt
 
-      - name: Verify archive contains application data
+      - name: Verify encrypted backup
         env:
           BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
         run: |
           set -euo pipefail
           archive="$(cat backup/latest.txt)"
-          decrypted_archive="/tmp/production.archive.gz"
-          network="backup-validation-network"
-          container="backup-validation-mongo"
-
-          cleanup() {
-            docker rm -f "$container" >/dev/null 2>&1 || true
-            docker network rm "$network" >/dev/null 2>&1 || true
-            rm -f "$decrypted_archive"
-          }
-          trap cleanup EXIT
-
-          openssl enc -d -aes-256-cbc -pbkdf2 -in "$archive" -pass env:BACKUP_ENCRYPTION_PASSPHRASE \
-            > "$decrypted_archive"
-          gzip -t "$decrypted_archive"
-
-          docker network create "$network" >/dev/null
-          docker run -d --name "$container" --network "$network" mongo:8 --bind_ip_all >/dev/null
-
-          ready=false
-          for attempt in $(seq 1 30); do
-            if docker exec "$container" mongosh --quiet --eval 'db.adminCommand({ ping: 1 }).ok' 2>/dev/null | grep -qx '1'; then
-              ready=true
-              break
-            fi
-            sleep 2
-          done
-          if [ "$ready" != "true" ]; then
-            echo "Temporary MongoDB validation server did not become ready."
-            exit 1
-          fi
-
-          docker run --rm -i --network "$network" mongo:8 \
-            mongorestore --host "$container" --archive --gzip --dryRun --verbose \
-            < "$decrypted_archive" \
-            2>&1 | tee backup/dry-run.log
-
-          grep -Eq '([.]organizations|[.]users)([^[:alnum:]_]|$)' backup/dry-run.log || {
-            echo "Backup archive does not contain expected application collections (organizations/users)."
-            echo "The configured MONGODB_BACKUP_URI may point to the wrong database."
-            exit 1
-          }
-
-          echo "Backup archive contains expected application collections."
+          openssl enc -d -aes-256-cbc -pbkdf2 -in "$archive" -pass env:BACKUP_ENCRYPTION_PASSPHRASE | node -e '
+            let data="";
+            process.stdin.on("data", c => data += c);
+            process.stdin.on("end", () => {
+              const payload = JSON.parse(data);
+              if (payload.format !== "global-tours-firestore-backup-v1") process.exit(1);
+              if (!Number.isInteger(payload.documentCount) || payload.documentCount < 1) process.exit(1);
+              console.log(JSON.stringify({ projectId: payload.projectId, documentCount: payload.documentCount, checksum: payload.checksum }));
+            });
+          '
 
       - name: Upload encrypted backup artifact
         uses: actions/upload-artifact@v4
         with:
-          name: production-mongodb-backup-${{ github.run_id }}
+          name: production-firestore-backup-${{ github.run_id }}
           path: backup/
           if-no-files-found: error
           retention-days: 30
-
-      - name: Verify encrypted archive can be decrypted
-        env:
-          BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
-        run: |
-          set -euo pipefail
-          archive="$(cat backup/latest.txt)"
-          openssl enc -d -aes-256-cbc -pbkdf2 -in "$archive" -pass env:BACKUP_ENCRYPTION_PASSPHRASE | gzip -t
-          echo "Encrypted backup integrity verification passed."
