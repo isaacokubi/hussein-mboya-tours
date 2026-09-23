@@ -26,6 +26,15 @@ test("Firestore compatibility layer supports projections and safe saves", () => 
   assert.doesNotMatch(source, /isModified\(\)\{return true;\}/);
 });
 
+test("Firestore compatibility layer supports query expressions, filtered array updates and aggregate expressions", () => {
+  assert.match(source, /const evaluateExpression =/);
+  assert.match(source, /key===\"\\$expr\"/);
+  assert.match(source, /\\$elemMatch/);
+  assert.match(source, /arrayFilterFor/);
+  assert.match(source, /\\$lookup/);
+  assert.match(source, /\\$avg/);
+});
+
 test("Firestore compatibility layer supports populate selection and nested population", () => {
   assert.match(source, /populate\(p, select\)/);
   assert.match(source, /spec\?\.populate/);
