@@ -51,7 +51,7 @@ const tourData = [
 const slugifyTitle = (value) => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 const seed = async () => {
-  if (!process.env.FIREBASE_PROJECT_ID) throw new Error("MONGODB_URI is missing in .env");
+  if (!process.env.FIREBASE_PROJECT_ID) throw new Error("FIREBASE_PROJECT_ID is missing in .env");
   await firestore.connectFirestore?.();
 
   await runWithTenant({ role: "super_admin", bypass: true }, async () => {
