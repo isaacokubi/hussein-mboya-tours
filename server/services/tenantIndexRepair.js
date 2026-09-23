@@ -1,5 +1,3 @@
-import { isDuplicateKeyError } from "../utils/duplicateKey.js";
-
 /**
  * Firestore compatibility layer for callers that previously repaired MongoDB
  * unique indexes at runtime.
@@ -8,8 +6,8 @@ import { isDuplicateKeyError } from "../utils/duplicateKey.js";
  * adapter, so index repair is intentionally a no-op. Uniqueness is enforced
  * by the application's tenant-scoped lookup/creation flow instead.
  */
-export async function repairLegacyTenantUniqueIndex(_Model, error) {
-  return isDuplicateKeyError(error) ? false : false;
+export async function repairLegacyTenantUniqueIndex() {
+  return false;
 }
 
 export async function createWithTenantIndexRepair(Model, payload, options = {}) {
@@ -17,7 +15,7 @@ export async function createWithTenantIndexRepair(Model, payload, options = {}) 
 }
 
 export function isTenantIndexConflict(error) {
-  if (!isDuplicateKeyError(error)) return false;
+  if (error?.code !== 11000 && error?.code !== "ALREADY_EXISTS" && error?.status !== 409) return false;
   const fields = Object.keys(error.keyPattern || {});
   return fields.length === 1 && fields[0] === "tenantId";
 }
