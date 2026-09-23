@@ -40,7 +40,8 @@
     "backup:firestore": "node scripts/firestoreBackup.js",
     "restore:firestore": "node scripts/firestoreRestore.js",
     "audit:firestore-integrity": "node scripts/firestoreProductionIntegrityScan.js",
-    "check:production:evidence": "node scripts/productionEvidenceCheck.js"
+    "check:production:evidence": "node scripts/productionEvidenceCheck.js",
+    "test:firestore:unique": "node --test tests/firestoreUniqueIndexIntegrity.test.js tests/firestoreUniqueIndexIntegrityStatic.test.js"
   },
   "dependencies": {
     "africastalking": "^0.8.0",
