@@ -1,6 +1,5 @@
 // server/middleware/errorHandler.js
 
-import mongoose from "mongoose";
 import multer from "multer";
 import env from "../config/env.js";
 
@@ -33,7 +32,7 @@ const errorHandler = (err, req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    if (err instanceof mongoose.Error.ValidationError) {
+    if (err?.name === "ValidationError") {
         statusCode = 400;
 
         message = Object.values(err.errors)
@@ -47,7 +46,7 @@ const errorHandler = (err, req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    if (err instanceof mongoose.Error.CastError) {
+    if (err?.name === "CastError") {
         statusCode = 400;
         message = `Invalid ${err.path}`;
     }
