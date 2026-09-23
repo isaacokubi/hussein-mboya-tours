@@ -133,3 +133,9 @@ The repository now contains a machine-checkable production evidence manifest val
 - Stored: emulator/static tests for `unique: true` field declarations and sparse uniqueness.
 - Pending: actual emulator execution in an environment with Node dependencies/Firebase CLI.
 - Production duplicate-data evidence remains dependent on the Phase 18 read-only Firestore integrity scan.
+
+
+## Phase 23 — Firestore runtime semantics hardening
+- Stored: emulator/static tests for schema validation, setters/defaults, select:false and +field projections, hidden-field preservation, real modification tracking, nested populate selection/matching and refPath compatibility.
+- Pending: actual emulator execution in an environment with Node dependencies/Firebase CLI.
+- Production acceptance remains dependent on current-deployment browser, payment, eTIMS, webhook, backup/restore and Firestore integrity evidence.
