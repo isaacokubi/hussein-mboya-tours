@@ -17,7 +17,7 @@ const requests = [
 ];
 
 const seed = async () => {
-  if (!process.env.FIREBASE_PROJECT_ID) throw new Error("MONGODB_URI is missing in .env");
+  if (!process.env.FIREBASE_PROJECT_ID) throw new Error("FIREBASE_PROJECT_ID is missing in .env");
   await firestore.connectFirestore?.();
   try {
     const organization = await Organization.findOne({ slug: TENANT_SLUG, isDeleted: { $ne: true } }).lean();
