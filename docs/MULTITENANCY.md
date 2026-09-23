@@ -36,7 +36,7 @@ The resolved organization is attached as `req.tenant` and `req.tenantId` and pro
 
 ## Isolation
 
-Business Mongoose schemas receive a tenant-aware plugin at model compilation time. Reads, updates, deletes, aggregates, lookups, bulk operations and inserts are scoped to the active tenant. Cross-tenant identifiers are rejected. Organization, Permission and Currency remain platform-level models.
+Business Firestore-backed models receive a tenant-aware plugin at model compilation time. Reads, updates, deletes, aggregates, lookups, bulk operations and inserts are scoped to the active tenant. Cross-tenant identifiers are rejected. Organization, Permission and Currency remain platform-level models.
 
 Never trust a browser-supplied tenant ID as an authorization boundary. The API compares the tenant context with the authenticated user's tenant stored in the database and JWT. SuperAdmin is the only role allowed to operate across tenants.
 
@@ -50,13 +50,14 @@ A tenant may provide a custom domain such as `www.husseintours.com` during compa
 
 For production, custom-domain onboarding should additionally verify domain ownership before activation and should only enable `features.customDomain` after verification.
 
-## Existing database migration
+## Production integrity and maintenance
 
-Back up MongoDB first, then run:
+Firestore is the active runtime datastore. Before a production migration or repair:
 
-```bash
-cd server
-npm run migrate:multitenancy
-```
+1. Create and verify an approved Firestore backup.
+2. Run the read-only integrity/reconciliation scan.
+3. Review the intended tenant scope and script behavior.
+4. Run the change against a staging/emulator environment first.
+5. Retain the command output and deployment commit with the evidence.
 
-The script creates the default `amani-trails-safaris` organization when necessary, assigns existing business records to it, synchronizes indexes, and prints `DEFAULT_TENANT_ID`.
+Use `npm run audit:firestore-integrity` for the read-only production integrity scan. Do not use historical MongoDB migration instructions for the current runtime.
