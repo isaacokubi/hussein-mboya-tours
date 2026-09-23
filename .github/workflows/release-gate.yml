@@ -271,33 +271,6 @@ jobs:
 
 
   phase-9-firestore-demo-seed:
-
-  phase-10-firestore-auth-seed:
-    name: Phase 10 — Firestore authentication & seed cutover
-    runs-on: ubuntu-latest
-    needs: phase-9-firestore-demo-seed
-    defaults:
-      run:
-        working-directory: server
-    env:
-      FIREBASE_PROJECT_ID: demo-global-tours
-      FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
-      GCLOUD_PROJECT: demo-global-tours
-      JWT_SECRET: ci-only-test-secret
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: server/package-lock.json
-      - name: Install server dependencies
-        run: npm install
-      - name: Firestore authentication and seed cutover contract
-        run: node --test tests/firestoreAuthSeedCutover.test.js
-
     name: Phase 9 — Firestore demo seed cutover
     runs-on: ubuntu-latest
     needs: phase-8-firestore-maintenance
@@ -328,3 +301,30 @@ jobs:
           sleep 10
       - name: Firestore demo seed cutover contract
         run: node --test tests/firestoreDemoSeedCutover.test.js
+
+  phase-10-firestore-auth-seed:
+    name: Phase 10 — Firestore authentication & seed cutover
+    runs-on: ubuntu-latest
+    needs: phase-9-firestore-demo-seed
+    defaults:
+      run:
+        working-directory: server
+    env:
+      FIREBASE_PROJECT_ID: demo-global-tours
+      FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
+      GCLOUD_PROJECT: demo-global-tours
+      JWT_SECRET: ci-only-test-secret
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - name: Install server dependencies
+        run: npm install
+      - name: Firestore authentication and seed cutover contract
+        run: node --test tests/firestoreAuthSeedCutover.test.js
+
