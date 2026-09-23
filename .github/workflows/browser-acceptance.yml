@@ -47,14 +47,18 @@ jobs:
         if: steps.target.outputs.configured == 'true'
         working-directory: client
         run: npm install
+      - name: Install Playwright test package
+        if: steps.target.outputs.configured == 'true'
+        working-directory: client
+        run: npm install --no-save playwright@1.55.0
       - name: Install Playwright browser dependencies
         if: steps.target.outputs.configured == 'true'
         working-directory: client
-        run: npx --yes playwright@1.55.0 install --with-deps chromium
+        run: npx playwright install --with-deps chromium
       - name: Run browser acceptance
         if: steps.target.outputs.configured == 'true'
         working-directory: client
-        run: npx --yes playwright@1.55.0 test
+        run: npx playwright test
       - name: Upload browser evidence
         if: always() && steps.target.outputs.configured == 'true'
         uses: actions/upload-artifact@v4
