@@ -1,4 +1,4 @@
-name: Eleven-Phase Release Gate
+name: Twelve-Phase Release Gate
 
 on:
   push:
@@ -363,3 +363,28 @@ jobs:
         run: node --test tests/tourLifecycleIntegration.test.js
       - name: Hospitality payment lifecycle integration
         run: node --test tests/hospitalityPaymentLifecycleIntegration.test.js
+  phase-12-firestore-backup-restore:
+    name: Phase 12 — Firestore backup & restore contract
+    runs-on: ubuntu-latest
+    needs: phase-11-firestore-integration-tests
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - name: Install server dependencies
+        run: npm install
+      - name: Backup/restore syntax checks
+        run: |
+          node --check scripts/firestoreBackup.js
+          node --check scripts/firestoreRestore.js
+      - name: Firestore backup/restore contract
+        run: node --test tests/firestoreBackupRestoreCutover.test.js
+
