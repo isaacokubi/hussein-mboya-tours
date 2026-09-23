@@ -100,9 +100,9 @@ Never document secrets, passwords, access tokens, private keys, MFA PINs or paym
 <!-- DOCS-AUTO:START -->
 ## Automatically captured repository state
 
-- Snapshot date (UTC): 2026-09-22
+- Snapshot date (UTC): 2026-09-23
 - Branch: `main`
-- Commit: `c79166a6a6bb430ef2b6ee83a125ff090190d5ce`
+- Commit: `73d118d8d2affca4f43539ef63f7943730111d24`
 - Server package: `hussein-mboya-tours-server@1.0.0`
 - Client package: `client@0.0.0`
 - Automated documentation updater: `scripts/update-documentation.js`
