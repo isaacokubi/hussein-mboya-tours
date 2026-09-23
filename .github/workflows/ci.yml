@@ -40,6 +40,8 @@ jobs:
           done
       - name: Syntax, security, RBAC and multitenancy checks
         run: npm run check:all
+      - name: Tenant isolation regression
+        run: npm run check:multitenancy:live
       - name: Automated tests
         run: npm test
 
