@@ -2,6 +2,19 @@
 
 Kenya-focused, multi-tenant tours & travel SaaS for tour operators, with tenant isolation, bookings, payments, finance/accounting, compliance, hospitality/operations, website integrations, RBAC and production safeguards.
 
+## Acquisition opportunity
+
+This repository is being prepared as a **software/source-code acquisition opportunity**. The intended transaction is for a buyer to acquire the software asset/IP (subject to legal due diligence and a definitive agreement), complete remaining engineering and regulatory work, rebrand it, and commercialize it as a buyer-owned product.
+
+Buyer materials:
+
+- [Software acquisition overview](docs/BUYER_ACQUISITION_OVERVIEW.md)
+- [Sales prospectus](docs/BUYER_SALES_PROSPECTUS.md)
+- [Product gap register](docs/BUYER_PRODUCT_GAP_REGISTER.md)
+- [Buyer due-diligence checklist](docs/BUYER_DUE_DILIGENCE_CHECKLIST.md)
+
+**Important:** KRA/eTIMS certification is not claimed. The repository contains an eTIMS/OSCU integration foundation; sandbox testing, certification/vetting and production acceptance remain outstanding external gates.
+
 ## Current status
 
 **Application verification baseline:** commit `8f9e90bb`  
@@ -26,16 +39,6 @@ The latest full local verification was completed after the production-audit reme
 | Client production build | PASS | Vite production build completed |
 | Production readiness contract | PASS | `npm run check:production` |
 | Live production certification | NOT VERIFIED | External deployment/provider evidence still required |
-
-### Intentionally skipped integration tests
-
-The following tests were skipped because they require the database/provider runtime conditions that are not available in the local verification environment:
-
-- airport-transfer payment completion atomic lifecycle;
-- tour lifecycle transactional capacity reservation/release;
-- payment-completion rollback when accounting posting fails.
-
-A skipped test is not treated as a failure or as production acceptance.
 
 ## Production acceptance still required
 
