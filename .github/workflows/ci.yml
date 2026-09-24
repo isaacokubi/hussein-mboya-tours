@@ -82,6 +82,11 @@ jobs:
       - name: Run live tenant isolation regression
         run: npm run check:multitenancy:live
 
+      - name: Run database-backed startup and health checks
+        env:
+          HEALTH_TEST_MONGODB_URI: mongodb://127.0.0.1:27017/hussein_mboya_ci
+        run: node --test tests/healthReadiness.test.js
+
   server-tour-lifecycle-integration:
     name: Tour lifecycle runtime integration
     runs-on: ubuntu-latest

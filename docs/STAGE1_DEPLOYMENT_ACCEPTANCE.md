@@ -19,9 +19,19 @@ The workflow:
 
 1. Calls `${PRODUCTION_API_URL}/api/health`.
 2. Requires HTTP success and JSON values `success=true`, `status=healthy`, and `database=connected`.
-3. Performs a lightweight HTTP check against the public web URL.
-4. Runs on pushes to `main`, every six hours, and manually through GitHub Actions.
-5. Skips an external check when its secret is not configured, so repository CI remains usable before deployment.
+3. Requires `PRODUCTION_API_URL` to be an HTTPS origin (scheme and hostname only; no `/api` path, credentials, query or fragment).
+4. Retries transient connection failures, explicit `starting` responses, and database disconnects during an otherwise-ready process for at most 120 seconds. Critical startup failure responses fail immediately; success still requires the exact healthy/connected contract.
+5. Confirms `GET /` still responds with `Travel API running successfully`.
+6. Runs on pushes to `main`, every six hours, and manually through GitHub Actions.
+7. Skips an external check when its secret is not configured, so repository CI remains usable before deployment.
+
+The workflow also performs a lightweight HTTP check against the public web URL.
+
+The API binds its HTTP listener before MongoDB connection and the critical invoice-index migration. `/api/health` is served before tenant/database-backed middleware so it responds promptly and accurately reports `starting`, `degraded`, or `healthy`. Database-backed routes remain unavailable until required startup work succeeds. The default MongoDB server-selection bound is 10 seconds and the invoice-index migration bound is 60 seconds; failures remain fatal to the service.
+
+For Render, set the backend's `MONGODB_URI`, strong `JWT_SECRET`, HTTPS `CLIENT_URL` and `CLIENT_ORIGINS`, and actual `PLATFORM_HOST` in the Render service environment. Set the static frontend's `VITE_API_URL` to the public API origin ending in `/api` and `VITE_SOCKET_URL` to the public API origin. These values must not be committed to the repository. The deployed API and frontend remain **NOT VERIFIED** until the live GitHub Actions smoke check passes.
+
+Cloudinary is optional for API startup. If credentials are absent or incomplete, upload and deletion paths that require Cloudinary return HTTP 503; `/api/health` continues to reflect MongoDB and critical startup readiness only.
 
 ## Production environment controls
 
@@ -48,8 +58,7 @@ These flags are evidence controls, not substitutes for the underlying live tests
 - [x] Release gate baseline exists and is documented.
 - [x] Production API health endpoint exists at `/api/health`.
 - [x] Production smoke workflow committed to `main`.
-- [x] `PRODUCTION_API_URL` configured as a GitHub Actions secret.
-- [x] `PRODUCTION_WEB_URL` configured as a GitHub Actions secret.
+- [x] Smoke workflow reads `PRODUCTION_API_URL` and `PRODUCTION_WEB_URL` only from GitHub Actions secrets.
 - [ ] Deployed API returns healthy/connected from the smoke workflow.
 - [ ] Deployed frontend responds successfully from the smoke workflow.
 - [ ] Production backup and restore evidence collected.

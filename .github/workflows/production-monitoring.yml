@@ -30,6 +30,8 @@ jobs:
       PRODUCTION_WEB_URL: ${{ secrets.PRODUCTION_WEB_URL }}
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Validate production endpoint configuration
         run: |
           set -euo pipefail
@@ -38,35 +40,15 @@ jobs:
           case "$PRODUCTION_API_URL" in https://*) ;; *) echo "PRODUCTION_API_URL must use HTTPS."; exit 1;; esac
           case "$PRODUCTION_WEB_URL" in https://*) ;; *) echo "PRODUCTION_WEB_URL must use HTTPS."; exit 1;; esac
 
-      - name: Check production API health and latency
+      - name: Check production API health and readiness
         id: api
         shell: bash
         run: |
           started="$(date +%s%3N)"
-          response="$(curl --fail-with-body --silent --show-error --max-time 20 \
-            -H 'Accept: application/json' \
-            "$PRODUCTION_API_URL/api/health")"
+          bash scripts/check-production-api-health.sh
           ended="$(date +%s%3N)"
-          latency_ms="$((ended - started))"
-
-          echo "$response"
-          echo "latency_ms=$latency_ms" >> "$GITHUB_OUTPUT"
-
-          RESPONSE="$response" python - <<'PY'
-          import json
-          import os
-
-          payload = json.loads(os.environ["RESPONSE"])
-
-          if payload.get("success") is not True:
-              raise SystemExit(f"Production API health success flag is not true: {payload}")
-
-          if payload.get("status") != "healthy":
-              raise SystemExit(f"Production API is not healthy: {payload}")
-
-          if payload.get("database") != "connected":
-              raise SystemExit(f"Production database is not connected: {payload}")
-          PY
+          readiness_wait_ms="$((ended - started))"
+          echo "readiness_wait_ms=$readiness_wait_ms" >> "$GITHUB_OUTPUT"
 
       - name: Check production website and latency
         id: web
@@ -74,8 +56,9 @@ jobs:
         run: |
           started="$(date +%s%3N)"
 
-          curl --fail-with-body --silent --show-error --max-time 20 \
+          curl --fail-with-body --silent --max-time 20 \
             -I "$PRODUCTION_WEB_URL/" \
+            2>/dev/null \
             > /tmp/production-web-headers.txt
 
           ended="$(date +%s%3N)"
@@ -98,7 +81,7 @@ jobs:
         env:
           PRODUCTION_API_URL: ${{ secrets.PRODUCTION_API_URL }}
           PRODUCTION_WEB_URL: ${{ secrets.PRODUCTION_WEB_URL }}
-          API_LATENCY_MS: ${{ steps.api.outputs.latency_ms }}
+          API_READINESS_WAIT_MS: ${{ steps.api.outputs.readiness_wait_ms }}
           WEB_LATENCY_MS: ${{ steps.web.outputs.latency_ms }}
         with:
           script: |
@@ -108,7 +91,7 @@ jobs:
               'Production monitoring detected a failed health, website, latency, or alert-path check.',
               '',
               `Workflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
-              `API latency: ${process.env.API_LATENCY_MS || 'unavailable'} ms`,
+              `API readiness wait: ${process.env.API_READINESS_WAIT_MS || 'unavailable'} ms`,
               `Website latency: ${process.env.WEB_LATENCY_MS || 'unavailable'} ms`,
               `Commit: ${context.sha}`,
               '',
@@ -139,5 +122,5 @@ jobs:
         if: ${{ success() }}
         run: |
           echo "Production monitoring PASS"
-          echo "API latency: ${{ steps.api.outputs.latency_ms }} ms"
+          echo "API readiness wait: ${{ steps.api.outputs.readiness_wait_ms }} ms"
           echo "Website latency: ${{ steps.web.outputs.latency_ms }} ms"

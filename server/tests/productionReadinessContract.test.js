@@ -39,6 +39,22 @@ test("runtime production readiness requires a platform host for tenant URLs", ()
   assert.match(check, /PLATFORM_HOST must be configured in production for tenant subdomain resolution/);
 });
 
+test("Render health stays reachable before MongoDB startup and requires completed readiness", () => {
+  const app = read("app.js");
+  const server = read("server.js");
+  const database = read("config/database.js");
+  const render = read("../render.yaml");
+  const healthRoute = app.indexOf('app.get("/api/health"');
+  const tenantResolver = app.indexOf("app.use(resolveTenant)");
+  assert.ok(healthRoute >= 0 && tenantResolver > healthRoute, "health must bypass tenant/database middleware");
+  assert.match(app, /startup === "ready" && database === "connected"/);
+  assert.ok(server.indexOf("server.listen(env.PORT") < server.indexOf("void initializeDatabase()"), "HTTP must bind before database startup work");
+  assert.match(server, /withTimeout\(migrateInvoiceIndexes, STARTUP_MIGRATION_TIMEOUT_MS/);
+  assert.match(database, /serverSelectionTimeoutMS/);
+  assert.match(render, /healthCheckPath:\s*\/api\/health/);
+  assert.match(render, /MONGODB_SERVER_SELECTION_TIMEOUT_MS/);
+});
+
 test("CI validates server, live tenant isolation, and client production build", () => {
   const workflow = read("../.github/workflows/ci.yml");
   assert.match(workflow, /npm run check:all/);

@@ -3,7 +3,7 @@
 import multer from "multer";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 import path from "node:path";
-import cloudinary from "../config/cloudinary.js";
+import cloudinary, { isCloudinaryConfigured } from "../config/cloudinary.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -11,7 +11,7 @@ import cloudinary from "../config/cloudinary.js";
 |--------------------------------------------------------------------------
 */
 
-const storage = new CloudinaryStorage({
+const storage = isCloudinaryConfigured ? new CloudinaryStorage({
     cloudinary,
 
     params: async (req, file) => {
@@ -41,7 +41,7 @@ const storage = new CloudinaryStorage({
                 : undefined,
         };
     },
-});
+}) : null;
 
 /*
 |--------------------------------------------------------------------------
@@ -82,7 +82,7 @@ const fileFilter = (req, file, cb) => {
 |--------------------------------------------------------------------------
 */
 
-const upload = multer({
+const upload = isCloudinaryConfigured ? multer({
     storage,
 
     limits: {
@@ -95,7 +95,16 @@ const upload = multer({
     },
 
     fileFilter,
+}) : null;
+
+const cloudinaryUnavailable = (req, res) => res.status(503).json({
+    success: false,
+    message: "File uploads are unavailable because Cloudinary is not configured.",
 });
+
+const createUploadMiddleware = (factory, ...args) => isCloudinaryConfigured
+    ? factory(...args)
+    : cloudinaryUnavailable;
 
 /*
 |--------------------------------------------------------------------------
@@ -104,12 +113,16 @@ const upload = multer({
 */
 
 export const uploadSingle = (field = "image") =>
-    upload.single(field);
+    createUploadMiddleware(upload?.single.bind(upload), field);
 
 export const uploadMultiple = (field = "images", max = 10) =>
-    upload.array(field, max);
+    createUploadMiddleware(upload?.array.bind(upload), field, max);
 
 export const uploadFields = (fields) =>
-    upload.fields(fields);
+    createUploadMiddleware(upload?.fields.bind(upload), fields);
 
-export default upload;
+export default {
+    single: (field) => uploadSingle(field),
+    array: (field, max) => uploadMultiple(field, max),
+    fields: (fields) => uploadFields(fields),
+};

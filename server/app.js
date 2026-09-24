@@ -12,6 +12,7 @@ import WebsiteIntegrationKey from "./models/WebsiteIntegrationKey.js";
 import loadTenantPlugin from "./config/tenantPluginLoader.js";
 import requestContext from "./middleware/requestContext.js";
 import { publicErrorMessage } from "./utils/publicError.js";
+import { getStartupPhase } from "./startup/readiness.js";
 
 loadTenantPlugin();
 
@@ -59,15 +60,51 @@ app.use(helmet({
   },
 }));
 
+const databaseStatus = () => ({
+  0: "disconnected",
+  1: "connected",
+  2: "connecting",
+  3: "disconnecting",
+}[mongoose.connection.readyState] || "disconnected");
+
+const readinessPayload = () => {
+  const startup = getStartupPhase();
+  const database = databaseStatus();
+  const ready = startup === "ready" && database === "connected";
+  return {
+    success: ready,
+    status: ready ? "healthy" : startup === "starting" ? "starting" : "degraded",
+    startup,
+    database,
+    version: process.env.RENDER_GIT_COMMIT || process.env.GIT_COMMIT || "unknown",
+    timestamp: new Date().toISOString(),
+  };
+};
+
+// Health and informational root routes stay reachable while the database and
+// required startup migration initialize. Health still reports non-ready states.
+app.get("/api/health", (req, res) => {
+  const payload = readinessPayload();
+  res.status(payload.success ? 200 : 503).json({ ...payload, requestId: req.requestId });
+});
+
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 300,
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => req.path === "/health",
+  skip: (req) => req.path === "/api/health",
   keyGenerator: (req) => req.ip || req.socket?.remoteAddress || "anonymous",
 });
 app.use(globalLimiter);
+
+app.get("/", (req, res) => res.status(200).json({ success: true, message: "Travel API running successfully", requestId: req.requestId }));
+
+app.use((req, res, next) => {
+  const payload = readinessPayload();
+  if (payload.success) return next();
+  return res.status(503).json({ ...payload, requestId: req.requestId });
+});
 
 const configuredOrigins = (env.CLIENT_ORIGINS || env.CLIENT_URL || "").split(",").map((origin) => origin.trim()).filter(Boolean);
 const allowedOrigins = [
@@ -125,11 +162,6 @@ app.use(cookieParser());
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 app.use(resolveTenant);
 
-app.get("/api/health", async (req, res) => {
-  const dbReady = mongoose.connection.readyState === 1;
-  res.status(dbReady ? 200 : 503).json({ success: dbReady, status: dbReady ? "healthy" : "degraded", database: dbReady ? "connected" : "disconnected", version: process.env.RENDER_GIT_COMMIT || process.env.GIT_COMMIT || "unknown", requestId: req.requestId, timestamp: new Date().toISOString() });
-});
-
 app.use("/api/public/onboarding", publicOnboardingRoutes);
 app.use("/api/tenant/branding", tenantBrandingRoutes);
 
@@ -144,7 +176,6 @@ app.use("/api/database", databaseRoutes);
 app.use("/api/system", systemHealthRoutes);
 app.use("/api/superadmin", superAdminRoutes);
 
-app.get("/", (req, res) => res.status(200).json({ success: true, message: "Travel API running successfully", requestId: req.requestId }));
 app.use((req, res) => res.status(404).json({ success: false, message: "Route not found", requestId: req.requestId }));
 app.use((err, req, res, next) => {
   console.error(process.env.NODE_ENV === "production"

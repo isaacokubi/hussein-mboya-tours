@@ -16,10 +16,19 @@ import { startJobWorker } from "./services/jobWorkerService.js";
 import { startDataRetentionScheduler } from "./services/dataRetentionService.js";
 import { startComplianceExpiryScheduler } from "./services/complianceExpiryService.js";
 import { migrateInvoiceIndexes } from "./bootstrap/invoiceIndexMigration.js";
+import { setStartupPhase } from "./startup/readiness.js";
 
 const DB_READY = 1;
 const TASK_RETRY_MS = 60 * 1000;
+const STARTUP_MIGRATION_TIMEOUT_MS = Math.min(
+  120_000,
+  Math.max(1_000, Number(process.env.MONGODB_STARTUP_MIGRATION_TIMEOUT_MS) || 60_000),
+);
 const taskState = new Map();
+const intervals = new Set();
+let stopJobWorker = () => {};
+let shutdownPromise = null;
+let shuttingDown = false;
 
 const runNonCriticalTask = async (name, task) => {
   if (mongoose.connection.readyState !== DB_READY) return false;
@@ -32,39 +41,93 @@ const runNonCriticalTask = async (name, task) => {
   finally { state.running = false; }
 };
 
-await connectDatabase();
-await migrateInvoiceIndexes();
+const withTimeout = (task, timeoutMs, name) => {
+  let timer;
+  return Promise.race([
+    Promise.resolve().then(task),
+    new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`${name} exceeded its ${timeoutMs}ms startup limit.`)), timeoutMs);
+      timer.unref?.();
+    }),
+  ]).finally(() => clearTimeout(timer));
+};
 
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: (env.CLIENT_ORIGINS || "").split(",").map((origin) => origin.trim()).filter(Boolean), credentials: true } });
 initSocket(io);
 export { io };
 
-const subscriptionInterval = startTenantSubscriptionScheduler();
-const communicationInterval = startCustomerCommunicationScheduler();
-const stopJobWorker = startJobWorker();
-const retentionScheduler = startDataRetentionScheduler();
-const complianceExpiryScheduler = startComplianceExpiryScheduler();
-const runEtimsDispatcher = () => runNonCriticalTask("eTIMS dispatcher", enqueueDueEtimsInvoices);
-const runLifecycleSync = () => runNonCriticalTask("Tour lifecycle sync", syncTourLifecycle);
-const etimsInterval = setInterval(runEtimsDispatcher, TASK_RETRY_MS);
-const lifecycleInterval = setInterval(runLifecycleSync, TASK_RETRY_MS);
+const shutdown = (exitCode = 0) => {
+  if (shutdownPromise) return shutdownPromise;
+  shuttingDown = true;
+  shutdownPromise = (async () => {
+    for (const interval of intervals) clearInterval(interval);
+    intervals.clear();
+    stopJobWorker();
+    try {
+      await new Promise((resolve) => {
+        if (!server.listening) return resolve();
+        server.close(() => resolve());
+      });
+    } catch (error) {
+      console.error("Server shutdown error:", error.message);
+    }
+    try {
+      await mongoose.connection.close();
+    } catch (error) {
+      console.error("MongoDB shutdown error:", error.message);
+    }
+    process.exit(exitCode);
+  })();
+  return shutdownPromise;
+};
+
+const startDatabaseServices = () => {
+  intervals.add(startTenantSubscriptionScheduler());
+  intervals.add(startCustomerCommunicationScheduler());
+  stopJobWorker = startJobWorker();
+  const retentionScheduler = startDataRetentionScheduler();
+  intervals.add(retentionScheduler.interval);
+  const complianceExpiryScheduler = startComplianceExpiryScheduler();
+  intervals.add(complianceExpiryScheduler.interval);
+
+  const runEtimsDispatcher = () => runNonCriticalTask("eTIMS dispatcher", enqueueDueEtimsInvoices);
+  const runLifecycleSync = () => runNonCriticalTask("Tour lifecycle sync", syncTourLifecycle);
+  intervals.add(setInterval(runEtimsDispatcher, TASK_RETRY_MS));
+  intervals.add(setInterval(runLifecycleSync, TASK_RETRY_MS));
+
+  void runEtimsDispatcher();
+  void runLifecycleSync();
+  void retentionScheduler.run();
+  void complianceExpiryScheduler.run();
+  startPaymentCleanupScheduler();
+};
+
+const initializeDatabase = async () => {
+  try {
+    await connectDatabase();
+    await withTimeout(migrateInvoiceIndexes, STARTUP_MIGRATION_TIMEOUT_MS, "Invoice index migration");
+    if (shuttingDown) return;
+    setStartupPhase("ready");
+    console.log("Critical database startup complete.");
+    startDatabaseServices();
+  } catch (error) {
+    if (shuttingDown) return;
+    setStartupPhase("failed");
+    console.error("Critical database startup failed:", error.name || "Error", error.code || "");
+    void shutdown(1);
+  }
+};
 
 server.on("error", (error) => {
   if (error?.code === "EADDRINUSE") { console.error(`PORT ${env.PORT} is already in use. Stop the existing server before starting another instance.`); void shutdown(1); return; }
   console.error("HTTP server error:", error); void shutdown(1);
 });
 
-const shutdown = async (exitCode = 0) => {
-  clearInterval(lifecycleInterval); clearInterval(subscriptionInterval); clearInterval(communicationInterval); clearInterval(etimsInterval); clearInterval(retentionScheduler.interval); clearInterval(complianceExpiryScheduler.interval); stopJobWorker();
-  try { await new Promise((resolve) => { if (!server.listening) return resolve(); server.close(() => resolve()); }); } catch (error) { console.error("Server shutdown error:", error.message); }
-  try { await mongoose.connection.close(); } catch (error) { console.error("MongoDB shutdown error:", error.message); }
-  process.exit(exitCode);
-};
-
-server.listen(env.PORT, () => {
-  console.log(`Server running on port ${env.PORT}`);
-  void runEtimsDispatcher(); void runLifecycleSync(); void retentionScheduler.run(); void complianceExpiryScheduler.run(); startPaymentCleanupScheduler();
-});
 process.on("SIGINT", () => void shutdown(0));
 process.on("SIGTERM", () => void shutdown(0));
+
+server.listen(env.PORT, () => {
+  console.log(`HTTP server listening on port ${server.address()?.port ?? env.PORT}`);
+  void initializeDatabase();
+});

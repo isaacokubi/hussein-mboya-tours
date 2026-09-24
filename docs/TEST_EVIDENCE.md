@@ -1,5 +1,11 @@
 # Global Tours — Test Evidence Register
 
+## 2026-09-24 — Render API startup/readiness remediation
+
+The API startup path now binds the HTTP listener before opening MongoDB and applying the required invoice indexes. The health endpoint is database-independent at the transport/middleware layer, reports actual startup/database state, and only returns healthy when MongoDB is connected and critical startup work is complete. MongoDB connection selection and startup index migration have explicit bounds. Production smoke/monitoring retain strict healthy-and-connected acceptance and retry transient startup/network states for a bounded 120 seconds.
+
+**Live Render production result: NOT VERIFIED.** Repository-local and CI checks cannot establish that the external `PRODUCTION_API_URL` secret points to the intended active Render API or that Render has the required runtime environment configured. Record a PASS only after the smoke check receives the expected response from that external service.
+
 ## 2026-09-21 — Full production-audit remediation verification
 
 ### Repository baseline

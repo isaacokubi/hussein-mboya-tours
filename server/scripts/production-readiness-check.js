@@ -5,6 +5,8 @@ const requiredFiles = [
   "config/env.js",
   "app.js",
   "server.js",
+  "startup/readiness.js",
+  "tests/healthReadiness.test.js",
   "models/Organization.js",
   "models/Payment.js",
   "models/Invoice.js",
@@ -75,7 +77,7 @@ if (missing.length) {
 }
 
 const envTemplate = fs.readFileSync(".env.example", "utf8");
-const requiredEnv = ["MONGODB_URI", "JWT_SECRET"];
+const requiredEnv = ["MONGODB_URI", "MONGODB_SERVER_SELECTION_TIMEOUT_MS", "MONGODB_STARTUP_MIGRATION_TIMEOUT_MS", "JWT_SECRET"];
 const missingTemplate = requiredEnv.filter((key) => !new RegExp(`^${key}=`, "m").test(envTemplate));
 if (missingTemplate.length) {
   console.error("Missing environment template variables:", missingTemplate.join(", "));

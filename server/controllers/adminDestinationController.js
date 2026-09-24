@@ -2,7 +2,7 @@ import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 import mongoose from "mongoose";
 import Destination from "../models/Destination.js";
-import cloudinary from "../config/cloudinary.js";
+import cloudinary, { isCloudinaryConfigured } from "../config/cloudinary.js";
 
 const escapeRegex = (value = "") => value.replace(/[.*+?^$\{\}()|[\]\\]/g, "\\$&");
 
@@ -203,6 +203,9 @@ export const deleteDestination = async (req, res, next) => {
     if (!destination) return res.status(404).json({ success: false, message: "Destination not found." });
 
     const imagePublicIds = (destination.images || []).map((image) => image.publicId).filter(Boolean);
+    if (imagePublicIds.length && !isCloudinaryConfigured) {
+      return res.status(503).json({ success: false, message: "Destination images cannot be deleted because Cloudinary is not configured." });
+    }
     await Promise.all(
       imagePublicIds.map((publicId) =>
         cloudinary.uploader.destroy(publicId).catch((error) => {

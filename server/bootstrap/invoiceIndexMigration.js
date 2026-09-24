@@ -1,7 +1,12 @@
 import Invoice from "../models/Invoice.js";
 
 export const migrateInvoiceIndexes = async () => {
-  const indexes = await Invoice.collection.indexes();
+  const indexes = await Invoice.collection.indexes().catch((error) => {
+    // listIndexes reports NamespaceNotFound for a fresh deployment database.
+    // createIndex below creates the collection as part of the critical setup.
+    if (error?.code === 26 || error?.codeName === "NamespaceNotFound") return [];
+    throw error;
+  });
   const legacy = indexes.find((index) => index.name === "tenantId_1_booking_1" && !index.partialFilterExpression);
   if (legacy) {
     try { await Invoice.collection.dropIndex(legacy.name); } catch (error) { if (error?.code !== 27) throw error; }

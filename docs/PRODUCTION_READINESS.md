@@ -23,6 +23,14 @@ The current working tree passed the local checks listed below. This is not a pro
 
 ## Latest remediation covered by the verification
 
+### API startup and health behavior
+
+The API binds to the platform-provided `PORT` before MongoDB connection and invoice-index migration begin. `/api/health` bypasses tenant resolution and rate limiting, responds promptly during startup, and reports `starting`/`degraded` plus the actual database connection state. It reports healthy only when the application startup migration has completed and Mongoose is connected. Database-backed routes return 503 until that point. MongoDB selection is bounded to 10 seconds by default; invoice-index migration is bounded to 60 seconds by default and remains a critical startup operation whose failure terminates the process. Background schedulers start only after database readiness and do not delay the listener.
+
+The production smoke and monitoring workflows share a bounded readiness probe. It requires an HTTPS origin in `PRODUCTION_API_URL`, retries transient startup/unreachable responses and database disconnects in an otherwise-ready process for at most 120 seconds, and fails immediately when critical startup has failed. Success still requires the exact healthy/connected response. The probe does not certify the live deployment by itself; current production status remains **NOT VERIFIED** until GitHub Actions receives that response from the configured Render service.
+
+Cloudinary is an optional media provider and is not contacted during API startup. Without all three Cloudinary credentials, media upload and deletion operations fail closed with HTTP 503; database-backed API readiness is unchanged.
+
 - JWT issuer/audience validation is enforced consistently.
 - Browser authentication uses secure HttpOnly session cookies with CSRF protection.
 - Legacy browser JWT persistence and the dedicated browser M-Pesa bearer-token path were removed.

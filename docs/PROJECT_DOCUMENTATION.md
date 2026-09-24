@@ -339,7 +339,7 @@ The exact controller and route contracts should be treated as implementation det
 
 ### Health endpoints
 
-The application exposes `/api/health` for basic health reporting and the server health configuration points Render at that endpoint. fileciteturn77file0
+The application exposes `/api/health` for startup, application-readiness, and MongoDB connection state; `render.yaml` points Render at this endpoint. The server binds the platform-provided port before MongoDB connection and the critical invoice-index migration begin. Health requests bypass tenant resolution and report `starting`/`degraded` until Mongoose is connected and critical startup work has completed. Database-backed routes return 503 until readiness; a failed connection or migration terminates the service rather than reporting healthy.
 
 A protected administrative system-health endpoint is also available for authorized operational users.
 
@@ -433,7 +433,7 @@ Operational recommendations:
 
 ## 12. Scheduled/background operations
 
-The backend starts automated operational processes during server startup. Current application behavior includes tour lifecycle synchronization and payment cleanup scheduling.
+The backend starts automated operational processes after MongoDB connection and the critical invoice-index migration complete. These scheduled jobs are not awaited before the HTTP listener binds. Current application behavior includes tour lifecycle synchronization, payment cleanup, subscription and communication automation, retention, compliance expiry, and durable job processing.
 
 Scheduled jobs must be designed to be idempotent because deployment platforms may restart instances and multiple instances may exist in production.
 
@@ -451,6 +451,8 @@ The deployment definition identifies the principal backend and frontend configur
 NODE_ENV
 PORT
 MONGODB_URI
+MONGODB_SERVER_SELECTION_TIMEOUT_MS
+MONGODB_STARTUP_MIGRATION_TIMEOUT_MS
 JWT_SECRET
 JWT_EXPIRE
 CLIENT_URL
@@ -614,7 +616,7 @@ At minimum, verify:
 
 ### Render
 
-The repository includes a Render definition containing separate backend and frontend services. The API uses `server` as its root directory and `npm ci` / `npm start`; the frontend uses `client`, `npm ci && npm run build`, and publishes `dist`. fileciteturn77file0
+The repository includes a Render definition containing separate backend and frontend services. The API uses `server` as its root directory and `npm ci` / `npm start`; the frontend uses `client`, `npm ci && npm run build`, and publishes `dist`. Configure the backend's actual MongoDB URI, production JWT secret, HTTPS client origins, and platform hostname in Render. Configure the static frontend's public API URL in `VITE_API_URL` with `/api` appended and its API origin in `VITE_SOCKET_URL`; both are build-time public configuration, not secrets.
 
 The frontend is configured as a single-page application with a catch-all rewrite to `index.html`. fileciteturn77file0
 
@@ -637,6 +639,8 @@ Recommended production sequence:
 ### Vercel
 
 `vercel.json` configures the Vite client build from `client/`, publishes `client/dist`, and rewrites application routes to `index.html`. fileciteturn78file0
+
+Set `VITE_API_URL` and `VITE_SOCKET_URL` in the Vercel project environment using the actual public API origin; `VITE_API_URL` must end in `/api`. Do not hardcode an unverified deployment hostname in the repository.
 
 The Vercel configuration should be kept aligned with the actual deployment project and environment-variable configuration.
 

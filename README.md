@@ -39,6 +39,14 @@ A skipped test is not treated as a failure or as production acceptance.
 
 ## Production acceptance still required
 
+### API startup and deployment health
+
+The API binds Render's `PORT` before connecting to MongoDB or running the critical invoice-index migration. `/api/health` stays reachable during startup and reports `starting` or `degraded` with the actual Mongoose connection state; it reports `healthy` only after MongoDB is connected and the required migration completes. Database-backed routes return 503 until then. A failed database connection or invoice-index migration terminates the process, and the startup migration has a bounded 60-second default (configurable up to 120 seconds).
+
+Render must provide `MONGODB_URI`, a production-strength `JWT_SECRET`, HTTPS `CLIENT_URL`/`CLIENT_ORIGINS`, and the real `PLATFORM_HOST`. Cloudinary credentials are optional; without them the API still starts, and upload/image deletion endpoints that need Cloudinary fail closed with HTTP 503. Its frontend service must set `VITE_API_URL` to the public API origin followed by `/api` and `VITE_SOCKET_URL` to that API origin. These deployment values belong in Render's environment settings, not in this repository. The GitHub API smoke check allows up to 120 seconds for transient startup/network readiness and still requires HTTP 200 with `success=true`, `status=healthy`, and `database=connected`.
+
+The production API and web endpoint results remain **NOT VERIFIED** until the configured GitHub Actions checks succeed against the live services. Vercel deployments must set the same build-time `VITE_API_URL` and `VITE_SOCKET_URL` values in the Vercel project environment; `vercel.json` intentionally contains no deployment hostname.
+
 The remaining gates are runtime/provider evidence gates, not unresolved source-code fixes:
 
 - current `main` deployment SHA verification;
