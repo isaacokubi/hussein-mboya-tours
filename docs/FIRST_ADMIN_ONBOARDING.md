@@ -7,7 +7,7 @@ The platform uses two privileged levels:
 - **SuperAdmin** — platform-level administrator. It is not assigned to a company tenant.
 - **Admin** — company-level administrator. Every Admin must belong to exactly one company/tenant.
 
-Public registration creates **customer accounts only**. It cannot create an Admin or SuperAdmin.
+Public registration creates **customer accounts only**. Public tenant registration and browser-based platform bootstrap are disabled.
 
 ## First installation
 
@@ -85,10 +85,10 @@ When a SuperAdmin creates staff for a company, the request must include a valid 
 
 After the platform has a SuperAdmin, use the authenticated SuperAdmin tenant-management API/UI to create another company. A first Admin may be supplied as part of tenant creation.
 
-The API is exposed under:
+The API is exposed under and requires the platform-owner session:
 
 ```text
-POST /api/tenants
+POST /api/superadmin/tenants
 ```
 
 Example request shape:
@@ -109,7 +109,7 @@ Example request shape:
 }
 ```
 
-The API validates the administrator, refuses duplicate email addresses, creates the company Admin inside the new tenant context, and returns a safe user representation without the password.
+The API validates the administrator, refuses duplicate unique values, and creates the Organization, tenant Admin and default settings in a MongoDB transaction. The response omits the password.
 
 ## Security model
 

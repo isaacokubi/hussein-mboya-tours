@@ -6,6 +6,8 @@ Hussein Mboya Tours is a full-stack travel and safari operations platform. It co
 
 The system is designed for organizations that need to manage the complete journey from destination and tour configuration through booking, pickup planning, staffing, vehicle assignment, payment, communication, reporting, and post-trip operations.
 
+First-tenant provisioning is controlled by the platform owner. Public registration creates customer accounts only. See [First Tenant Production Acceptance](FIRST_TENANT_ACCEPTANCE.md) for the production environment contract, tenant URL behavior and onboarding steps.
+
 This document is the engineering and operations reference for developers, system administrators, deployment engineers, testers, and future maintainers.
 
 ---
@@ -292,7 +294,7 @@ See [`MULTITENANCY.md`](MULTITENANCY.md) for the focused tenancy guide.
 
 ## 7. API organization
 
-The API is mounted under `/api`.
+The API is mounted under `/api`. Platform-owner tenant provisioning is protected at `/api/superadmin/tenants`; the public registration endpoint creates customer accounts only.
 
 Major route families include:
 
@@ -305,7 +307,7 @@ Major route families include:
 /api/admin/*
 /api/admin-ai
 /api/superadmin/*
-/api/tenants
+/api/superadmin/tenants (platform-owner only)
 /api/custom-tour-requests
 /api/reviews
 /api/gallery
@@ -640,7 +642,7 @@ Recommended production sequence:
 
 `vercel.json` configures the Vite client build from `client/`, publishes `client/dist`, and rewrites application routes to `index.html`. fileciteturn78file0
 
-Set `VITE_API_URL` and `VITE_SOCKET_URL` in the Vercel project environment using the actual public API origin; `VITE_API_URL` must end in `/api`. Do not hardcode an unverified deployment hostname in the repository.
+Set `VITE_API_URL` in the Vercel project environment using the public API origin with `/api` appended. Set `VITE_SOCKET_URL` to the API origin when possible; the client now derives it from an absolute `VITE_API_URL` if unset. Do not hardcode an unverified deployment hostname in the repository.
 
 The Vercel configuration should be kept aligned with the actual deployment project and environment-variable configuration.
 

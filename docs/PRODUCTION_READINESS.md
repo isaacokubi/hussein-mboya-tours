@@ -2,10 +2,12 @@
 
 ## Current application baseline
 
-**Verification date:** 2026-09-23
-**Verification scope:** current local working tree; see the commit recorded after this verification.
+**Verification date:** 2026-09-24
+**Verification scope:** local first-tenant audit worktree on top of `b46ad3154cc80411c160569823a00abd6f0466cb`; see the newest evidence entry in `TEST_EVIDENCE.md`.
 
-The current working tree passed the local checks listed below. This is not a production launch certification: production runtime configuration and external provider/infrastructure evidence are still required.
+The current worktree passes the local code checks recorded below. This is not a production launch certification: production runtime configuration and external provider/infrastructure evidence are still required. Render currently reports the older deployed commit `aabbe5b2feddcf844c187b57f5934d9a16fadb00`.
+
+See [First Tenant Production Acceptance](FIRST_TENANT_ACCEPTANCE.md) for the environment matrix, secure onboarding procedure and external evidence boundary. Public tenant creation and browser-based bootstrap are disabled; tenant provisioning requires platform-owner authorization.
 
 ## Verification matrix
 

@@ -29,7 +29,7 @@ The workflow also performs a lightweight HTTP check against the public web URL.
 
 The API binds its HTTP listener before MongoDB connection and the critical invoice-index migration. `/api/health` is served before tenant/database-backed middleware so it responds promptly and accurately reports `starting`, `degraded`, or `healthy`. Database-backed routes remain unavailable until required startup work succeeds. The default MongoDB server-selection bound is 10 seconds and the invoice-index migration bound is 60 seconds; failures remain fatal to the service.
 
-For Render, set the backend's `MONGODB_URI`, strong `JWT_SECRET`, HTTPS `CLIENT_URL` and `CLIENT_ORIGINS`, and actual `PLATFORM_HOST` in the Render service environment. Set the static frontend's `VITE_API_URL` to the public API origin ending in `/api` and `VITE_SOCKET_URL` to the public API origin. These values must not be committed to the repository. The deployed API and frontend remain **NOT VERIFIED** until the live GitHub Actions smoke check passes.
+For Render, set the backend's `MONGODB_URI`, strong `JWT_SECRET`, dedicated payment/webhook encryption keys, HTTPS `CLIENT_URL` and `CLIENT_ORIGINS`, and actual `PLATFORM_HOST`. Set the static frontend's `VITE_API_URL` to the public API origin ending in `/api`; set `VITE_SOCKET_URL` to the API origin or allow the client to derive it from `VITE_API_URL`. These values must not be committed to the repository. The deployed current source remains **NOT VERIFIED** until the live GitHub Actions smoke check passes.
 
 Cloudinary is optional for API startup. If credentials are absent or incomplete, upload and deletion paths that require Cloudinary return HTTP 503; `/api/health` continues to reflect MongoDB and critical startup readiness only.
 
@@ -54,6 +54,8 @@ The following evidence flags must remain `false` until the corresponding real-wo
 These flags are evidence controls, not substitutes for the underlying live tests.
 
 ## Stage 1 exit criteria
+
+Live endpoint observation found the Render API responding healthy/connected at deployed version `aabbe5b2feddcf844c187b57f5934d9a16fadb00`. The local startup/readiness fix is newer and is not yet deployed; current-source production acceptance remains unverified. See [First Tenant Production Acceptance](FIRST_TENANT_ACCEPTANCE.md) for required deployment values and evidence.
 
 - [x] Release gate baseline exists and is documented.
 - [x] Production API health endpoint exists at `/api/health`.

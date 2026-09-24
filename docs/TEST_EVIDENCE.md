@@ -1,5 +1,28 @@
 # Global Tours — Test Evidence Register
 
+## 2026-09-24 — First-tenant acceptance audit (local source)
+
+Verification was run with Node `v22.23.3`, `NODE_ENV=test`, the CI test JWT, and the local ignored `server/.env` temporarily removed from discovery. It was restored unchanged after verification. No production credentials were read or printed.
+
+| Area | Result | Evidence |
+|---|---|---|
+| Backend automated suite | PASS with integration skips | `cd server && npm test`: 123 total, 118 passed, 0 failed, 5 skipped. Skips require replica-set or MongoDB-backed execution. |
+| Tour-domain suite | PASS | `cd server && npm run test:tour-domain`: 5 passed. |
+| Security suite | PASS | `cd server && npm run test:security`: 4 passed. |
+| Full syntax/model/tenant/production contract | PASS | `cd server && npm run check:all`. |
+| Tenant security regression tests | PASS (unit/contracts); live DB UNVERIFIED | Full suite included tenant security/middleware/URL contract tests. `check:multitenancy:live` reached localhost but the MongoDB 3.6.8 server was rejected by the current driver (minimum MongoDB 4.2); the script failed before writing fixtures. |
+| Startup/readiness | PASS for unavailable DB; connected DB UNVERIFIED | Health/root routes, degraded/unavailable response and server-listens-before-connection-failure passed. MongoDB-connected migration check was skipped because the only available local server is unsupported MongoDB 3.6.8. |
+| First-tenant acceptance | UNVERIFIED locally | Integration test provisions two tenants, tenant admins, a package, destination and public tenant catalogs, then checks cross-tenant isolation and safe M-Pesa configuration failure; wired to CI's MongoDB 8 replica-set job. Local run is skipped because no supported replica-set URI is available. No tenant/provider transactions were run against production. |
+| Client lint/build | PASS | `cd client && npm run lint`; `npm run build` completed under Node 22 with local `.env` hidden. |
+| Workflow YAML | PASS | PyYAML parsed all 7 workflow files. |
+| Git whitespace | PASS | `git diff --check` run after final code changes. |
+| Live API | PASS for observed old deployed version only | Backend root and `/api/health` returned 200; health reported healthy/connected and version `aabbe5b2feddcf844c187b57f5934d9a16fadb00`. The local startup fix is not deployed. |
+| Live frontend | Partial / NOT VERIFIED | Vercel root returned 200; compiled API base targeted the Render API. No separate Render Socket.IO URL was present in the live bundle, so Vercel must set `VITE_SOCKET_URL` or deploy the local derived-origin fix. |
+| CORS | PASS for observed preflight | Vercel origin OPTIONS request to the API returned 204 with matching allow-origin and credentials. |
+| Database, provider payments, M-Pesa, eTIMS, backups and restore | UNVERIFIED | Require external Atlas/provider/operations evidence. |
+
+The new local fixes close the public tenant/bootstrap paths, require dedicated production encryption keys, reject tenant-selector mismatch against a signed tenant token, provide tenant-admin package CRUD and a tenant-scoped public package catalog, and allow body-only destination/tour writes without Cloudinary while rejecting actual file upload with HTTP 503. Production certification remains **NOT VERIFIED** until the reviewed commit is deployed and the external acceptance steps in `FIRST_TENANT_ACCEPTANCE.md` are completed.
+
 ## 2026-09-24 — Render API startup/readiness remediation
 
 The API startup path now binds the HTTP listener before opening MongoDB and applying the required invoice indexes. The health endpoint is database-independent at the transport/middleware layer, reports actual startup/database state, and only returns healthy when MongoDB is connected and critical startup work is complete. MongoDB connection selection and startup index migration have explicit bounds. Production smoke/monitoring retain strict healthy-and-connected acceptance and retry transient startup/network states for a bounded 120 seconds.

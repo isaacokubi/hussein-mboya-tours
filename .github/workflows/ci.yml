@@ -97,6 +97,7 @@ jobs:
 
     env:
       MONGODB_URI: mongodb://127.0.0.1:27017/hussein_mboya_ci?replicaSet=rs0
+      FIRST_TENANT_TEST_MONGODB_URI: mongodb://127.0.0.1:27017/first_tenant_acceptance_ci?replicaSet=rs0
       JWT_SECRET: ci-only-test-secret
       DEFAULT_TENANT_ID: 000000000000000000000000
       NODE_ENV: test
@@ -123,7 +124,7 @@ jobs:
           docker exec mongo-tour-ci mongosh --quiet --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"127.0.0.1:27017"}]})'
 
       - name: Run tour lifecycle integration
-        run: node --test tests/tourLifecycleIntegration.test.js tests/hospitalityPaymentLifecycleIntegration.test.js
+        run: node --test tests/tourLifecycleIntegration.test.js tests/hospitalityPaymentLifecycleIntegration.test.js tests/firstTenantAcceptance.integration.test.js
 
       - name: Cleanup Mongo replica set
         if: always()

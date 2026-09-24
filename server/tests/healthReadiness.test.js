@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { once } from "node:events";
+import express from "express";
 import test from "node:test";
 
 // Keep this runtime test independent of a developer's ignored .env file.
@@ -116,21 +117,28 @@ test("health and root routes stay reachable and report real database readiness",
   assert.equal(payload.message, "Travel API running successfully");
 });
 
-test("the API can load without Cloudinary and keeps upload routes fail-closed", () => {
-  let responseStatus;
-  let responseBody;
-  let nextCalled = false;
-  const response = {
-    status(status) { responseStatus = status; return this; },
-    json(body) { responseBody = body; return this; },
-  };
+test("the API can load without Cloudinary; body-only writes work and file uploads fail closed", async (t) => {
+  const uploadApp = express();
+  uploadApp.use(express.json());
+  uploadApp.post("/upload", upload.single("image"), (req, res) => res.json({ received: Boolean(req.file), name: req.body?.name || "" }));
+  uploadApp.use((error, req, res, next) => res.status(error.statusCode || 500).json({ success: false, message: error.message }));
+  const uploadServer = createServer(uploadApp);
+  uploadServer.listen(0, "127.0.0.1");
+  await once(uploadServer, "listening");
+  t.after(() => new Promise((resolve) => uploadServer.close(resolve)));
+  const uploadUrl = `http://127.0.0.1:${uploadServer.address().port}/upload`;
 
-  upload.single("image")({}, response, () => { nextCalled = true; });
+  const fieldsOnly = new FormData();
+  fieldsOnly.set("name", "Coast destination");
+  const fieldsResponse = await fetch(uploadUrl, { method: "POST", body: fieldsOnly });
+  assert.equal(fieldsResponse.status, 200);
+  assert.equal((await fieldsResponse.json()).name, "Coast destination");
 
-  assert.equal(responseStatus, 503);
-  assert.equal(responseBody.success, false);
-  assert.match(responseBody.message, /Cloudinary is not configured/);
-  assert.equal(nextCalled, false);
+  const fileUpload = new FormData();
+  fileUpload.set("image", new Blob(["image bytes"], { type: "image/png" }), "coast.png");
+  const fileResponse = await fetch(uploadUrl, { method: "POST", body: fileUpload });
+  assert.equal(fileResponse.status, 503);
+  assert.match((await fileResponse.json()).message, /Cloudinary is not configured/);
 });
 
 test("server binds before an unavailable MongoDB connection fails", async (t) => {

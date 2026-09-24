@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import { MutationCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./App";
 import { AuthProvider } from "./context/AuthContext";
+import { socketUrl } from "./api/apiUrls";
 import { SettingsProvider } from "./context/SettingsContext";
 import { CartProvider } from "./context/CartContext";
 import "./index.css";
@@ -51,7 +52,6 @@ ReactDOM.createRoot(document.getElementById("root")).render(
 
 if (import.meta.env.DEV) {
   const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-  const socketUrl = import.meta.env.VITE_SOCKET_URL || window.location.origin;
   console.log("Effective API URL =", apiUrl);
   console.log("Effective Socket URL =", socketUrl);
 }

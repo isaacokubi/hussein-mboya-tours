@@ -1,14 +1,7 @@
 // client/src/socket/socket.js
 
 import { io } from "socket.io-client";
-
-
-
-const SOCKET_URL =
-
-    import.meta.env.VITE_SOCKET_URL ||
-
-    window.location.origin;
+import { socketUrl as SOCKET_URL } from "../api/apiUrls";
 
 
 

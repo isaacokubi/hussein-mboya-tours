@@ -83,7 +83,7 @@ function getAuthenticatedTenantId() {
 }
 
 const isPublicAuthRequest = (url = "") =>
-  /(?:^|\/)(?:auth\/(?:login|register|bootstrap|password-reset(?:\/|$))|public\/onboarding\/register)/i.test(String(url));
+  /(?:^|\/)auth\/(?:login|register|password-reset(?:\/|$))/i.test(String(url));
 
 const api = axios.create({
   baseURL,
@@ -158,7 +158,7 @@ api.interceptors.response.use(
     }
 
     if (status === 401 && typeof window !== "undefined") {
-      const isLoginRequest = /\/auth\/(?:login|register|bootstrap)(?:[/?]|$)/i.test(url);
+      const isLoginRequest = /\/auth\/(?:login|register)(?:[/?]|$)/i.test(url);
       const hasKnownUser = Boolean(localStorage.getItem("user"));
       if (!isLoginRequest && hasKnownUser) {
         window.dispatchEvent(new CustomEvent("auth:session-invalid", {

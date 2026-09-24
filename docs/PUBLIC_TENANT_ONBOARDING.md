@@ -1,98 +1,26 @@
-# Public Tenant Onboarding
+# First Tenant Onboarding
 
-The SaaS supports public company registration from the existing `/register` page. Selecting **Register a Company** switches the page to company onboarding.
+Tenant creation is a platform-owner operation. There is no public tenant-creation or public first-platform-owner endpoint. Public `/register` creates a customer account only.
 
-## Flow
+## First installation
 
-1. Visitor enters company information.
-2. Visitor chooses a plan.
-3. System creates an isolated Organization/Tenant.
-4. System creates the first Administrator inside that tenant.
-5. System creates a 14-day trial Subscription.
-6. The new Admin receives a tenant-scoped JWT and is sent to the Admin dashboard.
-7. Platform SuperAdmin provisioning is handled separately by the server-side bootstrap script and is never part of public tenant registration.
+1. Configure `MONGODB_URI` and a strong `JWT_SECRET` for the backend. Configure the production encryption keys listed in [FIRST_TENANT_ACCEPTANCE.md](FIRST_TENANT_ACCEPTANCE.md) before starting the production service.
+2. Run `cd server && npm run bootstrap:first` as a controlled operator against the intended database. The interactive script creates system roles, the initial tenant, a platform SuperAdmin and its first tenant Admin. It refuses to run after an active SuperAdmin exists.
+3. Sign in at `/login` as the platform owner and tenant Admin separately. Confirm the tenant and its Admin appear in SuperAdmin → Tenants.
+4. For every later tenant, use the authenticated SuperAdmin tenant management UI (`POST /api/superadmin/tenants`). This creates the Organization, unique slug, tenant Admin with the system Admin role, and default tenant settings in a MongoDB transaction.
+5. From the tenant Admin account, configure destinations, tours, packages, customer/booking settings, branding, website integration keys and that tenant's payment gateways.
+6. Resolve the tenant using its configured tenant subdomain/custom domain or the public deployment's explicit tenant slug. Unknown and inactive tenants must fail closed.
 
-## Public API
+Do not call the obsolete public onboarding/bootstrap controller modules directly; they are not mounted as HTTP routes. Do not expose bootstrap values through a browser or Vite variable. Do not use direct MongoDB writes for normal tenant creation.
 
-`POST /api/public/onboarding/register`
+## Required onboarding verification
 
-Example body:
+- Tenant is created with `trial` status and a unique normalized slug.
+- Admin role is assigned to a user whose `tenantId` equals the new Organization ID.
+- Admin can log in and access tenant-scoped routes; the platform owner can use platform routes.
+- A different tenant context cannot read or mutate the tenant's data.
+- Tenant URL resolves to that tenant; unknown and suspended tenants cannot use public services.
+- Payment gateways are configured per tenant. Missing M-Pesa configuration returns a safe 503 and never falls back to global production credentials.
+- Website browser keys are publishable, tenant-scoped and revocable; website secret keys remain server-side.
 
-```json
-{
-  "company": {
-    "name": "Example Safaris",
-    "slug": "example-safaris",
-    "country": "Kenya",
-    "timezone": "Africa/Nairobi",
-    "currency": "KES"
-  },
-  "plan": "starter",
-  "admin": {
-    "name": "Jane Doe",
-    "email": "jane@example.com",
-    "phone": "0712345678",
-    "password": "StrongPassword123!"
-  }
-}
-```
-
-## Plans
-
-| Plan | Trial | Seats |
-|---|---:|---:|
-| Starter | 14 days | 5 |
-| Professional | 14 days | 15 |
-| Business | 14 days | 50 |
-| Enterprise | 14 days | 250 |
-
-## First SuperAdmin configuration
-
-Public tenant registration does **not** require `BOOTSTRAP_SUPERADMIN_*` variables and does not create a global SuperAdmin. This keeps public onboarding independent from platform-level privileged account provisioning.
-
-To provision the first platform SuperAdmin, configure these server-side secrets and run the dedicated bootstrap command:
-
-- `BOOTSTRAP_SUPERADMIN_NAME`
-- `BOOTSTRAP_SUPERADMIN_EMAIL`
-- `BOOTSTRAP_SUPERADMIN_PHONE`
-- `BOOTSTRAP_SUPERADMIN_PASSWORD`
-
-They must never be exposed through Vite/client environment variables or committed to Git.
-
-```bash
-cd server
-npm run bootstrap:first
-```
-
-The bootstrap script is safe to run only as a controlled server/deployment operation; public users must never be able to invoke it.
-
-## Security
-
-- Public onboarding is rate limited to 5 attempts per hour per client IP.
-- Company slugs are unique.
-- Administrator emails are unique.
-- Administrator phone numbers require exactly 10 digits.
-- Administrator passwords require at least 12 characters, an uppercase letter and a number.
-- Tenant-scoped models are created inside the new tenant context.
-- Tenant IDs are carried in the authentication token.
-- Platform SuperAdmin creation is separate from public tenant registration.
-- Subscription state is persisted independently from the Organization's embedded subscription summary.
-- Paid subscriptions enter a bounded grace period after renewal expiry before the tenant is suspended. Configure `SUBSCRIPTION_GRACE_PERIOD_DAYS` on the server if a value other than the default 3 days is required; the runtime caps it at 30 days.
-
-## Production deployment
-
-Configure the four `BOOTSTRAP_SUPERADMIN_*` variables only on the backend service when running the controlled bootstrap operation. Do not add them to the frontend `.env` or Vercel environment.
-
-Configure authoritative tenant plan prices through the platform billing configuration. Tenant checkout derives its amount from those platform settings and does not trust a client-supplied amount.
-
-Run the contract checks before deployment:
-
-```bash
-cd server
-npm run check:models
-npm run check:controllers
-npm run check:multitenancy:live
-npm test
-```
-
-The live database onboarding endpoint is intentionally not executed by CI because it creates real companies and privileged accounts.
+The current CI suite includes isolation, onboarding authorization and route-contract regression checks. Provider transactions, external DNS, production database behavior and live website acceptance still require their own external evidence; see [TEST_EVIDENCE.md](TEST_EVIDENCE.md).

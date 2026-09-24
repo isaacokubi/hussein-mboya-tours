@@ -51,7 +51,6 @@ const requiredFiles = [
   "services/webhookDeliveryService.js",
   "services/dataRetentionService.js",
   "services/tenantSubscriptionService.js",
-  "services/publicOnboardingService.js",
   "bootstrap/operationalAccountingHooks.js",
   "controllers/creditDebitNoteController.js",
   "controllers/paymentLinkController.js",
@@ -59,7 +58,6 @@ const requiredFiles = [
   "controllers/withholdingTaxController.js",
   "controllers/accountingReportsController.js",
   "controllers/managementAccountingController.js",
-  "controllers/publicOnboardingController.js",
   "controllers/subscriptionMpesaCallbackController.js",
   "routes/creditDebitNoteRoutes.js",
   "routes/paymentLinkRoutes.js",
@@ -135,7 +133,7 @@ if (runtimeValidation) {
   // Multi-tenant deployments do not require an arbitrary default tenant.
   // A default public tenant may still be configured when explicitly needed.
   const production = process.env.NODE_ENV === "production";
-  const securityKeys = ["ETIMS_CREDENTIAL_ENCRYPTION_KEY", "WEBHOOK_SECRET_KEY"];
+  const securityKeys = ["PAYMENT_CREDENTIAL_ENCRYPTION_KEY", "WEBHOOK_SECRET_KEY"];
   const weakSecurityKeys = securityKeys.filter((key) => production && String(process.env[key] || "").length < 32);
   const unsafeFallback = production && String(process.env.ALLOW_SINGLE_TENANT_DEV_FALLBACK || "false").toLowerCase() === "true";
   const globalMpesaFallback = production && String(process.env.ALLOW_GLOBAL_MPESA_FALLBACK || "false").toLowerCase() === "true";
@@ -147,7 +145,7 @@ if (runtimeValidation) {
   const platformHost = String(process.env.PLATFORM_HOST || "").trim();
   const missingPlatformHost = production && !platformHost;
   const placeholderHost = production && /^(your-domain\.com|localhost|127\.0\.0\.1)$/i.test(platformHost);
-  const paymentKeyRequired = production && (Boolean(process.env.PAYMENT_CREDENTIAL_ENCRYPTION_KEY) || Boolean(process.env.MPESA_CONSUMER_KEY) || Boolean(process.env.MPESA_CONSUMER_SECRET) || Boolean(process.env.MPESA_PASSKEY));
+  const paymentKeyRequired = production;
   const weakPaymentKey = paymentKeyRequired && String(process.env.PAYMENT_CREDENTIAL_ENCRYPTION_KEY || "").length < 32;
   const etimsConfigured = production && Boolean(process.env.ETIMS_ADAPTER_URL || process.env.ETIMS_ADAPTER_TOKEN);
   const missingEtimsKey = etimsConfigured && String(process.env.ETIMS_CREDENTIAL_ENCRYPTION_KEY || "").length < 32;

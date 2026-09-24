@@ -4,8 +4,8 @@ This runbook is the final release control for the buyer-ready multi-tenant SaaS 
 
 ## 1. Tenant onboarding
 
-- Register a company through the public onboarding flow.
-- Provision the tenant organization, administrator, subscription and audit event atomically from the application workflow.
+- Bootstrap the initial platform owner and first company through controlled `cd server && npm run bootstrap:first`, or use SuperAdmin → Tenants for later companies.
+- Never create tenants through a public endpoint. `POST /api/superadmin/tenants` requires platform-owner authorization and creates the Organization, tenant Admin and default settings in a MongoDB transaction.
 - Confirm tenant slug uniqueness and tenant-scoped administrator identity.
 - Confirm the administrator cannot access another tenant's data.
 - Keep platform SuperAdmin provisioning separate from tenant administration.

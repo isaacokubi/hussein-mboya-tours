@@ -19,7 +19,6 @@ loadTenantPlugin();
 import rateLimit from "express-rate-limit";
 import env from "./config/env.js";
 import apiRoutes from "./routes/index.js";
-import publicOnboardingRoutes from "./routes/publicOnboardingRoutes.js";
 import { resolveTenant } from "./middleware/tenantMiddleware.js";
 import tenantBrandingRoutes from "./routes/tenantBrandingRoutes.js";
 import settingsRoutes from "./routes/settingsRoutes.js";
@@ -162,7 +161,6 @@ app.use(cookieParser());
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 app.use(resolveTenant);
 
-app.use("/api/public/onboarding", publicOnboardingRoutes);
 app.use("/api/tenant/branding", tenantBrandingRoutes);
 
 // Mount subscription before the consolidated /api router. The /api router contains

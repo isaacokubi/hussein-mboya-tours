@@ -14,7 +14,6 @@ import {
   confirmEmailChange,
   logout,
 } from "../controllers/authController.js";
-import { bootstrapTenant } from "../controllers/bootstrapController.js";
 
 import { protect } from "../middleware/authMiddleware.js";
 import { syncCustomerProfile } from "../middleware/customerProfileSync.js";
@@ -26,7 +25,6 @@ import {
 
 const router = express.Router();
 
-router.post("/bootstrap", resolveTenant, loginRateLimiter, bootstrapTenant);
 router.post("/register", resolveTenant, register);
 router.post("/login", resolveTenant, loginRateLimiter, login);
 router.post("/password-reset/request", resolveTenant, passwordResetRateLimiter, requestPasswordReset);

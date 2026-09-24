@@ -76,6 +76,25 @@ const fileFilter = (req, file, cb) => {
     return cb(null, true);
 };
 
+const unavailableFileFilter = (req, file, cb) => {
+    fileFilter(req, file, (error, accepted) => {
+        if (error || !accepted) return cb(error, accepted);
+        const unavailable = new Error("File uploads are unavailable because Cloudinary is not configured.");
+        unavailable.statusCode = 503;
+        unavailable.expose = true;
+        return cb(unavailable);
+    });
+};
+
+const uploadLimits = {
+    fileSize: 5 * 1024 * 1024,
+    files: 10,
+    fields: 30,
+    fieldNameSize: 100,
+    fieldSize: 256 * 1024,
+    fieldNestingDepth: 5,
+};
+
 /*
 |--------------------------------------------------------------------------
 | MULTER INSTANCE
@@ -85,14 +104,7 @@ const fileFilter = (req, file, cb) => {
 const upload = isCloudinaryConfigured ? multer({
     storage,
 
-    limits: {
-        fileSize: 5 * 1024 * 1024, // 5 MB
-        files: 10,
-        fields: 30,
-        fieldNameSize: 100,
-        fieldSize: 256 * 1024,
-        fieldNestingDepth: 5,
-    },
+    limits: uploadLimits,
 
     fileFilter,
 }) : null;
@@ -102,9 +114,20 @@ const cloudinaryUnavailable = (req, res) => res.status(503).json({
     message: "File uploads are unavailable because Cloudinary is not configured.",
 });
 
-const createUploadMiddleware = (factory, ...args) => isCloudinaryConfigured
-    ? factory(...args)
-    : cloudinaryUnavailable;
+const createUploadMiddleware = (method, ...args) => {
+    if (isCloudinaryConfigured) return upload[method](...args);
+
+    const fieldsParser = multer({
+        storage: multer.memoryStorage(),
+        limits: uploadLimits,
+        fileFilter: unavailableFileFilter,
+    })[method](...args);
+
+    return (req, res, next) => {
+        if (!req.is("multipart/form-data")) return next();
+        return fieldsParser(req, res, next);
+    };
+};
 
 /*
 |--------------------------------------------------------------------------
@@ -113,13 +136,13 @@ const createUploadMiddleware = (factory, ...args) => isCloudinaryConfigured
 */
 
 export const uploadSingle = (field = "image") =>
-    createUploadMiddleware(upload?.single.bind(upload), field);
+    createUploadMiddleware("single", field);
 
 export const uploadMultiple = (field = "images", max = 10) =>
-    createUploadMiddleware(upload?.array.bind(upload), field, max);
+    createUploadMiddleware("array", field, max);
 
 export const uploadFields = (fields) =>
-    createUploadMiddleware(upload?.fields.bind(upload), fields);
+    createUploadMiddleware("fields", fields);
 
 export default {
     single: (field) => uploadSingle(field),
