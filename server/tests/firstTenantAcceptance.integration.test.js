@@ -1,39 +1,53 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
+import { randomBytes } from "node:crypto";
 
 const testMongoUri = process.env.FIRST_TENANT_TEST_MONGODB_URI;
 
 test("first tenant provisioning, tenant-admin access, public catalogue and cross-tenant denial", { skip: !testMongoUri }, async (t) => {
+  const testDatabase = new URL(testMongoUri);
+  const testDatabaseName = decodeURIComponent(testDatabase.pathname.replace(/^\//, ""));
+  if (!new Set(["127.0.0.1", "localhost", "[::1]", "::1"]).has(testDatabase.hostname) || !/^first_tenant_acceptance(?:_|$)/.test(testDatabaseName)) {
+    throw new Error("FIRST_TENANT_TEST_MONGODB_URI must target a loopback host and a disposable first_tenant_acceptance database.");
+  }
   process.env.MONGODB_URI = testMongoUri;
   process.env.JWT_SECRET ||= "first-tenant-ci-secret-only";
   process.env.NODE_ENV = "test";
   process.env.ALLOW_GLOBAL_MPESA_FALLBACK = "false";
+  process.env.ALLOW_SINGLE_TENANT_DEV_FALLBACK = "false";
+  process.env.MFA_DEV_MODE = "false";
+  process.env.MFA_ENABLED = "false";
 
-  const [mongooseModule, appModule, onboarding, userModel, organizationModel, tokenModule, context, paymentService, readiness] = await Promise.all([
+  const [mongooseModule, appModule, onboarding, userModel, organizationModel, context, paymentService, readiness] = await Promise.all([
     import("mongoose"), import("../app.js"), import("../services/onboardingService.js"),
-    import("../models/User.js"), import("../models/Organization.js"), import("../utils/generateToken.js"),
+    import("../models/User.js"), import("../models/Organization.js"),
     import("../tenancy/context.js"), import("../services/paymentGatewayService.js"), import("../startup/readiness.js"),
   ]);
   const mongoose = mongooseModule.default;
   const app = appModule.default;
+  const { assertSupportedMongoVersion } = await import("../utils/mongodbVersion.js");
   const User = userModel.default;
   const Organization = organizationModel.default;
   const server = http.createServer(app);
   let owner;
   let firstTenant;
   let secondTenant;
+  const ownerPassword = `Platform-${randomBytes(24).toString("hex")}1A`;
+  const tenantAdminPassword = `Tenant-${randomBytes(24).toString("hex")}1A`;
+  const customerPassword = `Customer-${randomBytes(24).toString("hex")}1A`;
 
   try {
     await mongoose.connect(testMongoUri);
+    const buildInfo = await mongoose.connection.db.admin().command({ buildInfo: 1 });
+    assertSupportedMongoVersion(buildInfo.version);
     await mongoose.connection.dropDatabase();
     const roles = await onboarding.ensureSystemRoles();
     owner = await context.runWithTenant({ role: "super_admin", bypass: true }, () => User.create({
       name: "Acceptance Platform Owner", email: "platform-owner@acceptance.invalid", phone: "0712345001",
-      password: "PlatformOwnerPass123", role: "super_admin", legacyRole: "super_admin", roleId: roles.superadmin._id,
+      password: ownerPassword, role: "super_admin", legacyRole: "super_admin", roleId: roles.superadmin._id,
       tenantId: null, status: "active", isVerified: true,
     }));
-    const ownerToken = tokenModule.default({ _id: owner._id, role: "super_admin", roleId: roles.superadmin._id, email: owner.email, tenantId: null });
     readiness.setStartupPhase("ready");
     await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
     const origin = `http://127.0.0.1:${server.address().port}`;
@@ -50,9 +64,21 @@ test("first tenant provisioning, tenant-admin access, public catalogue and cross
       companyName: `Acceptance Safaris ${suffix}`, slug: `acceptance-safaris-${suffix}`,
       companyEmail: `office-${suffix}@acceptance.invalid`, companyPhone: suffix === "a" ? "0712345002" : "0712345003",
       adminName: `Tenant Admin ${suffix.toUpperCase()}`, adminEmail: `admin-${suffix}@acceptance.invalid`,
-      adminPhone: suffix === "a" ? "0712345004" : "0712345005", adminPassword: "TenantAdminPass123",
+      adminPhone: suffix === "a" ? "0712345004" : "0712345005", adminPassword: tenantAdminPassword,
       plan: "starter", country: "Kenya", timezone: "Africa/Nairobi", currency: "KES",
     });
+
+    const ownerLogin = await call("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email: owner.email, password: ownerPassword }),
+    });
+    assert.equal(ownerLogin.status, 200, "platform owner can authenticate through the public login route");
+    const ownerLoginData = await ownerLogin.json();
+    const ownerToken = ownerLoginData.token;
+    assert.equal(ownerLoginData.user.role, "super_admin");
+    const ownerMe = await call("/api/auth/me", { token: ownerToken });
+    assert.equal(ownerMe.status, 200, "platform owner /me resolves authenticated profile");
+    assert.equal((await ownerMe.json()).user.email, owner.email);
 
     const publicCreate = await call("/api/superadmin/tenants", { method: "POST", body: JSON.stringify(tenantInput("public")) });
     assert.equal(publicCreate.status, 401, "anonymous visitors cannot provision a tenant");
@@ -67,19 +93,50 @@ test("first tenant provisioning, tenant-admin access, public catalogue and cross
 
     const adminLoginResponse = await call("/api/auth/login", {
       method: "POST", tenantSlug: firstTenant.slug,
-      body: JSON.stringify({ email: "admin-a@acceptance.invalid", password: "TenantAdminPass123" }),
+      body: JSON.stringify({ email: "admin-a@acceptance.invalid", password: tenantAdminPassword }),
     });
     assert.equal(adminLoginResponse.status, 200);
     const adminLogin = await adminLoginResponse.json();
     const adminToken = adminLogin.token;
     assert.equal(adminLogin.user.role, "admin");
     assert.equal(String(adminLogin.user.tenantId), String(firstTenant._id));
+    const adminMe = await call("/api/auth/me", { token: adminToken });
+    assert.equal(adminMe.status, 200, "tenant admin /me resolves authenticated profile");
+    assert.equal(String((await adminMe.json()).user.tenantId._id), String(firstTenant._id));
 
     const tenantAdminProvision = await call("/api/superadmin/tenants", { method: "POST", token: adminToken, body: JSON.stringify(tenantInput("forbidden")) });
     assert.equal(tenantAdminProvision.status, 403, "a tenant Admin cannot provision another tenant");
 
     const dashboard = await call("/api/admin/dashboard", { token: adminToken });
     assert.equal(dashboard.status, 200, "the tenant Admin can reach its dashboard");
+    const platformTenants = await call("/api/superadmin/tenants", { token: adminToken });
+    assert.equal(platformTenants.status, 403, "tenant Admin cannot list platform tenants");
+    const platformBilling = await call("/api/superadmin/billing/config", { token: adminToken });
+    assert.equal(platformBilling.status, 403, "tenant Admin cannot access platform payment credentials");
+
+    const brandingUpdate = await call("/api/tenant/branding", {
+      method: "PUT", token: adminToken,
+      body: JSON.stringify({
+        name: "Acceptance Safaris A", logoUrl: "https://images.example.invalid/acceptance.png",
+        brandColors: { primary: "#123456" },
+        settings: { homepageSections: { tours: true }, privateMarker: "must-not-be-public" },
+      }),
+    });
+    assert.equal(brandingUpdate.status, 200);
+    assert.equal(JSON.stringify(await brandingUpdate.json()).includes("must-not-be-public"), false);
+    const branding = await call("/api/tenant/branding", { tenantSlug: firstTenant.slug });
+    assert.equal(branding.status, 200);
+    const brandingPayload = await branding.json();
+    assert.equal(brandingPayload.branding.name, "Acceptance Safaris A");
+    assert.equal(brandingPayload.branding.brandColors.primary, "#123456");
+    assert.equal(Object.hasOwn(brandingPayload.branding, "settings"), false);
+    assert.equal(JSON.stringify(brandingPayload).includes("must-not-be-public"), false);
+    const publicSettings = await call("/api/settings/public", { tenantSlug: firstTenant.slug });
+    assert.equal(publicSettings.status, 200);
+    const publicSettingsPayload = await publicSettings.json();
+    assert.equal(publicSettingsPayload.settings.companyName, "Acceptance Safaris A");
+    assert.equal(JSON.stringify(publicSettingsPayload).includes("must-not-be-public"), false,
+      "public settings expose only an allowlist of settings data");
 
     const destinationResponse = await call("/api/admin/destinations", {
       method: "POST", token: adminToken,
@@ -88,16 +145,49 @@ test("first tenant provisioning, tenant-admin access, public catalogue and cross
     assert.equal(destinationResponse.status, 201);
     const destination = (await destinationResponse.json()).destination;
 
+    const futureTourDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const tourResponse = await call("/api/admin/tours", {
+      method: "POST", token: adminToken,
+      body: JSON.stringify({
+        title: "Acceptance Coast Tour", description: "A disposable published tour for API acceptance.",
+        destination: destination._id, country: "Kenya", location: "Mombasa",
+        date: futureTourDate, startDate: futureTourDate, durationDays: 2,
+        capacity: 10, price: 25000, status: "upcoming", published: true, available: true,
+      }),
+    });
+    assert.equal(tourResponse.status, 201);
+    const tour = (await tourResponse.json()).tour;
+    assert.equal(String(tour.tenantId), String(firstTenant._id));
+
+    for (const invalidPackage of [
+      { title: "", description: "Description", destination: "Coast", category: "Safari", duration: "2 days", basePrice: 100, agentPrice: 90 },
+      { title: "Bad price", description: "Description", destination: "Coast", category: "Safari", duration: "2 days", basePrice: -1, agentPrice: 90 },
+      { title: "Bad duration", description: "Description", destination: "Coast", category: "Safari", duration: "0 days", basePrice: 100, agentPrice: 90 },
+      { title: "Bad status", description: "Description", destination: "Coast", category: "Safari", duration: "2 days", basePrice: 100, agentPrice: 90, status: "published" },
+      { title: "Bad published", description: "Description", destination: "Coast", category: "Safari", duration: "2 days", basePrice: 100, agentPrice: 90, published: "true" },
+    ]) {
+      const invalidResponse = await call("/api/admin/packages", {
+        method: "POST", token: adminToken, body: JSON.stringify(invalidPackage),
+      });
+      assert.equal(invalidResponse.status, 400, "invalid package creation is rejected");
+    }
     const packageResponse = await call("/api/admin/packages", {
       method: "POST", token: adminToken,
       body: JSON.stringify({
         title: "Acceptance Safari Package", description: "A disposable acceptance safari.", destination: "Acceptance Coast",
         category: "Safari", duration: "2 days", numberOfDays: 2, basePrice: 25000, agentPrice: 22500,
-        status: "active", published: true,
+        status: "draft", published: false,
       }),
     });
     assert.equal(packageResponse.status, 201);
-    const createdPackage = (await packageResponse.json()).package;
+    const draftPackage = (await packageResponse.json()).package;
+    const draftCatalogue = await call("/api/packages", { tenantSlug: firstTenant.slug });
+    assert.equal((await draftCatalogue.json()).packages.some((item) => item._id === draftPackage._id), false);
+    const publishPackage = await call(`/api/admin/packages/${draftPackage._id}`, {
+      method: "PUT", token: adminToken, body: JSON.stringify({ status: "active", published: true }),
+    });
+    assert.equal(publishPackage.status, 200);
+    const createdPackage = (await publishPackage.json()).package;
 
     const publicCatalogue = await call("/api/destinations", { tenantSlug: firstTenant.slug });
     assert.equal(publicCatalogue.status, 200);
@@ -105,6 +195,80 @@ test("first tenant provisioning, tenant-admin access, public catalogue and cross
     const publicPackages = await call("/api/packages", { tenantSlug: firstTenant.slug });
     assert.equal(publicPackages.status, 200);
     assert.ok((await publicPackages.json()).packages.some((item) => item._id === createdPackage._id));
+    const publicTours = await call("/api/tours", { tenantSlug: firstTenant.slug });
+    assert.equal(publicTours.status, 200);
+    assert.ok((await publicTours.json()).data.some((item) => item._id === tour._id));
+
+    for (const invalidUpdate of [
+      { status: "unknown" },
+      { published: "true" },
+      { basePrice: -1 },
+      { duration: "0 days" },
+      { title: "   " },
+      { slug: "!!!" },
+    ]) {
+      const invalidResponse = await call(`/api/admin/packages/${createdPackage._id}`, {
+        method: "PUT", token: adminToken, body: JSON.stringify(invalidUpdate),
+      });
+      assert.equal(invalidResponse.status, 400, `invalid partial package update is rejected: ${Object.keys(invalidUpdate)[0]}`);
+    }
+    const unchangedPackageResponse = await call("/api/admin/packages", { token: adminToken });
+    const unchangedPackage = (await unchangedPackageResponse.json()).packages.find((item) => item._id === createdPackage._id);
+    assert.equal(unchangedPackage.title, "Acceptance Safari Package");
+    assert.equal(unchangedPackage.basePrice, 25000);
+    assert.equal(unchangedPackage.published, true);
+
+    const customerRegistration = await call("/api/auth/register", {
+      method: "POST", tenantSlug: firstTenant.slug,
+      body: JSON.stringify({ name: "Acceptance Customer", email: "customer-a@acceptance.invalid", phone: "0712345010", password: customerPassword }),
+    });
+    assert.equal(customerRegistration.status, 201);
+    const customerLogin = await call("/api/auth/login", {
+      method: "POST", tenantSlug: firstTenant.slug,
+      body: JSON.stringify({ email: "customer-a@acceptance.invalid", password: customerPassword }),
+    });
+    assert.equal(customerLogin.status, 200);
+    const customerLoginData = await customerLogin.json();
+    assert.equal(customerLoginData.mfaRequired, undefined, "development MFA bypass is disabled for acceptance");
+    assert.equal(customerLoginData.devPin, undefined, "no development MFA PIN is exposed");
+    assert.equal(process.env.MFA_DEV_MODE, "false");
+    const customerToken = customerLoginData.token;
+    assert.ok(customerToken);
+    const customerMe = await call("/api/auth/me", { token: customerToken });
+    assert.equal(customerMe.status, 200);
+    const customerUser = (await customerMe.json()).user;
+    const tenantCustomers = await call("/api/admin/customers", { token: adminToken });
+    assert.ok((await tenantCustomers.json()).customers.some((item) => item._id === customerUser._id));
+
+    const bookingResponse = await call("/api/bookings", {
+      method: "POST", token: customerToken,
+      body: JSON.stringify({
+        tour: tour._id, travelDate: futureTourDate, numberOfGuests: 1,
+        travelers: [{ name: "Acceptance Traveler", email: "traveler-a@acceptance.invalid" }],
+        paymentMethod: "BANK_TRANSFER", contact: { name: "Acceptance Customer", email: "customer-a@acceptance.invalid", phone: "0712345010" },
+      }),
+    });
+    assert.equal(bookingResponse.status, 201);
+    const booking = (await bookingResponse.json()).booking;
+    assert.equal(String(booking.tenantId), String(firstTenant._id));
+    assert.equal(String(booking.user), String(customerUser._id));
+    assert.equal(booking.paymentStatus, "pending", "acceptance creates no real payment");
+    const bookingRetrieval = await call(`/api/bookings/${booking._id}`, { token: customerToken });
+    assert.equal(bookingRetrieval.status, 200, "customer can retrieve its own booking");
+    assert.equal((await bookingRetrieval.json()).data.booking._id, booking._id);
+
+    const tenantABookings = await call("/api/admin/bookings", { token: adminToken });
+    assert.ok((await tenantABookings.json()).bookings.some((item) => item._id === booking._id));
+
+    // A pending ledger fixture proves payment listing and object reads are tenant scoped
+    // without contacting a payment provider or claiming a successful transaction.
+    const Payment = (await import("../models/Payment.js")).default;
+    const payment = await context.runWithTenant({ tenantId: firstTenant._id, tenant: firstTenant, bypass: false }, () => Payment.create({
+      tenantId: firstTenant._id, customer: customerUser._id, user: customerUser._id, booking: booking._id,
+      provider: "BANK", method: "bank", paymentMethod: "BANK_TRANSFER", amount: 25000, status: "pending",
+    }));
+    const tenantAPayments = await call("/api/admin/payments", { token: adminToken });
+    assert.ok((await tenantAPayments.json()).payments.some((item) => item._id === String(payment._id)));
 
     const secondResponse = await call("/api/superadmin/tenants", { method: "POST", token: ownerToken, body: JSON.stringify(tenantInput("b")) });
     assert.equal(secondResponse.status, 201);
@@ -115,10 +279,34 @@ test("first tenant provisioning, tenant-admin access, public catalogue and cross
 
     const secondAdminLogin = await call("/api/auth/login", {
       method: "POST", tenantSlug: secondTenant.slug,
-      body: JSON.stringify({ email: "admin-b@acceptance.invalid", password: "TenantAdminPass123" }),
+      body: JSON.stringify({ email: "admin-b@acceptance.invalid", password: tenantAdminPassword }),
     });
     assert.equal(secondAdminLogin.status, 200);
     const secondAdminToken = (await secondAdminLogin.json()).token;
+    const crossTenantDestination = await call(`/api/admin/destinations/${destination._id}`, { token: secondAdminToken });
+    assert.equal(crossTenantDestination.status, 404, "tenant B cannot read tenant A's destination");
+    const crossTenantCustomerLogin = await call("/api/auth/login", {
+      method: "POST", tenantSlug: secondTenant.slug,
+      body: JSON.stringify({ email: "customer-a@acceptance.invalid", password: customerPassword }),
+    });
+    assert.equal(crossTenantCustomerLogin.status, 401, "a customer account cannot authenticate in another tenant");
+    const crossTenantTour = await call(`/api/admin/tours/${tour._id}`, { token: secondAdminToken });
+    assert.equal(crossTenantTour.status, 404, "tenant B cannot read tenant A's tour");
+    const crossTenantCustomer = await call(`/api/admin/customers/${customerUser._id}`, { token: secondAdminToken });
+    assert.equal(crossTenantCustomer.status, 404, "tenant B cannot read tenant A's customer");
+    const crossTenantBooking = await call(`/api/admin/bookings/${booking._id}`, { token: secondAdminToken });
+    assert.equal(crossTenantBooking.status, 404, "tenant B cannot read tenant A's booking");
+    const crossTenantPackageUpdate = await call(`/api/admin/packages/${createdPackage._id}`, {
+      method: "PUT", token: secondAdminToken, body: JSON.stringify({ title: "Cross tenant update" }),
+    });
+    assert.equal(crossTenantPackageUpdate.status, 404, "tenant B cannot mutate a package owned by tenant A");
+    const crossTenantUserList = await call("/api/admin/users", { token: secondAdminToken });
+    assert.equal(crossTenantUserList.status, 200);
+    assert.equal(JSON.stringify(await crossTenantUserList.json()).includes("admin-a@acceptance.invalid"), false);
+    const crossTenantUserUpdate = await call(`/api/admin/users/${customerUser._id}`, {
+      method: "PUT", token: secondAdminToken, body: JSON.stringify({ name: "Cross tenant mutation" }),
+    });
+    assert.equal(crossTenantUserUpdate.status, 404, "tenant B cannot mutate a user owned by tenant A");
     const crossTenantMutation = await call(`/api/admin/destinations/${destination._id}`, {
       method: "PUT", token: secondAdminToken,
       body: JSON.stringify({ name: "Stolen Coast" }),
@@ -134,6 +322,24 @@ test("first tenant provisioning, tenant-admin access, public catalogue and cross
     const tenantBPublicPackages = await call("/api/packages", { tenantSlug: secondTenant.slug });
     assert.equal(tenantBPublicPackages.status, 200);
     assert.equal((await tenantBPublicPackages.json()).packages.some((item) => item._id === createdPackage._id), false);
+    const tenantBTours = await call("/api/tours", { tenantSlug: secondTenant.slug });
+    assert.equal(tenantBTours.status, 200);
+    assert.equal((await tenantBTours.json()).data.some((item) => item._id === tour._id), false);
+    const tenantBBranding = await call("/api/tenant/branding", { tenantSlug: secondTenant.slug });
+    assert.equal(tenantBBranding.status, 200);
+    assert.notEqual((await tenantBBranding.json()).branding.name, "Acceptance Safaris A");
+    const tenantBSettings = await call("/api/settings/public", { tenantSlug: secondTenant.slug });
+    assert.equal(tenantBSettings.status, 200);
+    assert.notEqual((await tenantBSettings.json()).settings.companyName, "Acceptance Safaris A");
+    const tenantBBookings = await call("/api/admin/bookings", { token: secondAdminToken });
+    assert.equal(tenantBBookings.status, 200);
+    assert.equal((await tenantBBookings.json()).bookings.some((item) => item._id === booking._id), false);
+    const tenantBPayments = await call("/api/admin/payments", { token: secondAdminToken });
+    assert.equal(tenantBPayments.status, 200);
+    assert.equal((await tenantBPayments.json()).payments.some((item) => item._id === String(payment._id)), false,
+      "tenant B payment listings do not expose tenant A booking payments");
+    const crossTenantPayment = await call(`/api/admin/payments/${payment._id}`, { token: secondAdminToken });
+    assert.equal(crossTenantPayment.status, 404, "tenant B cannot read tenant A's payment");
 
     await assert.rejects(
       context.runWithTenant({ tenantId: firstTenant._id, tenant: firstTenant, bypass: false }, () => paymentService.getTenantMpesaConfig()),

@@ -4,7 +4,7 @@ This document records the remote production-readiness setup that can be complete
 
 ## Automated baseline
 
-The repository already has a passing three-phase release gate covering backend checks/tests, Kenya readiness contracts, frontend lint/build, release configuration and committed-secret scanning. Stage 1 does not replace that baseline; it adds production endpoint smoke coverage.
+The repository defines a three-phase release gate for backend checks/tests, Kenya readiness contracts, frontend lint/build, release configuration and committed-secret scanning. This audit parsed all seven workflow YAML files and ran the local checks documented in `TEST_EVIDENCE.md`; no GitHub Actions result for this candidate was obtained. Stage 1 adds production endpoint smoke coverage.
 
 ## GitHub Actions production smoke checks
 
@@ -55,7 +55,7 @@ These flags are evidence controls, not substitutes for the underlying live tests
 
 ## Stage 1 exit criteria
 
-Live endpoint observation found the Render API responding healthy/connected at deployed version `aabbe5b2feddcf844c187b57f5934d9a16fadb00`. The local startup/readiness fix is newer and is not yet deployed; current-source production acceptance remains unverified. See [First Tenant Production Acceptance](FIRST_TENANT_ACCEPTANCE.md) for required deployment values and evidence.
+Read-only endpoint check on 2026-09-24: Render `/` timed out after 20 seconds with HTTP code 000; Render `/api/health` returned HTTP 503; Vercel `/` returned HTTP 200 with `text/html`. No deployed commit/version was obtained. This does not meet API health acceptance and does not establish API/frontend tenant integration. See [First Tenant Production Acceptance](FIRST_TENANT_ACCEPTANCE.md) for required deployment values and evidence.
 
 - [x] Release gate baseline exists and is documented.
 - [x] Production API health endpoint exists at `/api/health`.

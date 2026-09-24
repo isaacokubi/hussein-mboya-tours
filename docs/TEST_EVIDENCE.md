@@ -1,27 +1,25 @@
 # Global Tours — Test Evidence Register
 
-## 2026-09-24 — First-tenant acceptance audit (local source)
+## 2026-09-24 — First-tenant production audit (local source)
 
-Verification was run with Node `v22.23.3`, `NODE_ENV=test`, the CI test JWT, and the local ignored `server/.env` temporarily removed from discovery. It was restored unchanged after verification. No production credentials were read or printed.
+Commands ran under Node `v22.23.3`. The ignored `server/.env` was temporarily moved out of discovery for the full test run and restored unchanged. Local MongoDB is `3.6.8`; Docker is unavailable. The test suite ran outside the sandbox because its HTTP readiness checks bind loopback sockets. The worktree was based on `0048b99d1f2bee3f269bfa70d3af7eb3b4d075ed`; the evidence below does not include a GitHub Actions run for the resulting local changes.
 
 | Area | Result | Evidence |
 |---|---|---|
-| Backend automated suite | PASS with integration skips | `cd server && npm test`: 123 total, 118 passed, 0 failed, 5 skipped. Skips require replica-set or MongoDB-backed execution. |
-| Tour-domain suite | PASS | `cd server && npm run test:tour-domain`: 5 passed. |
-| Security suite | PASS | `cd server && npm run test:security`: 4 passed. |
-| Full syntax/model/tenant/production contract | PASS | `cd server && npm run check:all`. |
-| Tenant security regression tests | PASS (unit/contracts); live DB UNVERIFIED | Full suite included tenant security/middleware/URL contract tests. `check:multitenancy:live` reached localhost but the MongoDB 3.6.8 server was rejected by the current driver (minimum MongoDB 4.2); the script failed before writing fixtures. |
-| Startup/readiness | PASS for unavailable DB; connected DB UNVERIFIED | Health/root routes, degraded/unavailable response and server-listens-before-connection-failure passed. MongoDB-connected migration check was skipped because the only available local server is unsupported MongoDB 3.6.8. |
-| First-tenant acceptance | UNVERIFIED locally | Integration test provisions two tenants, tenant admins, a package, destination and public tenant catalogs, then checks cross-tenant isolation and safe M-Pesa configuration failure; wired to CI's MongoDB 8 replica-set job. Local run is skipped because no supported replica-set URI is available. No tenant/provider transactions were run against production. |
-| Client lint/build | PASS | `cd client && npm run lint`; `npm run build` completed under Node 22 with local `.env` hidden. |
-| Workflow YAML | PASS | PyYAML parsed all 7 workflow files. |
-| Git whitespace | PASS | `git diff --check` run after final code changes. |
-| Live API | PASS for observed old deployed version only | Backend root and `/api/health` returned 200; health reported healthy/connected and version `aabbe5b2feddcf844c187b57f5934d9a16fadb00`. The local startup fix is not deployed. |
-| Live frontend | Partial / NOT VERIFIED | Vercel root returned 200; compiled API base targeted the Render API. No separate Render Socket.IO URL was present in the live bundle, so Vercel must set `VITE_SOCKET_URL` or deploy the local derived-origin fix. |
-| CORS | PASS for observed preflight | Vercel origin OPTIONS request to the API returned 204 with matching allow-origin and credentials. |
-| Database, provider payments, M-Pesa, eTIMS, backups and restore | UNVERIFIED | Require external Atlas/provider/operations evidence. |
+| Backend automated suite | PASS with skips | `cd server && npm test`: 127 total, 122 passed, 0 failed, 5 skipped. Skips: first-tenant replica-set flow, connected MongoDB startup, tour lifecycle transaction (2 cases), and hospitality payment transaction. |
+| Tour-domain suite | PASS | `cd server && npm run test:tour-domain`: 1 passed, 0 failed, 0 skipped. |
+| Security suite | PASS | `cd server && npm run test:security`: 2 passed, 0 failed, 0 skipped. |
+| Full syntax/model/service/security/tenant/production checks | PASS | `cd server && npm run check:all`; tenant model contract passed and production readiness contract passed. |
+| Client lint and production build | PASS | `cd client && npm run lint`; `VITE_API_URL=https://api.example.invalid/api VITE_SOCKET_URL=https://api.example.invalid npm run build`. |
+| MongoDB version guard | PASS | Full suite accepts 4.2+ and rejects 4.0, 3.6 and unknown versions. Mongoose compatibility lists MongoDB 4.2; CI target remains MongoDB 8. |
+| Cloudinary optional path | PASS | Health/readiness test verified API middleware loads with Cloudinary unset, body-only multipart succeeds, and actual file upload returns 503. |
+| Workflow YAML | PASS | PyYAML parsed all 7 `.github/workflows/*.yml` files. Workflow source uses Node 22 and MongoDB 8; the replica-set job invokes first-tenant acceptance. No candidate CI run was available. |
+| Live Render | NOT VERIFIED / unhealthy observation | Root timed out after 20 seconds (HTTP code 000); `/api/health` returned HTTP 503. No version was obtained. |
+| Live Vercel | HTTP available; app integration NOT VERIFIED | Root returned HTTP 200 with `text/html`; no browser or tenant API flow was run. |
+| CORS | NOT CHECKED in this audit | Older CORS observations are historical and do not certify this candidate deployment. |
+| Atlas, payment provider, M-Pesa, eTIMS, backup and restore | NOT VERIFIED | No production data operation, payment, KRA submission, backup or restore was performed or evidenced in this audit. |
 
-The new local fixes close the public tenant/bootstrap paths, require dedicated production encryption keys, reject tenant-selector mismatch against a signed tenant token, provide tenant-admin package CRUD and a tenant-scoped public package catalog, and allow body-only destination/tour writes without Cloudinary while rejecting actual file upload with HTTP 503. Production certification remains **NOT VERIFIED** until the reviewed commit is deployed and the external acceptance steps in `FIRST_TENANT_ACCEPTANCE.md` are completed.
+The first-tenant API lifecycle itself remains **UNVERIFIED** because the only installed MongoDB is below the supported 4.2 minimum and is not a replica set. The local code and test coverage do not establish production readiness.
 
 ## 2026-09-24 — Render API startup/readiness remediation
 
@@ -129,9 +127,9 @@ Never document secrets, passwords, access tokens, private keys, MFA PINs or paym
 <!-- DOCS-AUTO:START -->
 ## Automatically captured repository state
 
-- Snapshot date (UTC): 2026-09-23
+- Snapshot date (UTC): 2026-09-24
 - Branch: `main`
-- Commit: `336038c9c43f9e504b3638e605cfdcab476a7003`
+- Commit: `0048b99d1f2bee3f269bfa70d3af7eb3b4d075ed`
 - Server package: `hussein-mboya-tours-server@1.0.0`
 - Client package: `client@0.0.0`
 - Automated documentation updater: `scripts/update-documentation.js`

@@ -37,3 +37,23 @@ test("production startup requires dedicated payment and webhook encryption secre
   assert.match(env, /for \(const key of \["PAYMENT_CREDENTIAL_ENCRYPTION_KEY", "WEBHOOK_SECRET_KEY"\]\)/);
   assert.match(env, /hasStrongSecret\(process\.env\[key\]\)/);
 });
+
+test("public tenant branding never returns arbitrary tenant settings", () => {
+  const branding = read("controllers/tenantBrandingController.js");
+  assert.doesNotMatch(branding, /settings:\s*tenant\.settings/);
+  assert.match(branding, /organization:\s*\{/);
+  assert.doesNotMatch(branding, /organization:\s*updated\s*\}/);
+});
+
+test("public tenant packages are rendered and production clients require a valid API base", () => {
+  const frontend = fs.readFileSync(path.resolve(root, "../client/src/components/home/PublicPackages.jsx"), "utf8");
+  const frontendApi = fs.readFileSync(path.resolve(root, "../client/src/api/axios.js"), "utf8");
+  const frontendSocket = fs.readFileSync(path.resolve(root, "../client/src/api/apiUrls.js"), "utf8");
+  assert.match(frontend, /getPublicPackages/);
+  assert.match(frontendApi, /Production VITE_API_URL must be an absolute HTTPS URL ending in \/api/);
+  assert.match(frontendApi, /Production VITE_API_URL must use HTTPS and cannot target a local host/);
+  assert.match(frontendApi, /parsed\.pathname\.replace/);
+  assert.match(frontendApi, /!== "\/api"/);
+  assert.match(frontendSocket, /socket\.origin !== api\.origin/);
+  assert.match(frontendSocket, /Production VITE_SOCKET_URL must be the HTTPS origin of VITE_API_URL/);
+});

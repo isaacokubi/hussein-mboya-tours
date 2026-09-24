@@ -4,13 +4,13 @@ Kenya-focused, multi-tenant tours & travel SaaS for tour operators, with tenant 
 
 ## Current status
 
-**First-tenant decision:** CODE READY — EXTERNAL EVIDENCE REMAINING. The live API reports deployed commit `aabbe5b2feddcf844c187b57f5934d9a16fadb00`, so the local startup/readiness update still requires deployment and live re-verification. Public tenant creation has been disabled; initial provisioning uses the controlled bootstrap command and later tenants require platform-owner authorization.
+**First-tenant decision: NOT READY.** The acceptance test now describes the platform-owner, tenant-admin, customer, catalogue, booking and isolation lifecycle, but its MongoDB-backed flow has not run. This machine has MongoDB 3.6.8 and no Docker runtime; the test requires a disposable MongoDB replica set. On 2026-09-24, Render root timed out and `/api/health` returned HTTP 503; Vercel root returned HTTP 200 HTML. The live Render version could not be identified from these responses. Atlas, payment, eTIMS, backup/restore and current-deployment evidence is outstanding.
 
 See [First Tenant Production Acceptance](docs/FIRST_TENANT_ACCEPTANCE.md) for the production environment matrix, onboarding procedure and external actions.
 
-**Audit base commit:** `b46ad3154cc80411c160569823a00abd6f0466cb`
+**Reviewed local base:** `0048b99d1f2bee3f269bfa70d3af7eb3b4d075ed`
 **Verification date:** 2026-09-24
-**Repository branch:** `main` (first-tenant audit changes are local and uncommitted until the final audit commit)
+**Repository branch:** `main` (local commits have not been pushed)
 
 The latest full local verification was completed after the production-audit remediation. Code-level checks and local release gates passed. Production launch certification is **not yet complete** because several acceptance gates require evidence from the actual deployment/provider environment.
 
@@ -18,19 +18,19 @@ The latest full local verification was completed after the production-audit reme
 
 | Area | Result | Evidence |
 |---|---|---|
-| Server static/security/tenant/production checks | PASS | `npm run check:all` under Node 22 with local `.env` hidden |
-| Backend automated tests | PASS with skips | 123 total: 118 passed, 0 failed, 5 skipped for MongoDB-backed integrations |
-| Security tests | PASS | 4 passed |
-| Tour-domain tests | PASS | 5 passed |
-| Client lint/build | PASS | `npm run lint`; Vite production build completed under Node 22 |
+| Server static/security/tenant/production checks | PASS | `npm run check:all` under Node 22 with `NODE_ENV=test` and CI-safe test credentials |
+| Backend automated tests | PASS with skips | `npm test`: 127 total, 122 passed, 0 failed, 5 skipped |
+| Security tests | PASS | `npm run test:security`: 2 passed, 0 failed, 0 skipped |
+| Tour-domain tests | PASS | `npm run test:tour-domain`: 1 test passed, 0 failed, 0 skipped |
+| Client lint/build | PASS | `npm run lint` and production `npm run build` with explicit HTTPS API/socket URLs |
 | Workflow YAML | PASS | Seven workflow files parsed |
-| First-tenant live integration | UNVERIFIED | Dedicated MongoDB 8 replica-set integration is wired into CI; no supported local MongoDB service was available |
-| Production API/frontend integration | PARTIAL / NOT VERIFIED | Live endpoints respond, but Render serves the older `aabbe5b...` commit and deployed Socket.IO configuration needs correction |
+| First-tenant live integration | UNVERIFIED | Expanded MongoDB 8 replica-set test is wired into CI; no supported local MongoDB service is available |
+| Production API/frontend integration | NOT VERIFIED | Render root timed out; `/api/health` returned 503; Vercel root returned 200 HTML. No deployed commit/version was exposed by this check. |
 | Production certification | NOT VERIFIED | External deployment, database, payment, backup, monitoring and compliance evidence remains required |
 
 ### Intentionally skipped integration tests
 
-The following tests were skipped because they require the database/provider runtime conditions that are not available in the local verification environment:
+The following database/provider tests were skipped because their runtime prerequisites were unavailable:
 
 - airport-transfer payment completion atomic lifecycle;
 - tour lifecycle transactional capacity reservation/release;
@@ -104,9 +104,9 @@ This section is maintained by `scripts/update-documentation.js`. The GitHub Acti
 
 - **Repository:** Global Tours — multi-tenant tours & travel SaaS
 - **Branch:** `main`
-- **Current commit:** `336038c9c43f9e504b3638e605cfdcab476a7003`
-- **Short commit:** `336038c`
-- **Documentation snapshot date (UTC):** 2026-09-23
+- **Current commit:** `0048b99d1f2bee3f269bfa70d3af7eb3b4d075ed`
+- **Short commit:** `0048b99`
+- **Documentation snapshot date (UTC):** 2026-09-24
 - **Server package:** `hussein-mboya-tours-server@1.0.0`
 - **Client package:** `client@0.0.0`
 - **Server verification commands:** `npm run check:all`, `npm test`, `npm run test:security`, `npm run test:tour-domain`

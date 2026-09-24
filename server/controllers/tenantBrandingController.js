@@ -23,12 +23,11 @@ export async function getBranding(req, res) {
         contactPhone: tenant.supportPhone || "",
         website: tenant.websiteUrl || "",
         domain: tenant.domain || "",
-        address: tenant.address || "",
-        country: tenant.country || "Kenya",
-        currency: tenant.currency || "KES",
-        timezone: tenant.timezone || "Africa/Nairobi",
-        settings: tenant.settings || {},
-        status: tenant.status,
+      address: tenant.address || "",
+      country: tenant.country || "Kenya",
+      currency: tenant.currency || "KES",
+      timezone: tenant.timezone || "Africa/Nairobi",
+      status: tenant.status,
       },
     });
   } catch (error) {
@@ -54,7 +53,22 @@ export async function updateBranding(req, res) {
     ).lean();
 
     if (!updated) return res.status(404).json({ success: false, message: "Tenant not found" });
-    return res.json({ success: true, organization: updated });
+    return res.json({ success: true, organization: {
+      _id: updated._id,
+      name: updated.name,
+      legalName: updated.legalName,
+      logoUrl: updated.logoUrl || "",
+      favicon: updated.favicon || "",
+      brandColors: updated.brandColors || {},
+      websiteUrl: updated.websiteUrl || "",
+      domain: updated.domain || "",
+      supportEmail: updated.supportEmail || "",
+      supportPhone: updated.supportPhone || "",
+      address: updated.address || "",
+      country: updated.country || "Kenya",
+      currency: updated.currency || "KES",
+      timezone: updated.timezone || "Africa/Nairobi",
+    } });
   } catch (error) {
     if (error?.code === 11000) return res.status(409).json({ success: false, message: "That custom domain is already assigned to another company." });
     return res.status(500).json({ success: false, message: publicErrorMessage(error) });

@@ -4,6 +4,7 @@ loadTenantPlugin();
 
 import mongoose from "mongoose";
 import env from "./env.js";
+import { assertSupportedMongoVersion } from "../utils/mongodbVersion.js";
 
 const requestedServerSelectionTimeout = Number(process.env.MONGODB_SERVER_SELECTION_TIMEOUT_MS);
 const serverSelectionTimeoutMS = Number.isFinite(requestedServerSelectionTimeout) && requestedServerSelectionTimeout > 0
@@ -27,9 +28,13 @@ const connectDatabase = async () => {
       retryWrites: true,
     });
 
+    const buildInfo = await connection.connection.db.admin().command({ buildInfo: 1 });
+    assertSupportedMongoVersion(buildInfo.version);
+
     console.log(`MongoDB connected: ${connection.connection.name}`);
   } catch (error) {
-    console.error("MongoDB connection failed:", error.name || "Error", error.code || "");
+    if (error?.code === "UNSUPPORTED_MONGODB_VERSION") console.error(error.message);
+    else console.error("MongoDB connection failed:", error.name || "Error", error.code || "");
     throw error;
   }
 };

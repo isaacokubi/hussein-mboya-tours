@@ -111,6 +111,8 @@ Example request shape:
 
 The API validates the administrator, refuses duplicate unique values, and creates the Organization, tenant Admin and default settings in a MongoDB transaction. The response omits the password.
 
+The current repository test exercises this flow only against a disposable loopback MongoDB replica-set database named `first_tenant_acceptance*`. Its local run was skipped because only MongoDB 3.6.8 is installed; CI is configured to run the test on MongoDB 8, but no CI result for this local candidate was obtained. Do not treat this test description as evidence that a production database or first tenant has been accepted.
+
 ## Security model
 
 - `superadmin` is platform-wide and is created only through the one-time bootstrap process.

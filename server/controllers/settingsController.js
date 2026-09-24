@@ -5,7 +5,7 @@ import User from "../models/User.js";
 import { getTenantContext, requireTenantId, isTenantBypassed } from "../tenancy/context.js";
 import { COMPANY_DEFAULTS } from "../config/companyDefaults.js";
 
-const DEFAULTS = { ...COMPANY_DEFAULTS, primaryColor: "#047857", secondaryColor: "#064e3b", accentColor: "#10b981", backgroundColor: "#f8fafc", surfaceColor: "#ffffff", textColor: "#0f172a", fontFamily: "Inter", borderRadius: "xl", buttonStyle: "rounded", heroOverlayOpacity: 50, homepageSections: { stats: true, tours: true, destinations: true, experiences: true, services: true, testimonials: true, gallery: true, whyChooseUs: true, newsletter: true } };
+const DEFAULTS = { ...COMPANY_DEFAULTS, primaryColor: "#047857", secondaryColor: "#064e3b", accentColor: "#10b981", backgroundColor: "#f8fafc", surfaceColor: "#ffffff", textColor: "#0f172a", fontFamily: "Inter", borderRadius: "xl", buttonStyle: "rounded", heroOverlayOpacity: 50, homepageSections: { stats: true, tours: true, packages: true, destinations: true, experiences: true, services: true, testimonials: true, gallery: true, whyChooseUs: true, newsletter: true } };
 const COLOR_FIELDS = ["primaryColor", "secondaryColor", "accentColor", "backgroundColor", "surfaceColor", "textColor"];
 const NUMERIC_FIELDS = ["taxRate", "bookingDepositPercentage", "defaultCommissionRate", "heroOverlayOpacity"];
 const BOOLEAN_FIELDS = ["bookingNotifications", "paymentNotifications", "maintenanceMode", "allowRegistrations", "allowAgentRegistrations", "requireEmailVerification", "requirePhoneVerification", "enableMpesa", "enableStripe", "enablePaypal", "enableBankTransfer"];

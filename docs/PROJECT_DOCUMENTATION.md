@@ -51,7 +51,7 @@ The backend package includes production, controller, model, RBAC, security, and 
 
 ### Database
 
-MongoDB is accessed through Mongoose. Application models are tenant-aware through the tenancy bootstrap/plugin system. Platform-global models are explicitly treated as global rather than receiving ordinary organization scoping.
+MongoDB is accessed through Mongoose. The locked Mongoose 8.24.1 / MongoDB Node driver 6.20 supports MongoDB 4.2 as the application minimum; operations requiring transactions need a replica set. CI targets MongoDB 8. Application models are tenant-aware through the tenancy bootstrap/plugin system. Platform-global models are explicitly treated as global rather than receiving ordinary organization scoping. See [First Tenant Production Acceptance](FIRST_TENANT_ACCEPTANCE.md) for the version evidence and current environment status.
 
 ---
 

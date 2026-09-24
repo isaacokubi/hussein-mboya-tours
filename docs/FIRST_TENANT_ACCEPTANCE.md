@@ -2,13 +2,13 @@
 
 ## Current decision
 
-**CODE READY — EXTERNAL EVIDENCE REMAINING.** This is not a production certification. The current live Render API identifies itself as commit `aabbe5b2feddcf844c187b57f5934d9a16fadb00`, while the local source includes newer startup behavior. Deploy the reviewed local commits and repeat the live checks before onboarding a real tenant.
+**NOT READY.** The expanded end-to-end acceptance test is present and wired into the MongoDB 8 replica-set CI job, but this worktree's database-backed test has not run and no CI result for this candidate was obtained. On 2026-09-24, Render root timed out, Render `/api/health` returned HTTP 503, and the Vercel root returned HTTP 200 HTML. The live API version was not established by that check. Complete the database-backed test and required external evidence before onboarding a real tenant.
 
 ## Environment contract
 
 | Variable | Used by | Required | Safe/default | Secret | Service / failure behavior |
 |---|---|---:|---|---:|---|
-| `MONGODB_URI` | Mongoose | Yes | No default | Yes | Render API; missing value prevents startup; unreachable MongoDB leaves health degraded then critical startup exits. |
+| `MONGODB_URI` | Mongoose | Yes | No default | Yes | Render API; missing value prevents startup; unreachable MongoDB leaves health degraded then critical startup exits. The current driver requires MongoDB 4.2 or newer; CI acceptance uses MongoDB 8 with replica-set transactions. |
 | `MONGODB_SERVER_SELECTION_TIMEOUT_MS` | Mongoose | No | 10000 ms, bounded | No | Render API; connection attempts are bounded. |
 | `MONGODB_STARTUP_MIGRATION_TIMEOUT_MS` | invoice-index startup migration | No | 60000 ms, max 120000 | No | Render API; migration failure is fatal and health never becomes healthy. |
 | `JWT_SECRET` | JWT sign/verify | Yes | No production fallback; production requires 32+ mixed-case/numeric chars | Yes | Render API; invalid/missing production secret prevents startup. |
@@ -27,7 +27,7 @@
 | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | media upload/delete | Optional | Empty | API secret is secret | Render API; service still starts; upload/delete that requires provider returns 503. |
 | `SMTP_*`, `EMAIL_*` | outbound email | Optional for core API startup; required for email delivery workflows | Empty | Credentials are secret | Render API; delivery must report unavailable/failure, never mark unsent mail delivered. |
 | `OPENAI_API_KEY` | optional AI | No | Empty | Yes | Render API; AI features unavailable without provider. |
-| `VITE_API_URL` | Axios API base URL | Yes for deployed Vercel frontend | Must be `https://hussein-mboya-tours.onrender.com/api` for this deployment | No | Vercel build environment; missing value falls back to same-origin `/api`, which is wrong for separate Vercel/Render hosts. |
+| `VITE_API_URL` | Axios API base URL | Yes for deployed Vercel frontend | Must be `https://hussein-mboya-tours.onrender.com/api` for this deployment | No | Vercel build environment; production build fails closed if missing, non-HTTPS, local, or not ending in `/api`. |
 | `VITE_SOCKET_URL` | Socket.IO | Recommended; optional when `VITE_API_URL` is absolute | `https://hussein-mboya-tours.onrender.com` | No | Vercel build environment; frontend now derives the origin from absolute `VITE_API_URL` when unset. |
 | `VITE_PLATFORM_HOST` | client tenant-host parsing | Required for tenant subdomains | Exact platform domain, no scheme | No | Vercel build environment; missing value disables platform-subdomain parsing. |
 | `VITE_PUBLIC_TENANT_SLUG` | tenant selection on shared Vercel hostname | Required when using one shared non-tenant hostname for a tenant website | Public slug, not a secret | No | Vercel build environment; do not use one fixed slug for a shared multi-tenant host. Prefer tenant subdomains/custom domains. |
@@ -37,7 +37,7 @@
 
 Tenant M-Pesa credentials, tenant integration keys, eTIMS credentials and payment gateway configuration are persisted in tenant-scoped MongoDB records. They are not Render global environment variables. `render.yaml` declares secret keys with `sync: false`; populate values in the Render dashboard without putting values in Git.
 
-The production database must use a currently supported MongoDB deployment with replica-set transactions enabled. Tenant creation provisions Organization, Admin and settings transactionally. CI uses MongoDB 8 replica-set integration; this audit did not use the installed local MongoDB 3.6 binary.
+The locked Mongoose 8.24.1 / MongoDB Node driver 6.20 dependency supports MongoDB 4.2 as the application minimum; tenant provisioning also requires replica-set transaction support. CI deliberately tests on MongoDB 8. This minimum is based on the [Mongoose 8 compatibility table](https://mongoosejs.com/docs/8.x/docs/compatibility.html). The installed local server is MongoDB 3.6.8 and Docker is unavailable, so it was not used for acceptance.
 
 ## Tenant URL behavior
 
@@ -48,7 +48,7 @@ The API resolves tenants from a verified tenant subdomain under `PLATFORM_HOST`,
 1. Configure all mandatory production environment variables above and confirm `/api/health` stays non-healthy until MongoDB and required invoice index migration are ready.
 2. If this is a new database, run the controlled interactive `cd server && npm run bootstrap:first`. This seeds roles and creates the initial company, platform owner and first company Admin. Never invoke the retired public bootstrap endpoint.
 3. For a later tenant, sign in as the platform owner and use SuperAdmin → Tenants, backed by `POST /api/superadmin/tenants`. The transaction creates Organization + unique slug + tenant Admin + default settings. Normal users cannot access this route.
-4. Test tenant Admin login, `/api/auth/me`, dashboard, and tenant-scoped destination/tour/package/customer/booking routes with disposable test data. Confirm the tenant context in the URL/host matches the token and tenant membership.
+4. Test tenant Admin login, `/api/auth/me`, dashboard, branding/settings, destination/tour/package creation, package publication, public package/tour catalogs, customer registration, booking creation, and tenant-admin booking retrieval with disposable data. Confirm the URL/host tenant matches the authenticated tenant.
 5. Configure branding, tenant website settings, website integration keys, and per-tenant payment gateways. Test website integration using a publishable test key and no real financial transaction.
 6. Verify a second tenant cannot read/update/delete the first tenant's records. Test unknown and suspended tenant behavior.
 7. Only enable production payment provider mode after callback URL ownership, credentials, signature verification, idempotency/replay and reconciliation have external evidence.
@@ -57,20 +57,20 @@ The API resolves tenants from a verified tenant subdomain under `PLATFORM_HOST`,
 
 | Area | Result | Evidence / limitation |
 |---|---|---|
-| Local code and static contracts | PASS | `npm test`, `npm run test:tour-domain`, `npm run test:security`, `npm run check:all`, client lint/build and workflow YAML parse passed; details in `TEST_EVIDENCE.md`. |
-| Tenant isolation | PASS for unit/contracts; live database UNVERIFIED | Static/unit tenant tests passed. Live regression requires MongoDB 8-compatible service; local MongoDB 3.6.8 is unsupported and was not used. |
-| Production API | UNVERIFIED for current local commit | Live endpoint currently returns healthy/connected but reports deployed commit `aabbe5b...`; local `b46ad31...` is not deployed. |
-| Production frontend | Responds, integration configuration UNVERIFIED | Vercel returns HTTP 200; project build env and tenant domain mapping require Vercel access. |
+| Local code and static contracts | PASS | Node 22 `npm test` 127 total (122 pass, 0 fail, 5 skip); tour-domain 1 pass; security 2 pass; `check:all`, client lint/build and YAML parsing pass. |
+| Tenant isolation | PASS for unit/contracts; live database UNVERIFIED | Tenant middleware, selectors, authorization and query-contract tests passed locally; live database acceptance was not run. |
+| Production API | NOT VERIFIED | Read-only check: Render root timed out; `/api/health` returned HTTP 503. The response did not establish a deployed version. |
+| Production frontend | HTTP available; integration configuration UNVERIFIED | Vercel root returned HTTP 200 with `text/html`; no browser/API tenant flow was run. |
 | Database/Atlas | UNVERIFIED | Need Atlas cluster version, network access, backup/PITR, restore drill, indexes and current-deployment health evidence. |
 | Payments/M-Pesa | UNVERIFIED | Need tenant-owned sandbox callback/replay/failure evidence before live credentials/transactions. |
-| First tenant onboarding | UNVERIFIED in runtime | Dedicated MongoDB replica-set CI test provisions two tenants through the platform-owner API, logs in both admins, exercises dashboard, tenant-admin package provisioning, and tenant-scoped destination/package catalogs, verifies cross-tenant denial and checks safe M-Pesa configuration failure. The local run skips without MongoDB 8 replica-set access. No provider payment is started. |
+| First tenant onboarding | UNVERIFIED in runtime | Test source covers owner login and `/me`, first tenant provisioning, tenant-admin login and `/me`, dashboard, branding/public settings, destination and tour creation, package creation/publication plus invalid create/partial-update regression cases, public catalogues, customer registration/login/`/me`, pending booking and admin retrieval, second tenant, cross-tenant object/list isolation, platform-role denial, missing tenant M-Pesa configuration and disabled fallbacks/MFA dev bypass. It runs only against a loopback disposable `first_tenant_acceptance*` database. It was skipped locally; no payment provider is called. |
 | KRA/eTIMS | UNVERIFIED | Requires tenant KRA onboarding and certified adapter evidence. |
 
 ## External operator actions
 
 - Render: deploy the reviewed commit; ensure required MongoDB, JWT, payment encryption and webhook keys are present; configure HTTPS client origins and real platform host; keep all development fallback flags false. Do not copy production secrets into Git.
-- Vercel: set `VITE_API_URL` to the exact API URL above at build time; set `VITE_SOCKET_URL` to the API origin explicitly or allow the frontend to derive it from `VITE_API_URL`. Configure tenant-host behavior and redeploy. `vercel.json` intentionally contains no secrets or authoritative hostname.
+- Vercel: set `VITE_API_URL` to the exact API URL above at build time; production build now fails if it is missing or malformed. Set `VITE_SOCKET_URL` to the API origin or allow the frontend to derive it. Set `VITE_PLATFORM_HOST` and either map tenant subdomains/custom domains or set the single tenant's `VITE_PUBLIC_TENANT_SLUG` on the shared Vercel hostname. `vercel.json` intentionally contains no secrets or authoritative hostname.
 - GitHub: set `PRODUCTION_API_URL` to the API origin above and `PRODUCTION_WEB_URL` to the frontend origin above. Never include an `/api` suffix in the API secret.
-- MongoDB Atlas: verify production-compatible MongoDB 8 behavior, indexes, TLS/network allow-list, backups/PITR, restore, credentials rotation and tenant isolation scan.
+- MongoDB Atlas: verify a replica-set deployment on the supported MongoDB 4.2+ application minimum (MongoDB 8 is the CI target), indexes, TLS/network allow-list, backups/PITR, restore, credentials rotation and tenant isolation scan.
 - Payment providers: issue each tenant its own credentials and configure production callback domains. Validate M-Pesa callback integrity and idempotency in sandbox first. Keep `ALLOW_GLOBAL_MPESA_FALLBACK=false`.
 - Operations: collect monitoring/alert routing, backup/restore, data protection, browser acceptance, payment and eTIMS evidence before claiming production certification.

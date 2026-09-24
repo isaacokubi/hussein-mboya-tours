@@ -2,6 +2,7 @@ import axios from "axios";
 
 const configuredApiUrl = String(import.meta.env.VITE_API_URL || "").trim();
 const configuredPlatformApiUrl = String(import.meta.env.VITE_PLATFORM_API_URL || "").trim();
+const productionBuild = Boolean(import.meta.env.PROD);
 
 function isLocalHost() {
   if (typeof window === "undefined") return false;
@@ -17,6 +18,29 @@ function isPlatformDeployment() {
 }
 
 const PLATFORM_API_URL = configuredPlatformApiUrl || "/api";
+const configuredBaseUrl = isPlatformDeployment()
+  ? (configuredPlatformApiUrl || configuredApiUrl)
+  : configuredApiUrl;
+
+function validateProductionApiUrl(value) {
+  if (!productionBuild) return value;
+  if (!value) throw new Error("Configure VITE_API_URL (or VITE_PLATFORM_API_URL for platform mode) before building the production client.");
+  let parsed;
+  try { parsed = new URL(value); }
+  catch { throw new Error("Production VITE_API_URL must be an absolute HTTPS URL ending in /api."); }
+  const hostname = parsed.hostname.toLowerCase();
+  if (parsed.protocol !== "https:" || hostname === "localhost" || hostname.endsWith(".localhost") || ["127.0.0.1", "[::1]"].includes(hostname)) {
+    throw new Error("Production VITE_API_URL must use HTTPS and cannot target a local host.");
+  }
+  if (parsed.username || parsed.password || parsed.search || parsed.hash) {
+    throw new Error("Production VITE_API_URL must not contain credentials, a query string, or a fragment.");
+  }
+  if (parsed.pathname.replace(/\/+$/, "") !== "/api") {
+    throw new Error("Production VITE_API_URL must use the API base path /api exactly once.");
+  }
+  return value.replace(/\/+$/, "");
+}
+const productionApiUrl = validateProductionApiUrl(configuredBaseUrl);
 
 // Local development must always use the local Vite proxy. This prevents a
 // developer machine from silently displaying stale data from a deployed API
@@ -25,8 +49,8 @@ const PLATFORM_API_URL = configuredPlatformApiUrl || "/api";
 export const baseURL = isLocalHost()
   ? "/api"
   : (isPlatformDeployment()
-      ? PLATFORM_API_URL
-      : (configuredApiUrl || "/api"));
+      ? (productionApiUrl || PLATFORM_API_URL)
+      : (productionApiUrl || configuredApiUrl || "/api"));
 
 // Production deployments on a shared Vercel hostname cannot infer a tenant
 // from the hostname alone. VITE_PUBLIC_TENANT_SLUG is therefore the explicit,

@@ -13,26 +13,42 @@ const allowedStatuses = new Set(["draft", "active", "inactive", "sold_out"]);
 
 const packagePayload = (body = {}, existing = null) => {
   const payload = Object.fromEntries(Object.entries(body).filter(([key]) => fields.includes(key)));
-  if (!existing) {
-    payload.title = String(payload.title || "").trim();
-    payload.description = String(payload.description || "").trim();
-    payload.destination = String(payload.destination || "").trim();
-    payload.duration = String(payload.duration || "").trim();
-    if (!payload.title || !payload.description || !payload.destination || !payload.duration || !payload.category) {
+  const current = existing?.toObject?.() || existing || {};
+  if (body.published !== undefined && typeof body.published !== "boolean") throw Object.assign(new Error("published must be a boolean."), { status: 400 });
+  for (const key of ["title", "description", "destination", "duration"]) {
+    if (payload[key] !== undefined) payload[key] = String(payload[key]).trim();
+  }
+  for (const key of ["title", "description", "destination", "duration", "category"]) {
+    if (!String(payload[key] ?? current[key] ?? "").trim()) {
       throw Object.assign(new Error("Title, description, destination, category and duration are required."), { status: 400 });
     }
-    payload.slug = slugify(body.slug || payload.title);
+  }
+  if (!existing || body.slug !== undefined) {
+    payload.slug = slugify(body.slug || payload.title || current.title);
     if (!payload.slug) throw Object.assign(new Error("A valid package slug is required."), { status: 400 });
+  }
+  if (!existing) {
     payload.country = String(payload.country || "Kenya").trim();
     payload.currency = String(payload.currency || "KES").trim().toUpperCase();
-    payload.basePrice = Number(payload.basePrice);
-    payload.agentPrice = Number(payload.agentPrice);
-    if (!Number.isFinite(payload.basePrice) || payload.basePrice < 0 || !Number.isFinite(payload.agentPrice) || payload.agentPrice < 0) {
-      throw Object.assign(new Error("Base and agent prices must be valid non-negative amounts."), { status: 400 });
-    }
-    payload.status = allowedStatuses.has(body.status) ? body.status : "draft";
+    payload.status = body.status === undefined ? "draft" : body.status;
+    if (!allowedStatuses.has(payload.status)) throw Object.assign(new Error("Invalid package status."), { status: 400 });
+    if (body.published !== undefined && typeof body.published !== "boolean") throw Object.assign(new Error("published must be a boolean."), { status: 400 });
     payload.published = body.published === true;
   }
+  for (const key of ["basePrice", "agentPrice"]) {
+    const value = payload[key] ?? current[key];
+    if (value !== undefined) {
+      payload[key] = Number(value);
+      if (!Number.isFinite(payload[key]) || payload[key] < 0) throw Object.assign(new Error("Base and agent prices must be valid non-negative amounts."), { status: 400 });
+    }
+  }
+  if (payload.duration !== undefined || !existing) {
+    const value = payload.duration ?? current.duration;
+    const match = String(value || "").match(/^\s*(\d+(?:\.\d+)?)\s*(?:days?|nights?)?\s*$/i);
+    const durationDays = Number(match?.[1]);
+    if (!Number.isFinite(durationDays) || durationDays < 1 || durationDays > 365) throw Object.assign(new Error("Duration must be from 1 to 365 days."), { status: 400 });
+  }
+  if (payload.currency !== undefined) payload.currency = String(payload.currency).trim().toUpperCase();
   return payload;
 };
 

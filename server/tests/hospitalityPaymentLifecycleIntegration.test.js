@@ -8,7 +8,7 @@ import JournalEntry from "../models/JournalEntry.js";
 import { completeHospitalityPayment } from "../services/hospitalityPaymentLifecycleService.js";
 import { runWithTenant } from "../tenancy/context.js";
 
-const integrationEnabled = Boolean(process.env.MONGODB_URI);
+const integrationEnabled = process.env.RUN_DATABASE_INTEGRATION_TESTS === "true" && Boolean(process.env.MONGODB_URI);
 
 test("airport transfer payment completion atomically updates booking, invoice and accounting", { skip: !integrationEnabled }, async () => {
   if (mongoose.connection.readyState === 0) await mongoose.connect(process.env.MONGODB_URI);

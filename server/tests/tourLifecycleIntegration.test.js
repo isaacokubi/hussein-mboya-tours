@@ -10,7 +10,9 @@ import { cancelTourAndBookings } from "../services/tourCancellationService.js";
 import { createBookingAtomically } from "../services/bookingCreationService.js";
 import { runWithTenant } from "../tenancy/context.js";
 
-const integrationEnabled = Boolean(process.env.MONGODB_URI);
+// A configured URI alone is not permission to run destructive, transactional
+// integration fixtures. CI opts in explicitly after starting its replica set.
+const integrationEnabled = process.env.RUN_DATABASE_INTEGRATION_TESTS === "true" && Boolean(process.env.MONGODB_URI);
 
 test("tour lifecycle atomically reserves dated capacity with booking creation and releases it transactionally", { skip: !integrationEnabled }, async () => {
   if (mongoose.connection.readyState === 0) await mongoose.connect(process.env.MONGODB_URI);

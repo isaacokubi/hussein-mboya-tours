@@ -111,6 +111,9 @@ jobs:
         run: npm run lint
       - name: Client production build
         working-directory: client
+        env:
+          VITE_API_URL: https://api.example.invalid/api
+          VITE_SOCKET_URL: https://api.example.invalid
         run: npm run build
       - name: Verify release configuration files
         run: |
