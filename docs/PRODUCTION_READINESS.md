@@ -1,5 +1,44 @@
 # Global Tours — Production Readiness
 
+## Atlas integration follow-up — 2026-09-26
+
+The two previously failing MongoDB integration cases shared an Atlas capacity cause. The first-tenant flow reached an insert that required a new collection while the Atlas cluster was at its 500-collection limit; Atlas returned error code 8000 (`AtlasError`, `cannot create a new collection -- already using 500 collections of 500`). The same limit blocked the fresh-database invoice index migration in the health/readiness test. This was Atlas cluster state, not a tenant provisioning, authorization, schema, migration, index, or permission defect. Read-only inventory showed 492 visible collections before cleanup. The isolated `global_tours_test` database contained 82 collections and 568 estimated test documents; only those 82 collections were dropped to restore test capacity. No other database was modified.
+
+The test environment takes its Atlas connection from `MONGODB_URI` targeting `global_tours_test`. Destructive acceptance cases derive explicitly isolated disposable databases (`fta_*` and `hr_*`) from that Atlas URI and clean their own collections. No local MongoDB was used. Credentials and connection strings are not recorded here.
+
+| Verification | Result |
+|---|---|
+| First-tenant acceptance, including tenant selection, JWT tenant binding, cross-tenant rejection, and tenant-scoped reads/writes | PASS, 1/1, Atlas disposable database derived from `global_tours_test`. |
+| Fresh MongoDB-backed readiness and invoice index migration | PASS, 1/1, Atlas disposable database derived from `global_tours_test`. |
+| Complete server suite with database integrations enabled and serialized | PASS, 136 passed, 0 failed, 0 skipped. |
+| Security suite; tour-domain suite | PASS, 2/2; PASS, 1/1. |
+| Server `npm run check:all`, including readiness contract | PASS. Runtime launch certification remains gated on deployment-only credentials and external evidence. |
+| Client lint and production build | PASS. |
+| Clean-environment production runtime validation | EXPECTED FAIL-CLOSED: required runtime keys, platform host, and six deployment evidence gates were absent; no secret values were loaded or displayed. |
+
+No application-code change was needed. The only new test evidence is recorded in this section; earlier snapshots below describe the verification state at the time they were written.
+
+## Current verification snapshot — 2026-09-26
+
+The audited baseline is `main` at `9c0046633c79f230b2fcd2cc9897988d6a0c0bb5` (`Remove local Codex session log`). No application-code changes were made during this verification.
+
+| Check | Result | Evidence / limitation |
+|---|---|---|
+| Server syntax, model/service contracts, security, tenant model and production contract | PASS | `cd server && npm run check:all`. |
+| Backend suite | PASS with environment-gated skips | `cd server && npm test`: 136 tests, 131 passed, 0 failed, 5 skipped. The skips require MongoDB integration configuration described below. |
+| Auth/RBAC suite | PASS | `cd server && npm run test:security`: 2 passed. |
+| Tour-domain suite | PASS | `cd server && npm run test:tour-domain`: 1 passed. |
+| Client lint and production build | PASS | `cd client && npm run lint` and `npm run build`. |
+| CI workflow syntax | PASS | All seven `.github/workflows/*.yml` files parsed. |
+| Current tenant and operational-data audit | BLOCKED as onboarding evidence | `npm run audit:mongodb` inspected `global_tours_test` and found no organizations/platform owner, no `travelservicerequests` collection, and empty operational collections. This test database has no seeded tenant; these findings do not establish production database state. The initial platform owner/tenant must be provisioned in the intended deployment. |
+| MongoDB-backed acceptance | NOT RUN | The first-tenant, connected-health and transactional lifecycle tests require explicitly configured database integration. Local `mongod` is 3.6.8 (below the 4.2 minimum); Docker daemon access was denied, so a MongoDB 8 replica-set CI-equivalent could not be started. |
+| Production runtime configuration | BLOCKED in the clean verification environment | Runtime validation rejected absent database/JWT settings, encryption keys, platform hostname and six external evidence flags. It was run without loading `.env`; this proves the gate fails closed, not that a particular deployment is misconfigured. |
+| Live web/mobile, provider and regulatory workflows | NOT VERIFIED | No live deployment, browser/device session, M-Pesa/card transaction, email delivery, KRA/eTIMS submission, webhook receiver, backup or restore evidence was available. |
+
+The five backend skips are intentional test guards: first-tenant acceptance (`FIRST_TENANT_TEST_MONGODB_URI`), MongoDB-connected health/index readiness (`HEALTH_TEST_MONGODB_URI`), and three transaction tests (`RUN_DATABASE_INTEGRATION_TESTS=true` plus `MONGODB_URI`). CI's dedicated MongoDB 8 replica-set job configures these conditions. No skip was introduced by this baseline.
+
+The automated checks found no repository-code regression requiring an application fix. They do not certify the 24 requested workflows end-to-end: live database onboarding/isolation, transactional booking/payment lifecycles, manual role-based browser/mobile behavior, provider delivery/callbacks, and production data reconciliation remain unverified until the listed infrastructure and owner access are available. Existing go-live gates and tenant-specific onboarding instructions remain mandatory.
+
 ## Current application baseline
 
 **Verification date:** 2026-09-25

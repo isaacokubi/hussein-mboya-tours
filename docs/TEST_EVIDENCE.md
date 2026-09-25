@@ -1,5 +1,42 @@
 # Global Tours — Test Evidence Register
 
+## 2026-09-26 — Atlas integration failure diagnosis and verification
+
+The two initial Atlas failures had one root cause: the Atlas cluster had reached its 500-collection limit. The first-tenant request failed when MongoDB tried to create a collection implicitly on insert; the health test failed when the startup invoice-index migration needed its fresh `invoices` collection. Atlas returned code 8000 (`AtlasError`: collection limit reached), so this was neither a migration/index incompatibility nor a database-user permission failure. The target cluster showed 492 visible collections. The isolated `global_tours_test` database had 82 collections and 568 estimated test documents; those collections alone were dropped to restore test capacity. No production or other test database was changed. No application or test fixture code needed changing.
+
+The configured Atlas URI was verified in memory as an Atlas SRV endpoint targeting `global_tours_test`; its value was never printed. Acceptance and readiness tests derive isolated disposable `fta_*` and `hr_*` database names from that Atlas test URI and guard cleanup against the expected test namespace. All integration tests ran on Atlas. No local MongoDB server was used.
+
+| Test/check | Result |
+|---|---|
+| `firstTenantAcceptance.integration.test.js` targeted acceptance | PASS, 1/1; includes selected-tenant auth, `X-Tenant-ID`, JWT tenant binding, mismatched selector rejection, cross-tenant isolation, and provisioning. |
+| `healthReadiness.test.js` Atlas-backed fresh-start/index-migration test | PASS, 1/1. |
+| Complete server suite: `node --test --test-concurrency=1 tests/*.js`, with database integrations enabled | PASS: 136 passed, 0 failed, 0 skipped. |
+| `npm run test:security` | PASS: 2 passed. |
+| `npm run test:tour-domain` | PASS: 1 passed. |
+| `npm run check:all` | PASS, including server syntax, controllers, models, services, seeds, tenant-model contract, and static production-readiness validation. |
+| `npm run lint` (client) | PASS. |
+| `npm run build` (client) | PASS. |
+
+The runtime production launch gate remains unverified because the deployment credentials and external evidence flags are intentionally not supplied in this test environment. Earlier entries below remain historical snapshots and are superseded for Atlas integration-test status by this entry.
+
+## 2026-09-26 — Verification of synchronized main baseline
+
+Baseline: `9c0046633c79f230b2fcd2cc9897988d6a0c0bb5` (`main`). No application code or credential files were changed.
+
+| Check | Result | Evidence / limitation |
+|---|---|---|
+| Server checks | PASS | `cd server && npm run check:all`; syntax, contracts, tenant-model contract and static production-readiness contract passed. |
+| Backend suite | PASS with skips | `cd server && npm test`: 136 total, 131 passed, 0 failed, 5 skipped. Skips are first-tenant MongoDB acceptance, MongoDB-connected health/index readiness, airport-transfer payment transaction, tour-capacity transaction, and accounting rollback transaction. |
+| Auth/RBAC and tour domain | PASS | `npm run test:security`: 2 passed; `npm run test:tour-domain`: 1 passed. |
+| Client lint/build | PASS | `cd client && npm run lint`; `cd client && npm run build`. |
+| CI workflow YAML | PASS | All seven workflow YAML files parsed. |
+| MongoDB application audit | BLOCKED as onboarding evidence | The script reported `global_tours_test` has zero organizations and zero platform owners, plus empty/lazy operational collections. This is an empty test database, not evidence about production. No tenant data was seeded or altered for this audit. |
+| Live transactional integration | NOT RUN | Local MongoDB is 3.6.8, below the supported 4.2 minimum. The Docker daemon denied access, preventing a temporary MongoDB 8 replica-set run. |
+| Production runtime check | BLOCKED as expected | With a clean environment and no `.env` loading, production validation rejected absent runtime settings and external evidence flags. This validates fail-closed behavior only; deployment configuration was not inspected. |
+| External/browser evidence | NOT VERIFIED | No live deployment/browser session, real provider payment/callback, email delivery, KRA/eTIMS submission, webhook receipt, backup or restore evidence was obtained. |
+
+No application-code defect was demonstrated by the available checks, so no application-code fix was made. The end-to-end categories that require a supported replica set, owner-created tenant, browser/device access or external provider credentials remain unverified; static contracts and unit coverage are not substitutes for that evidence.
+
 ## 2026-09-25 — Complete system audit of local HEAD
 
 The audited source was local branch `main` at `3e59ccad0cf5838a3a96fa6dd6a53a3ff6e834ae`. Verification used Node `v24.18.0` and npm `11.16.0`. Commands used isolated process environments and test-only values for relevant runtime settings; the ignored `server/.env` was not inspected or printed. The protected untracked backup file was left untouched. Existing untracked files under `codex-logs/` and `server/reports/` were preserved. No application code change was needed from the checks performed.
