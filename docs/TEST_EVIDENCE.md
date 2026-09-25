@@ -1,5 +1,23 @@
 # Global Tours — Test Evidence Register
 
+## 2026-09-25 — Complete system audit of local HEAD
+
+The audited source was local branch `main` at `3e59ccad0cf5838a3a96fa6dd6a53a3ff6e834ae`. Verification used Node `v24.18.0` and npm `11.16.0`. Commands used isolated process environments and test-only values for relevant runtime settings; the ignored `server/.env` was not inspected or printed. The protected untracked backup file was left untouched. Existing untracked files under `codex-logs/` and `server/reports/` were preserved. No application code change was needed from the checks performed.
+
+| Area | Result | Evidence |
+|---|---|---|
+| Server syntax, model/service contracts, security, tenancy and production readiness | PASS | `cd server && npm run check:all`; all component checks and the production readiness contract passed. |
+| Backend automated suite | PASS with skips | `cd server && npm test`: 136 total, 131 passed, 0 failed, 5 skipped. Skips require MongoDB-backed replica-set/transaction acceptance. |
+| Security suite | PASS | `cd server && npm run test:security`: 2 passed, 0 failed, 0 skipped. |
+| Tour-domain suite | PASS | `cd server && npm run test:tour-domain`: 1 passed, 0 failed, 0 skipped. |
+| Client lint and production build | PASS | `cd client && npm run lint`; `VITE_API_URL=https://api.example.invalid/api VITE_SOCKET_URL=https://api.example.invalid npm run build`. |
+| Dependency tree and vulnerability audit | PASS | `npm ls --depth=0` in the client; `npm audit` in server and client each reported 0 vulnerabilities. `npm ci` was not needed because installed dependency trees were present. |
+| MongoDB acceptance | BLOCKED | Installed `mongod` is 3.6.8, below the application's MongoDB 4.2 minimum; Docker is not installed. No live database acceptance was attempted. |
+| Live Render, Vercel, CORS and production deployment SHA | NOT VERIFIED | No live endpoint or deployment identity check was performed during this audit. |
+| M-Pesa, card/bank provider, eTIMS/KRA, Cloudinary, backup/restore | NOT VERIFIED | No live provider transaction, KRA submission, production upload, backup or restore was performed. |
+
+The backend suite initially failed inside the sandbox because its HTTP readiness tests could not bind to loopback (`EPERM`). The same complete `npm test` command was rerun with the required local-listener permission and completed with 131 passes, 0 failures and 5 skips. This sandbox limitation is not an application test failure.
+
 ## 2026-09-25 — Continued first-tenant production audit (local source)
 
 The audit began from `9b594ee8297d35400083a3ebe7af2ef7659ad40b` (`main` and `origin/main` matched at audit start); the verified source, tests and evidence were recorded in the local first-tenant audit commit after checks completed. Node 22 was unavailable; commands used Node `v24.18.0`. The ignored `server/.env` was moved out of discovery for backend verification and restored unchanged. Local MongoDB is `3.6.8`; Docker is unavailable. No GitHub Actions result for this local commit was obtained.

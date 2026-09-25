@@ -3,9 +3,9 @@
 ## Current application baseline
 
 **Verification date:** 2026-09-25
-**Verification scope:** first-tenant audit commit on local `main`, based on `9b594ee8297d35400083a3ebe7af2ef7659ad40b`. Node 22 was unavailable, so checks used Node 24.18.0. See the newest evidence entry in `TEST_EVIDENCE.md`.
+**Verification scope:** complete system audit of local `main` at source commit `3e59ccad0cf5838a3a96fa6dd6a53a3ff6e834ae`; audit evidence is recorded in `TEST_EVIDENCE.md`. Node `v24.18.0` and npm `11.16.0` were used. This audit did not verify live deployments or external integrations.
 
-The repository is **NOT READY** for a real tenant until the expanded MongoDB replica-set lifecycle test runs successfully and external service evidence is collected. A 2026-09-25 read-only probe returned HTTP 200 for Render root and `/api/health` and HTTP 200 HTML for Vercel. The API health body, CORS behavior and deployed commit were not established; a follow-up probe failed DNS resolution.
+The repository is **NOT READY** for a real tenant until the expanded MongoDB replica-set lifecycle test runs successfully and external service evidence is collected. A historical 2026-09-25 read-only probe returned HTTP 200 for Render root and `/api/health` and HTTP 200 HTML for Vercel. The API health body, CORS behavior and deployed commit were not established; a follow-up probe failed DNS resolution. Those observations were not repeated in this audit.
 
 See [First Tenant Production Acceptance](FIRST_TENANT_ACCEPTANCE.md) for the environment matrix, secure onboarding procedure and external evidence boundary. Public tenant creation and browser-based bootstrap are disabled; tenant provisioning requires platform-owner authorization.
 
@@ -17,10 +17,11 @@ See [First Tenant Production Acceptance](FIRST_TENANT_ACCEPTANCE.md) for the env
 | Backend automated suite | PASS with skips | Node 24.18.0 `npm test`: 136 total, 131 passed, 0 failed, 5 skipped. |
 | Tour-domain / security | PASS | Tour-domain: 1 test passed; security: 2 passed. |
 | Client lint/build | PASS | Node 24.18.0 `npm run lint` and `npm run build` with explicit HTTPS API/socket build URLs. |
+| Dependency audit | PASS | Server and client `npm audit` each reported 0 vulnerabilities; client `npm ls --depth=0` resolved its declared dependency tree. |
 | MongoDB version contract | PASS | Unit tests accept MongoDB 4.2+, reject 4.0/3.6/unknown. Mongoose 8.24.1 compatibility table supports 4.2; CI target remains MongoDB 8. |
 | First-tenant replica-set acceptance | UNVERIFIED | Expanded lifecycle is wired to the MongoDB 8 CI replica set; this local machine has MongoDB 3.6.8 and no Docker runtime. |
 | Live MongoDB tenant-isolation regression | UNVERIFIED | Must run against MongoDB 4.2+ on a replica set; CI deliberately targets MongoDB 8. No compatible local replica set is available. |
-| Live API / frontend | NOT VERIFIED | Render root and `/api/health` returned 200 JSON; Vercel root returned 200 HTML. Health body, CORS and deployed SHA were not obtained. |
+| Live API / frontend | NOT VERIFIED | No live endpoint, CORS, or deployed SHA check was performed in this audit. |
 | Production runtime readiness | BLOCKED | Runtime check correctly rejects missing deployment-only configuration/evidence; see external gates below |
 | Production launch certification | NOT VERIFIED | External deployment/provider evidence remains |
 
@@ -51,7 +52,7 @@ Cloudinary is an optional media provider and is not contacted during API startup
 - Production readiness now requires a configured platform hostname and the deployment's external evidence flags.
 - Documentation CI uploads a generated snapshot artifact with read-only repository permissions; it no longer commits or pushes changes to `main`.
 
-Historical live tenant-isolation results belong to their recorded commits and do not certify the current local source. The first-tenant lifecycle and MongoDB-connected startup cases were skipped, not passed. Local MongoDB is 3.6.8; Docker is unavailable.
+Historical live tenant-isolation results belong to their recorded commits and do not certify the current local source. The first-tenant lifecycle and MongoDB-connected startup cases were skipped, not passed. Local MongoDB is 3.6.8; Docker is unavailable. The health/readiness tests passed when run with loopback-listener permission; the initial sandbox run was blocked by `EPERM`.
 
 ## Intentionally skipped local integration tests
 
