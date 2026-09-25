@@ -28,6 +28,7 @@ const createAuditLog = (data) => AuditLog.log(data);
 const isLocalPublicLogin = (req) => {
   const host = String(req.get("X-Forwarded-Host") || req.get("Host") || "").split(",")[0].trim().toLowerCase().replace(/:\d+$/, "");
   const hasExplicitTenant = Boolean(
+    req.tenantId || getTenantContext().tenantId ||
     String(req.get("X-Tenant-ID") || "").trim() ||
     String(req.get("X-Tenant-Slug") || "").trim() ||
     String(req.get("X-Tenant-Key") || "").trim()
@@ -77,6 +78,10 @@ export const login = async (req, res, next) => {
     const password = typeof req.body?.password === "string" ? req.body.password : "";
     if (!email || !password) return res.status(400).json({ success: false, message: "Email and password are required." });
 
+    // Capture the tenant selected by middleware before local email resolution
+    // can establish a tenant context of its own.
+    const selectedTenantId = String(req.tenantId || getTenantContext().tenantId || "");
+
     const localResolution = await findUniqueLocalTenantUser(req, email);
     if (localResolution.ambiguous) {
       return res.status(409).json({ success: false, code: "TENANT_SELECTION_REQUIRED", message: "This email is registered with more than one company. Open the company login page or provide the company identifier before signing in." });
@@ -106,6 +111,10 @@ export const login = async (req, res, next) => {
         .select("+password")
         .populate({ path: "roleId", populate: { path: "permissions" } })
         .populate("permissionsOverride");
+    }
+
+    if (user && !isPlatformOwner(user) && selectedTenantId && String(user.tenantId || "") !== selectedTenantId) {
+      return res.status(401).json({ success: false, message: "Invalid email or password." });
     }
 
     if (!user) {

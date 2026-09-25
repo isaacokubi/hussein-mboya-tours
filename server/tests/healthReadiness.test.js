@@ -158,13 +158,30 @@ test("server binds before an unavailable MongoDB connection fails", async (t) =>
 
 test("a fresh MongoDB-backed server becomes healthy after its critical migration", { skip: !process.env.HEALTH_TEST_MONGODB_URI }, async (t) => {
   const testDatabaseUrl = new URL(process.env.HEALTH_TEST_MONGODB_URI);
-  testDatabaseUrl.pathname = `/health_readiness_${process.pid}_${Date.now()}`;
+  const sourceDatabase = decodeURIComponent(testDatabaseUrl.pathname.replace(/^\//, ""));
+  assert.equal(sourceDatabase, "global_tours_test", "health readiness must derive its isolated database from the Atlas test database");
+  const databaseName = `hr_${process.pid}_${Date.now()}_${Math.random().toString(16).slice(2, 10)}`;
+  testDatabaseUrl.pathname = `/${databaseName}`;
+  assert.match(databaseName, /^hr_[0-9]+_[0-9]+_[a-f0-9]+$/);
+  const isolatedMongoUri = testDatabaseUrl.toString();
   const runtime = await launchServer({
-    MONGODB_URI: testDatabaseUrl.toString(),
+    MONGODB_URI: isolatedMongoUri,
     MONGODB_SERVER_SELECTION_TIMEOUT_MS: "5000",
     MONGODB_STARTUP_MIGRATION_TIMEOUT_MS: "30000",
+    NODE_OPTIONS: [process.env.NODE_OPTIONS, `--import=${new URL("./disableMongoAutoIndexForStartupTest.mjs", import.meta.url).href}`].filter(Boolean).join(" "),
   });
-  t.after(() => { if (runtime.child.exitCode === null) runtime.child.kill("SIGTERM"); });
+  t.after(async () => {
+    if (runtime.child.exitCode === null) runtime.child.kill("SIGTERM");
+    const { default: cleanupMongoose } = await import("mongoose");
+    try {
+      await cleanupMongoose.connect(isolatedMongoUri, { serverSelectionTimeoutMS: 10_000 });
+      if (cleanupMongoose.connection.name !== databaseName) throw new Error("Refusing to clean an unexpected health readiness database.");
+      const collections = await cleanupMongoose.connection.db.listCollections({}, { nameOnly: true }).toArray();
+      await Promise.all(collections.map(({ name }) => cleanupMongoose.connection.db.collection(name).drop()));
+    } finally {
+      if (cleanupMongoose.connection.readyState !== 0) await cleanupMongoose.disconnect();
+    }
+  });
 
   const baseUrl = `http://127.0.0.1:${runtime.port}`;
   const deadline = Date.now() + 35_000;
@@ -182,9 +199,17 @@ test("a fresh MongoDB-backed server becomes healthy after its critical migration
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
 
-  assert.equal(healthResponse?.status, 200, "the API should become ready after database connection and index migration");
+  assert.equal(healthResponse?.status, 200, `the API should become ready after database connection and index migration. Startup output: ${runtime.output()}`);
   assert.equal(healthPayload.success, true);
   assert.equal(healthPayload.database, "connected");
+  await mongoose.connect(isolatedMongoUri, { serverSelectionTimeoutMS: 10_000 });
+  try {
+    const invoiceIndexes = await mongoose.connection.db.collection("invoices").indexes();
+    assert.ok(invoiceIndexes.some((index) => index.name === "tenantId_1_booking_1" && index.unique === true));
+    assert.ok(invoiceIndexes.some((index) => index.name === "tenantId_1_hospitalityBooking_1_hospitalityType_1" && index.unique === true));
+  } finally {
+    await mongoose.disconnect();
+  }
   const rootResponse = await fetch(`${baseUrl}/`);
   const rootPayload = await rootResponse.json();
   assert.equal(rootResponse.status, 200);

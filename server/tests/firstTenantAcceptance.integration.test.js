@@ -5,13 +5,21 @@ import { randomBytes } from "node:crypto";
 
 const testMongoUri = process.env.FIRST_TENANT_TEST_MONGODB_URI;
 
-test("first tenant provisioning, tenant-admin access, public catalogue and cross-tenant denial", { skip: !testMongoUri }, async (t) => {
-  const testDatabase = new URL(testMongoUri);
-  const testDatabaseName = decodeURIComponent(testDatabase.pathname.replace(/^\//, ""));
-  if (!new Set(["127.0.0.1", "localhost", "[::1]", "::1"]).has(testDatabase.hostname) || !/^first_tenant_acceptance(?:_|$)/.test(testDatabaseName)) {
-    throw new Error("FIRST_TENANT_TEST_MONGODB_URI must target a loopback host and a disposable first_tenant_acceptance database.");
+const isolatedTestDatabaseUri = (baseUri) => {
+  const uri = new URL(baseUri);
+  const sourceDatabase = decodeURIComponent(uri.pathname.replace(/^\//, ""));
+  if (sourceDatabase !== "global_tours_test") {
+    throw new Error("FIRST_TENANT_TEST_MONGODB_URI must use global_tours_test as its Atlas source connection.");
   }
-  process.env.MONGODB_URI = testMongoUri;
+  const databaseName = `fta_${process.pid}_${randomBytes(8).toString("hex")}`;
+  uri.pathname = `/${databaseName}`;
+  return { uri: uri.toString(), databaseName };
+};
+
+test("first tenant provisioning, tenant-admin access, public catalogue and cross-tenant denial", { skip: !testMongoUri }, async (t) => {
+  const { uri: isolatedUri, databaseName } = isolatedTestDatabaseUri(testMongoUri);
+  if (!/^fta_[0-9]+_[a-f0-9]{16}$/.test(databaseName)) throw new Error("Unsafe first-tenant test database name.");
+  process.env.MONGODB_URI = isolatedUri;
   process.env.JWT_SECRET ||= "first-tenant-ci-secret-only";
   process.env.NODE_ENV = "test";
   process.env.ALLOW_GLOBAL_MPESA_FALLBACK = "false";
@@ -24,12 +32,17 @@ test("first tenant provisioning, tenant-admin access, public catalogue and cross
   assert.equal(process.env.ALLOW_SINGLE_TENANT_DEV_FALLBACK, "false");
   assert.equal(process.env.MFA_DEV_MODE, "false");
 
-  const [mongooseModule, appModule, onboarding, userModel, organizationModel, context, paymentService, readiness] = await Promise.all([
-    import("mongoose"), import("../app.js"), import("../services/onboardingService.js"),
+  const mongooseModule = await import("mongoose");
+  const mongoose = mongooseModule.default;
+  // Keep unrelated model auto-indexing from materializing hundreds of collections
+  // in a fresh Atlas database. The acceptance flow exercises provisioning and
+  // tenant isolation; it does not certify every model index.
+  mongoose.set("autoIndex", false);
+  const [appModule, onboarding, userModel, organizationModel, context, paymentService, readiness] = await Promise.all([
+    import("../app.js"), import("../services/onboardingService.js"),
     import("../models/User.js"), import("../models/Organization.js"),
     import("../tenancy/context.js"), import("../services/paymentGatewayService.js"), import("../startup/readiness.js"),
   ]);
-  const mongoose = mongooseModule.default;
   const app = appModule.default;
   const { assertSupportedMongoVersion } = await import("../utils/mongodbVersion.js");
   const User = userModel.default;
@@ -43,10 +56,9 @@ test("first tenant provisioning, tenant-admin access, public catalogue and cross
   const customerPassword = `Customer-${randomBytes(24).toString("hex")}1A`;
 
   try {
-    await mongoose.connect(testMongoUri);
+    await mongoose.connect(isolatedUri);
     const buildInfo = await mongoose.connection.db.admin().command({ buildInfo: 1 });
     assertSupportedMongoVersion(buildInfo.version);
-    await mongoose.connection.dropDatabase();
     const roles = await onboarding.ensureSystemRoles();
     owner = await context.runWithTenant({ role: "super_admin", bypass: true }, () => User.create({
       name: "Acceptance Platform Owner", email: "platform-owner@acceptance.invalid", phone: "0712345001",
@@ -108,7 +120,8 @@ test("first tenant provisioning, tenant-admin access, public catalogue and cross
     assert.equal(String(adminLogin.user.tenantId), String(firstTenant._id));
     const adminMe = await call("/api/auth/me", { token: adminToken });
     assert.equal(adminMe.status, 200, "tenant admin /me resolves authenticated profile");
-    assert.equal(String((await adminMe.json()).user.tenantId._id), String(firstTenant._id));
+    const adminMeTenantId = (await adminMe.json()).user.tenantId;
+    assert.equal(String(adminMeTenantId?._id || adminMeTenantId), String(firstTenant._id));
 
     const tenantAdminProvision = await call("/api/superadmin/tenants", { method: "POST", token: adminToken, body: JSON.stringify(tenantInput("forbidden")) });
     assert.equal(tenantAdminProvision.status, 403, "a tenant Admin cannot provision another tenant");
@@ -146,7 +159,7 @@ test("first tenant provisioning, tenant-admin access, public catalogue and cross
 
     const destinationResponse = await call("/api/admin/destinations", {
       method: "POST", token: adminToken,
-      body: JSON.stringify({ name: "Acceptance Coast", slug: "acceptance-coast", country: "Kenya", city: "Mombasa" }),
+      body: JSON.stringify({ name: "Acceptance Coast", slug: "acceptance-coast", description: "Acceptance test destination", country: "Kenya", city: "Mombasa" }),
     });
     assert.equal(destinationResponse.status, 201);
     const destination = (await destinationResponse.json()).destination;
@@ -158,7 +171,9 @@ test("first tenant provisioning, tenant-admin access, public catalogue and cross
         title: "Acceptance Coast Tour", description: "A disposable published tour for API acceptance.",
         destination: destination._id, country: "Kenya", location: "Mombasa",
         date: futureTourDate, startDate: futureTourDate, durationDays: 2,
-        capacity: 10, price: 25000, status: "upcoming", published: true, available: true,
+        capacity: 10,
+        availabilitySettings: { totalSlots: 10, bookedSlots: 0, waitlistEnabled: false },
+        price: 25000, discountPrice: 25000, status: "upcoming", published: true, available: true,
       }),
     });
     assert.equal(tourResponse.status, 201);
@@ -229,6 +244,11 @@ test("first tenant provisioning, tenant-admin access, public catalogue and cross
       body: JSON.stringify({ name: "Acceptance Customer", email: "customer-a@acceptance.invalid", phone: "0712345010", password: customerPassword }),
     });
     assert.equal(customerRegistration.status, 201);
+    const tenantIdCustomerLogin = await call("/api/auth/login", {
+      method: "POST", headers: { "X-Tenant-ID": String(firstTenant._id) },
+      body: JSON.stringify({ email: "customer-a@acceptance.invalid", password: customerPassword }),
+    });
+    assert.equal(tenantIdCustomerLogin.status, 200, "X-Tenant-ID selects the owning tenant for login");
     const customerLogin = await call("/api/auth/login", {
       method: "POST", tenantSlug: firstTenant.slug,
       body: JSON.stringify({ email: "customer-a@acceptance.invalid", password: customerPassword }),
@@ -240,6 +260,12 @@ test("first tenant provisioning, tenant-admin access, public catalogue and cross
     assert.equal(process.env.MFA_DEV_MODE, "false");
     const customerToken = customerLoginData.token;
     assert.ok(customerToken);
+    const autoResolvedCustomerLogin = await call("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email: "customer-a@acceptance.invalid", password: customerPassword }),
+    });
+    assert.equal(autoResolvedCustomerLogin.status, 200, "a unique local customer login resolves its owning tenant when no selector is supplied");
+    assert.equal(String((await autoResolvedCustomerLogin.json()).user.tenantId), String(firstTenant._id));
     const customerMe = await call("/api/auth/me", { token: customerToken });
     assert.equal(customerMe.status, 200);
     const customerUser = (await customerMe.json()).user;
@@ -254,7 +280,7 @@ test("first tenant provisioning, tenant-admin access, public catalogue and cross
         paymentMethod: "BANK_TRANSFER", contact: { name: "Acceptance Customer", email: "customer-a@acceptance.invalid", phone: "0712345010" },
       }),
     });
-    assert.equal(bookingResponse.status, 201);
+    assert.equal(bookingResponse.status, 201, JSON.stringify(await bookingResponse.clone().json()));
     const booking = (await bookingResponse.json()).booking;
     assert.equal(String(booking.tenantId), String(firstTenant._id));
     assert.equal(String(booking.user), String(customerUser._id));
@@ -280,8 +306,40 @@ test("first tenant provisioning, tenant-admin access, public catalogue and cross
     assert.equal(secondResponse.status, 201);
     secondTenant = (await secondResponse.json()).tenant;
 
+    const secondCustomerRegistration = await call("/api/auth/register", {
+      method: "POST", tenantSlug: secondTenant.slug,
+      body: JSON.stringify({ name: "Acceptance Customer B", email: "customer-b@acceptance.invalid", phone: "0712345011", password: customerPassword }),
+    });
+    assert.equal(secondCustomerRegistration.status, 201, "a customer can register in Tenant B");
+    const secondCustomerLogin = await call("/api/auth/login", {
+      method: "POST", tenantSlug: secondTenant.slug,
+      body: JSON.stringify({ email: "customer-b@acceptance.invalid", password: customerPassword }),
+    });
+    assert.equal(secondCustomerLogin.status, 200, "Tenant B customer can authenticate in Tenant B");
+    const secondCustomerToken = (await secondCustomerLogin.json()).token;
+
     const unresolvedPublicTenant = await call("/api/tenant/branding", { tenantSlug: "not-a-real-tenant" });
     assert.equal(unresolvedPublicTenant.status, 404, "an invalid explicit tenant selector cannot fall back to an existing tenant");
+    const invalidTenantLogin = await call("/api/auth/login", {
+      method: "POST", tenantSlug: "not-a-real-tenant",
+      body: JSON.stringify({ email: "customer-a@acceptance.invalid", password: customerPassword }),
+    });
+    assert.equal(invalidTenantLogin.status, 404, "login rejects an invalid explicit tenant");
+    const mismatchedTenantIdLogin = await call("/api/auth/login", {
+      method: "POST", tenantSlug: firstTenant.slug,
+      headers: { "X-Tenant-ID": String(secondTenant._id) },
+      body: JSON.stringify({ email: "customer-a@acceptance.invalid", password: customerPassword }),
+    });
+    assert.equal(mismatchedTenantIdLogin.status, 404, "conflicting tenant selectors are rejected");
+    const authenticatedWrongTenant = await call("/api/auth/me", { token: customerToken, tenantSlug: secondTenant.slug });
+    assert.equal(authenticatedWrongTenant.status, 404, "an existing Tenant A JWT cannot select Tenant B");
+    const jwtCannotSelectOtherTenantDuringLogin = await call("/api/auth/login", {
+      method: "POST", token: customerToken, tenantSlug: secondTenant.slug,
+      body: JSON.stringify({ email: "customer-a@acceptance.invalid", password: customerPassword }),
+    });
+    assert.equal(jwtCannotSelectOtherTenantDuringLogin.status, 404, "a Tenant A JWT cannot bypass Tenant B selection during login");
+    const authenticatedRightTenant = await call("/api/auth/me", { token: secondCustomerToken, tenantSlug: secondTenant.slug });
+    assert.equal(authenticatedRightTenant.status, 200, "an existing Tenant B JWT works in Tenant B");
 
     const forgedSelector = await call("/api/destinations", { token: adminToken, tenantSlug: secondTenant.slug });
     assert.equal(forgedSelector.status, 404, "a tenant token cannot be retargeted by a forged tenant slug");
@@ -310,12 +368,26 @@ test("first tenant provisioning, tenant-admin access, public catalogue and cross
     });
     assert.equal(crossTenantPackageUpdate.status, 404, "tenant B cannot mutate a package owned by tenant A");
     const crossTenantUserList = await call("/api/admin/users", { token: secondAdminToken });
-    assert.equal(crossTenantUserList.status, 200);
-    assert.equal(JSON.stringify(await crossTenantUserList.json()).includes("admin-a@acceptance.invalid"), false);
+    const userListPayload = await crossTenantUserList.json();
+    if (crossTenantUserList.status === 200) {
+      assert.equal(JSON.stringify(userListPayload).includes("admin-a@acceptance.invalid"), false);
+    } else {
+      assert.equal(crossTenantUserList.status, 403);
+      assert.equal(userListPayload.code, "PLAN_FEATURE_LOCKED", "the starter plan blocks user management before any cross-tenant data is returned");
+    }
     const crossTenantUserUpdate = await call(`/api/admin/users/${customerUser._id}`, {
       method: "PUT", token: secondAdminToken, body: JSON.stringify({ name: "Cross tenant mutation" }),
     });
-    assert.equal(crossTenantUserUpdate.status, 404, "tenant B cannot mutate a user owned by tenant A");
+    if (crossTenantUserUpdate.status === 403) {
+      assert.equal((await crossTenantUserUpdate.json()).code, "PLAN_FEATURE_LOCKED");
+    } else {
+      assert.equal(crossTenantUserUpdate.status, 404, "tenant B cannot mutate a user owned by tenant A");
+    }
+    const originalCustomer = await context.runWithTenant(
+      { tenantId: firstTenant._id, tenant: firstTenant },
+      () => User.findById(customerUser._id).lean(),
+    );
+    assert.equal(originalCustomer.name, "Acceptance Customer", "a blocked or cross-tenant update leaves Tenant A's user unchanged");
     const crossTenantMutation = await call(`/api/admin/destinations/${destination._id}`, {
       method: "PUT", token: secondAdminToken,
       body: JSON.stringify({ name: "Stolen Coast" }),
@@ -357,7 +429,11 @@ test("first tenant provisioning, tenant-admin access, public catalogue and cross
     );
   } finally {
     if (server.listening) await new Promise((resolve) => server.close(resolve));
-    if (mongoose.connection.readyState !== 0) await mongoose.connection.dropDatabase().catch(() => {});
+    if (mongoose.connection.readyState !== 0) {
+      if (mongoose.connection.name !== databaseName) throw new Error("Refusing to clean an unexpected first-tenant test database.");
+      const collections = await mongoose.connection.db.listCollections({}, { nameOnly: true }).toArray();
+      await Promise.all(collections.map(({ name }) => mongoose.connection.db.collection(name).drop()));
+    }
     await mongoose.disconnect().catch(() => {});
   }
   t.diagnostic("Disposable first-tenant API flow exercised; no provider payment was initiated.");
