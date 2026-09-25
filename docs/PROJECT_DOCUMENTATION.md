@@ -404,7 +404,7 @@ Financial reconciliation should be run against provider transaction records and 
 
 ## 10. Media and file handling
 
-Cloudinary is the primary media integration. Production configuration requires:
+Cloudinary is an optional media integration. The API starts without it; operations that need a real upload or remote asset deletion fail closed when provider credentials are absent. Configure:
 
 ```text
 CLOUDINARY_CLOUD_NAME
@@ -414,7 +414,7 @@ CLOUDINARY_API_SECRET
 
 Upload middleware must enforce file-type/size rules and should never allow arbitrary executable content to become publicly executable.
 
-Store only references/metadata in MongoDB where appropriate; use Cloudinary for durable media storage.
+Store only references/metadata in MongoDB where appropriate; use Cloudinary for durable media storage when configured.
 
 ---
 

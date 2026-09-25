@@ -11,7 +11,7 @@ const withholdingTaxSchema = new mongoose.Schema({
   reference: { type: String, trim: true, required: true },
   description: { type: String, trim: true, default: "" },
   taxType: { type: String, trim: true, default: "WHT" },
-  taxPeriod: { type: String, trim: true, required: true, match: /^\\d{4}-(0[1-9]|1[0-2])$/ },
+  taxPeriod: { type: String, trim: true, required: true, match: /^\d{4}-(0[1-9]|1[0-2])$/ },
   baseAmount: { type: Number, min: 0, required: true },
   rate: { type: Number, min: 0, max: 100, required: true },
   taxAmount: { type: Number, min: 0, required: true },

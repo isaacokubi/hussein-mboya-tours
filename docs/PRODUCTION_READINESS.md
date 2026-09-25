@@ -2,10 +2,10 @@
 
 ## Current application baseline
 
-**Verification date:** 2026-09-24
-**Verification scope:** local `main` worktree based on `0048b99d1f2bee3f269bfa70d3af7eb3b4d075ed`; audit changes were local and uncommitted while verification ran. See the newest evidence entry in `TEST_EVIDENCE.md`.
+**Verification date:** 2026-09-25
+**Verification scope:** first-tenant audit commit on local `main`, based on `9b594ee8297d35400083a3ebe7af2ef7659ad40b`. Node 22 was unavailable, so checks used Node 24.18.0. See the newest evidence entry in `TEST_EVIDENCE.md`.
 
-The repository is **NOT READY** for a real tenant until the expanded MongoDB replica-set lifecycle test runs successfully and external service evidence is collected. The 2026-09-24 read-only check observed Render root timeout and `/api/health` HTTP 503; it did not establish the deployed commit. Vercel root returned HTTP 200 HTML.
+The repository is **NOT READY** for a real tenant until the expanded MongoDB replica-set lifecycle test runs successfully and external service evidence is collected. A 2026-09-25 read-only probe returned HTTP 200 for Render root and `/api/health` and HTTP 200 HTML for Vercel. The API health body, CORS behavior and deployed commit were not established; a follow-up probe failed DNS resolution.
 
 See [First Tenant Production Acceptance](FIRST_TENANT_ACCEPTANCE.md) for the environment matrix, secure onboarding procedure and external evidence boundary. Public tenant creation and browser-based bootstrap are disabled; tenant provisioning requires platform-owner authorization.
 
@@ -13,14 +13,14 @@ See [First Tenant Production Acceptance](FIRST_TENANT_ACCEPTANCE.md) for the env
 
 | Area | Status | Evidence |
 |---|---|---|
-| Server static/security/production checks | PASS | Node 22 `npm run check:all` completed successfully. |
-| Backend automated suite | PASS with skips | Node 22 `npm test`: 127 total, 122 passed, 0 failed, 5 skipped. |
+| Server static/security/production checks | PASS | Node 24.18.0 `npm run check:all` completed successfully. |
+| Backend automated suite | PASS with skips | Node 24.18.0 `npm test`: 136 total, 131 passed, 0 failed, 5 skipped. |
 | Tour-domain / security | PASS | Tour-domain: 1 test passed; security: 2 passed. |
-| Client lint/build | PASS | Node 22 `npm run lint` and `npm run build` with explicit HTTPS API/socket build URLs. |
+| Client lint/build | PASS | Node 24.18.0 `npm run lint` and `npm run build` with explicit HTTPS API/socket build URLs. |
 | MongoDB version contract | PASS | Unit tests accept MongoDB 4.2+, reject 4.0/3.6/unknown. Mongoose 8.24.1 compatibility table supports 4.2; CI target remains MongoDB 8. |
 | First-tenant replica-set acceptance | UNVERIFIED | Expanded lifecycle is wired to the MongoDB 8 CI replica set; this local machine has MongoDB 3.6.8 and no Docker runtime. |
-| Live MongoDB tenant-isolation regression | UNVERIFIED | Must run against MongoDB 8 or newer; no compatible local replica set is available. |
-| Live API / frontend | NOT VERIFIED | Render root timed out, `/api/health` returned 503, Vercel root returned 200 HTML; deployed SHA not obtained. |
+| Live MongoDB tenant-isolation regression | UNVERIFIED | Must run against MongoDB 4.2+ on a replica set; CI deliberately targets MongoDB 8. No compatible local replica set is available. |
+| Live API / frontend | NOT VERIFIED | Render root and `/api/health` returned 200 JSON; Vercel root returned 200 HTML. Health body, CORS and deployed SHA were not obtained. |
 | Production runtime readiness | BLOCKED | Runtime check correctly rejects missing deployment-only configuration/evidence; see external gates below |
 | Production launch certification | NOT VERIFIED | External deployment/provider evidence remains |
 
@@ -57,11 +57,11 @@ Historical live tenant-isolation results belong to their recorded commits and do
 
 These are skipped by the local suite and require provider/database capabilities or dedicated integration harnesses:
 
-1. airport-transfer payment completion atomic lifecycle;
-2. tour lifecycle transactional capacity reservation/release;
-3. payment-completion rollback when accounting posting fails.
-4. first-tenant onboarding and cross-tenant API acceptance against a disposable MongoDB replica set;
-5. MongoDB-connected startup and invoice-index readiness.
+1. first-tenant onboarding and cross-tenant API acceptance against a disposable MongoDB replica set;
+2. MongoDB-connected startup and invoice-index readiness;
+3. airport-transfer payment completion atomic lifecycle;
+4. tour lifecycle transactional capacity reservation/release;
+5. payment-completion rollback when accounting posting fails.
 
 They must be exercised against the intended deployment before being used as production evidence.
 
@@ -132,9 +132,9 @@ This section is maintained by `scripts/update-documentation.js`. The GitHub Acti
 
 - **Repository:** Global Tours — multi-tenant tours & travel SaaS
 - **Branch:** `main`
-- **Current commit:** `0048b99d1f2bee3f269bfa70d3af7eb3b4d075ed`
-- **Short commit:** `0048b99`
-- **Documentation snapshot date (UTC):** 2026-09-24
+- **Current commit:** `9b594ee8297d35400083a3ebe7af2ef7659ad40b`
+- **Short commit:** `9b594ee`
+- **Documentation snapshot date (UTC):** 2026-09-25
 - **Server package:** `hussein-mboya-tours-server@1.0.0`
 - **Client package:** `client@0.0.0`
 - **Server verification commands:** `npm run check:all`, `npm test`, `npm run test:security`, `npm run test:tour-domain`

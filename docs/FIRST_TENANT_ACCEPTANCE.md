@@ -2,7 +2,7 @@
 
 ## Current decision
 
-**NOT READY.** The expanded end-to-end acceptance test is present and wired into the MongoDB 8 replica-set CI job, but this worktree's database-backed test has not run and no CI result for this candidate was obtained. On 2026-09-24, Render root timed out, Render `/api/health` returned HTTP 503, and the Vercel root returned HTTP 200 HTML. The live API version was not established by that check. Complete the database-backed test and required external evidence before onboarding a real tenant.
+**NOT READY.** The expanded end-to-end acceptance test is present and wired into the MongoDB 8 replica-set CI job, but this worktree's database-backed test has not run and no CI result for this candidate was obtained. On 2026-09-25, a read-only probe returned HTTP 200 for the Render root and `/api/health` (JSON content type) and HTTP 200 HTML for Vercel. The health body, CORS behavior and live API version were not established; a repeat probe failed DNS resolution. Complete the database-backed test and required external evidence before onboarding a real tenant.
 
 ## Environment contract
 
@@ -57,13 +57,13 @@ The API resolves tenants from a verified tenant subdomain under `PLATFORM_HOST`,
 
 | Area | Result | Evidence / limitation |
 |---|---|---|
-| Local code and static contracts | PASS | Node 22 `npm test` 127 total (122 pass, 0 fail, 5 skip); tour-domain 1 pass; security 2 pass; `check:all`, client lint/build and YAML parsing pass. |
+| Local code and static contracts | PASS | Node 24.18.0 `npm test`: 136 total (131 pass, 0 fail, 5 skip); tour-domain 1 pass; security 2 pass; `check:all`, client lint/build and parsing of all 7 workflow YAML files pass. |
 | Tenant isolation | PASS for unit/contracts; live database UNVERIFIED | Tenant middleware, selectors, authorization and query-contract tests passed locally; live database acceptance was not run. |
-| Production API | NOT VERIFIED | Read-only check: Render root timed out; `/api/health` returned HTTP 503. The response did not establish a deployed version. |
+| Production API | NOT VERIFIED | Read-only check: Render root and `/api/health` returned HTTP 200 with JSON content type. The health payload and deployed version were not captured; retry failed DNS resolution. |
 | Production frontend | HTTP available; integration configuration UNVERIFIED | Vercel root returned HTTP 200 with `text/html`; no browser/API tenant flow was run. |
 | Database/Atlas | UNVERIFIED | Need Atlas cluster version, network access, backup/PITR, restore drill, indexes and current-deployment health evidence. |
 | Payments/M-Pesa | UNVERIFIED | Need tenant-owned sandbox callback/replay/failure evidence before live credentials/transactions. |
-| First tenant onboarding | UNVERIFIED in runtime | Test source covers owner login and `/me`, first tenant provisioning, tenant-admin login and `/me`, dashboard, branding/public settings, destination and tour creation, package creation/publication plus invalid create/partial-update regression cases, public catalogues, customer registration/login/`/me`, pending booking and admin retrieval, second tenant, cross-tenant object/list isolation, platform-role denial, missing tenant M-Pesa configuration and disabled fallbacks/MFA dev bypass. It runs only against a loopback disposable `first_tenant_acceptance*` database. It was skipped locally; no payment provider is called. |
+| First tenant onboarding | UNVERIFIED in runtime | Test source covers owner login and `/me`, first tenant provisioning, tenant-admin login and `/me`, dashboard, branding/public settings, destination and tour creation, package creation/publication plus invalid create/partial-update regression cases, public catalogues, customer registration/login/`/me`, pending booking and admin retrieval, second tenant, cross-tenant tour/destination/customer/booking/payment/user isolation, package list/update isolation, tenant B catalogue/settings isolation, platform-role denial, missing tenant M-Pesa configuration and disabled fallbacks/MFA dev bypass. No package GET-by-ID route exists; package reads are covered through tenant-scoped catalogues/lists. It runs only against a loopback disposable `first_tenant_acceptance*` database and was skipped locally; no payment provider is called. |
 | KRA/eTIMS | UNVERIFIED | Requires tenant KRA onboarding and certified adapter evidence. |
 
 ## External operator actions

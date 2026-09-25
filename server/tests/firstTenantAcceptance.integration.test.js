@@ -16,8 +16,13 @@ test("first tenant provisioning, tenant-admin access, public catalogue and cross
   process.env.NODE_ENV = "test";
   process.env.ALLOW_GLOBAL_MPESA_FALLBACK = "false";
   process.env.ALLOW_SINGLE_TENANT_DEV_FALLBACK = "false";
+  process.env.DEFAULT_PUBLIC_TENANT_SLUG = "";
+  process.env.PUBLIC_TENANT_SLUG = "";
   process.env.MFA_DEV_MODE = "false";
   process.env.MFA_ENABLED = "false";
+  assert.equal(process.env.ALLOW_GLOBAL_MPESA_FALLBACK, "false");
+  assert.equal(process.env.ALLOW_SINGLE_TENANT_DEV_FALLBACK, "false");
+  assert.equal(process.env.MFA_DEV_MODE, "false");
 
   const [mongooseModule, appModule, onboarding, userModel, organizationModel, context, paymentService, readiness] = await Promise.all([
     import("mongoose"), import("../app.js"), import("../services/onboardingService.js"),
@@ -79,7 +84,6 @@ test("first tenant provisioning, tenant-admin access, public catalogue and cross
     const ownerMe = await call("/api/auth/me", { token: ownerToken });
     assert.equal(ownerMe.status, 200, "platform owner /me resolves authenticated profile");
     assert.equal((await ownerMe.json()).user.email, owner.email);
-
     const publicCreate = await call("/api/superadmin/tenants", { method: "POST", body: JSON.stringify(tenantInput("public")) });
     assert.equal(publicCreate.status, 401, "anonymous visitors cannot provision a tenant");
 
@@ -90,6 +94,8 @@ test("first tenant provisioning, tenant-admin access, public catalogue and cross
     assert.equal(firstTenant.slug, "acceptance-safaris-a");
     assert.equal(firstData.admin.roleId.name, "admin");
     assert.equal(String(firstData.admin.tenantId), String(firstTenant._id));
+    const unselectedPublicBranding = await call("/api/tenant/branding");
+    assert.equal(unselectedPublicBranding.status, 404, "public requests do not silently select the only existing tenant");
 
     const adminLoginResponse = await call("/api/auth/login", {
       method: "POST", tenantSlug: firstTenant.slug,
@@ -273,6 +279,9 @@ test("first tenant provisioning, tenant-admin access, public catalogue and cross
     const secondResponse = await call("/api/superadmin/tenants", { method: "POST", token: ownerToken, body: JSON.stringify(tenantInput("b")) });
     assert.equal(secondResponse.status, 201);
     secondTenant = (await secondResponse.json()).tenant;
+
+    const unresolvedPublicTenant = await call("/api/tenant/branding", { tenantSlug: "not-a-real-tenant" });
+    assert.equal(unresolvedPublicTenant.status, 404, "an invalid explicit tenant selector cannot fall back to an existing tenant");
 
     const forgedSelector = await call("/api/destinations", { token: adminToken, tenantSlug: secondTenant.slug });
     assert.equal(forgedSelector.status, 404, "a tenant token cannot be retargeted by a forged tenant slug");

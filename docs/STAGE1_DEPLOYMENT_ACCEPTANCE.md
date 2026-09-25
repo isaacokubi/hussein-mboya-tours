@@ -55,7 +55,7 @@ These flags are evidence controls, not substitutes for the underlying live tests
 
 ## Stage 1 exit criteria
 
-Read-only endpoint check on 2026-09-24: Render `/` timed out after 20 seconds with HTTP code 000; Render `/api/health` returned HTTP 503; Vercel `/` returned HTTP 200 with `text/html`. No deployed commit/version was obtained. This does not meet API health acceptance and does not establish API/frontend tenant integration. See [First Tenant Production Acceptance](FIRST_TENANT_ACCEPTANCE.md) for required deployment values and evidence.
+Read-only endpoint check on 2026-09-25: Render `/` and `/api/health` returned HTTP 200 with JSON content type; Vercel `/` returned HTTP 200 with `text/html`. The health JSON body, CORS behavior and deployed commit/version were not captured; a repeat probe failed DNS resolution. This does not certify API health or establish API/frontend tenant integration. See [First Tenant Production Acceptance](FIRST_TENANT_ACCEPTANCE.md) for required deployment values and evidence.
 
 - [x] Release gate baseline exists and is documented.
 - [x] Production API health endpoint exists at `/api/health`.

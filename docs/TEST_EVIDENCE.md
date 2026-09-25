@@ -1,25 +1,29 @@
 # Global Tours — Test Evidence Register
 
-## 2026-09-24 — First-tenant production audit (local source)
+## 2026-09-25 — Continued first-tenant production audit (local source)
 
-Commands ran under Node `v22.23.3`. The ignored `server/.env` was temporarily moved out of discovery for the full test run and restored unchanged. Local MongoDB is `3.6.8`; Docker is unavailable. The test suite ran outside the sandbox because its HTTP readiness checks bind loopback sockets. The worktree was based on `0048b99d1f2bee3f269bfa70d3af7eb3b4d075ed`; the evidence below does not include a GitHub Actions run for the resulting local changes.
+The audit began from `9b594ee8297d35400083a3ebe7af2ef7659ad40b` (`main` and `origin/main` matched at audit start); the verified source, tests and evidence were recorded in the local first-tenant audit commit after checks completed. Node 22 was unavailable; commands used Node `v24.18.0`. The ignored `server/.env` was moved out of discovery for backend verification and restored unchanged. Local MongoDB is `3.6.8`; Docker is unavailable. No GitHub Actions result for this local commit was obtained.
 
 | Area | Result | Evidence |
 |---|---|---|
-| Backend automated suite | PASS with skips | `cd server && npm test`: 127 total, 122 passed, 0 failed, 5 skipped. Skips: first-tenant replica-set flow, connected MongoDB startup, tour lifecycle transaction (2 cases), and hospitality payment transaction. |
+| Backend automated suite | PASS with skips | `cd server && npm test`: 136 total, 131 passed, 0 failed, 5 skipped. Skips: first-tenant replica-set flow, connected MongoDB startup, tour lifecycle transaction, hospitality payment transaction and payment-accounting rollback transaction. |
 | Tour-domain suite | PASS | `cd server && npm run test:tour-domain`: 1 passed, 0 failed, 0 skipped. |
 | Security suite | PASS | `cd server && npm run test:security`: 2 passed, 0 failed, 0 skipped. |
 | Full syntax/model/service/security/tenant/production checks | PASS | `cd server && npm run check:all`; tenant model contract passed and production readiness contract passed. |
-| Client lint and production build | PASS | `cd client && npm run lint`; `VITE_API_URL=https://api.example.invalid/api VITE_SOCKET_URL=https://api.example.invalid npm run build`. |
+| Client lint and production build | PASS | `cd client && npm run lint`; build used explicit `VITE_API_URL=https://hussein-mboya-tours.onrender.com/api`, matching HTTPS socket origin, and `VITE_PLATFORM_HOST=globaltours.com`. |
 | MongoDB version guard | PASS | Full suite accepts 4.2+ and rejects 4.0, 3.6 and unknown versions. Mongoose compatibility lists MongoDB 4.2; CI target remains MongoDB 8. |
 | Cloudinary optional path | PASS | Health/readiness test verified API middleware loads with Cloudinary unset, body-only multipart succeeds, and actual file upload returns 503. |
-| Workflow YAML | PASS | PyYAML parsed all 7 `.github/workflows/*.yml` files. Workflow source uses Node 22 and MongoDB 8; the replica-set job invokes first-tenant acceptance. No candidate CI run was available. |
-| Live Render | NOT VERIFIED / unhealthy observation | Root timed out after 20 seconds (HTTP code 000); `/api/health` returned HTTP 503. No version was obtained. |
+| Workflow YAML | PASS | Ruby Psych parsed all 7 `.github/workflows/*.yml` files. Node jobs target Node 22; CI uses MongoDB 8 and invokes the first-tenant test against a replica set. No candidate CI run was available. |
+| Live Render | HTTP available; readiness NOT VERIFIED | Root and `/api/health` returned HTTP 200 with `application/json`. Health response body and deployed version were not captured. A follow-up request failed DNS resolution. |
 | Live Vercel | HTTP available; app integration NOT VERIFIED | Root returned HTTP 200 with `text/html`; no browser or tenant API flow was run. |
-| CORS | NOT CHECKED in this audit | Older CORS observations are historical and do not certify this candidate deployment. |
+| CORS | NOT VERIFIED | The CORS follow-up request failed DNS resolution; no CORS response was obtained. |
 | Atlas, payment provider, M-Pesa, eTIMS, backup and restore | NOT VERIFIED | No production data operation, payment, KRA submission, backup or restore was performed or evidenced in this audit. |
 
-The first-tenant API lifecycle itself remains **UNVERIFIED** because the only installed MongoDB is below the supported 4.2 minimum and is not a replica set. The local code and test coverage do not establish production readiness.
+The first-tenant API lifecycle itself remains **UNVERIFIED** because the only installed MongoDB is below the supported 4.2 minimum and is not a replica set. The acceptance test was skipped, not passed. The local code and test coverage do not establish production readiness.
+
+## 2026-09-25 — Test-seed credential and acceptance-test hardening
+
+The disposable demo seed requires `TEST_DEMO_SEED_PASSWORD` from the operator environment and omits its value from reports. The acceptance contract asserts both unsafe tenant/payment fallbacks and the MFA development bypass are disabled and that missing/invalid public tenant selection does not choose a default tenant. No seed was executed and no MongoDB writes were made by the seed.
 
 ## 2026-09-24 — Render API startup/readiness remediation
 
@@ -127,9 +131,9 @@ Never document secrets, passwords, access tokens, private keys, MFA PINs or paym
 <!-- DOCS-AUTO:START -->
 ## Automatically captured repository state
 
-- Snapshot date (UTC): 2026-09-24
+- Snapshot date (UTC): 2026-09-25
 - Branch: `main`
-- Commit: `0048b99d1f2bee3f269bfa70d3af7eb3b4d075ed`
+- Commit: `9b594ee8297d35400083a3ebe7af2ef7659ad40b`
 - Server package: `hussein-mboya-tours-server@1.0.0`
 - Client package: `client@0.0.0`
 - Automated documentation updater: `scripts/update-documentation.js`
