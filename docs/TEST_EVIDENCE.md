@@ -1,5 +1,163 @@
 # Global Tours — Test Evidence Register
 
+## 2026-09-26 — Staging verification record
+
+### Safety boundary — staging only
+
+> **ALL TESTS IN THIS RECORD ARE STAGING TESTS.** Production must never be used for these tests.
+
+| Environment | Endpoint / database | Use |
+|---|---|---|
+| Staging backend | `https://hussein-mboya-tours-1.onrender.com` | Disposable staging API checks only. |
+| Staging frontend | `https://hussein-mboya-tours-2-l3m78h6fz-isaacokubis-projects.vercel.app` | Staging browser checks only. It was verified to call the staging backend. |
+| Staging database | `global_tours_test` | Staging application data only. |
+| Production | `https://hussein-mboya-tours.onrender.com` / `husseindb` | **Excluded from disposable test execution.** |
+
+Never use the production frontend for test transactions, the production Render API for sandbox tests, or `husseindb` for disposable tests. Never manually invoke a production M-Pesa callback, expose secrets in documentation, commit `.env` files/credentials, or copy staging test data into production. No password, JWT, cookie, API key, M-Pesa credential, MongoDB credential, or private token belongs in this record. Do not perform cleanup or mutation against production.
+
+Staging isolation is implemented and verified: staging requires `DEPLOYMENT_ENV=staging` and `STAGING_DATABASE_NAME`; that database name must match the database path in `MONGODB_URI`; staging rejects `husseindb`; production expects `husseindb`; and staging retains `NODE_ENV=production`. Staging health returned HTTP 200 with a healthy/ready database status. The exact staging Vercel origin is configured for staging CORS.
+
+### Evidence matrix
+
+Date for the following staging verification: **2026-09-26**. “Actual result” records the observed response supplied for this staging run. Results are specific to these staging endpoints and this disposable tenant; they do not certify production.
+
+| Gate | Environment / endpoint | Expected result | Actual result | Status | Notes / next action |
+|---|---|---|---|---|---|
+| Database separation | Staging backend and `global_tours_test` | Staging fails closed unless explicitly configured for its separate database; production target remains `husseindb`. | Guard and target matching verified; staging rejects production database; production contract expects `husseindb`; `NODE_ENV=production` remains set on staging. | PASS | Keep staging and production targets excluded from one another. |
+| Staging health | `GET /api/health` on staging backend | HTTP 200, healthy/ready database status. | HTTP 200; database reported healthy/ready. | PASS | Staging evidence only. |
+| Frontend/backend target | Staging frontend | Browser API requests go to staging backend. | Staging frontend was verified to call `hussein-mboya-tours-1.onrender.com`, not production. | PASS | Continue to use only the staging frontend for this sequence. |
+| CORS preflight | Staging backend with exact staging Vercel `Origin` | HTTP 204, credentials allowed, exact origin returned. | HTTP 204; `access-control-allow-credentials: true`; response included the exact staging frontend origin. | PASS | Staging CORS origin implementation merge: `a01553451e1c3d8e0adfa756e3e88b078f5057be`. |
+| Platform login CORS | SuperAdmin login from staging frontend origin | Login request reaches staging API. | HTTP 200. | PASS | Same CORS gate; no credential or token recorded. |
+| Login without tenant | Staging login path | Invalid/unknown login does not get incorrectly blocked by tenant resolution before platform login path. | Tenant-resolution behavior was corrected; login returns invalid credentials through the intended path. | PASS | Fix merges: `ad544dd47a5ed6d5997d897cd08976746a3989f6` and `61fc4afcb96436a227b6d4d6241692000ab0ac8c`. |
+| Staging SuperAdmin bootstrap guards | Staging only | Require `NODE_ENV=production`, `DEPLOYMENT_ENV=staging`, `STAGING_DATABASE_NAME=global_tours_test`, matching Mongo URI path; reject `husseindb`. | Guards were implemented and verified. | PASS | Bootstrap implementation merge: `b7d2fca57f925fcf709bd161b06db99ddd15b499`; staging database validation merge: `da67dcba603ae83ebffca7a85f0bcbadcd2eab4d`. |
+| Bootstrap behavior | Staging platform account | Create only a platform SuperAdmin, no tenant and no `tenantId`; idempotent; enforce password requirements. | Focused tests passed; bootstrap was used successfully. It creates no tenant and assigns no tenant ID to the platform account; repeat invocation is idempotent; password requirements are enforced. | PASS | No password is documented. Temporary trigger cleanup remains pending. |
+| Bootstrap automated suite (historical run) | Focused bootstrap tests / full suite at bootstrap phase | Accurately distinguish passes, skips and failure. | Focused tests passed. Full suite: **164 passed, 4 skipped**, and **1 existing MongoDB-backed readiness timeout/failure was observed**. | PASS for focused tests; readiness case is not PASS | Historical bootstrap-era count, not the later Atlas run elsewhere in this register. The readiness timeout/failure remains an observed failure/limitation, not a passing test. |
+| Temporary bootstrap trigger | Staging bootstrap phase | Temporary trigger permits intended staging bootstrap and is then removed/disabled. | Temporary HTTP trigger was successfully used to create the staging SuperAdmin. | PASS for use; cleanup PENDING | Temporary trigger implementation merge: `48b304f016243312a239a4df5c6c95315b1842f9`. This is not a permanent production feature. Remove/disable after bootstrap; do not document its trigger token or value. |
+| SuperAdmin login | Staging platform login | HTTP 200 with platform role and no tenant context. | HTTP 200; role `super_admin`; `tenantId: null`. | PASS | No password, JWT, cookie, or token recorded. |
+| Tenant creation | Staging SuperAdmin tenant-management API | Valid tenant and admin created in staging; invalid plan rejected; no payment performed. | Disposable tenant created successfully. Invalid subscription plan `trial` was rejected before creation; valid `starter` plan succeeded. No M-Pesa transaction occurred. | PASS | Tenant identifiers below are non-secret staging data. |
+| Tenant admin login / identity | Staging tenant login | Authenticated tenant identity resolves to created tenant. | `success: true`; role `admin`; `tenantId: 6ab82dce30c1fd52b9dc3e80`; email `staging-tenant-admin@example.com`; status `active`. | PASS | Password/token omitted. |
+| Public tenant settings | `GET /settings/public` for `staging-demo-tours` | Public tenant plan/locale/status values match created tenant. | `companyName=Staging Demo Tours`; `companySlug=staging-demo-tours`; `subscriptionPlan=starter`; `userSeats=5`; `tenantStatus=trial`; `country=Kenya`; `currency=KES`; `timezone=Africa/Nairobi`; `enableMpesa=true`. | PASS | Private configuration values intentionally omitted. |
+| Initial tenant tours | `GET /tours` for `staging-demo-tours` | Tenant-scoped endpoint accessible; new tenant begins with no tours. | `success: true`; `data: []`; `tours: []`; `pagination.total: 0`. | PASS | Next: create one marked staging tour and verify scoped retrieval. |
+| Tenant/platform access boundary | Tenant admin: `GET /superadmin/tenants` | Tenant administrator denied access to platform tenant management. | HTTP 403; message `Super administrator access required.` | PASS | Confirms tenant admin cannot access platform SuperAdmin tenant-management endpoints. |
+| Customer endpoint discovery | Tenant admin: `GET /customers` | Customer-management endpoint is available on starter; empty initial result. | HTTP 200; `success: true`; `total: 0`; `count: 0`; `customers: []`. | PASS | Valid customer-management endpoint. |
+| Generic users feature | Tenant admin: `GET /users` | Starter plan restriction is explicit. | HTTP 403; code `PLAN_FEATURE_LOCKED`; feature `users`; plan `starter`. | PASS | Expected subscription restriction; preserve as a valid gate result. |
+| `/auth/users` discovery | Tenant admin: `GET /auth/users` | Record route availability exactly. | HTTP 404; Route not found. | OBSERVED / EXPECTED | Not an available API route; do not treat it as customer API. |
+| Admin customer endpoint discovery | Tenant admin: `GET /admin/customers` | Admin customer route is available. | HTTP 200; `success: true`; `total: 0`; `count: 0`; `customers: []`. | PASS | Valid customer-management endpoint. |
+| Generic booking endpoint discovery | Tenant admin: `GET /bookings` | Record route availability exactly. | HTTP 404; Route not found. | OBSERVED / EXPECTED | Do not use as generic booking endpoint unless a future code change adds it. |
+| Admin booking endpoint discovery | Tenant admin: `GET /admin/bookings` | Admin booking route is available with an empty result. | HTTP 200; `success: true`; `count: 0`; `bookings: []`. | PASS | Use for the pending booking verification. |
+| Agent feature | Tenant admin: `GET /agent/bookings` | Starter plan restriction is explicit. | HTTP 403; code `PLAN_FEATURE_LOCKED`; feature `agents`; plan `starter`. | PASS | Expected subscription restriction; preserve as a valid gate result. |
+
+### Disposable staging tenant identifiers
+
+| Record | Verified values |
+|---|---|
+| Tenant | Name `Staging Demo Tours`; slug `staging-demo-tours`; ID `6ab82dce30c1fd52b9dc3e80`; status `trial`; subscription plan `starter`; seats `5`; country `Kenya`; timezone `Africa/Nairobi`; currency `KES`. |
+| Tenant admin | Name `Staging Tenant Admin`; email `staging-tenant-admin@example.com`; role `admin`; tenant ID `6ab82dce30c1fd52b9dc3e80`; status `active`. |
+
+These are disposable staging identifiers, not credentials. Future disposable data should use a name, slug, or email containing `staging-demo` or another clearly documented staging marker. Remove data only after confirming it is disposable staging test data and safe to delete. Never delete production data.
+
+### Current test status and remaining work
+
+| Gate | Status | Current evidence / next action |
+|---|---|---|
+| Staging database separation | PASS | Isolation guards and target verified. |
+| Staging health | PASS | HTTP 200; healthy/ready database status. |
+| Staging frontend → staging backend connectivity | PASS | Frontend target verified. |
+| Staging CORS | PASS | Exact origin preflight and platform login verified. |
+| Platform SuperAdmin bootstrap | PASS | Staging-only, guarded, idempotent behavior and focused tests verified. |
+| Platform SuperAdmin login | PASS | HTTP 200; `super_admin`; `tenantId: null`. |
+| Tenant creation | PASS | Disposable starter tenant created; invalid `trial` plan rejected. |
+| Tenant admin login | PASS | Login succeeded for the expected tenant identity. |
+| Tenant identity resolution | PASS | Correct tenant ID and active status returned. |
+| Tenant public settings | PASS | Expected public values returned. |
+| Empty tenant tours retrieval | PASS | Tenant endpoint returned empty list and total zero. |
+| Tenant admin denied SuperAdmin endpoint | PASS | HTTP 403. |
+| Customer endpoint discovery | PASS | `/customers` available and empty. |
+| Admin customer endpoint discovery | PASS | `/admin/customers` available and empty. |
+| Admin booking endpoint discovery | PASS | `/admin/bookings` available and empty. |
+| Starter-plan users feature lock | PASS | `/users` returned `PLAN_FEATURE_LOCKED` for `users`. |
+| Starter-plan agents feature lock | PASS | `/agent/bookings` returned `PLAN_FEATURE_LOCKED` for `agents`. |
+| Invalid subscription plan rejection | PASS | `trial` rejected; `starter` accepted. |
+| `/auth/users` route discovery | OBSERVED / EXPECTED | HTTP 404 Route not found. |
+| `/bookings` route discovery | OBSERVED / EXPECTED | HTTP 404 Route not found. |
+| Create one staging tour | PENDING | Create only in staging with a recognizable marker. |
+| Verify tour retrieval | PENDING | Confirm returned only for `staging-demo-tours`. |
+| Create one staging customer | PENDING | Create only in staging with a recognizable marker. |
+| Verify customer tenant ownership | PENDING | Confirm ownership belongs to `staging-demo-tours`. |
+| Create one staging booking | PENDING | Use the staging tour and customer. |
+| Verify booking tenant ownership | PENDING | Confirm the booking references the correct tenant. |
+| Verify booking appears in admin bookings | PENDING | Check `/admin/bookings`. |
+| Verify customer booking relationship | PENDING | Confirm the expected customer/booking relationship. |
+| Cross-tenant data isolation | PENDING | Verify another tenant cannot access the staging tour, customer, or booking. |
+| SuperAdmin tenant visibility/context | PENDING | Verify SuperAdmin can see/manage tenants and tenant requests do not inherit leaked tenant context. |
+| Subscription behavior across plans | PENDING | Verify starter/professional/business/enterprise where applicable. |
+| Booking status transitions | PENDING | Verify supported transitions. |
+| Booking payment state before payment | PENDING | Capture state before any provider call. |
+| Staging M-Pesa sandbox STK Push | PENDING | Exactly one KES 1 request, only after all isolation gates pass. |
+| M-Pesa request persistence | PENDING | Verify staging request record. |
+| Callback handling | PENDING | Verify staging callback behavior. |
+| Successful payment affects correct booking only | PENDING | Verify exact booking update. |
+| Duplicate callback protection/idempotency | PENDING | Replay-safe behavior to be verified. |
+| Failed/cancelled payment handling | PENDING | Verify state remains correct. |
+| Payment tenant ownership | PENDING | Confirm payment belongs to correct tenant. |
+| No production endpoint/database touched | PENDING | Reconfirm throughout the sequence; production remains excluded. |
+| Customer dashboard booking flow | PENDING | Manual staging browser flow. |
+| Tenant admin dashboard | PENDING | Manual staging browser flow. |
+| Tour manager flow where enabled | PENDING | Manual staging browser flow. |
+| Guide assignment/operations where applicable | PENDING | Manual staging browser flow. |
+| Driver operations where applicable | PENDING | Manual staging browser flow. |
+| Finance/payment records | PENDING | Manual staging review after payment evidence. |
+| Notification/email behavior where configured | PENDING | Verify only if staging configuration enables it. |
+| Mobile frontend flow | PENDING | Staging mobile viewport/device verification. |
+| API authorization boundaries | PENDING | Complete applicable role and tenant boundary checks. |
+| Relevant automated suites after final fixes | PENDING | Run relevant suites and record exact counts. |
+| Final production-readiness audit | PENDING | Separate audit; staging evidence alone is not production certification. |
+| Temporary SuperAdmin bootstrap trigger removal/disablement | PENDING | Remove/disable after bootstrap phase; never treat as permanent production feature. |
+
+### Required next sequence — staging only
+
+Follow this order exactly. **Never run the M-Pesa test before the tenant/tour/customer/booking isolation gates pass.**
+
+1. Create one staging tour.
+2. Verify the tour is returned only for `staging-demo-tours`.
+3. Create one staging customer.
+4. Verify the customer belongs to `staging-demo-tours`.
+5. Create one staging booking using the staging tour and customer.
+6. Verify the booking appears in `/admin/bookings`.
+7. Verify the booking references the correct tenant.
+8. Attempt cross-tenant access and confirm it is rejected or isolated.
+9. Verify booking state before payment.
+10. Only after all isolation checks pass, configure/verify staging M-Pesa sandbox.
+11. Perform exactly one KES 1 sandbox STK Push test.
+12. Verify callback and payment persistence.
+13. Verify duplicate callback protection.
+14. Verify payment does not affect another tenant.
+15. Clean up disposable staging test data where safe.
+16. Remove the temporary SuperAdmin bootstrap trigger if it has not already been removed.
+17. Run final automated tests.
+18. Record final results.
+
+### Automated test history and interpretation
+
+The bootstrap-phase full-suite result above is historical: 164 passed, 4 skipped, and one existing MongoDB-backed readiness timeout/failure was observed. That failure is not a pass. The focused bootstrap tests passed. Later, separate verification records in this file document the Atlas-backed full server suite at 136 passed, 0 failed, 0 skipped; those later results supersede older local suite snapshots only for the corresponding test run and do not erase the bootstrap-era readiness observation. The 2026-09-25 baseline recorded 136 total, 131 passed, 0 failed, 5 skipped before the later Atlas integration run. Do not combine counts from different runs.
+
+Relevant repository commands actually recorded elsewhere in this register include `cd server && npm test`; `node --test --test-concurrency=1 tests/*.js` with database integrations enabled; `cd server && npm run test:security`; `cd server && npm run test:tour-domain`; `cd server && npm run check:all`; and client `npm run lint` / `npm run build`. Historical results and prerequisites are recorded in their dated sections below. This staging record does not claim that these commands were rerun on 2026-09-26.
+
+Staging-related implementation merges in repository history (short descriptions are exact subjects; hashes are full merge commit IDs):
+
+- Database isolation validation: `da67dcba603ae83ebffca7a85f0bcbadcd2eab4d` (merge; implementation commit `27ace83` is on branch `fix/isolated-staging-database`).
+- Staging SuperAdmin bootstrap: `b7d2fca57f925fcf709bd161b06db99ddd15b499`.
+- Temporary staging SuperAdmin trigger: `48b304f016243312a239a4df5c6c95315b1842f9`.
+- Staging CORS origin handling: `a01553451e1c3d8e0adfa756e3e88b078f5057be`.
+- SuperAdmin login tenant isolation: `ad544dd47a5ed6d5997d897cd08976746a3989f6`.
+- No-tenant login validation follow-up: `61fc4afcb96436a227b6d4d6241692000ab0ac8c`.
+
+The temporary HTTP bootstrap trigger was used only for the staging bootstrap phase and is scheduled for cleanup. Its token/value is intentionally not recorded. The mechanism is not a permanent production feature.
+
+### Evidence rules for future sessions
+
+Future developers and Codex sessions must continue from this recorded state. Check this staging matrix before running a gate; do not repeat completed gates unnecessarily unless a deployment, code/configuration change, or new evidence invalidates them. Update each status only after collecting fresh evidence and record date, environment, endpoint, expected result, actual result, status, notes, and next action. Keep production acceptance status separate. An expected subscription denial is a successful verification of that restriction; a 404 route observation remains `OBSERVED / EXPECTED`, not a passed feature.
+
 ## 2026-09-26 — Atlas integration failure diagnosis and verification
 
 The two initial Atlas failures had one root cause: the Atlas cluster had reached its 500-collection limit. The first-tenant request failed when MongoDB tried to create a collection implicitly on insert; the health test failed when the startup invoice-index migration needed its fresh `invoices` collection. Atlas returned code 8000 (`AtlasError`: collection limit reached), so this was neither a migration/index incompatibility nor a database-user permission failure. The target cluster showed 492 visible collections. The isolated `global_tours_test` database had 82 collections and 568 estimated test documents; those collections alone were dropped to restore test capacity. No production or other test database was changed. No application or test fixture code needed changing.
