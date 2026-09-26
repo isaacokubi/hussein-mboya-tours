@@ -16,8 +16,8 @@ const ask = async (label, fallback = "") => {
 const askSecret = async (label) => String(await rl.question(`${label}: `, { hideEchoBack: true }) || "").trim();
 
 try {
-  const mongoUri = env.MONGODB_URI || process.env.MONGODB_URI || process.env.MONGO_URI;
-  if (!mongoUri) throw new Error("MONGODB_URI/MONGO_URI is not configured.");
+  const mongoUri = env.MONGODB_URI || process.env.MONGODB_URI;
+  if (!mongoUri) throw new Error("MONGODB_URI is not configured.");
   await mongoose.connect(mongoUri);
 
   const tenantId = process.env.ADMIN_TENANT_ID || process.argv[2] || await ask("Company/Tenant ID");

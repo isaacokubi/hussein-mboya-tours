@@ -6,8 +6,8 @@ import Tour from "../models/Tour.js";
 dotenv.config();
 const round = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
 const run = async () => {
-  if (!process.env.MONGO_URI) throw new Error("MONGO_URI is required.");
-  await mongoose.connect(process.env.MONGO_URI);
+  if (!process.env.MONGODB_URI) throw new Error("MONGODB_URI is required.");
+  await mongoose.connect(process.env.MONGODB_URI);
   const cursor = Booking.find({}).cursor(); let processed = 0; let changed = 0;
   for await (const booking of cursor) {
     const payments = await Payment.find({ booking: booking._id, status: { $in: ["completed", "refunded"] } }).select("amount refundedAmount").lean();

@@ -2,12 +2,10 @@ import { backgroundTenantFilter } from "../tenancy/backgroundTenantFilter.js";
 import mongoose from "mongoose";
 import Booking from "../models/Booking.js";
 
-const uri =
-  process.env.MONGODB_URI ||
-  process.env.MONGO_URI;
+const uri = process.env.MONGODB_URI;
 
 if (!uri) {
-  console.log("Missing Mongo URI");
+  console.error("MONGODB_URI is required.");
   process.exit(1);
 }
 

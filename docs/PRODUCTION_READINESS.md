@@ -1,5 +1,11 @@
 # Global Tours — Production Readiness
 
+## MongoDB configuration and verification separation
+
+Render production remains configured through its existing `MONGODB_URI`, which must name the existing Atlas database `husseindb` in the URI path. The production validator accepts Atlas `mongodb+srv://` and standard `mongodb://` forms with that database name and does not require a test-only variable.
+
+Normal backend tests separate static/unit checks from database integrations: `npm test` runs without a local MongoDB requirement, and database-backed cases are skipped unless their dedicated opt-in variables are set. Atlas is the preferred integration target. First-tenant acceptance and fresh-start health checks require `FIRST_TENANT_TEST_MONGODB_URI` and `HEALTH_TEST_MONGODB_URI`, respectively, each pointing to a separately available disposable `global_tours_test` database. They derive `fta_*` and `hr_*` databases; the health test cleans only its derived database. Transactional lifecycle tests require both `LIFECYCLE_TEST_MONGODB_URI` (a disposable test database URI) and `RUN_DATABASE_INTEGRATION_TESTS=true`. They never use or fall back to production `MONGODB_URI`, and reject `husseindb`. When no dedicated Atlas test database is available, leave these variables unset; integration tests stay skipped. No test setup creates a database or alters production data automatically.
+
 ## Atlas integration follow-up — 2026-09-26
 
 The two previously failing MongoDB integration cases shared an Atlas capacity cause. The first-tenant flow reached an insert that required a new collection while the Atlas cluster was at its 500-collection limit; Atlas returned error code 8000 (`AtlasError`, `cannot create a new collection -- already using 500 collections of 500`). The same limit blocked the fresh-database invoice index migration in the health/readiness test. This was Atlas cluster state, not a tenant provisioning, authorization, schema, migration, index, or permission defect. Read-only inventory showed 492 visible collections before cleanup. The isolated `global_tours_test` database contained 82 collections and 568 estimated test documents; only those 82 collections were dropped to restore test capacity. No other database was modified.
