@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { PRODUCTION_DATABASE_NAME, validateProductionMongoUri } from "../config/mongoConfig.js";
 import { assertRequiredEnvironment } from "../config/envValidation.js";
+import { getDisposableIntegrationMongoUri } from "./integrationMongoUri.js";
 
 process.env.NODE_ENV = "test";
 process.env.MONGODB_URI = "mongodb://127.0.0.1:27017/mongo_config_test";
@@ -39,6 +40,16 @@ test("application configuration fails safely when MONGODB_URI is missing", () =>
   assert.throws(() => assertRequiredEnvironment({ MONGODB_URI: "", JWT_SECRET: "present" }), {
     message: "Missing required environment variable: MONGODB_URI",
   });
+});
+
+test("lifecycle integration requires a dedicated disposable URI and rejects production husseindb", () => {
+  assert.equal(getDisposableIntegrationMongoUri({}), null);
+  assert.throws(() => getDisposableIntegrationMongoUri({
+    LIFECYCLE_TEST_MONGODB_URI: "mongodb+srv://cluster.example/husseindb",
+  }), /never husseindb/);
+  assert.equal(getDisposableIntegrationMongoUri({
+    LIFECYCLE_TEST_MONGODB_URI: "mongodb+srv://cluster.example/disposable_lifecycle_test",
+  }), "mongodb+srv://cluster.example/disposable_lifecycle_test");
 });
 
 test("MongoDB connection failures never log the connection string", async () => {

@@ -96,7 +96,7 @@ jobs:
         working-directory: server
 
     env:
-      MONGODB_URI: mongodb://127.0.0.1:27017/hussein_mboya_ci?replicaSet=rs0
+      LIFECYCLE_TEST_MONGODB_URI: mongodb://127.0.0.1:27017/hussein_mboya_ci?replicaSet=rs0
       FIRST_TENANT_TEST_MONGODB_URI: mongodb://127.0.0.1:27017/first_tenant_acceptance_ci?replicaSet=rs0
       RUN_DATABASE_INTEGRATION_TESTS: "true"
       JWT_SECRET: ci-only-test-secret

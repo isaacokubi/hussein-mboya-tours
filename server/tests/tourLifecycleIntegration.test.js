@@ -9,13 +9,15 @@ import { completeBookingPayment } from "../services/paymentLifecycleService.js";
 import { cancelTourAndBookings } from "../services/tourCancellationService.js";
 import { createBookingAtomically } from "../services/bookingCreationService.js";
 import { runWithTenant } from "../tenancy/context.js";
+import { getDisposableIntegrationMongoUri } from "./integrationMongoUri.js";
 
 // A configured URI alone is not permission to run destructive, transactional
 // integration fixtures. CI opts in explicitly after starting its replica set.
-const integrationEnabled = process.env.RUN_DATABASE_INTEGRATION_TESTS === "true" && Boolean(process.env.MONGODB_URI);
+const integrationMongoUri = getDisposableIntegrationMongoUri();
+const integrationEnabled = process.env.RUN_DATABASE_INTEGRATION_TESTS === "true" && Boolean(integrationMongoUri);
 
 test("tour lifecycle atomically reserves dated capacity with booking creation and releases it transactionally", { skip: !integrationEnabled }, async () => {
-  if (mongoose.connection.readyState === 0) await mongoose.connect(process.env.MONGODB_URI);
+  if (mongoose.connection.readyState === 0) await mongoose.connect(integrationMongoUri);
   const tenantId = new mongoose.Types.ObjectId();
   const travelDate = new Date("2099-06-15T00:00:00.000Z");
 
@@ -134,7 +136,7 @@ test.after(async () => {
 
 
 test("payment completion rolls back financial state when accounting posting fails", { skip: !integrationEnabled }, async () => {
-  if (mongoose.connection.readyState === 0) await mongoose.connect(process.env.MONGODB_URI);
+  if (mongoose.connection.readyState === 0) await mongoose.connect(integrationMongoUri);
   const tenantId = new mongoose.Types.ObjectId();
 
   await runWithTenant({ tenantId, role: "manager" }, async () => {

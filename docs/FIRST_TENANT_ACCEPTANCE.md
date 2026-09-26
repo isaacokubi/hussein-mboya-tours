@@ -6,9 +6,14 @@
 
 ## Environment contract
 
+Production and integration use separate variables. Render keeps its existing `MONGODB_URI` Atlas connection targeting `/husseindb`. Atlas integration verification uses `FIRST_TENANT_TEST_MONGODB_URI` and/or `HEALTH_TEST_MONGODB_URI` targeting a separately available disposable `global_tours_test` database; transactional lifecycle tests use `LIFECYCLE_TEST_MONGODB_URI` plus `RUN_DATABASE_INTEGRATION_TESTS=true`. The integration URI values are never substituted for production `MONGODB_URI`. Do not use production `husseindb` for acceptance or lifecycle tests, and do not create a test database automatically. Without the relevant explicit test URI, database integration tests remain skipped; ordinary unit/static tests need no MongoDB server.
+
 | Variable | Used by | Required | Safe/default | Secret | Service / failure behavior |
 |---|---|---:|---|---:|---|
 | `MONGODB_URI` | Mongoose | Yes | No default | Yes | Render API; missing value prevents startup; unreachable MongoDB leaves health degraded then critical startup exits. The current driver requires MongoDB 4.2 or newer; CI acceptance uses MongoDB 8 with replica-set transactions. |
+| `FIRST_TENANT_TEST_MONGODB_URI` | First-tenant acceptance integration test | Optional, explicit opt-in | No default; must target disposable Atlas `global_tours_test`; test derives a uniquely named disposable database | Yes | Local test runner/CI only; unset means the test is skipped. Never set it to production `husseindb`. |
+| `HEALTH_TEST_MONGODB_URI` | MongoDB-backed health and startup-index integration test | Optional, explicit opt-in | No default; must target disposable Atlas `global_tours_test`; test derives a uniquely named disposable database | Yes | Local test runner/CI only; unset means the database-backed test is skipped. Never set it to production `husseindb`. |
+| `LIFECYCLE_TEST_MONGODB_URI` + `RUN_DATABASE_INTEGRATION_TESTS=true` | Transactional lifecycle integration tests | Optional, explicit opt-in | Dedicated disposable test database; refuses `husseindb`; no fallback to `MONGODB_URI` | Yes | Local test runner/CI only; normal backend suite skips unless both are explicitly configured. Atlas is preferred. |
 | `MONGODB_SERVER_SELECTION_TIMEOUT_MS` | Mongoose | No | 10000 ms, bounded | No | Render API; connection attempts are bounded. |
 | `MONGODB_STARTUP_MIGRATION_TIMEOUT_MS` | invoice-index startup migration | No | 60000 ms, max 120000 | No | Render API; migration failure is fatal and health never becomes healthy. |
 | `JWT_SECRET` | JWT sign/verify | Yes | No production fallback; production requires 32+ mixed-case/numeric chars | Yes | Render API; invalid/missing production secret prevents startup. |
