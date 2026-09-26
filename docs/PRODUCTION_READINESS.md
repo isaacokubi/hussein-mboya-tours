@@ -187,3 +187,64 @@ This section is maintained by `scripts/update-documentation.js`. The GitHub Acti
 The workflow has read-only repository permissions and does not modify or push repository contents. Manual changes to generated files should be reviewed as regular repository updates.
 
 <!-- DOCS-AUTO:END -->
+
+## Consolidated production audit — 2026-09-26
+
+This section records the audit of source at `ad26fa0` and supplements the historical snapshots above without erasing their evidence. The Atlas suite and checks listed at the top of this document passed before this audit. No full suite was repeated because application code was not changed. Production deployment and external provider services were not accessed or certified.
+
+### Code and configuration status
+
+| Area | Finding |
+|---|---|
+| Tenant security | The Atlas first-tenant acceptance passed tenant selection, JWT tenant binding, cross-tenant rejection and scoped reads/writes. Tenant provisioning is platform-owner-only; tenant subscription entitlements and scoped queries are implemented. Production tenant data/configuration remains unverified. |
+| M-Pesa/Daraja | STK initiation, tenant gateway credentials, sandbox/production URLs, provider status query, callback-to-payment correlation and booking/payment/accounting lifecycle hooks exist. Callback middleware queries Daraja and matches the callback state before dispatch; lifecycle logic validates amount/receipt and protects terminal states against duplicate callbacks. Daraja callbacks have no app-verifiable signature, so provider query is the integrity check. Live credentials and transaction evidence are absent; no live-readiness claim is made. Refund and subscription flows need separate tests. |
+| Email/notifications | SMTP uses `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` (EMAIL_/MAIL_ aliases also exist). Password recovery and booking/payment/admin communications are wired. Sending is synchronous; durable retry/dead-letter behavior for email is not established, and delivery has not been verified with a provider. In-app notifications are separate from email. |
+| KRA/eTIMS | Tenant tax profiles store PIN/verification, VAT/tax regime, solution/environment and branch/device references. Invoices include buyer/seller, line, tax and payment data; tenant-scoped submission audit records retain request hash, response/error and official references. Durable jobs use idempotency keys and backoff. This is a provider-neutral HTTPS adapter contract, not a direct KRA OSCU/VSCU client or certification. Buyer PIN/tax-category mapping and response semantics require confirmation with the selected certified adapter. |
+| Deployment | Render/Vercel configuration, API build variables, HTTPS CORS/tenant-origin rules, secure cookies, health/readiness and bounded startup/migration are present. Runtime validation rejects missing mandatory values and evidence flags. Actual production values and deployment were not inspected; deployment is NOT VERIFIED. |
+| Backups | Scheduled/manual GitHub Actions workflows create encrypted MongoDB archives, validate contents and retain uploaded artifacts for 30 days; the restore workflow remaps namespaces into a distinct target. This is not Atlas PITR and does not prove a production backup, adequate SLA/retention, alerting or successful restore. No production data was changed. |
+| Monitoring | Health/readiness, application system-health and durable job visibility exist. Provider alert routing, incident ownership, alert delivery, payment/webhook dashboards and a current production smoke result remain unverified. |
+| Mobile/browser | Responsive frontend and prior production build are present. No real desktop/mobile browser or device acceptance was performed. |
+
+### External configuration and credentials still required
+
+- **MongoDB Atlas:** production URI and database user, network access policy, production cluster/replica-set sizing and migration/index approval; least-privilege backup and isolated restore URIs; configure Atlas backup/PITR and retention with the Atlas account owner.
+- **M-Pesa Daraja, per tenant:** consumer key, consumer secret, shortcode/till, passkey, public HTTPS callback URL and sandbox/production selection. For enabled B2C refunds, initiator name and Safaricom security credential plus result/timeout callback URLs. Platform subscription checkout has separate platform Daraja configuration.
+- **Email:** SMTP/API host, port, username/API key, password, TLS mode, verified sender/name and reply-to/support address; configure SPF, DKIM and DMARC for the sending domain.
+- **KRA/eTIMS:** tenant KRA PIN and applicable VAT registration/tax data; solution/device/branch identifiers; certified OSCU/VSCU or system adapter URL, tenant token/client credentials/certificate references; provider schemas, response rules and onboarding/certification instructions.
+- **Hosting/domain:** Render `MONGODB_URI`, strong `JWT_SECRET`, `PAYMENT_CREDENTIAL_ENCRYPTION_KEY`, `WEBHOOK_SECRET_KEY`, HTTPS `CLIENT_URL`/`CLIENT_ORIGINS`, `PLATFORM_HOST`; client `VITE_API_URL`, `VITE_SOCKET_URL`, `VITE_PLATFORM_HOST`; DNS/HTTPS access for platform and tenant custom domains. Configure other secrets only for enabled providers.
+- **Evidence gates:** `PRODUCTION_BACKUP_VERIFIED`, `PRODUCTION_RESTORE_TESTED`, `PRODUCTION_MONITORING_VERIFIED`, `PRODUCTION_PAYMENT_VERIFIED`, `PRODUCTION_ETIMS_VERIFIED`, `PRODUCTION_WEBHOOKS_VERIFIED` must only be set after their checks pass. Backup workflow secrets: `MONGODB_BACKUP_URI`, `BACKUP_ENCRYPTION_PASSPHRASE`; restore workflow: `MONGODB_RESTORE_URI`, `MONGODB_PRODUCTION_URI`, `RESTORE_TARGET_ISOLATED=true`, passphrase. Smoke workflows need production API and web URLs. Monitoring also requires provider credentials, alert destinations and an on-call owner.
+
+### Required external verification
+
+1. **M-Pesa:** with sandbox credentials and a public HTTPS callback, initiate a small STK payment; verify provider query, callback, payment/booking state, invoice/journal, receipt, notification, duplicate replay, cancellation/failure, timeout/query recovery and tenant isolation against Daraja records. Test refund and subscription paths separately. Repeat required checks in production before enabling it.
+2. **Email:** send password-reset, booking, payment, cancellation and admin messages to controlled mailboxes; verify sender authentication, correct production tenant/client links, rendering, bounce handling and outage response.
+3. **eTIMS:** obtain the certified adapter contract; submit representative invoice and applicable credit/debit note in sandbox; reconcile official invoice/receipt/QR/unique-register fields, tax mapping, duplicate retry, provider-accepted timeout and validation rejection. Obtain applicable KRA/provider certification and a real response before production.
+4. **Backup/restore:** run a production backup workflow, inspect encrypted artifact/access/retention, restore to a distinct isolated database, validate collections, indexes and tenant-scoped samples, record RPO/RTO, then remove drill data by operator procedure. Never point restore at production.
+5. **Monitoring:** configure uptime/error/latency/database/worker/payment/eTIMS alerts and owners; trigger safe test alerts and verify receipt/acknowledgement; inspect the production smoke result.
+6. **Deployment/domain:** deploy to staging then production; verify `/api/health` reports healthy/connected and intended SHA; check TLS, CORS/cookies, API/socket URLs, tenant host resolution and client route fallback. Verify DNS and HTTPS externally.
+7. **Real-world acceptance:** exercise customer, admin, finance, guide, driver and SuperAdmin workflows on desktop plus actual iOS/Android browsers, including media, forms, booking/payment, dashboards and narrow tables. Record device/browser/build evidence.
+
+### First-tenant production launch checklist
+
+| Step | Status | Evidence to collect |
+|---|---|---|
+| 1. Super Admin creates tenant | CODE READY / LIVE TEST REQUIRED | Authorized platform-owner provisioning, tenant record and audit trail. |
+| 2. Subscription configured | CODE READY / LIVE TEST REQUIRED | Plan/trial, dates, entitlements and expiry/suspension behavior. Paid M-Pesa activation additionally needs provider verification. |
+| 3. Tenant admin created | CODE READY / LIVE TEST REQUIRED | Tenant Admin invite/create and verified role/scope. |
+| 4. Tenant domain/subdomain | BLOCKED BY EXTERNAL CREDENTIAL | Platform host/custom domain, DNS, TLS and origin mapping. |
+| 5. Tenant admin logs in | CODE READY / LIVE TEST REQUIRED | Deployed HTTPS login, cookie/CSRF, JWT tenant binding, logout and role checks. |
+| 6. Tenant creates tours | CODE READY / LIVE TEST REQUIRED | Create/publish; confirm public visibility and tenant isolation. |
+| 7. Tenant configures pricing | CODE READY / LIVE TEST REQUIRED | Prices, tax/deposit rules and server-calculated quote. |
+| 8. Configure guides/drivers/vehicles | CODE READY / LIVE TEST REQUIRED | Tenant staff/resources, availability and assignment. |
+| 9. Customer discovers tour | CODE READY / LIVE TEST REQUIRED | Public tenant host, listing, media and mobile layout. |
+| 10. Customer books | CODE READY / LIVE TEST REQUIRED | Capacity, price snapshot, ownership and deployed booking state. |
+| 11. Payment processed | BLOCKED BY EXTERNAL CREDENTIAL | Daraja credentials and public callback; end-to-end STK/query/callback evidence. |
+| 12. Booking confirmed | CODE READY / LIVE TEST REQUIRED | Only authoritative completed payment confirms; verify duplicate and failed callbacks. |
+| 13. Invoice/accounting record | CODE READY / LIVE TEST REQUIRED | Invoice, payment ledger/journal and provider receipt reconcile. eTIMS stamping remains separately gated. |
+| 14. Notifications sent | BLOCKED BY EXTERNAL CREDENTIAL | SMTP/API credentials and verified sender/domain; email plus in-app delivery check. |
+| 15. Guide/driver assigned | CODE READY / LIVE TEST REQUIRED | Assignment, schedule, access and notification. |
+| 16. Tour operated | CODE READY / LIVE TEST REQUIRED | Operational status/attendance and mobile staff workflow. |
+| 17. Customer reviews tour | CODE READY / LIVE TEST REQUIRED | Review linked to eligible booking/customer and moderation controls. |
+| 18. Finance/admin reports | CODE READY / LIVE TEST REQUIRED | Tenant-scoped booking, payment, tax and finance reports reconcile to source records. |
+
+No first real tenant has been onboarded in production. Overall production readiness remains **NOT VERIFIED** until deployment, provider, restore, monitoring, regulatory and real-world evidence is collected. Historical automated verification is not a production certification.
