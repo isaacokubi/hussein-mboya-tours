@@ -27,6 +27,7 @@ import {
 
 const isValidId = (id) =>
   mongoose.Types.ObjectId.isValid(id);
+const escapeHtml = (value) => String(value ?? "").replace(/[&<>\"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[char]));
 
 const getBookingContact = (booking) => ({
   name:
@@ -747,10 +748,12 @@ export const sendBookingNotification =
           });
         }
 
-        await sendEmail(
-          contact.email,
-          message
-        );
+        await sendEmail({
+          to: contact.email,
+          subject: title,
+          text: message,
+          html: `<h2>${escapeHtml(title)}</h2><p>${escapeHtml(message)}</p>`,
+        });
       }
 
       return res.status(200).json({

@@ -32,6 +32,7 @@ import { calculateBookingAmounts } from "../utils/bookingPricing.js";
 import { calculateTax } from "../services/taxEngineService.js";
 import { createBookingAtomically } from "../services/bookingCreationService.js";
 import { queueWebhookEvent } from "../services/webhookDeliveryService.js";
+import { sendBookingConfirmationEmail, sendEmailBestEffort } from "../services/emailService.js";
 
 import { successResponse } from "../utils/apiResponse.js";
 
@@ -273,6 +274,7 @@ export const createBooking = async (req, res, next) => {
 
     if (bookingNotificationsEnabled) {
       await Promise.allSettled([
+        sendEmailBestEffort(() => sendBookingConfirmationEmail(booking), "Booking confirmation"),
         customerPhone ? sendSMS(customerPhone, bookingMessage) : Promise.resolve(),
         customerPhone ? sendWhatsApp({ to: customerPhone, message: bookingMessage }) : Promise.resolve(),
       ]);

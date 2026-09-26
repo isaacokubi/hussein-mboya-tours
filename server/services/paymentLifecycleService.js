@@ -13,6 +13,7 @@ import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 */
 
 import mongoose from "mongoose";
+import { sendPaymentConfirmationEmail, sendBookingStatusEmail, sendEmailBestEffort } from "./emailService.js";
 
 import Booking from "../models/Booking.js";
 import Payment from "../models/Payment.js";
@@ -1060,7 +1061,9 @@ export const completeBookingPayment = async ({
       };
     });
 
-
+    if (result && !result.alreadyCompleted) {
+      await sendEmailBestEffort(() => sendPaymentConfirmationEmail(result.booking, result.payment), "Payment confirmation");
+    }
     return result;
 
   } finally {
@@ -1437,6 +1440,9 @@ export const refundBookingPayment = async ({
       }
     );
 
+    if (result && !result.alreadyProcessed && result.fullyRefunded) {
+      await sendEmailBestEffort(() => sendBookingStatusEmail(result.booking, "refunded"), "Refund notification");
+    }
     return result;
 
   } finally {
