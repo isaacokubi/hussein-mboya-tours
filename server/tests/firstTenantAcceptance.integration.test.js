@@ -28,6 +28,8 @@ test("first tenant provisioning, tenant-admin access, public catalogue and cross
   process.env.PUBLIC_TENANT_SLUG = "";
   process.env.MFA_DEV_MODE = "false";
   process.env.MFA_ENABLED = "false";
+  const stagingFrontendOrigin = "https://hussein-mboya-tours-2-l3m78h6fz-isaacokubis-projects.vercel.app";
+  process.env.CLIENT_ORIGINS = stagingFrontendOrigin;
   assert.equal(process.env.ALLOW_GLOBAL_MPESA_FALLBACK, "false");
   assert.equal(process.env.ALLOW_SINGLE_TENANT_DEV_FALLBACK, "false");
   assert.equal(process.env.MFA_DEV_MODE, "false");
@@ -85,14 +87,58 @@ test("first tenant provisioning, tenant-admin access, public catalogue and cross
       plan: "starter", country: "Kenya", timezone: "Africa/Nairobi", currency: "KES",
     });
 
+    const stagingPreflight = await call("/api/auth/login", {
+      method: "OPTIONS",
+      headers: {
+        Origin: stagingFrontendOrigin,
+        "Access-Control-Request-Method": "POST",
+        "Access-Control-Request-Headers": "content-type",
+      },
+    });
+    assert.equal(stagingPreflight.status, 204, "staging preflight is answered by CORS before tenant resolution");
+    assert.equal(stagingPreflight.headers.get("access-control-allow-origin"), stagingFrontendOrigin);
+    const unrelatedPreflight = await call("/api/auth/login", {
+      method: "OPTIONS",
+      headers: {
+        Origin: "https://unrelated.invalid",
+        "Access-Control-Request-Method": "POST",
+        "Access-Control-Request-Headers": "content-type",
+      },
+    });
+    assert.equal(unrelatedPreflight.headers.get("access-control-allow-origin"), null, "unrelated origins receive no CORS permission");
+
+    const unknownStagingLogin = await call("/api/auth/login", {
+      method: "POST",
+      headers: { Origin: stagingFrontendOrigin },
+      body: JSON.stringify({ email: "unknown@acceptance.invalid", password: "invalid-test-password" }),
+    });
+    assert.equal(unknownStagingLogin.status, 401, "configured platform origin reaches normal credential validation");
+    assert.notEqual((await unknownStagingLogin.json()).message, "Tenant not found.");
+
     const ownerLogin = await call("/api/auth/login", {
       method: "POST",
+      headers: { Origin: stagingFrontendOrigin },
       body: JSON.stringify({ email: owner.email, password: ownerPassword }),
     });
     assert.equal(ownerLogin.status, 200, "platform owner can authenticate through the public login route");
     const ownerLoginData = await ownerLogin.json();
     const ownerToken = ownerLoginData.token;
     assert.equal(ownerLoginData.user.role, "super_admin");
+    assert.equal(ownerLoginData.user.tenantId, null, "platform login never assigns a tenant context");
+    const aliasOwner = await context.runWithTenant({ role: "superadmin", bypass: true }, () => User.create({
+      name: "Acceptance Alias Owner", email: "platform-alias@acceptance.invalid", phone: "0712345012",
+      password: ownerPassword, role: "superadmin", legacyRole: "superadmin", roleId: roles.superadmin._id,
+      tenantId: null, status: "active", isVerified: true,
+    }));
+    const aliasOwnerLogin = await call("/api/auth/login", {
+      method: "POST",
+      headers: { Origin: stagingFrontendOrigin },
+      body: JSON.stringify({ email: aliasOwner.email, password: ownerPassword }),
+    });
+    assert.equal(aliasOwnerLogin.status, 200, "the superadmin role alias follows the global authentication path");
+    const aliasOwnerData = await aliasOwnerLogin.json();
+    assert.equal(aliasOwnerData.user.role, "superadmin");
+    assert.equal(aliasOwnerData.user.tenantId, null);
     const ownerMe = await call("/api/auth/me", { token: ownerToken });
     assert.equal(ownerMe.status, 200, "platform owner /me resolves authenticated profile");
     assert.equal((await ownerMe.json()).user.email, owner.email);
@@ -311,6 +357,17 @@ test("first tenant provisioning, tenant-admin access, public catalogue and cross
       body: JSON.stringify({ name: "Acceptance Customer B", email: "customer-b@acceptance.invalid", phone: "0712345011", password: customerPassword }),
     });
     assert.equal(secondCustomerRegistration.status, 201, "a customer can register in Tenant B");
+    await context.runWithTenant({ tenantId: secondTenant._id, tenant: secondTenant, bypass: false }, () => User.create({
+      name: "Shared Email Customer B", email: "customer-a@acceptance.invalid", phone: "0712345013",
+      password: customerPassword, role: "customer", legacyRole: "customer", tenantId: secondTenant._id,
+      status: "active", isVerified: true,
+    }));
+    const ambiguousTenantLogin = await call("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email: "customer-a@acceptance.invalid", password: customerPassword }),
+    });
+    assert.equal(ambiguousTenantLogin.status, 409, "a tenant user shared across companies requires an explicit tenant selection");
+    assert.equal((await ambiguousTenantLogin.json()).code, "TENANT_SELECTION_REQUIRED");
     const secondCustomerLogin = await call("/api/auth/login", {
       method: "POST", tenantSlug: secondTenant.slug,
       body: JSON.stringify({ email: "customer-b@acceptance.invalid", password: customerPassword }),

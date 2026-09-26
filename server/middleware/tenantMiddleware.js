@@ -4,6 +4,7 @@ import Organization from "../models/Organization.js";
 import env from "../config/env.js";
 import { runWithTenant } from "../tenancy/context.js";
 import { isTenantSubdomainHost } from "../utils/tenantHost.js";
+import { getConfiguredOrigins } from "../config/corsPolicy.js";
 export { isTenantSubdomainHost } from "../utils/tenantHost.js";
 const PLATFORM_ROLES = new Set(["super_admin", "superadmin"]);
 const normalizeHost = (value = "") => String(value).split(",")[0].trim().toLowerCase().replace(/:\d+$/, "");
@@ -36,7 +37,11 @@ export async function resolveTenant(req, res, next) { try {
   const platformSuffix = `.${configuredPlatformHost}`;
   const tenantHostRequested = !platformHosts.has(requestHost) && isTenantSubdomainHost(requestHost, configuredPlatformHost)
     || !platformHosts.has(originHost) && isTenantSubdomainHost(originHost, configuredPlatformHost);
-  const customOriginRequested = Boolean(originHost && !platformHosts.has(originHost) && !originHost.endsWith(platformSuffix) && !integrationRequest);
+  // Exact configured frontend origins may host the platform login page. They
+  // still do not establish tenant context: tenant users are resolved only by
+  // their unique account tenant or an explicit/host tenant selector above.
+  const configuredFrontendOrigin = getConfiguredOrigins(env).includes(String(req.get("Origin") || ""));
+  const customOriginRequested = Boolean(originHost && !platformHosts.has(originHost) && !originHost.endsWith(platformSuffix) && !integrationRequest && !configuredFrontendOrigin);
   if (!tenant && (explicitTenantRequested || tenantHostRequested || customOriginRequested)) {
     return res.status(404).json({ success: false, message: "Tenant not found." });
   }
