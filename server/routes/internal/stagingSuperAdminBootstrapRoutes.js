@@ -11,7 +11,7 @@ import Tour from "../../models/Tour.js";
 import Destination from "../../models/Destination.js";
 import Booking from "../../models/Booking.js";
 import Payment from "../../models/Payment.js";
-import { seedStagingQaData, verifyStagingQaData } from "../../scripts/stagingQaSeedCore.js";
+import { runStagingQaSeedOnce, verifyStagingQaData } from "../../scripts/stagingQaSeedCore.js";
 
 const REQUIRED_ENVIRONMENT = Object.freeze({
   NODE_ENV: "production",
@@ -34,7 +34,7 @@ export function createStagingAdminRouter({
   environment = process.env,
   mongooseClient = mongoose,
   userSchema = User.schema,
-  seed = seedStagingQaData,
+  seed = runStagingQaSeedOnce,
   verify = verifyStagingQaData,
   models = { Organization, User, Customer, Destination, Tour, Booking, Payment },
 } = {}) {
@@ -66,7 +66,8 @@ export function createStagingQaSeedHandler({ environment = process.env, mongoose
     running = true;
     try {
       const database = mongooseClient.connection?.db;
-      const result = await seed({ environment, dbName: database?.databaseName, models });
+      if (database?.databaseName !== "global_tours_test") throw new Error("Connected database must be global_tours_test.");
+      const result = await seed({ environment, mongooseClient, models });
       completed = true;
       return res.status(200).json({ success: true, ...result });
     } catch {

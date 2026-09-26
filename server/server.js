@@ -17,6 +17,7 @@ import { startDataRetentionScheduler } from "./services/dataRetentionService.js"
 import { startComplianceExpiryScheduler } from "./services/complianceExpiryService.js";
 import { migrateInvoiceIndexes } from "./bootstrap/invoiceIndexMigration.js";
 import { setStartupPhase } from "./startup/readiness.js";
+import { runStagingQaStartupSeed } from "./scripts/stagingQaStartupSeed.js";
 
 const DB_READY = 1;
 const TASK_RETRY_MS = 60 * 1000;
@@ -106,6 +107,7 @@ const startDatabaseServices = () => {
 const initializeDatabase = async () => {
   try {
     await connectDatabase();
+    await runStagingQaStartupSeed();
     await withTimeout(migrateInvoiceIndexes, STARTUP_MIGRATION_TIMEOUT_MS, "Invoice index migration");
     if (shuttingDown) return;
     setStartupPhase("ready");

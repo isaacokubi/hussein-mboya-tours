@@ -7,6 +7,7 @@ export const QA_DATABASE_NAME = "global_tours_test";
 export const QA_EMAIL = "qa-staging-customer@example.com";
 export const QA_TOUR_SLUG = "qa-staging-maasai-mara";
 export const QA_BOOKING_NUMBER = "QA-STAGING-BOOKING-001";
+export const QA_SEED_MARKER_ID = "staging-qa-fixture-v1";
 
 export function validateStagingQaEnvironment(environment) {
   if (environment.NODE_ENV !== "production") throw new Error("NODE_ENV must be production.");
@@ -25,7 +26,9 @@ export function validateStagingQaEnvironment(environment) {
   }
   if (dbName === "husseindb") throw new Error("husseindb is explicitly forbidden.");
   if (dbName !== QA_DATABASE_NAME) throw new Error("MONGODB_URI must target global_tours_test.");
-  if (host === "hussein-mboya-tours.onrender.com") throw new Error("Production hostnames are forbidden.");
+  if (["hussein-mboya-tours.onrender.com", "www.hussein-mboya-tours.onrender.com"].includes(host)) throw new Error("Production hostnames are forbidden.");
+  const deploymentHost = String(environment.RENDER_EXTERNAL_HOSTNAME || "").trim().toLowerCase();
+  if (["hussein-mboya-tours.onrender.com", "www.hussein-mboya-tours.onrender.com"].includes(deploymentHost)) throw new Error("Production hostnames are forbidden.");
   return { dbName };
 }
 
@@ -109,4 +112,42 @@ export async function verifyStagingQaData({ environment = process.env, dbName, m
     }
     return { dbName: QA_DATABASE_NAME, tenant: "verified", customer: "verified", tour: "verified", booking: "verified", payment: "unpaid" };
   });
+}
+
+/** Run the fixed QA seed once per staging database using a durable marker. */
+export async function runStagingQaSeedOnce({
+  environment = process.env,
+  mongooseClient = mongoose,
+  models,
+  seed = seedStagingQaData,
+  verify = verifyStagingQaData,
+} = {}) {
+  validateStagingQaEnvironment(environment);
+  const databaseName = mongooseClient.connection?.db?.databaseName;
+  if (databaseName !== QA_DATABASE_NAME || databaseName === "husseindb") {
+    throw new Error("Connected database must be global_tours_test.");
+  }
+  const markers = mongooseClient.connection.db.collection("staging_qa_seed_markers");
+  const existing = await markers.findOne({ _id: QA_SEED_MARKER_ID });
+  if (existing && (String(existing.tenantId) !== QA_TENANT_ID || existing.databaseName !== QA_DATABASE_NAME)) {
+    throw new Error("Staging QA completion marker has an unexpected target.");
+  }
+  if (existing?.completedAt) return { seeded: false, alreadyComplete: true };
+
+  await seed({ environment, dbName: databaseName, models });
+  await verify({ environment, dbName: databaseName, models });
+  try {
+    await markers.insertOne({
+      _id: QA_SEED_MARKER_ID,
+      tenantId: QA_TENANT_ID,
+      databaseName: QA_DATABASE_NAME,
+      completedAt: new Date(),
+    });
+  } catch (error) {
+    // Another staging instance may have completed the same deterministic seed.
+    if (error?.code !== 11000) throw error;
+    const concurrentMarker = await markers.findOne({ _id: QA_SEED_MARKER_ID, tenantId: QA_TENANT_ID });
+    if (!concurrentMarker?.completedAt) throw error;
+  }
+  return { seeded: true, alreadyComplete: false };
 }
