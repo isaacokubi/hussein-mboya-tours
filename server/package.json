@@ -18,6 +18,7 @@
     "reconcile:tenant-indexes": "node scripts/reconcileTenantIndexes.js",
     "create:admin": "node scripts/createAdmin.js",
     "bootstrap:first": "node scripts/bootstrapFirstSuperAdmin.js",
+    "bootstrap:staging-superadmin": "node scripts/bootstrapStagingSuperAdmin.js",
     "seed:global-test": "node seeds/globalToursTestSeed.js",
     "seed:test:complete": "node seeds/completeTestDemoSeed.js",
     "seed:dashboard-master-data": "node seeds/ensureDashboardMasterData.js",
