@@ -2,6 +2,12 @@
 
 Kenya-focused, multi-tenant tours & travel SaaS for tour operators, with tenant isolation, bookings, payments, finance/accounting, compliance, hospitality/operations, website integrations, RBAC and production safeguards.
 
+## Staging Verification Status
+
+**Staging verification is in progress.** The staging database separation, health/readiness, frontend-to-staging API connectivity, CORS, SuperAdmin bootstrap/login, disposable tenant creation, tenant identity/settings, initial empty tour retrieval, access isolation, and endpoint/subscription discovery gates are recorded as passed or observed as expected. The next gate is to create and verify staging tour, customer, and booking records and complete cross-tenant isolation checks. M-Pesa testing must wait until every data-isolation gate passes; no production endpoint or database may be used for these tests.
+
+See the [Staging Test Record](docs/TEST_EVIDENCE.md#2026-09-26--staging-verification-record) for environment boundaries, evidence, historical automated results, pending checks, and the exact staging-only test order. The [Test Evidence Register](docs/TEST_EVIDENCE.md) remains the chronological QA record.
+
 ## Current status
 
 **First-tenant decision: NOT READY.** The acceptance test covers the platform-owner, tenant-admin, customer, catalogue, booking and isolation lifecycle, but its MongoDB-backed flow has not run. This machine has MongoDB 3.6.8 and no Docker runtime; the test requires a disposable replica set. A read-only probe on 2026-09-25 observed HTTP 200 for the Render root and `/api/health` (both JSON content type), and HTTP 200 HTML for Vercel. The health response body, CORS behavior and deployed commit were not captured; a follow-up probe failed DNS resolution. Atlas, payment, eTIMS, backup/restore and current-deployment evidence remains outstanding.
