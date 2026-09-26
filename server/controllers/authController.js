@@ -106,7 +106,7 @@ export const login = async (req, res, next) => {
     // Only non-platform accounts require a tenant-scoped lookup. This keeps
     // tenant isolation intact while allowing the global platform owner to log
     // in from the public Global Tours site.
-    if (!user) {
+    if (!user && selectedTenantId) {
       user = await User.findOne(mergeTenantFilter({ email }))
         .select("+password")
         .populate({ path: "roleId", populate: { path: "permissions" } })
