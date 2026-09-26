@@ -3,6 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { validateDeploymentMongoUri } from "./mongoConfig.js";
 import { assertRequiredEnvironment } from "./envValidation.js";
+import { getConfiguredOrigins, isValidConfiguredOrigin } from "./corsPolicy.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -40,8 +41,8 @@ if (isProduction) {
     if (truthy(process.env[key])) throw new Error(`${key}=true is forbidden in production.`);
   }
 
-  const origins = String(process.env.CLIENT_ORIGINS || process.env.CLIENT_URL || "").split(",").map((value) => value.trim()).filter(Boolean);
-  if (!origins.length || origins.some((origin) => !/^https:\/\//i.test(origin))) throw new Error("Production CLIENT_ORIGINS/CLIENT_URL must contain only HTTPS origins.");
+  const origins = getConfiguredOrigins(process.env);
+  if (!origins.length || origins.some((origin) => !isValidConfiguredOrigin(origin, { production: true }))) throw new Error("Production CLIENT_ORIGINS/CLIENT_URL must contain only exact HTTPS origins.");
   const platformHost = String(process.env.PLATFORM_HOST || "").trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/$/, "");
   if (!platformHost || /^(your-domain\.com|localhost|127\.0\.0\.1)$/i.test(platformHost) || /[/:?#\s]/.test(platformHost)) {
     throw new Error("Production PLATFORM_HOST must be configured as a real hostname without a scheme or path.");

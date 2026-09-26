@@ -13,6 +13,7 @@ import loadTenantPlugin from "./config/tenantPluginLoader.js";
 import requestContext from "./middleware/requestContext.js";
 import { publicErrorMessage } from "./utils/publicError.js";
 import { getStartupPhase } from "./startup/readiness.js";
+import { getConfiguredOrigins, isConfiguredOrigin } from "./config/corsPolicy.js";
 
 loadTenantPlugin();
 
@@ -100,13 +101,7 @@ app.use(globalLimiter);
 
 app.get("/", (req, res) => res.status(200).json({ success: true, message: "Travel API running successfully", requestId: req.requestId }));
 
-app.use((req, res, next) => {
-  const payload = readinessPayload();
-  if (payload.success) return next();
-  return res.status(503).json({ ...payload, requestId: req.requestId });
-});
-
-const configuredOrigins = (env.CLIENT_ORIGINS || env.CLIENT_URL || "").split(",").map((origin) => origin.trim()).filter(Boolean);
+const configuredOrigins = getConfiguredOrigins(env);
 const allowedOrigins = [
   ...(process.env.NODE_ENV === "production" ? [] : ["http://localhost:5173", "http://127.0.0.1:5173"]),
   ...configuredOrigins,
@@ -114,7 +109,7 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: async (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    if (!origin || isConfiguredOrigin(origin, allowedOrigins)) return callback(null, true);
     try {
       const parsedOrigin = new URL(origin);
       if (process.env.NODE_ENV === "production" && parsedOrigin.protocol !== "https:") {
@@ -155,6 +150,13 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+
+app.use((req, res, next) => {
+  const payload = readinessPayload();
+  if (payload.success) return next();
+  return res.status(503).json({ ...payload, requestId: req.requestId });
+});
+
 app.use(compression());
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
