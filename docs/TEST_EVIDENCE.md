@@ -133,7 +133,7 @@ Follow this order exactly. **Never run the M-Pesa test before the tenant/tour/cu
 13. Verify duplicate callback protection.
 14. Verify payment does not affect another tenant.
 15. Clean up disposable staging test data where safe.
-16. Remove the temporary SuperAdmin bootstrap trigger if it has not already been removed.
+16. Keep the fixed staging QA trigger for the seed phase; the obsolete temporary SuperAdmin bootstrap HTTP trigger has been removed.
 17. Run final automated tests.
 18. Record final results.
 
@@ -152,7 +152,7 @@ Staging-related implementation merges in repository history (short descriptions 
 - SuperAdmin login tenant isolation: `ad544dd47a5ed6d5997d897cd08976746a3989f6`.
 - No-tenant login validation follow-up: `61fc4afcb96436a227b6d4d6241692000ab0ac8c`.
 
-The temporary HTTP bootstrap trigger was used only for the staging bootstrap phase and is scheduled for cleanup. Its token/value is intentionally not recorded. The mechanism is not a permanent production feature.
+The temporary HTTP bootstrap trigger was used only for staging bootstrap and has been removed. Its token/value is intentionally not recorded. The separate fixed QA seed trigger is documented below and remains staging-only.
 
 ### Evidence rules for future sessions
 
@@ -355,3 +355,25 @@ Never document secrets, passwords, access tokens, private keys, MFA PINs or paym
 The workflow generates this state for artifact review; it does not alter the repository. Historical test evidence below this section is retained and must only be updated when the corresponding test actually runs and produces evidence.
 
 <!-- DOCS-AUTO:END -->
+
+## 2026-09-27 — Controlled staging QA seed
+
+Added a fixed dataset seed and verifier for the existing `Staging Demo Tours` tenant (`staging-demo-tours`, tenant ID `6ab82dce30c1fd52b9dc3e80`) in the isolated staging database `global_tours_test`. The script requires `NODE_ENV=production`, `DEPLOYMENT_ENV=staging`, `STAGING_DATABASE_NAME=global_tours_test`, and an explicit `MONGODB_URI` whose database path is exactly `global_tours_test`. It rejects `husseindb`, checks the actual connected database identity, and refuses the known production backend hostname. The script does not load dotenv or read `server/.env`.
+
+The seed finds the existing tenant and tenant admin without changing either. It idempotently upserts one synthetic customer (`QA Staging Customer`, `qa-staging-customer@example.com`), a Maasai Mara destination, one active published upcoming tour (`QA Maasai Mara Safari`, `qa-staging-maasai-mara`, KES 25,000), and one booking (`QA-STAGING-BOOKING-001`). The booking starts pending with zero paid, and the seed creates no payment record or operational records. Stable tenant-scoped identifiers make repeated execution update/find the same records; it performs no broad deletes.
+
+The fixed HTTP trigger is available on the staging application without Render Shell. Its required environment variable names are `NODE_ENV`, `DEPLOYMENT_ENV`, `STAGING_DATABASE_NAME`, `MONGODB_URI`, and `STAGING_QA_SEED_TOKEN`; set the runtime flags to the exact staging values and `STAGING_QA_SEED_TOKEN` to a random staging-only value of at least 32 characters. The endpoint only runs the fixed dataset seed, has an in-process one-shot guard and rate limit, uses the application's already connected database, verifies the connected database name, and returns only safe summary fields. It is not mounted functionally outside the exact staging runtime environment. Request shape:
+
+```http
+POST /api/internal/staging/seed-qa
+X-Staging-QA-Seed-Token: <STAGING_QA_SEED_TOKEN>
+Content-Type: application/json
+
+{}
+```
+
+The intended staging service command, if a shell/one-off command becomes available, is `cd server && npm run seed:staging-qa`; it consumes the Render staging service environment directly and does not source a local `.env`. The application trigger is the available execution path in the current Render plan. `GET /api/internal/staging/verify-qa` performs read-only verification with the same header; `cd server && npm run verify:staging-qa` is the guarded connected CLI equivalent.
+
+Focused automated coverage checks production/non-staging/missing/wrong target rejection, explicit `husseindb` rejection, connected database identity, existing tenant/admin, record tenant IDs and booking references, pending unpaid status with no successful payment, verification, and repeat-run idempotency. Cross-tenant regression remains in the isolated integration infrastructure; no second persistent staging tenant is created. The obsolete temporary SuperAdmin bootstrap HTTP trigger and its route tests were removed; the CLI SuperAdmin bootstrap remains. The separate staging tenant-admin password reset route remains independent.
+
+Next sequence: run the fixed seed through staging `POST /api/internal/staging/seed-qa`; call `GET /api/internal/staging/verify-qa`; verify customer/tour/booking behavior and both directions of tenant isolation; only after all isolation checks pass may the next QA phase perform exactly one KES 1 sandbox STK Push and verify callback, persistence, duplicate protection, and tenant isolation. **M-Pesa has NOT yet been tested; no M-Pesa transaction or callback was performed for this work.** No staging or production database was contacted by this implementation task, and no production configuration was changed.

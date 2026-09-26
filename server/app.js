@@ -27,7 +27,7 @@ import databaseRoutes from "./routes/databaseRoutes.js";
 import systemHealthRoutes from "./routes/systemHealthRoutes.js";
 import superAdminRoutes from "./routes/superAdminRoutes.js";
 import tenantSubscriptionRoutes from "./routes/tenantSubscriptionRoutes.js";
-import stagingSuperAdminBootstrapRoutes from "./routes/internal/stagingSuperAdminBootstrapRoutes.js";
+import stagingAdminRoutes from "./routes/internal/stagingSuperAdminBootstrapRoutes.js";
 
 const app = express();
 
@@ -146,7 +146,7 @@ const corsOptions = {
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin", "X-Tenant-ID", "X-Tenant-Slug", "X-Tenant-Key", "X-API-Key", "X-Integration-Key", "X-Public-Integration-Key", "Idempotency-Key", "X-Request-ID"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin", "X-Tenant-ID", "X-Tenant-Slug", "X-Tenant-Key", "X-API-Key", "X-Integration-Key", "X-Public-Integration-Key", "Idempotency-Key", "X-Request-ID", "X-Staging-Tenant-Admin-Reset-Token"],
 };
 
 app.use(cors(corsOptions));
@@ -163,11 +163,9 @@ app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 app.use(cookieParser());
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev", {
   // Never log this temporary route's URL: callers must not place the trigger token in a query string.
-  skip: (req) => req.path === "/api/internal/staging/bootstrap-superadmin",
+  skip: (req) => ["/api/internal/staging/reset-tenant-admin-password", "/api/internal/staging/seed-qa"].includes(req.path),
 }));
-// Temporary emergency staging bootstrap endpoint; its own environment guard
-// returns 404 unless the service is the explicitly approved staging deployment.
-app.use("/api/internal/staging", stagingSuperAdminBootstrapRoutes);
+app.use("/api/internal/staging", stagingAdminRoutes);
 app.use(resolveTenant);
 
 app.use("/api/tenant/branding", tenantBrandingRoutes);
