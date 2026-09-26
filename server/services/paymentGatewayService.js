@@ -1,6 +1,6 @@
 import { requireTenantId } from "../tenancy/context.js";
 import PaymentGatewayConfig, { decryptSecret } from "../models/PaymentGatewayConfig.js";
-import { mpesaConfig as legacyMpesaConfig, hasLegacyMpesaConfig } from "../config/mpesa.js";
+import { mpesaConfig as legacyMpesaConfig, hasLegacyMpesaConfig, getMpesaUrls } from "../config/mpesa.js";
 
 export const isLegacyMpesaFallbackAllowed = (nodeEnv, setting) => (
   nodeEnv !== "production" && String(setting || "").toLowerCase() === "true"
@@ -33,6 +33,10 @@ export const getTenantMpesaConfig = async () => {
     if (!config.consumerKey || !config.consumerSecret || !config.shortcode || !config.passkey) {
       throw gatewayConfigurationError("M-Pesa configuration is incomplete for this tenant.");
     }
+    if (!config.callbackUrl) throw gatewayConfigurationError("M-Pesa callback URL is not configured for this tenant.");
+    if (!["sandbox", "production"].includes(String(config.environment).toLowerCase())) {
+      throw gatewayConfigurationError("M-Pesa environment must be sandbox or production.");
+    }
     return config;
   }
 
@@ -44,13 +48,6 @@ export const getTenantMpesaConfig = async () => {
 };
 
 export const getTenantMpesaUrls = (config) => {
-  const host = config.environment === "production"
-    ? "https://api.safaricom.co.ke"
-    : "https://sandbox.safaricom.co.ke";
-  return {
-    auth: `${host}/oauth/v1/generate?grant_type=client_credentials`,
-    stk: `${host}/mpesa/stkpush/v1/processrequest`,
-    query: `${host}/mpesa/stkpushquery/v1/query`,
-    b2c: `${host}/mpesa/b2c/v1/paymentrequest`,
-  };
+  const environment = String(config?.environment || "sandbox").toLowerCase();
+  return getMpesaUrls(environment);
 };

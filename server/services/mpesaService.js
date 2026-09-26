@@ -1,9 +1,11 @@
 import { requireTenantId } from "../tenancy/context.js";
 import { getSystemSettings } from "../services/settingsService.js";
 import axios from "axios";
+import { createHash } from "node:crypto";
 import { getTenantMpesaConfig, getTenantMpesaUrls } from "./paymentGatewayService.js";
 
 const mpesaClient = axios.create({ timeout: 30000 });
+const tokenCache = new Map();
 
 export const normalizePhoneNumber = (phone) => {
   requireTenantId();
@@ -19,27 +21,29 @@ export const normalizePhoneNumber = (phone) => {
   return normalized;
 };
 
-export const generateAccessToken = async (config = null) => {
+export const generateAccessToken = async (config = null, client = mpesaClient) => {
   const activeConfig = config || await getTenantMpesaConfig();
   const urls = getTenantMpesaUrls(activeConfig);
+  if (!activeConfig.consumerKey || !activeConfig.consumerSecret) throw new Error("M-Pesa credentials are not configured.");
+  const cacheKey = createHash("sha256").update(`${activeConfig.consumerKey}:${activeConfig.consumerSecret}:${urls.auth}`).digest("hex");
+  const cached = tokenCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now() + 30000) return cached.token;
   const auth = Buffer.from(`${activeConfig.consumerKey}:${activeConfig.consumerSecret}`).toString("base64");
 
   try {
-    const { data } = await mpesaClient.get(urls.auth, {
+    const { data } = await client.get(urls.auth, {
       headers: { Authorization: `Basic ${auth}` },
+      timeout: 10000,
     });
-    if (!data.access_token) throw new Error("M-Pesa access token missing.");
+    if (!data?.access_token) throw new Error("M-Pesa access token missing.");
+    const expiresIn = Math.max(60, Number(data.expires_in) || 3600);
+    tokenCache.set(cacheKey, { token: data.access_token, expiresAt: Date.now() + expiresIn * 1000 });
     return data.access_token;
   } catch (error) {
     console.error("M-Pesa authentication failed:", {
       status: error.response?.status,
-      message: error.response?.data?.errorMessage || error.response?.data?.error || error.message,
     });
-    throw new Error(
-      error.response?.data?.errorMessage ||
-      error.response?.data?.error ||
-      "Unable to authenticate with M-Pesa."
-    );
+    throw new Error("Unable to authenticate with M-Pesa.");
   }
 };
 
@@ -60,18 +64,17 @@ export const generatePassword = (timestamp, config = null) => {
   return Buffer.from(`${config.shortcode}${config.passkey}${timestamp}`).toString("base64");
 };
 
-export const initiateStkPush = async ({ phone, amount, bookingId }) => {
-  const settings = await getSystemSettings();
-  const companyName = settings.companyName || "Company";
+export const initiateStkPush = async ({ phone, amount, bookingId, config: suppliedConfig = null, client = mpesaClient, companyName: suppliedCompanyName = "" }) => {
+  const companyName = suppliedCompanyName || (await getSystemSettings()).companyName || "Company";
 
   if (!phone) throw new Error("Phone number is required.");
   if (!amount || amount <= 0) throw new Error("Invalid payment amount.");
   if (!bookingId) throw new Error("Booking ID is required.");
 
-  const config = await getTenantMpesaConfig();
+  const config = suppliedConfig || await getTenantMpesaConfig();
   const urls = getTenantMpesaUrls(config);
   const normalizedPhone = normalizePhoneNumber(phone);
-  const token = await generateAccessToken(config);
+  const token = await generateAccessToken(config, client);
   const timestamp = generateTimestamp();
   const password = generatePassword(timestamp, config);
 
@@ -90,9 +93,13 @@ export const initiateStkPush = async ({ phone, amount, bookingId }) => {
   };
 
   try {
-    const { data } = await mpesaClient.post(urls.stk, payload, {
+    const { data } = await client.post(urls.stk, payload, {
       headers: { Authorization: `Bearer ${token}` },
+      timeout: 30000,
     });
+    if (!data || typeof data !== "object" || !data.CheckoutRequestID || !data.MerchantRequestID || String(data.ResponseCode) !== "0") {
+      throw new Error("M-Pesa returned an invalid STK Push response.");
+    }
 
     console.info("M-Pesa STK request submitted:", {
       bookingId,
@@ -109,13 +116,7 @@ export const initiateStkPush = async ({ phone, amount, bookingId }) => {
     console.error("M-Pesa STK request failed:", {
       bookingId,
       status: error.response?.status,
-      message: error.response?.data?.errorMessage || error.response?.data?.errorCode || error.message,
     });
-
-    throw new Error(
-      error.response?.data?.errorMessage ||
-      error.response?.data?.errorCode ||
-      "STK Push failed."
-    );
+    throw new Error("STK Push failed or its result is uncertain. Check payment status before retrying.");
   }
 };

@@ -53,7 +53,7 @@ export const subscriptionMpesaCallback = async (req, res) => {
     });
     return res.json({ ResultCode: 0, ResultDesc: "Accepted" });
   } catch (error) {
-    console.error("SUBSCRIPTION MPESA CALLBACK ERROR:", error);
+    console.error("SUBSCRIPTION MPESA CALLBACK ERROR:", { code: error?.code || "CALLBACK_PROCESSING_FAILED" });
     return res.json({ ResultCode: 0, ResultDesc: "Accepted" });
   }
 };

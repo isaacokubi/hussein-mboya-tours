@@ -2,6 +2,7 @@ import Payment from "../models/Payment.js";
 import SubscriptionPayment from "../models/SubscriptionPayment.js";
 import { queryStkPush, classifyStkQueryResult } from "../services/mpesaQueryService.js";
 import { mergeTenantFilter } from "../tenancy/context.js";
+import { hasLegacyMpesaConfig, mpesaConfig } from "../config/mpesa.js";
 
 const checkoutIdOf = (req) => String(req.body?.Body?.stkCallback?.CheckoutRequestID || req.body?.Body?.stkCallback?.checkoutRequestID || req.body?.Body?.stkCallback?.checkoutRequestId || "").trim();
 
@@ -25,7 +26,7 @@ export const verifyMpesaCallbackIntegrity = async (req, res, next) => {
       return res.status(400).json({ ResultCode: 1, ResultDesc: "Unknown CheckoutRequestID." });
     }
 
-    const config = tenantId ? undefined : null;
+    const config = subscriptionPayment && hasLegacyMpesaConfig() ? mpesaConfig : undefined;
     const queryResult = await queryStkPush(checkoutRequestID, config);
     const providerState = classifyStkQueryResult(queryResult?.ResultCode);
     const callbackState = classifyStkQueryResult(callback.ResultCode);
@@ -34,7 +35,7 @@ export const verifyMpesaCallbackIntegrity = async (req, res, next) => {
     }
     return next();
   } catch (error) {
-    console.error("M-Pesa callback integrity verification failed:", error.message);
+    console.error("M-Pesa callback integrity verification failed:", { code: error?.code || "CALLBACK_VERIFY_FAILED" });
     return res.status(503).json({ ResultCode: 1, ResultDesc: "Unable to verify M-Pesa callback with the provider." });
   }
 };

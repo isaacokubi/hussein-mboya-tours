@@ -100,7 +100,7 @@ export const initiateTenantMpesaPayment = async ({ tenantId, userId, plan, phone
   const paymentAmount = await getTenantPlanPrice(normalizedPlan);
   if (!Number.isInteger(paymentAmount) || paymentAmount < 1) throw new Error("This subscription plan has no configured payment amount. Ask the platform owner to configure the plan price.");
   const normalizedPhone = normalizeSubscriptionPhone(phone);
-  const token = await generateAccessToken();
+    const token = await generateAccessToken(mpesaConfig);
   const timestamp = generateTimestamp();
   const password = generatePassword(timestamp);
   const urls = getMpesaUrls();

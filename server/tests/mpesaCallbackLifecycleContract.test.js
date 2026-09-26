@@ -20,6 +20,13 @@ test("failed and successful M-Pesa callbacks are both checked against Daraja", (
   assert.match(integrity, /Unknown CheckoutRequestID/);
 });
 
+test("platform subscription checkouts use their own configured Daraja credentials for token and callback verification", () => {
+  const checkout = read("services/tenantSubscriptionService.js");
+  const integrity = read("middleware/mpesaCallbackIntegrity.js");
+  assert.match(checkout, /generateAccessToken\(mpesaConfig\)/);
+  assert.match(integrity, /subscriptionPayment && hasLegacyMpesaConfig\(\) \? mpesaConfig/);
+});
+
 test("M-Pesa booking callback validates provider result, amount and receipt before completion", () => {
   const controller = read("controllers/mpesaController.js");
   assert.match(controller, /if\(resultCode!==0\)\{await failBookingPayment/);

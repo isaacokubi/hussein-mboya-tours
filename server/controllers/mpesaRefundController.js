@@ -47,7 +47,7 @@ export const mpesaRefundResult = async (req, res) => {
 
     return res.json({ ResultCode: 0, ResultDesc: "Accepted" });
   } catch (error) {
-    console.error("M-PESA REFUND CALLBACK ERROR:", error);
+    console.error("M-PESA REFUND CALLBACK ERROR:", { code: error?.code || "REFUND_CALLBACK_FAILED" });
     return res.json({ ResultCode: 0, ResultDesc: "Accepted" });
   }
 };
@@ -67,7 +67,7 @@ export const mpesaRefundTimeout = async (req, res) => {
       }
     }
   } catch (error) {
-    console.error("M-PESA REFUND TIMEOUT ERROR:", error);
+    console.error("M-PESA REFUND TIMEOUT ERROR:", { code: error?.code || "REFUND_TIMEOUT_FAILED" });
   }
 
   return res.json({ ResultCode: 0, ResultDesc: "Accepted" });
