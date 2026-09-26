@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
-import { validateProductionMongoUri } from "./mongoConfig.js";
+import { validateDeploymentMongoUri } from "./mongoConfig.js";
 import { assertRequiredEnvironment } from "./envValidation.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -14,14 +14,21 @@ assertRequiredEnvironment(process.env);
 
 const nodeEnv = process.env.NODE_ENV || "development";
 const isProduction = nodeEnv === "production";
+const deploymentEnv = String(process.env.DEPLOYMENT_ENV || "production").trim().toLowerCase();
 const truthy = (value) => String(value || "").toLowerCase() === "true";
 const hasStrongSecret = (value) => {
   const secret = String(value || "");
   return secret.length >= 32 && /[a-z]/.test(secret) && /[A-Z]/.test(secret) && /\d/.test(secret);
 };
 
+validateDeploymentMongoUri({
+  nodeEnv,
+  deploymentEnv,
+  uri: process.env.MONGODB_URI,
+  stagingDatabaseName: process.env.STAGING_DATABASE_NAME,
+});
+
 if (isProduction) {
-  validateProductionMongoUri(process.env.MONGODB_URI);
   if (!hasStrongSecret(process.env.JWT_SECRET)) throw new Error("Production JWT_SECRET must be at least 32 characters and contain upper-case, lower-case, and numeric characters.");
   for (const key of ["PAYMENT_CREDENTIAL_ENCRYPTION_KEY", "WEBHOOK_SECRET_KEY"]) {
     if (!hasStrongSecret(process.env[key])) throw new Error(`Production ${key} must be at least 32 characters and contain upper-case, lower-case, and numeric characters.`);

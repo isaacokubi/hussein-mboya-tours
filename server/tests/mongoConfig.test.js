@@ -1,6 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { PRODUCTION_DATABASE_NAME, validateProductionMongoUri } from "../config/mongoConfig.js";
+import {
+  PRODUCTION_DATABASE_NAME,
+  validateDeploymentMongoUri,
+  validateProductionMongoUri,
+  validateStagingMongoUri,
+} from "../config/mongoConfig.js";
 import { assertRequiredEnvironment } from "../config/envValidation.js";
 import { getDisposableIntegrationMongoUri } from "./integrationMongoUri.js";
 
@@ -31,6 +36,49 @@ test("production MongoDB target rejects non-MongoDB and malformed connection str
     assert.equal(error.message.includes("cluster.example"), false);
     return true;
   });
+});
+
+test("staging MongoDB target requires the designated database and refuses production", () => {
+  const testUri = "mongodb+srv://cluster.example/atlas_test_db?retryWrites=true&w=majority";
+  assert.equal(validateStagingMongoUri(testUri, "atlas_test_db"), true);
+  assert.throws(() => validateStagingMongoUri(testUri, "another_test_db"), /STAGING_DATABASE_NAME/);
+  assert.throws(() => validateStagingMongoUri(testUri, ""), /STAGING_DATABASE_NAME is required/);
+  assert.throws(() => validateStagingMongoUri(testUri, PRODUCTION_DATABASE_NAME), /must not be the production database/);
+  assert.throws(
+    () => validateStagingMongoUri("mongodb+srv://cluster.example/husseindb", "atlas_test_db"),
+    /must never target the production database/,
+  );
+});
+
+test("staging deployment keeps NODE_ENV production and reuses production database validation by default", () => {
+  assert.equal(validateDeploymentMongoUri({
+    nodeEnv: "production",
+    deploymentEnv: "staging",
+    uri: "mongodb+srv://cluster.example/atlas_test_db",
+    stagingDatabaseName: "atlas_test_db",
+  }), true);
+  assert.throws(() => validateDeploymentMongoUri({
+    nodeEnv: "staging",
+    deploymentEnv: "staging",
+    uri: "mongodb+srv://cluster.example/atlas_test_db",
+    stagingDatabaseName: "atlas_test_db",
+  }), /NODE_ENV=staging is unsupported/);
+  assert.throws(() => validateDeploymentMongoUri({
+    nodeEnv: "development",
+    deploymentEnv: "staging",
+    uri: "mongodb+srv://cluster.example/atlas_test_db",
+    stagingDatabaseName: "atlas_test_db",
+  }), /Staging requires NODE_ENV=production/);
+  assert.equal(validateDeploymentMongoUri({
+    nodeEnv: "production",
+    deploymentEnv: "production",
+    uri: "mongodb+srv://cluster.example/husseindb",
+  }), true);
+  assert.throws(() => validateDeploymentMongoUri({
+    nodeEnv: "production",
+    deploymentEnv: "production",
+    uri: "mongodb+srv://cluster.example/atlas_test_db",
+  }), /must explicitly target the husseindb database/);
 });
 
 test("application configuration fails safely when MONGODB_URI is missing", () => {
