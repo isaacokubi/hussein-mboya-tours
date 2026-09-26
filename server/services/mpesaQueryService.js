@@ -20,16 +20,15 @@ export async function queryStkPush(checkoutRequestID, suppliedConfig = null) {
       Password: password,
       Timestamp: timestamp,
       CheckoutRequestID: checkoutId,
-    }, { headers: { Authorization: `Bearer ${token}` } });
+    }, { headers: { Authorization: `Bearer ${token}` }, timeout: 30000 });
 
     return data;
   } catch (error) {
     console.error("M-Pesa STK query failed:", {
       checkoutRequestID: checkoutId,
       status: error.response?.status,
-      message: error.response?.data?.errorMessage || error.response?.data?.errorCode || error.message,
     });
-    throw new Error(error.response?.data?.errorMessage || error.response?.data?.errorCode || "Unable to query M-Pesa payment status.");
+    throw new Error("Unable to query M-Pesa payment status.");
   }
 }
 
