@@ -1,4 +1,22 @@
 export const PRODUCTION_DATABASE_NAME = "husseindb";
+export const STAGING_SUPERADMIN_DATABASE_NAME = "global_tours_test";
+
+/** Validate the fixed database target permitted for the staging bootstrap. */
+export function validateStagingSuperAdminBootstrapTarget({ nodeEnv, deploymentEnv, stagingDatabaseName, uri }) {
+  if (nodeEnv === "production" && deploymentEnv === "production") {
+    throw new Error("Staging SuperAdmin bootstrap refuses production deployment mode.");
+  }
+  if (nodeEnv !== "production") {
+    throw new Error("Staging SuperAdmin bootstrap requires NODE_ENV=production.");
+  }
+  if (String(deploymentEnv || "").trim().toLowerCase() !== "staging") {
+    throw new Error("Staging SuperAdmin bootstrap requires DEPLOYMENT_ENV=staging.");
+  }
+  if (String(stagingDatabaseName || "").trim() !== STAGING_SUPERADMIN_DATABASE_NAME) {
+    throw new Error(`Staging SuperAdmin bootstrap requires STAGING_DATABASE_NAME=${STAGING_SUPERADMIN_DATABASE_NAME}.`);
+  }
+  return validateStagingMongoUri(uri, STAGING_SUPERADMIN_DATABASE_NAME);
+}
 
 function getMongoDatabaseName(uri, environment) {
   if (typeof uri !== "string" || !uri.trim()) {

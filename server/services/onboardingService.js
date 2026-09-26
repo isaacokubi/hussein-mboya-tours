@@ -75,6 +75,49 @@ export async function countSuperAdmins() {
   return runWithTenant({ bypass: true }, () => User.countDocuments({ role: { $in: SUPERADMIN_ROLES }, status: { $ne: "blocked" } }));
 }
 
+export async function countPlatformSuperAdminAccounts() {
+  return runWithTenant({ bypass: true }, () => User.countDocuments({ role: { $in: SUPERADMIN_ROLES } }));
+}
+
+const validateStagingSuperAdminIdentity = ({ name, email, phone, password }) => {
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  const normalizedPhone = String(phone || "").trim();
+  const secret = String(password || "");
+  if (!String(name || "").trim()) throw new Error("SuperAdmin name is required.");
+  if (!/^\S+@\S+\.\S+$/.test(normalizedEmail)) throw new Error("A valid SuperAdmin email is required.");
+  if (!/^\d{10}$/.test(normalizedPhone)) throw new Error("SuperAdmin phone must contain exactly 10 digits.");
+  if (secret.length < 12 || !/[A-Z]/.test(secret) || !/[a-z]/.test(secret) || !/\d/.test(secret)) {
+    throw new Error("SuperAdmin password must be at least 12 characters and include uppercase, lowercase, and a number.");
+  }
+  return { normalizedEmail, normalizedPhone };
+};
+
+/** Create only the platform account. Password hashing is performed by User's save hook. */
+export async function bootstrapStagingSuperAdmin(
+  { name, email, phone, password },
+  { count = countPlatformSuperAdminAccounts, userModel = User, ensureRoles = ensureSystemRoles, withPlatformContext = runWithTenant } = {},
+) {
+  if (await count() > 0) return { created: false, reason: "exists" };
+
+  const identity = validateStagingSuperAdminIdentity({ name, email, phone, password });
+  const duplicateUser = await withPlatformContext({ bypass: true }, () => userModel.findOne({ email: identity.normalizedEmail }).lean());
+  if (duplicateUser) throw new Error("That email address already belongs to a user.");
+
+  const { superadmin } = await ensureRoles();
+  const user = await withPlatformContext({ bypass: true }, () => userModel.create({
+    name: String(name).trim(), email: identity.normalizedEmail, phone: identity.normalizedPhone,
+    password, role: "super_admin", legacyRole: "super_admin", roleId: superadmin._id,
+    status: "active", isVerified: true, tenantId: null,
+  }));
+
+  if (!user.tenantId && user.role === "super_admin" && user.legacyRole === "super_admin") {
+    return { created: true, superAdmin: { _id: user._id, role: user.role, tenantId: user.tenantId || null } };
+  }
+
+  await withPlatformContext({ bypass: true }, () => userModel.deleteOne({ _id: user._id })).catch(() => {});
+  throw new Error("Created account failed platform SuperAdmin verification.");
+}
+
 const validateIdentity = ({ name, email, phone, password, label }) => {
   const normalizedEmail = String(email || "").trim().toLowerCase();
   const normalizedPhone = String(phone || "").trim();
