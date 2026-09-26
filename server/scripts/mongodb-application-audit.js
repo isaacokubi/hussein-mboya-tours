@@ -11,10 +11,10 @@ import HospitalityRatePlan from "../models/HospitalityRatePlan.js";
 import HotelBooking from "../models/HotelBooking.js";
 import AirportTransferBooking from "../models/AirportTransferBooking.js";
 
-const uri = process.env.MONGODB_URI || process.env.MONGO_URI;
+const uri = process.env.MONGODB_URI;
 
 if (!uri) {
-  throw new Error("MONGODB_URI/MONGO_URI is required.");
+  throw new Error("MONGODB_URI is required.");
 }
 
 const requiredModels = [

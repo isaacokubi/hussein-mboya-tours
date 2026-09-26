@@ -1,6 +1,8 @@
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
+import { validateProductionMongoUri } from "./mongoConfig.js";
+import { assertRequiredEnvironment } from "./envValidation.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -8,10 +10,7 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
-const required = ["MONGODB_URI", "JWT_SECRET"];
-for (const key of required) {
-  if (!process.env[key]) throw new Error(`Missing required environment variable: ${key}`);
-}
+assertRequiredEnvironment(process.env);
 
 const nodeEnv = process.env.NODE_ENV || "development";
 const isProduction = nodeEnv === "production";
@@ -22,6 +21,7 @@ const hasStrongSecret = (value) => {
 };
 
 if (isProduction) {
+  validateProductionMongoUri(process.env.MONGODB_URI);
   if (!hasStrongSecret(process.env.JWT_SECRET)) throw new Error("Production JWT_SECRET must be at least 32 characters and contain upper-case, lower-case, and numeric characters.");
   for (const key of ["PAYMENT_CREDENTIAL_ENCRYPTION_KEY", "WEBHOOK_SECRET_KEY"]) {
     if (!hasStrongSecret(process.env[key])) throw new Error(`Production ${key} must be at least 32 characters and contain upper-case, lower-case, and numeric characters.`);
