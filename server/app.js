@@ -26,6 +26,7 @@ import databaseRoutes from "./routes/databaseRoutes.js";
 import systemHealthRoutes from "./routes/systemHealthRoutes.js";
 import superAdminRoutes from "./routes/superAdminRoutes.js";
 import tenantSubscriptionRoutes from "./routes/tenantSubscriptionRoutes.js";
+import stagingSuperAdminBootstrapRoutes from "./routes/internal/stagingSuperAdminBootstrapRoutes.js";
 
 const app = express();
 
@@ -158,7 +159,13 @@ app.use(compression());
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 app.use(cookieParser());
-app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
+app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev", {
+  // Never log this temporary route's URL: callers must not place the trigger token in a query string.
+  skip: (req) => req.path === "/api/internal/staging/bootstrap-superadmin",
+}));
+// Temporary emergency staging bootstrap endpoint; its own environment guard
+// returns 404 unless the service is the explicitly approved staging deployment.
+app.use("/api/internal/staging", stagingSuperAdminBootstrapRoutes);
 app.use(resolveTenant);
 
 app.use("/api/tenant/branding", tenantBrandingRoutes);

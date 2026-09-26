@@ -37,16 +37,16 @@ const permissionMeta = (name) => {
   };
 };
 
-export async function ensureSystemRoles() {
+export async function ensureSystemRoles({ permissionModel = Permission, roleModel = Role, withPlatformContext = runWithTenant } = {}) {
   const permissionMap = new Map();
   for (const name of [...new Set([...SUPERADMIN_PERMISSION_NAMES, ...ADMIN_PERMISSION_NAMES])]) {
-    const permission = await runWithTenant({ bypass: true }, () => Permission.findOneAndUpdate(
+    const permission = await withPlatformContext({ bypass: true }, () => permissionModel.findOneAndUpdate(
       { name }, { $set: permissionMeta(name) }, { upsert: true, new: true, setDefaultsOnInsert: true }
     ));
     permissionMap.set(name, permission._id);
   }
 
-  const superadmin = await runWithTenant({ bypass: true }, () => Role.findOneAndUpdate(
+  const superadmin = await withPlatformContext({ bypass: true }, () => roleModel.findOneAndUpdate(
     { name: "super_admin" },
     { $set: {
       displayName: "Super Admin",
@@ -57,7 +57,7 @@ export async function ensureSystemRoles() {
     { upsert: true, new: true, setDefaultsOnInsert: true }
   ));
 
-  const admin = await runWithTenant({ bypass: true }, () => Role.findOneAndUpdate(
+  const admin = await withPlatformContext({ bypass: true }, () => roleModel.findOneAndUpdate(
     { name: "admin" },
     { $set: {
       displayName: "Administrator",
@@ -75,8 +75,8 @@ export async function countSuperAdmins() {
   return runWithTenant({ bypass: true }, () => User.countDocuments({ role: { $in: SUPERADMIN_ROLES }, status: { $ne: "blocked" } }));
 }
 
-export async function countPlatformSuperAdminAccounts() {
-  return runWithTenant({ bypass: true }, () => User.countDocuments({ role: { $in: SUPERADMIN_ROLES } }));
+export async function countPlatformSuperAdminAccounts({ userModel = User, withPlatformContext = runWithTenant } = {}) {
+  return withPlatformContext({ bypass: true }, () => userModel.countDocuments({ role: { $in: SUPERADMIN_ROLES } }));
 }
 
 const validateStagingSuperAdminIdentity = ({ name, email, phone, password }) => {
@@ -95,9 +95,12 @@ const validateStagingSuperAdminIdentity = ({ name, email, phone, password }) => 
 /** Create only the platform account. Password hashing is performed by User's save hook. */
 export async function bootstrapStagingSuperAdmin(
   { name, email, phone, password },
-  { count = countPlatformSuperAdminAccounts, userModel = User, ensureRoles = ensureSystemRoles, withPlatformContext = runWithTenant } = {},
+  { count, userModel = User, ensureRoles = ensureSystemRoles, withPlatformContext = runWithTenant } = {},
 ) {
-  if (await count() > 0) return { created: false, reason: "exists" };
+  const superAdminCount = count
+    ? await count()
+    : await countPlatformSuperAdminAccounts({ userModel, withPlatformContext });
+  if (superAdminCount > 0) return { created: false, reason: "exists" };
 
   const identity = validateStagingSuperAdminIdentity({ name, email, phone, password });
   const duplicateUser = await withPlatformContext({ bypass: true }, () => userModel.findOne({ email: identity.normalizedEmail }).lean());
