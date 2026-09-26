@@ -1,6 +1,7 @@
 import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import mongoose from "mongoose";
 import Booking from "../models/Booking.js";
+import { sendBookingStatusEmail, sendEmailBestEffort } from "../services/emailService.js";
 import Notification from "../models/Notification.js";
 import Payment from "../models/Payment.js";
 
@@ -488,6 +489,8 @@ _id:req.params.id
         message: "Booking not found.",
       });
     }
+
+    await sendEmailBestEffort(() => sendBookingStatusEmail(booking, status, req.body?.reason || ""), "Booking status");
 
     /*
     |--------------------------------------------------------------------------
