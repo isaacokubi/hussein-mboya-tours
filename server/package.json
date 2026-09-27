@@ -21,6 +21,7 @@
     "bootstrap:staging-superadmin": "node scripts/bootstrapStagingSuperAdmin.js",
     "seed:staging-qa": "node scripts/seedStagingQaData.js",
     "verify:staging-qa": "node scripts/verifyStagingQaData.js",
+    "seed:demo": "node scripts/reset-and-seed-demo.js",
     "seed:global-test": "node seeds/globalToursTestSeed.js",
     "seed:test:complete": "node seeds/completeTestDemoSeed.js",
     "seed": "node seeds/completeTestDemoSeed.js",

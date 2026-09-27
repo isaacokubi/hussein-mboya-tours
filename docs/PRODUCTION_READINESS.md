@@ -254,3 +254,7 @@ This section records the audit of source at `ad26fa0` and supplements the histor
 | 18. Finance/admin reports | CODE READY / LIVE TEST REQUIRED | Tenant-scoped booking, payment, tax and finance reports reconcile to source records. |
 
 No first real tenant has been onboarded in production. Overall production readiness remains **NOT VERIFIED** until deployment, provider, restore, monitoring, regulatory and real-world evidence is collected. Historical automated verification is not a production certification.
+
+## 2026-09-27 demo seed evidence — not production evidence
+
+The authorized demo/staging database `husseindb` now contains 19 users, 12 tours, 12 destinations, 36 bookings, 30 synthetic payments, 3 vehicles, 9 reviews, 0 wishlists, and 18 notifications. Featured images are unique for all 12 tours and all 12 destinations. Backend tests passed 181/181 with five expected integration skips; `check:all`, frontend lint/build, and 17 live tenant-isolation checks passed. Complete actual counts are in [Demo Seeding Verification](DEMO_SEEDING.md). Production remains **NOT VERIFIED** and its database has not been supplied or accessed.

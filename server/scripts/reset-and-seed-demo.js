@@ -32,8 +32,25 @@ process.env.DEMO_SEED_MODE = "true";
 
 const CONFIRM = process.env.CONFIRM_DEMO_RESET;
 const DEMO_PASSWORD = String(process.env.SEED_DEMO_PASSWORD || "");
+const DEMO_DATABASE_NAME = "husseindb";
+const DEMO_DATABASE_HOST = "cluster0.cdtxzts.mongodb.net";
 if (CONFIRM !== "YES") throw new Error("Refusing destructive reset. Set CONFIRM_DEMO_RESET=YES.");
 if (DEMO_PASSWORD.length < 8) throw new Error("SEED_DEMO_PASSWORD must be at least 8 characters.");
+
+function assertDemoResetTarget() {
+  const uri = String(process.env.MONGODB_URI || "");
+  if (!uri) throw new Error("Refusing destructive reset: MONGODB_URI is missing.");
+  let target;
+  try {
+    target = new URL(uri);
+  } catch {
+    throw new Error("Refusing destructive reset: MONGODB_URI is invalid.");
+  }
+  const databaseName = decodeURIComponent(target.pathname.replace(/^\//, "").split("/")[0] || "");
+  if (target.hostname.toLowerCase() !== DEMO_DATABASE_HOST || databaseName !== DEMO_DATABASE_NAME) {
+    throw new Error(`Refusing destructive reset: target must be the authorized demo database ${DEMO_DATABASE_NAME} on its configured demo Atlas cluster.`);
+  }
+}
 
 const emailFor = (role, slug) => {
   const safe = String(slug || "tenant").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 35);
@@ -41,6 +58,14 @@ const emailFor = (role, slug) => {
 };
 const phoneFor = (index) => `0712${String(340000 + index).slice(-6)}`;
 const oid = () => new mongoose.Types.ObjectId();
+const demoTourImageIds = [
+  "photo-1516426122078-c23e76319801", "photo-1547471080-7cc2caa01a7e", "photo-1534177616072-ef7dc120449d",
+  "photo-1516026672322-bc52d61a55d5", "photo-1547036967-23d11aacaee0", "photo-1500530855697-b586d89ba3ee",
+  "photo-1501785888041-af3ef285b470", "photo-1469474968028-56623f02e42e", "photo-1441974231531-c6227db76b6e",
+  "photo-1472396961693-142e6e269027", "photo-1497250681960-ef046c08a56e", "photo-1501854140801-50d01698950b",
+];
+const demoTourImage = (tenantIndex, tourIndex) => `https://images.unsplash.com/${demoTourImageIds[tenantIndex * 4 + tourIndex]}?auto=format&fit=crop&w=1200&q=85`;
+const demoDestinationImage = (tenantIndex, destinationIndex) => `/demo-destinations/kenya-landscape-${String(tenantIndex * 4 + destinationIndex + 1).padStart(2, "0")}.svg`;
 
 async function resetCollectionsPreservingOwners() {
   const db = mongoose.connection.db;
@@ -182,6 +207,12 @@ async function seedTenant(tenant, tenantIndex, permissions) {
     { tenantId: tenant._id, name: "Mount Kenya", slug: `mount-kenya-${tenantIndex}`, country: "Kenya", region: "Central", city: "Nanyuki", shortDescription: "High-altitude mountain adventure.", description: "Demo mountain destination for dashboard testing.", featuredImage: "https://images.unsplash.com/photo-1516026672322-bc52d61a55d5", images: [{url:"https://images.unsplash.com/photo-1516026672322-bc52d61a55d5"}], attractions:["Mount Kenya","Ol Pejeta"], activities:["Hiking","Wildlife"], languages:["English","Swahili"], currency:"KES", timezone:"Africa/Nairobi", bestSeason:"All Year" },
     { tenantId: tenant._id, name: "Nairobi", slug: `nairobi-${tenantIndex}`, country: "Kenya", region: "Nairobi County", city: "Nairobi", shortDescription: "Kenya's capital city and cultural gateway.", description: "Demo Nairobi destination for city-tour dashboard testing.", featuredImage: "https://images.unsplash.com/photo-1489392191049-fc10c97e64b6", images: [{url:"https://images.unsplash.com/photo-1489392191049-fc10c97e64b6"}], attractions:["Nairobi National Park","Karen Blixen Museum"], activities:["City tours","Cultural experiences"], languages:["English","Swahili"], currency:"KES", timezone:"Africa/Nairobi", bestSeason:"All Year" },
   ]);
+  for (let i = 0; i < destinations.length; i += 1) {
+    const image = demoDestinationImage(tenantIndex, i);
+    destinations[i].featuredImage = image;
+    destinations[i].images = [{ url: image }];
+    await destinations[i].save();
+  }
 
   const tourData = [
     ["Maasai Mara Explorer","Maasai Mara",5,85000,"Safari"],
@@ -199,7 +230,7 @@ async function seedTenant(tenant, tenantIndex, permissions) {
       shortDescription: `Production-style demo ${title}.`, category, destination: dest?._id,
       country:"Kenya", location:destName, meetingPoint:"Nairobi CBD", duration:`${days} days`,
       durationDetails:{days,nights:Math.max(0,days-1)}, date, startDate:date, capacity:20,
-      price, agentPrice:Math.round(price*0.9), featuredImage:{url:"https://images.unsplash.com/photo-1516426122078-c23e76319801"},
+      price, agentPrice:Math.round(price*0.9), featuredImage:{url:demoTourImage(tenantIndex,i)},
       highlights:["Professional guide","Comfortable transport","Daily support"], inclusions:["Park fees","Guide","Transport"],
       exclusions:["International flights","Personal shopping"], languages:["English","Swahili"], difficulty:"easy",
       itinerary:Array.from({length:days},(_,d)=>({day:d+1,title:`Day ${d+1}`,description:"Demo itinerary activities and sightseeing.",meals:["Breakfast"],activities:["Sightseeing","Guided experience"]})),
@@ -289,6 +320,7 @@ async function seedTenant(tenant, tenantIndex, permissions) {
 }
 
 const main = async () => {
+  assertDemoResetTarget();
   await mongoose.connect(process.env.MONGODB_URI, {
     maxPoolSize: 5,
     minPoolSize: 0,

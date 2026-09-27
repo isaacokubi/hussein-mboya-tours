@@ -892,3 +892,7 @@ The project owner is responsible for:
 - licensing and commercial distribution decisions
 
 Changes to authentication, tenancy, payments, permissions, or database migrations should receive extra review because they affect security and transactional integrity.
+
+## 2026-09-27 demo seed verification
+
+The controlled demo reset and its finance, operations, website-integration, hospitality, hotel, and airport-transfer stages completed against authorized demo/staging database `husseindb`. Actual totals are 19 users including one preserved platform owner, 18 tenant roles, 25 global permissions, 12 tours, 12 destinations, 36 bookings, 30 synthetic payments, 3 vehicles, 9 reviews, 0 wishlists, and 18 notifications. All audited tenant-scoped records carry a tenant ID; all 12 featured tour images and 12 featured destination images are unique. See [Demo Seeding Verification](DEMO_SEEDING.md) for actual finance, operations, hospitality, tenant, and payment counts. This is not production certification.

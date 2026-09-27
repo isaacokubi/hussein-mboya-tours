@@ -79,3 +79,7 @@ The API resolves tenants from a verified tenant subdomain under `PLATFORM_HOST`,
 - MongoDB Atlas: verify a replica-set deployment on the supported MongoDB 4.2+ application minimum (MongoDB 8 is the CI target), indexes, TLS/network allow-list, backups/PITR, restore, credentials rotation and tenant isolation scan.
 - Payment providers: issue each tenant its own credentials and configure production callback domains. Validate M-Pesa callback integrity and idempotency in sandbox first. Keep `ALLOW_GLOBAL_MPESA_FALLBACK=false`.
 - Operations: collect monitoring/alert routing, backup/restore, data protection, browser acceptance, payment and eTIMS evidence before claiming production certification.
+
+## Demo seed inventory — 2026-09-27
+
+The authorized demo/staging target `husseindb` has three preserved tenants, 19 users including one preserved platform owner, 12 tours, 12 destinations, 36 bookings, and 30 synthetic payments. All audited tenant-scoped records carry `tenantId`; the live tenant-isolation regression passed 17 checks. This inventory is separate from first-tenant production acceptance and does not establish production readiness. See [Demo Seeding Verification](DEMO_SEEDING.md) for the complete counts and limits.

@@ -125,3 +125,7 @@ This section is maintained by `scripts/update-documentation.js`. The GitHub Acti
 The workflow has read-only repository permissions and does not modify or push repository contents. Manual changes to generated files should be reviewed as regular repository updates.
 
 <!-- DOCS-AUTO:END -->
+
+## 2026-09-27 demo seed verification
+
+The controlled reset completed against the authorized demo/staging Atlas database `husseindb`. It preserved three tenant identities and one platform owner. Actual totals are **19 users, 12 tours, 12 destinations, 36 bookings, 30 payments, 3 vehicles, 9 reviews, 0 wishlists, and 18 notifications**. Featured images are unique across all 12 tours and all 12 destinations. These totals differ from the earlier 37/24/36/33/33/18/9/12/27 baseline. Finance, operations, website-integration, hospitality, hotel, and airport-transfer counts are recorded in [Demo Seeding Verification](docs/DEMO_SEEDING.md). This evidence is demo/staging only; the separate production database has not been provided or accessed.

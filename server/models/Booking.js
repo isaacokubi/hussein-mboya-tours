@@ -60,7 +60,7 @@ bookingSchema.post("save", async function() {
     }
   } catch (error) { console.error("BOOKING WEBHOOK QUEUE ERROR:", error.message); }
   try {
-    if (this.tenantId && this.paymentStatus === "paid" && Number(this.totalAmount || 0) > 0 && this.user) {
+    if (process.env.DEMO_SEED_MODE !== "true" && this.tenantId && this.paymentStatus === "paid" && Number(this.totalAmount || 0) > 0 && this.user) {
       const { default: PaymentModel } = await import("./Payment.js");
       const existingPayments = await PaymentModel.find({
         tenantId: this.tenantId,
