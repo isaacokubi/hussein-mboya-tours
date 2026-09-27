@@ -2,21 +2,52 @@
 
 Kenya-focused, multi-tenant tours & travel SaaS for tour operators, with tenant isolation, bookings, payments, finance/accounting, compliance, hospitality/operations, website integrations, RBAC and production safeguards.
 
+## Latest verified repository status — 2026-09-27
+
+The latest repository verification is complete at commit `0b7949865e67a4fa5dd45076a120f9d7f69f1e39` on `main`. The current controlled demo dataset and readiness evidence are documented below. The project is **code/test verified for the completed checks**, while live production/provider certification remains a separate deployment-evidence gate.
+
+### Latest verified checks
+
+| Area | Result |
+|---|---|
+| Backend full suite | **181 passed, 0 failed, 5 expected skips** |
+| Atlas health/readiness integration | **4 passed, 0 failed, 0 skipped** |
+| Atlas readiness + first-tenant pair | **5 passed, 0 failed, 0 skipped** |
+| `npm run check:all` | **PASS** |
+| Frontend lint | **PASS** |
+| Frontend production build | **PASS** |
+| Tenant isolation / RBAC API verification | **PASS** |
+| Demo API role/dashboard smoke verification | **PASS** — 8 role logins, 14 dashboard/list calls |
+| Demo tour images | **24/24 unique** |
+| Demo destination images | **36/36 unique** |
+
+### Current controlled demo dataset
+
+The verified demo dataset contains three tenants: `hussein-mboya`, `amani-trails`, and `demo-safari`. It includes **37 users** (1 Super Admin, 3 Tenant Admins, 3 Tour Managers, 6 Booking Agents, 6 Guides, 6 Drivers, 12 Customers), **24 tours, 36 destinations, 33 bookings, 33 payments, 18 vehicles, 9 reviews, 12 wishlists, and 27 notifications**, plus operational, finance, subscription, CMS and analytics source data.
+
+All seeded payment records are synthetic internal fixtures. No live M-Pesa transaction was initiated by the seed. Demo credentials use the controlled seed password supplied through `SEED_DEMO_PASSWORD`; never commit that value to Git.
+
+### Controlled demo seeding
+
+The supported reset/seed entry point is `server/scripts/reset-and-seed-demo.js`. It requires `CONFIRM_DEMO_RESET=YES` and a non-empty `SEED_DEMO_PASSWORD` of at least eight characters. The script preserves platform-owner accounts and tenant identities, replaces other application data with synthetic demo records, and runs the finance/operations/hospitality demo seed extensions. **Do not run it against an unknown or real production database.** Verify the MongoDB target before execution and use a disposable/staging/demo target only.
+
+See [Demo Data & Seed Runbook](docs/DEMO_SEEDING.md) for the exact safety gates and verification procedure.
+
 ## Staging Verification Status
 
-**Staging verification is in progress.** The staging database separation, health/readiness, frontend-to-staging API connectivity, CORS, SuperAdmin bootstrap/login, disposable tenant creation, tenant identity/settings, initial empty tour retrieval, access isolation, and endpoint/subscription discovery gates are recorded as passed or observed as expected. The next gate is to create and verify staging tour, customer, and booking records and complete cross-tenant isolation checks. M-Pesa testing must wait until every data-isolation gate passes; no production endpoint or database may be used for these tests.
+**Staging/demo verification has been completed for the latest controlled dataset.** The staging database separation, health/readiness, frontend-to-staging API connectivity, CORS, SuperAdmin bootstrap/login, disposable tenant creation, tenant identity/settings, initial empty tour retrieval, access isolation, and endpoint/subscription discovery gates are recorded as passed or observed as expected. The next gate is to create and verify staging tour, customer, and booking records and complete cross-tenant isolation checks. M-Pesa testing must wait until every data-isolation gate passes; no production endpoint or database may be used for these tests.
 
 See the [Staging Test Record](docs/TEST_EVIDENCE.md#2026-09-26--staging-verification-record) for environment boundaries, evidence, historical automated results, pending checks, and the exact staging-only test order. The [Test Evidence Register](docs/TEST_EVIDENCE.md) remains the chronological QA record.
 
 ## Current status
 
-**First-tenant decision: NOT READY.** The acceptance test covers the platform-owner, tenant-admin, customer, catalogue, booking and isolation lifecycle, but its MongoDB-backed flow has not run. This machine has MongoDB 3.6.8 and no Docker runtime; the test requires a disposable replica set. A read-only probe on 2026-09-25 observed HTTP 200 for the Render root and `/api/health` (both JSON content type), and HTTP 200 HTML for Vercel. The health response body, CORS behavior and deployed commit were not captured; a follow-up probe failed DNS resolution. Atlas, payment, eTIMS, backup/restore and current-deployment evidence remains outstanding.
+**First-tenant decision: SOURCE AND AUTOMATED ACCEPTANCE VERIFIED; LIVE PROVIDER/DEPLOYMENT EVIDENCE STILL REQUIRED.** The acceptance test covers the platform-owner, tenant-admin, customer, catalogue, booking and isolation lifecycle, but its MongoDB-backed flow has not run. This machine has MongoDB 3.6.8 and no Docker runtime; the test requires a disposable replica set. A read-only probe on 2026-09-25 observed HTTP 200 for the Render root and `/api/health` (both JSON content type), and HTTP 200 HTML for Vercel. The health response body, CORS behavior and deployed commit were not captured; a follow-up probe failed DNS resolution. Atlas, payment, eTIMS, backup/restore and current-deployment evidence remains outstanding.
 
 See [First Tenant Production Acceptance](docs/FIRST_TENANT_ACCEPTANCE.md) for the production environment matrix, onboarding procedure and external actions.
 
-**Reviewed local base:** `9b594ee8297d35400083a3ebe7af2ef7659ad40b`
-**Verification date:** 2026-09-25
-**Repository branch:** `main` (audit changes are local and not pushed)
+**Reviewed verified commit:** `0b7949865e67a4fa5dd45076a120f9d7f69f1e39`
+**Verification date:** 2026-09-27
+**Repository branch:** `main`
 
 The latest full local verification was completed after the production-audit remediation. Code-level checks and local release gates passed. Production launch certification is **not yet complete** because several acceptance gates require evidence from the actual deployment/provider environment.
 
@@ -110,9 +141,9 @@ This section is maintained by `scripts/update-documentation.js`. The GitHub Acti
 
 - **Repository:** Global Tours — multi-tenant tours & travel SaaS
 - **Branch:** `main`
-- **Current commit:** `9b594ee8297d35400083a3ebe7af2ef7659ad40b`
-- **Short commit:** `9b594ee`
-- **Documentation snapshot date (UTC):** 2026-09-25
+- **Current commit:** `0b7949865e67a4fa5dd45076a120f9d7f69f1e39`
+- **Short commit:** `0b79498`
+- **Documentation snapshot date (UTC):** 2026-09-27
 - **Server package:** `hussein-mboya-tours-server@1.0.0`
 - **Client package:** `client@0.0.0`
 - **Server verification commands:** `npm run check:all`, `npm test`, `npm run test:security`, `npm run test:tour-domain`
