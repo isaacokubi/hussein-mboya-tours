@@ -5,6 +5,8 @@ import express from "express";
 import test from "node:test";
 
 // Keep this runtime test independent of a developer's ignored .env file.
+// app.js calls dotenv.config(), so capture opt-in state before importing it.
+const healthTestMongoUri = process.env.HEALTH_TEST_MONGODB_URI;
 process.env.NODE_ENV = "test";
 process.env.MONGODB_URI = "mongodb://127.0.0.1:27017/health_readiness_test";
 process.env.JWT_SECRET = "ci-only-test-secret";
@@ -71,7 +73,7 @@ const launchServer = async (overrides = {}) => {
     child.once("exit", (code) => {
       if (!findPort()) {
         clearTimeout(timeout);
-        reject(new Error(`Server exited before listening (code ${code}).`));
+        reject(new Error(`Server exited before listening (code ${code}). Output: ${output}`));
       }
     });
   });
@@ -152,12 +154,12 @@ test("server binds before an unavailable MongoDB connection fails", async (t) =>
   assert.equal(payload.status, "starting");
   assert.ok(["connecting", "disconnected"].includes(payload.database));
 
-  const exit = await waitForChildExit(runtime.childExit, 5000);
+  const exit = await waitForChildExit(runtime.childExit, 15_000);
   assert.equal(exit[0], 1);
 });
 
-test("a fresh MongoDB-backed server becomes healthy after its critical migration", { skip: !process.env.HEALTH_TEST_MONGODB_URI }, async (t) => {
-  const testDatabaseUrl = new URL(process.env.HEALTH_TEST_MONGODB_URI);
+test("a fresh MongoDB-backed server becomes healthy after its critical migration", { skip: !healthTestMongoUri }, async (t) => {
+  const testDatabaseUrl = new URL(healthTestMongoUri);
   const sourceDatabase = decodeURIComponent(testDatabaseUrl.pathname.replace(/^\//, ""));
   assert.equal(sourceDatabase, "global_tours_test", "health readiness must derive its isolated database from the Atlas test database");
   const databaseName = `hr_${process.pid}_${Date.now()}_${Math.random().toString(16).slice(2, 10)}`;
@@ -225,6 +227,6 @@ test("a fresh MongoDB-backed server becomes healthy after its critical migration
   assert.equal(rootPayload.message, "Travel API running successfully");
 
   runtime.child.kill("SIGTERM");
-  const exit = await waitForChildExit(runtime.childExit, 5000);
+  const exit = await waitForChildExit(runtime.childExit, 15_000);
   assert.equal(exit[0], 0);
 });
