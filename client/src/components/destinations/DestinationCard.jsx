@@ -19,6 +19,7 @@ const resolveMediaUrl = (value) => {
     : value?.url || value?.secure_url || value?.path || "";
   if (!raw) return "";
   if (/^(https?:|data:|blob:)/i.test(raw)) return raw;
+  if (/^\/(?:destinations|gallery|demo-destinations)\//.test(raw) || /^\/hero\d+\.(?:jpe?g|png|webp)$/i.test(raw)) return raw;
   const base = String(import.meta.env.VITE_API_URL || "")
     .replace(/\/api\/?$/, "")
     .replace(/\/$/, "");

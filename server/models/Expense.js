@@ -30,7 +30,7 @@ const expenseSchema = new mongoose.Schema({
 
 expenseSchema.pre("save", function(next) { if (!this.expenseNumber) this.expenseNumber = `EXP-${Date.now()}-${Math.floor(Math.random() * 10000)}`; next(); });
 expenseSchema.index({ tenantId: 1, expenseNumber: 1 }, { unique: true });
-expenseSchema.index({ tenantId: 1, purchaseOrder: 1 }, { unique: true, sparse: true });
+expenseSchema.index({ tenantId: 1, purchaseOrder: 1 }, { unique: true, partialFilterExpression: { purchaseOrder: { $type: "objectId" } } });
 expenseSchema.index({ tenantId: 1, status: 1, expenseDate: -1 });
 expenseSchema.plugin(tenantPlugin);
 export default mongoose.models.Expense || mongoose.model("Expense", expenseSchema);

@@ -23,7 +23,7 @@ const subscriptionPaymentSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-subscriptionPaymentSchema.index({ provider: 1, transactionReference: 1 }, { unique: true, sparse: true, partialFilterExpression: { transactionReference: { $type: "string", $gt: "" } } });
+subscriptionPaymentSchema.index({ provider: 1, transactionReference: 1 }, { unique: true, name: "provider_1_transactionReference_1", partialFilterExpression: { transactionReference: { $type: "string", $gt: "" } } });
 subscriptionPaymentSchema.index({ tenantId: 1, status: 1, createdAt: -1 });
 
 subscriptionPaymentSchema.plugin(tenantPlugin);

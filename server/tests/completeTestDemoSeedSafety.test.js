@@ -5,7 +5,7 @@ import { safeTarget, assertSeedConfirmation, getTestPassword, NAMESPACE, TEST_PA
 import AccountingPeriod from "../models/AccountingPeriod.js";
 import WithholdingTax from "../models/WithholdingTax.js";
 
-const original = { env: process.env.NODE_ENV, uri: process.env.MONGODB_URI, global: process.env.ALLOW_GLOBAL_MPESA_FALLBACK, single: process.env.ALLOW_SINGLE_TENANT_DEV_FALLBACK, confirm: process.env.CONFIRM_TEST_SEED, password: process.env.TEST_DEMO_SEED_PASSWORD };
+const original = { env: process.env.NODE_ENV, uri: process.env.MONGODB_URI, global: process.env.ALLOW_GLOBAL_MPESA_FALLBACK, single: process.env.ALLOW_SINGLE_TENANT_DEV_FALLBACK, confirm: process.env.CONFIRM_TEST_SEED, password: process.env.TEST_DEMO_SEED_PASSWORD, atlas: process.env.ALLOW_ATLAS_DEMO_SEED };
 function configure({ nodeEnv = "test", db = "global_tours_test", host = "127.0.0.1", globalFallback = "false", singleFallback = "false" } = {}) {
   process.env.NODE_ENV = nodeEnv;
   process.env.MONGODB_URI = `mongodb://${host}:27017/${db}`;
@@ -13,7 +13,7 @@ function configure({ nodeEnv = "test", db = "global_tours_test", host = "127.0.0
   process.env.ALLOW_SINGLE_TENANT_DEV_FALLBACK = singleFallback;
 }
 test.after(() => {
-  for (const [key, value] of [["NODE_ENV", original.env], ["MONGODB_URI", original.uri], ["ALLOW_GLOBAL_MPESA_FALLBACK", original.global], ["ALLOW_SINGLE_TENANT_DEV_FALLBACK", original.single], ["CONFIRM_TEST_SEED", original.confirm], ["TEST_DEMO_SEED_PASSWORD", original.password]]) {
+  for (const [key, value] of [["NODE_ENV", original.env], ["MONGODB_URI", original.uri], ["ALLOW_GLOBAL_MPESA_FALLBACK", original.global], ["ALLOW_SINGLE_TENANT_DEV_FALLBACK", original.single], ["CONFIRM_TEST_SEED", original.confirm], ["TEST_DEMO_SEED_PASSWORD", original.password], ["ALLOW_ATLAS_DEMO_SEED", original.atlas]]) {
     if (value === undefined) delete process.env[key]; else process.env[key] = value;
   }
 });
@@ -41,6 +41,13 @@ test("seed guard refuses database without test/demo namespace", () => {
 test("seed guard refuses remote databases even with a disposable-looking name", () => {
   configure({ db: "global_tours_test", host: "cluster0.example.mongodb.net" });
   assert.throws(() => safeTarget(), /host must be loopback/);
+});
+test("Atlas demo opt-in is restricted to the configured husseindb database", () => {
+  process.env.ALLOW_ATLAS_DEMO_SEED = "YES";
+  configure({ db: "husseindb", host: "cluster0.example.mongodb.net" });
+  assert.deepEqual(safeTarget(), { dbName: "husseindb", host: "cluster0.example.mongodb.net" });
+  configure({ db: "production", host: "cluster0.example.mongodb.net" });
+  assert.throws(() => safeTarget(), /explicit Atlas demo-seed opt-in/);
 });
 test("seed guard refuses production-looking host or deployment configuration", () => {
   configure({ db: "production_test" });

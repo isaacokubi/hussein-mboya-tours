@@ -95,13 +95,38 @@ export function getTestPassword() {
 }
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const reportFile = path.resolve(__dirname, "../reports/test-seed-report.json");
+let existingCollections = null;
+let seedStage = "preflight";
+const unavailableSeedCollections = new Set();
+const referenceCache = new Map();
+const allModels = [Organization, Permission, Role, User, Customer, CustomerProfile, UserPreference, Staff, StaffProfile, Agent, Destination, Tour, TourPackage, Booking, Payment, Invoice, Refund, CreditDebitNote, Supplier, SupplierPayable, PurchaseOrder, Expense, TourCost, Commission, Vehicle, Hotel, HotelRoomType, AccommodationInventory, HospitalityRatePlan, HospitalityRoomBlock, HospitalitySupplierContract, HotelBooking, HospitalityDeposit, AirportTransfer, AirportTransferBooking, Review, Lead, CustomTourRequest, TravelServiceRequest, ChartOfAccount, JournalEntry, AccountingPeriod, FinanceBudget, TaxRule, TaxProfile, CorporateAccount, ComplianceRecord, EtimsSubmission, PrivacyRequest, Notification, Coupon, Promotion, Campaign, Loyalty, LoyaltyAccount, Wishlist, Referral, PaymentGatewayConfig, ApiKey, WebsiteIntegrationKey, WebsiteIntegrationEvent, Webhook, WebhookDelivery, Subscription, SubscriptionPayment, PaymentLink, FixedAsset, OperationalAsset, TourCategory, Itinerary, Gallery, Media, TourGallery, TourReport, HeroSlide, Quotation, WithholdingTax, AccountingReconciliation, AccountingSubledger];
+export const SEEDED_MODELS = allModels;
 const tenantsSpec = [
-  { key: "amani", slug: "test-seed-amani-trails-2026", name: "Amani Trails Safaris", legalName: "Amani Trails Safaris TEST Limited", county: "Nairobi", email: "admin.amani@test.globaltours.co.ke", prefix: "amani" },
-  { key: "savanna", slug: "test-seed-savanna-crown-2026", name: "Savanna Crown Safaris", legalName: "Savanna Crown Safaris TEST Limited", county: "Narok", email: "admin.savanna@test.globaltours.co.ke", prefix: "savanna" },
-  { key: "coastal", slug: "test-seed-coastal-horizon-2026", name: "Coastal Horizon Adventures", legalName: "Coastal Horizon Adventures TEST Limited", county: "Mombasa", email: "admin.coastal@test.globaltours.co.ke", prefix: "coastal" },
+  { key: "hussein", slug: "hussein-mboya", name: "Hussein Mboya Tours", legalName: "Hussein Mboya Tours Limited", county: "Nairobi", email: "admin1@husseinmboya.com", prefix: "hussein" },
+  { key: "amani", slug: "amani-trails", name: "Amani Trails Safaris", legalName: "Amani Trails Safaris Limited", county: "Narok", email: "admin1@amanitrails.com", prefix: "amani" },
+  { key: "demo", slug: "demo-safari", name: "Demo Safari Adventures", legalName: "Demo Safari Adventures Limited", county: "Mombasa", email: "admin1@demosafari.com", prefix: "demo" },
 ];
-const publicImage = "https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=1200&q=80";
-const TEST_LOGIN_EMAILS = ["superadmin@test.globaltours.co.ke", ...tenantsSpec.flatMap(({ prefix }) => ["admin", "manager", "agent1", "agent2", "guide1", "guide2", "driver1", "driver2", "customer1", "customer2", "customer3", "customer4"].map((name) => `${name}.${prefix}@test.globaltours.co.ke`))];
+const unsplashAssetIds = [
+  "photo-1516426122078-c23e76319801", "photo-1547471080-7cc2caa01a7e", "photo-1534177616072-ef7dc120449d", "photo-1516026672322-bc52d61a55d5", "photo-1547036967-23d11aacaee0", "photo-1500530855697-b586d89ba3ee", "photo-1501785888041-af3ef285b470", "photo-1469474968028-56623f02e42e", "photo-1441974231531-c6227db76b6e", "photo-1472396961693-142e6e269027", "photo-1497250681960-ef046c08a56e", "photo-1501854140801-50d01698950b", "photo-1513836279014-a89f7a76ae86", "photo-1526778548025-fa2f459cd5c1", "photo-1531058020387-3be344556be6", "photo-1519904981063-b0cf448d479e", "photo-1482192596544-9eb780fc7f66", "photo-1526392060635-9d6019884377", "photo-1500534623283-312aade485b7", "photo-1489392191049-fc10c97e64b6", "photo-1507525428034-b723cf961d3e", "photo-1510414842594-a61c69b5ae57", "photo-1542314831-068cd1dbfeeb", "photo-1547970810-dc1eac37d174", "photo-1549366021-9f761d450615", "photo-1557050543-4d5f4e07ef46", "photo-1564501049412-61c2a3083791", "photo-1582719478250-c89cae4dc85b", "photo-1601918774946-25832a4be0d6",
+];
+const imageUrl = (id) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=1200&q=85`;
+const localDestinationImages = ["/destinations/maasai-mara.jpg", "/destinations/amboseli.jpg", "/destinations/diani.jpg", "/gallery/mara.jpg", "/gallery/amboseli.jpg", "/gallery/diani.jpg", "/gallery/beach.jpg", "/gallery/culture.jpg", "/gallery/safari.jpg", "/hero1.jpeg", "/hero2.jpeg", "/hero4.jpeg"];
+const generatedDestinationImages = Array.from({ length: 18 }, (_, index) => `/demo-destinations/kenya-landscape-${String(index + 1).padStart(2, "0")}.svg`);
+const generatedSafariTourImage = "/demo-tours/kenya-tour-08.svg";
+const destinationImage = (index) => {
+  if (index < localDestinationImages.length) return localDestinationImages[index];
+  if (index < localDestinationImages.length + 6) return imageUrl(unsplashAssetIds[23 + index - localDestinationImages.length]);
+  return generatedDestinationImages[index - localDestinationImages.length - 6];
+};
+const tourImage = (index) => index === 7 ? generatedSafariTourImage : imageUrl(unsplashAssetIds[index < 7 ? index : index - 1]);
+const sharedDemoImage = imageUrl(unsplashAssetIds[29]);
+const tenantDomain = { hussein: "husseinmboya.com", amani: "amanitrails.com", demo: "demosafari.com" };
+function loginEmail(local, prefix) {
+  if (local === "superadmin") return "superadmin1@husseinmboya.com";
+  const roleAccount = { admin: "admin1", manager: "tourmanager1" }[local] || local;
+  return `${roleAccount}@${tenantDomain[prefix]}`;
+}
+const TEST_LOGIN_EMAILS = ["superadmin1@husseinmboya.com", ...tenantsSpec.flatMap(({ prefix }) => ["admin", "manager", "agent1", "agent2", "guide1", "guide2", "driver1", "driver2", "customer1", "customer2", "customer3", "customer4"].map((name) => loginEmail(name, prefix)))];
 const dates = (days = 30) => new Date(Date.now() + days * 86400000);
 const stablePhone = (tenantIndex, accountIndex) => String(7100000000 + tenantIndex * 1000 + accountIndex).slice(0, 10);
 
@@ -116,11 +141,15 @@ function databaseTarget() {
 export function safeTarget(target = databaseTarget()) {
   if (String(process.env.NODE_ENV || "").toLowerCase() === "production") throw new Error("Refusing test seed because NODE_ENV=production.");
   const { dbName, host } = target;
-  if (!new Set(["127.0.0.1", "localhost", "[::1]", "::1"]).has(String(host || "").toLowerCase())) {
-    throw new Error("Refusing test seed: MongoDB host must be loopback; remote databases are never seeded.");
+  const normalizedHost = String(host || "").toLowerCase();
+  const explicitAtlasDemoSeed = process.env.ALLOW_ATLAS_DEMO_SEED === "YES"
+    && normalizedHost.endsWith(".mongodb.net")
+    && dbName === "husseindb";
+  if (!new Set(["127.0.0.1", "localhost", "[::1]", "::1"]).has(normalizedHost) && !explicitAtlasDemoSeed) {
+    throw new Error("Refusing test seed: MongoDB host must be loopback unless the explicit Atlas demo-seed opt-in targets husseindb.");
   }
   const configText = [process.env.NODE_ENV, process.env.PLATFORM_HOST, process.env.CLIENT_URL, process.env.CLIENT_ORIGINS, host, dbName].join(" ").toLowerCase();
-  if (!/(^|[-_])(test|testing|demo|disposable|seed)([-_]|$)/.test(dbName)) throw new Error(`Refusing seed: configured database name "${dbName || "(default)"}" is not explicitly test/demo/disposable. No writes were made.`);
+  if (!explicitAtlasDemoSeed && !/(^|[-_])(test|testing|demo|disposable|seed)([-_]|$)/.test(dbName)) throw new Error(`Refusing seed: configured database name "${dbName || "(default)"}" is not explicitly test/demo/disposable. No writes were made.`);
   if (/prod|production|render\.com|vercel\.app|mongodb\+srv:.*prod/.test(configText)) throw new Error("Refusing test seed because production-looking configuration was detected.");
   if ([process.env.ALLOW_GLOBAL_MPESA_FALLBACK, process.env.ALLOW_SINGLE_TENANT_DEV_FALLBACK].some((value) => String(value || "").trim().toLowerCase() === "true")) throw new Error("Refusing test seed while an unsafe M-Pesa fallback is enabled.");
   return { dbName, host };
@@ -162,19 +191,34 @@ async function inspectReferences(Model, docs, tenantId, failures) {
       const RefModel = modelName && mongoose.models[modelName];
       if (!RefModel) continue;
       const refs = collectPathValues(doc, field.split(".")).filter((value) => value != null && value !== "");
+      const platformOwner = Model === User && ["super_admin", "superadmin"].includes(String(doc.role || "").toLowerCase());
+      const ownerId = tenantId && RefModel.schema.path("tenantId") && !["Organization", "Permission", "Currency"].includes(modelName)
+        ? String(platformOwner ? "platform" : (doc.tenantId || tenantId))
+        : "global";
+      const cacheKey = `${modelName}:${ownerId}`;
+      if (!referenceCache.has(cacheKey)) {
+        const filter = {};
+        if (ownerId !== "global") filter.tenantId = ownerId === "platform" ? null : (doc.tenantId || tenantId);
+        const existing = await RefModel.find(filter).select("_id").lean();
+        referenceCache.set(cacheKey, new Set(existing.map((entry) => String(entry._id))));
+      }
+      const validIds = referenceCache.get(cacheKey);
       for (const reference of refs) {
         const id = reference?._id || reference;
-        const filter = { _id: id };
-        const platformOwner = Model === User && ["super_admin", "superadmin"].includes(String(doc.role || "").toLowerCase());
-        if (tenantId && RefModel.schema.path("tenantId") && !["Organization", "Permission", "Currency"].includes(modelName)) filter.tenantId = platformOwner ? null : (doc.tenantId || tenantId);
-        if (!(await RefModel.exists(filter))) failures.push(`${Model.modelName}.${field} points to missing or cross-tenant ${modelName}:${String(id)}`);
+        if (!validIds.has(String(id))) failures.push(`${Model.modelName}.${field} points to missing or cross-tenant ${modelName}:${String(id)}`);
       }
     }
   }
 }
 
 async function upsert(Model, filter, fields) {
-  let doc = await Model.findOne(filter);
+  if (typeof Model?.findOne !== "function") throw new Error(`Seed fixture is not a Mongoose model with findOne(): ${Model?.modelName || Model?.name || typeof Model}; caller ${new Error().stack?.split("\n")[2]?.trim() || "unknown"}`);
+  if (existingCollections && !existingCollections.has(Model.collection.collectionName)) {
+    throw new Error(`Required application collection was not initialized: ${Model.collection.collectionName}`);
+  }
+  let findQuery = Model.findOne(filter);
+  if (Model === Tour) findQuery = findQuery.sort({ createdAt: 1, _id: 1 });
+  let doc = await findQuery;
   if (!doc) doc = new Model({ ...filter, ...fields });
   else Object.assign(doc, fields);
   const missing = assertRequiredSchemaFields(Model, doc);
@@ -185,8 +229,144 @@ async function upsert(Model, filter, fields) {
 }
 
 async function upsertPlain(Model, filter, fields) {
+  if (existingCollections && !existingCollections.has(Model.collection.collectionName)) {
+    throw new Error(`Required application collection was not initialized: ${Model.collection.collectionName}`);
+  }
   const doc = await Model.findOneAndUpdate(filter, { $set: fields }, { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true });
   return doc;
+}
+
+async function initializeApplicationCollections() {
+  const newlyCreatedCollections = new Set();
+  for (const Model of allModels) {
+    const name = Model.collection.collectionName;
+    if (!existingCollections.has(name)) {
+      try {
+        await Model.createCollection();
+      } catch (error) {
+        if (error.codeName !== "NamespaceExists" && error.code !== 48) throw error;
+      }
+      existingCollections.add(name);
+      newlyCreatedCollections.add(name);
+    }
+  }
+  await reconcileBookingExternalIdIndex();
+  await reconcileSubscriptionPaymentIndex();
+  await reconcileExpensePurchaseOrderIndex();
+  const initialized = new Set();
+  for (const Model of allModels) {
+    const name = Model.collection.collectionName;
+    if (newlyCreatedCollections.has(name) && !initialized.has(name)) {
+      await Model.init();
+      initialized.add(name);
+    }
+  }
+  console.log(`Application collections ready: ${existingCollections.size}; new collections initialized: ${initialized.size}.`);
+}
+
+async function countClusterCollections() {
+  const { databases = [] } = await mongoose.connection.db.admin().listDatabases({ nameOnly: true });
+  const counts = await Promise.all(databases.map(async ({ name }) => {
+    const database = mongoose.connection.getClient().db(name);
+    return (await database.listCollections({}, { nameOnly: true }).toArray()).length;
+  }));
+  return counts.reduce((total, count) => total + count, 0);
+}
+
+async function replacePriorDemoData() {
+  return runWithTenant({ role: "super_admin", bypass: true }, async () => {
+  const tenantDocs = [];
+  for (const tenantSpec of tenantsSpec) {
+    const tenant = await Organization.findOne({ slug: tenantSpec.slug }).lean();
+    if (tenant && tenant.settings?.testSeedNamespace !== NAMESPACE) {
+      throw new Error(`Refusing to replace tenant without the exact demo seed marker: ${tenantSpec.slug}`);
+    }
+    if (tenant) tenantDocs.push(tenant);
+  }
+  const tenantIds = tenantDocs.map(({ _id }) => _id);
+  const deletedCounts = {};
+  if (tenantIds.length) {
+    for (const Model of allModels) {
+      if (Model === Organization || Model === Permission || !Model.schema.path("tenantId")) continue;
+      const result = await Model.deleteMany({ tenantId: { $in: tenantIds } });
+      if (result.deletedCount) deletedCounts[Model.modelName] = result.deletedCount;
+    }
+  }
+  const globalUserCleanup = await User.deleteMany({ email: { $in: TEST_LOGIN_EMAILS }, tenantId: null });
+  if (globalUserCleanup.deletedCount) deletedCounts.User = (deletedCounts.User || 0) + globalUserCleanup.deletedCount;
+  const roleCleanup = await Role.deleteMany({ tenantId: null, name: "super_admin", description: "TEST/DEMO platform owner RBAC role" });
+  if (roleCleanup.deletedCount) deletedCounts.Role = (deletedCounts.Role || 0) + roleCleanup.deletedCount;
+  const permissionCleanup = await Permission.deleteMany({ name: /^test_seed_2026_/ });
+  if (permissionCleanup.deletedCount) deletedCounts.Permission = permissionCleanup.deletedCount;
+  return { tenantIds, deletedCounts };
+  });
+}
+
+async function reconcileExpensePurchaseOrderIndex() {
+  if (!existingCollections?.has(Expense.collection.collectionName)) return;
+  const collection = mongoose.connection.db.collection(Expense.collection.collectionName);
+  const indexes = await collection.indexes();
+  const current = indexes.find((index) => index.name === "tenantId_1_purchaseOrder_1");
+  if (current?.partialFilterExpression?.purchaseOrder?.$type === "objectId") return;
+  const duplicates = await collection.aggregate([
+    { $match: { purchaseOrder: { $type: "objectId" } } },
+    { $group: { _id: { tenantId: "$tenantId", purchaseOrder: "$purchaseOrder" }, count: { $sum: 1 } } },
+    { $match: { count: { $gt: 1 } } },
+    { $limit: 1 },
+  ]).toArray();
+  if (duplicates.length) throw new Error("Cannot repair the expense purchase-order index: existing duplicate purchase-order references need review.");
+  if (current) await collection.dropIndex(current.name);
+  await collection.createIndex({ tenantId: 1, purchaseOrder: 1 }, {
+    name: "tenantId_1_purchaseOrder_1",
+    unique: true,
+    partialFilterExpression: { purchaseOrder: { $type: "objectId" } },
+  });
+}
+
+async function reconcileBookingExternalIdIndex() {
+  if (!existingCollections?.has(Booking.collection.collectionName)) return;
+  const collection = mongoose.connection.db.collection(Booking.collection.collectionName);
+  const indexes = await collection.indexes();
+  const indexName = "tenantId_1_externalSource_1_externalBookingId_1";
+  const current = indexes.find((index) => index.name === indexName);
+  const filter = current?.partialFilterExpression?.externalBookingId;
+  if (filter?.$type === "string" && filter?.$gt === "" && !current.sparse) return;
+  const duplicates = await collection.aggregate([
+    { $match: { externalBookingId: { $type: "string", $gt: "" } } },
+    { $group: { _id: { tenantId: "$tenantId", externalSource: "$externalSource", externalBookingId: "$externalBookingId" }, count: { $sum: 1 } } },
+    { $match: { count: { $gt: 1 } } },
+    { $limit: 1 },
+  ]).toArray();
+  if (duplicates.length) throw new Error("Cannot repair the booking external identifier index: existing duplicate external booking IDs need review.");
+  if (current) await collection.dropIndex(current.name);
+  await collection.createIndex({ tenantId: 1, externalSource: 1, externalBookingId: 1 }, {
+    name: indexName,
+    unique: true,
+    partialFilterExpression: { externalBookingId: { $type: "string", $gt: "" } },
+  });
+}
+
+async function reconcileSubscriptionPaymentIndex() {
+  if (!existingCollections?.has(SubscriptionPayment.collection.collectionName)) return;
+  const collection = mongoose.connection.db.collection(SubscriptionPayment.collection.collectionName);
+  const indexes = await collection.indexes();
+  const indexName = "provider_1_transactionReference_1";
+  const current = indexes.find((index) => index.name === indexName);
+  const filter = current?.partialFilterExpression?.transactionReference;
+  if (filter?.$type === "string" && filter?.$gt === "" && !current.sparse) return;
+  const duplicates = await collection.aggregate([
+    { $match: { transactionReference: { $type: "string", $gt: "" } } },
+    { $group: { _id: { provider: "$provider", transactionReference: "$transactionReference" }, count: { $sum: 1 } } },
+    { $match: { count: { $gt: 1 } } },
+    { $limit: 1 },
+  ]).toArray();
+  if (duplicates.length) throw new Error("Cannot repair the subscription payment transaction index: duplicate references need review.");
+  if (current) await collection.dropIndex(current.name);
+  await collection.createIndex({ provider: 1, transactionReference: 1 }, {
+    name: indexName,
+    unique: true,
+    partialFilterExpression: { transactionReference: { $type: "string", $gt: "" } },
+  });
 }
 
 async function createUsers(tenant, roleMap, prefix, ti, platform = false, platformRole = null) {
@@ -203,7 +383,7 @@ async function createUsers(tenant, roleMap, prefix, ti, platform = false, platfo
   const users = [];
   for (let i = 0; i < accountSpecs.length; i++) {
     const [local, role, title] = accountSpecs[i];
-    const email = platform && local === "superadmin" ? "superadmin@test.globaltours.co.ke" : `${local}.${prefix}@test.globaltours.co.ke`;
+    const email = loginEmail(local, prefix);
     const id = platform && local === "superadmin" ? null : tenant._id;
     const filter = id ? { tenantId: id, email } : { email, tenantId: null };
     const provision = async () => {
@@ -229,7 +409,7 @@ async function createUsers(tenant, roleMap, prefix, ti, platform = false, platfo
 
 async function seedTenant(spec, index, globalPermissionIds, platformRole = null) {
   const tenant = await upsertPlain(Organization, { slug: spec.slug }, {
-    name: spec.name, legalName: spec.legalName, supportEmail: `contact.${spec.prefix}@test.globaltours.co.ke`, supportPhone: stablePhone(index, 950),
+    name: spec.name, legalName: spec.legalName, supportEmail: `contact@${tenantDomain[spec.prefix]}`, supportPhone: stablePhone(index, 950),
     address: `TEST Seed Office, ${spec.county}, Kenya`, country: "Kenya", timezone: "Africa/Nairobi", currency: "KES", status: "active",
     subscription: { plan: "professional", seats: 30, trialEndsAt: dates(90) },
     features: { payments: false, mpesa: false, stripe: false, ai: false, customDomain: false },
@@ -243,7 +423,7 @@ async function seedTenant(spec, index, globalPermissionIds, platformRole = null)
   ];
   const roleMap = new Map();
   let seededUsers = [];
-  await runWithTenant({ tenantId: tenant._id, role: "admin", bypass: true }, async () => {
+  return runWithTenant({ tenantId: tenant._id, role: "admin", bypass: true }, async () => {
     for (const provider of ["MPESA", "STRIPE", "BANK"]) await upsert(PaymentGatewayConfig, { tenantId: tenant._id, provider }, { tenantId: tenant._id, provider, environment: "sandbox", enabled: false, accountName: `TEST ${provider} disabled`, updatedBy: null });
     for (const [name, displayName, level] of roleDefs) {
       const allowedModules = { super_admin: null, admin: null, tour_manager: new Set(["dashboard", "destination", "tour", "booking", "customer", "report"]), agent: new Set(["dashboard", "tour", "booking", "customer"]), tour_guide: new Set(["dashboard", "tour", "booking"]), driver: new Set(["dashboard", "tour", "booking"]), customer: new Set() }[name];
@@ -253,19 +433,26 @@ async function seedTenant(spec, index, globalPermissionIds, platformRole = null)
     const users = await createUsers(tenant, roleMap, spec.prefix, index, Boolean(platformRole), platformRole);
     seededUsers = users;
     const byEmail = new Map(users.map((u) => [u.email, u]));
+    // Keep internal fixture lookups stable while accounts use the requested public demo login format.
+    const legacyAccountNames = ["admin", "manager", "agent1", "agent2", "guide1", "guide2", "driver1", "driver2", "customer1", "customer2", "customer3", "customer4"];
+    for (const local of legacyAccountNames) {
+      const account = byEmail.get(loginEmail(local, spec.prefix));
+      if (account) byEmail.set(`${local}.${spec.prefix}@test.globaltours.co.ke`, account);
+    }
+    if (platformRole) byEmail.set("superadmin@test.globaltours.co.ke", byEmail.get(loginEmail("superadmin", spec.prefix)));
     const staffByKind = new Map();
     for (const [kind, position, roleName, nth] of [["manager", "tour_manager", "manager", 1], ["guide1", "guide", "guide", 1], ["guide2", "guide", "guide", 2], ["driver1", "driver", "driver", 1], ["driver2", "driver", "driver", 2]]) {
       const accountLocal = kind === "manager" ? "manager" : kind;
-      const account = byEmail.get(`${accountLocal}.${spec.prefix}@test.globaltours.co.ke`);
+      const account = byEmail.get(loginEmail(accountLocal, spec.prefix));
       const staff = await upsert(Staff, { tenantId: tenant._id, email: account.email }, { name: account.name, email: account.email, phone: account.phone, position, role: roleName, status: "active", availability: "available", employmentType: "full_time", languages: ["English", "Swahili"], certifications: ["TEST/DEMO operational induction"], licenseNumber: position === "driver" ? `TEST-KEN-DRV-${index}${nth}` : "", employeeNumber: `TEST-${spec.prefix.toUpperCase()}-STAFF-${kind.toUpperCase()}`, address: `${spec.county}, Kenya`, user: account._id });
       staffByKind.set(kind, staff);
       await upsert(StaffProfile, { tenantId: tenant._id, user: account._id }, { user: account._id, staff: staff._id, bio: `TEST/DEMO ${position} profile.`, address: `${spec.county}, Kenya`, city: spec.county, country: "Kenya", emergencyContact: { name: "TEST Emergency Contact", relationship: "Friend", phone: stablePhone(index, 650 + nth) }, education: ["Tourism operations TEST"], certifications: ["TEST/DEMO induction"], skills: ["Customer service", "Safety"], languages: ["English", "Swahili"], profileCompleted: true });
     }
-    const agentUsers = ["agent1", "agent2"].map((local) => byEmail.get(`${local}.${spec.prefix}@test.globaltours.co.ke`));
+    const agentUsers = ["agent1", "agent2"].map((local) => byEmail.get(loginEmail(local, spec.prefix)));
     const agents = [];
-    for (const [i, account] of agentUsers.entries()) agents.push(await upsert(Agent, { tenantId: tenant._id, user: account._id }, { user: account._id, companyName: `TEST ${spec.name} Agent ${i + 1}`, email: account.email, phone: account.phone, commissionRate: 8, status: "active", isApproved: true, approvedBy: byEmail.get(`admin.${spec.prefix}@test.globaltours.co.ke`)._id, approvedAt: new Date(), location: `${spec.county}, Kenya`, description: "Synthetic test travel agent profile.", licenseNumber: `TEST-${spec.prefix.toUpperCase()}-AGENT-LIC-${i + 1}` }));
+    for (const [i, account] of agentUsers.entries()) agents.push(await upsert(Agent, { tenantId: tenant._id, user: account._id }, { user: account._id, companyName: `TEST ${spec.name} Agent ${i + 1}`, email: account.email, phone: account.phone, commissionRate: 8, status: "active", isApproved: true, approvedBy: byEmail.get(loginEmail("admin", spec.prefix))._id, approvedAt: new Date(), location: `${spec.county}, Kenya`, description: "Synthetic test travel agent profile.", licenseNumber: `TEST-${spec.prefix.toUpperCase()}-AGENT-LIC-${i + 1}` }));
 
-    const customerUsers = [1, 2, 3, 4].map((n) => byEmail.get(`customer${n}.${spec.prefix}@test.globaltours.co.ke`));
+    const customerUsers = [1, 2, 3, 4].map((n) => byEmail.get(loginEmail(`customer${n}`, spec.prefix)));
     const customers = [];
     for (const [i, account] of customerUsers.entries()) customers.push(await upsert(Customer, { tenantId: tenant._id, user: account._id }, { user: account._id, agent: agents[i % agents.length]._id, firstName: `Demo${i + 1}`, lastName: `Traveler${spec.prefix}`, email: account.email, phone: account.phone, nationality: "Kenyan", country: "Kenya", county: spec.county, city: spec.county, address: `TEST Seed ${spec.county}, Kenya`, customerType: "individual", status: "active", preferredContactMethod: "email", marketingConsent: false }));
     for (const [i, account] of customerUsers.entries()) await upsert(CustomerProfile, { tenantId: tenant._id, user: account._id }, { tenantId: tenant._id, user: account._id, gender: "other", nationality: "Kenyan", address: `TEST ${spec.county}, Kenya`, city: spec.county, country: "Kenya", emergencyContact: { name: "TEST Emergency Contact", relationship: "Friend", phone: stablePhone(index, 600 + i) }, travelPreferences: { destinations: [spec.county], activities: ["wildlife", "culture"], travelStyle: "family", budgetRange: "medium", preferredAccommodation: "standard", preferredTransport: "road", dietaryRequirements: ["None"], accessibilityNeeds: "None" }, loyaltyPoints: 100 * (i + 1), loyaltyTier: "bronze", totalBookings: 0, completedBookings: 0, cancelledBookings: 0, totalSpent: 0, averageBookingValue: 0, customerType: "new", marketingPreferences: { email: false, sms: false, whatsapp: false, promotions: false }, notes: "TEST/DEMO customer profile.", isActive: true, isDeleted: false });
@@ -276,30 +463,41 @@ async function seedTenant(spec, index, globalPermissionIds, platformRole = null)
 
     const destinations = [];
     const dests = ["Maasai Mara", "Amboseli", "Tsavo East", "Tsavo West", "Lake Naivasha", "Lake Nakuru", "Samburu", "Mount Kenya", "Watamu", "Diani", "Lamu", "Nairobi National Park"];
-    for (const [i, name] of dests.entries()) destinations.push(await upsert(Destination, { tenantId: tenant._id, slug: `test-${spec.prefix}-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}` }, { name: `TEST ${name}`, slug: `test-${spec.prefix}-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`, country: "Kenya", region: spec.county, city: spec.county, description: `TEST/DEMO destination fixture ${i + 1} in Kenya.`, shortDescription: `TEST ${name} visit`, featuredImage: publicImage, images: [{ url: publicImage }], attractions: ["Wildlife", "Culture"], activities: ["Guided tour", "Photography"], languages: ["English", "Swahili"], currency: "KES", timezone: "Africa/Nairobi", status: "active", active: true, isDeleted: false }));
+    for (const [i, name] of dests.entries()) {
+      const image = destinationImage((index - 1) * dests.length + i);
+      destinations.push(await upsert(Destination, { tenantId: tenant._id, slug: `test-${spec.prefix}-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}` }, { name: `TEST ${name}`, slug: `test-${spec.prefix}-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`, country: "Kenya", region: spec.county, city: spec.county, description: `TEST/DEMO destination fixture ${i + 1} in Kenya.`, shortDescription: `TEST ${name} visit`, featuredImage: image, images: [{ url: image }], attractions: ["Wildlife", "Culture"], activities: ["Guided tour", "Photography"], languages: ["English", "Swahili"], currency: "KES", timezone: "Africa/Nairobi", status: "active", active: true, isDeleted: false }));
+    }
     for (const [i, account] of customerUsers.entries()) await upsert(UserPreference, { tenantId: tenant._id, user: account._id }, { user: account._id, interests: ["wildlife", "culture"], preferredCountries: ["Kenya"], preferredDestinations: [destinations[i]._id], preferredCategories: ["Safari", "Cultural"], travelStyle: ["Family", "Group"], budgetRange: { min: 30000, max: 200000 }, preferredAccommodation: "Standard", preferredTransport: "Road", language: "English", receivePromotions: false, receiveNewsletters: false });
 
-    const category = await upsert(TourCategory, { tenantId: tenant._id, slug: `test-${spec.prefix}-safari` }, { tenantId: tenant._id, name: `TEST ${spec.name} Safari`, slug: `test-${spec.prefix}-safari`, icon: "Map", description: "Synthetic safari category.", image: publicImage, active: true });
+    const category = await upsert(TourCategory, { tenantId: tenant._id, slug: `test-${spec.prefix}-safari` }, { tenantId: tenant._id, name: `TEST ${spec.name} Safari`, slug: `test-${spec.prefix}-safari`, icon: "Map", description: "Synthetic safari category.", image: sharedDemoImage, active: true });
     const tours = [];
-    for (let i = 0; i < 8; i++) {
+    const tourNames = ["Maasai Mara Safari", "Amboseli Safari", "Lake Nakuru Safari", "Nairobi National Park Safari", "Diani Beach Holiday", "Kenya Coast Holiday", "Tsavo East Safari", "Mount Kenya Adventure"];
+    for (let i = 0; i < tourNames.length; i++) {
       const destination = destinations[i % destinations.length];
-      const title = `TEST ${spec.name} Safari ${String(i + 1).padStart(2, "0")}`;
-      tours.push(await upsert(Tour, { tenantId: tenant._id, slug: `test-${spec.prefix}-safari-${i + 1}` }, {
+      const title = `TEST ${tourNames[i]} - ${spec.name}`;
+      const image = tourImage((index - 1) * tourNames.length + i);
+      tours.push(await upsert(Tour, { tenantId: tenant._id, title: `TEST ${spec.name} Safari ${String(i + 1).padStart(2, "0")}` }, {
         title, slug: `test-${spec.prefix}-safari-${i + 1}`, description: `TEST/DEMO guided itinerary for ${destination.name}, Kenya.`, shortDescription: `TEST Kenya safari ${i + 1}`,
         destination: destination._id, country: "Kenya", location: destination.region || spec.county, category: "Safari", tags: ["TEST", "DEMO", "Kenya"], meetingPoint: "Nairobi CBD TEST pickup", duration: "3", durationDays: 3, durationDetails: { days: 3, nights: 2 }, date: dates(45 + i), startDate: dates(45 + i), capacity: 40,
-        price: 45000 + i * 2500, agentPrice: 42000 + i * 2500, discount: 5, taxEnabled: false, taxCategory: "NON_VAT", taxMode: "exclusive", featuredImage: { url: publicImage }, gallery: [{ url: publicImage }], highlights: ["TEST wildlife viewing", "Kenyan guide"], inclusions: ["Transport", "Guide"], exclusions: ["International flights"], languages: ["English", "Swahili"], difficulty: "easy",
+        price: 45000 + i * 2500, agentPrice: 42000 + i * 2500, discount: 5, taxEnabled: false, taxCategory: "NON_VAT", taxMode: "exclusive", featuredImage: { url: image }, gallery: [{ url: image }], highlights: ["TEST wildlife viewing", "Kenyan guide"], inclusions: ["Transport", "Guide"], exclusions: ["International flights"], languages: ["English", "Swahili"], difficulty: "easy",
         itinerary: [1, 2, 3].map((day) => ({ day, title: `TEST Day ${day}`, description: "Synthetic sample itinerary day in Kenya.", activities: ["Guided sightseeing"], meals: ["Breakfast"] })), availability: [{ date: dates(45 + i), totalSlots: 40, bookedSlots: 0 }], availabilitySettings: { totalSlots: 40, bookedSlots: 0, waitlistEnabled: true }, bookingDeadline: 1, cancellationPolicy: "TEST/DEMO cancellation policy; no real booking is created.", status: "upcoming", published: true, featured: i < 2, available: true, isDeleted: false, assignedGuide: staffByKind.get("guide1")._id, assignedDriver: staffByKind.get("driver1")._id, assignedVehicle: vehicles[0]._id,
       }));
     }
-    for (const tour of tours) await upsert(Itinerary, { tenantId: tenant._id, tour: tour._id }, { tenantId: tenant._id, tour: tour._id, days: [1, 2, 3].map((dayNumber) => ({ dayNumber, title: `TEST Day ${dayNumber}`, summary: "Synthetic Kenya itinerary day.", activities: [{ title: "Guided sightseeing", startTime: "09:00", endTime: "12:00", description: "Demo itinerary activity.", location: spec.county, meal: dayNumber === 1 ? "lunch" : "breakfast", transport: "TEST safari vehicle", image: publicImage }] })), overview: "TEST/DEMO multi-day itinerary.", highlights: ["Wildlife", "Culture"], included: ["Guide", "Transport"], excluded: ["International airfare"], status: "published", createdBy: byEmail.get(`admin.${spec.prefix}@test.globaltours.co.ke`)._id });
-    for (const tour of tours) await upsert(TourGallery, { tenantId: tenant._id, tour: tour._id }, { tenantId: tenant._id, tour: tour._id, images: [{ url: publicImage, caption: "TEST/DEMO safari gallery image", alt: "Synthetic Kenya safari image", uploadedBy: byEmail.get(`admin.${spec.prefix}@test.globaltours.co.ke`)._id, featured: true, order: 0 }], active: true, isDeleted: false, createdBy: byEmail.get(`admin.${spec.prefix}@test.globaltours.co.ke`)._id });
-    await upsert(Gallery, { tenantId: tenant._id, title: `TEST ${spec.prefix} safari gallery` }, { tenantId: tenant._id, title: `TEST ${spec.prefix} safari gallery`, image: { url: publicImage, publicId: "" }, category: "Safari", featured: false, active: true });
-    await upsert(Media, { tenantId: tenant._id, fileName: `test-${spec.prefix}-safari-image.jpg` }, { tenantId: tenant._id, fileName: `test-${spec.prefix}-safari-image.jpg`, originalName: `TEST ${spec.name} safari image`, url: publicImage, publicId: "", fileType: "image", mimeType: "image/jpeg", extension: "jpg", size: 0, folder: "test-demo", category: "tour", tags: ["TEST", "DEMO"], relatedModel: "Tour", relatedId: tours[0]._id, uploadedBy: byEmail.get(`admin.${spec.prefix}@test.globaltours.co.ke`)._id, visibility: "public", isDeleted: false });
+    for (const tour of tours) {
+      await Tour.updateMany(
+        { tenantId: tenant._id, title: tour.title, _id: { $ne: tour._id }, isDeleted: { $ne: true } },
+        { $set: { isDeleted: true, deletedAt: new Date(), status: "cancelled", published: false, available: false } },
+      );
+    }
+    for (const tour of tours) await upsert(Itinerary, { tenantId: tenant._id, tour: tour._id }, { tenantId: tenant._id, tour: tour._id, days: [1, 2, 3].map((dayNumber) => ({ dayNumber, title: `TEST Day ${dayNumber}`, summary: "Synthetic Kenya itinerary day.", activities: [{ title: "Guided sightseeing", startTime: "09:00", endTime: "12:00", description: "Demo itinerary activity.", location: spec.county, meal: dayNumber === 1 ? "lunch" : "breakfast", transport: "TEST safari vehicle", image: sharedDemoImage }] })), overview: "TEST/DEMO multi-day itinerary.", highlights: ["Wildlife", "Culture"], included: ["Guide", "Transport"], excluded: ["International airfare"], status: "published", createdBy: byEmail.get(`admin.${spec.prefix}@test.globaltours.co.ke`)._id });
+    for (const tour of tours) await upsert(TourGallery, { tenantId: tenant._id, tour: tour._id }, { tenantId: tenant._id, tour: tour._id, images: [{ url: sharedDemoImage, caption: "TEST/DEMO safari gallery image", alt: "Synthetic Kenya safari image", uploadedBy: byEmail.get(`admin.${spec.prefix}@test.globaltours.co.ke`)._id, featured: true, order: 0 }], active: true, isDeleted: false, createdBy: byEmail.get(`admin.${spec.prefix}@test.globaltours.co.ke`)._id });
+    await upsert(Gallery, { tenantId: tenant._id, title: `TEST ${spec.prefix} safari gallery` }, { tenantId: tenant._id, title: `TEST ${spec.prefix} safari gallery`, image: { url: sharedDemoImage, publicId: "" }, category: "Safari", featured: false, active: true });
+    await upsert(Media, { tenantId: tenant._id, fileName: `test-${spec.prefix}-safari-image.jpg` }, { tenantId: tenant._id, fileName: `test-${spec.prefix}-safari-image.jpg`, originalName: `TEST ${spec.name} safari image`, url: sharedDemoImage, publicId: "", fileType: "image", mimeType: "image/jpeg", extension: "jpg", size: 0, folder: "test-demo", category: "tour", tags: ["TEST", "DEMO"], relatedModel: "Tour", relatedId: tours[0]._id, uploadedBy: byEmail.get(`admin.${spec.prefix}@test.globaltours.co.ke`)._id, visibility: "public", isDeleted: false });
     const packages = [];
     for (let i = 0; i < 3; i++) packages.push(await upsert(TourPackage, { tenantId: tenant._id, slug: `test-${spec.prefix}-package-${i + 1}` }, {
-      title: `TEST ${spec.name} Package ${i + 1}`, slug: `test-${spec.prefix}-package-${i + 1}`, description: "Synthetic sample multi-day Kenya safari package.", destination: destinations[i].name, category: "Safari", duration: String(3 + i), numberOfDays: 3 + i, basePrice: 75000 + i * 5000, agentPrice: 70000 + i * 5000, createdBy: byEmail.get(`admin.${spec.prefix}@test.globaltours.co.ke`)._id, status: "active", published: true, inclusions: ["Transport", "Guide"], exclusions: ["Airfare"], highlights: ["TEST safari", "Kenyan guide"], itinerary: Array.from({ length: 3 + i }, (_, index) => ({ day: index + 1, title: `TEST Day ${index + 1}`, description: "Synthetic sample itinerary day." })), coverImage: { url: publicImage }, gallery: [{ url: publicImage }],
+      title: `TEST ${spec.name} Package ${i + 1}`, slug: `test-${spec.prefix}-package-${i + 1}`, description: "Synthetic sample multi-day Kenya safari package.", destination: destinations[i].name, category: "Safari", duration: String(3 + i), numberOfDays: 3 + i, basePrice: 75000 + i * 5000, agentPrice: 70000 + i * 5000, createdBy: byEmail.get(`admin.${spec.prefix}@test.globaltours.co.ke`)._id, status: "active", published: true, inclusions: ["Transport", "Guide"], exclusions: ["Airfare"], highlights: ["TEST safari", "Kenyan guide"], itinerary: Array.from({ length: 3 + i }, (_, index) => ({ day: index + 1, title: `TEST Day ${index + 1}`, description: "Synthetic sample itinerary day." })), coverImage: { url: sharedDemoImage }, gallery: [{ url: sharedDemoImage }],
     }));
-    await upsert(HeroSlide, { tenantId: tenant._id, title: `TEST ${spec.prefix} homepage slide` }, { tenantId: tenant._id, title: `TEST ${spec.prefix} homepage slide`, subtitle: "Synthetic demo content", image: { url: publicImage, publicId: "" }, badge: "TEST/DEMO", buttonOne: { text: "Explore test tours", link: "/tours" }, buttonTwo: { text: "Test booking", link: "/book" }, active: true, order: 99 });
+    await upsert(HeroSlide, { tenantId: tenant._id, title: `TEST ${spec.prefix} homepage slide` }, { tenantId: tenant._id, title: `TEST ${spec.prefix} homepage slide`, subtitle: "Synthetic demo content", image: { url: sharedDemoImage, publicId: "" }, badge: "TEST/DEMO", buttonOne: { text: "Explore test tours", link: "/tours" }, buttonTwo: { text: "Test booking", link: "/book" }, active: true, order: 99 });
 
     await upsert(Coupon, { tenantId: tenant._id, code: `TEST-${spec.prefix.toUpperCase()}-SAVE10` }, { tenantId: tenant._id, code: `TEST-${spec.prefix.toUpperCase()}-SAVE10`, description: "Synthetic demo coupon.", discountType: "percentage", amount: 10, startDate: new Date(), expiresAt: dates(90), usageLimit: 100, usedCount: 0, minimumBookingAmount: 10000, maximumDiscount: 20000, active: true, createdBy: byEmail.get(`admin.${spec.prefix}@test.globaltours.co.ke`)._id });
     await upsert(Promotion, { tenantId: tenant._id, title: `TEST ${spec.prefix} safari promotion` }, { tenantId: tenant._id, title: `TEST ${spec.prefix} safari promotion`, description: "Synthetic demo promotion.", code: `TEST-${spec.prefix.toUpperCase()}-PROMO`, discountType: "percentage", discountValue: 5, startDate: new Date(), endDate: dates(60), tours: [tours[0]._id], audience: "all", usageLimit: 100, usageCount: 0, active: true, isDeleted: false, createdBy: byEmail.get(`admin.${spec.prefix}@test.globaltours.co.ke`)._id });
@@ -321,6 +519,15 @@ async function seedTenant(spec, index, globalPermissionIds, platformRole = null)
       bookings.push(await upsert(Booking, { tenantId: tenant._id, bookingNumber: `TEST-${spec.prefix.toUpperCase()}-BK-${String(i + 1).padStart(4, "0")}` }, {
         bookingNumber: `TEST-${spec.prefix.toUpperCase()}-BK-${String(i + 1).padStart(4, "0")}`, customer: customer._id, user: user._id, customerSnapshot: { name: `${customer.firstName} ${customer.lastName}`, email: customer.email, phone: customer.phone }, contact: { name: `${customer.firstName} ${customer.lastName}`, email: customer.email, phone: customer.phone }, tour: tour._id, travelDate: tour.date, travelers: [{ name: `${customer.firstName} ${customer.lastName}`, age: 30, nationality: "Kenyan" }], numberOfGuests: 1 + (i % 2), subtotal: total, totalAmount: total, amountPaid: paid, balanceAmount: Math.max(0, total - paid), paymentMethod: i % 3 === 0 ? "MPESA" : i % 3 === 1 ? "CARD" : "BANK_TRANSFER", paymentStatus, status, agent: agents[i % agents.length]._id, assignedGuide: staffByKind.get("guide1")._id, assignedDriver: staffByKind.get("driver1")._id, assignedVehicle: vehicles[0]._id, bookingSource: "admin", notes: "TEST/DEMO fixture; no real trip or payment.", refundAmount: paymentStatus === "refunded" ? total : 0, refundStatus: paymentStatus === "refunded" ? "completed" : "none", isDeleted: false,
       }));
+    }
+    for (const tour of tours) {
+      const guestTotals = await Booking.aggregate([
+        { $match: { tenantId: tenant._id, tour: tour._id, status: { $nin: ["cancelled", "refunded"] }, isDeleted: { $ne: true } } },
+        { $group: { _id: null, total: { $sum: "$numberOfGuests" } } },
+      ]);
+      tour.availabilitySettings.bookedSlots = Number(guestTotals[0]?.total || 0);
+      tour.availability = (tour.availability || []).map((slot) => ({ ...(typeof slot.toObject === "function" ? slot.toObject() : slot), bookedSlots: tour.availabilitySettings.bookedSlots }));
+      await tour.save();
     }
     const payments = [];
     for (let i = 0; i < 10; i++) {
@@ -365,7 +572,7 @@ async function seedTenant(spec, index, globalPermissionIds, platformRole = null)
       await upsert(Commission, { tenantId: tenant._id, booking: booking._id, agent: agents[i % agents.length]._id }, { tenantId: tenant._id, agent: agents[i % agents.length]._id, booking: booking._id, customer: booking.user, tour: booking.tour, bookingAmount: booking.totalAmount, rate: 8, amount: booking.totalAmount * 0.08, status, paymentMethod: status === "paid" ? "BANK_TRANSFER" : undefined, paymentReference: status === "paid" ? `TEST-COMMISSION-${spec.prefix.toUpperCase()}-${i + 1}` : "", paidAt: status === "paid" ? dates(-1) : null, approvedBy: status === "approved" ? byEmail.get(`admin.${spec.prefix}@test.globaltours.co.ke`)._id : null, approvedAt: status === "approved" ? dates(-1) : null, notes: "TEST commission; no external payment occurred." });
     }
 
-    const hotel = await upsert(Hotel, { tenantId: tenant._id, slug: `test-${spec.prefix}-hotel` }, { tenantId: tenant._id, name: `TEST ${spec.name} Safari Lodge`, slug: `test-${spec.prefix}-hotel`, description: "Synthetic demo accommodation.", location: spec.county, address: `TEST lodge, ${spec.county}, Kenya`, city: spec.county, county: spec.county, country: "Kenya", starRating: 4, amenities: ["Wi-Fi", "Breakfast"], images: [publicImage], contactPhone: stablePhone(index, 960), contactEmail: `hotel.${spec.prefix}@test.globaltours.co.ke`, status: "active", currency: "KES" });
+    const hotel = await upsert(Hotel, { tenantId: tenant._id, slug: `test-${spec.prefix}-hotel` }, { tenantId: tenant._id, name: `TEST ${spec.name} Safari Lodge`, slug: `test-${spec.prefix}-hotel`, description: "Synthetic demo accommodation.", location: spec.county, address: `TEST lodge, ${spec.county}, Kenya`, city: spec.county, county: spec.county, country: "Kenya", starRating: 4, amenities: ["Wi-Fi", "Breakfast"], images: [sharedDemoImage], contactPhone: stablePhone(index, 960), contactEmail: `hotel.${spec.prefix}@test.globaltours.co.ke`, status: "active", currency: "KES" });
     await upsert(HospitalitySupplierContract, { tenantId: tenant._id, contractNumber: `TEST-${spec.prefix.toUpperCase()}-HOTEL-CONTRACT-001` }, { tenantId: tenant._id, supplierName: `TEST ${spec.name} Lodge`, supplierType: "hotel", hotel: hotel._id, contactName: "Demo Lodge Contact", contactPhone: stablePhone(index, 961), contactEmail: `hotel.${spec.prefix}@test.globaltours.co.ke`, contractNumber: `TEST-${spec.prefix.toUpperCase()}-HOTEL-CONTRACT-001`, currency: "KES", commissionPercent: 0, depositPercent: 0, rates: [{ name: "TEST Standard", roomType: "Deluxe", unit: "night", amount: 12000 }], validFrom: new Date("2026-01-01"), validTo: new Date("2027-12-31"), paymentTerms: "TEST prepaid at property", cancellationTerms: "TEST demo cancellation terms", status: "active", notes: "Synthetic test contract only; no supplier agreement exists." });
     const room = await upsert(HotelRoomType, { tenantId: tenant._id, hotel: hotel._id, name: "TEST Deluxe Room" }, { tenantId: tenant._id, hotel: hotel._id, name: "TEST Deluxe Room", description: "Synthetic room inventory.", maxAdults: 2, maxChildren: 1, beds: ["Queen"], amenities: ["Wi-Fi"], totalRooms: 20, availableRooms: 18, nightlyRate: 12000, mealPlans: ["breakfast"], currency: "KES", status: "active" });
     const ratePlan = await upsert(HospitalityRatePlan, { tenantId: tenant._id, hotel: hotel._id, roomType: room._id, name: "TEST Flexible" }, { tenantId: tenant._id, hotel: hotel._id, roomType: room._id, name: "TEST Flexible", nightlyRate: 12000, currency: "KES", status: "active", mealPlan: "breakfast" });
@@ -414,6 +621,7 @@ async function seedTenant(spec, index, globalPermissionIds, platformRole = null)
     await upsert(TaxRule, { tenantId: tenant._id, code: "TEST-NONVAT" }, { tenantId: tenant._id, code: "TEST-NONVAT", name: "Synthetic non-VAT test rule", taxType: "NON_VAT", rate: 0, isActive: true, effectiveFrom: new Date("2026-01-01") });
     await upsert(TaxProfile, { tenantId: tenant._id }, { tenantId: tenant._id, kraPin: "TEST-NOT-A-REAL-KRA-PIN", kraPinStatus: "not_verified", vatRegistered: false, taxRegime: "NON_VAT", etimsEnabled: false, etimsEnvironment: "sandbox", complianceNotes: "TEST/DEMO only; no government registration or eTIMS submission." });
     await upsert(JournalEntry, { tenantId: tenant._id, reference: `TEST-${spec.prefix.toUpperCase()}-JE-001` }, { tenantId: tenant._id, reference: `TEST-${spec.prefix.toUpperCase()}-JE-001`, description: "TEST balanced opening demo entry", entryDate: dates(-1), status: "posted", postedAt: dates(-1), lines: [{ account: coa[0]._id, description: "Synthetic test debit", debit: 10000, credit: 0 }, { account: coa[1]._id, description: "Synthetic test credit", debit: 0, credit: 10000 }] });
+    const journal = await JournalEntry.findOne({ tenantId: tenant._id, reference: `TEST-${spec.prefix.toUpperCase()}-JE-001` });
     for (const [i, type] of ["TRA_LICENSE", "ODPC_REGISTRATION", "PRIVACY_POLICY", "DATA_RETENTION", "KRA_TAX_PROFILE", "ETIMS_ONBOARDING"].entries()) await upsert(ComplianceRecord, { tenantId: tenant._id, type }, { tenantId: tenant._id, type, status: "not_started", referenceNumber: `TEST-${spec.prefix.toUpperCase()}-COMPLIANCE-${i + 1}`, authority: "TEST/DEMO", notes: "Synthetic demo record; not a regulatory registration, approval, or submission." });
     for (const [i, type] of ["access", "correction", "deletion", "portability", "restriction"].entries()) await upsert(PrivacyRequest, { tenantId: tenant._id, type, requesterEmail: `privacy${i + 1}.${spec.prefix}@test.globaltours.co.ke` }, { tenantId: tenant._id, type, requesterName: `TEST requester ${i + 1}`, requesterEmail: `privacy${i + 1}.${spec.prefix}@test.globaltours.co.ke`, status: ["received", "identity_verification", "in_progress", "completed", "received"][i], details: "Synthetic privacy request for test data." });
 
@@ -428,7 +636,7 @@ async function seedTenant(spec, index, globalPermissionIds, platformRole = null)
     await upsert(WithholdingTax, { tenantId: tenant._id, reference: `TEST-${spec.prefix.toUpperCase()}-WHT-001` }, { tenantId: tenant._id, payee: suppliers[0]._id, payeeName: suppliers[0].legalName, sourceType: "supplier_payment", sourceId: bookings[0]._id, reference: `TEST-${spec.prefix.toUpperCase()}-WHT-001`, description: "Synthetic withholding tax test fixture.", taxType: "TEST-WHT", taxPeriod: "2026-09", baseAmount: 10000, rate: 5, taxAmount: 500, currency: "KES", status: "accrued" });
     await upsert(AccountingReconciliation, { tenantId: tenant._id, sourceType: "bank", externalReference: `TEST-${spec.prefix.toUpperCase()}-RECON-001` }, { tenantId: tenant._id, sourceType: "bank", externalReference: `TEST-${spec.prefix.toUpperCase()}-RECON-001`, transactionDate: dates(-1), amount: 10000, currency: "KES", accountCode: "1000", journalEntry: journal._id, status: "matched", notes: "Synthetic reconciliation only; no bank data imported." });
     await upsert(AccountingSubledger, { tenantId: tenant._id, type: "accrual", reference: `TEST-${spec.prefix.toUpperCase()}-SUBLEDGER-001` }, { tenantId: tenant._id, type: "accrual", reference: `TEST-${spec.prefix.toUpperCase()}-SUBLEDGER-001`, transactionDate: dates(-1), description: "Synthetic accrued tour cost.", amount: 10000, currency: "KES", exchangeRate: 1, baseAmount: 10000, quantity: 1, unitCost: 10000, accountCode: "5000", contraAccountCode: "1000", status: "posted", metadata: { namespace: NAMESPACE, synthetic: true }, journalEntry: journal._id });
-    await upsert(TourReport, { tenantId: tenant._id, tour: tours[0]._id, summary: `TEST-${spec.prefix}-tour report` }, { tenantId: tenant._id, tour: tours[0]._id, booking: bookings[3]._id, guide: staffByKind.get("guide1")._id, driver: staffByKind.get("driver1")._id, vehicle: vehicles[0]._id, summary: `TEST-${spec.prefix}-tour report`, highlights: ["Synthetic tour completed"], issues: [], recommendations: ["No operational action required"], customerFeedback: ["Synthetic feedback"], participants: 2, completedSuccessfully: true, guideRating: 5, images: [{ url: publicImage, caption: "Synthetic test report image", publicId: "" }], status: "submitted", completedAt: dates(-1) });
+    await upsert(TourReport, { tenantId: tenant._id, tour: tours[0]._id, summary: `TEST-${spec.prefix}-tour report` }, { tenantId: tenant._id, tour: tours[0]._id, booking: bookings[3]._id, guide: staffByKind.get("guide1")._id, driver: staffByKind.get("driver1")._id, vehicle: vehicles[0]._id, summary: `TEST-${spec.prefix}-tour report`, highlights: ["Synthetic tour completed"], issues: [], recommendations: ["No operational action required"], customerFeedback: ["Synthetic feedback"], participants: 2, completedSuccessfully: true, guideRating: 5, images: [{ url: sharedDemoImage, caption: "Synthetic test report image", publicId: "" }], status: "submitted", completedAt: dates(-1) });
 
     const expectedUsers = seededUsers;
     const bookingDocs = await Booking.find({ tenantId: tenant._id, bookingNumber: /^TEST-/ });
@@ -437,11 +645,10 @@ async function seedTenant(spec, index, globalPermissionIds, platformRole = null)
       if (!(await Customer.exists({ _id: booking.customer, tenantId: tenant._id })) || !(await Tour.exists({ _id: booking.tour, tenantId: tenant._id }))) broken.push(String(booking._id));
       if (booking.amountPaid > booking.totalAmount || booking.balanceAmount !== Math.max(0, booking.totalAmount - booking.amountPaid)) broken.push(`booking arithmetic:${booking.bookingNumber}`);
     }
-    const journal = await JournalEntry.findOne({ tenantId: tenant._id, reference: `TEST-${spec.prefix.toUpperCase()}-JE-001` });
     if (journal && journal.lines.reduce((n, line) => n + line.debit, 0) !== journal.lines.reduce((n, line) => n + line.credit, 0)) broken.push("unbalanced journal");
     const counts = {};
     for (const model of [User, Customer, CustomerProfile, UserPreference, Staff, StaffProfile, Agent, Vehicle, Destination, Tour, TourPackage, Booking, Payment, Invoice, Refund, CreditDebitNote, Supplier, SupplierPayable, PurchaseOrder, Expense, TourCost, Commission, ChartOfAccount, JournalEntry, AccountingPeriod, FinanceBudget, TaxRule, TaxProfile, ComplianceRecord, EtimsSubmission, PrivacyRequest, CorporateAccount, Hotel, HotelRoomType, AccommodationInventory, HospitalityRatePlan, HospitalityRoomBlock, HospitalitySupplierContract, HotelBooking, HospitalityDeposit, AirportTransfer, AirportTransferBooking, Review, Lead, CustomTourRequest, TravelServiceRequest, Notification, Coupon, Promotion, Campaign, Loyalty, LoyaltyAccount, Wishlist, Referral, PaymentGatewayConfig, Webhook, WebhookDelivery, WebsiteIntegrationKey, WebsiteIntegrationEvent, ApiKey, Subscription, SubscriptionPayment, PaymentLink, FixedAsset, OperationalAsset, TourCategory, Itinerary, Gallery, Media, TourGallery, TourReport, HeroSlide, Quotation, WithholdingTax, AccountingReconciliation, AccountingSubledger]) counts[model.modelName] = await model.countDocuments({ tenantId: tenant._id });
-    return { tenant, users: expectedUsers, counts, failures: broken };
+    return { tenant, users: expectedUsers, counts, failures: broken, prefix: spec.prefix };
   });
 }
 
@@ -452,12 +659,22 @@ async function main() {
   safeTarget(target);
   assertSeedConfirmation();
   getTestPassword();
-  await mongoose.connect(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 10000 });
+  seedStage = "connecting to configured database";
+  await mongoose.connect(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 10000, connectTimeoutMS: 10000, socketTimeoutMS: 120000 });
+  existingCollections = new Set((await mongoose.connection.db.listCollections({}, { nameOnly: true }).toArray()).map(({ name }) => name));
+  const targetCollectionsBefore = existingCollections.size;
+  const clusterCollectionsBefore = await countClusterCollections();
+  seedStage = "initializing application model collections and indexes";
+  await initializeApplicationCollections();
+  seedStage = "replacing namespace-marked demo tenant data";
+  const replacedDemoData = await replacePriorDemoData();
+  await reconcileExpensePurchaseOrderIndex();
   const buildInfo = await mongoose.connection.db.admin().command({ buildInfo: 1 });
   assertSupportedMongoVersion(buildInfo.version);
   const dbName = mongoose.connection.name;
   if (dbName !== target.dbName) throw new Error("Connected database name does not match guarded target.");
 
+  seedStage = "seeding demo tenants and interconnected data";
   const permissions = [];
   const permissionDefs = [["dashboard.view", "dashboard"], ["users.read", "user"], ["users.write", "user"], ["roles.read", "role"], ["roles.write", "role"], ["destinations.read", "destination"], ["destinations.write", "destination"], ["tours.read", "tour"], ["tours.write", "tour"], ["packages.read", "tour"], ["packages.write", "tour"], ["bookings.read", "booking"], ["bookings.write", "booking"], ["customers.read", "customer"], ["customers.write", "customer"], ["payments.read", "payment"], ["reports.read", "report"], ["settings.read", "system"], ["settings.write", "system"]];
   for (const [shortName, module] of permissionDefs) {
@@ -471,12 +688,13 @@ async function main() {
   // The platform login is provisioned by first tenant's role map, preserving a valid Role reference.
   // It is included in that tenant user list and remains tenantless by User model platform role hook.
   const allLoginEmails = TEST_LOGIN_EMAILS;
-  const allModels = [Organization, Permission, Role, User, Customer, CustomerProfile, UserPreference, Staff, StaffProfile, Agent, Destination, Tour, TourPackage, Booking, Payment, Invoice, Refund, CreditDebitNote, Supplier, SupplierPayable, PurchaseOrder, Expense, TourCost, Commission, Vehicle, Hotel, HotelRoomType, AccommodationInventory, HospitalityRatePlan, HospitalityRoomBlock, HospitalitySupplierContract, HotelBooking, HospitalityDeposit, AirportTransfer, AirportTransferBooking, Review, Lead, CustomTourRequest, TravelServiceRequest, ChartOfAccount, JournalEntry, AccountingPeriod, FinanceBudget, TaxRule, TaxProfile, CorporateAccount, ComplianceRecord, EtimsSubmission, PrivacyRequest, Notification, Coupon, Promotion, Campaign, Loyalty, LoyaltyAccount, Wishlist, Referral, PaymentGatewayConfig, ApiKey, WebsiteIntegrationKey, WebsiteIntegrationEvent, Webhook, WebhookDelivery, Subscription, SubscriptionPayment, PaymentLink, FixedAsset, OperationalAsset, TourCategory, Itinerary, Gallery, Media, TourGallery, TourReport, HeroSlide, Quotation, WithholdingTax, AccountingReconciliation, AccountingSubledger];
   const failures = results.flatMap((item) => item.failures);
   const relationshipFailures = [];
   const requiredFieldFindings = [];
   const countsByCollection = {};
   const roleCounts = {};
+  seedStage = "validating demo records, relationships, accounting, authentication, and images";
+  const imageValidation = { tours: 0, uniqueTourImages: 0, duplicateTourImages: 0, destinations: 0, uniqueDestinationImages: 0, duplicateDestinationImages: 0, invalidImages: [] };
   await runWithTenant({ role: "super_admin", bypass: true }, async () => {
     const platformRoleDocs = await Role.find({ tenantId: null, name: "super_admin" }).lean();
     const globalPermissionDocs = await Permission.find({ name: /^test_seed_2026_/ }).lean();
@@ -489,7 +707,7 @@ async function main() {
         await inspectReferences(Model, [doc], null, relationshipFailures);
       }
     }
-    const platformDoc = await User.findOne({ email: "superadmin@test.globaltours.co.ke", tenantId: null }).select("+password");
+    const platformDoc = await User.findOne({ email: "superadmin1@husseinmboya.com", tenantId: null }).select("+password");
     if (platformDoc) {
       const missing = assertRequiredSchemaFields(User, platformDoc);
       if (missing.length) requiredFieldFindings.push({ model: User.modelName, id: String(platformDoc._id), missing });
@@ -501,7 +719,9 @@ async function main() {
       if (item.tenant.settings?.testSeedNamespace !== NAMESPACE || item.tenant.features?.mpesa !== false || item.tenant.settings?.payments?.mode !== "disabled") failures.push(`unsafe test tenant configuration:${item.tenant.slug}`);
       for (const model of allModels) {
         if (!model.schema.path("tenantId") || model === Organization || model === Permission) continue;
-        const docs = await model.find({ tenantId: item.tenant._id }).lean();
+        const docs = await model.find({ tenantId: item.tenant._id })
+          .select(model === User ? "+password" : model === Webhook ? "+secret" : "")
+          .lean();
         for (const doc of docs) {
           const missing = assertRequiredSchemaFields(model, doc);
           if (missing.length) requiredFieldFindings.push({ model: model.modelName, id: String(doc._id), missing });
@@ -512,12 +732,18 @@ async function main() {
       }
       const gatewayConfigs = await PaymentGatewayConfig.find({ tenantId: item.tenant._id }).lean();
       if (gatewayConfigs.some((config) => config.enabled || config.environment !== "sandbox" || [config.consumerKeyEncrypted, config.consumerSecretEncrypted, config.passkeyEncrypted, config.secretKeyEncrypted, config.webhookSecretEncrypted, config.initiatorNameEncrypted, config.securityCredentialEncrypted].some(Boolean))) failures.push(`unsafe payment gateway fixture configuration:${item.tenant.slug}`);
-      const seededTours = await Tour.find({ tenantId: item.tenant._id, slug: /^test-/ }).lean();
+      const seededTours = await Tour.find({ tenantId: item.tenant._id, slug: /^test-/, isDeleted: { $ne: true } }).lean();
       for (const tour of seededTours) {
         const bookedTotals = await Booking.aggregate([{ $match: { tenantId: item.tenant._id, tour: tour._id, status: { $nin: ["cancelled", "refunded"] }, isDeleted: { $ne: true } } }, { $group: { _id: null, total: { $sum: "$numberOfGuests" } } }]);
         const booked = Number(bookedTotals[0]?.total || 0);
         if (Number(tour.availabilitySettings?.bookedSlots || 0) !== booked || booked > Number(tour.availabilitySettings?.totalSlots || 0)) failures.push(`tour capacity mismatch:${tour.slug}`);
       }
+      const duplicateDemoTours = await Tour.aggregate([
+        { $match: { tenantId: item.tenant._id, title: /^TEST .* - /, isDeleted: { $ne: true } } },
+        { $group: { _id: "$title", count: { $sum: 1 } } },
+        { $match: { count: { $gt: 1 } } },
+      ]);
+      for (const duplicate of duplicateDemoTours) failures.push(`duplicate active demo tour:${duplicate._id}`);
       const seededInvoices = await Invoice.find({ tenantId: item.tenant._id, invoiceNumber: /^TEST-/ }).lean();
       for (const invoice of seededInvoices) {
         const expectedTotal = Number(invoice.subtotal || 0) - Number(invoice.discount || 0) + Number(invoice.tax || 0);
@@ -532,10 +758,11 @@ async function main() {
         const invoice = await Invoice.findOne({ tenantId: item.tenant._id, booking: booking._id }).lean();
         if (invoice && Math.abs(Number(invoice.amountPaid || 0) - Number(booking.amountPaid || 0)) > 0.01) failures.push(`booking/invoice payment total mismatch:${booking.bookingNumber}`);
       }
-      const users = await User.find({ tenantId: item.tenant._id, email: /@test\.globaltours\.co\.ke$/ }).lean();
+      const tenantEmails = TEST_LOGIN_EMAILS.filter((email) => email !== "superadmin1@husseinmboya.com" && email.endsWith(`@${tenantDomain[item.prefix]}`));
+      const users = await User.find({ tenantId: item.tenant._id, email: { $in: tenantEmails } }).lean();
       for (const role of new Set(users.map((user) => user.role))) roleCounts[role] = (roleCounts[role] || 0) + users.filter((user) => user.role === role).length;
     }
-    const platformUser = await User.findOne({ email: "superadmin@test.globaltours.co.ke", tenantId: null }).select("+password");
+    const platformUser = await User.findOne({ email: "superadmin1@husseinmboya.com", tenantId: null }).select("+password");
     if (!platformUser || !(await platformUser.matchPassword(getTestPassword()))) failures.push("platform owner password authentication failed");
     roleCounts.super_admin = (roleCounts.super_admin || 0) + (platformUser ? 1 : 0);
     for (const [model, field] of [[User, "email"], [Destination, "slug"], [Tour, "slug"], [TourPackage, "slug"], [Booking, "bookingNumber"], [Invoice, "invoiceNumber"], [Supplier, "supplierNumber"], [PurchaseOrder, "poNumber"], [Expense, "expenseNumber"]]) {
@@ -543,11 +770,43 @@ async function main() {
       for (const duplicate of duplicates) failures.push(`duplicate test identifier:${model.modelName}.${field}:${duplicate._id.value}`);
     }
     for (const model of allModels) countsByCollection[model.modelName] = await model.countDocuments(model === Organization ? { slug: { $in: tenantsSpec.map((t) => t.slug) } } : model === Permission ? { name: { $regex: /^test_seed_2026_/ } } : model === User ? { email: { $in: allLoginEmails } } : model === Role ? { $or: [{ tenantId: { $in: results.map((item) => item.tenant._id) } }, { tenantId: null, name: "super_admin" }] } : model.schema.path("tenantId") ? { tenantId: { $in: results.map((item) => item.tenant._id) } } : {});
+    const tenantIds = results.map((item) => item.tenant._id);
+    const imageTours = await Tour.find({ tenantId: { $in: tenantIds }, slug: /^test-/, isDeleted: { $ne: true }, published: true }).select("featuredImage").lean();
+    const imageDestinations = await Destination.find({ tenantId: { $in: tenantIds }, slug: /^test-/, isDeleted: { $ne: true }, status: "active" }).select("featuredImage").lean();
+    const tourImages = imageTours.map(({ featuredImage }) => featuredImage?.url || "");
+    const destinationImages = imageDestinations.map(({ featuredImage }) => featuredImage || "");
+    imageValidation.tours = tourImages.length;
+    imageValidation.uniqueTourImages = new Set(tourImages).size;
+    imageValidation.duplicateTourImages = tourImages.length - imageValidation.uniqueTourImages;
+    imageValidation.destinations = destinationImages.length;
+    imageValidation.uniqueDestinationImages = new Set(destinationImages).size;
+    imageValidation.duplicateDestinationImages = destinationImages.length - imageValidation.uniqueDestinationImages;
+    for (const url of [...tourImages, ...destinationImages]) {
+      try {
+        if (url.startsWith("/")) {
+          if (url.includes("..")) throw new Error("unsafe local image path");
+          await fs.access(path.resolve(__dirname, "../../client/public", url.slice(1)));
+        } else if (new URL(url).hostname !== "images.unsplash.com") throw new Error("unexpected remote image host");
+      } catch (error) { imageValidation.invalidImages.push({ url, reason: error.message }); }
+    }
+    if (imageValidation.tours !== 24 || imageValidation.uniqueTourImages !== 24 || imageValidation.destinations !== 36 || imageValidation.uniqueDestinationImages !== 36 || imageValidation.invalidImages.length) failures.push("seeded tour/destination image catalog failed validation");
   });
   if (requiredFieldFindings.length) failures.push(...requiredFieldFindings.map((entry) => `${entry.model}/${entry.id}: ${entry.missing.join(",")}`));
   failures.push(...relationshipFailures);
+  seedStage = "writing final seed report";
+  let readinessCleanup = null;
+  try { readinessCleanup = JSON.parse(await fs.readFile(path.resolve(__dirname, "../reports/readiness-database-cleanup.json"), "utf8")); }
+  catch (error) { if (error.code !== "ENOENT") throw error; }
+  let verifiedImageAssets = null;
+  try { verifiedImageAssets = JSON.parse(await fs.readFile(path.resolve(__dirname, "../reports/demo-image-validation.json"), "utf8")); }
+  catch (error) { if (error.code !== "ENOENT") throw error; }
   const report = {
     namespace: NAMESPACE, timestamp: new Date().toISOString(), database: dbName, tenantCount: results.length, collectionCountsAvailable: true,
+    collectionSummary: { clusterCollectionsBefore: clusterCollectionsBefore, clusterCollectionsAfter: await countClusterCollections(), applicationCollectionsBefore: targetCollectionsBefore, applicationCollectionsAfter: existingCollections.size, applicationCollectionsCreated: existingCollections.size - targetCollectionsBefore, skippedApplicationCollections: [...unavailableSeedCollections] },
+    oldDemoDataReplaced: replacedDemoData.deletedCounts,
+    confirmedReadinessDatabaseCleanup: readinessCleanup,
+    verifiedImageAssets,
+    imageValidation,
     tenantsCreatedOrUpdated: results.map(({ tenant }) => ({ name: tenant.name, slug: tenant.slug, id: String(tenant._id), action: "created_or_updated" })),
     tenants: results.map(({ tenant, users, counts }) => ({ name: tenant.name, slug: tenant.slug, id: String(tenant._id), users: users.map((u) => u.email), counts })),
     perCollectionCounts: countsByCollection, testLoginEmails: allLoginEmails, usersByRole: roleCounts,
@@ -556,7 +815,7 @@ async function main() {
     validation: { requiredFieldsInspectedAgainstMongooseSchemas: true, requiredFieldFailures: requiredFieldFindings, relationshipFailures, authenticationChecked: true, bookingReferencesAndTotalsChecked: failures.length === 0, journalDebitsEqualCreditsChecked: failures.length === 0, status: failures.length ? "failed" : "passed" },
     relationshipFailures, requiredFieldFailures: requiredFieldFindings,
     overallStatus: failures.length ? "failed" : "passed",
-    failures, warnings: ["This command refuses non-test database names and production-looking configuration.", "No real payment gateway, M-Pesa request, webhook delivery, or KRA/eTIMS submission is performed.", "Credential-bearing EtimsCredential, backup, audit/security incident, AI session, and background job collections are intentionally not fabricated by this demo seed."],
+    failures, warnings: ["The seed replaces records only under demo tenants marked with this exact seed namespace and never drops the application database.", ...(unavailableSeedCollections.size ? [`Skipped application collections: ${[...unavailableSeedCollections].sort().join(", ")}.`] : []), "No real payment gateway, M-Pesa request, webhook delivery, or KRA/eTIMS submission is performed.", "Credential-bearing EtimsCredential, backup, audit/security incident, AI session, and background job collections are intentionally not fabricated by this demo seed."],
   };
   await fs.mkdir(path.dirname(reportFile), { recursive: true });
   await fs.writeFile(reportFile, `${JSON.stringify(report, null, 2)}\n`, { mode: 0o600 });
@@ -575,7 +834,7 @@ async function writeFailureReport(error) {
     tenants: [], perCollectionCounts: {}, usersByRole: {}, testLoginEmails: TEST_LOGIN_EMAILS,
     commonTestPasswordNote: "Seed logins require the operator-supplied TEST_DEMO_SEED_PASSWORD; its value is intentionally excluded from this report.",
     tenantsCreatedOrUpdated: [], authenticationResults: { checked: false, accountCount: 0, verifiedAccountCount: 0, failures: [] },
-    relationshipFailures: [], requiredFieldFailures: [], overallStatus: "blocked",
+    relationshipFailures: [], requiredFieldFailures: [], overallStatus: "blocked", failedStage: seedStage,
     validation: { status: "not_run", reason: error.message, relationshipFailures: [], requiredFieldFailures: [] }, failures: [error.message],
     warnings: ["The seed was not executed because the database/configuration safety guard blocked writes.", "No MongoDB URI, password, credential, or gateway secret is included in this report."],
   };
@@ -584,5 +843,5 @@ async function writeFailureReport(error) {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  main().catch(async (error) => { const message = safeErrorMessage(error); console.error(`TEST seed failed safely: ${message}`); await writeFailureReport(new Error(message)).catch((reportError) => console.error(`Could not write safe test-seed report: ${safeErrorMessage(reportError)}`)); process.exitCode = 1; }).finally(async () => { await mongoose.disconnect().catch(() => {}); });
+  main().catch(async (error) => { const message = safeErrorMessage(error); console.error(`TEST seed failed safely during ${seedStage}: ${message}`); await writeFailureReport(new Error(message)).catch((reportError) => console.error(`Could not write safe test-seed report: ${safeErrorMessage(reportError)}`)); process.exitCode = 1; }).finally(async () => { await mongoose.disconnect().catch(() => {}); });
 }

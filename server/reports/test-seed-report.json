@@ -1,74 +1,1126 @@
 {
   "namespace": "TEST-SEED-GLOBAL-TOURS-2026",
-  "timestamp": "2026-09-25T19:06:37.206Z",
-  "database": "global_tours_test",
-  "seedExecuted": false,
-  "tenantCount": 0,
-  "collectionCountsAvailable": false,
-  "tenants": [],
-  "perCollectionCounts": {},
-  "usersByRole": {},
-  "testLoginEmails": [
-    "superadmin@test.globaltours.co.ke",
-    "admin.amani@test.globaltours.co.ke",
-    "manager.amani@test.globaltours.co.ke",
-    "agent1.amani@test.globaltours.co.ke",
-    "agent2.amani@test.globaltours.co.ke",
-    "guide1.amani@test.globaltours.co.ke",
-    "guide2.amani@test.globaltours.co.ke",
-    "driver1.amani@test.globaltours.co.ke",
-    "driver2.amani@test.globaltours.co.ke",
-    "customer1.amani@test.globaltours.co.ke",
-    "customer2.amani@test.globaltours.co.ke",
-    "customer3.amani@test.globaltours.co.ke",
-    "customer4.amani@test.globaltours.co.ke",
-    "admin.savanna@test.globaltours.co.ke",
-    "manager.savanna@test.globaltours.co.ke",
-    "agent1.savanna@test.globaltours.co.ke",
-    "agent2.savanna@test.globaltours.co.ke",
-    "guide1.savanna@test.globaltours.co.ke",
-    "guide2.savanna@test.globaltours.co.ke",
-    "driver1.savanna@test.globaltours.co.ke",
-    "driver2.savanna@test.globaltours.co.ke",
-    "customer1.savanna@test.globaltours.co.ke",
-    "customer2.savanna@test.globaltours.co.ke",
-    "customer3.savanna@test.globaltours.co.ke",
-    "customer4.savanna@test.globaltours.co.ke",
-    "admin.coastal@test.globaltours.co.ke",
-    "manager.coastal@test.globaltours.co.ke",
-    "agent1.coastal@test.globaltours.co.ke",
-    "agent2.coastal@test.globaltours.co.ke",
-    "guide1.coastal@test.globaltours.co.ke",
-    "guide2.coastal@test.globaltours.co.ke",
-    "driver1.coastal@test.globaltours.co.ke",
-    "driver2.coastal@test.globaltours.co.ke",
-    "customer1.coastal@test.globaltours.co.ke",
-    "customer2.coastal@test.globaltours.co.ke",
-    "customer3.coastal@test.globaltours.co.ke",
-    "customer4.coastal@test.globaltours.co.ke"
+  "timestamp": "2026-09-27T15:12:16.707Z",
+  "database": "husseindb",
+  "tenantCount": 3,
+  "collectionCountsAvailable": true,
+  "collectionSummary": {
+    "clusterCollectionsBefore": 403,
+    "clusterCollectionsAfter": 403,
+    "applicationCollectionsBefore": 90,
+    "applicationCollectionsAfter": 90,
+    "applicationCollectionsCreated": 0,
+    "skippedApplicationCollections": []
+  },
+  "oldDemoDataReplaced": {
+    "Role": 22,
+    "User": 37,
+    "Customer": 12,
+    "CustomerProfile": 12,
+    "UserPreference": 12,
+    "Staff": 15,
+    "StaffProfile": 15,
+    "Agent": 6,
+    "Destination": 36,
+    "Tour": 24,
+    "TourPackage": 9,
+    "Booking": 33,
+    "Payment": 33,
+    "Invoice": 30,
+    "Refund": 3,
+    "CreditDebitNote": 6,
+    "Supplier": 15,
+    "SupplierPayable": 6,
+    "PurchaseOrder": 6,
+    "Expense": 24,
+    "TourCost": 192,
+    "Commission": 30,
+    "Vehicle": 18,
+    "Hotel": 3,
+    "HotelRoomType": 3,
+    "AccommodationInventory": 3,
+    "HospitalityRatePlan": 3,
+    "HospitalityRoomBlock": 3,
+    "HospitalitySupplierContract": 3,
+    "HotelBooking": 3,
+    "HospitalityDeposit": 6,
+    "AirportTransfer": 3,
+    "AirportTransferBooking": 3,
+    "Review": 9,
+    "Lead": 12,
+    "CustomTourRequest": 6,
+    "TravelServiceRequest": 3,
+    "ChartOfAccount": 105,
+    "JournalEntry": 45,
+    "AccountingPeriod": 3,
+    "FinanceBudget": 3,
+    "TaxRule": 3,
+    "TaxProfile": 3,
+    "CorporateAccount": 15,
+    "ComplianceRecord": 18,
+    "EtimsSubmission": 3,
+    "PrivacyRequest": 15,
+    "Notification": 27,
+    "Coupon": 3,
+    "Promotion": 3,
+    "Campaign": 3,
+    "Loyalty": 12,
+    "LoyaltyAccount": 12,
+    "Wishlist": 12,
+    "Referral": 9,
+    "PaymentGatewayConfig": 9,
+    "ApiKey": 3,
+    "WebsiteIntegrationKey": 3,
+    "WebsiteIntegrationEvent": 3,
+    "Webhook": 3,
+    "WebhookDelivery": 3,
+    "Subscription": 3,
+    "SubscriptionPayment": 3,
+    "PaymentLink": 3,
+    "FixedAsset": 3,
+    "OperationalAsset": 12,
+    "TourCategory": 3,
+    "Itinerary": 24,
+    "Gallery": 3,
+    "Media": 3,
+    "TourGallery": 24,
+    "TourReport": 3,
+    "HeroSlide": 3,
+    "Quotation": 3,
+    "WithholdingTax": 3,
+    "AccountingReconciliation": 3,
+    "AccountingSubledger": 3,
+    "Permission": 19
+  },
+  "confirmedReadinessDatabaseCleanup": {
+    "timestamp": "2026-09-27T14:26:05.976Z",
+    "applicationDatabase": "husseindb",
+    "testSourceDatabase": "global_tours_test",
+    "clusterCollectionsBefore": 506,
+    "clusterCollectionsAfter": 394,
+    "atlasLimit": 500,
+    "removedDatabaseCount": 6,
+    "removedCollectionCount": 112,
+    "removedDatabases": [
+      {
+        "name": "hr_143439_1790445184099_5107148a",
+        "collectionCount": 31,
+        "collections": [
+          {
+            "name": "payments",
+            "documents": 0
+          },
+          {
+            "name": "staffs",
+            "documents": 0
+          },
+          {
+            "name": "wishlists",
+            "documents": 0
+          },
+          {
+            "name": "customtourrequests",
+            "documents": 0
+          },
+          {
+            "name": "subscriptions",
+            "documents": 0
+          },
+          {
+            "name": "commissions",
+            "documents": 0
+          },
+          {
+            "name": "agents",
+            "documents": 0
+          },
+          {
+            "name": "notifications",
+            "documents": 0
+          },
+          {
+            "name": "reviews",
+            "documents": 0
+          },
+          {
+            "name": "systemsettings",
+            "documents": 0
+          },
+          {
+            "name": "vehicles",
+            "documents": 0
+          },
+          {
+            "name": "backgroundjobs",
+            "documents": 0
+          },
+          {
+            "name": "auditlogs",
+            "documents": 0
+          },
+          {
+            "name": "chartofaccounts",
+            "documents": 0
+          },
+          {
+            "name": "corporateaccounts",
+            "documents": 0
+          },
+          {
+            "name": "heroslides",
+            "documents": 0
+          },
+          {
+            "name": "webhooks",
+            "documents": 0
+          },
+          {
+            "name": "invoices",
+            "documents": 0
+          },
+          {
+            "name": "itineraries",
+            "documents": 0
+          },
+          {
+            "name": "journalentries",
+            "documents": 0
+          },
+          {
+            "name": "permissions",
+            "documents": 0
+          },
+          {
+            "name": "websiteintegrationevents",
+            "documents": 0
+          },
+          {
+            "name": "invoicesequences",
+            "documents": 0
+          },
+          {
+            "name": "tours",
+            "documents": 0
+          },
+          {
+            "name": "taxprofiles",
+            "documents": 0
+          },
+          {
+            "name": "bookings",
+            "documents": 0
+          },
+          {
+            "name": "hospitalityrateplans",
+            "documents": 0
+          },
+          {
+            "name": "hotelbookings",
+            "documents": 0
+          },
+          {
+            "name": "users",
+            "documents": 0
+          },
+          {
+            "name": "paymentgatewayconfigs",
+            "documents": 0
+          },
+          {
+            "name": "subscriptionpayments",
+            "documents": 0
+          }
+        ],
+        "classification": "EMPTY TEST database generated by healthReadiness.test.js"
+      },
+      {
+        "name": "hr_143996_1790445220086_1e47412b",
+        "collectionCount": 26,
+        "collections": [
+          {
+            "name": "accommodationinventories",
+            "documents": 0
+          },
+          {
+            "name": "permissions",
+            "documents": 0
+          },
+          {
+            "name": "airporttransferbookings",
+            "documents": 0
+          },
+          {
+            "name": "agents",
+            "documents": 0
+          },
+          {
+            "name": "operationalassets",
+            "documents": 0
+          },
+          {
+            "name": "systemsettings",
+            "documents": 0
+          },
+          {
+            "name": "payments",
+            "documents": 0
+          },
+          {
+            "name": "users",
+            "documents": 0
+          },
+          {
+            "name": "tours",
+            "documents": 0
+          },
+          {
+            "name": "subscriptionpayments",
+            "documents": 0
+          },
+          {
+            "name": "backgroundjobs",
+            "documents": 0
+          },
+          {
+            "name": "hospitalityrateplans",
+            "documents": 0
+          },
+          {
+            "name": "websiteintegrationkeys",
+            "documents": 0
+          },
+          {
+            "name": "databasebackups",
+            "documents": 0
+          },
+          {
+            "name": "hotelbookings",
+            "documents": 0
+          },
+          {
+            "name": "organizations",
+            "documents": 0
+          },
+          {
+            "name": "compliancerecords",
+            "documents": 0
+          },
+          {
+            "name": "staffs",
+            "documents": 0
+          },
+          {
+            "name": "hospitalitydeposits",
+            "documents": 0
+          },
+          {
+            "name": "commissions",
+            "documents": 0
+          },
+          {
+            "name": "subscriptions",
+            "documents": 0
+          },
+          {
+            "name": "journalentries",
+            "documents": 0
+          },
+          {
+            "name": "securitylogs",
+            "documents": 0
+          },
+          {
+            "name": "webhooks",
+            "documents": 0
+          },
+          {
+            "name": "auditlogs",
+            "documents": 0
+          },
+          {
+            "name": "chartofaccounts",
+            "documents": 0
+          }
+        ],
+        "classification": "EMPTY TEST database generated by healthReadiness.test.js"
+      },
+      {
+        "name": "hr_156485_1790448476350_2d3e3681",
+        "collectionCount": 14,
+        "collections": [
+          {
+            "name": "hotelbookings",
+            "documents": 0
+          },
+          {
+            "name": "airporttransferbookings",
+            "documents": 0
+          },
+          {
+            "name": "organizations",
+            "documents": 0
+          },
+          {
+            "name": "hospitalitydeposits",
+            "documents": 0
+          },
+          {
+            "name": "taxprofiles",
+            "documents": 0
+          },
+          {
+            "name": "hospitalitysuppliercontracts",
+            "documents": 0
+          },
+          {
+            "name": "chartofaccounts",
+            "documents": 0
+          },
+          {
+            "name": "invoicesequences",
+            "documents": 0
+          },
+          {
+            "name": "hotelroomtypes",
+            "documents": 0
+          },
+          {
+            "name": "journalentries",
+            "documents": 0
+          },
+          {
+            "name": "invoices",
+            "documents": 0
+          },
+          {
+            "name": "airporttransfers",
+            "documents": 0
+          },
+          {
+            "name": "hospitalityrateplans",
+            "documents": 0
+          },
+          {
+            "name": "websiteintegrationkeys",
+            "documents": 0
+          }
+        ],
+        "classification": "EMPTY TEST database generated by healthReadiness.test.js"
+      },
+      {
+        "name": "hr_170043_1790454182488_ca8ec3e6",
+        "collectionCount": 7,
+        "collections": [
+          {
+            "name": "webhooks",
+            "documents": 0
+          },
+          {
+            "name": "hospitalitysuppliercontracts",
+            "documents": 0
+          },
+          {
+            "name": "hospitalityroomblocks",
+            "documents": 0
+          },
+          {
+            "name": "hospitalitydeposits",
+            "documents": 0
+          },
+          {
+            "name": "aiconversations",
+            "documents": 0
+          },
+          {
+            "name": "journalentries",
+            "documents": 0
+          },
+          {
+            "name": "airporttransfers",
+            "documents": 0
+          }
+        ],
+        "classification": "EMPTY TEST database generated by healthReadiness.test.js"
+      },
+      {
+        "name": "hr_446794_1790419716122_aafc9649",
+        "collectionCount": 17,
+        "collections": [
+          {
+            "name": "agents",
+            "documents": 0
+          },
+          {
+            "name": "subscriptionpayments",
+            "documents": 0
+          },
+          {
+            "name": "accommodationinventories",
+            "documents": 0
+          },
+          {
+            "name": "securitylogs",
+            "documents": 0
+          },
+          {
+            "name": "roles",
+            "documents": 0
+          },
+          {
+            "name": "webhooks",
+            "documents": 0
+          },
+          {
+            "name": "chartofaccounts",
+            "documents": 0
+          },
+          {
+            "name": "webhookdeliveries",
+            "documents": 0
+          },
+          {
+            "name": "staffs",
+            "documents": 0
+          },
+          {
+            "name": "organizations",
+            "documents": 0
+          },
+          {
+            "name": "users",
+            "documents": 0
+          },
+          {
+            "name": "websiteintegrationkeys",
+            "documents": 0
+          },
+          {
+            "name": "systemsettings",
+            "documents": 0
+          },
+          {
+            "name": "backgroundjobs",
+            "documents": 0
+          },
+          {
+            "name": "hotelroomtypes",
+            "documents": 0
+          },
+          {
+            "name": "subscriptions",
+            "documents": 0
+          },
+          {
+            "name": "permissions",
+            "documents": 0
+          }
+        ],
+        "classification": "EMPTY TEST database generated by healthReadiness.test.js"
+      },
+      {
+        "name": "hr_548169_1790438431443_e47343e9",
+        "collectionCount": 17,
+        "collections": [
+          {
+            "name": "hospitalitydeposits",
+            "documents": 0
+          },
+          {
+            "name": "auditlogs",
+            "documents": 0
+          },
+          {
+            "name": "invoicesequences",
+            "documents": 0
+          },
+          {
+            "name": "backgroundjobs",
+            "documents": 0
+          },
+          {
+            "name": "databasebackups",
+            "documents": 0
+          },
+          {
+            "name": "webhookdeliveries",
+            "documents": 0
+          },
+          {
+            "name": "systemsettings",
+            "documents": 0
+          },
+          {
+            "name": "securitylogs",
+            "documents": 0
+          },
+          {
+            "name": "agents",
+            "documents": 0
+          },
+          {
+            "name": "webhooks",
+            "documents": 0
+          },
+          {
+            "name": "permissions",
+            "documents": 0
+          },
+          {
+            "name": "organizations",
+            "documents": 0
+          },
+          {
+            "name": "websiteintegrationkeys",
+            "documents": 0
+          },
+          {
+            "name": "subscriptions",
+            "documents": 0
+          },
+          {
+            "name": "staffs",
+            "documents": 0
+          },
+          {
+            "name": "users",
+            "documents": 0
+          },
+          {
+            "name": "subscriptionpayments",
+            "documents": 0
+          }
+        ],
+        "classification": "EMPTY TEST database generated by healthReadiness.test.js"
+      }
+    ]
+  },
+  "imageValidation": {
+    "tours": 24,
+    "uniqueTourImages": 24,
+    "duplicateTourImages": 0,
+    "destinations": 36,
+    "uniqueDestinationImages": 36,
+    "duplicateDestinationImages": 0,
+    "invalidImages": []
+  },
+  "tenantsCreatedOrUpdated": [
+    {
+      "name": "Hussein Mboya Tours",
+      "slug": "hussein-mboya",
+      "id": "6ab911b18f2f66ee603c3a7f",
+      "action": "created_or_updated"
+    },
+    {
+      "name": "Amani Trails Safaris",
+      "slug": "amani-trails",
+      "id": "6ab913528f2f66ee603c3aa8",
+      "action": "created_or_updated"
+    },
+    {
+      "name": "Demo Safari Adventures",
+      "slug": "demo-safari",
+      "id": "6ab913ae8f2f66ee603c3acd",
+      "action": "created_or_updated"
+    }
   ],
-  "commonTestPasswordNote": "Seed logins require the operator-supplied TEST_DEMO_SEED_PASSWORD; its value is intentionally excluded from this report.",
-  "tenantsCreatedOrUpdated": [],
+  "tenants": [
+    {
+      "name": "Hussein Mboya Tours",
+      "slug": "hussein-mboya",
+      "id": "6ab911b18f2f66ee603c3a7f",
+      "users": [
+        "superadmin1@husseinmboya.com",
+        "admin1@husseinmboya.com",
+        "tourmanager1@husseinmboya.com",
+        "agent1@husseinmboya.com",
+        "agent2@husseinmboya.com",
+        "guide1@husseinmboya.com",
+        "guide2@husseinmboya.com",
+        "driver1@husseinmboya.com",
+        "driver2@husseinmboya.com",
+        "customer1@husseinmboya.com",
+        "customer2@husseinmboya.com",
+        "customer3@husseinmboya.com",
+        "customer4@husseinmboya.com"
+      ],
+      "counts": {
+        "User": 12,
+        "Customer": 4,
+        "CustomerProfile": 4,
+        "UserPreference": 4,
+        "Staff": 5,
+        "StaffProfile": 5,
+        "Agent": 2,
+        "Vehicle": 6,
+        "Destination": 12,
+        "Tour": 8,
+        "TourPackage": 3,
+        "Booking": 11,
+        "Payment": 11,
+        "Invoice": 10,
+        "Refund": 1,
+        "CreditDebitNote": 2,
+        "Supplier": 5,
+        "SupplierPayable": 2,
+        "PurchaseOrder": 2,
+        "Expense": 8,
+        "TourCost": 64,
+        "Commission": 10,
+        "ChartOfAccount": 35,
+        "JournalEntry": 15,
+        "AccountingPeriod": 1,
+        "FinanceBudget": 1,
+        "TaxRule": 1,
+        "TaxProfile": 1,
+        "ComplianceRecord": 6,
+        "EtimsSubmission": 1,
+        "PrivacyRequest": 5,
+        "CorporateAccount": 5,
+        "Hotel": 1,
+        "HotelRoomType": 1,
+        "AccommodationInventory": 1,
+        "HospitalityRatePlan": 1,
+        "HospitalityRoomBlock": 1,
+        "HospitalitySupplierContract": 1,
+        "HotelBooking": 1,
+        "HospitalityDeposit": 2,
+        "AirportTransfer": 1,
+        "AirportTransferBooking": 1,
+        "Review": 3,
+        "Lead": 4,
+        "CustomTourRequest": 2,
+        "TravelServiceRequest": 1,
+        "Notification": 9,
+        "Coupon": 1,
+        "Promotion": 1,
+        "Campaign": 1,
+        "Loyalty": 4,
+        "LoyaltyAccount": 4,
+        "Wishlist": 4,
+        "Referral": 3,
+        "PaymentGatewayConfig": 3,
+        "Webhook": 1,
+        "WebhookDelivery": 1,
+        "WebsiteIntegrationKey": 1,
+        "WebsiteIntegrationEvent": 1,
+        "ApiKey": 1,
+        "Subscription": 1,
+        "SubscriptionPayment": 1,
+        "PaymentLink": 1,
+        "FixedAsset": 1,
+        "OperationalAsset": 4,
+        "TourCategory": 1,
+        "Itinerary": 8,
+        "Gallery": 1,
+        "Media": 1,
+        "TourGallery": 8,
+        "TourReport": 1,
+        "HeroSlide": 1,
+        "Quotation": 1,
+        "WithholdingTax": 1,
+        "AccountingReconciliation": 1,
+        "AccountingSubledger": 1
+      }
+    },
+    {
+      "name": "Amani Trails Safaris",
+      "slug": "amani-trails",
+      "id": "6ab913528f2f66ee603c3aa8",
+      "users": [
+        "admin1@amanitrails.com",
+        "tourmanager1@amanitrails.com",
+        "agent1@amanitrails.com",
+        "agent2@amanitrails.com",
+        "guide1@amanitrails.com",
+        "guide2@amanitrails.com",
+        "driver1@amanitrails.com",
+        "driver2@amanitrails.com",
+        "customer1@amanitrails.com",
+        "customer2@amanitrails.com",
+        "customer3@amanitrails.com",
+        "customer4@amanitrails.com"
+      ],
+      "counts": {
+        "User": 12,
+        "Customer": 4,
+        "CustomerProfile": 4,
+        "UserPreference": 4,
+        "Staff": 5,
+        "StaffProfile": 5,
+        "Agent": 2,
+        "Vehicle": 6,
+        "Destination": 12,
+        "Tour": 8,
+        "TourPackage": 3,
+        "Booking": 11,
+        "Payment": 11,
+        "Invoice": 10,
+        "Refund": 1,
+        "CreditDebitNote": 2,
+        "Supplier": 5,
+        "SupplierPayable": 2,
+        "PurchaseOrder": 2,
+        "Expense": 8,
+        "TourCost": 64,
+        "Commission": 10,
+        "ChartOfAccount": 35,
+        "JournalEntry": 15,
+        "AccountingPeriod": 1,
+        "FinanceBudget": 1,
+        "TaxRule": 1,
+        "TaxProfile": 1,
+        "ComplianceRecord": 6,
+        "EtimsSubmission": 1,
+        "PrivacyRequest": 5,
+        "CorporateAccount": 5,
+        "Hotel": 1,
+        "HotelRoomType": 1,
+        "AccommodationInventory": 1,
+        "HospitalityRatePlan": 1,
+        "HospitalityRoomBlock": 1,
+        "HospitalitySupplierContract": 1,
+        "HotelBooking": 1,
+        "HospitalityDeposit": 2,
+        "AirportTransfer": 1,
+        "AirportTransferBooking": 1,
+        "Review": 3,
+        "Lead": 4,
+        "CustomTourRequest": 2,
+        "TravelServiceRequest": 1,
+        "Notification": 9,
+        "Coupon": 1,
+        "Promotion": 1,
+        "Campaign": 1,
+        "Loyalty": 4,
+        "LoyaltyAccount": 4,
+        "Wishlist": 4,
+        "Referral": 3,
+        "PaymentGatewayConfig": 3,
+        "Webhook": 1,
+        "WebhookDelivery": 1,
+        "WebsiteIntegrationKey": 1,
+        "WebsiteIntegrationEvent": 1,
+        "ApiKey": 1,
+        "Subscription": 1,
+        "SubscriptionPayment": 1,
+        "PaymentLink": 1,
+        "FixedAsset": 1,
+        "OperationalAsset": 4,
+        "TourCategory": 1,
+        "Itinerary": 8,
+        "Gallery": 1,
+        "Media": 1,
+        "TourGallery": 8,
+        "TourReport": 1,
+        "HeroSlide": 1,
+        "Quotation": 1,
+        "WithholdingTax": 1,
+        "AccountingReconciliation": 1,
+        "AccountingSubledger": 1
+      }
+    },
+    {
+      "name": "Demo Safari Adventures",
+      "slug": "demo-safari",
+      "id": "6ab913ae8f2f66ee603c3acd",
+      "users": [
+        "admin1@demosafari.com",
+        "tourmanager1@demosafari.com",
+        "agent1@demosafari.com",
+        "agent2@demosafari.com",
+        "guide1@demosafari.com",
+        "guide2@demosafari.com",
+        "driver1@demosafari.com",
+        "driver2@demosafari.com",
+        "customer1@demosafari.com",
+        "customer2@demosafari.com",
+        "customer3@demosafari.com",
+        "customer4@demosafari.com"
+      ],
+      "counts": {
+        "User": 12,
+        "Customer": 4,
+        "CustomerProfile": 4,
+        "UserPreference": 4,
+        "Staff": 5,
+        "StaffProfile": 5,
+        "Agent": 2,
+        "Vehicle": 6,
+        "Destination": 12,
+        "Tour": 8,
+        "TourPackage": 3,
+        "Booking": 11,
+        "Payment": 11,
+        "Invoice": 10,
+        "Refund": 1,
+        "CreditDebitNote": 2,
+        "Supplier": 5,
+        "SupplierPayable": 2,
+        "PurchaseOrder": 2,
+        "Expense": 8,
+        "TourCost": 64,
+        "Commission": 10,
+        "ChartOfAccount": 35,
+        "JournalEntry": 15,
+        "AccountingPeriod": 1,
+        "FinanceBudget": 1,
+        "TaxRule": 1,
+        "TaxProfile": 1,
+        "ComplianceRecord": 6,
+        "EtimsSubmission": 1,
+        "PrivacyRequest": 5,
+        "CorporateAccount": 5,
+        "Hotel": 1,
+        "HotelRoomType": 1,
+        "AccommodationInventory": 1,
+        "HospitalityRatePlan": 1,
+        "HospitalityRoomBlock": 1,
+        "HospitalitySupplierContract": 1,
+        "HotelBooking": 1,
+        "HospitalityDeposit": 2,
+        "AirportTransfer": 1,
+        "AirportTransferBooking": 1,
+        "Review": 3,
+        "Lead": 4,
+        "CustomTourRequest": 2,
+        "TravelServiceRequest": 1,
+        "Notification": 9,
+        "Coupon": 1,
+        "Promotion": 1,
+        "Campaign": 1,
+        "Loyalty": 4,
+        "LoyaltyAccount": 4,
+        "Wishlist": 4,
+        "Referral": 3,
+        "PaymentGatewayConfig": 3,
+        "Webhook": 1,
+        "WebhookDelivery": 1,
+        "WebsiteIntegrationKey": 1,
+        "WebsiteIntegrationEvent": 1,
+        "ApiKey": 1,
+        "Subscription": 1,
+        "SubscriptionPayment": 1,
+        "PaymentLink": 1,
+        "FixedAsset": 1,
+        "OperationalAsset": 4,
+        "TourCategory": 1,
+        "Itinerary": 8,
+        "Gallery": 1,
+        "Media": 1,
+        "TourGallery": 8,
+        "TourReport": 1,
+        "HeroSlide": 1,
+        "Quotation": 1,
+        "WithholdingTax": 1,
+        "AccountingReconciliation": 1,
+        "AccountingSubledger": 1
+      }
+    }
+  ],
+  "perCollectionCounts": {
+    "Organization": 3,
+    "Permission": 19,
+    "Role": 22,
+    "User": 37,
+    "Customer": 12,
+    "CustomerProfile": 12,
+    "UserPreference": 12,
+    "Staff": 15,
+    "StaffProfile": 15,
+    "Agent": 6,
+    "Destination": 36,
+    "Tour": 24,
+    "TourPackage": 9,
+    "Booking": 33,
+    "Payment": 33,
+    "Invoice": 30,
+    "Refund": 3,
+    "CreditDebitNote": 6,
+    "Supplier": 15,
+    "SupplierPayable": 6,
+    "PurchaseOrder": 6,
+    "Expense": 24,
+    "TourCost": 192,
+    "Commission": 30,
+    "Vehicle": 18,
+    "Hotel": 3,
+    "HotelRoomType": 3,
+    "AccommodationInventory": 3,
+    "HospitalityRatePlan": 3,
+    "HospitalityRoomBlock": 3,
+    "HospitalitySupplierContract": 3,
+    "HotelBooking": 3,
+    "HospitalityDeposit": 6,
+    "AirportTransfer": 3,
+    "AirportTransferBooking": 3,
+    "Review": 9,
+    "Lead": 12,
+    "CustomTourRequest": 6,
+    "TravelServiceRequest": 3,
+    "ChartOfAccount": 105,
+    "JournalEntry": 45,
+    "AccountingPeriod": 3,
+    "FinanceBudget": 3,
+    "TaxRule": 3,
+    "TaxProfile": 3,
+    "CorporateAccount": 15,
+    "ComplianceRecord": 18,
+    "EtimsSubmission": 3,
+    "PrivacyRequest": 15,
+    "Notification": 27,
+    "Coupon": 3,
+    "Promotion": 3,
+    "Campaign": 3,
+    "Loyalty": 12,
+    "LoyaltyAccount": 12,
+    "Wishlist": 12,
+    "Referral": 9,
+    "PaymentGatewayConfig": 9,
+    "ApiKey": 3,
+    "WebsiteIntegrationKey": 3,
+    "WebsiteIntegrationEvent": 3,
+    "Webhook": 3,
+    "WebhookDelivery": 3,
+    "Subscription": 3,
+    "SubscriptionPayment": 3,
+    "PaymentLink": 3,
+    "FixedAsset": 3,
+    "OperationalAsset": 12,
+    "TourCategory": 3,
+    "Itinerary": 24,
+    "Gallery": 3,
+    "Media": 3,
+    "TourGallery": 24,
+    "TourReport": 3,
+    "HeroSlide": 3,
+    "Quotation": 3,
+    "WithholdingTax": 3,
+    "AccountingReconciliation": 3,
+    "AccountingSubledger": 3
+  },
+  "testLoginEmails": [
+    "superadmin1@husseinmboya.com",
+    "admin1@husseinmboya.com",
+    "tourmanager1@husseinmboya.com",
+    "agent1@husseinmboya.com",
+    "agent2@husseinmboya.com",
+    "guide1@husseinmboya.com",
+    "guide2@husseinmboya.com",
+    "driver1@husseinmboya.com",
+    "driver2@husseinmboya.com",
+    "customer1@husseinmboya.com",
+    "customer2@husseinmboya.com",
+    "customer3@husseinmboya.com",
+    "customer4@husseinmboya.com",
+    "admin1@amanitrails.com",
+    "tourmanager1@amanitrails.com",
+    "agent1@amanitrails.com",
+    "agent2@amanitrails.com",
+    "guide1@amanitrails.com",
+    "guide2@amanitrails.com",
+    "driver1@amanitrails.com",
+    "driver2@amanitrails.com",
+    "customer1@amanitrails.com",
+    "customer2@amanitrails.com",
+    "customer3@amanitrails.com",
+    "customer4@amanitrails.com",
+    "admin1@demosafari.com",
+    "tourmanager1@demosafari.com",
+    "agent1@demosafari.com",
+    "agent2@demosafari.com",
+    "guide1@demosafari.com",
+    "guide2@demosafari.com",
+    "driver1@demosafari.com",
+    "driver2@demosafari.com",
+    "customer1@demosafari.com",
+    "customer2@demosafari.com",
+    "customer3@demosafari.com",
+    "customer4@demosafari.com"
+  ],
+  "usersByRole": {
+    "admin": 3,
+    "agent": 6,
+    "customer": 12,
+    "driver": 6,
+    "tour_guide": 6,
+    "tour_manager": 3,
+    "super_admin": 1
+  },
+  "commonTestPasswordNote": "Seed logins use the operator-supplied TEST_DEMO_SEED_PASSWORD; its value is intentionally excluded from this report.",
   "authenticationResults": {
-    "checked": false,
-    "accountCount": 0,
-    "verifiedAccountCount": 0,
+    "checked": true,
+    "accountCount": 37,
+    "verifiedAccountCount": 37,
     "failures": []
+  },
+  "validation": {
+    "requiredFieldsInspectedAgainstMongooseSchemas": true,
+    "requiredFieldFailures": [],
+    "relationshipFailures": [],
+    "authenticationChecked": true,
+    "bookingReferencesAndTotalsChecked": true,
+    "journalDebitsEqualCreditsChecked": true,
+    "status": "passed"
   },
   "relationshipFailures": [],
   "requiredFieldFailures": [],
-  "overallStatus": "blocked",
-  "validation": {
-    "status": "not_run",
-    "reason": "connect ECONNREFUSED 127.0.0.1:27017",
-    "relationshipFailures": [],
-    "requiredFieldFailures": []
-  },
-  "failures": [
-    "connect ECONNREFUSED 127.0.0.1:27017"
-  ],
+  "overallStatus": "passed",
+  "failures": [],
   "warnings": [
-    "The seed was not executed because the database/configuration safety guard blocked writes.",
-    "No MongoDB URI, password, credential, or gateway secret is included in this report."
-  ]
+    "The seed replaces records only under demo tenants marked with this exact seed namespace and never drops the application database.",
+    "No real payment gateway, M-Pesa request, webhook delivery, or KRA/eTIMS submission is performed.",
+    "Credential-bearing EtimsCredential, backup, audit/security incident, AI session, and background job collections are intentionally not fabricated by this demo seed."
+  ],
+  "verifiedImageAssets": {
+    "timestamp": "2026-09-27T15:13:27.631Z",
+    "remoteAssets": 29,
+    "remoteAssetsVerified": 29,
+    "localAssets": 31,
+    "failures": []
+  },
+  "dashboardApiValidation": {
+    "timestamp": "2026-09-27T15:24:12.615Z",
+    "successfulRoleLogins": 8,
+    "dashboardAndListCalls": 14,
+    "tenantIsolationChecks": [
+      {
+        "account": "customerA",
+        "foreignBooking": true,
+        "status": 404
+      },
+      {
+        "account": "customerB",
+        "foreignBooking": true,
+        "status": 404
+      }
+    ],
+    "rbacChecks": [
+      {
+        "account": "customerA",
+        "protectedAdminDashboardStatus": 403
+      }
+    ],
+    "testAuditRecordsRemoved": {
+      "AuditLog": 16,
+      "SecurityLog": 16
+    },
+    "failures": []
+  },
+  "readinessIntegration": {
+    "status": "passed",
+    "tests": 4,
+    "passed": 4,
+    "failed": 0,
+    "skipped": 0,
+    "teardown": "raw-driver collection drop verified empty"
+  },
+  "finalAtlasVerification": {
+    "clusterCollections": 403,
+    "clusterLimit": 500,
+    "applicationDatabaseCollections": 90,
+    "skippedApplicationCollections": 0,
+    "generatedReadinessDatabasesRemaining": 0
+  },
+  "oldDemoRecordsReplacedTotal": 1095,
+  "qualityGateTimestamp": "2026-09-27T15:25:28.669Z"
 }

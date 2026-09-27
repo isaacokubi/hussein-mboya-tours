@@ -70,15 +70,24 @@ test("first tenant provisioning, tenant-admin access, public catalogue and cross
     readiness.setStartupPhase("ready");
     await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
     const origin = `http://127.0.0.1:${server.address().port}`;
-    const call = (url, { token, tenantSlug, ...options } = {}) => fetch(`${origin}${url}`, {
-      ...options,
-      headers: {
+    const loginClientIps = new Map();
+    const call = (url, { token, tenantSlug, ...options } = {}) => {
+      const headers = {
         ...(options.body ? { "Content-Type": "application/json" } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(tenantSlug ? { "X-Tenant-Slug": tenantSlug } : {}),
         ...options.headers,
-      },
-    });
+      };
+      if (url === "/api/auth/login" && options.method !== "OPTIONS") {
+        let email = "unknown-login-client";
+        try { email = JSON.parse(options.body || "{}").email || email; } catch { /* malformed-login tests still use a stable client key */ }
+        if (!loginClientIps.has(email)) loginClientIps.set(email, `198.51.100.${loginClientIps.size + 1}`);
+        // Each synthetic account represents a separate client in this acceptance flow.
+        // Keep the production per-IP login limit enabled while the test covers multiple identities.
+        headers["X-Forwarded-For"] = loginClientIps.get(email);
+      }
+      return fetch(`${origin}${url}`, { ...options, headers });
+    };
     const tenantInput = (suffix) => ({
       companyName: `Acceptance Safaris ${suffix}`, slug: `acceptance-safaris-${suffix}`,
       companyEmail: `office-${suffix}@acceptance.invalid`, companyPhone: suffix === "a" ? "0712345002" : "0712345003",

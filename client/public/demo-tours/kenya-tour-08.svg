@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+<title id="title">Kenya safari tour illustration</title>
+<desc id="desc">A warm illustrated safari landscape with acacia silhouettes, distant hills and a herd of elephants at sunset.</desc>
+<defs><linearGradient id="sky" x2="0" y2="1"><stop stop-color="#d8e6df"/><stop offset="1" stop-color="#f4c680"/></linearGradient><linearGradient id="savanna" x2="0" y2="1"><stop stop-color="#a96c43"/><stop offset="1" stop-color="#684936"/></linearGradient></defs>
+<rect width="1200" height="675" fill="url(#sky)"/><circle cx="900" cy="155" r="76" fill="#fff0bd"/>
+<path d="M0 355 200 230l150 115 180-190 200 195 165-150 180 155 125-95v190H0Z" fill="#a28b6d" opacity=".7"/>
+<path d="M0 420q180-90 360 0t360 0 360 0 360 0v255H0Z" fill="#718257"/>
+<path d="M0 485q250-60 500 0t500 0 400 0v190H0Z" fill="url(#savanna)"/>
+<g fill="#3d4935"><path d="M110 405h17l14-93H97z"/><path d="M55 313q-12-28 17-34 8-36 40-20 29-18 42 8 34 4 22 36-14 15-37 13H82q-20 0-27-3z"/><path d="M1010 425h18l11-104h-40z"/><path d="M964 322q-8-27 20-32 9-34 37-18 28-15 40 10 33 2 19 32-11 13-34 12h-56q-20 0-26-4z"/></g>
+<g fill="#40382e"><path d="M410 482c15-29 48-43 83-37l21 5 17-12 20 5 7 13-18 8-8 26-16 1-2-20-23 2-12 22-15 1 1-24-22 8-12 20-13-2 5-17-16 5z"/><path d="M556 493c14-25 38-35 66-29l23 8 19-9 17 6 4 12-16 7-6 23-14 1-1-18-19 1-10 19-14 1 1-21-17 8-10 17-13-2 3-15-14 4z"/><path d="M506 443c-9-12-4-24 9-26 10-2 15 8 12 17l16 3 10 17-6 3-13-13-13-1-6 17-8-1 4-16z"/></g>
+<path d="M0 620q300-28 600 2t600-8v61H0Z" fill="#4f3f32" opacity=".5"/>
+</svg>

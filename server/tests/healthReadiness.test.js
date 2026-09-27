@@ -162,7 +162,7 @@ test("a fresh MongoDB-backed server becomes healthy after its critical migration
   assert.equal(sourceDatabase, "global_tours_test", "health readiness must derive its isolated database from the Atlas test database");
   const databaseName = `hr_${process.pid}_${Date.now()}_${Math.random().toString(16).slice(2, 10)}`;
   testDatabaseUrl.pathname = `/${databaseName}`;
-  assert.match(databaseName, /^hr_[0-9]+_[0-9]+_[a-f0-9]+$/);
+  assert.match(databaseName, /^hr_[0-9]+_[0-9]+_[a-f0-9]{8}$/);
   const isolatedMongoUri = testDatabaseUrl.toString();
   const runtime = await launchServer({
     MONGODB_URI: isolatedMongoUri,
@@ -173,13 +173,22 @@ test("a fresh MongoDB-backed server becomes healthy after its critical migration
   t.after(async () => {
     if (runtime.child.exitCode === null) runtime.child.kill("SIGTERM");
     const { default: cleanupMongoose } = await import("mongoose");
+    const cleanupClient = new cleanupMongoose.mongo.MongoClient(isolatedMongoUri, { serverSelectionTimeoutMS: 10_000 });
     try {
-      await cleanupMongoose.connect(isolatedMongoUri, { serverSelectionTimeoutMS: 10_000 });
-      if (cleanupMongoose.connection.name !== databaseName) throw new Error("Refusing to clean an unexpected health readiness database.");
-      const collections = await cleanupMongoose.connection.db.listCollections({}, { nameOnly: true }).toArray();
-      await Promise.all(collections.map(({ name }) => cleanupMongoose.connection.db.collection(name).drop()));
+      await cleanupClient.connect();
+      const cleanupDatabase = cleanupClient.db(databaseName);
+      if (cleanupDatabase.databaseName !== databaseName) throw new Error("Refusing to clean an unexpected health readiness database.");
+      if (!/^hr_[0-9]+_[0-9]+_[a-f0-9]{8}$/.test(databaseName)) throw new Error("Refusing to clean a database outside the health-readiness test namespace.");
+      const knownCollections = new Set(Object.values(cleanupMongoose.models).map((model) => model.collection.collectionName));
+      const collections = await cleanupDatabase.listCollections({}, { nameOnly: true }).toArray();
+      for (const { name } of collections) {
+        if (!knownCollections.has(name)) throw new Error(`Refusing to remove unknown readiness collection ${name}.`);
+        await cleanupDatabase.collection(name).drop();
+      }
+      const remaining = await cleanupDatabase.listCollections({}, { nameOnly: true }).toArray();
+      assert.equal(remaining.length, 0, "the isolated readiness test database must be empty after teardown");
     } finally {
-      if (cleanupMongoose.connection.readyState !== 0) await cleanupMongoose.disconnect();
+      await cleanupClient.close();
     }
   });
 

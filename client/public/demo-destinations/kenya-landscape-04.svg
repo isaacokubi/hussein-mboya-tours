@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+<title id="title">Kenyan landscape demo illustration 04</title><desc id="desc">A colorful illustrated Kenyan safari landscape with layered hills, warm sunlight, acacia trees and wildlife.</desc>
+<defs><linearGradient id="sky" x2="0" y2="1"><stop stop-color="#f7d99b"/><stop offset="1" stop-color="#fff1d1"/></linearGradient><linearGradient id="land" x2="0" y2="1"><stop stop-color="#bc7040"/><stop offset="1" stop-color="#85563a"/></linearGradient></defs>
+<rect width="1200" height="675" fill="url(#sky)"/><circle cx="764" cy="203" r="58" fill="#fff4c7" opacity=".92"/>
+<path d="M0 330 Q160 190 330 315T650 292T980 320T1200 250V500H0Z" fill="#b99064" opacity=".65"/>
+<path d="M0 385 Q190 255 370 355T720 330T1050 365T1200 310V530H0Z" fill="#647c4d" opacity=".78"/>
+<path d="M0 420 L95,290 204,150 363,270 L219,300 507,135 751,285 L564,300 855,165 1100,285 L1200 410V675H0Z" fill="url(#land)"/>
+<path d="M0 485 Q220 450 430 500T820 475T1200 510V675H0Z" fill="#76523b" opacity=".45"/>
+<g fill="#647c4d"><path d="M97 350h19l8-75h-34z"/><path d="M67 278c-7-25 20-39 38-23 10-21 47-13 43 10 20 3 21 29 0 31h-70c-15 0-20-9-11-18z"/></g><g fill="#443a2d"><path d="M420 321c22-24 52-34 82-30l24 7 20-8 21 5-7 11-27 7-13 20-18-3 7-17-27 1-13 27-16-2 3-28-24 12-13 21-12-3 7-23-20 5-9-5z"/><path d="M513 295l4-17 5 1-1 18m9-19 5 1-2 19"/></g>
+<g fill="#fff7df" opacity=".85"><path d="M150 155q18-18 36 0q18-18 36 0q-18-6-36 5q-18-11-36-5z"/><path d="M320 115q14-13 28 0q14-13 28 0q-14-4-28 4q-14-8-28-4z"/></g>
+<path d="M0 620 Q300 590 600 624T1200 610V675H0Z" fill="#624936" opacity=".42"/>
+</svg>

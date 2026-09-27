@@ -1,0 +1,23 @@
+{
+  "timestamp": "2026-09-27T15:40:39.101Z",
+  "applicationDatabase": "husseindb",
+  "testSourceDatabase": "global_tours_test",
+  "clusterCollectionsBefore": 403,
+  "clusterCollectionsAfter": 403,
+  "atlasLimit": 500,
+  "removedDatabaseCount": 0,
+  "removedCollectionCount": 0,
+  "removedDatabases": [],
+  "initialClusterCollections": 506,
+  "confirmedOldReadinessDatabasesRemoved": 6,
+  "confirmedOldReadinessCollectionsRemoved": 112,
+  "clusterCollectionsAfterOldReadinessCleanup": 394,
+  "failedAttemptReadinessDatabaseRemoved": 1,
+  "failedAttemptReadinessCollectionsRemoved": 39,
+  "finalClusterCollectionsVerified": 403,
+  "finalApplicationDatabaseCollections": 90,
+  "unknownDatabasesTouched": 0,
+  "generatedReadinessDatabasesRemaining": 0,
+  "skippedApplicationCollections": 0,
+  "cleanupScope": "Only generated hr_<pid>_<timestamp>_<8hex> databases were checked for known application collections and zero documents before individual collection removal."
+}
