@@ -1,5 +1,35 @@
 # Global Tours — Production Readiness
 
+## Previous automated readiness snapshot — 2026-09-27
+
+**Source commit for that snapshot:** `0b7949865e67a4fa5dd45076a120f9d7f69f1e39` on `main`.
+
+The latest automated readiness pass completed successfully:
+
+| Check | Result |
+|---|---|
+| Full backend suite | **181 passed, 0 failed, 5 expected skips** |
+| Atlas health/readiness | **4 passed, 0 failed, 0 skipped** |
+| Atlas readiness + first-tenant pair | **5 passed, 0 failed, 0 skipped** |
+| `npm run check:all` | **PASS** |
+| Frontend lint/build | **PASS / PASS** |
+| Tenant isolation and RBAC smoke | **PASS** |
+| Demo API verification | **PASS** |
+
+The previous readiness test worker error was reproduced as localhost `listen(0, 127.0.0.1)` `EPERM` in the restricted execution environment. The same complete suite passed with the required execution permission, so no application/test source fix was necessary.
+
+### Current demo fixture inventory
+
+The 2026-09-27 authorized demo reset produced 19 users, 12 tours, 12 destinations, 36 bookings, 30 payments, 3 vehicles, 9 reviews, 0 wishlists and 18 notifications across `hussein-mboya`, `amani-trails`, and `demo-safari`. Featured images are unique for 12/12 tours and 12/12 destinations. Seeded payment records are internal fixtures only; no live M-Pesa transaction was initiated. Previous counts belong to a different seed run. This does not certify production.
+
+### Live production boundary
+
+These results establish the current automated source/readiness state. They do **not** replace deployment/provider evidence for live M-Pesa callbacks, eTIMS/KRA submission, SMTP delivery, current deployed SHA, browser/mobile acceptance, backups/restore or production data reconciliation.
+
+---
+
+
+
 ## MongoDB configuration and verification separation
 
 Render production remains configured through its existing `MONGODB_URI`, which must name the existing Atlas database `husseindb` in the URI path. The production validator accepts Atlas `mongodb+srv://` and standard `mongodb://` forms with that database name and does not require a test-only variable.

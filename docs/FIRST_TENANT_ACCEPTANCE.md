@@ -1,5 +1,30 @@
 # First Tenant Production Acceptance
 
+## Acceptance evidence snapshot — 2026-09-27
+
+**Prior source commit:** `0b7949865e67a4fa5dd45076a120f9d7f69f1e39` on `main`.
+
+The current repository-side checks are green:
+
+- Full backend suite: **181 passed, 0 failed, 5 expected skips**.
+- `npm run check:all`, frontend lint/build: **PASS**.
+- Live tenant-isolation regression: **17 passed, 0 failed**; RBAC seed links and permission assignments: **PASS**.
+- Atlas readiness integrations: not rerun because their configured URIs target `global_tours_test`, outside this task's explicit `husseindb`-only authorization.
+
+This changes the status from an unrun database acceptance test to verified isolated database evidence. It does **not** certify the live deployment or external providers. Current deployed SHA, production M-Pesa callback/replay/failure evidence, KRA/eTIMS submission evidence, email delivery, browser/mobile acceptance and production backup/restore evidence remain required before treating a real first-tenant launch as externally certified.
+
+### Current synthetic demo fixture
+
+The verified demo environment contains three tenants (`hussein-mboya`, `amani-trails`, `demo-safari`) with 19 users, 12 tours, 12 destinations, 36 bookings, 30 payments, 3 vehicles, 9 reviews, 0 wishlists and 18 notifications. Featured images are unique across 12/12 tours and 12/12 destinations. Payment records are synthetic and no live M-Pesa transaction was performed by the seed. Older baseline totals describe a different run; see [Demo Seeding Verification](DEMO_SEEDING.md) for current counts.
+
+### Seed safety
+
+The controlled reset/seed script is `server/scripts/reset-and-seed-demo.js`. It requires explicit destructive confirmation and a seed password, preserves platform-owner accounts and tenant identities, and must only target a confirmed disposable/staging/demo database. Never point it at an unknown or production database.
+
+---
+
+
+
 ## Current decision
 
 **NOT READY.** The expanded end-to-end acceptance test is present and wired into the MongoDB 8 replica-set CI job, but this worktree's database-backed test has not run and no CI result for this candidate was obtained. On 2026-09-25, a read-only probe returned HTTP 200 for the Render root and `/api/health` (JSON content type) and HTTP 200 HTML for Vercel. The health body, CORS behavior and live API version were not established; a repeat probe failed DNS resolution. Complete the database-backed test and required external evidence before onboarding a real tenant.

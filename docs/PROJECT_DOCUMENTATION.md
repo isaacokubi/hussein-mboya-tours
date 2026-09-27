@@ -1,5 +1,53 @@
 # Hussein Mboya Tours — Full Project Documentation
 
+## Latest verified state — 2026-09-27
+
+The controlled demo reset and verification were completed on 2026-09-27. The reset target and actual data counts are documented in [Demo Seeding Verification](DEMO_SEEDING.md).
+
+### Automated verification
+
+- Backend full suite: **181 passed, 0 failed, 5 expected skips**.
+- Atlas readiness integrations: not rerun in this task because their configured URIs target `global_tours_test`, outside the explicit authorization to touch only `husseindb`.
+- `npm run check:all`: **PASS**.
+- Frontend lint: **PASS**.
+- Frontend production build: **PASS**.
+- Live tenant-isolation regression: **17 passed, 0 failed**.
+
+The earlier `healthReadiness.test.js` failure was diagnosed as an execution-environment `EPERM` restriction on binding a localhost ephemeral port. With the required execution permission, the complete suite passed; no application-code fix was warranted.
+
+### Verified demo dataset
+
+Three demo tenants are currently represented: `hussein-mboya`, `amani-trails`, and `demo-safari`.
+
+| Dataset | Verified count |
+|---|---:|
+| Users, including platform owner | 19 |
+| Tours | 12 |
+| Destinations | 12 |
+| Bookings | 36 |
+| Payments | 30 |
+| Vehicles | 3 |
+| Reviews | 9 |
+| Wishlists | 0 |
+| Notifications | 18 |
+| Tour images | 12 unique / 12 |
+| Destination images | 12 unique / 12 |
+
+The dataset also contains finance, operations, website-integration, hospitality, hotel, and airport-transfer records. Subscription, CMS, and analytics collections were included in the final count audit and have zero records for this reset. Seeded payment records are synthetic fixtures; no live M-Pesa transaction was initiated by the seed.
+
+### Demo seed safety
+
+Use `server/scripts/reset-and-seed-demo.js` only against a confirmed disposable/staging/demo database. It requires `CONFIRM_DEMO_RESET=YES` and `SEED_DEMO_PASSWORD` (minimum eight characters), preserves platform-owner accounts and tenant identities, and replaces other application data with deterministic synthetic demo data. Verify the MongoDB database name and deployment environment before running it. Never use an unknown target or a real production database for a destructive demo reset.
+
+See [Demo Data & Seed Runbook](DEMO_SEEDING.md).
+
+### Production boundary
+
+The automated code/readiness gates above do not by themselves certify live production. Current live deployment SHA, production M-Pesa callback/replay/failure evidence, KRA/eTIMS submission evidence, transactional email delivery, browser/device acceptance, backup/restore evidence and production data-integrity evidence remain deployment/provider gates.
+
+---
+
+
 ## 1. Purpose and scope
 
 Hussein Mboya Tours is a full-stack travel and safari operations platform. It combines a public travel experience with authenticated customer, agent, guide, driver, finance, administration, and platform-management workflows.
