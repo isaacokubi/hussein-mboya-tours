@@ -1,5 +1,35 @@
 # Global Tours — Production Readiness
 
+## Current verified state — 2026-09-27
+
+**Verified commit:** `0b7949865e67a4fa5dd45076a120f9d7f69f1e39` on `main`.
+
+The latest automated readiness pass completed successfully:
+
+| Check | Result |
+|---|---|
+| Full backend suite | **181 passed, 0 failed, 5 expected skips** |
+| Atlas health/readiness | **4 passed, 0 failed, 0 skipped** |
+| Atlas readiness + first-tenant pair | **5 passed, 0 failed, 0 skipped** |
+| `npm run check:all` | **PASS** |
+| Frontend lint/build | **PASS / PASS** |
+| Tenant isolation and RBAC smoke | **PASS** |
+| Demo API verification | **PASS** |
+
+The previous readiness test worker error was reproduced as localhost `listen(0, 127.0.0.1)` `EPERM` in the restricted execution environment. The same complete suite passed with the required execution permission, so no application/test source fix was necessary.
+
+### Current demo fixture inventory
+
+The verified synthetic dataset spans `hussein-mboya`, `amani-trails`, and `demo-safari`: 37 users, 24 tours, 36 destinations, 33 bookings, 33 payments, 18 vehicles, 9 reviews, 12 wishlists and 27 notifications, with 24/24 unique tour images and 36/36 unique destination images. Seeded payment records are internal fixtures only; no live M-Pesa transaction was initiated.
+
+### Live production boundary
+
+These results establish the current automated source/readiness state. They do **not** replace deployment/provider evidence for live M-Pesa callbacks, eTIMS/KRA submission, SMTP delivery, current deployed SHA, browser/mobile acceptance, backups/restore or production data reconciliation.
+
+---
+
+
+
 ## MongoDB configuration and verification separation
 
 Render production remains configured through its existing `MONGODB_URI`, which must name the existing Atlas database `husseindb` in the URI path. The production validator accepts Atlas `mongodb+srv://` and standard `mongodb://` forms with that database name and does not require a test-only variable.
