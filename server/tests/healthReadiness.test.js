@@ -101,6 +101,7 @@ test("health and root routes stay reachable and report real database readiness",
   assert.equal(payload.success, false);
   assert.equal(payload.status, "starting");
   assert.equal(payload.database, "disconnected");
+  assert.equal(payload.databaseName, null);
 
   setStartupPhase("ready");
   response = await fetch(`${baseUrl}/api/health`);
@@ -109,6 +110,7 @@ test("health and root routes stay reachable and report real database readiness",
   assert.equal(payload.success, false);
   assert.equal(payload.status, "degraded");
   assert.equal(payload.database, "disconnected");
+  assert.equal(payload.databaseName, null);
 
   response = await fetch(`${baseUrl}/api/users`);
   assert.equal(response.status, 503, "database-backed routes fail promptly while unavailable");

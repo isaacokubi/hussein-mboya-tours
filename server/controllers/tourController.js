@@ -33,6 +33,11 @@ const normalizeDestinationId = (value) => {
   return String(value).trim();
 };
 
+export const categoryFilter = (value) => ({
+  $regex: `^${String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`,
+  $options: "i",
+});
+
 const ensureDestination = async (destinationId, tenantId) => {
   const id = normalizeDestinationId(destinationId);
   if (!id) return null;
@@ -56,7 +61,7 @@ export const getTours = async (req, res, next) => {
       const { page = 1, limit = 12, search, destination, category, featured } = req.query;
       const filter = platformWide ? { ...publicTourFilter } : mergeTenantFilter({ ...publicTourFilter });
       if (destination) filter.destination = destination;
-      if (category) filter.category = category;
+      if (category) filter.category = categoryFilter(category);
       if (featured === "true") filter.featured = true;
       if (search?.trim()) {
         const keyword = search.trim();
@@ -101,7 +106,7 @@ export const searchTours = async (req, res, next) => {
         { description: { $regex: term, $options: "i" } },
         { location: { $regex: term, $options: "i" } },
       ];
-      if (category) filter.category = category;
+      if (category) filter.category = categoryFilter(category);
       if (country) filter.country = country;
       if (destination) filter.destination = destination;
       const tours = await Tour.find(filter).populate("destination").sort({ createdAt: -1 }).lean();
@@ -143,4 +148,3 @@ export const getManagerTours = async (req, res, next) => {
     return res.json({ success: true, count: tours.length, data: tours.map((tour) => ({ ...attachAvailability(tour), hasOwnImage: hasRealTourImage(tour) })) });
   } catch (error) { return next(error); }
 };
-

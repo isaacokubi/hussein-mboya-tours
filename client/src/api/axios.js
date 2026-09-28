@@ -85,6 +85,13 @@ function getPublicTenantSlug() {
     if (label && label !== "www") return label;
   }
 
+  // The canonical Hussein Mboya Tours site is hosted on a shared Vercel
+  // hostname, so neither the hostname nor a Vercel project preview can
+  // identify its tenant. Keep the public selector scoped to that one
+  // production hostname; other tenant sites still require explicit build
+  // configuration or a tenant domain/subdomain.
+  if (hostname === "hussein-mboya-tours.vercel.app") return "hussein-mboya";
+
   return PUBLIC_TENANT_SLUG;
 }
 

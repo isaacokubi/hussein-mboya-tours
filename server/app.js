@@ -77,6 +77,9 @@ const readinessPayload = () => {
     status: ready ? "healthy" : startup === "starting" ? "starting" : "degraded",
     startup,
     database,
+    // Safe readiness metadata for deployment verification. Never include the
+    // MongoDB URI or credentials in a public health response.
+    databaseName: database === "connected" ? mongoose.connection.db?.databaseName || null : null,
     version: process.env.RENDER_GIT_COMMIT || process.env.GIT_COMMIT || "unknown",
     timestamp: new Date().toISOString(),
   };

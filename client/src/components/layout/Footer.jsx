@@ -16,7 +16,7 @@ export default function Footer() {
 
   const userRole = typeof user?.role === "string" ? user.role.toLowerCase() : user?.role?.name?.toLowerCase() || user?.roles?.[0]?.name?.toLowerCase() || "";
   const socialLinks = [["Facebook", settings.facebook, FaFacebookF], ["Instagram", settings.instagram, FaInstagram], ["X", settings.twitter, FaXTwitter], ["YouTube", settings.youtube, FaYoutube]].filter(([, href]) => href);
-  const popularDestinations = [["Tsavo National Park", "/destinations/tsavo-national-park"], ["Lake Naivasha", "/destinations/lake-naivasha"], ["Watamu", "/destinations/watamu"], ["Mount Kenya", "/destinations/mount-kenya"], ["Samburu National Reserve", "/destinations/samburu-national-reserve"]];
+  const popularDestinations = [["Maasai Mara", "/destinations/maasai-mara-0"], ["Diani Beach", "/destinations/diani-beach-0"], ["Mount Kenya", "/destinations/mount-kenya-0"], ["Nairobi", "/destinations/nairobi-0"]];
 
   return (
     <footer className="bg-gray-900 text-gray-300">
