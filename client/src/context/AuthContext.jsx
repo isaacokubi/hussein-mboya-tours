@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import api from "../api/axios";
 import { queryClient } from "../lib/queryClient";
 import { getUserRole, normalizeRole } from "../utils/roleUtils";
@@ -83,6 +83,8 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => readStoredUser());
   const [token, setToken] = useState(false);
   const [loading, setLoading] = useState(true);
+  // Async session restoration must never clear or replace a newer login.
+  const authOperation = useRef(0);
 
   const persistUser = (nextUser) => {
     const normalized = normalizeUser(nextUser);
@@ -104,6 +106,7 @@ export function AuthProvider({ children }) {
   };
 
   const logout = async () => {
+    authOperation.current += 1;
     try { await api.post("/auth/logout"); } catch (error) { console.warn("AUTH LOGOUT REQUEST FAILED", error?.message || error); }
     clearAuthStorage();
     queryClient.clear();
@@ -140,22 +143,33 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const savedUser = readStoredUser();
     if (savedUser) setUser(savedUser);
+    const operation = authOperation.current;
 
-    fetchCurrentUser()
-      .then((currentUser) => {
+    // Capture the operation generation so an initial /me response arriving
+    // after login cannot reset the freshly established session.
+    api.get("/auth/me")
+      .then(async ({ data }) => {
+        if (authOperation.current !== operation) return;
+        const currentUser = persistUser(data.user || data);
         setToken(Boolean(currentUser));
+        await preloadTenantSettings();
       })
       .catch((error) => {
+        if (authOperation.current !== operation) return;
         const status = error?.response?.status;
         if (status !== 401) console.error("AUTH ME NON-401 FAILURE", error);
         clearAuthStorage();
         setUser(null);
         setToken(false);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (authOperation.current === operation) setLoading(false);
+      });
   }, []);
 
   const login = async (email, password) => {
+    authOperation.current += 1;
+    setLoading(true);
     // A new login must start from a clean authentication session. In particular,
     // never let the previous user's JWT or tenant ID be attached to /auth/login.
     AUTH_KEYS.forEach((key) => localStorage.removeItem(key));
@@ -163,22 +177,24 @@ export function AuthProvider({ children }) {
     setToken(false);
     setUser(null);
 
-    const { data } = await api.post("/auth/login", {
-      email: String(email || "").trim().toLowerCase(),
-      password,
-    });
-    if (data?.mfaRequired) return data;
-    if (!data?.user) throw new Error("Authentication response did not contain a user.");
-    setToken(true);
-    const normalizedUser = persistUser(data.user);
-    if (!normalizedUser) throw new Error("Authentication response did not contain a user.");
+    try {
+      const { data } = await api.post("/auth/login", {
+        email: String(email || "").trim().toLowerCase(),
+        password,
+      });
+      if (data?.mfaRequired) return data;
+      if (!data?.user) throw new Error("Authentication response did not contain a user.");
+      const normalizedUser = persistUser(data.user);
+      if (!normalizedUser) throw new Error("Authentication response did not contain a user.");
+      setToken(true);
 
-    // Resolve the authenticated tenant's latest settings before returning from
-    // login. This prevents the dashboard/public shell from briefly showing
-    // stale/default branding while the SettingsProvider is still loading.
-    await preloadTenantSettings();
-
-    return { ...data, user: normalizedUser };
+      // The backend has now set the HttpOnly session cookie. Load tenant
+      // settings before navigation so the dashboard uses the right tenant.
+      await preloadTenantSettings();
+      return { ...data, user: normalizedUser };
+    } finally {
+      setLoading(false);
+    }
   };
 
   const register = async (userData) => {
