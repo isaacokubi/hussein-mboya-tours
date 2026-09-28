@@ -15,12 +15,23 @@ const userAgent = "AtlasDemoValidation/2026-09-27";
 const logins = [
   { key: "superAdmin", email: "superadmin@hussein-mboya.com", role: "super_admin", tenant: null },
   { key: "tenantAdminA", email: "admin@hussein-mboya.com", role: "admin", tenant: "hussein-mboya" },
+  { key: "tenantAdminB", email: "admin@amani-trails.com", role: "admin", tenant: "amani-trails" },
+  { key: "tenantAdminC", email: "admin@demo-safari.com", role: "admin", tenant: "demo-safari" },
   { key: "managerA", email: "manager@hussein-mboya.com", role: "tour_manager", tenant: "hussein-mboya" },
+  { key: "managerB", email: "manager@amani-trails.com", role: "tour_manager", tenant: "amani-trails" },
+  { key: "managerC", email: "manager@demo-safari.com", role: "tour_manager", tenant: "demo-safari" },
   { key: "agentA", email: "agent@hussein-mboya.com", role: "agent", tenant: "hussein-mboya" },
+  { key: "agentB", email: "agent@amani-trails.com", role: "agent", tenant: "amani-trails" },
+  { key: "agentC", email: "agent@demo-safari.com", role: "agent", tenant: "demo-safari" },
   { key: "guideA", email: "guide1@hussein-mboya.com", role: "guide", tenant: "hussein-mboya" },
+  { key: "guideB", email: "guide1@amani-trails.com", role: "guide", tenant: "amani-trails" },
+  { key: "guideC", email: "guide1@demo-safari.com", role: "guide", tenant: "demo-safari" },
   { key: "driverA", email: "driver1@hussein-mboya.com", role: "driver", tenant: "hussein-mboya" },
+  { key: "driverB", email: "driver1@amani-trails.com", role: "driver", tenant: "amani-trails" },
+  { key: "driverC", email: "driver1@demo-safari.com", role: "driver", tenant: "demo-safari" },
   { key: "customerA", email: "customer1@hussein-mboya.com", role: "customer", tenant: "hussein-mboya" },
   { key: "customerB", email: "customer1@amani-trails.com", role: "customer", tenant: "amani-trails" },
+  { key: "customerC", email: "customer1@demo-safari.com", role: "customer", tenant: "demo-safari" },
 ];
 const report = { timestamp: new Date().toISOString(), logins: [], dashboards: [], tenantIsolation: [], rbac: [], testArtifactsRemoved: {}, failures: [] };
 const sessions = new Map();
@@ -45,26 +56,55 @@ try {
     report.logins.push(result);
     assert.equal(response.status, 200, `${account.key} login`);
     assert.equal(actualRole, account.role, `${account.key} role`);
+    if (account.tenant === null) assert.equal(actualTenantId, null, `${account.key} must be platform scoped`);
     assert.ok(response.payload?.token, `${account.key} token`);
     sessions.set(account.key, { token: response.payload.token, tenantId: actualTenantId });
   }
-  assert.notEqual(sessions.get("customerA").tenantId, sessions.get("customerB").tenantId, "the customer fixtures belong to different tenants");
+  const tenantIds = ["tenantAdminA", "tenantAdminB", "tenantAdminC"].map((key) => sessions.get(key).tenantId);
+  assert.ok(tenantIds.every(Boolean), "each tenant admin must authenticate into a tenant");
+  assert.equal(new Set(tenantIds).size, 3, "the three tenant admin fixtures must resolve to distinct tenants");
+  assert.equal(sessions.get("customerA").tenantId, tenantIds[0]);
+  assert.equal(sessions.get("customerB").tenantId, tenantIds[1]);
+  assert.equal(sessions.get("customerC").tenantId, tenantIds[2]);
 
   const dashboardChecks = [
     ["superAdmin", "/api/superadmin/dashboard"],
     ["tenantAdminA", "/api/admin/dashboard/metrics"],
+    ["tenantAdminB", "/api/admin/dashboard/metrics"],
+    ["tenantAdminC", "/api/admin/dashboard/metrics"],
     ["tenantAdminA", "/api/admin/finance/stats"],
+    ["tenantAdminB", "/api/admin/finance/stats"],
+    ["tenantAdminC", "/api/admin/finance/stats"],
     ["managerA", "/api/tourmanager/dashboard"],
     ["managerA", "/api/tourmanager/tours"],
+    ["managerB", "/api/tourmanager/dashboard"],
+    ["managerB", "/api/tourmanager/tours"],
+    ["managerC", "/api/tourmanager/dashboard"],
+    ["managerC", "/api/tourmanager/tours"],
     ["agentA", "/api/agent/dashboard"],
     ["agentA", "/api/agent/bookings"],
+    ["agentB", "/api/agent/dashboard"],
+    ["agentB", "/api/agent/bookings"],
+    ["agentC", "/api/agent/dashboard"],
+    ["agentC", "/api/agent/bookings"],
     ["guideA", "/api/guide/dashboard"],
     ["guideA", "/api/guide/assigned-tours"],
+    ["guideB", "/api/guide/dashboard"],
+    ["guideB", "/api/guide/assigned-tours"],
+    ["guideC", "/api/guide/dashboard"],
+    ["guideC", "/api/guide/assigned-tours"],
     ["driverA", "/api/driver/dashboard"],
     ["driverA", "/api/driver/assigned-tours"],
+    ["driverB", "/api/driver/dashboard"],
+    ["driverB", "/api/driver/assigned-tours"],
+    ["driverC", "/api/driver/dashboard"],
+    ["driverC", "/api/driver/assigned-tours"],
     ["customerA", "/api/bookings/my-bookings"],
     ["customerB", "/api/bookings/my-bookings"],
+    ["customerC", "/api/bookings/my-bookings"],
     ["tenantAdminA", "/api/bookings/admin/all"],
+    ["tenantAdminB", "/api/bookings/admin/all"],
+    ["tenantAdminC", "/api/bookings/admin/all"],
   ];
   const payloads = new Map();
   for (const [key, endpoint] of dashboardChecks) {
@@ -74,14 +114,28 @@ try {
     payloads.set(`${key}:${endpoint}`, response.payload);
   }
 
+  for (const tenant of ["hussein-mboya", "amani-trails", "demo-safari"]) {
+    for (const endpoint of ["/api/tours", "/api/destinations"]) {
+      const response = await request(endpoint, null, { headers: { "X-Tenant-Slug": tenant } });
+      const records = response.payload?.data || response.payload?.tours || response.payload?.destinations || [];
+      const expectedTenantId = sessions.get({ "hussein-mboya": "tenantAdminA", "amani-trails": "tenantAdminB", "demo-safari": "tenantAdminC" }[tenant]).tenantId;
+      report.dashboards.push({ account: tenant, endpoint, status: response.status, recordCount: records.length });
+      assert.equal(response.status, 200, `${tenant} ${endpoint}`);
+      assert.ok(records.length > 0, `${tenant} ${endpoint} returns public records`);
+      assert.ok(records.every((record) => String(record.tenantId) === String(expectedTenantId)), `${tenant} ${endpoint} must contain only its tenant's records`);
+    }
+  }
+
   const bookingId = (key) => payloads.get(`${key}:/api/bookings/my-bookings`)?.bookings?.[0]?._id;
   const bookingA = bookingId("customerA");
-  const bookingB = bookingId("customerB");
-  assert.ok(bookingA && bookingB, "both tenants have customer bookings");
-  for (const [account, foreignBookingId] of [["customerA", bookingB], ["customerB", bookingA]]) {
-    const response = await request(`/api/bookings/${encodeURIComponent(foreignBookingId)}`, sessions.get(account).token);
-    report.tenantIsolation.push({ account, foreignBooking: true, status: response.status });
-    assert.equal(response.status, 404, `${account} must not retrieve another tenant's booking`);
+  const bookingIds = ["customerA", "customerB", "customerC"].map(bookingId);
+  assert.ok(bookingIds.every(Boolean), "all three tenant customers have seeded bookings");
+  for (const [index, account] of ["customerA", "customerB", "customerC"].entries()) {
+    for (const foreignBookingId of bookingIds.filter((_, other) => other !== index)) {
+      const response = await request(`/api/bookings/${encodeURIComponent(foreignBookingId)}`, sessions.get(account).token);
+      report.tenantIsolation.push({ account, foreignBooking: true, status: response.status });
+      assert.equal(response.status, 404, `${account} must not retrieve another tenant's booking`);
+    }
   }
   const denied = await request("/api/admin/dashboard/metrics", sessions.get("customerA").token);
   report.rbac.push({ account: "customerA", protectedAdminDashboardStatus: denied.status });

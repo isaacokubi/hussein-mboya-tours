@@ -308,6 +308,7 @@ async function seedTenant(tenant, tenantIndex, permissions) {
     insuranceExpiry:new Date(Date.now()+180*86400000), lastServiceDate:new Date(Date.now()-20*86400000),
     nextServiceDate:new Date(Date.now()+70*86400000), description:"Demo safari vehicle for fleet dashboard testing.", createdBy:users.admin._id,
   });
+  await Tour.updateOne({ _id: tours[0]._id, tenantId: tenant._id }, { $set: { assignedVehicle: vehicle._id } });
 
   const bookingDocs=[];
   for(let i=0;i<8;i++){

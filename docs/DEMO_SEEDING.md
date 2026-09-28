@@ -25,7 +25,7 @@ Connected target: Atlas database `husseindb` on `cluster0.cdtxzts.mongodb.net`.
 | Destinations / tours / tour packages | 36 / 36 / 36 |
 | Bookings / payments / commissions / invoices | 36 / 30 / 36 / 36 |
 | Enquiries / custom-tour modification requests / quotations | 6 / 6 / 6 |
-| Reviews / wishlists / notifications | 9 / 0 / 18 |
+| Reviews / wishlists / notifications | 9 / 0 / 48 |
 | Vehicles / leads | 3 / 6 |
 | Suppliers / expenses / purchase orders / tour costs / supplier payables | 6 / 6 / 6 / 6 / 6 |
 | Journal entries / chart-of-account records | 63 / 105 |
@@ -36,10 +36,13 @@ Connected target: Atlas database `husseindb` on `cluster0.cdtxzts.mongodb.net`.
 | Accommodation inventory | 18 |
 | Hotels / room types / rate plans / hotel bookings | 6 / 12 / 12 / 12 |
 | Airport-transfer products / bookings | 9 / 12 |
+| Hospitality room blocks / deposits / operational assets | 0 / 0 / 0 (not seeded in this fixture) |
 
 Each tenant (`hussein-mboya`, `amani-trails`, `demo-safari`) has nine users: administrator, manager, agent, guide, driver, and four customers. The application does not define a finance or operations login role in its User schema, so the seed does not invent those roles. Each tenant has 12 published destinations and 12 public tours. The public Vercel API checks returned HTTP 200 and 12 results for both catalogues. Every tenant has 12 distinct tour images and 12 distinct destination images; destination artwork is served from the repository's local demo SVG catalogue.
 
 The accepted demo quotation for each tenant points to a booking in that same tenant. Finance records, bookings, payments, and supplier costs are synthetic. The seed does not initiate live M-Pesa, Stripe, refund-provider, or other external payment actions.
+
+The current Atlas records were reconciled from their linked booking, payment, review, tour, and destination rows. Every tenant has 12 bookings and 10 payments; review records now point to completed bookings, booking balances match net payments, tour availability and review counters match source rows, and destination catalogue counters match their tours. Public tours and destinations returned 12 tenant-matched records for each tenant after reconciliation.
 
 ## Deployment diagnosis and verification
 

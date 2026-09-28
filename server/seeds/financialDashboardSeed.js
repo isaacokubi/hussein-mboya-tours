@@ -1,10 +1,15 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import Organization from "../models/Organization.js";
 import User from "../models/User.js";
 import Customer from "../models/Customer.js";
+import Destination from "../models/Destination.js";
 import Tour from "../models/Tour.js";
+import Review from "../models/Review.js";
 import Staff from "../models/Staff.js";
+import Vehicle from "../models/Vehicle.js";
 import Agent from "../models/Agent.js";
 import Booking from "../models/Booking.js";
 import Payment from "../models/Payment.js";
@@ -17,6 +22,7 @@ import PurchaseOrder from "../models/PurchaseOrder.js";
 import TourCost from "../models/TourCost.js";
 import SupplierPayable from "../models/SupplierPayable.js";
 import JournalEntry from "../models/JournalEntry.js";
+import Quotation from "../models/Quotation.js";
 import { runWithTenant } from "../tenancy/context.js";
 
 dotenv.config();
@@ -32,6 +38,14 @@ dotenv.config();
 
 const round = (n) => Math.round(Number(n) * 100) / 100;
 const daysFromNow = (n) => new Date(Date.now() + n * 86400000);
+
+export function seededPaymentAmounts(status, total, paid) {
+  const netPaid = status === "refunded"
+    ? 0
+    : Math.min(Math.max(0, Number(total) || 0), Math.max(0, Number(paid) || 0));
+  const totalAmount = Math.max(0, Number(total) || 0);
+  return { amountPaid: netPaid, balance: round(totalAmount - netPaid) };
+}
 
 const paymentPlans = [
   ["paid", "completed", 1],
@@ -61,6 +75,8 @@ async function clearTransactionalData(tenantId) {
   await Promise.all([
     Booking.deleteMany(filter),
     Payment.deleteMany(filter),
+    // Existing reviews refer to the bookings replaced by this refresh.
+    Review.deleteMany(filter),
     Invoice.deleteMany(filter),
     Commission.deleteMany(filter),
     Expense.deleteMany(filter),
@@ -76,13 +92,14 @@ async function seedTenant(tenant, tenantIndex) {
   return runWithTenant({ tenantId: tenant._id, role: "manager", bypass: false }, async () => {
     await clearTransactionalData(tenant._id);
 
-    const [customers, tours, users, staff, agents, suppliers] = await Promise.all([
+    const [customers, tours, users, staff, agents, suppliers, vehicles] = await Promise.all([
       Customer.find({ isDeleted: { $ne: true } }).limit(30).lean(),
       Tour.find({ isDeleted: { $ne: true }, published: true }).limit(50).lean(),
       User.find({ isDeleted: { $ne: true } }).limit(100).lean(),
       Staff.find({ isDeleted: { $ne: true }, status: "active" }).lean(),
       Agent.find({ isDeleted: { $ne: true } }).lean(),
       Supplier.find({ isDeleted: { $ne: true } }).lean(),
+      Vehicle.find({ isDeleted: { $ne: true }, status: { $nin: ["maintenance", "retired"] } }).lean(),
     ]);
 
     if (!customers.length) throw new Error(`Tenant ${tenant.name || tenant._id} has no customers; refusing to invent replacement master data.`);
@@ -94,6 +111,8 @@ async function seedTenant(tenant, tenantIndex) {
     const paymentUser = customerUsers[0] || actor;
     const guides = staff.filter((s) => s.position === "guide" || s.role === "guide");
     const drivers = staff.filter((s) => s.position === "driver" || s.role === "driver");
+    const vehicleByTour = new Map(vehicles.filter((vehicle) => vehicle.assignedTour)
+      .map((vehicle) => [String(vehicle.assignedTour), vehicle]));
 
     const bookings = [];
     for (let i = 0; i < 12; i += 1) {
@@ -102,13 +121,18 @@ async function seedTenant(tenant, tenantIndex) {
       const plan = paymentPlans[i];
       const amount = round(Math.max(1500, Number(tour.price || 0) * (1 + (i % 3) * 0.35)));
       const guests = 1 + (i % 5);
-      const travelOffset = i < 4 ? -(45 - i * 8) : i < 8 ? 7 + i * 3 : 25 + i * 4;
+      const status = plan[1];
+      const travelOffset = status === "completed"
+        ? -(Number(tour.durationDetails?.days || tour.durationDays || 1) + 5 + i)
+        : status === "ongoing" ? -1
+          : ["pending", "confirmed", "assigned"].includes(status) ? 7 + i * 3
+            : i < 8 ? 7 + i * 3 : 25 + i * 4;
       const travelDate = daysFromNow(travelOffset);
       const paid = round(amount * plan[2]);
       const paymentMethod = ["MPESA", "CARD", "BANK_TRANSFER", "CARD", "CASH"][i % 5];
-      const status = plan[1];
       const booking = new Booking({
         tenantId: tenant._id,
+        bookingNumber: `DEMO-${String(tenantIndex + 1).padStart(2, "0")}-${String(i + 1).padStart(4, "0")}`,
         customer: customer._id,
         user: customer.user || null,
         customerSnapshot: { name: `${customer.firstName} ${customer.lastName}`, email: customer.email, phone: customer.phone },
@@ -146,7 +170,8 @@ async function seedTenant(tenant, tenantIndex) {
         commissionAmount: agents.length ? round(amount * 0.10) : 0,
         commissionStatus: i % 4 === 0 ? "paid" : i % 3 === 0 ? "approved" : "pending",
         depositAmount: paid,
-        balanceAmount: round(amount - paid),
+        amountPaid: seededPaymentAmounts(plan[0], amount, paid).amountPaid,
+        balanceAmount: seededPaymentAmounts(plan[0], amount, paid).balance,
         paymentMethod,
         paymentStatus: plan[0],
         transactionId: paid ? `DEMO-TXN-${tenantIndex + 1}-${String(i + 1).padStart(3, "0")}` : undefined,
@@ -155,12 +180,16 @@ async function seedTenant(tenant, tenantIndex) {
         status,
         assignedGuide: guides.length && i % 3 !== 3 ? guides[i % guides.length]._id : null,
         assignedDriver: drivers.length && i % 4 !== 3 ? drivers[i % drivers.length]._id : null,
+        assignedVehicle: vehicleByTour.get(String(tour._id))?._id || null,
         assigned: Boolean(guides.length || drivers.length) && !["pending", "refunded"].includes(status),
         createdBy: actor?._id || null,
         updatedBy: actor?._id || null,
         notes: "Synthetic dashboard seed data — not a real customer transaction.",
       });
-      if (status === "completed") booking.completedAt = travelDate;
+      if (status === "completed") {
+        const durationDays = Math.max(1, Number(tour.durationDetails?.days || tour.durationDays || 1));
+        booking.completedAt = new Date(travelDate.getTime() + durationDays * 86400000);
+      }
       if (["confirmed", "assigned", "ongoing"].includes(status)) booking.confirmedAt = new Date(Math.min(Date.now(), travelDate.getTime() - 86400000));
       if (status === "refunded") {
         booking.refundAmount = paid;
@@ -194,8 +223,7 @@ async function seedTenant(tenant, tenantIndex) {
         taxMode: "exclusive",
         taxableAmount: booking.totalAmount,
         totalAmount: booking.totalAmount,
-        amountPaid: paid,
-        balance: round(booking.totalAmount - paid),
+        ...seededPaymentAmounts(plan[0], booking.totalAmount, paid),
         paymentMethod: booking.paymentMethod,
         paymentReference: booking.paymentReference || "",
         status: plan[0] === "refunded" ? "refunded" : paid >= booking.totalAmount ? "paid" : paid > 0 ? "partial" : "pending",
@@ -209,7 +237,7 @@ async function seedTenant(tenant, tenantIndex) {
         const provider = providers[i % providers.length];
         const payment = await Payment.create({
           tenantId: tenant._id,
-          customer: paymentUser._id,
+          customer: booking.user || paymentUser._id,
           user: booking.user || paymentUser._id,
           booking: booking._id,
           provider: provider[0],
@@ -334,14 +362,122 @@ async function seedTenant(tenant, tenantIndex) {
     for (const customer of customers) {
       const customerBookings = bookings.filter((b) => String(b.customer) === String(customer._id));
       const completed = customerBookings.filter((b) => b.status === "completed").length;
-      const spent = round(customerBookings.reduce((sum, b) => sum + Number(b.totalAmount || 0), 0));
+      const spent = round(customerBookings.reduce((sum, b) => sum + Number(b.amountPaid || 0), 0));
       await Customer.updateOne({ _id: customer._id }, { $set: { totalBookings: customerBookings.length, completedBookings: completed, cancelledBookings: customerBookings.filter((b) => b.status === "cancelled").length, totalSpent: spent, averageBookingValue: customerBookings.length ? round(spent / customerBookings.length) : 0, lastBookingDate: customerBookings.map((b) => b.createdAt).filter(Boolean).sort((a, b) => b - a)[0] || null, loyaltyPoints: Math.floor(spent / 100) } });
     }
 
     for (const tour of tours) {
       const activeBookings = bookings.filter((b) => String(b.tour) === String(tour._id) && !["cancelled", "refunded"].includes(b.status));
       const bookedSlots = activeBookings.reduce((sum, b) => sum + Number(b.numberOfGuests || 0), 0);
-      await Tour.updateOne({ _id: tour._id }, { $set: { "availabilitySettings.bookedSlots": bookedSlots } });
+      const tourBookings = bookings.filter((booking) => String(booking.tour) === String(tour._id));
+      const availability = (tour.availability || []).map((slot) => ({
+        ...(typeof slot.toObject === "function" ? slot.toObject() : slot),
+        bookedSlots,
+      }));
+      await Tour.updateOne({ _id: tour._id, tenantId: tenant._id }, {
+        $set: {
+          "availabilitySettings.bookedSlots": bookedSlots,
+          availability,
+          totalBookings: tourBookings.length,
+          ...(vehicleByTour.has(String(tour._id))
+            ? { assignedVehicle: vehicleByTour.get(String(tour._id))._id }
+            : {}),
+        },
+      });
+    }
+
+    // Rebuild reviews against eligible bookings after the old booking rows
+    // have been removed, then derive public tour review counters from those rows.
+    const reviewBookings = bookings.filter((booking) => booking.status === "completed").slice(0, 3);
+    for (const [index, booking] of reviewBookings.entries()) {
+      await Review.create({
+        tenantId: tenant._id,
+        user: booking.user,
+        customer: booking.user,
+        tour: booking.tour,
+        booking: booking._id,
+        rating: index === 1 ? 4 : 5,
+        title: ["Excellent trip", "A memorable journey", "Great local guide"][index],
+        comment: "Synthetic demo feedback attached to a completed booking.",
+        recommend: true,
+        verified: true,
+        approved: true,
+      });
+    }
+
+    const reviewStats = await Review.aggregate([
+      { $match: { tenantId: tenant._id, approved: true } },
+      { $group: { _id: "$tour", totalReviews: { $sum: 1 }, averageRating: { $avg: "$rating" } } },
+    ]);
+    const reviewsByTour = new Map(reviewStats.map((row) => [String(row._id), row]));
+    const bookingsByDestination = new Map();
+    const toursByDestination = new Map();
+    const destinationReviewTotals = new Map();
+    const destinationRatingSums = new Map();
+    for (const tour of tours) {
+      const stats = reviewsByTour.get(String(tour._id));
+      await Tour.updateOne({ _id: tour._id, tenantId: tenant._id }, {
+        $set: {
+          totalReviews: Number(stats?.totalReviews || 0),
+          averageRating: Number(stats?.averageRating || 0),
+        },
+      });
+      const destinationId = String(tour.destination);
+      toursByDestination.set(destinationId, (toursByDestination.get(destinationId) || 0) + 1);
+      const reviewCount = Number(stats?.totalReviews || 0);
+      destinationReviewTotals.set(destinationId,
+        (destinationReviewTotals.get(destinationId) || 0) + reviewCount);
+      destinationRatingSums.set(destinationId,
+        (destinationRatingSums.get(destinationId) || 0) + Number(stats?.averageRating || 0) * reviewCount);
+      const destinationBookings = bookings.filter((booking) =>
+        String(booking.tour) === String(tour._id));
+      bookingsByDestination.set(destinationId,
+        (bookingsByDestination.get(destinationId) || 0) + destinationBookings.length);
+    }
+    for (const [destinationId, totalTours] of toursByDestination) {
+      await Destination.updateOne(
+        { _id: destinationId, tenantId: tenant._id },
+        { $set: {
+          totalTours,
+          totalBookings: bookingsByDestination.get(destinationId) || 0,
+          totalReviews: destinationReviewTotals.get(destinationId) || 0,
+          averageRating: destinationReviewTotals.get(destinationId)
+            ? round(destinationRatingSums.get(destinationId) / destinationReviewTotals.get(destinationId))
+            : 0,
+        } },
+      );
+    }
+
+    const tourById = new Map(tours.map((tour) => [String(tour._id), tour]));
+    const convertedQuotes = await Quotation.find({ status: "converted", isDeleted: { $ne: true } });
+    for (const quote of convertedQuotes) {
+      const booking = bookings.find((row) => String(row.customer) === String(quote.customer)
+        && String(row.tour) === String(quote.tour))
+        || bookings.find((row) => String(row.customer) === String(quote.customer))
+        || bookings[0];
+      if (!booking) continue;
+      const tour = tourById.get(String(booking.tour));
+      const total = Number(booking.totalAmount || 0);
+      const quantity = Math.max(1, Number(booking.numberOfGuests || 1));
+      quote.booking = booking._id;
+      quote.customer = booking.customer;
+      quote.tour = booking.tour;
+      quote.agent = booking.agent || quote.agent;
+      quote.items = [{
+        tenantId: tenant._id,
+        name: tour?.title || "Demo tour booking",
+        category: "Other",
+        description: "Accepted demo quotation converted to the linked booking.",
+        quantity,
+        unitPrice: round(total / quantity),
+        total,
+      }];
+      quote.subtotal = total;
+      quote.tax = 0;
+      quote.discount = 0;
+      quote.grandTotal = total;
+      quote.currency = "KES";
+      await quote.save();
     }
 
     const actualExpenseCount = await Expense.countDocuments({});
@@ -396,7 +532,9 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error(`Financial dashboard seed failed: ${error.message}`);
-  process.exitCode = 1;
-});
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch((error) => {
+    console.error(`Financial dashboard seed failed: ${error.message}`);
+    process.exitCode = 1;
+  });
+}
