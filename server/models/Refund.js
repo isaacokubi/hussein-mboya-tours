@@ -83,9 +83,7 @@ timestamps:true
 
 
 
-export default refundSchema.plugin(tenantPlugin);
+refundSchema.plugin(tenantPlugin);
 
-mongoose.model(
-"Refund",
-refundSchema
-);
+const Refund = mongoose.models.Refund || mongoose.model("Refund", refundSchema);
+export default Refund;

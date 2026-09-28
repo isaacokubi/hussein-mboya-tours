@@ -276,12 +276,7 @@ userPreferenceSchema.methods.removeInterest = async function (interest) {
 
 const UserPreference =
   mongoose.models.UserPreference ||
-  userPreferenceSchema.plugin(tenantPlugin);
-
-mongoose.model(
-    "UserPreference",
-    userPreferenceSchema,
-  );
+  mongoose.model("UserPreference", userPreferenceSchema.plugin(tenantPlugin));
 
 
 
