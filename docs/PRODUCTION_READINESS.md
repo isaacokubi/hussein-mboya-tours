@@ -20,7 +20,7 @@ The previous readiness test worker error was reproduced as localhost `listen(0, 
 
 ### Current demo fixture inventory
 
-The 2026-09-27 authorized demo reset produced 19 users, 12 tours, 12 destinations, 36 bookings, 30 payments, 3 vehicles, 9 reviews, 0 wishlists and 18 notifications across `hussein-mboya`, `amani-trails`, and `demo-safari`. Featured images are unique for 12/12 tours and 12/12 destinations. Seeded payment records are internal fixtures only; no live M-Pesa transaction was initiated. Previous counts belong to a different seed run. This does not certify production.
+The 2026-09-28 authorized demo reset produced 28 users (including the preserved platform owner), 36 tours, 36 destinations, 36 bookings, 30 payments, 6 staff, 12 customers, 6 quotations, 6 custom-tour requests, 3 vehicles, 9 reviews and 18 notifications across `hussein-mboya`, `amani-trails`, and `demo-safari`. Each tenant has 12 unique tour images and 12 unique destination images. Seeded payment records are internal fixtures only; no live M-Pesa transaction was initiated. This does not certify production.
 
 ### Live production boundary
 
@@ -285,6 +285,6 @@ This section records the audit of source at `ad26fa0` and supplements the histor
 
 No first real tenant has been onboarded in production. Overall production readiness remains **NOT VERIFIED** until deployment, provider, restore, monitoring, regulatory and real-world evidence is collected. Historical automated verification is not a production certification.
 
-## 2026-09-27 demo seed evidence — not production evidence
+## 2026-09-28 demo seed evidence — not production evidence
 
-The authorized demo/staging database `husseindb` now contains 19 users, 12 tours, 12 destinations, 36 bookings, 30 synthetic payments, 3 vehicles, 9 reviews, 0 wishlists, and 18 notifications. Featured images are unique for all 12 tours and all 12 destinations. Backend tests passed 181/181 with five expected integration skips; `check:all`, frontend lint/build, and 17 live tenant-isolation checks passed. Complete actual counts are in [Demo Seeding Verification](DEMO_SEEDING.md). Production remains **NOT VERIFIED** and its database has not been supplied or accessed.
+The authorized demo database `husseindb` now contains 28 users, 36 tours, 36 destinations, 36 bookings, 30 synthetic payments, 6 staff, 12 customers, 6 quotations, 6 custom-tour requests, 3 vehicles, 9 reviews, and 18 notifications. Each tenant has 12 unique tour images and 12 unique destination images. Backend tests passed (182 passed, 0 failed, 5 skipped); seed checks, frontend lint/build, and live public catalogue and role-login checks passed. Complete counts are in [Demo Seeding Verification](DEMO_SEEDING.md). Production remains **NOT VERIFIED** and its database has not been supplied or accessed.

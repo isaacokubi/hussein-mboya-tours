@@ -8,18 +8,19 @@ import AuditLog from "../models/AuditLog.js";
 import SecurityLog from "../models/SecurityLog.js";
 
 const baseUrl = process.env.DEMO_API_BASE_URL || "http://127.0.0.1:5055";
-const password = process.env.TEST_DEMO_SEED_PASSWORD || "Password@2785";
+const password = String(process.env.TEST_DEMO_SEED_PASSWORD || process.env.SEED_DEMO_PASSWORD || "");
+if (password.length < 8) throw new Error("Set TEST_DEMO_SEED_PASSWORD or SEED_DEMO_PASSWORD (at least 8 characters) before verifying demo accounts.");
 const reportPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../reports/demo-api-validation.json");
 const userAgent = "AtlasDemoValidation/2026-09-27";
 const logins = [
-  { key: "superAdmin", email: "superadmin1@husseinmboya.com", role: "super_admin", tenant: null },
-  { key: "tenantAdminA", email: "admin1@husseinmboya.com", role: "admin", tenant: "hussein-mboya" },
-  { key: "managerA", email: "tourmanager1@husseinmboya.com", role: "tour_manager", tenant: "hussein-mboya" },
-  { key: "agentA", email: "agent1@husseinmboya.com", role: "agent", tenant: "hussein-mboya" },
-  { key: "guideA", email: "guide1@husseinmboya.com", role: "tour_guide", tenant: "hussein-mboya" },
-  { key: "driverA", email: "driver1@husseinmboya.com", role: "driver", tenant: "hussein-mboya" },
-  { key: "customerA", email: "customer1@husseinmboya.com", role: "customer", tenant: "hussein-mboya" },
-  { key: "customerB", email: "customer1@amanitrails.com", role: "customer", tenant: "amani-trails" },
+  { key: "superAdmin", email: "superadmin@hussein-mboya.com", role: "super_admin", tenant: null },
+  { key: "tenantAdminA", email: "admin@hussein-mboya.com", role: "admin", tenant: "hussein-mboya" },
+  { key: "managerA", email: "manager@hussein-mboya.com", role: "tour_manager", tenant: "hussein-mboya" },
+  { key: "agentA", email: "agent@hussein-mboya.com", role: "agent", tenant: "hussein-mboya" },
+  { key: "guideA", email: "guide1@hussein-mboya.com", role: "guide", tenant: "hussein-mboya" },
+  { key: "driverA", email: "driver1@hussein-mboya.com", role: "driver", tenant: "hussein-mboya" },
+  { key: "customerA", email: "customer1@hussein-mboya.com", role: "customer", tenant: "hussein-mboya" },
+  { key: "customerB", email: "customer1@amani-trails.com", role: "customer", tenant: "amani-trails" },
 ];
 const report = { timestamp: new Date().toISOString(), logins: [], dashboards: [], tenantIsolation: [], rbac: [], testArtifactsRemoved: {}, failures: [] };
 const sessions = new Map();
@@ -27,6 +28,7 @@ const sessions = new Map();
 async function request(endpoint, token, options = {}) {
   const response = await fetch(new URL(endpoint, baseUrl), {
     ...options,
+    signal: AbortSignal.timeout(30000),
     headers: { "content-type": "application/json", "user-agent": userAgent, ...(token ? { authorization: `Bearer ${token}` } : {}), ...options.headers },
   });
   let payload = {};

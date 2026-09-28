@@ -1,75 +1,56 @@
-# Demo Data & Seed Runbook
+# Demo Data and Seed Runbook
 
-## Purpose and safety boundary
+## Safety and reset process
 
-This runbook describes the repository's controlled synthetic demo dataset and reset process. The reset is destructive to non-owner application data in the selected database.
-
-Only run it against a database independently established and explicitly authorized as disposable demo/staging data. The `husseindb` target used for the 2026-09-27 run was explicitly authorized as demo/staging for that task. That authorization does not apply to a future production database. Production was not provided or accessed.
-
-Before a future run, verify the effective `MONGODB_URI` database path and environment. Do not use an unknown database, another cluster/database, or real production/customer data. The script now refuses a host or database other than its configured demo Atlas target. It preserves platform-owner accounts and existing tenant identities, but deletes other application collection data.
-
-## Latest verified demo seed — 2026-09-27
-
-Connected target: Atlas database `husseindb` on `cluster0.cdtxzts.mongodb.net`.
-
-| Record type | Actual count |
-|---|---:|
-| Tenants / organizations | 3 |
-| Users, including platform owner | 19 |
-| Roles | 18 |
-| Global permissions | 25 |
-| Staff / agents / customers | 6 / 3 / 3 |
-| Tours / tour packages | 12 / 12 |
-| Destinations | 12 |
-| Bookings / payments / commissions | 36 / 30 / 36 |
-| Reviews / wishlists / notifications | 9 / 0 / 18 |
-| Vehicles / leads | 3 / 6 |
-| Suppliers / invoices / expenses | 6 / 36 / 6 |
-| Purchase orders / tour costs / supplier payables | 6 / 6 / 6 |
-| Journal entries / chart-of-account records | 63 / 105 |
-| Credit/debit notes / corporate accounts | 6 / 6 |
-| Compliance / privacy / travel-service records | 24 / 9 / 18 |
-| Website integration keys / events | 3 / 9 |
-| Payment gateway configurations | 12 |
-| Demo API keys / webhooks | 3 / 3 |
-| Accommodation inventory | 18 |
-| Hotels / room types / rate plans / hotel bookings | 6 / 12 / 12 / 12 |
-| Airport-transfer products / bookings | 9 / 12 |
-| Subscriptions / subscription payments | 0 / 0 |
-| Campaigns / hero slides / galleries / tour galleries / tour reports | 0 / 0 / 0 / 0 / 0 |
-
-All other collections were also counted; any collection omitted from the table has zero documents. The expected tenant slugs are `hussein-mboya`, `amani-trails`, and `demo-safari`. The existing tenant IDs were retained. One tenantless `super_admin` platform-owner account was preserved.
-
-Each tenant has six demo role users (`admin`, `tour_manager`, `guide`, `driver`, `agent`, `customer`) linked to six roles. Each role references 25 permissions. All audited tenant-scoped records had a `tenantId`. Live tenant-isolation regression passed 17/17 checks.
-
-Featured images are unique for **12/12 tours** and **12/12 destinations**. Destination images use local `client/public/demo-destinations/kenya-landscape-01.svg` through `-12.svg`; tour image references use 12 distinct catalogued Unsplash IDs. This reset creates 12 tours and 12 destinations; the previous 24-tour/36-destination dataset is not the output of this reset script.
-
-All 30 payment rows are synthetic demo fixtures with `DEMO-` transaction references. The seed stages contain no live Daraja/STK, payment, refund-provider, or external-payment invocation. **No live M-Pesa transaction was initiated.**
-
-## Verification for this run
-
-- Backend suite: **181 passed, 0 failed, 5 skipped**.
-- `npm run check:all`: **PASS**.
-- Frontend `npm run lint`: **PASS**.
-- Frontend `npm run build`: **PASS**.
-- Live tenant isolation: **17 passed, 0 failed**.
-- RBAC role links and permission assignments: **PASS**.
-- Atlas readiness pair: not run because its configured URIs target `global_tours_test`, outside the task's explicit authorization to touch only `husseindb`.
-- No leftover temporary isolation-test tenants remained.
-
-The initial full seed stopped in finance on a duplicate synthetic payment caused by the booking post-save ledger hook. The hook now skips automatic payment-ledger synchronization when `DEMO_SEED_MODE=true`. Finance was resumed against only tenant-scoped transactional collections; the full destructive reset was not repeated. Operations and hospitality stages then completed.
-
-These are demo/staging results. They do not establish readiness or certification for the separate production database.
-
-## Supported seed entry point
+The reset replaces application records in the selected database. It requires `CONFIRM_DEMO_RESET=YES`, a private `SEED_DEMO_PASSWORD` of at least eight characters, and the exact configured Atlas host and database. The script refuses any target other than `cluster0.cdtxzts.mongodb.net/husseindb`, validates the target before connecting, preserves existing platform-owner accounts, and recreates the three established tenant records. Transient Atlas network failures receive up to two retries; each retry repeats the same guarded reset.
 
 Run from the repository root:
 
 ```bash
 cd server
-CONFIRM_DEMO_RESET=YES SEED_DEMO_PASSWORD='YOUR_DEMO_PASSWORD' npm run seed:demo
+CONFIRM_DEMO_RESET=YES SEED_DEMO_PASSWORD='YOUR_PRIVATE_DEMO_PASSWORD' npm run seed:demo
 ```
 
-The command requires `CONFIRM_DEMO_RESET=YES`, a `SEED_DEMO_PASSWORD` of at least eight characters, and the exact configured demo Atlas host/database. Never print or commit the seed password. The script enables `DEMO_SEED_MODE=true`, preserves tenant identities and platform-owner accounts, resets non-owner application data, and then runs financial master data, accounting/finance, dashboard operations/website integration, and hospitality/hotel/airport-transfer seed stages.
+Never place the seed password in source, documentation, public environment files, or Git. The user model hashes it with the existing bcrypt save hook.
 
-After seeding, verify the actual database counts, tenant IDs, role assignments, image uniqueness, and synthetic payment references. Run `npm test`, `npm run check:all`, then frontend `npm run lint` and `npm run build`. The seed is not evidence of a successful live payment, refund, provider callback, KRA/eTIMS submission, SMTP delivery, production backup/restore, or production deployment.
+## Latest verified demo dataset — 2026-09-28
+
+Connected target: Atlas database `husseindb` on `cluster0.cdtxzts.mongodb.net`.
+
+| Record type | Count |
+|---|---:|
+| Tenants / users (including preserved platform owner) | 3 / 28 |
+| Tenant roles / global permissions | 18 / 25 |
+| Staff / agents / customers | 6 / 3 / 12 |
+| Destinations / tours / tour packages | 36 / 36 / 36 |
+| Bookings / payments / commissions / invoices | 36 / 30 / 36 / 36 |
+| Enquiries / custom-tour modification requests / quotations | 6 / 6 / 6 |
+| Reviews / wishlists / notifications | 9 / 0 / 18 |
+| Vehicles / leads | 3 / 6 |
+| Suppliers / expenses / purchase orders / tour costs / supplier payables | 6 / 6 / 6 / 6 / 6 |
+| Journal entries / chart-of-account records | 63 / 105 |
+| Credit/debit notes / corporate accounts | 6 / 6 |
+| Compliance / privacy / travel-service records | 24 / 9 / 18 |
+| Website integration keys / events | 3 / 9 |
+| Payment gateway configurations / demo API keys / webhooks | 12 / 3 / 3 |
+| Accommodation inventory | 18 |
+| Hotels / room types / rate plans / hotel bookings | 6 / 12 / 12 / 12 |
+| Airport-transfer products / bookings | 9 / 12 |
+
+Each tenant (`hussein-mboya`, `amani-trails`, `demo-safari`) has nine users: administrator, manager, agent, guide, driver, and four customers. The application does not define a finance or operations login role in its User schema, so the seed does not invent those roles. Each tenant has 12 published destinations and 12 public tours. The public Vercel API checks returned HTTP 200 and 12 results for both catalogues. Every tenant has 12 distinct tour images and 12 distinct destination images; destination artwork is served from the repository's local demo SVG catalogue.
+
+The accepted demo quotation for each tenant points to a booking in that same tenant. Finance records, bookings, payments, and supplier costs are synthetic. The seed does not initiate live M-Pesa, Stripe, refund-provider, or other external payment actions.
+
+## Deployment diagnosis and verification
+
+The deployed Vercel bundle uses `https://hussein-mboya-tours.onrender.com/api` and carries the explicit `hussein-mboya` public tenant selector. Render health reported `database=connected` and `databaseName=husseindb`. CORS preflight from `https://hussein-mboya-tours.vercel.app` allowed the origin and `X-Tenant-Slug`. Before seeding, the public routes correctly returned `404 Tenant not found` because the configured database had no tenant records. After creating the tenants and catalogue, the public destination and tour routes returned HTTP 200 with 12 results each. This was a missing tenant/data problem, not a frontend fallback or API URL issue.
+
+Validation completed for this run:
+
+- `npm run check:seeds` and the targeted demo-seed safety/readiness tests passed.
+- The frontend production build passed with the deployed Render API and socket origins.
+- Live destination and tour API checks returned 12 records each.
+- Live admin, manager, agent, guide, driver, customer, and platform-owner logins succeeded in the API smoke check; customer access to admin endpoints was denied, and two tenant customer accounts resolved to distinct tenant IDs.
+- Atlas read-only checks confirmed per-tenant counts and converted quotation-to-booking references.
+
+The full test suite, production certification, and live payment/refund flows were not part of this run. Demo seed output is not evidence of production readiness.

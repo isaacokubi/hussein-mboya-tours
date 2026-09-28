@@ -2,28 +2,27 @@
 
 Kenya-focused, multi-tenant tours & travel SaaS for tour operators, with tenant isolation, bookings, payments, finance/accounting, compliance, hospitality/operations, website integrations, RBAC and production safeguards.
 
-## Latest verified repository status — 2026-09-27
+## Latest verified repository status — 2026-09-28
 
-The controlled demo reset and verification were completed on 2026-09-27 from the current `main` work. The project is **code/test verified for the completed checks**, while live production/provider certification remains a separate deployment-evidence gate.
+The controlled demo reset and verification were completed on 2026-09-28 on `main`. The project is **verified for the checks listed below**, while live production/provider certification remains a separate deployment-evidence gate.
 
 ### Latest verified checks
 
 | Area | Result |
 |---|---|
-| Backend full suite | **181 passed, 0 failed, 5 expected skips** |
-| Atlas readiness integrations | Not rerun; configured URIs target `global_tours_test`, outside this task's `husseindb`-only authorization |
-| `npm run check:all` | **PASS** |
+| Backend full suite | **182 passed, 0 failed, 5 expected skips** |
+| Seed syntax checks (`npm run check:seeds`) | **PASS** |
 | Frontend lint | **PASS** |
 | Frontend production build | **PASS** |
-| Tenant isolation / RBAC API verification | **PASS** |
-| Live tenant isolation | **PASS** — 17/17 checks |
-| RBAC data links and permission assignments | **PASS** |
-| Demo tour featured images | **12/12 unique** |
-| Demo destination featured images | **12/12 unique** |
+| Live health and CORS preflight | **PASS** |
+| Live destination and tour APIs | **PASS** — 12 records per Hussein Mboya catalogue |
+| Live seeded role logins | **PASS** — admin, manager, agent, guide, driver, customers, platform owner |
+| Customer tenant separation and RBAC smoke | **PASS** — distinct tenant IDs; customer denied admin endpoint |
+| Featured images | **12 unique per tenant** for tours and destinations |
 
 ### Current controlled demo dataset
 
-The verified demo dataset contains three tenants: `hussein-mboya`, `amani-trails`, and `demo-safari`. It includes **19 users** (18 tenant role users and 1 preserved platform owner), **12 tours, 12 destinations, 36 bookings, 30 payments, 3 vehicles, 9 reviews, 0 wishlists, and 18 notifications**, plus finance, operations, website-integration, hospitality, hotel, and airport-transfer records. Prior 37/24/36/33/33/18/9/12/27 counts describe a different seed run, not this reset.
+The verified demo dataset contains three tenants: `hussein-mboya`, `amani-trails`, and `demo-safari`. It includes **28 users** (27 tenant users and 1 preserved platform owner), **36 tours, 36 destinations, 36 bookings, 30 payments, 6 staff, 12 customers, 6 quotations, 6 custom-tour requests, 3 vehicles, 9 reviews, and 18 notifications**, plus finance, operations, website-integration, hospitality, hotel, and airport-transfer records. Each tenant has nine users, 12 public tours, and 12 public destinations. See [Demo Seeding Verification](docs/DEMO_SEEDING.md) for full totals and the seed safety boundary.
 
 All seeded payment records are synthetic internal fixtures. No live M-Pesa transaction was initiated by the seed. Demo credentials use the controlled seed password supplied through `SEED_DEMO_PASSWORD`; never commit that value to Git.
 
@@ -46,7 +45,7 @@ See the [Staging Test Record](docs/TEST_EVIDENCE.md#2026-09-26--staging-verifica
 See [First Tenant Production Acceptance](docs/FIRST_TENANT_ACCEPTANCE.md) for the production environment matrix, onboarding procedure and external actions.
 
 **Historical production-audit source snapshot:** `0b7949865e67a4fa5dd45076a120f9d7f69f1e39`
-**Verification date:** 2026-09-27
+**Verification date:** 2026-09-28
 **Repository branch:** `main`
 
 The latest full local verification was completed after the production-audit remediation. Code-level checks and local release gates passed. Production launch certification is **not yet complete** because several acceptance gates require evidence from the actual deployment/provider environment.
@@ -157,6 +156,6 @@ The workflow has read-only repository permissions and does not modify or push re
 
 <!-- DOCS-AUTO:END -->
 
-## 2026-09-27 demo seed verification
+## 2026-09-28 demo seed verification
 
-The controlled reset completed against the authorized demo/staging Atlas database `husseindb`. It preserved three tenant identities and one platform owner. Actual totals are **19 users, 12 tours, 12 destinations, 36 bookings, 30 payments, 3 vehicles, 9 reviews, 0 wishlists, and 18 notifications**. Featured images are unique across all 12 tours and all 12 destinations. These totals differ from the earlier 37/24/36/33/33/18/9/12/27 baseline. Finance, operations, website-integration, hospitality, hotel, and airport-transfer counts are recorded in [Demo Seeding Verification](docs/DEMO_SEEDING.md). This evidence is demo/staging only; the separate production database has not been provided or accessed.
+The controlled reset completed against the explicitly authorized demo Atlas database `husseindb`. It preserved one platform owner and seeded all three tenants. Actual totals are **28 users, 36 tours, 36 destinations, 36 bookings, 30 payments, 6 staff, 12 customers, 6 quotations, 6 custom-tour requests, 3 vehicles, 9 reviews, and 18 notifications**. Every tenant has 12 unique tour images and destination images. Both public catalogues returned 12 entries through the deployed API. Finance, operations, website-integration, hospitality, hotel, and airport-transfer counts are recorded in [Demo Seeding Verification](docs/DEMO_SEEDING.md). This is demo/staging evidence only; it does not certify production readiness.
