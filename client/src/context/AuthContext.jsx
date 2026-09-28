@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
-import api from "../api/axios";
+import api, { advanceAuthenticationGeneration } from "../api/axios";
 import { queryClient } from "../lib/queryClient";
 import { getUserRole, normalizeRole } from "../utils/roleUtils";
 
@@ -107,6 +107,7 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     authOperation.current += 1;
+    advanceAuthenticationGeneration();
     try { await api.post("/auth/logout"); } catch (error) { console.warn("AUTH LOGOUT REQUEST FAILED", error?.message || error); }
     clearAuthStorage();
     queryClient.clear();
@@ -169,6 +170,7 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     authOperation.current += 1;
+    advanceAuthenticationGeneration();
     setLoading(true);
     // A new login must start from a clean authentication session. In particular,
     // never let the previous user's JWT or tenant ID be attached to /auth/login.
@@ -184,6 +186,10 @@ export function AuthProvider({ children }) {
       });
       if (data?.mfaRequired) return data;
       if (!data?.user) throw new Error("Authentication response did not contain a user.");
+      if (!data?.token) throw new Error("Authentication response did not contain an access token.");
+      // Keep the backend's HttpOnly cookie session and persist its returned
+      // bearer token as a fallback for browsers that block cross-site cookies.
+      localStorage.setItem("token", data.token);
       const normalizedUser = persistUser(data.user);
       if (!normalizedUser) throw new Error("Authentication response did not contain a user.");
       setToken(true);
@@ -199,7 +205,8 @@ export function AuthProvider({ children }) {
 
   const register = async (userData) => {
     const { data } = await api.post("/auth/register", userData);
-    if (data?.user) {
+    if (data?.user && data?.token) {
+      localStorage.setItem("token", data.token);
       setToken(true);
       persistUser(data.user);
       await preloadTenantSettings();

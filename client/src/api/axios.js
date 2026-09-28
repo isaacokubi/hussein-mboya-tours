@@ -3,6 +3,12 @@ import axios from "axios";
 const configuredApiUrl = String(import.meta.env.VITE_API_URL || "").trim();
 const configuredPlatformApiUrl = String(import.meta.env.VITE_PLATFORM_API_URL || "").trim();
 const productionBuild = Boolean(import.meta.env.PROD);
+let authenticationGeneration = 0;
+
+export const advanceAuthenticationGeneration = () => {
+  authenticationGeneration += 1;
+  return authenticationGeneration;
+};
 
 function isLocalHost() {
   if (typeof window === "undefined") return false;
@@ -127,10 +133,19 @@ api.interceptors.request.use(
   (config) => {
     if (typeof window === "undefined") return config;
     config.headers = config.headers || {};
+    config.__authGeneration = authenticationGeneration;
 
     const publicAuthRequest = isPublicAuthRequest(config.url);
     config.__cookieAuth = !publicAuthRequest;
-    delete config.headers.Authorization;
+    const storedAccessToken = ["token", "accessToken", "authToken"]
+      .map((key) => String(window.localStorage.getItem(key) || "").trim())
+      .find(Boolean);
+    if (publicAuthRequest) {
+      // Never send a previous session's bearer token while authenticating.
+      delete config.headers.Authorization;
+    } else if (storedAccessToken) {
+      config.headers.Authorization = `Bearer ${storedAccessToken}`;
+    }
 
     const tenantId = publicAuthRequest ? "" : getAuthenticatedTenantId();
     const csrfToken = String(document.cookie.split(";").map((item) => item.trim()).find((item) => item.startsWith("csrfToken="))?.split("=")[1] || "").trim();
@@ -191,7 +206,12 @@ api.interceptors.response.use(
     if (status === 401 && typeof window !== "undefined") {
       const isLoginRequest = /\/auth\/(?:login|register)(?:[/?]|$)/i.test(url);
       const hasKnownUser = Boolean(localStorage.getItem("user"));
-      if (!isLoginRequest && hasKnownUser) {
+      const isCurrentUserRequest = /\/auth\/me(?:[/?]|$)/i.test(url);
+      // AuthContext owns /me restoration and guards its result by operation
+      // generation. A global event here could clear a newer login when an
+      // older /me request finishes with 401 after login succeeds.
+      const requestGeneration = error?.config?.__authGeneration;
+      if (!isLoginRequest && !isCurrentUserRequest && hasKnownUser && requestGeneration === authenticationGeneration) {
         window.dispatchEvent(new CustomEvent("auth:session-invalid", {
           detail: {
             url,
