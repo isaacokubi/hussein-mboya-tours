@@ -71,10 +71,10 @@ export default function TenantFooter() {
         <div>
           <h3 className="mb-4 text-lg font-semibold text-white">Popular Destinations</h3>
           <ul className="space-y-3">
-            <li><Link to="/destinations/maasai-mara-0" className="hover:text-green-400">Maasai Mara</Link></li>
-            <li><Link to="/destinations/diani-beach-0" className="hover:text-green-400">Diani Beach</Link></li>
-            <li><Link to="/destinations/mount-kenya-0" className="hover:text-green-400">Mount Kenya</Link></li>
-            <li><Link to="/destinations/nairobi-0" className="hover:text-green-400">Nairobi</Link></li>
+            <li><Link to="/destinations/maasai-mara" className="hover:text-green-400">Maasai Mara</Link></li>
+            <li><Link to="/destinations/diani-beach" className="hover:text-green-400">Diani Beach</Link></li>
+            <li><Link to="/destinations/mount-kenya" className="hover:text-green-400">Mount Kenya</Link></li>
+            <li><Link to="/destinations/nairobi" className="hover:text-green-400">Nairobi</Link></li>
           </ul>
         </div>
 
