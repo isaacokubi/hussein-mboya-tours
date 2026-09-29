@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { getSafeDemoApiOrigin, LOGIN_LIMIT, LOGIN_WINDOW_MS, needsLoginWindowWait } from "../scripts/demoApiValidationSafety.js";
 
 const source = fs.readFileSync(
   path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../scripts/verifyDemoApi.js"),
@@ -25,4 +26,25 @@ test("production demo API validation checks public catalog isolation and cross-t
   assert.match(source, /\/api\/destinations/);
   assert.match(source, /foreignBooking/);
   assert.match(source, /new Set\(tenantIds\)/);
+});
+
+test("demo API login batches respect the real limiter window", () => {
+  assert.equal(LOGIN_LIMIT, 10);
+  assert.equal(LOGIN_WINDOW_MS, 15 * 60 * 1000);
+  assert.equal(needsLoginWindowWait(9, 19), false);
+  assert.equal(needsLoginWindowWait(10, 19), true);
+  assert.equal(needsLoginWindowWait(19, 19), false);
+  assert.doesNotMatch(source, /x-forwarded-for/i);
+});
+
+test("demo API validation requires a credential-free HTTPS origin and never deletes audit data", () => {
+  assert.equal(getSafeDemoApiOrigin(), "https://hussein-mboya-tours.onrender.com");
+  assert.equal(getSafeDemoApiOrigin("https://api.example.com/"), "https://api.example.com");
+  for (const value of ["http://api.example.com", "https://api.example.com/path", "https://user:pass@api.example.com"]) {
+    assert.throws(() => getSafeDemoApiOrigin(value));
+  }
+  assert.match(source, /DEMO_TEST_PASSWORD/);
+  assert.doesNotMatch(source, /x-forwarded-for/i);
+  assert.doesNotMatch(source, /\.deleteMany\(/);
+  assert.doesNotMatch(source, /testArtifactsRemoved/);
 });

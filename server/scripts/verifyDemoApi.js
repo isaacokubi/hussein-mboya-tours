@@ -4,14 +4,14 @@ import fs from "node:fs/promises";
 import mongoose from "mongoose";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import AuditLog from "../models/AuditLog.js";
-import SecurityLog from "../models/SecurityLog.js";
+import { getSafeDemoApiOrigin, LOGIN_WINDOW_MS, needsLoginWindowWait } from "./demoApiValidationSafety.js";
 
-const baseUrl = process.env.DEMO_API_BASE_URL || "http://127.0.0.1:5055";
-const password = String(process.env.TEST_DEMO_SEED_PASSWORD || process.env.SEED_DEMO_PASSWORD || "");
-if (password.length < 8) throw new Error("Set TEST_DEMO_SEED_PASSWORD or SEED_DEMO_PASSWORD (at least 8 characters) before verifying demo accounts.");
-const reportPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../reports/demo-api-validation.json");
-const userAgent = "AtlasDemoValidation/2026-09-27";
+const baseUrl = getSafeDemoApiOrigin(process.env.DEMO_API_BASE_URL);
+const password = String(process.env.DEMO_TEST_PASSWORD || process.env.TEST_DEMO_SEED_PASSWORD || process.env.SEED_DEMO_PASSWORD || "");
+if (password.length < 8) throw new Error("Set DEMO_TEST_PASSWORD (or an existing demo password environment variable) before verifying demo accounts.");
+const defaultReportPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../reports/demo-api-validation.json");
+const reportPath = path.resolve(process.env.DEMO_API_REPORT_PATH || defaultReportPath);
+const pause = (duration) => new Promise((resolve) => setTimeout(resolve, duration));
 const logins = [
   { key: "superAdmin", email: "superadmin@hussein-mboya.com", role: "super_admin", tenant: null },
   { key: "tenantAdminA", email: "admin@hussein-mboya.com", role: "admin", tenant: "hussein-mboya" },
@@ -33,7 +33,7 @@ const logins = [
   { key: "customerB", email: "customer1@amani-trails.com", role: "customer", tenant: "amani-trails" },
   { key: "customerC", email: "customer1@demo-safari.com", role: "customer", tenant: "demo-safari" },
 ];
-const report = { timestamp: new Date().toISOString(), logins: [], dashboards: [], dashboardComparisons: [], tenantIsolation: [], rbac: [], testArtifactsRemoved: {}, failures: [] };
+const report = { timestamp: new Date().toISOString(), logins: [], dashboards: [], dashboardComparisons: [], financeComparisons: [], tenantIsolation: [], rbac: [], failures: [] };
 const sessions = new Map();
 
 async function request(endpoint, token, options = {}) {
@@ -49,17 +49,12 @@ async function request(endpoint, token, options = {}) {
 
 try {
   for (const [index, account] of logins.entries()) {
-    // Model each seeded account as a separate browser/client. The API's
-    // production login limiter is intentionally capped at 10 attempts per IP,
-    // while this audit authenticates more than 10 distinct seeded users.
-    // These reserved TEST-NET addresses reach Express only through the
-    // configured trusted proxy hop; the application limiter remains enabled.
-    const clientIp = `198.51.100.${index + 1}`;
+    if (needsLoginWindowWait(index, logins.length)) await pause(LOGIN_WINDOW_MS + 1000);
     const response = await request("/api/auth/login", null, {
       method: "POST",
       body: JSON.stringify({ email: account.email, password }),
-      headers: { "x-forwarded-for": clientIp },
     });
+    if (response.status === 429) throw new Error("Demo API login limiter reached; stopping without retrying or changing client identity.");
     const actualRole = response.payload?.user?.role;
     const actualTenantId = response.payload?.user?.tenantId || null;
     const result = { account: account.key, status: response.status, role: actualRole, authenticatedTenant: actualTenantId };
@@ -132,12 +127,30 @@ try {
   await mongoose.connect(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 10000 });
   const db = mongoose.connection.db;
   const count = (collection, filter) => db.collection(collection).countDocuments(filter);
+  const aggregateTotal = async (collection, pipeline, field = "total") => {
+    const [row] = await db.collection(collection).aggregate(pipeline).toArray();
+    return Number(row?.[field] || 0);
+  };
+  const postedRevenue = (tenantId) => aggregateTotal("journalentries", [
+    { $match: { tenantId, status: "posted" } },
+    { $unwind: "$lines" },
+    { $lookup: { from: "chartofaccounts", localField: "lines.account", foreignField: "_id", as: "account" } },
+    { $unwind: "$account" },
+    { $match: { "account.tenantId": tenantId, "account.type": "revenue", "account.active": true } },
+    { $group: { _id: null, total: { $sum: { $subtract: [{ $ifNull: ["$lines.credit", 0] }, { $ifNull: ["$lines.debit", 0] }] } } } },
+  ]);
   const active = { isDeleted: { $ne: true } };
   const paidStatuses = ["paid", "completed", "success"];
   for (const [tenant, account] of [["hussein-mboya", "tenantAdminA"], ["amani-trails", "tenantAdminB"], ["demo-safari", "tenantAdminC"]]) {
     const tenantId = new mongoose.Types.ObjectId(sessions.get(account).tenantId);
     const scope = { tenantId, ...active };
     const data = payloads.get(`${account}:/api/admin/dashboard/metrics`)?.data;
+    const [revenue, collections, refundedAmount, commission] = await Promise.all([
+      postedRevenue(tenantId),
+      aggregateTotal("payments", [{ $match: { tenantId, status: "completed" } }, { $group: { _id: null, total: { $sum: { $ifNull: ["$amount", 0] } } } }]),
+      aggregateTotal("payments", [{ $match: { tenantId, refundedAmount: { $gt: 0 } } }, { $group: { _id: null, total: { $sum: { $ifNull: ["$refundedAmount", 0] } } } }]),
+      aggregateTotal("commissions", [{ $match: { tenantId } }, { $group: { _id: null, total: { $sum: { $ifNull: ["$amount", 0] } } } }]),
+    ]);
     const [users, customers, staff, guides, drivers, agents, approvedAgents, pendingAgents, vehicles, availableVehicles, assignedVehicles, maintenanceVehicles, tours, destinations, bookings, pendingBookings, confirmedBookings, completedBookings, cancelledBookings, refundedBookings, payments, completedPayments, pendingPayments, failedPayments] = await Promise.all([
       count("users", { ...scope, status: { $ne: "blocked" } }),
       count("users", { ...scope, status: { $ne: "blocked" }, $or: [{ role: "customer" }, { legacyRole: "customer" }] }),
@@ -159,12 +172,32 @@ try {
       count("payments", { ...scope, status: { $in: ["pending", "processing", "partial"] } }),
       count("payments", { ...scope, status: { $in: ["failed", "cancelled"] } }),
     ]);
-    const expected = { users, customers, staff, guides, drivers, agents, approvedAgents, pendingAgents, vehicles, availableVehicles, assignedVehicles, maintenanceVehicles, tours, destinations, bookings, pendingBookings, confirmedBookings, completedBookings, cancelledBookings, refundedBookings, payments, completedPayments, pendingPayments, failedPayments };
+    const expected = { users, customers, staff, guides, drivers, agents, approvedAgents, pendingAgents, vehicles, availableVehicles, assignedVehicles, maintenanceVehicles, tours, destinations, bookings, pendingBookings, confirmedBookings, completedBookings, cancelledBookings, refundedBookings, payments, completedPayments, pendingPayments, failedPayments, revenue };
     assert.ok(data, `${tenant} admin dashboard returns metrics data`);
     for (const [metric, atlasValue] of Object.entries(expected)) {
       assert.equal(Number(data[metric]), atlasValue, `${tenant} dashboard ${metric} matches Atlas`);
     }
     report.dashboardComparisons.push({ tenant, metricsCompared: Object.keys(expected).length, matched: true });
+
+    const financeData = payloads.get(`${account}:/api/admin/finance/stats`)?.data;
+    const expectedFinance = {
+      revenue,
+      netRevenue: revenue,
+      collections,
+      netCollections: Math.max(0, collections - refundedAmount),
+      refundedAmount,
+      completedPayments: await count("payments", { tenantId, status: "completed" }),
+      pendingPayments: await count("payments", { tenantId, status: "pending" }),
+      failedPayments: await count("payments", { tenantId, status: "failed" }),
+      refundedPayments: await count("payments", { tenantId, status: "refunded" }),
+      paidBookings: await count("bookings", { tenantId, paymentStatus: "paid" }),
+      commission,
+    };
+    assert.ok(financeData, `${tenant} finance endpoint returns metrics data`);
+    for (const [metric, atlasValue] of Object.entries(expectedFinance)) {
+      assert.ok(Math.abs(Number(financeData[metric] || 0) - atlasValue) < 0.01, `${tenant} finance ${metric} matches Atlas`);
+    }
+    report.financeComparisons.push({ tenant, metricsCompared: Object.keys(expectedFinance).length, matched: true });
   }
 
   for (const tenant of ["hussein-mboya", "amani-trails", "demo-safari"]) {
@@ -194,28 +227,11 @@ try {
   report.rbac.push({ account: "customerA", protectedAdminDashboardStatus: denied.status });
   assert.equal(denied.status, 403, "customer cannot use tenant admin dashboard API");
 } catch (error) {
-  report.failures.push(String(error?.message || "API validation failed"));
+  report.failures.push(error?.name || "ValidationError");
   process.exitCode = 1;
 } finally {
-  try {
-    const target = new URL(process.env.MONGODB_URI || "");
-    const databaseName = decodeURIComponent(target.pathname.replace(/^\//, "").split("/")[0] || "");
-    if (databaseName !== "husseindb" || !target.hostname.endsWith(".mongodb.net")) throw new Error("Refusing to clean validation logs outside the configured Atlas application database.");
-    const client = new mongoose.mongo.MongoClient(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 10000 });
-    await client.connect();
-    try {
-      const collectionNames = { AuditLog: AuditLog.collection.collectionName, SecurityLog: SecurityLog.collection.collectionName };
-      for (const [modelName, collectionName] of Object.entries(collectionNames)) {
-        const result = await client.db(databaseName).collection(collectionName).deleteMany({ userAgent });
-        report.testArtifactsRemoved[modelName] = result.deletedCount;
-      }
-    } finally { await client.close(); }
-  } catch (error) {
-    report.failures.push(`Could not clean exact demo API validation log markers: ${String(error?.message || error).replace(/mongodb(?:\+srv)?:\/\/[^\s"']+/gi, "[MongoDB URI redacted]")}`);
-    process.exitCode = 1;
-  }
   await mongoose.disconnect().catch(() => {});
   await fs.mkdir(path.dirname(reportPath), { recursive: true });
   await fs.writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`, { mode: 0o600 });
-  console.log(JSON.stringify({ logins: report.logins.length, dashboards: report.dashboards.length, isolationChecks: report.tenantIsolation.length, rbacChecks: report.rbac.length, testArtifactsRemoved: report.testArtifactsRemoved, failures: report.failures, report: "reports/demo-api-validation.json" }, null, 2));
+  console.log(JSON.stringify({ logins: report.logins.length, dashboards: report.dashboards.length, isolationChecks: report.tenantIsolation.length, rbacChecks: report.rbac.length, failures: report.failures, report: path.relative(process.cwd(), reportPath) }, null, 2));
 }

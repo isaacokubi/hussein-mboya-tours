@@ -87,3 +87,5 @@ clean-env.sh
 
 # Local environment backups
 server/.env.backup-*
+.vercel/
+.env*.local

@@ -15,6 +15,6 @@ export default defineConfig({
     launchOptions: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
       ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH }
       : {},
-    trace: "retain-on-failure",
+    trace: process.env.DEMO_TEST_PASSWORD || process.env.DEMO_SMOKE_PASSWORD ? "off" : "retain-on-failure",
   },
 });

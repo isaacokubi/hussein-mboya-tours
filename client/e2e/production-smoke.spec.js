@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import process from "node:process";
 
 const apiOrigin = process.env.DEMO_API_ORIGIN || "https://hussein-mboya-tours.onrender.com";
-const password = process.env.DEMO_SMOKE_PASSWORD;
+const password = process.env.DEMO_TEST_PASSWORD || process.env.DEMO_SMOKE_PASSWORD;
 const accounts = [
   { name: "customer", email: "customer1@hussein-mboya.com", route: "/dashboard", tenant: true, content: /dashboard|welcome|booking/i },
   { name: "super admin", email: "superadmin@hussein-mboya.com", route: "/superadmin/dashboard", tenant: false, content: /dashboard|overview|tenant/i },
