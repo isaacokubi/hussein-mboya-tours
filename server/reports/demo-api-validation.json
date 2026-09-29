@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-09-28T21:14:55.400Z",
+  "timestamp": "2026-09-29T02:46:24.658Z",
   "logins": [
     {
       "account": "superAdmin",
@@ -75,18 +75,365 @@
     },
     {
       "account": "guideC",
-      "status": 429,
-      "authenticatedTenant": null
+      "status": 200,
+      "role": "guide",
+      "authenticatedTenant": "6aba98a78f2f66ee603c5bb3"
+    },
+    {
+      "account": "driverA",
+      "status": 200,
+      "role": "driver",
+      "authenticatedTenant": "6aba98a18f2f66ee603c5bb1"
+    },
+    {
+      "account": "driverB",
+      "status": 200,
+      "role": "driver",
+      "authenticatedTenant": "6aba98a48f2f66ee603c5bb2"
+    },
+    {
+      "account": "driverC",
+      "status": 200,
+      "role": "driver",
+      "authenticatedTenant": "6aba98a78f2f66ee603c5bb3"
+    },
+    {
+      "account": "customerA",
+      "status": 200,
+      "role": "customer",
+      "authenticatedTenant": "6aba98a18f2f66ee603c5bb1"
+    },
+    {
+      "account": "customerB",
+      "status": 200,
+      "role": "customer",
+      "authenticatedTenant": "6aba98a48f2f66ee603c5bb2"
+    },
+    {
+      "account": "customerC",
+      "status": 200,
+      "role": "customer",
+      "authenticatedTenant": "6aba98a78f2f66ee603c5bb3"
     }
   ],
-  "dashboards": [],
-  "tenantIsolation": [],
-  "rbac": [],
+  "dashboards": [
+    {
+      "account": "superAdmin",
+      "endpoint": "/api/superadmin/dashboard",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "tenantAdminA",
+      "endpoint": "/api/admin/dashboard/metrics",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "tenantAdminB",
+      "endpoint": "/api/admin/dashboard/metrics",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "tenantAdminC",
+      "endpoint": "/api/admin/dashboard/metrics",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "tenantAdminA",
+      "endpoint": "/api/admin/finance/stats",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "tenantAdminB",
+      "endpoint": "/api/admin/finance/stats",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "tenantAdminC",
+      "endpoint": "/api/admin/finance/stats",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "managerA",
+      "endpoint": "/api/tourmanager/dashboard",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "managerA",
+      "endpoint": "/api/tourmanager/tours",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "managerB",
+      "endpoint": "/api/tourmanager/dashboard",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "managerB",
+      "endpoint": "/api/tourmanager/tours",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "managerC",
+      "endpoint": "/api/tourmanager/dashboard",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "managerC",
+      "endpoint": "/api/tourmanager/tours",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "agentA",
+      "endpoint": "/api/agent/dashboard",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "agentA",
+      "endpoint": "/api/agent/bookings",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "agentB",
+      "endpoint": "/api/agent/dashboard",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "agentB",
+      "endpoint": "/api/agent/bookings",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "agentC",
+      "endpoint": "/api/agent/dashboard",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "agentC",
+      "endpoint": "/api/agent/bookings",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "guideA",
+      "endpoint": "/api/guide/dashboard",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "guideA",
+      "endpoint": "/api/guide/assigned-tours",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "guideB",
+      "endpoint": "/api/guide/dashboard",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "guideB",
+      "endpoint": "/api/guide/assigned-tours",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "guideC",
+      "endpoint": "/api/guide/dashboard",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "guideC",
+      "endpoint": "/api/guide/assigned-tours",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "driverA",
+      "endpoint": "/api/driver/dashboard",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "driverA",
+      "endpoint": "/api/driver/assigned-tours",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "driverB",
+      "endpoint": "/api/driver/dashboard",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "driverB",
+      "endpoint": "/api/driver/assigned-tours",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "driverC",
+      "endpoint": "/api/driver/dashboard",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "driverC",
+      "endpoint": "/api/driver/assigned-tours",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "customerA",
+      "endpoint": "/api/bookings/my-bookings",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "customerB",
+      "endpoint": "/api/bookings/my-bookings",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "customerC",
+      "endpoint": "/api/bookings/my-bookings",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "tenantAdminA",
+      "endpoint": "/api/bookings/admin/all",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "tenantAdminB",
+      "endpoint": "/api/bookings/admin/all",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "tenantAdminC",
+      "endpoint": "/api/bookings/admin/all",
+      "status": 200,
+      "success": true
+    },
+    {
+      "account": "hussein-mboya",
+      "endpoint": "/api/tours",
+      "status": 200,
+      "recordCount": 12
+    },
+    {
+      "account": "hussein-mboya",
+      "endpoint": "/api/destinations",
+      "status": 200,
+      "recordCount": 12
+    },
+    {
+      "account": "amani-trails",
+      "endpoint": "/api/tours",
+      "status": 200,
+      "recordCount": 12
+    },
+    {
+      "account": "amani-trails",
+      "endpoint": "/api/destinations",
+      "status": 200,
+      "recordCount": 12
+    },
+    {
+      "account": "demo-safari",
+      "endpoint": "/api/tours",
+      "status": 200,
+      "recordCount": 12
+    },
+    {
+      "account": "demo-safari",
+      "endpoint": "/api/destinations",
+      "status": 200,
+      "recordCount": 12
+    }
+  ],
+  "dashboardComparisons": [
+    {
+      "tenant": "hussein-mboya",
+      "metricsCompared": 24,
+      "matched": true
+    },
+    {
+      "tenant": "amani-trails",
+      "metricsCompared": 24,
+      "matched": true
+    },
+    {
+      "tenant": "demo-safari",
+      "metricsCompared": 24,
+      "matched": true
+    }
+  ],
+  "tenantIsolation": [
+    {
+      "account": "customerA",
+      "foreignBooking": true,
+      "status": 404
+    },
+    {
+      "account": "customerA",
+      "foreignBooking": true,
+      "status": 404
+    },
+    {
+      "account": "customerB",
+      "foreignBooking": true,
+      "status": 404
+    },
+    {
+      "account": "customerB",
+      "foreignBooking": true,
+      "status": 404
+    },
+    {
+      "account": "customerC",
+      "foreignBooking": true,
+      "status": 404
+    },
+    {
+      "account": "customerC",
+      "foreignBooking": true,
+      "status": 404
+    }
+  ],
+  "rbac": [
+    {
+      "account": "customerA",
+      "protectedAdminDashboardStatus": 403
+    }
+  ],
   "testArtifactsRemoved": {
-    "AuditLog": 12,
-    "SecurityLog": 12
+    "AuditLog": 19,
+    "SecurityLog": 19
   },
-  "failures": [
-    "guideC login\n\n429 !== 200\n"
-  ]
+  "failures": []
 }

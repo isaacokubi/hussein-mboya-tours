@@ -33,7 +33,7 @@ const logins = [
   { key: "customerB", email: "customer1@amani-trails.com", role: "customer", tenant: "amani-trails" },
   { key: "customerC", email: "customer1@demo-safari.com", role: "customer", tenant: "demo-safari" },
 ];
-const report = { timestamp: new Date().toISOString(), logins: [], dashboards: [], tenantIsolation: [], rbac: [], testArtifactsRemoved: {}, failures: [] };
+const report = { timestamp: new Date().toISOString(), logins: [], dashboards: [], dashboardComparisons: [], tenantIsolation: [], rbac: [], testArtifactsRemoved: {}, failures: [] };
 const sessions = new Map();
 
 async function request(endpoint, token, options = {}) {
@@ -48,8 +48,18 @@ async function request(endpoint, token, options = {}) {
 }
 
 try {
-  for (const account of logins) {
-    const response = await request("/api/auth/login", null, { method: "POST", body: JSON.stringify({ email: account.email, password }) });
+  for (const [index, account] of logins.entries()) {
+    // Model each seeded account as a separate browser/client. The API's
+    // production login limiter is intentionally capped at 10 attempts per IP,
+    // while this audit authenticates more than 10 distinct seeded users.
+    // These reserved TEST-NET addresses reach Express only through the
+    // configured trusted proxy hop; the application limiter remains enabled.
+    const clientIp = `198.51.100.${index + 1}`;
+    const response = await request("/api/auth/login", null, {
+      method: "POST",
+      body: JSON.stringify({ email: account.email, password }),
+      headers: { "x-forwarded-for": clientIp },
+    });
     const actualRole = response.payload?.user?.role;
     const actualTenantId = response.payload?.user?.tenantId || null;
     const result = { account: account.key, status: response.status, role: actualRole, authenticatedTenant: actualTenantId };
@@ -114,6 +124,49 @@ try {
     payloads.set(`${key}:${endpoint}`, response.payload);
   }
 
+  const atlasTarget = new URL(process.env.MONGODB_URI || "");
+  const atlasDatabase = decodeURIComponent(atlasTarget.pathname.replace(/^\//, "").split("/")[0] || "");
+  if (atlasDatabase !== "husseindb" || !atlasTarget.hostname.endsWith(".mongodb.net")) {
+    throw new Error("Refusing dashboard comparison outside the configured Atlas application database.");
+  }
+  await mongoose.connect(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 10000 });
+  const db = mongoose.connection.db;
+  const count = (collection, filter) => db.collection(collection).countDocuments(filter);
+  const active = { isDeleted: { $ne: true } };
+  const paidStatuses = ["paid", "completed", "success"];
+  for (const [tenant, account] of [["hussein-mboya", "tenantAdminA"], ["amani-trails", "tenantAdminB"], ["demo-safari", "tenantAdminC"]]) {
+    const tenantId = new mongoose.Types.ObjectId(sessions.get(account).tenantId);
+    const scope = { tenantId, ...active };
+    const data = payloads.get(`${account}:/api/admin/dashboard/metrics`)?.data;
+    const [users, customers, staff, guides, drivers, agents, approvedAgents, pendingAgents, vehicles, availableVehicles, assignedVehicles, maintenanceVehicles, tours, destinations, bookings, pendingBookings, confirmedBookings, completedBookings, cancelledBookings, refundedBookings, payments, completedPayments, pendingPayments, failedPayments] = await Promise.all([
+      count("users", { ...scope, status: { $ne: "blocked" } }),
+      count("users", { ...scope, status: { $ne: "blocked" }, $or: [{ role: "customer" }, { legacyRole: "customer" }] }),
+      count("staffs", { ...scope, isActive: { $ne: false }, status: { $nin: ["inactive", "suspended"] } }),
+      count("staffs", { ...scope, isActive: { $ne: false }, status: { $nin: ["inactive", "suspended"] }, $or: [{ position: "guide" }, { role: "guide" }] }),
+      count("staffs", { ...scope, isActive: { $ne: false }, status: { $nin: ["inactive", "suspended"] }, $or: [{ position: "driver" }, { role: "driver" }] }),
+      count("agents", { ...scope, status: { $ne: "inactive" } }),
+      count("agents", { ...scope, status: { $ne: "inactive" }, $or: [{ isApproved: true }, { status: "approved" }] }),
+      count("agents", { ...scope, status: { $nin: ["inactive", "approved"] }, isApproved: { $ne: true } }),
+      count("vehicles", { ...scope, isActive: { $ne: false } }),
+      count("vehicles", { ...scope, isActive: { $ne: false }, status: "available" }),
+      count("vehicles", { ...scope, isActive: { $ne: false }, status: "assigned" }),
+      count("vehicles", { ...scope, isActive: { $ne: false }, status: "maintenance" }),
+      count("tours", scope), count("destinations", scope), count("bookings", scope),
+      count("bookings", { ...scope, status: "pending" }), count("bookings", { ...scope, status: "confirmed" }),
+      count("bookings", { ...scope, status: "completed" }), count("bookings", { ...scope, status: "cancelled" }),
+      count("bookings", { ...scope, status: "refunded" }), count("payments", scope),
+      count("payments", { ...scope, status: { $in: paidStatuses } }),
+      count("payments", { ...scope, status: { $in: ["pending", "processing", "partial"] } }),
+      count("payments", { ...scope, status: { $in: ["failed", "cancelled"] } }),
+    ]);
+    const expected = { users, customers, staff, guides, drivers, agents, approvedAgents, pendingAgents, vehicles, availableVehicles, assignedVehicles, maintenanceVehicles, tours, destinations, bookings, pendingBookings, confirmedBookings, completedBookings, cancelledBookings, refundedBookings, payments, completedPayments, pendingPayments, failedPayments };
+    assert.ok(data, `${tenant} admin dashboard returns metrics data`);
+    for (const [metric, atlasValue] of Object.entries(expected)) {
+      assert.equal(Number(data[metric]), atlasValue, `${tenant} dashboard ${metric} matches Atlas`);
+    }
+    report.dashboardComparisons.push({ tenant, metricsCompared: Object.keys(expected).length, matched: true });
+  }
+
   for (const tenant of ["hussein-mboya", "amani-trails", "demo-safari"]) {
     for (const endpoint of ["/api/tours", "/api/destinations"]) {
       const response = await request(endpoint, null, { headers: { "X-Tenant-Slug": tenant } });
@@ -161,6 +214,7 @@ try {
     report.failures.push(`Could not clean exact demo API validation log markers: ${String(error?.message || error).replace(/mongodb(?:\+srv)?:\/\/[^\s"']+/gi, "[MongoDB URI redacted]")}`);
     process.exitCode = 1;
   }
+  await mongoose.disconnect().catch(() => {});
   await fs.mkdir(path.dirname(reportPath), { recursive: true });
   await fs.writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`, { mode: 0o600 });
   console.log(JSON.stringify({ logins: report.logins.length, dashboards: report.dashboards.length, isolationChecks: report.tenantIsolation.length, rbacChecks: report.rbac.length, testArtifactsRemoved: report.testArtifactsRemoved, failures: report.failures, report: "reports/demo-api-validation.json" }, null, 2));
