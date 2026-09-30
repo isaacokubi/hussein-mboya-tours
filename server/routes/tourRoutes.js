@@ -58,6 +58,11 @@ router.get("/slug/:slug", getTourBySlug);
 // protected tour-manager section below.
 router.get("/:id/availability", getTourAvailability);
 
+// GET SINGLE PUBLIC TOUR BY ID
+// Customer checkout requests the selected tour by MongoDB id. This read-only
+// endpoint must remain public; mutation endpoints stay protected below.
+router.get("/:id", getTourById);
+
 /*
 |--------------------------------------------------------------------------
 | PROTECTED TOUR MANAGER ROUTES
@@ -94,10 +99,6 @@ router.patch("/:id/availability", updateTourAvailability);
 | SINGLE TOUR / CRUD
 |--------------------------------------------------------------------------
 */
-
-// GET SINGLE TOUR
-// GET /api/tours/:id
-router.get("/:id", getTourById);
 
 // UPDATE TOUR
 // PUT /api/tours/:id
