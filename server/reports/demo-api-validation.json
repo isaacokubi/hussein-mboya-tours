@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-09-29T02:46:24.658Z",
+  "timestamp": "2026-09-29T02:57:19.800Z",
   "logins": [
     {
       "account": "superAdmin",
@@ -379,17 +379,17 @@
   "dashboardComparisons": [
     {
       "tenant": "hussein-mboya",
-      "metricsCompared": 24,
+      "metricsCompared": 25,
       "matched": true
     },
     {
       "tenant": "amani-trails",
-      "metricsCompared": 24,
+      "metricsCompared": 25,
       "matched": true
     },
     {
       "tenant": "demo-safari",
-      "metricsCompared": 24,
+      "metricsCompared": 25,
       "matched": true
     }
   ],
@@ -435,5 +435,22 @@
     "AuditLog": 19,
     "SecurityLog": 19
   },
-  "failures": []
+  "failures": [],
+  "financeComparisons": [
+    {
+      "tenant": "hussein-mboya",
+      "metricsCompared": 11,
+      "matched": true
+    },
+    {
+      "tenant": "amani-trails",
+      "metricsCompared": 11,
+      "matched": true
+    },
+    {
+      "tenant": "demo-safari",
+      "metricsCompared": 11,
+      "matched": true
+    }
+  ]
 }
