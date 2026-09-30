@@ -44,14 +44,32 @@ const syncDerivedAvailability = async (tour, session = null) => {
 
 const sameDay = (a, b) => Boolean(calendarDateKey(a) && calendarDateKey(a) === calendarDateKey(b));
 
+const tourDateWindow = (tour) => {
+  const start = calendarDateKey(tour?.startDate || tour?.date);
+  if (!start) return null;
+  const end = calendarDateKey(tour?.endDate);
+  if (end) return { start, end };
+  const days = Math.max(Number(tour?.durationDays || tour?.durationDetails?.days || tour?.duration || 1), 1);
+  const date = new Date(`${start}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days - 1);
+  return { start, end: calendarDateKey(date) };
+};
+
+const isWithinTourWindow = (tour, travelDate) => {
+  const target = calendarDateKey(travelDate);
+  const window = tourDateWindow(tour);
+  return Boolean(target && window && target >= window.start && target <= window.end);
+};
+
 const getDateAvailability = (tour, travelDate) => {
   const target = normalizeDate(travelDate);
   if (!target) throw new Error("A valid travel date is required.");
   const entries = Array.isArray(tour.availability) ? tour.availability : [];
   if (entries.length === 0) return null;
   const entry = entries.find((item) => sameDay(item.date, travelDate));
-  if (!entry) throw new Error("The selected travel date is not offered for this tour.");
-  return entry;
+  if (entry) return entry;
+  if (isWithinTourWindow(tour, travelDate)) return null;
+  throw new Error("The selected travel date is not offered for this tour.");
 };
 
 export const validateTourCapacity = async (tourId, requestedGuests, travelDate) => {
@@ -78,21 +96,26 @@ export const reserveSlots = async (tourId, travelers, travelDate, session = null
   if (Array.isArray(current.availability) && current.availability.length) {
     if (!target) throw new Error("A valid travel date is required.");
     const index = current.availability.findIndex((item) => sameDay(item.date, travelDate));
-    if (index < 0) throw new Error("The selected travel date is not offered for this tour.");
-    const entry = current.availability[index];
-    const totalSlots = Number(entry.totalSlots || 0);
-    const bookedSlots = Number(entry.bookedSlots || 0);
-    if (bookedSlots + travelers > totalSlots) throw new Error("Not enough available tour slots for the selected travel date.");
-    const tour = await Tour.findOneAndUpdate(
-      mergeTenantFilter({
-        _id: tourId,
-        [`availability.${index}.bookedSlots`]: { $lte: totalSlots - travelers }
-      }),
-      { $inc: { [`availability.${index}.bookedSlots`]: travelers } },
-      { new: true, session }
-    );
-    if (!tour) throw new Error("Not enough available tour slots for the selected travel date.");
-    return syncDerivedAvailability(tour, session);
+    if (index < 0) {
+      if (!isWithinTourWindow(current, travelDate)) {
+        throw new Error("The selected travel date is not offered for this tour.");
+      }
+    } else {
+      const entry = current.availability[index];
+      const totalSlots = Number(entry.totalSlots || 0);
+      const bookedSlots = Number(entry.bookedSlots || 0);
+      if (bookedSlots + travelers > totalSlots) throw new Error("Not enough available tour slots for the selected travel date.");
+      const tour = await Tour.findOneAndUpdate(
+        mergeTenantFilter({
+          _id: tourId,
+          [`availability.${index}.bookedSlots`]: { $lte: totalSlots - travelers }
+        }),
+        { $inc: { [`availability.${index}.bookedSlots`]: travelers } },
+        { new: true, session }
+      );
+      if (!tour) throw new Error("Not enough available tour slots for the selected travel date.");
+      return syncDerivedAvailability(tour, session);
+    }
   }
 
   const tour = await Tour.findOneAndUpdate(
