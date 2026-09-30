@@ -12,6 +12,7 @@ if (password.length < 8) throw new Error("Set DEMO_TEST_PASSWORD (or an existing
 const defaultReportPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../reports/demo-api-validation.json");
 const reportPath = path.resolve(process.env.DEMO_API_REPORT_PATH || defaultReportPath);
 const pause = (duration) => new Promise((resolve) => setTimeout(resolve, duration));
+const userAgent = "HusseinMboyaDemoApiValidator/1.0";
 const logins = [
   { key: "superAdmin", email: "superadmin@hussein-mboya.com", role: "super_admin", tenant: null },
   { key: "tenantAdminA", email: "admin@hussein-mboya.com", role: "admin", tenant: "hussein-mboya" },

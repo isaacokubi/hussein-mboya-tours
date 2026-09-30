@@ -20,6 +20,11 @@ test("production demo API validation uses login response roles and fixtures for 
   }
 });
 
+test("demo API request headers use a defined static validator user agent", () => {
+  assert.match(source, /const userAgent = "HusseinMboyaDemoApiValidator\/1\.0";/);
+  assert.match(source, /"user-agent": userAgent/);
+});
+
 test("production demo API validation checks public catalog isolation and cross-tenant bookings", () => {
   assert.match(source, /X-Tenant-Slug/);
   assert.match(source, /\/api\/tours/);
