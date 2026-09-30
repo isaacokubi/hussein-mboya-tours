@@ -227,6 +227,7 @@ test("first tenant provisioning, tenant-admin access, public catalogue and cross
         destination: destination._id, country: "Kenya", location: "Mombasa",
         date: futureTourDate, startDate: futureTourDate, durationDays: 2,
         capacity: 10,
+        availability: [{ date: futureTourDate, totalSlots: 10, bookedSlots: 0 }],
         availabilitySettings: { totalSlots: 10, bookedSlots: 0, waitlistEnabled: false },
         price: 25000, discountPrice: 25000, status: "upcoming", published: true, available: true,
       }),
