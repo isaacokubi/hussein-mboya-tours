@@ -102,7 +102,7 @@ router.patch("/:id/availability", updateTourAvailability);
 
 // UPDATE TOUR
 // PUT /api/tours/:id
-router.put("/:id", validateTourCommand(), upload.array("images", 10), updateTour);
+router.put("/:id", validateTourCommand({ allowPast: true }), upload.array("images", 10), updateTour);
 
 // DELETE TOUR
 // DELETE /api/tours/:id

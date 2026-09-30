@@ -51,7 +51,7 @@ export default function EditTour() {
       date: toDateInput(tourData.date || tourData.startDate),
       startDate: toDateInput(tourData.startDate || tourData.date),
       endDate: toDateInput(tourData.endDate),
-      duration: tourData.duration || String(tourData.durationDetails?.days || 1),
+      duration: Number(tourData.durationDays ?? tourData.durationDetails?.days ?? tourData.duration ?? 1),
       capacity: tourData.capacity ?? 20,
       price: tourData.price ?? 0,
       discount: tourData.discount ?? 0,
@@ -119,7 +119,13 @@ export default function EditTour() {
       toast.error("Title, description, destination, country, location and tour date are required.");
       return;
     }
-    saveMutation.mutate(form);
+    const duration = Number(form.duration);
+    if (!Number.isInteger(duration) || duration < 1 || duration > 365) {
+      toast.error("Duration must be a whole number between 1 and 365 days.");
+      return;
+    }
+    const payload = { ...form, duration };
+    saveMutation.mutate(payload);
   };
 
   if (tourLoading || !form) return <div className="p-10 text-center">Loading tour...</div>;
@@ -150,7 +156,7 @@ export default function EditTour() {
           <label className="space-y-1"><span className="text-sm font-medium">Tour date</span><input type="date" name="date" value={form.date} onChange={handleChange} className="w-full rounded-lg border p-3" required /></label>
           <label className="space-y-1"><span className="text-sm font-medium">Start date</span><input type="date" name="startDate" value={form.startDate} onChange={handleChange} className="w-full rounded-lg border p-3" /></label>
           <label className="space-y-1"><span className="text-sm font-medium">End date</span><input type="date" name="endDate" value={form.endDate} onChange={handleChange} className="w-full rounded-lg border p-3" /></label>
-          <label className="space-y-1"><span className="text-sm font-medium">Duration</span><input name="duration" value={form.duration} onChange={handleChange} className="w-full rounded-lg border p-3" /></label>
+          <label className="space-y-1"><span className="text-sm font-medium">Duration (days)</span><input type="number" min="1" max="365" step="1" name="duration" value={form.duration} onChange={handleChange} className="w-full rounded-lg border p-3" required /><span className="text-xs text-gray-500">Enter a whole number from 1 to 365.</span></label>
           <label className="space-y-1"><span className="text-sm font-medium">Capacity</span><input type="number" min="1" name="capacity" value={form.capacity} onChange={handleChange} className="w-full rounded-lg border p-3" /></label>
           <label className="space-y-1"><span className="text-sm font-medium">Price (KES)</span><input type="number" min="0" name="price" value={form.price} onChange={handleChange} className="w-full rounded-lg border p-3" /></label>
           <label className="space-y-1"><span className="text-sm font-medium">Discount (%)</span><input type="number" min="0" max="100" name="discount" value={form.discount} onChange={handleChange} className="w-full rounded-lg border p-3" /></label>

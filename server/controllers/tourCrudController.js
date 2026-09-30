@@ -68,10 +68,27 @@ const normalizedPayload = (body, files, userId, existing = null) => {
   if (!payload.title?.trim() || !payload.description?.trim() || !payload.destination || !payload.country?.trim() || !payload.location?.trim()) throw Object.assign(new Error("Title, description, destination, country and location are required."), { status: 400 });
   if (!payload.date && !payload.startDate) throw Object.assign(new Error("A tour date or startDate is required."), { status: 400 });
   if (payload.price === undefined || !Number.isFinite(Number(payload.price)) || Number(payload.price) < 0) throw Object.assign(new Error("A valid non-negative price is required."), { status: 400 });
-  const durationDays = parseDuration(payload.durationDays ?? payload.durationDetails?.days ?? payload.duration ?? 1);
+  const requestedDuration = Object.prototype.hasOwnProperty.call(body, "durationDays")
+    ? body.durationDays
+    : Object.prototype.hasOwnProperty.call(body, "durationDetails")
+      ? body.durationDetails?.days
+      : Object.prototype.hasOwnProperty.call(body, "duration")
+        ? body.duration
+        : payload.durationDays ?? payload.durationDetails?.days ?? payload.duration ?? 1;
+  const durationDays = parseDuration(requestedDuration);
   payload.durationDays = durationDays;
   payload.durationDetails = { ...(payload.durationDetails || {}), days: durationDays };
   payload.duration = String(durationDays);
+  const startValue = payload.startDate || payload.date;
+  if (startValue) {
+    const startDate = new Date(startValue);
+    if (!Number.isNaN(startDate.getTime())) {
+      payload.startDate = startDate;
+      const calculatedEnd = new Date(startDate);
+      calculatedEnd.setDate(calculatedEnd.getDate() + durationDays - 1);
+      payload.endDate = calculatedEnd;
+    }
+  }
   payload.price = Number(payload.price);
   payload.capacity = Math.max(1, Number(payload.capacity || 20));
   payload.discount = Math.min(100, Math.max(0, Number(payload.discount || 0)));
