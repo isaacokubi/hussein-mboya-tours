@@ -47,12 +47,16 @@ const sameDay = (a, b) => Boolean(calendarDateKey(a) && calendarDateKey(a) === c
 const tourDateWindow = (tour) => {
   const start = calendarDateKey(tour?.startDate || tour?.date);
   if (!start) return null;
-  const end = calendarDateKey(tour?.endDate);
-  if (end) return { start, end };
+  const storedEnd = calendarDateKey(tour?.endDate);
   const days = Math.max(Number(tour?.durationDays || tour?.durationDetails?.days || tour?.duration || 1), 1);
   const date = new Date(`${start}T00:00:00Z`);
   date.setUTCDate(date.getUTCDate() + days - 1);
-  return { start, end: calendarDateKey(date) };
+  const calculatedEnd = calendarDateKey(date);
+  // A stale endDate must never shorten the configured duration window.
+  const end = storedEnd && storedEnd >= start && storedEnd >= calculatedEnd
+    ? storedEnd
+    : calculatedEnd;
+  return { start, end };
 };
 
 const isWithinTourWindow = (tour, travelDate) => {
