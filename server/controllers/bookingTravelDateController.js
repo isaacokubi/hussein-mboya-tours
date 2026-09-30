@@ -81,6 +81,14 @@ export const updateBookingTravelDate = async (req, res, next) => {
     }
 
     booking.travelDate = target;
+    if (booking.pickupTime) {
+      const pickup = new Date(booking.pickupTime);
+      if (!Number.isNaN(pickup.getTime())) {
+        const updatedPickup = new Date(target);
+        updatedPickup.setHours(pickup.getHours(), pickup.getMinutes(), pickup.getSeconds(), pickup.getMilliseconds());
+        booking.pickupTime = updatedPickup;
+      }
+    }
     await booking.save();
     return res.json({ success: true, message: "Travel date updated successfully.", booking });
   } catch (error) {

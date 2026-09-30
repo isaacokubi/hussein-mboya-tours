@@ -143,6 +143,14 @@ export default function Checkout() {
   }, [dateRange.min, dateRange.max]);
 
   useEffect(() => {
+    if (!travelDate) return;
+    setPickupTime((current) => {
+      const time = current?.includes("T") ? current.slice(11, 16) : "";
+      return time ? `${travelDate}T${time}` : "";
+    });
+  }, [travelDate]);
+
+  useEffect(() => {
     if (balance <= 0) return setPaymentAmount("");
     setPaymentAmount((current) => {
       const value = Number(current);
@@ -216,7 +224,14 @@ export default function Checkout() {
     if (!travelDate) return toast.error("Please select a travel date.");
     if (dateRange.min && dateRange.max && !isDateWithinRange(travelDate, dateRange.min, dateRange.max)) return toast.error(`Select a travel date between ${dateRange.min} and ${dateRange.max}.`);
     if (!pickupLocation.trim()) return toast.error("Please enter the pickup location.");
-    if (!pickupTime) return toast.error("Please select the pickup time.");
+    if (!pickupTime) return toast.error("Please select the pickup date and time.");
+    const pickupDate = pickupTime.slice(0, 10);
+    if (!dateRange.min || !dateRange.max || !isDateWithinRange(pickupDate, dateRange.min, dateRange.max)) {
+      return toast.error(`Pickup date must be between ${dateRange.min} and ${dateRange.max}.`);
+    }
+    if (pickupDate !== travelDate) {
+      return toast.error("Pickup date must match the selected travel date.");
+    }
     if (!validPhone(normalizePhone(phone))) return toast.error("Enter a valid Safaricom M-Pesa number.");
 
     if (isBookingCheckout) {
@@ -296,7 +311,8 @@ export default function Checkout() {
           <Field label="Number of travellers"><input type="number" min="1" value={travellers} onChange={(e) => setTravellers(Math.max(1, Number(e.target.value) || 1))} className="w-full rounded-xl border p-3" disabled={isBookingCheckout} /></Field>
           <Field label="M-Pesa phone number" required><input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0707476586" autoComplete="tel" className="w-full rounded-xl border p-3" required /></Field>
           <Field label="Exact pickup location" required><input value={pickupLocation} onChange={(e) => setPickupLocation(e.target.value)} placeholder="e.g. Sarova Stanley, Nairobi" className="w-full rounded-xl border p-3" required /></Field>
-          <Field label="Pickup time" required><input type="datetime-local" value={pickupTime} onChange={(e) => setPickupTime(e.target.value)} className="w-full rounded-xl border p-3" required /></Field>
+          <Field label="Pickup date & time" required><input type="datetime-local" value={pickupTime} min={dateRange.min ? `${dateRange.min}T00:00` : undefined} max={dateRange.max ? `${dateRange.max}T23:59` : undefined} onChange={(e) => { const value = e.target.value; setPickupTime(value ? `${travelDate || value.slice(0, 10)}T${value.slice(11, 16)}` : ""); }} className="w-full rounded-xl border p-3" required /></Field>
+          <p className="-mt-3 text-sm text-slate-500">Pickup must be on the selected travel date and within the tour dates: {dateRangeText}.</p>
           <div className="grid gap-4 sm:grid-cols-2"><Field label="Hotel / accommodation"><input value={hotelName} onChange={(e) => setHotelName(e.target.value)} className="w-full rounded-xl border p-3" /></Field><Field label="Room number"><input value={roomNumber} onChange={(e) => setRoomNumber(e.target.value)} className="w-full rounded-xl border p-3" /></Field></div>
           <Field label="Special requests"><textarea value={specialRequests} onChange={(e) => setSpecialRequests(e.target.value)} rows="4" className="w-full rounded-xl border p-3" /></Field>
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5"><div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><label className="block text-sm font-bold">Pay now (KES)</label><input type="number" min={minimumInitialPayment || 1} max={balance} step="1" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} className="mt-2 w-full rounded-xl border border-emerald-300 p-3 text-lg font-bold sm:w-64" required /></div><button type="button" onClick={() => setPaymentAmount(String(balance))} className="rounded-xl border border-emerald-700 px-4 py-3 font-semibold text-emerald-800">Pay full balance</button></div>{bookingDepositRate > 0 ? <p className="mt-2 text-sm font-semibold text-emerald-900">Required initial deposit: {bookingDepositRate}% = KES {minimumInitialPayment.toLocaleString()}. You may pay more or the full balance.</p> : <p className="mt-2 text-sm text-slate-600">No minimum deposit is configured. You may pay any amount up to the remaining balance.</p>}<p className="mt-1 text-xs text-slate-600">The global deposit rate is controlled by SuperAdmin and applies to new payment requests.</p></div>

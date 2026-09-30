@@ -66,6 +66,21 @@ export const validateBookingTravelDate = async (req, res, next) => {
       });
     }
 
+    if (req.body.pickupTime) {
+      const pickup = new Date(req.body.pickupTime);
+      const pickupDay = startOfDay(pickup);
+      if (!pickupDay) return res.status(400).json({ success: false, message: "A valid pickup date and time is required." });
+      if (pickupDay < start || pickupDay > end) {
+        return res.status(400).json({
+          success: false,
+          message: `Pickup date must be between ${start.toLocaleDateString("en-KE")} and ${end.toLocaleDateString("en-KE")} for this ${label}.`,
+        });
+      }
+      if (pickupDay.getTime() !== target.getTime()) {
+        return res.status(400).json({ success: false, message: "Pickup date must match the selected travel date." });
+      }
+    }
+
     next();
   } catch (error) { next(error); }
 };

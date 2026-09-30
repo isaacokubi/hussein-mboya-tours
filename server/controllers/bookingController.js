@@ -1349,6 +1349,25 @@ next(error);
 };
 
 
+const getAllowedTourRange = async (booking) => {
+  if (!booking.tour) return null;
+  const tour = await Tour.findOne(mergeTenantFilter({ _id: booking.tour }))
+    .select("startDate endDate date durationDetails duration")
+    .lean();
+  if (!tour) return null;
+  const start = new Date(tour.startDate || tour.date);
+  if (Number.isNaN(start.getTime())) return null;
+  start.setHours(0, 0, 0, 0);
+  const storedEnd = tour.endDate ? new Date(tour.endDate) : null;
+  if (storedEnd && !Number.isNaN(storedEnd.getTime())) storedEnd.setHours(0, 0, 0, 0);
+  const match = String(tour.durationDetails?.days ?? tour.duration ?? 1).match(/\d+(?:\.\d+)?/);
+  const days = Math.max(1, Math.round(Number(match?.[0] || 1)));
+  const calculatedEnd = new Date(start);
+  calculatedEnd.setDate(calculatedEnd.getDate() + days - 1);
+  const end = storedEnd && storedEnd > calculatedEnd ? storedEnd : calculatedEnd;
+  return { start, end };
+};
+
 export const rescheduleBooking = async (req, res, next) => {
   try {
     const { newTravelDate, reason = "" } = req.body || {};
@@ -1368,9 +1387,27 @@ export const rescheduleBooking = async (req, res, next) => {
     if (!booking) return res.status(404).json({ success:false, message:"Booking not found." });
     if (["cancelled","completed","refunded"].includes(booking.status)) return res.status(400).json({ success:false, message:"This booking cannot be rescheduled." });
     if (booking.travelDate && target.getTime() === new Date(booking.travelDate).setHours(0,0,0,0)) return res.status(400).json({ success:false, message:"Choose a different travel date." });
+    const allowedRange = await getAllowedTourRange(booking);
+    if (booking.tour && (!allowedRange?.start || !allowedRange?.end)) {
+      return res.status(409).json({ success:false, message:"This tour has no configured travel-date range." });
+    }
+    if (allowedRange && (target < allowedRange.start || target > allowedRange.end)) {
+      return res.status(400).json({
+        success:false,
+        message:`Travel date must be between ${allowedRange.start.toLocaleDateString("en-KE")} and ${allowedRange.end.toLocaleDateString("en-KE")} for this tour.`,
+      });
+    }
     const previous = booking.travelDate;
     if (!booking.originalTravelDate) booking.originalTravelDate = previous;
     booking.travelDate = target;
+    if (booking.pickupTime) {
+      const pickup = new Date(booking.pickupTime);
+      if (!Number.isNaN(pickup.getTime())) {
+        const updatedPickup = new Date(target);
+        updatedPickup.setHours(pickup.getHours(), pickup.getMinutes(), pickup.getSeconds(), pickup.getMilliseconds());
+        booking.pickupTime = updatedPickup;
+      }
+    }
     booking.rescheduleCount = Number(booking.rescheduleCount || 0) + 1;
     booking.rescheduleHistory.push({ fromDate: previous, toDate: target, reason:String(reason||"").trim() });
     await booking.save();
