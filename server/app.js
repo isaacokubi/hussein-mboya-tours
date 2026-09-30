@@ -156,7 +156,11 @@ app.use(cors(corsOptions));
 
 app.use((req, res, next) => {
   const payload = readinessPayload();
-  if (payload.success) return next();
+  // Database connectivity is the hard dependency for API requests. Do not
+  // block authentication merely because a non-critical startup migration is
+  // still running or has failed; this was causing transient 503 login errors
+  // immediately after deployments.
+  if (payload.database === "connected") return next();
   return res.status(503).json({ ...payload, requestId: req.requestId });
 });
 
