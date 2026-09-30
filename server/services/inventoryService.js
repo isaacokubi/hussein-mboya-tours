@@ -156,3 +156,4 @@ export const releaseSlots = async (tourId, travelers, travelDate, session = null
   if (tour.availabilitySettings.bookedSlots < 0) tour.availabilitySettings.bookedSlots = 0;
   return syncDerivedAvailability(tour, session);
 };
+
