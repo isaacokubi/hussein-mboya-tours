@@ -28,13 +28,13 @@ export const validateBookingTravelDate = async (req, res, next) => {
 
     if (req.body.tour) {
       const tour = await Tour.findOne(mergeTenantFilter({ _id: req.body.tour }))
-        .select("startDate endDate date durationDetails duration")
+        .select("startDate endDate date durationDays durationDetails duration")
         .lean();
       if (!tour) return res.status(404).json({ success: false, message: "Tour not found." });
 
       start = startOfDay(tour.startDate || tour.date);
       const storedEnd = startOfDay(tour.endDate);
-      const days = getDurationDays(tour.durationDetails?.days, tour.duration);
+      const days = getDurationDays(tour.durationDays, tour.durationDetails?.days, tour.duration);
       if (start) {
         const calculatedEnd = new Date(start);
         calculatedEnd.setDate(calculatedEnd.getDate() + days - 1);
