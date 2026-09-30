@@ -54,9 +54,8 @@ const databaseBackupSchema = new mongoose.Schema(
 
 
 
-export default databaseBackupSchema.plugin(tenantPlugin);
+databaseBackupSchema.plugin(tenantPlugin);
 
-mongoose.model(
-"DatabaseBackup",
-databaseBackupSchema
-);
+const DatabaseBackup = mongoose.models.DatabaseBackup || mongoose.model("DatabaseBackup", databaseBackupSchema);
+
+export default DatabaseBackup;
