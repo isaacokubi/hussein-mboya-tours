@@ -100,7 +100,7 @@ export default function EditTour() {
       queryClient.invalidateQueries({ queryKey: ["manager-tours"] });
       queryClient.invalidateQueries({ queryKey: ["tour", id] });
       queryClient.invalidateQueries({ queryKey: ["admin-tour", id] });
-      navigate(isAdmin ? "/admin/manage-tours" : "/tour-manager/tours", { replace: true });
+      navigate(isAdmin ? "/admin/dashboard" : "/tour-manager/tours", { replace: true });
     },
     onError: (error) => {
       toast.error(error?.response?.data?.message || "Failed to update tour");
