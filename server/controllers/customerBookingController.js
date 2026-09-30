@@ -49,7 +49,7 @@ export const createCustomerBooking = async (req, res, next) => {
       corporateAmount = totalAmount;
     }
 
-    await reserveSlots(tourData._id, guests);
+    await reserveSlots(tourData._id, guests, travelDate);
     try {
       const booking = await Booking.create({
         customer: null, user: req.user._id,
@@ -67,7 +67,7 @@ export const createCustomerBooking = async (req, res, next) => {
       } catch (notificationError) { console.error("CUSTOMER BOOKING NOTIFICATION ERROR:", notificationError.message); }
       return res.status(201).json({ success: true, message: "Booking created successfully", data: { booking }, booking });
     } catch (createError) {
-      await releaseSlots(tourData._id, guests).catch((error) => console.error("BOOKING CAPACITY ROLLBACK ERROR:", error));
+      await releaseSlots(tourData._id, guests, travelDate).catch((error) => console.error("BOOKING CAPACITY ROLLBACK ERROR:", error));
       if (corporateReserved && corporateAccountId) await CorporateAccount.updateOne(mergeTenantFilter({ _id: corporateAccountId }), { $inc: { currentBalance: -corporateAmount } }).catch((error) => console.error("CORPORATE CREDIT ROLLBACK ERROR:", error));
       throw createError;
     }
