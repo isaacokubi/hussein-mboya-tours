@@ -8,6 +8,28 @@ const normalizeDate = (value) => {
   return d;
 };
 
+// Compare calendar dates without allowing Date timezone offsets to move a
+// selected YYYY-MM-DD onto the previous/next day.
+const calendarDateKey = (value) => {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return [
+      value.getUTCFullYear(),
+      String(value.getUTCMonth() + 1).padStart(2, "0"),
+      String(value.getUTCDate()).padStart(2, "0"),
+    ].join("-");
+  }
+  const raw = String(value ?? "").trim();
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(raw);
+  if (match) return `${match[1]}-${match[2]}-${match[3]}`;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  return [
+    d.getUTCFullYear(),
+    String(d.getUTCMonth() + 1).padStart(2, "0"),
+    String(d.getUTCDate()).padStart(2, "0"),
+  ].join("-");
+};
+
 const syncDerivedAvailability = async (tour, session = null) => {
   const entries = Array.isArray(tour.availability) ? tour.availability : [];
   const total = entries.length ? entries.reduce((sum, item) => sum + Number(item.totalSlots || 0), 0) : Number(tour.availabilitySettings?.totalSlots ?? tour.capacity ?? 0);
@@ -20,17 +42,14 @@ const syncDerivedAvailability = async (tour, session = null) => {
   return tour;
 };
 
-const sameDay = (a, b) => {
-  const da = normalizeDate(a); const db = normalizeDate(b);
-  return Boolean(da && db && da.getTime() === db.getTime());
-};
+const sameDay = (a, b) => Boolean(calendarDateKey(a) && calendarDateKey(a) === calendarDateKey(b));
 
 const getDateAvailability = (tour, travelDate) => {
   const target = normalizeDate(travelDate);
   if (!target) throw new Error("A valid travel date is required.");
   const entries = Array.isArray(tour.availability) ? tour.availability : [];
   if (entries.length === 0) return null;
-  const entry = entries.find((item) => sameDay(item.date, target));
+  const entry = entries.find((item) => sameDay(item.date, travelDate));
   if (!entry) throw new Error("The selected travel date is not offered for this tour.");
   return entry;
 };
@@ -58,7 +77,7 @@ export const reserveSlots = async (tourId, travelers, travelDate, session = null
 
   if (Array.isArray(current.availability) && current.availability.length) {
     if (!target) throw new Error("A valid travel date is required.");
-    const index = current.availability.findIndex((item) => sameDay(item.date, target));
+    const index = current.availability.findIndex((item) => sameDay(item.date, travelDate));
     if (index < 0) throw new Error("The selected travel date is not offered for this tour.");
     const entry = current.availability[index];
     const totalSlots = Number(entry.totalSlots || 0);

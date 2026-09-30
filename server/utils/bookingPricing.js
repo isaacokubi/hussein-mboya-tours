@@ -15,8 +15,11 @@ export const calculateBookingAmounts = (tour, travelerCount) => {
   const rawPrice = Number(tour.price);
   if (!Number.isFinite(rawPrice) || rawPrice < 0) throw new Error("Invalid tour price.");
 
+  // Older tours may store discountPrice as 0 to mean "not configured".
+  // Treat only a positive discountPrice as a legacy/unit-price override so a
+  // real tour price such as KES 1 is still billable.
   const overridePrice = Number(tour.discountPrice);
-  const unitPrice = Number.isFinite(overridePrice) && overridePrice >= 0 ? overridePrice : rawPrice;
+  const unitPrice = Number.isFinite(overridePrice) && overridePrice > 0 ? overridePrice : rawPrice;
   const subtotal = roundMoney(unitPrice * travelerCount);
 
   const rules = Array.isArray(tour.pricingRules) ? tour.pricingRules : [];
