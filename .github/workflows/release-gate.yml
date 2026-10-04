@@ -16,6 +16,11 @@ jobs:
     defaults:
       run:
         working-directory: server
+    env:
+      MONGODB_URI: mongodb://127.0.0.1:27017/hussein_mboya_ci
+      JWT_SECRET: ci-only-test-secret
+      DEFAULT_TENANT_ID: 000000000000000000000000
+      NODE_ENV: test
     steps:
       - name: Checkout
         uses: actions/checkout@v4
