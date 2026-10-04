@@ -16,6 +16,7 @@ jobs:
         working-directory: server
 
     env:
+      MONGODB_URI: mongodb://127.0.0.1:27017/hussein_mboya_ci
       JWT_SECRET: ci-only-test-secret
       DEFAULT_TENANT_ID: 000000000000000000000000
       NODE_ENV: test
@@ -83,8 +84,6 @@ jobs:
         run: npm run check:multitenancy:live
 
       - name: Run database-backed startup and health checks
-        env:
-          HEALTH_TEST_MONGODB_URI: mongodb://127.0.0.1:27017/hussein_mboya_ci
         run: node --test tests/healthReadiness.test.js
 
   server-tour-lifecycle-integration:
@@ -97,7 +96,6 @@ jobs:
 
     env:
       LIFECYCLE_TEST_MONGODB_URI: mongodb://127.0.0.1:27017/hussein_mboya_ci?replicaSet=rs0
-      FIRST_TENANT_TEST_MONGODB_URI: mongodb://127.0.0.1:27017/first_tenant_acceptance_ci?replicaSet=rs0
       RUN_DATABASE_INTEGRATION_TESTS: "true"
       JWT_SECRET: ci-only-test-secret
       DEFAULT_TENANT_ID: 000000000000000000000000
