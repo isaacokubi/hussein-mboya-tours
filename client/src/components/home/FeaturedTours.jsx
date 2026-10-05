@@ -13,11 +13,11 @@ export default function FeaturedTours() {
     <section aria-labelledby="featured-tours-heading">
       <div className="mb-9 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-extrabold uppercase tracking-[.24em] text-emerald-300">Handpicked journeys</p>
+          <p className="text-xs font-extrabold uppercase tracking-[.24em] text-[#e3bd67]">Handpicked journeys</p>
           <h2 id="featured-tours-heading" className="mt-2 text-3xl font-black tracking-tight text-white sm:text-4xl">Featured Kenya escapes</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">Popular itineraries, ready to book or tailor with our travel team.</p>
         </div>
-        <Link to="/tours" className="inline-flex items-center gap-2 text-sm font-bold text-emerald-300 hover:text-emerald-200">View all tours <ArrowRight size={16}/></Link>
+        <Link to="/tours" className="inline-flex items-center gap-2 text-sm font-bold text-[#e3bd67] hover:text-[#f0d38b]">View all tours <ArrowRight size={16}/></Link>
       </div>
 
       {isLoading ? (
@@ -44,8 +44,8 @@ export default function FeaturedTours() {
                 <div className="p-5">
                   <h3 className="line-clamp-2 text-xl font-black leading-tight text-slate-900">{tour?.title || "African Adventure"}</h3>
                   <div className="mt-5 flex items-end justify-between gap-3">
-                    <div><p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">From</p><p className="text-xl font-black text-emerald-700">KES {Number(tour.price || 0).toLocaleString()}</p></div>
-                    <Link to={`/tours/${tour?.slug || tour?._id}`} className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700">View tour <ArrowRight size={15}/></Link>
+                    <div><p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">From</p><p className="text-xl font-black text-[#8a6423]">KES {Number(tour.price || 0).toLocaleString()}</p></div>
+                    <Link to={`/tours/${tour?.slug || tour?._id}`} className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#12372a]">View tour <ArrowRight size={15}/></Link>
                   </div>
                 </div>
               </article>
