@@ -1,4 +1,4 @@
-import { useTenant } from '../../context/TenantContext';
+import { useTenant } from "../../context/TenantContext";
 import { useSettings } from "../../context/SettingsContext";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -28,16 +28,22 @@ const isOldLocalHero = (url = "") => /^\/hero(?:1|2|4)\.jpeg$/i.test(url.trim())
 export default function HeroSlider() {
   const { tenant } = useTenant() || {};
   const { settings = {} } = useSettings() || {};
-  const companyName = settings?.companyName || tenant?.name || tenant?.companyName || "Tours & Travel";
+  const tenantName = String(tenant?.name || tenant?.companyName || "").trim();
+  const configuredName = String(settings?.companyName || "").trim();
+  const companyName = tenantName || configuredName || "Hussein Mboya Tours";
   const tenantKey = tenant?._id || tenant?.id || tenant?.slug || companyName;
   const videoRefs = useRef([]);
   const [heroReady, setHeroReady] = useState(false);
   const [loadedVideos, setLoadedVideos] = useState({});
   const { data: rawSlides = [] } = useQuery({ queryKey: ["heroSlides", tenantKey], queryFn: getHeroSlides, staleTime: 1000 * 60 * 30, gcTime: 1000 * 60 * 60, refetchOnWindowFocus: false, retry: 0 });
 
-  const normalizeBrand = (value) => typeof value === "string"
-    ? value.replace(/\bGlobal Tours\b/gi, companyName).replace(/\{\{companyName\}\}/g, companyName)
-    : value;
+  const normalizeBrand = (value) => {
+    if (typeof value !== "string") return value;
+    return value
+      .replace(/\{\{\s*companyName\s*\}\}/gi, companyName)
+      .replace(/\bYour Travel Company\b/gi, companyName)
+      .replace(/\bGlobal Tours\b/gi, companyName);
+  };
 
   const sourceSlides = Array.isArray(rawSlides) && rawSlides.length > 0 ? rawSlides : FALLBACK_HERO_SLIDES;
   const slides = sourceSlides.map((slide) => ({
