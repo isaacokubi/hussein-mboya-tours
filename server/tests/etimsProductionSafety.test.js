@@ -73,7 +73,7 @@ test("eTIMS retry policy distinguishes transient provider failures from permanen
   assert.match(service, /const retryable = !response\.ok && isRetryableEtimsHttpStatus\(response\.status\)/);
   assert.match(service, /invoice\.etimsNextRetryAt = retryable \? nextEtimsRetryAt/);
   assert.match(service, /if \(retryable\) throw new Error/);
-  assert.match(service, /etimsStatus: "failed", etimsNextRetryAt: \{ \$ne: null, \$lte: new Date\(\) \}/);
+  assert.match(service, /etimsStatus:\s*"failed",\s*etimsNextRetryAt:\s*\{\s*\$ne:\s*null,\s*\$lte:\s*new Date\(\)\s*\}/);
 });
 
 test("eTIMS network failures persist failed state and bounded retry timing", () => {
