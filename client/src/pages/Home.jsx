@@ -49,7 +49,7 @@ export default function Home() {
     <main className="overflow-hidden bg-[#fbf7ef] text-[#17231e]" style={{ fontFamily: "var(--tenant-font-family,Inter), sans-serif" }}>
       <SEO title={seoTitle} description={seoDescription} image={settings.companyLogo || tenant.logoUrl || "/hero1.jpeg"} />
 
-      <section className="relative bg-[#0b241b]">
+      <section className="relative bg-[#0b241b] ">
         <HeroSlider />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-slate-950/70 to-transparent" />
         <HomeSearch />
@@ -86,7 +86,7 @@ export default function Home() {
           {sections.experiences && <section className="py-12 md:py-16"><CategoriesSection /></section>}
 
           {sections.services && (
-            <section className="rounded-[2rem] bg-[#12372a] px-6 py-14 text-white shadow-xl sm:px-10 md:py-16">
+            <section className="rounded-[2rem] bg-[#0b241b]  px-6 py-14 text-white shadow-xl sm:px-10 md:py-16">
               <div className="grid gap-10 lg:grid-cols-[.85fr_1.15fr] lg:items-end">
                 <div>
                   <p className="text-xs font-extrabold uppercase tracking-[.25em] text-[#e3bd67]">One travel platform</p>
@@ -100,7 +100,7 @@ export default function Home() {
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   {SERVICES.map(([title, text, Icon, path]) => (
-                    <Link key={title} to={path} className="group rounded-2xl border border-white/10 bg-white/[.07] p-5 backdrop-blur transition hover:-translate-y-1 hover:bg-white/[.11]">
+                    <Link key={title} to={path} className="group rounded-2xl border border-[#d8bd7a]/25 bg-white/[.07] p-5 backdrop-blur transition hover:-translate-y-1 hover:bg-white/[.11]">
                       <Icon className="text-[#e3bd67]" size={23} />
                       <h3 className="mt-4 font-bold">{title}</h3>
                       <p className="mt-2 text-sm leading-6 text-emerald-50/65">{text}</p>
