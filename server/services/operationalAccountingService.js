@@ -62,8 +62,15 @@ const postOnce = async ({ tenantId, sourceType, sourceId, date, description, ref
   await ensureAccounts(tenantId);
   const resolved = [];
   for (const line of lines) {
-    const acc = await account(tenantId, line.code);
-    if (!acc) throw new Error(`Accounting account ${line.code} is unavailable for tenant.`);
+    // Normal postings resolve accounts by chart code. Reversal postings may
+    // already carry the original journal line's account ObjectId; resolve it
+    // inside the same tenant instead of treating the ObjectId as a code.
+    const acc = line.code
+      ? await account(tenantId, line.code)
+      : line.account
+        ? await ChartOfAccount.findOne({ tenantId, _id: line.account, active: true }).lean()
+        : null;
+    if (!acc) throw new Error(`Accounting account ${line.code || line.account || "unknown"} is unavailable for tenant.`);
     resolved.push({ account: acc._id, description: line.description || description, debit: round(line.debit), credit: round(line.credit) });
   }
   const totalDebit = round(resolved.reduce((s, l) => s + l.debit, 0));
