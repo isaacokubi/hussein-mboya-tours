@@ -92,3 +92,9 @@ main.min-h-screen.bg-slate-50 button:not(:disabled):hover,main.min-h-screen.bg-s
 body{background:var(--hmt-cream);color:var(--hmt-ink)}
 .hmt-safari-accent{color:var(--hmt-gold)}
 .hmt-safari-surface{background:var(--hmt-forest)}
+
+
+/* Homepage traveller experiences: explicit production-safe background contract. */
+.hmt-traveller-experiences { background-color: #12372a !important; color: #ffffff !important; }
+[data-home-section="traveller-experiences"] { background-color: #12372a !important; }
+.hmt-traveller-experiences a { background-color: #0b241b !important; }

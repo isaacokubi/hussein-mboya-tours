@@ -29,7 +29,7 @@ export default function CategoriesSection() {
 
   return (
     <section
-      className="!m-0 !w-full !rounded-none !border-0 !bg-[#12372a] px-5 py-14 text-white shadow-none sm:px-8 md:py-20"
+      className="hmt-traveller-experiences !m-0 !w-full !rounded-none !border-0 !bg-[#12372a] px-5 py-14 text-white shadow-none sm:px-8 md:py-20"
       style={{ backgroundColor: "#12372a", color: "#ffffff" }}
       aria-labelledby="travel-experiences-heading"
     >
