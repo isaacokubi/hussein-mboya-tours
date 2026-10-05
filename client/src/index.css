@@ -78,3 +78,17 @@ main.min-h-screen.bg-slate-50 input,main.min-h-screen.bg-slate-50 select,main.mi
 main.min-h-screen.bg-slate-50 input:hover,main.min-h-screen.bg-slate-50 select:hover,main.min-h-screen.bg-slate-50 textarea:hover{border-color:#b9c7d8}
 main.min-h-screen.bg-slate-50 button,main.min-h-screen.bg-slate-50 a{transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease,background-color .16s ease}
 main.min-h-screen.bg-slate-50 button:not(:disabled):hover,main.min-h-screen.bg-slate-50 a:hover{transform:translateY(-1px)}
+
+/* Hussein Mboya Tours — premium safari palette */
+:root{
+  --hmt-forest:#12372a;
+  --hmt-deep:#0b241b;
+  --hmt-sand:#f4ead5;
+  --hmt-gold:#c99a3e;
+  --hmt-terracotta:#b85c38;
+  --hmt-cream:#fbf7ef;
+  --hmt-ink:#17231e;
+}
+body{background:var(--hmt-cream);color:var(--hmt-ink)}
+.hmt-safari-accent{color:var(--hmt-gold)}
+.hmt-safari-surface{background:var(--hmt-forest)}
