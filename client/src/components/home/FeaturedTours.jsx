@@ -1,7 +1,7 @@
 import { getTourImage, TOUR_FALLBACK_IMAGES } from "../../utils/tourImage";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { ArrowRight, Clock3, MapPin } from "lucide-react";
+import { ArrowRight, Clock3, MapPin, Star } from "lucide-react";
 import { getFeaturedTours } from "../../api/tourApi";
 import LazyImage from "../common/LazyImage";
 
@@ -30,6 +30,8 @@ export default function FeaturedTours() {
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {tours.map((tour, index) => {
             const fallbackImage = TOUR_FALLBACK_IMAGES[index % TOUR_FALLBACK_IMAGES.length];
+            const rating = Number(tour?.rating ?? tour?.averageRating ?? 0);
+            const reviewCount = Number(tour?.reviewCount ?? tour?.reviewsCount ?? 0);
             return (
               <article key={tour._id || tour.slug || index} className="group overflow-hidden rounded-3xl bg-white shadow-xl shadow-black/20 transition duration-300 hover:-translate-y-1.5 hover:shadow-2xl">
                 <div className="relative h-64 overflow-hidden">
@@ -43,9 +45,10 @@ export default function FeaturedTours() {
                 </div>
                 <div className="p-5">
                   <h3 className="line-clamp-2 text-xl font-black leading-tight text-slate-900">{tour?.title || "African Adventure"}</h3>
+                  {rating > 0 && <div className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#8a6423]"><Star size={14} fill="currentColor" /> {rating.toFixed(1)}{reviewCount > 0 ? ` · ${reviewCount} reviews` : ""}</div>}
                   <div className="mt-5 flex items-end justify-between gap-3">
                     <div><p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">From</p><p className="text-xl font-black text-[#8a6423]">KES {Number(tour.price || 0).toLocaleString()}</p></div>
-                    <Link to={`/tours/${tour?.slug || tour?._id}`} className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#12372a]">View tour <ArrowRight size={15}/></Link>
+                    <Link to={`/tours/${tour?.slug || tour?._id}`} className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#12372a]">View itinerary <ArrowRight size={15}/></Link>
                   </div>
                 </div>
               </article>
