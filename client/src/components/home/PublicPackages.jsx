@@ -13,7 +13,7 @@ export default function PublicPackages() {
   return (
     <section className="py-12 md:py-16" aria-labelledby="tenant-packages-heading">
       <div className="mb-8 text-center">
-        <p className="text-sm font-bold uppercase tracking-[0.2em] text-emerald-300">Curated for you</p>
+        <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#f0d38b]">Curated for you</p>
         <h2 id="tenant-packages-heading" className="mt-2 text-3xl font-black text-white">Travel packages</h2>
       </div>
       {isLoading ? <p className="text-center text-slate-300">Loading packages…</p> : isError ? (
@@ -21,13 +21,13 @@ export default function PublicPackages() {
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {data.map((item) => (
-            <article key={item._id} className="overflow-hidden rounded-2xl border border-white/10 bg-white text-slate-900 shadow-lg">
+            <article key={item._id} className="overflow-hidden rounded-2xl border border-white/10 bg-white text-[#17231e] shadow-lg">
               {item.coverImage?.url && <img src={item.coverImage.url} alt="" className="h-48 w-full object-cover" loading="lazy" />}
               <div className="p-5">
-                <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">{item.category} · {item.destination}</p>
+                <p className="text-xs font-bold uppercase tracking-wide text-[#8a6423]">{item.category} · {item.destination}</p>
                 <h3 className="mt-2 text-xl font-bold">{item.title}</h3>
                 <p className="mt-2 line-clamp-3 text-sm text-slate-600">{item.shortDescription || item.description}</p>
-                <p className="mt-4 font-bold text-emerald-700">{item.currency || "KES"} {Number(item.discountPrice ?? item.basePrice).toLocaleString()}</p>
+                <p className="mt-4 font-bold text-[#8a6423]">{item.currency || "KES"} {Number(item.discountPrice ?? item.basePrice).toLocaleString()}</p>
               </div>
             </article>
           ))}
