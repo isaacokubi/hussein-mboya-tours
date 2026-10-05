@@ -51,7 +51,7 @@ export default function Home() {
 
       <section className="relative bg-[#0b241b] ">
         <HeroSlider />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-slate-950/70 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#071a13]/85 to-transparent" />
         <HomeSearch />
       </section>
 
@@ -74,16 +74,16 @@ export default function Home() {
           {sections.stats && <section className="py-10 md:py-14"><StatsSection /></section>}
 
           {sections.tours && (
-            <section className="rounded-[2rem] bg-slate-950 px-4 py-10 shadow-2xl sm:px-8 md:py-14">
+            <section className="rounded-[2rem] bg-[#0b241b] px-4 py-10 shadow-2xl sm:px-8 md:py-14">
               <FeaturedTours />
             </section>
           )}
 
-          {sections.packages !== false && <PublicPackages />}
+          {sections.packages !== false && <section className="my-12 rounded-[2rem] bg-[#102d23] px-4 py-10 shadow-2xl sm:px-8 md:py-14"><PublicPackages /></section>}
 
           {sections.destinations && <section className="py-12 md:py-16"><DestinationsSection /></section>}
 
-          {sections.experiences && <section className="py-12 md:py-16"><CategoriesSection /></section>}
+          {sections.experiences && <section className="my-12 rounded-[2rem] bg-[#173f31] px-4 py-10 shadow-xl sm:px-8 md:py-14"><CategoriesSection /></section>}
 
           {sections.services && (
             <section className="rounded-[2rem] bg-[#0b241b]  px-6 py-14 text-white shadow-xl sm:px-10 md:py-16">
@@ -114,7 +114,7 @@ export default function Home() {
 
           {sections.testimonials && <section className="py-12 md:py-16"><TestimonialsSection /></section>}
           {sections.gallery && <section className="rounded-[2rem] bg-white px-4 py-8 shadow-sm ring-1 ring-slate-200 sm:px-8 md:py-12"><GallerySection /></section>}
-          {sections.whyChooseUs && <section className="py-12 md:py-16"><WhyChooseUs /></section>}
+          {sections.whyChooseUs && <section className="my-12 rounded-[2rem] bg-[#102d23] px-4 py-10 shadow-2xl sm:px-8 md:py-14"><WhyChooseUs /></section>}
         </Suspense>
       </div>
 
