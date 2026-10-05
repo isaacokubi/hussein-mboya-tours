@@ -1,13 +1,17 @@
 import CountUp from "react-countup";
 import { motion } from "framer-motion";
+import { useSettings } from "../../context/SettingsContext";
 
 const StatsSection = () => {
-  const stats = [
-    { number: 5000, label: "Happy Customers" },
-    { number: 300, label: "Tours Completed" },
-    { number: 50, label: "Destinations" },
+  const { settings = {} } = useSettings() || {};
+  const configured = Array.isArray(settings.homepageStats) ? settings.homepageStats : [];
+  const defaults = [
+    { number: 4486, label: "Happy Customers" },
+    { number: 290, label: "Tours Completed" },
+    { number: 48, label: "Destinations" },
     { number: 10, label: "Years Serving Travelers" },
   ];
+  const stats = defaults.map((fallback, index) => { const item = configured[index] || {}; const number = Number(item.number); return { number: Number.isFinite(number) && number >= 0 ? number : fallback.number, label: item.label || fallback.label }; });
 
   return (
     <section className="py-20 bg-white text-slate-900" aria-label="Travel company statistics">
