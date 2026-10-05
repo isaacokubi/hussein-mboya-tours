@@ -18,9 +18,9 @@ const PROFESSIONAL_HERO_IMAGES = [
 
 const FALLBACK_HERO_SLIDES = [
   { _id: "fallback-1", image: PROFESSIONAL_HERO_IMAGES[0], title: "Discover Kenya with {{companyName}}", description: "Unforgettable safaris, wildlife adventures and tailor-made African experiences.", buttonText: "Explore Tours", buttonLink: "/tours" },
-  { _id: "fallback-2", image: PROFESSIONAL_HERO_IMAGES[1], title: "Experience the Magic of Kenya", description: "From the Maasai Mara to the coast, discover extraordinary places with local experts.", buttonText: "View Destinations", buttonLink: "/destinations" },
-  { _id: "fallback-3", image: PROFESSIONAL_HERO_IMAGES[2], title: "Your African Adventure Starts Here", description: "Travel safely, comfortably and confidently with {{companyName}}.", buttonText: "Book Now", buttonLink: "/tours" },
-  { _id: "fallback-4", image: PROFESSIONAL_HERO_IMAGES[3], title: "Safari, Coast & Adventure", description: "Build a seamless Kenya journey from wildlife and mountains to the Indian Ocean.", buttonText: "Plan Your Trip", buttonLink: "/tours" },
+  { _id: "fallback-2", image: PROFESSIONAL_HERO_IMAGES[1], badge: "LOCAL EXPERTISE", title: "From the Maasai Mara to the Indian Ocean.", description: "Discover extraordinary places with a local team coordinating the details from arrival to departure.", buttonText: "Explore Destinations", buttonLink: "/destinations" },
+  { _id: "fallback-3", image: PROFESSIONAL_HERO_IMAGES[2], badge: "TAILOR-MADE TRAVEL", title: "Your adventure should fit you.", description: "Build a private family, honeymoon, corporate, luxury or photography journey around your dates and priorities.", buttonText: "Plan a Custom Trip", buttonLink: "/contact", buttonLink: "/tours" },
+  { _id: "fallback-4", image: PROFESSIONAL_HERO_IMAGES[3], badge: "READY WHEN YOU ARE", title: "One seamless Kenya journey.", description: "Tours, hotels, transfers, guides and secure payments brought together in one travel experience.", buttonText: "Start Planning", buttonLink: "/contact", buttonLink: "/tours" },
 ];
 
 const isOldLocalHero = (url = "") => /^\/hero(?:1|2|4)\.jpeg$/i.test(url.trim());
@@ -60,7 +60,7 @@ export default function HeroSlider() {
   const playVideo = (index) => { const video = videoRefs.current[index]; if (!video || !heroReady) return; video.play().catch(() => {}); };
   const pauseAllVideos = () => videoRefs.current.forEach((video) => video?.pause());
 
-  return <section className="relative overflow-hidden px-1 py-1"><div className="relative h-[58vh] min-h-[430px] max-h-[820px] overflow-hidden rounded-xl shadow-2xl sm:h-[68vh] lg:h-[78vh]">
+  return <section className="relative overflow-hidden px-1 py-1"><div className="relative h-[62vh] min-h-[480px] max-h-[820px] overflow-hidden rounded-xl shadow-2xl sm:h-[68vh] lg:h-[78vh]">
     <Swiper modules={[Autoplay, EffectFade]} effect="fade" speed={900} autoplay={{ delay: 6000, disableOnInteraction: false }} loop={slides.length > 1} preloadImages={false} className="h-full" onSwiper={(swiper) => { pauseAllVideos(); window.setTimeout(() => playVideo(swiper.realIndex), 100); }} onSlideChange={(swiper) => { pauseAllVideos(); window.setTimeout(() => playVideo(swiper.realIndex), 100); }}>
       {slides.map((slide, index) => {
         const candidateImage = slide.image?.url || slide.image;
@@ -75,7 +75,7 @@ export default function HeroSlider() {
             {slide.badge && <span className="mb-4 rounded-full border border-white/30 bg-white/20 px-4 py-1.5 text-xs font-medium backdrop-blur-md sm:mb-5 sm:px-5 sm:py-2 sm:text-sm">{slide.badge}</span>}
             {slide.title && <h1 className="max-w-5xl text-3xl font-bold leading-tight drop-shadow-2xl sm:text-4xl md:text-5xl lg:text-7xl">{slide.title}</h1>}
             {slide.description && <p className="mt-4 max-w-3xl text-sm text-white/90 drop-shadow-lg sm:mt-5 sm:text-base md:text-lg lg:text-xl">{slide.description}</p>}
-            {(slide.buttonText || slide.ctaText) && (slide.buttonLink || slide.ctaLink) && <Link to={slide.buttonLink || slide.ctaLink} className="mt-6 inline-flex max-w-full items-center justify-center rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 shadow-lg transition hover:scale-105 sm:mt-8 sm:px-7 sm:py-3">{slide.buttonText || slide.ctaText}</Link>}
+            {(slide.buttonText || slide.ctaText) && (slide.buttonLink || slide.ctaLink) && <Link to={slide.buttonLink || slide.ctaLink} className="mt-6 inline-flex max-w-full items-center justify-center rounded-full bg-[#e3bd67] px-5 py-2.5 text-sm font-extrabold text-[#17231e] shadow-lg transition hover:-translate-y-0.5 hover:bg-[#f0d38b] sm:mt-8 sm:px-7 sm:py-3">{slide.buttonText || slide.ctaText}</Link>}
           </div>
         </div></SwiperSlide>;
       })}
