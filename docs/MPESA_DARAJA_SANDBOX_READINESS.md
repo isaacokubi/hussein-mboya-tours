@@ -6,7 +6,7 @@ Customer booking, hospitality and subscription flows initiate STK Push through t
 
 The server derives a booking's outstanding balance from its persisted booking/payment state and verifies ownership before initiating a charge. Payment records are associated with their booking and tenant. Daraja callbacks resolve the tenant from the checkout ID, are verified by querying Daraja, and flow through the existing payment lifecycle service. Callback completion checks provider result, amount and receipt; lifecycle transactions and unique tenant indexes protect repeated callback processing. Failed callbacks do not mark bookings paid. Status and query routes provide a way to inspect uncertain requests before retrying.
 
-Refund/reversal support is present as a separate, tenant-resolved B2C reversal workflow. It requires the relevant Safaricom production permissions, initiator and security credential and is not implied by STK readiness.
+Refund/reversal support is present as a separate, tenant-resolved Daraja transaction-reversal workflow for eligible customer payment transactions. It requires the relevant Safaricom production permissions, initiator and security credential and is not implied by STK readiness.
 
 ## Environment configuration
 
@@ -20,7 +20,7 @@ Legacy/platform integration variables are optional and must not be confused with
 | `MPESA_ENVIRONMENT` | Explicit `sandbox` (default) or `production` mode |
 | `MPESA_SANDBOX_BASE_URL` | Sandbox Daraja HTTPS base; defaults to `https://sandbox.safaricom.co.ke` and is constrained to the sandbox host |
 | `MPESA_PRODUCTION_BASE_URL` | Production Daraja HTTPS base; defaults to `https://api.safaricom.co.ke` and is constrained to the production host |
-| `MPESA_INITIATOR_NAME` / `MPESA_SECURITY_CREDENTIAL` | Reversal/B2C operations only |
+| `MPESA_INITIATOR_NAME` / `MPESA_SECURITY_CREDENTIAL` | Daraja transaction-reversal operations only |
 | `ALLOW_GLOBAL_MPESA_FALLBACK` | Must remain `false` in production; tenant gateway setup is preferred |
 
 Configure the required credentials and callback URL in the server environment or the tenant's Admin → Payment Gateways configuration. Never place secrets in client environment variables, source files, tickets, logs or screenshots. Missing tenant credentials or callback configuration fails closed. Production tenant configuration must use production credentials issued for the production Daraja app and shortcode.
