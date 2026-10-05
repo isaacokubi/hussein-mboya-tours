@@ -94,7 +94,22 @@ body{background:var(--hmt-cream);color:var(--hmt-ink)}
 .hmt-safari-surface{background:var(--hmt-forest)}
 
 
-/* Homepage traveller experiences: explicit production-safe background contract. */
-.hmt-traveller-experiences { background-color: #12372a !important; color: #ffffff !important; }
-[data-home-section="traveller-experiences"] { background-color: #12372a !important; }
-.hmt-traveller-experiences a { background-color: #0b241b !important; }
+/* Homepage traveller experiences: hard visual contract. Keep this section independent of generic homepage/card styles. */
+.hmt-traveller-experiences,
+.hmt-traveller-experiences[style],
+[data-home-section="traveller-experiences"] {
+  background: #12372a !important;
+  background-color: #12372a !important;
+  background-image: none !important;
+  color: #ffffff !important;
+}
+.hmt-traveller-experiences > div { background: transparent !important; }
+.hmt-traveller-experiences a {
+  background: #0b241b !important;
+  background-color: #0b241b !important;
+  background-image: none !important;
+}
+.hmt-traveller-experiences a:hover {
+  background: #173f31 !important;
+  background-color: #173f31 !important;
+}
