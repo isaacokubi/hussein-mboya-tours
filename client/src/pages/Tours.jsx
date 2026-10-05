@@ -32,7 +32,7 @@ export default function Tours() {
   if (error) return <div className="min-h-[400px] bg-slate-950 px-6 py-20 text-center text-white"><h2 className="text-2xl font-bold">We are refreshing our tour inventory.</h2><p className="mt-2 text-slate-400">Please try again shortly.</p></div>
 
   const allTours = Array.isArray(data) ? data : data?.data || data?.tours || [];
-  const tours = (Array.isArray(allTours) ? allTours : []).filter((tour) => { const days = Number(tour?.durationDays ?? tour?.durationDetails?.days ?? String(tour?.duration || "").match(/\d+/)?.[0] || 0); const withinDuration = !duration || (duration === "1-3" && days >= 1 && days <= 3) || (duration === "4-6" && days >= 4 && days <= 6) || (duration === "7+" && days >= 7); const capacity = Number(tour?.capacity ?? tour?.availabilitySettings?.totalSlots ?? 0); const withinTravellers = !travellers || !capacity || capacity >= Number(travellers); return withinDuration && withinTravellers; });
+  const tours = (Array.isArray(allTours) ? allTours : []).filter((tour) => { const days = Number((tour?.durationDays ?? tour?.durationDetails?.days ?? String(tour?.duration || "").match(/\d+/)?.[0]) || 0); const withinDuration = !duration || (duration === "1-3" && days >= 1 && days <= 3) || (duration === "4-6" && days >= 4 && days <= 6) || (duration === "7+" && days >= 7); const capacity = Number(tour?.capacity ?? tour?.availabilitySettings?.totalSlots ?? 0); const withinTravellers = !travellers || !capacity || capacity >= Number(travellers); return withinDuration && withinTravellers; });
 
   const updateSearch = (event) => {
     event.preventDefault();
