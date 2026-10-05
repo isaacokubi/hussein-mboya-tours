@@ -9,7 +9,7 @@ import Invoice from "./Invoice.js";
 import Commission from "./Commission.js";
 
 const paymentSchema = new mongoose.Schema({
-  tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true },
+  tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
   customer: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
   user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   booking: { type: mongoose.Schema.Types.ObjectId, ref: "Booking", default: null },
