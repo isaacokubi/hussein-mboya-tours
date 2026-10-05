@@ -18,15 +18,21 @@ export default function CategoriesSection() {
 
   useEffect(() => {
     let mounted = true;
-    getCategories().then((data) => {
-      const remote = Array.isArray(data) ? data : Array.isArray(data?.categories) ? data.categories : [];
-      if (mounted && remote.length) setCategories(remote);
-    }).catch((error) => console.warn("Travel experiences unavailable; using homepage defaults.", error));
+    getCategories()
+      .then((data) => {
+        const remote = Array.isArray(data) ? data : Array.isArray(data?.categories) ? data.categories : [];
+        if (mounted && remote.length) setCategories(remote);
+      })
+      .catch((error) => console.warn("Travel experiences unavailable; using homepage defaults.", error));
     return () => { mounted = false; };
   }, []);
 
   return (
-    <section className="!w-full !bg-[#12372a] px-5 py-14 text-white sm:px-8 md:py-20" aria-labelledby="travel-experiences-heading">
+    <section
+      className="!m-0 !w-full !rounded-none !border-0 !bg-[#12372a] px-5 py-14 text-white shadow-none sm:px-8 md:py-20"
+      style={{ backgroundColor: "#12372a", color: "#ffffff" }}
+      aria-labelledby="travel-experiences-heading"
+    >
       <div className="mx-auto max-w-7xl">
         <div className="mb-10 max-w-3xl">
           <div className="mb-4 inline-flex items-center rounded-full border border-[#d8bd7a]/40 bg-[#f4ead5]/10 px-4 py-2 text-xs font-extrabold uppercase tracking-[.24em] text-[#f0d38b]">Travel your way</div>
@@ -38,7 +44,12 @@ export default function CategoriesSection() {
             const Icon = iconMap[category.icon] || FaMap;
             const slug = category.slug || category.filter || category._id;
             return (
-              <Link key={category._id || category.slug || category.name} to={`/tours/category/${slug}`} className="group rounded-3xl border border-[#d8bd7a]/30 !bg-[#0b241b] p-7 shadow-lg transition duration-300 hover:-translate-y-2 hover:border-[#f0d38b]/70 hover:!bg-[#173f31] hover:shadow-2xl">
+              <Link
+                key={category._id || category.slug || category.name}
+                to={`/tours/category/${slug}`}
+                className="group rounded-3xl border border-[#d8bd7a]/30 !bg-[#0b241b] p-7 shadow-lg transition duration-300 hover:-translate-y-2 hover:border-[#f0d38b]/70 hover:!bg-[#173f31] hover:shadow-2xl"
+                style={{ backgroundColor: "#0b241b" }}
+              >
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#f4ead5] text-[#684a18] shadow-lg ring-4 ring-[#f0d38b]/10"><Icon aria-hidden="true" size={22} /></div>
                 <h3 className="mt-6 text-xl font-black tracking-tight text-white">{category.name}</h3>
                 <p className="mt-3 text-sm leading-6 text-[#eadfca]">{category.description}</p>

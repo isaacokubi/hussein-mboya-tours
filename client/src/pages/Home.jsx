@@ -83,7 +83,7 @@ export default function Home() {
 
           {sections.destinations && <section className="py-12 md:py-16"><DestinationsSection /></section>}
 
-          {sections.experiences && <section className="my-12 rounded-[2rem] bg-[#173f31] px-4 py-10 shadow-xl sm:px-8 md:py-14"><CategoriesSection /></section>}
+          {sections.experiences && <section className="my-12 overflow-hidden rounded-[2rem] bg-[#12372a] p-0 shadow-2xl"><CategoriesSection /></section>}
 
           {sections.services && (
             <section className="rounded-[2rem] bg-[#0b241b]  px-6 py-14 text-white shadow-xl sm:px-10 md:py-16">
