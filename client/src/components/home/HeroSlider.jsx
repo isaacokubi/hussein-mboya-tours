@@ -17,10 +17,10 @@ const PROFESSIONAL_HERO_IMAGES = [
 ];
 
 const FALLBACK_HERO_SLIDES = [
-  { _id: "fallback-1", image: PROFESSIONAL_HERO_IMAGES[0], title: "Discover Kenya with {{companyName}}", description: "Unforgettable safaris, wildlife adventures and tailor-made African experiences.", buttonText: "Explore Tours", buttonLink: "/tours" },
+  { _id: "fallback-1", image: PROFESSIONAL_HERO_IMAGES[0], badge: "KENYA SAFARIS • BEACH • ADVENTURE", title: "Discover Kenya. Your way.", description: "Unforgettable safaris, wildlife, coast, mountains and tailor-made African experiences—planned around you.", buttonText: "Explore Safaris", buttonLink: "/tours" },
   { _id: "fallback-2", image: PROFESSIONAL_HERO_IMAGES[1], badge: "LOCAL EXPERTISE", title: "From the Maasai Mara to the Indian Ocean.", description: "Discover extraordinary places with a local team coordinating the details from arrival to departure.", buttonText: "Explore Destinations", buttonLink: "/destinations" },
-  { _id: "fallback-3", image: PROFESSIONAL_HERO_IMAGES[2], badge: "TAILOR-MADE TRAVEL", title: "Your adventure should fit you.", description: "Build a private family, honeymoon, corporate, luxury or photography journey around your dates and priorities.", buttonText: "Plan a Custom Trip", buttonLink: "/contact", buttonLink: "/tours" },
-  { _id: "fallback-4", image: PROFESSIONAL_HERO_IMAGES[3], badge: "READY WHEN YOU ARE", title: "One seamless Kenya journey.", description: "Tours, hotels, transfers, guides and secure payments brought together in one travel experience.", buttonText: "Start Planning", buttonLink: "/contact", buttonLink: "/tours" },
+  { _id: "fallback-3", image: PROFESSIONAL_HERO_IMAGES[2], badge: "TAILOR-MADE TRAVEL", title: "Your adventure should fit you.", description: "Build a private family, honeymoon, corporate, luxury or photography journey around your dates and priorities.", buttonText: "Plan a Custom Trip", buttonLink: "/contact" },
+  { _id: "fallback-4", image: PROFESSIONAL_HERO_IMAGES[3], badge: "READY WHEN YOU ARE", title: "One seamless Kenya journey.", description: "Tours, hotels, transfers, guides and secure payments brought together in one travel experience.", buttonText: "Start Planning", buttonLink: "/contact" },
 ];
 
 const isOldLocalHero = (url = "") => /^\/hero(?:1|2|4)\.jpeg$/i.test(url.trim());
