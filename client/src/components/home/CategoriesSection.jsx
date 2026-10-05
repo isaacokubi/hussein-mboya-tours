@@ -29,15 +29,15 @@ export default function CategoriesSection() {
 
   return (
     <section
-      className="hmt-traveller-experiences !m-0 !w-full !rounded-none !border-0 !bg-[#12372a] px-5 py-14 text-white shadow-none sm:px-8 md:py-20"
-      style={{ backgroundColor: "#12372a", color: "#ffffff" }}
+      className="hmt-traveller-experiences !m-0 !w-full !rounded-none !border-0 !bg-black px-5 py-14 text-black shadow-none sm:px-8 md:py-20"
+      style={{ backgroundColor: "#000000", color: "#000000" }}
       aria-labelledby="travel-experiences-heading"
     >
       <div className="mx-auto max-w-7xl">
         <div className="mb-10 max-w-3xl">
-          <div className="mb-4 inline-flex items-center rounded-full border border-[#d8bd7a]/40 bg-[#f4ead5]/10 px-4 py-2 text-xs font-extrabold uppercase tracking-[.24em] text-[#f0d38b]">Travel your way</div>
-          <h2 id="travel-experiences-heading" className="text-3xl font-black tracking-tight text-white sm:text-4xl md:text-5xl">Choose your kind of adventure</h2>
-          <p className="mt-3 max-w-2xl text-base leading-7 text-[#eadfca]">From game drives to ocean escapes, find an experience that fits your story. Choose an experience and let our local team help turn it into a memorable Kenya journey.</p>
+          <div className="mb-4 inline-flex items-center rounded-full border border-[#d8bd7a]/40 bg-[#f4ead5]/10 px-4 py-2 text-xs font-extrabold uppercase tracking-[.24em] text-black">Travel your way</div>
+          <h2 id="travel-experiences-heading" className="text-3xl font-black tracking-tight text-black sm:text-4xl md:text-5xl">Choose your kind of adventure</h2>
+          <p className="mt-3 max-w-2xl text-base leading-7 text-black">From game drives to ocean escapes, find an experience that fits your story. Choose an experience and let our local team help turn it into a memorable Kenya journey.</p>
         </div>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {categories.map((category) => {
@@ -47,13 +47,13 @@ export default function CategoriesSection() {
               <Link
                 key={category._id || category.slug || category.name}
                 to={`/tours/category/${slug}`}
-                className="group rounded-3xl border border-[#d8bd7a]/30 !bg-[#0b241b] p-7 shadow-lg transition duration-300 hover:-translate-y-2 hover:border-[#f0d38b]/70 hover:!bg-[#173f31] hover:shadow-2xl"
-                style={{ backgroundColor: "#0b241b" }}
+                className="group rounded-3xl border border-black !bg-black p-7 shadow-lg transition duration-300 hover:-translate-y-2 hover:border-black hover:!bg-black hover:shadow-2xl"
+                style={{ backgroundColor: "#000000" }}
               >
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#f4ead5] text-[#684a18] shadow-lg ring-4 ring-[#f0d38b]/10"><Icon aria-hidden="true" size={22} /></div>
-                <h3 className="mt-6 text-xl font-black tracking-tight text-white">{category.name}</h3>
-                <p className="mt-3 text-sm leading-6 text-[#eadfca]">{category.description}</p>
-                <span className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#f0d38b]">Explore experiences <ArrowRight size={15} className="transition group-hover:translate-x-1" /></span>
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#f4ead5] text-black shadow-lg ring-4 ring-[#f0d38b]/10"><Icon aria-hidden="true" size={22} /></div>
+                <h3 className="mt-6 text-xl font-black tracking-tight text-black">{category.name}</h3>
+                <p className="mt-3 text-sm leading-6 text-black">{category.description}</p>
+                <span className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-black">Explore experiences <ArrowRight size={15} className="transition group-hover:translate-x-1" /></span>
               </Link>
             );
           })}
