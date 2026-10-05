@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, BadgeCheck, CalendarCheck2, CarFront, Compass, CreditCard, Headphones, Hotel, MapPinned, ShieldCheck, Sparkles, UsersRound } from "lucide-react";
+import { ArrowRight, BadgeCheck, CalendarCheck2, CarFront, CheckCircle2, Compass, CreditCard, Hotel, ShieldCheck, Sparkles, UsersRound } from "lucide-react";
 import SEO from "../components/seo/SEO";
 import HeroSlider from "../components/home/HeroSlider";
 import HomeSearch from "../components/home/HomeSearch";
@@ -30,7 +30,7 @@ const JOURNEY = [
   ["Remember", "Complete your journey, share feedback and stay connected.", BadgeCheck],
 ];
 
-const SERVICES = [
+const TRUST_POINTS = [["Kenya specialists", "Local knowledge from people who know the destinations.", Compass], ["Verified local support", "Guides, drivers and partners coordinated around your trip.", ShieldCheck], ["Flexible itineraries", "Choose a ready-made safari or build a trip around you.", Sparkles], ["Secure payments", "Reserve confidently with M-Pesa and supported payment options.", CreditCard]];\n\nconst SERVICES = [
   ["Safaris & Tours", "Curated and tailor-made Kenya adventures.", Compass, "/tours"],
   ["Hotels & Stays", "Accommodation coordinated around your itinerary.", Hotel, "/hotels"],
   ["Airport Transfers", "Reliable pickups and drop-offs from arrival to departure.", CarFront, "/airport-transfers"],
@@ -55,17 +55,18 @@ export default function Home() {
         <HomeSearch />
       </section>
 
-      <section className="border-b border-slate-200 bg-white">
-        <div className="mx-auto grid max-w-7xl gap-px bg-slate-200 sm:grid-cols-3 lg:grid-cols-6">
-          {JOURNEY.map(([title, text, Icon]) => (
-            <div key={title} className="bg-white px-5 py-6">
-              <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-[#8a6423]"><Icon size={19} /></span>
-                <h3 className="font-bold text-slate-900">{title}</h3>
-              </div>
-              <p className="mt-3 text-sm leading-6 text-slate-500">{text}</p>
-            </div>
-          ))}
+      <section className="border-b border-[#eadfc9] bg-[#fbf7ef]" aria-label="Why book with us">
+        <div className="mx-auto grid max-w-7xl gap-0 divide-y divide-[#eadfc9] px-4 py-3 sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4 lg:px-6">
+          {TRUST_POINTS.map(([title, text, Icon]) => <div key={title} className="flex gap-3 px-4 py-4 sm:px-6"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#12372a] text-[#e3bd67]"><Icon size={18} /></span><div><h3 className="text-sm font-extrabold text-[#17231e]">{title}</h3><p className="mt-1 text-xs leading-5 text-slate-500">{text}</p></div></div>)}
+        </div>
+      </section>
+
+      <section className="bg-white px-4 py-10 sm:px-6 lg:px-10" aria-labelledby="journey-heading">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-7 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs font-extrabold uppercase tracking-[.24em] text-[#8a6423]">Simple from start to finish</p><h2 id="journey-heading" className="mt-2 text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">Your Kenya journey, coordinated in one place.</h2></div><Link to="/contact" className="inline-flex items-center gap-2 text-sm font-bold text-[#8a6423]">Talk to a travel expert <ArrowRight size={16}/></Link></div>
+          <div className="grid gap-px overflow-hidden rounded-2xl bg-slate-200 sm:grid-cols-3 lg:grid-cols-6">
+            {JOURNEY.map(([title, text, Icon], index) => <div key={title} className="relative bg-white px-4 py-5"><span className="absolute right-3 top-3 text-[10px] font-black text-slate-300">0{index+1}</span><div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-[#8a6423]"><Icon size={17}/></div><h3 className="mt-3 text-sm font-extrabold text-slate-900">{title}</h3><p className="mt-1 text-xs leading-5 text-slate-500">{text}</p></div>)}
+          </div>
         </div>
       </section>
 
@@ -94,11 +95,11 @@ export default function Home() {
               <div className="grid gap-10 lg:grid-cols-[.85fr_1.15fr] lg:items-end">
                 <div>
                   <p className="text-xs font-extrabold uppercase tracking-[.25em] text-[#e3bd67]">One travel platform</p>
-                  <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">Everything behind a seamless Kenya journey.</h2>
+                  <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">More than a tour company. Your entire Kenya journey, coordinated.</h2>
                   <p className="mt-5 max-w-xl leading-7 text-emerald-50/75">
                     {companyName} connects discovery, enquiries, quotations, bookings, payments and trip operations in one experience—so travelers get simplicity and your team gets control.
                   </p>
-                  <Link to="/contact" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 font-bold text-emerald-950 transition hover:-translate-y-0.5 hover:shadow-lg">
+                  <div className="mt-6 grid gap-2 text-sm text-emerald-50/80 sm:grid-cols-2">{["Tours & custom itineraries","Hotels & accommodation","Airport transfers","Guides & drivers","Secure payments","Trip operations"].map((item)=><span key={item} className="inline-flex items-center gap-2"><CheckCircle2 size={15} className="text-[#e3bd67]"/>{item}</span>)}</div>\n                  <Link to="/contact" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 font-bold text-emerald-950 transition hover:-translate-y-0.5 hover:shadow-lg">
                     Plan with a travel expert <ArrowRight size={17} />
                   </Link>
                 </div>
