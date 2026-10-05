@@ -9,7 +9,7 @@ export default function TenantFooter() {
   const { tenant } = useTenant() || {};
   const { settings = {} } = useSettings() || {};
 
-  const companyName = settings.companyName || tenant?.name || "Travel Company";
+  const companyName = settings.companyName || tenant?.name || "Hussein Mboya Tours";
   const supportEmail = settings.supportEmail || tenant?.contactEmail || "";
   const supportPhone = settings.supportPhone || tenant?.contactPhone || "";
   const address = settings.address || tenant?.address || "";

@@ -3,7 +3,7 @@ import { getTenantBranding } from "../api/tenantBrandingApi";
 import { useAuth } from "./AuthContext";
 import { useSettings } from "./SettingsContext";
 
-export const PLATFORM_BRAND_NAME = "Global Tours Platform";
+export const PLATFORM_BRAND_NAME = "Hussein Mboya Tours Platform";
 
 const DEFAULT_TENANT = {
   name: "",
@@ -103,7 +103,7 @@ export function TenantProvider({ children }) {
         console.error("Public tenant branding load failed", error);
         if (mounted) {
           setTenant(DEFAULT_TENANT);
-          document.title = "Tours & Travel";
+          document.title = "Hussein Mboya Tours";
         }
       }
     };

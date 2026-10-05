@@ -46,7 +46,7 @@ export default function CategoriesSection() {
             return (
               <Link
                 key={category._id || category.slug || category.name}
-                to={`/tours/category/${slug}`}
+                to={`/tours?category=${encodeURIComponent(slug)}`}
                 className="group rounded-3xl border border-white/10 !bg-[#0b241b] p-7 shadow-lg transition duration-300 hover:-translate-y-2 hover:border-[#d8bd7a]/30 hover:!bg-[#173f31] hover:shadow-2xl"
                 style={{ backgroundColor: "#0b241b" }}
               >

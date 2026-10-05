@@ -4,7 +4,7 @@ import { useTenant } from "../../context/TenantContext";
 export default function TestimonialsSection() {
   const { tenant } = useTenant() || {};
   const { settings = {} } = useSettings() || {};
-  const companyName = settings?.companyName || tenant?.name || tenant?.companyName || "Your Travel Company";
+  const companyName = settings?.companyName || tenant?.name || tenant?.companyName || "Hussein Mboya Tours";
 
   const testimonials = [
     { name: "Sarah Williams", country: "United Kingdom", text: `${companyName} gave us the best safari experience in Kenya.` },

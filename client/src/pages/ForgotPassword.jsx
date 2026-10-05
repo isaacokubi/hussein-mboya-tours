@@ -9,7 +9,7 @@ export default function ForgotPassword() {
   const navigate = useNavigate();
   const { settings = {} } = useSettings() || {};
   const { tenant = {} } = useTenant() || {};
-  const companyName = String(settings?.companyName || tenant?.name || tenant?.companyName || "Global Tours").trim();
+  const companyName = String(settings?.companyName || tenant?.name || tenant?.companyName || "Hussein Mboya Tours").trim();
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");

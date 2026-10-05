@@ -22,7 +22,7 @@ export default function Destinations() {
   });
 
   if (isLoading) return <div className="min-h-screen flex items-center justify-center">Loading destinations...</div>;
-  if (error) return <div className="min-h-screen flex items-center justify-center text-red-600">Failed to load destinations.</div>;
+  if (error) return <div className="min-h-screen flex flex-col items-center justify-center gap-3 px-6 text-center text-slate-700"><h2 className="text-2xl font-bold">We are refreshing our destination guide.</h2><p>Please try again shortly.</p></div>
 
   const destinations = data?.destinations || [];
   const destinationCount = data?.total ?? destinations.length;
@@ -33,7 +33,7 @@ export default function Destinations() {
         <div className="mb-10 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
           <div>
             <h1 className="text-4xl font-bold text-gray-800">Explore Destinations</h1>
-            <p className="text-gray-600 mt-3">Discover amazing places and unforgettable experiences with {settings?.companyName || tenant?.name || "Your Travel Company"}.</p>
+            <p className="text-gray-600 mt-3">Discover amazing places and unforgettable experiences with {settings?.companyName || tenant?.name || "Hussein Mboya Tours"}.</p>
           </div>
           <div className="bg-white rounded-full px-5 py-2 shadow-sm text-gray-700 font-semibold">{destinationCount} {destinationCount === 1 ? "Destination" : "Destinations"}</div>
         </div>

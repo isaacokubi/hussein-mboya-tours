@@ -4,9 +4,12 @@ import { Link } from "react-router-dom";
 import { ArrowRight, Clock3, MapPin, Star } from "lucide-react";
 import { getFeaturedTours } from "../../api/tourApi";
 import LazyImage from "../common/LazyImage";
+import { useTenant } from "../../context/TenantContext";
 
 export default function FeaturedTours() {
-  const { data, isLoading, isError, error } = useQuery({ queryKey: ["featuredTours"], queryFn: getFeaturedTours, staleTime: 1000 * 60 * 5 });
+  const { tenant = {} } = useTenant() || {};
+  const tenantKey = tenant?._id || tenant?.id || tenant?.slug || "public";
+  const { data, isLoading, isError, refetch } = useQuery({ queryKey: ["featuredTours", tenantKey], queryFn: getFeaturedTours, staleTime: 1000 * 60 * 5 });
   const tours = Array.isArray(data) ? data : [];
 
   return (
@@ -23,7 +26,7 @@ export default function FeaturedTours() {
       {isLoading ? (
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">{[1,2,3].map((item)=><div key={item} className="h-96 animate-pulse rounded-3xl bg-white/10" />)}</div>
       ) : isError ? (
-        <div className="rounded-2xl border border-amber-400/20 bg-amber-400/5 p-6 text-sm text-amber-100"><p className="font-bold">Featured journeys are temporarily unavailable.</p><p className="mt-1 text-amber-100/70">{error?.message || "Please try again shortly."}</p></div>
+        <div className="rounded-2xl border border-amber-400/20 bg-amber-400/5 p-6 text-sm text-amber-100" role="alert"><p className="font-bold">We are refreshing our travel inventory.</p><p className="mt-1 text-amber-100/70">Please try again shortly.</p><button type="button" onClick={() => refetch()} className="mt-4 rounded-xl bg-[#e3bd67] px-4 py-2 font-bold text-slate-950 hover:bg-[#f0d38b]">Try Again</button></div>
       ) : tours.length === 0 ? (
         <div className="rounded-2xl border border-white/10 bg-white/[.04] p-8 text-center text-slate-400">No featured tours are available right now.</div>
       ) : (

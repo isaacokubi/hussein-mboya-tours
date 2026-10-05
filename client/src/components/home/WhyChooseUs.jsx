@@ -4,7 +4,7 @@ import { useTenant } from "../../context/TenantContext";
 export default function WhyChooseUs() {
   const { tenant } = useTenant() || {};
   const { settings = {} } = useSettings() || {};
-  const companyName = settings?.companyName || tenant?.name || tenant?.companyName || "Your Travel Company";
+  const companyName = settings?.companyName || tenant?.name || tenant?.companyName || "Hussein Mboya Tours";
 
   const items = [
     { title: "Expert Local Guides", text: `${companyName} provides experienced guides for authentic Kenyan experiences.` },

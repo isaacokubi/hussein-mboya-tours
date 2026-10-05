@@ -7,7 +7,7 @@ import { useTenant } from "../context/TenantContext";
 import { useSettings } from "../context/SettingsContext";
 import PaymentLink from "./PaymentLink";
 
-const OFFICE_ADDRESS = "Nairobi, Kenya";
+const OFFICE_ADDRESS = "";
 const CONTACT_HERO = "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=2200&q=92";
 
 export default function Contact() {
@@ -15,7 +15,7 @@ export default function Contact() {
   const paymentToken = searchParams.get("paymentToken");
   const { tenant } = useTenant();
   const { settings } = useSettings();
-  const companyName = settings?.companyName || tenant?.name || "Global Tours";
+  const companyName = settings?.companyName || tenant?.name || "Hussein Mboya Tours";
   const businessPhone = String(settings?.supportPhone || tenant?.contactPhone || "").trim();
   const businessEmail = String(settings?.supportEmail || tenant?.contactEmail || "").trim();
   const [form, setForm] = useState({ name: "", email: "", phone: "", message: "" });
@@ -49,10 +49,14 @@ export default function Contact() {
     setForm({ name: "", email: "", phone: "", message: "" });
   };
 
+  const mapHref = settings?.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(settings.address)}` : "";
+
+  const mapHref = settings?.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(settings.address)}` : "";
+
   const details = [
     { icon: Phone, title: "Phone", value: businessPhone || "Not configured", href: businessPhone ? `tel:${businessPhone.replace(/\s+/g, "")}` : "" },
     { icon: Mail, title: "Email", value: businessEmail || "Not configured", href: businessEmail ? `mailto:${businessEmail}` : "" },
-    { icon: MapPin, title: "Office", value: settings?.address || OFFICE_ADDRESS, href: "https://www.google.com/maps/search/?api=1&query=Nairobi%2C%20Kenya" },
+    { icon: MapPin, title: "Office", value: settings?.address || OFFICE_ADDRESS, href: mapHref },
     { icon: Clock, title: "Working Hours", value: "Mon - Sat | 8AM - 6PM" },
   ];
 
@@ -69,10 +73,10 @@ export default function Contact() {
           {details.map(({ icon: Icon, title, value, href }) => { const content = <><Icon size={34} className="mx-auto mb-3 text-yellow-500" /><h3 className="mb-2 text-base font-bold text-green-900 sm:text-lg">{title}</h3><p className="break-words text-xs text-gray-600 sm:text-sm">{value}</p></>; return <motion.div key={title} whileHover={{ y: -6 }} className="min-w-0 rounded-xl border bg-white p-5 text-center shadow-lg sm:p-6">{href ? <a href={href} target={href.startsWith("http") ? "_blank" : undefined} rel={href.startsWith("http") ? "noreferrer" : undefined} className="block rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">{content}</a> : content}</motion.div>; })}
         </div></section>
       <section className="bg-gray-50 py-12 sm:py-16 lg:py-20"><div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 sm:px-6 lg:grid-cols-2 lg:gap-12 lg:px-8">
-          <div className="min-w-0"><h2 className="mb-5 text-2xl font-bold text-green-900 sm:text-3xl lg:text-4xl">Start Planning Your Journey</h2><p className="mb-7 text-sm leading-relaxed text-gray-600 sm:text-base">Whether you want corporate travel management, airport transfers, car hire, meet and assist, conferences and events, a safari, beach holiday, honeymoon, mountain adventure or a customized tour, our team will create the right package for you.</p><div className="space-y-4 text-sm sm:text-base">{businessPhone && <a href={`tel:${businessPhone.replace(/\s+/g, "")}`} className="flex items-start gap-3 text-gray-700 hover:text-green-800"><MessageCircle className="mt-0.5 shrink-0 text-yellow-500" />Fast response from our travel consultants — call {businessPhone}</a>}<a href="https://www.google.com/maps/search/?api=1&query=Nairobi%2C%20Kenya" target="_blank" rel="noreferrer" className="flex items-start gap-3 text-gray-700 hover:text-green-800"><MapPin className="mt-0.5 shrink-0 text-yellow-500" />Our office: {settings?.address || OFFICE_ADDRESS}</a></div></div>
+          <div className="min-w-0"><h2 className="mb-5 text-2xl font-bold text-green-900 sm:text-3xl lg:text-4xl">Start Planning Your Journey</h2><p className="mb-7 text-sm leading-relaxed text-gray-600 sm:text-base">Whether you want corporate travel management, airport transfers, car hire, meet and assist, conferences and events, a safari, beach holiday, honeymoon, mountain adventure or a customized tour, our team will create the right package for you.</p><div className="space-y-4 text-sm sm:text-base">{businessPhone && <a href={`tel:${businessPhone.replace(/\s+/g, "")}`} className="flex items-start gap-3 text-gray-700 hover:text-green-800"><MessageCircle className="mt-0.5 shrink-0 text-yellow-500" />Fast response from our travel consultants — call {businessPhone}</a>}{mapHref ? <a href={mapHref} target="_blank" rel="noreferrer" className="flex items-start gap-3 text-gray-700 hover:text-green-800"><MapPin className="mt-0.5 shrink-0 text-yellow-500" />Our office: {settings?.address}</a> : <div className="flex items-start gap-3 text-gray-700"><MapPin className="mt-0.5 shrink-0 text-yellow-500" />Our office location is configured by the travel company.</div>}</div></div>
           <motion.form onSubmit={submitHandler} noValidate initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} className="min-w-0 rounded-2xl bg-white p-4 shadow-xl sm:p-6 lg:p-8"><h3 className="mb-5 text-xl font-bold text-green-900 sm:text-2xl">Send An Inquiry</h3>{error && <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700 sm:text-sm">{error}</div>}{sent && <div role="status" className="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-xs text-green-700 sm:text-sm">Your inquiry has been prepared in your email application. Please send the email to complete your inquiry.</div>}<div className="grid grid-cols-1 gap-3 sm:grid-cols-2"><input name="name" value={form.name} onChange={handleChange} placeholder="Full Name" autoComplete="name" required className="w-full min-w-0 rounded-lg border p-2.5 text-sm outline-none focus:border-green-700 focus:ring-2 focus:ring-green-100" /><input name="email" value={form.email} onChange={handleChange} placeholder="Email Address" type="email" autoComplete="email" required className="w-full min-w-0 rounded-lg border p-2.5 text-sm outline-none focus:border-green-700 focus:ring-2 focus:ring-green-100" /></div><input name="phone" value={form.phone} onChange={handleChange} placeholder="Phone Number" type="tel" autoComplete="tel" className="mt-3 w-full min-w-0 rounded-lg border p-2.5 text-sm outline-none focus:border-green-700 focus:ring-2 focus:ring-green-100" /><textarea name="message" value={form.message} onChange={handleChange} placeholder="Tell us about your trip..." rows={6} required className="mt-3 w-full min-w-0 resize-y rounded-lg border p-2.5 text-sm outline-none focus:border-green-700 focus:ring-2 focus:ring-green-100" /><button type="submit" className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-green-900 py-3 text-sm font-bold text-white hover:bg-green-800"><Send size={18} />Send Message</button><p className="mt-2 text-center text-[11px] text-gray-500">Inquiries are sent to {businessEmail || "the tenant support email"}.</p></motion.form>
         </div></section>
-      <section className="bg-green-950 py-12 text-white sm:py-14"><div className="text-center"><h2 className="mb-5 text-2xl font-bold sm:text-3xl">Follow Our Adventures</h2><div className="flex justify-center gap-3 sm:gap-5"><a href="#" aria-label="Facebook" className="rounded-full bg-white/10 p-3 hover:bg-yellow-500 sm:p-4"><FaFacebook size={21} /></a><a href="#" aria-label="Instagram" className="rounded-full bg-white/10 p-3 hover:bg-yellow-500 sm:p-4"><FaInstagram size={21} /></a><a href={businessEmail ? `mailto:${businessEmail}` : "#"} aria-label="Email" className="rounded-full bg-white/10 p-3 hover:bg-yellow-500 sm:p-4"><Mail size={21} /></a></div></div></section>
+      <section className="bg-green-950 py-12 text-white sm:py-14"><div className="text-center"><h2 className="mb-5 text-2xl font-bold sm:text-3xl">Follow Our Adventures</h2><div className="flex justify-center gap-3 sm:gap-5">{settings?.facebook && <a href={settings.facebook} target="_blank" rel="noreferrer" aria-label="Facebook" className="rounded-full bg-white/10 p-3 hover:bg-yellow-500 sm:p-4"><FaFacebook size={21} /></a>}{settings?.instagram && <a href={settings.instagram} target="_blank" rel="noreferrer" aria-label="Instagram" className="rounded-full bg-white/10 p-3 hover:bg-yellow-500 sm:p-4"><FaInstagram size={21} /></a>}{businessEmail && <a href={`mailto:${businessEmail}`} aria-label="Email" className="rounded-full bg-white/10 p-3 hover:bg-yellow-500 sm:p-4"><Mail size={21} /></a>}</div></div></section>
     </div>
   );
 }

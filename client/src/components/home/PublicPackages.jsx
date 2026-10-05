@@ -1,11 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { getPublicPackages } from "../../api/publicPackageApi";
 import { Link } from "react-router-dom";
+import { useTenant } from "../../context/TenantContext";
 import { ArrowRight } from "lucide-react";
 
 export default function PublicPackages() {
-  const { data = [], isLoading, isError } = useQuery({
-    queryKey: ["public-tenant-packages"],
+  const { tenant = {} } = useTenant() || {};
+  const tenantKey = tenant?._id || tenant?.id || tenant?.slug || "public";
+  const { data = [], isLoading, isError, refetch } = useQuery({
+    queryKey: ["public-tenant-packages", tenantKey],
     queryFn: getPublicPackages,
     staleTime: 60_000,
   });
@@ -19,7 +22,7 @@ export default function PublicPackages() {
         <h2 id="tenant-packages-heading" className="mt-2 text-3xl font-black text-white">Travel packages</h2>
       </div>
       {isLoading ? <p className="text-center text-slate-300">Loading packages…</p> : isError ? (
-        <p className="text-center text-amber-200" role="status">Packages are temporarily unavailable. Please try again later.</p>
+        <div className="mx-auto max-w-xl text-center text-amber-100" role="alert"><p>We are refreshing our travel packages.</p><button type="button" onClick={() => refetch()} className="mt-4 rounded-xl bg-[#e3bd67] px-4 py-2 font-bold text-slate-950 hover:bg-[#f0d38b]">Try Again</button></div>
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {data.map((item) => (

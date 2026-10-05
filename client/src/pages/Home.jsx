@@ -87,7 +87,7 @@ export default function Home() {
           {sections.destinations && <section className="py-12 md:py-16"><DestinationsSection /></section>}
 
           {sections.experiences && (
-            <section className="my-12 overflow-hidden rounded-[2rem] !bg-black p-0 text-black shadow-2xl" style={{ backgroundColor: "#000000", color: "#000000" }} data-home-section="traveller-experiences">
+            <section className="my-12 overflow-hidden rounded-[2rem] bg-[#12372a] p-0 text-white shadow-2xl" data-home-section="traveller-experiences">
               <CategoriesSection />
             </section>
           )}

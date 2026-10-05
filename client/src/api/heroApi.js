@@ -2,27 +2,12 @@ import api from "./axios";
 
 const FALLBACK_HERO_SLIDES = [
   {
-    _id: "default-tour-fallback-1",
-    image: "/hero1.jpeg",
-    title: "Discover Kenya with Your Travel Company",
-    description: "Unforgettable safaris, wildlife adventures and tailor-made African experiences.",
-    buttonText: "Explore Tours",
-    buttonLink: "/tours",
-  },
-  {
-    _id: "default-tour-fallback-2",
-    image: "/hero2.jpeg",
+    _id: "default-hussein-mboya-hero",
+    image: "https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?auto=format&fit=crop&w=2200&q=92",
+    badge: "KENYA SAFARIS • BEACH • ADVENTURE",
     title: "Experience the Magic of Kenya",
     description: "From the Maasai Mara to the coast, discover extraordinary places with local experts.",
-    buttonText: "View Destinations",
-    buttonLink: "/destinations",
-  },
-  {
-    _id: "default-tour-fallback-3",
-    image: "/hero4.jpeg",
-    title: "Your African Adventure Starts Here",
-    description: "Travel safely, comfortably and confidently with Your Travel Company.",
-    buttonText: "Book Now",
+    buttonText: "Explore Tours",
     buttonLink: "/tours",
   },
 ];
@@ -37,10 +22,9 @@ export const getHeroSlides = async () => {
         : Array.isArray(response.data?.data)
           ? response.data.data
           : [];
-
     return slides.length ? slides : FALLBACK_HERO_SLIDES;
-  } catch {
-    // Optional CMS content must not blank the public tenant homepage.
+  } catch (error) {
+    if (import.meta.env.DEV) console.warn("Optional hero CMS content unavailable; using the configured public hero fallback.", error);
     return FALLBACK_HERO_SLIDES;
   }
 };

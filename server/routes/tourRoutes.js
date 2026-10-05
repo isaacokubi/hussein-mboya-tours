@@ -1,5 +1,3 @@
-import { resolveTenant } from "../middleware/tenantMiddleware.js";
-
 // server/routes/tourRoutes.js
 
 import express from "express";
@@ -27,8 +25,6 @@ import { assignTourResourcesSafe } from "../controllers/tourResourceAssignmentCo
 
 
 const router = express.Router();
-
-router.use(resolveTenant);
 
 /*
 |--------------------------------------------------------------------------

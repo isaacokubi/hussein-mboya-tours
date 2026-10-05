@@ -8,7 +8,7 @@ export default function NewsletterSection() {
     settings?.companyName ||
     tenant?.name ||
     tenant?.companyName ||
-    "Your Travel Company";
+    "Hussein Mboya Tours";
 
   return (
     <section className="py-16 bg-slate-900 text-slate-100" aria-labelledby="newsletter-heading">
@@ -18,7 +18,7 @@ export default function NewsletterSection() {
         </h2>
 
         <p className="mt-4 text-slate-300">
-          Get exclusive safari offers, travel tips and new experiences.
+          Get safari offers, travel inspiration, destination guides and new experiences.
         </p>
 
         <div className="mt-6 flex flex-col sm:flex-row justify-center items-stretch sm:items-center gap-3 max-w-xl mx-auto">

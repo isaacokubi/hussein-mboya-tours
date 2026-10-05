@@ -8,12 +8,6 @@ export const getFeaturedDestinations = async()=>{
   );
 
 
-  console.log(
-    "DESTINATION RESPONSE:",
-    response.data
-  );
-
-
   const destinations =
 
     Array.isArray(response.data)
@@ -40,12 +34,6 @@ export const getDestinations = async()=>{
 
     const response = await api.get(
         "/destinations"
-    );
-
-
-    console.log(
-        "ALL DESTINATIONS RESPONSE:",
-        response.data
     );
 
 
