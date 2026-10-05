@@ -1,4 +1,6 @@
 import { lazy, Suspense } from "react";
+import { Link } from "react-router-dom";
+import { ArrowRight, BadgeCheck, CalendarCheck2, CarFront, Compass, CreditCard, Headphones, Hotel, MapPinned, ShieldCheck, Sparkles, UsersRound } from "lucide-react";
 import SEO from "../components/seo/SEO";
 import HeroSlider from "../components/home/HeroSlider";
 import HomeSearch from "../components/home/HomeSearch";
@@ -19,40 +21,106 @@ const NewsletterSection = lazy(() => import("../components/home/NewsletterSectio
 const DEFAULT_SECTIONS = { stats: true, tours: true, destinations: true, experiences: true, services: true, testimonials: true, gallery: true, whyChooseUs: true, newsletter: true };
 const SectionFallback = () => <div className="min-h-24" aria-hidden="true" />;
 
+const JOURNEY = [
+  ["Discover", "Browse curated tours, destinations and travel services.", Compass],
+  ["Enquire", "Request a quote or tailor an itinerary around your needs.", UsersRound],
+  ["Book", "Accept your quotation and confirm the trip online.", CalendarCheck2],
+  ["Pay", "Pay securely with M-Pesa and supported payment methods.", CreditCard],
+  ["Travel", "Get coordinated guides, drivers, hotels and transfers.", CarFront],
+  ["Remember", "Complete your journey, share feedback and stay connected.", BadgeCheck],
+];
+
+const SERVICES = [
+  ["Safaris & Tours", "Curated and tailor-made Kenya adventures.", Compass, "/tours"],
+  ["Hotels & Stays", "Accommodation coordinated around your itinerary.", Hotel, "/hotels"],
+  ["Airport Transfers", "Reliable pickups and drop-offs from arrival to departure.", CarFront, "/airport-transfers"],
+  ["Custom Travel", "Flexible experiences for families, groups, corporates and honeymoons.", Sparkles, "/tours"],
+];
+
 export default function Home() {
   const { tenant = {} } = useTenant() || {};
   const { companyName: configuredCompanyName = "", settings = {} } = useSettings() || {};
-  const companyName = configuredCompanyName || tenant.name || tenant.companyName || "";
+  const companyName = configuredCompanyName || tenant.name || tenant.companyName || "Hussein Mboya Tours";
   const sections = { ...DEFAULT_SECTIONS, ...(settings.homepageSections || {}) };
-  const seoTitle = settings.seoTitle || (companyName ? `Kenya Safaris & Tours | ${companyName}` : "Kenya Safaris & Tours");
-  const seoDescription = settings.seoDescription || (companyName ? `Discover Kenya with ${companyName}: safaris, wildlife adventures, beach holidays and tailor-made African travel experiences.` : "Discover Kenya through safaris, wildlife adventures, beach holidays and tailor-made African travel experiences.");
+  const seoTitle = settings.seoTitle || `Kenya Safaris & Tours | ${companyName}`;
+  const seoDescription = settings.seoDescription || `Discover Kenya with ${companyName}: safaris, wildlife, beach holidays, custom itineraries and seamless travel support.`;
 
   return (
-    <main className="overflow-hidden bg-slate-950 text-slate-100" style={{ fontFamily: "var(--tenant-font-family,Inter), sans-serif" }}>
+    <main className="overflow-hidden bg-[#f7f8f5] text-slate-900" style={{ fontFamily: "var(--tenant-font-family,Inter), sans-serif" }}>
       <SEO title={seoTitle} description={seoDescription} image={settings.companyLogo || tenant.logoUrl || "/hero1.jpeg"} />
-      <div className="relative">
-        <HeroSlider />
-        <HomeSearch />
-      </div>
 
-      <div className="relative mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16">
-        <div className="pointer-events-none absolute left-1/4 top-24 h-72 w-72 rounded-full bg-emerald-500/10 blur-3xl" />
-        <div className="pointer-events-none absolute right-0 top-[45rem] h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl" />
+      <section className="relative bg-slate-950">
+        <HeroSlider />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-slate-950/70 to-transparent" />
+        <HomeSearch />
+      </section>
+
+      <section className="border-b border-slate-200 bg-white">
+        <div className="mx-auto grid max-w-7xl gap-px bg-slate-200 sm:grid-cols-3 lg:grid-cols-6">
+          {JOURNEY.map(([title, text, Icon]) => (
+            <div key={title} className="bg-white px-5 py-6">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700"><Icon size={19} /></span>
+                <h3 className="font-bold text-slate-900">{title}</h3>
+              </div>
+              <p className="mt-3 text-sm leading-6 text-slate-500">{text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-10 xl:px-16">
         <Suspense fallback={<SectionFallback />}>
-          {sections.stats && <section className="py-12 md:py-16"><StatsSection /></section>}
-          {sections.tours && <section className="rounded-[2rem] border border-white/10 bg-white/[0.04] px-4 py-12 shadow-2xl backdrop-blur-sm sm:px-7 md:py-16"><FeaturedTours /></section>}
+          {sections.stats && <section className="py-10 md:py-14"><StatsSection /></section>}
+
+          {sections.tours && (
+            <section className="rounded-[2rem] bg-slate-950 px-4 py-10 shadow-2xl sm:px-8 md:py-14">
+              <FeaturedTours />
+            </section>
+          )}
+
           {sections.packages !== false && <PublicPackages />}
+
           {sections.destinations && <section className="py-12 md:py-16"><DestinationsSection /></section>}
+
           {sections.experiences && <section className="py-12 md:py-16"><CategoriesSection /></section>}
-          {sections.services && <section className="py-12 md:py-16"><div className="mb-10 text-center"><p className="text-sm font-bold uppercase tracking-[0.25em] text-emerald-300">{companyName ? `${companyName} platform` : "Your travel platform"}</p><h2 className="mt-3 text-3xl font-black tracking-tight md:text-5xl">Everything for your next journey</h2><p className="mx-auto mt-4 max-w-2xl text-slate-400">{companyName ? `${companyName} brings discovery, booking and travel support together in one modern experience.` : "Discover, plan and book unforgettable African experiences in one modern travel platform."}</p></div><div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{[["Luxury Safaris","Private and premium safari experiences across Kenya and East Africa."],["Wildlife Tours","Guided wildlife adventures in Kenya's iconic national parks and reserves."],["Beach Holidays","Relaxing coastal escapes, island stays and tailor-made beach packages."],["Group Adventures","Flexible group travel for families, friends, schools and organizations."],["Honeymoon Packages","Romantic itineraries designed around memorable stays and experiences."],["Airport Transfers","Reliable airport pickups and drop-offs coordinated around your itinerary."]].map(([title,description])=><article key={title} className="group rounded-3xl border border-white/10 bg-white/[0.05] p-7 transition hover:-translate-y-1 hover:border-emerald-400/40 hover:bg-white/[0.08]"><div className="mb-5 h-1 w-12 rounded-full bg-emerald-400 transition-all group-hover:w-20"/><h3 className="text-xl font-bold text-white">{title}</h3><p className="mt-3 leading-7 text-slate-400">{description}</p></article>)}</div></section>}
+
+          {sections.services && (
+            <section className="rounded-[2rem] bg-emerald-950 px-6 py-14 text-white shadow-xl sm:px-10 md:py-16">
+              <div className="grid gap-10 lg:grid-cols-[.85fr_1.15fr] lg:items-end">
+                <div>
+                  <p className="text-xs font-extrabold uppercase tracking-[.25em] text-emerald-300">One travel platform</p>
+                  <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">Everything behind a seamless Kenya journey.</h2>
+                  <p className="mt-5 max-w-xl leading-7 text-emerald-50/75">
+                    {companyName} connects discovery, enquiries, quotations, bookings, payments and trip operations in one experience—so travelers get simplicity and your team gets control.
+                  </p>
+                  <Link to="/contact" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 font-bold text-emerald-950 transition hover:-translate-y-0.5 hover:shadow-lg">
+                    Plan with a travel expert <ArrowRight size={17} />
+                  </Link>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {SERVICES.map(([title, text, Icon, path]) => (
+                    <Link key={title} to={path} className="group rounded-2xl border border-white/10 bg-white/[.07] p-5 backdrop-blur transition hover:-translate-y-1 hover:bg-white/[.11]">
+                      <Icon className="text-emerald-300" size={23} />
+                      <h3 className="mt-4 font-bold">{title}</h3>
+                      <p className="mt-2 text-sm leading-6 text-emerald-50/65">{text}</p>
+                      <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-emerald-300">Explore <ArrowRight size={14} className="transition group-hover:translate-x-1" /></span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </section>
+          )}
+
           {sections.testimonials && <section className="py-12 md:py-16"><TestimonialsSection /></section>}
-          {sections.gallery && <section className="rounded-[2rem] border border-white/10 bg-white/[0.03] px-4 py-12 sm:px-7 md:py-16"><GallerySection /></section>}
+          {sections.gallery && <section className="rounded-[2rem] bg-white px-4 py-8 shadow-sm ring-1 ring-slate-200 sm:px-8 md:py-12"><GallerySection /></section>}
           {sections.whyChooseUs && <section className="py-12 md:py-16"><WhyChooseUs /></section>}
         </Suspense>
       </div>
+
       <Suspense fallback={<SectionFallback />}>
-        <section className="mt-8 bg-gradient-to-r from-emerald-950 via-emerald-800 to-cyan-900"><MpesaCTA /></section>
-        {sections.newsletter && <section className="mx-auto max-w-[1600px] px-4 py-12 sm:px-6 md:px-8 lg:px-12"><NewsletterSection /></section>}
+        <section className="mt-8"><MpesaCTA /></section>
+        {sections.newsletter && <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6"><NewsletterSection /></section>}
       </Suspense>
     </main>
   );
