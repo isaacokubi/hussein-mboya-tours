@@ -32,3 +32,19 @@ test("M-Pesa refund service uses Daraja TransactionReversal, not B2C disbursemen
   assert.match(service, /ResultURL: resultUrl/);
   assert.match(service, /QueueTimeOutURL: timeoutUrl/);
 });
+
+
+test("M-Pesa refund flow never falls back to a checkout request ID or local payment ID", () => {
+  const controller = read("controllers/adminPaymentController.js");
+  assert.match(controller, /const transactionId = String\(payment\.mpesaReceiptNumber \|\| payment\.transactionId \|\| ""\)\.trim\(\)/);
+  assert.doesNotMatch(controller, /payment\.checkoutRequestID \|\| payment\._id/);
+  assert.match(controller, /Payment\.findOneAndUpdate/);
+  assert.match(controller, /refundStatus: \{ \$in: \[["]none["], ["']failed["']\] \}/);
+  assert.match(controller, /refundStatus: "processing"/);
+  assert.match(controller, /refundStatus: "failed"/);
+});
+
+test("Invoice records require tenant ownership", () => {
+  const invoice = read("models/Invoice.js");
+  assert.match(invoice, /tenantId: \{ type: mongoose\.Schema\.Types\.ObjectId, ref: "Organization", required: true, index: true \}/);
+});
