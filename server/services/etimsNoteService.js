@@ -30,6 +30,12 @@ const assertAdapterUrl = async (rawUrl) => {
   if (!net.isIP(host)) { const records=await dns.lookup(host,{all:true,verbatim:true}); if(!records.length || records.some(({address})=>isPrivateAddress(address))) throw new Error("eTIMS adapter hostname resolves to a private or local address."); }
   return parsed.toString().replace(/\/$/,"");
 };
+const isRetryableEtimsHttpStatus = (status) => {
+  const code = Number(status);
+  return code === 408 || code === 429 || code >= 500;
+};
+const nextEtimsRetryAt = (attempt) =>
+  new Date(Date.now() + Math.min(1440, 5 * (2 ** Math.min(Number(attempt || 1) - 1, 8))) * 60 * 1000);
 const adapterToken = async (tenantId, environment) => { const credential=await EtimsCredential.findOne({tenantId,environment}).select("+adapterTokenEncrypted").lean(); return credential?.adapterTokenEncrypted ? decryptEtimsSecret(credential.adapterTokenEncrypted) : String(process.env.ETIMS_ADAPTER_TOKEN || ""); };
 export const enqueueNoteForEtims = async (noteId, tenantId, { manualRetry=false }={}) => { if(!noteId||!tenantId) throw new Error("Note and tenant are required for eTIMS queueing."); const idempotencyKey=`etims-note:${noteId}`; if(manualRetry) await retryDeadJob({tenantId,idempotencyKey}); return enqueueJob("etims.credit_debit_note.submit",{noteId:String(noteId),tenantId:String(tenantId)},{tenantId,idempotencyKey}); };
 
@@ -50,7 +56,7 @@ export async function processEtimsNoteJob(payload) {
     const response=await fetch(`${url}/credit-debit-notes`,{method:"POST",headers:{"content-type":"application/json","x-idempotency-key":idempotencyKey,...(token?{authorization:`Bearer ${token}`}:{})},body:JSON.stringify(requestPayload),signal:AbortSignal.timeout(15000)});
     const body=await response.json().catch(()=>({})); audit.httpStatus=response.status;audit.response=body;
     const confirmation=getEtimsNoteConfirmation(response.ok,body);
-    if(!confirmation){note.etimsStatus="failed";note.etimsLastError=String(body?.message||body?.error||(!response.ok?`Adapter returned HTTP ${response.status}`:"Adapter response did not include explicit success and official eTIMS note and receipt references.")).slice(0,2000);const delayMinutes=Math.min(1440,5*(2**Math.min(note.etimsSubmissionAttempts-1,8)));note.etimsNextRetryAt=new Date(Date.now()+delayMinutes*60000);audit.status="failed";audit.error=note.etimsLastError;await Promise.all([note.save(),audit.save()]);throw new Error(note.etimsLastError);}
+    if(!confirmation){note.etimsStatus="failed";note.etimsLastError=String(body?.message||body?.error||(!response.ok?`Adapter returned HTTP ${response.status}`:"Adapter response did not include explicit success and official eTIMS note and receipt references.")).slice(0,2000);const retryable=!response.ok&&isRetryableEtimsHttpStatus(response.status);note.etimsNextRetryAt=retryable?nextEtimsRetryAt(note.etimsSubmissionAttempts):null;audit.status="failed";audit.error=note.etimsLastError;await Promise.all([note.save(),audit.save()]);if(retryable)throw new Error(note.etimsLastError);return;}
     note.etimsStatus="synced";note.etimsReference=confirmation.reference;note.etimsReceiptNumber=confirmation.receiptNumber;note.etimsSubmittedAt=new Date();note.etimsNextRetryAt=null;note.etimsLastError="";note.etimsResponse=body;audit.status="synced";audit.submittedAt=note.etimsSubmittedAt;audit.etimsReference=note.etimsReference;audit.etimsReceiptNumber=note.etimsReceiptNumber;await Promise.all([note.save(),audit.save()]);
-  } catch(error){if(audit.status==="pending"){audit.status="failed";audit.error=String(error?.message||error).slice(0,2000);await audit.save().catch(()=>undefined);}throw error;}
+  } catch(error){if(audit.status==="pending"){note.etimsStatus="failed";note.etimsLastError=String(error?.message||error||"eTIMS note submission failed").slice(0,2000);note.etimsNextRetryAt=nextEtimsRetryAt(note.etimsSubmissionAttempts);await note.save().catch(()=>undefined);audit.status="failed";audit.error=note.etimsLastError;await audit.save().catch(()=>undefined);}throw error;}
 }
