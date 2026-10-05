@@ -13,15 +13,23 @@ export default function TestimonialsSection() {
   ];
 
   return (
-    <section className="py-16 text-slate-100" aria-labelledby="traveler-experiences-heading">
-      <div className="container mx-auto px-6">
-        <h2 id="traveler-experiences-heading" className="text-3xl font-black text-center text-white">Traveler Experiences</h2>
-        <div className="grid gap-6 mt-10 md:grid-cols-3">
+    <section
+      className="hmt-testimonials my-12 overflow-hidden rounded-[2rem] !bg-black px-5 py-14 text-black shadow-2xl sm:px-8 md:py-20"
+      style={{ backgroundColor: "#000000", color: "#000000" }}
+      aria-labelledby="traveler-experiences-heading"
+    >
+      <div className="mx-auto max-w-7xl">
+        <h2 id="traveler-experiences-heading" className="text-center text-3xl font-black text-black sm:text-4xl">Traveler Experiences</h2>
+        <div className="mt-10 grid gap-6 md:grid-cols-3">
           {testimonials.map((testimonial) => (
-            <article key={testimonial.name} className="rounded-2xl border border-white/10 bg-white/[0.06] p-6 shadow-xl backdrop-blur-sm">
-              <h3 className="font-bold text-lg text-white">{testimonial.name}</h3>
-              <p className="mt-1 text-sm font-medium text-emerald-300">{testimonial.country}</p>
-              <p className="mt-4 leading-7 text-slate-300">“{testimonial.text}”</p>
+            <article
+              key={testimonial.name}
+              className="rounded-2xl border border-black !bg-black p-6 shadow-xl transition hover:-translate-y-1"
+              style={{ backgroundColor: "#000000" }}
+            >
+              <h3 className="text-lg font-bold text-black">{testimonial.name}</h3>
+              <p className="mt-1 text-sm font-medium text-black">{testimonial.country}</p>
+              <p className="mt-4 leading-7 text-black">“{testimonial.text}”</p>
             </article>
           ))}
         </div>
