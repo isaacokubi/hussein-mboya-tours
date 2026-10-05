@@ -1,16 +1,26 @@
 import axios from "axios";
 import { getTenantMpesaConfig, getTenantMpesaUrls } from "./paymentGatewayService.js";
 
-const getAccessToken = async (config, urls) => {
+const getAccessToken = async (config, urls, client = axios) => {
   const auth = Buffer.from(`${config.consumerKey}:${config.consumerSecret}`).toString("base64");
-  const response = await axios.get(urls.auth, {
+  const response = await client.get(urls.auth, {
     headers: { Authorization: `Basic ${auth}` },
     timeout: 15000,
   });
+  if (!response.data?.access_token) throw new Error("M-Pesa access token missing.");
   return response.data.access_token;
 };
 
-export const requestMpesaRefund = async ({ amount, phone, transactionId }) => {
+const buildRefundCallbackUrls = (callbackUrl) => {
+  const normalized = String(callbackUrl || "").trim().replace(/\/$/, "");
+  const base = normalized.replace(/\/callback$/i, "");
+  return {
+    resultUrl: `${base}/refund/result`,
+    timeoutUrl: `${base}/refund/timeout`,
+  };
+};
+
+export const requestMpesaRefund = async ({ transactionId, client = axios }) => {
   const config = await getTenantMpesaConfig();
   const urls = getTenantMpesaUrls(config);
 
@@ -22,20 +32,27 @@ export const requestMpesaRefund = async ({ amount, phone, transactionId }) => {
     throw new Error("Tenant M-Pesa callback URL is not configured.");
   }
 
-  const token = await getAccessToken(config, urls);
+  const originalTransactionId = String(transactionId || "").trim();
+  if (!originalTransactionId) {
+    throw new Error("Original M-Pesa transaction ID is required for a refund.");
+  }
 
-  const response = await axios.post(
-    urls.b2c,
+  const { resultUrl, timeoutUrl } = buildRefundCallbackUrls(config.callbackUrl);
+  const token = await getAccessToken(config, urls, client);
+
+  const response = await client.post(
+    urls.reversal,
     {
-      InitiatorName: config.initiatorName,
+      Initiator: config.initiatorName,
       SecurityCredential: config.securityCredential,
-      CommandID: "BusinessPayment",
-      Amount: Number(amount),
-      PartyA: config.shortcode,
-      PartyB: phone,
-      Remarks: `Refund ${transactionId}`,
-      QueueTimeOutURL: `${config.callbackUrl.replace(/\/$/, "")}/refund/timeout`,
-      ResultURL: `${config.callbackUrl.replace(/\/$/, "")}/refund/result`,
+      CommandID: "TransactionReversal",
+      TransactionID: originalTransactionId,
+      ReceiverParty: config.shortcode,
+      ReceiverPartyType: "11",
+      ResultURL: resultUrl,
+      QueueTimeOutURL: timeoutUrl,
+      Remarks: `Refund reversal for ${originalTransactionId}`,
+      Occasion: "Customer refund",
     },
     {
       headers: { Authorization: `Bearer ${token}` },
@@ -45,3 +62,5 @@ export const requestMpesaRefund = async ({ amount, phone, transactionId }) => {
 
   return response.data;
 };
+
+export { buildRefundCallbackUrls };
