@@ -1,14 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  FaBinoculars,
-  FaUmbrellaBeach,
-  FaMountain,
-  FaPeopleGroup,
-  FaMap,
-  FaWater,
-  FaLandmark,
-} from "react-icons/fa6";
+import { FaBinoculars, FaUmbrellaBeach, FaMountain, FaPeopleGroup, FaMap, FaWater, FaLandmark } from "react-icons/fa6";
+import { ArrowRight } from "lucide-react";
 import { getCategories } from "../../api/categoryApi";
 
 const DEFAULT_EXPERIENCES = [
@@ -17,78 +10,33 @@ const DEFAULT_EXPERIENCES = [
   { _id: "default-mountain", name: "Mountain Adventures", slug: "mountain", icon: "Mountain", description: "Hiking, climbing and highland adventures for every level of explorer." },
   { _id: "default-culture", name: "Cultural Experiences", slug: "culture", icon: "Landmark", description: "Discover Kenyan heritage, communities, traditions and authentic local culture." },
 ];
-
-const iconMap = {
-  Binoculars: FaBinoculars,
-  Beach: FaUmbrellaBeach,
-  Mountain: FaMountain,
-  People: FaPeopleGroup,
-  Map: FaMap,
-  Waves: FaWater,
-  Landmark: FaLandmark,
-};
+const iconMap = { Binoculars: FaBinoculars, Beach: FaUmbrellaBeach, Mountain: FaMountain, People: FaPeopleGroup, Map: FaMap, Waves: FaWater, Landmark: FaLandmark };
 
 export default function CategoriesSection() {
   const [categories, setCategories] = useState(DEFAULT_EXPERIENCES);
-
   useEffect(() => {
     let mounted = true;
-
-    const loadCategories = async () => {
-      try {
-        const data = await getCategories();
-        const remoteCategories = Array.isArray(data)
-          ? data
-          : Array.isArray(data?.categories)
-            ? data.categories
-            : [];
-
-        if (mounted && remoteCategories.length > 0) {
-          setCategories(remoteCategories);
-        }
-      } catch (error) {
-        console.warn("Travel experiences unavailable; using homepage defaults.", error);
-      }
-    };
-
-    void loadCategories();
-    return () => {
-      mounted = false;
-    };
+    getCategories().then((data) => {
+      const remote = Array.isArray(data) ? data : Array.isArray(data?.categories) ? data.categories : [];
+      if (mounted && remote.length) setCategories(remote);
+    }).catch((error) => console.warn("Travel experiences unavailable; using homepage defaults.", error));
+    return () => { mounted = false; };
   }, []);
 
   return (
-    <section className="py-20 bg-gray-100 text-slate-900" aria-labelledby="travel-experiences-heading">
-      <div className="container mx-auto px-6">
-        <h2 id="travel-experiences-heading" className="text-4xl font-bold text-center text-slate-900 mb-12">
-          Explore Travel Experiences
-        </h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {categories.map((category) => {
-            const Icon = iconMap[category.icon] || FaMap;
-            const slug = category.slug || category.filter || category._id;
-
-            return (
-              <div
-                key={category._id || category.slug || category.name}
-                className="bg-white border border-slate-200 rounded-xl shadow-lg p-8 text-center hover:-translate-y-2 transition duration-300"
-              >
-                <div className="text-green-600 text-4xl flex justify-center mb-5">
-                  <Icon aria-hidden="true" />
-                </div>
-                <h3 className="font-bold text-xl text-slate-900">{category.name}</h3>
-                <p className="mt-3 text-slate-600">{category.description}</p>
-                <Link
-                  to={`/tours/category/${slug}`}
-                  className="inline-block mt-5 text-yellow-700 font-semibold hover:text-green-700"
-                >
-                  View Tours →
-                </Link>
-              </div>
-            );
-          })}
-        </div>
+    <section aria-labelledby="travel-experiences-heading">
+      <div className="mb-9"><p className="text-xs font-extrabold uppercase tracking-[.24em] text-emerald-700">Travel your way</p><h2 id="travel-experiences-heading" className="mt-2 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">Choose your kind of adventure</h2><p className="mt-2 max-w-2xl text-slate-500">From game drives to ocean escapes, find an experience that fits your story.</p></div>
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        {categories.map((category) => {
+          const Icon = iconMap[category.icon] || FaMap;
+          const slug = category.slug || category.filter || category._id;
+          return <Link key={category._id || category.slug || category.name} to={`/tours/category/${slug}`} className="group rounded-3xl border border-slate-200 bg-white p-7 shadow-sm transition hover:-translate-y-1 hover:border-emerald-200 hover:shadow-xl">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700"><Icon aria-hidden="true" size={22}/></div>
+            <h3 className="mt-6 text-xl font-black text-slate-950">{category.name}</h3>
+            <p className="mt-3 text-sm leading-6 text-slate-500">{category.description}</p>
+            <span className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-emerald-700">Explore experiences <ArrowRight size={15} className="transition group-hover:translate-x-1"/></span>
+          </Link>;
+        })}
       </div>
     </section>
   );
