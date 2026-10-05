@@ -66,3 +66,19 @@ test("eTIMS credit/debit note success requires explicit provider references", ()
     { reference: "NOTE-1", receiptNumber: "R-1" },
   );
 });
+
+test("eTIMS retry policy distinguishes transient provider failures from permanent validation failures", () => {
+  const service = read("services/etimsService.js");
+  assert.match(service, /code === 408 \|\| code === 429 \|\| code >= 500/);
+  assert.match(service, /const retryable = !response\.ok && isRetryableEtimsHttpStatus\(response\.status\)/);
+  assert.match(service, /invoice\.etimsNextRetryAt = retryable \? nextEtimsRetryAt/);
+  assert.match(service, /if \(retryable\) throw new Error/);
+  assert.match(service, /etimsStatus: "failed", etimsNextRetryAt: \{ \$ne: null, \$lte: new Date\(\) \}/);
+});
+
+test("eTIMS network failures persist failed state and bounded retry timing", () => {
+  const service = read("services/etimsService.js");
+  assert.match(service, /invoice\.etimsStatus = "failed";/);
+  assert.match(service, /invoice\.etimsLastError = String\(error\?\.message/);
+  assert.match(service, /invoice\.etimsNextRetryAt = nextEtimsRetryAt/);
+});
