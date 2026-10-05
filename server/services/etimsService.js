@@ -52,6 +52,14 @@ async function assertAdapterUrl(rawUrl) {
   return parsed.toString().replace(/\/$/, "");
 }
 
+const isRetryableEtimsHttpStatus = (status) => {
+  const code = Number(status);
+  return code === 408 || code === 429 || code >= 500;
+};
+
+const nextEtimsRetryAt = (attempt) =>
+  new Date(Date.now() + Math.min(1440, 5 * (2 ** Math.min(Number(attempt || 1) - 1, 8))) * 60 * 1000);
+
 const adapterToken = async (tenantId, environment) => {
   const credential = await EtimsCredential.findOne({ tenantId, environment }).select("+adapterTokenEncrypted").lean();
   return credential?.adapterTokenEncrypted ? decryptEtimsSecret(credential.adapterTokenEncrypted) : String(process.env.ETIMS_ADAPTER_TOKEN || "");
@@ -135,12 +143,13 @@ export async function processEtimsInvoiceJob(payload) {
       invoice.etimsLastError = String(body?.message || body?.error || (!response.ok
         ? `Adapter returned HTTP ${response.status}`
         : "Adapter response did not include explicit success and official eTIMS invoice and receipt references.")).slice(0, 2000);
-      const delayMinutes = Math.min(1440, 5 * (2 ** Math.min(invoice.etimsSubmissionAttempts - 1, 8)));
-      invoice.etimsNextRetryAt = new Date(Date.now() + delayMinutes * 60 * 1000);
+      const retryable = !response.ok && isRetryableEtimsHttpStatus(response.status);
+      invoice.etimsNextRetryAt = retryable ? nextEtimsRetryAt(invoice.etimsSubmissionAttempts) : null;
       audit.status = "failed";
       audit.error = invoice.etimsLastError;
       await Promise.all([invoice.save(), audit.save()]);
-      throw new Error(invoice.etimsLastError);
+      if (retryable) throw new Error(invoice.etimsLastError);
+      return;
     }
 
     invoice.etimsStatus = "synced";
@@ -161,8 +170,12 @@ export async function processEtimsInvoiceJob(payload) {
     await Promise.all([invoice.save(), audit.save()]);
   } catch (error) {
     if (audit.status === "pending") {
+      invoice.etimsStatus = "failed";
+      invoice.etimsLastError = String(error?.message || error || "eTIMS submission failed").slice(0, 2000);
+      invoice.etimsNextRetryAt = nextEtimsRetryAt(invoice.etimsSubmissionAttempts);
+      await invoice.save().catch(() => undefined);
       audit.status = "failed";
-      audit.error = String(error?.message || error).slice(0, 2000);
+      audit.error = invoice.etimsLastError;
       await audit.save().catch(() => undefined);
     }
     throw error;
@@ -173,7 +186,14 @@ export async function enqueueDueEtimsInvoices() {
   const profiles = await TaxProfile.find({ etimsEnabled: true }).select("tenantId").lean();
   let queued = 0;
   for (const profile of profiles) {
-    const invoices = await Invoice.find({ tenantId: profile.tenantId, isDeleted: { $ne: true }, etimsStatus: { $in: ["not_configured", "failed", "pending"] }, $or: [{ etimsNextRetryAt: null }, { etimsNextRetryAt: { $lte: new Date() } }] }).select("_id").limit(100).lean();
+    const invoices = await Invoice.find({
+      tenantId: profile.tenantId,
+      isDeleted: { $ne: true },
+      $or: [
+        { etimsStatus: "pending" },
+        { etimsStatus: "failed", etimsNextRetryAt: { $ne: null, $lte: new Date() } },
+      ],
+    }).select("_id").limit(100).lean();
     for (const invoice of invoices) {
       await enqueueInvoiceForEtims(invoice._id, profile.tenantId);
       queued += 1;
