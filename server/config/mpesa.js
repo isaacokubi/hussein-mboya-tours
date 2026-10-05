@@ -65,6 +65,7 @@ export const getMpesaUrls = (environment = mpesaConfig.environment) => {
     auth: `${base}/oauth/v1/generate?grant_type=client_credentials`,
     stk: `${base}/mpesa/stkpush/v1/processrequest`,
     query: `${base}/mpesa/stkpushquery/v1/query`,
+    reversal: `${base}/mpesa/reversal/v1/request`,
     b2c: `${base}/mpesa/b2c/v1/paymentrequest`,
   };
 };
