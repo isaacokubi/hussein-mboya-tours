@@ -121,29 +121,74 @@ const submitMpesaRefund = async ({ payment, booking, amount, phone }) => {
     throw new Error(`Invalid refund amount. Maximum refundable amount is ${refundableAmount}.`);
   }
 
-  if (payment.refundStatus === "processing") throw new Error("A refund is already processing for this payment.");
-
-  const refundResponse = await requestMpesaRefund({
-    amount: refundAmount,
-    phone,
-    transactionId: payment.mpesaReceiptNumber || payment.checkoutRequestID || payment._id,
-  });
-
-  const refundReference = String(refundResponse.ConversationID || refundResponse.OriginatorConversationID || "").trim();
-  if (!refundReference) throw new Error("M-Pesa did not return a refund conversation reference.");
-
-  payment.refundStatus = "processing";
-  payment.refundReference = refundReference;
-  payment.refundRequestedAmount = refundAmount;
-  payment.refundRequestedAt = new Date();
-  await payment.save();
-
-  if (booking) {
-    booking.refundStatus = "processing";
-    await booking.save();
+  const transactionId = String(payment.mpesaReceiptNumber || payment.transactionId || "").trim();
+  if (!transactionId) {
+    throw new Error("Original M-Pesa transaction ID is missing; verify the payment before requesting a reversal.");
   }
 
-  return { refundResponse, refundAmount };
+  // Claim the refund atomically before calling Daraja. This closes the race where
+  // two concurrent refund requests both observe a non-processing payment and
+  // submit two provider reversals for the same funds.
+  const claimedPayment = await Payment.findOneAndUpdate(
+    {
+      _id: payment._id,
+      tenantId: payment.tenantId,
+      status: "completed",
+      refundStatus: { $in: ["none", "failed"] },
+      $expr: {
+        $lte: [
+          { $add: [{ $ifNull: ["$refundedAmount", 0] }, refundAmount] },
+          { $ifNull: ["$amount", 0] },
+        ],
+      },
+    },
+    {
+      $set: {
+        refundStatus: "processing",
+        refundRequestedAmount: refundAmount,
+        refundRequestedAt: new Date(),
+      },
+    },
+    { new: true }
+  );
+
+  if (!claimedPayment) {
+    throw new Error("A refund is already processing, or the payment is no longer refundable.");
+  }
+
+  try {
+    const refundResponse = await requestMpesaRefund({
+      amount: refundAmount,
+      phone,
+      transactionId,
+    });
+
+    const refundReference = String(
+      refundResponse.ConversationID ||
+      refundResponse.OriginatorConversationID ||
+      ""
+    ).trim();
+    if (!refundReference) throw new Error("M-Pesa did not return a refund conversation reference.");
+
+    claimedPayment.refundReference = refundReference;
+    await claimedPayment.save();
+
+    if (booking) {
+      booking.refundStatus = "processing";
+      await booking.save();
+    }
+
+    return { refundResponse, refundAmount, payment: claimedPayment };
+  } catch (error) {
+    await Payment.updateOne(
+      { _id: claimedPayment._id, tenantId: claimedPayment.tenantId, refundStatus: "processing" },
+      {
+        $set: { refundStatus: "failed", refundRequestedAmount: 0 },
+        $unset: { refundReference: "", refundRequestedAt: "" },
+      }
+    ).catch(() => undefined);
+    throw error;
+  }
 };
 
 export const refundPayment = async (req, res, next) => {
@@ -156,14 +201,14 @@ export const refundPayment = async (req, res, next) => {
     const phone = payment.phoneNumber || payment.phone || payment.customer?.phone;
     if (!phone) return res.status(400).json({ success: false, message: "Customer phone number missing" });
 
-    const { refundResponse, refundAmount } = await submitMpesaRefund({
+    const { refundResponse, refundAmount, payment: updatedPayment } = await submitMpesaRefund({
       payment,
       booking: payment.booking,
       amount: req.body?.amount ?? (Number(payment.amount) - Number(payment.refundedAmount || 0)),
       phone,
     });
 
-    return res.json({ success: true, message: "Refund request submitted", refundResponse, refundAmount, payment });
+    return res.json({ success: true, message: "Refund request submitted", refundResponse, refundAmount, payment: updatedPayment });
   } catch (error) {
     return next(error);
   }
@@ -202,7 +247,7 @@ export const refundBooking = async (req, res, next) => {
       phone,
     });
 
-    return res.status(200).json({ success: true, message: "Refund request submitted", refundResponse, refundAmount, payment, booking });
+    return res.status(200).json({ success: true, message: "Refund request submitted", refundResponse, refundAmount, payment: updatedPayment, booking });
   } catch (error) {
     return next(error);
   }
