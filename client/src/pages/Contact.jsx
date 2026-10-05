@@ -51,7 +51,6 @@ export default function Contact() {
 
   const mapHref = settings?.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(settings.address)}` : "";
 
-  const mapHref = settings?.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(settings.address)}` : "";
 
   const details = [
     { icon: Phone, title: "Phone", value: businessPhone || "Not configured", href: businessPhone ? `tel:${businessPhone.replace(/\s+/g, "")}` : "" },
