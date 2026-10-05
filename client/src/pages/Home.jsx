@@ -11,7 +11,6 @@ const StatsSection = lazy(() => import("../components/home/StatsSection"));
 const FeaturedTours = lazy(() => import("../components/home/FeaturedTours"));
 const PublicPackages = lazy(() => import("../components/home/PublicPackages"));
 const DestinationsSection = lazy(() => import("../components/home/DestinationsSection"));
-const CategoriesSection = lazy(() => import("../components/home/CategoriesSection"));
 const TestimonialsSection = lazy(() => import("../components/home/TestimonialsSection"));
 const GallerySection = lazy(() => import("../components/home/GallerySection"));
 const WhyChooseUs = lazy(() => import("../components/home/WhyChooseUs"));
@@ -82,22 +81,6 @@ export default function Home() {
           {sections.packages !== false && <section className="my-12 rounded-[2rem] bg-[#102d23] px-4 py-10 shadow-2xl sm:px-8 md:py-14"><PublicPackages /></section>}
 
           {sections.destinations && <section className="py-12 md:py-16"><DestinationsSection /></section>}
-
-          {sections.experiences && (
-            <section
-              className="my-12 overflow-hidden rounded-[2rem] !bg-[#12372a] p-0 shadow-2xl"
-              style={{
-                background: "#12372a",
-                backgroundColor: "#12372a",
-                backgroundImage: "none",
-                color: "#ffffff",
-                isolation: "isolate",
-              }}
-              data-home-section="traveller-experiences"
-            >
-              <CategoriesSection />
-            </section>
-          )}
 
           {sections.services && (
             <section className="rounded-[2rem] bg-[#0b241b]  px-6 py-14 text-white shadow-xl sm:px-10 md:py-16">
