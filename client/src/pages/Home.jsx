@@ -30,7 +30,9 @@ const JOURNEY = [
   ["Remember", "Complete your journey, share feedback and stay connected.", BadgeCheck],
 ];
 
-const TRUST_POINTS = [["Kenya specialists", "Local knowledge from people who know the destinations.", Compass], ["Verified local support", "Guides, drivers and partners coordinated around your trip.", ShieldCheck], ["Flexible itineraries", "Choose a ready-made safari or build a trip around you.", Sparkles], ["Secure payments", "Reserve confidently with M-Pesa and supported payment options.", CreditCard]];\n\nconst SERVICES = [
+const TRUST_POINTS = [["Kenya specialists", "Local knowledge from people who know the destinations.", Compass], ["Verified local support", "Guides, drivers and partners coordinated around your trip.", ShieldCheck], ["Flexible itineraries", "Choose a ready-made safari or build a trip around you.", Sparkles], ["Secure payments", "Reserve confidently with M-Pesa and supported payment options.", CreditCard]];
+
+const SERVICES = [
   ["Safaris & Tours", "Curated and tailor-made Kenya adventures.", Compass, "/tours"],
   ["Hotels & Stays", "Accommodation coordinated around your itinerary.", Hotel, "/hotels"],
   ["Airport Transfers", "Reliable pickups and drop-offs from arrival to departure.", CarFront, "/airport-transfers"],
@@ -99,7 +101,8 @@ export default function Home() {
                   <p className="mt-5 max-w-xl leading-7 text-emerald-50/75">
                     {companyName} connects discovery, enquiries, quotations, bookings, payments and trip operations in one experience—so travelers get simplicity and your team gets control.
                   </p>
-                  <div className="mt-6 grid gap-2 text-sm text-emerald-50/80 sm:grid-cols-2">{["Tours & custom itineraries","Hotels & accommodation","Airport transfers","Guides & drivers","Secure payments","Trip operations"].map((item)=><span key={item} className="inline-flex items-center gap-2"><CheckCircle2 size={15} className="text-[#e3bd67]"/>{item}</span>)}</div>\n                  <Link to="/contact" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 font-bold text-emerald-950 transition hover:-translate-y-0.5 hover:shadow-lg">
+                  <div className="mt-6 grid gap-2 text-sm text-emerald-50/80 sm:grid-cols-2">{["Tours & custom itineraries","Hotels & accommodation","Airport transfers","Guides & drivers","Secure payments","Trip operations"].map((item)=><span key={item} className="inline-flex items-center gap-2"><CheckCircle2 size={15} className="text-[#e3bd67]"/>{item}</span>)}</div>
+                  <Link to="/contact" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 font-bold text-emerald-950 transition hover:-translate-y-0.5 hover:shadow-lg">
                     Plan with a travel expert <ArrowRight size={17} />
                   </Link>
                 </div>
