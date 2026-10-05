@@ -19,7 +19,7 @@ const invoiceItemSchema = new mongoose.Schema({
 }, { _id: false });
 
 const invoiceSchema = new mongoose.Schema({
-  tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true },
+  tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
   booking: { type: mongoose.Schema.Types.ObjectId, ref: "Booking", default: null },
   hospitalityBooking: { type: mongoose.Schema.Types.ObjectId, refPath: "hospitalityBookingModel", default: null, index: true },
   hospitalityBookingModel: { type: String, enum: ["HotelBooking", "AirportTransferBooking"], default: null },
