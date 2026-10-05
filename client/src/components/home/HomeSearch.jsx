@@ -13,12 +13,12 @@ export default function HomeSearch() {
   };
 
   return (
-    <section className="relative z-20 -mt-12 px-4 sm:-mt-16">
-      <form onSubmit={submit} className="mx-auto max-w-5xl rounded-3xl border border-white/20 bg-slate-950/80 p-2 shadow-2xl shadow-emerald-950/20 backdrop-blur-xl">
+    <section className="relative z-20 -mt-16 px-4 sm:-mt-20" aria-label="Trip finder">
+      <form onSubmit={submit} className="mx-auto max-w-6xl rounded-[1.75rem] border border-white/20 bg-slate-950/80 p-2 shadow-2xl shadow-emerald-950/20 backdrop-blur-xl">
         <div className="flex flex-col gap-2 md:flex-row md:items-center">
           <div className="flex min-h-14 flex-1 items-center gap-3 rounded-2xl bg-white/10 px-5 text-white ring-1 ring-white/10">
             <Search className="shrink-0 text-emerald-300" size={21} />
-            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Where do you want to explore? Try Maasai Mara, Watamu, safari..." className="w-full bg-transparent text-sm outline-none placeholder:text-white/50 sm:text-base" aria-label="Search tours and destinations" />
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Maasai Mara, Diani, safari..." className="w-full bg-transparent text-sm outline-none placeholder:text-white/50 sm:text-base" aria-label="Search tours and destinations" />
           </div>
           <button type="submit" className="inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-emerald-400 px-7 font-bold text-slate-950 transition hover:bg-emerald-300 hover:shadow-lg hover:shadow-emerald-400/20">
             <Search size={19} /> Search Adventures
