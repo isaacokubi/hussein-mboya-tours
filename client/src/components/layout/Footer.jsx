@@ -5,15 +5,13 @@ import { useTenant } from "../../context/TenantContext";
 import { FaFacebookF, FaInstagram, FaXTwitter, FaYoutube, FaPhone, FaLocationDot, FaEnvelope } from "react-icons/fa6";
 import { ShieldCheck, ArrowUpRight } from "lucide-react";
 
-const BUSINESS_PHONE = "0707476586";
-
 export default function Footer() {
   const { user } = useAuth();
   const { settings = {} } = useSettings() || {};
   const { tenant = {} } = useTenant() || {};
   const companyName = settings.companyName || tenant.name || tenant.companyName || (user ? "Your Travel Company" : "Hussein Mboya Tours");
   const supportEmail = settings.supportEmail || tenant.contactEmail || "";
-  const supportPhone = BUSINESS_PHONE;
+  const supportPhone = settings.supportPhone || tenant.contactPhone || "";
   const year = new Date().getFullYear();
   const userRole = typeof user?.role === "string" ? user.role.toLowerCase() : user?.role?.name?.toLowerCase() || user?.roles?.[0]?.name?.toLowerCase() || "";
   const socialLinks = [["Facebook", settings.facebook, FaFacebookF], ["Instagram", settings.instagram, FaInstagram], ["X", settings.twitter, FaXTwitter], ["YouTube", settings.youtube, FaYoutube]].filter(([, href]) => href);
@@ -31,7 +29,7 @@ export default function Footer() {
             <h2 className="text-2xl font-black tracking-tight text-white">{companyName}</h2>
             <p className="mt-4 max-w-md text-sm leading-7 text-slate-400">Discover Kenya and East Africa through safaris, wildlife adventures, beach escapes, mountain expeditions and tailor-made travel experiences.</p>
             <div className="mt-6 space-y-3 text-sm">
-              <a href={`tel:${supportPhone}`} className="flex items-center gap-3 hover:text-[#e3bd67]"><FaPhone/> {supportPhone}</a>
+              {supportPhone && <a href={`tel:${supportPhone.replace(/\s+/g, "")}`} className="flex items-center gap-3 hover:text-[#e3bd67]"><FaPhone/> {supportPhone}</a>}
               {supportEmail && <a href={`mailto:${supportEmail}`} className="flex items-center gap-3 hover:text-[#e3bd67]"><FaEnvelope/> {supportEmail}</a>}
               <div className="flex items-center gap-3"><FaLocationDot/> {settings.city || tenant.city || "Nairobi"}, {settings.country || tenant.country || "Kenya"}</div>
             </div>
