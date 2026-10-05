@@ -40,3 +40,9 @@ test("reconciliation only posts qualifying operational records", () => {
   assert.match(controller, /status.*cancelled/s);
   assert.match(controller, /amountPaid > 0/);
 });
+
+test("accounting reversals can reuse original journal account ids without losing tenant isolation", () => {
+  const accounting = read("services/operationalAccountingService.js");
+  assert.match(accounting, /line\.code\s*\?\s*await account\(tenantId, line\.code\)/);
+  assert.match(accounting, /line\.account\s*\?\s*await ChartOfAccount\.findOne\(\{ tenantId, _id: line\.account, active: true \}\)/);
+});
