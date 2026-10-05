@@ -33,8 +33,8 @@ export default function DestinationsSection() {
   return (
     <section aria-labelledby="destinations-heading">
       <div className="mb-9 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div><p className="text-xs font-extrabold uppercase tracking-[.24em] text-emerald-700">Go further</p><h2 id="destinations-heading" className="mt-2 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">Explore Kenya’s iconic destinations</h2><p className="mt-2 max-w-2xl text-slate-500">Wildlife, coast, mountains and culture—choose your next place to experience.</p></div>
-        <Link to="/destinations" className="text-sm font-bold text-emerald-700 hover:text-emerald-800">See all destinations →</Link>
+        <div><p className="text-xs font-extrabold uppercase tracking-[.24em] text-[#8a6423]">Go further</p><h2 id="destinations-heading" className="mt-2 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">Explore Kenya’s iconic destinations</h2><p className="mt-2 max-w-2xl text-slate-500">Wildlife, coast, mountains and culture—choose your next place to experience.</p></div>
+        <Link to="/destinations" className="text-sm font-bold text-[#8a6423] hover:text-[#684a18]">See all destinations →</Link>
       </div>
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {destinations.slice(0,6).map((destination, index) => (
@@ -43,7 +43,7 @@ export default function DestinationsSection() {
               <LazyImage src={typeof destination.images?.[0] === "string" ? destination.images[0] : destination.images?.[0]?.url || "/images/placeholder.jpg"} alt={destination.name || "Destination"} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/15 to-transparent"/>
               <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-300"><MapPin size={14}/> Kenya & East Africa</div>
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-[#e3bd67]"><MapPin size={14}/> Kenya & East Africa</div>
                 <h3 className="mt-1 text-2xl font-black">{destination.name}</h3>
                 <p className="mt-2 line-clamp-2 text-sm leading-6 text-white/75">{destination.description || "Discover an unforgettable Kenyan travel experience."}</p>
                 <span className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-white">Explore <ArrowUpRight size={15}/></span>
