@@ -24,17 +24,17 @@ export default function CategoriesSection() {
   }, []);
 
   return (
-    <section aria-labelledby="travel-experiences-heading">
-      <div className="mb-9"><p className="text-xs font-extrabold uppercase tracking-[.24em] text-[#8a6423]">Travel your way</p><h2 id="travel-experiences-heading" className="mt-2 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">Choose your kind of adventure</h2><p className="mt-2 max-w-2xl text-slate-500">From game drives to ocean escapes, find an experience that fits your story.</p></div>
+    <section className="rounded-[2rem] bg-[#173f31] px-5 py-10 text-white shadow-xl sm:px-8 md:py-14" aria-labelledby="travel-experiences-heading">
+      <div className="mb-9"><p className="text-xs font-extrabold uppercase tracking-[.24em] text-[#f0d38b]">Travel your way</p><h2 id="travel-experiences-heading" className="mt-2 text-3xl font-black tracking-tight text-white sm:text-4xl">Choose your kind of adventure</h2><p className="mt-2 max-w-2xl text-[#eadfca]">From game drives to ocean escapes, find an experience that fits your story.</p></div>
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {categories.map((category) => {
           const Icon = iconMap[category.icon] || FaMap;
           const slug = category.slug || category.filter || category._id;
-          return <Link key={category._id || category.slug || category.name} to={`/tours/category/${slug}`} className="group rounded-3xl border border-slate-200 bg-white p-7 shadow-sm transition hover:-translate-y-1 hover:border-[#dfc58f] hover:shadow-xl">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#f4ead5] text-[#8a6423]"><Icon aria-hidden="true" size={22}/></div>
-            <h3 className="mt-6 text-xl font-black text-slate-950">{category.name}</h3>
-            <p className="mt-3 text-sm leading-6 text-slate-500">{category.description}</p>
-            <span className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#8a6423]">Explore experiences <ArrowRight size={15} className="transition group-hover:translate-x-1"/></span>
+          return <Link key={category._id || category.slug || category.name} to={`/tours/category/${slug}`} className="group rounded-3xl border border-[#d8bd7a]/30 bg-[#102d23] p-7 shadow-sm transition hover:-translate-y-1 hover:border-[#dfc58f] hover:shadow-xl">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#f4ead5] text-[#684a18]"><Icon aria-hidden="true" size={22}/></div>
+            <h3 className="mt-6 text-xl font-black text-white">{category.name}</h3>
+            <p className="mt-3 text-sm leading-6 text-[#eadfca]">{category.description}</p>
+            <span className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#f0d38b]">Explore experiences <ArrowRight size={15} className="transition group-hover:translate-x-1"/></span>
           </Link>;
         })}
       </div>
