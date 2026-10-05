@@ -7,6 +7,7 @@ import { runWithTenant } from "../tenancy/context.js";
 test("Daraja endpoints are selected by explicit sandbox and production modes", () => {
   assert.match(getMpesaUrls("sandbox").auth, /^https:\/\/sandbox\.safaricom\.co\.ke\//);
   assert.match(getMpesaUrls("sandbox").stk, /\/mpesa\/stkpush\/v1\/processrequest$/);
+  assert.match(getMpesaUrls("sandbox").reversal, /\/mpesa\/reversal\/v1\/request$/);
   assert.match(getMpesaUrls("production").auth, /^https:\/\/api\.safaricom\.co\.ke\//);
   assert.throws(() => validateMpesaEnvironment("live"), /MPESA_ENVIRONMENT/);
 });
