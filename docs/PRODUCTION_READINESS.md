@@ -291,16 +291,16 @@ The authorized demo database `husseindb` now contains 28 users, 36 tours, 36 des
 
 ## 2026-10-06 — Current deployment and remaining acceptance evidence
 
-Read-only production verification was collected against `main` at `fc96544a59412b26e69b149a4086c93c5ceb10c1`:
+Read-only production verification was collected against `main` at `cc9aa448459c7a5987c789716d7a88e1d72cc0a6`:
 
 | Check | Result | Evidence |
 |---|---|---|
-| Render API readiness | PASS | `GET /api/health` returned `success=true`, `status=healthy`, `startup=ready`, `database=connected`, `databaseName=husseindb`, and version `fc96544a59412b26e69b149a4086c93c5ceb10c1`. |
-| Vercel frontend | PASS | `HEAD /` returned HTTP 200 and `text/html`. |
-| Public catalogue/browser smoke | PASS | Existing Playwright public catalogue smoke passed against the deployed Vercel/Render pair on this commit; tour and destination navigation, images, same-origin routes and tenant-scoped public catalogue calls passed. |
-| Current 28-account authenticated role audit | PENDING | No demo password is available in the execution environment. A 28-account browser audit is present in the worktree; the API verifier has been expanded to cover all 28 accounts, every customer's bookings, cross-tenant booking denial, tenant-admin API denial and platform-tenant-management denial. The updated authenticated runs have not been executed. |
-| M-Pesa callback and accounting reconciliation | PENDING | Local configuration selects Daraja sandbox and contains sandbox credentials, but there is no approved test phone number. No STK request or callback was initiated. |
+| Render API readiness | PASS | `GET /api/health` returned `success=true`, `status=healthy`, `startup=ready`, `database=connected`, `databaseName=husseindb`, and version `cc9aa448459c7a5987c789716d7a88e1d72cc0a6` at 2026-10-06 14:45 UTC. |
+| Vercel frontend | PASS (previous evidence) | `HEAD /` returned HTTP 200 and `text/html` in the prior public smoke. No new authenticated frontend session was used for this revision. |
+| Public catalogue/browser smoke | PASS (previous evidence) | Existing Playwright public catalogue smoke passed against the deployed Vercel/Render pair at `fc96544`; tour and destination navigation, images, same-origin routes and tenant-scoped public catalogue calls passed. |
+| Current 28-account authenticated role audit | PENDING | The password was supplied in chat, but is not available through the protected `DEMO_SMOKE_PASSWORD` / `DEMO_TEST_PASSWORD` environment variables; it was not copied into commands, logs, or repository files. The browser and API audits cover all 28 accounts, every customer's bookings, cross-tenant booking denial, tenant-admin API denial and platform-tenant-management denial. Authenticated runs remain unexecuted. Rotate the password shared in chat and set the replacement directly in the local protected environment before running them. |
+| M-Pesa callback and accounting reconciliation | BLOCKED | A test phone was supplied in chat, but no isolated staging frontend/API pair or test database was provided. The only supplied target is production Vercel with Render connected to `husseindb`; the repo's acceptance instructions prohibit sandbox STK/callback writes against the production database. No STK request or callback was initiated. |
 | eTIMS provider submission | BLOCKED | No eTIMS adapter URL/token is configured in this environment. The application adapter contract tests do not substitute for an actual provider submission/receipt. |
 | Production backup, restore, monitoring and webhook evidence | PENDING | All six production evidence flags remain unset/false; no external control was changed. |
 
-This addendum records deployment health and public traffic only. No account was logged in, no tenant or business record was changed, and no payment or tax-provider request was made during this verification. The full authenticated audit must be run with the private demo password supplied through `DEMO_SMOKE_PASSWORD` / `DEMO_TEST_PASSWORD`, plus a confirmed sandbox MSISDN for the M-Pesa phase. Never put either value in Git or documentation.
+This addendum records deployment health and public traffic only. No account was logged in, no tenant or business record was changed, and no payment or tax-provider request was made during this verification. The provider/authenticated phases require protected workspace variables and an isolated staging target. No non-production eTIMS adapter or credentials are available. Never put passwords, phone numbers, or provider secrets in Git or documentation.
