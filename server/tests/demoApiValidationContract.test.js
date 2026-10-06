@@ -42,6 +42,14 @@ test("production demo API validation checks public catalog isolation and cross-t
   assert.match(source, /new Set\(tenantIds\)/);
 });
 
+test("demo API finance dashboard expectations follow each tenant's server-reported plan entitlements", () => {
+  assert.match(source, /request\("\/api\/subscription"/);
+  assert.match(source, /features\.includes\("finance"\)/);
+  assert.match(source, /expectedStatus = financeFeatureLocked \? 403 : 200/);
+  assert.match(source, /PLAN_FEATURE_LOCKED/);
+  assert.match(source, /finance feature is not included in the tenant plan/);
+});
+
 test("demo API login batches respect the real limiter window", () => {
   assert.equal(LOGIN_LIMIT, 10);
   assert.equal(LOGIN_WINDOW_MS, 15 * 60 * 1000);

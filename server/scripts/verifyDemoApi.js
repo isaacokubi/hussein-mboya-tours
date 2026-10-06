@@ -46,7 +46,7 @@ const logins = [
   ...customerAccounts,
 ];
 assert.equal(logins.length, 28, "the production demo audit must cover all 28 seeded users");
-const report = { timestamp: new Date().toISOString(), logins: [], dashboards: [], dashboardComparisons: [], financeComparisons: [], tenantIsolation: [], rbac: [], failures: [] };
+const report = { timestamp: new Date().toISOString(), logins: [], tenantEntitlements: [], dashboards: [], dashboardComparisons: [], financeComparisons: [], tenantIsolation: [], rbac: [], failures: [] };
 const sessions = new Map();
 
 async function request(endpoint, token, options = {}) {
@@ -90,6 +90,16 @@ try {
     assert.equal(sessions.get(account.key).tenantId, tenantIdBySlug.get(account.tenant), `${account.key} must resolve to ${account.tenant}`);
   }
 
+  const tenantFeatures = new Map();
+  for (const [key, tenant] of [["tenantAdminA", "hussein-mboya"], ["tenantAdminB", "amani-trails"], ["tenantAdminC", "demo-safari"]]) {
+    const response = await request("/api/subscription", sessions.get(key).token);
+    assert.equal(response.status, 200, `${key} subscription feature access`);
+    const features = Array.isArray(response.payload?.features) ? response.payload.features : [];
+    assert.ok(response.payload?.plan, `${key} subscription plan`);
+    tenantFeatures.set(tenant, { plan: response.payload.plan, features: new Set(features) });
+    report.tenantEntitlements.push({ tenant, plan: response.payload.plan, finance: features.includes("finance") });
+  }
+
   const dashboardChecks = [
     ["superAdmin", "/api/superadmin/dashboard"],
     ["tenantAdminA", "/api/admin/dashboard/metrics"],
@@ -130,8 +140,17 @@ try {
   const payloads = new Map();
   for (const [key, endpoint] of dashboardChecks) {
     const response = await request(endpoint, sessions.get(key).token);
-    report.dashboards.push({ account: key, endpoint, status: response.status, success: response.payload?.success });
-    assert.equal(response.status, 200, `${key} ${endpoint}`);
+    const account = logins.find((candidate) => candidate.key === key);
+    const financeFeatureLocked = endpoint === "/api/admin/finance/stats"
+      && account?.tenant
+      && !tenantFeatures.get(account.tenant)?.features.has("finance");
+    const expectedStatus = financeFeatureLocked ? 403 : 200;
+    report.dashboards.push({ account: key, endpoint, status: response.status, expectedStatus, success: response.payload?.success });
+    assert.equal(response.status, expectedStatus, `${key} ${endpoint}`);
+    if (financeFeatureLocked) {
+      assert.equal(response.payload?.code, "PLAN_FEATURE_LOCKED", `${key} finance endpoint must be denied by its plan entitlement`);
+      assert.equal(response.payload?.feature, "finance", `${key} finance endpoint must identify the locked feature`);
+    }
     payloads.set(`${key}:${endpoint}`, response.payload);
   }
 
@@ -196,6 +215,10 @@ try {
     report.dashboardComparisons.push({ tenant, metricsCompared: Object.keys(expected).length, matched: true });
 
     const financeData = payloads.get(`${account}:/api/admin/finance/stats`)?.data;
+    if (!tenantFeatures.get(tenant)?.features.has("finance")) {
+      report.financeComparisons.push({ tenant, plan: tenantFeatures.get(tenant)?.plan, matched: null, reason: "finance feature is not included in the tenant plan" });
+      continue;
+    }
     const expectedFinance = {
       revenue,
       netRevenue: revenue,

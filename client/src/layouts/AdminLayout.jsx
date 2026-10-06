@@ -48,13 +48,6 @@ const MENU = [
   ["Settings", "/admin/settings", Settings, "settings.manage", "settings"],
 ];
 
-const FINANCE_FEATURES = new Set([
-  "reports", "analytics", "finance", "mpesa_transactions", "finance_reports", "management_accounting",
-  "complete_accounting", "accounting_control_reports", "accounting_subledgers", "withholding_tax", "reconciliation", "etims"
-]);
-
-const INSIGHT_FEATURES = new Set(["reports", "analytics", "ai"]);
-
 const GROUPS = [
   ["Operations", ["Dashboard", "Users", "Staff", "Destinations", "Bookings & Refunds", "Custom Tour Requests", "Operations & Procurement", "Hotels", "Airport Transfers", "Hospitality Reservations", "Hospitality Operations", "Hospitality Commercial", "Payments", "Agents", "Commissions", "Customers CRM", "Fleet Management", "Coupons", "Reviews", "Gallery"]],
   ["Finance & Insight", ["Reports", "Analytics", "Accounting & Finance", "M-Pesa Transactions", "Finance Reports", "Management Accounting", "Complete Accounting", "Accounting Control Reports", "Accounting Subledgers", "Withholding Tax", "Reconciliation", "Compliance & eTIMS", "AI Tools"]],
@@ -65,7 +58,7 @@ export default function AdminLayout() {
   const { user, hasPermission } = useAuth();
   const { companyName } = useSettings();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [planFeatures, setPlanFeatures] = useState(null);
+  const [planFeatures, setPlanFeatures] = useState([]);
   const [plan, setPlan] = useState("");
   const location = useLocation();
   const role = getUserRole(user);
@@ -79,21 +72,14 @@ export default function AdminLayout() {
     api.get("/subscription").then(({ data }) => {
       if (!active) return;
       setPlan(String(data?.plan || "").toLowerCase());
-      setPlanFeatures(Array.isArray(data?.features) ? data.features : null);
-    }).catch(() => { if (active) setPlanFeatures(null); });
+      setPlanFeatures(Array.isArray(data?.features) ? data.features : []);
+    }).catch(() => { if (active) setPlanFeatures([]); });
     return () => { active = false; };
   }, [isAdministrator]);
 
   const links = useMemo(() => {
     const permissionLinks = MENU.filter(([, , , permission]) => hasPermission(permission));
-    if (!planFeatures) return permissionLinks;
-
-    // Finance and business intelligence are core administrator capabilities.
-    // Do not let a stale/incomplete subscription feature list make these menus disappear.
-    return permissionLinks.filter(([, , , , feature]) => {
-      if (isAdministrator && (FINANCE_FEATURES.has(feature) || INSIGHT_FEATURES.has(feature))) return true;
-      return !feature || planFeatures.includes(feature);
-    });
+    return permissionLinks.filter(([, , , , feature]) => !feature || planFeatures.includes(feature));
   }, [hasPermission, planFeatures, isAdministrator]);
 
   const groupedLinks = useMemo(() => {

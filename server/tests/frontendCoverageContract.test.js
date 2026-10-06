@@ -76,6 +76,13 @@ test("frontend coverage: finance lifecycle, payments, accounting and reconciliat
   assert.match(routeSource, /path="finance\/reconciliation"/);
 });
 
+test("admin navigation honors the server-reported tenant plan for finance and insight features", () => {
+  const layout = read("layouts/AdminLayout.jsx");
+  assert.match(layout, /return permissionLinks\.filter\(\(\[, , , , feature\]\) => !feature \|\| planFeatures\.includes\(feature\)\)/);
+  assert.match(layout, /setPlanFeatures\(\[\]\)/);
+  assert.doesNotMatch(layout, /FINANCE_FEATURES|INSIGHT_FEATURES/);
+});
+
 test("frontend coverage: operations, corporate, supplier and accommodation workflows are visible", () => {
   const s = (read("pages/admin/OperationsDashboard.jsx") + read("components/admin/OperationsActionCenter.jsx") + read("components/admin/TravelOperationsCenter.jsx")).toLowerCase();
   for (const m of ["supplier", "corporate", "purchase", "room", "accommodation", "transfer", "totalcost", "unitcost"]) assert.match(s, new RegExp(m));

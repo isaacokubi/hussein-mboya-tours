@@ -119,10 +119,65 @@ test("seeded 28-account browser login, dashboard, session and logout audit", asy
       }
       row.steps.push("authenticated API session verified");
 
-      const menuLink = page.locator(`a[href="${account.menu}"]`).first();
+      let expectedMenu = account.menu;
+      if (account.role === "admin") {
+        const subscriptionResponse = await context.request.get(`${apiOrigin}/api/subscription`, {
+          headers: { authorization: `Bearer ${await page.evaluate(() => localStorage.getItem("token"))}` },
+        });
+        row.subscriptionStatus = subscriptionResponse.status();
+        const subscription = await subscriptionResponse.json();
+        row.tenantPlan = subscription.plan || null;
+        const features = new Set(Array.isArray(subscription.features) ? subscription.features : []);
+        if (!features.has("users")) expectedMenu = "/admin/bookings";
+        row.expectedMenu = expectedMenu;
+        const planControlledLinks = [
+          ["finance", "/admin/finance"],
+          ["reports", "/admin/reports"],
+          ["analytics", "/admin/analytics"],
+          ["ai", "/admin/ai"],
+        ];
+        row.planNavigation = {};
+        for (const [feature, href] of planControlledLinks) {
+          const link = page.locator(`a[href="${href}"]`);
+          const enabled = features.has(feature);
+          if (enabled) await expect(link).toBeVisible({ timeout: 15_000 });
+          else await expect(link).toHaveCount(0, { timeout: 15_000 });
+          row.planNavigation[feature] = (await link.isVisible().catch(() => false)) === enabled;
+        }
+        row.financeFeatureEnabled = features.has("finance");
+        row.financeMenuMatchesPlan = row.planNavigation.finance;
+        if (row.subscriptionStatus !== 200 || Object.values(row.planNavigation).some((matches) => !matches)) {
+          throw new Error("Plan-controlled navigation did not match the tenant's server-reported entitlements");
+        }
+        if (!row.financeFeatureEnabled) {
+          const lockedFinance = await context.request.get(`${apiOrigin}/api/admin/finance/stats`, {
+            headers: { authorization: `Bearer ${await page.evaluate(() => localStorage.getItem("token"))}` },
+          });
+          row.lockedFinanceApiStatus = lockedFinance.status();
+          const lockedPayload = await lockedFinance.json();
+          if (lockedFinance.status() !== 403 || lockedPayload.code !== "PLAN_FEATURE_LOCKED") {
+            throw new Error("Finance API did not enforce the tenant's locked plan feature");
+          }
+        }
+      }
+
+      const menuLink = page.locator(`a[href="${expectedMenu}"]`).first();
       await expect(menuLink).toBeVisible({ timeout: 15_000 });
       row.menuVisible = true;
-      row.steps.push("role menu visible");
+      await menuLink.click();
+      await expect(page).toHaveURL(new RegExp(expectedMenu.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), { timeout: 20_000 });
+      await expect(page.locator("main").last()).not.toBeEmpty({ timeout: 20_000 });
+      row.steps.push("permitted role navigation loaded");
+      const navigatedUrl = page.url();
+      await page.reload({ waitUntil: "domcontentloaded" });
+      await expect(page).toHaveURL(navigatedUrl, { timeout: 20_000 });
+      const reloadedSession = await page.evaluate(() => ({
+        tokenPresent: Boolean(localStorage.getItem("token")),
+        user: JSON.parse(localStorage.getItem("user") || "null"),
+      }));
+      row.sessionPersistsAfterReload = reloadedSession.tokenPresent && normalizeRole(reloadedSession.user?.role) === account.role;
+      if (!row.sessionPersistsAfterReload) throw new Error("Session identity did not persist after navigation and reload");
+      row.steps.push("session persisted after navigation and reload");
       const screenshot = path.join(screenshotDirectory, `${String(index + 1).padStart(2, "0")}-${account.email.replaceAll("@", "-")}.png`);
       await page.screenshot({ path: screenshot, fullPage: true, animations: "disabled" });
       row.screenshot = path.basename(screenshot);
