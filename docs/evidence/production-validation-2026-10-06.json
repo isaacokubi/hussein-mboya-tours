@@ -98,5 +98,92 @@
     "passwordOrProviderSecretInReport": false,
     "phoneNumberInReport": false,
     "screenshotsContainingAuthenticatedData": 0
+  },
+  "resumedValidation": {
+    "sourceCommit": "82e14a4b9372a8dcb37b2a0895d69e44e3b43600",
+    "checkedAt": "2026-10-06",
+    "protectedPasswordEnvironment": {
+      "DEMO_SMOKE_PASSWORD": "unset",
+      "DEMO_TEST_PASSWORD": "unset",
+      "passwordReadFromFiles": false,
+      "authenticatedRequestsAttempted": 0
+    },
+    "backend": {
+      "command": "npm test",
+      "status": "pass",
+      "total": 206,
+      "passed": 201,
+      "failed": 0,
+      "skipped": 5,
+      "note": "Initial sandbox run failed healthReadiness local listener with EPERM; full suite passed when rerun with loopback permission. The 5 skips are isolated MongoDB integrations."
+    },
+    "frontend": {
+      "lint": "pass",
+      "productionBuild": "pass"
+    },
+    "focusedRegression": {
+      "mpesaAccountingEtims": {
+        "command": "node --test tests/mpesaConfiguration.test.js tests/mpesaCallbackLifecycleContract.test.js tests/mpesaRefundSafety.test.js tests/etimsProductionSafety.test.js tests/etimsInvoicePayload.test.js tests/accountingOperationalReconciliationIntegrity.test.js tests/financeRevenueBasisContract.test.js tests/paymentFinancialIntegrity.test.js",
+        "total": 8,
+        "passed": 8,
+        "failed": 0,
+        "skipped": 0
+      },
+      "authRoleSecurity": { "command": "npm run test:security", "total": 2, "passed": 2, "failed": 0 },
+      "tourDomain": { "command": "npm run test:tour-domain", "total": 1, "passed": 1, "failed": 0 }
+    },
+    "publicDeployment": {
+      "renderHealthHttp": 200,
+      "renderHealth": "healthy",
+      "renderDatabase": "connected",
+      "renderDatabaseName": "husseindb",
+      "renderSha": "f7f1a81939006da41bb4cdca81d8da27c5671e68",
+      "vercelHttp": 200,
+      "vercelSourceSha": null,
+      "tenantCatalogue": {
+        "slug": "hussein-mboya",
+        "toursHttp": 200,
+        "toursReturned": 12,
+        "destinationsHttp": 200,
+        "destinationsReturned": 12,
+        "tenantScoped": true
+      },
+      "vercelToRenderCorsPreflight": {
+        "http": 204,
+        "originAllowed": true,
+        "tenantHeaderAllowed": true
+      }
+    },
+    "publicBrowserSmoke": {
+      "status": "blocked_by_browser_runtime",
+      "attempted": 1,
+      "passed": 0,
+      "failed": 0,
+      "blocked": 1,
+      "reason": "Snap Chromium could not launch in the sandbox because snap-confine lacked cap_dac_override. No browser assertions ran."
+    },
+    "authenticated28UserAudit": {
+      "status": "blocked",
+      "expectedAccounts": 28,
+      "accountsTested": 0,
+      "tenantIsolation": "not run",
+      "roleDashboardsAndPermissions": "not run"
+    },
+    "businessWorkflowMutation": {
+      "status": "not run",
+      "reason": "No authenticated account fixture or disposable integration target was available; husseindb was left unchanged."
+    },
+    "mpesa": {
+      "localMockContractCoverage": "pass in backend suite",
+      "externalProviderRequests": 0,
+      "reason": "No safely isolated non-production application database/API was demonstrated."
+    },
+    "etims": {
+      "localPayloadAndSafetyCoverage": "pass in backend suite",
+      "externalSubmission": "pending",
+      "adapterConfigured": false,
+      "kraRequests": 0
+    },
+    "worktreeBusinessDataWrites": 0
   }
 }

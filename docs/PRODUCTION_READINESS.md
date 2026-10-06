@@ -308,3 +308,23 @@ The follow-up continued the production-validation gap only. Evidence is machine-
 | Finance and operations roles | MODEL NOTE | The canonical seeded role set is Super Admin, Admin, Tour Manager, Agent, Guide, Driver, and Customer. Finance and Operations are tenant-admin functional areas, not distinct seeded role identities; no separate finance/operations account exists in the 28-user fixture. |
 
 No live login, payment, callback, tax submission, or business-record mutation was performed. The full role and authenticated journey results remain unverified due to the missing protected password variables. M-Pesa requires a safely isolated staging API/database; eTIMS external acceptance requires a non-production adapter and credentials. Do not treat this report as production certification.
+
+### Resumed public and local validation — 2026-10-06
+
+Validation resumed from the existing checkout at `82e14a4b9372a8dcb37b2a0895d69e44e3b43600` without repeating the earlier audit. The approved `DEMO_SMOKE_PASSWORD` and `DEMO_TEST_PASSWORD` variables were both absent from this process, so no login attempts were made and no password was read from a file. Current machine-readable results are in [production-validation-2026-10-06.json](evidence/production-validation-2026-10-06.json).
+
+| Check | Result | Evidence / limitation |
+|---|---|---|
+| Backend regression | PASS, 206 total / 201 passed / 0 failed / 5 skipped | Full `npm test` passed after rerunning with permission for the health test's loopback listener. Five skips require dedicated disposable MongoDB integrations. |
+| Frontend lint and production build | PASS / PASS | `npm run lint`; production build with the configured public Render API URL. |
+| Render health and deployment SHA | PASS | Read-only `/api/health`: HTTP 200, healthy, connected to `husseindb`, SHA `f7f1a81939006da41bb4cdca81d8da27c5671e68`. |
+| Vercel public response | PASS, HTTP 200 | The public HTML response does not establish its source SHA. |
+| Vercel-to-Render public API, tenant resolution and CORS | PASS | Vercel-origin preflight HTTP 204 allowed `X-Tenant-Slug`; public tour and destination endpoints each returned 12 records for the requested tenant, all with a tenant ID. |
+| 28-account authentication and role audit | BLOCKED, 0/28 attempted | Both approved password environment variables were unset. No login, `/me`, session or logout requests were sent. |
+| Browser smoke | BLOCKED before assertions | Installed Snap Chromium could not start in the sandbox (`snap-confine` lacked `cap_dac_override`). No browser assertions ran. |
+| Customer journey, live dashboard comparisons, cross-tenant authenticated checks | NOT RUN | Require the approved password and a safe read-only authenticated target or disposable integration database. No business data was changed. |
+| M-Pesa | LOCAL CONTRACT TESTS PASS; external flow pending | Backend mock/configuration/callback/refund/idempotency coverage passed. No Daraja request was made because a safely isolated application database/API was not demonstrated. |
+| Accounting | LOCAL INVARIANT/CONTRACT TESTS PASS; live reconciliation not run | Operational reconciliation, payment financial integrity and posted-revenue coverage passed. No live tenant ledger comparison was possible. |
+| eTIMS | LOCAL PAYLOAD/TAX/SAFETY TESTS PASS; external submission pending | Payload, tax, tenant/idempotency and fail-closed contracts passed. No adapter was configured and no KRA request was made. |
+
+The 28-user matrix, frontend visibility versus backend authorization for authenticated roles, authenticated dashboard widgets, full customer journey and live accounting reconciliation remain unresolved—not passed. Finance and Operations are not separate seeded role identities in this fixture. No code defect was established by the resumed checks, so no application behavior was changed. Production readiness remains **NOT VERIFIED**.
