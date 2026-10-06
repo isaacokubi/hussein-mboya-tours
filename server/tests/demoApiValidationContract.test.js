@@ -59,6 +59,7 @@ test("demo API validation requires a credential-free HTTPS origin and never dele
     assert.throws(() => getSafeDemoApiOrigin(value));
   }
   assert.match(source, /DEMO_TEST_PASSWORD/);
+  assert.match(source, /DEMO_SMOKE_PASSWORD/);
   assert.doesNotMatch(source, /x-forwarded-for/i);
   assert.doesNotMatch(source, /\.deleteMany\(/);
   assert.doesNotMatch(source, /testArtifactsRemoved/);

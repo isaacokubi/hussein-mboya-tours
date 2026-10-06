@@ -1,0 +1,94 @@
+{
+  "date": "2026-10-06",
+  "sourceCommitAtStart": "4b20376b27db1b8efd29c44b46edcdd8e7a1a623",
+  "render": {
+    "status": "pass",
+    "sha": "cc9aa448459c7a5987c789716d7a88e1d72cc0a6",
+    "health": "healthy",
+    "startup": "ready",
+    "database": "connected",
+    "databaseName": "husseindb",
+    "checkedAt": "2026-10-06T15:57:58Z"
+  },
+  "vercel": {
+    "status": "pass",
+    "httpStatus": 200,
+    "sourceSha": null,
+    "sourceShaReason": "The public frontend response does not expose a source revision."
+  },
+  "tests": {
+    "backend": { "command": "npm test", "total": 206, "passed": 201, "failed": 0, "skipped": 5, "status": "pass" },
+    "frontendLint": { "command": "npm run lint", "status": "pass" },
+    "frontendBuild": { "command": "npm run build", "status": "pass" },
+    "targetedFrontendLint": { "command": "npx eslint e2e/seeded-users-audit.spec.js", "status": "pass" },
+    "targetedMpesAccountingEtims": {
+      "command": "node --test tests/mpesaConfiguration.test.js tests/mpesaCallbackLifecycleContract.test.js tests/mpesaRefundSafety.test.js tests/etimsProductionSafety.test.js tests/etimsInvoicePayload.test.js tests/accountingOperationalReconciliationIntegrity.test.js tests/financeRevenueBasisContract.test.js tests/paymentFinancialIntegrity.test.js",
+      "status": "pass",
+      "files": 8,
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    "publicBrowserSmoke": {
+      "command": "PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/snap/bin/chromium npx playwright test e2e/production-smoke.spec.js --grep public catalogue smoke acceptance",
+      "status": "pass",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "authenticatedAudit": {
+    "status": "blocked",
+    "expectedAccounts": 28,
+    "accountsTested": 0,
+    "passwordVariableNames": ["DEMO_SMOKE_PASSWORD", "DEMO_TEST_PASSWORD"],
+    "passwordVariablesAvailable": false,
+    "userCanInjectProtectedVariables": false,
+    "passwordPersisted": false
+  },
+  "roleAudit": {
+    "status": "partial",
+    "canonicalSeededRoles": ["super_admin", "admin", "tour_manager", "agent", "tour_guide", "driver", "customer"],
+    "financeAndOperationsAreDistinctSeedRoles": false,
+    "authenticatedFrontendAndBackendPermissionChecks": "blocked with authenticatedAudit"
+  },
+  "tenantIsolation": {
+    "localRegressionTests": "pass",
+    "liveCrossTenantChecks": "not run",
+    "dashboardDatabaseComparisons": "not run",
+    "readonlyDatabaseQuery": { "status": "failed", "error": "EPIPE during Atlas TLS handshake", "writes": 0 }
+  },
+  "customerJourney": {
+    "localLifecycleCoverage": "partial pass; isolated database-dependent lifecycle cases skipped",
+    "endToEndProductionJourney": "not run",
+    "businessRecordsMutated": 0
+  },
+  "mpesa": {
+    "localMockAndContractTests": "pass",
+    "configuredEnvironment": "sandbox",
+    "globalFallbackEnabled": false,
+    "providerRequests": 0,
+    "liveCallbackAndReconciliation": "pending safely isolated staging API/database"
+  },
+  "accounting": {
+    "localIntegrityTests": "pass",
+    "liveTenantLedgerReconciliation": "not run; authenticated/direct database access unavailable"
+  },
+  "etims": {
+    "localPayloadTaxAndSafetyCoverage": "pass",
+    "invoiceNumberSequenceIntegration": "not run; database integration unavailable",
+    "invoicePayloadBuilderTests": 2,
+    "adapterConfigured": false,
+    "kraRequests": 0,
+    "externalSubmission": "pending non-production adapter URL and token"
+  },
+  "dashboard": {
+    "frontendBuildAndPublicAuthorizationRedirect": "pass",
+    "authenticatedRoleWidgetsAndDatabaseValueComparison": "not run"
+  },
+  "secretHandling": {
+    "passwordOrProviderSecretInReport": false,
+    "phoneNumberInReport": false,
+    "screenshotsContainingAuthenticatedData": 0
+  }
+}

@@ -356,6 +356,14 @@ The workflow generates this state for artifact review; it does not alter the rep
 
 <!-- DOCS-AUTO:END -->
 
+## 2026-10-06 — Follow-up production validation
+
+Continuing from commit `4b20376`, the focused validation ran the full backend suite (206 tests: 201 passed, 0 failed, 5 skipped), frontend lint/build, targeted M-Pesa/accounting/eTIMS tests, and the deployed public Playwright catalogue smoke (1 passed). The Render API reported healthy/connected on SHA `cc9aa448459c7a5987c789716d7a88e1d72cc0a6`; Vercel returned HTTP 200 and passed the public browser smoke.
+
+The 28-user authenticated audit was not run: neither protected password variable is present in the process or ignored local environment files, and the user confirmed they cannot inject them into this workspace. No password was copied from chat or persisted. A read-only direct Atlas comparison against `husseindb` failed during TLS handshake (`EPIPE`), so live tenant/dashboard/accounting values remain unverified. No login, business mutation, M-Pesa request, callback, or eTIMS submission was performed. M-Pesa is configured for sandbox with global fallback disabled, but its tenant gateway config cannot be inspected from this workspace and its callback would target production data. No eTIMS adapter is configured.
+
+The eTIMS invoice payload builder now has direct unit coverage for buyer/seller, invoice numbers/dates, tax, totals, payment reference, and line items. Full machine-readable detail is in [Production validation evidence](evidence/production-validation-2026-10-06.json).
+
 ## 2026-09-27 — Controlled staging QA seed
 
 Added a fixed dataset seed and verifier for the existing `Staging Demo Tours` tenant (`staging-demo-tours`, tenant ID `6ab82dce30c1fd52b9dc3e80`) in the isolated staging database `global_tours_test`. The script requires `NODE_ENV=production`, `DEPLOYMENT_ENV=staging`, `STAGING_DATABASE_NAME=global_tours_test`, and an explicit `MONGODB_URI` whose database path is exactly `global_tours_test`. It rejects `husseindb`, checks the actual connected database identity, and refuses the known production backend hostname. The script does not load dotenv or read `server/.env`.

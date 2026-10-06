@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 
-const password = process.env.DEMO_SMOKE_PASSWORD;
+const password = process.env.DEMO_SMOKE_PASSWORD || process.env.DEMO_TEST_PASSWORD;
 const users = [
   { email: "superadmin@hussein-mboya.com", role: "super_admin", tenant: null, route: "/superadmin/dashboard", menu: "/superadmin/users" },
   ...["hussein-mboya", "amani-trails", "demo-safari"].flatMap((tenant) => {

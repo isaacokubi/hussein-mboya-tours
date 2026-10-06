@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { getSafeDemoApiOrigin, LOGIN_WINDOW_MS, needsLoginWindowWait } from "./demoApiValidationSafety.js";
 
 const baseUrl = getSafeDemoApiOrigin(process.env.DEMO_API_BASE_URL);
-const password = String(process.env.DEMO_TEST_PASSWORD || process.env.TEST_DEMO_SEED_PASSWORD || process.env.SEED_DEMO_PASSWORD || "");
+const password = String(process.env.DEMO_TEST_PASSWORD || process.env.DEMO_SMOKE_PASSWORD || process.env.TEST_DEMO_SEED_PASSWORD || process.env.SEED_DEMO_PASSWORD || "");
 if (password.length < 8) throw new Error("Set DEMO_TEST_PASSWORD (or an existing demo password environment variable) before verifying demo accounts.");
 const defaultReportPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../reports/demo-api-validation.json");
 const reportPath = path.resolve(process.env.DEMO_API_REPORT_PATH || defaultReportPath);

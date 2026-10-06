@@ -65,7 +65,7 @@ const adapterToken = async (tenantId, environment) => {
   return credential?.adapterTokenEncrypted ? decryptEtimsSecret(credential.adapterTokenEncrypted) : String(process.env.ETIMS_ADAPTER_TOKEN || "");
 };
 
-const buildInvoicePayload = (invoice, profile) => ({
+export const buildEtimsInvoicePayload = (invoice, profile) => ({
   invoiceId: String(invoice._id), invoiceNumber: invoice.invoiceNumber, issueDate: invoice.issueDate, dueDate: invoice.dueDate,
   currency: "KES", receiptType: "INVOICE", transactionType: "NORMAL", buyerPin: invoice.buyerPin || "",
   seller: { kraPin: profile?.kraPin || "", branchId: profile?.etimsBranchId || "", branchName: profile?.etimsBranchName || "Head Office", deviceId: profile?.etimsDeviceId || "", tillId: profile?.etimsTillId || "" },
@@ -120,7 +120,7 @@ export async function processEtimsInvoiceJob(payload) {
   invoice.etimsSubmissionAttempts = Number(invoice.etimsSubmissionAttempts || 0) + 1;
   await invoice.save();
 
-  const requestPayload = buildInvoicePayload(invoice, profile);
+  const requestPayload = buildEtimsInvoicePayload(invoice, profile);
   const requestHash = crypto.createHash("sha256").update(JSON.stringify(requestPayload)).digest("hex");
   const attempt = invoice.etimsSubmissionAttempts;
   const idempotencyKey = `etims-invoice:${invoice._id}`;
