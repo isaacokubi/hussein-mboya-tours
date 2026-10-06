@@ -8,7 +8,13 @@
     "startup": "ready",
     "database": "connected",
     "databaseName": "husseindb",
-    "checkedAt": "2026-10-06T15:57:58Z"
+    "checkedAt": "2026-10-06T15:57:58Z",
+    "postPushRevision": {
+      "sha": "f7f1a81939006da41bb4cdca81d8da27c5671e68",
+      "status": "healthy",
+      "database": "connected",
+      "checkedAt": "2026-10-06T16:12:46Z"
+    }
   },
   "vercel": {
     "status": "pass",
@@ -34,7 +40,9 @@
       "status": "pass",
       "passed": 1,
       "failed": 0,
-      "skipped": 0
+      "skipped": 0,
+      "postDeploymentRevision": "f7f1a81939006da41bb4cdca81d8da27c5671e68",
+      "postDeploymentPassed": 1
     }
   },
   "authenticatedAudit": {
