@@ -52,6 +52,10 @@ test("public catalogue smoke acceptance", async ({ page }) => {
   await expect(page).toHaveURL(/\/destinations\/[^/]+/);
   await expect(page.locator("main").last()).not.toContainText("Destination not found");
 
+  // Let lazy-loaded catalogue/detail images settle before checking naturalWidth.
+  // Sampling immediately after SPA navigation can report still-pending SVGs as broken.
+  await page.locator("img").evaluateAll((items) => items.forEach((img) => { img.loading = "eager"; }));
+  await page.waitForFunction(() => Array.from(document.images).every((img) => img.complete), null, { timeout: 20_000 });
   const imgs = await page.locator("img").evaluateAll((items) => items.map((img) => ({ src: img.currentSrc || img.src, ok: img.complete && img.naturalWidth > 0 })));
   expect(imgs.filter((item) => !item.ok).map((item) => item.src)).toEqual([]);
   const anchors = await page.locator("a[href]").evaluateAll((items) => items.map((link) => link.href).filter((href) => new URL(href).origin === location.origin));

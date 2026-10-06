@@ -103,8 +103,8 @@ test("consolidated production audit: critical dashboard routes remain wired", ()
 
 test("consolidated production audit: public brand is tenant/platform controlled", () => {
   const settings = read("client/src/context/SettingsContext.jsx");
-  assert.match(settings, /PUBLIC_BRAND_NAME = \"Global Tours\"/);
-  assert.match(settings, /PLATFORM_BRAND_NAME = \"Global Tours\"/);
+  assert.match(settings, /PUBLIC_BRAND_NAME = \"Hussein Mboya Tours\"/);
+  assert.match(settings, /PLATFORM_BRAND_NAME = \"Hussein Mboya Tours Platform\"/);
   assert.match(settings, /isSuperAdminUser/);
 });
 
