@@ -13,6 +13,19 @@ const defaultReportPath = path.resolve(path.dirname(fileURLToPath(import.meta.ur
 const reportPath = path.resolve(process.env.DEMO_API_REPORT_PATH || defaultReportPath);
 const pause = (duration) => new Promise((resolve) => setTimeout(resolve, duration));
 const userAgent = "HusseinMboyaDemoApiValidator/1.0";
+const customerAccounts = [
+  ["A", "hussein-mboya"],
+  ["B", "amani-trails"],
+  ["C", "demo-safari"],
+].flatMap(([tenantKey, tenant]) => Array.from({ length: 4 }, (_, index) => {
+  const customerNumber = index + 1;
+  return {
+    key: customerNumber === 1 ? `customer${tenantKey}` : `customer${customerNumber}${tenantKey}`,
+    email: `customer${customerNumber}@${tenant}.com`,
+    role: "customer",
+    tenant,
+  };
+}));
 const logins = [
   { key: "superAdmin", email: "superadmin@hussein-mboya.com", role: "super_admin", tenant: null },
   { key: "tenantAdminA", email: "admin@hussein-mboya.com", role: "admin", tenant: "hussein-mboya" },
@@ -30,10 +43,9 @@ const logins = [
   { key: "driverA", email: "driver1@hussein-mboya.com", role: "driver", tenant: "hussein-mboya" },
   { key: "driverB", email: "driver1@amani-trails.com", role: "driver", tenant: "amani-trails" },
   { key: "driverC", email: "driver1@demo-safari.com", role: "driver", tenant: "demo-safari" },
-  { key: "customerA", email: "customer1@hussein-mboya.com", role: "customer", tenant: "hussein-mboya" },
-  { key: "customerB", email: "customer1@amani-trails.com", role: "customer", tenant: "amani-trails" },
-  { key: "customerC", email: "customer1@demo-safari.com", role: "customer", tenant: "demo-safari" },
+  ...customerAccounts,
 ];
+assert.equal(logins.length, 28, "the production demo audit must cover all 28 seeded users");
 const report = { timestamp: new Date().toISOString(), logins: [], dashboards: [], dashboardComparisons: [], financeComparisons: [], tenantIsolation: [], rbac: [], failures: [] };
 const sessions = new Map();
 
@@ -69,9 +81,14 @@ try {
   const tenantIds = ["tenantAdminA", "tenantAdminB", "tenantAdminC"].map((key) => sessions.get(key).tenantId);
   assert.ok(tenantIds.every(Boolean), "each tenant admin must authenticate into a tenant");
   assert.equal(new Set(tenantIds).size, 3, "the three tenant admin fixtures must resolve to distinct tenants");
-  assert.equal(sessions.get("customerA").tenantId, tenantIds[0]);
-  assert.equal(sessions.get("customerB").tenantId, tenantIds[1]);
-  assert.equal(sessions.get("customerC").tenantId, tenantIds[2]);
+  const tenantIdBySlug = new Map([
+    ["hussein-mboya", tenantIds[0]],
+    ["amani-trails", tenantIds[1]],
+    ["demo-safari", tenantIds[2]],
+  ]);
+  for (const account of logins.filter((candidate) => candidate.tenant)) {
+    assert.equal(sessions.get(account.key).tenantId, tenantIdBySlug.get(account.tenant), `${account.key} must resolve to ${account.tenant}`);
+  }
 
   const dashboardChecks = [
     ["superAdmin", "/api/superadmin/dashboard"],
@@ -105,9 +122,7 @@ try {
     ["driverB", "/api/driver/assigned-tours"],
     ["driverC", "/api/driver/dashboard"],
     ["driverC", "/api/driver/assigned-tours"],
-    ["customerA", "/api/bookings/my-bookings"],
-    ["customerB", "/api/bookings/my-bookings"],
-    ["customerC", "/api/bookings/my-bookings"],
+    ...customerAccounts.map(({ key }) => [key, "/api/bookings/my-bookings"]),
     ["tenantAdminA", "/api/bookings/admin/all"],
     ["tenantAdminB", "/api/bookings/admin/all"],
     ["tenantAdminC", "/api/bookings/admin/all"],
@@ -214,19 +229,26 @@ try {
   }
 
   const bookingId = (key) => payloads.get(`${key}:/api/bookings/my-bookings`)?.bookings?.[0]?._id;
-  const bookingA = bookingId("customerA");
-  const bookingIds = ["customerA", "customerB", "customerC"].map(bookingId);
-  assert.ok(bookingIds.every(Boolean), "all three tenant customers have seeded bookings");
-  for (const [index, account] of ["customerA", "customerB", "customerC"].entries()) {
-    for (const foreignBookingId of bookingIds.filter((_, other) => other !== index)) {
-      const response = await request(`/api/bookings/${encodeURIComponent(foreignBookingId)}`, sessions.get(account).token);
-      report.tenantIsolation.push({ account, foreignBooking: true, status: response.status });
-      assert.equal(response.status, 404, `${account} must not retrieve another tenant's booking`);
+  const customerBookings = customerAccounts.map(({ key, tenant }) => ({ key, tenant, bookingId: bookingId(key) }));
+  assert.ok(customerBookings.every(({ bookingId: id }) => id), "all 12 tenant customers have seeded bookings");
+  for (const account of customerAccounts) {
+    const foreignBookings = customerBookings.filter((candidate) => candidate.tenant !== account.tenant);
+    for (const foreign of foreignBookings) {
+      const response = await request(`/api/bookings/${encodeURIComponent(foreign.bookingId)}`, sessions.get(account.key).token);
+      report.tenantIsolation.push({ account: account.key, foreignBooking: true, status: response.status });
+      assert.equal(response.status, 404, `${account.key} must not retrieve another tenant's booking`);
     }
   }
-  const denied = await request("/api/admin/dashboard/metrics", sessions.get("customerA").token);
-  report.rbac.push({ account: "customerA", protectedAdminDashboardStatus: denied.status });
-  assert.equal(denied.status, 403, "customer cannot use tenant admin dashboard API");
+  for (const account of logins.filter((candidate) => candidate.role !== "super_admin" && candidate.role !== "admin")) {
+    const denied = await request("/api/admin/dashboard/metrics", sessions.get(account.key).token);
+    report.rbac.push({ account: account.key, protectedAdminDashboardStatus: denied.status });
+    assert.equal(denied.status, 403, `${account.key} cannot use tenant admin dashboard API`);
+  }
+  for (const account of logins.filter((candidate) => candidate.role !== "super_admin")) {
+    const denied = await request("/api/superadmin/tenants", sessions.get(account.key).token);
+    report.rbac.push({ account: account.key, platformTenantManagementStatus: denied.status });
+    assert.equal(denied.status, 403, `${account.key} cannot use platform tenant management API`);
+  }
 } catch (error) {
   report.failures.push(error?.name || "ValidationError");
   process.exitCode = 1;

@@ -288,3 +288,19 @@ No first real tenant has been onboarded in production. Overall production readin
 ## 2026-09-28 demo seed evidence — not production evidence
 
 The authorized demo database `husseindb` now contains 28 users, 36 tours, 36 destinations, 36 bookings, 30 synthetic payments, 6 staff, 12 customers, 6 quotations, 6 custom-tour requests, 3 vehicles, 9 reviews, and 18 notifications. Each tenant has 12 unique tour images and 12 unique destination images. Backend tests passed (182 passed, 0 failed, 5 skipped); seed checks, frontend lint/build, and live public catalogue and role-login checks passed. Complete counts are in [Demo Seeding Verification](DEMO_SEEDING.md). Production remains **NOT VERIFIED** and its database has not been supplied or accessed.
+
+## 2026-10-06 — Current deployment and remaining acceptance evidence
+
+Read-only production verification was collected against `main` at `fc96544a59412b26e69b149a4086c93c5ceb10c1`:
+
+| Check | Result | Evidence |
+|---|---|---|
+| Render API readiness | PASS | `GET /api/health` returned `success=true`, `status=healthy`, `startup=ready`, `database=connected`, `databaseName=husseindb`, and version `fc96544a59412b26e69b149a4086c93c5ceb10c1`. |
+| Vercel frontend | PASS | `HEAD /` returned HTTP 200 and `text/html`. |
+| Public catalogue/browser smoke | PASS | Existing Playwright public catalogue smoke passed against the deployed Vercel/Render pair on this commit; tour and destination navigation, images, same-origin routes and tenant-scoped public catalogue calls passed. |
+| Current 28-account authenticated role audit | PENDING | No demo password is available in the execution environment. A 28-account browser audit is present in the worktree; the API verifier has been expanded to cover all 28 accounts, every customer's bookings, cross-tenant booking denial, tenant-admin API denial and platform-tenant-management denial. The updated authenticated runs have not been executed. |
+| M-Pesa callback and accounting reconciliation | PENDING | Local configuration selects Daraja sandbox and contains sandbox credentials, but there is no approved test phone number. No STK request or callback was initiated. |
+| eTIMS provider submission | BLOCKED | No eTIMS adapter URL/token is configured in this environment. The application adapter contract tests do not substitute for an actual provider submission/receipt. |
+| Production backup, restore, monitoring and webhook evidence | PENDING | All six production evidence flags remain unset/false; no external control was changed. |
+
+This addendum records deployment health and public traffic only. No account was logged in, no tenant or business record was changed, and no payment or tax-provider request was made during this verification. The full authenticated audit must be run with the private demo password supplied through `DEMO_SMOKE_PASSWORD` / `DEMO_TEST_PASSWORD`, plus a confirmed sandbox MSISDN for the M-Pesa phase. Never put either value in Git or documentation.

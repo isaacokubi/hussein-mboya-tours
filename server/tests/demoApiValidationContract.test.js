@@ -12,12 +12,21 @@ const source = fs.readFileSync(
 
 test("production demo API validation uses login response roles and fixtures for all tenants", () => {
   assert.match(source, /guideA[^\n]+role: "guide"/);
+  assert.match(source, /const customerAccounts = \[/);
+  assert.match(source, /Array\.from\(\{ length: 4 \}/);
+  assert.match(source, /\.\.\.customerAccounts/);
+  assert.match(source, /assert\.equal\(logins\.length, 28/);
   for (const slug of ["hussein-mboya", "amani-trails", "demo-safari"]) {
     assert.ok(source.includes(`tenant: "${slug}"`), `missing fixture for ${slug}`);
   }
-  for (const key of ["tenantAdminA", "tenantAdminB", "tenantAdminC", "customerA", "customerB", "customerC"]) {
+  for (const key of ["tenantAdminA", "tenantAdminB", "tenantAdminC"]) {
     assert.ok(source.includes(`key: "${key}"`), `missing account ${key}`);
   }
+  assert.match(source, /all 12 tenant customers have seeded bookings/);
+  assert.match(source, /foreignBookings/);
+  assert.match(source, /candidate\.tenant\)\)/);
+  assert.match(source, /candidate\.role !== "super_admin" && candidate\.role !== "admin"/);
+  assert.match(source, /platformTenantManagementStatus/);
 });
 
 test("demo API request headers use a defined static validator user agent", () => {
@@ -36,9 +45,10 @@ test("production demo API validation checks public catalog isolation and cross-t
 test("demo API login batches respect the real limiter window", () => {
   assert.equal(LOGIN_LIMIT, 10);
   assert.equal(LOGIN_WINDOW_MS, 15 * 60 * 1000);
-  assert.equal(needsLoginWindowWait(9, 19), false);
-  assert.equal(needsLoginWindowWait(10, 19), true);
-  assert.equal(needsLoginWindowWait(19, 19), false);
+  assert.equal(needsLoginWindowWait(9, 28), false);
+  assert.equal(needsLoginWindowWait(10, 28), true);
+  assert.equal(needsLoginWindowWait(20, 28), true);
+  assert.equal(needsLoginWindowWait(27, 28), false);
   assert.doesNotMatch(source, /x-forwarded-for/i);
 });
 
