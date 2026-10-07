@@ -24,6 +24,8 @@ const auditUsers = process.env.DEMO_AUDIT_EMAIL
   : users;
 if (process.env.DEMO_AUDIT_EMAIL && auditUsers.length !== 1) throw new Error("DEMO_AUDIT_EMAIL must match one seeded fixture account");
 
+const resumeFile = process.env.DEMO_AUDIT_RESUME_FILE;
+
 const roleAliases = { guide: "tour_guide", tourguide: "tour_guide", manager: "tour_manager", tourmanager: "tour_manager", superadmin: "super_admin" };
 const normalizeRole = (role) => {
   const value = typeof role === "object" ? role?.name || role?.role : role;
@@ -35,16 +37,68 @@ const tenantIdOf = (user) => {
   return value && typeof value === "object" ? value._id || value.id || null : value || null;
 };
 const pause = (duration) => new Promise((resolve) => setTimeout(resolve, duration));
+const sanitizeError = (error) => String(error?.message || error || "Unknown browser audit error")
+  .replace(/(authorization:\s*Bearer\s+)[^\s\r\n]+/gi, "$1[redacted]");
+const getReadResponse = async (context, url, options = {}, onRetry = () => {}) => {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      const response = await context.request.get(url, { ...options, timeout: 45_000 });
+      if (attempt === 0 && response.status() >= 500) {
+        onRetry(`HTTP ${response.status()}`);
+        await pause(1500);
+        continue;
+      }
+      return response;
+    } catch (error) {
+      if (attempt > 0 || !/ETIMEDOUT|ECONNRESET|ECONNREFUSED|EAI_AGAIN/i.test(String(error?.message || ""))) throw error;
+      onRetry(error.code || "network timeout");
+      await pause(1500);
+    }
+  }
+};
+const gotoWithRetry = async (page, url, onRetry = () => {}) => {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      await page.goto(url, { waitUntil: "domcontentloaded", timeout: 25_000 });
+      return;
+    } catch (error) {
+      if (attempt > 0 || !/ERR_TIMED_OUT|ERR_CONNECTION_RESET|ERR_NETWORK_CHANGED|Timeout/i.test(String(error?.message || ""))) throw error;
+      onRetry(String(error.message).split("\n")[0]);
+      await pause(2000);
+    }
+  }
+};
 
 test("seeded 28-account browser login, dashboard, session and logout audit", async ({ browser }, testInfo) => {
   test.skip(!password, "Set DEMO_SMOKE_PASSWORD for the controlled seeded-account browser audit.");
   test.setTimeout(2 * 60 * 60 * 1000);
-  const outputDirectory = testInfo.outputPath("seeded-user-audit");
+  const outputDirectory = resumeFile ? path.dirname(resumeFile) : testInfo.outputPath("seeded-user-audit");
   await fs.mkdir(outputDirectory, { recursive: true });
-  const audit = { startedAt: new Date().toISOString(), accounts: [], tenantScope: [], errors: [], screenshots: [] };
+  const auditFilePath = resumeFile || path.join(outputDirectory, "audit.json");
+  let previousAudit = null;
+  if (resumeFile) {
+    try { previousAudit = JSON.parse(await fs.readFile(resumeFile, "utf8")); }
+    catch (error) { if (error.code !== "ENOENT") throw error; }
+  }
+  const sameSource = !process.env.DEMO_AUDIT_SOURCE_SHA || previousAudit?.sourceSha === process.env.DEMO_AUDIT_SOURCE_SHA;
+  const sameRun = previousAudit && sameSource;
+  const completedEmails = new Set((sameRun ? previousAudit.accounts : [])
+    .filter((row) => row.steps?.includes("logout cleared and invalidated session"))
+    .map((row) => row.email));
+  const pendingUsers = auditUsers.filter((account) => !completedEmails.has(account.email));
+  const audit = {
+    sourceSha: process.env.DEMO_AUDIT_SOURCE_SHA || null,
+    startedAt: sameRun ? previousAudit.startedAt : new Date().toISOString(),
+    resumedAt: sameRun ? new Date().toISOString() : undefined,
+    accounts: (sameRun ? previousAudit.accounts : []).filter((row) => completedEmails.has(row.email)),
+    tenantScope: [], errors: [], screenshots: sameRun ? previousAudit.screenshots || [] : [],
+  };
+  const tenantIdsBySlug = new Map(audit.accounts
+    .filter((account) => account.expectedRole === "admin" && account.expectedTenant && account.tenantId)
+    .map((account) => [account.expectedTenant, String(account.tenantId)]));
   let apiOrigin = "";
 
-  for (const [index, account] of auditUsers.entries()) {
+  for (const [index, account] of pendingUsers.entries()) {
     if (!process.env.DEMO_AUDIT_EMAIL && index > 0 && index % 10 === 0) await pause(15 * 60 * 1000 + 1500);
     const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
     const page = await context.newPage();
@@ -65,13 +119,14 @@ test("seeded 28-account browser login, dashboard, session and logout audit", asy
     page.on("response", (response) => {
       const url = new URL(response.url());
       if (url.pathname.endsWith("/api/auth/login") && response.request().method() === "POST") apiOrigin = url.origin;
-      if (url.pathname.startsWith("/api/") && response.status() >= 400 && response.status() !== 401) {
+      const expectedUnauthenticatedProbe = /\/api\/auth\/me\/?$/.test(url.pathname) && response.status() === 401;
+      if (url.pathname.startsWith("/api/") && response.status() >= 400 && !expectedUnauthenticatedProbe) {
         badResponses.push(`${response.status()} ${url.pathname}`);
       }
     });
 
     try {
-      await page.goto("/login");
+      await gotoWithRetry(page, "/login", (reason) => { row.navigationRetries = [...(row.navigationRetries || []), reason]; });
       await page.getByPlaceholder(/enter email/i).fill(account.email);
       await page.getByPlaceholder(/enter password/i).fill(password);
       const loginResponsePromise = page.waitForResponse((response) => response.url().includes("/api/auth/login") && response.request().method() === "POST");
@@ -82,7 +137,7 @@ test("seeded 28-account browser login, dashboard, session and logout audit", asy
         const retryAfter = Number(loginResponse.headers()["retry-after"] || 900);
         row.rateLimited = true;
         await pause((retryAfter + 2) * 1000);
-        await page.reload();
+        await page.reload({ waitUntil: "domcontentloaded", timeout: 25_000 });
         await page.getByPlaceholder(/enter email/i).fill(account.email);
         await page.getByPlaceholder(/enter password/i).fill(password);
         const retryPromise = page.waitForResponse((response) => response.url().includes("/api/auth/login") && response.request().method() === "POST");
@@ -98,6 +153,7 @@ test("seeded 28-account browser login, dashboard, session and logout audit", asy
       const loggedUser = loginPayload.user;
       row.actualRole = normalizeRole(loggedUser?.role || loggedUser?.legacyRole);
       row.tenantId = tenantIdOf(loggedUser);
+      if (account.role === "admin" && account.tenant && row.tenantId) tenantIdsBySlug.set(account.tenant, String(row.tenantId));
       row.permissionCount = Array.isArray(loggedUser?.roleId?.permissions) ? loggedUser.roleId.permissions.length : Array.isArray(loggedUser?.permissions) ? loggedUser.permissions.length : null;
       row.steps.push("login response accepted");
       if (row.actualRole !== account.role) throw new Error(`Expected role ${account.role}, received ${row.actualRole || "none"}`);
@@ -114,9 +170,24 @@ test("seeded 28-account browser login, dashboard, session and logout audit", asy
       row.permissionCount = storedSession.permissions.length;
       row.steps.push("browser session and permissions loaded");
 
-      const authMeResponse = await context.request.get(`${apiOrigin}/api/auth/me`, {
+      if (account.tenant) {
+        const otherTenantId = [...tenantIdsBySlug.entries()].find(([slug]) => slug !== account.tenant)?.[1];
+        if (otherTenantId) {
+          const crossTenantResponse = await getReadResponse(context, `${apiOrigin}/api/subscription`, {
+            headers: {
+              authorization: `Bearer ${await page.evaluate(() => localStorage.getItem("token"))}`,
+              "X-Tenant-ID": otherTenantId,
+            },
+          }, (reason) => { row.readRetries = [...(row.readRetries || []), { endpoint: "/api/subscription (cross-tenant)", reason }]; });
+          row.crossTenantSelectorStatus = crossTenantResponse.status();
+          if (crossTenantResponse.status() !== 403) throw new Error(`Cross-tenant selector expected 403, received ${crossTenantResponse.status()}`);
+          row.steps.push("cross-tenant selector rejected");
+        }
+      }
+
+      const authMeResponse = await getReadResponse(context, `${apiOrigin}/api/auth/me`, {
         headers: { authorization: `Bearer ${await page.evaluate(() => localStorage.getItem("token"))}` },
-      });
+      }, (reason) => { row.readRetries = [...(row.readRetries || []), { endpoint: "/api/auth/me", reason }]; });
       row.authMeStatus = authMeResponse.status();
       const authMe = await authMeResponse.json();
       const currentUser = authMe.user || authMe;
@@ -129,9 +200,9 @@ test("seeded 28-account browser login, dashboard, session and logout audit", asy
 
       let features = new Set();
       if (account.tenant) {
-        const subscriptionResponse = await context.request.get(`${apiOrigin}/api/subscription`, {
+        const subscriptionResponse = await getReadResponse(context, `${apiOrigin}/api/subscription`, {
           headers: { authorization: `Bearer ${await page.evaluate(() => localStorage.getItem("token"))}` },
-        });
+        }, (reason) => { row.readRetries = [...(row.readRetries || []), { endpoint: "/api/subscription", reason }]; });
         row.subscriptionStatus = subscriptionResponse.status();
         const subscription = await subscriptionResponse.json();
         row.tenantPlan = subscription.plan || null;
@@ -159,9 +230,9 @@ test("seeded 28-account browser login, dashboard, session and logout audit", asy
         driver: "/api/driver/dashboard",
         customer: "/api/bookings/my-bookings",
       }[account.role];
-      const dashboardResponse = await context.request.get(`${apiOrigin}${dashboardEndpoint}`, {
+      const dashboardResponse = await getReadResponse(context, `${apiOrigin}${dashboardEndpoint}`, {
         headers: { authorization: `Bearer ${await page.evaluate(() => localStorage.getItem("token"))}` },
-      });
+      }, (reason) => { row.readRetries = [...(row.readRetries || []), { endpoint: dashboardEndpoint, reason }]; });
       row.dashboardApiStatus = dashboardResponse.status();
       const dashboardPayload = await dashboardResponse.json();
       if (dashboardFeatureAllowed) {
@@ -176,6 +247,69 @@ test("seeded 28-account browser login, dashboard, session and logout audit", asy
         row.dashboardLocked = true;
       }
       row.steps.push(dashboardFeatureAllowed ? "role dashboard loaded" : "role dashboard correctly plan locked");
+
+      if (account.role === "customer" && account.tenant === "hussein-mboya" && account.email.endsWith("customer1@hussein-mboya.com")) {
+        await gotoWithRetry(page, "/destinations", (reason) => { row.navigationRetries = [...(row.navigationRetries || []), reason]; });
+        await expect(page.locator("main").last()).toContainText(/destination/i);
+        const destinationLink = page.locator("main").last().locator("a[href^='/destinations/']").first();
+        await expect(destinationLink).toBeVisible({ timeout: 20_000 });
+        await destinationLink.click();
+        await expect(page).toHaveURL(/\/destinations\/[^/]+/);
+        await expect(page.locator("main").last()).not.toContainText("Destination not found");
+
+        await gotoWithRetry(page, "/tours", (reason) => { row.navigationRetries = [...(row.navigationRetries || []), reason]; });
+        const tourLink = page.locator("a[href*='/tours/']:not([href='/tours'])").first();
+        await expect(tourLink).toBeVisible({ timeout: 20_000 });
+        await tourLink.click();
+        await expect(page).toHaveURL(/\/tours\/[^/]+/);
+        await expect(page.getByRole("button", { name: "Book This Adventure" })).toBeVisible();
+        await page.getByRole("button", { name: "Book This Adventure" }).click();
+        await expect(page).toHaveURL(/\/checkout\/tour\/[^/]+/);
+        await expect(page.getByLabel("Travel date")).toBeVisible({ timeout: 20_000 });
+        row.customerJourney = "PASS through booking and payment initiation UI; no production booking or charge submitted";
+        row.steps.push("destination discovery, tour details and checkout initiation loaded without mutation");
+      }
+
+      if (account.role === "super_admin") {
+        await gotoWithRetry(page, "/superadmin/settings", (reason) => { row.navigationRetries = [...(row.navigationRetries || []), reason]; });
+        const mpesaCard = page.locator("section").filter({ hasText: "Platform M-Pesa Subscription Checkout" }).first();
+        await expect(mpesaCard).toBeVisible({ timeout: 20_000 });
+        const mpesaText = await mpesaCard.innerText();
+        row.platformMpesaReadiness = mpesaText.includes("M-Pesa subscription gateway ready")
+          ? "READY"
+          : mpesaText.includes("requires deployment configuration") ? "MISSING_DEPLOYMENT_CONFIGURATION" : "UNAVAILABLE";
+        row.platformMpesaEnvironment = mpesaText.match(/Environment:\s*(sandbox|production)/i)?.[1]?.toLowerCase() || null;
+      }
+      if (account.role === "admin" && account.tenant === "hussein-mboya") {
+        await gotoWithRetry(page, "/admin/platform-architecture", (reason) => { row.navigationRetries = [...(row.navigationRetries || []), reason]; });
+        const gateways = page.locator("section").filter({ has: page.getByRole("heading", { name: "Payment gateways" }) }).first();
+        await expect(gateways).toBeVisible({ timeout: 20_000 });
+        const gatewayText = await gateways.innerText();
+        row.tenantMpesaEnabled = gatewayText.includes("M-Pesa") && /M-Pesa[\s\S]*?Enabled/i.test(gatewayText);
+        row.tenantMpesaConfigured = /consumer key\s*\(configured\)/i.test(gatewayText)
+          && /consumer secret\s*\(configured\)/i.test(gatewayText)
+          && /passkey\s*\(configured\)/i.test(gatewayText);
+
+        await gotoWithRetry(page, "/admin/compliance", (reason) => { row.navigationRetries = [...(row.navigationRetries || []), reason]; });
+        await expect(page.getByRole("heading", { name: "Compliance Centre" })).toBeVisible({ timeout: 20_000 });
+        const etimsCredentials = page.locator("section").filter({ has: page.getByRole("heading", { name: "eTIMS adapter credentials" }) }).first();
+        await expect(etimsCredentials).toBeVisible({ timeout: 20_000 });
+        row.etimsAdapterCredentialsConfigured = (await etimsCredentials.innerText()).split("\n").some((line) => line.trim() === "Configured");
+        const complianceText = await page.locator("main").innerText();
+        row.etimsProductionReady = /Production readiness\s+Configuration complete/i.test(complianceText);
+      }
+
+      if (account.role !== "super_admin") {
+        await gotoWithRetry(page, "/superadmin/users", (reason) => { row.navigationRetries = [...(row.navigationRetries || []), reason]; });
+        await expect(page).not.toHaveURL(/\/superadmin(?:\/|$)/);
+        row.superAdminDirectRouteDenied = true;
+      }
+      if (!["super_admin", "admin"].includes(account.role)) {
+        await gotoWithRetry(page, "/admin/dashboard", (reason) => { row.navigationRetries = [...(row.navigationRetries || []), reason]; });
+        await expect(page).not.toHaveURL(/\/admin(?:\/|$)/);
+        row.adminDirectRouteDenied = true;
+      }
+      await gotoWithRetry(page, account.route, (reason) => { row.navigationRetries = [...(row.navigationRetries || []), reason]; });
 
       let expectedMenu = account.menu;
       if (account.role === "admin") {
@@ -262,6 +396,9 @@ test("seeded 28-account browser login, dashboard, session and logout audit", asy
       await logoutButton.click();
       const logoutResponse = await logoutResponsePromise;
       row.logoutStatus = logoutResponse.status();
+      if (!/\/login(?:\?|$)/.test(page.url())) {
+        await gotoWithRetry(page, "/login", (reason) => { row.navigationRetries = [...(row.navigationRetries || []), reason]; });
+      }
       await expect(page).toHaveURL(/\/login(?:\?|$)/, { timeout: 15_000 });
       row.sessionCleared = await page.evaluate(() => !localStorage.getItem("token") && !localStorage.getItem("user"));
       const afterLogout = await context.request.get(`${apiOrigin}/api/auth/me`);
@@ -269,8 +406,8 @@ test("seeded 28-account browser login, dashboard, session and logout audit", asy
       if (logoutResponse.status() >= 400 || !row.sessionCleared || afterLogout.status() !== 401) throw new Error("Logout did not clear and invalidate the browser session");
       row.steps.push("logout cleared and invalidated session");
     } catch (error) {
-      row.error = error.message;
-      audit.errors.push({ email: account.email, error: error.message });
+      row.error = sanitizeError(error);
+      audit.errors.push({ email: account.email, error: row.error });
       // Preserve the account-by-account matrix and continue so one defect cannot
       // prevent the rest of the seeded users from being checked.
     } finally {
@@ -280,7 +417,7 @@ test("seeded 28-account browser login, dashboard, session and logout audit", asy
       audit.accounts.push(row);
       await context.close();
       audit.lastCompletedAccountAt = new Date().toISOString();
-      await fs.writeFile(path.join(outputDirectory, "audit.json"), `${JSON.stringify(audit, null, 2)}\n`);
+      await fs.writeFile(auditFilePath, `${JSON.stringify(audit, null, 2)}\n`);
     }
   }
 
@@ -301,7 +438,7 @@ test("seeded 28-account browser login, dashboard, session and logout audit", asy
   }
 
   audit.completedAt = new Date().toISOString();
-  await fs.writeFile(path.join(outputDirectory, "audit.json"), `${JSON.stringify(audit, null, 2)}\n`);
+  await fs.writeFile(auditFilePath, `${JSON.stringify(audit, null, 2)}\n`);
   expect(audit.accounts).toHaveLength(auditUsers.length);
   expect(audit.errors, "seeded account audit errors").toEqual([]);
 });

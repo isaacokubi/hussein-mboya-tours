@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import AgentSidebar from "../components/agent/AgentSidebar";
 
@@ -7,10 +7,6 @@ export default function AgentLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   useEffect(() => setMobileOpen(false), [location.pathname]);
-
-  if (location.pathname === "/agent/dashboard") {
-    return <Navigate to="/agent" replace />;
-  }
 
   return (
     <div className="dashboard-responsive agent-portal min-h-screen">
