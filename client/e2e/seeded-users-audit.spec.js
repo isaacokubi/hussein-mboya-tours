@@ -411,6 +411,13 @@ test("seeded 28-account browser login, dashboard, session and logout audit", asy
       // Preserve the account-by-account matrix and continue so one defect cannot
       // prevent the rest of the seeded users from being checked.
     } finally {
+      if (badResponses.length) {
+        const issue = `Unexpected API responses: ${badResponses.join(", ")}`;
+        row.apiResponseError = issue;
+        if (!audit.errors.some((entry) => entry.email === account.email && entry.error === issue)) {
+          audit.errors.push({ email: account.email, error: issue });
+        }
+      }
       row.consoleErrors = consoleErrors;
       row.failedRequests = failedRequests;
       row.badApiResponses = badResponses;

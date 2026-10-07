@@ -121,6 +121,8 @@ function getAuthenticatedTenantId() {
 
 const isPublicAuthRequest = (url = "") =>
   /(?:^|\/)auth\/(?:login|register|password-reset(?:\/|$))/i.test(String(url));
+const isPublicTenantSettingsRequest = (url = "") =>
+  /(?:^|\/)settings\/public(?:[/?]|$)/i.test(String(url));
 
 const api = axios.create({
   baseURL,
@@ -136,18 +138,21 @@ api.interceptors.request.use(
     config.__authGeneration = authenticationGeneration;
 
     const publicAuthRequest = isPublicAuthRequest(config.url);
-    config.__cookieAuth = !publicAuthRequest;
+    const publicTenantSettingsRequest = isPublicTenantSettingsRequest(config.url);
+    const publicRequest = publicAuthRequest || publicTenantSettingsRequest;
+    config.__cookieAuth = !publicRequest;
+    if (publicTenantSettingsRequest) config.withCredentials = false;
     const storedAccessToken = ["token", "accessToken", "authToken"]
       .map((key) => String(window.localStorage.getItem(key) || "").trim())
       .find(Boolean);
-    if (publicAuthRequest) {
-      // Never send a previous session's bearer token while authenticating.
+    if (publicRequest) {
+      // Public endpoints must not inherit credentials from an existing session.
       delete config.headers.Authorization;
     } else if (storedAccessToken) {
       config.headers.Authorization = `Bearer ${storedAccessToken}`;
     }
 
-    const tenantId = publicAuthRequest ? "" : getAuthenticatedTenantId();
+    const tenantId = publicRequest ? "" : getAuthenticatedTenantId();
     const csrfToken = String(document.cookie.split(";").map((item) => item.trim()).find((item) => item.startsWith("csrfToken="))?.split("=")[1] || "").trim();
     if (!publicAuthRequest && ["post", "put", "patch", "delete"].includes(String(config.method || "").toLowerCase()) && csrfToken) {
       config.headers["X-CSRF-Token"] = decodeURIComponent(csrfToken);
@@ -205,13 +210,14 @@ api.interceptors.response.use(
 
     if (status === 401 && typeof window !== "undefined") {
       const isLoginRequest = /\/auth\/(?:login|register)(?:[/?]|$)/i.test(url);
+      const isPublicTenantSettings = isPublicTenantSettingsRequest(url);
       const hasKnownUser = Boolean(localStorage.getItem("user"));
       const isCurrentUserRequest = /\/auth\/me(?:[/?]|$)/i.test(url);
       // AuthContext owns /me restoration and guards its result by operation
       // generation. A global event here could clear a newer login when an
       // older /me request finishes with 401 after login succeeds.
       const requestGeneration = error?.config?.__authGeneration;
-      if (!isLoginRequest && !isCurrentUserRequest && hasKnownUser && requestGeneration === authenticationGeneration) {
+      if (!isLoginRequest && !isPublicTenantSettings && !isCurrentUserRequest && hasKnownUser && requestGeneration === authenticationGeneration) {
         window.dispatchEvent(new CustomEvent("auth:session-invalid", {
           detail: {
             url,
