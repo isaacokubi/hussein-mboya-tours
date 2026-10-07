@@ -83,7 +83,7 @@ test("seeded 28-account browser login, dashboard, session and logout audit", asy
   const sameSource = !process.env.DEMO_AUDIT_SOURCE_SHA || previousAudit?.sourceSha === process.env.DEMO_AUDIT_SOURCE_SHA;
   const sameRun = previousAudit && sameSource;
   const completedEmails = new Set((sameRun ? previousAudit.accounts : [])
-    .filter((row) => row.steps?.includes("logout cleared and invalidated session"))
+    .filter((row) => row.steps?.includes("logout cleared and invalidated session") && !row.apiResponseError && !row.badApiResponses?.length)
     .map((row) => row.email));
   const pendingUsers = auditUsers.filter((account) => !completedEmails.has(account.email));
   const audit = {
