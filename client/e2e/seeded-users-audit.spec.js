@@ -180,8 +180,11 @@ test("seeded 28-account browser login, dashboard, session and logout audit", asy
             },
           }, (reason) => { row.readRetries = [...(row.readRetries || []), { endpoint: "/api/subscription (cross-tenant)", reason }]; });
           row.crossTenantSelectorStatus = crossTenantResponse.status();
-          if (crossTenantResponse.status() !== 403) throw new Error(`Cross-tenant selector expected 403, received ${crossTenantResponse.status()}`);
-          row.steps.push("cross-tenant selector rejected");
+          if (![403, 404].includes(crossTenantResponse.status())) {
+            throw new Error(`Cross-tenant selector expected an access-denial status (403 or concealed 404), received ${crossTenantResponse.status()}`);
+          }
+          row.crossTenantSelectorDenied = true;
+          row.steps.push(crossTenantResponse.status() === 404 ? "cross-tenant selector concealed with 404" : "cross-tenant selector rejected with 403");
         }
       }
 
@@ -295,7 +298,7 @@ test("seeded 28-account browser login, dashboard, session and logout audit", asy
         const etimsCredentials = page.locator("section").filter({ has: page.getByRole("heading", { name: "eTIMS adapter credentials" }) }).first();
         await expect(etimsCredentials).toBeVisible({ timeout: 20_000 });
         row.etimsAdapterCredentialsConfigured = (await etimsCredentials.innerText()).split("\n").some((line) => line.trim() === "Configured");
-        const complianceText = await page.locator("main").innerText();
+        const complianceText = await page.locator("main").last().innerText();
         row.etimsProductionReady = /Production readiness\s+Configuration complete/i.test(complianceText);
       }
 
