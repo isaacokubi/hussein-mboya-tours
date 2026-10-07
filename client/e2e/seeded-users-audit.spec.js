@@ -179,7 +179,7 @@ test("seeded 28-account browser login, dashboard, session and logout audit", asy
 
       let expectedMenu = account.menu;
       if (account.role === "admin") {
-        if (!features.has("users")) expectedMenu = "/admin/bookings";
+        expectedMenu = "/admin";
         row.expectedMenu = expectedMenu;
         const planControlledLinks = [
           ["finance", "/admin/finance"],

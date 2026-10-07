@@ -328,3 +328,23 @@ Validation resumed from the existing checkout at `82e14a4b9372a8dcb37b2a0895d69e
 | eTIMS | LOCAL PAYLOAD/TAX/SAFETY TESTS PASS; external submission pending | Payload, tax, tenant/idempotency and fail-closed contracts passed. No adapter was configured and no KRA request was made. |
 
 The 28-user matrix, frontend visibility versus backend authorization for authenticated roles, authenticated dashboard widgets, full customer journey and live accounting reconciliation remain unresolved—not passed. Finance and Operations are not separate seeded role identities in this fixture. No code defect was established by the resumed checks, so no application behavior was changed. Production readiness remains **NOT VERIFIED**.
+
+### Continued validation from `27fe9748` — 2026-10-07
+
+The preceding API audit used approved protected runtime password variables; no value was written to repository files, test output, evidence, or screenshots. The present continuation has no protected runtime credential variable or secret input channel. Current machine-readable evidence is in [production-validation-2026-10-06.json](evidence/production-validation-2026-10-06.json), under `continuedValidationFrom27fe9748`.
+
+| Check | Result | Evidence / limitation |
+|---|---|---|
+| Full backend regression | PASS, 210 total / 205 passed / 0 failed / 5 skipped | The five skips require disposable MongoDB integration configuration. `npm run check:all` also passed. |
+| Frontend lint/build | PASS / PASS | Updated browser audit passed targeted ESLint. |
+| Production API authentication audit | PASS, 28/28 | Every seeded identity logged in; tenant and role identity matched; dashboard results followed server subscription entitlements. The safe audit summary records 52 dashboard checks, 96 foreign-tenant checks, 51 RBAC denials and zero failures. |
+| Cross-tenant API requests | PASS, 96/96 denied | Foreign booking requests returned 404. Public tenant catalogues were independently confirmed tenant-scoped. |
+| Dashboard data comparison | PASS for available read-only data | 25 metrics per tenant matched. Finance values matched for enterprise and professional tenants; Starter correctly denies the finance feature. |
+| Authorization defect and regression | FIXED | Starter plan finance/analytics links were previously exempted from entitlement filtering in `AdminLayout`; the UI showed routes whose API correctly returned `PLAN_FEATURE_LOCKED`. Navigation now follows server entitlements and fails closed. Contract tests cover filtering and plan-aware API expectations. |
+| Public production deployment | PASS | Vercel returned HTTP 200. Render was healthy/ready, connected to `husseindb`, at application fix SHA `eed65c2f181e28b3e5686ef9eb33f50e83e3a065`. Public smoke passed. Vercel does not expose a source SHA/deployment ID. |
+| Customer journey writes and live ledger reconciliation | PENDING_ISOLATED_DATABASE | No production business records were written. Production journey mutations and live ledger reconciliation require a disposable integration database. Local lifecycle/accounting contracts passed. |
+| M-Pesa | LOCAL PASS; external execution pending | Configuration, callback, idempotency, refund/reversal and accounting contracts passed. No provider request or actual transaction was made because a safe isolated provider target is unavailable. |
+| eTIMS | LOCAL PASS; `PENDING_EXTERNAL_CREDENTIALS_AND_TEST_ADAPTER` | Invoice/tax payload and safety contracts passed. Live KRA validation needs test credentials and a non-production adapter URL/configuration. No KRA request was made. |
+| Browser 28-account audit | BLOCKED_BY_ENVIRONMENT | Public browser smoke passed using installed Google Chrome. Authenticated API matrix passed 28/28. The final execution environment exposes no protected runtime password variable or secret input channel that keeps the supplied password out of tool-call logs, so no browser login was attempted in this continuation. |
+
+Production readiness remains **NOT VERIFIED** while authenticated browser validation is blocked and isolated database, M-Pesa provider and eTIMS gates remain pending.

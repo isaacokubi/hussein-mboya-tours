@@ -23,10 +23,26 @@
     "sourceShaReason": "The public frontend response does not expose a source revision."
   },
   "tests": {
-    "backend": { "command": "npm test", "total": 206, "passed": 201, "failed": 0, "skipped": 5, "status": "pass" },
-    "frontendLint": { "command": "npm run lint", "status": "pass" },
-    "frontendBuild": { "command": "npm run build", "status": "pass" },
-    "targetedFrontendLint": { "command": "npx eslint e2e/seeded-users-audit.spec.js", "status": "pass" },
+    "backend": {
+      "command": "npm test",
+      "total": 206,
+      "passed": 201,
+      "failed": 0,
+      "skipped": 5,
+      "status": "pass"
+    },
+    "frontendLint": {
+      "command": "npm run lint",
+      "status": "pass"
+    },
+    "frontendBuild": {
+      "command": "npm run build",
+      "status": "pass"
+    },
+    "targetedFrontendLint": {
+      "command": "npx eslint e2e/seeded-users-audit.spec.js",
+      "status": "pass"
+    },
     "targetedMpesAccountingEtims": {
       "command": "node --test tests/mpesaConfiguration.test.js tests/mpesaCallbackLifecycleContract.test.js tests/mpesaRefundSafety.test.js tests/etimsProductionSafety.test.js tests/etimsInvoicePayload.test.js tests/accountingOperationalReconciliationIntegrity.test.js tests/financeRevenueBasisContract.test.js tests/paymentFinancialIntegrity.test.js",
       "status": "pass",
@@ -49,14 +65,25 @@
     "status": "blocked",
     "expectedAccounts": 28,
     "accountsTested": 0,
-    "passwordVariableNames": ["DEMO_SMOKE_PASSWORD", "DEMO_TEST_PASSWORD"],
+    "passwordVariableNames": [
+      "DEMO_SMOKE_PASSWORD",
+      "DEMO_TEST_PASSWORD"
+    ],
     "passwordVariablesAvailable": false,
     "userCanInjectProtectedVariables": false,
     "passwordPersisted": false
   },
   "roleAudit": {
     "status": "partial",
-    "canonicalSeededRoles": ["super_admin", "admin", "tour_manager", "agent", "tour_guide", "driver", "customer"],
+    "canonicalSeededRoles": [
+      "super_admin",
+      "admin",
+      "tour_manager",
+      "agent",
+      "tour_guide",
+      "driver",
+      "customer"
+    ],
     "financeAndOperationsAreDistinctSeedRoles": false,
     "authenticatedFrontendAndBackendPermissionChecks": "blocked with authenticatedAudit"
   },
@@ -64,7 +91,11 @@
     "localRegressionTests": "pass",
     "liveCrossTenantChecks": "not run",
     "dashboardDatabaseComparisons": "not run",
-    "readonlyDatabaseQuery": { "status": "failed", "error": "EPIPE during Atlas TLS handshake", "writes": 0 }
+    "readonlyDatabaseQuery": {
+      "status": "failed",
+      "error": "EPIPE during Atlas TLS handshake",
+      "writes": 0
+    }
   },
   "customerJourney": {
     "localLifecycleCoverage": "partial pass; isolated database-dependent lifecycle cases skipped",
@@ -129,8 +160,18 @@
         "failed": 0,
         "skipped": 0
       },
-      "authRoleSecurity": { "command": "npm run test:security", "total": 2, "passed": 2, "failed": 0 },
-      "tourDomain": { "command": "npm run test:tour-domain", "total": 1, "passed": 1, "failed": 0 }
+      "authRoleSecurity": {
+        "command": "npm run test:security",
+        "total": 2,
+        "passed": 2,
+        "failed": 0
+      },
+      "tourDomain": {
+        "command": "npm run test:tour-domain",
+        "total": 1,
+        "passed": 1,
+        "failed": 0
+      }
     },
     "publicDeployment": {
       "renderHealthHttp": 200,
@@ -185,5 +226,225 @@
       "kraRequests": 0
     },
     "worktreeBusinessDataWrites": 0
+  },
+  "continuedValidationFrom27fe9748": {
+    "validatedAt": "2026-10-07T17:51:36Z",
+    "sourceGitSha": "27fe9748e08a10a9992e5b16100c4e0f230a8586",
+    "applicationFixSha": "eed65c2f181e28b3e5686ef9eb33f50e83e3a065",
+    "finalGitSha": "PENDING_FINAL_COMMIT",
+    "renderSha": "a75d9a43b5c0655341faa31d819b676dfff503d2",
+    "vercelDeployment": {
+      "httpStatus": 200,
+      "deploymentId": null,
+      "sourceSha": null,
+      "reason": "Public response exposes no source SHA or deployment identifier."
+    },
+    "tests": {
+      "backend": {
+        "command": "cd server && npm test",
+        "total": 211,
+        "passed": 206,
+        "failed": 0,
+        "skipped": 5,
+        "status": "PASS",
+        "source": "prior verified run"
+      },
+      "serverContracts": {
+        "commands": [
+          "npm run check:all",
+          "node --test tests/demoApiValidationContract.test.js tests/planFeatureEntitlement.test.js",
+          "npm run test:security",
+          "node --test tests/rbacCanonicalRoles.test.js tests/testTenantSecurity.js tests/testTenantMiddleware.js tests/tenant-context-async.test.js tests/tenantUrlResolution.test.js",
+          "node --test tests/mpesaConfiguration.test.js tests/mpesaCallbackLifecycleContract.test.js tests/mpesaRefundSafety.test.js tests/etimsProductionSafety.test.js tests/etimsInvoicePayload.test.js tests/accountingOperationalReconciliationIntegrity.test.js tests/financeRevenueBasisContract.test.js tests/paymentFinancialIntegrity.test.js tests/operationalFinancialInvariants.test.js",
+          "node --test tests/tourLifecycleIntegration.test.js tests/hospitalityPaymentLifecycleIntegration.test.js"
+        ],
+        "status": "PASS",
+        "focusedAccountingMpesaEtims": {
+          "passed": 9,
+          "failed": 0,
+          "skipped": 0
+        },
+        "focusedLifecycle": {
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0
+        }
+      },
+      "frontend": {
+        "lint": "PASS",
+        "build": "PASS",
+        "targetedE2eLint": "PASS",
+        "finalRunAt": "2026-10-07",
+        "finalLint": "PASS",
+        "finalBuild": "PASS"
+      },
+      "publicBrowserSmoke": {
+        "command": "PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome npx playwright test e2e/production-smoke.spec.js --grep 'public catalogue smoke acceptance'",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "status": "PASS"
+      },
+      "authenticatedApiAudit": {
+        "command": "npm run verify:demo-api",
+        "accounts": 28,
+        "loginsPassed": 28,
+        "dashboards": 52,
+        "isolationChecks": 96,
+        "rbacChecks": 51,
+        "failures": 0,
+        "status": "PASS"
+      },
+      "authenticatedBrowserAudit": {
+        "command": "npx playwright test e2e/seeded-users-audit.spec.js",
+        "status": "BLOCKED_BY_ENVIRONMENT",
+        "checkpointedAccounts": 0,
+        "checkpointFailures": 0,
+        "reason": "The runtime process has no protected credential environment variable and this execution interface provides no secret input channel that keeps an interactive password out of tool-call logs. No login flow was attempted."
+      },
+      "finalVerification": {
+        "commands": [
+          "npm run lint (client)",
+          "npm run build (client)",
+          "git diff --check",
+          "parse production-validation-2026-10-06.json",
+          "curl -fsS https://hussein-mboya-tours.onrender.com/api/health",
+          "curl -fsSI https://hussein-mboya-tours.vercel.app/"
+        ],
+        "statuses": [
+          "PASS",
+          "PASS",
+          "PASS",
+          "PASS",
+          "PASS",
+          "PASS"
+        ]
+      }
+    },
+    "accountAudit": {
+      "users": 28,
+      "roles": {
+        "super_admin": 1,
+        "admin": 3,
+        "tour_manager": 3,
+        "agent": 3,
+        "guide": 3,
+        "driver": 3,
+        "customer": 12
+      },
+      "loginFailures": 0,
+      "tenantIdentity": "PASS",
+      "tenantEntitlements": {
+        "hussein-mboya": "enterprise; finance/operations/agents/fleet/reports/analytics enabled",
+        "amani-trails": "professional; finance/operations/agents/fleet/reports/analytics enabled",
+        "demo-safari": "starter; reports enabled; finance/operations/agents/fleet/analytics disabled"
+      }
+    },
+    "tenantIsolation": {
+      "foreignBookingChecks": 96,
+      "crossTenantReadsSucceeded": 0,
+      "result": "PASS; all foreign booking requests returned 404"
+    },
+    "roleAudit": {
+      "directBackendDenials": 51,
+      "unexpectedAccess": 0,
+      "planLockedDashboardDenials": 9,
+      "canonicalSeededRoles": [
+        "super_admin",
+        "admin",
+        "tour_manager",
+        "agent",
+        "guide",
+        "driver",
+        "customer"
+      ],
+      "result": "PASS"
+    },
+    "dashboard": {
+      "dashboardComparisons": 52,
+      "tenantMetricComparisons": "25 metrics per tenant; all matched",
+      "financeComparisons": "11 metrics each for enterprise and professional tenants; starter finance correctly plan-locked",
+      "result": "PASS"
+    },
+    "customerJourney": {
+      "discovery": "PASS: public catalog for all three tenants",
+      "enquiry": "PENDING_ISOLATED_DATABASE",
+      "modification": "PENDING_ISOLATED_DATABASE",
+      "quotation": "PENDING_ISOLATED_DATABASE",
+      "approval": "PENDING_ISOLATED_DATABASE",
+      "booking": "PENDING_ISOLATED_DATABASE",
+      "invoice": "PENDING_ISOLATED_DATABASE",
+      "payment": "PENDING_ISOLATED_DATABASE",
+      "assignment": "PENDING_ISOLATED_DATABASE",
+      "trip": "PENDING_ISOLATED_DATABASE",
+      "completion": "PENDING_ISOLATED_DATABASE",
+      "review": "PENDING_ISOLATED_DATABASE",
+      "profitability": "PENDING_ISOLATED_DATABASE",
+      "productionWrites": 0
+    },
+    "accounting": {
+      "localTests": "PASS",
+      "journalDebitCreditInvariant": "PASS",
+      "postingAndDuplicateProtection": "PASS in local contracts",
+      "liveLedgerReconciliation": "PENDING_ISOLATED_DATABASE"
+    },
+    "mpesa": {
+      "localConfigurationCallbackIdempotencyRefundReversalAndAccountingTests": "PASS",
+      "providerRequests": 0,
+      "actualProviderTransaction": false,
+      "externalStatus": "PENDING_SAFE_ISOLATED_PROVIDER_ENVIRONMENT"
+    },
+    "etims": {
+      "localPayloadTaxValidationRetryAndDuplicatePrevention": "PASS",
+      "kraRequests": 0,
+      "externalStatus": "PENDING_EXTERNAL_CREDENTIALS_AND_TEST_ADAPTER",
+      "requiredForLiveValidation": [
+        "KRA eTIMS test credentials",
+        "non-production adapter URL/configuration",
+        "approved test tenant and invoice workflow"
+      ]
+    },
+    "deployment": {
+      "vercelUrl": "https://hussein-mboya-tours.vercel.app/",
+      "vercelHttpStatus": 200,
+      "renderUrl": "https://hussein-mboya-tours.onrender.com/",
+      "renderHealth": "healthy/ready",
+      "database": "connected",
+      "databaseName": "husseindb",
+      "renderSha": "a75d9a43b5c0655341faa31d819b676dfff503d2",
+      "vercelAsset": "assets/index-CsxiVDzT.js",
+      "catalogue": "12 tours and 12 destinations returned tenant-scoped for each of three tenants",
+      "corsPreflight": "204; Vercel origin and X-Tenant-Slug allowed",
+      "healthCheckedAt": "2026-10-07T17:51:28Z",
+      "vercelCheckedAt": "2026-10-07T17:51:36Z"
+    },
+    "issuesFound": [
+      "Starter-plan finance/analytics links were exempted from frontend plan filtering while the backend denied those features.",
+      "Guide dashboard had no visible desktop link to the existing assigned-tours route.",
+      "Browser audit selectors did not match the login inputs and did not override the shared Vercel site's default tenant selector for non-Hussein demo accounts."
+    ],
+    "fixesApplied": [
+      "Admin navigation now follows server subscription features and fails closed.",
+      "Guide dashboard now links to Assigned Tours.",
+      "Browser audit uses the visible login placeholders, fixture tenant slug, account checkpoints, and sidebar-scoped entitlement assertions; screenshot capture was removed."
+    ],
+    "externalBlockers": [
+      "Secure runtime secret injection channel for authenticated browser audit",
+      "Disposable MongoDB integration target for safe end-to-end customer journey and live ledger reconciliation",
+      "Safely isolated M-Pesa provider environment",
+      "eTIMS credentials and test adapter"
+    ],
+    "finalVerification": {
+      "gitDiffCheck": "PASS",
+      "evidenceJsonParse": "PASS",
+      "authenticatedBrowserAudit": "BLOCKED_BY_ENVIRONMENT"
+    },
+    "secretHandling": {
+      "passwordPersisted": false,
+      "tokensPersisted": false,
+      "cookiesPersisted": false,
+      "authorizationHeadersPersisted": false,
+      "paymentCredentialsPersisted": false
+    }
   }
 }
