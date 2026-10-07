@@ -57,14 +57,14 @@ const getReadResponse = async (context, url, options = {}, onRetry = () => {}) =
   }
 };
 const gotoWithRetry = async (page, url, onRetry = () => {}) => {
-  for (let attempt = 0; ; attempt += 1) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
       await page.goto(url, { waitUntil: "domcontentloaded", timeout: 25_000 });
       return;
     } catch (error) {
-      if (attempt > 0 || !/ERR_TIMED_OUT|ERR_CONNECTION_RESET|ERR_NETWORK_CHANGED|Timeout/i.test(String(error?.message || ""))) throw error;
+      if (attempt === 2 || !/ERR_TIMED_OUT|ERR_CONNECTION_RESET|ERR_NETWORK_CHANGED|Timeout|ERR_HTTP2_PING_FAILED/i.test(String(error?.message || ""))) throw error;
       onRetry(String(error.message).split("\n")[0]);
-      await pause(2000);
+      await pause((attempt + 1) * 2000);
     }
   }
 };
