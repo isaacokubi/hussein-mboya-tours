@@ -83,6 +83,12 @@ test("admin navigation honors the server-reported tenant plan for finance and in
   assert.doesNotMatch(layout, /FINANCE_FEATURES|INSIGHT_FEATURES/);
 });
 
+test("guide dashboard exposes navigation to the assigned-tours route", () => {
+  const guideDashboard = read("pages/guide/TourGuideDashboard.jsx");
+  assert.match(routeSource, /path="\/guide\/assigned-tours"/);
+  assert.match(guideDashboard, /to="\/guide\/assigned-tours">Assigned Tours/);
+});
+
 test("frontend coverage: operations, corporate, supplier and accommodation workflows are visible", () => {
   const s = (read("pages/admin/OperationsDashboard.jsx") + read("components/admin/OperationsActionCenter.jsx") + read("components/admin/TravelOperationsCenter.jsx")).toLowerCase();
   for (const m of ["supplier", "corporate", "purchase", "room", "accommodation", "transfer", "totalcost", "unitcost"]) assert.match(s, new RegExp(m));

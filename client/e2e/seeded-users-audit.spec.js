@@ -19,6 +19,10 @@ const users = [
   }),
 ];
 if (users.length !== 28) throw new Error(`Expected 28 seeded demo users, found ${users.length}`);
+const auditUsers = process.env.DEMO_AUDIT_EMAIL
+  ? users.filter((account) => account.email === process.env.DEMO_AUDIT_EMAIL.trim().toLowerCase())
+  : users;
+if (process.env.DEMO_AUDIT_EMAIL && auditUsers.length !== 1) throw new Error("DEMO_AUDIT_EMAIL must match one seeded fixture account");
 
 const roleAliases = { guide: "tour_guide", tourguide: "tour_guide", manager: "tour_manager", tourmanager: "tour_manager", superadmin: "super_admin" };
 const normalizeRole = (role) => {
@@ -36,19 +40,25 @@ test("seeded 28-account browser login, dashboard, session and logout audit", asy
   test.skip(!password, "Set DEMO_SMOKE_PASSWORD for the controlled seeded-account browser audit.");
   test.setTimeout(2 * 60 * 60 * 1000);
   const outputDirectory = testInfo.outputPath("seeded-user-audit");
-  const screenshotDirectory = path.join(outputDirectory, "screenshots");
-  await fs.mkdir(screenshotDirectory, { recursive: true });
+  await fs.mkdir(outputDirectory, { recursive: true });
   const audit = { startedAt: new Date().toISOString(), accounts: [], tenantScope: [], errors: [], screenshots: [] };
   let apiOrigin = "";
 
-  for (const [index, account] of users.entries()) {
-    if (index > 0 && index % 10 === 0) await pause(15 * 60 * 1000 + 1500);
+  for (const [index, account] of auditUsers.entries()) {
+    if (!process.env.DEMO_AUDIT_EMAIL && index > 0 && index % 10 === 0) await pause(15 * 60 * 1000 + 1500);
     const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
     const page = await context.newPage();
     const row = { email: account.email, expectedRole: account.role, expectedTenant: account.tenant, steps: [] };
     const consoleErrors = [];
     const failedRequests = [];
     const badResponses = [];
+    if (account.tenant) {
+      await page.route("**/api/auth/login", async (route) => {
+        const headers = { ...route.request().headers(), "X-Tenant-Slug": account.tenant };
+        await route.continue({ headers });
+      });
+      row.loginTenantSelector = account.tenant;
+    }
     page.on("pageerror", (error) => consoleErrors.push(error.message));
     page.on("console", (message) => { if (message.type() === "error") consoleErrors.push(message.text()); });
     page.on("requestfailed", (request) => failedRequests.push(`${request.method()} ${new URL(request.url()).pathname}`));
@@ -62,8 +72,8 @@ test("seeded 28-account browser login, dashboard, session and logout audit", asy
 
     try {
       await page.goto("/login");
-      await page.getByLabel("Email").fill(account.email);
-      await page.getByLabel("Password").fill(password);
+      await page.getByPlaceholder(/enter email/i).fill(account.email);
+      await page.getByPlaceholder(/enter password/i).fill(password);
       const loginResponsePromise = page.waitForResponse((response) => response.url().includes("/api/auth/login") && response.request().method() === "POST");
       await page.getByRole("button", { name: "Login", exact: true }).click();
       let loginResponse = await loginResponsePromise;
@@ -73,8 +83,8 @@ test("seeded 28-account browser login, dashboard, session and logout audit", asy
         row.rateLimited = true;
         await pause((retryAfter + 2) * 1000);
         await page.reload();
-        await page.getByLabel("Email").fill(account.email);
-        await page.getByLabel("Password").fill(password);
+        await page.getByPlaceholder(/enter email/i).fill(account.email);
+        await page.getByPlaceholder(/enter password/i).fill(password);
         const retryPromise = page.waitForResponse((response) => response.url().includes("/api/auth/login") && response.request().method() === "POST");
         await page.getByRole("button", { name: "Login", exact: true }).click();
         loginResponse = await retryPromise;
@@ -94,8 +104,6 @@ test("seeded 28-account browser login, dashboard, session and logout audit", asy
       if (account.tenant === null ? Boolean(row.tenantId) : !row.tenantId) throw new Error("Tenant assignment did not match the account scope");
 
       await expect(page).toHaveURL(new RegExp(account.route.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), { timeout: 30_000 });
-      await expect(page.locator("main").last()).not.toBeEmpty({ timeout: 30_000 });
-      row.steps.push("role dashboard loaded");
       const storedSession = await page.evaluate(() => ({
         tokenPresent: Boolean(localStorage.getItem("token")),
         user: JSON.parse(localStorage.getItem("user") || "null"),
@@ -119,15 +127,58 @@ test("seeded 28-account browser login, dashboard, session and logout audit", asy
       }
       row.steps.push("authenticated API session verified");
 
-      let expectedMenu = account.menu;
-      if (account.role === "admin") {
+      let features = new Set();
+      if (account.tenant) {
         const subscriptionResponse = await context.request.get(`${apiOrigin}/api/subscription`, {
           headers: { authorization: `Bearer ${await page.evaluate(() => localStorage.getItem("token"))}` },
         });
         row.subscriptionStatus = subscriptionResponse.status();
         const subscription = await subscriptionResponse.json();
         row.tenantPlan = subscription.plan || null;
-        const features = new Set(Array.isArray(subscription.features) ? subscription.features : []);
+        features = new Set(Array.isArray(subscription.features) ? subscription.features : []);
+        if (row.subscriptionStatus !== 200 || !row.tenantPlan) throw new Error("Tenant subscription features were not available for route authorization");
+      }
+
+      const dashboardFeature = {
+        admin: "dashboard",
+        tour_manager: "operations",
+        agent: "agents",
+        tour_guide: "operations",
+        driver: "fleet",
+        customer: "bookings",
+      }[account.role];
+      const dashboardFeatureAllowed = account.role === "super_admin" || features.has(dashboardFeature);
+      row.dashboardFeature = dashboardFeature || "platform";
+      row.dashboardFeatureAllowed = dashboardFeatureAllowed;
+      const dashboardEndpoint = {
+        super_admin: "/api/superadmin/dashboard",
+        admin: "/api/admin/dashboard/metrics",
+        tour_manager: "/api/tourmanager/dashboard",
+        agent: "/api/agent/dashboard",
+        tour_guide: "/api/guide/dashboard",
+        driver: "/api/driver/dashboard",
+        customer: "/api/bookings/my-bookings",
+      }[account.role];
+      const dashboardResponse = await context.request.get(`${apiOrigin}${dashboardEndpoint}`, {
+        headers: { authorization: `Bearer ${await page.evaluate(() => localStorage.getItem("token"))}` },
+      });
+      row.dashboardApiStatus = dashboardResponse.status();
+      const dashboardPayload = await dashboardResponse.json();
+      if (dashboardFeatureAllowed) {
+        if (dashboardResponse.status() !== 200) throw new Error(`Permitted ${account.role} dashboard API returned HTTP ${dashboardResponse.status()}`);
+        await expect(page.locator("main").last()).not.toBeEmpty({ timeout: 30_000 });
+        row.dashboardLoaded = true;
+      } else {
+        if (dashboardResponse.status() !== 403 || dashboardPayload.code !== "PLAN_FEATURE_LOCKED") {
+          throw new Error(`Unentitled ${account.role} dashboard API did not enforce the tenant plan`);
+        }
+        await expect(page.getByText("Subscription feature lock", { exact: true })).toBeVisible({ timeout: 30_000 });
+        row.dashboardLocked = true;
+      }
+      row.steps.push(dashboardFeatureAllowed ? "role dashboard loaded" : "role dashboard correctly plan locked");
+
+      let expectedMenu = account.menu;
+      if (account.role === "admin") {
         if (!features.has("users")) expectedMenu = "/admin/bookings";
         row.expectedMenu = expectedMenu;
         const planControlledLinks = [
@@ -138,10 +189,9 @@ test("seeded 28-account browser login, dashboard, session and logout audit", asy
         ];
         row.planNavigation = {};
         for (const [feature, href] of planControlledLinks) {
-          const link = page.locator(`a[href="${href}"]`);
+          const link = page.locator(`a.admin-sidebar-link[href="${href}"]`);
           const enabled = features.has(feature);
-          if (enabled) await expect(link).toBeVisible({ timeout: 15_000 });
-          else await expect(link).toHaveCount(0, { timeout: 15_000 });
+          await expect(link).toHaveCount(enabled ? 1 : 0, { timeout: 15_000 });
           row.planNavigation[feature] = (await link.isVisible().catch(() => false)) === enabled;
         }
         row.financeFeatureEnabled = features.has("finance");
@@ -149,7 +199,22 @@ test("seeded 28-account browser login, dashboard, session and logout audit", asy
         if (row.subscriptionStatus !== 200 || Object.values(row.planNavigation).some((matches) => !matches)) {
           throw new Error("Plan-controlled navigation did not match the tenant's server-reported entitlements");
         }
+        if (features.has("finance")) {
+          await page.locator('a.admin-sidebar-link[href="/admin/finance"]').click();
+          await expect(page).toHaveURL(/\/admin\/finance(?:\?|$)/, { timeout: 20_000 });
+          await expect(page.locator("main").last()).not.toBeEmpty({ timeout: 20_000 });
+          row.financeDashboardLoaded = true;
+        }
+        if (features.has("reports")) {
+          await page.locator('a.admin-sidebar-link[href="/admin/reports"]').click();
+          await expect(page).toHaveURL(/\/admin\/reports(?:\?|$)/, { timeout: 20_000 });
+          await expect(page.locator("main").last()).not.toBeEmpty({ timeout: 20_000 });
+          row.reportingDashboardLoaded = true;
+        }
         if (!row.financeFeatureEnabled) {
+          await page.goto("/admin/finance");
+          await expect(page.getByText("Subscription feature lock", { exact: true })).toBeVisible({ timeout: 20_000 });
+          row.lockedFinanceRouteDenied = true;
           const lockedFinance = await context.request.get(`${apiOrigin}/api/admin/finance/stats`, {
             headers: { authorization: `Bearer ${await page.evaluate(() => localStorage.getItem("token"))}` },
           });
@@ -178,11 +243,6 @@ test("seeded 28-account browser login, dashboard, session and logout audit", asy
       row.sessionPersistsAfterReload = reloadedSession.tokenPresent && normalizeRole(reloadedSession.user?.role) === account.role;
       if (!row.sessionPersistsAfterReload) throw new Error("Session identity did not persist after navigation and reload");
       row.steps.push("session persisted after navigation and reload");
-      const screenshot = path.join(screenshotDirectory, `${String(index + 1).padStart(2, "0")}-${account.email.replaceAll("@", "-")}.png`);
-      await page.screenshot({ path: screenshot, fullPage: true, animations: "disabled" });
-      row.screenshot = path.basename(screenshot);
-      audit.screenshots.push(row.screenshot);
-
       if (account.role === "customer") {
         const unauthorized = await context.request.get(`${apiOrigin}/api/admin/dashboard/metrics`, {
           headers: { authorization: `Bearer ${await page.evaluate(() => localStorage.getItem("token"))}` },
@@ -219,16 +279,18 @@ test("seeded 28-account browser login, dashboard, session and logout audit", asy
       row.badApiResponses = badResponses;
       audit.accounts.push(row);
       await context.close();
+      audit.lastCompletedAccountAt = new Date().toISOString();
+      await fs.writeFile(path.join(outputDirectory, "audit.json"), `${JSON.stringify(audit, null, 2)}\n`);
     }
   }
 
   const tenantIdBySlug = new Map(audit.accounts
     .filter((account) => account.expectedRole === "admin")
     .map((account) => [account.expectedTenant, String(account.tenantId || "")]));
-  if (tenantIdBySlug.size !== 3 || new Set(tenantIdBySlug.values()).size !== 3 || [...tenantIdBySlug.values()].some((id) => !id)) {
+  if (!process.env.DEMO_AUDIT_EMAIL && (tenantIdBySlug.size !== 3 || new Set(tenantIdBySlug.values()).size !== 3 || [...tenantIdBySlug.values()].some((id) => !id))) {
     audit.errors.push({ check: "tenant-admin identities", error: "Expected three distinct tenant administrator identities" });
   }
-  for (const account of audit.accounts) {
+  for (const account of process.env.DEMO_AUDIT_EMAIL ? [] : audit.accounts) {
     if (!account.expectedTenant) {
       if (account.tenantId) audit.errors.push({ email: account.email, error: "Platform account unexpectedly resolved to a tenant" });
       continue;
@@ -240,6 +302,6 @@ test("seeded 28-account browser login, dashboard, session and logout audit", asy
 
   audit.completedAt = new Date().toISOString();
   await fs.writeFile(path.join(outputDirectory, "audit.json"), `${JSON.stringify(audit, null, 2)}\n`);
-  expect(audit.accounts).toHaveLength(28);
+  expect(audit.accounts).toHaveLength(auditUsers.length);
   expect(audit.errors, "seeded account audit errors").toEqual([]);
 });

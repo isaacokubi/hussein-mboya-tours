@@ -60,6 +60,14 @@ async function request(endpoint, token, options = {}) {
   return { status: response.status, payload };
 }
 
+const dashboardFeatureFor = (account, endpoint) => {
+  if (endpoint === "/api/admin/finance/stats") return "finance";
+  if (endpoint.startsWith("/api/tourmanager/") || endpoint.startsWith("/api/guide/")) return "operations";
+  if (endpoint.startsWith("/api/agent/")) return "agents";
+  if (endpoint.startsWith("/api/driver/")) return "fleet";
+  return null;
+};
+
 try {
   for (const [index, account] of logins.entries()) {
     if (needsLoginWindowWait(index, logins.length)) await pause(LOGIN_WINDOW_MS + 1000);
@@ -97,7 +105,16 @@ try {
     const features = Array.isArray(response.payload?.features) ? response.payload.features : [];
     assert.ok(response.payload?.plan, `${key} subscription plan`);
     tenantFeatures.set(tenant, { plan: response.payload.plan, features: new Set(features) });
-    report.tenantEntitlements.push({ tenant, plan: response.payload.plan, finance: features.includes("finance") });
+    report.tenantEntitlements.push({
+      tenant,
+      plan: response.payload.plan,
+      finance: features.includes("finance"),
+      operations: features.includes("operations"),
+      agents: features.includes("agents"),
+      fleet: features.includes("fleet"),
+      reports: features.includes("reports"),
+      analytics: features.includes("analytics"),
+    });
   }
 
   const dashboardChecks = [
@@ -141,15 +158,16 @@ try {
   for (const [key, endpoint] of dashboardChecks) {
     const response = await request(endpoint, sessions.get(key).token);
     const account = logins.find((candidate) => candidate.key === key);
-    const financeFeatureLocked = endpoint === "/api/admin/finance/stats"
+    const requiredFeature = dashboardFeatureFor(account, endpoint);
+    const planFeatureLocked = requiredFeature
       && account?.tenant
-      && !tenantFeatures.get(account.tenant)?.features.has("finance");
-    const expectedStatus = financeFeatureLocked ? 403 : 200;
-    report.dashboards.push({ account: key, endpoint, status: response.status, expectedStatus, success: response.payload?.success });
+      && !tenantFeatures.get(account.tenant)?.features.has(requiredFeature);
+    const expectedStatus = planFeatureLocked ? 403 : 200;
+    report.dashboards.push({ account: key, endpoint, requiredFeature, status: response.status, expectedStatus, success: response.payload?.success });
     assert.equal(response.status, expectedStatus, `${key} ${endpoint}`);
-    if (financeFeatureLocked) {
-      assert.equal(response.payload?.code, "PLAN_FEATURE_LOCKED", `${key} finance endpoint must be denied by its plan entitlement`);
-      assert.equal(response.payload?.feature, "finance", `${key} finance endpoint must identify the locked feature`);
+    if (planFeatureLocked) {
+      assert.equal(response.payload?.code, "PLAN_FEATURE_LOCKED", `${key} ${requiredFeature} endpoint must be denied by its plan entitlement`);
+      assert.equal(response.payload?.feature, requiredFeature, `${key} ${endpoint} must identify its locked plan feature`);
     }
     payloads.set(`${key}:${endpoint}`, response.payload);
   }

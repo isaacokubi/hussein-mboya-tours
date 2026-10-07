@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarDays, CheckCircle2, Clock3, MapPinned, PlayCircle, RefreshCw, Send, Users, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "react-toastify";
+import { Link } from "react-router-dom";
 import { getGuideDashboard, getTourGuests, submitTourReport, updateTourStatus } from "../../api/guideApi";
 import { asArray, firstNumeric, unwrapData } from "../../utils/dashboardData";
 
@@ -166,9 +167,12 @@ export default function TourGuideDashboard() {
           <div className="ops-page-title">Guide Operations</div>
           <div className="ops-page-subtitle">Assigned departures, guest manifests, tour status and tour-day readiness.</div>
         </div>
-        <button className="btn btn-secondary" type="button" onClick={() => { dashboardQuery.refetch(); if (selectedTourId) guestQuery.refetch(); }} disabled={dashboardQuery.isFetching || guestQuery.isFetching}>
-          <RefreshCw size={15} className={dashboardQuery.isFetching || guestQuery.isFetching ? "spin" : ""} /> {dashboardQuery.isFetching || guestQuery.isFetching ? "Refreshing..." : "Refresh"}
-        </button>
+        <div className="flex items-center gap-2">
+          <Link className="btn btn-secondary" to="/guide/assigned-tours">Assigned Tours</Link>
+          <button className="btn btn-secondary" type="button" onClick={() => { dashboardQuery.refetch(); if (selectedTourId) guestQuery.refetch(); }} disabled={dashboardQuery.isFetching || guestQuery.isFetching}>
+            <RefreshCw size={15} className={dashboardQuery.isFetching || guestQuery.isFetching ? "spin" : ""} /> {dashboardQuery.isFetching || guestQuery.isFetching ? "Refreshing..." : "Refresh"}
+          </button>
+        </div>
       </div>
 
       <div className="ops-kpis">
