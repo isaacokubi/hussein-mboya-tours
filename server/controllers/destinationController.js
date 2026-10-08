@@ -74,13 +74,7 @@ export const getDestination = async (req, res, next) => {
           "nairobi national park": ["nairobi national park", "nairobi"],
         };
         const candidates = aliases[canonicalName] || [canonicalName];
-        const namePatterns = candidates.map((candidate) => candidate.split(/\\s+/).filter(Boolean).map((part) => part.replace(/[.*+?^${}()|[\\]\\]/g, "\\        const canonicalName = slug.replace(/-/g, " ").trim();
-        const escapedParts = canonicalName.split(/\\s+/).filter(Boolean).map((part) => part.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&"));
-        const nameRegex = escapedParts.join(".*");
-        const nameFilter = platformWide
-          ? { ...publicDestinationFilter, name: { $regex: nameRegex, $options: "i" } }
-          : mergeTenantFilter({ ...publicDestinationFilter, name: { $regex: nameRegex, $options: "i" } });
-        destination = await Destination.findOne(nameFilter).sort({ createdAt: -1 }).lean();")).join(".*"));
+        const namePatterns = candidates.map((candidate) => candidate.split(" ").filter(Boolean).join(".*"));
         const nameFilter = platformWide
           ? { ...publicDestinationFilter, $or: namePatterns.map((pattern) => ({ name: { $regex: pattern, $options: "i" } })) }
           : mergeTenantFilter({ ...publicDestinationFilter, $or: namePatterns.map((pattern) => ({ name: { $regex: pattern, $options: "i" } })) });
