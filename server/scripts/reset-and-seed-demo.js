@@ -32,7 +32,7 @@ dotenv.config();
 process.env.DEMO_SEED_MODE = "true";
 
 const CONFIRM = process.env.CONFIRM_DEMO_RESET;
-const DEMO_PASSWORD = String(process.env.SEED_DEMO_PASSWORD || "");
+const DEMO_PASSWORD = String(process.env.SEED_DEMO_PASSWORD || process.env.TEST_DEMO_SEED_PASSWORD || "Password@2785");
 const DEMO_DATABASE_NAME = "husseindb";
 const DEMO_DATABASE_HOST = "cluster0.cdtxzts.mongodb.net";
 const DEMO_TENANTS = [

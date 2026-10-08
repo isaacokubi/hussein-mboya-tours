@@ -74,6 +74,19 @@ const PUBLIC_TENANT_KEY = String(
 function getPublicTenantSlug() {
   if (typeof window === "undefined") return "";
 
+  // A platform owner has no tenant by default. In particular, do not let a
+  // legacy public-site fallback silently attach the Hussein Mboya tenant to
+  // platform API requests. Tenant selection for platform users must be an
+  // explicit action that supplies its own tenant selector.
+  try {
+    const storedUser = JSON.parse(window.localStorage.getItem("user") || "null");
+    const storedRole = String(storedUser?.role?.name || storedUser?.role || storedUser?.legacyRole || "")
+      .trim().toLowerCase().replace(/[\s-]+/g, "_");
+    if (["super_admin", "superadmin"].includes(storedRole)) return "";
+  } catch {
+    // Invalid persisted user state is handled by AuthContext session restore.
+  }
+
   const hostname = String(window.location.hostname || "").trim().toLowerCase();
   const configuredPlatformHost = String(import.meta.env.VITE_PLATFORM_HOST || "")
     .trim()

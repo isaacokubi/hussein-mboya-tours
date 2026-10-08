@@ -89,7 +89,12 @@ import { assertSupportedMongoVersion } from "../utils/mongodbVersion.js";
 export const NAMESPACE = "TEST-SEED-GLOBAL-TOURS-2026";
 export const TEST_PASSWORD_ENV = "TEST_DEMO_SEED_PASSWORD";
 export function getTestPassword() {
-  const password = String(process.env[TEST_PASSWORD_ENV] || "");
+  // Both supported demo seed entry points must provision the same credentials.
+  // The default is the explicitly documented disposable-demo password; callers
+  // may still override it for isolated test environments.
+  const password = String(
+    process.env[TEST_PASSWORD_ENV] || process.env.SEED_DEMO_PASSWORD || "Password@2785"
+  );
   if (password.length < 12) throw new Error(`${TEST_PASSWORD_ENV} must contain at least 12 characters for disposable test accounts.`);
   return password;
 }

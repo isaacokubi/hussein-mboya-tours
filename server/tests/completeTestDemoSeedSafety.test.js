@@ -18,11 +18,15 @@ test.after(() => {
   }
 });
 
-test("complete test seed has an explicit namespace and requires an operator-supplied password", () => {
+test("complete test seed uses the common demo password unless explicitly overridden", () => {
   assert.equal(NAMESPACE, "TEST-SEED-GLOBAL-TOURS-2026");
   assert.equal(TEST_PASSWORD_ENV, "TEST_DEMO_SEED_PASSWORD");
   delete process.env.TEST_DEMO_SEED_PASSWORD;
-  assert.throws(() => getTestPassword(), /TEST_DEMO_SEED_PASSWORD/);
+  delete process.env.SEED_DEMO_PASSWORD;
+  assert.equal(getTestPassword(), "Password@2785");
+  process.env.SEED_DEMO_PASSWORD = "legacy-seed-password";
+  assert.equal(getTestPassword(), "legacy-seed-password");
+  delete process.env.SEED_DEMO_PASSWORD;
   process.env.TEST_DEMO_SEED_PASSWORD = "operator supplied disposable test value";
   assert.equal(getTestPassword(), "operator supplied disposable test value");
 });

@@ -66,6 +66,14 @@ const readStoredUser = () => {
 const preloadTenantSettings = async () => {
   if (typeof window === "undefined") return null;
   try {
+    const storedUser = JSON.parse(localStorage.getItem("user") || "null");
+    const role = String(storedUser?.role?.name || storedUser?.role || storedUser?.legacyRole || "")
+      .trim().toLowerCase().replace(/[\s-]+/g, "_");
+    if (["super_admin", "superadmin"].includes(role)) return null;
+  } catch {
+    // Session restore handles invalid persisted user state.
+  }
+  try {
     const response = await api.get("/settings/public", { params: { _t: Date.now() } });
     const settings = response.data?.settings || response.data?.data || response.data || {};
     const tenantId = String(localStorage.getItem("tenantId") || "").trim();

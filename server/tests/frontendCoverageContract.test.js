@@ -111,6 +111,13 @@ test("frontend coverage: authentication, security, RBAC and audit controls have 
   assert.match(routeSource, /path="rbac"/);
 });
 
+test("platform sessions do not inherit a public tenant fallback", () => {
+  const axios = read("api/axios.js");
+  const auth = read("context/AuthContext.jsx");
+  assert.match(axios, /storedRole[\s\S]*?\["super_admin", "superadmin"\][\s\S]*?return ""/);
+  assert.match(auth, /\["super_admin", "superadmin"\][\s\S]*?return null/);
+});
+
 test("frontend coverage: reliability and tenant administration are visible", () => {
   assert.match(read("pages/admin/AdminSystemHealth.jsx"), /System Health/);
   assert.match(read("pages/admin/TenantBilling.jsx"), /M-Pesa|Subscription|Billing/i);
