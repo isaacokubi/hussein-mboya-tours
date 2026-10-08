@@ -44,14 +44,27 @@ const report = { timestamp: new Date().toISOString(), logins: [], tenantEntitlem
 const sessions = new Map();
 
 async function request(endpoint, token, options = {}) {
-  const response = await fetch(new URL(endpoint, baseUrl), {
-    ...options,
-    signal: AbortSignal.timeout(30000),
-    headers: { "content-type": "application/json", "user-agent": userAgent, ...(token ? { authorization: `Bearer ${token}` } : {}), ...options.headers },
-  });
-  let payload = {};
-  try { payload = await response.json(); } catch { /* status remains the assertion */ }
-  return { status: response.status, payload };
+  const maxAttempts = 3;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      const response = await fetch(new URL(endpoint, baseUrl), {
+        ...options,
+        signal: AbortSignal.timeout(30000),
+        headers: { "content-type": "application/json", "user-agent": userAgent, ...(token ? { authorization: `Bearer ${token}` } : {}), ...options.headers },
+      });
+      let payload = {};
+      try { payload = await response.json(); } catch { /* status remains the assertion */ }
+      // Never retry rate limiting: the validator already enforces the server's
+      // login window and must not try to evade it. Retry only transient 5xx
+      // responses, which can occur while the Render service wakes or reconnects.
+      if (response.status < 500 || attempt === maxAttempts) return { status: response.status, payload };
+      await pause(1000 * attempt);
+    } catch (error) {
+      if (attempt === maxAttempts) throw error;
+      await pause(1000 * attempt);
+    }
+  }
+  throw new Error("Demo API request retry loop exhausted unexpectedly.");
 }
 
 const dashboardFeatureFor = (account, endpoint) => {
