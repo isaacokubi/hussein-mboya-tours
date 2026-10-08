@@ -68,11 +68,22 @@ export const getDestination = async (req, res, next) => {
       // the first choice, so normal production records are unaffected.
       if (!destination) {
         const canonicalName = slug.replace(/-/g, " ").trim();
+        const aliases = {
+          "diani beach": ["diani beach", "diani"],
+          "nairobi": ["nairobi"],
+          "nairobi national park": ["nairobi national park", "nairobi"],
+        };
+        const candidates = aliases[canonicalName] || [canonicalName];
+        const namePatterns = candidates.map((candidate) => candidate.split(/\\s+/).filter(Boolean).map((part) => part.replace(/[.*+?^${}()|[\\]\\]/g, "\\        const canonicalName = slug.replace(/-/g, " ").trim();
         const escapedParts = canonicalName.split(/\\s+/).filter(Boolean).map((part) => part.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&"));
         const nameRegex = escapedParts.join(".*");
         const nameFilter = platformWide
           ? { ...publicDestinationFilter, name: { $regex: nameRegex, $options: "i" } }
           : mergeTenantFilter({ ...publicDestinationFilter, name: { $regex: nameRegex, $options: "i" } });
+        destination = await Destination.findOne(nameFilter).sort({ createdAt: -1 }).lean();")).join(".*"));
+        const nameFilter = platformWide
+          ? { ...publicDestinationFilter, $or: namePatterns.map((pattern) => ({ name: { $regex: pattern, $options: "i" } })) }
+          : mergeTenantFilter({ ...publicDestinationFilter, $or: namePatterns.map((pattern) => ({ name: { $regex: pattern, $options: "i" } })) });
         destination = await Destination.findOne(nameFilter).sort({ createdAt: -1 }).lean();
       }
       if (!destination) return res.status(404).json({ success: false, message: "Destination not found." });
