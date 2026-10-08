@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { getSafeDemoApiOrigin, LOGIN_WINDOW_MS, needsLoginWindowWait } from "./demoApiValidationSafety.js";
+import { TEST_LOGIN_EMAILS } from "../seeds/completeTestDemoSeed.js";
 
 const baseUrl = getSafeDemoApiOrigin(process.env.DEMO_API_BASE_URL);
 const password = String(process.env.DEMO_TEST_PASSWORD || process.env.DEMO_SMOKE_PASSWORD || process.env.TEST_DEMO_SEED_PASSWORD || process.env.SEED_DEMO_PASSWORD || "");
@@ -13,39 +14,32 @@ const defaultReportPath = path.resolve(path.dirname(fileURLToPath(import.meta.ur
 const reportPath = path.resolve(process.env.DEMO_API_REPORT_PATH || defaultReportPath);
 const pause = (duration) => new Promise((resolve) => setTimeout(resolve, duration));
 const userAgent = "HusseinMboyaDemoApiValidator/1.0";
-const customerAccounts = [
-  ["A", "hussein-mboya"],
-  ["B", "amani-trails"],
-  ["C", "demo-safari"],
-].flatMap(([tenantKey, tenant]) => Array.from({ length: 4 }, (_, index) => {
-  const customerNumber = index + 1;
-  return {
-    key: customerNumber === 1 ? `customer${tenantKey}` : `customer${customerNumber}${tenantKey}`,
-    email: `customer${customerNumber}@${tenant}.com`,
-    role: "customer",
-    tenant,
-  };
-}));
-const logins = [
-  { key: "superAdmin", email: "superadmin@hussein-mboya.com", role: "super_admin", tenant: null },
-  { key: "tenantAdminA", email: "admin@hussein-mboya.com", role: "admin", tenant: "hussein-mboya" },
-  { key: "tenantAdminB", email: "admin@amani-trails.com", role: "admin", tenant: "amani-trails" },
-  { key: "tenantAdminC", email: "admin@demo-safari.com", role: "admin", tenant: "demo-safari" },
-  { key: "managerA", email: "manager@hussein-mboya.com", role: "tour_manager", tenant: "hussein-mboya" },
-  { key: "managerB", email: "manager@amani-trails.com", role: "tour_manager", tenant: "amani-trails" },
-  { key: "managerC", email: "manager@demo-safari.com", role: "tour_manager", tenant: "demo-safari" },
-  { key: "agentA", email: "agent@hussein-mboya.com", role: "agent", tenant: "hussein-mboya" },
-  { key: "agentB", email: "agent@amani-trails.com", role: "agent", tenant: "amani-trails" },
-  { key: "agentC", email: "agent@demo-safari.com", role: "agent", tenant: "demo-safari" },
-  { key: "guideA", email: "guide1@hussein-mboya.com", role: "guide", tenant: "hussein-mboya" },
-  { key: "guideB", email: "guide1@amani-trails.com", role: "guide", tenant: "amani-trails" },
-  { key: "guideC", email: "guide1@demo-safari.com", role: "guide", tenant: "demo-safari" },
-  { key: "driverA", email: "driver1@hussein-mboya.com", role: "driver", tenant: "hussein-mboya" },
-  { key: "driverB", email: "driver1@amani-trails.com", role: "driver", tenant: "amani-trails" },
-  { key: "driverC", email: "driver1@demo-safari.com", role: "driver", tenant: "demo-safari" },
-  ...customerAccounts,
-];
-assert.equal(logins.length, 28, "the production demo audit must cover all 28 seeded users");
+const domains = { "husseinmboya.com": "hussein-mboya", "amanitrails.com": "amani-trails", "demosafari.com": "demo-safari" };
+const tenantKeys = { "hussein-mboya": "A", "amani-trails": "B", "demo-safari": "C" };
+const accountRole = (email) => {
+  if (email === "superadmin1@husseinmboya.com") return "super_admin";
+  const local = email.split("@")[0];
+  if (local === "admin1") return "admin";
+  if (local === "tourmanager1") return "tour_manager";
+  if (local.startsWith("agent")) return "agent";
+  if (local.startsWith("guide")) return "tour_guide";
+  if (local.startsWith("driver")) return "driver";
+  if (local.startsWith("customer")) return "customer";
+  return null;
+};
+const accountKey = (email, tenant) => {
+  if (!tenant) return "superAdmin";
+  const local = email.split("@")[0];
+  if (local === "admin1") return `tenantAdmin${tenantKeys[tenant]}`;
+  if (local === "tourmanager1") return `manager${tenantKeys[tenant]}`;
+  return `${local}${tenantKeys[tenant]}`;
+};
+const logins = TEST_LOGIN_EMAILS.map((email) => {
+  const tenant = Object.entries(domains).find(([domain]) => email.endsWith(`@${domain}`))?.[1] || null;
+  return { key: accountKey(email, tenant), email, role: accountRole(email), tenant };
+});
+const customerAccounts = logins.filter(({ role }) => role === "customer");
+assert.equal(logins.length, 37, "the demo API audit must cover all 37 authoritative seeded users");
 const report = { timestamp: new Date().toISOString(), logins: [], tenantEntitlements: [], dashboards: [], dashboardComparisons: [], financeComparisons: [], tenantIsolation: [], rbac: [], failures: [] };
 const sessions = new Map();
 
@@ -291,7 +285,12 @@ try {
     assert.equal(denied.status, 403, `${account.key} cannot use platform tenant management API`);
   }
 } catch (error) {
-  report.failures.push(error?.name || "ValidationError");
+  const safeMessage = String(error?.message || "Validation failed.")
+    .replace(/mongodb(?:\+srv)?:\/\/[^\s"']+/gi, "[MongoDB URI redacted]")
+    .replace(/\bBearer\s+[^\s"']+/gi, "Bearer [redacted]")
+    .replace(/(password|secret|token|credential)\s*[:=]\s*[^\s,;]+/gi, "$1=[redacted]");
+  report.failures.push(`${error?.name || "ValidationError"}: ${safeMessage}`);
+  console.error(`Demo API validation failed safely: ${safeMessage}`);
   process.exitCode = 1;
 } finally {
   await mongoose.disconnect().catch(() => {});

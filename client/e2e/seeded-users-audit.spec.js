@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 
-const password = process.env.DEMO_SMOKE_PASSWORD || process.env.DEMO_TEST_PASSWORD;
+const password = process.env.DEMO_SMOKE_PASSWORD || process.env.DEMO_TEST_PASSWORD || process.env.SEED_DEMO_PASSWORD;
 const users = [
   { email: "superadmin1@husseinmboya.com", role: "super_admin", tenant: null, route: "/superadmin/dashboard", menu: "/superadmin/users" },
   ...[
@@ -70,7 +70,7 @@ const gotoWithRetry = async (page, url, onRetry = () => {}) => {
   }
 };
 
-test("seeded 28-account browser login, dashboard, session and logout audit", async ({ browser }, testInfo) => {
+test("seeded 37-account browser login, dashboard, session and logout audit", async ({ browser }, testInfo) => {
   test.skip(!password, "Set DEMO_SMOKE_PASSWORD for the controlled seeded-account browser audit.");
   test.setTimeout(2 * 60 * 60 * 1000);
   const outputDirectory = resumeFile ? path.dirname(resumeFile) : testInfo.outputPath("seeded-user-audit");
@@ -121,12 +121,23 @@ test("seeded 28-account browser login, dashboard, session and logout audit", asy
       const url = new URL(response.url());
       if (url.pathname.endsWith("/api/auth/login") && response.request().method() === "POST") apiOrigin = url.origin;
       const expectedUnauthenticatedProbe = /\/api\/auth\/me\/?$/.test(url.pathname) && response.status() === 401;
-      if (url.pathname.startsWith("/api/") && response.status() >= 400 && !expectedUnauthenticatedProbe) {
+      const expectedStaleTenantProbe = account.role === "super_admin"
+        && !row.steps.includes("login response accepted")
+        && /\/api\/auth\/me\/?$/.test(url.pathname)
+        && response.status() === 404;
+      if (url.pathname.startsWith("/api/") && response.status() >= 400 && !expectedUnauthenticatedProbe && !expectedStaleTenantProbe) {
         badResponses.push(`${response.status()} ${url.pathname}`);
       }
     });
 
     try {
+      if (account.role === "super_admin") {
+        await page.addInitScript(() => {
+          localStorage.setItem("tenantId", "stale-tenant-selection");
+          localStorage.setItem("tenantSlug", "hussein-mboya");
+          localStorage.setItem("tenantKey", "stale-tenant-selection");
+        });
+      }
       await gotoWithRetry(page, "/login", (reason) => { row.navigationRetries = [...(row.navigationRetries || []), reason]; });
       await page.getByPlaceholder(/enter email/i).fill(account.email);
       await page.getByPlaceholder(/enter password/i).fill(password);
@@ -165,9 +176,16 @@ test("seeded 28-account browser login, dashboard, session and logout audit", asy
         tokenPresent: Boolean(localStorage.getItem("token")),
         user: JSON.parse(localStorage.getItem("user") || "null"),
         permissions: JSON.parse(localStorage.getItem("permissions") || "[]"),
+        tenantId: localStorage.getItem("tenantId"),
+        tenantSlug: localStorage.getItem("tenantSlug"),
+        tenantKey: localStorage.getItem("tenantKey"),
       }));
       row.sessionCreated = storedSession.tokenPresent;
       if (!storedSession.tokenPresent || normalizeRole(storedSession.user?.role) !== account.role) throw new Error("Browser session or persisted role is missing");
+      if (account.role === "super_admin" && (storedSession.tenantId || storedSession.tenantSlug || storedSession.tenantKey || tenantIdOf(storedSession.user))) {
+        throw new Error("Platform login retained a stale tenant selection or tenant assignment");
+      }
+      if (account.role === "super_admin") row.staleTenantSelectionCleared = true;
       row.permissionCount = storedSession.permissions.length;
       row.steps.push("browser session and permissions loaded");
 
@@ -252,7 +270,7 @@ test("seeded 28-account browser login, dashboard, session and logout audit", asy
       }
       row.steps.push(dashboardFeatureAllowed ? "role dashboard loaded" : "role dashboard correctly plan locked");
 
-      if (account.role === "customer" && account.tenant === "hussein-mboya" && account.email.endsWith("customer1@hussein-mboya.com")) {
+      if (account.role === "customer" && account.tenant === "hussein-mboya" && account.email.endsWith("customer1@husseinmboya.com")) {
         await gotoWithRetry(page, "/destinations", (reason) => { row.navigationRetries = [...(row.navigationRetries || []), reason]; });
         await expect(page.locator("main").last()).toContainText(/destination/i);
         const destinationLink = page.locator("main").last().locator("a[href^='/destinations/']").first();

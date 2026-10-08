@@ -2,18 +2,18 @@
 
 ## Safety and reset process
 
-The reset replaces application records in the selected database. It requires `CONFIRM_DEMO_RESET=YES`, a private `SEED_DEMO_PASSWORD` of at least eight characters, and the exact configured Atlas host and database. The script refuses any target other than `cluster0.cdtxzts.mongodb.net/husseindb`, validates the target before connecting, preserves existing platform-owner accounts, and recreates the three established tenant records. Transient Atlas network failures receive up to two retries; each retry repeats the same guarded reset.
+The authoritative comprehensive seed is `server/seeds/completeTestDemoSeed.js`. The compatibility `seed:demo` command delegates to it and does not maintain another user list. For the known demo database, it requires `ALLOW_ATLAS_DEMO_SEED=YES`, `CONFIRM_TEST_SEED=YES`, a private `SEED_DEMO_PASSWORD`, and development/test mode. It validates the Atlas host and `husseindb`, exact tenant slugs/names, and unsafe fallback settings before writing. Before replacing any records scoped to those three tenant IDs, it writes `server/reports/test-seed-preflight-report.json` with tenant identities and planned per-model deletion counts. It does not drop the database or touch other tenant IDs.
 
 Run from the repository root:
 
 ```bash
 cd server
-CONFIRM_DEMO_RESET=YES SEED_DEMO_PASSWORD='YOUR_PRIVATE_DEMO_PASSWORD' npm run seed:demo
+ALLOW_ATLAS_DEMO_SEED=YES CONFIRM_TEST_SEED=YES SEED_DEMO_PASSWORD='YOUR_PRIVATE_DEMO_PASSWORD' npm run seed:test:complete
 ```
 
 Never place the seed password in source, documentation, public environment files, or Git. The user model hashes it with the existing bcrypt save hook.
 
-## Latest verified demo dataset — 2026-09-28
+## Historical demo dataset — 2026-09-28 (28-user seed)
 
 Connected target: Atlas database `husseindb` on `cluster0.cdtxzts.mongodb.net`.
 
@@ -38,7 +38,7 @@ Connected target: Atlas database `husseindb` on `cluster0.cdtxzts.mongodb.net`.
 | Airport-transfer products / bookings | 9 / 12 |
 | Hospitality room blocks / deposits / operational assets | 0 / 0 / 0 (not seeded in this fixture) |
 
-Each tenant (`hussein-mboya`, `amani-trails`, `demo-safari`) has nine users: administrator, manager, agent, guide, driver, and four customers. The application does not define a finance or operations login role in its User schema, so the seed does not invent those roles. Each tenant has 12 published destinations and 12 public tours. The public Vercel API checks returned HTTP 200 and 12 results for both catalogues. Every tenant has 12 distinct tour images and 12 distinct destination images; destination artwork is served from the repository's local demo SVG catalogue.
+This record predates the authoritative 37-account architecture and is retained as historical evidence only. It does not establish the current database counts or current account set. The current intended architecture is one global superadmin plus 12 users per tenant, as listed in [Demo accounts](../DEMO_CREDENTIALS.md). Each tenant has 12 published destinations and 12 public tours in the historical validation.
 
 The accepted demo quotation for each tenant points to a booking in that same tenant. Finance records, bookings, payments, and supplier costs are synthetic. The seed does not initiate live M-Pesa, Stripe, refund-provider, or other external payment actions.
 

@@ -2,33 +2,34 @@
 
 Kenya-focused, multi-tenant tours & travel SaaS for tour operators, with tenant isolation, bookings, payments, finance/accounting, compliance, hospitality/operations, website integrations, RBAC and production safeguards.
 
-## Latest verified repository status — 2026-09-28
+## Latest verified repository status — 2026-10-09
 
-The controlled demo reset and verification were completed on 2026-09-28 on `main`. The project is **verified for the checks listed below**, while live production/provider certification remains a separate deployment-evidence gate.
+The comprehensive three-tenant demo dataset was reconciled on 2026-10-09. Source-level and live checks below were run for this revision; full demo API and browser acceptance still have the limitations noted below. Production/provider certification remains a separate deployment-evidence gate.
 
 ### Latest verified checks
 
 | Area | Result |
 |---|---|
-| Backend full suite | **182 passed, 0 failed, 5 expected skips** |
+| Backend full suite | **209 passed, 0 failed, 5 expected skips** |
 | Seed syntax checks (`npm run check:seeds`) | **PASS** |
 | Frontend lint | **PASS** |
 | Frontend production build | **PASS** |
 | Live health and CORS preflight | **PASS** |
-| Live destination and tour APIs | **PASS** — 12 records per Hussein Mboya catalogue |
-| Live seeded role logins | **PASS** — admin, manager, agent, guide, driver, customers, platform owner |
-| Customer tenant separation and RBAC smoke | **PASS** — distinct tenant IDs; customer denied admin endpoint |
-| Featured images | **12 unique per tenant** for tours and destinations |
+| Live destination and tour APIs | **PASS** — 12 records for each of the three tenants |
+| Live login/API checks | **PASS** — global superadmin and tenant admins authenticated; cross-tenant tenant-ID requests were denied |
+| Complete 37-account API/browser audit | **INCOMPLETE** — API smoke stopped on a transient request failure; public browser smoke reported failed requests |
+| Global superadmin browser audit | **PASS** — tenantless session and stale tenant selection cleared |
+| Frontend lint/build | **PASS** |
 
-### Current controlled demo dataset
+### Demo account architecture
 
-The verified demo dataset contains three tenants: `hussein-mboya`, `amani-trails`, and `demo-safari`. It includes **28 users** (27 tenant users and 1 preserved platform owner), **36 tours, 36 destinations, 36 bookings, 30 payments, 6 staff, 12 customers, 6 quotations, 6 custom-tour requests, 3 vehicles, 9 reviews, and 18 notifications**, plus finance, operations, website-integration, hospitality, hotel, and airport-transfer records. Each tenant has nine users, 12 public tours, and 12 public destinations. See [Demo Seeding Verification](docs/DEMO_SEEDING.md) for full totals and the seed safety boundary.
+The authoritative demo login set is `TEST_LOGIN_EMAILS` in `server/seeds/completeTestDemoSeed.js`: one global platform superadmin and 12 tenant users for each of `hussein-mboya`, `amani-trails`, and `demo-safari` (37 total). The database was reseeded and validated on 2026-10-09 with 3 tenants and 37 active users. The 2026-09-28, 28-user seed verification below is historical and does not describe the current account architecture.
 
-All seeded payment records are synthetic internal fixtures. No live M-Pesa transaction was initiated by the seed. Demo credentials use the controlled seed password supplied through `SEED_DEMO_PASSWORD`; never commit that value to Git.
+Demo credentials use the private `SEED_DEMO_PASSWORD` environment variable; never commit its value to Git. All seeded payment records are synthetic internal fixtures. No live M-Pesa transaction is initiated by the seed.
 
 ### Controlled demo seeding
 
-The supported reset/seed entry point is `server/scripts/reset-and-seed-demo.js`. It requires `CONFIRM_DEMO_RESET=YES` and a non-empty `SEED_DEMO_PASSWORD` of at least eight characters. The script preserves platform-owner accounts and tenant identities, replaces other application data with synthetic demo records, and runs the finance/operations/hospitality demo seed extensions. **Do not run it against an unknown or real production database.** Verify the MongoDB target before execution and use a disposable/staging/demo target only.
+The authoritative seed is `server/seeds/completeTestDemoSeed.js`; the legacy `seed:demo` command delegates to it. Atlas use requires explicit `ALLOW_ATLAS_DEMO_SEED=YES` and `CONFIRM_TEST_SEED=YES`, and writes only under the three exact demo tenant identities after writing a preflight count report. The seed refuses production mode and unsafe fallback configuration. **Do not run it against an unknown or real production database.**
 
 See [Demo Data & Seed Runbook](docs/DEMO_SEEDING.md) for the exact safety gates and verification procedure.
 
@@ -45,7 +46,7 @@ See the [Staging Test Record](docs/TEST_EVIDENCE.md#2026-09-26--staging-verifica
 See [First Tenant Production Acceptance](docs/FIRST_TENANT_ACCEPTANCE.md) for the production environment matrix, onboarding procedure and external actions.
 
 **Historical production-audit source snapshot:** `0b7949865e67a4fa5dd45076a120f9d7f69f1e39`
-**Verification date:** 2026-09-28
+**Verification date:** 2026-10-09 (current demo-seed reconciliation; historical production-audit source snapshot above)
 **Repository branch:** `main`
 
 The latest full local verification was completed after the production-audit remediation. Code-level checks and local release gates passed. Production launch certification is **not yet complete** because several acceptance gates require evidence from the actual deployment/provider environment.

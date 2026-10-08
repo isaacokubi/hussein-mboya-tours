@@ -2,15 +2,15 @@ import { test, expect } from "@playwright/test";
 import process from "node:process";
 
 const apiOrigin = process.env.DEMO_API_ORIGIN || "https://hussein-mboya-tours.onrender.com";
-const password = process.env.DEMO_TEST_PASSWORD || process.env.DEMO_SMOKE_PASSWORD;
+const password = process.env.DEMO_TEST_PASSWORD || process.env.DEMO_SMOKE_PASSWORD || process.env.SEED_DEMO_PASSWORD;
 const accounts = [
-  { name: "customer", email: "customer1@hussein-mboya.com", role: "customer", route: "/dashboard", tenant: true, content: /dashboard|welcome|booking/i },
-  { name: "super admin", email: "superadmin@hussein-mboya.com", role: "super_admin", route: "/superadmin/dashboard", tenant: false, content: /dashboard|overview|tenant/i },
-  { name: "tenant admin", email: "admin@hussein-mboya.com", role: "admin", route: "/admin/dashboard", tenant: true, content: /dashboard|overview|booking/i },
-  { name: "tour manager", email: "manager@hussein-mboya.com", role: "tour_manager", route: "/tour-manager/dashboard", tenant: true, content: /dashboard|tour|booking/i },
-  { name: "agent", email: "agent@hussein-mboya.com", role: "agent", route: "/agent/dashboard", tenant: true, content: /dashboard|booking|commission/i },
-  { name: "guide", email: "guide1@hussein-mboya.com", role: "tour_guide", route: "/guide/dashboard", tenant: true, content: /dashboard|tour|guest/i },
-  { name: "driver", email: "driver1@hussein-mboya.com", role: "driver", route: "/driver/dashboard", tenant: true, content: /dashboard|tour|vehicle/i },
+  { name: "customer", email: "customer1@husseinmboya.com", role: "customer", route: "/dashboard", tenant: true, content: /dashboard|welcome|booking/i },
+  { name: "super admin", email: "superadmin1@husseinmboya.com", role: "super_admin", route: "/superadmin/dashboard", tenant: false, content: /dashboard|overview|tenant/i },
+  { name: "tenant admin", email: "admin1@husseinmboya.com", role: "admin", route: "/admin/dashboard", tenant: true, content: /dashboard|overview|booking/i },
+  { name: "tour manager", email: "tourmanager1@husseinmboya.com", role: "tour_manager", route: "/tour-manager/dashboard", tenant: true, content: /dashboard|tour|booking/i },
+  { name: "agent", email: "agent1@husseinmboya.com", role: "agent", route: "/agent/dashboard", tenant: true, content: /dashboard|booking|commission/i },
+  { name: "guide", email: "guide1@husseinmboya.com", role: "tour_guide", route: "/guide/dashboard", tenant: true, content: /dashboard|tour|guest/i },
+  { name: "driver", email: "driver1@husseinmboya.com", role: "driver", route: "/driver/dashboard", tenant: true, content: /dashboard|tour|vehicle/i },
 ];
 
 test("public catalogue smoke acceptance", async ({ page }) => {

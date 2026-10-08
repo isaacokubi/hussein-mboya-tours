@@ -22,6 +22,7 @@ test("unresolved explicit tenant selectors are rejected before default tenant fa
   const defaultFallback = source.indexOf("const fallbackSlug =");
   assert.ok(rejectUnknownTenant >= 0, "unknown tenant signals must be detected");
   assert.ok(defaultFallback > rejectUnknownTenant, "unknown tenant requests cannot reach the default tenant fallback");
+  assert.match(source, /!isLoginRequest\(req\) && fallbackSlug/, "default public tenant cannot set login context");
   assert.match(source, /res\.status\(404\)\.json\(\{ success: false, message: "Tenant not found\." \}\)/);
   assert.match(environment, /if \(isProduction\) \{[\s\S]*?for \(const key of \["ALLOW_SINGLE_TENANT_DEV_FALLBACK"/);
   assert.match(environment, /if \(truthy\(process\.env\[key\]\)\) throw new Error/);

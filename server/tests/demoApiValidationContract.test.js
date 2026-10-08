@@ -11,16 +11,15 @@ const source = fs.readFileSync(
 );
 
 test("production demo API validation uses login response roles and fixtures for all tenants", () => {
-  assert.match(source, /guideA[^\n]+role: "guide"/);
-  assert.match(source, /const customerAccounts = \[/);
-  assert.match(source, /Array\.from\(\{ length: 4 \}/);
-  assert.match(source, /\.\.\.customerAccounts/);
-  assert.match(source, /assert\.equal\(logins\.length, 28/);
+  assert.match(source, /TEST_LOGIN_EMAILS/);
+  assert.match(source, /const customerAccounts = logins\.filter/);
+  assert.match(source, /local\.startsWith\("guide"\)\) return "tour_guide"/);
+  assert.match(source, /assert\.equal\(logins\.length, 37/);
   for (const slug of ["hussein-mboya", "amani-trails", "demo-safari"]) {
-    assert.ok(source.includes(`tenant: "${slug}"`), `missing fixture for ${slug}`);
+    assert.ok(source.includes(`"${slug}"`), `missing tenant mapping for ${slug}`);
   }
   for (const key of ["tenantAdminA", "tenantAdminB", "tenantAdminC"]) {
-    assert.ok(source.includes(`key: "${key}"`), `missing account ${key}`);
+    assert.ok(source.includes(`"${key}"`), `missing account ${key}`);
   }
   assert.match(source, /all 12 tenant customers have seeded bookings/);
   assert.match(source, /foreignBookings/);
@@ -57,10 +56,10 @@ test("demo API dashboard expectations follow each tenant's server-reported plan 
 test("demo API login batches respect the real limiter window", () => {
   assert.equal(LOGIN_LIMIT, 10);
   assert.equal(LOGIN_WINDOW_MS, 15 * 60 * 1000);
-  assert.equal(needsLoginWindowWait(9, 28), false);
-  assert.equal(needsLoginWindowWait(10, 28), true);
-  assert.equal(needsLoginWindowWait(20, 28), true);
-  assert.equal(needsLoginWindowWait(27, 28), false);
+  assert.equal(needsLoginWindowWait(9, 37), false);
+  assert.equal(needsLoginWindowWait(10, 37), true);
+  assert.equal(needsLoginWindowWait(20, 37), true);
+  assert.equal(needsLoginWindowWait(36, 37), false);
   assert.doesNotMatch(source, /x-forwarded-for/i);
 });
 

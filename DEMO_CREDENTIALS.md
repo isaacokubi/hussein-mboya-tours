@@ -1,14 +1,14 @@
 # Demo accounts
 
-The controlled demo seed creates accounts for the `hussein-mboya`, `amani-trails`, and `demo-safari` tenants. Each tenant has an administrator, manager, agent, guide, driver, and four customers. Demo login email addresses use the tenant slug as the domain, for example `admin@hussein-mboya.com` and `customer1@hussein-mboya.com`.
+The authoritative login list is `TEST_LOGIN_EMAILS` in `server/seeds/completeTestDemoSeed.js`. It contains one tenantless platform account and 12 accounts for each of `hussein-mboya`, `amani-trails`, and `demo-safari`.
 
-The seed password is supplied privately through `SEED_DEMO_PASSWORD` when running the reset command. It is deliberately not stored in this repository. Use the same environment value for each demo account; do not paste credentials into documentation, issues, or public deployments.
+| Scope | Canonical login addresses |
+|---|---|
+| Platform | `superadmin1@husseinmboya.com` |
+| Hussein Mboya Tours | `admin1@husseinmboya.com`, `tourmanager1@husseinmboya.com`; `agent1` and `agent2`, `guide1` and `guide2`, `driver1` and `driver2`, `customer1` through `customer4` at `@husseinmboya.com` |
+| Amani Trails Safaris | `admin1@amanitrails.com`, `tourmanager1@amanitrails.com`; `agent1` and `agent2`, `guide1` and `guide2`, `driver1` and `driver2`, `customer1` through `customer4` at `@amanitrails.com` |
+| Demo Safari Adventures | `admin1@demosafari.com`, `tourmanager1@demosafari.com`; `agent1` and `agent2`, `guide1` and `guide2`, `driver1` and `driver2`, `customer1` through `customer4` at `@demosafari.com` |
 
-| Role | Login address | Dashboard |
-|---|---|---|
-| Tenant administrator | `admin@tenant-slug.com` | `/admin` |
-| Tour manager | `manager@tenant-slug.com` | `/tour-manager` |
-| Agent | `agent@tenant-slug.com` | `/agent` |
-| Guide | `guide1@tenant-slug.com` | `/guide` |
-| Driver | `driver1@tenant-slug.com` | `/driver` |
-| Customer | `customer1@tenant-slug.com` through `customer4@tenant-slug.com` | `/dashboard` |
+Use the same privately supplied `SEED_DEMO_PASSWORD` environment value for the seed and password-reset workflows. The password is intentionally absent from source, documentation, and committed environment files.
+
+Tenant users authenticate into the tenant matching their email domain. The platform account has role `super_admin`, `tenantId: null`, and remains in platform context until an explicit tenant action is taken.

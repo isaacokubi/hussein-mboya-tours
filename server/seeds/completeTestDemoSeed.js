@@ -87,14 +87,10 @@ import { runWithTenant } from "../tenancy/context.js";
 import { assertSupportedMongoVersion } from "../utils/mongodbVersion.js";
 
 export const NAMESPACE = "TEST-SEED-GLOBAL-TOURS-2026";
-export const TEST_PASSWORD_ENV = "TEST_DEMO_SEED_PASSWORD";
+export const TEST_PASSWORD_ENV = "SEED_DEMO_PASSWORD";
 export function getTestPassword() {
-  // Both supported demo seed entry points must provision the same credentials.
-  // The default is the explicitly documented disposable-demo password; callers
-  // may still override it for isolated test environments.
-  const password = String(
-    process.env[TEST_PASSWORD_ENV] || process.env.SEED_DEMO_PASSWORD || "Password@2785"
-  );
+  const password = String(process.env[TEST_PASSWORD_ENV] || process.env.TEST_DEMO_SEED_PASSWORD || "");
+  if (!password) throw new Error(`${TEST_PASSWORD_ENV} is required for demo seed accounts.`);
   if (password.length < 12) throw new Error(`${TEST_PASSWORD_ENV} must contain at least 12 characters for disposable test accounts.`);
   return password;
 }
@@ -132,6 +128,17 @@ function loginEmail(local, prefix) {
   return `${roleAccount}@${tenantDomain[prefix]}`;
 }
 export const TEST_LOGIN_EMAILS = ["superadmin1@husseinmboya.com", ...tenantsSpec.flatMap(({ prefix }) => ["admin", "manager", "agent1", "agent2", "guide1", "guide2", "driver1", "driver2", "customer1", "customer2", "customer3", "customer4"].map((name) => loginEmail(name, prefix)))];
+const roleForLoginEmail = (email) => {
+  if (email === TEST_LOGIN_EMAILS[0]) return "super_admin";
+  const local = String(email).split("@")[0];
+  if (local === "admin1") return "admin";
+  if (local === "tourmanager1") return "tour_manager";
+  if (local.startsWith("agent")) return "agent";
+  if (local.startsWith("guide")) return "tour_guide";
+  if (local.startsWith("driver")) return "driver";
+  if (local.startsWith("customer")) return "customer";
+  return null;
+};
 const dates = (days = 30) => new Date(Date.now() + days * 86400000);
 const stablePhone = (tenantIndex, accountIndex) => String(7100000000 + tenantIndex * 1000 + accountIndex).slice(0, 10);
 
@@ -148,7 +155,7 @@ export function safeTarget(target = databaseTarget()) {
   const { dbName, host } = target;
   const normalizedHost = String(host || "").toLowerCase();
   const explicitAtlasDemoSeed = process.env.ALLOW_ATLAS_DEMO_SEED === "YES"
-    && normalizedHost.endsWith(".mongodb.net")
+    && normalizedHost === "cluster0.cdtxzts.mongodb.net"
     && dbName === "husseindb";
   if (!new Set(["127.0.0.1", "localhost", "[::1]", "::1"]).has(normalizedHost) && !explicitAtlasDemoSeed) {
     throw new Error("Refusing test seed: MongoDB host must be loopback unless the explicit Atlas demo-seed opt-in targets husseindb.");
@@ -281,14 +288,40 @@ async function countClusterCollections() {
 async function replacePriorDemoData() {
   return runWithTenant({ role: "super_admin", bypass: true }, async () => {
   const tenantDocs = [];
+  const preflight = { namespace: NAMESPACE, database: mongoose.connection.name, timestamp: new Date().toISOString(), tenants: [], plannedDeletionCounts: {}, plannedGlobalCleanupCounts: {} };
   for (const tenantSpec of tenantsSpec) {
     const tenant = await Organization.findOne({ slug: tenantSpec.slug }).lean();
-    if (tenant && tenant.settings?.testSeedNamespace !== NAMESPACE) {
+    const knownDemoTenant = tenant && tenant.name === tenantSpec.name && tenant.status === "active";
+    if (tenant && tenant.settings?.testSeedNamespace !== NAMESPACE && !(knownDemoTenant && process.env.ALLOW_ATLAS_DEMO_SEED === "YES" && process.env.CONFIRM_TEST_SEED === "YES")) {
       throw new Error(`Refusing to replace tenant without the exact demo seed marker: ${tenantSpec.slug}`);
     }
-    if (tenant) tenantDocs.push(tenant);
+    if (tenant) {
+      tenantDocs.push(tenant);
+      preflight.tenants.push({ slug: tenant.slug, id: String(tenant._id), namespaceMarked: tenant.settings?.testSeedNamespace === NAMESPACE });
+    }
   }
   const tenantIds = tenantDocs.map(({ _id }) => _id);
+  if (tenantIds.length) {
+    for (const Model of allModels) {
+      if (Model === Organization || Model === Permission || !Model.schema.path("tenantId")) continue;
+      const count = await Model.countDocuments({ tenantId: { $in: tenantIds } });
+      if (count) preflight.plannedDeletionCounts[Model.modelName] = count;
+    }
+  }
+  preflight.plannedGlobalCleanupCounts.permissions = await Permission.countDocuments({ name: /^test_seed_2026_/ });
+  preflight.plannedGlobalCleanupCounts.platformRoles = await Role.countDocuments({ tenantId: null, name: "super_admin", description: "TEST/DEMO platform owner RBAC role" });
+  const legacyPlatformUser = await User.findOne({ email: "superadmin@hussein-mboya.com", role: { $in: ["super_admin", "superadmin"] }, tenantId: null }).select("_id").lean();
+  const canonicalPlatformUser = await User.findOne({ email: "superadmin1@husseinmboya.com", tenantId: null }).select("_id").lean();
+  if (legacyPlatformUser && canonicalPlatformUser && String(legacyPlatformUser._id) !== String(canonicalPlatformUser._id)) {
+    throw new Error("Refusing seed: both legacy and canonical global demo accounts exist; review the duplicate before seeding.");
+  }
+  preflight.platformAccountMigration = legacyPlatformUser && !canonicalPlatformUser ? "rename legacy global account to canonical address" : "no legacy global account migration needed";
+  await fs.mkdir(path.dirname(reportFile), { recursive: true });
+  await fs.writeFile(path.resolve(__dirname, "../reports/test-seed-preflight-report.json"), `${JSON.stringify(preflight, null, 2)}\n`, { mode: 0o600 });
+  if (legacyPlatformUser && !canonicalPlatformUser) await User.updateOne(
+    { _id: legacyPlatformUser._id, tenantId: null },
+    { $set: { email: "superadmin1@husseinmboya.com", role: "super_admin", legacyRole: "super_admin", status: "active" } }
+  );
   const deletedCounts = {};
   if (tenantIds.length) {
     for (const Model of allModels) {
@@ -297,8 +330,6 @@ async function replacePriorDemoData() {
       if (result.deletedCount) deletedCounts[Model.modelName] = result.deletedCount;
     }
   }
-  const globalUserCleanup = await User.deleteMany({ email: { $in: TEST_LOGIN_EMAILS }, tenantId: null });
-  if (globalUserCleanup.deletedCount) deletedCounts.User = (deletedCounts.User || 0) + globalUserCleanup.deletedCount;
   const roleCleanup = await Role.deleteMany({ tenantId: null, name: "super_admin", description: "TEST/DEMO platform owner RBAC role" });
   if (roleCleanup.deletedCount) deletedCounts.Role = (deletedCounts.Role || 0) + roleCleanup.deletedCount;
   const permissionCleanup = await Permission.deleteMany({ name: /^test_seed_2026_/ });
@@ -438,13 +469,6 @@ async function seedTenant(spec, index, globalPermissionIds, platformRole = null)
     const users = await createUsers(tenant, roleMap, spec.prefix, index, Boolean(platformRole), platformRole);
     seededUsers = users;
     const byEmail = new Map(users.map((u) => [u.email, u]));
-    // Keep internal fixture lookups stable while accounts use the requested public demo login format.
-    const legacyAccountNames = ["admin", "manager", "agent1", "agent2", "guide1", "guide2", "driver1", "driver2", "customer1", "customer2", "customer3", "customer4"];
-    for (const local of legacyAccountNames) {
-      const account = byEmail.get(loginEmail(local, spec.prefix));
-      if (account) byEmail.set(`${local}.${spec.prefix}@test.globaltours.co.ke`, account);
-    }
-    if (platformRole) byEmail.set("superadmin@test.globaltours.co.ke", byEmail.get(loginEmail("superadmin", spec.prefix)));
     const staffByKind = new Map();
     for (const [kind, position, roleName, nth] of [["manager", "tour_manager", "manager", 1], ["guide1", "guide", "guide", 1], ["guide2", "guide", "guide", 2], ["driver1", "driver", "driver", 1], ["driver2", "driver", "driver", 2]]) {
       const accountLocal = kind === "manager" ? "manager" : kind;
@@ -494,19 +518,19 @@ async function seedTenant(spec, index, globalPermissionIds, platformRole = null)
         { $set: { isDeleted: true, deletedAt: new Date(), status: "cancelled", published: false, available: false } },
       );
     }
-    for (const tour of tours) await upsert(Itinerary, { tenantId: tenant._id, tour: tour._id }, { tenantId: tenant._id, tour: tour._id, days: [1, 2, 3].map((dayNumber) => ({ dayNumber, title: `TEST Day ${dayNumber}`, summary: "Synthetic Kenya itinerary day.", activities: [{ title: "Guided sightseeing", startTime: "09:00", endTime: "12:00", description: "Demo itinerary activity.", location: spec.county, meal: dayNumber === 1 ? "lunch" : "breakfast", transport: "TEST safari vehicle", image: sharedDemoImage }] })), overview: "TEST/DEMO multi-day itinerary.", highlights: ["Wildlife", "Culture"], included: ["Guide", "Transport"], excluded: ["International airfare"], status: "published", createdBy: byEmail.get(`admin.${spec.prefix}@test.globaltours.co.ke`)._id });
-    for (const tour of tours) await upsert(TourGallery, { tenantId: tenant._id, tour: tour._id }, { tenantId: tenant._id, tour: tour._id, images: [{ url: sharedDemoImage, caption: "TEST/DEMO safari gallery image", alt: "Synthetic Kenya safari image", uploadedBy: byEmail.get(`admin.${spec.prefix}@test.globaltours.co.ke`)._id, featured: true, order: 0 }], active: true, isDeleted: false, createdBy: byEmail.get(`admin.${spec.prefix}@test.globaltours.co.ke`)._id });
+    for (const tour of tours) await upsert(Itinerary, { tenantId: tenant._id, tour: tour._id }, { tenantId: tenant._id, tour: tour._id, days: [1, 2, 3].map((dayNumber) => ({ dayNumber, title: `TEST Day ${dayNumber}`, summary: "Synthetic Kenya itinerary day.", activities: [{ title: "Guided sightseeing", startTime: "09:00", endTime: "12:00", description: "Demo itinerary activity.", location: spec.county, meal: dayNumber === 1 ? "lunch" : "breakfast", transport: "TEST safari vehicle", image: sharedDemoImage }] })), overview: "TEST/DEMO multi-day itinerary.", highlights: ["Wildlife", "Culture"], included: ["Guide", "Transport"], excluded: ["International airfare"], status: "published", createdBy: byEmail.get(loginEmail("admin", spec.prefix))._id });
+    for (const tour of tours) await upsert(TourGallery, { tenantId: tenant._id, tour: tour._id }, { tenantId: tenant._id, tour: tour._id, images: [{ url: sharedDemoImage, caption: "TEST/DEMO safari gallery image", alt: "Synthetic Kenya safari image", uploadedBy: byEmail.get(loginEmail("admin", spec.prefix))._id, featured: true, order: 0 }], active: true, isDeleted: false, createdBy: byEmail.get(loginEmail("admin", spec.prefix))._id });
     await upsert(Gallery, { tenantId: tenant._id, title: `TEST ${spec.prefix} safari gallery` }, { tenantId: tenant._id, title: `TEST ${spec.prefix} safari gallery`, image: { url: sharedDemoImage, publicId: "" }, category: "Safari", featured: false, active: true });
-    await upsert(Media, { tenantId: tenant._id, fileName: `test-${spec.prefix}-safari-image.jpg` }, { tenantId: tenant._id, fileName: `test-${spec.prefix}-safari-image.jpg`, originalName: `TEST ${spec.name} safari image`, url: sharedDemoImage, publicId: "", fileType: "image", mimeType: "image/jpeg", extension: "jpg", size: 0, folder: "test-demo", category: "tour", tags: ["TEST", "DEMO"], relatedModel: "Tour", relatedId: tours[0]._id, uploadedBy: byEmail.get(`admin.${spec.prefix}@test.globaltours.co.ke`)._id, visibility: "public", isDeleted: false });
+    await upsert(Media, { tenantId: tenant._id, fileName: `test-${spec.prefix}-safari-image.jpg` }, { tenantId: tenant._id, fileName: `test-${spec.prefix}-safari-image.jpg`, originalName: `TEST ${spec.name} safari image`, url: sharedDemoImage, publicId: "", fileType: "image", mimeType: "image/jpeg", extension: "jpg", size: 0, folder: "test-demo", category: "tour", tags: ["TEST", "DEMO"], relatedModel: "Tour", relatedId: tours[0]._id, uploadedBy: byEmail.get(loginEmail("admin", spec.prefix))._id, visibility: "public", isDeleted: false });
     const packages = [];
     for (let i = 0; i < 3; i++) packages.push(await upsert(TourPackage, { tenantId: tenant._id, slug: `test-${spec.prefix}-package-${i + 1}` }, {
-      title: `TEST ${spec.name} Package ${i + 1}`, slug: `test-${spec.prefix}-package-${i + 1}`, description: "Synthetic sample multi-day Kenya safari package.", destination: destinations[i].name, category: "Safari", duration: String(3 + i), numberOfDays: 3 + i, basePrice: 75000 + i * 5000, agentPrice: 70000 + i * 5000, createdBy: byEmail.get(`admin.${spec.prefix}@test.globaltours.co.ke`)._id, status: "active", published: true, inclusions: ["Transport", "Guide"], exclusions: ["Airfare"], highlights: ["TEST safari", "Kenyan guide"], itinerary: Array.from({ length: 3 + i }, (_, index) => ({ day: index + 1, title: `TEST Day ${index + 1}`, description: "Synthetic sample itinerary day." })), coverImage: { url: sharedDemoImage }, gallery: [{ url: sharedDemoImage }],
+      title: `TEST ${spec.name} Package ${i + 1}`, slug: `test-${spec.prefix}-package-${i + 1}`, description: "Synthetic sample multi-day Kenya safari package.", destination: destinations[i].name, category: "Safari", duration: String(3 + i), numberOfDays: 3 + i, basePrice: 75000 + i * 5000, agentPrice: 70000 + i * 5000, createdBy: byEmail.get(loginEmail("admin", spec.prefix))._id, status: "active", published: true, inclusions: ["Transport", "Guide"], exclusions: ["Airfare"], highlights: ["TEST safari", "Kenyan guide"], itinerary: Array.from({ length: 3 + i }, (_, index) => ({ day: index + 1, title: `TEST Day ${index + 1}`, description: "Synthetic sample itinerary day." })), coverImage: { url: sharedDemoImage }, gallery: [{ url: sharedDemoImage }],
     }));
     await upsert(HeroSlide, { tenantId: tenant._id, title: `TEST ${spec.prefix} homepage slide` }, { tenantId: tenant._id, title: `TEST ${spec.prefix} homepage slide`, subtitle: "Synthetic demo content", image: { url: sharedDemoImage, publicId: "" }, badge: "TEST/DEMO", buttonOne: { text: "Explore test tours", link: "/tours" }, buttonTwo: { text: "Test booking", link: "/book" }, active: true, order: 99 });
 
-    await upsert(Coupon, { tenantId: tenant._id, code: `TEST-${spec.prefix.toUpperCase()}-SAVE10` }, { tenantId: tenant._id, code: `TEST-${spec.prefix.toUpperCase()}-SAVE10`, description: "Synthetic demo coupon.", discountType: "percentage", amount: 10, startDate: new Date(), expiresAt: dates(90), usageLimit: 100, usedCount: 0, minimumBookingAmount: 10000, maximumDiscount: 20000, active: true, createdBy: byEmail.get(`admin.${spec.prefix}@test.globaltours.co.ke`)._id });
-    await upsert(Promotion, { tenantId: tenant._id, title: `TEST ${spec.prefix} safari promotion` }, { tenantId: tenant._id, title: `TEST ${spec.prefix} safari promotion`, description: "Synthetic demo promotion.", code: `TEST-${spec.prefix.toUpperCase()}-PROMO`, discountType: "percentage", discountValue: 5, startDate: new Date(), endDate: dates(60), tours: [tours[0]._id], audience: "all", usageLimit: 100, usageCount: 0, active: true, isDeleted: false, createdBy: byEmail.get(`admin.${spec.prefix}@test.globaltours.co.ke`)._id });
-    await upsert(Campaign, { tenantId: tenant._id, name: `TEST ${spec.prefix} demo campaign` }, { tenantId: tenant._id, name: `TEST ${spec.prefix} demo campaign`, description: "Synthetic campaign; no messages are delivered.", type: "email", subject: "TEST demo only", message: "Synthetic marketing content. Do not send.", audience: "custom", recipients: [], status: "draft", totalRecipients: 0, sentCount: 0, deliveredCount: 0, failedCount: 0, openedCount: 0, clickedCount: 0, unsubscribedCount: 0, createdBy: byEmail.get(`admin.${spec.prefix}@test.globaltours.co.ke`)._id, isDeleted: false });
+    await upsert(Coupon, { tenantId: tenant._id, code: `TEST-${spec.prefix.toUpperCase()}-SAVE10` }, { tenantId: tenant._id, code: `TEST-${spec.prefix.toUpperCase()}-SAVE10`, description: "Synthetic demo coupon.", discountType: "percentage", amount: 10, startDate: new Date(), expiresAt: dates(90), usageLimit: 100, usedCount: 0, minimumBookingAmount: 10000, maximumDiscount: 20000, active: true, createdBy: byEmail.get(loginEmail("admin", spec.prefix))._id });
+    await upsert(Promotion, { tenantId: tenant._id, title: `TEST ${spec.prefix} safari promotion` }, { tenantId: tenant._id, title: `TEST ${spec.prefix} safari promotion`, description: "Synthetic demo promotion.", code: `TEST-${spec.prefix.toUpperCase()}-PROMO`, discountType: "percentage", discountValue: 5, startDate: new Date(), endDate: dates(60), tours: [tours[0]._id], audience: "all", usageLimit: 100, usageCount: 0, active: true, isDeleted: false, createdBy: byEmail.get(loginEmail("admin", spec.prefix))._id });
+    await upsert(Campaign, { tenantId: tenant._id, name: `TEST ${spec.prefix} demo campaign` }, { tenantId: tenant._id, name: `TEST ${spec.prefix} demo campaign`, description: "Synthetic campaign; no messages are delivered.", type: "email", subject: "TEST demo only", message: "Synthetic marketing content. Do not send.", audience: "custom", recipients: [], status: "draft", totalRecipients: 0, sentCount: 0, deliveredCount: 0, failedCount: 0, openedCount: 0, clickedCount: 0, unsubscribedCount: 0, createdBy: byEmail.get(loginEmail("admin", spec.prefix))._id, isDeleted: false });
     for (let i = 0; i < customerUsers.length; i++) {
       const user = customerUsers[i];
       await upsert(Loyalty, { tenantId: tenant._id, user: user._id }, { user: user._id, availablePoints: 100 * (i + 1), lifetimePoints: 200 * (i + 1), redeemedPoints: 100 * i, expiredPoints: 0, tier: "Bronze", referralCode: `TEST-${spec.prefix.toUpperCase()}-LOYAL-${i + 1}`, successfulReferrals: i, status: "active", transactions: [] });
@@ -562,7 +586,7 @@ async function seedTenant(spec, index, globalPermissionIds, platformRole = null)
     await upsert(Quotation, { tenantId: tenant._id, quotationNumber: `TEST-${spec.prefix.toUpperCase()}-QT-001` }, { tenantId: tenant._id, quotationNumber: `TEST-${spec.prefix.toUpperCase()}-QT-001`, agent: agents[0]._id, customer: customers[0]._id, tour: tours[0]._id, tourPackage: packages[0]._id, items: [{ name: "TEST safari package", category: "Activity", description: "Synthetic quotation line.", quantity: 1, unitPrice: 75000, total: 75000 }], subtotal: 75000, tax: 0, discount: 0, grandTotal: 75000, currency: "KES", status: "sent", validUntil: dates(14), sentAt: new Date(), notes: "TEST/DEMO quotation; not an offer to a real customer." });
     const paymentLinkFilter = { tenantId: tenant._id, booking: bookings[0]._id };
     const existingPaymentLink = await PaymentLink.findOne(paymentLinkFilter).lean();
-    await upsert(PaymentLink, paymentLinkFilter, { token: existingPaymentLink?.token || randomBytes(32).toString("hex"), booking: bookings[0]._id, invoice: await Invoice.findOne({ tenantId: tenant._id, booking: bookings[0]._id }).then((invoice) => invoice._id), amount: bookings[0].balanceAmount || 1, currency: "KES", status: "cancelled", expiresAt: dates(-1), createdBy: byEmail.get(`admin.${spec.prefix}@test.globaltours.co.ke`)._id });
+    await upsert(PaymentLink, paymentLinkFilter, { token: existingPaymentLink?.token || randomBytes(32).toString("hex"), booking: bookings[0]._id, invoice: await Invoice.findOne({ tenantId: tenant._id, booking: bookings[0]._id }).then((invoice) => invoice._id), amount: bookings[0].balanceAmount || 1, currency: "KES", status: "cancelled", expiresAt: dates(-1), createdBy: byEmail.get(loginEmail("admin", spec.prefix))._id });
 
     const suppliers = [];
     for (const [i, category] of ["accommodation", "transport", "activity", "guide", "equipment"].entries()) suppliers.push(await upsert(Supplier, { tenantId: tenant._id, supplierNumber: `TEST-${spec.prefix.toUpperCase()}-SUP-${i + 1}` }, { tenantId: tenant._id, supplierNumber: `TEST-${spec.prefix.toUpperCase()}-SUP-${i + 1}`, legalName: `TEST ${category} supplier ${spec.name}`, tradingName: `Demo ${category}`, category, contacts: [{ name: "Demo Contact", email: `supplier${i + 1}.${spec.prefix}@test.globaltours.co.ke`, phone: stablePhone(index, 800 + i), role: "TEST contact" }], address: `${spec.county}, Kenya`, paymentTermsDays: 30, status: "active", notes: "Synthetic supplier data." }));
@@ -574,7 +598,7 @@ async function seedTenant(spec, index, globalPermissionIds, platformRole = null)
     for (const tour of tours) for (const [i, category] of ["accommodation", "transport", "park", "guide", "driver", "meals", "activity", "miscellaneous"].entries()) await upsert(TourCost, { tenantId: tenant._id, tour: tour._id, category }, { tenantId: tenant._id, tour: tour._id, category, description: `TEST ${category} cost`, quantity: 1, unitCost: 1000 + i * 100, currency: "KES", status: "estimated" });
     for (const [i, booking] of bookings.entries()) {
       const status = ["cancelled", "refunded"].includes(booking.status) ? "cancelled" : ["pending", "approved", "paid"][i % 3];
-      await upsert(Commission, { tenantId: tenant._id, booking: booking._id, agent: agents[i % agents.length]._id }, { tenantId: tenant._id, agent: agents[i % agents.length]._id, booking: booking._id, customer: booking.user, tour: booking.tour, bookingAmount: booking.totalAmount, rate: 8, amount: booking.totalAmount * 0.08, status, paymentMethod: status === "paid" ? "BANK_TRANSFER" : undefined, paymentReference: status === "paid" ? `TEST-COMMISSION-${spec.prefix.toUpperCase()}-${i + 1}` : "", paidAt: status === "paid" ? dates(-1) : null, approvedBy: status === "approved" ? byEmail.get(`admin.${spec.prefix}@test.globaltours.co.ke`)._id : null, approvedAt: status === "approved" ? dates(-1) : null, notes: "TEST commission; no external payment occurred." });
+      await upsert(Commission, { tenantId: tenant._id, booking: booking._id, agent: agents[i % agents.length]._id }, { tenantId: tenant._id, agent: agents[i % agents.length]._id, booking: booking._id, customer: booking.user, tour: booking.tour, bookingAmount: booking.totalAmount, rate: 8, amount: booking.totalAmount * 0.08, status, paymentMethod: status === "paid" ? "BANK_TRANSFER" : undefined, paymentReference: status === "paid" ? `TEST-COMMISSION-${spec.prefix.toUpperCase()}-${i + 1}` : "", paidAt: status === "paid" ? dates(-1) : null, approvedBy: status === "approved" ? byEmail.get(loginEmail("admin", spec.prefix))._id : null, approvedAt: status === "approved" ? dates(-1) : null, notes: "TEST commission; no external payment occurred." });
     }
 
     const hotel = await upsert(Hotel, { tenantId: tenant._id, slug: `test-${spec.prefix}-hotel` }, { tenantId: tenant._id, name: `TEST ${spec.name} Safari Lodge`, slug: `test-${spec.prefix}-hotel`, description: "Synthetic demo accommodation.", location: spec.county, address: `TEST lodge, ${spec.county}, Kenya`, city: spec.county, county: spec.county, country: "Kenya", starRating: 4, amenities: ["Wi-Fi", "Breakfast"], images: [sharedDemoImage], contactPhone: stablePhone(index, 960), contactEmail: `hotel.${spec.prefix}@test.globaltours.co.ke`, status: "active", currency: "KES" });
@@ -587,7 +611,7 @@ async function seedTenant(spec, index, globalPermissionIds, platformRole = null)
     await upsert(HospitalityRoomBlock, { tenantId: tenant._id, hotel: hotel._id, roomType: room._id, startDate: blockStart, endDate: blockEnd }, { tenantId: tenant._id, hotel: hotel._id, roomType: room._id, startDate: blockStart, endDate: blockEnd, quantity: 1, reason: "TEST maintenance block", status: "blocked" });
     await upsert(HospitalityDeposit, { tenantId: tenant._id, hospitalityType: "hotel", hospitalityBooking: hotelBooking._id }, { tenantId: tenant._id, hospitalityType: "hotel", hospitalityBooking: hotelBooking._id, amount: 5000, paidAmount: 0, dueDate: dates(10), status: "pending", notes: "Synthetic demo deposit; no payment requested." });
     const transfer = await upsert(AirportTransfer, { tenantId: tenant._id, name: `TEST ${spec.prefix} airport transfer` }, { tenantId: tenant._id, name: `TEST ${spec.prefix} airport transfer`, airportName: "Jomo Kenyatta International Airport TEST", airportCode: "NBO", direction: "airport_to_destination", pickupLocation: "JKIA TEST terminal", dropoffLocation: `${spec.county} hotel`, vehicleType: "TEST Van", passengerCapacity: 7, price: 6000, currency: "KES", status: "active", notes: "Synthetic transfer fixture." });
-    const transferBooking = await upsert(AirportTransferBooking, { tenantId: tenant._id, reference: `TEST-${spec.prefix.toUpperCase()}-TRANSFER-001` }, { tenantId: tenant._id, reference: `TEST-${spec.prefix.toUpperCase()}-TRANSFER-001`, transfer: transfer._id, customer: customers[0]._id, user: customerUsers[0]._id, linkedBooking: bookings[0]._id, pickupDateTime: dates(20), pickupLocation: "JKIA TEST terminal", dropoffLocation: `${spec.county} hotel`, passengerName: `${customers[0].firstName} ${customers[0].lastName}`, passengerPhone: customers[0].phone, passengerEmail: customers[0].email, passengers: 2, subtotal: 6000, totalAmount: 6000, assignedVehicle: vehicles[4]._id, assignedDriver: byEmail.get(`driver1.${spec.prefix}@test.globaltours.co.ke`)._id, status: "confirmed", paymentStatus: "pending", source: "booking" });
+    const transferBooking = await upsert(AirportTransferBooking, { tenantId: tenant._id, reference: `TEST-${spec.prefix.toUpperCase()}-TRANSFER-001` }, { tenantId: tenant._id, reference: `TEST-${spec.prefix.toUpperCase()}-TRANSFER-001`, transfer: transfer._id, customer: customers[0]._id, user: customerUsers[0]._id, linkedBooking: bookings[0]._id, pickupDateTime: dates(20), pickupLocation: "JKIA TEST terminal", dropoffLocation: `${spec.county} hotel`, passengerName: `${customers[0].firstName} ${customers[0].lastName}`, passengerPhone: customers[0].phone, passengerEmail: customers[0].email, passengers: 2, subtotal: 6000, totalAmount: 6000, assignedVehicle: vehicles[4]._id, assignedDriver: byEmail.get(loginEmail("driver1", spec.prefix))._id, status: "confirmed", paymentStatus: "pending", source: "booking" });
     await upsert(HospitalityDeposit, { tenantId: tenant._id, hospitalityType: "airport_transfer", hospitalityBooking: transferBooking._id }, { tenantId: tenant._id, hospitalityType: "airport_transfer", hospitalityBooking: transferBooking._id, amount: 1000, paidAmount: 0, dueDate: dates(10), status: "pending", notes: "Synthetic demo transfer deposit; no payment requested." });
     for (let i = 0; i < 3; i++) await upsert(Review, { tenantId: tenant._id, booking: bookings[i + 3]._id }, { tenantId: tenant._id, user: customerUsers[i % 4]._id, customer: customerUsers[i % 4]._id, tour: bookings[i + 3].tour, booking: bookings[i + 3]._id, rating: i + 3, title: "TEST sample review", comment: "Synthetic review text for a demo record.", verified: true, approved: i !== 0, rejected: false });
     for (let i = 0; i < 4; i++) await upsert(Lead, { tenantId: tenant._id, phone: stablePhone(index, 700 + i) }, { tenantId: tenant._id, name: `TEST prospective traveler ${i + 1}`, email: `lead${i + 1}.${spec.prefix}@test.globaltours.co.ke`, phone: stablePhone(index, 700 + i), country: "Kenya", county: spec.county, city: spec.county, tour: tours[i]._id, travelDate: tours[i].date, guests: 2, message: `${NAMESPACE} synthetic lead`, source: "test_seed", status: ["new", "contacted", "qualified", "lost"][i] });
@@ -596,7 +620,7 @@ async function seedTenant(spec, index, globalPermissionIds, platformRole = null)
 
     for (const [i, companyName] of ["Safari Corporate Ltd", "East Africa Business Travel Ltd", "Kenya Events Group", "Global NGO Travel Ltd", "Nairobi Consulting Services Ltd"].entries()) await upsert(CorporateAccount, { tenantId: tenant._id, companyName: `TEST ${companyName} ${spec.prefix}` }, { tenantId: tenant._id, companyName: `TEST ${companyName} ${spec.prefix}`, billingContacts: [{ name: `Demo Contact ${i + 1}`, email: `corporate${i + 1}.${spec.prefix}@test.globaltours.co.ke`, phone: stablePhone(index, 980 + i), title: "TEST procurement" }], paymentTerms: "30_days", creditLimit: 1000000, status: "active", notes: "Synthetic corporate test account; no real business affiliation." });
     const corporate = await CorporateAccount.findOne({ tenantId: tenant._id, companyName: `TEST Safari Corporate Ltd ${spec.prefix}` });
-    for (const [i, notificationEvent] of ["booking confirmation", "payment received", "payment failure", "tour reminder", "cancellation", "refund", "assignment", "new lead", "invoice generated"].entries()) await upsert(Notification, { tenantId: tenant._id, recipient: byEmail.get(`admin.${spec.prefix}@test.globaltours.co.ke`)._id, title: `TEST ${spec.prefix} ${notificationEvent}` }, { tenantId: tenant._id, recipient: byEmail.get(`admin.${spec.prefix}@test.globaltours.co.ke`)._id, title: `TEST ${spec.prefix} ${notificationEvent}`, message: `Synthetic notification fixture: ${notificationEvent}. No real event occurred.`, type: i < 2 ? "booking" : i === 2 ? "payment" : "system", priority: "normal", isSent: false, metadata: { namespace: NAMESPACE, synthetic: true } });
+    for (const [i, notificationEvent] of ["booking confirmation", "payment received", "payment failure", "tour reminder", "cancellation", "refund", "assignment", "new lead", "invoice generated"].entries()) await upsert(Notification, { tenantId: tenant._id, recipient: byEmail.get(loginEmail("admin", spec.prefix))._id, title: `TEST ${spec.prefix} ${notificationEvent}` }, { tenantId: tenant._id, recipient: byEmail.get(loginEmail("admin", spec.prefix))._id, title: `TEST ${spec.prefix} ${notificationEvent}`, message: `Synthetic notification fixture: ${notificationEvent}. No real event occurred.`, type: i < 2 ? "booking" : i === 2 ? "payment" : "system", priority: "normal", isSent: false, metadata: { namespace: NAMESPACE, synthetic: true } });
     await upsert(Booking, { tenantId: tenant._id, bookingNumber: `TEST-${spec.prefix.toUpperCase()}-CORP-001` }, { bookingNumber: `TEST-${spec.prefix.toUpperCase()}-CORP-001`, bookingType: "corporate", corporateAccount: corporate._id, corporateCompanyName: corporate.companyName, customer: customers[0]._id, user: customerUsers[0]._id, tour: tours[0]._id, travelDate: tours[0].date, totalAmount: tours[0].price, subtotal: tours[0].price, status: "confirmed", paymentStatus: "pending", paymentTerms: "credit", billingContact: { name: "Demo Procurement Contact", email: `corporate.${spec.prefix}@test.globaltours.co.ke`, phone: stablePhone(index, 980) }, contact: { name: "Demo Procurement Contact", email: `corporate.${spec.prefix}@test.globaltours.co.ke`, phone: stablePhone(index, 980) }, numberOfGuests: 4 });
     for (const tour of tours) {
         const bookedTotals = await Booking.aggregate([{ $match: { tenantId: tenant._id, tour: tour._id, status: { $nin: ["cancelled", "refunded"] }, isDeleted: { $ne: true } } }, { $group: { _id: null, total: { $sum: "$numberOfGuests" } } }]);
@@ -637,7 +661,7 @@ async function seedTenant(spec, index, globalPermissionIds, platformRole = null)
     const apiSecret = randomBytes(32).toString("hex");
     await upsert(ApiKey, { tenantId: tenant._id, name: `TEST API key ${spec.prefix}` }, { tenantId: tenant._id, name: `TEST API key ${spec.prefix}`, prefix: `test_${spec.prefix}`, secretHash: ApiKey.hashSecret(apiSecret), scopes: ["test:only"], revokedAt: new Date(), expiresAt: dates(30) });
     await upsert(Subscription, { tenantId: tenant._id }, { tenantId: tenant._id, plan: "professional", status: "trialing", trialStartsAt: new Date(), trialEndsAt: dates(30), currentPeriodStartsAt: new Date(), currentPeriodEndsAt: dates(30), currency: "KES", metadata: { namespace: NAMESPACE, synthetic: true } });
-    await upsert(SubscriptionPayment, { tenantId: tenant._id, transactionReference: `TEST-SUB-${spec.prefix.toUpperCase()}-001` }, { tenantId: tenant._id, userId: byEmail.get(`admin.${spec.prefix}@test.globaltours.co.ke`)._id, plan: "professional", amount: 1, currency: "KES", provider: "manual", status: "pending", transactionReference: `TEST-SUB-${spec.prefix.toUpperCase()}-001`, periodDays: 30, metadata: { namespace: NAMESPACE, synthetic: true, noGatewayCall: true } });
+    await upsert(SubscriptionPayment, { tenantId: tenant._id, transactionReference: `TEST-SUB-${spec.prefix.toUpperCase()}-001` }, { tenantId: tenant._id, userId: byEmail.get(loginEmail("admin", spec.prefix))._id, plan: "professional", amount: 1, currency: "KES", provider: "manual", status: "pending", transactionReference: `TEST-SUB-${spec.prefix.toUpperCase()}-001`, periodDays: 30, metadata: { namespace: NAMESPACE, synthetic: true, noGatewayCall: true } });
     await upsert(WithholdingTax, { tenantId: tenant._id, reference: `TEST-${spec.prefix.toUpperCase()}-WHT-001` }, { tenantId: tenant._id, payee: suppliers[0]._id, payeeName: suppliers[0].legalName, sourceType: "supplier_payment", sourceId: bookings[0]._id, reference: `TEST-${spec.prefix.toUpperCase()}-WHT-001`, description: "Synthetic withholding tax test fixture.", taxType: "TEST-WHT", taxPeriod: "2026-09", baseAmount: 10000, rate: 5, taxAmount: 500, currency: "KES", status: "accrued" });
     await upsert(AccountingReconciliation, { tenantId: tenant._id, sourceType: "bank", externalReference: `TEST-${spec.prefix.toUpperCase()}-RECON-001` }, { tenantId: tenant._id, sourceType: "bank", externalReference: `TEST-${spec.prefix.toUpperCase()}-RECON-001`, transactionDate: dates(-1), amount: 10000, currency: "KES", accountCode: "1000", journalEntry: journal._id, status: "matched", notes: "Synthetic reconciliation only; no bank data imported." });
     await upsert(AccountingSubledger, { tenantId: tenant._id, type: "accrual", reference: `TEST-${spec.prefix.toUpperCase()}-SUBLEDGER-001` }, { tenantId: tenant._id, type: "accrual", reference: `TEST-${spec.prefix.toUpperCase()}-SUBLEDGER-001`, transactionDate: dates(-1), description: "Synthetic accrued tour cost.", amount: 10000, currency: "KES", exchangeRate: 1, baseAmount: 10000, quantity: 1, unitCost: 10000, accountCode: "5000", contraAccountCode: "1000", status: "posted", metadata: { namespace: NAMESPACE, synthetic: true }, journalEntry: journal._id });
@@ -653,11 +677,11 @@ async function seedTenant(spec, index, globalPermissionIds, platformRole = null)
     if (journal && journal.lines.reduce((n, line) => n + line.debit, 0) !== journal.lines.reduce((n, line) => n + line.credit, 0)) broken.push("unbalanced journal");
     const counts = {};
     for (const model of [User, Customer, CustomerProfile, UserPreference, Staff, StaffProfile, Agent, Vehicle, Destination, Tour, TourPackage, Booking, Payment, Invoice, Refund, CreditDebitNote, Supplier, SupplierPayable, PurchaseOrder, Expense, TourCost, Commission, ChartOfAccount, JournalEntry, AccountingPeriod, FinanceBudget, TaxRule, TaxProfile, ComplianceRecord, EtimsSubmission, PrivacyRequest, CorporateAccount, Hotel, HotelRoomType, AccommodationInventory, HospitalityRatePlan, HospitalityRoomBlock, HospitalitySupplierContract, HotelBooking, HospitalityDeposit, AirportTransfer, AirportTransferBooking, Review, Lead, CustomTourRequest, TravelServiceRequest, Notification, Coupon, Promotion, Campaign, Loyalty, LoyaltyAccount, Wishlist, Referral, PaymentGatewayConfig, Webhook, WebhookDelivery, WebsiteIntegrationKey, WebsiteIntegrationEvent, ApiKey, Subscription, SubscriptionPayment, PaymentLink, FixedAsset, OperationalAsset, TourCategory, Itinerary, Gallery, Media, TourGallery, TourReport, HeroSlide, Quotation, WithholdingTax, AccountingReconciliation, AccountingSubledger]) counts[model.modelName] = await model.countDocuments({ tenantId: tenant._id });
-    return { tenant, users: expectedUsers, counts, failures: broken, prefix: spec.prefix };
+    return { tenant, users: expectedUsers.filter((user) => String(user.tenantId || "") === String(tenant._id)), counts, failures: broken, prefix: spec.prefix };
   });
 }
 
-async function main() {
+export async function runCompleteTestDemoSeed() {
   // All guards precede connecting or writing. Never log the URI or credentials.
   const target = databaseTarget();
   console.log(`TEST seed target database: ${target.dbName}`);
@@ -765,10 +789,11 @@ async function main() {
       }
       const tenantEmails = TEST_LOGIN_EMAILS.filter((email) => email !== "superadmin1@husseinmboya.com" && email.endsWith(`@${tenantDomain[item.prefix]}`));
       const users = await User.find({ tenantId: item.tenant._id, email: { $in: tenantEmails } }).lean();
+      if (users.length !== 12 || users.some((user) => user.status !== "active" || user.role !== roleForLoginEmail(user.email))) failures.push(`tenant demo account count, role, or active status mismatch:${item.tenant.slug}`);
       for (const role of new Set(users.map((user) => user.role))) roleCounts[role] = (roleCounts[role] || 0) + users.filter((user) => user.role === role).length;
     }
     const platformUser = await User.findOne({ email: "superadmin1@husseinmboya.com", tenantId: null }).select("+password");
-    if (!platformUser || !(await platformUser.matchPassword(getTestPassword()))) failures.push("platform owner password authentication failed");
+    if (!platformUser || platformUser.role !== "super_admin" || platformUser.status !== "active" || platformUser.tenantId != null || !(await platformUser.matchPassword(getTestPassword()))) failures.push("platform owner password authentication failed or global scope validation failed");
     roleCounts.super_admin = (roleCounts.super_admin || 0) + (platformUser ? 1 : 0);
     for (const [model, field] of [[User, "email"], [Destination, "slug"], [Tour, "slug"], [TourPackage, "slug"], [Booking, "bookingNumber"], [Invoice, "invoiceNumber"], [Supplier, "supplierNumber"], [PurchaseOrder, "poNumber"], [Expense, "expenseNumber"]]) {
       const duplicates = await model.aggregate([{ $match: { tenantId: { $in: results.map((item) => item.tenant._id) }, [field]: /^TEST-/ } }, { $group: { _id: { tenantId: "$tenantId", value: `$${field}` }, count: { $sum: 1 } } }, { $match: { count: { $gt: 1 } } }]);
@@ -815,7 +840,7 @@ async function main() {
     tenantsCreatedOrUpdated: results.map(({ tenant }) => ({ name: tenant.name, slug: tenant.slug, id: String(tenant._id), action: "created_or_updated" })),
     tenants: results.map(({ tenant, users, counts }) => ({ name: tenant.name, slug: tenant.slug, id: String(tenant._id), users: users.map((u) => u.email), counts })),
     perCollectionCounts: countsByCollection, testLoginEmails: allLoginEmails, usersByRole: roleCounts,
-    commonTestPasswordNote: "Seed logins use the operator-supplied TEST_DEMO_SEED_PASSWORD; its value is intentionally excluded from this report.",
+    commonTestPasswordNote: "Seed logins use the operator-supplied SEED_DEMO_PASSWORD; its value is intentionally excluded from this report.",
     authenticationResults: { checked: true, accountCount: allLoginEmails.length, verifiedAccountCount: allLoginEmails.length - (failures.includes("platform owner password authentication failed") ? 1 : 0), failures: failures.filter((failure) => failure.includes("password authentication")) },
     validation: { requiredFieldsInspectedAgainstMongooseSchemas: true, requiredFieldFailures: requiredFieldFindings, relationshipFailures, authenticationChecked: true, bookingReferencesAndTotalsChecked: failures.length === 0, journalDebitsEqualCreditsChecked: failures.length === 0, status: failures.length ? "failed" : "passed" },
     relationshipFailures, requiredFieldFailures: requiredFieldFindings,
@@ -837,7 +862,7 @@ async function writeFailureReport(error) {
   const report = {
     namespace: NAMESPACE, timestamp: new Date().toISOString(), database, seedExecuted: false, tenantCount: 0, collectionCountsAvailable: false,
     tenants: [], perCollectionCounts: {}, usersByRole: {}, testLoginEmails: TEST_LOGIN_EMAILS,
-    commonTestPasswordNote: "Seed logins require the operator-supplied TEST_DEMO_SEED_PASSWORD; its value is intentionally excluded from this report.",
+    commonTestPasswordNote: "Seed logins require the operator-supplied SEED_DEMO_PASSWORD; its value is intentionally excluded from this report.",
     tenantsCreatedOrUpdated: [], authenticationResults: { checked: false, accountCount: 0, verifiedAccountCount: 0, failures: [] },
     relationshipFailures: [], requiredFieldFailures: [], overallStatus: "blocked", failedStage: seedStage,
     validation: { status: "not_run", reason: error.message, relationshipFailures: [], requiredFieldFailures: [] }, failures: [error.message],
@@ -848,5 +873,5 @@ async function writeFailureReport(error) {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  main().catch(async (error) => { const message = safeErrorMessage(error); console.error(`TEST seed failed safely during ${seedStage}: ${message}`); await writeFailureReport(new Error(message)).catch((reportError) => console.error(`Could not write safe test-seed report: ${safeErrorMessage(reportError)}`)); process.exitCode = 1; }).finally(async () => { await mongoose.disconnect().catch(() => {}); });
+  runCompleteTestDemoSeed().catch(async (error) => { const message = safeErrorMessage(error); console.error(`TEST seed failed safely during ${seedStage}: ${message}`); await writeFailureReport(new Error(message)).catch((reportError) => console.error(`Could not write safe test-seed report: ${safeErrorMessage(reportError)}`)); process.exitCode = 1; }).finally(async () => { await mongoose.disconnect().catch(() => {}); });
 }

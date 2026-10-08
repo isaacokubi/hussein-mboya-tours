@@ -1,10 +1,13 @@
 import "dotenv/config";
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import Organization from "../models/Organization.js";
 import { TEST_LOGIN_EMAILS } from "../seeds/completeTestDemoSeed.js";
 
 const CONFIRM = process.env.CONFIRM_DEMO_PASSWORD_RESET;
-const DEMO_PASSWORD = String(process.env.SEED_DEMO_PASSWORD || "Password@2785");
+const DEMO_PASSWORD = String(process.env.SEED_DEMO_PASSWORD || "");
+const PLATFORM_EMAIL = "superadmin1@husseinmboya.com";
+const TENANT_DOMAINS = { "hussein-mboya": "husseinmboya.com", "amani-trails": "amanitrails.com", "demo-safari": "demosafari.com" };
 
 function validatePassword(password) {
   if (password.length < 12 || !/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/\d/.test(password)) {
@@ -16,6 +19,10 @@ async function main() {
   if (CONFIRM !== "YES") throw new Error("Refusing password reset. Set CONFIRM_DEMO_PASSWORD_RESET=YES.");
   validatePassword(DEMO_PASSWORD);
   if (!process.env.MONGODB_URI) throw new Error("MONGODB_URI is not configured.");
+  const target = new URL(process.env.MONGODB_URI);
+  if (target.hostname.toLowerCase() !== "cluster0.cdtxzts.mongodb.net" || decodeURIComponent(target.pathname.replace(/^\//, "").split("/")[0] || "") !== "husseindb") {
+    throw new Error("Safety check failed: password reset requires the configured demo Atlas host and husseindb database.");
+  }
 
   await mongoose.connect(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 10000, maxPoolSize: 1 });
   try {
@@ -27,11 +34,12 @@ async function main() {
       throw new Error(`Safety check failed: expected ${TEST_LOGIN_EMAILS.length} seeded demo users, found ${accounts.length}. No changes made.`);
     }
     const found = new Set(accounts.map(({ email }) => email));
+    if (found.size !== TEST_LOGIN_EMAILS.length) throw new Error("Safety check failed: duplicate canonical demo login records were found. No changes made.");
     const missing = TEST_LOGIN_EMAILS.filter((email) => !found.has(email));
     if (missing.length) throw new Error(`Safety check failed: missing seeded accounts: ${missing.join(", ")}. No changes made.`);
-    const platform = accounts.filter((user) => user.email === "superadmin1@husseinmboya.com");
-    const tenantUsers = accounts.filter((user) => user.email !== "superadmin1@husseinmboya.com");
-    if (platform.length !== 1 || platform[0].tenantId != null || !["super_admin", "superadmin"].includes(platform[0].role)) {
+    const platform = accounts.filter((user) => user.email === PLATFORM_EMAIL);
+    const tenantUsers = accounts.filter((user) => user.email !== PLATFORM_EMAIL);
+    if (platform.length !== 1 || platform[0].tenantId != null || platform[0].role !== "super_admin" || platform[0].status !== "active") {
       throw new Error("Safety check failed: platform owner must be a tenantless Super Admin. No changes made.");
     }
     if (tenantUsers.length !== 36 || tenantUsers.some((user) => !user.tenantId || user.status !== "active")) {
@@ -39,6 +47,17 @@ async function main() {
     }
     const tenants = new Set(tenantUsers.map((user) => String(user.tenantId)));
     if (tenants.size !== 3) throw new Error(`Safety check failed: expected users in 3 tenants, found ${tenants.size}. No changes made.`);
+    const tenantDocs = await Organization.find({ slug: { $in: Object.keys(TENANT_DOMAINS) } }).select("_id slug").lean();
+    const tenantIdBySlug = new Map(tenantDocs.map((tenant) => [tenant.slug, String(tenant._id)]));
+    if (tenantIdBySlug.size !== 3) throw new Error("Safety check failed: expected all 3 canonical demo tenants. No changes made.");
+    for (const account of tenantUsers) {
+      const slug = Object.entries(TENANT_DOMAINS).find(([, domain]) => account.email.endsWith(`@${domain}`))?.[0];
+      const local = account.email.split("@")[0];
+      const expectedRole = local === "admin1" ? "admin" : local === "tourmanager1" ? "tour_manager" : local.startsWith("agent") ? "agent" : local.startsWith("guide") ? "tour_guide" : local.startsWith("driver") ? "driver" : "customer";
+      if (!slug || String(account.tenantId) !== tenantIdBySlug.get(slug) || account.role !== expectedRole) {
+        throw new Error("Safety check failed: a demo account has the wrong tenant or role. No changes made.");
+      }
+    }
 
     const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
     const result = await users.updateMany({ _id: { $in: accounts.map((user) => user._id) }, email: { $in: TEST_LOGIN_EMAILS } }, {
@@ -59,6 +78,7 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(`DEMO PASSWORD RESET FAILED: ${error.message}`);
+  const safeMessage = String(error?.message || "Password reset failed.").replace(/mongodb(?:\+srv)?:\/\/[^\s"']+/gi, "[MongoDB URI redacted]");
+  console.error(`DEMO PASSWORD RESET FAILED: ${safeMessage}`);
   process.exitCode = 1;
 });
