@@ -68,11 +68,7 @@ export const getDestination = async (req, res, next) => {
       // the first choice, so normal production records are unaffected.
       if (!destination) {
         const canonicalName = slug.replace(/-/g, " ").trim();
-        const escapedParts = canonicalName.split(/\\s+/).filter(Boolean).map((part) => part.replace(/[.*+?^${}()|[\\]\\]/g, "\\      const destinationFilter = platformWide
-        ? { slug, ...publicDestinationFilter }
-        : mergeTenantFilter({ slug, ...publicDestinationFilter });
-      const destination = await Destination.findOne(destinationFilter).lean();
-      if (!destination) return res.status(404).json({ success: false, message: "Destination not found." });"));
+        const escapedParts = canonicalName.split(/\\s+/).filter(Boolean).map((part) => part.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&"));
         const nameRegex = escapedParts.join(".*");
         const nameFilter = platformWide
           ? { ...publicDestinationFilter, name: { $regex: nameRegex, $options: "i" } }
