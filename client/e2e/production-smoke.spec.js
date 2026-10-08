@@ -4,13 +4,13 @@ import process from "node:process";
 const apiOrigin = process.env.DEMO_API_ORIGIN || "https://hussein-mboya-tours.onrender.com";
 const password = process.env.DEMO_TEST_PASSWORD || process.env.DEMO_SMOKE_PASSWORD;
 const accounts = [
-  { name: "customer", email: "customer1@hussein-mboya.com", route: "/dashboard", tenant: true, content: /dashboard|welcome|booking/i },
-  { name: "super admin", email: "superadmin@hussein-mboya.com", route: "/superadmin/dashboard", tenant: false, content: /dashboard|overview|tenant/i },
-  { name: "tenant admin", email: "admin@hussein-mboya.com", route: "/admin/dashboard", tenant: true, content: /dashboard|overview|booking/i },
-  { name: "tour manager", email: "manager@hussein-mboya.com", route: "/tour-manager/dashboard", tenant: true, content: /dashboard|tour|booking/i },
-  { name: "agent", email: "agent@hussein-mboya.com", route: "/agent/dashboard", tenant: true, content: /dashboard|booking|commission/i },
-  { name: "guide", email: "guide1@hussein-mboya.com", route: "/guide/dashboard", tenant: true, content: /dashboard|tour|guest/i },
-  { name: "driver", email: "driver1@hussein-mboya.com", route: "/driver/dashboard", tenant: true, content: /dashboard|tour|vehicle/i },
+  { name: "customer", email: "customer1@hussein-mboya.com", role: "customer", route: "/dashboard", tenant: true, content: /dashboard|welcome|booking/i },
+  { name: "super admin", email: "superadmin@hussein-mboya.com", role: "super_admin", route: "/superadmin/dashboard", tenant: false, content: /dashboard|overview|tenant/i },
+  { name: "tenant admin", email: "admin@hussein-mboya.com", role: "admin", route: "/admin/dashboard", tenant: true, content: /dashboard|overview|booking/i },
+  { name: "tour manager", email: "manager@hussein-mboya.com", role: "tour_manager", route: "/tour-manager/dashboard", tenant: true, content: /dashboard|tour|booking/i },
+  { name: "agent", email: "agent@hussein-mboya.com", role: "agent", route: "/agent/dashboard", tenant: true, content: /dashboard|booking|commission/i },
+  { name: "guide", email: "guide1@hussein-mboya.com", role: "tour_guide", route: "/guide/dashboard", tenant: true, content: /dashboard|tour|guest/i },
+  { name: "driver", email: "driver1@hussein-mboya.com", role: "driver", route: "/driver/dashboard", tenant: true, content: /dashboard|tour|vehicle/i },
 ];
 
 test("public catalogue smoke acceptance", async ({ page }) => {
@@ -102,13 +102,14 @@ test("customer and staff role dashboards, read-only navigation and tenant scope"
       if (response.status() >= 500) badResponses.push(`${response.status()} ${new URL(response.url()).pathname}`);
     });
     await rolePage.goto("/login");
-    await rolePage.getByLabel("Email").fill(account.email);
-    await rolePage.getByLabel("Password").fill(password);
+    await rolePage.getByPlaceholder(/enter email/i).fill(account.email);
+    await rolePage.getByPlaceholder(/enter password/i).fill(password);
     const loginResponse = rolePage.waitForResponse((response) => response.url().includes("/api/auth/login") && response.request().method() === "POST");
     await rolePage.getByRole("button", { name: "Login" }).click();
     const loginResult = await loginResponse;
     expect(loginResult.status(), `${account.name} login API`).toBe(200);
     const loginPayload = await loginResult.json();
+    expect(loginPayload.user?.role, `${account.name} role`).toBe(account.role);
     tenantIdsByAccount.set(account.name, loginPayload.user?.tenantId || null);
     if (account.tenant) expect(tenantIdsByAccount.get(account.name), `${account.name} tenant`).toBeTruthy();
     await expect(rolePage).toHaveURL(new RegExp(account.route.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
@@ -122,7 +123,7 @@ test("customer and staff role dashboards, read-only navigation and tenant scope"
     }
     if (account.name === "customer") {
       await rolePage.goto("/admin/dashboard");
-      await expect(rolePage).toHaveURL(/unauthorized|dashboard/);
+      await expect(rolePage).not.toHaveURL(/\/admin(?:\/|$)/);
       expect(new URL(rolePage.url()).pathname).not.toMatch(/^\/admin(?:\/|$)/);
     }
     await context.close();

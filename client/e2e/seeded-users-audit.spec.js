@@ -5,20 +5,21 @@ import process from "node:process";
 
 const password = process.env.DEMO_SMOKE_PASSWORD || process.env.DEMO_TEST_PASSWORD;
 const users = [
-  { email: "superadmin@hussein-mboya.com", role: "super_admin", tenant: null, route: "/superadmin/dashboard", menu: "/superadmin/users" },
-  ...["hussein-mboya", "amani-trails", "demo-safari"].flatMap((tenant) => {
-    const domain = tenant === "hussein-mboya" ? "hussein-mboya.com" : `${tenant}.com`;
-    return [
-      { email: `admin@${domain}`, role: "admin", tenant, route: "/admin/dashboard", menu: "/admin/users" },
-      { email: `manager@${domain}`, role: "tour_manager", tenant, route: "/tour-manager/dashboard", menu: "/tour-manager/tours" },
-      { email: `agent@${domain}`, role: "agent", tenant, route: "/agent/dashboard", menu: "/agent/bookings" },
-      { email: `guide1@${domain}`, role: "tour_guide", tenant, route: "/guide/dashboard", menu: "/guide/assigned-tours" },
-      { email: `driver1@${domain}`, role: "driver", tenant, route: "/driver/dashboard", menu: "/driver/dashboard" },
-      ...[1, 2, 3, 4].map((customer) => ({ email: `customer${customer}@${domain}`, role: "customer", tenant, route: "/dashboard", menu: "/my-bookings" })),
-    ];
-  }),
+  { email: "superadmin1@husseinmboya.com", role: "super_admin", tenant: null, route: "/superadmin/dashboard", menu: "/superadmin/users" },
+  ...[
+    { slug: "hussein-mboya", domain: "husseinmboya.com" },
+    { slug: "amani-trails", domain: "amanitrails.com" },
+    { slug: "demo-safari", domain: "demosafari.com" },
+  ].flatMap(({ slug: tenant, domain }) => [
+    { email: `admin1@${domain}`, role: "admin", tenant, route: "/admin/dashboard", menu: "/admin/users" },
+    { email: `tourmanager1@${domain}`, role: "tour_manager", tenant, route: "/tour-manager/dashboard", menu: "/tour-manager/tours" },
+    ...[1, 2].map((n) => ({ email: `agent${n}@${domain}`, role: "agent", tenant, route: "/agent/dashboard", menu: "/agent/bookings" })),
+    ...[1, 2].map((n) => ({ email: `guide${n}@${domain}`, role: "tour_guide", tenant, route: "/guide/dashboard", menu: "/guide/assigned-tours" })),
+    ...[1, 2].map((n) => ({ email: `driver${n}@${domain}`, role: "driver", tenant, route: "/driver/dashboard", menu: "/driver/dashboard" })),
+    ...[1, 2, 3, 4].map((n) => ({ email: `customer${n}@${domain}`, role: "customer", tenant, route: "/dashboard", menu: "/my-bookings" })),
+  ]),
 ];
-if (users.length !== 28) throw new Error(`Expected 28 seeded demo users, found ${users.length}`);
+if (users.length !== 37) throw new Error(`Expected 37 seeded demo users, found ${users.length}`);
 const auditUsers = process.env.DEMO_AUDIT_EMAIL
   ? users.filter((account) => account.email === process.env.DEMO_AUDIT_EMAIL.trim().toLowerCase())
   : users;

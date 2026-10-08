@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
+import bcrypt from "bcryptjs";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -111,12 +112,13 @@ async function resetCollectionsPreservingOwners() {
   const demoTenantIds = tenants.map(({ _id }) => _id);
   await db.collection("organizations").deleteMany({ _id: { $nin: demoTenantIds } });
 
-  // Keep the platform owner's identity/access intact. Its password is never
-  // printed or replaced by this script.
+  // Preserve platform identity/access while aligning its password with the
+  // tenant accounts created by this demo reset.
+  const ownerPasswordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
   for (const owner of owners) {
     await db.collection("users").replaceOne(
       { _id: owner._id },
-      { ...owner, role: "super_admin", tenantId: null, roleId: null, permissionsOverride: [] },
+      { ...owner, password: ownerPasswordHash, loginAttempts: 0, lockUntil: null, role: "super_admin", tenantId: null, roleId: null, permissionsOverride: [] },
       { upsert: true }
     );
   }

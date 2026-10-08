@@ -131,7 +131,7 @@ function loginEmail(local, prefix) {
   const roleAccount = { admin: "admin1", manager: "tourmanager1" }[local] || local;
   return `${roleAccount}@${tenantDomain[prefix]}`;
 }
-const TEST_LOGIN_EMAILS = ["superadmin1@husseinmboya.com", ...tenantsSpec.flatMap(({ prefix }) => ["admin", "manager", "agent1", "agent2", "guide1", "guide2", "driver1", "driver2", "customer1", "customer2", "customer3", "customer4"].map((name) => loginEmail(name, prefix)))];
+export const TEST_LOGIN_EMAILS = ["superadmin1@husseinmboya.com", ...tenantsSpec.flatMap(({ prefix }) => ["admin", "manager", "agent1", "agent2", "guide1", "guide2", "driver1", "driver2", "customer1", "customer2", "customer3", "customer4"].map((name) => loginEmail(name, prefix)))];
 const dates = (days = 30) => new Date(Date.now() + days * 86400000);
 const stablePhone = (tenantIndex, accountIndex) => String(7100000000 + tenantIndex * 1000 + accountIndex).slice(0, 10);
 

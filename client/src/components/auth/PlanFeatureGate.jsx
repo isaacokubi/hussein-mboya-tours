@@ -50,7 +50,11 @@ export default function PlanFeatureGate({ children }) {
     if (authLoading || !token || !user || isSuperAdmin || !feature) return undefined;
     let active = true;
     setState({ loading: true, plan: "", features: null, error: null });
-    api.get("/subscription").then(({ data }) => {
+    // Entitlement checks must not leave the entire dashboard behind an
+    // indefinite spinner when a tenant API is slow or waking from idle. The
+    // API enforces these entitlements independently, so a timed-out UI check
+    // can fail open and let the dashboard render while its data requests retry.
+    api.get("/subscription", { timeout: 12_000 }).then(({ data }) => {
       if (!active) return;
       setState({ loading: false, plan: String(data?.plan || "starter").toLowerCase(), features: Array.isArray(data?.features) ? data.features : [], error: null });
     }).catch((error) => {
