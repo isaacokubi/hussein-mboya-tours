@@ -59,7 +59,26 @@ export const getDestination = async (req, res, next) => {
       const destinationFilter = platformWide
         ? { slug, ...publicDestinationFilter }
         : mergeTenantFilter({ slug, ...publicDestinationFilter });
+      let destination = await Destination.findOne(destinationFilter).lean();
+
+      // Public catalogue links may use human-friendly canonical slugs even when
+      // a demo/tenant seed uses tenant-scoped slugs such as
+      // "test-hussein-maasai-mara". Resolve a canonical slug by matching the
+      // destination name without weakening tenant isolation. Exact slug remains
+      // the first choice, so normal production records are unaffected.
+      if (!destination) {
+        const canonicalName = slug.replace(/-/g, " ").trim();
+        const escapedParts = canonicalName.split(/\\s+/).filter(Boolean).map((part) => part.replace(/[.*+?^${}()|[\\]\\]/g, "\\      const destinationFilter = platformWide
+        ? { slug, ...publicDestinationFilter }
+        : mergeTenantFilter({ slug, ...publicDestinationFilter });
       const destination = await Destination.findOne(destinationFilter).lean();
+      if (!destination) return res.status(404).json({ success: false, message: "Destination not found." });"));
+        const nameRegex = escapedParts.join(".*");
+        const nameFilter = platformWide
+          ? { ...publicDestinationFilter, name: { $regex: nameRegex, $options: "i" } }
+          : mergeTenantFilter({ ...publicDestinationFilter, name: { $regex: nameRegex, $options: "i" } });
+        destination = await Destination.findOne(nameFilter).sort({ createdAt: -1 }).lean();
+      }
       if (!destination) return res.status(404).json({ success: false, message: "Destination not found." });
 
       const tourFilter = platformWide
