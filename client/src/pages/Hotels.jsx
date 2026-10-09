@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Building2, BedDouble, CalendarDays, Check, Clock3, Coffee, MapPin, Search, ShieldCheck, Star, Users, X } from "lucide-react";
 import { createHotelBooking, getHotelAvailability, getHotels } from "../api/hotelApi";
+import { useTenant } from "../context/TenantContext";
 
 const input = "mt-1 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10";
 const Field = (label, control) => <label className="text-sm font-semibold text-slate-700">{label}{control}</label>;
@@ -11,7 +12,9 @@ const niceMeal = value => String(value || "room_only").replaceAll("_", " ").repl
 const dateOnly = value => value ? new Date(`${value}T00:00:00`) : null;
 
 export default function Hotels() {
-  const { data = [], isLoading, isError } = useQuery({ queryKey: ["public-hotels"], queryFn: getHotels, staleTime: 30000 });
+  const { tenant = {} } = useTenant() || {};
+  const tenantKey = tenant?._id || tenant?.id || tenant?.slug || "public";
+  const { data = [], isLoading, isError } = useQuery({ queryKey: ["public-hotels", tenantKey], queryFn: getHotels, staleTime: 30000 });
   const [selected, setSelected] = useState(null);
   const [search, setSearch] = useState("");
   const [stay, setStay] = useState({ checkIn: "", checkOut: "", rooms: 1, adults: 2, children: 0 });
@@ -19,7 +22,7 @@ export default function Hotels() {
   const updateStay = (key, value) => setStay(s => ({ ...s, [key]: value }));
   const updateForm = (key, value) => setForm(f => ({ ...f, [key]: value }));
   const filtered = useMemo(() => data.filter(h => `${h.name} ${h.location || ""} ${h.city || ""} ${h.county || ""}`.toLowerCase().includes(search.toLowerCase())), [data, search]);
-  const availability = useQuery({ queryKey: ["hotel-availability", selected?.hotel?._id, stay.checkIn, stay.checkOut], queryFn: () => getHotelAvailability({ hotelId: selected.hotel._id, checkIn: stay.checkIn, checkOut: stay.checkOut }), enabled: !!selected?.hotel?._id && !!stay.checkIn && !!stay.checkOut && !!dateOnly(stay.checkOut) && dateOnly(stay.checkOut) > dateOnly(stay.checkIn), staleTime: 10000 });
+  const availability = useQuery({ queryKey: ["hotel-availability", tenantKey, selected?.hotel?._id, stay.checkIn, stay.checkOut], queryFn: () => getHotelAvailability({ hotelId: selected.hotel._id, checkIn: stay.checkIn, checkOut: stay.checkOut }), enabled: !!selected?.hotel?._id && !!stay.checkIn && !!stay.checkOut && !!dateOnly(stay.checkOut) && dateOnly(stay.checkOut) > dateOnly(stay.checkIn), staleTime: 10000 });
   const liveRooms = availability.data?.roomTypes || selected?.hotel?.roomTypes || [];
   const selectedRoom = selected ? liveRooms.find(r => r._id === selected.room._id) || selected.room : null;
   const nights = stay.checkIn && stay.checkOut && dateOnly(stay.checkOut) > dateOnly(stay.checkIn) ? Math.ceil((dateOnly(stay.checkOut) - dateOnly(stay.checkIn)) / 86400000) : 0;
