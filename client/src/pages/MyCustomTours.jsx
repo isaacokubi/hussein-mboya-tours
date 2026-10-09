@@ -62,7 +62,7 @@ export default function MyCustomTours() {
 
   const handleProceed = (request) => {
     if (!request?._id || convertMutation.isPending) return;
-    if (!window.confirm("Proceed with this quoted custom tour and continue to secure checkout?")) return;
+    if (!window.confirm("Proceed with this quoted custom tour and continue to booking checkout?")) return;
     convertMutation.mutate(request._id);
   };
 
