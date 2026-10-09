@@ -7,10 +7,15 @@ import { useSettings } from "../context/SettingsContext";
 import { useTenant } from "../context/TenantContext";
 import { getTourImage, getTourImages } from "../utils/tourImage";
 
-const formatDate = (value) => {
+const formatDate = (value, locale = "en-KE", timeZone = "Africa/Nairobi") => {
   if (!value) return "";
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
+  if (Number.isNaN(date.getTime())) return "";
+  try {
+    return date.toLocaleDateString(locale, { timeZone, day: "numeric", month: "short", year: "numeric" });
+  } catch {
+    return date.toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
+  }
 };
 
 const formatPrice = (value, currency) => {
@@ -77,6 +82,8 @@ export default function TourDetails() {
   const images = getTourImages(tour);
   const image = getTourImage(tour);
   const currency = settings?.currency || tenant?.currency || "KES";
+  const locale = settings?.locale || "en-KE";
+  const timeZone = settings?.timezone || tenant?.timezone || "Africa/Nairobi";
   const basePrice = Number(tour.price ?? 0);
   const finalPrice = Number(tour.finalPrice ?? tour.discountPrice ?? (Number(tour.discount) > 0 ? basePrice * (1 - Number(tour.discount) / 100) : basePrice));
   const priceLabel = formatPrice(finalPrice, currency);
@@ -92,6 +99,15 @@ export default function TourDetails() {
   const exclusions = Array.isArray(tour.exclusions) ? tour.exclusions.filter(Boolean) : [];
   const itinerary = Array.isArray(tour.itinerary) ? tour.itinerary : [];
   const languages = Array.isArray(tour.languages) ? tour.languages.filter(Boolean) : [];
+  const hasDepartureInventory = Array.isArray(tour.availability) && tour.availability.length > 0;
+  const departureOptions = (Array.isArray(tour.availability) ? tour.availability : [])
+    .filter((departure) => {
+      const date = new Date(departure.date);
+      return !Number.isNaN(date.getTime()) && date.getTime() >= Date.now() &&
+        Number(departure.totalSlots ?? 0) - Number(departure.bookedSlots ?? 0) > 0;
+    })
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+  const bookingUnavailable = (slotsTotal > 0 && slotsRemaining <= 0) || (hasDepartureInventory && departureOptions.length === 0);
   const handleWhatsAppBooking = () => {
     if (!canWhatsApp) return;
     const message = encodeURIComponent(`Hello ${settings?.companyName || tenant?.name || "Travel team"}, I would like to enquire about "${tour.title}". Please confirm the available dates, final price, inclusions and booking terms.`);
@@ -115,10 +131,11 @@ export default function TourDetails() {
               <p className="mt-5 whitespace-pre-line leading-7 text-slate-700">{tour.description}</p>
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 <div className="flex gap-3 rounded-xl bg-slate-50 p-4"><Clock3 size={19} className="mt-0.5 shrink-0 text-emerald-800" /><div><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Duration</p><p className="mt-1 font-bold">{tour.durationDetails?.days || tour.durationDays || tour.duration || "To be confirmed"} day(s){tour.durationDetails?.nights != null ? ` · ${tour.durationDetails.nights} night(s)` : ""}</p></div></div>
-                <div className="flex gap-3 rounded-xl bg-slate-50 p-4"><CalendarDays size={19} className="mt-0.5 shrink-0 text-emerald-800" /><div><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Departure</p><p className="mt-1 font-bold">{formatDate(startDate) || "Confirm with the travel team"}{endDate && formatDate(endDate) && formatDate(endDate) !== formatDate(startDate) ? ` – ${formatDate(endDate)}` : ""}</p></div></div>
-                <div className="flex gap-3 rounded-xl bg-slate-50 p-4"><UsersRound size={19} className="mt-0.5 shrink-0 text-emerald-800" /><div><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Availability</p><p className="mt-1 font-bold">{slotsTotal ? (slotsRemaining > 0 ? `${slotsRemaining} of ${slotsTotal} spaces remaining` : "Currently full") : "Confirm availability before paying"}</p></div></div>
+                <div className="flex gap-3 rounded-xl bg-slate-50 p-4"><CalendarDays size={19} className="mt-0.5 shrink-0 text-emerald-800" /><div><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Departure</p><p className="mt-1 font-bold">{formatDate(startDate, locale, timeZone) || "Confirm with the travel team"}{endDate && formatDate(endDate, locale, timeZone) && formatDate(endDate) !== formatDate(startDate) ? ` – ${formatDate(endDate)}` : ""}</p></div></div>
+                <div className="flex gap-3 rounded-xl bg-slate-50 p-4"><UsersRound size={19} className="mt-0.5 shrink-0 text-emerald-800" /><div><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Availability</p><p className="mt-1 font-bold">{hasDepartureInventory ? `${departureOptions.length} departure option${departureOptions.length === 1 ? "" : "s"} with spaces` : slotsTotal ? (slotsRemaining > 0 ? `${slotsRemaining} of ${slotsTotal} spaces remaining` : "Currently full") : "Confirm availability before paying"}</p></div></div>
                 <div className="flex gap-3 rounded-xl bg-slate-50 p-4"><MapPin size={19} className="mt-0.5 shrink-0 text-emerald-800" /><div><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Meeting point</p><p className="mt-1 font-bold">{tour.meetingPoint || "Confirm with the travel team"}</p></div></div>
               </div>
+              {hasDepartureInventory && <section className="mt-8" aria-label="Available departures"><h2 className="text-xl font-extrabold">Available departures</h2>{departureOptions.length ? <ul className="mt-3 grid gap-3 sm:grid-cols-2">{departureOptions.map((departure, index) => <li key={departure._id || String(departure.date) + index} className="rounded-xl border border-slate-200 p-4"><p className="font-bold">{formatDate(departure.date, locale, timeZone)}</p><p className="mt-1 text-sm text-slate-600">{Math.max(0, Number(departure.totalSlots || 0) - Number(departure.bookedSlots || 0))} spaces available</p></li>)}</ul> : <p className="mt-3 text-sm text-slate-600">No published departure currently has spaces. Contact the travel team before making a booking.</p>}</section>}
               {highlights.length > 0 && <section className="mt-8" aria-label="Tour highlights"><h2 className="text-xl font-extrabold">Highlights</h2><ul className="mt-3 grid gap-2 sm:grid-cols-2">{highlights.map((item, index) => <li key={index} className="flex gap-2 text-sm leading-6"><CheckCircle2 size={16} className="mt-1 shrink-0 text-emerald-700" />{item}</li>)}</ul></section>}
               {itinerary.length > 0 && <section className="mt-8" aria-label="Day-by-day itinerary"><h2 className="text-xl font-extrabold">Day-by-day itinerary</h2><ol className="mt-4 space-y-4">{itinerary.map((day, index) => <li key={day._id || `${day.day || index}-${day.title || "day"}`} className="rounded-2xl border border-slate-200 p-4 sm:p-5"><p className="text-xs font-extrabold uppercase tracking-wide text-emerald-800">Day {day.day || index + 1}</p><h3 className="mt-1 text-lg font-bold">{day.title || `Day ${index + 1}`}</h3>{day.description && <p className="mt-2 leading-6 text-slate-600">{day.description}</p>}{Array.isArray(day.activities) && day.activities.length > 0 && <p className="mt-2 text-sm text-slate-600"><strong>Activities:</strong> {day.activities.join(", ")}</p>}{Array.isArray(day.meals) && day.meals.length > 0 && <p className="mt-1 text-sm text-slate-600"><strong>Meals:</strong> {day.meals.join(", ")}</p>}{day.accommodation && <p className="mt-1 text-sm text-slate-600"><strong>Accommodation:</strong> {day.accommodation}</p>}</li>)}</ol></section>}
               {languages.length > 0 && <p className="mt-6 text-sm text-slate-600"><strong>Languages:</strong> {languages.join(", ")}</p>}
@@ -130,7 +147,7 @@ export default function TourDetails() {
               <p className="text-xs font-extrabold uppercase tracking-widest text-emerald-800">Trip price</p>
               <div className="mt-2 flex flex-wrap items-baseline gap-3">{Number.isFinite(finalPrice) && finalPrice < basePrice && <span className="text-lg text-slate-400 line-through">{formatPrice(basePrice, currency)}</span>}<p className="text-3xl font-black">{priceLabel}</p></div>
               <p className="mt-2 text-sm leading-6 text-slate-500">Confirm the final price, traveler count, availability, taxes and any optional extras in your booking summary before payment.</p>
-              <button type="button" onClick={() => navigate(`/checkout/tour/${tour._id}`)} disabled={slotsTotal > 0 && slotsRemaining <= 0} className="mt-5 w-full rounded-xl bg-emerald-800 px-5 py-3.5 font-extrabold text-white hover:bg-emerald-900 disabled:cursor-not-allowed disabled:bg-slate-400">{slotsTotal > 0 && slotsRemaining <= 0 ? "Currently fully booked" : "Check dates & book"}</button>
+              <button type="button" onClick={() => navigate(`/checkout/tour/${tour._id}`)} disabled={bookingUnavailable} className="mt-5 w-full rounded-xl bg-emerald-800 px-5 py-3.5 font-extrabold text-white hover:bg-emerald-900 disabled:cursor-not-allowed disabled:bg-slate-400">{bookingUnavailable ? "No available departures" : "Check dates & book"}</button>
               {canWhatsApp && <button type="button" onClick={handleWhatsAppBooking} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-800 px-5 py-3 font-bold text-emerald-900 hover:bg-emerald-50"><MessageCircle size={18} aria-hidden="true" />Ask on WhatsApp</button>}
               <p className="mt-4 flex gap-2 text-xs leading-5 text-slate-500"><ShieldCheck size={15} className="mt-0.5 shrink-0" aria-hidden="true" />Payment options and confirmation are shown during checkout. Do not treat an unconfirmed payment as a completed booking.</p>
               {Number(tour.minimumAge) > 0 && <p className="mt-3 text-sm text-slate-600"><strong>Minimum age:</strong> {tour.minimumAge}</p>}
