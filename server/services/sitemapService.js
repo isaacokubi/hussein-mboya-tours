@@ -37,7 +37,17 @@ const resolveSiteOrigin = (req, tenant) => {
     if (vercelTenantHost) return requestOrigin;
   }
 
-  return normalizedOrigin(process.env.CLIENT_URL) || "https://example.invalid";
+  const forwardedHost = String(req?.get?.("x-forwarded-host") || req?.get?.("host") || "").split(",")[0].trim();
+  const forwardedOrigin = normalizedOrigin(forwardedHost.includes("://") ? forwardedHost : "https://" + forwardedHost);
+  if (forwardedOrigin) {
+    const forwardedName = new URL(forwardedOrigin).hostname.toLowerCase();
+    const tenantSlug = String(tenant?.slug || "").toLowerCase();
+    if (forwardedName === tenantSlug + ".vercel.app") return forwardedOrigin;
+  }
+
+  const fallbackOrigin = normalizedOrigin(process.env.CLIENT_URL);
+  if (fallbackOrigin) return fallbackOrigin;
+  throw new Error("Tenant website origin is not configured for sitemap generation.");
 };
 
 export const generateSitemap = async (req) => {
