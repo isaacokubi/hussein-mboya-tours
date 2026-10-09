@@ -3,13 +3,16 @@ import { Link } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Car, Check, Clock3, Luggage, MapPin, Plane, Search, ShieldCheck, Users, X } from "lucide-react";
 import { createTransferBooking, getAirportTransfers } from "../api/airportTransferApi";
+import { useTenant } from "../context/TenantContext";
 
 const input = "mt-1 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10";
 const field = (label, control) => <label className="text-sm font-semibold text-slate-700">{label}{control}</label>;
 const money = (value, currency = "KES") => `${currency} ${Number(value || 0).toLocaleString("en-KE", { maximumFractionDigits: 2 })}`;
 
 export default function AirportTransfers() {
-  const { data = [], isLoading, isError } = useQuery({ queryKey: ["airport-transfers"], queryFn: getAirportTransfers, staleTime: 30000 });
+  const { tenant = {} } = useTenant() || {};
+  const tenantKey = tenant?._id || tenant?.id || tenant?.slug || "public";
+  const { data = [], isLoading, isError } = useQuery({ queryKey: ["airport-transfers", tenantKey], queryFn: getAirportTransfers, staleTime: 30000 });
   const [selected, setSelected] = useState(null);
   const [search, setSearch] = useState("");
   const [form, setForm] = useState({ pickupDateTime: "", pickupLocation: "", dropoffLocation: "", passengerName: "", passengerPhone: "", passengerEmail: "", passengers: 1, luggage: 0, flightNumber: "", airline: "", terminal: "", specialRequests: "" });
