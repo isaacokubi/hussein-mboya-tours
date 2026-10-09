@@ -148,7 +148,7 @@ test("mobile homepage trip finder preserves date filters and avoids horizontal o
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto("/");
   await expect(page.getByRole("textbox", { name: "Destination or tour" })).toBeVisible();
-  const dateInput = page.getByRole("textbox", { name: "Preferred travel date" });
+  const dateInput = page.getByLabel("Preferred travel date");
   await expect(dateInput).toBeVisible();
   await dateInput.fill("2026-11-01");
   await page.getByRole("button", { name: /find my trip/i }).click();
