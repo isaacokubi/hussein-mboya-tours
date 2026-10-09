@@ -55,7 +55,7 @@ test("repair plan only accepts synthetic fixtures and preserves record IDs", () 
   assert.equal(plan.tours[0].row._id, "tour-0");
   assert.equal(plan.tours[0].price, tenantSpec.priceBase);
   assert.throws(() => buildRepairPlan(tenantSpec, tenant, destinations.slice(1), tours), /Expected at least 12 destinations/);
-  assert.throws(() => buildRepairPlan(tenantSpec, tenant, destinations, tours.map((row, i) => i === 0 ? { ...row, title: "Real client safari" } : row)), /non-synthetic tours/);
+  assert.throws(() => buildRepairPlan(tenantSpec, tenant, destinations, tours.map((row, i) => i === 0 ? { ...row, title: "Real client safari", slug: "real-client-safari", description: "A real client itinerary" } : row)), /non-synthetic tours/);
 });
 
 test("slug generation is stable and safe", () => {
