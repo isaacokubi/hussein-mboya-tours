@@ -18,7 +18,13 @@ export default function TourCard({ tour }) {
 
   const price = Number(tour.price ?? 0);
   const calculatedDiscount = Number(tour.discount) > 0 ? price - (price * Number(tour.discount)) / 100 : price;
-  const discountedPrice = Number(tour.finalPrice ?? tour.discountPrice ?? calculatedDiscount);
+  const explicitFinalPrice = Number(tour.finalPrice);
+  const legacyDiscountPrice = Number(tour.discountPrice);
+  const discountedPrice = tour.finalPrice != null && Number.isFinite(explicitFinalPrice) && explicitFinalPrice >= 0
+    ? explicitFinalPrice
+    : Number.isFinite(legacyDiscountPrice) && legacyDiscountPrice > 0
+      ? legacyDiscountPrice
+      : calculatedDiscount;
   const formatAmount = (value) => Number.isFinite(value) && value >= 0 ? `${currencySymbol} ${value.toLocaleString("en-KE", { maximumFractionDigits: 0 })}` : "Price on request";
   const hasDiscount = Number.isFinite(discountedPrice) && Number.isFinite(price) && discountedPrice < price;
   const tourTitle = tour.title || tour.name || "Amazing Safari Experience";
