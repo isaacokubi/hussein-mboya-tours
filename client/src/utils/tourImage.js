@@ -60,6 +60,24 @@ export const resolveMediaUrl = (value) => {
   return raw.startsWith("/") && base ? `${base}${raw}` : raw;
 };
 
+export const getTourFallbackImage = (tour = {}) => {
+  const label = [
+    tour?.title,
+    tour?.name,
+    tour?.category,
+    tour?.destination?.name,
+    typeof tour?.destination === "string" ? tour.destination : "",
+    ...(Array.isArray(tour?.tags) ? tour.tags : []),
+  ].filter(Boolean).join(" ").toLowerCase();
+
+  if (/beach|coast|ocean|diani|watamu|mombasa|lamu|snorkel/.test(label)) return "/gallery/beach.jpg";
+  if (/culture|heritage|village|community|museum|traditional/.test(label)) return "/gallery/culture.jpg";
+  if (/mountain|hiking|climb|trek|kilimanjaro/.test(label)) return "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=85";
+  if (/bird|lake|wetland|forest|nature|botanical/.test(label)) return "/gallery/amboseli.jpg";
+  if (/safari|wildlife|mara|amboseli|elephant|lion|game drive/.test(label)) return "/gallery/mara.jpg";
+  return "/hero1.jpeg";
+};
+
 export const getTourImage = (tour = {}) => {
   const candidates = [
     tour?.featuredImage,
@@ -74,7 +92,7 @@ export const getTourImage = (tour = {}) => {
 
   // Never intentionally render the placeholder when a tour has no media.
   // Use a deterministic real image instead so every card remains visual.
-  return resolved || TOUR_FALLBACK_IMAGES[getFallbackIndex(tour)] || TOUR_IMAGE_PLACEHOLDER;
+  return resolved || getTourFallbackImage(tour) || TOUR_IMAGE_PLACEHOLDER;
 };
 
 export const getTourImages = (tour = {}) => {
@@ -89,11 +107,7 @@ export const getTourImages = (tour = {}) => {
 
   if (media.length) return [...new Set(media)];
 
-  const index = getFallbackIndex(tour);
-  return [
-    TOUR_FALLBACK_IMAGES[index],
-    TOUR_FALLBACK_IMAGES[(index + 1) % TOUR_FALLBACK_IMAGES.length],
-  ];
+  return [getTourFallbackImage(tour)];
 };
 
 export { TOUR_FALLBACK_IMAGES };
