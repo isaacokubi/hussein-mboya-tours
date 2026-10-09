@@ -54,9 +54,9 @@ export default function HeroSlider() {
   const normalizeBrand = (value) => {
     if (typeof value !== "string") return value;
     return value
-      .replace(/\\{\\{\\s*companyName\\s*\\}\\}/gi, companyName)
-      .replace(/\\bYour Travel Company\\b/gi, companyName)
-      .replace(/\\bGlobal Tours\\b/gi, companyName);
+      .replace(/\{\{\s*companyName\s*\}\}/gi, companyName)
+      .replace(/\bYour Travel Company\b/gi, companyName)
+      .replace(/\bGlobal Tours\b/gi, companyName);
   };
 
   const sourceSlides = (Array.isArray(rawSlides) && rawSlides.length > 0 ? rawSlides : FALLBACK_HERO_SLIDES).slice(0, 5);
