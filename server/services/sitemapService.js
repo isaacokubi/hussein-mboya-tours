@@ -23,7 +23,10 @@ const normalizedOrigin = (value) => {
 
 export const resolveSiteOrigin = (req, tenant) => {
   const configuredDomain = String(tenant?.domain || "").trim().toLowerCase();
-  if (configuredDomain) return "https://" + configuredDomain;
+  if (configuredDomain) {
+    const domainOrigin = normalizedOrigin(configuredDomain.includes("://") ? configuredDomain : "https://" + configuredDomain);
+    if (domainOrigin) return domainOrigin;
+  }
 
   const websiteOrigin = normalizedOrigin(tenant?.websiteUrl);
   if (websiteOrigin) return websiteOrigin;
