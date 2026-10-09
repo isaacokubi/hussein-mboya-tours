@@ -1,4 +1,4 @@
-import { useSettings } from "../../context/SettingsContext";
+import { PUBLIC_BRAND_NAME, useSettings } from "../../context/SettingsContext";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useTenant } from "../../context/TenantContext";
@@ -9,7 +9,7 @@ export default function Footer() {
   const { user } = useAuth();
   const { settings = {} } = useSettings() || {};
   const { tenant = {} } = useTenant() || {};
-  const companyName = settings.companyName || tenant.name || tenant.companyName || "Hussein Mboya Tours";
+  const companyName = !user ? PUBLIC_BRAND_NAME : (settings.companyName || tenant.name || tenant.companyName || "Company");
   const supportEmail = settings.supportEmail || tenant.contactEmail || "";
   const supportPhone = settings.supportPhone || tenant.contactPhone || "";
   const year = new Date().getFullYear();
