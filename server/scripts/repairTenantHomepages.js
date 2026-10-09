@@ -188,9 +188,9 @@ async function main() {
     // The first repair run renamed TEST tours, so those records no longer match
     // the synthetic selector above. Reconcile every existing tour in this tenant
     // by its title and bind it to a destination owned by the same tenant.
-    const canonicalDestinations = destinations.map((row) => ({
+    const canonicalDestinations = plan.destinationRepairs.map(({ row, name }) => ({
       row,
-      name: cleanName(row.name),
+      name: cleanName(name || row.name),
     }));
     const destinationDescriptions = {
       "Maasai Mara": "The Maasai Mara is famed for big-cat sightings, sweeping savannah and the seasonal Great Migration. Enjoy guided game drives and learn about Maasai culture.",
