@@ -50,6 +50,9 @@ test("public catalogue smoke acceptance", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "What's included" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Not included" })).toBeVisible();
   await expect(page.getByRole("button", { name: /check dates & book|no available departures/i })).toBeVisible();
+  await page.goto("/travel-guides");
+  await expect(page.getByRole("heading", { name: /travel guides from/i })).toBeVisible();
+  await expect(page.locator("body")).not.toContainText(/travel guide not found/i);
   await page.goto("/destinations");
   await expect(page.locator("body")).toContainText(/destination/i);
   await expect(page.locator("footer").getByRole("link", { name: /explore all destinations/i })).toHaveAttribute("href", "/destinations");
