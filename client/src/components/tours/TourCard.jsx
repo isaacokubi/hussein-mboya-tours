@@ -16,8 +16,11 @@ export default function TourCard({ tour }) {
   const [imageSrc, setImageSrc] = useState(() => getTourImage(tour) || TOUR_FALLBACK_IMAGES[0] || NO_IMAGE);
   const [failedImageUrls, setFailedImageUrls] = useState(() => new Set());
 
-  const price = Number(tour.price || 0);
-  const discountedPrice = tour.discount ? price - (price * Number(tour.discount)) / 100 : price;
+  const price = Number(tour.price ?? 0);
+  const calculatedDiscount = Number(tour.discount) > 0 ? price - (price * Number(tour.discount)) / 100 : price;
+  const discountedPrice = Number(tour.finalPrice ?? tour.discountPrice ?? calculatedDiscount);
+  const formatAmount = (value) => Number.isFinite(value) && value >= 0 ? `${currencySymbol} ${value.toLocaleString("en-KE", { maximumFractionDigits: 0 })}` : "Price on request";
+  const hasDiscount = Number.isFinite(discountedPrice) && Number.isFinite(price) && discountedPrice < price;
   const tourTitle = tour.title || tour.name || "Amazing Safari Experience";
   const destination = tour.destination && typeof tour.destination === "object" ? tour.destination : null;
   const destinationName = destination?.name || tour.country || "Destination";
@@ -59,7 +62,7 @@ export default function TourCard({ tour }) {
     <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition">
       <div className="relative">
         <img src={imageSrc} alt={tourTitle} className="w-full h-64 object-cover" loading="lazy" onError={handleImageError} />
-        {Number(tour.discount) > 0 && <span className="absolute top-4 left-4 bg-red-600 text-white px-3 py-1 rounded-full text-sm font-semibold">{tour.discount}% OFF</span>}
+        {hasDiscount && <span className="absolute left-4 top-4 rounded-full bg-red-600 px-3 py-1 text-sm font-semibold text-white">Discount</span>}
       </div>
 
       <div className="p-6">
@@ -69,16 +72,16 @@ export default function TourCard({ tour }) {
           ) : (
             <span className="text-sm text-red-600 font-medium">Destination not assigned</span>
           )}
-          <span className="text-yellow-600 shrink-0">⭐ {rating || 0}</span>
+          {Number(rating?.average ?? rating) > 0 && <span className="shrink-0 text-yellow-600" aria-label={`Rating ${Number(rating?.average ?? rating).toFixed(1)} out of 5`}>★ {Number(rating?.average ?? rating).toFixed(1)}</span>}
         </div>
 
         <h2 className="text-xl font-bold mt-3">{tourTitle}</h2>
-        <p className="text-gray-600 mt-2 line-clamp-3">{tour.description || "Explore unforgettable destinations with our guided travel experience."}</p>
+        {tour.description && <p className="mt-2 line-clamp-3 text-gray-600">{tour.description}</p>}
 
         <div className="mt-5 flex justify-between items-center">
           <div>
-            {Number(tour.discount) > 0 && <p className="text-gray-400 line-through">{currencySymbol} {price.toLocaleString("en-US")}</p>}
-            <p className="text-2xl font-bold text-green-700">{currencySymbol} {discountedPrice.toLocaleString("en-US")}</p>
+            {hasDiscount && <p className="text-gray-400 line-through">{formatAmount(price)}</p>}
+            <p className="text-2xl font-bold text-green-700">{formatAmount(discountedPrice)}</p>
           </div>
           <Link to={`/tours/${tour.slug || tour._id}`} className="bg-yellow-600 text-white px-5 py-2 rounded-lg hover:bg-yellow-700 transition">View Trip</Link>
         </div>
