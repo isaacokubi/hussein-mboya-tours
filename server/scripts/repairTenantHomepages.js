@@ -5,6 +5,13 @@ const EXPECTED_HOST = "cluster0.cdtxzts.mongodb.net";
 const EXPECTED_DATABASE = "husseindb";
 const TARGET_TENANTS = [
   {
+    slug: "hussein-mboya",
+    name: "Hussein Mboya Tours",
+    tagline: "Experience the Magic of Kenya",
+    description: "Discover Kenya through expertly planned safaris, wildlife encounters, coastal escapes and tailor-made journeys with Hussein Mboya Tours.",
+    packageTitles: ["Classic Kenya Safari", "Wildlife Explorer", "Kenya Safari & Coast Escape"],
+  },
+  {
     slug: "amani-trails",
     name: "Amani Trails Safaris",
     tagline: "Discover Kenya with Amani Trails Safaris",
@@ -24,6 +31,29 @@ const DESTINATION_NAMES = new Set([
   "Lake Nakuru", "Samburu", "Mount Kenya", "Watamu", "Diani", "Lamu",
   "Nairobi National Park",
 ]);
+const DESTINATION_IMAGE_PATHS = {
+  "Maasai Mara": "/destinations/maasai-mara.jpg",
+  "Amboseli": "/destinations/amboseli.jpg",
+  "Tsavo East": "/demo-destinations/kenya-landscape-03.svg",
+  "Tsavo West": "/demo-destinations/kenya-landscape-04.svg",
+  "Lake Naivasha": "/demo-destinations/kenya-landscape-05.svg",
+  "Lake Nakuru": "/demo-destinations/kenya-landscape-06.svg",
+  "Samburu": "/demo-destinations/kenya-landscape-07.svg",
+  "Mount Kenya": "/demo-destinations/kenya-landscape-08.svg",
+  "Watamu": "/demo-destinations/kenya-landscape-09.svg",
+  "Diani": "/destinations/diani.jpg",
+  "Lamu": "/demo-destinations/kenya-landscape-11.svg",
+  "Nairobi National Park": "/demo-destinations/kenya-landscape-12.svg",
+};
+const TOUR_IMAGE_PATHS = [
+  "/gallery/mara.jpg", "/gallery/amboseli.jpg", "/gallery/diani.jpg",
+  "/gallery/beach.jpg", "/gallery/safari.jpg", "/gallery/culture.jpg",
+  "/demo-destinations/kenya-landscape-13.svg", "/demo-destinations/kenya-landscape-14.svg",
+  "/demo-destinations/kenya-landscape-15.svg", "/demo-destinations/kenya-landscape-16.svg",
+  "/demo-destinations/kenya-landscape-17.svg", "/demo-destinations/kenya-landscape-18.svg",
+];
+const HERO_IMAGE_PATHS = ["/hero1.jpeg", "/hero2.jpeg", "/hero4.jpeg"];
+
 const slugify = (value) => String(value || "")
   .normalize("NFKD")
   .replace(/[\u0300-\u036f]/g, "")
@@ -141,7 +171,7 @@ async function main() {
       const collision = allPackages.find((row) => String(row._id) !== String(item.row._id) && row.slug === item.slug);
       if (collision) throw new Error(`Package slug collision: ${item.slug}. No records were changed.`);
     }
-    plans.push({ spec, tenant, scope, destinationRepairs, tourRepairs, packageRepairs, categoryRepairs, slideRepairs, galleryRepairs });
+    plans.push({ spec, tenant, scope, destinationRepairs, tourRepairs, packageRepairs, categoryRepairs, slideRepairs, slides, galleryRepairs });
   }
 
   const report = [];
@@ -152,6 +182,8 @@ async function main() {
         name: item.name,
         slug: item.slug,
         description: `${item.name} is one of Kenya's memorable destinations, offering distinctive landscapes, wildlife and locally guided experiences.`,
+        featuredImage: DESTINATION_IMAGE_PATHS[item.name] || "/demo-destinations/kenya-landscape-01.svg",
+        images: [{ url: DESTINATION_IMAGE_PATHS[item.name] || "/demo-destinations/kenya-landscape-01.svg", publicId: "" }],
         shortDescription: `Explore ${item.name} with a locally planned Kenya journey.`,
         status: "active",
         active: true,
@@ -239,7 +271,7 @@ async function main() {
       return canonicalDestinations.find((entry) => entry.name.toLowerCase() === expected.toLowerCase()) || null;
     };
     const allTenantTours = await db.collection("tours").find({ ...scope, isDeleted: { $ne: true } }).toArray();
-    for (const tour of allTenantTours) {
+    for (const [tourIndex, tour] of allTenantTours.entries()) {
       const destinationEntry = destinationForTourTitle(tour.title);
       if (!destinationEntry) continue;
       const destinationName = destinationEntry.name;
@@ -263,6 +295,8 @@ async function main() {
         country: "Kenya",
         description: descriptions[destinationName] || `Explore ${destinationName} with a locally planned Kenya journey and guided experiences.`,
         shortDescription: `Discover ${destinationName} with local travel support.`,
+        featuredImage: { url: TOUR_IMAGE_PATHS[tourIndex % TOUR_IMAGE_PATHS.length], publicId: "" },
+        gallery: [{ url: TOUR_IMAGE_PATHS[(tourIndex + 1) % TOUR_IMAGE_PATHS.length], publicId: "" }],
       } });
     }
 
@@ -304,18 +338,24 @@ async function main() {
       } });
     }
 
-    for (const [index, item] of plan.slideRepairs.entries()) {
-      await db.collection("heroslides").updateOne({ _id: item._id, ...scope }, { $set: {
-        title: spec.tagline,
-        subtitle: spec.description,
-        badge: "KENYA SAFARIS • BEACH • ADVENTURE",
-        "buttonOne.text": "Explore Tours",
-        "buttonOne.link": "/tours",
-        "buttonTwo.text": "Plan Your Trip",
-        "buttonTwo.link": "/contact",
+    for (const [index, item] of plan.slides.entries()) {
+      const slideUpdate = {
+        image: { url: HERO_IMAGE_PATHS[index % HERO_IMAGE_PATHS.length], publicId: "" },
         active: true,
         order: index,
-      } });
+      };
+      if (isSynthetic(item) || /^\\s*TEST\\b/i.test(String(item.title || ""))) {
+        Object.assign(slideUpdate, {
+          title: spec.tagline,
+          subtitle: spec.description,
+          badge: "KENYA SAFARIS • BEACH • ADVENTURE",
+          "buttonOne.text": "Explore Tours",
+          "buttonOne.link": "/tours",
+          "buttonTwo.text": "Plan Your Trip",
+          "buttonTwo.link": "/contact",
+        });
+      }
+      await db.collection("heroslides").updateOne({ _id: item._id, ...scope }, { $set: slideUpdate });
     }
 
     for (const item of plan.galleryRepairs) {
@@ -346,7 +386,7 @@ async function main() {
       toursRepaired: plan.tourRepairs.length,
       packagesRepaired: plan.packageRepairs.length,
       categoriesRepaired: plan.categoryRepairs.length,
-      slidesRepaired: plan.slideRepairs.length,
+      slidesRepaired: plan.slides.length,
       galleriesRepaired: plan.galleryRepairs.length,
       publishedFeaturedDestinations: publishedDestinations,
       publishedFeaturedTours: featuredTours,
