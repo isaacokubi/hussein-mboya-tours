@@ -1,82 +1,18 @@
 import { Link } from "react-router-dom";
+import { useSettings } from "../../context/SettingsContext";
 
 export default function MpesaCTA() {
+  const { settings = {} } = useSettings() || {};
+  // Do not advertise a payment provider that the tenant has not enabled.
+  if (settings.enableMpesa !== true) return null;
+
   return (
-    <section
-      className="
-py-20
-bg-black
-text-white
-text-center
-"
-    >
-      <div
-        className="
-max-w-4xl
-mx-auto
-px-6
-"
-      >
-        <h2
-          className="
-text-3xl
-md:text-4xl
-font-bold
-"
-        >
-          Ready To Explore Kenya?
-        </h2>
-
-        <p
-          className="
-mt-5
-text-lg
-md:text-xl
-text-gray-300
-"
-        >
-          Book your adventure today and pay securely using M-Pesa.
-        </p>
-
-        <div
-          className="
-mt-6
-flex
-justify-center
-items-center
-gap-3
-"
-        >
-          <span
-            className="
-bg-green-700
-px-4
-py-2
-rounded-full
-text-sm
-font-semibold
-"
-          >
-            ✓ Secure M-Pesa Payments
-          </span>
-        </div>
-
-        <Link
-          to="/tours"
-          className="
-inline-block
-mt-8
-bg-green-600
-px-10
-py-4
-rounded-full
-font-bold
-hover:bg-green-700
-transition
-"
-        >
-          Explore Tours
-        </Link>
+    <section className="bg-black py-16 text-center text-white sm:py-20" aria-labelledby="mpesa-cta-heading">
+      <div className="mx-auto max-w-4xl px-6">
+        <h2 id="mpesa-cta-heading" className="text-3xl font-bold md:text-4xl">Ready to explore Kenya?</h2>
+        <p className="mt-5 text-lg text-gray-300 md:text-xl">Explore available trips and review the payment methods offered for your booking at checkout.</p>
+        <p className="mt-4 text-sm text-gray-400">M-Pesa availability and transaction confirmation are shown in the booking flow.</p>
+        <Link to="/tours" className="mt-8 inline-block rounded-full bg-green-600 px-10 py-4 font-bold transition hover:bg-green-700">Explore tours</Link>
       </div>
     </section>
   );
