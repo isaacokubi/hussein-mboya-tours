@@ -6,6 +6,14 @@
   "framework": "vite",
   "rewrites": [
     {
+      "source": "/robots.txt",
+      "destination": "https://hussein-mboya-tours.onrender.com/api/robots.txt"
+    },
+    {
+      "source": "/sitemap.xml",
+      "destination": "https://hussein-mboya-tours.onrender.com/api/sitemap.xml"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
