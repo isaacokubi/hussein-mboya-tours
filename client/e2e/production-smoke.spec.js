@@ -36,6 +36,8 @@ test("public catalogue smoke acceptance", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator("body")).toContainText(/Hussein|safari|tour/i);
   await expect(page.locator("body")).not.toContainText(/Sarah Williams|James Anderson|Amina Hassan/);
+  const canonical = await page.locator('link[rel="canonical"]').getAttribute("href");
+  expect(new URL(canonical).origin, "canonical must use the active tenant host").toBe(new URL(page.url()).origin);
   await expect(page.getByRole("link", { name: "Tours", exact: true }).first()).toBeVisible();
   await page.goto("/tours");
   await expect(page.locator("body")).toContainText(/tour/i);
@@ -139,4 +141,21 @@ test("customer and staff role dashboards, read-only navigation and tenant scope"
 
 test("customer reviews area", async () => {
   test.skip(true, "The client defines no customer reviews route; public review submission would require an existing completed booking and a mutation.");
+});
+
+
+test("mobile homepage trip finder preserves date filters and avoids horizontal overflow", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto("/");
+  await expect(page.getByRole("textbox", { name: "Destination or tour" })).toBeVisible();
+  const dateInput = page.getByRole("textbox", { name: "Preferred travel date" });
+  await expect(dateInput).toBeVisible();
+  await dateInput.fill("2026-11-01");
+  await page.getByRole("button", { name: /find my trip/i }).click();
+  await expect(page).toHaveURL(/\/tours\?.*date=2026-11-01/);
+  const dimensions = await page.evaluate(() => ({
+    viewport: document.documentElement.clientWidth,
+    content: document.documentElement.scrollWidth,
+  }));
+  expect(dimensions.content, "mobile content should not overflow horizontally").toBeLessThanOrEqual(dimensions.viewport);
 });
