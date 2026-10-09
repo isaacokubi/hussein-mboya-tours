@@ -8,6 +8,7 @@ import { initiateMpesa, checkPaymentStatus } from "../api/mpesaApi";
 import { getTourById } from "../api/tourApi";
 import { getSettings } from "../api/superAdminApi";
 import { useAuth } from "../context/AuthContext";
+import { useTenant } from "../context/TenantContext";
 import { getCustomTourDateRange, getTourDateRange, isDateWithinRange, toDateInputValue } from "../lib/dateRange";
 
 const normalizePhone = (value) => {
@@ -40,6 +41,8 @@ export default function Checkout() {
   const navigate = useNavigate();
   const { type, id } = useParams();
   const { user } = useAuth();
+  const { tenant = {} } = useTenant() || {};
+  const tenantKey = tenant?._id || tenant?.id || tenant?.slug || "public";
   const isBookingCheckout = type === "booking";
   const isTourCheckout = type === "tour";
 
@@ -55,17 +58,17 @@ export default function Checkout() {
   const [paymentState, setPaymentState] = useState(null);
 
   const { data: bookingResponse, isLoading: bookingLoading } = useQuery({
-    queryKey: ["checkout-booking", id],
+    queryKey: ["checkout-booking", tenantKey, id],
     queryFn: () => getBookingById(id),
     enabled: isBookingCheckout && Boolean(id),
   });
   const { data: tourResponse, isLoading: tourLoading } = useQuery({
-    queryKey: ["checkout-tour", id],
+    queryKey: ["checkout-tour", tenantKey, id],
     queryFn: () => getTourById(id),
     enabled: isTourCheckout && Boolean(id),
   });
   const { data: settingsResponse } = useQuery({
-    queryKey: ["public-system-settings"],
+    queryKey: ["public-system-settings", tenantKey],
     queryFn: getSettings,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
@@ -78,7 +81,7 @@ export default function Checkout() {
 
   const customRequestId = typeof booking?.customTourRequest === "string" ? booking.customTourRequest : booking?.customTourRequest?._id || "";
   const { data: customRequestsResponse, isLoading: customRequestLoading } = useQuery({
-    queryKey: ["checkout-custom-request", customRequestId],
+    queryKey: ["checkout-custom-request", tenantKey, customRequestId],
     queryFn: getMyCustomTourRequests,
     enabled: isBookingCheckout && Boolean(customRequestId) && typeof booking?.customTourRequest !== "object",
   });
@@ -281,7 +284,7 @@ export default function Checkout() {
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-8 md:py-10">
       <main className="mx-auto max-w-4xl rounded-3xl bg-white p-6 shadow-lg ring-1 ring-slate-200 md:p-8">
-        <p className="text-sm font-bold uppercase tracking-wider text-emerald-700">Secure checkout</p>
+        <p className="text-sm font-bold uppercase tracking-wider text-emerald-700">Booking checkout</p>
         <h1 className="mt-1 text-3xl font-bold text-slate-900">Complete your booking</h1>
         <p className="mt-2 text-slate-500">Pay your required deposit or full balance. You can make additional payments later until the balance is cleared.</p>
 

@@ -2,6 +2,7 @@ import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, BedDouble, Building2, CheckCircle2, Clock3, Coffee, CreditCard, MapPin, ShieldCheck, Star, Users } from "lucide-react";
 import { getHotel } from "../api/hotelApi";
+import { useTenant } from "../context/TenantContext";
 
 const HOTEL_IMAGES = { "Global Demo Nairobi Hotel": "https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=1600&q=85", "Global Demo Coast Resort": "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1600&q=85", "Global Demo Safari Lodge": "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1600&q=85" };
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1601918774946-25832a4be0d6?auto=format&fit=crop&w=1600&q=85";
@@ -10,7 +11,9 @@ const meal = value => String(value || "room_only").replaceAll("_", " ").replace(
 
 export default function HotelDetails() {
   const { id } = useParams();
-  const { data: hotel, isLoading, isError } = useQuery({ queryKey: ["public-hotel", id], queryFn: () => getHotel(id), enabled: !!id, staleTime: 30000 });
+  const { tenant = {} } = useTenant() || {};
+  const tenantKey = tenant?._id || tenant?.id || tenant?.slug || "public";
+  const { data: hotel, isLoading, isError } = useQuery({ queryKey: ["public-hotel", tenantKey, id], queryFn: () => getHotel(id), enabled: !!id, staleTime: 30000 });
   if (isLoading) return <main className="min-h-screen bg-slate-50 px-5 py-16"><div className="mx-auto max-w-6xl animate-pulse space-y-6"><div className="h-80 rounded-3xl bg-slate-200"/><div className="h-10 w-1/2 rounded bg-slate-200"/><div className="h-32 rounded-3xl bg-slate-200"/></div></main>;
   if (isError || !hotel) return <main className="min-h-screen bg-slate-50 px-5 py-20"><div className="mx-auto max-w-xl rounded-3xl bg-white p-10 text-center shadow-sm ring-1 ring-slate-200"><Building2 className="mx-auto text-slate-300" size={52}/><h1 className="mt-5 text-2xl font-black text-slate-900">Hotel not available</h1><p className="mt-2 text-sm leading-6 text-slate-500">This property may have been removed, is temporarily unavailable, or the link is no longer valid.</p><Link to="/hotels" className="mt-6 inline-flex rounded-xl bg-slate-950 px-5 py-3 text-sm font-black text-white">Back to hotels</Link></div></main>;
   const rooms = hotel.roomTypes || [];

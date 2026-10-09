@@ -76,7 +76,7 @@ export default function HeroSlider() {
   const { settings = {} } = useSettings() || {};
   const tenantName = String(tenant?.name || tenant?.companyName || "").trim();
   const configuredName = String(settings?.companyName || "").trim();
-  const companyName = tenantName || configuredName || "Hussein Mboya Tours";
+  const companyName = tenantName || configuredName || "Travel company";
   const tenantKey = tenant?._id || tenant?.id || tenant?.slug || companyName;
   const videoRefs = useRef([]);
   const [heroReady, setHeroReady] = useState(false);
@@ -100,14 +100,10 @@ export default function HeroSlider() {
       .replace(/\bGlobal Tours\b/gi, companyName);
   };
 
-  // Keep tenant-managed slides when there are several. If the API only returns one
-  // slide, supplement it with curated slides so the hero still rotates through images.
+  // Never mix a tenant's configured homepage with global slides. A single tenant-managed
+  // slide is valid; generic defaults are used only when the tenant has no active slides.
   const apiSlides = Array.isArray(rawSlides) ? rawSlides.filter(Boolean).slice(0, 5) : [];
-  const sourceSlides = apiSlides.length >= 2
-    ? apiSlides
-    : apiSlides.length === 1
-      ? [apiSlides[0], ...FALLBACK_HERO_SLIDES.slice(1)]
-      : FALLBACK_HERO_SLIDES;
+  const sourceSlides = apiSlides.length ? apiSlides : FALLBACK_HERO_SLIDES;
 
   const slides = sourceSlides.slice(0, 5).map((slide, index) => ({
     ...slide,

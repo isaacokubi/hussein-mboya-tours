@@ -133,6 +133,17 @@ const reviewSchema = new mongoose.Schema(
       default: false,
     },
 
+    // Explicit opt-in to publish the review and display name on the public website.
+    publicConsent: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    publicConsentAt: {
+      type: Date,
+      default: null,
+    },
+
     /*
     |--------------------------------------------------------------------------
     | MODERATION

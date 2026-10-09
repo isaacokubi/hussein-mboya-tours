@@ -5,6 +5,15 @@ import { Link } from "react-router-dom";
 import { useTenant } from "../../context/TenantContext";
 import { ArrowRight } from "lucide-react";
 
+const packagePrice = (item) => {
+  const base = Number(item?.basePrice);
+  const discounted = Number(item?.discountPrice);
+  const value = Number.isFinite(discounted) && discounted > 0 ? discounted : base;
+  if (item?.basePrice == null && !(Number.isFinite(discounted) && discounted > 0)) return "Price on request";
+  if (!Number.isFinite(value) || value < 0) return "Price on request";
+  return (item.currency || "KES") + " " + value.toLocaleString("en-KE", { maximumFractionDigits: 0 });
+};
+
 export default function PublicPackages() {
   const { tenant = {} } = useTenant() || {};
   const tenantKey = tenant?._id || tenant?.id || tenant?.slug || "public";
@@ -33,7 +42,7 @@ export default function PublicPackages() {
                 <p className="text-xs font-bold uppercase tracking-wide text-[#8a6423]">{item.category} · {item.destination}</p>
                 <h3 className="mt-2 text-xl font-bold">{item.title}</h3>
                 <p className="mt-2 line-clamp-3 text-sm text-slate-600">{item.shortDescription || item.description}</p>
-                <div className="mt-4 flex items-end justify-between gap-3"><p className="font-bold text-[#8a6423]">{item.currency || "KES"} {Number(item.discountPrice ?? item.basePrice ?? 0).toLocaleString()}</p><Link to="/tours" className="inline-flex items-center gap-1 text-sm font-extrabold text-[#12372a]">Explore <ArrowRight size={14}/></Link></div>
+                <div className="mt-4 flex items-end justify-between gap-3"><p className="font-bold text-[#8a6423]">{packagePrice(item)}</p><Link to="/tours" className="inline-flex items-center gap-1 text-sm font-extrabold text-[#12372a]">Explore <ArrowRight size={14}/></Link></div>
               </div>
             </article>
           ))}

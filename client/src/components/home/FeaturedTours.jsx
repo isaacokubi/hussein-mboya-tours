@@ -1,13 +1,34 @@
-import { getTourImage, TOUR_FALLBACK_IMAGES } from "../../utils/tourImage";
+import { getTourImage, getTourFallbackImage } from "../../utils/tourImage";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { ArrowRight, Clock3, MapPin, Star } from "lucide-react";
 import { getFeaturedTours } from "../../api/tourApi";
 import LazyImage from "../common/LazyImage";
 import { useTenant } from "../../context/TenantContext";
+import { useSettings } from "../../context/SettingsContext";
+
+const getTourPrice = (tour) => {
+  const base = Number(tour?.price);
+  const final = Number(tour?.finalPrice);
+  const legacyDiscount = Number(tour?.discountPrice);
+  if (tour?.finalPrice != null && Number.isFinite(final) && final >= 0) return final;
+  if (Number.isFinite(legacyDiscount) && legacyDiscount > 0) return legacyDiscount;
+  if (!Number.isFinite(base) || base < 0) return null;
+  return Number(tour?.discount) > 0 ? base - (base * Number(tour.discount)) / 100 : base;
+};
+
+const formatPrice = (value, currency) => {
+  if (value == null || value === "") return "Price on request";
+  const amount = Number(value);
+  if (!Number.isFinite(amount) || amount < 0) return "Price on request";
+  try { return new Intl.NumberFormat("en-KE", { style: "currency", currency: currency || "KES", maximumFractionDigits: 0 }).format(amount); }
+  catch { return (currency || "KES") + " " + amount.toLocaleString("en-KE", { maximumFractionDigits: 0 }); }
+};
 
 export default function FeaturedTours() {
   const { tenant = {} } = useTenant() || {};
+  const { settings = {} } = useSettings() || {};
+  const currency = settings.currency || tenant.currency || "KES";
   const tenantKey = tenant?._id || tenant?.id || tenant?.slug || "public";
   const { data, isLoading, isError, refetch } = useQuery({ queryKey: ["featuredTours", tenantKey], queryFn: getFeaturedTours, staleTime: 1000 * 60 * 5 });
   const tours = Array.isArray(data) ? data : [];
@@ -32,7 +53,7 @@ export default function FeaturedTours() {
       ) : (
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {tours.map((tour, index) => {
-            const fallbackImage = TOUR_FALLBACK_IMAGES[index % TOUR_FALLBACK_IMAGES.length];
+            const fallbackImage = getTourFallbackImage(tour);
             const rating = Number(tour?.rating ?? tour?.averageRating ?? 0);
             const reviewCount = Number(tour?.reviewCount ?? tour?.reviewsCount ?? 0);
             return (
@@ -50,7 +71,7 @@ export default function FeaturedTours() {
                   <h3 className="line-clamp-2 text-xl font-black leading-tight text-slate-900">{tour?.title || "African Adventure"}</h3>
                   {rating > 0 && <div className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#8a6423]"><Star size={14} fill="currentColor" /> {rating.toFixed(1)}{reviewCount > 0 ? ` · ${reviewCount} reviews` : ""}</div>}
                   <div className="mt-5 flex items-end justify-between gap-3">
-                    <div><p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">From</p><p className="text-xl font-black text-[#8a6423]">KES {Number(tour.price || 0).toLocaleString()}</p></div>
+                    <div><p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">From</p><p className="text-xl font-black text-[#8a6423]">{formatPrice(getTourPrice(tour), currency)}</p></div>
                     <Link to={`/tours/${tour?.slug || tour?._id}`} className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#12372a]">View itinerary <ArrowRight size={15}/></Link>
                   </div>
                 </div>

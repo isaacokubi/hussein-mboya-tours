@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ArrowLeft, BedDouble, CheckCircle2, Clock3, MapPin, ShieldCheck, Users } from "lucide-react";
 import { createHotelBooking, getHotel, getHotelAvailability } from "../api/hotelApi";
+import { useTenant } from "../context/TenantContext";
 
 const input = "mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10";
 const dateOnly = value => value ? new Date(`${value}T00:00:00`) : null;
@@ -17,13 +18,15 @@ const MEAL_PLAN_LABELS = {
 
 export default function HotelReservation() {
   const { id } = useParams();
+  const { tenant = {} } = useTenant() || {};
+  const tenantKey = tenant?._id || tenant?.id || tenant?.slug || "public";
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const [stay, setStay] = useState({ checkIn: "", checkOut: "", rooms: 1, adults: 2, children: 0 });
   const [form, setForm] = useState({ firstName: "", lastName: "", phone: "", email: "", mealPlan: "", estimatedArrivalTime: "", bedPreference: "", dietaryRequirements: "", accessibilityNeeds: "", airportTransferRequired: false, specialRequests: "" });
-  const { data: hotel, isLoading, isError } = useQuery({ queryKey: ["public-hotel", id], queryFn: () => getHotel(id), enabled: Boolean(id), staleTime: 30000 });
+  const { data: hotel, isLoading, isError } = useQuery({ queryKey: ["public-hotel", tenantKey, id], queryFn: () => getHotel(id), enabled: Boolean(id), staleTime: 30000 });
   const validDates = Boolean(stay.checkIn && stay.checkOut && dateOnly(stay.checkOut) > dateOnly(stay.checkIn));
-  const availability = useQuery({ queryKey: ["hotel-reservation-availability", id, stay.checkIn, stay.checkOut], queryFn: () => getHotelAvailability({ hotelId: id, checkIn: stay.checkIn, checkOut: stay.checkOut }), enabled: Boolean(id) && validDates, staleTime: 10000 });
+  const availability = useQuery({ queryKey: ["hotel-reservation-availability", tenantKey, id, stay.checkIn, stay.checkOut], queryFn: () => getHotelAvailability({ hotelId: id, checkIn: stay.checkIn, checkOut: stay.checkOut }), enabled: Boolean(id) && validDates, staleTime: 10000 });
   const rooms = availability.data?.roomTypes || hotel?.roomTypes || [];
   const [roomId, setRoomId] = useState(params.get("room") || "");
   const selectedRoom = rooms.find(room => String(room._id) === String(roomId)) || rooms[0];

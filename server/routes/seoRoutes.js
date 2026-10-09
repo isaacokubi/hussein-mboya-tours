@@ -3,9 +3,8 @@ import { resolveTenant } from "../middleware/tenantMiddleware.js";
 
 import express from "express";
 
-import {
-  generateSitemap,
-} from "../services/sitemapService.js";
+import { generateSitemap, resolveSiteOrigin } from "../services/sitemapService.js";
+import { getTenantContext } from "../tenancy/context.js";
 
 const router = express.Router();
 
@@ -23,11 +22,21 @@ router.use(resolveTenant);
 |--------------------------------------------------------------------------
 */
 
+router.get("/robots.txt", (req, res, next) => {
+  try {
+    const { tenant } = getTenantContext();
+    const siteOrigin = resolveSiteOrigin(req, tenant);
+    return res.status(200).type("text/plain").send("User-agent: *\nAllow: /\nSitemap: " + siteOrigin + "/sitemap.xml\n");
+  } catch (error) {
+    return next(error);
+  }
+});
+
 router.get(
   "/sitemap.xml",
   async (req, res, next) => {
     try {
-      const sitemap = await generateSitemap();
+      const sitemap = await generateSitemap(req);
 
       res
         .status(200)

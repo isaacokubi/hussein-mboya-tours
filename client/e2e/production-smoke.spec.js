@@ -35,19 +35,27 @@ test("public catalogue smoke acceptance", async ({ page }) => {
 
   await page.goto("/");
   await expect(page.locator("body")).toContainText(/Hussein|safari|tour/i);
+  await expect(page.locator("body")).not.toContainText(/Sarah Williams|James Anderson|Amina Hassan|4,486|290 Tours Completed|48 Destinations|10 Years Serving Travelers/);
+  const canonical = await page.locator('link[rel="canonical"]').getAttribute("href");
+  expect(new URL(canonical).origin, "canonical must use the active tenant host").toBe(new URL(page.url()).origin);
   await expect(page.getByRole("link", { name: "Tours", exact: true }).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: /contact us/i }).first()).toBeVisible();
+  await expect(page.getByPlaceholder("Email address")).toHaveCount(0);
   await page.goto("/tours");
   await expect(page.locator("body")).toContainText(/tour/i);
   await expect(page.locator("a[href*='/tours/']:not([href='/tours'])").first()).toBeVisible({ timeout: 20_000 });
   await page.locator("a[href*='/tours/']:not([href='/tours'])").first().click();
   await expect(page).toHaveURL(/\/tours\/[^/]+/);
   await expect(page.locator("main").last()).not.toBeEmpty();
+  await expect(page.getByRole("heading", { name: "What's included" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Not included" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /check dates & book|no available departures/i })).toBeVisible();
+  await page.goto("/travel-guides");
+  await expect(page.getByRole("heading", { name: /travel guides from/i })).toBeVisible();
+  await expect(page.locator("body")).not.toContainText(/travel guide not found/i);
   await page.goto("/destinations");
   await expect(page.locator("body")).toContainText(/destination/i);
-  const footerDestinations = [["Maasai Mara", "/destinations/maasai-mara"], ["Diani Beach", "/destinations/diani-beach"], ["Mount Kenya", "/destinations/mount-kenya"], ["Nairobi", "/destinations/nairobi"]];
-  for (const [name, href] of footerDestinations) {
-    await expect(page.locator("footer").getByRole("link", { name, exact: true })).toHaveAttribute("href", href);
-  }
+  await expect(page.locator("footer").getByRole("link", { name: /explore all destinations/i })).toHaveAttribute("href", "/destinations");
   await page.locator("main").last().locator("a[href^='/destinations/']").first().click();
   await expect(page).toHaveURL(/\/destinations\/[^/]+/);
   await expect(page.locator("main").last()).not.toContainText("Destination not found");
@@ -141,4 +149,21 @@ test("customer and staff role dashboards, read-only navigation and tenant scope"
 
 test("customer reviews area", async () => {
   test.skip(true, "The client defines no customer reviews route; public review submission would require an existing completed booking and a mutation.");
+});
+
+
+test("mobile homepage trip finder preserves date filters and avoids horizontal overflow", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto("/");
+  await expect(page.getByRole("textbox", { name: "Destination or tour" })).toBeVisible();
+  const dateInput = page.getByLabel("Preferred travel date");
+  await expect(dateInput).toBeVisible();
+  await dateInput.fill("2026-11-01");
+  await page.getByRole("button", { name: /find my trip/i }).click();
+  await expect(page).toHaveURL(/\/tours\?.*date=2026-11-01/);
+  const dimensions = await page.evaluate(() => ({
+    viewport: document.documentElement.clientWidth,
+    content: document.documentElement.scrollWidth,
+  }));
+  expect(dimensions.content, "mobile content should not overflow horizontally").toBeLessThanOrEqual(dimensions.viewport);
 });

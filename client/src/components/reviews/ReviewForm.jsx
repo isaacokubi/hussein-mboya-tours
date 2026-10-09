@@ -14,6 +14,7 @@ export default function ReviewForm({
     rating: 5,
     title: "",
     comment: "",
+    publicConsent: false,
   });
 
   /*
@@ -51,6 +52,7 @@ export default function ReviewForm({
         rating: Number(form.rating),
         title: form.title.trim(),
         comment: form.comment.trim(),
+        publicConsent: form.publicConsent === true,
       });
 
       toast.success("Thank you for your review!");
@@ -59,6 +61,7 @@ export default function ReviewForm({
         rating: 5,
         title: "",
         comment: "",
+        publicConsent: false,
       });
 
       if (onSuccess) {
@@ -180,6 +183,16 @@ export default function ReviewForm({
           "
         />
       </div>
+
+      <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700">
+        <input
+          type="checkbox"
+          checked={form.publicConsent}
+          onChange={(e) => updateField("publicConsent", e.target.checked)}
+          className="mt-1 h-4 w-4 shrink-0 accent-emerald-700"
+        />
+        <span>I consent to publishing this review and my display name on the public website. This is optional; without consent, my review will not be displayed publicly.</span>
+      </label>
 
       {/* Submit */}
 

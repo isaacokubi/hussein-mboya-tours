@@ -1,8 +1,9 @@
-import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
+import { getTenantContext, mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import { SitemapStream, streamToPromise } from "sitemap";
 
 import Tour from "../models/Tour.js";
 import Destination from "../models/Destination.js";
+import TravelGuide from "../models/TravelGuide.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -10,11 +11,51 @@ import Destination from "../models/Destination.js";
 |--------------------------------------------------------------------------
 */
 
-export const generateSitemap = async () => {
+const normalizedOrigin = (value) => {
+  try {
+    const parsed = new URL(String(value || ""));
+    if (!["http:", "https:"].includes(parsed.protocol)) return "";
+    return parsed.origin;
+  } catch {
+    return "";
+  }
+};
+
+export const resolveSiteOrigin = (req, tenant) => {
+  const configuredDomain = String(tenant?.domain || "").trim().toLowerCase();
+  if (configuredDomain) {
+    const domainOrigin = normalizedOrigin(configuredDomain.includes("://") ? configuredDomain : "https://" + configuredDomain);
+    if (domainOrigin) return domainOrigin;
+  }
+
+  const websiteOrigin = normalizedOrigin(tenant?.websiteUrl);
+  if (websiteOrigin) return websiteOrigin;
+
+  const requestOrigin = normalizedOrigin(req?.get?.("origin"));
+  if (requestOrigin) {
+    const originHost = new URL(requestOrigin).hostname.toLowerCase();
+    const tenantSlug = String(tenant?.slug || "").toLowerCase();
+    const vercelTenantHost = originHost.endsWith(".vercel.app") && originHost.split(".")[0] === tenantSlug;
+    if (vercelTenantHost) return requestOrigin;
+  }
+
+  const forwardedHost = String(req?.get?.("x-forwarded-host") || req?.get?.("host") || "").split(",")[0].trim();
+  const forwardedOrigin = normalizedOrigin(forwardedHost.includes("://") ? forwardedHost : "https://" + forwardedHost);
+  if (forwardedOrigin) {
+    const forwardedName = new URL(forwardedOrigin).hostname.toLowerCase();
+    const tenantSlug = String(tenant?.slug || "").toLowerCase();
+    if (forwardedName === tenantSlug + ".vercel.app") return forwardedOrigin;
+  }
+
+  throw new Error("Tenant website origin is not configured; refusing to publish a shared-domain sitemap.");
+};
+
+export const generateSitemap = async (req) => {
   requireTenantId();
   try {
+    const { tenant } = getTenantContext();
     const sitemap = new SitemapStream({
-      hostname: process.env.CLIENT_URL,
+      hostname: resolveSiteOrigin(req, tenant),
     });
 
     sitemap.write({
@@ -49,7 +90,9 @@ export const generateSitemap = async () => {
 
     const tours = await Tour.find(
       mergeTenantFilter({
-        status: "active",
+        published: true,
+        available: true,
+        isDeleted: false,
       })
     ).select("slug updatedAt");
 
@@ -63,7 +106,7 @@ export const generateSitemap = async () => {
     }
 
     const destinations = await Destination.find(
-      mergeTenantFilter({})
+      mergeTenantFilter({ active: true })
     ).select("slug updatedAt");
 
     for (const destination of destinations) {
@@ -75,6 +118,19 @@ export const generateSitemap = async () => {
       });
     }
 
+    const guides = await TravelGuide.find(
+      mergeTenantFilter({ status: "published" })
+    ).select("slug updatedAt publishedAt");
+    for (const guide of guides) {
+      sitemap.write({
+        url: "/travel-guides/" + guide.slug,
+        lastmod: guide.updatedAt || guide.publishedAt,
+        changefreq: "monthly",
+        priority: 0.6,
+      });
+    }
+
+    sitemap.write({ url: "/travel-guides", changefreq: "weekly", priority: 0.7 });
     sitemap.end();
 
     const xml = await streamToPromise(sitemap);

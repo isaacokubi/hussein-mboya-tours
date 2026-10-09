@@ -18,31 +18,31 @@ const WhyChooseUs = lazy(() => import("../components/home/WhyChooseUs"));
 const MpesaCTA = lazy(() => import("../components/home/MpesaCTA"));
 const NewsletterSection = lazy(() => import("../components/home/NewsletterSection"));
 
-const DEFAULT_SECTIONS = { stats: true, tours: true, destinations: true, experiences: true, services: true, testimonials: true, gallery: true, whyChooseUs: true, newsletter: true };
+const DEFAULT_SECTIONS = { stats: false, tours: true, destinations: true, experiences: true, services: true, testimonials: false, gallery: true, whyChooseUs: true, newsletter: true };
 const SectionFallback = () => <div className="min-h-24" aria-hidden="true" />;
 
 const JOURNEY = [
   ["Discover", "Browse curated tours, destinations and travel services.", Compass],
   ["Enquire", "Request a quote or tailor an itinerary around your needs.", UsersRound],
   ["Book", "Accept your quotation and confirm the trip online.", CalendarCheck2],
-  ["Pay", "Pay securely with M-Pesa and supported payment methods.", CreditCard],
-  ["Travel", "Get coordinated guides, drivers, hotels and transfers.", CarFront],
+  ["Pay", "Review the payment methods enabled for your booking after confirmation.", CreditCard],
+  ["Travel", "Confirm guides, accommodation, drivers and transfers for your itinerary.", CarFront],
   ["Remember", "Complete your journey, share feedback and stay connected.", BadgeCheck],
 ];
 
-const TRUST_POINTS = [["Kenya specialists", "Local knowledge from people who know the destinations.", Compass], ["Verified local support", "Guides, drivers and partners coordinated around your trip.", ShieldCheck], ["Flexible itineraries", "Choose a ready-made safari or build a trip around you.", Sparkles], ["Secure payments", "Reserve confidently with M-Pesa and supported payment options.", CreditCard]];
+const TRUST_POINTS = [["Kenya specialists", "Local knowledge from people who know the destinations.", Compass], ["Trip coordination", "Guides, drivers and partners can be coordinated when included in your confirmed itinerary.", ShieldCheck], ["Flexible itineraries", "Choose a ready-made safari or build a trip around you.", Sparkles], ["Payment options", "Review the payment methods available for your booking.", CreditCard]];
 
 const SERVICES = [
   ["Safaris & Tours", "Curated and tailor-made Kenya adventures.", Compass, "/tours"],
   ["Hotels & Stays", "Accommodation coordinated around your itinerary.", Hotel, "/hotels"],
-  ["Airport Transfers", "Reliable pickups and drop-offs from arrival to departure.", CarFront, "/airport-transfers"],
+  ["Airport Transfers", "Arrange airport pickups and drop-offs around your itinerary.", CarFront, "/airport-transfers"],
   ["Custom Travel", "Flexible experiences for families, groups, corporates and honeymoons.", Sparkles, "/tours"],
 ];
 
 export default function Home() {
   const { tenant = {} } = useTenant() || {};
   const { companyName: configuredCompanyName = "", settings = {} } = useSettings() || {};
-  const companyName = configuredCompanyName || tenant.name || tenant.companyName || "Hussein Mboya Tours";
+  const companyName = configuredCompanyName || tenant.name || tenant.companyName || "Travel company";
   const sections = { ...DEFAULT_SECTIONS, ...(settings.homepageSections || {}) };
   const seoTitle = settings.seoTitle || `Kenya Safaris & Tours | ${companyName}`;
   const seoDescription = settings.seoDescription || `Discover Kenya with ${companyName}: safaris, wildlife, beach holidays, custom itineraries and seamless travel support.`;

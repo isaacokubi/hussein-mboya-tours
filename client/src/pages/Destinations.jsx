@@ -9,7 +9,7 @@ export default function Destinations() {
   const { settings } = useSettings();
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["destinations"],
+    queryKey: ["destinations", tenant?._id || tenant?.id || tenant?.slug || "public"],
     queryFn: async () => {
       const response = await api.get("/destinations", { params: { page: 1, limit: 100 } });
       const payload = response.data || {};
@@ -33,7 +33,7 @@ export default function Destinations() {
         <div className="mb-10 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
           <div>
             <h1 className="text-4xl font-bold text-gray-800">Explore Destinations</h1>
-            <p className="text-gray-600 mt-3">Discover amazing places and unforgettable experiences with {settings?.companyName || tenant?.name || "Hussein Mboya Tours"}.</p>
+            <p className="text-gray-600 mt-3">Discover amazing places and unforgettable experiences with {settings?.companyName || tenant?.name || "Travel company"}.</p>
           </div>
           <div className="bg-white rounded-full px-5 py-2 shadow-sm text-gray-700 font-semibold">{destinationCount} {destinationCount === 1 ? "Destination" : "Destinations"}</div>
         </div>

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { Activity, BarChart3, Bell, Bot, Car, CalendarCheck, CreditCard, FileBarChart, FileText, Handshake, Image, LayoutDashboard, Menu, PackageCheck, Plane, BriefcaseBusiness, BadgeDollarSign, Receipt, Settings, Shield, Smartphone, Star, Tag, UserCog, Users, Wallet, X, Code2, Hotel, Home } from "lucide-react";
+import { Activity, BarChart3, Bell, BookOpen, Bot, Car, CalendarCheck, CreditCard, FileBarChart, FileText, Handshake, Image, LayoutDashboard, Menu, PackageCheck, Plane, BriefcaseBusiness, BadgeDollarSign, Receipt, Settings, Shield, Smartphone, Star, Tag, UserCog, Users, Wallet, X, Code2, Hotel, Home } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useSettings } from "../context/SettingsContext";
 import api from "../api/axios";
@@ -28,6 +28,7 @@ const MENU = [
   ["Coupons", "/admin/coupons", Tag, "tour.manage", "coupons"],
   ["Reviews", "/admin/reviews", Star, "tour.manage", "reviews"],
   ["Gallery", "/admin/gallery", Image, "tour.manage", "gallery"],
+  ["Travel Guides", "/admin/travel-guides", BookOpen, "tour.manage", ""],
   ["Reports", "/admin/reports", FileText, "analytics.view", "reports"],
   ["Analytics", "/admin/analytics", BarChart3, "analytics.view", "analytics"],
   ["Accounting & Finance", "/admin/finance", Wallet, "finance.view", "finance"],
@@ -50,7 +51,7 @@ const MENU = [
 ];
 
 const GROUPS = [
-  ["Operations", ["Dashboard", "Users", "Staff", "Destinations", "Bookings & Refunds", "Custom Tour Requests", "Operations & Procurement", "Hotels", "Airport Transfers", "Hospitality Reservations", "Hospitality Operations", "Hospitality Commercial", "Payments", "Agents", "Commissions", "Customers CRM", "Fleet Management", "Coupons", "Reviews", "Gallery"]],
+  ["Operations", ["Dashboard", "Users", "Staff", "Destinations", "Bookings & Refunds", "Custom Tour Requests", "Operations & Procurement", "Hotels", "Airport Transfers", "Hospitality Reservations", "Hospitality Operations", "Hospitality Commercial", "Payments", "Agents", "Commissions", "Customers CRM", "Fleet Management", "Coupons", "Reviews", "Gallery", "Travel Guides"]],
   ["Finance & Insight", ["Reports", "Analytics", "Accounting & Finance", "M-Pesa Transactions", "Finance Reports", "Management Accounting", "Complete Accounting", "Accounting Control Reports", "Accounting Subledgers", "Withholding Tax", "Reconciliation", "Compliance & eTIMS", "AI Tools"]],
   ["Governance", ["Notifications", "Roles & Permissions", "System Health", "Billing & Subscription", "Developer Platform", "Settings"]],
 ];

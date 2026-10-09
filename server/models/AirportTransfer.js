@@ -18,7 +18,7 @@ const AirportTransferSchema = new Schema({
   currency: { type: String, uppercase: true, trim: true, default: "KES" },
   durationMinutes: { type: Number, min: 0, default: 60 },
   amenities: [{ type: String, trim: true, maxlength: 100 }],
-  operatingHours: { type: String, trim: true, default: "24/7" },
+  operatingHours: { type: String, trim: true, default: "" },
   notes: { type: String, trim: true, maxlength: 2000, default: "" },
   status: { type: String, enum: ["draft", "active", "inactive"], default: "active" },
   createdBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
