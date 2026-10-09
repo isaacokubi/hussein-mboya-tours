@@ -45,7 +45,7 @@ test("tenant financial audit reconciles booking and invoice balances against suc
 test("tenant financial audit validates balanced journals and tenant-owned chart accounts", () => {
   assert.match(source, /POSTED_JOURNAL_UNBALANCED/);
   assert.match(source, /JOURNAL_ACCOUNT_TENANT/);
-  assert.match(source, /Math\.abs\(debit - credit\)/);
+  assert.match(source, /Math\.abs\(debit-credit\)/);
 });
 
 test("financial seed derives invoice and payment state from the same booking payment plan", () => {
