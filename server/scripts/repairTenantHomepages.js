@@ -103,7 +103,7 @@ async function main() {
           row,
           title: tourTitle(row, destinationName, spec.name, index),
           destinationName,
-          slug: `${spec.slug}-${slugify(tourTitle(row, destinationName, spec.name, index))}`,
+          slug: `${spec.slug}-${slugify(tourTitle(row, destinationName, spec.name, index))}-${index + 1}`,
         };
       });
     const packageRepairs = packages
