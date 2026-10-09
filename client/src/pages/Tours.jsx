@@ -32,7 +32,13 @@ export default function Tours() {
   if (isLoading) return <div className="min-h-[500px] bg-slate-950 flex items-center justify-center"><div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-400 border-t-transparent" /></div>;
   if (error) return <div className="min-h-[400px] bg-slate-950 px-6 py-20 text-center text-white"><h2 className="text-2xl font-bold">We are refreshing our tour inventory.</h2><p className="mt-2 text-slate-400">Please try again shortly.</p></div>
 
-  const allTours = Array.isArray(data) ? data : data?.data || data?.tours || [];
+  const allTours = Array.isArray(data) ? data
+    : Array.isArray(data?.data) ? data.data
+      : Array.isArray(data?.tours) ? data.tours
+        : Array.isArray(data?.data?.tours) ? data.data.tours
+          : Array.isArray(data?.items) ? data.items
+            : Array.isArray(data?.data?.items) ? data.data.items
+              : [];
   const tours = (Array.isArray(allTours) ? allTours : []).filter((tour) => { const days = Number((tour?.durationDays ?? tour?.durationDetails?.days ?? String(tour?.duration || "").match(/\d+/)?.[0]) || 0); const withinDuration = !duration || (duration === "1-3" && days >= 1 && days <= 3) || (duration === "4-6" && days >= 4 && days <= 6) || (duration === "7+" && days >= 7); const capacity = Number(tour?.capacity ?? tour?.availabilitySettings?.totalSlots ?? 0); const withinTravellers = !travellers || !capacity || capacity >= Number(travellers); const requested = travelDate ? new Date(travelDate + "T00:00:00") : null; const departures = Array.isArray(tour?.availability) ? tour.availability : []; const dateMatch = !requested || (departures.length ? departures.some((departure) => { const departureDate = new Date(departure.date); return !Number.isNaN(departureDate.getTime()) && departureDate.toISOString().slice(0, 10) === travelDate && Number(departure.totalSlots ?? 0) - Number(departure.bookedSlots ?? 0) > 0; }) : (() => { const start = new Date(tour?.startDate || tour?.date || ""); const end = new Date(tour?.endDate || tour?.startDate || tour?.date || ""); if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return false; start.setHours(0,0,0,0); end.setHours(23,59,59,999); return requested >= start && requested <= end; })()); return withinDuration && withinTravellers && dateMatch; });
 
   const updateSearch = (event) => {
