@@ -101,7 +101,7 @@ async function auditFinancialIntegrity(tenantId) {
     TourCost.find({ tenantId, ...active }).select("_id").lean(),
     SupplierPayable.find({ tenantId, ...active }).select("_id").lean(),
     JournalEntry.find({ tenantId, status: "posted" }).select("_id sourceType sourceId lines").lean(),
-    ChartOfAccount.find({ tenantId, active: true }).select("_id").lean(),
+    ChartOfAccount.find({ tenantId }).select("_id active").lean(),
   ]);
   const issues = [];
   const owned = rows => new Set(rows.map(row => auditId(row._id)));
