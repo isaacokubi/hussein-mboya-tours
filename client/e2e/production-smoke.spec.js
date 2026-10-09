@@ -39,6 +39,8 @@ test("public catalogue smoke acceptance", async ({ page }) => {
   const canonical = await page.locator('link[rel="canonical"]').getAttribute("href");
   expect(new URL(canonical).origin, "canonical must use the active tenant host").toBe(new URL(page.url()).origin);
   await expect(page.getByRole("link", { name: "Tours", exact: true }).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: /contact us/i }).first()).toBeVisible();
+  await expect(page.getByPlaceholder("Email address")).toHaveCount(0);
   await page.goto("/tours");
   await expect(page.locator("body")).toContainText(/tour/i);
   await expect(page.locator("a[href*='/tours/']:not([href='/tours'])").first()).toBeVisible({ timeout: 20_000 });
