@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import api from "../api/axios";
 import { useAuth } from "./AuthContext";
 
-export const PUBLIC_BRAND_NAME = "Hussein Mboya Tours";
+export const PUBLIC_BRAND_NAME = "Kenya Tours";
 export const PLATFORM_BRAND_NAME = "Kenya Tours";
 
 const DEFAULT_SETTINGS = {
