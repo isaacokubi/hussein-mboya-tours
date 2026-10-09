@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import TourManagerSidebar from "../components/tourManager/TourManagerSidebar";
+import DashboardLogoutButton from "../components/common/DashboardLogoutButton";
 import { useAuth } from "../context/AuthContext";
 import { getUserRole } from "../utils/roleUtils";
 
@@ -23,7 +24,7 @@ const TourManagerLayout = () => {
         </div>
       )}
       <div className="ops-main flex min-w-0 flex-1 flex-col">
-        <header className="ops-header lg:hidden"><div className="flex min-w-0 items-center gap-2 sm:gap-3"><button type="button" onClick={() => setMobileOpen(true)} className="ops-mobile-trigger shrink-0" aria-label="Open Tour Manager navigation" aria-expanded={mobileOpen}><Menu size={20} /></button><div className="min-w-0"><div className="truncate text-sm font-semibold sm:text-base">Tour Manager</div><div className="truncate text-[10px] sm:text-xs">Tour Operations</div></div></div></header>
+        <header className="ops-header flex items-center justify-between gap-3"><div className="flex min-w-0 items-center gap-2 sm:gap-3"><button type="button" onClick={() => setMobileOpen(true)} className="ops-mobile-trigger shrink-0 lg:hidden" aria-label="Open Tour Manager navigation" aria-expanded={mobileOpen}><Menu size={20} /></button><div className="min-w-0"><div className="truncate text-sm font-semibold sm:text-base">Tour Manager</div><div className="truncate text-[10px] sm:text-xs">Tour Operations</div></div></div><DashboardLogoutButton /></header>
         <main className="ops-content min-w-0 flex-1"><Outlet /></main>
       </div>
     </div>
