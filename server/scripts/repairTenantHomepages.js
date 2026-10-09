@@ -355,7 +355,7 @@ async function main() {
         active: true,
         order: index,
       };
-      if (isSynthetic(item) || /^\\s*TEST\\b/i.test(String(item.title || ""))) {
+      if (isSynthetic(item) || /^\s*TEST\b/i.test(String(item.title || ""))) {
         Object.assign(slideUpdate, {
           title: spec.tagline,
           subtitle: spec.description,
@@ -382,7 +382,7 @@ async function main() {
         image: { url: GALLERY_IMAGE_PATHS[index % GALLERY_IMAGE_PATHS.length], publicId: "" },
         active: true,
       };
-      if (isSynthetic(item) || /^\\s*TEST\\b/i.test(String(item.title || ""))) {
+      if (isSynthetic(item) || /^\s*TEST\b/i.test(String(item.title || ""))) {
         galleryUpdate.title = `${spec.name} Safari Gallery ${index + 1}`;
         galleryUpdate.category = "Safari";
       }
