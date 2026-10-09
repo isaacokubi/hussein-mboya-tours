@@ -37,15 +37,6 @@ const isGenericImage = (value) => {
     normalized.includes("destination-placeholder");
 };
 
-const getFallbackIndex = (tour = {}) => {
-  const seed = String(
-    tour?._id || tour?.slug || tour?.title || tour?.name || "global-tours"
-  );
-  return Math.abs(
-    seed.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0)
-  ) % TOUR_FALLBACK_IMAGES.length;
-};
-
 export const resolveMediaUrl = (value) => {
   if (!value) return "";
   const raw = typeof value === "string"
