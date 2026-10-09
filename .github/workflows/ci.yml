@@ -172,6 +172,22 @@ jobs:
           console.log(JSON.stringify({ metadata: audit.metadata?.vulnerabilities, advisories }, null, 2));
           NODE
 
+      - name: Generate patched client dependency lockfile
+        run: |
+          npm pkg delete devDependencies.depcheck devDependencies.ts-prune
+          npm install --package-lock-only --ignore-scripts
+          npm audit fix --package-lock-only || true
+          npm ci
+
+      - name: Upload patched client dependency files
+        uses: actions/upload-artifact@v4
+        with:
+          name: client-dependency-fix
+          path: |
+            client/package.json
+            client/package-lock.json
+          if-no-files-found: error
+
       - name: ESLint
         run: npm run lint
 
