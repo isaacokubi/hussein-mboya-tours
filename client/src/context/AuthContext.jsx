@@ -180,6 +180,10 @@ export function AuthProvider({ children }) {
     authOperation.current += 1;
     advanceAuthenticationGeneration();
     setLoading(true);
+    // React Query caches are in-memory and some operational pages use generic
+    // query keys. Clear every tenant's cached payload before switching sessions
+    // so a direct login as another tenant cannot render the previous tenant's data.
+    queryClient.clear();
     // A new login must start from a clean authentication session. In particular,
     // never let the previous user's JWT or tenant ID be attached to /auth/login.
     AUTH_KEYS.forEach((key) => localStorage.removeItem(key));
