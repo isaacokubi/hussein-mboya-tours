@@ -86,8 +86,8 @@ const auditMoney = (value) => Math.round((Number(value || 0) + Number.EPSILON) *
 async function auditFinancialIntegrity(tenantId) {
   const [bookings, paymentRows, invoices, tours, destinations, customers, users, staff, vehicles, agents, suppliers, purchaseOrders, expenses, tourCosts, supplierPayables, journals, accounts] = await Promise.all([
     Booking.find({ tenantId, ...active }).select("_id bookingNumber customer user tour agent assignedGuide assignedDriver assignedVehicle totalAmount amountPaid balanceAmount").lean(),
-    Payment.find({ tenantId, ...active }).select("_id booking customer user amount status refundedAmount").lean(),
-    Invoice.find({ tenantId, ...active }).select("_id invoiceNumber booking customer user tour agent totalAmount amountPaid balance").lean(),
+    Payment.find({ tenantId, ...active }).select("_id booking customer user amount status refundedAmount invoiceNumber").lean(),
+    Invoice.find({ tenantId, ...active }).select("_id invoiceNumber booking customer user tour agent totalAmount tax amountPaid balance status").lean(),
     Tour.find({ tenantId, ...active }).select("_id").lean(),
     Destination.find({ tenantId, ...active }).select("_id").lean(),
     Customer.find({ tenantId, ...active }).select("_id").lean(),
@@ -101,7 +101,7 @@ async function auditFinancialIntegrity(tenantId) {
     TourCost.find({ tenantId, ...active }).select("_id").lean(),
     SupplierPayable.find({ tenantId, ...active }).select("_id").lean(),
     JournalEntry.find({ tenantId, status: "posted" }).select("_id sourceType sourceId lines").lean(),
-    ChartOfAccount.find({ tenantId }).select("_id active").lean(),
+    ChartOfAccount.find({ tenantId }).select("_id code type active").lean(),
   ]);
   const issues = [];
   const owned = rows => new Set(rows.map(row => auditId(row._id)));
@@ -157,7 +157,45 @@ async function auditFinancialIntegrity(tenantId) {
     for(const line of journal.lines||[]) if(!sets.account.has(auditId(line.account))) foreignAccounts.push({journalId:auditId(journal),accountId:auditId(line.account)});
   }
   if(unbalanced.length) issues.push({code:"POSTED_JOURNAL_UNBALANCED",count:unbalanced.length,examples:unbalanced.slice(0,8)});
+
   if(foreignAccounts.length) issues.push({code:"JOURNAL_ACCOUNT_TENANT",count:foreignAccounts.length,examples:foreignAccounts.slice(0,8)});
+
+  const accountById = new Map(accounts.map(account => [auditId(account._id), account]));
+  const invoiceJournalIssues = [];
+  for (const invoice of invoices) {
+    if (["draft", "cancelled"].includes(invoice.status)) continue;
+    const journal = journals.find(row => row.sourceType === "invoice" && auditId(row.sourceId) === auditId(invoice._id));
+    if (!journal) {
+      invoiceJournalIssues.push({ invoice: invoice.invoiceNumber || auditId(invoice), issue: "missing posted invoice journal" });
+      continue;
+    }
+    const actualRevenue = auditMoney((journal.lines || []).reduce((sum, line) => {
+      const account = accountById.get(auditId(line.account));
+      return sum + (account?.type === "revenue" ? Number(line.credit || 0) - Number(line.debit || 0) : 0);
+    }, 0));
+    const total = Math.max(0, auditMoney(invoice.totalAmount));
+    const tax = Math.max(0, Math.min(total, auditMoney(invoice.tax)));
+    const expectedRevenue = auditMoney(total - tax);
+    if (Math.abs(actualRevenue - expectedRevenue) > 0.01) {
+      invoiceJournalIssues.push({ invoice: invoice.invoiceNumber || auditId(invoice), expectedRevenueKsh: expectedRevenue, postedRevenueKsh: actualRevenue });
+    }
+  }
+  if (invoiceJournalIssues.length) issues.push({ code: "INVOICE_REVENUE_POSTING", count: invoiceJournalIssues.length, examples: invoiceJournalIssues.slice(0, 8) });
+
+  const refundJournalIssues = [];
+  for (const journal of journals.filter(row => ["payment_refund", "payment_refund_correction"].includes(row.sourceType))) {
+    const lineTotals = (journal.lines || []).reduce((totals, line) => {
+      const account = accountById.get(auditId(line.account));
+      if (account?.type === "revenue") totals.revenueDebit += Number(line.debit || 0) - Number(line.credit || 0);
+      if (["1000", "1010", "1020", "1030"].includes(account?.code)) totals.cashCredit += Number(line.credit || 0) - Number(line.debit || 0);
+      if (account?.code === "1100") totals.receivableDebit += Number(line.debit || 0);
+      return totals;
+    }, { revenueDebit: 0, cashCredit: 0, receivableDebit: 0 });
+    if (lineTotals.revenueDebit <= 0 || lineTotals.cashCredit <= 0 || lineTotals.receivableDebit > 0.01) {
+      refundJournalIssues.push({ journalId: auditId(journal), sourceType: journal.sourceType, revenueDebitKsh: auditMoney(lineTotals.revenueDebit), cashCreditKsh: auditMoney(lineTotals.cashCredit), receivableDebitKsh: auditMoney(lineTotals.receivableDebit) });
+    }
+  }
+  if (refundJournalIssues.length) issues.push({ code: "REFUND_JOURNAL_ACCOUNTING", count: refundJournalIssues.length, examples: refundJournalIssues.slice(0, 8) });
   return {
     status:issues.length?"FAIL":"PASS",
     issueCount:issues.reduce((sum,issue)=>sum+issue.count,0),
