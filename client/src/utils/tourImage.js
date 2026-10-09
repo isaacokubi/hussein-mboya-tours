@@ -3,6 +3,15 @@ const TOUR_IMAGE_PLACEHOLDER = "/images/image-placeholder.jpg";
 // Reliable remote fallbacks. These are used only when a tour record has no
 // usable media or when its stored image fails to load in the browser.
 const TOUR_FALLBACK_IMAGES = [
+  "/gallery/mara.jpg",
+  "/gallery/amboseli.jpg",
+  "/gallery/diani.jpg",
+  "/gallery/beach.jpg",
+  "/gallery/safari.jpg",
+  "/gallery/culture.jpg",
+  "/destinations/maasai-mara.jpg",
+  "/destinations/amboseli.jpg",
+  "/destinations/diani.jpg",
   "https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=1200&q=85",
   "https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?auto=format&fit=crop&w=1200&q=85",
   "https://images.unsplash.com/photo-1534177616072-ef7dc120449d?auto=format&fit=crop&w=1200&q=85",
@@ -14,15 +23,7 @@ const TOUR_FALLBACK_IMAGES = [
   "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1200&q=85",
   "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1200&q=85",
   "https://images.unsplash.com/photo-1472396961693-142e6e269027?auto=format&fit=crop&w=1200&q=85",
-  "https://images.unsplash.com/photo-1497250681960-ef046c08a56e?auto=format&fit=crop&w=1200&q=85",
-  "https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&w=1200&q=85",
-  "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=1200&q=85",
-  "https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&w=1200&q=85",
-  "https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fit=crop&w=1200&q=85",
-  "https://images.unsplash.com/photo-1519904981063-b0cf448d479e?auto=format&fit=crop&w=1200&q=85",
-  "https://images.unsplash.com/photo-1482192596544-9eb780fc7f66?auto=format&fit=crop&w=1200&q=85",
-  "https://images.unsplash.com/photo-1526392060635-9d6019884377?auto=format&fit=crop&w=1200&q=85",
-  "https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1200&q=85",
+
 ];
 
 const isGenericImage = (value) => {
