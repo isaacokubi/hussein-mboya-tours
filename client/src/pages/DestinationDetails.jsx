@@ -5,10 +5,12 @@ import api from "../api/axios";
 
 const DestinationDetails = () => {
   const { slug } = useParams();
+  const { tenant = {} } = useTenant() || {};
+  const tenantKey = tenant?._id || tenant?.id || tenant?.slug || "public";
   const navigate = useNavigate();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["destination", slug],
+    queryKey: ["destination", tenantKey, slug],
     queryFn: async () => {
       const res = await api.get(`/destinations/${slug}`);
       return res.data?.data?.destination || res.data?.destination || null;
