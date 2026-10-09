@@ -49,7 +49,7 @@ export default function Tours() {
         <div className="mb-10 rounded-[2rem] border border-white/10 bg-gradient-to-br from-emerald-950 via-slate-900 to-cyan-950 p-7 shadow-2xl sm:p-10">
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.25em] text-emerald-300"><SlidersHorizontal size={15} /> Travel marketplace</div>
           <h1 className="mt-3 text-4xl font-black tracking-tight sm:text-5xl">Explore your next adventure</h1>
-          <p className="mt-4 max-w-2xl text-slate-300">Discover unforgettable African experiences with {settings?.companyName || tenant?.name || "Hussein Mboya Tours"}.</p>
+          <p className="mt-4 max-w-2xl text-slate-300">Discover unforgettable African experiences with {settings?.companyName || tenant?.name || "Travel company"}.</p>
           <form onSubmit={updateSearch} className="mt-7 flex flex-col gap-2 sm:flex-row">
             <div className="flex min-h-14 flex-1 items-center gap-3 rounded-2xl bg-white/10 px-5 ring-1 ring-white/10"><Search size={19} className="text-emerald-300" /><input name="search" defaultValue={search} placeholder="Search safari, beach, destination..." className="w-full bg-transparent outline-none placeholder:text-white/40" /></div>
             <button className="min-h-14 rounded-2xl bg-emerald-400 px-7 font-bold text-slate-950 hover:bg-emerald-300">Search tours</button>
