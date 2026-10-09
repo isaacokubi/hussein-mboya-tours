@@ -86,8 +86,9 @@ async function main() {
       db.collection("galleries").find(scope).toArray(),
     ]);
 
+    // Include already-cleaned canonical destinations so reruns remain safe and useful.
     const destinationRepairs = destinations
-      .filter((row) => isSynthetic(row) || /^test-/i.test(String(row.slug || "")))
+      .filter((row) => DESTINATION_NAMES.has(cleanName(row.name)) || isSynthetic(row) || /^test-/i.test(String(row.slug || "")))
       .map((row) => {
         const name = cleanName(row.name);
         if (!DESTINATION_NAMES.has(name)) throw new Error(`Unknown synthetic destination in ${spec.slug}: ${row.name}. No records were changed.`);
@@ -117,9 +118,11 @@ async function main() {
     const slideRepairs = slides.filter((row) => isSynthetic(row) || /^\s*TEST\b/i.test(String(row.title || "")));
     const galleryRepairs = galleries.filter((row) => isSynthetic(row) || /^\s*TEST\b/i.test(String(row.title || "")));
 
-    if (destinationRepairs.length < 6) throw new Error(`Expected at least six synthetic destinations for ${spec.slug}; found ${destinationRepairs.length}. No records were changed.`);
-    if (!tourRepairs.length || !packageRepairs.length || !slideRepairs.length) {
-      throw new Error(`Expected synthetic tours, packages, and homepage slide for ${spec.slug}. No records were changed.`);
+    if (destinationRepairs.length < 6) throw new Error(`Expected at least six recognized Kenya destinations for ${spec.slug}; found ${destinationRepairs.length}. No records were changed.`);
+    // Tours, packages, and slides may already have been cleaned by an earlier run.
+    // Existing records are reconciled below even when their old TEST markers are gone.
+    if (!tours.length || !packages.length || !slides.length) {
+      throw new Error(`Expected existing tours, packages, and homepage slide for ${spec.slug}. No records were changed.`);
     }
 
     // Preflight unique slugs before any writes. The repair is scoped to the two
