@@ -9,9 +9,11 @@ const money = (value, currency = "KES") => `${currency} ${Number(value || 0).toL
 
 export default function AirportTransferReservation() {
   const { id } = useParams();
+  const { tenant = {} } = useTenant() || {};
+  const tenantKey = tenant?._id || tenant?.id || tenant?.slug || "public";
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const { data: item, isLoading, isError } = useQuery({ queryKey: ["airport-transfer-reservation", id], queryFn: () => getAirportTransfer(id), enabled: !!id, staleTime: 30000 });
+  const { data: item, isLoading, isError } = useQuery({ queryKey: ["airport-transfer-reservation", tenantKey, id], queryFn: () => getAirportTransfer(id), enabled: !!id, staleTime: 30000 });
   const [form, setForm] = useState({ pickupDateTime: "", pickupLocation: "", dropoffLocation: "", passengerName: "", passengerPhone: "", passengerEmail: "", passengers: 1, luggage: 0, flightNumber: "", airline: "", terminal: "", specialRequests: "" });
   const update = (key, value) => setForm(f => ({ ...f, [key]: value }));
   const booking = useMutation({ mutationFn: createTransferBooking, onSuccess: result => { const bookingId = result?._id || result?.id; if (bookingId) navigate(`/hospitality-payment/${bookingId}?type=airport_transfer`); }, onError: error => window.alert(error?.response?.data?.message || "Unable to create the transfer reservation. Please check your details and try again.") });
