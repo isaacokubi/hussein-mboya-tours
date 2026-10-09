@@ -10,7 +10,7 @@ The comprehensive three-tenant demo dataset was reconciled on 2026-10-09. Source
 
 | Area | Result |
 |---|---|
-| Backend full suite | **209 passed, 0 failed, 5 expected skips** |
+| Backend full suite | **229 passed, 0 failed, 5 skipped** (verified 2026-10-09 after the financial audit changes) |
 | Seed syntax checks (`npm run check:seeds`) | **PASS** |
 | Frontend lint | **PASS** |
 | Frontend production build | **PASS** |
@@ -20,6 +20,22 @@ The comprehensive three-tenant demo dataset was reconciled on 2026-10-09. Source
 | Complete 37-account API/browser audit | **INCOMPLETE** — API smoke stopped on a transient request failure; public browser smoke reported failed requests |
 | Global superadmin browser audit | **PASS** — tenantless session and stale tenant selection cleared |
 | Frontend lint/build | **PASS** |
+
+### Test and remediation summary — 2026-10-03 through 2026-10-09
+
+The following summarizes evidence recorded during the last seven days. Detailed chronology and limitations are in [Test Evidence Register](docs/TEST_EVIDENCE.md).
+
+| Date / change | Test evidence | Result / boundary |
+|---|---|---|
+| 2026-10-04 — staging/security verification | Backend suite, seed checks, client lint/build, live health/CORS and role-login smoke were reported; historical suite count was 182 passed. | Automated and selected smoke checks passed. A full 28-account live staging login/RBAC audit was **not completed** because the documented Render/Vercel endpoints were inaccessible at that time. |
+| 2026-10-09 — catalogue uniqueness and tenant isolation | Catalogue repair regression tests; CI server checks, client lint/build, live tenant-isolation regression and three-phase release gate. | Reported PASS, including catalogue repair tests 4/4 and release gate 3/3. Live deployment/browser verification remains separate and must be checked against the deployed SHA. |
+| 2026-10-09 — financial seed and integrity audit | `npm test`; `npm run check:seeds`; `npm run seed:financial-dashboard`; `npm run audit:tenant-dashboards`. | **229 passed, 0 failed, 5 skipped**; seed syntax checks passed; read-only Atlas audit reported **PASS, 0 issues** across all three tenants. Five integration tests were skipped and are not counted as passes. |
+| 2026-10-09 — tenant-specific data and financial reconciliation | Ownership/reference checks, booking/payment and invoice/payment reconciliation, balanced journals, revenue/refund posting rules and seed consistency. | Audit passed for Hussein Mboya Tours, Amani Trails Safaris and Demo Safari Adventures. Each has 8 tours and 12 destinations; matching counts do not alone prove unique content, so catalogue uniqueness is tracked separately. |
+| 2026-10-09 — GitHub Actions | PR #196 CI and release-gate results. | Server production checks, live tenant-isolation regression, client lint/build, tour lifecycle runtime integration, and all three release-gate phases reported successful. |
+
+Recent merged remediation includes [PR #187](https://github.com/isaacokubi/hussein-mboya-tours/pull/187) tenant-scoped dashboard revenue/customer counts; [PR #188](https://github.com/isaacokubi/hussein-mboya-tours/pull/188) tenant-aware cache/session isolation; [PR #189](https://github.com/isaacokubi/hussein-mboya-tours/pull/189), [PR #191](https://github.com/isaacokubi/hussein-mboya-tours/pull/191), and [PR #192](https://github.com/isaacokubi/hussein-mboya-tours/pull/192) tenant-unique catalogues and guarded repair; [PR #193](https://github.com/isaacokubi/hussein-mboya-tours/pull/193) read-only tenant dashboard audit; [PR #194](https://github.com/isaacokubi/hussein-mboya-tours/pull/194) dashboard tenant-context correction; [PR #195](https://github.com/isaacokubi/hussein-mboya-tours/pull/195) financial seed payment synchronization; and [PR #196](https://github.com/isaacokubi/hussein-mboya-tours/pull/196) financial integrity audit and seed reconciliation.
+
+**Important limits:** demo bookings, payments, refunds and financial totals are synthetic test fixtures, not real revenue or evidence of live M-Pesa transactions. Live KRA/eTIMS submissions, payment-provider callbacks/idempotency, full 37-account browser acceptance, current production deployment SHA, backup/restore and production certification are not proven by these automated tests. Do not infer them as PASS.
 
 ### Demo account architecture
 
