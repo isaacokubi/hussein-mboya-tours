@@ -163,7 +163,7 @@ async function auditFinancialIntegrity(tenantId) {
   const accountById = new Map(accounts.map(account => [auditId(account._id), account]));
   const invoiceJournalIssues = [];
   for (const invoice of invoices) {
-    if (["draft", "cancelled"].includes(invoice.status)) continue;
+    if (["draft", "cancelled"].includes(invoice.status) || Number(invoice.totalAmount || 0) <= 0) continue;
     const journal = journals.find(row => row.sourceType === "invoice" && auditId(row.sourceId) === auditId(invoice._id));
     if (!journal) {
       invoiceJournalIssues.push({ invoice: invoice.invoiceNumber || auditId(invoice), issue: "missing posted invoice journal" });
