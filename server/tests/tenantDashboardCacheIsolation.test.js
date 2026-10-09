@@ -7,7 +7,7 @@ const read = (relativePath) => fs.readFileSync(path.resolve(process.cwd(), relat
 
 test("logging in as another tenant clears all in-memory query data", () => {
   const auth = read("../client/src/context/AuthContext.jsx");
-  const login = auth.match(/const login = async \(email, password\) => \{[\\s\\S]*?\n  \};/)?.[0];
+  const login = auth.match(/const login = async \(email, password\) => \{[\s\S]*?\n  \};/)?.[0];
   assert.ok(login, "AuthContext login implementation exists");
   assert.match(login, /queryClient\.clear\(\)/);
   assert.ok(
