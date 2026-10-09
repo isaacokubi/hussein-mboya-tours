@@ -301,6 +301,16 @@ async function main() {
       } });
     }
 
+    // Ensure every tour has local image media, including titles without a recognized destination keyword.
+    const toursWithoutMappedDestination = allTenantTours.filter((tour) => !destinationForTourTitle(tour.title));
+    for (const [index, tour] of toursWithoutMappedDestination.entries()) {
+      const imageIndex = (index + allTenantTours.length) % TOUR_IMAGE_PATHS.length;
+      await db.collection("tours").updateOne({ _id: tour._id, ...scope }, { $set: {
+        featuredImage: { url: TOUR_IMAGE_PATHS[imageIndex], publicId: "" },
+        gallery: [{ url: TOUR_IMAGE_PATHS[(imageIndex + 1) % TOUR_IMAGE_PATHS.length], publicId: "" }],
+      } });
+    }
+
     const syntheticAdminUsers = await db.collection("users").find({
       ...scope,
       role: { $in: ["admin", "administrator"] },
