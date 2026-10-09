@@ -3,7 +3,7 @@ import { getTenantBranding } from "../api/tenantBrandingApi";
 import { useAuth } from "./AuthContext";
 import { useSettings } from "./SettingsContext";
 
-export const PLATFORM_BRAND_NAME = "Hussein Mboya Tours Platform";
+export const PLATFORM_BRAND_NAME = "Kenya Tours";
 
 const DEFAULT_TENANT = {
   name: "",
