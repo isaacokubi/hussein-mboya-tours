@@ -18,6 +18,17 @@ const cleanTags = (value) => Array.isArray(value)
 const cleanContent = (value) => String(value || "").trim().slice(0, 50000);
 
 const publicFields = "title slug excerpt content category tags coverImage publishedAt seoTitle seoDescription createdAt updatedAt";
+const isSafeImageUrl = (value) => {
+  const url = String(value || "").trim();
+  if (!url) return true;
+  if (url.startsWith("/") && !url.startsWith("//")) return true;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "https:" || parsed.protocol === "http:";
+  } catch {
+    return false;
+  }
+};
 
 export async function listPublicTravelGuides(req, res, next) {
   try {
@@ -60,12 +71,14 @@ export async function createTravelGuide(req, res, next) {
     if (!slug) return res.status(400).json({ success: false, message: "A valid slug is required" });
     if (!content) return res.status(400).json({ success: false, message: "Article content is required" });
     const status = req.body.status === "published" ? "published" : "draft";
+    const coverImage = String(req.body.coverImage || "").trim().slice(0, 2048);
+    if (!isSafeImageUrl(coverImage)) return res.status(400).json({ success: false, message: "Cover image must use HTTP(S) or a same-site path" });
     const guide = await TravelGuide.create({
       tenantId, title, slug, content,
       excerpt: String(req.body.excerpt || "").trim().slice(0, 600),
       category: String(req.body.category || "Travel tips").trim().slice(0, 80),
       tags: cleanTags(req.body.tags),
-      coverImage: String(req.body.coverImage || "").trim().slice(0, 2048),
+      coverImage,
       status,
       publishedAt: status === "published" ? new Date() : null,
       seoTitle: String(req.body.seoTitle || "").trim().slice(0, 180),
@@ -88,18 +101,23 @@ export async function updateTravelGuide(req, res, next) {
     if (req.body.content !== undefined) update.content = cleanContent(req.body.content);
     if (req.body.category !== undefined) update.category = String(req.body.category).trim().slice(0, 80);
     if (req.body.tags !== undefined) update.tags = cleanTags(req.body.tags);
-    if (req.body.coverImage !== undefined) update.coverImage = String(req.body.coverImage).trim().slice(0, 2048);
+    if (req.body.coverImage !== undefined) {
+      update.coverImage = String(req.body.coverImage).trim().slice(0, 2048);
+      if (!isSafeImageUrl(update.coverImage)) return res.status(400).json({ success: false, message: "Cover image must use HTTP(S) or a same-site path" });
+    }
     if (req.body.seoTitle !== undefined) update.seoTitle = String(req.body.seoTitle).trim().slice(0, 180);
     if (req.body.seoDescription !== undefined) update.seoDescription = String(req.body.seoDescription).trim().slice(0, 320);
     if (req.body.status !== undefined) {
       if (!["draft", "published"].includes(req.body.status)) return res.status(400).json({ success: false, message: "Status must be draft or published" });
       update.status = req.body.status;
-      if (req.body.status === "published") update.publishedAt = new Date();
-      else update.publishedAt = null;
+      if (req.body.status === "draft") update.publishedAt = null;
     }
     if (update.title === "") return res.status(400).json({ success: false, message: "Title cannot be empty" });
     if (update.slug === "") return res.status(400).json({ success: false, message: "Slug cannot be empty" });
     if (update.content === "") return res.status(400).json({ success: false, message: "Article content cannot be empty" });
+    const current = await TravelGuide.findOne(mergeTenantFilter(req, { _id: req.params.id })).select("status publishedAt");
+    if (!current) return res.status(404).json({ success: false, message: "Travel guide not found" });
+    if (update.status === "published" && (current.status !== "published" || !current.publishedAt)) update.publishedAt = new Date();
     const guide = await TravelGuide.findOneAndUpdate(
       mergeTenantFilter(req, { _id: req.params.id }),
       update,
