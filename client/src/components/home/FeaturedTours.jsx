@@ -18,6 +18,7 @@ const getTourPrice = (tour) => {
 };
 
 const formatPrice = (value, currency) => {
+  if (value == null || value === "") return "Price on request";
   const amount = Number(value);
   if (!Number.isFinite(amount) || amount < 0) return "Price on request";
   try { return new Intl.NumberFormat("en-KE", { style: "currency", currency: currency || "KES", maximumFractionDigits: 0 }).format(amount); }
