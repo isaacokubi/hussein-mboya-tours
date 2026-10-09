@@ -48,6 +48,16 @@ test("responsive public navigation remains available from phone through tablet w
   }
 });
 
+test("trip finder preserves the chosen date and traveler count in the catalogue URL", async ({ page }) => {
+  await mockApi(page);
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto("/");
+  await page.getByLabel("Destination or tour").fill("birding");
+  await page.getByLabel("Preferred travel date").fill("2026-11-01");
+  await page.getByLabel("Number of travellers").fill("3");
+  await page.getByRole("button", { name: /find my trip/i }).click();
+  await expect(page).toHaveURL(/\/tours\?.*search=birding.*date=2026-11-01.*travellers=3|\/tours\?.*travellers=3.*date=2026-11-01/);
+});
 test("homepage avoids unverified metrics, invented testimonials and inert signup controls", async ({ page }) => {
   await mockApi(page);
   await page.goto("/");
