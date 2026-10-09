@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useTenant } from "../context/TenantContext";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import api from "../api/axios";
