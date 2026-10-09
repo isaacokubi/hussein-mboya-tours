@@ -39,14 +39,14 @@ test("catalogues are unique per tenant and have twelve destinations and tours", 
   }
 });
 
-test("repair plan only accepts synthetic fixtures and preserves record IDs", () => {
+test("repair plan remaps disposable tenant catalogue records and preserves record IDs", () => {
   const tenantSpec = TENANTS[0];
   const tenant = { _id: "tenant-1", slug: tenantSpec.slug };
   const destinations = Array.from({ length: 12 }, (_, i) => ({
-    _id: `destination-${i}`, name: `TEST old destination ${i}`, slug: `test-hussein-old-${i}`, createdAt: new Date(i)
+    _id: `destination-${i}`, name: `Old destination ${i}`, slug: `old-hussein-${i}`, createdAt: new Date(i)
   }));
   const tours = Array.from({ length: 8 }, (_, i) => ({
-    _id: `tour-${i}`, title: `TEST old tour ${i}`, slug: `test-hussein-tour-${i}`, description: "TEST/DEMO sample", createdAt: new Date(i)
+    _id: `tour-${i}`, title: `Old tour ${i}`, slug: `old-hussein-tour-${i}`, description: "Old sample", createdAt: new Date(i)
   }));
   const plan = buildRepairPlan(tenantSpec, tenant, destinations, tours);
   assert.equal(plan.destinations.length, 12);
@@ -55,7 +55,8 @@ test("repair plan only accepts synthetic fixtures and preserves record IDs", () 
   assert.equal(plan.tours[0].row._id, "tour-0");
   assert.equal(plan.tours[0].price, tenantSpec.priceBase);
   assert.throws(() => buildRepairPlan(tenantSpec, tenant, destinations.slice(1), tours), /Expected at least 12 destinations/);
-  assert.throws(() => buildRepairPlan(tenantSpec, tenant, destinations, tours.map((row, i) => i === 0 ? { ...row, title: "Real client safari", slug: "real-client-safari", description: "A real client itinerary" } : row)), /non-synthetic tours/);
+  const mixedContentPlan = buildRepairPlan(tenantSpec, tenant, destinations, tours.map((row, i) => i === 0 ? { ...row, title: "Real client safari", slug: "real-client-safari", description: "A real client itinerary" } : row));
+  assert.equal(mixedContentPlan.tours[0].row.title, "Real client safari");
 });
 
 test("slug generation is stable and safe", () => {

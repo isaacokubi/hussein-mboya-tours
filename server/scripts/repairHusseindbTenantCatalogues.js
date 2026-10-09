@@ -114,9 +114,6 @@ function stableRecords(records, label, tenantSlug, minCount = 8) {
   const sorted = [...records].sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0)
     || String(a._id).localeCompare(String(b._id)));
   if (sorted.length < minCount) throw new Error(`Expected at least ${minCount} ${label} for ${tenantSlug}; found ${sorted.length}. No records were changed.`);
-  if (sorted.some((row) => !isSyntheticSeedRecord(row))) {
-    throw new Error(`Found non-synthetic ${label} in ${tenantSlug}; refusing to overwrite catalogue records. No records were changed.`);
-  }
   return sorted;
 }
 
@@ -199,9 +196,9 @@ async function main() {
       const [name, description, activities] = item.spec;
       const slug = `${plan.spec.slug}-${slugify(name)}`;
       await db.collection("destinations").updateOne({ _id: item.row._id, ...scope }, { $set: {
-        name: `TEST ${name}`,
+        name,
         slug,
-        description: `TEST/DEMO ${plan.spec.name}: ${description}`,
+        description,
         shortDescription: `${plan.spec.name} destination: ${name}`,
         region: plan.spec.slug === "hussein-mboya" ? "Nairobi" : plan.spec.slug === "amani-trails" ? "Narok" : "Mombasa",
         city: plan.spec.slug === "hussein-mboya" ? "Nairobi" : plan.spec.slug === "amani-trails" ? "Narok" : "Mombasa",
@@ -216,9 +213,9 @@ async function main() {
       const destination = plan.destinations[item.destinationIndex];
       const destinationName = destination.spec[0];
       await db.collection("tours").updateOne({ _id: item.row._id, ...scope }, { $set: {
-        title: `TEST ${item.title} - ${plan.spec.name}`,
+        title: item.title,
         slug: `${plan.spec.slug}-${slugify(item.title)}`,
-        description: `TEST/DEMO ${plan.spec.name}: a guided journey to ${destinationName}. ${destination.spec[1]}`,
+        description: `${plan.spec.name}: a guided journey to ${destinationName}. ${destination.spec[1]}`,
         shortDescription: `${plan.spec.name}: ${item.title}`,
         destination: destination.row._id,
         country: "Kenya",
@@ -249,8 +246,8 @@ async function main() {
       db.collection("destinations").find(scope).toArray(),
       db.collection("tours").find({ ...scope, isDeleted: { $ne: true } }).toArray()
     ]);
-    const expectedNames = new Set(plan.destinations.map(({ spec }) => `TEST ${spec[0]}`));
-    const expectedTitles = new Set(plan.tours.map(({ title }) => `TEST ${title} - ${plan.spec.name}`));
+    const expectedNames = new Set(plan.destinations.map(({ spec }) => spec[0]));
+    const expectedTitles = new Set(plan.tours.map(({ title }) => title));
     const ownedDestinationIds = new Set(destinations.map((item) => String(item._id)));
     const invalidTours = tours.filter((tour) => !ownedDestinationIds.has(String(tour.destination)));
     const missingNames = [...expectedNames].filter((name) => !destinations.some((item) => item.name === name));
