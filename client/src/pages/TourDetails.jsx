@@ -87,7 +87,7 @@ export default function TourDetails() {
   const currency = settings?.currency || tenant?.currency || "KES";
   const locale = settings?.locale || (settings?.language === "sw" ? "sw-KE" : "en-KE");
   const timeZone = settings?.timezone || tenant?.timezone || "Africa/Nairobi";
-  const basePrice = Number(tour.price ?? 0);
+  const basePrice = tour.price == null || tour.price === "" ? Number.NaN : Number(tour.price);
   const explicitFinalPrice = Number(tour.finalPrice);
   const legacyDiscountPrice = Number(tour.discountPrice);
   const calculatedFinalPrice = Number(tour.discount) > 0 ? basePrice * (1 - Number(tour.discount) / 100) : basePrice;
