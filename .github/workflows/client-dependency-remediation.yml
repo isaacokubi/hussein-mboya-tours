@@ -1,0 +1,58 @@
+name: Client dependency remediation
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  patch-client-lock:
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'fix/all-34-readiness-remediations' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout remediation branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          persist-credentials: true
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Remove unused audit-vulnerable analysis tools and patch lockfile
+        working-directory: client
+        run: |
+          npm pkg delete devDependencies.depcheck devDependencies.ts-prune
+          npm install --package-lock-only --ignore-scripts
+          npm audit fix --package-lock-only || true
+          npm audit --json > /tmp/client-audit-after-fix.json || true
+          node <<'NODE'
+          const audit = require("/tmp/client-audit-after-fix.json");
+          const advisories = Object.entries(audit.vulnerabilities || {}).map(([name, vulnerability]) => ({
+            name,
+            severity: vulnerability.severity,
+            range: vulnerability.range,
+            fixAvailable: vulnerability.fixAvailable,
+          }));
+          console.log(JSON.stringify({ metadata: audit.metadata?.vulnerabilities, advisories }, null, 2));
+          NODE
+
+      - name: Commit patched dependency files when changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add client/package.json client/package-lock.json
+          if git diff --cached --quiet; then
+            echo "Dependency files are already current."
+            exit 0
+          fi
+          git commit -m "fix: remediate client dependency vulnerabilities"
+          git push origin "HEAD:${GITHUB_HEAD_REF}"
