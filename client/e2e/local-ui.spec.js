@@ -48,6 +48,15 @@ test("responsive public navigation remains available from phone through tablet w
   }
 });
 
+test("homepage avoids unverified metrics, invented testimonials and inert signup controls", async ({ page }) => {
+  await mockApi(page);
+  await page.goto("/");
+  await expect(page.locator("body")).not.toContainText(/4,486|290\+ Tours Completed|Sarah Williams|James Anderson|Amina Hassan/);
+  await expect(page.locator("body")).not.toContainText(/Secure M-Pesa Payments/i);
+  await expect(page.getByPlaceholder("Email address")).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /contact us/i }).first()).toBeVisible();
+});
+
 test("tenant travel guide catalogue and canonical metadata render on the active host", async ({ page }) => {
   await mockApi(page);
   await page.goto("/travel-guides");
