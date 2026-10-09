@@ -48,6 +48,12 @@ test("tenant financial audit validates balanced journals and tenant-owned chart 
   assert.match(source, /Math\.abs\(debit-credit\)/);
 });
 
+test("tenant financial audit reconciles invoice revenue postings and refund journals", () => {
+  assert.match(source, /INVOICE_REVENUE_POSTING/);
+  assert.match(source, /REFUND_JOURNAL_ACCOUNTING/);
+  assert.match(source, /receivableDebit > 0\.01/);
+});
+
 test("financial seed derives invoice and payment state from the same booking payment plan", () => {
   assert.match(seedSource, /const plan = \[booking\.paymentStatus, booking\.status, 0\];/);
   assert.doesNotMatch(seedSource, /const plan = paymentPlans\[i\];/);
