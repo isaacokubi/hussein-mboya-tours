@@ -15,9 +15,10 @@ export default function Tours() {
   const search = searchParams.get("search") || "";
   const duration = searchParams.get("duration") || "";
   const travellers = searchParams.get("travellers") || "";
+  const travelDate = searchParams.get("date") || "";
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["public-tours", destinationId, category, search, duration, travellers],
+    queryKey: ["public-tours", tenant?._id || tenant?.id || tenant?.slug || "public", destinationId, category, search, duration, travellers, travelDate],
     queryFn: () => getTours({
       ...(destinationId ? { destination: destinationId } : {}),
       ...(category ? { category } : {}),
@@ -32,7 +33,7 @@ export default function Tours() {
   if (error) return <div className="min-h-[400px] bg-slate-950 px-6 py-20 text-center text-white"><h2 className="text-2xl font-bold">We are refreshing our tour inventory.</h2><p className="mt-2 text-slate-400">Please try again shortly.</p></div>
 
   const allTours = Array.isArray(data) ? data : data?.data || data?.tours || [];
-  const tours = (Array.isArray(allTours) ? allTours : []).filter((tour) => { const days = Number((tour?.durationDays ?? tour?.durationDetails?.days ?? String(tour?.duration || "").match(/\d+/)?.[0]) || 0); const withinDuration = !duration || (duration === "1-3" && days >= 1 && days <= 3) || (duration === "4-6" && days >= 4 && days <= 6) || (duration === "7+" && days >= 7); const capacity = Number(tour?.capacity ?? tour?.availabilitySettings?.totalSlots ?? 0); const withinTravellers = !travellers || !capacity || capacity >= Number(travellers); return withinDuration && withinTravellers; });
+  const tours = (Array.isArray(allTours) ? allTours : []).filter((tour) => { const days = Number((tour?.durationDays ?? tour?.durationDetails?.days ?? String(tour?.duration || "").match(/\d+/)?.[0]) || 0); const withinDuration = !duration || (duration === "1-3" && days >= 1 && days <= 3) || (duration === "4-6" && days >= 4 && days <= 6) || (duration === "7+" && days >= 7); const capacity = Number(tour?.capacity ?? tour?.availabilitySettings?.totalSlots ?? 0); const withinTravellers = !travellers || !capacity || capacity >= Number(travellers); const requested = travelDate ? new Date(travelDate + "T00:00:00") : null; const departures = Array.isArray(tour?.availability) ? tour.availability : []; const dateMatch = !requested || (departures.length ? departures.some((departure) => { const departureDate = new Date(departure.date); return !Number.isNaN(departureDate.getTime()) && departureDate.toISOString().slice(0, 10) === travelDate && Number(departure.totalSlots ?? 0) - Number(departure.bookedSlots ?? 0) > 0; }) : (() => { const start = new Date(tour?.startDate || tour?.date || ""); const end = new Date(tour?.endDate || tour?.startDate || tour?.date || ""); if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return false; start.setHours(0,0,0,0); end.setHours(23,59,59,999); return requested >= start && requested <= end; })()); return withinDuration && withinTravellers && dateMatch; });
 
   const updateSearch = (event) => {
     event.preventDefault();
@@ -58,6 +59,7 @@ export default function Tours() {
           {category && <p className="mt-1 text-sm text-slate-400">Category: {category}</p>}
           {duration && <p className="mt-1 text-sm text-slate-400">Duration: {duration} days</p>}
           {travellers && <p className="mt-1 text-sm text-slate-400">Travellers: {travellers}</p>}
+          {travelDate && <p className="mt-1 text-sm text-slate-400">Travel date: {travelDate}</p>}
         </div>
 
         {tours.length === 0 ? <div className="rounded-3xl border border-white/10 bg-white/[0.04] py-24 text-center"><h2 className="text-2xl font-bold">No tours found</h2><p className="mt-2 text-slate-400">Try another destination, activity or tour name.</p></div> : <div className="grid gap-7 md:grid-cols-2 lg:grid-cols-3">{tours.map((tour) => <TourCard key={tour._id} tour={tour} />)}</div>}
