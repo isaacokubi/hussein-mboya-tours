@@ -181,6 +181,70 @@ async function main() {
       } });
     }
 
+    // Repair destination relationships for already-cleaned tours as well as synthetic rows.
+    // The first repair run renamed TEST tours, so those records no longer match
+    // the synthetic selector above. Reconcile every existing tour in this tenant
+    // by its title and bind it to a destination owned by the same tenant.
+    const canonicalDestinations = destinations.map((row) => ({
+      row,
+      name: cleanName(row.name),
+    }));
+    const destinationForTourTitle = (title) => {
+      const normalized = String(title || "").toLowerCase();
+      let expected;
+      if (/maasai\\s+mara/.test(normalized)) expected = "Maasai Mara";
+      else if (/amboseli/.test(normalized)) expected = "Amboseli";
+      else if (/tsavo\\s+east/.test(normalized)) expected = "Tsavo East";
+      else if (/tsavo\\s+west/.test(normalized)) expected = "Tsavo West";
+      else if (/nakuru/.test(normalized)) expected = "Lake Nakuru";
+      else if (/naivasha/.test(normalized)) expected = "Lake Naivasha";
+      else if (/samburu/.test(normalized)) expected = "Samburu";
+      else if (/mount\\s+kenya/.test(normalized)) expected = "Mount Kenya";
+      else if (/watamu/.test(normalized)) expected = "Watamu";
+      else if (/lamu/.test(normalized)) expected = "Lamu";
+      else if (/nairobi/.test(normalized)) expected = "Nairobi National Park";
+      else if (/diani|coast|beach/.test(normalized)) expected = "Diani";
+      else return null;
+      return canonicalDestinations.find((entry) => entry.name.toLowerCase() === expected.toLowerCase()) || null;
+    };
+    const allTenantTours = await db.collection("tours").find({ ...scope, isDeleted: { $ne: true } }).toArray();
+    for (const tour of allTenantTours) {
+      const destinationEntry = destinationForTourTitle(tour.title);
+      if (!destinationEntry) continue;
+      const destinationName = destinationEntry.name;
+      const descriptions = {
+        "Maasai Mara": "Explore Kenya's world-renowned savannahs, seasonal wildebeest migration and guided wildlife drives in the Maasai Mara.",
+        "Amboseli": "Discover Amboseli's elephant herds, open plains and striking views of Mount Kilimanjaro with a local guide.",
+        "Tsavo East": "Travel through Tsavo East's expansive red-earth landscapes, open savannah and diverse wildlife habitats.",
+        "Tsavo West": "Explore Tsavo West's volcanic scenery, rugged hills, natural springs and varied wildlife landscapes.",
+        "Lake Nakuru": "Discover Lake Nakuru National Park's lake views, birdlife, rhinos and surrounding Rift Valley scenery.",
+        "Lake Naivasha": "Enjoy Lake Naivasha's freshwater scenery, birdlife and nearby Rift Valley outdoor experiences.",
+        "Samburu": "Experience Samburu's northern landscapes, distinctive wildlife and rich local cultural heritage.",
+        "Mount Kenya": "Explore Mount Kenya's foothills, forest trails and mountain scenery with appropriately planned local support.",
+        "Watamu": "Enjoy Watamu's Indian Ocean beaches, marine experiences and relaxed coastal atmosphere.",
+        "Diani": "Relax on Diani's white-sand Indian Ocean beaches and explore the Kenyan coast at your own pace.",
+        "Lamu": "Discover Lamu's Swahili heritage, historic old town and peaceful island atmosphere.",
+        "Nairobi National Park": "Experience Nairobi National Park's wildlife and open grasslands just outside Kenya's capital.",
+      };
+      await db.collection("tours").updateOne({ _id: tour._id, ...scope }, { $set: {
+        destination: destinationEntry.row._id,
+        location: destinationName,
+        country: "Kenya",
+        description: descriptions[destinationName] || `Explore ${destinationName} with a locally planned Kenya journey and guided experiences.`,
+        shortDescription: `Discover ${destinationName} with local travel support.`,
+      } });
+    }
+
+    const syntheticAdminUsers = await db.collection("users").find({
+      ...scope,
+      role: { $in: ["admin", "administrator"] },
+      name: { $regex: "TEST|DEMO", $options: "i" },
+    }).toArray();
+    for (const admin of syntheticAdminUsers) {
+      const cleanAdminName = spec.slug === "demo-safari" ? "Demo Safari Administrator" : "Amani Trails Administrator";
+      await db.collection("users").updateOne({ _id: admin._id, ...scope }, { $set: { name: cleanAdminName } });
+    }
+
     for (const [index, item] of plan.packageRepairs.entries()) {
       await db.collection("tourpackages").updateOne({ _id: item.row._id, ...scope }, { $set: {
         title: item.title,
