@@ -96,7 +96,7 @@ export async function updateTravelGuide(req, res, next) {
     requireTenantId();
     const update = {};
     if (req.body.title !== undefined) update.title = String(req.body.title).trim().slice(0, 180);
-    if (req.body.slug !== undefined) update.slug = slugify(req.body.slug);
+    if (req.body.slug !== undefined && String(req.body.slug).trim()) update.slug = slugify(req.body.slug);
     if (req.body.excerpt !== undefined) update.excerpt = String(req.body.excerpt).trim().slice(0, 600);
     if (req.body.content !== undefined) update.content = cleanContent(req.body.content);
     if (req.body.category !== undefined) update.category = String(req.body.category).trim().slice(0, 80);
