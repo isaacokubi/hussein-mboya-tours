@@ -35,7 +35,7 @@ test("public catalogue smoke acceptance", async ({ page }) => {
 
   await page.goto("/");
   await expect(page.locator("body")).toContainText(/Hussein|safari|tour/i);
-  await expect(page.locator("body")).not.toContainText(/Sarah Williams|James Anderson|Amina Hassan/);
+  await expect(page.locator("body")).not.toContainText(/Sarah Williams|James Anderson|Amina Hassan|4,486|290 Tours Completed|48 Destinations|10 Years Serving Travelers/);
   const canonical = await page.locator('link[rel="canonical"]').getAttribute("href");
   expect(new URL(canonical).origin, "canonical must use the active tenant host").toBe(new URL(page.url()).origin);
   await expect(page.getByRole("link", { name: "Tours", exact: true }).first()).toBeVisible();
@@ -45,6 +45,9 @@ test("public catalogue smoke acceptance", async ({ page }) => {
   await page.locator("a[href*='/tours/']:not([href='/tours'])").first().click();
   await expect(page).toHaveURL(/\/tours\/[^/]+/);
   await expect(page.locator("main").last()).not.toBeEmpty();
+  await expect(page.getByRole("heading", { name: "What's included" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Not included" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /check dates & book|no available departures/i })).toBeVisible();
   await page.goto("/destinations");
   await expect(page.locator("body")).toContainText(/destination/i);
   await expect(page.locator("footer").getByRole("link", { name: /explore all destinations/i })).toHaveAttribute("href", "/destinations");
