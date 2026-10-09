@@ -64,9 +64,35 @@ export const getTourFallbackImage = (tour = {}) => {
   if (/beach|coast|ocean|diani|watamu|mombasa|lamu|snorkel/.test(label)) return "/gallery/beach.jpg";
   if (/culture|heritage|village|community|museum|traditional/.test(label)) return "/gallery/culture.jpg";
   if (/mountain|hiking|climb|trek|kilimanjaro/.test(label)) return "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=85";
-  if (/bird|lake|wetland|forest|nature|botanical/.test(label)) return "/gallery/amboseli.jpg";
+  if (/bird|birding|ornithology/.test(label)) return "https://images.unsplash.com/photo-1444464666168-49d633b86797?auto=format&fit=crop&w=1200&q=85";
+  if (/lake|wetland|forest|nature|botanical/.test(label)) return "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=85";
   if (/safari|wildlife|mara|amboseli|elephant|lion|game drive/.test(label)) return "/gallery/mara.jpg";
   return "/hero1.jpeg";
+};
+
+const imageFitsTour = (candidate, tour = {}) => {
+  const raw = typeof candidate === "string"
+    ? candidate
+    : candidate?.url || candidate?.secure_url || candidate?.path || "";
+  const source = String(raw).toLowerCase();
+  const label = [
+    tour?.title,
+    tour?.name,
+    tour?.category,
+    tour?.destination?.name,
+    typeof tour?.destination === "string" ? tour.destination : "",
+    ...(Array.isArray(tour?.tags) ? tour.tags : []),
+  ].filter(Boolean).join(" ").toLowerCase();
+
+  // Filenames in the existing local gallery are descriptive. Reject obvious category
+  // mismatches (e.g. culture.jpg for a birding trip) but don't guess from opaque CDN IDs.
+  const has = (pattern) => pattern.test(source);
+  if (/bird|birding|ornithology/.test(label) && has(/culture|beach|diani|mara|safari|amboseli/)) return false;
+  if (/culture|heritage|village|community|museum|traditional/.test(label) && has(/beach|diani|bird|mara|safari|amboseli/)) return false;
+  if (/beach|coast|ocean|diani|watamu|mombasa|lamu|snorkel/.test(label) && has(/culture|mara|safari|amboseli|bird/)) return false;
+  if (/safari|wildlife|mara|amboseli|elephant|lion|game drive/.test(label) && has(/culture|beach|diani|bird/)) return false;
+  if (/mountain|hiking|climb|trek|kilimanjaro/.test(label) && has(/culture|beach|diani|bird|mara/)) return false;
+  return true;
 };
 
 export const getTourImage = (tour = {}) => {
@@ -78,7 +104,7 @@ export const getTourImage = (tour = {}) => {
     tour?.thumbnail,
   ];
 
-  const realImage = candidates.find((candidate) => !isGenericImage(candidate));
+  const realImage = candidates.find((candidate) => !isGenericImage(candidate) && imageFitsTour(candidate, tour));
   const resolved = resolveMediaUrl(realImage);
 
   // Never intentionally render the placeholder when a tour has no media.
@@ -92,7 +118,7 @@ export const getTourImages = (tour = {}) => {
     ...(Array.isArray(tour?.gallery) ? tour.gallery : []),
     ...(Array.isArray(tour?.images) ? tour.images : []),
   ]
-    .filter((item) => !isGenericImage(item))
+    .filter((item) => !isGenericImage(item) && imageFitsTour(item, tour))
     .map(resolveMediaUrl)
     .filter(Boolean);
 
