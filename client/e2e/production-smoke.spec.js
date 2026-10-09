@@ -35,6 +35,7 @@ test("public catalogue smoke acceptance", async ({ page }) => {
 
   await page.goto("/");
   await expect(page.locator("body")).toContainText(/Hussein|safari|tour/i);
+  await expect(page.locator("body")).not.toContainText(/Sarah Williams|James Anderson|Amina Hassan/);
   await expect(page.getByRole("link", { name: "Tours", exact: true }).first()).toBeVisible();
   await page.goto("/tours");
   await expect(page.locator("body")).toContainText(/tour/i);
@@ -44,10 +45,7 @@ test("public catalogue smoke acceptance", async ({ page }) => {
   await expect(page.locator("main").last()).not.toBeEmpty();
   await page.goto("/destinations");
   await expect(page.locator("body")).toContainText(/destination/i);
-  const footerDestinations = [["Maasai Mara", "/destinations/maasai-mara"], ["Diani Beach", "/destinations/diani-beach"], ["Mount Kenya", "/destinations/mount-kenya"], ["Nairobi", "/destinations/nairobi"]];
-  for (const [name, href] of footerDestinations) {
-    await expect(page.locator("footer").getByRole("link", { name, exact: true })).toHaveAttribute("href", href);
-  }
+  await expect(page.locator("footer").getByRole("link", { name: /explore all destinations/i })).toHaveAttribute("href", "/destinations");
   await page.locator("main").last().locator("a[href^='/destinations/']").first().click();
   await expect(page).toHaveURL(/\/destinations\/[^/]+/);
   await expect(page.locator("main").last()).not.toContainText("Destination not found");
