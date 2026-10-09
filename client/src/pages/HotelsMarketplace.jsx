@@ -7,7 +7,7 @@ import { useTenant } from "../context/TenantContext";
 
 const HOTEL_IMAGES = { "Global Demo Nairobi Hotel": "https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=1200&q=85", "Global Demo Coast Resort": "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=85", "Global Demo Safari Lodge": "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=85" };
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1601918774946-25832a4be0d6?auto=format&fit=crop&w=1200&q=85";
-const money = (value, currency = "KES") => { if (value == null || value === "") return "Price on request"; const amount = Number(value); return Number.isFinite(amount) && amount >= 0 ? `${currency} ${amount.toLocaleString("en-KE", { maximumFractionDigits: 0 })}` : "Price on request"; };
+const money = (value, currency = "KES") => { if (value == null || value === "") return "Price on request"; const amount = Number(value); return Number.isFinite(amount) && amount > 0 ? `${currency} ${amount.toLocaleString("en-KE", { maximumFractionDigits: 0 })}` : "Price on request"; };
 export default function HotelsMarketplace() {
   const { tenant = {} } = useTenant() || {};
   const tenantKey = tenant?._id || tenant?.id || tenant?.slug || "public";
