@@ -2,14 +2,29 @@
 
 ## Safety and reset process
 
-The authoritative comprehensive seed is `server/seeds/completeTestDemoSeed.js`. The compatibility `seed:demo` command delegates to it and does not maintain another user list. For the known demo database, it requires `ALLOW_ATLAS_DEMO_SEED=YES`, `CONFIRM_TEST_SEED=YES`, a private `SEED_DEMO_PASSWORD`, and development/test mode. It validates the Atlas host and `husseindb`, exact tenant slugs/names, and unsafe fallback settings before writing. Before replacing any records scoped to those three tenant IDs, it writes `server/reports/test-seed-preflight-report.json` with tenant identities and planned per-model deletion counts. It does not drop the database or touch other tenant IDs.
+The authoritative comprehensive seed is `server/seeds/completeTestDemoSeed.js`. The compatibility `seed:demo` command delegates to it and does not maintain another user list. The comprehensive seed is restricted to a disposable database. **Never run it against `husseindb` or the live application database.** For Atlas, the only allowed target is the dedicated `global_tours_test` database on `cluster0.cdtxzts.mongodb.net`, with explicit opt-in. It requires `ALLOW_ATLAS_DEMO_SEED=YES`, `CONFIRM_TEST_SEED=YES`, a private `SEED_DEMO_PASSWORD`, and `NODE_ENV=test`. It validates the exact Atlas host/database, exact tenant slugs/names, and unsafe fallback settings before writing. Before replacing records scoped to the three demo tenant IDs, it writes `server/reports/test-seed-preflight-report.json` with tenant identities and planned per-model deletion counts. It does not drop the database or touch other tenant IDs.
 
-Run from the repository root:
+Create a **local-only** `server/.env.seed-staging` file (never commit it) containing the staging MongoDB URI and these values. Keep the database password private:
+
+```dotenv
+NODE_ENV=test
+MONGODB_URI=mongodb+srv://<staging-user>:<staging-password>@cluster0.cdtxzts.mongodb.net/global_tours_test?retryWrites=true&w=majority
+ALLOW_ATLAS_DEMO_SEED=YES
+CONFIRM_TEST_SEED=YES
+SEED_DEMO_PASSWORD=<private-disposable-account-password>
+CLIENT_URL=
+CLIENT_ORIGINS=
+PLATFORM_HOST=
+RENDER_EXTERNAL_HOSTNAME=
+```
+
+Run from the `server` directory:
 
 ```bash
-cd server
-ALLOW_ATLAS_DEMO_SEED=YES CONFIRM_TEST_SEED=YES SEED_DEMO_PASSWORD='YOUR_PRIVATE_DEMO_PASSWORD' npm run seed:test:complete
+node --env-file=.env.seed-staging seeds/completeTestDemoSeed.js
 ```
+
+Review the preflight report and final per-tenant counts before using the staging data. Do not paste database URIs or passwords into chat or commit the environment file.
 
 Never place the seed password in source, documentation, public environment files, or Git. The user model hashes it with the existing bcrypt save hook.
 
