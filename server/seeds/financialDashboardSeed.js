@@ -208,7 +208,8 @@ async function seedTenant(tenant, tenantIndex) {
     for (let i = 0; i < bookings.length; i += 1) {
       const booking = bookings[i];
       const paid = round(booking.depositAmount);
-      const plan = paymentPlans[i];
+      // Reuse the exact plan used to create this booking. Tenant-specific plan rotation must not desynchronize invoice/payment status from the booking.
+      const plan = [booking.paymentStatus, booking.status, 0];
       const invoice = await Invoice.create({
         tenantId: tenant._id,
         booking: booking._id,

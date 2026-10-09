@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 
 const source = fs.readFileSync(new URL("../scripts/auditTenantDashboardData.js", import.meta.url), "utf8");
+const seedSource = fs.readFileSync(new URL("../seeds/financialDashboardSeed.js", import.meta.url), "utf8");
 
 test("tenant dashboard audit is restricted to the intended Atlas database", () => {
   assert.match(source, /EXPECTED_HOST = "cluster0\.cdtxzts\.mongodb\.net"/);
@@ -25,4 +26,35 @@ test("tenant dashboard audit counts both TEST- and DEMO- synthetic booking refer
 test("tenant dashboard audit contains no database mutation calls", () => {
   assert.doesNotMatch(source, /\.(?:deleteMany|deleteOne|updateMany|updateOne|findOneAndUpdate|insertMany|bulkWrite)\s*\(/);
   assert.match(source, /No records were inserted, updated, or deleted/);
+});
+
+test("tenant financial audit checks cross-tenant references across booking, payment, invoice and supplier operations", () => {
+  for (const code of [
+    "BOOKING_TOUR_TENANT", "PAYMENT_BOOKING_TENANT", "INVOICE_BOOKING_TENANT",
+    "PO_SUPPLIER_TENANT", "EXPENSE_PO_TENANT", "PAYABLE_SUPPLIER_TENANT",
+  ]) assert.ok(source.includes(code), `missing integrity check: ${code}`);
+});
+
+test("tenant financial audit reconciles booking and invoice balances against successful net payments", () => {
+  assert.match(source, /BOOKING_PAYMENT_RECONCILIATION/);
+  assert.match(source, /INVOICE_PAYMENT_RECONCILIATION/);
+  assert.match(source, /netSuccessfulPaymentValueKsh/);
+  assert.match(source, /refundedPaymentValueKsh/);
+});
+
+test("tenant financial audit validates balanced journals and tenant-owned chart accounts", () => {
+  assert.match(source, /POSTED_JOURNAL_UNBALANCED/);
+  assert.match(source, /JOURNAL_ACCOUNT_TENANT/);
+  assert.match(source, /Math\.abs\(debit-credit\)/);
+});
+
+test("tenant financial audit reconciles invoice revenue postings and refund journals", () => {
+  assert.match(source, /INVOICE_REVENUE_POSTING/);
+  assert.match(source, /REFUND_JOURNAL_ACCOUNTING/);
+  assert.match(source, /receivableDebit > 0\.01/);
+});
+
+test("financial seed derives invoice and payment state from the same booking payment plan", () => {
+  assert.match(seedSource, /const plan = \[booking\.paymentStatus, booking\.status, 0\];/);
+  assert.doesNotMatch(seedSource, /const plan = paymentPlans\[i\];/);
 });
