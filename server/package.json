@@ -28,6 +28,7 @@
     "cleanup:readiness-test-dbs": "node scripts/cleanupReadinessTestDatabases.js",
     "verify:demo-images": "node scripts/verifyDemoImageAssets.js",
     "verify:demo-api": "node scripts/verifyDemoApi.js",
+    "audit:tenant-dashboards": "node scripts/auditTenantDashboardData.js",
     "reconcile:demo-data": "node scripts/reconcileDemoSeedData.js",
     "seed:dashboard-master-data": "node seeds/ensureDashboardMasterData.js",
     "seed:financial-dashboard": "node seeds/financialDashboardSeedRunner.js",
