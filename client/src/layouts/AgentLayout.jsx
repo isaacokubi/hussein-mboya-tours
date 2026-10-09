@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import AgentSidebar from "../components/agent/AgentSidebar";
+import DashboardLogoutButton from "../components/common/DashboardLogoutButton";
 
 export default function AgentLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -18,9 +19,12 @@ export default function AgentLayout() {
         </div>
       )}
       <div className="min-w-0 lg:pl-72">
-        <header className="sticky top-0 z-40 flex min-h-12 items-center gap-2 border-b border-indigo-100 bg-white/95 px-3 py-2 shadow-sm backdrop-blur sm:min-h-14 sm:px-4 sm:py-3 lg:hidden">
-          <button onClick={() => setMobileOpen(true)} className="rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 p-2 text-white shadow" aria-label="Open agent menu"><Menu size={20} /></button>
-          <h1 className="truncate text-sm font-bold text-indigo-950 sm:text-base">Agent Portal</h1>
+        <header className="sticky top-0 z-40 flex min-h-12 items-center justify-between gap-2 border-b border-indigo-100 bg-white/95 px-3 py-2 shadow-sm backdrop-blur sm:min-h-14 sm:px-4 sm:py-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <button onClick={() => setMobileOpen(true)} className="rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 p-2 text-white shadow lg:hidden" aria-label="Open agent menu"><Menu size={20} /></button>
+            <h1 className="truncate text-sm font-bold text-indigo-950 sm:text-base">Agent Portal</h1>
+          </div>
+          <DashboardLogoutButton />
         </header>
         <main className="min-w-0"><Outlet /></main>
       </div>
