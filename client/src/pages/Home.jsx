@@ -42,7 +42,7 @@ const SERVICES = [
 export default function Home() {
   const { tenant = {} } = useTenant() || {};
   const { companyName: configuredCompanyName = "", settings = {} } = useSettings() || {};
-  const companyName = configuredCompanyName || tenant.name || tenant.companyName || "Hussein Mboya Tours";
+  const companyName = configuredCompanyName || tenant.name || tenant.companyName || "Travel company";
   const sections = { ...DEFAULT_SECTIONS, ...(settings.homepageSections || {}) };
   const seoTitle = settings.seoTitle || `Kenya Safaris & Tours | ${companyName}`;
   const seoDescription = settings.seoDescription || `Discover Kenya with ${companyName}: safaris, wildlife, beach holidays, custom itineraries and seamless travel support.`;
