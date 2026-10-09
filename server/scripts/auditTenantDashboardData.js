@@ -98,7 +98,7 @@ async function auditTenant(tenant) {
     Payment.aggregate([{ $match: { tenantId, ...active } }, { $group: { _id: null, total: { $sum: { $ifNull: ["$amount", 0] } } } }]),
     Booking.find({ tenantId, ...active }).sort({ createdAt: -1 }).limit(5)
       .select("bookingNumber status paymentStatus totalAmount tenantId").lean(),
-    Booking.countDocuments({ tenantId, bookingNumber: /^TEST-/i }),
+    Booking.countDocuments({ tenantId, bookingNumber: /^(?:TEST|DEMO)-/i }),
     postedRevenue(tenantId),
   ]);
 
