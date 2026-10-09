@@ -7,9 +7,11 @@ const money = (value, currency = "KES") => `${currency} ${Number(value || 0).toL
 
 export default function AirportTransferDetails() {
   const { id } = useParams();
+  const { tenant = {} } = useTenant() || {};
+  const tenantKey = tenant?._id || tenant?.id || tenant?.slug || "public";
   const navigate = useNavigate();
   const reservationPath = `/airport-transfers/${id}/reserve`;
-  const { data: item, isLoading, isError } = useQuery({ queryKey: ["airport-transfer", id], queryFn: () => getAirportTransfer(id), enabled: !!id, staleTime: 30000 });
+  const { data: item, isLoading, isError } = useQuery({ queryKey: ["airport-transfer", tenantKey, id], queryFn: () => getAirportTransfer(id), enabled: !!id, staleTime: 30000 });
 
   const openReservation = () => {
     if (id) navigate(reservationPath);
