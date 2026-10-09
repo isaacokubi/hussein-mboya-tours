@@ -117,8 +117,8 @@ async function seedTenant(tenant, tenantIndex) {
 
     const bookings = [];
     // Deliberately vary synthetic transaction volume by tenant so the three demo dashboards do not share identical totals.
-    const bookingCountByTenant = [9, 12, 7];
-    const bookingCount = bookingCountByTenant[tenantIndex];
+    const bookingCountBySlug = { "hussein-mboya": 9, "amani-trails": 12, "demo-safari": 7 };
+    const bookingCount = bookingCountBySlug[String(tenant.slug || "").toLowerCase()] ?? [9, 12, 7][tenantIndex];
     for (let i = 0; i < bookingCount; i += 1) {
       const customer = customers[i % customers.length];
       const tour = tours[(i + tenantIndex * 3) % tours.length];
