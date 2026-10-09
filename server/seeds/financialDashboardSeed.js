@@ -116,7 +116,10 @@ async function seedTenant(tenant, tenantIndex) {
       .map((vehicle) => [String(vehicle.assignedTour), vehicle]));
 
     const bookings = [];
-    for (let i = 0; i < 12; i += 1) {
+    // Deliberately vary synthetic transaction volume by tenant so the three demo dashboards do not share identical totals.
+    const bookingCountByTenant = [9, 12, 7];
+    const bookingCount = bookingCountByTenant[tenantIndex];
+    for (let i = 0; i < bookingCount; i += 1) {
       const customer = customers[i % customers.length];
       const tour = tours[(i + tenantIndex * 3) % tours.length];
       const plan = paymentPlans[(i + tenantIndex * 3) % paymentPlans.length];
