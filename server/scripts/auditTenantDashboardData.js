@@ -11,6 +11,7 @@ import Vehicle from "../models/Vehicle.js";
 import Agent from "../models/Agent.js";
 import JournalEntry from "../models/JournalEntry.js";
 import ChartOfAccount from "../models/ChartOfAccount.js";
+import { runWithTenant } from "../tenancy/context.js";
 
 const EXPECTED_HOST = "cluster0.cdtxzts.mongodb.net";
 const EXPECTED_DATABASE = "husseindb";
@@ -73,6 +74,7 @@ async function postedRevenue(tenantId) {
 
 async function auditTenant(tenant) {
   const tenantId = tenant._id;
+  return runWithTenant({ tenantId, role: "manager", bypass: false }, async () => {
   const [
     users, customers, staff, guides, drivers, agents, vehicles, availableVehicles,
     tours, destinations, bookings, payments, bookingStatuses, paymentStatuses,
@@ -117,6 +119,7 @@ async function auditTenant(tenant) {
       amountKsh: Number(row.totalAmount || 0),
     })),
   };
+  });
 }
 
 async function main() {
