@@ -139,12 +139,12 @@ export default function TourDetails() {
           description: tour.shortDescription || tour.description || "",
           image: image ? [image] : undefined,
           touristType: tour.category || undefined,
-          ...(Number.isFinite(finalPrice) && finalPrice >= 0 ? {
+          ...(tour.price != null && Number.isFinite(finalPrice) && finalPrice >= 0 ? {
             offers: {
               "@type": "Offer",
               priceCurrency: currency,
               price: finalPrice,
-              availability: bookingUnavailable ? "https://schema.org/SoldOut" : "https://schema.org/InStock",
+              ...(bookingUnavailable ? { availability: "https://schema.org/SoldOut" } : ((slotsTotal > 0 || hasDepartureInventory) ? { availability: "https://schema.org/InStock" } : {})),
             },
           } : {}),
         }}
