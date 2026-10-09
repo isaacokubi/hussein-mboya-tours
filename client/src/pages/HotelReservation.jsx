@@ -26,7 +26,7 @@ export default function HotelReservation() {
   const [form, setForm] = useState({ firstName: "", lastName: "", phone: "", email: "", mealPlan: "", estimatedArrivalTime: "", bedPreference: "", dietaryRequirements: "", accessibilityNeeds: "", airportTransferRequired: false, specialRequests: "" });
   const { data: hotel, isLoading, isError } = useQuery({ queryKey: ["public-hotel", tenantKey, id], queryFn: () => getHotel(id), enabled: Boolean(id), staleTime: 30000 });
   const validDates = Boolean(stay.checkIn && stay.checkOut && dateOnly(stay.checkOut) > dateOnly(stay.checkIn));
-  const availability = useQuery({ queryKey: ["hotel-reservation-availability", id, stay.checkIn, stay.checkOut], queryFn: () => getHotelAvailability({ hotelId: id, checkIn: stay.checkIn, checkOut: stay.checkOut }), enabled: Boolean(id) && validDates, staleTime: 10000 });
+  const availability = useQuery({ queryKey: ["hotel-reservation-availability", tenantKey, id, stay.checkIn, stay.checkOut], queryFn: () => getHotelAvailability({ hotelId: id, checkIn: stay.checkIn, checkOut: stay.checkOut }), enabled: Boolean(id) && validDates, staleTime: 10000 });
   const rooms = availability.data?.roomTypes || hotel?.roomTypes || [];
   const [roomId, setRoomId] = useState(params.get("room") || "");
   const selectedRoom = rooms.find(room => String(room._id) === String(roomId)) || rooms[0];
