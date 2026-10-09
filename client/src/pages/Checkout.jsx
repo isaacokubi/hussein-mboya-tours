@@ -284,7 +284,7 @@ export default function Checkout() {
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-8 md:py-10">
       <main className="mx-auto max-w-4xl rounded-3xl bg-white p-6 shadow-lg ring-1 ring-slate-200 md:p-8">
-        <p className="text-sm font-bold uppercase tracking-wider text-emerald-700">Secure checkout</p>
+        <p className="text-sm font-bold uppercase tracking-wider text-emerald-700">Booking checkout</p>
         <h1 className="mt-1 text-3xl font-bold text-slate-900">Complete your booking</h1>
         <p className="mt-2 text-slate-500">Pay your required deposit or full balance. You can make additional payments later until the balance is cleared.</p>
 
