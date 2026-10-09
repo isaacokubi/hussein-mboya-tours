@@ -8,6 +8,7 @@ import { initiateMpesa, checkPaymentStatus } from "../api/mpesaApi";
 import { getTourById } from "../api/tourApi";
 import { getSettings } from "../api/superAdminApi";
 import { useAuth } from "../context/AuthContext";
+import { useTenant } from "../context/TenantContext";
 import { getCustomTourDateRange, getTourDateRange, isDateWithinRange, toDateInputValue } from "../lib/dateRange";
 
 const normalizePhone = (value) => {
@@ -40,6 +41,8 @@ export default function Checkout() {
   const navigate = useNavigate();
   const { type, id } = useParams();
   const { user } = useAuth();
+  const { tenant = {} } = useTenant() || {};
+  const tenantKey = tenant?._id || tenant?.id || tenant?.slug || "public";
   const isBookingCheckout = type === "booking";
   const isTourCheckout = type === "tour";
 
@@ -65,7 +68,7 @@ export default function Checkout() {
     enabled: isTourCheckout && Boolean(id),
   });
   const { data: settingsResponse } = useQuery({
-    queryKey: ["public-system-settings"],
+    queryKey: ["public-system-settings", tenantKey],
     queryFn: getSettings,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
