@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { useSettings } from "../context/SettingsContext";
 import api from "../api/axios";
 import { getUserRole } from "../utils/roleUtils";
+import DashboardLogoutButton from "../components/common/DashboardLogoutButton";
 
 const MENU = [
   ["Dashboard", "/admin", LayoutDashboard, "admin.dashboard", "dashboard"],
@@ -110,7 +111,10 @@ export default function AdminLayout() {
             <button onClick={() => setMobileOpen(true)} className="shrink-0 rounded-xl bg-indigo-700 p-2 text-white shadow lg:hidden" aria-label="Open admin menu"><Menu size={21} /></button><NavLink to="/admin" end aria-label="Go to dashboard" className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50 lg:hidden"><Home size={16} /><span>Dashboard</span></NavLink>
             <div className="min-w-0"><p className="truncate text-[10px] font-semibold uppercase tracking-wider text-indigo-700 sm:text-xs">Administration</p><h1 className="truncate text-sm font-bold text-slate-900 sm:text-base lg:text-lg">{companyName} Control Center</h1></div>
           </div>
-          <div className="hidden max-w-[35%] text-right sm:block"><p className="truncate text-sm font-semibold text-slate-900">{user?.name || "Administrator"}</p><p className="text-[10px] capitalize text-slate-500 sm:text-xs">{String(role || "admin").replace(/_/g, " ")}{plan ? ` · ${plan}` : ""}</p></div>
+          <div className="flex min-w-0 items-center gap-2 sm:gap-4">
+            <div className="hidden max-w-[35%] text-right sm:block"><p className="truncate text-sm font-semibold text-slate-900">{user?.name || "Administrator"}</p><p className="text-[10px] capitalize text-slate-500 sm:text-xs">{String(role || "admin").replace(/_/g, " ")}{plan ? ` · ${plan}` : ""}</p></div>
+            <DashboardLogoutButton />
+          </div>
         </header>
         <main className="admin-portal-main min-w-0 p-3 sm:p-4 md:p-6 lg:p-8"><Outlet /></main>
       </div>
