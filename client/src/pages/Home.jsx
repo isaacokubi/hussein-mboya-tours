@@ -18,19 +18,19 @@ const WhyChooseUs = lazy(() => import("../components/home/WhyChooseUs"));
 const MpesaCTA = lazy(() => import("../components/home/MpesaCTA"));
 const NewsletterSection = lazy(() => import("../components/home/NewsletterSection"));
 
-const DEFAULT_SECTIONS = { stats: true, tours: true, destinations: true, experiences: true, services: true, testimonials: true, gallery: true, whyChooseUs: true, newsletter: true };
+const DEFAULT_SECTIONS = { stats: false, tours: true, destinations: true, experiences: true, services: true, testimonials: false, gallery: true, whyChooseUs: true, newsletter: true };
 const SectionFallback = () => <div className="min-h-24" aria-hidden="true" />;
 
 const JOURNEY = [
   ["Discover", "Browse curated tours, destinations and travel services.", Compass],
   ["Enquire", "Request a quote or tailor an itinerary around your needs.", UsersRound],
   ["Book", "Accept your quotation and confirm the trip online.", CalendarCheck2],
-  ["Pay", "Pay securely with M-Pesa and supported payment methods.", CreditCard],
+  ["Pay", "Review the payment methods enabled for your booking after confirmation.", CreditCard],
   ["Travel", "Get coordinated guides, drivers, hotels and transfers.", CarFront],
   ["Remember", "Complete your journey, share feedback and stay connected.", BadgeCheck],
 ];
 
-const TRUST_POINTS = [["Kenya specialists", "Local knowledge from people who know the destinations.", Compass], ["Verified local support", "Guides, drivers and partners coordinated around your trip.", ShieldCheck], ["Flexible itineraries", "Choose a ready-made safari or build a trip around you.", Sparkles], ["Secure payments", "Reserve confidently with M-Pesa and supported payment options.", CreditCard]];
+const TRUST_POINTS = [["Kenya specialists", "Local knowledge from people who know the destinations.", Compass], ["Verified local support", "Guides, drivers and partners coordinated around your trip.", ShieldCheck], ["Flexible itineraries", "Choose a ready-made safari or build a trip around you.", Sparkles], ["Payment options", "Review the payment methods available for your booking.", CreditCard]];
 
 const SERVICES = [
   ["Safaris & Tours", "Curated and tailor-made Kenya adventures.", Compass, "/tours"],
