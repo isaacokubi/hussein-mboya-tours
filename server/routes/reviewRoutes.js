@@ -6,6 +6,7 @@ import express from "express";
 import {
   createReview,
   getTourReviews,
+  listPublicTestimonials,
   voteHelpful,
 } from "../controllers/reviewController.js";
 
@@ -27,6 +28,8 @@ router.use(resolveTenant);
  * GET /api/reviews/tour/:id
  * Get all approved reviews for a tour.
  */
+router.get("/featured", listPublicTestimonials);
+
 router.get(
   "/tour/:id",
   getTourReviews
