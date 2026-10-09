@@ -76,7 +76,7 @@ export default function HeroSlider() {
   const { settings = {} } = useSettings() || {};
   const tenantName = String(tenant?.name || tenant?.companyName || "").trim();
   const configuredName = String(settings?.companyName || "").trim();
-  const companyName = tenantName || configuredName || "Hussein Mboya Tours";
+  const companyName = tenantName || configuredName || "Travel company";
   const tenantKey = tenant?._id || tenant?.id || tenant?.slug || companyName;
   const videoRefs = useRef([]);
   const [heroReady, setHeroReady] = useState(false);
