@@ -7,6 +7,16 @@ import LazyImage from "../common/LazyImage";
 import { useTenant } from "../../context/TenantContext";
 import { useSettings } from "../../context/SettingsContext";
 
+const getTourPrice = (tour) => {
+  const base = Number(tour?.price);
+  const final = Number(tour?.finalPrice);
+  const legacyDiscount = Number(tour?.discountPrice);
+  if (tour?.finalPrice != null && Number.isFinite(final) && final >= 0) return final;
+  if (Number.isFinite(legacyDiscount) && legacyDiscount > 0) return legacyDiscount;
+  if (!Number.isFinite(base) || base < 0) return null;
+  return Number(tour?.discount) > 0 ? base - (base * Number(tour.discount)) / 100 : base;
+};
+
 const formatPrice = (value, currency) => {
   const amount = Number(value);
   if (!Number.isFinite(amount) || amount < 0) return "Price on request";
@@ -60,7 +70,7 @@ export default function FeaturedTours() {
                   <h3 className="line-clamp-2 text-xl font-black leading-tight text-slate-900">{tour?.title || "African Adventure"}</h3>
                   {rating > 0 && <div className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#8a6423]"><Star size={14} fill="currentColor" /> {rating.toFixed(1)}{reviewCount > 0 ? ` · ${reviewCount} reviews` : ""}</div>}
                   <div className="mt-5 flex items-end justify-between gap-3">
-                    <div><p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">From</p><p className="text-xl font-black text-[#8a6423]">{formatPrice(tour.finalPrice ?? tour.discountPrice ?? tour.price, currency)}</p></div>
+                    <div><p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">From</p><p className="text-xl font-black text-[#8a6423]">{formatPrice(getTourPrice(tour), currency)}</p></div>
                     <Link to={`/tours/${tour?.slug || tour?._id}`} className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#12372a]">View itinerary <ArrowRight size={15}/></Link>
                   </div>
                 </div>
