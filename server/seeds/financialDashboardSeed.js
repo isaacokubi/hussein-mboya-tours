@@ -24,6 +24,7 @@ import SupplierPayable from "../models/SupplierPayable.js";
 import JournalEntry from "../models/JournalEntry.js";
 import Quotation from "../models/Quotation.js";
 import { runWithTenant } from "../tenancy/context.js";
+import { postInvoiceToLedger, postPaymentToLedger, postPaymentRefundToLedger } from "../services/operationalAccountingService.js";
 
 dotenv.config();
 
@@ -115,10 +116,13 @@ async function seedTenant(tenant, tenantIndex) {
       .map((vehicle) => [String(vehicle.assignedTour), vehicle]));
 
     const bookings = [];
-    for (let i = 0; i < 12; i += 1) {
+    // Deliberately vary synthetic transaction volume by tenant so the three demo dashboards do not share identical totals.
+    const bookingCountBySlug = { "hussein-mboya": 9, "amani-trails": 12, "demo-safari": 7 };
+    const bookingCount = bookingCountBySlug[String(tenant.slug || "").toLowerCase()] ?? [9, 12, 7][tenantIndex];
+    for (let i = 0; i < bookingCount; i += 1) {
       const customer = customers[i % customers.length];
       const tour = tours[(i + tenantIndex * 3) % tours.length];
-      const plan = paymentPlans[i];
+      const plan = paymentPlans[(i + tenantIndex * 3) % paymentPlans.length];
       const amount = round(Math.max(1500, Number(tour.price || 0) * (1 + (i % 3) * 0.35)));
       const guests = 1 + (i % 5);
       const status = plan[1];
@@ -232,6 +236,7 @@ async function seedTenant(tenant, tenantIndex) {
         notes: "Synthetic dashboard seed data — no KRA/eTIMS submission has occurred.",
       });
       invoices.push(invoice);
+      await postInvoiceToLedger(invoice);
 
       if (paid > 0 && paymentUser) {
         const provider = providers[i % providers.length];
@@ -259,6 +264,8 @@ async function seedTenant(tenant, tenantIndex) {
           notes: "Synthetic dashboard seed payment — not a real customer transaction.",
         });
         payments.push(payment);
+        await postPaymentToLedger(payment);
+        if (plan[0] === "refunded") await postPaymentRefundToLedger(payment, paid, `DEMO-REFUND-${tenantIndex + 1}-${i + 1}`);
         booking.payments = [payment._id];
         await booking.save();
       }
@@ -363,7 +370,7 @@ async function seedTenant(tenant, tenantIndex) {
       const customerBookings = bookings.filter((b) => String(b.customer) === String(customer._id));
       const completed = customerBookings.filter((b) => b.status === "completed").length;
       const spent = round(customerBookings.reduce((sum, b) => sum + Number(b.amountPaid || 0), 0));
-      await Customer.updateOne({ _id: customer._id }, { $set: { totalBookings: customerBookings.length, completedBookings: completed, cancelledBookings: customerBookings.filter((b) => b.status === "cancelled").length, totalSpent: spent, averageBookingValue: customerBookings.length ? round(spent / customerBookings.length) : 0, lastBookingDate: customerBookings.map((b) => b.createdAt).filter(Boolean).sort((a, b) => b - a)[0] || null, loyaltyPoints: Math.floor(spent / 100) } });
+      await Customer.updateOne({ _id: customer._id, tenantId: tenant._id }, { $set: { totalBookings: customerBookings.length, completedBookings: completed, cancelledBookings: customerBookings.filter((b) => b.status === "cancelled").length, totalSpent: spent, averageBookingValue: customerBookings.length ? round(spent / customerBookings.length) : 0, lastBookingDate: customerBookings.map((b) => b.createdAt).filter(Boolean).sort((a, b) => b - a)[0] || null, loyaltyPoints: Math.floor(spent / 100) } });
     }
 
     for (const tour of tours) {
@@ -449,7 +456,7 @@ async function seedTenant(tenant, tenantIndex) {
     }
 
     const tourById = new Map(tours.map((tour) => [String(tour._id), tour]));
-    const convertedQuotes = await Quotation.find({ status: "converted", isDeleted: { $ne: true } });
+    const convertedQuotes = await Quotation.find({ tenantId: tenant._id, status: "converted", isDeleted: { $ne: true } });
     for (const quote of convertedQuotes) {
       const booking = bookings.find((row) => String(row.customer) === String(quote.customer)
         && String(row.tour) === String(quote.tour))
@@ -502,7 +509,7 @@ async function seedTenant(tenant, tenantIndex) {
   });
 }
 
-async function main() {
+export async function main() {
   if (!process.env.MONGODB_URI) throw new Error("MONGODB_URI is required.");
   await mongoose.connect(process.env.MONGODB_URI, {
     maxPoolSize: 5,
