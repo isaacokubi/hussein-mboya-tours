@@ -155,7 +155,22 @@ jobs:
       - name: Inspect dependency audit advisories
         run: |
           npm audit --json > /tmp/client-audit.json || true
-          node -e 'const a=require("/tmp/client-audit.json"); console.log(JSON.stringify({metadata:a.metadata?.vulnerabilities, advisories:Object.entries(a.vulnerabilities||{}).map(([name,v])=>({name,severity:v.severity,range:v.range,fixAvailable:v.fixAvailable,via:(v.via||[]).map(item=>typeof item==="string"?item:{name:item.name,title:item.title,url:item.url,range:item.range}))})},null,2))'
+          node <<'NODE'
+          const audit = require("/tmp/client-audit.json");
+          const advisories = Object.entries(audit.vulnerabilities || {}).map(([name, vulnerability]) => ({
+            name,
+            severity: vulnerability.severity,
+            range: vulnerability.range,
+            fixAvailable: vulnerability.fixAvailable,
+            via: (vulnerability.via || []).map((item) => typeof item === "string" ? item : ({
+              name: item.name,
+              title: item.title,
+              url: item.url,
+              range: item.range,
+            })),
+          }));
+          console.log(JSON.stringify({ metadata: audit.metadata?.vulnerabilities, advisories }, null, 2));
+          NODE
 
       - name: ESLint
         run: npm run lint
