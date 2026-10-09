@@ -11,12 +11,12 @@ import Agent from "../models/Agent.js";
 import Customer from "../models/Customer.js";
 import { runWithTenant } from "../tenancy/context.js";
 
-const TENANTS = [
+export const TENANTS = [
   { slug: "hussein-mboya", legacyDomain: "hussein-mboya.com", domain: "husseinmboya.com", label: "Hussein Mboya Tours" },
   { slug: "amani-trails", legacyDomain: "amani-trails.com", domain: "amanitrails.com", label: "Amani Trails Safaris" },
   { slug: "demo-safari", legacyDomain: "demo-safari.com", domain: "demosafari.com", label: "Demo Safari Adventures" },
 ];
-const ACCOUNT_SPECS = [
+export const ACCOUNT_SPECS = [
   { legacyLocal: "admin", local: "admin1", role: "admin", title: "Administrator" },
   { legacyLocal: "manager", local: "tourmanager1", role: "tour_manager", title: "Tour Manager" },
   { legacyLocal: "agent", local: "agent1", role: "agent", title: "Travel Agent" },
@@ -27,8 +27,8 @@ const ACCOUNT_SPECS = [
   { legacyLocal: null, local: "driver2", role: "driver", title: "Driver" },
   ...[1, 2, 3, 4].map((n) => ({ legacyLocal: `customer${n}`, local: `customer${n}`, role: "customer", title: "Customer" })),
 ];
-const PLATFORM_OLD = "superadmin@hussein-mboya.com";
-const PLATFORM_NEW = "superadmin1@husseinmboya.com";
+export const PLATFORM_OLD = "superadmin@hussein-mboya.com";
+export const PLATFORM_NEW = "superadmin1@husseinmboya.com";
 const platformRoleNames = ["super_admin", "superadmin"];
 const isDryRun = process.argv.includes("--dry-run");
 const expectedHost = "cluster0.cdtxzts.mongodb.net";
@@ -56,7 +56,7 @@ function validatePassword(password) {
   }
 }
 
-function emailFor(local, domain) { return `${local}@${domain}`; }
+export function emailFor(local, domain) { return `${local}@${domain}`; }
 function legacyEmailFor(local, domain) { return `${local}@${domain}`; }
 function roleForOldPlatform(user) { return platformRoleNames.includes(String(user?.role || "").toLowerCase()); }
 function generatedPhone(index) { return String(7900000000 + index).slice(-10); }
