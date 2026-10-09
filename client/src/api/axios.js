@@ -152,7 +152,12 @@ api.interceptors.request.use(
 
     const publicAuthRequest = isPublicAuthRequest(config.url);
     const publicTenantSettingsRequest = isPublicTenantSettingsRequest(config.url);
-    const publicRequest = publicAuthRequest || publicTenantSettingsRequest;
+    // Only login/registration/reset endpoints are anonymous authentication
+    // requests. The public settings endpoint also serves tenant branding, but
+    // after login it must retain the authenticated user's tenant ID and bearer
+    // token; otherwise the shared Vercel hostname falls back to Hussein Mboya
+    // and displays the wrong company's branding throughout another tenant's UI.
+    const publicRequest = publicAuthRequest;
     config.__cookieAuth = !publicRequest;
     if (publicTenantSettingsRequest) config.withCredentials = false;
     const storedAccessToken = ["token", "accessToken", "authToken"]
