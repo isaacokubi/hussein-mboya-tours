@@ -14,6 +14,7 @@ export default function SEO({
   url = "",
   type = "website",
   noIndex = false,
+  structuredData = null,
 }) {
   const { settings = {} } = useSettings() || {};
   const { tenant = {} } = useTenant() || {};
@@ -32,6 +33,21 @@ export default function SEO({
     : `${SITE_ORIGIN}${canonicalPath.startsWith("/") ? canonicalPath : `/${canonicalPath}`}`;
   const imageValue = image?.url || image;
   const pageImage = imageValue?.startsWith("http") ? imageValue : `${SITE_ORIGIN}${imageValue?.startsWith("/") ? imageValue : `/${imageValue || ""}`}`;
+  const schema = structuredData || {
+    "@context": "https://schema.org",
+    "@type": "TravelAgency",
+    name: siteName,
+    url: SITE_ORIGIN,
+    description: resolvedDescription,
+    ...(pageImage ? { image: pageImage } : {}),
+    ...(settings.supportPhone || tenant.contactPhone ? { telephone: settings.supportPhone || tenant.contactPhone } : {}),
+    ...(settings.supportEmail || tenant.contactEmail ? { email: settings.supportEmail || tenant.contactEmail } : {}),
+    ...(settings.address || tenant.address ? { address: settings.address || tenant.address } : {}),
+  };
+  const jsonLd = JSON.stringify({ ...schema, url: schema.url || pageUrl })
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e")
+    .replace(/&/g, "\\u0026");
 
   return (
     <Helmet>
@@ -52,6 +68,7 @@ export default function SEO({
       <meta name="twitter:image" content={pageImage} />
       <meta name="theme-color" content="#166534" />
       <meta name="author" content={siteName} />
+      <script type="application/ld+json">{jsonLd}</script>
     </Helmet>
   );
 }
