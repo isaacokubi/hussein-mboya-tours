@@ -7,6 +7,36 @@ on:
     branches: [main]
 
 jobs:
+  client-local-e2e:
+    name: Client local browser smoke
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Build for local preview
+        env:
+          VITE_API_URL: https://mock-api.invalid/api
+          VITE_SOCKET_URL: https://mock-api.invalid
+        run: npm run build
+      - name: Run mocked local browser smoke tests
+        env:
+          CI: "true"
+          PLAYWRIGHT_LOCAL_PREVIEW: "true"
+        run: npx playwright test e2e/local-ui.spec.js
+
   server-checks:
     name: Server production checks
     runs-on: ubuntu-latest
