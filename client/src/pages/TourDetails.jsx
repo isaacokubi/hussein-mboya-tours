@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useNavigate } from "react-router-dom";
 import { getTourBySlug } from "../api/tourApi";
@@ -41,6 +42,8 @@ const DetailList = ({ title, items, icon: Icon, emptyText }) => (
 
 export default function TourDetails() {
   const { slug } = useParams();
+  const [currentTime, setCurrentTime] = useState(0);
+  useEffect(() => { setCurrentTime(Date.now()); }, []);
   const { supportPhone, settings = {} } = useSettings() || {};
   const { tenant = {} } = useTenant() || {};
   const navigate = useNavigate();
@@ -103,7 +106,7 @@ export default function TourDetails() {
   const departureOptions = (Array.isArray(tour.availability) ? tour.availability : [])
     .filter((departure) => {
       const date = new Date(departure.date);
-      return !Number.isNaN(date.getTime()) && date.getTime() >= Date.now() &&
+      return currentTime > 0 && !Number.isNaN(date.getTime()) && date.getTime() >= currentTime &&
         Number(departure.totalSlots ?? 0) - Number(departure.bookedSlots ?? 0) > 0;
     })
     .sort((a, b) => new Date(a.date) - new Date(b.date));
