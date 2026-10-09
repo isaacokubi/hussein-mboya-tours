@@ -7,7 +7,7 @@ import { useTenant } from "../context/TenantContext";
 
 const input = "mt-1 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10";
 const field = (label, control) => <label className="text-sm font-semibold text-slate-700">{label}{control}</label>;
-const money = (value, currency = "KES") => `${currency} ${Number(value || 0).toLocaleString("en-KE", { maximumFractionDigits: 2 })}`;
+const money = (value, currency = "KES") => { if (value == null || value === "") return "Price on request"; const amount = Number(value); return Number.isFinite(amount) && amount >= 0 ? `${currency} ${amount.toLocaleString("en-KE", { maximumFractionDigits: 2 })}` : "Price on request"; };
 
 export default function AirportTransfers() {
   const { tenant = {} } = useTenant() || {};
