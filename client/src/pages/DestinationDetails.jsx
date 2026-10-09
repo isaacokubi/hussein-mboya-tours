@@ -44,7 +44,7 @@ const DestinationDetails = () => {
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
-      <SEO title={title} description={description} keywords={Array.isArray(data.seo?.keywords) ? data.seo.keywords.join(", ") : ""} image={heroImage || undefined} />
+      <SEO title={title} description={description} keywords={Array.isArray(data.seo?.keywords) ? data.seo.keywords.join(", ") : ""} image={heroImage || undefined} url={`/destinations/${slug}`} structuredData={{ "@context": "https://schema.org", "@type": "Place", name: data.name, description, image: heroImage ? [heroImage] : undefined, address: [data.city, data.region, data.country].filter(Boolean).join(", ") || undefined }} />
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid gap-7 lg:grid-cols-[1.1fr_.9fr] lg:items-center">
           <div className="overflow-hidden rounded-3xl bg-slate-200 shadow-sm ring-1 ring-slate-200">
