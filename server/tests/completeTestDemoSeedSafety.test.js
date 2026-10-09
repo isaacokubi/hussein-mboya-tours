@@ -46,14 +46,16 @@ test("seed guard refuses remote databases even with a disposable-looking name", 
   configure({ db: "global_tours_test", host: "cluster0.example.mongodb.net" });
   assert.throws(() => safeTarget(), /host must be loopback/);
 });
-test("Atlas demo opt-in is restricted to the configured husseindb database", () => {
+test("Atlas opt-in allows only the dedicated global_tours_test database", () => {
   process.env.ALLOW_ATLAS_DEMO_SEED = "YES";
+  configure({ db: "global_tours_test", host: "cluster0.cdtxzts.mongodb.net" });
+  assert.deepEqual(safeTarget(), { dbName: "global_tours_test", host: "cluster0.cdtxzts.mongodb.net" });
   configure({ db: "husseindb", host: "cluster0.cdtxzts.mongodb.net" });
-  assert.deepEqual(safeTarget(), { dbName: "husseindb", host: "cluster0.cdtxzts.mongodb.net" });
-  configure({ db: "husseindb", host: "other-cluster.mongodb.net" });
+  assert.throws(() => safeTarget(), /not explicitly test\/demo\/disposable/);
+  configure({ db: "global_tours_test", host: "other-cluster.mongodb.net" });
   assert.throws(() => safeTarget(), /host must be loopback/);
   configure({ db: "production", host: "cluster0.example.mongodb.net" });
-  assert.throws(() => safeTarget(), /explicit Atlas demo-seed opt-in/);
+  assert.throws(() => safeTarget(), /explicit Atlas staging-seed opt-in/);
 });
 test("seed guard refuses production-looking host or deployment configuration", () => {
   configure({ db: "production_test" });
