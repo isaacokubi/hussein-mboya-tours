@@ -103,7 +103,7 @@ export function TenantProvider({ children }) {
         console.error("Public tenant branding load failed", error);
         if (mounted) {
           setTenant(DEFAULT_TENANT);
-          document.title = "Hussein Mboya Tours";
+          document.title = "Tours & Travel";
         }
       }
     };
