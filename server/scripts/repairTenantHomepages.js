@@ -53,6 +53,7 @@ const TOUR_IMAGE_PATHS = [
   "/demo-destinations/kenya-landscape-17.svg", "/demo-destinations/kenya-landscape-18.svg",
 ];
 const HERO_IMAGE_PATHS = ["/hero1.jpeg", "/hero2.jpeg", "/hero4.jpeg"];
+const GALLERY_IMAGE_PATHS = ["/gallery/mara.jpg", "/gallery/amboseli.jpg", "/gallery/diani.jpg", "/gallery/beach.jpg", "/gallery/safari.jpg", "/gallery/culture.jpg"];
 
 const slugify = (value) => String(value || "")
   .normalize("NFKD")
@@ -171,7 +172,7 @@ async function main() {
       const collision = allPackages.find((row) => String(row._id) !== String(item.row._id) && row.slug === item.slug);
       if (collision) throw new Error(`Package slug collision: ${item.slug}. No records were changed.`);
     }
-    plans.push({ spec, tenant, scope, destinationRepairs, tourRepairs, packageRepairs, categoryRepairs, slideRepairs, slides, galleryRepairs });
+    plans.push({ spec, tenant, scope, destinationRepairs, tourRepairs, packageRepairs, categoryRepairs, slideRepairs, slides, galleryRepairs, galleries });
   }
 
   const report = [];
@@ -358,12 +359,24 @@ async function main() {
       await db.collection("heroslides").updateOne({ _id: item._id, ...scope }, { $set: slideUpdate });
     }
 
-    for (const item of plan.galleryRepairs) {
-      await db.collection("galleries").updateOne({ _id: item._id, ...scope }, { $set: {
-        title: `${spec.name} Safari Gallery`,
-        category: "Safari",
-        active: true,
+    const allTenantPackages = await db.collection("tourpackages").find(scope).toArray();
+    for (const [index, item] of allTenantPackages.entries()) {
+      await db.collection("tourpackages").updateOne({ _id: item._id, ...scope }, { $set: {
+        coverImage: { url: GALLERY_IMAGE_PATHS[index % GALLERY_IMAGE_PATHS.length], publicId: "" },
+        gallery: [{ url: GALLERY_IMAGE_PATHS[(index + 1) % GALLERY_IMAGE_PATHS.length], publicId: "" }],
       } });
+    }
+
+    for (const [index, item] of plan.galleries.entries()) {
+      const galleryUpdate = {
+        image: { url: GALLERY_IMAGE_PATHS[index % GALLERY_IMAGE_PATHS.length], publicId: "" },
+        active: true,
+      };
+      if (isSynthetic(item) || /^\\s*TEST\\b/i.test(String(item.title || ""))) {
+        galleryUpdate.title = `${spec.name} Safari Gallery ${index + 1}`;
+        galleryUpdate.category = "Safari";
+      }
+      await db.collection("galleries").updateOne({ _id: item._id, ...scope }, { $set: galleryUpdate });
     }
 
     await db.collection("organizations").updateOne({ _id: tenant._id, slug: spec.slug }, { $set: {
@@ -387,7 +400,7 @@ async function main() {
       packagesRepaired: plan.packageRepairs.length,
       categoriesRepaired: plan.categoryRepairs.length,
       slidesRepaired: plan.slides.length,
-      galleriesRepaired: plan.galleryRepairs.length,
+      galleriesRepaired: plan.galleries.length,
       publishedFeaturedDestinations: publishedDestinations,
       publishedFeaturedTours: featuredTours,
       publishedPackages,
