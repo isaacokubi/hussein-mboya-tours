@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { getPublicPackages } from "../../api/publicPackageApi";
 import { Link } from "react-router-dom";
 import { useTenant } from "../../context/TenantContext";
-import { useSettings } from "../../context/SettingsContext";
 import { ArrowRight } from "lucide-react";
 
 const packagePrice = (item) => {
