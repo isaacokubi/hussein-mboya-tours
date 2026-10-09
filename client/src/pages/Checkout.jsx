@@ -58,12 +58,12 @@ export default function Checkout() {
   const [paymentState, setPaymentState] = useState(null);
 
   const { data: bookingResponse, isLoading: bookingLoading } = useQuery({
-    queryKey: ["checkout-booking", id],
+    queryKey: ["checkout-booking", tenantKey, id],
     queryFn: () => getBookingById(id),
     enabled: isBookingCheckout && Boolean(id),
   });
   const { data: tourResponse, isLoading: tourLoading } = useQuery({
-    queryKey: ["checkout-tour", id],
+    queryKey: ["checkout-tour", tenantKey, id],
     queryFn: () => getTourById(id),
     enabled: isTourCheckout && Boolean(id),
   });
@@ -81,7 +81,7 @@ export default function Checkout() {
 
   const customRequestId = typeof booking?.customTourRequest === "string" ? booking.customTourRequest : booking?.customTourRequest?._id || "";
   const { data: customRequestsResponse, isLoading: customRequestLoading } = useQuery({
-    queryKey: ["checkout-custom-request", customRequestId],
+    queryKey: ["checkout-custom-request", tenantKey, customRequestId],
     queryFn: getMyCustomTourRequests,
     enabled: isBookingCheckout && Boolean(customRequestId) && typeof booking?.customTourRequest !== "object",
   });
