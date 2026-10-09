@@ -27,7 +27,7 @@ router.get(
   "/sitemap.xml",
   async (req, res, next) => {
     try {
-      const sitemap = await generateSitemap();
+      const sitemap = await generateSitemap(req);
 
       res
         .status(200)
