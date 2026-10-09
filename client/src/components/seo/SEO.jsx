@@ -1,7 +1,8 @@
 import { useSettings } from "../../context/SettingsContext";
 import { Helmet } from "react-helmet-async";
 
-const SITE_URL = String(import.meta.env.VITE_SITE_URL || (typeof window !== "undefined" ? window.location.origin : "")).replace(/\/$/, "");
+const CONFIGURED_SITE_URL = String(import.meta.env.VITE_SITE_URL || "").replace(/\/$/, "");
+const SITE_ORIGIN = typeof window !== "undefined" ? window.location.origin : CONFIGURED_SITE_URL;
 const DEFAULT_IMAGE = "/images/seo/default-og.jpg";
 
 export default function SEO({
@@ -17,9 +18,14 @@ export default function SEO({
   const siteName = settings.companyName || "Company";
   const resolvedTitle = title || siteName;
   const pageTitle = resolvedTitle === siteName ? siteName : `${resolvedTitle} | ${siteName}`;
-  const pageUrl = `${SITE_URL}${url}`;
+  // Public tenant sites may use different subdomains or custom domains. Canonical URLs
+  // must follow the host currently serving this tenant, not a build-time shared host.
+  const canonicalPath = url || (typeof window !== "undefined" ? window.location.pathname : "/");
+  const pageUrl = /^https?:\/\//i.test(canonicalPath)
+    ? canonicalPath
+    : `${SITE_ORIGIN}${canonicalPath.startsWith("/") ? canonicalPath : `/${canonicalPath}`}`;
   const imageValue = image?.url || image;
-  const pageImage = imageValue?.startsWith("http") ? imageValue : `${SITE_URL}${imageValue}`;
+  const pageImage = imageValue?.startsWith("http") ? imageValue : `${SITE_ORIGIN}${imageValue?.startsWith("/") ? imageValue : `/${imageValue || ""}`}`;
 
   return (
     <Helmet>
