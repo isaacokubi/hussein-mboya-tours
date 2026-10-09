@@ -7,6 +7,7 @@ import { CalendarDays, CheckCircle2, Clock3, MapPin, MessageCircle, ShieldCheck,
 import { useSettings } from "../context/SettingsContext";
 import { useTenant } from "../context/TenantContext";
 import { getTourImage, getTourImages } from "../utils/tourImage";
+import SEO from "../components/seo/SEO";
 
 const formatDate = (value, locale = "en-KE", timeZone = "Africa/Nairobi") => {
   if (!value) return "";
@@ -126,6 +127,28 @@ export default function TourDetails() {
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
+      <SEO
+        title={tour.title}
+        description={tour.shortDescription || tour.description || `Explore ${tour.title} with ${settings?.companyName || tenant?.name || "your travel team"}.`}
+        url={`/tours/${slug}`}
+        image={image}
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "TouristTrip",
+          name: tour.title,
+          description: tour.shortDescription || tour.description || "",
+          image: image ? [image] : undefined,
+          touristType: tour.category || undefined,
+          ...(Number.isFinite(finalPrice) && finalPrice >= 0 ? {
+            offers: {
+              "@type": "Offer",
+              priceCurrency: currency,
+              price: finalPrice,
+              availability: bookingUnavailable ? "https://schema.org/SoldOut" : "https://schema.org/InStock",
+            },
+          } : {}),
+        }}
+      />
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid gap-7 lg:grid-cols-[1.25fr_.75fr] lg:items-start">
           <section className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200">
