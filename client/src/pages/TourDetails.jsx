@@ -130,10 +130,10 @@ export default function TourDetails() {
         <div className="grid gap-7 lg:grid-cols-[1.25fr_.75fr] lg:items-start">
           <section className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200">
             <div className="relative aspect-[16/10] bg-slate-200">
-              <img src={image} alt={tour.title || "Tour experience"} className="h-full w-full object-cover" fetchPriority="high" />
+              <img src={image} alt={tour.title || "Tour experience"} className="h-full w-full object-cover" fetchPriority="high" decoding="async" onError={(event) => { if (event.currentTarget.dataset.fallbackApplied) { event.currentTarget.style.display = "none"; return; } event.currentTarget.dataset.fallbackApplied = "true"; event.currentTarget.src = "/demo-destinations/kenya-landscape-01.svg"; }} />
               {tour.category && <span className="absolute left-4 top-4 rounded-full bg-slate-950/80 px-3 py-1.5 text-sm font-bold text-white">{tour.category}</span>}
             </div>
-            {images.length > 1 && <div className="grid grid-cols-3 gap-2 p-3 sm:grid-cols-4">{images.slice(0, 4).map((src, index) => <img key={src} src={src} alt={`${tour.title || "Tour"} view ${index + 1}`} loading="lazy" className="aspect-[4/3] w-full rounded-xl object-cover" />)}</div>}
+            {images.length > 1 && <div className="grid grid-cols-3 gap-2 p-3 sm:grid-cols-4">{images.slice(0, 4).map((src, index) => <img key={src} src={src} alt={`${tour.title || "Tour"} view ${index + 1}`} loading="lazy" decoding="async" onError={(event) => { if (event.currentTarget.dataset.fallbackApplied) { event.currentTarget.style.display = "none"; return; } event.currentTarget.dataset.fallbackApplied = "true"; event.currentTarget.src = "/demo-destinations/kenya-landscape-01.svg"; }} className="aspect-[4/3] w-full rounded-xl object-cover" />)}</div>}
             <div className="p-5 sm:p-8">
               <p className="flex items-center gap-2 text-sm font-semibold text-emerald-800"><MapPin size={16} aria-hidden="true" />{tour.destination?.name || tour.location || tour.country || "Destination details on request"}</p>
               <h1 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">{tour.title}</h1>
