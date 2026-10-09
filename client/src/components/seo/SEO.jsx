@@ -18,11 +18,11 @@ export default function SEO({
   const { settings = {} } = useSettings() || {};
   const { tenant = {} } = useTenant() || {};
   const siteName = settings.companyName || tenant.name || tenant.companyName || "Travel company";
-  const resolvedDescription = description || settings.metaDescription || tenant.metaDescription ||
+  const resolvedDescription = description || settings.seoDescription || tenant.seoDescription ||
     "Explore published tours, destinations and travel experiences from this travel company.";
-  const resolvedKeywords = keywords || settings.metaKeywords || tenant.metaKeywords ||
-    "Kenya tours, safaris, destinations, travel experiences";
-  const resolvedTitle = title || settings.metaTitle || tenant.metaTitle || siteName;
+  const resolvedKeywords = keywords || (Array.isArray(settings.seoKeywords) ? settings.seoKeywords.join(", ") : settings.seoKeywords) ||
+    tenant.seoKeywords || "Kenya tours, safaris, destinations, travel experiences";
+  const resolvedTitle = title || settings.seoTitle || tenant.seoTitle || siteName;
   const pageTitle = resolvedTitle === siteName ? siteName : `${resolvedTitle} | ${siteName}`;
   // Public tenant sites may use different subdomains or custom domains. Canonical URLs
   // must follow the host currently serving this tenant, not a build-time shared host.
