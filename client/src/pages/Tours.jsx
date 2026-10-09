@@ -62,7 +62,7 @@ export default function Tours() {
           {travelDate && <p className="mt-1 text-sm text-slate-400">Travel date: {travelDate}</p>}
         </div>
 
-        {tours.length === 0 ? <div className="rounded-3xl border border-white/10 bg-white/[0.04] py-24 text-center"><h2 className="text-2xl font-bold">No tours found</h2><p className="mt-2 text-slate-400">Try another destination, activity or tour name.</p></div> : <div className="grid gap-7 md:grid-cols-2 lg:grid-cols-3">{tours.map((tour) => <TourCard key={tour._id} tour={tour} />)}</div>}
+        {tours.length === 0 ? <div className="rounded-3xl border border-white/10 bg-white/[0.04] py-24 text-center"><h2 className="text-2xl font-bold">No tours found</h2><p className="mt-2 text-slate-400">Try another destination, activity, date or traveler count.</p><button type="button" onClick={() => setSearchParams({})} className="mt-5 rounded-xl bg-emerald-400 px-5 py-3 font-bold text-slate-950 hover:bg-emerald-300">Clear all filters</button></div> : <div className="grid gap-7 md:grid-cols-2 lg:grid-cols-3">{tours.map((tour) => <TourCard key={tour._id} tour={tour} />)}</div>}
       </div>
     </main>
   );
