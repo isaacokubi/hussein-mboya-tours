@@ -1,5 +1,7 @@
+import mongoose from "mongoose";
 import JournalEntry from "../models/JournalEntry.js";
 import ChartOfAccount from "../models/ChartOfAccount.js";
+import { requireTenantId } from "../tenancy/context.js";
 
 const buildDateFilter = ({ from, to } = {}) => {
   const entryDate = {};
@@ -14,14 +16,18 @@ const buildDateFilter = ({ from, to } = {}) => {
   return Object.keys(entryDate).length ? { entryDate } : {};
 };
 
-const revenueMatch = ({ from, to } = {}) => ({
+const revenueMatch = ({ from, to } = {}, tenantId) => ({
+  tenantId,
   status: "posted",
   ...buildDateFilter({ from, to }),
 });
 
 export const getPostedRevenueReport = async ({ from, to } = {}) => {
+  // Aggregation pipelines do not cast IDs like Mongoose queries do.
+  // Apply the authenticated tenant to both journals and revenue accounts.
+  const tenantId = new mongoose.Types.ObjectId(String(requireTenantId()));
   const [result] = await JournalEntry.aggregate([
-    { $match: revenueMatch({ from, to }) },
+    { $match: revenueMatch({ from, to }, tenantId) },
     { $unwind: "$lines" },
     {
       $lookup: {
@@ -32,7 +38,7 @@ export const getPostedRevenueReport = async ({ from, to } = {}) => {
       },
     },
     { $unwind: "$account" },
-    { $match: { "account.type": "revenue", "account.active": true } },
+    { $match: { "account.tenantId": tenantId, "account.type": "revenue", "account.active": true } },
     {
       $facet: {
         summary: [
