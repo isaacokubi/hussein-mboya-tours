@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Search, RefreshCw, CheckCircle2, Clock3, XCircle, MessageSquare, Star, Trash2, ShieldCheck } from "lucide-react";
 import { getAdminReviews, approveReview, rejectReview, deleteReview } from "../../api/adminReviewApi";
+import { useTenant } from "../../context/TenantContext";
 
 const statusOf = (r) => r?.approved ? "approved" : r?.rejected ? "rejected" : "pending";
 const dateOf = (v) => v ? new Date(v).toLocaleDateString("en-KE", { day: "2-digit", month: "short", year: "numeric" }) : "—";
@@ -15,11 +16,13 @@ function Badge({ status }) { const [label, cls, Icon] = META[status]; return <sp
 
 export default function AdminReviews() {
   const qc = useQueryClient();
+  const { tenant = {} } = useTenant() || {};
+  const tenantKey = tenant?._id || tenant?.id || tenant?.slug || "public";
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [page, setPage] = useState(1);
   const limit = 10;
-  const { data, isLoading, isError, refetch, isFetching } = useQuery({ queryKey: ["admin-reviews"], queryFn: getAdminReviews });
+  const { data, isLoading, isError, refetch, isFetching } = useQuery({ queryKey: ["admin-reviews", tenantKey], queryFn: getAdminReviews });
   const reviews = Array.isArray(data?.reviews) ? data.reviews : Array.isArray(data) ? data : [];
   const mutation = useMutation({
     mutationFn: ({ action, id }) => action === "approve" ? approveReview(id) : action === "reject" ? rejectReview(id) : deleteReview(id),
