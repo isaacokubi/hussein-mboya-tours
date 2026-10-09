@@ -9,7 +9,7 @@ export default function Destinations() {
   const { settings } = useSettings();
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["destinations"],
+    queryKey: ["destinations", tenant?._id || tenant?.id || tenant?.slug || "public"],
     queryFn: async () => {
       const response = await api.get("/destinations", { params: { page: 1, limit: 100 } });
       const payload = response.data || {};
