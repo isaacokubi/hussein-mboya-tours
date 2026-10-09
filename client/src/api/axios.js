@@ -173,7 +173,7 @@ api.interceptors.request.use(
     }
     const publicTenantSlug = getPublicTenantSlug();
     const publicTenantKey = getPublicTenantKey();
-    const publicLoginRequest = /(?:^|\\/)auth\\/login(?:[/?]|$)/i.test(String(config.url || ""));
+    const publicLoginRequest = /auth\/login(?:[/?]|$)/i.test(String(config.url || ""));
 
     // On the shared Vercel site, the public selector defaults to Hussein Mboya.
     // Do not attach that default tenant to login: the backend resolves the
