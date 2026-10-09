@@ -154,11 +154,13 @@ export function safeTarget(target = databaseTarget()) {
   if (String(process.env.NODE_ENV || "").toLowerCase() === "production") throw new Error("Refusing test seed because NODE_ENV=production.");
   const { dbName, host } = target;
   const normalizedHost = String(host || "").toLowerCase();
+  // The comprehensive seed may target only the dedicated Atlas staging database.
+  // husseindb is the live application database and is intentionally never seedable.
   const explicitAtlasDemoSeed = process.env.ALLOW_ATLAS_DEMO_SEED === "YES"
     && normalizedHost === "cluster0.cdtxzts.mongodb.net"
-    && dbName === "husseindb";
+    && dbName === "global_tours_test";
   if (!new Set(["127.0.0.1", "localhost", "[::1]", "::1"]).has(normalizedHost) && !explicitAtlasDemoSeed) {
-    throw new Error("Refusing test seed: MongoDB host must be loopback unless the explicit Atlas demo-seed opt-in targets husseindb.");
+    throw new Error("Refusing test seed: MongoDB host must be loopback unless the explicit Atlas staging-seed opt-in targets global_tours_test.");
   }
   const configText = [process.env.NODE_ENV, process.env.PLATFORM_HOST, process.env.CLIENT_URL, process.env.CLIENT_ORIGINS, host, dbName].join(" ").toLowerCase();
   if (!explicitAtlasDemoSeed && !/(^|[-_])(test|testing|demo|disposable|seed)([-_]|$)/.test(dbName)) throw new Error(`Refusing seed: configured database name "${dbName || "(default)"}" is not explicitly test/demo/disposable. No writes were made.`);
