@@ -1,10 +1,9 @@
-import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
+import { getTenantContext, mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import { SitemapStream, streamToPromise } from "sitemap";
 
 import Tour from "../models/Tour.js";
 import Destination from "../models/Destination.js";
 import TravelGuide from "../models/TravelGuide.js";
-import { getTenantContext } from "../tenancy/context.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -22,7 +21,7 @@ const normalizedOrigin = (value) => {
   }
 };
 
-const resolveSiteOrigin = (req, tenant) => {
+export const resolveSiteOrigin = (req, tenant) => {
   const configuredDomain = String(tenant?.domain || "").trim().toLowerCase();
   if (configuredDomain) return "https://" + configuredDomain;
 
@@ -45,9 +44,7 @@ const resolveSiteOrigin = (req, tenant) => {
     if (forwardedName === tenantSlug + ".vercel.app") return forwardedOrigin;
   }
 
-  const fallbackOrigin = normalizedOrigin(process.env.CLIENT_URL);
-  if (fallbackOrigin) return fallbackOrigin;
-  throw new Error("Tenant website origin is not configured for sitemap generation.");
+  throw new Error("Tenant website origin is not configured; refusing to publish a shared-domain sitemap.");
 };
 
 export const generateSitemap = async (req) => {
