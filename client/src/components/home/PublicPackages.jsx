@@ -1,3 +1,4 @@
+import LazyImage from "../common/LazyImage";
 import { useQuery } from "@tanstack/react-query";
 import { getPublicPackages } from "../../api/publicPackageApi";
 import { Link } from "react-router-dom";
@@ -27,7 +28,7 @@ export default function PublicPackages() {
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {data.map((item) => (
             <article key={item._id} className="overflow-hidden rounded-2xl border border-white/10 bg-white text-[#17231e] shadow-lg">
-              {item.coverImage?.url && <img src={item.coverImage.url} alt="" className="h-48 w-full object-cover" loading="lazy" />}
+              <div className="h-48 w-full overflow-hidden"><LazyImage src={item.coverImage?.url || item.coverImage} alt={item.title || "Kenya travel package"} className="h-full w-full object-cover" /></div>
               <div className="p-5">
                 <p className="text-xs font-bold uppercase tracking-wide text-[#8a6423]">{item.category} · {item.destination}</p>
                 <h3 className="mt-2 text-xl font-bold">{item.title}</h3>
