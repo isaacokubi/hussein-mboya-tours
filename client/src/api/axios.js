@@ -173,8 +173,17 @@ api.interceptors.request.use(
     }
     const publicTenantSlug = getPublicTenantSlug();
     const publicTenantKey = getPublicTenantKey();
+    const publicLoginRequest = /(?:^|\\/)auth\\/login(?:[/?]|$)/i.test(String(config.url || ""));
 
-    if (tenantId && !publicAuthRequest) {
+    // On the shared Vercel site, the public selector defaults to Hussein Mboya.
+    // Do not attach that default tenant to login: the backend resolves the
+    // submitted email to its unique tenant. Otherwise Amani Trails and Demo
+    // Safari users are queried against Hussein Mboya and get "invalid password".
+    if (publicLoginRequest) {
+      delete config.headers["X-Tenant-ID"];
+      delete config.headers["X-Tenant-Slug"];
+      delete config.headers["X-Tenant-Key"];
+    } else if (tenantId && !publicAuthRequest) {
       config.headers["X-Tenant-ID"] = tenantId;
       delete config.headers["X-Tenant-Slug"];
       delete config.headers["X-Tenant-Key"];
