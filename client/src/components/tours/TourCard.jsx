@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { addWishlist } from "../../api/wishlistApi";
-import { getTourImage, TOUR_FALLBACK_IMAGES } from "../../utils/tourImage";
+import { getTourImage, getTourFallbackImage, TOUR_FALLBACK_IMAGES } from "../../utils/tourImage";
 
 const NO_IMAGE = "/gallery/beach.jpg";
 
@@ -44,7 +44,7 @@ export default function TourCard({ tour }) {
     const failed = new Set(failedImageUrls);
     failed.add(imageSrc);
 
-    const nextImage = TOUR_FALLBACK_IMAGES.find(
+    const nextImage = [getTourFallbackImage(tour), ...TOUR_FALLBACK_IMAGES].find(
       (url) => url && !failed.has(url)
     );
 
