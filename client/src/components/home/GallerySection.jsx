@@ -1,15 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
 import { getFeaturedGallery } from "../../api/galleryApi";
+import { useTenant } from "../../context/TenantContext";
 import LazyImage from "../common/LazyImage";
 
 export default function GallerySection() {
+  const { tenant = {} } = useTenant() || {};
+  const tenantKey = tenant?._id || tenant?.id || tenant?.slug || "public";
   const {
     data: images = [],
     isLoading,
     isError,
     refetch,
   } = useQuery({
-    queryKey: ["gallery", "featured"],
+    queryKey: ["gallery", "featured", tenantKey],
     queryFn: getFeaturedGallery,
     retry: 2,
     staleTime: 60_000,
