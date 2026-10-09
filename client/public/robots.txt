@@ -1,6 +1,3 @@
 User-agent: *
 
 Allow: /
-
-Sitemap:
-https://husseimboyatours.com/sitemap.xml
