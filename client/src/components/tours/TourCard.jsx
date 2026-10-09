@@ -16,7 +16,7 @@ export default function TourCard({ tour }) {
   const [imageSrc, setImageSrc] = useState(() => getTourImage(tour) || TOUR_FALLBACK_IMAGES[0] || NO_IMAGE);
   const [failedImageUrls, setFailedImageUrls] = useState(() => new Set());
 
-  const price = Number(tour.price ?? 0);
+  const price = tour.price == null || tour.price === "" ? Number.NaN : Number(tour.price);
   const calculatedDiscount = Number(tour.discount) > 0 ? price - (price * Number(tour.discount)) / 100 : price;
   const explicitFinalPrice = Number(tour.finalPrice);
   const legacyDiscountPrice = Number(tour.discountPrice);
