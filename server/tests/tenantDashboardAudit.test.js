@@ -18,6 +18,10 @@ test("tenant dashboard audit applies tenantId to each operational metric query",
   assert.match(source, /"account\.tenantId": tenantId/);
 });
 
+test("tenant dashboard audit counts both TEST- and DEMO- synthetic booking references", () => {
+  assert.match(source, /bookingNumber: \/\^\(\?:TEST\|DEMO\)-\/i/);
+});
+
 test("tenant dashboard audit contains no database mutation calls", () => {
   assert.doesNotMatch(source, /\.(?:deleteMany|deleteOne|updateMany|updateOne|findOneAndUpdate|insertMany|bulkWrite)\s*\(/);
   assert.match(source, /No records were inserted, updated, or deleted/);

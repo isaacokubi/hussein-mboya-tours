@@ -510,6 +510,8 @@ async function seedTenant(tenant, tenantIndex) {
 }
 
 export async function main() {
+  // Prevent Booking.post('save') from auto-creating a second payment while this seed writes its explicit ledger records.
+  process.env.DEMO_SEED_MODE = "true";
   if (!process.env.MONGODB_URI) throw new Error("MONGODB_URI is required.");
   await mongoose.connect(process.env.MONGODB_URI, {
     maxPoolSize: 5,
