@@ -1,4 +1,14 @@
 import { useSettings } from "../../context/SettingsContext";
+import { useAuth } from "../../context/AuthContext";
+
+const normalizeRole = (user) => {
+  if (!user) return "";
+  if (typeof user.role === "string") return user.role.toLowerCase().replace(/[\\s-]/g, "_");
+  if (user.role?.name) return String(user.role.name).toLowerCase().replace(/[\\s-]/g, "_");
+  if (Array.isArray(user.roles) && user.roles[0]?.name) return String(user.roles[0].name).toLowerCase().replace(/[\\s-]/g, "_");
+  return "";
+};
+const isSuperAdminUser = (user) => ["super_admin", "superadmin"].includes(normalizeRole(user));
 
 import {NavLink} from "react-router-dom";
 import {
@@ -52,6 +62,9 @@ items:[
 
 export default function SuperAdminSidebar({ open, setOpen }) {
   const { settings = {} } = useSettings() || {};
+  const { user } = useAuth();
+  const isPlatformOwner = isSuperAdminUser(user);
+  const platformName = "Kenya Tours";
 
 
 return (
@@ -93,7 +106,7 @@ md:translate-x-0
 
 
 <h1 className="text-xl font-bold">
-{settings.companyName || "Company"}
+{isPlatformOwner ? platformName : (settings.companyName || "Company")}
 </h1>
 
 
