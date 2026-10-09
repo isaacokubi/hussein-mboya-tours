@@ -1,4 +1,4 @@
-import { getTourImage, TOUR_FALLBACK_IMAGES } from "../../utils/tourImage";
+import { getTourImage, getTourFallbackImage } from "../../utils/tourImage";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { ArrowRight, Clock3, MapPin, Star } from "lucide-react";
@@ -42,7 +42,7 @@ export default function FeaturedTours() {
       ) : (
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {tours.map((tour, index) => {
-            const fallbackImage = TOUR_FALLBACK_IMAGES[index % TOUR_FALLBACK_IMAGES.length];
+            const fallbackImage = getTourFallbackImage(tour);
             const rating = Number(tour?.rating ?? tour?.averageRating ?? 0);
             const reviewCount = Number(tour?.reviewCount ?? tour?.reviewsCount ?? 0);
             return (
