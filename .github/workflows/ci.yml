@@ -152,6 +152,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Inspect dependency audit advisories
+        run: |
+          npm audit --json > /tmp/client-audit.json || true
+          node -e 'const a=require("/tmp/client-audit.json"); console.log(JSON.stringify({metadata:a.metadata?.vulnerabilities, advisories:Object.entries(a.vulnerabilities||{}).map(([name,v])=>({name,severity:v.severity,range:v.range,fixAvailable:v.fixAvailable,via:(v.via||[]).map(item=>typeof item==="string"?item:{name:item.name,title:item.title,url:item.url,range:item.range}))})},null,2))'
+
       - name: ESLint
         run: npm run lint
 
