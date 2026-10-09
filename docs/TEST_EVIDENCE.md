@@ -1,5 +1,71 @@
 # Global Tours — Test Evidence Register
 
+## Weekly QA record — 2026-10-03 through 2026-10-09
+
+This section consolidates test evidence from the previous seven days. It preserves the difference between a completed automated test, a skipped integration test, an observed smoke check, and an external acceptance gate that remains unverified.
+
+### 2026-10-09 — latest local verification (user-executed)
+
+| Check | Actual result | Interpretation |
+|---|---|---|
+| `cd server && npm test` | **234 tests; 229 passed; 0 failed; 5 skipped** | PASS for the executed suite. Skipped integration cases are not passes. |
+| `cd server && npm run check:seeds` | Completed with no syntax-check errors | PASS. |
+| `cd server && npm run seed:financial-dashboard` | Completed for 3 active tenants: 28 bookings, 23 payments, 28 invoices and 15 expenses total | PASS for the controlled demo-fixture reconciliation. This command replaces synthetic transactional/financial demo records; it is not a production seed and must not be run against an unknown or real production database. |
+| `cd server && npm run audit:tenant-dashboards` | `overallStatus: PASS`; `totalIssues: 0` | PASS; read-only audit, no records inserted, updated or deleted by the audit itself. |
+| Tenant dashboard/data reconciliation | Each tenant's booking/payment and invoice/payment totals reconcile; cross-tenant references, journal balance/account ownership, revenue/refund posting checks and seed-state consistency passed | PASS for the records examined by the audit. |
+| GitHub Actions for PR #196 | Server production checks, live tenant-isolation regression, client lint/build, tour lifecycle runtime integration and all three release-gate phases reported successful | PASS for those workflow jobs. A green workflow does not prove provider transactions or every live browser workflow. |
+
+#### Read-only audit snapshot (synthetic demo data)
+
+| Tenant | Tours | Destinations | Bookings | Payments | Gross payment fixtures | Net successful collections | Refunded fixtures | Integrity |
+|---|---:|---:|---:|---:|---:|---:|---:|---|
+| Hussein Mboya Tours (`hussein-mboya`) | 8 | 12 | 9 | 7 | KSh 460,710 | KSh 391,710 | KSh 69,000 | PASS; 0 issues |
+| Amani Trails Safaris (`amani-trails`) | 8 | 12 | 12 | 10 | KSh 854,235 | KSh 771,235 | KSh 83,000 | PASS; 0 issues |
+| Demo Safari Adventures (`demo-safari`) | 8 | 12 | 7 | 6 | KSh 308,700 | KSh 252,700 | KSh 56,000 | PASS; 0 issues |
+| **Total** | **24** | **36** | **28** | **23** | **KSh 1,623,645** | **KSh 1,415,645** | **KSh 208,000** | **PASS; 0 issues** |
+
+These payment and refund amounts are synthetic test data only. They are not real collections, financial advice, receipts, or evidence that M-Pesa processed a live transaction. The read-only audit's zero-issue result is specific to the connected `husseindb` state at the time the command was run.
+
+### 2026-10-09 — catalogue uniqueness and tenant isolation
+
+The catalogue remediation sequence was merged and tested through PRs #187–#196 (see the links and scope in [README](../README.md)). The key regression areas include tenant-scoped dashboard revenue and customer counts, cache clearing and tenant-aware cache keys on login/account switch, catalogue-specific destination/tour copy and pricing, guarded in-place catalogue repair that preserves IDs, cross-tenant ownership/reference checks, and financial integrity reconciliation.
+
+The reported catalogue repair regression tests passed **4/4**. The PR #196 CI report recorded successful server production checks, live tenant-isolation regression, client lint/build, tour lifecycle runtime integration, and three-phase release gate (**3/3 phases passed**). Each tenant's catalogue count is 8 tours and 12 destinations. Content uniqueness is a separate assertion from matching counts; the catalogue-specific regression/repair work is the evidence for that distinction.
+
+### 2026-10-04 — staging/security verification (historical)
+
+The recorded run reported **182 backend tests passed**, seed checks, frontend lint/build, live health/CORS, role-login and customer tenant-isolation/RBAC smoke checks passing. However, the full 28-account staging login/RBAC audit was **not completed** because the documented Render/Vercel endpoints were inaccessible at that time. Treat that result as historical partial smoke evidence, not full live acceptance.
+
+### Remaining / explicitly unverified gates as of 2026-10-09
+
+| Gate | Status | Why it is not marked PASS |
+|---|---|---|
+| Full 37-account API/browser role audit | INCOMPLETE | The API smoke previously stopped on a transient request failure and public browser smoke reported failed requests. A global superadmin browser check passed, but it does not substitute for the full account matrix. |
+| Current deployed frontend/API SHA alignment | NOT VERIFIED | A successful CI run is not evidence that the exact current main SHA is deployed to both Render and Vercel. |
+| Full browser/mobile acceptance across all roles | NOT VERIFIED | Not every customer, admin, finance, tour-manager, agent, guide, driver and superadmin workflow was exercised end-to-end on the current deployment. |
+| Live M-Pesa STK, callback, duplicate callback/idempotency, failed/expired payment and reconciliation | NOT VERIFIED | Tests or readiness checks using mocks/contracts do not prove provider-side delivery or a live transaction. |
+| Live KRA/eTIMS invoice submission and receipt/control-number evidence | PENDING / NOT VERIFIED | Sandbox architecture and source checks are not a KRA acceptance response. Credentials/provider evidence are still required. |
+| Production backup/restore, monitoring and incident recovery | NOT VERIFIED | Requires actual deployment/operations evidence. |
+| Fresh database replica-set first-tenant lifecycle and the five skipped integration cases | ENVIRONMENT-GATED / SKIPPED IN THE LATEST LOCAL RUN | The latest local `npm test` had five skipped tests. Use the dedicated CI MongoDB replica-set job or a separately configured disposable integration database to exercise them. Never point tests at production `husseindb`. |
+| Production certification | NOT COMPLETE | Requires the outstanding deployment/provider evidence above. |
+
+### Repeatable commands for the latest local verification
+
+Run from the repository root, after pulling the intended commit:
+
+```bash
+git pull --ff-only origin main
+cd server
+npm test
+npm run check:seeds
+npm run seed:financial-dashboard
+npm run audit:tenant-dashboards
+```
+
+**Safety note:** `npm run seed:financial-dashboard` changes synthetic transactional/financial demo fixtures; the audit command is read-only. Review the seed script's database guard before running it. Never run the seed against production data or an unknown database. Do not paste passwords, tokens, MongoDB URIs or provider credentials into this evidence file.
+
+---
+
 ## 2026-09-26 — Staging verification record
 
 ### Safety boundary — staging only
