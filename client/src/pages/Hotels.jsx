@@ -7,7 +7,7 @@ import { useTenant } from "../context/TenantContext";
 
 const input = "mt-1 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10";
 const Field = (label, control) => <label className="text-sm font-semibold text-slate-700">{label}{control}</label>;
-const money = (value, currency = "KES") => { if (value == null || value === "") return "Price on request"; const amount = Number(value); return Number.isFinite(amount) && amount >= 0 ? `${currency} ${amount.toLocaleString("en-KE", { maximumFractionDigits: 2 })}` : "Price on request"; };
+const money = (value, currency = "KES") => { if (value == null || value === "") return "Price on request"; const amount = Number(value); return Number.isFinite(amount) && amount > 0 ? `${currency} ${amount.toLocaleString("en-KE", { maximumFractionDigits: 2 })}` : "Price on request"; };
 const niceMeal = value => String(value || "room_only").replaceAll("_", " ").replace(/\b\w/g, x => x.toUpperCase());
 const dateOnly = value => value ? new Date(`${value}T00:00:00`) : null;
 
