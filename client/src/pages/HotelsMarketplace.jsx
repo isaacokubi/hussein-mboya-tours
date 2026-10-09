@@ -3,12 +3,15 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { BedDouble, Building2, CheckCircle2, MapPin, Search, ShieldCheck, Star } from "lucide-react";
 import { getHotels } from "../api/hotelApi";
+import { useTenant } from "../context/TenantContext";
 
 const HOTEL_IMAGES = { "Global Demo Nairobi Hotel": "https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=1200&q=85", "Global Demo Coast Resort": "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=85", "Global Demo Safari Lodge": "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=85" };
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1601918774946-25832a4be0d6?auto=format&fit=crop&w=1200&q=85";
 const money = (value, currency = "KES") => `${currency} ${Number(value || 0).toLocaleString("en-KE", { maximumFractionDigits: 0 })}`;
 export default function HotelsMarketplace() {
-  const { data = [], isLoading, isError } = useQuery({ queryKey: ["public-hotels"], queryFn: getHotels, staleTime: 30000 });
+  const { tenant = {} } = useTenant() || {};
+  const tenantKey = tenant?._id || tenant?.id || tenant?.slug || "public";
+  const { data = [], isLoading, isError } = useQuery({ queryKey: ["public-hotels", tenantKey], queryFn: getHotels, staleTime: 30000 });
   const [search, setSearch] = useState(""); const [city, setCity] = useState("all");
   const cities = useMemo(() => [...new Set(data.map(h => h.city || h.county).filter(Boolean))].sort(), [data]);
   const filtered = useMemo(() => data.filter(h => `${h.name} ${h.location || ""} ${h.city || ""} ${h.county || ""}`.toLowerCase().includes(search.toLowerCase())).filter(h => city === "all" || (h.city || h.county) === city), [data, search, city]);
