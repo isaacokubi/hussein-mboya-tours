@@ -189,17 +189,45 @@ async function main() {
       row,
       name: cleanName(row.name),
     }));
+    const destinationDescriptions = {
+      "Maasai Mara": "The Maasai Mara is famed for big-cat sightings, sweeping savannah and the seasonal Great Migration. Enjoy guided game drives and learn about Maasai culture.",
+      "Amboseli": "Amboseli is known for large elephant herds, open plains and spectacular views of Mount Kilimanjaro on clear days.",
+      "Tsavo East": "Tsavo East offers vast red-earth plains, baobab-dotted landscapes and excellent opportunities to spot elephants and other wildlife.",
+      "Tsavo West": "Tsavo West combines volcanic hills, lava fields, Mzima Springs and varied wildlife habitats in a dramatic landscape.",
+      "Lake Naivasha": "Lake Naivasha is a freshwater Rift Valley lake known for birdlife, boat trips and nearby walking and cycling experiences.",
+      "Lake Nakuru": "Lake Nakuru National Park is celebrated for rhinos, rich birdlife, scenic viewpoints and its setting in the Great Rift Valley.",
+      "Samburu": "Samburu's arid northern landscapes are home to distinctive wildlife species and vibrant Samburu cultural traditions.",
+      "Mount Kenya": "Mount Kenya offers forest walks, highland scenery and trekking routes for different levels of experience and preparation.",
+      "Watamu": "Watamu is a relaxed Indian Ocean destination with white-sand beaches, coral reefs and marine conservation experiences.",
+      "Diani": "Diani is known for its white-sand beach, turquoise Indian Ocean waters, water sports and easy access to coastal excursions.",
+      "Lamu": "Lamu blends Swahili architecture, historic lanes, dhow culture and a distinctive island pace of life.",
+      "Nairobi National Park": "Nairobi National Park offers wildlife viewing across open grassland with the city's skyline in the distance, close to the capital.",
+    };
+    for (const entry of canonicalDestinations) {
+      const description = destinationDescriptions[entry.name];
+      if (!description) continue;
+      await db.collection("destinations").updateOne({ _id: entry.row._id, ...scope }, { $set: {
+        name: entry.name,
+        description,
+        shortDescription: `Discover ${entry.name} with local guides and thoughtfully planned Kenya experiences.`,
+        country: "Kenya",
+        status: "active",
+        active: true,
+        featured: true,
+        isDeleted: false,
+      } });
+    }
     const destinationForTourTitle = (title) => {
       const normalized = String(title || "").toLowerCase();
       let expected;
-      if (/maasai\\s+mara/.test(normalized)) expected = "Maasai Mara";
+      if (/maasai\s+mara/.test(normalized)) expected = "Maasai Mara";
       else if (/amboseli/.test(normalized)) expected = "Amboseli";
-      else if (/tsavo\\s+east/.test(normalized)) expected = "Tsavo East";
-      else if (/tsavo\\s+west/.test(normalized)) expected = "Tsavo West";
+      else if (/tsavo\s+east/.test(normalized)) expected = "Tsavo East";
+      else if (/tsavo\s+west/.test(normalized)) expected = "Tsavo West";
       else if (/nakuru/.test(normalized)) expected = "Lake Nakuru";
       else if (/naivasha/.test(normalized)) expected = "Lake Naivasha";
       else if (/samburu/.test(normalized)) expected = "Samburu";
-      else if (/mount\\s+kenya/.test(normalized)) expected = "Mount Kenya";
+      else if (/mount\s+kenya/.test(normalized)) expected = "Mount Kenya";
       else if (/watamu/.test(normalized)) expected = "Watamu";
       else if (/lamu/.test(normalized)) expected = "Lamu";
       else if (/nairobi/.test(normalized)) expected = "Nairobi National Park";
