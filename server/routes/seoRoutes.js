@@ -26,7 +26,7 @@ router.get("/robots.txt", (req, res, next) => {
   try {
     const { tenant } = getTenantContext();
     const siteOrigin = resolveSiteOrigin(req, tenant);
-    return res.status(200).type("text/plain").send("User-agent: *\\nAllow: /\\nSitemap: " + siteOrigin + "/sitemap.xml\\n");
+    return res.status(200).type("text/plain").send("User-agent: *\nAllow: /\nSitemap: " + siteOrigin + "/sitemap.xml\n");
   } catch (error) {
     return next(error);
   }
