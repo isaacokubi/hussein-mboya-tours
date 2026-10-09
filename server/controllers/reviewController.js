@@ -15,10 +15,44 @@ const updateTourRating = async (tourId) => {
   );
 };
 
+export const listPublicTestimonials = async (req, res, next) => {
+  try {
+    const reviews = await Review.find(mergeTenantFilter({
+      approved: true,
+      verified: true,
+      publicConsent: true,
+      isDeleted: false,
+    }))
+      .select("rating title comment publicConsent verified createdAt user tour")
+      .populate("user", "name")
+      .populate("tour", "title")
+      .sort({ createdAt: -1 })
+      .limit(6)
+      .lean();
+
+    const testimonials = reviews
+      .filter((review) => review.publicConsent === true && review.verified === true)
+      .map((review) => ({
+        _id: review._id,
+        name: review.user?.name || "Traveler",
+        text: review.comment,
+        rating: Number(review.rating || 0),
+        tourTitle: review.tour?.title || "",
+        createdAt: review.createdAt,
+        verified: true,
+        publicConsent: true,
+      }));
+
+    return res.status(200).json({ success: true, count: testimonials.length, testimonials });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export const createReview = async (req, res, next) => {
   requireTenantId();
   try {
-    const { tour: requestedTour, tourId, rating, title, comment } = req.body;
+    const { tour: requestedTour, tourId, rating, title, comment, publicConsent } = req.body;
     const tour = requestedTour || tourId;
     if (!tour || !rating || !comment) return res.status(400).json({ success: false, message: "Tour, rating and comment are required." });
 
@@ -45,6 +79,8 @@ export const createReview = async (req, res, next) => {
       title,
       comment,
       verified: true,
+      publicConsent: publicConsent === true,
+      publicConsentAt: publicConsent === true ? new Date() : null,
       approved: false,
       helpfulVotes: 0,
     });
@@ -55,7 +91,7 @@ export const createReview = async (req, res, next) => {
 export const getTourReviews = async (req, res, next) => {
   requireTenantId();
   try {
-    const reviews = await Review.find(mergeTenantFilter({ tour: req.params.id, approved: true, isDeleted: false }))
+    const reviews = await Review.find(mergeTenantFilter({ tour: req.params.id, approved: true, verified: true, publicConsent: true, isDeleted: false }))
       .populate("user", "name profileImage")
       .sort({ createdAt: -1 });
     return res.status(200).json({ success: true, count: reviews.length, reviews });
