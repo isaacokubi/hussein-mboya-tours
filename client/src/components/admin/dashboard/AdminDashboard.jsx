@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import { getDashboard } from "../../../api/adminApi";
 import { approveAgent, getAgents } from "../../../api/adminAgentApi";
 import { useTenant } from "../../../context/TenantContext";
+import { useAuth } from "../../../context/AuthContext";
 import { useSettings } from "../../../context/SettingsContext";
 import DashboardHeader from "./DashboardHeader";
 import StatsGrid from "./StatsGrid";
@@ -22,8 +23,13 @@ const statusStyles = { pending: "border-amber-200 bg-amber-50 text-amber-800", c
 export default function AdminDashboard() {
   const queryClient = useQueryClient();
   const { tenant } = useTenant() || {};
+  const { user } = useAuth() || {};
   const { settings = {} } = useSettings() || {};
-  const tenantKey = tenant?._id || tenant?.id || tenant?.slug || "current";
+  // Authenticated tenant identity is authoritative. Tenant branding can omit an
+  // ID/slug on the shared Vercel hostname, so relying on it alone collapses
+  // different companies into the same React Query cache key ("current").
+  const authenticatedTenantId = user?.tenantId?._id || user?.tenantId;
+  const tenantKey = authenticatedTenantId || tenant?._id || tenant?.id || user?.tenantSlug || tenant?.slug || "current";
   const currency = String(settings.currencySymbol || settings.currency || "KSh").trim() || "KSh";
   const brandStyle = { "--admin-primary": settings.primaryColor || "#047857", "--admin-secondary": settings.secondaryColor || "#064e3b", "--admin-accent": settings.accentColor || "#10b981" };
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({ queryKey: ["admin-dashboard", tenantKey], queryFn: getDashboard, staleTime: 30_000, refetchInterval: 60_000, refetchIntervalInBackground: false, refetchOnMount: "always", refetchOnWindowFocus: true, retry: 1 });
