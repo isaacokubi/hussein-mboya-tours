@@ -15,7 +15,7 @@ export default function Contact() {
   const paymentToken = searchParams.get("paymentToken");
   const { tenant } = useTenant();
   const { settings } = useSettings();
-  const companyName = settings?.companyName || tenant?.name || "Hussein Mboya Tours";
+  const companyName = settings?.companyName || tenant?.name || "Travel company";
   const businessPhone = String(settings?.supportPhone || tenant?.contactPhone || "").trim();
   const businessEmail = String(settings?.supportEmail || tenant?.contactEmail || "").trim();
   const [form, setForm] = useState({ name: "", email: "", phone: "", message: "" });
