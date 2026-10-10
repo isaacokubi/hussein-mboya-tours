@@ -42,6 +42,17 @@ const formatDate = (value) => {
     ? ""
     : date.toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
 };
+const calculateReturnDate = (tour) => {
+  const startValue = tour?.startDate || tour?.date;
+  const duration = Number(tour?.durationDetails?.days || tour?.durationDays || tour?.duration || 0);
+  if (!startValue || !Number.isInteger(duration) || duration < 1 || duration > 365) return null;
+  // Use the calendar date, not a UTC midnight parse, to avoid timezone date shifts.
+  const startKey = String(startValue).slice(0, 10);
+  const start = new Date(`${startKey}T12:00:00`);
+  if (Number.isNaN(start.getTime())) return null;
+  start.setDate(start.getDate() + duration - 1);
+  return start;
+};
 
 function DetailList({ title, items, included = true }) {
   const values = asList(items).map((item) => typeof item === "string" ? item.trim() : "").filter(Boolean);
@@ -200,7 +211,7 @@ export default function TourDetails() {
     : tour.price));
   const currency = tour.currency || "KES";
   const departureDate = formatDate(tour.startDate || tour.date);
-  const returnDate = formatDate(tour.endDate);
+  const returnDate = formatDate(tour.endDate || calculateReturnDate(tour));
 
   const handleBooking = () => navigate(`/checkout/tour/${tour._id}`);
 
@@ -345,6 +356,13 @@ export default function TourDetails() {
 
       <div className="mx-auto mt-8 grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:px-8">
         <div className="min-w-0 space-y-10">
+          {displayText(tour.description) && displayText(tour.shortDescription) && displayText(tour.description) !== displayText(tour.shortDescription) && (
+            <section aria-labelledby="tour-overview-heading" className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+              <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-emerald-700">The experience</p>
+              <h2 id="tour-overview-heading" className="mt-2 text-2xl font-black tracking-tight text-slate-950">About this tour</h2>
+              <p className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-600">{tour.description}</p>
+            </section>
+          )}
           <section aria-labelledby="itinerary-heading">
             <div className="mb-5">
               <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-emerald-700">Your journey, day by day</p>
