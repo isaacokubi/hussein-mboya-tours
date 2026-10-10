@@ -14,14 +14,20 @@ const cleanName = (value) => {
 };
 
 const bookingCustomerFallback = (booking) => {
+  const customer = booking?.customer || {};
   const snapshot = booking?.customerSnapshot || {};
   const contact = booking?.contact || {};
   const user = booking?.user || {};
-  const name = cleanName(snapshot.name) || cleanName(contact.name) || cleanName(user.name) || [cleanName(snapshot.firstName), cleanName(snapshot.lastName)].filter(Boolean).join(" ");
+  const name = cleanName(customer.name)
+    || [cleanName(customer.firstName), cleanName(customer.lastName)].filter(Boolean).join(" ")
+    || cleanName(snapshot.name)
+    || [cleanName(snapshot.firstName), cleanName(snapshot.lastName)].filter(Boolean).join(" ")
+    || cleanName(contact.name)
+    || cleanName(user.name);
   return {
-    name: name || "Customer",
-    email: cleanName(snapshot.email) || cleanName(contact.email) || cleanName(user.email),
-    phone: cleanName(snapshot.phone) || cleanName(contact.phone) || cleanName(user.phone),
+    name: name || cleanName(customer.email) || cleanName(snapshot.email) || cleanName(contact.email) || cleanName(user.email) || cleanName(customer.phone) || cleanName(snapshot.phone) || cleanName(contact.phone) || cleanName(user.phone) || "Customer",
+    email: cleanName(customer.email) || cleanName(snapshot.email) || cleanName(contact.email) || cleanName(user.email),
+    phone: cleanName(customer.phone) || cleanName(snapshot.phone) || cleanName(contact.phone) || cleanName(user.phone),
     deleted: !booking?.customer && !booking?.user,
   };
 };
@@ -93,7 +99,7 @@ export const getDashboardStats = async (req, res, next) => {
 
     const recentBookings = recentRaw.map((booking) => ({
       ...booking,
-      customer: booking.customer || bookingCustomerFallback(booking),
+      customer: { ...(booking.customer || {}), ...bookingCustomerFallback(booking) },
       tour: bookingTourFallback(booking),
     }));
 
