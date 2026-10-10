@@ -94,6 +94,17 @@ test("catalogue itineraries are tenant-aware, detailed, and match tour duration"
   assert.equal(buildCatalogueItinerary({ tenantSlug: "hussein-mboya", tourTitle: "Long trip", destinationName: "Kenya", durationDays: 15 }).length, 15);
 });
 
+test("Thomson Falls is seeded as a one-day trip while the other mapped tours remain three days", () => {
+  const tenantSpec = TENANTS.find((tenant) => tenant.slug === "demo-safari");
+  const tenant = { _id: "demo-tenant", slug: tenantSpec.slug };
+  const destinations = Array.from({ length: 12 }, (_, i) => ({ _id: `destination-${i}`, createdAt: new Date(i) }));
+  const tours = Array.from({ length: 8 }, (_, i) => ({ _id: `tour-${i}`, createdAt: new Date(i) }));
+  const plan = buildRepairPlan(tenantSpec, tenant, destinations, tours);
+  const thomson = plan.tours.find((item) => item.title === "Thomson Falls Highland Day Trip");
+  assert.equal(thomson.durationDays, 1);
+  assert.equal(plan.tours.filter((item) => item.title !== "Thomson Falls Highland Day Trip").every((item) => item.durationDays === 3), true);
+});
+
 test("slug generation is stable and safe", () => {
   assert.equal(slugify("Mombasa Heritage Quarter"), "mombasa-heritage-quarter");
   assert.equal(isSyntheticSeedRecord({ title: "TEST sample" }), true);
