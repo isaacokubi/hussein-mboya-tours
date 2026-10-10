@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { CalendarDays, CarFront, CheckCircle2, ChevronLeft, CircleAlert, Compass, ImagePlus, MapPin, ShieldCheck, Users, UserRound, X } from "lucide-react";
 
@@ -16,7 +16,8 @@ const inputClass = "mt-2 w-full rounded-xl border border-slate-200 bg-white px-4
 const labelClass = "text-sm font-semibold text-slate-700";
 
 export default function CreateTour() {
-  const navigate = useNavigate(); const queryClient = useQueryClient();
+  const navigate = useNavigate(); const location = useLocation(); const queryClient = useQueryClient();
+  const returnPath = location.state?.returnTo === "/admin/tours" ? "/admin/tours" : "/tour-manager/tours";
   const { settings = {} } = useSettings() || {};
   const companyName = String(settings.companyName || settings.displayName || settings.organizationName || "Global Tours").trim();
   const [form, setForm] = useState(emptyForm); const [imageFiles, setImageFiles] = useState([]); const [imageError, setImageError] = useState("");
@@ -32,7 +33,7 @@ export default function CreateTour() {
   const estimatedTotal = useMemo(() => { const price = Number(form.price) || 0; const discount = Math.min(100, Math.max(0, Number(form.discount) || 0)); return Math.max(0, price * (1 - discount / 100)); }, [form.price, form.discount]);
   const assignmentLoading = guidesLoading || driversLoading || vehiclesLoading; const assignmentError = guidesError || driversError || vehiclesError;
 
-  const { mutate: saveTour, isPending } = useMutation({ mutationFn: createTour, onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["tour-manager-tours"] }); queryClient.invalidateQueries({ queryKey: ["tour-manager-dashboard"] }); queryClient.invalidateQueries({ queryKey: ["tour-assignment-guides"] }); queryClient.invalidateQueries({ queryKey: ["tour-assignment-drivers"] }); queryClient.invalidateQueries({ queryKey: ["tour-assignment-vehicles"] }); toast.success("Tour created successfully."); navigate("/tour-manager/tours"); }, onError: (error) => toast.error(error?.response?.data?.message || "Tour creation failed. No changes were applied.") });
+  const { mutate: saveTour, isPending } = useMutation({ mutationFn: createTour, onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["tour-manager-tours"] }); queryClient.invalidateQueries({ queryKey: ["tour-manager-dashboard"] }); queryClient.invalidateQueries({ queryKey: ["tour-assignment-guides"] }); queryClient.invalidateQueries({ queryKey: ["tour-assignment-drivers"] }); queryClient.invalidateQueries({ queryKey: ["tour-assignment-vehicles"] }); toast.success("Tour created successfully."); navigate(returnPath); }, onError: (error) => toast.error(error?.response?.data?.message || "Tour creation failed. No changes were applied.") });
   const handleChange = (event) => { const { name, value } = event.target; setForm((current) => ({ ...current, [name]: value })); };
   const handleImages = (event) => { const files = Array.from(event.target.files || []); const allowed = ["image/jpeg", "image/png", "image/webp"]; if (files.some((file) => !allowed.includes(file.type))) { setImageError("Only JPG, PNG and WebP images are supported."); setImageFiles([]); event.target.value = ""; return; } if (files.length > 10) setImageError("A maximum of 10 images can be uploaded."); else setImageError(""); setImageFiles(files.slice(0, 10)); };
   const removeImage = (index) => setImageFiles((files) => files.filter((_, itemIndex) => itemIndex !== index));
@@ -75,7 +76,7 @@ export default function CreateTour() {
   };
 
   return <div className="min-h-screen bg-slate-50">
-    <div className="border-b border-emerald-950/20 bg-slate-950 text-white"><div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8"><button type="button" onClick={() => navigate("/tour-manager/tours")} className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-emerald-300 hover:text-white"><ChevronLeft size={18}/> Back to Tours</button><div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end"><div><div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-emerald-300"><Compass size={14}/> Tour Operations</div><h1 className="text-3xl font-black tracking-tight sm:text-4xl">Create New Tour</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">Build a complete tour product with pricing, availability, destination and optional operational resources.</p></div><div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm"><div className="font-bold">{companyName}</div><div className="mt-1 text-xs text-slate-400">Tenant-scoped tour creation • Currency: KES</div></div></div></div></div>
+    <div className="border-b border-emerald-950/20 bg-slate-950 text-white"><div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8"><button type="button" onClick={() => navigate(returnPath)} className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-emerald-300 hover:text-white"><ChevronLeft size={18}/> Back to Tours</button><div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end"><div><div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-emerald-300"><Compass size={14}/> Tour Operations</div><h1 className="text-3xl font-black tracking-tight sm:text-4xl">Create New Tour</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">Build a complete tour product with pricing, availability, destination and optional operational resources.</p></div><div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm"><div className="font-bold">{companyName}</div><div className="mt-1 text-xs text-slate-400">Tenant-scoped tour creation • Currency: KES</div></div></div></div></div>
     <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8"><form onSubmit={submitHandler} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]"><div className="space-y-6">
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7"><div className="mb-6 flex items-start gap-3"><div className="rounded-xl bg-emerald-100 p-2.5 text-emerald-700"><Compass size={20}/></div><div><h2 className="text-xl font-extrabold text-slate-900">Tour details</h2><p className="mt-1 text-sm text-slate-500">Define how the tour will appear to customers and operations staff.</p></div></div><div className="grid gap-5 md:grid-cols-2">
         <div className="md:col-span-2"><label className={labelClass}>Tour title<span className="text-rose-500"> *</span></label><input name="title" value={form.title} onChange={handleChange} placeholder="e.g. Amboseli Wildlife Escape" className={inputClass} maxLength={120} required/></div>
