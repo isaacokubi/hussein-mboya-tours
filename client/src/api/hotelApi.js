@@ -41,7 +41,7 @@ export const hotelQueryScope = () => {
     const user = JSON.parse(window.localStorage.getItem("user") || "null");
     tenant = String(user?.tenantId?._id || user?.tenantId || user?.tenant?._id || user?.organizationId || "").trim();
   } catch {
-    tenant = "";
+    // Public hostname still provides a stable cache scope when storage is unavailable.
   }
   return `${window.location.hostname}:${tenant}`;
 };
