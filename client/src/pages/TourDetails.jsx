@@ -20,6 +20,11 @@ import { useState } from "react";
 
 const asList = (value) => (Array.isArray(value) ? value.filter(Boolean) : []);
 const displayText = (value) => (typeof value === "string" ? value.trim() : "");
+const getLocalDateInputValue = () => {
+  const date = new Date();
+  date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+  return date.toISOString().slice(0, 10);
+};
 const formatDuration = (tour) => {
   const value = tour?.durationDetails?.days || tour?.durationDays || tour?.duration;
   if (value === undefined || value === null || value === "") return "Confirm duration";
@@ -306,7 +311,7 @@ export default function TourDetails() {
                 <input type="email" autoComplete="email" value={whatsAppForm.email} onChange={(event) => setWhatsAppForm((form) => ({ ...form, email: event.target.value }))} className="mt-1.5 w-full rounded-xl border border-slate-300 px-3.5 py-3 font-normal outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" placeholder="you@example.com" />
               </label>
               <label className="block text-sm font-semibold text-slate-700">Preferred travel date *
-                <input required type="date" min={new Date().toLocaleDateString("en-CA")} value={whatsAppForm.travelDate} onChange={(event) => setWhatsAppForm((form) => ({ ...form, travelDate: event.target.value }))} className="mt-1.5 w-full rounded-xl border border-slate-300 px-3.5 py-3 font-normal outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" />
+                <input required type="date" min={getLocalDateInputValue()} value={whatsAppForm.travelDate} onChange={(event) => setWhatsAppForm((form) => ({ ...form, travelDate: event.target.value }))} className="mt-1.5 w-full rounded-xl border border-slate-300 px-3.5 py-3 font-normal outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" />
               </label>
               <label className="block text-sm font-semibold text-slate-700">Adults
                 <input required type="number" min="1" max="50" inputMode="numeric" value={whatsAppForm.adults} onChange={(event) => setWhatsAppForm((form) => ({ ...form, adults: event.target.value }))} className="mt-1.5 w-full rounded-xl border border-slate-300 px-3.5 py-3 font-normal outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" />
@@ -346,7 +351,7 @@ export default function TourDetails() {
               <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 sm:p-6">
                 <h3 className="font-bold text-amber-950">Detailed daily plan to be confirmed</h3>
                 <p className="mt-2 text-sm leading-6 text-amber-900">A day-by-day schedule has not been published for this tour yet. Contact our team before booking to confirm the planned activities, meals, accommodation and timings.</p>
-                {supportPhone && <button onClick={handleWhatsAppBooking} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-amber-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-amber-950"><MessageCircle size={16} /> Ask about the itinerary</button>}
+                {supportPhone && <button type="button" onClick={() => { setWhatsAppFormError(""); setWhatsAppFormOpen(true); }} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-amber-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-amber-950"><MessageCircle size={16} /> Ask about the itinerary</button>}
               </div>
             )}
           </section>
