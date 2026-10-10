@@ -1,4 +1,4 @@
-import { getTourImage } from "../utils/tourImage";
+import { getTourImage, getTourImages } from "../utils/tourImage";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useNavigate } from "react-router-dom";
 import { getTourBySlug } from "../api/tourApi";
@@ -195,6 +195,8 @@ export default function TourDetails() {
   }
 
   const image = getTourImage(tour);
+  const galleryImages = getTourImages(tour);
+  const hasUploadedGallery = [tour.featuredImage, ...(Array.isArray(tour.gallery) ? tour.gallery : []), ...(Array.isArray(tour.images) ? tour.images : [])].filter(Boolean).length > 1;
   const itinerarySource = Array.isArray(tour.itinerary)
     ? tour.itinerary
     : asList(tour.itinerary?.days || tour.itineraryDays);
@@ -265,8 +267,17 @@ export default function TourDetails() {
     <main className="min-h-screen bg-slate-50 pb-16">
       <section className="bg-white">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-7 sm:px-6 sm:py-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-12 lg:px-8">
-          <div className="overflow-hidden rounded-3xl bg-slate-100 shadow-sm">
-            <img src={image} alt={tour.title} className="aspect-[16/10] w-full object-cover" />
+          <div className="space-y-3">
+            <div className="overflow-hidden rounded-3xl bg-slate-100 shadow-sm">
+              <img src={image} alt={tour.title} className="aspect-[16/10] w-full object-cover" />
+            </div>
+            {hasUploadedGallery && galleryImages.length > 1 && (
+              <div className="grid grid-cols-4 gap-2 sm:grid-cols-5" aria-label="Tour photo gallery">
+                {galleryImages.slice(1, 10).map((galleryImage, index) => (
+                  <img key={`${galleryImage}-${index}`} src={galleryImage} alt={`${tour.title} photo ${index + 2}`} loading="lazy" className="aspect-square w-full rounded-xl border border-slate-200 object-cover" />
+                ))}
+              </div>
+            )}
           </div>
           <div className="py-1">
             <div className="flex flex-wrap items-center gap-2">
