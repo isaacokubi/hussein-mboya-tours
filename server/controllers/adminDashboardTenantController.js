@@ -26,13 +26,14 @@ export const getDashboardStats = async (req, res, next) => {
 
     const [users, bookings, tours, destinations, customers, revenueReport, bookingStatus, paymentStatus, pending, confirmed, completed, cancelled, recentBookings, popularTours, admins, staff, guides, drivers, agents, approvedAgents, vehicles, availableVehicles] = await Promise.all([
       User.countDocuments(usersFilter), Booking.countDocuments(bookingsFilter), Tour.countDocuments(toursFilter), Destination.countDocuments(destinationsFilter),
-      User.countDocuments(tenantFilter(req, { ...active, role: "customer" })),
+      User.countDocuments(tenantFilter(req, { ...active, $or: [{ role: "customer" }, { legacyRole: "customer" }] })),
+      
       getPostedRevenueReport(),
       Booking.aggregate([{ $match: bookingsFilter }, { $group: { _id: "$status", count: { $sum: 1 } } }, { $sort: { count: -1 } }]),
       Booking.aggregate([{ $match: bookingsFilter }, { $group: { _id: "$paymentStatus", count: { $sum: 1 } } }]),
       Booking.countDocuments(tenantFilter(req, { ...active, status: "pending" })), Booking.countDocuments(tenantFilter(req, { ...active, status: "confirmed" })),
       Booking.countDocuments(tenantFilter(req, { ...active, status: "completed" })), Booking.countDocuments(tenantFilter(req, { ...active, status: "cancelled" })),
-      Booking.find(bookingsFilter).sort({ createdAt: -1 }).limit(5).populate("customer", "name email phone").populate("tour", "title").lean(),
+      Booking.find(bookingsFilter).sort({ createdAt: -1 }).limit(5).populate("customer", "name firstName lastName email phone").populate("user", "name firstName lastName email phone").populate("tour", "title").populate("customTourRequest", "destination").lean(),
       Booking.aggregate([
         { $match: { ...bookingsFilter, status: { $nin: ["cancelled", "refunded"] }, tour: { $ne: null } } },
         { $group: { _id: "$tour", totalBookings: { $sum: 1 }, paidBookings: { $sum: { $cond: [{ $in: [{ $toLower: { $ifNull: ["$paymentStatus", ""] } }, paidPaymentStatuses] }, 1, 0] } }, bookingValue: { $sum: { $ifNull: ["$totalAmount", 0] } } } },
@@ -51,7 +52,17 @@ export const getDashboardStats = async (req, res, next) => {
       pending: paymentStatus.filter((x) => ["pending", "partial"].includes(String(x._id || "").toLowerCase())).reduce((n, x) => n + x.count, 0),
       failed: paymentStatus.filter((x) => ["failed", "cancelled"].includes(String(x._id || "").toLowerCase())).reduce((n, x) => n + x.count, 0),
     };
-    const normalizedBookings = recentBookings.map((booking) => ({ ...booking, customer: booking.customer || { name: booking.customerSnapshot?.name || "Customer" }, tour: booking.tour || { title: "Unavailable tour" }, amount: Number(booking.totalAmount ?? booking.amount ?? booking.subtotal ?? 0), paymentStatus: booking.paymentStatus || "pending" }));
+    const normalizedBookings = recentBookings.map((booking) => {
+      const customer = booking.customer || {};
+      const user = booking.user || {};
+      const snapshot = booking.customerSnapshot || {};
+      const contact = booking.contact || {};
+      const first = (...values) => values.map((value) => String(value ?? "").trim().replace(/\s+/g, " ")).find((value) => value && !/^(?:undefined(?:\s+undefined)?|null(?:\s+null)?)$/i.test(value)) || "";
+      const customerName = first(customer.name, [customer.firstName, customer.lastName].filter(Boolean).join(" "), snapshot.name, [snapshot.firstName, snapshot.lastName].filter(Boolean).join(" "), contact.name, user.name, customer.email, snapshot.email, contact.email, user.email, customer.phone, snapshot.phone, contact.phone, user.phone) || "Customer record unavailable";
+      const normalizedCustomer = { ...customer, name: customerName, email: first(customer.email, snapshot.email, contact.email, user.email), phone: first(customer.phone, snapshot.phone, contact.phone, user.phone) };
+      const tour = booking.tour || (booking.customTourRequest?.destination ? { title: `Custom tour — ${booking.customTourRequest.destination}`, custom: true } : { title: "Tour record unavailable" });
+      return { ...booking, customer: normalizedCustomer, tour, amount: Number(booking.totalAmount ?? booking.amount ?? booking.subtotal ?? 0), paymentStatus: booking.paymentStatus || "pending" };
+    });
     const monthlyRevenue = revenueReport.monthly;
 
     return res.json({ success: true, data: { users, customers, admins, staff, guides, drivers, agents, approvedAgents, vehicles, availableVehicles, tours, destinations, bookings, revenue: Number(revenueReport.total || 0), recentBookings: normalizedBookings, popularTours, paymentStats: payments, monthlyRevenue: monthlyRevenue.map((x) => ({ month: `${x._id.month}/${x._id.year}`, amount: Number(x.revenue || 0) })), status: bookingStatus, summary: { pendingBookings: pending, confirmedBookings: confirmed, completedBookings: completed, cancelledBookings: cancelled } } });

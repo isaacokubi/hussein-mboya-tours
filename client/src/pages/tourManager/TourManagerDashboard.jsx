@@ -85,7 +85,7 @@ export default function TourManagerDashboard() {
           </div>
           <div className="grid grid-cols-2 border-t border-white/10 sm:grid-cols-4">
             <div className="px-5 py-4"><p className="text-xs text-emerald-100/60">Data scope</p><p className="mt-1 font-semibold">Tenant-scoped</p></div>
-            <div className="px-5 py-4"><p className="text-xs text-emerald-100/60">Revenue basis</p><p className="mt-1 font-semibold">Completed payments</p></div>
+            <div className="px-5 py-4"><p className="text-xs text-emerald-100/60">Revenue basis</p><p className="mt-1 font-semibold">Posted journal entries</p></div>
             <div className="px-5 py-4"><p className="text-xs text-emerald-100/60">Refresh cycle</p><p className="mt-1 font-semibold">Every 60 seconds</p></div>
             <div className="px-5 py-4"><p className="text-xs text-emerald-100/60">Currency</p><p className="mt-1 font-semibold">{currencySymbol}</p></div>
           </div>
@@ -95,7 +95,7 @@ export default function TourManagerDashboard() {
           <StatCard title="Tours" value={totalTours} subtitle="Live tenant tours" icon={<Map size={22} />} color="bg-emerald-700" />
           <StatCard title="Upcoming Tours" value={upcomingCount} subtitle="Scheduled operational tours" icon={<CalendarDays size={22} />} color="bg-sky-700" />
           <StatCard title="Customers" value={totalCustomers} subtitle="Tenant customer accounts" icon={<Users size={22} />} color="bg-violet-700" />
-          <StatCard title="Revenue" value={formatCurrency(revenue, currencySymbol)} subtitle="Completed payments less completed refunds" icon={<Wallet size={22} />} color="bg-amber-600" />
+          <StatCard title="Revenue" value={formatCurrency(revenue, currencySymbol)} subtitle="Posted accounting revenue for this tenant" icon={<Wallet size={22} />} color="bg-amber-600" />
         </div>
 
         <UpcomingTours tours={upcomingTours} />
