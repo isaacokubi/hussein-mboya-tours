@@ -59,31 +59,6 @@ export const getHotel = async (req, res, next) => {
   }
 };
 
-export const getHotel = async (req, res, next) => {
-  try {
-    const tenantId = requireTenant(req, res);
-    if (!tenantId) return;
-    const key = clean(req.params.id);
-    const hotel = await Hotel.findOne({
-      tenantId,
-      status: "active",
-      $or: [
-        { _id: mongoose.isValidObjectId(key) ? key : null },
-        { slug: key.toLowerCase() },
-      ],
-    }).lean();
-    if (!hotel) return res.status(404).json({ success: false, message: "Hotel not found." });
-    const rooms = await HotelRoomType.find({
-      tenantId: hotel.tenantId,
-      hotel: hotel._id,
-      status: "active",
-    }).sort({ nightlyRate: 1 }).lean();
-    return res.json({ success: true, data: { ...hotel, roomTypes: rooms } });
-  } catch (error) {
-    return next(error);
-  }
-};
-
 export const listAdminHotels=async(req,res,next)=>{try{const tenantId=requireTenant(req,res);if(!tenantId)return;const filter={tenantId};if(req.query.status)filter.status=req.query.status;const hotels=await Hotel.find(filter).sort({createdAt:-1}).lean();const data=await Promise.all(hotels.map(async h=>({...h,roomTypes:await HotelRoomType.find({tenantId:h.tenantId,hotel:h._id}).sort({nightlyRate:1}).lean()})));res.json({success:true,data});}catch(e){next(e);}};
 export const createHotel=async(req,res,next)=>{try{const tenantId=requireTenant(req,res);if(!tenantId)return;const name=clean(req.body.name);if(!name)return res.status(400).json({success:false,message:"Hotel name is required."});const baseSlug=slugify(req.body.slug||name)||`hotel-${Date.now()}`;let slug=baseSlug,n=2;while(await Hotel.exists({tenantId,slug}))slug=`${baseSlug}-${n++}`;const hotel=await Hotel.create({...req.body,name,slug,tenantId,createdBy:req.user?._id||null,updatedBy:req.user?._id||null});res.status(201).json({success:true,data:hotel});}catch(e){next(e);}};
 export const updateHotel=async(req,res,next)=>{try{const tenantId=requireTenant(req,res);if(!tenantId)return;const hotel=await Hotel.findOne({_id:req.params.id,tenantId});if(!hotel)return res.status(404).json({success:false,message:"Hotel not found."});const allowed=["name","description","location","address","city","county","country","latitude","longitude","starRating","amenities","images","contactPhone","contactEmail","checkInTime","checkOutTime","cancellationPolicy","status","featured","currency"];for(const key of allowed)if(req.body[key]!==undefined)hotel[key]=req.body[key];const name=clean(hotel.name);if(!name||!clean(hotel.city)||!clean(hotel.location))return res.status(400).json({success:false,message:"Hotel name, city and location are required."});const stars=Number(hotel.starRating);if(!Number.isInteger(stars)||stars<1||stars>5)return res.status(400).json({success:false,message:"Star rating must be an integer from 1 to 5."});if(hotel.contactEmail&&(!/^\S+@\S+\.\S+$/.test(clean(hotel.contactEmail))))return res.status(400).json({success:false,message:"Reservations email is invalid."});if(hotel.latitude!==undefined&&hotel.latitude!==null&&hotel.latitude!==""&&(!Number.isFinite(Number(hotel.latitude))||Number(hotel.latitude)<-90||Number(hotel.latitude)>90))return res.status(400).json({success:false,message:"Latitude must be between -90 and 90."});if(hotel.longitude!==undefined&&hotel.longitude!==null&&hotel.longitude!==""&&(!Number.isFinite(Number(hotel.longitude))||Number(hotel.longitude)<-180||Number(hotel.longitude)>180))return res.status(400).json({success:false,message:"Longitude must be between -180 and 180."});hotel.name=name;hotel.amenities=arrayClean(hotel.amenities,50);hotel.images=arrayClean(hotel.images,30);hotel.status=["draft","active","inactive"].includes(hotel.status)?hotel.status:"draft";hotel.currency=clean(hotel.currency||"KES").toUpperCase();if(req.body.name!==undefined&&clean(req.body.name)!==hotel.name){let baseSlug=slugify(hotel.name)||`hotel-${Date.now()}`,slug=baseSlug,n=2;while(await Hotel.exists({_id:{$ne:hotel._id},tenantId,slug}))slug=`${baseSlug}-${n++}`;hotel.slug=slug;}hotel.updatedBy=req.user?._id||null;await hotel.save();res.json({success:true,message:"Property updated successfully.",data:hotel});}catch(e){if(e?.code===11000)return res.status(409).json({success:false,message:"A property with that name already exists for this tenant."});next(e);}};
