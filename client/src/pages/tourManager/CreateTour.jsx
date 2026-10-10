@@ -54,6 +54,7 @@ export default function CreateTour() {
     let itinerary;
     try { itinerary = JSON.parse(form.itineraryText || "[]"); } catch { return toast.error("Itinerary must be valid JSON. Use the example format shown below."); }
     if (!Array.isArray(itinerary)) return toast.error("Itinerary must be a JSON array of day objects.");
+    itinerary = itinerary.map((day, index) => ({ ...day, day: Number(day?.day ?? day?.dayNumber ?? index + 1) }));
     if (itinerary.length > duration) return toast.error("The itinerary cannot contain more days than the tour duration.");
     if (itinerary.some((day, index) => !day || typeof day !== "object" || !Number.isInteger(Number(day.day ?? day.dayNumber ?? index + 1)) || Number(day.day ?? day.dayNumber ?? index + 1) < 1 || Number(day.day ?? day.dayNumber ?? index + 1) > duration || !String(day.title || day.name || "").trim() || !String(day.description || day.summary || day.overview || "").trim() || (day.activities !== undefined && !Array.isArray(day.activities)) || (day.meals !== undefined && !Array.isArray(day.meals)))) return toast.error("Each itinerary day needs a valid day number, title and description; activities and meals must be lists.");
     const payload = new FormData();
