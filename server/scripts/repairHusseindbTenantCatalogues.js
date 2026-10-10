@@ -129,7 +129,7 @@ export function resolveTourDurationDays(tour) {
 }
 
 export function buildCatalogueItinerary({ tenantSlug, tourTitle, destinationName, destinationDescription, activities = [], durationDays = 3 }) {
-  const days = Math.max(1, Math.min(14, Math.floor(Number(durationDays) || 3)));
+  const days = Math.max(1, Math.min(365, Math.floor(Number(durationDays) || 3)));
   const cleanTitle = String(tourTitle || "Kenya journey").trim();
   const destination = String(destinationName || "the destination").trim();
   const activityList = activities.filter((value) => typeof value === "string" && value.trim());
