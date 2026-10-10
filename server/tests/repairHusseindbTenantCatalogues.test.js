@@ -91,6 +91,7 @@ test("catalogue itineraries are tenant-aware, detailed, and match tour duration"
   assert.equal(oneDay.length, 1);
   assert.match(oneDay[0].title, /Mombasa Heritage Quarter/);
   assert.equal(buildCatalogueItinerary({ tenantSlug: "hussein-mboya", tourTitle: "Short trip", destinationName: "Nairobi", durationDays: 0 }).length, 3);
+  assert.equal(buildCatalogueItinerary({ tenantSlug: "hussein-mboya", tourTitle: "Long trip", destinationName: "Kenya", durationDays: 15 }).length, 15);
 });
 
 test("slug generation is stable and safe", () => {
