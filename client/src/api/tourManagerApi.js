@@ -100,3 +100,18 @@ export const deleteManagerTour = deleteTour;
 export const getManagerTours = getTours;
 export const createManagerTour = createTour;
 export const updateManagerTour = updateTour;
+
+export const getCalendarReminders = async (params = {}) => {
+  const { data } = await api.get("/tourmanager/calendar/reminders", { params });
+  return data;
+};
+
+export const createCalendarReminder = async (reminder) => {
+  const { data } = await api.post("/tourmanager/calendar/reminders", reminder);
+  return data;
+};
+
+export const deleteCalendarReminder = async (id) => {
+  const { data } = await api.delete(`/tourmanager/calendar/reminders/${id}`);
+  return data;
+};
