@@ -1,5 +1,11 @@
 # Global Tours — Production Readiness
 
+## Latest targeted first-tenant evidence — 2026-10-10
+
+The dedicated test `cd server && node --env-file=.env --test tests/firstTenantAcceptance.integration.test.js` passed **1/1, 0 failures, 0 skips** in about 111.5 seconds against an isolated disposable test database. It covers tenant provisioning, tenant-admin/customer access, catalogue and booking behavior, tenant-scoped access and cross-tenant denial. Tenant A credentials against Tenant B login correctly return 401; a Tenant A JWT selecting Tenant B on `/api/auth/me` correctly returns 404.
+
+This result supersedes older statements that this specific acceptance test had not yet run, but does not supersede the dated full-suite counts elsewhere in this document. It does not establish live production readiness: deployed SHA, M-Pesa callback/replay/failure, eTIMS submission, email, browser/mobile acceptance, and backup/restore evidence remain required.
+
 ## Previous automated readiness snapshot — 2026-09-27
 
 **Source commit for that snapshot:** `0b7949865e67a4fa5dd45076a120f9d7f69f1e39` on `main`.
