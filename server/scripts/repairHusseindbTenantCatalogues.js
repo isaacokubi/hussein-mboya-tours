@@ -117,6 +117,17 @@ function stableRecords(records, label, tenantSlug, minCount = 8) {
   return sorted;
 }
 
+export function resolveTourDurationDays(tour) {
+  const candidates = [
+    tour?.durationDetails?.days,
+    tour?.durationDays,
+    Number.parseInt(String(tour?.duration || ""), 10),
+  ].map(Number).filter((days) => Number.isInteger(days) && days >= 1 && days <= 365);
+  // Older records sometimes retain schema defaults of one day while the
+  // explicitly entered duration string still contains the real trip length.
+  return candidates.find((days) => days > 1) || candidates[0] || 3;
+}
+
 export function buildCatalogueItinerary({ tenantSlug, tourTitle, destinationName, destinationDescription, activities = [], durationDays = 3 }) {
   const days = Math.max(1, Math.min(14, Math.floor(Number(durationDays) || 3)));
   const cleanTitle = String(tourTitle || "Kenya journey").trim();
@@ -278,7 +289,7 @@ async function main() {
           destinationName,
           destinationDescription: destination.spec[1],
           activities: destination.spec[2],
-          durationDays: item.row.durationDays || item.row.durationDetails?.days || item.row.duration || 3,
+          durationDays: resolveTourDurationDays(item.row),
         }),
         published: true,
         available: true,
