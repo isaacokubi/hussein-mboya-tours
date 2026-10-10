@@ -2,6 +2,12 @@
 
 Kenya-focused, multi-tenant tours & travel SaaS for tour operators, with tenant isolation, bookings, payments, finance/accounting, compliance, hospitality/operations, website integrations, RBAC and production safeguards.
 
+## Latest targeted first-tenant acceptance — 2026-10-10
+
+**PASS — 1 test passed, 0 failed, 0 skipped** using `cd server && node --env-file=.env --test tests/firstTenantAcceptance.integration.test.js` (about 111.5 seconds). The flow covered disposable tenant provisioning, tenant-admin/customer access, public catalogue and booking paths, tenant-scoped data, and cross-tenant denial. The login regression now correctly asserts that Tenant A credentials are rejected by Tenant B's login with HTTP 401; the separate authenticated `/api/auth/me` test verifies a Tenant A JWT cannot select Tenant B and expects HTTP 404. The test diagnostic confirms no provider payment was initiated.
+
+This is targeted disposable-database acceptance evidence, not a full-suite rerun or live production certification. M-Pesa callback/replay/failure, KRA/eTIMS submissions, current deployed SHA, browser/mobile acceptance, and backup/restore remain external verification gates.
+
 ## Latest verified repository status — 2026-10-09
 
 The comprehensive three-tenant demo dataset was reconciled on 2026-10-09. Source-level and live checks below were run for this revision; full demo API and browser acceptance still have the limitations noted below. Production/provider certification remains a separate deployment-evidence gate.
@@ -57,7 +63,7 @@ See the [Staging Test Record](docs/TEST_EVIDENCE.md#2026-09-26--staging-verifica
 
 ## Current status
 
-**First-tenant decision: SOURCE AND AUTOMATED ACCEPTANCE VERIFIED; LIVE PROVIDER/DEPLOYMENT EVIDENCE STILL REQUIRED.** The acceptance test covers the platform-owner, tenant-admin, customer, catalogue, booking and isolation lifecycle, but its MongoDB-backed flow has not run. This machine has MongoDB 3.6.8 and no Docker runtime; the test requires a disposable replica set. A read-only probe on 2026-09-25 observed HTTP 200 for the Render root and `/api/health` (both JSON content type), and HTTP 200 HTML for Vercel. The health response body, CORS behavior and deployed commit were not captured; a follow-up probe failed DNS resolution. Atlas, payment, eTIMS, backup/restore and current-deployment evidence remains outstanding.
+**First-tenant decision: TARGETED DATABASE-BACKED ACCEPTANCE PASSED ON 2026-10-10; LIVE PROVIDER/DEPLOYMENT EVIDENCE STILL REQUIRED.** The dedicated disposable-database flow passed 1/1 with no failures. The older 2026-09-25 endpoint probe and its missing health-body/CORS/deployed-SHA evidence are historical and do not describe this acceptance run. Atlas production state, payment-provider callbacks, eTIMS, backup/restore, current deployment SHA, and complete browser/mobile acceptance remain outstanding.
 
 See [First Tenant Production Acceptance](docs/FIRST_TENANT_ACCEPTANCE.md) for the production environment matrix, onboarding procedure and external actions.
 
@@ -85,7 +91,7 @@ The latest full local verification was completed after the production-audit reme
 
 The five skipped cases were:
 
-- first-tenant provisioning and cross-tenant API acceptance;
+- first-tenant provisioning and cross-tenant API acceptance (skipped in the 2026-10-09 full-suite run; subsequently passed as a dedicated targeted test on 2026-10-10);
 - database-connected startup and invoice-index readiness;
 - airport-transfer payment completion atomic lifecycle;
 - tour lifecycle transactional capacity reservation/release;
