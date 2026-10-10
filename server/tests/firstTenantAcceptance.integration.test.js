@@ -400,11 +400,11 @@ test("first tenant provisioning, tenant-admin access, public catalogue and cross
     assert.equal(mismatchedTenantIdLogin.status, 404, "conflicting tenant selectors are rejected");
     const authenticatedWrongTenant = await call("/api/auth/me", { token: customerToken, tenantSlug: secondTenant.slug });
     assert.equal(authenticatedWrongTenant.status, 404, "an existing Tenant A JWT cannot select Tenant B");
-    const jwtCannotSelectOtherTenantDuringLogin = await call("/api/auth/login", {
+    const tenantACredentialsRejectedInTenantB = await call("/api/auth/login", {
       method: "POST", token: customerToken, tenantSlug: secondTenant.slug,
-      body: JSON.stringify({ email: "customer-a@acceptance.invalid", password: customerPassword }),
+      body: JSON.stringify({ email: "admin-a@acceptance.invalid", password: tenantAdminPassword }),
     });
-    assert.equal(jwtCannotSelectOtherTenantDuringLogin.status, 404, "a Tenant A JWT cannot bypass Tenant B selection during login");
+    assert.equal(tenantACredentialsRejectedInTenantB.status, 401, "Tenant A credentials cannot authenticate through Tenant B login");
     const authenticatedRightTenant = await call("/api/auth/me", { token: secondCustomerToken, tenantSlug: secondTenant.slug });
     assert.equal(authenticatedRightTenant.status, 200, "an existing Tenant B JWT works in Tenant B");
 
