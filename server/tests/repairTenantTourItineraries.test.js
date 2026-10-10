@@ -33,6 +33,7 @@ test("explicit Thomson Falls day-trip override changes only that tour", () => {
   assert.equal(itinerary[0].day, 1);
   assert.match(itinerary[0].title, /Day Trip/);
   assert.match(itinerary[0].description, /returning the same day/i);
+  assert.deepEqual(itinerary[0].activities, destination.activities);
   assert.equal(getEffectiveTourDuration({ title: "Mara Big Five Expedition", durationDays: 3 }), 3);
 });
 
