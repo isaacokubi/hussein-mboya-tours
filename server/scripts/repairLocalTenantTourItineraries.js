@@ -92,7 +92,7 @@ async function main() {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch((error) => {
-    console.error(`Local tour itinerary repair failed: ${String(error.message || error).replace(/mongodb(?:\\+srv)?:\\/\\/[^\\s]+/gi, "[MongoDB URI redacted]")}`);
+    console.error("Local tour itinerary repair failed: " + String(error.message || error).replace(/mongodb\S*/gi, "[MongoDB URI redacted]"));
     process.exitCode = 1;
   }).finally(() => mongoose.disconnect().catch(() => {}));
 }
