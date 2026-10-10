@@ -5,6 +5,7 @@ import {
   assertSafeTarget,
   buildRepairPlan,
   buildCatalogueItinerary,
+  resolveTourDurationDays,
   isSyntheticSeedRecord,
   slugify
 } from "../scripts/repairHusseindbTenantCatalogues.js";
@@ -61,6 +62,10 @@ test("repair plan remaps disposable tenant catalogue records and preserves recor
 });
 
 test("catalogue itineraries are tenant-aware, detailed, and match tour duration", () => {
+  assert.equal(resolveTourDurationDays({ duration: "3", durationDays: 1, durationDetails: { days: 1 } }), 3);
+  assert.equal(resolveTourDurationDays({ duration: "1", durationDays: 1, durationDetails: { days: 1 } }), 1);
+  assert.equal(resolveTourDurationDays({ duration: "12 days", durationDays: 1, durationDetails: { days: 1 } }), 12);
+
   const threeDay = buildCatalogueItinerary({
     tenantSlug: "amani-trails",
     tourTitle: "Mara Great Migration Signature",
