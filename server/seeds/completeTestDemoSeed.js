@@ -444,8 +444,8 @@ async function createUsers(tenant, roleMap, prefix, ti, platform = false, platfo
 }
 
 function buildSeedTourItinerary({ title, destination, tenantPrefix, county }) {
-  const destinationName = String(destination?.name || county || "Kenya").replace(/^TEST\\s+/i, "");
-  const tourName = String(title || "Kenya experience").replace(/^TEST\\s+/i, "");
+  const destinationName = String(destination?.name || county || "Kenya").replace(/^TEST\s+/i, "");
+  const tourName = String(title || "Kenya experience").replace(/^TEST\s+/i, "");
   const plans = {
     hussein: [
       { title: "Arrival, welcome and safari briefing", description: `Meet the local team for the ${tourName}. Review the route, safety guidance and the day's arrangements before travelling toward ${destinationName}.`, activities: ["Pickup or meeting-point coordination", "Route and safety briefing", "Scenic transfer toward the destination"], meals: ["Lunch", "Dinner"] },
