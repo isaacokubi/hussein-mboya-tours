@@ -1,4 +1,4 @@
-import { getTourImage } from "../utils/tourImage";
+import { getTourImage, getTourImages } from "../utils/tourImage";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useNavigate } from "react-router-dom";
 import { getTourBySlug } from "../api/tourApi";
@@ -41,6 +41,17 @@ const formatDate = (value) => {
   return Number.isNaN(date.getTime())
     ? ""
     : date.toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
+};
+const calculateReturnDate = (tour) => {
+  const startValue = tour?.startDate || tour?.date;
+  const duration = Number(tour?.durationDetails?.days || tour?.durationDays || tour?.duration || 0);
+  if (!startValue || !Number.isInteger(duration) || duration < 1 || duration > 365) return null;
+  // Use the calendar date, not a UTC midnight parse, to avoid timezone date shifts.
+  const startKey = String(startValue).slice(0, 10);
+  const start = new Date(`${startKey}T12:00:00`);
+  if (Number.isNaN(start.getTime())) return null;
+  start.setDate(start.getDate() + duration - 1);
+  return start;
 };
 
 function DetailList({ title, items, included = true }) {
@@ -184,6 +195,8 @@ export default function TourDetails() {
   }
 
   const image = getTourImage(tour);
+  const galleryImages = getTourImages(tour);
+  const hasUploadedGallery = [tour.featuredImage, ...(Array.isArray(tour.gallery) ? tour.gallery : []), ...(Array.isArray(tour.images) ? tour.images : [])].filter(Boolean).length > 1;
   const itinerarySource = Array.isArray(tour.itinerary)
     ? tour.itinerary
     : asList(tour.itinerary?.days || tour.itineraryDays);
@@ -200,7 +213,7 @@ export default function TourDetails() {
     : tour.price));
   const currency = tour.currency || "KES";
   const departureDate = formatDate(tour.startDate || tour.date);
-  const returnDate = formatDate(tour.endDate);
+  const returnDate = formatDate(tour.endDate || calculateReturnDate(tour));
 
   const handleBooking = () => navigate(`/checkout/tour/${tour._id}`);
 
@@ -254,8 +267,17 @@ export default function TourDetails() {
     <main className="min-h-screen bg-slate-50 pb-16">
       <section className="bg-white">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-7 sm:px-6 sm:py-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-12 lg:px-8">
-          <div className="overflow-hidden rounded-3xl bg-slate-100 shadow-sm">
-            <img src={image} alt={tour.title} className="aspect-[16/10] w-full object-cover" />
+          <div className="space-y-3">
+            <div className="overflow-hidden rounded-3xl bg-slate-100 shadow-sm">
+              <img src={image} alt={tour.title} className="aspect-[16/10] w-full object-cover" />
+            </div>
+            {hasUploadedGallery && galleryImages.length > 1 && (
+              <div className="grid grid-cols-4 gap-2 sm:grid-cols-5" aria-label="Tour photo gallery">
+                {galleryImages.slice(1, 10).map((galleryImage, index) => (
+                  <img key={`${galleryImage}-${index}`} src={galleryImage} alt={`${tour.title} photo ${index + 2}`} loading="lazy" className="aspect-square w-full rounded-xl border border-slate-200 object-cover" />
+                ))}
+              </div>
+            )}
           </div>
           <div className="py-1">
             <div className="flex flex-wrap items-center gap-2">
@@ -345,6 +367,13 @@ export default function TourDetails() {
 
       <div className="mx-auto mt-8 grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:px-8">
         <div className="min-w-0 space-y-10">
+          {displayText(tour.description) && displayText(tour.shortDescription) && displayText(tour.description) !== displayText(tour.shortDescription) && (
+            <section aria-labelledby="tour-overview-heading" className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+              <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-emerald-700">The experience</p>
+              <h2 id="tour-overview-heading" className="mt-2 text-2xl font-black tracking-tight text-slate-950">About this tour</h2>
+              <p className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-600">{tour.description}</p>
+            </section>
+          )}
           <section aria-labelledby="itinerary-heading">
             <div className="mb-5">
               <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-emerald-700">Your journey, day by day</p>
