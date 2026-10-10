@@ -128,6 +128,7 @@ export function buildRepairPlan(tenantSpec, tenant, destinations, tours) {
     tours: sortedTours.map((row, index) => ({
       row,
       title: tenantSpec.tours[index],
+      durationDays: tenantSpec.tours[index] === "Thomson Falls Highland Day Trip" ? 1 : 3,
       destinationIndex: index % sortedDestinations.length,
       price: tenantSpec.priceBase + index * 3500,
       agentPrice: tenantSpec.priceBase + index * 3000,
@@ -227,11 +228,16 @@ async function main() {
         discount: 0,
         discountPrice: null,
         highlights: [`Explore ${destinationName}`, ...destination.spec[2]],
-        itinerary: [
-          { day: 1, title: `Arrive at ${destinationName}`, description: `Meet your local team and start exploring ${destinationName}.`, activities: destination.spec[2].slice(0, 2), meals: ["Breakfast"] },
-          { day: 2, title: `Discover ${destinationName}`, description: destination.spec[1], activities: destination.spec[2], meals: ["Breakfast", "Lunch"] },
-          { day: 3, title: "Return journey", description: "Enjoy a final activity before the return transfer.", activities: ["Morning activity", "Return transfer"], meals: ["Breakfast"] }
-        ],
+        duration: String(item.durationDays),
+        durationDays: item.durationDays,
+        durationDetails: { days: item.durationDays, nights: Math.max(0, item.durationDays - 1) },
+        itinerary: Array.from({ length: item.durationDays }, (_, dayIndex) => ({
+          day: dayIndex + 1,
+          title: item.durationDays === 1 ? `Explore ${destinationName} — Day Trip` : dayIndex === 0 ? `Arrive at ${destinationName}` : dayIndex === item.durationDays - 1 ? "Return journey" : `Discover ${destinationName}`,
+          description: item.durationDays === 1 ? `Enjoy a guided day trip to ${destinationName}, including ${destination.spec[2].join(", ").toLowerCase()}, before returning the same day. ${destination.spec[1]}` : dayIndex === 0 ? `Meet your local team and start exploring ${destinationName}.` : dayIndex === item.durationDays - 1 ? "Enjoy a final activity before the return transfer." : destination.spec[1],
+          activities: item.durationDays === 1 ? destination.spec[2] : dayIndex === 0 ? destination.spec[2].slice(0, 2) : dayIndex === item.durationDays - 1 ? ["Morning activity", "Return transfer"] : destination.spec[2],
+          meals: dayIndex === 0 || dayIndex === item.durationDays - 1 ? ["Breakfast"] : ["Breakfast", "Lunch"]
+        })),
         published: true,
         available: true,
         isDeleted: false

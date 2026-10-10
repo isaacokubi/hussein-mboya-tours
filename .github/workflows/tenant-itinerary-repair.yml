@@ -1,0 +1,38 @@
+name: Tenant itinerary repair regression
+
+on:
+  pull_request:
+    paths:
+      - "server/scripts/repairTenantTourItineraries.js"
+      - "server/scripts/repairHusseindbTenantCatalogues.js"
+      - "server/tests/repairTenantTourItineraries.test.js"
+      - "server/tests/repairHusseindbTenantCatalogues.test.js"
+      - ".github/workflows/tenant-itinerary-repair.yml"
+  push:
+    branches: [main]
+    paths:
+      - "server/scripts/repairTenantTourItineraries.js"
+      - "server/scripts/repairHusseindbTenantCatalogues.js"
+      - "server/tests/repairTenantTourItineraries.test.js"
+      - "server/tests/repairHusseindbTenantCatalogues.test.js"
+      - ".github/workflows/tenant-itinerary-repair.yml"
+
+jobs:
+  itinerary-regression:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - run: npm ci
+      - run: node --check scripts/repairTenantTourItineraries.js
+      - run: node --check scripts/repairHusseindbTenantCatalogues.js
+      - run: node --check tests/repairTenantTourItineraries.test.js
+      - run: node --check tests/repairHusseindbTenantCatalogues.test.js
+      - run: node --test tests/repairTenantTourItineraries.test.js tests/repairHusseindbTenantCatalogues.test.js
