@@ -1,6 +1,14 @@
 # First Tenant Production Acceptance
 
-## Acceptance evidence snapshot — 2026-09-27
+## Latest acceptance evidence — 2026-10-10
+
+**Targeted database-backed acceptance: PASS (1 passed, 0 failed, 0 skipped; about 111.5 seconds).** Executed with `cd server && node --env-file=.env --test tests/firstTenantAcceptance.integration.test.js`. The test exercised disposable first/second tenant provisioning, tenant-admin and customer access, public catalogue and booking paths, tenant-scoped records, and cross-tenant denial. No payment provider transaction was initiated.
+
+The corrected auth regression distinguishes two cases: Tenant A credentials submitted against Tenant B login are rejected with HTTP 401; a Tenant A JWT presented to `/api/auth/me` while selecting Tenant B is rejected with HTTP 404. Both assertions passed. This updates the prior unrun/skipped status for this specific targeted test only; it does not mean the entire backend suite was rerun.
+
+**Still not certified:** live deployment SHA, production M-Pesa callback/replay/failure, KRA/eTIMS submissions, email delivery, browser/mobile acceptance, and production backup/restore. Keep production `husseindb` out of integration tests.
+
+## Historical acceptance evidence snapshot — 2026-09-27
 
 **Prior source commit:** `0b7949865e67a4fa5dd45076a120f9d7f69f1e39` on `main`.
 
@@ -27,7 +35,7 @@ The controlled reset/seed script is `server/scripts/reset-and-seed-demo.js`. It 
 
 ## Current decision
 
-**NOT READY.** The expanded end-to-end acceptance test is present and wired into the MongoDB 8 replica-set CI job, but this worktree's database-backed test has not run and no CI result for this candidate was obtained. On 2026-09-25, a read-only probe returned HTTP 200 for the Render root and `/api/health` (JSON content type) and HTTP 200 HTML for Vercel. The health body, CORS behavior and live API version were not established; a repeat probe failed DNS resolution. Complete the database-backed test and required external evidence before onboarding a real tenant.
+**NOT READY FOR PRODUCTION LAUNCH.** The targeted database-backed acceptance test passed on 2026-10-10 as recorded above. The live deployment/provider certification gates below remain outstanding; this statement is retained as a historical readiness boundary, not a claim that the test is still unrun. On 2026-09-25, a read-only probe returned HTTP 200 for the Render root and `/api/health` (JSON content type) and HTTP 200 HTML for Vercel. The health body, CORS behavior and live API version were not established; a repeat probe failed DNS resolution. Complete the database-backed test and required external evidence before onboarding a real tenant.
 
 ## Environment contract
 
