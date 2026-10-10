@@ -5,7 +5,9 @@ import HotelBooking from "../models/HotelBooking.js";
 import Customer from "../models/Customer.js";
 const tenantIdOf=(req)=>req.tenantId||req.user?.tenantId; const clean=(v)=>String(v??"").trim(); const slugify=(v)=>clean(v).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,170); const ref=()=>`HTL-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2,7).toUpperCase()}`; const daysBetween=(a,b)=>Math.ceil((new Date(b)-new Date(a))/86400000); const staffRoles=new Set(["admin","manager","tour_manager","tourmanager","agent"]); const roleOf=(req)=>String(req.user?.role||"").trim().toLowerCase().replace(/[\s-]+/g,"_");
 const requireTenant=(req,res)=>{const tenantId=tenantIdOf(req);if(!tenantId||!mongoose.isValidObjectId(tenantId)){res.status(400).json({success:false,message:"A valid company/tenant context is required."});return null;}return tenantId;};
-const escapeRegex = (value) => String(value ?? "").replace(/[.*+?^${}()|[\]\\]/g, "\\const arrayClean=(value,max=50)=>");
+const regexSpecialChars = new Set([".", "*", "+", "?", "^", "$", "{", "}", "(", ")", "|", "[", "]", "\\"]);
+const escapeRegex = (value) => Array.from(String(value ?? ""), (char) => regexSpecialChars.has(char) ? "\\" + char : char).join("");
+const arrayClean=(value,max=50)=>");
 const arrayClean=(value,max=50)=>Array.isArray(value)?value.map(clean).filter(Boolean).slice(0,max):clean(value)?[clean(value)]:[];
 const normalizeRoomPayload=(body={})=>({name:clean(body.name),description:clean(body.description),maxAdults:Number(body.maxAdults??2),maxChildren:Number(body.maxChildren??1),beds:arrayClean(body.beds,20),amenities:arrayClean(body.amenities,50),totalRooms:Number(body.totalRooms),availableRooms:body.availableRooms===undefined?Number(body.totalRooms):Number(body.availableRooms),nightlyRate:Number(body.nightlyRate),mealPlans:arrayClean(body.mealPlans,10),currency:clean(body.currency||"KES").toUpperCase(),status:["active","inactive"].includes(body.status)?body.status:"active"});
 export const listHotels = async (req, res, next) => {
