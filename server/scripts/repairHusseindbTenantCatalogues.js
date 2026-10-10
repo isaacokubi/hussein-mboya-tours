@@ -117,6 +117,51 @@ function stableRecords(records, label, tenantSlug, minCount = 8) {
   return sorted;
 }
 
+export function buildCatalogueItinerary({ tenantSlug, tourTitle, destinationName, destinationDescription, activities = [], durationDays = 3 }) {
+  const days = Math.max(1, Math.min(14, Math.floor(Number(durationDays) || 3)));
+  const cleanTitle = String(tourTitle || "Kenya journey").trim();
+  const destination = String(destinationName || "the destination").trim();
+  const activityList = activities.filter((value) => typeof value === "string" && value.trim());
+  const brand = tenantSlug === "amani-trails" ? "Amani Trails" : tenantSlug === "demo-safari" ? "Demo Safari" : "Hussein Mboya Tours";
+  if (days === 1) return [{
+    day: 1,
+    title: `Guided ${destination} experience`,
+    description: `${brand}: enjoy ${cleanTitle} with a local guide. The final order of activities depends on access, weather and operating conditions.`,
+    activities: activityList.length ? activityList : [`Explore ${destination}`, "Guided interpretation and photo stops"],
+    meals: ["As confirmed before departure"],
+    accommodation: "",
+  }];
+  return Array.from({ length: days }, (_, index) => {
+    const first = index === 0;
+    const last = index === days - 1;
+    const dayActivities = first
+      ? ["Meet your guide and confirm the route", "Safety and trip briefing", `Transfer toward ${destination}`]
+      : last
+        ? ["Final morning activity, if time allows", "Check-out and departure preparation", "Return transfer or onward connection"]
+        : (activityList.length ? activityList : [`Explore ${destination}`, "Guided nature, wildlife or cultural experience", "Scenic stops and photography"]).slice(0, 4);
+    const title = first
+      ? `Arrival and introduction to ${destination}`
+      : last
+        ? "Final experience and return journey"
+        : days === 2
+          ? `Discover ${destination}`
+          : `Day ${index + 1}: ${destination} guided experience`;
+    const description = first
+      ? `Meet the ${brand} team for the ${cleanTitle}. Review the route and practical arrangements before travelling to ${destination}. Accommodation and inclusions follow the confirmed booking.`
+      : last
+        ? "Enjoy a final activity where timing allows, then prepare for departure and travel to the agreed drop-off point."
+        : `${destinationDescription || `Discover ${destination} with a local guide.`} Activities may be adjusted for weather, wildlife movement, access rules and local operating conditions.`;
+    return {
+      day: index + 1,
+      title,
+      description,
+      activities: dayActivities,
+      meals: first ? ["Lunch", "Dinner"] : last ? ["Breakfast"] : ["Breakfast", "Lunch", "Dinner"],
+      accommodation: last ? "" : "Accommodation as confirmed in the booking",
+    };
+  });
+}
+
 export function buildRepairPlan(tenantSpec, tenant, destinations, tours) {
   const sortedDestinations = stableRecords(destinations, "destinations", tenantSpec.slug, 12);
   if (sortedDestinations.length !== 12) throw new Error(`Expected exactly 12 seeded destinations for ${tenantSpec.slug}; found ${sortedDestinations.length}. No records were changed.`);
@@ -227,11 +272,14 @@ async function main() {
         discount: 0,
         discountPrice: null,
         highlights: [`Explore ${destinationName}`, ...destination.spec[2]],
-        itinerary: [
-          { day: 1, title: `Arrive at ${destinationName}`, description: `Meet your local team and start exploring ${destinationName}.`, activities: destination.spec[2].slice(0, 2), meals: ["Breakfast"] },
-          { day: 2, title: `Discover ${destinationName}`, description: destination.spec[1], activities: destination.spec[2], meals: ["Breakfast", "Lunch"] },
-          { day: 3, title: "Return journey", description: "Enjoy a final activity before the return transfer.", activities: ["Morning activity", "Return transfer"], meals: ["Breakfast"] }
-        ],
+        itinerary: buildCatalogueItinerary({
+          tenantSlug: plan.spec.slug,
+          tourTitle: item.title,
+          destinationName,
+          destinationDescription: destination.spec[1],
+          activities: destination.spec[2],
+          durationDays: item.row.durationDays || item.row.durationDetails?.days || item.row.duration || 3,
+        }),
         published: true,
         available: true,
         isDeleted: false
