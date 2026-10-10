@@ -15,7 +15,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { getManagerTours } from "../../api/tourApi";
+import { getManagerTours } from "../../api/tourManagerApi";
 
 const REMINDER_STORAGE_KEY = "global-tours-tour-manager-reminders";
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -208,7 +208,7 @@ export default function TourManagerCalendar() {
             <div className="flex flex-wrap gap-2">
               <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
                 <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Tours this month</div>
-                <div className="mt-1 text-xl font-black">{toursQuery.isLoading ? "—" : monthTourCount}</div>
+                <div className="mt-1 text-xl font-black">{toursQuery.isLoading || toursQuery.isError ? "—" : monthTourCount}</div>
               </div>
               <button
                 type="button"
@@ -358,7 +358,7 @@ export default function TourManagerCalendar() {
                     {selectedDate.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
                   </p>
                   <div className="mt-3 grid grid-cols-2 gap-2">
-                    <div className="rounded-xl bg-white/10 p-2.5"><div className="text-[10px] font-bold uppercase text-slate-400">Tours</div><div className="mt-1 text-lg font-black">{scheduledTourCount}</div></div>
+                    <div className="rounded-xl bg-white/10 p-2.5"><div className="text-[10px] font-bold uppercase text-slate-400">Tours</div><div className="mt-1 text-lg font-black">{toursQuery.isError ? "—" : scheduledTourCount}</div></div>
                     <div className="rounded-xl bg-white/10 p-2.5"><div className="text-[10px] font-bold uppercase text-slate-400">Reminders</div><div className="mt-1 text-lg font-black">{reminderCount}</div></div>
                   </div>
                 </div>
