@@ -62,7 +62,7 @@ export default function ManageTours() {
             onChange={(e) => setSearch(e.target.value)}
             className="w-72 rounded-lg border px-4 py-2"
           />
-          <Link to="/tour-manager/create-tour" className="rounded-lg bg-green-600 px-6 py-3 text-white hover:bg-green-700">
+          <Link to="/tour-manager/create-tour" state={{ returnTo: "/admin/tours" }} className="rounded-lg bg-green-600 px-6 py-3 text-white hover:bg-green-700">
             Add Tour
           </Link>
         </div>
