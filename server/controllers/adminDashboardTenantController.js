@@ -26,7 +26,8 @@ export const getDashboardStats = async (req, res, next) => {
 
     const [users, bookings, tours, destinations, customers, revenueReport, bookingStatus, paymentStatus, pending, confirmed, completed, cancelled, recentBookings, popularTours, admins, staff, guides, drivers, agents, approvedAgents, vehicles, availableVehicles] = await Promise.all([
       User.countDocuments(usersFilter), Booking.countDocuments(bookingsFilter), Tour.countDocuments(toursFilter), Destination.countDocuments(destinationsFilter),
-      User.countDocuments(tenantFilter(req, { ...active, role: "customer" })),
+      User.countDocuments(tenantFilter(req, { ...active, $or: [{ role: "customer" }, { legacyRole: "customer" }] })),
+      
       getPostedRevenueReport(),
       Booking.aggregate([{ $match: bookingsFilter }, { $group: { _id: "$status", count: { $sum: 1 } } }, { $sort: { count: -1 } }]),
       Booking.aggregate([{ $match: bookingsFilter }, { $group: { _id: "$paymentStatus", count: { $sum: 1 } } }]),
