@@ -60,7 +60,7 @@ const parseDate = (value) => {
   if (!value) return null;
   // Treat YYYY-MM-DD as a local calendar date instead of UTC midnight, which
   // can shift the displayed day in time zones west of UTC.
-  const dateOnlyMatch = typeof value === "string" && value.match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);
+  const dateOnlyMatch = typeof value === "string" && value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   const date = dateOnlyMatch
     ? new Date(Number(dateOnlyMatch[1]), Number(dateOnlyMatch[2]) - 1, Number(dateOnlyMatch[3]))
     : new Date(value);
@@ -72,7 +72,7 @@ const startDateOf = (tour) =>
 
 const durationDaysOf = (tour) => {
   const raw = tour?.durationDetails?.days ?? tour?.durationDays ?? tour?.duration ?? 1;
-  const match = String(raw).match(/\\d+/);
+  const match = String(raw).match(/\d+/);
   const days = Number(match?.[0] || 1);
   return Number.isFinite(days) && days >= 1 ? Math.min(days, 365) : 1;
 };
