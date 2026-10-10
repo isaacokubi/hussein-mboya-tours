@@ -2,13 +2,13 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { BedDouble, Building2, CheckCircle2, MapPin, Search, ShieldCheck, Star } from "lucide-react";
-import { getHotels } from "../api/hotelApi";
+import { getHotels, hotelQueryScope } from "../api/hotelApi";
 
 const HOTEL_IMAGES = { "Global Demo Nairobi Hotel": "https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=1200&q=85", "Global Demo Coast Resort": "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=85", "Global Demo Safari Lodge": "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=85" };
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1601918774946-25832a4be0d6?auto=format&fit=crop&w=1200&q=85";
 const money = (value, currency = "KES") => `${currency} ${Number(value || 0).toLocaleString("en-KE", { maximumFractionDigits: 0 })}`;
 export default function HotelsMarketplace() {
-  const { data = [], isLoading, isError } = useQuery({ queryKey: ["public-hotels"], queryFn: getHotels, staleTime: 30000 });
+  const { data = [], isLoading, isError } = useQuery({ queryKey: ["public-hotels", hotelQueryScope()], queryFn: getHotels, staleTime: 30000 });
   const [search, setSearch] = useState(""); const [city, setCity] = useState("all");
   // The public hotels API is the publication boundary. Do not hide returned
   // properties based on words like “demo” in descriptions or locations.
