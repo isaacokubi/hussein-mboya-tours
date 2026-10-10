@@ -443,6 +443,33 @@ async function createUsers(tenant, roleMap, prefix, ti, platform = false, platfo
   return users;
 }
 
+function buildSeedTourItinerary({ title, destination, tenantPrefix, county }) {
+  const destinationName = String(destination?.name || county || "Kenya").replace(/^TEST\\s+/i, "");
+  const tourName = String(title || "Kenya experience").replace(/^TEST\\s+/i, "");
+  const plans = {
+    hussein: [
+      { title: "Arrival, welcome and safari briefing", description: `Meet the local team for the ${tourName}. Review the route, safety guidance and the day's arrangements before travelling toward ${destinationName}.`, activities: ["Pickup or meeting-point coordination", "Route and safety briefing", "Scenic transfer toward the destination"], meals: ["Lunch", "Dinner"] },
+      { title: "Guided destination experience", description: `Spend the main day exploring ${destinationName} with a local guide. Wildlife and outdoor activities depend on conditions, park rules and the final confirmed itinerary.`, activities: ["Guided exploration", "Photo and rest stops", "Local interpretation and nature viewing"], meals: ["Breakfast", "Lunch", "Dinner"] },
+      { title: "Final activity and return journey", description: "Enjoy a final morning experience where timing allows, then check out and travel to the agreed drop-off point.", activities: ["Morning activity, subject to conditions", "Check-out and departure briefing", "Return transfer or onward connection"], meals: ["Breakfast"] },
+    ],
+    amani: [
+      { title: "Welcome and journey orientation", description: `Meet your Amani Trails team and begin the ${tourName}. Confirm the day's route, planned stops and any seasonal considerations before setting out for ${destinationName}.`, activities: ["Guest welcome and trip briefing", "Confirm route and pickup details", "Scenic journey with planned comfort stops"], meals: ["Lunch", "Dinner"] },
+      { title: "Signature guided experience", description: `Explore ${destinationName} at a considered pace with your guide. Activities may be adjusted for weather, wildlife movement, conservation rules and local operating conditions.`, activities: ["Guided nature or heritage experience", "Photography and interpretation stops", "Time to enjoy the destination"], meals: ["Breakfast", "Lunch", "Dinner"] },
+      { title: "Leisure, check-out and onward travel", description: "After breakfast, enjoy a final short activity if time permits, then check out and return to the agreed drop-off point.", activities: ["Optional morning activity", "Check-out and departure preparation", "Return transfer or onward connection"], meals: ["Breakfast"] },
+    ],
+    demo: [
+      { title: "Meet your guide and get underway", description: `Start the ${tourName} with a welcome briefing and journey to ${destinationName}. The guide will confirm practical arrangements and the order of activities.`, activities: ["Meeting-point and guest check-in", "Safety and schedule briefing", "Transfer to the experience area"], meals: ["Lunch", "Dinner"] },
+      { title: "Explore, learn and take in the scenery", description: `Enjoy a full day of guided discovery around ${destinationName}. The final activity order is subject to local conditions, access rules and operator confirmation.`, activities: ["Main guided activity", "Scenic viewpoints and photo stops", "Local nature or cultural interpretation"], meals: ["Breakfast", "Lunch", "Dinner"] },
+      { title: "Last look and departure", description: "Complete a final activity where the schedule allows, then prepare for departure and the return transfer.", activities: ["Final morning stop, if time allows", "Check-out and luggage check", "Return transfer or onward travel"], meals: ["Breakfast"] },
+    ],
+  };
+  return (plans[tenantPrefix] || plans.hussein).map((day, index) => ({
+    day: index + 1,
+    ...day,
+    accommodation: index < 2 ? "Accommodation as confirmed in the booking" : "",
+  }));
+}
+
 async function seedTenant(spec, index, globalPermissionIds, platformRole = null) {
   const tenant = await upsertPlain(Organization, { slug: spec.slug }, {
     name: spec.name, legalName: spec.legalName, supportEmail: `contact@${tenantDomain[spec.prefix]}`, supportPhone: stablePhone(index, 950),
@@ -520,7 +547,7 @@ async function seedTenant(spec, index, globalPermissionIds, platformRole = null)
         title, slug: `test-${spec.prefix}-safari-${i + 1}`, description: `TEST/DEMO guided itinerary for ${destination.name}, Kenya.`, shortDescription: `TEST Kenya safari ${i + 1}`,
         destination: destination._id, country: "Kenya", location: destination.region || spec.county, category: "Safari", tags: ["TEST", "DEMO", "Kenya"], meetingPoint: "Nairobi CBD TEST pickup", duration: "3", durationDays: 3, durationDetails: { days: 3, nights: 2 }, date: dates(45 + i), startDate: dates(45 + i), capacity: 40,
         price: (index * 10000) + 45000 + i * 2500, agentPrice: (index * 10000) + 42000 + i * 2500, discount: 5, taxEnabled: false, taxCategory: "NON_VAT", taxMode: "exclusive", featuredImage: { url: image }, gallery: [{ url: image }], highlights: ["TEST wildlife viewing", "Kenyan guide"], inclusions: ["Transport", "Guide"], exclusions: ["International flights"], languages: ["English", "Swahili"], difficulty: "easy",
-        itinerary: [1, 2, 3].map((day) => ({ day, title: `TEST Day ${day}`, description: "Synthetic sample itinerary day in Kenya.", activities: ["Guided sightseeing"], meals: ["Breakfast"] })), availability: [{ date: dates(45 + i), totalSlots: 40, bookedSlots: 0 }], availabilitySettings: { totalSlots: 40, bookedSlots: 0, waitlistEnabled: true }, bookingDeadline: 1, cancellationPolicy: "TEST/DEMO cancellation policy; no real booking is created.", status: "upcoming", published: true, featured: i < 2, available: true, isDeleted: false, assignedGuide: staffByKind.get("guide1")._id, assignedDriver: staffByKind.get("driver1")._id, assignedVehicle: vehicles[0]._id,
+        itinerary: buildSeedTourItinerary({ title, destination, tenantPrefix: spec.prefix, county: spec.county }), availability: [{ date: dates(45 + i), totalSlots: 40, bookedSlots: 0 }], availabilitySettings: { totalSlots: 40, bookedSlots: 0, waitlistEnabled: true }, bookingDeadline: 1, cancellationPolicy: "TEST/DEMO cancellation policy; no real booking is created.", status: "upcoming", published: true, featured: i < 2, available: true, isDeleted: false, assignedGuide: staffByKind.get("guide1")._id, assignedDriver: staffByKind.get("driver1")._id, assignedVehicle: vehicles[0]._id,
       }));
     }
     for (const tour of tours) {
