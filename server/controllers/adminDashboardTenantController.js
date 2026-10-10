@@ -56,7 +56,7 @@ export const getDashboardStats = async (req, res, next) => {
       const user = booking.user || {};
       const snapshot = booking.customerSnapshot || {};
       const contact = booking.contact || {};
-      const first = (...values) => values.map((value) => String(value ?? "").trim().replace(/\\s+/g, " ")).find((value) => value && !/^(?:undefined(?:\\s+undefined)?|null(?:\\s+null)?)$/i.test(value)) || "";
+      const first = (...values) => values.map((value) => String(value ?? "").trim().replace(/\s+/g, " ")).find((value) => value && !/^(?:undefined(?:\s+undefined)?|null(?:\s+null)?)$/i.test(value)) || "";
       const customerName = first(customer.name, [customer.firstName, customer.lastName].filter(Boolean).join(" "), snapshot.name, [snapshot.firstName, snapshot.lastName].filter(Boolean).join(" "), contact.name, user.name, customer.email, snapshot.email, contact.email, user.email, customer.phone, snapshot.phone, contact.phone, user.phone) || "Customer record unavailable";
       const normalizedCustomer = { ...customer, name: customerName, email: first(customer.email, snapshot.email, contact.email, user.email), phone: first(customer.phone, snapshot.phone, contact.phone, user.phone) };
       const tour = booking.tour || (booking.customTourRequest?.destination ? { title: `Custom tour — ${booking.customTourRequest.destination}`, custom: true } : { title: "Tour record unavailable" });
