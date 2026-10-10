@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { assertItineraryRepairTarget, buildCorrectedItinerary, EXPECTED_TENANTS, getEffectiveTourDuration, TOUR_DURATION_OVERRIDES } from "../scripts/repairTenantTourItineraries.js";
+import { assertItineraryRepairTarget, buildCorrectedItinerary, EXPECTED_TENANTS, getEffectiveTourDuration, getTourDurationOverride, TOUR_DURATION_OVERRIDES } from "../scripts/repairTenantTourItineraries.js";
 
 const approvedUri = "mongodb+srv://repair-user:unused-password@cluster0.cdtxzts.mongodb.net/husseindb?retryWrites=true&w=majority";
 const confirm = { CONFIRM_TENANT_ITINERARY_REPAIR: "YES", NODE_ENV: "maintenance" };
@@ -27,8 +27,10 @@ test("explicit Thomson Falls day-trip override changes only that tour", () => {
   const destination = { name: "Thomson Falls Highlands", description: "Waterfall and highland viewpoints.", activities: ["Waterfall visit", "Highland walks", "Photography"] };
   const dayTrip = { title: "Thomson Falls Highland Day Trip", durationDays: 3, durationDetails: { days: 3, nights: 2 }, duration: "3" };
   assert.equal(getEffectiveTourDuration(dayTrip), 1);
-  assert.deepEqual(TOUR_DURATION_OVERRIDES.get(dayTrip.title), { days: 1 });
-  const itinerary = buildCorrectedItinerary(dayTrip, destination, "demo-tenant");
+  assert.deepEqual(getTourDurationOverride(dayTrip, "demo-safari"), { days: 1 });
+  assert.equal(getTourDurationOverride(dayTrip, "hussein-mboya"), undefined);
+  assert.equal(getEffectiveTourDuration(dayTrip, "hussein-mboya"), 3);
+  const itinerary = buildCorrectedItinerary(dayTrip, destination, "demo-tenant", "demo-safari");
   assert.equal(itinerary.length, 1);
   assert.equal(itinerary[0].day, 1);
   assert.match(itinerary[0].title, /Day Trip/);
