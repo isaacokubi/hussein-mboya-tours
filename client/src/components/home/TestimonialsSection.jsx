@@ -4,32 +4,32 @@ import { useTenant } from "../../context/TenantContext";
 export default function TestimonialsSection() {
   const { tenant } = useTenant() || {};
   const { settings = {} } = useSettings() || {};
-  const companyName = settings?.companyName || tenant?.name || tenant?.companyName || "Hussein Mboya Tours";
+  const companyName = settings?.companyName || tenant?.name || tenant?.companyName || "our team";
+  const configured = Array.isArray(settings?.testimonials) ? settings.testimonials : [];
+  // Public social proof must come from explicitly approved, tenant-managed reviews.
+  const testimonials = configured
+    .filter((item) => item && item.approved === true && String(item.text || "").trim() && String(item.name || "").trim())
+    .slice(0, 6);
 
-  const testimonials = [
-    { name: "Sarah Williams", country: "United Kingdom", text: `${companyName} gave us the best safari experience in Kenya.` },
-    { name: "James Anderson", country: "United States", text: "Professional guides and unforgettable adventures." },
-    { name: "Amina Hassan", country: "United Arab Emirates", text: "Amazing holiday packages and excellent service." },
-  ];
+  if (!testimonials.length) return null;
 
   return (
     <section
-      className="hmt-testimonials my-12 overflow-hidden rounded-[2rem] !bg-[#12372a] px-5 py-14 text-white shadow-2xl sm:px-8 md:py-20"
-      style={{ backgroundColor: "#12372a", color: "#ffffff" }}
+      className="hmt-testimonials my-12 overflow-hidden rounded-[2rem] bg-[#12372a] px-5 py-14 text-white shadow-2xl sm:px-8 md:py-20"
       aria-labelledby="traveler-experiences-heading"
     >
       <div className="mx-auto max-w-7xl">
-        <h2 id="traveler-experiences-heading" className="text-center text-3xl font-black text-white sm:text-4xl">Traveler Experiences</h2>
-        <div className="mt-10 grid gap-6 md:grid-cols-3">
-          {testimonials.map((testimonial) => (
+        <p className="text-center text-xs font-extrabold uppercase tracking-[.2em] text-emerald-300">{companyName}</p>
+        <h2 id="traveler-experiences-heading" className="mt-3 text-center text-3xl font-black text-white sm:text-4xl">Guest experiences</h2>
+        <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {testimonials.map((testimonial, index) => (
             <article
-              key={testimonial.name}
-              className="rounded-2xl border border-white/10 !bg-[#0b241b] p-6 shadow-xl transition hover:-translate-y-1 hover:!bg-[#173f31]"
-              style={{ backgroundColor: "#0b241b" }}
+              key={testimonial._id || testimonial.id || `${testimonial.name}-${index}`}
+              className="rounded-2xl border border-white/10 bg-[#0b241b] p-6 shadow-xl transition hover:-translate-y-1"
             >
               <h3 className="text-lg font-bold text-white">{testimonial.name}</h3>
-              <p className="mt-1 text-sm font-medium text-emerald-300">{testimonial.country}</p>
-              <p className="mt-4 leading-7 text-emerald-50/80">“{testimonial.text}”</p>
+              {testimonial.country && <p className="mt-1 text-sm font-medium text-emerald-300">{testimonial.country}</p>}
+              <p className="mt-4 leading-7 text-emerald-50/90">“{testimonial.text}”</p>
             </article>
           ))}
         </div>
