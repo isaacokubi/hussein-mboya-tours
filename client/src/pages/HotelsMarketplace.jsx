@@ -10,12 +10,9 @@ const money = (value, currency = "KES") => `${currency} ${Number(value || 0).toL
 export default function HotelsMarketplace() {
   const { data = [], isLoading, isError } = useQuery({ queryKey: ["public-hotels"], queryFn: getHotels, staleTime: 30000 });
   const [search, setSearch] = useState(""); const [city, setCity] = useState("all");
-  // Public marketplace must not expose synthetic/test inventory. Keep the
-  // filter here because this is the page actually mounted by AppRoutes.
-  const publicHotels = useMemo(() => data.filter(h => {
-    const publicText = `${h.name || ""} ${h.description || ""} ${h.location || ""} ${h.city || ""} ${h.county || ""}`;
-    return !/\\b(test|demo|synthetic|sample|placeholder|seed data)\\b/i.test(publicText);
-  }), [data]);
+  // The public hotels API is the publication boundary. Do not hide returned
+  // properties based on words like “demo” in descriptions or locations.
+  const publicHotels = useMemo(() => data, [data]);
   const cities = useMemo(() => [...new Set(publicHotels.map(h => h.city || h.county).filter(Boolean))].sort(), [publicHotels]);
   const filtered = useMemo(() => publicHotels
     .filter(h => `${h.name || ""} ${h.description || ""} ${h.location || ""} ${h.city || ""} ${h.county || ""}`.toLowerCase().includes(search.toLowerCase()))
