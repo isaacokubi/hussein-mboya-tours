@@ -7,7 +7,6 @@ const tenantIdOf=(req)=>req.tenantId||req.user?.tenantId; const clean=(v)=>Strin
 const requireTenant=(req,res)=>{const tenantId=tenantIdOf(req);if(!tenantId||!mongoose.isValidObjectId(tenantId)){res.status(400).json({success:false,message:"A valid company/tenant context is required."});return null;}return tenantId;};
 const regexSpecialChars = new Set([".", "*", "+", "?", "^", "$", "{", "}", "(", ")", "|", "[", "]", "\\"]);
 const escapeRegex = (value) => Array.from(String(value ?? ""), (char) => regexSpecialChars.has(char) ? "\\" + char : char).join("");
-const arrayClean=(value,max=50)=>");
 const arrayClean=(value,max=50)=>Array.isArray(value)?value.map(clean).filter(Boolean).slice(0,max):clean(value)?[clean(value)]:[];
 const normalizeRoomPayload=(body={})=>({name:clean(body.name),description:clean(body.description),maxAdults:Number(body.maxAdults??2),maxChildren:Number(body.maxChildren??1),beds:arrayClean(body.beds,20),amenities:arrayClean(body.amenities,50),totalRooms:Number(body.totalRooms),availableRooms:body.availableRooms===undefined?Number(body.totalRooms):Number(body.availableRooms),nightlyRate:Number(body.nightlyRate),mealPlans:arrayClean(body.mealPlans,10),currency:clean(body.currency||"KES").toUpperCase(),status:["active","inactive"].includes(body.status)?body.status:"active"});
 export const listHotels = async (req, res, next) => {
@@ -55,34 +54,6 @@ export const getHotel = async (req, res, next) => {
       status: "active",
     }).sort({ nightlyRate: 1 }).lean();
     return res.json({ success: true, data: { ...hotel, roomTypes: rooms } });
-  } catch (error) {
-    return next(error);
-  }
-};
-
-export const listAdminHotels=");
-      filter.city = new RegExp(`^${city}import mongoose from "mongoose";
-import Hotel from "../models/Hotel.js";
-import HotelRoomType from "../models/HotelRoomType.js";
-import HotelBooking from "../models/HotelBooking.js";
-import Customer from "../models/Customer.js";
-const tenantIdOf=(req)=>req.tenantId||req.user?.tenantId; const clean=(v)=>String(v??"").trim(); const slugify=(v)=>clean(v).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,170); const ref=()=>`HTL-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2,7).toUpperCase()}`; const daysBetween=(a,b)=>Math.ceil((new Date(b)-new Date(a))/86400000); const staffRoles=new Set(["admin","manager","tour_manager","tourmanager","agent"]); const roleOf=(req)=>String(req.user?.role||"").trim().toLowerCase().replace(/[\s-]+/g,"_");
-const requireTenant=(req,res)=>{const tenantId=tenantIdOf(req);if(!tenantId||!mongoose.isValidObjectId(tenantId)){res.status(400).json({success:false,message:"A valid company/tenant context is required."});return null;}return tenantId;};
-const arrayClean=(value,max=50)=>Array.isArray(value)?value.map(clean).filter(Boolean).slice(0,max):clean(value)?[clean(value)]:[];
-const normalizeRoomPayload=(body={})=>({name:clean(body.name),description:clean(body.description),maxAdults:Number(body.maxAdults??2),maxChildren:Number(body.maxChildren??1),beds:arrayClean(body.beds,20),amenities:arrayClean(body.amenities,50),totalRooms:Number(body.totalRooms),availableRooms:body.availableRooms===undefined?Number(body.totalRooms):Number(body.availableRooms),nightlyRate:Number(body.nightlyRate),mealPlans:arrayClean(body.mealPlans,10),currency:clean(body.currency||"KES").toUpperCase(),status:["active","inactive"].includes(body.status)?body.status:"active"});
-, "i");
-    }
-    if (req.query.featured === "true") filter.featured = true;
-    const hotels = await Hotel.find(filter).sort({ featured: -1, name: 1 }).lean();
-    const data = await Promise.all(hotels.map(async (hotel) => ({
-      ...hotel,
-      roomTypes: await HotelRoomType.find({
-        tenantId: hotel.tenantId,
-        hotel: hotel._id,
-        status: "active",
-      }).sort({ nightlyRate: 1 }).lean(),
-    })));
-    return res.json({ success: true, data });
   } catch (error) {
     return next(error);
   }
