@@ -57,11 +57,13 @@ export function buildCorrectedItinerary(tour, destination, tenantId) {
         : isDeparture
           ? `Final experiences and departure from ${destinationName}`
           : `Discover ${destinationName} — Day ${day}`;
-    const dayActivities = isArrival
-      ? [`Arrival briefing in ${destinationName}`, safeActivities[0]]
-      : isDeparture
-        ? [safeActivities[(day - 1) % safeActivities.length], "Return transfer and departure"]
-        : [safeActivities[(day - 2) % safeActivities.length], safeActivities[(day - 1) % safeActivities.length]];
+    const dayActivities = days === 1
+      ? safeActivities.slice(0, 3)
+      : isArrival
+        ? [`Arrival briefing in ${destinationName}`, safeActivities[0]]
+        : isDeparture
+          ? [safeActivities[(day - 1) % safeActivities.length], "Return transfer and departure"]
+          : [safeActivities[(day - 2) % safeActivities.length], safeActivities[(day - 1) % safeActivities.length]];
     const description = days === 1
       ? `Enjoy a guided day trip to ${destinationName}, including ${dayActivities.join(" and ").toLowerCase()}, before returning the same day. ${destinationDescription}`.trim()
       : isArrival
