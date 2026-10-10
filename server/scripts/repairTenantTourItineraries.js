@@ -15,6 +15,30 @@ export function getEffectiveTourDuration(tour) {
   const override = TOUR_DURATION_OVERRIDES.get(String(tour.title || "").trim());
   if (override) return override.days;
   const parsed = Number.parseInt(String(tour.duration || "").match(/\d+/)?.[0], 10);
+  const days = Number(tour.durationDays ?? tour.durationDetails?.days ?? parsed ?? 1);
+  if (!Number.isInteger(days) || days < 1 || days > 365) throw new Error(`Invalid duration for tour ${tour.title || tour._id}: ${days}`);
+  return days;
+}
+
+export function assertItineraryRepairTarget(rawUri, env = process.env) {
+  if (env.CONFIRM_TENANT_ITINERARY_REPAIR !== "YES") {
+    throw new Error("Set CONFIRM_TENANT_ITINERARY_REPAIR=YES to confirm the targeted itinerary repair.");
+  }
+  if (!rawUri) throw new Error("MONGODB_URI is required.");
+  const target = new URL(rawUri);
+  const database = decodeURIComponent(target.pathname.replace(/^\//, "").split("/")[0] || "");
+  if (target.hostname.toLowerCase() !== EXPECTED_HOST || database !== EXPECTED_DATABASE) {
+    throw new Error(`Refusing to write outside ${EXPECTED_DATABASE} on the approved Atlas cluster.`);
+  }
+  if (String(env.NODE_ENV || "").toLowerCase() === "production") {
+    throw new Error("Run the repair in an explicitly controlled maintenance session, not with NODE_ENV=production.");
+  }
+  return { host: target.hostname.toLowerCase(), database };
+}
+
+const cleanList = (values) => (Array.isArray(values) ? values : []).map((value) => String(value || "").trim()).filter(Boolean);
+
+export function buildCorrectedItinerary(tour, destination, tenantId) {
   const days = getEffectiveTourDuration(tour);
   const destinationName = String(destination.name || tour.location || "the destination").trim();
   const destinationDescription = String(destination.description || tour.description || "").trim();
