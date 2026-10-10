@@ -53,10 +53,11 @@ export default function TourDetails() {
   const handleBooking = () => navigate(`/checkout/tour/${tour._id}`);
 
   const handleWhatsAppBooking = () => {
+    if (!supportPhone) return;
     const message = encodeURIComponent(
       `Hello ${settings?.companyName || "Company"}, I would like to book "${tour.title}" on ${tour.date ? new Date(tour.date).toLocaleDateString("en-KE") : "the available date"}. Please share availability and booking details.`
     );
-    const whatsappNumber = String(supportPhone || "+254733439362")
+    const whatsappNumber = String(supportPhone)
       .replace(/\D/g, "")
       .replace(/^0/, "254");
     window.open(`https://wa.me/${whatsappNumber}?text=${message}`, "_blank", "noopener,noreferrer");
@@ -76,13 +77,11 @@ export default function TourDetails() {
             <p>📍 <strong>Destination:</strong> {tour.destination?.name || tour.destination || "N/A"}</p>
             <p>⏳ <strong>Duration:</strong> {tour.duration || tour.durationDays || "N/A"}</p>
             <p>🏕️ <strong>Category:</strong> {tour.category || "N/A"}</p>
-            <p>👥 <strong>Capacity:</strong> {tour.totalSlots ?? tour.capacity ?? tour.maxGuests ?? "N/A"}</p>
-            <p>🎟️ <strong>Booked Slots:</strong> {tour.bookedSlots ?? 0}</p>
-            <p>🎟️ <strong>Available Slots:</strong> {tour.availableSlots ?? Math.max((tour.totalSlots || tour.capacity || 0) - (tour.bookedSlots || 0), 0)}</p>
+
           </div>
           <div className="mt-10 flex flex-wrap gap-3">
             <button onClick={handleBooking} className="bg-green-700 hover:bg-green-800 text-white px-10 py-4 rounded-full font-bold text-lg">Book This Adventure</button>
-            <button onClick={handleWhatsAppBooking} className="inline-flex items-center gap-2 rounded-full bg-green-600 px-7 py-4 font-bold text-white"><MessageCircle size={20} />Book on WhatsApp</button>
+            {supportPhone && <button onClick={handleWhatsAppBooking} className="inline-flex items-center gap-2 rounded-full bg-green-600 px-7 py-4 font-bold text-white"><MessageCircle size={20} />Enquire on WhatsApp</button>}
           </div>
         </div>
 
