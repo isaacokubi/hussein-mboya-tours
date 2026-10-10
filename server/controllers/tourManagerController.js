@@ -68,8 +68,8 @@ export const getTourManagerDashboard = async (req, res, next) => {
     });
 
     const cleanText = (value) => {
-      const text = String(value ?? "").trim().replace(/\\s+/g, " ");
-      return text && !/^(?:undefined(?:\\s+undefined)?|null(?:\\s+null)?)$/i.test(text) ? text : "";
+      const text = String(value ?? "").trim().replace(/\s+/g, " ");
+      return text && !/^(?:undefined(?:\s+undefined)?|null(?:\s+null)?)$/i.test(text) ? text : "";
     };
     const formattedBookings = recentBookings.map((booking) => {
       const customer = booking.customer || {};
