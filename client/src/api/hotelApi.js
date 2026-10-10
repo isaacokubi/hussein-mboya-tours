@@ -34,8 +34,44 @@ const normalizeList = (value) => {
   return String(value || "").split(",").map((item) => item.trim()).filter(Boolean);
 };
 
+export const hotelQueryScope = () => {
+  if (typeof window === "undefined") return "server";
+  let tenant = "";
+  try {
+    const user = JSON.parse(window.localStorage.getItem("user") || "null");
+    tenant = String(user?.tenantId?._id || user?.tenantId || user?.tenant?._id || user?.organizationId || "").trim();
+  } catch {
+    tenant = "";
+  }
+  return `${window.location.hostname}:${tenant}`;
+};
+
 export const getHotels = (params = {}) => api.get("/hotels", { params }).then(unwrap);
-export const getHotel = (id) => api.get(`/hotels/${id}`).then(unwrap);
+export const getHotel = (id) => api.get(`/hotels/${encodeURIComponent(id)}`).then(unwrap);
+
+// Keep detail and reservation views consistent with the public catalogue. Some
+// deployed API versions may temporarily fail to resolve a detail URL even when
+// the property is present in the tenant-scoped public list.
+export const getPublicHotel = async (id) => {
+  let detailError;
+  try {
+    const detail = await getHotel(id);
+    if (detail) return detail;
+  } catch (error) {
+    detailError = error;
+  }
+  const catalogue = await getHotels();
+  const key = String(id || "").trim().toLowerCase();
+  const match = Array.isArray(catalogue)
+    ? catalogue.find((item) =>
+        String(item?._id || "").toLowerCase() === key ||
+        String(item?.slug || "").trim().toLowerCase() === key
+      )
+    : null;
+  if (match) return match;
+  if (detailError) throw detailError;
+  return null;
+};
 export const getHotelAvailability = (params = {}) => api.get("/hotels/availability", { params }).then(unwrap);
 
 export const createHotelBooking = async (payload) => {
