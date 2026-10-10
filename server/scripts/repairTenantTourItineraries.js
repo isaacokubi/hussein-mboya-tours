@@ -12,7 +12,7 @@ export function assertItineraryRepairTarget(rawUri, env = process.env) {
   }
   if (!rawUri) throw new Error("MONGODB_URI is required.");
   const target = new URL(rawUri);
-  const database = decodeURIComponent(target.pathname.replace(/^\\//, "").split("/")[0] || "");
+  const database = decodeURIComponent(target.pathname.replace(/^\//, "").split("/")[0] || "");
   if (target.hostname.toLowerCase() !== EXPECTED_HOST || database !== EXPECTED_DATABASE) {
     throw new Error(`Refusing to write outside ${EXPECTED_DATABASE} on the approved Atlas cluster.`);
   }
@@ -25,7 +25,7 @@ export function assertItineraryRepairTarget(rawUri, env = process.env) {
 const cleanList = (values) => (Array.isArray(values) ? values : []).map((value) => String(value || "").trim()).filter(Boolean);
 
 export function buildCorrectedItinerary(tour, destination, tenantId) {
-  const days = Number(tour.durationDays ?? tour.durationDetails?.days ?? Number.parseInt(String(tour.duration || "").match(/\\d+/)?.[0], 10) ?? 1);
+  const days = Number(tour.durationDays ?? tour.durationDetails?.days ?? Number.parseInt(String(tour.duration || "").match(/\d+/)?.[0], 10) ?? 1);
   if (!Number.isInteger(days) || days < 1 || days > 365) throw new Error(`Invalid duration for tour ${tour.title || tour._id}: ${days}`);
   const destinationName = String(destination.name || tour.location || "the destination").trim();
   const destinationDescription = String(destination.description || tour.description || "").trim();
