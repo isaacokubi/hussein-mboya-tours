@@ -18,7 +18,7 @@ export const getTourManagerDashboard = async (req, res, next) => {
     const now = new Date();
     const tourFilter = mergeTenantFilter(req, { isDeleted: { $ne: true } });
     const bookingFilter = mergeTenantFilter(req, { isDeleted: { $ne: true } });
-    const customerFilter = mergeTenantFilter(req, { role: "customer" });
+    const customerFilter = mergeTenantFilter(req, { $or: [{ role: "customer" }, { legacyRole: "customer" }] });
     const paymentFilter = mergeTenantFilter(req, { status: "completed", isDeleted: { $ne: true } });
     const upcomingFilter = mergeTenantFilter(req, {
       isDeleted: { $ne: true },
