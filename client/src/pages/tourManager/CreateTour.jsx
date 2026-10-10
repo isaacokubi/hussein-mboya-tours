@@ -67,8 +67,8 @@ export default function CreateTour() {
       date: form.date, startDate: form.date, ...(form.endDate ? { endDate: form.endDate } : {}),
       price, currency: "KES", discount, capacity, duration, durationDays: duration,
       difficulty: form.difficulty, guide: form.guide || "", driver: form.driver || "", vehicle: form.vehicle || "",
-      status: form.status, published: form.status !== "draft", highlights: JSON.stringify(lines(form.highlightsText)),
-      inclusions: JSON.stringify(lines(form.inclusionsText)), exclusions: JSON.stringify(lines(form.exclusionsText)),
+      status: form.status, published: form.status !== "draft", highlights: JSON.stringify(linesFromText(form.highlightsText)),
+      inclusions: JSON.stringify(linesFromText(form.inclusionsText)), exclusions: JSON.stringify(linesFromText(form.exclusionsText)),
       itinerary: JSON.stringify(itinerary),
     };
     Object.entries(values).forEach(([key, value]) => payload.append(key, String(value)));
