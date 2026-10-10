@@ -13,7 +13,6 @@ import {
   MoonStar,
   Star,
   Utensils,
-  Users,
   X,
 } from "lucide-react";
 import { useSettings } from "../context/SettingsContext";
