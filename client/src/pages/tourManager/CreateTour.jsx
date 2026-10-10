@@ -8,7 +8,7 @@ import { getDestinations } from "../../api/destinationApi";
 import { createTour, getDrivers, getGuides, getVehicles } from "../../api/tourApi";
 import { useSettings } from "../../context/SettingsContext";
 
-const emptyForm = { title: "", shortDescription: "", description: "", category: "Safari", destination: "", country: "Kenya", location: "", meetingPoint: "Nairobi, Kenya", date: "", endDate: "", capacity: 20, duration: 1, difficulty: "easy", price: "", discount: 0, highlightsText: "", inclusionsText: "Transport\\nGuide", exclusionsText: "International flights", itineraryText: "[]", guide: "", driver: "", vehicle: "", status: "upcoming" };
+const emptyForm = { title: "", shortDescription: "", description: "", category: "Safari", destination: "", country: "Kenya", location: "", meetingPoint: "Nairobi, Kenya", date: "", endDate: "", capacity: 20, duration: 1, difficulty: "easy", price: "", discount: 0, highlightsText: "", inclusionsText: "Transport\nGuide", exclusionsText: "International flights", itineraryText: "[]", guide: "", driver: "", vehicle: "", status: "upcoming" };
 const unwrapList = (response, keys = []) => { if (Array.isArray(response)) return response; for (const key of keys) if (Array.isArray(response?.[key])) return response[key]; if (Array.isArray(response?.data)) return response.data; if (Array.isArray(response?.data?.data)) return response.data.data; for (const key of keys) if (Array.isArray(response?.data?.[key])) return response.data[key]; return []; };
 const cleanLabel = (value, fallback) => { const text = String(value ?? "").trim(); return text && !/^undefined|^null$/i.test(text) ? text : fallback; };
 const todayIso = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
@@ -57,7 +57,7 @@ export default function CreateTour() {
     if (itinerary.length > duration) return toast.error("The itinerary cannot contain more days than the tour duration.");
     if (itinerary.some((day) => !day || typeof day !== "object" || !String(day.title || day.name || "").trim())) return toast.error("Each itinerary day must be an object with a title.");
     const payload = new FormData();
-    const lines = (text) => text.split("\\n").map((item) => item.trim()).filter(Boolean);
+    const lines = (text) => text.split("\n").map((item) => item.trim()).filter(Boolean);
     const values = {
       title, shortDescription, description, category: form.category, destination: form.destination,
       country: form.country.trim() || "Kenya", location, meetingPoint: form.meetingPoint.trim(),
@@ -93,8 +93,8 @@ export default function CreateTour() {
         <div className="md:col-span-2"><label className={labelClass}>Short description</label><textarea name="shortDescription" value={form.shortDescription} onChange={handleChange} className={inputClass} rows={2} maxLength={500} placeholder="A concise summary shown on tour cards and detail pages."/></div>
         <div><label className={labelClass}>Meeting point</label><input name="meetingPoint" value={form.meetingPoint} onChange={handleChange} className={inputClass} placeholder="e.g. Nairobi, Kenya"/></div>
         <div><label className={labelClass}>Return date (optional)</label><input type="date" name="endDate" min={form.date || todayIso} value={form.endDate} onChange={handleChange} className={inputClass}/><p className="mt-1 text-xs text-slate-400">If omitted, the system calculates it from the duration.</p></div>
-        <div className="md:col-span-2"><label className={labelClass}>Trip highlights (one per line)</label><textarea name="highlightsText" value={form.highlightsText} onChange={handleChange} className={inputClass} rows={3} placeholder={"Explore the destination\\nBird watching\\nScenic drives"}/></div>
-        <div><label className={labelClass}>Included in the price (one per line)</label><textarea name="inclusionsText" value={form.inclusionsText} onChange={handleChange} className={inputClass} rows={3} placeholder={"Transport\\nGuide"}/></div>
+        <div className="md:col-span-2"><label className={labelClass}>Trip highlights (one per line)</label><textarea name="highlightsText" value={form.highlightsText} onChange={handleChange} className={inputClass} rows={3} placeholder={"Explore the destination\nBird watching\nScenic drives"}/></div>
+        <div><label className={labelClass}>Included in the price (one per line)</label><textarea name="inclusionsText" value={form.inclusionsText} onChange={handleChange} className={inputClass} rows={3} placeholder={"Transport\nGuide"}/></div>
         <div><label className={labelClass}>Not included (one per line)</label><textarea name="exclusionsText" value={form.exclusionsText} onChange={handleChange} className={inputClass} rows={3} placeholder="International flights"/></div>
         <div className="md:col-span-2"><label className={labelClass}>Daily itinerary (JSON)</label><textarea name="itineraryText" value={form.itineraryText} onChange={handleChange} className={inputClass + " font-mono text-xs"} rows={12} spellCheck={false} placeholder={'[{"day":1,"title":"Arrival and introduction","description":"Meet your guide and begin exploring.","activities":["Arrival briefing","Explore the destination"],"meals":["Breakfast"],"accommodation":"Overnight stay"}]'}/><p className="mt-2 text-xs leading-5 text-slate-500">Add one object per day. Supported fields: day, title, description, activities (array), meals (array), accommodation. Use double quotes as in the example; invalid JSON is rejected before saving.</p></div>
       </div></section>
