@@ -4,6 +4,7 @@ import {
   TENANTS,
   assertSafeTarget,
   buildRepairPlan,
+  buildCatalogueItinerary,
   isSyntheticSeedRecord,
   slugify
 } from "../scripts/repairHusseindbTenantCatalogues.js";
@@ -57,6 +58,34 @@ test("repair plan remaps disposable tenant catalogue records and preserves recor
   assert.throws(() => buildRepairPlan(tenantSpec, tenant, destinations.slice(1), tours), /Expected at least 12 destinations/);
   const mixedContentPlan = buildRepairPlan(tenantSpec, tenant, destinations, tours.map((row, i) => i === 0 ? { ...row, title: "Real client safari", slug: "real-client-safari", description: "A real client itinerary" } : row));
   assert.equal(mixedContentPlan.tours[0].row.title, "Real client safari");
+});
+
+test("catalogue itineraries are tenant-aware, detailed, and match tour duration", () => {
+  const threeDay = buildCatalogueItinerary({
+    tenantSlug: "amani-trails",
+    tourTitle: "Mara Great Migration Signature",
+    destinationName: "Mara River Migration Camp",
+    destinationDescription: "Seasonal migration country and guided camp experiences.",
+    activities: ["Migration viewing", "River game drives", "Campfire evenings"],
+    durationDays: 3,
+  });
+  assert.equal(threeDay.length, 3);
+  assert.deepEqual(threeDay.map((day) => day.day), [1, 2, 3]);
+  assert.match(threeDay[0].title, /Arrival/);
+  assert.match(threeDay[1].description, /Seasonal migration country/);
+  assert.ok(threeDay.every((day) => day.title && day.description && day.activities.length));
+  assert.match(threeDay[0].description, /Amani Trails/);
+  assert.equal(threeDay[2].accommodation, "");
+
+  const oneDay = buildCatalogueItinerary({
+    tenantSlug: "demo-safari",
+    tourTitle: "Mombasa City Discovery",
+    destinationName: "Mombasa Heritage Quarter",
+    durationDays: 1,
+  });
+  assert.equal(oneDay.length, 1);
+  assert.match(oneDay[0].title, /Mombasa Heritage Quarter/);
+  assert.equal(buildCatalogueItinerary({ tenantSlug: "hussein-mboya", tourTitle: "Short trip", destinationName: "Nairobi", durationDays: 0 }).length, 3);
 });
 
 test("slug generation is stable and safe", () => {
