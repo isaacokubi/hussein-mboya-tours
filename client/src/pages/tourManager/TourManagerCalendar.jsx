@@ -15,19 +15,9 @@ import {
   XCircle,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { getManagerTours } from "../../api/tourManagerApi";
+import { createCalendarReminder, deleteCalendarReminder, getCalendarReminders, getManagerTours } from "../../api/tourManagerApi";
 
-const REMINDER_STORAGE_KEY = "global-tours-tour-manager-reminders";
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-const loadReminders = () => {
-  try {
-    const stored = JSON.parse(localStorage.getItem(REMINDER_STORAGE_KEY) || "[]");
-    return Array.isArray(stored) ? stored : [];
-  } catch {
-    return [];
-  }
-};
 
 const normalizeResponse = (response) => {
   if (Array.isArray(response)) return response;
@@ -146,7 +136,8 @@ const statusClasses = (status) => {
 
 export default function TourManagerCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [reminders, setReminders] = useState(loadReminders);
+  const [savingReminder, setSavingReminder] = useState(false);
+  const [deletingReminderId, setDeletingReminderId] = useState("");
   const [selectedDay, setSelectedDay] = useState(null);
   const [title, setTitle] = useState("");
 
@@ -158,6 +149,13 @@ export default function TourManagerCalendar() {
   });
 
   const tours = useMemo(() => normalizeResponse(toursQuery.data), [toursQuery.data]);
+  const remindersQuery = useQuery({
+    queryKey: ["tour-manager-calendar-reminders"],
+    queryFn: () => getCalendarReminders(),
+    staleTime: 15_000,
+    retry: 1,
+  });
+  const reminders = useMemo(() => normalizeResponse(remindersQuery.data), [remindersQuery.data]);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -191,7 +189,7 @@ export default function TourManagerCalendar() {
 
     const reminderEvents = reminders
       .filter((reminder) => reminder?.date === keyDate)
-      .map((reminder) => ({ kind: "reminder", ...reminder }));
+      .map((reminder) => ({ kind: "reminder", ...reminder, id: String(reminder?._id || reminder?.id || "") }));
 
     return [...tourEvents, ...reminderEvents];
   };
@@ -213,35 +211,43 @@ export default function TourManagerCalendar() {
     setSelectedDay(null);
   };
 
-  const addReminder = () => {
-    if (!selectedDay || !title.trim()) return;
-
-    const item = {
-      id: `${dateKey(selectedDay)}-${title.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
-      date: dateKey(selectedDay),
-      title: title.trim(),
-    };
+  const addReminder = async () => {
+    if (!selectedDay || !title.trim() || savingReminder) return;
+    const item = { date: dateKey(selectedDay), title: title.trim() };
     const duplicate = reminders.some(
       (reminder) => reminder.date === item.date && reminder.title?.trim().toLowerCase() === item.title.toLowerCase()
     );
-
     if (duplicate) {
       toast.info("That reminder already exists on this date.");
       return;
     }
 
-    const next = [...reminders, item];
-    setReminders(next);
-    localStorage.setItem(REMINDER_STORAGE_KEY, JSON.stringify(next));
-    setTitle("");
-    toast.success("Reminder added to your tour manager calendar.");
+    setSavingReminder(true);
+    try {
+      await createCalendarReminder(item);
+      await remindersQuery.refetch();
+      setTitle("");
+      toast.success("Reminder saved to your team calendar.");
+    } catch (error) {
+      const message = error?.response?.data?.message || "Could not save the reminder. Please try again.";
+      toast.error(message);
+    } finally {
+      setSavingReminder(false);
+    }
   };
 
-  const removeReminder = (id) => {
-    const next = reminders.filter((reminder) => reminder.id !== id);
-    setReminders(next);
-    localStorage.setItem(REMINDER_STORAGE_KEY, JSON.stringify(next));
-    toast.success("Reminder removed.");
+  const removeReminder = async (id) => {
+    if (!id || deletingReminderId) return;
+    setDeletingReminderId(id);
+    try {
+      await deleteCalendarReminder(id);
+      await remindersQuery.refetch();
+      toast.success("Reminder removed.");
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Could not remove the reminder. Please try again.");
+    } finally {
+      setDeletingReminderId("");
+    }
   };
 
   return (
@@ -255,7 +261,7 @@ export default function TourManagerCalendar() {
               </div>
               <h1 className="text-3xl font-black tracking-tight sm:text-4xl">Tour Manager Calendar</h1>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
-                View multi-day tours, identify operational load by date, and keep local reminders alongside scheduled work.
+                View multi-day tours, identify operational load by date, and share saved reminders across your tenant team.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -433,7 +439,7 @@ export default function TourManagerCalendar() {
                             <p className="mt-1 flex items-center gap-1 text-xs text-slate-500"><Clock3 size={13} /> Starts {startDateOf(event.tour).toLocaleDateString()}</p>
                           )}
                           {event.kind === "reminder" && (
-                            <button type="button" onClick={() => removeReminder(event.id)} className="mt-2 text-xs font-bold text-rose-600 transition hover:text-rose-700">Remove reminder</button>
+                            <button type="button" onClick={() => removeReminder(event.id)} disabled={deletingReminderId === event.id} className="mt-2 text-xs font-bold text-rose-600 transition hover:text-rose-700 disabled:opacity-50">{deletingReminderId === event.id ? "Removing…" : "Remove reminder"}</button>
                           )}
                         </div>
                       </div>
@@ -466,11 +472,14 @@ export default function TourManagerCalendar() {
                       placeholder="e.g. Confirm driver pickup"
                       className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100"
                     />
-                    <button type="button" onClick={addReminder} disabled={!title.trim()} className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-3 text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40" title="Add reminder">
-                      <Plus size={18} />
+                    <button type="button" onClick={addReminder} disabled={!title.trim() || savingReminder || remindersQuery.isLoading} className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-3 text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40" title="Add reminder">
+                      {savingReminder ? <Loader2 size={18} className="animate-spin" /> : <Plus size={18} />}
                     </button>
                   </div>
-                  <p className="mt-2 flex items-center gap-1 text-xs text-slate-400"><Bell size={12} /> Reminders are saved in this browser and are not synced to other devices.</p>
+                  <p className="mt-2 flex items-center gap-1 text-xs text-slate-500"><Bell size={12} /> Reminders are stored securely on the server and shared with authorized managers in this tenant.</p>
+                  {remindersQuery.isLoading && <p className="mt-2 text-xs text-slate-500">Loading saved reminders…</p>}
+                  {remindersQuery.isError && <p className="mt-2 text-xs font-semibold text-rose-600">Saved reminders could not be loaded. Please retry or refresh.</p>}
+                  {remindersQuery.isSuccess && reminders.length === 0 && <p className="mt-2 text-xs text-slate-500">No saved reminders yet.</p>}
                 </div>
               </>
             )}
