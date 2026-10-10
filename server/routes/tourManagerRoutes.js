@@ -9,6 +9,7 @@ import { getTourAvailability, updateTourAvailability } from "../controllers/tour
 import { getTourReports } from "../controllers/tourReportController.js";
 import { getTenantGuides, getTenantDrivers, getTenantCustomers, getTenantVehicles } from "../controllers/tenantDirectoryController.js";
 import { getTourManagerBookings } from "../controllers/tourManagerBookingController.js";
+import { listCalendarReminders, createCalendarReminder, deleteCalendarReminder } from "../controllers/calendarReminderController.js";
 import { protect, managerOnly } from "../middleware/authMiddleware.js";
 import validateFutureTourDate from "../middleware/validateFutureTourDate.js";
 import validateTourAssignmentTenant from "../middleware/validateTourAssignmentTenant.js";
@@ -20,6 +21,9 @@ router.use(resolveTenant);
 router.use(managerOnly);
 
 router.get("/dashboard", getTourManagerDashboard);
+router.get("/calendar/reminders", listCalendarReminders);
+router.post("/calendar/reminders", createCalendarReminder);
+router.delete("/calendar/reminders/:id", deleteCalendarReminder);
 router.get("/tours", getTours);
 router.post("/tours", validateFutureTourDate, validateTourCommand(), createTour);
 router.put("/tours/:id", validateTourCommand(), updateTour);
