@@ -184,6 +184,9 @@ export function buildRepairPlan(tenantSpec, tenant, destinations, tours) {
     tours: sortedTours.map((row, index) => ({
       row,
       title: tenantSpec.tours[index],
+      durationDays: tenantSpec.slug === "demo-safari" && tenantSpec.tours[index] === "Thomson Falls Highland Day Trip"
+        ? 1
+        : resolveTourDurationDays(row),
       destinationIndex: index % sortedDestinations.length,
       price: tenantSpec.priceBase + index * 3500,
       agentPrice: tenantSpec.priceBase + index * 3000,
@@ -283,6 +286,9 @@ async function main() {
         discount: 0,
         discountPrice: null,
         highlights: [`Explore ${destinationName}`, ...destination.spec[2]],
+        duration: String(item.durationDays),
+        durationDays: item.durationDays,
+        durationDetails: { days: item.durationDays, nights: Math.max(0, item.durationDays - 1) },
         itinerary: buildCatalogueItinerary({
           tenantSlug: plan.spec.slug,
           tourTitle: item.title,
