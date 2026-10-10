@@ -8,11 +8,15 @@ export const EXPECTED_TENANTS = ["hussein-mboya", "amani-trails", "demo-safari"]
 
 // Explicit, reviewed exception to the current three-day tenant catalogue.
 export const TOUR_DURATION_OVERRIDES = new Map([
-  ["Thomson Falls Highland Day Trip", { days: 1 }]
+  ["demo-safari:Thomson Falls Highland Day Trip", { days: 1 }]
 ]);
 
-export function getEffectiveTourDuration(tour) {
-  const override = TOUR_DURATION_OVERRIDES.get(String(tour.title || "").trim());
+export function getTourDurationOverride(tour, tenantSlug) {
+  return TOUR_DURATION_OVERRIDES.get(`${tenantSlug}:${String(tour.title || "").trim()}`);
+}
+
+export function getEffectiveTourDuration(tour, tenantSlug) {
+  const override = getTourDurationOverride(tour, tenantSlug);
   if (override) return override.days;
   const parsed = Number.parseInt(String(tour.duration || "").match(/\d+/)?.[0], 10);
   const days = Number(tour.durationDays ?? tour.durationDetails?.days ?? parsed ?? 1);
@@ -38,8 +42,8 @@ export function assertItineraryRepairTarget(rawUri, env = process.env) {
 
 const cleanList = (values) => (Array.isArray(values) ? values : []).map((value) => String(value || "").trim()).filter(Boolean);
 
-export function buildCorrectedItinerary(tour, destination, tenantId) {
-  const days = getEffectiveTourDuration(tour);
+export function buildCorrectedItinerary(tour, destination, tenantId, tenantSlug) {
+  const days = getEffectiveTourDuration(tour, tenantSlug);
   const destinationName = String(destination.name || tour.location || "the destination").trim();
   const destinationDescription = String(destination.description || tour.description || "").trim();
   const activities = cleanList(destination.activities);
@@ -104,7 +108,7 @@ async function main() {
     const entries = tours.map((tour) => {
       const destination = destinationById.get(String(tour.destination));
       if (!destination) throw new Error(`Tour ${tour.title || tour._id} in ${tenant.slug} references a missing or cross-tenant destination. No records were changed.`);
-      return { tour, destination, itinerary: buildCorrectedItinerary(tour, destination, tenant._id) };
+      return { tour, destination, itinerary: buildCorrectedItinerary(tour, destination, tenant._id, tenant.slug) };
     });
     plans.push({ tenant, tours: entries });
   }
@@ -112,8 +116,8 @@ async function main() {
   const summary = plans.map(({ tenant, tours }) => ({
     tenant: tenant.slug,
     tours: tours.length,
-    toursToUpdate: tours.filter(({ tour, itinerary }) => JSON.stringify(tour.itinerary || []) !== JSON.stringify(itinerary) || getEffectiveTourDuration(tour) !== Number(tour.durationDays ?? tour.durationDetails?.days ?? 1)).length,
-    itineraryDayCounts: tours.map(({ tour, itinerary }) => ({ title: tour.title, currentDurationDays: Number(tour.durationDays ?? tour.durationDetails?.days ?? 1), plannedDurationDays: getEffectiveTourDuration(tour), currentItineraryDays: Array.isArray(tour.itinerary) ? tour.itinerary.length : 0, plannedItineraryDays: itinerary.length }))
+    toursToUpdate: tours.filter(({ tour, itinerary }) => JSON.stringify(tour.itinerary || []) !== JSON.stringify(itinerary) || getEffectiveTourDuration(tour, tenant.slug) !== Number(tour.durationDays ?? tour.durationDetails?.days ?? 1)).length,
+    itineraryDayCounts: tours.map(({ tour, itinerary }) => ({ title: tour.title, currentDurationDays: Number(tour.durationDays ?? tour.durationDetails?.days ?? 1), plannedDurationDays: getEffectiveTourDuration(tour, tenant.slug), currentItineraryDays: Array.isArray(tour.itinerary) ? tour.itinerary.length : 0, plannedItineraryDays: itinerary.length }))
   }));
   console.log(JSON.stringify({ mode: process.env.APPLY_TENANT_ITINERARY_REPAIR === "YES" ? "APPLY" : "DRY_RUN", database: EXPECTED_DATABASE, summary }, null, 2));
   if (process.env.APPLY_TENANT_ITINERARY_REPAIR !== "YES") {
@@ -124,7 +128,7 @@ async function main() {
   let updated = 0;
   for (const { tenant, tours } of plans) {
     for (const { tour, itinerary } of tours) {
-      const durationOverride = TOUR_DURATION_OVERRIDES.get(String(tour.title || "").trim());
+      const durationOverride = getTourDurationOverride(tour, tenant.slug);
       const set = { itinerary };
       if (durationOverride) {
         set.duration = String(durationOverride.days);
@@ -150,7 +154,7 @@ async function main() {
     const tours = await db.collection("tours").find({ tenantId: tenant._id, isDeleted: { $ne: true } }).toArray();
     const destinations = await db.collection("destinations").find({ tenantId: tenant._id, isDeleted: { $ne: true } }).toArray();
     const destinationIds = new Set(destinations.map((item) => String(item._id)));
-    const invalid = tours.filter((tour) => !destinationIds.has(String(tour.destination)) || !Array.isArray(tour.itinerary) || tour.itinerary.length !== getEffectiveTourDuration(tour) || tour.itinerary.some((day, index) => day.day !== index + 1 || !day.title || !day.description));
+    const invalid = tours.filter((tour) => !destinationIds.has(String(tour.destination)) || !Array.isArray(tour.itinerary) || tour.itinerary.length !== getEffectiveTourDuration(tour, tenant.slug) || tour.itinerary.some((day, index) => day.day !== index + 1 || !day.title || !day.description));
     if (invalid.length) throw new Error(`Post-write verification failed for ${tenant.slug}: ${invalid.length} invalid tours.`);
     verification.push({ tenant: tenant.slug, tours: tours.length, invalidItineraries: invalid.length });
   }
