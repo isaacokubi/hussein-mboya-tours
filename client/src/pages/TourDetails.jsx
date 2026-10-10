@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { useSettings } from "../context/SettingsContext";
+import { useState } from "react";
 
 const asList = (value) => (Array.isArray(value) ? value.filter(Boolean) : []);
 const displayText = (value) => (typeof value === "string" ? value.trim() : "");
@@ -120,6 +121,11 @@ export default function TourDetails() {
   const { slug } = useParams();
   const { supportPhone, settings } = useSettings();
   const navigate = useNavigate();
+  const [whatsAppFormOpen, setWhatsAppFormOpen] = useState(false);
+  const [whatsAppForm, setWhatsAppForm] = useState({
+    fullName: "", phone: "", email: "", travelDate: "", adults: "2", children: "0", pickupLocation: "", notes: "",
+  });
+  const [whatsAppFormError, setWhatsAppFormError] = useState("");
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["tour", slug],
@@ -185,13 +191,50 @@ export default function TourDetails() {
 
   const handleBooking = () => navigate(`/checkout/tour/${tour._id}`);
 
-  const handleWhatsAppBooking = () => {
-    if (!supportPhone) return;
-    const message = encodeURIComponent(
-      `Hello ${settings?.companyName || "Company"}, I would like to enquire about "${tour.title}". Please confirm availability, the day-by-day itinerary, inclusions and booking details.`
-    );
-    const whatsappNumber = String(supportPhone).replace(/\D/g, "").replace(/^0/, "254");
-    window.open(`https://wa.me/${whatsappNumber}?text=${message}`, "_blank", "noopener,noreferrer");
+  const handleWhatsAppBooking = (event) => {
+    event?.preventDefault?.();
+    setWhatsAppFormError("");
+    const rawNumber = String(supportPhone || "").replace(/\D/g, "");
+    const whatsappNumber = rawNumber.startsWith("0")
+      ? `254${rawNumber.slice(1)}`
+      : rawNumber.startsWith("254")
+        ? rawNumber
+        : rawNumber.startsWith("7") || rawNumber.startsWith("1")
+          ? `254${rawNumber}`
+          : rawNumber;
+    if (!whatsappNumber || whatsappNumber.length < 10) {
+      setWhatsAppFormError("The tour operator’s WhatsApp contact is not configured correctly. Please use the Contact page.");
+      return;
+    }
+    if (!whatsAppForm.fullName.trim()) return setWhatsAppFormError("Please enter the lead traveller’s full name.");
+    if (!whatsAppForm.phone.trim()) return setWhatsAppFormError("Please enter a contact phone number.");
+    if (!whatsAppForm.travelDate) return setWhatsAppFormError("Please choose your preferred travel date.");
+    const travelDate = new Date(`${whatsAppForm.travelDate}T12:00:00`);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (Number.isNaN(travelDate.getTime()) || travelDate < today) {
+      return setWhatsAppFormError("Please choose today or a future travel date.");
+    }
+    const adults = Math.max(1, Math.min(50, Number(whatsAppForm.adults) || 1));
+    const children = Math.max(0, Math.min(50, Number(whatsAppForm.children) || 0));
+    const lines = [
+      `Hello ${settings?.companyName || "Kenya Tours"}, I would like to arrange a booking.`,
+      "",
+      "TOUR BOOKING REQUEST",
+      `Tour: ${tour.title}`,
+      `Destination: ${destination || tour.location || "Please confirm"}`,
+      `Tour reference: ${tour._id}`,
+      `Preferred travel date: ${travelDate.toLocaleDateString("en-KE", { day: "numeric", month: "long", year: "numeric" })}`,
+      `Travellers: ${adults} adult(s), ${children} child(ren)`,
+      `Lead traveller: ${whatsAppForm.fullName.trim()}`,
+      `Contact phone: ${whatsAppForm.phone.trim()}`,
+      whatsAppForm.email.trim() ? `Email: ${whatsAppForm.email.trim()}` : "",
+      whatsAppForm.pickupLocation.trim() ? `Pickup / meeting preference: ${whatsAppForm.pickupLocation.trim()}` : "",
+      whatsAppForm.notes.trim() ? `Special requests: ${whatsAppForm.notes.trim()}` : "",
+      "",
+      "Please confirm availability, final pricing for this group, inclusions, itinerary, and secure payment/confirmation steps. I understand this is a request, not a confirmed reservation.",
+    ].filter(Boolean);
+    window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(lines.join("\n"))}`, "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -234,12 +277,58 @@ export default function TourDetails() {
               </div>
               <div className="flex flex-col gap-2 sm:min-w-[200px]">
                 <button onClick={handleBooking} className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-800 px-5 py-3.5 font-bold text-white shadow-sm transition hover:bg-emerald-900 focus:outline-none focus:ring-2 focus:ring-emerald-700 focus:ring-offset-2">Book this tour <ArrowRight size={17} /></button>
-                {supportPhone && <button onClick={handleWhatsAppBooking} className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white px-5 py-3 font-bold text-emerald-900 transition hover:bg-emerald-50"><MessageCircle size={17} /> Enquire on WhatsApp</button>}
+                {supportPhone && <button type="button" onClick={() => { setWhatsAppFormError(""); setWhatsAppFormOpen((open) => !open); }} className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white px-5 py-3 font-bold text-emerald-900 transition hover:bg-emerald-50"><MessageCircle size={17} /> {whatsAppFormOpen ? "Close WhatsApp booking" : "Book via WhatsApp"}</button>}
               </div>
             </div>
           </div>
         </div>
       </section>
+
+      {whatsAppFormOpen && supportPhone && (
+        <section className="mx-auto mt-6 max-w-4xl px-4 sm:px-6 lg:px-8" aria-labelledby="whatsapp-booking-heading">
+          <form onSubmit={handleWhatsAppBooking} className="rounded-3xl border border-emerald-200 bg-white p-5 shadow-sm sm:p-7">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-emerald-700">Self-service booking request</p>
+                <h2 id="whatsapp-booking-heading" className="mt-2 text-2xl font-black text-slate-950">Plan your trip on WhatsApp</h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Enter your trip details once. We’ll prepare a booking request and open WhatsApp so you can review and send it to the tour team.</p>
+              </div>
+              <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800">No account needed</span>
+            </div>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <label className="block text-sm font-semibold text-slate-700">Lead traveller full name *
+                <input required autoComplete="name" value={whatsAppForm.fullName} onChange={(event) => setWhatsAppForm((form) => ({ ...form, fullName: event.target.value }))} className="mt-1.5 w-full rounded-xl border border-slate-300 px-3.5 py-3 font-normal outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" placeholder="Your full name" />
+              </label>
+              <label className="block text-sm font-semibold text-slate-700">Your contact phone *
+                <input required type="tel" autoComplete="tel" value={whatsAppForm.phone} onChange={(event) => setWhatsAppForm((form) => ({ ...form, phone: event.target.value }))} className="mt-1.5 w-full rounded-xl border border-slate-300 px-3.5 py-3 font-normal outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" placeholder="+254 7XX XXX XXX" />
+              </label>
+              <label className="block text-sm font-semibold text-slate-700">Email (optional)
+                <input type="email" autoComplete="email" value={whatsAppForm.email} onChange={(event) => setWhatsAppForm((form) => ({ ...form, email: event.target.value }))} className="mt-1.5 w-full rounded-xl border border-slate-300 px-3.5 py-3 font-normal outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" placeholder="you@example.com" />
+              </label>
+              <label className="block text-sm font-semibold text-slate-700">Preferred travel date *
+                <input required type="date" min={new Date().toLocaleDateString("en-CA")} value={whatsAppForm.travelDate} onChange={(event) => setWhatsAppForm((form) => ({ ...form, travelDate: event.target.value }))} className="mt-1.5 w-full rounded-xl border border-slate-300 px-3.5 py-3 font-normal outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" />
+              </label>
+              <label className="block text-sm font-semibold text-slate-700">Adults
+                <input required type="number" min="1" max="50" inputMode="numeric" value={whatsAppForm.adults} onChange={(event) => setWhatsAppForm((form) => ({ ...form, adults: event.target.value }))} className="mt-1.5 w-full rounded-xl border border-slate-300 px-3.5 py-3 font-normal outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" />
+              </label>
+              <label className="block text-sm font-semibold text-slate-700">Children
+                <input type="number" min="0" max="50" inputMode="numeric" value={whatsAppForm.children} onChange={(event) => setWhatsAppForm((form) => ({ ...form, children: event.target.value }))} className="mt-1.5 w-full rounded-xl border border-slate-300 px-3.5 py-3 font-normal outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" />
+              </label>
+              <label className="block text-sm font-semibold text-slate-700 sm:col-span-2">Pickup or meeting preference (optional)
+                <input value={whatsAppForm.pickupLocation} onChange={(event) => setWhatsAppForm((form) => ({ ...form, pickupLocation: event.target.value }))} className="mt-1.5 w-full rounded-xl border border-slate-300 px-3.5 py-3 font-normal outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" placeholder="e.g. Nairobi CBD, hotel name, or airport" />
+              </label>
+              <label className="block text-sm font-semibold text-slate-700 sm:col-span-2">Special requests (optional)
+                <textarea rows="3" value={whatsAppForm.notes} onChange={(event) => setWhatsAppForm((form) => ({ ...form, notes: event.target.value }))} className="mt-1.5 w-full resize-y rounded-xl border border-slate-300 px-3.5 py-3 font-normal outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" placeholder="Accessibility needs, occasion, child ages, or other details" />
+              </label>
+            </div>
+            {whatsAppFormError && <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">{whatsAppFormError}</p>}
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="max-w-xl text-xs leading-5 text-slate-500">WhatsApp opens with your request filled in. Review it and tap Send. Your booking is not confirmed until the operator confirms availability and payment terms.</p>
+              <button type="submit" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-emerald-800 px-5 py-3.5 font-bold text-white transition hover:bg-emerald-900 focus:outline-none focus:ring-2 focus:ring-emerald-700 focus:ring-offset-2"><MessageCircle size={18} /> Continue in WhatsApp <ArrowRight size={17} /></button>
+            </div>
+          </form>
+        </section>
+      )}
 
       <div className="mx-auto mt-8 grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:px-8">
         <div className="min-w-0 space-y-10">
