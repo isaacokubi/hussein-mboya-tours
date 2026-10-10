@@ -63,18 +63,23 @@ function DetailList({ title, items, included = true }) {
 }
 
 function ItineraryDay({ day, index }) {
-  const activities = asList(day?.activities).filter((item) => typeof item === "string" && item.trim());
-  const meals = asList(day?.meals).filter((item) => typeof item === "string" && item.trim());
-  const title = displayText(day?.title || day?.name) || `Day ${day?.day || index + 1}`;
-  const description = displayText(day?.description);
-  const accommodation = displayText(day?.accommodation);
+  const dayNumber = Number(day?.day ?? day?.dayNumber) > 0 ? Number(day?.day ?? day?.dayNumber) : index + 1;
+  const activities = asList(day?.activities)
+    .map((item) => typeof item === "string" ? item.trim() : displayText(item?.title || item?.name || item?.description))
+    .filter(Boolean);
+  const meals = asList(day?.meals)
+    .map((item) => typeof item === "string" ? item.trim() : displayText(item?.name || item?.title))
+    .filter(Boolean);
+  const title = displayText(day?.title || day?.name) || `Day ${dayNumber}`;
+  const description = displayText(day?.description || day?.summary || day?.overview);
+  const accommodation = displayText(day?.accommodation || day?.lodging);
 
   return (
     <article className="relative grid gap-4 sm:grid-cols-[76px_minmax(0,1fr)] sm:gap-6">
       <div className="flex items-start sm:justify-center">
         <div className="inline-flex min-w-[68px] flex-col items-center rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-3 text-emerald-900">
           <span className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-emerald-700">Day</span>
-          <span className="mt-0.5 text-2xl font-black leading-none">{Number(day?.day) > 0 ? day.day : index + 1}</span>
+          <span className="mt-0.5 text-2xl font-black leading-none">{dayNumber}</span>
         </div>
       </div>
       <div className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
@@ -179,10 +184,13 @@ export default function TourDetails() {
   }
 
   const image = getTourImage(tour);
-  const itinerary = asList(tour.itinerary)
+  const itinerarySource = Array.isArray(tour.itinerary)
+    ? tour.itinerary
+    : asList(tour.itinerary?.days || tour.itineraryDays);
+  const itinerary = itinerarySource
     .filter((day) => day && typeof day === "object")
     .slice()
-    .sort((a, b) => (Number(a.day) || 0) - (Number(b.day) || 0));
+    .sort((a, b) => (Number(a.day ?? a.dayNumber) || 0) - (Number(b.day ?? b.dayNumber) || 0));
   const highlights = asList(tour.highlights);
   const destination = typeof tour.destination === "object"
     ? tour.destination?.name || tour.destination?.title
