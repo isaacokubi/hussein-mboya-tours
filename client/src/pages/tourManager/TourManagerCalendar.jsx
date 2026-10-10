@@ -39,6 +39,28 @@ const normalizeResponse = (response) => {
   return [];
 };
 
+const loadAllTenantTours = async () => {
+  const firstPage = await getManagerTours({ page: 1, limit: 50 });
+  const firstTours = normalizeResponse(firstPage);
+  const pageCount = Math.max(
+    1,
+    Number(firstPage?.pagination?.pages) ||
+      Math.ceil(Number(firstPage?.total || firstPage?.pagination?.total || firstTours.length) / 50)
+  );
+  const remainingPages = await Promise.all(
+    Array.from({ length: Math.max(0, pageCount - 1) }, (_, index) =>
+      getManagerTours({ page: index + 2, limit: 50 })
+    )
+  );
+  const allTours = [firstPage, ...remainingPages].flatMap(normalizeResponse);
+  return Array.from(
+    new Map(allTours.filter(Boolean).map((tour, index) => [
+      String(tour?._id || tour?.id || tour?.slug || `tour-${index}`),
+      tour,
+    ])).values()
+  );
+};
+
 const tourId = (tour, index) => String(tour?._id || tour?.id || tour?.slug || `tour-${index}`);
 
 const tourTitle = (tour) =>
@@ -46,21 +68,33 @@ const tourTitle = (tour) =>
 
 const parseDate = (value) => {
   if (!value) return null;
-  const date = new Date(value);
+  // Treat YYYY-MM-DD as a local calendar date instead of UTC midnight, which
+  // can shift the displayed day in time zones west of UTC.
+  const dateOnlyMatch = typeof value === "string" && value.match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);
+  const date = dateOnlyMatch
+    ? new Date(Number(dateOnlyMatch[1]), Number(dateOnlyMatch[2]) - 1, Number(dateOnlyMatch[3]))
+    : new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
-const startDateOf = (tour) => parseDate(tour?.startDate || tour?.date || tour?.departureDate);
+const startDateOf = (tour) =>
+  parseDate(tour?.startDate || tour?.date || tour?.departureDate || tour?.travelDate || tour?.tourDate);
+
+const durationDaysOf = (tour) => {
+  const raw = tour?.durationDetails?.days ?? tour?.durationDays ?? tour?.duration ?? 1;
+  const match = String(raw).match(/\\d+/);
+  const days = Number(match?.[0] || 1);
+  return Number.isFinite(days) && days >= 1 ? Math.min(days, 365) : 1;
+};
 
 const endDateOf = (tour) => {
   const start = startDateOf(tour);
   if (!start) return null;
   const explicitEnd = parseDate(tour?.endDate || tour?.returnDate);
-  if (explicitEnd) return explicitEnd;
+  if (explicitEnd && explicitEnd >= start) return explicitEnd;
 
-  const days = Number(tour?.durationDetails?.days || tour?.duration || tour?.durationDays || 1);
-  const end = new Date(start);
-  end.setDate(end.getDate() + Math.max(1, Number.isFinite(days) ? days : 1) - 1);
+  const end = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  end.setDate(end.getDate() + durationDaysOf(tour) - 1);
   return end;
 };
 
@@ -70,6 +104,35 @@ const dateOnly = (date) => {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+};
+
+const scheduledDateKeys = (tour) => {
+  const keys = new Set();
+  const start = startDateOf(tour);
+  const end = endDateOf(tour);
+
+  // Mark every day of a multi-day tour, including both departure and return.
+  if (start && end) {
+    const cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+    const finalDay = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+    for (; cursor <= finalDay; cursor.setDate(cursor.getDate() + 1)) {
+      keys.add(dateOnly(cursor));
+    }
+  }
+
+  // Some tours are sold on specific departure dates in the availability list.
+  // Include those dates too, even when the tour has no single startDate.
+  const availability = [
+    ...(Array.isArray(tour?.availability) ? tour.availability : []),
+    ...(Array.isArray(tour?.availableDates) ? tour.availableDates : []),
+    ...(Array.isArray(tour?.travelDates) ? tour.travelDates : []),
+  ];
+  for (const item of availability) {
+    const date = parseDate(typeof item === "object" ? item?.date || item?.startDate || item?.departureDate : item);
+    if (date) keys.add(dateOnly(date));
+  }
+
+  return keys;
 };
 
 const statusOf = (tour) => String(tour?.status || "scheduled").toLowerCase().replace(/[_-]/g, " ");
@@ -89,17 +152,12 @@ export default function TourManagerCalendar() {
 
   const toursQuery = useQuery({
     queryKey: ["tour-manager-calendar-tours"],
-    queryFn: () => getManagerTours({ page: 1, limit: 100 }),
+    queryFn: loadAllTenantTours,
     staleTime: 30_000,
     retry: 1,
   });
 
-  const tours = useMemo(() => {
-    const raw = normalizeResponse(toursQuery.data);
-    return Array.from(
-      new Map(raw.filter(Boolean).map((tour, index) => [tourId(tour, index), tour])).values()
-    );
-  }, [toursQuery.data]);
+  const tours = useMemo(() => normalizeResponse(toursQuery.data), [toursQuery.data]);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -122,12 +180,7 @@ export default function TourManagerCalendar() {
     if (!keyDate) return [];
 
     const tourEvents = tours
-      .filter((tour) => {
-        const start = startDateOf(tour);
-        const end = endDateOf(tour);
-        if (!start || !end) return false;
-        return keyDate >= dateOnly(start) && keyDate <= dateOnly(end);
-      })
+      .filter((tour) => scheduledDateKeys(tour).has(keyDate))
       .map((tour, index) => ({
         kind: "tour",
         id: tourId(tour, index),
