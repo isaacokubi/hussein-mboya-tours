@@ -82,6 +82,12 @@ const normalizedPayload = (body, files, userId, existing = null) => {
   for (const field of ["highlights", "inclusions", "exclusions", "languages", "tags", "itinerary", "availability", "pricingRules"]) {
     if (typeof normalizedBody[field] === "string") normalizedBody[field] = parseStructuredField(normalizedBody[field], field);
   }
+  for (const field of ["published", "available", "featured", "instantBooking", "taxEnabled"]) {
+    if (typeof normalizedBody[field] === "string") {
+      if (!["true", "false"].includes(normalizedBody[field].toLowerCase())) throw Object.assign(new Error(`${field} must be true or false.`), { status: 400 });
+      normalizedBody[field] = normalizedBody[field].toLowerCase() === "true";
+    }
+  }
   const source = existing ? { ...existing.toObject(), ...normalizedBody } : normalizedBody;
   const payload = {};
   for (const field of MUTABLE_FIELDS) if (Object.prototype.hasOwnProperty.call(source, field)) payload[field] = source[field];
