@@ -12,6 +12,7 @@ const MENU = [
   ["Users", "/admin/users", Users, "user.manage", "users"],
   ["Staff", "/admin/staff", UserCog, "staff.manage", "staff"],
   ["Destinations", "/admin/destinations", BriefcaseBusiness, "tour.manage", "destinations"],
+  ["Tours", "/admin/tours", PackageCheck, "tour.manage", "tours"],
   ["Bookings & Refunds", "/admin/bookings", CalendarCheck, "booking.manage", "bookings"],
   ["Custom Tour Requests", "/admin/custom-tour-requests", CalendarCheck, "booking.manage", "custom_tours"],
   ["Operations & Procurement", "/admin/operations", PackageCheck, "booking.manage", "operations"],
@@ -50,7 +51,7 @@ const MENU = [
 ];
 
 const GROUPS = [
-  ["Operations", ["Dashboard", "Users", "Staff", "Destinations", "Bookings & Refunds", "Custom Tour Requests", "Operations & Procurement", "Hotels", "Airport Transfers", "Hospitality Reservations", "Hospitality Operations", "Hospitality Commercial", "Payments", "Agents", "Commissions", "Customers CRM", "Fleet Management", "Coupons", "Reviews", "Gallery"]],
+  ["Operations", ["Dashboard", "Users", "Staff", "Destinations", "Tours", "Bookings & Refunds", "Custom Tour Requests", "Operations & Procurement", "Hotels", "Airport Transfers", "Hospitality Reservations", "Hospitality Operations", "Hospitality Commercial", "Payments", "Agents", "Commissions", "Customers CRM", "Fleet Management", "Coupons", "Reviews", "Gallery"]],
   ["Finance & Insight", ["Reports", "Analytics", "Accounting & Finance", "M-Pesa Transactions", "Finance Reports", "Management Accounting", "Complete Accounting", "Accounting Control Reports", "Accounting Subledgers", "Withholding Tax", "Reconciliation", "Compliance & eTIMS", "AI Tools"]],
   ["Governance", ["Notifications", "Roles & Permissions", "System Health", "Billing & Subscription", "Developer Platform", "Settings"]],
 ];
