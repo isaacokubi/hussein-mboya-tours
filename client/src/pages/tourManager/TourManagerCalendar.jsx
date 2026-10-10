@@ -446,7 +446,7 @@ export default function TourManagerCalendar() {
                     </div>
                   ))}
 
-                  {selectedEvents.length === 0 && !toursQuery.isError && (
+                  {selectedEvents.length === 0 && !toursQuery.isError && !remindersQuery.isError && (
                     <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-center">
                       <CheckCircle2 className="mx-auto text-emerald-500" size={25} />
                       <p className="mt-2 font-bold text-slate-700">Nothing scheduled</p>
