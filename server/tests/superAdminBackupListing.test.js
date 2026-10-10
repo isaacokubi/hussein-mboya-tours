@@ -1,8 +1,22 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import DatabaseBackup from "../models/DatabaseBackup.js";
-import { listPlatformDatabaseBackups } from "../controllers/superAdminBackupController.js";
-import superAdminRoutes from "../routes/superAdminRoutes.js";
+
+// This controller/route contract test does not connect to MongoDB. Set isolated
+// test-only configuration before dynamically importing modules that validate
+// the server environment; never depend on a developer's ignored .env file.
+process.env.NODE_ENV = "test";
+process.env.MONGODB_URI = "mongodb://127.0.0.1:27017/backup_listing_test";
+process.env.JWT_SECRET = "ci-only-test-secret";
+
+const [
+  { default: DatabaseBackup },
+  { listPlatformDatabaseBackups },
+  { default: superAdminRoutes },
+] = await Promise.all([
+  import("../models/DatabaseBackup.js"),
+  import("../controllers/superAdminBackupController.js"),
+  import("../routes/superAdminRoutes.js"),
+]);
 
 test("DatabaseBackup exports the registered Mongoose model", () => {
   assert.equal(typeof DatabaseBackup.find, "function");
