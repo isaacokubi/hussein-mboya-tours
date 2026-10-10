@@ -1,7 +1,7 @@
 import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, BedDouble, Building2, CheckCircle2, Clock3, Coffee, CreditCard, MapPin, ShieldCheck, Star, Users } from "lucide-react";
-import { getHotel, getHotels } from "../api/hotelApi";
+import { getPublicHotel, hotelQueryScope } from "../api/hotelApi";
 
 const HOTEL_IMAGES = { "Global Demo Nairobi Hotel": "https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=1600&q=85", "Global Demo Coast Resort": "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1600&q=85", "Global Demo Safari Lodge": "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1600&q=85" };
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1601918774946-25832a4be0d6?auto=format&fit=crop&w=1600&q=85";
@@ -11,32 +11,9 @@ const meal = value => String(value || "room_only").replaceAll("_", " ").replace(
 export default function HotelDetails() {
   const { id } = useParams();
   const { data: hotel, isLoading, isError } = useQuery({
-    queryKey: ["public-hotel", id],
-    queryFn: async () => {
-      // Prefer the canonical detail endpoint. Some older API deployments can
-      // resolve the public catalogue correctly but return 404 for detail URLs;
-      // fall back to the same tenant-scoped public catalogue rather than making
-      // a hotel that was just listed impossible to open.
-      let detailError;
-      try {
-        const detail = await getHotel(id);
-        if (detail) return detail;
-      } catch (error) {
-        detailError = error;
-      }
-      const catalogue = await getHotels();
-      const key = String(id || "").trim().toLowerCase();
-      const match = Array.isArray(catalogue)
-        ? catalogue.find((item) =>
-            String(item?._id || "").toLowerCase() === key ||
-            String(item?.slug || "").trim().toLowerCase() === key
-          )
-        : null;
-      if (match) return match;
-      if (detailError) throw detailError;
-      return null;
-    },
-    enabled: !!id,
+    queryKey: ["public-hotel", hotelQueryScope(), id],
+    queryFn: () => getPublicHotel(id),
+    enabled: Boolean(id),
     staleTime: 30000,
   });
   if (isLoading) return <main className="min-h-screen bg-slate-50 px-5 py-16"><div className="mx-auto max-w-6xl animate-pulse space-y-6"><div className="h-80 rounded-3xl bg-slate-200"/><div className="h-10 w-1/2 rounded bg-slate-200"/><div className="h-32 rounded-3xl bg-slate-200"/></div></main>;
