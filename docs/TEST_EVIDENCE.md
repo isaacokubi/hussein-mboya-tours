@@ -1,5 +1,16 @@
 # Global Tours — Test Evidence Register
 
+## 2026-10-10 — targeted first-tenant acceptance (executed)
+
+| Check | Actual result | Interpretation |
+|---|---|---|
+| `cd server && node --env-file=.env --test tests/firstTenantAcceptance.integration.test.js` | **1 passed, 0 failed, 0 skipped**; duration about 111.5 seconds | PASS for the dedicated first-tenant database-backed acceptance test. |
+| Provisioning, tenant-admin/customer access, catalogue, booking, tenant-scoped reads/writes and cross-tenant denials | Assertions completed successfully | PASS for the tested disposable-database flow. |
+| Tenant selector vs JWT behavior | Tenant A credentials submitted to Tenant B login return 401; Tenant A JWT with Tenant B selector on `/api/auth/me` returns 404 | PASS; these are distinct checks (invalid credentials vs authenticated session tenant binding). |
+| Payment-provider side effects | Test diagnostic: “Disposable first-tenant API flow exercised; no provider payment was initiated.” | No M-Pesa/provider transaction was initiated or certified. |
+
+The test derives a uniquely named `fta_*` database from the explicitly configured `FIRST_TENANT_TEST_MONGODB_URI` source targeting `global_tours_test`; cleanup is guarded to that generated database. This targeted run does not mean the complete backend suite was rerun, and it does not certify live deployment, M-Pesa callbacks/idempotency, eTIMS, email, browser/mobile workflows, or backup/restore.
+
 ## Weekly QA record — 2026-10-03 through 2026-10-09
 
 This section consolidates test evidence from the previous seven days. It preserves the difference between a completed automated test, a skipped integration test, an observed smoke check, and an external acceptance gate that remains unverified.
