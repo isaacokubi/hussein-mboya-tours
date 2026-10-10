@@ -18,7 +18,7 @@ export default function Hotels() {
   const [form, setForm] = useState({ firstName: "", lastName: "", phone: "", email: "", mealPlan: "room_only", estimatedArrivalTime: "", bedPreference: "", dietaryRequirements: "", accessibilityNeeds: "", airportTransferRequired: false, specialRequests: "" });
   const updateStay = (key, value) => setStay(s => ({ ...s, [key]: value }));
   const updateForm = (key, value) => setForm(f => ({ ...f, [key]: value }));
-  const filtered = useMemo(() => data.filter(h => `${h.name} ${h.location || ""} ${h.city || ""} ${h.county || ""}`.toLowerCase().includes(search.toLowerCase())), [data, search]);
+  const filtered = useMemo(() => data.filter(h => { const publicText = `${h.name || ""} ${h.description || ""} ${h.location || ""} ${h.city || ""} ${h.county || ""}`; const isDemoListing = /\b(test|demo|synthetic|sample|placeholder|seed data)\b/i.test(publicText); return !isDemoListing && publicText.toLowerCase().includes(search.toLowerCase()); }), [data, search]);
   const availability = useQuery({ queryKey: ["hotel-availability", selected?.hotel?._id, stay.checkIn, stay.checkOut], queryFn: () => getHotelAvailability({ hotelId: selected.hotel._id, checkIn: stay.checkIn, checkOut: stay.checkOut }), enabled: !!selected?.hotel?._id && !!stay.checkIn && !!stay.checkOut && !!dateOnly(stay.checkOut) && dateOnly(stay.checkOut) > dateOnly(stay.checkIn), staleTime: 10000 });
   const liveRooms = availability.data?.roomTypes || selected?.hotel?.roomTypes || [];
   const selectedRoom = selected ? liveRooms.find(r => r._id === selected.room._id) || selected.room : null;
