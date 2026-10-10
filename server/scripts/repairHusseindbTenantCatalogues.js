@@ -117,6 +117,62 @@ function stableRecords(records, label, tenantSlug, minCount = 8) {
   return sorted;
 }
 
+export function resolveTourDurationDays(tour) {
+  const candidates = [
+    tour?.durationDetails?.days,
+    tour?.durationDays,
+    Number.parseInt(String(tour?.duration || ""), 10),
+  ].map(Number).filter((days) => Number.isInteger(days) && days >= 1 && days <= 365);
+  // Older records sometimes retain schema defaults of one day while the
+  // explicitly entered duration string still contains the real trip length.
+  return candidates.find((days) => days > 1) || candidates[0] || 3;
+}
+
+export function buildCatalogueItinerary({ tenantSlug, tourTitle, destinationName, destinationDescription, activities = [], durationDays = 3 }) {
+  const days = Math.max(1, Math.min(365, Math.floor(Number(durationDays) || 3)));
+  const cleanTitle = String(tourTitle || "Kenya journey").replace(/^\s*TEST\s+/i, "").trim();
+  const destination = String(destinationName || "the destination").replace(/^\s*TEST\s+/i, "").trim();
+  const activityList = activities.filter((value) => typeof value === "string" && value.trim());
+  const brand = tenantSlug === "amani-trails" ? "Amani Trails" : tenantSlug === "demo-safari" ? "Demo Safari" : "Hussein Mboya Tours";
+  if (days === 1) return [{
+    day: 1,
+    title: `Guided ${destination} experience`,
+    description: `${brand}: enjoy ${cleanTitle} with a local guide. The final order of activities depends on access, weather and operating conditions.`,
+    activities: activityList.length ? activityList : [`Explore ${destination}`, "Guided interpretation and photo stops"],
+    meals: ["As confirmed before departure"],
+    accommodation: "",
+  }];
+  return Array.from({ length: days }, (_, index) => {
+    const first = index === 0;
+    const last = index === days - 1;
+    const dayActivities = first
+      ? ["Meet your guide and confirm the route", "Safety and trip briefing", `Transfer toward ${destination}`]
+      : last
+        ? ["Final morning activity, if time allows", "Check-out and departure preparation", "Return transfer or onward connection"]
+        : (activityList.length ? activityList : [`Explore ${destination}`, "Guided nature, wildlife or cultural experience", "Scenic stops and photography"]).slice(0, 4);
+    const title = first
+      ? `Arrival and introduction to ${destination}`
+      : last
+        ? "Final experience and return journey"
+        : days === 2
+          ? `Discover ${destination}`
+          : `Day ${index + 1}: ${destination} guided experience`;
+    const description = first
+      ? `Meet the ${brand} team for the ${cleanTitle}. Review the route and practical arrangements before travelling to ${destination}. Accommodation and inclusions follow the confirmed booking.`
+      : last
+        ? "Enjoy a final activity where timing allows, then prepare for departure and travel to the agreed drop-off point."
+        : `${destinationDescription || `Discover ${destination} with a local guide.`} Activities may be adjusted for weather, wildlife movement, access rules and local operating conditions.`;
+    return {
+      day: index + 1,
+      title,
+      description,
+      activities: dayActivities,
+      meals: first ? ["Lunch", "Dinner"] : last ? ["Breakfast"] : ["Breakfast", "Lunch", "Dinner"],
+      accommodation: last ? "" : "Accommodation as confirmed in the booking",
+    };
+  });
+}
+
 export function buildRepairPlan(tenantSpec, tenant, destinations, tours) {
   const sortedDestinations = stableRecords(destinations, "destinations", tenantSpec.slug, 12);
   if (sortedDestinations.length !== 12) throw new Error(`Expected exactly 12 seeded destinations for ${tenantSpec.slug}; found ${sortedDestinations.length}. No records were changed.`);
@@ -128,7 +184,9 @@ export function buildRepairPlan(tenantSpec, tenant, destinations, tours) {
     tours: sortedTours.map((row, index) => ({
       row,
       title: tenantSpec.tours[index],
-      durationDays: tenantSpec.tours[index] === "Thomson Falls Highland Day Trip" ? 1 : 3,
+      durationDays: tenantSpec.slug === "demo-safari" && tenantSpec.tours[index] === "Thomson Falls Highland Day Trip"
+        ? 1
+        : resolveTourDurationDays(row),
       destinationIndex: index % sortedDestinations.length,
       price: tenantSpec.priceBase + index * 3500,
       agentPrice: tenantSpec.priceBase + index * 3000,
@@ -231,13 +289,14 @@ async function main() {
         duration: String(item.durationDays),
         durationDays: item.durationDays,
         durationDetails: { days: item.durationDays, nights: Math.max(0, item.durationDays - 1) },
-        itinerary: Array.from({ length: item.durationDays }, (_, dayIndex) => ({
-          day: dayIndex + 1,
-          title: item.durationDays === 1 ? `Explore ${destinationName} — Day Trip` : dayIndex === 0 ? `Arrive at ${destinationName}` : dayIndex === item.durationDays - 1 ? "Return journey" : `Discover ${destinationName}`,
-          description: item.durationDays === 1 ? `Enjoy a guided day trip to ${destinationName}, including ${destination.spec[2].join(", ").toLowerCase()}, before returning the same day. ${destination.spec[1]}` : dayIndex === 0 ? `Meet your local team and start exploring ${destinationName}.` : dayIndex === item.durationDays - 1 ? "Enjoy a final activity before the return transfer." : destination.spec[1],
-          activities: item.durationDays === 1 ? destination.spec[2] : dayIndex === 0 ? destination.spec[2].slice(0, 2) : dayIndex === item.durationDays - 1 ? ["Morning activity", "Return transfer"] : destination.spec[2],
-          meals: dayIndex === 0 || dayIndex === item.durationDays - 1 ? ["Breakfast"] : ["Breakfast", "Lunch"]
-        })),
+        itinerary: buildCatalogueItinerary({
+          tenantSlug: plan.spec.slug,
+          tourTitle: item.title,
+          destinationName,
+          destinationDescription: destination.spec[1],
+          activities: destination.spec[2],
+          durationDays: resolveTourDurationDays(item.row),
+        }),
         published: true,
         available: true,
         isDeleted: false
