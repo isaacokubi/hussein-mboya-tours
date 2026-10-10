@@ -131,7 +131,7 @@ export const getUserAnalytics = async (req, res, next) => {
     const [total, active, customers, agents] = await Promise.all([
       User.countDocuments(mergeTenantFilter({ isDeleted: { $ne: true } })),
       User.countDocuments(mergeTenantFilter({ isDeleted: { $ne: true }, isActive: { $ne: false } })),
-      User.countDocuments(mergeTenantFilter({ isDeleted: { $ne: true }, role: "customer" })),
+      User.countDocuments(mergeTenantFilter({ isDeleted: { $ne: true }, $or: [{ role: "customer" }, { legacyRole: "customer" }] })), 
       User.countDocuments(mergeTenantFilter({ isDeleted: { $ne: true }, role: "agent" })),
     ]);
     return res.status(200).json({ success: true, data: { total, active, customers, agents } });
