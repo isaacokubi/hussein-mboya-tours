@@ -38,8 +38,10 @@ export const getTourManagerDashboard = async (req, res, next) => {
         .populate("assignedVehicle", "name registrationNumber registration model type capacity status assignedTour")
         .sort({ startDate: 1, date: 1 }).limit(10).lean(),
       Booking.find(bookingFilter)
-        .populate("customer", "name email")
+        .populate("customer", "name firstName lastName email phone")
+        .populate("user", "name email phone")
         .populate("tour", "title")
+        .populate("customTourRequest", "destination")
         .sort({ createdAt: -1 }).limit(6).lean(),
     ]);
 
@@ -65,17 +67,39 @@ export const getTourManagerDashboard = async (req, res, next) => {
       };
     });
 
-    const formattedBookings = recentBookings.map((booking) => ({
-      id: booking._id, _id: booking._id,
-      bookingNumber: booking.bookingNumber || null,
-      customer: booking.customer || { name: booking.customerSnapshot?.name || "Unknown" },
-      tour: booking.tour || { title: "Unknown" },
-      guests: Number(booking.numberOfGuests || booking.guests || 0),
-      paymentStatus: booking.paymentStatus || booking.payment?.status || "pending",
-      amount: Number(booking.totalAmount ?? booking.amount ?? booking.price ?? 0),
-      status: booking.status || "pending",
-      travelDate: booking.travelDate || booking.date || null,
-    }));
+    const cleanText = (value) => {
+      const text = String(value ?? "").trim().replace(/\\s+/g, " ");
+      return text && !/^(?:undefined(?:\\s+undefined)?|null(?:\\s+null)?)$/i.test(text) ? text : "";
+    };
+    const formattedBookings = recentBookings.map((booking) => {
+      const customer = booking.customer || {};
+      const user = booking.user || {};
+      const snapshot = booking.customerSnapshot || {};
+      const contact = booking.contact || {};
+      const customerName = [
+        customer.name,
+        [customer.firstName, customer.lastName].filter(Boolean).join(" "),
+        snapshot.name,
+        contact.name,
+        user.name,
+      ].map(cleanText).find(Boolean);
+      const customerEmail = [customer.email, snapshot.email, contact.email, user.email].map(cleanText).find(Boolean);
+      const customerPhone = [customer.phone, snapshot.phone, contact.phone, user.phone].map(cleanText).find(Boolean);
+      const tour = booking.tour || (booking.customTourRequest?.destination
+        ? { title: `Custom tour — ${booking.customTourRequest.destination}`, custom: true }
+        : { title: "Tour record unavailable" });
+      return {
+        id: booking._id, _id: booking._id,
+        bookingNumber: booking.bookingNumber || null,
+        customer: { ...customer, name: customerName || customerEmail || customerPhone || "Customer record unavailable", email: customerEmail || "", phone: customerPhone || "" },
+        tour,
+        guests: Number(booking.numberOfGuests || booking.guests || booking.numberOfPeople || 0),
+        paymentStatus: booking.paymentStatus || booking.payment?.status || "pending",
+        amount: Number(booking.totalAmount ?? booking.amount ?? booking.price ?? 0),
+        status: booking.status || "pending",
+        travelDate: booking.travelDate || booking.date || null,
+      };
+    });
 
     return res.status(200).json({ success: true, data: {
       stats: { totalTours, upcomingTours: upcomingToursCount, totalCustomers, revenue: Number(revenueResult?.revenue || 0), revenueSource: "paid_booking_value" },
