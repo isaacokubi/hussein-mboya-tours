@@ -61,8 +61,28 @@ const applyResourceState = async ({ tour, resources, session }) => {
   if (vehicle) { vehicle.status = "assigned"; vehicle.assignedTour = tour._id; await vehicle.save({ session }); }
 };
 
+const parseStructuredField = (value, field) => {
+  if (typeof value !== "string") return value;
+  const trimmed = value.trim();
+  if (!trimmed) return [];
+  try {
+    const parsed = JSON.parse(trimmed);
+    if (!Array.isArray(parsed) && !["highlights", "inclusions", "exclusions", "languages", "tags"].includes(field)) {
+      throw new Error(`${field} must be a JSON array.`);
+    }
+    return parsed;
+  } catch (error) {
+    if (error.message?.includes("must be a JSON array")) throw Object.assign(error, { status: 400 });
+    throw Object.assign(new Error(`Invalid JSON supplied for tour field: ${field}.`), { status: 400 });
+  }
+};
+
 const normalizedPayload = (body, files, userId, existing = null) => {
-  const source = existing ? { ...existing.toObject(), ...body } : { ...body };
+  const normalizedBody = { ...body };
+  for (const field of ["highlights", "inclusions", "exclusions", "languages", "tags", "itinerary", "availability", "pricingRules"]) {
+    if (typeof normalizedBody[field] === "string") normalizedBody[field] = parseStructuredField(normalizedBody[field], field);
+  }
+  const source = existing ? { ...existing.toObject(), ...normalizedBody } : normalizedBody;
   const payload = {};
   for (const field of MUTABLE_FIELDS) if (Object.prototype.hasOwnProperty.call(source, field)) payload[field] = source[field];
   if (!payload.title?.trim() || !payload.description?.trim() || !payload.destination || !payload.country?.trim() || !payload.location?.trim()) throw Object.assign(new Error("Title, description, destination, country and location are required."), { status: 400 });
@@ -86,7 +106,15 @@ const normalizedPayload = (body, files, userId, existing = null) => {
       payload.startDate = startDate;
       const calculatedEnd = new Date(startDate);
       calculatedEnd.setDate(calculatedEnd.getDate() + durationDays - 1);
-      payload.endDate = calculatedEnd;
+      if (body.endDate !== undefined && body.endDate !== "") {
+        const requestedEnd = new Date(body.endDate);
+        if (Number.isNaN(requestedEnd.getTime()) || requestedEnd < startDate) {
+          throw Object.assign(new Error("Tour endDate must be valid and cannot be before its start date."), { status: 400 });
+        }
+        payload.endDate = requestedEnd;
+      } else {
+        payload.endDate = calculatedEnd;
+      }
     }
   }
   payload.price = Number(payload.price);
