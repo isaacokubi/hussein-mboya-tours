@@ -5,10 +5,114 @@ import HotelBooking from "../models/HotelBooking.js";
 import Customer from "../models/Customer.js";
 const tenantIdOf=(req)=>req.tenantId||req.user?.tenantId; const clean=(v)=>String(v??"").trim(); const slugify=(v)=>clean(v).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,170); const ref=()=>`HTL-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2,7).toUpperCase()}`; const daysBetween=(a,b)=>Math.ceil((new Date(b)-new Date(a))/86400000); const staffRoles=new Set(["admin","manager","tour_manager","tourmanager","agent"]); const roleOf=(req)=>String(req.user?.role||"").trim().toLowerCase().replace(/[\s-]+/g,"_");
 const requireTenant=(req,res)=>{const tenantId=tenantIdOf(req);if(!tenantId||!mongoose.isValidObjectId(tenantId)){res.status(400).json({success:false,message:"A valid company/tenant context is required."});return null;}return tenantId;};
+const regexSpecialChars = new Set([".", "*", "+", "?", "^", "$", "{", "}", "(", ")", "|", "[", "]", "\\"]);
+const escapeRegex = (value) => Array.from(String(value ?? ""), (char) => regexSpecialChars.has(char) ? "\\" + char : char).join("");
+const arrayClean=(value,max=50)=>");
 const arrayClean=(value,max=50)=>Array.isArray(value)?value.map(clean).filter(Boolean).slice(0,max):clean(value)?[clean(value)]:[];
 const normalizeRoomPayload=(body={})=>({name:clean(body.name),description:clean(body.description),maxAdults:Number(body.maxAdults??2),maxChildren:Number(body.maxChildren??1),beds:arrayClean(body.beds,20),amenities:arrayClean(body.amenities,50),totalRooms:Number(body.totalRooms),availableRooms:body.availableRooms===undefined?Number(body.totalRooms):Number(body.availableRooms),nightlyRate:Number(body.nightlyRate),mealPlans:arrayClean(body.mealPlans,10),currency:clean(body.currency||"KES").toUpperCase(),status:["active","inactive"].includes(body.status)?body.status:"active"});
-export const listHotels=async(req,res,next)=>{try{const filter={tenantId:tenantIdOf(req),status:"active"};if(req.query.city)filter.city=new RegExp(`^${clean(req.query.city).replace(/[.*+?^${}()|[\\]\\\\]/g,"\\$&")}$`,"i");if(req.query.featured==="true")filter.featured=true;const hotels=await Hotel.find(filter).sort({featured:-1,name:1}).lean();const data=await Promise.all(hotels.map(async h=>({...h,roomTypes:await HotelRoomType.find({tenantId:h.tenantId,hotel:h._id,status:"active"}).sort({nightlyRate:1}).lean()})));res.json({success:true,data});}catch(e){next(e);}};
-export const getHotel=async(req,res,next)=>{try{const filter={tenantId:tenantIdOf(req),$or:[{_id:mongoose.isValidObjectId(req.params.id)?req.params.id:null},{slug:clean(req.params.id).toLowerCase()}]};const hotel=await Hotel.findOne(filter).lean();if(!hotel)return res.status(404).json({success:false,message:"Hotel not found."});const rooms=await HotelRoomType.find({tenantId:hotel.tenantId,hotel:hotel._id,status:"active"}).sort({nightlyRate:1}).lean();res.json({success:true,data:{...hotel,roomTypes:rooms}});}catch(e){next(e);}};
+export const listHotels = async (req, res, next) => {
+  try {
+    const tenantId = requireTenant(req, res);
+    if (!tenantId) return;
+    const filter = { tenantId, status: "active" };
+    if (req.query.city) {
+      const city = escapeRegex(clean(req.query.city));
+      filter.city = new RegExp("^" + city + "$", "i");
+    }
+    if (req.query.featured === "true") filter.featured = true;
+    const hotels = await Hotel.find(filter).sort({ featured: -1, name: 1 }).lean();
+    const data = await Promise.all(hotels.map(async (hotel) => ({
+      ...hotel,
+      roomTypes: await HotelRoomType.find({
+        tenantId: hotel.tenantId,
+        hotel: hotel._id,
+        status: "active",
+      }).sort({ nightlyRate: 1 }).lean(),
+    })));
+    return res.json({ success: true, data });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const getHotel = async (req, res, next) => {
+  try {
+    const tenantId = requireTenant(req, res);
+    if (!tenantId) return;
+    const key = clean(req.params.id);
+    const hotel = await Hotel.findOne({
+      tenantId,
+      status: "active",
+      $or: [
+        { _id: mongoose.isValidObjectId(key) ? key : null },
+        { slug: key.toLowerCase() },
+      ],
+    }).lean();
+    if (!hotel) return res.status(404).json({ success: false, message: "Hotel not found." });
+    const rooms = await HotelRoomType.find({
+      tenantId: hotel.tenantId,
+      hotel: hotel._id,
+      status: "active",
+    }).sort({ nightlyRate: 1 }).lean();
+    return res.json({ success: true, data: { ...hotel, roomTypes: rooms } });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const listAdminHotels=");
+      filter.city = new RegExp(`^${city}import mongoose from "mongoose";
+import Hotel from "../models/Hotel.js";
+import HotelRoomType from "../models/HotelRoomType.js";
+import HotelBooking from "../models/HotelBooking.js";
+import Customer from "../models/Customer.js";
+const tenantIdOf=(req)=>req.tenantId||req.user?.tenantId; const clean=(v)=>String(v??"").trim(); const slugify=(v)=>clean(v).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,170); const ref=()=>`HTL-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2,7).toUpperCase()}`; const daysBetween=(a,b)=>Math.ceil((new Date(b)-new Date(a))/86400000); const staffRoles=new Set(["admin","manager","tour_manager","tourmanager","agent"]); const roleOf=(req)=>String(req.user?.role||"").trim().toLowerCase().replace(/[\s-]+/g,"_");
+const requireTenant=(req,res)=>{const tenantId=tenantIdOf(req);if(!tenantId||!mongoose.isValidObjectId(tenantId)){res.status(400).json({success:false,message:"A valid company/tenant context is required."});return null;}return tenantId;};
+const arrayClean=(value,max=50)=>Array.isArray(value)?value.map(clean).filter(Boolean).slice(0,max):clean(value)?[clean(value)]:[];
+const normalizeRoomPayload=(body={})=>({name:clean(body.name),description:clean(body.description),maxAdults:Number(body.maxAdults??2),maxChildren:Number(body.maxChildren??1),beds:arrayClean(body.beds,20),amenities:arrayClean(body.amenities,50),totalRooms:Number(body.totalRooms),availableRooms:body.availableRooms===undefined?Number(body.totalRooms):Number(body.availableRooms),nightlyRate:Number(body.nightlyRate),mealPlans:arrayClean(body.mealPlans,10),currency:clean(body.currency||"KES").toUpperCase(),status:["active","inactive"].includes(body.status)?body.status:"active"});
+, "i");
+    }
+    if (req.query.featured === "true") filter.featured = true;
+    const hotels = await Hotel.find(filter).sort({ featured: -1, name: 1 }).lean();
+    const data = await Promise.all(hotels.map(async (hotel) => ({
+      ...hotel,
+      roomTypes: await HotelRoomType.find({
+        tenantId: hotel.tenantId,
+        hotel: hotel._id,
+        status: "active",
+      }).sort({ nightlyRate: 1 }).lean(),
+    })));
+    return res.json({ success: true, data });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const getHotel = async (req, res, next) => {
+  try {
+    const tenantId = requireTenant(req, res);
+    if (!tenantId) return;
+    const key = clean(req.params.id);
+    const hotel = await Hotel.findOne({
+      tenantId,
+      status: "active",
+      $or: [
+        { _id: mongoose.isValidObjectId(key) ? key : null },
+        { slug: key.toLowerCase() },
+      ],
+    }).lean();
+    if (!hotel) return res.status(404).json({ success: false, message: "Hotel not found." });
+    const rooms = await HotelRoomType.find({
+      tenantId: hotel.tenantId,
+      hotel: hotel._id,
+      status: "active",
+    }).sort({ nightlyRate: 1 }).lean();
+    return res.json({ success: true, data: { ...hotel, roomTypes: rooms } });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export const listAdminHotels=async(req,res,next)=>{try{const tenantId=requireTenant(req,res);if(!tenantId)return;const filter={tenantId};if(req.query.status)filter.status=req.query.status;const hotels=await Hotel.find(filter).sort({createdAt:-1}).lean();const data=await Promise.all(hotels.map(async h=>({...h,roomTypes:await HotelRoomType.find({tenantId:h.tenantId,hotel:h._id}).sort({nightlyRate:1}).lean()})));res.json({success:true,data});}catch(e){next(e);}};
 export const createHotel=async(req,res,next)=>{try{const tenantId=requireTenant(req,res);if(!tenantId)return;const name=clean(req.body.name);if(!name)return res.status(400).json({success:false,message:"Hotel name is required."});const baseSlug=slugify(req.body.slug||name)||`hotel-${Date.now()}`;let slug=baseSlug,n=2;while(await Hotel.exists({tenantId,slug}))slug=`${baseSlug}-${n++}`;const hotel=await Hotel.create({...req.body,name,slug,tenantId,createdBy:req.user?._id||null,updatedBy:req.user?._id||null});res.status(201).json({success:true,data:hotel});}catch(e){next(e);}};
 export const updateHotel=async(req,res,next)=>{try{const tenantId=requireTenant(req,res);if(!tenantId)return;const hotel=await Hotel.findOne({_id:req.params.id,tenantId});if(!hotel)return res.status(404).json({success:false,message:"Hotel not found."});const allowed=["name","description","location","address","city","county","country","latitude","longitude","starRating","amenities","images","contactPhone","contactEmail","checkInTime","checkOutTime","cancellationPolicy","status","featured","currency"];for(const key of allowed)if(req.body[key]!==undefined)hotel[key]=req.body[key];const name=clean(hotel.name);if(!name||!clean(hotel.city)||!clean(hotel.location))return res.status(400).json({success:false,message:"Hotel name, city and location are required."});const stars=Number(hotel.starRating);if(!Number.isInteger(stars)||stars<1||stars>5)return res.status(400).json({success:false,message:"Star rating must be an integer from 1 to 5."});if(hotel.contactEmail&&(!/^\S+@\S+\.\S+$/.test(clean(hotel.contactEmail))))return res.status(400).json({success:false,message:"Reservations email is invalid."});if(hotel.latitude!==undefined&&hotel.latitude!==null&&hotel.latitude!==""&&(!Number.isFinite(Number(hotel.latitude))||Number(hotel.latitude)<-90||Number(hotel.latitude)>90))return res.status(400).json({success:false,message:"Latitude must be between -90 and 90."});if(hotel.longitude!==undefined&&hotel.longitude!==null&&hotel.longitude!==""&&(!Number.isFinite(Number(hotel.longitude))||Number(hotel.longitude)<-180||Number(hotel.longitude)>180))return res.status(400).json({success:false,message:"Longitude must be between -180 and 180."});hotel.name=name;hotel.amenities=arrayClean(hotel.amenities,50);hotel.images=arrayClean(hotel.images,30);hotel.status=["draft","active","inactive"].includes(hotel.status)?hotel.status:"draft";hotel.currency=clean(hotel.currency||"KES").toUpperCase();if(req.body.name!==undefined&&clean(req.body.name)!==hotel.name){let baseSlug=slugify(hotel.name)||`hotel-${Date.now()}`,slug=baseSlug,n=2;while(await Hotel.exists({_id:{$ne:hotel._id},tenantId,slug}))slug=`${baseSlug}-${n++}`;hotel.slug=slug;}hotel.updatedBy=req.user?._id||null;await hotel.save();res.json({success:true,message:"Property updated successfully.",data:hotel});}catch(e){if(e?.code===11000)return res.status(409).json({success:false,message:"A property with that name already exists for this tenant."});next(e);}};
