@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { AlertTriangle, Bot, CalendarClock, CheckCircle2, RefreshCw, Wallet } from "lucide-react";
-import { getOperationsCopilotSummary, sendBookingNotification } from "../../api/tourManagerApi";
+import { createOperationsQuoteDraft, getOperationsCopilotSummary, getTours, sendBookingNotification } from "../../api/tourManagerApi";
 
 const money = (value) => new Intl.NumberFormat("en-KE", {
   style: "currency",
@@ -18,6 +19,21 @@ function Metric({ label, value, hint, icon: Icon }) {
 }
 
 export default function TourManagerCopilot() {
+  const [tourId, setTourId] = useState("");
+  const [travelerCount, setTravelerCount] = useState("2");
+  const [discountPercent, setDiscountPercent] = useState("0");
+  const [taxPercent, setTaxPercent] = useState("0");
+  const quoteMutation = useMutation({
+    mutationFn: createOperationsQuoteDraft,
+  });
+  const toursQuery = useQuery({
+    queryKey: ["tour-manager-copilot-tours"],
+    queryFn: getTours,
+    staleTime: 60_000,
+    retry: 1,
+  });
+  const toursPayload = toursQuery.data?.data ?? toursQuery.data;
+  const quoteTours = Array.isArray(toursPayload) ? toursPayload : (toursPayload?.tours || toursPayload?.data || toursPayload?.results || []);
   const reminderMutation = useMutation({
     mutationFn: ({ id, channel }) => sendBookingNotification(id, channel),
     onSuccess: () => window.alert("Payment reminder sent successfully."),
@@ -57,6 +73,32 @@ export default function TourManagerCopilot() {
           <Metric label="Need attention" value={summary.tripsNeedingAttention ?? 0} hint="Assignment or record-completeness alerts" icon={AlertTriangle}/>
           <Metric label="Payment follow-ups" value={summary.bookingsWithOutstandingBalances ?? 0} hint={`${summary.urgentPaymentFollowUps ?? 0} with travel in three days or less`} icon={Wallet}/><Metric label="Asset alerts" value={summary.assetsNeedingAttention ?? 0} hint={`${summary.urgentAssetAlerts ?? 0} urgent expiry or maintenance alerts`} icon={AlertTriangle}/>
         </div>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+          <div className="mb-5"><h2 className="text-lg font-bold text-slate-950">Smart quotation draft</h2><p className="mt-1 text-sm text-slate-500">Build a reviewable quote from the tenant's catalogue price. It does not create a booking or send a quote to a customer.</p></div>
+          <form className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" onSubmit={(event) => { event.preventDefault(); quoteMutation.mutate({ tourId, travelerCount: Number(travelerCount), discountPercent: Number(discountPercent), taxPercent: Number(taxPercent) }); }}>
+            <label className="text-sm font-medium text-slate-700 sm:col-span-2">Tour
+              <select required value={tourId} onChange={(event) => setTourId(event.target.value)} className="mt-1 block w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-slate-900"><option value="">Choose a tour</option>{quoteTours.map((tour) => <option key={tour._id || tour.id} value={tour._id || tour.id}>{tour.title || tour.name || "Untitled tour"} — KES {Number(tour.discountPrice ?? tour.price ?? 0).toLocaleString("en-KE")}</option>)}</select>
+            </label>
+            <label className="text-sm font-medium text-slate-700">Travellers
+              <input required type="number" min="1" max="100" step="1" value={travelerCount} onChange={(event) => setTravelerCount(event.target.value)} className="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5"/>
+            </label>
+            <label className="text-sm font-medium text-slate-700">Discount (%)
+              <input required type="number" min="0" max="100" step="0.01" value={discountPercent} onChange={(event) => setDiscountPercent(event.target.value)} className="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5"/>
+            </label>
+            <label className="text-sm font-medium text-slate-700">Tax (%)
+              <input required type="number" min="0" max="100" step="0.01" value={taxPercent} onChange={(event) => setTaxPercent(event.target.value)} className="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5"/>
+            </label>
+            <div className="flex items-end"><button type="submit" disabled={!tourId || quoteMutation.isPending || toursQuery.isLoading} className="w-full rounded-xl bg-emerald-800 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-900 disabled:opacity-50">{quoteMutation.isPending ? "Calculating…" : "Generate quote draft"}</button></div>
+          </form>
+          {toursQuery.isError && <p role="alert" className="mt-3 text-sm text-rose-700">Tour catalogue could not be loaded. Refresh the page and try again.</p>}
+          {quoteMutation.isError && <p role="alert" className="mt-4 text-sm text-rose-700">{quoteMutation.error?.response?.data?.message || quoteMutation.error?.message || "Quote could not be generated."}</p>}
+          {quoteMutation.data?.data && <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-xs font-bold uppercase tracking-wider text-emerald-800">Draft · requires review</p><h3 className="mt-1 text-xl font-bold text-slate-950">{quoteMutation.data.data.tourTitle}</h3><p className="mt-1 text-sm text-slate-600">{quoteMutation.data.data.travelerCount} traveller(s) · {quoteMutation.data.data.destination || "Destination as recorded"}</p></div><div className="text-left sm:text-right"><p className="text-sm text-slate-600">Estimated total</p><p className="text-3xl font-black text-emerald-900">{money(quoteMutation.data.data.total)}</p></div></div>
+            <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2"><p>Subtotal: <strong>{money(quoteMutation.data.data.subtotal)}</strong></p><p>Discount: <strong>{money(quoteMutation.data.data.discountAmount)}</strong></p><p>Tax: <strong>{money(quoteMutation.data.data.taxAmount)}</strong></p><p>Per traveller: <strong>{money(quoteMutation.data.data.unitPrice)}</strong></p></div>
+            <p className="mt-4 text-xs leading-5 text-slate-600">{quoteMutation.data.data.note}</p>
+          </div>}
+        </section>
 
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-100 p-5"><h2 className="text-lg font-bold text-slate-950">Tour readiness and profitability</h2><p className="mt-1 text-sm text-slate-500">Margins are estimates until costs are entered and reconciled.</p></div>
