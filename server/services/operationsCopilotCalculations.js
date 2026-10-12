@@ -112,3 +112,42 @@ export function buildAssetAlerts(asset, now = new Date(), horizonDays = 30) {
     alerts,
   };
 }
+
+/**
+ * Build a transparent, non-persisted quotation estimate from tenant tour data.
+ * The client may not supply or override the authoritative tour price.
+ */
+export function buildQuoteDraft(tour, travelerCount, discountPercent = 0, taxPercent = 0) {
+  const guests = Number(travelerCount);
+  const discountRate = Number(discountPercent);
+  const taxRate = Number(taxPercent);
+  if (!Number.isInteger(guests) || guests < 1 || guests > 100) throw new Error("Travellers must be a whole number between 1 and 100.");
+  if (!Number.isFinite(discountRate) || discountRate < 0 || discountRate > 100) throw new Error("Discount must be between 0 and 100 percent.");
+  if (!Number.isFinite(taxRate) || taxRate < 0 || taxRate > 100) throw new Error("Tax rate must be between 0 and 100 percent.");
+  const listedPrice = Number(tour.discountPrice ?? tour.price);
+  if (!Number.isFinite(listedPrice) || listedPrice < 0) throw new Error("Tour has no valid price configured.");
+  const subtotal = toMoney(listedPrice * guests);
+  const discountAmount = toMoney(subtotal * discountRate / 100);
+  const taxableAmount = toMoney(Math.max(0, subtotal - discountAmount));
+  const taxAmount = toMoney(taxableAmount * taxRate / 100);
+  return {
+    tourId: String(tour._id),
+    tourTitle: tour.title,
+    destination: typeof tour.destination === "object" ? (tour.destination?.name || tour.destination?.title || "") : String(tour.destination || ""),
+    travelerCount: guests,
+    unitPrice: toMoney(listedPrice),
+    currency: "KES",
+    subtotal,
+    discountPercent: discountRate,
+    discountAmount,
+    taxPercent: taxRate,
+    taxAmount,
+    total: toMoney(taxableAmount + taxAmount),
+    inclusions: Array.isArray(tour.inclusions) ? tour.inclusions : [],
+    exclusions: Array.isArray(tour.exclusions) ? tour.exclusions : [],
+    itinerary: Array.isArray(tour.itinerary) ? tour.itinerary : [],
+    cancellationPolicy: tour.cancellationPolicy || "",
+    requiresReview: true,
+    note: "Draft estimate based on the current tour catalogue price. Confirm dates, availability, taxes and any custom supplier costs before sending to the customer.",
+  };
+}
