@@ -60,7 +60,7 @@ export const getBookings = async (params = {}) => {
   return data;
 };
 
-export const completeBooking = async (id) => {
+export const sendBookingNotification = async (id, channel, type = "payment_reminder") => {\n  const { data } = await api.post(`/tourmanager/bookings/${id}/notify`, { type, channel });\n  return data;\n};\n\nexport const completeBooking = async (id) => {
   const { data } = await api.patch(`/tourmanager/bookings/${id}/complete`);
   return data;
 };
