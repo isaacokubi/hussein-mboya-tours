@@ -1,6 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { AlertTriangle, Bot, CalendarClock, CheckCircle2, RefreshCw, Wallet } from "lucide-react";
-import { getOperationsCopilotSummary } from "../../api/tourManagerApi";
+import { getOperationsCopilotSummary, sendBookingNotification } from "../../api/tourManagerApi";
 
 const money = (value) => new Intl.NumberFormat("en-KE", {
   style: "currency",
@@ -18,6 +18,11 @@ function Metric({ label, value, hint, icon: Icon }) {
 }
 
 export default function TourManagerCopilot() {
+  const reminderMutation = useMutation({
+    mutationFn: ({ id, channel }) => sendBookingNotification(id, channel),
+    onSuccess: () => window.alert("Payment reminder sent successfully."),
+    onError: (error) => window.alert(error?.response?.data?.message || error?.message || "Payment reminder could not be sent."),
+  });
   const query = useQuery({
     queryKey: ["tour-manager-copilot-summary"],
     queryFn: getOperationsCopilotSummary,
@@ -60,7 +65,7 @@ export default function TourManagerCopilot() {
 
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-100 p-5"><h2 className="text-lg font-bold text-slate-950">Payment follow-up queue</h2><p className="mt-1 text-sm text-slate-500">Suggested follow-ups only. No SMS, email or WhatsApp message is sent from this page.</p></div>
-          <div className="overflow-x-auto"><table className="min-w-[720px] w-full text-left text-sm"><thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-5 py-3">Booking</th><th className="px-5 py-3">Guest</th><th className="px-5 py-3">Travel date</th><th className="px-5 py-3">Balance</th><th className="px-5 py-3">Priority</th></tr></thead><tbody className="divide-y divide-slate-100">{followUps.map((item) => <tr key={item.bookingId}><td className="px-5 py-4 font-semibold text-slate-900">{item.bookingNumber || item.bookingId.slice(-8)}</td><td className="px-5 py-4"><p>{item.customerName || "Guest name not recorded"}</p><p className="mt-1 text-xs text-slate-500">{item.customerPhone || item.customerEmail || "No contact details recorded"}</p></td><td className="px-5 py-4">{item.travelDate ? new Date(item.travelDate).toLocaleDateString("en-KE") : "Not set"}</td><td className="px-5 py-4 font-semibold">{money(item.balance)}</td><td className="px-5 py-4"><span className={`rounded-full px-2.5 py-1 text-xs font-bold ${item.priority === "urgent" ? "bg-rose-50 text-rose-700" : "bg-slate-100 text-slate-700"}`}>{item.priority}</span></td></tr>)}{followUps.length === 0 && <tr><td colSpan="5" className="px-5 py-8 text-center text-slate-500">No outstanding booking balances were found.</td></tr>}</tbody></table></div>
+          <div className="overflow-x-auto"><table className="min-w-[720px] w-full text-left text-sm"><thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-5 py-3">Booking</th><th className="px-5 py-3">Guest</th><th className="px-5 py-3">Travel date</th><th className="px-5 py-3">Balance</th><th className="px-5 py-3">Priority</th></tr></thead><tbody className="divide-y divide-slate-100">{followUps.map((item) => <tr key={item.bookingId}><td className="px-5 py-4 font-semibold text-slate-900">{item.bookingNumber || item.bookingId.slice(-8)}</td><td className="px-5 py-4"><p>{item.customerName || "Guest name not recorded"}</p><p className="mt-1 text-xs text-slate-500">{item.customerPhone || item.customerEmail || "No contact details recorded"}</p></td><td className="px-5 py-4">{item.travelDate ? new Date(item.travelDate).toLocaleDateString("en-KE") : "Not set"}</td><td className="px-5 py-4 font-semibold">{money(item.balance)}</td><td className="px-5 py-4"><div className="flex flex-col items-start gap-2"><span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">{item.priority}</span><div className="flex flex-wrap gap-2">{item.customerEmail && <button type="button" disabled={reminderMutation.isPending} onClick={() => reminderMutation.mutate({ id: item.bookingId, channel: "email" })} className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">Email reminder</button>}{item.customerPhone && <button type="button" disabled={reminderMutation.isPending} onClick={() => reminderMutation.mutate({ id: item.bookingId, channel: "sms" })} className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">SMS reminder</button>}</div></div></td></tr>)}{followUps.length === 0 && <tr><td colSpan="5" className="px-5 py-8 text-center text-slate-500">No outstanding booking balances were found.</td></tr>}</tbody></table></div>
         </section>
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-100 p-5"><h2 className="text-lg font-bold text-slate-950">Fleet, staff and document alerts</h2><p className="mt-1 text-sm text-slate-500">Alerts are generated from operational asset records and their documented metadata dates.</p></div>
