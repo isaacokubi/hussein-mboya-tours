@@ -4,7 +4,7 @@ import Booking from "../models/Booking.js";
 import TourCost from "../models/TourCost.js";
 import OperationalAsset from "../models/OperationalAsset.js";
 import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
-import { buildTripOperations, buildPaymentFollowUp, buildAssetAlerts, toMoney } from "../services/operationsCopilotCalculations.js";
+import { buildTripOperations, buildPaymentFollowUp, buildAssetAlerts, buildQuoteDraft, toMoney } from "../services/operationsCopilotCalculations.js";
 
 /**
  * Read-only Safari Operations Copilot summary.
@@ -124,6 +124,34 @@ export const getOperationsCopilotSummary = async (req, res, next) => {
       },
     });
   } catch (error) {
+    return next(error);
+  }
+};
+
+/**
+ * Create a preview-only quotation from catalogue pricing. This intentionally
+ * does not save a quotation or create a booking; a manager reviews it first.
+ */
+export const createOperationsQuoteDraft = async (req, res, next) => {
+  try {
+    requireTenantId();
+    const { tourId, travelerCount, discountPercent = 0, taxPercent = 0 } = req.body || {};
+    if (!mongoose.isValidObjectId(tourId)) {
+      return res.status(400).json({ success: false, message: "A valid tourId is required." });
+    }
+    const tour = await Tour.findOne(mergeTenantFilter({
+      _id: tourId,
+      isDeleted: { $ne: true },
+    })).select("title destination price discountPrice inclusions exclusions itinerary cancellationPolicy").populate("destination", "name title").lean();
+    if (!tour) {
+      return res.status(404).json({ success: false, message: "Tour was not found in this tenant." });
+    }
+    const quote = buildQuoteDraft(tour, travelerCount, discountPercent, taxPercent);
+    return res.status(200).json({ success: true, data: quote });
+  } catch (error) {
+    if (/Travellers must|Discount must|Tax rate must|Tour has no valid price/.test(error.message)) {
+      return res.status(400).json({ success: false, message: error.message });
+    }
     return next(error);
   }
 };
