@@ -68,3 +68,47 @@ export function buildPaymentFollowUp(booking, now = new Date()) {
     daysUntilTravel,
   };
 }
+
+/**
+ * Convert optional dates on flexible operational-asset metadata into alerts.
+ * Supported keys are deliberately explicit so the copilot never guesses at
+ * undocumented metadata fields.
+ */
+export function buildAssetAlerts(asset, now = new Date(), horizonDays = 30) {
+  const metadata = asset.metadata && typeof asset.metadata === "object" ? asset.metadata : {};
+  const alerts = [];
+  if (asset.status === "expired") {
+    alerts.push({ kind: "status", severity: "urgent", message: "Asset is marked expired", dueAt: null });
+  }
+  const dateFields = [
+    ["expiryDate", "Expiry", "document"],
+    ["documentExpiry", "Document expiry", "document"],
+    ["licenseExpiry", "Licence expiry", "document"],
+    ["maintenanceDueAt", "Maintenance", "maintenance"],
+    ["nextMaintenanceAt", "Maintenance", "maintenance"],
+  ];
+  const horizon = new Date(now.getTime() + horizonDays * 86400000);
+  for (const [key, label, kind] of dateFields) {
+    if (!metadata[key]) continue;
+    const dueAt = new Date(metadata[key]);
+    if (!Number.isFinite(dueAt.getTime())) continue;
+    if (dueAt <= horizon) {
+      alerts.push({
+        kind,
+        severity: dueAt < now ? "urgent" : "warning",
+        message: dueAt < now ? `${label} is overdue` : `${label} due within ${horizonDays} days`,
+        dueAt: dueAt.toISOString(),
+      });
+    }
+  }
+  if (!alerts.length) return null;
+  return {
+    id: String(asset._id),
+    type: asset.type,
+    name: asset.name || "Unnamed operational asset",
+    status: asset.status || "unknown",
+    tourId: asset.tourId ? String(asset.tourId) : null,
+    bookingId: asset.bookingId ? String(asset.bookingId) : null,
+    alerts,
+  };
+}
