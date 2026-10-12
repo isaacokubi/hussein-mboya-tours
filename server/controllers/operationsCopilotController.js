@@ -7,14 +7,14 @@ import { buildTripOperations, buildPaymentFollowUp, toMoney } from "../services/
 
 /**
  * Read-only Safari Operations Copilot summary.
- * The endpoint is behind the authenticated Tour Manager router and uses the
- * active tenant for every query. It never sends reminders or changes payments.
+ * The authenticated Tour Manager router protects this endpoint and every
+ * database query is scoped to the current tenant. It never sends messages or
+ * changes booking/payment records.
  */
 export const getOperationsCopilotSummary = async (req, res, next) => {
   try {
     const tenantId = requireTenantId();
-    // Aggregation pipelines bypass Mongoose query casting and document middleware,
-    // so explicitly cast tenantId to ObjectId for all aggregation $match stages.
+    // Aggregate pipelines bypass Mongoose casting and query middleware.
     const tenantObjectId = new mongoose.Types.ObjectId(String(tenantId));
     const tourFilter = mergeTenantFilter({ isDeleted: { $ne: true } });
     const bookingFilter = {
@@ -49,9 +49,18 @@ export const getOperationsCopilotSummary = async (req, res, next) => {
           actualCostItems: { $sum: { $cond: [{ $eq: ["$status", "actual"] }, 1, 0] } },
         } },
       ]),
+      // Overall totals include bookings not yet linked to a tour.
+      Booking.aggregate([
+        { $match: bookingFilter },
+        { $group: {
+          _id: null,
+          bookedValue: { $sum: { $ifNull: ["$totalAmount", 0] } },
+          collectedValue: { $sum: { $ifNull: ["$amountPaid", 0] } },
+          activeBookings: { $sum: 1 },
+        } },
+      ]),
       Booking.find({
         ...bookingFilter,
-        status: { $nin: ["cancelled", "refunded"] },
         $expr: { $gt: [{ $subtract: ["$totalAmount", { $ifNull: ["$amountPaid", 0] }] }, 0] },
       })
         .select("bookingNumber contact customerSnapshot travelDate totalAmount amountPaid paymentStatus status")
@@ -70,8 +79,9 @@ export const getOperationsCopilotSummary = async (req, res, next) => {
     const paymentFollowUps = outstandingBookings
       .map((booking) => buildPaymentFollowUp(booking))
       .filter(Boolean);
-    const totalBookedValue = toMoney(trips.reduce((sum, trip) => sum + trip.bookedValue, 0));
-    const totalCollectedValue = toMoney(trips.reduce((sum, trip) => sum + trip.collectedValue, 0));
+    const financialTotals = bookingFinancialTotals[0] || {};
+    const totalBookedValue = toMoney(financialTotals.bookedValue);
+    const totalCollectedValue = toMoney(financialTotals.collectedValue);
     const totalEstimatedCost = toMoney(trips.reduce((sum, trip) => sum + trip.estimatedCost, 0));
 
     return res.status(200).json({
@@ -81,7 +91,8 @@ export const getOperationsCopilotSummary = async (req, res, next) => {
         currency: "KES",
         source: "tenant booking and tour-cost records",
         summary: {
-          trips: trips.length,\n          activeBookings: Number(financialTotals.activeBookings || 0),
+          trips: trips.length,
+          activeBookings: Number(financialTotals.activeBookings || 0),
           tripsNeedingAttention: trips.filter((trip) => trip.alerts.length).length,
           bookedValue: totalBookedValue,
           collectedValue: totalCollectedValue,
