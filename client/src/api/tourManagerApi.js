@@ -1,6 +1,11 @@
 import api from "./axios";
 
-export const getOperationsCopilotSummary = async () => {\n  const { data } = await api.get("/tourmanager/copilot/summary");\n  return data;\n};\n\nexport const getDashboardStats = async () => {
+export const getOperationsCopilotSummary = async () => {
+  const { data } = await api.get("/tourmanager/copilot/summary");
+  return data;
+};
+
+export const getDashboardStats = async () => {
   const { data } = await api.get("/tourmanager/dashboard");
   return data;
 };
@@ -60,7 +65,12 @@ export const getBookings = async (params = {}) => {
   return data;
 };
 
-export const sendBookingNotification = async (id, channel, type = "payment_reminder") => {\n  const { data } = await api.post(`/tourmanager/bookings/${id}/notify`, { type, channel });\n  return data;\n};\n\nexport const completeBooking = async (id) => {
+export const sendBookingNotification = async (id, channel, type = "payment_reminder") => {
+  const { data } = await api.post(`/tourmanager/bookings/${id}/notify`, { type, channel });
+  return data;
+};
+
+export const completeBooking = async (id) => {
   const { data } = await api.patch(`/tourmanager/bookings/${id}/complete`);
   return data;
 };
