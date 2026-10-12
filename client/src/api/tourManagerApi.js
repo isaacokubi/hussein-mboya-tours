@@ -1,6 +1,6 @@
 import api from "./axios";
 
-export const getDashboardStats = async () => {
+export const getOperationsCopilotSummary = async () => {\n  const { data } = await api.get("/tourmanager/copilot/summary");\n  return data;\n};\n\nexport const getDashboardStats = async () => {
   const { data } = await api.get("/tourmanager/dashboard");
   return data;
 };
