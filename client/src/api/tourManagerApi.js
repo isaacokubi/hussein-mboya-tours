@@ -1,5 +1,10 @@
 import api from "./axios";
 
+export const createOperationsQuoteDraft = async (payload) => {
+  const { data } = await api.post("/tourmanager/copilot/quote-draft", payload);
+  return data;
+};
+
 export const getOperationsCopilotSummary = async () => {
   const { data } = await api.get("/tourmanager/copilot/summary");
   return data;
