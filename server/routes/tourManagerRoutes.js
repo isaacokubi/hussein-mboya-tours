@@ -1,6 +1,7 @@
 import express from "express";
 import { resolveTenant } from "../middleware/tenantMiddleware.js";
 import { getTourManagerDashboard, getTours } from "../controllers/tourManagerController.js";
+import { getOperationsCopilotSummary } from "../controllers/operationsCopilotController.js";
 import { createTour, updateTour, deleteTour, setPublication } from "../controllers/tourCrudController.js";
 import { assignTourResourcesSafe } from "../controllers/tourResourceAssignmentController.js";
 import { completeTour, cancelTour, completeBookingAndMaybeRelease, cancelBookingAndUpdateCapacity } from "../controllers/tourLifecycleController.js";
@@ -21,6 +22,8 @@ router.use(resolveTenant);
 router.use(managerOnly);
 
 router.get("/dashboard", getTourManagerDashboard);
+// Read-only operations copilot: profitability and missing-assignment alerts for this tenant.
+router.get("/copilot/summary", getOperationsCopilotSummary);
 router.get("/calendar/reminders", listCalendarReminders);
 router.post("/calendar/reminders", createCalendarReminder);
 router.delete("/calendar/reminders/:id", deleteCalendarReminder);
