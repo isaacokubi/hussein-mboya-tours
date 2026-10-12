@@ -47,10 +47,10 @@ export default function TourManagerCopilot() {
           <Metric label="Outstanding" value={money(summary.outstandingValue)} hint="Booked less recorded collections" icon={CalendarClock}/>
           <Metric label="Estimated margin" value={money(summary.estimatedMargin)} hint="Booked value less estimated costs" icon={Bot}/>
         </div>
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <Metric label="Tours reviewed" value={summary.trips ?? 0} hint="Maximum 100 tours per refresh" icon={CalendarClock}/>
           <Metric label="Need attention" value={summary.tripsNeedingAttention ?? 0} hint="Assignment or record-completeness alerts" icon={AlertTriangle}/>
-          <Metric label="Payment follow-ups" value={summary.bookingsWithOutstandingBalances ?? 0} hint={`${summary.urgentPaymentFollowUps ?? 0} with travel in three days or less`} icon={Wallet}/>
+          <Metric label="Payment follow-ups" value={summary.bookingsWithOutstandingBalances ?? 0} hint={`${summary.urgentPaymentFollowUps ?? 0} with travel in three days or less`} icon={Wallet}/><Metric label="Asset alerts" value={summary.assetsNeedingAttention ?? 0} hint={`${summary.urgentAssetAlerts ?? 0} urgent expiry or maintenance alerts`} icon={AlertTriangle}/>
         </div>
 
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -61,6 +61,10 @@ export default function TourManagerCopilot() {
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-100 p-5"><h2 className="text-lg font-bold text-slate-950">Payment follow-up queue</h2><p className="mt-1 text-sm text-slate-500">Suggested follow-ups only. No SMS, email or WhatsApp message is sent from this page.</p></div>
           <div className="overflow-x-auto"><table className="min-w-[720px] w-full text-left text-sm"><thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-5 py-3">Booking</th><th className="px-5 py-3">Guest</th><th className="px-5 py-3">Travel date</th><th className="px-5 py-3">Balance</th><th className="px-5 py-3">Priority</th></tr></thead><tbody className="divide-y divide-slate-100">{followUps.map((item) => <tr key={item.bookingId}><td className="px-5 py-4 font-semibold text-slate-900">{item.bookingNumber || item.bookingId.slice(-8)}</td><td className="px-5 py-4"><p>{item.customerName || "Guest name not recorded"}</p><p className="mt-1 text-xs text-slate-500">{item.customerPhone || item.customerEmail || "No contact details recorded"}</p></td><td className="px-5 py-4">{item.travelDate ? new Date(item.travelDate).toLocaleDateString("en-KE") : "Not set"}</td><td className="px-5 py-4 font-semibold">{money(item.balance)}</td><td className="px-5 py-4"><span className={`rounded-full px-2.5 py-1 text-xs font-bold ${item.priority === "urgent" ? "bg-rose-50 text-rose-700" : "bg-slate-100 text-slate-700"}`}>{item.priority}</span></td></tr>)}{followUps.length === 0 && <tr><td colSpan="5" className="px-5 py-8 text-center text-slate-500">No outstanding booking balances were found.</td></tr>}</tbody></table></div>
+        </section>
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-100 p-5"><h2 className="text-lg font-bold text-slate-950">Fleet, staff and document alerts</h2><p className="mt-1 text-sm text-slate-500">Alerts are generated from operational asset records and their documented metadata dates.</p></div>
+          <div className="divide-y divide-slate-100">{(Array.isArray(result.assetAlerts) ? result.assetAlerts : []).map((asset) => <article key={asset.id} className="flex flex-col gap-3 p-5 sm:flex-row sm:items-start sm:justify-between"><div><p className="font-semibold text-slate-900">{asset.name}</p><p className="mt-1 text-xs capitalize text-slate-500">{asset.type.replaceAll("_", " ")} · {asset.status}</p><div className="mt-3 flex flex-wrap gap-2">{asset.alerts.map((alert, index) => <span key={`${alert.kind}-${index}`} className={`rounded-full px-2.5 py-1 text-xs font-semibold ${alert.severity === "urgent" ? "bg-rose-50 text-rose-700" : "bg-amber-50 text-amber-800"}`}>{alert.message}{alert.dueAt ? ` · ${new Date(alert.dueAt).toLocaleDateString("en-KE")}` : ""}</span>)}</div></div></article>)}{(!result.assetAlerts || result.assetAlerts.length === 0) && <p className="p-6 text-sm text-slate-500">No expiry or maintenance alerts were found in the recorded operational assets.</p>}</div>
         </section>
         <p className="text-xs leading-5 text-slate-500">{result.disclaimer}</p>
       </>}
