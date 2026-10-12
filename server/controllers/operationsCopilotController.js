@@ -23,7 +23,7 @@ export const getOperationsCopilotSummary = async (req, res, next) => {
       status: { $nin: ["cancelled", "refunded"] },
     };
 
-    const [tours, bookingTotals, costTotals, outstandingBookings] = await Promise.all([
+    const [tours, bookingTotals, costTotals, bookingFinancialTotals, outstandingBookings] = await Promise.all([
       Tour.find(tourFilter)
         .select("title startDate date duration status assignedGuide assignedDriver assignedVehicle capacity")
         .sort({ startDate: 1, date: 1 })
@@ -81,7 +81,7 @@ export const getOperationsCopilotSummary = async (req, res, next) => {
         currency: "KES",
         source: "tenant booking and tour-cost records",
         summary: {
-          trips: trips.length,
+          trips: trips.length,\n          activeBookings: Number(financialTotals.activeBookings || 0),
           tripsNeedingAttention: trips.filter((trip) => trip.alerts.length).length,
           bookedValue: totalBookedValue,
           collectedValue: totalCollectedValue,
