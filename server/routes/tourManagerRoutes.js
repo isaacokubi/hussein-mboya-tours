@@ -2,6 +2,7 @@ import express from "express";
 import { resolveTenant } from "../middleware/tenantMiddleware.js";
 import { getTourManagerDashboard, getTours } from "../controllers/tourManagerController.js";
 import { getOperationsCopilotSummary } from "../controllers/operationsCopilotController.js";
+import { sendBookingNotification } from "../controllers/notificationController.js";
 import { createTour, updateTour, deleteTour, setPublication } from "../controllers/tourCrudController.js";
 import { assignTourResourcesSafe } from "../controllers/tourResourceAssignmentController.js";
 import { completeTour, cancelTour, completeBookingAndMaybeRelease, cancelBookingAndUpdateCapacity } from "../controllers/tourLifecycleController.js";
@@ -48,6 +49,8 @@ router.get("/bookings", getTourManagerBookings);
 router.patch("/bookings/:id/complete", completeBookingAndMaybeRelease);
 router.put("/bookings/:id/complete", completeBookingAndMaybeRelease);
 router.patch("/bookings/:id/cancel", cancelBookingAndUpdateCapacity);
+// Managers can explicitly send a tenant-scoped booking/payment reminder through configured channels.
+router.post("/bookings/:id/notify", sendBookingNotification);
 router.put("/bookings/:id/cancel", cancelBookingAndUpdateCapacity);
 router.get("/customers", getTenantCustomers);
 router.get("/guides", getTenantGuides);
