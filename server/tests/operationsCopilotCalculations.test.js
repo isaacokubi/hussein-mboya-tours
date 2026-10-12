@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildTripOperations, buildPaymentFollowUp, toMoney } from "../services/operationsCopilotCalculations.js";
+import { buildTripOperations, buildPaymentFollowUp, buildAssetAlerts, toMoney } from "../services/operationsCopilotCalculations.js";
 
 test("trip summary reports margins and assignment gaps from recorded data", () => {
   const trip = buildTripOperations(
@@ -55,4 +55,32 @@ test("money values are rounded to cents and malformed travel dates remain non-ur
   assert.equal(item.priority, "normal");
   assert.equal(item.daysUntilTravel, null);
   assert.equal(item.travelDate, null);
+});
+
+test("asset alerting identifies overdue and upcoming document and maintenance dates", () => {
+  const now = new Date("2026-10-12T00:00:00.000Z");
+  const result = buildAssetAlerts({
+    _id: "asset-1",
+    type: "vehicle",
+    name: "Safari Land Cruiser",
+    status: "active",
+    metadata: {
+      licenseExpiry: "2026-10-10T00:00:00.000Z",
+      nextMaintenanceAt: "2026-10-20T00:00:00.000Z",
+    },
+  }, now);
+  assert.equal(result.alerts.length, 2);
+  assert.ok(result.alerts.some((alert) => alert.severity === "urgent" && alert.kind === "document"));
+  assert.ok(result.alerts.some((alert) => alert.severity === "warning" && alert.kind === "maintenance"));
+});
+
+test("asset alerting ignores malformed or distant metadata dates", () => {
+  const result = buildAssetAlerts({
+    _id: "asset-2",
+    type: "guide",
+    name: "Guide",
+    status: "active",
+    metadata: { expiryDate: "not-a-date", maintenanceDueAt: "2027-12-01T00:00:00.000Z" },
+  }, new Date("2026-10-12T00:00:00.000Z"));
+  assert.equal(result, null);
 });
