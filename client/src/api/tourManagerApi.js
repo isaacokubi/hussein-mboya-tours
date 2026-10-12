@@ -1,5 +1,15 @@
 import api from "./axios";
 
+export const createOperationsQuoteDraft = async (payload) => {
+  const { data } = await api.post("/tourmanager/copilot/quote-draft", payload);
+  return data;
+};
+
+export const getOperationsCopilotSummary = async () => {
+  const { data } = await api.get("/tourmanager/copilot/summary");
+  return data;
+};
+
 export const getDashboardStats = async () => {
   const { data } = await api.get("/tourmanager/dashboard");
   return data;
@@ -57,6 +67,11 @@ export const deleteItinerary = async (id) => {
 
 export const getBookings = async (params = {}) => {
   const { data } = await api.get("/tourmanager/bookings", { params });
+  return data;
+};
+
+export const sendBookingNotification = async (id, channel, type = "payment_reminder") => {
+  const { data } = await api.post(`/tourmanager/bookings/${id}/notify`, { type, channel });
   return data;
 };
 

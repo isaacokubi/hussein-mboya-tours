@@ -1,6 +1,8 @@
 import express from "express";
 import { resolveTenant } from "../middleware/tenantMiddleware.js";
 import { getTourManagerDashboard, getTours } from "../controllers/tourManagerController.js";
+import { getOperationsCopilotSummary, createOperationsQuoteDraft } from "../controllers/operationsCopilotController.js";
+import { sendBookingNotification } from "../controllers/notificationController.js";
 import { createTour, updateTour, deleteTour, setPublication } from "../controllers/tourCrudController.js";
 import { assignTourResourcesSafe } from "../controllers/tourResourceAssignmentController.js";
 import { completeTour, cancelTour, completeBookingAndMaybeRelease, cancelBookingAndUpdateCapacity } from "../controllers/tourLifecycleController.js";
@@ -21,6 +23,9 @@ router.use(resolveTenant);
 router.use(managerOnly);
 
 router.get("/dashboard", getTourManagerDashboard);
+// Read-only operations copilot: profitability and missing-assignment alerts for this tenant.
+router.get("/copilot/summary", getOperationsCopilotSummary);
+router.post("/copilot/quote-draft", createOperationsQuoteDraft);
 router.get("/calendar/reminders", listCalendarReminders);
 router.post("/calendar/reminders", createCalendarReminder);
 router.delete("/calendar/reminders/:id", deleteCalendarReminder);
@@ -45,6 +50,8 @@ router.get("/bookings", getTourManagerBookings);
 router.patch("/bookings/:id/complete", completeBookingAndMaybeRelease);
 router.put("/bookings/:id/complete", completeBookingAndMaybeRelease);
 router.patch("/bookings/:id/cancel", cancelBookingAndUpdateCapacity);
+// Managers can explicitly send a tenant-scoped booking/payment reminder through configured channels.
+router.post("/bookings/:id/notify", sendBookingNotification);
 router.put("/bookings/:id/cancel", cancelBookingAndUpdateCapacity);
 router.get("/customers", getTenantCustomers);
 router.get("/guides", getTenantGuides);
