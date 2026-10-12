@@ -1,6 +1,7 @@
 import { NavLink } from "react-router-dom";
 import {
-  CalendarDays,\n  Bot,
+  CalendarDays,
+  Bot,
   ChevronDown,
   ClipboardCheck,
   ClipboardList,
@@ -17,7 +18,8 @@ import { useSettings } from "../../context/SettingsContext";
 // Tour Manager owns day-to-day tour operations. Enterprise administration,
 // CRM, fleet master data, destinations, analytics and reporting stay in Admin.
 const links = [
-  ["Dashboard", "/tour-manager", LayoutDashboard],\n  ["Operations Copilot", "/tour-manager/copilot", Bot],
+  ["Dashboard", "/tour-manager", LayoutDashboard],
+  ["Operations Copilot", "/tour-manager/copilot", Bot],
   ["Tours", "/tour-manager/tours", Map],
   ["Create Tour", "/tour-manager/create-tour", PlusCircle],
   ["Calendar", "/tour-manager/calendar", CalendarDays],
