@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildTripOperations, buildPaymentFollowUp, buildAssetAlerts, toMoney } from "../services/operationsCopilotCalculations.js";
+import { buildTripOperations, buildPaymentFollowUp, buildAssetAlerts, buildQuoteDraft, toMoney } from "../services/operationsCopilotCalculations.js";
 
 test("trip summary reports margins and assignment gaps from recorded data", () => {
   const trip = buildTripOperations(
@@ -83,4 +83,32 @@ test("asset alerting ignores malformed or distant metadata dates", () => {
     metadata: { expiryDate: "not-a-date", maintenanceDueAt: "2027-12-01T00:00:00.000Z" },
   }, new Date("2026-10-12T00:00:00.000Z"));
   assert.equal(result, null);
+});
+
+test("quote draft uses catalogue price and computes discount and tax transparently", () => {
+  const quote = buildQuoteDraft({
+    _id: "tour-quote",
+    title: "Amboseli Safari",
+    price: 20000,
+    discountPrice: null,
+    destination: { name: "Amboseli" },
+    inclusions: ["Park fees"],
+    exclusions: ["Flights"],
+    itinerary: [{ day: 1, title: "Game drive" }],
+  }, 3, 10, 16);
+  assert.equal(quote.subtotal, 60000);
+  assert.equal(quote.discountAmount, 6000);
+  assert.equal(quote.taxAmount, 8640);
+  assert.equal(quote.total, 62640);
+  assert.equal(quote.currency, "KES");
+  assert.equal(quote.requiresReview, true);
+  assert.deepEqual(quote.inclusions, ["Park fees"]);
+});
+
+test("quote draft rejects invalid guest counts, discount and tax rates", () => {
+  const tour = { _id: "tour", title: "Safari", price: 1000 };
+  assert.throws(() => buildQuoteDraft(tour, 0), /Travellers must/);
+  assert.throws(() => buildQuoteDraft(tour, 101), /Travellers must/);
+  assert.throws(() => buildQuoteDraft(tour, 2, 101), /Discount must/);
+  assert.throws(() => buildQuoteDraft(tour, 2, 0, -1), /Tax rate must/);
 });
