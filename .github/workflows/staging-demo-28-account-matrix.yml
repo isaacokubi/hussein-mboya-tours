@@ -1,0 +1,56 @@
+name: Staging 28-Account Demo Matrix
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  staging-demo-matrix:
+    name: Verify all 28 seeded demo accounts
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      DEMO_API_BASE_URL: ${{ secrets.STAGING_API_URL }}
+      DEMO_TEST_PASSWORD: ${{ secrets.STAGING_DEMO_PASSWORD }}
+      DEMO_API_REPORT_PATH: server/reports/demo-28-account-matrix.json
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        working-directory: server
+        run: npm ci
+
+      - name: Verify staging API origin is configured
+        run: |
+          set -euo pipefail
+          test -n "${DEMO_API_BASE_URL:-}"
+          case "${DEMO_API_BASE_URL}" in
+            https://hussein-mboya-tours.onrender.com|https://www.hussein-mboya-tours.onrender.com)
+              echo "Refusing production hostname."
+              exit 1
+              ;;
+          esac
+
+      - name: Run 28-account matrix
+        working-directory: server
+        run: node scripts/verifyDemo28Accounts.js
+
+      - name: Upload 28-account report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-28-account-matrix
+          path: server/reports/demo-28-account-matrix.json
+          if-no-files-found: error
