@@ -2,6 +2,7 @@
 
 // client/src/context/NotificationContext.jsx
 
+// Import React primitives for sharing notification state and running lifecycle effects.
 import {
   createContext,
   useContext,
@@ -9,32 +10,40 @@ import {
   useState
 } from "react";
 
+// Load persisted notifications from the backend.
 import { getNotifications } from "../api/notificationApi";
+// Reuse the application's shared Socket.IO connection for live notifications.
 import socket from "../socket/socket";
 
+// Read the authenticated user and token before loading private notifications.
 import { useAuth } from "./AuthContext";
 
 
+// Create a context for notification records, unread count and actions.
 const NotificationContext =
   createContext();
 
 
+// Provide notification state and socket event handlers to descendant components.
 export function NotificationProvider({
   children
 }) {
 
+  // Read identity and authentication token from the auth provider.
   const {
     user,
     token
   } = useAuth();
 
 
+  // Store the current notification list and its state setter.
   const [
     notifications,
     setNotifications
   ] = useState([]);
 
 
+  // Store the number of notifications the user has not read.
   const [
     unreadCount,
     setUnreadCount
@@ -47,8 +56,9 @@ export function NotificationProvider({
   |--------------------------------------------------------------------------
   */
 
+  // Fetch the latest notifications when the signed-in identity/token changes.
   useEffect(() => {
-
+    // Do not request private notifications when the user is signed out.
     if (
       !user?._id ||
       !token
@@ -57,9 +67,10 @@ export function NotificationProvider({
     }
 
 
-    let cancelled = false;
+    // Track cleanup so a late response cannot update an unmounted effect.
 
 
+    // Request the most recent thirty notifications from the API.
     getNotifications({
       limit: 30
     })
@@ -71,13 +82,16 @@ export function NotificationProvider({
         }
 
 
+        // Read the response list, defaulting to an empty array when absent.
         const items =
           response?.notifications || [];
 
 
+        // Replace the local list with the server response.
         setNotifications(items);
 
 
+        // Count only records whose read flag is false.
         setUnreadCount(
           items.filter(
             (item) => !item.read
@@ -96,10 +110,10 @@ export function NotificationProvider({
       });
 
 
+    // Mark this request effect inactive when dependencies change or the provider unmounts.
+    // Remove only this provider's listeners during cleanup; the socket is shared.
     return () => {
-
       cancelled = true;
-
     };
 
   }, [
@@ -114,8 +128,9 @@ export function NotificationProvider({
   |--------------------------------------------------------------------------
   */
 
+  // Attach live socket listeners only for an authenticated user.
   useEffect(() => {
-
+    // Do not subscribe to private events while signed out.
     if (
       !user?._id ||
       !token
@@ -124,6 +139,7 @@ export function NotificationProvider({
     }
 
 
+    // Log a successful socket connection for diagnostics.
     const handleConnect = () => {
 
       console.log(
@@ -136,6 +152,7 @@ export function NotificationProvider({
     };
 
 
+    // Process each incoming notification event from the server.
     const handleNotification = (
       notification
     ) => {
@@ -146,6 +163,7 @@ export function NotificationProvider({
       );
 
 
+      // Prepend the new item so the newest notification appears first.
       setNotifications(
         (prev) => [
           notification,
@@ -154,6 +172,7 @@ export function NotificationProvider({
       );
 
 
+      // Increase the unread count for the newly received notification.
       setUnreadCount(
         (prev) => prev + 1
       );
@@ -161,6 +180,7 @@ export function NotificationProvider({
     };
 
 
+    // Log socket connection errors so failures can be diagnosed.
     const handleConnectError = (
       error
     ) => {
@@ -173,6 +193,7 @@ export function NotificationProvider({
     };
 
 
+    // Log why the shared notification socket disconnected.
     const handleDisconnect = (
       reason
     ) => {
@@ -191,6 +212,7 @@ export function NotificationProvider({
     |--------------------------------------------------------------------------
     */
 
+    // Provide the current auth token to Socket.IO's handshake configuration.
     socket.auth = {
       ...(socket.auth || {}),
       token
@@ -203,24 +225,28 @@ export function NotificationProvider({
     |--------------------------------------------------------------------------
     */
 
+    // Register the connection lifecycle handler.
     socket.on(
       "connect",
       handleConnect
     );
 
 
+    // Register the handler for live notification payloads.
     socket.on(
       "notification",
       handleNotification
     );
 
 
+    // Register the handler for connection failures.
     socket.on(
       "connect_error",
       handleConnectError
     );
 
 
+    // Register the handler for disconnect events.
     socket.on(
       "disconnect",
       handleDisconnect
@@ -233,6 +259,7 @@ export function NotificationProvider({
     |--------------------------------------------------------------------------
     */
 
+    // Reuse an already-connected socket; otherwise start its connection.
     if (socket.connected) {
 
       handleConnect();
@@ -293,6 +320,7 @@ export function NotificationProvider({
   |--------------------------------------------------------------------------
   */
 
+  // Mark the displayed notifications as read in local unread-count state.
   const markAllRead = () => {
 
     setUnreadCount(0);
@@ -300,8 +328,8 @@ export function NotificationProvider({
   };
 
 
+  // Publish notification state and actions to the component subtree.
   return (
-
     <NotificationContext.Provider
       value={{
         notifications,
@@ -321,6 +349,7 @@ export function NotificationProvider({
 }
 
 
+// Expose the notification context through a reusable React hook.
 export const useNotifications = () =>
   useContext(
     NotificationContext
