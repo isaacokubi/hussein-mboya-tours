@@ -1,3 +1,11 @@
+/**
+ * Inventory and tour-capacity service. Centralizes capacity checks and slot
+ * reservation/release so separate booking paths follow the same rules. Review
+ * concurrency and idempotency carefully: simultaneous bookings must not exceed
+ * available inventory, and a failed/cancelled booking must release only its own
+ * reservation.
+ */
+
 import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import Tour from "../models/Tour.js";
 
