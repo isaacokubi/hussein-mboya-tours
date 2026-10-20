@@ -86,3 +86,11 @@ test("hospitality payments route through their own lifecycle completion and fail
   assert.match(callback, /failHospitalityPayment\(/);
   assert.match(callback, /payment\.hospitalityBooking && payment\.hospitalityType/);
 });
+
+
+test("checkout reads CheckoutRequestID from the nested STK initiation response envelope", () => {
+  const checkout = fs.readFileSync(path.resolve(root, "../client/src/pages/Checkout.jsx"), "utf8");
+  assert.match(checkout, /const envelope = response\?\.data \|\| response \|\| \{\}/);
+  assert.match(checkout, /const data = envelope\?\.data \|\| envelope/);
+  assert.match(checkout, /data\.CheckoutRequestID \|\| data\.checkoutRequestID \|\| data\.checkoutRequestId/);
+});
