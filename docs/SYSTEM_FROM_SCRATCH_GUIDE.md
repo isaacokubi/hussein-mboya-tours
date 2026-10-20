@@ -22,8 +22,15 @@ The browser is never authoritative for payment success, price, tenant identity, 
 4. server/package.json — backend dependencies and run/check/test commands.
 5. client/package.json — React/Vite dependencies and lint/build/browser-test commands.
 6. client/index.html — browser document and root element loaded by Vite.
-7. client/vite.config.js — frontend plugins, dev proxy and production build. The PWA/offline app-shell configuration is now in this file.
-8. vercel.json, hosting configuration and GitHub Actions workflows — add after the application can run locally.
+7. client/vite.config.js — frontend plugins, dev proxy, PWA manifest, service worker and static asset caching.
+8. client/src/lib/publicOfflineCache.js — tenant-host-scoped cache for public catalogue responses only; create it before wiring catalogue API modules.
+9. client/src/lib/publicOfflineCache.test.js — deterministic unit tests for offline fallback, cache isolation and error handling.
+10. client/src/components/layout/OfflineStatusBanner.jsx — visible offline/stale-catalogue messaging.
+11. client/src/api/tourApi.js — connect public catalogue GET methods to the cache helper.
+12. client/src/App.jsx — mount the connectivity banner across the app.
+13. client/src/pages/Checkout.jsx — keep payment initiation online-only and interpret the API status envelope correctly.
+14. server/controllers/mpesaController.js — return canonical `paymentStatus` plus the compatibility `status` alias.
+15. vercel.json, hosting configuration and GitHub Actions workflows — add after the application can run locally.
 
 Test gate: run npm ci in both package directories; verify no secrets are tracked; run server syntax/security checks and client lint/build.
 
@@ -112,7 +119,7 @@ Test gate: lint/build, API-module tests where available, route smoke tests, and 
 
 ### Phase G — Offline/PWA
 
-client/vite.config.js now configures vite-plugin-pwa to generate a service worker and manifest and precache the production app shell/static assets. This supports reopening the already-loaded interface when connectivity is lost.
+`client/vite.config.js` configures `vite-plugin-pwa` to generate a service worker and manifest and precache the production app shell/static assets. Public images that have already been viewed are stored in a bounded cache. `client/src/lib/publicOfflineCache.js` also remembers successful public tour lists, featured tours, tour detail and destination responses in a host/tenant-namespaced browser cache. `client/src/components/layout/OfflineStatusBanner.jsx` explains offline mode and warns that saved catalogue data may be stale.
 
 Important limits:
 - Static assets can load offline, but server-backed authentication, authoritative bookings, synchronization, M-Pesa initiation and payment confirmation need a reachable server/network.
@@ -137,7 +144,7 @@ Use the Daraja sandbox and an isolated staging database:
 9. Deliver the same callback repeatedly and assert one ledger posting and one balance update.
 10. Test wrong checkout ID, wrong amount, missing receipt, non-zero result code, provider timeout, malformed callback, cross-tenant ID and simultaneous duplicate callbacks.
 
-The checkout UI had a response-field mismatch: the API returns paymentStatus, but the page previously checked only status. Checkout now reads paymentStatus first and distinguishes timeout/unknown from confirmed failure. The server remains authoritative.
+The checkout path had two nested-envelope hazards: the status endpoint returned `data.status`, and the client read the outer Axios response envelope rather than its nested `data`. The endpoint now returns `data.paymentStatus` and a compatibility `data.status`, and the client unwraps both envelopes. The status is always read from the server-owned Payment record. A timeout/network error remains unconfirmed, not proof of failure. Booking payments, hospitality payments and tenant subscription payments use different lifecycle services; each requires its own callback/status tests.
 
 Code tests do not prove live Safaricom callback delivery or production credentials work. Record sandbox evidence and deployed commit SHA separately. Never use real production transactions as test fixtures.
 
@@ -162,6 +169,7 @@ From the client directory, run:
 
     npm ci
     npm run lint
+    npm run test:unit
     npm run build
     npm run test:e2e
 
@@ -206,6 +214,8 @@ The Vite configuration and checkout page changed for this task now contain expla
 
 - [ ] Client production build succeeds with PWA generation.
 - [ ] First online visit caches the app shell; later cold launch works offline.
+- [ ] Public catalogue results can be reused offline and never cross tenant-host cache namespaces.
+- [ ] Client unit tests prove offline fallback, tenant cache isolation and that HTTP authorization errors are not hidden.
 - [ ] Offline UI never claims server writes/payments succeeded.
 - [ ] M-Pesa status polling reads paymentStatus and displays completed/failed/cancelled results.
 - [ ] STK initiation is never treated as payment confirmation.
