@@ -1,3 +1,10 @@
+/**
+ * M-Pesa controller: validates booking ownership and payable balance before
+ * requesting an STK Push, records the checkout identifiers as pending, and
+ * processes asynchronous callback outcomes through payment lifecycle services.
+ * STK initiation means only that a prompt was requested—not that money arrived.
+ */
+
 import { publicErrorMessage } from "../utils/publicError.js";
 import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 import Booking from "../models/Booking.js";
