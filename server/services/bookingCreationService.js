@@ -1,3 +1,10 @@
+/**
+ * Booking creation coordination. This service centralizes the database work
+ * needed to create a booking safely and consistently, including tenant-owned
+ * records and concurrency-sensitive operations. Keep writes recoverable and
+ * avoid trusting client-calculated prices or capacity.
+ */
+
 import mongoose from "mongoose";
 import Booking from "../models/Booking.js";
 import { reserveSlots } from "./inventoryService.js";
