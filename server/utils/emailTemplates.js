@@ -4,15 +4,17 @@
 |--------------------------------------------------------------------------
 */
 
+// Build the booking-confirmation HTML email from booking and company details.
 export const bookingConfirmationEmail = ({
-  customerName,
-  bookingNumber,
-  tourName,
-  amount,
-  travelDate,
-  paymentMethod,
-  companyName = "Global Tours",
+  customerName, // Customer name shown in the greeting.
+  bookingNumber, // Booking reference displayed and included in the booking link.
+  tourName, // Name of the tour the customer booked.
+  amount, // Amount recorded as paid for this confirmation email.
+  travelDate, // Scheduled travel date, when known.
+  paymentMethod, // Payment method displayed in the payment summary.
+  companyName = "Global Tours", // Company name used for branding and support messaging.
 }) => {
+  // Return a complete HTML email template; comments must stay outside this template so they are not sent to customers.
   return `
 <!DOCTYPE html>
 <html>
