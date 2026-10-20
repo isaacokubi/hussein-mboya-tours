@@ -179,9 +179,11 @@ export default function Checkout() {
       const normalized = normalizePhone(phoneNumber);
       if (!validPhone(normalized)) throw new Error("Enter a valid Safaricom M-Pesa number, e.g. 0707476586.");
       const response = await initiateMpesa({ bookingId, phoneNumber: normalized, amount: Number(amount) });
-      const data = response?.data || response || {};
-      const checkoutRequestId = data.CheckoutRequestID || data.checkoutRequestID;
-      if (!checkoutRequestId) throw new Error(data.message || "M-Pesa checkout could not be started.");
+      // STK initiation is wrapped in an API envelope, then a data payload; unwrap both before reading IDs.
+      const envelope = response?.data || response || {};
+      const data = envelope?.data || envelope;
+      const checkoutRequestId = data.CheckoutRequestID || data.checkoutRequestID || data.checkoutRequestId;
+      if (!checkoutRequestId) throw new Error(envelope.message || data.message || "M-Pesa checkout could not be started.");
       // Store the provider's checkout ID locally so status polling can resume after a brief navigation/network interruption.
       return { bookingId, checkoutRequestId, amount: Number(amount), status: "pending", message: `M-Pesa prompt sent for KES ${Number(amount).toLocaleString()}. Check your phone and enter your M-Pesa PIN.` };
     },
