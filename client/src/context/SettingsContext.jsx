@@ -103,7 +103,7 @@ export function SettingsProvider({ children }) {
     window.addEventListener("platform-settings-updated", handleSettingsChanged);
     window.addEventListener("settings-updated", handleSettingsChanged);
     window.addEventListener("dashboard:data-changed", handleSettingsChanged);
-    // Publish normalized settings and the actions consumers need to refresh or update them.
+    // Stop polling and remove event listeners when settings dependencies change or the provider unmounts.
   return () => { mounted = false; window.clearInterval(interval); window.removeEventListener("storage", handleStorage); window.removeEventListener("platform-settings-updated", handleSettingsChanged); window.removeEventListener("settings-updated", handleSettingsChanged); window.removeEventListener("dashboard:data-changed", handleSettingsChanged); };
   }, [refreshSettings, applySettings, settingsKey]);
 
@@ -115,6 +115,7 @@ export function SettingsProvider({ children }) {
 
   const companyName = String(settings.companyName || (isPlatformScope ? PLATFORM_BRAND_NAME : "")).trim();
   const value = useMemo(() => ({ settings: { ...settings, companyName }, companyName, supportEmail: settings.supportEmail || "", supportPhone: settings.supportPhone || "", loading, refreshSettings, updateSettings, isPlatformScope }), [settings, companyName, loading, refreshSettings, updateSettings, isPlatformScope]);
+  // Publish normalized settings and the actions consumers need to refresh or update them.
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
 }
 
