@@ -39,7 +39,12 @@ export default defineConfig(({ mode }) => {
             {
               // Cache public image files after they are viewed so tour/catalogue
               // images can still appear offline. Never use this route for API data.
-              urlPattern: ({ request }) => request.destination === "image",
+              urlPattern: ({ request, url }) =>
+                request.destination === "image" &&
+                (url.hostname === "res.cloudinary.com" ||
+                  url.hostname.endsWith(".cloudinary.com") ||
+                  url.hostname === "images.unsplash.com" ||
+                  url.hostname === "images.pexels.com"),
               handler: "CacheFirst",
               options: {
                 cacheName: "public-tour-images",
