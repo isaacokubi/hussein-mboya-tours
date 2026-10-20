@@ -1,6 +1,7 @@
 import api from "./axios";
 import { getPublicDataWithOfflineFallback } from "../lib/publicOfflineCache";
 
+// Public catalogue calls use a host-scoped read-only cache so the last successful response can be shown offline.
 /* Public tours */
 export const getTours = async (params = null) => {
   const query = typeof params === "string" ? { category: params } : (params || {});
@@ -38,6 +39,7 @@ export const getTourBySlug = async (slug) => getPublicDataWithOfflineFallback("t
   return data?.data || data;
 });
 
+// Staff mutations remain server-only; offline mode never queues these writes.
 /* Tour Manager */
 export const getManagerTours = async (params = {}) => {
   const { data } = await api.get("/tours/manager", { params });
@@ -70,6 +72,7 @@ export const deleteTour = async (id) => {
   return data;
 };
 
+// Staff, vehicle and resource data is private/operational and is intentionally not stored in the public offline cache.
 /* Staff/resources */
 export const getGuides = async () => {
   const { data } = await api.get("/staff/guides");
@@ -95,12 +98,14 @@ export const assignGuide = (tourId, guideId) => assignTourResources(tourId, { gu
 export const assignDriver = (tourId, driverId) => assignTourResources(tourId, { driverId });
 export const assignVehicle = (tourId, vehicleId) => assignTourResources(tourId, { vehicleId });
 
+// Public destinations are cached separately from tours so each list can be refreshed independently.
 /* Destinations */
 export const getDestinations = async () => getPublicDataWithOfflineFallback("destinations", {}, async () => {
   const { data } = await api.get("/destinations");
   return data;
 });
 
+// Availability changes frequently and must be read from the server before confirming a booking.
 /* Availability */
 export const getTourAvailability = async (id) => {
   const { data } = await api.get(`/tours/${id}/availability`);
@@ -112,6 +117,7 @@ export const updateTourAvailability = async (id, payload) => {
   return data;
 };
 
+// Reports are tenant-private and remain online-only; they are not eligible for the public cache.
 /* Reports */
 export const getTourReports = async (params = {}) => {
   const { data } = await api.get("/tourmanager/reports", { params });

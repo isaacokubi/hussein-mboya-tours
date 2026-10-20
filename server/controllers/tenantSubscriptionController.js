@@ -10,6 +10,7 @@ import { getPlanFeatureCatalog, getTenantPlanFeatures } from "../services/planFe
 const isAdmin = (user) => ["admin", "administrator", "super_admin", "superadmin"].includes(String(user?.role || user?.legacyRole || "").toLowerCase());
 const isPlatformSuperAdmin = (user) => ["super_admin", "superadmin"].includes(String(user?.role || user?.legacyRole || "").toLowerCase());
 
+// Return the current tenant plan, limits and recent subscription charges for the authenticated tenant.
 export const getTenantSubscription = async (req, res, next) => {
   try {
     const tenantId = req.tenantId || req.user?.tenantId;
@@ -25,6 +26,7 @@ export const getTenantSubscription = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
+// Start a platform-priced STK Push; client-supplied amounts are not accepted as authoritative.
 export const startTenantSubscriptionPayment = async (req, res, next) => {
   try {
     const tenantId = req.tenantId || req.user?.tenantId;
@@ -92,6 +94,7 @@ export const getTenantSubscriptionPaymentStatus = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
+// Allow only the platform SuperAdmin to record a manually verified subscription payment.
 export const approveTenantSubscription = async (req, res, next) => {
   try {
     if (!isPlatformSuperAdmin(req.user)) return res.status(403).json({ success: false, message: "Only the platform SuperAdmin can manually activate subscriptions." });
@@ -110,6 +113,7 @@ export const approveTenantSubscription = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
+// Platform-only plan switching preserves the existing renewal period for controlled administrative testing.
 export const switchTenantSubscription = async (req, res, next) => {
   try {
     if (!isPlatformSuperAdmin(req.user)) return res.status(403).json({ success: false, message: "Only the platform SuperAdmin can switch tenant subscription plans." });
@@ -121,6 +125,7 @@ export const switchTenantSubscription = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
+// Provide the platform SuperAdmin with a bounded list of subscription payment records for reconciliation.
 export const listSubscriptionPayments = async (req, res, next) => {
   try {
     if (!isPlatformSuperAdmin(req.user)) return res.status(403).json({ success: false, message: "Only the platform SuperAdmin can view all subscription payments." });

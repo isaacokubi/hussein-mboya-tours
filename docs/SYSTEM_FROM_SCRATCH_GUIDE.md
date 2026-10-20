@@ -29,7 +29,11 @@ The browser is never authoritative for payment success, price, tenant identity, 
 11. client/src/api/tourApi.js — connect public catalogue GET methods to the cache helper.
 12. client/src/App.jsx — mount the connectivity banner across the app.
 13. client/src/pages/Checkout.jsx — keep payment initiation online-only and interpret the API status envelope correctly.
-14. server/controllers/mpesaController.js — return canonical `paymentStatus` plus the compatibility `status` alias.
+14. client/src/api/mpesaApi.js — separate initiation, persisted-status polling, explicit provider query and booking verification calls.
+15. server/controllers/mpesaController.js — return canonical `paymentStatus` plus the compatibility `status` alias.
+16. server/controllers/tenantSubscriptionController.js and server/models/SubscriptionPayment.js — persist subscription charge states and periodically reconcile pending requests with Daraja.
+17. server/tests/mpesaCallbackLifecycleContract.test.js — lock the booking, hospitality, subscription, callback and status-response contracts.
+18. .github/workflows/ci.yml — run client unit tests along with lint and production build.
 15. vercel.json, hosting configuration and GitHub Actions workflows — add after the application can run locally.
 
 Test gate: run npm ci in both package directories; verify no secrets are tracked; run server syntax/security checks and client lint/build.
@@ -220,6 +224,7 @@ The Vite configuration and checkout page changed for this task now contain expla
 - [ ] M-Pesa status polling reads paymentStatus and displays completed/failed/cancelled results.
 - [ ] STK initiation is never treated as payment confirmation.
 - [ ] Callback validation, duplicate handling, amount/receipt matching and tenant isolation pass integration tests.
+- [ ] Pending subscription payments reconcile provider-confirmed failure/cancellation while keeping success pending until receipt-verified callback.
 - [ ] Full server suite, client lint/build and browser tests have recorded outcomes.
 - [ ] Staging/provider evidence is distinct from local test results.
 - [ ] Every source file has been annotated and reviewed in tracked batches before claiming the line-by-line commenting task complete.
