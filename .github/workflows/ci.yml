@@ -155,6 +155,9 @@ jobs:
       - name: ESLint
         run: npm run lint
 
+      - name: Client unit tests
+        run: npm run test:unit
+
       - name: Production build
         env:
           VITE_API_URL: https://api.example.invalid/api
