@@ -16,6 +16,8 @@ const subscriptionPaymentSchema = new mongoose.Schema(
     mpesaReceiptNumber: { type: String, default: "", index: true },
     transactionReference: { type: String, default: "", index: true },
     paidAt: { type: Date, default: null },
+    lastQueriedAt: { type: Date, default: null },
+    providerQueryResponse: { type: mongoose.Schema.Types.Mixed, default: {} },
     periodDays: { type: Number, default: 30, min: 1 },
     failureReason: { type: String, default: "" },
     metadata: { type: mongoose.Schema.Types.Mixed, default: {} },
