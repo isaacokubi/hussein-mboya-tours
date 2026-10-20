@@ -1,21 +1,29 @@
+// Import Axios for all frontend HTTP requests.
 import axios from "axios";
 
+// Read the configured API endpoint from Vite environment variables.
 const configuredApiUrl = String(import.meta.env.VITE_API_URL || "").trim();
+// Read the optional API endpoint used for platform-wide operations.
 const configuredPlatformApiUrl = String(import.meta.env.VITE_PLATFORM_API_URL || "").trim();
+// Detect production builds so strict deployed-URL validation can be enforced.
 const productionBuild = Boolean(import.meta.env.PROD);
+// Track session generations so stale requests cannot invalidate a newer login.
 let authenticationGeneration = 0;
 
+// Increment the session generation whenever authentication identity changes.
 export const advanceAuthenticationGeneration = () => {
   authenticationGeneration += 1;
   return authenticationGeneration;
 };
 
+// Detect local browser hosts so development requests use the local API proxy.
 function isLocalHost() {
   if (typeof window === "undefined") return false;
   const hostname = String(window.location.hostname || "").trim().toLowerCase();
   return ["localhost", "127.0.0.1", "[::1]"].includes(hostname);
 }
 
+// Determine whether the build explicitly targets platform-wide mode.
 function isPlatformDeployment() {
   const configured = String(import.meta.env.VITE_PLATFORM_MODE || "").trim().toLowerCase();
   if (configured === "true") return true;
@@ -23,11 +31,14 @@ function isPlatformDeployment() {
   return false;
 }
 
+// Provide a relative platform API fallback when no separate URL is configured.
 const PLATFORM_API_URL = configuredPlatformApiUrl || "/api";
+// Choose the base URL appropriate to the selected tenant/platform deployment mode.
 const configuredBaseUrl = isPlatformDeployment()
   ? (configuredPlatformApiUrl || configuredApiUrl)
   : configuredApiUrl;
 
+// Reject invalid or unsafe API endpoints before production code uses them.
 function validateProductionApiUrl(value) {
   if (!productionBuild) return value;
   if (!value) throw new Error("Configure VITE_API_URL (or VITE_PLATFORM_API_URL for platform mode) before building the production client.");
@@ -46,12 +57,14 @@ function validateProductionApiUrl(value) {
   }
   return value.replace(/\/+$/, "");
 }
+// Validate the selected base URL for production, leaving local builds flexible.
 const productionApiUrl = validateProductionApiUrl(configuredBaseUrl);
 
 // Local development must always use the local Vite proxy. This prevents a
 // developer machine from silently displaying stale data from a deployed API
 // when VITE_API_URL happens to contain a production URL. Deployed builds keep
 // using their configured API endpoint exactly as before.
+// Use the local proxy during development and the validated configured URL when deployed.
 export const baseURL = isLocalHost()
   ? "/api"
   : (isPlatformDeployment()
@@ -61,16 +74,19 @@ export const baseURL = isLocalHost()
 // Production deployments on a shared Vercel hostname cannot infer a tenant
 // from the hostname alone. VITE_PUBLIC_TENANT_SLUG is therefore the explicit,
 // deployment-level tenant selector. It is public configuration, not a secret.
+// Read the public tenant selector used by shared-hostname deployments.
 const PUBLIC_TENANT_SLUG = String(
   import.meta.env.VITE_PUBLIC_TENANT_SLUG ||
     import.meta.env.VITE_TENANT_SLUG ||
     ""
 ).trim().toLowerCase();
 
+// Read the optional public integration/tenant key from build configuration.
 const PUBLIC_TENANT_KEY = String(
   import.meta.env.VITE_PUBLIC_TENANT_KEY || ""
 ).trim();
 
+// Resolve the public tenant from explicit configuration or the tenant subdomain.
 function getPublicTenantSlug() {
   if (typeof window === "undefined") return "";
 
@@ -114,11 +130,13 @@ function getPublicTenantSlug() {
   return PUBLIC_TENANT_SLUG;
 }
 
+// Return the public tenant key unless this is a platform-wide deployment.
 function getPublicTenantKey() {
   if (isPlatformDeployment()) return "";
   return PUBLIC_TENANT_KEY;
 }
 
+// Resolve the signed-in user's tenant ID from session storage or persisted user data.
 function getAuthenticatedTenantId() {
   if (typeof window === "undefined") return "";
   const direct = String(window.localStorage.getItem("tenantId") || "").trim();
@@ -132,11 +150,14 @@ function getAuthenticatedTenantId() {
   }
 }
 
+// Identify authentication endpoints that must not inherit a prior session.
 const isPublicAuthRequest = (url = "") =>
   /(?:^|\/)auth\/(?:login|register|password-reset(?:\/|$))/i.test(String(url));
+// Identify the public settings endpoint, which may be requested before/after login.
 const isPublicTenantSettingsRequest = (url = "") =>
   /(?:^|\/)settings\/public(?:[/?]|$)/i.test(String(url));
 
+// Create the shared HTTP client with cookies, timeout and JSON defaults.
 const api = axios.create({
   baseURL,
   withCredentials: true,
@@ -144,6 +165,7 @@ const api = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
+// Add session and tenant context before each outgoing request.
 api.interceptors.request.use(
   (config) => {
     if (typeof window === "undefined") return config;
@@ -206,6 +228,7 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// Handle successful mutations and centralize network/session error behavior.
 api.interceptors.response.use(
   (response) => {
     const method = String(response.config?.method || "").toLowerCase();
@@ -265,4 +288,5 @@ api.interceptors.response.use(
   }
 );
 
+// Export the configured client so API modules share the same policy.
 export default api;
