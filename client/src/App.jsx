@@ -1,15 +1,88 @@
+// Import React's lazy-loading and suspense utilities for large page modules.
 import { lazy, Suspense } from "react";
+// Read the current URL so the shell can adjust layout for the active page.
 import { useLocation } from "react-router-dom";
+// Import the main route switch for the standard application pages.
 import AppRoutes from "./routes/AppRoutes";
+// Import the public-site navigation bar.
 import Navbar from "./components/layout/Navbar";
+// Import the public-site footer.
 import Footer from "./components/layout/Footer";
+// Import the floating AI helper shown throughout the application.
 import HusseinAIWidget from "./components/HusseinAIWidget";
+// Import the route guard used to protect administrator-only pages.
 import AdminRoute from "./components/auth/AdminRoute";
+// Import the subscription/plan gate used to control feature access.
 import PlanFeatureGate from "./components/auth/PlanFeatureGate";
+// Import the toast notification container used by pages to show feedback.
 import { ToastContainer } from "react-toastify";
+// Load the toast library's required visual styles.
 import "react-toastify/dist/ReactToastify.css";
-const WithholdingTax=lazy(()=>import("./pages/admin/finance/WithholdingTax"));
-const AccountingCompletionCenter=lazy(()=>import("./pages/admin/finance/AccountingCompletionCenter"));
-const AccountingControlReports=lazy(()=>import("./pages/admin/finance/AccountingControlReports"));
-const AccountingSubledgers=lazy(()=>import("./pages/admin/finance/AccountingSubledgers"));
-export default function App(){const location=useLocation();const withholding=location.pathname==="/admin/finance/withholding-tax";const accountingCompletion=location.pathname==="/admin/finance/accounting/completion";const accountingReports=location.pathname==="/admin/finance/accounting/control-reports";const accountingSubledgers=location.pathname==="/admin/finance/accounting/subledgers";const bareAdmin=withholding||accountingCompletion||accountingReports||accountingSubledgers;const content=withholding?<AdminRoute><Suspense fallback={<div className="p-8">Loading...</div>}><WithholdingTax/></Suspense></AdminRoute>:accountingCompletion?<AdminRoute><Suspense fallback={<div className="p-8">Loading...</div>}><AccountingCompletionCenter/></Suspense></AdminRoute>:accountingReports?<AdminRoute><Suspense fallback={<div className="p-8">Loading...</div>}><AccountingControlReports/></Suspense></AdminRoute>:accountingSubledgers?<AdminRoute><Suspense fallback={<div className="p-8">Loading...</div>}><AccountingSubledgers/></Suspense></AdminRoute>:<AppRoutes/>;return <div className="min-h-screen flex flex-col bg-gray-50">{!bareAdmin&&<Navbar/>}<main className="flex-1"><PlanFeatureGate>{content}</PlanFeatureGate></main>{!location.pathname.startsWith("/admin")&&!location.pathname.startsWith("/superadmin")&&!location.pathname.startsWith("/agent")&&!location.pathname.startsWith("/tour-manager")&&!location.pathname.startsWith("/guide")&&!location.pathname.startsWith("/driver")&&<Footer/>}<HusseinAIWidget/><ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnHover draggable/></div>}
+
+// Load the withholding-tax screen only when its route is visited.
+const WithholdingTax = lazy(() => import("./pages/admin/finance/WithholdingTax"));
+// Load the accounting completion center only when its route is visited.
+const AccountingCompletionCenter = lazy(() => import("./pages/admin/finance/AccountingCompletionCenter"));
+// Load accounting control reports only when their route is visited.
+const AccountingControlReports = lazy(() => import("./pages/admin/finance/AccountingControlReports"));
+// Load accounting subledgers only when their route is visited.
+const AccountingSubledgers = lazy(() => import("./pages/admin/finance/AccountingSubledgers"));
+
+// Render the shared application shell and select the content for the current route.
+export default function App() {
+  // Read the current router location.
+  const location = useLocation();
+  // Identify the withholding-tax page by its exact URL path.
+  const withholding = location.pathname === "/admin/finance/withholding-tax";
+  // Identify the accounting completion center page.
+  const accountingCompletion = location.pathname === "/admin/finance/accounting/completion";
+  // Identify the accounting control reports page.
+  const accountingReports = location.pathname === "/admin/finance/accounting/control-reports";
+  // Identify the accounting subledgers page.
+  const accountingSubledgers = location.pathname === "/admin/finance/accounting/subledgers";
+  // Mark finance pages that render without the public navigation and footer.
+  const bareAdmin = withholding || accountingCompletion || accountingReports || accountingSubledgers;
+
+  // Select the page component and protect specialized finance pages with AdminRoute.
+  const content = withholding
+    ? <AdminRoute><Suspense fallback={<div className="p-8">Loading...</div>}><WithholdingTax /></Suspense></AdminRoute>
+    : accountingCompletion
+      ? <AdminRoute><Suspense fallback={<div className="p-8">Loading...</div>}><AccountingCompletionCenter /></Suspense></AdminRoute>
+      : accountingReports
+        ? <AdminRoute><Suspense fallback={<div className="p-8">Loading...</div>}><AccountingControlReports /></Suspense></AdminRoute>
+        : accountingSubledgers
+          ? <AdminRoute><Suspense fallback={<div className="p-8">Loading...</div>}><AccountingSubledgers /></Suspense></AdminRoute>
+          : <AppRoutes />; // Use the normal route tree for every other URL.
+
+  // Return the shared responsive application shell.
+  return (
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      {/* Hide the public navbar on the specially handled finance screens. */}
+      {!bareAdmin && <Navbar />}
+      {/* Keep the selected page content stretched to fill the available height. */}
+      <main className="flex-1">
+        {/* Enforce plan/subscription access rules around the selected page. */}
+        <PlanFeatureGate>{content}</PlanFeatureGate>
+      </main>
+      {/* Keep the public footer off staff workspaces and administrator areas. */}
+      {!location.pathname.startsWith("/admin") &&
+        !location.pathname.startsWith("/superadmin") &&
+        !location.pathname.startsWith("/agent") &&
+        !location.pathname.startsWith("/tour-manager") &&
+        !location.pathname.startsWith("/guide") &&
+        !location.pathname.startsWith("/driver") && <Footer />}
+      {/* Provide the persistent in-app assistant. */}
+      <HusseinAIWidget />
+      {/* Render transient success/error notifications generated by page components. */}
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        pauseOnHover
+        draggable
+      />
+    </div>
+  );
+}
