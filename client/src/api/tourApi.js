@@ -1,13 +1,16 @@
 import api from "./axios";
+import { getPublicDataWithOfflineFallback } from "../lib/publicOfflineCache";
 
 /* Public tours */
 export const getTours = async (params = null) => {
   const query = typeof params === "string" ? { category: params } : (params || {});
-  const { data } = await api.get("/tours", { params: query });
-  return data;
+  return getPublicDataWithOfflineFallback("tours", query, async () => {
+    const { data } = await api.get("/tours", { params: query });
+    return data;
+  });
 };
 
-export const getFeaturedTours = async () => {
+export const getFeaturedTours = async () => getPublicDataWithOfflineFallback("featured-tours", {}, async () => {
   try {
     const { data } = await api.get("/tours/featured");
     return Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
@@ -17,23 +20,23 @@ export const getFeaturedTours = async () => {
       const fallback = Array.isArray(data?.data) ? data.data : Array.isArray(data?.tours) ? data.tours : Array.isArray(data) ? data : [];
       if (fallback.length) return fallback;
     } catch {
-      // Fall through to the original error.
+      // If both online endpoints fail, the offline wrapper may still return the last successful public response.
     }
     throw featuredError;
   }
-};
+});
 
-export const getTourById = async (id) => {
+export const getTourById = async (id) => getPublicDataWithOfflineFallback("tour-by-id", { id }, async () => {
   const { data } = await api.get(`/tours/${id}`);
   return data?.data || data;
-};
+});
 
 export const getTour = getTourById;
 
-export const getTourBySlug = async (slug) => {
+export const getTourBySlug = async (slug) => getPublicDataWithOfflineFallback("tour-by-slug", { slug }, async () => {
   const { data } = await api.get(`/tours/slug/${slug}`);
   return data?.data || data;
-};
+});
 
 /* Tour Manager */
 export const getManagerTours = async (params = {}) => {
@@ -93,10 +96,10 @@ export const assignDriver = (tourId, driverId) => assignTourResources(tourId, { 
 export const assignVehicle = (tourId, vehicleId) => assignTourResources(tourId, { vehicleId });
 
 /* Destinations */
-export const getDestinations = async () => {
+export const getDestinations = async () => getPublicDataWithOfflineFallback("destinations", {}, async () => {
   const { data } = await api.get("/destinations");
   return data;
-};
+});
 
 /* Availability */
 export const getTourAvailability = async (id) => {
