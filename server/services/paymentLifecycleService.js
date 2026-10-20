@@ -1,3 +1,10 @@
+/**
+ * Shared booking-payment lifecycle rules. Controllers should delegate state
+ * transitions here so balance calculation, duplicate protection and booking
+ * updates are consistent across payment entry points. Provider callbacks must
+ * be authenticated/validated before this service is asked to complete payment.
+ */
+
 import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 /*
 |--------------------------------------------------------------------------
