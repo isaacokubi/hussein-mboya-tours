@@ -112,3 +112,15 @@ test("manual checkout reconciliation calls the provider-query endpoint and never
   assert.match(checkout, /A successful STK query without receipt metadata is not proof that funds were received/);
   assert.match(checkout, /do not pay again/);
 });
+
+
+test("pending subscription M-Pesa statuses periodically reconcile provider failures without assuming query success is paid", () => {
+  const controller = read("controllers/tenantSubscriptionController.js");
+  const model = read("models/SubscriptionPayment.js");
+  assert.match(controller, /classifyStkQueryResult\(providerResponse\?\.ResultCode\)/);
+  assert.match(controller, /providerState === "failed" \|\| providerState === "cancelled"/);
+  assert.match(controller, /providerState === "completed" without a receipt still remains pending/);
+  assert.match(controller, /Date\.now\(\) - lastQueriedAt >= 30_000/);
+  assert.match(model, /lastQueriedAt: \{ type: Date, default: null \}/);
+  assert.match(model, /providerQueryResponse: \{ type: mongoose\.Schema\.Types\.Mixed, default: \{\} \}/);
+});
