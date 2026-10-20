@@ -26,5 +26,31 @@ export const getAllPayments = async(req,res,next)=>{try{const {status,provider,p
 export const getPaymentByReceipt=async(req,res,next)=>{try{const payment=await Payment.findOne(mergeTenantFilter(req,{mpesaReceiptNumber:req.params.receipt})).populate("booking").populate("user","name email phone").populate("customer","name email phone");if(!payment)return res.status(404).json({success:false,message:"Payment not found"});return res.status(200).json({success:true,payment});}catch(error){next(error);}};
 export const handleRefundResult=async(req,res)=>res.json({ResultCode:0,ResultDesc:"Accepted"});
 export const handleRefundTimeout=async(req,res)=>res.json({ResultCode:0,ResultDesc:"Accepted"});
-export const checkCheckoutStatus=async(req,res,next)=>{try{const checkoutRequestId=String(req.params.checkoutRequestId||"").trim();if(!checkoutRequestId)return res.status(400).json({success:false,message:"Checkout request ID is required"});const payment=await Payment.findOne(mergeTenantFilter(req,{$or:[{checkoutRequestID:checkoutRequestId},{checkoutRequestId}]})).populate("booking").lean();if(!payment)return res.status(404).json({success:false,message:"Payment request not found"});return res.status(200).json({success:true,data:{status:payment.status,failureReason:payment.failureReason||"",booking:payment.booking||null,payment}});}catch(error){next(error);}};
+// Return a stable status contract for the checkout UI while retaining the legacy status alias.
+export const checkCheckoutStatus = async (req, res, next) => {
+  try {
+    const checkoutRequestId = String(req.params.checkoutRequestId || "").trim();
+    if (!checkoutRequestId) return res.status(400).json({ success: false, message: "Checkout request ID is required" });
+
+    // Scope lookup to the authenticated tenant so a checkout ID cannot expose another tenant's payment.
+    const payment = await Payment.findOne(
+      mergeTenantFilter(req, { $or: [{ checkoutRequestID: checkoutRequestId }, { checkoutRequestId }] })
+    ).populate("booking").lean();
+    if (!payment) return res.status(404).json({ success: false, message: "Payment request not found" });
+
+    // Both fields intentionally carry the same server-owned state for old and new clients.
+    return res.status(200).json({
+      success: true,
+      data: {
+        paymentStatus: payment.status,
+        status: payment.status,
+        failureReason: payment.failureReason || "",
+        booking: payment.booking || null,
+        payment,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 export const verifyBookingPayment=async(req,res,next)=>{try{const booking=await Booking.findOne(mergeTenantFilter(req,{_id:req.params.bookingId})).lean();if(!booking)return res.status(404).json({success:false,message:"Booking not found"});const payment=await Payment.findOne(mergeTenantFilter(req,{booking:booking._id})).sort({createdAt:-1}).lean();return res.status(200).json({success:true,data:{booking,payment,paymentStatus:booking.paymentStatus}});}catch(error){next(error);}};
