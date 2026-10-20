@@ -33,6 +33,10 @@ This tracker prevents us from claiming that the entire repository has been annot
 - [x] `server/models/Payment.js` — charge/refund state separation, provider evidence and indexes annotated.
 - [x] `docs/SYSTEM_FROM_SCRATCH_GUIDE.md` — exact file order and subscription reconciliation updated.
 
+## CI environment correction
+
+- [x] `.github/workflows/ci.yml` — change MongoDB test containers from `mongo:8` to `mongo:7.0` after the runner log showed MongoDB 8 refuses to start on the current Linux kernel (`SERVER-121912`). This is a CI image compatibility fix, not an application database migration.
+
 ## Remaining batches
 
 The repository also contains many other controllers, models, services, routes, React pages/components, configuration files, scripts and tests. They must be reviewed and annotated in dependency order. Generated files, lockfiles, binary assets, environment files and JSON files that do not support comments must not be corrupted by adding comment syntax. This tracker will be updated after each verified batch.
