@@ -200,9 +200,11 @@ export default function Checkout() {
       attempts += 1;
       try {
         const response = await checkPaymentStatus(paymentState.checkoutRequestId);
-        const data = response?.data || response || {};
-        const payment = data?.payment || {};
-        // The API's canonical field is paymentStatus (not status); read both for backwards compatibility.
+        // Axios wraps the server response in response.data; the API may wrap the payload again in data.
+        const envelope = response?.data || response || {};
+        const data = envelope?.data || envelope;
+        const payment = data?.payment || envelope?.payment || {};
+        // Prefer the canonical paymentStatus field while accepting older status-only API responses.
         const status = String(data?.paymentStatus || data?.status || payment?.status || "pending").toLowerCase();
         if (status === "completed") {
           setPaymentState((current) => ({ ...current, status: "completed", bookingId: data?.booking?._id || current.bookingId, mpesaReceiptNumber: payment?.mpesaReceiptNumber || payment?.transactionId || "", message: "Payment confirmed successfully." }));
