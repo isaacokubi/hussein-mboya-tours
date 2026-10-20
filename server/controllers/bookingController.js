@@ -1,3 +1,11 @@
+/**
+ * Booking controller: validates a customer's requested tour/custom itinerary,
+ * checks tenant scope and capacity, calculates server-side prices/tax, and
+ * coordinates booking persistence plus notifications and webhook delivery.
+ * Treat request values as untrusted: prices, capacity and state transitions
+ * must be verified using server-owned records and services.
+ */
+
 import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import mongoose from "mongoose";
 import { getSystemSettings } from "../services/settingsService.js";
