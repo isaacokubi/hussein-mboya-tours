@@ -67,7 +67,7 @@ test("checkout polling unwraps the Axios response and nested API data envelope b
   assert.match(checkout, /const data = envelope\?\.data \|\| envelope/);
   assert.match(checkout, /data\?\.paymentStatus \|\| data\?\.status \|\| payment\?\.status/);
   for (const terminalState of ["completed", "failed", "cancelled"]) {
-    assert.match(checkout, new RegExp(`status === "\\${terminalState}"`));
+    assert.match(checkout, new RegExp('status === "' + terminalState + '"'));
   }
 });
 
