@@ -13,8 +13,8 @@ export default defineConfig(({ mode }) => {
       tailwindcss(),
       // Generate a service worker and web manifest so the already-visited app shell
       // and fingerprinted JS/CSS assets remain available when the network is lost.
-      // API responses are deliberately not cached here: booking, payment, and tenant
-      // data must not be replayed from a shared cache or exposed across tenant sessions.
+      // Private API responses are deliberately not cached to avoid stale balances and
+      // accidental cross-tenant exposure on shared browsers.
       VitePWA({
         registerType: "autoUpdate",
         injectRegister: "auto",
@@ -35,8 +35,22 @@ export default defineConfig(({ mode }) => {
           cleanupOutdatedCaches: true,
           clientsClaim: true,
           skipWaiting: true,
-          // Do not cache API or Socket.IO requests. They contain private tenant
-          // information and payment states must always be reconciled with the server.
+          runtimeCaching: [
+            {
+              // Cache public image files after they are viewed so tour/catalogue
+              // images can still appear offline. Never use this route for API data.
+              urlPattern: ({ request }) => request.destination === "image",
+              handler: "CacheFirst",
+              options: {
+                cacheName: "public-tour-images",
+                expiration: {
+                  maxEntries: 250,
+                  maxAgeSeconds: 60 * 60 * 24 * 30,
+                },
+                cacheableResponse: { statuses: [0, 200] },
+              },
+            },
+          ],
         },
       }),
     ],
@@ -58,17 +72,13 @@ export default defineConfig(({ mode }) => {
     },
 
     build: {
-      // esbuild 0.28.x currently fails when asked to lower destructuring for
-      // otherwise-compatible browser targets. All browsers previously targeted
-      // by this project support destructuring, so preserve modern syntax during
-      // the final Vite transpile instead of invoking the broken lowering path.
+      // Preserve modern syntax for browsers supported by this project.
       target: "esnext",
       rollupOptions: {
         output: {
           manualChunks: undefined,
         },
       },
-
       chunkSizeWarningLimit: 1000,
     },
   };
