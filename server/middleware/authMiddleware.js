@@ -1,3 +1,4 @@
+// Verify signed access tokens before allowing protected API actions.
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import "../models/Role.js";
@@ -8,6 +9,7 @@ import { setTenantContext, runWithTenant } from "../tenancy/context.js";
 
 export { normalizeRole, getUserRole };
 
+// Permissions granted to standard admins for core dashboard and business workflows.
 const ADMIN_BASE_PERMISSIONS = new Set([
   "admin.dashboard", "user.manage", "staff.manage", "tour.manage", "booking.manage", "payment.manage", "refund.manage", "analytics.view",
   "settings.manage", "roles.manage", "notifications.view", "finance.view", "customer.view", "tour.view", "tour.create", "tour.update",
@@ -20,6 +22,7 @@ const JWT_AUDIENCE = "husseinmboyatours-client";
 const verifyAccessToken = (token, secret) =>
   jwt.verify(token, secret, { issuer: JWT_ISSUER, audience: JWT_AUDIENCE });
 
+// Read bearer/cookie tokens and verify candidates in order; never trust unverified claims.
 const extractAndVerifyToken = (req, secret) => {
   const bearer = req.headers.authorization?.startsWith("Bearer ")
     ? req.headers.authorization.substring(7).trim()
@@ -47,6 +50,7 @@ const extractAndVerifyToken = (req, secret) => {
   return { decoded: null, token: null, source: null, error: lastError };
 };
 
+// Require a valid token, reload the user, enforce tenant membership and attach identity to the request.
 export const protect = async (req, res, next) => {
   try {
     const secret = env.JWT_SECRET || process.env.JWT_SECRET;
@@ -60,6 +64,7 @@ export const protect = async (req, res, next) => {
     }
     if (!decoded) return res.status(401).json({ success: false, message: "Authentication required." });
 
+    // Cookie-authenticated state-changing requests must include a matching CSRF cookie/header pair.
     if (source === "cookie" && !["GET", "HEAD", "OPTIONS"].includes(String(req.method || "").toUpperCase())) {
       const csrfCookie = String(req.cookies?.csrfToken || "").trim();
       const csrfHeader = String(req.get("X-CSRF-Token") || "").trim();
@@ -71,6 +76,7 @@ export const protect = async (req, res, next) => {
     const userId = decoded.sub || decoded.id || decoded._id || decoded.userId;
     if (!userId) return res.status(401).json({ success: false, message: "Invalid authentication token." });
 
+    // Reload the account so deleted or disabled users are not trusted from stale JWT claims.
     const loadUser = () => User.findById(userId).select("-password").populate({ path: "roleId", populate: { path: "permissions" } }).populate("permissionsOverride");
     const user = await runWithTenant({ role: "super_admin", bypass: true }, loadUser);
     if (!user) return res.status(401).json({ success: false, message: "User no longer exists." });
@@ -82,6 +88,7 @@ export const protect = async (req, res, next) => {
     const requestedTenantId = req.tenantId ? String(req.tenantId) : null;
     const userTenantId = user.tenantId ? String(user.tenantId) : null;
 
+    // Tenant users must match both the account's tenant and the resolved request tenant.
     if (!isPlatformOwner) {
       if (!userTenantId) return res.status(403).json({ success: false, message: "Account is not assigned to a company." });
       if (requestedTenantId && requestedTenantId !== userTenantId) return res.status(403).json({ success: false, message: "You cannot access another company." });
@@ -107,6 +114,7 @@ export const protect = async (req, res, next) => {
 
 // Public endpoints can accept a logged-in customer without requiring login.
 // If credentials are present they are fully verified; invalid credentials are rejected.
+// Permit anonymous access when no token is supplied, but reject invalid supplied credentials.
 export const optionalProtect = async (req, res, next) => {
   const hasBearer = req.headers.authorization?.startsWith("Bearer ") && req.headers.authorization.substring(7).trim();
   const hasCookie = Boolean(String(req.cookies?.token || "").trim());
@@ -114,6 +122,7 @@ export const optionalProtect = async (req, res, next) => {
   return protect(req, res, next);
 };
 
+// Create middleware that allows only authenticated users whose normalized role is allowlisted.
 export const requireRoles = (...allowedRoles) => (req, res, next) => {
   if (!req.user) return res.status(401).json({ success: false, message: "Authentication required." });
   const role = getUserRole(req.user);
@@ -130,6 +139,7 @@ export const driverOnly = requireRoles("driver", "admin", "super_admin");
 export const guideOnly = requireRoles("guide", "admin", "super_admin");
 export const customerOnly = requireRoles("customer");
 
+// Check a named permission against role permissions and explicit overrides.
 export const checkPermission = (permissionName) => (req, res, next) => {
   try {
     if (!req.user) return res.status(401).json({ success: false, message: "Authentication required." });
