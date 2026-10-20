@@ -1,11 +1,18 @@
+// Import React context, lifecycle, memoization, reference and state helpers.
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+// Use the configured API client and generation counter to prevent stale requests invalidating newer sessions.
 import api, { advanceAuthenticationGeneration } from "../api/axios";
+// Access the shared query cache so tenant data can be cleared when identities change.
 import { queryClient } from "../lib/queryClient";
+// Normalize role names consistently for permissions and role checks.
 import { getUserRole, normalizeRole } from "../utils/roleUtils";
 
+// Create the context that exposes authenticated identity and authorization helpers.
 export const AuthContext = createContext();
+// Provide a hook for components to read the current authentication context.
 export const useAuth = () => useContext(AuthContext);
 
+// Keep baseline admin permissions available even when a role record is missing.
 const ADMIN_BASE_PERMISSIONS = [
   "admin.dashboard", "user.manage", "staff.manage", "tour.manage", "booking.manage",
   "payment.manage", "refund.manage", "analytics.view", "settings.manage", "roles.manage",
@@ -13,9 +20,12 @@ const ADMIN_BASE_PERMISSIONS = [
   "tour.create", "tour.update", "booking.view", "report.view", "guide.view", "vehicle.view",
 ];
 
+// List token keys that must be removed when a session ends or changes.
 const AUTH_KEYS = ["token", "accessToken", "authToken"];
+// List tenant selectors that must not leak from one authenticated session into another.
 const TENANT_SESSION_KEYS = ["tenantId", "tenantSlug", "tenantKey"];
 
+// Convert permissions into a consistent, deduplicated list of named permission objects.
 const normalizePermissions = (permissions) => {
   if (!Array.isArray(permissions)) return [];
   const seen = new Set();
@@ -32,12 +42,14 @@ const normalizePermissions = (permissions) => {
   });
 };
 
+// Read permissions from either populated role representation supported by user records.
 const extractRolePermissions = (user) => {
   const roleIdPermissions = user?.roleId && typeof user.roleId === "object" ? user.roleId.permissions || [] : [];
   const roleObjectPermissions = user?.role && typeof user.role === "object" ? user.role.permissions || [] : [];
   return [...roleIdPermissions, ...roleObjectPermissions];
 };
 
+// Normalize the user and merge baseline, role, override and direct permissions.
 const normalizeUser = (user) => {
   if (!user) return null;
   const role = getUserRole(user);
@@ -52,6 +64,7 @@ const normalizeUser = (user) => {
   };
 };
 
+// Restore the cached user from browser storage without trusting malformed JSON.
 const readStoredUser = () => {
   if (typeof window === "undefined") return null;
   try {
@@ -63,6 +76,7 @@ const readStoredUser = () => {
   }
 };
 
+// Fetch and cache tenant settings after authentication so the first screen has correct branding.
 const preloadTenantSettings = async () => {
   if (typeof window === "undefined") return null;
   try {
@@ -87,13 +101,18 @@ const preloadTenantSettings = async () => {
   }
 };
 
+// Manage login/logout/session restoration and publish the result to React descendants.
 export function AuthProvider({ children }) {
+  // Initialize identity from the last valid browser-stored user record.
   const [user, setUser] = useState(() => readStoredUser());
+  // Track whether an authenticated token/session is available.
   const [token, setToken] = useState(false);
+  // Keep protected screens waiting while the existing session is restored.
   const [loading, setLoading] = useState(true);
   // Async session restoration must never clear or replace a newer login.
   const authOperation = useRef(0);
 
+  // Normalize a user and persist only the identity/permission fields needed by the client.
   const persistUser = (nextUser) => {
     const normalized = normalizeUser(nextUser);
     setUser(normalized);
@@ -109,10 +128,12 @@ export function AuthProvider({ children }) {
     return normalized;
   };
 
+  // Remove auth credentials and tenant selectors so sessions cannot cross tenant boundaries.
   const clearAuthStorage = () => {
     [...AUTH_KEYS, "user", "permissions", ...TENANT_SESSION_KEYS].forEach((key) => localStorage.removeItem(key));
   };
 
+  // End the current server/browser session and clear tenant-specific client state.
   const logout = async () => {
     authOperation.current += 1;
     advanceAuthenticationGeneration();
@@ -124,6 +145,7 @@ export function AuthProvider({ children }) {
     window.location.href = "/login";
   };
 
+  // Ask the backend to validate the current session and refresh the user record.
   const fetchCurrentUser = async () => {
     const { data } = await api.get("/auth/me");
     const currentUser = persistUser(data.user || data);
@@ -131,6 +153,7 @@ export function AuthProvider({ children }) {
     return currentUser;
   };
 
+  // Listen for API-client signals that the current session is no longer valid.
   useEffect(() => {
     const onInvalidSession = (event) => {
       const message = event?.detail?.message || "Your authentication session is no longer valid. Please log in again.";
@@ -149,6 +172,7 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener("auth:session-invalid", onInvalidSession);
   }, []);
 
+  // Restore and validate the current session once when the provider mounts.
   useEffect(() => {
     const savedUser = readStoredUser();
     if (savedUser) setUser(savedUser);
@@ -176,6 +200,7 @@ export function AuthProvider({ children }) {
       });
   }, []);
 
+  // Authenticate with the backend and replace any previous user's session.
   const login = async (email, password) => {
     authOperation.current += 1;
     advanceAuthenticationGeneration();
@@ -215,6 +240,7 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // Create an account and initialize a session if the backend returns credentials.
   const register = async (userData) => {
     const { data } = await api.post("/auth/register", userData);
     if (data?.user && data?.token) {
@@ -226,7 +252,9 @@ export function AuthProvider({ children }) {
     return data;
   };
 
+  // Expose the normalized permissions currently assigned to the user.
   const permissions = user?.permissions || [];
+  // Check whether the user is allowed to perform one named action.
   const hasPermission = (permission) => {
     if (!user || !permission) return false;
     const role = getUserRole(user);
@@ -235,12 +263,18 @@ export function AuthProvider({ children }) {
     if (role === "admin" && ADMIN_BASE_PERMISSIONS.includes(wanted)) return true;
     return permissions.some((p) => String(p?.name || "").trim().toLowerCase() === wanted && p?.enabled !== false);
   };
+  // Return true when the user has at least one permission from the supplied list.
   const hasAnyPermission = (items = []) => items.some(hasPermission);
+  // Return true only when the user has every permission from the supplied list.
   const hasAllPermissions = (items = []) => items.every(hasPermission);
+  // Compare the user's normalized role with the requested role name.
   const hasRole = (roleName) => getUserRole(user) === normalizeRole(roleName);
+  // Preserve the legacy access-check helper name as an alias of hasPermission.
   const canAccess = hasPermission;
+  // Return permissions for navigation/menu visibility checks.
   const getMenuPermissions = () => permissions;
 
+  // Memoize the context value so consumers update when auth state/actions change.
   const value = useMemo(() => ({
     user,
     setUser: (valueOrUpdater) => setUser((current) => normalizeUser(typeof valueOrUpdater === "function" ? valueOrUpdater(current) : valueOrUpdater)),
@@ -248,5 +282,6 @@ export function AuthProvider({ children }) {
     hasPermission, hasAnyPermission, hasAllPermissions, hasRole, canAccess, getMenuPermissions,
   }), [user, token, loading, permissions]);
 
+  // Publish authentication state and actions to all child components.
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
