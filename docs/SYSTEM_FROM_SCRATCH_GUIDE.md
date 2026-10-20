@@ -1646,3 +1646,205 @@ This inventory was assembled from the Git tree at commit `c767548fa35ad9943222b0
 8. Re-run tests and builds after comment-only changes. Keep an explicit completion table that distinguishes commented, documented externally, generated/binary, reviewed, and not-yet-reviewed files.
 
 **Important status:** this inventory is complete for the cited Git tree snapshot, but it does not claim that all 1,099 files already have line-by-line source comments. The source-commenting work must continue in small verified batches, and the inventory must be regenerated when files are added or removed.
+
+
+---
+
+# 13. Real source-code walkthroughs: how important flows are implemented
+
+The examples below are taken from the repository's implementation patterns and explained in plain language. They are shortened excerpts for teaching; consult the named file for the complete handler and surrounding checks. Do not copy a shortened example over the production source.
+
+## 13.1 Authentication: normalize role names before permission decisions
+
+File: `server/controllers/authController.js`
+
+```js
+const normalizeRole = (value) =>
+  String(value?.name || value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
+
+const effectiveRoleForUser = (user) =>
+  normalizeRole(user?.role) ||
+  normalizeRole(user?.legacyRole) ||
+  normalizeRole(user?.roleId) ||
+  "customer";
+```
+
+Line-by-line explanation:
+
+- `const normalizeRole = (value) =>` declares a reusable function so all role comparisons use one consistent format.
+- `value?.name` reads a populated role object's name when available; optional chaining avoids crashing if `value` is null or undefined.
+- `|| value || ""` falls back to a string-like role value, then an empty string if no role was provided.
+- `String(...)` converts the selected value to a string before string methods are called.
+- `.trim()` removes whitespace at the beginning and end.
+- `.toLowerCase()` makes comparisons case-insensitive.
+- `.replace(/[\s-]+/g, "_")` replaces one or more whitespace or hyphen characters with underscores, so role spellings are normalized.
+- `effectiveRoleForUser` selects the first available current role, legacy role or role ID representation, then defaults to `customer`.
+- This normalization helps consistent checks, but it is not authorization by itself. Protected routes still need trusted authentication, tenant checks and permission enforcement.
+
+## 13.2 Authentication: reject incomplete credentials before database work
+
+File: `server/controllers/authController.js`
+
+```js
+const email =
+  typeof req.body?.email === "string"
+    ? req.body.email.trim().toLowerCase()
+    : "";
+const password =
+  typeof req.body?.password === "string"
+    ? req.body.password
+    : "";
+
+if (!email || !password) {
+  return res.status(400).json({
+    success: false,
+    message: "Email and password are required."
+  });
+}
+```
+
+- `req.body?.email` safely reads the email from the incoming request body.
+- `typeof ... === "string"` prevents unexpected objects/numbers from being treated as credentials.
+- `.trim().toLowerCase()` normalizes email lookup while preserving the password exactly as entered.
+- Invalid/missing values become an empty string so the next check can reject them consistently.
+- The `if` prevents needless database work when a required field is missing.
+- `return` stops the handler after sending the HTTP 400 response; it avoids continuing into authentication logic.
+- `res.status(400).json(...)` communicates a client-input error in a structured response. Never include passwords or password hashes in that response.
+
+## 13.3 Tenant isolation: query records through a tenant-aware filter
+
+Files: `server/controllers/bookingController.js`, `server/controllers/paymentController.js`, and `server/tenancy/context.js`
+
+Representative repository pattern:
+
+```js
+const booking = await Booking.findOne(
+  mergeTenantFilter(req, { _id: bookingId })
+);
+if (!booking) {
+  return res.status(404).json({
+    success: false,
+    message: "Booking not found"
+  });
+}
+```
+
+- `bookingId` comes from the request and must be treated as untrusted.
+- `{ _id: bookingId }` describes the requested database record; by itself, it does not establish tenant ownership.
+- `mergeTenantFilter(req, ...)` adds the tenant boundary according to the application's tenancy context, so the lookup is scoped rather than being a global ID lookup.
+- `await` waits for the database query before using its result.
+- If no matching record exists within the permitted scope, the handler returns 404.
+- This pattern must be applied to every tenant-owned read and write, not just the first lookup. Tests should prove tenant A cannot read or mutate tenant B's records.
+
+## 13.4 Booking creation: server calculates totals instead of trusting the browser
+
+File: `server/controllers/bookingController.js`
+
+Representative excerpt:
+
+```js
+const totalTravellers =
+  Number(numberOfGuests) ||
+  travelers?.length ||
+  1;
+
+const amounts = tourData
+  ? calculateBookingAmounts(tourData, totalTravellers)
+  : {
+      subtotal: Number(customTourData?.quotedAmount || customTourData?.budget || 0),
+      discountAmount: 0,
+      totalAmount: Number(customTourData?.quotedAmount || customTourData?.budget || 0),
+      depositAmount: Number(customTourData?.quotedAmount || customTourData?.budget || 0),
+      balanceAmount: 0,
+    };
+```
+
+- `Number(numberOfGuests)` converts the provided guest count to a number.
+- `|| travelers?.length || 1` falls back to the travelers array length, then one traveler if no usable count was provided.
+- The tour branch calls the shared pricing utility using a database-loaded tour and the computed guest count.
+- The custom-tour branch uses the server-stored approved quote/budget, not a total supplied by the browser.
+- The fallback object explicitly sets discount, deposit and balance values so later code receives a predictable shape.
+- This excerpt illustrates the data flow, not every validation required: the complete handler also needs positive integer checks, capacity checks, approved quote validation, tenant scoping and safe state transitions.
+
+## 13.5 M-Pesa: initiation is pending until a verified callback confirms payment
+
+File: `server/controllers/mpesaController.js`
+
+Representative excerpt:
+
+```js
+const response = await initiateStkPush({
+  phone: customerPhone,
+  amount: paymentAmount,
+  bookingId: booking._id.toString()
+});
+
+await Payment.create({
+  tenantId: booking.tenantId,
+  booking: booking._id,
+  provider: "MPESA",
+  method: "mpesa",
+  amount: paymentAmount,
+  phoneNumber: customerPhone,
+  merchantRequestID: response.MerchantRequestID,
+  checkoutRequestID: response.CheckoutRequestID,
+  status: "pending"
+});
+
+booking.paymentStatus = "pending";
+await booking.save();
+```
+
+- `initiateStkPush(...)` asks the configured M-Pesa integration to send a payment prompt. It does not prove the customer entered a PIN or that funds were received.
+- `await` waits for the provider initiation response, which supplies identifiers used to correlate the later callback.
+- `Payment.create(...)` stores a local payment record tied to the tenant and booking and retains the provider identifiers for matching.
+- `status: "pending"` accurately records that the financial outcome is not yet known.
+- `booking.paymentStatus = "pending"` makes the booking's UI/state reflect that a payment attempt is awaiting confirmation.
+- `await booking.save()` persists that state.
+- Production-grade handling must also cover provider timeout after the prompt was accepted, duplicate/out-of-order callbacks, signature/secret validation where applicable, idempotent transitions, mismatched amount/receipt checks and reconciliation. Never mark a payment successful merely because the STK request returned successfully.
+
+## 13.6 Payment status: provider payments must not be completed by an ordinary user request
+
+File: `server/controllers/paymentController.js`
+
+The controller delegates confirmed completion to `completeBookingPayment(...)` and checks that some manual providers are permitted before accepting a completion request. This is an important security boundary: a client changing a request field to `status: "completed"` must not be enough to fabricate an M-Pesa or other provider payment. The provider callback path must validate the callback and pass through the payment lifecycle service, which should enforce allowed transitions and duplicate protection.
+
+When reviewing this code, trace:
+1. Who is allowed to initiate the payment?
+2. How the booking is tenant-scoped and ownership is checked.
+3. Where the payable balance is computed.
+4. How the provider response is persisted.
+5. Which callback validates the final outcome.
+6. Whether repeated callbacks can create duplicate financial effects.
+7. How the booking and payment states are reconciled if one database write fails.
+
+## 13.7 How to add a comment without changing behavior
+
+For JavaScript, place comments outside expressions and strings. For example:
+
+```js
+// Resolve the effective role before building the public response.
+const role = effectiveRoleForUser(user);
+
+// Remove password hashes and internal fields from the user object returned to the browser.
+return publicUser(user, permissions);
+```
+
+The first comment explains why the calculation happens at this point; the second describes the security purpose of the serializer. A comment should describe the real behavior, not promise behavior the code does not enforce.
+
+## 13.8 File-by-file teaching record
+
+For every source file, add a short header comment describing its responsibility and boundaries, then add inline comments around important blocks:
+- imports: which responsibility each imported module supplies;
+- constants: why the value exists and its units/defaults;
+- functions: inputs, outputs, side effects and failure behavior;
+- conditions: the business or security reason for branching;
+- database operations: the scope and expected result;
+- provider calls: timeout/retry behavior and what the response does or does not prove;
+- state changes: permitted transition and idempotency assumptions;
+- errors: why the status code is appropriate and what the caller should do.
+
+Avoid comments that merely restate syntax such as `// increment i` above `i++`. For generated and comment-hostile files, retain the inventory entry and explain their role here or in a format-appropriate sidecar document.
