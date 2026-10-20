@@ -1,3 +1,10 @@
+/**
+ * M-Pesa integration service. Keep Daraja authentication, request construction,
+ * timeout/error normalization and STK Push transport logic here rather than in
+ * route handlers. A successful initiation response is not proof of payment.
+ * Never log access tokens, passkeys, full credentials or customer PINs.
+ */
+
 import { requireTenantId } from "../tenancy/context.js";
 import { getSystemSettings } from "../services/settingsService.js";
 import axios from "axios";
