@@ -4,7 +4,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import { createBooking, getBookingById, updateBookingTravelDate } from "../api/bookingApi";
 import { getMyCustomTourRequests } from "../api/customTourApi";
-import { initiateMpesa, checkPaymentStatus } from "../api/mpesaApi";
+import { initiateMpesa, checkPaymentStatus, queryPaymentStatus } from "../api/mpesaApi";
 import { getTourById } from "../api/tourApi";
 import { getSettings } from "../api/superAdminApi";
 import { useAuth } from "../context/AuthContext";
@@ -225,6 +225,38 @@ export default function Checkout() {
     return () => { cancelled = true; if (timer) window.clearTimeout(timer); };
   }, [paymentState?.checkoutRequestId, paymentState?.status]);
 
+  // Ask the server to reconcile an uncertain STK request with Daraja when the user explicitly checks.
+  const refreshPaymentStatus = async () => {
+    if (!paymentState?.checkoutRequestId) return;
+    try {
+      const response = await queryPaymentStatus(paymentState.checkoutRequestId);
+      const envelope = response?.data || response || {};
+      const data = envelope?.data || envelope;
+      const payment = data?.payment || {};
+      const status = String(data?.paymentStatus || data?.status || payment?.status || "pending").toLowerCase();
+      if (["completed", "failed", "cancelled"].includes(status)) {
+        setPaymentState((current) => ({
+          ...current,
+          status,
+          bookingId: data?.booking?._id || payment?.booking?._id || current.bookingId,
+          mpesaReceiptNumber: payment?.mpesaReceiptNumber || payment?.transactionId || current.mpesaReceiptNumber || "",
+          message: status === "completed"
+            ? "Payment confirmed successfully."
+            : payment?.failureReason || data?.failureReason || `M-Pesa payment ${status}.`,
+        }));
+      } else {
+        // A successful STK query without receipt metadata is not proof that funds were received.
+        setPaymentState((current) => ({
+          ...current,
+          status: "pending",
+          message: "The provider has not supplied final payment confirmation yet. Keep this request open and do not pay again.",
+        }));
+      }
+    } catch (error) {
+      toast.error(error?.response?.data?.message || error?.message || "Could not reconcile the payment yet.");
+    }
+  };
+
   // Create a booking first, then request payment against its server-generated ID.
   const createBookingMutation = useMutation({
     mutationFn: createBooking,
@@ -328,7 +360,7 @@ export default function Checkout() {
           <Detail label="Pickup time" value={pickupTime || "Select below"} />
         </section>
 
-        {paymentState && <section className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-5"><h2 className="font-bold">{successful ? "Payment successful" : paymentState.status === "pending" ? "Waiting for M-Pesa payment" : paymentState.status === "timeout" ? "Payment status not yet confirmed" : "Payment failed"}</h2><p className="mt-2 text-slate-700">{paymentState.message}</p>{paymentState.status === "pending" && <p className="mt-3 font-bold text-amber-800">Check your phone and enter your M-Pesa PIN.</p>}{paymentState.mpesaReceiptNumber && <p className="mt-2 text-sm font-semibold">M-Pesa receipt: {paymentState.mpesaReceiptNumber}</p>}{successful && <button type="button" onClick={() => navigate(`/bookings/${paymentState.bookingId}`)} className="mt-4 rounded-xl bg-emerald-700 px-5 py-3 font-bold text-white">View Booking & Remaining Balance</button>}{["failed", "cancelled"].includes(paymentState.status) && <button type="button" onClick={() => setPaymentState(null)} className="mt-4 rounded-xl bg-amber-600 px-5 py-3 font-bold text-white">Retry Payment</button>}{paymentState.status === "timeout" && <button type="button" onClick={() => setPaymentState((current) => ({ ...current, status: "pending", message: "Checking the saved payment request with the server. Do not start another payment yet." }))} className="mt-4 rounded-xl bg-amber-600 px-5 py-3 font-bold text-white">Check payment status</button>}</section>}
+        {paymentState && <section className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-5"><h2 className="font-bold">{successful ? "Payment successful" : paymentState.status === "pending" ? "Waiting for M-Pesa payment" : paymentState.status === "timeout" ? "Payment status not yet confirmed" : "Payment failed"}</h2><p className="mt-2 text-slate-700">{paymentState.message}</p>{paymentState.status === "pending" && <p className="mt-3 font-bold text-amber-800">Check your phone and enter your M-Pesa PIN.</p>}{paymentState.mpesaReceiptNumber && <p className="mt-2 text-sm font-semibold">M-Pesa receipt: {paymentState.mpesaReceiptNumber}</p>}{successful && <button type="button" onClick={() => navigate(`/bookings/${paymentState.bookingId}`)} className="mt-4 rounded-xl bg-emerald-700 px-5 py-3 font-bold text-white">View Booking & Remaining Balance</button>}{["failed", "cancelled"].includes(paymentState.status) && <button type="button" onClick={() => setPaymentState(null)} className="mt-4 rounded-xl bg-amber-600 px-5 py-3 font-bold text-white">Retry Payment</button>}{paymentState.status === "timeout" && <button type="button" onClick={refreshPaymentStatus} className="mt-4 rounded-xl bg-amber-600 px-5 py-3 font-bold text-white">Check payment status</button>}</section>}
 
         {balance > 0 && !successful && <form onSubmit={submit} className="mt-6 space-y-5">
           <Field label="Travel date" required><input type="date" value={travelDate} min={dateRange.min || undefined} max={dateRange.max || undefined} onChange={(e) => setTravelDate(e.target.value)} className="w-full rounded-xl border p-3 text-base touch-manipulation" required /></Field>
