@@ -1,3 +1,4 @@
+// Import the canonical tenant plugin that enforces tenant-scoped database access.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
 /**
@@ -12,7 +13,10 @@ import { tenantPlugin } from "../tenancy/tenantPlugin.js";
  * collections such as permissions, currencies and organizations remain
  * global.
  */
+// Apply tenant isolation to each Mongoose schema that owns tenantId.
 export default function tenantIsolationPlugin(schema) {
+  // Leave global schemas alone when they do not declare a tenantId path.
   if (!schema?.path?.("tenantId")) return;
+  // Attach the canonical read/write tenant protections to tenant-owned schemas.
   tenantPlugin(schema);
 }
