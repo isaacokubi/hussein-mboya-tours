@@ -74,7 +74,8 @@ test("checkout polling unwraps the Axios response and nested API data envelope b
 test("subscription callback records a terminal failure or completes the subscription payment before activation", () => {
   const callback = read("controllers/subscriptionMpesaCallbackController.js");
   assert.match(callback, /payment\.status = "failed"/);
-  assert.match(callback, /payment\.status = "completed"/);
+  const subscriptionService = read("services/tenantSubscriptionService.js");
+  assert.match(subscriptionService, /payment\.status = "completed"/);
   assert.match(callback, /activateTenantSubscription\(/);
   assert.match(callback, /Math\.round\(paidAmount\) !== Math\.round\(payment\.amount\)/);
 });
