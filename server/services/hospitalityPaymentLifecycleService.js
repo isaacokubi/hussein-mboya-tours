@@ -25,6 +25,7 @@ export const getHospitalityPayableAmount = async (booking, { session = null } = 
   return Math.max(0, Math.round((total - Number(paid?.total || 0)) * 100) / 100);
 };
 
+// Recalculate paid/balance/status fields from persisted payment records rather than client input.
 export const syncHospitalityPaymentStatus = async ({ type, booking, payment, session = null }) => {
   const paymentQuery = Payment.find({
     tenantId: booking.tenantId,
@@ -45,6 +46,7 @@ export const syncHospitalityPaymentStatus = async ({ type, booking, payment, ses
   return { booking, invoice, paidAmount: paid, balance: Math.max(0, total - paid) };
 };
 
+// Apply receipt-verified hotel/airport-transfer payments through the shared idempotent lifecycle.
 export const completeHospitalityPayment = async ({ payment, booking, paymentData = {} }) => {
   if (!payment || !booking) throw new Error("Payment and hospitality booking are required.");
 
@@ -122,6 +124,7 @@ export const completeHospitalityPayment = async ({ payment, booking, paymentData
   }
 };
 
+// Persist failure details for hotel/airport-transfer charges without treating a failed prompt as a completed payment.
 export const failHospitalityPayment = async ({ payment, booking, reason = "Payment failed.", paymentData = {} }) => {
   if (!payment) throw new Error("Payment is required.");
 

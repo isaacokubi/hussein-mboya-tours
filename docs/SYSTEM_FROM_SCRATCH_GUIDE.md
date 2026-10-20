@@ -34,7 +34,7 @@ The browser is never authoritative for payment success, price, tenant identity, 
 16. server/controllers/tenantSubscriptionController.js and server/models/SubscriptionPayment.js — persist subscription charge states and periodically reconcile pending requests with Daraja.
 17. server/tests/mpesaCallbackLifecycleContract.test.js — lock the booking, hospitality, subscription, callback and status-response contracts.
 18. .github/workflows/ci.yml — run client unit tests along with lint and production build.
-15. vercel.json, hosting configuration and GitHub Actions workflows — add after the application can run locally.
+19. vercel.json and hosting configuration — add after the application can run locally; keep CI workflow definitions separate from deployment configuration.
 
 Test gate: run npm ci in both package directories; verify no secrets are tracked; run server syntax/security checks and client lint/build.
 
@@ -148,7 +148,7 @@ Use the Daraja sandbox and an isolated staging database:
 9. Deliver the same callback repeatedly and assert one ledger posting and one balance update.
 10. Test wrong checkout ID, wrong amount, missing receipt, non-zero result code, provider timeout, malformed callback, cross-tenant ID and simultaneous duplicate callbacks.
 
-The checkout path had two nested-envelope hazards: the status endpoint returned `data.status`, and the client read the outer Axios response envelope rather than its nested `data`. The endpoint now returns `data.paymentStatus` and a compatibility `data.status`, and the client unwraps both envelopes. The status is always read from the server-owned Payment record. A timeout/network error remains unconfirmed, not proof of failure. Booking payments, hospitality payments and tenant subscription payments use different lifecycle services; each requires its own callback/status tests.
+Subscription billing polls its payment status endpoint every five seconds, while the server throttles Daraja status queries to one every 30 seconds. Provider-confirmed failures/cancellations are persisted; a provider query that reports success still remains pending until the verified callback includes the expected amount and receipt. The checkout path had two nested-envelope hazards: the status endpoint returned `data.status`, and the client read the outer Axios response envelope rather than its nested `data`. The endpoint now returns `data.paymentStatus` and a compatibility `data.status`, and the client unwraps both envelopes. The status is always read from the server-owned Payment record. A timeout/network error remains unconfirmed, not proof of failure. Booking payments, hospitality payments, subscription charges and refunds use distinct handlers/lifecycle paths; the tests must cover each state transition and duplicate callback behavior.
 
 Code tests do not prove live Safaricom callback delivery or production credentials work. Record sandbox evidence and deployed commit SHA separately. Never use real production transactions as test fixtures.
 

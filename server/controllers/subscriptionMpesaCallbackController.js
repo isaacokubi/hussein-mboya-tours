@@ -4,6 +4,7 @@ import { mpesaCallback } from "./mpesaController.js";
 
 const resolvedTenantId = (req) => String(req.tenantId || req.tenant?.tenantId || req.tenant?.id || "").trim();
 
+// Dispatch subscription callbacks separately from booking/hospitality payments, using the tenant-scoped subscription record.
 export const subscriptionMpesaCallback = async (req, res) => {
   try {
     const stkCallback = req.body?.Body?.stkCallback;
@@ -18,6 +19,7 @@ export const subscriptionMpesaCallback = async (req, res) => {
     if (["completed", "failed", "cancelled"].includes(payment.status)) return res.json({ ResultCode: 0, ResultDesc: "Already processed" });
 
     const resultCode = Number(stkCallback?.ResultCode);
+    // A provider-confirmed non-zero result is a terminal subscription-payment failure.
     if (resultCode !== 0) {
       payment.status = "failed";
       payment.failureReason = stkCallback?.ResultDesc || "M-Pesa subscription payment failed.";
@@ -43,6 +45,7 @@ export const subscriptionMpesaCallback = async (req, res) => {
     payment.metadata = { ...(payment.metadata || {}), callbackResponse: stkCallback, amount: paidAmount, phoneNumber: value("PhoneNumber") || payment.phoneNumber };
     await payment.save();
 
+    // Activate only after amount and receipt are present and match the stored subscription charge.
     await activateTenantSubscription({
       tenantId: payment.tenantId,
       plan: payment.plan,
