@@ -1,3 +1,10 @@
+/**
+ * Payment controller: exposes tenant-scoped payment lookup, pagination,
+ * payment-intent creation and permitted status transitions. Provider-backed
+ * payments must be completed by verified provider callbacks/reconciliation;
+ * an ordinary API request must not be able to forge a successful payment.
+ */
+
 import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 import { getSystemSettings } from "../services/settingsService.js";
 import Payment from "../models/Payment.js";
