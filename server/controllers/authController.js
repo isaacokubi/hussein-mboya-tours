@@ -1,3 +1,11 @@
+/**
+ * Authentication controller: coordinates sign-in and related identity flows.
+ * It resolves the effective role, serializes only approved public user fields,
+ * maintains tenant context, and delegates token/cookie/MFA/SMS work to helpers.
+ * Tenant resolution is security-sensitive: ambiguous shared email addresses
+ * must not silently authenticate against an arbitrary tenant.
+ */
+
 import crypto from "crypto";
 import { mergeTenantFilter, runWithTenant, setTenantContext, getTenantContext } from "../tenancy/context.js";
 import User from "../models/User.js";
