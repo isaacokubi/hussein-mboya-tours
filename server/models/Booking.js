@@ -1,5 +1,8 @@
+// Mongoose defines booking documents and their validation rules.
 import mongoose from "mongoose";
+// Apply tenant-aware read/write protections to booking records.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+// Queue external notifications when booking lifecycle events occur.
 import { queueWebhookEvent } from "../services/webhookDeliveryService.js";
 
 const travelerSchema = new mongoose.Schema(
@@ -13,8 +16,219 @@ const billingContactSchema = new mongoose.Schema({ name: String, email: String, 
 
 const bookingSchema = new mongoose.Schema(
   {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true }, bookingNumber: { type: String, unique: true, index: true }, customTourRequest: { type: mongoose.Schema.Types.ObjectId, ref: "CustomTourRequest", default: null }, customer: { type: mongoose.Schema.Types.ObjectId, ref: "Customer", required: false, index: true }, user: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null, index: true }, customerSnapshot: customerSnapshotSchema, contact: { name: { type: String, trim: true, default: "" }, email: { type: String, lowercase: true, trim: true, default: "" }, phone: { type: String, trim: true, default: "" } }, agent: { type: mongoose.Schema.Types.ObjectId, ref: "Agent", default: null }, bookingSource: { type: String, enum: ["website", "mobile_app", "agent", "admin", "walk_in", "partner", "api"], default: "website" }, externalSource: { type: String, trim: true, default: undefined }, externalBookingId: { type: String, trim: true, default: undefined }, integrationKeyId: { type: mongoose.Schema.Types.ObjectId, ref: "WebsiteIntegrationKey", default: null }, externalMetadata: { type: mongoose.Schema.Types.Mixed, default: {} }, bookingType: { type: String, enum: ["individual", "group", "corporate"], default: "individual", index: true }, groupReference: { type: String, trim: true, default: "" }, corporateAccount: { type: mongoose.Schema.Types.ObjectId, ref: "CorporateAccount", default: null, index: true }, corporateCompanyName: { type: String, trim: true, default: "" }, corporatePin: { type: String, trim: true, uppercase: true, default: "" }, purchaseOrderNumber: { type: String, trim: true, default: "" }, paymentTerms: { type: String, enum: ["immediate", "deposit", "credit", "staged"], default: "immediate" }, billingContact: billingContactSchema, roomingListReference: { type: String, trim: true, default: "" }, tour: { type: mongoose.Schema.Types.ObjectId, ref: "Tour", required: false, default: null, index: true }, travelDate: { type: Date, required: true }, originalTravelDate: { type: Date, default: null }, rescheduleHistory: [{ fromDate: { type: Date }, toDate: { type: Date }, reason: { type: String, default: "" }, requestedAt: { type: Date, default: Date.now } }], rescheduleCount: { type: Number, default: 0, min: 0 }, travelers: { type: [travelerSchema], default: [] }, numberOfGuests: { type: Number, default: 1, min: 1 }, pickupLocation: { type: String, trim: true, default: "" }, pickupTime: Date, hotelName: { type: String, trim: true, default: "" }, roomNumber: { type: String, trim: true, default: "" }, emergencyContact: emergencyContactSchema, specialRequests: [{ type: String, trim: true }], assignedGuide: { type: mongoose.Schema.Types.ObjectId, ref: "Staff", default: null }, assignedDriver: { type: mongoose.Schema.Types.ObjectId, ref: "Staff", default: null }, assignedVehicle: { type: mongoose.Schema.Types.ObjectId, ref: "Vehicle", default: null }, assigned: { type: Boolean, default: false }, subtotal: { type: Number, default: 0, min: 0 }, discountAmount: { type: Number, default: 0, min: 0 }, taxAmount: { type: Number, default: 0, min: 0 }, serviceFee: { type: Number, default: 0, min: 0 }, couponUsed: { type: String, trim: true, default: "" }, totalAmount: { type: Number, required: true, min: 0 }, commissionRate: { type: Number, default: 0, min: 0, max: 100 }, commissionAmount: { type: Number, default: 0, min: 0 }, commissionStatus: { type: String, enum: ["pending", "approved", "paid", "cancelled"], default: "pending" }, commissionPaidAt: { type: Date, default: null }, depositAmount: { type: Number, default: 0, min: 0 }, amountPaid: { type: Number, default: 0, min: 0 }, balanceAmount: { type: Number, default: 0, min: 0 }, paymentMethod: { type: String, enum: ["MPESA", "CARD", "PAYPAL", "BANK_TRANSFER", "CASH"], default: "MPESA" }, paymentStatus: { type: String, enum: ["pending", "partial", "paid", "failed", "cancelled", "refunded"], default: "pending", index: true }, transactionId: { type: String, trim: true }, paymentReference: { type: String, trim: true }, mpesaReceipt: { type: String, trim: true, default: "" }, payments: [{ type: mongoose.Schema.Types.ObjectId, ref: "Payment" }], refundAmount: { type: Number, default: 0, min: 0 }, refundStatus: { type: String, enum: ["none", "requested", "approved", "processing", "completed", "rejected"], default: "none" }, refundReason: { type: String, default: "" }, status: { type: String, enum: ["pending", "confirmed", "assigned", "ongoing", "completed", "cancelled", "refunded"], default: "pending", index: true }, cancellationReason: { type: String, default: "" }, cancelledAt: { type: Date, default: null }, confirmedAt: { type: Date, default: null }, completedAt: { type: Date, default: null }, notes: { type: String, default: "" }, documents: [{ name: String, url: String, type: String, uploadedAt: { type: Date, default: Date.now } }], createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null }, updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null }, isDeleted: { type: Boolean, default: false, index: true },
-  },
+  // Organization that owns the booking; required for tenant isolation.
+  tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true },
+
+  // Human-readable unique booking reference used in emails, receipts and support.
+  bookingNumber: { type: String, unique: true, index: true },
+
+  // Optional custom-tour request associated with this booking.
+  customTourRequest: { type: mongoose.Schema.Types.ObjectId, ref: "CustomTourRequest", default: null },
+
+  // Customer record associated with the booking.
+  customer: { type: mongoose.Schema.Types.ObjectId, ref: "Customer", required: false, index: true },
+
+  // Authenticated user who placed the booking, when available.
+  user: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null, index: true },
+
+  // Snapshot of customer contact details captured when the booking was created.
+  customerSnapshot: customerSnapshotSchema,
+
+  // Name, email and phone details used to contact the booking party.
+  contact: { name: { type: String, trim: true, default: "" }, email: { type: String, lowercase: true, trim: true, default: "" }, phone: { type: String, trim: true, default: "" } },
+
+  // Travel agent responsible for the booking, when applicable.
+  agent: { type: mongoose.Schema.Types.ObjectId, ref: "Agent", default: null },
+
+  // Channel through which the booking was created.
+  bookingSource: { type: String, enum: ["website", "mobile_app", "agent", "admin", "walk_in", "partner", "api"], default: "website" },
+
+  // External partner/system that supplied the booking.
+  externalSource: { type: String, trim: true, default: undefined },
+
+  // Identifier assigned to this booking by an external system.
+  externalBookingId: { type: String, trim: true, default: undefined },
+
+  // Integration credential record used by an API-originated booking.
+  integrationKeyId: { type: mongoose.Schema.Types.ObjectId, ref: "WebsiteIntegrationKey", default: null },
+
+  // Additional external integration data stored with the booking.
+  externalMetadata: { type: mongoose.Schema.Types.Mixed, default: {} },
+
+  // Classifies the booking as individual, group or corporate.
+  bookingType: { type: String, enum: ["individual", "group", "corporate"], default: "individual", index: true },
+
+  // Reference that groups related bookings together.
+  groupReference: { type: String, trim: true, default: "" },
+
+  // Corporate customer account billed for the booking.
+  corporateAccount: { type: mongoose.Schema.Types.ObjectId, ref: "CorporateAccount", default: null, index: true },
+
+  // Company name snapshot used for corporate booking records.
+  corporateCompanyName: { type: String, trim: true, default: "" },
+
+  // Corporate tax/PIN identifier captured for billing.
+  corporatePin: { type: String, trim: true, uppercase: true, default: "" },
+
+  // Customer purchase-order reference for invoicing.
+  purchaseOrderNumber: { type: String, trim: true, default: "" },
+
+  // Defines when and how payment is expected.
+  paymentTerms: { type: String, enum: ["immediate", "deposit", "credit", "staged"], default: "immediate" },
+
+  // Contact details used for billing and invoices.
+  billingContact: billingContactSchema,
+
+  // Reference to the group rooming list, when applicable.
+  roomingListReference: { type: String, trim: true, default: "" },
+
+  // Tour record selected for this booking.
+  tour: { type: mongoose.Schema.Types.ObjectId, ref: "Tour", required: false, default: null, index: true },
+
+  // Date the traveler plans to take the tour.
+  travelDate: { type: Date, required: true },
+
+  // Original travel date retained after rescheduling.
+  originalTravelDate: { type: Date, default: null },
+
+  // Audit history of previous travel-date changes.
+  rescheduleHistory: [{ fromDate: { type: Date }, toDate: { type: Date }, reason: { type: String, default: "" }, requestedAt: { type: Date, default: Date.now } }],
+
+  // Number of times this booking has been rescheduled.
+  rescheduleCount: { type: Number, default: 0, min: 0 },
+
+  // Traveler details captured for this booking.
+  travelers: { type: [travelerSchema], default: [] },
+
+  // Total number of guests included in the booking.
+  numberOfGuests: { type: Number, default: 1, min: 1 },
+
+  // Requested pickup point for the travelers.
+  pickupLocation: { type: String, trim: true, default: "" },
+
+  // Scheduled pickup time, when configured.
+  pickupTime: Date,
+
+  // Hotel associated with pickup or accommodation.
+  hotelName: { type: String, trim: true, default: "" },
+
+  // Room identifier associated with the booking, when applicable.
+  roomNumber: { type: String, trim: true, default: "" },
+
+  // Emergency contact information for the booking party.
+  emergencyContact: emergencyContactSchema,
+
+  // Special requirements or notes supplied by the customer.
+  specialRequests: [{ type: String, trim: true }],
+
+  // Guide assigned to conduct the tour.
+  assignedGuide: { type: mongoose.Schema.Types.ObjectId, ref: "Staff", default: null },
+
+  // Driver assigned to transport the travelers.
+  assignedDriver: { type: mongoose.Schema.Types.ObjectId, ref: "Staff", default: null },
+
+  // Vehicle assigned to the booking.
+  assignedVehicle: { type: mongoose.Schema.Types.ObjectId, ref: "Vehicle", default: null },
+
+  // Flag indicating whether operational resources have been assigned.
+  assigned: { type: Boolean, default: false },
+
+  // Amount before discounts, tax and service fees.
+  subtotal: { type: Number, default: 0, min: 0 },
+
+  // Total discount applied to the booking.
+  discountAmount: { type: Number, default: 0, min: 0 },
+
+  // Tax amount calculated for the booking.
+  taxAmount: { type: Number, default: 0, min: 0 },
+
+  // Additional service fee charged for the booking.
+  serviceFee: { type: Number, default: 0, min: 0 },
+
+  // Coupon code applied to the booking, if any.
+  couponUsed: { type: String, trim: true, default: "" },
+
+  // Final amount due for the booking.
+  totalAmount: { type: Number, required: true, min: 0 },
+
+  // Commission percentage used for agent/partner calculations.
+  commissionRate: { type: Number, default: 0, min: 0, max: 100 },
+
+  // Commission amount calculated for the booking.
+  commissionAmount: { type: Number, default: 0, min: 0 },
+
+  // Lifecycle status of the booking's commission.
+  commissionStatus: { type: String, enum: ["pending", "approved", "paid", "cancelled"], default: "pending" },
+
+  // Timestamp when the commission was paid.
+  commissionPaidAt: { type: Date, default: null },
+
+  // Configured initial deposit amount for the booking.
+  depositAmount: { type: Number, default: 0, min: 0 },
+
+  // Total payment amount recorded against the booking.
+  amountPaid: { type: Number, default: 0, min: 0 },
+
+  // Outstanding balance after recorded payments.
+  balanceAmount: { type: Number, default: 0, min: 0 },
+
+  // Payment method associated with the booking.
+  paymentMethod: { type: String, enum: ["MPESA", "CARD", "PAYPAL", "BANK_TRANSFER", "CASH"], default: "MPESA" },
+
+  // Payment lifecycle state for the booking.
+  paymentStatus: { type: String, enum: ["pending", "partial", "paid", "failed", "cancelled", "refunded"], default: "pending", index: true },
+
+  // Booking schema field: transactionId.
+  transactionId: { type: String, trim: true },
+
+  // Provider or transaction reference for reconciliation.
+  paymentReference: { type: String, trim: true },
+
+  // Booking schema field: mpesaReceipt.
+  mpesaReceipt: { type: String, trim: true, default: "" },
+
+  // Booking schema field: payments.
+  payments: [{ type: mongoose.Schema.Types.ObjectId, ref: "Payment" }],
+
+  // Booking schema field: refundAmount.
+  refundAmount: { type: Number, default: 0, min: 0 },
+
+  // Booking schema field: refundStatus.
+  refundStatus: { type: String, enum: ["none", "requested", "approved", "processing", "completed", "rejected"], default: "none" },
+
+  // Booking schema field: refundReason.
+  refundReason: { type: String, default: "" },
+
+  // Overall booking lifecycle status.
+  status: { type: String, enum: ["pending", "confirmed", "assigned", "ongoing", "completed", "cancelled", "refunded"], default: "pending", index: true },
+
+  // Booking schema field: cancellationReason.
+  cancellationReason: { type: String, default: "" },
+
+  // Booking schema field: cancelledAt.
+  cancelledAt: { type: Date, default: null },
+
+  // Booking schema field: confirmedAt.
+  confirmedAt: { type: Date, default: null },
+
+  // Booking schema field: completedAt.
+  completedAt: { type: Date, default: null },
+
+  // Internal booking notes used by authorized staff.
+  notes: { type: String, default: "" },
+
+  // Booking schema field: documents.
+  documents: [{ name: String, url: String, type: String, uploadedAt: { type: Date, default: Date.now } }],
+
+  // Booking schema field: createdBy.
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+
+  // Booking schema field: updatedBy.
+  updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+
+  // Booking schema field: isDeleted.
+  isDeleted: { type: Boolean, default: false, index: true },
+},
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
 
