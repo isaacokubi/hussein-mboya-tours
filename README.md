@@ -145,6 +145,8 @@ The platform includes:
 
 ## Production documentation
 
+- [System from scratch guide](docs/SYSTEM_FROM_SCRATCH_GUIDE.md) — detailed build order, file responsibilities, tenant/database design, offline behavior, payment lifecycle, testing and release acceptance.
+
 - [Production readiness](docs/PRODUCTION_READINESS.md) — current readiness matrix and release rules.
 - [Test evidence register](docs/TEST_EVIDENCE.md) — chronological evidence and explicit pending/not-verified gates.
 - [Documentation automation](scripts/update-documentation.js) — generates the current repository-state section.
