@@ -102,3 +102,13 @@ test("an unconfirmed payment timeout asks the user to check status instead of bl
   assert.match(checkout, /Check payment status/);
   assert.doesNotMatch(checkout, /\["failed", "cancelled", "timeout"\]\.includes\(paymentState\.status\).*Retry Payment/);
 });
+
+
+test("manual checkout reconciliation calls the provider-query endpoint and never treats an unconfirmed query as paid", () => {
+  const api = fs.readFileSync(path.resolve(root, "../client/src/api/mpesaApi.js"), "utf8");
+  const checkout = fs.readFileSync(path.resolve(root, "../client/src/pages/Checkout.jsx"), "utf8");
+  assert.match(api, /api\.get\(\`\/mpesa\/query\/\${checkoutRequestId}\`\)/);
+  assert.match(checkout, /queryPaymentStatus\(paymentState\.checkoutRequestId\)/);
+  assert.match(checkout, /A successful STK query without receipt metadata is not proof that funds were received/);
+  assert.match(checkout, /do not pay again/);
+});
