@@ -162,17 +162,43 @@ const paymentSchema = new mongoose.Schema({
 }, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } });
 
 // Expose a computed boolean for callers that need to check successful completion.
+// Expose whether this payment is in the confirmed-completed state.
 paymentSchema.virtual("isSuccessful").get(function () { return this.status === "completed"; });
 // Expose whether the refund workflow has reached its completed state.
 paymentSchema.virtual("isRefunded").get(function () { return this.refundStatus === "completed"; });
 // Compute the remaining net payment after refunds, never returning a negative amount.
 paymentSchema.virtual("netAmount").get(function () { return Math.max(0, Number(this.amount || 0) - Number(this.refundedAmount || 0)); });
-paymentSchema.index({ customer: 1, createdAt: -1 }); paymentSchema.index({ booking: 1 }); paymentSchema.index({ status: 1, provider: 1 }); paymentSchema.index({ transactionId: 1 }); paymentSchema.index({ transactionReference: 1 });
-paymentSchema.index({ tenantId: 1, provider: 1, transactionReference: 1 }, { unique: true, partialFilterExpression: { status: "completed", transactionReference: { $type: "string", $gt: "" } } });
-paymentSchema.index({ tenantId: 1, checkoutRequestID: 1 }, { unique: true, partialFilterExpression: { checkoutRequestID: { $type: "string", $gt: "" } } }); paymentSchema.index({ tenantId: 1, checkoutRequestId: 1 }, { unique: true, partialFilterExpression: { checkoutRequestId: { $type: "string", $gt: "" } } }); paymentSchema.index({ tenantId: 1, mpesaReceiptNumber: 1 }, { unique: true, partialFilterExpression: { mpesaReceiptNumber: { $type: "string", $gt: "" } } }); paymentSchema.index({ tenantId: 1, booking: 1, createdAt: -1 }); paymentSchema.index({ tenantId: 1, status: 1, createdAt: -1 }); paymentSchema.index({ tenantId: 1, callbackEventId: 1 }, { unique: true, partialFilterExpression: { callbackEventId: { $type: "string", $gt: "" } } });
 
+// Index customer payment history by customer and newest-first creation date.
+paymentSchema.index({ customer: 1, createdAt: -1 });
+// Index payments by their linked tour booking.
+paymentSchema.index({ booking: 1 });
+// Speed up queries filtering by status and provider.
+paymentSchema.index({ status: 1, provider: 1 });
+// Index internal/provider transaction identifiers for lookups.
+paymentSchema.index({ transactionId: 1 });
+// Index transaction references for reconciliation.
+paymentSchema.index({ transactionReference: 1 });
+// Prevent duplicate completed provider references within the same tenant.
+paymentSchema.index({ tenantId: 1, provider: 1, transactionReference: 1 }, { unique: true, partialFilterExpression: { status: "completed", transactionReference: { $type: "string", $gt: "" } } });
+// Prevent duplicate M-Pesa checkout IDs within one tenant.
+paymentSchema.index({ tenantId: 1, checkoutRequestID: 1 }, { unique: true, partialFilterExpression: { checkoutRequestID: { $type: "string", $gt: "" } } });
+// Keep a unique index for the legacy checkoutRequestId spelling too.
+paymentSchema.index({ tenantId: 1, checkoutRequestId: 1 }, { unique: true, partialFilterExpression: { checkoutRequestId: { $type: "string", $gt: "" } } });
+// Prevent a receipt number from being attached to multiple payments in the same tenant.
+paymentSchema.index({ tenantId: 1, mpesaReceiptNumber: 1 }, { unique: true, partialFilterExpression: { mpesaReceiptNumber: { $type: "string", $gt: "" } } });
+// Speed up tenant-scoped booking payment history.
+paymentSchema.index({ tenantId: 1, booking: 1, createdAt: -1 });
+// Speed up tenant-scoped payment status history.
+paymentSchema.index({ tenantId: 1, status: 1, createdAt: -1 });
+// Prevent duplicate callback event identifiers within a tenant.
+paymentSchema.index({ tenantId: 1, callbackEventId: 1 }, { unique: true, partialFilterExpression: { callbackEventId: { $type: "string", $gt: "" } } });
+
+// Capture whether status changed before the save completes so accounting hooks can avoid duplicate postings.
 paymentSchema.pre("save", function (next) { this.$statusWasModified = this.isModified("status"); next(); });
+// Provide a convenience method for recording a completed payment and its receipt/reference.
 paymentSchema.methods.markCompleted = function (receiptNumber, transactionId = "") { this.status = "completed"; this.mpesaReceiptNumber = receiptNumber; this.transactionId = transactionId; this.paidAt = new Date(); return this.save(); };
+// Provide a convenience method for recording a failed payment and the failure reason.
 paymentSchema.methods.markFailed = function (reason) { this.status = "failed"; this.failureReason = reason; this.failedAt = new Date(); return this.save(); };
 
 // After saving, synchronize confirmed hospitality payments with their invoices and ledger.
