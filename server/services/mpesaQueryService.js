@@ -4,6 +4,7 @@ import { generateAccessToken, generateTimestamp, generatePassword } from "./mpes
 
 const client = axios.create({ timeout: 30000 });
 
+// Use server-side credentials to query the provider; never accept credentials from the browser.
 export async function queryStkPush(checkoutRequestID, suppliedConfig = null) {
   const checkoutId = String(checkoutRequestID || "").trim();
   if (!checkoutId) throw new Error("CheckoutRequestID is required.");
@@ -32,6 +33,7 @@ export async function queryStkPush(checkoutRequestID, suppliedConfig = null) {
   }
 }
 
+// Normalize provider result codes into the small state vocabulary used by payment lifecycles.
 export function classifyStkQueryResult(resultCode) {
   const code = String(resultCode ?? "").trim();
   if (code === "0") return "completed";

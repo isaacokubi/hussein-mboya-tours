@@ -6,6 +6,7 @@ import { hasLegacyMpesaConfig, mpesaConfig } from "../config/mpesa.js";
 
 const checkoutIdOf = (req) => String(req.body?.Body?.stkCallback?.CheckoutRequestID || req.body?.Body?.stkCallback?.checkoutRequestID || req.body?.Body?.stkCallback?.checkoutRequestId || "").trim();
 
+// Reject unknown checkout IDs and callbacks whose claimed state does not match a fresh Daraja query.
 export const verifyMpesaCallbackIntegrity = async (req, res, next) => {
   try {
     const callback = req.body?.Body?.stkCallback;
@@ -27,9 +28,11 @@ export const verifyMpesaCallbackIntegrity = async (req, res, next) => {
     }
 
     const config = subscriptionPayment && hasLegacyMpesaConfig() ? mpesaConfig : undefined;
+    // A callback is not trusted merely because it reached the public HTTPS endpoint; compare it with provider state.
     const queryResult = await queryStkPush(checkoutRequestID, config);
     const providerState = classifyStkQueryResult(queryResult?.ResultCode);
     const callbackState = classifyStkQueryResult(callback.ResultCode);
+    // Pending/contradictory provider results are rejected so they cannot mutate a financial record.
     if (providerState === "pending" || callbackState !== providerState) {
       return res.status(409).json({ ResultCode: 1, ResultDesc: "M-Pesa callback state could not be verified with the provider." });
     }

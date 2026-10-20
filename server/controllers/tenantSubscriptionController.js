@@ -2,12 +2,15 @@ import Organization from "../models/Organization.js";
 import Subscription from "../models/Subscription.js";
 import SubscriptionPayment from "../models/SubscriptionPayment.js";
 import User from "../models/User.js";
+import { queryStkPush, classifyStkQueryResult } from "../services/mpesaQueryService.js";
+import { hasLegacyMpesaConfig, mpesaConfig } from "../config/mpesa.js";
 import { activateTenantSubscription, getTenantPlanPrice, getTenantPlanPrices, initiateTenantMpesaPayment, switchTenantSubscriptionPlan } from "../services/tenantSubscriptionService.js";
 import { getPlanFeatureCatalog, getTenantPlanFeatures } from "../services/planFeatureService.js";
 
 const isAdmin = (user) => ["admin", "administrator", "super_admin", "superadmin"].includes(String(user?.role || user?.legacyRole || "").toLowerCase());
 const isPlatformSuperAdmin = (user) => ["super_admin", "superadmin"].includes(String(user?.role || user?.legacyRole || "").toLowerCase());
 
+// Return the current tenant plan, limits and recent subscription charges for the authenticated tenant.
 export const getTenantSubscription = async (req, res, next) => {
   try {
     const tenantId = req.tenantId || req.user?.tenantId;
@@ -23,6 +26,7 @@ export const getTenantSubscription = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
+// Start a platform-priced STK Push; client-supplied amounts are not accepted as authoritative.
 export const startTenantSubscriptionPayment = async (req, res, next) => {
   try {
     const tenantId = req.tenantId || req.user?.tenantId;
@@ -36,14 +40,61 @@ export const startTenantSubscriptionPayment = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
+// Return the persisted subscription payment state and periodically reconcile known failures with Daraja.
 export const getTenantSubscriptionPaymentStatus = async (req, res, next) => {
   try {
-    const payment = await SubscriptionPayment.findOne({ checkoutRequestID: req.params.checkoutRequestId, tenantId: req.tenantId || req.user?.tenantId }).lean();
+    const tenantId = req.tenantId || req.user?.tenantId;
+    const payment = await SubscriptionPayment.findOne({
+      checkoutRequestID: req.params.checkoutRequestId,
+      tenantId,
+    });
     if (!payment) return res.status(404).json({ success: false, message: "Subscription payment not found." });
-    return res.json({ success: true, payment });
+
+    const terminalStates = ["completed", "failed", "cancelled"];
+    const lastQueriedAt = payment.lastQueriedAt ? new Date(payment.lastQueriedAt).getTime() : 0;
+    const queryIsDue = Date.now() - lastQueriedAt >= 30_000;
+
+    // The callback is the source of receipt-confirmed success. A provider query can safely resolve
+    // failed/cancelled outcomes, but a query result alone must not activate a paid subscription.
+    if (
+      payment.status === "pending" &&
+      payment.checkoutRequestID &&
+      queryIsDue &&
+      hasLegacyMpesaConfig()
+    ) {
+      // Save the query timestamp first so repeated frontend polling does not hammer Daraja.
+      payment.lastQueriedAt = new Date();
+      await payment.save();
+
+      try {
+        const providerResponse = await queryStkPush(payment.checkoutRequestID, mpesaConfig);
+        payment.providerQueryResponse = providerResponse || {};
+        const providerState = classifyStkQueryResult(providerResponse?.ResultCode);
+
+        if (providerState === "failed" || providerState === "cancelled") {
+          payment.status = providerState;
+          payment.failureReason = providerResponse?.ResultDesc || `M-Pesa subscription payment ${providerState}.`;
+        }
+        // Provider "completed" without a receipt still remains pending until the verified callback
+        // supplies amount and receipt metadata; never activate a subscription from the query alone.
+        await payment.save();
+      } catch (providerError) {
+        // Keep pending on provider/network errors. An unknown result is not a confirmed failure.
+        console.error("Subscription M-Pesa status reconciliation failed:", {
+          code: providerError?.code || "MPESA_QUERY_FAILED",
+        });
+      }
+    }
+
+    return res.json({
+      success: true,
+      paymentStatus: payment.status,
+      payment,
+    });
   } catch (error) { next(error); }
 };
 
+// Allow only the platform SuperAdmin to record a manually verified subscription payment.
 export const approveTenantSubscription = async (req, res, next) => {
   try {
     if (!isPlatformSuperAdmin(req.user)) return res.status(403).json({ success: false, message: "Only the platform SuperAdmin can manually activate subscriptions." });
@@ -62,6 +113,7 @@ export const approveTenantSubscription = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
+// Platform-only plan switching preserves the existing renewal period for controlled administrative testing.
 export const switchTenantSubscription = async (req, res, next) => {
   try {
     if (!isPlatformSuperAdmin(req.user)) return res.status(403).json({ success: false, message: "Only the platform SuperAdmin can switch tenant subscription plans." });
@@ -73,6 +125,7 @@ export const switchTenantSubscription = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
+// Provide the platform SuperAdmin with a bounded list of subscription payment records for reconciliation.
 export const listSubscriptionPayments = async (req, res, next) => {
   try {
     if (!isPlatformSuperAdmin(req.user)) return res.status(403).json({ success: false, message: "Only the platform SuperAdmin can view all subscription payments." });

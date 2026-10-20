@@ -4,24 +4,28 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import { createBooking, getBookingById, updateBookingTravelDate } from "../api/bookingApi";
 import { getMyCustomTourRequests } from "../api/customTourApi";
-import { initiateMpesa, checkPaymentStatus } from "../api/mpesaApi";
+import { initiateMpesa, checkPaymentStatus, queryPaymentStatus } from "../api/mpesaApi";
 import { getTourById } from "../api/tourApi";
 import { getSettings } from "../api/superAdminApi";
 import { useAuth } from "../context/AuthContext";
 import { getCustomTourDateRange, getTourDateRange, isDateWithinRange, toDateInputValue } from "../lib/dateRange";
 
+// Convert Kenyan local phone formats into the international format expected by Daraja.
 const normalizePhone = (value) => {
   let phone = String(value || "").replace(/\D/g, "");
   if (phone.startsWith("0")) phone = `254${phone.slice(1)}`;
   if (phone.startsWith("7") || phone.startsWith("1")) phone = `254${phone}`;
   return phone;
 };
+// Safaricom mobile numbers must be ten digits after the 254 country code.
 const validPhone = (value) => /^254[17]\d{8}$/.test(value);
+// API endpoints historically return a few different envelope shapes; normalize them at the UI boundary.
 const unwrapBooking = (response) => response?.data?.booking || response?.booking || response?.data || response || null;
 const unwrapTour = (response) => response?.data?.data || response?.data?.tour || response?.data || response?.tour || response || null;
 const unwrapCustomRequests = (response) => response?.data?.requests || response?.requests || response?.data || response || [];
 const unwrapSettings = (response) => response?.settings || response?.data?.settings || response?.data || response || {};
 
+// Convert a time/date value to the browser's local datetime-local input format.
 const toLocalDateTime = (value, dateFallback) => {
   if (!value) return "";
   const raw = String(value).trim();
@@ -54,6 +58,7 @@ export default function Checkout() {
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentState, setPaymentState] = useState(null);
 
+  // Load booking and tour records through React Query so repeated visits reuse recent server data.
   const { data: bookingResponse, isLoading: bookingLoading } = useQuery({
     queryKey: ["checkout-booking", id],
     queryFn: () => getBookingById(id),
@@ -71,6 +76,7 @@ export default function Checkout() {
     refetchOnWindowFocus: false,
   });
 
+  // Normalize API responses and derive the deposit rule and linked custom-tour details.
   const booking = useMemo(() => unwrapBooking(bookingResponse), [bookingResponse]);
   const tour = useMemo(() => unwrapTour(tourResponse), [tourResponse]);
   const settings = useMemo(() => unwrapSettings(settingsResponse), [settingsResponse]);
@@ -89,12 +95,14 @@ export default function Checkout() {
   }, [booking?.customTourRequest, customRequestsResponse, customRequestId]);
   const custom = booking?.customTourSnapshot || customRequest || {};
 
+  // Determine the legal travel-date window from the selected tour or custom-tour request.
   const dateRange = useMemo(() => {
     if (isTourCheckout) return getTourDateRange(tour);
     if (isBookingCheckout && (booking?.customTourRequest || custom?.startDate)) return getCustomTourDateRange(custom);
     return { min: "", max: "" };
   }, [isTourCheckout, isBookingCheckout, tour, booking?.customTourRequest, custom]);
 
+  // Calculate totals from server-owned prices and the booking's persisted payment ledger.
   const baseTourPrice = Number(tour?.price ?? tour?.tourPrice ?? tour?.pricePerPerson ?? 0);
   const total = isBookingCheckout ? Number(booking?.totalAmount || booking?.quotedAmount || 0) : baseTourPrice * Number(travellers || 0);
   const storedPaid = Number(booking?.depositAmount ?? booking?.amountPaid ?? booking?.paidAmount ?? booking?.paymentSummary?.paid ?? 0);
@@ -103,6 +111,7 @@ export default function Checkout() {
   const configuredDeposit = Math.round((total * bookingDepositRate) / 100);
   const minimumInitialPayment = Math.min(balance, configuredDeposit);
 
+  // Prefill fields when an existing booking or tour becomes available.
   useEffect(() => {
     if (isBookingCheckout && booking) {
       const bookingTravelDate = booking.travelDate || custom.startDate || dateRange.min || "";
@@ -134,6 +143,7 @@ export default function Checkout() {
     }
   }, [isBookingCheckout, isTourCheckout, booking, custom, tour, user, dateRange.min]);
 
+  // Keep the selected date and pickup time aligned with the tour's permitted travel window.
   useEffect(() => {
     if (!dateRange.min || !dateRange.max) return;
     setTravelDate((current) => {
@@ -150,6 +160,7 @@ export default function Checkout() {
     });
   }, [travelDate]);
 
+  // Enforce the configured minimum deposit while allowing payment of the remaining balance.
   useEffect(() => {
     if (balance <= 0) return setPaymentAmount("");
     setPaymentAmount((current) => {
@@ -159,20 +170,28 @@ export default function Checkout() {
     });
   }, [balance, minimumInitialPayment]);
 
+  // Start an STK push only while online; payment initiation must never be queued as an offline write.
   const paymentMutation = useMutation({
     mutationFn: async ({ bookingId, phoneNumber, amount }) => {
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        throw new Error("You are offline. Reconnect before starting an M-Pesa payment; no payment has been sent.");
+      }
       const normalized = normalizePhone(phoneNumber);
       if (!validPhone(normalized)) throw new Error("Enter a valid Safaricom M-Pesa number, e.g. 0707476586.");
       const response = await initiateMpesa({ bookingId, phoneNumber: normalized, amount: Number(amount) });
-      const data = response?.data || response || {};
-      const checkoutRequestId = data.CheckoutRequestID || data.checkoutRequestID;
-      if (!checkoutRequestId) throw new Error(data.message || "M-Pesa checkout could not be started.");
+      // STK initiation is wrapped in an API envelope, then a data payload; unwrap both before reading IDs.
+      const envelope = response?.data || response || {};
+      const data = envelope?.data || envelope;
+      const checkoutRequestId = data.CheckoutRequestID || data.checkoutRequestID || data.checkoutRequestId;
+      if (!checkoutRequestId) throw new Error(envelope.message || data.message || "M-Pesa checkout could not be started.");
+      // Store the provider's checkout ID locally so status polling can resume after a brief navigation/network interruption.
       return { bookingId, checkoutRequestId, amount: Number(amount), status: "pending", message: `M-Pesa prompt sent for KES ${Number(amount).toLocaleString()}. Check your phone and enter your M-Pesa PIN.` };
     },
     onSuccess: (state) => { setPaymentState(state); toast.success("M-Pesa prompt sent. Enter your PIN on your phone."); },
     onError: (error) => toast.error(error?.response?.data?.message || error?.message || "Unable to start payment."),
   });
 
+  // Poll the server's authenticated status endpoint; only the server/provider callback can confirm money received.
   useEffect(() => {
     if (!paymentState?.checkoutRequestId || paymentState.status !== "pending") return;
     let cancelled = false;
@@ -183,9 +202,12 @@ export default function Checkout() {
       attempts += 1;
       try {
         const response = await checkPaymentStatus(paymentState.checkoutRequestId);
-        const data = response?.data || response || {};
-        const payment = data?.payment || {};
-        const status = String(data?.status || payment?.status || "pending").toLowerCase();
+        // Axios wraps the server response in response.data; the API may wrap the payload again in data.
+        const envelope = response?.data || response || {};
+        const data = envelope?.data || envelope;
+        const payment = data?.payment || envelope?.payment || {};
+        // Prefer the canonical paymentStatus field while accepting older status-only API responses.
+        const status = String(data?.paymentStatus || data?.status || payment?.status || "pending").toLowerCase();
         if (status === "completed") {
           setPaymentState((current) => ({ ...current, status: "completed", bookingId: data?.booking?._id || current.bookingId, mpesaReceiptNumber: payment?.mpesaReceiptNumber || payment?.transactionId || "", message: "Payment confirmed successfully." }));
           toast.success("Payment confirmed successfully.");
@@ -195,7 +217,7 @@ export default function Checkout() {
           setPaymentState((current) => ({ ...current, status, message: payment?.failureReason || data?.failureReason || "M-Pesa payment was not completed." }));
           return;
         }
-      } catch (_) { /* continue polling */ }
+      } catch (_) { /* Temporary network/provider errors are retried; they are not treated as payment failure. */ }
       if (!cancelled && attempts < 60) timer = window.setTimeout(poll, 3000);
       if (!cancelled && attempts >= 60) setPaymentState((current) => ({ ...current, status: "timeout", message: "Payment confirmation is taking longer than expected. Check your booking or retry." }));
     };
@@ -203,6 +225,39 @@ export default function Checkout() {
     return () => { cancelled = true; if (timer) window.clearTimeout(timer); };
   }, [paymentState?.checkoutRequestId, paymentState?.status]);
 
+  // Ask the server to reconcile an uncertain STK request with Daraja when the user explicitly checks.
+  const refreshPaymentStatus = async () => {
+    if (!paymentState?.checkoutRequestId) return;
+    try {
+      const response = await queryPaymentStatus(paymentState.checkoutRequestId);
+      const envelope = response?.data || response || {};
+      const data = envelope?.data || envelope;
+      const payment = data?.payment || {};
+      const status = String(data?.paymentStatus || data?.status || payment?.status || "pending").toLowerCase();
+      if (["completed", "failed", "cancelled"].includes(status)) {
+        setPaymentState((current) => ({
+          ...current,
+          status,
+          bookingId: data?.booking?._id || payment?.booking?._id || current.bookingId,
+          mpesaReceiptNumber: payment?.mpesaReceiptNumber || payment?.transactionId || current.mpesaReceiptNumber || "",
+          message: status === "completed"
+            ? "Payment confirmed successfully."
+            : payment?.failureReason || data?.failureReason || `M-Pesa payment ${status}.`,
+        }));
+      } else {
+        // A successful STK query without receipt metadata is not proof that funds were received.
+        setPaymentState((current) => ({
+          ...current,
+          status: "pending",
+          message: "The provider has not supplied final payment confirmation yet. Keep this request open and do not pay again.",
+        }));
+      }
+    } catch (error) {
+      toast.error(error?.response?.data?.message || error?.message || "Could not reconcile the payment yet.");
+    }
+  };
+
+  // Create a booking first, then request payment against its server-generated ID.
   const createBookingMutation = useMutation({
     mutationFn: createBooking,
     onSuccess: async (response) => {
@@ -213,6 +268,7 @@ export default function Checkout() {
     onError: (error) => toast.error(error?.response?.data?.message || error?.message || "Unable to create booking."),
   });
 
+  // Validate the form before sending any booking/payment request to the server.
   const submit = async (event) => {
     event.preventDefault();
     if (!total || total <= 0) return toast.error("This booking has no valid total cost. Please contact the tour operator.");
@@ -304,25 +360,13 @@ export default function Checkout() {
           <Detail label="Pickup time" value={pickupTime || "Select below"} />
         </section>
 
-        {paymentState && <section className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-5"><h2 className="font-bold">{successful ? "Payment successful" : paymentState.status === "pending" ? "Waiting for M-Pesa payment" : "Payment failed"}</h2><p className="mt-2 text-slate-700">{paymentState.message}</p>{paymentState.status === "pending" && <p className="mt-3 font-bold text-amber-800">Check your phone and enter your M-Pesa PIN.</p>}{paymentState.mpesaReceiptNumber && <p className="mt-2 text-sm font-semibold">M-Pesa receipt: {paymentState.mpesaReceiptNumber}</p>}{successful && <button type="button" onClick={() => navigate(`/bookings/${paymentState.bookingId}`)} className="mt-4 rounded-xl bg-emerald-700 px-5 py-3 font-bold text-white">View Booking & Remaining Balance</button>}{["failed", "cancelled", "timeout"].includes(paymentState.status) && <button type="button" onClick={() => setPaymentState(null)} className="mt-4 rounded-xl bg-amber-600 px-5 py-3 font-bold text-white">Retry Payment</button>}</section>}
+        {paymentState && <section className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-5"><h2 className="font-bold">{successful ? "Payment successful" : paymentState.status === "pending" ? "Waiting for M-Pesa payment" : paymentState.status === "timeout" ? "Payment status not yet confirmed" : "Payment failed"}</h2><p className="mt-2 text-slate-700">{paymentState.message}</p>{paymentState.status === "pending" && <p className="mt-3 font-bold text-amber-800">Check your phone and enter your M-Pesa PIN.</p>}{paymentState.mpesaReceiptNumber && <p className="mt-2 text-sm font-semibold">M-Pesa receipt: {paymentState.mpesaReceiptNumber}</p>}{successful && <button type="button" onClick={() => navigate(`/bookings/${paymentState.bookingId}`)} className="mt-4 rounded-xl bg-emerald-700 px-5 py-3 font-bold text-white">View Booking & Remaining Balance</button>}{["failed", "cancelled"].includes(paymentState.status) && <button type="button" onClick={() => setPaymentState(null)} className="mt-4 rounded-xl bg-amber-600 px-5 py-3 font-bold text-white">Retry Payment</button>}{paymentState.status === "timeout" && <button type="button" onClick={refreshPaymentStatus} className="mt-4 rounded-xl bg-amber-600 px-5 py-3 font-bold text-white">Check payment status</button>}</section>}
 
         {balance > 0 && !successful && <form onSubmit={submit} className="mt-6 space-y-5">
           <Field label="Travel date" required><input type="date" value={travelDate} min={dateRange.min || undefined} max={dateRange.max || undefined} onChange={(e) => setTravelDate(e.target.value)} className="w-full rounded-xl border p-3 text-base touch-manipulation" required /></Field>
           <p className="-mt-3 text-sm text-slate-500">You can only select a date from {dateRange.min || "the tour start"} through {dateRange.max || "the tour end"}. Dates outside this period are disabled.</p>
           <Field label="Number of travellers" required={!isBookingCheckout}>
-            <input
-              type="number"
-              min="1"
-              step="1"
-              value={travellers}
-              onChange={(e) => setTravellers(e.target.value)}
-              onBlur={() => { if (!String(travellers).trim()) setTravellers("1"); }}
-              inputMode="numeric"
-              pattern="[0-9]*"
-              className="w-full rounded-xl border p-3 text-base touch-manipulation"
-              required={!isBookingCheckout}
-              aria-label="Number of travellers"
-            />
+            <input type="number" min="1" step="1" value={travellers} onChange={(e) => setTravellers(e.target.value)} onBlur={() => { if (!String(travellers).trim()) setTravellers("1"); }} inputMode="numeric" pattern="[0-9]*" className="w-full rounded-xl border p-3 text-base touch-manipulation" required={!isBookingCheckout} aria-label="Number of travellers" />
           </Field>
           <Field label="M-Pesa phone number" required><input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0707476586" autoComplete="tel" className="w-full rounded-xl border p-3 text-base touch-manipulation" required /></Field>
           <Field label="Exact pickup location" required><input value={pickupLocation} onChange={(e) => setPickupLocation(e.target.value)} placeholder="e.g. Sarova Stanley, Nairobi" className="w-full rounded-xl border p-3 text-base touch-manipulation" required /></Field>
@@ -331,7 +375,7 @@ export default function Checkout() {
           <div className="grid gap-4 sm:grid-cols-2"><Field label="Hotel / accommodation"><input value={hotelName} onChange={(e) => setHotelName(e.target.value)} className="w-full rounded-xl border p-3 text-base touch-manipulation" /></Field><Field label="Room number"><input value={roomNumber} onChange={(e) => setRoomNumber(e.target.value)} className="w-full rounded-xl border p-3 text-base touch-manipulation" /></Field></div>
           <Field label="Special requests"><textarea value={specialRequests} onChange={(e) => setSpecialRequests(e.target.value)} rows="4" className="w-full rounded-xl border p-3 text-base touch-manipulation" /></Field>
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5"><div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><label className="block text-sm font-bold">Pay now (KES)</label><input type="number" min={minimumInitialPayment || 1} max={balance} step="1" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} inputMode="numeric" pattern="[0-9]*" className="mt-2 w-full rounded-xl border border-emerald-300 p-3 text-base font-bold touch-manipulation sm:w-64" required /></div><button type="button" onClick={() => setPaymentAmount(String(balance))} className="rounded-xl border border-emerald-700 px-4 py-3 font-semibold text-emerald-800">Pay full balance</button></div>{bookingDepositRate > 0 ? <p className="mt-2 text-sm font-semibold text-emerald-900">Required initial deposit: {bookingDepositRate}% = KES {minimumInitialPayment.toLocaleString()}. You may pay more or the full balance.</p> : <p className="mt-2 text-sm text-slate-600">No minimum deposit is configured. You may pay any amount up to the remaining balance.</p>}<p className="mt-1 text-xs text-slate-600">The global deposit rate is controlled by SuperAdmin and applies to new payment requests.</p></div>
-          <button type="submit" disabled={submitting} className="w-full rounded-xl bg-emerald-700 py-4 font-bold text-white disabled:opacity-50">{submitting ? "Starting M-Pesa..." : `Pay KES ${Number(paymentAmount || 0).toLocaleString()} with M-Pesa`}</button>
+          <button type="submit" disabled={submitting || (typeof navigator !== "undefined" && !navigator.onLine)} className="w-full rounded-xl bg-emerald-700 py-4 font-bold text-white disabled:opacity-50">{typeof navigator !== "undefined" && !navigator.onLine ? "Reconnect to start M-Pesa payment" : submitting ? "Starting M-Pesa..." : `Pay KES ${Number(paymentAmount || 0).toLocaleString()} with M-Pesa`}</button>
         </form>}
 
         {balance <= 0 && !paymentState && <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 font-semibold text-emerald-900">This booking is fully paid. You are eligible to proceed with the trip once normal operational requirements are satisfied.</div>}
@@ -340,6 +384,7 @@ export default function Checkout() {
   );
 }
 
+// Small presentation helpers keep repeated summary rows consistent across the checkout page.
 function Stat({ label, value }) { return <div><p className="text-xs uppercase tracking-wide text-slate-400">{label}</p><p className="mt-1 text-lg font-bold">{value}</p></div>; }
 function Detail({ label, value }) { return <div><p className="text-xs uppercase tracking-wide text-slate-500">{label}</p><p className="mt-1 font-semibold text-slate-900">{value}</p></div>; }
 function Field({ label, required, children }) { return <label className="block"><span className="mb-2 block font-medium">{label}{required && <span className="text-red-600"> *</span>}</span>{children}</label>; }

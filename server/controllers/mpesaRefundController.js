@@ -9,6 +9,7 @@ const getConversationId = (result = {}) => String(
 const findRefundPayment = (req, conversationId) =>
   Payment.findOne(mergeTenantFilter(req, { refundReference: conversationId }));
 
+// Persist the asynchronous refund result against the original tenant-scoped payment and refund reference.
 export const mpesaRefundResult = async (req, res) => {
   requireTenantId();
   try {
@@ -52,6 +53,7 @@ export const mpesaRefundResult = async (req, res) => {
   }
 };
 
+// A timeout is an unknown refund outcome; retain it for reconciliation rather than claiming money was returned.
 export const mpesaRefundTimeout = async (req, res) => {
   requireTenantId();
   try {

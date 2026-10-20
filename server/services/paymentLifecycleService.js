@@ -33,6 +33,7 @@ import {
 |--------------------------------------------------------------------------
 */
 
+// Normalize payment-method labels from older clients into the canonical domain values.
 export const normalizePaymentMethod = (method) => {
   requireTenantId();
 
@@ -177,6 +178,7 @@ export const canAccessBooking = (booking, user) => {
 |--------------------------------------------------------------------------
 */
 
+// Compute the server-owned outstanding balance; never trust the amount displayed by the browser.
 export const getPayableBookingAmount = (booking) => {
 
   if (!booking) {
@@ -255,6 +257,7 @@ export const validateBookingPaymentStatus = (status) => {
 |--------------------------------------------------------------------------
 */
 
+// Reuse a pending request instead of starting a second charge for the same booking.
 export const findPendingBookingPayment = async (
   bookingId
 ) => {
@@ -285,6 +288,7 @@ export const findPendingBookingPayment = async (
 |--------------------------------------------------------------------------
 */
 
+// Apply a failure idempotently and keep booking/payment status consistent after provider failure.
 export const failBookingPayment = async ({
   payment,
   booking,
@@ -446,6 +450,7 @@ export const failBookingPayment = async ({
 |--------------------------------------------------------------------------
 */
 
+// Complete a verified payment once, protect against duplicate callbacks, and synchronize ledger/invoice/booking balances.
 export const completeBookingPayment = async ({
   payment,
   booking,
@@ -1087,6 +1092,7 @@ export const completeBookingPayment = async ({
 |--------------------------------------------------------------------------
 */
 
+// Apply refund accounting separately from the original charge and prevent refund totals exceeding paid amounts.
 export const refundBookingPayment = async ({
   payment,
   booking = null,

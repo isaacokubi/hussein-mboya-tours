@@ -10,6 +10,7 @@ const isStaff = (user) => {
 };
 const canAccess = (booking, user) => isStaff(user) || booking?.user?.toString() === user?._id?.toString() || booking?.customer?.toString() === user?._id?.toString();
 
+// Query Daraja for an authenticated tenant-owned booking payment when the callback has not settled it yet.
 export const queryMpesaPayment = async (req, res, next) => {
   requireTenantId();
   try {
@@ -22,8 +23,10 @@ export const queryMpesaPayment = async (req, res, next) => {
     );
     if (!booking) return res.status(404).json({ success: false, message: "Booking not found." });
     if (!canAccess(booking, req.user)) return res.status(403).json({ success: false, message: "You do not have permission to query this payment." });
+    // Terminal local states are not re-queried, which avoids reopening a settled payment on duplicate requests.
     if (["completed", "failed", "cancelled", "refunded"].includes(payment.status)) return res.json({ success: true, data: { paymentStatus: payment.status, providerQueried: false, payment } });
 
+    // Save the provider response for audit/reconciliation; a query success without a receipt remains pending.
     const providerResponse = await queryStkPush(checkoutRequestID);
     const resultCode = String(providerResponse?.ResultCode ?? "");
     const providerStatus = classifyStkQueryResult(resultCode);

@@ -7,6 +7,7 @@ const callbackCheckoutId = (req) => {
   return String(callback?.CheckoutRequestID || callback?.checkoutRequestID || callback?.checkoutRequestId || "").trim();
 };
 
+// Callback requests have no logged-in browser user, so resolve the tenant using the known checkout/payment record.
 export async function resolveMpesaCallbackTenant(req, res, next) {
   try {
     const checkoutRequestID = callbackCheckoutId(req);
