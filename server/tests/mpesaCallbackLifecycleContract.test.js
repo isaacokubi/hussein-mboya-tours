@@ -94,3 +94,11 @@ test("checkout reads CheckoutRequestID from the nested STK initiation response e
   assert.match(checkout, /const data = envelope\?\.data \|\| envelope/);
   assert.match(checkout, /data\.CheckoutRequestID \|\| data\.checkoutRequestID \|\| data\.checkoutRequestId/);
 });
+
+
+test("an unconfirmed payment timeout asks the user to check status instead of blindly starting another charge", () => {
+  const checkout = fs.readFileSync(path.resolve(root, "../client/src/pages/Checkout.jsx"), "utf8");
+  assert.match(checkout, /paymentState\.status === "timeout"/);
+  assert.match(checkout, /Check payment status/);
+  assert.doesNotMatch(checkout, /\["failed", "cancelled", "timeout"\]\.includes\(paymentState\.status\).*Retry Payment/);
+});
