@@ -67,10 +67,11 @@ export default function Checkout() {
     enabled: isTourCheckout && Boolean(id),
   });
   const { data: settingsResponse, isLoading: settingsLoading, isError: settingsError } = useQuery({
-    queryKey: ["public-system-settings"],
+    queryKey: ["public-system-settings", window.location.host],
     queryFn: getPublicSettings,
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
 
   const booking = useMemo(() => unwrapBooking(bookingResponse), [bookingResponse]);
