@@ -21,13 +21,17 @@ export const getTourDateRange = (tour) => {
   const min = toDateInputValue(tour.startDate || tour.date || tour.travelDate || tour.departureDate);
   if (!min) return { min: "", max: "" };
 
-  const durationDays = getDurationDays(tour.durationDetails?.days, tour.duration);
-  const end = new Date(`${min}T00:00:00`);
+  const durationDays = getDurationDays(tour.durationDays, tour.durationDetails?.days, tour.duration);
+  // A single-day tour must never inherit a stale endDate from an earlier
+  // schedule. Native date pickers differ across mobile/desktop, so the same
+  // canonical ISO date range is also enforced again by the API.
+  const end = new Date(`${min}T00:00:00Z`);
   if (Number.isNaN(end.getTime())) return { min, max: min };
-  end.setDate(end.getDate() + durationDays - 1);
+  end.setUTCDate(end.getUTCDate() + durationDays - 1);
   const durationEnd = toDateInputValue(end);
   const storedEnd = toDateInputValue(tour.endDate);
-  return { min, max: storedEnd > durationEnd ? storedEnd : durationEnd };
+  const max = durationDays > 1 && storedEnd >= min && storedEnd < durationEnd ? storedEnd : durationEnd;
+  return { min, max };
 };
 
 export const getCustomTourDateRange = (request) => {
