@@ -33,12 +33,12 @@ export const validateBookingTravelDate = async (req, res, next) => {
       if (!tour) return res.status(404).json({ success: false, message: "Tour not found." });
 
       start = startOfDay(tour.startDate || tour.date);
-      const storedEnd = startOfDay(tour.endDate);
       const days = getDurationDays(tour.durationDays, tour.durationDetails?.days, tour.duration);
       if (start) {
-        const calculatedEnd = new Date(start);
-        calculatedEnd.setDate(calculatedEnd.getDate() + days - 1);
-        end = storedEnd && storedEnd > calculatedEnd ? storedEnd : calculatedEnd;
+        // Duration is authoritative: a stale endDate must not make a one-day
+        // tour bookable on the following calendar day.
+        end = new Date(start);
+        end.setDate(end.getDate() + days - 1);
       }
     } else if (req.body.customTourRequest) {
       const request = await CustomTourRequest.findOne(mergeTenantFilter({ _id: req.body.customTourRequest, customer: req.user._id }))
