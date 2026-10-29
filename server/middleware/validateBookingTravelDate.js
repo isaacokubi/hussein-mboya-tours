@@ -15,7 +15,7 @@ const parseDurationDays = (value, fallback = 1) => {
   return Number.isFinite(days) && days >= 1 ? Math.max(1, Math.round(days)) : 1;
 };
 
-const getDurationDays = (...values) => Math.max(1, ...values.map((value) => parseDurationDays(value, 1)));
+const getDurationDays = (...values) => { for (const value of values) { if (value !== undefined && value !== null && String(value).trim() !== "") return parseDurationDays(value, 1); } return 1; };
 
 export const validateBookingTravelDate = async (req, res, next) => {
   try {
