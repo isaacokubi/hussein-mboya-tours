@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useTenant } from "../context/TenantContext";
 import { useSettings } from "../context/SettingsContext";
 import { useQuery } from "@tanstack/react-query";
@@ -7,17 +8,20 @@ import DestinationCard from "../components/destinations/DestinationCard";
 export default function Destinations() {
   const { tenant } = useTenant();
   const { settings } = useSettings();
+  const [page, setPage] = useState(1);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["destinations"],
+    queryKey: ["destinations", page],
     queryFn: async () => {
-      const response = await api.get("/destinations", { params: { page: 1, limit: 100 } });
+      const response = await api.get("/destinations", { params: { page, limit: 24 } });
       const payload = response.data || {};
       return {
         destinations: Array.isArray(payload) ? payload : (Array.isArray(payload.data) ? payload.data : []),
         total: Number(payload?.pagination?.total ?? payload?.count ?? (Array.isArray(payload) ? payload.length : payload?.data?.length ?? 0)),
+        pagination: payload?.pagination || null,
       };
     },
+    placeholderData: (previousData) => previousData,
     staleTime: 1000 * 60 * 10,
   });
 
@@ -26,6 +30,7 @@ export default function Destinations() {
 
   const destinations = data?.destinations || [];
   const destinationCount = data?.total ?? destinations.length;
+  const totalPages = Number(data?.pagination?.pages || 1);
 
   return (
     <div className="min-h-screen bg-gray-100 p-6 md:p-10">
@@ -44,6 +49,11 @@ export default function Destinations() {
             {destinations.map((destination) => <DestinationCard key={destination._id} destination={destination} />)}
           </div>
         )}
+        {totalPages > 1 && <nav className="mt-8 flex items-center justify-center gap-4" aria-label="Destination pages">
+          <button type="button" className="rounded-lg border bg-white px-4 py-2 disabled:opacity-40" disabled={page <= 1} onClick={() => setPage((current) => current - 1)}>Previous</button>
+          <span aria-live="polite" className="text-sm text-slate-700">Page {page} of {totalPages}</span>
+          <button type="button" className="rounded-lg border bg-white px-4 py-2 disabled:opacity-40" disabled={page >= totalPages} onClick={() => setPage((current) => current + 1)}>Next</button>
+        </nav>}
       </div>
     </div>
   );

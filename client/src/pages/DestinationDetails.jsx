@@ -9,10 +9,11 @@ const DestinationDetails = () => {
 
   const { data, isLoading } = useQuery({
     queryKey: ["destination", slug],
-    queryFn: async () => {
-      const res = await api.get(`/destinations/${slug}`);
+    queryFn: async ({ signal }) => {
+      const res = await api.get(`/destinations/${encodeURIComponent(slug)}`, { signal });
       return res.data?.data?.destination || res.data?.destination || null;
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   useEffect(() => {

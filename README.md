@@ -181,6 +181,10 @@ The platform includes:
 
 ## Production documentation
 
+- [Performance audit](docs/PERFORMANCE_AUDIT.md) — measured evidence, changes, results and outstanding limits.
+- [Dashboard test matrix](docs/DASHBOARD_TEST_MATRIX.md) — discovered roles, workflows and current verification outcomes.
+- [Performance testing](docs/PERFORMANCE_TESTING.md) — repeatable browser/backend commands and measurement protocol.
+
 - [System from scratch guide](docs/SYSTEM_FROM_SCRATCH_GUIDE.md) — detailed build order, file responsibilities, tenant/database design, offline behavior, payment lifecycle, testing and release acceptance.
 
 - [Production readiness](docs/PRODUCTION_READINESS.md) — current readiness matrix and release rules.

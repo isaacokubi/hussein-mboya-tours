@@ -15,23 +15,27 @@ export default function Tours() {
   const search = searchParams.get("search") || "";
   const duration = searchParams.get("duration") || "";
   const travellers = searchParams.get("travellers") || "";
+  const page = Math.max(1, Number(searchParams.get("page")) || 1);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["public-tours", destinationId, category, search, duration, travellers],
+    queryKey: ["public-tours", destinationId, category, search, duration, travellers, page],
     queryFn: () => getTours({
       ...(destinationId ? { destination: destinationId } : {}),
       ...(category ? { category } : {}),
       ...(search.trim() ? { search: search.trim() } : {}),
-      page: 1,
-      limit: 100,
+      ...(duration ? { duration } : {}),
+      ...(travellers ? { travellers } : {}),
+      page,
+      limit: 24,
     }),
-    keepPreviousData: true,
+    placeholderData: (previousData) => previousData,
   });
 
   if (isLoading) return <div className="min-h-[500px] bg-slate-950 flex items-center justify-center"><div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-400 border-t-transparent" /></div>;
   if (error) return <div className="min-h-[400px] bg-slate-950 px-6 py-20 text-center text-white"><h2 className="text-2xl font-bold">We are refreshing our tour inventory.</h2><p className="mt-2 text-slate-400">Please try again shortly.</p></div>
 
   const allTours = Array.isArray(data) ? data : data?.data || data?.tours || [];
+  const totalPages = Number(data?.pagination?.pages || 1);
   const tours = (Array.isArray(allTours) ? allTours : []).filter((tour) => { const days = Number((tour?.durationDays ?? tour?.durationDetails?.days ?? String(tour?.duration || "").match(/\d+/)?.[0]) || 0); const withinDuration = !duration || (duration === "1-3" && days >= 1 && days <= 3) || (duration === "4-6" && days >= 4 && days <= 6) || (duration === "7+" && days >= 7); const capacity = Number(tour?.capacity ?? tour?.availabilitySettings?.totalSlots ?? 0); const withinTravellers = !travellers || !capacity || capacity >= Number(travellers); return withinDuration && withinTravellers; });
 
   const updateSearch = (event) => {
@@ -39,6 +43,7 @@ export default function Tours() {
     const value = new FormData(event.currentTarget).get("search")?.toString().trim() || "";
     const next = new URLSearchParams(searchParams);
     if (value) next.set("search", value); else next.delete("search");
+    next.delete("page");
     setSearchParams(next);
   };
 
@@ -61,6 +66,11 @@ export default function Tours() {
         </div>
 
         {tours.length === 0 ? <div className="rounded-3xl border border-white/10 bg-white/[0.04] py-24 text-center"><h2 className="text-2xl font-bold">No tours found</h2><p className="mt-2 text-slate-400">Try another destination, activity or tour name.</p></div> : <div className="grid gap-7 md:grid-cols-2 lg:grid-cols-3">{tours.map((tour) => <TourCard key={tour._id} tour={tour} />)}</div>}
+        {totalPages > 1 && <nav className="mt-8 flex items-center justify-center gap-4" aria-label="Tour pages">
+          <button type="button" className="rounded-lg border border-white/30 px-4 py-2 disabled:opacity-40" disabled={page <= 1} onClick={() => { const next = new URLSearchParams(searchParams); next.set("page", String(page - 1)); setSearchParams(next); }}>Previous</button>
+          <span aria-live="polite" className="text-sm text-slate-300">Page {page} of {totalPages}</span>
+          <button type="button" className="rounded-lg border border-white/30 px-4 py-2 disabled:opacity-40" disabled={page >= totalPages} onClick={() => { const next = new URLSearchParams(searchParams); next.set("page", String(page + 1)); setSearchParams(next); }}>Next</button>
+        </nav>}
       </div>
     </main>
   );

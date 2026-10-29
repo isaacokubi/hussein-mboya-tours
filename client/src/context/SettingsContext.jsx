@@ -69,14 +69,18 @@ export function SettingsProvider({ children }) {
     let mounted = true;
     const load = async () => { setLoading(true); try { await refreshSettings(); } finally { if (mounted) setLoading(false); } };
     void load();
-    const interval = window.setInterval(() => { void refreshSettings(); }, 60_000);
     const handleStorage = (event) => { if (event.key !== settingsKey || !event.newValue) return; try { applySettings(JSON.parse(event.newValue)); } catch (parseError) { console.warn("Unable to apply cached settings update:", parseError); } };
-    const handleSettingsChanged = () => { void refreshSettings(); };
+    const handleSettingsChanged = (event) => {
+      if (event.detail && typeof event.detail === "object") {
+        applySettings(event.detail);
+        return;
+      }
+      void refreshSettings();
+    };
     window.addEventListener("storage", handleStorage);
     window.addEventListener("platform-settings-updated", handleSettingsChanged);
     window.addEventListener("settings-updated", handleSettingsChanged);
-    window.addEventListener("dashboard:data-changed", handleSettingsChanged);
-    return () => { mounted = false; window.clearInterval(interval); window.removeEventListener("storage", handleStorage); window.removeEventListener("platform-settings-updated", handleSettingsChanged); window.removeEventListener("settings-updated", handleSettingsChanged); window.removeEventListener("dashboard:data-changed", handleSettingsChanged); };
+    return () => { mounted = false; window.removeEventListener("storage", handleStorage); window.removeEventListener("platform-settings-updated", handleSettingsChanged); window.removeEventListener("settings-updated", handleSettingsChanged); };
   }, [refreshSettings, applySettings, settingsKey]);
 
   const updateSettings = useCallback((nextSettings) => {

@@ -14,7 +14,8 @@ export default function requestLogger(req, res, next) {
         type: "request",
         requestId,
         method: req.method,
-        path: req.originalUrl,
+        // Query strings may contain search terms, identifiers or credentials.
+        path: req.path,
         status: res.statusCode,
         durationMs: duration,
       }));

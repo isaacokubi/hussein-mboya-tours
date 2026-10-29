@@ -38,6 +38,17 @@ export const categoryFilter = (value) => ({
   $options: "i",
 });
 
+const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const publicListFields = "title slug description shortDescription price discount currency duration durationDays durationDetails category country location featuredImage images gallery rating averageRating capacity availabilitySettings destination tenantId featured popularity createdAt startDate endDate";
+const parsePage = (value) => {
+  const page = Number(value);
+  return Number.isSafeInteger(page) && page > 0 ? Math.min(page, 10_000) : 1;
+};
+const parsePageSize = (value, fallback = 12) => {
+  const size = Number(value);
+  return Number.isSafeInteger(size) ? Math.min(Math.max(size, 1), 24) : fallback;
+};
+
 const ensureDestination = async (destinationId, tenantId) => {
   const id = normalizeDestinationId(destinationId);
   if (!id) return null;
@@ -58,24 +69,35 @@ const hasRealTourImage = (tour) => {
 export const getTours = async (req, res, next) => {
   try {
     return await withPublicTourContext(async (platformWide) => {
-      const { page = 1, limit = 12, search, destination, category, featured } = req.query;
+      const { page = 1, limit = 12, search, destination, category, featured, duration, travellers, sort } = req.query;
       const filter = platformWide ? { ...publicTourFilter } : mergeTenantFilter({ ...publicTourFilter });
       if (destination) filter.destination = destination;
       if (category) filter.category = categoryFilter(category);
       if (featured === "true") filter.featured = true;
-      if (search?.trim()) {
-        const keyword = search.trim();
+      if (typeof search === "string" && search.trim()) {
+        const keyword = escapeRegex(search.trim().slice(0, 120));
         filter.$or = [
           { title: { $regex: keyword, $options: "i" } },
           { description: { $regex: keyword, $options: "i" } },
           { location: { $regex: keyword, $options: "i" } },
         ];
       }
-      const currentPage = Math.max(Number(page) || 1, 1);
-      const pageSize = Math.min(Math.max(Number(limit) || 12, 1), 100);
+      if (duration === "1-3") filter.durationDays = { $gte: 1, $lte: 3 };
+      else if (duration === "4-6") filter.durationDays = { $gte: 4, $lte: 6 };
+      else if (duration === "7+") filter.durationDays = { $gte: 7 };
+      const partySize = Number(travellers);
+      if (Number.isInteger(partySize) && partySize > 0 && partySize <= 100) {
+        filter.$and = [...(filter.$and || []), { $or: [{ capacity: { $gte: partySize } }, { "availabilitySettings.totalSlots": { $gte: partySize } }] }];
+      }
+      const currentPage = parsePage(page);
+      const pageSize = parsePageSize(limit);
       const skip = (currentPage - 1) * pageSize;
+      const sortBy = sort === "price-asc" ? { price: 1, createdAt: -1 }
+        : sort === "price-desc" ? { price: -1, createdAt: -1 }
+          : sort === "newest" ? { createdAt: -1 }
+            : { featured: -1, popularity: -1, createdAt: -1 };
       const [tours, total, settings] = await Promise.all([
-        Tour.find(filter).populate("destination").sort({ featured: -1, popularity: -1, createdAt: -1 }).skip(skip).limit(pageSize).lean(),
+        Tour.find(filter).select(publicListFields).slice("images", 1).slice("gallery", 1).populate({ path: "destination", select: "name slug country" }).sort(sortBy).skip(skip).limit(pageSize).lean(),
         Tour.countDocuments(filter),
         getSystemSettings(),
       ]);
@@ -89,7 +111,7 @@ export const getFeaturedTours = async (req, res, next) => {
   try {
     return await withPublicTourContext(async (platformWide) => {
       const filter = platformWide ? { ...publicTourFilter, featured: true } : mergeTenantFilter({ ...publicTourFilter, featured: true });
-      const tours = await Tour.find(filter).populate("destination").sort({ popularity: -1, createdAt: -1 }).limit(6).lean();
+      const tours = await Tour.find(filter).select(publicListFields).slice("images", 1).slice("gallery", 1).populate({ path: "destination", select: "name slug country" }).sort({ popularity: -1, createdAt: -1 }).limit(6).lean();
       return res.json({ success: true, data: tours.map((tour) => ({ ...attachAvailability(tour), hasOwnImage: hasRealTourImage(tour) })) });
     });
   } catch (error) { return next(error); }
@@ -98,19 +120,24 @@ export const getFeaturedTours = async (req, res, next) => {
 export const searchTours = async (req, res, next) => {
   try {
     return await withPublicTourContext(async (platformWide) => {
-      const { keyword, search, category, country, destination } = req.query;
+      const { keyword, search, category, country, destination, page = 1, limit = 12 } = req.query;
       const filter = platformWide ? { ...publicTourFilter } : mergeTenantFilter({ ...publicTourFilter });
       const term = keyword || search;
       if (term) filter.$or = [
-        { title: { $regex: term, $options: "i" } },
-        { description: { $regex: term, $options: "i" } },
-        { location: { $regex: term, $options: "i" } },
+        { title: { $regex: escapeRegex(String(term).slice(0, 120)), $options: "i" } },
+        { description: { $regex: escapeRegex(String(term).slice(0, 120)), $options: "i" } },
+        { location: { $regex: escapeRegex(String(term).slice(0, 120)), $options: "i" } },
       ];
       if (category) filter.category = categoryFilter(category);
       if (country) filter.country = country;
       if (destination) filter.destination = destination;
-      const tours = await Tour.find(filter).populate("destination").sort({ createdAt: -1 }).lean();
-      return res.json({ success: true, count: tours.length, data: tours.map((tour) => ({ ...attachAvailability(tour), hasOwnImage: hasRealTourImage(tour) })) });
+      const currentPage = parsePage(page);
+      const pageSize = parsePageSize(limit);
+      const [tours, total] = await Promise.all([
+        Tour.find(filter).select(publicListFields).slice("images", 1).slice("gallery", 1).populate({ path: "destination", select: "name slug country" }).sort({ createdAt: -1 }).skip((currentPage - 1) * pageSize).limit(pageSize).lean(),
+        Tour.countDocuments(filter),
+      ]);
+      return res.json({ success: true, count: tours.length, pagination: { page: currentPage, limit: pageSize, total, pages: Math.ceil(total / pageSize) }, data: tours.map((tour) => ({ ...attachAvailability(tour), hasOwnImage: hasRealTourImage(tour) })) });
     });
   } catch (error) { return next(error); }
 };
@@ -119,7 +146,7 @@ export const getTourById = async (req, res, next) => {
   try {
     return await withPublicTourContext(async (platformWide) => {
       const filter = platformWide ? { _id: req.params.id, ...publicTourFilter } : mergeTenantFilter({ _id: req.params.id, ...publicTourFilter });
-      const tour = await Tour.findOne(filter).populate("destination assignedGuide assignedDriver assignedVehicle").lean();
+      const tour = await Tour.findOne(filter).populate({ path: "destination", select: "name slug country" }).lean();
       if (!tour) return res.status(404).json({ success: false, message: "Tour not found" });
       return res.json({ success: true, data: { ...attachAvailability(tour), hasOwnImage: hasRealTourImage(tour) } });
     });
@@ -132,7 +159,7 @@ export const getTourBySlug = async (req, res, next) => {
       const slug = String(req.params.slug || "").trim().toLowerCase();
       if (!slug) return res.status(400).json({ success: false, message: "Tour slug is required" });
       const filter = platformWide ? { slug, ...publicTourFilter } : mergeTenantFilter({ slug, ...publicTourFilter });
-      const tour = await Tour.findOne(filter).populate("destination assignedGuide assignedDriver assignedVehicle").lean();
+      const tour = await Tour.findOne(filter).populate({ path: "destination", select: "name slug country" }).lean();
       if (!tour) return res.status(404).json({ success: false, message: "Tour not found" });
       return res.json({ success: true, data: { ...attachAvailability(tour), hasOwnImage: hasRealTourImage(tour) } });
     });

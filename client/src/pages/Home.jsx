@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, BadgeCheck, CalendarCheck2, CarFront, CheckCircle2, Compass, CreditCard, Hotel, ShieldCheck, Sparkles, UsersRound } from "lucide-react";
 import SEO from "../components/seo/SEO";
@@ -6,6 +6,7 @@ import HeroSlider from "../components/home/HeroSlider";
 import HomeSearch from "../components/home/HomeSearch";
 import { useSettings } from "../context/SettingsContext";
 import { useTenant } from "../context/TenantContext";
+import DeferredSection from "../components/common/DeferredSection";
 
 const StatsSection = lazy(() => import("../components/home/StatsSection"));
 const FeaturedTours = lazy(() => import("../components/home/FeaturedTours"));
@@ -19,8 +20,6 @@ const MpesaCTA = lazy(() => import("../components/home/MpesaCTA"));
 const NewsletterSection = lazy(() => import("../components/home/NewsletterSection"));
 
 const DEFAULT_SECTIONS = { stats: true, tours: true, destinations: true, experiences: true, services: true, testimonials: true, gallery: true, whyChooseUs: true, newsletter: true };
-const SectionFallback = () => <div className="min-h-24" aria-hidden="true" />;
-
 const JOURNEY = [
   ["Discover", "Browse curated tours, destinations and travel services.", Compass],
   ["Enquire", "Request a quote or tailor an itinerary around your needs.", UsersRound],
@@ -73,22 +72,21 @@ export default function Home() {
       </section>
 
       <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-10 xl:px-16">
-        <Suspense fallback={<SectionFallback />}>
-          {sections.stats && <section className="py-10 md:py-14"><StatsSection /></section>}
+          {sections.stats && <section className="py-10 md:py-14"><DeferredSection placeholderClassName="min-h-36"><StatsSection /></DeferredSection></section>}
 
           {sections.tours && (
             <section className="rounded-[2rem] bg-[#0b241b] px-4 py-10 shadow-2xl sm:px-8 md:py-14">
-              <FeaturedTours />
+              <DeferredSection placeholderClassName="min-h-96 bg-white/10"><FeaturedTours /></DeferredSection>
             </section>
           )}
 
-          {sections.packages !== false && <section className="my-12 rounded-[2rem] bg-[#102d23] px-4 py-10 shadow-2xl sm:px-8 md:py-14"><PublicPackages /></section>}
+          {sections.packages !== false && <section className="my-12 rounded-[2rem] bg-[#102d23] px-4 py-10 shadow-2xl sm:px-8 md:py-14"><DeferredSection placeholderClassName="min-h-80 bg-white/10"><PublicPackages /></DeferredSection></section>}
 
-          {sections.destinations && <section className="py-12 md:py-16"><DestinationsSection /></section>}
+          {sections.destinations && <section className="py-12 md:py-16"><DeferredSection placeholderClassName="min-h-96"><DestinationsSection /></DeferredSection></section>}
 
           {sections.experiences && (
             <section className="my-12 overflow-hidden rounded-[2rem] bg-[#12372a] p-0 text-white shadow-2xl" data-home-section="traveller-experiences">
-              <CategoriesSection />
+              <DeferredSection placeholderClassName="min-h-80 bg-white/10"><CategoriesSection /></DeferredSection>
             </section>
           )}
 
@@ -120,16 +118,13 @@ export default function Home() {
             </section>
           )}
 
-          {sections.testimonials && <section className="py-12 md:py-16"><TestimonialsSection /></section>}
-          {sections.gallery && <section className="rounded-[2rem] bg-white px-4 py-8 shadow-sm ring-1 ring-slate-200 sm:px-8 md:py-12"><GallerySection /></section>}
-          {sections.whyChooseUs && <section className="my-12 rounded-[2rem] bg-[#102d23] px-4 py-10 shadow-2xl sm:px-8 md:py-14"><WhyChooseUs /></section>}
-        </Suspense>
+          {sections.testimonials && <section className="py-12 md:py-16"><DeferredSection placeholderClassName="min-h-56"><TestimonialsSection /></DeferredSection></section>}
+          {sections.gallery && <section className="rounded-[2rem] bg-white px-4 py-8 shadow-sm ring-1 ring-slate-200 sm:px-8 md:py-12"><DeferredSection placeholderClassName="min-h-80"><GallerySection /></DeferredSection></section>}
+          {sections.whyChooseUs && <section className="my-12 rounded-[2rem] bg-[#102d23] px-4 py-10 shadow-2xl sm:px-8 md:py-14"><DeferredSection placeholderClassName="min-h-72 bg-white/10"><WhyChooseUs /></DeferredSection></section>}
       </div>
 
-      <Suspense fallback={<SectionFallback />}>
-        <section className="mt-8"><MpesaCTA /></section>
-        {sections.newsletter && <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6"><NewsletterSection /></section>}
-      </Suspense>
+      <section className="mt-8"><DeferredSection placeholderClassName="min-h-40"><MpesaCTA /></DeferredSection></section>
+      {sections.newsletter && <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6"><DeferredSection placeholderClassName="min-h-32"><NewsletterSection /></DeferredSection></section>}
     </main>
   );
 }

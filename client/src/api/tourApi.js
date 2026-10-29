@@ -30,8 +30,8 @@ export const getTourById = async (id) => {
 
 export const getTour = getTourById;
 
-export const getTourBySlug = async (slug) => {
-  const { data } = await api.get(`/tours/slug/${slug}`);
+export const getTourBySlug = async (slug, { signal } = {}) => {
+  const { data } = await api.get(`/tours/slug/${encodeURIComponent(slug)}`, { signal });
   return data?.data || data;
 };
 

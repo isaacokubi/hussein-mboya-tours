@@ -150,10 +150,9 @@ export default function TourDetails() {
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["tour", slug],
-    queryFn: () => getTourBySlug(slug),
+    queryFn: ({ signal }) => getTourBySlug(slug, { signal }),
     enabled: Boolean(slug),
-    staleTime: 0,
-    refetchInterval: 15000,
+    staleTime: 5 * 60 * 1000,
   });
 
   const tour = data?.data || data;

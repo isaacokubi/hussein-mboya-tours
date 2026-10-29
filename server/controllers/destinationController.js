@@ -9,6 +9,15 @@ const publicTourFilter = {
   available: true,
   status: { $in: ["scheduled", "upcoming", "ongoing"] },
 };
+const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const parsePage = (value) => {
+  const page = Number(value);
+  return Number.isSafeInteger(page) && page > 0 ? Math.min(page, 10_000) : 1;
+};
+const parsePageSize = (value, fallback = 12) => {
+  const size = Number(value);
+  return Number.isSafeInteger(size) ? Math.min(Math.max(size, 1), 24) : fallback;
+};
 
 const withPublicDestinationContext = async (callback) => {
   const context = getTenantContext();
@@ -20,14 +29,14 @@ export const getDestinations = async (req, res, next) => {
   try {
     return await withPublicDestinationContext(async (platformWide) => {
       const { page = 1, limit = 12, search, country, featured } = req.query;
-      const currentPage = Math.max(Number(page) || 1, 1);
-      const pageSize = Math.min(Math.max(Number(limit) || 12, 1), 100);
+      const currentPage = parsePage(page);
+      const pageSize = parsePageSize(limit);
       const skip = (currentPage - 1) * pageSize;
       const filter = platformWide ? { ...publicDestinationFilter } : mergeTenantFilter({ ...publicDestinationFilter });
       if (country) filter.country = country;
       if (featured === "true") filter.featured = true;
-      if (search?.trim()) {
-        const keyword = search.trim();
+      if (typeof search === "string" && search.trim()) {
+        const keyword = escapeRegex(search.trim().slice(0, 120));
         filter.$or = [
           { name: { $regex: keyword, $options: "i" } },
           { slug: { $regex: keyword, $options: "i" } },
@@ -36,7 +45,7 @@ export const getDestinations = async (req, res, next) => {
         ];
       }
       const [destinations, total] = await Promise.all([
-        Destination.find(filter).sort({ createdAt: -1 }).skip(skip).limit(pageSize).lean(),
+        Destination.find(filter).select("name slug description shortDescription country city region images featured tenantId").slice("images", 1).sort({ createdAt: -1 }).skip(skip).limit(pageSize).lean(),
         Destination.countDocuments(filter),
       ]);
       return res.status(200).json({
@@ -59,7 +68,7 @@ export const getDestination = async (req, res, next) => {
       const destinationFilter = platformWide
         ? { slug, ...publicDestinationFilter }
         : mergeTenantFilter({ slug, ...publicDestinationFilter });
-      let destination = await Destination.findOne(destinationFilter).lean();
+      let destination = await Destination.findOne(destinationFilter).select("name slug description shortDescription country city region images featured tenantId seo").slice("images", 5).lean();
 
       // Public catalogue links may use human-friendly canonical slugs even when
       // a demo/tenant seed uses tenant-scoped slugs such as
@@ -78,25 +87,27 @@ export const getDestination = async (req, res, next) => {
         const nameFilter = platformWide
           ? { ...publicDestinationFilter, $or: namePatterns.map((pattern) => ({ name: { $regex: pattern, $options: "i" } })) }
           : mergeTenantFilter({ ...publicDestinationFilter, $or: namePatterns.map((pattern) => ({ name: { $regex: pattern, $options: "i" } })) });
-        destination = await Destination.findOne(nameFilter).sort({ createdAt: -1 }).lean();
+        destination = await Destination.findOne(nameFilter).select("name slug description shortDescription country city region images featured tenantId seo").slice("images", 5).sort({ createdAt: -1 }).lean();
       }
       if (!destination) return res.status(404).json({ success: false, message: "Destination not found." });
 
       const tourFilter = platformWide
         ? { destination: destination._id, ...publicTourFilter }
         : mergeTenantFilter({ destination: destination._id, ...publicTourFilter });
-      const tours = await Tour.find(tourFilter)
-        .select("title slug images featuredImage gallery price duration category destination tenantId startDate endDate")
-        .sort({ featured: -1, popularity: -1, createdAt: -1 })
-        .lean();
-
       const relatedFilter = platformWide
         ? { _id: { $ne: destination._id }, country: destination.country, ...publicDestinationFilter }
         : mergeTenantFilter({ _id: { $ne: destination._id }, country: destination.country, ...publicDestinationFilter });
-      const relatedDestinations = await Destination.find(relatedFilter)
+      const [tours, relatedDestinations] = await Promise.all([Tour.find(tourFilter)
+        .select("title slug images featuredImage gallery price duration category destination tenantId startDate endDate")
+        .sort({ featured: -1, popularity: -1, createdAt: -1 })
+        .slice("images", 1)
+        .slice("gallery", 1)
+        .limit(24)
+        .lean(), Destination.find(relatedFilter)
         .select("name slug images country featured")
+        .slice("images", 1)
         .limit(4)
-        .lean();
+        .lean()]);
 
       destination.tours = tours;
       return res.status(200).json({ success: true, data: { destination, relatedDestinations } });
