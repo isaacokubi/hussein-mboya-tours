@@ -17,6 +17,9 @@ import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 
 import Booking from "../models/Booking.js";
 import Payment from "../models/Payment.js";
+import StripeWebhookEvent from "../models/StripeWebhookEvent.js";
+import { runWithTenant } from "../tenancy/context.js";
+import { verifyStripeWebhookSignature } from "../services/stripeWebhookSecurity.js";
 
 import {
   completeBookingPayment,
@@ -26,7 +29,7 @@ import {
 } from "../services/paymentLifecycleService.js";
 
 import { getSystemSettings } from "../services/settingsService.js";
-import { isTenantPaymentMethodAvailable } from "../services/tenantPaymentMethods.js";
+import { isTenantPaymentMethodAvailable, isStripeRuntimeEnvironmentValid } from "../services/tenantPaymentMethods.js";
 
 
 /*
@@ -38,7 +41,8 @@ import { isTenantPaymentMethodAvailable } from "../services/tenantPaymentMethods
 const stripeRequest = async (
   path,
   body = {},
-  method = "POST"
+  method = "POST",
+  idempotencyKey = ""
 ) => {
 
   const key =
@@ -49,6 +53,7 @@ const stripeRequest = async (
       "Stripe is not configured. Add STRIPE_SECRET_KEY to the server environment."
     );
   }
+  if (!isStripeRuntimeEnvironmentValid(process.env)) throw new Error("Stripe credentials do not match the server environment.");
 
   const options = {
     method,
@@ -56,6 +61,7 @@ const stripeRequest = async (
     headers: {
       Authorization:
         `Bearer ${key}`,
+      ...(idempotencyKey ? { "Idempotency-Key": String(idempotencyKey).slice(0, 255) } : {}),
     },
   };
 
@@ -77,7 +83,7 @@ const stripeRequest = async (
   const response =
     await fetch(
       `https://api.stripe.com/v1/${path}`,
-      options
+      { ...options, signal: AbortSignal.timeout(15000), redirect: "error" }
     );
 
   const data =
@@ -282,6 +288,7 @@ export const createStripeSession = async (
   next
 ) => {
   requireTenantId();
+  let initiatingPayment = null;
 
   try {
 
@@ -420,6 +427,8 @@ export const createStripeSession = async (
 
         provider: "STRIPE",
 
+        activeAttempt: true,
+
         status: {
           $in: [
             "pending",
@@ -427,12 +436,6 @@ export const createStripeSession = async (
           ],
         },
 
-        transactionReference: {
-          $nin: [
-            "",
-            null,
-          ],
-        },
       })
         .sort({
           createdAt: -1,
@@ -440,6 +443,8 @@ export const createStripeSession = async (
 
 
     if (existingPayment) {
+
+      if (!existingPayment.transactionReference) return res.status(409).json({ success: false, message: "A Stripe checkout request is processing or uncertain. Refresh payment status before retrying." });
 
       /*
       |--------------------------------------------------------------------------
@@ -472,14 +477,15 @@ export const createStripeSession = async (
             reused: true,
           });
         }
+        if (existingSession?.status === "expired") {
+          existingPayment.status = "cancelled";
+          await existingPayment.save();
+        } else {
+          return res.status(409).json({ success: false, message: "A Stripe checkout is already active or its status is uncertain. Refresh payment status before retrying." });
+        }
 
       } catch {
-        /*
-        |--------------------------------------------------------------------------
-        | If the old session cannot be retrieved,
-        | create a fresh session.
-        |--------------------------------------------------------------------------
-        */
+        return res.status(409).json({ success: false, message: "The existing Stripe checkout status could not be verified. Refresh payment status before retrying." });
       }
     }
 
@@ -492,6 +498,9 @@ export const createStripeSession = async (
 
     const origin =
       getTrustedClientOrigin();
+
+    const canonicalPaymentMethod = normalizePaymentMethod("CARD") || "CARD";
+    initiatingPayment = await Payment.create({ tenantId: booking.tenantId, customer: req.user._id, user: req.user._id, booking: booking._id, provider: "STRIPE", method: "card", paymentMethod: canonicalPaymentMethod, amount, currency, status: "processing", activeAttempt: true, notes: "Stripe Checkout creation pending." });
 
 
     /*
@@ -537,6 +546,10 @@ export const createStripeSession = async (
               booking._id
             ),
 
+          "metadata[tenantId]": String(booking.tenantId),
+
+          "metadata[paymentId]": String(initiatingPayment._id),
+
           "metadata[userId]":
             String(
               req.user._id
@@ -546,7 +559,9 @@ export const createStripeSession = async (
             String(
               booking.bookingNumber || ""
             ),
-        }
+        },
+        "POST",
+        `stripe-checkout-${initiatingPayment._id}`
       );
 
 
@@ -556,48 +571,13 @@ export const createStripeSession = async (
     |--------------------------------------------------------------------------
     */
 
-    const canonicalPaymentMethod =
-      normalizePaymentMethod(
-        "CARD"
-      ) || "CARD";
-
-
-    const payment =
-      await Payment.create({
-
-        customer:
-          req.user._id,
-
-        user:
-          req.user._id,
-
-        booking:
-          booking._id,
-
-        provider:
-          "STRIPE",
-
-        method:
-          "card",
-
-        paymentMethod:
-          canonicalPaymentMethod,
-
-        amount,
-
-        currency,
-
-        transactionReference:
-          String(
-            session.id
-          ),
-
-        notes:
-          "Stripe Checkout session",
-
-        status:
-          "pending",
-      });
+    const payment = initiatingPayment;
+    payment.providerOrderId = String(session.id);
+    payment.providerApprovalUrl = String(session.url || "");
+    payment.transactionReference = String(session.id);
+    payment.status = "pending";
+    payment.notes = "Stripe Checkout session awaiting customer payment.";
+    await payment.save();
 
 
     /*
@@ -637,6 +617,13 @@ export const createStripeSession = async (
     });
 
   } catch (error) {
+
+    if (initiatingPayment && error?.status >= 400 && error?.status < 500) {
+      initiatingPayment.status = "failed";
+      initiatingPayment.failureReason = "Stripe rejected the checkout request.";
+      initiatingPayment.failedAt = new Date();
+      await initiatingPayment.save().catch(() => {});
+    }
 
     return next(error);
   }
@@ -1311,5 +1298,68 @@ export const createBankTransferPayment = async (
   } catch (error) {
 
     return next(error);
+  }
+};
+
+export const stripeWebhook = async (req, res) => {
+  const secret = String(process.env.STRIPE_WEBHOOK_SECRET || "");
+  if (!secret) return res.status(503).json({ success: false, message: "Stripe webhook verification is not configured." });
+  if (!verifyStripeWebhookSignature({ payload: req.rawBody, signature: req.get("stripe-signature"), secret })) return res.status(400).json({ success: false, message: "Stripe webhook signature verification failed." });
+  const eventPayload = req.body || {};
+  const eventId = String(eventPayload.id || "").trim();
+  const eventType = String(eventPayload.type || "").trim();
+  const sessionObject = eventPayload?.data?.object || {};
+  const tenantId = String(sessionObject?.metadata?.tenantId || "");
+  if (!/^\w{24}$/.test(tenantId) || !eventId || !eventType) return res.status(400).json({ success: false, message: "Stripe event is missing payment correlation metadata." });
+  const leaseCutoff = new Date(Date.now() - 5 * 60 * 1000);
+  let event;
+  try {
+    event = await StripeWebhookEvent.findOneAndUpdate(
+      { tenantId, eventId, $or: [{ status: { $in: ["received", "failed"] } }, { status: "processing", updatedAt: { $lt: leaseCutoff } }] },
+      { $set: { eventType, status: "processing" } },
+      { new: true },
+    );
+    if (!event) {
+      try { event = await StripeWebhookEvent.create({ tenantId, eventId, eventType, status: "processing" }); }
+      catch (error) {
+        if (error?.code !== 11000) throw error;
+        const existing = await StripeWebhookEvent.findOne({ tenantId, eventId }).lean();
+        if (existing?.status === "processed" || existing?.status === "ignored" || existing?.status === "processing") return res.status(200).json({ success: true, duplicate: true });
+        event = await StripeWebhookEvent.findOneAndUpdate({ tenantId, eventId, status: { $in: ["received", "failed"] } }, { $set: { status: "processing" } }, { new: true });
+      }
+    }
+    if (!event) return res.status(200).json({ success: true, duplicate: true });
+    const successful = ["checkout.session.completed", "checkout.session.async_payment_succeeded"].includes(eventType);
+    const failed = ["checkout.session.async_payment_failed", "checkout.session.expired"].includes(eventType);
+    if (!successful && !failed) { event.status = "ignored"; await event.save(); return res.status(200).json({ success: true, ignored: true }); }
+    await runWithTenant({ tenantId, role: "stripe_webhook", bypass: false }, async () => {
+      const session = sessionObject;
+      if (!session.id || String(session.metadata?.tenantId) !== tenantId) throw new Error("Stripe session tenant does not match the payment event.");
+      const payment = await Payment.findOne({ tenantId, provider: "STRIPE", transactionReference: String(session.id) });
+      if (!payment) throw new Error("Stripe payment record is not available yet.");
+      if (String(session.metadata?.paymentId || "") !== String(payment._id)) throw new Error("Stripe payment correlation does not match the saved attempt.");
+      const booking = await Booking.findOne({ tenantId, _id: payment.booking });
+      if (!booking) throw new Error("Stripe booking is not available.");
+      event.payment = payment._id;
+      if (failed) {
+        if (payment.status === "pending" || payment.status === "processing") {
+          const { failBookingPayment } = await import("../services/paymentLifecycleService.js");
+          await failBookingPayment({ payment, booking, failureReason: eventType === "checkout.session.expired" ? "Stripe Checkout session expired." : "Stripe reported asynchronous payment failure.", paymentData: { callbackResponse: { eventId, type: eventType, sessionId: session.id } } });
+        }
+        return;
+      }
+      if (session.payment_status !== "paid") throw new Error("Stripe event does not confirm a paid Checkout session.");
+      const expectedAmount = Math.round(Number(payment.amount) * 100);
+      if (!Number.isFinite(expectedAmount) || Number(session.amount_total) !== expectedAmount || String(session.currency || "").toUpperCase() !== String(payment.currency || "").toUpperCase()) throw new Error("Stripe amount or currency does not match the saved payment.");
+      await completeBookingPayment({ payment, booking, paymentData: { amount: payment.amount, paymentMethod: "CARD", transactionId: String(session.payment_intent || session.id), paymentReference: String(session.id), callbackResponse: { provider: "stripe", eventId, type: eventType, sessionId: session.id, paymentStatus: session.payment_status, amountTotal: session.amount_total, currency: session.currency } } });
+    });
+    event.status = "processed";
+    event.processedAt = new Date();
+    await event.save();
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    if (event) { event.status = "failed"; await event.save().catch(() => {}); }
+    console.error("Stripe webhook processing failed:", { code: error?.code || "STRIPE_WEBHOOK_FAILED" });
+    return res.status(500).json({ success: false });
   }
 };

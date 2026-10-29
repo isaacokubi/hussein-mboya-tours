@@ -73,6 +73,9 @@ services:
       - key: MPESA_CALLBACK_URL
         sync: false
 
+      - key: MPESA_SANDBOX_CALLBACK_URL
+        sync: false
+
       - key: MPESA_PRODUCTION_CALLBACK_URL
         sync: false
 

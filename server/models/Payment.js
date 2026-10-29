@@ -28,8 +28,13 @@ const paymentSchema = new mongoose.Schema({
   phone: { type: String, trim: true, default: "" },
   phoneNumber: { type: String, trim: true, default: "" },
   status: { type: String, enum: ["pending", "processing", "completed", "failed", "cancelled", "refunded"], default: "pending" },
+  activeAttempt: { type: Boolean, default: false, index: true },
   transactionId: { type: String, trim: true, default: "" },
   transactionReference: { type: String, trim: true, default: "" },
+  providerOrderId: { type: String, trim: true, default: "", index: true },
+  providerCaptureId: { type: String, trim: true, default: "", index: true },
+  providerApprovalUrl: { type: String, trim: true, default: "" },
+  providerEnvironment: { type: String, enum: ["sandbox", "production", ""], default: "" },
   invoiceNumber: { type: String, trim: true, default: "" },
   merchantRequestID: String, merchantRequestId: String, checkoutRequestID: String, checkoutRequestId: String,
   mpesaReceiptNumber: String, transactionDate: String,
@@ -45,9 +50,11 @@ paymentSchema.virtual("isRefunded").get(function () { return this.refundStatus =
 paymentSchema.virtual("netAmount").get(function () { return Math.max(0, Number(this.amount || 0) - Number(this.refundedAmount || 0)); });
 paymentSchema.index({ customer: 1, createdAt: -1 }); paymentSchema.index({ booking: 1 }); paymentSchema.index({ status: 1, provider: 1 }); paymentSchema.index({ transactionId: 1 }); paymentSchema.index({ transactionReference: 1 });
 paymentSchema.index({ tenantId: 1, provider: 1, transactionReference: 1 }, { unique: true, partialFilterExpression: { status: "completed", transactionReference: { $type: "string", $gt: "" } } });
+paymentSchema.index({ tenantId: 1, provider: 1, providerOrderId: 1 }, { unique: true, partialFilterExpression: { providerOrderId: { $type: "string", $gt: "" } } });
+paymentSchema.index({ tenantId: 1, booking: 1, provider: 1, activeAttempt: 1 }, { unique: true, partialFilterExpression: { activeAttempt: true }, name: "unique_active_payment_attempt_tenant_booking_provider" });
 paymentSchema.index({ tenantId: 1, checkoutRequestID: 1 }, { unique: true, partialFilterExpression: { checkoutRequestID: { $type: "string", $gt: "" } } }); paymentSchema.index({ tenantId: 1, checkoutRequestId: 1 }, { unique: true, partialFilterExpression: { checkoutRequestId: { $type: "string", $gt: "" } } }); paymentSchema.index({ tenantId: 1, mpesaReceiptNumber: 1 }, { unique: true, partialFilterExpression: { mpesaReceiptNumber: { $type: "string", $gt: "" } } }); paymentSchema.index({ tenantId: 1, booking: 1, createdAt: -1 }); paymentSchema.index({ tenantId: 1, status: 1, createdAt: -1 }); paymentSchema.index({ tenantId: 1, callbackEventId: 1 }, { unique: true, partialFilterExpression: { callbackEventId: { $type: "string", $gt: "" } } });
 
-paymentSchema.pre("save", function (next) { this.$statusWasModified = this.isModified("status"); next(); });
+paymentSchema.pre("save", function (next) { this.$statusWasModified = this.isModified("status"); if (["completed", "failed", "cancelled", "refunded"].includes(this.status)) this.activeAttempt = false; next(); });
 paymentSchema.methods.markCompleted = function (receiptNumber, transactionId = "") { this.status = "completed"; this.mpesaReceiptNumber = receiptNumber; this.transactionId = transactionId; this.paidAt = new Date(); return this.save(); };
 paymentSchema.methods.markFailed = function (reason) { this.status = "failed"; this.failureReason = reason; this.failedAt = new Date(); return this.save(); };
 

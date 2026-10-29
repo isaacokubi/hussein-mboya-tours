@@ -2,6 +2,7 @@ import Payment from "../models/Payment.js";
 import SubscriptionPayment from "../models/SubscriptionPayment.js";
 import { queryStkPush, classifyStkQueryResult } from "../services/mpesaQueryService.js";
 import { mergeTenantFilter } from "../tenancy/context.js";
+import { getTenantMpesaConfig } from "../services/paymentGatewayService.js";
 import { hasLegacyMpesaConfig, mpesaConfig } from "../config/mpesa.js";
 import { getCheckoutRequestId, getStkCallback, validateStkCallback } from "../services/mpesaCallbackPayload.js";
 
@@ -12,7 +13,7 @@ export const validateMpesaCallbackPayload = (req, res, next) => {
 };
 
 export const createVerifyMpesaCallbackIntegrity = ({
-  findPayment = (filter) => Payment.findOne(filter).select("_id").lean(),
+  findPayment = (filter) => Payment.findOne(filter).select("_id providerEnvironment").lean(),
   findSubscriptionPayment = (filter) => SubscriptionPayment.findOne(filter).select("_id").lean(),
   providerQuery = queryStkPush,
   legacyConfigCheck = hasLegacyMpesaConfig,
@@ -38,7 +39,10 @@ export const createVerifyMpesaCallbackIntegrity = ({
     }
 
     const config = subscriptionPayment && legacyConfigCheck() ? legacyConfig : undefined;
-    const queryResult = await providerQuery(checkoutRequestID, config);
+    const paymentConfig = payment?.providerEnvironment
+      ? await getTenantMpesaConfig({ environment: payment.providerEnvironment, allowDisabled: true })
+      : null;
+    const queryResult = await providerQuery(checkoutRequestID, paymentConfig || config);
     const providerState = classifyStkQueryResult(queryResult?.ResultCode);
     const callbackState = classifyStkQueryResult(callback.ResultCode);
     if (providerState === "pending" || callbackState !== providerState) {

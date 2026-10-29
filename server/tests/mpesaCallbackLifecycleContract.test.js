@@ -14,7 +14,8 @@ test("M-Pesa callback is tenant-resolved and integrity-protected before processi
 test("failed and successful M-Pesa callbacks are both checked against Daraja", () => {
   const integrity = read("middleware/mpesaCallbackIntegrity.js");
   assert.doesNotMatch(integrity, /ResultCode\)\) !== 0\) return next\(\)/);
-  assert.match(integrity, /providerQuery\(checkoutRequestID, config\)/);
+  assert.match(integrity, /providerQuery\(checkoutRequestID, paymentConfig \|\| config\)/);
+  assert.match(integrity, /providerEnvironment, allowDisabled: true/);
   assert.match(integrity, /const callbackState = classifyStkQueryResult\(callback\.ResultCode\)/);
   assert.match(integrity, /providerState === "pending" \|\| callbackState !== providerState/);
   assert.match(integrity, /Unknown CheckoutRequestID/);

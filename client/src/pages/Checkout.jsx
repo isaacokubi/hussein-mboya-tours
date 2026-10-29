@@ -7,7 +7,7 @@ import { getMyCustomTourRequests } from "../api/customTourApi";
 import { initiateMpesa, checkPaymentStatus } from "../api/mpesaApi";
 import { getTourById } from "../api/tourApi";
 import { getPublicSettings } from "../api/settingsApi";
-import { createBankTransferPayment, createCashPayment, createStripeCheckout } from "../api/checkoutPaymentsApi";
+import { createBankTransferPayment, createCashPayment, createPaypalOrder, createStripeCheckout } from "../api/checkoutPaymentsApi";
 import { useAuth } from "../context/AuthContext";
 import { getCustomTourDateRange, getTourDateRange, isDateWithinRange, toDateInputValue } from "../lib/dateRange";
 
@@ -79,6 +79,7 @@ export default function Checkout() {
   const availablePaymentMethods = useMemo(() => [
     settings?.enableMpesa === true && { id: "MPESA", label: "M-Pesa", detail: "Pay securely using an STK Push prompt." },
     settings?.enableStripe === true && { id: "CARD", label: "Card", detail: "Pay by card through secure Stripe Checkout." },
+    settings?.enablePaypal === true && { id: "PAYPAL", label: "PayPal", detail: "Pay through PayPal's secure checkout. Currency support depends on the tenant account." },
     settings?.enableBankTransfer === true && { id: "BANK_TRANSFER", label: "Bank transfer", detail: "Transfer to the tenant account; staff will verify receipt." },
     settings?.enableCash === true && { id: "CASH", label: "Cash", detail: "Pay at the listed collection point. Staff confirmation is required." },
   ].filter(Boolean), [settings]);
@@ -187,6 +188,7 @@ export default function Checkout() {
   const otherPaymentMutation = useMutation({
     mutationFn: async ({ bookingId, method, amount }) => {
       if (method === "CARD") return { method, bookingId, response: await createStripeCheckout({ bookingId, amount }) };
+      if (method === "PAYPAL") return { method, bookingId, response: await createPaypalOrder({ bookingId }) };
       if (method === "BANK_TRANSFER") return { method, bookingId, response: await createBankTransferPayment({ bookingId, amount }) };
       if (method === "CASH") return { method, bookingId, response: await createCashPayment({ bookingId, amount }) };
       throw new Error("Select a supported payment method.");
@@ -195,6 +197,12 @@ export default function Checkout() {
       if (method === "CARD") {
         const redirect = response?.url || response?.data?.url;
         if (!redirect) { toast.error("Stripe did not return a checkout link. No payment was recorded as complete."); return; }
+        window.location.assign(redirect);
+        return;
+      }
+      if (method === "PAYPAL") {
+        const redirect = response?.url || response?.data?.url;
+        if (!redirect) { toast.error("PayPal did not return an approval link. No payment was recorded as complete."); return; }
         window.location.assign(redirect);
         return;
       }

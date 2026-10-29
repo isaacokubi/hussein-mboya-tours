@@ -204,6 +204,9 @@ export const refundPayment = async (req, res, next) => {
     const payment = await Payment.findOne(mergeTenantFilter(req, { _id: req.params.id })).populate("booking").populate("customer");
     if (!payment) return res.status(404).json({ success: false, message: "Payment not found" });
     if (payment.status !== "completed") return res.status(400).json({ success: false, message: "Only completed payments can be refunded" });
+    if (String(payment.provider || "").toUpperCase() !== "MPESA") {
+      return res.status(501).json({ success: false, message: "Automated refunds are not available for this payment method. Use the authorized reconciliation workflow." });
+    }
 
     const phone = payment.phoneNumber || payment.phone || payment.customer?.phone;
     if (!phone) return res.status(400).json({ success: false, message: "Customer phone number missing" });
@@ -247,7 +250,11 @@ export const refundBooking = async (req, res, next) => {
     const phone = payment.phoneNumber || payment.phone || booking.contact?.phone || booking.customerSnapshot?.phone;
     if (!phone) return res.status(400).json({ success: false, message: "Customer phone number missing" });
 
-    const { refundResponse, refundAmount } = await submitMpesaRefund({
+    if (String(payment.provider || "").toUpperCase() !== "MPESA") {
+      return res.status(501).json({ success: false, message: "Automated refunds are not available for this payment method. Use the authorized reconciliation workflow." });
+    }
+
+    const { refundResponse, refundAmount, payment: updatedPayment } = await submitMpesaRefund({
       payment,
       booking,
       amount: req.body?.amount ?? (Number(payment.amount) - Number(payment.refundedAmount || 0)),

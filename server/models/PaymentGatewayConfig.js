@@ -55,6 +55,20 @@ const paymentGatewayConfigSchema = new mongoose.Schema({
   productionShortcode: { type: String, trim: true, default: "" },
   sandboxCallbackUrl: { type: String, trim: true, default: "" },
   productionCallbackUrl: { type: String, trim: true, default: "" },
+  // PayPal credentials are kept per environment so switching modes can never
+  // reuse a credential from the other PayPal app. Webhook IDs are identifiers,
+  // not secrets, but are still scoped to the environment and tenant.
+  sandboxPaypalClientIdEncrypted: { type: String, default: "" },
+  sandboxPaypalClientSecretEncrypted: { type: String, default: "" },
+  sandboxPaypalWebhookId: { type: String, trim: true, default: "" },
+  sandboxPaypalMerchantId: { type: String, trim: true, default: "" },
+  sandboxPaypalValidatedAt: { type: Date, default: null },
+  productionPaypalClientIdEncrypted: { type: String, default: "" },
+  productionPaypalClientSecretEncrypted: { type: String, default: "" },
+  productionPaypalWebhookId: { type: String, trim: true, default: "" },
+  productionPaypalMerchantId: { type: String, trim: true, default: "" },
+  productionPaypalValidatedAt: { type: Date, default: null },
+  sandboxLifecycleVerifiedAt: { type: Date, default: null },
   updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
 }, { timestamps: true });
 

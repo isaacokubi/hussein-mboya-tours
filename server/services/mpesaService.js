@@ -117,6 +117,9 @@ export const initiateStkPush = async ({ phone, amount, bookingId, config: suppli
       bookingId,
       status: error.response?.status,
     });
-    throw new Error("STK Push failed or its result is uncertain. Check payment status before retrying.");
+    const safeError = new Error("STK Push failed or its result is uncertain. Check payment status before retrying.");
+    safeError.status = error.response?.status || 502;
+    safeError.code = error.response ? "MPESA_PROVIDER_REJECTED" : "MPESA_REQUEST_UNCERTAIN";
+    throw safeError;
   }
 };

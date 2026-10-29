@@ -29,8 +29,10 @@ test("gateway detail API selects safe metadata for the requested environment", a
   const controller = await read("../controllers/paymentGatewayController.js");
   assert.match(controller, /req\.query\?\.environment/);
   assert.match(controller, /activeEnvironment: config\.environment \|\| "sandbox"/);
-  assert.match(controller, /enabled: provider === "MPESA" \? Boolean\(config\.enabled && config\.environment === environment\)/);
-  assert.match(controller, /secretsConfigured: SECRET_FIELDS\.reduce/);
+  assert.match(controller, /enabled: \["MPESA", "PAYPAL"\]\.includes\(provider\) \? Boolean\(config\.enabled && config\.environment === environment\)/);
+  assert.match(controller, /checkoutAvailable: paypalCheckoutAvailable/);
+  assert.match(controller, /secretsConfigured: provider === "PAYPAL"/);
+  assert.match(controller, /secretsConfigured: \{ clientId: Boolean\(paypalSettings\.clientId\)/);
   assert.doesNotMatch(controller.match(/export const getGatewayConfig[\s\S]*?export const disableGatewayConfig/)?.[0] || "", /consumerKeyEncrypted:/);
 });
 

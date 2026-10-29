@@ -693,6 +693,10 @@ export const completeBookingPayment = async ({
           ).trim();
       }
 
+      if (paymentData.providerOrderId) paymentDoc.providerOrderId = String(paymentData.providerOrderId).trim();
+      if (paymentData.providerCaptureId) paymentDoc.providerCaptureId = String(paymentData.providerCaptureId).trim();
+      if (paymentData.providerEnvironment) paymentDoc.providerEnvironment = String(paymentData.providerEnvironment).trim();
+
 
       /*
       |--------------------------------------------------------------------------

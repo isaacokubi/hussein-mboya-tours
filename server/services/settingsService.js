@@ -1,4 +1,7 @@
 import SystemSetting from "../models/SystemSetting.js";
+import PaymentGatewayConfig from "../models/PaymentGatewayConfig.js";
+import { getPaypalEnvironmentSettings } from "./paypalService.js";
+import { isPaypalCurrencySupported } from "./tenantPaymentMethods.js";
 
 const DEFAULT_SETTINGS = {
   key: "default",
@@ -71,7 +74,10 @@ export async function getSystemSettings(source = {}) {
     ).lean();
   }
 
-  return { ...DEFAULT_SETTINGS, ...settings, tenantId, _tenantScoped: true, _platformScoped: false };
+  const paypal = await PaymentGatewayConfig.findOne({ tenantId, provider: "PAYPAL" }).lean().catch(() => null);
+  const paypalEnv = getPaypalEnvironmentSettings(paypal || {}, paypal?.environment);
+  const paypalAvailable = Boolean(paypal?.enabled && paypalEnv.configured && paypalEnv.validatedAt && isPaypalCurrencySupported(settings?.currency || DEFAULT_SETTINGS.currency) && (paypal?.environment !== "production" || paypal.sandboxLifecycleVerifiedAt));
+  return { ...DEFAULT_SETTINGS, ...settings, paypalAvailable, enablePaypal: paypalAvailable, tenantId, _tenantScoped: true, _platformScoped: false };
 }
 
 export async function updateSystemSettings(source = {}, updates = {}) {

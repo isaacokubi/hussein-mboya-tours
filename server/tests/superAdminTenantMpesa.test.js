@@ -117,16 +117,27 @@ test("gateway API only returns secret-presence flags, never encrypted credential
   assert.deepEqual(res.body.data.secretsConfigured, { consumerKey: true, consumerSecret: true, passkey: true });
 });
 
-test("sandbox callbacks require a valid public callback and cannot use the production callback host", () => {
-  const productionCallbackUrl = "https://api.example.com/api/mpesa/callback";
-  assert.match(validateMpesaGatewaySettings({ environment: "sandbox", callbackUrl: "https://api.example.com/api/mpesa/callback" }, { productionCallbackUrl }), /production callback host/);
-  assert.match(validateMpesaGatewaySettings({ environment: "sandbox", callbackUrl: "https://api.example.com:8443/api/mpesa/callback" }, { productionCallbackUrl }), /production callback host/);
-  assert.match(validateMpesaGatewaySettings({ environment: "sandbox", callbackUrl: "http://stage.example.com/api/mpesa/callback" }, { productionCallbackUrl }), /public HTTPS/);
-  assert.match(validateMpesaGatewaySettings({ environment: "sandbox", callbackUrl: "https://localhost/api/mpesa/callback" }, { productionCallbackUrl }), /public HTTPS/);
-  assert.match(validateMpesaGatewaySettings({ environment: "sandbox", callbackUrl: "https://stage.example.com/other" }, { productionCallbackUrl }), /ending in \/api\/mpesa\/callback/);
-  assert.equal(validateMpesaGatewaySettings({ environment: "sandbox", callbackUrl: "https://stage.example.com/api/mpesa/callback" }, { productionCallbackUrl }), null);
+test("sandbox callbacks use the explicitly configured sandbox host or an explicitly shared production route", () => {
+  const productionCallbackUrl = "https://hussein-mboya-tours.onrender.com/api/mpesa/callback";
+  const shared = { productionCallbackUrl, sandboxCallbackUrl: productionCallbackUrl };
+  assert.equal(validateMpesaGatewaySettings({ environment: "sandbox", callbackUrl: `  ${productionCallbackUrl}  ` }, shared), null);
+  assert.match(validateMpesaGatewaySettings({ environment: "sandbox", callbackUrl: "https://api.example.com/api/mpesa/callback" }, { ...shared, sandboxCallbackUrl: "https://sandbox-api.example.com/api/mpesa/callback" }), /must match the configured Sandbox host/);
+  assert.equal(validateMpesaGatewaySettings({ environment: "sandbox", callbackUrl: "https://sandbox-api.example.com/api/mpesa/callback" }, { ...shared, sandboxCallbackUrl: "https://sandbox-api.example.com/api/mpesa/callback" }), null);
+  assert.match(validateMpesaGatewaySettings({ environment: "sandbox", callbackUrl: "http://stage.example.com/api/mpesa/callback" }, shared), /public HTTPS/);
+  assert.match(validateMpesaGatewaySettings({ environment: "sandbox", callbackUrl: "https://localhost/api/mpesa/callback" }, shared), /public HTTPS/);
+  assert.match(validateMpesaGatewaySettings({ environment: "sandbox", callbackUrl: "https://10.0.0.12/api/mpesa/callback" }, { ...shared, sandboxCallbackUrl: "https://10.0.0.12/api/mpesa/callback" }), /public HTTPS/);
+  assert.match(validateMpesaGatewaySettings({ environment: "sandbox", callbackUrl: "https://stage.example.com:8443/api/mpesa/callback" }, { ...shared, sandboxCallbackUrl: "https://stage.example.com:8443/api/mpesa/callback" }), /public HTTPS/);
+  assert.match(validateMpesaGatewaySettings({ environment: "sandbox", callbackUrl: "https://stage.example.com/api/mpesa/callback?tenant=x" }, { ...shared, sandboxCallbackUrl: "https://stage.example.com/api/mpesa/callback" }), /public HTTPS/);
+  assert.match(validateMpesaGatewaySettings({ environment: "sandbox", callbackUrl: "https://stage.example.com/other" }, shared), /ending in \/api\/mpesa\/callback/);
   assert.equal(validateMpesaGatewaySettings({ environment: "production", callbackUrl: productionCallbackUrl }, { productionCallbackUrl }), null);
+  assert.equal(validateMpesaGatewaySettings({ environment: "production", callbackUrl: ` ${productionCallbackUrl} ` }, { productionCallbackUrl }), null);
   assert.match(validateMpesaGatewaySettings({ environment: "qa", callbackUrl: productionCallbackUrl }, { productionCallbackUrl }), /Environment must be/);
+});
+
+test("sandbox callback host comes from explicit sandbox deployment config and defaults to the shared production callback", async () => {
+  const { getSandboxMpesaCallbackUrl } = await import("../services/mpesaGatewaySettings.js");
+  assert.equal(getSandboxMpesaCallbackUrl({ MPESA_SANDBOX_CALLBACK_URL: " https://sandbox-api.example.com/api/mpesa/callback ", MPESA_PRODUCTION_CALLBACK_URL: "https://api.example.com/api/mpesa/callback" }), "https://sandbox-api.example.com/api/mpesa/callback");
+  assert.equal(getSandboxMpesaCallbackUrl({ MPESA_PRODUCTION_CALLBACK_URL: "https://api.example.com/api/mpesa/callback" }), "https://api.example.com/api/mpesa/callback");
 });
 
 test("tenant Admin settings and runtime share the callback safety validator without falling back to global callbacks", () => {

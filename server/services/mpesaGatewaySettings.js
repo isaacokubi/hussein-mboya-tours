@@ -1,14 +1,20 @@
+import { isIP } from "node:net";
+
 const CALLBACK_PATH = "/api/mpesa/callback";
 
 const parseHttpsUrl = (value) => {
   let url;
   try { url = new URL(String(value || "").trim()); } catch { return null; }
   if (url.protocol !== "https:" || url.username || url.password || url.hash) return null;
+  if (url.port && url.port !== "443") return null;
+  if (url.search) return null;
   if (url.pathname.replace(/\/$/, "") !== CALLBACK_PATH) return null;
   const host = url.hostname.toLowerCase().replace(/^\[|\]$/g, "");
-  if (host === "localhost" || host.endsWith(".localhost") || host.endsWith(".local")) return null;
-  if (/^(10\.|127\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.)/.test(host)) return null;
-  if (host === "::1" || host.startsWith("fc") || host.startsWith("fd") || host.startsWith("fe80:")) return null;
+  if (host === "localhost" || host.endsWith(".localhost") || host.endsWith(".local") || host.endsWith(".") || !host.includes(".")) return null;
+  // Daraja callbacks must target a public DNS host. Reject literal IPs
+  // outright so private, loopback, link-local, and ambiguous IP ranges cannot
+  // be smuggled through textual range checks.
+  if (isIP(host)) return null;
   return url;
 };
 
@@ -27,6 +33,16 @@ export const getProductionMpesaCallbackUrl = (environment = process.env) => {
   return "";
 };
 
+export const getSandboxMpesaCallbackUrl = (environment = process.env) => {
+  const explicit = String(environment.MPESA_SANDBOX_CALLBACK_URL || "").trim();
+  if (explicit) return explicit;
+  // A single API service can receive both environments safely: the callback
+  // handler resolves the pending payment first, then queries Daraja using that
+  // attempt's tenant-scoped, persisted providerEnvironment. The production
+  // callback URL is therefore the explicit shared-host reference by default.
+  return getProductionMpesaCallbackUrl(environment);
+};
+
 export const validateMpesaGatewaySettings = ({ environment, callbackUrl }, options = {}) => {
   if (!["sandbox", "production"].includes(String(environment || "").toLowerCase())) {
     return "Environment must be sandbox or production.";
@@ -34,11 +50,11 @@ export const validateMpesaGatewaySettings = ({ environment, callbackUrl }, optio
   const callback = parseHttpsUrl(callbackUrl);
   if (!callback) return `Callback URL must be a public HTTPS URL ending in ${CALLBACK_PATH}.`;
   if (String(environment).toLowerCase() === "sandbox") {
-    const productionCallbackUrl = options.productionCallbackUrl ?? getProductionMpesaCallbackUrl(options.processEnv);
-    const productionCallback = parseHttpsUrl(productionCallbackUrl);
-    if (!productionCallback) return "A valid production callback reference must be configured before saving sandbox settings.";
-    if (callback.hostname.toLowerCase() === productionCallback.hostname.toLowerCase()) {
-      return "Sandbox M-Pesa settings cannot use the production callback host.";
+    const sandboxCallbackUrl = options.sandboxCallbackUrl ?? options.productionCallbackUrl ?? getSandboxMpesaCallbackUrl(options.processEnv);
+    const sandboxCallback = parseHttpsUrl(sandboxCallbackUrl);
+    if (!sandboxCallback) return "A valid Sandbox callback host must be configured before saving Sandbox settings.";
+    if (callback.origin.toLowerCase() !== sandboxCallback.origin.toLowerCase()) {
+      return `Sandbox callback host must match the configured Sandbox host (${sandboxCallback.host}). Set MPESA_SANDBOX_CALLBACK_URL for a dedicated Sandbox API, or use the explicitly configured shared callback host.`;
     }
   }
   return null;

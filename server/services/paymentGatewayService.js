@@ -14,12 +14,14 @@ const gatewayConfigurationError = (message) => Object.assign(new Error(message),
 });
 
 /** Resolve the active M-Pesa configuration for the current tenant. */
-export const getTenantMpesaConfig = async () => {
+export const getTenantMpesaConfig = async ({ environment: requestedEnvironment = "", allowDisabled = false } = {}) => {
   const tenantId = requireTenantId();
-  const gateway = await PaymentGatewayConfig.findOne({ tenantId, provider: "MPESA", enabled: true }).lean();
+  const gateway = await PaymentGatewayConfig.findOne({ tenantId, provider: "MPESA" }).lean();
 
   if (gateway) {
-    const environment = gateway.environment || "sandbox";
+    if (!gateway.enabled && !allowDisabled) throw gatewayConfigurationError("M-Pesa is disabled for this tenant.");
+    const environment = String(requestedEnvironment || gateway.environment || "sandbox").toLowerCase();
+    if (!["sandbox", "production"].includes(environment)) throw gatewayConfigurationError("M-Pesa environment must be sandbox or production.");
     const environmentSettings = getEnvironmentMpesaSettings(gateway, environment);
     const config = {
       consumerKey: decryptSecret(environmentSettings.consumerKeyEncrypted),

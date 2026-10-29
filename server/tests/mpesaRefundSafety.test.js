@@ -44,6 +44,12 @@ test("M-Pesa refund flow never falls back to a checkout request ID or local paym
   assert.match(controller, /refundStatus: "failed"/);
 });
 
+test("admin refund endpoints fail closed for non-M-Pesa payments", () => {
+  const controller = read("controllers/adminPaymentController.js");
+  assert.equal((controller.match(/Automated refunds are not available for this payment method/g) || []).length, 2);
+  assert.match(controller, /payment: updatedPayment, booking/);
+});
+
 test("Invoice records require tenant ownership", () => {
   const invoice = read("models/Invoice.js");
   assert.match(invoice, /tenantId: \{ type: mongoose\.Schema\.Types\.ObjectId, ref: "Organization", required: true, index: true \}/);
