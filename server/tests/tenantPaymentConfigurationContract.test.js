@@ -70,9 +70,9 @@ test("payment initiation endpoints apply per-IP request limits", async () => {
 
 test("tour booking creation permits PayPal when tenant configuration marks it available", async () => {
   const bookings = await read("../controllers/customerBookingController.js");
-  assert.doesNotMatch(bookings, /normalizedPaymentMethod === "PAYPAL"[\\s\\S]{0,160}PayPal checkout is not available yet/);
-  assert.match(bookings, /isTenantPaymentMethodAvailable\\(tenantSettings, normalizedPaymentMethod\\)/);
+  assert.doesNotMatch(bookings, /normalizedPaymentMethod === "PAYPAL"[\s\S]{0,160}PayPal checkout is not available yet/);
+  assert.match(bookings, /isTenantPaymentMethodAvailable\(tenantSettings, normalizedPaymentMethod\)/);
   const checkout = await read("../../client/src/pages/Checkout.jsx");
-  assert.match(checkout, /method === "PAYPAL"\\) return \\{ method, bookingId, response: await createPaypalOrder/);
-  assert.match(checkout, /queryKey: \\[["']public-system-settings["'], window.location.host\\]/);
+  assert.match(checkout, /method === "PAYPAL"\) return \{ method, bookingId, response: await createPaypalOrder/);
+  assert.match(checkout, /queryKey: \["public-system-settings", window.location.host\]/);
 });
