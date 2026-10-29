@@ -27,7 +27,6 @@ export const createCustomerBooking = async (req, res, next) => {
     const normalizedPaymentMethod = normalizeTenantPaymentMethod(paymentMethod);
     const tenantSettings = await getSystemSettings(req);
     if (!normalizedPaymentMethod || !isTenantPaymentMethodAvailable(tenantSettings, normalizedPaymentMethod)) return res.status(409).json({ success: false, message: "This payment method is not currently available for this tenant. Choose another method or contact the tenant administrator." });
-    if (normalizedPaymentMethod === "PAYPAL") return res.status(409).json({ success: false, message: "PayPal checkout is not available yet." });
     const normalizedType = String(bookingType).toLowerCase();
     if (!["individual", "group", "corporate"].includes(normalizedType)) return res.status(400).json({ success: false, message: "Invalid booking type." });
 
