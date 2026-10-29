@@ -9,14 +9,14 @@ const tokenCache = new Map();
 
 export const normalizePhoneNumber = (phone) => {
   requireTenantId();
-  if (!phone) throw new Error("Phone number is required.");
+  if (!phone) throw Object.assign(new Error("Phone number is required."), { status: 400, code: "INVALID_MPESA_PHONE", expose: true });
 
   let normalized = phone.toString().trim().replace(/\s+/g, "");
   if (normalized.startsWith("+254")) normalized = normalized.substring(1);
   if (/^0[17]\d{8}$/.test(normalized)) normalized = "254" + normalized.substring(1);
 
   if (!/^254[17]\d{8}$/.test(normalized)) {
-    throw new Error("Invalid Safaricom phone number.");
+    throw Object.assign(new Error("Invalid Safaricom phone number."), { status: 400, code: "INVALID_MPESA_PHONE", expose: true });
   }
   return normalized;
 };
@@ -68,7 +68,7 @@ export const initiateStkPush = async ({ phone, amount, bookingId, config: suppli
   const companyName = suppliedCompanyName || (await getSystemSettings()).companyName || "Company";
 
   if (!phone) throw new Error("Phone number is required.");
-  if (!amount || amount <= 0) throw new Error("Invalid payment amount.");
+  if (!Number.isSafeInteger(Number(amount)) || Number(amount) <= 0) throw Object.assign(new Error("Invalid payment amount."), { status: 400, code: "INVALID_MPESA_AMOUNT", expose: true });
   if (!bookingId) throw new Error("Booking ID is required.");
 
   const config = suppliedConfig || await getTenantMpesaConfig();

@@ -27,7 +27,8 @@ test("Kenyan mobile numbers normalize consistently and invalid numbers are rejec
     assert.equal(normalizePhoneNumber("0712 345 678"), "254712345678");
     assert.equal(normalizePhoneNumber("+254112345678"), "254112345678");
     assert.equal(normalizePhoneNumber("254708374149"), "254708374149");
-    assert.throws(() => normalizePhoneNumber("254201234567"), /Invalid Safaricom phone number/);
+    assert.throws(() => normalizePhoneNumber("254201234567"), (error) => error.message === "Invalid Safaricom phone number." && error.status === 400 && error.code === "INVALID_MPESA_PHONE");
+    assert.throws(() => normalizePhoneNumber(""), (error) => error.message === "Phone number is required." && error.status === 400 && error.code === "INVALID_MPESA_PHONE");
   });
 });
 
@@ -64,6 +65,24 @@ test("STK Push sends the Daraja payload and validates provider acceptance", asyn
   assert.equal(payload.AccountReference, "BOOKING-booking-mock");
   assert.match(payload.Password, /^[A-Za-z0-9+/]+=*$/);
   assert.equal(options.headers.Authorization, "Bearer mock-token");
+});
+
+test("STK initiation rejects fractional, unsafe, and non-positive amounts before provider requests", async () => {
+  const config = mockConfig("invalid-amount");
+  let requests = 0;
+  const client = {
+    get: async () => { requests += 1; return { data: { access_token: "mock-token", expires_in: 3600 } }; },
+    post: async () => { requests += 1; return { data: {} }; },
+  };
+
+  for (const amount of [0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1, "not-an-amount"]) {
+    await assert.rejects(
+      runWithTenant({ tenantId: "test-tenant" }, () => initiateStkPush({ phone: "0712345678", amount, bookingId: "booking-invalid", config, client, companyName: "Test Tours" })),
+      (error) => error.status === 400 && error.code === "INVALID_MPESA_AMOUNT",
+    );
+  }
+
+  assert.equal(requests, 0);
 });
 
 test("OAuth and STK failures never include credentials or token values in logs/errors", async () => {

@@ -2,6 +2,7 @@ import { useSettings } from "../../context/SettingsContext";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X, LayoutDashboard, CalendarCheck, UserRound, Heart, FileText, Sparkles } from "lucide-react";
+import DashboardLogoutButton from "./DashboardLogoutButton";
 
 const NAV = {
   customer: [["/dashboard", "Dashboard", LayoutDashboard], ["/my-bookings", "My Bookings", CalendarCheck], ["/custom-tour", "Custom Tour", Sparkles], ["/tours", "Explore Tours", FileText], ["/profile", "Profile", UserRound], ["/wishlist", "Wishlist", Heart]],
@@ -16,9 +17,12 @@ export default function MobileDashboardNav({ role = "customer", title }) {
   const items = NAV[role] || NAV.customer;
   return (
     <>
-      <header className="sticky top-0 z-40 flex items-center gap-3 border-b border-indigo-100 bg-white/95 px-4 py-3 shadow-sm backdrop-blur lg:hidden">
-        <button type="button" onClick={() => setOpen(true)} aria-label="Open dashboard menu" className="rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 p-2 text-white shadow"><Menu size={21} /></button>
-        <span className="font-bold text-indigo-950">{displayTitle}</span>
+      <header className="sticky top-0 z-40 flex min-h-14 items-center justify-between gap-3 border-b border-indigo-100 bg-white/95 px-3 py-2 shadow-sm backdrop-blur sm:px-4 lg:hidden">
+        <div className="flex min-w-0 items-center gap-3">
+          <button type="button" onClick={() => setOpen(true)} aria-label="Open dashboard menu" className="shrink-0 rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 p-2 text-white shadow"><Menu size={21} /></button>
+          <span className="truncate font-bold text-indigo-950">{displayTitle}</span>
+        </div>
+        <DashboardLogoutButton />
       </header>
       {open && (
         <div className="fixed inset-0 z-[60] lg:hidden">

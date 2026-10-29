@@ -6,6 +6,8 @@ Tenant Admins open **Admin Control Center → Finance & Insight → M-Pesa Confi
 
 The 2026-10-29 payment and callback-host changes passed focused tests (7/7 test files), the backend suite (295 tests: 290 passed, 0 failed, 5 skipped), `npm run check:all`, frontend lint, frontend production build, and `git diff --check`. The five skips are opt-in database/integration cases. Provider credentials were not available for live Sandbox certification; automated tests do not establish external Daraja, PayPal, or Stripe connectivity or a completed payment lifecycle.
 
+The 2026-10-29 follow-up audit found the public checkout settings currently disable every payment method for all three tenants. This is separate from entering credentials: the intended tenant gateway must also be enabled with a complete credential slot and callback configuration. The same follow-up hardens tenant ownership and M-Pesa amount/phone validation, prevents zero traveler totals from displaying as paid, keeps checkout's traveler count editable, and moves mobile dashboard logout controls beside their menus. Current live evidence and the bounded payment-test scope are in [M-Pesa readiness](docs/MPESA_DARAJA_SANDBOX_READINESS.md).
+
 ## 2026-10-29 demo credential and readiness update
 
 The configured backend connection was verified against Atlas `husseindb` on the expected cluster. A compressed local database archive was created before the credential update; its ignored path is `server/backups/husseindb-before-demo-password-reset-2026-10-29.archive.gz`.

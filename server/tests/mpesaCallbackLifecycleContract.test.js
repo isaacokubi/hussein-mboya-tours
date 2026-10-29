@@ -54,3 +54,16 @@ test("M-Pesa provider identifiers are tenant-unique to prevent duplicate complet
   assert.match(payment, /tenantId: 1, mpesaReceiptNumber: 1/);
   assert.match(payment, /tenantId: 1, callbackEventId: 1/);
 });
+
+test("booking payment status and verification endpoints enforce booking ownership", () => {
+  const controller = read("controllers/mpesaController.js");
+  assert.match(controller, /canAccessBookingPayment\(payment\.booking,req\.user\)/);
+  assert.match(controller, /canAccessBookingPayment\(booking,req\.user\)/);
+});
+
+test("invalid M-Pesa phone input is normalized before a payment attempt is created", () => {
+  const controller = read("controllers/mpesaController.js");
+  const normalizeAt = controller.indexOf("normalizePhoneNumber(phoneNumber");
+  const createAt = controller.indexOf("payment = await Payment.create");
+  assert.ok(normalizeAt >= 0 && createAt > normalizeAt);
+});

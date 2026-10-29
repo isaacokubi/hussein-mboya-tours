@@ -39,7 +39,12 @@ export default function Login() {
       toast.success("Login successful");
       navigate(dashboardPath(response?.user), { replace: true });
     } catch (error) {
-      console.error("LOGIN ERROR:", error);
+      // Axios errors contain request config.data, which includes the password
+      // for a failed login. Keep diagnostics limited to safe metadata.
+      console.error("LOGIN ERROR:", {
+        status: error?.response?.status || null,
+        code: error?.code || "AUTHENTICATION_FAILED",
+      });
       toast.error(error?.response?.data?.message || error?.message || "Invalid email or password");
     } finally {
       setLoading(false);

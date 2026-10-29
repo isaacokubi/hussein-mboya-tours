@@ -66,7 +66,7 @@ export default function Checkout() {
     queryFn: () => getTourById(id),
     enabled: isTourCheckout && Boolean(id),
   });
-  const { data: settingsResponse } = useQuery({
+  const { data: settingsResponse, isLoading: settingsLoading, isError: settingsError } = useQuery({
     queryKey: ["public-system-settings"],
     queryFn: getPublicSettings,
     staleTime: 60_000,
@@ -262,6 +262,10 @@ export default function Checkout() {
 
   const submit = async (event) => {
     event.preventDefault();
+    if (isTourCheckout) {
+      const travellerCount = Number(travellers);
+      if (!Number.isInteger(travellerCount) || travellerCount < 1) return toast.error("Enter at least 1 traveller.");
+    }
     if (!total || total <= 0) return toast.error("This booking has no valid total cost. Please contact the tour operator.");
     if (balance <= 0) return toast.info("This booking is already fully paid.");
     const amount = Number(paymentAmount);
@@ -323,6 +327,8 @@ export default function Checkout() {
   const successful = paymentState?.status === "completed";
   const submitting = createBookingMutation.isPending || paymentMutation.isPending || otherPaymentMutation.isPending;
   const priceIsSuspicious = isTourCheckout && baseTourPrice <= 1;
+  const showCheckoutForm = !successful && (isTourCheckout ? baseTourPrice > 0 : balance > 0);
+  const bookingIsConfirmedPaid = isBookingCheckout && total > 0 && balance <= 0 && String(booking?.paymentStatus || "").toLowerCase() === "paid";
   const dateRangeText = dateRange.min && dateRange.max ? `${dateRange.min} to ${dateRange.max}` : "the tour dates";
 
   return (
@@ -353,7 +359,7 @@ export default function Checkout() {
 
         {paymentState && <section className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-5"><h2 className="font-bold">{successful ? "Payment successful" : paymentState.status === "pending" ? selectedPaymentMethod === "MPESA" ? "Waiting for M-Pesa payment" : "Payment pending" : "Payment failed"}</h2><p className="mt-2 text-slate-700">{paymentState.message}</p>{paymentState.status === "pending" && selectedPaymentMethod === "MPESA" && <p className="mt-3 font-bold text-amber-800">Check your phone and enter your M-Pesa PIN.</p>}{paymentState.status === "pending" && selectedPaymentMethod === "BANK_TRANSFER" && settings.bankInstructions && <p className="mt-3 whitespace-pre-line text-amber-950">{settings.bankInstructions}</p>}{paymentState.status === "pending" && selectedPaymentMethod === "CASH" && <p className="mt-3 whitespace-pre-line text-amber-950">{settings.cashInstructions} {settings.cashCollectionLocation}</p>}{paymentState.mpesaReceiptNumber && <p className="mt-2 text-sm font-semibold">M-Pesa receipt: {paymentState.mpesaReceiptNumber}</p>}{paymentState.status === "pending" && paymentState.bookingId && <button type="button" onClick={() => navigate(`/bookings/${paymentState.bookingId}`)} className="mt-4 rounded-xl border border-amber-700 px-5 py-3 font-bold text-amber-900">View booking status</button>}{successful && <button type="button" onClick={() => navigate(`/bookings/${paymentState.bookingId}`)} className="mt-4 rounded-xl bg-emerald-700 px-5 py-3 font-bold text-white">View Booking & Remaining Balance</button>}{["failed", "cancelled", "timeout"].includes(paymentState.status) && <button type="button" onClick={() => setPaymentState(null)} className="mt-4 rounded-xl bg-amber-600 px-5 py-3 font-bold text-white">Retry Payment</button>}</section>}
 
-        {balance > 0 && !successful && <form onSubmit={submit} className="mt-6 space-y-5">
+        {showCheckoutForm && <form onSubmit={submit} className="mt-6 space-y-5">
           <Field label="Travel date" required><input type="date" value={travelDate} min={dateRange.min || undefined} max={dateRange.max || undefined} onChange={(e) => setTravelDate(e.target.value)} className="w-full rounded-xl border p-3 text-base touch-manipulation" required /></Field>
           <p className="-mt-3 text-sm text-slate-500">You can only select a date from {dateRange.min || "the tour start"} through {dateRange.max || "the tour end"}. Dates outside this period are disabled.</p>
           <Field label="Number of travellers" required={!isBookingCheckout}>
@@ -363,7 +369,6 @@ export default function Checkout() {
               step="1"
               value={travellers}
               onChange={(e) => setTravellers(e.target.value)}
-              onBlur={() => { if (!String(travellers).trim()) setTravellers("1"); }}
               inputMode="numeric"
               pattern="[0-9]*"
               className="w-full rounded-xl border p-3 text-base touch-manipulation"
@@ -371,7 +376,7 @@ export default function Checkout() {
               aria-label="Number of travellers"
             />
           </Field>
-          <fieldset className="rounded-2xl border border-slate-200 p-4"><legend className="px-2 font-bold text-slate-900">Payment method</legend>{availablePaymentMethods.length ? <div className="grid gap-3 sm:grid-cols-2">{availablePaymentMethods.map((method) => <label key={method.id} className={`flex cursor-pointer gap-3 rounded-xl border p-4 ${selectedPaymentMethod === method.id ? "border-emerald-600 bg-emerald-50" : "border-slate-200"}`}><input type="radio" name="paymentMethod" value={method.id} checked={selectedPaymentMethod === method.id} onChange={() => setSelectedPaymentMethod(method.id)} className="mt-1 accent-emerald-700"/><span><span className="block font-bold">{method.label}</span><span className="mt-1 block text-sm text-slate-600">{method.detail}</span></span></label>)}</div> : <p className="text-sm text-amber-900">No payment methods are currently available. Contact the tour operator.</p>}</fieldset>
+          <fieldset className="rounded-2xl border border-slate-200 p-4"><legend className="px-2 font-bold text-slate-900">Payment method</legend>{availablePaymentMethods.length ? <div className="grid gap-3 sm:grid-cols-2">{availablePaymentMethods.map((method) => <label key={method.id} className={`flex cursor-pointer gap-3 rounded-xl border p-4 ${selectedPaymentMethod === method.id ? "border-emerald-600 bg-emerald-50" : "border-slate-200"}`}><input type="radio" name="paymentMethod" value={method.id} checked={selectedPaymentMethod === method.id} onChange={() => setSelectedPaymentMethod(method.id)} className="mt-1 accent-emerald-700"/><span><span className="block font-bold">{method.label}</span><span className="mt-1 block text-sm text-slate-600">{method.detail}</span></span></label>)}</div> : <p role="status" className="text-sm text-amber-900">{settingsLoading ? "Loading payment options…" : settingsError ? "Payment options could not be loaded. Refresh the page or contact the tour operator." : <>No payment methods are enabled for this tour operator. If you manage this tenant, enable and complete a payment method in Admin → Finance &amp; Insight → Payment gateways. Customers can contact the tour operator for help.</>}</p>}</fieldset>
           {selectedPaymentMethod === "MPESA" && <Field label="M-Pesa phone number" required><input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0707476586" autoComplete="tel" className="w-full rounded-xl border p-3 text-base touch-manipulation" required /></Field>}
           {selectedPaymentMethod === "BANK_TRANSFER" && <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950"><p className="font-bold">Bank transfer details</p><p>{settings.bankName} · {settings.bankAccountName} · {settings.bankAccountNumber}{settings.bankBranch ? ` · ${settings.bankBranch}` : ""}</p>{settings.bankSwiftCode && <p>SWIFT/BIC: {settings.bankSwiftCode}</p>}{settings.bankReferenceInstructions && <p className="mt-2">{settings.bankReferenceInstructions}</p>}<p className="mt-2">Your booking remains pending until staff verify receipt.</p></div>}
           {selectedPaymentMethod === "CASH" && <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950"><p className="font-bold">Cash collection</p><p>{settings.cashCollectionLocation}</p><p className="mt-2 whitespace-pre-line">{settings.cashInstructions}</p><p className="mt-2">The booking is pending until staff confirm they received the cash.</p></div>}
@@ -384,7 +389,7 @@ export default function Checkout() {
           <button type="submit" disabled={submitting || !availablePaymentMethods.length} className="w-full rounded-xl bg-emerald-700 py-4 font-bold text-white disabled:opacity-50">{submitting ? "Starting…" : selectedPaymentMethod === "MPESA" ? `Pay KES ${Number(paymentAmount || 0).toLocaleString()} with M-Pesa` : selectedPaymentMethod === "CARD" ? `Continue to card payment · KES ${Number(paymentAmount || 0).toLocaleString()}` : selectedPaymentMethod === "BANK_TRANSFER" ? `Create pending bank transfer · KES ${Number(paymentAmount || 0).toLocaleString()}` : `Reserve with cash · KES ${Number(paymentAmount || 0).toLocaleString()}`}</button>
         </form>}
 
-        {balance <= 0 && !paymentState && <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 font-semibold text-emerald-900">This booking is fully paid. You are eligible to proceed with the trip once normal operational requirements are satisfied.</div>}
+        {bookingIsConfirmedPaid && !paymentState && <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 font-semibold text-emerald-900">This booking is fully paid. You are eligible to proceed with the trip once normal operational requirements are satisfied.</div>}
       </main>
     </div>
   );
