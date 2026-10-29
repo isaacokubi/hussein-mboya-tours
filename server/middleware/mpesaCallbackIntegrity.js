@@ -3,31 +3,42 @@ import SubscriptionPayment from "../models/SubscriptionPayment.js";
 import { queryStkPush, classifyStkQueryResult } from "../services/mpesaQueryService.js";
 import { mergeTenantFilter } from "../tenancy/context.js";
 import { hasLegacyMpesaConfig, mpesaConfig } from "../config/mpesa.js";
+import { getCheckoutRequestId, getStkCallback, validateStkCallback } from "../services/mpesaCallbackPayload.js";
 
-const checkoutIdOf = (req) => String(req.body?.Body?.stkCallback?.CheckoutRequestID || req.body?.Body?.stkCallback?.checkoutRequestID || req.body?.Body?.stkCallback?.checkoutRequestId || "").trim();
+export const validateMpesaCallbackPayload = (req, res, next) => {
+  const validationError = validateStkCallback(getStkCallback(req.body));
+  if (validationError) return res.status(400).json({ ResultCode: 1, ResultDesc: validationError });
+  return next();
+};
 
-export const verifyMpesaCallbackIntegrity = async (req, res, next) => {
+export const createVerifyMpesaCallbackIntegrity = ({
+  findPayment = (filter) => Payment.findOne(filter).select("_id").lean(),
+  findSubscriptionPayment = (filter) => SubscriptionPayment.findOne(filter).select("_id").lean(),
+  providerQuery = queryStkPush,
+  legacyConfigCheck = hasLegacyMpesaConfig,
+  legacyConfig = mpesaConfig,
+} = {}) => async (req, res, next) => {
   try {
-    const callback = req.body?.Body?.stkCallback;
-    if (!callback) return next();
+    const callback = getStkCallback(req.body);
+    const validationError = validateStkCallback(callback);
+    if (validationError) return res.status(400).json({ ResultCode: 1, ResultDesc: validationError });
 
-    const checkoutRequestID = checkoutIdOf(req);
-    if (!checkoutRequestID) return res.status(400).json({ ResultCode: 1, ResultDesc: "Missing CheckoutRequestID." });
+    const checkoutRequestID = getCheckoutRequestId(callback);
 
     const tenantId = String(req.tenantId || req.tenant?.tenantId || req.tenant?.id || "").trim();
     const payment = tenantId
-      ? await Payment.findOne(mergeTenantFilter(req, { $or: [{ checkoutRequestID }, { checkoutRequestId: checkoutRequestID }] })).select("_id").lean()
+      ? await findPayment(mergeTenantFilter(req, { $or: [{ checkoutRequestID }, { checkoutRequestId: checkoutRequestID }] }))
       : null;
     const subscriptionPayment = tenantId
-      ? await SubscriptionPayment.findOne({ tenantId, checkoutRequestID }).select("_id").lean()
+      ? await findSubscriptionPayment({ tenantId, checkoutRequestID })
       : null;
 
     if (!payment && !subscriptionPayment) {
       return res.status(400).json({ ResultCode: 1, ResultDesc: "Unknown CheckoutRequestID." });
     }
 
-    const config = subscriptionPayment && hasLegacyMpesaConfig() ? mpesaConfig : undefined;
-    const queryResult = await queryStkPush(checkoutRequestID, config);
+    const config = subscriptionPayment && legacyConfigCheck() ? legacyConfig : undefined;
+    const queryResult = await providerQuery(checkoutRequestID, config);
     const providerState = classifyStkQueryResult(queryResult?.ResultCode);
     const callbackState = classifyStkQueryResult(callback.ResultCode);
     if (providerState === "pending" || callbackState !== providerState) {
@@ -39,5 +50,7 @@ export const verifyMpesaCallbackIntegrity = async (req, res, next) => {
     return res.status(503).json({ ResultCode: 1, ResultDesc: "Unable to verify M-Pesa callback with the provider." });
   }
 };
+
+export const verifyMpesaCallbackIntegrity = createVerifyMpesaCallbackIntegrity();
 
 export default verifyMpesaCallbackIntegrity;

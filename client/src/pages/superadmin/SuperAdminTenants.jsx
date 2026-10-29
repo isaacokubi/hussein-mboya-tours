@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
+import { Link } from "react-router-dom";
 import { deleteSuperAdminTenant, getSuperAdminTenants, updateSuperAdminTenantStatus, switchSuperAdminTenantPlan } from "../../api/superAdminTenantsApi";
 import { activateTenantSubscription } from "../../api/tenantSubscriptionApi";
 
@@ -110,6 +111,7 @@ export default function SuperAdminTenants() {
                     <td className="px-5 py-4">
                       <div className="flex flex-wrap gap-2">
                         <button onClick={() => toast.info(`${tenant.name}: ${c.users ?? 0} users, ${c.tours ?? c.tourpackages ?? 0} tours, ${c.bookings ?? 0} bookings.`)} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">View</button>
+                        {!protectedTenant && <Link to={`/superadmin/tenants/${tenant._id}/mpesa`} className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-800 hover:bg-emerald-100">M-Pesa settings</Link>}
                         {!protectedTenant && <button onClick={() => openSwitcher(tenant)} className="rounded-lg bg-emerald-700 px-3 py-2 text-sm font-bold text-white shadow-sm hover:bg-emerald-800">Switch Plan</button>}
                         <button disabled={protectedTenant || statusMutation.isPending} onClick={() => statusMutation.mutate({ id: tenant._id, status: tenant.status === "suspended" ? "active" : "suspended" })} className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white disabled:opacity-40">{tenant.status === "suspended" ? "Activate" : "Suspend"}</button>
                         {!protectedTenant && <button onClick={() => { setActivateTarget(tenant); setActivation({ plan: currentPlan, periodDays: 30, amount: "", reference: "" }); }} className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-800 hover:bg-emerald-100">Paid / Activate</button>}

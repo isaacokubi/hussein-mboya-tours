@@ -79,7 +79,6 @@ async function postedRevenue(tenantId) {
   return result || { total: 0, journalCount: 0 };
 }
 
-
 const auditId = (value) => value == null ? null : String(value._id || value);
 const auditMoney = (value) => Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100;
 
@@ -213,7 +212,7 @@ async function auditTenant(tenant) {
   const [
     users, customers, staff, guides, drivers, agents, vehicles, availableVehicles,
     tours, destinations, bookings, payments, bookingStatuses, paymentStatuses,
-    bookingValue, paymentValue, recentBookings, syntheticBookings, revenue,
+    syntheticBookings, revenue,
   ] = await Promise.all([
     count(User, tenantId, { status: { $ne: "blocked" } }),
     count(User, tenantId, { $or: [{ role: "customer" }, { legacyRole: "customer" }], status: { $ne: "blocked" } }),
@@ -229,10 +228,6 @@ async function auditTenant(tenant) {
     count(Payment, tenantId),
     grouped(Booking, tenantId, "status"),
     grouped(Payment, tenantId, "status"),
-    Booking.aggregate([{ $match: { tenantId, ...active } }, { $group: { _id: null, total: { $sum: { $ifNull: ["$totalAmount", 0] } } } }]),
-    Payment.aggregate([{ $match: { tenantId, ...active } }, { $group: { _id: null, total: { $sum: { $ifNull: ["$amount", 0] } } } }]),
-    Booking.find({ tenantId, ...active }).sort({ createdAt: -1 }).limit(5)
-      .select("bookingNumber status paymentStatus totalAmount tenantId").lean(),
     Booking.countDocuments({ tenantId, bookingNumber: /^(?:TEST|DEMO)-/i }),
     postedRevenue(tenantId),
   ]);
@@ -243,18 +238,14 @@ async function auditTenant(tenant) {
     counts: { users, customers, staff, guides, drivers, agents, vehicles, availableVehicles, tours, destinations, bookings, payments },
     bookingStatuses: Object.fromEntries(bookingStatuses.map((row) => [String(row._id), row.count])),
     paymentStatuses: Object.fromEntries(paymentStatuses.map((row) => [String(row._id), row.count])),
-    bookingValueKsh: Number(bookingValue[0]?.total || 0),
-    paymentValueKsh: Number(paymentValue[0]?.total || 0),
-    postedRevenueKsh: Number(revenue.total || 0),
-    postedJournalCount: Number(revenue.journalCount || 0),
     testPrefixedBookings: syntheticBookings,
-    integrity,
-    recentBookings: recentBookings.map((row) => ({
-      reference: row.bookingNumber,
-      status: row.status,
-      paymentStatus: row.paymentStatus || "missing",
-      amountKsh: Number(row.totalAmount || 0),
-    })),
+    postedJournalCount: Number(revenue.journalCount || 0),
+    integrity: {
+      status: integrity.status,
+      issueCount: integrity.issueCount,
+      issueSummary: integrity.issues.map(({ code, count }) => ({ code, count })),
+      catalogueCounts: integrity.catalogueCounts,
+    },
   };
   });
 }

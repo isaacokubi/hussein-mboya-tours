@@ -57,7 +57,7 @@ test("subscription callback verifies tenant, amount and receipt before activatio
 
 test("M-Pesa callback route resolves tenant context and verifies integrity", () => {
   const routes = read("routes/mpesaRoutes.js");
-  assert.match(routes, /router\.post\("\/callback", resolveMpesaCallbackTenant, verifyMpesaCallbackIntegrity, subscriptionMpesaCallback\)/);
+  assert.match(routes, /router\.post\("\/callback", validateMpesaCallbackPayload, resolveMpesaCallbackTenant, verifyMpesaCallbackIntegrity, subscriptionMpesaCallback\)/);
 });
 
 test("SuperAdmin billing API is exposed through protected routes", () => {

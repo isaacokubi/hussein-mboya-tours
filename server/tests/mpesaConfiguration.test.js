@@ -26,6 +26,7 @@ test("Kenyan mobile numbers normalize consistently and invalid numbers are rejec
   await runWithTenant({ tenantId: "test-tenant" }, async () => {
     assert.equal(normalizePhoneNumber("0712 345 678"), "254712345678");
     assert.equal(normalizePhoneNumber("+254112345678"), "254112345678");
+    assert.equal(normalizePhoneNumber("254708374149"), "254708374149");
     assert.throws(() => normalizePhoneNumber("254201234567"), /Invalid Safaricom phone number/);
   });
 });
@@ -49,16 +50,16 @@ test("STK Push sends the Daraja payload and validates provider acceptance", asyn
     get: async () => ({ data: { access_token: "mock-token", expires_in: 3600 } }),
     post: async (url, payload, options) => { calls.push({ url, payload, options }); return { data: { ResponseCode: "0", CheckoutRequestID: "ws_CO_mock", MerchantRequestID: "merchant_mock" } }; },
   };
-  const result = await runWithTenant({ tenantId: "test-tenant" }, () => initiateStkPush({ phone: "0712345678", amount: 1200, bookingId: "booking-mock", config, client, companyName: "Test Tours" }));
+  const result = await runWithTenant({ tenantId: "test-tenant" }, () => initiateStkPush({ phone: "254708374149", amount: 1200, bookingId: "booking-mock", config, client, companyName: "Test Tours" }));
   assert.equal(result.CheckoutRequestID, "ws_CO_mock");
   const [{ url, payload, options }] = calls;
   assert.equal(url, getMpesaUrls("sandbox").stk);
   assert.equal(payload.BusinessShortCode, config.shortcode);
   assert.equal(payload.TransactionType, "CustomerPayBillOnline");
   assert.equal(payload.Amount, 1200);
-  assert.equal(payload.PartyA, "254712345678");
+  assert.equal(payload.PartyA, "254708374149");
   assert.equal(payload.PartyB, config.shortcode);
-  assert.equal(payload.PhoneNumber, "254712345678");
+  assert.equal(payload.PhoneNumber, "254708374149");
   assert.equal(payload.CallBackURL, config.callbackUrl);
   assert.equal(payload.AccountReference, "BOOKING-booking-mock");
   assert.match(payload.Password, /^[A-Za-z0-9+/]+=*$/);

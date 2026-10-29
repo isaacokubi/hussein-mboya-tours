@@ -1,4 +1,5 @@
 import express from "express";
+import rateLimit from "express-rate-limit";
 import securityService from "../services/securityService.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { superAdminOnly } from "../middleware/superAdminOnly.js";
@@ -11,6 +12,7 @@ import { listTenants, getTenant, createTenantWithAdmin, updateTenantStatus, dele
 import { approveTenantSubscription, switchTenantSubscription, listSubscriptionPayments } from "../controllers/tenantSubscriptionController.js";
 import { getPlatformBillingConfig, updatePlatformBillingConfig, getPlatformPlanFeatureCatalog } from "../controllers/platformBillingController.js";
 import { getSettings, updateSettings } from "../controllers/settingsController.js";
+import { getSuperAdminTenantMpesa, saveSuperAdminTenantMpesa, disableSuperAdminTenantMpesa, validateSuperAdminTenantMpesa } from "../controllers/superAdminMpesaGatewayController.js";
 
 const router = express.Router();
 router.use(protect, superAdminOnly);
@@ -21,6 +23,10 @@ router.get("/tenant-plans", getTenantPlans);
 router.get("/tenants", listTenants);
 router.post("/tenants", createTenantWithAdmin);
 router.get("/tenants/:id", getTenant);
+router.get("/tenants/:tenantId/mpesa", getSuperAdminTenantMpesa);
+router.put("/tenants/:tenantId/mpesa", saveSuperAdminTenantMpesa);
+router.post("/tenants/:tenantId/mpesa/validate", rateLimit({ windowMs: 15 * 60 * 1000, limit: 5, standardHeaders: true, legacyHeaders: false, message: { success: false, message: "Too many configuration checks. Try again later." } }), validateSuperAdminTenantMpesa);
+router.delete("/tenants/:tenantId/mpesa", disableSuperAdminTenantMpesa);
 router.patch("/tenants/:id/status", updateTenantStatus);
 router.post("/tenants/:id/subscription/activate", approveTenantSubscription);
 router.patch("/tenants/:id/subscription/plan", switchTenantSubscription);

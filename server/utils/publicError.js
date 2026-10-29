@@ -1,4 +1,5 @@
 export function publicErrorMessage(error, fallback = "Internal server error", statusOverride) {
+  if (error?.type === "entity.parse.failed") return "Invalid JSON request body.";
   if (process.env.NODE_ENV !== "production") return error?.message || fallback;
 
   const status = Number(statusOverride ?? error?.statusCode ?? error?.status ?? 500);

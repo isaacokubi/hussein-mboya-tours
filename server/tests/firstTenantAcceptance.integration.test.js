@@ -88,12 +88,12 @@ test("first tenant provisioning, tenant-admin access, public catalogue and cross
       }
       return fetch(`${origin}${url}`, { ...options, headers });
     };
-    const tenantInput = (suffix) => ({
+    const tenantInput = (suffix, plan = "starter") => ({
       companyName: `Acceptance Safaris ${suffix}`, slug: `acceptance-safaris-${suffix}`,
       companyEmail: `office-${suffix}@acceptance.invalid`, companyPhone: suffix === "a" ? "0712345002" : "0712345003",
       adminName: `Tenant Admin ${suffix.toUpperCase()}`, adminEmail: `admin-${suffix}@acceptance.invalid`,
       adminPhone: suffix === "a" ? "0712345004" : "0712345005", adminPassword: tenantAdminPassword,
-      plan: "starter", country: "Kenya", timezone: "Africa/Nairobi", currency: "KES",
+      plan, country: "Kenya", timezone: "Africa/Nairobi", currency: "KES",
     });
 
     const stagingPreflight = await call("/api/auth/login", {
@@ -154,7 +154,7 @@ test("first tenant provisioning, tenant-admin access, public catalogue and cross
     const publicCreate = await call("/api/superadmin/tenants", { method: "POST", body: JSON.stringify(tenantInput("public")) });
     assert.equal(publicCreate.status, 401, "anonymous visitors cannot provision a tenant");
 
-    const firstResponse = await call("/api/superadmin/tenants", { method: "POST", token: ownerToken, body: JSON.stringify(tenantInput("a")) });
+    const firstResponse = await call("/api/superadmin/tenants", { method: "POST", token: ownerToken, body: JSON.stringify(tenantInput("a", "professional")) });
     assert.equal(firstResponse.status, 201);
     const firstData = await firstResponse.json();
     firstTenant = firstData.tenant;
@@ -236,6 +236,17 @@ test("first tenant provisioning, tenant-admin access, public catalogue and cross
     const tour = (await tourResponse.json()).tour;
     assert.equal(String(tour.tenantId), String(firstTenant._id));
 
+    const operationsSummary = await call("/api/tourmanager/copilot/summary", { token: adminToken });
+    assert.equal(operationsSummary.status, 200, "tenant Admin can read its own Operations Copilot summary");
+    const operationsSummaryData = (await operationsSummary.json()).data;
+    assert.ok(operationsSummaryData.trips.some((trip) => trip.id === String(tour._id)));
+    const quoteDraft = await call("/api/tourmanager/copilot/quote-draft", {
+      method: "POST", token: adminToken,
+      body: JSON.stringify({ tourId: String(tour._id), travelerCount: 2 }),
+    });
+    assert.equal(quoteDraft.status, 200, "tenant Admin can calculate a non-persisted quote from its own tour");
+    assert.equal((await quoteDraft.json()).data.total, 50000);
+
     for (const invalidPackage of [
       { title: "", description: "Description", destination: "Coast", category: "Safari", duration: "2 days", basePrice: 100, agentPrice: 90 },
       { title: "Bad price", description: "Description", destination: "Coast", category: "Safari", duration: "2 days", basePrice: -1, agentPrice: 90 },
@@ -316,6 +327,8 @@ test("first tenant provisioning, tenant-admin access, public catalogue and cross
     assert.equal(process.env.MFA_DEV_MODE, "false");
     const customerToken = customerLoginData.token;
     assert.ok(customerToken);
+    const customerOperationsSummary = await call("/api/tourmanager/copilot/summary", { token: customerToken });
+    assert.equal(customerOperationsSummary.status, 403, "customer cannot read manager-only Operations Copilot data");
     const autoResolvedCustomerLogin = await call("/api/auth/login", {
       method: "POST",
       body: JSON.stringify({ email: "customer-a@acceptance.invalid", password: customerPassword }),
@@ -358,7 +371,7 @@ test("first tenant provisioning, tenant-admin access, public catalogue and cross
     const tenantAPayments = await call("/api/admin/payments", { token: adminToken });
     assert.ok((await tenantAPayments.json()).payments.some((item) => item._id === String(payment._id)));
 
-    const secondResponse = await call("/api/superadmin/tenants", { method: "POST", token: ownerToken, body: JSON.stringify(tenantInput("b")) });
+    const secondResponse = await call("/api/superadmin/tenants", { method: "POST", token: ownerToken, body: JSON.stringify(tenantInput("b", "professional")) });
     assert.equal(secondResponse.status, 201);
     secondTenant = (await secondResponse.json()).tenant;
 
@@ -417,6 +430,18 @@ test("first tenant provisioning, tenant-admin access, public catalogue and cross
     });
     assert.equal(secondAdminLogin.status, 200);
     const secondAdminToken = (await secondAdminLogin.json()).token;
+    const tenantBOperationsSummary = await call("/api/tourmanager/copilot/summary", { token: secondAdminToken });
+    assert.equal(tenantBOperationsSummary.status, 200);
+    const tenantBOperationsData = (await tenantBOperationsSummary.json()).data;
+    assert.equal(tenantBOperationsData.trips.some((trip) => trip.id === String(tour._id)), false,
+      "Tenant B Operations Copilot summary does not include Tenant A tours");
+    assert.equal(JSON.stringify(tenantBOperationsData).includes("customer-a@acceptance.invalid"), false,
+      "Tenant B Operations Copilot summary does not expose Tenant A booking contact data");
+    const crossTenantQuoteDraft = await call("/api/tourmanager/copilot/quote-draft", {
+      method: "POST", token: secondAdminToken,
+      body: JSON.stringify({ tourId: String(tour._id), travelerCount: 2 }),
+    });
+    assert.equal(crossTenantQuoteDraft.status, 404, "Tenant B cannot build a quote from Tenant A's tour");
     const crossTenantDestination = await call(`/api/admin/destinations/${destination._id}`, { token: secondAdminToken });
     assert.equal(crossTenantDestination.status, 404, "tenant B cannot read tenant A's destination");
     const crossTenantCustomerLogin = await call("/api/auth/login", {

@@ -1,6 +1,7 @@
 import { requireTenantId } from "../tenancy/context.js";
 import PaymentGatewayConfig, { decryptSecret } from "../models/PaymentGatewayConfig.js";
 import { mpesaConfig as legacyMpesaConfig, hasLegacyMpesaConfig, getMpesaUrls } from "../config/mpesa.js";
+import { getEnvironmentMpesaSettings, validateMpesaGatewaySettings } from "./mpesaGatewaySettings.js";
 
 export const isLegacyMpesaFallbackAllowed = (nodeEnv, setting) => (
   nodeEnv !== "production" && String(setting || "").toLowerCase() === "true"
@@ -18,13 +19,15 @@ export const getTenantMpesaConfig = async () => {
   const gateway = await PaymentGatewayConfig.findOne({ tenantId, provider: "MPESA", enabled: true }).lean();
 
   if (gateway) {
+    const environment = gateway.environment || "sandbox";
+    const environmentSettings = getEnvironmentMpesaSettings(gateway, environment);
     const config = {
-      consumerKey: decryptSecret(gateway.consumerKeyEncrypted),
-      consumerSecret: decryptSecret(gateway.consumerSecretEncrypted),
-      shortcode: gateway.shortcode,
-      passkey: decryptSecret(gateway.passkeyEncrypted),
-      callbackUrl: gateway.callbackUrl || legacyMpesaConfig.callbackUrl,
-      environment: gateway.environment || "sandbox",
+      consumerKey: decryptSecret(environmentSettings.consumerKeyEncrypted),
+      consumerSecret: decryptSecret(environmentSettings.consumerSecretEncrypted),
+      shortcode: environmentSettings.shortcode,
+      passkey: decryptSecret(environmentSettings.passkeyEncrypted),
+      callbackUrl: environmentSettings.callbackUrl,
+      environment,
       initiatorName: decryptSecret(gateway.initiatorNameEncrypted),
       securityCredential: decryptSecret(gateway.securityCredentialEncrypted),
       source: "tenant",
@@ -37,6 +40,8 @@ export const getTenantMpesaConfig = async () => {
     if (!["sandbox", "production"].includes(String(config.environment).toLowerCase())) {
       throw gatewayConfigurationError("M-Pesa environment must be sandbox or production.");
     }
+    const callbackError = validateMpesaGatewaySettings(config);
+    if (callbackError) throw gatewayConfigurationError(callbackError);
     return config;
   }
 
@@ -44,6 +49,8 @@ export const getTenantMpesaConfig = async () => {
     throw gatewayConfigurationError("M-Pesa is not configured for this tenant.");
   }
 
+  const legacyCallbackError = validateMpesaGatewaySettings(legacyMpesaConfig);
+  if (legacyCallbackError) throw gatewayConfigurationError(legacyCallbackError);
   return { ...legacyMpesaConfig, source: "legacy" };
 };
 

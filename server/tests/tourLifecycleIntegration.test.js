@@ -106,6 +106,20 @@ test("tour lifecycle atomically reserves dated capacity with booking creation an
       Math.round(paymentJournal.lines.reduce((sum, line) => sum + Number(line.credit || 0), 0) * 100),
     );
 
+    const journalCountBeforeReplay = await JournalEntry.countDocuments({
+      tenantId, sourceType: "payment", sourceId: completedPayment.payment._id,
+    });
+    const replayed = await completeBookingPayment({
+      payment: completedPayment.payment,
+      booking: completedPayment.booking,
+      paymentData: { amount: 1000, paymentMethod: "MPESA", mpesaReceiptNumber: "CI-LIFECYCLE-001" },
+    });
+    assert.equal(replayed.alreadyCompleted, true, "replayed completion must be recognized as idempotent");
+    assert.equal(replayed.booking.amountPaid, 1000, "replay must not credit the booking twice");
+    assert.equal(await JournalEntry.countDocuments({
+      tenantId, sourceType: "payment", sourceId: completedPayment.payment._id,
+    }), journalCountBeforeReplay, "replay must not duplicate the payment journal");
+
     const cancelled = await cancelTourAndBookings({
       tourId: tour._id,
       reason: "Lifecycle integration cancellation",

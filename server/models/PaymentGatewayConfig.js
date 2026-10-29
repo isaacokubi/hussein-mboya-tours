@@ -45,6 +45,16 @@ const paymentGatewayConfigSchema = new mongoose.Schema({
   webhookSecretEncrypted: { type: String, default: "" },
   initiatorNameEncrypted: { type: String, default: "" },
   securityCredentialEncrypted: { type: String, default: "" },
+  sandboxConsumerKeyEncrypted: { type: String, default: "" },
+  sandboxConsumerSecretEncrypted: { type: String, default: "" },
+  sandboxPasskeyEncrypted: { type: String, default: "" },
+  productionConsumerKeyEncrypted: { type: String, default: "" },
+  productionConsumerSecretEncrypted: { type: String, default: "" },
+  productionPasskeyEncrypted: { type: String, default: "" },
+  sandboxShortcode: { type: String, trim: true, default: "" },
+  productionShortcode: { type: String, trim: true, default: "" },
+  sandboxCallbackUrl: { type: String, trim: true, default: "" },
+  productionCallbackUrl: { type: String, trim: true, default: "" },
   updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
 }, { timestamps: true });
 
