@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
@@ -13,6 +13,10 @@ const toDateInput = (value) => {
 };
 
 const normalizeTour = (value) => value?.tour || value?.data || value || null;
+const normalizeDestinations = (value) => {
+  const candidates = [value, value?.data, value?.destinations, value?.data?.destinations, value?.data?.data];
+  return candidates.find(Array.isArray) || [];
+};
 
 export default function EditTour() {
   const { id } = useParams();
@@ -21,6 +25,7 @@ export default function EditTour() {
   const queryClient = useQueryClient();
   const isAdmin = useMemo(() => location.pathname.startsWith("/admin/"), [location.pathname]);
   const [form, setForm] = useState(null);
+  const saveInFlight = useRef(false);
 
   const { data: tourData, isLoading: tourLoading, isError: tourError } = useQuery({
     queryKey: [isAdmin ? "admin-tour" : "tour", id],
@@ -28,10 +33,11 @@ export default function EditTour() {
     enabled: Boolean(id),
   });
 
-  const { data: destinations = [] } = useQuery({
+  const { data: destinationsData, isLoading: destinationsLoading, isError: destinationsError } = useQuery({
     queryKey: ["destinations"],
     queryFn: getDestinations,
   });
+  const destinations = normalizeDestinations(destinationsData);
 
   const { data: guides = [] } = useQuery({ queryKey: ["tour-assignment-guides"], queryFn: getGuides, enabled: !isAdmin });
   const { data: drivers = [] } = useQuery({ queryKey: ["tour-assignment-drivers"], queryFn: getDrivers, enabled: !isAdmin });
@@ -96,14 +102,19 @@ export default function EditTour() {
     },
     onSuccess: () => {
       toast.success("Tour updated successfully");
-      queryClient.invalidateQueries({ queryKey: ["admin-tours"] });
+      queryClient.invalidateQueries({ queryKey: ["adminTours"] });
+      queryClient.invalidateQueries({ queryKey: ["tours"] });
       queryClient.invalidateQueries({ queryKey: ["manager-tours"] });
+      queryClient.invalidateQueries({ queryKey: ["tour-manager-tours"] });
       queryClient.invalidateQueries({ queryKey: ["tour", id] });
       queryClient.invalidateQueries({ queryKey: ["admin-tour", id] });
-      navigate(isAdmin ? "/admin/dashboard" : "/tour-manager/tours", { replace: true });
+      navigate(isAdmin ? "/admin/tours" : "/tour-manager/tours", { replace: true });
     },
     onError: (error) => {
       toast.error(error?.response?.data?.message || "Failed to update tour");
+    },
+    onSettled: () => {
+      saveInFlight.current = false;
     },
   });
 
@@ -114,7 +125,7 @@ export default function EditTour() {
 
   const submitHandler = (event) => {
     event.preventDefault();
-    if (!form) return;
+    if (!form || saveInFlight.current || saveMutation.isPending) return;
     if (!form.title.trim() || !form.description.trim() || !form.destination || !form.country.trim() || !form.location.trim() || !form.date) {
       toast.error("Title, description, destination, country, location and tour date are required.");
       return;
@@ -125,11 +136,23 @@ export default function EditTour() {
       return;
     }
     const payload = { ...form, duration };
+    saveInFlight.current = true;
     saveMutation.mutate(payload);
   };
 
-  if (tourLoading || !form) return <div className="p-10 text-center">Loading tour...</div>;
   if (tourError) return <div className="p-6 text-red-600">Failed to load the tour.</div>;
+  if (tourLoading || !form) return <div className="p-10 text-center" role="status">Loading tour...</div>;
+
+  const destinationId = typeof form.destination === "object" ? form.destination?._id : form.destination;
+  const currentDestination = tourData?.destination && typeof tourData.destination === "object"
+    ? tourData.destination
+    : destinationId ? { _id: destinationId, name: "Current destination" } : null;
+  const destinationOptions = currentDestination && !destinations.some((item) => String(item?._id) === String(destinationId))
+    ? [currentDestination, ...destinations]
+    : destinations;
+  const returnPath = location.state?.returnTo === "/admin/tours"
+    ? "/admin/tours"
+    : isAdmin ? "/admin/tours" : "/tour-manager/tours";
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -139,6 +162,9 @@ export default function EditTour() {
           <p className="text-sm text-gray-500">{isAdmin ? "Edit this tenant tour from the admin control center." : "Update tour operations and assignments."}</p>
         </div>
 
+        {saveMutation.isError && <div role="alert" className="mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-800">{saveMutation.error?.response?.data?.message || "Failed to update tour. Your changes are still here; please try again."}</div>}
+        {destinationsError && <div role="alert" className="mb-5 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">Destination options could not be refreshed. The tour's saved destination is preserved; retry after the destination service is available.</div>}
+
         <form onSubmit={submitHandler} className="grid gap-5 md:grid-cols-2">
           <label className="space-y-1"><span className="text-sm font-medium">Title</span><input name="title" value={form.title} onChange={handleChange} className="w-full rounded-lg border p-3" required /></label>
           <label className="space-y-1"><span className="text-sm font-medium">Category</span><input name="category" value={form.category} onChange={handleChange} className="w-full rounded-lg border p-3" /></label>
@@ -146,8 +172,9 @@ export default function EditTour() {
           <label className="space-y-1"><span className="text-sm font-medium">Destination</span>
             <select name="destination" value={form.destination} onChange={handleChange} className="w-full rounded-lg border p-3" required>
               <option value="">Select destination</option>
-              {(Array.isArray(destinations) ? destinations : destinations?.data || destinations?.destinations || []).map((item) => <option key={item._id} value={item._id}>{item.name}</option>)}
+              {destinationOptions.map((item) => <option key={item._id} value={item._id}>{item.name || item.title || "Current destination"}</option>)}
             </select>
+            {destinationsLoading && <span className="text-xs text-gray-500">Loading destinations…</span>}
           </label>
           <label className="space-y-1"><span className="text-sm font-medium">Country</span><input name="country" value={form.country} onChange={handleChange} className="w-full rounded-lg border p-3" required /></label>
           <label className="space-y-1"><span className="text-sm font-medium">Location</span><input name="location" value={form.location} onChange={handleChange} className="w-full rounded-lg border p-3" required /></label>
@@ -181,9 +208,12 @@ export default function EditTour() {
             </>
           )}
 
-          <button type="submit" disabled={saveMutation.isPending} className="rounded-lg bg-orange-600 py-3 font-semibold text-white hover:bg-orange-700 disabled:opacity-50 md:col-span-2">
-            {saveMutation.isPending ? "Saving..." : "Update Tour"}
-          </button>
+          <div className="flex flex-col-reverse gap-3 md:col-span-2 sm:flex-row sm:justify-end">
+            <button type="button" disabled={saveMutation.isPending} onClick={() => navigate(returnPath)} className="rounded-lg border border-slate-300 px-5 py-3 font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">Cancel</button>
+            <button type="submit" disabled={saveMutation.isPending} className="rounded-lg bg-orange-600 px-5 py-3 font-semibold text-white hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-50">
+              {saveMutation.isPending ? "Saving..." : "Update Tour"}
+            </button>
+          </div>
         </form>
       </div>
     </div>

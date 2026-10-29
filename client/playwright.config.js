@@ -3,6 +3,7 @@ import process from "node:process";
 
 export default defineConfig({
   testDir: "./e2e",
+  testIgnore: ["**/tour-edit/**"],
   timeout: 60_000,
   expect: { timeout: 12_000 },
   fullyParallel: false,

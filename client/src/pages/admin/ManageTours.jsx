@@ -62,7 +62,7 @@ export default function ManageTours() {
             onChange={(e) => setSearch(e.target.value)}
             className="w-72 rounded-lg border px-4 py-2"
           />
-          <Link to="/tour-manager/create-tour" state={{ returnTo: "/admin/tours" }} className="rounded-lg bg-green-600 px-6 py-3 text-white hover:bg-green-700">
+          <Link to="/admin/create-tour" state={{ returnTo: "/admin/tours" }} className="rounded-lg bg-green-600 px-6 py-3 text-white hover:bg-green-700">
             Add Tour
           </Link>
         </div>
@@ -99,7 +99,7 @@ export default function ManageTours() {
                   <span className="mt-2 inline-block rounded-full bg-green-100 px-3 py-1 text-sm text-green-700">{tour.status || "active"}</span>
 
                   <div className="mt-5 flex gap-3">
-                    <Link to={`/tour-manager/edit-tour/${tour._id}`} className="flex-1 rounded bg-blue-600 px-4 py-2 text-center text-white">
+                    <Link to={`/admin/tours/${tour._id}/edit`} state={{ returnTo: "/admin/tours" }} className="flex-1 rounded bg-blue-600 px-4 py-2 text-center text-white">
                       Edit
                     </Link>
                     <button
