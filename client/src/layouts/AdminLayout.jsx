@@ -22,6 +22,7 @@ const MENU = [
   ["Hospitality Operations", "/admin/hospitality/reservation-operations", BriefcaseBusiness, "booking.manage", "hospitality_operations"],
   ["Hospitality Commercial", "/admin/hospitality/commercial", BadgeDollarSign, "booking.manage", "hospitality_commercial"],
   ["Payments", "/admin/payments", CreditCard, "payment.manage", "payments"],
+  ["M-Pesa Configuration", "/admin/payment-gateways", Smartphone, "settings.manage"],
   ["Agents", "/admin/agents", Handshake, "user.manage", "agents"],
   ["Commissions", "/admin/commissions", Wallet, "finance.view", "commissions"],
   ["Customers CRM", "/admin/customers", Users, "manage_customers", "crm"],
@@ -52,7 +53,7 @@ const MENU = [
 
 const GROUPS = [
   ["Operations", ["Dashboard", "Users", "Staff", "Destinations", "Tours", "Bookings & Refunds", "Custom Tour Requests", "Operations & Procurement", "Hotels", "Airport Transfers", "Hospitality Reservations", "Hospitality Operations", "Hospitality Commercial", "Payments", "Agents", "Commissions", "Customers CRM", "Fleet Management", "Coupons", "Reviews", "Gallery"]],
-  ["Finance & Insight", ["Reports", "Analytics", "Accounting & Finance", "M-Pesa Transactions", "Finance Reports", "Management Accounting", "Complete Accounting", "Accounting Control Reports", "Accounting Subledgers", "Withholding Tax", "Reconciliation", "Compliance & eTIMS", "AI Tools"]],
+  ["Finance & Insight", ["Reports", "Analytics", "Accounting & Finance", "M-Pesa Transactions", "M-Pesa Configuration", "Finance Reports", "Management Accounting", "Complete Accounting", "Accounting Control Reports", "Accounting Subledgers", "Withholding Tax", "Reconciliation", "Compliance & eTIMS", "AI Tools"]],
   ["Governance", ["Notifications", "Roles & Permissions", "System Health", "Billing & Subscription", "Developer Platform", "Settings"]],
 ];
 

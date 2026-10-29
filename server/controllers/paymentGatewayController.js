@@ -110,9 +110,14 @@ export const getGatewayConfig = async (req, res, next) => {
     if (!ALLOWED_PROVIDERS.includes(provider)) return res.status(400).json({ success: false, message: "Unsupported payment provider." });
     const config = await PaymentGatewayConfig.findOne({ tenantId, provider }).lean();
     if (!config) return res.json({ success: true, data: { provider, configured: false, enabled: false } });
-    const environmentSettings = provider === "MPESA" ? getEnvironmentMpesaSettings(config, config.environment || "sandbox") : {};
+    const requestedEnvironment = String(req.query?.environment || "").toLowerCase();
+    if (provider === "MPESA" && requestedEnvironment && !["sandbox", "production"].includes(requestedEnvironment)) {
+      return res.status(400).json({ success: false, message: "Environment must be sandbox or production." });
+    }
+    const environment = provider === "MPESA" ? requestedEnvironment || config.environment || "sandbox" : config.environment;
+    const environmentSettings = provider === "MPESA" ? getEnvironmentMpesaSettings(config, environment) : {};
     return res.json({ success: true, data: {
-      id: config._id, provider: config.provider, environment: config.environment, enabled: config.enabled,
+      id: config._id, provider: config.provider, environment, activeEnvironment: config.environment || "sandbox", enabled: provider === "MPESA" ? Boolean(config.enabled && config.environment === environment) : config.enabled,
       accountName: config.accountName, shortcode: provider === "MPESA" ? environmentSettings.shortcode : config.shortcode, publicKey: config.publicKey, merchantId: config.merchantId,
       callbackUrl: provider === "MPESA" ? environmentSettings.callbackUrl : config.callbackUrl,
       configured: provider === "MPESA"
