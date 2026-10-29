@@ -71,7 +71,7 @@ export default function AdminPayments() {
   };
 
   const statusMutation = useMutation({
-    mutationFn: ({ id, status }) => updatePaymentStatus(id, { status }),
+    mutationFn: ({ id, status, payload = {} }) => updatePaymentStatus(id, { status, ...payload }),
     onSuccess: () => { invalidate(); toast.success("Payment status updated."); },
     onError: (error) => toast.error(error?.response?.data?.message || "Unable to update payment status."),
   });
@@ -143,6 +143,7 @@ export default function AdminPayments() {
               {filteredPayments.map((payment) => {
                 const status = statusOf(payment);
                 const canRefund = !["refunded"].includes(status) && !["processing", "completed"].includes(clean(payment.refundStatus).toLowerCase());
+                const canConfirmManually = status === "pending" && ["BANK", "CASH"].includes(clean(payment.provider).toUpperCase());
                 return <tr key={payment._id} className="transition hover:bg-slate-50/80">
                   <td className="px-5 py-4 font-semibold text-slate-900">{customerOf(payment)}</td>
                   <td className="px-5 py-4 font-mono text-xs text-slate-600">{bookingOf(payment)}</td>
@@ -150,7 +151,7 @@ export default function AdminPayments() {
                   <td className="px-5 py-4 font-mono text-xs text-slate-600">{receiptOf(payment)}</td>
                   <td className="px-5 py-4 text-slate-600">{phoneOf(payment)}</td>
                   <td className="px-5 py-4"><select aria-label={`Payment status for ${customerOf(payment)}`} value={status} onChange={(event) => statusMutation.mutate({ id: payment._id, status: event.target.value })} className={`rounded-full border-0 px-3 py-1.5 text-xs font-bold capitalize ring-1 outline-none ${statusStyles[status]}`} disabled={statusMutation.isPending && statusMutation.variables?.id === payment._id}>{PAYMENT_STATUSES.map((option) => <option key={option} value={option} disabled={option === "completed" || option === "refunded"}>{labelStatus(option)}{option === "completed" ? " (provider verified)" : option === "refunded" ? " (refund workflow)" : ""}</option>)}</select></td>
-                  <td className="px-5 py-4"><div className="flex justify-end gap-2"><button type="button" onClick={() => setSelectedPayment(payment)} className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100"><Eye className="h-3.5 w-3.5" />View</button><button type="button" disabled={!canRefund || refundMutation.isPending} onClick={() => { if (window.confirm(`Start a refund for ${customerOf(payment)} — ${money(payment.amount)}?`)) refundMutation.mutate(payment._id); }} className="inline-flex items-center gap-1.5 rounded-lg bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-40"><RotateCcw className="h-3.5 w-3.5" />{refundingPaymentId === payment._id ? "Refunding…" : "Refund"}</button></div></td>
+                  <td className="px-5 py-4"><div className="flex justify-end gap-2">{canConfirmManually && <button type="button" disabled={statusMutation.isPending} onClick={() => { if (!window.confirm(`Confirm that ${money(payment.amount)} was actually received for ${bookingOf(payment)}?`)) return; const confirmationReference = window.prompt("Receipt or bank transaction reference (optional):", clean(payment.transactionReference)); if (confirmationReference === null) return; statusMutation.mutate({ id: payment._id, status: "completed", payload: { confirmationReference, confirmationNotes: "Manually confirmed by authorized tenant staff." } }); }} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-100 disabled:opacity-50">Confirm received</button>}<button type="button" onClick={() => setSelectedPayment(payment)} className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100"><Eye className="h-3.5 w-3.5" />View</button><button type="button" disabled={!canRefund || refundMutation.isPending} onClick={() => { if (window.confirm(`Start a refund for ${customerOf(payment)} — ${money(payment.amount)}?`)) refundMutation.mutate(payment._id); }} className="inline-flex items-center gap-1.5 rounded-lg bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-40"><RotateCcw className="h-3.5 w-3.5" />{refundingPaymentId === payment._id ? "Refunding…" : "Refund"}</button></div></td>
                 </tr>;
               })}
               {!filteredPayments.length && <tr><td colSpan="7" className="px-6 py-16 text-center"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400"><CreditCard className="h-6 w-6" /></div><h3 className="mt-3 font-bold text-slate-900">No payments found</h3><p className="mt-1 text-sm text-slate-500">Try changing the search or status filter.</p></td></tr>}

@@ -1,5 +1,6 @@
 import { resolveTenant } from "../middleware/tenantMiddleware.js";
 import express from "express";
+import rateLimit from "express-rate-limit";
 import { mpesaRefundResult, mpesaRefundTimeout } from "../controllers/mpesaRefundController.js";
 import { stkPush, checkCheckoutStatus, verifyBookingPayment } from "../controllers/mpesaController.js";
 import { queryMpesaPayment } from "../controllers/mpesaStatusController.js";
@@ -11,9 +12,10 @@ import { resolveMpesaRefundTenant } from "../middleware/resolveMpesaRefundTenant
 import { validateMpesaCallbackPayload, verifyMpesaCallbackIntegrity } from "../middleware/mpesaCallbackIntegrity.js";
 
 const router = express.Router();
+const paymentInitiationLimit = rateLimit({ windowMs: 15 * 60 * 1000, limit: 10, standardHeaders: true, legacyHeaders: false });
 router.use(resolveTenant);
-router.post("/stkpush", protect, prepareBookingForMpesa, stkPush);
-router.post("/mpesa", protect, prepareBookingForMpesa, stkPush);
+router.post("/stkpush", protect, paymentInitiationLimit, prepareBookingForMpesa, stkPush);
+router.post("/mpesa", protect, paymentInitiationLimit, prepareBookingForMpesa, stkPush);
 router.post("/callback", validateMpesaCallbackPayload, resolveMpesaCallbackTenant, verifyMpesaCallbackIntegrity, subscriptionMpesaCallback);
 router.get("/status/:checkoutRequestId", protect, checkCheckoutStatus);
 router.get("/query/:checkoutRequestId", protect, queryMpesaPayment);

@@ -1,5 +1,11 @@
 # Global Tours
 
+## Tenant payment configuration center
+
+Tenant Admins open **Admin Control Center → Finance & Insight → M-Pesa Configuration** for tenant-specific M-Pesa, bank transfer, Stripe card, and cash settings. Bank and cash payments remain pending until authorized staff confirm receipt in Payment Management. Stripe credentials remain deployment-managed. PayPal is intentionally unavailable until server-side order, capture, and verified webhook processing is implemented. See [Tenant Payment Configuration](docs/TENANT_PAYMENT_CONFIGURATION.md) for fields, safe validation behavior, security boundaries, and verification limits.
+
+The 2026-10-29 configuration changes passed focused tenant payment contract tests (3/3), the backend suite (286 tests: 281 passed, 0 failed, 5 skipped), `npm run check:all`, frontend lint, and frontend production build. The five skips are opt-in database/integration cases. These checks do not prove external Stripe or Daraja connectivity or a completed live payment.
+
 ## 2026-10-29 demo credential and readiness update
 
 The configured backend connection was verified against Atlas `husseindb` on the expected cluster. A compressed local database archive was created before the credential update; its ignored path is `server/backups/husseindb-before-demo-password-reset-2026-10-29.archive.gz`.

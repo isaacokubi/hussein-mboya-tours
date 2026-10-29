@@ -4,12 +4,14 @@ import Organization from "../models/Organization.js";
 import User from "../models/User.js";
 import { getTenantContext, requireTenantId, isTenantBypassed } from "../tenancy/context.js";
 import { COMPANY_DEFAULTS } from "../config/companyDefaults.js";
+import PaymentGatewayConfig from "../models/PaymentGatewayConfig.js";
+import { getEnvironmentMpesaSettings } from "../services/mpesaGatewaySettings.js";
 
 const DEFAULTS = { ...COMPANY_DEFAULTS, primaryColor: "#047857", secondaryColor: "#064e3b", accentColor: "#10b981", backgroundColor: "#f8fafc", surfaceColor: "#ffffff", textColor: "#0f172a", fontFamily: "Inter", borderRadius: "xl", buttonStyle: "rounded", heroOverlayOpacity: 50, homepageSections: { stats: true, tours: true, packages: true, destinations: true, experiences: true, services: true, testimonials: true, gallery: true, whyChooseUs: true, newsletter: true } };
 const COLOR_FIELDS = ["primaryColor", "secondaryColor", "accentColor", "backgroundColor", "surfaceColor", "textColor"];
 const NUMERIC_FIELDS = ["taxRate", "bookingDepositPercentage", "defaultCommissionRate", "heroOverlayOpacity"];
-const BOOLEAN_FIELDS = ["bookingNotifications", "paymentNotifications", "maintenanceMode", "allowRegistrations", "allowAgentRegistrations", "requireEmailVerification", "requirePhoneVerification", "enableMpesa", "enableStripe", "enablePaypal", "enableBankTransfer"];
-const ALLOWED = ["companyName", "companyLogo", "websiteUrl", "supportEmail", "supportPhone", "address", "city", "country", "currency", "currencySymbol", "timezone", "language", "taxRate", "bookingDepositPercentage", "defaultCommissionRate", "maintenanceMode", "allowRegistrations", "allowAgentRegistrations", "requireEmailVerification", "requirePhoneVerification", "enableMpesa", "enableStripe", "enablePaypal", "enableBankTransfer", "bankName", "bankAccountName", "bankAccountNumber", "bankBranch", "bankSwiftCode", "emailFromName", "emailFromAddress", "facebook", "instagram", "twitter", "youtube", "seoTitle", "seoDescription", "seoKeywords", "bookingNotifications", "paymentNotifications", ...COLOR_FIELDS, "fontFamily", "borderRadius", "buttonStyle", "heroOverlayOpacity", "homepageSections"];
+const BOOLEAN_FIELDS = ["bookingNotifications", "paymentNotifications", "maintenanceMode", "allowRegistrations", "allowAgentRegistrations", "requireEmailVerification", "requirePhoneVerification", "enableMpesa", "enableStripe", "enablePaypal", "enableBankTransfer", "enableCash", "cashReceiptRequired"];
+const ALLOWED = ["companyName", "companyLogo", "websiteUrl", "supportEmail", "supportPhone", "address", "city", "country", "currency", "currencySymbol", "timezone", "language", "taxRate", "bookingDepositPercentage", "defaultCommissionRate", "maintenanceMode", "allowRegistrations", "allowAgentRegistrations", "requireEmailVerification", "requirePhoneVerification", "enableMpesa", "enableStripe", "enablePaypal", "enableBankTransfer", "enableCash", "cashReceiptRequired", "bankName", "bankAccountName", "bankAccountNumber", "bankBranch", "bankSwiftCode", "bankInstructions", "bankReferenceInstructions", "cashInstructions", "cashCollectionLocation", "emailFromName", "emailFromAddress", "facebook", "instagram", "twitter", "youtube", "seoTitle", "seoDescription", "seoKeywords", "bookingNotifications", "paymentNotifications", ...COLOR_FIELDS, "fontFamily", "borderRadius", "buttonStyle", "heroOverlayOpacity", "homepageSections"];
 const isColor = (value) => /^#[0-9a-fA-F]{6}$/.test(String(value || ""));
 
 const normalizeUpdates = (body = {}) => {
@@ -34,6 +36,16 @@ const validateUpdates = (updates, existing = {}) => {
   const companyName = String(updates.companyName ?? existing.companyName ?? DEFAULTS.companyName).trim();
   if (!companyName) return "Company name cannot be empty.";
   if (updates.supportEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(updates.supportEmail)) return "Enter a valid support email.";
+  const bankEnabled = updates.enableBankTransfer ?? existing.enableBankTransfer;
+  if (bankEnabled === true && ["enableBankTransfer", "bankName", "bankAccountName", "bankAccountNumber", "bankBranch", "bankSwiftCode"].some((key) => updates[key] !== undefined)) {
+    const values = { ...existing, ...updates };
+    if (!String(values.bankName || "").trim() || !String(values.bankAccountName || "").trim() || !/^[A-Za-z0-9][A-Za-z0-9 -]{4,33}$/.test(String(values.bankAccountNumber || "").trim()) || !String(values.bankInstructions || "").trim()) return "Bank transfer requires bank name, beneficiary name, valid account number and customer instructions.";
+    if (values.bankSwiftCode && !/^[A-Za-z0-9]{8}(?:[A-Za-z0-9]{3})?$/.test(String(values.bankSwiftCode).trim())) return "Enter a valid 8- or 11-character SWIFT/BIC code.";
+  }
+  if ((updates.enableCash ?? existing.enableCash) === true && ["enableCash", "cashInstructions", "cashCollectionLocation"].some((key) => updates[key] !== undefined)) {
+    const values = { ...existing, ...updates };
+    if (!String(values.cashCollectionLocation || "").trim() || !String(values.cashInstructions || "").trim()) return "Cash payments require a collection location and customer instructions.";
+  }
   return null;
 };
 
@@ -66,7 +78,16 @@ export const updateSettings = async (req, res, next) => {
 
 export const getPublicSettings = async (req, res, next) => {
   try {
-    requireTenantId(); const { tenantId } = getTenantContext(); const tenant = await Organization.findById(tenantId).lean(); if (!tenant) return res.status(404).json({ success: false, message: "Tenant not resolved" }); let tenantSettings = await SystemSetting.findOne({ tenantId, key: "default" }).lean(); if (!tenantSettings) tenantSettings = await getOrCreateSettings({ tenantId, key: "default" }); const overrides = tenant.settings && typeof tenant.settings === "object" ? tenant.settings : {};
+    requireTenantId(); const { tenantId } = getTenantContext(); const tenant = await Organization.findById(tenantId).lean(); if (!tenant) return res.status(404).json({ success: false, message: "Tenant not resolved" }); let tenantSettings = await SystemSetting.findOne({ tenantId, key: "default" }).lean(); if (!tenantSettings) tenantSettings = await getOrCreateSettings({ tenantId, key: "default" });
+    const mpesaGateway = await PaymentGatewayConfig.findOne({ tenantId, provider: "MPESA" }).lean();
+    const mpesaEnvironment = mpesaGateway?.environment || "sandbox";
+    const mpesaCredentials = getEnvironmentMpesaSettings(mpesaGateway || {}, mpesaEnvironment);
+    const mpesaReady = Boolean(mpesaGateway?.enabled && mpesaCredentials.consumerKeyEncrypted && mpesaCredentials.consumerSecretEncrypted && mpesaCredentials.passkeyEncrypted && mpesaCredentials.shortcode && mpesaCredentials.callbackUrl);
+    const bankName = tenantSettings?.bankName || "";
+    const bankAccountName = tenantSettings?.bankAccountName || "";
+    const bankAccountNumber = tenantSettings?.bankAccountNumber || "";
+    const bankReady = Boolean(bankName.trim() && bankAccountName.trim() && /^[A-Za-z0-9][A-Za-z0-9 -]{4,33}$/.test(bankAccountNumber.trim()) && String(tenantSettings?.bankInstructions || "").trim());
+    const cashReady = Boolean(String(tenantSettings?.cashCollectionLocation || "").trim() && String(tenantSettings?.cashInstructions || "").trim());
     const settings = {
       companyName: tenant.name || tenantSettings?.companyName || DEFAULTS.companyName,
       supportEmail: tenant.supportEmail || tenantSettings?.supportEmail || "", supportPhone: tenant.supportPhone || tenantSettings?.supportPhone || "", websiteUrl: tenant.websiteUrl || tenantSettings?.websiteUrl || "", companyLogo: tenant.logoUrl || tenantSettings?.companyLogo || "",
@@ -75,9 +96,9 @@ export const getPublicSettings = async (req, res, next) => {
       address: tenant.address || tenantSettings?.address || "", city: tenantSettings?.city || tenant.city || "", country: tenant.country || tenantSettings?.country || "Kenya", currency: tenant.currency || tenantSettings?.currency || "KES", currencySymbol: tenantSettings?.currencySymbol || "KSh", timezone: tenant.timezone || tenantSettings?.timezone || "Africa/Nairobi", language: tenantSettings?.language || "en",
       facebook: tenantSettings?.facebook || "", instagram: tenantSettings?.instagram || "", twitter: tenantSettings?.twitter || "", youtube: tenantSettings?.youtube || "", seoTitle: tenant.name || tenantSettings?.seoTitle || DEFAULTS.companyName, seoDescription: tenantSettings?.seoDescription || "", seoKeywords: tenantSettings?.seoKeywords || [],
       maintenanceMode: Boolean(tenantSettings?.maintenanceMode), allowRegistrations: tenantSettings?.allowRegistrations !== false, allowAgentRegistrations: tenantSettings?.allowAgentRegistrations !== false, requireEmailVerification: tenantSettings?.requireEmailVerification !== false, requirePhoneVerification: Boolean(tenantSettings?.requirePhoneVerification),
-      enableMpesa: overrides.enableMpesa ?? tenantSettings?.enableMpesa ?? tenant.features?.mpesa !== false, enableStripe: overrides.enableStripe ?? tenantSettings?.enableStripe ?? tenant.features?.stripe === true, enablePaypal: overrides.enablePaypal ?? tenantSettings?.enablePaypal ?? false, enableBankTransfer: overrides.enableBankTransfer ?? tenantSettings?.enableBankTransfer ?? true,
+      enableMpesa: Boolean(tenantSettings?.enableMpesa !== false && tenant.features?.mpesa !== false && mpesaReady), enableStripe: Boolean(tenantSettings?.enableStripe === true && process.env.STRIPE_SECRET_KEY), stripeConfigured: Boolean(process.env.STRIPE_SECRET_KEY), enablePaypal: false, paypalAvailable: false, enableBankTransfer: Boolean(tenantSettings?.enableBankTransfer === true && bankReady), enableCash: Boolean(tenantSettings?.enableCash === true && cashReady),
       bookingNotifications: tenantSettings?.bookingNotifications !== false, paymentNotifications: tenantSettings?.paymentNotifications !== false, taxRate: Number(tenantSettings?.taxRate || 0), bookingDepositPercentage: Number(tenantSettings?.bookingDepositPercentage ?? 30), defaultCommissionRate: Number(tenantSettings?.defaultCommissionRate ?? 10),
-      bankName: tenantSettings?.bankName || "", bankAccountName: tenantSettings?.bankAccountName || "", bankAccountNumber: tenantSettings?.bankAccountNumber || "", bankBranch: tenantSettings?.bankBranch || "", bankSwiftCode: tenantSettings?.bankSwiftCode || "",
+      bankName, bankAccountName, bankAccountNumber, bankBranch: tenantSettings?.bankBranch || "", bankSwiftCode: tenantSettings?.bankSwiftCode || "", bankInstructions: tenantSettings?.bankInstructions || "", bankReferenceInstructions: tenantSettings?.bankReferenceInstructions || "", cashInstructions: tenantSettings?.cashInstructions || "", cashCollectionLocation: tenantSettings?.cashCollectionLocation || "", cashReceiptRequired: Boolean(tenantSettings?.cashReceiptRequired),
       primaryColor: tenantSettings?.primaryColor || tenant.brandColors?.primary || DEFAULTS.primaryColor, secondaryColor: tenantSettings?.secondaryColor || tenant.brandColors?.secondary || DEFAULTS.secondaryColor, accentColor: tenantSettings?.accentColor || tenant.brandColors?.accent || DEFAULTS.accentColor, backgroundColor: tenantSettings?.backgroundColor || DEFAULTS.backgroundColor, surfaceColor: tenantSettings?.surfaceColor || DEFAULTS.surfaceColor, textColor: tenantSettings?.textColor || DEFAULTS.textColor,
       fontFamily: tenantSettings?.fontFamily || DEFAULTS.fontFamily, borderRadius: tenantSettings?.borderRadius || DEFAULTS.borderRadius, buttonStyle: tenantSettings?.buttonStyle || DEFAULTS.buttonStyle, heroOverlayOpacity: Number(tenantSettings?.heroOverlayOpacity ?? DEFAULTS.heroOverlayOpacity), homepageSections: { ...DEFAULTS.homepageSections, ...(tenantSettings?.homepageSections || {}) },
     };

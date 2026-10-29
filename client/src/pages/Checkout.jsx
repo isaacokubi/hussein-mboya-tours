@@ -6,7 +6,8 @@ import { createBooking, getBookingById, updateBookingTravelDate } from "../api/b
 import { getMyCustomTourRequests } from "../api/customTourApi";
 import { initiateMpesa, checkPaymentStatus } from "../api/mpesaApi";
 import { getTourById } from "../api/tourApi";
-import { getSettings } from "../api/superAdminApi";
+import { getPublicSettings } from "../api/settingsApi";
+import { createBankTransferPayment, createCashPayment, createStripeCheckout } from "../api/checkoutPaymentsApi";
 import { useAuth } from "../context/AuthContext";
 import { getCustomTourDateRange, getTourDateRange, isDateWithinRange, toDateInputValue } from "../lib/dateRange";
 
@@ -53,6 +54,7 @@ export default function Checkout() {
   const [specialRequests, setSpecialRequests] = useState("");
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentState, setPaymentState] = useState(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("MPESA");
 
   const { data: bookingResponse, isLoading: bookingLoading } = useQuery({
     queryKey: ["checkout-booking", id],
@@ -66,7 +68,7 @@ export default function Checkout() {
   });
   const { data: settingsResponse } = useQuery({
     queryKey: ["public-system-settings"],
-    queryFn: getSettings,
+    queryFn: getPublicSettings,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
@@ -74,6 +76,15 @@ export default function Checkout() {
   const booking = useMemo(() => unwrapBooking(bookingResponse), [bookingResponse]);
   const tour = useMemo(() => unwrapTour(tourResponse), [tourResponse]);
   const settings = useMemo(() => unwrapSettings(settingsResponse), [settingsResponse]);
+  const availablePaymentMethods = useMemo(() => [
+    settings?.enableMpesa === true && { id: "MPESA", label: "M-Pesa", detail: "Pay securely using an STK Push prompt." },
+    settings?.enableStripe === true && { id: "CARD", label: "Card", detail: "Pay by card through secure Stripe Checkout." },
+    settings?.enableBankTransfer === true && { id: "BANK_TRANSFER", label: "Bank transfer", detail: "Transfer to the tenant account; staff will verify receipt." },
+    settings?.enableCash === true && { id: "CASH", label: "Cash", detail: "Pay at the listed collection point. Staff confirmation is required." },
+  ].filter(Boolean), [settings]);
+  useEffect(() => {
+    if (!availablePaymentMethods.some(({ id: method }) => method === selectedPaymentMethod) && availablePaymentMethods[0]) setSelectedPaymentMethod(availablePaymentMethods[0].id);
+  }, [availablePaymentMethods, selectedPaymentMethod]);
   const bookingDepositRate = Math.min(100, Math.max(0, Number(settings?.bookingDepositPercentage ?? settings?.defaultBookingDepositPercentage ?? 0)));
 
   const customRequestId = typeof booking?.customTourRequest === "string" ? booking.customTourRequest : booking?.customTourRequest?._id || "";
@@ -173,6 +184,34 @@ export default function Checkout() {
     onError: (error) => toast.error(error?.response?.data?.message || error?.message || "Unable to start payment."),
   });
 
+  const otherPaymentMutation = useMutation({
+    mutationFn: async ({ bookingId, method, amount }) => {
+      if (method === "CARD") return { method, bookingId, response: await createStripeCheckout({ bookingId, amount }) };
+      if (method === "BANK_TRANSFER") return { method, bookingId, response: await createBankTransferPayment({ bookingId, amount }) };
+      if (method === "CASH") return { method, bookingId, response: await createCashPayment({ bookingId, amount }) };
+      throw new Error("Select a supported payment method.");
+    },
+    onSuccess: ({ method, bookingId, response }) => {
+      if (method === "CARD") {
+        const redirect = response?.url || response?.data?.url;
+        if (!redirect) { toast.error("Stripe did not return a checkout link. No payment was recorded as complete."); return; }
+        window.location.assign(redirect);
+        return;
+      }
+      const message = method === "BANK_TRANSFER"
+        ? "Transfer payment is pending verification. Use the tenant bank details below and include your booking reference. The booking will remain unpaid until staff confirms the funds."
+        : "Cash payment is pending staff confirmation. The booking will remain unpaid until receipt is confirmed.";
+      setPaymentState({ status: "pending", bookingId, message });
+      toast.info(message);
+    },
+    onError: (error) => toast.error(error?.response?.data?.message || error?.message || "Unable to start this payment method."),
+  });
+
+  const startPayment = ({ bookingId, phoneNumber, amount }) => {
+    if (selectedPaymentMethod === "MPESA") return paymentMutation.mutateAsync({ bookingId, phoneNumber, amount });
+    return otherPaymentMutation.mutateAsync({ bookingId, method: selectedPaymentMethod, amount });
+  };
+
   useEffect(() => {
     if (!paymentState?.checkoutRequestId || paymentState.status !== "pending") return;
     let cancelled = false;
@@ -208,7 +247,7 @@ export default function Checkout() {
     onSuccess: async (response) => {
       const created = unwrapBooking(response);
       if (!created?._id) throw new Error("Booking was created without an ID.");
-      await paymentMutation.mutateAsync({ bookingId: created._id, phoneNumber: phone, amount: Number(paymentAmount) });
+      await startPayment({ bookingId: created._id, phoneNumber: phone, amount: Number(paymentAmount) });
     },
     onError: (error) => toast.error(error?.response?.data?.message || error?.message || "Unable to create booking."),
   });
@@ -232,14 +271,14 @@ export default function Checkout() {
     if (pickupDate !== travelDate) {
       return toast.error("Pickup date must match the selected travel date.");
     }
-    if (!validPhone(normalizePhone(phone))) return toast.error("Enter a valid Safaricom M-Pesa number.");
+    if (selectedPaymentMethod === "MPESA" && !validPhone(normalizePhone(phone))) return toast.error("Enter a valid Safaricom M-Pesa number.");
 
     if (isBookingCheckout) {
       if (String(booking?.travelDate || "").slice(0, 10) !== travelDate) {
         try { await updateBookingTravelDate(booking._id, travelDate); }
         catch (error) { return toast.error(error?.response?.data?.message || error?.message || "Unable to update the travel date."); }
       }
-      await paymentMutation.mutateAsync({ bookingId: booking._id, phoneNumber: phone, amount });
+      await startPayment({ bookingId: booking._id, phoneNumber: phone, amount });
       return;
     }
 
@@ -264,7 +303,7 @@ export default function Checkout() {
       hotelName: hotelName.trim(),
       roomNumber: roomNumber.trim(),
       specialRequests: specialRequests.split("\n").map((item) => item.trim()).filter(Boolean),
-      paymentMethod: "MPESA",
+      paymentMethod: selectedPaymentMethod,
       normalizedPhone: normalizePhone(phone),
     });
   };
@@ -274,7 +313,7 @@ export default function Checkout() {
   if (isTourCheckout && !tour?._id) return <div className="flex min-h-screen items-center justify-center text-red-600">Tour not found.</div>;
 
   const successful = paymentState?.status === "completed";
-  const submitting = createBookingMutation.isPending || paymentMutation.isPending;
+  const submitting = createBookingMutation.isPending || paymentMutation.isPending || otherPaymentMutation.isPending;
   const priceIsSuspicious = isTourCheckout && baseTourPrice <= 1;
   const dateRangeText = dateRange.min && dateRange.max ? `${dateRange.min} to ${dateRange.max}` : "the tour dates";
 
@@ -304,7 +343,7 @@ export default function Checkout() {
           <Detail label="Pickup time" value={pickupTime || "Select below"} />
         </section>
 
-        {paymentState && <section className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-5"><h2 className="font-bold">{successful ? "Payment successful" : paymentState.status === "pending" ? "Waiting for M-Pesa payment" : "Payment failed"}</h2><p className="mt-2 text-slate-700">{paymentState.message}</p>{paymentState.status === "pending" && <p className="mt-3 font-bold text-amber-800">Check your phone and enter your M-Pesa PIN.</p>}{paymentState.mpesaReceiptNumber && <p className="mt-2 text-sm font-semibold">M-Pesa receipt: {paymentState.mpesaReceiptNumber}</p>}{successful && <button type="button" onClick={() => navigate(`/bookings/${paymentState.bookingId}`)} className="mt-4 rounded-xl bg-emerald-700 px-5 py-3 font-bold text-white">View Booking & Remaining Balance</button>}{["failed", "cancelled", "timeout"].includes(paymentState.status) && <button type="button" onClick={() => setPaymentState(null)} className="mt-4 rounded-xl bg-amber-600 px-5 py-3 font-bold text-white">Retry Payment</button>}</section>}
+        {paymentState && <section className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-5"><h2 className="font-bold">{successful ? "Payment successful" : paymentState.status === "pending" ? selectedPaymentMethod === "MPESA" ? "Waiting for M-Pesa payment" : "Payment pending" : "Payment failed"}</h2><p className="mt-2 text-slate-700">{paymentState.message}</p>{paymentState.status === "pending" && selectedPaymentMethod === "MPESA" && <p className="mt-3 font-bold text-amber-800">Check your phone and enter your M-Pesa PIN.</p>}{paymentState.status === "pending" && selectedPaymentMethod === "BANK_TRANSFER" && settings.bankInstructions && <p className="mt-3 whitespace-pre-line text-amber-950">{settings.bankInstructions}</p>}{paymentState.status === "pending" && selectedPaymentMethod === "CASH" && <p className="mt-3 whitespace-pre-line text-amber-950">{settings.cashInstructions} {settings.cashCollectionLocation}</p>}{paymentState.mpesaReceiptNumber && <p className="mt-2 text-sm font-semibold">M-Pesa receipt: {paymentState.mpesaReceiptNumber}</p>}{paymentState.status === "pending" && paymentState.bookingId && <button type="button" onClick={() => navigate(`/bookings/${paymentState.bookingId}`)} className="mt-4 rounded-xl border border-amber-700 px-5 py-3 font-bold text-amber-900">View booking status</button>}{successful && <button type="button" onClick={() => navigate(`/bookings/${paymentState.bookingId}`)} className="mt-4 rounded-xl bg-emerald-700 px-5 py-3 font-bold text-white">View Booking & Remaining Balance</button>}{["failed", "cancelled", "timeout"].includes(paymentState.status) && <button type="button" onClick={() => setPaymentState(null)} className="mt-4 rounded-xl bg-amber-600 px-5 py-3 font-bold text-white">Retry Payment</button>}</section>}
 
         {balance > 0 && !successful && <form onSubmit={submit} className="mt-6 space-y-5">
           <Field label="Travel date" required><input type="date" value={travelDate} min={dateRange.min || undefined} max={dateRange.max || undefined} onChange={(e) => setTravelDate(e.target.value)} className="w-full rounded-xl border p-3 text-base touch-manipulation" required /></Field>
@@ -324,14 +363,17 @@ export default function Checkout() {
               aria-label="Number of travellers"
             />
           </Field>
-          <Field label="M-Pesa phone number" required><input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0707476586" autoComplete="tel" className="w-full rounded-xl border p-3 text-base touch-manipulation" required /></Field>
+          <fieldset className="rounded-2xl border border-slate-200 p-4"><legend className="px-2 font-bold text-slate-900">Payment method</legend>{availablePaymentMethods.length ? <div className="grid gap-3 sm:grid-cols-2">{availablePaymentMethods.map((method) => <label key={method.id} className={`flex cursor-pointer gap-3 rounded-xl border p-4 ${selectedPaymentMethod === method.id ? "border-emerald-600 bg-emerald-50" : "border-slate-200"}`}><input type="radio" name="paymentMethod" value={method.id} checked={selectedPaymentMethod === method.id} onChange={() => setSelectedPaymentMethod(method.id)} className="mt-1 accent-emerald-700"/><span><span className="block font-bold">{method.label}</span><span className="mt-1 block text-sm text-slate-600">{method.detail}</span></span></label>)}</div> : <p className="text-sm text-amber-900">No payment methods are currently available. Contact the tour operator.</p>}</fieldset>
+          {selectedPaymentMethod === "MPESA" && <Field label="M-Pesa phone number" required><input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0707476586" autoComplete="tel" className="w-full rounded-xl border p-3 text-base touch-manipulation" required /></Field>}
+          {selectedPaymentMethod === "BANK_TRANSFER" && <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950"><p className="font-bold">Bank transfer details</p><p>{settings.bankName} · {settings.bankAccountName} · {settings.bankAccountNumber}{settings.bankBranch ? ` · ${settings.bankBranch}` : ""}</p>{settings.bankSwiftCode && <p>SWIFT/BIC: {settings.bankSwiftCode}</p>}{settings.bankReferenceInstructions && <p className="mt-2">{settings.bankReferenceInstructions}</p>}<p className="mt-2">Your booking remains pending until staff verify receipt.</p></div>}
+          {selectedPaymentMethod === "CASH" && <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950"><p className="font-bold">Cash collection</p><p>{settings.cashCollectionLocation}</p><p className="mt-2 whitespace-pre-line">{settings.cashInstructions}</p><p className="mt-2">The booking is pending until staff confirm they received the cash.</p></div>}
           <Field label="Exact pickup location" required><input value={pickupLocation} onChange={(e) => setPickupLocation(e.target.value)} placeholder="e.g. Sarova Stanley, Nairobi" className="w-full rounded-xl border p-3 text-base touch-manipulation" required /></Field>
           <Field label="Pickup date & time" required><input type="datetime-local" value={pickupTime} min={dateRange.min ? `${dateRange.min}T00:00` : undefined} max={dateRange.max ? `${dateRange.max}T23:59` : undefined} onChange={(e) => { const value = e.target.value; setPickupTime(value ? `${travelDate || value.slice(0, 10)}T${value.slice(11, 16)}` : ""); }} className="w-full rounded-xl border p-3 text-base touch-manipulation" required /></Field>
           <p className="-mt-3 text-sm text-slate-500">Pickup must be on the selected travel date and within the tour dates: {dateRangeText}.</p>
           <div className="grid gap-4 sm:grid-cols-2"><Field label="Hotel / accommodation"><input value={hotelName} onChange={(e) => setHotelName(e.target.value)} className="w-full rounded-xl border p-3 text-base touch-manipulation" /></Field><Field label="Room number"><input value={roomNumber} onChange={(e) => setRoomNumber(e.target.value)} className="w-full rounded-xl border p-3 text-base touch-manipulation" /></Field></div>
           <Field label="Special requests"><textarea value={specialRequests} onChange={(e) => setSpecialRequests(e.target.value)} rows="4" className="w-full rounded-xl border p-3 text-base touch-manipulation" /></Field>
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5"><div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><label className="block text-sm font-bold">Pay now (KES)</label><input type="number" min={minimumInitialPayment || 1} max={balance} step="1" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} inputMode="numeric" pattern="[0-9]*" className="mt-2 w-full rounded-xl border border-emerald-300 p-3 text-base font-bold touch-manipulation sm:w-64" required /></div><button type="button" onClick={() => setPaymentAmount(String(balance))} className="rounded-xl border border-emerald-700 px-4 py-3 font-semibold text-emerald-800">Pay full balance</button></div>{bookingDepositRate > 0 ? <p className="mt-2 text-sm font-semibold text-emerald-900">Required initial deposit: {bookingDepositRate}% = KES {minimumInitialPayment.toLocaleString()}. You may pay more or the full balance.</p> : <p className="mt-2 text-sm text-slate-600">No minimum deposit is configured. You may pay any amount up to the remaining balance.</p>}<p className="mt-1 text-xs text-slate-600">The global deposit rate is controlled by SuperAdmin and applies to new payment requests.</p></div>
-          <button type="submit" disabled={submitting} className="w-full rounded-xl bg-emerald-700 py-4 font-bold text-white disabled:opacity-50">{submitting ? "Starting M-Pesa..." : `Pay KES ${Number(paymentAmount || 0).toLocaleString()} with M-Pesa`}</button>
+          <button type="submit" disabled={submitting || !availablePaymentMethods.length} className="w-full rounded-xl bg-emerald-700 py-4 font-bold text-white disabled:opacity-50">{submitting ? "Starting…" : selectedPaymentMethod === "MPESA" ? `Pay KES ${Number(paymentAmount || 0).toLocaleString()} with M-Pesa` : selectedPaymentMethod === "CARD" ? `Continue to card payment · KES ${Number(paymentAmount || 0).toLocaleString()}` : selectedPaymentMethod === "BANK_TRANSFER" ? `Create pending bank transfer · KES ${Number(paymentAmount || 0).toLocaleString()}` : `Reserve with cash · KES ${Number(paymentAmount || 0).toLocaleString()}`}</button>
         </form>}
 
         {balance <= 0 && !paymentState && <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 font-semibold text-emerald-900">This booking is fully paid. You are eligible to proceed with the trip once normal operational requirements are satisfied.</div>}

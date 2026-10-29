@@ -1,16 +1,50 @@
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { CreditCard, Banknote, Building2, Smartphone, Wifi } from "lucide-react";
+import { toast } from "react-toastify";
 import PaymentGatewayCenter from "../../components/admin/PaymentGatewayCenter";
+import { getSettings, updateSettings } from "../../api/settingsApi";
+import api from "../../api/axios";
+
+const tabs = [
+  ["MPESA", "M-Pesa", Smartphone], ["BANK", "Bank transfer", Building2],
+  ["STRIPE", "Card payments", CreditCard], ["CASH", "Cash", Banknote], ["PAYPAL", "PayPal", CreditCard],
+];
+const defaults = { enableBankTransfer: false, bankName: "", bankAccountName: "", bankAccountNumber: "", bankBranch: "", bankSwiftCode: "", bankInstructions: "", bankReferenceInstructions: "", enableCash: false, cashCollectionLocation: "", cashInstructions: "", cashReceiptRequired: false, enableStripe: false };
 
 export default function MpesaConfiguration() {
-  return (
-    <div className="mx-auto max-w-7xl space-y-5">
-      <header className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-8">
-        <p className="text-sm font-semibold uppercase tracking-wider text-emerald-700">Tenant settings</p>
-        <h1 className="mt-1 text-2xl font-bold text-slate-900 sm:text-3xl">M-Pesa Configuration</h1>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-          Configure this tenant’s Daraja credentials separately for Sandbox and Production. Validate checks OAuth connectivity only and never starts a payment.
-        </p>
-      </header>
-      <PaymentGatewayCenter mpesaOnly />
-    </div>
-  );
+  const qc = useQueryClient();
+  const [tab, setTab] = useState("MPESA");
+  const [settings, setSettings] = useState(defaults);
+  const [stripeCheck, setStripeCheck] = useState(null);
+  const query = useQuery({ queryKey: ["payment-center-settings"], queryFn: getSettings });
+  useEffect(() => { const saved = query.data?.data || query.data?.settings; if (saved) setSettings((s) => ({ ...s, ...saved })); }, [query.data]);
+  const save = useMutation({ mutationFn: updateSettings, onSuccess: async (r) => { const saved = r?.data || r?.settings || {}; setSettings((s) => ({ ...s, ...saved })); await qc.invalidateQueries({ queryKey: ["payment-center-settings"] }); await qc.invalidateQueries({ queryKey: ["public-system-settings"] }); toast.success("Payment settings saved for this tenant."); }, onError: (e) => toast.error(e?.response?.data?.message || "Unable to save tenant payment settings.") });
+  const validateStripe = useMutation({ mutationFn: async () => (await api.post("/admin/payment-gateways/STRIPE/validate")).data, onSuccess: (r) => setStripeCheck(r?.data), onError: () => setStripeCheck({ status: "unverified", message: "Stripe could not be reached. Connectivity remains unverified." }) });
+  const update = (key, value) => setSettings((s) => ({ ...s, [key]: value }));
+  const submit = (e) => { e.preventDefault(); const fields = tab === "BANK" ? ["enableBankTransfer", "bankName", "bankAccountName", "bankAccountNumber", "bankBranch", "bankSwiftCode", "bankInstructions", "bankReferenceInstructions"] : tab === "STRIPE" ? ["enableStripe"] : ["enableCash", "cashCollectionLocation", "cashInstructions", "cashReceiptRequired"]; save.mutate(Object.fromEntries(fields.map((key) => [key, settings[key]]))); };
+  const ready = (key) => {
+    if (!settings[key]) return "Disabled";
+    const complete = key === "enableBankTransfer"
+      ? Boolean(settings.bankName?.trim() && settings.bankAccountName?.trim() && /^[A-Za-z0-9][A-Za-z0-9 -]{4,33}$/.test(String(settings.bankAccountNumber || "").trim()) && settings.bankInstructions?.trim())
+      : Boolean(settings.cashCollectionLocation?.trim() && settings.cashInstructions?.trim());
+    return complete ? "Configured · manual confirmation required" : "Validation required · checkout unavailable";
+  };
+
+  return <div className="mx-auto max-w-7xl space-y-5">
+    <header className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-8"><p className="text-sm font-semibold uppercase tracking-wider text-emerald-700">Tenant settings</p><h1 className="mt-1 text-2xl font-bold text-slate-900 sm:text-3xl">M-Pesa Configuration</h1><p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">Payment Configuration Center · settings apply to the current tenant only. Enabled does not mean provider connectivity or payment completion has been verified.</p><p className="mt-3 inline-flex rounded-full bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-700">Scope: {query.isLoading ? "Loading tenant…" : settings.companyName || "Current tenant"}</p></header>
+    {query.isError && <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">Tenant settings could not be loaded. Check your access or connection, then <button type="button" onClick={() => query.refetch()} className="font-bold underline">retry</button>.</div>}
+    <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-7">
+      <div role="tablist" aria-label="Payment methods" className="flex gap-2 overflow-x-auto pb-2">{tabs.map(([id, name, Icon]) => <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)} className={`inline-flex shrink-0 items-center gap-2 rounded-xl border px-4 py-3 font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-600 ${tab === id ? "border-emerald-700 bg-emerald-50 text-emerald-900" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}><Icon size={17}/>{name}</button>)}</div>
+      {tab === "MPESA" && <PaymentGatewayCenter mpesaOnly />}
+      {tab === "BANK" && <form onSubmit={submit} className="mt-5 space-y-5"><PanelHeader title="Bank transfer" status={ready("enableBankTransfer")} detail="Customers receive these payment instructions. Transfers remain pending until authorized staff confirm receipt."/><div className="grid gap-4 sm:grid-cols-2">{[["bankName","Bank name"],["bankAccountName","Beneficiary / account name"],["bankAccountNumber","Account number"],["bankBranch","Branch"],["bankSwiftCode","SWIFT / BIC (optional)"],["bankReferenceInstructions","Reference instructions"]].map(([key,label])=><label key={key} className="text-sm font-semibold text-slate-700">{label}<input value={settings[key] || ""} onChange={(e)=>update(key,e.target.value)} required={Boolean(settings.enableBankTransfer) && key !== "bankSwiftCode" && key !== "bankBranch" && key !== "bankReferenceInstructions"} maxLength={key === "bankAccountNumber" ? 34 : 120} className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5"/></label>)}<label className="text-sm font-semibold text-slate-700 sm:col-span-2">Customer instructions<textarea value={settings.bankInstructions || ""} onChange={(e)=>update("bankInstructions",e.target.value)} required={Boolean(settings.enableBankTransfer)} rows={3} maxLength={1000} className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5"/></label></div><Toggle checked={settings.enableBankTransfer} onChange={(v)=>update("enableBankTransfer",v)} label="Offer bank transfer at checkout"/><SaveButton busy={save.isPending} disabled={query.isLoading || query.isError}/></form>}
+      {tab === "STRIPE" && <form onSubmit={submit} className="mt-5 space-y-5"><PanelHeader title="Card payments · Stripe" status={stripeCheck?.status === "connected" ? "Connection verified" : settings.enableStripe ? "Enabled · validation required" : "Disabled"} detail="Stripe API credentials are deployment-managed in STRIPE_SECRET_KEY. Tenant admins cannot view or replace platform credentials."/><div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">Validation checks the Stripe account API only. It does not create a payment or verify a completed checkout.</div><Toggle checked={settings.enableStripe} onChange={(v)=>update("enableStripe",v)} label="Offer card payments at checkout"/><div className="flex flex-wrap gap-3"><SaveButton busy={save.isPending} disabled={query.isLoading || query.isError}/><button type="button" disabled={validateStripe.isPending} onClick={()=>validateStripe.mutate()} className="inline-flex items-center gap-2 rounded-xl border border-blue-300 px-5 py-3 font-semibold text-blue-900 disabled:opacity-50"><Wifi size={17}/>{validateStripe.isPending ? "Checking…" : "Validate Stripe connectivity"}</button></div>{stripeCheck && <p aria-live="polite" className="rounded-xl bg-slate-50 p-4 text-sm">{stripeCheck.message} · {stripeCheck.timestamp ? new Date(stripeCheck.timestamp).toLocaleString() : ""}</p>}</form>}
+      {tab === "CASH" && <form onSubmit={submit} className="mt-5 space-y-5"><PanelHeader title="Cash payments" status={ready("enableCash")} detail="Cash is confirmed by authorized staff after they receive it. Selecting cash never marks a booking paid."/><label className="block text-sm font-semibold text-slate-700">Collection location<input value={settings.cashCollectionLocation || ""} onChange={(e)=>update("cashCollectionLocation",e.target.value)} required={Boolean(settings.enableCash)} maxLength={200} placeholder="Office or authorized collection point" className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5"/></label><label className="block text-sm font-semibold text-slate-700">Customer instructions<textarea value={settings.cashInstructions || ""} onChange={(e)=>update("cashInstructions",e.target.value)} required={Boolean(settings.enableCash)} rows={3} maxLength={1000} className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5"/></label><Toggle checked={settings.cashReceiptRequired} onChange={(v)=>update("cashReceiptRequired",v)} label="Require a receipt/reference during staff confirmation"/><Toggle checked={settings.enableCash} onChange={(v)=>update("enableCash",v)} label="Offer cash at checkout"/><SaveButton busy={save.isPending} disabled={query.isLoading || query.isError}/></form>}
+      {tab === "PAYPAL" && <div className="mt-5"><PanelHeader title="PayPal" status="Unavailable" detail="This application does not currently implement PayPal order creation, capture, or verified webhooks. Checkout will not offer PayPal, and no saved flag can make it available."/><p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">A full server-side payment and webhook lifecycle is required before PayPal can be enabled safely.</p></div>}
+    </section>
+  </div>;
 }
+
+function PanelHeader({ title, status, detail }) { return <div className="mb-5"><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-xl font-bold text-slate-900">{title}</h2><span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">{status}</span></div><p className="mt-2 text-sm leading-6 text-slate-600">{detail}</p></div>; }
+function Toggle({ checked, onChange, label }) { return <label className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-slate-200 p-4"><span className="font-semibold">{label}</span><input type="checkbox" checked={Boolean(checked)} onChange={(e)=>onChange(e.target.checked)} className="h-5 w-5 accent-emerald-700"/></label>; }
+function SaveButton({ busy, disabled = false }) { return <button type="submit" disabled={busy || disabled} className="rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white disabled:opacity-50">{busy ? "Saving…" : "Save tenant settings"}</button>; }

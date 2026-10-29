@@ -7,6 +7,8 @@ import CorporateAccount from "../models/CorporateAccount.js";
 import { reserveSlots, validateTourCapacity, releaseSlots } from "../services/inventoryService.js";
 import { PAYMENT_METHODS } from "../constants/bookingConstants.js";
 import { calculateBookingAmounts } from "../utils/bookingPricing.js";
+import { getSystemSettings } from "../services/settingsService.js";
+import { isTenantPaymentMethodAvailable, normalizeTenantPaymentMethod } from "../services/tenantPaymentMethods.js";
 
 export const createCustomerBooking = async (req, res, next) => {
   requireTenantId();
@@ -22,6 +24,10 @@ export const createCustomerBooking = async (req, res, next) => {
     } = req.body || {};
 
     if (!tour || !travelDate) return res.status(400).json({ success: false, message: "Tour and travel date are required." });
+    const normalizedPaymentMethod = normalizeTenantPaymentMethod(paymentMethod);
+    const tenantSettings = await getSystemSettings(req);
+    if (!normalizedPaymentMethod || !isTenantPaymentMethodAvailable(tenantSettings, normalizedPaymentMethod)) return res.status(409).json({ success: false, message: "This payment method is not currently available for this tenant. Choose another method or contact the tenant administrator." });
+    if (normalizedPaymentMethod === "PAYPAL") return res.status(409).json({ success: false, message: "PayPal checkout is not available yet." });
     const normalizedType = String(bookingType).toLowerCase();
     if (!["individual", "group", "corporate"].includes(normalizedType)) return res.status(400).json({ success: false, message: "Invalid booking type." });
 
@@ -59,7 +65,7 @@ export const createCustomerBooking = async (req, res, next) => {
         travelDate, travelers, numberOfGuests: guests,
         contact: { name: contact.name || req.user.name || "", email: contact.email || req.user.email || "", phone: contact.phone || req.user.phone || "" },
         pickupLocation: String(pickupLocation || "").trim(), pickupTime: pickupTime ? new Date(pickupTime) : null, hotelName: String(hotelName || "").trim(), roomNumber: String(roomNumber || "").trim(), emergencyContact,
-        specialRequests: Array.isArray(specialRequests) ? specialRequests.map(String).map((x) => x.trim()).filter(Boolean) : [], subtotal: Number(amounts.subtotal || 0), discountAmount: Number(amounts.discountAmount || 0), totalAmount, depositAmount: 0, balanceAmount: totalAmount, paymentMethod, paymentStatus: "pending", status: "pending", assigned: false,
+        specialRequests: Array.isArray(specialRequests) ? specialRequests.map(String).map((x) => x.trim()).filter(Boolean) : [], subtotal: Number(amounts.subtotal || 0), discountAmount: Number(amounts.discountAmount || 0), totalAmount, depositAmount: 0, balanceAmount: totalAmount, paymentMethod: normalizedPaymentMethod, paymentStatus: "pending", status: "pending", assigned: false,
       });
       try {
         const admins = await User.find(mergeTenantFilter({ $or: [{ role: { $in: ["admin", "super_admin", "superadmin", "manager", "tour_manager", "tourmanager"] } }, { legacyRole: { $in: ["admin", "super_admin", "superadmin", "manager", "tour_manager", "tourmanager"] } }], status: "active" })).select("_id").lean();

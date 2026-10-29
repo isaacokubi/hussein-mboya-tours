@@ -8,6 +8,7 @@ import {
 import Booking from "../models/Booking.js";
 import RefundAudit from "../models/RefundAudit.js";
 import { requestMpesaRefund } from "../services/mpesaRefundService.js";
+import { getSystemSettings } from "../services/settingsService.js";
 
 export const getPayments = async (req, res, next) => {
   requireTenantId();
@@ -70,6 +71,10 @@ export const updatePaymentStatus = async (req, res, next) => {
       if (!["BANK", "CASH"].includes(String(payment.provider || "").toUpperCase())) {
         return res.status(409).json({ success: false, message: "Provider payments must be confirmed by their provider callback/verification flow." });
       }
+      if (payment.status === "completed") return res.status(409).json({ success: false, message: "This manual payment has already been confirmed." });
+      const settings = await getSystemSettings(req);
+      const confirmationReference = String(req.body?.confirmationReference || req.body?.receiptNumber || "").trim().slice(0, 200);
+      if (String(payment.provider).toUpperCase() === "CASH" && settings.cashReceiptRequired === true && !confirmationReference) return res.status(400).json({ success: false, message: "A cash receipt number is required by this tenant." });
       const result = await completeBookingPayment({
         payment,
         booking,
@@ -77,9 +82,11 @@ export const updatePaymentStatus = async (req, res, next) => {
           amount: Number(payment.amount),
           paymentMethod: payment.paymentMethod || payment.method,
           transactionId: payment.transactionId || undefined,
-          paymentReference: payment.transactionReference || undefined,
+          paymentReference: confirmationReference || payment.transactionReference || undefined,
         },
       });
+      result.payment.manualConfirmation = { confirmedBy: req.user?._id || null, confirmedAt: new Date(), amount: Number(payment.amount), currency: String(payment.currency || "KES").toUpperCase(), reference: confirmationReference, notes: String(req.body?.confirmationNotes || "").trim().slice(0, 1000) };
+      await result.payment.save();
       return res.json({ success: true, payment: result.payment, booking: result.booking });
     }
 

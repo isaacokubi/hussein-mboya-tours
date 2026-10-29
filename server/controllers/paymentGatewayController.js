@@ -166,3 +166,19 @@ export const validateMpesaGateway = async (req, res, next) => {
     return next(error);
   }
 };
+
+export const validateStripeGateway = async (req, res, next) => {
+  const timestamp = new Date().toISOString();
+  const result = (status, message, remoteVerified = false) => res.json({ success: true, data: { status, environment: "platform-managed", timestamp, remoteVerified, message } });
+  const apiKey = String(process.env.STRIPE_SECRET_KEY || "").trim();
+  if (!apiKey) return result("incomplete", "Stripe deployment credentials are not configured.");
+  try {
+    const response = await axios.get("https://api.stripe.com/v1/account", { headers: { Authorization: `Bearer ${apiKey}` }, timeout: 8000, maxRedirects: 0 });
+    return response.data?.id ? result("connected", "Stripe API connectivity verified. No payment was initiated.", true) : result("provider_error", "Stripe did not return account metadata.");
+  } catch (error) {
+    if (error?.response?.status === 401 || error?.response?.status === 403) return result("invalid_credentials", "Stripe rejected the deployment credentials.");
+    if (["ECONNABORTED", "ETIMEDOUT"].includes(error?.code)) return result("unverified", "Stripe validation timed out. Connectivity remains unverified.");
+    if (error?.response) return result("provider_error", `Stripe returned HTTP ${Number(error.response.status) || 0}.`);
+    return result("unverified", "Stripe could not be reached. Connectivity remains unverified.");
+  }
+};

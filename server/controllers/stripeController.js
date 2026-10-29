@@ -26,6 +26,7 @@ import {
 } from "../services/paymentLifecycleService.js";
 
 import { getSystemSettings } from "../services/settingsService.js";
+import { isTenantPaymentMethodAvailable } from "../services/tenantPaymentMethods.js";
 
 
 /*
@@ -131,7 +132,7 @@ const normalizeCurrency = (
 |--------------------------------------------------------------------------
 */
 
-const getServerCurrency = async () => {
+const getServerCurrency = async (source = {}) => {
 
   let configuredCurrency =
     process.env.DEFAULT_CURRENCY ||
@@ -140,7 +141,7 @@ const getServerCurrency = async () => {
   try {
 
     const settings =
-      await getSystemSettings();
+      await getSystemSettings(source);
 
     configuredCurrency =
       settings?.currency ||
@@ -284,6 +285,9 @@ export const createStripeSession = async (
 
   try {
 
+    const tenantSettings = await getSystemSettings(req);
+    if (!isTenantPaymentMethodAvailable(tenantSettings, "CARD")) return res.status(409).json({ success: false, message: "Card payments are disabled or not configured for this tenant." });
+
     if (!req.user?._id) {
 
       return res.status(401).json({
@@ -378,10 +382,8 @@ export const createStripeSession = async (
     |--------------------------------------------------------------------------
     */
 
-    const amount =
-      getPayableBookingAmount(
-        booking
-      );
+    const payableAmount = getPayableBookingAmount(booking);
+    const amount = req.body?.amount === undefined ? payableAmount : Number(req.body.amount);
 
     if (!Number.isFinite(amount) || amount <= 0) {
 
@@ -391,6 +393,7 @@ export const createStripeSession = async (
           "No valid payment amount is due for this booking.",
       });
     }
+    if (amount > payableAmount) return res.status(400).json({ success: false, message: "Payment amount cannot exceed the booking balance." });
 
 
     /*
@@ -401,7 +404,7 @@ export const createStripeSession = async (
 
     const currency =
       normalizeCurrency(
-        await getServerCurrency()
+        await getServerCurrency(req)
       );
 
 
@@ -615,16 +618,12 @@ export const createStripeSession = async (
 
 
     if (!paymentAlreadyAttached) {
-
-      booking.payments =
-        booking.payments || [];
-
-      booking.payments.push(
-        payment._id
-      );
-
-      await booking.save();
+      booking.payments = booking.payments || [];
+      booking.payments.push(payment._id);
     }
+    booking.paymentMethod = "CARD";
+    booking.paymentStatus = "pending";
+    await booking.save();
 
 
     return res.status(201).json({
@@ -779,14 +778,14 @@ export const verifyStripeSession = async (
     |--------------------------------------------------------------------------
     */
 
-    const expectedAmount =
-      getPayableBookingAmount(
-        booking
-      );
+    const payment = await Payment.findOne(mergeTenantFilter(req, { booking: booking._id, provider: "STRIPE", transactionReference: session.id }));
+    if (!payment) return res.status(404).json({ success: false, message: "Stripe payment record not found." });
+    if (payment.customer && String(payment.customer) !== String(req.user._id)) return res.status(403).json({ success: false, message: "Payment does not belong to this user." });
+    const expectedAmount = Number(payment.amount);
 
     const expectedCurrency =
       normalizeCurrency(
-        await getServerCurrency()
+        await getServerCurrency(req)
       );
 
 
@@ -840,29 +839,6 @@ export const verifyStripeSession = async (
     | PAYMENT RECORD
     |--------------------------------------------------------------------------
     */
-
-    const payment =
-      await Payment.findOne({
-        booking:
-          booking._id,
-
-        provider:
-          "STRIPE",
-
-        transactionReference:
-          session.id,
-      });
-
-
-    if (!payment) {
-
-      return res.status(404).json({
-        success: false,
-        message:
-          "Stripe payment record not found.",
-      });
-    }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -1067,6 +1043,9 @@ export const createBankTransferPayment = async (
 
   try {
 
+    const tenantSettings = await getSystemSettings(req);
+    if (!isTenantPaymentMethodAvailable(tenantSettings, "BANK_TRANSFER")) return res.status(409).json({ success: false, message: "Bank transfer is disabled or not configured for this tenant." });
+
     if (!req.user?._id) {
 
       return res.status(401).json({
@@ -1151,10 +1130,8 @@ export const createBankTransferPayment = async (
     |--------------------------------------------------------------------------
     */
 
-    const amount =
-      getPayableBookingAmount(
-        booking
-      );
+    const payableAmount = getPayableBookingAmount(booking);
+    const amount = req.body?.amount === undefined ? payableAmount : Number(req.body.amount);
 
     if (
       !Number.isFinite(amount) ||
@@ -1167,6 +1144,7 @@ export const createBankTransferPayment = async (
           "No valid amount is due for this booking.",
       });
     }
+    if (amount > payableAmount) return res.status(400).json({ success: false, message: "Payment amount cannot exceed the booking balance." });
 
 
     /*
@@ -1177,7 +1155,7 @@ export const createBankTransferPayment = async (
 
     const currency =
       normalizeCurrency(
-        await getServerCurrency()
+        await getServerCurrency(req)
       );
 
 
@@ -1311,16 +1289,12 @@ export const createBankTransferPayment = async (
 
 
     if (!alreadyAttached) {
-
-      booking.payments =
-        booking.payments || [];
-
-      booking.payments.push(
-        payment._id
-      );
-
-      await booking.save();
+      booking.payments = booking.payments || [];
+      booking.payments.push(payment._id);
     }
+    booking.paymentMethod = "BANK_TRANSFER";
+    booking.paymentStatus = "pending";
+    await booking.save();
 
 
     return res.status(201).json({
@@ -1331,7 +1305,7 @@ export const createBankTransferPayment = async (
       message:
         "Bank transfer recorded. The company will verify the transfer and confirm your booking.",
 
-      payment,
+      payment: { id: payment._id, status: payment.status, amount: payment.amount, currency: payment.currency, transactionReference: payment.transactionReference },
     });
 
   } catch (error) {
