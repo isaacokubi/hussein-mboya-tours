@@ -6,7 +6,7 @@ Reviewed the React/Vite client, route setup, React Query defaults, public tour a
 
 The server route tree contains **773 route declarations** across mounted route modules (including the nested declarations counted in `server/routes`). Route groups are classified below by their primary traffic and dependencies; per-endpoint production frequency and latency cannot be ranked without request-log/APM data. `requestLogger` already records method, path, status, request ID and duration without request bodies.
 
-The repository's Playwright public catalogue smoke test ran against production with system Chrome: **1 passed**, covering homepage, tours, a tour detail, destinations, a destination detail, image completion, same-origin links, public catalogue APIs, and an unauthenticated admin redirect. The repeatable performance test also ran against production with detail API responses asserted successful: **1 passed**. The deployed commit SHA was not exposed, so this is a baseline for the observed deployment, not verification of this worktree.
+The repository's Playwright public catalogue smoke test ran against production with system Chrome: **1 passed**, covering homepage, tours, a tour detail, destinations, a destination detail, image completion, same-origin links, public catalogue APIs, and an unauthenticated admin redirect. The desktop/mobile performance sample passed **2/2** with detail API responses asserted HTTP 200 and produced the baseline below. On a later rerun, both variants failed because `/tours` rendered no tour links (blank main region; the shared Vercel site displayed “Kenya Tours” branding). Treat that as an observed production consistency issue and rerun against the intended tenant/site before release. The deployed commit SHA was not exposed, so the passing sample is a baseline for the observed deployment at that time, not verification of this worktree.
 
 No production database URI, MongoDB query profiler, APM trace, field Core Web Vitals, or staging credentials were available. Consequently there are no measured database timings, production p50/p95 API latencies, or historical before-change browser metrics in this audit. Do not interpret local bundle sizes or one live smoke run as field performance or a before/after performance claim.
 
@@ -51,7 +51,8 @@ Validation evidence in this work session:
 | Client production build | PASS | Local build; see output sizes above. |
 | Focused backend tests | PASS, 4/4 | `publicTourCategoryFilter`, `tourDomainIntegrity`, `tenantDashboardCacheIsolation`, `bookingPaymentAccess`; no connected database integration was involved in these tests. |
 | Production public Playwright smoke | PASS, 1/1 | Read-only public customer/navigation flow on 2026-10-29; not a controlled benchmark. |
-| Production performance sample | PASS, 1/1 | One desktop lab run at 1280×720 on 2026-10-29; values below. No throttling or repeated percentile sample. |
+| Production performance sample | PASS, 2/2 | One desktop run at 1280×720 and one mobile run at 390×844 on 2026-10-29; values below. No throttling or repeated percentile sample. |
+| Later performance rerun | FAIL, 0/2 | Tour list produced no links in desktop or mobile browser runs; production content/runtime was inconsistent with the earlier passing sample. |
 | API/database query plans and response timings | NOT TESTED | No database access, APM, or profiler evidence. |
 | Production booking/payment, authenticated dashboards | NOT TESTED | No sandbox/provider credentials used; no charges initiated. |
 | Production deployment SHA | NOT VERIFIED | No deployment metadata was exposed by the inspected endpoints. |

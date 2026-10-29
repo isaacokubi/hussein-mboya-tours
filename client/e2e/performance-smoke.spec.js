@@ -41,6 +41,7 @@ async function capturePublicFlow(page, testInfo) {
   }));
   startup.usableMs = Date.now() - startedAt;
   startup.apiRequests = requests.map(({ url, durationMs, status }) => ({ url, durationMs, status }));
+  expect(startup.apiRequests.length, "homepage startup API request budget").toBeLessThanOrEqual(3);
 
   const tourListStartedAt = Date.now();
   await page.goto("/tours");

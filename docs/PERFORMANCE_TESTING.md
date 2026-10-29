@@ -11,6 +11,18 @@ npx playwright test e2e/performance-smoke.spec.js
 
 The Playwright config defaults to the production frontend. For an isolated local or staging environment set `DEMO_FRONTEND_URL` and `DEMO_API_ORIGIN`. The performance test attaches `public-performance-sample.json` with browser startup navigation timing, LCP/CLS observer results, time until useful homepage content, tour/destination click-to-heading time, and API request statuses/durations. Run at least five times on the same browser, viewport and network profile; compare medians and p75/p95. Run separate desktop and mobile contexts when collecting release evidence. These browser numbers are lab measurements, not field Core Web Vitals.
 
+Initial provisional regression budgets, based on the single desktop/mobile production samples recorded on 2026-10-29:
+
+| Measurement | Provisional guard | Good field target |
+|---|---:|---:|
+| Homepage API requests | At most 3 (asserted in the browser test) | At most 3 |
+| Initial JavaScript entry chunk | At most 150 kB gzip (current local build: 141.86 kB) | Reduce further where practical |
+| LCP | At most 3.0 s in these unthrottled lab contexts | ≤2.5 s at the 75th percentile |
+| CLS | At most 0.45 as a lab regression ceiling (current sample is 0.275 desktop / 0.409 mobile) | ≤0.1 at the 75th percentile |
+| Useful tour/destination list and detail content | At most 5.5 s in the same unthrottled lab context | Set tighter limits after repeated network-profile runs |
+
+The timing ceilings are provisional regression guards, not acceptable final experience targets. The current measured CLS already misses the recommended good field range; INP must be measured from real-user data. Update guards after repeated runs and a representative Kenyan mobile-network profile.
+
 For the existing public smoke and role matrix:
 
 ```bash

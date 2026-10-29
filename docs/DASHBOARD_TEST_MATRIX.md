@@ -4,7 +4,7 @@ Routes and roles below were discovered in `client/src/routes/AppRoutes.jsx`, `cl
 
 | Area / role | Direct routes and workflows | Current outcome |
 |---|---|---|
-| Public customer | `/`, `/tours`, `/tours/:slug`, `/destinations`, `/destinations/:slug`, public catalogue APIs, images, internal links | **PASS** — production public smoke and performance test, read-only. Both detail APIs returned HTTP 200. Performance is one desktop run, not a percentile baseline. |
+| Public customer | `/`, `/tours`, `/tours/:slug`, `/destinations`, `/destinations/:slug`, public catalogue APIs, images, internal links | **PASS, earlier run** — public smoke and desktop/mobile performance tests, read-only; both detail APIs returned HTTP 200. **FAIL, later rerun** — `/tours` rendered no tour links in both viewports. This production inconsistency needs investigation before release. |
 | Search, filters, pagination | Tour list and search APIs; client filter controls | **NOT TESTED** end-to-end this session; no live performance sample result captured. |
 | Booking / checkout / payment | `/checkout/:type/:id`, `/payment-status/:id`, hospitality payment; booking creation and payment provider callbacks | **NOT TESTED**; no sandbox/provider credentials. No payment was initiated. |
 | Customer account | `/dashboard`, `/my-bookings`, `/bookings/:id`, `/profile`, `/notifications`, `/wishlist`, custom tours | Existing `production-smoke.spec.js` includes customer dashboard/profile/bookings navigation, but authenticated cases were **SKIPPED** because no demo password was configured. |
