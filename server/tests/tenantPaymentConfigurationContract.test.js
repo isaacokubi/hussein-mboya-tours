@@ -76,3 +76,12 @@ test("tour booking creation permits PayPal when tenant configuration marks it av
   assert.match(checkout, /method === "PAYPAL"\) return \{ method, bookingId, response: await createPaypalOrder/);
   assert.match(checkout, /queryKey: \["public-system-settings", window.location.host\]/);
 });
+
+test("single-day tour checkout ignores stale endDate and uses durationDays as canonical range", async () => {
+  const dateRange = await read("../../client/src/lib/dateRange.js");
+  const middleware = await read("../middleware/validateBookingTravelDate.js");
+  assert.match(dateRange, /getDurationDays\(tour\.durationDays, tour\.durationDetails\?\.days, tour\.duration\)/);
+  assert.match(dateRange, /durationDays > 1 && storedEnd >= min/);
+  assert.match(middleware, /end = new Date\(start\);[\s\S]{0,120}end\.setDate\(end\.getDate\(\) \+ days - 1\)/);
+  assert.match(middleware, /Duration is authoritative/);
+});
