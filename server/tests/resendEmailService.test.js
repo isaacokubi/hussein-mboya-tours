@@ -44,11 +44,11 @@ test("sendEmail submits through Resend and defaults to the supported development
 test("sendEmail surfaces Resend failure without exposing provider details", async () => {
   process.env.RESEND_API_KEY = "test-only-key";
   process.env.RESEND_FROM_EMAIL = RESEND_TEST_SENDER;
-  setResendClientForTests({ emails: { send: async () => ({ data: null, error: { message: "provider failure test-only-key" } }) } });
+  setResendClientForTests({ emails: { send: async () => ({ data: null, error: { message: "provider failure test-only-key", statusCode: 403 } }) } });
 
   try {
     await assert.rejects(sendEmail({ to: "customer@example.com", subject: "Test", text: "Hello" }), (error) => {
-      assert.equal(error.message, "Resend email delivery failed.");
+      assert.equal(error.message, "Resend email delivery failed (HTTP 403).");
       assert.doesNotMatch(error.message, /test-only-key/);
       return true;
     });
