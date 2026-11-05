@@ -62,6 +62,8 @@ jobs:
 
     env:
       MONGODB_URI: mongodb://127.0.0.1:27017/hussein_mboya_ci
+      LIFECYCLE_TEST_MONGODB_URI: mongodb://127.0.0.1:27017/hussein_mboya_ci_test
+      HEALTH_TEST_MONGODB_URI: mongodb://127.0.0.1:27017/global_tours_test
       JWT_SECRET: ci-only-test-secret
       DEFAULT_TENANT_ID: 000000000000000000000000
       NODE_ENV: test
