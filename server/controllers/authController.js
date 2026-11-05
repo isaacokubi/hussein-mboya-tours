@@ -431,6 +431,11 @@ export const requestPasswordReset = async (req, res, next) => {
       const { sendEmail } = await import("../services/emailService.js");
       await sendEmail({ to: user.email, subject, html, text, fromName: companyName, settingsSource: req });
     } catch (emailError) {
+      // A code must never remain usable when its delivery failed.
+      user.passwordResetCodeHash = "";
+      user.passwordResetExpiresAt = null;
+      user.passwordResetAttempts = 0;
+      await user.save({ validateBeforeSave: false });
       console.error("PASSWORD RESET EMAIL ERROR:", emailError.message);
       return res.status(503).json({ success: false, message: "We could not send the reset email right now. Please try again shortly." });
     }

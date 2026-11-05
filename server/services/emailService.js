@@ -4,6 +4,7 @@ import { getSystemSettings } from "./settingsService.js";
 export const RESEND_TEST_SENDER = "onboarding@resend.dev";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 let resendClient;
+let resendClientApiKey;
 
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>\"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[char]));
 const clean = (value, fallback = "Not specified") => {
@@ -14,7 +15,12 @@ const formatDate = (value) => value ? new Date(value).toLocaleDateString("en-KE"
 const money = (value) => `KES ${Number(value ?? 0).toLocaleString("en-KE")}`;
 
 const clientFor = (apiKey) => {
-  if (!resendClient) resendClient = new Resend(apiKey);
+  // Render environment changes restart the service, but comparing the key also
+  // prevents a stale SDK client if credentials rotate during a warm process.
+  if (!resendClient || resendClientApiKey !== apiKey) {
+    resendClient = new Resend(apiKey);
+    resendClientApiKey = apiKey;
+  }
   return resendClient;
 };
 
@@ -33,8 +39,10 @@ export const sendEmail = async ({ to, subject, html, text, attachments = [], cc,
   const from = `${companyName.replace(/[<>\r\n]/g, "")} <${sender}>`;
   const { data, error } = await clientFor(apiKey).emails.send({ from, to, subject, html, text, attachments, cc, bcc, replyTo });
   if (error) {
-    // Resend response errors are surfaced without including request headers or credentials.
-    throw new Error("Resend email delivery failed.");
+    // Keep provider status for server-side diagnosis without exposing credentials
+    // or provider internals to the public API response.
+    const statusCode = Number(error.statusCode || error.status || 0);
+    throw new Error(statusCode ? `Resend email delivery failed (HTTP ${statusCode}).` : "Resend email delivery failed.");
   }
   return data;
 };
@@ -74,7 +82,7 @@ export const sendBookingStatusEmail = async (booking, status, reason = "") => {
 };
 
 // Used by focused tests without constructing a real SDK client.
-export const resetResendClientForTests = () => { resendClient = undefined; };
+export const resetResendClientForTests = () => { resendClient = undefined; resendClientApiKey = undefined; };
 export const setResendClientForTests = (client) => { resendClient = client; };
 
 export const sendEmailBestEffort = async (send, context = "Notification") => {
