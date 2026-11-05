@@ -43,25 +43,20 @@ jobs:
 
   server-live-isolation:
     name: Live tenant isolation regression
-    runs-on: ubuntu-latest
-
-    services:
-      mongodb:
-        image: mongo:8
-        ports:
-          - 27017:27017
-        options: >-
-          --health-cmd "mongosh --quiet --eval 'db.adminCommand({ ping: 1 }).ok'"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
+    # Ubuntu 24.04 runners currently use a kernel MongoDB 8 rejects at startup.
+    # Use the 22.04 LTS host until MongoDB ships its kernel-check fix.
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
 
     defaults:
       run:
         working-directory: server
 
     env:
-      MONGODB_URI: mongodb://127.0.0.1:27017/hussein_mboya_ci
+      MONGODB_URI: mongodb://127.0.0.1:27017/hussein_mboya_ci?replicaSet=rs0
+      LIFECYCLE_TEST_MONGODB_URI: mongodb://127.0.0.1:27017/hussein_mboya_ci_test?replicaSet=rs0
+      HEALTH_TEST_MONGODB_URI: mongodb://127.0.0.1:27017/global_tours_test?replicaSet=rs0
+      FIRST_TENANT_TEST_MONGODB_URI: mongodb://127.0.0.1:27017/global_tours_test?replicaSet=rs0
       JWT_SECRET: ci-only-test-secret
       DEFAULT_TENANT_ID: 000000000000000000000000
       NODE_ENV: test
@@ -80,22 +75,67 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Initialize disposable MongoDB replica set
+        run: |
+          docker run -d --name mongo-live-isolation-ci -p 27017:27017 mongo:8 --replSet rs0 --bind_ip_all
+          mongo_container=mongo-live-isolation-ci
+          if ! docker inspect "$mongo_container" >/dev/null 2>&1; then
+            echo "MongoDB test container is missing."
+            docker ps -a --no-trunc || true
+            exit 1
+          fi
+          ready=false
+          for attempt in $(seq 1 60); do
+            if docker exec "$mongo_container" mongosh "mongodb://127.0.0.1:27017/admin?directConnection=true" --quiet --eval 'db.adminCommand({ ping: 1 }).ok' 2>/dev/null | grep -q 1; then
+              ready=true
+              break
+            fi
+            sleep 2
+          done
+          if [ "$ready" != "true" ]; then
+            echo "MongoDB service did not become ready. Container diagnostics follow."
+            docker ps -a --no-trunc || true
+            docker logs --tail 100 "$mongo_container" 2>&1 || true
+            exit 1
+          fi
+          docker exec "$mongo_container" mongosh "mongodb://127.0.0.1:27017/admin?directConnection=true" --quiet --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"127.0.0.1:27017"}]})'
+          for attempt in $(seq 1 60); do
+            if docker exec "$mongo_container" mongosh "mongodb://127.0.0.1:27017/admin?replicaSet=rs0" --quiet --eval 'db.hello().isWritablePrimary' 2>/dev/null | grep -q true; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "MongoDB replica set did not elect a primary."
+          docker ps -a --no-trunc || true
+          docker logs --tail 100 "$mongo_container" 2>&1 || true
+          exit 1
+
       - name: Run live tenant isolation regression
         run: npm run check:multitenancy:live
 
       - name: Run database-backed startup and health checks
         run: node --test tests/healthReadiness.test.js
 
+      - name: Run isolated first-tenant acceptance
+        run: node --test tests/firstTenantAcceptance.integration.test.js
+
+      - name: Remove disposable MongoDB container
+        if: always()
+        run: docker rm -f mongo-live-isolation-ci 2>/dev/null || true
+
   server-tour-lifecycle-integration:
     name: Tour lifecycle runtime integration
-    runs-on: ubuntu-latest
+    # Keep MongoDB 8 on the Ubuntu 22.04 LTS host kernel until the upstream
+    # MongoDB kernel compatibility fix is available.
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
 
     defaults:
       run:
         working-directory: server
 
     env:
-      LIFECYCLE_TEST_MONGODB_URI: mongodb://127.0.0.1:27017/hussein_mboya_ci?replicaSet=rs0
+      LIFECYCLE_TEST_MONGODB_URI: mongodb://127.0.0.1:27017/hussein_mboya_ci_test?replicaSet=rs0
       RUN_DATABASE_INTEGRATION_TESTS: "true"
       JWT_SECRET: ci-only-test-secret
       DEFAULT_TENANT_ID: 000000000000000000000000
@@ -119,7 +159,19 @@ jobs:
         working-directory: .
         run: |
           docker run -d --name mongo-tour-ci -p 27017:27017 mongo:8 --replSet rs0 --bind_ip_all
-          until docker exec mongo-tour-ci mongosh --quiet --eval 'db.adminCommand({ ping: 1 }).ok' | grep -q 1; do sleep 1; done
+          ready=false
+          for attempt in $(seq 1 60); do
+            if docker exec mongo-tour-ci mongosh --quiet --eval 'db.adminCommand({ ping: 1 }).ok' 2>/dev/null | grep -q 1; then
+              ready=true
+              break
+            fi
+            sleep 2
+          done
+          if [ "$ready" != "true" ]; then
+            echo "MongoDB replica set did not become ready. Container diagnostics follow."
+            docker logs --tail 100 mongo-tour-ci 2>&1 || true
+            exit 1
+          fi
           docker exec mongo-tour-ci mongosh --quiet --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"127.0.0.1:27017"}]})'
 
       - name: Run tour lifecycle integration

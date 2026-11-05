@@ -55,28 +55,33 @@ const launchServer = async (overrides = {}) => {
   child.stdout.setEncoding("utf8").on("data", (chunk) => { output += chunk; });
   child.stderr.setEncoding("utf8").on("data", (chunk) => { output += chunk; });
 
-  const port = await new Promise((resolvePort, reject) => {
-    // Importing the complete production route graph can take several seconds in
-    // parallel CI runs; keep the assertion bounded without mistaking import
-    // contention for a listener-order regression.
-    const timeout = setTimeout(() => reject(new Error(`HTTP listener did not start promptly. Output: ${output}`)), 15_000);
-    const findPort = () => {
-      const match = output.match(/HTTP server listening on port (\d+)/);
-      if (!match) return false;
-      clearTimeout(timeout);
-      resolvePort(Number(match[1]));
-      return true;
-    };
-    child.stdout.on("data", findPort);
-    child.stderr.on("data", findPort);
-    child.once("error", (error) => { clearTimeout(timeout); reject(error); });
-    child.once("exit", (code) => {
-      if (!findPort()) {
+  let port;
+  try {
+    port = await new Promise((resolvePort, reject) => {
+      // Importing the complete production route graph can take several seconds
+      // in parallel CI runs; keep this bounded without masking listener errors.
+      const timeout = setTimeout(() => reject(new Error(`HTTP listener did not start promptly. Output: ${output}`)), 30_000);
+      const findPort = () => {
+        const match = output.match(/HTTP server listening on port (\d+)/);
+        if (!match) return false;
         clearTimeout(timeout);
-        reject(new Error(`Server exited before listening (code ${code}). Output: ${output}`));
-      }
+        resolvePort(Number(match[1]));
+        return true;
+      };
+      child.stdout.on("data", findPort);
+      child.stderr.on("data", findPort);
+      child.once("error", (error) => { clearTimeout(timeout); reject(error); });
+      child.once("exit", (code) => {
+        if (!findPort()) {
+          clearTimeout(timeout);
+          reject(new Error(`Server exited before listening (code ${code}). Output: ${output}`));
+        }
+      });
     });
-  });
+  } catch (error) {
+    if (child.exitCode === null) child.kill("SIGTERM");
+    throw error;
+  }
 
   return { child, childExit, port, output: () => output };
 };
@@ -95,13 +100,22 @@ test("health and root routes stay reachable and report real database readiness",
   });
 
   setStartupPhase("starting");
-  let response = await fetch(`${baseUrl}/api/health`);
+  let response = await fetch(`${baseUrl}/api/live`);
   let payload = await response.json();
+  assert.equal(response.status, 200, "liveness stays successful while infrastructure is unavailable");
+  assert.equal(payload.status, "alive");
+
+  response = await fetch(`${baseUrl}/api/health`);
+  payload = await response.json();
   assert.equal(response.status, 503);
   assert.equal(payload.success, false);
   assert.equal(payload.status, "starting");
   assert.equal(payload.database, "disconnected");
   assert.equal(payload.databaseName, null);
+
+  response = await fetch(`${baseUrl}/api/ready`);
+  assert.equal(response.status, 503);
+  assert.equal((await response.json()).database, "disconnected");
 
   setStartupPhase("ready");
   response = await fetch(`${baseUrl}/api/health`);
@@ -145,19 +159,23 @@ test("the API can load without Cloudinary; body-only writes work and file upload
   assert.match((await fileResponse.json()).message, /Cloudinary is not configured/);
 });
 
-test("server binds before an unavailable MongoDB connection fails", async (t) => {
+test("server remains live and retries while MongoDB is unavailable", async (t) => {
   const runtime = await launchServer();
   t.after(() => { if (runtime.child.exitCode === null) runtime.child.kill("SIGTERM"); });
 
-  const response = await fetch(`http://127.0.0.1:${runtime.port}/api/health`);
+  const baseUrl = `http://127.0.0.1:${runtime.port}`;
+  const response = await fetch(`${baseUrl}/api/health`);
   const payload = await response.json();
   assert.equal(response.status, 503);
   assert.equal(payload.success, false);
   assert.equal(payload.status, "starting");
   assert.ok(["connecting", "disconnected"].includes(payload.database));
 
-  const exit = await waitForChildExit(runtime.childExit, 15_000);
-  assert.equal(exit[0], 1);
+  const liveResponse = await fetch(`${baseUrl}/api/live`);
+  assert.equal(liveResponse.status, 200);
+  assert.equal((await liveResponse.json()).status, "alive");
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  assert.equal(runtime.child.exitCode, null, "database outage must not terminate the HTTP process");
 });
 
 test("a fresh MongoDB-backed server becomes healthy after its critical migration", { skip: !healthTestMongoUri }, async (t) => {
@@ -171,7 +189,7 @@ test("a fresh MongoDB-backed server becomes healthy after its critical migration
   const runtime = await launchServer({
     MONGODB_URI: isolatedMongoUri,
     MONGODB_SERVER_SELECTION_TIMEOUT_MS: "5000",
-    MONGODB_STARTUP_MIGRATION_TIMEOUT_MS: "30000",
+    MONGODB_STARTUP_MIGRATION_TIMEOUT_MS: "60000",
     NODE_OPTIONS: [process.env.NODE_OPTIONS, `--import=${new URL("./disableMongoAutoIndexForStartupTest.mjs", import.meta.url).href}`].filter(Boolean).join(" "),
   });
   t.after(async () => {
@@ -197,7 +215,7 @@ test("a fresh MongoDB-backed server becomes healthy after its critical migration
   });
 
   const baseUrl = `http://127.0.0.1:${runtime.port}`;
-  const deadline = Date.now() + 35_000;
+  const deadline = Date.now() + 75_000;
   let healthResponse;
   let healthPayload;
   while (Date.now() < deadline) {
@@ -207,7 +225,8 @@ test("a fresh MongoDB-backed server becomes healthy after its critical migration
       healthPayload = await healthResponse.json();
       if (healthResponse.status === 200 && healthPayload.status === "healthy") break;
       assert.equal(healthResponse.status, 503, "startup failures must not masquerade as healthy");
-      assert.equal(healthPayload.status, "starting", "critical startup failure must not be hidden");
+      assert.ok(["starting", "degraded"].includes(healthPayload.status), "critical startup failure must remain non-ready while retrying");
+      assert.ok(["starting", "failed"].includes(healthPayload.startup));
     }
     await new Promise((resolve) => setTimeout(resolve, 100));
   }

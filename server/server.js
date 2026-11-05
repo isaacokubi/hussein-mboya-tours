@@ -25,6 +25,8 @@ const STARTUP_MIGRATION_TIMEOUT_MS = Math.min(
   120_000,
   Math.max(1_000, Number(process.env.MONGODB_STARTUP_MIGRATION_TIMEOUT_MS) || 60_000),
 );
+const STARTUP_RETRY_BASE_MS = 2_000;
+const STARTUP_RETRY_MAX_MS = 30_000;
 const taskState = new Map();
 const intervals = new Set();
 let stopJobWorker = () => {};
@@ -44,13 +46,21 @@ const runNonCriticalTask = async (name, task) => {
 
 const withTimeout = (task, timeoutMs, name) => {
   let timer;
+  const operation = Promise.resolve().then(task);
   return Promise.race([
-    Promise.resolve().then(task),
+    operation,
     new Promise((_, reject) => {
       timer = setTimeout(() => reject(new Error(`${name} exceeded its ${timeoutMs}ms startup limit.`)), timeoutMs);
       timer.unref?.();
     }),
-  ]).finally(() => clearTimeout(timer));
+  ]).catch(async (error) => {
+    if (error?.message === `${name} exceeded its ${timeoutMs}ms startup limit.`) {
+      // A timeout does not cancel MongoDB work. Let the in-flight migration
+      // settle before a retry so two index migrations cannot race each other.
+      await operation.catch(() => {});
+    }
+    throw error;
+  }).finally(() => clearTimeout(timer));
 };
 
 const server = http.createServer(app);
@@ -105,19 +115,30 @@ const startDatabaseServices = () => {
 };
 
 const initializeDatabase = async () => {
-  try {
-    await connectDatabase();
-    await runStagingQaStartupSeed();
-    await withTimeout(migrateInvoiceIndexes, STARTUP_MIGRATION_TIMEOUT_MS, "Invoice index migration");
-    if (shuttingDown) return;
-    setStartupPhase("ready");
-    console.log("Critical database startup complete.");
-    startDatabaseServices();
-  } catch (error) {
-    if (shuttingDown) return;
-    setStartupPhase("failed");
-    console.error("Critical database startup failed:", error.name || "Error", error.code || "");
-    void shutdown(1);
+  let failures = 0;
+  while (!shuttingDown) {
+    try {
+      if (mongoose.connection.readyState !== 0) await mongoose.disconnect();
+      setStartupPhase("starting");
+      await connectDatabase();
+      await runStagingQaStartupSeed();
+      await withTimeout(migrateInvoiceIndexes, STARTUP_MIGRATION_TIMEOUT_MS, "Invoice index migration");
+      if (shuttingDown) return;
+      setStartupPhase("ready");
+      console.log("Critical database startup complete.");
+      startDatabaseServices();
+      return;
+    } catch (error) {
+      if (shuttingDown) return;
+      failures += 1;
+      setStartupPhase("failed");
+      const retryIn = Math.min(STARTUP_RETRY_BASE_MS * 2 ** Math.min(failures - 1, 5), STARTUP_RETRY_MAX_MS);
+      console.error("Critical database startup failed; HTTP listener remains available and initialization will retry:", error.name || "Error", error.code || "", `retryInMs=${retryIn}`);
+      await new Promise((resolve) => {
+        const timer = setTimeout(resolve, retryIn);
+        timer.unref?.();
+      });
+    }
   }
 };
 
@@ -129,7 +150,7 @@ server.on("error", (error) => {
 process.on("SIGINT", () => void shutdown(0));
 process.on("SIGTERM", () => void shutdown(0));
 
-server.listen(env.PORT, () => {
+server.listen(env.PORT, "0.0.0.0", () => {
   console.log(`HTTP server listening on port ${server.address()?.port ?? env.PORT}`);
   void initializeDatabase();
 });

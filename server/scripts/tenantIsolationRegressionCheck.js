@@ -1,11 +1,15 @@
 import mongoose from "mongoose";
-import env from "../config/env.js";
 import Organization from "../models/Organization.js";
 import Destination from "../models/Destination.js";
 import AccommodationInventory from "../models/AccommodationInventory.js";
 import { runWithTenant } from "../tenancy/context.js";
+import { getDisposableIntegrationMongoUri } from "../tests/integrationMongoUri.js";
 
 await import("../tenancy/bootstrap.js");
+const integrationUri = getDisposableIntegrationMongoUri();
+if (!integrationUri) throw new Error("Set LIFECYCLE_TEST_MONGODB_URI to an authorized test database before running the live tenant regression check.");
+process.env.MONGODB_URI = integrationUri;
+const { default: env } = await import("../config/env.js");
 await mongoose.connect(env.MONGODB_URI);
 
 const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;

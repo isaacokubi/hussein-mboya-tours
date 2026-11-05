@@ -8,6 +8,7 @@ node_modules/
 .env.development
 .env.production
 server/.env
+server/.env.seed-staging
 client/.env
 client/.env.local
 client/.env.development

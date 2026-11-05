@@ -11,7 +11,9 @@ permissions:
 jobs:
   backup:
     name: Encrypted MongoDB backup
-    runs-on: ubuntu-latest
+    # MongoDB 8 refuses to start on the current ubuntu-latest kernel; retain
+    # MongoDB 8 validation on Ubuntu 22.04 until newer runner kernels are supported.
+    runs-on: ubuntu-22.04
     timeout-minutes: 30
     steps:
       - name: Validate backup secrets
@@ -66,7 +68,7 @@ jobs:
           docker run -d --name "$container" --network "$network" mongo:8 --bind_ip_all >/dev/null
 
           ready=false
-          for attempt in $(seq 1 30); do
+          for attempt in $(seq 1 60); do
             if docker exec "$container" mongosh --quiet --eval 'db.adminCommand({ ping: 1 }).ok' 2>/dev/null | grep -qx '1'; then
               ready=true
               break
@@ -75,35 +77,55 @@ jobs:
           done
           if [ "$ready" != "true" ]; then
             echo "Temporary MongoDB validation server did not become ready."
+            docker inspect "$container" --format 'Container state: {{json .State}}' 2>/dev/null || true
+            docker logs --tail 100 "$container" 2>&1 || true
             exit 1
           fi
 
+          sha256sum -c "$archive.sha256"
           docker run --rm -i --network "$network" mongo:8 \
-            mongorestore --host "$container" --archive --gzip --dryRun --verbose \
-            < "$decrypted_archive" \
-            2>&1 | tee backup/dry-run.log
+            mongorestore --host "$container:27017" --archive --gzip \
+            < "$decrypted_archive"
 
-          grep -Eq '([.]organizations|[.]users)([^[:alnum:]_]|$)' backup/dry-run.log || {
-            echo "Backup archive does not contain expected application collections (organizations/users)."
-            echo "The configured MONGODB_BACKUP_URI may point to the wrong database."
-            exit 1
-          }
+          docker run --rm --network "$network" mongo:8 mongosh \
+            --quiet "mongodb://$container:27017/admin" --eval '
+              const names = db.getMongo().getDBNames().filter((name) => !["admin", "config", "local"].includes(name));
+              const appDbName = names.find((name) => {
+                const candidate = db.getSiblingDB(name);
+                const collections = candidate.getCollectionNames();
+                return collections.includes("organizations") && collections.includes("users");
+              });
+              if (!appDbName) throw new Error("Restored archive is missing organizations/users collections");
+              const restored = db.getSiblingDB(appDbName);
+              const users = restored.users.countDocuments({});
+              const organizations = restored.organizations.countDocuments({});
+              if (!users || !organizations) throw new Error("Restored users and organizations must contain readable documents");
+              const organizationIds = restored.organizations.find({}, { _id: 1 }).toArray().map(({ _id }) => _id);
+              const collections = restored.getCollectionNames();
+              const integrity = {};
+              for (const required of ["bookings", "payments", "invoices"]) {
+                if (!collections.includes(required)) throw new Error(`Restored archive is missing ${required}`);
+                const indexes = restored.getCollection(required).getIndexes();
+                if (!indexes.length) throw new Error(`Restored ${required} collection has no readable indexes`);
+                integrity[required] = restored.getCollection(required).countDocuments({
+                  tenantId: { $exists: true, $ne: null, $nin: organizationIds }
+                });
+                if (integrity[required]) throw new Error(`Restored ${required} contain tenant references without an organization`);
+              }
+              printjson({ database: appDbName, userCount: users, organizationCount: organizations,
+                bookings: restored.bookings.countDocuments({}), payments: restored.payments.countDocuments({}),
+                invoices: restored.invoices.countDocuments({}), tenantReferenceOrphans: integrity,
+                collectionCount: collections.length });
+            '
 
-          echo "Backup archive contains expected application collections."
+          echo "Encrypted archive decrypted, restored into isolated MongoDB, and application data validated."
 
       - name: Upload encrypted backup artifact
         uses: actions/upload-artifact@v4
         with:
           name: production-mongodb-backup-${{ github.run_id }}
-          path: backup/
+          path: |
+            backup/*.archive.gz.enc
+            backup/*.archive.gz.enc.sha256
           if-no-files-found: error
           retention-days: 30
-
-      - name: Verify encrypted archive can be decrypted
-        env:
-          BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
-        run: |
-          set -euo pipefail
-          archive="$(cat backup/latest.txt)"
-          openssl enc -d -aes-256-cbc -pbkdf2 -in "$archive" -pass env:BACKUP_ENCRYPTION_PASSPHRASE | gzip -t
-          echo "Encrypted backup integrity verification passed."

@@ -154,14 +154,17 @@ export function safeTarget(target = databaseTarget()) {
   if (String(process.env.NODE_ENV || "").toLowerCase() === "production") throw new Error("Refusing test seed because NODE_ENV=production.");
   const { dbName, host } = target;
   const normalizedHost = String(host || "").toLowerCase();
-  const explicitAtlasDemoSeed = process.env.ALLOW_ATLAS_DEMO_SEED === "YES"
+  if (String(dbName || "").toLowerCase() === "husseindb") {
+    throw new Error("Refusing comprehensive test seed against the application database husseindb.");
+  }
+  const explicitAtlasStagingSeed = process.env.ALLOW_ATLAS_DEMO_SEED === "YES"
     && normalizedHost === "cluster0.cdtxzts.mongodb.net"
-    && dbName === "husseindb";
-  if (!new Set(["127.0.0.1", "localhost", "[::1]", "::1"]).has(normalizedHost) && !explicitAtlasDemoSeed) {
-    throw new Error("Refusing test seed: MongoDB host must be loopback unless the explicit Atlas demo-seed opt-in targets husseindb.");
+    && dbName === "global_tours_test";
+  if (!new Set(["127.0.0.1", "localhost", "[::1]", "::1"]).has(normalizedHost) && !explicitAtlasStagingSeed) {
+    throw new Error("Refusing test seed: MongoDB host must be loopback unless the explicit Atlas staging-seed opt-in targets global_tours_test.");
   }
   const configText = [process.env.NODE_ENV, process.env.PLATFORM_HOST, process.env.CLIENT_URL, process.env.CLIENT_ORIGINS, host, dbName].join(" ").toLowerCase();
-  if (!explicitAtlasDemoSeed && !/(^|[-_])(test|testing|demo|disposable|seed)([-_]|$)/.test(dbName)) throw new Error(`Refusing seed: configured database name "${dbName || "(default)"}" is not explicitly test/demo/disposable. No writes were made.`);
+  if (!explicitAtlasStagingSeed && !/(^|[-_])(test|testing|demo|disposable|seed)([-_]|$)/.test(dbName)) throw new Error(`Refusing seed: configured database name "${dbName || "(default)"}" is not explicitly test/demo/disposable. No writes were made.`);
   if (/prod|production|render\.com|vercel\.app|mongodb\+srv:.*prod/.test(configText)) throw new Error("Refusing test seed because production-looking configuration was detected.");
   if ([process.env.ALLOW_GLOBAL_MPESA_FALLBACK, process.env.ALLOW_SINGLE_TENANT_DEV_FALLBACK].some((value) => String(value || "").trim().toLowerCase() === "true")) throw new Error("Refusing test seed while an unsafe M-Pesa fallback is enabled.");
   return { dbName, host };
