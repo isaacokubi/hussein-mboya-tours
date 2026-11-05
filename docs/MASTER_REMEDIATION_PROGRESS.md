@@ -2,7 +2,7 @@
 
 ## Current state
 
-**NOT PRODUCTION READY.** This follow-up starts from GitHub `main` at `1b5c8aacf340b3728852486400e31b96592fe242` on branch `codex/complete-readiness-2026-11-05`; PR #224 is open. Its current head `da92c4d` passed CI run `41969409132` and release gate `41969409044`. No deployment or production database mutation was made. Current-main production smoke run `41960879541` observed HTTP 503, followed by successful monitoring run `41963125543`, which passed API readiness and website checks and closed alerts #221 and #145. Latest backup run `41613200034` failed temporary MongoDB validation before artifact upload.
+**NOT PRODUCTION READY.** PR #224 was squash-merged. Current `main` is `4085201b3d70c66afa749ee04fe4b7b995f8f937`; post-merge CI `41971013763` and release gate `41971013788` passed. Post-merge production smoke `41971013760` timed out three times and then returned API HTTP 503; the public website check was skipped. No deployment or production database mutation was made. Earlier monitoring run `41963125543` passed readiness and website checks on the previous main SHA and closed alerts #221/#145, but does not override the post-merge smoke failure. Latest backup run `41613200034` failed temporary MongoDB validation before artifact upload.
 
 ## Completed repository work
 
@@ -17,9 +17,9 @@
 - **FIXED:** monitoring retries the startup failure state during its configured wait and does not cancel an in-progress failure check when a new scheduled run starts.
 - **FIXED:** current-main Resend key-rotation logic now honors the test client's active test key; focused provider mock tests pass 5/5 without making a provider call.
 - **FIXED:** the release secret scan's false positive on an illustrative Stripe test literal; focused payment-method tests and the exact scan command pass, and the release-gate rerun passed.
-- **FIXED IN THIS FOLLOW-UP:** MongoDB 8 workflows use Ubuntu 22.04 because Ubuntu 24.04 also reproduced the MongoDB kernel compatibility startup failure; tour replica-set startup is bounded with diagnostics; CI now runs isolated first-tenant acceptance and uses a database name accepted by its safety guard. Follow-up CI is still required to validate this runner workaround.
-- **FIXED IN THIS FOLLOW-UP:** PR CI confirmed the first-tenant flow depends on MongoDB transactions. The live-isolation job now initializes its temporary MongoDB 8 service as a replica set and passes replica-set URIs to the health and first-tenant tests; initialization has bounded waits and container diagnostics.
-- **TESTED:** follow-up PR #224 commit `da92c4d` passed CI run `41969409132` in all four jobs and passed all phases in release gate `41969409044`.
+- **FIXED AND TESTED:** MongoDB 8 CI, backup and restore validation use Ubuntu 22.04 because Ubuntu 24.04 reproduced the kernel startup guard. Post-merge CI passed. Tour replica-set startup is bounded with diagnostics.
+- **FIXED AND TESTED:** CI initializes a named disposable MongoDB 8 replica-set container with bounded readiness/election checks and cleanup. Health, first-tenant transactional acceptance and live tenant isolation pass.
+- **TESTED:** PR #224 merged as `4085201`; post-merge CI `41971013763` passed all jobs and release gate `41971013788` passed all phases.
 - **FIXED IN THIS FOLLOW-UP:** comprehensive demo seeding categorically refuses the application database `husseindb`; Atlas seeding is limited to the explicit disposable `global_tours_test` target. No seed was run.
 - **FIXED IN TEST:** first-tenant acceptance now selects the MPESA method enabled by fresh-tenant defaults, while still asserting no provider payment is initiated. The prior test incorrectly selected an unconfigured bank-transfer method.
 
@@ -54,15 +54,15 @@ The initial sandbox run failed because loopback binding returned `EPERM`; the ba
 
 On current main, the monitoring run at `41963125543` passed health/readiness and website latency; it closed #221 and #145. Earlier same-commit smoke run `41960879541` received HTTP 503. The latest production backup run `41613200034` created an archive but failed temporary MongoDB validation; upload was skipped. Its old workflow did not emit useful container diagnostics. Ubuntu 24.04 reproduced the MongoDB 8 kernel compatibility failure, so MongoDB 8 backup/restore validation now uses Ubuntu 22.04. That is the likely cause of the old backup failure but remains an inference until rerun; the protected archive still needs successful validation.
 
-Current open PRs are #222, #220, #210, #209, #198, #190, #186, #184, #183, #182, #174, #148, #130, #102, #100, #99, #97, and #96. The M-Pesa offline test from #222 is already on main; its MongoDB 7 workaround is replaced here by a supported-runner fix that preserves MongoDB 8. PR #190's seed safety has been implemented here. PR #186's account matrix writes account emails into report output, so it is not accepted as-is. #209/#210 have duplicate patches that delete overlapping controller blocks; current main syntax and tests pass, and neither was merged. #220 and #198 overlap broad checkout/public-site changes; dependency-only PRs need compatibility review; #148 contains a broad Firestore rewrite and is deferred. No unrelated PR was merged or closed in this follow-up.
+PR #190 (seed safety) and #222 (offline M-Pesa tests/CI workaround) were closed as superseded after PR #224 merged. Other open PRs at last review: #220, #210, #209, #198, #186, #184, #183, #182, #174, #148, #130, #102, #100, #99, #97, and #96. The offline M-Pesa test from #222 was already on main; PR #224 preserves MongoDB 8 with the supported Ubuntu 22.04 runner. PR #186's account matrix writes account emails into report output, so it was not accepted as-is. #209/#210 have duplicate patches that delete overlapping controller blocks; neither was merged. #220 and #198 overlap broad checkout/public-site changes; dependency-only PRs need compatibility review; #148 contains a broad Firestore rewrite and is deferred. No other unrelated PR was merged or closed.
 
-The previous remediation PR has landed in current main. Follow-up PR #224 commit `da92c4d` passed all CI jobs, including live tenant isolation, DB health/first-tenant acceptance, tour lifecycle runtime integration, server checks, and client lint/build. Its release gate passed. On main, the earlier live-isolation service failed during MongoDB initialization because of the runner kernel; Ubuntu 22.04 allowed MongoDB 8 to start. The first-tenant acceptance then exposed its transaction requirement and drove the change to a named disposable replica-set container with bounded initialization and cleanup.
+The previous remediation and PR #224 have landed in main. Post-merge CI passed all jobs, including live tenant isolation, DB health/first-tenant acceptance, tour lifecycle runtime integration, server checks, and client lint/build. The release gate passed. Production smoke on the merge SHA failed after three timeouts with API HTTP 503; website smoke was skipped. The deployment SHA and runtime cause are not established, so production readiness remains blocked.
 
 The isolated offline test portion of PR #222 was reviewed and incorporated as `server/tests/mpesaOfflineSimulation.test.js` (4/4 tests pass). Its proposed MongoDB 8→7.0 CI downgrade was not copied because it is unrelated to the test coverage and would change the repository's MongoDB 8 integration target. PR #222 itself remains open and unmerged.
 
 ## Remaining work by gate
 
-- **TESTED, CURRENT MONITORING:** latest read-only monitor passed and closed alerts #221/#145. **BLOCKED EXTERNALLY:** establish the actual production deployment SHA and confirm recurring monitoring after any approved deployment.
+- **BLOCKED EXTERNALLY:** production smoke on merged main timed out and returned API HTTP 503; establish deployed SHA/runtime cause, remediate through approved deployment process and rerun smoke. Earlier monitoring on the prior SHA passed.
 - **BLOCKED EXTERNALLY:** run encrypted backup and restore drill with the actual protected archive and isolated restore target; collect business data, index, RPO/RTO, and retention evidence. The synthetic restore does not verify production archive contents or credentials.
 - **BLOCKED EXTERNALLY:** inspect/rotate production database principal to least privilege through authorized Atlas/Render access.
 - **BLOCKED EXTERNALLY:** complete tenant-configured Daraja Sandbox STK/callback/idempotency/refund/reconciliation lifecycle; no real or production payment was initiated.
@@ -70,12 +70,11 @@ The isolated offline test portion of PR #222 was reviewed and incorporated as `s
 - **NOT TESTED:** complete the exhaustive finance, hotel/tour/fleet/supplier, SaaS billing, AI, auth recovery, mobile/browser and P0 cross-tenant test matrix.
 - **NOT TESTED:** complete the full patch review and reconciliation of unrelated open PRs; no unrelated merge is claimed.
 - **TESTED:** dependency vulnerability audit (`npm audit`); zero critical/high findings, with 2 server moderate and 8 client moderate/2 low findings remaining.
-- **BLOCKED EXTERNALLY:** complete new branch CI after pushing; rerun protected production backup and verify an actual restore. Production workflow evidence remains separate from the synthetic local restore.
+- **TESTED:** current-main CI and release gate pass. **BLOCKED EXTERNALLY:** rerun protected production backup and verify an actual restore. Production workflow evidence remains separate from synthetic local restore.
 
 ## Next actions
 
-1. Complete final review and merge PR #224; its CI and release gate pass.
+1. Diagnose the post-merge production HTTP 503 and identify the deployed SHA through authorized Render access; deploy only with approval and rerun production smoke/monitoring.
 2. Run the updated production backup and restore workflows with a dedicated restore target and protected secrets.
-3. After approved deployment, run production smoke/monitoring; verify recovery closes #221 and #145.
-4. Configure a separate isolated Sandbox environment and run provider acceptance without production data.
-5. Complete full patch review of unrelated PRs, security review, remaining business workflow and browser acceptance; update this register with evidence rather than implementation assumptions.
+3. Configure a separate isolated Daraja Sandbox environment and run provider acceptance without production data.
+4. Complete full patch review of unrelated PRs, security review, remaining business workflow and browser acceptance; update this register with evidence rather than implementation assumptions.
