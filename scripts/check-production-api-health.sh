@@ -51,7 +51,8 @@ if (status == 200 and body.get("success") is True
     raise SystemExit(0)
 
 if (status == 503 and body.get("success") is False
-        and body.get("status") == "starting" and body.get("startup") == "starting"
+        and body.get("startup") in {"starting", "failed"}
+        and body.get("status") in {"starting", "degraded"}
         and body.get("database") in {"connecting", "disconnected"}):
     raise SystemExit(2)
 

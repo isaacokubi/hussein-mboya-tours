@@ -90,11 +90,18 @@ test("application configuration fails safely when MONGODB_URI is missing", () =>
   });
 });
 
-test("lifecycle integration requires a dedicated disposable URI and rejects production husseindb", () => {
+test("lifecycle integration requires an explicit disposable URI and opt-in for husseindb", () => {
   assert.equal(getDisposableIntegrationMongoUri({}), null);
   assert.throws(() => getDisposableIntegrationMongoUri({
     LIFECYCLE_TEST_MONGODB_URI: "mongodb+srv://cluster.example/husseindb",
-  }), /never husseindb/);
+  }), /ALLOW_HUSSEINDB_TEST_DATABASE=true/);
+  assert.equal(getDisposableIntegrationMongoUri({
+    LIFECYCLE_TEST_MONGODB_URI: "mongodb+srv://cluster.example/husseindb",
+    ALLOW_HUSSEINDB_TEST_DATABASE: "true",
+  }), "mongodb+srv://cluster.example/husseindb");
+  assert.throws(() => getDisposableIntegrationMongoUri({
+    LIFECYCLE_TEST_MONGODB_URI: "mongodb+srv://cluster.example/production",
+  }), /clearly identify a disposable test database/);
   assert.equal(getDisposableIntegrationMongoUri({
     LIFECYCLE_TEST_MONGODB_URI: "mongodb+srv://cluster.example/disposable_lifecycle_test",
   }), "mongodb+srv://cluster.example/disposable_lifecycle_test");

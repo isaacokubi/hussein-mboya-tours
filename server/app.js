@@ -87,7 +87,18 @@ const readinessPayload = () => {
 
 // Health and informational root routes stay reachable while the database and
 // required startup migration initialize. Health still reports non-ready states.
+app.get("/api/live", (req, res) => res.status(200).json({
+  success: true,
+  status: "alive",
+  timestamp: new Date().toISOString(),
+  requestId: req.requestId,
+}));
+
 app.get("/api/health", (req, res) => {
+  const payload = readinessPayload();
+  res.status(payload.success ? 200 : 503).json({ ...payload, requestId: req.requestId });
+});
+app.get("/api/ready", (req, res) => {
   const payload = readinessPayload();
   res.status(payload.success ? 200 : 503).json({ ...payload, requestId: req.requestId });
 });

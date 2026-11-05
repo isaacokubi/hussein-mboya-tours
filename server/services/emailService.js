@@ -83,7 +83,10 @@ export const sendBookingStatusEmail = async (booking, status, reason = "") => {
 
 // Used by focused tests without constructing a real SDK client.
 export const resetResendClientForTests = () => { resendClient = undefined; resendClientApiKey = undefined; };
-export const setResendClientForTests = (client) => { resendClient = client; };
+export const setResendClientForTests = (client) => {
+  resendClient = client;
+  resendClientApiKey = String(process.env.RESEND_API_KEY || "").trim();
+};
 
 export const sendEmailBestEffort = async (send, context = "Notification") => {
   try {

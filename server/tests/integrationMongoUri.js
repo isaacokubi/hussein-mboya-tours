@@ -21,8 +21,16 @@ export function getDisposableIntegrationMongoUri(environment = process.env) {
   } catch {
     throw new Error("LIFECYCLE_TEST_MONGODB_URI must name a disposable test database.");
   }
-  if (!databaseName || databaseName === "husseindb") {
-    throw new Error("LIFECYCLE_TEST_MONGODB_URI must name a disposable test database, never husseindb.");
+  if (!databaseName) {
+    throw new Error("LIFECYCLE_TEST_MONGODB_URI must name a disposable test database.");
+  }
+  if (databaseName.toLowerCase() === "husseindb" && environment.ALLOW_HUSSEINDB_TEST_DATABASE !== "true") {
+    throw new Error("Using husseindb for lifecycle tests requires ALLOW_HUSSEINDB_TEST_DATABASE=true.");
+  }
+  const explicitlyAuthorizedHusseindb = databaseName.toLowerCase() === "husseindb"
+    && environment.ALLOW_HUSSEINDB_TEST_DATABASE === "true";
+  if (!explicitlyAuthorizedHusseindb && !/(?:^|[_-])(test|testing|disposable|integration|lifecycle)(?:[_-]|$)/i.test(databaseName)) {
+    throw new Error("LIFECYCLE_TEST_MONGODB_URI database name must clearly identify a disposable test database.");
   }
   return rawUri;
 }
