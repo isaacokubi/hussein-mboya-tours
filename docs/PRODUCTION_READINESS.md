@@ -1,5 +1,9 @@
 # Global Tours — Production Readiness
 
+## Current remediation status — 2026-11-04
+
+The current source remediation is documented in [the 2026-11-04 update](READINESS_UPDATE_2026-11-04.md). The checkout was `main` at `a186b7a6829b61fabd7bc65bbd966319f0b6f128`; current readiness changes remain on an uncommitted remediation branch. API startup now retries required database initialization while preserving liveness, and backup validation now performs an isolated restore in the workflow. Neither change has been deployed or verified against production. The actual backup restore workflow has not yet run against an encrypted backup. Overall status remains **NOT PRODUCTION READY**.
+
 ## Latest targeted first-tenant evidence — 2026-10-10
 
 The dedicated test `cd server && node --env-file=.env --test tests/firstTenantAcceptance.integration.test.js` passed **1/1, 0 failures, 0 skips** in about 111.5 seconds against an isolated disposable test database. It covers tenant provisioning, tenant-admin/customer access, catalogue and booking behavior, tenant-scoped access and cross-tenant denial. Tenant A credentials against Tenant B login correctly return 401; a Tenant A JWT selecting Tenant B on `/api/auth/me` correctly returns 404.
@@ -110,7 +114,7 @@ See [First Tenant Production Acceptance](FIRST_TENANT_ACCEPTANCE.md) for the env
 
 ### API startup and health behavior
 
-The API binds to the platform-provided `PORT` before MongoDB connection and invoice-index migration begin. `/api/health` bypasses tenant resolution and rate limiting, responds promptly during startup, and reports `starting`/`degraded` plus the actual database connection state. It reports healthy only when the application startup migration has completed and Mongoose is connected. Database-backed routes return 503 until that point. MongoDB selection is bounded to 10 seconds by default; invoice-index migration is bounded to 60 seconds by default and remains a critical startup operation whose failure terminates the process. Background schedulers start only after database readiness and do not delay the listener.
+The API binds to the platform-provided `PORT` before MongoDB connection and invoice-index migration begin. `/api/live` reports process liveness independently of dependencies; `/api/ready` and backward-compatible `/api/health` report startup and database readiness. Readiness is healthy only after the critical startup migration completes and Mongoose is connected. Database-backed routes return 503 until then. MongoDB selection is bounded to 10 seconds by default; invoice-index migration is bounded to 60 seconds by default. A failed initial connection or critical startup operation is retried with capped backoff while the HTTP listener stays available; retry waits for timed-out migration work to settle. Background schedulers start only after database readiness and do not delay the listener.
 
 The production smoke and monitoring workflows share a bounded readiness probe. It requires an HTTPS origin in `PRODUCTION_API_URL`, retries transient startup/unreachable responses and database disconnects in an otherwise-ready process for at most 120 seconds, and fails immediately when critical startup has failed. Success still requires the exact healthy/connected response. The probe does not certify the live deployment by itself; current production status remains **NOT VERIFIED** until GitHub Actions receives that response from the configured Render service.
 

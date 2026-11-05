@@ -39,7 +39,7 @@ test("runtime production readiness requires a platform host for tenant URLs", ()
   assert.match(check, /PLATFORM_HOST must be configured in production for tenant subdomain resolution/);
 });
 
-test("Render health stays reachable before MongoDB startup and requires completed readiness", () => {
+test("Render health stays reachable before MongoDB startup and retries failed initialization", () => {
   const app = read("app.js");
   const server = read("server.js");
   const database = read("config/database.js");
@@ -48,11 +48,44 @@ test("Render health stays reachable before MongoDB startup and requires complete
   const tenantResolver = app.indexOf("app.use(resolveTenant)");
   assert.ok(healthRoute >= 0 && tenantResolver > healthRoute, "health must bypass tenant/database middleware");
   assert.match(app, /startup === "ready" && database === "connected"/);
-  assert.ok(server.indexOf("server.listen(env.PORT") < server.indexOf("void initializeDatabase()"), "HTTP must bind before database startup work");
+  assert.match(app, /app\.get\("\/api\/live"/);
+  assert.match(app, /app\.get\("\/api\/ready"/);
+  assert.ok(server.indexOf('server.listen(env.PORT, "0.0.0.0"') < server.indexOf("void initializeDatabase()"), "HTTP must bind on Render's port and public interface before database startup work");
   assert.match(server, /withTimeout\(migrateInvoiceIndexes, STARTUP_MIGRATION_TIMEOUT_MS/);
+  assert.match(server, /while \(!shuttingDown\)/);
+  assert.match(server, /STARTUP_RETRY_MAX_MS/);
+  assert.match(server, /await operation\.catch\(\(\) => \{\}\)/);
   assert.match(database, /serverSelectionTimeoutMS/);
   assert.match(render, /healthCheckPath:\s*\/api\/health/);
   assert.match(render, /MONGODB_SERVER_SELECTION_TIMEOUT_MS/);
+  const monitorCheck = read("../scripts/check-production-api-health.sh");
+  assert.match(monitorCheck, /body\.get\("startup"\) in \{"starting", "failed"\}/,
+    "monitoring must retry during the bounded startup-recovery backoff");
+});
+
+test("backup workflow validates a real isolated restore before encrypted artifact upload", () => {
+  const workflow = read("../.github/workflows/production-backup.yml");
+  const restore = workflow.indexOf("mongorestore --host \"$container:27017\" --archive --gzip");
+  const dataValidation = workflow.indexOf("tenantReferenceOrphans");
+  const upload = workflow.indexOf("Upload encrypted backup artifact");
+  assert.ok(restore >= 0, "backup must restore into the disposable MongoDB server");
+  assert.equal(workflow.includes("--dryRun"), false, "a dry run cannot satisfy restore verification");
+  assert.match(workflow, /sha256sum -c/);
+  assert.match(workflow, /mongosh[\s\S]*organizations[\s\S]*users[\s\S]*bookings[\s\S]*payments[\s\S]*invoices/);
+  assert.match(workflow, /docker logs --tail 100/);
+  assert.ok(dataValidation > restore && upload > dataValidation, "upload must follow completed restore data checks");
+  assert.match(workflow, /backup\/\*\.archive\.gz\.enc/);
+  assert.doesNotMatch(workflow, /backup\/\n\s*if-no-files-found/, "diagnostic and plaintext files must not be uploaded");
+});
+
+test("monitoring closes existing alerts after a complete recovery check", () => {
+  const workflow = read("../.github/workflows/production-monitoring.yml");
+  assert.match(workflow, /Close recovered production monitoring alert/);
+  assert.match(workflow, /github\.paginate\(github\.rest\.issues\.listForRepo/);
+  assert.match(workflow, /state: 'closed'/);
+  assert.match(workflow, /inputs\.simulate_failure != true/);
+  assert.match(workflow, /cancel-in-progress: false/,
+    "a new scheduled run must not cancel an active failure check before alert delivery");
 });
 
 test("CI validates server, live tenant isolation, and client production build", () => {

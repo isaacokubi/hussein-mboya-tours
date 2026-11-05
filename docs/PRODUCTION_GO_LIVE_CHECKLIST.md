@@ -21,6 +21,8 @@ The automated retention sweep intentionally does **not** delete bookings, invoic
 
 ## Phase 2 — Production evidence and external integrations
 
+Repository workflow remediation is in progress as of 2026-11-04: API startup retry/liveness changes and an actual isolated backup restore validator are on a remediation branch. These implementation changes do **not** satisfy the evidence gates below. They remain unchecked until the workflows pass against the configured deployment and protected backup/restore targets. See [the dated readiness update](READINESS_UPDATE_2026-11-04.md).
+
 Before setting `NODE_ENV=production`, the deployment owner must verify all of the following in the actual production environment:
 
 - [ ] `PRODUCTION_BACKUP_VERIFIED=true` — automated backup destination and retention verified.
