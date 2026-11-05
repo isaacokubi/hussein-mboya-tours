@@ -2,7 +2,7 @@
 
 ## Follow-up audit — 2026-11-05
 
-Latest GitHub `main` at branch creation was `1b5c8aacf340b3728852486400e31b96592fe242`. Follow-up work is on `codex/complete-readiness-2026-11-05`; PR #224 commit `da92c4d` passed CI run `41969409132` and release gate `41969409044`. The live MongoDB 8 CI failure came from runner-kernel compatibility; Ubuntu 24.04 reproduced it, while Ubuntu 22.04 allowed the test image to start. First-tenant acceptance showed transactions were required, so CI starts a named disposable replica-set container with bounded startup, diagnostics and cleanup. The branch also bounds the tour wait, adds first-tenant CI coverage and restricts comprehensive seeding away from `husseindb`. Production readiness remains **NOT READY** until protected restore/provider/deployment and remaining security/business acceptance gates pass.
+Latest `main` is `4085201b3d70c66afa749ee04fe4b7b995f8f937`. PR #224 passed CI/release gates and was merged; the merged commit's CI [41971013763](https://github.com/isaacokubi/hussein-mboya-tours/actions/runs/41971013763) and release gate [41971013788](https://github.com/isaacokubi/hussein-mboya-tours/actions/runs/41971013788) passed. The post-merge production smoke [41971013760](https://github.com/isaacokubi/hussein-mboya-tours/actions/runs/41971013760) timed out three times then received HTTP 503 from API readiness; the website step was skipped. Deployed SHA/runtime cause remain unknown. Production readiness remains **NOT READY** pending that external runtime investigation, protected restore/provider, and remaining security/business acceptance gates.
 
 ## Scope and evidence
 

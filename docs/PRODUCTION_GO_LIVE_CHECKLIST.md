@@ -21,7 +21,7 @@ The automated retention sweep intentionally does **not** delete bookings, invoic
 
 ## Phase 2 — Production evidence and external integrations
 
-Repository workflow remediation is in progress as of 2026-11-05. MongoDB 8 jobs now use Ubuntu 22.04 after the Ubuntu 24.04 runner reproduced the kernel compatibility startup failure. Local replica-set, readiness and synthetic restore tests pass. The latest production monitor passed and closed existing alerts, but a same-commit production smoke run previously returned HTTP 503. These code and local-test results do **not** satisfy the external evidence gates below. The protected production archive restore and CI for the new branch are still pending. See [the dated readiness update](READINESS_UPDATE_2026-11-05.md).
+Repository workflow remediation merged in PR #224 on 2026-11-05; post-merge CI and release gate pass. MongoDB 8 jobs use Ubuntu 22.04 after newer runners reproduced the kernel compatibility startup failure. Local replica-set, readiness and synthetic restore tests pass. The post-merge production smoke run `41971013760` timed out three times then returned API HTTP 503; website smoke was skipped. The deployed SHA and runtime cause are unknown. These repository and local-test results do **not** satisfy the external evidence gates below. The protected production archive restore also remains pending. See [the dated readiness update](READINESS_UPDATE_2026-11-05.md).
 
 Before setting `NODE_ENV=production`, the deployment owner must verify all of the following in the actual production environment:
 
