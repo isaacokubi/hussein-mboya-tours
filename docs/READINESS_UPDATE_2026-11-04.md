@@ -35,7 +35,7 @@ This record was refreshed on 2026-11-05. The user explicitly confirmed `husseind
 - Live Daraja Sandbox payment/callback/refund/reconciliation: **NOT TESTED**; no provider credential, callback, or payment operation was used.
 - Production deployment SHA and live database role: **NOT VERIFIED**.
 
-GitHub run metadata confirms the cited monitoring run failed at API health/readiness (website check skipped), and the backup run failed during temporary MongoDB validation before upload. Issues #221/#145 remain open. PR #223's first CI run exposed the Resend mock issue (fixed) and a Mongo service initialization failure before the live-isolation step; explicit test URIs were added and a fresh CI run is pending. The recovery closure has not run against production monitoring.
+GitHub run metadata confirms the cited monitoring run failed at API health/readiness (website check skipped), and the backup run failed during temporary MongoDB validation before upload. Issues #221/#145 remain open. For PR #223 head `c3bb671`, release gate passed all three phases; server production and client checks passed. Main CI's live-isolation Mongo service failed initialization before tests, while tour lifecycle integration was still running at last check. The secret-scan false positive was fixed and the rerun release gate passed. Overall CI remains incomplete. Recovery closure has not run against production monitoring.
 
 ## Verdict
 

@@ -2,7 +2,7 @@
 
 ## Current state
 
-**NOT PRODUCTION READY.** Current branch `codex/global-tours-remediation-2026-11-04` includes current GitHub `main` SHA `5ac913bd96504927c9bbfb0a9e10a620e7ecf82d` via merge commit `607eae4`. Commits are pushed and draft PR #223 is open against `main`; the newest CI run must complete before the PR can be considered green. No deployment was made.
+**NOT PRODUCTION READY.** Current branch `codex/global-tours-remediation-2026-11-04` includes current GitHub `main` SHA `5ac913bd96504927c9bbfb0a9e10a620e7ecf82d` via merge commit `607eae4`. Commits are pushed and draft PR #223 is open against `main`. On head `c3bb671`, release gate passed; main CI remained incomplete/failed because the live-isolation Mongo service failed to initialize and tour lifecycle integration was still running. No deployment was made.
 
 ## Completed repository work
 
@@ -16,6 +16,7 @@
 - **FIXED:** the live multitenancy script now requires a dedicated `LIFECYCLE_TEST_MONGODB_URI`; using fake-data `husseindb` requires a one-command explicit authorization flag. Its authorized run created and removed only uniquely named fixtures.
 - **FIXED:** monitoring retries the startup failure state during its configured wait and does not cancel an in-progress failure check when a new scheduled run starts.
 - **FIXED:** current-main Resend key-rotation logic now honors the test client's active test key; focused provider mock tests pass 5/5 without making a provider call.
+- **FIXED:** the release secret scan's false positive on an illustrative Stripe test literal; focused payment-method tests and the exact scan command pass, and the release-gate rerun passed.
 
 ## Commands executed
 
@@ -41,7 +42,7 @@ The cited monitoring run failed its API health/readiness step and skipped the we
 
 Current open PRs are #223, #222, #220, #210, #209, #198, #190, #186, #184, #183, #182, #174, #148, #130, #102, #100, #99, #97, and #96. No unrelated PR was merged or closed. #222 overlaps the incorporated M-Pesa offline test/CI workflow; #220 overlaps CI and M-Pesa status/checkout code; #198 overlaps lockfiles and readiness documentation; #209/#210 duplicate a hotel-controller fix; dependency PRs overlap the lockfiles; #148 is a broad acquisition change. Full unrelated patch review remains outstanding.
 
-PR #223's first CI run failed in the backend test job because the current-main Resend client-rotation code bypassed the test stub, and the live-isolation job failed before its test step while GitHub initialized its Mongo service. The Resend injection was fixed; explicit test URIs were added for live isolation and health. A fresh CI run is required.
+PR #223's current release gate passed all three phases. Main CI's server production and client checks passed, but live isolation failed before checkout/tests while GitHub initialized its Mongo service, and tour lifecycle integration remained in progress at last check. The first main CI run also exposed the Resend injection issue, now fixed. The next action is to resolve/rerun the Mongo-service job and obtain a completed tour lifecycle result; the PR is not green.
 
 The isolated offline test portion of PR #222 was reviewed and incorporated as `server/tests/mpesaOfflineSimulation.test.js` (4/4 tests pass). Its proposed MongoDB 8→7.0 CI downgrade was not copied because it is unrelated to the test coverage and would change the repository's MongoDB 8 integration target. PR #222 itself remains open and unmerged.
 
@@ -55,7 +56,7 @@ The isolated offline test portion of PR #222 was reviewed and incorporated as `s
 - **NOT TESTED:** complete the exhaustive finance, hotel/tour/fleet/supplier, SaaS billing, AI, auth recovery, mobile/browser and P0 cross-tenant test matrix.
 - **NOT TESTED:** complete the full patch review and reconciliation of unrelated open PRs; no unrelated merge is claimed.
 - **TESTED:** dependency vulnerability audit (`npm audit`); zero critical/high findings, with 2 server moderate and 8 client moderate/2 low findings remaining.
-- **BLOCKED EXTERNALLY:** wait for the fresh PR #223 CI results; production workflow verification remains external.
+- **BLOCKED EXTERNALLY:** complete PR #223 CI after GitHub runner Mongo service initialization failure; production workflow verification remains external.
 
 ## Next actions
 

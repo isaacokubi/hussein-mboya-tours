@@ -51,6 +51,7 @@ Current GitHub API lists open PRs #223, #222, #220, #210, #209, #198, #190, #186
 - Dependency PRs #184/#183/#182/#174/#130 overlap server package and lock files; #102/#100/#99/#97/#96 overlap the client lockfile. No blind merge was done.
 - #148 is a broad acquisition/due diligence change set touching multiple runtime, workflow, and readiness files; no safe partial merge was identified.
 - PR #223's first CI run failed: current-main Resend test injection (fixed) and Mongo service initialization before the live-isolation test (a fresh CI run is needed). Explicit isolated URIs are now configured for the live-isolation and health jobs.
+- On head `c3bb6715c913c087a928ffd0d6fcd5093830540c`, release gate run `41960120269` passed all three phases. CI run `41960120286` has server production checks and client lint/build passed; live tenant-isolation failed during GitHub Mongo service initialization before checkout/tests, and tour lifecycle integration had not completed when checked. A fake `sk_live_example` test literal triggered the secret scan in the previous run; the test now assembles the example value at runtime, and the rerun release scan passed. Overall CI is not green.
 
 No unrelated PR was merged or closed. Changed-file lists and CI/status metadata were inspected for all open PRs; complete patch review remains outstanding for unrelated changes.
 
