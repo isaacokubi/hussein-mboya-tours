@@ -92,8 +92,8 @@ test("CI validates server, live tenant isolation, and client production build", 
   const workflow = read("../.github/workflows/ci.yml");
   assert.match(workflow, /npm run check:all/);
   assert.match(workflow, /npm run check:multitenancy:live/);
-  assert.match(workflow, /server-live-isolation:[\s\S]*runs-on: ubuntu-24\.04/);
-  assert.match(workflow, /server-tour-lifecycle-integration:[\s\S]*runs-on: ubuntu-24\.04/);
+  assert.match(workflow, /server-live-isolation:[\s\S]*runs-on: ubuntu-22\.04/);
+  assert.match(workflow, /server-tour-lifecycle-integration:[\s\S]*runs-on: ubuntu-22\.04/);
   assert.match(workflow, /LIFECYCLE_TEST_MONGODB_URI:[^\n]*hussein_mboya_ci_test/);
   assert.match(workflow, /HEALTH_TEST_MONGODB_URI:[^\n]*global_tours_test/);
   assert.match(workflow, /FIRST_TENANT_TEST_MONGODB_URI:[^\n]*global_tours_test/);
@@ -107,7 +107,7 @@ test("CI validates server, live tenant isolation, and client production build", 
 test("MongoDB 8 backup and restore validation uses the compatible LTS runner", () => {
   for (const path of ["../.github/workflows/production-backup.yml", "../.github/workflows/production-restore-drill.yml"]) {
     const workflow = read(path);
-    assert.match(workflow, /runs-on: ubuntu-24\.04/);
+    assert.match(workflow, /runs-on: ubuntu-22\.04/);
   }
 });
 

@@ -43,9 +43,9 @@ jobs:
 
   server-live-isolation:
     name: Live tenant isolation regression
-    # Pin to the stable LTS runner: the ubuntu-latest host kernel currently
-    # prevents MongoDB 8 from starting (SERVER-121912).
-    runs-on: ubuntu-24.04
+    # Ubuntu 24.04 runners currently use a kernel MongoDB 8 rejects at startup.
+    # Use the 22.04 LTS host until MongoDB ships its kernel-check fix.
+    runs-on: ubuntu-22.04
     timeout-minutes: 20
 
     services:
@@ -97,9 +97,9 @@ jobs:
 
   server-tour-lifecycle-integration:
     name: Tour lifecycle runtime integration
-    # Keep the MongoDB 8 replica-set test on a runner kernel supported by the
-    # MongoDB 8 image; ubuntu-latest currently has an incompatible kernel.
-    runs-on: ubuntu-24.04
+    # Keep MongoDB 8 on the Ubuntu 22.04 LTS host kernel until the upstream
+    # MongoDB kernel compatibility fix is available.
+    runs-on: ubuntu-22.04
     timeout-minutes: 25
 
     defaults:

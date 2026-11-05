@@ -6,16 +6,16 @@ The latest GitHub `main` was fetched and verified at `1b5c8aacf340b3728852486400
 
 ## Current-main workflow findings
 
-- **FIXED IN WORKING TREE:** CI run [41960879516](https://github.com/isaacokubi/hussein-mboya-tours/actions/runs/41960879516) failed while GitHub initialized `mongo:8`. The container log states MongoDB refuses startup on Linux kernel 6.19 or newer because of the known TCMalloc/rseq incompatibility. MongoDB's [8.0 release notes](https://www.mongodb.com/docs/v8.0/release-notes/8.0/) describe the affected kernel range. MongoDB 8 remains the integration target; its jobs now use `ubuntu-24.04`.
+- **FIXED IN WORKING TREE; CI VALIDATION PENDING:** CI run [41960879516](https://github.com/isaacokubi/hussein-mboya-tours/actions/runs/41960879516) failed while GitHub initialized `mongo:8`. The container diagnostic reports the kernel compatibility guard. MongoDB's [8.0 release notes](https://www.mongodb.com/docs/v8.0/release-notes/8.0/) describe the affected kernel range. PR #224 first pinned MongoDB jobs to Ubuntu 24.04, but the run [41965027976](https://github.com/isaacokubi/hussein-mboya-tours/actions/runs/41965027976) reproduced service initialization failure there too. The jobs now use Ubuntu 22.04; CI must confirm this workaround.
 - **FIXED IN WORKING TREE:** the tour replica-set job had an unbounded readiness loop. It now has a 120-second bound, captures container logs on failure, uses a disposable namespace accepted by the URI safety helper, and has a job timeout.
 - **TESTED:** the latest main release gate succeeded in run `41960879467`.
 - **TESTED, CURRENT MONITORING:** run [41963125543](https://github.com/isaacokubi/hussein-mboya-tours/actions/runs/41963125543) passed production API readiness and website latency and closed issues #221 and #145.
 - **NOT PASSED, LATER RECOVERED:** production smoke run [41960879541](https://github.com/isaacokubi/hussein-mboya-tours/actions/runs/41960879541) got HTTP 503 from the configured API. The later monitoring run passed. The deployed SHA was not established.
-- **BLOCKED EXTERNALLY:** backup run [41613200034](https://github.com/isaacokubi/hussein-mboya-tours/actions/runs/41613200034) dumped the configured `husseindb` archive, then failed because temporary MongoDB validation did not become ready; artifact upload did not run. The old workflow produced no container diagnostics. Runner/kernel incompatibility is the likely shared cause, inferred from the exact MongoDB 8 startup error in current CI. Backup and restore jobs now use `ubuntu-24.04`; the protected archive still requires a successful workflow rerun.
+- **BLOCKED EXTERNALLY:** backup run [41613200034](https://github.com/isaacokubi/hussein-mboya-tours/actions/runs/41613200034) dumped the configured `husseindb` archive, then failed because temporary MongoDB validation did not become ready; artifact upload did not run. The old workflow produced no container diagnostics. Runner/kernel incompatibility is the likely shared cause, inferred from the MongoDB 8 startup error in CI. Backup and restore jobs now use `ubuntu-22.04`; the protected archive still requires a successful workflow rerun.
 
 ## Changes in this follow-up
 
-- CI, backup, and restore jobs that start MongoDB 8 are pinned to `ubuntu-24.04`; application integration tests remain on MongoDB 8.
+- CI, backup, and restore jobs that start MongoDB 8 are pinned to `ubuntu-22.04`; application integration tests remain on MongoDB 8.
 - MongoDB replica-set readiness is bounded and emits container logs on failure. CI now runs the first-tenant acceptance suite using only its temporary Mongo service.
 - The first-tenant test now uses the payment method enabled by fresh-tenant defaults. It still does not initiate a provider payment.
 - The comprehensive demo seed refuses the application database `husseindb`; Atlas seed opt-in is limited to `global_tours_test`. No seed ran.
