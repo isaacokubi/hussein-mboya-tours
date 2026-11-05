@@ -1,5 +1,9 @@
 # Master remediation audit — 2026-11-04
 
+## Follow-up audit — 2026-11-05
+
+Latest GitHub `main` is `1b5c8aacf340b3728852486400e31b96592fe242`. Follow-up changes are being made on `codex/complete-readiness-2026-11-05`. The live MongoDB 8 CI failure is now attributed to the runner's Linux kernel 6.19 incompatibility based on the container log; the separate tour integration job also had an unbounded startup loop. The working tree pins MongoDB 8 jobs to Ubuntu 24.04, bounds replica-set startup, adds first-tenant CI acceptance, and restricts comprehensive seeding away from `husseindb`. Verification and actual production monitor/backup evidence are recorded in [the 2026-11-05 update](READINESS_UPDATE_2026-11-05.md). Production readiness remains **NOT READY** until follow-up CI and the protected restore/provider/deployment evidence gates pass.
+
 ## Scope and evidence
 
 Repository baseline was first observed locally at `a186b7a6829b61fabd7bc65bbd966319f0b6f128`; GitHub `main` had advanced to `5ac913bd96504927c9bbfb0a9e10a620e7ecf82d`. Current `main` was fetched and merged in commit `607eae4147ae8145dd2a2ba704de002c30aee253`. Work remains isolated on `codex/global-tours-remediation-2026-11-04`. No production endpoint, production database, credential, account, payment provider, or deployment was changed. As explicitly authorized for this task, tenant-isolation fixtures were created in the fake-data `husseindb` test database and the regression script removed only the fixture IDs it created.

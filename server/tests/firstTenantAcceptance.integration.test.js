@@ -346,7 +346,9 @@ test("first tenant provisioning, tenant-admin access, public catalogue and cross
       body: JSON.stringify({
         tour: tour._id, travelDate: futureTourDate, numberOfGuests: 1,
         travelers: [{ name: "Acceptance Traveler", email: "traveler-a@acceptance.invalid" }],
-        paymentMethod: "BANK_TRANSFER", contact: { name: "Acceptance Customer", email: "customer-a@acceptance.invalid", phone: "0712345010" },
+        // Booking creation does not initiate a provider payment; use the
+        // explicitly available tenant method in the fresh-tenant defaults.
+        paymentMethod: "MPESA", contact: { name: "Acceptance Customer", email: "customer-a@acceptance.invalid", phone: "0712345010" },
       }),
     });
     assert.equal(bookingResponse.status, 201, JSON.stringify(await bookingResponse.clone().json()));

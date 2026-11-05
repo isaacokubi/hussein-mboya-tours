@@ -11,7 +11,9 @@ permissions:
 jobs:
   backup:
     name: Encrypted MongoDB backup
-    runs-on: ubuntu-latest
+    # MongoDB 8 refuses to start on the current ubuntu-latest kernel; retain
+    # MongoDB 8 validation using the supported Ubuntu 24.04 runner.
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - name: Validate backup secrets

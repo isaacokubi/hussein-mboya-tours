@@ -43,7 +43,10 @@ jobs:
 
   server-live-isolation:
     name: Live tenant isolation regression
-    runs-on: ubuntu-latest
+    # Pin to the stable LTS runner: the ubuntu-latest host kernel currently
+    # prevents MongoDB 8 from starting (SERVER-121912).
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
 
     services:
       mongodb:
@@ -64,6 +67,7 @@ jobs:
       MONGODB_URI: mongodb://127.0.0.1:27017/hussein_mboya_ci
       LIFECYCLE_TEST_MONGODB_URI: mongodb://127.0.0.1:27017/hussein_mboya_ci_test
       HEALTH_TEST_MONGODB_URI: mongodb://127.0.0.1:27017/global_tours_test
+      FIRST_TENANT_TEST_MONGODB_URI: mongodb://127.0.0.1:27017/global_tours_test
       JWT_SECRET: ci-only-test-secret
       DEFAULT_TENANT_ID: 000000000000000000000000
       NODE_ENV: test
@@ -88,16 +92,22 @@ jobs:
       - name: Run database-backed startup and health checks
         run: node --test tests/healthReadiness.test.js
 
+      - name: Run isolated first-tenant acceptance
+        run: node --test tests/firstTenantAcceptance.integration.test.js
+
   server-tour-lifecycle-integration:
     name: Tour lifecycle runtime integration
-    runs-on: ubuntu-latest
+    # Keep the MongoDB 8 replica-set test on a runner kernel supported by the
+    # MongoDB 8 image; ubuntu-latest currently has an incompatible kernel.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
 
     defaults:
       run:
         working-directory: server
 
     env:
-      LIFECYCLE_TEST_MONGODB_URI: mongodb://127.0.0.1:27017/hussein_mboya_ci?replicaSet=rs0
+      LIFECYCLE_TEST_MONGODB_URI: mongodb://127.0.0.1:27017/hussein_mboya_ci_test?replicaSet=rs0
       RUN_DATABASE_INTEGRATION_TESTS: "true"
       JWT_SECRET: ci-only-test-secret
       DEFAULT_TENANT_ID: 000000000000000000000000
@@ -121,7 +131,19 @@ jobs:
         working-directory: .
         run: |
           docker run -d --name mongo-tour-ci -p 27017:27017 mongo:8 --replSet rs0 --bind_ip_all
-          until docker exec mongo-tour-ci mongosh --quiet --eval 'db.adminCommand({ ping: 1 }).ok' | grep -q 1; do sleep 1; done
+          ready=false
+          for attempt in $(seq 1 60); do
+            if docker exec mongo-tour-ci mongosh --quiet --eval 'db.adminCommand({ ping: 1 }).ok' 2>/dev/null | grep -q 1; then
+              ready=true
+              break
+            fi
+            sleep 2
+          done
+          if [ "$ready" != "true" ]; then
+            echo "MongoDB replica set did not become ready. Container diagnostics follow."
+            docker logs --tail 100 mongo-tour-ci 2>&1 || true
+            exit 1
+          fi
           docker exec mongo-tour-ci mongosh --quiet --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"127.0.0.1:27017"}]})'
 
       - name: Run tour lifecycle integration
