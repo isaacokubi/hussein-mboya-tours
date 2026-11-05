@@ -2,7 +2,7 @@
 
 ## Follow-up audit — 2026-11-05
 
-Latest GitHub `main` is `1b5c8aacf340b3728852486400e31b96592fe242`. Follow-up changes are being made on `codex/complete-readiness-2026-11-05`. The live MongoDB 8 CI failure is attributed to a runner kernel compatibility guard based on the container diagnostic; the separate tour integration job also had an unbounded startup loop. Ubuntu 24.04 reproduced the MongoDB service initialization failure, so jobs now use Ubuntu 22.04, the recommended runner workaround while the upstream compatibility fix is pending. The branch also bounds replica-set startup, adds first-tenant CI acceptance, and restricts comprehensive seeding away from `husseindb`. Verification evidence is in [the 2026-11-05 update](READINESS_UPDATE_2026-11-05.md). Production readiness remains **NOT READY** until follow-up CI and protected restore/provider/deployment gates pass.
+Latest GitHub `main` at branch creation was `1b5c8aacf340b3728852486400e31b96592fe242`. Follow-up work is on `codex/complete-readiness-2026-11-05`; PR #224 commit `da92c4d` passed CI run `41969409132` and release gate `41969409044`. The live MongoDB 8 CI failure came from runner-kernel compatibility; Ubuntu 24.04 reproduced it, while Ubuntu 22.04 allowed the test image to start. First-tenant acceptance showed transactions were required, so CI starts a named disposable replica-set container with bounded startup, diagnostics and cleanup. The branch also bounds the tour wait, adds first-tenant CI coverage and restricts comprehensive seeding away from `husseindb`. Production readiness remains **NOT READY** until protected restore/provider/deployment and remaining security/business acceptance gates pass.
 
 ## Scope and evidence
 
