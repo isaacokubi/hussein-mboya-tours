@@ -2,7 +2,7 @@
 
 ## Current state
 
-**NOT PRODUCTION READY.** Current branch `codex/global-tours-remediation-2026-11-04` is based on `main` SHA `a186b7a6829b61fabd7bc65bbd966319f0b6f128`. Changes are local and not committed, pushed, opened as a PR, or deployed. `gh` is not installed; GitHub write credentials were not configured through an available integration. The branch can be pushed and reviewed with the commands in the final response once authenticated GitHub CLI or equivalent write access is available.
+**NOT PRODUCTION READY.** Current branch `codex/global-tours-remediation-2026-11-04` includes current GitHub `main` SHA `5ac913bd96504927c9bbfb0a9e10a620e7ecf82d` via merge commit `607eae4`. Commits are pushed and draft PR #223 is open against `main`; the newest CI run must complete before the PR can be considered green. No deployment was made.
 
 ## Completed repository work
 
@@ -15,6 +15,7 @@
 - **FIXED:** compatible server/client dependency updates removed all critical and high severity advisories (last recorded audit: 2 moderate server, 19 moderate/2 low client findings; audit not rerun in this turn).
 - **FIXED:** the live multitenancy script now requires a dedicated `LIFECYCLE_TEST_MONGODB_URI`; using fake-data `husseindb` requires a one-command explicit authorization flag. Its authorized run created and removed only uniquely named fixtures.
 - **FIXED:** monitoring retries the startup failure state during its configured wait and does not cancel an in-progress failure check when a new scheduled run starts.
+- **FIXED:** current-main Resend key-rotation logic now honors the test client's active test key; focused provider mock tests pass 5/5 without making a provider call.
 
 ## Commands executed
 
@@ -26,6 +27,7 @@
 | `npm run lint` in `client` after clean lockfile install | **PASS**. |
 | `VITE_API_URL=https://api.example.invalid/api VITE_SOCKET_URL=https://api.example.invalid npm run build` in `client` after compatible lockfile update | **PASS**. |
 | Live tenant isolation regression on authorized fake-data `husseindb` | **17 passed, 0 failed**; named fixtures cleaned in teardown. |
+| Focused Resend mock tests after merging current main | **5 passed, 0 failed**; no provider call. |
 | `npm audit --json` current advisory data | Server **0 critical/0 high/2 moderate**; client **0 critical/0 high/8 moderate/2 low**; both exit nonzero because moderate advisories remain. |
 | `git diff --check` | Rerun required after final documentation edits. |
 | Synthetic encrypted backup/restore against disposable MongoDB 8 (previous recorded result) | **PASS** in prior evidence; not recreated this turn. |
@@ -35,9 +37,11 @@ The initial sandbox run failed because loopback binding returned `EPERM`; the ba
 
 ## GitHub review
 
-The prior review record says the cited monitoring run failed its API health/readiness step and skipped the website check. The cited backup run created the encrypted archive, then failed at temporary MongoDB validation; the upload step was skipped. Two open monitoring alerts (#221 and #145) were previously recorded. This run could not revalidate current Actions/PR/issue state because GitHub CLI was unavailable and repository pages did not load. The workflow code now closes matching alerts after recovery, but it has not run.
+The cited monitoring run failed its API health/readiness step and skipped the website check. The backup run created the encrypted archive, then failed at temporary MongoDB validation; upload was skipped. Current issue state confirms #221 and #145 are still open. The workflow closes matching alerts after recovery, but it has not run.
 
-Previous notes listed open PRs #222, #220, #210, #209, #198, #190, #186, #184, #183, #182, #174, #148, #130, #102, #100, #99, and #97; the present state is unverified. Earlier notes recorded #220 and #198 as unmergeable and #209/#210 as duplicate hotel-controller proposals. No PR was merged or closed; full review and CI are outstanding.
+Current open PRs are #223, #222, #220, #210, #209, #198, #190, #186, #184, #183, #182, #174, #148, #130, #102, #100, #99, #97, and #96. No unrelated PR was merged or closed. #222 overlaps the incorporated M-Pesa offline test/CI workflow; #220 overlaps CI and M-Pesa status/checkout code; #198 overlaps lockfiles and readiness documentation; #209/#210 duplicate a hotel-controller fix; dependency PRs overlap the lockfiles; #148 is a broad acquisition change. Full unrelated patch review remains outstanding.
+
+PR #223's first CI run failed in the backend test job because the current-main Resend client-rotation code bypassed the test stub, and the live-isolation job failed before its test step while GitHub initialized its Mongo service. The Resend injection was fixed; explicit test URIs were added for live isolation and health. A fresh CI run is required.
 
 The isolated offline test portion of PR #222 was reviewed and incorporated as `server/tests/mpesaOfflineSimulation.test.js` (4/4 tests pass). Its proposed MongoDB 8→7.0 CI downgrade was not copied because it is unrelated to the test coverage and would change the repository's MongoDB 8 integration target. PR #222 itself remains open and unmerged.
 
@@ -49,14 +53,14 @@ The isolated offline test portion of PR #222 was reviewed and incorporated as `s
 - **BLOCKED EXTERNALLY:** complete tenant-configured Daraja Sandbox STK/callback/idempotency/refund/reconciliation lifecycle; no real or production payment was initiated.
 - **BLOCKED EXTERNALLY:** verify staging/browser role workflows, email recovery, KRA/eTIMS, webhook consumers, production deployment, and operational rollback.
 - **NOT TESTED:** complete the exhaustive finance, hotel/tour/fleet/supplier, SaaS billing, AI, auth recovery, mobile/browser and P0 cross-tenant test matrix.
-- **NOT TESTED:** inspect all open PR patches and statuses and decide which safe changes to reconcile; no merge is claimed.
-- **NOT TESTED:** full dependency vulnerability audit (`npm audit`) in this turn.
-- **BLOCKED EXTERNALLY:** current GitHub pull requests/issues, PR CI, push, and PR creation could not be completed (`gh` is unavailable and repository pages did not load); no merge is claimed.
+- **NOT TESTED:** complete the full patch review and reconciliation of unrelated open PRs; no unrelated merge is claimed.
+- **TESTED:** dependency vulnerability audit (`npm audit`); zero critical/high findings, with 2 server moderate and 8 client moderate/2 low findings remaining.
+- **BLOCKED EXTERNALLY:** wait for the fresh PR #223 CI results; production workflow verification remains external.
 
 ## Next actions
 
-1. Review and merge this branch through CI after pushing with authorized repository write access.
+1. Wait for PR #223 CI to rerun after the current-main merge, Resend test injection fix, and explicit isolated test database configuration; review and merge through GitHub only after checks pass.
 2. Run the updated production backup and restore workflows with a dedicated restore target and protected secrets.
 3. After approved deployment, run production smoke/monitoring; verify recovery closes #221 and #145.
 4. Configure a separate isolated Sandbox environment and run provider acceptance without production data.
-5. Continue PR, security, full workflow and browser acceptance audits; update this register with evidence, not implementation assumptions.
+5. Complete full patch review of unrelated PRs, security review, remaining business workflow and browser acceptance; update this register with evidence rather than implementation assumptions.
