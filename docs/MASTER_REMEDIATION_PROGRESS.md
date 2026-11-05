@@ -18,6 +18,7 @@
 - **FIXED:** current-main Resend key-rotation logic now honors the test client's active test key; focused provider mock tests pass 5/5 without making a provider call.
 - **FIXED:** the release secret scan's false positive on an illustrative Stripe test literal; focused payment-method tests and the exact scan command pass, and the release-gate rerun passed.
 - **FIXED IN THIS FOLLOW-UP:** MongoDB 8 workflows use Ubuntu 22.04 because Ubuntu 24.04 also reproduced the MongoDB kernel compatibility startup failure; tour replica-set startup is bounded with diagnostics; CI now runs isolated first-tenant acceptance and uses a database name accepted by its safety guard. Follow-up CI is still required to validate this runner workaround.
+- **FIXED IN THIS FOLLOW-UP:** PR CI confirmed the first-tenant flow depends on MongoDB transactions. The live-isolation job now initializes its temporary MongoDB 8 service as a replica set and passes replica-set URIs to the health and first-tenant tests; initialization has bounded waits and container diagnostics.
 - **FIXED IN THIS FOLLOW-UP:** comprehensive demo seeding categorically refuses the application database `husseindb`; Atlas seeding is limited to the explicit disposable `global_tours_test` target. No seed was run.
 - **FIXED IN TEST:** first-tenant acceptance now selects the MPESA method enabled by fresh-tenant defaults, while still asserting no provider payment is initiated. The prior test incorrectly selected an unconfigured bank-transfer method.
 

@@ -17,6 +17,7 @@ The latest GitHub `main` was fetched and verified at `1b5c8aacf340b3728852486400
 
 - CI, backup, and restore jobs that start MongoDB 8 are pinned to `ubuntu-22.04`; application integration tests remain on MongoDB 8.
 - MongoDB replica-set readiness is bounded and emits container logs on failure. CI now runs the first-tenant acceptance suite using only its temporary Mongo service.
+- The first PR CI attempt revealed first-tenant provisioning requires MongoDB transactions; its service was a standalone server. CI now configures that disposable service as a replica set, initializes it with a bounded wait, and passes replica-set URIs to the acceptance and health suites.
 - The first-tenant test now uses the payment method enabled by fresh-tenant defaults. It still does not initiate a provider payment.
 - The comprehensive demo seed refuses the application database `husseindb`; Atlas seed opt-in is limited to `global_tours_test`. No seed ran.
 - The security/production contract test asserts the runner, database namespace, first-tenant step, bounded wait and backup/restore runner configuration.
