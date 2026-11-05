@@ -2,7 +2,7 @@
 
 ## Current remediation status — 2026-11-05
 
-The previous remediation is included in current GitHub `main` at `1b5c8aacf340b3728852486400e31b96592fe242`. This follow-up is on `codex/complete-readiness-2026-11-05`. It addresses MongoDB 8 startup failures on GitHub's latest runner kernel, the unbounded replica-set test wait, first-tenant test setup, and comprehensive seed safety. The latest production monitoring run passed and recovered alerts, while the earlier same-commit smoke run returned HTTP 503. Synthetic isolated backup/restore and all local MongoDB 8 lifecycle tests pass; the protected production archive restore and new GitHub CI run remain unverified. Overall status remains **NOT PRODUCTION READY**.
+Current GitHub `main` is `4085201b3d70c66afa749ee04fe4b7b995f8f937`, including merged PR #224. Post-merge CI run `41971013763` and three-phase release gate `41971013788` passed. MongoDB 8 CI now uses Ubuntu 22.04; replica-set startup is bounded and the first-tenant transactional flow is covered. However, production smoke run `41971013760` timed out three times and then received API HTTP 503; website smoke was skipped. The currently deployed SHA and runtime cause are unknown. Synthetic isolated backup/restore passed, but the protected production archive restore remains unverified. Overall status remains **NOT PRODUCTION READY**.
 
 ## Latest targeted first-tenant evidence — 2026-10-10
 
