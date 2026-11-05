@@ -1,8 +1,8 @@
 # Global Tours — Production Readiness
 
-## Current remediation status — 2026-11-04
+## Current remediation status — 2026-11-05
 
-The current source remediation is documented in [the 2026-11-04 update](READINESS_UPDATE_2026-11-04.md). The checkout was `main` at `a186b7a6829b61fabd7bc65bbd966319f0b6f128`; current readiness changes remain on an uncommitted remediation branch. API startup now retries required database initialization while preserving liveness, and backup validation now performs an isolated restore in the workflow. Neither change has been deployed or verified against production. The actual backup restore workflow has not yet run against an encrypted backup. Overall status remains **NOT PRODUCTION READY**.
+The previous remediation is included in current GitHub `main` at `1b5c8aacf340b3728852486400e31b96592fe242`. This follow-up is on `codex/complete-readiness-2026-11-05`. It addresses MongoDB 8 startup failures on GitHub's latest runner kernel, the unbounded replica-set test wait, first-tenant test setup, and comprehensive seed safety. The latest production monitoring run passed and recovered alerts, while the earlier same-commit smoke run returned HTTP 503. Synthetic isolated backup/restore and all local MongoDB 8 lifecycle tests pass; the protected production archive restore and new GitHub CI run remain unverified. Overall status remains **NOT PRODUCTION READY**.
 
 ## Latest targeted first-tenant evidence — 2026-10-10
 

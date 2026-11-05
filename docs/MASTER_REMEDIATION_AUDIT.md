@@ -1,5 +1,9 @@
 # Master remediation audit — 2026-11-04
 
+## Follow-up audit — 2026-11-05
+
+Latest GitHub `main` at branch creation was `1b5c8aacf340b3728852486400e31b96592fe242`. Follow-up work is on `codex/complete-readiness-2026-11-05`; PR #224 commit `da92c4d` passed CI run `41969409132` and release gate `41969409044`. The live MongoDB 8 CI failure came from runner-kernel compatibility; Ubuntu 24.04 reproduced it, while Ubuntu 22.04 allowed the test image to start. First-tenant acceptance showed transactions were required, so CI starts a named disposable replica-set container with bounded startup, diagnostics and cleanup. The branch also bounds the tour wait, adds first-tenant CI coverage and restricts comprehensive seeding away from `husseindb`. Production readiness remains **NOT READY** until protected restore/provider/deployment and remaining security/business acceptance gates pass.
+
 ## Scope and evidence
 
 Repository baseline was first observed locally at `a186b7a6829b61fabd7bc65bbd966319f0b6f128`; GitHub `main` had advanced to `5ac913bd96504927c9bbfb0a9e10a620e7ecf82d`. Current `main` was fetched and merged in commit `607eae4147ae8145dd2a2ba704de002c30aee253`. Work remains isolated on `codex/global-tours-remediation-2026-11-04`. No production endpoint, production database, credential, account, payment provider, or deployment was changed. As explicitly authorized for this task, tenant-isolation fixtures were created in the fake-data `husseindb` test database and the regression script removed only the fixture IDs it created.

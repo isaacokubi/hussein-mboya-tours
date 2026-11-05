@@ -15,7 +15,8 @@ permissions:
 jobs:
   restore:
     name: Restore backup into isolated target
-    runs-on: ubuntu-latest
+    # Restore tools use MongoDB 8; pin the runner to the compatible LTS kernel.
+    runs-on: ubuntu-22.04
     timeout-minutes: 30
     steps:
       - name: Validate backup run
