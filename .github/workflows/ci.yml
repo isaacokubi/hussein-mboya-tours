@@ -48,19 +48,6 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 20
 
-    services:
-      mongodb:
-        image: mongo:8
-        ports:
-          - 27017:27017
-        options: >-
-          --replSet rs0
-          --bind_ip_all
-          --health-cmd "mongosh --quiet --eval 'db.adminCommand({ ping: 1 }).ok'"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
-
     defaults:
       run:
         working-directory: server
@@ -90,9 +77,10 @@ jobs:
 
       - name: Initialize disposable MongoDB replica set
         run: |
-          mongo_container="$(docker ps -q --filter ancestor=mongo:8 | head -n 1)"
-          if [ -z "$mongo_container" ]; then
-            echo "MongoDB service container is missing."
+          docker run -d --name mongo-live-isolation-ci -p 27017:27017 mongo:8 --replSet rs0 --bind_ip_all
+          mongo_container=mongo-live-isolation-ci
+          if ! docker inspect "$mongo_container" >/dev/null 2>&1; then
+            echo "MongoDB test container is missing."
             docker ps -a --no-trunc || true
             exit 1
           fi
@@ -106,7 +94,7 @@ jobs:
           done
           if [ "$ready" != "true" ]; then
             echo "MongoDB service did not become ready. Container diagnostics follow."
-            docker ps -a --filter name=mongodb --no-trunc || true
+            docker ps -a --no-trunc || true
             docker logs --tail 100 "$mongo_container" 2>&1 || true
             exit 1
           fi
@@ -118,7 +106,7 @@ jobs:
             sleep 2
           done
           echo "MongoDB replica set did not elect a primary."
-          docker ps -a --filter name=mongodb --no-trunc || true
+          docker ps -a --no-trunc || true
           docker logs --tail 100 "$mongo_container" 2>&1 || true
           exit 1
 
@@ -130,6 +118,10 @@ jobs:
 
       - name: Run isolated first-tenant acceptance
         run: node --test tests/firstTenantAcceptance.integration.test.js
+
+      - name: Remove disposable MongoDB container
+        if: always()
+        run: docker rm -f mongo-live-isolation-ci 2>/dev/null || true
 
   server-tour-lifecycle-integration:
     name: Tour lifecycle runtime integration

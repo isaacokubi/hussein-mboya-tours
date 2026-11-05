@@ -97,7 +97,7 @@ test("CI validates server, live tenant isolation, and client production build", 
   assert.match(workflow, /LIFECYCLE_TEST_MONGODB_URI:[^\n]*hussein_mboya_ci_test/);
   assert.match(workflow, /HEALTH_TEST_MONGODB_URI:[^\n]*global_tours_test/);
   assert.match(workflow, /FIRST_TENANT_TEST_MONGODB_URI:[^\n]*global_tours_test\?replicaSet=rs0/);
-  assert.match(workflow, /image: mongo:8[\s\S]*?--replSet rs0/);
+  assert.match(workflow, /Initialize disposable MongoDB replica set[\s\S]*docker run -d --name mongo-live-isolation-ci[^\n]*mongo:8 --replSet rs0/);
   assert.match(workflow, /Initialize disposable MongoDB replica set[\s\S]*?rs\.initiate/);
   assert.match(workflow, /node --test tests\/firstTenantAcceptance\.integration\.test\.js/);
   assert.match(workflow, /MongoDB replica set did not become ready/);
