@@ -3,19 +3,24 @@ import { QueryClient } from "@tanstack/react-query";
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 0,
+      // Keep recently loaded resources warm during navigation. Individual
+      // high-volatility queries can override these defaults.
+      staleTime: 30_000,
+      gcTime: 10 * 60 * 1000,
       retry: 1,
-      refetchOnWindowFocus: true,
-      refetchOnReconnect: true,      refetchOnMount: "always",
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
+      refetchOnMount: false,
     },
   },
 });
 
-// A single mutation event invalidates every dashboard/query cache. This keeps
-// admin, SuperAdmin, agent, guide, driver, Tour Manager and customer dashboards
-// synchronized after creates, updates and deletes without coupling pages.
+// API mutations announce data changes globally for legacy dashboard listeners.
+// Mark cached data stale without triggering a simultaneous refetch storm;
+// active screens can refresh explicitly and the next navigation loads only
+// the resources it actually needs.
 if (typeof window !== "undefined") {
   window.addEventListener("dashboard:data-changed", () => {
-    queryClient.invalidateQueries();
+    void queryClient.invalidateQueries({ refetchType: "none" });
   });
 }
