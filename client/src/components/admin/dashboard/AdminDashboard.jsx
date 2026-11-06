@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Clock3, Users } from "lucide-react";
 import { toast } from "react-toastify";
@@ -32,10 +32,9 @@ export default function AdminDashboard() {
   const tenantKey = authenticatedTenantId || tenant?._id || tenant?.id || user?.tenantSlug || tenant?.slug || "current";
   const currency = String(settings.currencySymbol || settings.currency || "KSh").trim() || "KSh";
   const brandStyle = { "--admin-primary": settings.primaryColor || "#047857", "--admin-secondary": settings.secondaryColor || "#064e3b", "--admin-accent": settings.accentColor || "#10b981" };
-  const { data, isLoading, isError, error, refetch, isFetching } = useQuery({ queryKey: ["admin-dashboard", tenantKey], queryFn: getDashboard, staleTime: 30_000, refetchInterval: 60_000, refetchIntervalInBackground: false, refetchOnMount: "always", refetchOnWindowFocus: true, retry: 1 });
-  const { data: agents = [], isLoading: agentsLoading, isError: agentsError, error: agentsLoadError, refetch: refetchAgents } = useQuery({ queryKey: ["agents", tenantKey], queryFn: getAgents, staleTime: 30_000, refetchInterval: 60_000, refetchOnWindowFocus: true, retry: 1, refetchOnReconnect: true });
+  const { data, isLoading, isError, error, refetch, isFetching } = useQuery({ queryKey: ["admin-dashboard", tenantKey], queryFn: getDashboard, staleTime: 30_000, refetchInterval: 60_000, refetchIntervalInBackground: false, refetchOnMount: "always", refetchOnWindowFocus: false, retry: 1 });
+  const { data: agents = [], isLoading: agentsLoading, isError: agentsError, error: agentsLoadError, refetch: refetchAgents } = useQuery({ queryKey: ["agents", tenantKey], queryFn: getAgents, staleTime: 30_000, refetchInterval: 60_000, refetchOnWindowFocus: false, retry: 1, refetchOnReconnect: true });
   const approve = useMutation({ mutationFn: approveAgent, onSuccess: () => { toast.success("Agent approved successfully."); void queryClient.invalidateQueries({ queryKey: ["agents", tenantKey] }); void queryClient.invalidateQueries({ queryKey: ["admin-dashboard", tenantKey] }); }, onError: (e) => toast.error(e?.response?.data?.message || "Unable to approve agent.") });
-  useEffect(() => { const refresh = () => { void refetch(); void queryClient.invalidateQueries({ queryKey: ["agents", tenantKey] }); }; window.addEventListener("dashboard:data-changed", refresh); return () => window.removeEventListener("dashboard:data-changed", refresh); }, [refetch, queryClient, tenantKey]);
   const dashboard = useMemo(() => unwrap(data), [data]);
   const summary = dashboard.summary || {};
   const paymentStats = dashboard.paymentStats || {};
