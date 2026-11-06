@@ -120,6 +120,107 @@ test("tour lifecycle atomically reserves dated capacity with booking creation an
       tenantId, sourceType: "payment", sourceId: completedPayment.payment._id,
     }), journalCountBeforeReplay, "replay must not duplicate the payment journal");
 
+    // A completed partial payment must be idempotent even though the booking
+    // itself is not fully paid yet.
+    const partialBooking = await Booking.create({
+      tenantId,
+      bookingNumber: "BK-PARTIAL-REPLAY",
+      customer: new mongoose.Types.ObjectId(),
+      // Keep this payment-only fixture outside the tour being cancelled below.
+      tour: new mongoose.Types.ObjectId(),
+      travelDate,
+      numberOfGuests: 1,
+      totalAmount: 2000,
+      amountPaid: 0,
+      balanceAmount: 2000,
+      paymentStatus: "pending",
+      status: "pending",
+    });
+    const partialPayment = await Payment.create({
+      tenantId,
+      customer: partialBooking.customer,
+      user: new mongoose.Types.ObjectId(),
+      booking: partialBooking._id,
+      provider: "MPESA",
+      method: "mpesa",
+      paymentMethod: "MPESA",
+      amount: 1000,
+      currency: "KES",
+      status: "pending",
+    });
+    const partialCompletion = await completeBookingPayment({
+      payment: partialPayment,
+      booking: partialBooking,
+      paymentData: { amount: 1000, paymentMethod: "MPESA", mpesaReceiptNumber: "CI-PARTIAL-001" },
+    });
+    assert.equal(partialCompletion.payment.status, "completed");
+    assert.equal(partialCompletion.booking.paymentStatus, "partial");
+    assert.equal(partialCompletion.booking.amountPaid, 1000);
+    assert.equal(partialCompletion.booking.balanceAmount, 1000);
+
+    const partialJournalCount = await JournalEntry.countDocuments({
+      tenantId, sourceType: "payment", sourceId: partialPayment._id,
+    });
+    const partialReplay = await completeBookingPayment({
+      payment: partialCompletion.payment,
+      booking: partialCompletion.booking,
+      paymentData: { amount: 1000, paymentMethod: "MPESA", mpesaReceiptNumber: "CI-PARTIAL-001" },
+    });
+    assert.equal(partialReplay.alreadyCompleted, true, "replaying a completed partial payment must be recognized");
+    assert.equal(partialReplay.booking.paymentStatus, "partial", "replay must not falsely mark a partially paid booking as paid");
+    assert.equal(partialReplay.booking.amountPaid, 1000, "replay must not credit a partial payment twice");
+    assert.equal(partialReplay.booking.balanceAmount, 1000, "replay must preserve the outstanding balance");
+    assert.equal(await JournalEntry.countDocuments({
+      tenantId, sourceType: "payment", sourceId: partialPayment._id,
+    }), partialJournalCount, "partial payment replay must not duplicate its accounting journal");
+
+    // Two identical provider callbacks can arrive at nearly the same time.
+    // MongoDB transaction retries must make one completion win and the other
+    // observe the completed payment without applying a second financial credit.
+    const concurrentBooking = await Booking.create({
+      tenantId,
+      bookingNumber: "BK-CONCURRENT-REPLAY",
+      customer: new mongoose.Types.ObjectId(),
+      tour: new mongoose.Types.ObjectId(),
+      travelDate,
+      numberOfGuests: 1,
+      totalAmount: 2000,
+      amountPaid: 0,
+      balanceAmount: 2000,
+      paymentStatus: "pending",
+      status: "pending",
+    });
+    const concurrentPayment = await Payment.create({
+      tenantId,
+      customer: concurrentBooking.customer,
+      user: new mongoose.Types.ObjectId(),
+      booking: concurrentBooking._id,
+      provider: "MPESA",
+      method: "mpesa",
+      paymentMethod: "MPESA",
+      amount: 1000,
+      currency: "KES",
+      status: "pending",
+    });
+    const concurrentPayload = {
+      paymentData: { amount: 1000, paymentMethod: "MPESA", mpesaReceiptNumber: "CI-CONCURRENT-001" },
+    };
+    const concurrentResults = await Promise.all([
+      completeBookingPayment({ payment: concurrentPayment, booking: concurrentBooking, ...concurrentPayload }),
+      completeBookingPayment({ payment: concurrentPayment, booking: concurrentBooking, ...concurrentPayload }),
+    ]);
+    assert.equal(concurrentResults.filter((result) => result.alreadyCompleted).length, 1,
+      "exactly one concurrent callback must be recognized as a replay");
+    const concurrentBookingAfter = await Booking.findById(concurrentBooking._id).lean();
+    const concurrentPaymentAfter = await Payment.findById(concurrentPayment._id).lean();
+    assert.equal(concurrentPaymentAfter.status, "completed");
+    assert.equal(concurrentBookingAfter.paymentStatus, "partial");
+    assert.equal(concurrentBookingAfter.amountPaid, 1000, "concurrent callback must credit the booking only once");
+    assert.equal(concurrentBookingAfter.balanceAmount, 1000);
+    assert.equal(await JournalEntry.countDocuments({
+      tenantId, sourceType: "payment", sourceId: concurrentPayment._id,
+    }), 1, "concurrent callback must create exactly one accounting journal");
+
     const cancelled = await cancelTourAndBookings({
       tourId: tour._id,
       reason: "Lifecycle integration cancellation",
