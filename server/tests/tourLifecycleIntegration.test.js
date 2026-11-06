@@ -120,6 +120,59 @@ test("tour lifecycle atomically reserves dated capacity with booking creation an
       tenantId, sourceType: "payment", sourceId: completedPayment.payment._id,
     }), journalCountBeforeReplay, "replay must not duplicate the payment journal");
 
+    // A completed partial payment must be idempotent even though the booking
+    // itself is not fully paid yet.
+    const partialBooking = await Booking.create({
+      tenantId,
+      bookingNumber: "BK-PARTIAL-REPLAY",
+      customer: new mongoose.Types.ObjectId(),
+      tour: tour._id,
+      travelDate,
+      numberOfGuests: 1,
+      totalAmount: 2000,
+      amountPaid: 0,
+      balanceAmount: 2000,
+      paymentStatus: "pending",
+      status: "pending",
+    });
+    const partialPayment = await Payment.create({
+      tenantId,
+      customer: partialBooking.customer,
+      user: new mongoose.Types.ObjectId(),
+      booking: partialBooking._id,
+      provider: "MPESA",
+      method: "mpesa",
+      paymentMethod: "MPESA",
+      amount: 1000,
+      currency: "KES",
+      status: "pending",
+    });
+    const partialCompletion = await completeBookingPayment({
+      payment: partialPayment,
+      booking: partialBooking,
+      paymentData: { amount: 1000, paymentMethod: "MPESA", mpesaReceiptNumber: "CI-PARTIAL-001" },
+    });
+    assert.equal(partialCompletion.payment.status, "completed");
+    assert.equal(partialCompletion.booking.paymentStatus, "partial");
+    assert.equal(partialCompletion.booking.amountPaid, 1000);
+    assert.equal(partialCompletion.booking.balanceAmount, 1000);
+
+    const partialJournalCount = await JournalEntry.countDocuments({
+      tenantId, sourceType: "payment", sourceId: partialPayment._id,
+    });
+    const partialReplay = await completeBookingPayment({
+      payment: partialCompletion.payment,
+      booking: partialCompletion.booking,
+      paymentData: { amount: 1000, paymentMethod: "MPESA", mpesaReceiptNumber: "CI-PARTIAL-001" },
+    });
+    assert.equal(partialReplay.alreadyCompleted, true, "replaying a completed partial payment must be recognized");
+    assert.equal(partialReplay.booking.paymentStatus, "partial", "replay must not falsely mark a partially paid booking as paid");
+    assert.equal(partialReplay.booking.amountPaid, 1000, "replay must not credit a partial payment twice");
+    assert.equal(partialReplay.booking.balanceAmount, 1000, "replay must preserve the outstanding balance");
+    assert.equal(await JournalEntry.countDocuments({
+      tenantId, sourceType: "payment", sourceId: partialPayment._id,
+    }), partialJournalCount, "partial payment replay must not duplicate its accounting journal");
+
     const cancelled = await cancelTourAndBookings({
       tourId: tour._id,
       reason: "Lifecycle integration cancellation",
