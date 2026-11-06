@@ -59,7 +59,10 @@ export default function PlanFeatureGate({ children }) {
       setState({ loading: false, plan: String(data?.plan || "starter").toLowerCase(), features: Array.isArray(data?.features) ? data.features : [], error: null });
     }).catch((error) => {
       if (!active) return;
-      setState({ loading: false, plan: "", features: null, error });
+      console.error("[PlanFeatureGate] Subscription check failed:", error);
+      // Release the gate on transient API failures. The backend remains
+      // responsible for enforcing subscription and role permissions.
+      setState({ loading: false, plan: "", features: [], error });
     });
     return () => { active = false; };
   }, [authLoading, token, user, isSuperAdmin, feature]);
