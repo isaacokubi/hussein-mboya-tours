@@ -116,6 +116,24 @@ app.use(globalLimiter);
 app.get("/", (req, res) => res.status(200).json({ success: true, message: "Travel API running successfully", requestId: req.requestId }));
 
 const configuredOrigins = getConfiguredOrigins(env);
+// Cache dynamic tenant-origin checks: without this, every cross-origin API
+// request performs one or more MongoDB lookups before the route can run.
+const tenantOriginCache = new Map();
+const TENANT_ORIGIN_CACHE_TTL_MS = 60_000;
+const TENANT_ORIGIN_CACHE_MAX_ENTRIES = 1_000;
+const getCachedTenantOrigin = (origin) => {
+  const cached = tenantOriginCache.get(origin);
+  if (!cached) return undefined;
+  if (cached.expiresAt <= Date.now()) { tenantOriginCache.delete(origin); return undefined; }
+  return cached.allowed;
+};
+const cacheTenantOrigin = (origin, allowed) => {
+  if (tenantOriginCache.size >= TENANT_ORIGIN_CACHE_MAX_ENTRIES) {
+    const oldest = tenantOriginCache.keys().next().value;
+    if (oldest) tenantOriginCache.delete(oldest);
+  }
+  tenantOriginCache.set(origin, { allowed, expiresAt: Date.now() + TENANT_ORIGIN_CACHE_TTL_MS });
+};
 const allowedOrigins = [
   ...(process.env.NODE_ENV === "production" ? [] : ["http://localhost:5173", "http://127.0.0.1:5173"]),
   ...configuredOrigins,
@@ -130,6 +148,8 @@ const corsOptions = {
         return callback(null, false);
       }
       const normalizedOrigin = parsedOrigin.origin.toLowerCase();
+      const cachedOriginDecision = getCachedTenantOrigin(normalizedOrigin);
+      if (cachedOriginDecision !== undefined) return callback(null, cachedOriginDecision);
       const hostname = parsedOrigin.hostname.toLowerCase();
       const configuredPlatformHost = String(process.env.PLATFORM_HOST || "globaltours.com").trim().toLowerCase();
       const platformSuffix = `.${configuredPlatformHost}`;
@@ -151,9 +171,9 @@ const corsOptions = {
           allowedOrigins: normalizedOrigin,
         }).select("_id").lean();
       }
-      return tenantOrigin
-        ? callback(null, true)
-        : callback(null, false);
+      const allowed = Boolean(tenantOrigin);
+      cacheTenantOrigin(normalizedOrigin, allowed);
+      return callback(null, allowed);
     } catch {
       return callback(null, false);
     }
