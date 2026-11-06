@@ -126,7 +126,8 @@ test("tour lifecycle atomically reserves dated capacity with booking creation an
       tenantId,
       bookingNumber: "BK-PARTIAL-REPLAY",
       customer: new mongoose.Types.ObjectId(),
-      tour: tour._id,
+      // Keep this payment-only fixture outside the tour being cancelled below.
+      tour: new mongoose.Types.ObjectId(),
       travelDate,
       numberOfGuests: 1,
       totalAmount: 2000,
