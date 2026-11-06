@@ -23,6 +23,15 @@ const queryClient = new QueryClient({
   },
 });
 
+// A successful write marks cached resources stale but does not eagerly reload
+// every active dashboard. Screens refresh their own keys; route navigation
+// fetches only the resources needed by the destination.
+if (typeof window !== "undefined") {
+  window.addEventListener("dashboard:data-changed", () => {
+    void queryClient.invalidateQueries({ refetchType: "none" });
+  });
+}
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
