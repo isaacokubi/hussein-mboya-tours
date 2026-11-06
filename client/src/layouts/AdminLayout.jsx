@@ -1,3 +1,5 @@
+import "../styles/admin-settings.css";
+import "../styles/admin-dashboard.css";
 import { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { Activity, BarChart3, Bell, Bot, Car, CalendarCheck, CreditCard, FileBarChart, FileText, Handshake, Image, LayoutDashboard, Menu, PackageCheck, Plane, BriefcaseBusiness, BadgeDollarSign, Receipt, Settings, Shield, Smartphone, Star, Tag, UserCog, Users, Wallet, X, Code2, Hotel, Home } from "lucide-react";
