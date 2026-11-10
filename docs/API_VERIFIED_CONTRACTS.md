@@ -285,3 +285,8 @@ Entries 445–450 are source-traced in [Super Admin platform billing configurati
 ## Super Admin user administration
 
 Entries 451–460 are source-traced in [Super Admin user administration API contracts](API_DOMAIN_CONTRACTS/superadmin-users.md). The account-creation route does not assign tenantId to created User/Staff/Agent records while operating in platform bypass context, so resulting records can be tenantless. User deletion cascades Staff/Agent deletes without a transaction and does not remove other related records. Search patterns are not escaped.
+
+
+## Super Admin monitoring, settings and backup operations
+
+Entries 460–490 are source-traced in [Super Admin audit, security, settings, monitoring and backup APIs](API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md), with entry 460 sharing the user deletion contract. Effective mount order applies protect/superAdminOnly before the overlapping later routers. The backup endpoints write full platform data to plaintext JSON under server/backups without visible encryption/retention/size guards; cache clear is process-wide. API monitor reports database-derived status and does not probe endpoints or measure latency.
