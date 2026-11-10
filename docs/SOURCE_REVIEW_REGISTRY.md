@@ -276,3 +276,5 @@ This is an explicit evidence list for implementation-focused explanations. `SOUR
 
 | `server/routes/superAdminToolsRoutes.js` | SOURCE-VERIFIED | [Super Admin tools contracts](API_DOMAIN_CONTRACTS/superadmin-tools.md) | Tenant resolution, authentication, system.security permission and two mounted tool routes |
 | `server/controllers/superAdminToolsController.js` | SOURCE-VERIFIED | [Super Admin tools contracts](API_DOMAIN_CONTRACTS/superadmin-tools.md) | Database metadata response and placeholder settings response; unused monitor/system handlers are not mounted |
+
+| `server/routes/superAdminUserRoutes.js` | SOURCE-VERIFIED | [Super Admin user contracts](API_DOMAIN_CONTRACTS/superadmin-users.md) | Duplicate account-creation route declaration; effective earlier superAdminRoutes gate is superAdminOnly |
