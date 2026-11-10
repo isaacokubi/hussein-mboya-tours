@@ -261,3 +261,7 @@ This is an explicit evidence list for implementation-focused explanations. `SOUR
 | `server/services/tenantSubscriptionService.js` | SOURCE-VERIFIED | [Super Admin subscription contracts](API_DOMAIN_CONTRACTS/superadmin-subscriptions.md) | Subscription activation, plan seat constants, payment completion behavior and plan switching |
 | `server/models/SubscriptionPayment.js` | SOURCE-VERIFIED | [Super Admin subscription contracts](API_DOMAIN_CONTRACTS/superadmin-subscriptions.md) | Payment evidence fields, provider/status enums and unique transaction reference index |
 | `server/models/Subscription.js` | SOURCE-VERIFIED | [Super Admin subscription contracts](API_DOMAIN_CONTRACTS/superadmin-subscriptions.md) | Per-tenant subscription schema, period fields and unique tenant index |
+
+
+| `server/controllers/platformBillingController.js` | SOURCE-VERIFIED | [Super Admin billing contracts](API_DOMAIN_CONTRACTS/superadmin-billing.md) | Platform price fallback, billing config validation/write and feature catalog responses |
+| `server/services/planFeatureService.js` | SOURCE-VERIFIED | [Super Admin billing contracts](API_DOMAIN_CONTRACTS/superadmin-billing.md) | Feature catalogue, plan defaults, normalization and strict feature validation |
