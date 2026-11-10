@@ -27,9 +27,7 @@ router.get(
 - Literal HTTP statuses in handler: `200`.
 - JSON envelope keys observed: `success`, `count`, `wishlist`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
-**Source-traced behavior:** See [Tenant wishlist API contracts](../API_DOMAIN_CONTRACTS/wishlist.md) for tenant/owner filtering, public-tour visibility and add/remove behavior.
+**Source-traced behavior:** See [Tenant wishlist API contracts](../API_DOMAIN_CONTRACTS/wishlist.md) for authenticated-owner isolation, public-tour filtering, duplicate handling, response envelopes and model behavior.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
@@ -58,9 +56,7 @@ router.post(
 - Literal HTTP statuses in handler: `400`, `404`, `200`.
 - JSON envelope keys observed: `success`, `message`, `count`, `wishlist`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
-**Source-traced behavior:** See [Tenant wishlist API contracts](../API_DOMAIN_CONTRACTS/wishlist.md) for tenant/owner filtering, public-tour visibility and add/remove behavior.
+**Source-traced behavior:** See [Tenant wishlist API contracts](../API_DOMAIN_CONTRACTS/wishlist.md) for authenticated-owner isolation, public-tour filtering, duplicate handling, response envelopes and model behavior.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
@@ -89,9 +85,7 @@ router.delete(
 - Literal HTTP statuses in handler: `400`, `404`, `200`.
 - JSON envelope keys observed: `success`, `message`, `count`, `wishlist`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
-**Source-traced behavior:** See [Tenant wishlist API contracts](../API_DOMAIN_CONTRACTS/wishlist.md) for tenant/owner filtering, public-tour visibility and add/remove behavior.
+**Source-traced behavior:** See [Tenant wishlist API contracts](../API_DOMAIN_CONTRACTS/wishlist.md) for authenticated-owner isolation, public-tour filtering, duplicate handling, response envelopes and model behavior.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
