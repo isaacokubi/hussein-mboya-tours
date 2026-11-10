@@ -15,12 +15,12 @@ Counts are computed from first-party `server/` and `client/src/` source files, e
 | Source-index classification | 725 structural-label rows, 24 deep-label rows, and 268 specialized/non-deep rows; labels may overlap scoped reviews and are not quality certification | [Source file index](SOURCE_FILE_INDEX.md) |
 | Registered source-verified critical scopes | 170 registered review-scope rows; scope is listed in [source review registry](SOURCE_REVIEW_REGISTRY.md), and does not imply exhaustive file review | [Review registry](SOURCE_REVIEW_REGISTRY.md) |
 | Source files without a registered scoped review | 853 of 1,017; 0 files certified exhaustive line-by-line | [Source review registry](SOURCE_REVIEW_REGISTRY.md) |
-| Fully source-traced API entries | 402 mounted method/path entries; 227 of 629 remain partial | [Verified contracts](API_VERIFIED_CONTRACTS.md) |
+| Fully source-traced API entries | 411 mounted method/path entries; 218 of 629 remain partial | [Verified contracts](API_VERIFIED_CONTRACTS.md) |
 | Curl examples | 8 illustrative request templates are source-shape checked; 0 requests executed | [Verified critical contracts](API_VERIFIED_CONTRACTS.md) |
 | Mounted route inventory | 629 method/path rows: 588 unique route-module/method/path declarations plus 41 repeated mount entries; 81 route declarations in unmounted modules | [API route inventory](API_ROUTE_INVENTORY.md) |
 | API route declarations | See mounted route inventory count above; endpoint guides account for all 629 rows | [API route inventory](API_ROUTE_INVENTORY.md) |
 | API endpoint handler cues | Per route module: exact expression/mount/middleware; statically extracted request keys, literal statuses, JSON keys, validation lines and direct model operations where handler resolution succeeds | [Route explanation index](code-explanations/backend/routes/INDEX.md) |
-| API endpoint contracts | 402 SOURCE-TRACED path entries; 227 PARTIALLY VERIFIED entries; 0 unclassified entries. No claim of 629 complete contracts. | [API reference](API_REFERENCE.md) |
+| API endpoint contracts | 411 SOURCE-TRACED path entries; 218 PARTIALLY VERIFIED entries; 0 unclassified entries. No claim of 629 complete contracts. | [API reference](API_REFERENCE.md) |
 | Test evidence | 77 backend test files inventoried; 17 API domain documents mention test evidence and 13 explicitly report no focused test; endpoint-level coverage is not auto-inferred | Audit script; domain contracts |
 | Model files | 96 of 96 have dedicated runtime-schema explanations | [Model explanation index](code-explanations/database/models/INDEX.md) |
 | Model fields and indexes | 2,229 compiled paths and 633 schema indexes inventoried across the 96 runtime models | Per-model pages link sources/callers; inferred semantic descriptions are labeled |
