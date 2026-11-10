@@ -99,3 +99,5 @@ The API index count is maintained in the coverage report and generated endpoint 
 - [Tenant-safe tour resource assignment and conflict checks](tour-resource-assignment.md)
 
 - [Tour Manager Operations Copilot summary and preview-only quote drafts](operations-copilot.md)
+
+- [Tour Manager tenant routes, operations, bookings and availability](tour-manager.md)
