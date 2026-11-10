@@ -2,7 +2,7 @@
 
 ## Route and authorization boundary
 
-server/routes/index.js mounts travelOperationsRoutes at /operations, yielding /api/operations. The router applies protect globally. GET / and GET /rules/list are available to any authenticated user; POST/PATCH/DELETE operations and all rule mutations additionally require managerOnly (manager/admin/super_admin role aliases). The controller scopes records with req.user.tenantId. The route file does not call resolveTenant itself; protect's verified user context supplies tenantId.
+server/routes/index.js mounts travelOperationsRoutes at /operations, yielding /api/operations. The router applies protect globally. GET / and GET /rules/list are available to any authenticated user; POST/PATCH/DELETE operations and all rule mutations additionally require managerOnly (manager/admin/super_admin role aliases). The controller scopes records with req.user.tenantId. The route file does not call resolveTenant itself; the application and parent API router resolve the tenant before this mount, and protect authenticates the user whose tenantId the handlers use.
 
 ## GET /api/operations — inventory 606
 
@@ -43,3 +43,13 @@ OperationalAsset is tenant-scoped and stores type/name/code/status, bookingId/to
 ## Test evidence and limitations
 
 No focused travelOperationsRoutes/controller tests were found in the searched paths. No operational asset or commercial rule was created, updated or deleted during this source review.
+
+## Additional integrity and validation findings
+
+- createOperation spreads the request body into OperationalAsset, then overwrites tenantId and createdBy. The model is strict, but the controller does not verify that bookingId, tourId or assignedTo refer to records in the same tenant. updateOperation likewise permits those reference fields without ownership checks. Tenant-scoping the asset document does not validate its referenced records.
+- createOperation checks endAt > startAt only when both values are truthy. Invalid date strings can bypass the JavaScript comparison (NaN comparison is false) and are left to Mongoose casting. updateOperation does not repeat the end-after-start check at all.
+- updateScheduledOperation uses nullish coalescing when building its conflict-check window. Explicit null values for assignedTo/startAt/endAt fall back to the old values for conflict detection even though Object.assign later clears them; this can falsely reject a request intended to release a resource or clear its schedule.
+- assertNoScheduleConflict checks assignedTo across all OperationalAsset types rather than partitioning by type. It ignores only cancelled/completed status; inactive, expired and pending records can still block overlapping assignments.
+- createRule and updateRule do not semantically validate Mixed conditions/actions. updateRule applies the entire request body with $set rather than a field allowlist; the tenant plugin still scopes the query and guards foreign tenantId changes, while runValidators provides schema-level validation only.
+- listOperations and listRules are unpaginated. listOperations copies type/status/bookingId/tourId/assignedTo query values without validation. listRules silently ignores an unsupported type and returns all tenant rules.
+- Operation and rule deletion are hard deletes with no history or audit event in these handlers. No focused travelOperations route/controller tests were found.
