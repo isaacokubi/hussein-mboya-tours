@@ -284,4 +284,4 @@ Entries 445–450 are source-traced in [Super Admin platform billing configurati
 
 ## Super Admin user administration
 
-Entries 451–459 are source-traced in [Super Admin user administration API contracts](API_DOMAIN_CONTRACTS/superadmin-users.md). The account-creation route does not assign tenantId to created User/Staff/Agent records while operating in platform bypass context, so resulting records can be tenantless. User deletion cascades Staff/Agent deletes without a transaction and does not remove other related records. Search patterns are not escaped.
+Entries 451–460 are source-traced in [Super Admin user administration API contracts](API_DOMAIN_CONTRACTS/superadmin-users.md). The account-creation route does not assign tenantId to created User/Staff/Agent records while operating in platform bypass context, so resulting records can be tenantless. User deletion cascades Staff/Agent deletes without a transaction and does not remove other related records. Search patterns are not escaped.
