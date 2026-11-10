@@ -68,3 +68,5 @@ The API index count is maintained in the coverage report and generated endpoint 
 - [Super Admin backup, cache maintenance and file operations](superadmin-maintenance.md)
 
 - [Super Admin audit logs, database status and runtime health](superadmin-operations.md)
+
+- [Super Admin platform revenue aggregation and authorization boundary](superadmin-revenue.md)
