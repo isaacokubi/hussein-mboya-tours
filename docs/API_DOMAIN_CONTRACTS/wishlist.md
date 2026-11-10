@@ -10,7 +10,7 @@ Handler getWishlist. Requires tenant context. Reads the authenticated user's Wis
 
 ## POST /api/wishlist — inventory 628
 
-Body requires tourId; missing returns 400, invalid ObjectId returns 400. The tour must belong to the current tenant and satisfy isDeleted:false/published:true; otherwise 404. It loads or creates the authenticated user's wishlist, then uses $addToSet to add the tour ID (duplicate additions are idempotent). It re-reads/populates the wishlist and returns 200 {success:true,message,count,wishlist}. Concurrent first-time creates can race against the unique user index and may surface a duplicate-key error; no retry is implemented.
+Body requires tourId; missing returns 400, invalid ObjectId returns 400. The tour must belong to the current tenant and satisfy isDeleted:false/published:true; otherwise 404. It does not require available:true or a scheduled/upcoming/ongoing status, so unavailable or cancelled-but-still-published tours can be added. It loads or creates the authenticated user's wishlist, then uses $addToSet to add the tour ID (duplicate additions are idempotent). It re-reads/populates the wishlist and returns 200 {success:true,message,count,wishlist}. Concurrent first-time creates can race against the unique user index and may surface a duplicate-key error; no retry is implemented.
 
 ## DELETE /api/wishlist/:tourId — inventory 629
 
@@ -19,3 +19,5 @@ Requires valid ObjectId; invalid returns 400. Finds the authenticated user's ten
 ## Model and test evidence
 
 Wishlist stores tenantId, unique user owner and array of Tour IDs, uses tenantPlugin, and has a pre-save deduplication hook plus totalTours virtual. No focused wishlistRoutes/controller tests were found in searched paths. No wishlist was created or modified during this review.
+
+**Availability mismatch:** GET population and POST validation share the same isDeleted:false/published:true match and omit available/status filters. A saved tour can therefore remain in the wishlist after it becomes unavailable or cancelled, and the API will continue returning it while published. There is no pagination or focused wishlist route/controller test.
