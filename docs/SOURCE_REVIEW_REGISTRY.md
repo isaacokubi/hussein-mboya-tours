@@ -229,3 +229,8 @@ This is an explicit evidence list for implementation-focused explanations. `SOUR
 | `server/controllers/superAdminOperationsController.js` | SOURCE-VERIFIED | [Super Admin operational contracts](API_DOMAIN_CONTRACTS/superadmin-operations.md) | Audit query/filter/count behavior and database/system health response fields; maintenance handlers scoped separately |
 | `server/middleware/auditMiddleware.js` | SOURCE-VERIFIED | [Super Admin operational contracts](API_DOMAIN_CONTRACTS/superadmin-operations.md) | Response-finish audit logging, resource mapping, action/status/severity derivation |
 | `server/models/AuditLog.js` | SOURCE-VERIFIED | [Super Admin operational contracts](API_DOMAIN_CONTRACTS/superadmin-operations.md) | Tenant ID, audit event fields, enums and indexes relevant to audit listing |
+
+
+| `server/routes/superAdminRevenueRoutes.js` | SOURCE-VERIFIED | [Super Admin revenue contract](API_DOMAIN_CONTRACTS/superadmin-revenue.md) | Revenue route uses authorize(admin.dashboard) without a local superAdminOnly guard |
+| `server/controllers/superAdminRevenueController.js` | SOURCE-VERIFIED | [Super Admin revenue contract](API_DOMAIN_CONTRACTS/superadmin-revenue.md) | Platform-bypass payment aggregation, refund qualification and multi-currency response |
+| `server/middleware/permissionMiddleware.js` | SOURCE-VERIFIED | [Super Admin revenue contract](API_DOMAIN_CONTRACTS/superadmin-revenue.md) | admin.dashboard compatibility permission granted to normalized admin role and wildcard platform role behavior |
