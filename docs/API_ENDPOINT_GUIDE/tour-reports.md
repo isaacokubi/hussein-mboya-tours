@@ -25,9 +25,7 @@ router.get("/", roleMiddleware("admin", "manager", "super_admin"), getTourReport
 - Literal HTTP statuses in handler: `200`.
 - JSON envelope keys observed: response shape is dynamic or not a literal object.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
-**Source-traced behavior:** See [Public and manager tour catalogue API contracts](../API_DOMAIN_CONTRACTS/tour-catalogue.md) for tenant authorization, booking/revenue aggregates and response fields.
+**Source-traced behavior:** See [Tour reports API contract](../API_DOMAIN_CONTRACTS/tour-reports.md) for the exact role gate, tenant scope, report calculations, revenue bases and known aggregation caveats.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
