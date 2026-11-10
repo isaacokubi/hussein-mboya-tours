@@ -60,6 +60,7 @@ This is an explicit evidence list for implementation-focused explanations. `SOUR
 | `server/controllers/categoryController.js` | SOURCE-VERIFIED | [Admin experience/category contracts](API_DOMAIN_CONTRACTS/admin-experiences.md) | Tenant category seeding, validation, slug normalization and CRUD behavior |
 | `server/controllers/adminCouponController.js` | SOURCE-VERIFIED | [Admin coupon contracts](API_DOMAIN_CONTRACTS/admin-coupons.md) | Tenant coupon CRUD, shared normalization/validation and display status serialization |
 | `server/controllers/adminDashboardMetricsController.js` | SOURCE-VERIFIED | [Canonical admin dashboard metrics](API_DOMAIN_CONTRACTS/admin-dashboard.md) | Dashboard queries, normalization, financial basis and metric labeling |
+| `server/services/financeReportingService.js` | SOURCE-VERIFIED | [Tour reports API contract](API_DOMAIN_CONTRACTS/tour-reports.md) | Tenant-scoped posted-journal revenue total and monthly grouping over active revenue accounts |
 | `server/services/bookingRevenueService.js` | SOURCE-VERIFIED | [Canonical admin dashboard metrics](API_DOMAIN_CONTRACTS/admin-dashboard.md) | Posted-journal revenue total plus separate qualifying paid-booking count |
 | `server/controllers/adminDestinationController.js` | SOURCE-VERIFIED | [Admin destination contracts](API_DOMAIN_CONTRACTS/admin-destinations.md) | Tenant destination CRUD, image uploads, Cloudinary cleanup and failure boundaries |
 | `server/controllers/adminGalleryController.js` | SOURCE-VERIFIED | [Admin gallery contracts](API_DOMAIN_CONTRACTS/admin-gallery.md) | Gallery CRUD, media upload separation, tenant scope and Cloudinary cleanup gaps |
@@ -315,12 +316,12 @@ This is an explicit evidence list for implementation-focused explanations. `SOUR
 | `server/controllers/itineraryController.js` | SOURCE-VERIFIED | [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md) | Tenant itinerary create/list/read/update/soft-delete and one-per-tour checks |
 | `server/models/Itinerary.js` | SOURCE-VERIFIED | [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md) | Itinerary days, status, creator and soft-delete fields plus unique tour index |
 | `server/controllers/tourAvailabilityController.js` | SOURCE-VERIFIED | [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md) | Tenant availability reads, booking aggregation and capacity updates |
-| `server/controllers/tourReportController.js` | SOURCE-VERIFIED | [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md) | Tenant booking/revenue/status/popular-tour/monthly-journal report aggregation |
+| `server/controllers/tourReportController.js` | SOURCE-VERIFIED | [Tour reports API contract](API_DOMAIN_CONTRACTS/tour-reports.md) | Tenant booking/status/popular-tour and posted-journal revenue aggregation; report source-basis caveats |
 | `server/controllers/tenantDirectoryController.js` | SOURCE-VERIFIED | [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md) | Tenant customer/guide/driver/vehicle directory and derived customer metrics |
 | `server/controllers/tourManagerBookingController.js` | SOURCE-VERIFIED | [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md) | Tenant booking filters, pagination, populated customer fallback and booking summaries |
 
 
-| `server/routes/tourReportRoutes.js` | SOURCE-VERIFIED | [Tour catalogue contracts](API_DOMAIN_CONTRACTS/tour-catalogue.md) | Tenant-resolved, authenticated admin/manager report route |
+| `server/routes/tourReportRoutes.js` | SOURCE-VERIFIED | [Tour reports API contract](API_DOMAIN_CONTRACTS/tour-reports.md) | Tenant resolution, JWT authentication and admin/manager/super-admin role gate |
 | `server/routes/tourRoutes.js` | SOURCE-VERIFIED | [Tour catalogue contracts](API_DOMAIN_CONTRACTS/tour-catalogue.md) | Public tour reads followed by protected manager CRUD, availability and assignment routes |
 | `server/controllers/tourController.js` | SOURCE-VERIFIED | [Tour catalogue contracts](API_DOMAIN_CONTRACTS/tour-catalogue.md) | Public visibility filters, search/category/pagination, tenant-aware reads and manager-owned tour list |
 | `server/middleware/tourManagerMiddleware.js` | SOURCE-VERIFIED | [Tour catalogue contracts](API_DOMAIN_CONTRACTS/tour-catalogue.md) | Role allowlist for tour_manager/manager/admin/super_admin |
