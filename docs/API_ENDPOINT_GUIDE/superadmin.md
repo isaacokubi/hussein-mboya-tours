@@ -1054,7 +1054,7 @@ router.get("/subscription-payments", listSubscriptionPayments)
 
 ## endpoint-445 — GET /api/superadmin/billing/config
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 445 of 629<br>
 **Route declaration pipeline:** `getPlatformBillingConfig`
@@ -1068,20 +1068,13 @@ router.get("/subscription-payments", listSubscriptionPayments)
 router.get("/billing/config", getPlatformBillingConfig)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: no literal status code detected; Express default or delegated error handler may apply.
-- JSON envelope keys observed: response shape is dynamic or not a literal object.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin platform billing configuration APIs](../API_DOMAIN_CONTRACTS/superadmin-billing.md) for price fallback/validation, platform settings isolation, feature catalogue defaults and update semantics.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-446 — GET /api/superadmin/billing/config
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 446 of 629<br>
 **Route declaration pipeline:** `getPlatformBillingConfig`
@@ -1095,20 +1088,13 @@ router.get("/billing/config", getPlatformBillingConfig)
 router.get("/billing/config", getPlatformBillingConfig)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: no literal status code detected; Express default or delegated error handler may apply.
-- JSON envelope keys observed: response shape is dynamic or not a literal object.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin platform billing configuration APIs](../API_DOMAIN_CONTRACTS/superadmin-billing.md) for price fallback/validation, platform settings isolation, feature catalogue defaults and update semantics.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-447 — PUT /api/superadmin/billing/config
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 447 of 629<br>
 **Route declaration pipeline:** `updatePlatformBillingConfig`
@@ -1122,20 +1108,13 @@ router.get("/billing/config", getPlatformBillingConfig)
 router.put("/billing/config", updatePlatformBillingConfig)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: `features`.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: no literal status code detected; Express default or delegated error handler may apply.
-- JSON envelope keys observed: `success`, `message`, `prices`, `features`, `currency`, `mpesa`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin platform billing configuration APIs](../API_DOMAIN_CONTRACTS/superadmin-billing.md) for price fallback/validation, platform settings isolation, feature catalogue defaults and update semantics.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-448 — PUT /api/superadmin/billing/config
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 448 of 629<br>
 **Route declaration pipeline:** `updatePlatformBillingConfig`
@@ -1149,20 +1128,13 @@ router.put("/billing/config", updatePlatformBillingConfig)
 router.put("/billing/config", updatePlatformBillingConfig)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: `features`.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: no literal status code detected; Express default or delegated error handler may apply.
-- JSON envelope keys observed: `success`, `message`, `prices`, `features`, `currency`, `mpesa`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin platform billing configuration APIs](../API_DOMAIN_CONTRACTS/superadmin-billing.md) for price fallback/validation, platform settings isolation, feature catalogue defaults and update semantics.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-449 — GET /api/superadmin/billing/features
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 449 of 629<br>
 **Route declaration pipeline:** `getPlatformPlanFeatureCatalog`
@@ -1176,20 +1148,13 @@ router.put("/billing/config", updatePlatformBillingConfig)
 router.get("/billing/features", getPlatformPlanFeatureCatalog)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: no literal status code detected; Express default or delegated error handler may apply.
-- JSON envelope keys observed: response shape is dynamic or not a literal object.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin platform billing configuration APIs](../API_DOMAIN_CONTRACTS/superadmin-billing.md) for price fallback/validation, platform settings isolation, feature catalogue defaults and update semantics.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-450 — GET /api/superadmin/billing/features
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 450 of 629<br>
 **Route declaration pipeline:** `getPlatformPlanFeatureCatalog`
@@ -1203,14 +1168,7 @@ router.get("/billing/features", getPlatformPlanFeatureCatalog)
 router.get("/billing/features", getPlatformPlanFeatureCatalog)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: no literal status code detected; Express default or delegated error handler may apply.
-- JSON envelope keys observed: response shape is dynamic or not a literal object.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin platform billing configuration APIs](../API_DOMAIN_CONTRACTS/superadmin-billing.md) for price fallback/validation, platform settings isolation, feature catalogue defaults and update semantics.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
