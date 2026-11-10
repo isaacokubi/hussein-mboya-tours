@@ -69,7 +69,7 @@ Test evidence: tourLifecycleIntegration.test.js includes an opt-in replica-set i
 
 ### PATCH /api/tourmanager/tours/:id/publication and /api/tour-manager/tours/:id/publication — entries 536–537
 
-Body published must be boolean or string "true"/"false". Updates only a tenant-owned non-deleted tour, populates destination/resources, and returns 200 {success:true,message,data,tour}. Invalid value/ID returns 400; missing tour 404.
+Handler setPublication accepts only body.published as a boolean or the exact lowercase string "true"/"false". It validates the path ID (400), updates only a tenant-owned non-deleted Tour with $set published and runValidators:true, populates destination/resources, and returns 200 {success:true,message,data,tour}; missing/cross-tenant tour is 404. Extra body fields are ignored. This is a single-document update with no transaction. It does not change status or available, and has no guard against setting published=true on a cancelled or unavailable tour, so those flags can become inconsistent. No focused publication-route test was found.
 
 ### PUT /api/tourmanager/tours/:id/assign, PUT /api/tourmanager/assign-resources/:id, POST /api/tourmanager/assign-guide and their /tour-manager aliases — entries 538–539, 544–547
 
