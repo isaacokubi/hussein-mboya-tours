@@ -349,3 +349,8 @@ Entries 584–599 are source-traced in [Public and manager tour catalogue API co
 ## Tour Manager tour catalogue
 
 Entries 528–529 are source-traced in [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md). Both route prefixes reach the same tenant-scoped GET handler. It excludes deleted tours, supports status and upcoming filters, clamps page size to 1–50, populates assigned resources/creator and returns data/tours plus pagination. The upcoming filter overrides a supplied status with the active future-tour status set; invalid status values are not separately rejected.
+
+
+## Travel voucher, pricing and loyalty
+
+Entries 600–605 are source-traced in [Travel lifecycle APIs](API_DOMAIN_CONTRACTS/travel-lifecycle.md). The review identified non-atomic one-use voucher redemption, client-overridable basePrice in dynamic pricing, loyalty balance disclosure to any authenticated same-tenant user, and loyalty redemption against arbitrary customerId without owner/manager authorization.
