@@ -283,3 +283,7 @@ This is an explicit evidence list for implementation-focused explanations. `SOUR
 | `server/routes/systemHealthRoutes.js` | SOURCE-VERIFIED | [Tenant system health contracts](API_DOMAIN_CONTRACTS/system-health.md) | Tenant resolution, authentication, admin role and system.security middleware for both health aliases |
 | `server/controllers/systemHealthController.js` | SOURCE-VERIFIED | [Tenant system health contracts](API_DOMAIN_CONTRACTS/system-health.md) | Database, Cloudinary ping and tenant Daraja OAuth health response |
 | `server/middleware/adminMiddleware.js` | SOURCE-VERIFIED | [Tenant system health contracts](API_DOMAIN_CONTRACTS/system-health.md) | Reloaded active-user and admin/super-admin role gate |
+
+
+| `server/routes/tenantBrandingRoutes.js` | SOURCE-VERIFIED | [Tenant branding contracts](API_DOMAIN_CONTRACTS/tenant-branding.md) | Tenant resolution and root GET/PUT declarations; no /branding child route |
+| `server/controllers/tenantBrandingController.js` | SOURCE-VERIFIED | [Tenant branding contracts](API_DOMAIN_CONTRACTS/tenant-branding.md) | Public branding projection, admin/manager update allowlist and Organization write behavior |
