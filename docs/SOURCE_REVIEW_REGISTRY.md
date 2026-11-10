@@ -265,3 +265,7 @@ This is an explicit evidence list for implementation-focused explanations. `SOUR
 
 | `server/controllers/platformBillingController.js` | SOURCE-VERIFIED | [Super Admin billing contracts](API_DOMAIN_CONTRACTS/superadmin-billing.md) | Platform price fallback, billing config validation/write and feature catalog responses |
 | `server/services/planFeatureService.js` | SOURCE-VERIFIED | [Super Admin billing contracts](API_DOMAIN_CONTRACTS/superadmin-billing.md) | Feature catalogue, plan defaults, normalization and strict feature validation |
+
+
+| `server/controllers/superAdminUserController.js` | SOURCE-VERIFIED | [Super Admin user contracts](API_DOMAIN_CONTRACTS/superadmin-users.md) | User search, role normalization, account creation, status mutation and linked Staff/Agent deletion |
+| `server/models/User.js` | SOURCE-VERIFIED | [Super Admin user contracts](API_DOMAIN_CONTRACTS/superadmin-users.md) | Tenant-scoped email index, role/status fields, password hashing and authentication metadata |
